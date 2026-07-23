@@ -167,20 +167,20 @@ Expectations:
 
 ---
 
-## 6. Current State (Phase 1 — Sprint 17)
+## 6. Current State (Phase 1 — Sprint 18)
 
 Phase 1 scaffolding is in progress. Implemented structure:
 
 ```
 Workspace/
-├── app/                    # Tauri + IPC (workspace, resource, layout, projection, discovery, observation)
+├── app/                    # Tauri + IPC (workspace, resource, layout, projection, discovery, observation, analytics)
 ├── packages/
-│   ├── domain/             # Entities, ResourceRef, graph, layout, projection, intent, discovery, observation
-│   ├── kernel/             # Services, commands, intent validation, projection, capability resolver, observation
+│   ├── domain/             # Entities, ResourceRef, graph, layout, projection, intent, discovery, observation, analytics
+│   ├── kernel/             # Services, commands, intent validation, projection, capability resolver, observation, analytics
 │   └── database/           # Repositories + graph + layout tables
 ```
 
-Resource services own graph-backed entity persistence. Layout owns spatial state. Projection aggregates derived read models. Action intents provide metadata-first command mapping. Capability discovery derives actor authority from existing policy without a permission database. Observation derives a neutral, read-only activity stream over the audit trail without adding persistence.
+Resource services own graph-backed entity persistence. Layout owns spatial state. Projection aggregates derived read models. Action intents provide metadata-first command mapping. Capability discovery derives actor authority from existing policy without a permission database. Observation derives a neutral, read-only activity stream over the audit trail without adding persistence. Analytics deterministically aggregates observations into `WorkspaceMetrics` — the "Learn" stage — with no AI and no persistence.
 
 Implementation directories will be created during Phase 1 scaffolding.
 

@@ -79,6 +79,9 @@ pub enum KernelError {
     #[error("Observation validation failed: {message}")]
     ObservationValidation { message: String },
 
+    #[error("Analytics validation failed: {message}")]
+    AnalyticsValidation { message: String },
+
     #[error("Service '{0}' failed to start")]
     ServiceStartup(&'static str),
 
@@ -218,6 +221,10 @@ impl KernelError {
             },
             KernelError::ObservationValidation { message } => PublicError {
                 code: "observation_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::AnalyticsValidation { message } => PublicError {
+                code: "analytics_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::ServiceStartup(service) => PublicError {

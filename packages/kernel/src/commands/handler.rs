@@ -6,6 +6,7 @@ use crate::commands::get_actor_capabilities::GetActorCapabilities;
 use crate::commands::get_audit_history::GetAuditHistory;
 use crate::commands::get_observations::GetObservations;
 use crate::commands::get_workspace::GetWorkspace;
+use crate::commands::get_workspace_metrics::GetWorkspaceMetrics;
 use crate::commands::get_workspace_snapshot::GetWorkspaceSnapshot;
 use crate::commands::initialize::InitializeWorkspace;
 use crate::commands::layout::{
@@ -25,8 +26,8 @@ use crate::WorkspaceKernel;
 use workspace_domain::{
     Actor, ActorContext, ApplicationId, ApplicationReference, AuditEvent, Capability, Intent,
     IntentContext, Layout, LayoutId, LayoutMetadata, LayoutNode, LayoutSnapshot, Observation,
-    WidgetId, WidgetReference, Workspace, WorkspaceId, WorkspaceSnapshot, CapabilityDiscovery,
-    Zone, ZoneId,
+    WidgetId, WidgetReference, Workspace, WorkspaceId, WorkspaceMetrics, WorkspaceSnapshot,
+    CapabilityDiscovery, Zone, ZoneId,
 };
 
 /// Executes kernel commands and coordinates services + events.
@@ -309,6 +310,16 @@ impl CommandHandler {
     ) -> Result<Vec<Observation>> {
         CommandPipeline::new(kernel.command_context(actor, intent))
             .execute_query(GetObservations::new(limit))
+    }
+
+    pub fn get_workspace_metrics(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        limit: Option<usize>,
+    ) -> Result<WorkspaceMetrics> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetWorkspaceMetrics::new(limit))
     }
 
     pub fn shutdown(kernel: &mut WorkspaceKernel) {

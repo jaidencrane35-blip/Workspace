@@ -1,6 +1,7 @@
 //! Shared Workspace domain models — no database or UI logic.
 
 pub mod actor;
+pub mod analytics;
 pub mod audit;
 pub mod capability;
 pub mod discovery;
@@ -18,6 +19,7 @@ pub mod workspace;
 pub use actor::{
     Actor, ActorContext, ActorMetadata, ActorType, LOCAL_USER_ACTOR_ID, SYSTEM_ACTOR_ID,
 };
+pub use analytics::{AnalyticsError, CategoryActivity, WorkspaceMetrics};
 pub use audit::AuditEvent;
 pub use capability::{Capability, CapabilityId, CapabilityScope, CapabilitySet};
 pub use discovery::{

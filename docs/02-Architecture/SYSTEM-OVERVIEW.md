@@ -271,6 +271,18 @@ Observation (derived, disposable, neutral) → GetObservations (governed)
 
 Observations answer "what is happening over time?" as a read-only interpretation of the recorded audit trail. Domain events remain authoritative; observations add no persistence, no new subscriber, and no interpretation beyond a static category/importance mapping. Reads are governed (`audit.read`) because they reveal activity history.
 
+**Observation analytics layer (Sprint 18):**
+
+```
+Observation
+    ↓
+WorkspaceAnalyticsService (deterministic aggregation)
+    ↓
+WorkspaceMetrics (derived, read-only) → GetWorkspaceMetrics (governed)
+```
+
+Analytics is the "Learn" stage: it answers "what patterns exist in what happened?" by deterministically counting and grouping observations. No AI, scoring, prediction, ranking, or recommendations. It adds no persistence and no mutation path; it consumes `ObservationService` output and aggregates via a pure domain type. Reads are governed (`audit.read`).
+
 ### 6.6 Windows Integration Layer
 
 Abstracts all Windows API interactions. Only this layer communicates directly with the OS.

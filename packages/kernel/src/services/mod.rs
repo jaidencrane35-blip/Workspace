@@ -1,5 +1,6 @@
 //! Foundation service ownership for the Platform Kernel.
 
+mod analytics;
 mod application;
 mod audit;
 mod configuration;
@@ -14,6 +15,7 @@ mod widget;
 mod workspace;
 mod zone;
 
+pub use analytics::WorkspaceAnalyticsService;
 pub use application::ApplicationService;
 pub use audit::AuditService;
 pub use configuration::ConfigurationService;
