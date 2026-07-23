@@ -109,6 +109,15 @@ pub enum KernelError {
     #[error("Duplicate execution blocked for {execution_request_id}")]
     DuplicateExecution { execution_request_id: String },
 
+    #[error("Execution cancellation validation failed: {message}")]
+    ExecutionCancellationValidation { message: String },
+
+    #[error("Unknown execution request: {execution_request_id}")]
+    UnknownExecutionRequest { execution_request_id: String },
+
+    #[error("Cannot cancel completed execution: {execution_request_id}")]
+    CannotCancelCompletedExecution { execution_request_id: String },
+
     #[error("Service '{0}' failed to start")]
     ServiceStartup(&'static str),
 
@@ -292,6 +301,24 @@ impl KernelError {
                 code: "duplicate_execution".into(),
                 message: format!(
                     "Execution request '{execution_request_id}' has already completed."
+                ),
+            },
+            KernelError::ExecutionCancellationValidation { message } => PublicError {
+                code: "execution_cancellation_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::UnknownExecutionRequest {
+                execution_request_id,
+            } => PublicError {
+                code: "unknown_execution_request".into(),
+                message: format!("Unknown execution request '{execution_request_id}'."),
+            },
+            KernelError::CannotCancelCompletedExecution {
+                execution_request_id,
+            } => PublicError {
+                code: "cannot_cancel_completed_execution".into(),
+                message: format!(
+                    "Execution request '{execution_request_id}' has already completed and cannot be cancelled."
                 ),
             },
             KernelError::ServiceStartup(service) => PublicError {

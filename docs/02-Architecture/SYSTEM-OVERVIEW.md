@@ -406,6 +406,20 @@ AlreadyExecuted → DuplicateExecution (existing failure audit path)
 
 Idempotency answers "has this execution request already completed?" using audit-derived outcomes and the existing `execution:{suggestion_id}` id. Only successful completions block; failures remain retryable. No idempotency table, no new capability, no IPC.
 
+**Execution cancellation layer (Sprint 28):**
+
+```
+RequestExecutionCancellation (governed, audit.write)
+    ↓
+ExecutionCancellationService (validate known execution via outcomes)
+    ↓
+Audit metadata (execution_request_id, cancellation_status, reason)
+    ↓
+ExecutionOutcome(cancelled)  ← additive classifier
+```
+
+Cancellation is a governed **request** boundary — not runtime interruption. Unknown and completed executions are rejected explicitly. No cancellation table, no IPC, no process/thread stop.
+
 ### 6.6 Windows Integration Layer
 
 Abstracts all Windows API interactions. Only this layer communicates directly with the OS.

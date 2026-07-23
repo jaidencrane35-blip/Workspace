@@ -8,6 +8,7 @@ pub mod context;
 pub mod discovery;
 pub mod entities;
 pub mod errors;
+pub mod execution_cancellation;
 pub mod execution_context;
 pub mod execution_guard;
 pub mod execution_outcome;
@@ -58,6 +59,9 @@ pub use suggestion_intent::{
 };
 pub use intent_execution::{
     IntentExecutionError, IntentExecutionRequest, IntentExecutionStatus,
+};
+pub use execution_cancellation::{
+    sanitize_reason, CancellationRequest, CancellationStatus, ExecutionCancellationError,
 };
 pub use execution_context::{ExecutionContextError, ExecutionContextSummary};
 pub use execution_guard::{

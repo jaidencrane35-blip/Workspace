@@ -85,15 +85,20 @@ impl ExecutionOutcome {
 
 /// Classifies an audit event into an execution outcome status when applicable.
 ///
-/// Only recognizes `ExecuteIntentRequest` lifecycle signals. Ignores unrelated
+/// Recognizes `ExecuteIntentRequest` lifecycle signals and successful
+/// `RequestExecutionCancellation` records (Sprint 28). Ignores unrelated
 /// workspace events and generic command bookkeeping. No inference or scoring.
 pub fn classify_execution_outcome_event(
     event: &AuditEvent,
 ) -> Option<ExecutionOutcomeStatus> {
-    if event.command_name.as_deref() != Some("ExecuteIntentRequest") {
-        return None;
+    match event.command_name.as_deref() {
+        Some("ExecuteIntentRequest") => classify_execute_intent_outcome(event),
+        Some("RequestExecutionCancellation") => classify_cancellation_outcome(event),
+        _ => None,
     }
+}
 
+fn classify_execute_intent_outcome(event: &AuditEvent) -> Option<ExecutionOutcomeStatus> {
     match event.event_type.as_str() {
         "command.failed" => Some(ExecutionOutcomeStatus::Failed),
         "command.executed" => {
@@ -112,6 +117,26 @@ pub fn classify_execution_outcome_event(
                 _ => None,
             }
         }
+        _ => None,
+    }
+}
+
+fn classify_cancellation_outcome(event: &AuditEvent) -> Option<ExecutionOutcomeStatus> {
+    if event.event_type != "command.executed" || !event.success {
+        return None;
+    }
+    let metadata = event.metadata.as_deref()?;
+    let value = serde_json::from_str::<serde_json::Value>(metadata).ok()?;
+    if value
+        .get("execution_request_id")
+        .and_then(|v| v.as_str())
+        .filter(|id| !id.trim().is_empty())
+        .is_none()
+    {
+        return None;
+    }
+    match value.get("cancellation_status").and_then(|v| v.as_str()) {
+        Some("requested") | Some("approved") => Some(ExecutionOutcomeStatus::Cancelled),
         _ => None,
     }
 }
@@ -330,5 +355,25 @@ mod tests {
             Some(r#"{"suggestion_id":"s-1"}"#),
         );
         assert!(classify_execution_outcome_event(&event).is_none());
+    }
+
+    #[test]
+    fn classifies_cancellation_request_as_cancelled() {
+        let event = audit_event(
+            true,
+            Some("RequestExecutionCancellation"),
+            Some(
+                r#"{"execution_request_id":"execution:s-1","cancellation_status":"requested","reason":"stop"}"#,
+            ),
+        );
+        assert_eq!(
+            classify_execution_outcome_event(&event),
+            Some(ExecutionOutcomeStatus::Cancelled)
+        );
+        let outcome = outcome_from_audit_event(&event).unwrap();
+        assert_eq!(outcome.execution_request_id, "execution:s-1");
+        assert_eq!(outcome.status, ExecutionOutcomeStatus::Cancelled);
+        assert!(!outcome.success);
+        assert_eq!(outcome.command_name, "RequestExecutionCancellation");
     }
 }

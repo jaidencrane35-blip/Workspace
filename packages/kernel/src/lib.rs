@@ -27,7 +27,7 @@ pub use policy::{
     PolicyContext, PolicyDecision, PolicyEvaluator, PolicyResult,
 };
 pub use security::{AllowAllPermissionGate, PermissionGate, PermissionRequest, PermissionSubject};
-pub use services::{AuditService, CapabilityResolver, ConfigurationService, DatabaseServiceHandle, ExecutionContextService, ExecutionGuardService, ExecutionOutcomeService, GovernedIntentExecutionService, ObservationService, ServiceRegistry, ServiceStatus, SuggestionIntentService, SuggestionLifecycleService, SuggestionService, WorkspaceAnalyticsService, WorkspaceContextService};
+pub use services::{AuditService, CapabilityResolver, ConfigurationService, DatabaseServiceHandle, ExecutionCancellationService, ExecutionContextService, ExecutionGuardService, ExecutionOutcomeService, GovernedIntentExecutionService, ObservationService, ServiceRegistry, ServiceStatus, SuggestionIntentService, SuggestionLifecycleService, SuggestionService, WorkspaceAnalyticsService, WorkspaceContextService};
 pub use state::WorkspaceState;
 pub use workspace_domain::{
     Actor, ActorContext, ActorType, Addressable, Capability, CapabilityId, CapabilityScope,

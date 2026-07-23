@@ -21,6 +21,7 @@ use crate::commands::layout::{
 };
 use crate::commands::pipeline::CommandPipeline;
 use crate::commands::reject_suggestion::RejectSuggestion;
+use crate::commands::request_execution_cancellation::RequestExecutionCancellation;
 use crate::commands::update_settings::UpdateSettings;
 use crate::commands::widget::{CreateWidget, DeleteWidget, GetWidget};
 use crate::commands::zone::{CreateZone, DeleteZone, GetZone};
@@ -34,7 +35,7 @@ use crate::WorkspaceKernel;
 use workspace_domain::{
     Actor, ActorContext, ApplicationId, ApplicationReference, AuditEvent, Capability, Intent,
     IntentContext, Layout, LayoutId, LayoutMetadata, LayoutNode, LayoutSnapshot, Observation,
-    Suggestion, SuggestionIntentRequest, SuggestionLifecycleRecord, IntentExecutionRequest, ExecutionOutcome, WidgetId, WidgetReference, Workspace, WorkspaceContext, WorkspaceId,
+    Suggestion, SuggestionIntentRequest, SuggestionLifecycleRecord, IntentExecutionRequest, ExecutionOutcome, CancellationRequest, WidgetId, WidgetReference, Workspace, WorkspaceContext, WorkspaceId,
     WorkspaceMetrics, WorkspaceSnapshot, CapabilityDiscovery, Zone, ZoneId,
 };
 
@@ -422,6 +423,20 @@ impl CommandHandler {
     ) -> Result<Vec<ExecutionOutcome>> {
         CommandPipeline::new(kernel.command_context(actor, intent))
             .execute_query(GetExecutionOutcomes::new(limit))
+    }
+
+    pub fn request_execution_cancellation(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        execution_request_id: String,
+        reason: String,
+    ) -> Result<CancellationRequest> {
+        let workspace_id = WorkspaceId::new(workspace_id).map_err(KernelError::Domain)?;
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_mutation(
+            RequestExecutionCancellation::new(workspace_id, execution_request_id, reason),
+        )
     }
 
     pub fn shutdown(kernel: &mut WorkspaceKernel) {

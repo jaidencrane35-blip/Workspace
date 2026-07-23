@@ -18,6 +18,7 @@ mod handler;
 mod initialize;
 mod pipeline;
 mod reject_suggestion;
+mod request_execution_cancellation;
 #[cfg(test)]
 mod analytics_tests;
 #[cfg(test)]
@@ -73,6 +74,7 @@ pub use handler::CommandHandler;
 pub use initialize::InitializeWorkspace;
 pub use pipeline::CommandPipeline;
 pub use reject_suggestion::RejectSuggestion;
+pub use request_execution_cancellation::RequestExecutionCancellation;
 pub use r#trait::{Command, MutationCommand, QueryCommand};
 pub use update_settings::UpdateSettings;
 pub use widget::{CreateWidget, DeleteWidget, GetWidget};
