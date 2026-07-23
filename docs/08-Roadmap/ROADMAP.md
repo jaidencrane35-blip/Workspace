@@ -122,6 +122,7 @@ Foundation     Decisions       Core Platform     Feature Expansion   Maturity
 - [x] Suggestion approval foundation: AcceptSuggestion / RejectSuggestion decision commands (audit-backed, no automate) — Sprint 21
 - [x] Suggestion lifecycle foundation: SuggestionLifecycleService, GetSuggestionLifecycle, audit-derived lifecycle projection — Sprint 22
 - [x] Suggestion intent bridge foundation: SuggestionIntentService, CreateSuggestionIntentRequest, approval-gated intent request — Sprint 23
+- [x] Governed suggestion execution boundary: ExecuteIntentRequest, GovernedIntentExecutionService, pipeline-dispatched execution — Sprint 24
 - [x] CI/CD pipeline (lint, build, test) — Sprint 01 PR workflow
 - [x] Developer setup documentation — Sprint 01
 - [ ] Spatial Workspace Canvas shell prototype — future sprint (DEC-009)

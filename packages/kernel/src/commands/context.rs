@@ -28,6 +28,20 @@ impl CommandContext<'_> {
         let guard = self.database.lock().expect("database lock poisoned");
         f(&guard)
     }
+
+    /// Creates an equivalent context for nested pipeline execution.
+    pub fn fork(&self) -> CommandContext<'_> {
+        CommandContext {
+            actor_context: self.actor_context.clone(),
+            intent_context: self.intent_context.clone(),
+            capability_set: self.capability_set.clone(),
+            state: self.state,
+            database: Arc::clone(&self.database),
+            event_bus: self.event_bus,
+            permission_gate: self.permission_gate,
+            permission_policy: self.permission_policy,
+        }
+    }
 }
 
 #[cfg(test)]

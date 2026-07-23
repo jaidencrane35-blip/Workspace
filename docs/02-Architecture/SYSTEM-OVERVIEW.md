@@ -353,6 +353,22 @@ SuggestionIntentRequest
 
 The bridge creates a validated intent request from an accepted suggestion. It does not dispatch commands, automate actions, or bypass the permission pipeline.
 
+**Governed execution boundary (Sprint 24):**
+
+```
+SuggestionIntentRequest (audit bridge)
+    ↓
+ExecuteIntentRequest (governed, audit.write)
+    ↓
+GovernedIntentExecutionService::prepare
+    ↓
+CommandPipeline::execute_*_with_action
+    ↓
+Existing mapped command → Audit
+```
+
+Execution remains explicit and governed. This is not automation — each execution request is a separate mutation through the full authority pipeline. Future automation systems remain a separate stage.
+
 ### 6.6 Windows Integration Layer
 
 Abstracts all Windows API interactions. Only this layer communicates directly with the OS.

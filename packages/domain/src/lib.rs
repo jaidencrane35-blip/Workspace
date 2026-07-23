@@ -11,6 +11,7 @@ pub mod errors;
 pub mod graph;
 pub mod ids;
 pub mod intent;
+pub mod intent_execution;
 pub mod layout;
 pub mod observation;
 pub mod projection;
@@ -51,6 +52,9 @@ pub use suggestion_lifecycle::{
 };
 pub use suggestion_intent::{
     map_suggestion_type_to_intent, SuggestionIntentError, SuggestionIntentRequest,
+};
+pub use intent_execution::{
+    IntentExecutionError, IntentExecutionRequest, IntentExecutionStatus,
 };
 pub use entities::{
     ApplicationReference, WidgetReference, Workspace, Zone,
