@@ -21,15 +21,15 @@ pub use events::{DomainEvent, EventBus};
 pub use health::WorkspaceHealth;
 pub use lifecycle::LifecycleState;
 pub use policy::{
-    AlwaysAllowPolicy, DefaultPolicyEvaluator, PermissionPolicy, PolicyContext, PolicyDecision,
-    PolicyEvaluator, PolicyResult,
+    read_is_governed, AlwaysAllowPolicy, DefaultPolicyEvaluator, GovernanceClass, PermissionPolicy,
+    PolicyContext, PolicyDecision, PolicyEvaluator, PolicyResult,
 };
 pub use security::{AllowAllPermissionGate, PermissionGate, PermissionRequest, PermissionSubject};
 pub use services::{AuditService, ConfigurationService, DatabaseServiceHandle, ServiceRegistry, ServiceStatus};
 pub use state::WorkspaceState;
 pub use workspace_domain::{
-    Actor, ActorContext, ActorType, Capability, CapabilityId, CapabilityScope, CapabilitySet, Intent,
-    IntentContext, IntentType,
+    Actor, ActorContext, ActorType, Addressable, Capability, CapabilityId, CapabilityScope,
+    CapabilitySet, Intent, IntentContext, IntentType, ResourceId, ResourceKind, ResourceRef,
 };
 
 use std::path::Path;
@@ -194,6 +194,8 @@ impl WorkspaceKernel {
         self.permission_gate.as_ref()
     }
 
+    // Exposed for governance wiring/tests; enforcement lands in a later sprint.
+    #[allow(dead_code)]
     pub(crate) fn permission_policy(&self) -> &dyn PermissionPolicy {
         self.permission_policy.as_ref()
     }
@@ -226,7 +228,7 @@ mod tests {
             Intent::user_request(),
             Capability::workspace_write(),
             "CreateWorkspace",
-            PermissionSubject::Workspace,
+            PermissionSubject::Resource(workspace_domain::ResourceKind::Workspace),
         );
 
         assert!(

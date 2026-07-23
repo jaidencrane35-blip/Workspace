@@ -2,6 +2,11 @@
 
 Platform Kernel boundary for Workspace — the central runtime authority.
 
+## Governance hardening (DEC-016, DEC-017)
+
+- **Resource-addressed permissions (DEC-016)** — `PermissionSubject` is now `System | Resource(ResourceKind)`; commands address resources uniformly
+- **Read governance (DEC-017)** — `QueryCommand` declares a `*.read` capability and a `GovernanceClass`; `execute_query` governs + audits non-human reads and sensitive-kind reads, while local-human non-sensitive reads bypass governance. Enforcement remains allow-all.
+
 ## Sprint 09
 
 - **Intent model** — `Intent`, `IntentContext`, `IntentType` in domain

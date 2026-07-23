@@ -66,7 +66,7 @@ impl PolicyResult {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use workspace_domain::{Actor, Capability, IntentType};
+    use workspace_domain::{Actor, Capability, IntentType, ResourceKind};
 
     #[test]
     fn policy_context_carries_intent_and_capability() {
@@ -75,7 +75,7 @@ mod tests {
             workspace_domain::Intent::user_request(),
             Capability::workspace_write(),
             "CreateWorkspace",
-            PermissionSubject::Workspace,
+            PermissionSubject::Resource(ResourceKind::Workspace),
         );
 
         assert_eq!(context.intent.intent_type, IntentType::UserRequest);

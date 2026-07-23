@@ -280,6 +280,87 @@ Each decision entry follows this format:
 
 ---
 
+### DEC-016: Resource Addressing Model
+
+- **Date:** 2026-07-23
+- **Status:** Accepted
+- **Decision Type:** B (Strategic)
+- **Owner:** Lead Software Engineer
+- **Context:** Sprint 06 introduced per-entity typed IDs (`WorkspaceId`, `ZoneId`, `ApplicationId`, `WidgetId`). Sprint 09 introduced a closed `PermissionSubject` enum (`System`, `Settings`, `Workspace`). The next phase (Resource Services + Workspace Graph) requires a uniform way to *address* any resource for permissions, audit, graph nodes, and IPC. Without a canonical address, every new resource kind forces cross-cutting edits (permission subject, event enum, audit metadata) and the graph has no uniform node identity. The audit (post–Sprint 09) flagged this as the highest feature-refactor risk if deferred.
+
+- **Resource identity strategy:** Introduce a canonical resource address composed of a **`ResourceKind`** (an extensible classification — `Workspace`, `Zone`, `Application`, `Widget`, and future kinds) and a **`ResourceId`** (a generic, globally-unique identifier). Together they form a **`ResourceRef { kind, id }`**. Resource IDs remain UUIDv4 and are globally unique across kinds, so `kind` is descriptive/routing metadata rather than a uniqueness requirement.
+
+- **Node identity vs typed IDs:** Both are retained, at different layers.
+  - **Typed IDs** (`WorkspaceId`, `ZoneId`, …) remain the compile-time-safe identifiers *inside* each bounded entity and its repository, preserving the type safety established in Sprint 06.
+  - **`ResourceRef`** is the *cross-cutting* address used wherever code must treat resources uniformly: permission subjects, audit records, Workspace Graph nodes/edges, and resource-facing IPC. Each typed entity provides a lossless mapping to and from its `ResourceRef`.
+  - `PermissionSubject` is redefined to be `ResourceKind`-driven for resource operations, while retaining a dedicated `System` subject for non-resource operations (startup, shutdown, settings-as-system). This removes the closed 3-variant enum bottleneck.
+
+- **Relationship to the future Workspace Graph:** The Workspace Graph is defined *on top of* this addressing model. **Nodes** are resources addressed by `ResourceRef`. **Edges** are typed relationships referencing a source `ResourceRef` and a target `ResourceRef` plus a relationship type. The addressing model is therefore a prerequisite for the graph, not part of it — the graph adds edges and traversal, but node identity is already defined here.
+
+- **IPC implications:** `ResourceRef` serializes over IPC as a structured object `{ "kind": "...", "id": "..." }` (forward-compatible; avoids string-parsing ambiguity), with a canonical `kind:id` string form reserved for audit records and logs. Existing typed IDs currently serialize transparently as bare strings; resource-facing IPC introduced from this point uses `ResourceRef` from the start. Pre-existing settings/workspace endpoints may continue returning bare IDs until a coordinated, versioned contract change — no forced rewrite of shipped endpoints.
+
+- **Migration implications:** Additive only. Existing tables are unchanged; their UUID primary keys already satisfy global uniqueness. The future graph introduces a `graph_edges` table keyed by `(source_kind, source_id, relationship, target_kind, target_id)`. No data rewrite is required to adopt the addressing model; only new resource/graph tables reference `ResourceRef` columns.
+
+- **Options Considered:**
+  - **(A) Keep per-type typed IDs only; extend `PermissionSubject` per resource kind.** Rejected — closed enum forces cross-cutting edits per kind and gives the graph no uniform node identity.
+  - **(B) Replace typed IDs with a single opaque global `ResourceId` string everywhere.** Rejected — discards the compile-time safety established in DEC-era Sprint 06.
+  - **(C) Hybrid: typed IDs for entity internals + `ResourceRef { kind, id }` for cross-cutting concerns.** **Chosen** — preserves type safety while giving permissions, audit, graph, and IPC one uniform address.
+  - **(D) URN-style single string (`workspace:uuid`) as the universal identifier.** Adopted only as the canonical *serialized/audit* form within (C), not as the primary in-memory type.
+
+- **Decision:** Adopt option **(C)**. Define `ResourceKind`, `ResourceId`, and `ResourceRef` as the canonical resource address. Redefine `PermissionSubject` to be `ResourceKind`-driven for resource operations while retaining a `System` subject. Address Workspace Graph nodes and edges by `ResourceRef`. Serialize `ResourceRef` as `{ kind, id }` over IPC and as `kind:id` in audit/logs.
+
+- **Rationale:** Fixes the highest-risk foundational gap before feature code depends on it. Uniform addressing makes permissions, audit, and the graph extensible without cross-cutting edits, while typed IDs keep entity code type-safe. The change is additive to storage and to shipped IPC contracts.
+
+- **Consequences:** A resource-addressing type set is introduced in the domain layer and threaded through permission subjects, audit attribution, and (later) graph nodes/edges. New resource kinds are added by extending `ResourceKind` and providing a typed-ID↔`ResourceRef` mapping — no changes to unrelated commands. Existing typed IDs and shipped endpoints remain valid. Implementation is performed in a later Composer step, not by this record.
+
+- **Related:** DEC-003, DEC-009 (Spatial Workspace Canvas / graph), DEC-010, Sprint 06 (typed IDs), Sprint 09 (permission subject), DEC-017
+
+---
+
+### DEC-017: Read Governance Policy
+
+- **Date:** 2026-07-23
+- **Status:** Accepted
+- **Decision Type:** B (Strategic)
+- **Owner:** Project Owner
+- **Context:** The Sprint 09 command pipeline governs mutations (policy + gate + audit) but `execute_query` bypasses policy, gate, and audit entirely. Read capabilities (`workspace.read`, `settings.read`, `audit.read`) exist but are never consulted. Before Resource Services introduce read-heavy and non-human-initiated reads, the project must decide *which reads require governance*, or later governing them would force query-command, IPC, and frontend refactors (post–Sprint 09 audit finding C2). This must align with the constitution's AI-advisory model (DEC-004) and confidence framework (DEC-013).
+
+- **Which reads require governance:** Governance is **actor-driven with a resource-sensitivity override**:
+  - **Ungoverned** (allowed without policy/gate): reads by the **local human user** of **non-sensitive** local resources (e.g. listing own workspaces, zones, applications, widgets). Consistent with human authority — the local human already holds full authority over local data.
+  - **Governed** (policy + gate consulted): (1) **all reads by non-human actors** (AIAssistant, Automation, Plugin, RemoteSession), and (2) **all reads of sensitive resource kinds** regardless of actor — currently the audit log itself, settings containing secrets, and any future credential/permission/policy resources.
+
+- **Human vs AI vs Plugin vs Automation reads:**
+  | Actor | Non-sensitive read | Sensitive-kind read |
+  |-------|--------------------|---------------------|
+  | LocalUser (human) | Ungoverned, unaudited | Governed + audited |
+  | AIAssistant | Governed + audited | Governed + audited |
+  | Plugin | Governed + audited | Governed + audited |
+  | Automation | Governed + audited | Governed + audited |
+  | RemoteSession | Governed + audited | Governed + audited |
+  AI reads are always governed because observation beyond passive L1 must remain permission-gated (DEC-004, DEC-013). Plugin and automation reads are governed under least-privilege and delegated-authority principles.
+
+- **Audit requirements:** Governed reads produce a full audit entry (actor, intent, `*.read` capability, target `ResourceRef`, decision) with **no payloads or resource content** (consistent with Sprint 07). Human ungoverned reads of non-sensitive data are **not audited by default** to prevent audit flooding. Reads of sensitive kinds are **always audited regardless of actor**.
+
+- **Performance implications:** Auditing every read would flood the audit table and amplify writes on the single serialized database connection. Actor-driven governance keeps the human hot path (browsing one's own workspace/graph) free of gate checks and audit writes, while lower-frequency non-human reads bear the governance cost. Batched/asynchronous read-audit writes are noted as a *future* optimisation if governed-read volume grows; not decided here.
+
+- **Future extensibility:** The query contract is extended so each `QueryCommand` declares (1) a required `*.read` capability and (2) a **governance class** (`Ungoverned` | `Governed`). At execution the pipeline combines the declared class, the actor type, and the target resource kind's sensitivity to decide whether to invoke policy, gate, and audit. Sensitive kinds opt in via a central classification. Declaring these now means query commands are shaped correctly from the outset, so later *enforcement* is additive rather than a refactor.
+
+- **Options Considered:**
+  - **(A) Leave all reads ungoverned.** Rejected — violates the AI-advisory constitution and leaves sensitive reads (audit log, secrets) unprotected.
+  - **(B) Govern and audit every read for every actor.** Rejected — audit flooding and write amplification on the single connection; burdens the human hot path with no trust benefit.
+  - **(C) Actor-driven governance with a sensitivity override.** **Chosen** — enforces the constitution for non-human actors and sensitive data while keeping the local human experience fast and quiet.
+  - **(D) Purely resource-sensitivity-driven (ignore actor).** Rejected — would under-govern AI/plugin reads of ordinary resources, contradicting DEC-004.
+
+- **Decision:** Adopt option **(C)**. Local-human reads of non-sensitive local resources are ungoverned and unaudited; all non-human-actor reads and all sensitive-resource-kind reads are governed (policy + gate) and audited. Extend the `QueryCommand` contract to declare a read capability and a governance class now, with enforcement remaining allow-all (per Sprint 09) until a dedicated enforcement sprint.
+
+- **Rationale:** Resolves the second high-risk foundational gap before read-heavy features exist. Keeps query commands correctly shaped so future enforcement is additive, upholds the AI-advisory constitution, protects sensitive reads, and avoids audit/performance blowup on the hot path.
+
+- **Consequences:** `QueryCommand` gains capability + governance-class declarations; the query pipeline gains an (initially allow-all) governance step mirroring mutations; a resource-kind sensitivity classification is introduced. Human non-sensitive reads remain unaudited by design. Implementation is performed in a later Composer step, not by this record.
+
+- **Related:** DEC-004 (AI permission sequence), DEC-013 (confidence model), Sprint 07 (audit), Sprint 09 (policy/gate/capability), DEC-016
+
+---
+
 ## 3. Pending Decisions
 
 Decisions that are needed but not yet made are tracked in [Open Questions](OPEN-QUESTIONS.md), not here. When resolved, they move from Open Questions to this log.

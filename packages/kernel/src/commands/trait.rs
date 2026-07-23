@@ -2,7 +2,7 @@ use workspace_domain::{ActorContext, Capability, IntentContext};
 
 use crate::commands::context::CommandContext;
 use crate::error::Result;
-use crate::policy::{PolicyContext, PolicyDecision, PolicyResult};
+use crate::policy::{GovernanceClass, PolicyContext, PolicyDecision, PolicyResult};
 use crate::security::{PermissionRequest, PermissionSubject};
 
 /// Base metadata for all kernel commands.
@@ -22,8 +22,17 @@ pub trait MutationCommand: Command {
 }
 
 /// Read-only command executed through the command pipeline.
+///
+/// Query commands declare their read capability and governance class (DEC-017)
+/// so read governance can be applied without changing command shapes later.
 pub trait QueryCommand: Command {
     type Output;
+
+    fn permission_subject(&self) -> PermissionSubject;
+
+    fn required_capability(&self) -> Capability;
+
+    fn governance_class(&self) -> GovernanceClass;
 
     fn execute(self, ctx: &CommandContext<'_>) -> Result<Self::Output>;
 }
@@ -69,7 +78,7 @@ pub fn require_policy(result: PolicyResult) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use workspace_domain::{Capability, IntentContext, IntentType};
+    use workspace_domain::{Capability, IntentContext, IntentType, ResourceKind};
 
     #[test]
     fn permission_request_includes_intent_and_capability() {
@@ -77,7 +86,7 @@ mod tests {
             &ActorContext::local_user(),
             &IntentContext::user_request(),
             "CreateWorkspace",
-            PermissionSubject::Workspace,
+            PermissionSubject::Resource(ResourceKind::Workspace),
             Capability::workspace_write(),
         );
 

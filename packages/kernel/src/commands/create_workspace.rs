@@ -5,7 +5,7 @@ use crate::events::types::{DomainEvent, WorkspaceEntityCreated};
 use crate::lifecycle::LifecycleState;
 use crate::security::PermissionSubject;
 use crate::services::WorkspaceService;
-use workspace_domain::{Capability, Workspace};
+use workspace_domain::{Capability, ResourceKind, Workspace};
 
 /// Creates a new workspace domain entity.
 pub struct CreateWorkspace {
@@ -22,7 +22,7 @@ impl MutationCommand for CreateWorkspace {
     type Output = Workspace;
 
     fn permission_subject(&self) -> PermissionSubject {
-        PermissionSubject::Workspace
+        PermissionSubject::Resource(ResourceKind::Workspace)
     }
 
     fn required_capability(&self) -> Capability {

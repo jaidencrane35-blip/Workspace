@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::errors::{DomainError, Result};
 use crate::ids::{ApplicationId, WidgetId, WorkspaceId, ZoneId};
+use crate::resource::{Addressable, ResourceId, ResourceKind, ResourceRef};
 
 /// A user workspace container (domain entity).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -52,6 +53,60 @@ impl Workspace {
     }
 }
 
+/// Maps each typed entity to its canonical `ResourceRef` (DEC-016).
+/// Entity IDs are non-empty by construction, so `ResourceId` creation is infallible here.
+impl Addressable for Workspace {
+    fn resource_kind(&self) -> ResourceKind {
+        ResourceKind::Workspace
+    }
+
+    fn resource_ref(&self) -> ResourceRef {
+        ResourceRef::new(
+            ResourceKind::Workspace,
+            ResourceId::new(self.id.as_str()).expect("workspace id is non-empty"),
+        )
+    }
+}
+
+impl Addressable for Zone {
+    fn resource_kind(&self) -> ResourceKind {
+        ResourceKind::Zone
+    }
+
+    fn resource_ref(&self) -> ResourceRef {
+        ResourceRef::new(
+            ResourceKind::Zone,
+            ResourceId::new(self.id.as_str()).expect("zone id is non-empty"),
+        )
+    }
+}
+
+impl Addressable for ApplicationReference {
+    fn resource_kind(&self) -> ResourceKind {
+        ResourceKind::Application
+    }
+
+    fn resource_ref(&self) -> ResourceRef {
+        ResourceRef::new(
+            ResourceKind::Application,
+            ResourceId::new(self.id.as_str()).expect("application id is non-empty"),
+        )
+    }
+}
+
+impl Addressable for WidgetReference {
+    fn resource_kind(&self) -> ResourceKind {
+        ResourceKind::Widget
+    }
+
+    fn resource_ref(&self) -> ResourceRef {
+        ResourceRef::new(
+            ResourceKind::Widget,
+            ResourceId::new(self.id.as_str()).expect("widget id is non-empty"),
+        )
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -74,5 +129,25 @@ mod tests {
             updated_at: "2026-07-23T00:00:00Z".into(),
         };
         assert_eq!(workspace.name, "Default");
+    }
+
+    #[test]
+    fn entities_map_to_canonical_resource_refs() {
+        let workspace = Workspace {
+            id: WorkspaceId::new("ws-1").unwrap(),
+            name: "Default".into(),
+            created_at: "2026-07-23T00:00:00Z".into(),
+            updated_at: "2026-07-23T00:00:00Z".into(),
+        };
+        assert_eq!(workspace.resource_kind(), ResourceKind::Workspace);
+        assert_eq!(workspace.resource_ref().canonical(), "workspace:ws-1");
+
+        let zone = Zone {
+            id: ZoneId::new("zone-1").unwrap(),
+            workspace_id: WorkspaceId::new("ws-1").unwrap(),
+            name: "Primary".into(),
+            position_metadata: None,
+        };
+        assert_eq!(zone.resource_ref().canonical(), "zone:zone-1");
     }
 }

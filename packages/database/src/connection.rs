@@ -32,12 +32,21 @@ impl Database {
         }
 
         let connection = Connection::open(&path)?;
+        Self::apply_connection_pragmas(&connection)?;
 
         Ok(Self {
             connection,
             path,
             encryption,
         })
+    }
+
+    /// Applies per-connection pragmas. Foreign key enforcement is off by default
+    /// in SQLite and must be enabled on every connection to honour the
+    /// `ON DELETE CASCADE` / referential integrity declared in migrations.
+    fn apply_connection_pragmas(connection: &Connection) -> Result<()> {
+        connection.execute_batch("PRAGMA foreign_keys = ON;")?;
+        Ok(())
     }
 
     pub fn path(&self) -> &Path {
@@ -59,6 +68,7 @@ impl Database {
     /// Opens an in-memory database for tests.
     pub fn open_in_memory() -> Result<Self> {
         let connection = Connection::open_in_memory()?;
+        Self::apply_connection_pragmas(&connection)?;
         Ok(Self {
             connection,
             path: PathBuf::from(":memory:"),
@@ -115,6 +125,64 @@ mod tests {
         let db = Database::open(&db_path).unwrap();
         assert_eq!(db.path(), db_path.as_path());
         assert_eq!(db.encryption().tier(), EncryptionTier::Tier0);
+    }
+
+    #[test]
+    fn foreign_keys_pragma_is_enabled() {
+        let db = Database::open_in_memory().unwrap();
+        let enabled: i64 = db
+            .connection()
+            .query_row("PRAGMA foreign_keys", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(enabled, 1);
+    }
+
+    #[test]
+    fn foreign_keys_reject_orphan_child_rows() {
+        let db = Database::open_in_memory().unwrap();
+        let runner = MigrationRunner::load_from_dir(crate::init::bundled_migrations_dir()).unwrap();
+        runner.apply_all(&db).unwrap();
+
+        // Inserting a zone referencing a non-existent workspace must fail.
+        let result = db.connection().execute(
+            "INSERT INTO zones (id, workspace_id, name, position_metadata) VALUES (?1, ?2, ?3, ?4)",
+            ("zone-orphan", "missing-workspace", "Orphan", Option::<String>::None),
+        );
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn foreign_keys_cascade_delete_children() {
+        let db = Database::open_in_memory().unwrap();
+        let runner = MigrationRunner::load_from_dir(crate::init::bundled_migrations_dir()).unwrap();
+        runner.apply_all(&db).unwrap();
+
+        db.connection()
+            .execute(
+                "INSERT INTO workspaces (id, name, created_at, updated_at) VALUES (?1, ?2, ?3, ?4)",
+                ("ws-cascade", "Cascade", "2026-07-23T10:00:00Z", "2026-07-23T10:00:00Z"),
+            )
+            .unwrap();
+        db.connection()
+            .execute(
+                "INSERT INTO zones (id, workspace_id, name, position_metadata) VALUES (?1, ?2, ?3, ?4)",
+                ("zone-cascade", "ws-cascade", "Primary", Option::<String>::None),
+            )
+            .unwrap();
+
+        db.connection()
+            .execute("DELETE FROM workspaces WHERE id = ?1", ["ws-cascade"])
+            .unwrap();
+
+        let remaining: i64 = db
+            .connection()
+            .query_row(
+                "SELECT COUNT(*) FROM zones WHERE workspace_id = ?1",
+                ["ws-cascade"],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(remaining, 0);
     }
 
     #[test]

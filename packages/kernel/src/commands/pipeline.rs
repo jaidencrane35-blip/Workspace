@@ -3,7 +3,7 @@ use serde_json::json;
 use crate::commands::context::CommandContext;
 use crate::commands::r#trait::{permission_request, policy_context, require_policy, MutationCommand, QueryCommand};
 use crate::error::Result;
-use crate::policy::{DefaultPolicyEvaluator, PolicyEvaluator};
+use crate::policy::{read_is_governed, DefaultPolicyEvaluator, PolicyEvaluator};
 use crate::services::AuditService;
 
 /// Uniform execution path for kernel commands.
@@ -65,15 +65,62 @@ impl<'a> CommandPipeline<'a> {
         }
     }
 
-    /// Executes a read-only command.
+    /// Executes a read-only command, applying read governance (DEC-017).
+    ///
+    /// Human reads of non-sensitive resources bypass governance and are not
+    /// audited. Non-human reads and sensitive-kind reads run policy + gate
+    /// (allow-all today) and are audited.
     pub fn execute_query<Q: QueryCommand>(self, command: Q) -> Result<Q::Output> {
+        let command_name = command.name();
+        let governed = read_is_governed(
+            self.ctx.actor_context.actor.actor_type,
+            command.governance_class(),
+        );
+
         log::info!(
-            "COMMAND: {} (actor={}, intent={:?})",
-            command.name(),
+            "COMMAND: {command_name} (actor={}, intent={:?}, governed_read={governed})",
             self.ctx.actor_context.actor.id,
             self.ctx.intent_context.intent.intent_type
         );
-        command.execute(&self.ctx)
+
+        if !governed {
+            return command.execute(&self.ctx);
+        }
+
+        let capability = command.required_capability();
+        let request = permission_request(
+            &self.ctx.actor_context,
+            &self.ctx.intent_context,
+            command_name,
+            command.permission_subject(),
+            capability.clone(),
+        );
+
+        let policy_result = DefaultPolicyEvaluator.evaluate(
+            self.ctx.permission_policy,
+            &policy_context(&request),
+        )?;
+
+        if let Err(error) = require_policy(policy_result) {
+            Self::record_command_failure(&self.ctx, command_name, &capability, &error);
+            return Err(error);
+        }
+
+        if let Err(error) = self.ctx.permission_gate.require(&request) {
+            Self::record_command_failure(&self.ctx, command_name, &capability, &error);
+            return Err(error);
+        }
+
+        match command.execute(&self.ctx) {
+            Ok(output) => {
+                Self::record_command_success(&self.ctx, command_name, &capability);
+                Ok(output)
+            }
+            Err(error) => {
+                Self::record_command_failure(&self.ctx, command_name, &capability, &error);
+                Err(error)
+            }
+        }
     }
 
     fn record_command_success(
@@ -121,6 +168,8 @@ impl<'a> CommandPipeline<'a> {
 mod tests {
     use super::*;
     use crate::commands::create_workspace::CreateWorkspace;
+    use crate::commands::get_audit_history::GetAuditHistory;
+    use crate::commands::get_workspace::GetWorkspace;
     use crate::commands::initialize::InitializeWorkspace;
     use crate::commands::update_settings::UpdateSettings;
     use crate::config::SettingsUpdate;
@@ -302,6 +351,102 @@ mod tests {
                 && record.actor_type == ActorType::LocalUser
                 && record.intent_type == Some(IntentType::UserRequest)
                 && record.capability.as_deref() == Some("workspace.write")
+        }));
+    }
+
+    #[test]
+    fn governed_read_is_audited() {
+        let bus = EventBus::new();
+        let init = InitializeWorkspace::in_memory().execute(&bus).unwrap();
+
+        // GetAuditHistory is a sensitive-kind read (Governed) — audited even for the local user.
+        CommandPipeline::new(ready_context(
+            &bus,
+            &init,
+            &AllowAllPermissionGate,
+            &AlwaysAllowPolicy,
+            ActorContext::local_user(),
+            IntentContext::user_request(),
+        ))
+        .execute_query(GetAuditHistory::new(Some(10)))
+        .unwrap();
+
+        let records = AuditService::list_recent(&init.database.shared(), 20).unwrap();
+        assert!(records.iter().any(|record| {
+            record.command_name.as_deref() == Some("GetAuditHistory")
+                && record.success
+                && record.capability.as_deref() == Some("audit.read")
+        }));
+    }
+
+    #[test]
+    fn ungoverned_human_read_is_not_audited() {
+        let bus = EventBus::new();
+        let init = InitializeWorkspace::in_memory().execute(&bus).unwrap();
+
+        let workspace = CommandPipeline::new(ready_context(
+            &bus,
+            &init,
+            &AllowAllPermissionGate,
+            &AlwaysAllowPolicy,
+            ActorContext::local_user(),
+            IntentContext::user_request(),
+        ))
+        .execute_mutation(CreateWorkspace::new("Readable".into()))
+        .unwrap();
+
+        // GetWorkspace by the local human on a non-sensitive resource is ungoverned.
+        CommandPipeline::new(ready_context(
+            &bus,
+            &init,
+            &AllowAllPermissionGate,
+            &AlwaysAllowPolicy,
+            ActorContext::local_user(),
+            IntentContext::user_request(),
+        ))
+        .execute_query(GetWorkspace::new(workspace.id.clone()))
+        .unwrap();
+
+        let records = AuditService::list_recent(&init.database.shared(), 50).unwrap();
+        assert!(!records
+            .iter()
+            .any(|record| record.command_name.as_deref() == Some("GetWorkspace")));
+    }
+
+    #[test]
+    fn non_human_read_is_governed_and_audited() {
+        let bus = EventBus::new();
+        let init = InitializeWorkspace::in_memory().execute(&bus).unwrap();
+
+        let workspace = CommandPipeline::new(ready_context(
+            &bus,
+            &init,
+            &AllowAllPermissionGate,
+            &AlwaysAllowPolicy,
+            ActorContext::local_user(),
+            IntentContext::user_request(),
+        ))
+        .execute_mutation(CreateWorkspace::new("AI Readable".into()))
+        .unwrap();
+
+        // Same ungoverned-class read, but by a non-human actor → governed + audited.
+        let ai_actor = ActorContext::new(Actor::ai_assistant("ai-1").unwrap());
+        CommandPipeline::new(ready_context(
+            &bus,
+            &init,
+            &AllowAllPermissionGate,
+            &AlwaysAllowPolicy,
+            ai_actor,
+            IntentContext::user_request(),
+        ))
+        .execute_query(GetWorkspace::new(workspace.id.clone()))
+        .unwrap();
+
+        let records = AuditService::list_recent(&init.database.shared(), 50).unwrap();
+        assert!(records.iter().any(|record| {
+            record.command_name.as_deref() == Some("GetWorkspace")
+                && record.actor_type == ActorType::AIAssistant
+                && record.capability.as_deref() == Some("workspace.read")
         }));
     }
 

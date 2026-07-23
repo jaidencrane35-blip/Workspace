@@ -2,8 +2,10 @@ use crate::commands::context::CommandContext;
 use crate::commands::r#trait::QueryCommand;
 use crate::error::{KernelError, Result};
 use crate::lifecycle::LifecycleState;
+use crate::policy::GovernanceClass;
+use crate::security::PermissionSubject;
 use crate::services::WorkspaceService;
-use workspace_domain::{Workspace, WorkspaceId};
+use workspace_domain::{Capability, ResourceKind, Workspace, WorkspaceId};
 
 /// Retrieves a workspace domain entity by id.
 pub struct GetWorkspace {
@@ -18,6 +20,18 @@ impl crate::commands::Command for GetWorkspace {
 
 impl QueryCommand for GetWorkspace {
     type Output = Workspace;
+
+    fn permission_subject(&self) -> PermissionSubject {
+        PermissionSubject::Resource(ResourceKind::Workspace)
+    }
+
+    fn required_capability(&self) -> Capability {
+        Capability::workspace_read()
+    }
+
+    fn governance_class(&self) -> GovernanceClass {
+        GovernanceClass::Ungoverned
+    }
 
     fn execute(self, ctx: &CommandContext<'_>) -> Result<Workspace> {
         if ctx.state.lifecycle != LifecycleState::Ready {

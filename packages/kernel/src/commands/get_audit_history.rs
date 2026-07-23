@@ -2,8 +2,10 @@ use crate::commands::context::CommandContext;
 use crate::commands::r#trait::QueryCommand;
 use crate::error::{KernelError, Result};
 use crate::lifecycle::LifecycleState;
+use crate::policy::GovernanceClass;
+use crate::security::PermissionSubject;
 use crate::services::AuditService;
-use workspace_domain::AuditEvent;
+use workspace_domain::{AuditEvent, Capability};
 
 const DEFAULT_LIMIT: usize = 50;
 const MAX_LIMIT: usize = 200;
@@ -21,6 +23,20 @@ impl crate::commands::Command for GetAuditHistory {
 
 impl QueryCommand for GetAuditHistory {
     type Output = Vec<AuditEvent>;
+
+    fn permission_subject(&self) -> PermissionSubject {
+        // The audit log is a sensitive, system-level resource, not a graph resource.
+        PermissionSubject::System
+    }
+
+    fn required_capability(&self) -> Capability {
+        Capability::audit_read()
+    }
+
+    fn governance_class(&self) -> GovernanceClass {
+        // Sensitive-kind read: governed and audited regardless of actor (DEC-017).
+        GovernanceClass::Governed
+    }
 
     fn execute(self, ctx: &CommandContext<'_>) -> Result<Vec<AuditEvent>> {
         if ctx.state.lifecycle != LifecycleState::Ready {

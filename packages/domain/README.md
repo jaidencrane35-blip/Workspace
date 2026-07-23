@@ -13,6 +13,17 @@ Shared Workspace domain models — pure data, no persistence or UI.
 
 IDs serialize as JSON strings (`#[serde(transparent)]`) for IPC compatibility.
 
+## Resource addressing (DEC-016)
+
+| Type | Purpose |
+|------|---------|
+| `ResourceKind` | Extensible resource classification (`Workspace`, `Zone`, `Application`, `Widget`) |
+| `ResourceId` | Generic, globally-unique resource identifier |
+| `ResourceRef` | Canonical address `{ kind, id }`; `kind:id` string for audit/logs |
+| `Addressable` | Maps a typed entity to its `ResourceRef` |
+
+Typed IDs (`WorkspaceId`, …) remain for entity-internal type safety; `ResourceRef` is the cross-cutting address for permissions, audit, IPC, and the future Workspace Graph.
+
 ## Sprint 09 intent & capability
 
 | Type | Purpose |

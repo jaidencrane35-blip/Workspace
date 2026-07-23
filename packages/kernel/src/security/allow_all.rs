@@ -15,7 +15,7 @@ impl PermissionGate for AllowAllPermissionGate {
 mod tests {
     use super::*;
     use crate::security::PermissionSubject;
-    use workspace_domain::{Actor, Capability, Intent};
+    use workspace_domain::{Actor, Capability, Intent, ResourceKind};
 
     #[test]
     fn allows_all_mutations() {
@@ -25,7 +25,7 @@ mod tests {
             intent: Intent::user_request(),
             capability: Capability::workspace_write(),
             command: "CreateWorkspace",
-            subject: PermissionSubject::Workspace,
+            subject: PermissionSubject::Resource(ResourceKind::Workspace),
         };
 
         assert_eq!(
@@ -42,7 +42,7 @@ mod tests {
             intent: Intent::user_request(),
             capability: Capability::settings_write(),
             command: "UpdateSettings",
-            subject: PermissionSubject::Settings,
+            subject: PermissionSubject::System,
         };
 
         assert_eq!(request.actor, Actor::local_user());

@@ -7,6 +7,7 @@ pub mod entities;
 pub mod errors;
 pub mod ids;
 pub mod intent;
+pub mod resource;
 pub mod workspace;
 
 pub use actor::{
@@ -18,6 +19,7 @@ pub use intent::{
     Intent, IntentContext, IntentMetadata, IntentType, SYSTEM_SHUTDOWN_INTENT_ID,
     SYSTEM_STARTUP_INTENT_ID, USER_REQUEST_INTENT_ID,
 };
+pub use resource::{Addressable, ResourceId, ResourceKind, ResourceRef};
 pub use entities::{
     ApplicationReference, WidgetReference, Workspace, Zone,
 };

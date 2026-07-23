@@ -15,9 +15,9 @@ impl PermissionPolicy for AlwaysAllowPolicy {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::policy::{DefaultPolicyEvaluator, PolicyDecision, PolicyEvaluator};
+    use crate::policy::{DefaultPolicyEvaluator, PolicyEvaluator};
     use crate::security::PermissionSubject;
-    use workspace_domain::{Actor, Capability, Intent};
+    use workspace_domain::{Actor, Capability, Intent, ResourceKind};
 
     #[test]
     fn always_allows_any_context() {
@@ -26,7 +26,7 @@ mod tests {
             Intent::user_request(),
             Capability::workspace_write(),
             "CreateWorkspace",
-            PermissionSubject::Workspace,
+            PermissionSubject::Resource(ResourceKind::Workspace),
         );
 
         let result = AlwaysAllowPolicy.evaluate(&context).unwrap();

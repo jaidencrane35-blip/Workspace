@@ -2,6 +2,10 @@
 
 SQLite persistence foundation for Workspace (DEC-010).
 
+## Governance hardening
+
+- **Foreign key enforcement** — `PRAGMA foreign_keys = ON` applied on every connection (file + in-memory), so migration-declared `ON DELETE CASCADE` and referential integrity are enforced (prerequisite for the Workspace Graph)
+
 ## Sprint 09
 
 - Migration `005_audit_intent_capability.sql` — `intent_type`, `capability` columns on `audit_events`

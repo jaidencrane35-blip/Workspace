@@ -23,7 +23,7 @@ impl MutationCommand for UpdateSettings {
     type Output = WorkspaceSettings;
 
     fn permission_subject(&self) -> PermissionSubject {
-        PermissionSubject::Settings
+        PermissionSubject::System
     }
 
     fn required_capability(&self) -> Capability {

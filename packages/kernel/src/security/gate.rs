@@ -1,13 +1,15 @@
-use workspace_domain::{Actor, Capability, Intent};
+use workspace_domain::{Actor, Capability, Intent, ResourceKind};
 
 use crate::error::{KernelError, Result};
 
-/// What kind of resource a command intends to mutate.
+/// What a command intends to act on (DEC-016).
+///
+/// Resource operations are addressed by `ResourceKind`; `System` covers
+/// non-resource operations (startup, shutdown, settings-as-system).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PermissionSubject {
     System,
-    Settings,
-    Workspace,
+    Resource(ResourceKind),
 }
 
 /// Authorization context for a mutation command.

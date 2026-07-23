@@ -35,7 +35,7 @@ mod tests {
             Intent::user_request(),
             Capability::settings_write(),
             "UpdateSettings",
-            PermissionSubject::Settings,
+            PermissionSubject::System,
         );
 
         let result = DefaultPolicyEvaluator
