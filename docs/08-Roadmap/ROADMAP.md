@@ -167,13 +167,14 @@ Foundation     Decisions       Core Platform     Feature Expansion   Maturity
 
 **Goal:** Application launching, AI observation/suggestion, and user-approved automation.
 
-**Status:** **In progress** — Gateway + launch + approval loop (Sprints 40–44).
+**Status:** **In progress** — Authority sealed (Sprint 45). Next: AI observation / suggestion inside the sealed model.
 
 ### Expected Deliverables
 
 - [x] Permission Gateway (replace AllowAll on execution path; decision audit) — Sprint 40
 - [x] Governed application launch through Permission Gateway — Sprints 41–42
 - [x] Permission approval foundation (pending → allow once / deny → grant) — Sprints 43–44
+- [x] Permission architecture seal (no bypass, docs, boundary tests) — Sprint 45; see [Permission Architecture](../07-Security/PERMISSION-ARCHITECTURE.md)
 - Application service (discovery, launch, grouping) — launch authority done; discovery/grouping later
 - Window service (tracking, layout integration)
 - AI observer and pattern store (L0–L4 confidence model)

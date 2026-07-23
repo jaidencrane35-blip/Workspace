@@ -11,23 +11,27 @@ use super::ApplicationService;
 use crate::error::{KernelError, Result};
 
 /// Launches a registered application after Permission Gateway authorization.
-pub struct ApplicationLaunchService;
+pub(crate) struct ApplicationLaunchService;
 
 impl ApplicationLaunchService {
-    pub fn launch(db: &Database, application_id: &ApplicationId) -> Result<ApplicationLaunchResult> {
+    /// OS launch — crate-internal only. Callers must go through `LaunchApplication` + gateway.
+    pub(crate) fn launch(
+        db: &Database,
+        application_id: &ApplicationId,
+    ) -> Result<ApplicationLaunchResult> {
         let launcher = platform_process_launcher();
         Self::launch_with(db, application_id, &*launcher)
     }
 
     /// Test helper — uses the stub launcher (no OS spawn).
-    pub fn launch_simulated(
+    pub(crate) fn launch_simulated(
         db: &Database,
         application_id: &ApplicationId,
     ) -> Result<ApplicationLaunchResult> {
         Self::launch_with(db, application_id, &StubProcessLauncher)
     }
 
-    pub fn launch_with(
+    pub(crate) fn launch_with(
         db: &Database,
         application_id: &ApplicationId,
         launcher: &dyn ProcessLauncher,

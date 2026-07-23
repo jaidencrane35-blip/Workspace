@@ -30,7 +30,7 @@ mod zone;
 
 pub use analytics::WorkspaceAnalyticsService;
 pub use application::ApplicationService;
-pub use application_launch::ApplicationLaunchService;
+pub(crate) use application_launch::ApplicationLaunchService;
 pub use audit::AuditService;
 pub use configuration::ConfigurationService;
 pub use context::WorkspaceContextService;
@@ -46,7 +46,7 @@ pub use graph::GraphService;
 pub use layout::LayoutService;
 pub use intent_execution::GovernedIntentExecutionService;
 pub use observation::ObservationService;
-pub use permission_approval::PermissionApprovalService;
+pub(crate) use permission_approval::PermissionApprovalService;
 pub use projection::WorkspaceProjectionService;
 pub use registry::{RegisteredService, ServiceRegistry, ServiceStatus};
 pub use suggestion::SuggestionService;

@@ -14,7 +14,7 @@ use crate::policy::{AlwaysAllowPolicy, CapabilityBoundPolicy};
 use crate::security::{AllowAllPermissionGate, StandardPermissionGate};
 use crate::services::AuditService;
 use workspace_domain::{
-    Actor, ActorContext, ActorType, ApprovalDecisionKind, CapabilitySet, IntentContext,
+    Actor, ActorContext, ActorType, ApprovalDecisionKind, Capability, CapabilitySet, IntentContext,
     PermissionApprovalStatus,
 };
 
@@ -251,4 +251,147 @@ fn deny_keeps_execution_blocked() {
     .unwrap_err();
 
     assert!(matches!(blocked, KernelError::ApprovalRequired { .. }));
+}
+
+#[test]
+fn non_local_user_cannot_decide_approval() {
+    let bus = EventBus::new();
+    let init = InitializeWorkspace::in_memory().execute(&bus).unwrap();
+    let app_id = seed_launchable_app(&init, &bus);
+    let ai = ActorContext::new(Actor::ai_assistant("ai-self-approve").unwrap());
+
+    // Seed a pending request under production gate/policy.
+    let error = CommandPipeline::new(ready_ctx(
+        &init,
+        &bus,
+        &StandardPermissionGate,
+        &CapabilityBoundPolicy,
+        CapabilitySet::new(),
+        ai.clone(),
+    ))
+    .execute_mutation(LaunchApplication::simulated(app_id))
+    .unwrap_err();
+
+    let KernelError::ApprovalRequired {
+        approval_request_id,
+        ..
+    } = error
+    else {
+        panic!("expected ApprovalRequired");
+    };
+
+    let request_id =
+        workspace_domain::PermissionApprovalRequestId::new(approval_request_id).unwrap();
+
+    // Bypass gate so the LocalUser-only decide check is exercised (defense in depth).
+    let denied = CommandPipeline::new(ready_ctx(
+        &init,
+        &bus,
+        &AllowAllPermissionGate,
+        &AlwaysAllowPolicy,
+        CapabilitySet::new().with_capability(&Capability::audit_write()),
+        ai,
+    ))
+    .execute_mutation(DecideApproval::new(
+        request_id,
+        ApprovalDecisionKind::AllowOnce,
+    ))
+    .unwrap_err();
+
+    assert!(matches!(denied, KernelError::PermissionDenied(_)));
+}
+
+#[test]
+fn double_decide_fails_closed() {
+    let bus = EventBus::new();
+    let init = InitializeWorkspace::in_memory().execute(&bus).unwrap();
+    let app_id = seed_launchable_app(&init, &bus);
+    let ai = ActorContext::new(Actor::ai_assistant("ai-double").unwrap());
+
+    let error = CommandPipeline::new(ready_ctx(
+        &init,
+        &bus,
+        &StandardPermissionGate,
+        &CapabilityBoundPolicy,
+        CapabilitySet::new(),
+        ai,
+    ))
+    .execute_mutation(LaunchApplication::simulated(app_id))
+    .unwrap_err();
+
+    let KernelError::ApprovalRequired {
+        approval_request_id,
+        ..
+    } = error
+    else {
+        panic!("expected ApprovalRequired");
+    };
+
+    let request_id =
+        workspace_domain::PermissionApprovalRequestId::new(approval_request_id).unwrap();
+
+    CommandPipeline::new(ready_ctx(
+        &init,
+        &bus,
+        &StandardPermissionGate,
+        &CapabilityBoundPolicy,
+        CapabilitySet::local_user_standard(),
+        ActorContext::local_user(),
+    ))
+    .execute_mutation(DecideApproval::new(
+        request_id.clone(),
+        ApprovalDecisionKind::AllowOnce,
+    ))
+    .unwrap();
+
+    let second = CommandPipeline::new(ready_ctx(
+        &init,
+        &bus,
+        &StandardPermissionGate,
+        &CapabilityBoundPolicy,
+        CapabilitySet::local_user_standard(),
+        ActorContext::local_user(),
+    ))
+    .execute_mutation(DecideApproval::new(
+        request_id,
+        ApprovalDecisionKind::Deny,
+    ))
+    .unwrap_err();
+
+    assert!(matches!(
+        second,
+        KernelError::PermissionApprovalValidation { .. }
+    ));
+}
+
+#[test]
+fn permission_decision_audit_includes_actor_intent_and_resource() {
+    let bus = EventBus::new();
+    let init = InitializeWorkspace::in_memory().execute(&bus).unwrap();
+    let app_id = seed_launchable_app(&init, &bus);
+
+    let _ = CommandPipeline::new(ready_ctx(
+        &init,
+        &bus,
+        &StandardPermissionGate,
+        &CapabilityBoundPolicy,
+        CapabilitySet::new(),
+        ActorContext::new(Actor::ai_assistant("ai-audit").unwrap()),
+    ))
+    .execute_mutation(LaunchApplication::simulated(app_id))
+    .unwrap_err();
+
+    let records = AuditService::list_recent(&init.database.shared(), 50).unwrap();
+    let decision = records
+        .iter()
+        .find(|r| r.event_type == "permission.approval_required")
+        .expect("permission.approval_required audit missing");
+
+    assert_eq!(decision.actor_type, ActorType::AIAssistant);
+    assert_eq!(decision.command_name.as_deref(), Some("LaunchApplication"));
+    assert!(!decision.success);
+    let metadata = decision.metadata.as_deref().unwrap_or("");
+    assert!(metadata.contains("approval_required"));
+    assert!(metadata.contains("LaunchApplication"));
+    assert!(metadata.contains("AIAssistant"));
 }

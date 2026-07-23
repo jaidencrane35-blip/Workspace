@@ -12,11 +12,11 @@ use crate::error::{KernelError, Result};
 use crate::security::PermissionRequest;
 
 /// Coordinates approval request persistence and capability grants.
-pub struct PermissionApprovalService;
+pub(crate) struct PermissionApprovalService;
 
 impl PermissionApprovalService {
     /// Ensures a pending approval exists for this blocked request (idempotent).
-    pub fn ensure_pending_request(
+    pub(crate) fn ensure_pending_request(
         db: &Database,
         request: &PermissionRequest,
         reason: &str,
@@ -48,19 +48,25 @@ impl PermissionApprovalService {
         Ok(pending)
     }
 
-    pub fn list_recent(db: &Database, limit: Option<usize>) -> Result<Vec<PermissionApprovalRequest>> {
+    pub(crate) fn list_recent(
+        db: &Database,
+        limit: Option<usize>,
+    ) -> Result<Vec<PermissionApprovalRequest>> {
         PermissionApprovalRepository::new(db)
             .list_recent(limit.unwrap_or(50))
             .map_err(Into::into)
     }
 
-    pub fn active_grants_for_actor(db: &Database, actor_id: &str) -> Result<Vec<CapabilityGrant>> {
+    pub(crate) fn active_grants_for_actor(
+        db: &Database,
+        actor_id: &str,
+    ) -> Result<Vec<CapabilityGrant>> {
         PermissionApprovalRepository::new(db)
             .list_active_grants_for_actor(actor_id)
             .map_err(Into::into)
     }
 
-    pub fn merge_active_grants(
+    pub(crate) fn merge_active_grants(
         db: &Database,
         actor: &Actor,
         base: CapabilitySet,
@@ -75,23 +81,20 @@ impl PermissionApprovalService {
         Ok((set, grants))
     }
 
-    pub fn matching_active_grant<'a>(
+    pub(crate) fn matching_active_grant<'a>(
         grants: &'a [CapabilityGrant],
         request: &PermissionRequest,
     ) -> Option<&'a CapabilityGrant> {
+        // Allow-once grants are command-scoped; bare grants without a command never match.
         grants.iter().find(|grant| {
             grant.grantee_actor_id == request.actor.id.as_str()
                 && grant.capability == request.capability.id.as_str()
-                && grant
-                    .command_name
-                    .as_deref()
-                    .map(|name| name == request.command)
-                    .unwrap_or(true)
+                && grant.command_name.as_deref() == Some(request.command)
                 && grant.status == CapabilityGrantStatus::Active
         })
     }
 
-    pub fn consume_grant(db: &Database, grant_id: &CapabilityGrantId) -> Result<()> {
+    pub(crate) fn consume_grant(db: &Database, grant_id: &CapabilityGrantId) -> Result<()> {
         let consumed = PermissionApprovalRepository::new(db)
             .consume_grant(grant_id, &Utc::now().to_rfc3339())?;
         if !consumed {
@@ -102,7 +105,7 @@ impl PermissionApprovalService {
         Ok(())
     }
 
-    pub fn decide(
+    pub(crate) fn decide(
         db: &Database,
         decider: &ActorContext,
         request_id: &PermissionApprovalRequestId,
@@ -132,7 +135,12 @@ impl PermissionApprovalService {
         let grant = match decision {
             ApprovalDecisionKind::AllowOnce => {
                 request.status = PermissionApprovalStatus::Approved;
-                repo.update_request(&request)?;
+                let claimed = repo.decide_if_pending(&request)?;
+                if !claimed {
+                    return Err(KernelError::PermissionApprovalValidation {
+                        message: "approval request is no longer pending".into(),
+                    });
+                }
 
                 let grant = CapabilityGrant {
                     id: CapabilityGrantId::generate(),
@@ -150,7 +158,12 @@ impl PermissionApprovalService {
             }
             ApprovalDecisionKind::Deny => {
                 request.status = PermissionApprovalStatus::Denied;
-                repo.update_request(&request)?;
+                let claimed = repo.decide_if_pending(&request)?;
+                if !claimed {
+                    return Err(KernelError::PermissionApprovalValidation {
+                        message: "approval request is no longer pending".into(),
+                    });
+                }
                 None
             }
         };
@@ -158,7 +171,7 @@ impl PermissionApprovalService {
         Ok(ApprovalDecisionResult { request, grant })
     }
 
-    pub fn is_non_human(actor_type: ActorType) -> bool {
+    pub(crate) fn is_non_human(actor_type: ActorType) -> bool {
         matches!(
             actor_type,
             ActorType::AIAssistant

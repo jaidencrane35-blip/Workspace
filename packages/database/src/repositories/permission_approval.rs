@@ -100,11 +100,13 @@ impl<'a> PermissionApprovalRepository<'a> {
             .map_err(Into::into)
     }
 
-    pub fn update_request(&self, request: &PermissionApprovalRequest) -> Result<bool> {
+    /// Atomically transitions a pending request to a terminal status.
+    /// Returns false if the row was not pending (prevents double-decide races).
+    pub fn decide_if_pending(&self, request: &PermissionApprovalRequest) -> Result<bool> {
         let changed = self.db.connection().execute(
             "UPDATE permission_approval_requests
              SET status = ?1, decided_at = ?2, decided_by_actor_id = ?3
-             WHERE id = ?4",
+             WHERE id = ?4 AND status = 'pending'",
             (
                 request.status.as_str(),
                 &request.decided_at,

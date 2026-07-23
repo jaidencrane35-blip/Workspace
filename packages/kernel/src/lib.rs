@@ -30,7 +30,14 @@ pub use security::{
     AllowAllPermissionGate, GatewayDecision, PermissionGate, PermissionGateway, PermissionRequest,
     PermissionSubject, StandardPermissionGate,
 };
-pub use services::{ApplicationLaunchService, AuditService, CapabilityResolver, ConfigurationService, DatabaseServiceHandle, DesktopWindowService, ExecutionCancellationService, ExecutionContextService, ExecutionGuardService, ExecutionOutcomeService, ExecutionReconciliationService, GovernedIntentExecutionService, ObservationService, PermissionApprovalService, ServiceRegistry, ServiceStatus, SuggestionIntentService, SuggestionLifecycleService, SuggestionService, WorkspaceAnalyticsService, WorkspaceContextService};
+pub use services::{
+    AuditService, CapabilityResolver, ConfigurationService, DatabaseServiceHandle,
+    DesktopWindowService, ExecutionCancellationService, ExecutionContextService,
+    ExecutionGuardService, ExecutionOutcomeService, ExecutionReconciliationService,
+    GovernedIntentExecutionService, ObservationService, ServiceRegistry, ServiceStatus,
+    SuggestionIntentService, SuggestionLifecycleService, SuggestionService,
+    WorkspaceAnalyticsService, WorkspaceContextService,
+};
 pub use state::WorkspaceState;
 pub use workspace_domain::{
     Actor, ActorContext, ActorType, Addressable, Capability, CapabilityId, CapabilityScope,
@@ -195,8 +202,8 @@ impl WorkspaceKernel {
         self.permission_gate.as_ref()
     }
 
-    // Exposed for governance wiring/tests; enforcement lands in a later sprint.
-    #[allow(dead_code)]
+    /// Production policy handle (`CapabilityBoundPolicy`). Used by tests and wiring checks.
+    #[cfg(test)]
     pub(crate) fn permission_policy(&self) -> &dyn PermissionPolicy {
         self.permission_policy.as_ref()
     }
@@ -390,5 +397,36 @@ mod tests {
             DatabaseService::initialize_with_migrations(&db_path, &bad_migrations);
 
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn kernel_defaults_block_ai_launch_with_approval_required() {
+        use commands::{
+            CommandPipeline, CreateApplication, CreateWorkspace, LaunchApplication,
+        };
+
+        let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+        let local = ActorContext::local_user();
+        let intent = IntentContext::user_request();
+
+        let workspace = CommandPipeline::new(kernel.command_context(local.clone(), intent.clone()))
+            .execute_mutation(CreateWorkspace::new("Seal WS".into()))
+            .unwrap();
+
+        let app = CommandPipeline::new(kernel.command_context(local, intent.clone()))
+            .execute_mutation(CreateApplication::new(
+                workspace.id,
+                "Notepad".into(),
+                None,
+                Some("notepad.exe".into()),
+            ))
+            .unwrap();
+
+        let ai = ActorContext::new(Actor::ai_assistant("ai-kernel-default").unwrap());
+        let error = CommandPipeline::new(kernel.command_context(ai, intent))
+            .execute_mutation(LaunchApplication::simulated(app.id))
+            .unwrap_err();
+
+        assert!(matches!(error, KernelError::ApprovalRequired { .. }));
     }
 }

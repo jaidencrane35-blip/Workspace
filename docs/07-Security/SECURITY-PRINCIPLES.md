@@ -76,9 +76,10 @@ Full threat model: [Threat Model](THREAT-MODEL.md). Initial analysis completed i
 
 ### 4.1 Platform Kernel
 
-- Permission enforcement for all state-changing operations
+- Permission enforcement for all state-changing operations via the Permission Gateway (see [Permission Architecture](PERMISSION-ARCHITECTURE.md))
 - Audit logging for security-relevant events
 - Secure configuration storage
+- Future AI / plugin / automation actors enter the same authority path; they do not receive private execution APIs
 
 ### 4.2 AI Subsystem
 
