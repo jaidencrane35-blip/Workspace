@@ -97,6 +97,9 @@ pub enum KernelError {
     #[error("Intent execution validation failed: {message}")]
     IntentExecutionValidation { message: String },
 
+    #[error("Execution outcome validation failed: {message}")]
+    ExecutionOutcomeValidation { message: String },
+
     #[error("Service '{0}' failed to start")]
     ServiceStartup(&'static str),
 
@@ -260,6 +263,10 @@ impl KernelError {
             },
             KernelError::IntentExecutionValidation { message } => PublicError {
                 code: "intent_execution_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::ExecutionOutcomeValidation { message } => PublicError {
+                code: "execution_outcome_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::ServiceStartup(service) => PublicError {

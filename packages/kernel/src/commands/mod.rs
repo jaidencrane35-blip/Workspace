@@ -6,6 +6,7 @@ mod create_suggestion_intent_request;
 mod create_workspace;
 mod get_actor_capabilities;
 mod get_audit_history;
+mod get_execution_outcomes;
 mod get_observations;
 mod get_suggestion_lifecycle;
 mod get_suggestions;
@@ -26,8 +27,10 @@ mod discovery_tests;
 #[cfg(test)]
 mod suggestion_lifecycle_tests;
 #[cfg(test)]
-#[cfg(test)]
 mod intent_execution_tests;
+#[cfg(test)]
+mod execution_outcome_tests;
+#[cfg(test)]
 mod suggestion_intent_tests;
 mod suggestion_tests;
 #[cfg(test)]
@@ -58,6 +61,7 @@ pub use create_suggestion_intent_request::CreateSuggestionIntentRequest;
 pub use create_workspace::CreateWorkspace;
 pub use get_actor_capabilities::GetActorCapabilities;
 pub use get_audit_history::GetAuditHistory;
+pub use get_execution_outcomes::GetExecutionOutcomes;
 pub use get_observations::GetObservations;
 pub use get_suggestion_lifecycle::GetSuggestionLifecycle;
 pub use get_suggestions::GetSuggestions;

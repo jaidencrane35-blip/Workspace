@@ -60,9 +60,22 @@ impl MutationCommand for ExecuteIntentRequest {
         Some(
             json!({
                 "execution_request": true,
+                "execution_request_id": format!("execution:{}", output.suggestion_id),
                 "suggestion_id": output.suggestion_id,
                 "intent_id": output.action_intent_id.as_str(),
                 "execution_status": output.status.as_str(),
+            })
+            .to_string(),
+        )
+    }
+
+    fn audit_failure_metadata(&self) -> Option<String> {
+        Some(
+            json!({
+                "execution_request": true,
+                "execution_request_id": format!("execution:{}", self.suggestion_id),
+                "suggestion_id": self.suggestion_id,
+                "execution_status": "failed",
             })
             .to_string(),
         )
@@ -262,6 +275,7 @@ mod tests {
                     m.contains("\"execution_request\":true")
                         && m.contains(&suggestion_id)
                         && m.contains("\"execution_status\":\"executed\"")
+                        && m.contains(&format!("execution:{suggestion_id}"))
                 })
         }));
     }

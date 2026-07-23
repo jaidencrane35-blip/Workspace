@@ -74,12 +74,26 @@ impl<'a> CommandPipeline<'a> {
         )?;
 
         if let Err(error) = require_policy(policy_result) {
-            Self::record_command_failure(&self.ctx, command_name, &capability, None, &error);
+            Self::record_command_failure(
+                &self.ctx,
+                command_name,
+                &capability,
+                None,
+                &error,
+                command.audit_failure_metadata(),
+            );
             return Err(error);
         }
 
         if let Err(error) = self.ctx.permission_gate.require(&request) {
-            Self::record_command_failure(&self.ctx, command_name, &capability, None, &error);
+            Self::record_command_failure(
+                &self.ctx,
+                command_name,
+                &capability,
+                None,
+                &error,
+                command.audit_failure_metadata(),
+            );
             return Err(error);
         }
 
@@ -97,7 +111,14 @@ impl<'a> CommandPipeline<'a> {
                 Ok(output)
             }
             Err(error) => {
-                Self::record_command_failure(&self.ctx, command_name, &capability, None, &error);
+                Self::record_command_failure(
+                    &self.ctx,
+                    command_name,
+                    &capability,
+                    None,
+                    &error,
+                    command.audit_failure_metadata(),
+                );
                 Err(error)
             }
         }
@@ -140,12 +161,12 @@ impl<'a> CommandPipeline<'a> {
         )?;
 
         if let Err(error) = require_policy(policy_result) {
-            Self::record_command_failure(&self.ctx, command_name, &capability, None, &error);
+            Self::record_command_failure(&self.ctx, command_name, &capability, None, &error, None);
             return Err(error);
         }
 
         if let Err(error) = self.ctx.permission_gate.require(&request) {
-            Self::record_command_failure(&self.ctx, command_name, &capability, None, &error);
+            Self::record_command_failure(&self.ctx, command_name, &capability, None, &error, None);
             return Err(error);
         }
 
@@ -155,7 +176,7 @@ impl<'a> CommandPipeline<'a> {
                 Ok(output)
             }
             Err(error) => {
-                Self::record_command_failure(&self.ctx, command_name, &capability, None, &error);
+                Self::record_command_failure(&self.ctx, command_name, &capability, None, &error, None);
                 Err(error)
             }
         }
@@ -188,8 +209,9 @@ impl<'a> CommandPipeline<'a> {
         capability: &workspace_domain::Capability,
         resource_ref: Option<&workspace_domain::ResourceRef>,
         error: &crate::error::KernelError,
+        extra_metadata: Option<String>,
     ) {
-        let metadata = json!({ "error_code": error.to_public().code }).to_string();
+        let metadata = merge_failure_metadata(error, extra_metadata);
         if let Err(audit_error) = AuditService::record_command(
             &ctx.database,
             &ctx.actor_context,
@@ -205,6 +227,27 @@ impl<'a> CommandPipeline<'a> {
             );
         }
     }
+}
+
+fn merge_failure_metadata(
+    error: &crate::error::KernelError,
+    extra_metadata: Option<String>,
+) -> String {
+    let mut value = serde_json::Map::new();
+    value.insert(
+        "error_code".into(),
+        json!(error.to_public().code),
+    );
+
+    if let Some(extra) = extra_metadata {
+        if let Ok(serde_json::Value::Object(extra_obj)) = serde_json::from_str(&extra) {
+            for (key, nested) in extra_obj {
+                value.insert(key, nested);
+            }
+        }
+    }
+
+    serde_json::Value::Object(value).to_string()
 }
 
 #[cfg(test)]

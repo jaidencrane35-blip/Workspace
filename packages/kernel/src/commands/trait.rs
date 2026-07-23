@@ -30,6 +30,12 @@ pub trait MutationCommand: Command {
         None
     }
 
+    /// Optional JSON metadata recorded when the command fails before producing output.
+    /// Used for execution-outcome classification (Sprint 25) without a parallel event system.
+    fn audit_failure_metadata(&self) -> Option<String> {
+        None
+    }
+
     fn execute(&self, ctx: &CommandContext<'_>) -> Result<Self::Output>;
 }
 

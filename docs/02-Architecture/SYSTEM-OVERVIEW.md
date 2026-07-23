@@ -369,6 +369,18 @@ Existing mapped command → Audit
 
 Execution remains explicit and governed. This is not automation — each execution request is a separate mutation through the full authority pipeline. Future automation systems remain a separate stage.
 
+**Execution outcome layer (Sprint 25):**
+
+```
+ExecuteIntentRequest audit (success / failure)
+    ↓
+classify_execution_outcome_event (pure)
+    ↓
+ExecutionOutcomeService::list_recent → GetExecutionOutcomes (governed, audit.read)
+```
+
+Outcomes answer whether governed execution completed, failed, or was cancelled. Derived only — no outcome store, no AI feedback loops, no automatic retries. Audit remains authoritative.
+
 ### 6.6 Windows Integration Layer
 
 Abstracts all Windows API interactions. Only this layer communicates directly with the OS.
