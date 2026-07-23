@@ -82,6 +82,15 @@ impl WidgetService {
     pub fn lookup(db: &Database, id: &WidgetId) -> Result<Option<WidgetReference>> {
         WidgetRepository::new(db).get_by_id(id).map_err(Into::into)
     }
+
+    pub fn list_by_workspace(
+        db: &Database,
+        workspace_id: &WorkspaceId,
+    ) -> Result<Vec<WidgetReference>> {
+        WidgetRepository::new(db)
+            .list_by_workspace(workspace_id)
+            .map_err(Into::into)
+    }
 }
 
 #[cfg(test)]

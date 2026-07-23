@@ -1,7 +1,7 @@
 //! Passive workspace graph — node and edge registration only.
 
 use workspace_database::{Database, GraphRepository};
-use workspace_domain::{GraphRelationship, ResourceKind, ResourceRef};
+use workspace_domain::{GraphEdge, GraphRelationship, ResourceKind, ResourceRef};
 
 use crate::error::{KernelError, Result};
 
@@ -58,6 +58,21 @@ impl GraphService {
     pub fn lookup(db: &Database, resource: &ResourceRef) -> Result<Option<()>> {
         let exists = Self::exists(db, resource)?;
         Ok(if exists { Some(()) } else { None })
+    }
+
+    pub fn list_edges_from(db: &Database, source: &ResourceRef) -> Result<Vec<GraphEdge>> {
+        let edges = GraphRepository::new(db)
+            .list_edges_from_source(source)
+            .map_err(|error| map_graph_error(source, error))?;
+
+        Ok(edges
+            .into_iter()
+            .map(|(relationship, target)| GraphEdge {
+                source: source.clone(),
+                relationship,
+                target,
+            })
+            .collect())
     }
 }
 

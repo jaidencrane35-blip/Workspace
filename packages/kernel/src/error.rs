@@ -50,6 +50,9 @@ pub enum KernelError {
     #[error("Layout validation failed: {message}")]
     LayoutValidation { message: String },
 
+    #[error("Projection validation failed: {message}")]
+    ProjectionValidation { message: String },
+
     #[error("Service '{0}' failed to start")]
     ServiceStartup(&'static str),
 
@@ -149,6 +152,10 @@ impl KernelError {
             },
             KernelError::LayoutValidation { message } => PublicError {
                 code: "layout_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::ProjectionValidation { message } => PublicError {
+                code: "projection_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::ServiceStartup(service) => PublicError {

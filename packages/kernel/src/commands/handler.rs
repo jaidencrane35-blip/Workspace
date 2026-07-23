@@ -4,6 +4,7 @@ use crate::commands::application::{CreateApplication, DeleteApplication, GetAppl
 use crate::commands::create_workspace::CreateWorkspace;
 use crate::commands::get_audit_history::GetAuditHistory;
 use crate::commands::get_workspace::GetWorkspace;
+use crate::commands::get_workspace_snapshot::GetWorkspaceSnapshot;
 use crate::commands::initialize::InitializeWorkspace;
 use crate::commands::layout::{
     CreateLayout, DeleteLayout, GetLayout, GetLayoutSnapshot, ResetLayout, UpdateLayout,
@@ -22,7 +23,7 @@ use crate::WorkspaceKernel;
 use workspace_domain::{
     Actor, ActorContext, ApplicationId, ApplicationReference, AuditEvent, Capability, Intent,
     IntentContext, Layout, LayoutId, LayoutMetadata, LayoutNode, LayoutSnapshot, WidgetId,
-    WidgetReference, Workspace, WorkspaceId, Zone, ZoneId,
+    WidgetReference, Workspace, WorkspaceId, WorkspaceSnapshot, Zone, ZoneId,
 };
 
 /// Executes kernel commands and coordinates services + events.
@@ -265,6 +266,17 @@ impl CommandHandler {
         let layout_id = LayoutId::new(layout_id).map_err(KernelError::Domain)?;
         CommandPipeline::new(kernel.command_context(actor, intent))
             .execute_query(GetLayoutSnapshot::new(layout_id))
+    }
+
+    pub fn get_workspace_snapshot(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceSnapshot> {
+        let workspace_id = WorkspaceId::new(workspace_id).map_err(KernelError::Domain)?;
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetWorkspaceSnapshot::new(workspace_id))
     }
 
     pub fn get_audit_history(

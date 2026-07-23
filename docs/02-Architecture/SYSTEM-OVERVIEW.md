@@ -222,6 +222,18 @@ Canvas (rendering — how it is displayed)
 
 Layout never stores graph edges or mutates graph state. Layout nodes reference `ResourceRef`; commands verify graph node existence before persisting layout updates.
 
+**Projection layer (Sprint 14):**
+
+```
+Authoritative domains (Workspace, Zone, Application, Widget, Layout, Graph)
+    ↓
+WorkspaceProjectionService (derived read model)
+    ↓
+WorkspaceSnapshot → future consumers (Canvas, AI, plugins, search)
+```
+
+Projections are read-only, non-authoritative, and not persisted. `ResourceRef` remains canonical identity throughout.
+
 ### 6.6 Windows Integration Layer
 
 Abstracts all Windows API interactions. Only this layer communicates directly with the OS.

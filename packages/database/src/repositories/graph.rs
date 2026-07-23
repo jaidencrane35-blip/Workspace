@@ -2,7 +2,7 @@ use uuid::Uuid;
 
 use crate::connection::Database;
 use crate::error::{DatabaseError, Result};
-use workspace_domain::{GraphRelationship, ResourceKind, ResourceRef};
+use workspace_domain::{GraphRelationship, ResourceId, ResourceKind, ResourceRef};
 
 /// Persistence for the passive workspace graph (nodes + edges).
 pub struct GraphRepository<'a> {
@@ -71,6 +71,61 @@ impl<'a> GraphRepository<'a> {
             |row| row.get(0),
         )?;
         Ok(count)
+    }
+
+    pub fn list_edges_from_source(&self, source: &ResourceRef) -> Result<Vec<(GraphRelationship, ResourceRef)>> {
+        let mut stmt = self.db.connection().prepare(
+            "SELECT relationship, target_kind, target_id FROM graph_edges
+             WHERE source_kind = ?1 AND source_id = ?2
+             ORDER BY target_kind, target_id",
+        )?;
+
+        let rows = stmt.query_map(
+            (kind_to_str(source.kind), source.id.as_str()),
+            |row| {
+                let relationship = parse_relationship(row.get::<_, String>(0)?.as_str())?;
+                let target_kind = parse_kind(row.get::<_, String>(1)?.as_str())?;
+                let target_id = ResourceId::new(row.get::<_, String>(2)?).map_err(|_| {
+                    rusqlite::Error::InvalidColumnType(
+                        2,
+                        "target_id".into(),
+                        rusqlite::types::Type::Text,
+                    )
+                })?;
+                Ok((
+                    relationship,
+                    ResourceRef::new(target_kind, target_id),
+                ))
+            },
+        )?;
+
+        rows.collect::<std::result::Result<Vec<_>, _>>()
+            .map_err(Into::into)
+    }
+}
+
+fn parse_kind(value: &str) -> rusqlite::Result<ResourceKind> {
+    match value {
+        "workspace" => Ok(ResourceKind::Workspace),
+        "zone" => Ok(ResourceKind::Zone),
+        "application" => Ok(ResourceKind::Application),
+        "widget" => Ok(ResourceKind::Widget),
+        _ => Err(rusqlite::Error::InvalidColumnType(
+            0,
+            "resource_kind".into(),
+            rusqlite::types::Type::Text,
+        )),
+    }
+}
+
+fn parse_relationship(value: &str) -> rusqlite::Result<GraphRelationship> {
+    match value {
+        "contains" => Ok(GraphRelationship::Contains),
+        _ => Err(rusqlite::Error::InvalidColumnType(
+            0,
+            "relationship".into(),
+            rusqlite::types::Type::Text,
+        )),
     }
 }
 
@@ -144,5 +199,26 @@ mod tests {
             .unwrap();
 
         assert_eq!(repo.edge_count_for_source(&workspace).unwrap(), 1);
+    }
+
+    #[test]
+    fn lists_edges_from_source() {
+        let db = initialized_db();
+        let repo = GraphRepository::new(&db);
+        let workspace = ResourceRef::new(
+            ResourceKind::Workspace,
+            ResourceId::new("ws-list").unwrap(),
+        );
+        let zone = ResourceRef::new(ResourceKind::Zone, ResourceId::new("zone-list").unwrap());
+
+        repo.register_node(&workspace).unwrap();
+        repo.register_node(&zone).unwrap();
+        repo.add_edge(&workspace, GraphRelationship::Contains, &zone)
+            .unwrap();
+
+        let edges = repo.list_edges_from_source(&workspace).unwrap();
+        assert_eq!(edges.len(), 1);
+        assert_eq!(edges[0].0, GraphRelationship::Contains);
+        assert_eq!(edges[0].1, zone);
     }
 }

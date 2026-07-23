@@ -3,11 +3,14 @@ mod context;
 mod create_workspace;
 mod get_audit_history;
 mod get_workspace;
+mod get_workspace_snapshot;
 mod handler;
 mod initialize;
 mod pipeline;
 #[cfg(test)]
 mod layout_tests;
+#[cfg(test)]
+mod projection_tests;
 mod layout;
 mod resource;
 #[cfg(test)]
@@ -25,6 +28,7 @@ pub use context::CommandContext;
 pub use create_workspace::CreateWorkspace;
 pub use get_audit_history::GetAuditHistory;
 pub use get_workspace::GetWorkspace;
+pub use get_workspace_snapshot::GetWorkspaceSnapshot;
 pub use handler::CommandHandler;
 pub use initialize::InitializeWorkspace;
 pub use pipeline::CommandPipeline;

@@ -9,6 +9,7 @@ pub mod graph;
 pub mod ids;
 pub mod intent;
 pub mod layout;
+pub mod projection;
 pub mod resource;
 pub mod workspace;
 
@@ -33,4 +34,8 @@ pub use ids::{
 pub use layout::{
     Layout, LayoutBounds, LayoutError, LayoutMetadata, LayoutNode, LayoutSnapshot, Position2D,
     Size2D, Viewport,
+};
+pub use projection::{
+    ApplicationSummary, LayoutPlacementSummary, ProjectionError, ProjectionRelationship,
+    WidgetSummary, WorkspaceSnapshot, ZoneSummary,
 };

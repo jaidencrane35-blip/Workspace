@@ -7,6 +7,7 @@ use commands::audit::get_audit_history;
 use commands::layout::{
     create_layout, delete_layout, get_layout, get_layout_snapshot, reset_layout, update_layout,
 };
+use commands::projection::get_workspace_snapshot;
 use commands::resources::{
     create_application, create_widget, create_zone, delete_application, delete_widget,
     delete_zone, get_application, get_widget, get_zone,
@@ -52,6 +53,7 @@ pub fn run() {
             reset_layout,
             get_layout,
             get_layout_snapshot,
+            get_workspace_snapshot,
             get_audit_history,
         ])
         .setup(|app| {
