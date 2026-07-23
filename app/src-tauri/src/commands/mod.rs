@@ -3,6 +3,7 @@ pub mod error;
 pub mod health;
 pub mod layout;
 pub mod projection;
+pub mod discovery;
 pub mod resources;
 pub mod response;
 pub mod settings;

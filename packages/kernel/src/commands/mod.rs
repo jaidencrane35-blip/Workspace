@@ -1,12 +1,15 @@
 mod application;
 mod context;
 mod create_workspace;
+mod get_actor_capabilities;
 mod get_audit_history;
 mod get_workspace;
 mod get_workspace_snapshot;
 mod handler;
 mod initialize;
 mod pipeline;
+#[cfg(test)]
+mod discovery_tests;
 #[cfg(test)]
 mod intent_tests;
 #[cfg(test)]
@@ -28,6 +31,7 @@ pub use layout::{
 };
 pub use context::CommandContext;
 pub use create_workspace::CreateWorkspace;
+pub use get_actor_capabilities::GetActorCapabilities;
 pub use get_audit_history::GetAuditHistory;
 pub use get_workspace::GetWorkspace;
 pub use get_workspace_snapshot::GetWorkspaceSnapshot;

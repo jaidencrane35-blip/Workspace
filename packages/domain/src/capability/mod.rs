@@ -5,6 +5,7 @@ use std::str::FromStr;
 use serde::{Deserialize, Serialize};
 
 use crate::errors::{DomainError, Result};
+use crate::actor::ActorType;
 
 /// Strongly typed capability identifier (e.g. `workspace.read`).
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
@@ -231,11 +232,20 @@ impl CapabilitySet {
             .with_capability(&Capability::system_startup())
             .with_capability(&Capability::system_shutdown())
     }
+
+    /// Nominal capability identifiers attributed to an actor type.
+    pub fn for_actor_type(actor_type: ActorType) -> Self {
+        match actor_type {
+            ActorType::System => Self::system_standard(),
+            _ => Self::local_user_standard(),
+        }
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::actor::ActorType;
 
     #[test]
     fn capability_serializes_as_object() {
@@ -263,5 +273,13 @@ mod tests {
     #[test]
     fn layout_write_capability_has_layout_scope() {
         assert_eq!(Capability::layout_write().scope, CapabilityScope::Layout);
+    }
+
+    #[test]
+    fn for_actor_type_matches_system_and_local_user_sets() {
+        assert!(CapabilitySet::for_actor_type(ActorType::System)
+            .contains(&Capability::system_shutdown()));
+        assert!(CapabilitySet::for_actor_type(ActorType::LocalUser)
+            .contains(&Capability::workspace_read()));
     }
 }

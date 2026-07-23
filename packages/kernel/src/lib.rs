@@ -27,7 +27,7 @@ pub use policy::{
     PolicyContext, PolicyDecision, PolicyEvaluator, PolicyResult,
 };
 pub use security::{AllowAllPermissionGate, PermissionGate, PermissionRequest, PermissionSubject};
-pub use services::{AuditService, ConfigurationService, DatabaseServiceHandle, ServiceRegistry, ServiceStatus};
+pub use services::{AuditService, CapabilityResolver, ConfigurationService, DatabaseServiceHandle, ServiceRegistry, ServiceStatus};
 pub use state::WorkspaceState;
 pub use workspace_domain::{
     Actor, ActorContext, ActorType, Addressable, Capability, CapabilityId, CapabilityScope,

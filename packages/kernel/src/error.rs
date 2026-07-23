@@ -73,6 +73,9 @@ pub enum KernelError {
         actual_command: String,
     },
 
+    #[error("Capability discovery validation failed: {message}")]
+    CapabilityDiscoveryValidation { message: String },
+
     #[error("Service '{0}' failed to start")]
     ServiceStartup(&'static str),
 
@@ -205,6 +208,10 @@ impl KernelError {
                 message: format!(
                     "Action intent '{intent_id}' maps to '{expected_command}', not '{actual_command}'."
                 ),
+            },
+            KernelError::CapabilityDiscoveryValidation { message } => PublicError {
+                code: "capability_discovery_validation_error".into(),
+                message: message.clone(),
             },
             KernelError::ServiceStartup(service) => PublicError {
                 code: "service_startup_failed".into(),

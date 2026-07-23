@@ -246,6 +246,18 @@ CommandPipeline → existing Command
 
 Motivation intent (`IntentContext` — why) and action intent (`ActionIntentRequest` — what) coexist. Commands remain the mutation mechanism.
 
+**Capability discovery layer (Sprint 16):**
+
+```
+ActorContext
+    ↓
+CapabilityResolver (policy + gate evaluation)
+    ↓
+CapabilityDiscovery (derived, non-authoritative)
+```
+
+Discovery exposes what an actor can do; it does not grant permission. Policy and CommandPipeline remain authoritative.
+
 ### 6.6 Windows Integration Layer
 
 Abstracts all Windows API interactions. Only this layer communicates directly with the OS.

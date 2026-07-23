@@ -3,6 +3,7 @@
 pub mod actor;
 pub mod audit;
 pub mod capability;
+pub mod discovery;
 pub mod entities;
 pub mod errors;
 pub mod graph;
@@ -18,6 +19,9 @@ pub use actor::{
 };
 pub use audit::AuditEvent;
 pub use capability::{Capability, CapabilityId, CapabilityScope, CapabilitySet};
+pub use discovery::{
+    AvailableIntentSummary, CapabilityDiscovery, CapabilityDiscoveryError,
+};
 pub use intent::{
     ActionIntentCategory, ActionIntentDefinition, ActionIntentError, ActionIntentId,
     ActionIntentMetadata, ActionIntentRegistry, ActionIntentRequest, Intent, IntentContext,
