@@ -210,6 +210,18 @@ IPC / CommandHandler
 
 Cross-resource operations (e.g. validating workspace existence before creating a zone) occur in **commands**, not services.
 
+**Layout layer (Sprint 13):**
+
+```
+Graph (topology — what exists)
+    ↓ referenced by ResourceRef only
+Layout (presentation — where resources are positioned)
+    ↓ future
+Canvas (rendering — how it is displayed)
+```
+
+Layout never stores graph edges or mutates graph state. Layout nodes reference `ResourceRef`; commands verify graph node existence before persisting layout updates.
+
 ### 6.6 Windows Integration Layer
 
 Abstracts all Windows API interactions. Only this layer communicates directly with the OS.

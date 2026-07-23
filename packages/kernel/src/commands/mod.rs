@@ -6,6 +6,9 @@ mod get_workspace;
 mod handler;
 mod initialize;
 mod pipeline;
+#[cfg(test)]
+mod layout_tests;
+mod layout;
 mod resource;
 #[cfg(test)]
 mod resource_tests;
@@ -15,6 +18,9 @@ mod widget;
 mod zone;
 
 pub use application::{CreateApplication, DeleteApplication, GetApplication};
+pub use layout::{
+    CreateLayout, DeleteLayout, GetLayout, GetLayoutSnapshot, ResetLayout, UpdateLayout,
+};
 pub use context::CommandContext;
 pub use create_workspace::CreateWorkspace;
 pub use get_audit_history::GetAuditHistory;

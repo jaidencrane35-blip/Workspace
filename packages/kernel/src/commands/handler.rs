@@ -5,6 +5,9 @@ use crate::commands::create_workspace::CreateWorkspace;
 use crate::commands::get_audit_history::GetAuditHistory;
 use crate::commands::get_workspace::GetWorkspace;
 use crate::commands::initialize::InitializeWorkspace;
+use crate::commands::layout::{
+    CreateLayout, DeleteLayout, GetLayout, GetLayoutSnapshot, ResetLayout, UpdateLayout,
+};
 use crate::commands::pipeline::CommandPipeline;
 use crate::commands::update_settings::UpdateSettings;
 use crate::commands::widget::{CreateWidget, DeleteWidget, GetWidget};
@@ -18,7 +21,8 @@ use crate::services::ConfigurationService;
 use crate::WorkspaceKernel;
 use workspace_domain::{
     Actor, ActorContext, ApplicationId, ApplicationReference, AuditEvent, Capability, Intent,
-    IntentContext, WidgetId, WidgetReference, Workspace, WorkspaceId, Zone, ZoneId,
+    IntentContext, Layout, LayoutId, LayoutMetadata, LayoutNode, LayoutSnapshot, WidgetId,
+    WidgetReference, Workspace, WorkspaceId, Zone, ZoneId,
 };
 
 /// Executes kernel commands and coordinates services + events.
@@ -189,6 +193,78 @@ impl CommandHandler {
         let widget_id = WidgetId::new(id).map_err(KernelError::Domain)?;
         CommandPipeline::new(kernel.command_context(actor, intent))
             .execute_query(GetWidget::new(widget_id))
+    }
+
+    pub fn create_layout(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<Layout> {
+        let workspace_id = WorkspaceId::new(workspace_id).map_err(KernelError::Domain)?;
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_mutation(CreateLayout::new(workspace_id))
+    }
+
+    pub fn update_layout(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        layout_id: String,
+        viewport: workspace_domain::Viewport,
+        nodes: Vec<LayoutNode>,
+        metadata: Option<LayoutMetadata>,
+    ) -> Result<Layout> {
+        let layout_id = LayoutId::new(layout_id).map_err(KernelError::Domain)?;
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_mutation(
+            UpdateLayout::new(layout_id, viewport, nodes, metadata),
+        )
+    }
+
+    pub fn delete_layout(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        layout_id: String,
+        workspace_id: String,
+    ) -> Result<()> {
+        let layout_id = LayoutId::new(layout_id).map_err(KernelError::Domain)?;
+        let workspace_id = WorkspaceId::new(workspace_id).map_err(KernelError::Domain)?;
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_mutation(DeleteLayout::new(layout_id, workspace_id))
+    }
+
+    pub fn reset_layout(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        layout_id: String,
+    ) -> Result<Layout> {
+        let layout_id = LayoutId::new(layout_id).map_err(KernelError::Domain)?;
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_mutation(ResetLayout::new(layout_id))
+    }
+
+    pub fn get_layout(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<Layout> {
+        let workspace_id = WorkspaceId::new(workspace_id).map_err(KernelError::Domain)?;
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetLayout::new(workspace_id))
+    }
+
+    pub fn get_layout_snapshot(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        layout_id: String,
+    ) -> Result<LayoutSnapshot> {
+        let layout_id = LayoutId::new(layout_id).map_err(KernelError::Domain)?;
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetLayoutSnapshot::new(layout_id))
     }
 
     pub fn get_audit_history(

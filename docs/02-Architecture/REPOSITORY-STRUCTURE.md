@@ -167,20 +167,20 @@ Expectations:
 
 ---
 
-## 6. Current State (Phase 1 — Sprint 12)
+## 6. Current State (Phase 1 — Sprint 13)
 
 Phase 1 scaffolding is in progress. Implemented structure:
 
 ```
 Workspace/
-├── app/                    # Tauri + IPC (workspace + resource commands)
+├── app/                    # Tauri + IPC (workspace, resource, layout commands)
 ├── packages/
-│   ├── domain/             # Entities, ResourceRef, graph types, capabilities
-│   ├── kernel/             # GraphService, resource services, commands, pipeline
-│   └── database/           # Repositories + graph_nodes/graph_edges tables
+│   ├── domain/             # Entities, ResourceRef, graph + layout types
+│   ├── kernel/             # GraphService, resource + layout services, commands
+│   └── database/           # Repositories + graph + layout tables
 ```
 
-Resource services (`WorkspaceService`, `ZoneService`, `ApplicationService`, `WidgetService`) sit between commands and repositories. `GraphService` is passive — services register resources; commands orchestrate cross-resource validation.
+Resource services own graph-backed entity persistence. Layout service owns spatial presentation state keyed by `ResourceRef`, fully decoupled from graph topology.
 
 Implementation directories will be created during Phase 1 scaffolding.
 

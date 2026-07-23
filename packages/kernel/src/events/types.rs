@@ -1,6 +1,6 @@
 use std::fmt;
 
-use workspace_domain::{ActorContext, Capability, IntentContext, ResourceRef};
+use workspace_domain::{ActorContext, Capability, IntentContext, LayoutId, ResourceRef, WorkspaceId};
 
 use crate::lifecycle::LifecycleState;
 
@@ -70,6 +70,17 @@ pub struct ResourceLifecycleEvent {
     pub capability: Option<Capability>,
 }
 
+/// Layout lifecycle metadata (Sprint 13).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LayoutLifecycleEvent {
+    pub layout_id: LayoutId,
+    pub workspace_id: WorkspaceId,
+    pub resource_ref: ResourceRef,
+    pub actor: Option<ActorContext>,
+    pub intent: Option<IntentContext>,
+    pub capability: Option<Capability>,
+}
+
 /// Internal domain events for kernel communication (Sprint 04+).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DomainEvent {
@@ -85,6 +96,11 @@ pub enum DomainEvent {
     ZoneCreated(ResourceLifecycleEvent),
     ApplicationCreated(ResourceLifecycleEvent),
     WidgetCreated(ResourceLifecycleEvent),
+    LayoutCreated(LayoutLifecycleEvent),
+    LayoutUpdated(LayoutLifecycleEvent),
+    LayoutDeleted(LayoutLifecycleEvent),
+    LayoutReset(LayoutLifecycleEvent),
+    LayoutSnapshot(LayoutLifecycleEvent),
 }
 
 impl DomainEvent {
@@ -102,6 +118,11 @@ impl DomainEvent {
             Self::ZoneCreated(_) => "zone.created",
             Self::ApplicationCreated(_) => "application.created",
             Self::WidgetCreated(_) => "widget.created",
+            Self::LayoutCreated(_) => "layout.created",
+            Self::LayoutUpdated(_) => "layout.updated",
+            Self::LayoutDeleted(_) => "layout.deleted",
+            Self::LayoutReset(_) => "layout.reset",
+            Self::LayoutSnapshot(_) => "layout.snapshot",
         }
     }
 
@@ -117,6 +138,11 @@ impl DomainEvent {
             Self::ZoneCreated(payload) => payload.actor.as_ref(),
             Self::ApplicationCreated(payload) => payload.actor.as_ref(),
             Self::WidgetCreated(payload) => payload.actor.as_ref(),
+            Self::LayoutCreated(payload) => payload.actor.as_ref(),
+            Self::LayoutUpdated(payload) => payload.actor.as_ref(),
+            Self::LayoutDeleted(payload) => payload.actor.as_ref(),
+            Self::LayoutReset(payload) => payload.actor.as_ref(),
+            Self::LayoutSnapshot(payload) => payload.actor.as_ref(),
             _ => None,
         }
     }
@@ -135,6 +161,11 @@ impl DomainEvent {
             Self::ZoneCreated(payload) => payload.intent.as_ref(),
             Self::ApplicationCreated(payload) => payload.intent.as_ref(),
             Self::WidgetCreated(payload) => payload.intent.as_ref(),
+            Self::LayoutCreated(payload) => payload.intent.as_ref(),
+            Self::LayoutUpdated(payload) => payload.intent.as_ref(),
+            Self::LayoutDeleted(payload) => payload.intent.as_ref(),
+            Self::LayoutReset(payload) => payload.intent.as_ref(),
+            Self::LayoutSnapshot(payload) => payload.intent.as_ref(),
         }
     }
 
@@ -152,6 +183,11 @@ impl DomainEvent {
             Self::ZoneCreated(payload) => payload.capability.as_ref(),
             Self::ApplicationCreated(payload) => payload.capability.as_ref(),
             Self::WidgetCreated(payload) => payload.capability.as_ref(),
+            Self::LayoutCreated(payload) => payload.capability.as_ref(),
+            Self::LayoutUpdated(payload) => payload.capability.as_ref(),
+            Self::LayoutDeleted(payload) => payload.capability.as_ref(),
+            Self::LayoutReset(payload) => payload.capability.as_ref(),
+            Self::LayoutSnapshot(payload) => payload.capability.as_ref(),
         }
     }
 
@@ -163,6 +199,11 @@ impl DomainEvent {
             Self::ZoneCreated(payload) => Some(&payload.resource_ref),
             Self::ApplicationCreated(payload) => Some(&payload.resource_ref),
             Self::WidgetCreated(payload) => Some(&payload.resource_ref),
+            Self::LayoutCreated(payload) => Some(&payload.resource_ref),
+            Self::LayoutUpdated(payload) => Some(&payload.resource_ref),
+            Self::LayoutDeleted(payload) => Some(&payload.resource_ref),
+            Self::LayoutReset(payload) => Some(&payload.resource_ref),
+            Self::LayoutSnapshot(payload) => Some(&payload.resource_ref),
             _ => None,
         }
     }

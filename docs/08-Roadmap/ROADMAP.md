@@ -111,6 +111,7 @@ Foundation     Decisions       Core Platform     Feature Expansion   Maturity
 - [x] Intent, capability, and policy foundation — Sprint 09
 - [x] Governance hardening: resource addressing (DEC-016), read governance (DEC-017), FK enforcement — Sprint 10
 - [x] Resource services foundation: GraphService, Zone/Application/Widget services, graph registration, resource IPC — Sprint 12
+- [x] Workspace layout foundation: LayoutService, spatial persistence, layout IPC — Sprint 13
 - [x] CI/CD pipeline (lint, build, test) — Sprint 01 PR workflow
 - [x] Developer setup documentation — Sprint 01
 - [ ] Spatial Workspace Canvas shell prototype — future sprint (DEC-009)

@@ -16,7 +16,7 @@ pub use error::DatabaseError;
 pub use init::{bundled_migrations_dir, DatabaseService};
 pub use migration::MigrationRunner;
 pub use repositories::{
-    ApplicationRepository, AuditRepository, GraphRepository, WidgetRepository, WorkspaceRepository,
-    ZoneRepository,
+    ApplicationRepository, AuditRepository, GraphRepository, LayoutRepository, WidgetRepository,
+    WorkspaceRepository, ZoneRepository,
 };
 pub use settings::SettingsRepository;

@@ -8,6 +8,7 @@ pub mod errors;
 pub mod graph;
 pub mod ids;
 pub mod intent;
+pub mod layout;
 pub mod resource;
 pub mod workspace;
 
@@ -27,5 +28,9 @@ pub use entities::{
 pub use errors::{validate_resource_name, DomainError, Result};
 pub use graph::{GraphEdge, GraphRelationship};
 pub use ids::{
-    ActorId, ApplicationId, AuditEventId, IntentId, WidgetId, WorkspaceId, ZoneId,
+    ActorId, ApplicationId, AuditEventId, IntentId, LayoutId, WidgetId, WorkspaceId, ZoneId,
+};
+pub use layout::{
+    Layout, LayoutBounds, LayoutError, LayoutMetadata, LayoutNode, LayoutSnapshot, Position2D,
+    Size2D, Viewport,
 };

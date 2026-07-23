@@ -107,6 +107,15 @@ impl AuditService {
                 "resource_ref": payload.resource_ref.canonical(),
                 "workspace_id": payload.workspace_id,
             }),
+            DomainEvent::LayoutCreated(payload)
+            | DomainEvent::LayoutUpdated(payload)
+            | DomainEvent::LayoutDeleted(payload)
+            | DomainEvent::LayoutReset(payload)
+            | DomainEvent::LayoutSnapshot(payload) => json!({
+                "layout_id": payload.layout_id.to_string(),
+                "workspace_id": payload.workspace_id.to_string(),
+                "resource_ref": payload.resource_ref.canonical(),
+            }),
         };
 
         Ok(value.to_string())

@@ -68,6 +68,7 @@ define_id!(WorkspaceId);
 define_id!(ZoneId);
 define_id!(ApplicationId);
 define_id!(WidgetId);
+define_id!(LayoutId);
 define_id!(AuditEventId);
 define_id!(ActorId);
 define_id!(IntentId);

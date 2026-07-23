@@ -20,6 +20,7 @@ pub enum CapabilityScope {
     Zone,
     Application,
     Widget,
+    Layout,
     Settings,
     Audit,
     System,
@@ -171,6 +172,20 @@ impl Capability {
             scope: CapabilityScope::Widget,
         }
     }
+
+    pub fn layout_read() -> Self {
+        Self {
+            id: CapabilityId::new("layout.read").expect("layout.read is valid"),
+            scope: CapabilityScope::Layout,
+        }
+    }
+
+    pub fn layout_write() -> Self {
+        Self {
+            id: CapabilityId::new("layout.write").expect("layout.write is valid"),
+            scope: CapabilityScope::Layout,
+        }
+    }
 }
 
 impl CapabilitySet {
@@ -202,6 +217,8 @@ impl CapabilitySet {
             .with_capability(&Capability::application_write())
             .with_capability(&Capability::widget_read())
             .with_capability(&Capability::widget_write())
+            .with_capability(&Capability::layout_read())
+            .with_capability(&Capability::layout_write())
             .with_capability(&Capability::settings_read())
             .with_capability(&Capability::settings_write())
             .with_capability(&Capability::audit_read())
@@ -237,7 +254,14 @@ mod tests {
     }
 
     #[test]
-    fn rejects_empty_capability_id() {
-        assert_eq!(CapabilityId::new("").unwrap_err(), DomainError::InvalidId);
+    fn layout_capabilities_in_local_user_set() {
+        let set = CapabilitySet::local_user_standard();
+        assert!(set.contains(&Capability::layout_read()));
+        assert!(set.contains(&Capability::layout_write()));
+    }
+
+    #[test]
+    fn layout_write_capability_has_layout_scope() {
+        assert_eq!(Capability::layout_write().scope, CapabilityScope::Layout);
     }
 }

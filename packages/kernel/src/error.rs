@@ -41,6 +41,15 @@ pub enum KernelError {
     #[error("Invalid parent reference: expected {expected_kind}")]
     InvalidParentReference { expected_kind: ResourceKind },
 
+    #[error("Layout not found")]
+    LayoutNotFound,
+
+    #[error("Duplicate layout for workspace")]
+    DuplicateLayout,
+
+    #[error("Layout validation failed: {message}")]
+    LayoutValidation { message: String },
+
     #[error("Service '{0}' failed to start")]
     ServiceStartup(&'static str),
 
@@ -129,6 +138,18 @@ impl KernelError {
             KernelError::InvalidParentReference { expected_kind } => PublicError {
                 code: "invalid_parent_reference".into(),
                 message: format!("Invalid parent reference; expected {expected_kind}."),
+            },
+            KernelError::LayoutNotFound => PublicError {
+                code: "layout_not_found".into(),
+                message: "The requested layout was not found.".into(),
+            },
+            KernelError::DuplicateLayout => PublicError {
+                code: "duplicate_layout".into(),
+                message: "A layout already exists for this workspace.".into(),
+            },
+            KernelError::LayoutValidation { message } => PublicError {
+                code: "layout_validation_error".into(),
+                message: message.clone(),
             },
             KernelError::ServiceStartup(service) => PublicError {
                 code: "service_startup_failed".into(),
