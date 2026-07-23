@@ -68,6 +68,7 @@ Operational events only:
 
 - `ai.planning.plan_created` — goal id, statement, proposal count
 - `ai.planning.proposal_created` — goal id, proposal id, command, target
+- `ai.planning.proposal_evaluated` / `ai.planning.outcome_recorded` — quality/outcome measurement (see [AI Evaluation Foundation](AI-EVALUATION-FOUNDATION.md))
 - Existing `permission.*` events when proposals are submitted
 
 No private reasoning traces.

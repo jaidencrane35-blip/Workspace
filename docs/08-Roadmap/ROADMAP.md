@@ -167,7 +167,7 @@ Foundation     Decisions       Core Platform     Feature Expansion   Maturity
 
 **Goal:** Application launching, AI observation/suggestion, and user-approved automation.
 
-**Status:** **In progress** — AI action catalog (Sprints 52–53). Batches 5–7 sequenced in [Intelligence Roadmap](../05-AI/INTELLIGENCE-ROADMAP.md).
+**Status:** **In progress** — AI planning evaluation (Sprints 54–55). Batches 6–7 sequenced in [Intelligence Roadmap](../05-AI/INTELLIGENCE-ROADMAP.md).
 
 ### Expected Deliverables
 
@@ -179,6 +179,7 @@ Foundation     Decisions       Core Platform     Feature Expansion   Maturity
 - [x] AI planning foundation (goals → proposals → governed requests) — Sprints 48–49; see [AI Planning Foundation](../05-AI/AI-PLANNING-FOUNDATION.md)
 - [x] AI context foundation (read-only awareness → better proposals) — Sprints 50–51; see [AI Context Foundation](../05-AI/AI-CONTEXT-FOUNDATION.md)
 - [x] AI action catalog (existence ≠ authorization) — Sprints 52–53; see [AI Action Catalog](../05-AI/AI-ACTION-CATALOG.md)
+- [x] AI planning evaluation (quality/outcome measurement only) — Sprints 54–55; see [AI Evaluation Foundation](../05-AI/AI-EVALUATION-FOUNDATION.md)
 - Application service (discovery, launch, grouping) — launch authority done; discovery/grouping later
 - Window service (tracking, layout integration)
 - AI observer and pattern store (L0–L4 confidence model)

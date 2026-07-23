@@ -2,8 +2,8 @@ use std::sync::{Arc, Mutex};
 
 use tauri::State;
 use workspace_domain::{
-    AiPlanSubmissionResult, ApplicationLaunchResult, ApprovalDecisionResult,
-    PermissionApprovalRequest,
+    AiPlanEvaluationReport, AiPlanSubmissionResult, AiProposalEvaluation,
+    ApplicationLaunchResult, ApprovalDecisionResult, PermissionApprovalRequest,
 };
 use workspace_kernel::{CommandHandler, WorkspaceKernel};
 
@@ -108,6 +108,56 @@ pub fn diagnose_ai_workspace_plan(
             workspace_id,
         ) {
             Ok(result) => IpcResponse::success(result),
+            Err(error) => IpcResponse::failure(CommandError::from(error)),
+        },
+        Err(_) => IpcResponse::failure(CommandError::new(
+            "internal_error",
+            "Workspace core is temporarily unavailable.",
+        )),
+    }
+}
+
+/// Diagnostic AI evaluation: plan → quality/outcome measurement (no execution, no authority).
+#[tauri::command]
+pub fn diagnose_ai_plan_evaluation(
+    goal: Option<String>,
+    application_ids: Option<Vec<String>>,
+    workspace_id: Option<String>,
+    kernel: State<'_, Arc<Mutex<WorkspaceKernel>>>,
+) -> IpcResponse<AiPlanEvaluationReport> {
+    let goal = goal.unwrap_or_else(|| "Prepare my workspace".into());
+    match kernel.lock() {
+        Ok(kernel) => match CommandHandler::diagnose_ai_plan_evaluation(
+            &kernel,
+            DIAGNOSTIC_AI_ACTOR_ID,
+            goal,
+            application_ids.unwrap_or_default(),
+            workspace_id,
+        ) {
+            Ok(report) => IpcResponse::success(report),
+            Err(error) => IpcResponse::failure(CommandError::from(error)),
+        },
+        Err(_) => IpcResponse::failure(CommandError::new(
+            "internal_error",
+            "Workspace core is temporarily unavailable.",
+        )),
+    }
+}
+
+/// Diagnostic: derived AI proposal evaluation history from operational audits.
+#[tauri::command]
+pub fn get_ai_evaluation_history(
+    limit: Option<usize>,
+    kernel: State<'_, Arc<Mutex<WorkspaceKernel>>>,
+) -> IpcResponse<Vec<AiProposalEvaluation>> {
+    match kernel.lock() {
+        Ok(kernel) => match CommandHandler::get_ai_evaluation_history(
+            &kernel,
+            ipc_actor_context(),
+            ipc_intent_context(),
+            limit,
+        ) {
+            Ok(items) => IpcResponse::success(items),
             Err(error) => IpcResponse::failure(CommandError::from(error)),
         },
         Err(_) => IpcResponse::failure(CommandError::new(

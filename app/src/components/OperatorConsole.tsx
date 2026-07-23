@@ -2,7 +2,9 @@ import { useCallback, useEffect, useState } from "react";
 import { IpcCommandError, invokeIpc } from "../lib/ipc";
 import type {
   ActionCatalog,
+  AiPlanEvaluationReport,
   AiPlanSubmissionResult,
+  AiProposalEvaluation,
   ApplicationLaunchResult,
   ApplicationReference,
   ApprovalDecisionResult,
@@ -109,6 +111,11 @@ export function OperatorConsole({
   const [actionCatalog, setActionCatalog] = useState<ActionCatalog | null>(
     null,
   );
+  const [lastEvaluation, setLastEvaluation] =
+    useState<AiPlanEvaluationReport | null>(null);
+  const [evaluationHistory, setEvaluationHistory] = useState<
+    AiProposalEvaluation[]
+  >([]);
   const [busy, setBusy] = useState(false);
 
   const run = useCallback(
@@ -510,6 +517,78 @@ export function OperatorConsole({
               ))}
             </dd>
           </dl>
+        )}
+      </section>
+
+      <section>
+        <h2>AI plan evaluation (measurement only)</h2>
+        <p className="muted">
+          Was the proposal useful / necessary / appropriate? Evaluation does not
+          authorize actions — the Permission Gateway still decides.
+        </p>
+        <div className="row">
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("AI plan evaluated", async () => {
+                if (!workspace) return;
+                const report = await invokeIpc<AiPlanEvaluationReport>(
+                  "diagnose_ai_plan_evaluation",
+                  {
+                    goal: "Prepare my workspace",
+                    workspaceId: workspace.id,
+                  },
+                );
+                setLastEvaluation(report);
+              })
+            }
+          >
+            Evaluate plan (no submit)
+          </button>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() =>
+              void run("Evaluation history loaded", async () => {
+                const history = await invokeIpc<AiProposalEvaluation[]>(
+                  "get_ai_evaluation_history",
+                  { limit: 20 },
+                );
+                setEvaluationHistory(history);
+              })
+            }
+          >
+            Load evaluation history
+          </button>
+        </div>
+        {lastEvaluation && (
+          <ul className="muted">
+            <li>
+              {lastEvaluation.goal_statement}:{" "}
+              {lastEvaluation.summary.proposal_count} proposal(s),{" "}
+              {lastEvaluation.summary.unnecessary_count} unnecessary,{" "}
+              {lastEvaluation.summary.duplicate_count} duplicate
+            </li>
+            {lastEvaluation.evaluations.slice(0, 5).map((evaluation) => (
+              <li key={evaluation.proposal_id}>
+                {evaluation.command_name} → {evaluation.outcome}
+                {evaluation.quality_issues.length > 0
+                  ? ` (${evaluation.quality_issues.map((i) => i.kind).join(", ")})`
+                  : ""}
+              </li>
+            ))}
+            <li>{lastEvaluation.authority_note}</li>
+          </ul>
+        )}
+        {evaluationHistory.length > 0 && (
+          <ul className="muted">
+            {evaluationHistory.slice(0, 5).map((evaluation) => (
+              <li key={`${evaluation.proposal_id}-${evaluation.evaluated_at}`}>
+                {evaluation.command_name}: {evaluation.outcome}
+              </li>
+            ))}
+          </ul>
         )}
       </section>
 

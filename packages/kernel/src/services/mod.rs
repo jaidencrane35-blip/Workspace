@@ -1,6 +1,7 @@
 //! Foundation service ownership for the Platform Kernel.
 
 mod action_catalog;
+mod ai_evaluation;
 mod ai_participation;
 mod ai_planning;
 mod analytics;
@@ -32,6 +33,7 @@ mod workspace;
 mod zone;
 
 pub use action_catalog::ActionCatalogService;
+pub(crate) use ai_evaluation::AiEvaluationService;
 pub(crate) use ai_participation::AiParticipationService;
 pub(crate) use ai_planning::AiPlanningService;
 pub use analytics::WorkspaceAnalyticsService;

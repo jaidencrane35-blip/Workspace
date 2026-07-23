@@ -235,6 +235,65 @@ export interface AiPlanSubmissionResult {
   submissions: AiProposalSubmission[];
 }
 
+export type AiProposalValidity =
+  | { kind: "valid" }
+  | { kind: "invalid"; reason: string };
+
+export type AiProposalRelevance =
+  | { kind: "relevant" }
+  | { kind: "irrelevant"; reason: string }
+  | { kind: "unknown" };
+
+export type AiProposalQualityIssue =
+  | { kind: "invalid"; reason: string }
+  | { kind: "irrelevant"; reason: string }
+  | { kind: "duplicate"; of_proposal_id: string }
+  | { kind: "unnecessary"; reason: string };
+
+export type AiProposalOutcomeClass =
+  | "created"
+  | "not_submitted"
+  | "approval_required"
+  | "denied"
+  | "succeeded"
+  | "failed";
+
+export interface AiProposalEvaluation {
+  proposal_id: string;
+  goal_id: string;
+  command_name: string;
+  target: string | null;
+  validity: AiProposalValidity;
+  relevance: AiProposalRelevance;
+  quality_issues: AiProposalQualityIssue[];
+  outcome: AiProposalOutcomeClass;
+  outcome_detail: string | null;
+  evaluated_at: string;
+}
+
+export interface AiEvaluationSummary {
+  proposal_count: number;
+  valid_count: number;
+  invalid_count: number;
+  relevant_count: number;
+  irrelevant_count: number;
+  duplicate_count: number;
+  unnecessary_count: number;
+  rejected_count: number;
+  approval_required_count: number;
+  successful_count: number;
+  failed_count: number;
+}
+
+export interface AiPlanEvaluationReport {
+  goal_id: string;
+  goal_statement: string;
+  evaluations: AiProposalEvaluation[];
+  summary: AiEvaluationSummary;
+  generated_at: string;
+  authority_note: string;
+}
+
 export interface ActionCatalogEntry {
   intent_id: string;
   name: string;

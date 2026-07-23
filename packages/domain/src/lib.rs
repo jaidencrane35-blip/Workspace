@@ -2,6 +2,7 @@
 
 pub mod action_catalog;
 pub mod actor;
+pub mod ai_evaluation;
 pub mod ai_planning;
 pub mod ai_request;
 pub mod analytics;
@@ -35,6 +36,11 @@ pub use action_catalog::{
 };
 pub use actor::{
     Actor, ActorContext, ActorMetadata, ActorType, LOCAL_USER_ACTOR_ID, SYSTEM_ACTOR_ID,
+};
+pub use ai_evaluation::{
+    classify_authority_outcome, evaluate_plan, evaluate_submission_result, AiEvaluationError,
+    AiEvaluationSummary, AiPlanEvaluationReport, AiProposalEvaluation, AiProposalOutcomeClass,
+    AiProposalQualityIssue, AiProposalRelevance, AiProposalValidity,
 };
 pub use ai_planning::{
     AiActionProposal, AiApplicationAwareness, AiGoal, AiPlan, AiPlanSubmissionResult,

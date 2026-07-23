@@ -7,6 +7,7 @@ use crate::commands::create_suggestion_intent_request::CreateSuggestionIntentReq
 use crate::commands::create_workspace::CreateWorkspace;
 use crate::commands::decide_approval::DecideApproval;
 use crate::commands::get_action_catalog::GetActionCatalog;
+use crate::commands::get_ai_evaluation_history::GetAiEvaluationHistory;
 use crate::commands::get_actor_capabilities::GetActorCapabilities;
 use crate::commands::get_audit_history::GetAuditHistory;
 use crate::commands::get_permission_approvals::GetPermissionApprovals;
@@ -38,18 +39,19 @@ use crate::events::types::{DomainEvent, WorkspaceShutdown};
 use crate::lifecycle::LifecycleState;
 use crate::security::{PermissionRequest, PermissionSubject};
 use crate::services::{
-    AiParticipationService, AiPlanningService, ConfigurationService, DesktopWindowService,
-    WorkspaceContextService,
+    AiEvaluationService, AiParticipationService, AiPlanningService, ConfigurationService,
+    DesktopWindowService, WorkspaceContextService,
 };
 use crate::WorkspaceKernel;
 use workspace_domain::{
-    ActionCatalog, Actor, ActorContext, AiPlan, AiPlanSubmissionResult, AiProposalAuthorityOutcome,
-    AiProposalSubmission, ApplicationId, ApplicationReference, AuditEvent, Capability,
-    CapabilitySet, Intent, IntentContext, Layout, LayoutId, LayoutMetadata, LayoutNode,
-    LayoutSnapshot, Observation, Suggestion, SuggestionIntentRequest, SuggestionLifecycleRecord,
-    IntentExecutionRequest, ExecutionOutcome, ExecutionReconciliation, CancellationRequest,
-    WidgetId, WidgetReference, Workspace, WorkspaceContext, WorkspaceId, WorkspaceMetrics,
-    WorkspaceSnapshot, CapabilityDiscovery, Zone, ZoneId,
+    ActionCatalog, Actor, ActorContext, AiPlan, AiPlanEvaluationReport, AiPlanSubmissionResult,
+    AiProposalAuthorityOutcome, AiProposalEvaluation, AiProposalSubmission, ApplicationId,
+    ApplicationReference, AuditEvent, Capability, CapabilitySet, Intent, IntentContext, Layout,
+    LayoutId, LayoutMetadata, LayoutNode, LayoutSnapshot, Observation, Suggestion,
+    SuggestionIntentRequest, SuggestionLifecycleRecord, IntentExecutionRequest, ExecutionOutcome,
+    ExecutionReconciliation, CancellationRequest, WidgetId, WidgetReference, Workspace,
+    WorkspaceContext, WorkspaceId, WorkspaceMetrics, WorkspaceSnapshot, CapabilityDiscovery, Zone,
+    ZoneId,
 };
 use workspace_windows_integration::DesktopWindowSnapshot;
 
@@ -459,7 +461,99 @@ impl CommandHandler {
             });
         }
 
-        Ok(AiPlanSubmissionResult { plan, submissions })
+        let result = AiPlanSubmissionResult { plan, submissions };
+        // Measurement only — evaluation never grants authority or retries.
+        let actor = AiPlanningService::ensure_ai_actor(&actor_id)?;
+        let report = AiEvaluationService::evaluate_submission_result(&result, None)?;
+        AiEvaluationService::audit_report(&kernel.shared_database(), &actor, &report)?;
+        Ok(result)
+    }
+
+    /// Plans and evaluates proposal quality without submitting or executing.
+    pub fn diagnose_ai_plan_evaluation(
+        kernel: &WorkspaceKernel,
+        actor_id: impl Into<String>,
+        goal_statement: impl Into<String>,
+        application_ids: Vec<String>,
+        workspace_id: Option<String>,
+    ) -> Result<AiPlanEvaluationReport> {
+        Self::diagnose_ai_plan_evaluation_inner(
+            kernel,
+            actor_id,
+            goal_statement,
+            application_ids,
+            workspace_id,
+            None,
+        )
+    }
+
+    fn diagnose_ai_plan_evaluation_inner(
+        kernel: &WorkspaceKernel,
+        actor_id: impl Into<String>,
+        goal_statement: impl Into<String>,
+        application_ids: Vec<String>,
+        workspace_id: Option<String>,
+        environment_override: Option<Vec<String>>,
+    ) -> Result<AiPlanEvaluationReport> {
+        let actor_id = actor_id.into();
+        let environment_for_plan = environment_override.clone();
+        let awareness = if let Some(workspace_id) = workspace_id.clone() {
+            let workspace_id = WorkspaceId::new(workspace_id).map_err(KernelError::Domain)?;
+            let provider = ActorContext::local_user();
+            let provider_intent = IntentContext::user_request();
+            let provider_caps = CapabilitySet::local_user_standard();
+            let workspace_context = WorkspaceContextService::build(
+                &kernel.shared_database(),
+                &provider,
+                &provider_intent,
+                &provider_caps,
+                kernel.permission_policy(),
+                kernel.permission_gate(),
+                &workspace_id,
+                20,
+            )?;
+            let titles = match environment_override {
+                Some(titles) => titles,
+                None => DesktopWindowService::list_recent(Some(50))?
+                    .into_iter()
+                    .map(|window| window.title)
+                    .filter(|title| !title.trim().is_empty())
+                    .collect(),
+            };
+            Some(AiPlanningService::awareness_from_context(
+                &workspace_context,
+                titles,
+            ))
+        } else {
+            None
+        };
+
+        let plan = Self::plan_ai_goal_inner(
+            kernel,
+            actor_id.clone(),
+            goal_statement,
+            application_ids,
+            workspace_id,
+            environment_for_plan,
+        )?;
+
+        // Note: context-aware planning already skips active apps, so "unnecessary"
+        // appears when evaluating injected/poor proposals or when awareness differs.
+        let report = AiEvaluationService::evaluate_plan(&plan, awareness.as_ref())?;
+        let actor = AiPlanningService::ensure_ai_actor(&actor_id)?;
+        AiEvaluationService::audit_report(&kernel.shared_database(), &actor, &report)?;
+        Ok(report)
+    }
+
+    /// Derived evaluation history from operational audits (read-only).
+    pub fn get_ai_evaluation_history(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        limit: Option<usize>,
+    ) -> Result<Vec<AiProposalEvaluation>> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetAiEvaluationHistory::new(limit))
     }
 
     pub fn delete_application(

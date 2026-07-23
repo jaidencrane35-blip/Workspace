@@ -1,7 +1,9 @@
 use thiserror::Error;
 
 use workspace_database::DatabaseError;
-use workspace_domain::{AiPlanningError, AiRequestError, DomainError, ResourceKind};
+use workspace_domain::{
+    AiEvaluationError, AiPlanningError, AiRequestError, DomainError, ResourceKind,
+};
 
 #[derive(Debug, Error)]
 pub enum KernelError {
@@ -154,6 +156,9 @@ pub enum KernelError {
     #[error("Action catalog validation failed: {message}")]
     ActionCatalogValidation { message: String },
 
+    #[error("AI evaluation validation failed: {message}")]
+    AiEvaluationValidation { message: String },
+
     #[error("Workspace kernel initialization failed")]
     InitializationFailed,
 }
@@ -205,6 +210,14 @@ impl From<AiPlanningError> for KernelError {
             other => KernelError::AiPlanningValidation {
                 message: other.to_string(),
             },
+        }
+    }
+}
+
+impl From<AiEvaluationError> for KernelError {
+    fn from(error: AiEvaluationError) -> Self {
+        KernelError::AiEvaluationValidation {
+            message: error.to_string(),
         }
     }
 }
@@ -425,6 +438,10 @@ impl KernelError {
             },
             KernelError::ActionCatalogValidation { message } => PublicError {
                 code: "action_catalog_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::AiEvaluationValidation { message } => PublicError {
+                code: "ai_evaluation_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::InitializationFailed => PublicError {
