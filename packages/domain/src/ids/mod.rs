@@ -72,6 +72,7 @@ define_id!(LayoutId);
 define_id!(AuditEventId);
 define_id!(ActorId);
 define_id!(IntentId);
+define_id!(ActionIntentId);
 
 #[cfg(test)]
 mod tests {

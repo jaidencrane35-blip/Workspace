@@ -1,3 +1,11 @@
+mod action;
+
+pub use action::{
+    ActionIntentCategory, ActionIntentDefinition, ActionIntentError, ActionIntentMetadata,
+    ActionIntentRegistry, ActionIntentRequest, TargetRequirement,
+};
+pub use crate::ids::ActionIntentId;
+
 use serde::{Deserialize, Serialize};
 
 use crate::errors::Result;

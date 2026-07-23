@@ -3,8 +3,10 @@ use serde_json::json;
 use crate::commands::context::CommandContext;
 use crate::commands::r#trait::{permission_request, policy_context, require_policy, MutationCommand, QueryCommand};
 use crate::error::Result;
+use crate::intent::IntentExecutionService;
 use crate::policy::{read_is_governed, DefaultPolicyEvaluator, PolicyEvaluator};
 use crate::services::AuditService;
+use workspace_domain::ActionIntentRequest;
 
 /// Uniform execution path for kernel commands.
 pub struct CommandPipeline<'a> {
@@ -18,6 +20,34 @@ impl<'a> CommandPipeline<'a> {
 
     pub fn context(&self) -> &CommandContext<'a> {
         &self.ctx
+    }
+
+    /// Executes a mutation after validating the accompanying action intent metadata.
+    pub fn execute_mutation_with_action<C: MutationCommand>(
+        self,
+        action: &ActionIntentRequest,
+        command: C,
+    ) -> Result<C::Output> {
+        IntentExecutionService::validate_before_command(
+            action,
+            command.name(),
+            &command.required_capability(),
+        )?;
+        self.execute_mutation(command)
+    }
+
+    /// Executes a query after validating the accompanying action intent metadata.
+    pub fn execute_query_with_action<Q: QueryCommand>(
+        self,
+        action: &ActionIntentRequest,
+        command: Q,
+    ) -> Result<Q::Output> {
+        IntentExecutionService::validate_before_command(
+            action,
+            command.name(),
+            &command.required_capability(),
+        )?;
+        self.execute_query(command)
     }
 
     /// Executes a state-changing command through policy, permission, and handler logic.

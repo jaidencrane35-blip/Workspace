@@ -8,6 +8,8 @@ mod handler;
 mod initialize;
 mod pipeline;
 #[cfg(test)]
+mod intent_tests;
+#[cfg(test)]
 mod layout_tests;
 #[cfg(test)]
 mod projection_tests;

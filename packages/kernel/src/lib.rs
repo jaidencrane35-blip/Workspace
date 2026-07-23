@@ -8,6 +8,7 @@ pub mod config;
 pub mod error;
 pub mod events;
 pub mod health;
+pub mod intent;
 pub mod lifecycle;
 pub mod policy;
 pub mod security;
@@ -19,6 +20,7 @@ pub use config::{ConfigManager, SettingsUpdate, WorkspaceSettings};
 pub use error::{KernelError, PublicError, Result};
 pub use events::{DomainEvent, EventBus};
 pub use health::WorkspaceHealth;
+pub use intent::{CommandIntentMapping, IntentExecutionService};
 pub use lifecycle::LifecycleState;
 pub use policy::{
     read_is_governed, AlwaysAllowPolicy, DefaultPolicyEvaluator, GovernanceClass, PermissionPolicy,

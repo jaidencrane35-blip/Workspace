@@ -53,6 +53,26 @@ pub enum KernelError {
     #[error("Projection validation failed: {message}")]
     ProjectionValidation { message: String },
 
+    #[error("Action intent not found: {intent_id}")]
+    ActionIntentNotFound { intent_id: String },
+
+    #[error("Action intent validation failed: {message}")]
+    ActionIntentValidation { message: String },
+
+    #[error("Action intent capability mismatch for {intent_id}: expected {expected}, got {actual}")]
+    ActionIntentCapabilityMismatch {
+        intent_id: String,
+        expected: String,
+        actual: String,
+    },
+
+    #[error("Action intent {intent_id} maps to {expected_command}, not {actual_command}")]
+    ActionIntentCommandMismatch {
+        intent_id: String,
+        expected_command: String,
+        actual_command: String,
+    },
+
     #[error("Service '{0}' failed to start")]
     ServiceStartup(&'static str),
 
@@ -157,6 +177,34 @@ impl KernelError {
             KernelError::ProjectionValidation { message } => PublicError {
                 code: "projection_validation_error".into(),
                 message: message.clone(),
+            },
+            KernelError::ActionIntentNotFound { intent_id } => PublicError {
+                code: "action_intent_not_found".into(),
+                message: format!("The action intent '{intent_id}' is not supported."),
+            },
+            KernelError::ActionIntentValidation { message } => PublicError {
+                code: "action_intent_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::ActionIntentCapabilityMismatch {
+                intent_id,
+                expected,
+                actual,
+            } => PublicError {
+                code: "action_intent_capability_mismatch".into(),
+                message: format!(
+                    "Action intent '{intent_id}' requires capability '{expected}', but command declared '{actual}'."
+                ),
+            },
+            KernelError::ActionIntentCommandMismatch {
+                intent_id,
+                expected_command,
+                actual_command,
+            } => PublicError {
+                code: "action_intent_command_mismatch".into(),
+                message: format!(
+                    "Action intent '{intent_id}' maps to '{expected_command}', not '{actual_command}'."
+                ),
             },
             KernelError::ServiceStartup(service) => PublicError {
                 code: "service_startup_failed".into(),

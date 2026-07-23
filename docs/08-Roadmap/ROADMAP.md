@@ -113,6 +113,7 @@ Foundation     Decisions       Core Platform     Feature Expansion   Maturity
 - [x] Resource services foundation: GraphService, Zone/Application/Widget services, graph registration, resource IPC — Sprint 12
 - [x] Workspace layout foundation: LayoutService, spatial persistence, layout IPC — Sprint 13
 - [x] Workspace state projection foundation: WorkspaceProjectionService, GetWorkspaceSnapshot, projection IPC — Sprint 14
+- [x] Intent execution foundation: ActionIntentRegistry, IntentExecutionService, command mapping — Sprint 15
 - [x] CI/CD pipeline (lint, build, test) — Sprint 01 PR workflow
 - [x] Developer setup documentation — Sprint 01
 - [ ] Spatial Workspace Canvas shell prototype — future sprint (DEC-009)

@@ -19,7 +19,9 @@ pub use actor::{
 pub use audit::AuditEvent;
 pub use capability::{Capability, CapabilityId, CapabilityScope, CapabilitySet};
 pub use intent::{
-    Intent, IntentContext, IntentMetadata, IntentType, SYSTEM_SHUTDOWN_INTENT_ID,
+    ActionIntentCategory, ActionIntentDefinition, ActionIntentError, ActionIntentId,
+    ActionIntentMetadata, ActionIntentRegistry, ActionIntentRequest, Intent, IntentContext,
+    IntentMetadata, IntentType, TargetRequirement, SYSTEM_SHUTDOWN_INTENT_ID,
     SYSTEM_STARTUP_INTENT_ID, USER_REQUEST_INTENT_ID,
 };
 pub use resource::{Addressable, ResourceId, ResourceKind, ResourceRef};

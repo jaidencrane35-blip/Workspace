@@ -234,6 +234,18 @@ WorkspaceSnapshot → future consumers (Canvas, AI, plugins, search)
 
 Projections are read-only, non-authoritative, and not persisted. `ResourceRef` remains canonical identity throughout.
 
+**Action intent layer (Sprint 15):**
+
+```
+ActionIntentRequest (what to do)
+    ↓
+IntentExecutionService (validate metadata + capability match)
+    ↓
+CommandPipeline → existing Command
+```
+
+Motivation intent (`IntentContext` — why) and action intent (`ActionIntentRequest` — what) coexist. Commands remain the mutation mechanism.
+
 ### 6.6 Windows Integration Layer
 
 Abstracts all Windows API interactions. Only this layer communicates directly with the OS.

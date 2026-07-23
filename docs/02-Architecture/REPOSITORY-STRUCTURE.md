@@ -167,7 +167,7 @@ Expectations:
 
 ---
 
-## 6. Current State (Phase 1 — Sprint 14)
+## 6. Current State (Phase 1 — Sprint 15)
 
 Phase 1 scaffolding is in progress. Implemented structure:
 
@@ -175,12 +175,12 @@ Phase 1 scaffolding is in progress. Implemented structure:
 Workspace/
 ├── app/                    # Tauri + IPC (workspace, resource, layout, projection commands)
 ├── packages/
-│   ├── domain/             # Entities, ResourceRef, graph, layout, projection types
-│   ├── kernel/             # GraphService, resource + layout + projection services, commands
+│   ├── domain/             # Entities, ResourceRef, graph, layout, projection, action intent types
+│   ├── kernel/             # Services, commands, intent validation, projection
 │   └── database/           # Repositories + graph + layout tables
 ```
 
-Resource services own graph-backed entity persistence. Layout service owns spatial presentation state keyed by `ResourceRef`, fully decoupled from graph topology. Workspace projection aggregates derived read models without duplicating persistence.
+Resource services own graph-backed entity persistence. Layout owns spatial state. Projection aggregates derived read models. Action intents provide metadata-first command mapping without replacing the command pipeline.
 
 Implementation directories will be created during Phase 1 scaffolding.
 
