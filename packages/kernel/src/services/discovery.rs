@@ -7,8 +7,9 @@ use workspace_domain::{
 };
 
 use crate::error::{KernelError, Result};
-use crate::policy::{DefaultPolicyEvaluator, PolicyContext, PolicyEvaluator};
-use crate::security::{PermissionDecision, PermissionGate, PermissionRequest, PermissionSubject};
+use crate::security::{
+    GatewayDecision, PermissionGate, PermissionGateway, PermissionRequest, PermissionSubject,
+};
 
 /// Derives actor capabilities and available intents from existing governance rules.
 pub struct CapabilityResolver;
@@ -34,6 +35,7 @@ impl CapabilityResolver {
                     definition.command_name,
                     &definition.capability_required,
                     subject_for_category(definition.category),
+                    nominal_capabilities,
                     policy,
                     gate,
                 )?;
@@ -82,22 +84,10 @@ impl CapabilityResolver {
         command_name: &'static str,
         capability: &Capability,
         subject: PermissionSubject,
+        granted: &CapabilitySet,
         policy: &dyn crate::policy::PermissionPolicy,
         gate: &dyn PermissionGate,
     ) -> Result<bool> {
-        let policy_context = PolicyContext::new(
-            actor_context.actor.id.to_string(),
-            intent_context.intent.clone(),
-            capability.clone(),
-            command_name,
-            subject.clone(),
-        );
-
-        let policy_result = DefaultPolicyEvaluator.evaluate(policy, &policy_context)?;
-        if !policy_result.is_allowed() {
-            return Ok(false);
-        }
-
         let request = PermissionRequest {
             actor: actor_context.actor.clone(),
             intent: intent_context.intent.clone(),
@@ -106,7 +96,11 @@ impl CapabilityResolver {
             subject,
         };
 
-        Ok(matches!(gate.authorize(&request)?, PermissionDecision::Allowed))
+        // Discovery probes evaluate without writing permission audit records.
+        let decision =
+            PermissionGateway::evaluate(policy, gate, &request, granted)?;
+
+        Ok(matches!(decision, GatewayDecision::Allow { .. }))
     }
 }
 
@@ -133,8 +127,10 @@ fn subject_for_category(category: ActionIntentCategory) -> PermissionSubject {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::policy::AlwaysAllowPolicy;
-    use crate::security::{AllowAllPermissionGate, PermissionDecision, PermissionGate};
+    use crate::policy::{AlwaysAllowPolicy, CapabilityBoundPolicy};
+    use crate::security::{
+        AllowAllPermissionGate, PermissionDecision, StandardPermissionGate,
+    };
     use workspace_domain::{ActionIntentId, ActorType, IntentContext};
 
     struct DenyAllGate;
@@ -156,8 +152,8 @@ mod tests {
             &ActorContext::local_user(),
             &IntentContext::user_request(),
             &CapabilitySet::local_user_standard(),
-            &AlwaysAllowPolicy,
-            &AllowAllPermissionGate,
+            &CapabilityBoundPolicy,
+            &StandardPermissionGate,
         )
         .unwrap();
 
@@ -173,8 +169,8 @@ mod tests {
             &ActorContext::system(),
             &IntentContext::system_startup(),
             &CapabilitySet::system_standard(),
-            &AlwaysAllowPolicy,
-            &AllowAllPermissionGate,
+            &CapabilityBoundPolicy,
+            &StandardPermissionGate,
         )
         .unwrap();
 
@@ -206,7 +202,7 @@ mod tests {
             &ActorContext::local_user(),
             &IntentContext::user_request(),
             &CapabilitySet::new(),
-            &AlwaysAllowPolicy,
+            &CapabilityBoundPolicy,
             &AllowAllPermissionGate,
         )
         .unwrap();

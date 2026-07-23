@@ -5,13 +5,20 @@ Platform Kernel boundary for Workspace — the central runtime authority.
 ## Governance hardening (DEC-016, DEC-017)
 
 - **Resource-addressed permissions (DEC-016)** — `PermissionSubject` is now `System | Resource(ResourceKind)`; commands address resources uniformly
-- **Read governance (DEC-017)** — `QueryCommand` declares a `*.read` capability and a `GovernanceClass`; `execute_query` governs + audits non-human reads and sensitive-kind reads, while local-human non-sensitive reads bypass governance. Enforcement remains allow-all.
+- **Read governance (DEC-017)** — `QueryCommand` declares a `*.read` capability and a `GovernanceClass`; `execute_query` governs + audits non-human reads and sensitive-kind reads, while local-human non-sensitive reads bypass governance.
+
+## Phase 2 — Permission Gateway (Sprint 40)
+
+- **PermissionGateway** — authority boundary: policy + gate + decision audit
+- **CapabilityBoundPolicy** — default policy; missing capability = deny
+- **StandardPermissionGate** — LocalUser/System allow; non-human → `ApprovalRequired`
+- **AlwaysAllow\*** retained for tests only — not on the kernel execution path
 
 ## Sprint 09
 
 - **Intent model** — `Intent`, `IntentContext`, `IntentType` in domain
 - **Capability model** — `Capability`, `CapabilitySet` (identifiers only)
-- **Policy layer** — `PermissionPolicy`, `PolicyEvaluator`, `AlwaysAllowPolicy`
+- **Policy layer** — `PermissionPolicy`, `PolicyEvaluator`, `AlwaysAllowPolicy` (Phase 1 stub)
 - **Pipeline** — actor + intent + capability through permission and audit
 
 ## Sprint 08
@@ -30,7 +37,7 @@ Platform Kernel boundary for Workspace — the central runtime authority.
 ## Sprint 06
 
 - **Command pipeline** — uniform `MutationCommand` / `QueryCommand` dispatch via `CommandPipeline`
-- **Permission gate** — `PermissionGate` trait with `AllowAllPermissionGate` (future: approval, AI, automation)
+- **Permission gate** — `PermissionGate` trait (Phase 1: `AllowAllPermissionGate`; Phase 2: `StandardPermissionGate`)
 - **Security module** — `packages/kernel/src/security/`
 
 ## Sprint 05
@@ -50,18 +57,21 @@ Platform Kernel boundary for Workspace — the central runtime authority.
 ## Architecture
 
 ```
-React UI  →  Tauri IPC  →  CommandHandler  →  CommandPipeline  →  PermissionPolicy
-                                                    ↓                      ↓
-                                              PermissionGate         (AlwaysAllow)
+React UI  →  Tauri IPC  →  CommandHandler  →  CommandPipeline
+                                                    ↓
+                                            PermissionGateway
+                                       (CapabilityBoundPolicy + StandardPermissionGate)
+                                                    ↓
+                                         Allow | Deny | ApprovalRequired
                                                     ↓
                                               Services  →  workspace-database
                                                     ↓
-                                                EventBus  →  Audit (intent + capability)
+                                         Audit (command + permission decisions)
 ```
 
 - **IPC** — external communication (React ↔ Rust)
 - **Command pipeline** — single path for mutations (post-bootstrap)
-- **Permission gate** — authorization seam (Observe → Learn → Suggest → **Permission** → Automate)
+- **Permission Gateway** — authority boundary (Observe → Learn → Suggest → **Permission** → Automate)
 - **Event bus** — internal communication (kernel ↔ future modules)
 - **ServiceRegistry** — runtime health tracking only; not for domain resources
 

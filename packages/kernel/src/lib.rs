@@ -23,10 +23,13 @@ pub use health::WorkspaceHealth;
 pub use intent::{CommandIntentMapping, ActionIntentValidationService};
 pub use lifecycle::LifecycleState;
 pub use policy::{
-    read_is_governed, AlwaysAllowPolicy, DefaultPolicyEvaluator, GovernanceClass, PermissionPolicy,
-    PolicyContext, PolicyDecision, PolicyEvaluator, PolicyResult,
+    read_is_governed, AlwaysAllowPolicy, CapabilityBoundPolicy, DefaultPolicyEvaluator,
+    GovernanceClass, PermissionPolicy, PolicyContext, PolicyDecision, PolicyEvaluator, PolicyResult,
 };
-pub use security::{AllowAllPermissionGate, PermissionGate, PermissionRequest, PermissionSubject};
+pub use security::{
+    AllowAllPermissionGate, GatewayDecision, PermissionGate, PermissionGateway, PermissionRequest,
+    PermissionSubject, StandardPermissionGate,
+};
 pub use services::{AuditService, CapabilityResolver, ConfigurationService, DatabaseServiceHandle, DesktopWindowService, ExecutionCancellationService, ExecutionContextService, ExecutionGuardService, ExecutionOutcomeService, ExecutionReconciliationService, GovernedIntentExecutionService, ObservationService, ServiceRegistry, ServiceStatus, SuggestionIntentService, SuggestionLifecycleService, SuggestionService, WorkspaceAnalyticsService, WorkspaceContextService};
 pub use state::WorkspaceState;
 pub use workspace_domain::{
@@ -39,8 +42,8 @@ use std::sync::Arc;
 
 use commands::CommandContext;
 use events::AuditEventSubscriber;
-use policy::AlwaysAllowPolicy as DefaultPermissionPolicy;
-use security::AllowAllPermissionGate as DefaultPermissionGate;
+use policy::CapabilityBoundPolicy as DefaultPermissionPolicy;
+use security::StandardPermissionGate as DefaultPermissionGate;
 
 /// Kernel crate version aligned with application semver.
 pub const KERNEL_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -174,11 +177,7 @@ impl WorkspaceKernel {
         actor: ActorContext,
         intent: IntentContext,
     ) -> CommandContext<'_> {
-        let capability_set = if actor.actor.actor_type == ActorType::System {
-            CapabilitySet::system_standard()
-        } else {
-            CapabilitySet::local_user_standard()
-        };
+        let capability_set = CapabilitySet::for_actor_type(actor.actor.actor_type);
 
         CommandContext {
             actor_context: actor,
@@ -223,9 +222,24 @@ mod tests {
     use std::sync::{Arc, Mutex};
 
     #[test]
-    fn kernel_wires_default_permission_policy() {
+    fn kernel_wires_capability_bound_permission_policy() {
         let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
-        let context = PolicyContext::new(
+        let allowed = PolicyContext::new(
+            Actor::local_user().id.to_string(),
+            Intent::user_request(),
+            Capability::workspace_write(),
+            "CreateWorkspace",
+            PermissionSubject::Resource(workspace_domain::ResourceKind::Workspace),
+        )
+        .with_granted(CapabilitySet::local_user_standard());
+
+        assert!(kernel
+            .permission_policy()
+            .evaluate(&allowed)
+            .unwrap()
+            .is_allowed());
+
+        let denied = PolicyContext::new(
             Actor::local_user().id.to_string(),
             Intent::user_request(),
             Capability::workspace_write(),
@@ -233,13 +247,11 @@ mod tests {
             PermissionSubject::Resource(workspace_domain::ResourceKind::Workspace),
         );
 
-        assert!(
-            kernel
-                .permission_policy()
-                .evaluate(&context)
-                .unwrap()
-                .is_allowed()
-        );
+        assert!(!kernel
+            .permission_policy()
+            .evaluate(&denied)
+            .unwrap()
+            .is_allowed());
     }
 
     #[test]

@@ -492,19 +492,22 @@ Abstracts all Windows API interactions. Only this layer communicates directly wi
 
 The Permission Gateway is the single enforcement point for all state-changing operations in Workspace.
 
+**Sprint 40 status:** Gateway is live on the `CommandPipeline` path (`CapabilityBoundPolicy` + `StandardPermissionGate` + decision audit). Approval UI and permission tokens remain future work — non-human actors receive `ApprovalRequired` (treated as deny until approval exists).
+
 | Responsibility | Detail |
 |----------------|--------|
 | Validate permission requests | From AI, plugins, shell, and automation service |
-| Present approval UI | User-facing permission prompts |
-| Issue permission tokens | Scoped, time-limited authorisation |
-| Enforce policy | Block unapproved actions |
-| Audit logging | Record all permission requests and outcomes |
+| Present approval UI | User-facing permission prompts *(deferred)* |
+| Issue permission tokens | Scoped, time-limited authorisation *(deferred)* |
+| Enforce policy | Capability-bound allow; default deny when unknown |
+| Audit logging | `permission.allowed` / `permission.denied` / `permission.approval_required` |
 
 **Request flow:**
 ```
 Requester (AI / Plugin / Shell / Automation)
+    → CommandPipeline
     → Permission Gateway (Platform Kernel)
-    → User Prompt (if required)
+    → User Prompt (if required — future)
     → Domain Service (if approved)
 ```
 

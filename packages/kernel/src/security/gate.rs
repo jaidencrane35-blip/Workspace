@@ -27,6 +27,8 @@ pub struct PermissionRequest {
 pub enum PermissionDecision {
     Allowed,
     Denied { reason: String },
+    /// Future approval UI — not executable until an approval flow grants authority.
+    ApprovalRequired { reason: String },
 }
 
 /// Boundary for user approval, automation policy, and future AI suggestions.
@@ -36,7 +38,10 @@ pub trait PermissionGate: Send + Sync {
     fn require(&self, request: &PermissionRequest) -> Result<()> {
         match self.authorize(request)? {
             PermissionDecision::Allowed => Ok(()),
-            PermissionDecision::Denied { reason } => Err(KernelError::PermissionDenied(reason)),
+            PermissionDecision::Denied { reason }
+            | PermissionDecision::ApprovalRequired { reason } => {
+                Err(KernelError::PermissionDenied(reason))
+            }
         }
     }
 }

@@ -142,7 +142,10 @@ fn permission_required_for_bridge_command() {
         command.required_capability(),
     );
     let policy = DefaultPermissionPolicy;
-    let context = crate::commands::r#trait::policy_context(&request);
+    let context = crate::commands::r#trait::policy_context(
+        &request,
+        &CapabilitySet::local_user_standard(),
+    );
     let result = policy.evaluate(&context).unwrap();
     require_policy(result).expect("default policy allows local user");
     assert_eq!(request.capability.id.as_str(), "audit.write");

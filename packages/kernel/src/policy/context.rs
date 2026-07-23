@@ -1,4 +1,4 @@
-use workspace_domain::{Capability, Intent};
+use workspace_domain::{Capability, CapabilitySet, Intent};
 
 use crate::security::PermissionSubject;
 
@@ -10,6 +10,8 @@ pub struct PolicyContext {
     pub capability: Capability,
     pub command: &'static str,
     pub subject: PermissionSubject,
+    /// Capabilities currently granted to the actor (empty = default deny under CapabilityBoundPolicy).
+    pub granted_capabilities: CapabilitySet,
 }
 
 impl PolicyContext {
@@ -26,7 +28,13 @@ impl PolicyContext {
             capability,
             command,
             subject,
+            granted_capabilities: CapabilitySet::new(),
         }
+    }
+
+    pub fn with_granted(mut self, granted: CapabilitySet) -> Self {
+        self.granted_capabilities = granted;
+        self
     }
 }
 

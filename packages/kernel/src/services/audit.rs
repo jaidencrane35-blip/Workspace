@@ -54,6 +54,26 @@ impl AuditService {
         Self::append(db, event)
     }
 
+    /// Records a Permission Gateway decision (allow / deny / approval_required).
+    pub fn record_permission_decision(
+        db: &Arc<Mutex<Database>>,
+        actor_context: &ActorContext,
+        intent_context: &IntentContext,
+        event_type: &str,
+        command_name: &str,
+        capability: &Capability,
+        success: bool,
+        metadata: String,
+    ) -> Result<()> {
+        let event = AuditEvent::from_actor(event_type, &actor_context.actor, success)
+            .with_command_name(command_name)
+            .with_intent_type(intent_context.intent.intent_type)
+            .with_capability(capability)
+            .with_metadata(metadata);
+
+        Self::append(db, event)
+    }
+
     pub fn record_domain_event(db: &Arc<Mutex<Database>>, event: &DomainEvent) -> Result<()> {
         let actor = event
             .actor()

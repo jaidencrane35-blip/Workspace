@@ -1,4 +1,4 @@
-use workspace_domain::{ActorContext, Capability, IntentContext, ResourceRef};
+use workspace_domain::{ActorContext, Capability, CapabilitySet, IntentContext, ResourceRef};
 
 use crate::commands::context::CommandContext;
 use crate::error::Result;
@@ -72,8 +72,11 @@ pub fn permission_request(
     }
 }
 
-/// Builds policy evaluation input from a permission request.
-pub fn policy_context(request: &PermissionRequest) -> PolicyContext {
+/// Builds policy evaluation input from a permission request and granted capabilities.
+///
+/// Retained for tests and callers that evaluate policy outside `PermissionGateway`.
+#[allow(dead_code)]
+pub fn policy_context(request: &PermissionRequest, granted: &CapabilitySet) -> PolicyContext {
     PolicyContext::new(
         request.actor.id.to_string(),
         request.intent.clone(),
@@ -81,9 +84,11 @@ pub fn policy_context(request: &PermissionRequest) -> PolicyContext {
         request.command,
         request.subject.clone(),
     )
+    .with_granted(granted.clone())
 }
 
 /// Applies a policy result — denies when the policy rejects the operation.
+#[allow(dead_code)]
 pub fn require_policy(result: PolicyResult) -> Result<()> {
     match result.decision {
         PolicyDecision::Allow => Ok(()),
@@ -123,8 +128,11 @@ mod tests {
             Capability::system_shutdown(),
         );
 
-        let context = policy_context(&request);
+        let context = policy_context(&request, &CapabilitySet::system_standard());
         assert_eq!(context.intent.intent_type, IntentType::SystemShutdown);
         assert_eq!(context.capability.id.as_str(), "system.shutdown");
+        assert!(context
+            .granted_capabilities
+            .contains(&Capability::system_shutdown()));
     }
 }

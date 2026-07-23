@@ -1,10 +1,11 @@
 use serde_json::json;
 
 use crate::commands::context::CommandContext;
-use crate::commands::r#trait::{permission_request, policy_context, require_policy, MutationCommand, QueryCommand};
+use crate::commands::r#trait::{permission_request, MutationCommand, QueryCommand};
 use crate::error::Result;
 use crate::intent::ActionIntentValidationService;
-use crate::policy::{read_is_governed, DefaultPolicyEvaluator, PolicyEvaluator};
+use crate::policy::read_is_governed;
+use crate::security::PermissionGateway;
 use crate::services::AuditService;
 use workspace_domain::ActionIntentRequest;
 
@@ -68,24 +69,15 @@ impl<'a> CommandPipeline<'a> {
             capability.clone(),
         );
 
-        let policy_result = DefaultPolicyEvaluator.evaluate(
+        if let Err(error) = PermissionGateway::require(
+            &self.ctx.database,
+            &self.ctx.actor_context,
+            &self.ctx.intent_context,
             self.ctx.permission_policy,
-            &policy_context(&request),
-        )?;
-
-        if let Err(error) = require_policy(policy_result) {
-            Self::record_command_failure(
-                &self.ctx,
-                command_name,
-                &capability,
-                None,
-                &error,
-                command.audit_failure_metadata(),
-            );
-            return Err(error);
-        }
-
-        if let Err(error) = self.ctx.permission_gate.require(&request) {
+            self.ctx.permission_gate,
+            &request,
+            &self.ctx.capability_set,
+        ) {
             Self::record_command_failure(
                 &self.ctx,
                 command_name,
@@ -127,8 +119,8 @@ impl<'a> CommandPipeline<'a> {
     /// Executes a read-only command, applying read governance (DEC-017).
     ///
     /// Human reads of non-sensitive resources bypass governance and are not
-    /// audited. Non-human reads and sensitive-kind reads run policy + gate
-    /// (allow-all today) and are audited.
+    /// audited. Non-human reads and sensitive-kind reads run through the
+    /// Permission Gateway and are audited.
     pub fn execute_query<Q: QueryCommand>(self, command: Q) -> Result<Q::Output> {
         let command_name = command.name();
         let governed = read_is_governed(
@@ -155,17 +147,15 @@ impl<'a> CommandPipeline<'a> {
             capability.clone(),
         );
 
-        let policy_result = DefaultPolicyEvaluator.evaluate(
+        if let Err(error) = PermissionGateway::require(
+            &self.ctx.database,
+            &self.ctx.actor_context,
+            &self.ctx.intent_context,
             self.ctx.permission_policy,
-            &policy_context(&request),
-        )?;
-
-        if let Err(error) = require_policy(policy_result) {
-            Self::record_command_failure(&self.ctx, command_name, &capability, None, &error, None);
-            return Err(error);
-        }
-
-        if let Err(error) = self.ctx.permission_gate.require(&request) {
+            self.ctx.permission_gate,
+            &request,
+            &self.ctx.capability_set,
+        ) {
             Self::record_command_failure(&self.ctx, command_name, &capability, None, &error, None);
             return Err(error);
         }
@@ -260,14 +250,17 @@ mod tests {
     use crate::commands::update_settings::UpdateSettings;
     use crate::config::SettingsUpdate;
     use crate::events::EventBus;
-    use crate::policy::{AlwaysAllowPolicy, PermissionPolicy, PolicyContext, PolicyResult};
+    use crate::policy::{
+        AlwaysAllowPolicy, CapabilityBoundPolicy, PermissionPolicy, PolicyContext, PolicyResult,
+    };
     use crate::security::{
         AllowAllPermissionGate, PermissionDecision, PermissionGate, PermissionRequest,
+        StandardPermissionGate,
     };
     use crate::error::KernelError;
     use crate::services::AuditService;
     use workspace_domain::{
-        Actor, ActorContext, ActorType, Capability, IntentContext, IntentType,
+        Actor, ActorContext, ActorType, Capability, CapabilitySet, IntentContext, IntentType,
     };
     use std::sync::atomic::{AtomicUsize, Ordering};
 
@@ -560,6 +553,86 @@ mod tests {
                 && !record.success
                 && record.event_type == "command.failed"
                 && record.intent_type == Some(IntentType::UserRequest)
+        }));
+    }
+
+    #[test]
+    fn gateway_allows_local_user_with_granted_capability() {
+        let bus = EventBus::new();
+        let init = InitializeWorkspace::in_memory().execute(&bus).unwrap();
+        let ctx = ready_context(
+            &bus,
+            &init,
+            &StandardPermissionGate,
+            &CapabilityBoundPolicy,
+            ActorContext::local_user(),
+            IntentContext::user_request(),
+        );
+
+        CommandPipeline::new(ctx)
+            .execute_mutation(CreateWorkspace::new("Gateway Allow".into()))
+            .unwrap();
+
+        let records = AuditService::list_recent(&init.database.shared(), 20).unwrap();
+        assert!(records.iter().any(|record| {
+            record.event_type == "permission.allowed"
+                && record.command_name.as_deref() == Some("CreateWorkspace")
+                && record.success
+        }));
+    }
+
+    #[test]
+    fn gateway_denies_missing_capability_and_audits() {
+        let bus = EventBus::new();
+        let init = InitializeWorkspace::in_memory().execute(&bus).unwrap();
+        let mut ctx = ready_context(
+            &bus,
+            &init,
+            &AllowAllPermissionGate,
+            &CapabilityBoundPolicy,
+            ActorContext::local_user(),
+            IntentContext::user_request(),
+        );
+        ctx.capability_set = CapabilitySet::new();
+
+        let error = CommandPipeline::new(ctx)
+            .execute_mutation(CreateWorkspace::new("Gateway Deny".into()))
+            .unwrap_err();
+
+        assert!(matches!(error, KernelError::PermissionDenied(_)));
+
+        let records = AuditService::list_recent(&init.database.shared(), 20).unwrap();
+        assert!(records.iter().any(|record| {
+            record.event_type == "permission.denied"
+                && record.command_name.as_deref() == Some("CreateWorkspace")
+                && !record.success
+        }));
+    }
+
+    #[test]
+    fn gateway_blocks_ai_actor_pending_approval() {
+        let bus = EventBus::new();
+        let init = InitializeWorkspace::in_memory().execute(&bus).unwrap();
+        let mut ctx = ready_context(
+            &bus,
+            &init,
+            &StandardPermissionGate,
+            &AlwaysAllowPolicy,
+            ActorContext::new(Actor::ai_assistant("ai-1").unwrap()),
+            IntentContext::user_request(),
+        );
+        ctx.capability_set = CapabilitySet::local_user_standard();
+
+        let error = CommandPipeline::new(ctx)
+            .execute_mutation(CreateWorkspace::new("AI Blocked".into()))
+            .unwrap_err();
+
+        assert!(matches!(error, KernelError::PermissionDenied(_)));
+
+        let records = AuditService::list_recent(&init.database.shared(), 20).unwrap();
+        assert!(records.iter().any(|record| {
+            record.event_type == "permission.approval_required"
+                && record.command_name.as_deref() == Some("CreateWorkspace")
         }));
     }
 }

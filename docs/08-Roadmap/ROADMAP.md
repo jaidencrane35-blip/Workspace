@@ -17,9 +17,8 @@ Foundation     Decisions       Core Platform     Feature Expansion   Maturity
 (docs)         (recorded)      (Tauri shell)     (domains + AI)      (plugins)
    │               │                │                  │                  │
    ▼               ▼                ▼                  ▼                  ▼
- DONE            DONE         HARDEN (S37–38)       Not started        Not started
-                            Sprints 01–36 done
-                            gates amber → harden
+ DONE            DONE         Foundation complete   Gateway (S40)      Not started
+                            Sprints 01–39 done      Phase 2 entry
 ```
 
 ---
@@ -81,7 +80,7 @@ Foundation     Decisions       Core Platform     Feature Expansion   Maturity
 
 **Goal:** Scaffold the Tauri application and deliver a running shell with spatial layout persistence.
 
-**Status:** **In progress — harden** — Sprints 01–36 delivered; gates amber (CI Rust tests, shell completeness, DEC-011 process deferral). Sprint 37–38 harden before Phase 2.
+**Status:** **Complete (foundation)** — Sprints 01–39 delivered. Permission Gateway is Phase 2 entry (Sprint 40).
 
 ### Technology Direction (DEC-007)
 
@@ -140,7 +139,7 @@ Foundation     Decisions       Core Platform     Feature Expansion   Maturity
 - [x] Foundation hardening: seal service mutators, ActionIntentValidationService rename, IPC inventory — Sprint 39
 - [x] CI/CD pipeline (lint, build, test) — Sprint 01 PR workflow; Sprint 37 adds `cargo test --workspace`
 - [x] Developer setup documentation — Sprint 01
-- [ ] Platform kernel (event bus, state management, Permission Gateway) — permission seam in Sprint 06; full gateway in Phase 2
+- [x] Platform kernel (event bus, state management, Permission Gateway) — seam Sprint 06; gateway Sprint 40
 
 **Phase 1 note:** Application launch is Phase 2 entry (ROADMAP), not a missed Phase 1 checkbox, even though MVP §2.2 lists it under the overall MVP.
 ### Gate Criteria (Phase 1 → Phase 2)
@@ -168,10 +167,11 @@ Foundation     Decisions       Core Platform     Feature Expansion   Maturity
 
 **Goal:** Application launching, AI observation/suggestion, and user-approved automation.
 
-**Status:** Not started
+**Status:** **In progress** — Permission Gateway foundation (Sprint 40); app launch next.
 
 ### Expected Deliverables
 
+- [x] Permission Gateway (replace AllowAll on execution path; decision audit) — Sprint 40
 - Application service (discovery, launch, grouping)
 - Window service (tracking, layout integration)
 - AI observer and pattern store (L0–L4 confidence model)

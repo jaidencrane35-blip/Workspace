@@ -234,10 +234,17 @@ impl CapabilitySet {
     }
 
     /// Nominal capability identifiers attributed to an actor type.
+    ///
+    /// Non-human actors (AI, automation, plugin, remote) start with an empty
+    /// set — Permission Gateway default-denies until capabilities are granted.
     pub fn for_actor_type(actor_type: ActorType) -> Self {
         match actor_type {
             ActorType::System => Self::system_standard(),
-            _ => Self::local_user_standard(),
+            ActorType::LocalUser => Self::local_user_standard(),
+            ActorType::AIAssistant
+            | ActorType::Automation
+            | ActorType::Plugin
+            | ActorType::RemoteSession => Self::new(),
         }
     }
 }
@@ -281,5 +288,17 @@ mod tests {
             .contains(&Capability::system_shutdown()));
         assert!(CapabilitySet::for_actor_type(ActorType::LocalUser)
             .contains(&Capability::workspace_read()));
+    }
+
+    #[test]
+    fn non_human_actors_have_empty_nominal_capabilities() {
+        assert!(!CapabilitySet::for_actor_type(ActorType::AIAssistant)
+            .contains(&Capability::workspace_read()));
+        assert!(!CapabilitySet::for_actor_type(ActorType::Automation)
+            .contains(&Capability::workspace_write()));
+        assert!(!CapabilitySet::for_actor_type(ActorType::Plugin)
+            .contains(&Capability::settings_write()));
+        assert!(!CapabilitySet::for_actor_type(ActorType::RemoteSession)
+            .contains(&Capability::audit_read()));
     }
 }
