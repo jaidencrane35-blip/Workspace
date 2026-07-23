@@ -1,10 +1,10 @@
 //! Deterministic workspace context service — the "Context" boundary (Sprint 19;
-//! enriched Sprint 26).
+//! enriched Sprint 26; execution states Sprint 31).
 //!
 //! Composes the existing derived read layers into a single [`WorkspaceContext`]:
 //! projection (state), observations (activity), analytics (metrics), capability
-//! discovery (authority), and execution outcome summary (history). It performs
-//! no mutation, executes no commands, grants no permissions, and adds no
+//! discovery (authority), execution outcome summary, and reconciled execution
+//! states. It performs no mutation, executes no commands, grants no permissions,
 //! persistence — it orchestrates existing services and validates the
 //! composition via the pure domain type.
 
@@ -17,8 +17,8 @@ use workspace_domain::{
 };
 
 use super::{
-    CapabilityResolver, ExecutionContextService, ObservationService, WorkspaceAnalyticsService,
-    WorkspaceProjectionService,
+    CapabilityResolver, ExecutionContextService, ExecutionReconciliationService,
+    ObservationService, WorkspaceAnalyticsService, WorkspaceProjectionService,
 };
 use crate::error::{KernelError, Result};
 use crate::policy::PermissionPolicy;
@@ -57,6 +57,7 @@ impl WorkspaceContextService {
             gate,
         )?;
         let execution_context = ExecutionContextService::summarize(db, limit)?;
+        let execution_states = ExecutionReconciliationService::list_recent(db, limit)?;
 
         let context = WorkspaceContext {
             generated_at: Utc::now().to_rfc3339(),
@@ -66,6 +67,7 @@ impl WorkspaceContextService {
             metrics,
             capabilities,
             execution_context,
+            execution_states,
         };
 
         context
@@ -113,6 +115,7 @@ mod tests {
             context.execution_context,
             workspace_domain::ExecutionContextSummary::empty()
         );
+        assert!(context.execution_states.is_empty());
         assert!(context.validate().is_ok());
     }
 
@@ -191,6 +194,9 @@ mod tests {
         assert!(context.execution_context.recent_completed_count >= 1);
         assert!(context.execution_context.last_execution_time.is_some());
         assert!(!context.execution_context.recent_commands.is_empty());
+        assert!(context.execution_states.iter().any(|state| {
+            state.current_state == workspace_domain::ExecutionState::Completed
+        }));
         assert!(context.validate().is_ok());
     }
 

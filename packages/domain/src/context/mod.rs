@@ -1,10 +1,9 @@
-//! Deterministic workspace context boundary (Sprint 19; enriched Sprint 26).
+//! Deterministic workspace context boundary (Sprint 19; enriched Sprints 26, 31).
 //!
 //! `WorkspaceContext` assembles the existing derived read layers — workspace
 //! state (projection), activity history (observations), analytics (metrics),
-//! authority (capability discovery), and recent execution outcomes — into a
-//! single, read-only structure. It is the "Context" stage: a deterministic
-//! composition, not intelligence. No AI, memory, learning, or persistence.
+//! authority (capability discovery), recent execution outcome summary, and
+//! reconciled execution states — into a single, read-only structure.
 //!
 //! Pure domain type: no database, IO, or UI dependencies.
 
@@ -14,6 +13,7 @@ use thiserror::Error;
 use crate::analytics::WorkspaceMetrics;
 use crate::discovery::CapabilityDiscovery;
 use crate::execution_context::ExecutionContextSummary;
+use crate::execution_reconciliation::ExecutionReconciliation;
 use crate::observation::Observation;
 use crate::projection::WorkspaceSnapshot;
 use crate::resource::ResourceRef;
@@ -48,6 +48,8 @@ pub struct WorkspaceContext {
     pub capabilities: CapabilityDiscovery,
     /// Recent execution outcome summary (Sprint 26).
     pub execution_context: ExecutionContextSummary,
+    /// Recent reconciled execution states (Sprint 31).
+    pub execution_states: Vec<ExecutionReconciliation>,
 }
 
 impl WorkspaceContext {
@@ -82,6 +84,12 @@ impl WorkspaceContext {
         self.execution_context.validate().map_err(|error| {
             ContextError::InvalidComponent(format!("execution_context: {error}"))
         })?;
+
+        for state in &self.execution_states {
+            state.validate().map_err(|error| {
+                ContextError::InvalidComponent(format!("execution_states: {error}"))
+            })?;
+        }
 
         Ok(())
     }
@@ -137,6 +145,7 @@ mod tests {
             metrics: metrics(),
             capabilities: capabilities(),
             execution_context: ExecutionContextSummary::empty(),
+            execution_states: vec![],
         }
     }
 

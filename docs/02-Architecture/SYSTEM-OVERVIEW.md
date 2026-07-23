@@ -293,7 +293,7 @@ WorkspaceContextService (deterministic composition)
 WorkspaceContext (derived, read-only) → GetWorkspaceContext (governed)
 ```
 
-The context boundary assembles the existing derived read layers into a single read-only structure — the "Context" stage before "Suggest". It is a deterministic composition only: no AI, suggestions, memory, embeddings, or persistence. It orchestrates existing services, preserves `ResourceRef` identity, and reads are governed (`audit.read`). Sprint 26 additively includes `execution_context: ExecutionContextSummary` so trusted consumers can see recent execution outcome history without a separate surface.
+The context boundary assembles the existing derived read layers into a single read-only structure — the "Context" stage before "Suggest". It is a deterministic composition only: no AI, suggestions, memory, embeddings, or persistence. It orchestrates existing services, preserves `ResourceRef` identity, and reads are governed (`audit.read`). Sprint 26 additively includes `execution_context: ExecutionContextSummary` so trusted consumers can see recent execution outcome history without a separate surface. Sprint 31 additively includes `execution_states: Vec<ExecutionReconciliation>` so trusted consumers can see per-id reconciled execution state without a separate `GetExecutionStates` call.
 
 **Suggestion layer (Sprint 20):**
 
@@ -443,6 +443,18 @@ ExecutionReconciliationService::list_recent → GetExecutionStates (governed, au
 ```
 
 List projection answers "what are the states of recent executions?" as a bounded, deterministic read model. No persistence, no IPC, no automation.
+
+**Execution state context enrichment (Sprint 31):**
+
+```
+ExecutionReconciliationService::list_recent
+    ↓
+WorkspaceContext.execution_states (additive field)
+    ↓
+GetWorkspaceContext (governed, audit.read)
+```
+
+Trusted consumers of `WorkspaceContext` receive per-id reconciled states alongside outcome summary without a separate list read. No new command, capability, persistence, or IPC surface.
 
 ### 6.6 Windows Integration Layer
 
