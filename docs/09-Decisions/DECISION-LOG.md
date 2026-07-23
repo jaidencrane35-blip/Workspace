@@ -261,6 +261,25 @@ Each decision entry follows this format:
 
 ---
 
+### DEC-015: Tiered Encryption Strategy
+
+- **Date:** 2026-07-23
+- **Status:** Accepted
+- **Decision Type:** B (Strategic)
+- **Owner:** Project Owner
+- **Context:** Encryption at rest requirements needed before persistence implementation (OQ-017). Threat Model TD-01 references local data exposure.
+- **Options Considered:** (A) No encryption (OS file permissions only); (B) Encrypt sensitive data only; (C) Encrypt all user data; (D) Tiered approach (approved).
+- **Decision:** Adopt tiered encryption strategy:
+  - **Tier 0:** Normal local storage with OS-level file protection (default for Sprint 01)
+  - **Tier 1:** Sensitive data encryption abstraction (patterns, automations — future)
+  - **Tier 2:** Full database encryption (future)
+  Sprint 01 implements `EncryptionProvider` trait and `NoOpEncryptionProvider` placeholder only. No application-level encryption in Sprint 01.
+- **Rationale:** Balances security posture with implementation complexity. Allows incremental hardening without blocking Phase 1 scaffold. Sensitive data can be protected before full-database encryption is justified.
+- **Consequences:** `packages/database` includes encryption module boundary. Future tiers require Decision Log updates if scope changes. Threat Model TD-01 mitigation path defined.
+- **Related:** OQ-017 (resolved), DEC-010, [Threat Model](../07-Security/THREAT-MODEL.md), [Security Principles](../07-Security/SECURITY-PRINCIPLES.md)
+
+---
+
 ## 3. Pending Decisions
 
 Decisions that are needed but not yet made are tracked in [Open Questions](OPEN-QUESTIONS.md), not here. When resolved, they move from Open Questions to this log.

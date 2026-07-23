@@ -118,18 +118,6 @@ When a requirement is ambiguous:
 - **Options:** Fixed limit (N per hour/day); adaptive based on acceptance rate; user-configurable
 - **Impact:** AI suggestion engine design (Phase 2), UX quality.
 
-### OQ-017: Encryption at Rest Requirements
-
-- **Category:** Security
-- **Priority:** High
-- **Status:** Open
-- **Raised:** 2026-07-23
-- **Owner:** Project Owner
-- **Question:** Must user data (layouts, patterns, preferences) be encrypted at rest on disk?
-- **Context:** SQLite selected (DEC-010). Security Principles and Threat Model (TD-01) reference encryption at rest as TBD.
-- **Options:** (A) No encryption (OS file permissions only); (B) Encrypt sensitive data (patterns, automations); (C) Encrypt all user data; (D) Optional user-controlled encryption
-- **Impact:** Storage implementation, security posture, performance. Should resolve before Phase 1 persistence implementation.
-
 ### OQ-018: Cross-Device Learning Scope
 
 - **Category:** AI
@@ -157,6 +145,7 @@ When a requirement is ambiguous:
 | OQ-015 | AI confidence thresholds | [DEC-013](DECISION-LOG.md) — L0–L4 framework | 2026-07-23 |
 | OQ-016 | AI learned-data retention | [DEC-014](DECISION-LOG.md) — User-controlled adaptive memory | 2026-07-23 |
 | OQ-019 | Monorepo tooling | [DEC-012](DECISION-LOG.md) — pnpm workspaces | 2026-07-23 |
+| OQ-017 | Encryption at rest requirements | [DEC-015](DECISION-LOG.md) — Tiered encryption strategy | 2026-07-23 |
 
 ---
 

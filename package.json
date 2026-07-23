@@ -1,0 +1,17 @@
+{
+  "name": "workspace",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Adaptive desktop workspace — local-first intelligent desktop layer",
+  "license": "MIT",
+  "scripts": {
+    "dev": "pnpm --filter @workspace/app dev",
+    "build": "pnpm --filter @workspace/app build",
+    "test": "pnpm --filter @workspace/tests test",
+    "typecheck": "pnpm --filter @workspace/app typecheck"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "pnpm@9.15.0"
+}

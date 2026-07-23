@@ -114,7 +114,7 @@ Analysis uses **STRIDE** categorisation:
 
 | ID | Threat | STRIDE | Description | Initial Mitigation |
 |----|--------|--------|-------------|-------------------|
-| TD-01 | Local data exposure | I | Layout, patterns, or preferences readable by other apps | File permissions; encryption at rest (OQ-017) |
+| TD-01 | Local data exposure | I | Layout, patterns, or preferences readable by other apps | File permissions; tiered encryption at rest ([DEC-015](../09-Decisions/DECISION-LOG.md)) |
 | TD-02 | Data not deleted on uninstall | I | User data remains after removal | Secure deletion procedure |
 | TD-03 | Backup exposure | I | Sensitive data in unencrypted backups | User notification; encryption guidance |
 | TD-04 | Memory dump exposure | I | Pattern data readable from process memory | Minimise sensitive data in memory; secure allocation |

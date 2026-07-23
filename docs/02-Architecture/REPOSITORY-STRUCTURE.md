@@ -27,7 +27,7 @@ The repository structure must:
 Workspace/
 ├── .github/                    # GitHub configuration
 │   ├── ISSUE_TEMPLATE/         # Issue templates
-│   ├── workflows/              # CI/CD pipelines (future)
+│   ├── workflows/              # CI/CD pipelines
 │   └── PULL_REQUEST_TEMPLATE.md
 │
 ├── docs/                       # All project documentation
@@ -44,37 +44,41 @@ Workspace/
 │   ├── 10-Sprints/
 │   └── README.md               # Documentation index
 │
-├── app/                        # Main application (future)
-│   └── ...                     # Shell, entry point, app config
+├── app/                        # Tauri + React application shell
+│   ├── src/                    # React frontend (TypeScript)
+│   ├── src-tauri/              # Tauri Rust backend
+│   ├── package.json
+│   └── vite.config.ts
 │
-├── packages/                   # Shared internal packages (future)
-│   ├── kernel/                 # Platform kernel (events, state, permissions)
-│   ├── domain-apps/            # Application domain service
-│   ├── domain-windows/         # Window domain service
-│   ├── domain-devices/         # Device domain service
-│   ├── domain-audio/           # Audio domain service
-│   ├── domain-automation/      # Automation domain service
-│   ├── ai/                     # AI subsystem
-│   ├── shell/                  # UI shell components
-│   ├── windows-integration/    # Windows API abstraction
-│   └── shared/                 # Shared types, utilities, constants
+├── packages/                   # Shared internal Rust/TS packages
+│   ├── kernel/                 # Platform kernel boundary (placeholder — Sprint 01)
+│   ├── database/               # SQLite persistence foundation (Sprint 01)
+│   ├── domain-apps/            # Application domain service (future)
+│   ├── domain-windows/         # Window domain service (future)
+│   ├── domain-devices/         # Device domain service (future)
+│   ├── domain-audio/           # Audio domain service (future)
+│   ├── domain-automation/      # Automation domain service (future)
+│   ├── ai/                     # AI subsystem (future)
+│   ├── shell/                  # UI shell components (future)
+│   ├── windows-integration/    # Windows API abstraction (future)
+│   └── shared/                 # Shared types, utilities, constants (future)
 │
-├── plugins/                    # First-party plugin examples (future)
-│   └── ...
+├── plugins/                    # First-party plugin examples (placeholder)
+│   └── README.md
 │
 ├── tests/                      # Cross-package integration and E2E tests
-│   ├── integration/
-│   └── e2e/
+│   ├── placeholder.test.ts     # Sprint 01 Vitest placeholder
+│   └── vitest.config.ts
 │
-├── scripts/                    # Development and build scripts
+├── tools/                      # Developer tooling and generators (placeholder)
+│   └── README.md
+│
+├── assets/                     # Static assets (icons, fonts, sounds) (future)
 │   └── ...
 │
-├── tools/                      # Developer tooling and generators
-│   └── ...
-│
-├── assets/                     # Static assets (icons, fonts, sounds)
-│   └── ...
-│
+├── package.json                # Root pnpm workspace scripts
+├── pnpm-workspace.yaml         # pnpm workspace definition
+├── Cargo.toml                  # Rust workspace root
 ├── .gitignore
 ├── CONTRIBUTING.md
 └── README.md

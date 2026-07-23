@@ -1,0 +1,30 @@
+body {
+  font-family: system-ui, sans-serif;
+  margin: 0;
+  padding: 2rem;
+  background: #0f1419;
+  color: #e7ecf1;
+}
+
+.container {
+  max-width: 32rem;
+}
+
+h1 {
+  margin-top: 0;
+}
+
+dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.5rem 1rem;
+}
+
+dt {
+  font-weight: 600;
+  color: #9aa8b4;
+}
+
+.error {
+  color: #f87171;
+}

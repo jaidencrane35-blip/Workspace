@@ -51,6 +51,15 @@ temp/
 *.tmp
 *.bak
 
+# Rust / Tauri
+target/
+**/target/
+
+# Tauri generated
+app/src-tauri/gen/
+app/src-tauri/WixTools/
+app/src-tauri/icons/.DS_Store
+
 # Native / Electron (future)
 *.exe
 *.dll

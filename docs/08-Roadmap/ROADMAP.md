@@ -17,9 +17,9 @@ Foundation     Decisions       Core Platform     Feature Expansion   Maturity
 (docs)         (recorded)      (Tauri shell)     (domains + AI)      (plugins)
    │               │                │                  │                  │
    ▼               ▼                ▼                  ▼                  ▼
- DONE            DONE          READY TO BEGIN      AI observing        Plugin SDK
-                               pnpm + Tauri        Automations         Public release
-                               Spatial canvas      MVP complete
+ DONE            DONE         IN PROGRESS         Not started        Not started
+                            Sprint 01 done
+                            pnpm + Tauri
 ```
 
 ---
@@ -81,7 +81,7 @@ Foundation     Decisions       Core Platform     Feature Expansion   Maturity
 
 **Goal:** Scaffold the Tauri application and deliver a running shell with spatial layout persistence.
 
-**Status:** Ready to begin
+**Status:** **In progress** — Sprint 01 complete (architecture validation scaffold)
 
 ### Technology Direction (DEC-007)
 
@@ -95,15 +95,17 @@ Foundation     Decisions       Core Platform     Feature Expansion   Maturity
 
 ### Expected Deliverables
 
-- [ ] pnpm workspace and Cargo workspace configuration
-- [ ] Tauri application scaffolding (`app/`)
-- [ ] Platform kernel (event bus, state management, Permission Gateway)
-- [ ] Spatial Workspace Canvas shell prototype
-- [ ] SQLite schema v1 (layouts, preferences)
-- [ ] Layout save/restore
-- [ ] Windows Integration Layer (basic window enumeration)
-- [ ] CI/CD pipeline (lint, build, test) per [CI/CD Plan](../03-Engineering/CI-CD-PLAN.md)
-- [ ] Developer setup documentation
+- [x] pnpm workspace and Cargo workspace configuration — Sprint 01
+- [x] Tauri application scaffolding (`app/`) — Sprint 01
+- [x] Platform kernel placeholder (`packages/kernel`) — Sprint 01 boundary only
+- [x] SQLite foundation (`packages/database`) — Sprint 01
+- [x] CI/CD pipeline (lint, build, test) — Sprint 01 PR workflow
+- [x] Developer setup documentation — Sprint 01
+- [ ] Spatial Workspace Canvas shell prototype — future sprint (DEC-009)
+- [ ] SQLite schema v1 (layouts, preferences) — future sprint
+- [ ] Layout save/restore — future sprint
+- [ ] Windows Integration Layer (basic window enumeration) — future sprint (DEC-008)
+- [ ] Platform kernel (event bus, state management, Permission Gateway) — future sprint
 
 ### Gate Criteria (Phase 1 → Phase 2)
 

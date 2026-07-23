@@ -11,7 +11,9 @@
 
 ## 1. Status
 
-**Pipeline not yet implemented.** This document defines intent. Workflows will be created in `.github/workflows/` when Phase 1 begins and the technology stack is decided.
+**Sprint 01 CI implemented.** PR workflow runs on `windows-latest` via [`.github/workflows/ci-pr.yml`](../../.github/workflows/ci-pr.yml). Full release packaging and `tauri build` installer generation are not yet required.
+
+See [Sprint 01](../10-Sprints/sprints/2026-07-23-sprint-01.md) for scope.
 
 ---
 

@@ -304,7 +304,7 @@ See [Open Questions](../09-Decisions/OPEN-QUESTIONS.md) for remaining items incl
 
 - AI model selection (OQ-004)
 - Plugin runtime technology (OQ-007)
-- Encryption at rest (OQ-017)
+- Encryption at rest ([DEC-015](DECISION-LOG.md))
 - Cloud sync scope (OQ-005)
 
 ---
