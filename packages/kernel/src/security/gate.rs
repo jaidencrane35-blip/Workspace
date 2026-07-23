@@ -1,3 +1,5 @@
+use workspace_domain::Actor;
+
 use crate::error::{KernelError, Result};
 
 /// What kind of resource a command intends to mutate.
@@ -11,6 +13,7 @@ pub enum PermissionSubject {
 /// Authorization context for a mutation command.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PermissionRequest {
+    pub actor: Actor,
     pub command: &'static str,
     pub subject: PermissionSubject,
 }

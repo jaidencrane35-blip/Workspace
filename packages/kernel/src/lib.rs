@@ -20,13 +20,16 @@ pub use events::{DomainEvent, EventBus};
 pub use health::WorkspaceHealth;
 pub use lifecycle::LifecycleState;
 pub use security::{AllowAllPermissionGate, PermissionGate, PermissionRequest, PermissionSubject};
-pub use services::{ConfigurationService, DatabaseServiceHandle, ServiceRegistry, ServiceStatus};
+pub use services::{AuditService, ConfigurationService, DatabaseServiceHandle, ServiceRegistry, ServiceStatus};
 pub use state::WorkspaceState;
+pub use workspace_domain::{Actor, ActorContext, ActorType};
 
 use std::path::Path;
 use std::sync::Arc;
+use std::sync::Mutex;
 
 use commands::CommandContext;
+use events::AuditEventSubscriber;
 use security::AllowAllPermissionGate as DefaultPermissionGate;
 
 /// Kernel crate version aligned with application semver.
@@ -75,8 +78,9 @@ impl WorkspaceKernel {
         &self.event_bus
     }
 
-    pub fn database(&self) -> &workspace_database::Database {
-        self.database.database()
+    #[cfg(test)]
+    pub(crate) fn shared_database(&self) -> Arc<Mutex<workspace_database::Database>> {
+        self.database.shared()
     }
 
     pub fn health(&self) -> WorkspaceHealth {
@@ -88,19 +92,26 @@ impl WorkspaceKernel {
     }
 
     pub fn get_settings(&self) -> Result<WorkspaceSettings> {
-        CommandHandler::get_settings(self)
+        CommandHandler::get_settings(self, ActorContext::local_user())
     }
 
     pub fn update_settings(&self, update: SettingsUpdate) -> Result<WorkspaceSettings> {
-        CommandHandler::update_settings(self, update)
+        CommandHandler::update_settings(self, ActorContext::local_user(), update)
     }
 
     pub fn create_workspace(&self, name: String) -> Result<workspace_domain::Workspace> {
-        CommandHandler::create_workspace(self, name)
+        CommandHandler::create_workspace(self, ActorContext::local_user(), name)
     }
 
     pub fn get_workspace(&self, id: String) -> Result<workspace_domain::Workspace> {
-        CommandHandler::get_workspace(self, id)
+        CommandHandler::get_workspace(self, ActorContext::local_user(), id)
+    }
+
+    pub fn get_audit_history(
+        &self,
+        limit: Option<usize>,
+    ) -> Result<Vec<workspace_domain::AuditEvent>> {
+        CommandHandler::get_audit_history(self, ActorContext::local_user(), limit)
     }
 
     pub fn begin_shutdown(&mut self) {
@@ -116,16 +127,18 @@ impl WorkspaceKernel {
         self.state = state;
         self.database = database;
         self.services = services;
+        AuditEventSubscriber::register(&self.event_bus, self.database.shared());
     }
 
     pub(crate) fn transition_lifecycle(&mut self, lifecycle: crate::lifecycle::LifecycleState) {
         self.state.transition(lifecycle);
     }
 
-    pub(crate) fn command_context(&self) -> CommandContext<'_> {
+    pub(crate) fn command_context(&self, actor: ActorContext) -> CommandContext<'_> {
         CommandContext {
+            actor_context: actor,
             state: &self.state,
-            database: self.database(),
+            database: self.database.shared(),
             event_bus: &self.event_bus,
             permission_gate: self.permission_gate.as_ref(),
         }
@@ -153,6 +166,20 @@ impl WorkspaceKernel {
 mod tests {
     use super::*;
     use std::sync::{Arc, Mutex};
+
+    #[test]
+    fn shutdown_audit_uses_system_actor() {
+        use workspace_domain::ActorType;
+
+        let mut kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+        kernel.begin_shutdown();
+
+        let history = AuditService::list_recent(&kernel.shared_database(), 20).unwrap();
+        assert!(history.iter().any(|record| {
+            record.event_type == "system.workspace.shutdown"
+                && record.actor_type == ActorType::System
+        }));
+    }
 
     #[test]
     fn kernel_initializes_in_memory() {

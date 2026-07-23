@@ -15,11 +15,13 @@ impl PermissionGate for AllowAllPermissionGate {
 mod tests {
     use super::*;
     use crate::security::PermissionSubject;
+    use workspace_domain::Actor;
 
     #[test]
     fn allows_all_mutations() {
         let gate = AllowAllPermissionGate;
         let request = PermissionRequest {
+            actor: Actor::local_user(),
             command: "CreateWorkspace",
             subject: PermissionSubject::Workspace,
         };
@@ -29,5 +31,16 @@ mod tests {
             PermissionDecision::Allowed
         );
         assert!(gate.require(&request).is_ok());
+    }
+
+    #[test]
+    fn permission_request_carries_actor() {
+        let request = PermissionRequest {
+            actor: Actor::local_user(),
+            command: "UpdateSettings",
+            subject: PermissionSubject::Settings,
+        };
+
+        assert_eq!(request.actor, Actor::local_user());
     }
 }

@@ -2,35 +2,41 @@ use crate::commands::context::CommandContext;
 use crate::commands::r#trait::QueryCommand;
 use crate::error::{KernelError, Result};
 use crate::lifecycle::LifecycleState;
-use crate::services::WorkspaceService;
-use workspace_domain::{Workspace, WorkspaceId};
+use crate::services::AuditService;
+use workspace_domain::AuditEvent;
 
-/// Retrieves a workspace domain entity by id.
-pub struct GetWorkspace {
-    pub id: WorkspaceId,
+const DEFAULT_LIMIT: usize = 50;
+const MAX_LIMIT: usize = 200;
+
+/// Returns recent audit history entries (read-only).
+pub struct GetAuditHistory {
+    pub limit: usize,
 }
 
-impl crate::commands::Command for GetWorkspace {
+impl crate::commands::Command for GetAuditHistory {
     fn name(&self) -> &'static str {
-        "GetWorkspace"
+        "GetAuditHistory"
     }
 }
 
-impl QueryCommand for GetWorkspace {
-    type Output = Workspace;
+impl QueryCommand for GetAuditHistory {
+    type Output = Vec<AuditEvent>;
 
-    fn execute(self, ctx: &CommandContext<'_>) -> Result<Workspace> {
+    fn execute(self, ctx: &CommandContext<'_>) -> Result<Vec<AuditEvent>> {
         if ctx.state.lifecycle != LifecycleState::Ready {
             return Err(KernelError::NotReady);
         }
 
-        ctx.with_database(|db| WorkspaceService::get(db, &self.id))
+        let limit = self.limit.clamp(1, MAX_LIMIT);
+        AuditService::list_recent(&ctx.database, limit)
     }
 }
 
-impl GetWorkspace {
-    pub fn new(id: WorkspaceId) -> Self {
-        Self { id }
+impl GetAuditHistory {
+    pub fn new(limit: Option<usize>) -> Self {
+        Self {
+            limit: limit.unwrap_or(DEFAULT_LIMIT),
+        }
     }
 }
 
@@ -46,7 +52,7 @@ mod tests {
     use workspace_domain::ActorContext;
 
     #[test]
-    fn retrieves_created_workspace() {
+    fn returns_recent_audit_records() {
         let bus = EventBus::new();
         let init = InitializeWorkspace::in_memory().execute(&bus).unwrap();
         let ctx = CommandContext {
@@ -57,20 +63,20 @@ mod tests {
             permission_gate: &AllowAllPermissionGate,
         };
 
-        let created = CommandPipeline::new(ctx)
-            .execute_mutation(CreateWorkspace::new("Find Me".into()))
+        CommandPipeline::new(ctx)
+            .execute_mutation(CreateWorkspace::new("Audit Query".into()))
             .unwrap();
 
-        let loaded = CommandPipeline::new(CommandContext {
+        let history = CommandPipeline::new(CommandContext {
             actor_context: ActorContext::local_user(),
             state: &init.state,
             database: init.database.shared(),
             event_bus: &bus,
             permission_gate: &AllowAllPermissionGate,
         })
-        .execute_query(GetWorkspace::new(created.id.clone()))
+        .execute_query(GetAuditHistory::new(Some(10)))
         .unwrap();
 
-        assert_eq!(loaded, created);
+        assert!(!history.is_empty());
     }
 }

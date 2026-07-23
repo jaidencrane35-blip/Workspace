@@ -5,18 +5,12 @@ use workspace_database::{Database, WorkspaceRepository};
 use workspace_domain::{Workspace, WorkspaceId};
 
 use crate::error::{KernelError, Result};
-use crate::events::types::{DomainEvent, WorkspaceEntityCreated, WorkspaceEntityUpdated};
-use crate::events::EventBus;
 
 /// Kernel-owned workspace domain service.
 pub struct WorkspaceService;
 
 impl WorkspaceService {
-    pub fn create(
-        db: &Database,
-        event_bus: &EventBus,
-        name: String,
-    ) -> Result<Workspace> {
+    pub fn create(db: &Database, name: String) -> Result<Workspace> {
         Workspace::validate_name(&name)?;
 
         let now = Utc::now().to_rfc3339();
@@ -28,11 +22,6 @@ impl WorkspaceService {
         };
 
         WorkspaceRepository::new(db).create(&workspace)?;
-
-        event_bus.publish(DomainEvent::WorkspaceCreated(WorkspaceEntityCreated {
-            workspace_id: workspace.id.to_string(),
-            name: workspace.name.clone(),
-        }));
 
         Ok(workspace)
     }
@@ -47,52 +36,37 @@ impl WorkspaceService {
         WorkspaceRepository::new(db).list().map_err(Into::into)
     }
 
-    pub fn update_name(
-        db: &Database,
-        event_bus: &EventBus,
-        id: &WorkspaceId,
-        name: String,
-    ) -> Result<Workspace> {
+    pub fn update_name(db: &Database, id: &WorkspaceId, name: String) -> Result<Workspace> {
         Workspace::validate_name(&name)?;
         let updated_at = Utc::now().to_rfc3339();
         let trimmed = name.trim().to_string();
 
-        let workspace = db
-            .transaction(|tx| {
-                let updated = WorkspaceRepository::update_name_in_transaction(
-                    tx,
-                    id,
-                    &trimmed,
-                    &updated_at,
-                )?;
-                if !updated {
-                    return Err(workspace_database::DatabaseError::NotFound(
-                        "workspace".into(),
-                    ));
-                }
+        db.transaction(|tx| {
+            let updated = WorkspaceRepository::update_name_in_transaction(
+                tx,
+                id,
+                &trimmed,
+                &updated_at,
+            )?;
+            if !updated {
+                return Err(workspace_database::DatabaseError::NotFound(
+                    "workspace".into(),
+                ));
+            }
 
-                WorkspaceRepository::get_by_id_in_transaction(tx, id)?.ok_or_else(|| {
-                    workspace_database::DatabaseError::NotFound("workspace".into())
-                })
-            })
-            .map_err(|error| match error {
-                workspace_database::DatabaseError::NotFound(_) => KernelError::WorkspaceNotFound,
-                other => KernelError::Database(other),
-            })?;
-
-        event_bus.publish(DomainEvent::WorkspaceUpdated(WorkspaceEntityUpdated {
-            workspace_id: workspace.id.to_string(),
-            name: workspace.name.clone(),
-        }));
-
-        Ok(workspace)
+            WorkspaceRepository::get_by_id_in_transaction(tx, id)?
+                .ok_or_else(|| workspace_database::DatabaseError::NotFound("workspace".into()))
+        })
+        .map_err(|error| match error {
+            workspace_database::DatabaseError::NotFound(_) => KernelError::WorkspaceNotFound,
+            other => KernelError::Database(other),
+        })
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::events::EventBus;
     use workspace_database::DatabaseService;
     use tempfile::tempdir;
 
@@ -106,8 +80,7 @@ mod tests {
     #[test]
     fn creates_workspace_via_service() {
         let db = test_db();
-        let bus = EventBus::new();
-        let workspace = WorkspaceService::create(&db, &bus, "Primary".into()).unwrap();
+        let workspace = WorkspaceService::create(&db, "Primary".into()).unwrap();
         assert_eq!(workspace.name, "Primary");
     }
 }

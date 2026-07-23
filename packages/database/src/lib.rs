@@ -15,5 +15,5 @@ pub use encryption::{EncryptionProvider, EncryptionTier, NoOpEncryptionProvider}
 pub use error::DatabaseError;
 pub use init::{bundled_migrations_dir, DatabaseService};
 pub use migration::MigrationRunner;
-pub use repositories::{WorkspaceRepository, ZoneRepository};
+pub use repositories::{AuditRepository, WorkspaceRepository, ZoneRepository};
 pub use settings::SettingsRepository;

@@ -2,6 +2,19 @@
 
 Platform Kernel boundary for Workspace — the central runtime authority.
 
+## Sprint 08
+
+- **Actor model** — `Actor`, `ActorContext`, `ActorId`, `ActorType` in domain
+- **Command context** — every command receives `ActorContext`
+- **Permission + audit** — actor propagated through pipeline (no auth changes)
+
+## Sprint 07
+
+- **Audit trail** — durable `audit_events` persistence via `AuditService`
+- **Command auditing** — `CommandPipeline` records success/failure (no payloads)
+- **Event auditing** — `AuditEventSubscriber` on `EventBus`
+- **Query IPC** — `get_audit_history` (read-only)
+
 ## Sprint 06
 
 - **Command pipeline** — uniform `MutationCommand` / `QueryCommand` dispatch via `CommandPipeline`

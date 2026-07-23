@@ -106,6 +106,8 @@ Foundation     Decisions       Core Platform     Feature Expansion   Maturity
 - [x] Internal event bus and command layer — Sprint 04
 - [x] Workspace domain entities and repository pattern — Sprint 05
 - [x] Command pipeline, permission seam, typed IDs, transactions — Sprint 06
+- [x] Observability and audit foundation — Sprint 07
+- [x] Actor and execution identity foundation — Sprint 08
 - [x] CI/CD pipeline (lint, build, test) — Sprint 01 PR workflow
 - [x] Developer setup documentation — Sprint 01
 - [ ] Spatial Workspace Canvas shell prototype — future sprint (DEC-009)

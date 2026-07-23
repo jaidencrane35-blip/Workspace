@@ -3,6 +3,7 @@ use std::sync::{Arc, Mutex};
 use tauri::State;
 use workspace_kernel::{CommandHandler, SettingsUpdate, WorkspaceKernel, WorkspaceSettings};
 
+use crate::actor::ipc_actor_context;
 use super::error::CommandError;
 use super::response::IpcResponse;
 
@@ -12,7 +13,7 @@ pub fn get_settings(
     kernel: State<'_, Arc<Mutex<WorkspaceKernel>>>,
 ) -> IpcResponse<WorkspaceSettings> {
     match kernel.lock() {
-        Ok(kernel) => match CommandHandler::get_settings(&kernel) {
+        Ok(kernel) => match CommandHandler::get_settings(&kernel, ipc_actor_context()) {
             Ok(settings) => IpcResponse::success(settings),
             Err(error) => IpcResponse::failure(CommandError::from(error)),
         },
@@ -30,10 +31,12 @@ pub fn update_settings(
     kernel: State<'_, Arc<Mutex<WorkspaceKernel>>>,
 ) -> IpcResponse<WorkspaceSettings> {
     match kernel.lock() {
-        Ok(kernel) => match CommandHandler::update_settings(&kernel, update) {
-            Ok(settings) => IpcResponse::success(settings),
-            Err(error) => IpcResponse::failure(CommandError::from(error)),
-        },
+        Ok(kernel) => {
+            match CommandHandler::update_settings(&kernel, ipc_actor_context(), update) {
+                Ok(settings) => IpcResponse::success(settings),
+                Err(error) => IpcResponse::failure(CommandError::from(error)),
+            }
+        }
         Err(_) => IpcResponse::failure(CommandError::new(
             "internal_error",
             "Workspace core is temporarily unavailable.",
@@ -49,12 +52,14 @@ mod tests {
     #[test]
     fn ipc_settings_path_uses_command_layer() {
         let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+        let actor = ipc_actor_context();
 
-        let initial = CommandHandler::get_settings(&kernel).unwrap();
+        let initial = CommandHandler::get_settings(&kernel, actor.clone()).unwrap();
         assert_eq!(initial.theme, "system");
 
         let updated = CommandHandler::update_settings(
             &kernel,
+            actor,
             SettingsUpdate {
                 theme: Some("light".into()),
                 first_run: Some(false),

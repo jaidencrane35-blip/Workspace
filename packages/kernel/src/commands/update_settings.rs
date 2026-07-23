@@ -1,10 +1,10 @@
 use crate::commands::context::CommandContext;
-use crate::commands::r#trait::{Command, MutationCommand};
+use crate::commands::r#trait::MutationCommand;
 use crate::config::{SettingsUpdate, WorkspaceSettings};
 use crate::error::{KernelError, Result};
 use crate::events::types::{DomainEvent, SettingsChanged};
 use crate::lifecycle::LifecycleState;
-use crate::security::{PermissionRequest, PermissionSubject};
+use crate::security::PermissionSubject;
 use crate::services::ConfigurationService;
 
 /// Updates persisted workspace settings through the configuration service.
@@ -21,26 +21,26 @@ impl crate::commands::Command for UpdateSettings {
 impl MutationCommand for UpdateSettings {
     type Output = WorkspaceSettings;
 
-    fn permission_request(&self) -> PermissionRequest {
-        PermissionRequest {
-            command: self.name(),
-            subject: PermissionSubject::Settings,
-        }
+    fn permission_subject(&self) -> PermissionSubject {
+        PermissionSubject::Settings
     }
 
     fn execute(self, ctx: &CommandContext<'_>) -> Result<WorkspaceSettings> {
         Self::ensure_ready(ctx.state)?;
         Self::validate(&self.update)?;
 
-        let settings = ConfigurationService::update(ctx.database, self.update).map_err(|error| {
-            log::error!("UpdateSettings command failed: {error}");
-            error
+        let settings = ctx.with_database(|db| {
+            ConfigurationService::update(db, self.update).map_err(|error| {
+                log::error!("UpdateSettings command failed: {error}");
+                error
+            })
         })?;
 
         ctx.event_bus.publish(DomainEvent::SettingsChanged(SettingsChanged {
             theme: settings.theme.clone(),
             first_run: settings.first_run,
             settings_version: settings.settings_version,
+            actor: Some(ctx.actor_context.clone()),
         }));
 
         Ok(settings)
@@ -79,6 +79,7 @@ mod tests {
     use crate::events::EventBus;
     use crate::security::AllowAllPermissionGate;
     use std::sync::{Arc, Mutex};
+    use workspace_domain::ActorContext;
 
     #[test]
     fn executes_successfully_and_emits_event() {
@@ -92,8 +93,9 @@ mod tests {
         });
 
         let ctx = CommandContext {
+            actor_context: ActorContext::local_user(),
             state: &init.state,
-            database: init.database.database(),
+            database: init.database.shared(),
             event_bus: &bus,
             permission_gate: &AllowAllPermissionGate,
         };
@@ -114,8 +116,9 @@ mod tests {
         let bus = EventBus::new();
         let init = InitializeWorkspace::in_memory().execute(&bus).unwrap();
         let ctx = CommandContext {
+            actor_context: ActorContext::local_user(),
             state: &init.state,
-            database: init.database.database(),
+            database: init.database.shared(),
             event_bus: &bus,
             permission_gate: &AllowAllPermissionGate,
         };

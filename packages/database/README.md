@@ -2,6 +2,11 @@
 
 SQLite persistence foundation for Workspace (DEC-010).
 
+## Sprint 07
+
+- `AuditRepository` — append and query recent audit records
+- Migration `004_audit.sql` — `audit_events` table with timestamp/event_type indexes
+
 ## Sprint 06
 
 - `Database::transaction()` — atomic multi-step operations (`BEGIN IMMEDIATE` / `COMMIT` / `ROLLBACK`)

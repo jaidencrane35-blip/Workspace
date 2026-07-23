@@ -1,7 +1,9 @@
+mod actor;
 mod commands;
 
 use std::sync::{Arc, Mutex};
 
+use commands::audit::get_audit_history;
 use commands::workspace::{create_workspace, get_workspace};
 use commands::health::get_workspace_health;
 use commands::settings::{get_settings, update_settings};
@@ -28,6 +30,7 @@ pub fn run() {
             update_settings,
             create_workspace,
             get_workspace,
+            get_audit_history,
         ])
         .setup(|app| {
             let app_data_dir = app

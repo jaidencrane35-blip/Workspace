@@ -1,5 +1,7 @@
 use std::fmt;
 
+use workspace_domain::ActorContext;
+
 use crate::lifecycle::LifecycleState;
 
 /// Metadata for workspace startup beginning.
@@ -17,7 +19,9 @@ pub struct WorkspaceReady {
 
 /// Metadata for workspace shutdown.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct WorkspaceShutdown;
+pub struct WorkspaceShutdown {
+    pub actor: Option<ActorContext>,
+}
 
 /// Metadata for persisted settings changes.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -25,6 +29,7 @@ pub struct SettingsChanged {
     pub theme: String,
     pub first_run: bool,
     pub settings_version: u32,
+    pub actor: Option<ActorContext>,
 }
 
 /// Metadata when a workspace entity is created.
@@ -32,6 +37,7 @@ pub struct SettingsChanged {
 pub struct WorkspaceEntityCreated {
     pub workspace_id: String,
     pub name: String,
+    pub actor: Option<ActorContext>,
 }
 
 /// Metadata when a workspace entity is updated.
@@ -39,6 +45,7 @@ pub struct WorkspaceEntityCreated {
 pub struct WorkspaceEntityUpdated {
     pub workspace_id: String,
     pub name: String,
+    pub actor: Option<ActorContext>,
 }
 
 /// Internal domain events for kernel communication (Sprint 04+).
@@ -61,6 +68,16 @@ impl DomainEvent {
             Self::SettingsChanged(_) => "system.settings.changed",
             Self::WorkspaceCreated(_) => "workspace.entity.created",
             Self::WorkspaceUpdated(_) => "workspace.entity.updated",
+        }
+    }
+
+    pub fn actor(&self) -> Option<&ActorContext> {
+        match self {
+            Self::WorkspaceShutdown(payload) => payload.actor.as_ref(),
+            Self::SettingsChanged(payload) => payload.actor.as_ref(),
+            Self::WorkspaceCreated(payload) => payload.actor.as_ref(),
+            Self::WorkspaceUpdated(payload) => payload.actor.as_ref(),
+            _ => None,
         }
     }
 }

@@ -1,8 +1,9 @@
 use crate::commands::context::CommandContext;
-use crate::commands::r#trait::{Command, MutationCommand};
+use crate::commands::r#trait::MutationCommand;
 use crate::error::{KernelError, Result};
+use crate::events::types::{DomainEvent, WorkspaceEntityCreated};
 use crate::lifecycle::LifecycleState;
-use crate::security::{PermissionRequest, PermissionSubject};
+use crate::security::PermissionSubject;
 use crate::services::WorkspaceService;
 use workspace_domain::Workspace;
 
@@ -20,16 +21,19 @@ impl crate::commands::Command for CreateWorkspace {
 impl MutationCommand for CreateWorkspace {
     type Output = Workspace;
 
-    fn permission_request(&self) -> PermissionRequest {
-        PermissionRequest {
-            command: self.name(),
-            subject: PermissionSubject::Workspace,
-        }
+    fn permission_subject(&self) -> PermissionSubject {
+        PermissionSubject::Workspace
     }
 
     fn execute(self, ctx: &CommandContext<'_>) -> Result<Workspace> {
         Self::ensure_ready(ctx.state)?;
-        WorkspaceService::create(ctx.database, ctx.event_bus, self.name)
+        let workspace = ctx.with_database(|db| WorkspaceService::create(db, self.name))?;
+        ctx.event_bus.publish(DomainEvent::WorkspaceCreated(WorkspaceEntityCreated {
+            workspace_id: workspace.id.to_string(),
+            name: workspace.name.clone(),
+            actor: Some(ctx.actor_context.clone()),
+        }));
+        Ok(workspace)
     }
 }
 
@@ -56,6 +60,7 @@ mod tests {
     use crate::events::EventBus;
     use crate::security::AllowAllPermissionGate;
     use std::sync::{Arc, Mutex};
+    use workspace_domain::ActorContext;
 
     #[test]
     fn emits_workspace_created_event() {
@@ -69,8 +74,9 @@ mod tests {
 
         let init = InitializeWorkspace::in_memory().execute(&bus).unwrap();
         let ctx = CommandContext {
+            actor_context: ActorContext::local_user(),
             state: &init.state,
-            database: init.database.database(),
+            database: init.database.shared(),
             event_bus: &bus,
             permission_gate: &AllowAllPermissionGate,
         };

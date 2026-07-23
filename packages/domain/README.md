@@ -13,6 +13,25 @@ Shared Workspace domain models — pure data, no persistence or UI.
 
 IDs serialize as JSON strings (`#[serde(transparent)]`) for IPC compatibility.
 
+## Sprint 08 execution identity
+
+| Type | Purpose |
+|------|---------|
+| `Actor` | Immutable execution identity |
+| `ActorContext` | Passed through every command |
+| `ActorId` | Typed actor identifier |
+| `ActorType` | LocalUser, System (+ future placeholders) |
+
+Only `LocalUser` and `System` are active in Sprint 08. This is identity, not authentication.
+
+## Sprint 07 audit entities
+
+| Type | Purpose |
+|------|---------|
+| `AuditEvent` | Durable activity record |
+| `ActorType` | Who initiated an action (`system`, `user`, `service`) |
+| `AuditEventId` | Typed audit record identifier |
+
 ## Sprint 05 entities
 
 | Entity | Purpose |

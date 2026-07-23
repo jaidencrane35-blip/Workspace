@@ -106,7 +106,9 @@ mod tests {
             if event.name() == "system.workspace.started"
                 && started.fetch_add(1, Ordering::SeqCst) == 0
             {
-                bus_clone.publish(DomainEvent::WorkspaceShutdown(WorkspaceShutdown));
+                bus_clone.publish(DomainEvent::WorkspaceShutdown(WorkspaceShutdown {
+                    actor: None,
+                }));
             }
         });
 

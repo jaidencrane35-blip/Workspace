@@ -68,6 +68,8 @@ define_id!(WorkspaceId);
 define_id!(ZoneId);
 define_id!(ApplicationId);
 define_id!(WidgetId);
+define_id!(AuditEventId);
+define_id!(ActorId);
 
 #[cfg(test)]
 mod tests {
