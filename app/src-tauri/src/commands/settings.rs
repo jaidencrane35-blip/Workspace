@@ -74,6 +74,7 @@ mod tests {
             SettingsUpdate {
                 theme: Some("light".into()),
                 first_run: Some(false),
+                active_workspace_id: None,
             },
         )
         .unwrap();

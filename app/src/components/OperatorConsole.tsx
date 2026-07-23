@@ -167,7 +167,10 @@ export function OperatorConsole({
       const created = await invokeIpc<Workspace>("create_workspace", {
         name: workspaceName.trim() || "Operator Workspace",
       });
-      localStorage.setItem("workspace.active_id", created.id);
+      await invokeIpc<WorkspaceSettings>("update_settings", {
+        update: { active_workspace_id: created.id },
+      });
+      localStorage.removeItem("workspace.active_id");
       onWorkspaceChange(created);
       onZonesChange([]);
       await refreshReads(created.id);

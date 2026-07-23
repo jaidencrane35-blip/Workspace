@@ -297,6 +297,7 @@ mod tests {
             .update_settings(SettingsUpdate {
                 theme: Some("dark".into()),
                 first_run: None,
+                active_workspace_id: None,
             })
             .unwrap();
 

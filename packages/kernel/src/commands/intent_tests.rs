@@ -58,6 +58,7 @@ fn action_intent_rejects_capability_mismatch_before_pipeline() {
             UpdateSettings::new(SettingsUpdate {
                 theme: Some("dark".into()),
                 first_run: None,
+                active_workspace_id: None,
             }),
         )
         .unwrap_err();

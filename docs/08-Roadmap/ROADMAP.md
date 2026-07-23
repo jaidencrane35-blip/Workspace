@@ -17,9 +17,9 @@ Foundation     Decisions       Core Platform     Feature Expansion   Maturity
 (docs)         (recorded)      (Tauri shell)     (domains + AI)      (plugins)
    │               │                │                  │                  │
    ▼               ▼                ▼                  ▼                  ▼
- DONE            DONE         IN PROGRESS         Not started        Not started
-                            Sprint 01 done
-                            pnpm + Tauri
+ DONE            DONE         HARDEN (S37–38)       Not started        Not started
+                            Sprints 01–36 done
+                            gates amber → harden
 ```
 
 ---
@@ -81,7 +81,7 @@ Foundation     Decisions       Core Platform     Feature Expansion   Maturity
 
 **Goal:** Scaffold the Tauri application and deliver a running shell with spatial layout persistence.
 
-**Status:** **In progress** — Sprint 01 complete (architecture validation scaffold)
+**Status:** **In progress — harden** — Sprints 01–36 delivered; gates amber (CI Rust tests, shell completeness, DEC-011 process deferral). Sprint 37–38 harden before Phase 2.
 
 ### Technology Direction (DEC-007)
 
@@ -135,10 +135,13 @@ Foundation     Decisions       Core Platform     Feature Expansion   Maturity
 - [x] SQLite schema v1 (layouts, preferences) — verified existing Sprint 02/13 schema (no redesign)
 - [x] Layout save/restore — Sprint 34: ensureLayout + update_layout on canvas interaction
 - [x] Windows Integration Layer (basic window enumeration) — Sprint 35–36: windows-integration crate + GetDesktopWindows IPC
-- [x] CI/CD pipeline (lint, build, test) — Sprint 01 PR workflow
+- [x] Phase 1 harden: CI cargo test + ROADMAP/DEC-011 honesty — Sprint 37
+- [x] Phase 1 harden: canvas resize + canvas-first create + Operator diagnostic label — Sprint 38
+- [x] CI/CD pipeline (lint, build, test) — Sprint 01 PR workflow; Sprint 37 adds `cargo test --workspace`
 - [x] Developer setup documentation — Sprint 01
 - [ ] Platform kernel (event bus, state management, Permission Gateway) — permission seam in Sprint 06; full gateway in Phase 2
 
+**Phase 1 note:** Application launch is Phase 2 entry (ROADMAP), not a missed Phase 1 checkbox, even though MVP §2.2 lists it under the overall MVP.
 ### Gate Criteria (Phase 1 → Phase 2)
 
 | Criterion | Detail |

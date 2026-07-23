@@ -10,7 +10,7 @@ import type {
   WorkspaceStatus,
 } from "./types/workspace";
 
-const WORKSPACE_ID_KEY = "workspace.active_id";
+const LEGACY_WORKSPACE_ID_KEY = "workspace.active_id";
 
 type AppView = "canvas" | "operator";
 
@@ -39,6 +39,23 @@ function zonesFromContext(
   });
 }
 
+async function persistActiveWorkspaceId(id: string | null): Promise<void> {
+  await invokeIpc<WorkspaceSettings>("update_settings", {
+    update: {
+      active_workspace_id: id ?? "",
+    },
+  });
+  localStorage.removeItem(LEGACY_WORKSPACE_ID_KEY);
+}
+
+async function loadZones(workspaceId: string): Promise<Zone[]> {
+  const context = await invokeIpc<WorkspaceContext>("get_workspace_context", {
+    workspaceId,
+    limit: 200,
+  });
+  return zonesFromContext(workspaceId, context);
+}
+
 export default function App() {
   const [view, setView] = useState<AppView>("canvas");
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
@@ -46,6 +63,7 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [bootstrapped, setBootstrapped] = useState(false);
+  const [busy, setBusy] = useState(false);
 
   const onWorkspaceChange = useCallback((next: Workspace | null) => {
     setWorkspace(next);
@@ -68,33 +86,85 @@ export default function App() {
     setError(null);
   }, []);
 
+  const activateWorkspace = useCallback(async (next: Workspace) => {
+    setWorkspace(next);
+    await persistActiveWorkspaceId(next.id);
+    const nextZones = await loadZones(next.id);
+    setZones(nextZones);
+  }, []);
+
   useEffect(() => {
     Promise.all([
       invokeIpc<WorkspaceStatus>("get_workspace_status"),
       invokeIpc<WorkspaceHealth>("get_workspace_health"),
       invokeIpc<WorkspaceSettings>("get_settings"),
     ])
-      .then(async () => {
-        const storedId = localStorage.getItem(WORKSPACE_ID_KEY);
+      .then(async ([, , settings]) => {
+        let storedId =
+          settings.active_workspace_id?.trim() ||
+          localStorage.getItem(LEGACY_WORKSPACE_ID_KEY);
         if (!storedId) {
           return;
         }
         const loaded = await invokeIpc<Workspace>("get_workspace", {
           id: storedId,
         });
+        if (!settings.active_workspace_id) {
+          await persistActiveWorkspaceId(loaded.id);
+        } else {
+          localStorage.removeItem(LEGACY_WORKSPACE_ID_KEY);
+        }
         setWorkspace(loaded);
-        const context = await invokeIpc<WorkspaceContext>(
-          "get_workspace_context",
-          { workspaceId: loaded.id, limit: 200 },
-        );
-        setZones(zonesFromContext(loaded.id, context));
+        setZones(await loadZones(loaded.id));
       })
       .catch((err: unknown) => {
-        localStorage.removeItem(WORKSPACE_ID_KEY);
+        localStorage.removeItem(LEGACY_WORKSPACE_ID_KEY);
         setError(formatError(err));
       })
       .finally(() => setBootstrapped(true));
   }, []);
+
+  const createWorkspaceFromCanvas = () => {
+    setBusy(true);
+    setError(null);
+    void (async () => {
+      try {
+        const created = await invokeIpc<Workspace>("create_workspace", {
+          name: "Canvas Workspace",
+        });
+        await activateWorkspace(created);
+        setMessage("Workspace created");
+      } catch (err: unknown) {
+        setError(formatError(err));
+      } finally {
+        setBusy(false);
+      }
+    })();
+  };
+
+  const addZoneFromCanvas = () => {
+    if (!workspace) {
+      setError("Create a workspace first.");
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    void (async () => {
+      try {
+        const zone = await invokeIpc<Zone>("create_zone", {
+          workspaceId: workspace.id,
+          name: `Zone ${zones.length + 1}`,
+          positionMetadata: null,
+        });
+        setZones((prev) => [...prev, zone]);
+        setMessage(`Zone created: ${zone.name}`);
+      } catch (err: unknown) {
+        setError(formatError(err));
+      } finally {
+        setBusy(false);
+      }
+    })();
+  };
 
   return (
     <main className="app-shell">
@@ -113,7 +183,7 @@ export default function App() {
             className={view === "operator" ? "tab active" : "tab"}
             onClick={() => setView("operator")}
           >
-            Operator
+            Diagnostic
           </button>
         </nav>
       </header>
@@ -131,22 +201,33 @@ export default function App() {
             workspaceId={workspace.id}
             workspaceName={workspace.name}
             zones={zones}
+            busy={busy}
             onError={(msg) => setError(msg)}
             onSaved={onLayoutSaved}
+            onCreateWorkspace={createWorkspaceFromCanvas}
+            onAddZone={addZoneFromCanvas}
           />
         ) : (
-          <div className="canvas-shell">
-            <p className="muted">
-              No active workspace. Open the Operator tab to create one and seed
-              zones, then return here.
+          <div className="canvas-shell canvas-bootstrap">
+            <p className="lede">
+              No active workspace. Create one here to start arranging zones.
             </p>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={createWorkspaceFromCanvas}
+            >
+              Create workspace
+            </button>
           </div>
         )
       ) : (
         <div className="container">
           <p className="lede">
-            Operator console — create workspace, seed zones, approve
-            suggestions, bridge intent, execute, inspect outcomes.
+            <span className="badge">Diagnostic</span> Operator console — not the
+            product shell. Use for pipeline inspection (suggestions → execute),
+            settings, and desktop window enumeration. Prefer Canvas for layout
+            work.
           </p>
           <OperatorConsole
             workspace={workspace}

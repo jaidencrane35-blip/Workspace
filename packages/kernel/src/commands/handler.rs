@@ -513,6 +513,7 @@ mod tests {
             SettingsUpdate {
                 theme: Some("light".into()),
                 first_run: Some(false),
+                active_workspace_id: None,
             },
         )
         .unwrap();
@@ -550,6 +551,7 @@ mod tests {
             SettingsUpdate {
                 theme: Some("dark".into()),
                 first_run: None,
+                active_workspace_id: None,
             },
         )
         .unwrap();

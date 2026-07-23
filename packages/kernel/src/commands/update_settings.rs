@@ -115,6 +115,7 @@ mod tests {
             .execute_mutation(UpdateSettings::new(SettingsUpdate {
                 theme: Some("dark".into()),
                 first_run: None,
+                active_workspace_id: None,
             }))
             .unwrap();
 

@@ -201,6 +201,7 @@ Each decision entry follows this format:
   - AI Worker Processes (isolated)
 - **Rationale:** Plugin isolation, crash containment, security boundaries, scalability.
 - **Consequences:** Requires inter-process communication contracts. See [Event and API Standards](../02-Architecture/EVENT-AND-API-STANDARDS.md).
+- **Phase 1 interpretation (Sprint 37):** True multi-process (separate Workspace Core / plugin / AI processes) is **deferred**. Phase 1 validates **crate + IPC boundaries** inside the Tauri host process (`domain` / `kernel` / `database` / `windows-integration` / React via Tauri commands). DEC-011 process isolation remains the target for plugin/AI maturity; do not treat crate separation as DEC-011 complete.
 - **Related:** OQ-002 (resolved), DEC-007, [Threat Model](../07-Security/THREAT-MODEL.md)
 
 ---

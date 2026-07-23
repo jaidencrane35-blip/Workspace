@@ -6,6 +6,7 @@ use crate::error::{KernelError, Result};
 pub const KEY_THEME: &str = "theme";
 pub const KEY_FIRST_RUN: &str = "first_run";
 pub const KEY_SETTINGS_VERSION: &str = "settings_version";
+pub const KEY_ACTIVE_WORKSPACE_ID: &str = "active_workspace_id";
 
 const DEFAULT_THEME: &str = "system";
 const DEFAULT_FIRST_RUN: &str = "true";
@@ -17,6 +18,8 @@ pub struct WorkspaceSettings {
     pub theme: String,
     pub first_run: bool,
     pub settings_version: u32,
+    /// Last active workspace id for session restore (Sprint 38).
+    pub active_workspace_id: Option<String>,
 }
 
 impl Default for WorkspaceSettings {
@@ -25,6 +28,7 @@ impl Default for WorkspaceSettings {
             theme: DEFAULT_THEME.to_string(),
             first_run: true,
             settings_version: 1,
+            active_workspace_id: None,
         }
     }
 }
@@ -34,6 +38,8 @@ impl Default for WorkspaceSettings {
 pub struct SettingsUpdate {
     pub theme: Option<String>,
     pub first_run: Option<bool>,
+    /// `None` leave unchanged · `Some("")` clear · `Some(id)` set.
+    pub active_workspace_id: Option<String>,
 }
 
 /// Owns configuration reads/writes through the database layer.
@@ -57,11 +63,15 @@ impl ConfigManager {
                 .unwrap_or_else(|| DEFAULT_SETTINGS_VERSION.to_string())
                 .as_str(),
         )?;
+        let active_workspace_id = repo
+            .get(KEY_ACTIVE_WORKSPACE_ID)?
+            .filter(|value| !value.trim().is_empty());
 
         Ok(WorkspaceSettings {
             theme,
             first_run,
             settings_version,
+            active_workspace_id,
         })
     }
 
@@ -95,6 +105,16 @@ impl ConfigManager {
         if let Some(first_run) = update.first_run {
             repo.set(KEY_FIRST_RUN, if first_run { "true" } else { "false" })?;
             current.first_run = first_run;
+        }
+
+        if let Some(active) = update.active_workspace_id {
+            if active.trim().is_empty() {
+                repo.set(KEY_ACTIVE_WORKSPACE_ID, "")?;
+                current.active_workspace_id = None;
+            } else {
+                repo.set(KEY_ACTIVE_WORKSPACE_ID, &active)?;
+                current.active_workspace_id = Some(active);
+            }
         }
 
         Ok(current)
@@ -149,6 +169,7 @@ mod tests {
         assert_eq!(settings.theme, "system");
         assert!(settings.first_run);
         assert_eq!(settings.settings_version, 1);
+        assert!(settings.active_workspace_id.is_none());
     }
 
     #[test]
@@ -161,12 +182,14 @@ mod tests {
             SettingsUpdate {
                 theme: Some("dark".into()),
                 first_run: Some(false),
+                active_workspace_id: Some("ws-1".into()),
             },
         )
         .unwrap();
 
         assert_eq!(updated.theme, "dark");
         assert!(!updated.first_run);
+        assert_eq!(updated.active_workspace_id.as_deref(), Some("ws-1"));
 
         let reloaded = ConfigManager::load(&db).unwrap();
         assert_eq!(reloaded, updated);

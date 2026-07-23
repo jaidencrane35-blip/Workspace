@@ -256,6 +256,36 @@ button:not(:disabled):hover {
   color: #9aa8b4;
 }
 
+.zone-resize {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  border: none;
+  border-radius: 2px;
+  background: linear-gradient(
+    135deg,
+    transparent 0 45%,
+    #6b8aab 45% 55%,
+    transparent 55% 70%,
+    #6b8aab 70% 80%,
+    transparent 80%
+  );
+  cursor: nwse-resize;
+}
+
+.canvas-actions {
+  margin: 0;
+  justify-content: flex-end;
+}
+
+.canvas-bootstrap {
+  padding: 2rem 1.5rem;
+  gap: 1rem;
+}
+
 .canvas-empty {
   position: absolute;
   left: 48px;
