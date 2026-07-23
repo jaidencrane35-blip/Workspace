@@ -167,20 +167,20 @@ Expectations:
 
 ---
 
-## 6. Current State (Phase 1 — Sprint 18)
+## 6. Current State (Phase 1 — Sprint 19)
 
 Phase 1 scaffolding is in progress. Implemented structure:
 
 ```
 Workspace/
-├── app/                    # Tauri + IPC (workspace, resource, layout, projection, discovery, observation, analytics)
+├── app/                    # Tauri + IPC (workspace, resource, layout, projection, discovery, observation, analytics, context)
 ├── packages/
-│   ├── domain/             # Entities, ResourceRef, graph, layout, projection, intent, discovery, observation, analytics
-│   ├── kernel/             # Services, commands, intent validation, projection, capability resolver, observation, analytics
+│   ├── domain/             # Entities, ResourceRef, graph, layout, projection, intent, discovery, observation, analytics, context
+│   ├── kernel/             # Services, commands, intent validation, projection, capability resolver, observation, analytics, context
 │   └── database/           # Repositories + graph + layout tables
 ```
 
-Resource services own graph-backed entity persistence. Layout owns spatial state. Projection aggregates derived read models. Action intents provide metadata-first command mapping. Capability discovery derives actor authority from existing policy without a permission database. Observation derives a neutral, read-only activity stream over the audit trail without adding persistence. Analytics deterministically aggregates observations into `WorkspaceMetrics` — the "Learn" stage — with no AI and no persistence.
+Resource services own graph-backed entity persistence. Layout owns spatial state. Projection aggregates derived read models. Action intents provide metadata-first command mapping. Capability discovery derives actor authority from existing policy without a permission database. Observation derives a neutral, read-only activity stream over the audit trail without adding persistence. Analytics deterministically aggregates observations into `WorkspaceMetrics` — the "Learn" stage — with no AI and no persistence. Context deterministically composes state, activity, metrics, and authority into `WorkspaceContext` — the "Context" boundary — with no persistence and no inference.
 
 Implementation directories will be created during Phase 1 scaffolding.
 

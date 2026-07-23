@@ -283,6 +283,18 @@ WorkspaceMetrics (derived, read-only) → GetWorkspaceMetrics (governed)
 
 Analytics is the "Learn" stage: it answers "what patterns exist in what happened?" by deterministically counting and grouping observations. No AI, scoring, prediction, ranking, or recommendations. It adds no persistence and no mutation path; it consumes `ObservationService` output and aggregates via a pure domain type. Reads are governed (`audit.read`).
 
+**Workspace context layer (Sprint 19):**
+
+```
+Projection (state) + Observations (activity) + Metrics (learn) + Capabilities (authority)
+    ↓
+WorkspaceContextService (deterministic composition)
+    ↓
+WorkspaceContext (derived, read-only) → GetWorkspaceContext (governed)
+```
+
+The context boundary assembles the existing derived read layers into a single read-only structure — the "Context" stage before "Suggest". It is a deterministic composition only: no AI, suggestions, memory, embeddings, or persistence. It orchestrates existing services, preserves `ResourceRef` identity, and reads are governed (`audit.read`).
+
 ### 6.6 Windows Integration Layer
 
 Abstracts all Windows API interactions. Only this layer communicates directly with the OS.

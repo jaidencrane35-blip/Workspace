@@ -82,6 +82,9 @@ pub enum KernelError {
     #[error("Analytics validation failed: {message}")]
     AnalyticsValidation { message: String },
 
+    #[error("Context validation failed: {message}")]
+    ContextValidation { message: String },
+
     #[error("Service '{0}' failed to start")]
     ServiceStartup(&'static str),
 
@@ -225,6 +228,10 @@ impl KernelError {
             },
             KernelError::AnalyticsValidation { message } => PublicError {
                 code: "analytics_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::ContextValidation { message } => PublicError {
+                code: "context_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::ServiceStartup(service) => PublicError {

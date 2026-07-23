@@ -8,6 +8,7 @@ use commands::layout::{
     create_layout, delete_layout, get_layout, get_layout_snapshot, reset_layout, update_layout,
 };
 use commands::analytics::get_workspace_metrics;
+use commands::context::get_workspace_context;
 use commands::discovery::get_actor_capabilities;
 use commands::observation::get_observations;
 use commands::projection::get_workspace_snapshot;
@@ -61,6 +62,7 @@ pub fn run() {
             get_audit_history,
             get_observations,
             get_workspace_metrics,
+            get_workspace_context,
         ])
         .setup(|app| {
             let app_data_dir = app

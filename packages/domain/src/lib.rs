@@ -4,6 +4,7 @@ pub mod actor;
 pub mod analytics;
 pub mod audit;
 pub mod capability;
+pub mod context;
 pub mod discovery;
 pub mod entities;
 pub mod errors;
@@ -22,6 +23,7 @@ pub use actor::{
 pub use analytics::{AnalyticsError, CategoryActivity, WorkspaceMetrics};
 pub use audit::AuditEvent;
 pub use capability::{Capability, CapabilityId, CapabilityScope, CapabilitySet};
+pub use context::{ContextError, WorkspaceContext};
 pub use discovery::{
     AvailableIntentSummary, CapabilityDiscovery, CapabilityDiscoveryError,
 };
