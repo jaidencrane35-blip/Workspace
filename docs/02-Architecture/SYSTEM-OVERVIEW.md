@@ -466,7 +466,19 @@ Tauri IPC (execution.rs)
 Operator console (App.tsx) — suggestion → intent → execute → outcomes
 ```
 
-Previously deferred execution commands are registered for frontend use. The shell is a diagnostic operator console, not Spatial Canvas (DEC-009 remains future).
+Previously deferred execution commands are registered for frontend use. The Operator tab remains the diagnostic console.
+
+**Spatial Workspace Canvas shell (Sprint 33) + layout save/restore (Sprint 34):**
+
+```
+Zones (graph) + Layout IPC (Sprint 13)
+    ↓
+CanvasShell — drag / pan / zoom
+    ↓
+ensureLayout → update_layout (persist positions across sessions)
+```
+
+Fixed app chrome (Canvas | Operator). Prototype shell only — not production visual design. Apps/widgets/AI blocks on canvas remain future.
 
 ### 6.6 Windows Integration Layer
 

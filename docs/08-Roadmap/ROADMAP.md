@@ -131,11 +131,11 @@ Foundation     Decisions       Core Platform     Feature Expansion   Maturity
 - [x] Execution States Projection Foundation — Sprint 30: reconcile_execution_states, GetExecutionStates
 - [x] Execution State Context Enrichment — Sprint 31: WorkspaceContext.execution_states via ExecutionReconciliationService
 - [x] Execution IPC + Operator Console — Sprint 32: wire S23–S30 IPC; front-to-back suggestion→execute path in app shell
+- [x] Spatial Workspace Canvas shell prototype — Sprint 33: CanvasShell, zone drag, pan/zoom (DEC-009)
+- [x] SQLite schema v1 (layouts, preferences) — verified existing Sprint 02/13 schema (no redesign)
+- [x] Layout save/restore — Sprint 34: ensureLayout + update_layout on canvas interaction
 - [x] CI/CD pipeline (lint, build, test) — Sprint 01 PR workflow
 - [x] Developer setup documentation — Sprint 01
-- [ ] Spatial Workspace Canvas shell prototype — future sprint (DEC-009)
-- [ ] SQLite schema v1 (layouts, preferences) — future sprint
-- [ ] Layout save/restore — future sprint
 - [ ] Windows Integration Layer (basic window enumeration) — future sprint (DEC-008)
 - [ ] Platform kernel (event bus, state management, Permission Gateway) — permission seam in Sprint 06; full gateway in Phase 2
 
