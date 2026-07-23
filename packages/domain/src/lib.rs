@@ -40,8 +40,8 @@ pub use observation::{
 };
 pub use resource::{Addressable, ResourceId, ResourceKind, ResourceRef};
 pub use suggestion::{
-    derive_suggestions, Suggestion, SuggestionConfidence, SuggestionError, SuggestionStatus,
-    SuggestionType,
+    derive_suggestions, find_pending_suggestion, Suggestion, SuggestionConfidence, SuggestionError,
+    SuggestionStatus, SuggestionType,
 };
 pub use entities::{
     ApplicationReference, WidgetReference, Workspace, Zone,

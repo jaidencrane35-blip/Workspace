@@ -1,5 +1,6 @@
 use std::path::Path;
 
+use crate::commands::accept_suggestion::AcceptSuggestion;
 use crate::commands::application::{CreateApplication, DeleteApplication, GetApplication};
 use crate::commands::create_workspace::CreateWorkspace;
 use crate::commands::get_actor_capabilities::GetActorCapabilities;
@@ -15,6 +16,7 @@ use crate::commands::layout::{
     CreateLayout, DeleteLayout, GetLayout, GetLayoutSnapshot, ResetLayout, UpdateLayout,
 };
 use crate::commands::pipeline::CommandPipeline;
+use crate::commands::reject_suggestion::RejectSuggestion;
 use crate::commands::update_settings::UpdateSettings;
 use crate::commands::widget::{CreateWidget, DeleteWidget, GetWidget};
 use crate::commands::zone::{CreateZone, DeleteZone, GetZone};
@@ -346,6 +348,30 @@ impl CommandHandler {
         let workspace_id = WorkspaceId::new(workspace_id).map_err(KernelError::Domain)?;
         CommandPipeline::new(kernel.command_context(actor, intent))
             .execute_query(GetSuggestions::new(workspace_id, limit))
+    }
+
+    pub fn accept_suggestion(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        suggestion_id: String,
+    ) -> Result<Suggestion> {
+        let workspace_id = WorkspaceId::new(workspace_id).map_err(KernelError::Domain)?;
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_mutation(AcceptSuggestion::new(workspace_id, suggestion_id))
+    }
+
+    pub fn reject_suggestion(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        suggestion_id: String,
+    ) -> Result<Suggestion> {
+        let workspace_id = WorkspaceId::new(workspace_id).map_err(KernelError::Domain)?;
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_mutation(RejectSuggestion::new(workspace_id, suggestion_id))
     }
 
     pub fn shutdown(kernel: &mut WorkspaceKernel) {

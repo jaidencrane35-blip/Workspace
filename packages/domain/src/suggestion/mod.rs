@@ -69,6 +69,16 @@ pub enum SuggestionError {
 
     #[error("Suggestion source context must not be empty")]
     EmptySourceContext,
+
+    #[error("Suggestion not found: {0}")]
+    NotFound(String),
+
+    #[error("Suggestion '{id}' cannot transition from {from:?} to {to:?}")]
+    InvalidTransition {
+        id: String,
+        from: SuggestionStatus,
+        to: SuggestionStatus,
+    },
 }
 
 /// A deterministic, read-only proposal. Never an action.
@@ -104,6 +114,40 @@ impl Suggestion {
         }
         Ok(())
     }
+
+    /// Marks a pending proposal as accepted. Decision only — never executes.
+    pub fn accept(self) -> Result<Self, SuggestionError> {
+        self.transition(SuggestionStatus::Accepted)
+    }
+
+    /// Marks a pending proposal as rejected. Decision only — never executes.
+    pub fn reject(self) -> Result<Self, SuggestionError> {
+        self.transition(SuggestionStatus::Rejected)
+    }
+
+    fn transition(mut self, to: SuggestionStatus) -> Result<Self, SuggestionError> {
+        if self.status != SuggestionStatus::Pending {
+            return Err(SuggestionError::InvalidTransition {
+                id: self.id,
+                from: self.status,
+                to,
+            });
+        }
+        self.status = to;
+        Ok(self)
+    }
+}
+
+/// Finds a currently derived pending suggestion by id.
+pub fn find_pending_suggestion(
+    suggestions: &[Suggestion],
+    suggestion_id: &str,
+) -> Result<Suggestion, SuggestionError> {
+    suggestions
+        .iter()
+        .find(|suggestion| suggestion.id == suggestion_id)
+        .cloned()
+        .ok_or_else(|| SuggestionError::NotFound(suggestion_id.to_string()))
 }
 
 /// Deterministically derives proposals from a workspace context.
@@ -317,5 +361,33 @@ mod tests {
             .unwrap();
         suggestion.id = String::new();
         assert_eq!(suggestion.validate(), Err(SuggestionError::EmptyId));
+    }
+
+    #[test]
+    fn accept_and_reject_only_from_pending() {
+        let pending = derive_suggestions(&growth_context())
+            .into_iter()
+            .next()
+            .unwrap();
+        let accepted = pending.clone().accept().unwrap();
+        assert_eq!(accepted.status, SuggestionStatus::Accepted);
+        assert!(matches!(
+            accepted.accept(),
+            Err(SuggestionError::InvalidTransition { .. })
+        ));
+
+        let rejected = pending.reject().unwrap();
+        assert_eq!(rejected.status, SuggestionStatus::Rejected);
+    }
+
+    #[test]
+    fn find_pending_suggestion_by_id() {
+        let suggestions = derive_suggestions(&growth_context());
+        let id = suggestions[0].id.clone();
+        assert_eq!(find_pending_suggestion(&suggestions, &id).unwrap().id, id);
+        assert!(matches!(
+            find_pending_suggestion(&suggestions, "missing"),
+            Err(SuggestionError::NotFound(_))
+        ));
     }
 }

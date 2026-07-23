@@ -125,6 +125,7 @@ fn subject_for_category(category: ActionIntentCategory) -> PermissionSubject {
         ActionIntentCategory::Layout => PermissionSubject::Resource(ResourceKind::Workspace),
         ActionIntentCategory::Settings
         | ActionIntentCategory::Audit
+        | ActionIntentCategory::Suggestion
         | ActionIntentCategory::System => PermissionSubject::System,
     }
 }

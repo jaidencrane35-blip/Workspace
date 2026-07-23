@@ -1,19 +1,22 @@
-//! Deterministic suggestion service — the "Suggest" proposal boundary (Sprint 20).
+//! Deterministic suggestion service — Suggest + decision support (Sprint 20–21).
 //!
 //! Consumes a [`WorkspaceContext`] (built via [`WorkspaceContextService`]) and
-//! produces deterministic proposals via the pure domain generator. It performs
-//! no mutation, executes no commands, grants no permissions, and adds no
-//! persistence. Suggestions are proposals only — acceptance (a future stage)
-//! must route through existing intent/command governance.
+//! produces deterministic proposals via the pure domain generator. Listing is
+//! read-only. Accept/Reject decisions are recorded by mutation commands through
+//! the existing command pipeline; this service only resolves pending proposals
+//! and suppresses previously decided ids using the audit trail (no suggestion
+//! store).
 
+use std::collections::BTreeSet;
 use std::sync::{Arc, Mutex};
 
 use workspace_database::Database;
 use workspace_domain::{
-    derive_suggestions, ActorContext, CapabilitySet, IntentContext, Suggestion, WorkspaceId,
+    derive_suggestions, find_pending_suggestion, ActorContext, CapabilitySet, IntentContext,
+    Suggestion, WorkspaceId,
 };
 
-use super::WorkspaceContextService;
+use super::{AuditService, WorkspaceContextService};
 use crate::error::{KernelError, Result};
 use crate::policy::PermissionPolicy;
 use crate::security::PermissionGate;
@@ -54,7 +57,68 @@ impl SuggestionService {
                 })?;
         }
 
-        Ok(suggestions)
+        let decided = Self::decided_suggestion_ids(db)?;
+        Ok(suggestions
+            .into_iter()
+            .filter(|suggestion| !decided.contains(&suggestion.id))
+            .collect())
+    }
+
+    /// Resolves a currently pending derived suggestion by id (fail closed).
+    #[allow(clippy::too_many_arguments)]
+    pub fn resolve_pending(
+        db: &Arc<Mutex<Database>>,
+        actor_context: &ActorContext,
+        intent_context: &IntentContext,
+        capability_set: &CapabilitySet,
+        policy: &dyn PermissionPolicy,
+        gate: &dyn PermissionGate,
+        workspace_id: &WorkspaceId,
+        suggestion_id: &str,
+    ) -> Result<Suggestion> {
+        let pending = Self::list(
+            db,
+            actor_context,
+            intent_context,
+            capability_set,
+            policy,
+            gate,
+            workspace_id,
+            500,
+        )?;
+
+        find_pending_suggestion(&pending, suggestion_id).map_err(|error| {
+            KernelError::SuggestionValidation {
+                message: error.to_string(),
+            }
+        })
+    }
+
+    fn decided_suggestion_ids(db: &Arc<Mutex<Database>>) -> Result<BTreeSet<String>> {
+        let records = AuditService::list_recent(db, 500)?;
+        let mut decided = BTreeSet::new();
+
+        for record in records {
+            let Some(command_name) = record.command_name.as_deref() else {
+                continue;
+            };
+            if command_name != "AcceptSuggestion" && command_name != "RejectSuggestion" {
+                continue;
+            }
+            if !record.success {
+                continue;
+            }
+            let Some(metadata) = record.metadata.as_deref() else {
+                continue;
+            };
+            if let Ok(value) = serde_json::from_str::<serde_json::Value>(metadata) {
+                if let Some(suggestion_id) = value.get("suggestion_id").and_then(|v| v.as_str()) {
+                    decided.insert(suggestion_id.to_string());
+                }
+            }
+        }
+
+        Ok(decided)
     }
 }
 

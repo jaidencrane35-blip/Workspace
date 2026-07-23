@@ -24,6 +24,12 @@ pub trait MutationCommand: Command {
         None
     }
 
+    /// Optional JSON metadata recorded in the audit trail after execution.
+    fn audit_metadata(&self, output: &Self::Output) -> Option<String> {
+        let _ = (self, output);
+        None
+    }
+
     fn execute(&self, ctx: &CommandContext<'_>) -> Result<Self::Output>;
 }
 

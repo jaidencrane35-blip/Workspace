@@ -86,11 +86,13 @@ impl<'a> CommandPipeline<'a> {
         match command.execute(&self.ctx) {
             Ok(output) => {
                 let resource_ref = command.audit_resource_ref(&output);
+                let metadata = command.audit_metadata(&output);
                 Self::record_command_success(
                     &self.ctx,
                     command_name,
                     &capability,
                     resource_ref.as_ref(),
+                    metadata,
                 );
                 Ok(output)
             }
@@ -149,7 +151,7 @@ impl<'a> CommandPipeline<'a> {
 
         match command.execute(&self.ctx) {
             Ok(output) => {
-                Self::record_command_success(&self.ctx, command_name, &capability, None);
+                Self::record_command_success(&self.ctx, command_name, &capability, None, None);
                 Ok(output)
             }
             Err(error) => {
@@ -164,6 +166,7 @@ impl<'a> CommandPipeline<'a> {
         command_name: &str,
         capability: &workspace_domain::Capability,
         resource_ref: Option<&workspace_domain::ResourceRef>,
+        metadata: Option<String>,
     ) {
         if let Err(error) = AuditService::record_command(
             &ctx.database,
@@ -173,7 +176,7 @@ impl<'a> CommandPipeline<'a> {
             capability,
             resource_ref,
             true,
-            None,
+            metadata,
         ) {
             log::error!("failed to record successful command audit for {command_name}: {error}");
         }

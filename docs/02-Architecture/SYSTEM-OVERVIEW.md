@@ -305,7 +305,23 @@ derive_suggestions(context)  ← pure, threshold-based rules (no AI)
 SuggestionService::list → GetSuggestions (governed) → get_suggestions (IPC)
 ```
 
-The suggestion layer is the "Suggest" stage: it derives deterministic **proposals** on demand from `WorkspaceContext` using simple threshold rules (e.g. `resource_creation_count >= 3`). A `Suggestion` is a proposal object, **never an action** — it does not execute, mutate state, grant permissions, or bypass governance. "Confidence" is deterministic metadata (a supporting count + rule basis), never a probabilistic or learned score. No AI, LLM, ML ranking, behaviour prediction, automation, or persistence. Suggestions start `Pending`; acceptance is deferred and must route through the existing intent → capability → permission → command pipeline. The preserved future flow is Context → Suggestion → (future) User Approval → Intent → Capability → Permission → CommandPipeline → Execution. Reads are governed (`audit.read`).
+The suggestion layer is the "Suggest" stage: it derives deterministic **proposals** on demand from `WorkspaceContext` using simple threshold rules (e.g. `resource_creation_count >= 3`). A `Suggestion` is a proposal object, **never an action** — it does not execute, mutate state, grant permissions, or bypass governance. "Confidence" is deterministic metadata (a supporting count + rule basis), never a probabilistic or learned score. No AI, LLM, ML ranking, behaviour prediction, automation, or suggestion persistence. Suggestions start `Pending`. Reads are governed (`audit.read`).
+
+**Suggestion approval layer (Sprint 21):**
+
+```
+Suggestion (Pending)
+    ↓
+AcceptSuggestion / RejectSuggestion  ← MutationCommand (audit.write)
+    ↓
+Intent → Capability → PermissionGate → Audit (decision metadata)
+    ↓
+GetSuggestions suppresses decided ids (audit-derived; no suggestion store)
+```
+
+The approval layer is the "Receive Permission" decision stage: explicit Accept/Reject through the existing command pipeline. Decisions are durable in the audit trail and do **not** execute Automate-stage workspace mutations. Automate remains a future stage (proposed actions bound to intents). Approval-type UX and the real Permission Gateway remain deferred.
+
+The preserved future flow is Context → Suggestion → User Approval → Intent → Capability → Permission → CommandPipeline → Execution.
 
 ### 6.6 Windows Integration Layer
 

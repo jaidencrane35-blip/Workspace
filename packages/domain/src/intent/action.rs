@@ -26,6 +26,7 @@ pub enum ActionIntentCategory {
     Layout,
     Settings,
     Audit,
+    Suggestion,
     System,
 }
 
@@ -413,6 +414,26 @@ fn build_definitions() -> Vec<ActionIntentDefinition> {
             "GetAuditHistory",
             TargetRequirement::None,
             &[],
+        ),
+        definition(
+            "accept-suggestion",
+            "Accept Suggestion",
+            "Record explicit user approval of a proposal. Decision only — does not automate.",
+            ActionIntentCategory::Suggestion,
+            Capability::audit_write(),
+            "AcceptSuggestion",
+            TargetRequirement::Optional,
+            &[ResourceKind::Workspace],
+        ),
+        definition(
+            "reject-suggestion",
+            "Reject Suggestion",
+            "Record explicit user dismissal of a proposal. Decision only — does not automate.",
+            ActionIntentCategory::Suggestion,
+            Capability::audit_write(),
+            "RejectSuggestion",
+            TargetRequirement::Optional,
+            &[ResourceKind::Workspace],
         ),
     ]
 }

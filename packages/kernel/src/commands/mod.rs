@@ -1,3 +1,4 @@
+mod accept_suggestion;
 mod application;
 mod context;
 mod create_workspace;
@@ -12,6 +13,7 @@ mod get_workspace_snapshot;
 mod handler;
 mod initialize;
 mod pipeline;
+mod reject_suggestion;
 #[cfg(test)]
 mod analytics_tests;
 #[cfg(test)]
@@ -37,6 +39,7 @@ mod update_settings;
 mod widget;
 mod zone;
 
+pub use accept_suggestion::AcceptSuggestion;
 pub use application::{CreateApplication, DeleteApplication, GetApplication};
 pub use layout::{
     CreateLayout, DeleteLayout, GetLayout, GetLayoutSnapshot, ResetLayout, UpdateLayout,
@@ -54,6 +57,7 @@ pub use get_workspace_snapshot::GetWorkspaceSnapshot;
 pub use handler::CommandHandler;
 pub use initialize::InitializeWorkspace;
 pub use pipeline::CommandPipeline;
+pub use reject_suggestion::RejectSuggestion;
 pub use r#trait::{Command, MutationCommand, QueryCommand};
 pub use update_settings::UpdateSettings;
 pub use widget::{CreateWidget, DeleteWidget, GetWidget};

@@ -34,6 +34,56 @@ pub fn get_suggestions(
     }
 }
 
+/// Records explicit user approval of a proposal (decision only).
+#[tauri::command]
+pub fn accept_suggestion(
+    workspace_id: String,
+    suggestion_id: String,
+    kernel: State<'_, Arc<Mutex<WorkspaceKernel>>>,
+) -> IpcResponse<Suggestion> {
+    match kernel.lock() {
+        Ok(kernel) => match CommandHandler::accept_suggestion(
+            &kernel,
+            ipc_actor_context(),
+            ipc_intent_context(),
+            workspace_id,
+            suggestion_id,
+        ) {
+            Ok(suggestion) => IpcResponse::success(suggestion),
+            Err(error) => IpcResponse::failure(CommandError::from(error)),
+        },
+        Err(_) => IpcResponse::failure(CommandError::new(
+            "internal_error",
+            "Workspace core is temporarily unavailable.",
+        )),
+    }
+}
+
+/// Records explicit user dismissal of a proposal (decision only).
+#[tauri::command]
+pub fn reject_suggestion(
+    workspace_id: String,
+    suggestion_id: String,
+    kernel: State<'_, Arc<Mutex<WorkspaceKernel>>>,
+) -> IpcResponse<Suggestion> {
+    match kernel.lock() {
+        Ok(kernel) => match CommandHandler::reject_suggestion(
+            &kernel,
+            ipc_actor_context(),
+            ipc_intent_context(),
+            workspace_id,
+            suggestion_id,
+        ) {
+            Ok(suggestion) => IpcResponse::success(suggestion),
+            Err(error) => IpcResponse::failure(CommandError::from(error)),
+        },
+        Err(_) => IpcResponse::failure(CommandError::new(
+            "internal_error",
+            "Workspace core is temporarily unavailable.",
+        )),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
