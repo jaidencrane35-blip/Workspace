@@ -1,22 +1,49 @@
-use workspace_database::Database;
-
-use crate::commands::Command;
+use crate::commands::context::CommandContext;
+use crate::commands::r#trait::{Command, MutationCommand};
 use crate::config::{SettingsUpdate, WorkspaceSettings};
 use crate::error::{KernelError, Result};
 use crate::events::types::{DomainEvent, SettingsChanged};
-use crate::events::EventBus;
 use crate::lifecycle::LifecycleState;
+use crate::security::{PermissionRequest, PermissionSubject};
 use crate::services::ConfigurationService;
-use crate::state::WorkspaceState;
 
 /// Updates persisted workspace settings through the configuration service.
 pub struct UpdateSettings {
     pub update: SettingsUpdate,
 }
 
-impl Command for UpdateSettings {
+impl crate::commands::Command for UpdateSettings {
     fn name(&self) -> &'static str {
         "UpdateSettings"
+    }
+}
+
+impl MutationCommand for UpdateSettings {
+    type Output = WorkspaceSettings;
+
+    fn permission_request(&self) -> PermissionRequest {
+        PermissionRequest {
+            command: self.name(),
+            subject: PermissionSubject::Settings,
+        }
+    }
+
+    fn execute(self, ctx: &CommandContext<'_>) -> Result<WorkspaceSettings> {
+        Self::ensure_ready(ctx.state)?;
+        Self::validate(&self.update)?;
+
+        let settings = ConfigurationService::update(ctx.database, self.update).map_err(|error| {
+            log::error!("UpdateSettings command failed: {error}");
+            error
+        })?;
+
+        ctx.event_bus.publish(DomainEvent::SettingsChanged(SettingsChanged {
+            theme: settings.theme.clone(),
+            first_run: settings.first_run,
+            settings_version: settings.settings_version,
+        }));
+
+        Ok(settings)
     }
 }
 
@@ -25,32 +52,7 @@ impl UpdateSettings {
         Self { update }
     }
 
-    pub fn execute(
-        self,
-        state: &WorkspaceState,
-        database: &Database,
-        event_bus: &EventBus,
-    ) -> Result<WorkspaceSettings> {
-        log::info!("COMMAND: UpdateSettings");
-
-        Self::ensure_ready(state)?;
-        Self::validate(&self.update)?;
-
-        let settings = ConfigurationService::update(database, self.update).map_err(|error| {
-            log::error!("UpdateSettings command failed: {error}");
-            error
-        })?;
-
-        event_bus.publish(DomainEvent::SettingsChanged(SettingsChanged {
-            theme: settings.theme.clone(),
-            first_run: settings.first_run,
-            settings_version: settings.settings_version,
-        }));
-
-        Ok(settings)
-    }
-
-    fn ensure_ready(state: &WorkspaceState) -> Result<()> {
+    fn ensure_ready(state: &crate::state::WorkspaceState) -> Result<()> {
         if state.lifecycle == LifecycleState::Ready {
             Ok(())
         } else {
@@ -71,19 +73,17 @@ impl UpdateSettings {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::commands::initialize::{InitializeWorkspace, InitializeWorkspaceResult};
+    use crate::commands::context::CommandContext;
+    use crate::commands::initialize::InitializeWorkspace;
+    use crate::commands::pipeline::CommandPipeline;
     use crate::events::EventBus;
+    use crate::security::AllowAllPermissionGate;
     use std::sync::{Arc, Mutex};
-
-    fn initialized_context() -> (EventBus, InitializeWorkspaceResult) {
-        let bus = EventBus::new();
-        let init = InitializeWorkspace::in_memory().execute(&bus).unwrap();
-        (bus, init)
-    }
 
     #[test]
     fn executes_successfully_and_emits_event() {
-        let (bus, init) = initialized_context();
+        let bus = EventBus::new();
+        let init = InitializeWorkspace::in_memory().execute(&bus).unwrap();
         let event_name = Arc::new(Mutex::new(String::new()));
         let captured = Arc::clone(&event_name);
 
@@ -91,12 +91,19 @@ mod tests {
             *captured.lock().unwrap() = event.name().to_string();
         });
 
-        let settings = UpdateSettings::new(SettingsUpdate {
-            theme: Some("dark".into()),
-            first_run: None,
-        })
-        .execute(&init.state, init.database.database(), &bus)
-        .unwrap();
+        let ctx = CommandContext {
+            state: &init.state,
+            database: init.database.database(),
+            event_bus: &bus,
+            permission_gate: &AllowAllPermissionGate,
+        };
+
+        let settings = CommandPipeline::new(ctx)
+            .execute_mutation(UpdateSettings::new(SettingsUpdate {
+                theme: Some("dark".into()),
+                first_run: None,
+            }))
+            .unwrap();
 
         assert_eq!(settings.theme, "dark");
         assert_eq!(*event_name.lock().unwrap(), "system.settings.changed");
@@ -104,10 +111,17 @@ mod tests {
 
     #[test]
     fn rejects_empty_update() {
-        let (bus, init) = initialized_context();
+        let bus = EventBus::new();
+        let init = InitializeWorkspace::in_memory().execute(&bus).unwrap();
+        let ctx = CommandContext {
+            state: &init.state,
+            database: init.database.database(),
+            event_bus: &bus,
+            permission_gate: &AllowAllPermissionGate,
+        };
 
-        let error = UpdateSettings::new(SettingsUpdate::default())
-            .execute(&init.state, init.database.database(), &bus)
+        let error = CommandPipeline::new(ctx)
+            .execute_mutation(UpdateSettings::new(SettingsUpdate::default()))
             .unwrap_err();
 
         assert!(matches!(error, KernelError::InvalidSettings(_)));

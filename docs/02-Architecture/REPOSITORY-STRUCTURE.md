@@ -51,9 +51,9 @@ Workspace/
 │   └── vite.config.ts
 │
 ├── packages/                   # Shared internal Rust/TS packages
-│   ├── domain/                 # Shared domain models (Sprint 05)
-│   ├── kernel/                 # Platform kernel (Sprint 03–05)
-│   ├── database/               # SQLite persistence + repositories (Sprint 01–05)
+│   ├── domain/                 # Shared domain models + typed IDs (Sprint 05–06)
+│   ├── kernel/                 # Platform kernel, command pipeline, security (Sprint 03–06)
+│   ├── database/               # SQLite persistence + transactions (Sprint 01–06)
 │   ├── domain-apps/            # Application domain service (future)
 │   ├── domain-windows/         # Window domain service (future)
 │   ├── domain-devices/         # Device domain service (future)
@@ -99,7 +99,8 @@ Workspace/
 
 - Application entry point and top-level assembly.
 - Tauri commands delegate to `WorkspaceKernel`; no direct database access from commands.
-- State-changing IPC routes through the kernel command layer (Sprint 04).
+- State-changing IPC routes through the kernel command layer (Sprint 04+).
+- Mutations pass through `CommandPipeline` and `PermissionGate` (Sprint 06).
 - No domain logic — delegates to `packages/`.
 
 ### 3.3 `packages/`
@@ -203,6 +204,19 @@ These directories may be added as the project matures:
 | `tests/e2e/` | E2E framework selected (Phase 2) |
 
 Each addition requires a Decision Log entry if it changes the structure defined here.
+
+---
+
+## 8. Naming Conventions (Sprint 06)
+
+| Term | Reserved for | Example |
+|------|--------------|---------|
+| **Registry** | Runtime/service health tracking only | `ServiceRegistry` |
+| **Service** | Domain operations coordinating repos + events | `WorkspaceService`, future `ZoneService` |
+| **Repository** | SQL persistence only | `WorkspaceRepository` |
+| **Pipeline** | Uniform command dispatch + permission | `CommandPipeline` |
+
+Do **not** introduce `ResourceRegistry`. Future resources use sibling `*Service` types under `CommandHandler`, not nested under `WorkspaceService`.
 
 ---
 

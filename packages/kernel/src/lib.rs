@@ -1,7 +1,7 @@
 //! Workspace Platform Kernel — core runtime boundary.
 //!
 //! Owns application lifecycle, state, configuration, service registration,
-//! internal events, and the command layer.
+//! internal events, command pipeline, and permission boundaries.
 
 pub mod commands;
 pub mod config;
@@ -9,6 +9,7 @@ pub mod error;
 pub mod events;
 pub mod health;
 pub mod lifecycle;
+pub mod security;
 pub mod services;
 pub mod state;
 
@@ -18,10 +19,15 @@ pub use error::{KernelError, PublicError, Result};
 pub use events::{DomainEvent, EventBus};
 pub use health::WorkspaceHealth;
 pub use lifecycle::LifecycleState;
+pub use security::{AllowAllPermissionGate, PermissionGate, PermissionRequest, PermissionSubject};
 pub use services::{ConfigurationService, DatabaseServiceHandle, ServiceRegistry, ServiceStatus};
 pub use state::WorkspaceState;
 
 use std::path::Path;
+use std::sync::Arc;
+
+use commands::CommandContext;
+use security::AllowAllPermissionGate as DefaultPermissionGate;
 
 /// Kernel crate version aligned with application semver.
 pub const KERNEL_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -36,6 +42,7 @@ pub struct WorkspaceKernel {
     database: DatabaseServiceHandle,
     services: ServiceRegistry,
     event_bus: EventBus,
+    permission_gate: Arc<dyn PermissionGate>,
 }
 
 impl WorkspaceKernel {
@@ -115,6 +122,19 @@ impl WorkspaceKernel {
         self.state.transition(lifecycle);
     }
 
+    pub(crate) fn command_context(&self) -> CommandContext<'_> {
+        CommandContext {
+            state: &self.state,
+            database: self.database(),
+            event_bus: &self.event_bus,
+            permission_gate: self.permission_gate.as_ref(),
+        }
+    }
+
+    pub(crate) fn permission_gate(&self) -> &dyn PermissionGate {
+        self.permission_gate.as_ref()
+    }
+
     fn bootstrap_shell(version: &str) -> Self {
         Self {
             state: WorkspaceState::new(version),
@@ -124,6 +144,7 @@ impl WorkspaceKernel {
             ),
             services: ServiceRegistry::new(),
             event_bus: EventBus::new(),
+            permission_gate: Arc::new(DefaultPermissionGate),
         }
     }
 }
@@ -229,7 +250,7 @@ mod tests {
         });
 
         let workspace = kernel.create_workspace("Sprint 05".into()).unwrap();
-        let loaded = kernel.get_workspace(workspace.id).unwrap();
+        let loaded = kernel.get_workspace(workspace.id.to_string()).unwrap();
 
         assert_eq!(loaded.name, "Sprint 05");
         assert_eq!(*received.lock().unwrap(), "workspace.entity.created");

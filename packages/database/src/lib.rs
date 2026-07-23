@@ -7,8 +7,10 @@ pub mod init;
 pub mod migration;
 pub mod repositories;
 pub mod settings;
+pub mod transaction;
 
 pub use connection::Database;
+pub use transaction::Transaction;
 pub use encryption::{EncryptionProvider, EncryptionTier, NoOpEncryptionProvider};
 pub use error::DatabaseError;
 pub use init::{bundled_migrations_dir, DatabaseService};

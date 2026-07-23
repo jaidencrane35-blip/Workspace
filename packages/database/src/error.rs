@@ -8,6 +8,9 @@ pub enum DatabaseError {
     #[error("Migration error: {0}")]
     Migration(String),
 
+    #[error("Record not found: {0}")]
+    NotFound(String),
+
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
 }

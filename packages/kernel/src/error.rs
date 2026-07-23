@@ -26,6 +26,9 @@ pub enum KernelError {
     #[error("Service '{0}' failed to start")]
     ServiceStartup(&'static str),
 
+    #[error("Permission denied: {0}")]
+    PermissionDenied(String),
+
     #[error("Workspace kernel initialization failed")]
     InitializationFailed,
 }
@@ -69,6 +72,10 @@ impl KernelError {
             KernelError::ServiceStartup(service) => PublicError {
                 code: "service_startup_failed".into(),
                 message: format!("Service '{service}' failed to start."),
+            },
+            KernelError::PermissionDenied(_) => PublicError {
+                code: "permission_denied".into(),
+                message: "This action was not permitted.".into(),
             },
             KernelError::InitializationFailed => PublicError {
                 code: "initialization_failed".into(),

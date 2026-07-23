@@ -52,7 +52,7 @@ mod tests {
     fn ipc_workspace_mutation_uses_command_layer() {
         let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
         let created = CommandHandler::create_workspace(&kernel, "IPC Workspace".into()).unwrap();
-        let loaded = CommandHandler::get_workspace(&kernel, created.id).unwrap();
+        let loaded = CommandHandler::get_workspace(&kernel, created.id.to_string()).unwrap();
         assert_eq!(loaded.name, "IPC Workspace");
     }
 }

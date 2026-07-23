@@ -4,6 +4,7 @@ use rusqlite::Connection;
 
 use crate::encryption::{EncryptionProvider, NoOpEncryptionProvider};
 use crate::error::Result;
+use crate::transaction::Transaction;
 
 /// SQLite database handle for Workspace local-first storage (DEC-010).
 pub struct Database {
@@ -67,6 +68,26 @@ impl Database {
 }
 
 impl Database {
+    /// Runs `operation` inside a transaction. Commits on success; rolls back on error.
+    pub fn transaction<F, T>(&self, operation: F) -> Result<T>
+    where
+        F: FnOnce(&Transaction<'_>) -> Result<T>,
+    {
+        self.connection().execute_batch("BEGIN IMMEDIATE")?;
+        let tx = Transaction::new(self.connection());
+
+        match operation(&tx) {
+            Ok(value) => {
+                self.connection().execute_batch("COMMIT")?;
+                Ok(value)
+            }
+            Err(error) => {
+                let _ = self.connection().execute_batch("ROLLBACK");
+                Err(error)
+            }
+        }
+    }
+
     pub(crate) fn ensure_migration_table(&self) -> Result<()> {
         self.connection.execute_batch(
             "CREATE TABLE IF NOT EXISTS _workspace_migrations (
@@ -109,6 +130,53 @@ mod tests {
                 [],
                 |row| row.get(0),
             )
+            .unwrap();
+        assert_eq!(count, 0);
+    }
+
+    #[test]
+    fn transaction_commits_on_success() {
+        let db = Database::open_in_memory().unwrap();
+        let runner = MigrationRunner::load_from_dir(crate::init::bundled_migrations_dir()).unwrap();
+        runner.apply_all(&db).unwrap();
+
+        db.transaction(|tx| {
+            tx.connection().execute(
+                "INSERT INTO workspaces (id, name, created_at, updated_at) VALUES (?1, ?2, ?3, ?4)",
+                ("tx-ws", "Transactional", "2026-07-23T10:00:00Z", "2026-07-23T10:00:00Z"),
+            )?;
+            Ok(())
+        })
+        .unwrap();
+
+        let count: i64 = db
+            .connection()
+            .query_row("SELECT COUNT(*) FROM workspaces", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(count, 1);
+    }
+
+    #[test]
+    fn transaction_rolls_back_on_error() {
+        let db = Database::open_in_memory().unwrap();
+        let runner = MigrationRunner::load_from_dir(crate::init::bundled_migrations_dir()).unwrap();
+        runner.apply_all(&db).unwrap();
+
+        let result: crate::error::Result<()> = db.transaction(|tx| {
+            tx.connection().execute(
+                "INSERT INTO workspaces (id, name, created_at, updated_at) VALUES (?1, ?2, ?3, ?4)",
+                ("rollback-ws", "Rollback", "2026-07-23T10:00:00Z", "2026-07-23T10:00:00Z"),
+            )?;
+            Err(crate::error::DatabaseError::Migration(
+                "forced rollback".into(),
+            ))
+        });
+
+        assert!(result.is_err());
+
+        let count: i64 = db
+            .connection()
+            .query_row("SELECT COUNT(*) FROM workspaces", [], |row| row.get(0))
             .unwrap();
         assert_eq!(count, 0);
     }

@@ -2,6 +2,12 @@
 
 SQLite persistence foundation for Workspace (DEC-010).
 
+## Sprint 06
+
+- `Database::transaction()` — atomic multi-step operations (`BEGIN IMMEDIATE` / `COMMIT` / `ROLLBACK`)
+- `Transaction` scope type for in-transaction repository helpers
+- Typed domain IDs in repository mappings
+
 ## Sprint 05
 
 - `WorkspaceRepository`, `ZoneRepository` — repository pattern for domain entities

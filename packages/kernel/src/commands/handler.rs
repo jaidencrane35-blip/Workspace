@@ -3,14 +3,16 @@ use std::path::Path;
 use crate::commands::create_workspace::CreateWorkspace;
 use crate::commands::get_workspace::GetWorkspace;
 use crate::commands::initialize::InitializeWorkspace;
+use crate::commands::pipeline::CommandPipeline;
 use crate::commands::update_settings::UpdateSettings;
 use crate::config::{SettingsUpdate, WorkspaceSettings};
 use crate::error::{KernelError, Result};
 use crate::events::types::{DomainEvent, WorkspaceShutdown};
 use crate::lifecycle::LifecycleState;
+use crate::security::{PermissionRequest, PermissionSubject};
 use crate::services::ConfigurationService;
 use crate::WorkspaceKernel;
-use workspace_domain::Workspace;
+use workspace_domain::{Workspace, WorkspaceId};
 
 /// Executes kernel commands and coordinates services + events.
 pub struct CommandHandler;
@@ -42,26 +44,32 @@ impl CommandHandler {
         kernel: &WorkspaceKernel,
         update: SettingsUpdate,
     ) -> Result<WorkspaceSettings> {
-        UpdateSettings::new(update).execute(
-            kernel.state(),
-            kernel.database(),
-            kernel.event_bus(),
-        )
+        CommandPipeline::new(kernel.command_context())
+            .execute_mutation(UpdateSettings::new(update))
     }
 
     pub fn create_workspace(kernel: &WorkspaceKernel, name: String) -> Result<Workspace> {
-        CreateWorkspace::new(name).execute(
-            kernel.state(),
-            kernel.database(),
-            kernel.event_bus(),
-        )
+        CommandPipeline::new(kernel.command_context())
+            .execute_mutation(CreateWorkspace::new(name))
     }
 
     pub fn get_workspace(kernel: &WorkspaceKernel, id: String) -> Result<Workspace> {
-        GetWorkspace::new(id).execute(kernel.state(), kernel.database())
+        let workspace_id = WorkspaceId::new(id).map_err(KernelError::Domain)?;
+        CommandPipeline::new(kernel.command_context())
+            .execute_query(GetWorkspace::new(workspace_id))
     }
 
     pub fn shutdown(kernel: &mut WorkspaceKernel) {
+        let request = PermissionRequest {
+            command: "ShutdownWorkspace",
+            subject: PermissionSubject::System,
+        };
+
+        if let Err(error) = kernel.permission_gate().require(&request) {
+            log::error!("ShutdownWorkspace denied: {error}");
+            return;
+        }
+
         log::info!("COMMAND: ShutdownWorkspace");
         kernel.transition_lifecycle(LifecycleState::ShuttingDown);
         kernel
@@ -90,5 +98,23 @@ mod tests {
 
         assert_eq!(settings.theme, "light");
         assert!(!settings.first_run);
+    }
+
+    #[test]
+    fn all_mutations_route_through_pipeline_or_handler_boundary() {
+        let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+
+        let workspace = CommandHandler::create_workspace(&kernel, "Boundary".into()).unwrap();
+        assert_eq!(workspace.name, "Boundary");
+
+        let settings = CommandHandler::update_settings(
+            &kernel,
+            SettingsUpdate {
+                theme: Some("dark".into()),
+                first_run: None,
+            },
+        )
+        .unwrap();
+        assert_eq!(settings.theme, "dark");
     }
 }
