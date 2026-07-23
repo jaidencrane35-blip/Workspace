@@ -12,6 +12,10 @@ use commands::context::get_workspace_context;
 use commands::discovery::get_actor_capabilities;
 use commands::observation::get_observations;
 use commands::projection::get_workspace_snapshot;
+use commands::execution::{
+    create_suggestion_intent_request, execute_intent_request, get_execution_outcomes,
+    get_execution_state, get_execution_states, request_execution_cancellation,
+};
 use commands::suggestion::{accept_suggestion, get_suggestions, reject_suggestion};
 use commands::suggestion_lifecycle::get_suggestion_lifecycle;
 use commands::resources::{
@@ -69,6 +73,12 @@ pub fn run() {
             accept_suggestion,
             reject_suggestion,
             get_suggestion_lifecycle,
+            create_suggestion_intent_request,
+            execute_intent_request,
+            get_execution_outcomes,
+            get_execution_state,
+            get_execution_states,
+            request_execution_cancellation,
         ])
         .setup(|app| {
             let app_data_dir = app

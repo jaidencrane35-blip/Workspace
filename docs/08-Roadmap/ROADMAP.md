@@ -130,6 +130,7 @@ Foundation     Decisions       Core Platform     Feature Expansion   Maturity
 - [x] Execution State Reconciliation Foundation — Sprint 29: ExecutionReconciliationService, GetExecutionState
 - [x] Execution States Projection Foundation — Sprint 30: reconcile_execution_states, GetExecutionStates
 - [x] Execution State Context Enrichment — Sprint 31: WorkspaceContext.execution_states via ExecutionReconciliationService
+- [x] Execution IPC + Operator Console — Sprint 32: wire S23–S30 IPC; front-to-back suggestion→execute path in app shell
 - [x] CI/CD pipeline (lint, build, test) — Sprint 01 PR workflow
 - [x] Developer setup documentation — Sprint 01
 - [ ] Spatial Workspace Canvas shell prototype — future sprint (DEC-009)

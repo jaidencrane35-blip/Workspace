@@ -454,7 +454,19 @@ WorkspaceContext.execution_states (additive field)
 GetWorkspaceContext (governed, audit.read)
 ```
 
-Trusted consumers of `WorkspaceContext` receive per-id reconciled states alongside outcome summary without a separate list read. No new command, capability, persistence, or IPC surface.
+Trusted consumers of `WorkspaceContext` receive per-id reconciled states alongside outcome summary without a separate list read. No new command, capability, or persistence.
+
+**Execution IPC + operator console (Sprint 32):**
+
+```
+CommandHandler (S23–S30)
+    ↓
+Tauri IPC (execution.rs)
+    ↓
+Operator console (App.tsx) — suggestion → intent → execute → outcomes
+```
+
+Previously deferred execution commands are registered for frontend use. The shell is a diagnostic operator console, not Spatial Canvas (DEC-009 remains future).
 
 ### 6.6 Windows Integration Layer
 

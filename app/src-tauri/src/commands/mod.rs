@@ -7,6 +7,7 @@ pub mod layout;
 pub mod observation;
 pub mod projection;
 pub mod discovery;
+pub mod execution;
 pub mod resources;
 pub mod response;
 pub mod settings;
