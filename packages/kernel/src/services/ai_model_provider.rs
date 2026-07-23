@@ -50,11 +50,22 @@ impl DeterministicModelProvider {
         &self,
         context: &AiPlanningContext,
     ) -> Vec<ModelProposalCandidate> {
-        let preferred = context
+        // Personalization ranks first; memory remains a secondary informational hint.
+        let mut preferred = context
+            .personalization_awareness
+            .as_ref()
+            .map(|awareness| awareness.preferred_application_ids())
+            .unwrap_or_default();
+        let memory_preferred = context
             .memory_awareness
             .as_ref()
             .map(|awareness| awareness.preferred_application_ids())
             .unwrap_or_default();
+        for id in memory_preferred {
+            if !preferred.iter().any(|existing| existing == &id) {
+                preferred.push(id);
+            }
+        }
 
         let mut candidates: Vec<(ApplicationId, String)> =
             if let Some(awareness) = &context.awareness {
@@ -63,11 +74,7 @@ impl DeterministicModelProvider {
                     .iter()
                     .filter(|app| !app.appears_active)
                     .map(|app| {
-                        let preferred_note = if preferred.iter().any(|id| id == app.id.as_str()) {
-                            " (preferred from memory)"
-                        } else {
-                            ""
-                        };
+                        let preferred_note = preference_note(context, app.id.as_str(), &app.name);
                         let explanation = format!(
                         "Goal '{}': launch '{}' (registered in workspace '{}', not appearing active){preferred_note}",
                         context.goal.statement, app.name, awareness.workspace_name
@@ -81,11 +88,7 @@ impl DeterministicModelProvider {
                     .iter()
                     .map(|application_id| {
                         let preferred_note =
-                            if preferred.iter().any(|id| id == application_id.as_str()) {
-                                " (preferred from memory)"
-                            } else {
-                                ""
-                            };
+                            preference_note(context, application_id.as_str(), application_id.as_str());
                         let explanation = format!(
                             "Goal '{}': launch application to prepare workspace{preferred_note}",
                             context.goal.statement
@@ -112,6 +115,23 @@ impl DeterministicModelProvider {
             .map(|(id, explanation)| ModelProposalCandidate::application_launch(id, explanation))
             .collect()
     }
+}
+
+fn preference_note(context: &AiPlanningContext, application_id: &str, fallback_label: &str) -> String {
+    if let Some(personalization) = &context.personalization_awareness {
+        if let Some(explanation) = personalization.explanation_for_application(application_id) {
+            return format!(" {explanation}");
+        }
+    }
+    let memory_preferred = context
+        .memory_awareness
+        .as_ref()
+        .map(|awareness| awareness.preferred_application_ids())
+        .unwrap_or_default();
+    if memory_preferred.iter().any(|id| id == application_id) {
+        return format!(" (preferred from memory: {fallback_label})");
+    }
+    String::new()
 }
 
 impl ModelProvider for DeterministicModelProvider {
@@ -476,6 +496,11 @@ impl ModelProviderService {
             .as_ref()
             .map(|awareness| awareness.planning_notes())
             .unwrap_or_default();
+        let personalization_notes = context
+            .personalization_awareness
+            .as_ref()
+            .map(|awareness| awareness.applied_explanations())
+            .unwrap_or_default();
 
         let mut proposals = Vec::new();
         for candidate in response
@@ -491,6 +516,14 @@ impl ModelProviderService {
                 .unwrap_or_else(|| format!("Provider suggested launch of {application_id}"));
             if let Some(note) = &capability_note {
                 explanation = format!("{explanation} {note}");
+            }
+            if !personalization_notes.is_empty()
+                && !explanation.contains("Preferred because")
+            {
+                explanation = format!(
+                    "{explanation} Personalization: {}",
+                    personalization_notes.join("; ")
+                );
             }
             if !memory_notes.is_empty() {
                 explanation = format!("{explanation} Memory: {}", memory_notes.join("; "));

@@ -17,6 +17,7 @@ pub use init::{bundled_migrations_dir, DatabaseService};
 pub use migration::MigrationRunner;
 pub use repositories::{
     AiMemoryRepository, ApplicationRepository, AuditRepository, GraphRepository, LayoutRepository,
-    PermissionApprovalRepository, WidgetRepository, WorkspaceRepository, ZoneRepository,
+    PermissionApprovalRepository, UserPreferenceRepository, WidgetRepository, WorkspaceRepository,
+    ZoneRepository,
 };
 pub use settings::SettingsRepository;

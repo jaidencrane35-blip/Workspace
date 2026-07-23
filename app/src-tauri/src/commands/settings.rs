@@ -75,6 +75,7 @@ mod tests {
                 theme: Some("light".into()),
                 first_run: Some(false),
                 active_workspace_id: None,
+                personalization_enabled: None,
             },
         )
         .unwrap();

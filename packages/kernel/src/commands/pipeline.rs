@@ -357,6 +357,7 @@ mod tests {
                 theme: Some("dark".into()),
                 first_run: None,
                 active_workspace_id: None,
+                personalization_enabled: None,
             }))
             .unwrap();
 

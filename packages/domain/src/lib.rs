@@ -7,6 +7,7 @@ pub mod ai_evaluation;
 pub mod ai_memory;
 pub mod ai_model;
 pub mod ai_orchestration;
+pub mod ai_personalization;
 pub mod ai_planning;
 pub mod ai_request;
 pub mod analytics;
@@ -53,6 +54,10 @@ pub use ai_model::{
     AiModelError, ModelInvocationSummary, ModelProposalCandidate, ModelProviderAvailability,
     ModelProviderCapability, ModelProviderDescriptor, ModelRequest, ModelRequestKind,
     ModelResponse, ModelResponseFormat, ModelResponseStatus,
+};
+pub use ai_personalization::{
+    AiPersonalizationAwareness, AiPersonalizationError, PersonalizedPlanComparison,
+    PreferenceCategory, PreferenceSource, UserPreference, UserPreferenceProfile,
 };
 pub use ai_evaluation::{
     classify_authority_outcome, evaluate_plan, evaluate_submission_result, AiEvaluationError,
@@ -128,8 +133,8 @@ pub use graph::{GraphEdge, GraphRelationship};
 pub use ids::{
     ActorId, AiActionProposalId, AiAssistantWorkflowId, AiGoalId, AiOrchestratedPlanId,
     AiPlanStepId, ApplicationId, AuditEventId, CapabilityGrantId, IntentId, LayoutId,
-    MemoryEntryId, ModelId, ModelProviderId, PermissionApprovalRequestId, WidgetId, WorkspaceId,
-    ZoneId,
+    MemoryEntryId, ModelId, ModelProviderId, PermissionApprovalRequestId, UserPreferenceId,
+    WidgetId, WorkspaceId, ZoneId,
 };
 pub use layout::{
     Layout, LayoutBounds, LayoutError, LayoutMetadata, LayoutNode, LayoutSnapshot, Position2D,

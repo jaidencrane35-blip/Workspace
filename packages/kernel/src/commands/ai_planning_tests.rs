@@ -194,6 +194,7 @@ fn case5_planner_cannot_bypass_via_direct_launch_service() {
         "Prepare my workspace",
         vec![workspace_domain::ApplicationId::new(app_a).unwrap()],
         None,
+        None,
     )
     .unwrap();
 

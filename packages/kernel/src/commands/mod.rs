@@ -26,6 +26,7 @@ mod initialize;
 mod launch_application;
 mod memory;
 mod model_provider;
+mod personalization;
 mod pipeline;
 mod reject_suggestion;
 mod request_execution_cancellation;
@@ -65,6 +66,8 @@ mod ai_assistant_tests;
 mod ai_memory_tests;
 #[cfg(test)]
 mod ai_model_provider_tests;
+#[cfg(test)]
+mod ai_personalization_tests;
 #[cfg(test)]
 mod observation_tests;
 #[cfg(test)]
@@ -114,6 +117,10 @@ pub use memory::{
 };
 pub use model_provider::{
     GetModelProviderMetadata, ListModelProviders, TestModelProviderRequest,
+};
+pub use personalization::{
+    CreateUserPreference, DeleteUserPreference, GetPreferenceProfile, SetPersonalizationEnabled,
+    UpdateUserPreference,
 };
 pub use pipeline::CommandPipeline;
 pub use reject_suggestion::RejectSuggestion;

@@ -19,6 +19,11 @@ use commands::model_provider::{
     diagnose_model_proposal_generation, get_model_provider_metadata, list_model_providers,
     test_model_provider_request,
 };
+use commands::personalization::{
+    compare_personalized_vs_neutral_plan, create_user_preference, delete_user_preference,
+    diagnose_ai_plan_with_personalization, get_preference_profile, set_personalization_enabled,
+    update_user_preference,
+};
 use commands::permission_approval::{
     advance_orchestrated_ai_plan, cancel_assistant_workflow, cancel_orchestrated_ai_plan,
     confirm_assistant_workflow, create_orchestrated_ai_plan, decide_approval,
@@ -95,6 +100,13 @@ pub fn run() {
             get_model_provider_metadata,
             test_model_provider_request,
             diagnose_model_proposal_generation,
+            create_user_preference,
+            update_user_preference,
+            get_preference_profile,
+            delete_user_preference,
+            set_personalization_enabled,
+            diagnose_ai_plan_with_personalization,
+            compare_personalized_vs_neutral_plan,
             create_orchestrated_ai_plan,
             get_orchestrated_ai_plan,
             advance_orchestrated_ai_plan,

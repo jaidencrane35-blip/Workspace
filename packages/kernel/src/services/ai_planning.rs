@@ -10,9 +10,9 @@ use std::sync::{Arc, Mutex};
 use serde_json::json;
 use workspace_database::Database;
 use workspace_domain::{
-    Actor, ActorContext, AiActionProposal, AiGoal, AiMemoryAwareness, AiPlan, AiPlanningContext,
-    AiPlanningError, AiProposalAuthorityOutcome, AiWorkspaceAwareness, ApplicationId,
-    IntentContext, WorkspaceContext,
+    Actor, ActorContext, AiActionProposal, AiGoal, AiMemoryAwareness, AiPersonalizationAwareness,
+    AiPlan, AiPlanningContext, AiPlanningError, AiProposalAuthorityOutcome, AiWorkspaceAwareness,
+    ApplicationId, IntentContext, WorkspaceContext,
 };
 
 use crate::error::{KernelError, Result};
@@ -52,12 +52,14 @@ impl AiPlanningService {
         goal_statement: impl Into<String>,
         application_ids: Vec<ApplicationId>,
         memory_awareness: Option<AiMemoryAwareness>,
+        personalization_awareness: Option<AiPersonalizationAwareness>,
     ) -> Result<AiPlan> {
         let context = Self::build_prepare_context(
             actor_id,
             goal_statement,
             application_ids,
             memory_awareness,
+            personalization_awareness,
         )?;
         Self::plan(&context)
     }
@@ -69,13 +71,22 @@ impl AiPlanningService {
         goal_statement: impl Into<String>,
         application_ids: Vec<ApplicationId>,
         memory_awareness: Option<AiMemoryAwareness>,
+        personalization_awareness: Option<AiPersonalizationAwareness>,
     ) -> Result<AiPlan> {
         let context = Self::build_prepare_context(
             actor_id,
             goal_statement,
             application_ids,
             memory_awareness,
+            personalization_awareness,
         )?;
+        if let Some(personalization) = &context.personalization_awareness {
+            crate::services::AiPersonalizationService::audit_used_in_planning(
+                db,
+                actor,
+                personalization,
+            )?;
+        }
         Self::plan_with_audit(&context, db, actor)
     }
 
@@ -84,9 +95,15 @@ impl AiPlanningService {
         goal_statement: impl Into<String>,
         awareness: AiWorkspaceAwareness,
         memory_awareness: Option<AiMemoryAwareness>,
+        personalization_awareness: Option<AiPersonalizationAwareness>,
     ) -> Result<AiPlan> {
-        let context =
-            Self::build_awareness_context(actor_id, goal_statement, awareness, memory_awareness)?;
+        let context = Self::build_awareness_context(
+            actor_id,
+            goal_statement,
+            awareness,
+            memory_awareness,
+            personalization_awareness,
+        )?;
         Self::plan(&context)
     }
 
@@ -97,9 +114,22 @@ impl AiPlanningService {
         goal_statement: impl Into<String>,
         awareness: AiWorkspaceAwareness,
         memory_awareness: Option<AiMemoryAwareness>,
+        personalization_awareness: Option<AiPersonalizationAwareness>,
     ) -> Result<AiPlan> {
-        let context =
-            Self::build_awareness_context(actor_id, goal_statement, awareness, memory_awareness)?;
+        let context = Self::build_awareness_context(
+            actor_id,
+            goal_statement,
+            awareness,
+            memory_awareness,
+            personalization_awareness,
+        )?;
+        if let Some(personalization) = &context.personalization_awareness {
+            crate::services::AiPersonalizationService::audit_used_in_planning(
+                db,
+                actor,
+                personalization,
+            )?;
+        }
         Self::plan_with_audit(&context, db, actor)
     }
 
@@ -108,6 +138,7 @@ impl AiPlanningService {
         goal_statement: impl Into<String>,
         application_ids: Vec<ApplicationId>,
         memory_awareness: Option<AiMemoryAwareness>,
+        personalization_awareness: Option<AiPersonalizationAwareness>,
     ) -> Result<AiPlanningContext> {
         let goal = AiGoal::new(goal_statement, actor_id).map_err(KernelError::from)?;
         let mut context = AiPlanningContext::new(goal, application_ids);
@@ -117,6 +148,9 @@ impl AiPlanningService {
         if let Some(memory_awareness) = memory_awareness {
             context = context.with_memory_awareness(memory_awareness);
         }
+        if let Some(personalization_awareness) = personalization_awareness {
+            context = context.with_personalization_awareness(personalization_awareness);
+        }
         Ok(context)
     }
 
@@ -125,6 +159,7 @@ impl AiPlanningService {
         goal_statement: impl Into<String>,
         awareness: AiWorkspaceAwareness,
         memory_awareness: Option<AiMemoryAwareness>,
+        personalization_awareness: Option<AiPersonalizationAwareness>,
     ) -> Result<AiPlanningContext> {
         let goal = AiGoal::new(goal_statement, actor_id).map_err(KernelError::from)?;
         let fallback_ids: Vec<ApplicationId> = awareness
@@ -138,6 +173,9 @@ impl AiPlanningService {
         }
         if let Some(memory_awareness) = memory_awareness {
             context = context.with_memory_awareness(memory_awareness);
+        }
+        if let Some(personalization_awareness) = personalization_awareness {
+            context = context.with_personalization_awareness(personalization_awareness);
         }
         Ok(context)
     }

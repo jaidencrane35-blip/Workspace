@@ -83,6 +83,7 @@ define_id!(AiAssistantWorkflowId);
 define_id!(MemoryEntryId);
 define_id!(ModelProviderId);
 define_id!(ModelId);
+define_id!(UserPreferenceId);
 
 #[cfg(test)]
 mod tests {

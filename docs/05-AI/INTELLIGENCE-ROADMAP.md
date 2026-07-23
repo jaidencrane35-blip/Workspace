@@ -27,7 +27,7 @@
 |-------|--------|--------|
 | 1 | Governed Memory Foundation | Complete (S60–61) |
 | 2 | Model Provider Abstraction | Complete (S62–63) |
-| 3 | Personalization (preference-aware proposals) | Planned |
+| 3 | Personalization (preference-aware proposals) | Complete (S64–65) |
 | 4 | Product Assistant UX | Planned |
 | 5 | Governed Automation Contracts | Planned |
 
@@ -63,6 +63,10 @@ Governed memory types + store; memory assembles into planning context only. Audi
 
 Model provider interface + registry/routing; planning consumes provider candidates only. Failures are safe; providers cannot execute or grant. See [AI Model Provider Foundation](AI-MODEL-PROVIDER-FOUNDATION.md).
 
+## Phase 4 Batch 3 (done)
+
+Explicit user preference profiles; preference-aware ranking/explanations with disable toggle. No hidden profiling; gateway unchanged. See [AI Personalization Foundation](AI-PERSONALIZATION-FOUNDATION.md).
+
 ---
 
 ## Never build
@@ -73,5 +77,6 @@ Model provider interface + registry/routing; planning consumes provider candidat
 - Hidden background automation
 - Memory → permission bypass
 - Model → permission / execution bypass
+- Hidden preference learning / behavioral profiling
 - Autonomous model switching / self-optimizing loops
 - Chain-of-thought / hidden reasoning storage as authority

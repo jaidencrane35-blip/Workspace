@@ -6,6 +6,7 @@ mod ai_evaluation;
 mod ai_memory;
 mod ai_model_provider;
 mod ai_orchestration;
+mod ai_personalization;
 mod ai_participation;
 mod ai_planning;
 mod analytics;
@@ -45,6 +46,7 @@ pub(crate) use ai_model_provider::{
     UnavailableModelProvider,
 };
 pub(crate) use ai_orchestration::{AiOrchestrationService, OrchestratedPlanStore};
+pub(crate) use ai_personalization::AiPersonalizationService;
 pub(crate) use ai_participation::AiParticipationService;
 pub(crate) use ai_planning::AiPlanningService;
 pub use analytics::WorkspaceAnalyticsService;

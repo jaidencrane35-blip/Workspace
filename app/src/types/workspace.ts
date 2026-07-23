@@ -27,4 +27,5 @@ export interface WorkspaceSettings {
   first_run: boolean;
   settings_version: number;
   active_workspace_id: string | null;
+  personalization_enabled: boolean;
 }

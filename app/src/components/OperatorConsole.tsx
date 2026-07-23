@@ -20,7 +20,10 @@ import type {
   MemoryEntry,
   ModelProviderDescriptor,
   ModelResponse,
+  PersonalizedPlanComparison,
   PermissionApprovalRequest,
+  UserPreference,
+  UserPreferenceProfile,
   Suggestion,
   SuggestionIntentRequest,
   SuggestionLifecycleRecord,
@@ -144,6 +147,11 @@ export function OperatorConsole({
     null,
   );
   const [modelPlan, setModelPlan] = useState<AiPlan | null>(null);
+  const [preferenceProfile, setPreferenceProfile] =
+    useState<UserPreferenceProfile | null>(null);
+  const [personalizedPlan, setPersonalizedPlan] = useState<AiPlan | null>(null);
+  const [planComparison, setPlanComparison] =
+    useState<PersonalizedPlanComparison | null>(null);
   const [busy, setBusy] = useState(false);
 
   const run = useCallback(
@@ -688,6 +696,221 @@ export function OperatorConsole({
                   {proposal.explanation ?? "(no explanation)"}
                 </div>
               ))}
+            </dd>
+          </dl>
+        )}
+      </section>
+
+      <section>
+        <h2>Governed personalization</h2>
+        <p className="muted">
+          Explicit preferences improve ranking and explanations only. Disable
+          anytime for neutral planning — never grants permissions.
+        </p>
+        <div className="row">
+          <button
+            type="button"
+            disabled={busy || !workspace || !lastRegisteredApp}
+            onClick={() =>
+              void run("Preference created", async () => {
+                if (!workspace || !lastRegisteredApp) return;
+                await invokeIpc<UserPreference>("create_user_preference", {
+                  category: "application",
+                  key: "default_editor",
+                  value: `${lastRegisteredApp.name} is my default editor`,
+                  source: "user_defined",
+                  workspaceId: workspace.id,
+                  label: lastRegisteredApp.name,
+                  attributes: JSON.stringify({
+                    application_id: lastRegisteredApp.id,
+                  }),
+                });
+                const profile = await invokeIpc<UserPreferenceProfile>(
+                  "get_preference_profile",
+                  { workspaceId: workspace.id, limit: 20 },
+                );
+                setPreferenceProfile(profile);
+              })
+            }
+          >
+            Create preference
+          </button>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() =>
+              void run("Preferences listed", async () => {
+                const profile = await invokeIpc<UserPreferenceProfile>(
+                  "get_preference_profile",
+                  {
+                    workspaceId: workspace?.id ?? null,
+                    limit: 20,
+                  },
+                );
+                setPreferenceProfile(profile);
+              })
+            }
+          >
+            List preferences
+          </button>
+          <button
+            type="button"
+            disabled={busy || !preferenceProfile?.preferences[0]}
+            onClick={() =>
+              void run("Preference edited", async () => {
+                const first = preferenceProfile?.preferences[0];
+                if (!first) return;
+                await invokeIpc<UserPreference>("update_user_preference", {
+                  id: first.id,
+                  value: `${first.value} (edited)`,
+                  label: first.label,
+                });
+                const profile = await invokeIpc<UserPreferenceProfile>(
+                  "get_preference_profile",
+                  {
+                    workspaceId: workspace?.id ?? null,
+                    limit: 20,
+                  },
+                );
+                setPreferenceProfile(profile);
+              })
+            }
+          >
+            Edit preference
+          </button>
+          <button
+            type="button"
+            disabled={busy || !preferenceProfile?.preferences[0]}
+            onClick={() =>
+              void run("Preference deleted", async () => {
+                const first = preferenceProfile?.preferences[0];
+                if (!first) return;
+                await invokeIpc<UserPreference>("delete_user_preference", {
+                  id: first.id,
+                });
+                const profile = await invokeIpc<UserPreferenceProfile>(
+                  "get_preference_profile",
+                  {
+                    workspaceId: workspace?.id ?? null,
+                    limit: 20,
+                  },
+                );
+                setPreferenceProfile(profile);
+              })
+            }
+          >
+            Delete preference
+          </button>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() =>
+              void run("Personalization toggled", async () => {
+                const enabled = !(
+                  preferenceProfile?.personalization_enabled ?? true
+                );
+                await invokeIpc<boolean>("set_personalization_enabled", {
+                  enabled,
+                });
+                const profile = await invokeIpc<UserPreferenceProfile>(
+                  "get_preference_profile",
+                  {
+                    workspaceId: workspace?.id ?? null,
+                    limit: 20,
+                  },
+                );
+                setPreferenceProfile(profile);
+              })
+            }
+          >
+            Toggle personalization
+          </button>
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("Personalized plan generated", async () => {
+                if (!workspace) return;
+                const plan = await invokeIpc<AiPlan>(
+                  "diagnose_ai_plan_with_personalization",
+                  {
+                    goal: "Prepare my coding workspace",
+                    workspaceId: workspace.id,
+                    applicationIds: lastRegisteredApp
+                      ? [lastRegisteredApp.id]
+                      : [],
+                    personalizationEnabled: true,
+                  },
+                );
+                setPersonalizedPlan(plan);
+              })
+            }
+          >
+            Generate plan with personalization
+          </button>
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("Personalized vs neutral compared", async () => {
+                if (!workspace) return;
+                const comparison = await invokeIpc<PersonalizedPlanComparison>(
+                  "compare_personalized_vs_neutral_plan",
+                  {
+                    goal: "Prepare my coding workspace",
+                    workspaceId: workspace.id,
+                    applicationIds: lastRegisteredApp
+                      ? [lastRegisteredApp.id]
+                      : [],
+                  },
+                );
+                setPlanComparison(comparison);
+              })
+            }
+          >
+            Compare personalized vs neutral
+          </button>
+        </div>
+        {preferenceProfile && (
+          <dl>
+            <dt>Preference profile</dt>
+            <dd>
+              enabled={String(preferenceProfile.personalization_enabled)} —{" "}
+              {preferenceProfile.preferences.length} preference(s)
+              {preferenceProfile.preferences.map((preference) => (
+                <div key={preference.id}>
+                  [{preference.category}] {preference.key}: {preference.value}
+                  {preference.label ? ` (${preference.label})` : ""}
+                </div>
+              ))}
+            </dd>
+          </dl>
+        )}
+        {personalizedPlan && (
+          <dl>
+            <dt>Personalized plan</dt>
+            <dd>
+              {personalizedPlan.proposals.map((proposal) => (
+                <div key={proposal.id}>
+                  {proposal.command_name}:{" "}
+                  {proposal.explanation ?? "(no explanation)"}
+                </div>
+              ))}
+            </dd>
+          </dl>
+        )}
+        {planComparison && (
+          <dl>
+            <dt>Personalized vs neutral</dt>
+            <dd>
+              <div>
+                Personalized first:{" "}
+                {planComparison.personalized.proposals[0]?.explanation ?? "none"}
+              </div>
+              <div>
+                Neutral first:{" "}
+                {planComparison.neutral.proposals[0]?.explanation ?? "none"}
+              </div>
             </dd>
           </dl>
         )}

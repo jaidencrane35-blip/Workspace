@@ -26,6 +26,7 @@ pub enum CapabilityScope {
     Audit,
     System,
     Memory,
+    Personalization,
 }
 
 /// A named capability required or granted for an operation.
@@ -209,6 +210,22 @@ impl Capability {
             scope: CapabilityScope::Memory,
         }
     }
+
+    pub fn personalization_read() -> Self {
+        Self {
+            id: CapabilityId::new("personalization.read")
+                .expect("personalization.read is valid"),
+            scope: CapabilityScope::Personalization,
+        }
+    }
+
+    pub fn personalization_write() -> Self {
+        Self {
+            id: CapabilityId::new("personalization.write")
+                .expect("personalization.write is valid"),
+            scope: CapabilityScope::Personalization,
+        }
+    }
 }
 
 impl CapabilitySet {
@@ -265,6 +282,8 @@ impl CapabilitySet {
             .with_capability(&Capability::audit_write())
             .with_capability(&Capability::memory_read())
             .with_capability(&Capability::memory_write())
+            .with_capability(&Capability::personalization_read())
+            .with_capability(&Capability::personalization_write())
     }
 
     /// Capabilities attributed to system lifecycle operations.

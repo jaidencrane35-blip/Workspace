@@ -460,6 +460,45 @@ export interface AiMemoryAwareness {
   assembled_at: string;
 }
 
+export type PreferenceCategory =
+  | "workflow"
+  | "application"
+  | "layout"
+  | "communication"
+  | "planning";
+
+export type PreferenceSource =
+  | "user_defined"
+  | "user_confirmed"
+  | "imported";
+
+export interface UserPreference {
+  id: string;
+  category: PreferenceCategory;
+  key: string;
+  value: string;
+  label: string | null;
+  source: PreferenceSource;
+  confidence: number;
+  scope_workspace_id: string | null;
+  editable: boolean;
+  attributes: string | null;
+  created_at: string;
+  updated_at: string;
+  deleted: boolean;
+}
+
+export interface UserPreferenceProfile {
+  preferences: UserPreference[];
+  personalization_enabled: boolean;
+  assembled_at: string;
+}
+
+export interface PersonalizedPlanComparison {
+  personalized: AiPlan;
+  neutral: AiPlan;
+}
+
 export interface ActionCatalogEntry {
   intent_id: string;
   name: string;

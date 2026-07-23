@@ -7,10 +7,12 @@ pub const KEY_THEME: &str = "theme";
 pub const KEY_FIRST_RUN: &str = "first_run";
 pub const KEY_SETTINGS_VERSION: &str = "settings_version";
 pub const KEY_ACTIVE_WORKSPACE_ID: &str = "active_workspace_id";
+pub const KEY_PERSONALIZATION_ENABLED: &str = "personalization_enabled";
 
 const DEFAULT_THEME: &str = "system";
 const DEFAULT_FIRST_RUN: &str = "true";
 const DEFAULT_SETTINGS_VERSION: &str = "1";
+const DEFAULT_PERSONALIZATION_ENABLED: &str = "true";
 
 /// Application settings persisted in SQLite.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -20,6 +22,8 @@ pub struct WorkspaceSettings {
     pub settings_version: u32,
     /// Last active workspace id for session restore (Sprint 38).
     pub active_workspace_id: Option<String>,
+    /// When false, planning ignores stored preferences (Sprint 65).
+    pub personalization_enabled: bool,
 }
 
 impl Default for WorkspaceSettings {
@@ -29,6 +33,7 @@ impl Default for WorkspaceSettings {
             first_run: true,
             settings_version: 1,
             active_workspace_id: None,
+            personalization_enabled: true,
         }
     }
 }
@@ -40,6 +45,7 @@ pub struct SettingsUpdate {
     pub first_run: Option<bool>,
     /// `None` leave unchanged · `Some("")` clear · `Some(id)` set.
     pub active_workspace_id: Option<String>,
+    pub personalization_enabled: Option<bool>,
 }
 
 /// Owns configuration reads/writes through the database layer.
@@ -66,12 +72,18 @@ impl ConfigManager {
         let active_workspace_id = repo
             .get(KEY_ACTIVE_WORKSPACE_ID)?
             .filter(|value| !value.trim().is_empty());
+        let personalization_enabled = parse_bool(
+            repo.get(KEY_PERSONALIZATION_ENABLED)?
+                .unwrap_or_else(|| DEFAULT_PERSONALIZATION_ENABLED.to_string())
+                .as_str(),
+        )?;
 
         Ok(WorkspaceSettings {
             theme,
             first_run,
             settings_version,
             active_workspace_id,
+            personalization_enabled,
         })
     }
 
@@ -87,6 +99,12 @@ impl ConfigManager {
         }
         if repo.get(KEY_SETTINGS_VERSION)?.is_none() {
             repo.set(KEY_SETTINGS_VERSION, DEFAULT_SETTINGS_VERSION)?;
+        }
+        if repo.get(KEY_PERSONALIZATION_ENABLED)?.is_none() {
+            repo.set(
+                KEY_PERSONALIZATION_ENABLED,
+                DEFAULT_PERSONALIZATION_ENABLED,
+            )?;
         }
 
         Ok(())
@@ -115,6 +133,18 @@ impl ConfigManager {
                 repo.set(KEY_ACTIVE_WORKSPACE_ID, &active)?;
                 current.active_workspace_id = Some(active);
             }
+        }
+
+        if let Some(personalization_enabled) = update.personalization_enabled {
+            repo.set(
+                KEY_PERSONALIZATION_ENABLED,
+                if personalization_enabled {
+                    "true"
+                } else {
+                    "false"
+                },
+            )?;
+            current.personalization_enabled = personalization_enabled;
         }
 
         Ok(current)
@@ -170,6 +200,7 @@ mod tests {
         assert!(settings.first_run);
         assert_eq!(settings.settings_version, 1);
         assert!(settings.active_workspace_id.is_none());
+        assert!(settings.personalization_enabled);
     }
 
     #[test]
@@ -183,6 +214,7 @@ mod tests {
                 theme: Some("dark".into()),
                 first_run: Some(false),
                 active_workspace_id: Some("ws-1".into()),
+                personalization_enabled: None,
             },
         )
         .unwrap();

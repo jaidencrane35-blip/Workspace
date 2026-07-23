@@ -10,6 +10,7 @@ use thiserror::Error;
 use crate::action_catalog::AiActionAwareness;
 use crate::ai_memory::AiMemoryAwareness;
 use crate::ai_model::ModelInvocationSummary;
+use crate::ai_personalization::AiPersonalizationAwareness;
 use crate::ai_request::{AiActionRequest, AiRequestError};
 use crate::context::WorkspaceContext;
 use crate::ids::{
@@ -188,6 +189,8 @@ pub struct AiPlanningContext {
     pub action_awareness: Option<AiActionAwareness>,
     /// Optional governed memory hints (Phase 4 Batch 1) — never authority.
     pub memory_awareness: Option<AiMemoryAwareness>,
+    /// Optional explicit personalization (Phase 4 Batch 3) — never authority.
+    pub personalization_awareness: Option<AiPersonalizationAwareness>,
 }
 
 impl AiPlanningContext {
@@ -198,6 +201,7 @@ impl AiPlanningContext {
             awareness: None,
             action_awareness: None,
             memory_awareness: None,
+            personalization_awareness: None,
         }
     }
 
@@ -213,6 +217,14 @@ impl AiPlanningContext {
 
     pub fn with_memory_awareness(mut self, memory_awareness: AiMemoryAwareness) -> Self {
         self.memory_awareness = Some(memory_awareness);
+        self
+    }
+
+    pub fn with_personalization_awareness(
+        mut self,
+        personalization_awareness: AiPersonalizationAwareness,
+    ) -> Self {
+        self.personalization_awareness = Some(personalization_awareness);
         self
     }
 }

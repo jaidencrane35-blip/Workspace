@@ -33,6 +33,10 @@ use crate::commands::memory::{
 use crate::commands::model_provider::{
     GetModelProviderMetadata, ListModelProviders, TestModelProviderRequest,
 };
+use crate::commands::personalization::{
+    CreateUserPreference, DeleteUserPreference, GetPreferenceProfile, SetPersonalizationEnabled,
+    UpdateUserPreference,
+};
 use crate::commands::pipeline::CommandPipeline;
 use crate::commands::reject_suggestion::RejectSuggestion;
 use crate::commands::request_execution_cancellation::RequestExecutionCancellation;
@@ -55,9 +59,10 @@ use workspace_domain::{
     AiProposalEvaluation, AiProposalSubmission, ApplicationId, ApplicationReference, AuditEvent,
     Capability, CapabilitySet, Intent, IntentContext, Layout, LayoutId, LayoutMetadata, LayoutNode,
     LayoutSnapshot, MemoryEntry, MemoryType, ModelProviderDescriptor, ModelResponse, Observation,
-    Suggestion, SuggestionIntentRequest, SuggestionLifecycleRecord, IntentExecutionRequest,
-    ExecutionOutcome, ExecutionReconciliation, CancellationRequest, WidgetId, WidgetReference,
-    Workspace, WorkspaceContext, WorkspaceId, WorkspaceMetrics, WorkspaceSnapshot,
+    PersonalizedPlanComparison, PreferenceCategory, PreferenceSource, Suggestion,
+    SuggestionIntentRequest, SuggestionLifecycleRecord, IntentExecutionRequest, ExecutionOutcome,
+    ExecutionReconciliation, CancellationRequest, UserPreference, UserPreferenceProfile, WidgetId,
+    WidgetReference, Workspace, WorkspaceContext, WorkspaceId, WorkspaceMetrics, WorkspaceSnapshot,
     CapabilityDiscovery, Zone, ZoneId,
 };
 use workspace_windows_integration::DesktopWindowSnapshot;
@@ -271,6 +276,7 @@ impl CommandHandler {
             application_ids,
             workspace_id,
             None,
+            None,
         )
     }
 
@@ -291,6 +297,7 @@ impl CommandHandler {
             application_ids,
             workspace_id,
             Some(environment_window_titles),
+            None,
         )
     }
 
@@ -301,6 +308,7 @@ impl CommandHandler {
         application_ids: Vec<String>,
         workspace_id: Option<String>,
         environment_override: Option<Vec<String>>,
+        personalization_override: Option<bool>,
     ) -> Result<AiPlan> {
         let actor_id = actor_id.into();
         let actor = AiPlanningService::ensure_ai_actor(&actor_id)?;
@@ -345,6 +353,14 @@ impl CommandHandler {
                 20,
             )
             .ok();
+            let personalization_awareness =
+                crate::services::AiPersonalizationService::assemble_awareness(
+                    &kernel.shared_database(),
+                    Some(workspace_id.as_str()),
+                    20,
+                    personalization_override,
+                )
+                .ok();
             AiPlanningService::plan_with_awareness_audited(
                 &kernel.shared_database(),
                 &actor,
@@ -352,6 +368,7 @@ impl CommandHandler {
                 goal_statement,
                 awareness,
                 memory_awareness,
+                personalization_awareness,
             )?
         } else {
             let apps = application_ids
@@ -365,6 +382,14 @@ impl CommandHandler {
                 20,
             )
             .ok();
+            let personalization_awareness =
+                crate::services::AiPersonalizationService::assemble_awareness(
+                    &kernel.shared_database(),
+                    None,
+                    20,
+                    personalization_override,
+                )
+                .ok();
             AiPlanningService::plan_prepare_workspace_audited(
                 &kernel.shared_database(),
                 &actor,
@@ -372,6 +397,7 @@ impl CommandHandler {
                 goal_statement,
                 apps,
                 memory_awareness,
+                personalization_awareness,
             )?
         };
 
@@ -461,6 +487,7 @@ impl CommandHandler {
             application_ids,
             workspace_id,
             environment_override,
+            None,
         )?;
 
         let mut submissions = Vec::new();
@@ -568,6 +595,7 @@ impl CommandHandler {
             application_ids,
             workspace_id,
             environment_for_plan,
+            None,
         )?;
 
         // Note: context-aware planning already skips active apps, so "unnecessary"
@@ -604,6 +632,7 @@ impl CommandHandler {
             goal_statement,
             application_ids,
             workspace_id,
+            None,
             None,
         )?;
         let plan = AiOrchestrationService::create_from_plan(ai_plan)?;
@@ -1318,6 +1347,129 @@ impl CommandHandler {
         )
     }
 
+    pub fn create_user_preference(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        category: PreferenceCategory,
+        key: impl Into<String>,
+        value: impl Into<String>,
+        source: PreferenceSource,
+        workspace_id: Option<String>,
+        label: Option<String>,
+        attributes: Option<String>,
+    ) -> Result<UserPreference> {
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_mutation(
+            CreateUserPreference::new(
+                category,
+                key.into(),
+                value.into(),
+                source,
+                workspace_id,
+                label,
+                attributes,
+            ),
+        )
+    }
+
+    pub fn update_user_preference(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        id: impl Into<String>,
+        value: Option<String>,
+        label: Option<Option<String>>,
+        attributes: Option<Option<String>>,
+        confidence: Option<u8>,
+    ) -> Result<UserPreference> {
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_mutation(
+            UpdateUserPreference::new(id.into(), value, label, attributes, confidence),
+        )
+    }
+
+    pub fn get_preference_profile(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: Option<String>,
+        limit: Option<usize>,
+    ) -> Result<UserPreferenceProfile> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetPreferenceProfile::new(workspace_id, limit))
+    }
+
+    pub fn delete_user_preference(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        id: impl Into<String>,
+    ) -> Result<UserPreference> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_mutation(DeleteUserPreference::new(id.into()))
+    }
+
+    pub fn set_personalization_enabled(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        enabled: bool,
+    ) -> Result<bool> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_mutation(SetPersonalizationEnabled::new(enabled))
+    }
+
+    /// Planning with an explicit personalization on/off override (diagnostics).
+    pub fn diagnose_ai_plan_with_personalization(
+        kernel: &WorkspaceKernel,
+        actor_id: impl Into<String>,
+        goal_statement: impl Into<String>,
+        application_ids: Vec<String>,
+        workspace_id: Option<String>,
+        personalization_enabled: bool,
+    ) -> Result<AiPlan> {
+        Self::plan_ai_goal_inner(
+            kernel,
+            actor_id,
+            goal_statement,
+            application_ids,
+            workspace_id,
+            None,
+            Some(personalization_enabled),
+        )
+    }
+
+    /// Compare personalized vs neutral planning (no execution).
+    pub fn compare_personalized_vs_neutral_plan(
+        kernel: &WorkspaceKernel,
+        actor_id: impl Into<String>,
+        goal_statement: impl Into<String>,
+        application_ids: Vec<String>,
+        workspace_id: Option<String>,
+    ) -> Result<PersonalizedPlanComparison> {
+        let actor_id = actor_id.into();
+        let goal_statement = goal_statement.into();
+        let personalized = Self::diagnose_ai_plan_with_personalization(
+            kernel,
+            actor_id.clone(),
+            goal_statement.clone(),
+            application_ids.clone(),
+            workspace_id.clone(),
+            true,
+        )?;
+        let neutral = Self::diagnose_ai_plan_with_personalization(
+            kernel,
+            actor_id,
+            goal_statement,
+            application_ids,
+            workspace_id,
+            false,
+        )?;
+        Ok(PersonalizedPlanComparison {
+            personalized,
+            neutral,
+        })
+    }
+
     pub fn get_audit_history(
         kernel: &WorkspaceKernel,
         actor: ActorContext,
@@ -1555,6 +1707,7 @@ mod tests {
                 theme: Some("light".into()),
                 first_run: Some(false),
                 active_workspace_id: None,
+                personalization_enabled: None,
             },
         )
         .unwrap();
@@ -1593,6 +1746,7 @@ mod tests {
                 theme: Some("dark".into()),
                 first_run: None,
                 active_workspace_id: None,
+                personalization_enabled: None,
             },
         )
         .unwrap();

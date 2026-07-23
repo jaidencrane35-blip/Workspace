@@ -8,6 +8,7 @@ pub mod layout;
 pub mod memory;
 pub mod model_provider;
 pub mod observation;
+pub mod personalization;
 pub mod permission_approval;
 pub mod projection;
 pub mod discovery;

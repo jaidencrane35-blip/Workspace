@@ -215,6 +215,14 @@ impl ModelRequest {
         if let Some(memory) = &context.memory_awareness {
             summary_parts.push(format!("memory_entries={}", memory.entries.len()));
         }
+        if let Some(personalization) = &context.personalization_awareness {
+            summary_parts.push(format!(
+                "personalization_enabled={} preference_count={} preferred_apps={}",
+                personalization.enabled,
+                personalization.preferences.len(),
+                personalization.preferred_application_ids().join(",")
+            ));
+        }
 
         Self::planning_assist(
             context.goal.statement.clone(),

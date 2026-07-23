@@ -167,7 +167,7 @@ Foundation     Decisions       Core Platform     Feature Expansion   Maturity
 
 **Goal:** Application launching, AI observation/suggestion, and user-approved automation.
 
-**Status:** **In progress** — model provider abstraction (Sprints 62–63 / P4-B2). Phase 3 intelligence batches 1–7 complete; Phase 4 Batches 1–2 complete; see [Intelligence Roadmap](../05-AI/INTELLIGENCE-ROADMAP.md).
+**Status:** **In progress** — governed personalization (Sprints 64–65 / P4-B3). Phase 3 intelligence batches 1–7 complete; Phase 4 Batches 1–3 complete; see [Intelligence Roadmap](../05-AI/INTELLIGENCE-ROADMAP.md).
 
 ### Expected Deliverables
 
@@ -184,6 +184,7 @@ Foundation     Decisions       Core Platform     Feature Expansion   Maturity
 - [x] Governed AI assistant (goal → preview → confirm → gateway) — Sprints 58–59; see [AI Assistant Foundation](../05-AI/AI-ASSISTANT-FOUNDATION.md)
 - [x] Governed memory foundation (context only; no authority) — Sprints 60–61; see [AI Memory Foundation](../05-AI/AI-MEMORY-FOUNDATION.md)
 - [x] Model provider abstraction (intelligence ≠ authority) — Sprints 62–63; see [AI Model Provider Foundation](../05-AI/AI-MODEL-PROVIDER-FOUNDATION.md)
+- [x] Governed personalization (explicit preferences; no hidden profiling) — Sprints 64–65; see [AI Personalization Foundation](../05-AI/AI-PERSONALIZATION-FOUNDATION.md)
 - Application service (discovery, launch, grouping) — launch authority done; discovery/grouping later
 - Window service (tracking, layout integration)
 - AI observer and pattern store (L0–L4 confidence model)

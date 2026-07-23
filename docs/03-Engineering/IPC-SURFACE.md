@@ -47,6 +47,10 @@
 | `list_model_providers` / `get_model_provider_metadata` | Diagnostic model provider inventory |
 | `test_model_provider_request` | Diagnostic provider invoke (intelligence only) |
 | `diagnose_model_proposal_generation` | Diagnostic provider → proposals (no execution) |
+| `create_user_preference` / `update_user_preference` / `get_preference_profile` | Diagnostic personalization CRUD |
+| `delete_user_preference` / `set_personalization_enabled` | Diagnostic preference lifecycle / toggle |
+| `diagnose_ai_plan_with_personalization` | Diagnostic preference-aware plan (no execution) |
+| `compare_personalized_vs_neutral_plan` | Diagnostic personalized vs neutral compare |
 | `get_action_catalog` | Diagnostic action catalog (existence ≠ authorization) |
 | `get_permission_approvals` / `decide_approval` | Diagnostic (allow once / deny) |
 
