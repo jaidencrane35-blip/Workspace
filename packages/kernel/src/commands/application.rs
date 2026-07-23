@@ -17,6 +17,7 @@ pub struct CreateApplication {
     pub workspace_id: WorkspaceId,
     pub name: String,
     pub identifier: Option<String>,
+    pub executable_path: Option<String>,
 }
 
 impl crate::commands::Command for CreateApplication {
@@ -50,6 +51,7 @@ impl MutationCommand for CreateApplication {
                 self.workspace_id.clone(),
                 self.name.clone(),
                 self.identifier.clone(),
+                self.executable_path.clone(),
             )
         })?;
 
@@ -73,11 +75,13 @@ impl CreateApplication {
         workspace_id: WorkspaceId,
         name: String,
         identifier: Option<String>,
+        executable_path: Option<String>,
     ) -> Self {
         Self {
             workspace_id,
             name,
             identifier,
+            executable_path,
         }
     }
 }

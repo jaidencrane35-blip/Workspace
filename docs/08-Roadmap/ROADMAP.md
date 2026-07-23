@@ -167,12 +167,13 @@ Foundation     Decisions       Core Platform     Feature Expansion   Maturity
 
 **Goal:** Application launching, AI observation/suggestion, and user-approved automation.
 
-**Status:** **In progress** — Permission Gateway foundation (Sprint 40); app launch next.
+**Status:** **In progress** — Permission Gateway (Sprint 40); governed app launch (Sprints 41–42).
 
 ### Expected Deliverables
 
 - [x] Permission Gateway (replace AllowAll on execution path; decision audit) — Sprint 40
-- Application service (discovery, launch, grouping)
+- [x] Governed application launch through Permission Gateway — Sprints 41–42
+- Application service (discovery, launch, grouping) — launch authority done; discovery/grouping later
 - Window service (tracking, layout integration)
 - AI observer and pattern store (L0–L4 confidence model)
 - AI suggestion UI (permission-gated)

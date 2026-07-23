@@ -1,7 +1,8 @@
-//! Win32 EnumWindows-backed enumerator (Windows only).
+//! Win32 EnumWindows-backed enumerator and process launcher (Windows only).
 
 use std::ffi::OsString;
 use std::os::windows::ffi::OsStringExt;
+use std::process::Command;
 
 use windows::Win32::Foundation::{BOOL, HWND, LPARAM};
 use windows::Win32::UI::WindowsAndMessaging::{
@@ -9,6 +10,7 @@ use windows::Win32::UI::WindowsAndMessaging::{
 };
 
 use super::enumerator::{DesktopWindowSnapshot, WindowEnumerator};
+use super::launcher::{ProcessLaunchOutcome, ProcessLaunchRequest, ProcessLauncher};
 use crate::error::{Result, WindowsIntegrationError};
 
 #[derive(Debug, Default, Clone, Copy)]
@@ -76,6 +78,39 @@ unsafe fn read_window_title(hwnd: HWND) -> String {
     OsString::from_wide(&buf).to_string_lossy().into_owned()
 }
 
+/// Spawns a process without going through a shell (no injection via `cmd /c`).
+#[derive(Debug, Default, Clone, Copy)]
+pub struct Win32ProcessLauncher;
+
+impl ProcessLauncher for Win32ProcessLauncher {
+    fn launch(&self, request: &ProcessLaunchRequest) -> Result<ProcessLaunchOutcome> {
+        let executable = request.executable.trim();
+        if executable.is_empty() {
+            return Err(WindowsIntegrationError::InvalidLaunchTarget(
+                "executable path is required".into(),
+            ));
+        }
+        if executable.contains('\0') {
+            return Err(WindowsIntegrationError::InvalidLaunchTarget(
+                "executable path contains invalid characters".into(),
+            ));
+        }
+
+        let mut command = Command::new(executable);
+        command.args(&request.args);
+        let child = command.spawn().map_err(|error| {
+            WindowsIntegrationError::LaunchFailed(format!(
+                "failed to spawn '{executable}': {error}"
+            ))
+        })?;
+
+        Ok(ProcessLaunchOutcome {
+            process_id: Some(child.id()),
+            simulated: false,
+        })
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -89,5 +124,19 @@ mod tests {
             assert!(!window.title.trim().is_empty());
             assert!(window.hwnd.starts_with("0x"));
         }
+    }
+
+    #[test]
+    fn rejects_empty_executable() {
+        let error = Win32ProcessLauncher
+            .launch(&ProcessLaunchRequest {
+                executable: "  ".into(),
+                args: Vec::new(),
+            })
+            .unwrap_err();
+        assert!(matches!(
+            error,
+            WindowsIntegrationError::InvalidLaunchTarget(_)
+        ));
     }
 }

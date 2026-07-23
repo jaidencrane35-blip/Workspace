@@ -19,6 +19,7 @@ use crate::commands::get_workspace_context::GetWorkspaceContext;
 use crate::commands::get_workspace_metrics::GetWorkspaceMetrics;
 use crate::commands::get_workspace_snapshot::GetWorkspaceSnapshot;
 use crate::commands::initialize::InitializeWorkspace;
+use crate::commands::launch_application::LaunchApplication;
 use crate::commands::layout::{
     CreateLayout, DeleteLayout, GetLayout, GetLayoutSnapshot, ResetLayout, UpdateLayout,
 };
@@ -148,11 +149,23 @@ impl CommandHandler {
         workspace_id: String,
         name: String,
         identifier: Option<String>,
+        executable_path: Option<String>,
     ) -> Result<ApplicationReference> {
         let workspace_id = WorkspaceId::new(workspace_id).map_err(KernelError::Domain)?;
         CommandPipeline::new(kernel.command_context(actor, intent)).execute_mutation(
-            CreateApplication::new(workspace_id, name, identifier),
+            CreateApplication::new(workspace_id, name, identifier, executable_path),
         )
+    }
+
+    pub fn launch_application(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        id: String,
+    ) -> Result<workspace_domain::ApplicationLaunchResult> {
+        let application_id = ApplicationId::new(id).map_err(KernelError::Domain)?;
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_mutation(LaunchApplication::new(application_id))
     }
 
     pub fn delete_application(

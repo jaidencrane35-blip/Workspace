@@ -2,6 +2,7 @@
 
 mod analytics;
 mod application;
+mod application_launch;
 mod audit;
 mod configuration;
 mod context;
@@ -28,6 +29,7 @@ mod zone;
 
 pub use analytics::WorkspaceAnalyticsService;
 pub use application::ApplicationService;
+pub use application_launch::ApplicationLaunchService;
 pub use audit::AuditService;
 pub use configuration::ConfigurationService;
 pub use context::WorkspaceContextService;

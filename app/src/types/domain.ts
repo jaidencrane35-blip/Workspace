@@ -137,6 +137,22 @@ export interface DesktopWindowSnapshot {
   visible: boolean;
 }
 
+export interface ApplicationReference {
+  id: string;
+  workspace_id: string;
+  name: string;
+  identifier: string | null;
+  executable_path: string | null;
+}
+
+export interface ApplicationLaunchResult {
+  application_id: string;
+  name: string;
+  executable_path: string;
+  process_id: number | null;
+  simulated: boolean;
+}
+
 export interface WorkspaceMetrics {
   observation_count: number;
   resource_change_count: number;

@@ -78,7 +78,7 @@ pub use execution_reconciliation::{
     ExecutionReconciliationError, ExecutionState,
 };
 pub use entities::{
-    ApplicationReference, WidgetReference, Workspace, Zone,
+    ApplicationLaunchResult, ApplicationReference, WidgetReference, Workspace, Zone,
 };
 pub use errors::{validate_resource_name, DomainError, Result};
 pub use graph::{GraphEdge, GraphRelationship};

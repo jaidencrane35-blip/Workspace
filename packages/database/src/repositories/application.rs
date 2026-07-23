@@ -14,12 +14,13 @@ impl<'a> ApplicationRepository<'a> {
 
     pub fn create(&self, application: &ApplicationReference) -> Result<()> {
         self.db.connection().execute(
-            "INSERT INTO applications (id, workspace_id, name, identifier) VALUES (?1, ?2, ?3, ?4)",
+            "INSERT INTO applications (id, workspace_id, name, identifier, executable_path) VALUES (?1, ?2, ?3, ?4, ?5)",
             (
                 application.id.as_str(),
                 application.workspace_id.as_str(),
                 &application.name,
                 &application.identifier,
+                &application.executable_path,
             ),
         )?;
         Ok(())
@@ -27,7 +28,7 @@ impl<'a> ApplicationRepository<'a> {
 
     pub fn get_by_id(&self, id: &ApplicationId) -> Result<Option<ApplicationReference>> {
         let mut stmt = self.db.connection().prepare(
-            "SELECT id, workspace_id, name, identifier FROM applications WHERE id = ?1",
+            "SELECT id, workspace_id, name, identifier, executable_path FROM applications WHERE id = ?1",
         )?;
         let mut rows = stmt.query([id.as_str()])?;
         if let Some(row) = rows.next()? {
@@ -50,10 +51,11 @@ impl<'a> ApplicationRepository<'a> {
         id: &ApplicationId,
         name: &str,
         identifier: Option<&str>,
+        executable_path: Option<&str>,
     ) -> Result<bool> {
         let changed = self.db.connection().execute(
-            "UPDATE applications SET name = ?1, identifier = ?2, updated_at = datetime('now') WHERE id = ?3",
-            (name, identifier, id.as_str()),
+            "UPDATE applications SET name = ?1, identifier = ?2, executable_path = ?3, updated_at = datetime('now') WHERE id = ?4",
+            (name, identifier, executable_path, id.as_str()),
         )?;
         Ok(changed > 0)
     }
@@ -68,7 +70,7 @@ impl<'a> ApplicationRepository<'a> {
 
     pub fn list_by_workspace(&self, workspace_id: &WorkspaceId) -> Result<Vec<ApplicationReference>> {
         let mut stmt = self.db.connection().prepare(
-            "SELECT id, workspace_id, name, identifier FROM applications WHERE workspace_id = ?1 ORDER BY name",
+            "SELECT id, workspace_id, name, identifier, executable_path FROM applications WHERE workspace_id = ?1 ORDER BY name",
         )?;
         let rows = stmt.query_map([workspace_id.as_str()], map_application_row)?;
         rows.collect::<std::result::Result<Vec<_>, _>>()
@@ -86,6 +88,7 @@ fn map_application_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<ApplicationR
         })?,
         name: row.get(2)?,
         identifier: row.get(3)?,
+        executable_path: row.get(4)?,
     })
 }
 
@@ -122,6 +125,7 @@ mod tests {
             workspace_id: workspace_id.clone(),
             name: "Terminal".into(),
             identifier: Some("com.example.terminal".into()),
+            executable_path: Some("C:\\Windows\\System32\\notepad.exe".into()),
         };
 
         let repo = ApplicationRepository::new(&db);

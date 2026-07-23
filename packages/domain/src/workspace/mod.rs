@@ -23,12 +23,27 @@ pub struct Zone {
 }
 
 /// Reference to an application associated with a workspace.
+///
+/// `identifier` is opaque metadata (bundle id, product key).
+/// `executable_path` is the OS launch target used by governed launch.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ApplicationReference {
     pub id: ApplicationId,
     pub workspace_id: WorkspaceId,
     pub name: String,
     pub identifier: Option<String>,
+    pub executable_path: Option<String>,
+}
+
+/// Outcome of a governed application launch (authority + OS boundary).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ApplicationLaunchResult {
+    pub application_id: ApplicationId,
+    pub name: String,
+    pub executable_path: String,
+    pub process_id: Option<u32>,
+    /// True when the platform stub simulated launch (non-Windows / tests).
+    pub simulated: bool,
 }
 
 /// Reference to a widget associated with a workspace.
@@ -55,6 +70,14 @@ impl Zone {
 impl ApplicationReference {
     pub fn validate_name(name: &str) -> Result<()> {
         validate_resource_name(name)
+    }
+
+    /// Returns a non-empty executable path suitable for launch, if configured.
+    pub fn launch_executable(&self) -> Option<&str> {
+        self.executable_path
+            .as_deref()
+            .map(str::trim)
+            .filter(|path| !path.is_empty())
     }
 }
 

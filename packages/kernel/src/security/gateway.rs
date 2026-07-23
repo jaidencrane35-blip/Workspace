@@ -83,9 +83,9 @@ impl PermissionGateway {
 
         match decision {
             GatewayDecision::Allow { .. } => Ok(()),
-            GatewayDecision::Deny { reason }
-            | GatewayDecision::ApprovalRequired { reason } => {
-                Err(KernelError::PermissionDenied(reason))
+            GatewayDecision::Deny { reason } => Err(KernelError::PermissionDenied(reason)),
+            GatewayDecision::ApprovalRequired { reason } => {
+                Err(KernelError::ApprovalRequired(reason))
             }
         }
     }

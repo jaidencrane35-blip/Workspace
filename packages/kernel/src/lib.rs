@@ -30,7 +30,7 @@ pub use security::{
     AllowAllPermissionGate, GatewayDecision, PermissionGate, PermissionGateway, PermissionRequest,
     PermissionSubject, StandardPermissionGate,
 };
-pub use services::{AuditService, CapabilityResolver, ConfigurationService, DatabaseServiceHandle, DesktopWindowService, ExecutionCancellationService, ExecutionContextService, ExecutionGuardService, ExecutionOutcomeService, ExecutionReconciliationService, GovernedIntentExecutionService, ObservationService, ServiceRegistry, ServiceStatus, SuggestionIntentService, SuggestionLifecycleService, SuggestionService, WorkspaceAnalyticsService, WorkspaceContextService};
+pub use services::{ApplicationLaunchService, AuditService, CapabilityResolver, ConfigurationService, DatabaseServiceHandle, DesktopWindowService, ExecutionCancellationService, ExecutionContextService, ExecutionGuardService, ExecutionOutcomeService, ExecutionReconciliationService, GovernedIntentExecutionService, ObservationService, ServiceRegistry, ServiceStatus, SuggestionIntentService, SuggestionLifecycleService, SuggestionService, WorkspaceAnalyticsService, WorkspaceContextService};
 pub use state::WorkspaceState;
 pub use workspace_domain::{
     Actor, ActorContext, ActorType, Addressable, Capability, CapabilityId, CapabilityScope,

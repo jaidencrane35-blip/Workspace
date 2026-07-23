@@ -26,6 +26,7 @@
 | `get_execution_outcomes` / `get_execution_states` | Diagnostic |
 | `request_execution_cancellation` | Diagnostic |
 | `get_desktop_windows` | Diagnostic |
+| `create_application` / `launch_application` | Diagnostic (governed launch) |
 
 ---
 
@@ -34,7 +35,7 @@
 Kept for kernel CommandHandler parity and future UI. Not removed during foundation hardening to avoid breaking external/test callers of the Tauri surface.
 
 - `delete_zone`, `get_zone`
-- `create_application`, `delete_application`, `get_application`
+- `delete_application`, `get_application`
 - `create_widget`, `delete_widget`, `get_widget`
 - `delete_layout`, `reset_layout`, `get_layout_snapshot`
 - `get_workspace_snapshot`

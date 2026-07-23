@@ -77,6 +77,7 @@ pub fn create_application(
     workspace_id: String,
     name: String,
     identifier: Option<String>,
+    executable_path: Option<String>,
     kernel: State<'_, Arc<Mutex<WorkspaceKernel>>>,
 ) -> IpcResponse<ApplicationReference> {
     match kernel.lock() {
@@ -87,8 +88,31 @@ pub fn create_application(
             workspace_id,
             name,
             identifier,
+            executable_path,
         ) {
             Ok(application) => IpcResponse::success(application),
+            Err(error) => IpcResponse::failure(CommandError::from(error)),
+        },
+        Err(_) => IpcResponse::failure(CommandError::new(
+            "internal_error",
+            "Workspace core is temporarily unavailable.",
+        )),
+    }
+}
+
+#[tauri::command]
+pub fn launch_application(
+    id: String,
+    kernel: State<'_, Arc<Mutex<WorkspaceKernel>>>,
+) -> IpcResponse<workspace_domain::ApplicationLaunchResult> {
+    match kernel.lock() {
+        Ok(kernel) => match CommandHandler::launch_application(
+            &kernel,
+            ipc_actor_context(),
+            ipc_intent_context(),
+            id,
+        ) {
+            Ok(result) => IpcResponse::success(result),
             Err(error) => IpcResponse::failure(CommandError::from(error)),
         },
         Err(_) => IpcResponse::failure(CommandError::new(

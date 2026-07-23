@@ -160,6 +160,13 @@ impl Capability {
         }
     }
 
+    pub fn application_launch() -> Self {
+        Self {
+            id: CapabilityId::new("application.launch").expect("application.launch is valid"),
+            scope: CapabilityScope::Application,
+        }
+    }
+
     pub fn widget_read() -> Self {
         Self {
             id: CapabilityId::new("widget.read").expect("widget.read is valid"),
@@ -216,6 +223,7 @@ impl CapabilitySet {
             .with_capability(&Capability::zone_write())
             .with_capability(&Capability::application_read())
             .with_capability(&Capability::application_write())
+            .with_capability(&Capability::application_launch())
             .with_capability(&Capability::widget_read())
             .with_capability(&Capability::widget_write())
             .with_capability(&Capability::layout_read())

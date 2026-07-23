@@ -124,11 +124,17 @@ pub enum KernelError {
     #[error("Windows integration error: {message}")]
     WindowsIntegration { message: String },
 
+    #[error("Invalid launch target: {message}")]
+    InvalidLaunchTarget { message: String },
+
     #[error("Service '{0}' failed to start")]
     ServiceStartup(&'static str),
 
     #[error("Permission denied: {0}")]
     PermissionDenied(String),
+
+    #[error("Approval required: {0}")]
+    ApprovalRequired(String),
 
     #[error("Workspace kernel initialization failed")]
     InitializationFailed,
@@ -335,13 +341,29 @@ impl KernelError {
                 code: "windows_integration_error".into(),
                 message: message.clone(),
             },
+            KernelError::InvalidLaunchTarget { message } => PublicError {
+                code: "invalid_launch_target".into(),
+                message: message.clone(),
+            },
             KernelError::ServiceStartup(service) => PublicError {
                 code: "service_startup_failed".into(),
                 message: format!("Service '{service}' failed to start."),
             },
-            KernelError::PermissionDenied(_) => PublicError {
+            KernelError::PermissionDenied(reason) => PublicError {
                 code: "permission_denied".into(),
-                message: "This action was not permitted.".into(),
+                message: if reason.trim().is_empty() {
+                    "This action was not permitted.".into()
+                } else {
+                    format!("This action was not permitted: {reason}")
+                },
+            },
+            KernelError::ApprovalRequired(reason) => PublicError {
+                code: "approval_required".into(),
+                message: if reason.trim().is_empty() {
+                    "This action requires approval.".into()
+                } else {
+                    format!("This action requires approval. {reason}")
+                },
             },
             KernelError::InitializationFailed => PublicError {
                 code: "initialization_failed".into(),

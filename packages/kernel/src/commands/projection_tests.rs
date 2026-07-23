@@ -43,7 +43,7 @@ fn snapshot_aggregates_workspace_resources() {
         CreateZone::new(workspace.id.clone(), "Zone".into(), None),
     ).unwrap();
     CommandPipeline::new(ready_ctx(&init, &bus)).execute_mutation(
-        CreateApplication::new(workspace.id.clone(), "App".into(), None),
+        CreateApplication::new(workspace.id.clone(), "App".into(), None, None),
     ).unwrap();
     CommandPipeline::new(ready_ctx(&init, &bus)).execute_mutation(
         CreateWidget::new(workspace.id.clone(), "Widget".into(), None),

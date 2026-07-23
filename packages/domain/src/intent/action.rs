@@ -306,6 +306,16 @@ fn build_definitions() -> Vec<ActionIntentDefinition> {
             &[ResourceKind::Application],
         ),
         definition(
+            "launch-application",
+            "Launch Application",
+            "Launch a registered desktop application through the Permission Gateway.",
+            ActionIntentCategory::Application,
+            Capability::application_launch(),
+            "LaunchApplication",
+            TargetRequirement::Required,
+            &[ResourceKind::Application],
+        ),
+        definition(
             "create-widget",
             "Create Widget",
             "Register a widget reference in a workspace.",

@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
-import { invokeIpc } from "../lib/ipc";
+import { IpcCommandError, invokeIpc } from "../lib/ipc";
 import type {
+  ApplicationLaunchResult,
+  ApplicationReference,
   CancellationRequest,
   DesktopWindowSnapshot,
   ExecutionOutcome,
@@ -24,6 +26,23 @@ function formatError(err: unknown): string {
     return err.message;
   }
   return String(err);
+}
+
+function formatLaunchError(err: unknown): string {
+  if (err instanceof IpcCommandError) {
+    if (err.code === "permission_denied") {
+      const reason = err.message.replace(/^This action was not permitted:\s*/i, "");
+      return `Launch denied: ${reason || "this actor does not have permission to open this application."}`;
+    }
+    if (err.code === "approval_required") {
+      return "This action requires approval.";
+    }
+    if (err.code === "invalid_launch_target") {
+      return `Launch failed: ${err.message}`;
+    }
+    return `${err.message} (${err.code})`;
+  }
+  return formatError(err);
 }
 
 function executionIdFor(suggestionId: string): string {
@@ -70,6 +89,11 @@ export function OperatorConsole({
 
   const [workspaceName, setWorkspaceName] = useState("Operator Workspace");
   const [zoneName, setZoneName] = useState("Zone");
+  const [appName, setAppName] = useState("Notepad");
+  const [executablePath, setExecutablePath] = useState("notepad.exe");
+  const [lastLaunch, setLastLaunch] = useState<ApplicationLaunchResult | null>(
+    null,
+  );
   const [busy, setBusy] = useState(false);
 
   const run = useCallback(
@@ -278,6 +302,41 @@ export function OperatorConsole({
       setDesktopWindows(windows);
     });
 
+  const registerAndLaunch = () => {
+    setBusy(true);
+    onError(null);
+    onMessage(null);
+    void (async () => {
+      try {
+        if (!workspace) {
+          throw new Error("Create or load a workspace first.");
+        }
+        const application = await invokeIpc<ApplicationReference>(
+          "create_application",
+          {
+            workspaceId: workspace.id,
+            name: appName,
+            identifier: null,
+            executablePath,
+          },
+        );
+        const result = await invokeIpc<ApplicationLaunchResult>(
+          "launch_application",
+          { id: application.id },
+        );
+        setLastLaunch(result);
+        const mode = result.simulated ? "simulated" : `pid ${result.process_id ?? "?"}`;
+        onMessage(
+          `Launch allowed: ${result.name} (${result.executable_path}) — ${mode}`,
+        );
+      } catch (err: unknown) {
+        onError(formatLaunchError(err));
+      } finally {
+        setBusy(false);
+      }
+    })();
+  };
+
   return (
     <div className="operator-console">
       {busy && <p className="muted">Working…</p>}
@@ -307,6 +366,48 @@ export function OperatorConsole({
           </dl>
         </section>
       )}
+
+      <section>
+        <h2>Governed application launch</h2>
+        <p className="muted">
+          Registers an application resource, then launches through Permission
+          Gateway (Allow / Deny / ApprovalRequired).
+        </p>
+        <div className="row">
+          <input
+            value={appName}
+            disabled={busy}
+            onChange={(event) => setAppName(event.target.value)}
+            placeholder="Application name"
+          />
+          <input
+            value={executablePath}
+            disabled={busy}
+            onChange={(event) => setExecutablePath(event.target.value)}
+            placeholder="Executable path"
+          />
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() => registerAndLaunch()}
+          >
+            Register &amp; launch
+          </button>
+        </div>
+        {lastLaunch && (
+          <dl>
+            <dt>Last launch</dt>
+            <dd>
+              {lastLaunch.name} → {lastLaunch.executable_path}
+              {lastLaunch.simulated
+                ? " (simulated)"
+                : lastLaunch.process_id != null
+                  ? ` (pid ${lastLaunch.process_id})`
+                  : ""}
+            </dd>
+          </dl>
+        )}
+      </section>
 
       <section>
         <h2>Desktop windows</h2>

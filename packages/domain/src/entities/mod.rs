@@ -1,3 +1,3 @@
 pub use crate::workspace::{
-    ApplicationReference, WidgetReference, Workspace, Zone,
+    ApplicationLaunchResult, ApplicationReference, WidgetReference, Workspace, Zone,
 };

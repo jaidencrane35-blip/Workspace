@@ -128,6 +128,7 @@ mod tests {
             workspace.id.clone(),
             "Terminal".into(),
             Some("com.example.terminal".into()),
+            None,
         )
         .unwrap();
         WidgetService::create(

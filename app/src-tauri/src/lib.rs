@@ -21,7 +21,7 @@ use commands::suggestion::{accept_suggestion, get_suggestions, reject_suggestion
 use commands::suggestion_lifecycle::get_suggestion_lifecycle;
 use commands::resources::{
     create_application, create_widget, create_zone, delete_application, delete_widget,
-    delete_zone, get_application, get_widget, get_zone,
+    delete_zone, get_application, get_widget, get_zone, launch_application,
 };
 use commands::workspace::{create_workspace, get_workspace};
 use commands::health::get_workspace_health;
@@ -61,6 +61,8 @@ pub fn run() {
             reject_suggestion,
             get_suggestion_lifecycle,
             get_desktop_windows,
+            create_application,
+            launch_application,
             create_suggestion_intent_request,
             execute_intent_request,
             get_execution_outcomes,
@@ -70,7 +72,6 @@ pub fn run() {
             // (see docs/03-Engineering/IPC-SURFACE.md)
             delete_zone,
             get_zone,
-            create_application,
             delete_application,
             get_application,
             create_widget,

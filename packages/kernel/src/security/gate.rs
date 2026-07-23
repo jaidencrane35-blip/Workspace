@@ -38,9 +38,9 @@ pub trait PermissionGate: Send + Sync {
     fn require(&self, request: &PermissionRequest) -> Result<()> {
         match self.authorize(request)? {
             PermissionDecision::Allowed => Ok(()),
-            PermissionDecision::Denied { reason }
-            | PermissionDecision::ApprovalRequired { reason } => {
-                Err(KernelError::PermissionDenied(reason))
+            PermissionDecision::Denied { reason } => Err(KernelError::PermissionDenied(reason)),
+            PermissionDecision::ApprovalRequired { reason } => {
+                Err(KernelError::ApprovalRequired(reason))
             }
         }
     }

@@ -627,7 +627,7 @@ mod tests {
             .execute_mutation(CreateWorkspace::new("AI Blocked".into()))
             .unwrap_err();
 
-        assert!(matches!(error, KernelError::PermissionDenied(_)));
+        assert!(matches!(error, KernelError::ApprovalRequired(_)));
 
         let records = AuditService::list_recent(&init.database.shared(), 20).unwrap();
         assert!(records.iter().any(|record| {

@@ -17,14 +17,20 @@ impl ApplicationService {
         workspace_id: WorkspaceId,
         name: String,
         identifier: Option<String>,
+        executable_path: Option<String>,
     ) -> Result<ApplicationReference> {
         ApplicationReference::validate_name(&name).map_err(KernelError::from)?;
+
+        let executable_path = executable_path
+            .map(|path| path.trim().to_string())
+            .filter(|path| !path.is_empty());
 
         let application = ApplicationReference {
             id: ApplicationId::generate(),
             workspace_id: workspace_id.clone(),
             name: name.trim().to_string(),
             identifier,
+            executable_path,
         };
 
         ApplicationRepository::new(db).create(&application)?;
@@ -49,12 +55,17 @@ impl ApplicationService {
         id: &ApplicationId,
         name: String,
         identifier: Option<String>,
+        executable_path: Option<String>,
     ) -> Result<ApplicationReference> {
         ApplicationReference::validate_name(&name).map_err(KernelError::from)?;
+        let executable_path = executable_path
+            .map(|path| path.trim().to_string())
+            .filter(|path| !path.is_empty());
         let updated = ApplicationRepository::new(db).update(
             id,
             name.trim(),
             identifier.as_deref(),
+            executable_path.as_deref(),
         )?;
         if !updated {
             return Err(KernelError::ApplicationNotFound);
@@ -119,6 +130,7 @@ mod tests {
             workspace.id.clone(),
             "Terminal".into(),
             Some("com.example.terminal".into()),
+            None,
         )
         .unwrap();
 

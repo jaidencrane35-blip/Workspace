@@ -108,6 +108,7 @@ fn application_lifecycle_through_commands() {
             workspace.id.clone(),
             "Browser".into(),
             Some("com.example.browser".into()),
+            None,
         ),
     ).unwrap();
 
