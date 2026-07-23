@@ -17,6 +17,9 @@ pub struct CapabilityId(String);
 pub enum CapabilityScope {
     Global,
     Workspace,
+    Zone,
+    Application,
+    Widget,
     Settings,
     Audit,
     System,
@@ -126,6 +129,48 @@ impl Capability {
             scope: CapabilityScope::System,
         }
     }
+
+    pub fn zone_read() -> Self {
+        Self {
+            id: CapabilityId::new("zone.read").expect("zone.read is valid"),
+            scope: CapabilityScope::Zone,
+        }
+    }
+
+    pub fn zone_write() -> Self {
+        Self {
+            id: CapabilityId::new("zone.write").expect("zone.write is valid"),
+            scope: CapabilityScope::Zone,
+        }
+    }
+
+    pub fn application_read() -> Self {
+        Self {
+            id: CapabilityId::new("application.read").expect("application.read is valid"),
+            scope: CapabilityScope::Application,
+        }
+    }
+
+    pub fn application_write() -> Self {
+        Self {
+            id: CapabilityId::new("application.write").expect("application.write is valid"),
+            scope: CapabilityScope::Application,
+        }
+    }
+
+    pub fn widget_read() -> Self {
+        Self {
+            id: CapabilityId::new("widget.read").expect("widget.read is valid"),
+            scope: CapabilityScope::Widget,
+        }
+    }
+
+    pub fn widget_write() -> Self {
+        Self {
+            id: CapabilityId::new("widget.write").expect("widget.write is valid"),
+            scope: CapabilityScope::Widget,
+        }
+    }
 }
 
 impl CapabilitySet {
@@ -151,6 +196,12 @@ impl CapabilitySet {
         Self::new()
             .with_capability(&Capability::workspace_read())
             .with_capability(&Capability::workspace_write())
+            .with_capability(&Capability::zone_read())
+            .with_capability(&Capability::zone_write())
+            .with_capability(&Capability::application_read())
+            .with_capability(&Capability::application_write())
+            .with_capability(&Capability::widget_read())
+            .with_capability(&Capability::widget_write())
             .with_capability(&Capability::settings_read())
             .with_capability(&Capability::settings_write())
             .with_capability(&Capability::audit_read())

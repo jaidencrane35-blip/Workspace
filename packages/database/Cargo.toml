@@ -15,6 +15,7 @@ rusqlite.workspace = true
 serde.workspace = true
 thiserror.workspace = true
 log = { workspace = true }
+uuid = { workspace = true }
 workspace-domain = { workspace = true }
 
 [dev-dependencies]

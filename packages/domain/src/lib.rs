@@ -5,6 +5,7 @@ pub mod audit;
 pub mod capability;
 pub mod entities;
 pub mod errors;
+pub mod graph;
 pub mod ids;
 pub mod intent;
 pub mod resource;
@@ -23,7 +24,8 @@ pub use resource::{Addressable, ResourceId, ResourceKind, ResourceRef};
 pub use entities::{
     ApplicationReference, WidgetReference, Workspace, Zone,
 };
-pub use errors::{DomainError, Result};
+pub use errors::{validate_resource_name, DomainError, Result};
+pub use graph::{GraphEdge, GraphRelationship};
 pub use ids::{
     ActorId, ApplicationId, AuditEventId, IntentId, WidgetId, WorkspaceId, ZoneId,
 };

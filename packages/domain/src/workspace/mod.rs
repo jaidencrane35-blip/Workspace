@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::errors::{DomainError, Result};
+use crate::errors::{validate_resource_name, Result};
 use crate::ids::{ApplicationId, WidgetId, WorkspaceId, ZoneId};
 use crate::resource::{Addressable, ResourceId, ResourceKind, ResourceRef};
 
@@ -42,14 +42,25 @@ pub struct WidgetReference {
 
 impl Workspace {
     pub fn validate_name(name: &str) -> Result<()> {
-        let trimmed = name.trim();
-        if trimmed.is_empty() {
-            return Err(DomainError::EmptyName);
-        }
-        if trimmed.len() > 120 {
-            return Err(DomainError::NameTooLong { max: 120 });
-        }
-        Ok(())
+        validate_resource_name(name)
+    }
+}
+
+impl Zone {
+    pub fn validate_name(name: &str) -> Result<()> {
+        validate_resource_name(name)
+    }
+}
+
+impl ApplicationReference {
+    pub fn validate_name(name: &str) -> Result<()> {
+        validate_resource_name(name)
+    }
+}
+
+impl WidgetReference {
+    pub fn validate_name(name: &str) -> Result<()> {
+        validate_resource_name(name)
     }
 }
 
@@ -110,6 +121,7 @@ impl Addressable for WidgetReference {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::errors::DomainError;
 
     #[test]
     fn validates_workspace_name() {

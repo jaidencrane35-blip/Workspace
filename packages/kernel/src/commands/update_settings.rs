@@ -30,12 +30,12 @@ impl MutationCommand for UpdateSettings {
         Capability::settings_write()
     }
 
-    fn execute(self, ctx: &CommandContext<'_>) -> Result<WorkspaceSettings> {
+    fn execute(&self, ctx: &CommandContext<'_>) -> Result<WorkspaceSettings> {
         Self::ensure_ready(ctx.state)?;
         Self::validate(&self.update)?;
 
         let settings = ctx.with_database(|db| {
-            ConfigurationService::update(db, self.update).map_err(|error| {
+            ConfigurationService::update(db, self.update.clone()).map_err(|error| {
                 log::error!("UpdateSettings command failed: {error}");
                 error
             })

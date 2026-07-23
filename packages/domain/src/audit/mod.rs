@@ -4,6 +4,7 @@ use crate::actor::{Actor, ActorType};
 use crate::capability::Capability;
 use crate::ids::AuditEventId;
 use crate::intent::IntentType;
+use crate::resource::ResourceRef;
 
 /// Durable record of important system activity.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -16,6 +17,7 @@ pub struct AuditEvent {
     pub command_name: Option<String>,
     pub intent_type: Option<IntentType>,
     pub capability: Option<String>,
+    pub resource_ref: Option<String>,
     pub success: bool,
     pub metadata: Option<String>,
 }
@@ -35,6 +37,7 @@ impl AuditEvent {
             command_name: None,
             intent_type: None,
             capability: None,
+            resource_ref: None,
             success,
             metadata: None,
         }
@@ -66,6 +69,11 @@ impl AuditEvent {
 
     pub fn with_capability(mut self, capability: &Capability) -> Self {
         self.capability = Some(capability.id.to_string());
+        self
+    }
+
+    pub fn with_resource_ref(mut self, resource_ref: &ResourceRef) -> Self {
+        self.resource_ref = Some(resource_ref.canonical());
         self
     }
 

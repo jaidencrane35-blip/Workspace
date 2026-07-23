@@ -14,8 +14,8 @@ impl<'a> AuditRepository<'a> {
 
     pub fn append(&self, event: &AuditEvent) -> Result<()> {
         self.db.connection().execute(
-            "INSERT INTO audit_events (id, timestamp, event_type, actor_type, actor_id, command_name, intent_type, capability, success, metadata)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
+            "INSERT INTO audit_events (id, timestamp, event_type, actor_type, actor_id, command_name, intent_type, capability, resource_ref, success, metadata)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
             (
                 event.id.as_str(),
                 &event.timestamp,
@@ -25,6 +25,7 @@ impl<'a> AuditRepository<'a> {
                 &event.command_name,
                 event.intent_type.map(intent_type_to_str),
                 &event.capability,
+                &event.resource_ref,
                 i32::from(event.success),
                 &event.metadata,
             ),
@@ -35,7 +36,7 @@ impl<'a> AuditRepository<'a> {
     pub fn list_recent(&self, limit: usize) -> Result<Vec<AuditEvent>> {
         let limit = limit.clamp(1, 500) as i64;
         let mut stmt = self.db.connection().prepare(
-            "SELECT id, timestamp, event_type, actor_type, actor_id, command_name, intent_type, capability, success, metadata
+            "SELECT id, timestamp, event_type, actor_type, actor_id, command_name, intent_type, capability, resource_ref, success, metadata
              FROM audit_events
              ORDER BY timestamp DESC
              LIMIT ?1",
@@ -120,8 +121,9 @@ fn map_audit_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<AuditEvent> {
             .map(|value| parse_intent_type(&value))
             .transpose()?,
         capability: row.get(7)?,
-        success: row.get::<_, i32>(8)? != 0,
-        metadata: row.get(9)?,
+        resource_ref: row.get(8)?,
+        success: row.get::<_, i32>(9)? != 0,
+        metadata: row.get(10)?,
     })
 }
 

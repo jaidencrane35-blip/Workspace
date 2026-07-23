@@ -191,9 +191,24 @@ Shared infrastructure for all subsystems. Sits above the Windows Integration Lay
 **Capabilities:**
 - Event bus
 - State management
-- **Permission Gateway** (see §2.7)
+- **Command pipeline** (mutations: policy → permission → execute → audit)
+- **Resource services** (Sprint 12) — Workspace, Zone, Application, Widget
+- **Passive workspace graph** (Sprint 12) — `GraphService` registers nodes/edges; services never touch graph tables directly
+- **Permission Gateway** (see §6.7)
 - Configuration store
-- Logging and diagnostics
+- Logging, diagnostics, and audit
+
+**Resource orchestration flow (implemented Sprint 12):**
+
+```
+IPC / CommandHandler
+    → CommandPipeline (policy, permission, audit)
+        → Resource Service (persistence + GraphService registration)
+            → Repository (SQLite)
+            → GraphService (passive nodes/edges)
+```
+
+Cross-resource operations (e.g. validating workspace existence before creating a zone) occur in **commands**, not services.
 
 ### 6.6 Windows Integration Layer
 

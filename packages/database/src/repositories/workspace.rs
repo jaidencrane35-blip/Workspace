@@ -78,6 +78,23 @@ impl<'a> WorkspaceRepository<'a> {
             .map_err(Into::into)
     }
 
+    pub fn exists(&self, id: &WorkspaceId) -> Result<bool> {
+        let count: i64 = self.db.connection().query_row(
+            "SELECT COUNT(*) FROM workspaces WHERE id = ?1",
+            [id.as_str()],
+            |row| row.get(0),
+        )?;
+        Ok(count > 0)
+    }
+
+    pub fn delete(&self, id: &WorkspaceId) -> Result<bool> {
+        let changed = self.db.connection().execute(
+            "DELETE FROM workspaces WHERE id = ?1",
+            [id.as_str()],
+        )?;
+        Ok(changed > 0)
+    }
+
     pub fn update_name(&self, id: &WorkspaceId, name: &str, updated_at: &str) -> Result<bool> {
         let changed = self.db.connection().execute(
             "UPDATE workspaces SET name = ?1, updated_at = ?2 WHERE id = ?3",

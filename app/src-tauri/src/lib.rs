@@ -4,6 +4,10 @@ mod commands;
 use std::sync::{Arc, Mutex};
 
 use commands::audit::get_audit_history;
+use commands::resources::{
+    create_application, create_widget, create_zone, delete_application, delete_widget,
+    delete_zone, get_application, get_widget, get_zone,
+};
 use commands::workspace::{create_workspace, get_workspace};
 use commands::health::get_workspace_health;
 use commands::settings::{get_settings, update_settings};
@@ -30,6 +34,15 @@ pub fn run() {
             update_settings,
             create_workspace,
             get_workspace,
+            create_zone,
+            delete_zone,
+            get_zone,
+            create_application,
+            delete_application,
+            get_application,
+            create_widget,
+            delete_widget,
+            get_widget,
             get_audit_history,
         ])
         .setup(|app| {

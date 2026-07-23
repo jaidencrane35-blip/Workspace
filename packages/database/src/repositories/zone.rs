@@ -25,35 +25,76 @@ impl<'a> ZoneRepository<'a> {
         Ok(())
     }
 
+    pub fn get_by_id(&self, id: &ZoneId) -> Result<Option<Zone>> {
+        let mut stmt = self.db.connection().prepare(
+            "SELECT id, workspace_id, name, position_metadata FROM zones WHERE id = ?1",
+        )?;
+        let mut rows = stmt.query([id.as_str()])?;
+        if let Some(row) = rows.next()? {
+            return Ok(Some(map_zone_row(row)?));
+        }
+        Ok(None)
+    }
+
+    pub fn exists(&self, id: &ZoneId) -> Result<bool> {
+        let count: i64 = self.db.connection().query_row(
+            "SELECT COUNT(*) FROM zones WHERE id = ?1",
+            [id.as_str()],
+            |row| row.get(0),
+        )?;
+        Ok(count > 0)
+    }
+
+    pub fn update(
+        &self,
+        id: &ZoneId,
+        name: &str,
+        position_metadata: Option<&str>,
+    ) -> Result<bool> {
+        let changed = self.db.connection().execute(
+            "UPDATE zones SET name = ?1, position_metadata = ?2, updated_at = datetime('now') WHERE id = ?3",
+            (name, position_metadata, id.as_str()),
+        )?;
+        Ok(changed > 0)
+    }
+
+    pub fn delete(&self, id: &ZoneId) -> Result<bool> {
+        let changed = self.db.connection().execute(
+            "DELETE FROM zones WHERE id = ?1",
+            [id.as_str()],
+        )?;
+        Ok(changed > 0)
+    }
+
     pub fn list_by_workspace(&self, workspace_id: &WorkspaceId) -> Result<Vec<Zone>> {
         let mut stmt = self.db.connection().prepare(
             "SELECT id, workspace_id, name, position_metadata FROM zones WHERE workspace_id = ?1 ORDER BY name",
         )?;
 
         let rows = stmt.query_map([workspace_id.as_str()], |row| {
-            Ok(Zone {
-                id: ZoneId::new(row.get::<_, String>(0)?).map_err(|_| {
-                    rusqlite::Error::InvalidColumnType(
-                        0,
-                        "id".into(),
-                        rusqlite::types::Type::Text,
-                    )
-                })?,
-                workspace_id: WorkspaceId::new(row.get::<_, String>(1)?).map_err(|_| {
-                    rusqlite::Error::InvalidColumnType(
-                        1,
-                        "workspace_id".into(),
-                        rusqlite::types::Type::Text,
-                    )
-                })?,
-                name: row.get(2)?,
-                position_metadata: row.get(3)?,
-            })
+            map_zone_row(row)
         })?;
 
         rows.collect::<std::result::Result<Vec<_>, _>>()
             .map_err(Into::into)
     }
+}
+
+fn map_zone_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<Zone> {
+    Ok(Zone {
+        id: ZoneId::new(row.get::<_, String>(0)?).map_err(|_| {
+            rusqlite::Error::InvalidColumnType(0, "id".into(), rusqlite::types::Type::Text)
+        })?,
+        workspace_id: WorkspaceId::new(row.get::<_, String>(1)?).map_err(|_| {
+            rusqlite::Error::InvalidColumnType(
+                1,
+                "workspace_id".into(),
+                rusqlite::types::Type::Text,
+            )
+        })?,
+        name: row.get(2)?,
+        position_metadata: row.get(3)?,
+    })
 }
 
 #[cfg(test)]

@@ -51,9 +51,9 @@ Workspace/
 │   └── vite.config.ts
 │
 ├── packages/                   # Shared internal Rust/TS packages
-│   ├── domain/                 # Shared domain models + typed IDs (Sprint 05–09)
-│   ├── kernel/                 # Platform kernel, command pipeline, policy (Sprint 03–09)
-│   ├── database/               # SQLite persistence + transactions (Sprint 01–09)
+│   ├── domain/                 # Shared domain models, ResourceRef, graph types (Sprint 05–12)
+│   ├── kernel/                 # Platform kernel, resource services, command pipeline (Sprint 03–12)
+│   ├── database/               # SQLite persistence, graph tables, repositories (Sprint 01–12)
 │   ├── domain-apps/            # Application domain service (future)
 │   ├── domain-windows/         # Window domain service (future)
 │   ├── domain-devices/         # Device domain service (future)
@@ -167,25 +167,20 @@ Expectations:
 
 ---
 
-## 6. Current State (Phase 0.5 Complete)
+## 6. Current State (Phase 1 — Sprint 12)
 
-Phase 1 scaffolding has not begun. Approved structure for Phase 1:
+Phase 1 scaffolding is in progress. Implemented structure:
 
 ```
 Workspace/
-├── .github/
-├── docs/
-├── app/                    # Tauri application (Phase 1)
-├── packages/               # pnpm + Rust workspace packages (Phase 1)
-├── plugins/                # First-party plugins (Phase 3)
-├── tests/
-├── tools/
-├── assets/
-├── LICENSE                 # MIT (DEC-006)
-├── pnpm-workspace.yaml     # Phase 1
-├── Cargo.toml              # Rust workspace (Phase 1)
-└── README.md
+├── app/                    # Tauri + IPC (workspace + resource commands)
+├── packages/
+│   ├── domain/             # Entities, ResourceRef, graph types, capabilities
+│   ├── kernel/             # GraphService, resource services, commands, pipeline
+│   └── database/           # Repositories + graph_nodes/graph_edges tables
 ```
+
+Resource services (`WorkspaceService`, `ZoneService`, `ApplicationService`, `WidgetService`) sit between commands and repositories. `GraphService` is passive — services register resources; commands orchestrate cross-resource validation.
 
 Implementation directories will be created during Phase 1 scaffolding.
 

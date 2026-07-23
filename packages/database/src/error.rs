@@ -11,6 +11,9 @@ pub enum DatabaseError {
     #[error("Record not found: {0}")]
     NotFound(String),
 
+    #[error("Duplicate resource: {0}")]
+    DuplicateResource(String),
+
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
 }

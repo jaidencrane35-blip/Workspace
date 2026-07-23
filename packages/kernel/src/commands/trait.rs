@@ -1,4 +1,4 @@
-use workspace_domain::{ActorContext, Capability, IntentContext};
+use workspace_domain::{ActorContext, Capability, IntentContext, ResourceRef};
 
 use crate::commands::context::CommandContext;
 use crate::error::Result;
@@ -18,7 +18,13 @@ pub trait MutationCommand: Command {
 
     fn required_capability(&self) -> Capability;
 
-    fn execute(self, ctx: &CommandContext<'_>) -> Result<Self::Output>;
+    /// Optional resource address recorded in the audit trail after execution.
+    fn audit_resource_ref(&self, output: &Self::Output) -> Option<ResourceRef> {
+        let _ = (self, output);
+        None
+    }
+
+    fn execute(&self, ctx: &CommandContext<'_>) -> Result<Self::Output>;
 }
 
 /// Read-only command executed through the command pipeline.

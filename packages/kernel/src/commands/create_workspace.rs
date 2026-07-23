@@ -1,11 +1,11 @@
 use crate::commands::context::CommandContext;
+use crate::commands::resource::{ensure_ready, resource_lifecycle_event};
 use crate::commands::r#trait::MutationCommand;
-use crate::error::{KernelError, Result};
+use crate::error::Result;
 use crate::events::types::{DomainEvent, WorkspaceEntityCreated};
-use crate::lifecycle::LifecycleState;
 use crate::security::PermissionSubject;
 use crate::services::WorkspaceService;
-use workspace_domain::{Capability, ResourceKind, Workspace};
+use workspace_domain::{Addressable, Capability, ResourceKind, ResourceRef, Workspace};
 
 /// Creates a new workspace domain entity.
 pub struct CreateWorkspace {
@@ -29,9 +29,20 @@ impl MutationCommand for CreateWorkspace {
         Capability::workspace_write()
     }
 
-    fn execute(self, ctx: &CommandContext<'_>) -> Result<Workspace> {
-        Self::ensure_ready(ctx.state)?;
-        let workspace = ctx.with_database(|db| WorkspaceService::create(db, self.name))?;
+    fn audit_resource_ref(&self, output: &Self::Output) -> Option<ResourceRef> {
+        Some(output.resource_ref())
+    }
+
+    fn execute(&self, ctx: &CommandContext<'_>) -> Result<Workspace> {
+        ensure_ready(ctx)?;
+        let workspace = ctx.with_database(|db| WorkspaceService::create(db, self.name.clone()))?;
+        let lifecycle = resource_lifecycle_event(
+            workspace.resource_ref(),
+            None,
+            ctx,
+            Capability::workspace_write(),
+        );
+        ctx.event_bus.publish(DomainEvent::ResourceCreated(lifecycle));
         ctx.event_bus.publish(DomainEvent::WorkspaceCreated(WorkspaceEntityCreated {
             workspace_id: workspace.id.to_string(),
             name: workspace.name.clone(),
@@ -46,14 +57,6 @@ impl MutationCommand for CreateWorkspace {
 impl CreateWorkspace {
     pub fn new(name: String) -> Self {
         Self { name }
-    }
-
-    fn ensure_ready(state: &crate::state::WorkspaceState) -> Result<()> {
-        if state.lifecycle == LifecycleState::Ready {
-            Ok(())
-        } else {
-            Err(KernelError::NotReady)
-        }
     }
 }
 

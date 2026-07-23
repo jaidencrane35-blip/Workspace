@@ -1,6 +1,6 @@
 use std::fmt;
 
-use workspace_domain::{ActorContext, Capability, IntentContext};
+use workspace_domain::{ActorContext, Capability, IntentContext, ResourceRef};
 
 use crate::lifecycle::LifecycleState;
 
@@ -60,6 +60,16 @@ pub struct WorkspaceEntityUpdated {
     pub capability: Option<Capability>,
 }
 
+/// Generic resource lifecycle metadata (Sprint 12).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ResourceLifecycleEvent {
+    pub resource_ref: ResourceRef,
+    pub workspace_id: Option<String>,
+    pub actor: Option<ActorContext>,
+    pub intent: Option<IntentContext>,
+    pub capability: Option<Capability>,
+}
+
 /// Internal domain events for kernel communication (Sprint 04+).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DomainEvent {
@@ -69,6 +79,12 @@ pub enum DomainEvent {
     SettingsChanged(SettingsChanged),
     WorkspaceCreated(WorkspaceEntityCreated),
     WorkspaceUpdated(WorkspaceEntityUpdated),
+    ResourceCreated(ResourceLifecycleEvent),
+    ResourceUpdated(ResourceLifecycleEvent),
+    ResourceDeleted(ResourceLifecycleEvent),
+    ZoneCreated(ResourceLifecycleEvent),
+    ApplicationCreated(ResourceLifecycleEvent),
+    WidgetCreated(ResourceLifecycleEvent),
 }
 
 impl DomainEvent {
@@ -80,6 +96,12 @@ impl DomainEvent {
             Self::SettingsChanged(_) => "system.settings.changed",
             Self::WorkspaceCreated(_) => "workspace.entity.created",
             Self::WorkspaceUpdated(_) => "workspace.entity.updated",
+            Self::ResourceCreated(_) => "resource.created",
+            Self::ResourceUpdated(_) => "resource.updated",
+            Self::ResourceDeleted(_) => "resource.deleted",
+            Self::ZoneCreated(_) => "zone.created",
+            Self::ApplicationCreated(_) => "application.created",
+            Self::WidgetCreated(_) => "widget.created",
         }
     }
 
@@ -89,6 +111,12 @@ impl DomainEvent {
             Self::SettingsChanged(payload) => payload.actor.as_ref(),
             Self::WorkspaceCreated(payload) => payload.actor.as_ref(),
             Self::WorkspaceUpdated(payload) => payload.actor.as_ref(),
+            Self::ResourceCreated(payload) => payload.actor.as_ref(),
+            Self::ResourceUpdated(payload) => payload.actor.as_ref(),
+            Self::ResourceDeleted(payload) => payload.actor.as_ref(),
+            Self::ZoneCreated(payload) => payload.actor.as_ref(),
+            Self::ApplicationCreated(payload) => payload.actor.as_ref(),
+            Self::WidgetCreated(payload) => payload.actor.as_ref(),
             _ => None,
         }
     }
@@ -101,6 +129,12 @@ impl DomainEvent {
             Self::SettingsChanged(payload) => payload.intent.as_ref(),
             Self::WorkspaceCreated(payload) => payload.intent.as_ref(),
             Self::WorkspaceUpdated(payload) => payload.intent.as_ref(),
+            Self::ResourceCreated(payload) => payload.intent.as_ref(),
+            Self::ResourceUpdated(payload) => payload.intent.as_ref(),
+            Self::ResourceDeleted(payload) => payload.intent.as_ref(),
+            Self::ZoneCreated(payload) => payload.intent.as_ref(),
+            Self::ApplicationCreated(payload) => payload.intent.as_ref(),
+            Self::WidgetCreated(payload) => payload.intent.as_ref(),
         }
     }
 
@@ -112,6 +146,24 @@ impl DomainEvent {
             Self::SettingsChanged(payload) => payload.capability.as_ref(),
             Self::WorkspaceCreated(payload) => payload.capability.as_ref(),
             Self::WorkspaceUpdated(payload) => payload.capability.as_ref(),
+            Self::ResourceCreated(payload) => payload.capability.as_ref(),
+            Self::ResourceUpdated(payload) => payload.capability.as_ref(),
+            Self::ResourceDeleted(payload) => payload.capability.as_ref(),
+            Self::ZoneCreated(payload) => payload.capability.as_ref(),
+            Self::ApplicationCreated(payload) => payload.capability.as_ref(),
+            Self::WidgetCreated(payload) => payload.capability.as_ref(),
+        }
+    }
+
+    pub fn resource_ref(&self) -> Option<&ResourceRef> {
+        match self {
+            Self::ResourceCreated(payload) => Some(&payload.resource_ref),
+            Self::ResourceUpdated(payload) => Some(&payload.resource_ref),
+            Self::ResourceDeleted(payload) => Some(&payload.resource_ref),
+            Self::ZoneCreated(payload) => Some(&payload.resource_ref),
+            Self::ApplicationCreated(payload) => Some(&payload.resource_ref),
+            Self::WidgetCreated(payload) => Some(&payload.resource_ref),
+            _ => None,
         }
     }
 }

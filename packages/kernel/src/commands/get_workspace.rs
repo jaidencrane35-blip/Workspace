@@ -38,7 +38,7 @@ impl QueryCommand for GetWorkspace {
             return Err(KernelError::NotReady);
         }
 
-        ctx.with_database(|db| WorkspaceService::get(db, &self.id))
+        ctx.with_database(|db| WorkspaceService::load(db, &self.id))
     }
 }
 

@@ -1,11 +1,14 @@
 use std::path::Path;
 
+use crate::commands::application::{CreateApplication, DeleteApplication, GetApplication};
 use crate::commands::create_workspace::CreateWorkspace;
 use crate::commands::get_audit_history::GetAuditHistory;
 use crate::commands::get_workspace::GetWorkspace;
 use crate::commands::initialize::InitializeWorkspace;
 use crate::commands::pipeline::CommandPipeline;
 use crate::commands::update_settings::UpdateSettings;
+use crate::commands::widget::{CreateWidget, DeleteWidget, GetWidget};
+use crate::commands::zone::{CreateZone, DeleteZone, GetZone};
 use crate::config::{SettingsUpdate, WorkspaceSettings};
 use crate::error::{KernelError, Result};
 use crate::events::types::{DomainEvent, WorkspaceShutdown};
@@ -14,7 +17,8 @@ use crate::security::{PermissionRequest, PermissionSubject};
 use crate::services::ConfigurationService;
 use crate::WorkspaceKernel;
 use workspace_domain::{
-    Actor, ActorContext, AuditEvent, Capability, Intent, IntentContext, Workspace, WorkspaceId,
+    Actor, ActorContext, ApplicationId, ApplicationReference, AuditEvent, Capability, Intent,
+    IntentContext, WidgetId, WidgetReference, Workspace, WorkspaceId, Zone, ZoneId,
 };
 
 /// Executes kernel commands and coordinates services + events.
@@ -77,6 +81,114 @@ impl CommandHandler {
         let workspace_id = WorkspaceId::new(id).map_err(KernelError::Domain)?;
         CommandPipeline::new(kernel.command_context(actor, intent))
             .execute_query(GetWorkspace::new(workspace_id))
+    }
+
+    pub fn create_zone(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        name: String,
+        position_metadata: Option<String>,
+    ) -> Result<Zone> {
+        let workspace_id = WorkspaceId::new(workspace_id).map_err(KernelError::Domain)?;
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_mutation(
+            CreateZone::new(workspace_id, name, position_metadata),
+        )
+    }
+
+    pub fn delete_zone(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        id: String,
+    ) -> Result<()> {
+        let zone_id = ZoneId::new(id).map_err(KernelError::Domain)?;
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_mutation(DeleteZone::new(zone_id))
+    }
+
+    pub fn get_zone(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        id: String,
+    ) -> Result<Zone> {
+        let zone_id = ZoneId::new(id).map_err(KernelError::Domain)?;
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetZone::new(zone_id))
+    }
+
+    pub fn create_application(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        name: String,
+        identifier: Option<String>,
+    ) -> Result<ApplicationReference> {
+        let workspace_id = WorkspaceId::new(workspace_id).map_err(KernelError::Domain)?;
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_mutation(
+            CreateApplication::new(workspace_id, name, identifier),
+        )
+    }
+
+    pub fn delete_application(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        id: String,
+    ) -> Result<()> {
+        let application_id = ApplicationId::new(id).map_err(KernelError::Domain)?;
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_mutation(DeleteApplication::new(application_id))
+    }
+
+    pub fn get_application(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        id: String,
+    ) -> Result<ApplicationReference> {
+        let application_id = ApplicationId::new(id).map_err(KernelError::Domain)?;
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetApplication::new(application_id))
+    }
+
+    pub fn create_widget(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        name: String,
+        widget_type: Option<String>,
+    ) -> Result<WidgetReference> {
+        let workspace_id = WorkspaceId::new(workspace_id).map_err(KernelError::Domain)?;
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_mutation(
+            CreateWidget::new(workspace_id, name, widget_type),
+        )
+    }
+
+    pub fn delete_widget(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        id: String,
+    ) -> Result<()> {
+        let widget_id = WidgetId::new(id).map_err(KernelError::Domain)?;
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_mutation(DeleteWidget::new(widget_id))
+    }
+
+    pub fn get_widget(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        id: String,
+    ) -> Result<WidgetReference> {
+        let widget_id = WidgetId::new(id).map_err(KernelError::Domain)?;
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetWidget::new(widget_id))
     }
 
     pub fn get_audit_history(
@@ -147,6 +259,17 @@ mod tests {
             CommandHandler::create_workspace(&kernel, actor.clone(), intent.clone(), "Boundary".into())
                 .unwrap();
         assert_eq!(workspace.name, "Boundary");
+
+        let zone = CommandHandler::create_zone(
+            &kernel,
+            actor.clone(),
+            intent.clone(),
+            workspace.id.to_string(),
+            "Primary".into(),
+            None,
+        )
+        .unwrap();
+        assert_eq!(zone.name, "Primary");
 
         let settings = CommandHandler::update_settings(
             &kernel,
