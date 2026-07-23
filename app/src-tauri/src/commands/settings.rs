@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 use tauri::State;
 use workspace_kernel::{CommandHandler, SettingsUpdate, WorkspaceKernel, WorkspaceSettings};
 
-use crate::actor::ipc_actor_context;
+use crate::actor::{ipc_actor_context, ipc_intent_context};
 use super::error::CommandError;
 use super::response::IpcResponse;
 
@@ -13,7 +13,11 @@ pub fn get_settings(
     kernel: State<'_, Arc<Mutex<WorkspaceKernel>>>,
 ) -> IpcResponse<WorkspaceSettings> {
     match kernel.lock() {
-        Ok(kernel) => match CommandHandler::get_settings(&kernel, ipc_actor_context()) {
+        Ok(kernel) => match CommandHandler::get_settings(
+            &kernel,
+            ipc_actor_context(),
+            ipc_intent_context(),
+        ) {
             Ok(settings) => IpcResponse::success(settings),
             Err(error) => IpcResponse::failure(CommandError::from(error)),
         },
@@ -32,7 +36,12 @@ pub fn update_settings(
 ) -> IpcResponse<WorkspaceSettings> {
     match kernel.lock() {
         Ok(kernel) => {
-            match CommandHandler::update_settings(&kernel, ipc_actor_context(), update) {
+            match CommandHandler::update_settings(
+                &kernel,
+                ipc_actor_context(),
+                ipc_intent_context(),
+                update,
+            ) {
                 Ok(settings) => IpcResponse::success(settings),
                 Err(error) => IpcResponse::failure(CommandError::from(error)),
             }
@@ -53,13 +62,15 @@ mod tests {
     fn ipc_settings_path_uses_command_layer() {
         let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
         let actor = ipc_actor_context();
+        let intent = ipc_intent_context();
 
-        let initial = CommandHandler::get_settings(&kernel, actor.clone()).unwrap();
+        let initial = CommandHandler::get_settings(&kernel, actor.clone(), intent.clone()).unwrap();
         assert_eq!(initial.theme, "system");
 
         let updated = CommandHandler::update_settings(
             &kernel,
             actor,
+            intent,
             SettingsUpdate {
                 theme: Some("light".into()),
                 first_run: Some(false),

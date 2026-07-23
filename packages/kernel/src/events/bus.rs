@@ -68,6 +68,8 @@ mod tests {
 
         bus.publish(DomainEvent::WorkspaceStarted(WorkspaceStarted {
             version: "0.1.0".into(),
+            intent: None,
+            capability: None,
         }));
 
         assert_eq!(counter.load(Ordering::SeqCst), 1);
@@ -87,6 +89,8 @@ mod tests {
 
         bus.publish(DomainEvent::WorkspaceStarted(WorkspaceStarted {
             version: "0.1.0".into(),
+            intent: None,
+            capability: None,
         }));
 
         assert_eq!(counter.load(Ordering::SeqCst), 3);
@@ -108,6 +112,8 @@ mod tests {
             {
                 bus_clone.publish(DomainEvent::WorkspaceShutdown(WorkspaceShutdown {
                     actor: None,
+                    intent: None,
+                    capability: None,
                 }));
             }
         });
@@ -121,6 +127,8 @@ mod tests {
 
         bus.publish(DomainEvent::WorkspaceStarted(WorkspaceStarted {
             version: "outer".into(),
+            intent: None,
+            capability: None,
         }));
 
         assert_eq!(started_count.load(Ordering::SeqCst), 1);
@@ -138,6 +146,8 @@ mod tests {
 
         bus.publish(DomainEvent::WorkspaceStarted(WorkspaceStarted {
             version: "0.1.0".into(),
+            intent: None,
+            capability: None,
         }));
 
         assert_eq!(bus.subscriber_count(), 2);

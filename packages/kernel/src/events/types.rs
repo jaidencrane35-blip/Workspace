@@ -1,6 +1,6 @@
 use std::fmt;
 
-use workspace_domain::ActorContext;
+use workspace_domain::{ActorContext, Capability, IntentContext};
 
 use crate::lifecycle::LifecycleState;
 
@@ -8,6 +8,8 @@ use crate::lifecycle::LifecycleState;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WorkspaceStarted {
     pub version: String,
+    pub intent: Option<IntentContext>,
+    pub capability: Option<Capability>,
 }
 
 /// Metadata for workspace reaching ready state.
@@ -15,12 +17,16 @@ pub struct WorkspaceStarted {
 pub struct WorkspaceReady {
     pub version: String,
     pub lifecycle: LifecycleState,
+    pub intent: Option<IntentContext>,
+    pub capability: Option<Capability>,
 }
 
 /// Metadata for workspace shutdown.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WorkspaceShutdown {
     pub actor: Option<ActorContext>,
+    pub intent: Option<IntentContext>,
+    pub capability: Option<Capability>,
 }
 
 /// Metadata for persisted settings changes.
@@ -30,6 +36,8 @@ pub struct SettingsChanged {
     pub first_run: bool,
     pub settings_version: u32,
     pub actor: Option<ActorContext>,
+    pub intent: Option<IntentContext>,
+    pub capability: Option<Capability>,
 }
 
 /// Metadata when a workspace entity is created.
@@ -38,6 +46,8 @@ pub struct WorkspaceEntityCreated {
     pub workspace_id: String,
     pub name: String,
     pub actor: Option<ActorContext>,
+    pub intent: Option<IntentContext>,
+    pub capability: Option<Capability>,
 }
 
 /// Metadata when a workspace entity is updated.
@@ -46,6 +56,8 @@ pub struct WorkspaceEntityUpdated {
     pub workspace_id: String,
     pub name: String,
     pub actor: Option<ActorContext>,
+    pub intent: Option<IntentContext>,
+    pub capability: Option<Capability>,
 }
 
 /// Internal domain events for kernel communication (Sprint 04+).
@@ -78,6 +90,28 @@ impl DomainEvent {
             Self::WorkspaceCreated(payload) => payload.actor.as_ref(),
             Self::WorkspaceUpdated(payload) => payload.actor.as_ref(),
             _ => None,
+        }
+    }
+
+    pub fn intent(&self) -> Option<&IntentContext> {
+        match self {
+            Self::WorkspaceStarted(payload) => payload.intent.as_ref(),
+            Self::WorkspaceReady(payload) => payload.intent.as_ref(),
+            Self::WorkspaceShutdown(payload) => payload.intent.as_ref(),
+            Self::SettingsChanged(payload) => payload.intent.as_ref(),
+            Self::WorkspaceCreated(payload) => payload.intent.as_ref(),
+            Self::WorkspaceUpdated(payload) => payload.intent.as_ref(),
+        }
+    }
+
+    pub fn capability(&self) -> Option<&Capability> {
+        match self {
+            Self::WorkspaceStarted(payload) => payload.capability.as_ref(),
+            Self::WorkspaceReady(payload) => payload.capability.as_ref(),
+            Self::WorkspaceShutdown(payload) => payload.capability.as_ref(),
+            Self::SettingsChanged(payload) => payload.capability.as_ref(),
+            Self::WorkspaceCreated(payload) => payload.capability.as_ref(),
+            Self::WorkspaceUpdated(payload) => payload.capability.as_ref(),
         }
     }
 }

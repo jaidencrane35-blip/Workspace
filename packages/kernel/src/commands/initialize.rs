@@ -49,6 +49,8 @@ impl InitializeWorkspace {
 
         event_bus.publish(DomainEvent::WorkspaceStarted(WorkspaceStarted {
             version: KERNEL_VERSION.to_string(),
+            intent: Some(workspace_domain::IntentContext::system_startup()),
+            capability: Some(workspace_domain::Capability::system_startup()),
         }));
 
         let mut state = WorkspaceState::new(KERNEL_VERSION);
@@ -95,6 +97,8 @@ impl InitializeWorkspace {
         event_bus.publish(DomainEvent::WorkspaceReady(WorkspaceReady {
             version: KERNEL_VERSION.to_string(),
             lifecycle: LifecycleState::Ready,
+            intent: Some(workspace_domain::IntentContext::system_startup()),
+            capability: Some(workspace_domain::Capability::system_startup()),
         }));
 
         Ok(InitializeWorkspaceResult {

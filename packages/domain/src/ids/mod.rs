@@ -70,6 +70,7 @@ define_id!(ApplicationId);
 define_id!(WidgetId);
 define_id!(AuditEventId);
 define_id!(ActorId);
+define_id!(IntentId);
 
 #[cfg(test)]
 mod tests {

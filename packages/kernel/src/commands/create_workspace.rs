@@ -5,7 +5,7 @@ use crate::events::types::{DomainEvent, WorkspaceEntityCreated};
 use crate::lifecycle::LifecycleState;
 use crate::security::PermissionSubject;
 use crate::services::WorkspaceService;
-use workspace_domain::Workspace;
+use workspace_domain::{Capability, Workspace};
 
 /// Creates a new workspace domain entity.
 pub struct CreateWorkspace {
@@ -25,6 +25,10 @@ impl MutationCommand for CreateWorkspace {
         PermissionSubject::Workspace
     }
 
+    fn required_capability(&self) -> Capability {
+        Capability::workspace_write()
+    }
+
     fn execute(self, ctx: &CommandContext<'_>) -> Result<Workspace> {
         Self::ensure_ready(ctx.state)?;
         let workspace = ctx.with_database(|db| WorkspaceService::create(db, self.name))?;
@@ -32,6 +36,8 @@ impl MutationCommand for CreateWorkspace {
             workspace_id: workspace.id.to_string(),
             name: workspace.name.clone(),
             actor: Some(ctx.actor_context.clone()),
+            intent: Some(ctx.intent_context.clone()),
+            capability: Some(Capability::workspace_write()),
         }));
         Ok(workspace)
     }
@@ -58,9 +64,10 @@ mod tests {
     use crate::commands::initialize::InitializeWorkspace;
     use crate::commands::pipeline::CommandPipeline;
     use crate::events::EventBus;
+    use crate::policy::AlwaysAllowPolicy;
     use crate::security::AllowAllPermissionGate;
     use std::sync::{Arc, Mutex};
-    use workspace_domain::ActorContext;
+    use workspace_domain::{ActorContext, CapabilitySet, IntentContext};
 
     #[test]
     fn emits_workspace_created_event() {
@@ -75,10 +82,13 @@ mod tests {
         let init = InitializeWorkspace::in_memory().execute(&bus).unwrap();
         let ctx = CommandContext {
             actor_context: ActorContext::local_user(),
+            intent_context: IntentContext::user_request(),
+            capability_set: CapabilitySet::local_user_standard(),
             state: &init.state,
             database: init.database.shared(),
             event_bus: &bus,
             permission_gate: &AllowAllPermissionGate,
+            permission_policy: &AlwaysAllowPolicy,
         };
 
         let workspace = CommandPipeline::new(ctx)

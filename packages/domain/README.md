@@ -13,6 +13,17 @@ Shared Workspace domain models — pure data, no persistence or UI.
 
 IDs serialize as JSON strings (`#[serde(transparent)]`) for IPC compatibility.
 
+## Sprint 09 intent & capability
+
+| Type | Purpose |
+|------|---------|
+| `Intent` / `IntentContext` | Why an action is performed |
+| `IntentId` / `IntentType` | Typed intent classification |
+| `Capability` / `CapabilityId` | Authority identifier (not enforced yet) |
+| `CapabilitySet` | Collection of granted capability ids |
+
+Active intents: `UserRequest`, `SystemStartup`, `SystemShutdown`.
+
 ## Sprint 08 execution identity
 
 | Type | Purpose |

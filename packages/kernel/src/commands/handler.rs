@@ -13,7 +13,9 @@ use crate::lifecycle::LifecycleState;
 use crate::security::{PermissionRequest, PermissionSubject};
 use crate::services::ConfigurationService;
 use crate::WorkspaceKernel;
-use workspace_domain::{Actor, ActorContext, AuditEvent, Workspace, WorkspaceId};
+use workspace_domain::{
+    Actor, ActorContext, AuditEvent, Capability, Intent, IntentContext, Workspace, WorkspaceId,
+};
 
 /// Executes kernel commands and coordinates services + events.
 pub struct CommandHandler;
@@ -37,54 +39,61 @@ impl CommandHandler {
     pub fn get_settings(
         kernel: &WorkspaceKernel,
         actor: ActorContext,
+        intent: IntentContext,
     ) -> Result<WorkspaceSettings> {
         if !kernel.state().is_ready() {
             return Err(KernelError::NotReady);
         }
-        let _actor = actor;
+        let _ = (actor, intent);
         kernel.database.with_database(ConfigurationService::load)
     }
 
     pub fn update_settings(
         kernel: &WorkspaceKernel,
         actor: ActorContext,
+        intent: IntentContext,
         update: SettingsUpdate,
     ) -> Result<WorkspaceSettings> {
-        CommandPipeline::new(kernel.command_context(actor))
+        CommandPipeline::new(kernel.command_context(actor, intent))
             .execute_mutation(UpdateSettings::new(update))
     }
 
     pub fn create_workspace(
         kernel: &WorkspaceKernel,
         actor: ActorContext,
+        intent: IntentContext,
         name: String,
     ) -> Result<Workspace> {
-        CommandPipeline::new(kernel.command_context(actor))
+        CommandPipeline::new(kernel.command_context(actor, intent))
             .execute_mutation(CreateWorkspace::new(name))
     }
 
     pub fn get_workspace(
         kernel: &WorkspaceKernel,
         actor: ActorContext,
+        intent: IntentContext,
         id: String,
     ) -> Result<Workspace> {
         let workspace_id = WorkspaceId::new(id).map_err(KernelError::Domain)?;
-        CommandPipeline::new(kernel.command_context(actor))
+        CommandPipeline::new(kernel.command_context(actor, intent))
             .execute_query(GetWorkspace::new(workspace_id))
     }
 
     pub fn get_audit_history(
         kernel: &WorkspaceKernel,
         actor: ActorContext,
+        intent: IntentContext,
         limit: Option<usize>,
     ) -> Result<Vec<AuditEvent>> {
-        CommandPipeline::new(kernel.command_context(actor))
+        CommandPipeline::new(kernel.command_context(actor, intent))
             .execute_query(GetAuditHistory::new(limit))
     }
 
     pub fn shutdown(kernel: &mut WorkspaceKernel) {
         let request = PermissionRequest {
             actor: Actor::system(),
+            intent: Intent::system_shutdown(),
+            capability: Capability::system_shutdown(),
             command: "ShutdownWorkspace",
             subject: PermissionSubject::System,
         };
@@ -94,10 +103,12 @@ impl CommandHandler {
             return;
         }
 
-        log::info!("COMMAND: ShutdownWorkspace (actor=system)");
+        log::info!("COMMAND: ShutdownWorkspace (actor=system, intent=SystemShutdown)");
         kernel.transition_lifecycle(LifecycleState::ShuttingDown);
         kernel.event_bus().publish(DomainEvent::WorkspaceShutdown(WorkspaceShutdown {
             actor: Some(ActorContext::system()),
+            intent: Some(IntentContext::system_shutdown()),
+            capability: Some(Capability::system_shutdown()),
         }));
     }
 }
@@ -114,6 +125,7 @@ mod tests {
         let settings = CommandHandler::update_settings(
             &kernel,
             ActorContext::local_user(),
+            IntentContext::user_request(),
             SettingsUpdate {
                 theme: Some("light".into()),
                 first_run: Some(false),
@@ -129,14 +141,17 @@ mod tests {
     fn all_mutations_route_through_pipeline_or_handler_boundary() {
         let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
         let actor = ActorContext::local_user();
+        let intent = IntentContext::user_request();
 
         let workspace =
-            CommandHandler::create_workspace(&kernel, actor.clone(), "Boundary".into()).unwrap();
+            CommandHandler::create_workspace(&kernel, actor.clone(), intent.clone(), "Boundary".into())
+                .unwrap();
         assert_eq!(workspace.name, "Boundary");
 
         let settings = CommandHandler::update_settings(
             &kernel,
             actor,
+            intent,
             SettingsUpdate {
                 theme: Some("dark".into()),
                 first_run: None,

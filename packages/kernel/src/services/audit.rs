@@ -2,7 +2,7 @@ use std::sync::{Arc, Mutex};
 
 use serde_json::json;
 use workspace_database::{AuditRepository, Database};
-use workspace_domain::{ActorContext, AuditEvent};
+use workspace_domain::{ActorContext, AuditEvent, Capability, IntentContext};
 
 use crate::error::Result;
 use crate::events::types::DomainEvent;
@@ -25,7 +25,9 @@ impl AuditService {
     pub fn record_command(
         db: &Arc<Mutex<Database>>,
         actor_context: &ActorContext,
+        intent_context: &IntentContext,
         command_name: &str,
+        capability: &Capability,
         success: bool,
         metadata: Option<String>,
     ) -> Result<()> {
@@ -36,7 +38,9 @@ impl AuditService {
         };
 
         let mut event = AuditEvent::from_actor(event_type, &actor_context.actor, success)
-            .with_command_name(command_name);
+            .with_command_name(command_name)
+            .with_intent_type(intent_context.intent.intent_type)
+            .with_capability(capability);
 
         if let Some(metadata) = metadata {
             event = event.with_metadata(metadata);
@@ -51,7 +55,19 @@ impl AuditService {
             .cloned()
             .unwrap_or_else(ActorContext::system);
 
+        let intent_context = event
+            .intent()
+            .cloned()
+            .unwrap_or_else(IntentContext::system_startup);
+
+        let capability = event
+            .capability()
+            .cloned()
+            .unwrap_or_else(Capability::system_startup);
+
         let audit = AuditEvent::from_actor(event.name(), &actor.actor, true)
+            .with_intent_type(intent_context.intent.intent_type)
+            .with_capability(&capability)
             .with_metadata(Self::sanitized_domain_metadata(event)?);
 
         Self::append(db, audit)
@@ -88,7 +104,7 @@ mod tests {
     use super::*;
     use crate::events::types::WorkspaceEntityCreated;
     use workspace_database::DatabaseService;
-    use workspace_domain::ActorType;
+    use workspace_domain::{ActorType, IntentType};
     use tempfile::tempdir;
 
     fn test_db() -> Arc<Mutex<Database>> {
@@ -101,12 +117,14 @@ mod tests {
     }
 
     #[test]
-    fn records_command_audit_with_local_user() {
+    fn records_command_audit_with_intent_and_capability() {
         let db = test_db();
         AuditService::record_command(
             &db,
             &ActorContext::local_user(),
+            &IntentContext::user_request(),
             "CreateWorkspace",
+            &Capability::workspace_write(),
             true,
             None,
         )
@@ -115,6 +133,8 @@ mod tests {
         let records = AuditService::list_recent(&db, 10).unwrap();
         assert_eq!(records[0].actor_type, ActorType::LocalUser);
         assert_eq!(records[0].actor_id.as_deref(), Some("local-user"));
+        assert_eq!(records[0].intent_type, Some(IntentType::UserRequest));
+        assert_eq!(records[0].capability.as_deref(), Some("workspace.write"));
     }
 
     #[test]
@@ -125,6 +145,8 @@ mod tests {
                 first_run: false,
                 settings_version: 2,
                 actor: Some(ActorContext::local_user()),
+                intent: Some(IntentContext::user_request()),
+                capability: Some(Capability::settings_write()),
             },
         ))
         .unwrap();
@@ -134,7 +156,7 @@ mod tests {
     }
 
     #[test]
-    fn records_domain_event_with_actor_attribution() {
+    fn records_domain_event_with_actor_intent_and_capability() {
         let db = test_db();
         AuditService::record_domain_event(
             &db,
@@ -142,6 +164,8 @@ mod tests {
                 workspace_id: "ws-1".into(),
                 name: "Sensitive Name".into(),
                 actor: Some(ActorContext::local_user()),
+                intent: Some(IntentContext::user_request()),
+                capability: Some(Capability::workspace_write()),
             }),
         )
         .unwrap();
@@ -149,21 +173,26 @@ mod tests {
         let records = AuditService::list_recent(&db, 10).unwrap();
         assert_eq!(records[0].event_type, "workspace.entity.created");
         assert_eq!(records[0].actor_type, ActorType::LocalUser);
+        assert_eq!(records[0].intent_type, Some(IntentType::UserRequest));
+        assert_eq!(records[0].capability.as_deref(), Some("workspace.write"));
         assert!(!records[0].metadata.as_ref().unwrap().contains("Sensitive Name"));
     }
 
     #[test]
-    fn system_actor_used_when_domain_event_has_no_actor() {
+    fn system_defaults_used_when_domain_event_has_no_attribution() {
         let db = test_db();
         AuditService::record_domain_event(
             &db,
             &DomainEvent::WorkspaceStarted(crate::events::types::WorkspaceStarted {
                 version: "0.1.0".into(),
+                intent: Some(IntentContext::system_startup()),
+                capability: Some(Capability::system_startup()),
             }),
         )
         .unwrap();
 
         let records = AuditService::list_recent(&db, 10).unwrap();
-        assert_eq!(records[0].actor_type, ActorType::System);
+        assert_eq!(records[0].intent_type, Some(IntentType::SystemStartup));
+        assert_eq!(records[0].capability.as_deref(), Some("system.startup"));
     }
 }

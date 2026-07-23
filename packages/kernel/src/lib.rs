@@ -9,6 +9,7 @@ pub mod error;
 pub mod events;
 pub mod health;
 pub mod lifecycle;
+pub mod policy;
 pub mod security;
 pub mod services;
 pub mod state;
@@ -19,17 +20,24 @@ pub use error::{KernelError, PublicError, Result};
 pub use events::{DomainEvent, EventBus};
 pub use health::WorkspaceHealth;
 pub use lifecycle::LifecycleState;
+pub use policy::{
+    AlwaysAllowPolicy, DefaultPolicyEvaluator, PermissionPolicy, PolicyContext, PolicyDecision,
+    PolicyEvaluator, PolicyResult,
+};
 pub use security::{AllowAllPermissionGate, PermissionGate, PermissionRequest, PermissionSubject};
 pub use services::{AuditService, ConfigurationService, DatabaseServiceHandle, ServiceRegistry, ServiceStatus};
 pub use state::WorkspaceState;
-pub use workspace_domain::{Actor, ActorContext, ActorType};
+pub use workspace_domain::{
+    Actor, ActorContext, ActorType, Capability, CapabilityId, CapabilityScope, CapabilitySet, Intent,
+    IntentContext, IntentType,
+};
 
 use std::path::Path;
 use std::sync::Arc;
-use std::sync::Mutex;
 
 use commands::CommandContext;
 use events::AuditEventSubscriber;
+use policy::AlwaysAllowPolicy as DefaultPermissionPolicy;
 use security::AllowAllPermissionGate as DefaultPermissionGate;
 
 /// Kernel crate version aligned with application semver.
@@ -46,6 +54,7 @@ pub struct WorkspaceKernel {
     services: ServiceRegistry,
     event_bus: EventBus,
     permission_gate: Arc<dyn PermissionGate>,
+    permission_policy: Arc<dyn PermissionPolicy>,
 }
 
 impl WorkspaceKernel {
@@ -79,7 +88,7 @@ impl WorkspaceKernel {
     }
 
     #[cfg(test)]
-    pub(crate) fn shared_database(&self) -> Arc<Mutex<workspace_database::Database>> {
+    pub(crate) fn shared_database(&self) -> Arc<std::sync::Mutex<workspace_database::Database>> {
         self.database.shared()
     }
 
@@ -92,26 +101,50 @@ impl WorkspaceKernel {
     }
 
     pub fn get_settings(&self) -> Result<WorkspaceSettings> {
-        CommandHandler::get_settings(self, ActorContext::local_user())
+        CommandHandler::get_settings(
+            self,
+            ActorContext::local_user(),
+            IntentContext::user_request(),
+        )
     }
 
     pub fn update_settings(&self, update: SettingsUpdate) -> Result<WorkspaceSettings> {
-        CommandHandler::update_settings(self, ActorContext::local_user(), update)
+        CommandHandler::update_settings(
+            self,
+            ActorContext::local_user(),
+            IntentContext::user_request(),
+            update,
+        )
     }
 
     pub fn create_workspace(&self, name: String) -> Result<workspace_domain::Workspace> {
-        CommandHandler::create_workspace(self, ActorContext::local_user(), name)
+        CommandHandler::create_workspace(
+            self,
+            ActorContext::local_user(),
+            IntentContext::user_request(),
+            name,
+        )
     }
 
     pub fn get_workspace(&self, id: String) -> Result<workspace_domain::Workspace> {
-        CommandHandler::get_workspace(self, ActorContext::local_user(), id)
+        CommandHandler::get_workspace(
+            self,
+            ActorContext::local_user(),
+            IntentContext::user_request(),
+            id,
+        )
     }
 
     pub fn get_audit_history(
         &self,
         limit: Option<usize>,
     ) -> Result<Vec<workspace_domain::AuditEvent>> {
-        CommandHandler::get_audit_history(self, ActorContext::local_user(), limit)
+        CommandHandler::get_audit_history(
+            self,
+            ActorContext::local_user(),
+            IntentContext::user_request(),
+            limit,
+        )
     }
 
     pub fn begin_shutdown(&mut self) {
@@ -134,18 +167,35 @@ impl WorkspaceKernel {
         self.state.transition(lifecycle);
     }
 
-    pub(crate) fn command_context(&self, actor: ActorContext) -> CommandContext<'_> {
+    pub(crate) fn command_context(
+        &self,
+        actor: ActorContext,
+        intent: IntentContext,
+    ) -> CommandContext<'_> {
+        let capability_set = if actor.actor.actor_type == ActorType::System {
+            CapabilitySet::system_standard()
+        } else {
+            CapabilitySet::local_user_standard()
+        };
+
         CommandContext {
             actor_context: actor,
+            intent_context: intent,
+            capability_set,
             state: &self.state,
             database: self.database.shared(),
             event_bus: &self.event_bus,
             permission_gate: self.permission_gate.as_ref(),
+            permission_policy: self.permission_policy.as_ref(),
         }
     }
 
     pub(crate) fn permission_gate(&self) -> &dyn PermissionGate {
         self.permission_gate.as_ref()
+    }
+
+    pub(crate) fn permission_policy(&self) -> &dyn PermissionPolicy {
+        self.permission_policy.as_ref()
     }
 
     fn bootstrap_shell(version: &str) -> Self {
@@ -158,6 +208,7 @@ impl WorkspaceKernel {
             services: ServiceRegistry::new(),
             event_bus: EventBus::new(),
             permission_gate: Arc::new(DefaultPermissionGate),
+            permission_policy: Arc::new(DefaultPermissionPolicy),
         }
     }
 }
@@ -166,6 +217,26 @@ impl WorkspaceKernel {
 mod tests {
     use super::*;
     use std::sync::{Arc, Mutex};
+
+    #[test]
+    fn kernel_wires_default_permission_policy() {
+        let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+        let context = PolicyContext::new(
+            Actor::local_user().id.to_string(),
+            Intent::user_request(),
+            Capability::workspace_write(),
+            "CreateWorkspace",
+            PermissionSubject::Workspace,
+        );
+
+        assert!(
+            kernel
+                .permission_policy()
+                .evaluate(&context)
+                .unwrap()
+                .is_allowed()
+        );
+    }
 
     #[test]
     fn shutdown_audit_uses_system_actor() {

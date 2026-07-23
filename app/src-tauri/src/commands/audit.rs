@@ -4,7 +4,7 @@ use tauri::State;
 use workspace_domain::AuditEvent;
 use workspace_kernel::{CommandHandler, WorkspaceKernel};
 
-use crate::actor::ipc_actor_context;
+use crate::actor::{ipc_actor_context, ipc_intent_context};
 use super::error::CommandError;
 use super::response::IpcResponse;
 
@@ -16,7 +16,12 @@ pub fn get_audit_history(
 ) -> IpcResponse<Vec<AuditEvent>> {
     match kernel.lock() {
         Ok(kernel) => {
-            match CommandHandler::get_audit_history(&kernel, ipc_actor_context(), limit) {
+            match CommandHandler::get_audit_history(
+                &kernel,
+                ipc_actor_context(),
+                ipc_intent_context(),
+                limit,
+            ) {
                 Ok(history) => IpcResponse::success(history),
                 Err(error) => IpcResponse::failure(CommandError::from(error)),
             }
@@ -38,9 +43,11 @@ mod tests {
     fn ipc_audit_query_returns_envelope_with_local_user_attribution() {
         let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
         let actor = ipc_actor_context();
-        CommandHandler::create_workspace(&kernel, actor.clone(), "Audited".into()).unwrap();
+        let intent = ipc_intent_context();
+        CommandHandler::create_workspace(&kernel, actor.clone(), intent.clone(), "Audited".into())
+            .unwrap();
 
-        let response = match CommandHandler::get_audit_history(&kernel, actor, Some(10)) {
+        let response = match CommandHandler::get_audit_history(&kernel, actor, intent, Some(10)) {
             Ok(history) => IpcResponse::success(history),
             Err(error) => IpcResponse::failure(super::CommandError::from(error)),
         };

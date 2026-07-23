@@ -6,6 +6,7 @@ use crate::events::types::{DomainEvent, SettingsChanged};
 use crate::lifecycle::LifecycleState;
 use crate::security::PermissionSubject;
 use crate::services::ConfigurationService;
+use workspace_domain::Capability;
 
 /// Updates persisted workspace settings through the configuration service.
 pub struct UpdateSettings {
@@ -25,6 +26,10 @@ impl MutationCommand for UpdateSettings {
         PermissionSubject::Settings
     }
 
+    fn required_capability(&self) -> Capability {
+        Capability::settings_write()
+    }
+
     fn execute(self, ctx: &CommandContext<'_>) -> Result<WorkspaceSettings> {
         Self::ensure_ready(ctx.state)?;
         Self::validate(&self.update)?;
@@ -41,6 +46,8 @@ impl MutationCommand for UpdateSettings {
             first_run: settings.first_run,
             settings_version: settings.settings_version,
             actor: Some(ctx.actor_context.clone()),
+            intent: Some(ctx.intent_context.clone()),
+            capability: Some(Capability::settings_write()),
         }));
 
         Ok(settings)
@@ -77,9 +84,10 @@ mod tests {
     use crate::commands::initialize::InitializeWorkspace;
     use crate::commands::pipeline::CommandPipeline;
     use crate::events::EventBus;
+    use crate::policy::AlwaysAllowPolicy;
     use crate::security::AllowAllPermissionGate;
     use std::sync::{Arc, Mutex};
-    use workspace_domain::ActorContext;
+    use workspace_domain::{ActorContext, CapabilitySet, IntentContext};
 
     #[test]
     fn executes_successfully_and_emits_event() {
@@ -94,10 +102,13 @@ mod tests {
 
         let ctx = CommandContext {
             actor_context: ActorContext::local_user(),
+            intent_context: IntentContext::user_request(),
+            capability_set: CapabilitySet::local_user_standard(),
             state: &init.state,
             database: init.database.shared(),
             event_bus: &bus,
             permission_gate: &AllowAllPermissionGate,
+            permission_policy: &AlwaysAllowPolicy,
         };
 
         let settings = CommandPipeline::new(ctx)
@@ -117,10 +128,13 @@ mod tests {
         let init = InitializeWorkspace::in_memory().execute(&bus).unwrap();
         let ctx = CommandContext {
             actor_context: ActorContext::local_user(),
+            intent_context: IntentContext::user_request(),
+            capability_set: CapabilitySet::local_user_standard(),
             state: &init.state,
             database: init.database.shared(),
             event_bus: &bus,
             permission_gate: &AllowAllPermissionGate,
+            permission_policy: &AlwaysAllowPolicy,
         };
 
         let error = CommandPipeline::new(ctx)

@@ -43,6 +43,8 @@ mod tests {
 
         bus.publish(DomainEvent::WorkspaceStarted(WorkspaceStarted {
             version: "0.1.0".into(),
+            intent: Some(workspace_domain::IntentContext::system_startup()),
+            capability: Some(workspace_domain::Capability::system_startup()),
         }));
 
         let records = AuditService::list_recent(&db, 10).unwrap();

@@ -1,4 +1,4 @@
-use workspace_domain::Actor;
+use workspace_domain::{Actor, Capability, Intent};
 
 use crate::error::{KernelError, Result};
 
@@ -14,6 +14,8 @@ pub enum PermissionSubject {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PermissionRequest {
     pub actor: Actor,
+    pub intent: Intent,
+    pub capability: Capability,
     pub command: &'static str,
     pub subject: PermissionSubject,
 }

@@ -2,6 +2,13 @@
 
 Platform Kernel boundary for Workspace — the central runtime authority.
 
+## Sprint 09
+
+- **Intent model** — `Intent`, `IntentContext`, `IntentType` in domain
+- **Capability model** — `Capability`, `CapabilitySet` (identifiers only)
+- **Policy layer** — `PermissionPolicy`, `PolicyEvaluator`, `AlwaysAllowPolicy`
+- **Pipeline** — actor + intent + capability through permission and audit
+
 ## Sprint 08
 
 - **Actor model** — `Actor`, `ActorContext`, `ActorId`, `ActorType` in domain
@@ -38,11 +45,13 @@ Platform Kernel boundary for Workspace — the central runtime authority.
 ## Architecture
 
 ```
-React UI  →  Tauri IPC  →  CommandHandler  →  CommandPipeline  →  PermissionGate
+React UI  →  Tauri IPC  →  CommandHandler  →  CommandPipeline  →  PermissionPolicy
+                                                    ↓                      ↓
+                                              PermissionGate         (AlwaysAllow)
                                                     ↓
                                               Services  →  workspace-database
                                                     ↓
-                                                EventBus
+                                                EventBus  →  Audit (intent + capability)
 ```
 
 - **IPC** — external communication (React ↔ Rust)

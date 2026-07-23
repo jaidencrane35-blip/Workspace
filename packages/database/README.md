@@ -2,6 +2,11 @@
 
 SQLite persistence foundation for Workspace (DEC-010).
 
+## Sprint 09
+
+- Migration `005_audit_intent_capability.sql` — `intent_type`, `capability` columns on `audit_events`
+- `AuditRepository` reads/writes intent and capability attribution
+
 ## Sprint 07
 
 - `AuditRepository` — append and query recent audit records
