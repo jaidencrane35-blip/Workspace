@@ -11,7 +11,7 @@
 
 ## 1. Status
 
-**Standards defined; no implementation yet.** These rules apply when Phase 1 modules are created. Specific schemas will be added as modules are designed.
+**Standards defined.** Stack and process architecture approved (DEC-007, DEC-011). IPC mechanism specific to Tauri (commands, events) will follow these conventions.
 
 ---
 
@@ -25,6 +25,18 @@ Modules communicate through two mechanisms:
 | **Service API** | Request/response operations (launch app, save layout, query state) |
 
 Direct cross-module imports of internal implementation are prohibited. See [Architecture Principles](ARCHITECTURE-PRINCIPLES.md) §2.3.
+
+### 2.1 Inter-Process Communication (DEC-011)
+
+Multi-process architecture requires explicit IPC contracts:
+
+| Channel | Use |
+|---------|-----|
+| Tauri commands | Frontend → Rust core request/response |
+| Tauri events | Rust core → Frontend push notifications |
+| Internal IPC | Core ↔ Plugin processes, Core ↔ AI worker processes |
+
+All IPC payloads follow the event schema rules in §4. Permission checks occur in the Core process before any state change.
 
 ---
 

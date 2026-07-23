@@ -123,7 +123,7 @@ Decision tracking and unresolved questions.
 | Document | Description |
 |----------|-------------|
 | [Decision Log](09-Decisions/DECISION-LOG.md) | Record of all significant decisions |
-| [Open Questions](09-Decisions/OPEN-QUESTIONS.md) | 19 unresolved decisions requiring review |
+| [Open Questions](09-Decisions/OPEN-QUESTIONS.md) | 10 open decisions requiring review |
 
 ### 10 — Sprints
 
@@ -150,8 +150,8 @@ See [Documentation Standards](03-Engineering/DOCUMENTATION-STANDARDS.md) for ful
 
 ## Current Phase
 
-**Phase 0 — Foundation** — documentation complete; improvement pass complete.
+**Phase 0 — Foundation:** Complete  
+**Phase 0.5 — Decision Recording:** Complete  
+**Phase 1 — Core Platform:** Ready to begin
 
-**Phase 1 — Core Platform** — **blocked** until OQ-001, OQ-014, OQ-013, OQ-003, and OQ-010 are resolved.
-
-See [Roadmap](08-Roadmap/ROADMAP.md) for phase details and gate criteria.
+See [Roadmap](08-Roadmap/ROADMAP.md) and [Decision Log](09-Decisions/DECISION-LOG.md) (DEC-006 through DEC-014).

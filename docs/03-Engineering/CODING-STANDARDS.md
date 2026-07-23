@@ -11,7 +11,7 @@
 
 ## 1. Status
 
-**Technology stack not yet selected.** This document defines universal standards applicable regardless of language. Language-specific conventions will be added as an appendix when the stack is decided (see [Open Questions](../09-Decisions/OPEN-QUESTIONS.md)).
+**Technology stack selected:** Tauri, React, TypeScript, Rust (DEC-007). Language-specific conventions below are active for Phase 1.
 
 ---
 
@@ -120,14 +120,31 @@ Names must be descriptive. Avoid abbreviations except widely understood ones (`i
 
 ## 4. Language-Specific Standards
 
-_To be added when technology stack is decided._
+### 4.1 TypeScript / React (Frontend — Tauri WebView)
 
-Placeholder sections:
+- Strict TypeScript mode enabled (`strict: true`)
+- Functional React components with hooks
+- Props interfaces named `{Component}Props`
+- Use `camelCase` for functions and variables; `PascalCase` for components and types
+- Prefer explicit return types on exported functions
+- No `any` without documented justification
+- Tauri API calls wrapped in typed service modules — not scattered in components
 
-- [ ] TypeScript / JavaScript conventions
-- [ ] Rust conventions (if applicable)
-- [ ] C# / .NET conventions (if applicable)
-- [ ] Python conventions (if applicable for tooling)
+### 4.2 Rust (Core Runtime — Tauri Backend)
+
+- Follow Rust standard naming: `snake_case` functions/modules, `PascalCase` types
+- Use `Result<T, E>` for fallible operations — no unwrap in production code
+- Domain logic in `packages/` crates; Tauri command handlers are thin adapters
+- `clippy` warnings treated as errors in CI
+- Public API documented with `///` doc comments
+- Error types defined per crate using `thiserror` or equivalent
+
+### 4.3 SQL (SQLite Schema)
+
+- Schema migrations versioned and sequential
+- Table and column names: `snake_case`
+- All schema changes via migration files — never manual DB edits
+- See DEC-010 for stored data categories
 
 ---
 

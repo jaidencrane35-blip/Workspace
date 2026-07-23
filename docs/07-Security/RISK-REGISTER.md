@@ -21,18 +21,6 @@
 
 ## 2. Active Risks
 
-### R-001: Technology Stack Undecided
-
-| Field | Value |
-|-------|-------|
-| **Category** | Architecture |
-| **Description** | No technology stack selected. Delaying this decision blocks Phase 1. |
-| **Impact** | High — blocks all implementation |
-| **Likelihood** | High — decision not yet made |
-| **Status** | Open |
-| **Mitigation** | Evaluate options against architecture principles. Record decision in Decision Log. See OQ-001. |
-| **Owner** | Architect (TBD) |
-
 ### R-002: Scope Ambiguity
 
 | Field | Value |
@@ -143,9 +131,11 @@
 
 ---
 
-## 3. Closed Risks
+### Closed Risks
 
-_None yet._
+#### R-001: Technology Stack Undecided — Closed 2026-07-23
+
+Resolved by DEC-007 (Tauri stack).
 
 ---
 
@@ -154,7 +144,7 @@ _None yet._
 | Date | Reviewer | Changes |
 |------|----------|---------|
 | 2026-07-23 | Lead Software Engineer | Initial risk register created |
-| 2026-07-23 | Lead Software Engineer | Phase 0 improvement pass — threat model added; R-001 mitigation updated |
+| 2026-07-23 | Project Owner | Phase 0.5 decisions recorded — R-001 closed (DEC-007) |
 
 ---
 

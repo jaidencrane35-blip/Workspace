@@ -9,11 +9,11 @@
 
 ---
 
-## 1. Purpose
+## 1. Status
 
-Workspace requires a technology stack decision (OQ-001) before Phase 1 implementation. This document defines **how to evaluate options** — not which option to choose.
+**Technology stack selected:** Tauri + React + TypeScript + Rust + SQLite (DEC-007, 2026-07-23).
 
-Candidates may include (non-exhaustive): Electron + TypeScript, Tauri + Rust, native C#/.NET, WinUI, or hybrid approaches. No candidate is endorsed here.
+This document records the evaluation framework used to reach that decision. For the recorded outcome, see [Decision Log](../09-Decisions/DECISION-LOG.md) DEC-007.
 
 ---
 
@@ -169,15 +169,14 @@ A candidate is **disqualified** regardless of score if:
 
 ## 6. Relationship to Other Decisions
 
-| Decision | Depends On Stack Selection |
-|----------|---------------------------|
-| OQ-002 (process model) | Partially — some stacks favour in-process |
-| OQ-007 (plugin runtime) | Yes — sandboxing options vary by stack |
-| OQ-019 (monorepo tooling) | Yes — tooling ecosystem varies |
-| CI/CD tooling | Yes — build and test tooling |
-| Coding Standards language sections | Yes — language-specific conventions |
-
-Stack selection does **not** require resolving OQ-014 (Windows integration model) first, but the two decisions should be evaluated together.
+| Decision | Status |
+|----------|--------|
+| OQ-001 (stack) | **Resolved** — DEC-007 (Tauri) |
+| OQ-002 (process model) | **Resolved** — DEC-011 (multi-process) |
+| OQ-014 (Windows integration) | **Resolved** — DEC-008 (hybrid) |
+| OQ-019 (monorepo tooling) | **Resolved** — DEC-012 (pnpm) |
+| OQ-007 (plugin runtime) | Open — Phase 3 |
+| CI/CD tooling | Phase 1 — Tauri + pnpm + Cargo |
 
 ---
 
@@ -185,5 +184,5 @@ Stack selection does **not** require resolving OQ-014 (Windows integration model
 
 - [Windows Integration Model](WINDOWS-INTEGRATION-MODEL.md)
 - [Architecture Principles](ARCHITECTURE-PRINCIPLES.md)
-- [Performance Budgets](PERFORMANCE-BUDGETS.md)
-- [Open Questions](../09-Decisions/OPEN-QUESTIONS.md) — OQ-001
+- [Decision Log](../09-Decisions/DECISION-LOG.md) — DEC-007
+- [Repository Structure](REPOSITORY-STRUCTURE.md)

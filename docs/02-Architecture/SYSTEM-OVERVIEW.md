@@ -58,9 +58,83 @@ This diagram matches the layer model in [Architecture Principles](ARCHITECTURE-P
 
 ---
 
-## 2. Major Subsystems
+## 2. Technology Stack (DEC-007)
 
-### 2.1 Shell
+| Layer | Technology |
+|-------|------------|
+| UI | React + TypeScript (Tauri webview) |
+| Desktop runtime | Tauri |
+| Core services | Rust |
+| Data persistence | SQLite (+ JSON export) |
+| Monorepo (JS/TS) | pnpm workspaces (DEC-012) |
+| Monorepo (Rust) | Cargo workspace |
+
+### Target Application Structure
+
+```
+Workspace Application
+    Tauri Shell
+        React + TypeScript Interface
+        Rust Core Runtime
+            SQLite Database
+            AI Subsystem
+            Plugin Runtime
+            Windows Integration Services
+```
+
+---
+
+## 3. Process Architecture (DEC-011)
+
+```
+Frontend Process (Tauri WebView — React UI)
+        │
+        │ IPC
+        ▼
+Workspace Core Process (Rust)
+        │
+        ├── Plugin Processes (isolated)
+        └── AI Worker Processes (isolated)
+```
+
+Inter-process communication follows [Event and API Standards](EVENT-AND-API-STANDARDS.md).
+
+---
+
+## 4. Windows Integration (DEC-008)
+
+Hybrid Companion + Overlay model. Workspace provides:
+
+- Companion application (primary shell)
+- Overlay interface (spatial workspace canvas)
+- Window management integration
+- Automation services
+- AI assistance layer
+
+See [Windows Integration Model](WINDOWS-INTEGRATION-MODEL.md).
+
+---
+
+## 5. Layout Model (DEC-009)
+
+Spatial Workspace Canvas — not a fixed grid.
+
+```
+Workspace
+    Zones
+        Applications
+        Widgets
+        AI Suggestions
+        Automation Blocks
+```
+
+Navigation and core controls remain consistent. Workspace content is user-customizable.
+
+---
+
+## 6. Major Subsystems
+
+### 6.1 Shell
 
 The user-facing workspace environment.
 
@@ -74,7 +148,7 @@ The user-facing workspace environment.
 - Contain domain business logic
 - Directly manipulate OS resources
 
-### 2.2 Domain Services
+### 6.2 Domain Services
 
 Independent service modules for each product domain.
 
@@ -88,7 +162,7 @@ Independent service modules for each product domain.
 
 Each service exposes a public API. Internal state is private.
 
-### 2.3 AI Subsystem
+### 6.3 AI Subsystem
 
 Observes system events and user patterns. Produces suggestions. Never acts without permission.
 
@@ -104,13 +178,13 @@ Observes system events and user patterns. Produces suggestions. Never acts witho
 
 See [AI Principles](../05-AI/AI-PRINCIPLES.md) and [AI Operating Model](../05-AI/AI-OPERATING-MODEL.md).
 
-### 2.4 Plugin Runtime
+### 6.4 Plugin Runtime
 
 Executes third-party and first-party extensions in a sandboxed, permission-controlled environment. All plugin actions route through the Permission Gateway.
 
 See [Plugin Architecture Vision](../06-Plugins/PLUGIN-ARCHITECTURE-VISION.md).
 
-### 2.5 Platform Kernel
+### 6.5 Platform Kernel
 
 Shared infrastructure for all subsystems. Sits above the Windows Integration Layer and below all feature layers.
 
@@ -121,11 +195,11 @@ Shared infrastructure for all subsystems. Sits above the Windows Integration Lay
 - Configuration store
 - Logging and diagnostics
 
-### 2.6 Windows Integration Layer
+### 6.6 Windows Integration Layer
 
 Abstracts all Windows API interactions. Only this layer communicates directly with the OS.
 
-### 2.7 Permission Gateway
+### 6.7 Permission Gateway
 
 **Owner: Platform Kernel**
 
@@ -153,7 +227,7 @@ See [Event and API Standards](EVENT-AND-API-STANDARDS.md) §7 and [AI Operating 
 
 ---
 
-## 3. Data Flow (Conceptual)
+## 7. Data Flow (Conceptual)
 
 ### User Action Flow
 
@@ -184,24 +258,24 @@ Plugin → Plugin Runtime → Permission Gateway → Domain Service API
 
 ---
 
-## 4. State Ownership
+## 8. State Ownership
 
 | State Type | Owner | Persistence |
 |------------|-------|-------------|
-| Layouts | Shell + User | Local (format TBD — OQ-003) |
-| User preferences | Platform Kernel | Local |
-| Workflow patterns | AI Subsystem | Local |
-| Automation definitions | Automation Service | Local |
-| Plugin configurations | Plugin Runtime | Local per plugin |
-| Permission grants | Platform Kernel (Permission Gateway) | Local |
+| Layouts | Shell + User | SQLite (DEC-010) |
+| User preferences | Platform Kernel | SQLite |
+| Workflow patterns | AI Subsystem | SQLite |
+| Automation definitions | Automation Service | SQLite |
+| Plugin configurations | Plugin Runtime | SQLite per plugin |
+| Permission grants | Platform Kernel (Permission Gateway) | SQLite |
 | Runtime/window state | Domain Services | Session |
-| Audit log | Platform Kernel | Local |
+| Audit log | Platform Kernel | SQLite |
 
-Persistence formats and storage mechanisms are open decisions.
+JSON export supported for backup, migration, and debugging (DEC-010).
 
 ---
 
-## 5. Integration Points (External)
+## 9. Integration Points (External)
 
 | Integration | Purpose | Status |
 |-------------|---------|--------|
@@ -215,7 +289,7 @@ Specific protocols and APIs are not yet selected. See [Windows Integration Model
 
 ---
 
-## 6. Non-Goals (Architectural)
+## 10. Non-Goals (Architectural)
 
 - Replacing the Windows shell entirely
 - Building a custom operating system kernel
@@ -224,16 +298,14 @@ Specific protocols and APIs are not yet selected. See [Windows Integration Model
 
 ---
 
-## 7. Open Architectural Questions
+## 11. Open Architectural Questions
 
-See [Open Questions](../09-Decisions/OPEN-QUESTIONS.md) for unresolved items including:
+See [Open Questions](../09-Decisions/OPEN-QUESTIONS.md) for remaining items including:
 
-- Technology stack selection (OQ-001)
-- Windows integration model (OQ-014)
-- Inter-process vs. in-process module architecture (OQ-002)
-- Data persistence format (OQ-003)
-- AI model deployment (OQ-004)
-- Monorepo tooling (OQ-019)
+- AI model selection (OQ-004)
+- Plugin runtime technology (OQ-007)
+- Encryption at rest (OQ-017)
+- Cloud sync scope (OQ-005)
 
 ---
 

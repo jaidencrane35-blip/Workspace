@@ -72,7 +72,7 @@ Document new dependencies in the PR description with justification.
 
 | Rule | Detail |
 |------|--------|
-| **Lock files committed** | Yes — ensures reproducible builds across machines and CI |
+| **Lock files committed** | Yes — `pnpm-lock.yaml` and `Cargo.lock` committed (DEC-012) |
 | **Lock file updates** | Intentional only — update when adding/upgrading dependencies |
 | **Lock file in PR review** | Reviewers check for unexpected dependency changes |
 | **Specific manager** | Determined when stack is selected (OQ-001, OQ-019) |

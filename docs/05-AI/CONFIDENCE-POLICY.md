@@ -5,13 +5,15 @@
 | **Purpose** | Define AI confidence levels, suggestion thresholds, uncertainty handling, and automation requirements |
 | **Owner** | Project Owner |
 | **Dependencies** | [AI Operating Model](AI-OPERATING-MODEL.md), [Memory Policy](MEMORY-POLICY.md), [AI Principles](AI-PRINCIPLES.md) |
-| **Update Process** | Project Owner approves changes. Specific threshold values require OQ-015 resolution and Decision Log entry. |
+| **Update Process** | Project Owner approves changes. Framework approved in DEC-013. Numeric tuning requires Decision Log entry. |
 
 ---
 
-## 1. Purpose
+## 1. Approved Framework — DEC-013
 
-Confidence governs when AI suggests, asks, or stays silent. Higher confidence requirements protect user trust. Specific numeric thresholds are pending OQ-015 — this document defines the framework.
+**Status:** Accepted (2026-07-23)
+
+Workspace adopts the **L0–L4 confidence model**. AI cannot silently escalate confidence. Automation requires explicit user approval at all levels.
 
 ---
 
@@ -19,18 +21,25 @@ Confidence governs when AI suggests, asks, or stays silent. Higher confidence re
 
 | Level | Name | Description | AI Behaviour |
 |-------|------|-------------|--------------|
-| **L0** | Insufficient | Too few observations or high variance | Do not suggest; continue observing |
-| **L1** | Emerging | Pattern detected but weak | Do not suggest; continue observing |
-| **L2** | Moderate | Consistent pattern, moderate frequency | Ask clarifying question (optional) — do not automate |
-| **L3** | High | Strong, repeated pattern | May suggest automation |
-| **L4** | Very High | Highly consistent, frequent pattern | May suggest with full confidence statement |
+| **L0** | No Confidence | Insufficient observations or high variance | No suggestion — continue observing |
+| **L1** | Observation Only | Pattern emerging but not actionable | Observe and store — no user interaction |
+| **L2** | Suggestion Allowed | Consistent pattern detected | May present suggestion to user |
+| **L3** | Permission Required | Strong pattern — automation proposed | Must request explicit user permission before any action |
+| **L4** | Previously Approved | User has approved this automation before | May execute within approved scope — user can revoke |
 
-### 2.1 Confidence Inputs
+### 2.1 Escalation Rules
+
+- AI **cannot** silently escalate from a lower level to a higher level
+- Each level transition requires additional observations and/or user action
+- Dismissal reduces confidence — never increases it automatically
+- L4 applies only to automations with active, non-revoked user approval
+
+### 2.2 Confidence Inputs
 
 Confidence is derived from:
 
-| Factor | Weight (TBD) |
-|--------|--------------|
+| Factor | Weight |
+|--------|--------|
 | Occurrence count | High |
 | Consistency (variance) | High |
 | Recency | Medium |
@@ -38,34 +47,21 @@ Confidence is derived from:
 | User feedback history (accept/dismiss ratio) | Medium |
 | Time span of observation | Low |
 
-Exact weighting requires implementation and tuning — record final values in Decision Log when OQ-015 is resolved.
+Specific numeric thresholds will be tuned during Phase 2 implementation.
 
 ---
 
-## 3. Suggestion Thresholds
+## 3. Suggestion and Permission Thresholds
 
-AI may present a suggestion only when confidence reaches **L3 (High)** or above.
+| Confidence | Suggestion | Automation |
+|------------|------------|------------|
+| L0 | No | No |
+| L1 | No | No |
+| L2 | Yes — present suggestion | No — approval not yet requested |
+| L3 | Yes — with permission request | Only after explicit user approval |
+| L4 | N/A — automation active | Yes — within approved scope only |
 
-| Confidence | Suggestion | Automation Proposal |
-|------------|------------|---------------------|
-| L0–L1 | No | No |
-| L2 | Clarifying question only (optional) | No |
-| L3 | Yes — with pattern explanation | Yes — requires user approval |
-| L4 | Yes — with strong confidence statement | Yes — requires user approval |
-
-**No confidence level permits autonomous action.** Approval is always required regardless of L3 or L4.
-
-### 3.1 Proposed Numeric Thresholds (Pending OQ-015)
-
-| Parameter | Proposed Starting Point | Status |
-|-----------|------------------------|--------|
-| Minimum observations before L2 | 3 occurrences | Proposed |
-| Minimum observations before L3 | 5 occurrences over 3+ days | Proposed |
-| Minimum observations before L4 | 10 occurrences over 7+ days | Proposed |
-| Dismissal impact on confidence | −1 level per dismissal | Proposed |
-| Cooldown after dismissal | 7 days before re-suggestion | Proposed |
-
-These are starting proposals only — Project Owner must approve before implementation.
+**No confidence level permits autonomous action without prior user approval.**
 
 ---
 
@@ -75,73 +71,53 @@ When AI is uncertain, it must **fail silent or ask** — never guess.
 
 | Situation | Required Behaviour |
 |-----------|-------------------|
-| Confidence between L1 and L2 | Continue observing; no user interaction |
-| Confidence at L2 with ambiguous pattern | Ask clarifying question: *"I noticed X sometimes followed by Y or Z. Which do you prefer?"* |
-| Conflicting patterns | Explain conflict; present options; do not suggest |
-| New context never seen before | Observe only |
-| Pattern involves sensitive context (calls, screen share) | Require L4 before suggesting |
-| User recently dismissed similar suggestion | Suppress until cooldown expires regardless of confidence |
+| Confidence at L0 | Continue observing; no user interaction |
+| Confidence at L1 | Continue observing; no user interaction |
+| Confidence at L2 with ambiguous pattern | Present suggestion with clarifying context |
+| Conflicting patterns | Explain conflict; present options; do not automate |
+| User dismissed suggestion | Reduce confidence; apply cooldown before re-suggestion |
+| Pattern involves sensitive context | Require L3 before permission request |
 
 ---
 
-## 5. When AI Should Ask Instead of Suggest
+## 5. When AI Should Ask Instead of Act
 
-AI asks clarifying questions (instead of suggesting automation) when:
+AI asks or suggests (never acts) when:
 
-1. Confidence is L2 — pattern emerging but not confirmed
-2. Multiple valid interpretations exist
-3. User history shows mixed accept/dismiss for similar patterns
-4. Pattern would affect a domain the user recently disabled and re-enabled
-5. Suggested automation would cross domain boundaries for the first time
-
-Clarifying questions are dismissible and do not imply consent for future automation.
+1. Confidence is L2 — suggestion allowed but permission not yet appropriate
+2. Confidence reaches L3 — permission request required before any action
+3. Multiple valid interpretations exist
+4. User history shows mixed accept/dismiss for similar patterns
+5. Automation would cross domain boundaries for the first time
 
 ---
 
-## 6. Confidence Requirements Before Automation
+## 6. L4 — Previously Approved Automation
 
-Even after user approval, these rules apply:
+L4 is not higher permission — it is **remembered approval**:
 
-| Rule | Detail |
-|------|--------|
-| Approval is independent of confidence | User may approve a L3 suggestion; AI may not auto-approve |
-| Re-approval on context change | If pattern confidence drops below L2, pause automation and notify user |
-| No confidence escalation | AI cannot re-classify L2 as L3 without new observations |
-| Execution confidence check | Before each persistent automation run, verify pattern still meets L2 minimum |
-| Failed execution | Reduce confidence by one level; notify user |
+- User previously approved a specific automation at L3
+- Automation executes within its approved definition only
+- User can revoke at any time — drops back to L0 for that pattern
+- If pattern changes significantly, revert to L2/L3 and re-request permission
+- Scope creep is prohibited — approved automation cannot expand silently
 
 ---
 
-## 7. Sensitive Context Modifiers
-
-Certain contexts require elevated confidence before suggestion:
-
-| Context | Minimum Level Required |
-|---------|----------------------|
-| Audio routing changes | L3 |
-| Application launching | L3 |
-| Layout modification | L3 |
-| During active call or meeting | L4 |
-| First suggestion ever to user | L3 with extended explanation |
-| Automation affecting multiple apps | L4 |
-
----
-
-## 8. User-Configurable Confidence
+## 7. User-Configurable Settings
 
 Users may adjust (future setting):
 
-- Suggestion frequency (see OQ-012)
-- Minimum confidence threshold for suggestions (never below L3)
+- Suggestion frequency (OQ-012)
 - Disable suggestions entirely while keeping observation
 
-Users **cannot** reduce approval requirements — approval is always mandatory.
+Users **cannot** reduce approval requirements — L3 permission is always required for new automations.
 
 ---
 
 ## Related Documents
 
+- [Decision Log](../09-Decisions/DECISION-LOG.md) — DEC-013
 - [AI Operating Model](AI-OPERATING-MODEL.md)
 - [Memory Policy](MEMORY-POLICY.md)
 - [AI Principles](AI-PRINCIPLES.md)
-- [Open Questions](../09-Decisions/OPEN-QUESTIONS.md) — OQ-012, OQ-015

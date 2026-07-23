@@ -4,7 +4,7 @@
 
 Workspace is an adaptive desktop environment that unifies applications, windows, devices, audio, automation, and AI into a single operating experience — without replacing Windows.
 
-**Status:** Phase 0 complete — Phase 1 blocked pending decisions. No production implementation yet.
+**Status:** Phase 0.5 complete — Phase 1 ready to begin. No production implementation yet.
 
 ---
 
@@ -23,10 +23,11 @@ The software adapts to the user. The user never adapts to the software.
 
 | Area | Status |
 |------|--------|
-| Documentation | Active |
-| Architecture | Defined at principle level |
-| Implementation | Not started |
-| CI/CD | Not started |
+| Documentation | Complete (Phase 0 + 0.5) |
+| Architecture | Decisions recorded (DEC-006–014) |
+| Technology stack | Tauri + React + TypeScript + Rust + SQLite |
+| Implementation | Not started — Phase 1 ready |
+| CI/CD | Planned — not started |
 
 ---
 
@@ -62,4 +63,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for workflow, standards, and review expec
 
 ## License
 
-License to be determined. See [Open Questions](docs/09-Decisions/OPEN-QUESTIONS.md).
+MIT License. See [LICENSE](LICENSE) and [DEC-006](docs/09-Decisions/DECISION-LOG.md).

@@ -94,15 +94,170 @@ Each decision entry follows this format:
 ### DEC-005: Local-First Data Preference
 
 - **Date:** 2026-07-23
-- **Status:** Accepted (preference, not final)
+- **Status:** Accepted
 - **Decision Type:** B (Strategic)
-- **Owner:** Architect (TBD)
+- **Owner:** Project Owner
 - **Context:** Need guiding principle for where user data lives.
 - **Options Considered:** (A) Local-first; (B) Cloud-first; (C) Hybrid default.
 - **Decision:** Local-first as the guiding preference. Cloud sync is opt-in if adopted.
 - **Rationale:** Privacy, performance, offline capability, and user trust. Aligns with security principles.
-- **Consequences:** Architecture defaults to local storage. Any cloud feature requires explicit opt-in and Decision Log entry.
-- **Related:** [Architecture Principles](../02-Architecture/ARCHITECTURE-PRINCIPLES.md), OQ-005
+- **Consequences:** Architecture defaults to local storage. Any cloud feature requires explicit opt-in and Decision Log entry. Reinforced by DEC-010 (SQLite local database).
+- **Related:** [Architecture Principles](../02-Architecture/ARCHITECTURE-PRINCIPLES.md), OQ-005, DEC-010
+
+---
+
+### DEC-006: Project License — MIT
+
+- **Date:** 2026-07-23
+- **Status:** Accepted
+- **Decision Type:** B (Strategic)
+- **Owner:** Project Owner
+- **Context:** Project license undecided (OQ-010). Required before dependency selection and contribution model.
+- **Options Considered:** MIT, Apache 2.0, GPL, proprietary.
+- **Decision:** Use the MIT License.
+- **Rationale:** Maximum flexibility for commercial development, future plugin ecosystem, community contribution, and low legal complexity.
+- **Consequences:** Project remains open and permissive. Future proprietary components can be separated if required. `LICENSE` file added to repository root.
+- **Related:** OQ-010 (resolved), [Dependency Policy](../03-Engineering/DEPENDENCY-POLICY.md)
+
+---
+
+### DEC-007: Technology Stack — Tauri
+
+- **Date:** 2026-07-23
+- **Status:** Accepted
+- **Decision Type:** B (Strategic)
+- **Owner:** Project Owner
+- **Context:** Technology stack blocked Phase 1 (OQ-001). Evaluated against [Stack Evaluation Criteria](../02-Architecture/STACK-EVALUATION-CRITERIA.md).
+- **Options Considered:** Electron + TypeScript, Tauri + Rust + React, native .NET, other.
+- **Decision:** Tauri-based architecture:
+  - **Frontend:** React + TypeScript
+  - **Desktop runtime:** Tauri
+  - **Core runtime:** Rust services
+  - **Data layer:** SQLite
+  - **Supporting layers:** Plugin Runtime, AI Subsystem, Windows Integration Layer
+- **Rationale:** Lower resource usage than Electron, stronger system integration potential, suitable for long-running desktop software, supports secure native capabilities, aligns with local-first architecture.
+- **Consequences:** Rust knowledge required. More initial complexity than Electron. Better long-term foundation. See [System Overview](../02-Architecture/SYSTEM-OVERVIEW.md) for target architecture.
+- **Related:** OQ-001 (resolved), DEC-010, DEC-011, [Repository Structure](../02-Architecture/REPOSITORY-STRUCTURE.md)
+
+---
+
+### DEC-008: Windows Integration Model — Hybrid Companion + Overlay
+
+- **Date:** 2026-07-23
+- **Status:** Accepted
+- **Decision Type:** B (Strategic)
+- **Owner:** Project Owner
+- **Context:** Windows coexistence model blocked Phase 1 (OQ-014). Constitution prohibits replacing Windows.
+- **Options Considered:** Overlay only, companion application only, deeper system integration, hybrid.
+- **Decision:** Hybrid Companion + Overlay model. Workspace operates as an intelligent desktop environment layer — not a Windows replacement. v1 focus: workspace management, application launching, layout management, user-approved automation. Future: deeper Windows integration and advanced system awareness.
+- **Rationale:** Strong capability without excessive risk. Remains compatible with Windows. Deeper integration can be added gradually.
+- **Consequences:** Requires both companion app shell and overlay interface components. See [Windows Integration Model](../02-Architecture/WINDOWS-INTEGRATION-MODEL.md).
+- **Related:** OQ-014 (resolved), DEC-007, [MVP Definition](../01-Product/MVP-DEFINITION.md)
+
+---
+
+### DEC-009: Layout System — Spatial Workspace Canvas
+
+- **Date:** 2026-07-23
+- **Status:** Accepted
+- **Decision Type:** B (Strategic)
+- **Owner:** Project Owner
+- **Context:** Layout system blocked shell prototype design (OQ-013).
+- **Options Considered:** Free-form floating panels, grid/tile system, zones/areas, hybrid spatial model.
+- **Decision:** Spatial Workspace Canvas model. Workspace contains Zones containing Applications, Widgets, AI Suggestions, and Automation Blocks. Draggable elements, customizable workspace, saved layouts, multiple workspaces, user-defined arrangements, persistent state. UX constraint: consistent navigation/button placement — customization applies to workspace content, not core navigation.
+- **Rationale:** Matches intended premium workspace/operator environment. Supports future AI-assisted organization.
+- **Consequences:** Requires flexible layout data model in SQLite (DEC-010). Schema design needed in Phase 1.
+- **Related:** OQ-013 (resolved), DEC-010, [UX Principles](../04-UX/UX-PRINCIPLES.md)
+
+---
+
+### DEC-010: Data Persistence — SQLite + JSON Export
+
+- **Date:** 2026-07-23
+- **Status:** Accepted
+- **Decision Type:** B (Strategic)
+- **Owner:** Project Owner
+- **Context:** Persistence format blocked layout save/restore (OQ-003). Local-first preference (DEC-005).
+- **Options Considered:** JSON files only, SQLite only, SQLite + JSON export, Windows registry (partial).
+- **Decision:** SQLite as primary local database. JSON for export, backup, migration, debugging, and portability. SQLite stores: layouts, application configurations, permissions, AI patterns, automation rules, system preferences.
+- **Rationale:** Structured growth while maintaining local-first principles. Queryable, transactional, suitable for relational data at scale.
+- **Consequences:** Requires schema versioning and migrations. Rust SQLite integration in core runtime.
+- **Related:** OQ-003 (resolved), DEC-005, DEC-007, DEC-009
+
+---
+
+### DEC-011: Process Architecture — Multi-Process
+
+- **Date:** 2026-07-23
+- **Status:** Accepted
+- **Decision Type:** B (Strategic)
+- **Owner:** Project Owner
+- **Context:** Process model affects plugin isolation and crash containment (OQ-002).
+- **Options Considered:** All in-process, domain services as separate processes, hybrid multi-process.
+- **Decision:** Multi-process architecture:
+  - Frontend Process (Tauri webview — React UI)
+  - Workspace Core Process (Rust runtime)
+  - Plugin Processes (isolated)
+  - AI Worker Processes (isolated)
+- **Rationale:** Plugin isolation, crash containment, security boundaries, scalability.
+- **Consequences:** Requires inter-process communication contracts. See [Event and API Standards](../02-Architecture/EVENT-AND-API-STANDARDS.md).
+- **Related:** OQ-002 (resolved), DEC-007, [Threat Model](../07-Security/THREAT-MODEL.md)
+
+---
+
+### DEC-012: Monorepo Tooling — pnpm Workspaces
+
+- **Date:** 2026-07-23
+- **Status:** Accepted
+- **Decision Type:** C (Tactical)
+- **Owner:** Lead Software Engineer
+- **Context:** Monorepo structure decided (DEC-003) but tooling undecided (OQ-019). Stack now Tauri + TypeScript (DEC-007).
+- **Options Considered:** pnpm workspaces, npm workspaces, Nx, Turborepo, Lerna, Cargo workspace only.
+- **Decision:** pnpm workspaces for TypeScript/JavaScript packages. Rust crates managed via Cargo workspace within the same repository.
+- **Rationale:** Good TypeScript support, simple workspace management, suitable for modular architecture.
+- **Consequences:** `pnpm-workspace.yaml` at repository root. Lock file committed per [Dependency Policy](../03-Engineering/DEPENDENCY-POLICY.md).
+- **Related:** OQ-019 (resolved), DEC-003, [Repository Structure](../02-Architecture/REPOSITORY-STRUCTURE.md)
+
+---
+
+### DEC-013: AI Confidence Framework — L0–L4 Model
+
+- **Date:** 2026-07-23
+- **Status:** Accepted
+- **Decision Type:** B (Strategic)
+- **Owner:** Project Owner
+- **Context:** Confidence thresholds needed for AI suggestion engine (OQ-015).
+- **Options Considered:** Rule-based thresholds only, L0–L4 model (approved), binary suggest/don't-suggest.
+- **Decision:** Adopt L0–L4 confidence model:
+  - **L0:** No confidence — no suggestion
+  - **L1:** Observation only
+  - **L2:** Suggestion allowed
+  - **L3:** Permission request required
+  - **L4:** Previously approved automation
+  Rules: AI cannot silently escalate confidence. Automation requires explicit user approval regardless of level.
+- **Rationale:** Graduated trust model protects users while enabling useful suggestions at appropriate confidence.
+- **Consequences:** [Confidence Policy](../05-AI/CONFIDENCE-POLICY.md) updated to reflect approved levels. Implementation in Phase 2.
+- **Related:** OQ-015 (resolved), DEC-004, [AI Operating Model](../05-AI/AI-OPERATING-MODEL.md)
+
+---
+
+### DEC-014: AI Memory Retention — User-Controlled Adaptive Memory
+
+- **Date:** 2026-07-23
+- **Status:** Accepted
+- **Decision Type:** B (Strategic)
+- **Owner:** Project Owner
+- **Context:** Retention policy needed for AI pattern store (OQ-016).
+- **Options Considered:** Indefinite retention, fixed expiry, user-controlled adaptive memory (approved).
+- **Decision:** User-controlled adaptive memory:
+  - Temporary observations expire
+  - Learned patterns require sufficient confidence before persistence
+  - Stored memories are reviewable
+  - User controls deletion
+  - No hidden learning
+- **Rationale:** Maintains trust and transparency. Aligns with constitution user-control principle.
+- **Consequences:** [Memory Policy](../05-AI/MEMORY-POLICY.md) updated. SQLite schema must support memory inspection and deletion.
+- **Related:** OQ-016 (resolved), DEC-010, [Memory Policy](../05-AI/MEMORY-POLICY.md)
 
 ---
 

@@ -12,14 +12,14 @@
 ## 1. Roadmap Overview
 
 ```
-Phase 0          Phase 1           Phase 2            Phase 3+
-Foundation       Core Platform     Feature Expansion   Maturity
-(docs only)      (MVP shell)       (domains + AI)      (plugins, polish)
-   │                 │                  │                  │
-   ▼                 ▼                  ▼                  ▼
- NOW            Stack decided       First domains       Plugin SDK
-                Shell running       AI observing        Public release
-                CI/CD active        Automations         Ecosystem
+Phase 0        Phase 0.5       Phase 1           Phase 2            Phase 3+
+Foundation     Decisions       Core Platform     Feature Expansion   Maturity
+(docs)         (recorded)      (Tauri shell)     (domains + AI)      (plugins)
+   │               │                │                  │                  │
+   ▼               ▼                ▼                  ▼                  ▼
+ DONE            DONE          READY TO BEGIN      AI observing        Plugin SDK
+                               pnpm + Tauri        Automations         Public release
+                               Spatial canvas      MVP complete
 ```
 
 ---
@@ -28,7 +28,7 @@ Foundation       Core Platform     Feature Expansion   Maturity
 
 **Goal:** Establish the professional engineering and product foundation.
 
-**Status:** Documentation foundation complete. Improvement pass complete. Phase 1 remains **blocked** until required decisions are resolved.
+**Status:** **Complete**
 
 ### Deliverables
 
@@ -40,70 +40,95 @@ Foundation       Core Platform     Feature Expansion   Maturity
 - [x] Decision tracking and open questions
 - [x] Roadmap and sprint structure
 - [x] Repository initialisation and GitHub connection
-- [x] Phase 0 improvement pass (AI governance, threat model, CI/CD plan, testing strategy, architecture foundation, MVP definition)
-- [ ] Critical open questions resolved (see gate criteria below)
-- [ ] Project Owner decisions recorded for Phase 1 blockers
-
-### Gate Criteria (Phase 0 → Phase 1)
-
-| Criterion | Status |
-|-----------|--------|
-| All foundation documents complete | **Done** |
-| Improvement pass documents complete | **Done** |
-| Threat model (initial) complete | **Done** |
-| CI/CD plan documented | **Done** |
-| Technology stack decision recorded | **Blocked** — OQ-001 |
-| Windows integration model decided | **Blocked** — OQ-014 |
-| Layout system decided | **Blocked** — OQ-013 |
-| Data persistence format decided | **Blocked** — OQ-003 |
-| Project license decided | **Blocked** — OQ-010 |
-| Open questions triaged with owners and priorities | **Done** (19 questions tracked) |
-| Architecture layer diagrams consistent | **Done** |
-
-**Phase 1 must not begin until OQ-001, OQ-014, OQ-013, OQ-003, and OQ-010 are resolved and recorded in the Decision Log.**
+- [x] Phase 0 improvement pass
 
 ---
 
-## 3. Phase 1 — Core Platform
+## 3. Phase 0.5 — Decision Recording
 
-**Goal:** Select technology stack, scaffold the application, and deliver a running shell.
+**Goal:** Resolve Phase 1 architecture blockers and record approved decisions.
 
-**Status:** Not started
+**Status:** **Complete**
+
+### Deliverables
+
+- [x] Technology stack decided — DEC-007 (Tauri + React + TypeScript + Rust + SQLite)
+- [x] Windows integration model decided — DEC-008 (Hybrid Companion + Overlay)
+- [x] Layout system decided — DEC-009 (Spatial Workspace Canvas)
+- [x] Data persistence decided — DEC-010 (SQLite + JSON export)
+- [x] Process architecture decided — DEC-011 (Multi-process)
+- [x] Monorepo tooling decided — DEC-012 (pnpm workspaces)
+- [x] Project license decided — DEC-006 (MIT)
+- [x] AI confidence framework decided — DEC-013 (L0–L4)
+- [x] AI memory retention decided — DEC-014 (User-controlled adaptive)
+- [x] Architecture documents updated to reflect decisions
+- [x] Open questions resolved and tracked
+
+### Gate Criteria (Phase 0.5 → Phase 1)
+
+| Criterion | Status |
+|-----------|--------|
+| All Phase 1 blocker decisions recorded in Decision Log | **Done** |
+| Architecture documents reflect approved stack and models | **Done** |
+| MIT License added to repository | **Done** |
+| Remaining open questions do not block Phase 1 scaffolding | **Done** |
+
+**Phase 1 is ready to begin after final verification.**
+
+---
+
+## 4. Phase 1 — Core Platform
+
+**Goal:** Scaffold the Tauri application and deliver a running shell with spatial layout persistence.
+
+**Status:** Ready to begin
+
+### Technology Direction (DEC-007)
+
+| Layer | Technology |
+|-------|------------|
+| Frontend | React + TypeScript |
+| Desktop runtime | Tauri |
+| Core runtime | Rust services |
+| Data layer | SQLite |
+| Monorepo | pnpm workspaces + Cargo workspace |
 
 ### Expected Deliverables
 
-- Technology stack decision (Decision Log)
-- Application scaffolding (app entry point, build system)
-- Platform kernel (event bus, state management, configuration)
-- Shell prototype (navigation, basic panels, layout persistence)
-- Windows Integration Layer (basic window enumeration)
-- CI/CD pipeline (lint, build, test)
-- Developer setup documentation
+- [ ] pnpm workspace and Cargo workspace configuration
+- [ ] Tauri application scaffolding (`app/`)
+- [ ] Platform kernel (event bus, state management, Permission Gateway)
+- [ ] Spatial Workspace Canvas shell prototype
+- [ ] SQLite schema v1 (layouts, preferences)
+- [ ] Layout save/restore
+- [ ] Windows Integration Layer (basic window enumeration)
+- [ ] CI/CD pipeline (lint, build, test) per [CI/CD Plan](../03-Engineering/CI-CD-PLAN.md)
+- [ ] Developer setup documentation
 
 ### Gate Criteria (Phase 1 → Phase 2)
 
 | Criterion | Detail |
 |-----------|--------|
-| Shell renders and accepts user interaction | Basic panel system working |
-| Layouts persist between sessions | Save/restore verified |
+| Shell renders Spatial Workspace Canvas | Zones, draggable elements working |
+| Layouts persist between sessions | SQLite save/restore verified |
 | CI/CD operational | All PRs pass automated checks |
-| Architecture validated | Core module boundaries implemented as designed |
-| First vertical slice defined | One domain (likely Apps) scoped for Phase 2 |
+| Architecture validated | Multi-process boundaries implemented |
+| MVP Phase 1 scope complete | Per [MVP Definition](../01-Product/MVP-DEFINITION.md) v0.1 shell items |
 
 ### Out of Scope for Phase 1
 
-- AI features
-- Plugin system
+- AI features (Phase 2)
+- Plugin processes (Phase 3)
 - Device integration
 - Audio management
 - Automation engine
-- Production UI design
+- Production visual design
 
 ---
 
-## 4. Phase 2 — Feature Expansion
+## 5. Phase 2 — Feature Expansion
 
-**Goal:** Implement core domain services and introduce AI observation and suggestion.
+**Goal:** Application launching, AI observation/suggestion, and user-approved automation.
 
 **Status:** Not started
 
@@ -111,26 +136,23 @@ Foundation       Core Platform     Feature Expansion   Maturity
 
 - Application service (discovery, launch, grouping)
 - Window service (tracking, layout integration)
-- Audio service (basic routing and volume)
-- AI observer and pattern store
+- AI observer and pattern store (L0–L4 confidence model)
 - AI suggestion UI (permission-gated)
-- Basic automation service (user-approved workflows)
-- Device service (initial device discovery)
+- Basic automation service (user-approved app launch sequences)
 - Integration tests for cross-domain flows
 
 ### Gate Criteria (Phase 2 → Phase 3)
 
 | Criterion | Detail |
 |-----------|--------|
-| Core domains operational | Apps, windows, audio functional |
+| MVP v0.1 complete | All [MVP Definition](../01-Product/MVP-DEFINITION.md) acceptance criteria met |
 | AI observes and suggests | Permission model working end-to-end |
 | At least one automation type works | User can approve and run an automation |
 | Security review complete | Threat model validated against implementation |
-| MVP feature set meets DoD | All Phase 2 deliverables pass Definition of Done |
 
 ---
 
-## 5. Phase 3 — Maturity
+## 6. Phase 3 — Maturity
 
 **Goal:** Plugin platform, advanced features, polish, and public release preparation.
 
@@ -138,7 +160,7 @@ Foundation       Core Platform     Feature Expansion   Maturity
 
 ### Expected Deliverables
 
-- Plugin SDK and runtime
+- Plugin SDK and isolated plugin processes
 - Plugin registry (or GitHub-based distribution)
 - Advanced automation (cross-domain, conditional)
 - Phone/device deep integration
@@ -146,46 +168,23 @@ Foundation       Core Platform     Feature Expansion   Maturity
 - Accessibility audit and fixes
 - Public release preparation (installer, updates, documentation)
 
-### Gate Criteria (Phase 3 → Release)
-
-| Criterion | Detail |
-|-----------|--------|
-| Plugin SDK documented and tested | Third-party developer can build a plugin |
-| Performance budgets met | No perceptible lag in normal use |
-| Security audit passed | No Critical or High vulnerabilities |
-| Accessibility target met | WCAG level achieved (TBD) |
-| User documentation complete | Setup, usage, and troubleshooting guides |
-
 ---
 
-## 6. Future Considerations (Post-Release)
+## 7. Future Considerations (Post-Release)
 
-Not in current roadmap scope. Recorded for planning continuity:
-
-- Cloud sync (opt-in)
+- Cloud sync (opt-in) — OQ-005
 - Multi-monitor advanced layouts
-- Collaboration features
+- Deeper Windows integration (DEC-008 future expansion)
 - macOS / Linux ports
 - Mobile companion app
-- Marketplace for plugins and themes
-- Enterprise features
-
----
-
-## 7. Roadmap Change Process
-
-1. Product Owner proposes change
-2. Impact assessment on current phase and resources
-3. Decision Log entry if phase boundaries shift
-4. Update this document
-5. Communicate to all contributors
+- Plugin marketplace
 
 ---
 
 ## Related Documents
 
+- [Decision Log](../09-Decisions/DECISION-LOG.md)
+- [MVP Definition](../01-Product/MVP-DEFINITION.md)
 - [Scope Management](../01-Product/SCOPE-MANAGEMENT.md)
 - [Sprint Structure](../10-Sprints/SPRINT-STRUCTURE.md)
-- [Decision Log](../09-Decisions/DECISION-LOG.md)
 - [Open Questions](../09-Decisions/OPEN-QUESTIONS.md)
-- [Risk Register](../07-Security/RISK-REGISTER.md)

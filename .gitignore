@@ -64,7 +64,8 @@ __pycache__/
 .venv/
 venv/
 
-# Package manager locks (policy TBD — see Repository Standards)
-# package-lock.json
-# pnpm-lock.yaml
-# yarn.lock
+# Package manager locks — committed per DEPENDENCY-POLICY (DEC-012)
+# pnpm-lock.yaml — DO commit
+# Cargo.lock — DO commit (application)
+package-lock.json
+yarn.lock

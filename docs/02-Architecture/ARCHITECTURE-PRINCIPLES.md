@@ -114,7 +114,7 @@ These layers describe intent, not implementation. Technology mapping is a future
 
 Higher layers depend on lower layers. The Platform Kernel provides shared infrastructure (event bus, state management, Permission Gateway, configuration, logging) to all layers above it. The Permission Gateway is owned by the Platform Kernel — not the AI Subsystem. See [System Overview](SYSTEM-OVERVIEW.md) and [Event and API Standards](EVENT-AND-API-STANDARDS.md).
 
-Layer responsibilities and boundaries will be detailed in future architecture documents as decisions are made.
+Layer responsibilities and boundaries are detailed in [System Overview](SYSTEM-OVERVIEW.md). Technology mapping: DEC-007 (Tauri + React + TypeScript + Rust + SQLite).
 
 ---
 

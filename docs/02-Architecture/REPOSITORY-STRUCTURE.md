@@ -145,35 +145,46 @@ Workspace/
 
 ---
 
-## 5. Monorepo Considerations
+## 5. Monorepo Tooling — DEC-012
 
-When implementation begins, the repository will likely use a monorepo tool (specific tool TBD). Expectations:
+**Decision:** pnpm workspaces for TypeScript/JavaScript packages. Cargo workspace for Rust crates.
 
-- Shared dependency management
+Expectations:
+
+- `pnpm-workspace.yaml` at repository root
+- `Cargo.toml` workspace manifest for Rust packages
+- Shared dependency management via pnpm
 - Per-package versioning internally
 - Workspace-level scripts for build, test, lint
-- CI runs affected packages only (when supported)
+- CI runs affected packages when supported
 
 ---
 
-## 6. Current State (Phase 0)
+## 6. Current State (Phase 0.5 Complete)
 
-Only the following directories exist today:
+Phase 1 scaffolding has not begun. Approved structure for Phase 1:
 
 ```
 Workspace/
 ├── .github/
 ├── docs/
-├── .gitignore
-├── CONTRIBUTING.md
+├── app/                    # Tauri application (Phase 1)
+├── packages/               # pnpm + Rust workspace packages (Phase 1)
+├── plugins/                # First-party plugins (Phase 3)
+├── tests/
+├── tools/
+├── assets/
+├── LICENSE                 # MIT (DEC-006)
+├── pnpm-workspace.yaml     # Phase 1
+├── Cargo.toml              # Rust workspace (Phase 1)
 └── README.md
 ```
 
-Implementation directories (`app/`, `packages/`, etc.) will be created when Phase 1 begins and the technology stack is decided.
+Implementation directories will be created during Phase 1 scaffolding.
 
 ---
 
-## 7. Future Additions
+## 7. Phase 1 Additions
 
 These directories may be added as the project matures:
 

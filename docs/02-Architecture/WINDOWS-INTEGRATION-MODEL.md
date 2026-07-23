@@ -5,25 +5,45 @@
 | **Purpose** | Document approaches for how Workspace coexists with and integrates into Windows — without selecting an approach |
 | **Owner** | Project Owner |
 | **Dependencies** | [Architecture Principles](ARCHITECTURE-PRINCIPLES.md), [Project Constitution](../00-Constitution/PROJECT-CONSTITUTION.md), [Stack Evaluation Criteria](STACK-EVALUATION-CRITERIA.md) |
-| **Update Process** | Update when OQ-014 is resolved. Record chosen approach in Decision Log. |
+| **Update Process** | Update when integration approach evolves. Material changes require Decision Log entry. |
 
 ---
 
-## 1. Constraint
+## 1. Approved Decision — DEC-008
+
+**Status:** Accepted (2026-07-23)
+
+Workspace uses a **Hybrid Companion + Overlay** model (DEC-008). Workspace is not a Windows replacement. It operates as an intelligent desktop environment layer.
+
+```
+Windows Operating System
+        │
+Workspace Runtime (Tauri)
+        │
+        ├── Companion Application
+        ├── Overlay Interface
+        ├── Window Management
+        ├── Automation Services
+        └── AI Assistance Layer
+```
+
+**Version 1 focus:** workspace management, application launching, layout management, user-approved automation.
+
+**Future expansion:** deeper Windows integration, advanced system awareness.
+
+See [Decision Log](../09-Decisions/DECISION-LOG.md) DEC-008.
+
+---
+
+## 2. Constraint
 
 Workspace **must not replace Windows**. It must operate as a layer that enhances the existing desktop experience. Any approach that replaces Explorer as the default shell is disqualified.
 
-This decision is tracked as **OQ-014**.
+This constraint is enforced by DEC-008. OQ-014 resolved.
 
 ---
 
-## 2. The Question
-
-How does Workspace present itself on Windows while integrating with applications, windows, audio, and devices?
-
----
-
-## 3. Possible Approaches
+## 3. Historical Options Analysis
 
 ### 3.1 Overlay Approach
 

@@ -9,25 +9,41 @@
 
 ---
 
-## 1. MVP Goal
+## 1. Workspace v0.1 Goal
 
-Deliver a workspace the user can open, arrange, save, and restore — with AI that observes patterns and suggests (never imposes) user-approved automations.
+Deliver **Workspace v0.1** — a spatial workspace the user can open, arrange, save, and restore, with AI that observes patterns and suggests (never imposes) user-approved automations.
 
-**Success statement:** *"I opened Workspace, set up my layout, came back tomorrow, and everything was where I left it. It noticed I always open Discord after Steam and asked if I wanted that automated."*
+**No autonomous control.**
+
+**Success statement:** *"I opened Workspace, set up my spatial layout, came back tomorrow, and everything was where I left it. It noticed I always open Discord after Steam and asked if I wanted that automated."*
+
+### v0.1 Capabilities
+
+| # | Capability |
+|---|------------|
+| 1 | Open Workspace |
+| 2 | Manage layouts (Spatial Workspace Canvas — DEC-009) |
+| 3 | Save and restore workspace state (SQLite — DEC-010) |
+| 4 | Launch applications |
+| 5 | Observe usage patterns |
+| 6 | Suggest improvements (L0–L4 confidence — DEC-013) |
+| 7 | Approve automation (explicit permission only) |
 
 ---
 
 ## 2. MVP Scope — Included
 
-### 2.1 Core Shell
+### 2.1 Core Shell (Phase 1 — DEC-009, DEC-007)
 
 | Capability | Description |
 |------------|-------------|
-| Open Workspace | User launches Workspace as a desktop application |
-| Workspace layout | User arranges panels within the shell |
-| Save layout | User saves current panel arrangement |
-| Restore layout | Layout persists and restores between sessions |
-| Resize and move panels | Panels are user-resizable and movable per UX Principles |
+| Open Workspace | Tauri desktop application with companion + overlay (DEC-008) |
+| Spatial Workspace Canvas | User arranges Zones containing apps, widgets, and panels |
+| Save layout | Layout persisted to SQLite |
+| Restore layout | Layout restored from SQLite between sessions |
+| Multiple workspaces | User-defined workspace arrangements |
+| Draggable elements | Zones and content are movable within canvas |
+| Consistent navigation | Core navigation/button placement fixed; content customizable |
 
 ### 2.2 Application Integration
 
