@@ -10,7 +10,7 @@ use commands::layout::{
 use commands::analytics::get_workspace_metrics;
 use commands::context::get_workspace_context;
 use commands::desktop_window::get_desktop_windows;
-use commands::discovery::get_actor_capabilities;
+use commands::discovery::{get_action_catalog, get_actor_capabilities};
 use commands::permission_approval::{
     decide_approval, diagnose_ai_workspace_plan, get_permission_approvals,
     request_ai_application_launch,
@@ -90,6 +90,7 @@ pub fn run() {
             get_layout_snapshot,
             get_workspace_snapshot,
             get_actor_capabilities,
+            get_action_catalog,
             get_audit_history,
             get_observations,
             get_workspace_metrics,

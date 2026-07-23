@@ -29,6 +29,7 @@
 | `create_application` / `launch_application` | Diagnostic (governed launch) |
 | `request_ai_application_launch` | Diagnostic AI simulation (`AiActionRequest` → pipeline → ApprovalRequired) |
 | `diagnose_ai_workspace_plan` | Diagnostic AI planning (workspace context → proposals → governed submissions) |
+| `get_action_catalog` | Diagnostic action catalog (existence ≠ authorization) |
 | `get_permission_approvals` / `decide_approval` | Diagnostic (allow once / deny) |
 
 ---

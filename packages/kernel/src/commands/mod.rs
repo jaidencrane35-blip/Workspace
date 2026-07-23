@@ -5,6 +5,7 @@ mod execute_intent_request;
 mod create_suggestion_intent_request;
 mod create_workspace;
 mod decide_approval;
+mod get_action_catalog;
 mod get_actor_capabilities;
 mod get_audit_history;
 mod get_desktop_windows;
@@ -50,6 +51,8 @@ mod ai_participation_tests;
 #[cfg(test)]
 mod ai_planning_tests;
 #[cfg(test)]
+mod action_catalog_tests;
+#[cfg(test)]
 mod observation_tests;
 #[cfg(test)]
 mod layout_tests;
@@ -74,6 +77,7 @@ pub use execute_intent_request::ExecuteIntentRequest;
 pub use create_suggestion_intent_request::CreateSuggestionIntentRequest;
 pub use create_workspace::CreateWorkspace;
 pub use decide_approval::DecideApproval;
+pub use get_action_catalog::GetActionCatalog;
 pub use get_actor_capabilities::GetActorCapabilities;
 pub use get_audit_history::GetAuditHistory;
 pub use get_permission_approvals::GetPermissionApprovals;

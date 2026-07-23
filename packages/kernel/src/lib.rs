@@ -31,12 +31,12 @@ pub use security::{
     PermissionSubject, StandardPermissionGate,
 };
 pub use services::{
-    AuditService, CapabilityResolver, ConfigurationService, DatabaseServiceHandle,
-    DesktopWindowService, ExecutionCancellationService, ExecutionContextService,
-    ExecutionGuardService, ExecutionOutcomeService, ExecutionReconciliationService,
-    GovernedIntentExecutionService, ObservationService, ServiceRegistry, ServiceStatus,
-    SuggestionIntentService, SuggestionLifecycleService, SuggestionService,
-    WorkspaceAnalyticsService, WorkspaceContextService,
+    ActionCatalogService, AuditService, CapabilityResolver, ConfigurationService,
+    DatabaseServiceHandle, DesktopWindowService, ExecutionCancellationService,
+    ExecutionContextService, ExecutionGuardService, ExecutionOutcomeService,
+    ExecutionReconciliationService, GovernedIntentExecutionService, ObservationService,
+    ServiceRegistry, ServiceStatus, SuggestionIntentService, SuggestionLifecycleService,
+    SuggestionService, WorkspaceAnalyticsService, WorkspaceContextService,
 };
 pub use state::WorkspaceState;
 pub use workspace_domain::{

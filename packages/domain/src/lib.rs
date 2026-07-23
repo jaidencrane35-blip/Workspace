@@ -1,5 +1,6 @@
 //! Shared Workspace domain models — no database or UI logic.
 
+pub mod action_catalog;
 pub mod actor;
 pub mod ai_planning;
 pub mod ai_request;
@@ -29,6 +30,9 @@ pub mod suggestion_intent;
 pub mod suggestion_lifecycle;
 pub mod workspace;
 
+pub use action_catalog::{
+    ActionCatalog, ActionCatalogEntry, ActionCatalogError, AiActionAwareness,
+};
 pub use actor::{
     Actor, ActorContext, ActorMetadata, ActorType, LOCAL_USER_ACTOR_ID, SYSTEM_ACTOR_ID,
 };

@@ -6,6 +6,7 @@ use crate::commands::execute_intent_request::ExecuteIntentRequest;
 use crate::commands::create_suggestion_intent_request::CreateSuggestionIntentRequest;
 use crate::commands::create_workspace::CreateWorkspace;
 use crate::commands::decide_approval::DecideApproval;
+use crate::commands::get_action_catalog::GetActionCatalog;
 use crate::commands::get_actor_capabilities::GetActorCapabilities;
 use crate::commands::get_audit_history::GetAuditHistory;
 use crate::commands::get_permission_approvals::GetPermissionApprovals;
@@ -42,7 +43,7 @@ use crate::services::{
 };
 use crate::WorkspaceKernel;
 use workspace_domain::{
-    Actor, ActorContext, AiPlan, AiPlanSubmissionResult, AiProposalAuthorityOutcome,
+    ActionCatalog, Actor, ActorContext, AiPlan, AiPlanSubmissionResult, AiProposalAuthorityOutcome,
     AiProposalSubmission, ApplicationId, ApplicationReference, AuditEvent, Capability,
     CapabilitySet, Intent, IntentContext, Layout, LayoutId, LayoutMetadata, LayoutNode,
     LayoutSnapshot, Observation, Suggestion, SuggestionIntentRequest, SuggestionLifecycleRecord,
@@ -609,6 +610,15 @@ impl CommandHandler {
     ) -> Result<CapabilityDiscovery> {
         CommandPipeline::new(kernel.command_context(actor, intent))
             .execute_query(GetActorCapabilities)
+    }
+
+    /// Informational action catalog — does not grant authority.
+    pub fn get_action_catalog(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+    ) -> Result<ActionCatalog> {
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_query(GetActionCatalog)
     }
 
     pub fn get_audit_history(

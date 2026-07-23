@@ -7,6 +7,7 @@ use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
+use crate::action_catalog::AiActionAwareness;
 use crate::ai_request::{AiActionRequest, AiRequestError};
 use crate::context::WorkspaceContext;
 use crate::ids::{
@@ -181,6 +182,8 @@ pub struct AiPlanningContext {
     pub available_application_ids: Vec<ApplicationId>,
     /// Optional read-only workspace awareness (Batch 3).
     pub awareness: Option<AiWorkspaceAwareness>,
+    /// Optional informational action catalog awareness (Batch 4).
+    pub action_awareness: Option<AiActionAwareness>,
 }
 
 impl AiPlanningContext {
@@ -189,11 +192,17 @@ impl AiPlanningContext {
             goal,
             available_application_ids,
             awareness: None,
+            action_awareness: None,
         }
     }
 
     pub fn with_awareness(mut self, awareness: AiWorkspaceAwareness) -> Self {
         self.awareness = Some(awareness);
+        self
+    }
+
+    pub fn with_action_awareness(mut self, action_awareness: AiActionAwareness) -> Self {
+        self.action_awareness = Some(action_awareness);
         self
     }
 }

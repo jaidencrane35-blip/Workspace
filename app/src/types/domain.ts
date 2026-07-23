@@ -235,6 +235,22 @@ export interface AiPlanSubmissionResult {
   submissions: AiProposalSubmission[];
 }
 
+export interface ActionCatalogEntry {
+  intent_id: string;
+  name: string;
+  description: string;
+  category: string;
+  command_name: string;
+  capability_required: { id: string; name?: string; scope?: string };
+  target_requirement: "none" | "optional" | "required";
+  allowed_target_kinds: string[];
+}
+
+export interface ActionCatalog {
+  entries: ActionCatalogEntry[];
+  generated_at: string;
+}
+
 export interface WorkspaceMetrics {
   observation_count: number;
   resource_change_count: number;

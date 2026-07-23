@@ -14,7 +14,7 @@
 | 1 | AI Actor | Complete (S46–47) |
 | 2 | AI Planning | Complete (S48–49) |
 | 3 | AI Context & Workspace Understanding | Complete (S50–51) |
-| 4 | Capability Discovery & Tool Awareness | Next |
+| 4 | Capability Discovery & Tool Awareness | Complete (S52–53) |
 | 5 | Planning Quality & Evaluation | Deferred |
 | 6 | Governed Action Orchestration | Deferred |
 | 7 | Governed Assistant Foundation | Deferred |
@@ -25,9 +25,9 @@
 
 Read-only `AiWorkspaceAwareness` from `WorkspaceContext` + desktop window titles; context-aware launch proposals; gateway unchanged.
 
-## Batch 4 (next)
+## Batch 4 (done)
 
-Informational action catalog from `ActionIntentRegistry` / `CapabilityResolver` — “what actions exist?” without granting authority. Feed planning metadata; do not treat `available: bool` as permission.
+Informational `ActionCatalog` + `AiActionAwareness`; planning explanations include required capabilities; gateway still decides. See [AI Action Catalog](AI-ACTION-CATALOG.md).
 
 ## Batch 5
 

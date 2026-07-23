@@ -151,6 +151,9 @@ pub enum KernelError {
     #[error("AI planning validation failed: {message}")]
     AiPlanningValidation { message: String },
 
+    #[error("Action catalog validation failed: {message}")]
+    ActionCatalogValidation { message: String },
+
     #[error("Workspace kernel initialization failed")]
     InitializationFailed,
 }
@@ -418,6 +421,10 @@ impl KernelError {
             },
             KernelError::AiPlanningValidation { message } => PublicError {
                 code: "ai_planning_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::ActionCatalogValidation { message } => PublicError {
+                code: "action_catalog_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::InitializationFailed => PublicError {

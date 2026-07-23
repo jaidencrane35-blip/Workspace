@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { IpcCommandError, invokeIpc } from "../lib/ipc";
 import type {
+  ActionCatalog,
   AiPlanSubmissionResult,
   ApplicationLaunchResult,
   ApplicationReference,
@@ -103,6 +104,9 @@ export function OperatorConsole({
     useState<ApplicationReference | null>(null);
   const [approvals, setApprovals] = useState<PermissionApprovalRequest[]>([]);
   const [lastAiPlan, setLastAiPlan] = useState<AiPlanSubmissionResult | null>(
+    null,
+  );
+  const [actionCatalog, setActionCatalog] = useState<ActionCatalog | null>(
     null,
   );
   const [busy, setBusy] = useState(false);
@@ -506,6 +510,49 @@ export function OperatorConsole({
               ))}
             </dd>
           </dl>
+        )}
+      </section>
+
+      <section>
+        <h2>Action catalog (informational)</h2>
+        <p className="muted">
+          What actions exist and which capability they require. Seeing an action
+          does not authorize it — the Permission Gateway still decides.
+        </p>
+        <div className="row">
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() =>
+              void run("Action catalog loaded", async () => {
+                const catalog = await invokeIpc<ActionCatalog>(
+                  "get_action_catalog",
+                );
+                setActionCatalog(catalog);
+              })
+            }
+          >
+            Explore actions
+          </button>
+        </div>
+        {actionCatalog && (
+          <ul className="muted">
+            {actionCatalog.entries
+              .filter((entry) =>
+                ["LaunchApplication", "CreateApplication", "CreateZone"].includes(
+                  entry.command_name,
+                ),
+              )
+              .map((entry) => (
+                <li key={entry.intent_id}>
+                  {entry.name} → requires{" "}
+                  <code>{entry.capability_required.id}</code>
+                </li>
+              ))}
+            <li>
+              … {actionCatalog.entries.length} actions total (catalog only)
+            </li>
+          </ul>
         )}
       </section>
 

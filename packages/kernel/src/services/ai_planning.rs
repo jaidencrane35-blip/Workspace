@@ -26,10 +26,18 @@ impl AiPlanningService {
             return Err(KernelError::from(AiPlanningError::EmptyGoalStatement));
         }
 
+        let capability_note = context
+            .action_awareness
+            .as_ref()
+            .and_then(|awareness| awareness.explain_capability_for_command("LaunchApplication"));
+
         let candidates = Self::candidate_launches(context);
         let mut proposals = Vec::new();
 
-        for (application_id, explanation) in candidates.into_iter().take(5) {
+        for (application_id, mut explanation) in candidates.into_iter().take(5) {
+            if let Some(note) = &capability_note {
+                explanation = format!("{explanation} {note}");
+            }
             let proposal = AiActionProposal::propose_application_launch(
                 &context.goal,
                 &application_id,
@@ -81,7 +89,10 @@ impl AiPlanningService {
         application_ids: Vec<ApplicationId>,
     ) -> Result<AiPlan> {
         let goal = AiGoal::new(goal_statement, actor_id).map_err(KernelError::from)?;
-        let context = AiPlanningContext::new(goal, application_ids);
+        let mut context = AiPlanningContext::new(goal, application_ids);
+        if let Ok(action_awareness) = crate::services::ActionCatalogService::ai_awareness() {
+            context = context.with_action_awareness(action_awareness);
+        }
         Self::plan(&context)
     }
 
@@ -96,7 +107,10 @@ impl AiPlanningService {
             .iter()
             .map(|app| app.id.clone())
             .collect();
-        let context = AiPlanningContext::new(goal, fallback_ids).with_awareness(awareness);
+        let mut context = AiPlanningContext::new(goal, fallback_ids).with_awareness(awareness);
+        if let Ok(action_awareness) = crate::services::ActionCatalogService::ai_awareness() {
+            context = context.with_action_awareness(action_awareness);
+        }
         Self::plan(&context)
     }
 
