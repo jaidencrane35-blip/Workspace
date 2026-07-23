@@ -41,6 +41,9 @@
 | `confirm_assistant_workflow` | Diagnostic confirm → Permission Gateway path |
 | `resume_assistant_workflow` | Diagnostic resume after human permission decision |
 | `cancel_assistant_workflow` | Diagnostic cancel assistant workflow |
+| `create_memory_entry` / `list_memory_entries` / `get_memory_context` | Diagnostic governed memory (informational) |
+| `delete_memory_entry` / `clear_memory_entries` | Diagnostic memory lifecycle |
+| `diagnose_ai_plan_preview` | Diagnostic memory-aware plan (no execution) |
 | `get_action_catalog` | Diagnostic action catalog (existence ≠ authorization) |
 | `get_permission_approvals` / `decide_approval` | Diagnostic (allow once / deny) |
 

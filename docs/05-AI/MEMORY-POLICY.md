@@ -128,6 +128,7 @@ Patterns stored in SQLite with: source domain, confidence level, last observed, 
 
 ## Related Documents
 
+- [AI Memory Foundation](AI-MEMORY-FOUNDATION.md) — implemented model (Sprints 60–61)
 - [Decision Log](../09-Decisions/DECISION-LOG.md) — DEC-014, DEC-010
 - [Confidence Policy](CONFIDENCE-POLICY.md)
 - [AI Operating Model](AI-OPERATING-MODEL.md)

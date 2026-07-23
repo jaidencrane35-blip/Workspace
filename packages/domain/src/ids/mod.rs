@@ -80,6 +80,7 @@ define_id!(AiActionProposalId);
 define_id!(AiOrchestratedPlanId);
 define_id!(AiPlanStepId);
 define_id!(AiAssistantWorkflowId);
+define_id!(MemoryEntryId);
 
 #[cfg(test)]
 mod tests {

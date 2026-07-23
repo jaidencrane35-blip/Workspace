@@ -4,6 +4,7 @@ pub mod action_catalog;
 pub mod actor;
 pub mod ai_assistant;
 pub mod ai_evaluation;
+pub mod ai_memory;
 pub mod ai_orchestration;
 pub mod ai_planning;
 pub mod ai_request;
@@ -42,6 +43,10 @@ pub use actor::{
 pub use ai_assistant::{
     AiAssistantActionPreview, AiAssistantError, AiAssistantPlanPreview, AiAssistantWorkflow,
     AiAssistantWorkflowState,
+};
+pub use ai_memory::{
+    AiMemoryAwareness, AiMemoryError, MemoryEntry, MemoryLifecycleState, MemoryMetadata,
+    MemoryType,
 };
 pub use ai_evaluation::{
     classify_authority_outcome, evaluate_plan, evaluate_submission_result, AiEvaluationError,
@@ -117,7 +122,7 @@ pub use graph::{GraphEdge, GraphRelationship};
 pub use ids::{
     ActorId, AiActionProposalId, AiAssistantWorkflowId, AiGoalId, AiOrchestratedPlanId,
     AiPlanStepId, ApplicationId, AuditEventId, CapabilityGrantId, IntentId, LayoutId,
-    PermissionApprovalRequestId, WidgetId, WorkspaceId, ZoneId,
+    MemoryEntryId, PermissionApprovalRequestId, WidgetId, WorkspaceId, ZoneId,
 };
 pub use layout::{
     Layout, LayoutBounds, LayoutError, LayoutMetadata, LayoutNode, LayoutSnapshot, Position2D,

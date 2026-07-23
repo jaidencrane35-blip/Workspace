@@ -3,7 +3,9 @@ import { IpcCommandError, invokeIpc } from "../lib/ipc";
 import type {
   ActionCatalog,
   AiAssistantWorkflow,
+  AiMemoryAwareness,
   AiOrchestratedPlan,
+  AiPlan,
   AiPlanEvaluationReport,
   AiPlanSubmissionResult,
   AiProposalEvaluation,
@@ -15,6 +17,7 @@ import type {
   ExecutionOutcome,
   ExecutionReconciliation,
   IntentExecutionRequest,
+  MemoryEntry,
   PermissionApprovalRequest,
   Suggestion,
   SuggestionIntentRequest,
@@ -125,6 +128,11 @@ export function OperatorConsole({
   const [assistantGoal, setAssistantGoal] = useState(
     "Prepare my coding workspace",
   );
+  const [memoryEntries, setMemoryEntries] = useState<MemoryEntry[]>([]);
+  const [memoryContext, setMemoryContext] = useState<AiMemoryAwareness | null>(
+    null,
+  );
+  const [memoryPlan, setMemoryPlan] = useState<AiPlan | null>(null);
   const [busy, setBusy] = useState(false);
 
   const run = useCallback(
@@ -522,6 +530,142 @@ export function OperatorConsole({
               {lastAiPlan.submissions.map((s) => (
                 <div key={s.proposal.id}>
                   {s.proposal.command_name}: {s.outcome.kind}
+                </div>
+              ))}
+            </dd>
+          </dl>
+        )}
+      </section>
+
+      <section>
+        <h2>Governed memory</h2>
+        <p className="muted">
+          Memory improves planning context only. It never grants permissions or
+          executes actions — Permission Gateway remains the authority boundary.
+        </p>
+        <div className="row">
+          <button
+            type="button"
+            disabled={busy || !workspace || !lastRegisteredApp}
+            onClick={() =>
+              void run("Test memory created", async () => {
+                if (!workspace || !lastRegisteredApp) return;
+                const entry = await invokeIpc<MemoryEntry>(
+                  "create_memory_entry",
+                  {
+                    memoryType: "workspace",
+                    key: "preferred_application",
+                    summary: `Prefer ${lastRegisteredApp.name} for workspace prep`,
+                    source: "operator_console",
+                    workspaceId: workspace.id,
+                    attributes: JSON.stringify({
+                      application_id: lastRegisteredApp.id,
+                    }),
+                  },
+                );
+                setMemoryEntries((prev) => [entry, ...prev]);
+              })
+            }
+          >
+            Create test memory
+          </button>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() =>
+              void run("Memory context loaded", async () => {
+                const context = await invokeIpc<AiMemoryAwareness>(
+                  "get_memory_context",
+                  {
+                    workspaceId: workspace?.id ?? null,
+                    limit: 20,
+                  },
+                );
+                setMemoryContext(context);
+                setMemoryEntries(context.entries);
+              })
+            }
+          >
+            View memory context
+          </button>
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("Plan generated with memory", async () => {
+                if (!workspace) return;
+                const plan = await invokeIpc<AiPlan>(
+                  "diagnose_ai_plan_preview",
+                  {
+                    goal: "Prepare my coding workspace",
+                    workspaceId: workspace.id,
+                    applicationIds: lastRegisteredApp
+                      ? [lastRegisteredApp.id]
+                      : [],
+                  },
+                );
+                setMemoryPlan(plan);
+              })
+            }
+          >
+            Generate plan with memory
+          </button>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() =>
+              void run("Test memory cleared", async () => {
+                await invokeIpc<number>("clear_memory_entries", {
+                  memoryType: null,
+                  workspaceId: workspace?.id ?? null,
+                });
+                setMemoryEntries([]);
+                setMemoryContext(null);
+                setMemoryPlan(null);
+              })
+            }
+          >
+            Clear test memory
+          </button>
+        </div>
+        {memoryContext && (
+          <dl>
+            <dt>Memory context</dt>
+            <dd>
+              {memoryContext.entries.length} active entr
+              {memoryContext.entries.length === 1 ? "y" : "ies"} (assembled{" "}
+              {memoryContext.assembled_at})
+              {memoryContext.entries.map((entry) => (
+                <div key={entry.id}>
+                  [{entry.memory_type}] {entry.key}: {entry.summary} (
+                  {entry.source})
+                </div>
+              ))}
+            </dd>
+          </dl>
+        )}
+        {!memoryContext && memoryEntries.length > 0 && (
+          <dl>
+            <dt>Recent memory</dt>
+            <dd>
+              {memoryEntries.map((entry) => (
+                <div key={entry.id}>
+                  [{entry.memory_type}] {entry.summary}
+                </div>
+              ))}
+            </dd>
+          </dl>
+        )}
+        {memoryPlan && (
+          <dl>
+            <dt>Memory-aware plan (no execution)</dt>
+            <dd>
+              {memoryPlan.goal.statement} — {memoryPlan.proposals.length}{" "}
+              proposal(s)
+              {memoryPlan.proposals.map((proposal) => (
+                <div key={proposal.id}>
+                  {proposal.command_name}:{" "}
+                  {proposal.explanation ?? "(no explanation)"}
                 </div>
               ))}
             </dd>

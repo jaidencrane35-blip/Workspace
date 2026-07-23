@@ -25,6 +25,7 @@ pub enum CapabilityScope {
     Settings,
     Audit,
     System,
+    Memory,
 }
 
 /// A named capability required or granted for an operation.
@@ -194,6 +195,20 @@ impl Capability {
             scope: CapabilityScope::Layout,
         }
     }
+
+    pub fn memory_read() -> Self {
+        Self {
+            id: CapabilityId::new("memory.read").expect("memory.read is valid"),
+            scope: CapabilityScope::Memory,
+        }
+    }
+
+    pub fn memory_write() -> Self {
+        Self {
+            id: CapabilityId::new("memory.write").expect("memory.write is valid"),
+            scope: CapabilityScope::Memory,
+        }
+    }
 }
 
 impl CapabilitySet {
@@ -248,6 +263,8 @@ impl CapabilitySet {
             .with_capability(&Capability::settings_write())
             .with_capability(&Capability::audit_read())
             .with_capability(&Capability::audit_write())
+            .with_capability(&Capability::memory_read())
+            .with_capability(&Capability::memory_write())
     }
 
     /// Capabilities attributed to system lifecycle operations.

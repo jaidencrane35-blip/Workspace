@@ -1,4 +1,4 @@
-# Intelligence Layer Roadmap (Phase 3 Batches 3–7)
+# Intelligence Layer Roadmap
 
 | Field | Value |
 |-------|-------|
@@ -7,7 +7,7 @@
 
 ---
 
-## Batch status
+## Phase 3 batch status
 
 | Batch | Theme | Status |
 |-------|--------|--------|
@@ -18,6 +18,18 @@
 | 5 | Planning Quality & Evaluation | Complete (S54–55) |
 | 6 | Governed Action Orchestration | Complete (S56–57) |
 | 7 | Governed Assistant Foundation | Complete (S58–59) |
+
+---
+
+## Phase 4 batch status
+
+| Batch | Theme | Status |
+|-------|--------|--------|
+| 1 | Governed Memory Foundation | Complete (S60–61) |
+| 2 | Model Provider Abstraction | Planned |
+| 3 | Personalization (preference-aware proposals) | Planned |
+| 4 | Product Assistant UX | Planned |
+| 5 | Governed Automation Contracts | Planned |
 
 ---
 
@@ -43,9 +55,17 @@ User-facing `AiAssistantWorkflow`: goal input → plan preview → user confirm 
 
 ---
 
+## Phase 4 Batch 1 (done)
+
+Governed memory types + store; memory assembles into planning context only. Auditable lifecycle; no permission/execution influence. See [AI Memory Foundation](AI-MEMORY-FOUNDATION.md) and [Memory Policy](MEMORY-POLICY.md).
+
+---
+
 ## Never build
 
 - AI → Tool → Execution bypass
 - AI-only pipelines / permission systems
 - Lasting AI self-grants
 - Hidden background automation
+- Memory → permission bypass
+- Chain-of-thought / hidden reasoning storage as authority

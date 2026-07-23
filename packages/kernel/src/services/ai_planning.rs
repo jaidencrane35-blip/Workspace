@@ -9,8 +9,9 @@ use std::sync::{Arc, Mutex};
 use serde_json::json;
 use workspace_database::Database;
 use workspace_domain::{
-    Actor, ActorContext, AiActionProposal, AiGoal, AiPlan, AiPlanningContext, AiPlanningError,
-    AiProposalAuthorityOutcome, AiWorkspaceAwareness, ApplicationId, IntentContext, WorkspaceContext,
+    Actor, ActorContext, AiActionProposal, AiGoal, AiMemoryAwareness, AiPlan, AiPlanningContext,
+    AiPlanningError, AiProposalAuthorityOutcome, AiWorkspaceAwareness, ApplicationId,
+    IntentContext, WorkspaceContext,
 };
 
 use crate::error::{KernelError, Result};
@@ -30,6 +31,11 @@ impl AiPlanningService {
             .action_awareness
             .as_ref()
             .and_then(|awareness| awareness.explain_capability_for_command("LaunchApplication"));
+        let memory_notes = context
+            .memory_awareness
+            .as_ref()
+            .map(|awareness| awareness.planning_notes())
+            .unwrap_or_default();
 
         let candidates = Self::candidate_launches(context);
         let mut proposals = Vec::new();
@@ -37,6 +43,9 @@ impl AiPlanningService {
         for (application_id, mut explanation) in candidates.into_iter().take(5) {
             if let Some(note) = &capability_note {
                 explanation = format!("{explanation} {note}");
+            }
+            if !memory_notes.is_empty() {
+                explanation = format!("{explanation} Memory: {}", memory_notes.join("; "));
             }
             let proposal = AiActionProposal::propose_application_launch(
                 &context.goal,
@@ -54,44 +63,76 @@ impl AiPlanningService {
     }
 
     /// Context-aware launch candidates: skip apps that already appear active.
+    /// Preferred applications from memory are ranked first (informational only).
     fn candidate_launches(context: &AiPlanningContext) -> Vec<(ApplicationId, String)> {
-        if let Some(awareness) = &context.awareness {
-            return awareness
+        let preferred = context
+            .memory_awareness
+            .as_ref()
+            .map(|awareness| awareness.preferred_application_ids())
+            .unwrap_or_default();
+
+        let mut candidates: Vec<(ApplicationId, String)> = if let Some(awareness) = &context.awareness
+        {
+            awareness
                 .applications
                 .iter()
                 .filter(|app| !app.appears_active)
                 .map(|app| {
+                    let preferred_note = if preferred.iter().any(|id| id == app.id.as_str()) {
+                        " (preferred from memory)"
+                    } else {
+                        ""
+                    };
                     let explanation = format!(
-                        "Goal '{}': launch '{}' (registered in workspace '{}', not appearing active)",
+                        "Goal '{}': launch '{}' (registered in workspace '{}', not appearing active){preferred_note}",
                         context.goal.statement, app.name, awareness.workspace_name
                     );
                     (app.id.clone(), explanation)
                 })
-                .collect();
-        }
+                .collect()
+        } else {
+            context
+                .available_application_ids
+                .iter()
+                .map(|application_id| {
+                    let preferred_note = if preferred.iter().any(|id| id == application_id.as_str())
+                    {
+                        " (preferred from memory)"
+                    } else {
+                        ""
+                    };
+                    let explanation = format!(
+                        "Goal '{}': launch application to prepare workspace{preferred_note}",
+                        context.goal.statement
+                    );
+                    (application_id.clone(), explanation)
+                })
+                .collect()
+        };
 
-        context
-            .available_application_ids
-            .iter()
-            .map(|application_id| {
-                let explanation = format!(
-                    "Goal '{}': launch application to prepare workspace",
-                    context.goal.statement
-                );
-                (application_id.clone(), explanation)
-            })
-            .collect()
+        candidates.sort_by_key(|(id, _)| {
+            if preferred.iter().any(|preferred_id| preferred_id == id.as_str()) {
+                0_u8
+            } else {
+                1_u8
+            }
+        });
+        candidates
     }
 
     pub(crate) fn plan_prepare_workspace(
         actor_id: impl Into<String>,
         goal_statement: impl Into<String>,
         application_ids: Vec<ApplicationId>,
+        memory_awareness: Option<AiMemoryAwareness>,
     ) -> Result<AiPlan> {
         let goal = AiGoal::new(goal_statement, actor_id).map_err(KernelError::from)?;
         let mut context = AiPlanningContext::new(goal, application_ids);
         if let Ok(action_awareness) = crate::services::ActionCatalogService::ai_awareness() {
             context = context.with_action_awareness(action_awareness);
+        }
+        if let Some(memory_awareness) = memory_awareness {
+            context = context.with_memory_awareness(memory_awareness);
         }
         Self::plan(&context)
     }
@@ -100,6 +141,7 @@ impl AiPlanningService {
         actor_id: impl Into<String>,
         goal_statement: impl Into<String>,
         awareness: AiWorkspaceAwareness,
+        memory_awareness: Option<AiMemoryAwareness>,
     ) -> Result<AiPlan> {
         let goal = AiGoal::new(goal_statement, actor_id).map_err(KernelError::from)?;
         let fallback_ids: Vec<ApplicationId> = awareness
@@ -110,6 +152,9 @@ impl AiPlanningService {
         let mut context = AiPlanningContext::new(goal, fallback_ids).with_awareness(awareness);
         if let Ok(action_awareness) = crate::services::ActionCatalogService::ai_awareness() {
             context = context.with_action_awareness(action_awareness);
+        }
+        if let Some(memory_awareness) = memory_awareness {
+            context = context.with_memory_awareness(memory_awareness);
         }
         Self::plan(&context)
     }

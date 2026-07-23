@@ -5,6 +5,7 @@ pub mod desktop_window;
 pub mod error;
 pub mod health;
 pub mod layout;
+pub mod memory;
 pub mod observation;
 pub mod permission_approval;
 pub mod projection;

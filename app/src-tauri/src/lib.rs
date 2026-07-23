@@ -11,6 +11,10 @@ use commands::analytics::get_workspace_metrics;
 use commands::context::get_workspace_context;
 use commands::desktop_window::get_desktop_windows;
 use commands::discovery::{get_action_catalog, get_actor_capabilities};
+use commands::memory::{
+    clear_memory_entries, create_memory_entry, delete_memory_entry, diagnose_ai_plan_preview,
+    get_memory_context, list_memory_entries,
+};
 use commands::permission_approval::{
     advance_orchestrated_ai_plan, cancel_assistant_workflow, cancel_orchestrated_ai_plan,
     confirm_assistant_workflow, create_orchestrated_ai_plan, decide_approval,
@@ -75,8 +79,14 @@ pub fn run() {
             decide_approval,
             request_ai_application_launch,
             diagnose_ai_workspace_plan,
+            diagnose_ai_plan_preview,
             diagnose_ai_plan_evaluation,
             get_ai_evaluation_history,
+            create_memory_entry,
+            list_memory_entries,
+            get_memory_context,
+            delete_memory_entry,
+            clear_memory_entries,
             create_orchestrated_ai_plan,
             get_orchestrated_ai_plan,
             advance_orchestrated_ai_plan,

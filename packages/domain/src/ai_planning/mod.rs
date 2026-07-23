@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use crate::action_catalog::AiActionAwareness;
+use crate::ai_memory::AiMemoryAwareness;
 use crate::ai_request::{AiActionRequest, AiRequestError};
 use crate::context::WorkspaceContext;
 use crate::ids::{
@@ -184,6 +185,8 @@ pub struct AiPlanningContext {
     pub awareness: Option<AiWorkspaceAwareness>,
     /// Optional informational action catalog awareness (Batch 4).
     pub action_awareness: Option<AiActionAwareness>,
+    /// Optional governed memory hints (Phase 4 Batch 1) — never authority.
+    pub memory_awareness: Option<AiMemoryAwareness>,
 }
 
 impl AiPlanningContext {
@@ -193,6 +196,7 @@ impl AiPlanningContext {
             available_application_ids,
             awareness: None,
             action_awareness: None,
+            memory_awareness: None,
         }
     }
 
@@ -203,6 +207,11 @@ impl AiPlanningContext {
 
     pub fn with_action_awareness(mut self, action_awareness: AiActionAwareness) -> Self {
         self.action_awareness = Some(action_awareness);
+        self
+    }
+
+    pub fn with_memory_awareness(mut self, memory_awareness: AiMemoryAwareness) -> Self {
+        self.memory_awareness = Some(memory_awareness);
         self
     }
 }

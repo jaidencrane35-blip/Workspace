@@ -2,8 +2,8 @@ use thiserror::Error;
 
 use workspace_database::DatabaseError;
 use workspace_domain::{
-    AiAssistantError, AiEvaluationError, AiOrchestrationError, AiPlanningError, AiRequestError,
-    DomainError, ResourceKind,
+    AiAssistantError, AiEvaluationError, AiMemoryError, AiOrchestrationError, AiPlanningError,
+    AiRequestError, DomainError, ResourceKind,
 };
 
 #[derive(Debug, Error)]
@@ -166,6 +166,9 @@ pub enum KernelError {
     #[error("AI assistant validation failed: {message}")]
     AiAssistantValidation { message: String },
 
+    #[error("AI memory validation failed: {message}")]
+    AiMemoryValidation { message: String },
+
     #[error("Workspace kernel initialization failed")]
     InitializationFailed,
 }
@@ -245,6 +248,17 @@ impl From<AiAssistantError> for KernelError {
         match error {
             AiAssistantError::Domain(domain) => KernelError::from(domain),
             other => KernelError::AiAssistantValidation {
+                message: other.to_string(),
+            },
+        }
+    }
+}
+
+impl From<AiMemoryError> for KernelError {
+    fn from(error: AiMemoryError) -> Self {
+        match error {
+            AiMemoryError::Domain(domain) => KernelError::from(domain),
+            other => KernelError::AiMemoryValidation {
                 message: other.to_string(),
             },
         }
@@ -479,6 +493,10 @@ impl KernelError {
             },
             KernelError::AiAssistantValidation { message } => PublicError {
                 code: "ai_assistant_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::AiMemoryValidation { message } => PublicError {
+                code: "ai_memory_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::InitializationFailed => PublicError {

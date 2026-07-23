@@ -1,3 +1,4 @@
+mod ai_memory;
 mod application;
 mod audit;
 mod graph;
@@ -7,6 +8,7 @@ mod widget;
 mod workspace;
 mod zone;
 
+pub use ai_memory::AiMemoryRepository;
 pub use application::ApplicationRepository;
 pub use audit::AuditRepository;
 pub use graph::GraphRepository;

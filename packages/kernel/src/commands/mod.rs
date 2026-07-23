@@ -24,6 +24,7 @@ mod get_workspace_snapshot;
 mod handler;
 mod initialize;
 mod launch_application;
+mod memory;
 mod pipeline;
 mod reject_suggestion;
 mod request_execution_cancellation;
@@ -59,6 +60,8 @@ mod ai_evaluation_tests;
 mod ai_orchestration_tests;
 #[cfg(test)]
 mod ai_assistant_tests;
+#[cfg(test)]
+mod ai_memory_tests;
 #[cfg(test)]
 mod observation_tests;
 #[cfg(test)]
@@ -103,6 +106,9 @@ pub use get_workspace_snapshot::GetWorkspaceSnapshot;
 pub use handler::CommandHandler;
 pub use initialize::InitializeWorkspace;
 pub use launch_application::LaunchApplication;
+pub use memory::{
+    ClearMemoryEntries, CreateMemoryEntry, DeleteMemoryEntry, GetMemoryContext, ListMemoryEntries,
+};
 pub use pipeline::CommandPipeline;
 pub use reject_suggestion::RejectSuggestion;
 pub use request_execution_cancellation::RequestExecutionCancellation;

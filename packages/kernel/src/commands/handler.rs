@@ -27,6 +27,9 @@ use crate::commands::launch_application::LaunchApplication;
 use crate::commands::layout::{
     CreateLayout, DeleteLayout, GetLayout, GetLayoutSnapshot, ResetLayout, UpdateLayout,
 };
+use crate::commands::memory::{
+    ClearMemoryEntries, CreateMemoryEntry, DeleteMemoryEntry, GetMemoryContext, ListMemoryEntries,
+};
 use crate::commands::pipeline::CommandPipeline;
 use crate::commands::reject_suggestion::RejectSuggestion;
 use crate::commands::request_execution_cancellation::RequestExecutionCancellation;
@@ -44,14 +47,14 @@ use crate::services::{
 };
 use crate::WorkspaceKernel;
 use workspace_domain::{
-    ActionCatalog, Actor, ActorContext, AiAssistantWorkflow, AiOrchestratedPlan, AiPlan,
-    AiPlanEvaluationReport, AiPlanSubmissionResult, AiProposalAuthorityOutcome,
+    ActionCatalog, Actor, ActorContext, AiAssistantWorkflow, AiMemoryAwareness, AiOrchestratedPlan,
+    AiPlan, AiPlanEvaluationReport, AiPlanSubmissionResult, AiProposalAuthorityOutcome,
     AiProposalEvaluation, AiProposalSubmission, ApplicationId, ApplicationReference, AuditEvent,
     Capability, CapabilitySet, Intent, IntentContext, Layout, LayoutId, LayoutMetadata, LayoutNode,
-    LayoutSnapshot, Observation, Suggestion, SuggestionIntentRequest, SuggestionLifecycleRecord,
-    IntentExecutionRequest, ExecutionOutcome, ExecutionReconciliation, CancellationRequest,
-    WidgetId, WidgetReference, Workspace, WorkspaceContext, WorkspaceId, WorkspaceMetrics,
-    WorkspaceSnapshot, CapabilityDiscovery, Zone, ZoneId,
+    LayoutSnapshot, MemoryEntry, MemoryType, Observation, Suggestion, SuggestionIntentRequest,
+    SuggestionLifecycleRecord, IntentExecutionRequest, ExecutionOutcome, ExecutionReconciliation,
+    CancellationRequest, WidgetId, WidgetReference, Workspace, WorkspaceContext, WorkspaceId,
+    WorkspaceMetrics, WorkspaceSnapshot, CapabilityDiscovery, Zone, ZoneId,
 };
 use workspace_windows_integration::DesktopWindowSnapshot;
 
@@ -332,14 +335,36 @@ impl CommandHandler {
                 &actor,
                 &awareness,
             )?;
-            AiPlanningService::plan_with_awareness(actor_id, goal_statement, awareness)?
+            let memory_awareness = crate::services::AiMemoryService::assemble_awareness(
+                &kernel.shared_database(),
+                Some(workspace_id.as_str()),
+                20,
+            )
+            .ok();
+            AiPlanningService::plan_with_awareness(
+                actor_id,
+                goal_statement,
+                awareness,
+                memory_awareness,
+            )?
         } else {
             let apps = application_ids
                 .into_iter()
                 .map(ApplicationId::new)
                 .collect::<std::result::Result<Vec<_>, _>>()
                 .map_err(KernelError::Domain)?;
-            AiPlanningService::plan_prepare_workspace(actor_id, goal_statement, apps)?
+            let memory_awareness = crate::services::AiMemoryService::assemble_awareness(
+                &kernel.shared_database(),
+                None,
+                20,
+            )
+            .ok();
+            AiPlanningService::plan_prepare_workspace(
+                actor_id,
+                goal_statement,
+                apps,
+                memory_awareness,
+            )?
         };
 
         AiPlanningService::audit_plan_created(&kernel.shared_database(), &actor, &plan)?;
@@ -1150,6 +1175,90 @@ impl CommandHandler {
         intent: IntentContext,
     ) -> Result<ActionCatalog> {
         CommandPipeline::new(kernel.command_context(actor, intent)).execute_query(GetActionCatalog)
+    }
+
+    /// Creates a governed memory entry (informational only — not authority).
+    pub fn create_memory_entry(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        memory_type: MemoryType,
+        key: impl Into<String>,
+        summary: impl Into<String>,
+        source: impl Into<String>,
+        workspace_id: Option<String>,
+        attributes: Option<String>,
+    ) -> Result<MemoryEntry> {
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_mutation(
+            CreateMemoryEntry::new(
+                memory_type,
+                key.into(),
+                summary.into(),
+                source.into(),
+                workspace_id,
+                attributes,
+            ),
+        )
+    }
+
+    pub fn list_memory_entries(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: Option<String>,
+        limit: Option<usize>,
+    ) -> Result<Vec<MemoryEntry>> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(ListMemoryEntries::new(workspace_id, limit))
+    }
+
+    pub fn get_memory_context(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: Option<String>,
+        limit: Option<usize>,
+    ) -> Result<AiMemoryAwareness> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetMemoryContext::new(workspace_id, limit))
+    }
+
+    pub fn delete_memory_entry(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        id: impl Into<String>,
+    ) -> Result<MemoryEntry> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_mutation(DeleteMemoryEntry::new(id.into()))
+    }
+
+    pub fn clear_memory_entries(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        memory_type: Option<MemoryType>,
+        workspace_id: Option<String>,
+    ) -> Result<usize> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_mutation(ClearMemoryEntries::new(memory_type, workspace_id))
+    }
+
+    /// Planning-only diagnostic: goal → memory-aware proposals (no submission/execution).
+    pub fn diagnose_ai_plan_preview(
+        kernel: &WorkspaceKernel,
+        actor_id: impl Into<String>,
+        goal_statement: impl Into<String>,
+        application_ids: Vec<String>,
+        workspace_id: Option<String>,
+    ) -> Result<AiPlan> {
+        Self::plan_ai_goal(
+            kernel,
+            actor_id,
+            goal_statement,
+            application_ids,
+            workspace_id,
+        )
     }
 
     pub fn get_audit_history(

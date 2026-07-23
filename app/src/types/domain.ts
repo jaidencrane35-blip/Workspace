@@ -373,6 +373,43 @@ export interface AiAssistantWorkflow {
   updated_at: string;
 }
 
+export type MemoryType =
+  | "session"
+  | "workspace"
+  | "user_preference"
+  | "system_knowledge";
+
+export type MemoryLifecycleState =
+  | "created"
+  | "updated"
+  | "viewed"
+  | "deleted";
+
+export interface MemoryMetadata {
+  confidence_level: number;
+  occurrence_count: number;
+  user_visible: boolean;
+  attributes: string | null;
+}
+
+export interface MemoryEntry {
+  id: string;
+  memory_type: MemoryType;
+  key: string;
+  summary: string;
+  source: string;
+  workspace_id: string | null;
+  lifecycle: MemoryLifecycleState;
+  metadata: MemoryMetadata;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AiMemoryAwareness {
+  entries: MemoryEntry[];
+  assembled_at: string;
+}
+
 export interface ActionCatalogEntry {
   intent_id: string;
   name: string;
