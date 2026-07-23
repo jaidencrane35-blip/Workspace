@@ -36,7 +36,7 @@ use crate::error::{KernelError, Result};
 use crate::events::types::{DomainEvent, WorkspaceShutdown};
 use crate::lifecycle::LifecycleState;
 use crate::security::{PermissionRequest, PermissionSubject};
-use crate::services::ConfigurationService;
+use crate::services::{AiParticipationService, ConfigurationService};
 use crate::WorkspaceKernel;
 use workspace_domain::{
     Actor, ActorContext, ApplicationId, ApplicationReference, AuditEvent, Capability, Intent,
@@ -168,6 +168,72 @@ impl CommandHandler {
         let application_id = ApplicationId::new(id).map_err(KernelError::Domain)?;
         CommandPipeline::new(kernel.command_context(actor, intent))
             .execute_mutation(LaunchApplication::new(application_id))
+    }
+
+    /// AI participation entry: propose launch → CommandPipeline → Permission Gateway.
+    ///
+    /// Does not call launch services directly. Uses `AIAssistant` + `AISuggestion`.
+    pub fn submit_ai_application_launch(
+        kernel: &WorkspaceKernel,
+        actor_id: impl Into<String>,
+        application_id: String,
+        reason: Option<String>,
+    ) -> Result<workspace_domain::ApplicationLaunchResult> {
+        Self::submit_ai_application_launch_inner(
+            kernel,
+            actor_id,
+            application_id,
+            reason,
+            false,
+        )
+    }
+
+    /// Test helper — same path as production, stub launcher (no OS spawn).
+    #[cfg(test)]
+    pub(crate) fn submit_ai_application_launch_simulated(
+        kernel: &WorkspaceKernel,
+        actor_id: impl Into<String>,
+        application_id: String,
+        reason: Option<String>,
+    ) -> Result<workspace_domain::ApplicationLaunchResult> {
+        Self::submit_ai_application_launch_inner(
+            kernel,
+            actor_id,
+            application_id,
+            reason,
+            true,
+        )
+    }
+
+    fn submit_ai_application_launch_inner(
+        kernel: &WorkspaceKernel,
+        actor_id: impl Into<String>,
+        application_id: String,
+        reason: Option<String>,
+        simulate: bool,
+    ) -> Result<workspace_domain::ApplicationLaunchResult> {
+        let actor_id = actor_id.into();
+        let application_id = ApplicationId::new(application_id).map_err(KernelError::Domain)?;
+        let request = AiParticipationService::propose_application_launch(
+            actor_id.clone(),
+            &application_id,
+            reason,
+        )?;
+        let actor =
+            ActorContext::new(Actor::ai_assistant(actor_id).map_err(KernelError::Domain)?);
+        let intent = match request.reason.as_ref() {
+            Some(label) => IntentContext::ai_suggestion_with_label(label.clone()),
+            None => IntentContext::ai_suggestion(),
+        };
+        let ctx = kernel.command_context(actor, intent);
+        AiParticipationService::ensure_ai_submission_context(&ctx, &request)?;
+
+        let command = if simulate {
+            LaunchApplication::simulated(request.application_id().map_err(KernelError::from)?)
+        } else {
+            LaunchApplication::new(request.application_id().map_err(KernelError::from)?)
+        };
+        CommandPipeline::new(ctx).execute_mutation(command)
     }
 
     pub fn delete_application(

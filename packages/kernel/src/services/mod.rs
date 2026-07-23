@@ -1,5 +1,6 @@
 //! Foundation service ownership for the Platform Kernel.
 
+mod ai_participation;
 mod analytics;
 mod application;
 mod application_launch;
@@ -28,6 +29,7 @@ mod widget;
 mod workspace;
 mod zone;
 
+pub(crate) use ai_participation::AiParticipationService;
 pub use analytics::WorkspaceAnalyticsService;
 pub use application::ApplicationService;
 pub(crate) use application_launch::ApplicationLaunchService;

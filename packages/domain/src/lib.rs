@@ -1,6 +1,7 @@
 //! Shared Workspace domain models — no database or UI logic.
 
 pub mod actor;
+pub mod ai_request;
 pub mod analytics;
 pub mod audit;
 pub mod capability;
@@ -30,6 +31,7 @@ pub mod workspace;
 pub use actor::{
     Actor, ActorContext, ActorMetadata, ActorType, LOCAL_USER_ACTOR_ID, SYSTEM_ACTOR_ID,
 };
+pub use ai_request::{AiActionRequest, AiRequestError};
 pub use analytics::{AnalyticsError, CategoryActivity, WorkspaceMetrics};
 pub use audit::AuditEvent;
 pub use capability::{Capability, CapabilityId, CapabilityScope, CapabilitySet};
@@ -44,8 +46,8 @@ pub use discovery::{
 pub use intent::{
     ActionIntentCategory, ActionIntentDefinition, ActionIntentError, ActionIntentId,
     ActionIntentMetadata, ActionIntentRegistry, ActionIntentRequest, Intent, IntentContext,
-    IntentMetadata, IntentType, TargetRequirement, SYSTEM_SHUTDOWN_INTENT_ID,
-    SYSTEM_STARTUP_INTENT_ID, USER_REQUEST_INTENT_ID,
+    IntentMetadata, IntentType, TargetRequirement, AI_SUGGESTION_INTENT_ID,
+    SYSTEM_SHUTDOWN_INTENT_ID, SYSTEM_STARTUP_INTENT_ID, USER_REQUEST_INTENT_ID,
 };
 pub use observation::{
     classify_event, neutral_summary, Observation, ObservationCategory, ObservationError,

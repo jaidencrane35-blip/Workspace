@@ -54,6 +54,9 @@ pub const SYSTEM_STARTUP_INTENT_ID: &str = "system-startup";
 /// Well-known identifier for kernel shutdown.
 pub const SYSTEM_SHUTDOWN_INTENT_ID: &str = "system-shutdown";
 
+/// Well-known identifier for AI-proposed actions (motivation intent).
+pub const AI_SUGGESTION_INTENT_ID: &str = "ai-suggestion";
+
 impl Intent {
     pub fn new(id: IntentId, intent_type: IntentType, metadata: IntentMetadata) -> Self {
         Self {
@@ -94,8 +97,19 @@ impl Intent {
         }
     }
 
-    /// Placeholder constructors for future intent types (not used in Sprint 09).
-    pub fn ai_suggestion(id: impl Into<String>) -> Result<Self> {
+    /// Motivation intent for AI-proposed actions (no authority implied).
+    pub fn ai_suggestion() -> Self {
+        Self {
+            id: IntentId::new(AI_SUGGESTION_INTENT_ID).expect("ai suggestion intent id is valid"),
+            intent_type: IntentType::AISuggestion,
+            metadata: IntentMetadata {
+                label: Some("AI Suggestion".into()),
+            },
+        }
+    }
+
+    /// Named AI suggestion intent when a distinct id is required.
+    pub fn ai_suggestion_named(id: impl Into<String>) -> Result<Self> {
         Ok(Self {
             id: IntentId::new(id)?,
             intent_type: IntentType::AISuggestion,
@@ -136,6 +150,17 @@ impl IntentContext {
     pub fn system_shutdown() -> Self {
         Self::new(Intent::system_shutdown())
     }
+
+    /// AI-proposed action motivation — carries no privileges.
+    pub fn ai_suggestion() -> Self {
+        Self::new(Intent::ai_suggestion())
+    }
+
+    pub fn ai_suggestion_with_label(label: impl Into<String>) -> Self {
+        let mut intent = Intent::ai_suggestion();
+        intent.metadata.label = Some(label.into());
+        Self::new(intent)
+    }
 }
 
 #[cfg(test)]
@@ -158,9 +183,14 @@ mod tests {
     }
 
     #[test]
-    fn future_intent_placeholders_are_constructible() {
+    fn ai_suggestion_intent_is_first_class() {
+        let context = IntentContext::ai_suggestion();
+        assert_eq!(context.intent.intent_type, IntentType::AISuggestion);
+        assert_eq!(context.intent.id.as_str(), AI_SUGGESTION_INTENT_ID);
         assert_eq!(
-            Intent::ai_suggestion("ai-suggest-1").unwrap().intent_type,
+            Intent::ai_suggestion_named("ai-suggest-1")
+                .unwrap()
+                .intent_type,
             IntentType::AISuggestion
         );
     }

@@ -167,7 +167,7 @@ Foundation     Decisions       Core Platform     Feature Expansion   Maturity
 
 **Goal:** Application launching, AI observation/suggestion, and user-approved automation.
 
-**Status:** **In progress** — Authority sealed (Sprint 45). Next: AI observation / suggestion inside the sealed model.
+**Status:** **In progress** — AI actor foundation (Sprints 46–47). Authority sealed; AI participates without privileges.
 
 ### Expected Deliverables
 
@@ -175,6 +175,7 @@ Foundation     Decisions       Core Platform     Feature Expansion   Maturity
 - [x] Governed application launch through Permission Gateway — Sprints 41–42
 - [x] Permission approval foundation (pending → allow once / deny → grant) — Sprints 43–44
 - [x] Permission architecture seal (no bypass, docs, boundary tests) — Sprint 45; see [Permission Architecture](../07-Security/PERMISSION-ARCHITECTURE.md)
+- [x] AI actor foundation (propose → pipeline → gateway; zero default authority) — Sprints 46–47; see [AI Actor Foundation](../05-AI/AI-ACTOR-FOUNDATION.md)
 - Application service (discovery, launch, grouping) — launch authority done; discovery/grouping later
 - Window service (tracking, layout integration)
 - AI observer and pattern store (L0–L4 confidence model)

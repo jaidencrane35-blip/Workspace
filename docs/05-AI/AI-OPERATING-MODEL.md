@@ -48,13 +48,19 @@ Workspace AI must **never**:
 
 ---
 
-## 4. The Operating Sequence
+## 4. Authority path (implemented)
+
+Product AI enters as `ActorType::AIAssistant` with empty default capabilities. Proposals become `AiActionRequest` values and submit through the Command Pipeline → Permission Gateway — never a private execution path. See [AI Actor Foundation](AI-ACTOR-FOUNDATION.md).
+
+## 5. The Operating Sequence
 
 All AI behaviour follows this sequence without exception:
 
 ```
 Observe → Learn → Suggest → Receive Permission → Automate
 ```
+
+Sprints 46–47 implement the **Suggest → Receive Permission** authority seam for governed action requests (diagnostic launch). Observe / Learn / Automate product surfaces remain later work.
 
 | Stage | AI Role | User Role |
 |-------|---------|-----------|
@@ -68,7 +74,7 @@ Skipping any stage is prohibited. See [AI Principles](AI-PRINCIPLES.md) §2.
 
 ---
 
-## 5. When AI Can Recommend
+## 6. When AI Can Recommend
 
 AI **may** generate a suggestion when **all** conditions are met:
 
@@ -87,7 +93,7 @@ AI **may** generate a suggestion when **all** conditions are met:
 
 ---
 
-## 6. When AI Must Request Approval
+## 7. When AI Must Request Approval
 
 AI **must** request explicit approval before:
 
@@ -106,7 +112,7 @@ Approval flows through the **Permission Gateway** (Platform Kernel). AI submits 
 
 ---
 
-## 7. When AI Must Refuse or Escalate
+## 8. When AI Must Refuse or Escalate
 
 AI **must refuse** to act when:
 
@@ -135,9 +141,9 @@ Escalation means presenting information and options to the user — never delega
 
 ---
 
-## 8. Human Approval Boundaries
+## 9. Human Approval Boundaries
 
-### 8.1 What Requires Human Approval
+### 9.1 What Requires Human Approval
 
 Everything that changes system state outside the user's direct manual action:
 
@@ -146,7 +152,7 @@ Everything that changes system state outside the user's direct manual action:
 - Observation scope expansion
 - Data retention beyond default policy
 
-### 8.2 What Does Not Require Approval
+### 9.2 What Does Not Require Approval
 
 Passive operations that do not change state:
 
@@ -155,7 +161,7 @@ Passive operations that do not change state:
 - Logging for audit (non-sensitive metadata)
 - Failing safe when AI subsystem is unavailable
 
-### 8.3 Approval Types
+### 9.3 Approval Types
 
 | Type | Scope | User Chooses |
 |------|-------|--------------|
@@ -167,7 +173,7 @@ AI never defaults to persistent approval.
 
 ---
 
-## 9. Permission Gateway Integration
+## 10. Permission Gateway Integration
 
 The Permission Gateway is owned by the **Platform Kernel**, not the AI Subsystem.
 
@@ -179,11 +185,11 @@ AI Subsystem → Permission Gateway (Platform Kernel) → User Prompt
               Domain Service (if approved)
 ```
 
-AI Subsystem submits permission requests. The gateway validates policy, presents UI, records audit entries, and routes approved actions to domain services. See [System Overview](../02-Architecture/SYSTEM-OVERVIEW.md).
+AI Subsystem submits permission requests. The gateway validates policy, presents UI, records audit entries, and routes approved actions to domain services. See [System Overview](../02-Architecture/SYSTEM-OVERVIEW.md) and [AI Actor Foundation](AI-ACTOR-FOUNDATION.md).
 
 ---
 
-## 10. Failure Modes
+## 11. Failure Modes
 
 | Failure | Behaviour |
 |---------|-----------|

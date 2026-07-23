@@ -149,11 +149,21 @@ These support debugging, security review, and future user-facing history.
 
 ---
 
-## 7. Future extension points (do not invent yet)
+## 7. AI participation (Sprints 46–47)
+
+AI enters only as `ActorType::AIAssistant` with empty defaults:
+
+```
+AiActionRequest → CommandHandler.submit_ai_* → CommandPipeline → PermissionGateway
+```
+
+See [AI Actor Foundation](../05-AI/AI-ACTOR-FOUNDATION.md). AI does **not** receive a parallel pipeline or execution service.
+
+## 8. Future extension points (do not invent yet)
 
 Safe to add later **inside** this framework:
 
-- AI observer / suggestion → still an `AIAssistant` actor through the pipeline
+- AI observer / pattern store → still an `AIAssistant` actor through the pipeline
 - Automation engine → `Automation` actor + approvals
 - Plugins → `Plugin` actor + capability grants
 - Lasting (non allow-once) grants and a permission center UI
@@ -166,7 +176,7 @@ Unsafe / out of scope until redesigned:
 
 ---
 
-## 8. Seal checklist (Sprint 45)
+## 9. Seal checklist (Sprint 45)
 
 - [x] Permission Gateway is the universal authority boundary for command execution
 - [x] Privileged launch / approval mutators are crate-internal

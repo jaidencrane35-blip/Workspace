@@ -449,7 +449,7 @@ export function OperatorConsole({
               })()
             }
           >
-            Request as AI (approval path)
+            Propose as AI (governed path)
           </button>
         </div>
       </section>

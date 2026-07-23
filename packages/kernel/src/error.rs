@@ -1,7 +1,7 @@
 use thiserror::Error;
 
 use workspace_database::DatabaseError;
-use workspace_domain::{DomainError, ResourceKind};
+use workspace_domain::{AiRequestError, DomainError, ResourceKind};
 
 #[derive(Debug, Error)]
 pub enum KernelError {
@@ -145,6 +145,9 @@ pub enum KernelError {
     #[error("Permission approval validation failed: {message}")]
     PermissionApprovalValidation { message: String },
 
+    #[error("AI request validation failed: {message}")]
+    AiRequestValidation { message: String },
+
     #[error("Workspace kernel initialization failed")]
     InitializationFailed,
 }
@@ -173,6 +176,17 @@ impl From<DomainError> for KernelError {
             }
             DomainError::ResourceNotFound { kind } => KernelError::ResourceNotFound { kind },
             other => KernelError::Domain(other),
+        }
+    }
+}
+
+impl From<AiRequestError> for KernelError {
+    fn from(error: AiRequestError) -> Self {
+        match error {
+            AiRequestError::Domain(domain) => KernelError::from(domain),
+            other => KernelError::AiRequestValidation {
+                message: other.to_string(),
+            },
         }
     }
 }
@@ -381,6 +395,10 @@ impl KernelError {
             },
             KernelError::PermissionApprovalValidation { message } => PublicError {
                 code: "permission_approval_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::AiRequestValidation { message } => PublicError {
+                code: "ai_request_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::InitializationFailed => PublicError {

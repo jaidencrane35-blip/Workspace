@@ -46,6 +46,8 @@ mod intent_tests;
 #[cfg(test)]
 mod permission_approval_tests;
 #[cfg(test)]
+mod ai_participation_tests;
+#[cfg(test)]
 mod observation_tests;
 #[cfg(test)]
 mod layout_tests;

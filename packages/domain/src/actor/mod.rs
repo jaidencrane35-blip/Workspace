@@ -70,7 +70,7 @@ impl Actor {
         }
     }
 
-    /// Placeholder constructors for future actor types (not used in Sprint 08).
+    /// AI participant identity — starts with zero capabilities (no authority).
     pub fn ai_assistant(id: impl Into<String>) -> Result<Self> {
         Ok(Self {
             id: ActorId::new(id)?,
@@ -147,10 +147,22 @@ mod tests {
     }
 
     #[test]
-    fn future_actor_placeholders_are_constructible() {
+    fn ai_assistant_is_first_class_actor() {
         assert_eq!(
             Actor::ai_assistant("ai-1").unwrap().actor_type,
             ActorType::AIAssistant
+        );
+        assert_eq!(
+            Actor::automation("auto-1").unwrap().actor_type,
+            ActorType::Automation
+        );
+        assert_eq!(
+            Actor::plugin("plugin-1").unwrap().actor_type,
+            ActorType::Plugin
+        );
+        assert_eq!(
+            Actor::remote_session("remote-1").unwrap().actor_type,
+            ActorType::RemoteSession
         );
     }
 }
