@@ -28,7 +28,7 @@
 | 1 | Governed Memory Foundation | Complete (S60–61) |
 | 2 | Model Provider Abstraction | Complete (S62–63) |
 | 3 | Personalization (preference-aware proposals) | Complete (S64–65) |
-| 4 | Product Assistant UX | Planned |
+| 4 | Product Assistant UX | Complete (S66–67) |
 | 5 | Governed Automation Contracts | Planned |
 
 ---
@@ -66,6 +66,10 @@ Model provider interface + registry/routing; planning consumes provider candidat
 ## Phase 4 Batch 3 (done)
 
 Explicit user preference profiles; preference-aware ranking/explanations with disable toggle. No hidden profiling; gateway unchanged. See [AI Personalization Foundation](AI-PERSONALIZATION-FOUNDATION.md).
+
+## Phase 4 Batch 4 (done)
+
+Production Assistant UX over the existing governed pipeline: revise/regenerate/compare, structured explanations, clear workflow states. No new authority path. See [AI Product Assistant](AI-PRODUCT-ASSISTANT.md).
 
 ---
 

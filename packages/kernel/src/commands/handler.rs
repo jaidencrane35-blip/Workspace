@@ -54,7 +54,8 @@ use crate::services::{
 };
 use crate::WorkspaceKernel;
 use workspace_domain::{
-    ActionCatalog, Actor, ActorContext, AiAssistantWorkflow, AiMemoryAwareness, AiOrchestratedPlan,
+    ActionCatalog, Actor, ActorContext, AiAssistantPlanComparison, AiAssistantWorkflow,
+    AiMemoryAwareness, AiOrchestratedPlan,
     AiPlan, AiPlanEvaluationReport, AiPlanSubmissionResult, AiProposalAuthorityOutcome,
     AiProposalEvaluation, AiProposalSubmission, ApplicationId, ApplicationReference, AuditEvent,
     Capability, CapabilitySet, Intent, IntentContext, Layout, LayoutId, LayoutMetadata, LayoutNode,
@@ -918,26 +919,174 @@ impl CommandHandler {
         let actor_id = actor_id.into();
         let mut workflow =
             workspace_domain::AiAssistantWorkflow::receive_goal(user_goal, actor_id.clone())
-                .map_err(KernelError::from)?;
+                .map_err(KernelError::from)?
+                .with_planning_context(application_ids.clone(), workspace_id.clone());
         let actor = AiPlanningService::ensure_ai_actor(&actor_id)?;
         AiAssistantService::audit_goal_received(&kernel.shared_database(), &actor, &workflow)?;
 
         workflow.mark_understanding();
-        workflow.mark_generating_plan();
+        Self::rebuild_assistant_plan(kernel, &mut workflow)?;
+        AiAssistantService::audit_plan_presented(&kernel.shared_database(), &actor, &workflow)?;
+        AiAssistantService::store_workflow(&kernel.assistant_workflows(), workflow)
+    }
 
+    /// Revise the goal and regenerate a governed plan (archives prior preview).
+    pub fn revise_assistant_goal(
+        kernel: &WorkspaceKernel,
+        workflow_id: impl Into<String>,
+        new_goal: impl Into<String>,
+        application_ids: Option<Vec<String>>,
+        workspace_id: Option<String>,
+    ) -> Result<AiAssistantWorkflow> {
+        let mut workflow =
+            AiAssistantService::get_workflow(&kernel.assistant_workflows(), &workflow_id.into())?;
+        let actor_id = workflow.requesting_actor_id.as_str().to_string();
+        let actor = AiPlanningService::ensure_ai_actor(&actor_id)?;
+        let previous_goal = workflow.user_goal.clone();
+
+        if let Some(ids) = application_ids {
+            workflow.application_ids = ids;
+        }
+        if workspace_id.is_some() {
+            workflow.workspace_id = workspace_id;
+        }
+
+        workflow.revise_goal(new_goal).map_err(KernelError::from)?;
+        AiAssistantService::audit_goal_updated(
+            &kernel.shared_database(),
+            &actor,
+            &workflow,
+            &previous_goal,
+        )?;
+        Self::rebuild_assistant_plan(kernel, &mut workflow)?;
+        AiAssistantService::audit_plan_regenerated(
+            &kernel.shared_database(),
+            &actor,
+            &workflow,
+            "goal_revised",
+        )?;
+        AiAssistantService::save_workflow(&kernel.assistant_workflows(), workflow)
+    }
+
+    /// Regenerate the current plan without changing the goal.
+    pub fn regenerate_assistant_plan(
+        kernel: &WorkspaceKernel,
+        workflow_id: impl Into<String>,
+        application_ids: Option<Vec<String>>,
+        workspace_id: Option<String>,
+    ) -> Result<AiAssistantWorkflow> {
+        let mut workflow =
+            AiAssistantService::get_workflow(&kernel.assistant_workflows(), &workflow_id.into())?;
+        let actor_id = workflow.requesting_actor_id.as_str().to_string();
+        let actor = AiPlanningService::ensure_ai_actor(&actor_id)?;
+
+        if let Some(ids) = application_ids {
+            workflow.application_ids = ids;
+        }
+        if workspace_id.is_some() {
+            workflow.workspace_id = workspace_id;
+        }
+
+        workflow.prepare_regenerate().map_err(KernelError::from)?;
+        Self::rebuild_assistant_plan(kernel, &mut workflow)?;
+        AiAssistantService::audit_plan_regenerated(
+            &kernel.shared_database(),
+            &actor,
+            &workflow,
+            "user_regenerate",
+        )?;
+        AiAssistantService::save_workflow(&kernel.assistant_workflows(), workflow)
+    }
+
+    /// Compare two plan revisions (or a revision vs the current preview).
+    ///
+    /// Pass `None` for a revision number to mean the current plan preview.
+    pub fn compare_assistant_plan_revisions(
+        kernel: &WorkspaceKernel,
+        workflow_id: impl Into<String>,
+        left_revision: Option<u32>,
+        right_revision: Option<u32>,
+    ) -> Result<AiAssistantPlanComparison> {
+        let workflow =
+            AiAssistantService::get_workflow(&kernel.assistant_workflows(), &workflow_id.into())?;
+        let actor_id = workflow.requesting_actor_id.as_str().to_string();
+        let actor = AiPlanningService::ensure_ai_actor(&actor_id)?;
+
+        let left = Self::resolve_assistant_revision(&workflow, left_revision)?;
+        let right = Self::resolve_assistant_revision(&workflow, right_revision)?;
+        let left_num = left.revision;
+        let right_num = right.revision;
+        let mut comparison = AiAssistantPlanComparison::compare(left, right);
+        comparison.workflow_id = workflow.id.to_string();
+
+        AiAssistantService::audit_plan_compared(
+            &kernel.shared_database(),
+            &actor,
+            workflow.id.as_str(),
+            left_num,
+            right_num,
+            comparison.differences.len(),
+        )?;
+        Ok(comparison)
+    }
+
+    /// Record that the user viewed a structured proposal explanation (audit only).
+    pub fn record_assistant_explanation_viewed(
+        kernel: &WorkspaceKernel,
+        workflow_id: impl Into<String>,
+        step_id: impl Into<String>,
+    ) -> Result<()> {
+        let workflow =
+            AiAssistantService::get_workflow(&kernel.assistant_workflows(), &workflow_id.into())?;
+        let actor_id = workflow.requesting_actor_id.as_str().to_string();
+        let actor = AiPlanningService::ensure_ai_actor(&actor_id)?;
+        let step_id = step_id.into();
+        AiAssistantService::audit_explanation_viewed(
+            &kernel.shared_database(),
+            &actor,
+            workflow.id.as_str(),
+            &step_id,
+        )
+    }
+
+    fn resolve_assistant_revision(
+        workflow: &AiAssistantWorkflow,
+        revision: Option<u32>,
+    ) -> Result<workspace_domain::AiAssistantPlanRevision> {
+        match revision {
+            Some(number) => workflow
+                .revision_by_number(number)
+                .cloned()
+                .ok_or_else(|| KernelError::AiAssistantValidation {
+                    message: format!("assistant plan revision not found: {number}"),
+                }),
+            None => workflow
+                .current_as_revision()
+                .ok_or_else(|| KernelError::AiAssistantValidation {
+                    message: "assistant workflow has no current plan preview to compare".into(),
+                }),
+        }
+    }
+
+    fn rebuild_assistant_plan(
+        kernel: &WorkspaceKernel,
+        workflow: &mut AiAssistantWorkflow,
+    ) -> Result<()> {
+        let actor_id = workflow.requesting_actor_id.as_str().to_string();
+        workflow.mark_generating_plan();
         let plan = Self::create_orchestrated_ai_plan(
             kernel,
             actor_id,
             workflow.user_goal.clone(),
-            application_ids,
-            workspace_id,
+            workflow.application_ids.clone(),
+            workflow.workspace_id.clone(),
         )?;
+        workflow.mark_evaluating();
         let preview = AiAssistantService::build_plan_preview(&plan);
         workflow
             .present_plan(&plan, preview)
             .map_err(KernelError::from)?;
-        AiAssistantService::audit_plan_presented(&kernel.shared_database(), &actor, &workflow)?;
-        AiAssistantService::store_workflow(&kernel.assistant_workflows(), workflow)
+        Ok(())
     }
 
     pub fn get_assistant_workflow(

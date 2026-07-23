@@ -26,11 +26,12 @@ use commands::personalization::{
 };
 use commands::permission_approval::{
     advance_orchestrated_ai_plan, cancel_assistant_workflow, cancel_orchestrated_ai_plan,
-    confirm_assistant_workflow, create_orchestrated_ai_plan, decide_approval,
-    diagnose_ai_plan_evaluation, diagnose_ai_workspace_plan, get_ai_evaluation_history,
-    get_assistant_workflow, get_orchestrated_ai_plan, get_permission_approvals,
+    compare_assistant_plan_revisions, confirm_assistant_workflow, create_orchestrated_ai_plan,
+    decide_approval, diagnose_ai_plan_evaluation, diagnose_ai_workspace_plan,
+    get_ai_evaluation_history, get_assistant_workflow, get_orchestrated_ai_plan,
+    get_permission_approvals, record_assistant_explanation_viewed, regenerate_assistant_plan,
     request_ai_application_launch, resume_assistant_workflow, resume_orchestrated_ai_plan,
-    submit_assistant_goal,
+    revise_assistant_goal, submit_assistant_goal,
 };
 use commands::observation::get_observations;
 use commands::projection::get_workspace_snapshot;
@@ -117,6 +118,10 @@ pub fn run() {
             confirm_assistant_workflow,
             resume_assistant_workflow,
             cancel_assistant_workflow,
+            revise_assistant_goal,
+            regenerate_assistant_plan,
+            compare_assistant_plan_revisions,
+            record_assistant_explanation_viewed,
             create_suggestion_intent_request,
             execute_intent_request,
             get_execution_outcomes,

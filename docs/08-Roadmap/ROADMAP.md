@@ -167,7 +167,7 @@ Foundation     Decisions       Core Platform     Feature Expansion   Maturity
 
 **Goal:** Application launching, AI observation/suggestion, and user-approved automation.
 
-**Status:** **In progress** — governed personalization (Sprints 64–65 / P4-B3). Phase 3 intelligence batches 1–7 complete; Phase 4 Batches 1–3 complete; see [Intelligence Roadmap](../05-AI/INTELLIGENCE-ROADMAP.md).
+**Status:** Phase 3 intelligence batches 1–7 complete; Phase 4 Batches 1–4 complete (product assistant UX / S66–67). Next: Phase 4 Batch 5 (governed automation contracts). See [Intelligence Roadmap](../05-AI/INTELLIGENCE-ROADMAP.md).
 
 ### Expected Deliverables
 

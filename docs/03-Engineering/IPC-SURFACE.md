@@ -36,11 +36,15 @@
 | `advance_orchestrated_ai_plan` | Diagnostic advance steps through Permission Gateway |
 | `resume_orchestrated_ai_plan` | Diagnostic resume after human approval decision |
 | `cancel_orchestrated_ai_plan` | Diagnostic cancel multi-step plan |
-| `submit_assistant_goal` | Diagnostic assistant goal → governed plan preview |
-| `get_assistant_workflow` | Diagnostic assistant workflow preview/refresh |
-| `confirm_assistant_workflow` | Diagnostic confirm → Permission Gateway path |
-| `resume_assistant_workflow` | Diagnostic resume after human permission decision |
-| `cancel_assistant_workflow` | Diagnostic cancel assistant workflow |
+| `submit_assistant_goal` | Product + diagnostic: goal → governed plan preview |
+| `get_assistant_workflow` | Product + diagnostic: workflow preview/refresh |
+| `confirm_assistant_workflow` | Product + diagnostic: confirm → Permission Gateway path |
+| `resume_assistant_workflow` | Product + diagnostic: resume after human permission decision |
+| `cancel_assistant_workflow` | Product + diagnostic: cancel assistant workflow |
+| `revise_assistant_goal` | Product + diagnostic: revise goal → regenerate plan |
+| `regenerate_assistant_plan` | Product + diagnostic: regenerate plan for same goal |
+| `compare_assistant_plan_revisions` | Product + diagnostic: explain differences between revisions |
+| `record_assistant_explanation_viewed` | Product + diagnostic: audit explanation view (`authority_effect: none`) |
 | `create_memory_entry` / `list_memory_entries` / `get_memory_context` | Diagnostic governed memory (informational) |
 | `delete_memory_entry` / `clear_memory_entries` | Diagnostic memory lifecycle |
 | `diagnose_ai_plan_preview` | Diagnostic memory-aware plan (no execution) |

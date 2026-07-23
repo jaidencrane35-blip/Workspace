@@ -387,12 +387,33 @@ export type AiAssistantWorkflowState =
   | "receiving_goal"
   | "understanding"
   | "generating_plan"
+  | "evaluating"
   | "awaiting_confirmation"
   | "submitting_actions"
   | "waiting_for_permission"
   | "completed"
   | "failed"
   | "cancelled";
+
+/** Product UX labels mapped from workflow state. */
+export type AiAssistantProductState =
+  | "idle"
+  | "understanding"
+  | "planning"
+  | "evaluating"
+  | "awaiting_confirmation"
+  | "awaiting_permission"
+  | "executing"
+  | "completed"
+  | "failed"
+  | "cancelled";
+
+export interface AiAssistantActionExplanation {
+  why_suggested: string;
+  why_permission: string;
+  what_if_approve: string;
+  influence_tags: string[];
+}
 
 export interface AiAssistantActionPreview {
   step_id: string;
@@ -402,6 +423,7 @@ export interface AiAssistantActionPreview {
   explanation: string | null;
   step_state: string;
   capability_hint: string | null;
+  structured_explanation?: AiAssistantActionExplanation | null;
 }
 
 export interface AiAssistantPlanPreview {
@@ -409,6 +431,22 @@ export interface AiAssistantPlanPreview {
   goal_statement: string;
   actions: AiAssistantActionPreview[];
   permission_note: string;
+  influence_summary?: string | null;
+}
+
+export interface AiAssistantPlanRevision {
+  revision: number;
+  plan_id: string;
+  goal_statement: string;
+  preview: AiAssistantPlanPreview;
+  created_at: string;
+}
+
+export interface AiAssistantPlanComparison {
+  workflow_id: string;
+  left: AiAssistantPlanRevision;
+  right: AiAssistantPlanRevision;
+  differences: string[];
 }
 
 export interface AiAssistantWorkflow {
@@ -421,6 +459,38 @@ export interface AiAssistantWorkflow {
   status_message: string;
   created_at: string;
   updated_at: string;
+  plan_revisions?: AiAssistantPlanRevision[];
+  application_ids?: string[];
+  workspace_id?: string | null;
+  revision_counter?: number;
+}
+
+export function assistantProductState(
+  state: AiAssistantWorkflowState | null | undefined,
+): AiAssistantProductState {
+  if (!state) return "idle";
+  switch (state) {
+    case "receiving_goal":
+      return "idle";
+    case "understanding":
+      return "understanding";
+    case "generating_plan":
+      return "planning";
+    case "evaluating":
+      return "evaluating";
+    case "awaiting_confirmation":
+      return "awaiting_confirmation";
+    case "submitting_actions":
+      return "executing";
+    case "waiting_for_permission":
+      return "awaiting_permission";
+    case "completed":
+      return "completed";
+    case "failed":
+      return "failed";
+    case "cancelled":
+      return "cancelled";
+  }
 }
 
 export type MemoryType =

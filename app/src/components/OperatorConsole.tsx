@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { IpcCommandError, invokeIpc } from "../lib/ipc";
 import type {
   ActionCatalog,
+  AiAssistantPlanComparison,
   AiAssistantWorkflow,
   AiMemoryAwareness,
   AiOrchestratedPlan,
@@ -130,6 +131,8 @@ export function OperatorConsole({
     useState<AiOrchestratedPlan | null>(null);
   const [assistantWorkflow, setAssistantWorkflow] =
     useState<AiAssistantWorkflow | null>(null);
+  const [assistantComparison, setAssistantComparison] =
+    useState<AiAssistantPlanComparison | null>(null);
   const [assistantGoal, setAssistantGoal] = useState(
     "Prepare my coding workspace",
   );
@@ -1053,10 +1056,10 @@ export function OperatorConsole({
       </section>
 
       <section>
-        <h2>Governed AI assistant</h2>
+        <h2>Governed AI assistant (diagnostics)</h2>
         <p className="muted">
-          Express a workspace goal. The assistant presents a governed plan for
-          confirmation — every action still passes the Permission Gateway.
+          Same CommandHandler pipeline as the product Assistant tab — regenerate,
+          compare, explanation rendering, and recovery checks.
         </p>
         <div className="row">
           <input
@@ -1080,10 +1083,112 @@ export function OperatorConsole({
                   },
                 );
                 setAssistantWorkflow(workflow);
+                setAssistantComparison(null);
               })
             }
           >
             Submit assistant goal
+          </button>
+          <button
+            type="button"
+            disabled={
+              busy ||
+              !assistantWorkflow ||
+              !workspace ||
+              !assistantGoal.trim() ||
+              !(
+                assistantWorkflow.state === "awaiting_confirmation" ||
+                assistantWorkflow.state === "cancelled" ||
+                assistantWorkflow.state === "failed"
+              )
+            }
+            onClick={() =>
+              void run("Assistant goal revised", async () => {
+                if (!assistantWorkflow || !workspace) return;
+                const workflow = await invokeIpc<AiAssistantWorkflow>(
+                  "revise_assistant_goal",
+                  {
+                    workflowId: assistantWorkflow.id,
+                    goal: assistantGoal.trim(),
+                    workspaceId: workspace.id,
+                  },
+                );
+                setAssistantWorkflow(workflow);
+              })
+            }
+          >
+            Revise goal
+          </button>
+          <button
+            type="button"
+            disabled={
+              busy ||
+              !assistantWorkflow ||
+              !workspace ||
+              assistantWorkflow.state !== "awaiting_confirmation"
+            }
+            onClick={() =>
+              void run("Assistant plan regenerated", async () => {
+                if (!assistantWorkflow || !workspace) return;
+                const workflow = await invokeIpc<AiAssistantWorkflow>(
+                  "regenerate_assistant_plan",
+                  {
+                    workflowId: assistantWorkflow.id,
+                    workspaceId: workspace.id,
+                  },
+                );
+                setAssistantWorkflow(workflow);
+              })
+            }
+          >
+            Regenerate plan
+          </button>
+          <button
+            type="button"
+            disabled={
+              busy ||
+              !assistantWorkflow ||
+              !(assistantWorkflow.plan_revisions?.length) ||
+              !assistantWorkflow.plan_preview
+            }
+            onClick={() =>
+              void run("Assistant plans compared", async () => {
+                if (!assistantWorkflow) return;
+                const revisions = assistantWorkflow.plan_revisions ?? [];
+                const prior = revisions[revisions.length - 1];
+                if (!prior) return;
+                const result = await invokeIpc<AiAssistantPlanComparison>(
+                  "compare_assistant_plan_revisions",
+                  {
+                    workflowId: assistantWorkflow.id,
+                    leftRevision: prior.revision,
+                    rightRevision: null,
+                  },
+                );
+                setAssistantComparison(result);
+              })
+            }
+          >
+            Compare plan revisions
+          </button>
+          <button
+            type="button"
+            disabled={
+              busy ||
+              !assistantWorkflow ||
+              !assistantWorkflow.plan_preview?.actions[0]
+            }
+            onClick={() =>
+              void run("Explanation viewed (audit)", async () => {
+                if (!assistantWorkflow?.plan_preview?.actions[0]) return;
+                await invokeIpc("record_assistant_explanation_viewed", {
+                  workflowId: assistantWorkflow.id,
+                  stepId: assistantWorkflow.plan_preview.actions[0].step_id,
+                });
+              })
+            }
+          >
+            Record explanation view
           </button>
           <button
             type="button"
@@ -1139,25 +1244,58 @@ export function OperatorConsole({
               })
             }
           >
-            Cancel workflow
+            Cancel / recover
           </button>
         </div>
         {assistantWorkflow && (
           <ul className="muted">
             <li>
               Goal: {assistantWorkflow.user_goal} — state:{" "}
-              {assistantWorkflow.state}
+              {assistantWorkflow.state} (product:{" "}
+              {assistantWorkflow.state === "submitting_actions"
+                ? "executing"
+                : assistantWorkflow.state === "waiting_for_permission"
+                  ? "awaiting_permission"
+                  : assistantWorkflow.state === "generating_plan"
+                    ? "planning"
+                    : assistantWorkflow.state}
+              )
             </li>
             <li>{assistantWorkflow.status_message}</li>
+            {assistantWorkflow.plan_preview?.influence_summary && (
+              <li>{assistantWorkflow.plan_preview.influence_summary}</li>
+            )}
             {assistantWorkflow.plan_preview?.actions.map((action) => (
               <li key={action.step_id}>
                 {action.ordinal + 1}. {action.command_name} → {action.step_state}
                 {action.capability_hint ? ` (${action.capability_hint})` : ""}
+                {action.structured_explanation && (
+                  <div>
+                    Why: {action.structured_explanation.why_suggested} | Perm:{" "}
+                    {action.structured_explanation.why_permission} | Approve:{" "}
+                    {action.structured_explanation.what_if_approve}
+                  </div>
+                )}
               </li>
             ))}
             {assistantWorkflow.plan_preview && (
               <li>{assistantWorkflow.plan_preview.permission_note}</li>
             )}
+            <li>
+              Revisions archived:{" "}
+              {assistantWorkflow.plan_revisions?.length ?? 0}
+            </li>
+          </ul>
+        )}
+        {assistantComparison && (
+          <ul className="muted">
+            <li>
+              Compare rev {assistantComparison.left.revision} →{" "}
+              {assistantComparison.right.revision}
+            </li>
+            {assistantComparison.differences.map((diff) => (
+              <li key={diff}>{diff}</li>
+            ))}
           </ul>
         )}
       </section>

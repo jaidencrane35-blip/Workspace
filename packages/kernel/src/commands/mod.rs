@@ -63,6 +63,8 @@ mod ai_orchestration_tests;
 #[cfg(test)]
 mod ai_assistant_tests;
 #[cfg(test)]
+mod ai_assistant_product_tests;
+#[cfg(test)]
 mod ai_memory_tests;
 #[cfg(test)]
 mod ai_model_provider_tests;

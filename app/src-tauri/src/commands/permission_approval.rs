@@ -2,8 +2,8 @@ use std::sync::{Arc, Mutex};
 
 use tauri::State;
 use workspace_domain::{
-    AiAssistantWorkflow, AiOrchestratedPlan, AiPlanEvaluationReport, AiPlanSubmissionResult,
-    AiProposalEvaluation, ApplicationLaunchResult, ApprovalDecisionResult,
+    AiAssistantPlanComparison, AiAssistantWorkflow, AiOrchestratedPlan, AiPlanEvaluationReport,
+    AiPlanSubmissionResult, AiProposalEvaluation, ApplicationLaunchResult, ApprovalDecisionResult,
     PermissionApprovalRequest,
 };
 use workspace_kernel::{CommandHandler, WorkspaceKernel};
@@ -333,6 +333,105 @@ pub fn cancel_assistant_workflow(
             Ok(workflow) => IpcResponse::success(workflow),
             Err(error) => IpcResponse::failure(CommandError::from(error)),
         },
+        Err(_) => IpcResponse::failure(CommandError::new(
+            "internal_error",
+            "Workspace core is temporarily unavailable.",
+        )),
+    }
+}
+
+/// Product + diagnostic: revise goal and regenerate governed plan.
+#[tauri::command]
+pub fn revise_assistant_goal(
+    workflow_id: String,
+    goal: String,
+    application_ids: Option<Vec<String>>,
+    workspace_id: Option<String>,
+    kernel: State<'_, Arc<Mutex<WorkspaceKernel>>>,
+) -> IpcResponse<AiAssistantWorkflow> {
+    match kernel.lock() {
+        Ok(kernel) => match CommandHandler::revise_assistant_goal(
+            &kernel,
+            workflow_id,
+            goal,
+            application_ids,
+            workspace_id,
+        ) {
+            Ok(workflow) => IpcResponse::success(workflow),
+            Err(error) => IpcResponse::failure(CommandError::from(error)),
+        },
+        Err(_) => IpcResponse::failure(CommandError::new(
+            "internal_error",
+            "Workspace core is temporarily unavailable.",
+        )),
+    }
+}
+
+/// Product + diagnostic: regenerate plan for the same goal.
+#[tauri::command]
+pub fn regenerate_assistant_plan(
+    workflow_id: String,
+    application_ids: Option<Vec<String>>,
+    workspace_id: Option<String>,
+    kernel: State<'_, Arc<Mutex<WorkspaceKernel>>>,
+) -> IpcResponse<AiAssistantWorkflow> {
+    match kernel.lock() {
+        Ok(kernel) => match CommandHandler::regenerate_assistant_plan(
+            &kernel,
+            workflow_id,
+            application_ids,
+            workspace_id,
+        ) {
+            Ok(workflow) => IpcResponse::success(workflow),
+            Err(error) => IpcResponse::failure(CommandError::from(error)),
+        },
+        Err(_) => IpcResponse::failure(CommandError::new(
+            "internal_error",
+            "Workspace core is temporarily unavailable.",
+        )),
+    }
+}
+
+/// Product + diagnostic: compare plan revisions (`null` revision = current preview).
+#[tauri::command]
+pub fn compare_assistant_plan_revisions(
+    workflow_id: String,
+    left_revision: Option<u32>,
+    right_revision: Option<u32>,
+    kernel: State<'_, Arc<Mutex<WorkspaceKernel>>>,
+) -> IpcResponse<AiAssistantPlanComparison> {
+    match kernel.lock() {
+        Ok(kernel) => match CommandHandler::compare_assistant_plan_revisions(
+            &kernel,
+            workflow_id,
+            left_revision,
+            right_revision,
+        ) {
+            Ok(comparison) => IpcResponse::success(comparison),
+            Err(error) => IpcResponse::failure(CommandError::from(error)),
+        },
+        Err(_) => IpcResponse::failure(CommandError::new(
+            "internal_error",
+            "Workspace core is temporarily unavailable.",
+        )),
+    }
+}
+
+/// Product + diagnostic: audit that a structured explanation was viewed.
+#[tauri::command]
+pub fn record_assistant_explanation_viewed(
+    workflow_id: String,
+    step_id: String,
+    kernel: State<'_, Arc<Mutex<WorkspaceKernel>>>,
+) -> IpcResponse<()> {
+    match kernel.lock() {
+        Ok(kernel) => {
+            match CommandHandler::record_assistant_explanation_viewed(&kernel, workflow_id, step_id)
+            {
+                Ok(()) => IpcResponse::success(()),
+                Err(error) => IpcResponse::failure(CommandError::from(error)),
+            }
+        }
         Err(_) => IpcResponse::failure(CommandError::new(
             "internal_error",
             "Workspace core is temporarily unavailable.",

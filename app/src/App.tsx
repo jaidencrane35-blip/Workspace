@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { AssistantPanel } from "./components/AssistantPanel";
 import { CanvasShell } from "./components/CanvasShell";
 import { OperatorConsole } from "./components/OperatorConsole";
 import { invokeIpc } from "./lib/ipc";
@@ -12,7 +13,7 @@ import type {
 
 const LEGACY_WORKSPACE_ID_KEY = "workspace.active_id";
 
-type AppView = "canvas" | "operator";
+type AppView = "canvas" | "assistant" | "operator";
 
 function formatError(err: unknown): string {
   if (err instanceof Error) {
@@ -180,6 +181,13 @@ export default function App() {
           </button>
           <button
             type="button"
+            className={view === "assistant" ? "tab active" : "tab"}
+            onClick={() => setView("assistant")}
+          >
+            Assistant
+          </button>
+          <button
+            type="button"
             className={view === "operator" ? "tab active" : "tab"}
             onClick={() => setView("operator")}
           >
@@ -221,13 +229,22 @@ export default function App() {
             </button>
           </div>
         )
+      ) : view === "assistant" ? (
+        <div className="container assistant-container">
+          <AssistantPanel
+            workspace={workspace}
+            busy={busy}
+            onBusy={setBusy}
+            onError={onError}
+            onMessage={onMessage}
+          />
+        </div>
       ) : (
         <div className="container">
           <p className="lede">
-            <span className="badge">Diagnostic</span> Operator console — not the
-            product shell. Use for pipeline inspection (suggestions → execute),
-            settings, and desktop window enumeration. Prefer Canvas for layout
-            work.
+            <span className="badge">Diagnostic</span> Operator console — validates
+            the same governed assistant pipeline as the product Assistant tab.
+            Prefer Assistant for day-to-day work.
           </p>
           <OperatorConsole
             workspace={workspace}

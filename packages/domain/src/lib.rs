@@ -43,8 +43,9 @@ pub use actor::{
     Actor, ActorContext, ActorMetadata, ActorType, LOCAL_USER_ACTOR_ID, SYSTEM_ACTOR_ID,
 };
 pub use ai_assistant::{
-    AiAssistantActionPreview, AiAssistantError, AiAssistantPlanPreview, AiAssistantWorkflow,
-    AiAssistantWorkflowState,
+    AiAssistantActionExplanation, AiAssistantActionPreview, AiAssistantError,
+    AiAssistantPlanComparison, AiAssistantPlanPreview, AiAssistantPlanRevision,
+    AiAssistantWorkflow, AiAssistantWorkflowState,
 };
 pub use ai_memory::{
     AiMemoryAwareness, AiMemoryError, MemoryEntry, MemoryLifecycleState, MemoryMetadata,
