@@ -7,10 +7,13 @@ use workspace_domain::{
 use super::mapping::CommandIntentMapping;
 use crate::error::{KernelError, Result};
 
-/// Validates action intent metadata before commands run through the pipeline.
-pub struct IntentExecutionService;
+/// Validates action-intent catalog metadata before commands run through the pipeline.
+///
+/// Distinct from [`crate::GovernedIntentExecutionService`], which prepares
+/// suggestion-driven execution requests (Sprint 24).
+pub struct ActionIntentValidationService;
 
-impl IntentExecutionService {
+impl ActionIntentValidationService {
     pub fn lookup(request: &ActionIntentRequest) -> Result<workspace_domain::ActionIntentDefinition> {
         ActionIntentRegistry::lookup(&request.intent_id).ok_or_else(|| {
             KernelError::ActionIntentNotFound {
@@ -110,7 +113,7 @@ mod tests {
     #[test]
     fn validates_request_before_command() {
         let request = ActionIntentRequest::new(ActionIntentId::new("create-workspace").unwrap());
-        let definition = IntentExecutionService::validate_request(&request).unwrap();
+        let definition = ActionIntentValidationService::validate_request(&request).unwrap();
         assert_eq!(definition.command_name, "CreateWorkspace");
     }
 
@@ -118,7 +121,7 @@ mod tests {
     fn rejects_capability_mismatch() {
         let id = ActionIntentId::new("create-workspace").unwrap();
         let definition = ActionIntentRegistry::lookup(&id).unwrap();
-        let error = IntentExecutionService::validate_capability_match(
+        let error = ActionIntentValidationService::validate_capability_match(
             &definition,
             &Capability::zone_write(),
         )
@@ -133,7 +136,7 @@ mod tests {
     fn validate_before_command_checks_name_and_capability() {
         let request = ActionIntentRequest::new(ActionIntentId::new("delete-zone").unwrap())
             .with_target(zone_ref("zone-1"));
-        IntentExecutionService::validate_before_command(
+        ActionIntentValidationService::validate_before_command(
             &request,
             "DeleteZone",
             &Capability::zone_write(),
@@ -144,7 +147,7 @@ mod tests {
     #[test]
     fn validate_before_command_rejects_command_name_mismatch() {
         let request = ActionIntentRequest::new(ActionIntentId::new("create-workspace").unwrap());
-        let error = IntentExecutionService::validate_before_command(
+        let error = ActionIntentValidationService::validate_before_command(
             &request,
             "DeleteZone",
             &Capability::workspace_write(),

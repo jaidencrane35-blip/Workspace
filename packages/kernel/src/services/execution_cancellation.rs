@@ -27,7 +27,7 @@ impl ExecutionCancellationService {
     /// - completed execution → rejected explicitly (nothing left to cancel)
     /// - already cancelled → rejected
     /// - otherwise → `CancellationStatus::Requested` (no runtime stop)
-    pub fn prepare_request(
+    pub(crate) fn prepare_request(
         db: &Arc<Mutex<Database>>,
         execution_request_id: &str,
         requested_by: &str,

@@ -13,7 +13,7 @@ use crate::error::{KernelError, Result};
 pub struct LayoutService;
 
 impl LayoutService {
-    pub fn create(db: &Database, workspace_id: WorkspaceId) -> Result<Layout> {
+    pub(crate) fn create(db: &Database, workspace_id: WorkspaceId) -> Result<Layout> {
         if LayoutRepository::new(db).exists_for_workspace(&workspace_id)? {
             return Err(map_layout_error(LayoutError::DuplicateLayout));
         }
@@ -46,7 +46,7 @@ impl LayoutService {
             .ok_or_else(|| map_layout_error(LayoutError::NotFound))
     }
 
-    pub fn update(
+    pub(crate) fn update(
         db: &Database,
         id: &LayoutId,
         viewport: Viewport,
@@ -67,7 +67,7 @@ impl LayoutService {
         Self::load(db, id)
     }
 
-    pub fn delete(db: &Database, id: &LayoutId) -> Result<()> {
+    pub(crate) fn delete(db: &Database, id: &LayoutId) -> Result<()> {
         let deleted = LayoutRepository::new(db).delete(id)?;
         if !deleted {
             return Err(map_layout_error(LayoutError::NotFound));
@@ -75,7 +75,7 @@ impl LayoutService {
         Ok(())
     }
 
-    pub fn reset(db: &Database, id: &LayoutId) -> Result<Layout> {
+    pub(crate) fn reset(db: &Database, id: &LayoutId) -> Result<Layout> {
         let mut layout = Self::load(db, id)?;
         layout.viewport = Viewport::default();
         layout.nodes.clear();

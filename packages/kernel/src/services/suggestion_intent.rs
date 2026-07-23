@@ -14,7 +14,7 @@ use workspace_domain::{
 
 use super::AuditService;
 use crate::error::{KernelError, Result};
-use crate::IntentExecutionService;
+use crate::ActionIntentValidationService;
 
 const MAX_AUDIT_SCAN: usize = 500;
 
@@ -32,7 +32,7 @@ impl SuggestionIntentService {
     ///
     /// Verifies acceptance via audit, maps suggestion type to intent, validates
     /// the resulting action intent shape, and returns the bridge record.
-    pub fn create_request(
+    pub(crate) fn create_request(
         db: &Arc<Mutex<Database>>,
         suggestion_id: &str,
         actor_type: ActorType,
@@ -62,7 +62,7 @@ impl SuggestionIntentService {
             action_request = action_request.with_target(resource_ref.clone());
         }
 
-        IntentExecutionService::validate_request(&action_request)?;
+        ActionIntentValidationService::validate_request(&action_request)?;
 
         let metadata = Some(
             serde_json::json!({

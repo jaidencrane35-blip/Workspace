@@ -11,7 +11,7 @@ use crate::error::{KernelError, Result};
 pub struct ZoneService;
 
 impl ZoneService {
-    pub fn create(
+    pub(crate) fn create(
         db: &Database,
         workspace_id: WorkspaceId,
         name: String,
@@ -43,7 +43,7 @@ impl ZoneService {
             .ok_or(KernelError::ZoneNotFound)
     }
 
-    pub fn update(
+    pub(crate) fn update(
         db: &Database,
         id: &ZoneId,
         name: String,
@@ -61,7 +61,7 @@ impl ZoneService {
         Self::load(db, id)
     }
 
-    pub fn delete(db: &Database, id: &ZoneId) -> Result<()> {
+    pub(crate) fn delete(db: &Database, id: &ZoneId) -> Result<()> {
         let zone = Self::load(db, id)?;
         let deleted = ZoneRepository::new(db).delete(id)?;
         if !deleted {

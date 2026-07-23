@@ -4,4 +4,4 @@ mod mapping;
 mod validation;
 
 pub use mapping::CommandIntentMapping;
-pub use validation::IntentExecutionService;
+pub use validation::ActionIntentValidationService;

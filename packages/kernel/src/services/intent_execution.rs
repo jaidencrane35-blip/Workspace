@@ -5,7 +5,7 @@
 //! prepares an [`IntentExecutionRequest`]. Does not execute commands or bypass
 //! the pipeline — dispatch remains the command layer's responsibility.
 //!
-//! Distinct from [`crate::IntentExecutionService`] (Sprint 15), which validates
+//! Distinct from [`crate::ActionIntentValidationService`] (Sprint 15), which validates
 //! action-intent metadata before commands run. This service prepares
 //! suggestion-derived execution requests only.
 
@@ -20,7 +20,7 @@ use workspace_domain::{
 use super::AuditService;
 use crate::error::{KernelError, Result};
 use crate::CommandIntentMapping;
-use crate::IntentExecutionService as ActionIntentValidator;
+use crate::ActionIntentValidationService as ActionIntentValidator;
 
 const MAX_AUDIT_SCAN: usize = 500;
 
@@ -34,13 +34,13 @@ pub struct PreparedIntentExecution {
 
 /// Orchestrates governed execution request preparation from audit-derived bridges.
 ///
-/// Named distinctly from Sprint 15 [`crate::IntentExecutionService`] (action-intent
+/// Named distinctly from Sprint 15 [`crate::ActionIntentValidationService`] (action-intent
 /// validation) to avoid conflating metadata validation with suggestion execution.
 pub struct GovernedIntentExecutionService;
 
 impl GovernedIntentExecutionService {
     /// Validates audit history and prepares an authorized execution request.
-    pub fn prepare(
+    pub(crate) fn prepare(
         db: &Arc<Mutex<Database>>,
         suggestion_id: &str,
         actor_type: ActorType,

@@ -20,7 +20,7 @@ pub use config::{ConfigManager, SettingsUpdate, WorkspaceSettings};
 pub use error::{KernelError, PublicError, Result};
 pub use events::{DomainEvent, EventBus};
 pub use health::WorkspaceHealth;
-pub use intent::{CommandIntentMapping, IntentExecutionService};
+pub use intent::{CommandIntentMapping, ActionIntentValidationService};
 pub use lifecycle::LifecycleState;
 pub use policy::{
     read_is_governed, AlwaysAllowPolicy, DefaultPolicyEvaluator, GovernanceClass, PermissionPolicy,

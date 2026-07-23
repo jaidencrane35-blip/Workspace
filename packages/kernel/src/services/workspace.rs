@@ -11,7 +11,7 @@ use crate::error::{KernelError, Result};
 pub struct WorkspaceService;
 
 impl WorkspaceService {
-    pub fn create(db: &Database, name: String) -> Result<Workspace> {
+    pub(crate) fn create(db: &Database, name: String) -> Result<Workspace> {
         Workspace::validate_name(&name).map_err(KernelError::from)?;
 
         let now = Utc::now().to_rfc3339();
@@ -34,7 +34,7 @@ impl WorkspaceService {
             .ok_or(KernelError::WorkspaceNotFound)
     }
 
-    pub fn update(db: &Database, id: &WorkspaceId, name: String) -> Result<Workspace> {
+    pub(crate) fn update(db: &Database, id: &WorkspaceId, name: String) -> Result<Workspace> {
         Workspace::validate_name(&name).map_err(KernelError::from)?;
         let updated_at = Utc::now().to_rfc3339();
         let trimmed = name.trim().to_string();
@@ -47,7 +47,7 @@ impl WorkspaceService {
         Self::load(db, id)
     }
 
-    pub fn delete(db: &Database, id: &WorkspaceId) -> Result<()> {
+    pub(crate) fn delete(db: &Database, id: &WorkspaceId) -> Result<()> {
         let workspace = Self::load(db, id)?;
         let deleted = WorkspaceRepository::new(db).delete(id)?;
         if !deleted {

@@ -11,14 +11,14 @@ use crate::error::{KernelError, Result};
 pub struct GraphService;
 
 impl GraphService {
-    pub fn register_node(db: &Database, resource: &ResourceRef) -> Result<()> {
+    pub(crate) fn register_node(db: &Database, resource: &ResourceRef) -> Result<()> {
         GraphRepository::new(db)
             .register_node(resource)
             .map_err(|error| map_graph_error(resource, error))?;
         Ok(())
     }
 
-    pub fn register_child(
+    pub(crate) fn register_child(
         db: &Database,
         parent: &ResourceRef,
         child: &ResourceRef,
@@ -42,7 +42,7 @@ impl GraphService {
         Ok(())
     }
 
-    pub fn unregister_node(db: &Database, resource: &ResourceRef) -> Result<()> {
+    pub(crate) fn unregister_node(db: &Database, resource: &ResourceRef) -> Result<()> {
         GraphRepository::new(db)
             .remove_node(resource)
             .map_err(|error| map_graph_error(resource, error))?;

@@ -22,7 +22,6 @@ serde_json = "1"
 log = { workspace = true }
 env_logger = "0.11"
 tauri = { version = "2", features = [] }
-workspace-database = { path = "../../packages/database" }
 workspace-kernel = { path = "../../packages/kernel" }
 workspace-domain = { path = "../../packages/domain" }
 workspace-windows-integration = { path = "../../packages/windows-integration" }

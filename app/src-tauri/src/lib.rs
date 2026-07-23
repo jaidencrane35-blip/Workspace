@@ -43,32 +43,18 @@ pub fn run() {
 
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
+            // Runtime / settings
             get_workspace_status,
             get_workspace_health,
             get_settings,
             update_settings,
+            // Product shell (Canvas + Diagnostic)
             create_workspace,
             get_workspace,
             create_zone,
-            delete_zone,
-            get_zone,
-            create_application,
-            delete_application,
-            get_application,
-            create_widget,
-            delete_widget,
-            get_widget,
             create_layout,
             update_layout,
-            delete_layout,
-            reset_layout,
             get_layout,
-            get_layout_snapshot,
-            get_workspace_snapshot,
-            get_actor_capabilities,
-            get_audit_history,
-            get_observations,
-            get_workspace_metrics,
             get_workspace_context,
             get_suggestions,
             accept_suggestion,
@@ -78,9 +64,27 @@ pub fn run() {
             create_suggestion_intent_request,
             execute_intent_request,
             get_execution_outcomes,
-            get_execution_state,
             get_execution_states,
             request_execution_cancellation,
+            // Registered for CommandHandler parity / future UI — unused by React today
+            // (see docs/03-Engineering/IPC-SURFACE.md)
+            delete_zone,
+            get_zone,
+            create_application,
+            delete_application,
+            get_application,
+            create_widget,
+            delete_widget,
+            get_widget,
+            delete_layout,
+            reset_layout,
+            get_layout_snapshot,
+            get_workspace_snapshot,
+            get_actor_capabilities,
+            get_audit_history,
+            get_observations,
+            get_workspace_metrics,
+            get_execution_state,
         ])
         .setup(|app| {
             let app_data_dir = app

@@ -137,6 +137,7 @@ Foundation     Decisions       Core Platform     Feature Expansion   Maturity
 - [x] Windows Integration Layer (basic window enumeration) — Sprint 35–36: windows-integration crate + GetDesktopWindows IPC
 - [x] Phase 1 harden: CI cargo test + ROADMAP/DEC-011 honesty — Sprint 37
 - [x] Phase 1 harden: canvas resize + canvas-first create + Operator diagnostic label — Sprint 38
+- [x] Foundation hardening: seal service mutators, ActionIntentValidationService rename, IPC inventory — Sprint 39
 - [x] CI/CD pipeline (lint, build, test) — Sprint 01 PR workflow; Sprint 37 adds `cargo test --workspace`
 - [x] Developer setup documentation — Sprint 01
 - [ ] Platform kernel (event bus, state management, Permission Gateway) — permission seam in Sprint 06; full gateway in Phase 2

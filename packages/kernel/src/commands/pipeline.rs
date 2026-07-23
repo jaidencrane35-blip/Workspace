@@ -3,7 +3,7 @@ use serde_json::json;
 use crate::commands::context::CommandContext;
 use crate::commands::r#trait::{permission_request, policy_context, require_policy, MutationCommand, QueryCommand};
 use crate::error::Result;
-use crate::intent::IntentExecutionService;
+use crate::intent::ActionIntentValidationService;
 use crate::policy::{read_is_governed, DefaultPolicyEvaluator, PolicyEvaluator};
 use crate::services::AuditService;
 use workspace_domain::ActionIntentRequest;
@@ -28,7 +28,7 @@ impl<'a> CommandPipeline<'a> {
         action: &ActionIntentRequest,
         command: C,
     ) -> Result<C::Output> {
-        IntentExecutionService::validate_before_command(
+        ActionIntentValidationService::validate_before_command(
             action,
             command.name(),
             &command.required_capability(),
@@ -42,7 +42,7 @@ impl<'a> CommandPipeline<'a> {
         action: &ActionIntentRequest,
         command: Q,
     ) -> Result<Q::Output> {
-        IntentExecutionService::validate_before_command(
+        ActionIntentValidationService::validate_before_command(
             action,
             command.name(),
             &command.required_capability(),

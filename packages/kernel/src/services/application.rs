@@ -12,7 +12,7 @@ use crate::error::{KernelError, Result};
 pub struct ApplicationService;
 
 impl ApplicationService {
-    pub fn create(
+    pub(crate) fn create(
         db: &Database,
         workspace_id: WorkspaceId,
         name: String,
@@ -44,7 +44,7 @@ impl ApplicationService {
             .ok_or(KernelError::ApplicationNotFound)
     }
 
-    pub fn update(
+    pub(crate) fn update(
         db: &Database,
         id: &ApplicationId,
         name: String,
@@ -62,7 +62,7 @@ impl ApplicationService {
         Self::load(db, id)
     }
 
-    pub fn delete(db: &Database, id: &ApplicationId) -> Result<()> {
+    pub(crate) fn delete(db: &Database, id: &ApplicationId) -> Result<()> {
         let application = Self::load(db, id)?;
         let deleted = ApplicationRepository::new(db).delete(id)?;
         if !deleted {

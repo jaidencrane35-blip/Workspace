@@ -9,7 +9,7 @@ use crate::error::Result;
 pub struct ConfigurationService;
 
 impl ConfigurationService {
-    pub fn initialize(db: &Database) -> Result<()> {
+    pub(crate) fn initialize(db: &Database) -> Result<()> {
         ConfigManager::ensure_defaults(db)
     }
 
@@ -17,7 +17,7 @@ impl ConfigurationService {
         ConfigManager::load(db)
     }
 
-    pub fn update(db: &Database, update: SettingsUpdate) -> Result<WorkspaceSettings> {
+    pub(crate) fn update(db: &Database, update: SettingsUpdate) -> Result<WorkspaceSettings> {
         ConfigManager::update(db, update)
     }
 }

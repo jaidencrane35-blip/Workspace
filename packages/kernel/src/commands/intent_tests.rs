@@ -9,7 +9,7 @@ use crate::commands::CommandContext;
 use crate::config::SettingsUpdate;
 use crate::error::KernelError;
 use crate::events::EventBus;
-use crate::intent::{CommandIntentMapping, IntentExecutionService};
+use crate::intent::{CommandIntentMapping, ActionIntentValidationService};
 use crate::policy::AlwaysAllowPolicy;
 use crate::security::AllowAllPermissionGate;
 use workspace_domain::{
@@ -100,7 +100,7 @@ fn mutation_command_mappings_match_capabilities() {
         let id = ActionIntentId::new(intent_id).unwrap();
         let definition = ActionIntentRegistry::lookup(&id).unwrap();
         assert_eq!(definition.command_name, command_name);
-        IntentExecutionService::validate_capability_match(&definition, &capability).unwrap();
+        ActionIntentValidationService::validate_capability_match(&definition, &capability).unwrap();
     }
 }
 

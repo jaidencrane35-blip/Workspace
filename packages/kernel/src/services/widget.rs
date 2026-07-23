@@ -11,7 +11,7 @@ use crate::error::{KernelError, Result};
 pub struct WidgetService;
 
 impl WidgetService {
-    pub fn create(
+    pub(crate) fn create(
         db: &Database,
         workspace_id: WorkspaceId,
         name: String,
@@ -43,7 +43,7 @@ impl WidgetService {
             .ok_or(KernelError::WidgetNotFound)
     }
 
-    pub fn update(
+    pub(crate) fn update(
         db: &Database,
         id: &WidgetId,
         name: String,
@@ -61,7 +61,7 @@ impl WidgetService {
         Self::load(db, id)
     }
 
-    pub fn delete(db: &Database, id: &WidgetId) -> Result<()> {
+    pub(crate) fn delete(db: &Database, id: &WidgetId) -> Result<()> {
         let widget = Self::load(db, id)?;
         let deleted = WidgetRepository::new(db).delete(id)?;
         if !deleted {
