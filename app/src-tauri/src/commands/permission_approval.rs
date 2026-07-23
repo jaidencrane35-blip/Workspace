@@ -94,7 +94,8 @@ pub fn request_ai_application_launch(
 #[tauri::command]
 pub fn diagnose_ai_workspace_plan(
     goal: Option<String>,
-    application_ids: Vec<String>,
+    application_ids: Option<Vec<String>>,
+    workspace_id: Option<String>,
     kernel: State<'_, Arc<Mutex<WorkspaceKernel>>>,
 ) -> IpcResponse<AiPlanSubmissionResult> {
     let goal = goal.unwrap_or_else(|| "Prepare my workspace".into());
@@ -103,7 +104,8 @@ pub fn diagnose_ai_workspace_plan(
             &kernel,
             DIAGNOSTIC_AI_ACTOR_ID,
             goal,
-            application_ids,
+            application_ids.unwrap_or_default(),
+            workspace_id,
         ) {
             Ok(result) => IpcResponse::success(result),
             Err(error) => IpcResponse::failure(CommandError::from(error)),

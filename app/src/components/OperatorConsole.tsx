@@ -457,10 +457,10 @@ export function OperatorConsole({
           </button>
           <button
             type="button"
-            disabled={busy || !lastRegisteredApp}
+            disabled={busy || !workspace}
             onClick={() =>
               void (async () => {
-                if (!lastRegisteredApp) return;
+                if (!workspace) return;
                 setBusy(true);
                 onError(null);
                 onMessage(null);
@@ -469,7 +469,7 @@ export function OperatorConsole({
                     "diagnose_ai_workspace_plan",
                     {
                       goal: "Prepare my workspace",
-                      applicationIds: [lastRegisteredApp.id],
+                      workspaceId: workspace.id,
                     },
                   );
                   setLastAiPlan(result);

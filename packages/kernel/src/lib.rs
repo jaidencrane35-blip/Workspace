@@ -201,8 +201,7 @@ impl WorkspaceKernel {
         self.permission_gate.as_ref()
     }
 
-    /// Production policy handle (`CapabilityBoundPolicy`). Used by tests and wiring checks.
-    #[cfg(test)]
+    /// Production policy handle (`CapabilityBoundPolicy`).
     pub(crate) fn permission_policy(&self) -> &dyn PermissionPolicy {
         self.permission_policy.as_ref()
     }

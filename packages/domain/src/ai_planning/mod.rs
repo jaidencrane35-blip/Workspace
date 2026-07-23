@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use crate::ai_request::{AiActionRequest, AiRequestError};
+use crate::context::WorkspaceContext;
 use crate::ids::{
     ActionIntentId, ActorId, AiActionProposalId, AiGoalId, ApplicationId,
 };
@@ -78,14 +79,108 @@ impl AiGoal {
     }
 }
 
+/// Read-only application fact for AI awareness ("what exists?").
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AiApplicationAwareness {
+    pub id: ApplicationId,
+    pub name: String,
+    pub identifier: Option<String>,
+    /// Heuristic: a desktop window title appears to match this application.
+    pub appears_active: bool,
+}
+
+/// Bounded, read-only workspace awareness for AI planning (Sprint 50).
+///
+/// Answers "what exists?" — not "what should happen?" and not authority.
+/// Derived from [`WorkspaceContext`] + optional environment window titles.
+/// Does not grant capabilities or enable mutation.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AiWorkspaceAwareness {
+    pub workspace_id: String,
+    pub workspace_name: String,
+    pub zone_count: usize,
+    pub layout_id: Option<String>,
+    pub applications: Vec<AiApplicationAwareness>,
+    pub recent_observation_count: usize,
+    pub environment_window_titles: Vec<String>,
+}
+
+impl AiWorkspaceAwareness {
+    /// Builds awareness from the existing ContextProvider (`WorkspaceContext`).
+    pub fn from_workspace_context(
+        context: &WorkspaceContext,
+        environment_window_titles: Vec<String>,
+    ) -> Self {
+        let titles_lower: Vec<String> = environment_window_titles
+            .iter()
+            .map(|t| t.to_lowercase())
+            .collect();
+
+        let applications = context
+            .snapshot
+            .applications
+            .iter()
+            .filter_map(|app| {
+                let id = ApplicationId::new(app.resource_ref.id.as_str()).ok()?;
+                let name = app.name.clone();
+                let appears_active = app_appears_active(&name, app.identifier.as_deref(), &titles_lower);
+                Some(AiApplicationAwareness {
+                    id,
+                    name,
+                    identifier: app.identifier.clone(),
+                    appears_active,
+                })
+            })
+            .collect();
+
+        Self {
+            workspace_id: context.workspace.id.as_str().to_string(),
+            workspace_name: context.snapshot.workspace_name.clone(),
+            zone_count: context.snapshot.zones.len(),
+            layout_id: context.snapshot.layout_id.as_ref().map(|id| id.to_string()),
+            applications,
+            recent_observation_count: context.observations.len(),
+            environment_window_titles,
+        }
+    }
+
+    /// Test/helper: mark specific application ids as already active.
+    pub fn with_forced_active(mut self, active_ids: &[ApplicationId]) -> Self {
+        for app in &mut self.applications {
+            if active_ids.iter().any(|id| id == &app.id) {
+                app.appears_active = true;
+            }
+        }
+        self
+    }
+}
+
+fn app_appears_active(name: &str, identifier: Option<&str>, titles_lower: &[String]) -> bool {
+    let name_l = name.to_lowercase();
+    if !name_l.is_empty() && titles_lower.iter().any(|t| t.contains(&name_l)) {
+        return true;
+    }
+    if let Some(identifier) = identifier {
+        let id_l = identifier.to_lowercase();
+        // Match bare executable stem (e.g. "notepad" from "notepad.exe").
+        let stem = id_l.strip_suffix(".exe").unwrap_or(&id_l);
+        if !stem.is_empty() && titles_lower.iter().any(|t| t.contains(stem)) {
+            return true;
+        }
+    }
+    false
+}
+
 /// Boundary for AI reasoning inputs — not long-term memory.
 ///
 /// `User Goal + Available Context + System State hints = Possible Action Proposals`
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AiPlanningContext {
     pub goal: AiGoal,
-    /// Minimal system-state hint: applications the planner may consider.
+    /// Fallback when awareness is absent: applications the planner may consider.
     pub available_application_ids: Vec<ApplicationId>,
+    /// Optional read-only workspace awareness (Batch 3).
+    pub awareness: Option<AiWorkspaceAwareness>,
 }
 
 impl AiPlanningContext {
@@ -93,7 +188,13 @@ impl AiPlanningContext {
         Self {
             goal,
             available_application_ids,
+            awareness: None,
         }
+    }
+
+    pub fn with_awareness(mut self, awareness: AiWorkspaceAwareness) -> Self {
+        self.awareness = Some(awareness);
+        self
     }
 }
 
@@ -260,5 +361,40 @@ mod tests {
         assert_eq!(request.command_name, "LaunchApplication");
         assert_eq!(request.goal_id.as_deref(), Some(goal.id.as_str()));
         assert_eq!(request.proposal_id.as_deref(), Some(proposal.id.as_str()));
+    }
+
+    #[test]
+    fn window_title_heuristic_detects_active_apps() {
+        assert!(app_appears_active(
+            "Notepad",
+            Some("notepad.exe"),
+            &["untitled - notepad".into()]
+        ));
+        assert!(!app_appears_active(
+            "Visual Studio Code",
+            Some("code.exe"),
+            &["untitled - notepad".into()]
+        ));
+    }
+
+    #[test]
+    fn forced_active_marks_applications() {
+        let id = ApplicationId::new("app-1").unwrap();
+        let awareness = AiWorkspaceAwareness {
+            workspace_id: "ws-1".into(),
+            workspace_name: "Dev".into(),
+            zone_count: 0,
+            layout_id: None,
+            applications: vec![AiApplicationAwareness {
+                id: id.clone(),
+                name: "Notepad".into(),
+                identifier: Some("notepad.exe".into()),
+                appears_active: false,
+            }],
+            recent_observation_count: 0,
+            environment_window_titles: vec![],
+        }
+        .with_forced_active(&[id]);
+        assert!(awareness.applications[0].appears_active);
     }
 }

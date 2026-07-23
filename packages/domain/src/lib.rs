@@ -33,8 +33,9 @@ pub use actor::{
     Actor, ActorContext, ActorMetadata, ActorType, LOCAL_USER_ACTOR_ID, SYSTEM_ACTOR_ID,
 };
 pub use ai_planning::{
-    AiActionProposal, AiGoal, AiPlan, AiPlanSubmissionResult, AiPlanningContext, AiPlanningError,
-    AiProposalAuthorityOutcome, AiProposalSubmission,
+    AiActionProposal, AiApplicationAwareness, AiGoal, AiPlan, AiPlanSubmissionResult,
+    AiPlanningContext, AiPlanningError, AiProposalAuthorityOutcome, AiProposalSubmission,
+    AiWorkspaceAwareness,
 };
 pub use ai_request::{AiActionRequest, AiRequestError};
 pub use analytics::{AnalyticsError, CategoryActivity, WorkspaceMetrics};

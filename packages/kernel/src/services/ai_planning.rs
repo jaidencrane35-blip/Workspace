@@ -1,7 +1,8 @@
-//! AI planning service — goals → proposals only (Sprints 48–49).
+//! AI planning service — goals → proposals only (Sprints 48–51).
 //!
 //! Never calls ProcessLauncher, approval mutators, or grant APIs.
 //! Submissions route through [`crate::commands::CommandHandler`] → pipeline → gateway.
+//! Workspace awareness is read-only and does not grant authority.
 
 use std::sync::{Arc, Mutex};
 
@@ -9,7 +10,7 @@ use serde_json::json;
 use workspace_database::Database;
 use workspace_domain::{
     Actor, ActorContext, AiActionProposal, AiGoal, AiPlan, AiPlanningContext, AiPlanningError,
-    AiProposalAuthorityOutcome, ApplicationId, IntentContext,
+    AiProposalAuthorityOutcome, AiWorkspaceAwareness, ApplicationId, IntentContext, WorkspaceContext,
 };
 
 use crate::error::{KernelError, Result};
@@ -25,16 +26,13 @@ impl AiPlanningService {
             return Err(KernelError::from(AiPlanningError::EmptyGoalStatement));
         }
 
+        let candidates = Self::candidate_launches(context);
         let mut proposals = Vec::new();
-        // Deterministic "prepare workspace" heuristic: propose launch for each available app.
-        for application_id in context.available_application_ids.iter().take(5) {
-            let explanation = format!(
-                "Goal '{}': launch application to prepare workspace",
-                context.goal.statement
-            );
+
+        for (application_id, explanation) in candidates.into_iter().take(5) {
             let proposal = AiActionProposal::propose_application_launch(
                 &context.goal,
-                application_id,
+                &application_id,
                 Some(explanation),
             )
             .map_err(KernelError::from)?;
@@ -47,6 +45,36 @@ impl AiPlanningService {
         })
     }
 
+    /// Context-aware launch candidates: skip apps that already appear active.
+    fn candidate_launches(context: &AiPlanningContext) -> Vec<(ApplicationId, String)> {
+        if let Some(awareness) = &context.awareness {
+            return awareness
+                .applications
+                .iter()
+                .filter(|app| !app.appears_active)
+                .map(|app| {
+                    let explanation = format!(
+                        "Goal '{}': launch '{}' (registered in workspace '{}', not appearing active)",
+                        context.goal.statement, app.name, awareness.workspace_name
+                    );
+                    (app.id.clone(), explanation)
+                })
+                .collect();
+        }
+
+        context
+            .available_application_ids
+            .iter()
+            .map(|application_id| {
+                let explanation = format!(
+                    "Goal '{}': launch application to prepare workspace",
+                    context.goal.statement
+                );
+                (application_id.clone(), explanation)
+            })
+            .collect()
+    }
+
     pub(crate) fn plan_prepare_workspace(
         actor_id: impl Into<String>,
         goal_statement: impl Into<String>,
@@ -55,6 +83,29 @@ impl AiPlanningService {
         let goal = AiGoal::new(goal_statement, actor_id).map_err(KernelError::from)?;
         let context = AiPlanningContext::new(goal, application_ids);
         Self::plan(&context)
+    }
+
+    pub(crate) fn plan_with_awareness(
+        actor_id: impl Into<String>,
+        goal_statement: impl Into<String>,
+        awareness: AiWorkspaceAwareness,
+    ) -> Result<AiPlan> {
+        let goal = AiGoal::new(goal_statement, actor_id).map_err(KernelError::from)?;
+        let fallback_ids: Vec<ApplicationId> = awareness
+            .applications
+            .iter()
+            .map(|app| app.id.clone())
+            .collect();
+        let context = AiPlanningContext::new(goal, fallback_ids).with_awareness(awareness);
+        Self::plan(&context)
+    }
+
+    /// Builds read-only awareness from workspace context + environment titles.
+    pub(crate) fn awareness_from_context(
+        workspace_context: &WorkspaceContext,
+        environment_window_titles: Vec<String>,
+    ) -> AiWorkspaceAwareness {
+        AiWorkspaceAwareness::from_workspace_context(workspace_context, environment_window_titles)
     }
 
     /// Records operational planning audits (not chain-of-thought).
@@ -100,6 +151,32 @@ impl AiPlanningService {
             actor,
             &IntentContext::ai_suggestion(),
             "ai.planning.proposal_created",
+            true,
+            metadata,
+        )
+    }
+
+    pub(crate) fn audit_awareness_used(
+        db: &Arc<Mutex<Database>>,
+        actor: &ActorContext,
+        awareness: &AiWorkspaceAwareness,
+    ) -> Result<()> {
+        let metadata = json!({
+            "workspace_id": awareness.workspace_id,
+            "workspace_name": awareness.workspace_name,
+            "zone_count": awareness.zone_count,
+            "application_count": awareness.applications.len(),
+            "active_application_count": awareness.applications.iter().filter(|a| a.appears_active).count(),
+            "observation_count": awareness.recent_observation_count,
+            "environment_window_count": awareness.environment_window_titles.len(),
+        })
+        .to_string();
+
+        AuditService::record_ai_planning_event(
+            db,
+            actor,
+            &IntentContext::ai_suggestion(),
+            "ai.planning.awareness_used",
             true,
             metadata,
         )

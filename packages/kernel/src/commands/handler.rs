@@ -36,14 +36,19 @@ use crate::error::{KernelError, Result};
 use crate::events::types::{DomainEvent, WorkspaceShutdown};
 use crate::lifecycle::LifecycleState;
 use crate::security::{PermissionRequest, PermissionSubject};
-use crate::services::{AiParticipationService, AiPlanningService, ConfigurationService};
+use crate::services::{
+    AiParticipationService, AiPlanningService, ConfigurationService, DesktopWindowService,
+    WorkspaceContextService,
+};
 use crate::WorkspaceKernel;
 use workspace_domain::{
     Actor, ActorContext, AiPlan, AiPlanSubmissionResult, AiProposalAuthorityOutcome,
-    AiProposalSubmission, ApplicationId, ApplicationReference, AuditEvent, Capability, Intent,
-    IntentContext, Layout, LayoutId, LayoutMetadata, LayoutNode, LayoutSnapshot, Observation,
-    Suggestion, SuggestionIntentRequest, SuggestionLifecycleRecord, IntentExecutionRequest, ExecutionOutcome, ExecutionReconciliation, CancellationRequest, WidgetId, WidgetReference, Workspace, WorkspaceContext, WorkspaceId,
-    WorkspaceMetrics, WorkspaceSnapshot, CapabilityDiscovery, Zone, ZoneId,
+    AiProposalSubmission, ApplicationId, ApplicationReference, AuditEvent, Capability,
+    CapabilitySet, Intent, IntentContext, Layout, LayoutId, LayoutMetadata, LayoutNode,
+    LayoutSnapshot, Observation, Suggestion, SuggestionIntentRequest, SuggestionLifecycleRecord,
+    IntentExecutionRequest, ExecutionOutcome, ExecutionReconciliation, CancellationRequest,
+    WidgetId, WidgetReference, Workspace, WorkspaceContext, WorkspaceId, WorkspaceMetrics,
+    WorkspaceSnapshot, CapabilityDiscovery, Zone, ZoneId,
 };
 use workspace_windows_integration::DesktopWindowSnapshot;
 
@@ -238,21 +243,102 @@ impl CommandHandler {
     }
 
     /// AI planning: goal → proposals only. Does not submit or execute.
+    ///
+    /// When `workspace_id` is provided, loads read-only [`WorkspaceContext`] via the
+    /// ContextProvider (`WorkspaceContextService`) using the local-user provider
+    /// identity — AI receives awareness, not mutation rights.
     pub fn plan_ai_goal(
         kernel: &WorkspaceKernel,
         actor_id: impl Into<String>,
         goal_statement: impl Into<String>,
         application_ids: Vec<String>,
+        workspace_id: Option<String>,
+    ) -> Result<AiPlan> {
+        Self::plan_ai_goal_inner(
+            kernel,
+            actor_id,
+            goal_statement,
+            application_ids,
+            workspace_id,
+            None,
+        )
+    }
+
+    /// Test helper: inject environment window titles (skips live desktop enumeration).
+    #[cfg(test)]
+    pub(crate) fn plan_ai_goal_with_environment(
+        kernel: &WorkspaceKernel,
+        actor_id: impl Into<String>,
+        goal_statement: impl Into<String>,
+        application_ids: Vec<String>,
+        workspace_id: Option<String>,
+        environment_window_titles: Vec<String>,
+    ) -> Result<AiPlan> {
+        Self::plan_ai_goal_inner(
+            kernel,
+            actor_id,
+            goal_statement,
+            application_ids,
+            workspace_id,
+            Some(environment_window_titles),
+        )
+    }
+
+    fn plan_ai_goal_inner(
+        kernel: &WorkspaceKernel,
+        actor_id: impl Into<String>,
+        goal_statement: impl Into<String>,
+        application_ids: Vec<String>,
+        workspace_id: Option<String>,
+        environment_override: Option<Vec<String>>,
     ) -> Result<AiPlan> {
         let actor_id = actor_id.into();
-        let apps = application_ids
-            .into_iter()
-            .map(ApplicationId::new)
-            .collect::<std::result::Result<Vec<_>, _>>()
-            .map_err(KernelError::Domain)?;
-        let plan =
-            AiPlanningService::plan_prepare_workspace(actor_id.clone(), goal_statement, apps)?;
         let actor = AiPlanningService::ensure_ai_actor(&actor_id)?;
+
+        let plan = if let Some(workspace_id) = workspace_id {
+            let workspace_id = WorkspaceId::new(workspace_id).map_err(KernelError::Domain)?;
+            // Context is provided by the local-user path (read-only). AI does not
+            // gain audit.read — awareness is injected into planning only.
+            let provider = ActorContext::local_user();
+            let provider_intent = IntentContext::user_request();
+            let provider_caps = CapabilitySet::local_user_standard();
+            let workspace_context = WorkspaceContextService::build(
+                &kernel.shared_database(),
+                &provider,
+                &provider_intent,
+                &provider_caps,
+                kernel.permission_policy(),
+                kernel.permission_gate(),
+                &workspace_id,
+                20,
+            )?;
+
+            let titles = match environment_override {
+                Some(titles) => titles,
+                None => DesktopWindowService::list_recent(Some(50))?
+                    .into_iter()
+                    .map(|window| window.title)
+                    .filter(|title| !title.trim().is_empty())
+                    .collect(),
+            };
+
+            let awareness =
+                AiPlanningService::awareness_from_context(&workspace_context, titles);
+            AiPlanningService::audit_awareness_used(
+                &kernel.shared_database(),
+                &actor,
+                &awareness,
+            )?;
+            AiPlanningService::plan_with_awareness(actor_id, goal_statement, awareness)?
+        } else {
+            let apps = application_ids
+                .into_iter()
+                .map(ApplicationId::new)
+                .collect::<std::result::Result<Vec<_>, _>>()
+                .map_err(KernelError::Domain)?;
+            AiPlanningService::plan_prepare_workspace(actor_id, goal_statement, apps)?
+        };
+
         AiPlanningService::audit_plan_created(&kernel.shared_database(), &actor, &plan)?;
         for proposal in &plan.proposals {
             AiPlanningService::audit_proposal_created(
@@ -272,8 +358,17 @@ impl CommandHandler {
         actor_id: impl Into<String>,
         goal_statement: impl Into<String>,
         application_ids: Vec<String>,
+        workspace_id: Option<String>,
     ) -> Result<AiPlanSubmissionResult> {
-        Self::submit_ai_plan_inner(kernel, actor_id, goal_statement, application_ids, false)
+        Self::submit_ai_plan_inner(
+            kernel,
+            actor_id,
+            goal_statement,
+            application_ids,
+            workspace_id,
+            false,
+            None,
+        )
     }
 
     #[cfg(test)]
@@ -283,7 +378,34 @@ impl CommandHandler {
         goal_statement: impl Into<String>,
         application_ids: Vec<String>,
     ) -> Result<AiPlanSubmissionResult> {
-        Self::submit_ai_plan_inner(kernel, actor_id, goal_statement, application_ids, true)
+        Self::submit_ai_plan_inner(
+            kernel,
+            actor_id,
+            goal_statement,
+            application_ids,
+            None,
+            true,
+            None,
+        )
+    }
+
+    #[cfg(test)]
+    pub(crate) fn submit_ai_plan_simulated_with_workspace(
+        kernel: &WorkspaceKernel,
+        actor_id: impl Into<String>,
+        goal_statement: impl Into<String>,
+        workspace_id: String,
+        environment_window_titles: Vec<String>,
+    ) -> Result<AiPlanSubmissionResult> {
+        Self::submit_ai_plan_inner(
+            kernel,
+            actor_id,
+            goal_statement,
+            Vec::new(),
+            Some(workspace_id),
+            true,
+            Some(environment_window_titles),
+        )
     }
 
     fn submit_ai_plan_inner(
@@ -291,14 +413,18 @@ impl CommandHandler {
         actor_id: impl Into<String>,
         goal_statement: impl Into<String>,
         application_ids: Vec<String>,
+        workspace_id: Option<String>,
         simulate: bool,
+        environment_override: Option<Vec<String>>,
     ) -> Result<AiPlanSubmissionResult> {
         let actor_id = actor_id.into();
-        let plan = Self::plan_ai_goal(
+        let plan = Self::plan_ai_goal_inner(
             kernel,
             actor_id.clone(),
             goal_statement,
             application_ids,
+            workspace_id,
+            environment_override,
         )?;
 
         let mut submissions = Vec::new();
