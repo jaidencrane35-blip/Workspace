@@ -1,0 +1,196 @@
+# Repository Structure
+
+| Field | Value |
+|-------|-------|
+| **Purpose** | Define the recommended repository layout for Workspace at current and future scale |
+| **Owner** | Lead Software Engineer |
+| **Dependencies** | [Architecture Principles](ARCHITECTURE-PRINCIPLES.md), [Repository Standards](../03-Engineering/REPOSITORY-STANDARDS.md) |
+| **Update Process** | Update when new top-level directories are introduced or structure changes. Requires Decision Log entry for structural changes. |
+
+---
+
+## 1. Design Goals
+
+The repository structure must:
+
+- Separate documentation from implementation
+- Support a monorepo as the project grows
+- Accommodate first-party and third-party plugins
+- Keep tooling, scripts, and assets organised
+- Remain navigable at 100,000+ lines of code
+
+---
+
+## 2. Recommended Layout
+
+```
+Workspace/
+├── .github/                    # GitHub configuration
+│   ├── ISSUE_TEMPLATE/         # Issue templates
+│   ├── workflows/              # CI/CD pipelines (future)
+│   └── PULL_REQUEST_TEMPLATE.md
+│
+├── docs/                       # All project documentation
+│   ├── 00-Constitution/
+│   ├── 01-Product/
+│   ├── 02-Architecture/
+│   ├── 03-Engineering/
+│   ├── 04-UX/
+│   ├── 05-AI/
+│   ├── 06-Plugins/
+│   ├── 07-Security/
+│   ├── 08-Roadmap/
+│   ├── 09-Decisions/
+│   ├── 10-Sprints/
+│   └── README.md               # Documentation index
+│
+├── app/                        # Main application (future)
+│   └── ...                     # Shell, entry point, app config
+│
+├── packages/                   # Shared internal packages (future)
+│   ├── kernel/                 # Platform kernel (events, state, permissions)
+│   ├── domain-apps/            # Application domain service
+│   ├── domain-windows/         # Window domain service
+│   ├── domain-devices/         # Device domain service
+│   ├── domain-audio/           # Audio domain service
+│   ├── domain-automation/      # Automation domain service
+│   ├── ai/                     # AI subsystem
+│   ├── shell/                  # UI shell components
+│   ├── windows-integration/    # Windows API abstraction
+│   └── shared/                 # Shared types, utilities, constants
+│
+├── plugins/                    # First-party plugin examples (future)
+│   └── ...
+│
+├── tests/                      # Cross-package integration and E2E tests
+│   ├── integration/
+│   └── e2e/
+│
+├── scripts/                    # Development and build scripts
+│   └── ...
+│
+├── tools/                      # Developer tooling and generators
+│   └── ...
+│
+├── assets/                     # Static assets (icons, fonts, sounds)
+│   └── ...
+│
+├── .gitignore
+├── CONTRIBUTING.md
+└── README.md
+```
+
+---
+
+## 3. Directory Rules
+
+### 3.1 `docs/`
+
+- **Only** documentation. No code, no configs that affect runtime.
+- Numbered prefixes enforce reading order and hierarchy.
+- Every document includes metadata (Purpose, Owner, Dependencies, Update Process).
+
+### 3.2 `app/`
+
+- Application entry point and top-level assembly.
+- Wires packages together. Contains minimal logic.
+- No domain logic — delegates to `packages/`.
+
+### 3.3 `packages/`
+
+- Each package is a bounded module with its own tests.
+- Package names follow `domain-*` for domain services, descriptive names for infrastructure.
+- Packages declare explicit dependencies. No circular references.
+- Each package contains:
+  ```
+  packages/<name>/
+  ├── src/
+  ├── tests/
+  ├── package.json (or equivalent)
+  └── README.md
+  ```
+
+### 3.4 `plugins/`
+
+- First-party plugin examples and SDK consumers.
+- Third-party plugins are **not** stored in this repository.
+- Plugin API definitions live in a dedicated package (e.g., `packages/plugin-sdk/`).
+
+### 3.5 `tests/`
+
+- Cross-package integration tests and end-to-end tests.
+- Package-level unit tests live inside each package.
+
+### 3.6 `scripts/` and `tools/`
+
+- `scripts/` — operational scripts (build, deploy, setup)
+- `tools/` — developer tools (generators, linters, custom tooling)
+
+### 3.7 `assets/`
+
+- Static files only. No code.
+- Organised by type: `icons/`, `fonts/`, `sounds/`, etc.
+
+---
+
+## 4. What Not to Put in the Repository
+
+| Item | Where It Belongs |
+|------|-----------------|
+| Secrets and credentials | Environment variables / secure vault — never committed |
+| Build artifacts | `.gitignore` — generated locally or in CI |
+| User data / layouts | Runtime local storage — not in repo |
+| Third-party plugin source | Plugin author's repository |
+| Large binary blobs | Asset management system or LFS (if needed) |
+
+---
+
+## 5. Monorepo Considerations
+
+When implementation begins, the repository will likely use a monorepo tool (specific tool TBD). Expectations:
+
+- Shared dependency management
+- Per-package versioning internally
+- Workspace-level scripts for build, test, lint
+- CI runs affected packages only (when supported)
+
+---
+
+## 6. Current State (Phase 0)
+
+Only the following directories exist today:
+
+```
+Workspace/
+├── .github/
+├── docs/
+├── .gitignore
+├── CONTRIBUTING.md
+└── README.md
+```
+
+Implementation directories (`app/`, `packages/`, etc.) will be created when Phase 1 begins and the technology stack is decided.
+
+---
+
+## 7. Future Additions
+
+These directories may be added as the project matures:
+
+| Directory | When |
+|-----------|------|
+| `.github/workflows/` | CI/CD setup (Phase 1) |
+| `app/` | Application scaffolding (Phase 1) |
+| `packages/` | First module creation (Phase 1) |
+| `plugins/` | Plugin SDK ready (Phase 2+) |
+| `tests/e2e/` | E2E framework selected (Phase 2) |
+
+Each addition requires a Decision Log entry if it changes the structure defined here.
+
+---
+
+## Related Documents
+
+- [Architecture Principles](ARCHITECTURE-PRINCIPLES.md)
+- [Repository Standards](../03-Engineering/REPOSITORY-STANDARDS.md)
+- [Coding Standards](../03-Engineering/CODING-STANDARDS.md)
