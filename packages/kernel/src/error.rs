@@ -118,6 +118,9 @@ pub enum KernelError {
     #[error("Cannot cancel completed execution: {execution_request_id}")]
     CannotCancelCompletedExecution { execution_request_id: String },
 
+    #[error("Execution reconciliation validation failed: {message}")]
+    ExecutionReconciliationValidation { message: String },
+
     #[error("Service '{0}' failed to start")]
     ServiceStartup(&'static str),
 
@@ -320,6 +323,10 @@ impl KernelError {
                 message: format!(
                     "Execution request '{execution_request_id}' has already completed and cannot be cancelled."
                 ),
+            },
+            KernelError::ExecutionReconciliationValidation { message } => PublicError {
+                code: "execution_reconciliation_validation_error".into(),
+                message: message.clone(),
             },
             KernelError::ServiceStartup(service) => PublicError {
                 code: "service_startup_failed".into(),

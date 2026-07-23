@@ -8,6 +8,7 @@ use crate::commands::create_workspace::CreateWorkspace;
 use crate::commands::get_actor_capabilities::GetActorCapabilities;
 use crate::commands::get_audit_history::GetAuditHistory;
 use crate::commands::get_execution_outcomes::GetExecutionOutcomes;
+use crate::commands::get_execution_state::GetExecutionState;
 use crate::commands::get_observations::GetObservations;
 use crate::commands::get_suggestion_lifecycle::GetSuggestionLifecycle;
 use crate::commands::get_suggestions::GetSuggestions;
@@ -35,7 +36,7 @@ use crate::WorkspaceKernel;
 use workspace_domain::{
     Actor, ActorContext, ApplicationId, ApplicationReference, AuditEvent, Capability, Intent,
     IntentContext, Layout, LayoutId, LayoutMetadata, LayoutNode, LayoutSnapshot, Observation,
-    Suggestion, SuggestionIntentRequest, SuggestionLifecycleRecord, IntentExecutionRequest, ExecutionOutcome, CancellationRequest, WidgetId, WidgetReference, Workspace, WorkspaceContext, WorkspaceId,
+    Suggestion, SuggestionIntentRequest, SuggestionLifecycleRecord, IntentExecutionRequest, ExecutionOutcome, ExecutionReconciliation, CancellationRequest, WidgetId, WidgetReference, Workspace, WorkspaceContext, WorkspaceId,
     WorkspaceMetrics, WorkspaceSnapshot, CapabilityDiscovery, Zone, ZoneId,
 };
 
@@ -423,6 +424,16 @@ impl CommandHandler {
     ) -> Result<Vec<ExecutionOutcome>> {
         CommandPipeline::new(kernel.command_context(actor, intent))
             .execute_query(GetExecutionOutcomes::new(limit))
+    }
+
+    pub fn get_execution_state(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        execution_request_id: String,
+    ) -> Result<ExecutionReconciliation> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetExecutionState::new(execution_request_id))
     }
 
     pub fn request_execution_cancellation(

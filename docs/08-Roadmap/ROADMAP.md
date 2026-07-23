@@ -127,6 +127,7 @@ Foundation     Decisions       Core Platform     Feature Expansion   Maturity
 - [x] Execution Context Foundation — Sprint 26: ExecutionContextService, WorkspaceContext.execution_context enrichment
 - [x] Execution Idempotency Foundation — Sprint 27: ExecutionGuardService, audit-derived duplicate dispatch protection
 - [x] Execution Cancellation Foundation — Sprint 28: ExecutionCancellationService, RequestExecutionCancellation (request boundary only)
+- [x] Execution State Reconciliation Foundation — Sprint 29: ExecutionReconciliationService, GetExecutionState
 - [x] CI/CD pipeline (lint, build, test) — Sprint 01 PR workflow
 - [x] Developer setup documentation — Sprint 01
 - [ ] Spatial Workspace Canvas shell prototype — future sprint (DEC-009)

@@ -12,6 +12,7 @@ pub mod execution_cancellation;
 pub mod execution_context;
 pub mod execution_guard;
 pub mod execution_outcome;
+pub mod execution_reconciliation;
 pub mod graph;
 pub mod ids;
 pub mod intent;
@@ -71,6 +72,10 @@ pub use execution_guard::{
 pub use execution_outcome::{
     classify_execution_outcome_event, outcome_from_audit_event, ExecutionOutcome,
     ExecutionOutcomeError, ExecutionOutcomeStatus,
+};
+pub use execution_reconciliation::{
+    reconcile_execution_state, ExecutionReconciliation, ExecutionReconciliationError,
+    ExecutionState,
 };
 pub use entities::{
     ApplicationReference, WidgetReference, Workspace, Zone,

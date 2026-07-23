@@ -420,6 +420,18 @@ ExecutionOutcome(cancelled)  ← additive classifier
 
 Cancellation is a governed **request** boundary — not runtime interruption. Unknown and completed executions are rejected explicitly. No cancellation table, no IPC, no process/thread stop.
 
+**Execution state reconciliation layer (Sprint 29):**
+
+```
+ExecutionOutcomeService (history)
+    ↓
+ExecutionReconciliationService → ExecutionReconciliation
+    ↓
+GetExecutionState (governed, audit.read)
+```
+
+Reconciliation answers "what is the current interpreted state of `execution:X`?" by folding outcome facts into `Unknown | Completed | Failed | Cancelled` plus `dispatch_allowed` / `cancellation_allowed` flags aligned with Sprint 27–28 rules. No persistence, no mutation, no automation.
+
 ### 6.6 Windows Integration Layer
 
 Abstracts all Windows API interactions. Only this layer communicates directly with the OS.
