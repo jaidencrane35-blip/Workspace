@@ -188,10 +188,11 @@ Once approved:
 - AI is a subsystem, not embedded in every module
 - AI accesses domain state through the event bus and defined APIs
 - AI cannot call OS APIs directly
-- AI cannot bypass the permission gateway
-- AI model selection and deployment are open decisions
+- AI cannot bypass the Permission Gateway (owned by Platform Kernel)
+- AI submits permission requests; it does not enforce permissions
+- AI model selection and deployment are open decisions (OQ-004)
 
-See [System Overview](../02-Architecture/SYSTEM-OVERVIEW.md).
+See [System Overview](../02-Architecture/SYSTEM-OVERVIEW.md) §2.7 and [AI Operating Model](AI-OPERATING-MODEL.md).
 
 ---
 
@@ -199,16 +200,21 @@ See [System Overview](../02-Architecture/SYSTEM-OVERVIEW.md).
 
 See [Open Questions](../09-Decisions/OPEN-QUESTIONS.md) for unresolved items including:
 
-- AI model selection (local LLM vs. hybrid vs. rule-based)
-- Confidence thresholds for suggestions
-- Suggestion frequency limits
-- Cross-device learning scope
+- AI model selection (OQ-004)
+- Confidence thresholds (OQ-015)
+- Suggestion frequency limits (OQ-012)
+- Learned-data retention (OQ-016)
+- Cross-device learning scope (OQ-018)
 
 ---
 
 ## Related Documents
 
+- [AI Operating Model](AI-OPERATING-MODEL.md)
+- [Memory Policy](MEMORY-POLICY.md)
+- [Confidence Policy](CONFIDENCE-POLICY.md)
 - [Project Constitution](../00-Constitution/PROJECT-CONSTITUTION.md)
 - [UX Principles](../04-UX/UX-PRINCIPLES.md)
 - [Security Principles](../07-Security/SECURITY-PRINCIPLES.md)
+- [Threat Model](../07-Security/THREAT-MODEL.md)
 - [System Overview](../02-Architecture/SYSTEM-OVERVIEW.md)

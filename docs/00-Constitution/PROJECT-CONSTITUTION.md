@@ -81,16 +81,20 @@ Any proposal to change this sequence requires a Decision Log entry and Product O
 
 ## 6. Decision Authority
 
+Workspace is a founder-led project. The **Project Owner** retains final authority on all decisions.
+
 | Domain | Authority |
 |--------|-----------|
-| Product scope and behaviour | Product Owner |
-| Architecture | Architect / Tech Lead |
-| UX patterns and interaction design | UX Lead |
-| AI behaviour and permissions | AI Lead + Product Owner |
-| Security model | Security Lead |
-| Engineering standards | Lead Software Engineer |
+| All product scope and behaviour | Project Owner |
+| Architecture and system design | Project Owner |
+| UX patterns and interaction design | Project Owner |
+| AI behaviour and permissions | Project Owner |
+| Security model | Project Owner |
+| Engineering standards and delivery | Lead Software Engineer (within Owner direction) |
 
-When a role is unfilled, the decision **must not** be made silently. It must be logged in [Open Questions](../09-Decisions/OPEN-QUESTIONS.md) and resolved before implementation proceeds.
+AI tools and agents are **advisory only** — they recommend and document but do not approve. See [Governance Model](GOVERNANCE.md).
+
+When a decision is needed and the Project Owner has not ruled, it **must not** be made silently. It must be logged in [Open Questions](../09-Decisions/OPEN-QUESTIONS.md) and resolved before implementation proceeds.
 
 ---
 

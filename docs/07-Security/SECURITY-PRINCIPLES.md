@@ -68,7 +68,7 @@ Workspace operates at the intersection of applications, devices, audio, automati
 | **Supply chain** | Compromised dependency | Dependency auditing; lock files; review |
 | **Input validation** | Malformed input causes crashes or code execution | Validate at all boundaries |
 
-Full threat model will be developed before Phase 1 implementation.
+Full threat model: [Threat Model](THREAT-MODEL.md). Initial analysis completed in Phase 0 improvement pass.
 
 ---
 
@@ -165,4 +165,5 @@ See [Open Questions](../09-Decisions/OPEN-QUESTIONS.md).
 - [AI Principles](../05-AI/AI-PRINCIPLES.md)
 - [Plugin Architecture Vision](../06-Plugins/PLUGIN-ARCHITECTURE-VISION.md)
 - [Risk Register](RISK-REGISTER.md)
+- [Threat Model](THREAT-MODEL.md)
 - [Architecture Principles](../02-Architecture/ARCHITECTURE-PRINCIPLES.md)

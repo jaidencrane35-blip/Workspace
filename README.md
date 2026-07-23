@@ -4,7 +4,7 @@
 
 Workspace is an adaptive desktop environment that unifies applications, windows, devices, audio, automation, and AI into a single operating experience — without replacing Windows.
 
-**Status:** Foundation phase — documentation and governance only. No production implementation yet.
+**Status:** Phase 0 complete — Phase 1 blocked pending decisions. No production implementation yet.
 
 ---
 

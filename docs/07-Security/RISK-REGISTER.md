@@ -154,6 +154,7 @@ _None yet._
 | Date | Reviewer | Changes |
 |------|----------|---------|
 | 2026-07-23 | Lead Software Engineer | Initial risk register created |
+| 2026-07-23 | Lead Software Engineer | Phase 0 improvement pass — threat model added; R-001 mitigation updated |
 
 ---
 

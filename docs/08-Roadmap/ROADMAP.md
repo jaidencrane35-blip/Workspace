@@ -3,9 +3,9 @@
 | Field | Value |
 |-------|-------|
 | **Purpose** | Define the phased delivery plan for Workspace from foundation through mature product |
-| **Owner** | Product Owner (TBD) |
+| **Owner** | Project Owner |
 | **Dependencies** | [Product Vision](../01-Product/PRODUCT-VISION.md), [Scope Management](../01-Product/SCOPE-MANAGEMENT.md), [Project Constitution](../00-Constitution/PROJECT-CONSTITUTION.md) |
-| **Update Process** | Product Owner updates at phase boundaries. Phase scope changes require Decision Log entry. |
+| **Update Process** | Project Owner updates at phase boundaries. Phase scope changes require Decision Log entry. |
 
 ---
 
@@ -24,11 +24,11 @@ Foundation       Core Platform     Feature Expansion   Maturity
 
 ---
 
-## 2. Phase 0 — Foundation (Current)
+## 2. Phase 0 — Foundation
 
 **Goal:** Establish the professional engineering and product foundation.
 
-**Status:** In progress
+**Status:** Documentation foundation complete. Improvement pass complete. Phase 1 remains **blocked** until required decisions are resolved.
 
 ### Deliverables
 
@@ -40,18 +40,27 @@ Foundation       Core Platform     Feature Expansion   Maturity
 - [x] Decision tracking and open questions
 - [x] Roadmap and sprint structure
 - [x] Repository initialisation and GitHub connection
-- [ ] Open questions triaged and critical decisions made
-- [ ] Roles assigned (Product Owner, Architect, UX Lead, AI Lead, Security Lead)
+- [x] Phase 0 improvement pass (AI governance, threat model, CI/CD plan, testing strategy, architecture foundation, MVP definition)
+- [ ] Critical open questions resolved (see gate criteria below)
+- [ ] Project Owner decisions recorded for Phase 1 blockers
 
 ### Gate Criteria (Phase 0 → Phase 1)
 
 | Criterion | Status |
 |-----------|--------|
-| All foundation documents complete | Done |
-| Technology stack decision recorded | Blocked — see OQ-001 |
-| Critical open questions triaged | Pending |
-| At least Product Owner and Architect roles assigned | Pending |
-| Repository connected to GitHub with CI plan | In progress |
+| All foundation documents complete | **Done** |
+| Improvement pass documents complete | **Done** |
+| Threat model (initial) complete | **Done** |
+| CI/CD plan documented | **Done** |
+| Technology stack decision recorded | **Blocked** — OQ-001 |
+| Windows integration model decided | **Blocked** — OQ-014 |
+| Layout system decided | **Blocked** — OQ-013 |
+| Data persistence format decided | **Blocked** — OQ-003 |
+| Project license decided | **Blocked** — OQ-010 |
+| Open questions triaged with owners and priorities | **Done** (19 questions tracked) |
+| Architecture layer diagrams consistent | **Done** |
+
+**Phase 1 must not begin until OQ-001, OQ-014, OQ-013, OQ-003, and OQ-010 are resolved and recorded in the Decision Log.**
 
 ---
 

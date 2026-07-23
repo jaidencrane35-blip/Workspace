@@ -103,13 +103,16 @@ These layers describe intent, not implementation. Technology mapping is a future
 ├──────────────────────────────────────────────┤
 │  AI Subsystem (Observe, Learn, Suggest)      │
 ├──────────────────────────────────────────────┤
-│  Platform Kernel (Events, State, Permissions)│
-├──────────────────────────────────────────────┤
 │  Plugin Runtime                              │
+├──────────────────────────────────────────────┤
+│  Platform Kernel                             │
+│  (Events, State, Permission Gateway, Config) │
 ├──────────────────────────────────────────────┤
 │  Windows Integration Layer                   │
 └──────────────────────────────────────────────┘
 ```
+
+Higher layers depend on lower layers. The Platform Kernel provides shared infrastructure (event bus, state management, Permission Gateway, configuration, logging) to all layers above it. The Permission Gateway is owned by the Platform Kernel — not the AI Subsystem. See [System Overview](SYSTEM-OVERVIEW.md) and [Event and API Standards](EVENT-AND-API-STANDARDS.md).
 
 Layer responsibilities and boundaries will be detailed in future architecture documents as decisions are made.
 
@@ -145,6 +148,7 @@ The following are prohibited unless explicitly approved via Decision Log:
 ## Related Documents
 
 - [System Overview](SYSTEM-OVERVIEW.md)
+- [Event and API Standards](EVENT-AND-API-STANDARDS.md)
 - [Repository Structure](REPOSITORY-STRUCTURE.md)
 - [Plugin Architecture Vision](../06-Plugins/PLUGIN-ARCHITECTURE-VISION.md)
 - [AI Principles](../05-AI/AI-PRINCIPLES.md)

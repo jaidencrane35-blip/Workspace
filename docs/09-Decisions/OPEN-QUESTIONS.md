@@ -47,7 +47,7 @@ When a requirement is ambiguous:
 - **Owner:** Architect (TBD)
 - **Question:** What technology stack will Workspace use? (Language, UI framework, build system, packaging)
 - **Context:** Blocks all Phase 1 implementation. Candidates may include Electron + TypeScript, Tauri + Rust, native C#/.NET, or others.
-- **Options:** Electron, Tauri, native .NET, other — evaluation criteria needed
+- **Options:** Electron, Tauri, native .NET, other — see [Stack Evaluation Criteria](../02-Architecture/STACK-EVALUATION-CRITERIA.md)
 - **Impact:** Blocks Phase 1 gate. Coding standards language sections blocked. CI/CD design blocked.
 
 ### OQ-002: Inter-Process vs In-Process Architecture
@@ -193,6 +193,78 @@ When a requirement is ambiguous:
 - **Context:** UX principles require resizable, movable, persistent panels. Layout system choice affects shell architecture.
 - **Options:** (A) Free-form floating panels; (B) Grid/tile system; (C) Zones/areas; (D) Hybrid
 - **Impact:** Shell architecture, Phase 1 prototype design.
+
+### OQ-014: Workspace Windows Integration Model
+
+- **Category:** Architecture
+- **Priority:** Blocker
+- **Status:** Open
+- **Raised:** 2026-07-23
+- **Owner:** Project Owner
+- **Question:** How does Workspace coexist with and integrate into Windows?
+- **Context:** Constitution requires Workspace to layer over Windows, not replace it. Integration model affects shell design, MVP scope, and stack evaluation.
+- **Options:** (A) Overlay; (B) Companion application; (C) Deeper system integration; (D) Hybrid — see [Windows Integration Model](../02-Architecture/WINDOWS-INTEGRATION-MODEL.md)
+- **Impact:** Shell architecture, Phase 1 prototype, stack evaluation (OQ-001).
+
+### OQ-015: AI Confidence Thresholds
+
+- **Category:** AI
+- **Priority:** High
+- **Status:** Open
+- **Raised:** 2026-07-23
+- **Owner:** Project Owner
+- **Question:** What numeric confidence thresholds govern when AI suggests automations?
+- **Context:** [Confidence Policy](../05-AI/CONFIDENCE-POLICY.md) defines levels L0–L4 but specific values are proposed, not approved.
+- **Options:** Approve proposed thresholds in Confidence Policy; modify; or define alternatives
+- **Impact:** AI suggestion engine design (Phase 2).
+
+### OQ-016: AI Learned-Data Retention Policy
+
+- **Category:** AI
+- **Priority:** High
+- **Status:** Open
+- **Raised:** 2026-07-23
+- **Owner:** Project Owner
+- **Question:** How long does Workspace retain learned patterns, suggestion history, and automation logs?
+- **Context:** [Memory Policy](../05-AI/MEMORY-POLICY.md) defines principles but proposed retention tiers are unapproved.
+- **Options:** Indefinite until user deletes; time-based expiry; tiered retention per data type
+- **Impact:** Storage design, privacy, performance (pattern store size).
+
+### OQ-017: Encryption at Rest Requirements
+
+- **Category:** Security
+- **Priority:** High
+- **Status:** Open
+- **Raised:** 2026-07-23
+- **Owner:** Project Owner
+- **Question:** Must user data (layouts, patterns, preferences) be encrypted at rest on disk?
+- **Context:** Security Principles and Threat Model (TD-01) reference encryption at rest as TBD.
+- **Options:** (A) No encryption (OS file permissions only); (B) Encrypt sensitive data (patterns, automations); (C) Encrypt all user data; (D) Optional user-controlled encryption
+- **Impact:** Storage implementation, security posture, performance.
+
+### OQ-018: Cross-Device Learning Scope
+
+- **Category:** AI
+- **Priority:** Medium
+- **Status:** Open
+- **Raised:** 2026-07-23
+- **Owner:** Project Owner
+- **Question:** May Workspace share learned patterns across a user's devices?
+- **Context:** Memory Policy prohibits cross-device learning until resolved. Product vision includes phone integration.
+- **Options:** (A) No cross-device learning; (B) Opt-in sync of patterns; (C) Full cross-device learning with cloud; (D) Defer until device integration (Phase 3)
+- **Impact:** Data architecture, privacy model, cloud requirements.
+
+### OQ-019: Monorepo Tooling Selection
+
+- **Category:** Engineering
+- **Priority:** High
+- **Status:** Open
+- **Raised:** 2026-07-23
+- **Owner:** Lead Software Engineer
+- **Question:** What monorepo tooling will manage the Workspace repository?
+- **Context:** DEC-003 commits to monorepo structure. Tooling depends on stack (OQ-001).
+- **Options:** pnpm workspaces, npm workspaces, Nx, Turborepo, Lerna, Cargo workspace (if Tauri), .NET solution (if native)
+- **Impact:** CI/CD design, developer workflow, build performance.
 
 ---
 
