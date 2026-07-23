@@ -167,20 +167,20 @@ Expectations:
 
 ---
 
-## 6. Current State (Phase 1 — Sprint 19)
+## 6. Current State (Phase 1 — Sprint 20)
 
 Phase 1 scaffolding is in progress. Implemented structure:
 
 ```
 Workspace/
-├── app/                    # Tauri + IPC (workspace, resource, layout, projection, discovery, observation, analytics, context)
+├── app/                    # Tauri + IPC (workspace, resource, layout, projection, discovery, observation, analytics, context, suggestion)
 ├── packages/
-│   ├── domain/             # Entities, ResourceRef, graph, layout, projection, intent, discovery, observation, analytics, context
-│   ├── kernel/             # Services, commands, intent validation, projection, capability resolver, observation, analytics, context
+│   ├── domain/             # Entities, ResourceRef, graph, layout, projection, intent, discovery, observation, analytics, context, suggestion
+│   ├── kernel/             # Services, commands, intent validation, projection, capability resolver, observation, analytics, context, suggestion
 │   └── database/           # Repositories + graph + layout tables
 ```
 
-Resource services own graph-backed entity persistence. Layout owns spatial state. Projection aggregates derived read models. Action intents provide metadata-first command mapping. Capability discovery derives actor authority from existing policy without a permission database. Observation derives a neutral, read-only activity stream over the audit trail without adding persistence. Analytics deterministically aggregates observations into `WorkspaceMetrics` — the "Learn" stage — with no AI and no persistence. Context deterministically composes state, activity, metrics, and authority into `WorkspaceContext` — the "Context" boundary — with no persistence and no inference.
+Resource services own graph-backed entity persistence. Layout owns spatial state. Projection aggregates derived read models. Action intents provide metadata-first command mapping. Capability discovery derives actor authority from existing policy without a permission database. Observation derives a neutral, read-only activity stream over the audit trail without adding persistence. Analytics deterministically aggregates observations into `WorkspaceMetrics` — the "Learn" stage — with no AI and no persistence. Context deterministically composes state, activity, metrics, and authority into `WorkspaceContext` — the "Context" boundary — with no persistence and no inference. Suggestion derives deterministic **proposals** from `WorkspaceContext` via simple threshold rules — the "Suggest" stage — with no AI, no execution, and no persistence; suggestions are proposals only and never bypass governance.
 
 Implementation directories will be created during Phase 1 scaffolding.
 

@@ -15,6 +15,7 @@ pub mod layout;
 pub mod observation;
 pub mod projection;
 pub mod resource;
+pub mod suggestion;
 pub mod workspace;
 
 pub use actor::{
@@ -38,6 +39,10 @@ pub use observation::{
     ObservationImportance,
 };
 pub use resource::{Addressable, ResourceId, ResourceKind, ResourceRef};
+pub use suggestion::{
+    derive_suggestions, Suggestion, SuggestionConfidence, SuggestionError, SuggestionStatus,
+    SuggestionType,
+};
 pub use entities::{
     ApplicationReference, WidgetReference, Workspace, Zone,
 };

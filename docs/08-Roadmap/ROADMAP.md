@@ -118,6 +118,7 @@ Foundation     Decisions       Core Platform     Feature Expansion   Maturity
 - [x] Workspace observation foundation: ObservationService, GetObservations, derived audit-based activity stream — Sprint 17
 - [x] Observation analytics foundation: WorkspaceAnalyticsService, GetWorkspaceMetrics, deterministic learning layer — Sprint 18
 - [x] Workspace context foundation: WorkspaceContextService, GetWorkspaceContext, deterministic context boundary — Sprint 19
+- [x] Suggestion foundation: SuggestionService, GetSuggestions, deterministic proposal layer — Sprint 20
 - [x] CI/CD pipeline (lint, build, test) — Sprint 01 PR workflow
 - [x] Developer setup documentation — Sprint 01
 - [ ] Spatial Workspace Canvas shell prototype — future sprint (DEC-009)

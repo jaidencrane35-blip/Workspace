@@ -295,6 +295,18 @@ WorkspaceContext (derived, read-only) → GetWorkspaceContext (governed)
 
 The context boundary assembles the existing derived read layers into a single read-only structure — the "Context" stage before "Suggest". It is a deterministic composition only: no AI, suggestions, memory, embeddings, or persistence. It orchestrates existing services, preserves `ResourceRef` identity, and reads are governed (`audit.read`).
 
+**Suggestion layer (Sprint 20):**
+
+```
+WorkspaceContext (Sprint 19)
+    ↓
+derive_suggestions(context)  ← pure, threshold-based rules (no AI)
+    ↓
+SuggestionService::list → GetSuggestions (governed) → get_suggestions (IPC)
+```
+
+The suggestion layer is the "Suggest" stage: it derives deterministic **proposals** on demand from `WorkspaceContext` using simple threshold rules (e.g. `resource_creation_count >= 3`). A `Suggestion` is a proposal object, **never an action** — it does not execute, mutate state, grant permissions, or bypass governance. "Confidence" is deterministic metadata (a supporting count + rule basis), never a probabilistic or learned score. No AI, LLM, ML ranking, behaviour prediction, automation, or persistence. Suggestions start `Pending`; acceptance is deferred and must route through the existing intent → capability → permission → command pipeline. The preserved future flow is Context → Suggestion → (future) User Approval → Intent → Capability → Permission → CommandPipeline → Execution. Reads are governed (`audit.read`).
+
 ### 6.6 Windows Integration Layer
 
 Abstracts all Windows API interactions. Only this layer communicates directly with the OS.

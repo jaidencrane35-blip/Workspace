@@ -11,4 +11,5 @@ pub mod resources;
 pub mod response;
 pub mod settings;
 pub mod status;
+pub mod suggestion;
 pub mod workspace;

@@ -85,6 +85,9 @@ pub enum KernelError {
     #[error("Context validation failed: {message}")]
     ContextValidation { message: String },
 
+    #[error("Suggestion validation failed: {message}")]
+    SuggestionValidation { message: String },
+
     #[error("Service '{0}' failed to start")]
     ServiceStartup(&'static str),
 
@@ -232,6 +235,10 @@ impl KernelError {
             },
             KernelError::ContextValidation { message } => PublicError {
                 code: "context_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::SuggestionValidation { message } => PublicError {
+                code: "suggestion_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::ServiceStartup(service) => PublicError {
