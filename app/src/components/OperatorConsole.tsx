@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { IpcCommandError, invokeIpc } from "../lib/ipc";
 import type {
   ActionCatalog,
+  AiOrchestratedPlan,
   AiPlanEvaluationReport,
   AiPlanSubmissionResult,
   AiProposalEvaluation,
@@ -116,6 +117,8 @@ export function OperatorConsole({
   const [evaluationHistory, setEvaluationHistory] = useState<
     AiProposalEvaluation[]
   >([]);
+  const [orchestratedPlan, setOrchestratedPlan] =
+    useState<AiOrchestratedPlan | null>(null);
   const [busy, setBusy] = useState(false);
 
   const run = useCallback(
@@ -517,6 +520,99 @@ export function OperatorConsole({
               ))}
             </dd>
           </dl>
+        )}
+      </section>
+
+      <section>
+        <h2>Governed multi-step AI plan</h2>
+        <p className="muted">
+          Orchestration organizes proposals. Each step still passes through the
+          Permission Gateway — no shortcut path, no silent continue after deny.
+        </p>
+        <div className="row">
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("Multi-step AI plan created", async () => {
+                if (!workspace) return;
+                const plan = await invokeIpc<AiOrchestratedPlan>(
+                  "create_orchestrated_ai_plan",
+                  {
+                    goal: "Prepare my coding workspace",
+                    workspaceId: workspace.id,
+                  },
+                );
+                setOrchestratedPlan(plan);
+              })
+            }
+          >
+            Create multi-step plan
+          </button>
+          <button
+            type="button"
+            disabled={busy || !orchestratedPlan}
+            onClick={() =>
+              void run("Plan advanced through gateway", async () => {
+                if (!orchestratedPlan) return;
+                const plan = await invokeIpc<AiOrchestratedPlan>(
+                  "advance_orchestrated_ai_plan",
+                  { planId: orchestratedPlan.id },
+                );
+                setOrchestratedPlan(plan);
+              })
+            }
+          >
+            Advance plan (gateway)
+          </button>
+          <button
+            type="button"
+            disabled={busy || !orchestratedPlan}
+            onClick={() =>
+              void run("Plan resumed after approval decision", async () => {
+                if (!orchestratedPlan) return;
+                const plan = await invokeIpc<AiOrchestratedPlan>(
+                  "resume_orchestrated_ai_plan",
+                  { planId: orchestratedPlan.id },
+                );
+                setOrchestratedPlan(plan);
+              })
+            }
+          >
+            Resume after approval
+          </button>
+          <button
+            type="button"
+            disabled={busy || !orchestratedPlan}
+            onClick={() =>
+              void run("Plan cancelled", async () => {
+                if (!orchestratedPlan) return;
+                const plan = await invokeIpc<AiOrchestratedPlan>(
+                  "cancel_orchestrated_ai_plan",
+                  { planId: orchestratedPlan.id },
+                );
+                setOrchestratedPlan(plan);
+              })
+            }
+          >
+            Cancel plan
+          </button>
+        </div>
+        {orchestratedPlan && (
+          <ul className="muted">
+            <li>
+              {orchestratedPlan.goal.statement} — state: {orchestratedPlan.state}{" "}
+              ({orchestratedPlan.steps.length} steps)
+            </li>
+            {orchestratedPlan.steps.map((step) => (
+              <li key={step.id}>
+                {step.ordinal + 1}. {step.proposal.command_name} → {step.state}
+                {step.approval_request_id
+                  ? ` (approval ${step.approval_request_id.slice(0, 8)}…)`
+                  : ""}
+              </li>
+            ))}
+          </ul>
         )}
       </section>
 

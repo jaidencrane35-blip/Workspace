@@ -45,12 +45,13 @@ pub use workspace_domain::{
 };
 
 use std::path::Path;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use commands::CommandContext;
 use events::AuditEventSubscriber;
 use policy::CapabilityBoundPolicy as DefaultPermissionPolicy;
 use security::StandardPermissionGate as DefaultPermissionGate;
+use services::OrchestratedPlanStore;
 
 /// Kernel crate version aligned with application semver.
 pub const KERNEL_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -67,6 +68,8 @@ pub struct WorkspaceKernel {
     event_bus: EventBus,
     permission_gate: Arc<dyn PermissionGate>,
     permission_policy: Arc<dyn PermissionPolicy>,
+    /// Diagnostic in-memory orchestrated AI plans (not durable authority).
+    orchestrated_plans: Arc<Mutex<OrchestratedPlanStore>>,
 }
 
 impl WorkspaceKernel {
@@ -99,8 +102,12 @@ impl WorkspaceKernel {
         &self.event_bus
     }
 
-    pub(crate) fn shared_database(&self) -> Arc<std::sync::Mutex<workspace_database::Database>> {
+    pub(crate) fn shared_database(&self) -> Arc<Mutex<workspace_database::Database>> {
         self.database.shared()
+    }
+
+    pub(crate) fn orchestrated_plans(&self) -> Arc<Mutex<OrchestratedPlanStore>> {
+        Arc::clone(&self.orchestrated_plans)
     }
 
     pub fn health(&self) -> WorkspaceHealth {
@@ -217,6 +224,7 @@ impl WorkspaceKernel {
             event_bus: EventBus::new(),
             permission_gate: Arc::new(DefaultPermissionGate),
             permission_policy: Arc::new(DefaultPermissionPolicy),
+            orchestrated_plans: Arc::new(Mutex::new(OrchestratedPlanStore::new())),
         }
     }
 }

@@ -77,6 +77,8 @@ define_id!(PermissionApprovalRequestId);
 define_id!(CapabilityGrantId);
 define_id!(AiGoalId);
 define_id!(AiActionProposalId);
+define_id!(AiOrchestratedPlanId);
+define_id!(AiPlanStepId);
 
 #[cfg(test)]
 mod tests {

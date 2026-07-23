@@ -56,6 +56,8 @@ mod action_catalog_tests;
 #[cfg(test)]
 mod ai_evaluation_tests;
 #[cfg(test)]
+mod ai_orchestration_tests;
+#[cfg(test)]
 mod observation_tests;
 #[cfg(test)]
 mod layout_tests;

@@ -2,6 +2,7 @@
 
 mod action_catalog;
 mod ai_evaluation;
+mod ai_orchestration;
 mod ai_participation;
 mod ai_planning;
 mod analytics;
@@ -34,6 +35,7 @@ mod zone;
 
 pub use action_catalog::ActionCatalogService;
 pub(crate) use ai_evaluation::AiEvaluationService;
+pub(crate) use ai_orchestration::{AiOrchestrationService, OrchestratedPlanStore};
 pub(crate) use ai_participation::AiParticipationService;
 pub(crate) use ai_planning::AiPlanningService;
 pub use analytics::WorkspaceAnalyticsService;

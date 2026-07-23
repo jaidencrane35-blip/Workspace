@@ -2,7 +2,7 @@ use std::sync::{Arc, Mutex};
 
 use tauri::State;
 use workspace_domain::{
-    AiPlanEvaluationReport, AiPlanSubmissionResult, AiProposalEvaluation,
+    AiOrchestratedPlan, AiPlanEvaluationReport, AiPlanSubmissionResult, AiProposalEvaluation,
     ApplicationLaunchResult, ApprovalDecisionResult, PermissionApprovalRequest,
 };
 use workspace_kernel::{CommandHandler, WorkspaceKernel};
@@ -135,6 +135,105 @@ pub fn diagnose_ai_plan_evaluation(
             workspace_id,
         ) {
             Ok(report) => IpcResponse::success(report),
+            Err(error) => IpcResponse::failure(CommandError::from(error)),
+        },
+        Err(_) => IpcResponse::failure(CommandError::new(
+            "internal_error",
+            "Workspace core is temporarily unavailable.",
+        )),
+    }
+}
+
+/// Diagnostic: create a multi-step AI plan (no execution).
+#[tauri::command]
+pub fn create_orchestrated_ai_plan(
+    goal: Option<String>,
+    application_ids: Option<Vec<String>>,
+    workspace_id: Option<String>,
+    kernel: State<'_, Arc<Mutex<WorkspaceKernel>>>,
+) -> IpcResponse<AiOrchestratedPlan> {
+    let goal = goal.unwrap_or_else(|| "Prepare my coding workspace".into());
+    match kernel.lock() {
+        Ok(kernel) => match CommandHandler::create_orchestrated_ai_plan(
+            &kernel,
+            DIAGNOSTIC_AI_ACTOR_ID,
+            goal,
+            application_ids.unwrap_or_default(),
+            workspace_id,
+        ) {
+            Ok(plan) => IpcResponse::success(plan),
+            Err(error) => IpcResponse::failure(CommandError::from(error)),
+        },
+        Err(_) => IpcResponse::failure(CommandError::new(
+            "internal_error",
+            "Workspace core is temporarily unavailable.",
+        )),
+    }
+}
+
+/// Diagnostic: preview / load an orchestrated plan by id.
+#[tauri::command]
+pub fn get_orchestrated_ai_plan(
+    plan_id: String,
+    kernel: State<'_, Arc<Mutex<WorkspaceKernel>>>,
+) -> IpcResponse<AiOrchestratedPlan> {
+    match kernel.lock() {
+        Ok(kernel) => match CommandHandler::get_orchestrated_ai_plan(&kernel, plan_id) {
+            Ok(plan) => IpcResponse::success(plan),
+            Err(error) => IpcResponse::failure(CommandError::from(error)),
+        },
+        Err(_) => IpcResponse::failure(CommandError::new(
+            "internal_error",
+            "Workspace core is temporarily unavailable.",
+        )),
+    }
+}
+
+/// Diagnostic: advance runnable steps through Permission Gateway (pauses on approval).
+#[tauri::command]
+pub fn advance_orchestrated_ai_plan(
+    plan_id: String,
+    kernel: State<'_, Arc<Mutex<WorkspaceKernel>>>,
+) -> IpcResponse<AiOrchestratedPlan> {
+    match kernel.lock() {
+        Ok(kernel) => match CommandHandler::advance_orchestrated_ai_plan(&kernel, plan_id) {
+            Ok(plan) => IpcResponse::success(plan),
+            Err(error) => IpcResponse::failure(CommandError::from(error)),
+        },
+        Err(_) => IpcResponse::failure(CommandError::new(
+            "internal_error",
+            "Workspace core is temporarily unavailable.",
+        )),
+    }
+}
+
+/// Diagnostic: resume after human DecideApproval (allow-once or deny).
+#[tauri::command]
+pub fn resume_orchestrated_ai_plan(
+    plan_id: String,
+    kernel: State<'_, Arc<Mutex<WorkspaceKernel>>>,
+) -> IpcResponse<AiOrchestratedPlan> {
+    match kernel.lock() {
+        Ok(kernel) => match CommandHandler::resume_orchestrated_ai_plan(&kernel, plan_id) {
+            Ok(plan) => IpcResponse::success(plan),
+            Err(error) => IpcResponse::failure(CommandError::from(error)),
+        },
+        Err(_) => IpcResponse::failure(CommandError::new(
+            "internal_error",
+            "Workspace core is temporarily unavailable.",
+        )),
+    }
+}
+
+/// Diagnostic: cancel an orchestrated plan safely.
+#[tauri::command]
+pub fn cancel_orchestrated_ai_plan(
+    plan_id: String,
+    kernel: State<'_, Arc<Mutex<WorkspaceKernel>>>,
+) -> IpcResponse<AiOrchestratedPlan> {
+    match kernel.lock() {
+        Ok(kernel) => match CommandHandler::cancel_orchestrated_ai_plan(&kernel, plan_id) {
+            Ok(plan) => IpcResponse::success(plan),
             Err(error) => IpcResponse::failure(CommandError::from(error)),
         },
         Err(_) => IpcResponse::failure(CommandError::new(

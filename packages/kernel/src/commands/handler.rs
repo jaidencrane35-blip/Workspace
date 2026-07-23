@@ -39,19 +39,19 @@ use crate::events::types::{DomainEvent, WorkspaceShutdown};
 use crate::lifecycle::LifecycleState;
 use crate::security::{PermissionRequest, PermissionSubject};
 use crate::services::{
-    AiEvaluationService, AiParticipationService, AiPlanningService, ConfigurationService,
-    DesktopWindowService, WorkspaceContextService,
+    AiEvaluationService, AiOrchestrationService, AiParticipationService, AiPlanningService,
+    ConfigurationService, DesktopWindowService, WorkspaceContextService,
 };
 use crate::WorkspaceKernel;
 use workspace_domain::{
-    ActionCatalog, Actor, ActorContext, AiPlan, AiPlanEvaluationReport, AiPlanSubmissionResult,
-    AiProposalAuthorityOutcome, AiProposalEvaluation, AiProposalSubmission, ApplicationId,
-    ApplicationReference, AuditEvent, Capability, CapabilitySet, Intent, IntentContext, Layout,
-    LayoutId, LayoutMetadata, LayoutNode, LayoutSnapshot, Observation, Suggestion,
-    SuggestionIntentRequest, SuggestionLifecycleRecord, IntentExecutionRequest, ExecutionOutcome,
-    ExecutionReconciliation, CancellationRequest, WidgetId, WidgetReference, Workspace,
-    WorkspaceContext, WorkspaceId, WorkspaceMetrics, WorkspaceSnapshot, CapabilityDiscovery, Zone,
-    ZoneId,
+    ActionCatalog, Actor, ActorContext, AiOrchestratedPlan, AiPlan, AiPlanEvaluationReport,
+    AiPlanSubmissionResult, AiProposalAuthorityOutcome, AiProposalEvaluation, AiProposalSubmission,
+    ApplicationId, ApplicationReference, AuditEvent, Capability, CapabilitySet, Intent,
+    IntentContext, Layout, LayoutId, LayoutMetadata, LayoutNode, LayoutSnapshot, Observation,
+    Suggestion, SuggestionIntentRequest, SuggestionLifecycleRecord, IntentExecutionRequest,
+    ExecutionOutcome, ExecutionReconciliation, CancellationRequest, WidgetId, WidgetReference,
+    Workspace, WorkspaceContext, WorkspaceId, WorkspaceMetrics, WorkspaceSnapshot,
+    CapabilityDiscovery, Zone, ZoneId,
 };
 use workspace_windows_integration::DesktopWindowSnapshot;
 
@@ -554,6 +554,293 @@ impl CommandHandler {
     ) -> Result<Vec<AiProposalEvaluation>> {
         CommandPipeline::new(kernel.command_context(actor, intent))
             .execute_query(GetAiEvaluationHistory::new(limit))
+    }
+
+    /// Creates a multi-step orchestrated plan from AI proposals (no execution).
+    pub fn create_orchestrated_ai_plan(
+        kernel: &WorkspaceKernel,
+        actor_id: impl Into<String>,
+        goal_statement: impl Into<String>,
+        application_ids: Vec<String>,
+        workspace_id: Option<String>,
+    ) -> Result<AiOrchestratedPlan> {
+        let actor_id = actor_id.into();
+        let ai_plan = Self::plan_ai_goal_inner(
+            kernel,
+            actor_id.clone(),
+            goal_statement,
+            application_ids,
+            workspace_id,
+            None,
+        )?;
+        let plan = AiOrchestrationService::create_from_plan(ai_plan)?;
+        let actor = AiPlanningService::ensure_ai_actor(&actor_id)?;
+        AiOrchestrationService::audit_plan_created(&kernel.shared_database(), &actor, &plan)?;
+        AiOrchestrationService::store_plan(&kernel.orchestrated_plans(), plan)
+    }
+
+    pub fn get_orchestrated_ai_plan(
+        kernel: &WorkspaceKernel,
+        plan_id: impl Into<String>,
+    ) -> Result<AiOrchestratedPlan> {
+        AiOrchestrationService::get_plan(&kernel.orchestrated_plans(), &plan_id.into())
+    }
+
+    /// Advances runnable steps through the existing AI → pipeline → gateway path.
+    ///
+    /// Pauses on ApprovalRequired. Stops on Denied/Failed. No silent continue.
+    pub fn advance_orchestrated_ai_plan(
+        kernel: &WorkspaceKernel,
+        plan_id: impl Into<String>,
+    ) -> Result<AiOrchestratedPlan> {
+        Self::advance_orchestrated_ai_plan_inner(kernel, plan_id, false)
+    }
+
+    #[cfg(test)]
+    pub(crate) fn advance_orchestrated_ai_plan_simulated(
+        kernel: &WorkspaceKernel,
+        plan_id: impl Into<String>,
+    ) -> Result<AiOrchestratedPlan> {
+        Self::advance_orchestrated_ai_plan_inner(kernel, plan_id, true)
+    }
+
+    /// Resumes a step paused on ApprovalRequired after human DecideApproval.
+    pub fn resume_orchestrated_ai_plan(
+        kernel: &WorkspaceKernel,
+        plan_id: impl Into<String>,
+    ) -> Result<AiOrchestratedPlan> {
+        Self::resume_orchestrated_ai_plan_inner(kernel, plan_id, false)
+    }
+
+    #[cfg(test)]
+    pub(crate) fn resume_orchestrated_ai_plan_simulated(
+        kernel: &WorkspaceKernel,
+        plan_id: impl Into<String>,
+    ) -> Result<AiOrchestratedPlan> {
+        Self::resume_orchestrated_ai_plan_inner(kernel, plan_id, true)
+    }
+
+    pub fn cancel_orchestrated_ai_plan(
+        kernel: &WorkspaceKernel,
+        plan_id: impl Into<String>,
+    ) -> Result<AiOrchestratedPlan> {
+        let mut plan =
+            AiOrchestrationService::get_plan(&kernel.orchestrated_plans(), &plan_id.into())?;
+        let actor_id = plan.requesting_actor_id.as_str().to_string();
+        plan.cancel().map_err(KernelError::from)?;
+        let actor = AiPlanningService::ensure_ai_actor(&actor_id)?;
+        AiOrchestrationService::audit_plan_cancelled(&kernel.shared_database(), &actor, &plan)?;
+        AiOrchestrationService::save_plan(&kernel.orchestrated_plans(), plan)
+    }
+
+    fn advance_orchestrated_ai_plan_inner(
+        kernel: &WorkspaceKernel,
+        plan_id: impl Into<String>,
+        simulate: bool,
+    ) -> Result<AiOrchestratedPlan> {
+        let mut plan =
+            AiOrchestrationService::get_plan(&kernel.orchestrated_plans(), &plan_id.into())?;
+        let actor_id = plan.requesting_actor_id.as_str().to_string();
+        let actor = AiPlanningService::ensure_ai_actor(&actor_id)?;
+
+        AiOrchestrationService::ensure_can_advance(&plan)?;
+
+        while let Some(index) = plan.next_runnable_step_index() {
+            plan.begin_step(index).map_err(KernelError::from)?;
+            AiOrchestrationService::audit_action_started(
+                &kernel.shared_database(),
+                &actor,
+                &plan,
+                index,
+            )?;
+
+            let application_id = AiOrchestrationService::step_application_id(&plan, index)?;
+            let reason = AiOrchestrationService::step_reason(&plan, index);
+            let submit_result = Self::submit_ai_application_launch_inner(
+                kernel,
+                actor_id.clone(),
+                application_id,
+                reason,
+                simulate,
+            );
+
+            match submit_result {
+                Ok(_) => {
+                    plan.apply_authority_outcome(index, &AiProposalAuthorityOutcome::Allowed)
+                        .map_err(KernelError::from)?;
+                    AiOrchestrationService::audit_action_completed(
+                        &kernel.shared_database(),
+                        &actor,
+                        &plan,
+                        index,
+                    )?;
+                }
+                Err(error @ KernelError::ApprovalRequired { .. }) => {
+                    let outcome = AiOrchestrationService::map_submission_error(error).0;
+                    plan.apply_authority_outcome(index, &outcome)
+                        .map_err(KernelError::from)?;
+                    AiOrchestrationService::audit_action_failed(
+                        &kernel.shared_database(),
+                        &actor,
+                        &plan,
+                        index,
+                        "approval_required",
+                    )?;
+                    break;
+                }
+                Err(error @ KernelError::PermissionDenied(_)) => {
+                    let outcome = AiOrchestrationService::map_submission_error(error).0;
+                    plan.apply_authority_outcome(index, &outcome)
+                        .map_err(KernelError::from)?;
+                    AiOrchestrationService::audit_action_failed(
+                        &kernel.shared_database(),
+                        &actor,
+                        &plan,
+                        index,
+                        "denied",
+                    )?;
+                    break;
+                }
+                Err(error) => {
+                    plan.apply_step_failure(index, error.to_string())
+                        .map_err(KernelError::from)?;
+                    AiOrchestrationService::audit_action_failed(
+                        &kernel.shared_database(),
+                        &actor,
+                        &plan,
+                        index,
+                        "failed",
+                    )?;
+                    break;
+                }
+            }
+        }
+
+        AiOrchestrationService::save_plan(&kernel.orchestrated_plans(), plan)
+    }
+
+    fn resume_orchestrated_ai_plan_inner(
+        kernel: &WorkspaceKernel,
+        plan_id: impl Into<String>,
+        simulate: bool,
+    ) -> Result<AiOrchestratedPlan> {
+        let mut plan =
+            AiOrchestrationService::get_plan(&kernel.orchestrated_plans(), &plan_id.into())?;
+        let actor_id = plan.requesting_actor_id.as_str().to_string();
+        let actor = AiPlanningService::ensure_ai_actor(&actor_id)?;
+        let index = AiOrchestrationService::ensure_can_resume(&plan)?;
+
+        // If the human denied the paused approval, fail the step without re-submit / retry.
+        if let Some(approval_id) = plan.steps[index].approval_request_id.clone() {
+            let request_id =
+                workspace_domain::PermissionApprovalRequestId::new(approval_id)
+                    .map_err(KernelError::Domain)?;
+            let db = kernel.shared_database();
+            let guard = db
+                .lock()
+                .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+            if let Some(request) =
+                crate::services::PermissionApprovalService::get_request(&guard, &request_id)?
+            {
+                if request.status == workspace_domain::PermissionApprovalStatus::Denied {
+                    drop(guard);
+                    plan.apply_authority_outcome(
+                        index,
+                        &AiProposalAuthorityOutcome::Denied {
+                            reason: "approval denied by local user".into(),
+                        },
+                    )
+                    .map_err(KernelError::from)?;
+                    AiOrchestrationService::audit_action_failed(
+                        &kernel.shared_database(),
+                        &actor,
+                        &plan,
+                        index,
+                        "denied",
+                    )?;
+                    return AiOrchestrationService::save_plan(&kernel.orchestrated_plans(), plan);
+                }
+            }
+        }
+
+        plan.begin_step(index).map_err(KernelError::from)?;
+        AiOrchestrationService::audit_action_started(
+            &kernel.shared_database(),
+            &actor,
+            &plan,
+            index,
+        )?;
+
+        let application_id = AiOrchestrationService::step_application_id(&plan, index)?;
+        let reason = AiOrchestrationService::step_reason(&plan, index);
+        let submit_result = Self::submit_ai_application_launch_inner(
+            kernel,
+            actor_id.clone(),
+            application_id,
+            reason,
+            simulate,
+        );
+
+        match submit_result {
+            Ok(_) => {
+                plan.apply_authority_outcome(index, &AiProposalAuthorityOutcome::Allowed)
+                    .map_err(KernelError::from)?;
+                AiOrchestrationService::audit_action_completed(
+                    &kernel.shared_database(),
+                    &actor,
+                    &plan,
+                    index,
+                )?;
+            }
+            Err(error @ KernelError::ApprovalRequired { .. }) => {
+                let outcome = AiOrchestrationService::map_submission_error(error).0;
+                plan.apply_authority_outcome(index, &outcome)
+                    .map_err(KernelError::from)?;
+                AiOrchestrationService::audit_action_failed(
+                    &kernel.shared_database(),
+                    &actor,
+                    &plan,
+                    index,
+                    "approval_required",
+                )?;
+                return AiOrchestrationService::save_plan(&kernel.orchestrated_plans(), plan);
+            }
+            Err(error @ KernelError::PermissionDenied(_)) => {
+                let outcome = AiOrchestrationService::map_submission_error(error).0;
+                plan.apply_authority_outcome(index, &outcome)
+                    .map_err(KernelError::from)?;
+                AiOrchestrationService::audit_action_failed(
+                    &kernel.shared_database(),
+                    &actor,
+                    &plan,
+                    index,
+                    "denied",
+                )?;
+                return AiOrchestrationService::save_plan(&kernel.orchestrated_plans(), plan);
+            }
+            Err(error) => {
+                plan.apply_step_failure(index, error.to_string())
+                    .map_err(KernelError::from)?;
+                AiOrchestrationService::audit_action_failed(
+                    &kernel.shared_database(),
+                    &actor,
+                    &plan,
+                    index,
+                    "failed",
+                )?;
+                return AiOrchestrationService::save_plan(&kernel.orchestrated_plans(), plan);
+            }
+        }
+
+        let plan = AiOrchestrationService::save_plan(&kernel.orchestrated_plans(), plan)?;
+        // Continue remaining pending steps after a successful resume.
+        if plan.state.is_terminal()
+            || plan.awaiting_approval_step_index().is_some()
+            || plan.next_runnable_step_index().is_none()
+        {
+            return Ok(plan);
+        }
+        Self::advance_orchestrated_ai_plan_inner(kernel, plan.id.to_string(), simulate)
     }
 
     pub fn delete_application(

@@ -31,6 +31,11 @@
 | `diagnose_ai_workspace_plan` | Diagnostic AI planning (workspace context → proposals → governed submissions) |
 | `diagnose_ai_plan_evaluation` | Diagnostic AI evaluation (plan quality/outcomes; no authority) |
 | `get_ai_evaluation_history` | Diagnostic evaluation history from operational audits |
+| `create_orchestrated_ai_plan` | Diagnostic multi-step plan create (no execution) |
+| `get_orchestrated_ai_plan` | Diagnostic multi-step plan preview |
+| `advance_orchestrated_ai_plan` | Diagnostic advance steps through Permission Gateway |
+| `resume_orchestrated_ai_plan` | Diagnostic resume after human approval decision |
+| `cancel_orchestrated_ai_plan` | Diagnostic cancel multi-step plan |
 | `get_action_catalog` | Diagnostic action catalog (existence ≠ authorization) |
 | `get_permission_approvals` / `decide_approval` | Diagnostic (allow once / deny) |
 

@@ -2,7 +2,8 @@ use thiserror::Error;
 
 use workspace_database::DatabaseError;
 use workspace_domain::{
-    AiEvaluationError, AiPlanningError, AiRequestError, DomainError, ResourceKind,
+    AiEvaluationError, AiOrchestrationError, AiPlanningError, AiRequestError, DomainError,
+    ResourceKind,
 };
 
 #[derive(Debug, Error)]
@@ -159,6 +160,9 @@ pub enum KernelError {
     #[error("AI evaluation validation failed: {message}")]
     AiEvaluationValidation { message: String },
 
+    #[error("AI orchestration validation failed: {message}")]
+    AiOrchestrationValidation { message: String },
+
     #[error("Workspace kernel initialization failed")]
     InitializationFailed,
 }
@@ -218,6 +222,17 @@ impl From<AiEvaluationError> for KernelError {
     fn from(error: AiEvaluationError) -> Self {
         KernelError::AiEvaluationValidation {
             message: error.to_string(),
+        }
+    }
+}
+
+impl From<AiOrchestrationError> for KernelError {
+    fn from(error: AiOrchestrationError) -> Self {
+        match error {
+            AiOrchestrationError::Domain(domain) => KernelError::from(domain),
+            other => KernelError::AiOrchestrationValidation {
+                message: other.to_string(),
+            },
         }
     }
 }
@@ -442,6 +457,10 @@ impl KernelError {
             },
             KernelError::AiEvaluationValidation { message } => PublicError {
                 code: "ai_evaluation_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::AiOrchestrationValidation { message } => PublicError {
+                code: "ai_orchestration_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::InitializationFailed => PublicError {

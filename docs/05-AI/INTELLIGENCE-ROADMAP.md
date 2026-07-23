@@ -16,7 +16,7 @@
 | 3 | AI Context & Workspace Understanding | Complete (S50–51) |
 | 4 | Capability Discovery & Tool Awareness | Complete (S52–53) |
 | 5 | Planning Quality & Evaluation | Complete (S54–55) |
-| 6 | Governed Action Orchestration | Deferred |
+| 6 | Governed Action Orchestration | Complete (S56–57) |
 | 7 | Governed Assistant Foundation | Deferred |
 
 ---
@@ -33,9 +33,9 @@ Informational `ActionCatalog` + `AiActionAwareness`; planning explanations inclu
 
 Operational `AiPlanEvaluationReport` + quality/outcome classification; audits `ai.planning.proposal_evaluated` / `ai.planning.outcome_recorded`. Measurement only — gateway unchanged. See [AI Evaluation Foundation](AI-EVALUATION-FOUNDATION.md).
 
-## Batch 6
+## Batch 6 (done)
 
-Multi-step plan lifecycle (`proposed` → `awaiting_approval` → …) with per-step gateway checks; no silent continue after denial.
+`AiOrchestratedPlan` multi-step lifecycle with per-step gateway checks; pause on approval, fail on deny, no silent continue. See [AI Orchestration Foundation](AI-ORCHESTRATION-FOUNDATION.md).
 
 ## Batch 7
 

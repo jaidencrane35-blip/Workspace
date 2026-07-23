@@ -12,8 +12,10 @@ use commands::context::get_workspace_context;
 use commands::desktop_window::get_desktop_windows;
 use commands::discovery::{get_action_catalog, get_actor_capabilities};
 use commands::permission_approval::{
+    advance_orchestrated_ai_plan, cancel_orchestrated_ai_plan, create_orchestrated_ai_plan,
     decide_approval, diagnose_ai_plan_evaluation, diagnose_ai_workspace_plan,
-    get_ai_evaluation_history, get_permission_approvals, request_ai_application_launch,
+    get_ai_evaluation_history, get_orchestrated_ai_plan, get_permission_approvals,
+    request_ai_application_launch, resume_orchestrated_ai_plan,
 };
 use commands::observation::get_observations;
 use commands::projection::get_workspace_snapshot;
@@ -73,6 +75,11 @@ pub fn run() {
             diagnose_ai_workspace_plan,
             diagnose_ai_plan_evaluation,
             get_ai_evaluation_history,
+            create_orchestrated_ai_plan,
+            get_orchestrated_ai_plan,
+            advance_orchestrated_ai_plan,
+            resume_orchestrated_ai_plan,
+            cancel_orchestrated_ai_plan,
             create_suggestion_intent_request,
             execute_intent_request,
             get_execution_outcomes,

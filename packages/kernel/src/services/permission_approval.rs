@@ -57,6 +57,15 @@ impl PermissionApprovalService {
             .map_err(Into::into)
     }
 
+    pub(crate) fn get_request(
+        db: &Database,
+        request_id: &PermissionApprovalRequestId,
+    ) -> Result<Option<PermissionApprovalRequest>> {
+        PermissionApprovalRepository::new(db)
+            .get_request(request_id)
+            .map_err(Into::into)
+    }
+
     pub(crate) fn active_grants_for_actor(
         db: &Database,
         actor_id: &str,

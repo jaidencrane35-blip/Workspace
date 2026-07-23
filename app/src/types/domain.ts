@@ -294,6 +294,45 @@ export interface AiPlanEvaluationReport {
   authority_note: string;
 }
 
+export type AiOrchestratedPlanState =
+  | "proposed"
+  | "awaiting_approval"
+  | "partially_approved"
+  | "executing"
+  | "completed"
+  | "failed"
+  | "cancelled";
+
+export type AiPlanStepState =
+  | "pending"
+  | "awaiting_approval"
+  | "running"
+  | "completed"
+  | "denied"
+  | "failed"
+  | "cancelled";
+
+export interface AiPlanStep {
+  id: string;
+  ordinal: number;
+  proposal: AiActionProposal;
+  depends_on: string[];
+  state: AiPlanStepState;
+  approval_request_id: string | null;
+  last_outcome_detail: string | null;
+}
+
+export interface AiOrchestratedPlan {
+  id: string;
+  goal: AiGoal;
+  requesting_actor_id: string;
+  steps: AiPlanStep[];
+  state: AiOrchestratedPlanState;
+  current_step_index: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface ActionCatalogEntry {
   intent_id: string;
   name: string;

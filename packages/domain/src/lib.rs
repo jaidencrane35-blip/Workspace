@@ -3,6 +3,7 @@
 pub mod action_catalog;
 pub mod actor;
 pub mod ai_evaluation;
+pub mod ai_orchestration;
 pub mod ai_planning;
 pub mod ai_request;
 pub mod analytics;
@@ -41,6 +42,9 @@ pub use ai_evaluation::{
     classify_authority_outcome, evaluate_plan, evaluate_submission_result, AiEvaluationError,
     AiEvaluationSummary, AiPlanEvaluationReport, AiProposalEvaluation, AiProposalOutcomeClass,
     AiProposalQualityIssue, AiProposalRelevance, AiProposalValidity,
+};
+pub use ai_orchestration::{
+    AiOrchestratedPlan, AiOrchestratedPlanState, AiOrchestrationError, AiPlanStep, AiPlanStepState,
 };
 pub use ai_planning::{
     AiActionProposal, AiApplicationAwareness, AiGoal, AiPlan, AiPlanSubmissionResult,
@@ -106,8 +110,9 @@ pub use entities::{
 pub use errors::{validate_resource_name, DomainError, Result};
 pub use graph::{GraphEdge, GraphRelationship};
 pub use ids::{
-    ActorId, AiActionProposalId, AiGoalId, ApplicationId, AuditEventId, CapabilityGrantId,
-    IntentId, LayoutId, PermissionApprovalRequestId, WidgetId, WorkspaceId, ZoneId,
+    ActorId, AiActionProposalId, AiGoalId, AiOrchestratedPlanId, AiPlanStepId, ApplicationId,
+    AuditEventId, CapabilityGrantId, IntentId, LayoutId, PermissionApprovalRequestId, WidgetId,
+    WorkspaceId, ZoneId,
 };
 pub use layout::{
     Layout, LayoutBounds, LayoutError, LayoutMetadata, LayoutNode, LayoutSnapshot, Position2D,
