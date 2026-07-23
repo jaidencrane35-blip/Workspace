@@ -30,6 +30,9 @@ use crate::commands::layout::{
 use crate::commands::memory::{
     ClearMemoryEntries, CreateMemoryEntry, DeleteMemoryEntry, GetMemoryContext, ListMemoryEntries,
 };
+use crate::commands::model_provider::{
+    GetModelProviderMetadata, ListModelProviders, TestModelProviderRequest,
+};
 use crate::commands::pipeline::CommandPipeline;
 use crate::commands::reject_suggestion::RejectSuggestion;
 use crate::commands::request_execution_cancellation::RequestExecutionCancellation;
@@ -51,10 +54,11 @@ use workspace_domain::{
     AiPlan, AiPlanEvaluationReport, AiPlanSubmissionResult, AiProposalAuthorityOutcome,
     AiProposalEvaluation, AiProposalSubmission, ApplicationId, ApplicationReference, AuditEvent,
     Capability, CapabilitySet, Intent, IntentContext, Layout, LayoutId, LayoutMetadata, LayoutNode,
-    LayoutSnapshot, MemoryEntry, MemoryType, Observation, Suggestion, SuggestionIntentRequest,
-    SuggestionLifecycleRecord, IntentExecutionRequest, ExecutionOutcome, ExecutionReconciliation,
-    CancellationRequest, WidgetId, WidgetReference, Workspace, WorkspaceContext, WorkspaceId,
-    WorkspaceMetrics, WorkspaceSnapshot, CapabilityDiscovery, Zone, ZoneId,
+    LayoutSnapshot, MemoryEntry, MemoryType, ModelProviderDescriptor, ModelResponse, Observation,
+    Suggestion, SuggestionIntentRequest, SuggestionLifecycleRecord, IntentExecutionRequest,
+    ExecutionOutcome, ExecutionReconciliation, CancellationRequest, WidgetId, WidgetReference,
+    Workspace, WorkspaceContext, WorkspaceId, WorkspaceMetrics, WorkspaceSnapshot,
+    CapabilityDiscovery, Zone, ZoneId,
 };
 use workspace_windows_integration::DesktopWindowSnapshot;
 
@@ -341,7 +345,9 @@ impl CommandHandler {
                 20,
             )
             .ok();
-            AiPlanningService::plan_with_awareness(
+            AiPlanningService::plan_with_awareness_audited(
+                &kernel.shared_database(),
+                &actor,
                 actor_id,
                 goal_statement,
                 awareness,
@@ -359,7 +365,9 @@ impl CommandHandler {
                 20,
             )
             .ok();
-            AiPlanningService::plan_prepare_workspace(
+            AiPlanningService::plan_prepare_workspace_audited(
+                &kernel.shared_database(),
+                &actor,
                 actor_id,
                 goal_statement,
                 apps,
@@ -1253,6 +1261,55 @@ impl CommandHandler {
         workspace_id: Option<String>,
     ) -> Result<AiPlan> {
         Self::plan_ai_goal(
+            kernel,
+            actor_id,
+            goal_statement,
+            application_ids,
+            workspace_id,
+        )
+    }
+
+    pub fn list_model_providers(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+    ) -> Result<Vec<ModelProviderDescriptor>> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(ListModelProviders)
+    }
+
+    pub fn get_model_provider_metadata(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        provider_id: impl Into<String>,
+    ) -> Result<ModelProviderDescriptor> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetModelProviderMetadata::new(provider_id.into()))
+    }
+
+    pub fn test_model_provider_request(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        task: impl Into<String>,
+        application_ids: Vec<String>,
+        preferred_provider_id: Option<String>,
+    ) -> Result<ModelResponse> {
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_query(
+            TestModelProviderRequest::new(task.into(), application_ids, preferred_provider_id),
+        )
+    }
+
+    /// Diagnostic: provider → proposals only (no Permission Gateway submission).
+    pub fn diagnose_model_proposal_generation(
+        kernel: &WorkspaceKernel,
+        actor_id: impl Into<String>,
+        goal_statement: impl Into<String>,
+        application_ids: Vec<String>,
+        workspace_id: Option<String>,
+    ) -> Result<AiPlan> {
+        Self::diagnose_ai_plan_preview(
             kernel,
             actor_id,
             goal_statement,

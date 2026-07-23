@@ -18,6 +18,8 @@ import type {
   ExecutionReconciliation,
   IntentExecutionRequest,
   MemoryEntry,
+  ModelProviderDescriptor,
+  ModelResponse,
   PermissionApprovalRequest,
   Suggestion,
   SuggestionIntentRequest,
@@ -133,6 +135,15 @@ export function OperatorConsole({
     null,
   );
   const [memoryPlan, setMemoryPlan] = useState<AiPlan | null>(null);
+  const [modelProviders, setModelProviders] = useState<
+    ModelProviderDescriptor[]
+  >([]);
+  const [selectedProvider, setSelectedProvider] =
+    useState<ModelProviderDescriptor | null>(null);
+  const [modelResponse, setModelResponse] = useState<ModelResponse | null>(
+    null,
+  );
+  const [modelPlan, setModelPlan] = useState<AiPlan | null>(null);
   const [busy, setBusy] = useState(false);
 
   const run = useCallback(
@@ -530,6 +541,151 @@ export function OperatorConsole({
               {lastAiPlan.submissions.map((s) => (
                 <div key={s.proposal.id}>
                   {s.proposal.command_name}: {s.outcome.kind}
+                </div>
+              ))}
+            </dd>
+          </dl>
+        )}
+      </section>
+
+      <section>
+        <h2>Model providers</h2>
+        <p className="muted">
+          Providers supply intelligence only. Model output becomes proposals —
+          Permission Gateway remains the sole authority boundary.
+        </p>
+        <div className="row">
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() =>
+              void run("Model providers listed", async () => {
+                const providers = await invokeIpc<ModelProviderDescriptor[]>(
+                  "list_model_providers",
+                );
+                setModelProviders(providers);
+              })
+            }
+          >
+            List available model providers
+          </button>
+          <button
+            type="button"
+            disabled={busy || modelProviders.length === 0}
+            onClick={() =>
+              void run("Model metadata loaded", async () => {
+                const id =
+                  modelProviders.find((p) => p.availability === "available")
+                    ?.provider_id ?? modelProviders[0]?.provider_id;
+                if (!id) return;
+                const metadata = await invokeIpc<ModelProviderDescriptor>(
+                  "get_model_provider_metadata",
+                  { providerId: id },
+                );
+                setSelectedProvider(metadata);
+              })
+            }
+          >
+            Inspect model metadata
+          </button>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() =>
+              void run("Provider request tested", async () => {
+                const response = await invokeIpc<ModelResponse>(
+                  "test_model_provider_request",
+                  {
+                    task: "Prepare my coding workspace",
+                    applicationIds: lastRegisteredApp
+                      ? [lastRegisteredApp.id]
+                      : [],
+                    preferredProviderId: "deterministic",
+                  },
+                );
+                setModelResponse(response);
+              })
+            }
+          >
+            Test provider request
+          </button>
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("Proposal generation tested", async () => {
+                if (!workspace) return;
+                const plan = await invokeIpc<AiPlan>(
+                  "diagnose_model_proposal_generation",
+                  {
+                    goal: "Prepare my coding workspace",
+                    workspaceId: workspace.id,
+                    applicationIds: lastRegisteredApp
+                      ? [lastRegisteredApp.id]
+                      : [],
+                  },
+                );
+                setModelPlan(plan);
+              })
+            }
+          >
+            Run proposal generation test
+          </button>
+        </div>
+        {modelProviders.length > 0 && (
+          <dl>
+            <dt>Providers</dt>
+            <dd>
+              {modelProviders.map((provider) => (
+                <div key={provider.provider_id}>
+                  {provider.display_name} ({provider.provider_id}/
+                  {provider.model_id}) — {provider.availability} v
+                  {provider.version}
+                </div>
+              ))}
+            </dd>
+          </dl>
+        )}
+        {selectedProvider && (
+          <dl>
+            <dt>Selected provider metadata</dt>
+            <dd>
+              {selectedProvider.display_name} — capabilities:{" "}
+              {selectedProvider.capabilities.join(", ") || "none"}
+              {selectedProvider.runtime_metadata
+                ? ` — ${selectedProvider.runtime_metadata}`
+                : ""}
+            </dd>
+          </dl>
+        )}
+        {modelResponse && (
+          <dl>
+            <dt>Provider response</dt>
+            <dd>
+              {modelResponse.provider_id}/{modelResponse.model_id} —{" "}
+              {modelResponse.status} (
+              {modelResponse.proposal_candidates.length} candidate(s))
+              {modelResponse.text_output ? ` — ${modelResponse.text_output}` : ""}
+            </dd>
+          </dl>
+        )}
+        {modelPlan && (
+          <dl>
+            <dt>Provider → proposal plan (no execution)</dt>
+            <dd>
+              {modelPlan.goal.statement} — {modelPlan.proposals.length}{" "}
+              proposal(s)
+              {modelPlan.model_invocation && (
+                <div>
+                  via {modelPlan.model_invocation.provider_id}/
+                  {modelPlan.model_invocation.model_id} (
+                  {modelPlan.model_invocation.status})
+                </div>
+              )}
+              {modelPlan.proposals.map((proposal) => (
+                <div key={proposal.id}>
+                  {proposal.command_name}:{" "}
+                  {proposal.explanation ?? "(no explanation)"}
                 </div>
               ))}
             </dd>

@@ -81,6 +81,8 @@ define_id!(AiOrchestratedPlanId);
 define_id!(AiPlanStepId);
 define_id!(AiAssistantWorkflowId);
 define_id!(MemoryEntryId);
+define_id!(ModelProviderId);
+define_id!(ModelId);
 
 #[cfg(test)]
 mod tests {

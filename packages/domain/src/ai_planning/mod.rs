@@ -9,6 +9,7 @@ use thiserror::Error;
 
 use crate::action_catalog::AiActionAwareness;
 use crate::ai_memory::AiMemoryAwareness;
+use crate::ai_model::ModelInvocationSummary;
 use crate::ai_request::{AiActionRequest, AiRequestError};
 use crate::context::WorkspaceContext;
 use crate::ids::{
@@ -307,6 +308,19 @@ impl AiActionProposal {
 pub struct AiPlan {
     pub goal: AiGoal,
     pub proposals: Vec<AiActionProposal>,
+    /// Optional model provider invocation metadata (intelligence only).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub model_invocation: Option<ModelInvocationSummary>,
+}
+
+impl AiPlan {
+    pub fn new(goal: AiGoal, proposals: Vec<AiActionProposal>) -> Self {
+        Self {
+            goal,
+            proposals,
+            model_invocation: None,
+        }
+    }
 }
 
 /// Authority outcome after submitting a proposal (no silent retries).

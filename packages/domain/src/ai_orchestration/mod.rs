@@ -348,7 +348,7 @@ mod tests {
             )
             .unwrap(),
         ];
-        AiOrchestratedPlan::from_ai_plan(AiPlan { goal, proposals }).unwrap()
+        AiOrchestratedPlan::from_ai_plan(AiPlan::new(goal, proposals)).unwrap()
     }
 
     #[test]

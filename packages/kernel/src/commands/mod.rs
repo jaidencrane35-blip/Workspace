@@ -25,6 +25,7 @@ mod handler;
 mod initialize;
 mod launch_application;
 mod memory;
+mod model_provider;
 mod pipeline;
 mod reject_suggestion;
 mod request_execution_cancellation;
@@ -62,6 +63,8 @@ mod ai_orchestration_tests;
 mod ai_assistant_tests;
 #[cfg(test)]
 mod ai_memory_tests;
+#[cfg(test)]
+mod ai_model_provider_tests;
 #[cfg(test)]
 mod observation_tests;
 #[cfg(test)]
@@ -108,6 +111,9 @@ pub use initialize::InitializeWorkspace;
 pub use launch_application::LaunchApplication;
 pub use memory::{
     ClearMemoryEntries, CreateMemoryEntry, DeleteMemoryEntry, GetMemoryContext, ListMemoryEntries,
+};
+pub use model_provider::{
+    GetModelProviderMetadata, ListModelProviders, TestModelProviderRequest,
 };
 pub use pipeline::CommandPipeline;
 pub use reject_suggestion::RejectSuggestion;

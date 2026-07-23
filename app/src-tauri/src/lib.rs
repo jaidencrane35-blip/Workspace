@@ -15,6 +15,10 @@ use commands::memory::{
     clear_memory_entries, create_memory_entry, delete_memory_entry, diagnose_ai_plan_preview,
     get_memory_context, list_memory_entries,
 };
+use commands::model_provider::{
+    diagnose_model_proposal_generation, get_model_provider_metadata, list_model_providers,
+    test_model_provider_request,
+};
 use commands::permission_approval::{
     advance_orchestrated_ai_plan, cancel_assistant_workflow, cancel_orchestrated_ai_plan,
     confirm_assistant_workflow, create_orchestrated_ai_plan, decide_approval,
@@ -87,6 +91,10 @@ pub fn run() {
             get_memory_context,
             delete_memory_entry,
             clear_memory_entries,
+            list_model_providers,
+            get_model_provider_metadata,
+            test_model_provider_request,
+            diagnose_model_proposal_generation,
             create_orchestrated_ai_plan,
             get_orchestrated_ai_plan,
             advance_orchestrated_ai_plan,

@@ -3,6 +3,7 @@
 //! Never calls ProcessLauncher, approval mutators, or grant APIs.
 //! Submissions route through [`crate::commands::CommandHandler`] → pipeline → gateway.
 //! Workspace awareness is read-only and does not grant authority.
+//! Model providers supply intelligence candidates only (Sprints 62–63).
 
 use std::sync::{Arc, Mutex};
 
@@ -15,109 +16,35 @@ use workspace_domain::{
 };
 
 use crate::error::{KernelError, Result};
-use crate::services::AuditService;
+use crate::services::{AuditService, ModelProviderService};
 
-/// Deterministic diagnostic planner — no LLM, no memory, no execution.
+/// Planner that routes intelligence through the model provider boundary.
+/// Does not execute actions or grant authority.
 pub(crate) struct AiPlanningService;
 
 impl AiPlanningService {
     /// Builds proposals for a goal from available context. Does not submit or execute.
     pub(crate) fn plan(context: &AiPlanningContext) -> Result<AiPlan> {
+        Self::plan_internal(context, None)
+    }
+
+    pub(crate) fn plan_with_audit(
+        context: &AiPlanningContext,
+        db: &Arc<Mutex<Database>>,
+        actor: &ActorContext,
+    ) -> Result<AiPlan> {
+        Self::plan_internal(context, Some((db, actor)))
+    }
+
+    fn plan_internal(
+        context: &AiPlanningContext,
+        audit: Option<(&Arc<Mutex<Database>>, &ActorContext)>,
+    ) -> Result<AiPlan> {
         if context.goal.statement.trim().is_empty() {
             return Err(KernelError::from(AiPlanningError::EmptyGoalStatement));
         }
-
-        let capability_note = context
-            .action_awareness
-            .as_ref()
-            .and_then(|awareness| awareness.explain_capability_for_command("LaunchApplication"));
-        let memory_notes = context
-            .memory_awareness
-            .as_ref()
-            .map(|awareness| awareness.planning_notes())
-            .unwrap_or_default();
-
-        let candidates = Self::candidate_launches(context);
-        let mut proposals = Vec::new();
-
-        for (application_id, mut explanation) in candidates.into_iter().take(5) {
-            if let Some(note) = &capability_note {
-                explanation = format!("{explanation} {note}");
-            }
-            if !memory_notes.is_empty() {
-                explanation = format!("{explanation} Memory: {}", memory_notes.join("; "));
-            }
-            let proposal = AiActionProposal::propose_application_launch(
-                &context.goal,
-                &application_id,
-                Some(explanation),
-            )
-            .map_err(KernelError::from)?;
-            proposals.push(proposal);
-        }
-
-        Ok(AiPlan {
-            goal: context.goal.clone(),
-            proposals,
-        })
-    }
-
-    /// Context-aware launch candidates: skip apps that already appear active.
-    /// Preferred applications from memory are ranked first (informational only).
-    fn candidate_launches(context: &AiPlanningContext) -> Vec<(ApplicationId, String)> {
-        let preferred = context
-            .memory_awareness
-            .as_ref()
-            .map(|awareness| awareness.preferred_application_ids())
-            .unwrap_or_default();
-
-        let mut candidates: Vec<(ApplicationId, String)> = if let Some(awareness) = &context.awareness
-        {
-            awareness
-                .applications
-                .iter()
-                .filter(|app| !app.appears_active)
-                .map(|app| {
-                    let preferred_note = if preferred.iter().any(|id| id == app.id.as_str()) {
-                        " (preferred from memory)"
-                    } else {
-                        ""
-                    };
-                    let explanation = format!(
-                        "Goal '{}': launch '{}' (registered in workspace '{}', not appearing active){preferred_note}",
-                        context.goal.statement, app.name, awareness.workspace_name
-                    );
-                    (app.id.clone(), explanation)
-                })
-                .collect()
-        } else {
-            context
-                .available_application_ids
-                .iter()
-                .map(|application_id| {
-                    let preferred_note = if preferred.iter().any(|id| id == application_id.as_str())
-                    {
-                        " (preferred from memory)"
-                    } else {
-                        ""
-                    };
-                    let explanation = format!(
-                        "Goal '{}': launch application to prepare workspace{preferred_note}",
-                        context.goal.statement
-                    );
-                    (application_id.clone(), explanation)
-                })
-                .collect()
-        };
-
-        candidates.sort_by_key(|(id, _)| {
-            if preferred.iter().any(|preferred_id| preferred_id == id.as_str()) {
-                0_u8
-            } else {
-                1_u8
-            }
-        });
-        candidates
+        // Provider → structured candidates → governed AiActionProposal (no execution).
+        ModelProviderService::plan_from_context(context, audit)
     }
 
     pub(crate) fn plan_prepare_workspace(
@@ -126,15 +53,30 @@ impl AiPlanningService {
         application_ids: Vec<ApplicationId>,
         memory_awareness: Option<AiMemoryAwareness>,
     ) -> Result<AiPlan> {
-        let goal = AiGoal::new(goal_statement, actor_id).map_err(KernelError::from)?;
-        let mut context = AiPlanningContext::new(goal, application_ids);
-        if let Ok(action_awareness) = crate::services::ActionCatalogService::ai_awareness() {
-            context = context.with_action_awareness(action_awareness);
-        }
-        if let Some(memory_awareness) = memory_awareness {
-            context = context.with_memory_awareness(memory_awareness);
-        }
+        let context = Self::build_prepare_context(
+            actor_id,
+            goal_statement,
+            application_ids,
+            memory_awareness,
+        )?;
         Self::plan(&context)
+    }
+
+    pub(crate) fn plan_prepare_workspace_audited(
+        db: &Arc<Mutex<Database>>,
+        actor: &ActorContext,
+        actor_id: impl Into<String>,
+        goal_statement: impl Into<String>,
+        application_ids: Vec<ApplicationId>,
+        memory_awareness: Option<AiMemoryAwareness>,
+    ) -> Result<AiPlan> {
+        let context = Self::build_prepare_context(
+            actor_id,
+            goal_statement,
+            application_ids,
+            memory_awareness,
+        )?;
+        Self::plan_with_audit(&context, db, actor)
     }
 
     pub(crate) fn plan_with_awareness(
@@ -143,6 +85,47 @@ impl AiPlanningService {
         awareness: AiWorkspaceAwareness,
         memory_awareness: Option<AiMemoryAwareness>,
     ) -> Result<AiPlan> {
+        let context =
+            Self::build_awareness_context(actor_id, goal_statement, awareness, memory_awareness)?;
+        Self::plan(&context)
+    }
+
+    pub(crate) fn plan_with_awareness_audited(
+        db: &Arc<Mutex<Database>>,
+        actor: &ActorContext,
+        actor_id: impl Into<String>,
+        goal_statement: impl Into<String>,
+        awareness: AiWorkspaceAwareness,
+        memory_awareness: Option<AiMemoryAwareness>,
+    ) -> Result<AiPlan> {
+        let context =
+            Self::build_awareness_context(actor_id, goal_statement, awareness, memory_awareness)?;
+        Self::plan_with_audit(&context, db, actor)
+    }
+
+    fn build_prepare_context(
+        actor_id: impl Into<String>,
+        goal_statement: impl Into<String>,
+        application_ids: Vec<ApplicationId>,
+        memory_awareness: Option<AiMemoryAwareness>,
+    ) -> Result<AiPlanningContext> {
+        let goal = AiGoal::new(goal_statement, actor_id).map_err(KernelError::from)?;
+        let mut context = AiPlanningContext::new(goal, application_ids);
+        if let Ok(action_awareness) = crate::services::ActionCatalogService::ai_awareness() {
+            context = context.with_action_awareness(action_awareness);
+        }
+        if let Some(memory_awareness) = memory_awareness {
+            context = context.with_memory_awareness(memory_awareness);
+        }
+        Ok(context)
+    }
+
+    fn build_awareness_context(
+        actor_id: impl Into<String>,
+        goal_statement: impl Into<String>,
+        awareness: AiWorkspaceAwareness,
+        memory_awareness: Option<AiMemoryAwareness>,
+    ) -> Result<AiPlanningContext> {
         let goal = AiGoal::new(goal_statement, actor_id).map_err(KernelError::from)?;
         let fallback_ids: Vec<ApplicationId> = awareness
             .applications
@@ -156,7 +139,7 @@ impl AiPlanningService {
         if let Some(memory_awareness) = memory_awareness {
             context = context.with_memory_awareness(memory_awareness);
         }
-        Self::plan(&context)
+        Ok(context)
     }
 
     /// Builds read-only awareness from workspace context + environment titles.

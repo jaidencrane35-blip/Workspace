@@ -125,10 +125,7 @@ fn case3_poor_proposal_identified_without_correction() {
         Some("Launch VS Code again".into()),
     )
     .unwrap();
-    let plan = AiPlan {
-        goal,
-        proposals: vec![first, duplicate],
-    };
+    let plan = AiPlan::new(goal, vec![first, duplicate]);
     let awareness = AiWorkspaceAwareness {
         workspace_id: "ws-1".into(),
         workspace_name: "Dev".into(),
@@ -171,10 +168,7 @@ fn case4_denied_proposal_records_outcome_and_stays_blocked() {
         .to_action_request(&goal.requesting_actor_id)
         .unwrap();
     let result = AiPlanSubmissionResult {
-        plan: AiPlan {
-            goal,
-            proposals: vec![proposal.clone()],
-        },
+        plan: AiPlan::new(goal, vec![proposal.clone()]),
         submissions: vec![AiProposalSubmission {
             proposal,
             request,
@@ -207,10 +201,7 @@ fn case5_successful_approved_action_outcome_recorded() {
         .to_action_request(&goal.requesting_actor_id)
         .unwrap();
     let result = AiPlanSubmissionResult {
-        plan: AiPlan {
-            goal: goal.clone(),
-            proposals: vec![proposal.clone()],
-        },
+        plan: AiPlan::new(goal.clone(), vec![proposal.clone()]),
         submissions: vec![AiProposalSubmission {
             proposal,
             request,

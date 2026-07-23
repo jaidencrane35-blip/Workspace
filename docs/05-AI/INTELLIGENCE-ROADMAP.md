@@ -26,7 +26,7 @@
 | Batch | Theme | Status |
 |-------|--------|--------|
 | 1 | Governed Memory Foundation | Complete (S60–61) |
-| 2 | Model Provider Abstraction | Planned |
+| 2 | Model Provider Abstraction | Complete (S62–63) |
 | 3 | Personalization (preference-aware proposals) | Planned |
 | 4 | Product Assistant UX | Planned |
 | 5 | Governed Automation Contracts | Planned |
@@ -59,6 +59,10 @@ User-facing `AiAssistantWorkflow`: goal input → plan preview → user confirm 
 
 Governed memory types + store; memory assembles into planning context only. Auditable lifecycle; no permission/execution influence. See [AI Memory Foundation](AI-MEMORY-FOUNDATION.md) and [Memory Policy](MEMORY-POLICY.md).
 
+## Phase 4 Batch 2 (done)
+
+Model provider interface + registry/routing; planning consumes provider candidates only. Failures are safe; providers cannot execute or grant. See [AI Model Provider Foundation](AI-MODEL-PROVIDER-FOUNDATION.md).
+
 ---
 
 ## Never build
@@ -68,4 +72,6 @@ Governed memory types + store; memory assembles into planning context only. Audi
 - Lasting AI self-grants
 - Hidden background automation
 - Memory → permission bypass
+- Model → permission / execution bypass
+- Autonomous model switching / self-optimizing loops
 - Chain-of-thought / hidden reasoning storage as authority

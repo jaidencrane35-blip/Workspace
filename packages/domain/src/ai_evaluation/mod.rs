@@ -426,7 +426,7 @@ mod tests {
                 .unwrap()
             })
             .collect();
-        AiPlan { goal, proposals }
+        AiPlan::new(goal, proposals)
     }
 
     #[test]

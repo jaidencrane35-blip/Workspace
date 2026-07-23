@@ -204,9 +204,59 @@ export interface AiActionProposal {
   created_at: string;
 }
 
+export interface ModelInvocationSummary {
+  provider_id: string;
+  model_id: string;
+  status: string;
+  candidate_count: number;
+  request_id: string;
+}
+
 export interface AiPlan {
   goal: AiGoal;
   proposals: AiActionProposal[];
+  model_invocation?: ModelInvocationSummary | null;
+}
+
+export type ModelProviderAvailability =
+  | "available"
+  | "unavailable"
+  | "degraded";
+
+export type ModelProviderCapability =
+  | "text_generation"
+  | "structured_proposals"
+  | "planning_assist"
+  | "context_interpretation";
+
+export interface ModelProviderDescriptor {
+  provider_id: string;
+  model_id: string;
+  display_name: string;
+  version: string;
+  capabilities: ModelProviderCapability[];
+  availability: ModelProviderAvailability;
+  runtime_metadata: string | null;
+}
+
+export type ModelResponseStatus = "success" | "failed";
+
+export interface ModelProposalCandidate {
+  command_name: string;
+  target_application_id: string | null;
+  explanation: string | null;
+}
+
+export interface ModelResponse {
+  request_id: string;
+  provider_id: string;
+  model_id: string;
+  status: ModelResponseStatus;
+  text_output: string | null;
+  proposal_candidates: ModelProposalCandidate[];
+  metadata: string | null;
+  error_message: string | null;
+  created_at: string;
 }
 
 export type AiProposalAuthorityOutcome =

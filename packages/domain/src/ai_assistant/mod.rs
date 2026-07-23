@@ -337,11 +337,7 @@ mod tests {
             Some("Open IDE".into()),
         )
         .unwrap();
-        AiOrchestratedPlan::from_ai_plan(AiPlan {
-            goal,
-            proposals: vec![proposal],
-        })
-        .unwrap()
+        AiOrchestratedPlan::from_ai_plan(AiPlan::new(goal, vec![proposal])).unwrap()
     }
 
     #[test]
