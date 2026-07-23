@@ -293,7 +293,7 @@ WorkspaceContextService (deterministic composition)
 WorkspaceContext (derived, read-only) → GetWorkspaceContext (governed)
 ```
 
-The context boundary assembles the existing derived read layers into a single read-only structure — the "Context" stage before "Suggest". It is a deterministic composition only: no AI, suggestions, memory, embeddings, or persistence. It orchestrates existing services, preserves `ResourceRef` identity, and reads are governed (`audit.read`).
+The context boundary assembles the existing derived read layers into a single read-only structure — the "Context" stage before "Suggest". It is a deterministic composition only: no AI, suggestions, memory, embeddings, or persistence. It orchestrates existing services, preserves `ResourceRef` identity, and reads are governed (`audit.read`). Sprint 26 additively includes `execution_context: ExecutionContextSummary` so trusted consumers can see recent execution outcome history without a separate surface.
 
 **Suggestion layer (Sprint 20):**
 
@@ -380,6 +380,18 @@ ExecutionOutcomeService::list_recent → GetExecutionOutcomes (governed, audit.r
 ```
 
 Outcomes answer whether governed execution completed, failed, or was cancelled. Derived only — no outcome store, no AI feedback loops, no automatic retries. Audit remains authoritative.
+
+**Execution outcome context layer (Sprint 26):**
+
+```
+ExecutionOutcomeService (Sprint 25)
+    ↓
+ExecutionContextService → ExecutionContextSummary (counts + recent commands)
+    ↓
+WorkspaceContext.execution_context (additive enrichment)
+```
+
+Execution context enrichment answers "what happened after previous executions?" as a deterministic, read-only summary inside `WorkspaceContext`. No persistence, no new command/capability, no IPC, no AI memory or ranking. Audit remains the durable history; outcomes remain historical facts.
 
 ### 6.6 Windows Integration Layer
 

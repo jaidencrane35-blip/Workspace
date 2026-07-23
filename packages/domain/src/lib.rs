@@ -8,6 +8,7 @@ pub mod context;
 pub mod discovery;
 pub mod entities;
 pub mod errors;
+pub mod execution_context;
 pub mod execution_outcome;
 pub mod graph;
 pub mod ids;
@@ -57,6 +58,7 @@ pub use suggestion_intent::{
 pub use intent_execution::{
     IntentExecutionError, IntentExecutionRequest, IntentExecutionStatus,
 };
+pub use execution_context::{ExecutionContextError, ExecutionContextSummary};
 pub use execution_outcome::{
     classify_execution_outcome_event, outcome_from_audit_event, ExecutionOutcome,
     ExecutionOutcomeError, ExecutionOutcomeStatus,

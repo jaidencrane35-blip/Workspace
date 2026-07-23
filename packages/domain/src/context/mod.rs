@@ -1,10 +1,10 @@
-//! Deterministic workspace context boundary (Sprint 19).
+//! Deterministic workspace context boundary (Sprint 19; enriched Sprint 26).
 //!
 //! `WorkspaceContext` assembles the existing derived read layers — workspace
 //! state (projection), activity history (observations), analytics (metrics),
-//! and authority (capability discovery) — into a single, read-only structure.
-//! It is the "Context" stage of Observe → Learn → Suggest: a deterministic
-//! composition, not intelligence. No AI, suggestions, memory, or persistence.
+//! authority (capability discovery), and recent execution outcomes — into a
+//! single, read-only structure. It is the "Context" stage: a deterministic
+//! composition, not intelligence. No AI, memory, learning, or persistence.
 //!
 //! Pure domain type: no database, IO, or UI dependencies.
 
@@ -13,6 +13,7 @@ use thiserror::Error;
 
 use crate::analytics::WorkspaceMetrics;
 use crate::discovery::CapabilityDiscovery;
+use crate::execution_context::ExecutionContextSummary;
 use crate::observation::Observation;
 use crate::projection::WorkspaceSnapshot;
 use crate::resource::ResourceRef;
@@ -45,6 +46,8 @@ pub struct WorkspaceContext {
     pub metrics: WorkspaceMetrics,
     /// Derived actor authority (Sprint 16 capability discovery).
     pub capabilities: CapabilityDiscovery,
+    /// Recent execution outcome summary (Sprint 26).
+    pub execution_context: ExecutionContextSummary,
 }
 
 impl WorkspaceContext {
@@ -75,6 +78,10 @@ impl WorkspaceContext {
         self.capabilities
             .validate()
             .map_err(|error| ContextError::InvalidComponent(format!("capabilities: {error}")))?;
+
+        self.execution_context.validate().map_err(|error| {
+            ContextError::InvalidComponent(format!("execution_context: {error}"))
+        })?;
 
         Ok(())
     }
@@ -129,6 +136,7 @@ mod tests {
             observations: vec![],
             metrics: metrics(),
             capabilities: capabilities(),
+            execution_context: ExecutionContextSummary::empty(),
         }
     }
 
@@ -150,6 +158,16 @@ mod tests {
         ctx.workspace =
             ResourceRef::new(ResourceKind::Workspace, ResourceId::new("ws-other").unwrap());
         assert_eq!(ctx.validate(), Err(ContextError::WorkspaceRefMismatch));
+    }
+
+    #[test]
+    fn rejects_invalid_execution_context() {
+        let mut ctx = context(workspace_ref());
+        ctx.execution_context.recent_completed_count = 1;
+        assert!(matches!(
+            ctx.validate(),
+            Err(ContextError::InvalidComponent(_))
+        ));
     }
 
     #[test]

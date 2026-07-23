@@ -100,6 +100,9 @@ pub enum KernelError {
     #[error("Execution outcome validation failed: {message}")]
     ExecutionOutcomeValidation { message: String },
 
+    #[error("Execution context validation failed: {message}")]
+    ExecutionContextValidation { message: String },
+
     #[error("Service '{0}' failed to start")]
     ServiceStartup(&'static str),
 
@@ -267,6 +270,10 @@ impl KernelError {
             },
             KernelError::ExecutionOutcomeValidation { message } => PublicError {
                 code: "execution_outcome_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::ExecutionContextValidation { message } => PublicError {
+                code: "execution_context_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::ServiceStartup(service) => PublicError {

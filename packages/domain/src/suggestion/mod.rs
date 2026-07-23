@@ -285,6 +285,7 @@ mod tests {
                 available_intents: vec![],
                 generated_at: "2026-07-24T00:00:00Z".into(),
             },
+            execution_context: crate::ExecutionContextSummary::empty(),
         }
     }
 
