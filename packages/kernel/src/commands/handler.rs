@@ -2,6 +2,7 @@ use std::path::Path;
 
 use crate::commands::accept_suggestion::AcceptSuggestion;
 use crate::commands::application::{CreateApplication, DeleteApplication, GetApplication};
+use crate::commands::create_suggestion_intent_request::CreateSuggestionIntentRequest;
 use crate::commands::create_workspace::CreateWorkspace;
 use crate::commands::get_actor_capabilities::GetActorCapabilities;
 use crate::commands::get_audit_history::GetAuditHistory;
@@ -31,7 +32,7 @@ use crate::WorkspaceKernel;
 use workspace_domain::{
     Actor, ActorContext, ApplicationId, ApplicationReference, AuditEvent, Capability, Intent,
     IntentContext, Layout, LayoutId, LayoutMetadata, LayoutNode, LayoutSnapshot, Observation,
-    Suggestion, SuggestionLifecycleRecord, WidgetId, WidgetReference, Workspace, WorkspaceContext, WorkspaceId,
+    Suggestion, SuggestionIntentRequest, SuggestionLifecycleRecord, WidgetId, WidgetReference, Workspace, WorkspaceContext, WorkspaceId,
     WorkspaceMetrics, WorkspaceSnapshot, CapabilityDiscovery, Zone, ZoneId,
 };
 
@@ -383,6 +384,19 @@ impl CommandHandler {
     ) -> Result<Vec<SuggestionLifecycleRecord>> {
         CommandPipeline::new(kernel.command_context(actor, intent))
             .execute_query(GetSuggestionLifecycle::new(limit))
+    }
+
+    pub fn create_suggestion_intent_request(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        suggestion_id: String,
+    ) -> Result<SuggestionIntentRequest> {
+        let workspace_id = WorkspaceId::new(workspace_id).map_err(KernelError::Domain)?;
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_mutation(
+            CreateSuggestionIntentRequest::new(workspace_id, suggestion_id),
+        )
     }
 
     pub fn shutdown(kernel: &mut WorkspaceKernel) {

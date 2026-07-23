@@ -1,6 +1,7 @@
 mod accept_suggestion;
 mod application;
 mod context;
+mod create_suggestion_intent_request;
 mod create_workspace;
 mod get_actor_capabilities;
 mod get_audit_history;
@@ -23,6 +24,8 @@ mod context_tests;
 mod discovery_tests;
 #[cfg(test)]
 mod suggestion_lifecycle_tests;
+#[cfg(test)]
+mod suggestion_intent_tests;
 mod suggestion_tests;
 #[cfg(test)]
 mod intent_tests;
@@ -47,6 +50,7 @@ pub use layout::{
     CreateLayout, DeleteLayout, GetLayout, GetLayoutSnapshot, ResetLayout, UpdateLayout,
 };
 pub use context::CommandContext;
+pub use create_suggestion_intent_request::CreateSuggestionIntentRequest;
 pub use create_workspace::CreateWorkspace;
 pub use get_actor_capabilities::GetActorCapabilities;
 pub use get_audit_history::GetAuditHistory;

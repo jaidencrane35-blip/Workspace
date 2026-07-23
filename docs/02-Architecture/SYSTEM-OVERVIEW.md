@@ -335,6 +335,24 @@ SuggestionLifecycleService::list_recent → GetSuggestionLifecycle (governed) �
 
 The lifecycle layer adds read-only visibility into suggestion governance history. It derives `SuggestionLifecycleRecord` entries from audit events without a suggestion store, inference, or automation. Reads are governed (`audit.read`).
 
+**Suggestion intent bridge (Sprint 23):**
+
+```
+Accepted Suggestion (audit)
+    ↓
+map_suggestion_type_to_intent (static)
+    ↓
+SuggestionIntentService → IntentExecutionService::validate_request
+    ↓
+CreateSuggestionIntentRequest (governed, audit.write)
+    ↓
+SuggestionIntentRequest
+    ↓
+[Future] governed command execution
+```
+
+The bridge creates a validated intent request from an accepted suggestion. It does not dispatch commands, automate actions, or bypass the permission pipeline.
+
 ### 6.6 Windows Integration Layer
 
 Abstracts all Windows API interactions. Only this layer communicates directly with the OS.
