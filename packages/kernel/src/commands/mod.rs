@@ -5,6 +5,7 @@ mod create_workspace;
 mod get_actor_capabilities;
 mod get_audit_history;
 mod get_observations;
+mod get_suggestion_lifecycle;
 mod get_suggestions;
 mod get_workspace;
 mod get_workspace_context;
@@ -21,6 +22,7 @@ mod context_tests;
 #[cfg(test)]
 mod discovery_tests;
 #[cfg(test)]
+mod suggestion_lifecycle_tests;
 mod suggestion_tests;
 #[cfg(test)]
 mod intent_tests;
@@ -49,6 +51,7 @@ pub use create_workspace::CreateWorkspace;
 pub use get_actor_capabilities::GetActorCapabilities;
 pub use get_audit_history::GetAuditHistory;
 pub use get_observations::GetObservations;
+pub use get_suggestion_lifecycle::GetSuggestionLifecycle;
 pub use get_suggestions::GetSuggestions;
 pub use get_workspace::GetWorkspace;
 pub use get_workspace_context::GetWorkspaceContext;

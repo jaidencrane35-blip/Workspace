@@ -88,6 +88,9 @@ pub enum KernelError {
     #[error("Suggestion validation failed: {message}")]
     SuggestionValidation { message: String },
 
+    #[error("Suggestion lifecycle validation failed: {message}")]
+    SuggestionLifecycleValidation { message: String },
+
     #[error("Service '{0}' failed to start")]
     ServiceStartup(&'static str),
 
@@ -239,6 +242,10 @@ impl KernelError {
             },
             KernelError::SuggestionValidation { message } => PublicError {
                 code: "suggestion_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::SuggestionLifecycleValidation { message } => PublicError {
+                code: "suggestion_lifecycle_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::ServiceStartup(service) => PublicError {

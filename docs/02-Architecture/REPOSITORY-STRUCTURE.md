@@ -167,20 +167,20 @@ Expectations:
 
 ---
 
-## 6. Current State (Phase 1 — Sprint 21)
+## 6. Current State (Phase 1 — Sprint 22)
 
 Phase 1 scaffolding is in progress. Implemented structure:
 
 ```
 Workspace/
-├── app/                    # Tauri + IPC (… suggestion list/accept/reject)
+├── app/                    # Tauri + IPC (… suggestion lifecycle read)
 ├── packages/
-│   ├── domain/             # … suggestion model + accept/reject transitions
-│   ├── kernel/             # … SuggestionService, AcceptSuggestion, RejectSuggestion
+│   ├── domain/             # … suggestion_lifecycle projection types
+│   ├── kernel/             # … SuggestionLifecycleService, GetSuggestionLifecycle
 │   └── database/           # Repositories + graph + layout tables
 ```
 
-Resource services own graph-backed entity persistence. Layout owns spatial state. Projection aggregates derived read models. Action intents provide metadata-first command mapping. Capability discovery derives actor authority from existing policy without a permission database. Observation derives a neutral, read-only activity stream over the audit trail without adding persistence. Analytics deterministically aggregates observations into `WorkspaceMetrics` — the "Learn" stage — with no AI and no persistence. Context deterministically composes state, activity, metrics, and authority into `WorkspaceContext` — the "Context" boundary — with no persistence and no inference. Suggestion derives deterministic **proposals** from `WorkspaceContext` via simple threshold rules — the "Suggest" stage — with no AI and no suggestion store. Sprint 21 adds **AcceptSuggestion / RejectSuggestion** as decision-only mutations through the command pipeline (`audit.write`), durable in the audit trail, without Automate-stage execution.
+Resource services own graph-backed entity persistence. Layout owns spatial state. Projection aggregates derived read models. Action intents provide metadata-first command mapping. Capability discovery derives actor authority from existing policy without a permission database. Observation derives a neutral, read-only activity stream over the audit trail without adding persistence. Analytics deterministically aggregates observations into `WorkspaceMetrics` — the "Learn" stage — with no AI and no persistence. Context deterministically composes state, activity, metrics, and authority into `WorkspaceContext` — the "Context" boundary — with no persistence and no inference. Suggestion derives deterministic **proposals** from `WorkspaceContext` via simple threshold rules — the "Suggest" stage — with no AI and no suggestion store. Sprint 21 adds Accept/Reject as decision-only mutations (`audit.write`). Sprint 22 adds **audit-derived lifecycle projection** for suggestion governance visibility (`audit.read`) without persistence or automation.
 
 Implementation directories will be created during Phase 1 scaffolding.
 

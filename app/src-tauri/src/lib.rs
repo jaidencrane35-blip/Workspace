@@ -13,6 +13,7 @@ use commands::discovery::get_actor_capabilities;
 use commands::observation::get_observations;
 use commands::projection::get_workspace_snapshot;
 use commands::suggestion::{accept_suggestion, get_suggestions, reject_suggestion};
+use commands::suggestion_lifecycle::get_suggestion_lifecycle;
 use commands::resources::{
     create_application, create_widget, create_zone, delete_application, delete_widget,
     delete_zone, get_application, get_widget, get_zone,
@@ -67,6 +68,7 @@ pub fn run() {
             get_suggestions,
             accept_suggestion,
             reject_suggestion,
+            get_suggestion_lifecycle,
         ])
         .setup(|app| {
             let app_data_dir = app

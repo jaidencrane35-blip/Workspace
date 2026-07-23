@@ -12,4 +12,5 @@ pub mod response;
 pub mod settings;
 pub mod status;
 pub mod suggestion;
+pub mod suggestion_lifecycle;
 pub mod workspace;

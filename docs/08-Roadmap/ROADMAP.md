@@ -120,6 +120,7 @@ Foundation     Decisions       Core Platform     Feature Expansion   Maturity
 - [x] Workspace context foundation: WorkspaceContextService, GetWorkspaceContext, deterministic context boundary — Sprint 19
 - [x] Suggestion foundation: SuggestionService, GetSuggestions, deterministic proposal layer — Sprint 20
 - [x] Suggestion approval foundation: AcceptSuggestion / RejectSuggestion decision commands (audit-backed, no automate) — Sprint 21
+- [x] Suggestion lifecycle foundation: SuggestionLifecycleService, GetSuggestionLifecycle, audit-derived lifecycle projection — Sprint 22
 - [x] CI/CD pipeline (lint, build, test) — Sprint 01 PR workflow
 - [x] Developer setup documentation — Sprint 01
 - [ ] Spatial Workspace Canvas shell prototype — future sprint (DEC-009)

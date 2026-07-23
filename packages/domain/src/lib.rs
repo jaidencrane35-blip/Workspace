@@ -16,6 +16,7 @@ pub mod observation;
 pub mod projection;
 pub mod resource;
 pub mod suggestion;
+pub mod suggestion_lifecycle;
 pub mod workspace;
 
 pub use actor::{
@@ -42,6 +43,10 @@ pub use resource::{Addressable, ResourceId, ResourceKind, ResourceRef};
 pub use suggestion::{
     derive_suggestions, find_pending_suggestion, Suggestion, SuggestionConfidence, SuggestionError,
     SuggestionStatus, SuggestionType,
+};
+pub use suggestion_lifecycle::{
+    classify_suggestion_lifecycle_event, extract_suggestion_id, parse_canonical_resource_ref,
+    SuggestionLifecycleError, SuggestionLifecycleRecord, SuggestionLifecycleState,
 };
 pub use entities::{
     ApplicationReference, WidgetReference, Workspace, Zone,

@@ -323,6 +323,18 @@ The approval layer is the "Receive Permission" decision stage: explicit Accept/R
 
 The preserved future flow is Context → Suggestion → User Approval → Intent → Capability → Permission → CommandPipeline → Execution.
 
+**Suggestion lifecycle layer (Sprint 22):**
+
+```
+Audit Trail (Accept/Reject decisions + metadata)
+    ↓
+classify_suggestion_lifecycle_event (pure)
+    ↓
+SuggestionLifecycleService::list_recent → GetSuggestionLifecycle (governed) → get_suggestion_lifecycle (IPC)
+```
+
+The lifecycle layer adds read-only visibility into suggestion governance history. It derives `SuggestionLifecycleRecord` entries from audit events without a suggestion store, inference, or automation. Reads are governed (`audit.read`).
+
 ### 6.6 Windows Integration Layer
 
 Abstracts all Windows API interactions. Only this layer communicates directly with the OS.
