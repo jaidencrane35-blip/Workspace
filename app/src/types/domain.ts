@@ -153,6 +153,40 @@ export interface ApplicationLaunchResult {
   simulated: boolean;
 }
 
+export type PermissionApprovalStatus = "pending" | "approved" | "denied";
+
+export interface PermissionApprovalRequest {
+  id: string;
+  created_at: string;
+  status: PermissionApprovalStatus;
+  requesting_actor_type: string;
+  requesting_actor_id: string;
+  command_name: string;
+  capability: string;
+  subject: string;
+  intent_type: string;
+  reason: string;
+  decided_at: string | null;
+  decided_by_actor_id: string | null;
+}
+
+export interface CapabilityGrant {
+  id: string;
+  approval_request_id: string;
+  grantee_actor_id: string;
+  capability: string;
+  command_name: string | null;
+  grant_kind: "allow_once" | "lasting";
+  status: "active" | "consumed" | "revoked";
+  created_at: string;
+  consumed_at: string | null;
+}
+
+export interface ApprovalDecisionResult {
+  request: PermissionApprovalRequest;
+  grant: CapabilityGrant | null;
+}
+
 export interface WorkspaceMetrics {
   observation_count: number;
   resource_change_count: number;

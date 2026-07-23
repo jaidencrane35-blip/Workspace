@@ -4,6 +4,7 @@ mod context;
 mod execute_intent_request;
 mod create_suggestion_intent_request;
 mod create_workspace;
+mod decide_approval;
 mod get_actor_capabilities;
 mod get_audit_history;
 mod get_desktop_windows;
@@ -11,6 +12,7 @@ mod get_execution_outcomes;
 mod get_execution_state;
 mod get_execution_states;
 mod get_observations;
+mod get_permission_approvals;
 mod get_suggestion_lifecycle;
 mod get_suggestions;
 mod get_workspace;
@@ -42,6 +44,8 @@ mod suggestion_tests;
 #[cfg(test)]
 mod intent_tests;
 #[cfg(test)]
+mod permission_approval_tests;
+#[cfg(test)]
 mod observation_tests;
 #[cfg(test)]
 mod layout_tests;
@@ -65,8 +69,10 @@ pub use context::CommandContext;
 pub use execute_intent_request::ExecuteIntentRequest;
 pub use create_suggestion_intent_request::CreateSuggestionIntentRequest;
 pub use create_workspace::CreateWorkspace;
+pub use decide_approval::DecideApproval;
 pub use get_actor_capabilities::GetActorCapabilities;
 pub use get_audit_history::GetAuditHistory;
+pub use get_permission_approvals::GetPermissionApprovals;
 pub use get_desktop_windows::GetDesktopWindows;
 pub use get_execution_outcomes::GetExecutionOutcomes;
 pub use get_execution_state::GetExecutionState;

@@ -11,6 +11,9 @@ use commands::analytics::get_workspace_metrics;
 use commands::context::get_workspace_context;
 use commands::desktop_window::get_desktop_windows;
 use commands::discovery::get_actor_capabilities;
+use commands::permission_approval::{
+    decide_approval, get_permission_approvals, request_ai_application_launch,
+};
 use commands::observation::get_observations;
 use commands::projection::get_workspace_snapshot;
 use commands::execution::{
@@ -63,6 +66,9 @@ pub fn run() {
             get_desktop_windows,
             create_application,
             launch_application,
+            get_permission_approvals,
+            decide_approval,
+            request_ai_application_launch,
             create_suggestion_intent_request,
             execute_intent_request,
             get_execution_outcomes,

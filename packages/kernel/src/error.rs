@@ -133,8 +133,17 @@ pub enum KernelError {
     #[error("Permission denied: {0}")]
     PermissionDenied(String),
 
-    #[error("Approval required: {0}")]
-    ApprovalRequired(String),
+    #[error("Approval required: {reason}")]
+    ApprovalRequired {
+        reason: String,
+        approval_request_id: String,
+    },
+
+    #[error("Permission approval request not found")]
+    PermissionApprovalNotFound,
+
+    #[error("Permission approval validation failed: {message}")]
+    PermissionApprovalValidation { message: String },
 
     #[error("Workspace kernel initialization failed")]
     InitializationFailed,
@@ -357,13 +366,22 @@ impl KernelError {
                     format!("This action was not permitted: {reason}")
                 },
             },
-            KernelError::ApprovalRequired(reason) => PublicError {
+            KernelError::ApprovalRequired {
+                reason,
+                approval_request_id,
+            } => PublicError {
                 code: "approval_required".into(),
-                message: if reason.trim().is_empty() {
-                    "This action requires approval.".into()
-                } else {
-                    format!("This action requires approval. {reason}")
-                },
+                message: format!(
+                    "This action requires approval. {reason} (request_id={approval_request_id})"
+                ),
+            },
+            KernelError::PermissionApprovalNotFound => PublicError {
+                code: "permission_approval_not_found".into(),
+                message: "Permission approval request was not found.".into(),
+            },
+            KernelError::PermissionApprovalValidation { message } => PublicError {
+                code: "permission_approval_validation_error".into(),
+                message: message.clone(),
             },
             KernelError::InitializationFailed => PublicError {
                 code: "initialization_failed".into(),

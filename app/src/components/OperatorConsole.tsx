@@ -3,11 +3,13 @@ import { IpcCommandError, invokeIpc } from "../lib/ipc";
 import type {
   ApplicationLaunchResult,
   ApplicationReference,
+  ApprovalDecisionResult,
   CancellationRequest,
   DesktopWindowSnapshot,
   ExecutionOutcome,
   ExecutionReconciliation,
   IntentExecutionRequest,
+  PermissionApprovalRequest,
   Suggestion,
   SuggestionIntentRequest,
   SuggestionLifecycleRecord,
@@ -35,7 +37,9 @@ function formatLaunchError(err: unknown): string {
       return `Launch denied: ${reason || "this actor does not have permission to open this application."}`;
     }
     if (err.code === "approval_required") {
-      return "This action requires approval.";
+      return err.message.startsWith("This action requires approval")
+        ? err.message
+        : `This action requires approval. ${err.message}`;
     }
     if (err.code === "invalid_launch_target") {
       return `Launch failed: ${err.message}`;
@@ -94,6 +98,9 @@ export function OperatorConsole({
   const [lastLaunch, setLastLaunch] = useState<ApplicationLaunchResult | null>(
     null,
   );
+  const [lastRegisteredApp, setLastRegisteredApp] =
+    useState<ApplicationReference | null>(null);
+  const [approvals, setApprovals] = useState<PermissionApprovalRequest[]>([]);
   const [busy, setBusy] = useState(false);
 
   const run = useCallback(
@@ -121,6 +128,7 @@ export function OperatorConsole({
         nextContext,
         nextOutcomes,
         nextStates,
+        nextApprovals,
       ] = await Promise.all([
         invokeIpc<Suggestion[]>("get_suggestions", {
           workspaceId,
@@ -139,12 +147,16 @@ export function OperatorConsole({
         invokeIpc<ExecutionReconciliation[]>("get_execution_states", {
           limit: 50,
         }),
+        invokeIpc<PermissionApprovalRequest[]>("get_permission_approvals", {
+          limit: 50,
+        }),
       ]);
       setSuggestions(nextSuggestions);
       setLifecycle(nextLifecycle);
       setContext(nextContext);
       setOutcomes(nextOutcomes);
       setExecutionStates(nextStates);
+      setApprovals(nextApprovals);
       onZonesChange(
         nextContext.snapshot.zones.map((z) => {
           const summary = z as {
@@ -320,6 +332,7 @@ export function OperatorConsole({
             executablePath,
           },
         );
+        setLastRegisteredApp(application);
         const result = await invokeIpc<ApplicationLaunchResult>(
           "launch_application",
           { id: application.id },
@@ -406,6 +419,117 @@ export function OperatorConsole({
                   : ""}
             </dd>
           </dl>
+        )}
+        <div className="row">
+          <button
+            type="button"
+            disabled={busy || !lastRegisteredApp}
+            onClick={() =>
+              void (async () => {
+                if (!lastRegisteredApp || !workspace) return;
+                setBusy(true);
+                onError(null);
+                onMessage(null);
+                try {
+                  const result = await invokeIpc<ApplicationLaunchResult>(
+                    "request_ai_application_launch",
+                    { id: lastRegisteredApp.id },
+                  );
+                  setLastLaunch(result);
+                  onMessage(
+                    `AI launch allowed: ${result.name} (grant consumed)`,
+                  );
+                  await refreshReads(workspace.id);
+                } catch (err: unknown) {
+                  onError(formatLaunchError(err));
+                  await refreshReads(workspace.id);
+                } finally {
+                  setBusy(false);
+                }
+              })()
+            }
+          >
+            Request as AI (approval path)
+          </button>
+        </div>
+      </section>
+
+      <section>
+        <h2>Permission approvals</h2>
+        <p className="muted">
+          Human control loop: Allow once issues a consumable grant; Deny leaves
+          the action blocked.
+        </p>
+        <div className="row">
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("Approvals refreshed", async () => {
+                if (!workspace) return;
+                await refreshReads(workspace.id);
+              })
+            }
+          >
+            Refresh approvals
+          </button>
+        </div>
+        {approvals.length === 0 ? (
+          <p className="muted">No approval requests yet.</p>
+        ) : (
+          <ul className="list">
+            {approvals.map((item) => (
+              <li key={item.id}>
+                <strong>{item.status}</strong> — {item.command_name} /{" "}
+                {item.capability} ({item.requesting_actor_type})
+                <div className="muted">{item.reason}</div>
+                {item.status === "pending" && (
+                  <div className="row">
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() =>
+                        void run("Allowed once", async () => {
+                          await invokeIpc<ApprovalDecisionResult>(
+                            "decide_approval",
+                            {
+                              requestId: item.id,
+                              decision: "allow_once",
+                            },
+                          );
+                          if (workspace) {
+                            await refreshReads(workspace.id);
+                          }
+                        })
+                      }
+                    >
+                      Allow once
+                    </button>
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() =>
+                        void run("Denied", async () => {
+                          await invokeIpc<ApprovalDecisionResult>(
+                            "decide_approval",
+                            {
+                              requestId: item.id,
+                              decision: "deny",
+                            },
+                          );
+                          if (workspace) {
+                            await refreshReads(workspace.id);
+                          }
+                        })
+                      }
+                    >
+                      Deny
+                    </button>
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
         )}
       </section>
 

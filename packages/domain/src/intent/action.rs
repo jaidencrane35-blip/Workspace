@@ -27,6 +27,7 @@ pub enum ActionIntentCategory {
     Settings,
     Audit,
     Suggestion,
+    Permission,
     System,
 }
 
@@ -444,6 +445,26 @@ fn build_definitions() -> Vec<ActionIntentDefinition> {
             "RejectSuggestion",
             TargetRequirement::Optional,
             &[ResourceKind::Workspace],
+        ),
+        definition(
+            "get-permission-approvals",
+            "Get Permission Approvals",
+            "List pending and recent permission approval requests.",
+            ActionIntentCategory::Permission,
+            Capability::audit_read(),
+            "GetPermissionApprovals",
+            TargetRequirement::None,
+            &[],
+        ),
+        definition(
+            "decide-approval",
+            "Decide Approval",
+            "Allow once or deny a pending permission approval request.",
+            ActionIntentCategory::Permission,
+            Capability::audit_write(),
+            "DecideApproval",
+            TargetRequirement::None,
+            &[],
         ),
     ]
 }

@@ -5,8 +5,10 @@ use crate::commands::application::{CreateApplication, DeleteApplication, GetAppl
 use crate::commands::execute_intent_request::ExecuteIntentRequest;
 use crate::commands::create_suggestion_intent_request::CreateSuggestionIntentRequest;
 use crate::commands::create_workspace::CreateWorkspace;
+use crate::commands::decide_approval::DecideApproval;
 use crate::commands::get_actor_capabilities::GetActorCapabilities;
 use crate::commands::get_audit_history::GetAuditHistory;
+use crate::commands::get_permission_approvals::GetPermissionApprovals;
 use crate::commands::get_desktop_windows::GetDesktopWindows;
 use crate::commands::get_execution_outcomes::GetExecutionOutcomes;
 use crate::commands::get_execution_state::GetExecutionState;
@@ -326,6 +328,34 @@ impl CommandHandler {
     ) -> Result<Vec<AuditEvent>> {
         CommandPipeline::new(kernel.command_context(actor, intent))
             .execute_query(GetAuditHistory::new(limit))
+    }
+
+    pub fn get_permission_approvals(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        limit: Option<usize>,
+    ) -> Result<Vec<workspace_domain::PermissionApprovalRequest>> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetPermissionApprovals::new(limit))
+    }
+
+    pub fn decide_approval(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        request_id: String,
+        decision: String,
+    ) -> Result<workspace_domain::ApprovalDecisionResult> {
+        let request_id = workspace_domain::PermissionApprovalRequestId::new(request_id)
+            .map_err(KernelError::Domain)?;
+        let decision = workspace_domain::ApprovalDecisionKind::parse(&decision).map_err(|error| {
+            KernelError::PermissionApprovalValidation {
+                message: error.to_string(),
+            }
+        })?;
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_mutation(DecideApproval::new(request_id, decision))
     }
 
     pub fn get_observations(

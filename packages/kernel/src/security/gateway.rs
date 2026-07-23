@@ -8,7 +8,7 @@ use crate::error::{KernelError, Result};
 use crate::policy::{
     DefaultPolicyEvaluator, PermissionPolicy, PolicyContext, PolicyDecision, PolicyEvaluator,
 };
-use crate::services::AuditService;
+use crate::services::{AuditService, PermissionApprovalService};
 
 use super::gate::{PermissionDecision, PermissionGate, PermissionRequest};
 
@@ -17,11 +17,13 @@ use super::gate::{PermissionDecision, PermissionGate, PermissionRequest};
 pub enum GatewayDecision {
     Allow { reason: String },
     Deny { reason: String },
-    /// Reserved for future approval UI — not executable today.
-    ApprovalRequired { reason: String },
+    ApprovalRequired {
+        reason: String,
+        approval_request_id: String,
+    },
 }
 
-/// Coordinates policy + gate evaluation and decision auditing.
+/// Coordinates policy + gate evaluation, approval persistence, and decision auditing.
 ///
 /// Pipeline path:
 /// `CommandPipeline → PermissionGateway → Allow | Deny | ApprovalRequired → Execution`
@@ -34,6 +36,16 @@ impl PermissionGateway {
         gate: &dyn PermissionGate,
         request: &PermissionRequest,
         granted: &CapabilitySet,
+    ) -> Result<GatewayDecision> {
+        Self::evaluate_with_grants(policy, gate, request, granted, &[])
+    }
+
+    fn evaluate_with_grants(
+        policy: &dyn PermissionPolicy,
+        gate: &dyn PermissionGate,
+        request: &PermissionRequest,
+        granted: &CapabilitySet,
+        active_grants: &[workspace_domain::CapabilityGrant],
     ) -> Result<GatewayDecision> {
         let policy_ctx = PolicyContext::new(
             request.actor.id.to_string(),
@@ -51,7 +63,25 @@ impl PermissionGateway {
                 PolicyDecision::Deny { reason } => reason,
                 PolicyDecision::Allow => "policy denied without reason".to_string(),
             };
+
+            if PermissionApprovalService::is_non_human(request.actor.actor_type) {
+                return Ok(GatewayDecision::ApprovalRequired {
+                    reason,
+                    approval_request_id: String::new(),
+                });
+            }
             return Ok(GatewayDecision::Deny { reason });
+        }
+
+        if let Some(grant) =
+            PermissionApprovalService::matching_active_grant(active_grants, request)
+        {
+            return Ok(GatewayDecision::Allow {
+                reason: format!(
+                    "allow-once grant '{}' authorized '{}'",
+                    grant.id, request.command
+                ),
+            });
         }
 
         match gate.authorize(request)? {
@@ -63,7 +93,10 @@ impl PermissionGateway {
             }),
             PermissionDecision::Denied { reason } => Ok(GatewayDecision::Deny { reason }),
             PermissionDecision::ApprovalRequired { reason } => {
-                Ok(GatewayDecision::ApprovalRequired { reason })
+                Ok(GatewayDecision::ApprovalRequired {
+                    reason,
+                    approval_request_id: String::new(),
+                })
             }
         }
     }
@@ -78,15 +111,51 @@ impl PermissionGateway {
         request: &PermissionRequest,
         granted: &CapabilitySet,
     ) -> Result<()> {
-        let decision = Self::evaluate(policy, gate, request, granted)?;
+        let (effective, active_grants) = {
+            let guard = db.lock().expect("database lock poisoned");
+            PermissionApprovalService::merge_active_grants(
+                &guard,
+                &request.actor,
+                granted.clone(),
+            )?
+        };
+
+        let mut decision =
+            Self::evaluate_with_grants(policy, gate, request, &effective, &active_grants)?;
+
+        let matching_grant =
+            PermissionApprovalService::matching_active_grant(&active_grants, request)
+                .map(|g| g.id.clone());
+
+        if let GatewayDecision::ApprovalRequired { reason, .. } = &decision {
+            let pending = {
+                let guard = db.lock().expect("database lock poisoned");
+                PermissionApprovalService::ensure_pending_request(&guard, request, reason)?
+            };
+            decision = GatewayDecision::ApprovalRequired {
+                reason: reason.clone(),
+                approval_request_id: pending.id.to_string(),
+            };
+        }
+
         Self::record_decision(db, actor_context, intent_context, request, &decision);
 
         match decision {
-            GatewayDecision::Allow { .. } => Ok(()),
-            GatewayDecision::Deny { reason } => Err(KernelError::PermissionDenied(reason)),
-            GatewayDecision::ApprovalRequired { reason } => {
-                Err(KernelError::ApprovalRequired(reason))
+            GatewayDecision::Allow { .. } => {
+                if let Some(grant_id) = matching_grant {
+                    let guard = db.lock().expect("database lock poisoned");
+                    PermissionApprovalService::consume_grant(&guard, &grant_id)?;
+                }
+                Ok(())
             }
+            GatewayDecision::Deny { reason } => Err(KernelError::PermissionDenied(reason)),
+            GatewayDecision::ApprovalRequired {
+                reason,
+                approval_request_id,
+            } => Err(KernelError::ApprovalRequired {
+                reason,
+                approval_request_id,
+            }),
         }
     }
 
@@ -97,12 +166,22 @@ impl PermissionGateway {
         request: &PermissionRequest,
         decision: &GatewayDecision,
     ) {
-        let (event_type, success, reason) = match decision {
-            GatewayDecision::Allow { reason } => ("permission.allowed", true, reason.as_str()),
-            GatewayDecision::Deny { reason } => ("permission.denied", false, reason.as_str()),
-            GatewayDecision::ApprovalRequired { reason } => {
-                ("permission.approval_required", false, reason.as_str())
+        let (event_type, success, reason, approval_request_id) = match decision {
+            GatewayDecision::Allow { reason } => {
+                ("permission.allowed", true, reason.as_str(), None)
             }
+            GatewayDecision::Deny { reason } => {
+                ("permission.denied", false, reason.as_str(), None)
+            }
+            GatewayDecision::ApprovalRequired {
+                reason,
+                approval_request_id,
+            } => (
+                "permission.approval_required",
+                false,
+                reason.as_str(),
+                Some(approval_request_id.as_str()),
+            ),
         };
 
         let metadata = json!({
@@ -117,6 +196,7 @@ impl PermissionGateway {
             "subject": format!("{:?}", request.subject),
             "actor_type": format!("{:?}", request.actor.actor_type),
             "intent_type": format!("{:?}", request.intent.intent_type),
+            "approval_request_id": approval_request_id,
         })
         .to_string();
 
@@ -169,7 +249,7 @@ mod tests {
     }
 
     #[test]
-    fn denies_ungranted_capability() {
+    fn denies_ungranted_capability_for_local_user() {
         let decision = PermissionGateway::evaluate(
             &CapabilityBoundPolicy,
             &AllowAllPermissionGate,
@@ -179,6 +259,22 @@ mod tests {
         .unwrap();
 
         assert!(matches!(decision, GatewayDecision::Deny { .. }));
+    }
+
+    #[test]
+    fn approval_required_for_ai_missing_capability() {
+        let decision = PermissionGateway::evaluate(
+            &CapabilityBoundPolicy,
+            &StandardPermissionGate,
+            &workspace_write_request(Actor::ai_assistant("ai-1").unwrap()),
+            &CapabilitySet::new(),
+        )
+        .unwrap();
+
+        assert!(matches!(
+            decision,
+            GatewayDecision::ApprovalRequired { .. }
+        ));
     }
 
     #[test]
@@ -196,4 +292,5 @@ mod tests {
             GatewayDecision::ApprovalRequired { .. }
         ));
     }
+
 }

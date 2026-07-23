@@ -120,6 +120,7 @@ fn subject_for_category(category: ActionIntentCategory) -> PermissionSubject {
         ActionIntentCategory::Settings
         | ActionIntentCategory::Audit
         | ActionIntentCategory::Suggestion
+        | ActionIntentCategory::Permission
         | ActionIntentCategory::System => PermissionSubject::System,
     }
 }

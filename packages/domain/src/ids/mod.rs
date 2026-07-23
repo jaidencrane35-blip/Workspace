@@ -73,6 +73,8 @@ define_id!(AuditEventId);
 define_id!(ActorId);
 define_id!(IntentId);
 define_id!(ActionIntentId);
+define_id!(PermissionApprovalRequestId);
+define_id!(CapabilityGrantId);
 
 #[cfg(test)]
 mod tests {

@@ -238,7 +238,10 @@ mod tests {
         .execute_mutation(LaunchApplication::simulated(app_id))
         .unwrap_err();
 
-        assert!(matches!(error, KernelError::ApprovalRequired(_)));
+        assert!(matches!(
+            error,
+            KernelError::ApprovalRequired { .. }
+        ));
         assert_eq!(error.to_public().code, "approval_required");
 
         let records = AuditService::list_recent(&init.database.shared(), 30).unwrap();

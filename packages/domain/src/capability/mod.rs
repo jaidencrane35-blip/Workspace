@@ -206,8 +206,24 @@ impl CapabilitySet {
         self
     }
 
+    pub fn with_capability_id(mut self, id: CapabilityId) -> Self {
+        self.capabilities.insert(id);
+        self
+    }
+
     pub fn contains(&self, capability: &Capability) -> bool {
         self.capabilities.contains(&capability.id)
+    }
+
+    pub fn contains_id(&self, id: &CapabilityId) -> bool {
+        self.capabilities.contains(id)
+    }
+
+    pub fn merge(mut self, other: &CapabilitySet) -> Self {
+        for id in other.iter() {
+            self.capabilities.insert(id.clone());
+        }
+        self
     }
 
     pub fn iter(&self) -> impl Iterator<Item = &CapabilityId> {

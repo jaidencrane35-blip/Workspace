@@ -27,6 +27,8 @@
 | `request_execution_cancellation` | Diagnostic |
 | `get_desktop_windows` | Diagnostic |
 | `create_application` / `launch_application` | Diagnostic (governed launch) |
+| `request_ai_application_launch` | Diagnostic (AI actor → ApprovalRequired) |
+| `get_permission_approvals` / `decide_approval` | Diagnostic (allow once / deny) |
 
 ---
 

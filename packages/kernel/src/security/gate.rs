@@ -39,9 +39,10 @@ pub trait PermissionGate: Send + Sync {
         match self.authorize(request)? {
             PermissionDecision::Allowed => Ok(()),
             PermissionDecision::Denied { reason } => Err(KernelError::PermissionDenied(reason)),
-            PermissionDecision::ApprovalRequired { reason } => {
-                Err(KernelError::ApprovalRequired(reason))
-            }
+            PermissionDecision::ApprovalRequired { reason } => Err(KernelError::ApprovalRequired {
+                reason,
+                approval_request_id: String::new(),
+            }),
         }
     }
 }

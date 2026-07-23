@@ -89,6 +89,7 @@ fn mutation_command_mappings_match_capabilities() {
         ("CreateApplication", "create-application", Capability::application_write()),
         ("DeleteApplication", "delete-application", Capability::application_write()),
         ("LaunchApplication", "launch-application", Capability::application_launch()),
+        ("DecideApproval", "decide-approval", Capability::audit_write()),
         ("CreateWidget", "create-widget", Capability::widget_write()),
         ("DeleteWidget", "delete-widget", Capability::widget_write()),
         ("CreateLayout", "create-layout", Capability::layout_write()),

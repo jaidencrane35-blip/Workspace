@@ -19,6 +19,7 @@ pub mod intent;
 pub mod intent_execution;
 pub mod layout;
 pub mod observation;
+pub mod permission_approval;
 pub mod projection;
 pub mod resource;
 pub mod suggestion;
@@ -32,6 +33,10 @@ pub use actor::{
 pub use analytics::{AnalyticsError, CategoryActivity, WorkspaceMetrics};
 pub use audit::AuditEvent;
 pub use capability::{Capability, CapabilityId, CapabilityScope, CapabilitySet};
+pub use permission_approval::{
+    ApprovalDecisionKind, ApprovalDecisionResult, CapabilityGrant, CapabilityGrantStatus,
+    GrantKind, PermissionApprovalError, PermissionApprovalRequest, PermissionApprovalStatus,
+};
 pub use context::{ContextError, WorkspaceContext};
 pub use discovery::{
     AvailableIntentSummary, CapabilityDiscovery, CapabilityDiscoveryError,
@@ -83,7 +88,8 @@ pub use entities::{
 pub use errors::{validate_resource_name, DomainError, Result};
 pub use graph::{GraphEdge, GraphRelationship};
 pub use ids::{
-    ActorId, ApplicationId, AuditEventId, IntentId, LayoutId, WidgetId, WorkspaceId, ZoneId,
+    ActorId, ApplicationId, AuditEventId, CapabilityGrantId, IntentId, LayoutId,
+    PermissionApprovalRequestId, WidgetId, WorkspaceId, ZoneId,
 };
 pub use layout::{
     Layout, LayoutBounds, LayoutError, LayoutMetadata, LayoutNode, LayoutSnapshot, Position2D,

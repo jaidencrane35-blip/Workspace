@@ -6,6 +6,7 @@ pub mod error;
 pub mod health;
 pub mod layout;
 pub mod observation;
+pub mod permission_approval;
 pub mod projection;
 pub mod discovery;
 pub mod execution;
