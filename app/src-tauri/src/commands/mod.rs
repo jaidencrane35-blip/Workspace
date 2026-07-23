@@ -2,6 +2,7 @@ pub mod audit;
 pub mod error;
 pub mod health;
 pub mod layout;
+pub mod observation;
 pub mod projection;
 pub mod discovery;
 pub mod resources;

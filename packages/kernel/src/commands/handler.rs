@@ -4,6 +4,7 @@ use crate::commands::application::{CreateApplication, DeleteApplication, GetAppl
 use crate::commands::create_workspace::CreateWorkspace;
 use crate::commands::get_actor_capabilities::GetActorCapabilities;
 use crate::commands::get_audit_history::GetAuditHistory;
+use crate::commands::get_observations::GetObservations;
 use crate::commands::get_workspace::GetWorkspace;
 use crate::commands::get_workspace_snapshot::GetWorkspaceSnapshot;
 use crate::commands::initialize::InitializeWorkspace;
@@ -23,8 +24,9 @@ use crate::services::ConfigurationService;
 use crate::WorkspaceKernel;
 use workspace_domain::{
     Actor, ActorContext, ApplicationId, ApplicationReference, AuditEvent, Capability, Intent,
-    IntentContext, Layout, LayoutId, LayoutMetadata, LayoutNode, LayoutSnapshot, WidgetId,
-    WidgetReference, Workspace, WorkspaceId, WorkspaceSnapshot, CapabilityDiscovery, Zone, ZoneId,
+    IntentContext, Layout, LayoutId, LayoutMetadata, LayoutNode, LayoutSnapshot, Observation,
+    WidgetId, WidgetReference, Workspace, WorkspaceId, WorkspaceSnapshot, CapabilityDiscovery,
+    Zone, ZoneId,
 };
 
 /// Executes kernel commands and coordinates services + events.
@@ -297,6 +299,16 @@ impl CommandHandler {
     ) -> Result<Vec<AuditEvent>> {
         CommandPipeline::new(kernel.command_context(actor, intent))
             .execute_query(GetAuditHistory::new(limit))
+    }
+
+    pub fn get_observations(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        limit: Option<usize>,
+    ) -> Result<Vec<Observation>> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetObservations::new(limit))
     }
 
     pub fn shutdown(kernel: &mut WorkspaceKernel) {

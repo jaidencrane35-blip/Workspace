@@ -258,6 +258,19 @@ CapabilityDiscovery (derived, non-authoritative)
 
 Discovery exposes what an actor can do; it does not grant permission. Policy and CommandPipeline remain authoritative.
 
+**Observation layer (Sprint 17):**
+
+```
+Domain Events (authoritative, ephemeral)
+    ↓ AuditEventSubscriber → audit trail (durable history)
+    ↓
+ObservationService (derive on read)
+    ↓
+Observation (derived, disposable, neutral) → GetObservations (governed)
+```
+
+Observations answer "what is happening over time?" as a read-only interpretation of the recorded audit trail. Domain events remain authoritative; observations add no persistence, no new subscriber, and no interpretation beyond a static category/importance mapping. Reads are governed (`audit.read`) because they reveal activity history.
+
 ### 6.6 Windows Integration Layer
 
 Abstracts all Windows API interactions. Only this layer communicates directly with the OS.

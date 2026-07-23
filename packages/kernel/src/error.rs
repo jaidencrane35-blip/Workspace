@@ -76,6 +76,9 @@ pub enum KernelError {
     #[error("Capability discovery validation failed: {message}")]
     CapabilityDiscoveryValidation { message: String },
 
+    #[error("Observation validation failed: {message}")]
+    ObservationValidation { message: String },
+
     #[error("Service '{0}' failed to start")]
     ServiceStartup(&'static str),
 
@@ -211,6 +214,10 @@ impl KernelError {
             },
             KernelError::CapabilityDiscoveryValidation { message } => PublicError {
                 code: "capability_discovery_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::ObservationValidation { message } => PublicError {
+                code: "observation_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::ServiceStartup(service) => PublicError {

@@ -167,20 +167,20 @@ Expectations:
 
 ---
 
-## 6. Current State (Phase 1 — Sprint 16)
+## 6. Current State (Phase 1 — Sprint 17)
 
 Phase 1 scaffolding is in progress. Implemented structure:
 
 ```
 Workspace/
-├── app/                    # Tauri + IPC (workspace, resource, layout, projection, discovery)
+├── app/                    # Tauri + IPC (workspace, resource, layout, projection, discovery, observation)
 ├── packages/
-│   ├── domain/             # Entities, ResourceRef, graph, layout, projection, intent, discovery
-│   ├── kernel/             # Services, commands, intent validation, projection, capability resolver
+│   ├── domain/             # Entities, ResourceRef, graph, layout, projection, intent, discovery, observation
+│   ├── kernel/             # Services, commands, intent validation, projection, capability resolver, observation
 │   └── database/           # Repositories + graph + layout tables
 ```
 
-Resource services own graph-backed entity persistence. Layout owns spatial state. Projection aggregates derived read models. Action intents provide metadata-first command mapping. Capability discovery derives actor authority from existing policy without a permission database.
+Resource services own graph-backed entity persistence. Layout owns spatial state. Projection aggregates derived read models. Action intents provide metadata-first command mapping. Capability discovery derives actor authority from existing policy without a permission database. Observation derives a neutral, read-only activity stream over the audit trail without adding persistence.
 
 Implementation directories will be created during Phase 1 scaffolding.
 

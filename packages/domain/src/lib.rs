@@ -10,6 +10,7 @@ pub mod graph;
 pub mod ids;
 pub mod intent;
 pub mod layout;
+pub mod observation;
 pub mod projection;
 pub mod resource;
 pub mod workspace;
@@ -27,6 +28,10 @@ pub use intent::{
     ActionIntentMetadata, ActionIntentRegistry, ActionIntentRequest, Intent, IntentContext,
     IntentMetadata, IntentType, TargetRequirement, SYSTEM_SHUTDOWN_INTENT_ID,
     SYSTEM_STARTUP_INTENT_ID, USER_REQUEST_INTENT_ID,
+};
+pub use observation::{
+    classify_event, neutral_summary, Observation, ObservationCategory, ObservationError,
+    ObservationImportance,
 };
 pub use resource::{Addressable, ResourceId, ResourceKind, ResourceRef};
 pub use entities::{

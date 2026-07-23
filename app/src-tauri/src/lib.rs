@@ -8,6 +8,7 @@ use commands::layout::{
     create_layout, delete_layout, get_layout, get_layout_snapshot, reset_layout, update_layout,
 };
 use commands::discovery::get_actor_capabilities;
+use commands::observation::get_observations;
 use commands::projection::get_workspace_snapshot;
 use commands::resources::{
     create_application, create_widget, create_zone, delete_application, delete_widget,
@@ -57,6 +58,7 @@ pub fn run() {
             get_workspace_snapshot,
             get_actor_capabilities,
             get_audit_history,
+            get_observations,
         ])
         .setup(|app| {
             let app_data_dir = app
