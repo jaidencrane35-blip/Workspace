@@ -20,10 +20,24 @@ impl DatabaseService {
         path: impl AsRef<Path>,
         migrations_dir: impl AsRef<Path>,
     ) -> Result<Self> {
-        let database = Database::open(path)?;
-        let runner = MigrationRunner::load_from_dir(migrations_dir)?;
-        runner.apply_all(&database)?;
+        let path = path.as_ref();
+        log::info!("initializing database at {}", path.display());
 
+        let database = match Database::open(path) {
+            Ok(database) => database,
+            Err(error) => {
+                log::error!("failed to open database connection: {error}");
+                return Err(error);
+            }
+        };
+
+        let runner = MigrationRunner::load_from_dir(migrations_dir.as_ref())?;
+        if let Err(error) = runner.apply_all(&database) {
+            log::error!("database migration failed: {error}");
+            return Err(error);
+        }
+
+        log::info!("database initialization complete");
         Ok(Self { database })
     }
 

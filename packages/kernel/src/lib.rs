@@ -1,73 +1,58 @@
 //! Workspace Platform Kernel — core runtime boundary.
 //!
-//! Owns application state, configuration, and service registration.
-//! Business logic must not live in the React frontend (Sprint 02).
+//! Owns application lifecycle, state, configuration, service registration,
+//! internal events, and the command layer.
 
+pub mod commands;
 pub mod config;
 pub mod error;
+pub mod events;
+pub mod health;
+pub mod lifecycle;
 pub mod services;
 pub mod state;
 
+pub use commands::CommandHandler;
 pub use config::{ConfigManager, SettingsUpdate, WorkspaceSettings};
 pub use error::{KernelError, PublicError, Result};
-pub use services::ServiceRegistry;
-pub use state::{InitializationState, RuntimeStatus, WorkspaceState};
+pub use events::{DomainEvent, EventBus};
+pub use health::WorkspaceHealth;
+pub use lifecycle::LifecycleState;
+pub use services::{ConfigurationService, DatabaseServiceHandle, ServiceRegistry, ServiceStatus};
+pub use state::WorkspaceState;
 
 use std::path::Path;
-
-use workspace_database::{Database, DatabaseService};
 
 /// Kernel crate version aligned with application semver.
 pub const KERNEL_VERSION: &str = env!("CARGO_PKG_VERSION");
 
+pub const SERVICE_DATABASE: &str = "database";
+pub const SERVICE_CONFIGURATION: &str = "configuration";
+
 /// Central runtime authority for Workspace.
 pub struct WorkspaceKernel {
     state: WorkspaceState,
-    database: Database,
+    database: DatabaseServiceHandle,
     services: ServiceRegistry,
+    event_bus: EventBus,
 }
 
 impl WorkspaceKernel {
-    /// Initializes database, applies migrations, seeds defaults, and marks runtime ready.
+    /// Runs InitializeWorkspace through the command layer.
     pub fn initialize(db_path: impl AsRef<Path>) -> Result<Self> {
-        let mut state = WorkspaceState::new(KERNEL_VERSION);
-        state.initialization = InitializationState::Initializing;
-
-        let db_service = DatabaseService::initialize(db_path)?;
-        let database = db_service.into_database();
-
-        ConfigManager::ensure_defaults(&database)?;
-
-        state.initialization = InitializationState::Ready;
-        state.runtime_status = RuntimeStatus::Running;
-
-        Ok(Self {
-            state,
-            database,
-            services: ServiceRegistry::new(),
-        })
+        log::info!("workspace kernel startup beginning");
+        let mut kernel = Self::bootstrap_shell(KERNEL_VERSION);
+        CommandHandler::initialize_workspace(&mut kernel, db_path)?;
+        log::info!("workspace kernel ready");
+        Ok(kernel)
     }
 
-    /// Initializes with an existing in-memory database (tests).
+    /// Initializes with an in-memory database (tests).
     pub fn initialize_in_memory() -> Result<Self> {
-        let mut state = WorkspaceState::new(KERNEL_VERSION);
-        state.initialization = InitializationState::Initializing;
-
-        let database = Database::open_in_memory()?;
-        let runner = workspace_database::MigrationRunner::load_from_dir(
-            workspace_database::bundled_migrations_dir(),
-        )?;
-        runner.apply_all(&database)?;
-        ConfigManager::ensure_defaults(&database)?;
-
-        state.initialization = InitializationState::Ready;
-        state.runtime_status = RuntimeStatus::Running;
-
-        Ok(Self {
-            state,
-            database,
-            services: ServiceRegistry::new(),
-        })
+        log::debug!("workspace kernel in-memory initialization");
+        let mut kernel = Self::bootstrap_shell(KERNEL_VERSION);
+        CommandHandler::initialize_workspace_in_memory(&mut kernel)?;
+        Ok(kernel)
     }
 
     pub fn state(&self) -> &WorkspaceState {
@@ -78,29 +63,58 @@ impl WorkspaceKernel {
         &self.services
     }
 
-    pub fn services_mut(&mut self) -> &mut ServiceRegistry {
-        &mut self.services
+    pub fn event_bus(&self) -> &EventBus {
+        &self.event_bus
     }
 
-    pub fn database(&self) -> &Database {
-        &self.database
+    pub fn database(&self) -> &workspace_database::Database {
+        self.database.database()
+    }
+
+    pub fn health(&self) -> WorkspaceHealth {
+        WorkspaceHealth::from_runtime(
+            self.state.lifecycle,
+            &self.state.version,
+            &self.services,
+        )
     }
 
     pub fn get_settings(&self) -> Result<WorkspaceSettings> {
-        self.ensure_ready()?;
-        ConfigManager::load(&self.database)
+        CommandHandler::get_settings(self)
     }
 
     pub fn update_settings(&self, update: SettingsUpdate) -> Result<WorkspaceSettings> {
-        self.ensure_ready()?;
-        ConfigManager::update(&self.database, update)
+        CommandHandler::update_settings(self, update)
     }
 
-    fn ensure_ready(&self) -> Result<()> {
-        if self.state.is_ready() {
-            Ok(())
-        } else {
-            Err(KernelError::NotReady)
+    pub fn begin_shutdown(&mut self) {
+        CommandHandler::shutdown(self);
+    }
+
+    pub(crate) fn apply_runtime(
+        &mut self,
+        state: WorkspaceState,
+        database: DatabaseServiceHandle,
+        services: ServiceRegistry,
+    ) {
+        self.state = state;
+        self.database = database;
+        self.services = services;
+    }
+
+    pub(crate) fn transition_lifecycle(&mut self, lifecycle: crate::lifecycle::LifecycleState) {
+        self.state.transition(lifecycle);
+    }
+
+    fn bootstrap_shell(version: &str) -> Self {
+        Self {
+            state: WorkspaceState::new(version),
+            database: DatabaseServiceHandle::new(
+                workspace_database::Database::open_in_memory()
+                    .expect("bootstrap in-memory database placeholder"),
+            ),
+            services: ServiceRegistry::new(),
+            event_bus: EventBus::new(),
         }
     }
 }
@@ -108,12 +122,53 @@ impl WorkspaceKernel {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::{Arc, Mutex};
 
     #[test]
     fn kernel_initializes_in_memory() {
         let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
         assert!(kernel.state().is_ready());
-        assert_eq!(kernel.state().version, KERNEL_VERSION);
+        assert_eq!(kernel.state().lifecycle, LifecycleState::Ready);
+        assert!(kernel.services().all_healthy());
+    }
+
+    #[test]
+    fn kernel_emits_lifecycle_events() {
+        let received = Arc::new(Mutex::new(Vec::new()));
+        let captured = Arc::clone(&received);
+
+        let mut kernel = WorkspaceKernel::bootstrap_shell(KERNEL_VERSION);
+        kernel.event_bus.subscribe(move |event| {
+            captured.lock().unwrap().push(event.name().to_string());
+        });
+
+        CommandHandler::initialize_workspace_in_memory(&mut kernel).unwrap();
+
+        let events = received.lock().unwrap();
+        assert!(events.contains(&"system.workspace.started".to_string()));
+        assert!(events.contains(&"system.workspace.ready".to_string()));
+    }
+
+    #[test]
+    fn update_settings_emits_settings_changed() {
+        let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+        let received = Arc::new(Mutex::new(String::new()));
+        let captured = Arc::clone(&received);
+
+        kernel.event_bus.subscribe(move |event| {
+            if event.name() == "system.settings.changed" {
+                *captured.lock().unwrap() = event.name().to_string();
+            }
+        });
+
+        kernel
+            .update_settings(SettingsUpdate {
+                theme: Some("dark".into()),
+                first_run: None,
+            })
+            .unwrap();
+
+        assert_eq!(*received.lock().unwrap(), "system.settings.changed");
     }
 
     #[test]
@@ -122,5 +177,54 @@ mod tests {
         let settings = kernel.get_settings().unwrap();
         assert_eq!(settings.theme, "system");
         assert!(settings.first_run);
+    }
+
+    #[test]
+    fn kernel_reports_health() {
+        let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+        let health = kernel.health();
+
+        assert_eq!(health.status, "ready");
+        assert!(health.initialized);
+        assert!(health.services.contains(&SERVICE_DATABASE.to_string()));
+        assert!(health.services.contains(&SERVICE_CONFIGURATION.to_string()));
+    }
+
+    #[test]
+    fn shutdown_transitions_lifecycle_and_emits_event() {
+        let mut kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+        let received = Arc::new(Mutex::new(false));
+        let captured = Arc::clone(&received);
+
+        kernel.event_bus.subscribe(move |event| {
+            if event.name() == "system.workspace.shutdown" {
+                *captured.lock().unwrap() = true;
+            }
+        });
+
+        kernel.begin_shutdown();
+        assert_eq!(kernel.state().lifecycle, LifecycleState::ShuttingDown);
+        assert!(*received.lock().unwrap());
+    }
+
+    #[test]
+    fn failed_migration_prevents_initialization() {
+        use tempfile::tempdir;
+        use workspace_database::DatabaseService;
+
+        let dir = tempdir().unwrap();
+        let bad_migrations = dir.path().join("bad_migrations");
+        std::fs::create_dir_all(&bad_migrations).unwrap();
+        std::fs::write(
+            bad_migrations.join("001_bad.sql"),
+            "CREATE TABLE bad syntax ;",
+        )
+        .unwrap();
+
+        let db_path = dir.path().join("workspace.db");
+        let result =
+            DatabaseService::initialize_with_migrations(&db_path, &bad_migrations);
+
+        assert!(result.is_err());
     }
 }

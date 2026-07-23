@@ -51,7 +51,7 @@ Workspace/
 │   └── vite.config.ts
 │
 ├── packages/                   # Shared internal Rust/TS packages
-│   ├── kernel/                 # Platform kernel (state, config, services — Sprint 02)
+│   ├── kernel/                 # Platform kernel (lifecycle, health, services — Sprint 03)
 │   ├── database/               # SQLite persistence foundation (Sprint 01–02)
 │   ├── domain-apps/            # Application domain service (future)
 │   ├── domain-windows/         # Window domain service (future)
@@ -98,6 +98,7 @@ Workspace/
 
 - Application entry point and top-level assembly.
 - Tauri commands delegate to `WorkspaceKernel`; no direct database access from commands.
+- State-changing IPC routes through the kernel command layer (Sprint 04).
 - No domain logic — delegates to `packages/`.
 
 ### 3.3 `packages/`

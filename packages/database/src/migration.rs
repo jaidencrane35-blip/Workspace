@@ -77,7 +77,12 @@ impl MigrationRunner {
                 continue;
             }
 
-            db.connection().execute_batch(&migration.sql)?;
+            db.connection().execute_batch(&migration.sql).map_err(|error| {
+                DatabaseError::Migration(format!(
+                    "migration '{}' failed during apply: {error}",
+                    migration.version
+                ))
+            })?;
 
             db.connection().execute(
                 "INSERT INTO _workspace_migrations (version, name) VALUES (?1, ?2)",
@@ -122,5 +127,24 @@ mod tests {
             )
             .unwrap();
         assert_eq!(count, 1);
+    }
+
+    #[test]
+    fn migration_failure_returns_clear_error() {
+        let db = Database::open_in_memory().unwrap();
+        let mut runner = MigrationRunner::new();
+        runner.register(Migration {
+            version: "999_invalid".into(),
+            name: "invalid".into(),
+            sql: "CREATE TABLE bad syntax ;".into(),
+        });
+
+        let error = runner.apply_all(&db).unwrap_err();
+        match error {
+            DatabaseError::Migration(message) => {
+                assert!(message.contains("999_invalid"));
+            }
+            other => panic!("expected migration error, got {other:?}"),
+        }
     }
 }

@@ -8,6 +8,8 @@ SQLite persistence foundation for Workspace (DEC-010).
 - `SettingsRepository` — key/value configuration storage
 - Migration `001_settings.sql` — settings table only
 
+See [LIFECYCLE.md](LIFECYCLE.md) for connection lifecycle and failure handling (Sprint 03).
+
 ## Sprint 01
 
 - Connection handling

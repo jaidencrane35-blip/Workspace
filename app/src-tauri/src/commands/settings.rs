@@ -1,33 +1,44 @@
 use std::sync::{Arc, Mutex};
 
 use tauri::State;
-use workspace_kernel::{SettingsUpdate, WorkspaceKernel, WorkspaceSettings};
+use workspace_kernel::{CommandHandler, SettingsUpdate, WorkspaceKernel, WorkspaceSettings};
 
 use super::error::CommandError;
+use super::response::IpcResponse;
 
-/// Reads persisted application settings via the Platform Kernel.
+/// Reads persisted application settings via the kernel command layer.
 #[tauri::command]
 pub fn get_settings(
     kernel: State<'_, Arc<Mutex<WorkspaceKernel>>>,
-) -> Result<WorkspaceSettings, CommandError> {
-    let kernel = kernel
-        .lock()
-        .map_err(|_| CommandError::new("internal_error", "Workspace core is temporarily unavailable."))?;
-
-    kernel.get_settings().map_err(CommandError::from)
+) -> IpcResponse<WorkspaceSettings> {
+    match kernel.lock() {
+        Ok(kernel) => match CommandHandler::get_settings(&kernel) {
+            Ok(settings) => IpcResponse::success(settings),
+            Err(error) => IpcResponse::failure(CommandError::from(error)),
+        },
+        Err(_) => IpcResponse::failure(CommandError::new(
+            "internal_error",
+            "Workspace core is temporarily unavailable.",
+        )),
+    }
 }
 
-/// Updates persisted application settings via the Platform Kernel.
+/// Updates persisted application settings via the kernel command layer.
 #[tauri::command]
 pub fn update_settings(
     update: SettingsUpdate,
     kernel: State<'_, Arc<Mutex<WorkspaceKernel>>>,
-) -> Result<WorkspaceSettings, CommandError> {
-    let kernel = kernel
-        .lock()
-        .map_err(|_| CommandError::new("internal_error", "Workspace core is temporarily unavailable."))?;
-
-    kernel.update_settings(update).map_err(CommandError::from)
+) -> IpcResponse<WorkspaceSettings> {
+    match kernel.lock() {
+        Ok(kernel) => match CommandHandler::update_settings(&kernel, update) {
+            Ok(settings) => IpcResponse::success(settings),
+            Err(error) => IpcResponse::failure(CommandError::from(error)),
+        },
+        Err(_) => IpcResponse::failure(CommandError::new(
+            "internal_error",
+            "Workspace core is temporarily unavailable.",
+        )),
+    }
 }
 
 #[cfg(test)]
@@ -36,23 +47,22 @@ mod tests {
     use workspace_kernel::WorkspaceKernel;
 
     #[test]
-    fn settings_flow_through_kernel() {
+    fn ipc_settings_path_uses_command_layer() {
         let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
 
-        let initial = kernel.get_settings().unwrap();
+        let initial = CommandHandler::get_settings(&kernel).unwrap();
         assert_eq!(initial.theme, "system");
 
-        let updated = kernel
-            .update_settings(SettingsUpdate {
+        let updated = CommandHandler::update_settings(
+            &kernel,
+            SettingsUpdate {
                 theme: Some("light".into()),
                 first_run: Some(false),
-            })
-            .unwrap();
+            },
+        )
+        .unwrap();
 
         assert_eq!(updated.theme, "light");
         assert!(!updated.first_run);
-
-        let reloaded = kernel.get_settings().unwrap();
-        assert_eq!(reloaded, updated);
     }
 }

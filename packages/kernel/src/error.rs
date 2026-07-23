@@ -15,6 +15,12 @@ pub enum KernelError {
 
     #[error("Invalid settings value: {0}")]
     InvalidSettings(String),
+
+    #[error("Service '{0}' failed to start")]
+    ServiceStartup(&'static str),
+
+    #[error("Workspace kernel initialization failed")]
+    InitializationFailed,
 }
 
 pub type Result<T> = std::result::Result<T, KernelError>;
@@ -44,6 +50,14 @@ impl KernelError {
             KernelError::InvalidSettings(_) => PublicError {
                 code: "invalid_settings".into(),
                 message: "One or more settings values were invalid.".into(),
+            },
+            KernelError::ServiceStartup(service) => PublicError {
+                code: "service_startup_failed".into(),
+                message: format!("Service '{service}' failed to start."),
+            },
+            KernelError::InitializationFailed => PublicError {
+                code: "initialization_failed".into(),
+                message: "Workspace failed to initialize.".into(),
             },
         }
     }

@@ -102,6 +102,8 @@ Foundation     Decisions       Core Platform     Feature Expansion   Maturity
 - [x] Workspace Core state + configuration foundation — Sprint 02
 - [x] Settings persistence (SQLite) — Sprint 02
 - [x] IPC conventions (React → Tauri → Kernel → Database) — Sprint 02
+- [x] Runtime lifecycle, health reporting, and IPC envelope — Sprint 03
+- [x] Internal event bus and command layer — Sprint 04
 - [x] CI/CD pipeline (lint, build, test) — Sprint 01 PR workflow
 - [x] Developer setup documentation — Sprint 01
 - [ ] Spatial Workspace Canvas shell prototype — future sprint (DEC-009)
