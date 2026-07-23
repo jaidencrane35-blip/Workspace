@@ -17,7 +17,7 @@
 | 4 | Capability Discovery & Tool Awareness | Complete (S52–53) |
 | 5 | Planning Quality & Evaluation | Complete (S54–55) |
 | 6 | Governed Action Orchestration | Complete (S56–57) |
-| 7 | Governed Assistant Foundation | Deferred |
+| 7 | Governed Assistant Foundation | Complete (S58–59) |
 
 ---
 
@@ -37,9 +37,9 @@ Operational `AiPlanEvaluationReport` + quality/outcome classification; audits `a
 
 `AiOrchestratedPlan` multi-step lifecycle with per-step gateway checks; pause on approval, fail on deny, no silent continue. See [AI Orchestration Foundation](AI-ORCHESTRATION-FOUNDATION.md).
 
-## Batch 7
+## Batch 7 (done)
 
-User-facing governed assistant (goal input, proposal explanation, human decide). Not autonomous OS control.
+User-facing `AiAssistantWorkflow`: goal input → plan preview → user confirm → orchestration → Permission Gateway. Not autonomous OS control. See [AI Assistant Foundation](AI-ASSISTANT-FOUNDATION.md).
 
 ---
 

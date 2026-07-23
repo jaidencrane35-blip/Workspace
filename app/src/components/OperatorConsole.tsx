@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { IpcCommandError, invokeIpc } from "../lib/ipc";
 import type {
   ActionCatalog,
+  AiAssistantWorkflow,
   AiOrchestratedPlan,
   AiPlanEvaluationReport,
   AiPlanSubmissionResult,
@@ -119,6 +120,11 @@ export function OperatorConsole({
   >([]);
   const [orchestratedPlan, setOrchestratedPlan] =
     useState<AiOrchestratedPlan | null>(null);
+  const [assistantWorkflow, setAssistantWorkflow] =
+    useState<AiAssistantWorkflow | null>(null);
+  const [assistantGoal, setAssistantGoal] = useState(
+    "Prepare my coding workspace",
+  );
   const [busy, setBusy] = useState(false);
 
   const run = useCallback(
@@ -520,6 +526,116 @@ export function OperatorConsole({
               ))}
             </dd>
           </dl>
+        )}
+      </section>
+
+      <section>
+        <h2>Governed AI assistant</h2>
+        <p className="muted">
+          Express a workspace goal. The assistant presents a governed plan for
+          confirmation — every action still passes the Permission Gateway.
+        </p>
+        <div className="row">
+          <input
+            value={assistantGoal}
+            disabled={busy}
+            onChange={(event) => setAssistantGoal(event.target.value)}
+            aria-label="Assistant goal"
+            style={{ minWidth: "16rem" }}
+          />
+          <button
+            type="button"
+            disabled={busy || !workspace || !assistantGoal.trim()}
+            onClick={() =>
+              void run("Assistant goal submitted", async () => {
+                if (!workspace) return;
+                const workflow = await invokeIpc<AiAssistantWorkflow>(
+                  "submit_assistant_goal",
+                  {
+                    goal: assistantGoal.trim(),
+                    workspaceId: workspace.id,
+                  },
+                );
+                setAssistantWorkflow(workflow);
+              })
+            }
+          >
+            Submit assistant goal
+          </button>
+          <button
+            type="button"
+            disabled={
+              busy ||
+              !assistantWorkflow ||
+              assistantWorkflow.state !== "awaiting_confirmation"
+            }
+            onClick={() =>
+              void run("Assistant workflow confirmed", async () => {
+                if (!assistantWorkflow) return;
+                const workflow = await invokeIpc<AiAssistantWorkflow>(
+                  "confirm_assistant_workflow",
+                  { workflowId: assistantWorkflow.id },
+                );
+                setAssistantWorkflow(workflow);
+              })
+            }
+          >
+            Confirm governed workflow
+          </button>
+          <button
+            type="button"
+            disabled={
+              busy ||
+              !assistantWorkflow ||
+              assistantWorkflow.state !== "waiting_for_permission"
+            }
+            onClick={() =>
+              void run("Assistant workflow resumed", async () => {
+                if (!assistantWorkflow) return;
+                const workflow = await invokeIpc<AiAssistantWorkflow>(
+                  "resume_assistant_workflow",
+                  { workflowId: assistantWorkflow.id },
+                );
+                setAssistantWorkflow(workflow);
+              })
+            }
+          >
+            Resume after permission
+          </button>
+          <button
+            type="button"
+            disabled={busy || !assistantWorkflow}
+            onClick={() =>
+              void run("Assistant workflow cancelled", async () => {
+                if (!assistantWorkflow) return;
+                const workflow = await invokeIpc<AiAssistantWorkflow>(
+                  "cancel_assistant_workflow",
+                  { workflowId: assistantWorkflow.id },
+                );
+                setAssistantWorkflow(workflow);
+              })
+            }
+          >
+            Cancel workflow
+          </button>
+        </div>
+        {assistantWorkflow && (
+          <ul className="muted">
+            <li>
+              Goal: {assistantWorkflow.user_goal} — state:{" "}
+              {assistantWorkflow.state}
+            </li>
+            <li>{assistantWorkflow.status_message}</li>
+            {assistantWorkflow.plan_preview?.actions.map((action) => (
+              <li key={action.step_id}>
+                {action.ordinal + 1}. {action.command_name} → {action.step_state}
+                {action.capability_hint ? ` (${action.capability_hint})` : ""}
+              </li>
+            ))}
+            {assistantWorkflow.plan_preview && (
+              <li>{assistantWorkflow.plan_preview.permission_note}</li>
+            )}
+          </ul>
         )}
       </section>
 

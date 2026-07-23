@@ -2,6 +2,7 @@
 
 pub mod action_catalog;
 pub mod actor;
+pub mod ai_assistant;
 pub mod ai_evaluation;
 pub mod ai_orchestration;
 pub mod ai_planning;
@@ -37,6 +38,10 @@ pub use action_catalog::{
 };
 pub use actor::{
     Actor, ActorContext, ActorMetadata, ActorType, LOCAL_USER_ACTOR_ID, SYSTEM_ACTOR_ID,
+};
+pub use ai_assistant::{
+    AiAssistantActionPreview, AiAssistantError, AiAssistantPlanPreview, AiAssistantWorkflow,
+    AiAssistantWorkflowState,
 };
 pub use ai_evaluation::{
     classify_authority_outcome, evaluate_plan, evaluate_submission_result, AiEvaluationError,
@@ -110,9 +115,9 @@ pub use entities::{
 pub use errors::{validate_resource_name, DomainError, Result};
 pub use graph::{GraphEdge, GraphRelationship};
 pub use ids::{
-    ActorId, AiActionProposalId, AiGoalId, AiOrchestratedPlanId, AiPlanStepId, ApplicationId,
-    AuditEventId, CapabilityGrantId, IntentId, LayoutId, PermissionApprovalRequestId, WidgetId,
-    WorkspaceId, ZoneId,
+    ActorId, AiActionProposalId, AiAssistantWorkflowId, AiGoalId, AiOrchestratedPlanId,
+    AiPlanStepId, ApplicationId, AuditEventId, CapabilityGrantId, IntentId, LayoutId,
+    PermissionApprovalRequestId, WidgetId, WorkspaceId, ZoneId,
 };
 pub use layout::{
     Layout, LayoutBounds, LayoutError, LayoutMetadata, LayoutNode, LayoutSnapshot, Position2D,

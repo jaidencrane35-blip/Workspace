@@ -36,6 +36,11 @@
 | `advance_orchestrated_ai_plan` | Diagnostic advance steps through Permission Gateway |
 | `resume_orchestrated_ai_plan` | Diagnostic resume after human approval decision |
 | `cancel_orchestrated_ai_plan` | Diagnostic cancel multi-step plan |
+| `submit_assistant_goal` | Diagnostic assistant goal → governed plan preview |
+| `get_assistant_workflow` | Diagnostic assistant workflow preview/refresh |
+| `confirm_assistant_workflow` | Diagnostic confirm → Permission Gateway path |
+| `resume_assistant_workflow` | Diagnostic resume after human permission decision |
+| `cancel_assistant_workflow` | Diagnostic cancel assistant workflow |
 | `get_action_catalog` | Diagnostic action catalog (existence ≠ authorization) |
 | `get_permission_approvals` / `decide_approval` | Diagnostic (allow once / deny) |
 

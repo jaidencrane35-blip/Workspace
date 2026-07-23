@@ -79,6 +79,7 @@ define_id!(AiGoalId);
 define_id!(AiActionProposalId);
 define_id!(AiOrchestratedPlanId);
 define_id!(AiPlanStepId);
+define_id!(AiAssistantWorkflowId);
 
 #[cfg(test)]
 mod tests {

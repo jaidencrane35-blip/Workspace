@@ -333,6 +333,46 @@ export interface AiOrchestratedPlan {
   updated_at: string;
 }
 
+export type AiAssistantWorkflowState =
+  | "receiving_goal"
+  | "understanding"
+  | "generating_plan"
+  | "awaiting_confirmation"
+  | "submitting_actions"
+  | "waiting_for_permission"
+  | "completed"
+  | "failed"
+  | "cancelled";
+
+export interface AiAssistantActionPreview {
+  step_id: string;
+  ordinal: number;
+  command_name: string;
+  target: string | null;
+  explanation: string | null;
+  step_state: string;
+  capability_hint: string | null;
+}
+
+export interface AiAssistantPlanPreview {
+  plan_id: string;
+  goal_statement: string;
+  actions: AiAssistantActionPreview[];
+  permission_note: string;
+}
+
+export interface AiAssistantWorkflow {
+  id: string;
+  user_goal: string;
+  requesting_actor_id: string;
+  state: AiAssistantWorkflowState;
+  orchestrated_plan_id: string | null;
+  plan_preview: AiAssistantPlanPreview | null;
+  status_message: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface ActionCatalogEntry {
   intent_id: string;
   name: string;

@@ -2,8 +2,9 @@ use std::sync::{Arc, Mutex};
 
 use tauri::State;
 use workspace_domain::{
-    AiOrchestratedPlan, AiPlanEvaluationReport, AiPlanSubmissionResult, AiProposalEvaluation,
-    ApplicationLaunchResult, ApprovalDecisionResult, PermissionApprovalRequest,
+    AiAssistantWorkflow, AiOrchestratedPlan, AiPlanEvaluationReport, AiPlanSubmissionResult,
+    AiProposalEvaluation, ApplicationLaunchResult, ApprovalDecisionResult,
+    PermissionApprovalRequest,
 };
 use workspace_kernel::{CommandHandler, WorkspaceKernel};
 
@@ -234,6 +235,102 @@ pub fn cancel_orchestrated_ai_plan(
     match kernel.lock() {
         Ok(kernel) => match CommandHandler::cancel_orchestrated_ai_plan(&kernel, plan_id) {
             Ok(plan) => IpcResponse::success(plan),
+            Err(error) => IpcResponse::failure(CommandError::from(error)),
+        },
+        Err(_) => IpcResponse::failure(CommandError::new(
+            "internal_error",
+            "Workspace core is temporarily unavailable.",
+        )),
+    }
+}
+
+/// Diagnostic: submit a natural-language assistant goal → governed plan preview.
+#[tauri::command]
+pub fn submit_assistant_goal(
+    goal: Option<String>,
+    application_ids: Option<Vec<String>>,
+    workspace_id: Option<String>,
+    kernel: State<'_, Arc<Mutex<WorkspaceKernel>>>,
+) -> IpcResponse<AiAssistantWorkflow> {
+    let goal = goal.unwrap_or_else(|| "Prepare my coding workspace".into());
+    match kernel.lock() {
+        Ok(kernel) => match CommandHandler::submit_assistant_goal(
+            &kernel,
+            DIAGNOSTIC_AI_ACTOR_ID,
+            goal,
+            application_ids.unwrap_or_default(),
+            workspace_id,
+        ) {
+            Ok(workflow) => IpcResponse::success(workflow),
+            Err(error) => IpcResponse::failure(CommandError::from(error)),
+        },
+        Err(_) => IpcResponse::failure(CommandError::new(
+            "internal_error",
+            "Workspace core is temporarily unavailable.",
+        )),
+    }
+}
+
+#[tauri::command]
+pub fn get_assistant_workflow(
+    workflow_id: String,
+    kernel: State<'_, Arc<Mutex<WorkspaceKernel>>>,
+) -> IpcResponse<AiAssistantWorkflow> {
+    match kernel.lock() {
+        Ok(kernel) => match CommandHandler::get_assistant_workflow(&kernel, workflow_id) {
+            Ok(workflow) => IpcResponse::success(workflow),
+            Err(error) => IpcResponse::failure(CommandError::from(error)),
+        },
+        Err(_) => IpcResponse::failure(CommandError::new(
+            "internal_error",
+            "Workspace core is temporarily unavailable.",
+        )),
+    }
+}
+
+/// Diagnostic: user confirms assistant plan → Permission Gateway path.
+#[tauri::command]
+pub fn confirm_assistant_workflow(
+    workflow_id: String,
+    kernel: State<'_, Arc<Mutex<WorkspaceKernel>>>,
+) -> IpcResponse<AiAssistantWorkflow> {
+    match kernel.lock() {
+        Ok(kernel) => match CommandHandler::confirm_assistant_workflow(&kernel, workflow_id) {
+            Ok(workflow) => IpcResponse::success(workflow),
+            Err(error) => IpcResponse::failure(CommandError::from(error)),
+        },
+        Err(_) => IpcResponse::failure(CommandError::new(
+            "internal_error",
+            "Workspace core is temporarily unavailable.",
+        )),
+    }
+}
+
+#[tauri::command]
+pub fn resume_assistant_workflow(
+    workflow_id: String,
+    kernel: State<'_, Arc<Mutex<WorkspaceKernel>>>,
+) -> IpcResponse<AiAssistantWorkflow> {
+    match kernel.lock() {
+        Ok(kernel) => match CommandHandler::resume_assistant_workflow(&kernel, workflow_id) {
+            Ok(workflow) => IpcResponse::success(workflow),
+            Err(error) => IpcResponse::failure(CommandError::from(error)),
+        },
+        Err(_) => IpcResponse::failure(CommandError::new(
+            "internal_error",
+            "Workspace core is temporarily unavailable.",
+        )),
+    }
+}
+
+#[tauri::command]
+pub fn cancel_assistant_workflow(
+    workflow_id: String,
+    kernel: State<'_, Arc<Mutex<WorkspaceKernel>>>,
+) -> IpcResponse<AiAssistantWorkflow> {
+    match kernel.lock() {
+        Ok(kernel) => match CommandHandler::cancel_assistant_workflow(&kernel, workflow_id) {
+            Ok(workflow) => IpcResponse::success(workflow),
             Err(error) => IpcResponse::failure(CommandError::from(error)),
         },
         Err(_) => IpcResponse::failure(CommandError::new(

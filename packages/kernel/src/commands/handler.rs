@@ -39,19 +39,19 @@ use crate::events::types::{DomainEvent, WorkspaceShutdown};
 use crate::lifecycle::LifecycleState;
 use crate::security::{PermissionRequest, PermissionSubject};
 use crate::services::{
-    AiEvaluationService, AiOrchestrationService, AiParticipationService, AiPlanningService,
-    ConfigurationService, DesktopWindowService, WorkspaceContextService,
+    AiAssistantService, AiEvaluationService, AiOrchestrationService, AiParticipationService,
+    AiPlanningService, ConfigurationService, DesktopWindowService, WorkspaceContextService,
 };
 use crate::WorkspaceKernel;
 use workspace_domain::{
-    ActionCatalog, Actor, ActorContext, AiOrchestratedPlan, AiPlan, AiPlanEvaluationReport,
-    AiPlanSubmissionResult, AiProposalAuthorityOutcome, AiProposalEvaluation, AiProposalSubmission,
-    ApplicationId, ApplicationReference, AuditEvent, Capability, CapabilitySet, Intent,
-    IntentContext, Layout, LayoutId, LayoutMetadata, LayoutNode, LayoutSnapshot, Observation,
-    Suggestion, SuggestionIntentRequest, SuggestionLifecycleRecord, IntentExecutionRequest,
-    ExecutionOutcome, ExecutionReconciliation, CancellationRequest, WidgetId, WidgetReference,
-    Workspace, WorkspaceContext, WorkspaceId, WorkspaceMetrics, WorkspaceSnapshot,
-    CapabilityDiscovery, Zone, ZoneId,
+    ActionCatalog, Actor, ActorContext, AiAssistantWorkflow, AiOrchestratedPlan, AiPlan,
+    AiPlanEvaluationReport, AiPlanSubmissionResult, AiProposalAuthorityOutcome,
+    AiProposalEvaluation, AiProposalSubmission, ApplicationId, ApplicationReference, AuditEvent,
+    Capability, CapabilitySet, Intent, IntentContext, Layout, LayoutId, LayoutMetadata, LayoutNode,
+    LayoutSnapshot, Observation, Suggestion, SuggestionIntentRequest, SuggestionLifecycleRecord,
+    IntentExecutionRequest, ExecutionOutcome, ExecutionReconciliation, CancellationRequest,
+    WidgetId, WidgetReference, Workspace, WorkspaceContext, WorkspaceId, WorkspaceMetrics,
+    WorkspaceSnapshot, CapabilityDiscovery, Zone, ZoneId,
 };
 use workspace_windows_integration::DesktopWindowSnapshot;
 
@@ -841,6 +841,156 @@ impl CommandHandler {
             return Ok(plan);
         }
         Self::advance_orchestrated_ai_plan_inner(kernel, plan.id.to_string(), simulate)
+    }
+
+    /// Assistant: accept a natural-language goal and present a governed plan preview.
+    ///
+    /// Does not execute. Creates an orchestrated plan under the hood for later confirm.
+    pub fn submit_assistant_goal(
+        kernel: &WorkspaceKernel,
+        actor_id: impl Into<String>,
+        user_goal: impl Into<String>,
+        application_ids: Vec<String>,
+        workspace_id: Option<String>,
+    ) -> Result<AiAssistantWorkflow> {
+        let actor_id = actor_id.into();
+        let mut workflow =
+            workspace_domain::AiAssistantWorkflow::receive_goal(user_goal, actor_id.clone())
+                .map_err(KernelError::from)?;
+        let actor = AiPlanningService::ensure_ai_actor(&actor_id)?;
+        AiAssistantService::audit_goal_received(&kernel.shared_database(), &actor, &workflow)?;
+
+        workflow.mark_understanding();
+        workflow.mark_generating_plan();
+
+        let plan = Self::create_orchestrated_ai_plan(
+            kernel,
+            actor_id,
+            workflow.user_goal.clone(),
+            application_ids,
+            workspace_id,
+        )?;
+        let preview = AiAssistantService::build_plan_preview(&plan);
+        workflow
+            .present_plan(&plan, preview)
+            .map_err(KernelError::from)?;
+        AiAssistantService::audit_plan_presented(&kernel.shared_database(), &actor, &workflow)?;
+        AiAssistantService::store_workflow(&kernel.assistant_workflows(), workflow)
+    }
+
+    pub fn get_assistant_workflow(
+        kernel: &WorkspaceKernel,
+        workflow_id: impl Into<String>,
+    ) -> Result<AiAssistantWorkflow> {
+        let mut workflow =
+            AiAssistantService::get_workflow(&kernel.assistant_workflows(), &workflow_id.into())?;
+        if let Some(plan_id) = workflow.orchestrated_plan_id.clone() {
+            if let Ok(plan) =
+                AiOrchestrationService::get_plan(&kernel.orchestrated_plans(), plan_id.as_str())
+            {
+                workflow.sync_from_plan(&plan);
+                workflow = AiAssistantService::save_workflow(
+                    &kernel.assistant_workflows(),
+                    workflow,
+                )?;
+            }
+        }
+        Ok(workflow)
+    }
+
+    /// User confirms the presented plan → advance through Permission Gateway.
+    pub fn confirm_assistant_workflow(
+        kernel: &WorkspaceKernel,
+        workflow_id: impl Into<String>,
+    ) -> Result<AiAssistantWorkflow> {
+        Self::confirm_assistant_workflow_inner(kernel, workflow_id, false)
+    }
+
+    #[cfg(test)]
+    pub(crate) fn confirm_assistant_workflow_simulated(
+        kernel: &WorkspaceKernel,
+        workflow_id: impl Into<String>,
+    ) -> Result<AiAssistantWorkflow> {
+        Self::confirm_assistant_workflow_inner(kernel, workflow_id, true)
+    }
+
+    /// Resume assistant workflow after human permission decision on a paused step.
+    pub fn resume_assistant_workflow(
+        kernel: &WorkspaceKernel,
+        workflow_id: impl Into<String>,
+    ) -> Result<AiAssistantWorkflow> {
+        Self::resume_assistant_workflow_inner(kernel, workflow_id, false)
+    }
+
+    #[cfg(test)]
+    pub(crate) fn resume_assistant_workflow_simulated(
+        kernel: &WorkspaceKernel,
+        workflow_id: impl Into<String>,
+    ) -> Result<AiAssistantWorkflow> {
+        Self::resume_assistant_workflow_inner(kernel, workflow_id, true)
+    }
+
+    pub fn cancel_assistant_workflow(
+        kernel: &WorkspaceKernel,
+        workflow_id: impl Into<String>,
+    ) -> Result<AiAssistantWorkflow> {
+        let mut workflow =
+            AiAssistantService::get_workflow(&kernel.assistant_workflows(), &workflow_id.into())?;
+        let actor_id = workflow.requesting_actor_id.as_str().to_string();
+        let actor = AiPlanningService::ensure_ai_actor(&actor_id)?;
+
+        workflow.cancel().map_err(KernelError::from)?;
+        if let Some(plan_id) = workflow.orchestrated_plan_id.clone() {
+            let _ = Self::cancel_orchestrated_ai_plan(kernel, plan_id.to_string());
+        }
+        AiAssistantService::audit_cancelled(&kernel.shared_database(), &actor, &workflow)?;
+        AiAssistantService::save_workflow(&kernel.assistant_workflows(), workflow)
+    }
+
+    fn confirm_assistant_workflow_inner(
+        kernel: &WorkspaceKernel,
+        workflow_id: impl Into<String>,
+        simulate: bool,
+    ) -> Result<AiAssistantWorkflow> {
+        let mut workflow =
+            AiAssistantService::get_workflow(&kernel.assistant_workflows(), &workflow_id.into())?;
+        let actor_id = workflow.requesting_actor_id.as_str().to_string();
+        let actor = AiPlanningService::ensure_ai_actor(&actor_id)?;
+        AiAssistantService::ensure_awaiting_confirmation(&workflow)?;
+        workflow.confirm().map_err(KernelError::from)?;
+        AiAssistantService::audit_user_confirmed(&kernel.shared_database(), &actor, &workflow)?;
+
+        let plan_id = workflow
+            .orchestrated_plan_id
+            .as_ref()
+            .ok_or_else(|| KernelError::AiAssistantValidation {
+                message: "assistant workflow has no linked plan".into(),
+            })?
+            .to_string();
+
+        let plan = Self::advance_orchestrated_ai_plan_inner(kernel, plan_id, simulate)?;
+        workflow.sync_from_plan(&plan);
+        AiAssistantService::save_workflow(&kernel.assistant_workflows(), workflow)
+    }
+
+    fn resume_assistant_workflow_inner(
+        kernel: &WorkspaceKernel,
+        workflow_id: impl Into<String>,
+        simulate: bool,
+    ) -> Result<AiAssistantWorkflow> {
+        let mut workflow =
+            AiAssistantService::get_workflow(&kernel.assistant_workflows(), &workflow_id.into())?;
+        let plan_id = workflow
+            .orchestrated_plan_id
+            .as_ref()
+            .ok_or_else(|| KernelError::AiAssistantValidation {
+                message: "assistant workflow has no linked plan".into(),
+            })?
+            .to_string();
+
+        let plan = Self::resume_orchestrated_ai_plan_inner(kernel, plan_id, simulate)?;
+        workflow.sync_from_plan(&plan);
+        AiAssistantService::save_workflow(&kernel.assistant_workflows(), workflow)
     }
 
     pub fn delete_application(
