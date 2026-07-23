@@ -8,6 +8,7 @@ mod get_actor_capabilities;
 mod get_audit_history;
 mod get_execution_outcomes;
 mod get_execution_state;
+mod get_execution_states;
 mod get_observations;
 mod get_suggestion_lifecycle;
 mod get_suggestions;
@@ -34,6 +35,7 @@ mod intent_execution_tests;
 mod execution_outcome_tests;
 #[cfg(test)]
 mod suggestion_intent_tests;
+#[cfg(test)]
 mod suggestion_tests;
 #[cfg(test)]
 mod intent_tests;
@@ -65,6 +67,7 @@ pub use get_actor_capabilities::GetActorCapabilities;
 pub use get_audit_history::GetAuditHistory;
 pub use get_execution_outcomes::GetExecutionOutcomes;
 pub use get_execution_state::GetExecutionState;
+pub use get_execution_states::GetExecutionStates;
 pub use get_observations::GetObservations;
 pub use get_suggestion_lifecycle::GetSuggestionLifecycle;
 pub use get_suggestions::GetSuggestions;

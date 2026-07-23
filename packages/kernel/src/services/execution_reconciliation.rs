@@ -7,7 +7,7 @@
 use std::sync::{Arc, Mutex};
 
 use workspace_database::Database;
-use workspace_domain::{reconcile_execution_state, ExecutionReconciliation};
+use workspace_domain::{reconcile_execution_state, reconcile_execution_states, ExecutionReconciliation};
 
 use super::ExecutionOutcomeService;
 use crate::error::{KernelError, Result};
@@ -38,6 +38,24 @@ impl ExecutionReconciliationService {
                 message: error.to_string(),
             })?;
         Ok(reconciliation)
+    }
+
+    /// Returns up to `limit` reconciled execution states, most recently seen first.
+    pub fn list_recent(
+        db: &Arc<Mutex<Database>>,
+        limit: usize,
+    ) -> Result<Vec<ExecutionReconciliation>> {
+        let outcomes = ExecutionOutcomeService::list_recent(db, OUTCOME_SCAN_LIMIT)?;
+        let mut states = reconcile_execution_states(&outcomes);
+        states.truncate(limit.max(1));
+        for state in &states {
+            state.validate().map_err(|error| {
+                KernelError::ExecutionReconciliationValidation {
+                    message: error.to_string(),
+                }
+            })?;
+        }
+        Ok(states)
     }
 }
 
@@ -200,5 +218,32 @@ mod tests {
         assert_eq!(result.current_state, ExecutionState::Cancelled);
         assert!(result.dispatch_allowed);
         assert!(!result.cancellation_allowed);
+    }
+
+    #[test]
+    fn list_recent_returns_multiple_states() {
+        let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+        let _ = seed_failed(&kernel);
+        let _ = seed_completed(&kernel);
+
+        let states =
+            ExecutionReconciliationService::list_recent(&kernel.shared_database(), 50).unwrap();
+
+        assert!(states.len() >= 2);
+        assert!(states
+            .iter()
+            .any(|s| s.current_state == ExecutionState::Failed));
+        assert!(states
+            .iter()
+            .any(|s| s.current_state == ExecutionState::Completed));
+        assert!(states.iter().all(|s| s.validate().is_ok()));
+    }
+
+    #[test]
+    fn list_recent_empty_history() {
+        let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+        let states =
+            ExecutionReconciliationService::list_recent(&kernel.shared_database(), 50).unwrap();
+        assert!(states.is_empty());
     }
 }

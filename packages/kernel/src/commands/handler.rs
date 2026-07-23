@@ -9,6 +9,7 @@ use crate::commands::get_actor_capabilities::GetActorCapabilities;
 use crate::commands::get_audit_history::GetAuditHistory;
 use crate::commands::get_execution_outcomes::GetExecutionOutcomes;
 use crate::commands::get_execution_state::GetExecutionState;
+use crate::commands::get_execution_states::GetExecutionStates;
 use crate::commands::get_observations::GetObservations;
 use crate::commands::get_suggestion_lifecycle::GetSuggestionLifecycle;
 use crate::commands::get_suggestions::GetSuggestions;
@@ -434,6 +435,16 @@ impl CommandHandler {
     ) -> Result<ExecutionReconciliation> {
         CommandPipeline::new(kernel.command_context(actor, intent))
             .execute_query(GetExecutionState::new(execution_request_id))
+    }
+
+    pub fn get_execution_states(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        limit: Option<usize>,
+    ) -> Result<Vec<ExecutionReconciliation>> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetExecutionStates::new(limit))
     }
 
     pub fn request_execution_cancellation(

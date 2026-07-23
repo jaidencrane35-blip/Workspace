@@ -432,6 +432,18 @@ GetExecutionState (governed, audit.read)
 
 Reconciliation answers "what is the current interpreted state of `execution:X`?" by folding outcome facts into `Unknown | Completed | Failed | Cancelled` plus `dispatch_allowed` / `cancellation_allowed` flags aligned with Sprint 27–28 rules. No persistence, no mutation, no automation.
 
+**Execution states projection layer (Sprint 30):**
+
+```
+ExecutionOutcomeService (history)
+    ↓
+reconcile_execution_states (pure — dedupe by execution_request_id)
+    ↓
+ExecutionReconciliationService::list_recent → GetExecutionStates (governed, audit.read)
+```
+
+List projection answers "what are the states of recent executions?" as a bounded, deterministic read model. No persistence, no IPC, no automation.
+
 ### 6.6 Windows Integration Layer
 
 Abstracts all Windows API interactions. Only this layer communicates directly with the OS.

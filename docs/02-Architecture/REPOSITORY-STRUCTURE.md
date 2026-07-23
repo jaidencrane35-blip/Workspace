@@ -167,7 +167,7 @@ Expectations:
 
 ---
 
-## 6. Current State (Phase 1 — Sprint 29)
+## 6. Current State (Phase 1 — Sprint 30)
 
 Phase 1 scaffolding is in progress. Implemented structure:
 
@@ -175,12 +175,12 @@ Phase 1 scaffolding is in progress. Implemented structure:
 Workspace/
 ├── app/                    # Tauri + IPC (… suggestion lifecycle read)
 ├── packages/
-│   ├── domain/             # … execution_reconciliation state types
-│   ├── kernel/             # … ExecutionReconciliationService, GetExecutionState
+│   ├── domain/             # … execution_reconciliation list fold
+│   ├── kernel/             # … GetExecutionStates list projection
 │   └── database/           # Repositories + graph + layout tables
 ```
 
-Resource services own graph-backed entity persistence. Layout owns spatial state. Projection aggregates derived read models. Action intents provide metadata-first command mapping. Capability discovery derives actor authority from existing policy without a permission database. Observation derives a neutral, read-only activity stream over the audit trail without adding persistence. Analytics deterministically aggregates observations into `WorkspaceMetrics` — the "Learn" stage — with no AI and no persistence. Context deterministically composes state, activity, metrics, authority, and execution outcome summary into `WorkspaceContext` — the "Context" boundary — with no persistence and no inference. Suggestion derives deterministic **proposals** from `WorkspaceContext` via simple threshold rules — the "Suggest" stage — with no AI and no suggestion store. Sprints 21–24 add Accept/Reject, lifecycle projection, intent bridge, and governed execution. Sprint 25 adds **audit-derived execution outcomes** (`audit.read`). Sprint 26 adds **Execution Context Foundation**. Sprint 27 adds **Execution Idempotency Foundation**. Sprint 28 adds **Execution Cancellation Foundation** — a governed cancellation-request boundary (no runtime interruption) that projects `ExecutionOutcome(cancelled)` from existing audit metadata. Sprint 29 adds **Execution State Reconciliation Foundation** — deterministic per-id state interpretation over outcome history without persistence or automation.
+Resource services own graph-backed entity persistence. Layout owns spatial state. Projection aggregates derived read models. Action intents provide metadata-first command mapping. Capability discovery derives actor authority from existing policy without a permission database. Observation derives a neutral, read-only activity stream over the audit trail without adding persistence. Analytics deterministically aggregates observations into `WorkspaceMetrics` — the "Learn" stage — with no AI and no persistence. Context deterministically composes state, activity, metrics, authority, and execution outcome summary into `WorkspaceContext` — the "Context" boundary — with no persistence and no inference. Suggestion derives deterministic **proposals** from `WorkspaceContext` via simple threshold rules — the "Suggest" stage — with no AI and no suggestion store. Sprints 21–29 build the governed execution intelligence pipeline (approval → execution → outcomes → guard → cancellation → reconciliation). Sprint 30 adds **Execution States Projection Foundation** — bounded list reconciliation over outcome history without persistence or automation.
 
 Implementation directories will be created during Phase 1 scaffolding.
 

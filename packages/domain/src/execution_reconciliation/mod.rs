@@ -146,6 +146,24 @@ pub fn reconcile_execution_state(
     }
 }
 
+/// Reconciles all unique execution ids present in `outcomes`.
+///
+/// Ids are ordered by most-recent first appearance in the outcome stream.
+/// Each id is folded with the same precedence as [`reconcile_execution_state`].
+pub fn reconcile_execution_states(outcomes: &[ExecutionOutcome]) -> Vec<ExecutionReconciliation> {
+    let mut seen = std::collections::HashSet::new();
+    let mut ids = Vec::new();
+    for outcome in outcomes {
+        if seen.insert(outcome.execution_request_id.clone()) {
+            ids.push(outcome.execution_request_id.clone());
+        }
+    }
+
+    ids.into_iter()
+        .map(|id| reconcile_execution_state(&id, outcomes))
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -252,5 +270,38 @@ mod tests {
         let json = serde_json::to_string(&result).unwrap();
         let restored: ExecutionReconciliation = serde_json::from_str(&json).unwrap();
         assert_eq!(result, restored);
+    }
+
+    #[test]
+    fn list_reconciles_multiple_ids_in_order() {
+        let outcomes = vec![
+            outcome("execution:b", ExecutionOutcomeStatus::Failed),
+            outcome("execution:a", ExecutionOutcomeStatus::Completed),
+            outcome("execution:c", ExecutionOutcomeStatus::Cancelled),
+        ];
+        let states = reconcile_execution_states(&outcomes);
+        assert_eq!(states.len(), 3);
+        assert_eq!(states[0].execution_request_id, "execution:b");
+        assert_eq!(states[0].current_state, ExecutionState::Failed);
+        assert_eq!(states[1].execution_request_id, "execution:a");
+        assert_eq!(states[1].current_state, ExecutionState::Completed);
+        assert_eq!(states[2].execution_request_id, "execution:c");
+        assert_eq!(states[2].current_state, ExecutionState::Cancelled);
+    }
+
+    #[test]
+    fn list_empty_outcomes() {
+        assert!(reconcile_execution_states(&[]).is_empty());
+    }
+
+    #[test]
+    fn list_dedupes_same_id() {
+        let outcomes = vec![
+            outcome("execution:s-1", ExecutionOutcomeStatus::Failed),
+            outcome("execution:s-1", ExecutionOutcomeStatus::Completed),
+        ];
+        let states = reconcile_execution_states(&outcomes);
+        assert_eq!(states.len(), 1);
+        assert_eq!(states[0].current_state, ExecutionState::Completed);
     }
 }
