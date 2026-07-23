@@ -130,6 +130,13 @@ export interface ExecutionContextSummary {
   recent_commands: string[];
 }
 
+export interface DesktopWindowSnapshot {
+  hwnd: string;
+  title: string;
+  process_id: number;
+  visible: boolean;
+}
+
 export interface WorkspaceMetrics {
   observation_count: number;
   resource_change_count: number;

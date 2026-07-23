@@ -484,6 +484,8 @@ Fixed app chrome (Canvas | Operator). Prototype shell only — not production vi
 
 Abstracts all Windows API interactions. Only this layer communicates directly with the OS.
 
+**Sprint 35–36:** `packages/windows-integration` provides `WindowEnumerator` + Win32 `EnumWindows` (stub off-Windows). Kernel `GetDesktopWindows` is a governed read (`application_read`); Operator console can list visible top-level window titles. No focus/control APIs yet.
+
 ### 6.7 Permission Gateway
 
 **Owner: Platform Kernel**

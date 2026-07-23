@@ -7,6 +7,7 @@ use crate::commands::create_suggestion_intent_request::CreateSuggestionIntentReq
 use crate::commands::create_workspace::CreateWorkspace;
 use crate::commands::get_actor_capabilities::GetActorCapabilities;
 use crate::commands::get_audit_history::GetAuditHistory;
+use crate::commands::get_desktop_windows::GetDesktopWindows;
 use crate::commands::get_execution_outcomes::GetExecutionOutcomes;
 use crate::commands::get_execution_state::GetExecutionState;
 use crate::commands::get_execution_states::GetExecutionStates;
@@ -40,6 +41,7 @@ use workspace_domain::{
     Suggestion, SuggestionIntentRequest, SuggestionLifecycleRecord, IntentExecutionRequest, ExecutionOutcome, ExecutionReconciliation, CancellationRequest, WidgetId, WidgetReference, Workspace, WorkspaceContext, WorkspaceId,
     WorkspaceMetrics, WorkspaceSnapshot, CapabilityDiscovery, Zone, ZoneId,
 };
+use workspace_windows_integration::DesktopWindowSnapshot;
 
 /// Executes kernel commands and coordinates services + events.
 pub struct CommandHandler;
@@ -389,6 +391,16 @@ impl CommandHandler {
     ) -> Result<Vec<SuggestionLifecycleRecord>> {
         CommandPipeline::new(kernel.command_context(actor, intent))
             .execute_query(GetSuggestionLifecycle::new(limit))
+    }
+
+    pub fn get_desktop_windows(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        limit: Option<usize>,
+    ) -> Result<Vec<DesktopWindowSnapshot>> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetDesktopWindows::new(limit))
     }
 
     pub fn create_suggestion_intent_request(

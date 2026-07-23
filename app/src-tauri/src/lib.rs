@@ -9,6 +9,7 @@ use commands::layout::{
 };
 use commands::analytics::get_workspace_metrics;
 use commands::context::get_workspace_context;
+use commands::desktop_window::get_desktop_windows;
 use commands::discovery::get_actor_capabilities;
 use commands::observation::get_observations;
 use commands::projection::get_workspace_snapshot;
@@ -73,6 +74,7 @@ pub fn run() {
             accept_suggestion,
             reject_suggestion,
             get_suggestion_lifecycle,
+            get_desktop_windows,
             create_suggestion_intent_request,
             execute_intent_request,
             get_execution_outcomes,

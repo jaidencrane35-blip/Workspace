@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { invokeIpc } from "../lib/ipc";
 import type {
   CancellationRequest,
+  DesktopWindowSnapshot,
   ExecutionOutcome,
   ExecutionReconciliation,
   IntentExecutionRequest,
@@ -56,6 +57,9 @@ export function OperatorConsole({
   const [executionStates, setExecutionStates] = useState<
     ExecutionReconciliation[]
   >([]);
+  const [desktopWindows, setDesktopWindows] = useState<DesktopWindowSnapshot[]>(
+    [],
+  );
   const [lastIntent, setLastIntent] = useState<SuggestionIntentRequest | null>(
     null,
   );
@@ -262,6 +266,15 @@ export function OperatorConsole({
       setSettings(next);
     });
 
+  const refreshDesktopWindows = () =>
+    run("Desktop windows refreshed", async () => {
+      const windows = await invokeIpc<DesktopWindowSnapshot[]>(
+        "get_desktop_windows",
+        { limit: 50 },
+      );
+      setDesktopWindows(windows);
+    });
+
   return (
     <div className="operator-console">
       {busy && <p className="muted">Working…</p>}
@@ -291,6 +304,34 @@ export function OperatorConsole({
           </dl>
         </section>
       )}
+
+      <section>
+        <h2>Desktop windows</h2>
+        <p className="muted">
+          Win32 enumeration via Windows Integration Layer (observation only).
+        </p>
+        <div className="row">
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => void refreshDesktopWindows()}
+          >
+            Refresh windows
+          </button>
+        </div>
+        {desktopWindows.length === 0 ? (
+          <p className="muted">No windows listed yet — click refresh.</p>
+        ) : (
+          <ul className="list compact">
+            {desktopWindows.map((w) => (
+              <li key={w.hwnd}>
+                <strong>{w.title}</strong>{" "}
+                <span className="mono">pid {w.process_id}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       {settings && (
         <section>

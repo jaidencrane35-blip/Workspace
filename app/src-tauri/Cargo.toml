@@ -25,6 +25,7 @@ tauri = { version = "2", features = [] }
 workspace-database = { path = "../../packages/database" }
 workspace-kernel = { path = "../../packages/kernel" }
 workspace-domain = { path = "../../packages/domain" }
+workspace-windows-integration = { path = "../../packages/windows-integration" }
 
 [features]
 default = ["custom-protocol"]

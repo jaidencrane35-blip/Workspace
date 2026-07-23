@@ -134,9 +134,9 @@ Foundation     Decisions       Core Platform     Feature Expansion   Maturity
 - [x] Spatial Workspace Canvas shell prototype — Sprint 33: CanvasShell, zone drag, pan/zoom (DEC-009)
 - [x] SQLite schema v1 (layouts, preferences) — verified existing Sprint 02/13 schema (no redesign)
 - [x] Layout save/restore — Sprint 34: ensureLayout + update_layout on canvas interaction
+- [x] Windows Integration Layer (basic window enumeration) — Sprint 35–36: windows-integration crate + GetDesktopWindows IPC
 - [x] CI/CD pipeline (lint, build, test) — Sprint 01 PR workflow
 - [x] Developer setup documentation — Sprint 01
-- [ ] Windows Integration Layer (basic window enumeration) — future sprint (DEC-008)
 - [ ] Platform kernel (event bus, state management, Permission Gateway) — permission seam in Sprint 06; full gateway in Phase 2
 
 ### Gate Criteria (Phase 1 → Phase 2)

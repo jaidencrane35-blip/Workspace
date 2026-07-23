@@ -61,7 +61,7 @@ Workspace/
 │   ├── domain-automation/      # Automation domain service (future)
 │   ├── ai/                     # AI subsystem (future)
 │   ├── shell/                  # UI shell components (future)
-│   ├── windows-integration/    # Windows API abstraction (future)
+│   ├── windows-integration/    # Windows API abstraction (Sprint 35)
 │   └── shared/                 # Shared types, utilities, constants (future)
 │
 ├── plugins/                    # First-party plugin examples (placeholder)
@@ -167,7 +167,7 @@ Expectations:
 
 ---
 
-## 6. Current State (Phase 1 — Sprint 34)
+## 6. Current State (Phase 1 — Sprint 36)
 
 Phase 1 scaffolding is in progress. Implemented structure:
 

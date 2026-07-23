@@ -19,6 +19,7 @@ uuid = { workspace = true }
 chrono = { version = "0.4", features = ["clock"] }
 workspace-database = { workspace = true }
 workspace-domain = { workspace = true }
+workspace-windows-integration = { workspace = true }
 
 [dev-dependencies]
 tempfile = "3"

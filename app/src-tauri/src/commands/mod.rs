@@ -1,6 +1,7 @@
 pub mod analytics;
 pub mod audit;
 pub mod context;
+pub mod desktop_window;
 pub mod error;
 pub mod health;
 pub mod layout;

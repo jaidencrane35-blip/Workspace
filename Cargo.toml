@@ -5,6 +5,7 @@ members = [
   "packages/database",
   "packages/domain",
   "packages/kernel",
+  "packages/windows-integration",
 ]
 
 [workspace.package]
@@ -22,5 +23,6 @@ rusqlite = { version = "0.32", features = ["bundled"] }
 workspace-database = { path = "packages/database" }
 workspace-domain = { path = "packages/domain" }
 workspace-kernel = { path = "packages/kernel" }
+workspace-windows-integration = { path = "packages/windows-integration" }
 uuid = { version = "1", features = ["v4"] }
 chrono = { version = "0.4", features = ["clock"] }

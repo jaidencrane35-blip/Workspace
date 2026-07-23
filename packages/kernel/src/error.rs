@@ -121,6 +121,9 @@ pub enum KernelError {
     #[error("Execution reconciliation validation failed: {message}")]
     ExecutionReconciliationValidation { message: String },
 
+    #[error("Windows integration error: {message}")]
+    WindowsIntegration { message: String },
+
     #[error("Service '{0}' failed to start")]
     ServiceStartup(&'static str),
 
@@ -326,6 +329,10 @@ impl KernelError {
             },
             KernelError::ExecutionReconciliationValidation { message } => PublicError {
                 code: "execution_reconciliation_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::WindowsIntegration { message } => PublicError {
+                code: "windows_integration_error".into(),
                 message: message.clone(),
             },
             KernelError::ServiceStartup(service) => PublicError {
