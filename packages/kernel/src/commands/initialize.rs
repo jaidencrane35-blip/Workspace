@@ -9,7 +9,7 @@ use crate::events::EventBus;
 use crate::lifecycle::LifecycleState;
 use crate::services::{ConfigurationService, DatabaseServiceHandle, ServiceRegistry, ServiceStatus};
 use crate::state::WorkspaceState;
-use crate::{KERNEL_VERSION, SERVICE_CONFIGURATION, SERVICE_DATABASE};
+use crate::{KERNEL_VERSION, SERVICE_CONFIGURATION, SERVICE_DATABASE, SERVICE_WORKSPACE};
 
 /// Initializes database services and transitions workspace to ready.
 pub struct InitializeWorkspace {
@@ -88,6 +88,7 @@ impl InitializeWorkspace {
             KernelError::ServiceStartup(SERVICE_CONFIGURATION)
         })?;
         services.register(SERVICE_CONFIGURATION, ServiceStatus::Healthy);
+        services.register(SERVICE_WORKSPACE, ServiceStatus::Healthy);
 
         state.transition(LifecycleState::Ready);
 

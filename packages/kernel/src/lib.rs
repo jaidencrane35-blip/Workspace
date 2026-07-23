@@ -28,6 +28,7 @@ pub const KERNEL_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 pub const SERVICE_DATABASE: &str = "database";
 pub const SERVICE_CONFIGURATION: &str = "configuration";
+pub const SERVICE_WORKSPACE: &str = "workspace";
 
 /// Central runtime authority for Workspace.
 pub struct WorkspaceKernel {
@@ -85,6 +86,14 @@ impl WorkspaceKernel {
 
     pub fn update_settings(&self, update: SettingsUpdate) -> Result<WorkspaceSettings> {
         CommandHandler::update_settings(self, update)
+    }
+
+    pub fn create_workspace(&self, name: String) -> Result<workspace_domain::Workspace> {
+        CommandHandler::create_workspace(self, name)
+    }
+
+    pub fn get_workspace(&self, id: String) -> Result<workspace_domain::Workspace> {
+        CommandHandler::get_workspace(self, id)
     }
 
     pub fn begin_shutdown(&mut self) {
@@ -205,6 +214,25 @@ mod tests {
         kernel.begin_shutdown();
         assert_eq!(kernel.state().lifecycle, LifecycleState::ShuttingDown);
         assert!(*received.lock().unwrap());
+    }
+
+    #[test]
+    fn create_workspace_persists_and_emits_event() {
+        let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+        let received = Arc::new(Mutex::new(String::new()));
+        let captured = Arc::clone(&received);
+
+        kernel.event_bus.subscribe(move |event| {
+            if event.name() == "workspace.entity.created" {
+                *captured.lock().unwrap() = event.name().to_string();
+            }
+        });
+
+        let workspace = kernel.create_workspace("Sprint 05".into()).unwrap();
+        let loaded = kernel.get_workspace(workspace.id).unwrap();
+
+        assert_eq!(loaded.name, "Sprint 05");
+        assert_eq!(*received.lock().unwrap(), "workspace.entity.created");
     }
 
     #[test]

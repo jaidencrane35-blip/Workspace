@@ -27,13 +27,29 @@ pub struct SettingsChanged {
     pub settings_version: u32,
 }
 
-/// Internal domain events for kernel communication (Sprint 04).
+/// Metadata when a workspace entity is created.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WorkspaceEntityCreated {
+    pub workspace_id: String,
+    pub name: String,
+}
+
+/// Metadata when a workspace entity is updated.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WorkspaceEntityUpdated {
+    pub workspace_id: String,
+    pub name: String,
+}
+
+/// Internal domain events for kernel communication (Sprint 04+).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DomainEvent {
     WorkspaceStarted(WorkspaceStarted),
     WorkspaceReady(WorkspaceReady),
     WorkspaceShutdown(WorkspaceShutdown),
     SettingsChanged(SettingsChanged),
+    WorkspaceCreated(WorkspaceEntityCreated),
+    WorkspaceUpdated(WorkspaceEntityUpdated),
 }
 
 impl DomainEvent {
@@ -43,6 +59,8 @@ impl DomainEvent {
             Self::WorkspaceReady(_) => "system.workspace.ready",
             Self::WorkspaceShutdown(_) => "system.workspace.shutdown",
             Self::SettingsChanged(_) => "system.settings.changed",
+            Self::WorkspaceCreated(_) => "workspace.entity.created",
+            Self::WorkspaceUpdated(_) => "workspace.entity.updated",
         }
     }
 }

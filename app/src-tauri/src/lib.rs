@@ -2,6 +2,7 @@ mod commands;
 
 use std::sync::{Arc, Mutex};
 
+use commands::workspace::{create_workspace, get_workspace};
 use commands::health::get_workspace_health;
 use commands::settings::{get_settings, update_settings};
 use commands::status::get_workspace_status;
@@ -25,6 +26,8 @@ pub fn run() {
             get_workspace_health,
             get_settings,
             update_settings,
+            create_workspace,
+            get_workspace,
         ])
         .setup(|app| {
             let app_data_dir = app

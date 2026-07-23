@@ -5,6 +5,7 @@ pub mod encryption;
 pub mod error;
 pub mod init;
 pub mod migration;
+pub mod repositories;
 pub mod settings;
 
 pub use connection::Database;
@@ -12,4 +13,5 @@ pub use encryption::{EncryptionProvider, EncryptionTier, NoOpEncryptionProvider}
 pub use error::DatabaseError;
 pub use init::{bundled_migrations_dir, DatabaseService};
 pub use migration::MigrationRunner;
+pub use repositories::{WorkspaceRepository, ZoneRepository};
 pub use settings::SettingsRepository;

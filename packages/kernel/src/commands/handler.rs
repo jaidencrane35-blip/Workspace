@@ -1,5 +1,7 @@
 use std::path::Path;
 
+use crate::commands::create_workspace::CreateWorkspace;
+use crate::commands::get_workspace::GetWorkspace;
 use crate::commands::initialize::InitializeWorkspace;
 use crate::commands::update_settings::UpdateSettings;
 use crate::config::{SettingsUpdate, WorkspaceSettings};
@@ -8,6 +10,7 @@ use crate::events::types::{DomainEvent, WorkspaceShutdown};
 use crate::lifecycle::LifecycleState;
 use crate::services::ConfigurationService;
 use crate::WorkspaceKernel;
+use workspace_domain::Workspace;
 
 /// Executes kernel commands and coordinates services + events.
 pub struct CommandHandler;
@@ -44,6 +47,18 @@ impl CommandHandler {
             kernel.database(),
             kernel.event_bus(),
         )
+    }
+
+    pub fn create_workspace(kernel: &WorkspaceKernel, name: String) -> Result<Workspace> {
+        CreateWorkspace::new(name).execute(
+            kernel.state(),
+            kernel.database(),
+            kernel.event_bus(),
+        )
+    }
+
+    pub fn get_workspace(kernel: &WorkspaceKernel, id: String) -> Result<Workspace> {
+        GetWorkspace::new(id).execute(kernel.state(), kernel.database())
     }
 
     pub fn shutdown(kernel: &mut WorkspaceKernel) {

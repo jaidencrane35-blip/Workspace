@@ -1,11 +1,15 @@
 use thiserror::Error;
 
 use workspace_database::DatabaseError;
+use workspace_domain::DomainError;
 
 #[derive(Debug, Error)]
 pub enum KernelError {
     #[error("Database error")]
     Database(#[from] DatabaseError),
+
+    #[error("Domain error: {0}")]
+    Domain(#[from] DomainError),
 
     #[error("Configuration error: {0}")]
     Config(String),
@@ -15,6 +19,9 @@ pub enum KernelError {
 
     #[error("Invalid settings value: {0}")]
     InvalidSettings(String),
+
+    #[error("Workspace not found")]
+    WorkspaceNotFound,
 
     #[error("Service '{0}' failed to start")]
     ServiceStartup(&'static str),
@@ -50,6 +57,14 @@ impl KernelError {
             KernelError::InvalidSettings(_) => PublicError {
                 code: "invalid_settings".into(),
                 message: "One or more settings values were invalid.".into(),
+            },
+            KernelError::Domain(_) => PublicError {
+                code: "domain_error".into(),
+                message: "The request contained invalid workspace data.".into(),
+            },
+            KernelError::WorkspaceNotFound => PublicError {
+                code: "workspace_not_found".into(),
+                message: "The requested workspace was not found.".into(),
             },
             KernelError::ServiceStartup(service) => PublicError {
                 code: "service_startup_failed".into(),

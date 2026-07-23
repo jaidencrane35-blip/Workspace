@@ -2,6 +2,11 @@
 
 SQLite persistence foundation for Workspace (DEC-010).
 
+## Sprint 05
+
+- `WorkspaceRepository`, `ZoneRepository` — repository pattern for domain entities
+- Migration `002_workspace.sql` — workspaces, zones, applications, widgets tables
+
 ## Sprint 02
 
 - `DatabaseService` — open, migrate, lifecycle management

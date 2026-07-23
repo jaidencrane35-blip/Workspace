@@ -3,6 +3,7 @@ resolver = "2"
 members = [
   "app/src-tauri",
   "packages/database",
+  "packages/domain",
   "packages/kernel",
 ]
 
@@ -19,4 +20,7 @@ thiserror = "2"
 log = "0.4"
 rusqlite = { version = "0.32", features = ["bundled"] }
 workspace-database = { path = "packages/database" }
+workspace-domain = { path = "packages/domain" }
 workspace-kernel = { path = "packages/kernel" }
+uuid = { version = "1", features = ["v4"] }
+chrono = { version = "0.4", features = ["clock"] }

@@ -51,8 +51,9 @@ Workspace/
 │   └── vite.config.ts
 │
 ├── packages/                   # Shared internal Rust/TS packages
-│   ├── kernel/                 # Platform kernel (lifecycle, health, services — Sprint 03)
-│   ├── database/               # SQLite persistence foundation (Sprint 01–02)
+│   ├── domain/                 # Shared domain models (Sprint 05)
+│   ├── kernel/                 # Platform kernel (Sprint 03–05)
+│   ├── database/               # SQLite persistence + repositories (Sprint 01–05)
 │   ├── domain-apps/            # Application domain service (future)
 │   ├── domain-windows/         # Window domain service (future)
 │   ├── domain-devices/         # Device domain service (future)
