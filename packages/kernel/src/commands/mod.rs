@@ -48,6 +48,8 @@ mod permission_approval_tests;
 #[cfg(test)]
 mod ai_participation_tests;
 #[cfg(test)]
+mod ai_planning_tests;
+#[cfg(test)]
 mod observation_tests;
 #[cfg(test)]
 mod layout_tests;

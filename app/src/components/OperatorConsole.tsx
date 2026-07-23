@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { IpcCommandError, invokeIpc } from "../lib/ipc";
 import type {
+  AiPlanSubmissionResult,
   ApplicationLaunchResult,
   ApplicationReference,
   ApprovalDecisionResult,
@@ -101,6 +102,9 @@ export function OperatorConsole({
   const [lastRegisteredApp, setLastRegisteredApp] =
     useState<ApplicationReference | null>(null);
   const [approvals, setApprovals] = useState<PermissionApprovalRequest[]>([]);
+  const [lastAiPlan, setLastAiPlan] = useState<AiPlanSubmissionResult | null>(
+    null,
+  );
   const [busy, setBusy] = useState(false);
 
   const run = useCallback(
@@ -451,7 +455,58 @@ export function OperatorConsole({
           >
             Propose as AI (governed path)
           </button>
+          <button
+            type="button"
+            disabled={busy || !lastRegisteredApp}
+            onClick={() =>
+              void (async () => {
+                if (!lastRegisteredApp) return;
+                setBusy(true);
+                onError(null);
+                onMessage(null);
+                try {
+                  const result = await invokeIpc<AiPlanSubmissionResult>(
+                    "diagnose_ai_workspace_plan",
+                    {
+                      goal: "Prepare my workspace",
+                      applicationIds: [lastRegisteredApp.id],
+                    },
+                  );
+                  setLastAiPlan(result);
+                  const outcomes = result.submissions
+                    .map((s) => s.outcome.kind)
+                    .join(", ");
+                  onMessage(
+                    `AI plan: ${result.plan.proposals.length} proposal(s) → ${outcomes || "none"} (no auto-retry)`,
+                  );
+                  if (workspace) {
+                    await refreshReads(workspace.id);
+                  }
+                } catch (err: unknown) {
+                  onError(formatError(err));
+                } finally {
+                  setBusy(false);
+                }
+              })()
+            }
+          >
+            Plan as AI (prepare workspace)
+          </button>
         </div>
+        {lastAiPlan && (
+          <dl>
+            <dt>Last AI plan</dt>
+            <dd>
+              {lastAiPlan.plan.goal.statement} —{" "}
+              {lastAiPlan.plan.proposals.length} proposal(s)
+              {lastAiPlan.submissions.map((s) => (
+                <div key={s.proposal.id}>
+                  {s.proposal.command_name}: {s.outcome.kind}
+                </div>
+              ))}
+            </dd>
+          </dl>
+        )}
       </section>
 
       <section>

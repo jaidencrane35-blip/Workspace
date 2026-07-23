@@ -99,7 +99,6 @@ impl WorkspaceKernel {
         &self.event_bus
     }
 
-    #[cfg(test)]
     pub(crate) fn shared_database(&self) -> Arc<std::sync::Mutex<workspace_database::Database>> {
         self.database.shared()
     }

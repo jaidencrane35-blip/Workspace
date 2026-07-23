@@ -43,6 +43,10 @@ pub struct AiActionRequest {
     pub target_resource: Option<ResourceRef>,
     pub command_name: String,
     pub reason: Option<String>,
+    /// Optional link to originating AI goal (planning layer).
+    pub goal_id: Option<String>,
+    /// Optional link to originating AI action proposal (planning layer).
+    pub proposal_id: Option<String>,
     pub created_at: String,
 }
 
@@ -68,6 +72,8 @@ impl AiActionRequest {
             )),
             command_name: LAUNCH_APPLICATION_COMMAND.into(),
             reason,
+            goal_id: None,
+            proposal_id: None,
             created_at: Utc::now().to_rfc3339(),
         };
         request.validate()?;

@@ -75,6 +75,8 @@ define_id!(IntentId);
 define_id!(ActionIntentId);
 define_id!(PermissionApprovalRequestId);
 define_id!(CapabilityGrantId);
+define_id!(AiGoalId);
+define_id!(AiActionProposalId);
 
 #[cfg(test)]
 mod tests {

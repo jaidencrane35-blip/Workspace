@@ -187,6 +187,54 @@ export interface ApprovalDecisionResult {
   grant: CapabilityGrant | null;
 }
 
+export interface AiGoal {
+  id: string;
+  statement: string;
+  requesting_actor_id: string;
+  created_at: string;
+}
+
+export interface AiActionProposal {
+  id: string;
+  goal_id: string;
+  action_intent_id: string;
+  target_resource: ResourceRef | null;
+  command_name: string;
+  explanation: string | null;
+  created_at: string;
+}
+
+export interface AiPlan {
+  goal: AiGoal;
+  proposals: AiActionProposal[];
+}
+
+export type AiProposalAuthorityOutcome =
+  | { kind: "allowed" }
+  | { kind: "denied"; reason: string }
+  | {
+      kind: "approval_required";
+      reason: string;
+      approval_request_id: string;
+    };
+
+export interface AiProposalSubmission {
+  proposal: AiActionProposal;
+  request: {
+    requesting_actor_id: string;
+    command_name: string;
+    goal_id: string | null;
+    proposal_id: string | null;
+    reason: string | null;
+  };
+  outcome: AiProposalAuthorityOutcome;
+}
+
+export interface AiPlanSubmissionResult {
+  plan: AiPlan;
+  submissions: AiProposalSubmission[];
+}
+
 export interface WorkspaceMetrics {
   observation_count: number;
   resource_change_count: number;

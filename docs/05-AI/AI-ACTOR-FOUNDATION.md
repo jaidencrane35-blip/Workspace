@@ -15,7 +15,7 @@
 AI is not a privileged execution engine. It is an actor with empty default capabilities that must enter the same path as every other participant:
 
 ```
-AI Reasoning (outside authority)
+User Goal → AI Planner → Action Proposals
         ↓
 AiActionRequest  ("what does AI want?")
         ↓
@@ -27,6 +27,8 @@ PermissionGateway
         ↓
 Allow | Deny | ApprovalRequired
 ```
+
+Planning details: [AI Planning Foundation](AI-PLANNING-FOUNDATION.md).
 
 There is no `AICommandPipeline`, no `AIExecutionService`, and no bypass of the Permission Gateway.
 

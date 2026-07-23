@@ -2,7 +2,8 @@ use std::sync::{Arc, Mutex};
 
 use tauri::State;
 use workspace_domain::{
-    ApplicationLaunchResult, ApprovalDecisionResult, PermissionApprovalRequest,
+    AiPlanSubmissionResult, ApplicationLaunchResult, ApprovalDecisionResult,
+    PermissionApprovalRequest,
 };
 use workspace_kernel::{CommandHandler, WorkspaceKernel};
 
@@ -76,6 +77,33 @@ pub fn request_ai_application_launch(
             reason.or_else(|| {
                 Some("Diagnostic AI simulation — propose launch for approval".into())
             }),
+        ) {
+            Ok(result) => IpcResponse::success(result),
+            Err(error) => IpcResponse::failure(CommandError::from(error)),
+        },
+        Err(_) => IpcResponse::failure(CommandError::new(
+            "internal_error",
+            "Workspace core is temporarily unavailable.",
+        )),
+    }
+}
+
+/// Diagnostic AI planning: goal → proposals → governed submissions (no auto-retry).
+///
+/// Default: each proposal hits ApprovalRequired. Not a chatbot or autonomous agent.
+#[tauri::command]
+pub fn diagnose_ai_workspace_plan(
+    goal: Option<String>,
+    application_ids: Vec<String>,
+    kernel: State<'_, Arc<Mutex<WorkspaceKernel>>>,
+) -> IpcResponse<AiPlanSubmissionResult> {
+    let goal = goal.unwrap_or_else(|| "Prepare my workspace".into());
+    match kernel.lock() {
+        Ok(kernel) => match CommandHandler::submit_ai_plan(
+            &kernel,
+            DIAGNOSTIC_AI_ACTOR_ID,
+            goal,
+            application_ids,
         ) {
             Ok(result) => IpcResponse::success(result),
             Err(error) => IpcResponse::failure(CommandError::from(error)),

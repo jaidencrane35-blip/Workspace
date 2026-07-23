@@ -1,7 +1,7 @@
 use thiserror::Error;
 
 use workspace_database::DatabaseError;
-use workspace_domain::{AiRequestError, DomainError, ResourceKind};
+use workspace_domain::{AiPlanningError, AiRequestError, DomainError, ResourceKind};
 
 #[derive(Debug, Error)]
 pub enum KernelError {
@@ -148,6 +148,9 @@ pub enum KernelError {
     #[error("AI request validation failed: {message}")]
     AiRequestValidation { message: String },
 
+    #[error("AI planning validation failed: {message}")]
+    AiPlanningValidation { message: String },
+
     #[error("Workspace kernel initialization failed")]
     InitializationFailed,
 }
@@ -185,6 +188,18 @@ impl From<AiRequestError> for KernelError {
         match error {
             AiRequestError::Domain(domain) => KernelError::from(domain),
             other => KernelError::AiRequestValidation {
+                message: other.to_string(),
+            },
+        }
+    }
+}
+
+impl From<AiPlanningError> for KernelError {
+    fn from(error: AiPlanningError) -> Self {
+        match error {
+            AiPlanningError::Request(request) => KernelError::from(request),
+            AiPlanningError::Domain(domain) => KernelError::from(domain),
+            other => KernelError::AiPlanningValidation {
                 message: other.to_string(),
             },
         }
@@ -399,6 +414,10 @@ impl KernelError {
             },
             KernelError::AiRequestValidation { message } => PublicError {
                 code: "ai_request_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::AiPlanningValidation { message } => PublicError {
+                code: "ai_planning_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::InitializationFailed => PublicError {

@@ -36,10 +36,11 @@ use crate::error::{KernelError, Result};
 use crate::events::types::{DomainEvent, WorkspaceShutdown};
 use crate::lifecycle::LifecycleState;
 use crate::security::{PermissionRequest, PermissionSubject};
-use crate::services::{AiParticipationService, ConfigurationService};
+use crate::services::{AiParticipationService, AiPlanningService, ConfigurationService};
 use crate::WorkspaceKernel;
 use workspace_domain::{
-    Actor, ActorContext, ApplicationId, ApplicationReference, AuditEvent, Capability, Intent,
+    Actor, ActorContext, AiPlan, AiPlanSubmissionResult, AiProposalAuthorityOutcome,
+    AiProposalSubmission, ApplicationId, ApplicationReference, AuditEvent, Capability, Intent,
     IntentContext, Layout, LayoutId, LayoutMetadata, LayoutNode, LayoutSnapshot, Observation,
     Suggestion, SuggestionIntentRequest, SuggestionLifecycleRecord, IntentExecutionRequest, ExecutionOutcome, ExecutionReconciliation, CancellationRequest, WidgetId, WidgetReference, Workspace, WorkspaceContext, WorkspaceId,
     WorkspaceMetrics, WorkspaceSnapshot, CapabilityDiscovery, Zone, ZoneId,
@@ -234,6 +235,104 @@ impl CommandHandler {
             LaunchApplication::new(request.application_id().map_err(KernelError::from)?)
         };
         CommandPipeline::new(ctx).execute_mutation(command)
+    }
+
+    /// AI planning: goal → proposals only. Does not submit or execute.
+    pub fn plan_ai_goal(
+        kernel: &WorkspaceKernel,
+        actor_id: impl Into<String>,
+        goal_statement: impl Into<String>,
+        application_ids: Vec<String>,
+    ) -> Result<AiPlan> {
+        let actor_id = actor_id.into();
+        let apps = application_ids
+            .into_iter()
+            .map(ApplicationId::new)
+            .collect::<std::result::Result<Vec<_>, _>>()
+            .map_err(KernelError::Domain)?;
+        let plan =
+            AiPlanningService::plan_prepare_workspace(actor_id.clone(), goal_statement, apps)?;
+        let actor = AiPlanningService::ensure_ai_actor(&actor_id)?;
+        AiPlanningService::audit_plan_created(&kernel.shared_database(), &actor, &plan)?;
+        for proposal in &plan.proposals {
+            AiPlanningService::audit_proposal_created(
+                &kernel.shared_database(),
+                &actor,
+                proposal,
+            )?;
+        }
+        Ok(plan)
+    }
+
+    /// Plan then submit each proposal through the existing AI governance path.
+    ///
+    /// Unauthorized outcomes are recorded; proposals are not auto-retried.
+    pub fn submit_ai_plan(
+        kernel: &WorkspaceKernel,
+        actor_id: impl Into<String>,
+        goal_statement: impl Into<String>,
+        application_ids: Vec<String>,
+    ) -> Result<AiPlanSubmissionResult> {
+        Self::submit_ai_plan_inner(kernel, actor_id, goal_statement, application_ids, false)
+    }
+
+    #[cfg(test)]
+    pub(crate) fn submit_ai_plan_simulated(
+        kernel: &WorkspaceKernel,
+        actor_id: impl Into<String>,
+        goal_statement: impl Into<String>,
+        application_ids: Vec<String>,
+    ) -> Result<AiPlanSubmissionResult> {
+        Self::submit_ai_plan_inner(kernel, actor_id, goal_statement, application_ids, true)
+    }
+
+    fn submit_ai_plan_inner(
+        kernel: &WorkspaceKernel,
+        actor_id: impl Into<String>,
+        goal_statement: impl Into<String>,
+        application_ids: Vec<String>,
+        simulate: bool,
+    ) -> Result<AiPlanSubmissionResult> {
+        let actor_id = actor_id.into();
+        let plan = Self::plan_ai_goal(
+            kernel,
+            actor_id.clone(),
+            goal_statement,
+            application_ids,
+        )?;
+
+        let mut submissions = Vec::new();
+        for proposal in &plan.proposals {
+            let request = proposal
+                .to_action_request(&plan.goal.requesting_actor_id)
+                .map_err(KernelError::from)?;
+
+            let application_id = request.application_id().map_err(KernelError::from)?;
+            let submit_result = Self::submit_ai_application_launch_inner(
+                kernel,
+                actor_id.clone(),
+                application_id.to_string(),
+                request.reason.clone(),
+                simulate,
+            );
+
+            let outcome = match submit_result {
+                Ok(_) => AiProposalAuthorityOutcome::Allowed,
+                Err(error @ KernelError::ApprovalRequired { .. })
+                | Err(error @ KernelError::PermissionDenied(_)) => {
+                    AiPlanningService::map_submission_error(error).0
+                }
+                Err(error) => return Err(error),
+            };
+
+            submissions.push(AiProposalSubmission {
+                proposal: proposal.clone(),
+                request,
+                outcome,
+            });
+        }
+
+        Ok(AiPlanSubmissionResult { plan, submissions })
     }
 
     pub fn delete_application(

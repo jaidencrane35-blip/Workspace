@@ -1,6 +1,7 @@
 //! Shared Workspace domain models — no database or UI logic.
 
 pub mod actor;
+pub mod ai_planning;
 pub mod ai_request;
 pub mod analytics;
 pub mod audit;
@@ -30,6 +31,10 @@ pub mod workspace;
 
 pub use actor::{
     Actor, ActorContext, ActorMetadata, ActorType, LOCAL_USER_ACTOR_ID, SYSTEM_ACTOR_ID,
+};
+pub use ai_planning::{
+    AiActionProposal, AiGoal, AiPlan, AiPlanSubmissionResult, AiPlanningContext, AiPlanningError,
+    AiProposalAuthorityOutcome, AiProposalSubmission,
 };
 pub use ai_request::{AiActionRequest, AiRequestError};
 pub use analytics::{AnalyticsError, CategoryActivity, WorkspaceMetrics};
@@ -90,8 +95,8 @@ pub use entities::{
 pub use errors::{validate_resource_name, DomainError, Result};
 pub use graph::{GraphEdge, GraphRelationship};
 pub use ids::{
-    ActorId, ApplicationId, AuditEventId, CapabilityGrantId, IntentId, LayoutId,
-    PermissionApprovalRequestId, WidgetId, WorkspaceId, ZoneId,
+    ActorId, AiActionProposalId, AiGoalId, ApplicationId, AuditEventId, CapabilityGrantId,
+    IntentId, LayoutId, PermissionApprovalRequestId, WidgetId, WorkspaceId, ZoneId,
 };
 pub use layout::{
     Layout, LayoutBounds, LayoutError, LayoutMetadata, LayoutNode, LayoutSnapshot, Position2D,

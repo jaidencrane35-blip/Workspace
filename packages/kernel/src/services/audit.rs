@@ -74,6 +74,21 @@ impl AuditService {
         Self::append(db, event)
     }
 
+    /// Records operational AI planning events (goal/proposal ids only — no chain-of-thought).
+    pub fn record_ai_planning_event(
+        db: &Arc<Mutex<Database>>,
+        actor_context: &ActorContext,
+        intent_context: &IntentContext,
+        event_type: &str,
+        success: bool,
+        metadata: String,
+    ) -> Result<()> {
+        let event = AuditEvent::from_actor(event_type, &actor_context.actor, success)
+            .with_intent_type(intent_context.intent.intent_type)
+            .with_metadata(metadata);
+        Self::append(db, event)
+    }
+
     pub fn record_domain_event(db: &Arc<Mutex<Database>>, event: &DomainEvent) -> Result<()> {
         let actor = event
             .actor()
