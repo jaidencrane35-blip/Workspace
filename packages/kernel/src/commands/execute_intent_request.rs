@@ -10,6 +10,7 @@ use crate::commands::zone::CreateZone;
 use crate::error::{KernelError, Result};
 use crate::lifecycle::LifecycleState;
 use crate::security::PermissionSubject;
+use crate::services::ExecutionGuardService;
 use crate::services::GovernedIntentExecutionService;
 use crate::services::LayoutService;
 use workspace_domain::{
@@ -87,6 +88,10 @@ impl MutationCommand for ExecuteIntentRequest {
         }
 
         ensure_workspace_exists(ctx, &self.workspace_id)?;
+
+        // Audit-derived idempotency: block only prior successful completions.
+        // Runs inside the mutation after permission/policy — never bypasses governance.
+        ExecutionGuardService::ensure_allowed(&ctx.database, &self.suggestion_id)?;
 
         let prepared = GovernedIntentExecutionService::prepare(
             &ctx.database,
@@ -284,5 +289,44 @@ mod tests {
     fn requires_audit_write_capability() {
         let command = ExecuteIntentRequest::new(WorkspaceId::new("ws-1").unwrap(), "s-1".into());
         assert_eq!(command.required_capability(), Capability::audit_write());
+    }
+
+    #[test]
+    fn duplicate_successful_execution_is_rejected() {
+        let bus = EventBus::new();
+        let init = InitializeWorkspace::in_memory().execute(&bus).unwrap();
+        crate::events::AuditEventSubscriber::register(&bus, init.database.shared());
+        let (workspace, suggestion_id) = seed_through_intent_bridge(&init, &bus);
+
+        CommandPipeline::new(ready_ctx(&init, &bus))
+            .execute_mutation(ExecuteIntentRequest::new(
+                workspace.id.clone(),
+                suggestion_id.clone(),
+            ))
+            .unwrap();
+
+        let err = CommandPipeline::new(ready_ctx(&init, &bus))
+            .execute_mutation(ExecuteIntentRequest::new(
+                workspace.id.clone(),
+                suggestion_id.clone(),
+            ))
+            .unwrap_err();
+
+        assert!(matches!(
+            err,
+            KernelError::DuplicateExecution { execution_request_id }
+                if execution_request_id == format!("execution:{suggestion_id}")
+        ));
+
+        // Rejection uses the existing failure audit path (no new event types).
+        let audit = AuditService::list_recent(&init.database.shared(), 100).unwrap();
+        assert!(audit.iter().any(|event| {
+            !event.success
+                && event.command_name.as_deref() == Some("ExecuteIntentRequest")
+                && event.metadata.as_deref().is_some_and(|m| {
+                    m.contains("duplicate_execution")
+                        || m.contains(&format!("execution:{suggestion_id}"))
+                })
+        }));
     }
 }

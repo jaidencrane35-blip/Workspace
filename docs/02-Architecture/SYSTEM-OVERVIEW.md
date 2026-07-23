@@ -393,6 +393,19 @@ WorkspaceContext.execution_context (additive enrichment)
 
 Execution context enrichment answers "what happened after previous executions?" as a deterministic, read-only summary inside `WorkspaceContext`. No persistence, no new command/capability, no IPC, no AI memory or ranking. Audit remains the durable history; outcomes remain historical facts.
 
+**Execution idempotency layer (Sprint 27):**
+
+```
+ExecuteIntentRequest (governed mutation)
+    ↓
+ExecutionGuardService → ExecutionOutcomeService → Audit
+    ↓
+Allowed → mapped command dispatch
+AlreadyExecuted → DuplicateExecution (existing failure audit path)
+```
+
+Idempotency answers "has this execution request already completed?" using audit-derived outcomes and the existing `execution:{suggestion_id}` id. Only successful completions block; failures remain retryable. No idempotency table, no new capability, no IPC.
+
 ### 6.6 Windows Integration Layer
 
 Abstracts all Windows API interactions. Only this layer communicates directly with the OS.

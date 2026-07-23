@@ -103,6 +103,12 @@ pub enum KernelError {
     #[error("Execution context validation failed: {message}")]
     ExecutionContextValidation { message: String },
 
+    #[error("Execution guard validation failed: {message}")]
+    ExecutionGuardValidation { message: String },
+
+    #[error("Duplicate execution blocked for {execution_request_id}")]
+    DuplicateExecution { execution_request_id: String },
+
     #[error("Service '{0}' failed to start")]
     ServiceStartup(&'static str),
 
@@ -275,6 +281,18 @@ impl KernelError {
             KernelError::ExecutionContextValidation { message } => PublicError {
                 code: "execution_context_validation_error".into(),
                 message: message.clone(),
+            },
+            KernelError::ExecutionGuardValidation { message } => PublicError {
+                code: "execution_guard_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::DuplicateExecution {
+                execution_request_id,
+            } => PublicError {
+                code: "duplicate_execution".into(),
+                message: format!(
+                    "Execution request '{execution_request_id}' has already completed."
+                ),
             },
             KernelError::ServiceStartup(service) => PublicError {
                 code: "service_startup_failed".into(),

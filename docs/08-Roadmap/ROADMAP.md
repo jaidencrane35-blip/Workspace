@@ -125,6 +125,7 @@ Foundation     Decisions       Core Platform     Feature Expansion   Maturity
 - [x] Governed suggestion execution boundary: ExecuteIntentRequest, GovernedIntentExecutionService, pipeline-dispatched execution — Sprint 24
 - [x] Execution outcome foundation: ExecutionOutcomeService, GetExecutionOutcomes, audit-derived outcome projection — Sprint 25
 - [x] Execution Context Foundation — Sprint 26: ExecutionContextService, WorkspaceContext.execution_context enrichment
+- [x] Execution Idempotency Foundation — Sprint 27: ExecutionGuardService, audit-derived duplicate dispatch protection
 - [x] CI/CD pipeline (lint, build, test) — Sprint 01 PR workflow
 - [x] Developer setup documentation — Sprint 01
 - [ ] Spatial Workspace Canvas shell prototype — future sprint (DEC-009)
