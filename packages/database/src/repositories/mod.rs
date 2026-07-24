@@ -7,6 +7,7 @@ mod permission_approval;
 mod user_preference;
 mod widget;
 mod workspace;
+mod workspace_intent;
 mod zone;
 
 pub use ai_memory::AiMemoryRepository;
@@ -18,4 +19,5 @@ pub use permission_approval::PermissionApprovalRepository;
 pub use user_preference::UserPreferenceRepository;
 pub use widget::WidgetRepository;
 pub use workspace::WorkspaceRepository;
+pub use workspace_intent::WorkspaceIntentRepository;
 pub use zone::ZoneRepository;

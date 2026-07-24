@@ -38,6 +38,10 @@ impl OrchestratedPlanStore {
         self.plans.insert(plan.id.to_string(), plan.clone());
         plan
     }
+
+    pub(crate) fn list_all(&self) -> Vec<AiOrchestratedPlan> {
+        self.plans.values().cloned().collect()
+    }
 }
 
 pub(crate) struct AiOrchestrationService;

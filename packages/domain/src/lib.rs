@@ -35,6 +35,8 @@ pub mod suggestion;
 pub mod suggestion_intent;
 pub mod suggestion_lifecycle;
 pub mod workspace;
+pub mod workspace_intent;
+pub mod workspace_intelligence;
 
 pub use action_catalog::{
     ActionCatalog, ActionCatalogEntry, ActionCatalogError, AiActionAwareness,
@@ -134,8 +136,17 @@ pub use graph::{GraphEdge, GraphRelationship};
 pub use ids::{
     ActorId, AiActionProposalId, AiAssistantWorkflowId, AiGoalId, AiOrchestratedPlanId,
     AiPlanStepId, ApplicationId, AuditEventId, CapabilityGrantId, IntentId, LayoutId,
-    MemoryEntryId, ModelId, ModelProviderId, PermissionApprovalRequestId, UserPreferenceId,
-    WidgetId, WorkspaceId, ZoneId,
+    MemoryEntryId, ModelId, ModelProviderId, PermissionApprovalRequestId, ProjectId, TaskId,
+    UserPreferenceId, WidgetId, WorkGoalId, WorkspaceId, ZoneId,
+};
+pub use workspace_intent::{
+    Project, ProjectStatus, Task, TaskPriority, TaskStatus, WorkGoal, WorkGoalStatus,
+    WorkflowContext, WorkspaceIntentError,
+};
+pub use workspace_intelligence::{
+    BlockedActionSummary, IntelligenceApplicationSummary, IntelligenceHighlight,
+    PendingDecisionSummary, RecentActivityItem, WorkspaceIntelligenceComparison,
+    WorkspaceIntelligenceError, WorkspaceIntelligenceState, WorkspaceRecommendation,
 };
 pub use layout::{
     Layout, LayoutBounds, LayoutError, LayoutMetadata, LayoutNode, LayoutSnapshot, Position2D,

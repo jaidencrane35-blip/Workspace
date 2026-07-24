@@ -42,6 +42,10 @@ impl AssistantWorkflowStore {
             .insert(workflow.id.to_string(), workflow.clone());
         workflow
     }
+
+    pub(crate) fn list_all(&self) -> Vec<AiAssistantWorkflow> {
+        self.workflows.values().cloned().collect()
+    }
 }
 
 pub(crate) struct AiAssistantService;

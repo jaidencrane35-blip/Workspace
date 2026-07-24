@@ -35,6 +35,8 @@ mod suggestion_intent;
 mod suggestion_lifecycle;
 mod widget;
 mod workspace;
+mod workspace_intelligence;
+mod workspace_intent;
 mod zone;
 
 pub use action_catalog::ActionCatalogService;
@@ -75,4 +77,6 @@ pub use suggestion_intent::SuggestionIntentService;
 pub use suggestion_lifecycle::SuggestionLifecycleService;
 pub use widget::WidgetService;
 pub use workspace::WorkspaceService;
+pub(crate) use workspace_intelligence::WorkspaceIntelligenceService;
+pub(crate) use workspace_intent::WorkspaceIntentService;
 pub use zone::ZoneService;

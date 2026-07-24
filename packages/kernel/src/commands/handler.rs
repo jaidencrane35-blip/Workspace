@@ -42,6 +42,10 @@ use crate::commands::reject_suggestion::RejectSuggestion;
 use crate::commands::request_execution_cancellation::RequestExecutionCancellation;
 use crate::commands::update_settings::UpdateSettings;
 use crate::commands::widget::{CreateWidget, DeleteWidget, GetWidget};
+use crate::commands::workspace_intent::{
+    CreateProject, CreateTask, CreateWorkGoal, GetProject, GetTask, GetWorkflowContext,
+    ListProjects, ListTasks, SetActiveWork, UpdateProject, UpdateTask,
+};
 use crate::commands::zone::{CreateZone, DeleteZone, GetZone};
 use crate::config::{SettingsUpdate, WorkspaceSettings};
 use crate::error::{KernelError, Result};
@@ -51,11 +55,13 @@ use crate::security::{PermissionRequest, PermissionSubject};
 use crate::services::{
     AiAssistantService, AiEvaluationService, AiOrchestrationService, AiParticipationService,
     AiPlanningService, ConfigurationService, DesktopWindowService, WorkspaceContextService,
+    WorkspaceIntelligenceService,
 };
 use crate::WorkspaceKernel;
 use workspace_domain::{
     ActionCatalog, Actor, ActorContext, AiAssistantPlanComparison, AiAssistantWorkflow,
-    AiMemoryAwareness, AiOrchestratedPlan,
+    AiMemoryAwareness, AiOrchestratedPlan, Project, ProjectStatus, Task, TaskPriority, TaskStatus,
+    WorkGoal, WorkflowContext, WorkspaceIntelligenceComparison, WorkspaceIntelligenceState,
     AiPlan, AiPlanEvaluationReport, AiPlanSubmissionResult, AiProposalAuthorityOutcome,
     AiProposalEvaluation, AiProposalSubmission, ApplicationId, ApplicationReference, AuditEvent,
     Capability, CapabilitySet, Intent, IntentContext, Layout, LayoutId, LayoutMetadata, LayoutNode,
@@ -1813,6 +1819,182 @@ impl CommandHandler {
         CommandPipeline::new(kernel.command_context(actor, intent)).execute_mutation(
             RequestExecutionCancellation::new(workspace_id, execution_request_id, reason),
         )
+    }
+
+    pub fn create_project(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        name: String,
+        description: Option<String>,
+        metadata: Option<String>,
+    ) -> Result<Project> {
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_mutation(
+            CreateProject::new(workspace_id, name, description, metadata),
+        )
+    }
+
+    pub fn update_project(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        project_id: String,
+        name: Option<String>,
+        description: Option<Option<String>>,
+        status: Option<ProjectStatus>,
+    ) -> Result<Project> {
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_mutation(
+            UpdateProject::new(project_id, name, description, status),
+        )
+    }
+
+    pub fn get_project(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        project_id: String,
+    ) -> Result<Project> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetProject::new(project_id))
+    }
+
+    pub fn list_projects(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        limit: Option<usize>,
+    ) -> Result<Vec<Project>> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(ListProjects::new(workspace_id, limit))
+    }
+
+    pub fn create_task(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        project_id: String,
+        workspace_id: String,
+        title: String,
+        priority: TaskPriority,
+    ) -> Result<Task> {
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_mutation(
+            CreateTask::new(project_id, workspace_id, title, priority),
+        )
+    }
+
+    pub fn update_task(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        task_id: String,
+        title: Option<String>,
+        status: Option<TaskStatus>,
+        priority: Option<TaskPriority>,
+    ) -> Result<Task> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_mutation(UpdateTask::new(task_id, title, status, priority))
+    }
+
+    pub fn get_task(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        task_id: String,
+    ) -> Result<Task> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetTask::new(task_id))
+    }
+
+    pub fn list_tasks(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        project_id: Option<String>,
+        limit: Option<usize>,
+    ) -> Result<Vec<Task>> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(ListTasks::new(workspace_id, project_id, limit))
+    }
+
+    pub fn create_work_goal(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        description: String,
+        project_id: Option<String>,
+        task_id: Option<String>,
+    ) -> Result<WorkGoal> {
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_mutation(
+            CreateWorkGoal::new(workspace_id, description, project_id, task_id),
+        )
+    }
+
+    pub fn get_workflow_context(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkflowContext> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetWorkflowContext::new(workspace_id))
+    }
+
+    pub fn set_active_work(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        project_id: Option<String>,
+        task_id: Option<String>,
+    ) -> Result<WorkflowContext> {
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_mutation(
+            SetActiveWork::new(workspace_id, project_id, task_id),
+        )
+    }
+
+    /// Read-only workspace intelligence aggregation. Capability-gated; never executes.
+    pub fn generate_workspace_intelligence(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceIntelligenceState> {
+        // Gate on work_context.read via existing query path before aggregating.
+        let _ =
+            Self::get_workflow_context(kernel, actor.clone(), intent.clone(), workspace_id.clone())?;
+        let workspace = Self::get_workspace(kernel, actor.clone(), intent.clone(), workspace_id.clone())?;
+        let health = kernel.health();
+        WorkspaceIntelligenceService::generate(
+            &kernel.shared_database(),
+            &actor,
+            &kernel.orchestrated_plans(),
+            &kernel.assistant_workflows(),
+            workspace_id,
+            workspace.name,
+            health.status.clone(),
+        )
+    }
+
+    pub fn compare_workspace_intelligence_states(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        left_workspace_id: String,
+        right_workspace_id: String,
+    ) -> Result<WorkspaceIntelligenceComparison> {
+        let left = Self::generate_workspace_intelligence(
+            kernel,
+            actor.clone(),
+            intent.clone(),
+            left_workspace_id,
+        )?;
+        let right =
+            Self::generate_workspace_intelligence(kernel, actor, intent, right_workspace_id)?;
+        Ok(WorkspaceIntelligenceComparison::compare(&left, &right))
     }
 
     pub fn shutdown(kernel: &mut WorkspaceKernel) {

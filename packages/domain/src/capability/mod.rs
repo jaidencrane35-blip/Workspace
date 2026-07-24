@@ -27,6 +27,7 @@ pub enum CapabilityScope {
     System,
     Memory,
     Personalization,
+    WorkContext,
 }
 
 /// A named capability required or granted for an operation.
@@ -226,6 +227,20 @@ impl Capability {
             scope: CapabilityScope::Personalization,
         }
     }
+
+    pub fn work_context_read() -> Self {
+        Self {
+            id: CapabilityId::new("work_context.read").expect("work_context.read is valid"),
+            scope: CapabilityScope::WorkContext,
+        }
+    }
+
+    pub fn work_context_write() -> Self {
+        Self {
+            id: CapabilityId::new("work_context.write").expect("work_context.write is valid"),
+            scope: CapabilityScope::WorkContext,
+        }
+    }
 }
 
 impl CapabilitySet {
@@ -284,6 +299,8 @@ impl CapabilitySet {
             .with_capability(&Capability::memory_write())
             .with_capability(&Capability::personalization_read())
             .with_capability(&Capability::personalization_write())
+            .with_capability(&Capability::work_context_read())
+            .with_capability(&Capability::work_context_write())
     }
 
     /// Capabilities attributed to system lifecycle operations.

@@ -5,6 +5,10 @@ import type {
   AiAssistantPlanComparison,
   AiAssistantWorkflow,
   AiMemoryAwareness,
+  Project,
+  Task,
+  WorkspaceIntelligenceComparison,
+  WorkspaceIntelligenceState,
   AiOrchestratedPlan,
   AiPlan,
   AiPlanEvaluationReport,
@@ -136,6 +140,12 @@ export function OperatorConsole({
   const [assistantGoal, setAssistantGoal] = useState(
     "Prepare my coding workspace",
   );
+  const [workspaceIntelligence, setWorkspaceIntelligence] =
+    useState<WorkspaceIntelligenceState | null>(null);
+  const [intelligenceComparison, setIntelligenceComparison] =
+    useState<WorkspaceIntelligenceComparison | null>(null);
+  const [activeProject, setActiveProject] = useState<Project | null>(null);
+  const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [memoryEntries, setMemoryEntries] = useState<MemoryEntry[]>([]);
   const [memoryContext, setMemoryContext] = useState<AiMemoryAwareness | null>(
     null,
@@ -1052,6 +1062,159 @@ export function OperatorConsole({
               ))}
             </dd>
           </dl>
+        )}
+      </section>
+
+      <section>
+        <h2>Workspace intelligence (diagnostics)</h2>
+        <p className="muted">
+          Same WorkspaceIntelligenceService as the product Work tab — aggregate
+          only, authority_effect none.
+        </p>
+        <div className="row">
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("Workspace intelligence generated", async () => {
+                if (!workspace) return;
+                const project = await invokeIpc<Project>("create_project", {
+                  workspaceId: workspace.id,
+                  name: "Diagnostic Project",
+                  description: "Operator console seed",
+                  metadata: null,
+                });
+                const task = await invokeIpc<Task>("create_task", {
+                  projectId: project.id,
+                  workspaceId: workspace.id,
+                  title: "Inspect workspace context",
+                  priority: "medium",
+                });
+                await invokeIpc("set_active_work", {
+                  workspaceId: workspace.id,
+                  projectId: project.id,
+                  taskId: task.id,
+                });
+                setActiveProject(project);
+                setActiveTask(task);
+                const state = await invokeIpc<WorkspaceIntelligenceState>(
+                  "generate_workspace_intelligence",
+                  { workspaceId: workspace.id },
+                );
+                setWorkspaceIntelligence(state);
+              })
+            }
+          >
+            Generate Workspace Intelligence
+          </button>
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("Workspace summary refreshed", async () => {
+                if (!workspace) return;
+                const state = await invokeIpc<WorkspaceIntelligenceState>(
+                  "generate_workspace_intelligence",
+                  { workspaceId: workspace.id },
+                );
+                setWorkspaceIntelligence(state);
+              })
+            }
+          >
+            Generate Workspace Summary
+          </button>
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("Workflow context inspected", async () => {
+                if (!workspace) return;
+                const context = await invokeIpc("get_workflow_context", {
+                  workspaceId: workspace.id,
+                });
+                onMessage(
+                  `Context: project=${(context as { active_project_id?: string }).active_project_id ?? "none"} task=${(context as { active_task_id?: string }).active_task_id ?? "none"}`,
+                );
+              })
+            }
+          >
+            Inspect Workspace Context
+          </button>
+          <button
+            type="button"
+            disabled={busy || !activeProject}
+            onClick={() =>
+              void run("Active project inspected", async () => {
+                if (!activeProject) return;
+                const project = await invokeIpc<Project>("get_project", {
+                  projectId: activeProject.id,
+                });
+                setActiveProject(project);
+              })
+            }
+          >
+            Inspect Active Project
+          </button>
+          <button
+            type="button"
+            disabled={busy || !activeTask}
+            onClick={() =>
+              void run("Active task inspected", async () => {
+                if (!activeTask) return;
+                const task = await invokeIpc<Task>("get_task", {
+                  taskId: activeTask.id,
+                });
+                setActiveTask(task);
+              })
+            }
+          >
+            Inspect Active Task
+          </button>
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("Workspace states compared", async () => {
+                if (!workspace) return;
+                const result = await invokeIpc<WorkspaceIntelligenceComparison>(
+                  "compare_workspace_intelligence_states",
+                  {
+                    leftWorkspaceId: workspace.id,
+                    rightWorkspaceId: workspace.id,
+                  },
+                );
+                setIntelligenceComparison(result);
+              })
+            }
+          >
+            Compare Workspace States
+          </button>
+        </div>
+        {workspaceIntelligence && (
+          <ul className="muted">
+            <li>{workspaceIntelligence.summary}</li>
+            <li>
+              Project: {workspaceIntelligence.current_project?.name ?? "none"} /
+              Task: {workspaceIntelligence.current_task?.title ?? "none"}
+            </li>
+            <li>
+              Pending approvals: {workspaceIntelligence.pending_approvals.length}{" "}
+              · Blocked: {workspaceIntelligence.blocked_actions.length} · Recs:{" "}
+              {workspaceIntelligence.recommended_actions.length}
+            </li>
+            {workspaceIntelligence.recommended_actions.slice(0, 3).map((rec) => (
+              <li key={rec.id}>
+                {rec.title} — {rec.explanation}
+              </li>
+            ))}
+          </ul>
+        )}
+        {intelligenceComparison && (
+          <ul className="muted">
+            {intelligenceComparison.differences.map((diff) => (
+              <li key={diff}>{diff}</li>
+            ))}
+          </ul>
         )}
       </section>
 

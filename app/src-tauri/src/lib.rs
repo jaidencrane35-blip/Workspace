@@ -46,6 +46,11 @@ use commands::resources::{
     delete_zone, get_application, get_widget, get_zone, launch_application,
 };
 use commands::workspace::{create_workspace, get_workspace};
+use commands::workspace_intelligence::{
+    compare_workspace_intelligence_states, create_project, create_task,
+    generate_workspace_intelligence, get_project, get_task, get_workflow_context, list_projects,
+    list_tasks, set_active_work, update_task_status,
+};
 use commands::health::get_workspace_health;
 use commands::settings::{get_settings, update_settings};
 use commands::status::get_workspace_status;
@@ -122,6 +127,17 @@ pub fn run() {
             regenerate_assistant_plan,
             compare_assistant_plan_revisions,
             record_assistant_explanation_viewed,
+            create_project,
+            list_projects,
+            get_project,
+            create_task,
+            list_tasks,
+            get_task,
+            update_task_status,
+            set_active_work,
+            get_workflow_context,
+            generate_workspace_intelligence,
+            compare_workspace_intelligence_states,
             create_suggestion_intent_request,
             execute_intent_request,
             get_execution_outcomes,

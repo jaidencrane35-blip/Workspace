@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { AssistantPanel } from "./components/AssistantPanel";
 import { CanvasShell } from "./components/CanvasShell";
 import { OperatorConsole } from "./components/OperatorConsole";
+import { WorkspaceIntelligencePanel } from "./components/WorkspaceIntelligencePanel";
 import { invokeIpc } from "./lib/ipc";
 import type { Workspace, WorkspaceContext, Zone } from "./types/domain";
 import type { Layout } from "./types/layout";
@@ -13,7 +14,7 @@ import type {
 
 const LEGACY_WORKSPACE_ID_KEY = "workspace.active_id";
 
-type AppView = "canvas" | "assistant" | "operator";
+type AppView = "canvas" | "work" | "assistant" | "operator";
 
 function formatError(err: unknown): string {
   if (err instanceof Error) {
@@ -181,6 +182,13 @@ export default function App() {
           </button>
           <button
             type="button"
+            className={view === "work" ? "tab active" : "tab"}
+            onClick={() => setView("work")}
+          >
+            Work
+          </button>
+          <button
+            type="button"
             className={view === "assistant" ? "tab active" : "tab"}
             onClick={() => setView("assistant")}
           >
@@ -229,6 +237,16 @@ export default function App() {
             </button>
           </div>
         )
+      ) : view === "work" ? (
+        <div className="container assistant-container">
+          <WorkspaceIntelligencePanel
+            workspace={workspace}
+            busy={busy}
+            onBusy={setBusy}
+            onError={onError}
+            onMessage={onMessage}
+          />
+        </div>
       ) : view === "assistant" ? (
         <div className="container assistant-container">
           <AssistantPanel
@@ -243,8 +261,8 @@ export default function App() {
         <div className="container">
           <p className="lede">
             <span className="badge">Diagnostic</span> Operator console — validates
-            the same governed assistant pipeline as the product Assistant tab.
-            Prefer Assistant for day-to-day work.
+            Work intelligence and the governed Assistant pipeline. Prefer{" "}
+            <strong>Work</strong> for workspace understanding.
           </p>
           <OperatorConsole
             workspace={workspace}

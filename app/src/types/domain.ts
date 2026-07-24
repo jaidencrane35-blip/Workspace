@@ -609,3 +609,123 @@ export interface WorkspaceContext {
   execution_context: ExecutionContextSummary;
   execution_states: ExecutionReconciliation[];
 }
+
+export type ProjectStatus = "active" | "paused" | "completed" | "archived";
+export type TaskStatus =
+  | "todo"
+  | "in_progress"
+  | "blocked"
+  | "done"
+  | "cancelled";
+export type TaskPriority = "low" | "medium" | "high";
+
+export interface Project {
+  id: string;
+  workspace_id: string;
+  name: string;
+  description: string | null;
+  status: ProjectStatus;
+  metadata: string | null;
+  created_at: string;
+  updated_at: string;
+  deleted: boolean;
+}
+
+export interface Task {
+  id: string;
+  project_id: string;
+  workspace_id: string;
+  title: string;
+  status: TaskStatus;
+  priority: TaskPriority;
+  created_at: string;
+  updated_at: string;
+  deleted: boolean;
+}
+
+export interface WorkGoal {
+  id: string;
+  workspace_id: string;
+  project_id: string | null;
+  task_id: string | null;
+  description: string;
+  status: "active" | "achieved" | "abandoned";
+  created_at: string;
+  updated_at: string;
+  deleted: boolean;
+}
+
+export interface WorkflowContext {
+  workspace_id: string;
+  active_project_id: string | null;
+  active_task_id: string | null;
+  related_plan_ids: string[];
+  pending_decision_notes: string[];
+  blocker_notes: string[];
+  updated_at: string;
+}
+
+export interface WorkspaceRecommendation {
+  id: string;
+  title: string;
+  explanation: string;
+  kind: string;
+}
+
+export interface IntelligenceHighlight {
+  id: string;
+  label: string;
+  summary: string;
+  source: string;
+}
+
+export interface PendingDecisionSummary {
+  id: string;
+  summary: string;
+  explanation: string;
+}
+
+export interface BlockedActionSummary {
+  id: string;
+  summary: string;
+  explanation: string;
+}
+
+export interface RecentActivityItem {
+  event_type: string;
+  summary: string;
+  timestamp: string;
+}
+
+export interface IntelligenceApplicationSummary {
+  id: string;
+  name: string;
+  appears_active: boolean;
+}
+
+export interface WorkspaceIntelligenceState {
+  workspace_id: string;
+  workspace_name: string;
+  generated_at: string;
+  current_project: Project | null;
+  current_task: Task | null;
+  workflow_context: WorkflowContext;
+  recent_goals: WorkGoal[];
+  recent_activity: RecentActivityItem[];
+  pending_plans: string[];
+  pending_approvals: PendingDecisionSummary[];
+  blocked_actions: BlockedActionSummary[];
+  recommended_actions: WorkspaceRecommendation[];
+  memory_highlights: IntelligenceHighlight[];
+  preference_highlights: IntelligenceHighlight[];
+  current_applications: IntelligenceApplicationSummary[];
+  workspace_health: string;
+  summary: string;
+  authority_effect: string;
+}
+
+export interface WorkspaceIntelligenceComparison {
+  left_workspace_id: string;
+  right_workspace_id: string;
+  differences: string[];
+}

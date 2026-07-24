@@ -65,6 +65,8 @@ mod ai_assistant_tests;
 #[cfg(test)]
 mod ai_assistant_product_tests;
 #[cfg(test)]
+mod workspace_intelligence_tests;
+#[cfg(test)]
 mod ai_memory_tests;
 #[cfg(test)]
 mod ai_model_provider_tests;
@@ -83,6 +85,7 @@ mod resource_tests;
 mod r#trait;
 mod update_settings;
 mod widget;
+mod workspace_intent;
 mod zone;
 
 pub use accept_suggestion::AcceptSuggestion;
@@ -130,4 +133,8 @@ pub use request_execution_cancellation::RequestExecutionCancellation;
 pub use r#trait::{Command, MutationCommand, QueryCommand};
 pub use update_settings::UpdateSettings;
 pub use widget::{CreateWidget, DeleteWidget, GetWidget};
+pub use workspace_intent::{
+    CreateProject, CreateTask, CreateWorkGoal, GetProject, GetTask, GetWorkflowContext,
+    ListProjects, ListTasks, SetActiveWork, UpdateProject, UpdateTask,
+};
 pub use zone::{CreateZone, DeleteZone, GetZone};

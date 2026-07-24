@@ -29,7 +29,8 @@
 | 2 | Model Provider Abstraction | Complete (S62–63) |
 | 3 | Personalization (preference-aware proposals) | Complete (S64–65) |
 | 4 | Product Assistant UX | Complete (S66–67) |
-| 5 | Governed Automation Contracts | Planned |
+| 5 | Workspace Intelligence Foundation | Complete (S68–69) |
+| 6 | Governed Automation Contracts | Planned |
 
 ---
 
@@ -70,6 +71,10 @@ Explicit user preference profiles; preference-aware ranking/explanations with di
 ## Phase 4 Batch 4 (done)
 
 Production Assistant UX over the existing governed pipeline: revise/regenerate/compare, structured explanations, clear workflow states. No new authority path. See [AI Product Assistant](AI-PRODUCT-ASSISTANT.md).
+
+## Phase 4 Batch 5 (done)
+
+Durable work context (Project/Task/Goal/WorkflowContext) + read-only Workspace Intelligence aggregator. Product **Work** tab; Assistant is one interface. Foundation for future automation contracts. See [Workspace Intelligence Foundation](WORKSPACE-INTELLIGENCE-FOUNDATION.md).
 
 ---
 

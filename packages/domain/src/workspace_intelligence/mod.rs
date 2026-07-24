@@ -1,0 +1,149 @@
+//! Workspace Intelligence — read-only aggregation of work understanding (P4-B5).
+//!
+//! Aggregates existing systems. Cannot execute, approve, or grant authority.
+
+use serde::{Deserialize, Serialize};
+use thiserror::Error;
+
+use crate::errors::DomainError;
+use crate::workspace_intent::{Project, Task, WorkGoal, WorkflowContext};
+
+/// Intelligence-layer validation errors.
+#[derive(Debug, Error, PartialEq, Eq)]
+pub enum WorkspaceIntelligenceError {
+    #[error("workspace intelligence requires a workspace id")]
+    MissingWorkspace,
+
+    #[error(transparent)]
+    Domain(#[from] DomainError),
+}
+
+/// User-facing recommendation with an explanation (no chain-of-thought).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct WorkspaceRecommendation {
+    pub id: String,
+    pub title: String,
+    pub explanation: String,
+    pub kind: String,
+}
+
+/// Highlight drawn from memory (informational).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct IntelligenceHighlight {
+    pub id: String,
+    pub label: String,
+    pub summary: String,
+    pub source: String,
+}
+
+/// Pending decision surfaced for the user (not an approval action).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PendingDecisionSummary {
+    pub id: String,
+    pub summary: String,
+    pub explanation: String,
+}
+
+/// Blocked action summary (display only).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct BlockedActionSummary {
+    pub id: String,
+    pub summary: String,
+    pub explanation: String,
+}
+
+/// Recent activity line for the workspace summary.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RecentActivityItem {
+    pub event_type: String,
+    pub summary: String,
+    pub timestamp: String,
+}
+
+/// Application currently relevant to the workspace (informational).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct IntelligenceApplicationSummary {
+    pub id: String,
+    pub name: String,
+    pub appears_active: bool,
+}
+
+/// Aggregated, read-only understanding of the user's work context.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct WorkspaceIntelligenceState {
+    pub workspace_id: String,
+    pub workspace_name: String,
+    pub generated_at: String,
+    pub current_project: Option<Project>,
+    pub current_task: Option<Task>,
+    pub workflow_context: WorkflowContext,
+    pub recent_goals: Vec<WorkGoal>,
+    pub recent_activity: Vec<RecentActivityItem>,
+    pub pending_plans: Vec<String>,
+    pub pending_approvals: Vec<PendingDecisionSummary>,
+    pub blocked_actions: Vec<BlockedActionSummary>,
+    pub recommended_actions: Vec<WorkspaceRecommendation>,
+    pub memory_highlights: Vec<IntelligenceHighlight>,
+    pub preference_highlights: Vec<IntelligenceHighlight>,
+    pub current_applications: Vec<IntelligenceApplicationSummary>,
+    pub workspace_health: String,
+    pub summary: String,
+    /// Explicit marker for audits and UI: this state grants nothing.
+    pub authority_effect: String,
+}
+
+impl WorkspaceIntelligenceState {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+}
+
+/// Side-by-side comparison of two intelligence snapshots (informational).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct WorkspaceIntelligenceComparison {
+    pub left_workspace_id: String,
+    pub right_workspace_id: String,
+    pub differences: Vec<String>,
+}
+
+impl WorkspaceIntelligenceComparison {
+    pub fn compare(left: &WorkspaceIntelligenceState, right: &WorkspaceIntelligenceState) -> Self {
+        let mut differences = Vec::new();
+        if left.current_project.as_ref().map(|p| p.id.as_str())
+            != right.current_project.as_ref().map(|p| p.id.as_str())
+        {
+            differences.push("Active project differs.".into());
+        }
+        if left.current_task.as_ref().map(|t| t.id.as_str())
+            != right.current_task.as_ref().map(|t| t.id.as_str())
+        {
+            differences.push("Active task differs.".into());
+        }
+        if left.pending_approvals.len() != right.pending_approvals.len() {
+            differences.push(format!(
+                "Pending approvals: {} → {}",
+                left.pending_approvals.len(),
+                right.pending_approvals.len()
+            ));
+        }
+        if left.memory_highlights.len() != right.memory_highlights.len() {
+            differences.push("Memory highlights differ.".into());
+        }
+        if left.preference_highlights.len() != right.preference_highlights.len() {
+            differences.push("Preference highlights differ.".into());
+        }
+        if left.recommended_actions.len() != right.recommended_actions.len() {
+            differences.push(format!(
+                "Recommendation count: {} → {}",
+                left.recommended_actions.len(),
+                right.recommended_actions.len()
+            ));
+        }
+        if differences.is_empty() {
+            differences.push("No material differences between workspace intelligence states.".into());
+        }
+        Self {
+            left_workspace_id: left.workspace_id.clone(),
+            right_workspace_id: right.workspace_id.clone(),
+            differences,
+        }
+    }
+}

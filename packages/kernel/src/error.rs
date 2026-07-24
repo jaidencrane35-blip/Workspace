@@ -4,6 +4,7 @@ use workspace_database::DatabaseError;
 use workspace_domain::{
     AiAssistantError, AiEvaluationError, AiMemoryError, AiModelError, AiOrchestrationError,
     AiPersonalizationError, AiPlanningError, AiRequestError, DomainError, ResourceKind,
+    WorkspaceIntelligenceError, WorkspaceIntentError,
 };
 
 #[derive(Debug, Error)]
@@ -175,6 +176,12 @@ pub enum KernelError {
     #[error("AI personalization validation failed: {message}")]
     AiPersonalizationValidation { message: String },
 
+    #[error("Workspace intent validation failed: {message}")]
+    WorkspaceIntentValidation { message: String },
+
+    #[error("Workspace intelligence validation failed: {message}")]
+    WorkspaceIntelligenceValidation { message: String },
+
     #[error("Workspace kernel initialization failed")]
     InitializationFailed,
 }
@@ -287,6 +294,28 @@ impl From<AiPersonalizationError> for KernelError {
         match error {
             AiPersonalizationError::Domain(domain) => KernelError::from(domain),
             other => KernelError::AiPersonalizationValidation {
+                message: other.to_string(),
+            },
+        }
+    }
+}
+
+impl From<WorkspaceIntentError> for KernelError {
+    fn from(error: WorkspaceIntentError) -> Self {
+        match error {
+            WorkspaceIntentError::Domain(domain) => KernelError::from(domain),
+            other => KernelError::WorkspaceIntentValidation {
+                message: other.to_string(),
+            },
+        }
+    }
+}
+
+impl From<WorkspaceIntelligenceError> for KernelError {
+    fn from(error: WorkspaceIntelligenceError) -> Self {
+        match error {
+            WorkspaceIntelligenceError::Domain(domain) => KernelError::from(domain),
+            other => KernelError::WorkspaceIntelligenceValidation {
                 message: other.to_string(),
             },
         }
@@ -533,6 +562,14 @@ impl KernelError {
             },
             KernelError::AiPersonalizationValidation { message } => PublicError {
                 code: "ai_personalization_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::WorkspaceIntentValidation { message } => PublicError {
+                code: "workspace_intent_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::WorkspaceIntelligenceValidation { message } => PublicError {
+                code: "workspace_intelligence_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::InitializationFailed => PublicError {

@@ -84,6 +84,9 @@ define_id!(MemoryEntryId);
 define_id!(ModelProviderId);
 define_id!(ModelId);
 define_id!(UserPreferenceId);
+define_id!(ProjectId);
+define_id!(TaskId);
+define_id!(WorkGoalId);
 
 #[cfg(test)]
 mod tests {

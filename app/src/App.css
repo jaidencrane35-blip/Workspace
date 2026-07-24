@@ -458,3 +458,34 @@ button.linkish:not(:disabled):hover {
   padding-left: 1.1rem;
   color: #c5d0da;
 }
+
+/* Workspace intelligence — Phase 4 Batch 5 */
+
+.intelligence-panel h3 {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+  color: #9aa8b4;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.intelligence-hero h2 {
+  margin: 0.35rem 0 0.5rem;
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: #e7ecf1;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.intelligence-list {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.intelligence-list li {
+  line-height: 1.35;
+}

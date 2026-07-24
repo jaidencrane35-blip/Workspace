@@ -20,3 +20,4 @@ pub mod status;
 pub mod suggestion;
 pub mod suggestion_lifecycle;
 pub mod workspace;
+pub mod workspace_intelligence;

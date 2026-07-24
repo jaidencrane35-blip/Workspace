@@ -45,6 +45,11 @@
 | `regenerate_assistant_plan` | Product + diagnostic: regenerate plan for same goal |
 | `compare_assistant_plan_revisions` | Product + diagnostic: explain differences between revisions |
 | `record_assistant_explanation_viewed` | Product + diagnostic: audit explanation view (`authority_effect: none`) |
+| `create_project` / `list_projects` / `get_project` | Product + diagnostic: durable project intent |
+| `create_task` / `list_tasks` / `get_task` / `update_task_status` | Product + diagnostic: durable task intent |
+| `set_active_work` / `get_workflow_context` | Product + diagnostic: active project/task context |
+| `generate_workspace_intelligence` | Product + diagnostic: read-only workspace understanding |
+| `compare_workspace_intelligence_states` | Product + diagnostic: compare intelligence snapshots |
 | `create_memory_entry` / `list_memory_entries` / `get_memory_context` | Diagnostic governed memory (informational) |
 | `delete_memory_entry` / `clear_memory_entries` | Diagnostic memory lifecycle |
 | `diagnose_ai_plan_preview` | Diagnostic memory-aware plan (no execution) |
