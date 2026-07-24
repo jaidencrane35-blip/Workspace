@@ -20,6 +20,7 @@ use crate::commands::workspace_environment::GateEnvironmentRead;
 use crate::commands::workspace_composition::GateCompositionRead;
 use crate::commands::workspace_purpose::GatePurposeRead;
 use crate::commands::workspace_evolution::GateEvolutionRead;
+use crate::commands::workspace_recommendation::GateRecommendationEngineRead;
 use crate::commands::workspace_activity::GateActivityGraphRead;
 use crate::commands::workspace_attention::GateAttentionRead;
 use crate::commands::workspace_continuity::GateContinuityRead;
@@ -78,6 +79,7 @@ use crate::services::{
     AiPlanningService, ConfigurationService, DecisionEngineService, DecisionQueueService,
     DesktopWindowService, TaskGraphService, WorkspaceEnvironmentService,
     WorkspaceCompositionService, WorkspacePurposeService, WorkspaceEvolutionService,
+    WorkspaceRecommendationEngineService,
     WorkspaceActivityGraphService, WorkspaceAttentionService, WorkspaceContextService,
     WorkspaceContinuityService, WorkspaceIntelligenceService,
 };
@@ -91,7 +93,8 @@ use workspace_domain::{
     TaskRelationshipKind, TaskStatus, TriggerEvaluationResult, TriggerEvent, TriggerEventType,
     WorkGoal, WorkflowContext, WorkspaceActivity, WorkspaceActivityGraph, WorkspaceAttentionState,
     WorkspaceContinuityState, WorkspaceEnvironmentState, WorkspaceCompositionState,
-    WorkspacePurposeState, WorkspaceEvolutionState, WorkspaceTask, WorkspaceTaskPriority,
+    WorkspacePurposeState, WorkspaceEvolutionState, WorkspaceRecommendationEngineState,
+    WorkspaceTask, WorkspaceTaskPriority,
     WorkspaceTaskStatus,
     WorkspaceIntelligenceComparison, WorkspaceIntelligenceState, AiPlan, AiPlanEvaluationReport,
     AiPlanSubmissionResult,
@@ -2765,6 +2768,35 @@ impl CommandHandler {
     /// Architecture guard — Evolution Model must never execute.
     pub fn workspace_evolution_attempt_execute() -> Result<()> {
         WorkspaceEvolutionService::attempt_execute()
+    }
+
+    /// Aggregate Workspace Recommendation Engine (read-only next-step suggestions).
+    pub fn generate_workspace_recommendation_engine(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceRecommendationEngineState> {
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent.clone()))
+            .execute_query(GateRecommendationEngineRead)?;
+        let _ = Self::get_workflow_context(
+            kernel,
+            actor.clone(),
+            intent,
+            workspace_id.clone(),
+        )?;
+        WorkspaceRecommendationEngineService::generate(
+            &kernel.shared_database(),
+            &actor,
+            &kernel.orchestrated_plans(),
+            &kernel.assistant_workflows(),
+            workspace_id,
+        )
+    }
+
+    /// Architecture guard — Recommendation Engine must never execute.
+    pub fn workspace_recommendation_engine_attempt_execute() -> Result<()> {
+        WorkspaceRecommendationEngineService::attempt_execute()
     }
 
     /// Read-only workspace intelligence aggregation. Capability-gated; never executes.

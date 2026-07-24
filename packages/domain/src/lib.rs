@@ -45,6 +45,7 @@ pub mod workspace_attention;
 pub mod workspace_composition;
 pub mod workspace_purpose;
 pub mod workspace_evolution;
+pub mod workspace_recommendation;
 pub mod workspace_continuity;
 pub mod workspace_task_graph;
 pub mod workspace_environment;
@@ -206,6 +207,13 @@ pub use workspace_evolution::{
     EvolutionEvent, EvolutionInsight, EvolutionInsightKind, EvolutionRelationship,
     EvolutionSourceModel, WorkspaceEvolutionError, WorkspaceEvolutionState,
     WorkspaceEvolutionSummary,
+};
+pub use workspace_recommendation::{
+    build_recommendation_engine_summary, recommendation_engine_now_rfc3339,
+    validate_recommendation_engine_workspace_id, RecommendationConfidence, RecommendationEvidence,
+    RecommendationItem, RecommendationKind, RecommendationRelationship,
+    WorkspaceRecommendationEngineError, WorkspaceRecommendationEngineState,
+    WorkspaceRecommendationEngineSummary,
 };
 pub use workspace_environment::{
     build_environment_summary, now_rfc3339, validate_workspace_id, EnvironmentApplication,

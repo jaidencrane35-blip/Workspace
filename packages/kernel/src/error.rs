@@ -7,7 +7,8 @@ use workspace_domain::{
     AutomationTriggerError, DecisionEngineError, DecisionQueueError, DomainError, ResourceKind,
     TaskGraphError, WorkspaceActivityError, WorkspaceAttentionError, WorkspaceContinuityError,
     WorkspaceEnvironmentError, WorkspaceCompositionError, WorkspacePurposeError,
-    WorkspaceEvolutionError, WorkspaceIntelligenceError, WorkspaceIntentError,
+    WorkspaceEvolutionError, WorkspaceRecommendationEngineError, WorkspaceIntelligenceError,
+    WorkspaceIntentError,
 };
 
 #[derive(Debug, Error)]
@@ -220,6 +221,9 @@ pub enum KernelError {
 
     #[error("Workspace evolution validation failed: {message}")]
     WorkspaceEvolutionValidation { message: String },
+
+    #[error("Workspace recommendation engine validation failed: {message}")]
+    WorkspaceRecommendationEngineValidation { message: String },
 
     #[error("Workspace kernel initialization failed")]
     InitializationFailed,
@@ -487,6 +491,17 @@ impl From<WorkspaceEvolutionError> for KernelError {
         match error {
             WorkspaceEvolutionError::Domain(domain) => KernelError::from(domain),
             other => KernelError::WorkspaceEvolutionValidation {
+                message: other.to_string(),
+            },
+        }
+    }
+}
+
+impl From<WorkspaceRecommendationEngineError> for KernelError {
+    fn from(error: WorkspaceRecommendationEngineError) -> Self {
+        match error {
+            WorkspaceRecommendationEngineError::Domain(domain) => KernelError::from(domain),
+            other => KernelError::WorkspaceRecommendationEngineValidation {
                 message: other.to_string(),
             },
         }
@@ -789,6 +804,10 @@ impl KernelError {
             },
             KernelError::WorkspaceEvolutionValidation { message } => PublicError {
                 code: "workspace_evolution_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::WorkspaceRecommendationEngineValidation { message } => PublicError {
+                code: "workspace_recommendation_engine_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::InitializationFailed => PublicError {

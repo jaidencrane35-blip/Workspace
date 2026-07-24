@@ -253,6 +253,16 @@ export function AssistantPanel({
               Same Evolution Model as the Work tab. Assistant may explain what
               changed — never rewrites history or acts on patterns.
             </dd>
+            <dt>Recommendation Engine</dt>
+            <dd>
+              {workspaceIntel.recommendation_engine.summary}{" "}
+              {workspaceIntel.recommendation_engine.top_candidates.length > 0
+                ? `Top: ${workspaceIntel.recommendation_engine.top_candidates[0].title}. `
+                : ""}
+              Same Recommendation Engine as the Work tab. Assistant may explain
+              and compare options — never accept, execute, or convert into
+              actions silently.
+            </dd>
             <dt>Continuity</dt>
             <dd>
               {workspaceIntel.continuity.summary}{" "}

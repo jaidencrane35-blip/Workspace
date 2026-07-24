@@ -14,6 +14,7 @@ import type {
   WorkspaceCompositionState,
   WorkspacePurposeState,
   WorkspaceEvolutionState,
+  WorkspaceRecommendationEngineState,
   AiOrchestratedPlan,
   AiPlan,
   AiPlanEvaluationReport,
@@ -157,6 +158,8 @@ export function OperatorConsole({
   const [purpose, setPurpose] = useState<WorkspacePurposeState | null>(null);
   const [evolution, setEvolution] =
     useState<WorkspaceEvolutionState | null>(null);
+  const [recommendationEngine, setRecommendationEngine] =
+    useState<WorkspaceRecommendationEngineState | null>(null);
   const [activeProject, setActiveProject] = useState<Project | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [memoryEntries, setMemoryEntries] = useState<MemoryEntry[]>([]);
@@ -1698,6 +1701,65 @@ export function OperatorConsole({
             <li>{evolution.summary}</li>
             <li>
               Events {evolution.event_count} · insights {evolution.insight_count}
+            </li>
+          </ul>
+        )}
+      </section>
+
+      <section>
+        <h2>Recommendation Engine (diagnostics)</h2>
+        <p className="muted">
+          What might help next — suggestions only. Aggregates Attention,
+          Continuity, Evolution, Purpose, Task Graph, Composition, Decision
+          Queue, Environment. Never executes or grants authority.
+        </p>
+        <div className="row">
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("Recommendation Engine generated", async () => {
+                if (!workspace) return;
+                const state =
+                  await invokeIpc<WorkspaceRecommendationEngineState>(
+                    "generate_workspace_recommendation_engine",
+                    { workspaceId: workspace.id },
+                  );
+                setRecommendationEngine(state);
+              })
+            }
+          >
+            Inspect recommendations
+          </button>
+          <button
+            type="button"
+            disabled={busy || !recommendationEngine}
+            onClick={() =>
+              void run("Recommendation evidence inspected", async () => {
+                if (!recommendationEngine) return;
+                onMessage(
+                  recommendationEngine.candidates.length
+                    ? recommendationEngine.candidates
+                        .slice(0, 5)
+                        .map(
+                          (c) =>
+                            `${c.kind}: ${c.title} (${c.confidence}) — ${c.reason}`,
+                        )
+                        .join(" · ")
+                    : "No candidates",
+                );
+              })
+            }
+          >
+            Inspect candidates
+          </button>
+        </div>
+        {recommendationEngine && (
+          <ul className="muted">
+            <li>{recommendationEngine.summary}</li>
+            <li>
+              Candidates {recommendationEngine.candidate_count} · authority{" "}
+              {recommendationEngine.authority_effect}
             </li>
           </ul>
         )}

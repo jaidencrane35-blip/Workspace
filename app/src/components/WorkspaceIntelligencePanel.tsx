@@ -19,6 +19,7 @@ import type {
   WorkspaceCompositionState,
   WorkspacePurposeState,
   WorkspaceEvolutionState,
+  WorkspaceRecommendationEngineState,
   WorkspaceIntelligenceState,
 } from "../types/domain";
 
@@ -69,6 +70,8 @@ export function WorkspaceIntelligencePanel({
   const [purpose, setPurpose] = useState<WorkspacePurposeState | null>(null);
   const [evolution, setEvolution] =
     useState<WorkspaceEvolutionState | null>(null);
+  const [recommendationEngine, setRecommendationEngine] =
+    useState<WorkspaceRecommendationEngineState | null>(null);
   const [lastHandoff, setLastHandoff] = useState<string | null>(null);
   const [contractName, setContractName] = useState(
     "Prepare coding environment",
@@ -107,6 +110,7 @@ export function WorkspaceIntelligencePanel({
       setComposition(null);
       setPurpose(null);
       setEvolution(null);
+      setRecommendationEngine(null);
       setLastHandoff(null);
       setState(null);
       return;
@@ -129,6 +133,7 @@ export function WorkspaceIntelligencePanel({
           comp,
           purp,
           evo,
+          rec,
         ] = await Promise.all([
             invokeIpc<Project[]>("list_projects", {
               workspaceId: workspace.id,
@@ -179,6 +184,10 @@ export function WorkspaceIntelligencePanel({
             invokeIpc<WorkspaceEvolutionState>("generate_workspace_evolution", {
               workspaceId: workspace.id,
             }),
+            invokeIpc<WorkspaceRecommendationEngineState>(
+              "generate_workspace_recommendation_engine",
+              { workspaceId: workspace.id },
+            ),
           ]);
         if (!cancelled) {
           setProjects(listed);
@@ -195,6 +204,7 @@ export function WorkspaceIntelligencePanel({
           setComposition(comp);
           setPurpose(purp);
           setEvolution(evo);
+          setRecommendationEngine(rec);
         }
       } catch (err: unknown) {
         if (!cancelled) {
@@ -797,11 +807,73 @@ export function WorkspaceIntelligencePanel({
       </section>
 
       <section>
+        <h3>Recommendation Engine</h3>
+        <p className="muted">
+          What might help next — suggestions grounded in Attention, Continuity,
+          Evolution, Purpose, Task Graph, Composition, Decision Queue, and
+          Environment. Never executes, accepts, or grants authority. Distinct
+          from Decision Engine accept/handoff.
+        </p>
+        <div className="row">
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("Recommendation Engine refreshed", async () => {
+                if (!workspace) return;
+                const next = await invokeIpc<WorkspaceRecommendationEngineState>(
+                  "generate_workspace_recommendation_engine",
+                  { workspaceId: workspace.id },
+                );
+                setRecommendationEngine(next);
+              })
+            }
+          >
+            Refresh recommendations
+          </button>
+        </div>
+        {recommendationEngine ? (
+          <>
+            <p>
+              <strong>{recommendationEngine.label}</strong>
+            </p>
+            <p>{recommendationEngine.summary}</p>
+            <p className="muted">{recommendationEngine.explanation}</p>
+            <p className="muted">
+              {recommendationEngine.candidate_count} candidate(s) · authority:{" "}
+              {recommendationEngine.authority_effect}
+            </p>
+            {recommendationEngine.candidates.length > 0 && (
+              <ul className="intelligence-list">
+                {recommendationEngine.candidates.slice(0, 6).map((item) => (
+                  <li key={item.id}>
+                    <strong>
+                      [{item.kind}] {item.title}
+                    </strong>
+                    <div className="muted">
+                      Why: {item.reason} · Impact: {item.impact} · Confidence:{" "}
+                      {item.confidence}
+                    </div>
+                    <div className="muted">
+                      Evidence:{" "}
+                      {item.evidence.map((e) => e.summary).join(" · ")}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
+        ) : (
+          <p className="muted">No recommendation engine snapshot yet.</p>
+        )}
+      </section>
+
+      <section>
         <h3>Recommended Actions</h3>
         <p className="muted">
           Decision Engine synthesizes Attention, memory, preferences, and goals
-          into ranked recommendations. Accept hands off to the Planner — never
-          executes.
+          into ranked candidates. Accept hands off to the Planner — never
+          executes. Separate from the Recommendation Engine above.
         </p>
         <div className="row">
           <button

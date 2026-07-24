@@ -1066,7 +1066,13 @@ export type AttentionSourceType =
   | "continuity"
   | "activity_graph"
   | "workflow_context"
-  | "automation_contract";
+  | "automation_contract"
+  | "task_graph"
+  | "environment"
+  | "composition"
+  | "purpose"
+  | "evolution"
+  | "recommendation_engine";
 
 export type AttentionCategory =
   | "requires_decision"
@@ -1256,6 +1262,7 @@ export interface WorkspaceIntelligenceState {
   composition: WorkspaceCompositionSummary;
   purpose: WorkspacePurposeSummary;
   evolution: WorkspaceEvolutionSummary;
+  recommendation_engine: WorkspaceRecommendationEngineSummary;
   workspace_health: string;
   summary: string;
   authority_effect: string;
@@ -1683,6 +1690,74 @@ export interface WorkspaceEvolutionSummary {
   relationship_count: number;
   top_events: EvolutionEvent[];
   top_insights: EvolutionInsight[];
+  explanation: string;
+  summary: string;
+  authority_effect: string;
+}
+
+export type RecommendationKind =
+  | "continue_work"
+  | "resolve_blocker"
+  | "review_decision"
+  | "complete_task"
+  | "reorganize_workspace"
+  | "restore_context"
+  | "explore_opportunity";
+
+export type RecommendationConfidence = "high" | "medium" | "low";
+
+export interface RecommendationEvidence {
+  id: string;
+  source_model: string;
+  source_ref: string;
+  summary: string;
+}
+
+export interface RecommendationRelationship {
+  id: string;
+  from_id: string;
+  to_id: string;
+  kind: string;
+  explanation: string;
+  evidence: string[];
+}
+
+export interface RecommendationItem {
+  id: string;
+  kind: RecommendationKind;
+  title: string;
+  reason: string;
+  evidence: RecommendationEvidence[];
+  impact: string;
+  confidence: RecommendationConfidence;
+  related_attention_id: string | null;
+  related_task_id: string | null;
+  related_purpose_label: string | null;
+  related_decision_id: string | null;
+  authority_effect: string;
+}
+
+export interface WorkspaceRecommendationEngineState {
+  workspace_id: string;
+  generated_at: string;
+  label: string;
+  candidates: RecommendationItem[];
+  relationships: RecommendationRelationship[];
+  candidate_count: number;
+  relationship_count: number;
+  explanation: string;
+  evidence: string[];
+  summary: string;
+  authority_effect: string;
+}
+
+export interface WorkspaceRecommendationEngineSummary {
+  workspace_id: string;
+  generated_at: string;
+  label: string;
+  candidate_count: number;
+  relationship_count: number;
+  top_candidates: RecommendationItem[];
   explanation: string;
   summary: string;
   authority_effect: string;

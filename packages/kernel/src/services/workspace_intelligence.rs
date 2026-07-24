@@ -23,7 +23,7 @@ use crate::services::{
     DesktopWindowService, OrchestratedPlanStore, TaskGraphService, TriggerEvaluatorService,
     WorkspaceActivityGraphService, WorkspaceAttentionService, WorkspaceContinuityService,
     WorkspaceEnvironmentService, WorkspaceIntentService, WorkspaceCompositionService,
-    WorkspacePurposeService, WorkspaceEvolutionService,
+    WorkspacePurposeService, WorkspaceEvolutionService, WorkspaceRecommendationEngineService,
 };
 
 pub(crate) struct WorkspaceIntelligenceService;
@@ -166,7 +166,7 @@ impl WorkspaceIntelligenceService {
         )?;
         let evolution = WorkspaceEvolutionService::summary_projection(&full_evolution, 8);
 
-        let full_attention = WorkspaceAttentionService::generate_with_task_graph(
+        let base_attention = WorkspaceAttentionService::generate_with_task_graph(
             db,
             actor,
             ws,
@@ -178,6 +178,31 @@ impl WorkspaceIntelligenceService {
             Some(&full_composition),
             Some(&full_purpose),
             Some(&full_evolution),
+        )?;
+
+        let full_recommendation_engine =
+            WorkspaceRecommendationEngineService::generate_with_inputs(
+                db,
+                actor,
+                ws,
+                &base_attention,
+                &full_continuity,
+                &full_evolution,
+                &full_purpose,
+                Some(&full_task_graph),
+                &full_composition,
+                &full_decision_queue,
+                &full_environment,
+            )?;
+        let recommendation_engine = WorkspaceRecommendationEngineService::summary_projection(
+            &full_recommendation_engine,
+            8,
+        );
+
+        // Attention may surface recommendations after RE is built (no circular regen).
+        let full_attention = WorkspaceAttentionService::enrich_with_recommendations(
+            &base_attention,
+            &full_recommendation_engine,
         )?;
         let attention = full_attention.summary_projection(8);
 
@@ -340,6 +365,7 @@ impl WorkspaceIntelligenceService {
             composition,
             purpose,
             evolution,
+            recommendation_engine,
             workspace_health: health_label,
             summary,
             authority_effect: WorkspaceIntelligenceState::AUTHORITY_EFFECT_NONE.into(),

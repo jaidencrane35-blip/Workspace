@@ -1,0 +1,608 @@
+//! Workspace Recommendation Engine (Phase 5).
+//!
+//! Aggregates Attention + Continuity + Evolution + Purpose + Task Graph +
+//! Composition + Decision Queue + Environment into typed next-step suggestions.
+//! Never executes, never accepts into planner, never persists candidates.
+
+use std::collections::HashSet;
+use std::sync::{Arc, Mutex};
+
+use serde_json::json;
+use workspace_database::Database;
+use workspace_domain::{
+    build_recommendation_engine_summary, recommendation_engine_now_rfc3339,
+    validate_recommendation_engine_workspace_id, ActorContext, AttentionCategory, DecisionQueue,
+    IntentContext, RecommendationConfidence, RecommendationEvidence, RecommendationItem,
+    RecommendationKind, RecommendationRelationship, TaskGraph, WorkspaceAttentionState,
+    WorkspaceCompositionState, WorkspaceContinuityState, WorkspaceEnvironmentState,
+    WorkspaceEvolutionState, WorkspacePurposeState, WorkspaceRecommendationEngineState,
+    WorkspaceRecommendationEngineSummary,
+};
+
+use crate::error::{KernelError, Result};
+use crate::services::{
+    AssistantWorkflowStore, AuditService, DecisionQueueService, OrchestratedPlanStore,
+    TaskGraphService, WorkspaceActivityGraphService, WorkspaceAttentionService,
+    WorkspaceCompositionService, WorkspaceContinuityService, WorkspaceEnvironmentService,
+    WorkspaceEvolutionService, WorkspaceIntentService, WorkspacePurposeService,
+};
+
+pub(crate) struct WorkspaceRecommendationEngineService;
+
+impl WorkspaceRecommendationEngineService {
+    /// Standalone generate — loads existing aggregators; does not invent state.
+    pub(crate) fn generate(
+        db: &Arc<Mutex<Database>>,
+        actor: &ActorContext,
+        orchestrated_plans: &Arc<Mutex<OrchestratedPlanStore>>,
+        assistant_workflows: &Arc<Mutex<AssistantWorkflowStore>>,
+        workspace_id: impl Into<String>,
+    ) -> Result<WorkspaceRecommendationEngineState> {
+        let workspace_id = workspace_id.into();
+        let attention = WorkspaceAttentionService::generate(
+            db,
+            actor,
+            orchestrated_plans,
+            assistant_workflows,
+            workspace_id.clone(),
+        )?;
+        let purpose = WorkspacePurposeService::generate(
+            db,
+            actor,
+            orchestrated_plans,
+            assistant_workflows,
+            workspace_id.clone(),
+        )?;
+        let evolution = WorkspaceEvolutionService::generate(
+            db,
+            actor,
+            orchestrated_plans,
+            assistant_workflows,
+            workspace_id.clone(),
+        )?;
+        let workflow =
+            WorkspaceIntentService::get_workflow_context_readonly(db, &workspace_id)?;
+        let project = workflow
+            .active_project_id
+            .as_ref()
+            .and_then(|id| WorkspaceIntentService::get_project(db, id.as_str()).ok());
+        let task_graph = TaskGraphService::generate(db, actor, workspace_id.clone())?;
+        let decision_queue = DecisionQueueService::aggregate_readonly(
+            db,
+            actor,
+            orchestrated_plans,
+            assistant_workflows,
+            workspace_id.clone(),
+        )?;
+        let activity = WorkspaceActivityGraphService::generate_with_decision_queue(
+            db,
+            actor,
+            orchestrated_plans,
+            assistant_workflows,
+            workspace_id.clone(),
+            Some(&decision_queue),
+        )?;
+        let continuity = WorkspaceContinuityService::generate_with_inputs(
+            db,
+            actor,
+            workspace_id.clone(),
+            &decision_queue,
+            &activity,
+        )?;
+        let environment =
+            WorkspaceEnvironmentService::generate(db, actor, workspace_id.clone())?;
+        let composition = WorkspaceCompositionService::generate_with_inputs(
+            db,
+            actor,
+            workspace_id.clone(),
+            &environment,
+            Some(&task_graph),
+            &continuity,
+            &activity,
+            &workflow,
+            &decision_queue,
+            project.as_ref(),
+        )?;
+        Self::generate_with_inputs(
+            db,
+            actor,
+            &workspace_id,
+            &attention,
+            &continuity,
+            &evolution,
+            &purpose,
+            Some(&task_graph),
+            &composition,
+            &decision_queue,
+            &environment,
+        )
+    }
+
+    /// Preferred path — Intelligence injects shared aggregator inputs.
+    #[allow(clippy::too_many_arguments)]
+    pub(crate) fn generate_with_inputs(
+        db: &Arc<Mutex<Database>>,
+        actor: &ActorContext,
+        workspace_id: impl Into<String>,
+        attention: &WorkspaceAttentionState,
+        continuity: &WorkspaceContinuityState,
+        evolution: &WorkspaceEvolutionState,
+        purpose: &WorkspacePurposeState,
+        task_graph: Option<&TaskGraph>,
+        composition: &WorkspaceCompositionState,
+        decision_queue: &DecisionQueue,
+        environment: &WorkspaceEnvironmentState,
+    ) -> Result<WorkspaceRecommendationEngineState> {
+        let workspace_id =
+            validate_recommendation_engine_workspace_id(workspace_id).map_err(KernelError::from)?;
+        let ws = workspace_id.as_str();
+        let label = if !purpose.label.is_empty() {
+            purpose.label.clone()
+        } else {
+            composition.label.clone()
+        };
+
+        let mut candidates = Vec::new();
+        let mut relationships = Vec::new();
+        let mut evidence = Vec::new();
+        let mut seen = HashSet::new();
+
+        // ResolveBlocker — Attention blockers + Continuity interrupted.
+        for item in attention
+            .items
+            .iter()
+            .filter(|i| i.category == AttentionCategory::Blocker)
+            .take(3)
+        {
+            let id = format!("recommendation:resolve_blocker:{}", item.id);
+            if !seen.insert(id.clone()) {
+                continue;
+            }
+            candidates.push(RecommendationItem {
+                id: id.clone(),
+                kind: RecommendationKind::ResolveBlocker,
+                title: format!("Resolve blocker: {}", item.title),
+                reason: format!(
+                    "Attention surfaces \"{}\" as a blocker for current work.",
+                    item.title
+                ),
+                evidence: vec![RecommendationEvidence {
+                    id: format!("ev:attention:{}", item.id),
+                    source_model: "attention".into(),
+                    source_ref: item.id.to_string(),
+                    summary: item.explanation.clone(),
+                }],
+                impact: "Clearing blockers unblocks Purpose progress and reduces Attention load."
+                    .into(),
+                confidence: RecommendationConfidence::High,
+                related_attention_id: Some(item.id.to_string()),
+                related_task_id: None,
+                related_purpose_label: Some(purpose.label.clone()),
+                related_decision_id: None,
+                authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
+            });
+            relationships.push(RecommendationRelationship {
+                id: format!("rel:rec-attention:{}", item.id),
+                from_id: id,
+                to_id: format!("attention:{}", item.id),
+                kind: "derived_from".into(),
+                explanation: "Recommendation is grounded in an Attention blocker item.".into(),
+                evidence: vec!["source Attention Engine".into()],
+            });
+        }
+
+        // ReviewDecision — Attention requires_decision + DQ pending.
+        for item in attention
+            .items
+            .iter()
+            .filter(|i| i.category == AttentionCategory::RequiresDecision)
+            .take(3)
+        {
+            let id = format!("recommendation:review_decision:{}", item.id);
+            if !seen.insert(id.clone()) {
+                continue;
+            }
+            candidates.push(RecommendationItem {
+                id: id.clone(),
+                kind: RecommendationKind::ReviewDecision,
+                title: format!("Review decision: {}", item.title),
+                reason: format!(
+                    "A pending decision needs human attention: \"{}\".",
+                    item.title
+                ),
+                evidence: vec![
+                    RecommendationEvidence {
+                        id: format!("ev:attention:{}", item.id),
+                        source_model: "attention".into(),
+                        source_ref: item.id.to_string(),
+                        summary: item.explanation.clone(),
+                    },
+                    RecommendationEvidence {
+                        id: format!("ev:dq:{ws}"),
+                        source_model: "decision_queue".into(),
+                        source_ref: ws.to_string(),
+                        summary: format!("{} pending Decision Queue item(s)", decision_queue.pending_count),
+                    },
+                ],
+                impact: "Resolving decisions unblocks Purpose and Continuity next steps.".into(),
+                confidence: RecommendationConfidence::High,
+                related_attention_id: Some(item.id.to_string()),
+                related_task_id: None,
+                related_purpose_label: Some(purpose.label.clone()),
+                related_decision_id: Some(item.source_id.clone()),
+                authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
+            });
+        }
+        if decision_queue.pending_count > 0
+            && !candidates
+                .iter()
+                .any(|c| c.kind == RecommendationKind::ReviewDecision)
+        {
+            let id = format!("recommendation:review_decision:queue:{ws}");
+            if seen.insert(id.clone()) {
+                candidates.push(RecommendationItem {
+                    id,
+                    kind: RecommendationKind::ReviewDecision,
+                    title: format!(
+                        "Review {} outstanding decision(s)",
+                        decision_queue.pending_count
+                    ),
+                    reason: "Decision Queue reports pending human decisions.".into(),
+                    evidence: vec![RecommendationEvidence {
+                        id: format!("ev:dq:{ws}"),
+                        source_model: "decision_queue".into(),
+                        source_ref: ws.to_string(),
+                        summary: format!("pending_count={}", decision_queue.pending_count),
+                    }],
+                    impact: "Clearing the Decision Queue reduces Attention pressure.".into(),
+                    confidence: RecommendationConfidence::Medium,
+                    related_attention_id: None,
+                    related_task_id: None,
+                    related_purpose_label: Some(purpose.label.clone()),
+                    related_decision_id: None,
+                    authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
+                });
+            }
+        }
+
+        // ContinueWork — Continuity suggested next / focus + Purpose.
+        if let Some(next) = &continuity.suggested_next_step {
+            let id = format!("recommendation:continue_work:{}", next.id);
+            if seen.insert(id.clone()) {
+                candidates.push(RecommendationItem {
+                    id,
+                    kind: RecommendationKind::ContinueWork,
+                    title: format!("Continue: {}", next.title),
+                    reason: format!(
+                        "Continuity suggests \"{}\" as the next step for \"{}\".",
+                        next.title, purpose.label
+                    ),
+                    evidence: vec![
+                        RecommendationEvidence {
+                            id: format!("ev:continuity:{}", next.id),
+                            source_model: "continuity".into(),
+                            source_ref: next.id.to_string(),
+                            summary: next.why.clone(),
+                        },
+                        RecommendationEvidence {
+                            id: format!("ev:purpose:{ws}"),
+                            source_model: "purpose".into(),
+                            source_ref: purpose.workspace_id.clone(),
+                            summary: purpose.label.clone(),
+                        },
+                    ],
+                    impact: "Continuing focused work advances Purpose without inventing new tasks."
+                        .into(),
+                    confidence: RecommendationConfidence::High,
+                    related_attention_id: None,
+                    related_task_id: None,
+                    related_purpose_label: Some(purpose.label.clone()),
+                    related_decision_id: None,
+                    authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
+                });
+            }
+        } else if let Some(focus) = &continuity.current_focus {
+            let id = format!("recommendation:continue_work:focus:{}", focus.id);
+            if seen.insert(id.clone()) {
+                candidates.push(RecommendationItem {
+                    id,
+                    kind: RecommendationKind::ContinueWork,
+                    title: format!("Continue focus: {}", focus.title),
+                    reason: format!(
+                        "Current Continuity focus \"{}\" aligns with Purpose \"{}\".",
+                        focus.title, purpose.label
+                    ),
+                    evidence: vec![RecommendationEvidence {
+                        id: format!("ev:continuity:{}", focus.id),
+                        source_model: "continuity".into(),
+                        source_ref: focus.id.to_string(),
+                        summary: focus.summary.clone(),
+                    }],
+                    impact: "Resuming current focus maintains Continuity.".into(),
+                    confidence: RecommendationConfidence::Medium,
+                    related_attention_id: None,
+                    related_task_id: None,
+                    related_purpose_label: Some(purpose.label.clone()),
+                    related_decision_id: None,
+                    authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
+                });
+            }
+        }
+
+        // RestoreContext — Continuity interrupted + Evolution interrupted.
+        if !continuity.interrupted_work.is_empty() {
+            let facet = &continuity.interrupted_work[0];
+            let id = format!("recommendation:restore_context:{}", facet.id);
+            if seen.insert(id.clone()) {
+                let mut ev = vec![RecommendationEvidence {
+                    id: format!("ev:continuity:{}", facet.id),
+                    source_model: "continuity".into(),
+                    source_ref: facet.id.to_string(),
+                    summary: facet.title.clone(),
+                }];
+                if evolution
+                    .insights
+                    .iter()
+                    .any(|i| {
+                        matches!(
+                            i.kind,
+                            workspace_domain::EvolutionInsightKind::InterruptedWork
+                        )
+                    })
+                {
+                    ev.push(RecommendationEvidence {
+                        id: format!("ev:evolution:{ws}"),
+                        source_model: "evolution".into(),
+                        source_ref: ws.to_string(),
+                        summary: "Evolution reports interrupted-work insight.".into(),
+                    });
+                }
+                candidates.push(RecommendationItem {
+                    id,
+                    kind: RecommendationKind::RestoreContext,
+                    title: format!("Restore context: {}", facet.title),
+                    reason: format!(
+                        "Work was interrupted (\"{}\"); restoring context helps resume Purpose.",
+                        facet.title
+                    ),
+                    evidence: ev,
+                    impact: "Restored context reduces Continuity interruption drag.".into(),
+                    confidence: RecommendationConfidence::High,
+                    related_attention_id: None,
+                    related_task_id: None,
+                    related_purpose_label: Some(purpose.label.clone()),
+                    related_decision_id: None,
+                    authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
+                });
+            }
+        }
+
+        // CompleteTask — open Task Graph nodes.
+        if let Some(graph) = task_graph {
+            for node in graph.open_incomplete_nodes().into_iter().take(3) {
+                let id = format!("recommendation:complete_task:{}", node.task.id);
+                if !seen.insert(id.clone()) {
+                    continue;
+                }
+                let confidence = if node.task.progress_percent >= 50 {
+                    RecommendationConfidence::High
+                } else {
+                    RecommendationConfidence::Medium
+                };
+                candidates.push(RecommendationItem {
+                    id,
+                    kind: RecommendationKind::CompleteTask,
+                    title: format!("Complete task: {}", node.task.title),
+                    reason: format!(
+                        "Task Graph lists \"{}\" as open ({}, {}%).",
+                        node.task.title,
+                        node.task.status.as_str(),
+                        node.task.progress_percent
+                    ),
+                    evidence: vec![RecommendationEvidence {
+                        id: format!("ev:task:{}", node.task.id),
+                        source_model: "task_graph".into(),
+                        source_ref: node.task.id.to_string(),
+                        summary: node.task.explanation.clone(),
+                    }],
+                    impact: "Completing open Task Graph work advances Purpose progress.".into(),
+                    confidence,
+                    related_attention_id: None,
+                    related_task_id: Some(node.task.id.to_string()),
+                    related_purpose_label: Some(purpose.label.clone()),
+                    related_decision_id: None,
+                    authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
+                });
+            }
+        }
+
+        // ReorganizeWorkspace — Composition gaps / Environment disconnected.
+        if composition.missing_application_count > 0 || !composition.gaps.is_empty() {
+            let id = format!("recommendation:reorganize:{ws}");
+            if seen.insert(id.clone()) {
+                candidates.push(RecommendationItem {
+                    id,
+                    kind: RecommendationKind::ReorganizeWorkspace,
+                    title: format!("Improve working environment: {}", composition.label),
+                    reason: format!(
+                        "Composition reports {} missing application(s) for Purpose \"{}\".",
+                        composition.missing_application_count, purpose.label
+                    ),
+                    evidence: vec![
+                        RecommendationEvidence {
+                            id: format!("ev:composition:{ws}"),
+                            source_model: "composition".into(),
+                            source_ref: composition.workspace_id.clone(),
+                            summary: composition.summary.clone(),
+                        },
+                        RecommendationEvidence {
+                            id: format!("ev:environment:{ws}"),
+                            source_model: "environment".into(),
+                            source_ref: environment.workspace_id.clone(),
+                            summary: environment.summary.clone(),
+                        },
+                    ],
+                    impact: "A coherent environment makes Purpose work easier to continue.".into(),
+                    confidence: RecommendationConfidence::Medium,
+                    related_attention_id: None,
+                    related_task_id: None,
+                    related_purpose_label: Some(purpose.label.clone()),
+                    related_decision_id: None,
+                    authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
+                });
+            }
+        } else if environment.disconnected_work {
+            let id = format!("recommendation:reorganize:disconnected:{ws}");
+            if seen.insert(id.clone()) {
+                candidates.push(RecommendationItem {
+                    id,
+                    kind: RecommendationKind::ReorganizeWorkspace,
+                    title: "Reconnect desktop to active work".into(),
+                    reason: "Environment Model reports active work appears disconnected from open windows."
+                        .into(),
+                    evidence: vec![RecommendationEvidence {
+                        id: format!("ev:environment:{ws}"),
+                        source_model: "environment".into(),
+                        source_ref: environment.workspace_id.clone(),
+                        summary: environment.summary.clone(),
+                    }],
+                    impact: "Aligning desktop apps with Purpose reduces Continuity friction.".into(),
+                    confidence: RecommendationConfidence::Medium,
+                    related_attention_id: None,
+                    related_task_id: None,
+                    related_purpose_label: Some(purpose.label.clone()),
+                    related_decision_id: None,
+                    authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
+                });
+            }
+        }
+
+        // ExploreOpportunity — Evolution purpose progression without blockers.
+        if candidates.len() < 3
+            && evolution
+                .insights
+                .iter()
+                .any(|i| {
+                    matches!(
+                        i.kind,
+                        workspace_domain::EvolutionInsightKind::PurposeProgression
+                            | workspace_domain::EvolutionInsightKind::TaskProgression
+                    )
+                })
+        {
+            let id = format!("recommendation:explore:{ws}");
+            if seen.insert(id.clone()) {
+                candidates.push(RecommendationItem {
+                    id,
+                    kind: RecommendationKind::ExploreOpportunity,
+                    title: format!("Explore next progress on \"{}\"", purpose.label),
+                    reason: "Evolution shows purpose/task progression with room for further useful work."
+                        .into(),
+                    evidence: vec![RecommendationEvidence {
+                        id: format!("ev:evolution:{ws}"),
+                        source_model: "evolution".into(),
+                        source_ref: ws.to_string(),
+                        summary: evolution.summary.clone(),
+                    }],
+                    impact: "Exploring next progress keeps Momentum without inventing tasks.".into(),
+                    confidence: RecommendationConfidence::Low,
+                    related_attention_id: None,
+                    related_task_id: None,
+                    related_purpose_label: Some(purpose.label.clone()),
+                    related_decision_id: None,
+                    authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
+                });
+            }
+        }
+
+        // Deterministic ordering: kind priority then id.
+        candidates.sort_by(|a, b| {
+            kind_rank(a.kind)
+                .cmp(&kind_rank(b.kind))
+                .then_with(|| a.id.cmp(&b.id))
+        });
+        // Cap for product clarity.
+        if candidates.len() > 12 {
+            candidates.truncate(12);
+        }
+        relationships.sort_by(|a, b| a.id.cmp(&b.id));
+
+        evidence.push(format!("Attention items: {}", attention.items.len()));
+        evidence.push(format!("Purpose: {}", purpose.label));
+        evidence.push(format!("Evolution insights: {}", evolution.insight_count));
+        evidence.push(format!(
+            "Decision Queue pending: {}",
+            decision_queue.pending_count
+        ));
+
+        let explanation = format!(
+            "Recommendations for \"{label}\" suggest possible useful next steps from Attention, \
+             Continuity, Evolution, Purpose, Task Graph, Composition, Decision Queue, and Environment. \
+             They are suggestions only — distinct from Decision Engine accept/handoff and from \
+             Intelligence Attention projections."
+        );
+        let summary = build_recommendation_engine_summary(&label, candidates.len());
+
+        let state = WorkspaceRecommendationEngineState {
+            workspace_id: ws.to_string(),
+            generated_at: recommendation_engine_now_rfc3339(),
+            label,
+            candidate_count: candidates.len(),
+            relationship_count: relationships.len(),
+            candidates,
+            relationships,
+            explanation,
+            evidence,
+            summary,
+            authority_effect: WorkspaceRecommendationEngineState::AUTHORITY_EFFECT_NONE.into(),
+        };
+
+        Self::audit_generated(db, actor, &state)?;
+        Ok(state)
+    }
+
+    pub(crate) fn summary_projection(
+        state: &WorkspaceRecommendationEngineState,
+        limit: usize,
+    ) -> WorkspaceRecommendationEngineSummary {
+        state.summary_projection(limit)
+    }
+
+    pub(crate) fn attempt_execute() -> Result<()> {
+        Err(KernelError::from(
+            workspace_domain::WorkspaceRecommendationEngineError::CannotExecute,
+        ))
+    }
+
+    fn audit_generated(
+        db: &Arc<Mutex<Database>>,
+        actor: &ActorContext,
+        state: &WorkspaceRecommendationEngineState,
+    ) -> Result<()> {
+        AuditService::record_ai_planning_event(
+            db,
+            actor,
+            &IntentContext::user_request(),
+            "workspace.recommendation_engine.generated",
+            true,
+            json!({
+                "workspace_id": state.workspace_id,
+                "candidate_count": state.candidate_count,
+                "authority_effect": "none",
+            })
+            .to_string(),
+        )
+    }
+}
+
+fn kind_rank(kind: RecommendationKind) -> u8 {
+    match kind {
+        RecommendationKind::ResolveBlocker => 0,
+        RecommendationKind::ReviewDecision => 1,
+        RecommendationKind::RestoreContext => 2,
+        RecommendationKind::ContinueWork => 3,
+        RecommendationKind::CompleteTask => 4,
+        RecommendationKind::ReorganizeWorkspace => 5,
+        RecommendationKind::ExploreOpportunity => 6,
+    }
+}

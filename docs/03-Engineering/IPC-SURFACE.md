@@ -77,6 +77,7 @@
 | `generate_workspace_composition` | Product: aggregate logical working environment Composition (never launches or groups) |
 | `generate_workspace_purpose` | Product: aggregate why-work-exists Purpose Model (never executes or owns goals) |
 | `generate_workspace_evolution` | Product: aggregate how-work-changed Evolution Model (never stores a second history) |
+| `generate_workspace_recommendation_engine` | Product: aggregate what-might-help-next suggestions (never executes or accepts) |
 | `create_memory_entry` / `list_memory_entries` / `get_memory_context` | Diagnostic governed memory (informational) |
 | `delete_memory_entry` / `clear_memory_entries` | Diagnostic memory lifecycle |
 | `diagnose_ai_plan_preview` | Diagnostic memory-aware plan (no execution) |

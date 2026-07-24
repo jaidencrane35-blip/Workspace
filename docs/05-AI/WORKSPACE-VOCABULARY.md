@@ -14,7 +14,8 @@ Canonical product language. Prefer these terms in UI, docs, and Assistant copy.
 | **Decision** | Inbox item in the Decision Queue (human attention) | Approval (unless it is one) |
 | **Permission Approval** | Gateway consent for a capability/command | Decision (broader), Contract Approval |
 | **Contract Approval** | Consent for an Automation Contract *definition* | Permission Approval, execution grant |
-| **Recommendation** | Advisory next step from Intelligence (never executes) | Suggestion (product UI), Proposal |
+| **Recommendation** | Advisory next step from Intelligence Attention projection (never executes) | Suggestion (product UI), Proposal |
+| **Recommendation Candidate** | Typed next-step suggestion from Recommendation Engine (never executes or accepts) | Decision Engine candidate, Attention projection |
 | **Suggestion** | Legacy deterministic context hint (diagnostic/Sprint 20) | Recommendation in product Work UI |
 | **Intent** | Pipeline request entering Command Pipeline | Proposal, Decision |
 | **Activity** | Synthetic Activity Graph node (read model) | Audit event, Decision |

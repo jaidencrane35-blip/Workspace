@@ -236,6 +236,90 @@ impl WorkspaceAttentionService {
         Ok(state)
     }
 
+    /// Merge Recommendation Engine candidates into an Attention snapshot (CASE 5).
+    /// Does not regenerate Attention or Recommendation Engine — avoids circular regen.
+    pub(crate) fn enrich_with_recommendations(
+        attention: &WorkspaceAttentionState,
+        recommendations: &workspace_domain::WorkspaceRecommendationEngineState,
+    ) -> Result<WorkspaceAttentionState> {
+        let now = chrono::Utc::now().to_rfc3339();
+        let mut items = attention.items.clone();
+        let mut seen: HashSet<String> = items.iter().map(|i| i.id.to_string()).collect();
+        for item in Self::from_recommendation_engine(attention.workspace_id.as_str(), recommendations, &now)?
+        {
+            if seen.insert(item.id.to_string()) {
+                items.push(item);
+            }
+        }
+        Ok(WorkspaceAttentionState::from_items(
+            attention.workspace_id.clone(),
+            items,
+        ))
+    }
+
+    fn from_recommendation_engine(
+        ws: &str,
+        recommendations: &workspace_domain::WorkspaceRecommendationEngineState,
+        now: &str,
+    ) -> Result<Vec<AttentionItem>> {
+        let mut out = Vec::new();
+        for candidate in recommendations.candidates.iter().take(4) {
+            let (category, score, urgency) = match candidate.kind {
+                workspace_domain::RecommendationKind::ResolveBlocker => (
+                    AttentionCategory::Blocker,
+                    58u32,
+                    AttentionUrgency::Soon,
+                ),
+                workspace_domain::RecommendationKind::ReviewDecision => (
+                    AttentionCategory::RequiresDecision,
+                    56u32,
+                    AttentionUrgency::Soon,
+                ),
+                workspace_domain::RecommendationKind::RestoreContext => (
+                    AttentionCategory::Interrupted,
+                    50u32,
+                    AttentionUrgency::Soon,
+                ),
+                workspace_domain::RecommendationKind::ContinueWork
+                | workspace_domain::RecommendationKind::CompleteTask => (
+                    AttentionCategory::Resumable,
+                    46u32,
+                    AttentionUrgency::Whenever,
+                ),
+                workspace_domain::RecommendationKind::ReorganizeWorkspace
+                | workspace_domain::RecommendationKind::ExploreOpportunity => (
+                    AttentionCategory::Informative,
+                    38u32,
+                    AttentionUrgency::Whenever,
+                ),
+            };
+            let factors = vec![
+                format!("base {score} for recommendation {}", candidate.kind.as_str()),
+                format!("confidence {}", candidate.confidence.as_str()),
+                "source Recommendation Engine".into(),
+            ];
+            out.push(AttentionItem::project(
+                ws,
+                AttentionSourceType::RecommendationEngine,
+                candidate.id.clone(),
+                category,
+                score_to_priority(score),
+                urgency,
+                AttentionConfidence::High,
+                score,
+                factors,
+                candidate.title.clone(),
+                format!(
+                    "{}. Impact: {}. Suggestion only — Attention surfaces; never executes.",
+                    candidate.reason, candidate.impact
+                ),
+                now,
+                AttentionState::New,
+            )?);
+        }
+        Ok(out)
+    }
+
     fn from_evolution(
         ws: &str,
         evolution: &workspace_domain::WorkspaceEvolutionState,

@@ -43,6 +43,7 @@ pub enum AttentionSourceType {
     Composition,
     Purpose,
     Evolution,
+    RecommendationEngine,
 }
 
 impl AttentionSourceType {
@@ -58,6 +59,7 @@ impl AttentionSourceType {
             Self::Composition => "composition",
             Self::Purpose => "purpose",
             Self::Evolution => "evolution",
+            Self::RecommendationEngine => "recommendation_engine",
         }
     }
 }
