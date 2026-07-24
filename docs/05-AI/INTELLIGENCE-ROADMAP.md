@@ -112,6 +112,10 @@ Workspace Continuity Engine foundation — read-only projection of focus, interr
 
 Workspace Attention Engine foundation — deterministic explainable prioritization over Continuity / Decision Queue / Activity Graph; Intelligence Recommendations consume Attention. No autonomy. See [Workspace Attention Engine](WORKSPACE-ATTENTION-ENGINE.md).
 
+## Phase 5 Batch 3 (done)
+
+Governed Decision Engine foundation (Sprints 80–81) — synthesize Attention + memory + personalization + goals into ranked, explainable `DecisionCandidate`s; accept → planner handoff only. Distinct from Decision Queue inbox. No autonomy. See [Workspace Decision Engine](WORKSPACE-DECISION-ENGINE.md).
+
 ---
 
 ## Never build

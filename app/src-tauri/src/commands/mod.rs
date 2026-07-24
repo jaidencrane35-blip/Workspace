@@ -2,6 +2,7 @@ pub mod analytics;
 pub mod audit;
 pub mod automation_contract;
 pub mod automation_trigger;
+pub mod decision_engine;
 pub mod decision_queue;
 pub mod workspace_activity;
 pub mod workspace_attention;

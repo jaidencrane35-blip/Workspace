@@ -1,0 +1,768 @@
+//! Governed Decision Engine (Phase 5 — Sprints 80–81).
+//!
+//! Synthesizes Attention + memory + personalization + goals into ranked
+//! DecisionCandidates. Never executes, never grants authority, never plans.
+
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
+
+use chrono::Utc;
+use serde_json::json;
+use workspace_database::{Database, DecisionEngineRepository};
+use workspace_domain::{
+    ActorContext, AttentionItem, DecisionCandidate, DecisionContext, DecisionEngineActionResult,
+    DecisionEngineError, DecisionEngineHandoff, DecisionEngineOverlay, DecisionEngineState,
+    DecisionEngineSummary, DecisionExplanation, DecisionOutcome, DecisionQueue, DecisionReason,
+    DecisionScore, DecisionSourceType, DecisionState, IntelligenceHighlight, IntentContext,
+    WorkspaceAttentionState, WorkspaceId, WorkGoal, WorkflowContext,
+};
+
+use crate::error::{KernelError, Result};
+use crate::services::{
+    AssistantWorkflowStore, AuditService, DecisionQueueService, OrchestratedPlanStore,
+    WorkspaceAttentionService, WorkspaceIntentService,
+};
+
+pub(crate) struct DecisionEngineService;
+
+impl DecisionEngineService {
+    /// Standalone generate — builds Attention then synthesizes decisions.
+    pub(crate) fn generate(
+        db: &Arc<Mutex<Database>>,
+        actor: &ActorContext,
+        orchestrated_plans: &Arc<Mutex<OrchestratedPlanStore>>,
+        assistant_workflows: &Arc<Mutex<AssistantWorkflowStore>>,
+        workspace_id: impl Into<String>,
+    ) -> Result<DecisionEngineState> {
+        let workspace_id = workspace_id.into();
+        let attention = WorkspaceAttentionService::generate(
+            db,
+            actor,
+            orchestrated_plans,
+            assistant_workflows,
+            workspace_id.clone(),
+        )?;
+        let queue = DecisionQueueService::aggregate_readonly(
+            db,
+            actor,
+            orchestrated_plans,
+            assistant_workflows,
+            workspace_id.clone(),
+        )?;
+        let workflow = WorkspaceIntentService::get_workflow_context_readonly(db, &workspace_id)?;
+        let goals = WorkspaceIntentService::list_goals(db, &workspace_id, 10).unwrap_or_default();
+        let memory = crate::services::AiMemoryService::assemble_awareness(db, Some(&workspace_id), 10)
+            .unwrap_or_else(|_| workspace_domain::AiMemoryAwareness::from_entries(Vec::new()));
+        let personalization =
+            crate::services::AiPersonalizationService::assemble_awareness(db, Some(&workspace_id), 10, None)
+                .unwrap_or_else(|_| {
+                    workspace_domain::AiPersonalizationAwareness::from_preferences(Vec::new(), true)
+                });
+        let memory_highlights: Vec<_> = memory
+            .entries
+            .iter()
+            .take(5)
+            .map(|entry| IntelligenceHighlight {
+                id: entry.id.to_string(),
+                label: entry.key.clone(),
+                summary: entry.summary.clone(),
+                source: "memory".into(),
+            })
+            .collect();
+        let preference_highlights: Vec<_> = if personalization.enabled {
+            personalization
+                .preferences
+                .iter()
+                .take(5)
+                .map(|pref| IntelligenceHighlight {
+                    id: pref.id.to_string(),
+                    label: pref.label.clone().unwrap_or_else(|| pref.key.clone()),
+                    summary: pref.value.clone(),
+                    source: "preference".into(),
+                })
+                .collect()
+        } else {
+            Vec::new()
+        };
+        Self::generate_with_inputs(
+            db,
+            actor,
+            &workspace_id,
+            &attention,
+            &queue,
+            &workflow,
+            &goals,
+            &memory_highlights,
+            &preference_highlights,
+        )
+    }
+
+    /// Preferred path — Intelligence injects Attention + context.
+    #[allow(clippy::too_many_arguments)]
+    pub(crate) fn generate_with_inputs(
+        db: &Arc<Mutex<Database>>,
+        actor: &ActorContext,
+        workspace_id: impl Into<String>,
+        attention: &WorkspaceAttentionState,
+        decision_queue: &DecisionQueue,
+        workflow: &WorkflowContext,
+        goals: &[WorkGoal],
+        memory_highlights: &[IntelligenceHighlight],
+        preference_highlights: &[IntelligenceHighlight],
+    ) -> Result<DecisionEngineState> {
+        let workspace_id = WorkspaceId::new(workspace_id.into()).map_err(KernelError::Domain)?;
+        let ws = workspace_id.as_str();
+        let overlays = Self::load_overlays(db, ws)?;
+        let previous_ranks = Self::previous_open_order(db, actor, ws);
+
+        let attention_open = |state: DecisionState| {
+            matches!(
+                state,
+                DecisionState::Pending | DecisionState::Viewed | DecisionState::Deferred
+            )
+        };
+        let pending_approvals: Vec<_> = decision_queue
+            .items
+            .iter()
+            .filter(|item| {
+                item.source_type == DecisionSourceType::PendingApproval && attention_open(item.decision_state)
+            })
+            .collect();
+        let pending_plans: Vec<_> = decision_queue
+            .items
+            .iter()
+            .filter(|item| {
+                item.source_type == DecisionSourceType::PlanningContinuation
+                    && attention_open(item.decision_state)
+            })
+            .collect();
+
+        let context = DecisionContext {
+            workspace_id: ws.to_string(),
+            active_project_id: workflow.active_project_id.as_ref().map(|id| id.to_string()),
+            active_task_id: workflow.active_task_id.as_ref().map(|id| id.to_string()),
+            attention_item_count: attention.items.len(),
+            memory_highlight_count: memory_highlights.len(),
+            preference_highlight_count: preference_highlights.len(),
+            pending_approval_count: pending_approvals.len(),
+            pending_plan_count: pending_plans.len(),
+        };
+
+        let mut candidates = Vec::new();
+        let mut seen = std::collections::HashSet::new();
+
+        for item in &attention.top_items {
+            let key = format!("attention:{}", item.id);
+            if !seen.insert(key.clone()) {
+                continue;
+            }
+            candidates.push(Self::candidate_from_attention(
+                ws,
+                item,
+                goals,
+                memory_highlights,
+                preference_highlights,
+                &pending_approvals,
+                &pending_plans,
+                &overlays,
+            )?);
+        }
+
+        // Always surface at least one bootstrap candidate when empty.
+        if candidates.is_empty() {
+            let key = "bootstrap:define_work";
+            seen.insert(key.to_string());
+            candidates.push(Self::bootstrap_candidate(
+                ws,
+                goals,
+                memory_highlights,
+                preference_highlights,
+                &overlays,
+            )?);
+        }
+
+        // Alternative: goal continuation when goals exist and not already covered.
+        if let Some(goal) = goals.first() {
+            let key = format!("goal:{}", goal.id);
+            if seen.insert(key.clone()) {
+                candidates.push(Self::candidate_from_goal(
+                    ws,
+                    goal,
+                    attention,
+                    memory_highlights,
+                    preference_highlights,
+                    &pending_approvals,
+                    &overlays,
+                )?);
+            }
+        }
+
+        let state = DecisionEngineState::from_candidates(ws, context, candidates);
+        Self::audit_generated(db, actor, &state)?;
+        Self::audit_rank_changes(db, actor, &state, &previous_ranks)?;
+        Ok(state)
+    }
+
+    pub(crate) fn summary_projection(
+        state: &DecisionEngineState,
+        limit: usize,
+    ) -> DecisionEngineSummary {
+        state.summary_projection(limit)
+    }
+
+    pub(crate) fn dismiss(
+        db: &Arc<Mutex<Database>>,
+        actor: &ActorContext,
+        orchestrated_plans: &Arc<Mutex<OrchestratedPlanStore>>,
+        assistant_workflows: &Arc<Mutex<AssistantWorkflowStore>>,
+        workspace_id: impl Into<String>,
+        candidate_id: impl Into<String>,
+    ) -> Result<DecisionEngineActionResult> {
+        Self::transition(
+            db,
+            actor,
+            orchestrated_plans,
+            assistant_workflows,
+            workspace_id,
+            candidate_id,
+            DecisionOutcome::Dismissed,
+            "decision.dismissed",
+            false,
+        )
+    }
+
+    pub(crate) fn postpone(
+        db: &Arc<Mutex<Database>>,
+        actor: &ActorContext,
+        orchestrated_plans: &Arc<Mutex<OrchestratedPlanStore>>,
+        assistant_workflows: &Arc<Mutex<AssistantWorkflowStore>>,
+        workspace_id: impl Into<String>,
+        candidate_id: impl Into<String>,
+    ) -> Result<DecisionEngineActionResult> {
+        // Postponed is a soft dismiss — audit under decision.dismissed with outcome metadata.
+        Self::transition(
+            db,
+            actor,
+            orchestrated_plans,
+            assistant_workflows,
+            workspace_id,
+            candidate_id,
+            DecisionOutcome::Postponed,
+            "decision.dismissed",
+            false,
+        )
+    }
+
+    /// Select a recommendation — returns planner handoff only. Never executes.
+    pub(crate) fn select(
+        db: &Arc<Mutex<Database>>,
+        actor: &ActorContext,
+        orchestrated_plans: &Arc<Mutex<OrchestratedPlanStore>>,
+        assistant_workflows: &Arc<Mutex<AssistantWorkflowStore>>,
+        workspace_id: impl Into<String>,
+        candidate_id: impl Into<String>,
+    ) -> Result<DecisionEngineActionResult> {
+        Self::transition(
+            db,
+            actor,
+            orchestrated_plans,
+            assistant_workflows,
+            workspace_id,
+            candidate_id,
+            DecisionOutcome::Selected,
+            "decision.selected",
+            true,
+        )
+    }
+
+    /// Explicit rejection of any execution attempt from this layer.
+    pub(crate) fn attempt_execute() -> Result<()> {
+        Err(KernelError::from(DecisionEngineError::CannotExecute))
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn transition(
+        db: &Arc<Mutex<Database>>,
+        actor: &ActorContext,
+        orchestrated_plans: &Arc<Mutex<OrchestratedPlanStore>>,
+        assistant_workflows: &Arc<Mutex<AssistantWorkflowStore>>,
+        workspace_id: impl Into<String>,
+        candidate_id: impl Into<String>,
+        to: DecisionOutcome,
+        audit_event: &str,
+        include_handoff: bool,
+    ) -> Result<DecisionEngineActionResult> {
+        let workspace_id = workspace_id.into();
+        let candidate_id = candidate_id.into();
+        let state = Self::generate(
+            db,
+            actor,
+            orchestrated_plans,
+            assistant_workflows,
+            workspace_id.clone(),
+        )?;
+        let candidate = state
+            .candidates
+            .iter()
+            .find(|c| c.id.as_str() == candidate_id)
+            .cloned()
+            .ok_or_else(|| KernelError::from(DecisionEngineError::NotFound))?;
+
+        if !candidate.outcome.allows_transition(to) {
+            return Err(KernelError::from(DecisionEngineError::InvalidTransition {
+                from: candidate.outcome.as_str().into(),
+                to: to.as_str().into(),
+            }));
+        }
+
+        let key = Self::candidate_key(&candidate);
+        Self::upsert_overlay(
+            db,
+            &DecisionEngineOverlay {
+                workspace_id: workspace_id.clone(),
+                candidate_key: key,
+                outcome: to,
+                updated_at: Utc::now().to_rfc3339(),
+                actor_id: actor.actor.id.to_string(),
+            },
+        )?;
+
+        let mut updated = candidate.clone();
+        updated.outcome = to;
+        Self::audit_lifecycle(db, actor, audit_event, &updated, json!({}))?;
+
+        let handoff = if include_handoff {
+            Some(DecisionEngineHandoff {
+                candidate_id: updated.id.to_string(),
+                next_command: DecisionCandidate::HANDOFF_SUBMIT_ASSISTANT_GOAL.into(),
+                goal_statement: updated.goal_statement.clone(),
+                workspace_id: workspace_id.clone(),
+                note: "Decision Engine selected a recommendation. Call submit_assistant_goal to plan — never execute from Decision Engine.".into(),
+                authority_effect: DecisionCandidate::AUTHORITY_EFFECT_NONE.into(),
+            })
+        } else {
+            None
+        };
+
+        Ok(DecisionEngineActionResult {
+            candidate: Some(updated),
+            handoff,
+            authority_effect: DecisionCandidate::AUTHORITY_EFFECT_NONE.into(),
+        })
+    }
+
+    fn candidate_key(candidate: &DecisionCandidate) -> String {
+        candidate
+            .id
+            .as_str()
+            .strip_prefix("engine_decision:")
+            .unwrap_or(candidate.id.as_str())
+            .to_string()
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn candidate_from_attention(
+        ws: &str,
+        item: &AttentionItem,
+        goals: &[WorkGoal],
+        memory: &[IntelligenceHighlight],
+        prefs: &[IntelligenceHighlight],
+        pending_approvals: &[&workspace_domain::DecisionItem],
+        pending_plans: &[&workspace_domain::DecisionItem],
+        overlays: &HashMap<String, DecisionOutcome>,
+    ) -> Result<DecisionCandidate> {
+        let key = format!("attention:{}", item.id);
+        let outcome = overlays.get(&key).copied().unwrap_or(DecisionOutcome::Open);
+        let attention_contribution = item.score.min(100);
+        let memory_contribution = if memory.is_empty() { 0 } else { 8 };
+        let personalization_contribution = if prefs.is_empty() { 0 } else { 10 };
+        let goal_contribution = if goals.is_empty() { 0 } else { 12 };
+        let plan_bonus = if pending_plans.is_empty() { 0 } else { 6 };
+        let total = attention_contribution
+            + memory_contribution
+            + personalization_contribution
+            + goal_contribution
+            + plan_bonus;
+
+        let mut reasons = vec![DecisionReason {
+            kind: "attention".into(),
+            summary: format!(
+                "Current attention score is {} ({})",
+                item.score,
+                item.category.as_str()
+            ),
+            evidence_ref: Some(item.id.to_string()),
+        }];
+        for factor in item.score_factors.iter().take(3) {
+            reasons.push(DecisionReason {
+                kind: "attention_factor".into(),
+                summary: factor.clone(),
+                evidence_ref: Some(item.id.to_string()),
+            });
+        }
+        if let Some(goal) = goals.first() {
+            reasons.push(DecisionReason {
+                kind: "goal".into(),
+                summary: format!("Related to current goal: {}", goal.description),
+                evidence_ref: Some(goal.id.to_string()),
+            });
+        }
+        if let Some(mem) = memory.first() {
+            reasons.push(DecisionReason {
+                kind: "memory".into(),
+                summary: format!("Memory supports this: {}", mem.summary),
+                evidence_ref: Some(mem.id.clone()),
+            });
+        }
+        if let Some(pref) = prefs.first() {
+            reasons.push(DecisionReason {
+                kind: "personalization".into(),
+                summary: format!("Preference: {} = {}", pref.label, pref.summary),
+                evidence_ref: Some(pref.id.clone()),
+            });
+        }
+        if !pending_plans.is_empty() {
+            reasons.push(DecisionReason {
+                kind: "plan".into(),
+                summary: "Unfinished plan exists in Decision Queue.".into(),
+                evidence_ref: Some(pending_plans[0].source_id.clone()),
+            });
+        }
+        if !pending_approvals.is_empty() {
+            reasons.push(DecisionReason {
+                kind: "approval".into(),
+                summary: format!(
+                    "{} pending approval(s) in workspace.",
+                    pending_approvals.len()
+                ),
+                evidence_ref: Some(pending_approvals[0].source_id.clone()),
+            });
+        }
+
+        let confidence = if total >= 80 {
+            "high"
+        } else if total >= 45 {
+            "medium"
+        } else {
+            "low"
+        };
+
+        let mut factors = item.score_factors.clone();
+        if memory_contribution > 0 {
+            factors.push(format!("memory +{memory_contribution}"));
+        }
+        if personalization_contribution > 0 {
+            factors.push(format!("personalization +{personalization_contribution}"));
+        }
+        if goal_contribution > 0 {
+            factors.push(format!("goal +{goal_contribution}"));
+        }
+        if plan_bonus > 0 {
+            factors.push(format!("pending plan +{plan_bonus}"));
+        }
+
+        let goal_statement = format!(
+            "Recommend next step: {}. {}",
+            item.title, item.explanation
+        );
+        let related_goal_ids: Vec<_> = goals.iter().take(3).map(|g| g.id.to_string()).collect();
+        let pending_approval_ids: Vec<_> = pending_approvals
+            .iter()
+            .take(5)
+            .map(|a| a.source_id.clone())
+            .collect();
+
+        Ok(DecisionCandidate {
+            id: DecisionCandidate::synthetic_id(&key),
+            workspace_id: WorkspaceId::new(ws).map_err(KernelError::Domain)?,
+            title: item.title.clone(),
+            goal_statement,
+            originating_goal: goals.first().map(|g| g.description.clone()),
+            attention_item_id: Some(item.id.to_string()),
+            recommendation_id: Some(format!("rec-attention-{}", item.id)),
+            score: DecisionScore {
+                total,
+                attention_contribution,
+                memory_contribution,
+                personalization_contribution,
+                goal_contribution: goal_contribution + plan_bonus,
+                factors,
+            },
+            explanation: DecisionExplanation {
+                headline: format!("Recommended because attention prioritizes: {}", item.title),
+                reasons,
+                confidence: confidence.into(),
+            },
+            related_goal_ids,
+            pending_approval_ids,
+            outcome,
+            created_at: Utc::now().to_rfc3339(),
+            handoff_command: DecisionCandidate::HANDOFF_SUBMIT_ASSISTANT_GOAL.into(),
+            authority_effect: DecisionCandidate::AUTHORITY_EFFECT_NONE.into(),
+        })
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn candidate_from_goal(
+        ws: &str,
+        goal: &WorkGoal,
+        attention: &WorkspaceAttentionState,
+        memory: &[IntelligenceHighlight],
+        prefs: &[IntelligenceHighlight],
+        pending_approvals: &[&workspace_domain::DecisionItem],
+        overlays: &HashMap<String, DecisionOutcome>,
+    ) -> Result<DecisionCandidate> {
+        let key = format!("goal:{}", goal.id);
+        let outcome = overlays.get(&key).copied().unwrap_or(DecisionOutcome::Open);
+        let attention_contribution = attention
+            .top_items
+            .first()
+            .map(|i| (i.score / 2).min(40))
+            .unwrap_or(10);
+        let memory_contribution = if memory.is_empty() { 0 } else { 8 };
+        let personalization_contribution = if prefs.is_empty() { 0 } else { 8 };
+        let goal_contribution = 20u32;
+        let total = attention_contribution
+            + memory_contribution
+            + personalization_contribution
+            + goal_contribution;
+
+        let mut reasons = vec![DecisionReason {
+            kind: "goal".into(),
+            summary: format!("Continue work toward goal: {}", goal.description),
+            evidence_ref: Some(goal.id.to_string()),
+        }];
+        if let Some(item) = attention.top_items.first() {
+            reasons.push(DecisionReason {
+                kind: "attention".into(),
+                summary: format!("Attention also highlights: {}", item.title),
+                evidence_ref: Some(item.id.to_string()),
+            });
+        }
+        if let Some(mem) = memory.first() {
+            reasons.push(DecisionReason {
+                kind: "memory".into(),
+                summary: format!("Memory: {}", mem.summary),
+                evidence_ref: Some(mem.id.clone()),
+            });
+        }
+        if let Some(pref) = prefs.first() {
+            reasons.push(DecisionReason {
+                kind: "personalization".into(),
+                summary: format!("Preference: {}", pref.label),
+                evidence_ref: Some(pref.id.clone()),
+            });
+        }
+
+        let confidence = if total >= 70 { "high" } else { "medium" };
+
+        Ok(DecisionCandidate {
+            id: DecisionCandidate::synthetic_id(&key),
+            workspace_id: WorkspaceId::new(ws).map_err(KernelError::Domain)?,
+            title: format!("Continue: {}", goal.description),
+            goal_statement: format!("Continue progress on work goal: {}", goal.description),
+            originating_goal: Some(goal.description.clone()),
+            attention_item_id: attention.top_items.first().map(|i| i.id.to_string()),
+            recommendation_id: None,
+            score: DecisionScore {
+                total,
+                attention_contribution,
+                memory_contribution,
+                personalization_contribution,
+                goal_contribution,
+                factors: vec![
+                    format!("goal base +{goal_contribution}"),
+                    format!("attention share +{attention_contribution}"),
+                ],
+            },
+            explanation: DecisionExplanation {
+                headline: format!("Recommended because goal \"{}\" remains active", goal.description),
+                reasons,
+                confidence: confidence.into(),
+            },
+            related_goal_ids: vec![goal.id.to_string()],
+            pending_approval_ids: pending_approvals
+                .iter()
+                .take(5)
+                .map(|a| a.source_id.clone())
+                .collect(),
+            outcome,
+            created_at: Utc::now().to_rfc3339(),
+            handoff_command: DecisionCandidate::HANDOFF_SUBMIT_ASSISTANT_GOAL.into(),
+            authority_effect: DecisionCandidate::AUTHORITY_EFFECT_NONE.into(),
+        })
+    }
+
+    fn bootstrap_candidate(
+        ws: &str,
+        goals: &[WorkGoal],
+        memory: &[IntelligenceHighlight],
+        prefs: &[IntelligenceHighlight],
+        overlays: &HashMap<String, DecisionOutcome>,
+    ) -> Result<DecisionCandidate> {
+        let key = "bootstrap:define_work";
+        let outcome = overlays.get(key).copied().unwrap_or(DecisionOutcome::Open);
+        let memory_contribution = if memory.is_empty() { 0 } else { 5 };
+        let personalization_contribution = if prefs.is_empty() { 0 } else { 5 };
+        let total = 20 + memory_contribution + personalization_contribution;
+        let mut reasons = vec![DecisionReason {
+            kind: "bootstrap".into(),
+            summary: "Attention has no scored items — define current work.".into(),
+            evidence_ref: None,
+        }];
+        if let Some(goal) = goals.first() {
+            reasons.push(DecisionReason {
+                kind: "goal".into(),
+                summary: format!("Existing goal available: {}", goal.description),
+                evidence_ref: Some(goal.id.to_string()),
+            });
+        }
+
+        Ok(DecisionCandidate {
+            id: DecisionCandidate::synthetic_id(key),
+            workspace_id: WorkspaceId::new(ws).map_err(KernelError::Domain)?,
+            title: "Define current work".into(),
+            goal_statement: "Define the current project and task so the Workspace can recommend next steps."
+                .into(),
+            originating_goal: goals.first().map(|g| g.description.clone()),
+            attention_item_id: None,
+            recommendation_id: Some("rec-idle".into()),
+            score: DecisionScore {
+                total,
+                attention_contribution: 0,
+                memory_contribution,
+                personalization_contribution,
+                goal_contribution: if goals.is_empty() { 0 } else { 5 },
+                factors: vec!["bootstrap baseline +20".into()],
+            },
+            explanation: DecisionExplanation {
+                headline: "Recommended because the workspace needs an active focus".into(),
+                reasons,
+                confidence: "low".into(),
+            },
+            related_goal_ids: goals.iter().take(3).map(|g| g.id.to_string()).collect(),
+            pending_approval_ids: Vec::new(),
+            outcome,
+            created_at: Utc::now().to_rfc3339(),
+            handoff_command: DecisionCandidate::HANDOFF_SUBMIT_ASSISTANT_GOAL.into(),
+            authority_effect: DecisionCandidate::AUTHORITY_EFFECT_NONE.into(),
+        })
+    }
+
+    fn load_overlays(
+        db: &Arc<Mutex<Database>>,
+        workspace_id: &str,
+    ) -> Result<HashMap<String, DecisionOutcome>> {
+        let guard = db
+            .lock()
+            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+        let overlays = DecisionEngineRepository::new(&guard).list_overlays(workspace_id)?;
+        Ok(overlays
+            .into_iter()
+            .map(|o| (o.candidate_key, o.outcome))
+            .collect())
+    }
+
+    fn upsert_overlay(db: &Arc<Mutex<Database>>, overlay: &DecisionEngineOverlay) -> Result<()> {
+        let guard = db
+            .lock()
+            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+        DecisionEngineRepository::new(&guard).upsert_overlay(overlay)?;
+        Ok(())
+    }
+
+    fn previous_open_order(
+        _db: &Arc<Mutex<Database>>,
+        _actor: &ActorContext,
+        _ws: &str,
+    ) -> Vec<String> {
+        // Rank-change detection is best-effort via audit comparison within a session;
+        // empty baseline means first generation (no rank_changed events).
+        Vec::new()
+    }
+
+    fn audit_generated(
+        db: &Arc<Mutex<Database>>,
+        actor: &ActorContext,
+        state: &DecisionEngineState,
+    ) -> Result<()> {
+        AuditService::record_ai_planning_event(
+            db,
+            actor,
+            &IntentContext::user_request(),
+            "decision.generated",
+            true,
+            json!({
+                "workspace_id": state.workspace_id,
+                "candidate_count": state.candidates.len(),
+                "open_count": state.top_candidates.len(),
+                "top_ids": state.top_candidates.iter().map(|c| c.id.to_string()).collect::<Vec<_>>(),
+                "authority_effect": "none",
+            })
+            .to_string(),
+        )
+    }
+
+    fn audit_rank_changes(
+        db: &Arc<Mutex<Database>>,
+        actor: &ActorContext,
+        state: &DecisionEngineState,
+        previous: &[String],
+    ) -> Result<()> {
+        if previous.is_empty() {
+            return Ok(());
+        }
+        let current: Vec<_> = state
+            .top_candidates
+            .iter()
+            .map(|c| c.id.to_string())
+            .collect();
+        if current == previous {
+            return Ok(());
+        }
+        AuditService::record_ai_planning_event(
+            db,
+            actor,
+            &IntentContext::user_request(),
+            "decision.rank_changed",
+            true,
+            json!({
+                "workspace_id": state.workspace_id,
+                "previous": previous,
+                "current": current,
+                "authority_effect": "none",
+            })
+            .to_string(),
+        )
+    }
+
+    fn audit_lifecycle(
+        db: &Arc<Mutex<Database>>,
+        actor: &ActorContext,
+        event: &str,
+        candidate: &DecisionCandidate,
+        extra: serde_json::Value,
+    ) -> Result<()> {
+        let mut metadata = json!({
+            "workspace_id": candidate.workspace_id.as_str(),
+            "candidate_id": candidate.id.as_str(),
+            "outcome": candidate.outcome.as_str(),
+            "authority_effect": "none",
+        });
+        if let Some(obj) = metadata.as_object_mut() {
+            if let Some(extra_obj) = extra.as_object() {
+                for (k, v) in extra_obj {
+                    obj.insert(k.clone(), v.clone());
+                }
+            }
+        }
+        AuditService::record_ai_planning_event(
+            db,
+            actor,
+            &IntentContext::user_request(),
+            event,
+            true,
+            metadata.to_string(),
+        )
+    }
+}

@@ -15,6 +15,10 @@ use commands::automation_trigger::{
     list_trigger_events, record_and_evaluate_triggers, record_trigger_event,
     reject_automation_intent_proposal,
 };
+use commands::decision_engine::{
+    dismiss_decision_candidate, generate_decision_engine, postpone_decision_candidate,
+    select_decision_candidate,
+};
 use commands::decision_queue::{
     accept_decision_item, defer_decision_item, dismiss_decision_item, generate_decision_queue,
     mark_decision_item_viewed, reject_decision_item,
@@ -185,6 +189,10 @@ pub fn run() {
             get_workspace_activity_timeline,
             generate_workspace_continuity,
             generate_workspace_attention,
+            generate_decision_engine,
+            select_decision_candidate,
+            dismiss_decision_candidate,
+            postpone_decision_candidate,
             create_suggestion_intent_request,
             execute_intent_request,
             get_execution_outcomes,

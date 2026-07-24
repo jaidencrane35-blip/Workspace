@@ -13,6 +13,7 @@ use crate::commands::automation_trigger::{
     ListTriggerEvents, RecordAndEvaluateTriggers, RecordTriggerEvent,
     RejectAutomationIntentProposal,
 };
+use crate::commands::decision_engine::{GateDecisionEngineRead, GateDecisionEngineWrite};
 use crate::commands::decision_queue::{GateDecisionQueueRead, GateDecisionQueueWrite};
 use crate::commands::workspace_activity::GateActivityGraphRead;
 use crate::commands::workspace_attention::GateAttentionRead;
@@ -69,7 +70,8 @@ use crate::lifecycle::LifecycleState;
 use crate::security::{PermissionRequest, PermissionSubject};
 use crate::services::{
     AiAssistantService, AiEvaluationService, AiOrchestrationService, AiParticipationService,
-    AiPlanningService, ConfigurationService, DecisionQueueService, DesktopWindowService,
+    AiPlanningService, ConfigurationService, DecisionEngineService, DecisionQueueService,
+    DesktopWindowService,
     WorkspaceActivityGraphService, WorkspaceAttentionService, WorkspaceContextService,
     WorkspaceContinuityService, WorkspaceIntelligenceService,
 };
@@ -78,9 +80,10 @@ use workspace_domain::{
     ActionCatalog, Actor, ActorContext, AiAssistantPlanComparison, AiAssistantWorkflow,
     AiMemoryAwareness, AiOrchestratedPlan, AutomationContract, AutomationContractIntentRequest,
     AutomationIntentProposal, AutomationIntentProposalStatus, AutomationTriggerKind,
-    DecisionActionResult, DecisionItem, DecisionQueue, Project, ProjectStatus, Task, TaskPriority,
-    TaskStatus, TriggerEvaluationResult, TriggerEvent, TriggerEventType, WorkGoal, WorkflowContext,
-    WorkspaceActivity, WorkspaceActivityGraph, WorkspaceAttentionState, WorkspaceContinuityState,
+    DecisionActionResult, DecisionEngineActionResult, DecisionEngineState, DecisionItem,
+    DecisionQueue, Project, ProjectStatus, Task, TaskPriority, TaskStatus, TriggerEvaluationResult,
+    TriggerEvent, TriggerEventType, WorkGoal, WorkflowContext, WorkspaceActivity,
+    WorkspaceActivityGraph, WorkspaceAttentionState, WorkspaceContinuityState,
     WorkspaceIntelligenceComparison, WorkspaceIntelligenceState, AiPlan, AiPlanEvaluationReport,
     AiPlanSubmissionResult,
     AiProposalAuthorityOutcome, AiProposalEvaluation, AiProposalSubmission, ApplicationId,
@@ -2434,6 +2437,94 @@ impl CommandHandler {
             &kernel.assistant_workflows(),
             workspace_id,
         )
+    }
+
+    /// Aggregate Decision Engine recommendations (never executes).
+    pub fn generate_decision_engine(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<DecisionEngineState> {
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent.clone()))
+            .execute_query(GateDecisionEngineRead)?;
+        let _ = Self::get_workflow_context(
+            kernel,
+            actor.clone(),
+            intent,
+            workspace_id.clone(),
+        )?;
+        DecisionEngineService::generate(
+            &kernel.shared_database(),
+            &actor,
+            &kernel.orchestrated_plans(),
+            &kernel.assistant_workflows(),
+            workspace_id,
+        )
+    }
+
+    /// Accept a Decision Engine recommendation — returns planner handoff; never executes.
+    pub fn select_decision_candidate(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        candidate_id: String,
+    ) -> Result<DecisionEngineActionResult> {
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent))
+            .execute_mutation(GateDecisionEngineWrite)?;
+        // Handoff only — caller invokes submit_assistant_goal explicitly so Planner plans.
+        DecisionEngineService::select(
+            &kernel.shared_database(),
+            &actor,
+            &kernel.orchestrated_plans(),
+            &kernel.assistant_workflows(),
+            workspace_id,
+            candidate_id,
+        )
+    }
+
+    pub fn dismiss_decision_candidate(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        candidate_id: String,
+    ) -> Result<DecisionEngineActionResult> {
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent))
+            .execute_mutation(GateDecisionEngineWrite)?;
+        DecisionEngineService::dismiss(
+            &kernel.shared_database(),
+            &actor,
+            &kernel.orchestrated_plans(),
+            &kernel.assistant_workflows(),
+            workspace_id,
+            candidate_id,
+        )
+    }
+
+    pub fn postpone_decision_candidate(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        candidate_id: String,
+    ) -> Result<DecisionEngineActionResult> {
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent))
+            .execute_mutation(GateDecisionEngineWrite)?;
+        DecisionEngineService::postpone(
+            &kernel.shared_database(),
+            &actor,
+            &kernel.orchestrated_plans(),
+            &kernel.assistant_workflows(),
+            workspace_id,
+            candidate_id,
+        )
+    }
+
+    /// Architecture guard — Decision Engine must never execute.
+    pub fn decision_engine_attempt_execute() -> Result<()> {
+        DecisionEngineService::attempt_execute()
     }
 
     /// Read-only workspace intelligence aggregation. Capability-gated; never executes.

@@ -4,7 +4,7 @@ use workspace_database::DatabaseError;
 use workspace_domain::{
     AiAssistantError, AiEvaluationError, AiMemoryError, AiModelError, AiOrchestrationError,
     AiPersonalizationError, AiPlanningError, AiRequestError, AutomationContractError,
-    AutomationTriggerError, DecisionQueueError, DomainError, ResourceKind,
+    AutomationTriggerError, DecisionEngineError, DecisionQueueError, DomainError, ResourceKind,
     WorkspaceActivityError, WorkspaceAttentionError, WorkspaceContinuityError,
     WorkspaceIntelligenceError, WorkspaceIntentError,
 };
@@ -201,6 +201,9 @@ pub enum KernelError {
 
     #[error("Workspace attention validation failed: {message}")]
     WorkspaceAttentionValidation { message: String },
+
+    #[error("Decision engine validation failed: {message}")]
+    DecisionEngineValidation { message: String },
 
     #[error("Workspace kernel initialization failed")]
     InitializationFailed,
@@ -402,6 +405,17 @@ impl From<WorkspaceAttentionError> for KernelError {
         match error {
             WorkspaceAttentionError::Domain(domain) => KernelError::from(domain),
             other => KernelError::WorkspaceAttentionValidation {
+                message: other.to_string(),
+            },
+        }
+    }
+}
+
+impl From<DecisionEngineError> for KernelError {
+    fn from(error: DecisionEngineError) -> Self {
+        match error {
+            DecisionEngineError::Domain(domain) => KernelError::from(domain),
+            other => KernelError::DecisionEngineValidation {
                 message: other.to_string(),
             },
         }
@@ -680,6 +694,10 @@ impl KernelError {
             },
             KernelError::WorkspaceAttentionValidation { message } => PublicError {
                 code: "workspace_attention_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::DecisionEngineValidation { message } => PublicError {
+                code: "decision_engine_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::InitializationFailed => PublicError {

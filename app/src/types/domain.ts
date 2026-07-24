@@ -1133,6 +1133,98 @@ export interface WorkspaceAttentionSummary {
   authority_effect: string;
 }
 
+export type DecisionOutcome =
+  | "open"
+  | "selected"
+  | "dismissed"
+  | "postponed"
+  | "expired";
+
+export interface DecisionReason {
+  kind: string;
+  summary: string;
+  evidence_ref: string | null;
+}
+
+export interface DecisionScore {
+  total: number;
+  attention_contribution: number;
+  memory_contribution: number;
+  personalization_contribution: number;
+  goal_contribution: number;
+  factors: string[];
+}
+
+export interface DecisionExplanation {
+  headline: string;
+  reasons: DecisionReason[];
+  confidence: string;
+}
+
+export interface DecisionContext {
+  workspace_id: string;
+  active_project_id: string | null;
+  active_task_id: string | null;
+  attention_item_count: number;
+  memory_highlight_count: number;
+  preference_highlight_count: number;
+  pending_approval_count: number;
+  pending_plan_count: number;
+}
+
+export interface DecisionCandidate {
+  id: string;
+  workspace_id: string;
+  title: string;
+  goal_statement: string;
+  originating_goal: string | null;
+  attention_item_id: string | null;
+  recommendation_id: string | null;
+  score: DecisionScore;
+  explanation: DecisionExplanation;
+  related_goal_ids: string[];
+  pending_approval_ids: string[];
+  outcome: DecisionOutcome;
+  created_at: string;
+  handoff_command: string;
+  authority_effect: string;
+}
+
+export interface DecisionEngineState {
+  workspace_id: string;
+  generated_at: string;
+  context: DecisionContext;
+  candidates: DecisionCandidate[];
+  top_candidates: DecisionCandidate[];
+  summary: string;
+  authority_effect: string;
+}
+
+export interface DecisionEngineSummary {
+  workspace_id: string;
+  generated_at: string;
+  candidate_count: number;
+  open_count: number;
+  top_candidates: DecisionCandidate[];
+  summary: string;
+  authority_effect: string;
+}
+
+export interface DecisionEngineHandoff {
+  candidate_id: string;
+  next_command: string;
+  goal_statement: string;
+  workspace_id: string;
+  note: string;
+  authority_effect: string;
+}
+
+export interface DecisionEngineActionResult {
+  candidate: DecisionCandidate | null;
+  handoff: DecisionEngineHandoff | null;
+  authority_effect: string;
+}
+
 export interface WorkspaceIntelligenceState {
   workspace_id: string;
   workspace_name: string;
@@ -1156,6 +1248,7 @@ export interface WorkspaceIntelligenceState {
   activity_graph: WorkspaceActivityGraphSummary;
   continuity: WorkspaceContinuitySummary;
   attention: WorkspaceAttentionSummary;
+  decision_engine: DecisionEngineSummary;
   workspace_health: string;
   summary: string;
   authority_effect: string;

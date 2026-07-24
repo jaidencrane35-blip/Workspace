@@ -65,6 +65,9 @@
 | `get_workspace_activity_timeline` | Product: same generate; return timeline slice only |
 | `generate_workspace_continuity` | Product: aggregate Workspace Continuity (read-only resume narrative) |
 | `generate_workspace_attention` | Product: aggregate Workspace Attention (read-only prioritization) |
+| `generate_decision_engine` | Product: aggregate Decision Engine recommendations (never executes) |
+| `select_decision_candidate` | Product: accept recommendation → planner handoff only |
+| `dismiss_decision_candidate` / `postpone_decision_candidate` | Product: Decision Engine lifecycle overlay |
 | `create_memory_entry` / `list_memory_entries` / `get_memory_context` | Diagnostic governed memory (informational) |
 | `delete_memory_entry` / `clear_memory_entries` | Diagnostic memory lifecycle |
 | `diagnose_ai_plan_preview` | Diagnostic memory-aware plan (no execution) |

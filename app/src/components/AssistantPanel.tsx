@@ -183,6 +183,20 @@ export function AssistantPanel({
               something is prioritized — never change attention, approve, or
               execute.
             </dd>
+            <dt>Decision Engine</dt>
+            <dd>
+              {workspaceIntel.decision_engine.summary}{" "}
+              {workspaceIntel.decision_engine.top_candidates.length === 0
+                ? "No open recommendations."
+                : `Top: ${workspaceIntel.decision_engine.top_candidates
+                    .map(
+                      (c) =>
+                        `${c.title} (${c.explanation.confidence}, score ${c.score.total})`,
+                    )
+                    .join("; ")}.`}{" "}
+              Explain-only here — accept/dismiss/postpone live on the Work tab.
+              Never executes.
+            </dd>
             <dt>Continuity</dt>
             <dd>
               {workspaceIntel.continuity.summary}{" "}

@@ -13,6 +13,7 @@ import type {
   WorkspaceActivityGraph,
   WorkspaceAttentionState,
   WorkspaceContinuityState,
+  DecisionEngineState,
   WorkspaceIntelligenceState,
 } from "../types/domain";
 
@@ -53,6 +54,8 @@ export function WorkspaceIntelligencePanel({
   const [attention, setAttention] = useState<WorkspaceAttentionState | null>(
     null,
   );
+  const [decisionEngine, setDecisionEngine] =
+    useState<DecisionEngineState | null>(null);
   const [lastHandoff, setLastHandoff] = useState<string | null>(null);
   const [contractName, setContractName] = useState(
     "Prepare coding environment",
@@ -101,6 +104,7 @@ export function WorkspaceIntelligencePanel({
           intel,
           cont,
           attn,
+          decisions,
         ] = await Promise.all([
             invokeIpc<Project[]>("list_projects", {
               workspaceId: workspace.id,
@@ -131,6 +135,9 @@ export function WorkspaceIntelligencePanel({
             invokeIpc<WorkspaceAttentionState>("generate_workspace_attention", {
               workspaceId: workspace.id,
             }),
+            invokeIpc<DecisionEngineState>("generate_decision_engine", {
+              workspaceId: workspace.id,
+            }),
           ]);
         if (!cancelled) {
           setProjects(listed);
@@ -141,6 +148,7 @@ export function WorkspaceIntelligencePanel({
           setState(intel);
           setContinuity(cont);
           setAttention(attn);
+          setDecisionEngine(decisions);
         }
       } catch (err: unknown) {
         if (!cancelled) {
@@ -160,7 +168,8 @@ export function WorkspaceIntelligencePanel({
         <h2>Where you are. What needs attention. How work connects.</h2>
         <p className="lede">
           One Workspace operating environment — Continuity, Attention, Decision
-          Queue, then Activity. Nothing here executes or grants permission.
+          Engine, Decision Queue, then Activity. Nothing here executes or grants
+          permission.
         </p>
       </header>
 
@@ -421,6 +430,172 @@ export function WorkspaceIntelligencePanel({
           </>
         ) : (
           <p className="muted">No attention snapshot yet.</p>
+        )}
+      </section>
+
+      <section>
+        <h3>Recommended Actions</h3>
+        <p className="muted">
+          Decision Engine synthesizes Attention, memory, preferences, and goals
+          into ranked recommendations. Accept hands off to the Planner — never
+          executes.
+        </p>
+        <div className="row">
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("Recommendations regenerated", async () => {
+                if (!workspace) return;
+                const next = await invokeIpc<DecisionEngineState>(
+                  "generate_decision_engine",
+                  { workspaceId: workspace.id },
+                );
+                setDecisionEngine(next);
+              })
+            }
+          >
+            Regenerate recommendations
+          </button>
+        </div>
+        {decisionEngine ? (
+          <>
+            <p>{decisionEngine.summary}</p>
+            <p className="muted">
+              Why this matters now · {decisionEngine.context.attention_item_count}{" "}
+              attention · {decisionEngine.context.pending_approval_count} pending
+              approvals · authority: {decisionEngine.authority_effect}
+            </p>
+            {decisionEngine.top_candidates.length === 0 ? (
+              <p className="muted">No open recommendations.</p>
+            ) : (
+              <ul className="intelligence-list">
+                {decisionEngine.top_candidates.map((candidate, index) => (
+                  <li key={candidate.id}>
+                    <strong>
+                      {index === 0 ? "Top · " : "Alternative · "}
+                      {candidate.title}
+                    </strong>
+                    <div className="muted">
+                      Confidence {candidate.explanation.confidence} · score{" "}
+                      {candidate.score.total} · {candidate.outcome}
+                    </div>
+                    <div>{candidate.explanation.headline}</div>
+                    <ul className="muted">
+                      {candidate.explanation.reasons.map((reason) => (
+                        <li key={`${candidate.id}-${reason.kind}-${reason.summary}`}>
+                          {reason.summary}
+                        </li>
+                      ))}
+                    </ul>
+                    {candidate.related_goal_ids.length > 0 && (
+                      <div className="muted">
+                        Related goals: {candidate.related_goal_ids.length}
+                      </div>
+                    )}
+                    {candidate.pending_approval_ids.length > 0 && (
+                      <div className="muted">
+                        Pending approvals: {candidate.pending_approval_ids.length}
+                      </div>
+                    )}
+                    <div className="row">
+                      <button
+                        type="button"
+                        disabled={busy || !workspace || candidate.outcome !== "open"}
+                        onClick={() =>
+                          void run("Recommendation accepted → planner", async () => {
+                            if (!workspace) return;
+                            const result = await invokeIpc<{
+                              handoff: {
+                                next_command: string;
+                                goal_statement: string;
+                                workspace_id: string;
+                              } | null;
+                            }>("select_decision_candidate", {
+                              workspaceId: workspace.id,
+                              candidateId: candidate.id,
+                            });
+                            if (result.handoff?.next_command === "submit_assistant_goal") {
+                              try {
+                                await invokeIpc("submit_assistant_goal", {
+                                  goal: result.handoff.goal_statement,
+                                  applicationIds: [],
+                                  workspaceId: result.handoff.workspace_id,
+                                });
+                                setLastHandoff(
+                                  `Planner received recommendation via ${result.handoff.next_command}`,
+                                );
+                              } catch {
+                                setLastHandoff(
+                                  `Selected — planner handoff ready (${result.handoff.next_command}). Open Assistant to plan.`,
+                                );
+                              }
+                            } else {
+                              setLastHandoff(
+                                result.handoff
+                                  ? `Handoff: ${result.handoff.next_command}`
+                                  : "Selected",
+                              );
+                            }
+                            const next = await invokeIpc<DecisionEngineState>(
+                              "generate_decision_engine",
+                              { workspaceId: workspace.id },
+                            );
+                            setDecisionEngine(next);
+                          })
+                        }
+                      >
+                        Accept
+                      </button>
+                      <button
+                        type="button"
+                        disabled={busy || !workspace}
+                        onClick={() =>
+                          void run("Recommendation postponed", async () => {
+                            if (!workspace) return;
+                            await invokeIpc("postpone_decision_candidate", {
+                              workspaceId: workspace.id,
+                              candidateId: candidate.id,
+                            });
+                            const next = await invokeIpc<DecisionEngineState>(
+                              "generate_decision_engine",
+                              { workspaceId: workspace.id },
+                            );
+                            setDecisionEngine(next);
+                          })
+                        }
+                      >
+                        Postpone
+                      </button>
+                      <button
+                        type="button"
+                        disabled={busy || !workspace}
+                        onClick={() =>
+                          void run("Recommendation dismissed", async () => {
+                            if (!workspace) return;
+                            await invokeIpc("dismiss_decision_candidate", {
+                              workspaceId: workspace.id,
+                              candidateId: candidate.id,
+                            });
+                            const next = await invokeIpc<DecisionEngineState>(
+                              "generate_decision_engine",
+                              { workspaceId: workspace.id },
+                            );
+                            setDecisionEngine(next);
+                          })
+                        }
+                      >
+                        Dismiss
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {lastHandoff && <p className="muted">{lastHandoff}</p>}
+          </>
+        ) : (
+          <p className="muted">No Decision Engine snapshot yet.</p>
         )}
       </section>
 

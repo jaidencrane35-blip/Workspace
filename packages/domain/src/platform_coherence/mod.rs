@@ -80,6 +80,11 @@ pub const PLATFORM_CONCEPT_OWNERS: &[ConceptOwnership] = &[
         kind: ConceptOwnerKind::Aggregator,
     },
     ConceptOwnership {
+        concept: "decision_candidate",
+        owner: "DecisionEngineService",
+        kind: ConceptOwnerKind::Aggregator,
+    },
+    ConceptOwnership {
         concept: "permission_approval",
         owner: "PermissionApprovalService",
         kind: ConceptOwnerKind::DurableStore,
@@ -121,4 +126,6 @@ pub mod vocabulary {
     pub const INTERRUPTED_WORK: &str = "Interrupted Work";
     pub const RESUMABLE_WORK: &str = "Resumable Work";
     pub const ATTENTION: &str = "Attention";
+    pub const DECISION_ENGINE: &str = "Decision Engine";
+    pub const DECISION_CANDIDATE: &str = "Decision Candidate";
 }

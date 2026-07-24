@@ -19,9 +19,10 @@ use workspace_domain::{
 use crate::error::{KernelError, Result};
 use crate::services::{
     list_rejection_summaries, AiMemoryService, AiPersonalizationService, AssistantWorkflowStore,
-    AuditService, AutomationContractService, DecisionQueueService, DesktopWindowService,
-    OrchestratedPlanStore, TriggerEvaluatorService, WorkspaceActivityGraphService,
-    WorkspaceAttentionService, WorkspaceContinuityService, WorkspaceIntentService,
+    AuditService, AutomationContractService, DecisionEngineService, DecisionQueueService,
+    DesktopWindowService, OrchestratedPlanStore, TriggerEvaluatorService,
+    WorkspaceActivityGraphService, WorkspaceAttentionService, WorkspaceContinuityService,
+    WorkspaceIntentService,
 };
 
 pub(crate) struct WorkspaceIntelligenceService;
@@ -138,6 +139,19 @@ impl WorkspaceIntelligenceService {
         } else {
             Vec::new()
         };
+
+        let full_decision_engine = DecisionEngineService::generate_with_inputs(
+            db,
+            actor,
+            ws,
+            &full_attention,
+            &full_decision_queue,
+            &workflow_context,
+            &recent_goals,
+            &memory_highlights,
+            &preference_highlights,
+        )?;
+        let decision_engine = DecisionEngineService::summary_projection(&full_decision_engine, 5);
 
         let window_titles = DesktopWindowService::list_recent(Some(50))
             .unwrap_or_default()
@@ -259,6 +273,7 @@ impl WorkspaceIntelligenceService {
             activity_graph,
             continuity,
             attention,
+            decision_engine,
             workspace_health: health_label,
             summary,
             authority_effect: WorkspaceIntelligenceState::AUTHORITY_EFFECT_NONE.into(),
@@ -341,6 +356,7 @@ impl WorkspaceIntelligenceService {
             "blocked_actions": state.blocked_actions.len(),
             "decision_queue_pending": state.decision_queue.pending_count,
             "activity_count": state.activity_graph.activity_count,
+            "decision_engine_candidates": state.decision_engine.candidate_count,
             "memory_highlights": state.memory_highlights.len(),
             "preference_highlights": state.preference_highlights.len(),
             "summary_len": state.summary.len(),

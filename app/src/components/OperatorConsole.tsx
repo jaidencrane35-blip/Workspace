@@ -8,6 +8,7 @@ import type {
   Project,
   Task,
   WorkspaceIntelligenceState,
+  DecisionEngineState,
   AiOrchestratedPlan,
   AiPlan,
   AiPlanEvaluationReport,
@@ -141,6 +142,8 @@ export function OperatorConsole({
   );
   const [workspaceIntelligence, setWorkspaceIntelligence] =
     useState<WorkspaceIntelligenceState | null>(null);
+  const [decisionEngine, setDecisionEngine] =
+    useState<DecisionEngineState | null>(null);
   const [activeProject, setActiveProject] = useState<Project | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [memoryEntries, setMemoryEntries] = useState<MemoryEntry[]>([]);
@@ -1183,6 +1186,104 @@ export function OperatorConsole({
             {workspaceIntelligence.recommended_actions.slice(0, 3).map((rec) => (
               <li key={rec.id}>
                 {rec.title} — {rec.explanation}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section>
+        <h2>Decision Engine (diagnostics)</h2>
+        <p className="muted">
+          Generate decisions, inspect scoring, compare recommendations. Never
+          executes — accept hands off to submit_assistant_goal only.
+        </p>
+        <div className="row">
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("Decision Engine generated", async () => {
+                if (!workspace) return;
+                const state = await invokeIpc<DecisionEngineState>(
+                  "generate_decision_engine",
+                  { workspaceId: workspace.id },
+                );
+                setDecisionEngine(state);
+              })
+            }
+          >
+            Generate decisions
+          </button>
+          <button
+            type="button"
+            disabled={busy || !workspace || !decisionEngine}
+            onClick={() =>
+              void run("Decision graph inspected", async () => {
+                if (!decisionEngine) return;
+                onMessage(
+                  `Candidates=${decisionEngine.candidates.length} top=${decisionEngine.top_candidates
+                    .map((c) => `${c.title}:${c.score.total}`)
+                    .join(" | ")}`,
+                );
+              })
+            }
+          >
+            Inspect decision graph
+          </button>
+          <button
+            type="button"
+            disabled={busy || !workspace || !decisionEngine}
+            onClick={() =>
+              void run("Scoring inspected", async () => {
+                if (!decisionEngine) return;
+                const lines = decisionEngine.candidates.slice(0, 5).map((c) => {
+                  const s = c.score;
+                  return `${c.title}: total=${s.total} attn=${s.attention_contribution} mem=${s.memory_contribution} pref=${s.personalization_contribution} goal=${s.goal_contribution}`;
+                });
+                onMessage(lines.join(" · "));
+              })
+            }
+          >
+            Inspect scoring
+          </button>
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("Decision generation replayed", async () => {
+                if (!workspace) return;
+                const first = await invokeIpc<DecisionEngineState>(
+                  "generate_decision_engine",
+                  { workspaceId: workspace.id },
+                );
+                const second = await invokeIpc<DecisionEngineState>(
+                  "generate_decision_engine",
+                  { workspaceId: workspace.id },
+                );
+                setDecisionEngine(second);
+                onMessage(
+                  `Replay: first=${first.top_candidates[0]?.score.total ?? 0} second=${second.top_candidates[0]?.score.total ?? 0} (deterministic ranks expected)`,
+                );
+              })
+            }
+          >
+            Replay decision generation
+          </button>
+        </div>
+        {decisionEngine && (
+          <ul className="muted">
+            <li>{decisionEngine.summary}</li>
+            <li>
+              Context: attention={decisionEngine.context.attention_item_count}{" "}
+              memory={decisionEngine.context.memory_highlight_count} prefs=
+              {decisionEngine.context.preference_highlight_count} approvals=
+              {decisionEngine.context.pending_approval_count}
+            </li>
+            {decisionEngine.top_candidates.map((c) => (
+              <li key={c.id}>
+                [{c.explanation.confidence}] {c.title} — score {c.score.total} —{" "}
+                {c.explanation.headline}
               </li>
             ))}
           </ul>

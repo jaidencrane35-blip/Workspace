@@ -2,6 +2,7 @@ mod accept_suggestion;
 mod application;
 mod automation_contract;
 mod automation_trigger;
+mod decision_engine;
 mod decision_queue;
 mod workspace_activity;
 mod workspace_attention;
@@ -86,6 +87,8 @@ mod platform_coherence_tests;
 mod workspace_continuity_tests;
 #[cfg(test)]
 mod workspace_attention_tests;
+#[cfg(test)]
+mod decision_engine_tests;
 #[cfg(test)]
 mod ai_memory_tests;
 #[cfg(test)]

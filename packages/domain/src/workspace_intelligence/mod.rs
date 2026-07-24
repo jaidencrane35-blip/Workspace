@@ -8,6 +8,7 @@ use thiserror::Error;
 use crate::errors::DomainError;
 use crate::automation_contract::AutomationContractSummary;
 use crate::automation_trigger::{AutomationIntentProposalSummary, TriggerRejectionSummary};
+use crate::decision_engine::DecisionEngineSummary;
 use crate::decision_queue::DecisionQueueSummary;
 use crate::workspace_activity::WorkspaceActivityGraphSummary;
 use crate::workspace_attention::WorkspaceAttentionSummary;
@@ -106,6 +107,8 @@ pub struct WorkspaceIntelligenceState {
     pub continuity: WorkspaceContinuitySummary,
     /// Attention Engine summary (Phase 5 Batch 2). Canonical prioritization.
     pub attention: WorkspaceAttentionSummary,
+    /// Decision Engine summary (Phase 5). Ranked recommendations — never executes.
+    pub decision_engine: DecisionEngineSummary,
     pub workspace_health: String,
     pub summary: String,
     /// Explicit marker for audits and UI: this state grants nothing.
@@ -155,6 +158,13 @@ impl WorkspaceIntelligenceComparison {
                 "Recommendation count: {} → {}",
                 left.recommended_actions.len(),
                 right.recommended_actions.len()
+            ));
+        }
+        if left.decision_engine.open_count != right.decision_engine.open_count {
+            differences.push(format!(
+                "Decision Engine open candidates: {} → {}",
+                left.decision_engine.open_count,
+                right.decision_engine.open_count
             ));
         }
         if differences.is_empty() {
