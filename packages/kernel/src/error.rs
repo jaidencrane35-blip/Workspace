@@ -3,8 +3,9 @@ use thiserror::Error;
 use workspace_database::DatabaseError;
 use workspace_domain::{
     AiAssistantError, AiEvaluationError, AiMemoryError, AiModelError, AiOrchestrationError,
-    AiPersonalizationError, AiPlanningError, AiRequestError, AutomationContractError, DomainError,
-    ResourceKind, WorkspaceIntelligenceError, WorkspaceIntentError,
+    AiPersonalizationError, AiPlanningError, AiRequestError, AutomationContractError,
+    AutomationTriggerError, DomainError, ResourceKind, WorkspaceIntelligenceError,
+    WorkspaceIntentError,
 };
 
 #[derive(Debug, Error)]
@@ -185,6 +186,9 @@ pub enum KernelError {
     #[error("Automation contract validation failed: {message}")]
     AutomationContractValidation { message: String },
 
+    #[error("Automation trigger validation failed: {message}")]
+    AutomationTriggerValidation { message: String },
+
     #[error("Workspace kernel initialization failed")]
     InitializationFailed,
 }
@@ -330,6 +334,17 @@ impl From<AutomationContractError> for KernelError {
         match error {
             AutomationContractError::Domain(domain) => KernelError::from(domain),
             other => KernelError::AutomationContractValidation {
+                message: other.to_string(),
+            },
+        }
+    }
+}
+
+impl From<AutomationTriggerError> for KernelError {
+    fn from(error: AutomationTriggerError) -> Self {
+        match error {
+            AutomationTriggerError::Domain(domain) => KernelError::from(domain),
+            other => KernelError::AutomationTriggerValidation {
                 message: other.to_string(),
             },
         }
@@ -588,6 +603,10 @@ impl KernelError {
             },
             KernelError::AutomationContractValidation { message } => PublicError {
                 code: "automation_contract_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::AutomationTriggerValidation { message } => PublicError {
+                code: "automation_trigger_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::InitializationFailed => PublicError {

@@ -1,6 +1,7 @@
 mod accept_suggestion;
 mod application;
 mod automation_contract;
+mod automation_trigger;
 mod context;
 mod execute_intent_request;
 mod create_suggestion_intent_request;
@@ -70,6 +71,8 @@ mod workspace_intelligence_tests;
 #[cfg(test)]
 mod automation_contract_tests;
 #[cfg(test)]
+mod automation_trigger_tests;
+#[cfg(test)]
 mod ai_memory_tests;
 #[cfg(test)]
 mod ai_model_provider_tests;
@@ -98,6 +101,11 @@ pub use automation_contract::{
     ListAutomationContracts, PauseAutomationContract, PrepareAutomationContractIntent,
     RequestAutomationContractApproval, ResumeAutomationContract, RevokeAutomationContract,
     UpdateAutomationContract,
+};
+pub use automation_trigger::{
+    AcceptAutomationIntentProposal, EvaluateTriggers, ListAutomationIntentProposals,
+    ListTriggerEvents, RecordAndEvaluateTriggers, RecordTriggerEvent,
+    RejectAutomationIntentProposal,
 };
 pub use layout::{
     CreateLayout, DeleteLayout, GetLayout, GetLayoutSnapshot, ResetLayout, UpdateLayout,

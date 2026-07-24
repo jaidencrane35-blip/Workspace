@@ -10,6 +10,11 @@ use commands::automation_contract::{
     request_automation_contract_approval, resume_automation_contract, revoke_automation_contract,
     update_automation_contract,
 };
+use commands::automation_trigger::{
+    accept_automation_intent_proposal, evaluate_triggers, list_automation_intent_proposals,
+    list_trigger_events, record_and_evaluate_triggers, record_trigger_event,
+    reject_automation_intent_proposal,
+};
 use commands::layout::{
     create_layout, delete_layout, get_layout, get_layout_snapshot, reset_layout, update_layout,
 };
@@ -154,6 +159,13 @@ pub fn run() {
             resume_automation_contract,
             revoke_automation_contract,
             prepare_automation_contract_intent,
+            record_trigger_event,
+            evaluate_triggers,
+            record_and_evaluate_triggers,
+            list_trigger_events,
+            list_automation_intent_proposals,
+            accept_automation_intent_proposal,
+            reject_automation_intent_proposal,
             create_suggestion_intent_request,
             execute_intent_request,
             get_execution_outcomes,

@@ -88,6 +88,10 @@ Governed automation contract foundation — durable Project/Task-scoped definiti
 
 Integrity audit and hardening — definition fingerprints, stale-approval invalidation, prepare metadata, trust UX, CASE 1–10. Trigger engine readiness: **READY WITH CONDITIONS**. See [Governed Automation Contract Integrity Audit](GOVERNED-AUTOMATION-CONTRACT-INTEGRITY-AUDIT.md).
 
+## Phase 4 Batch 7 (done)
+
+Governed trigger evaluation foundation — `TriggerEvent`, `TriggerEvaluator`, explainable rejections, `AutomationIntentProposal`. No schedulers, workers, or automatic execution. See [Governed Trigger Evaluation](GOVERNED-TRIGGER-EVALUATION.md).
+
 ---
 
 ## Never build

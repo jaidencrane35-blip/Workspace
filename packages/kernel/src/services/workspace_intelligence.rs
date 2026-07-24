@@ -20,9 +20,9 @@ use workspace_domain::{
 
 use crate::error::{KernelError, Result};
 use crate::services::{
-    AiMemoryService, AiPersonalizationService, AssistantWorkflowStore, AuditService,
-    AutomationContractService, DesktopWindowService, OrchestratedPlanStore,
-    PermissionApprovalService, WorkspaceIntentService,
+    list_rejection_summaries, AiMemoryService, AiPersonalizationService, AssistantWorkflowStore,
+    AuditService, AutomationContractService, DesktopWindowService, OrchestratedPlanStore,
+    PermissionApprovalService, TriggerEvaluatorService, WorkspaceIntentService,
 };
 
 pub(crate) struct WorkspaceIntelligenceService;
@@ -64,11 +64,15 @@ impl WorkspaceIntelligenceService {
             }),
         };
         let recent_goals = WorkspaceIntentService::list_goals(db, ws, 10)?;
-        // Read-only — never mutate contracts from intelligence.
+        // Read-only — never mutate contracts or proposals from intelligence.
         let automation_contracts = AutomationContractService::list(db, ws, Some(20))?
             .iter()
             .map(AutomationContractSummary::from)
             .collect::<Vec<_>>();
+        let pending_automation_proposals =
+            TriggerEvaluatorService::pending_summaries(db, ws, 20).unwrap_or_default();
+        let recent_trigger_rejections =
+            list_rejection_summaries(db, ws, 20).unwrap_or_default();
 
         let memory = AiMemoryService::assemble_awareness(db, Some(ws), 10)
             .unwrap_or_else(|_| workspace_domain::AiMemoryAwareness::from_entries(Vec::new()));
@@ -289,6 +293,7 @@ impl WorkspaceIntelligenceService {
             blocked_actions.len(),
             recommended_actions.len(),
             &automation_contracts,
+            pending_automation_proposals.len(),
         );
 
         let state = WorkspaceIntelligenceState {
@@ -308,6 +313,8 @@ impl WorkspaceIntelligenceService {
             preference_highlights,
             current_applications: applications,
             automation_contracts,
+            pending_automation_proposals,
+            recent_trigger_rejections,
             workspace_health: health_label,
             summary,
             authority_effect: WorkspaceIntelligenceState::AUTHORITY_EFFECT_NONE.into(),
@@ -447,6 +454,7 @@ impl WorkspaceIntelligenceService {
         blocked: usize,
         recommendations: usize,
         automation_contracts: &[AutomationContractSummary],
+        pending_proposals: usize,
     ) -> String {
         let project_label = project
             .as_ref()
@@ -464,7 +472,8 @@ impl WorkspaceIntelligenceService {
             "Workspace \"{workspace_name}\" — working on {project_label} / {task_label}. \
              {pending_approvals} pending decision(s), {blocked} blocked action(s), \
              {recommendations} recommendation(s), {approved_contracts} approved automation \
-             contract(s). Intelligence is informational only."
+             contract(s), {pending_proposals} pending automation proposal(s). \
+             Intelligence is informational only."
         )
     }
 

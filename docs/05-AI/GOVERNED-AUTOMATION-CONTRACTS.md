@@ -71,7 +71,9 @@ Integrity audit: [Governed Automation Contract Integrity Audit](GOVERNED-AUTOMAT
 The request includes actor, workspace/project/task context, required capabilities, fingerprint, and audit metadata.
 It never launches processes. Callers must still enter Command Pipeline → Permission Gateway.
 
-Triggers (`manual` / `scheduled` / `event` / `pattern`) are stored definitions only.
+Triggers (`manual` / `scheduled` / `event` / `pattern`) are stored definitions.
+Batch 7 evaluates trigger relevance into Intent Proposals only — see
+[Governed Trigger Evaluation](GOVERNED-TRIGGER-EVALUATION.md).
 
 ---
 

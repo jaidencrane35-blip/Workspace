@@ -8,6 +8,11 @@ use crate::commands::automation_contract::{
     RequestAutomationContractApproval, ResumeAutomationContract, RevokeAutomationContract,
     UpdateAutomationContract,
 };
+use crate::commands::automation_trigger::{
+    AcceptAutomationIntentProposal, EvaluateTriggers, ListAutomationIntentProposals,
+    ListTriggerEvents, RecordAndEvaluateTriggers, RecordTriggerEvent,
+    RejectAutomationIntentProposal,
+};
 use crate::commands::execute_intent_request::ExecuteIntentRequest;
 use crate::commands::create_suggestion_intent_request::CreateSuggestionIntentRequest;
 use crate::commands::create_workspace::CreateWorkspace;
@@ -67,16 +72,18 @@ use crate::WorkspaceKernel;
 use workspace_domain::{
     ActionCatalog, Actor, ActorContext, AiAssistantPlanComparison, AiAssistantWorkflow,
     AiMemoryAwareness, AiOrchestratedPlan, AutomationContract, AutomationContractIntentRequest,
-    AutomationTriggerKind, Project, ProjectStatus, Task, TaskPriority, TaskStatus, WorkGoal,
-    WorkflowContext, WorkspaceIntelligenceComparison, WorkspaceIntelligenceState, AiPlan,
-    AiPlanEvaluationReport, AiPlanSubmissionResult, AiProposalAuthorityOutcome,
-    AiProposalEvaluation, AiProposalSubmission, ApplicationId, ApplicationReference, AuditEvent,
-    Capability, CapabilitySet, Intent, IntentContext, Layout, LayoutId, LayoutMetadata, LayoutNode,
-    LayoutSnapshot, MemoryEntry, MemoryType, ModelProviderDescriptor, ModelResponse, Observation,
-    PersonalizedPlanComparison, PreferenceCategory, PreferenceSource, Suggestion,
-    SuggestionIntentRequest, SuggestionLifecycleRecord, IntentExecutionRequest, ExecutionOutcome,
-    ExecutionReconciliation, CancellationRequest, UserPreference, UserPreferenceProfile, WidgetId,
-    WidgetReference, Workspace, WorkspaceContext, WorkspaceId, WorkspaceMetrics, WorkspaceSnapshot,
+    AutomationIntentProposal, AutomationIntentProposalStatus, AutomationTriggerKind, Project,
+    ProjectStatus, Task, TaskPriority, TaskStatus, TriggerEvaluationResult, TriggerEvent,
+    TriggerEventType, WorkGoal, WorkflowContext, WorkspaceIntelligenceComparison,
+    WorkspaceIntelligenceState, AiPlan, AiPlanEvaluationReport, AiPlanSubmissionResult,
+    AiProposalAuthorityOutcome, AiProposalEvaluation, AiProposalSubmission, ApplicationId,
+    ApplicationReference, AuditEvent, Capability, CapabilitySet, Intent, IntentContext, Layout,
+    LayoutId, LayoutMetadata, LayoutNode, LayoutSnapshot, MemoryEntry, MemoryType,
+    ModelProviderDescriptor, ModelResponse, Observation, PersonalizedPlanComparison,
+    PreferenceCategory, PreferenceSource, Suggestion, SuggestionIntentRequest,
+    SuggestionLifecycleRecord, IntentExecutionRequest, ExecutionOutcome, ExecutionReconciliation,
+    CancellationRequest, UserPreference, UserPreferenceProfile, WidgetId, WidgetReference,
+    Workspace, WorkspaceContext, WorkspaceId, WorkspaceMetrics, WorkspaceSnapshot,
     CapabilityDiscovery, Zone, ZoneId,
 };
 use workspace_windows_integration::DesktopWindowSnapshot;
@@ -2100,6 +2107,108 @@ impl CommandHandler {
     ) -> Result<AutomationContractIntentRequest> {
         CommandPipeline::new(kernel.command_context(actor, intent))
             .execute_query(PrepareAutomationContractIntent::new(contract_id))
+    }
+
+    pub fn record_trigger_event(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        event_type: TriggerEventType,
+        source: String,
+        context: String,
+        project_id: Option<String>,
+        task_id: Option<String>,
+    ) -> Result<TriggerEvent> {
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_mutation(
+            RecordTriggerEvent::new(
+                workspace_id,
+                event_type,
+                source,
+                context,
+                project_id,
+                task_id,
+            ),
+        )
+    }
+
+    pub fn evaluate_triggers(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        trigger_event_id: String,
+    ) -> Result<TriggerEvaluationResult> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_mutation(EvaluateTriggers::new(trigger_event_id))
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    pub fn record_and_evaluate_triggers(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        event_type: TriggerEventType,
+        source: String,
+        context: String,
+        project_id: Option<String>,
+        task_id: Option<String>,
+    ) -> Result<TriggerEvaluationResult> {
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_mutation(
+            RecordAndEvaluateTriggers::new(
+                workspace_id,
+                event_type,
+                source,
+                context,
+                project_id,
+                task_id,
+            ),
+        )
+    }
+
+    pub fn list_trigger_events(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        limit: Option<usize>,
+    ) -> Result<Vec<TriggerEvent>> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(ListTriggerEvents::new(workspace_id, limit))
+    }
+
+    pub fn list_automation_intent_proposals(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        status: Option<AutomationIntentProposalStatus>,
+        limit: Option<usize>,
+    ) -> Result<Vec<AutomationIntentProposal>> {
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_query(
+            ListAutomationIntentProposals::new(workspace_id, status, limit),
+        )
+    }
+
+    /// Marks a proposal accepted for review handoff — never executes.
+    pub fn accept_automation_intent_proposal(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        proposal_id: String,
+    ) -> Result<AutomationIntentProposal> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_mutation(AcceptAutomationIntentProposal::new(proposal_id))
+    }
+
+    pub fn reject_automation_intent_proposal(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        proposal_id: String,
+    ) -> Result<AutomationIntentProposal> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_mutation(RejectAutomationIntentProposal::new(proposal_id))
     }
 
     /// Read-only workspace intelligence aggregation. Capability-gated; never executes.

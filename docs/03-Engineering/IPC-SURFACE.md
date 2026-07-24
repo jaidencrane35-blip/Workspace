@@ -55,6 +55,9 @@
 | `request_automation_contract_approval` / `approve_automation_contract` | Product: definition approval lifecycle (≠ execution) |
 | `pause_automation_contract` / `resume_automation_contract` / `revoke_automation_contract` | Product: pause/resume/revoke definitions |
 | `prepare_automation_contract_intent` | Boundary only: materialize future Intent template (no execute) |
+| `record_trigger_event` / `evaluate_triggers` / `record_and_evaluate_triggers` | Product: governed trigger evaluation (proposals only) |
+| `list_trigger_events` / `list_automation_intent_proposals` | Product: inspect trigger events and intent proposals |
+| `accept_automation_intent_proposal` / `reject_automation_intent_proposal` | Product: proposal review status (≠ execution) |
 | `create_memory_entry` / `list_memory_entries` / `get_memory_context` | Diagnostic governed memory (informational) |
 | `delete_memory_entry` / `clear_memory_entries` | Diagnostic memory lifecycle |
 | `diagnose_ai_plan_preview` | Diagnostic memory-aware plan (no execution) |

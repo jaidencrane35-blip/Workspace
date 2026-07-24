@@ -784,6 +784,77 @@ export interface AutomationContractIntentRequest {
   audit_metadata: string;
 }
 
+export type TriggerEventType =
+  | "application_opened"
+  | "workspace_changed"
+  | "project_context_changed"
+  | "task_state_changed"
+  | "user_requested_evaluation"
+  | "manual_evaluation_requested";
+
+export interface TriggerEvent {
+  id: string;
+  workspace_id: string;
+  event_type: TriggerEventType;
+  source: string;
+  context: string;
+  project_id: string | null;
+  task_id: string | null;
+  actor_id: string;
+  actor_type: string;
+  created_at: string;
+  authority_effect: string;
+}
+
+export type AutomationIntentProposalStatus =
+  | "pending_review"
+  | "accepted"
+  | "rejected"
+  | "expired";
+
+export interface AutomationIntentProposal {
+  id: string;
+  contract_id: string;
+  workspace_id: string;
+  project_id: string;
+  task_id: string | null;
+  trigger_event_id: string;
+  intent_definition: AutomationIntentDefinition;
+  required_capabilities: string[];
+  status: AutomationIntentProposalStatus;
+  explanation: string;
+  definition_fingerprint: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TriggerRejection {
+  contract_id: string;
+  contract_name: string;
+  reason: string;
+}
+
+export interface TriggerEvaluationResult {
+  trigger_event: TriggerEvent;
+  proposals: AutomationIntentProposal[];
+  rejections: TriggerRejection[];
+  authority_effect: string;
+}
+
+export interface AutomationIntentProposalSummary {
+  id: string;
+  contract_id: string;
+  status: string;
+  explanation: string;
+  intent_statement: string;
+  trigger_event_id: string;
+}
+
+export interface TriggerRejectionSummary {
+  contract_id: string;
+  reason: string;
+}
+
 export interface WorkspaceIntelligenceState {
   workspace_id: string;
   workspace_name: string;
@@ -801,6 +872,8 @@ export interface WorkspaceIntelligenceState {
   preference_highlights: IntelligenceHighlight[];
   current_applications: IntelligenceApplicationSummary[];
   automation_contracts: AutomationContractSummary[];
+  pending_automation_proposals: AutomationIntentProposalSummary[];
+  recent_trigger_rejections: TriggerRejectionSummary[];
   workspace_health: string;
   summary: string;
   authority_effect: string;

@@ -7,6 +7,7 @@ use thiserror::Error;
 
 use crate::errors::DomainError;
 use crate::automation_contract::AutomationContractSummary;
+use crate::automation_trigger::{AutomationIntentProposalSummary, TriggerRejectionSummary};
 use crate::workspace_intent::{Project, Task, WorkGoal, WorkflowContext};
 
 /// Intelligence-layer validation errors.
@@ -89,6 +90,10 @@ pub struct WorkspaceIntelligenceState {
     pub current_applications: Vec<IntelligenceApplicationSummary>,
     /// Read-only automation contract summaries (Batch 6). Never mutates contracts.
     pub automation_contracts: Vec<AutomationContractSummary>,
+    /// Pending intent proposals from trigger evaluation (Batch 7). Read-only.
+    pub pending_automation_proposals: Vec<AutomationIntentProposalSummary>,
+    /// Recent explainable evaluation rejections (Batch 7). Read-only.
+    pub recent_trigger_rejections: Vec<TriggerRejectionSummary>,
     pub workspace_health: String,
     pub summary: String,
     /// Explicit marker for audits and UI: this state grants nothing.

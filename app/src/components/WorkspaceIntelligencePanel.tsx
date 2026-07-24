@@ -2,8 +2,10 @@ import { useEffect, useState } from "react";
 import { invokeIpc } from "../lib/ipc";
 import type {
   AutomationContract,
+  AutomationIntentProposal,
   Project,
   Task,
+  TriggerEvaluationResult,
   Workspace,
   WorkspaceIntelligenceState,
 } from "../types/domain";
@@ -31,6 +33,9 @@ export function WorkspaceIntelligencePanel({
   const [projects, setProjects] = useState<Project[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [contracts, setContracts] = useState<AutomationContract[]>([]);
+  const [proposals, setProposals] = useState<AutomationIntentProposal[]>([]);
+  const [lastEvaluation, setLastEvaluation] =
+    useState<TriggerEvaluationResult | null>(null);
   const [contractName, setContractName] = useState(
     "Prepare coding environment",
   );
@@ -56,13 +61,15 @@ export function WorkspaceIntelligencePanel({
       setProjects([]);
       setTasks([]);
       setContracts([]);
+      setProposals([]);
+      setLastEvaluation(null);
       setState(null);
       return;
     }
     let cancelled = false;
     void (async () => {
       try {
-        const [listed, listedContracts] = await Promise.all([
+        const [listed, listedContracts, listedProposals] = await Promise.all([
           invokeIpc<Project[]>("list_projects", {
             workspaceId: workspace.id,
             limit: 50,
@@ -71,10 +78,15 @@ export function WorkspaceIntelligencePanel({
             workspaceId: workspace.id,
             limit: 50,
           }),
+          invokeIpc<AutomationIntentProposal[]>(
+            "list_automation_intent_proposals",
+            { workspaceId: workspace.id, limit: 50 },
+          ),
         ]);
         if (!cancelled) {
           setProjects(listed);
           setContracts(listedContracts);
+          setProposals(listedProposals);
         }
       } catch (err: unknown) {
         if (!cancelled) {
@@ -357,6 +369,130 @@ export function WorkspaceIntelligencePanel({
       </section>
 
       <section>
+        <h3>Trigger evaluation (proposals only)</h3>
+        <p className="muted">
+          Manual evaluation notices when an approved contract may be relevant.
+          It creates intent proposals — never executes. Accepting a proposal is
+          still not authority; prepare + Command Pipeline + Permission Gateway
+          remain required.
+        </p>
+        <div className="row">
+          <button
+            type="button"
+            disabled={busy || !workspace || projects.length === 0}
+            onClick={() =>
+              void run("Trigger evaluation complete", async () => {
+                if (!workspace || projects.length === 0) return;
+                const evaluation = await invokeIpc<TriggerEvaluationResult>(
+                  "record_and_evaluate_triggers",
+                  {
+                    workspaceId: workspace.id,
+                    eventType: "manual_evaluation_requested",
+                    source: "workspace_intelligence_panel",
+                    context: JSON.stringify({ reason: "user_requested" }),
+                    projectId: projects[0]?.id ?? null,
+                    taskId: tasks[0]?.id ?? null,
+                  },
+                );
+                setLastEvaluation(evaluation);
+                const listedProposals = await invokeIpc<
+                  AutomationIntentProposal[]
+                >("list_automation_intent_proposals", {
+                  workspaceId: workspace.id,
+                  limit: 50,
+                });
+                setProposals(listedProposals);
+              })
+            }
+          >
+            Evaluate approved contracts now
+          </button>
+        </div>
+        {lastEvaluation && (
+          <p className="muted">
+            Last event: {lastEvaluation.trigger_event.event_type} ·{" "}
+            {lastEvaluation.proposals.length} proposal(s) ·{" "}
+            {lastEvaluation.rejections.length} rejection(s) · authority:{" "}
+            {lastEvaluation.authority_effect}
+          </p>
+        )}
+        {lastEvaluation && lastEvaluation.rejections.length > 0 && (
+          <ul className="intelligence-list">
+            {lastEvaluation.rejections.map((rejection) => (
+              <li key={`${rejection.contract_id}-${rejection.reason}`}>
+                <strong>{rejection.contract_name}</strong>
+                <div className="muted">{rejection.reason}</div>
+              </li>
+            ))}
+          </ul>
+        )}
+        {proposals.length === 0 ? (
+          <p className="muted">No intent proposals yet.</p>
+        ) : (
+          <ul className="intelligence-list">
+            {proposals.map((proposal) => (
+              <li key={proposal.id}>
+                <strong>Proposal {proposal.status}</strong>
+                <div className="muted">
+                  Contract {proposal.contract_id.slice(0, 8)}… · Event{" "}
+                  {proposal.trigger_event_id.slice(0, 8)}…
+                </div>
+                <div className="muted">
+                  Intent that would be prepared:{" "}
+                  {proposal.intent_definition.statement}
+                </div>
+                <div className="muted">{proposal.explanation}</div>
+                <div className="muted">
+                  Requires (still gateway-checked):{" "}
+                  {proposal.required_capabilities.join(", ") || "none listed"}
+                </div>
+                <div className="row">
+                  <button
+                    type="button"
+                    disabled={busy || proposal.status !== "pending_review"}
+                    onClick={() =>
+                      void run(
+                        "Proposal accepted for review (not executed)",
+                        async () => {
+                          const next =
+                            await invokeIpc<AutomationIntentProposal>(
+                              "accept_automation_intent_proposal",
+                              { proposalId: proposal.id },
+                            );
+                          setProposals((prev) =>
+                            prev.map((p) => (p.id === next.id ? next : p)),
+                          );
+                        },
+                      )
+                    }
+                  >
+                    Accept (review only)
+                  </button>
+                  <button
+                    type="button"
+                    disabled={busy || proposal.status !== "pending_review"}
+                    onClick={() =>
+                      void run("Proposal rejected", async () => {
+                        const next = await invokeIpc<AutomationIntentProposal>(
+                          "reject_automation_intent_proposal",
+                          { proposalId: proposal.id },
+                        );
+                        setProposals((prev) =>
+                          prev.map((p) => (p.id === next.id ? next : p)),
+                        );
+                      })
+                    }
+                  >
+                    Reject
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section>
         <div className="row">
           <button
             type="button"
@@ -369,11 +505,18 @@ export function WorkspaceIntelligencePanel({
                   { workspaceId: workspace.id },
                 );
                 setState(next);
-                const listedContracts = await invokeIpc<AutomationContract[]>(
-                  "list_automation_contracts",
-                  { workspaceId: workspace.id, limit: 50 },
-                );
+                const [listedContracts, listedProposals] = await Promise.all([
+                  invokeIpc<AutomationContract[]>("list_automation_contracts", {
+                    workspaceId: workspace.id,
+                    limit: 50,
+                  }),
+                  invokeIpc<AutomationIntentProposal[]>(
+                    "list_automation_intent_proposals",
+                    { workspaceId: workspace.id, limit: 50 },
+                  ),
+                ]);
                 setContracts(listedContracts);
+                setProposals(listedProposals);
               })
             }
           >
@@ -427,6 +570,40 @@ export function WorkspaceIntelligencePanel({
                     <div className="muted">
                       Consent matches definition:{" "}
                       {contract.approval_matches_definition ? "yes" : "no"}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          <section>
+            <h3>Pending automation proposals (read-only)</h3>
+            <p className="muted">
+              Intelligence displays evaluations. It cannot accept, reject, or
+              execute proposals.
+            </p>
+            {state.pending_automation_proposals.length === 0 ? (
+              <p className="muted">No pending proposals.</p>
+            ) : (
+              <ul className="intelligence-list">
+                {state.pending_automation_proposals.map((proposal) => (
+                  <li key={proposal.id}>
+                    <strong>{proposal.status}</strong>
+                    <div className="muted">{proposal.intent_statement}</div>
+                    <div className="muted">{proposal.explanation}</div>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {state.recent_trigger_rejections.length > 0 && (
+              <ul className="intelligence-list">
+                {state.recent_trigger_rejections.map((rejection) => (
+                  <li key={`${rejection.contract_id}-${rejection.reason}`}>
+                    <strong>Not matched</strong>
+                    <div className="muted">
+                      Contract {rejection.contract_id.slice(0, 8)}… —{" "}
+                      {rejection.reason}
                     </div>
                   </li>
                 ))}

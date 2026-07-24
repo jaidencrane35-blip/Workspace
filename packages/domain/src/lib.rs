@@ -13,6 +13,7 @@ pub mod ai_request;
 pub mod analytics;
 pub mod audit;
 pub mod automation_contract;
+pub mod automation_trigger;
 pub mod capability;
 pub mod context;
 pub mod discovery;
@@ -136,15 +137,21 @@ pub use errors::{validate_resource_name, DomainError, Result};
 pub use graph::{GraphEdge, GraphRelationship};
 pub use ids::{
     ActorId, AiActionProposalId, AiAssistantWorkflowId, AiGoalId, AiOrchestratedPlanId,
-    AiPlanStepId, ApplicationId, AuditEventId, AutomationContractId, CapabilityGrantId, IntentId,
-    LayoutId, MemoryEntryId, ModelId, ModelProviderId, PermissionApprovalRequestId, ProjectId,
-    TaskId, UserPreferenceId, WidgetId, WorkGoalId, WorkspaceId, ZoneId,
+    AiPlanStepId, ApplicationId, AuditEventId, AutomationContractId, AutomationIntentProposalId,
+    CapabilityGrantId, IntentId, LayoutId, MemoryEntryId, ModelId, ModelProviderId,
+    PermissionApprovalRequestId, ProjectId, TaskId, TriggerEventId, UserPreferenceId, WidgetId,
+    WorkGoalId, WorkspaceId, ZoneId,
 };
 pub use automation_contract::{
     AutomationContract, AutomationContractApprovalState, AutomationContractError,
     AutomationContractIntentRequest, AutomationContractScope, AutomationContractStatus,
     AutomationContractSummary, AutomationIntentDefinition, AutomationTriggerDefinition,
     AutomationTriggerKind,
+};
+pub use automation_trigger::{
+    AutomationIntentProposal, AutomationIntentProposalStatus, AutomationIntentProposalSummary,
+    AutomationTriggerError, TriggerEvaluationResult, TriggerEvent, TriggerEventType,
+    TriggerRejection, TriggerRejectionSummary,
 };
 pub use workspace_intent::{
     Project, ProjectStatus, Task, TaskPriority, TaskStatus, WorkGoal, WorkGoalStatus,

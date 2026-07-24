@@ -160,6 +160,19 @@ export function AssistantPanel({
                     .join("; ")}
               . Informational only — Assistant cannot approve or authorize them.
             </dd>
+            <dt>Automation proposals</dt>
+            <dd>
+              {workspaceIntel.pending_automation_proposals.length === 0
+                ? "None pending"
+                : workspaceIntel.pending_automation_proposals
+                    .map(
+                      (p) =>
+                        `${p.intent_statement.slice(0, 48)}… (${p.status})`,
+                    )
+                    .join("; ")}
+              . Explain-only — Assistant cannot accept, execute, or bypass
+              governance for proposals.
+            </dd>
             <dt>Authority effect</dt>
             <dd>{workspaceIntel.authority_effect}</dd>
           </dl>

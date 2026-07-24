@@ -88,6 +88,8 @@ define_id!(ProjectId);
 define_id!(TaskId);
 define_id!(WorkGoalId);
 define_id!(AutomationContractId);
+define_id!(TriggerEventId);
+define_id!(AutomationIntentProposalId);
 
 #[cfg(test)]
 mod tests {
