@@ -68,6 +68,11 @@
 | `generate_decision_engine` | Product: aggregate Decision Engine recommendations (never executes) |
 | `select_decision_candidate` | Product: accept recommendation → planner handoff only |
 | `dismiss_decision_candidate` / `postpone_decision_candidate` | Product: Decision Engine lifecycle overlay |
+| `generate_task_graph` | Product: aggregate / refresh Workspace Task Graph |
+| `create_workspace_task` / `update_workspace_task_status` | Product: graph node lifecycle (≠ execute) |
+| `add_task_relationship` | Product: dependency edges with cycle prevention |
+| `validate_task_graph` | Product/diagnostic: integrity check |
+| `get_task_graph_planning_inputs` | Product: open incomplete nodes for Planner |
 | `create_memory_entry` / `list_memory_entries` / `get_memory_context` | Diagnostic governed memory (informational) |
 | `delete_memory_entry` / `clear_memory_entries` | Diagnostic memory lifecycle |
 | `diagnose_ai_plan_preview` | Diagnostic memory-aware plan (no execution) |

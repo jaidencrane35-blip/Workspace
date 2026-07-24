@@ -95,6 +95,7 @@ define_id!(WorkspaceActivityId);
 define_id!(ContinuityFacetId);
 define_id!(AttentionItemId);
 define_id!(DecisionCandidateId);
+define_id!(WorkspaceTaskId);
 
 #[cfg(test)]
 mod tests {

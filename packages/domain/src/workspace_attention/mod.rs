@@ -38,6 +38,7 @@ pub enum AttentionSourceType {
     ActivityGraph,
     WorkflowContext,
     AutomationContract,
+    TaskGraph,
 }
 
 impl AttentionSourceType {
@@ -48,6 +49,7 @@ impl AttentionSourceType {
             Self::ActivityGraph => "activity_graph",
             Self::WorkflowContext => "workflow_context",
             Self::AutomationContract => "automation_contract",
+            Self::TaskGraph => "task_graph",
         }
     }
 }

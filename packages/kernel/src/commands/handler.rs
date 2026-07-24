@@ -15,6 +15,7 @@ use crate::commands::automation_trigger::{
 };
 use crate::commands::decision_engine::{GateDecisionEngineRead, GateDecisionEngineWrite};
 use crate::commands::decision_queue::{GateDecisionQueueRead, GateDecisionQueueWrite};
+use crate::commands::task_graph::{GateTaskGraphRead, GateTaskGraphWrite};
 use crate::commands::workspace_activity::GateActivityGraphRead;
 use crate::commands::workspace_attention::GateAttentionRead;
 use crate::commands::workspace_continuity::GateContinuityRead;
@@ -71,7 +72,7 @@ use crate::security::{PermissionRequest, PermissionSubject};
 use crate::services::{
     AiAssistantService, AiEvaluationService, AiOrchestrationService, AiParticipationService,
     AiPlanningService, ConfigurationService, DecisionEngineService, DecisionQueueService,
-    DesktopWindowService,
+    DesktopWindowService, TaskGraphService,
     WorkspaceActivityGraphService, WorkspaceAttentionService, WorkspaceContextService,
     WorkspaceContinuityService, WorkspaceIntelligenceService,
 };
@@ -81,9 +82,10 @@ use workspace_domain::{
     AiMemoryAwareness, AiOrchestratedPlan, AutomationContract, AutomationContractIntentRequest,
     AutomationIntentProposal, AutomationIntentProposalStatus, AutomationTriggerKind,
     DecisionActionResult, DecisionEngineActionResult, DecisionEngineState, DecisionItem,
-    DecisionQueue, Project, ProjectStatus, Task, TaskPriority, TaskStatus, TriggerEvaluationResult,
-    TriggerEvent, TriggerEventType, WorkGoal, WorkflowContext, WorkspaceActivity,
-    WorkspaceActivityGraph, WorkspaceAttentionState, WorkspaceContinuityState,
+    DecisionQueue, Project, ProjectStatus, Task, TaskGraph, TaskPriority, TaskRelationship,
+    TaskRelationshipKind, TaskStatus, TriggerEvaluationResult, TriggerEvent, TriggerEventType,
+    WorkGoal, WorkflowContext, WorkspaceActivity, WorkspaceActivityGraph, WorkspaceAttentionState,
+    WorkspaceContinuityState, WorkspaceTask, WorkspaceTaskPriority, WorkspaceTaskStatus,
     WorkspaceIntelligenceComparison, WorkspaceIntelligenceState, AiPlan, AiPlanEvaluationReport,
     AiPlanSubmissionResult,
     AiProposalAuthorityOutcome, AiProposalEvaluation, AiProposalSubmission, ApplicationId,
@@ -2525,6 +2527,127 @@ impl CommandHandler {
     /// Architecture guard — Decision Engine must never execute.
     pub fn decision_engine_attempt_execute() -> Result<()> {
         DecisionEngineService::attempt_execute()
+    }
+
+    /// Generate / refresh Workspace Task Graph (persistent work model).
+    pub fn generate_task_graph(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<TaskGraph> {
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent.clone()))
+            .execute_query(GateTaskGraphRead)?;
+        let _ = Self::get_workflow_context(
+            kernel,
+            actor.clone(),
+            intent,
+            workspace_id.clone(),
+        )?;
+        TaskGraphService::generate(&kernel.shared_database(), &actor, workspace_id)
+    }
+
+    pub fn create_workspace_task(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        title: String,
+        project_id: Option<String>,
+        priority: WorkspaceTaskPriority,
+    ) -> Result<WorkspaceTask> {
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent))
+            .execute_mutation(GateTaskGraphWrite)?;
+        TaskGraphService::create_task(
+            &kernel.shared_database(),
+            &actor,
+            workspace_id,
+            title,
+            project_id,
+            priority,
+        )
+    }
+
+    pub fn update_workspace_task_status(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        task_id: String,
+        status: WorkspaceTaskStatus,
+        explanation: Option<String>,
+    ) -> Result<WorkspaceTask> {
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent))
+            .execute_mutation(GateTaskGraphWrite)?;
+        TaskGraphService::update_task_status(
+            &kernel.shared_database(),
+            &actor,
+            task_id,
+            status,
+            explanation,
+        )
+    }
+
+    pub fn add_task_relationship(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        from_task_id: String,
+        to_task_id: String,
+        kind: TaskRelationshipKind,
+    ) -> Result<TaskRelationship> {
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent))
+            .execute_mutation(GateTaskGraphWrite)?;
+        TaskGraphService::add_relationship(
+            &kernel.shared_database(),
+            &actor,
+            workspace_id,
+            from_task_id,
+            to_task_id,
+            kind,
+        )
+    }
+
+    pub fn remove_task_relationship(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        relationship_id: String,
+    ) -> Result<()> {
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent))
+            .execute_mutation(GateTaskGraphWrite)?;
+        TaskGraphService::remove_relationship(
+            &kernel.shared_database(),
+            &actor,
+            relationship_id,
+        )
+    }
+
+    pub fn validate_task_graph(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<TaskGraph> {
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent.clone()))
+            .execute_query(GateTaskGraphRead)?;
+        TaskGraphService::validate(&kernel.shared_database(), &actor, workspace_id)
+    }
+
+    /// Planner input: open incomplete graph nodes (no duplicated planner state).
+    pub fn get_task_graph_planning_inputs(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<Vec<WorkspaceTask>> {
+        let graph = Self::generate_task_graph(kernel, actor, intent, workspace_id)?;
+        Ok(TaskGraphService::planning_inputs(&graph))
+    }
+
+    /// Architecture guard — Task Graph must never execute.
+    pub fn task_graph_attempt_execute() -> Result<()> {
+        TaskGraphService::attempt_execute()
     }
 
     /// Read-only workspace intelligence aggregation. Capability-gated; never executes.

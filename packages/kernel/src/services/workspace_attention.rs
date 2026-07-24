@@ -55,10 +55,19 @@ impl WorkspaceAttentionService {
             &queue,
             &graph,
         )?;
-        Self::generate_with_inputs(db, actor, &workspace_id, &queue, &graph, &continuity)
+        let task_graph = crate::services::TaskGraphService::generate(db, actor, workspace_id.clone())?;
+        Self::generate_with_task_graph(
+            db,
+            actor,
+            &workspace_id,
+            &queue,
+            &graph,
+            &continuity,
+            Some(&task_graph),
+        )
     }
 
-    /// Preferred path — Intelligence injects DQ + AG + Continuity.
+    /// Preferred path — Intelligence injects DQ + AG + Continuity (+ optional Task Graph).
     pub(crate) fn generate_with_inputs(
         db: &Arc<Mutex<Database>>,
         actor: &ActorContext,
@@ -66,6 +75,26 @@ impl WorkspaceAttentionService {
         decision_queue: &DecisionQueue,
         activity_graph: &WorkspaceActivityGraph,
         continuity: &WorkspaceContinuityState,
+    ) -> Result<WorkspaceAttentionState> {
+        Self::generate_with_task_graph(
+            db,
+            actor,
+            workspace_id,
+            decision_queue,
+            activity_graph,
+            continuity,
+            None,
+        )
+    }
+
+    pub(crate) fn generate_with_task_graph(
+        db: &Arc<Mutex<Database>>,
+        actor: &ActorContext,
+        workspace_id: impl Into<String>,
+        decision_queue: &DecisionQueue,
+        activity_graph: &WorkspaceActivityGraph,
+        continuity: &WorkspaceContinuityState,
+        task_graph: Option<&workspace_domain::TaskGraph>,
     ) -> Result<WorkspaceAttentionState> {
         let workspace_id = WorkspaceId::new(workspace_id.into()).map_err(KernelError::Domain)?;
         let ws = workspace_id.as_str();
@@ -89,10 +118,86 @@ impl WorkspaceAttentionService {
                 items.push(item);
             }
         }
+        if let Some(graph) = task_graph {
+            for item in Self::from_task_graph(ws, graph, &now)? {
+                if seen.insert(item.id.to_string()) {
+                    items.push(item);
+                }
+            }
+        }
 
         let state = WorkspaceAttentionState::from_items(ws, items);
         Self::audit_generated(db, actor, &state)?;
         Ok(state)
+    }
+
+    fn from_task_graph(
+        ws: &str,
+        graph: &workspace_domain::TaskGraph,
+        now: &str,
+    ) -> Result<Vec<AttentionItem>> {
+        let mut out = Vec::new();
+        for node in &graph.nodes {
+            if !node.task.status.is_open() {
+                continue;
+            }
+            let (category, base, urgency) = match node.task.status {
+                workspace_domain::WorkspaceTaskStatus::Blocked => (
+                    AttentionCategory::Blocker,
+                    88u32,
+                    AttentionUrgency::Immediate,
+                ),
+                workspace_domain::WorkspaceTaskStatus::Waiting => (
+                    AttentionCategory::RequiresDecision,
+                    55u32,
+                    AttentionUrgency::Soon,
+                ),
+                workspace_domain::WorkspaceTaskStatus::InProgress => (
+                    AttentionCategory::Informative,
+                    45u32,
+                    AttentionUrgency::Soon,
+                ),
+                _ => (
+                    AttentionCategory::Informative,
+                    30u32,
+                    AttentionUrgency::Whenever,
+                ),
+            };
+            let mut score = base;
+            let mut factors = vec![
+                format!("base {base} for Task Graph {}", node.task.status.as_str()),
+                "source TaskGraph".into(),
+            ];
+            score += u32::from(node.task.priority.rank()) * 4;
+            factors.push(format!(
+                "+{} priority {}",
+                u32::from(node.task.priority.rank()) * 4,
+                node.task.priority.as_str()
+            ));
+            let explanation = node
+                .waiting_reason
+                .clone()
+                .unwrap_or_else(|| node.task.explanation.clone());
+            out.push(AttentionItem::project(
+                ws,
+                AttentionSourceType::TaskGraph,
+                node.task.id.to_string(),
+                category,
+                score_to_priority(score),
+                urgency,
+                AttentionConfidence::High,
+                score,
+                factors.clone(),
+                node.task.title.clone(),
+                format!(
+                    "{explanation}. Score factors: {}.",
+                    score_factors_join(&factors)
+                ),
+                now.to_string(),
+                AttentionState::Visible,
+            )?);
+        }
+        Ok(out)
     }
 
     fn from_decision_queue(

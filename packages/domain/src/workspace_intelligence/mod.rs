@@ -10,6 +10,7 @@ use crate::automation_contract::AutomationContractSummary;
 use crate::automation_trigger::{AutomationIntentProposalSummary, TriggerRejectionSummary};
 use crate::decision_engine::DecisionEngineSummary;
 use crate::decision_queue::DecisionQueueSummary;
+use crate::workspace_task_graph::TaskGraphSummary;
 use crate::workspace_activity::WorkspaceActivityGraphSummary;
 use crate::workspace_attention::WorkspaceAttentionSummary;
 use crate::workspace_continuity::WorkspaceContinuitySummary;
@@ -109,6 +110,8 @@ pub struct WorkspaceIntelligenceState {
     pub attention: WorkspaceAttentionSummary,
     /// Decision Engine summary (Phase 5). Ranked recommendations — never executes.
     pub decision_engine: DecisionEngineSummary,
+    /// Task Graph summary (Phase 5). Canonical work model — never executes.
+    pub task_graph: TaskGraphSummary,
     pub workspace_health: String,
     pub summary: String,
     /// Explicit marker for audits and UI: this state grants nothing.

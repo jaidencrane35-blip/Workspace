@@ -9,6 +9,7 @@ import type {
   Task,
   WorkspaceIntelligenceState,
   DecisionEngineState,
+  TaskGraph,
   AiOrchestratedPlan,
   AiPlan,
   AiPlanEvaluationReport,
@@ -144,6 +145,7 @@ export function OperatorConsole({
     useState<WorkspaceIntelligenceState | null>(null);
   const [decisionEngine, setDecisionEngine] =
     useState<DecisionEngineState | null>(null);
+  const [taskGraph, setTaskGraph] = useState<TaskGraph | null>(null);
   const [activeProject, setActiveProject] = useState<Project | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [memoryEntries, setMemoryEntries] = useState<MemoryEntry[]>([]);
@@ -1284,6 +1286,141 @@ export function OperatorConsole({
               <li key={c.id}>
                 [{c.explanation.confidence}] {c.title} — score {c.score.total} —{" "}
                 {c.explanation.headline}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section>
+        <h2>Task Graph (diagnostics)</h2>
+        <p className="muted">
+          Create / inspect / validate the Workspace Task Graph. Never executes.
+        </p>
+        <div className="row">
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("Task Graph created/refreshed", async () => {
+                if (!workspace) return;
+                await invokeIpc("create_workspace_task", {
+                  workspaceId: workspace.id,
+                  title: "Diagnostic graph task",
+                  projectId: activeProject?.id ?? null,
+                  priority: "high",
+                });
+                const graph = await invokeIpc<TaskGraph>("generate_task_graph", {
+                  workspaceId: workspace.id,
+                });
+                setTaskGraph(graph);
+              })
+            }
+          >
+            Create graph
+          </button>
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("Task Graph inspected", async () => {
+                if (!workspace) return;
+                const graph = await invokeIpc<TaskGraph>("generate_task_graph", {
+                  workspaceId: workspace.id,
+                });
+                setTaskGraph(graph);
+                onMessage(
+                  `${graph.nodes.length} nodes · ${graph.relationships.length} relationships · ${graph.progress_percent}%`,
+                );
+              })
+            }
+          >
+            Inspect graph
+          </button>
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("Task Graph integrity validated", async () => {
+                if (!workspace) return;
+                const graph = await invokeIpc<TaskGraph>("validate_task_graph", {
+                  workspaceId: workspace.id,
+                });
+                setTaskGraph(graph);
+                onMessage(
+                  graph.integrity_ok
+                    ? "Integrity ok"
+                    : `Issues: ${graph.integrity_notes.join("; ")}`,
+                );
+              })
+            }
+          >
+            Validate graph integrity
+          </button>
+          <button
+            type="button"
+            disabled={busy || !workspace || !taskGraph}
+            onClick={() =>
+              void run("Dependencies inspected", async () => {
+                if (!taskGraph) return;
+                const deps = taskGraph.relationships
+                  .filter((r) => r.kind === "depends_on" || r.kind === "blocks")
+                  .map((r) => `${r.kind}:${r.from_task_id.slice(0, 8)}→${r.to_task_id.slice(0, 8)}`);
+                onMessage(deps.length ? deps.join(" · ") : "No dependency edges");
+              })
+            }
+          >
+            Inspect dependencies
+          </button>
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("Planning inputs inspected", async () => {
+                if (!workspace) return;
+                const inputs = await invokeIpc<{ id: string; title: string; status: string }[]>(
+                  "get_task_graph_planning_inputs",
+                  { workspaceId: workspace.id },
+                );
+                onMessage(
+                  inputs.length
+                    ? inputs.map((t) => `${t.title}(${t.status})`).join(" · ")
+                    : "No open graph nodes for planner",
+                );
+              })
+            }
+          >
+            Inspect task lifecycle / planner inputs
+          </button>
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("Graph history replayed", async () => {
+                if (!workspace) return;
+                const first = await invokeIpc<TaskGraph>("generate_task_graph", {
+                  workspaceId: workspace.id,
+                });
+                const second = await invokeIpc<TaskGraph>("generate_task_graph", {
+                  workspaceId: workspace.id,
+                });
+                setTaskGraph(second);
+                onMessage(
+                  `Replay nodes ${first.nodes.length}→${second.nodes.length} (durable regenerate)`,
+                );
+              })
+            }
+          >
+            Replay graph history
+          </button>
+        </div>
+        {taskGraph && (
+          <ul className="muted">
+            <li>{taskGraph.summary}</li>
+            {taskGraph.nodes.slice(0, 5).map((n) => (
+              <li key={n.task.id}>
+                [{n.task.status}] {n.task.title}
+                {n.waiting_reason ? ` — ${n.waiting_reason}` : ""}
               </li>
             ))}
           </ul>

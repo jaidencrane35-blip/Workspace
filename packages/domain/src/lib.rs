@@ -43,6 +43,7 @@ pub mod workspace;
 pub mod workspace_activity;
 pub mod workspace_attention;
 pub mod workspace_continuity;
+pub mod workspace_task_graph;
 pub mod workspace_intent;
 pub mod workspace_intelligence;
 
@@ -150,7 +151,7 @@ pub use ids::{
     CapabilityGrantId, IntentId, LayoutId, MemoryEntryId, ModelId, ModelProviderId,
     DecisionCandidateId, DecisionItemId, PermissionApprovalRequestId, ProjectId, TaskId,
     TriggerEventId, UserPreferenceId, WidgetId, WorkGoalId, AttentionItemId, ContinuityFacetId,
-    WorkspaceActivityId, WorkspaceId, ZoneId,
+    WorkspaceActivityId, WorkspaceId, WorkspaceTaskId, ZoneId,
 };
 pub use automation_contract::{
     AutomationContract, AutomationContractApprovalState, AutomationContractError,
@@ -189,6 +190,11 @@ pub use workspace_continuity::{
 pub use workspace_intent::{
     Project, ProjectStatus, Task, TaskPriority, TaskStatus, WorkGoal, WorkGoalStatus,
     WorkflowContext, WorkspaceIntentError,
+};
+pub use workspace_task_graph::{
+    would_create_cycle, TaskDependency, TaskGraph, TaskGraphError, TaskGraphSummary, TaskMetadata,
+    TaskNode, TaskRelationship, TaskRelationshipKind, WorkspaceTask, WorkspaceTaskPriority,
+    WorkspaceTaskStatus,
 };
 pub use workspace_intelligence::{
     BlockedActionSummary, IntelligenceApplicationSummary, IntelligenceHighlight,

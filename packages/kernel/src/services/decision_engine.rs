@@ -84,6 +84,8 @@ impl DecisionEngineService {
         } else {
             Vec::new()
         };
+        let task_graph =
+            crate::services::TaskGraphService::generate(db, actor, workspace_id.clone())?;
         Self::generate_with_inputs(
             db,
             actor,
@@ -94,10 +96,11 @@ impl DecisionEngineService {
             &goals,
             &memory_highlights,
             &preference_highlights,
+            Some(&task_graph),
         )
     }
 
-    /// Preferred path — Intelligence injects Attention + context.
+    /// Preferred path — Intelligence injects Attention + context (+ Task Graph).
     #[allow(clippy::too_many_arguments)]
     pub(crate) fn generate_with_inputs(
         db: &Arc<Mutex<Database>>,
@@ -109,6 +112,7 @@ impl DecisionEngineService {
         goals: &[WorkGoal],
         memory_highlights: &[IntelligenceHighlight],
         preference_highlights: &[IntelligenceHighlight],
+        task_graph: Option<&workspace_domain::TaskGraph>,
     ) -> Result<DecisionEngineState> {
         let workspace_id = WorkspaceId::new(workspace_id.into()).map_err(KernelError::Domain)?;
         let ws = workspace_id.as_str();
@@ -137,6 +141,18 @@ impl DecisionEngineService {
             })
             .collect();
 
+        let (open_count, blocked_count) = task_graph
+            .map(|g| {
+                (
+                    g.nodes
+                        .iter()
+                        .filter(|n| n.task.status.is_open())
+                        .count(),
+                    g.blocked_count,
+                )
+            })
+            .unwrap_or((0, 0));
+
         let context = DecisionContext {
             workspace_id: ws.to_string(),
             active_project_id: workflow.active_project_id.as_ref().map(|id| id.to_string()),
@@ -146,12 +162,28 @@ impl DecisionEngineService {
             preference_highlight_count: preference_highlights.len(),
             pending_approval_count: pending_approvals.len(),
             pending_plan_count: pending_plans.len(),
+            task_graph_open_count: open_count,
+            task_graph_blocked_count: blocked_count,
         };
 
         let mut candidates = Vec::new();
         let mut seen = std::collections::HashSet::new();
 
+        // Completed graph work must not be recommended again.
+        let completed_titles: std::collections::HashSet<String> = task_graph
+            .map(|g| {
+                g.nodes
+                    .iter()
+                    .filter(|n| n.task.status == workspace_domain::WorkspaceTaskStatus::Completed)
+                    .map(|n| n.task.title.to_lowercase())
+                    .collect()
+            })
+            .unwrap_or_default();
+
         for item in &attention.top_items {
+            if completed_titles.contains(&item.title.to_lowercase()) {
+                continue;
+            }
             let key = format!("attention:{}", item.id);
             if !seen.insert(key.clone()) {
                 continue;
@@ -166,6 +198,23 @@ impl DecisionEngineService {
                 &pending_plans,
                 &overlays,
             )?);
+        }
+
+        if let Some(graph) = task_graph {
+            for node in graph.open_incomplete_nodes().into_iter().take(4) {
+                let key = format!("graph:{}", node.task.id);
+                if !seen.insert(key.clone()) {
+                    continue;
+                }
+                candidates.push(Self::candidate_from_graph_node(
+                    ws,
+                    node,
+                    goals,
+                    memory_highlights,
+                    preference_highlights,
+                    &overlays,
+                )?);
+            }
         }
 
         // Always surface at least one bootstrap candidate when empty.
@@ -495,6 +544,100 @@ impl DecisionEngineService {
             },
             related_goal_ids,
             pending_approval_ids,
+            outcome,
+            created_at: Utc::now().to_rfc3339(),
+            handoff_command: DecisionCandidate::HANDOFF_SUBMIT_ASSISTANT_GOAL.into(),
+            authority_effect: DecisionCandidate::AUTHORITY_EFFECT_NONE.into(),
+        })
+    }
+
+    fn candidate_from_graph_node(
+        ws: &str,
+        node: &workspace_domain::TaskNode,
+        goals: &[WorkGoal],
+        memory: &[IntelligenceHighlight],
+        prefs: &[IntelligenceHighlight],
+        overlays: &HashMap<String, DecisionOutcome>,
+    ) -> Result<DecisionCandidate> {
+        let key = format!("graph:{}", node.task.id);
+        let outcome = overlays.get(&key).copied().unwrap_or(DecisionOutcome::Open);
+        let attention_contribution = match node.task.status {
+            workspace_domain::WorkspaceTaskStatus::Blocked => 70,
+            workspace_domain::WorkspaceTaskStatus::Waiting => 50,
+            workspace_domain::WorkspaceTaskStatus::InProgress => 45,
+            _ => 35,
+        };
+        let memory_contribution = if memory.is_empty() { 0 } else { 6 };
+        let personalization_contribution = if prefs.is_empty() { 0 } else { 6 };
+        let goal_contribution = if goals.is_empty() { 0 } else { 10 };
+        let priority_bonus = u32::from(node.task.priority.rank()) * 5;
+        let total = attention_contribution
+            + memory_contribution
+            + personalization_contribution
+            + goal_contribution
+            + priority_bonus;
+
+        let mut reasons = vec![DecisionReason {
+            kind: "task_graph".into(),
+            summary: format!(
+                "This recommendation targets an incomplete {}-priority task.",
+                node.task.priority.as_str()
+            ),
+            evidence_ref: Some(node.task.id.to_string()),
+        }];
+        if let Some(reason) = &node.waiting_reason {
+            reasons.push(DecisionReason {
+                kind: "dependency".into(),
+                summary: reason.clone(),
+                evidence_ref: node.dependency_ids.first().cloned(),
+            });
+        }
+        reasons.push(DecisionReason {
+            kind: "progress".into(),
+            summary: format!("Task is {}% complete.", node.task.progress_percent),
+            evidence_ref: Some(node.task.id.to_string()),
+        });
+
+        let confidence = if total >= 80 {
+            "high"
+        } else if total >= 45 {
+            "medium"
+        } else {
+            "low"
+        };
+
+        Ok(DecisionCandidate {
+            id: DecisionCandidate::synthetic_id(&key),
+            workspace_id: WorkspaceId::new(ws).map_err(KernelError::Domain)?,
+            title: format!("Continue: {}", node.task.title),
+            goal_statement: format!(
+                "Advance Task Graph work: {}. {}",
+                node.task.title, node.task.explanation
+            ),
+            originating_goal: goals.first().map(|g| g.description.clone()),
+            attention_item_id: None,
+            recommendation_id: Some(format!("rec-graph-{}", node.task.id)),
+            score: DecisionScore {
+                total,
+                attention_contribution,
+                memory_contribution,
+                personalization_contribution,
+                goal_contribution: goal_contribution + priority_bonus,
+                factors: vec![
+                    format!("graph status +{attention_contribution}"),
+                    format!("priority bonus +{priority_bonus}"),
+                ],
+            },
+            explanation: DecisionExplanation {
+                headline: format!(
+                    "Recommended because Task Graph shows incomplete work: {}",
+                    node.task.title
+                ),
+                reasons,
+                confidence: confidence.into(),
+            },
+            related_goal_ids: goals.iter().take(3).map(|g| g.id.to_string()).collect(),
+            pending_approval_ids: Vec::new(),
             outcome,
             created_at: Utc::now().to_rfc3339(),
             handoff_command: DecisionCandidate::HANDOFF_SUBMIT_ASSISTANT_GOAL.into(),

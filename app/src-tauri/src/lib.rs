@@ -19,6 +19,10 @@ use commands::decision_engine::{
     dismiss_decision_candidate, generate_decision_engine, postpone_decision_candidate,
     select_decision_candidate,
 };
+use commands::task_graph::{
+    add_task_relationship, create_workspace_task, generate_task_graph,
+    get_task_graph_planning_inputs, update_workspace_task_status, validate_task_graph,
+};
 use commands::decision_queue::{
     accept_decision_item, defer_decision_item, dismiss_decision_item, generate_decision_queue,
     mark_decision_item_viewed, reject_decision_item,
@@ -193,6 +197,12 @@ pub fn run() {
             select_decision_candidate,
             dismiss_decision_candidate,
             postpone_decision_candidate,
+            generate_task_graph,
+            create_workspace_task,
+            update_workspace_task_status,
+            add_task_relationship,
+            validate_task_graph,
+            get_task_graph_planning_inputs,
             create_suggestion_intent_request,
             execute_intent_request,
             get_execution_outcomes,

@@ -85,6 +85,11 @@ pub const PLATFORM_CONCEPT_OWNERS: &[ConceptOwnership] = &[
         kind: ConceptOwnerKind::Aggregator,
     },
     ConceptOwnership {
+        concept: "workspace_task",
+        owner: "TaskGraphService",
+        kind: ConceptOwnerKind::DurableStore,
+    },
+    ConceptOwnership {
         concept: "permission_approval",
         owner: "PermissionApprovalService",
         kind: ConceptOwnerKind::DurableStore,
@@ -128,4 +133,6 @@ pub mod vocabulary {
     pub const ATTENTION: &str = "Attention";
     pub const DECISION_ENGINE: &str = "Decision Engine";
     pub const DECISION_CANDIDATE: &str = "Decision Candidate";
+    pub const TASK_GRAPH: &str = "Task Graph";
+    pub const WORKSPACE_TASK: &str = "Workspace Task";
 }

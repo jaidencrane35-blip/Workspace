@@ -5,7 +5,7 @@ use workspace_domain::{
     AiAssistantError, AiEvaluationError, AiMemoryError, AiModelError, AiOrchestrationError,
     AiPersonalizationError, AiPlanningError, AiRequestError, AutomationContractError,
     AutomationTriggerError, DecisionEngineError, DecisionQueueError, DomainError, ResourceKind,
-    WorkspaceActivityError, WorkspaceAttentionError, WorkspaceContinuityError,
+    TaskGraphError, WorkspaceActivityError, WorkspaceAttentionError, WorkspaceContinuityError,
     WorkspaceIntelligenceError, WorkspaceIntentError,
 };
 
@@ -204,6 +204,9 @@ pub enum KernelError {
 
     #[error("Decision engine validation failed: {message}")]
     DecisionEngineValidation { message: String },
+
+    #[error("Task graph validation failed: {message}")]
+    TaskGraphValidation { message: String },
 
     #[error("Workspace kernel initialization failed")]
     InitializationFailed,
@@ -416,6 +419,17 @@ impl From<DecisionEngineError> for KernelError {
         match error {
             DecisionEngineError::Domain(domain) => KernelError::from(domain),
             other => KernelError::DecisionEngineValidation {
+                message: other.to_string(),
+            },
+        }
+    }
+}
+
+impl From<TaskGraphError> for KernelError {
+    fn from(error: TaskGraphError) -> Self {
+        match error {
+            TaskGraphError::Domain(domain) => KernelError::from(domain),
+            other => KernelError::TaskGraphValidation {
                 message: other.to_string(),
             },
         }
@@ -698,6 +712,10 @@ impl KernelError {
             },
             KernelError::DecisionEngineValidation { message } => PublicError {
                 code: "decision_engine_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::TaskGraphValidation { message } => PublicError {
+                code: "task_graph_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::InitializationFailed => PublicError {

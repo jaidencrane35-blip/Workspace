@@ -20,7 +20,7 @@ use crate::error::{KernelError, Result};
 use crate::services::{
     list_rejection_summaries, AiMemoryService, AiPersonalizationService, AssistantWorkflowStore,
     AuditService, AutomationContractService, DecisionEngineService, DecisionQueueService,
-    DesktopWindowService, OrchestratedPlanStore, TriggerEvaluatorService,
+    DesktopWindowService, OrchestratedPlanStore, TaskGraphService, TriggerEvaluatorService,
     WorkspaceActivityGraphService, WorkspaceAttentionService, WorkspaceContinuityService,
     WorkspaceIntentService,
 };
@@ -95,13 +95,16 @@ impl WorkspaceIntelligenceService {
             &full_activity_graph,
         )?;
         let continuity = full_continuity.summary_projection(6);
-        let full_attention = WorkspaceAttentionService::generate_with_inputs(
+        let full_task_graph = TaskGraphService::generate(db, actor, ws)?;
+        let task_graph = full_task_graph.summary_projection(8);
+        let full_attention = WorkspaceAttentionService::generate_with_task_graph(
             db,
             actor,
             ws,
             &full_decision_queue,
             &full_activity_graph,
             &full_continuity,
+            Some(&full_task_graph),
         )?;
         let attention = full_attention.summary_projection(8);
 
@@ -150,6 +153,7 @@ impl WorkspaceIntelligenceService {
             &recent_goals,
             &memory_highlights,
             &preference_highlights,
+            Some(&full_task_graph),
         )?;
         let decision_engine = DecisionEngineService::summary_projection(&full_decision_engine, 5);
 
@@ -274,6 +278,7 @@ impl WorkspaceIntelligenceService {
             continuity,
             attention,
             decision_engine,
+            task_graph,
             workspace_health: health_label,
             summary,
             authority_effect: WorkspaceIntelligenceState::AUTHORITY_EFFECT_NONE.into(),
@@ -357,6 +362,7 @@ impl WorkspaceIntelligenceService {
             "decision_queue_pending": state.decision_queue.pending_count,
             "activity_count": state.activity_graph.activity_count,
             "decision_engine_candidates": state.decision_engine.candidate_count,
+            "task_graph_nodes": state.task_graph.node_count,
             "memory_highlights": state.memory_highlights.len(),
             "preference_highlights": state.preference_highlights.len(),
             "summary_len": state.summary.len(),

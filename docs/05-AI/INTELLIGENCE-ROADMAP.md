@@ -116,6 +116,10 @@ Workspace Attention Engine foundation — deterministic explainable prioritizati
 
 Governed Decision Engine foundation (Sprints 80–81) — synthesize Attention + memory + personalization + goals into ranked, explainable `DecisionCandidate`s; accept → planner handoff only. Distinct from Decision Queue inbox. No autonomy. See [Workspace Decision Engine](WORKSPACE-DECISION-ENGINE.md).
 
+## Phase 5 Batch 4 (done)
+
+Workspace Task Graph foundation (Sprints 82–83) — persistent canonical work model with dependencies and progress; Attention / Decision Engine / Intelligence / Planner inputs consume the graph. No autonomy. See [Workspace Task Graph](WORKSPACE-TASK-GRAPH.md).
+
 ---
 
 ## Never build

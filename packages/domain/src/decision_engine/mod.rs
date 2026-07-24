@@ -115,6 +115,8 @@ pub struct DecisionContext {
     pub preference_highlight_count: usize,
     pub pending_approval_count: usize,
     pub pending_plan_count: usize,
+    pub task_graph_open_count: usize,
+    pub task_graph_blocked_count: usize,
 }
 
 /// One ranked, explainable recommendation candidate.

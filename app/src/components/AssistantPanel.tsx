@@ -197,6 +197,18 @@ export function AssistantPanel({
               Explain-only here — accept/dismiss/postpone live on the Work tab.
               Never executes.
             </dd>
+            <dt>Task Graph</dt>
+            <dd>
+              {workspaceIntel.task_graph.summary}{" "}
+              {workspaceIntel.task_graph.top_nodes.length === 0
+                ? "No graph nodes."
+                : `Active work: ${workspaceIntel.task_graph.top_nodes
+                    .slice(0, 3)
+                    .map((n) => n.task.title)
+                    .join("; ")}.`}{" "}
+              Same Task Graph as the Work tab. Assistant may explain — never
+              mutate or execute.
+            </dd>
             <dt>Continuity</dt>
             <dd>
               {workspaceIntel.continuity.summary}{" "}

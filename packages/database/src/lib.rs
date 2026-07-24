@@ -18,7 +18,7 @@ pub use migration::MigrationRunner;
 pub use repositories::{
     AiMemoryRepository, ApplicationRepository, AuditRepository, AutomationContractRepository,
     AutomationTriggerRepository, DecisionEngineRepository, DecisionQueueRepository, GraphRepository,
-    LayoutRepository, PermissionApprovalRepository, UserPreferenceRepository, WidgetRepository,
-    WorkspaceRepository, WorkspaceIntentRepository, ZoneRepository,
+    LayoutRepository, PermissionApprovalRepository, TaskGraphRepository, UserPreferenceRepository,
+    WidgetRepository, WorkspaceRepository, WorkspaceIntentRepository, ZoneRepository,
 };
 pub use settings::SettingsRepository;

@@ -1170,6 +1170,8 @@ export interface DecisionContext {
   preference_highlight_count: number;
   pending_approval_count: number;
   pending_plan_count: number;
+  task_graph_open_count: number;
+  task_graph_blocked_count: number;
 }
 
 export interface DecisionCandidate {
@@ -1249,8 +1251,101 @@ export interface WorkspaceIntelligenceState {
   continuity: WorkspaceContinuitySummary;
   attention: WorkspaceAttentionSummary;
   decision_engine: DecisionEngineSummary;
+  task_graph: TaskGraphSummary;
   workspace_health: string;
   summary: string;
+  authority_effect: string;
+}
+
+export type WorkspaceTaskStatus =
+  | "proposed"
+  | "planned"
+  | "waiting"
+  | "in_progress"
+  | "blocked"
+  | "completed"
+  | "cancelled";
+
+export type WorkspaceTaskPriority = "low" | "medium" | "high" | "critical";
+
+export type TaskRelationshipKind =
+  | "depends_on"
+  | "blocks"
+  | "related_to"
+  | "child_of"
+  | "parent_of";
+
+export interface TaskMetadata {
+  labels: string[];
+  notes: string | null;
+  attributes_json: string | null;
+}
+
+export interface WorkspaceTask {
+  id: string;
+  workspace_id: string;
+  project_id: string | null;
+  title: string;
+  status: WorkspaceTaskStatus;
+  priority: WorkspaceTaskPriority;
+  metadata: TaskMetadata;
+  source_intent_task_id: string | null;
+  work_goal_id: string | null;
+  progress_percent: number;
+  explanation: string;
+  created_at: string;
+  updated_at: string;
+  authority_effect: string;
+}
+
+export interface TaskNode {
+  task: WorkspaceTask;
+  blocker_ids: string[];
+  dependency_ids: string[];
+  child_ids: string[];
+  parent_ids: string[];
+  waiting_reason: string | null;
+}
+
+export interface TaskRelationship {
+  id: string;
+  workspace_id: string;
+  from_task_id: string;
+  to_task_id: string;
+  kind: TaskRelationshipKind;
+  created_at: string;
+  authority_effect: string;
+}
+
+export interface TaskGraph {
+  workspace_id: string;
+  generated_at: string;
+  nodes: TaskNode[];
+  relationships: TaskRelationship[];
+  active_count: number;
+  blocked_count: number;
+  waiting_count: number;
+  completed_count: number;
+  progress_percent: number;
+  summary: string;
+  integrity_ok: boolean;
+  integrity_notes: string[];
+  authority_effect: string;
+}
+
+export interface TaskGraphSummary {
+  workspace_id: string;
+  generated_at: string;
+  node_count: number;
+  relationship_count: number;
+  active_count: number;
+  blocked_count: number;
+  waiting_count: number;
+  completed_count: number;
+  progress_percent: number;
+  top_nodes: TaskNode[];
+  summary: string;
+  integrity_ok: boolean;
   authority_effect: string;
 }
 

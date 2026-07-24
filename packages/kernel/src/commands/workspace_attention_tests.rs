@@ -98,6 +98,7 @@ fn case1_attention_derives_from_existing_systems() {
                 | workspace_domain::AttentionSourceType::ActivityGraph
                 | workspace_domain::AttentionSourceType::WorkflowContext
                 | workspace_domain::AttentionSourceType::AutomationContract
+                | workspace_domain::AttentionSourceType::TaskGraph
         ));
         assert!(item.id.as_str().starts_with("attention:"));
     }

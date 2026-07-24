@@ -4,6 +4,7 @@ mod automation_contract;
 mod automation_trigger;
 mod decision_engine;
 mod decision_queue;
+mod task_graph;
 mod workspace_activity;
 mod workspace_attention;
 mod workspace_continuity;
@@ -89,6 +90,8 @@ mod workspace_continuity_tests;
 mod workspace_attention_tests;
 #[cfg(test)]
 mod decision_engine_tests;
+#[cfg(test)]
+mod task_graph_tests;
 #[cfg(test)]
 mod ai_memory_tests;
 #[cfg(test)]

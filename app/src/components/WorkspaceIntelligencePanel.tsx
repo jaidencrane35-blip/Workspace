@@ -14,6 +14,7 @@ import type {
   WorkspaceAttentionState,
   WorkspaceContinuityState,
   DecisionEngineState,
+  TaskGraph,
   WorkspaceIntelligenceState,
 } from "../types/domain";
 
@@ -56,6 +57,7 @@ export function WorkspaceIntelligencePanel({
   );
   const [decisionEngine, setDecisionEngine] =
     useState<DecisionEngineState | null>(null);
+  const [taskGraph, setTaskGraph] = useState<TaskGraph | null>(null);
   const [lastHandoff, setLastHandoff] = useState<string | null>(null);
   const [contractName, setContractName] = useState(
     "Prepare coding environment",
@@ -105,6 +107,7 @@ export function WorkspaceIntelligencePanel({
           cont,
           attn,
           decisions,
+          graphTasks,
         ] = await Promise.all([
             invokeIpc<Project[]>("list_projects", {
               workspaceId: workspace.id,
@@ -138,6 +141,9 @@ export function WorkspaceIntelligencePanel({
             invokeIpc<DecisionEngineState>("generate_decision_engine", {
               workspaceId: workspace.id,
             }),
+            invokeIpc<TaskGraph>("generate_task_graph", {
+              workspaceId: workspace.id,
+            }),
           ]);
         if (!cancelled) {
           setProjects(listed);
@@ -149,6 +155,7 @@ export function WorkspaceIntelligencePanel({
           setContinuity(cont);
           setAttention(attn);
           setDecisionEngine(decisions);
+          setTaskGraph(graphTasks);
         }
       } catch (err: unknown) {
         if (!cancelled) {
@@ -167,9 +174,9 @@ export function WorkspaceIntelligencePanel({
         <p className="assistant-kicker">Work</p>
         <h2>Where you are. What needs attention. How work connects.</h2>
         <p className="lede">
-          One Workspace operating environment — Continuity, Attention, Decision
-          Engine, Decision Queue, then Activity. Nothing here executes or grants
-          permission.
+          One Workspace operating environment — Continuity, Attention, Task
+          Graph, Decision Engine, Decision Queue, then Activity. Nothing here
+          executes or grants permission.
         </p>
       </header>
 
@@ -430,6 +437,69 @@ export function WorkspaceIntelligencePanel({
           </>
         ) : (
           <p className="muted">No attention snapshot yet.</p>
+        )}
+      </section>
+
+      <section>
+        <h3>Workspace Task Graph</h3>
+        <p className="muted">
+          Canonical model of work — dependencies, blockers, and progress.
+          Informational only; never executes.
+        </p>
+        <div className="row">
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("Task Graph refreshed", async () => {
+                if (!workspace) return;
+                const next = await invokeIpc<TaskGraph>("generate_task_graph", {
+                  workspaceId: workspace.id,
+                });
+                setTaskGraph(next);
+              })
+            }
+          >
+            Refresh task graph
+          </button>
+        </div>
+        {taskGraph ? (
+          <>
+            <p>{taskGraph.summary}</p>
+            <p className="muted">
+              {taskGraph.active_count} active · {taskGraph.blocked_count} blocked ·{" "}
+              {taskGraph.waiting_count} waiting · {taskGraph.completed_count}{" "}
+              completed · {taskGraph.progress_percent}% · integrity{" "}
+              {taskGraph.integrity_ok ? "ok" : "issues"} · authority:{" "}
+              {taskGraph.authority_effect}
+            </p>
+            {taskGraph.nodes.length === 0 ? (
+              <p className="muted">No graph tasks yet.</p>
+            ) : (
+              <ul className="intelligence-list">
+                {taskGraph.nodes.slice(0, 12).map((node) => (
+                  <li key={node.task.id}>
+                    <strong>
+                      [{node.task.status}/{node.task.priority}] {node.task.title}
+                    </strong>
+                    <div className="muted">
+                      {node.task.progress_percent}% · deps{" "}
+                      {node.dependency_ids.length} · blockers{" "}
+                      {node.blocker_ids.length}
+                    </div>
+                    {node.waiting_reason && (
+                      <div>{node.waiting_reason}</div>
+                    )}
+                    {!node.waiting_reason && (
+                      <div className="muted">{node.task.explanation}</div>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
+        ) : (
+          <p className="muted">No Task Graph snapshot yet.</p>
         )}
       </section>
 
