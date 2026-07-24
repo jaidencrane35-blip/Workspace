@@ -58,6 +58,27 @@ impl WorkspaceAttentionService {
         let task_graph = crate::services::TaskGraphService::generate(db, actor, workspace_id.clone())?;
         let environment =
             crate::services::WorkspaceEnvironmentService::generate(db, actor, workspace_id.clone()).ok();
+        let workflow =
+            crate::services::WorkspaceIntentService::get_workflow_context_readonly(db, &workspace_id)
+                .ok();
+        let composition = match (&environment, &workflow) {
+            (Some(env), Some(wf)) => {
+                crate::services::WorkspaceCompositionService::generate_with_inputs(
+                    db,
+                    actor,
+                    workspace_id.clone(),
+                    env,
+                    Some(&task_graph),
+                    &continuity,
+                    &graph,
+                    wf,
+                    &queue,
+                    None,
+                )
+                .ok()
+            }
+            _ => None,
+        };
         Self::generate_with_task_graph(
             db,
             actor,
@@ -67,6 +88,7 @@ impl WorkspaceAttentionService {
             &continuity,
             Some(&task_graph),
             environment.as_ref(),
+            composition.as_ref(),
         )
     }
 
@@ -88,6 +110,7 @@ impl WorkspaceAttentionService {
             continuity,
             None,
             None,
+            None,
         )
     }
 
@@ -100,6 +123,7 @@ impl WorkspaceAttentionService {
         continuity: &WorkspaceContinuityState,
         task_graph: Option<&workspace_domain::TaskGraph>,
         environment: Option<&workspace_domain::WorkspaceEnvironmentState>,
+        composition: Option<&workspace_domain::WorkspaceCompositionState>,
     ) -> Result<WorkspaceAttentionState> {
         let workspace_id = WorkspaceId::new(workspace_id.into()).map_err(KernelError::Domain)?;
         let ws = workspace_id.as_str();
@@ -137,10 +161,68 @@ impl WorkspaceAttentionService {
                 }
             }
         }
+        if let Some(comp) = composition {
+            for item in Self::from_composition(ws, comp, &now)? {
+                if seen.insert(item.id.to_string()) {
+                    items.push(item);
+                }
+            }
+        }
 
         let state = WorkspaceAttentionState::from_items(ws, items);
         Self::audit_generated(db, actor, &state)?;
         Ok(state)
+    }
+
+    fn from_composition(
+        ws: &str,
+        composition: &workspace_domain::WorkspaceCompositionState,
+        now: &str,
+    ) -> Result<Vec<AttentionItem>> {
+        let mut out = Vec::new();
+        for gap in composition.gaps.iter().take(5) {
+            let (category, score, urgency) = match gap.kind.as_str() {
+                "disconnected_work" => (
+                    AttentionCategory::Interrupted,
+                    55u32,
+                    AttentionUrgency::Soon,
+                ),
+                "missing_application" => (
+                    AttentionCategory::Informative,
+                    38u32,
+                    AttentionUrgency::Whenever,
+                ),
+                _ => (
+                    AttentionCategory::Informative,
+                    32u32,
+                    AttentionUrgency::Whenever,
+                ),
+            };
+            let factors = vec![
+                format!("base {score} for composition gap {}", gap.kind),
+                "source Composition".into(),
+            ];
+            out.push(AttentionItem::project(
+                ws,
+                AttentionSourceType::Composition,
+                format!("{}:{}", gap.kind, gap.title),
+                category,
+                score_to_priority(score),
+                urgency,
+                AttentionConfidence::Medium,
+                score,
+                factors.clone(),
+                gap.title.clone(),
+                format!(
+                    "{}. Score factors: {}.",
+                    gap.explanation,
+                    score_factors_join(&factors)
+                ),
+                now.to_string(),
+                AttentionState::Visible,
+            )?);
+        }
+        Ok(out)
     }
 
     fn from_environment(

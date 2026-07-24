@@ -540,6 +540,14 @@ fn case7_assistant_and_work_share_intelligence_path() {
         work_view.environment.authority_effect,
         workspace_domain::WorkspaceEnvironmentState::AUTHORITY_EFFECT_NONE
     );
+    assert_eq!(
+        work_view.composition.authority_effect,
+        assistant_view.composition.authority_effect
+    );
+    assert_eq!(
+        work_view.composition.authority_effect,
+        workspace_domain::WorkspaceCompositionState::AUTHORITY_EFFECT_NONE
+    );
     // Both product surfaces use Attention-projected recommendations (shared path).
     assert!(work_view
         .recommended_actions
@@ -553,6 +561,10 @@ fn case7_assistant_and_work_share_intelligence_path() {
     assert_eq!(
         work_view.environment.workspace_id,
         assistant_view.environment.workspace_id
+    );
+    assert_eq!(
+        work_view.composition.workspace_id,
+        assistant_view.composition.workspace_id
     );
 }
 

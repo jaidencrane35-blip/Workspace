@@ -40,6 +40,7 @@ pub enum AttentionSourceType {
     AutomationContract,
     TaskGraph,
     Environment,
+    Composition,
 }
 
 impl AttentionSourceType {
@@ -52,6 +53,7 @@ impl AttentionSourceType {
             Self::AutomationContract => "automation_contract",
             Self::TaskGraph => "task_graph",
             Self::Environment => "environment",
+            Self::Composition => "composition",
         }
     }
 }

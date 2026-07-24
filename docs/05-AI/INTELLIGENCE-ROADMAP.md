@@ -124,6 +124,10 @@ Workspace Task Graph foundation (Sprints 82–83) — persistent canonical work 
 
 Workspace Environment Model foundation (Sprint 84) — live desktop read model aggregating Windows Integration with work context; Intelligence and Attention become environment-aware. No window control or autonomy. See [Workspace Environment Model](WORKSPACE-ENVIRONMENT-MODEL.md).
 
+## Phase 5 Batch 6 (done)
+
+Workspace Composition Engine foundation (Sprint 85) — logical working environments from Environment + Task Graph + Continuity + Activity + Workflow; Attention and Intelligence consume compositions. No launch, grouping, or autonomy. See [Workspace Composition Engine](WORKSPACE-COMPOSITION-ENGINE.md).
+
 ---
 
 ## Never build

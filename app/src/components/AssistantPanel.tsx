@@ -221,6 +221,18 @@ export function AssistantPanel({
               Same Environment Model as the Work tab. Explain-only — never
               moves windows.
             </dd>
+            <dt>Composition</dt>
+            <dd>
+              {workspaceIntel.composition.summary}{" "}
+              {workspaceIntel.composition.focus_label
+                ? `Focus: ${workspaceIntel.composition.focus_label}. `
+                : ""}
+              {workspaceIntel.composition.gap_count > 0
+                ? `${workspaceIntel.composition.gap_count} gap(s) in the working environment. `
+                : ""}
+              Same Composition Engine as the Work tab. Assistant may explain why
+              resources belong together — never edits compositions.
+            </dd>
             <dt>Continuity</dt>
             <dd>
               {workspaceIntel.continuity.summary}{" "}

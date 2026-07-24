@@ -10,6 +10,7 @@ use crate::automation_contract::AutomationContractSummary;
 use crate::automation_trigger::{AutomationIntentProposalSummary, TriggerRejectionSummary};
 use crate::decision_engine::DecisionEngineSummary;
 use crate::decision_queue::DecisionQueueSummary;
+use crate::workspace_composition::WorkspaceCompositionSummary;
 use crate::workspace_environment::WorkspaceEnvironmentSummary;
 use crate::workspace_task_graph::TaskGraphSummary;
 use crate::workspace_activity::WorkspaceActivityGraphSummary;
@@ -115,6 +116,8 @@ pub struct WorkspaceIntelligenceState {
     pub task_graph: TaskGraphSummary,
     /// Environment Model summary (Phase 5). Live desktop read model — never executes.
     pub environment: WorkspaceEnvironmentSummary,
+    /// Composition Engine summary (Phase 5). Logical working environment — never executes.
+    pub composition: WorkspaceCompositionSummary,
     pub workspace_health: String,
     pub summary: String,
     /// Explicit marker for audits and UI: this state grants nothing.

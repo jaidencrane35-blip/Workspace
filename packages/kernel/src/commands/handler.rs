@@ -17,6 +17,7 @@ use crate::commands::decision_engine::{GateDecisionEngineRead, GateDecisionEngin
 use crate::commands::decision_queue::{GateDecisionQueueRead, GateDecisionQueueWrite};
 use crate::commands::task_graph::{GateTaskGraphRead, GateTaskGraphWrite};
 use crate::commands::workspace_environment::GateEnvironmentRead;
+use crate::commands::workspace_composition::GateCompositionRead;
 use crate::commands::workspace_activity::GateActivityGraphRead;
 use crate::commands::workspace_attention::GateAttentionRead;
 use crate::commands::workspace_continuity::GateContinuityRead;
@@ -74,6 +75,7 @@ use crate::services::{
     AiAssistantService, AiEvaluationService, AiOrchestrationService, AiParticipationService,
     AiPlanningService, ConfigurationService, DecisionEngineService, DecisionQueueService,
     DesktopWindowService, TaskGraphService, WorkspaceEnvironmentService,
+    WorkspaceCompositionService,
     WorkspaceActivityGraphService, WorkspaceAttentionService, WorkspaceContextService,
     WorkspaceContinuityService, WorkspaceIntelligenceService,
 };
@@ -86,7 +88,8 @@ use workspace_domain::{
     DecisionQueue, Project, ProjectStatus, Task, TaskGraph, TaskPriority, TaskRelationship,
     TaskRelationshipKind, TaskStatus, TriggerEvaluationResult, TriggerEvent, TriggerEventType,
     WorkGoal, WorkflowContext, WorkspaceActivity, WorkspaceActivityGraph, WorkspaceAttentionState,
-    WorkspaceContinuityState, WorkspaceEnvironmentState, WorkspaceTask, WorkspaceTaskPriority,
+    WorkspaceContinuityState, WorkspaceEnvironmentState, WorkspaceCompositionState, WorkspaceTask,
+    WorkspaceTaskPriority,
     WorkspaceTaskStatus,
     WorkspaceIntelligenceComparison, WorkspaceIntelligenceState, AiPlan, AiPlanEvaluationReport,
     AiPlanSubmissionResult,
@@ -2673,6 +2676,35 @@ impl CommandHandler {
     /// Architecture guard — Environment Model must never execute.
     pub fn workspace_environment_attempt_execute() -> Result<()> {
         WorkspaceEnvironmentService::attempt_execute()
+    }
+
+    /// Aggregate Workspace Composition Engine (read-only working environment meaning).
+    pub fn generate_workspace_composition(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceCompositionState> {
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent.clone()))
+            .execute_query(GateCompositionRead)?;
+        let _ = Self::get_workflow_context(
+            kernel,
+            actor.clone(),
+            intent,
+            workspace_id.clone(),
+        )?;
+        WorkspaceCompositionService::generate(
+            &kernel.shared_database(),
+            &actor,
+            &kernel.orchestrated_plans(),
+            &kernel.assistant_workflows(),
+            workspace_id,
+        )
+    }
+
+    /// Architecture guard — Composition Engine must never execute.
+    pub fn workspace_composition_attempt_execute() -> Result<()> {
+        WorkspaceCompositionService::attempt_execute()
     }
 
     /// Read-only workspace intelligence aggregation. Capability-gated; never executes.

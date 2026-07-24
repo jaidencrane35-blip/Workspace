@@ -1253,6 +1253,7 @@ export interface WorkspaceIntelligenceState {
   decision_engine: DecisionEngineSummary;
   task_graph: TaskGraphSummary;
   environment: WorkspaceEnvironmentSummary;
+  composition: WorkspaceCompositionSummary;
   workspace_health: string;
   summary: string;
   authority_effect: string;
@@ -1434,6 +1435,88 @@ export interface WorkspaceEnvironmentSummary {
   focused_window_title: string | null;
   top_applications: EnvironmentApplication[];
   top_gaps: EnvironmentGap[];
+  summary: string;
+  authority_effect: string;
+}
+
+export type CompositionMemberKind =
+  | "application"
+  | "window"
+  | "layout"
+  | "task_node"
+  | "project"
+  | "active_work"
+  | "environment"
+  | "activity"
+  | "continuity";
+
+export interface CompositionMember {
+  id: string;
+  kind: CompositionMemberKind;
+  ref_id: string;
+  label: string;
+  present: boolean;
+  explanation: string;
+  evidence: string[];
+  authority_effect: string;
+}
+
+export interface CompositionRelationship {
+  id: string;
+  from_member_id: string;
+  to_member_id: string;
+  kind: string;
+  explanation: string;
+  evidence: string[];
+}
+
+export interface CompositionGap {
+  kind: string;
+  title: string;
+  explanation: string;
+  evidence: string[];
+  member_id: string | null;
+}
+
+export interface WorkspaceCompositionState {
+  workspace_id: string;
+  generated_at: string;
+  label: string;
+  active_project_id: string | null;
+  active_project_name: string | null;
+  active_task_id: string | null;
+  focus_label: string | null;
+  members: CompositionMember[];
+  relationships: CompositionRelationship[];
+  gaps: CompositionGap[];
+  present_application_count: number;
+  missing_application_count: number;
+  task_node_count: number;
+  window_count: number;
+  outstanding_decision_count: number;
+  explanation: string;
+  evidence: string[];
+  summary: string;
+  authority_effect: string;
+}
+
+export interface WorkspaceCompositionSummary {
+  workspace_id: string;
+  generated_at: string;
+  label: string;
+  active_project_name: string | null;
+  focus_label: string | null;
+  present_application_count: number;
+  missing_application_count: number;
+  task_node_count: number;
+  window_count: number;
+  outstanding_decision_count: number;
+  member_count: number;
+  relationship_count: number;
+  gap_count: number;
+  top_members: CompositionMember[];
+  top_gaps: CompositionGap[];
+  explanation: string;
   summary: string;
   authority_effect: string;
 }

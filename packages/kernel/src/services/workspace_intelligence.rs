@@ -22,7 +22,7 @@ use crate::services::{
     AuditService, AutomationContractService, DecisionEngineService, DecisionQueueService,
     DesktopWindowService, OrchestratedPlanStore, TaskGraphService, TriggerEvaluatorService,
     WorkspaceActivityGraphService, WorkspaceAttentionService, WorkspaceContinuityService,
-    WorkspaceEnvironmentService, WorkspaceIntentService,
+    WorkspaceEnvironmentService, WorkspaceIntentService, WorkspaceCompositionService,
 };
 
 pub(crate) struct WorkspaceIntelligenceService;
@@ -123,6 +123,20 @@ impl WorkspaceIntelligenceService {
         )?;
         let environment = WorkspaceEnvironmentService::summary_projection(&full_environment, 6);
 
+        let full_composition = WorkspaceCompositionService::generate_with_inputs(
+            db,
+            actor,
+            ws,
+            &full_environment,
+            Some(&full_task_graph),
+            &full_continuity,
+            &full_activity_graph,
+            &workflow_context,
+            &full_decision_queue,
+            current_project.as_ref(),
+        )?;
+        let composition = WorkspaceCompositionService::summary_projection(&full_composition, 8);
+
         let full_attention = WorkspaceAttentionService::generate_with_task_graph(
             db,
             actor,
@@ -132,6 +146,7 @@ impl WorkspaceIntelligenceService {
             &full_continuity,
             Some(&full_task_graph),
             Some(&full_environment),
+            Some(&full_composition),
         )?;
         let attention = full_attention.summary_projection(8);
 
@@ -291,6 +306,7 @@ impl WorkspaceIntelligenceService {
             decision_engine,
             task_graph,
             environment,
+            composition,
             workspace_health: health_label,
             summary,
             authority_effect: WorkspaceIntelligenceState::AUTHORITY_EFFECT_NONE.into(),
@@ -376,6 +392,7 @@ impl WorkspaceIntelligenceService {
             "decision_engine_candidates": state.decision_engine.candidate_count,
             "task_graph_nodes": state.task_graph.node_count,
             "environment_windows": state.environment.window_count,
+            "composition_members": state.composition.member_count,
             "memory_highlights": state.memory_highlights.len(),
             "preference_highlights": state.preference_highlights.len(),
             "summary_len": state.summary.len(),

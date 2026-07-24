@@ -42,6 +42,7 @@ pub mod suggestion_lifecycle;
 pub mod workspace;
 pub mod workspace_activity;
 pub mod workspace_attention;
+pub mod workspace_composition;
 pub mod workspace_continuity;
 pub mod workspace_task_graph;
 pub mod workspace_environment;
@@ -187,6 +188,11 @@ pub use workspace_attention::{
 pub use workspace_continuity::{
     ContinuityFacet, ContinuityFacetKind, WorkspaceContinuityError, WorkspaceContinuityState,
     WorkspaceContinuitySummary,
+};
+pub use workspace_composition::{
+    build_composition_summary, composition_now_rfc3339, validate_composition_workspace_id,
+    CompositionGap, CompositionMember, CompositionMemberKind, CompositionRelationship,
+    WorkspaceCompositionError, WorkspaceCompositionState, WorkspaceCompositionSummary,
 };
 pub use workspace_environment::{
     build_environment_summary, now_rfc3339, validate_workspace_id, EnvironmentApplication,

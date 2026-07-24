@@ -6,7 +6,8 @@ use workspace_domain::{
     AiPersonalizationError, AiPlanningError, AiRequestError, AutomationContractError,
     AutomationTriggerError, DecisionEngineError, DecisionQueueError, DomainError, ResourceKind,
     TaskGraphError, WorkspaceActivityError, WorkspaceAttentionError, WorkspaceContinuityError,
-    WorkspaceEnvironmentError, WorkspaceIntelligenceError, WorkspaceIntentError,
+    WorkspaceEnvironmentError, WorkspaceCompositionError, WorkspaceIntelligenceError,
+    WorkspaceIntentError,
 };
 
 #[derive(Debug, Error)]
@@ -210,6 +211,9 @@ pub enum KernelError {
 
     #[error("Workspace environment validation failed: {message}")]
     WorkspaceEnvironmentValidation { message: String },
+
+    #[error("Workspace composition validation failed: {message}")]
+    WorkspaceCompositionValidation { message: String },
 
     #[error("Workspace kernel initialization failed")]
     InitializationFailed,
@@ -444,6 +448,17 @@ impl From<WorkspaceEnvironmentError> for KernelError {
         match error {
             WorkspaceEnvironmentError::Domain(domain) => KernelError::from(domain),
             other => KernelError::WorkspaceEnvironmentValidation {
+                message: other.to_string(),
+            },
+        }
+    }
+}
+
+impl From<WorkspaceCompositionError> for KernelError {
+    fn from(error: WorkspaceCompositionError) -> Self {
+        match error {
+            WorkspaceCompositionError::Domain(domain) => KernelError::from(domain),
+            other => KernelError::WorkspaceCompositionValidation {
                 message: other.to_string(),
             },
         }
@@ -734,6 +749,10 @@ impl KernelError {
             },
             KernelError::WorkspaceEnvironmentValidation { message } => PublicError {
                 code: "workspace_environment_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::WorkspaceCompositionValidation { message } => PublicError {
+                code: "workspace_composition_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::InitializationFailed => PublicError {

@@ -16,6 +16,7 @@ import type {
   DecisionEngineState,
   TaskGraph,
   WorkspaceEnvironmentState,
+  WorkspaceCompositionState,
   WorkspaceIntelligenceState,
 } from "../types/domain";
 
@@ -61,6 +62,8 @@ export function WorkspaceIntelligencePanel({
   const [taskGraph, setTaskGraph] = useState<TaskGraph | null>(null);
   const [environment, setEnvironment] =
     useState<WorkspaceEnvironmentState | null>(null);
+  const [composition, setComposition] =
+    useState<WorkspaceCompositionState | null>(null);
   const [lastHandoff, setLastHandoff] = useState<string | null>(null);
   const [contractName, setContractName] = useState(
     "Prepare coding environment",
@@ -93,6 +96,10 @@ export function WorkspaceIntelligencePanel({
       setActivityGraph(null);
       setContinuity(null);
       setAttention(null);
+      setDecisionEngine(null);
+      setTaskGraph(null);
+      setEnvironment(null);
+      setComposition(null);
       setLastHandoff(null);
       setState(null);
       return;
@@ -112,6 +119,7 @@ export function WorkspaceIntelligencePanel({
           decisions,
           graphTasks,
           env,
+          comp,
         ] = await Promise.all([
             invokeIpc<Project[]>("list_projects", {
               workspaceId: workspace.id,
@@ -152,6 +160,10 @@ export function WorkspaceIntelligencePanel({
               "generate_workspace_environment",
               { workspaceId: workspace.id },
             ),
+            invokeIpc<WorkspaceCompositionState>(
+              "generate_workspace_composition",
+              { workspaceId: workspace.id },
+            ),
           ]);
         if (!cancelled) {
           setProjects(listed);
@@ -165,6 +177,7 @@ export function WorkspaceIntelligencePanel({
           setDecisionEngine(decisions);
           setTaskGraph(graphTasks);
           setEnvironment(env);
+          setComposition(comp);
         }
       } catch (err: unknown) {
         if (!cancelled) {
@@ -184,8 +197,8 @@ export function WorkspaceIntelligencePanel({
         <h2>Where you are. What needs attention. How work connects.</h2>
         <p className="lede">
           One Workspace operating environment — Continuity, Attention, Task
-          Graph, Environment, Decision Engine, Decision Queue, then Activity.
-          Nothing here executes or grants permission.
+          Graph, Environment, Composition, Decision Engine, Decision Queue, then
+          Activity. Nothing here executes or grants permission.
         </p>
       </header>
 
@@ -573,6 +586,78 @@ export function WorkspaceIntelligencePanel({
           </>
         ) : (
           <p className="muted">No environment snapshot yet.</p>
+        )}
+      </section>
+
+      <section>
+        <h3>Working environment</h3>
+        <p className="muted">
+          Composition Engine — how applications, projects, tasks, and desktop
+          state belong together as meaning. Never launches or groups windows.
+        </p>
+        <div className="row">
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("Composition refreshed", async () => {
+                if (!workspace) return;
+                const next = await invokeIpc<WorkspaceCompositionState>(
+                  "generate_workspace_composition",
+                  { workspaceId: workspace.id },
+                );
+                setComposition(next);
+              })
+            }
+          >
+            Refresh composition
+          </button>
+        </div>
+        {composition ? (
+          <>
+            <p>
+              <strong>{composition.label}</strong>
+            </p>
+            <p>{composition.summary}</p>
+            <p className="muted">{composition.explanation}</p>
+            <p className="muted">
+              {composition.present_application_count} present ·{" "}
+              {composition.missing_application_count} missing ·{" "}
+              {composition.task_node_count} task node(s) ·{" "}
+              {composition.outstanding_decision_count} outstanding decision(s)
+              {composition.focus_label
+                ? ` · focus: ${composition.focus_label}`
+                : ""}{" "}
+              · authority: {composition.authority_effect}
+            </p>
+            {composition.members.filter((m) => m.kind === "application")
+              .length > 0 && (
+              <ul className="intelligence-list">
+                {composition.members
+                  .filter((m) => m.kind === "application")
+                  .map((member) => (
+                    <li key={member.id}>
+                      <strong>
+                        {member.present ? "✓" : "○"} {member.label}
+                      </strong>
+                      <div className="muted">{member.explanation}</div>
+                    </li>
+                  ))}
+              </ul>
+            )}
+            {composition.gaps.length > 0 && (
+              <ul className="intelligence-list">
+                {composition.gaps.slice(0, 5).map((gap) => (
+                  <li key={`${gap.kind}-${gap.title}`}>
+                    <strong>{gap.title}</strong>
+                    <div className="muted">{gap.explanation}</div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
+        ) : (
+          <p className="muted">No composition snapshot yet.</p>
         )}
       </section>
 

@@ -11,6 +11,7 @@ import type {
   DecisionEngineState,
   TaskGraph,
   WorkspaceEnvironmentState,
+  WorkspaceCompositionState,
   AiOrchestratedPlan,
   AiPlan,
   AiPlanEvaluationReport,
@@ -149,6 +150,8 @@ export function OperatorConsole({
   const [taskGraph, setTaskGraph] = useState<TaskGraph | null>(null);
   const [environment, setEnvironment] =
     useState<WorkspaceEnvironmentState | null>(null);
+  const [composition, setComposition] =
+    useState<WorkspaceCompositionState | null>(null);
   const [activeProject, setActiveProject] = useState<Project | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [memoryEntries, setMemoryEntries] = useState<MemoryEntry[]>([]);
@@ -1495,6 +1498,81 @@ export function OperatorConsole({
               Running {environment.running_application_count} · missing{" "}
               {environment.missing_application_count} · disconnected=
               {String(environment.disconnected_work)}
+            </li>
+          </ul>
+        )}
+      </section>
+
+      <section>
+        <h2>Composition Engine (diagnostics)</h2>
+        <p className="muted">
+          Logical working environment — how apps, projects, tasks, and desktop
+          state belong together. Never launches, groups, or moves windows.
+        </p>
+        <div className="row">
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("Composition generated", async () => {
+                if (!workspace) return;
+                const state = await invokeIpc<WorkspaceCompositionState>(
+                  "generate_workspace_composition",
+                  { workspaceId: workspace.id },
+                );
+                setComposition(state);
+              })
+            }
+          >
+            Inspect composition
+          </button>
+          <button
+            type="button"
+            disabled={busy || !composition}
+            onClick={() =>
+              void run("Composition members inspected", async () => {
+                if (!composition) return;
+                onMessage(
+                  composition.members.length
+                    ? composition.members
+                        .slice(0, 8)
+                        .map(
+                          (m) =>
+                            `${m.present ? "✓" : "○"} ${m.label} (${m.kind})`,
+                        )
+                        .join(" · ")
+                    : "No members",
+                );
+              })
+            }
+          >
+            Inspect members
+          </button>
+          <button
+            type="button"
+            disabled={busy || !composition}
+            onClick={() =>
+              void run("Composition gaps inspected", async () => {
+                if (!composition) return;
+                onMessage(
+                  composition.gaps.length
+                    ? composition.gaps.map((g) => g.title).join(" · ")
+                    : "No gaps",
+                );
+              })
+            }
+          >
+            Inspect composition gaps
+          </button>
+        </div>
+        {composition && (
+          <ul className="muted">
+            <li>{composition.summary}</li>
+            <li>
+              Present {composition.present_application_count} · missing{" "}
+              {composition.missing_application_count} · tasks{" "}
+              {composition.task_node_count} · decisions{" "}
+              {composition.outstanding_decision_count}
             </li>
           </ul>
         )}
