@@ -100,6 +100,10 @@ Governed Decision Queue foundation — aggregate pending human decisions into on
 
 Workspace Activity Graph foundation — pure aggregation read model linking work objects into timeline and relationships; synthetic IDs only; no second database or authority. See [Workspace Activity Graph](WORKSPACE-ACTIVITY-GRAPH.md).
 
+## Phase 4 Batch 9.5 (done)
+
+Workspace platform integration & coherence audit — singular ownership, Decision Queue as attention SoT, Activity Graph as relationship SoT, Intelligence/Assistant as consumers, unified vocabulary, continuous Work IA. No authority changes. See [Workspace Platform Coherence](WORKSPACE-PLATFORM-COHERENCE.md) and [Vocabulary](WORKSPACE-VOCABULARY.md).
+
 ---
 
 ## Never build

@@ -25,18 +25,57 @@ use crate::error::{KernelError, Result};
 use crate::services::{
     AssistantWorkflowStore, AuditService, AutomationContractService, OrchestratedPlanStore,
     PermissionApprovalService, TriggerEvaluatorService, WorkspaceIntentService,
+    approval_belongs_to_workspace,
 };
 
 pub(crate) struct DecisionQueueService;
 
 impl DecisionQueueService {
     /// Aggregate live sources + lifecycle overlay into one ordered queue.
+    /// Persists overlay rows for newly seen items (canonical Decision Queue generate).
     pub(crate) fn generate(
         db: &Arc<Mutex<Database>>,
         actor: &ActorContext,
         orchestrated_plans: &Arc<Mutex<OrchestratedPlanStore>>,
         assistant_workflows: &Arc<Mutex<AssistantWorkflowStore>>,
         workspace_id: impl Into<String>,
+    ) -> Result<DecisionQueue> {
+        Self::aggregate(
+            db,
+            actor,
+            orchestrated_plans,
+            assistant_workflows,
+            workspace_id,
+            true,
+        )
+    }
+
+    /// Same aggregation as [`generate`], but does not write overlays or emit create audits.
+    /// Used by Activity Graph / nested consumers so Decision Queue remains the sole writer.
+    pub(crate) fn aggregate_readonly(
+        db: &Arc<Mutex<Database>>,
+        actor: &ActorContext,
+        orchestrated_plans: &Arc<Mutex<OrchestratedPlanStore>>,
+        assistant_workflows: &Arc<Mutex<AssistantWorkflowStore>>,
+        workspace_id: impl Into<String>,
+    ) -> Result<DecisionQueue> {
+        Self::aggregate(
+            db,
+            actor,
+            orchestrated_plans,
+            assistant_workflows,
+            workspace_id,
+            false,
+        )
+    }
+
+    fn aggregate(
+        db: &Arc<Mutex<Database>>,
+        actor: &ActorContext,
+        orchestrated_plans: &Arc<Mutex<OrchestratedPlanStore>>,
+        assistant_workflows: &Arc<Mutex<AssistantWorkflowStore>>,
+        workspace_id: impl Into<String>,
+        persist_overlays: bool,
     ) -> Result<DecisionQueue> {
         let workspace_id = WorkspaceId::new(workspace_id.into()).map_err(KernelError::Domain)?;
         let ws = workspace_id.as_str();
@@ -83,7 +122,9 @@ impl DecisionQueueService {
 
         let scoped_plans: Vec<&AiOrchestratedPlan> = plans
             .iter()
-            .filter(|plan| plan_belongs_to_workspace(plan, &app_ids, &linked_plan_ids))
+            .filter(|plan| {
+                crate::services::plan_belongs_to_workspace(plan, &app_ids, &linked_plan_ids)
+            })
             .collect();
         let linked_approval_ids: HashSet<String> = scoped_plans
             .iter()
@@ -144,7 +185,7 @@ impl DecisionQueueService {
             );
             if let Some(overlay) = overlay_map.get(&key) {
                 item.apply_overlay(overlay.decision_state);
-            } else {
+            } else if persist_overlays {
                 Self::audit(
                     db,
                     actor,
@@ -168,33 +209,37 @@ impl DecisionQueueService {
             }
         }
 
-        // Drop stale overlays whose sources no longer exist (aggregation wins).
-        for ((source_type, source_id), overlay) in &overlay_map {
-            if !live_keys.contains(&(source_type.clone(), source_id.clone())) {
-                let Ok(source_type) = DecisionSourceType::parse(source_type) else {
-                    continue;
-                };
-                let guard = db
-                    .lock()
-                    .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
-                DecisionQueueRepository::new(&guard).delete_overlay(ws, source_type, source_id)?;
-                let _ = overlay;
+        if persist_overlays {
+            // Drop stale overlays whose sources no longer exist (aggregation wins).
+            for ((source_type, source_id), overlay) in &overlay_map {
+                if !live_keys.contains(&(source_type.clone(), source_id.clone())) {
+                    let Ok(source_type) = DecisionSourceType::parse(source_type) else {
+                        continue;
+                    };
+                    let guard = db
+                        .lock()
+                        .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+                    DecisionQueueRepository::new(&guard).delete_overlay(ws, source_type, source_id)?;
+                    let _ = overlay;
+                }
             }
         }
 
         let queue = DecisionQueue::from_items(ws, items);
-        Self::audit(
-            db,
-            actor,
-            "decision.queue.generated",
-            json!({
-                "workspace_id": ws,
-                "item_count": queue.items.len(),
-                "pending_count": queue.pending_count,
-                "high_priority_count": queue.high_priority_count,
-                "authority_effect": "none",
-            }),
-        )?;
+        if persist_overlays {
+            Self::audit(
+                db,
+                actor,
+                "decision.queue.generated",
+                json!({
+                    "workspace_id": ws,
+                    "item_count": queue.items.len(),
+                    "pending_count": queue.pending_count,
+                    "high_priority_count": queue.high_priority_count,
+                    "authority_effect": "none",
+                }),
+            )?;
+        }
         Ok(queue)
     }
 
@@ -766,37 +811,4 @@ impl DecisionQueueService {
             metadata.to_string(),
         )
     }
-}
-
-fn plan_belongs_to_workspace(
-    plan: &AiOrchestratedPlan,
-    app_ids: &HashSet<String>,
-    linked_plan_ids: &HashSet<String>,
-) -> bool {
-    if linked_plan_ids.contains(plan.id.as_str()) {
-        return true;
-    }
-    plan.steps.iter().any(|step| {
-        step.proposal
-            .target_resource
-            .as_ref()
-            .is_some_and(|resource| app_ids.contains(resource.id.as_str()))
-    })
-}
-
-fn approval_belongs_to_workspace(
-    item: &PermissionApprovalRequest,
-    workspace_id: &str,
-    app_ids: &HashSet<String>,
-    linked_approval_ids: &HashSet<String>,
-) -> bool {
-    if linked_approval_ids.contains(item.id.as_str()) {
-        return true;
-    }
-    if item.subject.contains(workspace_id) || item.reason.contains(workspace_id) {
-        return true;
-    }
-    app_ids.iter().any(|app_id| {
-        item.subject.contains(app_id.as_str()) || item.reason.contains(app_id.as_str())
-    })
 }

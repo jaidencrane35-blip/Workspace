@@ -32,6 +32,7 @@ pub mod intent_execution;
 pub mod layout;
 pub mod observation;
 pub mod permission_approval;
+pub mod platform_coherence;
 pub mod projection;
 pub mod resource;
 pub mod suggestion;
@@ -86,6 +87,9 @@ pub use capability::{Capability, CapabilityId, CapabilityScope, CapabilitySet};
 pub use permission_approval::{
     ApprovalDecisionKind, ApprovalDecisionResult, CapabilityGrant, CapabilityGrantStatus,
     GrantKind, PermissionApprovalError, PermissionApprovalRequest, PermissionApprovalStatus,
+};
+pub use platform_coherence::{
+    vocabulary, ConceptOwnerKind, ConceptOwnership, PLATFORM_CONCEPT_OWNERS,
 };
 pub use context::{ContextError, WorkspaceContext};
 pub use discovery::{

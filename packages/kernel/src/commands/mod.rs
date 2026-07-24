@@ -79,6 +79,8 @@ mod decision_queue_tests;
 #[cfg(test)]
 mod workspace_activity_tests;
 #[cfg(test)]
+mod platform_coherence_tests;
+#[cfg(test)]
 mod ai_memory_tests;
 #[cfg(test)]
 mod ai_model_provider_tests;

@@ -167,7 +167,7 @@ Foundation     Decisions       Core Platform     Feature Expansion   Maturity
 
 **Goal:** Application launching, AI observation/suggestion, and user-approved automation.
 
-**Status:** Phase 3 intelligence batches 1–7 complete; Phase 4 Batches 1–9 complete (automation contracts + trigger evaluation + Decision Queue + Activity Graph / S68–75). Next: governed proposal → intent handoff without autonomous execution. See [Intelligence Roadmap](../05-AI/INTELLIGENCE-ROADMAP.md).
+**Status:** Phase 3 intelligence batches 1–7 complete; Phase 4 Batches 1–9.5 complete (automation through Activity Graph + platform coherence / S68–76). Next: governed proposal → intent handoff without autonomous execution. See [Intelligence Roadmap](../05-AI/INTELLIGENCE-ROADMAP.md).
 
 ### Expected Deliverables
 

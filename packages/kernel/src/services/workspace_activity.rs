@@ -10,16 +10,17 @@ use serde_json::json;
 use workspace_database::{ApplicationRepository, Database};
 use workspace_domain::{
     ActorContext, ActivitySourceType, ActivityType, AiOrchestratedPlan, AiOrchestratedPlanState,
-    AiPlanStepState, AutomationIntentProposalStatus, DecisionSourceType, IntentContext,
-    PermissionApprovalRequest, PermissionApprovalStatus, WorkspaceActivity,
+    AiPlanStepState, AutomationIntentProposalStatus, DecisionQueue, DecisionSourceType,
+    IntentContext, PermissionApprovalRequest, PermissionApprovalStatus, WorkspaceActivity,
     WorkspaceActivityGraph, WorkspaceId,
 };
 
 use crate::error::{KernelError, Result};
 use crate::services::{
-    AssistantWorkflowStore, AuditService, AutomationContractService, DecisionQueueService,
-    ExecutionOutcomeService, OrchestratedPlanStore, PermissionApprovalService,
-    TriggerEvaluatorService, WorkspaceIntentService,
+    approval_belongs_to_workspace, plan_belongs_to_workspace, AssistantWorkflowStore, AuditService,
+    AutomationContractService, DecisionQueueService, ExecutionOutcomeService,
+    OrchestratedPlanStore, PermissionApprovalService, TriggerEvaluatorService,
+    WorkspaceIntentService,
 };
 
 pub(crate) struct WorkspaceActivityGraphService;
@@ -31,6 +32,25 @@ impl WorkspaceActivityGraphService {
         orchestrated_plans: &Arc<Mutex<OrchestratedPlanStore>>,
         assistant_workflows: &Arc<Mutex<AssistantWorkflowStore>>,
         workspace_id: impl Into<String>,
+    ) -> Result<WorkspaceActivityGraph> {
+        Self::generate_with_decision_queue(
+            db,
+            actor,
+            orchestrated_plans,
+            assistant_workflows,
+            workspace_id,
+            None,
+        )
+    }
+
+    /// Prefer passing a Decision Queue from Intelligence to avoid nested overlay writes.
+    pub(crate) fn generate_with_decision_queue(
+        db: &Arc<Mutex<Database>>,
+        actor: &ActorContext,
+        orchestrated_plans: &Arc<Mutex<OrchestratedPlanStore>>,
+        assistant_workflows: &Arc<Mutex<AssistantWorkflowStore>>,
+        workspace_id: impl Into<String>,
+        decision_queue: Option<&DecisionQueue>,
     ) -> Result<WorkspaceActivityGraph> {
         let workspace_id = WorkspaceId::new(workspace_id.into()).map_err(KernelError::Domain)?;
         let ws = workspace_id.as_str();
@@ -94,6 +114,7 @@ impl WorkspaceActivityGraphService {
             orchestrated_plans,
             assistant_workflows,
             ws,
+            decision_queue,
         )? {
             by_id.insert(activity.id.to_string(), activity);
         }
@@ -274,7 +295,7 @@ impl WorkspaceActivityGraphService {
                 goal.task_id.as_ref().map(|id| id.to_string()),
                 parent,
                 related,
-                !matches!(goal.status.as_str(), "completed" | "cancelled"),
+                !matches!(goal.status.as_str(), "achieved" | "abandoned"),
             )?);
         }
 
@@ -421,16 +442,24 @@ impl WorkspaceActivityGraphService {
         orchestrated_plans: &Arc<Mutex<OrchestratedPlanStore>>,
         assistant_workflows: &Arc<Mutex<AssistantWorkflowStore>>,
         workspace_id: &str,
+        decision_queue: Option<&DecisionQueue>,
     ) -> Result<Vec<WorkspaceActivity>> {
-        let queue = DecisionQueueService::generate(
-            db,
-            actor,
-            orchestrated_plans,
-            assistant_workflows,
-            workspace_id,
-        )?;
+        let owned;
+        let queue = if let Some(queue) = decision_queue {
+            queue
+        } else {
+            // Nested consumers must not persist Decision Queue overlays.
+            owned = DecisionQueueService::aggregate_readonly(
+                db,
+                actor,
+                orchestrated_plans,
+                assistant_workflows,
+                workspace_id,
+            )?;
+            &owned
+        };
         let mut out = Vec::new();
-        for item in queue.items {
+        for item in &queue.items {
             let related_source = match item.source_type {
                 DecisionSourceType::IntentProposal => WorkspaceActivity::synthetic_id(
                     ActivityType::IntentProposal,
@@ -799,37 +828,4 @@ impl WorkspaceActivityGraphService {
             metadata.to_string(),
         )
     }
-}
-
-fn plan_belongs_to_workspace(
-    plan: &AiOrchestratedPlan,
-    app_ids: &HashSet<String>,
-    linked_plan_ids: &HashSet<String>,
-) -> bool {
-    if linked_plan_ids.contains(plan.id.as_str()) {
-        return true;
-    }
-    plan.steps.iter().any(|step| {
-        step.proposal
-            .target_resource
-            .as_ref()
-            .is_some_and(|resource| app_ids.contains(resource.id.as_str()))
-    })
-}
-
-fn approval_belongs_to_workspace(
-    item: &PermissionApprovalRequest,
-    workspace_id: &str,
-    app_ids: &HashSet<String>,
-    linked_approval_ids: &HashSet<String>,
-) -> bool {
-    if linked_approval_ids.contains(item.id.as_str()) {
-        return true;
-    }
-    if item.subject.contains(workspace_id) || item.reason.contains(workspace_id) {
-        return true;
-    }
-    app_ids.iter().any(|app_id| {
-        item.subject.contains(app_id.as_str()) || item.reason.contains(app_id.as_str())
-    })
 }

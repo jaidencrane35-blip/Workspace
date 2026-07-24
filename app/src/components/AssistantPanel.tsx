@@ -145,10 +145,13 @@ export function AssistantPanel({
             </dd>
             <dt>Needs attention</dt>
             <dd>
-              {workspaceIntel.pending_approvals.length} pending decision(s),{" "}
-              {workspaceIntel.blocked_actions.length} blocked action(s)
+              Decision Queue: {workspaceIntel.decision_queue.pending_count}{" "}
+              decision(s) needing attention (
+              {workspaceIntel.decision_queue.high_priority_count} high priority)
+              · {workspaceIntel.blocked_actions.length} blocked action(s)
+              projected from the same queue.
             </dd>
-            <dt>Automation contracts</dt>
+            <dt>Automation Contracts</dt>
             <dd>
               {workspaceIntel.automation_contracts.length === 0
                 ? "None"
@@ -160,7 +163,7 @@ export function AssistantPanel({
                     .join("; ")}
               . Informational only — Assistant cannot approve or authorize them.
             </dd>
-            <dt>Automation proposals</dt>
+            <dt>Intent Proposals</dt>
             <dd>
               {workspaceIntel.pending_automation_proposals.length === 0
                 ? "None pending"
@@ -171,7 +174,7 @@ export function AssistantPanel({
                     )
                     .join("; ")}
               . Explain-only — Assistant cannot accept, execute, or bypass
-              governance for proposals.
+              governance for Intent Proposals.
             </dd>
             <dt>Decision Queue</dt>
             <dd>
