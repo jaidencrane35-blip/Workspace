@@ -120,6 +120,10 @@ Governed Decision Engine foundation (Sprints 80–81) — synthesize Attention +
 
 Workspace Task Graph foundation (Sprints 82–83) — persistent canonical work model with dependencies and progress; Attention / Decision Engine / Intelligence / Planner inputs consume the graph. No autonomy. See [Workspace Task Graph](WORKSPACE-TASK-GRAPH.md).
 
+## Phase 5 Batch 5 (done)
+
+Workspace Environment Model foundation (Sprint 84) — live desktop read model aggregating Windows Integration with work context; Intelligence and Attention become environment-aware. No window control or autonomy. See [Workspace Environment Model](WORKSPACE-ENVIRONMENT-MODEL.md).
+
 ---
 
 ## Never build

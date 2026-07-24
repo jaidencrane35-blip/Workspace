@@ -1252,6 +1252,7 @@ export interface WorkspaceIntelligenceState {
   attention: WorkspaceAttentionSummary;
   decision_engine: DecisionEngineSummary;
   task_graph: TaskGraphSummary;
+  environment: WorkspaceEnvironmentSummary;
   workspace_health: string;
   summary: string;
   authority_effect: string;
@@ -1346,6 +1347,94 @@ export interface TaskGraphSummary {
   top_nodes: TaskNode[];
   summary: string;
   integrity_ok: boolean;
+  authority_effect: string;
+}
+
+export type EnvironmentWindowState = "open" | "minimized" | "focused" | "unknown";
+
+export interface EnvironmentWindow {
+  id: string;
+  hwnd: string;
+  title: string;
+  process_id: number;
+  state: EnvironmentWindowState;
+  matched_application_id: string | null;
+  matched_application_name: string | null;
+  project_id: string | null;
+  task_id: string | null;
+  layout_id: string | null;
+  display_label: string;
+  explanation: string;
+  authority_effect: string;
+}
+
+export interface EnvironmentApplication {
+  application_id: string;
+  name: string;
+  identifier: string | null;
+  appears_running: boolean;
+  window_count: number;
+  focused: boolean;
+  project_id: string | null;
+  task_id: string | null;
+  explanation: string;
+}
+
+export interface EnvironmentWindowGroup {
+  id: string;
+  label: string;
+  application_id: string | null;
+  process_id: number | null;
+  window_ids: string[];
+  project_id: string | null;
+  explanation: string;
+}
+
+export interface EnvironmentLayoutAssociation {
+  layout_id: string;
+  layout_name: string;
+  explanation: string;
+}
+
+export interface EnvironmentGap {
+  kind: string;
+  title: string;
+  explanation: string;
+  application_id: string | null;
+  project_id: string | null;
+  task_id: string | null;
+}
+
+export interface WorkspaceEnvironmentState {
+  workspace_id: string;
+  generated_at: string;
+  active_project_id: string | null;
+  active_task_id: string | null;
+  windows: EnvironmentWindow[];
+  applications: EnvironmentApplication[];
+  window_groups: EnvironmentWindowGroup[];
+  layout_associations: EnvironmentLayoutAssociation[];
+  gaps: EnvironmentGap[];
+  focused_window_id: string | null;
+  running_application_count: number;
+  missing_application_count: number;
+  disconnected_work: boolean;
+  summary: string;
+  authority_effect: string;
+}
+
+export interface WorkspaceEnvironmentSummary {
+  workspace_id: string;
+  generated_at: string;
+  window_count: number;
+  running_application_count: number;
+  missing_application_count: number;
+  group_count: number;
+  disconnected_work: boolean;
+  focused_window_title: string | null;
+  top_applications: EnvironmentApplication[];
+  top_gaps: EnvironmentGap[];
+  summary: string;
   authority_effect: string;
 }
 

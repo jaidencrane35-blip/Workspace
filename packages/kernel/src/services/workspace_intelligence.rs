@@ -22,7 +22,7 @@ use crate::services::{
     AuditService, AutomationContractService, DecisionEngineService, DecisionQueueService,
     DesktopWindowService, OrchestratedPlanStore, TaskGraphService, TriggerEvaluatorService,
     WorkspaceActivityGraphService, WorkspaceAttentionService, WorkspaceContinuityService,
-    WorkspaceIntentService,
+    WorkspaceEnvironmentService, WorkspaceIntentService,
 };
 
 pub(crate) struct WorkspaceIntelligenceService;
@@ -97,6 +97,32 @@ impl WorkspaceIntelligenceService {
         let continuity = full_continuity.summary_projection(6);
         let full_task_graph = TaskGraphService::generate(db, actor, ws)?;
         let task_graph = full_task_graph.summary_projection(8);
+
+        let windows = DesktopWindowService::list_recent(Some(50)).unwrap_or_default();
+        let applications = {
+            let guard = db
+                .lock()
+                .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+            ApplicationRepository::new(&guard).list_by_workspace(&workspace_id)?
+        };
+        let layout = {
+            let guard = db.lock().ok();
+            guard.and_then(|g| {
+                crate::services::LayoutService::load_by_workspace(&g, &workspace_id).ok()
+            })
+        };
+        let full_environment = WorkspaceEnvironmentService::generate_with_inputs(
+            db,
+            actor,
+            ws,
+            &windows,
+            &applications,
+            &workflow_context,
+            Some(&full_task_graph),
+            layout.as_ref(),
+        )?;
+        let environment = WorkspaceEnvironmentService::summary_projection(&full_environment, 6);
+
         let full_attention = WorkspaceAttentionService::generate_with_task_graph(
             db,
             actor,
@@ -105,6 +131,7 @@ impl WorkspaceIntelligenceService {
             &full_activity_graph,
             &full_continuity,
             Some(&full_task_graph),
+            Some(&full_environment),
         )?;
         let attention = full_attention.summary_projection(8);
 
@@ -157,32 +184,16 @@ impl WorkspaceIntelligenceService {
         )?;
         let decision_engine = DecisionEngineService::summary_projection(&full_decision_engine, 5);
 
-        let window_titles = DesktopWindowService::list_recent(Some(50))
-            .unwrap_or_default()
-            .into_iter()
-            .map(|window| window.title.to_lowercase())
+        let applications = full_environment
+            .applications
+            .iter()
+            .map(|app| IntelligenceApplicationSummary {
+                id: app.application_id.clone(),
+                name: app.name.clone(),
+                appears_active: app.appears_running,
+            })
             .collect::<Vec<_>>();
 
-        let applications = {
-            let guard = db
-                .lock()
-                .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
-            ApplicationRepository::new(&guard)
-                .list_by_workspace(&workspace_id)?
-                .into_iter()
-                .map(|app| {
-                    let name_lower = app.name.to_lowercase();
-                    let appears_active = window_titles
-                        .iter()
-                        .any(|title| title.contains(&name_lower));
-                    IntelligenceApplicationSummary {
-                        id: app.id.to_string(),
-                        name: app.name.clone(),
-                        appears_active,
-                    }
-                })
-                .collect::<Vec<_>>()
-        };
         // Project attention fields from Decision Queue — do not re-scan sources.
         let attention_open = |state: DecisionState| {
             matches!(
@@ -279,6 +290,7 @@ impl WorkspaceIntelligenceService {
             attention,
             decision_engine,
             task_graph,
+            environment,
             workspace_health: health_label,
             summary,
             authority_effect: WorkspaceIntelligenceState::AUTHORITY_EFFECT_NONE.into(),
@@ -363,6 +375,7 @@ impl WorkspaceIntelligenceService {
             "activity_count": state.activity_graph.activity_count,
             "decision_engine_candidates": state.decision_engine.candidate_count,
             "task_graph_nodes": state.task_graph.node_count,
+            "environment_windows": state.environment.window_count,
             "memory_highlights": state.memory_highlights.len(),
             "preference_highlights": state.preference_highlights.len(),
             "summary_len": state.summary.len(),

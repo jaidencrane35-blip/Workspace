@@ -167,7 +167,7 @@ Foundation     Decisions       Core Platform     Feature Expansion   Maturity
 
 **Goal:** Application launching, AI observation/suggestion, and user-approved automation.
 
-**Status:** Phase 3–4 complete; Phase 5 Continuity + Attention (S77–78), Decision Engine (S80–81), and Task Graph foundation (S82–83) complete. Next: deepen graph-aware planning without autonomous execution. See [Intelligence Roadmap](../05-AI/INTELLIGENCE-ROADMAP.md) and [Workspace Task Graph](../05-AI/WORKSPACE-TASK-GRAPH.md).
+**Status:** Phase 3–4 complete; Phase 5 Continuity, Attention, Decision Engine, Task Graph, and Environment Model foundations complete. Next: deepen environment-aware work experience without autonomous window control. See [Intelligence Roadmap](../05-AI/INTELLIGENCE-ROADMAP.md) and [Workspace Environment Model](../05-AI/WORKSPACE-ENVIRONMENT-MODEL.md).
 
 ### Expected Deliverables
 

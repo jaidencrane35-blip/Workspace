@@ -16,6 +16,7 @@ use crate::commands::automation_trigger::{
 use crate::commands::decision_engine::{GateDecisionEngineRead, GateDecisionEngineWrite};
 use crate::commands::decision_queue::{GateDecisionQueueRead, GateDecisionQueueWrite};
 use crate::commands::task_graph::{GateTaskGraphRead, GateTaskGraphWrite};
+use crate::commands::workspace_environment::GateEnvironmentRead;
 use crate::commands::workspace_activity::GateActivityGraphRead;
 use crate::commands::workspace_attention::GateAttentionRead;
 use crate::commands::workspace_continuity::GateContinuityRead;
@@ -72,7 +73,7 @@ use crate::security::{PermissionRequest, PermissionSubject};
 use crate::services::{
     AiAssistantService, AiEvaluationService, AiOrchestrationService, AiParticipationService,
     AiPlanningService, ConfigurationService, DecisionEngineService, DecisionQueueService,
-    DesktopWindowService, TaskGraphService,
+    DesktopWindowService, TaskGraphService, WorkspaceEnvironmentService,
     WorkspaceActivityGraphService, WorkspaceAttentionService, WorkspaceContextService,
     WorkspaceContinuityService, WorkspaceIntelligenceService,
 };
@@ -85,7 +86,8 @@ use workspace_domain::{
     DecisionQueue, Project, ProjectStatus, Task, TaskGraph, TaskPriority, TaskRelationship,
     TaskRelationshipKind, TaskStatus, TriggerEvaluationResult, TriggerEvent, TriggerEventType,
     WorkGoal, WorkflowContext, WorkspaceActivity, WorkspaceActivityGraph, WorkspaceAttentionState,
-    WorkspaceContinuityState, WorkspaceTask, WorkspaceTaskPriority, WorkspaceTaskStatus,
+    WorkspaceContinuityState, WorkspaceEnvironmentState, WorkspaceTask, WorkspaceTaskPriority,
+    WorkspaceTaskStatus,
     WorkspaceIntelligenceComparison, WorkspaceIntelligenceState, AiPlan, AiPlanEvaluationReport,
     AiPlanSubmissionResult,
     AiProposalAuthorityOutcome, AiProposalEvaluation, AiProposalSubmission, ApplicationId,
@@ -2648,6 +2650,29 @@ impl CommandHandler {
     /// Architecture guard — Task Graph must never execute.
     pub fn task_graph_attempt_execute() -> Result<()> {
         TaskGraphService::attempt_execute()
+    }
+
+    /// Aggregate Workspace Environment Model (read-only desktop + work association).
+    pub fn generate_workspace_environment(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceEnvironmentState> {
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent.clone()))
+            .execute_query(GateEnvironmentRead)?;
+        let _ = Self::get_workflow_context(
+            kernel,
+            actor.clone(),
+            intent,
+            workspace_id.clone(),
+        )?;
+        WorkspaceEnvironmentService::generate(&kernel.shared_database(), &actor, workspace_id)
+    }
+
+    /// Architecture guard — Environment Model must never execute.
+    pub fn workspace_environment_attempt_execute() -> Result<()> {
+        WorkspaceEnvironmentService::attempt_execute()
     }
 
     /// Read-only workspace intelligence aggregation. Capability-gated; never executes.

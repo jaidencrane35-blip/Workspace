@@ -8,6 +8,7 @@ mod task_graph;
 mod workspace_activity;
 mod workspace_attention;
 mod workspace_continuity;
+mod workspace_environment;
 mod context;
 mod execute_intent_request;
 mod create_suggestion_intent_request;
@@ -92,6 +93,8 @@ mod workspace_attention_tests;
 mod decision_engine_tests;
 #[cfg(test)]
 mod task_graph_tests;
+#[cfg(test)]
+mod workspace_environment_tests;
 #[cfg(test)]
 mod ai_memory_tests;
 #[cfg(test)]

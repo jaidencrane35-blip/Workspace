@@ -99,6 +99,7 @@ fn case1_attention_derives_from_existing_systems() {
                 | workspace_domain::AttentionSourceType::WorkflowContext
                 | workspace_domain::AttentionSourceType::AutomationContract
                 | workspace_domain::AttentionSourceType::TaskGraph
+                | workspace_domain::AttentionSourceType::Environment
         ));
         assert!(item.id.as_str().starts_with("attention:"));
     }
@@ -251,16 +252,19 @@ fn case6_assistant_and_intelligence_share_attention() {
     )
     .unwrap();
     let stable_ids = |items: &[workspace_domain::AttentionItem]| {
-        items
+        let mut ids = items
             .iter()
             .filter(|i| i.score >= 35)
             .map(|i| i.id.as_str().to_string())
-            .collect::<Vec<_>>()
+            .collect::<Vec<_>>();
+        ids.sort();
+        ids
     };
     assert_eq!(
         stable_ids(&work.attention.top_items),
         stable_ids(&assistant.attention.top_items)
     );
+    // Direct Attention generate shares Environment + Task Graph sources with Intelligence.
     assert_eq!(
         stable_ids(&work.attention.top_items),
         stable_ids(&direct.top_items)

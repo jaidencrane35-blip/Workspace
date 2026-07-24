@@ -6,7 +6,7 @@ use workspace_domain::{
     AiPersonalizationError, AiPlanningError, AiRequestError, AutomationContractError,
     AutomationTriggerError, DecisionEngineError, DecisionQueueError, DomainError, ResourceKind,
     TaskGraphError, WorkspaceActivityError, WorkspaceAttentionError, WorkspaceContinuityError,
-    WorkspaceIntelligenceError, WorkspaceIntentError,
+    WorkspaceEnvironmentError, WorkspaceIntelligenceError, WorkspaceIntentError,
 };
 
 #[derive(Debug, Error)]
@@ -207,6 +207,9 @@ pub enum KernelError {
 
     #[error("Task graph validation failed: {message}")]
     TaskGraphValidation { message: String },
+
+    #[error("Workspace environment validation failed: {message}")]
+    WorkspaceEnvironmentValidation { message: String },
 
     #[error("Workspace kernel initialization failed")]
     InitializationFailed,
@@ -430,6 +433,17 @@ impl From<TaskGraphError> for KernelError {
         match error {
             TaskGraphError::Domain(domain) => KernelError::from(domain),
             other => KernelError::TaskGraphValidation {
+                message: other.to_string(),
+            },
+        }
+    }
+}
+
+impl From<WorkspaceEnvironmentError> for KernelError {
+    fn from(error: WorkspaceEnvironmentError) -> Self {
+        match error {
+            WorkspaceEnvironmentError::Domain(domain) => KernelError::from(domain),
+            other => KernelError::WorkspaceEnvironmentValidation {
                 message: other.to_string(),
             },
         }
@@ -716,6 +730,10 @@ impl KernelError {
             },
             KernelError::TaskGraphValidation { message } => PublicError {
                 code: "task_graph_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::WorkspaceEnvironmentValidation { message } => PublicError {
+                code: "workspace_environment_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::InitializationFailed => PublicError {

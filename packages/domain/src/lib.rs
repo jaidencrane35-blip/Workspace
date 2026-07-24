@@ -44,6 +44,7 @@ pub mod workspace_activity;
 pub mod workspace_attention;
 pub mod workspace_continuity;
 pub mod workspace_task_graph;
+pub mod workspace_environment;
 pub mod workspace_intent;
 pub mod workspace_intelligence;
 
@@ -186,6 +187,12 @@ pub use workspace_attention::{
 pub use workspace_continuity::{
     ContinuityFacet, ContinuityFacetKind, WorkspaceContinuityError, WorkspaceContinuityState,
     WorkspaceContinuitySummary,
+};
+pub use workspace_environment::{
+    build_environment_summary, now_rfc3339, validate_workspace_id, EnvironmentApplication,
+    EnvironmentGap, EnvironmentLayoutAssociation, EnvironmentWindow, EnvironmentWindowGroup,
+    EnvironmentWindowState, WorkspaceEnvironmentError, WorkspaceEnvironmentState,
+    WorkspaceEnvironmentSummary,
 };
 pub use workspace_intent::{
     Project, ProjectStatus, Task, TaskPriority, TaskStatus, WorkGoal, WorkGoalStatus,

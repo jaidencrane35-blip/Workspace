@@ -10,6 +10,7 @@ import type {
   WorkspaceIntelligenceState,
   DecisionEngineState,
   TaskGraph,
+  WorkspaceEnvironmentState,
   AiOrchestratedPlan,
   AiPlan,
   AiPlanEvaluationReport,
@@ -146,6 +147,8 @@ export function OperatorConsole({
   const [decisionEngine, setDecisionEngine] =
     useState<DecisionEngineState | null>(null);
   const [taskGraph, setTaskGraph] = useState<TaskGraph | null>(null);
+  const [environment, setEnvironment] =
+    useState<WorkspaceEnvironmentState | null>(null);
   const [activeProject, setActiveProject] = useState<Project | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [memoryEntries, setMemoryEntries] = useState<MemoryEntry[]>([]);
@@ -1423,6 +1426,76 @@ export function OperatorConsole({
                 {n.waiting_reason ? ` — ${n.waiting_reason}` : ""}
               </li>
             ))}
+          </ul>
+        )}
+      </section>
+
+      <section>
+        <h2>Environment Model (diagnostics)</h2>
+        <p className="muted">
+          Aggregate live desktop windows with Workspace apps and active work.
+          Never moves windows or grants authority.
+        </p>
+        <div className="row">
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("Environment generated", async () => {
+                if (!workspace) return;
+                const state = await invokeIpc<WorkspaceEnvironmentState>(
+                  "generate_workspace_environment",
+                  { workspaceId: workspace.id },
+                );
+                setEnvironment(state);
+              })
+            }
+          >
+            Inspect environment
+          </button>
+          <button
+            type="button"
+            disabled={busy || !environment}
+            onClick={() =>
+              void run("Environment gaps inspected", async () => {
+                if (!environment) return;
+                onMessage(
+                  environment.gaps.length
+                    ? environment.gaps.map((g) => g.title).join(" · ")
+                    : "No gaps",
+                );
+              })
+            }
+          >
+            Inspect gaps
+          </button>
+          <button
+            type="button"
+            disabled={busy || !environment}
+            onClick={() =>
+              void run("Window groups inspected", async () => {
+                if (!environment) return;
+                onMessage(
+                  environment.window_groups.length
+                    ? environment.window_groups
+                        .map((g) => `${g.label}(${g.window_ids.length})`)
+                        .join(" · ")
+                    : "No groups",
+                );
+              })
+            }
+          >
+            Inspect window groups
+          </button>
+        </div>
+        {environment && (
+          <ul className="muted">
+            <li>{environment.summary}</li>
+            <li>
+              Running {environment.running_application_count} · missing{" "}
+              {environment.missing_application_count} · disconnected=
+              {String(environment.disconnected_work)}
+            </li>
           </ul>
         )}
       </section>

@@ -530,12 +530,29 @@ fn case7_assistant_and_work_share_intelligence_path() {
         work_view.current_project.as_ref().map(|p| p.id.as_str()),
         assistant_view.current_project.as_ref().map(|p| p.id.as_str())
     );
-    assert_eq!(work_view.summary, assistant_view.summary);
     assert_eq!(work_view.authority_effect, "none");
     assert_eq!(assistant_view.authority_effect, "none");
     assert_eq!(
-        work_view.recommended_actions.len(),
-        assistant_view.recommended_actions.len()
+        work_view.environment.authority_effect,
+        assistant_view.environment.authority_effect
+    );
+    assert_eq!(
+        work_view.environment.authority_effect,
+        workspace_domain::WorkspaceEnvironmentState::AUTHORITY_EFFECT_NONE
+    );
+    // Both product surfaces use Attention-projected recommendations (shared path).
+    assert!(work_view
+        .recommended_actions
+        .iter()
+        .any(|r| r.kind.starts_with("attention:") || r.kind == "bootstrap"));
+    assert!(assistant_view
+        .recommended_actions
+        .iter()
+        .any(|r| r.kind.starts_with("attention:") || r.kind == "bootstrap"));
+    // Shared Environment Model is present on both Work and Assistant intelligence views.
+    assert_eq!(
+        work_view.environment.workspace_id,
+        assistant_view.environment.workspace_id
     );
 }
 

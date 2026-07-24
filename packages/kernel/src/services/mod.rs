@@ -20,6 +20,7 @@ mod task_graph;
 mod workspace_activity;
 mod workspace_attention;
 mod workspace_continuity;
+mod workspace_environment;
 mod workspace_scope;
 mod trigger_evaluator;
 mod configuration;
@@ -73,6 +74,7 @@ pub(crate) use trigger_evaluator::{list_rejection_summaries, TriggerEvaluatorSer
 pub(crate) use workspace_activity::WorkspaceActivityGraphService;
 pub(crate) use workspace_attention::WorkspaceAttentionService;
 pub(crate) use workspace_continuity::WorkspaceContinuityService;
+pub(crate) use workspace_environment::WorkspaceEnvironmentService;
 pub(crate) use workspace_scope::{approval_belongs_to_workspace, plan_belongs_to_workspace};
 pub use context::WorkspaceContextService;
 pub use database::DatabaseServiceHandle;

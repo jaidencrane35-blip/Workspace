@@ -209,6 +209,18 @@ export function AssistantPanel({
               Same Task Graph as the Work tab. Assistant may explain — never
               mutate or execute.
             </dd>
+            <dt>Environment</dt>
+            <dd>
+              {workspaceIntel.environment.summary}{" "}
+              {workspaceIntel.environment.focused_window_title
+                ? `Focused: ${workspaceIntel.environment.focused_window_title}. `
+                : ""}
+              {workspaceIntel.environment.disconnected_work
+                ? "Active work may be disconnected from open windows. "
+                : ""}
+              Same Environment Model as the Work tab. Explain-only — never
+              moves windows.
+            </dd>
             <dt>Continuity</dt>
             <dd>
               {workspaceIntel.continuity.summary}{" "}

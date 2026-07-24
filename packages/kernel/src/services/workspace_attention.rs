@@ -56,6 +56,8 @@ impl WorkspaceAttentionService {
             &graph,
         )?;
         let task_graph = crate::services::TaskGraphService::generate(db, actor, workspace_id.clone())?;
+        let environment =
+            crate::services::WorkspaceEnvironmentService::generate(db, actor, workspace_id.clone()).ok();
         Self::generate_with_task_graph(
             db,
             actor,
@@ -64,6 +66,7 @@ impl WorkspaceAttentionService {
             &graph,
             &continuity,
             Some(&task_graph),
+            environment.as_ref(),
         )
     }
 
@@ -84,6 +87,7 @@ impl WorkspaceAttentionService {
             activity_graph,
             continuity,
             None,
+            None,
         )
     }
 
@@ -95,6 +99,7 @@ impl WorkspaceAttentionService {
         activity_graph: &WorkspaceActivityGraph,
         continuity: &WorkspaceContinuityState,
         task_graph: Option<&workspace_domain::TaskGraph>,
+        environment: Option<&workspace_domain::WorkspaceEnvironmentState>,
     ) -> Result<WorkspaceAttentionState> {
         let workspace_id = WorkspaceId::new(workspace_id.into()).map_err(KernelError::Domain)?;
         let ws = workspace_id.as_str();
@@ -125,10 +130,68 @@ impl WorkspaceAttentionService {
                 }
             }
         }
+        if let Some(env) = environment {
+            for item in Self::from_environment(ws, env, &now)? {
+                if seen.insert(item.id.to_string()) {
+                    items.push(item);
+                }
+            }
+        }
 
         let state = WorkspaceAttentionState::from_items(ws, items);
         Self::audit_generated(db, actor, &state)?;
         Ok(state)
+    }
+
+    fn from_environment(
+        ws: &str,
+        environment: &workspace_domain::WorkspaceEnvironmentState,
+        now: &str,
+    ) -> Result<Vec<AttentionItem>> {
+        let mut out = Vec::new();
+        for gap in environment.gaps.iter().take(5) {
+            let (category, score, urgency) = match gap.kind.as_str() {
+                "disconnected_work" => (
+                    AttentionCategory::Interrupted,
+                    60u32,
+                    AttentionUrgency::Soon,
+                ),
+                "missing_application" => (
+                    AttentionCategory::Informative,
+                    40u32,
+                    AttentionUrgency::Whenever,
+                ),
+                _ => (
+                    AttentionCategory::Informative,
+                    35u32,
+                    AttentionUrgency::Whenever,
+                ),
+            };
+            let factors = vec![
+                format!("base {score} for environment gap {}", gap.kind),
+                "source Environment".into(),
+            ];
+            out.push(AttentionItem::project(
+                ws,
+                AttentionSourceType::Environment,
+                format!("{}:{}", gap.kind, gap.title),
+                category,
+                score_to_priority(score),
+                urgency,
+                AttentionConfidence::Medium,
+                score,
+                factors.clone(),
+                gap.title.clone(),
+                format!(
+                    "{}. Score factors: {}.",
+                    gap.explanation,
+                    score_factors_join(&factors)
+                ),
+                now.to_string(),
+                AttentionState::Visible,
+            )?);
+        }
+        Ok(out)
     }
 
     fn from_task_graph(
@@ -448,7 +511,8 @@ impl WorkspaceAttentionService {
         now: &str,
     ) -> Result<Vec<AttentionItem>> {
         let mut out = Vec::new();
-        for activity in graph.timeline.iter().rev().take(8) {
+        // Walk newest-first, skipping audit noise so recent real work stays visible.
+        for activity in graph.timeline.iter().rev() {
             if matches!(
                 activity.activity_type,
                 workspace_domain::ActivityType::AuditSignal

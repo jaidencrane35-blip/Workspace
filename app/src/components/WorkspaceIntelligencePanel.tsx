@@ -15,6 +15,7 @@ import type {
   WorkspaceContinuityState,
   DecisionEngineState,
   TaskGraph,
+  WorkspaceEnvironmentState,
   WorkspaceIntelligenceState,
 } from "../types/domain";
 
@@ -58,6 +59,8 @@ export function WorkspaceIntelligencePanel({
   const [decisionEngine, setDecisionEngine] =
     useState<DecisionEngineState | null>(null);
   const [taskGraph, setTaskGraph] = useState<TaskGraph | null>(null);
+  const [environment, setEnvironment] =
+    useState<WorkspaceEnvironmentState | null>(null);
   const [lastHandoff, setLastHandoff] = useState<string | null>(null);
   const [contractName, setContractName] = useState(
     "Prepare coding environment",
@@ -108,6 +111,7 @@ export function WorkspaceIntelligencePanel({
           attn,
           decisions,
           graphTasks,
+          env,
         ] = await Promise.all([
             invokeIpc<Project[]>("list_projects", {
               workspaceId: workspace.id,
@@ -144,6 +148,10 @@ export function WorkspaceIntelligencePanel({
             invokeIpc<TaskGraph>("generate_task_graph", {
               workspaceId: workspace.id,
             }),
+            invokeIpc<WorkspaceEnvironmentState>(
+              "generate_workspace_environment",
+              { workspaceId: workspace.id },
+            ),
           ]);
         if (!cancelled) {
           setProjects(listed);
@@ -156,6 +164,7 @@ export function WorkspaceIntelligencePanel({
           setAttention(attn);
           setDecisionEngine(decisions);
           setTaskGraph(graphTasks);
+          setEnvironment(env);
         }
       } catch (err: unknown) {
         if (!cancelled) {
@@ -175,8 +184,8 @@ export function WorkspaceIntelligencePanel({
         <h2>Where you are. What needs attention. How work connects.</h2>
         <p className="lede">
           One Workspace operating environment — Continuity, Attention, Task
-          Graph, Decision Engine, Decision Queue, then Activity. Nothing here
-          executes or grants permission.
+          Graph, Environment, Decision Engine, Decision Queue, then Activity.
+          Nothing here executes or grants permission.
         </p>
       </header>
 
@@ -500,6 +509,70 @@ export function WorkspaceIntelligencePanel({
           </>
         ) : (
           <p className="muted">No Task Graph snapshot yet.</p>
+        )}
+      </section>
+
+      <section>
+        <h3>Desktop environment</h3>
+        <p className="muted">
+          Live desktop read model — which windows and apps belong to this
+          Workspace. Observation only; never moves windows.
+        </p>
+        <div className="row">
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("Environment refreshed", async () => {
+                if (!workspace) return;
+                const next = await invokeIpc<WorkspaceEnvironmentState>(
+                  "generate_workspace_environment",
+                  { workspaceId: workspace.id },
+                );
+                setEnvironment(next);
+              })
+            }
+          >
+            Refresh environment
+          </button>
+        </div>
+        {environment ? (
+          <>
+            <p>{environment.summary}</p>
+            <p className="muted">
+              {environment.running_application_count} running ·{" "}
+              {environment.missing_application_count} missing ·{" "}
+              {environment.windows.length} window(s) ·{" "}
+              {environment.disconnected_work
+                ? "work appears disconnected"
+                : "work linked"}{" "}
+              · authority: {environment.authority_effect}
+            </p>
+            {environment.gaps.length > 0 && (
+              <ul className="intelligence-list">
+                {environment.gaps.slice(0, 5).map((gap) => (
+                  <li key={`${gap.kind}-${gap.title}`}>
+                    <strong>{gap.title}</strong>
+                    <div className="muted">{gap.explanation}</div>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {environment.window_groups.length > 0 && (
+              <ul className="intelligence-list">
+                {environment.window_groups.slice(0, 5).map((group) => (
+                  <li key={group.id}>
+                    <strong>{group.label}</strong>
+                    <div className="muted">
+                      {group.window_ids.length} window(s) · {group.explanation}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
+        ) : (
+          <p className="muted">No environment snapshot yet.</p>
         )}
       </section>
 
