@@ -11,6 +11,7 @@ import type {
   TriggerEvaluationResult,
   Workspace,
   WorkspaceActivityGraph,
+  WorkspaceContinuityState,
   WorkspaceIntelligenceState,
 } from "../types/domain";
 
@@ -45,6 +46,9 @@ export function WorkspaceIntelligencePanel({
   );
   const [activityGraph, setActivityGraph] =
     useState<WorkspaceActivityGraph | null>(null);
+  const [continuity, setContinuity] = useState<WorkspaceContinuityState | null>(
+    null,
+  );
   const [lastHandoff, setLastHandoff] = useState<string | null>(null);
   const [contractName, setContractName] = useState(
     "Prepare coding environment",
@@ -75,6 +79,7 @@ export function WorkspaceIntelligencePanel({
       setLastEvaluation(null);
       setDecisionQueue(null);
       setActivityGraph(null);
+      setContinuity(null);
       setLastHandoff(null);
       setState(null);
       return;
@@ -82,7 +87,7 @@ export function WorkspaceIntelligencePanel({
     let cancelled = false;
     void (async () => {
       try {
-        const [listed, listedContracts, listedProposals, queue, graph, intel] =
+        const [listed, listedContracts, listedProposals, queue, graph, intel, cont] =
           await Promise.all([
             invokeIpc<Project[]>("list_projects", {
               workspaceId: workspace.id,
@@ -107,6 +112,9 @@ export function WorkspaceIntelligencePanel({
               "generate_workspace_intelligence",
               { workspaceId: workspace.id },
             ),
+            invokeIpc<WorkspaceContinuityState>("generate_workspace_continuity", {
+              workspaceId: workspace.id,
+            }),
           ]);
         if (!cancelled) {
           setProjects(listed);
@@ -115,6 +123,7 @@ export function WorkspaceIntelligencePanel({
           setDecisionQueue(queue);
           setActivityGraph(graph);
           setState(intel);
+          setContinuity(cont);
         }
       } catch (err: unknown) {
         if (!cancelled) {
@@ -133,9 +142,9 @@ export function WorkspaceIntelligencePanel({
         <p className="assistant-kicker">Work</p>
         <h2>Where you are. What needs attention. How work connects.</h2>
         <p className="lede">
-          One Workspace operating environment — current work, Decision Queue,
-          Activity Graph, then Recommendations. Nothing here executes or grants
-          permission.
+          One Workspace operating environment — current work, Continuity, Decision
+          Queue, Activity Graph, then Recommendations. Nothing here executes or
+          grants permission.
         </p>
       </header>
 
@@ -227,7 +236,7 @@ export function WorkspaceIntelligencePanel({
                   { workspaceId: workspace.id },
                 );
                 setState(next);
-                const [listedContracts, listedProposals, queue, graph] =
+                const [listedContracts, listedProposals, queue, graph, cont] =
                   await Promise.all([
                     invokeIpc<AutomationContract[]>("list_automation_contracts", {
                       workspaceId: workspace.id,
@@ -244,11 +253,16 @@ export function WorkspaceIntelligencePanel({
                       "generate_workspace_activity_graph",
                       { workspaceId: workspace.id },
                     ),
+                    invokeIpc<WorkspaceContinuityState>(
+                      "generate_workspace_continuity",
+                      { workspaceId: workspace.id },
+                    ),
                   ]);
                 setContracts(listedContracts);
                 setProposals(listedProposals);
                 setDecisionQueue(queue);
                 setActivityGraph(graph);
+                setContinuity(cont);
               })
             }
           >
@@ -265,6 +279,72 @@ export function WorkspaceIntelligencePanel({
               {state.current_task?.title ?? "no task"}
             </p>
           </>
+        )}
+      </section>
+
+      <section>
+        <h3>Pick up where you left off</h3>
+        <p className="muted">
+          Continuity explains focus, what changed, and what remains — without
+          executing or granting permission.
+        </p>
+        <div className="row">
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("Continuity refreshed", async () => {
+                if (!workspace) return;
+                const next = await invokeIpc<WorkspaceContinuityState>(
+                  "generate_workspace_continuity",
+                  { workspaceId: workspace.id },
+                );
+                setContinuity(next);
+              })
+            }
+          >
+            Refresh continuity
+          </button>
+        </div>
+        {continuity ? (
+          <>
+            <p>{continuity.summary}</p>
+            <p className="muted">
+              Session anchor: {continuity.session_anchor || "none"} · authority:{" "}
+              {continuity.authority_effect}
+            </p>
+            {continuity.current_focus && (
+              <p>
+                <strong>{continuity.current_focus.title}</strong>
+                <span className="muted"> — {continuity.current_focus.why}</span>
+              </p>
+            )}
+            {continuity.suggested_next_step && (
+              <p>
+                <strong>Suggested next:</strong>{" "}
+                {continuity.suggested_next_step.title}
+                <div className="muted">{continuity.suggested_next_step.why}</div>
+              </p>
+            )}
+            <p className="muted">
+              {continuity.outstanding_decisions.length} outstanding decision(s) ·{" "}
+              {continuity.interrupted_work.length} interrupted ·{" "}
+              {continuity.resumable_work.length} resumable ·{" "}
+              {continuity.blockers.length} blocker(s)
+            </p>
+            {continuity.recent_progress.length > 0 && (
+              <ul className="intelligence-list">
+                {continuity.recent_progress.slice(0, 5).map((item) => (
+                  <li key={item.id}>
+                    <strong>{item.title}</strong>
+                    <div className="muted">{item.what_changed}</div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
+        ) : (
+          <p className="muted">No continuity snapshot yet.</p>
         )}
       </section>
 

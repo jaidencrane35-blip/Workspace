@@ -104,6 +104,10 @@ Workspace Activity Graph foundation — pure aggregation read model linking work
 
 Workspace platform integration & coherence audit — singular ownership, Decision Queue as attention SoT, Activity Graph as relationship SoT, Intelligence/Assistant as consumers, unified vocabulary, continuous Work IA. No authority changes. See [Workspace Platform Coherence](WORKSPACE-PLATFORM-COHERENCE.md) and [Vocabulary](WORKSPACE-VOCABULARY.md).
 
+## Phase 5 Batch 1 (done)
+
+Workspace Continuity Engine foundation — read-only projection of focus, interrupted/resumable work, outstanding decisions, and suggested next steps across sessions. No autonomy. See [Workspace Continuity Engine](WORKSPACE-CONTINUITY-ENGINE.md).
+
 ---
 
 ## Never build

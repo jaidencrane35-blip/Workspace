@@ -63,6 +63,7 @@
 | `accept_decision_item` / `reject_decision_item` | Product: delegate to source or return gateway handoff (≠ execute) |
 | `generate_workspace_activity_graph` | Product: aggregate Workspace Activity Graph (read-only timeline + relationships) |
 | `get_workspace_activity_timeline` | Product: same generate; return timeline slice only |
+| `generate_workspace_continuity` | Product: aggregate Workspace Continuity (read-only resume narrative) |
 | `create_memory_entry` / `list_memory_entries` / `get_memory_context` | Diagnostic governed memory (informational) |
 | `delete_memory_entry` / `clear_memory_entries` | Diagnostic memory lifecycle |
 | `diagnose_ai_plan_preview` | Diagnostic memory-aware plan (no execution) |

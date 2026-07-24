@@ -15,6 +15,7 @@ use crate::commands::automation_trigger::{
 };
 use crate::commands::decision_queue::{GateDecisionQueueRead, GateDecisionQueueWrite};
 use crate::commands::workspace_activity::GateActivityGraphRead;
+use crate::commands::workspace_continuity::GateContinuityRead;
 use crate::commands::execute_intent_request::ExecuteIntentRequest;
 use crate::commands::create_suggestion_intent_request::CreateSuggestionIntentRequest;
 use crate::commands::create_workspace::CreateWorkspace;
@@ -68,7 +69,8 @@ use crate::security::{PermissionRequest, PermissionSubject};
 use crate::services::{
     AiAssistantService, AiEvaluationService, AiOrchestrationService, AiParticipationService,
     AiPlanningService, ConfigurationService, DecisionQueueService, DesktopWindowService,
-    WorkspaceActivityGraphService, WorkspaceContextService, WorkspaceIntelligenceService,
+    WorkspaceActivityGraphService, WorkspaceContextService, WorkspaceContinuityService,
+    WorkspaceIntelligenceService,
 };
 use crate::WorkspaceKernel;
 use workspace_domain::{
@@ -77,8 +79,9 @@ use workspace_domain::{
     AutomationIntentProposal, AutomationIntentProposalStatus, AutomationTriggerKind,
     DecisionActionResult, DecisionItem, DecisionQueue, Project, ProjectStatus, Task, TaskPriority,
     TaskStatus, TriggerEvaluationResult, TriggerEvent, TriggerEventType, WorkGoal, WorkflowContext,
-    WorkspaceActivity, WorkspaceActivityGraph, WorkspaceIntelligenceComparison,
-    WorkspaceIntelligenceState, AiPlan, AiPlanEvaluationReport, AiPlanSubmissionResult,
+    WorkspaceActivity, WorkspaceActivityGraph, WorkspaceContinuityState,
+    WorkspaceIntelligenceComparison, WorkspaceIntelligenceState, AiPlan, AiPlanEvaluationReport,
+    AiPlanSubmissionResult,
     AiProposalAuthorityOutcome, AiProposalEvaluation, AiProposalSubmission, ApplicationId,
     ApplicationReference, AuditEvent, Capability, CapabilitySet, Intent, IntentContext, Layout,
     LayoutId, LayoutMetadata, LayoutNode, LayoutSnapshot, MemoryEntry, MemoryType,
@@ -2382,6 +2385,30 @@ impl CommandHandler {
             .into_iter()
             .rev()
             .collect())
+    }
+
+    /// Aggregate Workspace Continuity (read-only; never executes).
+    pub fn generate_workspace_continuity(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceContinuityState> {
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent.clone()))
+            .execute_query(GateContinuityRead)?;
+        let _ = Self::get_workflow_context(
+            kernel,
+            actor.clone(),
+            intent,
+            workspace_id.clone(),
+        )?;
+        WorkspaceContinuityService::generate(
+            &kernel.shared_database(),
+            &actor,
+            &kernel.orchestrated_plans(),
+            &kernel.assistant_workflows(),
+            workspace_id,
+        )
     }
 
     /// Read-only workspace intelligence aggregation. Capability-gated; never executes.

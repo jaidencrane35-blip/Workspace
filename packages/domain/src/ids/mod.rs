@@ -92,6 +92,7 @@ define_id!(TriggerEventId);
 define_id!(AutomationIntentProposalId);
 define_id!(DecisionItemId);
 define_id!(WorkspaceActivityId);
+define_id!(ContinuityFacetId);
 
 #[cfg(test)]
 mod tests {

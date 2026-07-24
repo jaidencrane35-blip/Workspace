@@ -18,6 +18,8 @@ Canonical product language. Prefer these terms in UI, docs, and Assistant copy.
 | **Suggestion** | Legacy deterministic context hint (diagnostic/Sprint 20) | Recommendation in product Work UI |
 | **Intent** | Pipeline request entering Command Pipeline | Proposal, Decision |
 | **Activity** | Synthetic Activity Graph node (read model) | Audit event, Decision |
+| **Continuity** | Cross-session resume narrative (focus, interrupted, what changed) | Memory (durable notes), Activity (timeline) |
+| **Current Focus** | Active project/task from WorkflowContext | Inferred first project |
 
 ## Explainability fields (consistent meaning)
 

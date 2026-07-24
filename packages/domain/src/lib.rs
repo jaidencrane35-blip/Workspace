@@ -40,6 +40,7 @@ pub mod suggestion_intent;
 pub mod suggestion_lifecycle;
 pub mod workspace;
 pub mod workspace_activity;
+pub mod workspace_continuity;
 pub mod workspace_intent;
 pub mod workspace_intelligence;
 
@@ -146,7 +147,8 @@ pub use ids::{
     AiPlanStepId, ApplicationId, AuditEventId, AutomationContractId, AutomationIntentProposalId,
     CapabilityGrantId, IntentId, LayoutId, MemoryEntryId, ModelId, ModelProviderId,
     DecisionItemId, PermissionApprovalRequestId, ProjectId, TaskId, TriggerEventId,
-    UserPreferenceId, WidgetId, WorkGoalId, WorkspaceActivityId, WorkspaceId, ZoneId,
+    UserPreferenceId, WidgetId, WorkGoalId, ContinuityFacetId, WorkspaceActivityId, WorkspaceId,
+    ZoneId,
 };
 pub use automation_contract::{
     AutomationContract, AutomationContractApprovalState, AutomationContractError,
@@ -167,6 +169,10 @@ pub use decision_queue::{
 pub use workspace_activity::{
     ActivitySourceType, ActivityType, WorkspaceActivity, WorkspaceActivityError,
     WorkspaceActivityGraph, WorkspaceActivityGraphSummary,
+};
+pub use workspace_continuity::{
+    ContinuityFacet, ContinuityFacetKind, WorkspaceContinuityError, WorkspaceContinuityState,
+    WorkspaceContinuitySummary,
 };
 pub use workspace_intent::{
     Project, ProjectStatus, Task, TaskPriority, TaskStatus, WorkGoal, WorkGoalStatus,

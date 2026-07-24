@@ -21,7 +21,7 @@ use crate::services::{
     list_rejection_summaries, AiMemoryService, AiPersonalizationService, AssistantWorkflowStore,
     AuditService, AutomationContractService, DecisionQueueService, DesktopWindowService,
     OrchestratedPlanStore, TriggerEvaluatorService, WorkspaceActivityGraphService,
-    WorkspaceIntentService,
+    WorkspaceContinuityService, WorkspaceIntentService,
 };
 
 pub(crate) struct WorkspaceIntelligenceService;
@@ -86,6 +86,14 @@ impl WorkspaceIntelligenceService {
             Some(&full_decision_queue),
         )?;
         let activity_graph = full_activity_graph.summary(12);
+        let full_continuity = WorkspaceContinuityService::generate_with_inputs(
+            db,
+            actor,
+            ws,
+            &full_decision_queue,
+            &full_activity_graph,
+        )?;
+        let continuity = full_continuity.summary_projection(6);
 
         let memory = AiMemoryService::assemble_awareness(db, Some(ws), 10)
             .unwrap_or_else(|_| workspace_domain::AiMemoryAwareness::from_entries(Vec::new()));
@@ -250,6 +258,7 @@ impl WorkspaceIntelligenceService {
             recent_trigger_rejections,
             decision_queue,
             activity_graph,
+            continuity,
             workspace_health: health_label,
             summary,
             authority_effect: WorkspaceIntelligenceState::AUTHORITY_EFFECT_NONE.into(),

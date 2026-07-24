@@ -10,6 +10,7 @@ use crate::automation_contract::AutomationContractSummary;
 use crate::automation_trigger::{AutomationIntentProposalSummary, TriggerRejectionSummary};
 use crate::decision_queue::DecisionQueueSummary;
 use crate::workspace_activity::WorkspaceActivityGraphSummary;
+use crate::workspace_continuity::WorkspaceContinuitySummary;
 use crate::workspace_intent::{Project, Task, WorkGoal, WorkflowContext};
 
 /// Intelligence-layer validation errors.
@@ -100,6 +101,8 @@ pub struct WorkspaceIntelligenceState {
     pub decision_queue: DecisionQueueSummary,
     /// Activity Graph summary (Batch 9). Read-only.
     pub activity_graph: WorkspaceActivityGraphSummary,
+    /// Continuity Engine summary (Phase 5 Batch 1). Read-only.
+    pub continuity: WorkspaceContinuitySummary,
     pub workspace_health: String,
     pub summary: String,
     /// Explicit marker for audits and UI: this state grants nothing.

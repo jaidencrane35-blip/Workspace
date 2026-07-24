@@ -5,7 +5,8 @@ use workspace_domain::{
     AiAssistantError, AiEvaluationError, AiMemoryError, AiModelError, AiOrchestrationError,
     AiPersonalizationError, AiPlanningError, AiRequestError, AutomationContractError,
     AutomationTriggerError, DecisionQueueError, DomainError, ResourceKind,
-    WorkspaceActivityError, WorkspaceIntelligenceError, WorkspaceIntentError,
+    WorkspaceActivityError, WorkspaceContinuityError, WorkspaceIntelligenceError,
+    WorkspaceIntentError,
 };
 
 #[derive(Debug, Error)]
@@ -195,6 +196,9 @@ pub enum KernelError {
     #[error("Workspace activity validation failed: {message}")]
     WorkspaceActivityValidation { message: String },
 
+    #[error("Workspace continuity validation failed: {message}")]
+    WorkspaceContinuityValidation { message: String },
+
     #[error("Workspace kernel initialization failed")]
     InitializationFailed,
 }
@@ -373,6 +377,17 @@ impl From<WorkspaceActivityError> for KernelError {
         match error {
             WorkspaceActivityError::Domain(domain) => KernelError::from(domain),
             other => KernelError::WorkspaceActivityValidation {
+                message: other.to_string(),
+            },
+        }
+    }
+}
+
+impl From<WorkspaceContinuityError> for KernelError {
+    fn from(error: WorkspaceContinuityError) -> Self {
+        match error {
+            WorkspaceContinuityError::Domain(domain) => KernelError::from(domain),
+            other => KernelError::WorkspaceContinuityValidation {
                 message: other.to_string(),
             },
         }
@@ -643,6 +658,10 @@ impl KernelError {
             },
             KernelError::WorkspaceActivityValidation { message } => PublicError {
                 code: "workspace_activity_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::WorkspaceContinuityValidation { message } => PublicError {
+                code: "workspace_continuity_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::InitializationFailed => PublicError {

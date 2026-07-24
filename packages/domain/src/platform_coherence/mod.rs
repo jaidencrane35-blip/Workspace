@@ -70,6 +70,11 @@ pub const PLATFORM_CONCEPT_OWNERS: &[ConceptOwnership] = &[
         kind: ConceptOwnerKind::Aggregator,
     },
     ConceptOwnership {
+        concept: "continuity",
+        owner: "WorkspaceContinuityService",
+        kind: ConceptOwnerKind::Aggregator,
+    },
+    ConceptOwnership {
         concept: "permission_approval",
         owner: "PermissionApprovalService",
         kind: ConceptOwnerKind::DurableStore,
@@ -106,4 +111,8 @@ pub mod vocabulary {
     pub const RECOMMENDATION: &str = "Recommendation";
     pub const INTENT: &str = "Intent";
     pub const ACTIVITY: &str = "Activity";
+    pub const CONTINUITY: &str = "Continuity";
+    pub const CURRENT_FOCUS: &str = "Current Focus";
+    pub const INTERRUPTED_WORK: &str = "Interrupted Work";
+    pub const RESUMABLE_WORK: &str = "Resumable Work";
 }

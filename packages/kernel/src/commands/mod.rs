@@ -4,6 +4,7 @@ mod automation_contract;
 mod automation_trigger;
 mod decision_queue;
 mod workspace_activity;
+mod workspace_continuity;
 mod context;
 mod execute_intent_request;
 mod create_suggestion_intent_request;
@@ -80,6 +81,8 @@ mod decision_queue_tests;
 mod workspace_activity_tests;
 #[cfg(test)]
 mod platform_coherence_tests;
+#[cfg(test)]
+mod workspace_continuity_tests;
 #[cfg(test)]
 mod ai_memory_tests;
 #[cfg(test)]

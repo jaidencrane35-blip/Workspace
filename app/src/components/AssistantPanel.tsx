@@ -176,6 +176,15 @@ export function AssistantPanel({
               . Explain-only — Assistant cannot accept, execute, or bypass
               governance for Intent Proposals.
             </dd>
+            <dt>Continuity</dt>
+            <dd>
+              {workspaceIntel.continuity.summary}{" "}
+              {workspaceIntel.continuity.suggested_next_step
+                ? `Suggested next: ${workspaceIntel.continuity.suggested_next_step.title}. `
+                : ""}
+              Same Continuity Engine as the Work tab. Assistant may explain —
+              never resume or execute.
+            </dd>
             <dt>Decision Queue</dt>
             <dd>
               {workspaceIntel.decision_queue.pending_count} pending (

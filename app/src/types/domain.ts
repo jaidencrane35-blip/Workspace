@@ -998,6 +998,69 @@ export interface WorkspaceActivityGraphSummary {
   authority_effect: string;
 }
 
+export type ContinuityFacetKind =
+  | "current_focus"
+  | "interrupted_work"
+  | "resumable_work"
+  | "outstanding_decision"
+  | "dormant_project"
+  | "active_commitment"
+  | "recent_progress"
+  | "recent_outcome"
+  | "blocker"
+  | "suggested_next_step";
+
+export interface ContinuityFacet {
+  id: string;
+  workspace_id: string;
+  kind: ContinuityFacetKind;
+  title: string;
+  summary: string;
+  why: string;
+  evidence_refs: string[];
+  what_changed: string;
+  source_type: string;
+  source_id: string;
+  project_id: string | null;
+  task_id: string | null;
+  authority_effect: string;
+}
+
+export interface WorkspaceContinuityState {
+  workspace_id: string;
+  generated_at: string;
+  session_anchor: string;
+  current_focus: ContinuityFacet | null;
+  interrupted_work: ContinuityFacet[];
+  resumable_work: ContinuityFacet[];
+  outstanding_decisions: ContinuityFacet[];
+  dormant_projects: ContinuityFacet[];
+  active_commitments: ContinuityFacet[];
+  recent_progress: ContinuityFacet[];
+  recent_outcomes: ContinuityFacet[];
+  blockers: ContinuityFacet[];
+  suggested_next_step: ContinuityFacet | null;
+  summary: string;
+  authority_effect: string;
+}
+
+export interface WorkspaceContinuitySummary {
+  workspace_id: string;
+  generated_at: string;
+  session_anchor: string;
+  current_focus: ContinuityFacet | null;
+  interrupted_count: number;
+  resumable_count: number;
+  outstanding_decision_count: number;
+  blocker_count: number;
+  dormant_project_count: number;
+  active_commitment_count: number;
+  suggested_next_step: ContinuityFacet | null;
+  recent_progress: ContinuityFacet[];
+  summary: string;
+  authority_effect: string;
+}
+
 export interface WorkspaceIntelligenceState {
   workspace_id: string;
   workspace_name: string;
@@ -1019,6 +1082,7 @@ export interface WorkspaceIntelligenceState {
   recent_trigger_rejections: TriggerRejectionSummary[];
   decision_queue: DecisionQueueSummary;
   activity_graph: WorkspaceActivityGraphSummary;
+  continuity: WorkspaceContinuitySummary;
   workspace_health: string;
   summary: string;
   authority_effect: string;

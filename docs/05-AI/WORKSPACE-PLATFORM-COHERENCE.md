@@ -62,6 +62,7 @@ This batch does not introduce execution paths, modify authority, or weaken gover
 | Trigger Event / Intent Proposal | `TriggerEvaluatorService` | Decision Queue, Activity, Intelligence |
 | Decision Item | Aggregator only (`DecisionQueueService` + lifecycle overlay) | Intelligence, Activity, Work inbox |
 | Activity | Aggregator only (`WorkspaceActivityGraphService`) | Intelligence, Work Activity, Assistant |
+| Continuity | Aggregator only (`WorkspaceContinuityService`) | Intelligence, Work Continuity, Assistant |
 | Permission Approval | `PermissionApprovalService` | Gateway, Decision Queue, Activity |
 | Execution outcome | Audit + `ExecutionOutcomeService` | Activity (attributable), diagnostics |
 | Memory / Preferences | AI memory / personalization services | Intelligence (highlights), planning |
@@ -75,6 +76,7 @@ This batch does not introduce execution paths, modify authority, or weaken gover
 | What needs my attention? | **Decision Queue** |
 | How does work connect over time? | **Activity Graph** |
 | What is the current project/task? | **WorkflowContext** (`set_active_work`) |
+| Where did I leave off / what changed? | **Continuity Engine** |
 | Workspace understanding narrative | **Workspace Intelligence** (consumes the above) |
 
 Intelligence and Assistant must consume, never re-own, these answers.
