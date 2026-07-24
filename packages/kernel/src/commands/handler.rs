@@ -22,6 +22,7 @@ use crate::commands::workspace_purpose::GatePurposeRead;
 use crate::commands::workspace_evolution::GateEvolutionRead;
 use crate::commands::workspace_recommendation::GateRecommendationEngineRead;
 use crate::commands::workspace_operating_state::GateOperatingStateRead;
+use crate::commands::workspace_pattern::GatePatternRead;
 use crate::commands::workspace_activity::GateActivityGraphRead;
 use crate::commands::workspace_attention::GateAttentionRead;
 use crate::commands::workspace_continuity::GateContinuityRead;
@@ -81,6 +82,7 @@ use crate::services::{
     DesktopWindowService, TaskGraphService, WorkspaceEnvironmentService,
     WorkspaceCompositionService, WorkspacePurposeService, WorkspaceEvolutionService,
     WorkspaceRecommendationEngineService, WorkspaceOperatingStateService,
+    WorkspacePatternService,
     WorkspaceActivityGraphService, WorkspaceAttentionService, WorkspaceContextService,
     WorkspaceContinuityService, WorkspaceIntelligenceService,
 };
@@ -95,7 +97,7 @@ use workspace_domain::{
     WorkGoal, WorkflowContext, WorkspaceActivity, WorkspaceActivityGraph, WorkspaceAttentionState,
     WorkspaceContinuityState, WorkspaceEnvironmentState, WorkspaceCompositionState,
     WorkspacePurposeState, WorkspaceEvolutionState, WorkspaceRecommendationEngineState,
-    WorkspaceOperatingState, WorkspaceTask, WorkspaceTaskPriority,
+    WorkspaceOperatingState, WorkspacePatternState, WorkspaceTask, WorkspaceTaskPriority,
     WorkspaceTaskStatus,
     WorkspaceIntelligenceComparison, WorkspaceIntelligenceState, AiPlan, AiPlanEvaluationReport,
     AiPlanSubmissionResult,
@@ -2827,6 +2829,35 @@ impl CommandHandler {
     /// Architecture guard — Operating State must never execute.
     pub fn workspace_operating_state_attempt_execute() -> Result<()> {
         WorkspaceOperatingStateService::attempt_execute()
+    }
+
+    /// Aggregate Workspace Pattern Model (read-only recurring structures).
+    pub fn generate_workspace_pattern(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspacePatternState> {
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent.clone()))
+            .execute_query(GatePatternRead)?;
+        let _ = Self::get_workflow_context(
+            kernel,
+            actor.clone(),
+            intent,
+            workspace_id.clone(),
+        )?;
+        WorkspacePatternService::generate(
+            &kernel.shared_database(),
+            &actor,
+            &kernel.orchestrated_plans(),
+            &kernel.assistant_workflows(),
+            workspace_id,
+        )
+    }
+
+    /// Architecture guard — Pattern Model must never execute.
+    pub fn workspace_pattern_attempt_execute() -> Result<()> {
+        WorkspacePatternService::attempt_execute()
     }
 
     /// Read-only workspace intelligence aggregation. Capability-gated; never executes.

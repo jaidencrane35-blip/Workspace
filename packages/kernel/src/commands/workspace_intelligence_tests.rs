@@ -614,6 +614,18 @@ fn case7_assistant_and_work_share_intelligence_path() {
         work_view.operating_state.workspace_id,
         assistant_view.operating_state.workspace_id
     );
+    assert_eq!(
+        work_view.pattern.authority_effect,
+        assistant_view.pattern.authority_effect
+    );
+    assert_eq!(
+        work_view.pattern.authority_effect,
+        workspace_domain::WorkspacePatternState::AUTHORITY_EFFECT_NONE
+    );
+    assert_eq!(
+        work_view.pattern.workspace_id,
+        assistant_view.pattern.workspace_id
+    );
 }
 
 /// CASE 8 — Diagnostic Console uses the same intelligence path.

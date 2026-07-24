@@ -24,7 +24,7 @@ use crate::services::{
     WorkspaceActivityGraphService, WorkspaceAttentionService, WorkspaceContinuityService,
     WorkspaceEnvironmentService, WorkspaceIntentService, WorkspaceCompositionService,
     WorkspacePurposeService, WorkspaceEvolutionService, WorkspaceRecommendationEngineService,
-    WorkspaceOperatingStateService,
+    WorkspaceOperatingStateService, WorkspacePatternService,
 };
 
 pub(crate) struct WorkspaceIntelligenceService;
@@ -181,7 +181,7 @@ impl WorkspaceIntelligenceService {
             Some(&full_evolution),
         )?;
 
-        let full_recommendation_engine =
+        let base_recommendation_engine =
             WorkspaceRecommendationEngineService::generate_with_inputs(
                 db,
                 actor,
@@ -195,17 +195,12 @@ impl WorkspaceIntelligenceService {
                 &full_decision_queue,
                 &full_environment,
             )?;
-        let recommendation_engine = WorkspaceRecommendationEngineService::summary_projection(
-            &full_recommendation_engine,
-            8,
-        );
 
         // Attention may surface recommendations after RE is built (no circular regen).
-        let full_attention = WorkspaceAttentionService::enrich_with_recommendations(
+        let attention_with_recs = WorkspaceAttentionService::enrich_with_recommendations(
             &base_attention,
-            &full_recommendation_engine,
+            &base_recommendation_engine,
         )?;
-        let attention = full_attention.summary_projection(8);
 
         let full_operating_state = WorkspaceOperatingStateService::generate_with_inputs(
             db,
@@ -221,12 +216,52 @@ impl WorkspaceIntelligenceService {
             &full_continuity,
             &full_activity_graph,
             &full_decision_queue,
-            &full_attention,
-            &full_recommendation_engine,
+            &attention_with_recs,
+            &base_recommendation_engine,
             &full_evolution,
         )?;
         let operating_state =
             WorkspaceOperatingStateService::summary_projection(&full_operating_state, 8);
+
+        let full_pattern = WorkspacePatternService::generate_with_inputs(
+            db,
+            actor,
+            ws,
+            &full_activity_graph,
+            &full_evolution,
+            &full_operating_state,
+            &full_composition,
+            Some(&full_task_graph),
+            &full_environment,
+            &full_purpose,
+            &full_continuity,
+            &full_decision_queue,
+        )?;
+        let pattern = WorkspacePatternService::summary_projection(&full_pattern, 8);
+
+        // Recommendation Engine may consume patterns as evidence (no circular regen).
+        let full_recommendation_engine =
+            WorkspaceRecommendationEngineService::enrich_with_patterns(
+                db,
+                actor,
+                &base_recommendation_engine,
+                &full_pattern,
+            )?;
+        let recommendation_engine = WorkspaceRecommendationEngineService::summary_projection(
+            &full_recommendation_engine,
+            8,
+        );
+
+        // Attention may surface pattern-informed context after Pattern is built.
+        let attention_with_patterns = WorkspaceAttentionService::enrich_with_patterns(
+            &attention_with_recs,
+            &full_pattern,
+        )?;
+        let full_attention = WorkspaceAttentionService::enrich_with_recommendations(
+            &attention_with_patterns,
+            &full_recommendation_engine,
+        )?;
+        let attention = full_attention.summary_projection(8);
 
         let memory = AiMemoryService::assemble_awareness(db, Some(ws), 10)
             .unwrap_or_else(|_| workspace_domain::AiMemoryAwareness::from_entries(Vec::new()));
@@ -389,6 +424,7 @@ impl WorkspaceIntelligenceService {
             evolution,
             recommendation_engine,
             operating_state,
+            pattern,
             workspace_health: health_label,
             summary,
             authority_effect: WorkspaceIntelligenceState::AUTHORITY_EFFECT_NONE.into(),

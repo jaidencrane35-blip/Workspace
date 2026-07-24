@@ -1072,7 +1072,8 @@ export type AttentionSourceType =
   | "composition"
   | "purpose"
   | "evolution"
-  | "recommendation_engine";
+  | "recommendation_engine"
+  | "pattern";
 
 export type AttentionCategory =
   | "requires_decision"
@@ -1264,6 +1265,7 @@ export interface WorkspaceIntelligenceState {
   evolution: WorkspaceEvolutionSummary;
   recommendation_engine: WorkspaceRecommendationEngineSummary;
   operating_state: WorkspaceOperatingStateSummary;
+  pattern: WorkspacePatternSummary;
   workspace_health: string;
   summary: string;
   authority_effect: string;
@@ -1844,6 +1846,78 @@ export interface WorkspaceOperatingStateSummary {
   signal_count: number;
   relationship_count: number;
   top_signals: OperatingSignal[];
+  explanation: string;
+  summary: string;
+  authority_effect: string;
+}
+
+export type PatternKind =
+  | "application_pattern"
+  | "workflow_pattern"
+  | "task_pattern"
+  | "decision_pattern"
+  | "environment_pattern";
+
+export type PatternConfidence = "high" | "medium" | "low";
+
+export interface PatternEvidence {
+  id: string;
+  source_model: string;
+  source_ref: string;
+  summary: string;
+}
+
+export interface PatternRelationship {
+  id: string;
+  from_id: string;
+  to_id: string;
+  kind: string;
+  explanation: string;
+  evidence: string[];
+}
+
+export interface WorkspacePattern {
+  id: string;
+  kind: PatternKind;
+  title: string;
+  observation: string;
+  evidence: PatternEvidence[];
+  confidence: PatternConfidence;
+  impact: string;
+  authority_effect: string;
+}
+
+export interface PatternSummary {
+  headline: string;
+  recurring_line: string;
+  workflow_line: string;
+  environment_line: string;
+  narrative: string;
+}
+
+export interface WorkspacePatternState {
+  workspace_id: string;
+  generated_at: string;
+  label: string;
+  patterns: WorkspacePattern[];
+  relationships: PatternRelationship[];
+  pattern_summary: PatternSummary;
+  pattern_count: number;
+  relationship_count: number;
+  explanation: string;
+  evidence: string[];
+  summary: string;
+  authority_effect: string;
+}
+
+export interface WorkspacePatternSummary {
+  workspace_id: string;
+  generated_at: string;
+  label: string;
+  pattern_count: number;
+  relationship_count: number;
+  top_patterns: WorkspacePattern[];
+  pattern_summary: PatternSummary;
   explanation: string;
   summary: string;
   authority_effect: string;

@@ -16,6 +16,7 @@ import type {
   WorkspaceEvolutionState,
   WorkspaceRecommendationEngineState,
   WorkspaceOperatingState,
+  WorkspacePatternState,
   AiOrchestratedPlan,
   AiPlan,
   AiPlanEvaluationReport,
@@ -163,6 +164,8 @@ export function OperatorConsole({
     useState<WorkspaceRecommendationEngineState | null>(null);
   const [operatingState, setOperatingState] =
     useState<WorkspaceOperatingState | null>(null);
+  const [patternState, setPatternState] =
+    useState<WorkspacePatternState | null>(null);
   const [activeProject, setActiveProject] = useState<Project | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [memoryEntries, setMemoryEntries] = useState<MemoryEntry[]>([]);
@@ -1812,6 +1815,60 @@ export function OperatorConsole({
             <li>
               Signals {operatingState.signal_count} · authority{" "}
               {operatingState.authority_effect}
+            </li>
+          </ul>
+        )}
+      </section>
+
+      <section>
+        <h2>Pattern Model (diagnostics)</h2>
+        <p className="muted">
+          Recurring structures — observations only. Never predicts, profiles, or
+          executes.
+        </p>
+        <div className="row">
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("Pattern Model generated", async () => {
+                if (!workspace) return;
+                const state = await invokeIpc<WorkspacePatternState>(
+                  "generate_workspace_pattern",
+                  { workspaceId: workspace.id },
+                );
+                setPatternState(state);
+              })
+            }
+          >
+            Inspect patterns
+          </button>
+          <button
+            type="button"
+            disabled={busy || !patternState}
+            onClick={() =>
+              void run("Pattern observations inspected", async () => {
+                if (!patternState) return;
+                onMessage(
+                  patternState.patterns.length
+                    ? patternState.patterns
+                        .slice(0, 5)
+                        .map((p) => `${p.kind}: ${p.observation}`)
+                        .join(" · ")
+                    : "No patterns",
+                );
+              })
+            }
+          >
+            Inspect observations
+          </button>
+        </div>
+        {patternState && (
+          <ul className="muted">
+            <li>{patternState.summary}</li>
+            <li>
+              Patterns {patternState.pattern_count} · authority{" "}
+              {patternState.authority_effect}
             </li>
           </ul>
         )}

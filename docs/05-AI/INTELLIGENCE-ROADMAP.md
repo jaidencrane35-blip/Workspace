@@ -144,6 +144,10 @@ Workspace Recommendation Engine foundation (Sprint 88) — what might help next,
 
 Workspace Operating State foundation (Sprint 89) — what is happening right now, unified snapshot over existing understanding systems; Intelligence embeds; Assistant explains. Aggregator only — no durable store, no autonomy. See [Workspace Operating State](WORKSPACE-OPERATING-STATE.md).
 
+## Phase 5 Batch 11 (done)
+
+Workspace Pattern Model foundation (Sprint 90) — recurring structures from Activity + Evolution + Operating State + Composition + Task Graph; Recommendation may use as evidence; Attention may surface; Assistant explains. Not prediction or profiling. See [Workspace Pattern Model](WORKSPACE-PATTERN-MODEL.md).
+
 ---
 
 ## Never build

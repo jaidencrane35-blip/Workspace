@@ -273,6 +273,15 @@ export function AssistantPanel({
               current situation and explain relationships — never alter state or
               execute from it.
             </dd>
+            <dt>Pattern Model</dt>
+            <dd>
+              {workspaceIntel.pattern.summary}{" "}
+              {workspaceIntel.pattern.top_patterns.length > 0
+                ? `Example: ${workspaceIntel.pattern.top_patterns[0].title}. `
+                : ""}
+              Same Pattern Model as the Work tab. Assistant may explain recurring
+              structures — never act on patterns or create automation.
+            </dd>
             <dt>Continuity</dt>
             <dd>
               {workspaceIntel.continuity.summary}{" "}

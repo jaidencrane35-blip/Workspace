@@ -44,6 +44,7 @@ pub enum AttentionSourceType {
     Purpose,
     Evolution,
     RecommendationEngine,
+    Pattern,
 }
 
 impl AttentionSourceType {
@@ -60,6 +61,7 @@ impl AttentionSourceType {
             Self::Purpose => "purpose",
             Self::Evolution => "evolution",
             Self::RecommendationEngine => "recommendation_engine",
+            Self::Pattern => "pattern",
         }
     }
 }

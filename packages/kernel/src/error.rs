@@ -8,7 +8,7 @@ use workspace_domain::{
     TaskGraphError, WorkspaceActivityError, WorkspaceAttentionError, WorkspaceContinuityError,
     WorkspaceEnvironmentError, WorkspaceCompositionError, WorkspacePurposeError,
     WorkspaceEvolutionError, WorkspaceRecommendationEngineError, WorkspaceOperatingStateError,
-    WorkspaceIntelligenceError, WorkspaceIntentError,
+    WorkspacePatternError, WorkspaceIntelligenceError, WorkspaceIntentError,
 };
 
 #[derive(Debug, Error)]
@@ -227,6 +227,9 @@ pub enum KernelError {
 
     #[error("Workspace operating state validation failed: {message}")]
     WorkspaceOperatingStateValidation { message: String },
+
+    #[error("Workspace pattern validation failed: {message}")]
+    WorkspacePatternValidation { message: String },
 
     #[error("Workspace kernel initialization failed")]
     InitializationFailed,
@@ -516,6 +519,17 @@ impl From<WorkspaceOperatingStateError> for KernelError {
         match error {
             WorkspaceOperatingStateError::Domain(domain) => KernelError::from(domain),
             other => KernelError::WorkspaceOperatingStateValidation {
+                message: other.to_string(),
+            },
+        }
+    }
+}
+
+impl From<WorkspacePatternError> for KernelError {
+    fn from(error: WorkspacePatternError) -> Self {
+        match error {
+            WorkspacePatternError::Domain(domain) => KernelError::from(domain),
+            other => KernelError::WorkspacePatternValidation {
                 message: other.to_string(),
             },
         }
@@ -826,6 +840,10 @@ impl KernelError {
             },
             KernelError::WorkspaceOperatingStateValidation { message } => PublicError {
                 code: "workspace_operating_state_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::WorkspacePatternValidation { message } => PublicError {
+                code: "workspace_pattern_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::InitializationFailed => PublicError {

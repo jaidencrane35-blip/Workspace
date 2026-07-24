@@ -15,6 +15,7 @@ use crate::workspace_purpose::WorkspacePurposeSummary;
 use crate::workspace_evolution::WorkspaceEvolutionSummary;
 use crate::workspace_recommendation::WorkspaceRecommendationEngineSummary;
 use crate::workspace_operating_state::WorkspaceOperatingStateSummary;
+use crate::workspace_pattern::WorkspacePatternSummary;
 use crate::workspace_environment::WorkspaceEnvironmentSummary;
 use crate::workspace_task_graph::TaskGraphSummary;
 use crate::workspace_activity::WorkspaceActivityGraphSummary;
@@ -130,6 +131,8 @@ pub struct WorkspaceIntelligenceState {
     pub recommendation_engine: WorkspaceRecommendationEngineSummary,
     /// Operating State summary (Phase 5). What is happening right now — never executes.
     pub operating_state: WorkspaceOperatingStateSummary,
+    /// Pattern Model summary (Phase 5). Recurring structures — never executes.
+    pub pattern: WorkspacePatternSummary,
     pub workspace_health: String,
     pub summary: String,
     /// Explicit marker for audits and UI: this state grants nothing.

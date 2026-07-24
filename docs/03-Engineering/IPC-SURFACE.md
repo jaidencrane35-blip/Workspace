@@ -79,6 +79,7 @@
 | `generate_workspace_evolution` | Product: aggregate how-work-changed Evolution Model (never stores a second history) |
 | `generate_workspace_recommendation_engine` | Product: aggregate what-might-help-next suggestions (never executes or accepts) |
 | `generate_workspace_operating_state` | Product: aggregate what-is-happening-now snapshot (never executes or persists) |
+| `generate_workspace_pattern` | Product: aggregate recurring structures (never predicts, profiles, or executes) |
 | `create_memory_entry` / `list_memory_entries` / `get_memory_context` | Diagnostic governed memory (informational) |
 | `delete_memory_entry` / `clear_memory_entries` | Diagnostic memory lifecycle |
 | `diagnose_ai_plan_preview` | Diagnostic memory-aware plan (no execution) |

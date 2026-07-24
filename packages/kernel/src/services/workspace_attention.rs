@@ -257,6 +257,77 @@ impl WorkspaceAttentionService {
         ))
     }
 
+    /// Merge Pattern Model observations into an Attention snapshot (CASE 7).
+    /// Does not regenerate Pattern — avoids circular regen.
+    pub(crate) fn enrich_with_patterns(
+        attention: &WorkspaceAttentionState,
+        patterns: &workspace_domain::WorkspacePatternState,
+    ) -> Result<WorkspaceAttentionState> {
+        let now = chrono::Utc::now().to_rfc3339();
+        let mut items = attention.items.clone();
+        let mut seen: HashSet<String> = items.iter().map(|i| i.id.to_string()).collect();
+        for item in Self::from_pattern_model(attention.workspace_id.as_str(), patterns, &now)? {
+            if seen.insert(item.id.to_string()) {
+                items.push(item);
+            }
+        }
+        Ok(WorkspaceAttentionState::from_items(
+            attention.workspace_id.clone(),
+            items,
+        ))
+    }
+
+    fn from_pattern_model(
+        ws: &str,
+        patterns: &workspace_domain::WorkspacePatternState,
+        now: &str,
+    ) -> Result<Vec<AttentionItem>> {
+        let mut out = Vec::new();
+        for pattern in patterns.patterns.iter().take(4) {
+            let (category, score, urgency) = match pattern.kind {
+                workspace_domain::PatternKind::DecisionPattern => (
+                    AttentionCategory::RequiresDecision,
+                    44u32,
+                    AttentionUrgency::Soon,
+                ),
+                workspace_domain::PatternKind::WorkflowPattern => (
+                    AttentionCategory::Informative,
+                    36u32,
+                    AttentionUrgency::Whenever,
+                ),
+                _ => (
+                    AttentionCategory::Informative,
+                    32u32,
+                    AttentionUrgency::Whenever,
+                ),
+            };
+            let factors = vec![
+                format!("base {score} for pattern {}", pattern.kind.as_str()),
+                format!("confidence {}", pattern.confidence.as_str()),
+                "source Pattern Model".into(),
+            ];
+            out.push(AttentionItem::project(
+                ws,
+                AttentionSourceType::Pattern,
+                pattern.id.clone(),
+                category,
+                score_to_priority(score),
+                urgency,
+                AttentionConfidence::Medium,
+                score,
+                factors,
+                pattern.title.clone(),
+                format!(
+                    "{}. Impact: {}. Pattern context only — Attention surfaces; never executes.",
+                    pattern.observation, pattern.impact
+                ),
+                now,
+                AttentionState::New,
+            )?);
+        }
+        Ok(out)
+    }
+
     fn from_recommendation_engine(
         ws: &str,
         recommendations: &workspace_domain::WorkspaceRecommendationEngineState,

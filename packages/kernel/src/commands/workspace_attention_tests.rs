@@ -104,6 +104,7 @@ fn case1_attention_derives_from_existing_systems() {
             | workspace_domain::AttentionSourceType::Purpose
             | workspace_domain::AttentionSourceType::Evolution
             | workspace_domain::AttentionSourceType::RecommendationEngine
+            | workspace_domain::AttentionSourceType::Pattern
         ));
         assert!(item.id.as_str().starts_with("attention:"));
     }

@@ -14,6 +14,7 @@ pub mod workspace_purpose;
 pub mod workspace_evolution;
 pub mod workspace_recommendation;
 pub mod workspace_operating_state;
+pub mod workspace_pattern;
 pub mod context;
 pub mod desktop_window;
 pub mod error;

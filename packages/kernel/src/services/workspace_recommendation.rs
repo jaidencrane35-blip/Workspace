@@ -568,6 +568,87 @@ impl WorkspaceRecommendationEngineService {
         state.summary_projection(limit)
     }
 
+    /// Merge Pattern Model observations into recommendations as evidence-only context.
+    /// Does not regenerate Pattern or Attention — avoids circular regen.
+    pub(crate) fn enrich_with_patterns(
+        db: &Arc<Mutex<Database>>,
+        actor: &ActorContext,
+        recommendations: &WorkspaceRecommendationEngineState,
+        patterns: &workspace_domain::WorkspacePatternState,
+    ) -> Result<WorkspaceRecommendationEngineState> {
+        let mut state = recommendations.clone();
+        let mut seen: HashSet<String> = state.candidates.iter().map(|c| c.id.clone()).collect();
+        for pattern in patterns.patterns.iter().take(3) {
+            let id = format!("recommendation:from_pattern:{}", pattern.id);
+            if !seen.insert(id.clone()) {
+                continue;
+            }
+            let kind = match pattern.kind {
+                workspace_domain::PatternKind::DecisionPattern => {
+                    RecommendationKind::ReviewDecision
+                }
+                workspace_domain::PatternKind::ApplicationPattern
+                | workspace_domain::PatternKind::EnvironmentPattern => {
+                    RecommendationKind::ReorganizeWorkspace
+                }
+                workspace_domain::PatternKind::TaskPattern => RecommendationKind::CompleteTask,
+                workspace_domain::PatternKind::WorkflowPattern => RecommendationKind::ContinueWork,
+            };
+            let candidate = RecommendationItem {
+                id: id.clone(),
+                kind,
+                title: format!("Consider pattern: {}", pattern.title),
+                reason: format!(
+                    "Pattern observation: {}. Suggestion only — patterns never execute.",
+                    pattern.observation
+                ),
+                evidence: pattern
+                    .evidence
+                    .iter()
+                    .map(|e| RecommendationEvidence {
+                        id: e.id.clone(),
+                        source_model: format!("pattern:{}", e.source_model),
+                        source_ref: e.source_ref.clone(),
+                        summary: e.summary.clone(),
+                    })
+                    .collect(),
+                impact: pattern.impact.clone(),
+                confidence: match pattern.confidence {
+                    workspace_domain::PatternConfidence::High => RecommendationConfidence::High,
+                    workspace_domain::PatternConfidence::Medium => RecommendationConfidence::Medium,
+                    workspace_domain::PatternConfidence::Low => RecommendationConfidence::Low,
+                },
+                related_attention_id: None,
+                related_task_id: None,
+                related_purpose_label: Some(patterns.label.clone()),
+                related_decision_id: None,
+                authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
+            };
+            crate::services::WorkspacePatternService::audit_used_for_recommendation(
+                db,
+                actor,
+                pattern,
+                &id,
+            )?;
+            state.candidates.push(candidate);
+        }
+        state.candidates.sort_by(|a, b| {
+            kind_rank(a.kind)
+                .cmp(&kind_rank(b.kind))
+                .then_with(|| a.id.cmp(&b.id))
+        });
+        if state.candidates.len() > 12 {
+            state.candidates.truncate(12);
+        }
+        state.candidate_count = state.candidates.len();
+        state.evidence.push(format!(
+            "Pattern Model patterns used as evidence: {}",
+            patterns.pattern_count
+        ));
+        state.summary = build_recommendation_engine_summary(&state.label, state.candidate_count);
+        Ok(state)
+    }
+
     pub(crate) fn attempt_execute() -> Result<()> {
         Err(KernelError::from(
             workspace_domain::WorkspaceRecommendationEngineError::CannotExecute,

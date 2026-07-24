@@ -21,6 +21,7 @@ import type {
   WorkspaceEvolutionState,
   WorkspaceRecommendationEngineState,
   WorkspaceOperatingState,
+  WorkspacePatternState,
   WorkspaceIntelligenceState,
 } from "../types/domain";
 
@@ -75,6 +76,8 @@ export function WorkspaceIntelligencePanel({
     useState<WorkspaceRecommendationEngineState | null>(null);
   const [operatingState, setOperatingState] =
     useState<WorkspaceOperatingState | null>(null);
+  const [patternState, setPatternState] =
+    useState<WorkspacePatternState | null>(null);
   const [lastHandoff, setLastHandoff] = useState<string | null>(null);
   const [contractName, setContractName] = useState(
     "Prepare coding environment",
@@ -115,6 +118,7 @@ export function WorkspaceIntelligencePanel({
       setEvolution(null);
       setRecommendationEngine(null);
       setOperatingState(null);
+      setPatternState(null);
       setLastHandoff(null);
       setState(null);
       return;
@@ -139,6 +143,7 @@ export function WorkspaceIntelligencePanel({
           evo,
           rec,
           ops,
+          pat,
         ] = await Promise.all([
             invokeIpc<Project[]>("list_projects", {
               workspaceId: workspace.id,
@@ -197,6 +202,9 @@ export function WorkspaceIntelligencePanel({
               "generate_workspace_operating_state",
               { workspaceId: workspace.id },
             ),
+            invokeIpc<WorkspacePatternState>("generate_workspace_pattern", {
+              workspaceId: workspace.id,
+            }),
           ]);
         if (!cancelled) {
           setProjects(listed);
@@ -215,6 +223,7 @@ export function WorkspaceIntelligencePanel({
           setEvolution(evo);
           setRecommendationEngine(rec);
           setOperatingState(ops);
+          setPatternState(pat);
         }
       } catch (err: unknown) {
         if (!cancelled) {
@@ -862,6 +871,63 @@ export function WorkspaceIntelligencePanel({
           </>
         ) : (
           <p className="muted">No operating state snapshot yet.</p>
+        )}
+      </section>
+
+      <section>
+        <h3>Pattern Model</h3>
+        <p className="muted">
+          Things this workspace often does — recurring structures from Activity,
+          Evolution, Operating State, Composition, and Task Graph. Observations
+          only; not prediction, profiling, or automation.
+        </p>
+        <div className="row">
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("Pattern Model refreshed", async () => {
+                if (!workspace) return;
+                const next = await invokeIpc<WorkspacePatternState>(
+                  "generate_workspace_pattern",
+                  { workspaceId: workspace.id },
+                );
+                setPatternState(next);
+              })
+            }
+          >
+            Refresh patterns
+          </button>
+        </div>
+        {patternState ? (
+          <>
+            <p>
+              <strong>{patternState.pattern_summary.headline}</strong>
+            </p>
+            <p>{patternState.summary}</p>
+            <p className="muted">{patternState.pattern_summary.narrative}</p>
+            <p className="muted">
+              {patternState.pattern_count} pattern(s) · authority:{" "}
+              {patternState.authority_effect}
+            </p>
+            {patternState.patterns.length > 0 && (
+              <ul className="intelligence-list">
+                {patternState.patterns.slice(0, 5).map((item) => (
+                  <li key={item.id}>
+                    <strong>
+                      [{item.kind}] {item.title}
+                    </strong>
+                    <div className="muted">
+                      Observation: {item.observation} · Impact: {item.impact} ·
+                      Confidence: {item.confidence}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
+        ) : (
+          <p className="muted">No pattern snapshot yet.</p>
         )}
       </section>
 
