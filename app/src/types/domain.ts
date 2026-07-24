@@ -1255,6 +1255,7 @@ export interface WorkspaceIntelligenceState {
   environment: WorkspaceEnvironmentSummary;
   composition: WorkspaceCompositionSummary;
   purpose: WorkspacePurposeSummary;
+  evolution: WorkspaceEvolutionSummary;
   workspace_health: string;
   summary: string;
   authority_effect: string;
@@ -1605,6 +1606,83 @@ export interface WorkspacePurposeSummary {
   top_evidence: PurposeEvidence[];
   top_obstacles: PurposeObstacle[];
   recent_progress: string[];
+  explanation: string;
+  summary: string;
+  authority_effect: string;
+}
+
+export type EvolutionInsightKind =
+  | "task_progression"
+  | "purpose_progression"
+  | "composition_shift"
+  | "interrupted_work"
+  | "decision_outcome"
+  | "focus_change";
+
+export type EvolutionSourceModel =
+  | "activity"
+  | "task_graph"
+  | "purpose"
+  | "composition"
+  | "continuity"
+  | "decision_queue";
+
+export interface EvolutionEvent {
+  id: string;
+  kind: string;
+  ref_id: string;
+  source_model: EvolutionSourceModel;
+  title: string;
+  change: string;
+  evidence: string[];
+  impact: string;
+  timestamp: string;
+  authority_effect: string;
+}
+
+export interface EvolutionRelationship {
+  id: string;
+  from_id: string;
+  to_id: string;
+  kind: string;
+  explanation: string;
+  evidence: string[];
+}
+
+export interface EvolutionInsight {
+  id: string;
+  kind: EvolutionInsightKind;
+  title: string;
+  explanation: string;
+  evidence: string[];
+  related_event_ids: string[];
+}
+
+export interface WorkspaceEvolutionState {
+  workspace_id: string;
+  generated_at: string;
+  label: string;
+  events: EvolutionEvent[];
+  insights: EvolutionInsight[];
+  relationships: EvolutionRelationship[];
+  event_count: number;
+  insight_count: number;
+  relationship_count: number;
+  explanation: string;
+  evidence: string[];
+  summary: string;
+  authority_effect: string;
+}
+
+export interface WorkspaceEvolutionSummary {
+  workspace_id: string;
+  generated_at: string;
+  label: string;
+  event_count: number;
+  insight_count: number;
+  relationship_count: number;
+  top_events: EvolutionEvent[];
+  top_insights: EvolutionInsight[];
   explanation: string;
   summary: string;
   authority_effect: string;

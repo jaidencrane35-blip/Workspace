@@ -19,6 +19,7 @@ use crate::commands::task_graph::{GateTaskGraphRead, GateTaskGraphWrite};
 use crate::commands::workspace_environment::GateEnvironmentRead;
 use crate::commands::workspace_composition::GateCompositionRead;
 use crate::commands::workspace_purpose::GatePurposeRead;
+use crate::commands::workspace_evolution::GateEvolutionRead;
 use crate::commands::workspace_activity::GateActivityGraphRead;
 use crate::commands::workspace_attention::GateAttentionRead;
 use crate::commands::workspace_continuity::GateContinuityRead;
@@ -76,7 +77,7 @@ use crate::services::{
     AiAssistantService, AiEvaluationService, AiOrchestrationService, AiParticipationService,
     AiPlanningService, ConfigurationService, DecisionEngineService, DecisionQueueService,
     DesktopWindowService, TaskGraphService, WorkspaceEnvironmentService,
-    WorkspaceCompositionService, WorkspacePurposeService,
+    WorkspaceCompositionService, WorkspacePurposeService, WorkspaceEvolutionService,
     WorkspaceActivityGraphService, WorkspaceAttentionService, WorkspaceContextService,
     WorkspaceContinuityService, WorkspaceIntelligenceService,
 };
@@ -90,7 +91,7 @@ use workspace_domain::{
     TaskRelationshipKind, TaskStatus, TriggerEvaluationResult, TriggerEvent, TriggerEventType,
     WorkGoal, WorkflowContext, WorkspaceActivity, WorkspaceActivityGraph, WorkspaceAttentionState,
     WorkspaceContinuityState, WorkspaceEnvironmentState, WorkspaceCompositionState,
-    WorkspacePurposeState, WorkspaceTask, WorkspaceTaskPriority,
+    WorkspacePurposeState, WorkspaceEvolutionState, WorkspaceTask, WorkspaceTaskPriority,
     WorkspaceTaskStatus,
     WorkspaceIntelligenceComparison, WorkspaceIntelligenceState, AiPlan, AiPlanEvaluationReport,
     AiPlanSubmissionResult,
@@ -2735,6 +2736,35 @@ impl CommandHandler {
     /// Architecture guard — Purpose Model must never execute.
     pub fn workspace_purpose_attempt_execute() -> Result<()> {
         WorkspacePurposeService::attempt_execute()
+    }
+
+    /// Aggregate Workspace Evolution Model (read-only change narrative).
+    pub fn generate_workspace_evolution(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceEvolutionState> {
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent.clone()))
+            .execute_query(GateEvolutionRead)?;
+        let _ = Self::get_workflow_context(
+            kernel,
+            actor.clone(),
+            intent,
+            workspace_id.clone(),
+        )?;
+        WorkspaceEvolutionService::generate(
+            &kernel.shared_database(),
+            &actor,
+            &kernel.orchestrated_plans(),
+            &kernel.assistant_workflows(),
+            workspace_id,
+        )
+    }
+
+    /// Architecture guard — Evolution Model must never execute.
+    pub fn workspace_evolution_attempt_execute() -> Result<()> {
+        WorkspaceEvolutionService::attempt_execute()
     }
 
     /// Read-only workspace intelligence aggregation. Capability-gated; never executes.

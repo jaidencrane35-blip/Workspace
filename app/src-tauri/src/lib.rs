@@ -34,6 +34,7 @@ use commands::workspace_continuity::generate_workspace_continuity;
 use commands::workspace_environment::generate_workspace_environment;
 use commands::workspace_composition::generate_workspace_composition;
 use commands::workspace_purpose::generate_workspace_purpose;
+use commands::workspace_evolution::generate_workspace_evolution;
 use commands::workspace_attention::generate_workspace_attention;
 use commands::layout::{
     create_layout, delete_layout, get_layout, get_layout_snapshot, reset_layout, update_layout,
@@ -199,6 +200,7 @@ pub fn run() {
             generate_workspace_environment,
             generate_workspace_composition,
             generate_workspace_purpose,
+            generate_workspace_evolution,
             generate_decision_engine,
             select_decision_candidate,
             dismiss_decision_candidate,

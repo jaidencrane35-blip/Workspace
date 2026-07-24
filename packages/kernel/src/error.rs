@@ -7,7 +7,7 @@ use workspace_domain::{
     AutomationTriggerError, DecisionEngineError, DecisionQueueError, DomainError, ResourceKind,
     TaskGraphError, WorkspaceActivityError, WorkspaceAttentionError, WorkspaceContinuityError,
     WorkspaceEnvironmentError, WorkspaceCompositionError, WorkspacePurposeError,
-    WorkspaceIntelligenceError, WorkspaceIntentError,
+    WorkspaceEvolutionError, WorkspaceIntelligenceError, WorkspaceIntentError,
 };
 
 #[derive(Debug, Error)]
@@ -217,6 +217,9 @@ pub enum KernelError {
 
     #[error("Workspace purpose validation failed: {message}")]
     WorkspacePurposeValidation { message: String },
+
+    #[error("Workspace evolution validation failed: {message}")]
+    WorkspaceEvolutionValidation { message: String },
 
     #[error("Workspace kernel initialization failed")]
     InitializationFailed,
@@ -473,6 +476,17 @@ impl From<WorkspacePurposeError> for KernelError {
         match error {
             WorkspacePurposeError::Domain(domain) => KernelError::from(domain),
             other => KernelError::WorkspacePurposeValidation {
+                message: other.to_string(),
+            },
+        }
+    }
+}
+
+impl From<WorkspaceEvolutionError> for KernelError {
+    fn from(error: WorkspaceEvolutionError) -> Self {
+        match error {
+            WorkspaceEvolutionError::Domain(domain) => KernelError::from(domain),
+            other => KernelError::WorkspaceEvolutionValidation {
                 message: other.to_string(),
             },
         }
@@ -771,6 +785,10 @@ impl KernelError {
             },
             KernelError::WorkspacePurposeValidation { message } => PublicError {
                 code: "workspace_purpose_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::WorkspaceEvolutionValidation { message } => PublicError {
+                code: "workspace_evolution_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::InitializationFailed => PublicError {

@@ -244,6 +244,15 @@ export function AssistantPanel({
               Same Purpose Model as the Work tab. Assistant may explain what you
               are working toward — never creates or modifies purpose silently.
             </dd>
+            <dt>Evolution</dt>
+            <dd>
+              {workspaceIntel.evolution.summary}{" "}
+              {workspaceIntel.evolution.top_insights.length > 0
+                ? `Insight: ${workspaceIntel.evolution.top_insights[0].title}. `
+                : ""}
+              Same Evolution Model as the Work tab. Assistant may explain what
+              changed — never rewrites history or acts on patterns.
+            </dd>
             <dt>Continuity</dt>
             <dd>
               {workspaceIntel.continuity.summary}{" "}

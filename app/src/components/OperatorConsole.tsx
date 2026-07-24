@@ -13,6 +13,7 @@ import type {
   WorkspaceEnvironmentState,
   WorkspaceCompositionState,
   WorkspacePurposeState,
+  WorkspaceEvolutionState,
   AiOrchestratedPlan,
   AiPlan,
   AiPlanEvaluationReport,
@@ -154,6 +155,8 @@ export function OperatorConsole({
   const [composition, setComposition] =
     useState<WorkspaceCompositionState | null>(null);
   const [purpose, setPurpose] = useState<WorkspacePurposeState | null>(null);
+  const [evolution, setEvolution] =
+    useState<WorkspaceEvolutionState | null>(null);
   const [activeProject, setActiveProject] = useState<Project | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [memoryEntries, setMemoryEntries] = useState<MemoryEntry[]>([]);
@@ -1645,6 +1648,56 @@ export function OperatorConsole({
             <li>
               Progress {purpose.progress_percent}% · open{" "}
               {purpose.open_task_count} · obstacles {purpose.obstacles.length}
+            </li>
+          </ul>
+        )}
+      </section>
+
+      <section>
+        <h2>Evolution Model (diagnostics)</h2>
+        <p className="muted">
+          How work changed — projected from Activity Graph and related models.
+          Never stores a second history or predicts.
+        </p>
+        <div className="row">
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("Evolution generated", async () => {
+                if (!workspace) return;
+                const state = await invokeIpc<WorkspaceEvolutionState>(
+                  "generate_workspace_evolution",
+                  { workspaceId: workspace.id },
+                );
+                setEvolution(state);
+              })
+            }
+          >
+            Inspect evolution
+          </button>
+          <button
+            type="button"
+            disabled={busy || !evolution}
+            onClick={() =>
+              void run("Evolution insights inspected", async () => {
+                if (!evolution) return;
+                onMessage(
+                  evolution.insights.length
+                    ? evolution.insights.map((i) => i.title).join(" · ")
+                    : "No insights",
+                );
+              })
+            }
+          >
+            Inspect insights
+          </button>
+        </div>
+        {evolution && (
+          <ul className="muted">
+            <li>{evolution.summary}</li>
+            <li>
+              Events {evolution.event_count} · insights {evolution.insight_count}
             </li>
           </ul>
         )}

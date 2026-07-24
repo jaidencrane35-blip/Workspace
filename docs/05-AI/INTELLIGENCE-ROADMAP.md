@@ -132,6 +132,10 @@ Workspace Composition Engine foundation (Sprint 85) — logical working environm
 
 Workspace Purpose Model foundation (Sprint 86) — why work exists, projected from WorkGoals + projects + Task Graph + Composition + Continuity; Attention and Intelligence consume Purpose. WorkGoal remains DurableStore. No autonomy. See [Workspace Purpose Model](WORKSPACE-PURPOSE-MODEL.md).
 
+## Phase 5 Batch 8 (done)
+
+Workspace Evolution Model foundation (Sprint 87) — how work changed, projected from Activity Graph + Task Graph + Purpose + Composition + Continuity; Attention and Intelligence consume Evolution. Activity Graph remains history SoT. No prediction or second memory. See [Workspace Evolution Model](WORKSPACE-EVOLUTION-MODEL.md).
+
 ---
 
 ## Never build

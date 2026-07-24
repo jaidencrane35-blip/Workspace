@@ -12,6 +12,7 @@ use crate::decision_engine::DecisionEngineSummary;
 use crate::decision_queue::DecisionQueueSummary;
 use crate::workspace_composition::WorkspaceCompositionSummary;
 use crate::workspace_purpose::WorkspacePurposeSummary;
+use crate::workspace_evolution::WorkspaceEvolutionSummary;
 use crate::workspace_environment::WorkspaceEnvironmentSummary;
 use crate::workspace_task_graph::TaskGraphSummary;
 use crate::workspace_activity::WorkspaceActivityGraphSummary;
@@ -121,6 +122,8 @@ pub struct WorkspaceIntelligenceState {
     pub composition: WorkspaceCompositionSummary,
     /// Purpose Model summary (Phase 5). Why work exists — never executes.
     pub purpose: WorkspacePurposeSummary,
+    /// Evolution Model summary (Phase 5). How work changed — never executes.
+    pub evolution: WorkspaceEvolutionSummary,
     pub workspace_health: String,
     pub summary: String,
     /// Explicit marker for audits and UI: this state grants nothing.

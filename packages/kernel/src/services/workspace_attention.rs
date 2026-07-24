@@ -104,6 +104,23 @@ impl WorkspaceAttentionService {
             }
             _ => None,
         };
+        let evolution = match &purpose {
+            Some(purp) => composition.as_ref().and_then(|comp| {
+                crate::services::WorkspaceEvolutionService::generate_with_inputs(
+                    db,
+                    actor,
+                    workspace_id.clone(),
+                    &graph,
+                    Some(&task_graph),
+                    purp,
+                    comp,
+                    &continuity,
+                    &queue,
+                )
+                .ok()
+            }),
+            None => None,
+        };
         Self::generate_with_task_graph(
             db,
             actor,
@@ -115,6 +132,7 @@ impl WorkspaceAttentionService {
             environment.as_ref(),
             composition.as_ref(),
             purpose.as_ref(),
+            evolution.as_ref(),
         )
     }
 
@@ -138,6 +156,7 @@ impl WorkspaceAttentionService {
             None,
             None,
             None,
+            None,
         )
     }
 
@@ -152,6 +171,7 @@ impl WorkspaceAttentionService {
         environment: Option<&workspace_domain::WorkspaceEnvironmentState>,
         composition: Option<&workspace_domain::WorkspaceCompositionState>,
         purpose: Option<&workspace_domain::WorkspacePurposeState>,
+        evolution: Option<&workspace_domain::WorkspaceEvolutionState>,
     ) -> Result<WorkspaceAttentionState> {
         let workspace_id = WorkspaceId::new(workspace_id.into()).map_err(KernelError::Domain)?;
         let ws = workspace_id.as_str();
@@ -203,10 +223,74 @@ impl WorkspaceAttentionService {
                 }
             }
         }
+        if let Some(evo) = evolution {
+            for item in Self::from_evolution(ws, evo, &now)? {
+                if seen.insert(item.id.to_string()) {
+                    items.push(item);
+                }
+            }
+        }
 
         let state = WorkspaceAttentionState::from_items(ws, items);
         Self::audit_generated(db, actor, &state)?;
         Ok(state)
+    }
+
+    fn from_evolution(
+        ws: &str,
+        evolution: &workspace_domain::WorkspaceEvolutionState,
+        now: &str,
+    ) -> Result<Vec<AttentionItem>> {
+        let mut out = Vec::new();
+        for insight in evolution.insights.iter().take(4) {
+            let (category, score, urgency) = match insight.kind {
+                workspace_domain::EvolutionInsightKind::InterruptedWork => (
+                    AttentionCategory::Interrupted,
+                    52u32,
+                    AttentionUrgency::Soon,
+                ),
+                workspace_domain::EvolutionInsightKind::DecisionOutcome => (
+                    AttentionCategory::RequiresDecision,
+                    48u32,
+                    AttentionUrgency::Soon,
+                ),
+                workspace_domain::EvolutionInsightKind::TaskProgression
+                | workspace_domain::EvolutionInsightKind::PurposeProgression => (
+                    AttentionCategory::Informative,
+                    40u32,
+                    AttentionUrgency::Whenever,
+                ),
+                _ => (
+                    AttentionCategory::Informative,
+                    34u32,
+                    AttentionUrgency::Whenever,
+                ),
+            };
+            let factors = vec![
+                format!("base {score} for evolution insight {}", insight.kind.as_str()),
+                "source Evolution".into(),
+            ];
+            out.push(AttentionItem::project(
+                ws,
+                AttentionSourceType::Evolution,
+                format!("{}:{}", insight.kind.as_str(), insight.title),
+                category,
+                score_to_priority(score),
+                urgency,
+                AttentionConfidence::Medium,
+                score,
+                factors.clone(),
+                insight.title.clone(),
+                format!(
+                    "{}. Score factors: {}.",
+                    insight.explanation,
+                    score_factors_join(&factors)
+                ),
+                now.to_string(),
+                AttentionState::Visible,
+            )?);
+        }
+        Ok(out)
     }
 
     fn from_purpose(

@@ -42,6 +42,7 @@ pub enum AttentionSourceType {
     Environment,
     Composition,
     Purpose,
+    Evolution,
 }
 
 impl AttentionSourceType {
@@ -56,6 +57,7 @@ impl AttentionSourceType {
             Self::Environment => "environment",
             Self::Composition => "composition",
             Self::Purpose => "purpose",
+            Self::Evolution => "evolution",
         }
     }
 }

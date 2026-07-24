@@ -11,6 +11,7 @@ mod workspace_continuity;
 mod workspace_environment;
 mod workspace_composition;
 mod workspace_purpose;
+mod workspace_evolution;
 mod context;
 mod execute_intent_request;
 mod create_suggestion_intent_request;
@@ -101,6 +102,8 @@ mod workspace_environment_tests;
 mod workspace_composition_tests;
 #[cfg(test)]
 mod workspace_purpose_tests;
+#[cfg(test)]
+mod workspace_evolution_tests;
 #[cfg(test)]
 mod ai_memory_tests;
 #[cfg(test)]

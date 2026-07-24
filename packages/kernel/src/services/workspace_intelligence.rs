@@ -23,7 +23,7 @@ use crate::services::{
     DesktopWindowService, OrchestratedPlanStore, TaskGraphService, TriggerEvaluatorService,
     WorkspaceActivityGraphService, WorkspaceAttentionService, WorkspaceContinuityService,
     WorkspaceEnvironmentService, WorkspaceIntentService, WorkspaceCompositionService,
-    WorkspacePurposeService,
+    WorkspacePurposeService, WorkspaceEvolutionService,
 };
 
 pub(crate) struct WorkspaceIntelligenceService;
@@ -153,6 +153,19 @@ impl WorkspaceIntelligenceService {
         )?;
         let purpose = WorkspacePurposeService::summary_projection(&full_purpose, 8);
 
+        let full_evolution = WorkspaceEvolutionService::generate_with_inputs(
+            db,
+            actor,
+            ws,
+            &full_activity_graph,
+            Some(&full_task_graph),
+            &full_purpose,
+            &full_composition,
+            &full_continuity,
+            &full_decision_queue,
+        )?;
+        let evolution = WorkspaceEvolutionService::summary_projection(&full_evolution, 8);
+
         let full_attention = WorkspaceAttentionService::generate_with_task_graph(
             db,
             actor,
@@ -164,6 +177,7 @@ impl WorkspaceIntelligenceService {
             Some(&full_environment),
             Some(&full_composition),
             Some(&full_purpose),
+            Some(&full_evolution),
         )?;
         let attention = full_attention.summary_projection(8);
 
@@ -325,6 +339,7 @@ impl WorkspaceIntelligenceService {
             environment,
             composition,
             purpose,
+            evolution,
             workspace_health: health_label,
             summary,
             authority_effect: WorkspaceIntelligenceState::AUTHORITY_EFFECT_NONE.into(),
@@ -412,6 +427,7 @@ impl WorkspaceIntelligenceService {
             "environment_windows": state.environment.window_count,
             "composition_members": state.composition.member_count,
             "purpose_label": state.purpose.label,
+            "evolution_insights": state.evolution.insight_count,
             "memory_highlights": state.memory_highlights.len(),
             "preference_highlights": state.preference_highlights.len(),
             "summary_len": state.summary.len(),

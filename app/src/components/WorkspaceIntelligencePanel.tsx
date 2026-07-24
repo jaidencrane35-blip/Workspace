@@ -18,6 +18,7 @@ import type {
   WorkspaceEnvironmentState,
   WorkspaceCompositionState,
   WorkspacePurposeState,
+  WorkspaceEvolutionState,
   WorkspaceIntelligenceState,
 } from "../types/domain";
 
@@ -66,6 +67,8 @@ export function WorkspaceIntelligencePanel({
   const [composition, setComposition] =
     useState<WorkspaceCompositionState | null>(null);
   const [purpose, setPurpose] = useState<WorkspacePurposeState | null>(null);
+  const [evolution, setEvolution] =
+    useState<WorkspaceEvolutionState | null>(null);
   const [lastHandoff, setLastHandoff] = useState<string | null>(null);
   const [contractName, setContractName] = useState(
     "Prepare coding environment",
@@ -103,6 +106,7 @@ export function WorkspaceIntelligencePanel({
       setEnvironment(null);
       setComposition(null);
       setPurpose(null);
+      setEvolution(null);
       setLastHandoff(null);
       setState(null);
       return;
@@ -124,6 +128,7 @@ export function WorkspaceIntelligencePanel({
           env,
           comp,
           purp,
+          evo,
         ] = await Promise.all([
             invokeIpc<Project[]>("list_projects", {
               workspaceId: workspace.id,
@@ -171,6 +176,9 @@ export function WorkspaceIntelligencePanel({
             invokeIpc<WorkspacePurposeState>("generate_workspace_purpose", {
               workspaceId: workspace.id,
             }),
+            invokeIpc<WorkspaceEvolutionState>("generate_workspace_evolution", {
+              workspaceId: workspace.id,
+            }),
           ]);
         if (!cancelled) {
           setProjects(listed);
@@ -186,6 +194,7 @@ export function WorkspaceIntelligencePanel({
           setEnvironment(env);
           setComposition(comp);
           setPurpose(purp);
+          setEvolution(evo);
         }
       } catch (err: unknown) {
         if (!cancelled) {
@@ -205,8 +214,9 @@ export function WorkspaceIntelligencePanel({
         <h2>Where you are. What needs attention. How work connects.</h2>
         <p className="lede">
           One Workspace operating environment — Continuity, Attention, Task
-          Graph, Environment, Composition, Purpose, Decision Engine, Decision
-          Queue, then Activity. Nothing here executes or grants permission.
+          Graph, Environment, Composition, Purpose, Evolution, Decision Engine,
+          Decision Queue, then Activity. Nothing here executes or grants
+          permission.
         </p>
       </header>
 
@@ -731,6 +741,58 @@ export function WorkspaceIntelligencePanel({
           </>
         ) : (
           <p className="muted">No purpose snapshot yet.</p>
+        )}
+      </section>
+
+      <section>
+        <h3>Evolution</h3>
+        <p className="muted">
+          How work changed — projected from Activity Graph, Task Graph, Purpose,
+          Composition, and Continuity. Not a second history store; never
+          predicts.
+        </p>
+        <div className="row">
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("Evolution refreshed", async () => {
+                if (!workspace) return;
+                const next = await invokeIpc<WorkspaceEvolutionState>(
+                  "generate_workspace_evolution",
+                  { workspaceId: workspace.id },
+                );
+                setEvolution(next);
+              })
+            }
+          >
+            Refresh evolution
+          </button>
+        </div>
+        {evolution ? (
+          <>
+            <p>
+              <strong>{evolution.label}</strong>
+            </p>
+            <p>{evolution.summary}</p>
+            <p className="muted">{evolution.explanation}</p>
+            <p className="muted">
+              {evolution.event_count} event(s) · {evolution.insight_count}{" "}
+              insight(s) · authority: {evolution.authority_effect}
+            </p>
+            {evolution.insights.length > 0 && (
+              <ul className="intelligence-list">
+                {evolution.insights.slice(0, 5).map((insight) => (
+                  <li key={insight.id}>
+                    <strong>{insight.title}</strong>
+                    <div className="muted">{insight.explanation}</div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
+        ) : (
+          <p className="muted">No evolution snapshot yet.</p>
         )}
       </section>
 

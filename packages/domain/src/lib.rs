@@ -44,6 +44,7 @@ pub mod workspace_activity;
 pub mod workspace_attention;
 pub mod workspace_composition;
 pub mod workspace_purpose;
+pub mod workspace_evolution;
 pub mod workspace_continuity;
 pub mod workspace_task_graph;
 pub mod workspace_environment;
@@ -199,6 +200,12 @@ pub use workspace_purpose::{
     build_purpose_summary, purpose_now_rfc3339, validate_purpose_workspace_id, PurposeEvidence,
     PurposeEvidenceKind, PurposeObstacle, PurposeRelationship, WorkspacePurposeError,
     WorkspacePurposeState, WorkspacePurposeSummary,
+};
+pub use workspace_evolution::{
+    build_evolution_summary, evolution_now_rfc3339, validate_evolution_workspace_id,
+    EvolutionEvent, EvolutionInsight, EvolutionInsightKind, EvolutionRelationship,
+    EvolutionSourceModel, WorkspaceEvolutionError, WorkspaceEvolutionState,
+    WorkspaceEvolutionSummary,
 };
 pub use workspace_environment::{
     build_environment_summary, now_rfc3339, validate_workspace_id, EnvironmentApplication,
