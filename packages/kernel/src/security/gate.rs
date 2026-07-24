@@ -20,6 +20,9 @@ pub struct PermissionRequest {
     pub capability: Capability,
     pub command: &'static str,
     pub subject: PermissionSubject,
+    /// Optional concrete resource id (e.g. application id) for audit/scoping.
+    /// Does not grant authority; used so approvals can be workspace-attributed.
+    pub target_resource_id: Option<String>,
 }
 
 /// Outcome of a permission check.

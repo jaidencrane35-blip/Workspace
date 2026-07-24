@@ -232,6 +232,7 @@ mod tests {
             capability: Capability::workspace_write(),
             command: "CreateWorkspace",
             subject: PermissionSubject::Resource(ResourceKind::Workspace),
+            target_resource_id: None,
         }
     }
 

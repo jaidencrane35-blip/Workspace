@@ -494,7 +494,7 @@ impl QueryCommand for GetWorkflowContext {
         if ctx.state.lifecycle != LifecycleState::Ready {
             return Err(KernelError::NotReady);
         }
-        WorkspaceIntentService::get_or_create_workflow_context(&ctx.database, &self.workspace_id)
+        WorkspaceIntentService::get_workflow_context_readonly(&ctx.database, &self.workspace_id)
     }
 }
 

@@ -261,6 +261,23 @@ impl WorkspaceIntentService {
             .map_err(Into::into)
     }
 
+    /// Read-only workflow context. Missing rows yield an empty in-memory context (no insert).
+    pub(crate) fn get_workflow_context_readonly(
+        db: &Arc<Mutex<Database>>,
+        workspace_id: &str,
+    ) -> Result<WorkflowContext> {
+        let workspace_id = WorkspaceId::new(workspace_id).map_err(KernelError::Domain)?;
+        let guard = db
+            .lock()
+            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+        if let Some(existing) =
+            WorkspaceIntentRepository::new(&guard).get_workflow_context(workspace_id.as_str())?
+        {
+            return Ok(existing);
+        }
+        WorkflowContext::empty(workspace_id.as_str()).map_err(KernelError::from)
+    }
+
     pub(crate) fn get_or_create_workflow_context(
         db: &Arc<Mutex<Database>>,
         workspace_id: &str,
@@ -296,10 +313,27 @@ impl WorkspaceIntentService {
             .map_err(KernelError::Domain)?;
 
         if let Some(ref project_id) = active_project {
-            let _ = Self::get_project(db, project_id.as_str())?;
+            let project = Self::get_project(db, project_id.as_str())?;
+            if project.workspace_id.as_str() != workspace_id || project.deleted {
+                return Err(KernelError::WorkspaceIntentValidation {
+                    message: "active project does not belong to this workspace".into(),
+                });
+            }
         }
         if let Some(ref task_id) = active_task {
-            let _ = Self::get_task(db, task_id.as_str())?;
+            let task = Self::get_task(db, task_id.as_str())?;
+            if task.workspace_id.as_str() != workspace_id || task.deleted {
+                return Err(KernelError::WorkspaceIntentValidation {
+                    message: "active task does not belong to this workspace".into(),
+                });
+            }
+            if let Some(ref project_id) = active_project {
+                if task.project_id.as_str() != project_id.as_str() {
+                    return Err(KernelError::WorkspaceIntentValidation {
+                        message: "active task does not belong to the active project".into(),
+                    });
+                }
+            }
         }
 
         context.active_project_id = active_project;

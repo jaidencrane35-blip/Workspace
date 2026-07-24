@@ -16,6 +16,11 @@ pub trait MutationCommand: Command {
 
     fn permission_subject(&self) -> PermissionSubject;
 
+    /// Optional concrete resource id for approval attribution / intelligence scoping.
+    fn permission_target_id(&self) -> Option<String> {
+        None
+    }
+
     fn required_capability(&self) -> Capability;
 
     /// Optional resource address recorded in the audit trail after execution.
@@ -69,6 +74,7 @@ pub fn permission_request(
         capability,
         command,
         subject,
+        target_resource_id: None,
     }
 }
 

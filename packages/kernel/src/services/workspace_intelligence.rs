@@ -1,30 +1,33 @@
-//! Workspace Intelligence aggregator — read-only (Phase 4 Batch 5).
+//! Workspace Intelligence aggregator — read-only (Phase 4 Batch 5 / 5.5).
 //!
 //! Consumes existing awareness, memory, personalization, plans, approvals.
 //! Cannot execute, approve, grant, or bypass Permission Gateway.
+//! Batch 5.5: workspace-scoped aggregation, no create-on-read.
 
+use std::collections::HashSet;
 use std::sync::{Arc, Mutex};
 
 use chrono::Utc;
 use serde_json::json;
 use workspace_database::{ApplicationRepository, Database};
 use workspace_domain::{
-    ActorContext, AiOrchestratedPlanState, AiPlanStepState, BlockedActionSummary,
-    IntelligenceApplicationSummary, IntelligenceHighlight, IntentContext, PendingDecisionSummary,
-    PermissionApprovalStatus, RecentActivityItem, WorkspaceId, WorkspaceIntelligenceState,
-    WorkspaceRecommendation,
+    ActorContext, AiOrchestratedPlan, AiOrchestratedPlanState, AiPlanStepState,
+    BlockedActionSummary, IntelligenceApplicationSummary, IntelligenceHighlight, IntentContext,
+    PendingDecisionSummary, PermissionApprovalRequest, PermissionApprovalStatus,
+    RecentActivityItem, WorkspaceId, WorkspaceIntelligenceState, WorkspaceRecommendation,
 };
 
 use crate::error::{KernelError, Result};
 use crate::services::{
     AiMemoryService, AiPersonalizationService, AssistantWorkflowStore, AuditService,
-    OrchestratedPlanStore, PermissionApprovalService, WorkspaceIntentService,
+    DesktopWindowService, OrchestratedPlanStore, PermissionApprovalService,
+    WorkspaceIntentService,
 };
 
 pub(crate) struct WorkspaceIntelligenceService;
 
 impl WorkspaceIntelligenceService {
-    /// Build a read-only intelligence snapshot. Never mutates authority.
+    /// Build a read-only intelligence snapshot. Never mutates authority or intent tables.
     pub(crate) fn generate(
         db: &Arc<Mutex<Database>>,
         actor: &ActorContext,
@@ -39,23 +42,25 @@ impl WorkspaceIntelligenceService {
         let health_label = health_label.into();
         let ws = workspace_id.as_str();
 
-        let workflow_context =
-            WorkspaceIntentService::get_or_create_workflow_context(db, ws)?;
+        // Read-only: never insert WorkflowContext during generate.
+        let workflow_context = WorkspaceIntentService::get_workflow_context_readonly(db, ws)?;
         let current_project = match &workflow_context.active_project_id {
-            Some(id) => WorkspaceIntentService::get_project(db, id.as_str()).ok(),
+            Some(id) => WorkspaceIntentService::get_project(db, id.as_str())
+                .ok()
+                .filter(|project| project.workspace_id.as_str() == ws && !project.deleted),
             None => WorkspaceIntentService::list_projects(db, ws, 1)?
                 .into_iter()
                 .next(),
         };
         let current_task = match &workflow_context.active_task_id {
-            Some(id) => WorkspaceIntentService::get_task(db, id.as_str()).ok(),
-            None => current_project
-                .as_ref()
-                .and_then(|project| {
-                    WorkspaceIntentService::list_tasks(db, ws, Some(project.id.as_str()), 1)
-                        .ok()
-                        .and_then(|tasks| tasks.into_iter().next())
-                }),
+            Some(id) => WorkspaceIntentService::get_task(db, id.as_str())
+                .ok()
+                .filter(|task| task.workspace_id.as_str() == ws && !task.deleted),
+            None => current_project.as_ref().and_then(|project| {
+                WorkspaceIntentService::list_tasks(db, ws, Some(project.id.as_str()), 1)
+                    .ok()
+                    .and_then(|tasks| tasks.into_iter().next())
+            }),
         };
         let recent_goals = WorkspaceIntentService::list_goals(db, ws, 10)?;
 
@@ -94,6 +99,12 @@ impl WorkspaceIntelligenceService {
             Vec::new()
         };
 
+        let window_titles = DesktopWindowService::list_recent(Some(50))
+            .unwrap_or_default()
+            .into_iter()
+            .map(|window| window.title.to_lowercase())
+            .collect::<Vec<_>>();
+
         let applications = {
             let guard = db
                 .lock()
@@ -101,32 +112,20 @@ impl WorkspaceIntelligenceService {
             ApplicationRepository::new(&guard)
                 .list_by_workspace(&workspace_id)?
                 .into_iter()
-                .map(|app| IntelligenceApplicationSummary {
-                    id: app.id.to_string(),
-                    name: app.name.clone(),
-                    appears_active: false,
+                .map(|app| {
+                    let name_lower = app.name.to_lowercase();
+                    let appears_active = window_titles
+                        .iter()
+                        .any(|title| title.contains(&name_lower));
+                    IntelligenceApplicationSummary {
+                        id: app.id.to_string(),
+                        name: app.name.clone(),
+                        appears_active,
+                    }
                 })
                 .collect::<Vec<_>>()
         };
-
-        let approvals = {
-            let guard = db
-                .lock()
-                .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
-            PermissionApprovalService::list_recent(&guard, Some(20))?
-        };
-        let pending_approvals = approvals
-            .into_iter()
-            .filter(|item| item.status == PermissionApprovalStatus::Pending)
-            .map(|item| PendingDecisionSummary {
-                id: item.id.to_string(),
-                summary: format!("{} requires approval", item.command_name),
-                explanation: format!(
-                    "Waiting because permission approval is required for capability {}.",
-                    item.capability
-                ),
-            })
-            .collect::<Vec<_>>();
+        let app_ids: HashSet<String> = applications.iter().map(|app| app.id.clone()).collect();
 
         let plans = {
             let guard = orchestrated_plans
@@ -141,9 +140,58 @@ impl WorkspaceIntelligenceService {
             guard.list_all()
         };
 
+        let linked_plan_ids: HashSet<String> = workflow_context
+            .related_plan_ids
+            .iter()
+            .cloned()
+            .chain(
+                workflows
+                    .iter()
+                    .filter(|workflow| workflow.workspace_id.as_deref() == Some(ws))
+                    .filter_map(|workflow| {
+                        workflow
+                            .orchestrated_plan_id
+                            .as_ref()
+                            .map(|id| id.to_string())
+                    }),
+            )
+            .collect();
+
+        let scoped_plans: Vec<&AiOrchestratedPlan> = plans
+            .iter()
+            .filter(|plan| plan_belongs_to_workspace(plan, &app_ids, &linked_plan_ids))
+            .collect();
+        let linked_approval_ids: HashSet<String> = scoped_plans
+            .iter()
+            .flat_map(|plan| plan.steps.iter())
+            .filter_map(|step| step.approval_request_id.clone())
+            .collect();
+
+        let approvals = {
+            let guard = db
+                .lock()
+                .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+            PermissionApprovalService::list_recent(&guard, Some(50))?
+        };
+        let pending_approvals = approvals
+            .into_iter()
+            .filter(|item| item.status == PermissionApprovalStatus::Pending)
+            .filter(|item| {
+                approval_belongs_to_workspace(item, ws, &app_ids, &linked_approval_ids)
+            })
+            .map(|item| PendingDecisionSummary {
+                id: item.id.to_string(),
+                summary: format!("{} requires approval", item.command_name),
+                explanation: format!(
+                    "Waiting because permission approval is required for capability {}.",
+                    item.capability
+                ),
+            })
+            .collect::<Vec<_>>();
+
         let mut pending_plans = Vec::new();
         let mut blocked_actions = Vec::new();
-        for plan in &plans {
+        for plan in scoped_plans {
             if matches!(
                 plan.state,
                 AiOrchestratedPlanState::Proposed
@@ -170,40 +218,41 @@ impl WorkspaceIntelligenceService {
                             step.proposal.command_name,
                             step.state.as_str()
                         ),
-                        explanation: step
-                            .last_outcome_detail
-                            .clone()
-                            .unwrap_or_else(|| {
-                                "Blocked because Permission Gateway denied or the step failed."
-                                    .into()
-                            }),
+                        explanation: step.last_outcome_detail.clone().unwrap_or_else(|| {
+                            "Blocked because Permission Gateway denied or the step failed.".into()
+                        }),
                     });
                 }
             }
         }
+
+        // Exact workspace match only — never include unbound workflows.
         for workflow in &workflows {
-            if workflow
-                .workspace_id
-                .as_deref()
-                .is_some_and(|id| id == ws)
-                || workflow.workspace_id.is_none()
-            {
-                if !matches!(
-                    workflow.state.as_str(),
-                    "completed" | "cancelled" | "failed"
-                ) {
-                    pending_plans.push(format!(
-                        "Assistant workflow {} — {} ({})",
-                        workflow.id,
-                        workflow.user_goal,
-                        workflow.state.as_str()
-                    ));
-                }
+            if workflow.workspace_id.as_deref() != Some(ws) {
+                continue;
+            }
+            if !matches!(
+                workflow.state.as_str(),
+                "completed" | "cancelled" | "failed"
+            ) {
+                pending_plans.push(format!(
+                    "Assistant workflow {} — {} ({})",
+                    workflow.id,
+                    workflow.user_goal,
+                    workflow.state.as_str()
+                ));
             }
         }
 
-        let recent_activity = AuditService::list_recent(db, 15)?
+        let recent_activity = AuditService::list_recent(db, 40)?
             .into_iter()
+            .filter(|event| {
+                event
+                    .metadata
+                    .as_deref()
+                    .is_some_and(|metadata| metadata.contains(ws))
+            })
+            .take(15)
             .map(|event| RecentActivityItem {
                 event_type: event.event_type.clone(),
                 summary: event
@@ -378,11 +427,15 @@ impl WorkspaceIntelligenceService {
         actor: &ActorContext,
         state: &WorkspaceIntelligenceState,
     ) -> Result<()> {
+        // Single operational event — avoid audit fan-out noise (Batch 5.5).
         let metadata = json!({
             "workspace_id": state.workspace_id,
             "recommendation_count": state.recommended_actions.len(),
             "pending_approvals": state.pending_approvals.len(),
             "blocked_actions": state.blocked_actions.len(),
+            "memory_highlights": state.memory_highlights.len(),
+            "preference_highlights": state.preference_highlights.len(),
+            "summary_len": state.summary.len(),
             "authority_effect": "none",
         })
         .to_string();
@@ -393,51 +446,39 @@ impl WorkspaceIntelligenceService {
             "workspace.intelligence.generated",
             true,
             metadata,
-        )?;
-        AuditService::record_ai_planning_event(
-            db,
-            actor,
-            &IntentContext::user_request(),
-            "workspace.summary.created",
-            true,
-            json!({
-                "workspace_id": state.workspace_id,
-                "summary_len": state.summary.len(),
-                "authority_effect": "none",
-            })
-            .to_string(),
-        )?;
-        if !state.recommended_actions.is_empty() {
-            AuditService::record_ai_planning_event(
-                db,
-                actor,
-                &IntentContext::user_request(),
-                "workspace.recommendation.generated",
-                true,
-                json!({
-                    "workspace_id": state.workspace_id,
-                    "count": state.recommended_actions.len(),
-                    "authority_effect": "none",
-                })
-                .to_string(),
-            )?;
-        }
-        if !state.memory_highlights.is_empty() || !state.preference_highlights.is_empty() {
-            AuditService::record_ai_planning_event(
-                db,
-                actor,
-                &IntentContext::user_request(),
-                "workspace.insight.generated",
-                true,
-                json!({
-                    "workspace_id": state.workspace_id,
-                    "memory_highlights": state.memory_highlights.len(),
-                    "preference_highlights": state.preference_highlights.len(),
-                    "authority_effect": "none",
-                })
-                .to_string(),
-            )?;
-        }
-        Ok(())
+        )
     }
+}
+
+fn plan_belongs_to_workspace(
+    plan: &AiOrchestratedPlan,
+    app_ids: &HashSet<String>,
+    linked_plan_ids: &HashSet<String>,
+) -> bool {
+    if linked_plan_ids.contains(plan.id.as_str()) {
+        return true;
+    }
+    plan.steps.iter().any(|step| {
+        step.proposal
+            .target_resource
+            .as_ref()
+            .is_some_and(|resource| app_ids.contains(resource.id.as_str()))
+    })
+}
+
+fn approval_belongs_to_workspace(
+    item: &PermissionApprovalRequest,
+    workspace_id: &str,
+    app_ids: &HashSet<String>,
+    linked_approval_ids: &HashSet<String>,
+) -> bool {
+    if linked_approval_ids.contains(item.id.as_str()) {
+        return true;
+    }
+    if item.subject.contains(workspace_id) || item.reason.contains(workspace_id) {
+        return true;
+    }
+    app_ids.iter().any(|app_id| {
+        item.subject.contains(app_id.as_str()) || item.reason.contains(app_id.as_str())
+    })
 }

@@ -51,6 +51,10 @@ impl MutationCommand for LaunchApplication {
         PermissionSubject::Resource(ResourceKind::Application)
     }
 
+    fn permission_target_id(&self) -> Option<String> {
+        Some(self.application_id.to_string())
+    }
+
     fn required_capability(&self) -> Capability {
         Capability::application_launch()
     }

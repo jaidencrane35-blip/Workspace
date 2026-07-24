@@ -26,6 +26,7 @@ mod tests {
             capability: Capability::workspace_write(),
             command: "CreateWorkspace",
             subject: PermissionSubject::Resource(ResourceKind::Workspace),
+            target_resource_id: None,
         };
 
         assert_eq!(
@@ -43,6 +44,7 @@ mod tests {
             capability: Capability::settings_write(),
             command: "UpdateSettings",
             subject: PermissionSubject::System,
+            target_resource_id: None,
         };
 
         assert_eq!(request.actor, Actor::local_user());

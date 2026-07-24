@@ -94,6 +94,7 @@ impl CapabilityResolver {
             capability: capability.clone(),
             command: command_name,
             subject,
+            target_resource_id: None,
         };
 
         // Discovery probes evaluate without writing permission audit records.

@@ -1,10 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { invokeIpc } from "../lib/ipc";
 import type {
   Project,
   Task,
   Workspace,
-  WorkspaceIntelligenceComparison,
   WorkspaceIntelligenceState,
 } from "../types/domain";
 
@@ -24,8 +23,6 @@ export function WorkspaceIntelligencePanel({
   onMessage,
 }: WorkspaceIntelligencePanelProps) {
   const [state, setState] = useState<WorkspaceIntelligenceState | null>(null);
-  const [comparison, setComparison] =
-    useState<WorkspaceIntelligenceComparison | null>(null);
   const [projectName, setProjectName] = useState("Workspace AI");
   const [taskTitle, setTaskTitle] = useState(
     "Build Workspace Intelligence Layer",
@@ -46,6 +43,32 @@ export function WorkspaceIntelligencePanel({
     }
   }
 
+  useEffect(() => {
+    if (!workspace) {
+      setProjects([]);
+      setTasks([]);
+      setState(null);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const listed = await invokeIpc<Project[]>("list_projects", {
+          workspaceId: workspace.id,
+          limit: 50,
+        });
+        if (!cancelled) setProjects(listed);
+      } catch (err: unknown) {
+        if (!cancelled) {
+          onError(err instanceof Error ? err.message : String(err));
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [workspace, onError]);
+
   return (
     <div className="intelligence-panel">
       <header className="intelligence-hero">
@@ -59,6 +82,12 @@ export function WorkspaceIntelligencePanel({
 
       <section>
         <h3>Current work</h3>
+        {projects.length > 0 && (
+          <p className="muted">
+            Durable projects:{" "}
+            {projects.map((project) => project.name).join(", ")}
+          </p>
+        )}
         <div className="row">
           <input
             value={projectName}
@@ -139,30 +168,10 @@ export function WorkspaceIntelligencePanel({
                   { workspaceId: workspace.id },
                 );
                 setState(next);
-                setComparison(null);
               })
             }
           >
             Refresh workspace understanding
-          </button>
-          <button
-            type="button"
-            disabled={busy || !workspace || !state}
-            onClick={() =>
-              void run("Workspace states compared", async () => {
-                if (!workspace) return;
-                const result = await invokeIpc<WorkspaceIntelligenceComparison>(
-                  "compare_workspace_intelligence_states",
-                  {
-                    leftWorkspaceId: workspace.id,
-                    rightWorkspaceId: workspace.id,
-                  },
-                );
-                setComparison(result);
-              })
-            }
-          >
-            Compare workspace states
           </button>
         </div>
       </section>
@@ -293,17 +302,6 @@ export function WorkspaceIntelligencePanel({
         </>
       )}
 
-      {comparison && (
-        <section>
-          <h3>State comparison</h3>
-          <ul className="intelligence-list">
-            {comparison.differences.map((diff) => (
-              <li key={diff}>{diff}</li>
-            ))}
-          </ul>
-        </section>
-      )}
-
       {!workspace && (
         <p className="muted">
           Create or activate a workspace on Canvas before generating
@@ -312,7 +310,7 @@ export function WorkspaceIntelligencePanel({
       )}
 
       {tasks.length > 0 && (
-        <p className="muted">Local session tasks created: {tasks.length}</p>
+        <p className="muted">Tasks created this session: {tasks.length}</p>
       )}
     </div>
   );

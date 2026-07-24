@@ -61,13 +61,14 @@ impl<'a> CommandPipeline<'a> {
         );
 
         let capability = command.required_capability();
-        let request = permission_request(
+        let mut request = permission_request(
             &self.ctx.actor_context,
             &self.ctx.intent_context,
             command_name,
             command.permission_subject(),
             capability.clone(),
         );
+        request.target_resource_id = command.permission_target_id();
 
         if let Err(error) = PermissionGateway::require(
             &self.ctx.database,

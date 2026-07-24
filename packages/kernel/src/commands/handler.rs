@@ -2004,6 +2004,7 @@ impl CommandHandler {
             capability: Capability::system_shutdown(),
             command: "ShutdownWorkspace",
             subject: PermissionSubject::System,
+            target_resource_id: None,
         };
 
         if let Err(error) = kernel.permission_gate().require(&request) {

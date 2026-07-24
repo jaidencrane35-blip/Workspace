@@ -6,6 +6,7 @@ import type {
   AiAssistantProductState,
   AiAssistantWorkflow,
   Workspace,
+  WorkspaceIntelligenceState,
 } from "../types/domain";
 import { assistantProductState } from "../types/domain";
 
@@ -47,6 +48,8 @@ export function AssistantPanel({
     null,
   );
   const [expandedStepId, setExpandedStepId] = useState<string | null>(null);
+  const [workspaceIntel, setWorkspaceIntel] =
+    useState<WorkspaceIntelligenceState | null>(null);
 
   const productState = assistantProductState(workflow?.state);
   const canConfirm = workflow?.state === "awaiting_confirmation";
@@ -103,10 +106,53 @@ export function AssistantPanel({
         <p className="assistant-kicker">Governed assistant</p>
         <h2>Ask for work. Review the plan. Approve what runs.</h2>
         <p className="lede">
-          Every action still passes the Permission Gateway. The assistant never
-          executes on its own.
+          A governed interface into Workspace Intelligence. Understanding comes
+          from the Workspace; every action still passes the Permission Gateway.
         </p>
       </header>
+
+      <section>
+        <h3>Shared workspace understanding</h3>
+        <p className="muted">
+          Same generate_workspace_intelligence path as the Work tab — read-only.
+        </p>
+        <div className="row">
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("Workspace understanding loaded", async () => {
+                if (!workspace) return;
+                const state = await invokeIpc<WorkspaceIntelligenceState>(
+                  "generate_workspace_intelligence",
+                  { workspaceId: workspace.id },
+                );
+                setWorkspaceIntel(state);
+              })
+            }
+          >
+            Load workspace intelligence
+          </button>
+        </div>
+        {workspaceIntel && (
+          <dl>
+            <dt>Summary</dt>
+            <dd>{workspaceIntel.summary}</dd>
+            <dt>Project / task</dt>
+            <dd>
+              {workspaceIntel.current_project?.name ?? "None"} /{" "}
+              {workspaceIntel.current_task?.title ?? "None"}
+            </dd>
+            <dt>Needs attention</dt>
+            <dd>
+              {workspaceIntel.pending_approvals.length} pending decision(s),{" "}
+              {workspaceIntel.blocked_actions.length} blocked action(s)
+            </dd>
+            <dt>Authority effect</dt>
+            <dd>{workspaceIntel.authority_effect}</dd>
+          </dl>
+        )}
+      </section>
 
       <div
         className="assistant-states"

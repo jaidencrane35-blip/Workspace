@@ -38,7 +38,10 @@ impl PermissionApprovalService {
             requesting_actor_id: request.actor.id.to_string(),
             command_name: request.command.to_string(),
             capability: request.capability.id.to_string(),
-            subject: format!("{:?}", request.subject),
+            subject: match &request.target_resource_id {
+                Some(id) => format!("{:?}:{id}", request.subject),
+                None => format!("{:?}", request.subject),
+            },
             intent_type: request.intent.intent_type,
             reason: reason.to_string(),
             decided_at: None,

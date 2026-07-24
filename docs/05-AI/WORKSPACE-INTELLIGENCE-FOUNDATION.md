@@ -58,14 +58,17 @@ Capabilities: `work_context.read` / `work_context.write`.
 
 Cannot execute, approve, grant, or bypass CommandPipeline / Permission Gateway.
 
+Aggregation is **workspace-scoped** (Batch 5.5): plans, approvals, assistant workflows, and activity must attribute to the target workspace. Generate is read-only (no create-on-read for `WorkflowContext`).
+
+Integrity audit: [Workspace Intelligence Integrity Audit](WORKSPACE-INTELLIGENCE-INTEGRITY-AUDIT.md).
+
 ---
 
 ## Product surface
 
 Primary tab: **Work** (`WorkspaceIntelligencePanel`).
-Assistant remains one interface into governed planning — not the primary intelligence surface.
-
-Diagnostics: Operator Console validates the same CommandHandler APIs.
+Assistant is a governed interface into Workspace Intelligence — not a parallel brain.
+Work, Assistant, and Operator Console all call `generate_workspace_intelligence`.
 
 ---
 
@@ -76,10 +79,7 @@ Diagnostics: Operator Console validates the same CommandHandler APIs.
 | `workspace.intent.created` | none |
 | `workspace.intent.updated` | none |
 | `workspace.context.updated` | none |
-| `workspace.intelligence.generated` | none |
-| `workspace.summary.created` | none |
-| `workspace.insight.generated` | none |
-| `workspace.recommendation.generated` | none |
+| `workspace.intelligence.generated` | none (single event per generate; Batch 5.5) |
 
 ---
 
@@ -90,4 +90,4 @@ Diagnostics: Operator Console validates the same CommandHandler APIs.
 - Hidden workflows
 - Second permission system
 - Memory/preferences granting authority
-- Governed Automation Contracts (deferred to next batch)
+- Governed Automation Contracts (Batch 6)

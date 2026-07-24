@@ -76,6 +76,14 @@ Production Assistant UX over the existing governed pipeline: revise/regenerate/c
 
 Durable work context (Project/Task/Goal/WorkflowContext) + read-only Workspace Intelligence aggregator. Product **Work** tab; Assistant is one interface. Foundation for future automation contracts. See [Workspace Intelligence Foundation](WORKSPACE-INTELLIGENCE-FOUNDATION.md).
 
+## Phase 4 Batch 5.5 (done)
+
+Integrity audit and hardening of Workspace Intelligence — isolation, read-only generate, shared path, governance CASE tests. No new capabilities. See [Workspace Intelligence Integrity Audit](WORKSPACE-INTELLIGENCE-INTEGRITY-AUDIT.md).
+
+## Phase 4 Batch 6 (next)
+
+Governed automation contracts — durable, inspectable, re-enter CommandPipeline → Permission Gateway on every trigger. Must not treat in-memory plan stores as durable work context.
+
 ---
 
 ## Never build

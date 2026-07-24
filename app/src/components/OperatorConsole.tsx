@@ -7,7 +7,6 @@ import type {
   AiMemoryAwareness,
   Project,
   Task,
-  WorkspaceIntelligenceComparison,
   WorkspaceIntelligenceState,
   AiOrchestratedPlan,
   AiPlan,
@@ -142,8 +141,6 @@ export function OperatorConsole({
   );
   const [workspaceIntelligence, setWorkspaceIntelligence] =
     useState<WorkspaceIntelligenceState | null>(null);
-  const [intelligenceComparison, setIntelligenceComparison] =
-    useState<WorkspaceIntelligenceComparison | null>(null);
   const [activeProject, setActiveProject] = useState<Project | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [memoryEntries, setMemoryEntries] = useState<MemoryEntry[]>([]);
@@ -1105,13 +1102,13 @@ export function OperatorConsole({
               })
             }
           >
-            Generate Workspace Intelligence
+            Seed + generate intelligence
           </button>
           <button
             type="button"
             disabled={busy || !workspace}
             onClick={() =>
-              void run("Workspace summary refreshed", async () => {
+              void run("Workspace intelligence refreshed", async () => {
                 if (!workspace) return;
                 const state = await invokeIpc<WorkspaceIntelligenceState>(
                   "generate_workspace_intelligence",
@@ -1121,7 +1118,7 @@ export function OperatorConsole({
               })
             }
           >
-            Generate Workspace Summary
+            Refresh intelligence (shared path)
           </button>
           <button
             type="button"
@@ -1170,25 +1167,6 @@ export function OperatorConsole({
           >
             Inspect Active Task
           </button>
-          <button
-            type="button"
-            disabled={busy || !workspace}
-            onClick={() =>
-              void run("Workspace states compared", async () => {
-                if (!workspace) return;
-                const result = await invokeIpc<WorkspaceIntelligenceComparison>(
-                  "compare_workspace_intelligence_states",
-                  {
-                    leftWorkspaceId: workspace.id,
-                    rightWorkspaceId: workspace.id,
-                  },
-                );
-                setIntelligenceComparison(result);
-              })
-            }
-          >
-            Compare Workspace States
-          </button>
         </div>
         {workspaceIntelligence && (
           <ul className="muted">
@@ -1206,13 +1184,6 @@ export function OperatorConsole({
               <li key={rec.id}>
                 {rec.title} — {rec.explanation}
               </li>
-            ))}
-          </ul>
-        )}
-        {intelligenceComparison && (
-          <ul className="muted">
-            {intelligenceComparison.differences.map((diff) => (
-              <li key={diff}>{diff}</li>
             ))}
           </ul>
         )}
