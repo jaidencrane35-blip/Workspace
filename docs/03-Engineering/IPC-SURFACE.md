@@ -50,6 +50,10 @@
 | `set_active_work` / `get_workflow_context` | Product + diagnostic: active project/task context |
 | `generate_workspace_intelligence` | Product + diagnostic: read-only workspace understanding |
 | `compare_workspace_intelligence_states` | Product + diagnostic: compare intelligence snapshots |
+| `create_automation_contract` / `list_automation_contracts` / `get_automation_contract` | Product: governed automation contract definitions |
+| `request_automation_contract_approval` / `approve_automation_contract` | Product: definition approval lifecycle (≠ execution) |
+| `pause_automation_contract` / `revoke_automation_contract` | Product: pause/revoke definitions |
+| `prepare_automation_contract_intent` | Boundary only: materialize future Intent template (no execute) |
 | `create_memory_entry` / `list_memory_entries` / `get_memory_context` | Diagnostic governed memory (informational) |
 | `delete_memory_entry` / `clear_memory_entries` | Diagnostic memory lifecycle |
 | `diagnose_ai_plan_preview` | Diagnostic memory-aware plan (no execution) |

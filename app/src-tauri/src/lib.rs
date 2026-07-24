@@ -4,6 +4,11 @@ mod commands;
 use std::sync::{Arc, Mutex};
 
 use commands::audit::get_audit_history;
+use commands::automation_contract::{
+    approve_automation_contract, create_automation_contract, get_automation_contract,
+    list_automation_contracts, pause_automation_contract, prepare_automation_contract_intent,
+    request_automation_contract_approval, revoke_automation_contract,
+};
 use commands::layout::{
     create_layout, delete_layout, get_layout, get_layout_snapshot, reset_layout, update_layout,
 };
@@ -138,6 +143,14 @@ pub fn run() {
             get_workflow_context,
             generate_workspace_intelligence,
             compare_workspace_intelligence_states,
+            create_automation_contract,
+            list_automation_contracts,
+            get_automation_contract,
+            request_automation_contract_approval,
+            approve_automation_contract,
+            pause_automation_contract,
+            revoke_automation_contract,
+            prepare_automation_contract_intent,
             create_suggestion_intent_request,
             execute_intent_request,
             get_execution_outcomes,

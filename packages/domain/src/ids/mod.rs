@@ -87,6 +87,7 @@ define_id!(UserPreferenceId);
 define_id!(ProjectId);
 define_id!(TaskId);
 define_id!(WorkGoalId);
+define_id!(AutomationContractId);
 
 #[cfg(test)]
 mod tests {

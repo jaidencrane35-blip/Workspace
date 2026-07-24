@@ -1,5 +1,6 @@
 mod accept_suggestion;
 mod application;
+mod automation_contract;
 mod context;
 mod execute_intent_request;
 mod create_suggestion_intent_request;
@@ -67,6 +68,8 @@ mod ai_assistant_product_tests;
 #[cfg(test)]
 mod workspace_intelligence_tests;
 #[cfg(test)]
+mod automation_contract_tests;
+#[cfg(test)]
 mod ai_memory_tests;
 #[cfg(test)]
 mod ai_model_provider_tests;
@@ -90,6 +93,11 @@ mod zone;
 
 pub use accept_suggestion::AcceptSuggestion;
 pub use application::{CreateApplication, DeleteApplication, GetApplication};
+pub use automation_contract::{
+    ApproveAutomationContract, CreateAutomationContract, GetAutomationContract,
+    ListAutomationContracts, PauseAutomationContract, PrepareAutomationContractIntent,
+    RequestAutomationContractApproval, RevokeAutomationContract, UpdateAutomationContract,
+};
 pub use layout::{
     CreateLayout, DeleteLayout, GetLayout, GetLayoutSnapshot, ResetLayout, UpdateLayout,
 };

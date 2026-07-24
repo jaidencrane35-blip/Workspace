@@ -703,6 +703,76 @@ export interface IntelligenceApplicationSummary {
   appears_active: boolean;
 }
 
+export type AutomationTriggerKind =
+  | "manual"
+  | "scheduled"
+  | "event"
+  | "pattern";
+
+export type AutomationContractStatus =
+  | "draft"
+  | "pending_approval"
+  | "approved"
+  | "paused"
+  | "revoked"
+  | "completed";
+
+export type AutomationContractApprovalState =
+  | "not_approved"
+  | "pending"
+  | "approved"
+  | "revoked";
+
+export interface AutomationTriggerDefinition {
+  kind: AutomationTriggerKind;
+  definition: string;
+}
+
+export interface AutomationIntentDefinition {
+  statement: string;
+}
+
+export interface AutomationContract {
+  id: string;
+  workspace_id: string;
+  project_id: string;
+  task_id: string | null;
+  name: string;
+  description: string | null;
+  status: AutomationContractStatus;
+  trigger_definition: AutomationTriggerDefinition;
+  intent_definition: AutomationIntentDefinition;
+  scope: "project" | "task";
+  required_capabilities: string[];
+  approval_state: AutomationContractApprovalState;
+  created_by_actor: string;
+  created_at: string;
+  updated_at: string;
+  deleted: boolean;
+}
+
+export interface AutomationContractSummary {
+  id: string;
+  name: string;
+  project_id: string;
+  task_id: string | null;
+  status: string;
+  approval_state: string;
+  intent_statement: string;
+  required_capabilities: string[];
+  created_by_actor: string;
+}
+
+export interface AutomationContractIntentRequest {
+  contract_id: string;
+  workspace_id: string;
+  project_id: string;
+  task_id: string | null;
+  intent_statement: string;
+  required_capabilities: string[];
+  governance_note: string;
+}
+
 export interface WorkspaceIntelligenceState {
   workspace_id: string;
   workspace_name: string;
@@ -719,6 +789,7 @@ export interface WorkspaceIntelligenceState {
   memory_highlights: IntelligenceHighlight[];
   preference_highlights: IntelligenceHighlight[];
   current_applications: IntelligenceApplicationSummary[];
+  automation_contracts: AutomationContractSummary[];
   workspace_health: string;
   summary: string;
   authority_effect: string;

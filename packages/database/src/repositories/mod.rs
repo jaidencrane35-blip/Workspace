@@ -1,6 +1,7 @@
 mod ai_memory;
 mod application;
 mod audit;
+mod automation_contract;
 mod graph;
 mod layout;
 mod permission_approval;
@@ -13,6 +14,7 @@ mod zone;
 pub use ai_memory::AiMemoryRepository;
 pub use application::ApplicationRepository;
 pub use audit::AuditRepository;
+pub use automation_contract::AutomationContractRepository;
 pub use graph::GraphRepository;
 pub use layout::LayoutRepository;
 pub use permission_approval::PermissionApprovalRepository;

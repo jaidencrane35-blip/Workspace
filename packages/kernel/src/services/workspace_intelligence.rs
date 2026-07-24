@@ -12,16 +12,17 @@ use serde_json::json;
 use workspace_database::{ApplicationRepository, Database};
 use workspace_domain::{
     ActorContext, AiOrchestratedPlan, AiOrchestratedPlanState, AiPlanStepState,
-    BlockedActionSummary, IntelligenceApplicationSummary, IntelligenceHighlight, IntentContext,
-    PendingDecisionSummary, PermissionApprovalRequest, PermissionApprovalStatus,
-    RecentActivityItem, WorkspaceId, WorkspaceIntelligenceState, WorkspaceRecommendation,
+    AutomationContractSummary, BlockedActionSummary, IntelligenceApplicationSummary,
+    IntelligenceHighlight, IntentContext, PendingDecisionSummary, PermissionApprovalRequest,
+    PermissionApprovalStatus, RecentActivityItem, WorkspaceId, WorkspaceIntelligenceState,
+    WorkspaceRecommendation,
 };
 
 use crate::error::{KernelError, Result};
 use crate::services::{
     AiMemoryService, AiPersonalizationService, AssistantWorkflowStore, AuditService,
-    DesktopWindowService, OrchestratedPlanStore, PermissionApprovalService,
-    WorkspaceIntentService,
+    AutomationContractService, DesktopWindowService, OrchestratedPlanStore,
+    PermissionApprovalService, WorkspaceIntentService,
 };
 
 pub(crate) struct WorkspaceIntelligenceService;
@@ -63,6 +64,11 @@ impl WorkspaceIntelligenceService {
             }),
         };
         let recent_goals = WorkspaceIntentService::list_goals(db, ws, 10)?;
+        // Read-only — never mutate contracts from intelligence.
+        let automation_contracts = AutomationContractService::list(db, ws, Some(20))?
+            .iter()
+            .map(AutomationContractSummary::from)
+            .collect::<Vec<_>>();
 
         let memory = AiMemoryService::assemble_awareness(db, Some(ws), 10)
             .unwrap_or_else(|_| workspace_domain::AiMemoryAwareness::from_entries(Vec::new()));
@@ -271,6 +277,7 @@ impl WorkspaceIntelligenceService {
             &applications,
             &pending_approvals,
             &blocked_actions,
+            &automation_contracts,
             personalization.enabled,
         );
 
@@ -281,6 +288,7 @@ impl WorkspaceIntelligenceService {
             pending_approvals.len(),
             blocked_actions.len(),
             recommended_actions.len(),
+            &automation_contracts,
         );
 
         let state = WorkspaceIntelligenceState {
@@ -299,6 +307,7 @@ impl WorkspaceIntelligenceService {
             memory_highlights,
             preference_highlights,
             current_applications: applications,
+            automation_contracts,
             workspace_health: health_label,
             summary,
             authority_effect: WorkspaceIntelligenceState::AUTHORITY_EFFECT_NONE.into(),
@@ -316,6 +325,7 @@ impl WorkspaceIntelligenceService {
         applications: &[IntelligenceApplicationSummary],
         pending_approvals: &[PendingDecisionSummary],
         blocked: &[BlockedActionSummary],
+        automation_contracts: &[AutomationContractSummary],
         personalization_enabled: bool,
     ) -> Vec<WorkspaceRecommendation> {
         let mut recommendations = Vec::new();
@@ -386,6 +396,36 @@ impl WorkspaceIntelligenceService {
             });
         }
 
+        if let Some(contract) = automation_contracts
+            .iter()
+            .find(|c| c.approval_state == "pending")
+        {
+            recommendations.push(WorkspaceRecommendation {
+                id: format!("rec-contract-pending-{}", contract.id),
+                title: format!("Review automation contract: {}", contract.name),
+                explanation: format!(
+                    "Showing because contract \"{}\" awaits definition approval. \
+                     Approving the definition does not authorize execution.",
+                    contract.name
+                ),
+                kind: "automation_contract".into(),
+            });
+        } else if let Some(contract) = automation_contracts
+            .iter()
+            .find(|c| c.status == "approved" && c.approval_state == "approved")
+        {
+            recommendations.push(WorkspaceRecommendation {
+                id: format!("rec-contract-active-{}", contract.id),
+                title: format!("Approved automation: {}", contract.name),
+                explanation: format!(
+                    "Showing because an approved contract intends: \"{}\". \
+                     Triggers do not run automatically in this release.",
+                    contract.intent_statement
+                ),
+                kind: "automation_contract".into(),
+            });
+        }
+
         if recommendations.is_empty() {
             recommendations.push(WorkspaceRecommendation {
                 id: "rec-idle".into(),
@@ -406,6 +446,7 @@ impl WorkspaceIntelligenceService {
         pending_approvals: usize,
         blocked: usize,
         recommendations: usize,
+        automation_contracts: &[AutomationContractSummary],
     ) -> String {
         let project_label = project
             .as_ref()
@@ -415,10 +456,15 @@ impl WorkspaceIntelligenceService {
             .as_ref()
             .map(|t| t.title.as_str())
             .unwrap_or("no active task");
+        let approved_contracts = automation_contracts
+            .iter()
+            .filter(|c| c.status == "approved" && c.approval_state == "approved")
+            .count();
         format!(
             "Workspace \"{workspace_name}\" — working on {project_label} / {task_label}. \
              {pending_approvals} pending decision(s), {blocked} blocked action(s), \
-             {recommendations} recommendation(s). Intelligence is informational only."
+             {recommendations} recommendation(s), {approved_contracts} approved automation \
+             contract(s). Intelligence is informational only."
         )
     }
 

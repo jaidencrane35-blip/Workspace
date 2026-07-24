@@ -148,6 +148,18 @@ export function AssistantPanel({
               {workspaceIntel.pending_approvals.length} pending decision(s),{" "}
               {workspaceIntel.blocked_actions.length} blocked action(s)
             </dd>
+            <dt>Automation contracts</dt>
+            <dd>
+              {workspaceIntel.automation_contracts.length === 0
+                ? "None"
+                : workspaceIntel.automation_contracts
+                    .map(
+                      (c) =>
+                        `${c.name} (${c.status}/${c.approval_state})`,
+                    )
+                    .join("; ")}
+              . Informational only — Assistant cannot approve or authorize them.
+            </dd>
             <dt>Authority effect</dt>
             <dd>{workspaceIntel.authority_effect}</dd>
           </dl>

@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use crate::errors::DomainError;
+use crate::automation_contract::AutomationContractSummary;
 use crate::workspace_intent::{Project, Task, WorkGoal, WorkflowContext};
 
 /// Intelligence-layer validation errors.
@@ -86,6 +87,8 @@ pub struct WorkspaceIntelligenceState {
     pub memory_highlights: Vec<IntelligenceHighlight>,
     pub preference_highlights: Vec<IntelligenceHighlight>,
     pub current_applications: Vec<IntelligenceApplicationSummary>,
+    /// Read-only automation contract summaries (Batch 6). Never mutates contracts.
+    pub automation_contracts: Vec<AutomationContractSummary>,
     pub workspace_health: String,
     pub summary: String,
     /// Explicit marker for audits and UI: this state grants nothing.

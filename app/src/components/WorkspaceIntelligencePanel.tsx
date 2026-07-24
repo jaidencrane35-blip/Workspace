@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { invokeIpc } from "../lib/ipc";
 import type {
+  AutomationContract,
   Project,
   Task,
   Workspace,
@@ -29,6 +30,13 @@ export function WorkspaceIntelligencePanel({
   );
   const [projects, setProjects] = useState<Project[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [contracts, setContracts] = useState<AutomationContract[]>([]);
+  const [contractName, setContractName] = useState(
+    "Prepare coding environment",
+  );
+  const [contractIntent, setContractIntent] = useState(
+    "When ready, request opening my development environment.",
+  );
 
   async function run(ok: string, action: () => Promise<void>) {
     onBusy(true);
@@ -47,17 +55,27 @@ export function WorkspaceIntelligencePanel({
     if (!workspace) {
       setProjects([]);
       setTasks([]);
+      setContracts([]);
       setState(null);
       return;
     }
     let cancelled = false;
     void (async () => {
       try {
-        const listed = await invokeIpc<Project[]>("list_projects", {
-          workspaceId: workspace.id,
-          limit: 50,
-        });
-        if (!cancelled) setProjects(listed);
+        const [listed, listedContracts] = await Promise.all([
+          invokeIpc<Project[]>("list_projects", {
+            workspaceId: workspace.id,
+            limit: 50,
+          }),
+          invokeIpc<AutomationContract[]>("list_automation_contracts", {
+            workspaceId: workspace.id,
+            limit: 50,
+          }),
+        ]);
+        if (!cancelled) {
+          setProjects(listed);
+          setContracts(listedContracts);
+        }
       } catch (err: unknown) {
         if (!cancelled) {
           onError(err instanceof Error ? err.message : String(err));
@@ -156,6 +174,165 @@ export function WorkspaceIntelligencePanel({
       </section>
 
       <section>
+        <h3>Automation contracts</h3>
+        <p className="muted">
+          Durable records of approved future intent. Approving a definition does
+          not authorize execution — every action still passes the Permission
+          Gateway. No automatic runs in this release.
+        </p>
+        <div className="row">
+          <input
+            value={contractName}
+            disabled={busy || !workspace || projects.length === 0}
+            onChange={(e) => setContractName(e.target.value)}
+            aria-label="Contract name"
+            placeholder="Contract name"
+          />
+          <input
+            value={contractIntent}
+            disabled={busy || !workspace || projects.length === 0}
+            onChange={(e) => setContractIntent(e.target.value)}
+            aria-label="Intent statement"
+            placeholder="Intent statement"
+          />
+          <button
+            type="button"
+            disabled={
+              busy ||
+              !workspace ||
+              projects.length === 0 ||
+              !contractName.trim() ||
+              !contractIntent.trim()
+            }
+            onClick={() =>
+              void run("Automation contract created (draft)", async () => {
+                if (!workspace || projects.length === 0) return;
+                const project = projects[0];
+                const created = await invokeIpc<AutomationContract>(
+                  "create_automation_contract",
+                  {
+                    workspaceId: workspace.id,
+                    projectId: project.id,
+                    taskId: tasks[0]?.id ?? null,
+                    name: contractName.trim(),
+                    description: "User-defined automation contract",
+                    triggerKind: "manual",
+                    triggerDefinition: null,
+                    intentStatement: contractIntent.trim(),
+                    requiredCapabilities: ["application.launch"],
+                  },
+                );
+                setContracts((prev) => [created, ...prev]);
+              })
+            }
+          >
+            Create draft contract
+          </button>
+        </div>
+        {contracts.length === 0 ? (
+          <p className="muted">No automation contracts yet.</p>
+        ) : (
+          <ul className="intelligence-list">
+            {contracts.map((contract) => (
+              <li key={contract.id}>
+                <strong>{contract.name}</strong>
+                <div className="muted">
+                  Project {contract.project_id.slice(0, 8)}… · Status:{" "}
+                  {contract.status} · Approval: {contract.approval_state}
+                </div>
+                <div className="muted">
+                  Intent: {contract.intent_definition.statement}
+                </div>
+                <div className="muted">
+                  Capabilities:{" "}
+                  {contract.required_capabilities.join(", ") || "none listed"} ·
+                  Approved by actor field: {contract.created_by_actor}
+                </div>
+                <div className="row">
+                  <button
+                    type="button"
+                    disabled={busy || contract.status !== "draft"}
+                    onClick={() =>
+                      void run("Approval requested", async () => {
+                        const next = await invokeIpc<AutomationContract>(
+                          "request_automation_contract_approval",
+                          { contractId: contract.id },
+                        );
+                        setContracts((prev) =>
+                          prev.map((c) => (c.id === next.id ? next : c)),
+                        );
+                      })
+                    }
+                  >
+                    Request approval
+                  </button>
+                  <button
+                    type="button"
+                    disabled={
+                      busy ||
+                      (contract.status !== "pending_approval" &&
+                        contract.status !== "draft")
+                    }
+                    onClick={() =>
+                      void run("Contract definition approved", async () => {
+                        const next = await invokeIpc<AutomationContract>(
+                          "approve_automation_contract",
+                          { contractId: contract.id },
+                        );
+                        setContracts((prev) =>
+                          prev.map((c) => (c.id === next.id ? next : c)),
+                        );
+                      })
+                    }
+                  >
+                    Approve definition
+                  </button>
+                  <button
+                    type="button"
+                    disabled={busy || contract.status !== "approved"}
+                    onClick={() =>
+                      void run("Contract paused", async () => {
+                        const next = await invokeIpc<AutomationContract>(
+                          "pause_automation_contract",
+                          { contractId: contract.id },
+                        );
+                        setContracts((prev) =>
+                          prev.map((c) => (c.id === next.id ? next : c)),
+                        );
+                      })
+                    }
+                  >
+                    Pause
+                  </button>
+                  <button
+                    type="button"
+                    disabled={
+                      busy ||
+                      contract.status === "revoked" ||
+                      contract.status === "completed"
+                    }
+                    onClick={() =>
+                      void run("Contract revoked", async () => {
+                        const next = await invokeIpc<AutomationContract>(
+                          "revoke_automation_contract",
+                          { contractId: contract.id },
+                        );
+                        setContracts((prev) =>
+                          prev.map((c) => (c.id === next.id ? next : c)),
+                        );
+                      })
+                    }
+                  >
+                    Revoke
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section>
         <div className="row">
           <button
             type="button"
@@ -168,6 +345,11 @@ export function WorkspaceIntelligencePanel({
                   { workspaceId: workspace.id },
                 );
                 setState(next);
+                const listedContracts = await invokeIpc<AutomationContract[]>(
+                  "list_automation_contracts",
+                  { workspaceId: workspace.id, limit: 50 },
+                );
+                setContracts(listedContracts);
               })
             }
           >
@@ -200,6 +382,25 @@ export function WorkspaceIntelligencePanel({
                   "None registered"}
               </dd>
             </dl>
+          </section>
+
+          <section>
+            <h3>Automation contracts (intelligence view)</h3>
+            {state.automation_contracts.length === 0 ? (
+              <p className="muted">No contracts in this workspace.</p>
+            ) : (
+              <ul className="intelligence-list">
+                {state.automation_contracts.map((contract) => (
+                  <li key={contract.id}>
+                    <strong>{contract.name}</strong>
+                    <div className="muted">
+                      {contract.status} / {contract.approval_state} —{" "}
+                      {contract.intent_statement}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
           </section>
 
           <section>

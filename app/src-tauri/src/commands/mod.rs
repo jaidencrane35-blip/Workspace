@@ -1,5 +1,6 @@
 pub mod analytics;
 pub mod audit;
+pub mod automation_contract;
 pub mod context;
 pub mod desktop_window;
 pub mod error;

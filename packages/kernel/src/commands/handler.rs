@@ -2,6 +2,11 @@ use std::path::Path;
 
 use crate::commands::accept_suggestion::AcceptSuggestion;
 use crate::commands::application::{CreateApplication, DeleteApplication, GetApplication};
+use crate::commands::automation_contract::{
+    ApproveAutomationContract, CreateAutomationContract, GetAutomationContract,
+    ListAutomationContracts, PauseAutomationContract, PrepareAutomationContractIntent,
+    RequestAutomationContractApproval, RevokeAutomationContract, UpdateAutomationContract,
+};
 use crate::commands::execute_intent_request::ExecuteIntentRequest;
 use crate::commands::create_suggestion_intent_request::CreateSuggestionIntentRequest;
 use crate::commands::create_workspace::CreateWorkspace;
@@ -60,9 +65,10 @@ use crate::services::{
 use crate::WorkspaceKernel;
 use workspace_domain::{
     ActionCatalog, Actor, ActorContext, AiAssistantPlanComparison, AiAssistantWorkflow,
-    AiMemoryAwareness, AiOrchestratedPlan, Project, ProjectStatus, Task, TaskPriority, TaskStatus,
-    WorkGoal, WorkflowContext, WorkspaceIntelligenceComparison, WorkspaceIntelligenceState,
-    AiPlan, AiPlanEvaluationReport, AiPlanSubmissionResult, AiProposalAuthorityOutcome,
+    AiMemoryAwareness, AiOrchestratedPlan, AutomationContract, AutomationContractIntentRequest,
+    AutomationTriggerKind, Project, ProjectStatus, Task, TaskPriority, TaskStatus, WorkGoal,
+    WorkflowContext, WorkspaceIntelligenceComparison, WorkspaceIntelligenceState, AiPlan,
+    AiPlanEvaluationReport, AiPlanSubmissionResult, AiProposalAuthorityOutcome,
     AiProposalEvaluation, AiProposalSubmission, ApplicationId, ApplicationReference, AuditEvent,
     Capability, CapabilitySet, Intent, IntentContext, Layout, LayoutId, LayoutMetadata, LayoutNode,
     LayoutSnapshot, MemoryEntry, MemoryType, ModelProviderDescriptor, ModelResponse, Observation,
@@ -1954,6 +1960,135 @@ impl CommandHandler {
         CommandPipeline::new(kernel.command_context(actor, intent)).execute_mutation(
             SetActiveWork::new(workspace_id, project_id, task_id),
         )
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    pub fn create_automation_contract(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        project_id: String,
+        task_id: Option<String>,
+        name: String,
+        description: Option<String>,
+        trigger_kind: AutomationTriggerKind,
+        trigger_definition: Option<String>,
+        intent_statement: String,
+        required_capabilities: Vec<String>,
+    ) -> Result<AutomationContract> {
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_mutation(
+            CreateAutomationContract::new(
+                workspace_id,
+                project_id,
+                task_id,
+                name,
+                description,
+                trigger_kind,
+                trigger_definition,
+                intent_statement,
+                required_capabilities,
+            ),
+        )
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    pub fn update_automation_contract(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        contract_id: String,
+        name: Option<String>,
+        description: Option<Option<String>>,
+        intent_statement: Option<String>,
+        trigger_kind: Option<AutomationTriggerKind>,
+        trigger_definition: Option<String>,
+        required_capabilities: Option<Vec<String>>,
+    ) -> Result<AutomationContract> {
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_mutation(
+            UpdateAutomationContract::new(
+                contract_id,
+                name,
+                description,
+                intent_statement,
+                trigger_kind,
+                trigger_definition,
+                required_capabilities,
+            ),
+        )
+    }
+
+    pub fn request_automation_contract_approval(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        contract_id: String,
+    ) -> Result<AutomationContract> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_mutation(RequestAutomationContractApproval::new(contract_id))
+    }
+
+    pub fn approve_automation_contract(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        contract_id: String,
+    ) -> Result<AutomationContract> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_mutation(ApproveAutomationContract::new(contract_id))
+    }
+
+    pub fn pause_automation_contract(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        contract_id: String,
+    ) -> Result<AutomationContract> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_mutation(PauseAutomationContract::new(contract_id))
+    }
+
+    pub fn revoke_automation_contract(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        contract_id: String,
+    ) -> Result<AutomationContract> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_mutation(RevokeAutomationContract::new(contract_id))
+    }
+
+    pub fn get_automation_contract(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        contract_id: String,
+    ) -> Result<AutomationContract> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetAutomationContract::new(contract_id))
+    }
+
+    pub fn list_automation_contracts(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        limit: Option<usize>,
+    ) -> Result<Vec<AutomationContract>> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(ListAutomationContracts::new(workspace_id, limit))
+    }
+
+    /// Materializes a future Intent template from an approved contract.
+    /// Does not execute — caller must still enter Command Pipeline → Gateway.
+    pub fn prepare_automation_contract_intent(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        contract_id: String,
+    ) -> Result<AutomationContractIntentRequest> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(PrepareAutomationContractIntent::new(contract_id))
     }
 
     /// Read-only workspace intelligence aggregation. Capability-gated; never executes.
