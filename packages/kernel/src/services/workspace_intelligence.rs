@@ -21,7 +21,7 @@ use crate::services::{
     list_rejection_summaries, AiMemoryService, AiPersonalizationService, AssistantWorkflowStore,
     AuditService, AutomationContractService, DecisionQueueService, DesktopWindowService,
     OrchestratedPlanStore, TriggerEvaluatorService, WorkspaceActivityGraphService,
-    WorkspaceContinuityService, WorkspaceIntentService,
+    WorkspaceAttentionService, WorkspaceContinuityService, WorkspaceIntentService,
 };
 
 pub(crate) struct WorkspaceIntelligenceService;
@@ -94,6 +94,15 @@ impl WorkspaceIntelligenceService {
             &full_activity_graph,
         )?;
         let continuity = full_continuity.summary_projection(6);
+        let full_attention = WorkspaceAttentionService::generate_with_inputs(
+            db,
+            actor,
+            ws,
+            &full_decision_queue,
+            &full_activity_graph,
+            &full_continuity,
+        )?;
+        let attention = full_attention.summary_projection(8);
 
         let memory = AiMemoryService::assemble_awareness(db, Some(ws), 10)
             .unwrap_or_else(|_| workspace_domain::AiMemoryAwareness::from_entries(Vec::new()));
@@ -214,17 +223,7 @@ impl WorkspaceIntelligenceService {
             })
             .collect::<Vec<_>>();
 
-        let recommended_actions = Self::build_recommendations(
-            &current_project,
-            &current_task,
-            &memory_highlights,
-            &preference_highlights,
-            &applications,
-            &pending_approvals,
-            &blocked_actions,
-            &automation_contracts,
-            personalization.enabled,
-        );
+        let recommended_actions = Self::recommendations_from_attention(&full_attention);
 
         let summary = Self::build_summary(
             &workspace_name,
@@ -259,6 +258,7 @@ impl WorkspaceIntelligenceService {
             decision_queue,
             activity_graph,
             continuity,
+            attention,
             workspace_health: health_label,
             summary,
             authority_effect: WorkspaceIntelligenceState::AUTHORITY_EFFECT_NONE.into(),
@@ -268,121 +268,28 @@ impl WorkspaceIntelligenceService {
         Ok(state)
     }
 
-    fn build_recommendations(
-        project: &Option<workspace_domain::Project>,
-        task: &Option<workspace_domain::Task>,
-        memory: &[IntelligenceHighlight],
-        preferences: &[IntelligenceHighlight],
-        applications: &[IntelligenceApplicationSummary],
-        pending_approvals: &[PendingDecisionSummary],
-        blocked: &[BlockedActionSummary],
-        automation_contracts: &[AutomationContractSummary],
-        personalization_enabled: bool,
+    /// Recommendations are projected from Attention — Intelligence does not re-prioritize.
+    fn recommendations_from_attention(
+        attention: &workspace_domain::WorkspaceAttentionState,
     ) -> Vec<WorkspaceRecommendation> {
-        let mut recommendations = Vec::new();
-
-        if let Some(pending) = pending_approvals.first() {
-            recommendations.push(WorkspaceRecommendation {
-                id: format!("rec-approval-{}", pending.id),
-                title: "Review pending permission decision".into(),
-                explanation: pending.explanation.clone(),
-                kind: "pending_decision".into(),
-            });
-        }
-
-        if let Some(blocked) = blocked.first() {
-            recommendations.push(WorkspaceRecommendation {
-                id: format!("rec-blocked-{}", blocked.id),
-                title: "Resolve blocked action".into(),
-                explanation: blocked.explanation.clone(),
-                kind: "blocked_action".into(),
-            });
-        }
-
-        if let Some(task) = task {
-            recommendations.push(WorkspaceRecommendation {
-                id: format!("rec-task-{}", task.id),
-                title: format!("Continue task: {}", task.title),
-                explanation: "Showing because this task is the active work item for the workspace."
-                    .into(),
-                kind: "active_task".into(),
-            });
-        } else if let Some(project) = project {
-            recommendations.push(WorkspaceRecommendation {
-                id: format!("rec-project-{}", project.id),
-                title: format!("Set an active task in {}", project.name),
-                explanation:
-                    "Suggested because a project is active but no current task is selected.".into(),
-                kind: "active_project".into(),
-            });
-        }
-
-        if personalization_enabled && !preferences.is_empty() && !applications.is_empty() {
-            let app_names = applications
-                .iter()
-                .take(2)
-                .map(|app| app.name.as_str())
-                .collect::<Vec<_>>()
-                .join(" and ");
-            let pref_label = preferences[0].label.clone();
-            recommendations.push(WorkspaceRecommendation {
-                id: "rec-pref-apps".into(),
-                title: format!("Prepare familiar apps ({app_names})"),
-                explanation: format!(
-                    "Suggested because this project usually uses preferences like \"{pref_label}\" with registered applications."
-                ),
-                kind: "preference".into(),
-            });
-        }
-
-        if let Some(memory) = memory.first() {
-            recommendations.push(WorkspaceRecommendation {
-                id: format!("rec-memory-{}", memory.id),
-                title: format!("Remember: {}", memory.label),
-                explanation: format!(
-                    "Showing because workspace memory notes \"{}\".",
-                    memory.summary
-                ),
-                kind: "memory".into(),
-            });
-        }
-
-        if let Some(contract) = automation_contracts
+        let mut recommendations = attention
+            .top_items
             .iter()
-            .find(|c| c.approval_state == "pending")
-        {
-            recommendations.push(WorkspaceRecommendation {
-                id: format!("rec-contract-pending-{}", contract.id),
-                title: format!("Review automation contract: {}", contract.name),
-                explanation: format!(
-                    "Showing because contract \"{}\" awaits definition approval. \
-                     Approving the definition does not authorize execution.",
-                    contract.name
-                ),
-                kind: "automation_contract".into(),
-            });
-        } else if let Some(contract) = automation_contracts
-            .iter()
-            .find(|c| c.status == "approved" && c.approval_state == "approved")
-        {
-            recommendations.push(WorkspaceRecommendation {
-                id: format!("rec-contract-active-{}", contract.id),
-                title: format!("Approved automation: {}", contract.name),
-                explanation: format!(
-                    "Showing because an approved contract intends: \"{}\". \
-                     Triggers do not run automatically in this release.",
-                    contract.intent_statement
-                ),
-                kind: "automation_contract".into(),
-            });
-        }
+            .take(6)
+            .map(|item| WorkspaceRecommendation {
+                id: format!("rec-attention-{}", item.id),
+                title: item.title.clone(),
+                explanation: item.explanation.clone(),
+                kind: format!("attention:{}", item.category.as_str()),
+            })
+            .collect::<Vec<_>>();
 
         if recommendations.is_empty() {
             recommendations.push(WorkspaceRecommendation {
                 id: "rec-idle".into(),
                 title: "Define current work".into(),
                 explanation:
-                    "Suggested because no active project or task is set for this workspace.".into(),
+                    "Suggested because Attention has no scored items for this workspace.".into(),
                 kind: "bootstrap".into(),
             });
         }

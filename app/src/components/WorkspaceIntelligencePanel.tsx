@@ -11,6 +11,7 @@ import type {
   TriggerEvaluationResult,
   Workspace,
   WorkspaceActivityGraph,
+  WorkspaceAttentionState,
   WorkspaceContinuityState,
   WorkspaceIntelligenceState,
 } from "../types/domain";
@@ -49,6 +50,9 @@ export function WorkspaceIntelligencePanel({
   const [continuity, setContinuity] = useState<WorkspaceContinuityState | null>(
     null,
   );
+  const [attention, setAttention] = useState<WorkspaceAttentionState | null>(
+    null,
+  );
   const [lastHandoff, setLastHandoff] = useState<string | null>(null);
   const [contractName, setContractName] = useState(
     "Prepare coding environment",
@@ -80,6 +84,7 @@ export function WorkspaceIntelligencePanel({
       setDecisionQueue(null);
       setActivityGraph(null);
       setContinuity(null);
+      setAttention(null);
       setLastHandoff(null);
       setState(null);
       return;
@@ -87,8 +92,16 @@ export function WorkspaceIntelligencePanel({
     let cancelled = false;
     void (async () => {
       try {
-        const [listed, listedContracts, listedProposals, queue, graph, intel, cont] =
-          await Promise.all([
+        const [
+          listed,
+          listedContracts,
+          listedProposals,
+          queue,
+          graph,
+          intel,
+          cont,
+          attn,
+        ] = await Promise.all([
             invokeIpc<Project[]>("list_projects", {
               workspaceId: workspace.id,
               limit: 50,
@@ -115,6 +128,9 @@ export function WorkspaceIntelligencePanel({
             invokeIpc<WorkspaceContinuityState>("generate_workspace_continuity", {
               workspaceId: workspace.id,
             }),
+            invokeIpc<WorkspaceAttentionState>("generate_workspace_attention", {
+              workspaceId: workspace.id,
+            }),
           ]);
         if (!cancelled) {
           setProjects(listed);
@@ -124,6 +140,7 @@ export function WorkspaceIntelligencePanel({
           setActivityGraph(graph);
           setState(intel);
           setContinuity(cont);
+          setAttention(attn);
         }
       } catch (err: unknown) {
         if (!cancelled) {
@@ -142,9 +159,8 @@ export function WorkspaceIntelligencePanel({
         <p className="assistant-kicker">Work</p>
         <h2>Where you are. What needs attention. How work connects.</h2>
         <p className="lede">
-          One Workspace operating environment — current work, Continuity, Decision
-          Queue, Activity Graph, then Recommendations. Nothing here executes or
-          grants permission.
+          One Workspace operating environment — Continuity, Attention, Decision
+          Queue, then Activity. Nothing here executes or grants permission.
         </p>
       </header>
 
@@ -236,7 +252,7 @@ export function WorkspaceIntelligencePanel({
                   { workspaceId: workspace.id },
                 );
                 setState(next);
-                const [listedContracts, listedProposals, queue, graph, cont] =
+                const [listedContracts, listedProposals, queue, graph, cont, attn] =
                   await Promise.all([
                     invokeIpc<AutomationContract[]>("list_automation_contracts", {
                       workspaceId: workspace.id,
@@ -257,12 +273,17 @@ export function WorkspaceIntelligencePanel({
                       "generate_workspace_continuity",
                       { workspaceId: workspace.id },
                     ),
+                    invokeIpc<WorkspaceAttentionState>(
+                      "generate_workspace_attention",
+                      { workspaceId: workspace.id },
+                    ),
                   ]);
                 setContracts(listedContracts);
                 setProposals(listedProposals);
                 setDecisionQueue(queue);
                 setActivityGraph(graph);
                 setContinuity(cont);
+                setAttention(attn);
               })
             }
           >
@@ -345,6 +366,61 @@ export function WorkspaceIntelligencePanel({
           </>
         ) : (
           <p className="muted">No continuity snapshot yet.</p>
+        )}
+      </section>
+
+      <section>
+        <h3>What deserves attention</h3>
+        <p className="muted">
+          Canonical prioritization — explainable scores only. Attention never
+          executes or grants permission.
+        </p>
+        <div className="row">
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("Attention refreshed", async () => {
+                if (!workspace) return;
+                const next = await invokeIpc<WorkspaceAttentionState>(
+                  "generate_workspace_attention",
+                  { workspaceId: workspace.id },
+                );
+                setAttention(next);
+              })
+            }
+          >
+            Refresh attention
+          </button>
+        </div>
+        {attention ? (
+          <>
+            <p>{attention.summary}</p>
+            <p className="muted">
+              {attention.requires_decision_count} require decision ·{" "}
+              {attention.blocker_count} blocker(s) · {attention.can_wait_count}{" "}
+              can wait · authority: {attention.authority_effect}
+            </p>
+            {attention.top_items.length === 0 ? (
+              <p className="muted">Nothing needs attention right now.</p>
+            ) : (
+              <ul className="intelligence-list">
+                {attention.top_items.map((item) => (
+                  <li key={item.id}>
+                    <strong>
+                      [{item.priority}/{item.urgency}] {item.title}
+                    </strong>
+                    <div className="muted">
+                      score {item.score} · {item.category} · {item.attention_state}
+                    </div>
+                    <div className="muted">{item.explanation}</div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
+        ) : (
+          <p className="muted">No attention snapshot yet.</p>
         )}
       </section>
 

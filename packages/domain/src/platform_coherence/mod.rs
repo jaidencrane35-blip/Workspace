@@ -75,6 +75,11 @@ pub const PLATFORM_CONCEPT_OWNERS: &[ConceptOwnership] = &[
         kind: ConceptOwnerKind::Aggregator,
     },
     ConceptOwnership {
+        concept: "attention",
+        owner: "WorkspaceAttentionService",
+        kind: ConceptOwnerKind::Aggregator,
+    },
+    ConceptOwnership {
         concept: "permission_approval",
         owner: "PermissionApprovalService",
         kind: ConceptOwnerKind::DurableStore,
@@ -115,4 +120,5 @@ pub mod vocabulary {
     pub const CURRENT_FOCUS: &str = "Current Focus";
     pub const INTERRUPTED_WORK: &str = "Interrupted Work";
     pub const RESUMABLE_WORK: &str = "Resumable Work";
+    pub const ATTENTION: &str = "Attention";
 }

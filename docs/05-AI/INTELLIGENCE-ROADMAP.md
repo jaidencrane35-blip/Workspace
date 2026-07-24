@@ -108,6 +108,10 @@ Workspace platform integration & coherence audit — singular ownership, Decisio
 
 Workspace Continuity Engine foundation — read-only projection of focus, interrupted/resumable work, outstanding decisions, and suggested next steps across sessions. No autonomy. See [Workspace Continuity Engine](WORKSPACE-CONTINUITY-ENGINE.md).
 
+## Phase 5 Batch 2 (done)
+
+Workspace Attention Engine foundation — deterministic explainable prioritization over Continuity / Decision Queue / Activity Graph; Intelligence Recommendations consume Attention. No autonomy. See [Workspace Attention Engine](WORKSPACE-ATTENTION-ENGINE.md).
+
 ---
 
 ## Never build

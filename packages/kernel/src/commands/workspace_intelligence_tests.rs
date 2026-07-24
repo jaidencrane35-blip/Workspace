@@ -140,10 +140,12 @@ fn case3_removing_memory_changes_intelligence_output() {
     )
     .unwrap();
     assert!(!with_memory.memory_highlights.is_empty());
+    // Recommendations come from Attention; memory remains an informational highlight.
     assert!(with_memory
-        .recommended_actions
+        .memory_highlights
         .iter()
-        .any(|r| r.kind == "memory" || r.explanation.contains("memory")));
+        .any(|h| h.summary.to_lowercase().contains("vs code")
+            || h.summary.to_lowercase().contains("coding")));
 
     CommandHandler::delete_memory_entry(
         &kernel,
@@ -161,13 +163,9 @@ fn case3_removing_memory_changes_intelligence_output() {
     )
     .unwrap();
     assert!(after.memory_highlights.is_empty());
-    assert!(!after
-        .recommended_actions
-        .iter()
-        .any(|r| r.kind == "memory"));
 }
 
-/// CASE 4 — Changing preferences changes recommendations.
+/// CASE 4 — Changing preferences changes preference highlights (Attention owns prioritization).
 #[test]
 fn case4_changing_preferences_changes_recommendations() {
     let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
@@ -183,10 +181,11 @@ fn case4_changing_preferences_changes_recommendations() {
     )
     .unwrap();
     assert!(before.preference_highlights.is_empty());
-    assert!(!before
+    // Recommendations come from Attention — not a parallel preference ranking path.
+    assert!(before
         .recommended_actions
         .iter()
-        .any(|r| r.kind == "preference"));
+        .all(|r| r.kind.starts_with("attention:") || r.kind == "bootstrap"));
 
     let preference = CommandHandler::create_user_preference(
         &kernel,
@@ -211,9 +210,9 @@ fn case4_changing_preferences_changes_recommendations() {
     .unwrap();
     assert!(!with_pref.preference_highlights.is_empty());
     assert!(with_pref
-        .recommended_actions
+        .preference_highlights
         .iter()
-        .any(|r| r.kind == "preference" || r.explanation.to_lowercase().contains("prefer")));
+        .any(|h| h.summary.to_lowercase().contains("vs code") || h.label.contains("VS Code")));
 
     CommandHandler::delete_user_preference(
         &kernel,
@@ -231,10 +230,6 @@ fn case4_changing_preferences_changes_recommendations() {
     )
     .unwrap();
     assert!(after.preference_highlights.is_empty());
-    assert!(!after
-        .recommended_actions
-        .iter()
-        .any(|r| r.kind == "preference"));
 }
 
 /// CASE 5 — Restart preserves Project and Task state.

@@ -15,6 +15,7 @@ use crate::commands::automation_trigger::{
 };
 use crate::commands::decision_queue::{GateDecisionQueueRead, GateDecisionQueueWrite};
 use crate::commands::workspace_activity::GateActivityGraphRead;
+use crate::commands::workspace_attention::GateAttentionRead;
 use crate::commands::workspace_continuity::GateContinuityRead;
 use crate::commands::execute_intent_request::ExecuteIntentRequest;
 use crate::commands::create_suggestion_intent_request::CreateSuggestionIntentRequest;
@@ -69,8 +70,8 @@ use crate::security::{PermissionRequest, PermissionSubject};
 use crate::services::{
     AiAssistantService, AiEvaluationService, AiOrchestrationService, AiParticipationService,
     AiPlanningService, ConfigurationService, DecisionQueueService, DesktopWindowService,
-    WorkspaceActivityGraphService, WorkspaceContextService, WorkspaceContinuityService,
-    WorkspaceIntelligenceService,
+    WorkspaceActivityGraphService, WorkspaceAttentionService, WorkspaceContextService,
+    WorkspaceContinuityService, WorkspaceIntelligenceService,
 };
 use crate::WorkspaceKernel;
 use workspace_domain::{
@@ -79,7 +80,7 @@ use workspace_domain::{
     AutomationIntentProposal, AutomationIntentProposalStatus, AutomationTriggerKind,
     DecisionActionResult, DecisionItem, DecisionQueue, Project, ProjectStatus, Task, TaskPriority,
     TaskStatus, TriggerEvaluationResult, TriggerEvent, TriggerEventType, WorkGoal, WorkflowContext,
-    WorkspaceActivity, WorkspaceActivityGraph, WorkspaceContinuityState,
+    WorkspaceActivity, WorkspaceActivityGraph, WorkspaceAttentionState, WorkspaceContinuityState,
     WorkspaceIntelligenceComparison, WorkspaceIntelligenceState, AiPlan, AiPlanEvaluationReport,
     AiPlanSubmissionResult,
     AiProposalAuthorityOutcome, AiProposalEvaluation, AiProposalSubmission, ApplicationId,
@@ -2403,6 +2404,30 @@ impl CommandHandler {
             workspace_id.clone(),
         )?;
         WorkspaceContinuityService::generate(
+            &kernel.shared_database(),
+            &actor,
+            &kernel.orchestrated_plans(),
+            &kernel.assistant_workflows(),
+            workspace_id,
+        )
+    }
+
+    /// Aggregate Workspace Attention (read-only; never executes).
+    pub fn generate_workspace_attention(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceAttentionState> {
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent.clone()))
+            .execute_query(GateAttentionRead)?;
+        let _ = Self::get_workflow_context(
+            kernel,
+            actor.clone(),
+            intent,
+            workspace_id.clone(),
+        )?;
+        WorkspaceAttentionService::generate(
             &kernel.shared_database(),
             &actor,
             &kernel.orchestrated_plans(),

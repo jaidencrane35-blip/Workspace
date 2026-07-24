@@ -93,6 +93,7 @@ define_id!(AutomationIntentProposalId);
 define_id!(DecisionItemId);
 define_id!(WorkspaceActivityId);
 define_id!(ContinuityFacetId);
+define_id!(AttentionItemId);
 
 #[cfg(test)]
 mod tests {

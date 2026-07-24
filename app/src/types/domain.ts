@@ -1061,6 +1061,78 @@ export interface WorkspaceContinuitySummary {
   authority_effect: string;
 }
 
+export type AttentionSourceType =
+  | "decision_queue"
+  | "continuity"
+  | "activity_graph"
+  | "workflow_context"
+  | "automation_contract";
+
+export type AttentionCategory =
+  | "requires_decision"
+  | "blocker"
+  | "interrupted"
+  | "resumable"
+  | "informative"
+  | "commitment"
+  | "can_wait";
+
+export type AttentionPriority = "critical" | "high" | "normal" | "low";
+export type AttentionUrgency = "immediate" | "soon" | "whenever";
+export type AttentionConfidence = "high" | "medium" | "low";
+export type AttentionState =
+  | "new"
+  | "visible"
+  | "acknowledged"
+  | "deferred"
+  | "resolved"
+  | "expired";
+
+export interface AttentionItem {
+  id: string;
+  workspace_id: string;
+  source_type: AttentionSourceType;
+  source_id: string;
+  category: AttentionCategory;
+  priority: AttentionPriority;
+  urgency: AttentionUrgency;
+  confidence: AttentionConfidence;
+  score: number;
+  score_factors: string[];
+  title: string;
+  explanation: string;
+  created_at: string;
+  expires_at: string | null;
+  attention_state: AttentionState;
+  authority_effect: string;
+}
+
+export interface WorkspaceAttentionState {
+  workspace_id: string;
+  generated_at: string;
+  items: AttentionItem[];
+  top_items: AttentionItem[];
+  requires_decision_count: number;
+  blocker_count: number;
+  informative_count: number;
+  can_wait_count: number;
+  summary: string;
+  authority_effect: string;
+}
+
+export interface WorkspaceAttentionSummary {
+  workspace_id: string;
+  generated_at: string;
+  item_count: number;
+  requires_decision_count: number;
+  blocker_count: number;
+  informative_count: number;
+  can_wait_count: number;
+  top_items: AttentionItem[];
+  summary: string;
+  authority_effect: string;
+}
+
 export interface WorkspaceIntelligenceState {
   workspace_id: string;
   workspace_name: string;
@@ -1083,6 +1155,7 @@ export interface WorkspaceIntelligenceState {
   decision_queue: DecisionQueueSummary;
   activity_graph: WorkspaceActivityGraphSummary;
   continuity: WorkspaceContinuitySummary;
+  attention: WorkspaceAttentionSummary;
   workspace_health: string;
   summary: string;
   authority_effect: string;

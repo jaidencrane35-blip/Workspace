@@ -22,6 +22,7 @@ use commands::decision_queue::{
 use commands::workspace_activity::{
     generate_workspace_activity_graph, get_workspace_activity_timeline,
 };
+use commands::workspace_attention::generate_workspace_attention;
 use commands::workspace_continuity::generate_workspace_continuity;
 use commands::layout::{
     create_layout, delete_layout, get_layout, get_layout_snapshot, reset_layout, update_layout,
@@ -183,6 +184,7 @@ pub fn run() {
             generate_workspace_activity_graph,
             get_workspace_activity_timeline,
             generate_workspace_continuity,
+            generate_workspace_attention,
             create_suggestion_intent_request,
             execute_intent_request,
             get_execution_outcomes,

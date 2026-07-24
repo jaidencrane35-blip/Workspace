@@ -10,6 +10,7 @@ use crate::automation_contract::AutomationContractSummary;
 use crate::automation_trigger::{AutomationIntentProposalSummary, TriggerRejectionSummary};
 use crate::decision_queue::DecisionQueueSummary;
 use crate::workspace_activity::WorkspaceActivityGraphSummary;
+use crate::workspace_attention::WorkspaceAttentionSummary;
 use crate::workspace_continuity::WorkspaceContinuitySummary;
 use crate::workspace_intent::{Project, Task, WorkGoal, WorkflowContext};
 
@@ -103,6 +104,8 @@ pub struct WorkspaceIntelligenceState {
     pub activity_graph: WorkspaceActivityGraphSummary,
     /// Continuity Engine summary (Phase 5 Batch 1). Read-only.
     pub continuity: WorkspaceContinuitySummary,
+    /// Attention Engine summary (Phase 5 Batch 2). Canonical prioritization.
+    pub attention: WorkspaceAttentionSummary,
     pub workspace_health: String,
     pub summary: String,
     /// Explicit marker for audits and UI: this state grants nothing.

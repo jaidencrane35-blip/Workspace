@@ -176,6 +176,13 @@ export function AssistantPanel({
               . Explain-only — Assistant cannot accept, execute, or bypass
               governance for Intent Proposals.
             </dd>
+            <dt>Attention</dt>
+            <dd>
+              {workspaceIntel.attention.summary}{" "}
+              Same Attention Engine as the Work tab. Assistant may explain why
+              something is prioritized — never change attention, approve, or
+              execute.
+            </dd>
             <dt>Continuity</dt>
             <dd>
               {workspaceIntel.continuity.summary}{" "}
