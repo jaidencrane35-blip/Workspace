@@ -10,6 +10,7 @@ mod workspace_attention;
 mod workspace_continuity;
 mod workspace_environment;
 mod workspace_composition;
+mod workspace_purpose;
 mod context;
 mod execute_intent_request;
 mod create_suggestion_intent_request;
@@ -98,6 +99,8 @@ mod task_graph_tests;
 mod workspace_environment_tests;
 #[cfg(test)]
 mod workspace_composition_tests;
+#[cfg(test)]
+mod workspace_purpose_tests;
 #[cfg(test)]
 mod ai_memory_tests;
 #[cfg(test)]

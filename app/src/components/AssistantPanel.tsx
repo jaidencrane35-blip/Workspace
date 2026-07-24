@@ -233,6 +233,17 @@ export function AssistantPanel({
               Same Composition Engine as the Work tab. Assistant may explain why
               resources belong together — never edits compositions.
             </dd>
+            <dt>Purpose</dt>
+            <dd>
+              {workspaceIntel.purpose.summary}{" "}
+              {workspaceIntel.purpose.recent_progress.length > 0
+                ? `Recent: ${workspaceIntel.purpose.recent_progress
+                    .slice(0, 2)
+                    .join("; ")}. `
+                : ""}
+              Same Purpose Model as the Work tab. Assistant may explain what you
+              are working toward — never creates or modifies purpose silently.
+            </dd>
             <dt>Continuity</dt>
             <dd>
               {workspaceIntel.continuity.summary}{" "}

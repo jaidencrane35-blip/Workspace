@@ -17,6 +17,7 @@ import type {
   TaskGraph,
   WorkspaceEnvironmentState,
   WorkspaceCompositionState,
+  WorkspacePurposeState,
   WorkspaceIntelligenceState,
 } from "../types/domain";
 
@@ -64,6 +65,7 @@ export function WorkspaceIntelligencePanel({
     useState<WorkspaceEnvironmentState | null>(null);
   const [composition, setComposition] =
     useState<WorkspaceCompositionState | null>(null);
+  const [purpose, setPurpose] = useState<WorkspacePurposeState | null>(null);
   const [lastHandoff, setLastHandoff] = useState<string | null>(null);
   const [contractName, setContractName] = useState(
     "Prepare coding environment",
@@ -100,6 +102,7 @@ export function WorkspaceIntelligencePanel({
       setTaskGraph(null);
       setEnvironment(null);
       setComposition(null);
+      setPurpose(null);
       setLastHandoff(null);
       setState(null);
       return;
@@ -120,6 +123,7 @@ export function WorkspaceIntelligencePanel({
           graphTasks,
           env,
           comp,
+          purp,
         ] = await Promise.all([
             invokeIpc<Project[]>("list_projects", {
               workspaceId: workspace.id,
@@ -164,6 +168,9 @@ export function WorkspaceIntelligencePanel({
               "generate_workspace_composition",
               { workspaceId: workspace.id },
             ),
+            invokeIpc<WorkspacePurposeState>("generate_workspace_purpose", {
+              workspaceId: workspace.id,
+            }),
           ]);
         if (!cancelled) {
           setProjects(listed);
@@ -178,6 +185,7 @@ export function WorkspaceIntelligencePanel({
           setTaskGraph(graphTasks);
           setEnvironment(env);
           setComposition(comp);
+          setPurpose(purp);
         }
       } catch (err: unknown) {
         if (!cancelled) {
@@ -197,8 +205,8 @@ export function WorkspaceIntelligencePanel({
         <h2>Where you are. What needs attention. How work connects.</h2>
         <p className="lede">
           One Workspace operating environment — Continuity, Attention, Task
-          Graph, Environment, Composition, Decision Engine, Decision Queue, then
-          Activity. Nothing here executes or grants permission.
+          Graph, Environment, Composition, Purpose, Decision Engine, Decision
+          Queue, then Activity. Nothing here executes or grants permission.
         </p>
       </header>
 
@@ -658,6 +666,71 @@ export function WorkspaceIntelligencePanel({
           </>
         ) : (
           <p className="muted">No composition snapshot yet.</p>
+        )}
+      </section>
+
+      <section>
+        <h3>Purpose</h3>
+        <p className="muted">
+          Why this work exists — outcomes projected from WorkGoals, projects,
+          Task Graph, Composition, and Continuity. Never executes.
+        </p>
+        <div className="row">
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("Purpose refreshed", async () => {
+                if (!workspace) return;
+                const next = await invokeIpc<WorkspacePurposeState>(
+                  "generate_workspace_purpose",
+                  { workspaceId: workspace.id },
+                );
+                setPurpose(next);
+              })
+            }
+          >
+            Refresh purpose
+          </button>
+        </div>
+        {purpose ? (
+          <>
+            <p>
+              <strong>{purpose.label}</strong>
+            </p>
+            <p>{purpose.summary}</p>
+            <p className="muted">{purpose.explanation}</p>
+            <p className="muted">
+              {purpose.progress_percent}% progress · {purpose.open_task_count}{" "}
+              open · {purpose.completed_task_count} completed ·{" "}
+              {purpose.outstanding_decision_count} outstanding decision(s)
+              {purpose.composition_label
+                ? ` · environment: ${purpose.composition_label}`
+                : ""}{" "}
+              · authority: {purpose.authority_effect}
+            </p>
+            {purpose.recent_progress.length > 0 && (
+              <ul className="intelligence-list">
+                {purpose.recent_progress.slice(0, 5).map((line) => (
+                  <li key={line}>
+                    <div className="muted">{line}</div>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {purpose.obstacles.length > 0 && (
+              <ul className="intelligence-list">
+                {purpose.obstacles.slice(0, 5).map((obstacle) => (
+                  <li key={`${obstacle.kind}-${obstacle.title}`}>
+                    <strong>{obstacle.title}</strong>
+                    <div className="muted">{obstacle.explanation}</div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
+        ) : (
+          <p className="muted">No purpose snapshot yet.</p>
         )}
       </section>
 

@@ -41,6 +41,7 @@ pub enum AttentionSourceType {
     TaskGraph,
     Environment,
     Composition,
+    Purpose,
 }
 
 impl AttentionSourceType {
@@ -54,6 +55,7 @@ impl AttentionSourceType {
             Self::TaskGraph => "task_graph",
             Self::Environment => "environment",
             Self::Composition => "composition",
+            Self::Purpose => "purpose",
         }
     }
 }

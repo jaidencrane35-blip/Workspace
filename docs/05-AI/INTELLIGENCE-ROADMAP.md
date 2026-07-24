@@ -128,6 +128,10 @@ Workspace Environment Model foundation (Sprint 84) — live desktop read model a
 
 Workspace Composition Engine foundation (Sprint 85) — logical working environments from Environment + Task Graph + Continuity + Activity + Workflow; Attention and Intelligence consume compositions. No launch, grouping, or autonomy. See [Workspace Composition Engine](WORKSPACE-COMPOSITION-ENGINE.md).
 
+## Phase 5 Batch 7 (done)
+
+Workspace Purpose Model foundation (Sprint 86) — why work exists, projected from WorkGoals + projects + Task Graph + Composition + Continuity; Attention and Intelligence consume Purpose. WorkGoal remains DurableStore. No autonomy. See [Workspace Purpose Model](WORKSPACE-PURPOSE-MODEL.md).
+
 ---
 
 ## Never build

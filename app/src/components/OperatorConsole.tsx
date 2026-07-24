@@ -12,6 +12,7 @@ import type {
   TaskGraph,
   WorkspaceEnvironmentState,
   WorkspaceCompositionState,
+  WorkspacePurposeState,
   AiOrchestratedPlan,
   AiPlan,
   AiPlanEvaluationReport,
@@ -152,6 +153,7 @@ export function OperatorConsole({
     useState<WorkspaceEnvironmentState | null>(null);
   const [composition, setComposition] =
     useState<WorkspaceCompositionState | null>(null);
+  const [purpose, setPurpose] = useState<WorkspacePurposeState | null>(null);
   const [activeProject, setActiveProject] = useState<Project | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [memoryEntries, setMemoryEntries] = useState<MemoryEntry[]>([]);
@@ -1573,6 +1575,76 @@ export function OperatorConsole({
               {composition.missing_application_count} · tasks{" "}
               {composition.task_node_count} · decisions{" "}
               {composition.outstanding_decision_count}
+            </li>
+          </ul>
+        )}
+      </section>
+
+      <section>
+        <h2>Purpose Model (diagnostics)</h2>
+        <p className="muted">
+          Why work exists — projected from WorkGoals, projects, Task Graph,
+          Composition, Continuity. Never executes or owns goals.
+        </p>
+        <div className="row">
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("Purpose generated", async () => {
+                if (!workspace) return;
+                const state = await invokeIpc<WorkspacePurposeState>(
+                  "generate_workspace_purpose",
+                  { workspaceId: workspace.id },
+                );
+                setPurpose(state);
+              })
+            }
+          >
+            Inspect purpose
+          </button>
+          <button
+            type="button"
+            disabled={busy || !purpose}
+            onClick={() =>
+              void run("Purpose relationships inspected", async () => {
+                if (!purpose) return;
+                onMessage(
+                  purpose.relationships.length
+                    ? purpose.relationships
+                        .slice(0, 6)
+                        .map((r) => `${r.kind}: ${r.explanation}`)
+                        .join(" · ")
+                    : "No relationships",
+                );
+              })
+            }
+          >
+            Inspect relationships
+          </button>
+          <button
+            type="button"
+            disabled={busy || !purpose}
+            onClick={() =>
+              void run("Purpose obstacles inspected", async () => {
+                if (!purpose) return;
+                onMessage(
+                  purpose.obstacles.length
+                    ? purpose.obstacles.map((o) => o.title).join(" · ")
+                    : "No obstacles",
+                );
+              })
+            }
+          >
+            Inspect obstacles
+          </button>
+        </div>
+        {purpose && (
+          <ul className="muted">
+            <li>{purpose.summary}</li>
+            <li>
+              Progress {purpose.progress_percent}% · open{" "}
+              {purpose.open_task_count} · obstacles {purpose.obstacles.length}
             </li>
           </ul>
         )}

@@ -79,6 +79,31 @@ impl WorkspaceAttentionService {
             }
             _ => None,
         };
+        let purpose = match (&composition, &workflow) {
+            (Some(comp), Some(wf)) => {
+                let goals =
+                    crate::services::WorkspaceIntentService::list_goals(db, &workspace_id, 20)
+                        .unwrap_or_default();
+                let project = wf.active_project_id.as_ref().and_then(|id| {
+                    crate::services::WorkspaceIntentService::get_project(db, id.as_str()).ok()
+                });
+                crate::services::WorkspacePurposeService::generate_with_inputs(
+                    db,
+                    actor,
+                    workspace_id.clone(),
+                    &goals,
+                    wf,
+                    project.as_ref(),
+                    Some(&task_graph),
+                    comp,
+                    &continuity,
+                    &graph,
+                    &queue,
+                )
+                .ok()
+            }
+            _ => None,
+        };
         Self::generate_with_task_graph(
             db,
             actor,
@@ -89,6 +114,7 @@ impl WorkspaceAttentionService {
             Some(&task_graph),
             environment.as_ref(),
             composition.as_ref(),
+            purpose.as_ref(),
         )
     }
 
@@ -111,6 +137,7 @@ impl WorkspaceAttentionService {
             None,
             None,
             None,
+            None,
         )
     }
 
@@ -124,6 +151,7 @@ impl WorkspaceAttentionService {
         task_graph: Option<&workspace_domain::TaskGraph>,
         environment: Option<&workspace_domain::WorkspaceEnvironmentState>,
         composition: Option<&workspace_domain::WorkspaceCompositionState>,
+        purpose: Option<&workspace_domain::WorkspacePurposeState>,
     ) -> Result<WorkspaceAttentionState> {
         let workspace_id = WorkspaceId::new(workspace_id.into()).map_err(KernelError::Domain)?;
         let ws = workspace_id.as_str();
@@ -168,10 +196,92 @@ impl WorkspaceAttentionService {
                 }
             }
         }
+        if let Some(purp) = purpose {
+            for item in Self::from_purpose(ws, purp, &now)? {
+                if seen.insert(item.id.to_string()) {
+                    items.push(item);
+                }
+            }
+        }
 
         let state = WorkspaceAttentionState::from_items(ws, items);
         Self::audit_generated(db, actor, &state)?;
         Ok(state)
+    }
+
+    fn from_purpose(
+        ws: &str,
+        purpose: &workspace_domain::WorkspacePurposeState,
+        now: &str,
+    ) -> Result<Vec<AttentionItem>> {
+        let mut out = Vec::new();
+        // Purpose context as informative commitment.
+        let factors = vec![
+            "base 42 for Purpose outcome context".into(),
+            "source Purpose Model".into(),
+        ];
+        out.push(AttentionItem::project(
+            ws,
+            AttentionSourceType::Purpose,
+            format!("purpose_label:{}", purpose.label),
+            AttentionCategory::Commitment,
+            AttentionPriority::Normal,
+            AttentionUrgency::Whenever,
+            AttentionConfidence::Medium,
+            42,
+            factors.clone(),
+            format!("Working toward: {}", purpose.label),
+            format!(
+                "{}. Score factors: {}.",
+                purpose.explanation,
+                score_factors_join(&factors)
+            ),
+            now.to_string(),
+            AttentionState::Visible,
+        )?);
+        for obstacle in purpose.obstacles.iter().take(4) {
+            let (category, score, urgency) = match obstacle.kind.as_str() {
+                "blocked_task" | "blocked_work" | "interrupted_work" => (
+                    AttentionCategory::Blocker,
+                    58u32,
+                    AttentionUrgency::Soon,
+                ),
+                "outstanding_decisions" => (
+                    AttentionCategory::RequiresDecision,
+                    50u32,
+                    AttentionUrgency::Soon,
+                ),
+                _ => (
+                    AttentionCategory::Informative,
+                    36u32,
+                    AttentionUrgency::Whenever,
+                ),
+            };
+            let factors = vec![
+                format!("base {score} for purpose obstacle {}", obstacle.kind),
+                "source Purpose".into(),
+            ];
+            out.push(AttentionItem::project(
+                ws,
+                AttentionSourceType::Purpose,
+                format!("{}:{}", obstacle.kind, obstacle.title),
+                category,
+                score_to_priority(score),
+                urgency,
+                AttentionConfidence::Medium,
+                score,
+                factors.clone(),
+                obstacle.title.clone(),
+                format!(
+                    "{}. Score factors: {}.",
+                    obstacle.explanation,
+                    score_factors_join(&factors)
+                ),
+                now.to_string(),
+                AttentionState::Visible,
+            )?);
+        }
+        Ok(out)
     }
 
     fn from_composition(

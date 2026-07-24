@@ -75,6 +75,7 @@
 | `get_task_graph_planning_inputs` | Product: open incomplete nodes for Planner |
 | `generate_workspace_environment` | Product: aggregate live desktop Environment Model (never moves windows) |
 | `generate_workspace_composition` | Product: aggregate logical working environment Composition (never launches or groups) |
+| `generate_workspace_purpose` | Product: aggregate why-work-exists Purpose Model (never executes or owns goals) |
 | `create_memory_entry` / `list_memory_entries` / `get_memory_context` | Diagnostic governed memory (informational) |
 | `delete_memory_entry` / `clear_memory_entries` | Diagnostic memory lifecycle |
 | `diagnose_ai_plan_preview` | Diagnostic memory-aware plan (no execution) |

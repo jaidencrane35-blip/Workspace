@@ -1254,6 +1254,7 @@ export interface WorkspaceIntelligenceState {
   task_graph: TaskGraphSummary;
   environment: WorkspaceEnvironmentSummary;
   composition: WorkspaceCompositionSummary;
+  purpose: WorkspacePurposeSummary;
   workspace_health: string;
   summary: string;
   authority_effect: string;
@@ -1516,6 +1517,94 @@ export interface WorkspaceCompositionSummary {
   gap_count: number;
   top_members: CompositionMember[];
   top_gaps: CompositionGap[];
+  explanation: string;
+  summary: string;
+  authority_effect: string;
+}
+
+export type PurposeEvidenceKind =
+  | "work_goal"
+  | "project"
+  | "task_graph"
+  | "composition"
+  | "continuity"
+  | "activity"
+  | "decision_queue"
+  | "attention";
+
+export interface PurposeEvidence {
+  id: string;
+  kind: PurposeEvidenceKind;
+  ref_id: string;
+  label: string;
+  explanation: string;
+  evidence: string[];
+}
+
+export interface PurposeRelationship {
+  id: string;
+  from_id: string;
+  to_id: string;
+  kind: string;
+  explanation: string;
+  evidence: string[];
+  progress_note: string | null;
+  incomplete_note: string | null;
+}
+
+export interface PurposeObstacle {
+  kind: string;
+  title: string;
+  explanation: string;
+  evidence: string[];
+}
+
+export interface WorkspacePurposeState {
+  workspace_id: string;
+  generated_at: string;
+  label: string;
+  primary_work_goal_id: string | null;
+  primary_work_goal_description: string | null;
+  active_project_id: string | null;
+  active_project_name: string | null;
+  active_task_id: string | null;
+  composition_label: string | null;
+  focus_label: string | null;
+  progress_percent: number;
+  open_task_count: number;
+  completed_task_count: number;
+  blocked_task_count: number;
+  outstanding_decision_count: number;
+  interrupted_count: number;
+  evidence_items: PurposeEvidence[];
+  relationships: PurposeRelationship[];
+  obstacles: PurposeObstacle[];
+  recent_progress: string[];
+  explanation: string;
+  evidence: string[];
+  summary: string;
+  authority_effect: string;
+}
+
+export interface WorkspacePurposeSummary {
+  workspace_id: string;
+  generated_at: string;
+  label: string;
+  primary_work_goal_description: string | null;
+  active_project_name: string | null;
+  composition_label: string | null;
+  focus_label: string | null;
+  progress_percent: number;
+  open_task_count: number;
+  completed_task_count: number;
+  blocked_task_count: number;
+  outstanding_decision_count: number;
+  interrupted_count: number;
+  obstacle_count: number;
+  relationship_count: number;
+  top_evidence: PurposeEvidence[];
+  top_obstacles: PurposeObstacle[];
+  recent_progress: string[];
   explanation: string;
   summary: string;
   authority_effect: string;

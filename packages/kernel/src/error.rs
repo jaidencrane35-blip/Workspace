@@ -6,8 +6,8 @@ use workspace_domain::{
     AiPersonalizationError, AiPlanningError, AiRequestError, AutomationContractError,
     AutomationTriggerError, DecisionEngineError, DecisionQueueError, DomainError, ResourceKind,
     TaskGraphError, WorkspaceActivityError, WorkspaceAttentionError, WorkspaceContinuityError,
-    WorkspaceEnvironmentError, WorkspaceCompositionError, WorkspaceIntelligenceError,
-    WorkspaceIntentError,
+    WorkspaceEnvironmentError, WorkspaceCompositionError, WorkspacePurposeError,
+    WorkspaceIntelligenceError, WorkspaceIntentError,
 };
 
 #[derive(Debug, Error)]
@@ -214,6 +214,9 @@ pub enum KernelError {
 
     #[error("Workspace composition validation failed: {message}")]
     WorkspaceCompositionValidation { message: String },
+
+    #[error("Workspace purpose validation failed: {message}")]
+    WorkspacePurposeValidation { message: String },
 
     #[error("Workspace kernel initialization failed")]
     InitializationFailed,
@@ -459,6 +462,17 @@ impl From<WorkspaceCompositionError> for KernelError {
         match error {
             WorkspaceCompositionError::Domain(domain) => KernelError::from(domain),
             other => KernelError::WorkspaceCompositionValidation {
+                message: other.to_string(),
+            },
+        }
+    }
+}
+
+impl From<WorkspacePurposeError> for KernelError {
+    fn from(error: WorkspacePurposeError) -> Self {
+        match error {
+            WorkspacePurposeError::Domain(domain) => KernelError::from(domain),
+            other => KernelError::WorkspacePurposeValidation {
                 message: other.to_string(),
             },
         }
@@ -753,6 +767,10 @@ impl KernelError {
             },
             KernelError::WorkspaceCompositionValidation { message } => PublicError {
                 code: "workspace_composition_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::WorkspacePurposeValidation { message } => PublicError {
+                code: "workspace_purpose_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::InitializationFailed => PublicError {

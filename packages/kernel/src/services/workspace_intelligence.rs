@@ -23,6 +23,7 @@ use crate::services::{
     DesktopWindowService, OrchestratedPlanStore, TaskGraphService, TriggerEvaluatorService,
     WorkspaceActivityGraphService, WorkspaceAttentionService, WorkspaceContinuityService,
     WorkspaceEnvironmentService, WorkspaceIntentService, WorkspaceCompositionService,
+    WorkspacePurposeService,
 };
 
 pub(crate) struct WorkspaceIntelligenceService;
@@ -137,6 +138,21 @@ impl WorkspaceIntelligenceService {
         )?;
         let composition = WorkspaceCompositionService::summary_projection(&full_composition, 8);
 
+        let full_purpose = WorkspacePurposeService::generate_with_inputs(
+            db,
+            actor,
+            ws,
+            &recent_goals,
+            &workflow_context,
+            current_project.as_ref(),
+            Some(&full_task_graph),
+            &full_composition,
+            &full_continuity,
+            &full_activity_graph,
+            &full_decision_queue,
+        )?;
+        let purpose = WorkspacePurposeService::summary_projection(&full_purpose, 8);
+
         let full_attention = WorkspaceAttentionService::generate_with_task_graph(
             db,
             actor,
@@ -147,6 +163,7 @@ impl WorkspaceIntelligenceService {
             Some(&full_task_graph),
             Some(&full_environment),
             Some(&full_composition),
+            Some(&full_purpose),
         )?;
         let attention = full_attention.summary_projection(8);
 
@@ -307,6 +324,7 @@ impl WorkspaceIntelligenceService {
             task_graph,
             environment,
             composition,
+            purpose,
             workspace_health: health_label,
             summary,
             authority_effect: WorkspaceIntelligenceState::AUTHORITY_EFFECT_NONE.into(),
@@ -393,6 +411,7 @@ impl WorkspaceIntelligenceService {
             "task_graph_nodes": state.task_graph.node_count,
             "environment_windows": state.environment.window_count,
             "composition_members": state.composition.member_count,
+            "purpose_label": state.purpose.label,
             "memory_highlights": state.memory_highlights.len(),
             "preference_highlights": state.preference_highlights.len(),
             "summary_len": state.summary.len(),
