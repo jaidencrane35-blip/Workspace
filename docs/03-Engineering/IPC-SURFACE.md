@@ -58,6 +58,9 @@
 | `record_trigger_event` / `evaluate_triggers` / `record_and_evaluate_triggers` | Product: governed trigger evaluation (proposals only) |
 | `list_trigger_events` / `list_automation_intent_proposals` | Product: inspect trigger events and intent proposals |
 | `accept_automation_intent_proposal` / `reject_automation_intent_proposal` | Product: proposal review status (≠ execution) |
+| `generate_decision_queue` | Product: aggregate Workspace Decision Queue (read-only aggregation) |
+| `mark_decision_item_viewed` / `defer_decision_item` / `dismiss_decision_item` | Product: lifecycle overlay only (≠ source mutation for dismiss) |
+| `accept_decision_item` / `reject_decision_item` | Product: delegate to source or return gateway handoff (≠ execute) |
 | `create_memory_entry` / `list_memory_entries` / `get_memory_context` | Diagnostic governed memory (informational) |
 | `delete_memory_entry` / `clear_memory_entries` | Diagnostic memory lifecycle |
 | `diagnose_ai_plan_preview` | Diagnostic memory-aware plan (no execution) |

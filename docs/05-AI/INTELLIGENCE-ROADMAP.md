@@ -92,6 +92,10 @@ Integrity audit and hardening — definition fingerprints, stale-approval invali
 
 Governed trigger evaluation foundation — `TriggerEvent`, `TriggerEvaluator`, explainable rejections, `AutomationIntentProposal`. No schedulers, workers, or automatic execution. See [Governed Trigger Evaluation](GOVERNED-TRIGGER-EVALUATION.md).
 
+## Phase 4 Batch 8 (done)
+
+Governed Decision Queue foundation — aggregate pending human decisions into one Workspace inbox with lifecycle overlay; sources remain authoritative; no execution or permission grants. See [Governed Decision Queue](GOVERNED-DECISION-QUEUE.md).
+
 ---
 
 ## Never build

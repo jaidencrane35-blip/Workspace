@@ -90,6 +90,7 @@ define_id!(WorkGoalId);
 define_id!(AutomationContractId);
 define_id!(TriggerEventId);
 define_id!(AutomationIntentProposalId);
+define_id!(DecisionItemId);
 
 #[cfg(test)]
 mod tests {

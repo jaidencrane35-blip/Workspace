@@ -15,6 +15,10 @@ use commands::automation_trigger::{
     list_trigger_events, record_and_evaluate_triggers, record_trigger_event,
     reject_automation_intent_proposal,
 };
+use commands::decision_queue::{
+    accept_decision_item, defer_decision_item, dismiss_decision_item, generate_decision_queue,
+    mark_decision_item_viewed, reject_decision_item,
+};
 use commands::layout::{
     create_layout, delete_layout, get_layout, get_layout_snapshot, reset_layout, update_layout,
 };
@@ -166,6 +170,12 @@ pub fn run() {
             list_automation_intent_proposals,
             accept_automation_intent_proposal,
             reject_automation_intent_proposal,
+            generate_decision_queue,
+            mark_decision_item_viewed,
+            defer_decision_item,
+            dismiss_decision_item,
+            accept_decision_item,
+            reject_decision_item,
             create_suggestion_intent_request,
             execute_intent_request,
             get_execution_outcomes,

@@ -173,6 +173,19 @@ export function AssistantPanel({
               . Explain-only — Assistant cannot accept, execute, or bypass
               governance for proposals.
             </dd>
+            <dt>Decision Queue</dt>
+            <dd>
+              {workspaceIntel.decision_queue.pending_count} pending (
+              {workspaceIntel.decision_queue.high_priority_count} high
+              priority)
+              {workspaceIntel.decision_queue.items.length === 0
+                ? "."
+                : `: ${workspaceIntel.decision_queue.items
+                    .map((i) => `[${i.priority}] ${i.title}`)
+                    .join("; ")}.`}{" "}
+              Same queue as the Work tab. Assistant may explain and prioritize —
+              never accept, reject, defer, or execute.
+            </dd>
             <dt>Authority effect</dt>
             <dd>{workspaceIntel.authority_effect}</dd>
           </dl>

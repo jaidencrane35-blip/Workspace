@@ -13,6 +13,7 @@ use crate::commands::automation_trigger::{
     ListTriggerEvents, RecordAndEvaluateTriggers, RecordTriggerEvent,
     RejectAutomationIntentProposal,
 };
+use crate::commands::decision_queue::{GateDecisionQueueRead, GateDecisionQueueWrite};
 use crate::commands::execute_intent_request::ExecuteIntentRequest;
 use crate::commands::create_suggestion_intent_request::CreateSuggestionIntentRequest;
 use crate::commands::create_workspace::CreateWorkspace;
@@ -65,21 +66,21 @@ use crate::lifecycle::LifecycleState;
 use crate::security::{PermissionRequest, PermissionSubject};
 use crate::services::{
     AiAssistantService, AiEvaluationService, AiOrchestrationService, AiParticipationService,
-    AiPlanningService, ConfigurationService, DesktopWindowService, WorkspaceContextService,
-    WorkspaceIntelligenceService,
+    AiPlanningService, ConfigurationService, DecisionQueueService, DesktopWindowService,
+    WorkspaceContextService, WorkspaceIntelligenceService,
 };
 use crate::WorkspaceKernel;
 use workspace_domain::{
     ActionCatalog, Actor, ActorContext, AiAssistantPlanComparison, AiAssistantWorkflow,
     AiMemoryAwareness, AiOrchestratedPlan, AutomationContract, AutomationContractIntentRequest,
-    AutomationIntentProposal, AutomationIntentProposalStatus, AutomationTriggerKind, Project,
-    ProjectStatus, Task, TaskPriority, TaskStatus, TriggerEvaluationResult, TriggerEvent,
-    TriggerEventType, WorkGoal, WorkflowContext, WorkspaceIntelligenceComparison,
-    WorkspaceIntelligenceState, AiPlan, AiPlanEvaluationReport, AiPlanSubmissionResult,
-    AiProposalAuthorityOutcome, AiProposalEvaluation, AiProposalSubmission, ApplicationId,
-    ApplicationReference, AuditEvent, Capability, CapabilitySet, Intent, IntentContext, Layout,
-    LayoutId, LayoutMetadata, LayoutNode, LayoutSnapshot, MemoryEntry, MemoryType,
-    ModelProviderDescriptor, ModelResponse, Observation, PersonalizedPlanComparison,
+    AutomationIntentProposal, AutomationIntentProposalStatus, AutomationTriggerKind,
+    DecisionActionResult, DecisionItem, DecisionQueue, Project, ProjectStatus, Task, TaskPriority,
+    TaskStatus, TriggerEvaluationResult, TriggerEvent, TriggerEventType, WorkGoal, WorkflowContext,
+    WorkspaceIntelligenceComparison, WorkspaceIntelligenceState, AiPlan, AiPlanEvaluationReport,
+    AiPlanSubmissionResult, AiProposalAuthorityOutcome, AiProposalEvaluation, AiProposalSubmission,
+    ApplicationId, ApplicationReference, AuditEvent, Capability, CapabilitySet, Intent,
+    IntentContext, Layout, LayoutId, LayoutMetadata, LayoutNode, LayoutSnapshot, MemoryEntry,
+    MemoryType, ModelProviderDescriptor, ModelResponse, Observation, PersonalizedPlanComparison,
     PreferenceCategory, PreferenceSource, Suggestion, SuggestionIntentRequest,
     SuggestionLifecycleRecord, IntentExecutionRequest, ExecutionOutcome, ExecutionReconciliation,
     CancellationRequest, UserPreference, UserPreferenceProfile, WidgetId, WidgetReference,
@@ -2209,6 +2210,126 @@ impl CommandHandler {
     ) -> Result<AutomationIntentProposal> {
         CommandPipeline::new(kernel.command_context(actor, intent))
             .execute_mutation(RejectAutomationIntentProposal::new(proposal_id))
+    }
+
+    /// Aggregate the Workspace Decision Queue (read-only aggregation; never executes).
+    pub fn generate_decision_queue(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<DecisionQueue> {
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent.clone()))
+            .execute_query(GateDecisionQueueRead)?;
+        let _ = Self::get_workflow_context(
+            kernel,
+            actor.clone(),
+            intent,
+            workspace_id.clone(),
+        )?;
+        DecisionQueueService::generate(
+            &kernel.shared_database(),
+            &actor,
+            &kernel.orchestrated_plans(),
+            &kernel.assistant_workflows(),
+            workspace_id,
+        )
+    }
+
+    pub fn mark_decision_item_viewed(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        decision_item_id: String,
+    ) -> Result<DecisionItem> {
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent))
+            .execute_mutation(GateDecisionQueueWrite)?;
+        DecisionQueueService::mark_viewed(
+            &kernel.shared_database(),
+            &actor,
+            &kernel.orchestrated_plans(),
+            &kernel.assistant_workflows(),
+            workspace_id,
+            decision_item_id,
+        )
+    }
+
+    pub fn defer_decision_item(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        decision_item_id: String,
+    ) -> Result<DecisionItem> {
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent))
+            .execute_mutation(GateDecisionQueueWrite)?;
+        DecisionQueueService::defer(
+            &kernel.shared_database(),
+            &actor,
+            &kernel.orchestrated_plans(),
+            &kernel.assistant_workflows(),
+            workspace_id,
+            decision_item_id,
+        )
+    }
+
+    pub fn dismiss_decision_item(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        decision_item_id: String,
+    ) -> Result<DecisionItem> {
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent))
+            .execute_mutation(GateDecisionQueueWrite)?;
+        DecisionQueueService::dismiss(
+            &kernel.shared_database(),
+            &actor,
+            &kernel.orchestrated_plans(),
+            &kernel.assistant_workflows(),
+            workspace_id,
+            decision_item_id,
+        )
+    }
+
+    /// Accept delegates to source subsystems or returns a governed handoff.
+    pub fn accept_decision_item(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        decision_item_id: String,
+    ) -> Result<DecisionActionResult> {
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent))
+            .execute_mutation(GateDecisionQueueWrite)?;
+        DecisionQueueService::accept(
+            &kernel.shared_database(),
+            &actor,
+            &kernel.orchestrated_plans(),
+            &kernel.assistant_workflows(),
+            workspace_id,
+            decision_item_id,
+        )
+    }
+
+    pub fn reject_decision_item(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        decision_item_id: String,
+    ) -> Result<DecisionActionResult> {
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent))
+            .execute_mutation(GateDecisionQueueWrite)?;
+        DecisionQueueService::reject(
+            &kernel.shared_database(),
+            &actor,
+            &kernel.orchestrated_plans(),
+            &kernel.assistant_workflows(),
+            workspace_id,
+            decision_item_id,
+        )
     }
 
     /// Read-only workspace intelligence aggregation. Capability-gated; never executes.

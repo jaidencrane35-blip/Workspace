@@ -14,6 +14,7 @@ pub mod analytics;
 pub mod audit;
 pub mod automation_contract;
 pub mod automation_trigger;
+pub mod decision_queue;
 pub mod capability;
 pub mod context;
 pub mod discovery;
@@ -139,8 +140,8 @@ pub use ids::{
     ActorId, AiActionProposalId, AiAssistantWorkflowId, AiGoalId, AiOrchestratedPlanId,
     AiPlanStepId, ApplicationId, AuditEventId, AutomationContractId, AutomationIntentProposalId,
     CapabilityGrantId, IntentId, LayoutId, MemoryEntryId, ModelId, ModelProviderId,
-    PermissionApprovalRequestId, ProjectId, TaskId, TriggerEventId, UserPreferenceId, WidgetId,
-    WorkGoalId, WorkspaceId, ZoneId,
+    DecisionItemId, PermissionApprovalRequestId, ProjectId, TaskId, TriggerEventId,
+    UserPreferenceId, WidgetId, WorkGoalId, WorkspaceId, ZoneId,
 };
 pub use automation_contract::{
     AutomationContract, AutomationContractApprovalState, AutomationContractError,
@@ -152,6 +153,11 @@ pub use automation_trigger::{
     AutomationIntentProposal, AutomationIntentProposalStatus, AutomationIntentProposalSummary,
     AutomationTriggerError, TriggerEvaluationResult, TriggerEvent, TriggerEventType,
     TriggerRejection, TriggerRejectionSummary,
+};
+pub use decision_queue::{
+    DecisionActionResult, DecisionCategory, DecisionHandoff, DecisionItem, DecisionLifecycleOverlay,
+    DecisionPriority, DecisionQueue, DecisionQueueError, DecisionQueueSummary, DecisionSourceType,
+    DecisionState,
 };
 pub use workspace_intent::{
     Project, ProjectStatus, Task, TaskPriority, TaskStatus, WorkGoal, WorkGoalStatus,

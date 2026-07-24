@@ -855,6 +855,86 @@ export interface TriggerRejectionSummary {
   reason: string;
 }
 
+export type DecisionSourceType =
+  | "intent_proposal"
+  | "pending_approval"
+  | "blocked_action"
+  | "planning_continuation";
+
+export type DecisionCategory =
+  | "permission"
+  | "automation"
+  | "blocked"
+  | "planning"
+  | "contract_definition";
+
+export type DecisionState =
+  | "pending"
+  | "viewed"
+  | "deferred"
+  | "dismissed"
+  | "accepted"
+  | "rejected"
+  | "expired";
+
+export type DecisionPriority = "critical" | "high" | "normal" | "low";
+
+export interface DecisionItem {
+  id: string;
+  workspace_id: string;
+  source_type: DecisionSourceType;
+  source_id: string;
+  category: DecisionCategory;
+  title: string;
+  summary: string;
+  explanation: string;
+  recommended_action: string;
+  decision_state: DecisionState;
+  priority: DecisionPriority;
+  created_at: string;
+  expires_at: string | null;
+  actor_id: string;
+  actor_type: string;
+  project_id: string | null;
+  required_capabilities: string[];
+  handoff_command: string | null;
+  authority_effect: string;
+}
+
+export interface DecisionHandoff {
+  decision_item_id: string;
+  source_type: DecisionSourceType;
+  source_id: string;
+  next_command: string;
+  note: string;
+  authority_effect: string;
+}
+
+export interface DecisionActionResult {
+  item: DecisionItem | null;
+  handoff: DecisionHandoff | null;
+  delegated: boolean;
+  authority_effect: string;
+}
+
+export interface DecisionQueue {
+  workspace_id: string;
+  generated_at: string;
+  items: DecisionItem[];
+  pending_count: number;
+  high_priority_count: number;
+  authority_effect: string;
+}
+
+export interface DecisionQueueSummary {
+  workspace_id: string;
+  generated_at: string;
+  pending_count: number;
+  high_priority_count: number;
+  items: DecisionItem[];
+  authority_effect: string;
+}
+
 export interface WorkspaceIntelligenceState {
   workspace_id: string;
   workspace_name: string;
@@ -874,6 +954,7 @@ export interface WorkspaceIntelligenceState {
   automation_contracts: AutomationContractSummary[];
   pending_automation_proposals: AutomationIntentProposalSummary[];
   recent_trigger_rejections: TriggerRejectionSummary[];
+  decision_queue: DecisionQueueSummary;
   workspace_health: string;
   summary: string;
   authority_effect: string;

@@ -4,8 +4,8 @@ use workspace_database::DatabaseError;
 use workspace_domain::{
     AiAssistantError, AiEvaluationError, AiMemoryError, AiModelError, AiOrchestrationError,
     AiPersonalizationError, AiPlanningError, AiRequestError, AutomationContractError,
-    AutomationTriggerError, DomainError, ResourceKind, WorkspaceIntelligenceError,
-    WorkspaceIntentError,
+    AutomationTriggerError, DecisionQueueError, DomainError, ResourceKind,
+    WorkspaceIntelligenceError, WorkspaceIntentError,
 };
 
 #[derive(Debug, Error)]
@@ -189,6 +189,9 @@ pub enum KernelError {
     #[error("Automation trigger validation failed: {message}")]
     AutomationTriggerValidation { message: String },
 
+    #[error("Decision queue validation failed: {message}")]
+    DecisionQueueValidation { message: String },
+
     #[error("Workspace kernel initialization failed")]
     InitializationFailed,
 }
@@ -345,6 +348,17 @@ impl From<AutomationTriggerError> for KernelError {
         match error {
             AutomationTriggerError::Domain(domain) => KernelError::from(domain),
             other => KernelError::AutomationTriggerValidation {
+                message: other.to_string(),
+            },
+        }
+    }
+}
+
+impl From<DecisionQueueError> for KernelError {
+    fn from(error: DecisionQueueError) -> Self {
+        match error {
+            DecisionQueueError::Domain(domain) => KernelError::from(domain),
+            other => KernelError::DecisionQueueValidation {
                 message: other.to_string(),
             },
         }
@@ -607,6 +621,10 @@ impl KernelError {
             },
             KernelError::AutomationTriggerValidation { message } => PublicError {
                 code: "automation_trigger_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::DecisionQueueValidation { message } => PublicError {
+                code: "decision_queue_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::InitializationFailed => PublicError {

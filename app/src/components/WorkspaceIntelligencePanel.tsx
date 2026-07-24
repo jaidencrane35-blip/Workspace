@@ -3,6 +3,9 @@ import { invokeIpc } from "../lib/ipc";
 import type {
   AutomationContract,
   AutomationIntentProposal,
+  DecisionActionResult,
+  DecisionItem,
+  DecisionQueue,
   Project,
   Task,
   TriggerEvaluationResult,
@@ -36,6 +39,10 @@ export function WorkspaceIntelligencePanel({
   const [proposals, setProposals] = useState<AutomationIntentProposal[]>([]);
   const [lastEvaluation, setLastEvaluation] =
     useState<TriggerEvaluationResult | null>(null);
+  const [decisionQueue, setDecisionQueue] = useState<DecisionQueue | null>(
+    null,
+  );
+  const [lastHandoff, setLastHandoff] = useState<string | null>(null);
   const [contractName, setContractName] = useState(
     "Prepare coding environment",
   );
@@ -63,30 +70,37 @@ export function WorkspaceIntelligencePanel({
       setContracts([]);
       setProposals([]);
       setLastEvaluation(null);
+      setDecisionQueue(null);
+      setLastHandoff(null);
       setState(null);
       return;
     }
     let cancelled = false;
     void (async () => {
       try {
-        const [listed, listedContracts, listedProposals] = await Promise.all([
-          invokeIpc<Project[]>("list_projects", {
-            workspaceId: workspace.id,
-            limit: 50,
-          }),
-          invokeIpc<AutomationContract[]>("list_automation_contracts", {
-            workspaceId: workspace.id,
-            limit: 50,
-          }),
-          invokeIpc<AutomationIntentProposal[]>(
-            "list_automation_intent_proposals",
-            { workspaceId: workspace.id, limit: 50 },
-          ),
-        ]);
+        const [listed, listedContracts, listedProposals, queue] =
+          await Promise.all([
+            invokeIpc<Project[]>("list_projects", {
+              workspaceId: workspace.id,
+              limit: 50,
+            }),
+            invokeIpc<AutomationContract[]>("list_automation_contracts", {
+              workspaceId: workspace.id,
+              limit: 50,
+            }),
+            invokeIpc<AutomationIntentProposal[]>(
+              "list_automation_intent_proposals",
+              { workspaceId: workspace.id, limit: 50 },
+            ),
+            invokeIpc<DecisionQueue>("generate_decision_queue", {
+              workspaceId: workspace.id,
+            }),
+          ]);
         if (!cancelled) {
           setProjects(listed);
           setContracts(listedContracts);
           setProposals(listedProposals);
+          setDecisionQueue(queue);
         }
       } catch (err: unknown) {
         if (!cancelled) {
@@ -369,6 +383,226 @@ export function WorkspaceIntelligencePanel({
       </section>
 
       <section>
+        <h3>Workspace Decision Queue</h3>
+        <p className="muted">
+          Canonical inbox for governed decisions. Sources remain authoritative —
+          the queue aggregates, explains, and prioritizes. It never executes or
+          grants permissions.
+        </p>
+        <div className="row">
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("Decision Queue refreshed", async () => {
+                if (!workspace) return;
+                const queue = await invokeIpc<DecisionQueue>(
+                  "generate_decision_queue",
+                  { workspaceId: workspace.id },
+                );
+                setDecisionQueue(queue);
+                setLastHandoff(null);
+              })
+            }
+          >
+            Refresh Decision Queue
+          </button>
+        </div>
+        {decisionQueue && (
+          <p className="muted">
+            {decisionQueue.pending_count} needing attention ·{" "}
+            {decisionQueue.high_priority_count} high priority · authority:{" "}
+            {decisionQueue.authority_effect}
+          </p>
+        )}
+        {lastHandoff && <p className="muted">{lastHandoff}</p>}
+        {!decisionQueue || decisionQueue.items.length === 0 ? (
+          <p className="muted">No decisions require attention.</p>
+        ) : (
+          <ul className="intelligence-list">
+            {decisionQueue.items.map((item) => (
+              <li key={item.id}>
+                <strong>
+                  [{item.priority}] {item.title}
+                </strong>
+                <div className="muted">
+                  {item.category} · {item.decision_state} · {item.source_type}
+                </div>
+                <div className="muted">{item.explanation}</div>
+                <div className="muted">
+                  If accepted: {item.recommended_action}
+                </div>
+                {item.required_capabilities.length > 0 && (
+                  <div className="muted">
+                    Permissions eventually required:{" "}
+                    {item.required_capabilities.join(", ")}
+                  </div>
+                )}
+                <div className="row">
+                  <button
+                    type="button"
+                    disabled={busy || item.decision_state === "dismissed"}
+                    onClick={() =>
+                      void run("Decision marked viewed", async () => {
+                        if (!workspace) return;
+                        const next = await invokeIpc<DecisionItem>(
+                          "mark_decision_item_viewed",
+                          {
+                            workspaceId: workspace.id,
+                            decisionItemId: item.id,
+                          },
+                        );
+                        setDecisionQueue((prev) =>
+                          prev
+                            ? {
+                                ...prev,
+                                items: prev.items.map((i) =>
+                                  i.id === next.id ? next : i,
+                                ),
+                              }
+                            : prev,
+                        );
+                      })
+                    }
+                  >
+                    Mark viewed
+                  </button>
+                  <button
+                    type="button"
+                    disabled={busy || item.decision_state === "dismissed"}
+                    onClick={() =>
+                      void run("Decision deferred", async () => {
+                        if (!workspace) return;
+                        const next = await invokeIpc<DecisionItem>(
+                          "defer_decision_item",
+                          {
+                            workspaceId: workspace.id,
+                            decisionItemId: item.id,
+                          },
+                        );
+                        setDecisionQueue((prev) =>
+                          prev
+                            ? {
+                                ...prev,
+                                items: prev.items.map((i) =>
+                                  i.id === next.id ? next : i,
+                                ),
+                              }
+                            : prev,
+                        );
+                      })
+                    }
+                  >
+                    Defer
+                  </button>
+                  <button
+                    type="button"
+                    disabled={busy || item.decision_state === "dismissed"}
+                    onClick={() =>
+                      void run("Decision dismissed (source unchanged)", async () => {
+                        if (!workspace) return;
+                        const next = await invokeIpc<DecisionItem>(
+                          "dismiss_decision_item",
+                          {
+                            workspaceId: workspace.id,
+                            decisionItemId: item.id,
+                          },
+                        );
+                        setDecisionQueue((prev) =>
+                          prev
+                            ? {
+                                ...prev,
+                                items: prev.items.map((i) =>
+                                  i.id === next.id ? next : i,
+                                ),
+                              }
+                            : prev,
+                        );
+                      })
+                    }
+                  >
+                    Dismiss
+                  </button>
+                  <button
+                    type="button"
+                    disabled={
+                      busy ||
+                      item.decision_state === "dismissed" ||
+                      item.decision_state === "accepted" ||
+                      item.decision_state === "rejected"
+                    }
+                    onClick={() =>
+                      void run("Decision accept attempted", async () => {
+                        if (!workspace) return;
+                        const result = await invokeIpc<DecisionActionResult>(
+                          "accept_decision_item",
+                          {
+                            workspaceId: workspace.id,
+                            decisionItemId: item.id,
+                          },
+                        );
+                        if (result.handoff) {
+                          setLastHandoff(
+                            `Handoff: use ${result.handoff.next_command} — ${result.handoff.note}`,
+                          );
+                        } else {
+                          setLastHandoff(
+                            result.delegated
+                              ? "Delegated to source subsystem (not executed)."
+                              : null,
+                          );
+                        }
+                        const queue = await invokeIpc<DecisionQueue>(
+                          "generate_decision_queue",
+                          { workspaceId: workspace.id },
+                        );
+                        setDecisionQueue(queue);
+                      })
+                    }
+                  >
+                    Accept
+                  </button>
+                  <button
+                    type="button"
+                    disabled={
+                      busy ||
+                      item.decision_state === "dismissed" ||
+                      item.decision_state === "accepted" ||
+                      item.decision_state === "rejected"
+                    }
+                    onClick={() =>
+                      void run("Decision reject attempted", async () => {
+                        if (!workspace) return;
+                        const result = await invokeIpc<DecisionActionResult>(
+                          "reject_decision_item",
+                          {
+                            workspaceId: workspace.id,
+                            decisionItemId: item.id,
+                          },
+                        );
+                        if (result.handoff) {
+                          setLastHandoff(
+                            `Handoff: use ${result.handoff.next_command} — ${result.handoff.note}`,
+                          );
+                        }
+                        const queue = await invokeIpc<DecisionQueue>(
+                          "generate_decision_queue",
+                          { workspaceId: workspace.id },
+                        );
+                        setDecisionQueue(queue);
+                      })
+                    }
+                  >
+                    Reject
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section>
         <h3>Trigger evaluation (proposals only)</h3>
         <p className="muted">
           Manual evaluation notices when an approved contract may be relevant.
@@ -505,18 +739,23 @@ export function WorkspaceIntelligencePanel({
                   { workspaceId: workspace.id },
                 );
                 setState(next);
-                const [listedContracts, listedProposals] = await Promise.all([
-                  invokeIpc<AutomationContract[]>("list_automation_contracts", {
-                    workspaceId: workspace.id,
-                    limit: 50,
-                  }),
-                  invokeIpc<AutomationIntentProposal[]>(
-                    "list_automation_intent_proposals",
-                    { workspaceId: workspace.id, limit: 50 },
-                  ),
-                ]);
+                const [listedContracts, listedProposals, queue] =
+                  await Promise.all([
+                    invokeIpc<AutomationContract[]>("list_automation_contracts", {
+                      workspaceId: workspace.id,
+                      limit: 50,
+                    }),
+                    invokeIpc<AutomationIntentProposal[]>(
+                      "list_automation_intent_proposals",
+                      { workspaceId: workspace.id, limit: 50 },
+                    ),
+                    invokeIpc<DecisionQueue>("generate_decision_queue", {
+                      workspaceId: workspace.id,
+                    }),
+                  ]);
                 setContracts(listedContracts);
                 setProposals(listedProposals);
+                setDecisionQueue(queue);
               })
             }
           >
@@ -571,6 +810,32 @@ export function WorkspaceIntelligencePanel({
                       Consent matches definition:{" "}
                       {contract.approval_matches_definition ? "yes" : "no"}
                     </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          <section>
+            <h3>Decision Queue (intelligence view)</h3>
+            <p className="muted">
+              Same queue as Work tab actions. Intelligence cannot accept, reject,
+              defer, or execute.
+            </p>
+            <p className="muted">
+              {state.decision_queue.pending_count} pending ·{" "}
+              {state.decision_queue.high_priority_count} high priority
+            </p>
+            {state.decision_queue.items.length === 0 ? (
+              <p className="muted">No queued decisions.</p>
+            ) : (
+              <ul className="intelligence-list">
+                {state.decision_queue.items.map((item) => (
+                  <li key={item.id}>
+                    <strong>
+                      [{item.priority}] {item.title}
+                    </strong>
+                    <div className="muted">{item.explanation}</div>
                   </li>
                 ))}
               </ul>

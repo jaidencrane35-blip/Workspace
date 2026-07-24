@@ -21,8 +21,9 @@ use workspace_domain::{
 use crate::error::{KernelError, Result};
 use crate::services::{
     list_rejection_summaries, AiMemoryService, AiPersonalizationService, AssistantWorkflowStore,
-    AuditService, AutomationContractService, DesktopWindowService, OrchestratedPlanStore,
-    PermissionApprovalService, TriggerEvaluatorService, WorkspaceIntentService,
+    AuditService, AutomationContractService, DecisionQueueService, DesktopWindowService,
+    OrchestratedPlanStore, PermissionApprovalService, TriggerEvaluatorService,
+    WorkspaceIntentService,
 };
 
 pub(crate) struct WorkspaceIntelligenceService;
@@ -73,6 +74,15 @@ impl WorkspaceIntelligenceService {
             TriggerEvaluatorService::pending_summaries(db, ws, 20).unwrap_or_default();
         let recent_trigger_rejections =
             list_rejection_summaries(db, ws, 20).unwrap_or_default();
+        let decision_queue = DecisionQueueService::generate(
+            db,
+            actor,
+            orchestrated_plans,
+            assistant_workflows,
+            ws,
+        )
+        .map(|queue| queue.summary(10))
+        .unwrap_or_default();
 
         let memory = AiMemoryService::assemble_awareness(db, Some(ws), 10)
             .unwrap_or_else(|_| workspace_domain::AiMemoryAwareness::from_entries(Vec::new()));
@@ -315,6 +325,7 @@ impl WorkspaceIntelligenceService {
             automation_contracts,
             pending_automation_proposals,
             recent_trigger_rejections,
+            decision_queue,
             workspace_health: health_label,
             summary,
             authority_effect: WorkspaceIntelligenceState::AUTHORITY_EFFECT_NONE.into(),
@@ -473,7 +484,7 @@ impl WorkspaceIntelligenceService {
              {pending_approvals} pending decision(s), {blocked} blocked action(s), \
              {recommendations} recommendation(s), {approved_contracts} approved automation \
              contract(s), {pending_proposals} pending automation proposal(s). \
-             Intelligence is informational only."
+             Intelligence is informational only — Decision Queue organizes attention."
         )
     }
 
