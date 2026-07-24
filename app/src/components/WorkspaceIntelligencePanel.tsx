@@ -20,6 +20,7 @@ import type {
   WorkspacePurposeState,
   WorkspaceEvolutionState,
   WorkspaceRecommendationEngineState,
+  WorkspaceOperatingState,
   WorkspaceIntelligenceState,
 } from "../types/domain";
 
@@ -72,6 +73,8 @@ export function WorkspaceIntelligencePanel({
     useState<WorkspaceEvolutionState | null>(null);
   const [recommendationEngine, setRecommendationEngine] =
     useState<WorkspaceRecommendationEngineState | null>(null);
+  const [operatingState, setOperatingState] =
+    useState<WorkspaceOperatingState | null>(null);
   const [lastHandoff, setLastHandoff] = useState<string | null>(null);
   const [contractName, setContractName] = useState(
     "Prepare coding environment",
@@ -111,6 +114,7 @@ export function WorkspaceIntelligencePanel({
       setPurpose(null);
       setEvolution(null);
       setRecommendationEngine(null);
+      setOperatingState(null);
       setLastHandoff(null);
       setState(null);
       return;
@@ -134,6 +138,7 @@ export function WorkspaceIntelligencePanel({
           purp,
           evo,
           rec,
+          ops,
         ] = await Promise.all([
             invokeIpc<Project[]>("list_projects", {
               workspaceId: workspace.id,
@@ -188,6 +193,10 @@ export function WorkspaceIntelligencePanel({
               "generate_workspace_recommendation_engine",
               { workspaceId: workspace.id },
             ),
+            invokeIpc<WorkspaceOperatingState>(
+              "generate_workspace_operating_state",
+              { workspaceId: workspace.id },
+            ),
           ]);
         if (!cancelled) {
           setProjects(listed);
@@ -205,6 +214,7 @@ export function WorkspaceIntelligencePanel({
           setPurpose(purp);
           setEvolution(evo);
           setRecommendationEngine(rec);
+          setOperatingState(ops);
         }
       } catch (err: unknown) {
         if (!cancelled) {
@@ -803,6 +813,55 @@ export function WorkspaceIntelligencePanel({
           </>
         ) : (
           <p className="muted">No evolution snapshot yet.</p>
+        )}
+      </section>
+
+      <section>
+        <h3>Operating State</h3>
+        <p className="muted">
+          What is happening right now — unified snapshot over Purpose,
+          Environment, Composition, Task Graph, Continuity, Attention,
+          Decision Queue, and Recommendations. Aggregates only; never executes.
+        </p>
+        <div className="row">
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("Operating State refreshed", async () => {
+                if (!workspace) return;
+                const next = await invokeIpc<WorkspaceOperatingState>(
+                  "generate_workspace_operating_state",
+                  { workspaceId: workspace.id },
+                );
+                setOperatingState(next);
+              })
+            }
+          >
+            Refresh operating state
+          </button>
+        </div>
+        {operatingState ? (
+          <>
+            <p>
+              <strong>{operatingState.operating_summary.headline}</strong>
+            </p>
+            <p>{operatingState.summary}</p>
+            <p className="muted">{operatingState.operating_summary.narrative}</p>
+            <ul className="muted">
+              <li>{operatingState.operating_summary.purpose_line}</li>
+              <li>{operatingState.operating_summary.environment_line}</li>
+              <li>{operatingState.operating_summary.progress_line}</li>
+              <li>{operatingState.operating_summary.pending_line}</li>
+              <li>{operatingState.operating_summary.suggested_line}</li>
+            </ul>
+            <p className="muted">
+              {operatingState.signal_count} signal(s) · authority:{" "}
+              {operatingState.authority_effect}
+            </p>
+          </>
+        ) : (
+          <p className="muted">No operating state snapshot yet.</p>
         )}
       </section>
 

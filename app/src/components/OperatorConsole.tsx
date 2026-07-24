@@ -15,6 +15,7 @@ import type {
   WorkspacePurposeState,
   WorkspaceEvolutionState,
   WorkspaceRecommendationEngineState,
+  WorkspaceOperatingState,
   AiOrchestratedPlan,
   AiPlan,
   AiPlanEvaluationReport,
@@ -160,6 +161,8 @@ export function OperatorConsole({
     useState<WorkspaceEvolutionState | null>(null);
   const [recommendationEngine, setRecommendationEngine] =
     useState<WorkspaceRecommendationEngineState | null>(null);
+  const [operatingState, setOperatingState] =
+    useState<WorkspaceOperatingState | null>(null);
   const [activeProject, setActiveProject] = useState<Project | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [memoryEntries, setMemoryEntries] = useState<MemoryEntry[]>([]);
@@ -1760,6 +1763,55 @@ export function OperatorConsole({
             <li>
               Candidates {recommendationEngine.candidate_count} · authority{" "}
               {recommendationEngine.authority_effect}
+            </li>
+          </ul>
+        )}
+      </section>
+
+      <section>
+        <h2>Operating State (diagnostics)</h2>
+        <p className="muted">
+          What is happening right now — unified current-situation snapshot.
+          Aggregates existing understanding systems; never executes or grants
+          authority.
+        </p>
+        <div className="row">
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("Operating State generated", async () => {
+                if (!workspace) return;
+                const state = await invokeIpc<WorkspaceOperatingState>(
+                  "generate_workspace_operating_state",
+                  { workspaceId: workspace.id },
+                );
+                setOperatingState(state);
+              })
+            }
+          >
+            Inspect operating state
+          </button>
+          <button
+            type="button"
+            disabled={busy || !operatingState}
+            onClick={() =>
+              void run("Operating narrative inspected", async () => {
+                if (!operatingState) return;
+                onMessage(operatingState.operating_summary.narrative);
+              })
+            }
+          >
+            Inspect narrative
+          </button>
+        </div>
+        {operatingState && (
+          <ul className="muted">
+            <li>{operatingState.summary}</li>
+            <li>{operatingState.operating_summary.purpose_line}</li>
+            <li>
+              Signals {operatingState.signal_count} · authority{" "}
+              {operatingState.authority_effect}
             </li>
           </ul>
         )}

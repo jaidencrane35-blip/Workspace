@@ -7,8 +7,8 @@ use workspace_domain::{
     AutomationTriggerError, DecisionEngineError, DecisionQueueError, DomainError, ResourceKind,
     TaskGraphError, WorkspaceActivityError, WorkspaceAttentionError, WorkspaceContinuityError,
     WorkspaceEnvironmentError, WorkspaceCompositionError, WorkspacePurposeError,
-    WorkspaceEvolutionError, WorkspaceRecommendationEngineError, WorkspaceIntelligenceError,
-    WorkspaceIntentError,
+    WorkspaceEvolutionError, WorkspaceRecommendationEngineError, WorkspaceOperatingStateError,
+    WorkspaceIntelligenceError, WorkspaceIntentError,
 };
 
 #[derive(Debug, Error)]
@@ -224,6 +224,9 @@ pub enum KernelError {
 
     #[error("Workspace recommendation engine validation failed: {message}")]
     WorkspaceRecommendationEngineValidation { message: String },
+
+    #[error("Workspace operating state validation failed: {message}")]
+    WorkspaceOperatingStateValidation { message: String },
 
     #[error("Workspace kernel initialization failed")]
     InitializationFailed,
@@ -502,6 +505,17 @@ impl From<WorkspaceRecommendationEngineError> for KernelError {
         match error {
             WorkspaceRecommendationEngineError::Domain(domain) => KernelError::from(domain),
             other => KernelError::WorkspaceRecommendationEngineValidation {
+                message: other.to_string(),
+            },
+        }
+    }
+}
+
+impl From<WorkspaceOperatingStateError> for KernelError {
+    fn from(error: WorkspaceOperatingStateError) -> Self {
+        match error {
+            WorkspaceOperatingStateError::Domain(domain) => KernelError::from(domain),
+            other => KernelError::WorkspaceOperatingStateValidation {
                 message: other.to_string(),
             },
         }
@@ -808,6 +822,10 @@ impl KernelError {
             },
             KernelError::WorkspaceRecommendationEngineValidation { message } => PublicError {
                 code: "workspace_recommendation_engine_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::WorkspaceOperatingStateValidation { message } => PublicError {
+                code: "workspace_operating_state_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::InitializationFailed => PublicError {

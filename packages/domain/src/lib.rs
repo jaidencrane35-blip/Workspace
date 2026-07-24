@@ -46,6 +46,7 @@ pub mod workspace_composition;
 pub mod workspace_purpose;
 pub mod workspace_evolution;
 pub mod workspace_recommendation;
+pub mod workspace_operating_state;
 pub mod workspace_continuity;
 pub mod workspace_task_graph;
 pub mod workspace_environment;
@@ -214,6 +215,12 @@ pub use workspace_recommendation::{
     RecommendationItem, RecommendationKind, RecommendationRelationship,
     WorkspaceRecommendationEngineError, WorkspaceRecommendationEngineState,
     WorkspaceRecommendationEngineSummary,
+};
+pub use workspace_operating_state::{
+    build_operating_state_summary, operating_state_now_rfc3339,
+    validate_operating_state_workspace_id, OperatingContext, OperatingRelationship,
+    OperatingSignal, OperatingSignalKind, OperatingSummary, WorkspaceOperatingState,
+    WorkspaceOperatingStateError, WorkspaceOperatingStateSummary,
 };
 pub use workspace_environment::{
     build_environment_summary, now_rfc3339, validate_workspace_id, EnvironmentApplication,

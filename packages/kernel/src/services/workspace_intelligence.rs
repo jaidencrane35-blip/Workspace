@@ -24,6 +24,7 @@ use crate::services::{
     WorkspaceActivityGraphService, WorkspaceAttentionService, WorkspaceContinuityService,
     WorkspaceEnvironmentService, WorkspaceIntentService, WorkspaceCompositionService,
     WorkspacePurposeService, WorkspaceEvolutionService, WorkspaceRecommendationEngineService,
+    WorkspaceOperatingStateService,
 };
 
 pub(crate) struct WorkspaceIntelligenceService;
@@ -206,6 +207,27 @@ impl WorkspaceIntelligenceService {
         )?;
         let attention = full_attention.summary_projection(8);
 
+        let full_operating_state = WorkspaceOperatingStateService::generate_with_inputs(
+            db,
+            actor,
+            ws,
+            &workflow_context,
+            current_project.as_ref(),
+            current_task.as_ref(),
+            &full_purpose,
+            &full_environment,
+            &full_composition,
+            Some(&full_task_graph),
+            &full_continuity,
+            &full_activity_graph,
+            &full_decision_queue,
+            &full_attention,
+            &full_recommendation_engine,
+            &full_evolution,
+        )?;
+        let operating_state =
+            WorkspaceOperatingStateService::summary_projection(&full_operating_state, 8);
+
         let memory = AiMemoryService::assemble_awareness(db, Some(ws), 10)
             .unwrap_or_else(|_| workspace_domain::AiMemoryAwareness::from_entries(Vec::new()));
         let personalization = AiPersonalizationService::assemble_awareness(db, Some(ws), 10, None)
@@ -366,6 +388,7 @@ impl WorkspaceIntelligenceService {
             purpose,
             evolution,
             recommendation_engine,
+            operating_state,
             workspace_health: health_label,
             summary,
             authority_effect: WorkspaceIntelligenceState::AUTHORITY_EFFECT_NONE.into(),

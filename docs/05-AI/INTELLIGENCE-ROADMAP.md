@@ -140,6 +140,10 @@ Workspace Evolution Model foundation (Sprint 87) — how work changed, projected
 
 Workspace Recommendation Engine foundation (Sprint 88) — what might help next, projected from Attention + Continuity + Evolution + Purpose + Task Graph + Composition + Decision Queue + Environment; Attention may surface recommendations; Intelligence embeds; Assistant explains. Suggestions only — not Decision Engine, not Planner. See [Workspace Recommendation Engine](WORKSPACE-RECOMMENDATION-ENGINE.md).
 
+## Phase 5 Batch 10 (done)
+
+Workspace Operating State foundation (Sprint 89) — what is happening right now, unified snapshot over existing understanding systems; Intelligence embeds; Assistant explains. Aggregator only — no durable store, no autonomy. See [Workspace Operating State](WORKSPACE-OPERATING-STATE.md).
+
 ---
 
 ## Never build

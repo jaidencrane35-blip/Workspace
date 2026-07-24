@@ -1263,6 +1263,7 @@ export interface WorkspaceIntelligenceState {
   purpose: WorkspacePurposeSummary;
   evolution: WorkspaceEvolutionSummary;
   recommendation_engine: WorkspaceRecommendationEngineSummary;
+  operating_state: WorkspaceOperatingStateSummary;
   workspace_health: string;
   summary: string;
   authority_effect: string;
@@ -1758,6 +1759,91 @@ export interface WorkspaceRecommendationEngineSummary {
   candidate_count: number;
   relationship_count: number;
   top_candidates: RecommendationItem[];
+  explanation: string;
+  summary: string;
+  authority_effect: string;
+}
+
+export type OperatingSignalKind =
+  | "purpose"
+  | "project"
+  | "active_work"
+  | "environment"
+  | "composition"
+  | "progress"
+  | "blocker"
+  | "pending_decision"
+  | "recommendation"
+  | "attention"
+  | "continuity"
+  | "evolution";
+
+export interface OperatingSignal {
+  id: string;
+  kind: OperatingSignalKind;
+  current_value: string;
+  source_model: string;
+  source_ref: string;
+  evidence: string[];
+  authority_effect: string;
+}
+
+export interface OperatingRelationship {
+  id: string;
+  from_id: string;
+  to_id: string;
+  kind: string;
+  explanation: string;
+  evidence: string[];
+}
+
+export interface OperatingContext {
+  purpose_label: string;
+  active_project_label: string | null;
+  active_task_label: string | null;
+  environment_summary: string;
+  composition_label: string;
+  recent_progress: string[];
+  current_blockers: string[];
+  pending_decisions: string[];
+  top_recommendations: string[];
+  attention_priorities: string[];
+  continuity_focus: string | null;
+}
+
+export interface OperatingSummary {
+  headline: string;
+  purpose_line: string;
+  environment_line: string;
+  progress_line: string;
+  pending_line: string;
+  suggested_line: string;
+  narrative: string;
+}
+
+export interface WorkspaceOperatingState {
+  workspace_id: string;
+  generated_at: string;
+  context: OperatingContext;
+  signals: OperatingSignal[];
+  relationships: OperatingRelationship[];
+  operating_summary: OperatingSummary;
+  signal_count: number;
+  relationship_count: number;
+  explanation: string;
+  evidence: string[];
+  summary: string;
+  authority_effect: string;
+}
+
+export interface WorkspaceOperatingStateSummary {
+  workspace_id: string;
+  generated_at: string;
+  context: OperatingContext;
+  operating_summary: OperatingSummary;
+  signal_count: number;
+  relationship_count: number;
+  top_signals: OperatingSignal[];
   explanation: string;
   summary: string;
   authority_effect: string;

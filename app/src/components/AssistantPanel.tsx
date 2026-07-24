@@ -263,6 +263,16 @@ export function AssistantPanel({
               and compare options — never accept, execute, or convert into
               actions silently.
             </dd>
+            <dt>Operating State</dt>
+            <dd>
+              {workspaceIntel.operating_state.summary}{" "}
+              {workspaceIntel.operating_state.operating_summary.headline
+                ? `${workspaceIntel.operating_state.operating_summary.headline}. `
+                : ""}
+              Same Operating State as the Work tab. Assistant may summarize the
+              current situation and explain relationships — never alter state or
+              execute from it.
+            </dd>
             <dt>Continuity</dt>
             <dd>
               {workspaceIntel.continuity.summary}{" "}
