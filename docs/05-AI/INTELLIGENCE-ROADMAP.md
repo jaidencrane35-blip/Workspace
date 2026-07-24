@@ -96,6 +96,10 @@ Governed trigger evaluation foundation — `TriggerEvent`, `TriggerEvaluator`, e
 
 Governed Decision Queue foundation — aggregate pending human decisions into one Workspace inbox with lifecycle overlay; sources remain authoritative; no execution or permission grants. See [Governed Decision Queue](GOVERNED-DECISION-QUEUE.md).
 
+## Phase 4 Batch 9 (done)
+
+Workspace Activity Graph foundation — pure aggregation read model linking work objects into timeline and relationships; synthetic IDs only; no second database or authority. See [Workspace Activity Graph](WORKSPACE-ACTIVITY-GRAPH.md).
+
 ---
 
 ## Never build

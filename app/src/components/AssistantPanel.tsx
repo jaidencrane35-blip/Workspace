@@ -186,6 +186,20 @@ export function AssistantPanel({
               Same queue as the Work tab. Assistant may explain and prioritize —
               never accept, reject, defer, or execute.
             </dd>
+            <dt>Activity Graph</dt>
+            <dd>
+              {workspaceIntel.activity_graph.activity_count} activities,{" "}
+              {workspaceIntel.activity_graph.unresolved_count} unresolved,{" "}
+              {workspaceIntel.activity_graph.relationship_count} relationships
+              {workspaceIntel.activity_graph.recent_timeline.length === 0
+                ? "."
+                : `: ${workspaceIntel.activity_graph.recent_timeline
+                    .slice(0, 3)
+                    .map((a) => a.summary)
+                    .join("; ")}.`}{" "}
+              Same graph as the Work tab. Assistant may explain history and
+              blockers — never mutate or execute.
+            </dd>
             <dt>Authority effect</dt>
             <dd>{workspaceIntel.authority_effect}</dd>
           </dl>

@@ -14,6 +14,7 @@ use crate::commands::automation_trigger::{
     RejectAutomationIntentProposal,
 };
 use crate::commands::decision_queue::{GateDecisionQueueRead, GateDecisionQueueWrite};
+use crate::commands::workspace_activity::GateActivityGraphRead;
 use crate::commands::execute_intent_request::ExecuteIntentRequest;
 use crate::commands::create_suggestion_intent_request::CreateSuggestionIntentRequest;
 use crate::commands::create_workspace::CreateWorkspace;
@@ -67,7 +68,7 @@ use crate::security::{PermissionRequest, PermissionSubject};
 use crate::services::{
     AiAssistantService, AiEvaluationService, AiOrchestrationService, AiParticipationService,
     AiPlanningService, ConfigurationService, DecisionQueueService, DesktopWindowService,
-    WorkspaceContextService, WorkspaceIntelligenceService,
+    WorkspaceActivityGraphService, WorkspaceContextService, WorkspaceIntelligenceService,
 };
 use crate::WorkspaceKernel;
 use workspace_domain::{
@@ -76,11 +77,12 @@ use workspace_domain::{
     AutomationIntentProposal, AutomationIntentProposalStatus, AutomationTriggerKind,
     DecisionActionResult, DecisionItem, DecisionQueue, Project, ProjectStatus, Task, TaskPriority,
     TaskStatus, TriggerEvaluationResult, TriggerEvent, TriggerEventType, WorkGoal, WorkflowContext,
-    WorkspaceIntelligenceComparison, WorkspaceIntelligenceState, AiPlan, AiPlanEvaluationReport,
-    AiPlanSubmissionResult, AiProposalAuthorityOutcome, AiProposalEvaluation, AiProposalSubmission,
-    ApplicationId, ApplicationReference, AuditEvent, Capability, CapabilitySet, Intent,
-    IntentContext, Layout, LayoutId, LayoutMetadata, LayoutNode, LayoutSnapshot, MemoryEntry,
-    MemoryType, ModelProviderDescriptor, ModelResponse, Observation, PersonalizedPlanComparison,
+    WorkspaceActivity, WorkspaceActivityGraph, WorkspaceIntelligenceComparison,
+    WorkspaceIntelligenceState, AiPlan, AiPlanEvaluationReport, AiPlanSubmissionResult,
+    AiProposalAuthorityOutcome, AiProposalEvaluation, AiProposalSubmission, ApplicationId,
+    ApplicationReference, AuditEvent, Capability, CapabilitySet, Intent, IntentContext, Layout,
+    LayoutId, LayoutMetadata, LayoutNode, LayoutSnapshot, MemoryEntry, MemoryType,
+    ModelProviderDescriptor, ModelResponse, Observation, PersonalizedPlanComparison,
     PreferenceCategory, PreferenceSource, Suggestion, SuggestionIntentRequest,
     SuggestionLifecycleRecord, IntentExecutionRequest, ExecutionOutcome, ExecutionReconciliation,
     CancellationRequest, UserPreference, UserPreferenceProfile, WidgetId, WidgetReference,
@@ -2330,6 +2332,56 @@ impl CommandHandler {
             workspace_id,
             decision_item_id,
         )
+    }
+
+    /// Aggregate the Workspace Activity Graph (read-only; never executes).
+    pub fn generate_workspace_activity_graph(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceActivityGraph> {
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent.clone()))
+            .execute_query(GateActivityGraphRead)?;
+        let _ = Self::get_workflow_context(
+            kernel,
+            actor.clone(),
+            intent,
+            workspace_id.clone(),
+        )?;
+        WorkspaceActivityGraphService::generate(
+            &kernel.shared_database(),
+            &actor,
+            &kernel.orchestrated_plans(),
+            &kernel.assistant_workflows(),
+            workspace_id,
+        )
+    }
+
+    /// Chronological timeline slice from the same Activity Graph generate.
+    pub fn get_workspace_activity_timeline(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        limit: Option<usize>,
+    ) -> Result<Vec<WorkspaceActivity>> {
+        let graph = Self::generate_workspace_activity_graph(
+            kernel,
+            actor,
+            intent,
+            workspace_id,
+        )?;
+        let limit = limit.unwrap_or(50).min(graph.timeline.len());
+        Ok(graph
+            .timeline
+            .into_iter()
+            .rev()
+            .take(limit)
+            .collect::<Vec<_>>()
+            .into_iter()
+            .rev()
+            .collect())
     }
 
     /// Read-only workspace intelligence aggregation. Capability-gated; never executes.

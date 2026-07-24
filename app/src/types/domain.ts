@@ -935,6 +935,69 @@ export interface DecisionQueueSummary {
   authority_effect: string;
 }
 
+export type ActivityType =
+  | "project"
+  | "task"
+  | "work_goal"
+  | "automation_contract"
+  | "trigger_event"
+  | "intent_proposal"
+  | "decision_item"
+  | "permission_approval"
+  | "planning_continuation"
+  | "blocked_action"
+  | "execution_outcome"
+  | "audit_signal";
+
+export type ActivitySourceType =
+  | "work_context"
+  | "automation_contract"
+  | "trigger_evaluation"
+  | "decision_queue"
+  | "permission_approval"
+  | "planning"
+  | "execution"
+  | "audit";
+
+export interface WorkspaceActivity {
+  id: string;
+  workspace_id: string;
+  project_id: string | null;
+  task_id: string | null;
+  activity_type: ActivityType;
+  source_type: ActivitySourceType;
+  source_id: string;
+  parent_activity_id: string | null;
+  related_activity_ids: string[];
+  summary: string;
+  explanation: string;
+  timestamp: string;
+  actor_id: string;
+  actor_type: string;
+  unresolved: boolean;
+  authority_effect: string;
+}
+
+export interface WorkspaceActivityGraph {
+  workspace_id: string;
+  generated_at: string;
+  activities: WorkspaceActivity[];
+  timeline: WorkspaceActivity[];
+  relationship_count: number;
+  unresolved_count: number;
+  authority_effect: string;
+}
+
+export interface WorkspaceActivityGraphSummary {
+  workspace_id: string;
+  generated_at: string;
+  activity_count: number;
+  relationship_count: number;
+  unresolved_count: number;
+  recent_timeline: WorkspaceActivity[];
+  authority_effect: string;
+}
+
 export interface WorkspaceIntelligenceState {
   workspace_id: string;
   workspace_name: string;
@@ -955,6 +1018,7 @@ export interface WorkspaceIntelligenceState {
   pending_automation_proposals: AutomationIntentProposalSummary[];
   recent_trigger_rejections: TriggerRejectionSummary[];
   decision_queue: DecisionQueueSummary;
+  activity_graph: WorkspaceActivityGraphSummary;
   workspace_health: string;
   summary: string;
   authority_effect: string;

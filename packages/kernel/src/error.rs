@@ -5,7 +5,7 @@ use workspace_domain::{
     AiAssistantError, AiEvaluationError, AiMemoryError, AiModelError, AiOrchestrationError,
     AiPersonalizationError, AiPlanningError, AiRequestError, AutomationContractError,
     AutomationTriggerError, DecisionQueueError, DomainError, ResourceKind,
-    WorkspaceIntelligenceError, WorkspaceIntentError,
+    WorkspaceActivityError, WorkspaceIntelligenceError, WorkspaceIntentError,
 };
 
 #[derive(Debug, Error)]
@@ -192,6 +192,9 @@ pub enum KernelError {
     #[error("Decision queue validation failed: {message}")]
     DecisionQueueValidation { message: String },
 
+    #[error("Workspace activity validation failed: {message}")]
+    WorkspaceActivityValidation { message: String },
+
     #[error("Workspace kernel initialization failed")]
     InitializationFailed,
 }
@@ -359,6 +362,17 @@ impl From<DecisionQueueError> for KernelError {
         match error {
             DecisionQueueError::Domain(domain) => KernelError::from(domain),
             other => KernelError::DecisionQueueValidation {
+                message: other.to_string(),
+            },
+        }
+    }
+}
+
+impl From<WorkspaceActivityError> for KernelError {
+    fn from(error: WorkspaceActivityError) -> Self {
+        match error {
+            WorkspaceActivityError::Domain(domain) => KernelError::from(domain),
+            other => KernelError::WorkspaceActivityValidation {
                 message: other.to_string(),
             },
         }
@@ -625,6 +639,10 @@ impl KernelError {
             },
             KernelError::DecisionQueueValidation { message } => PublicError {
                 code: "decision_queue_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::WorkspaceActivityValidation { message } => PublicError {
+                code: "workspace_activity_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::InitializationFailed => PublicError {

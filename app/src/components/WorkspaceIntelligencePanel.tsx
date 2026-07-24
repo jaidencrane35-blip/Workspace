@@ -10,6 +10,7 @@ import type {
   Task,
   TriggerEvaluationResult,
   Workspace,
+  WorkspaceActivityGraph,
   WorkspaceIntelligenceState,
 } from "../types/domain";
 
@@ -42,6 +43,8 @@ export function WorkspaceIntelligencePanel({
   const [decisionQueue, setDecisionQueue] = useState<DecisionQueue | null>(
     null,
   );
+  const [activityGraph, setActivityGraph] =
+    useState<WorkspaceActivityGraph | null>(null);
   const [lastHandoff, setLastHandoff] = useState<string | null>(null);
   const [contractName, setContractName] = useState(
     "Prepare coding environment",
@@ -71,6 +74,7 @@ export function WorkspaceIntelligencePanel({
       setProposals([]);
       setLastEvaluation(null);
       setDecisionQueue(null);
+      setActivityGraph(null);
       setLastHandoff(null);
       setState(null);
       return;
@@ -78,7 +82,7 @@ export function WorkspaceIntelligencePanel({
     let cancelled = false;
     void (async () => {
       try {
-        const [listed, listedContracts, listedProposals, queue] =
+        const [listed, listedContracts, listedProposals, queue, graph] =
           await Promise.all([
             invokeIpc<Project[]>("list_projects", {
               workspaceId: workspace.id,
@@ -95,12 +99,17 @@ export function WorkspaceIntelligencePanel({
             invokeIpc<DecisionQueue>("generate_decision_queue", {
               workspaceId: workspace.id,
             }),
+            invokeIpc<WorkspaceActivityGraph>(
+              "generate_workspace_activity_graph",
+              { workspaceId: workspace.id },
+            ),
           ]);
         if (!cancelled) {
           setProjects(listed);
           setContracts(listedContracts);
           setProposals(listedProposals);
           setDecisionQueue(queue);
+          setActivityGraph(graph);
         }
       } catch (err: unknown) {
         if (!cancelled) {
@@ -376,6 +385,69 @@ export function WorkspaceIntelligencePanel({
                     Revoke
                   </button>
                 </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section>
+        <h3>Activity</h3>
+        <p className="muted">
+          How work connects — projects, contracts, triggers, decisions, and
+          outcomes. Informational only; the Activity Graph never executes or
+          grants permissions.
+        </p>
+        <div className="row">
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("Activity graph refreshed", async () => {
+                if (!workspace) return;
+                const graph = await invokeIpc<WorkspaceActivityGraph>(
+                  "generate_workspace_activity_graph",
+                  { workspaceId: workspace.id },
+                );
+                setActivityGraph(graph);
+              })
+            }
+          >
+            Refresh activity
+          </button>
+        </div>
+        {activityGraph && (
+          <p className="muted">
+            {activityGraph.activities.length} activities ·{" "}
+            {activityGraph.relationship_count} relationships ·{" "}
+            {activityGraph.unresolved_count} still need attention · authority:{" "}
+            {activityGraph.authority_effect}
+          </p>
+        )}
+        {!activityGraph || activityGraph.timeline.length === 0 ? (
+          <p className="muted">No activity yet for this workspace.</p>
+        ) : (
+          <ul className="intelligence-list">
+            {[...activityGraph.timeline].reverse().slice(0, 20).map((item) => (
+              <li key={item.id}>
+                <strong>{item.summary}</strong>
+                <div className="muted">
+                  {item.activity_type}
+                  {item.unresolved ? " · needs attention" : ""}
+                  {item.project_id
+                    ? ` · project ${item.project_id.slice(0, 8)}…`
+                    : ""}
+                </div>
+                <div className="muted">{item.explanation}</div>
+                {item.related_activity_ids.length > 0 && (
+                  <div className="muted">
+                    Connected to {item.related_activity_ids.length} related
+                    item(s)
+                    {item.parent_activity_id
+                      ? ` · follows ${item.parent_activity_id.split(":")[1] ?? "parent"}`
+                      : ""}
+                  </div>
+                )}
               </li>
             ))}
           </ul>
@@ -739,7 +811,7 @@ export function WorkspaceIntelligencePanel({
                   { workspaceId: workspace.id },
                 );
                 setState(next);
-                const [listedContracts, listedProposals, queue] =
+                const [listedContracts, listedProposals, queue, graph] =
                   await Promise.all([
                     invokeIpc<AutomationContract[]>("list_automation_contracts", {
                       workspaceId: workspace.id,
@@ -752,10 +824,15 @@ export function WorkspaceIntelligencePanel({
                     invokeIpc<DecisionQueue>("generate_decision_queue", {
                       workspaceId: workspace.id,
                     }),
+                    invokeIpc<WorkspaceActivityGraph>(
+                      "generate_workspace_activity_graph",
+                      { workspaceId: workspace.id },
+                    ),
                   ]);
                 setContracts(listedContracts);
                 setProposals(listedProposals);
                 setDecisionQueue(queue);
+                setActivityGraph(graph);
               })
             }
           >
@@ -810,6 +887,31 @@ export function WorkspaceIntelligencePanel({
                       Consent matches definition:{" "}
                       {contract.approval_matches_definition ? "yes" : "no"}
                     </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          <section>
+            <h3>Activity (intelligence view)</h3>
+            <p className="muted">
+              Same Activity Graph as the Work tab. Intelligence cannot mutate or
+              execute.
+            </p>
+            <p className="muted">
+              {state.activity_graph.activity_count} activities ·{" "}
+              {state.activity_graph.unresolved_count} unresolved ·{" "}
+              {state.activity_graph.relationship_count} relationships
+            </p>
+            {state.activity_graph.recent_timeline.length === 0 ? (
+              <p className="muted">No recent activity.</p>
+            ) : (
+              <ul className="intelligence-list">
+                {state.activity_graph.recent_timeline.map((item) => (
+                  <li key={item.id}>
+                    <strong>{item.summary}</strong>
+                    <div className="muted">{item.explanation}</div>
                   </li>
                 ))}
               </ul>

@@ -3,6 +3,7 @@ mod application;
 mod automation_contract;
 mod automation_trigger;
 mod decision_queue;
+mod workspace_activity;
 mod context;
 mod execute_intent_request;
 mod create_suggestion_intent_request;
@@ -76,6 +77,8 @@ mod automation_trigger_tests;
 #[cfg(test)]
 mod decision_queue_tests;
 #[cfg(test)]
+mod workspace_activity_tests;
+#[cfg(test)]
 mod ai_memory_tests;
 #[cfg(test)]
 mod ai_model_provider_tests;
@@ -111,6 +114,7 @@ pub use automation_trigger::{
     RejectAutomationIntentProposal,
 };
 pub use decision_queue::{GateDecisionQueueRead, GateDecisionQueueWrite};
+pub use workspace_activity::GateActivityGraphRead;
 pub use layout::{
     CreateLayout, DeleteLayout, GetLayout, GetLayoutSnapshot, ResetLayout, UpdateLayout,
 };

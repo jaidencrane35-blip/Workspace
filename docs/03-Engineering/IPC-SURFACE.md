@@ -61,6 +61,8 @@
 | `generate_decision_queue` | Product: aggregate Workspace Decision Queue (read-only aggregation) |
 | `mark_decision_item_viewed` / `defer_decision_item` / `dismiss_decision_item` | Product: lifecycle overlay only (≠ source mutation for dismiss) |
 | `accept_decision_item` / `reject_decision_item` | Product: delegate to source or return gateway handoff (≠ execute) |
+| `generate_workspace_activity_graph` | Product: aggregate Workspace Activity Graph (read-only timeline + relationships) |
+| `get_workspace_activity_timeline` | Product: same generate; return timeline slice only |
 | `create_memory_entry` / `list_memory_entries` / `get_memory_context` | Diagnostic governed memory (informational) |
 | `delete_memory_entry` / `clear_memory_entries` | Diagnostic memory lifecycle |
 | `diagnose_ai_plan_preview` | Diagnostic memory-aware plan (no execution) |

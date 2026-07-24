@@ -19,6 +19,9 @@ use commands::decision_queue::{
     accept_decision_item, defer_decision_item, dismiss_decision_item, generate_decision_queue,
     mark_decision_item_viewed, reject_decision_item,
 };
+use commands::workspace_activity::{
+    generate_workspace_activity_graph, get_workspace_activity_timeline,
+};
 use commands::layout::{
     create_layout, delete_layout, get_layout, get_layout_snapshot, reset_layout, update_layout,
 };
@@ -176,6 +179,8 @@ pub fn run() {
             dismiss_decision_item,
             accept_decision_item,
             reject_decision_item,
+            generate_workspace_activity_graph,
+            get_workspace_activity_timeline,
             create_suggestion_intent_request,
             execute_intent_request,
             get_execution_outcomes,
