@@ -17,6 +17,7 @@ import type {
   WorkspaceRecommendationEngineState,
   WorkspaceOperatingState,
   WorkspacePatternState,
+  WorkspaceAdaptationState,
   AiOrchestratedPlan,
   AiPlan,
   AiPlanEvaluationReport,
@@ -166,6 +167,8 @@ export function OperatorConsole({
     useState<WorkspaceOperatingState | null>(null);
   const [patternState, setPatternState] =
     useState<WorkspacePatternState | null>(null);
+  const [adaptationState, setAdaptationState] =
+    useState<WorkspaceAdaptationState | null>(null);
   const [activeProject, setActiveProject] = useState<Project | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [memoryEntries, setMemoryEntries] = useState<MemoryEntry[]>([]);
@@ -1869,6 +1872,60 @@ export function OperatorConsole({
             <li>
               Patterns {patternState.pattern_count} · authority{" "}
               {patternState.authority_effect}
+            </li>
+          </ul>
+        )}
+      </section>
+
+      <section>
+        <h2>Adaptation Proposals (diagnostics)</h2>
+        <p className="muted">
+          Possible improvements — proposals only. Review / accept hands off to
+          Intent; never applies changes.
+        </p>
+        <div className="row">
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("Adaptation proposals generated", async () => {
+                if (!workspace) return;
+                const state = await invokeIpc<WorkspaceAdaptationState>(
+                  "generate_workspace_adaptation",
+                  { workspaceId: workspace.id },
+                );
+                setAdaptationState(state);
+              })
+            }
+          >
+            Inspect adaptation proposals
+          </button>
+          <button
+            type="button"
+            disabled={busy || !adaptationState}
+            onClick={() =>
+              void run("Adaptation narratives inspected", async () => {
+                if (!adaptationState) return;
+                onMessage(
+                  adaptationState.proposals.length
+                    ? adaptationState.proposals
+                        .slice(0, 5)
+                        .map((p) => `${p.kind}: ${p.title} (${p.status})`)
+                        .join(" · ")
+                    : "No proposals",
+                );
+              })
+            }
+          >
+            Inspect proposals
+          </button>
+        </div>
+        {adaptationState && (
+          <ul className="muted">
+            <li>{adaptationState.summary}</li>
+            <li>
+              Open {adaptationState.open_count} · authority{" "}
+              {adaptationState.authority_effect}
             </li>
           </ul>
         )}

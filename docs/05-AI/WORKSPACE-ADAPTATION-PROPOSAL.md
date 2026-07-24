@@ -1,0 +1,53 @@
+# Workspace Adaptation Proposal
+
+| Field | Value |
+|-------|-------|
+| **Purpose** | Read-only proposals for possible Workspace improvements |
+| **Owner** | Architecture |
+| **Status** | Phase 5 Batch 12 foundation (Sprint 91) |
+| **Authority** | Never creates authority (`authority_effect: none`) |
+
+---
+
+## Principle
+
+Adaptation is a proposal.
+
+It is not execution, automation, permission, or autonomous improvement.
+
+```
+Pattern + Recommendation Engine + Operating State
+  + Composition + Environment + Continuity + Purpose
+        ↓
+Adaptation Proposal   ← this document
+        ↓
+Human Decision (review / accept / reject)
+        ↓
+Intent → Planning → Command Pipeline → Permission Gateway → Execution → Audit
+```
+
+Accept returns an Intent handoff only. Adaptation never skips governance.
+
+---
+
+## Ownership
+
+| Concept | Kind | Owner |
+|---------|------|-------|
+| Adaptation proposal | Aggregator | `WorkspaceAdaptationService` |
+
+Distinct from Recommendation Engine (next-step suggestions) and Decision Engine (planner candidates).
+
+---
+
+## Lifecycle
+
+`proposed` → `reviewed` → `accepted` | `rejected`
+
+- **Review** required before accept
+- **Accept** → `submit_assistant_goal` handoff (never executes)
+- **Reject** → audit only; workspace unchanged
+
+Audits: `workspace.adaptation.proposal_generated`, `.reviewed`, `.accepted`, `.rejected` — all `authority_effect: none`.
+
+IPC: `generate_workspace_adaptation`, `review_adaptation_proposal`, `accept_adaptation_proposal`, `reject_adaptation_proposal`

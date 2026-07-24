@@ -148,6 +148,10 @@ Workspace Operating State foundation (Sprint 89) — what is happening right now
 
 Workspace Pattern Model foundation (Sprint 90) — recurring structures from Activity + Evolution + Operating State + Composition + Task Graph; Recommendation may use as evidence; Attention may surface; Assistant explains. Not prediction or profiling. See [Workspace Pattern Model](WORKSPACE-PATTERN-MODEL.md).
 
+## Phase 5 Batch 12 (done)
+
+Workspace Adaptation Proposal foundation (Sprint 91) — possible improvements from Pattern + Recommendation + Operating State + Composition; human review required; accept → Intent handoff only. Never mutates layout or bypasses Gateway. See [Workspace Adaptation Proposal](WORKSPACE-ADAPTATION-PROPOSAL.md).
+
 ---
 
 ## Never build

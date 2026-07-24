@@ -23,6 +23,7 @@ use crate::commands::workspace_evolution::GateEvolutionRead;
 use crate::commands::workspace_recommendation::GateRecommendationEngineRead;
 use crate::commands::workspace_operating_state::GateOperatingStateRead;
 use crate::commands::workspace_pattern::GatePatternRead;
+use crate::commands::workspace_adaptation::{GateAdaptationRead, GateAdaptationWrite};
 use crate::commands::workspace_activity::GateActivityGraphRead;
 use crate::commands::workspace_attention::GateAttentionRead;
 use crate::commands::workspace_continuity::GateContinuityRead;
@@ -82,7 +83,7 @@ use crate::services::{
     DesktopWindowService, TaskGraphService, WorkspaceEnvironmentService,
     WorkspaceCompositionService, WorkspacePurposeService, WorkspaceEvolutionService,
     WorkspaceRecommendationEngineService, WorkspaceOperatingStateService,
-    WorkspacePatternService,
+    WorkspacePatternService, WorkspaceAdaptationService,
     WorkspaceActivityGraphService, WorkspaceAttentionService, WorkspaceContextService,
     WorkspaceContinuityService, WorkspaceIntelligenceService,
 };
@@ -97,8 +98,8 @@ use workspace_domain::{
     WorkGoal, WorkflowContext, WorkspaceActivity, WorkspaceActivityGraph, WorkspaceAttentionState,
     WorkspaceContinuityState, WorkspaceEnvironmentState, WorkspaceCompositionState,
     WorkspacePurposeState, WorkspaceEvolutionState, WorkspaceRecommendationEngineState,
-    WorkspaceOperatingState, WorkspacePatternState, WorkspaceTask, WorkspaceTaskPriority,
-    WorkspaceTaskStatus,
+    WorkspaceOperatingState,     WorkspacePatternState, AdaptationActionResult, WorkspaceAdaptationState, WorkspaceTask,
+    WorkspaceTaskPriority, WorkspaceTaskStatus,
     WorkspaceIntelligenceComparison, WorkspaceIntelligenceState, AiPlan, AiPlanEvaluationReport,
     AiPlanSubmissionResult,
     AiProposalAuthorityOutcome, AiProposalEvaluation, AiProposalSubmission, ApplicationId,
@@ -2858,6 +2859,95 @@ impl CommandHandler {
     /// Architecture guard — Pattern Model must never execute.
     pub fn workspace_pattern_attempt_execute() -> Result<()> {
         WorkspacePatternService::attempt_execute()
+    }
+
+    /// Aggregate Workspace Adaptation Proposals (read-only improvement suggestions).
+    pub fn generate_workspace_adaptation(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceAdaptationState> {
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent.clone()))
+            .execute_query(GateAdaptationRead)?;
+        let _ = Self::get_workflow_context(
+            kernel,
+            actor.clone(),
+            intent,
+            workspace_id.clone(),
+        )?;
+        WorkspaceAdaptationService::generate(
+            &kernel.shared_database(),
+            &actor,
+            &kernel.orchestrated_plans(),
+            &kernel.assistant_workflows(),
+            workspace_id,
+        )
+    }
+
+    /// Mark an adaptation proposal reviewed (audit only — never executes).
+    pub fn review_adaptation_proposal(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        proposal_id: String,
+    ) -> Result<AdaptationActionResult> {
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent))
+            .execute_mutation(GateAdaptationWrite)?;
+        WorkspaceAdaptationService::review(
+            &kernel.shared_database(),
+            &actor,
+            &kernel.orchestrated_plans(),
+            &kernel.assistant_workflows(),
+            workspace_id,
+            proposal_id,
+        )
+    }
+
+    /// Accept an adaptation — returns Intent handoff only. Never executes.
+    pub fn accept_adaptation_proposal(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        proposal_id: String,
+    ) -> Result<AdaptationActionResult> {
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent))
+            .execute_mutation(GateAdaptationWrite)?;
+        WorkspaceAdaptationService::accept(
+            &kernel.shared_database(),
+            &actor,
+            &kernel.orchestrated_plans(),
+            &kernel.assistant_workflows(),
+            workspace_id,
+            proposal_id,
+        )
+    }
+
+    /// Reject an adaptation (audit only — never modifies workspace state).
+    pub fn reject_adaptation_proposal(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        proposal_id: String,
+    ) -> Result<AdaptationActionResult> {
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent))
+            .execute_mutation(GateAdaptationWrite)?;
+        WorkspaceAdaptationService::reject(
+            &kernel.shared_database(),
+            &actor,
+            &kernel.orchestrated_plans(),
+            &kernel.assistant_workflows(),
+            workspace_id,
+            proposal_id,
+        )
+    }
+
+    /// Architecture guard — Adaptation must never execute.
+    pub fn workspace_adaptation_attempt_execute() -> Result<()> {
+        WorkspaceAdaptationService::attempt_execute()
     }
 
     /// Read-only workspace intelligence aggregation. Capability-gated; never executes.

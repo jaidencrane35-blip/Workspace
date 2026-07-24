@@ -22,6 +22,8 @@ import type {
   WorkspaceRecommendationEngineState,
   WorkspaceOperatingState,
   WorkspacePatternState,
+  WorkspaceAdaptationState,
+  AdaptationActionResult,
   WorkspaceIntelligenceState,
 } from "../types/domain";
 
@@ -78,6 +80,8 @@ export function WorkspaceIntelligencePanel({
     useState<WorkspaceOperatingState | null>(null);
   const [patternState, setPatternState] =
     useState<WorkspacePatternState | null>(null);
+  const [adaptationState, setAdaptationState] =
+    useState<WorkspaceAdaptationState | null>(null);
   const [lastHandoff, setLastHandoff] = useState<string | null>(null);
   const [contractName, setContractName] = useState(
     "Prepare coding environment",
@@ -119,6 +123,7 @@ export function WorkspaceIntelligencePanel({
       setRecommendationEngine(null);
       setOperatingState(null);
       setPatternState(null);
+      setAdaptationState(null);
       setLastHandoff(null);
       setState(null);
       return;
@@ -144,6 +149,7 @@ export function WorkspaceIntelligencePanel({
           rec,
           ops,
           pat,
+          adapt,
         ] = await Promise.all([
             invokeIpc<Project[]>("list_projects", {
               workspaceId: workspace.id,
@@ -205,6 +211,9 @@ export function WorkspaceIntelligencePanel({
             invokeIpc<WorkspacePatternState>("generate_workspace_pattern", {
               workspaceId: workspace.id,
             }),
+            invokeIpc<WorkspaceAdaptationState>("generate_workspace_adaptation", {
+              workspaceId: workspace.id,
+            }),
           ]);
         if (!cancelled) {
           setProjects(listed);
@@ -224,6 +233,7 @@ export function WorkspaceIntelligencePanel({
           setRecommendationEngine(rec);
           setOperatingState(ops);
           setPatternState(pat);
+          setAdaptationState(adapt);
         }
       } catch (err: unknown) {
         if (!cancelled) {
@@ -928,6 +938,152 @@ export function WorkspaceIntelligencePanel({
           </>
         ) : (
           <p className="muted">No pattern snapshot yet.</p>
+        )}
+      </section>
+
+      <section>
+        <h3>Possible Improvements</h3>
+        <p className="muted">
+          Adaptation proposals — possible Workspace improvements grounded in
+          Pattern, Recommendations, Operating State, and Composition. Proposals
+          only; review then accept hands off to Intent. Never applies changes.
+        </p>
+        <div className="row">
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("Adaptation proposals refreshed", async () => {
+                if (!workspace) return;
+                const next = await invokeIpc<WorkspaceAdaptationState>(
+                  "generate_workspace_adaptation",
+                  { workspaceId: workspace.id },
+                );
+                setAdaptationState(next);
+              })
+            }
+          >
+            Refresh adaptations
+          </button>
+        </div>
+        {adaptationState ? (
+          <>
+            <p>
+              <strong>{adaptationState.adaptation_summary.headline}</strong>
+            </p>
+            <p>{adaptationState.summary}</p>
+            <p className="muted">
+              {adaptationState.adaptation_summary.narrative}
+            </p>
+            <p className="muted">
+              {adaptationState.open_count} open · authority:{" "}
+              {adaptationState.authority_effect}
+            </p>
+            {adaptationState.proposals.length > 0 && (
+              <ul className="intelligence-list">
+                {adaptationState.proposals.slice(0, 5).map((item) => (
+                  <li key={item.id}>
+                    <strong>
+                      [{item.kind}] {item.title}
+                    </strong>
+                    <div className="muted">
+                      Why: {item.reason} · Benefit: {item.impact.benefit} ·
+                      Risk: {item.impact.risk} · Status: {item.status}
+                    </div>
+                    <div className="row">
+                      <button
+                        type="button"
+                        disabled={busy || !workspace || item.status !== "proposed"}
+                        onClick={() =>
+                          void run("Adaptation reviewed", async () => {
+                            if (!workspace) return;
+                            await invokeIpc<AdaptationActionResult>(
+                              "review_adaptation_proposal",
+                              {
+                                workspaceId: workspace.id,
+                                proposalId: item.id,
+                              },
+                            );
+                            const next =
+                              await invokeIpc<WorkspaceAdaptationState>(
+                                "generate_workspace_adaptation",
+                                { workspaceId: workspace.id },
+                              );
+                            setAdaptationState(next);
+                          })
+                        }
+                      >
+                        Review
+                      </button>
+                      <button
+                        type="button"
+                        disabled={
+                          busy || !workspace || item.status !== "reviewed"
+                        }
+                        onClick={() =>
+                          void run("Adaptation accepted (Intent handoff)", async () => {
+                            if (!workspace) return;
+                            const result =
+                              await invokeIpc<AdaptationActionResult>(
+                                "accept_adaptation_proposal",
+                                {
+                                  workspaceId: workspace.id,
+                                  proposalId: item.id,
+                                },
+                              );
+                            if (result.handoff) {
+                              setLastHandoff(
+                                `Intent handoff via ${result.handoff.next_command}`,
+                              );
+                            }
+                            const next =
+                              await invokeIpc<WorkspaceAdaptationState>(
+                                "generate_workspace_adaptation",
+                                { workspaceId: workspace.id },
+                              );
+                            setAdaptationState(next);
+                          })
+                        }
+                      >
+                        Accept (handoff)
+                      </button>
+                      <button
+                        type="button"
+                        disabled={
+                          busy ||
+                          !workspace ||
+                          (item.status !== "proposed" &&
+                            item.status !== "reviewed")
+                        }
+                        onClick={() =>
+                          void run("Adaptation rejected", async () => {
+                            if (!workspace) return;
+                            await invokeIpc<AdaptationActionResult>(
+                              "reject_adaptation_proposal",
+                              {
+                                workspaceId: workspace.id,
+                                proposalId: item.id,
+                              },
+                            );
+                            const next =
+                              await invokeIpc<WorkspaceAdaptationState>(
+                                "generate_workspace_adaptation",
+                                { workspaceId: workspace.id },
+                              );
+                            setAdaptationState(next);
+                          })
+                        }
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
+        ) : (
+          <p className="muted">No adaptation proposals yet.</p>
         )}
       </section>
 

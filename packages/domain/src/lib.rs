@@ -48,6 +48,7 @@ pub mod workspace_evolution;
 pub mod workspace_recommendation;
 pub mod workspace_operating_state;
 pub mod workspace_pattern;
+pub mod workspace_adaptation;
 pub mod workspace_continuity;
 pub mod workspace_task_graph;
 pub mod workspace_environment;
@@ -227,6 +228,13 @@ pub use workspace_pattern::{
     build_pattern_model_summary, pattern_now_rfc3339, validate_pattern_workspace_id,
     PatternConfidence, PatternEvidence, PatternKind, PatternRelationship, PatternSummary,
     WorkspacePattern, WorkspacePatternError, WorkspacePatternState, WorkspacePatternSummary,
+};
+pub use workspace_adaptation::{
+    adaptation_now_rfc3339, build_adaptation_summary, validate_adaptation_workspace_id,
+    AdaptationActionResult, AdaptationEvidence, AdaptationHandoff, AdaptationImpact,
+    AdaptationKind, AdaptationProposal, AdaptationStatus, AdaptationSummary, AdaptationTarget,
+    AdaptationTargetKind, WorkspaceAdaptationError, WorkspaceAdaptationState,
+    WorkspaceAdaptationSummary,
 };
 pub use workspace_environment::{
     build_environment_summary, now_rfc3339, validate_workspace_id, EnvironmentApplication,

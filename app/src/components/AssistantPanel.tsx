@@ -282,6 +282,15 @@ export function AssistantPanel({
               Same Pattern Model as the Work tab. Assistant may explain recurring
               structures — never act on patterns or create automation.
             </dd>
+            <dt>Adaptation Proposals</dt>
+            <dd>
+              {workspaceIntel.adaptation.summary}{" "}
+              {workspaceIntel.adaptation.top_proposals.length > 0
+                ? `Would you like to consider: ${workspaceIntel.adaptation.top_proposals[0].title}? `
+                : ""}
+              Same Adaptation layer as the Work tab. Assistant may explain and
+              compare — never accept or apply adaptations.
+            </dd>
             <dt>Continuity</dt>
             <dd>
               {workspaceIntel.continuity.summary}{" "}

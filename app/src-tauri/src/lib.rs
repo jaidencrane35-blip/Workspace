@@ -38,6 +38,10 @@ use commands::workspace_evolution::generate_workspace_evolution;
 use commands::workspace_recommendation::generate_workspace_recommendation_engine;
 use commands::workspace_operating_state::generate_workspace_operating_state;
 use commands::workspace_pattern::generate_workspace_pattern;
+use commands::workspace_adaptation::{
+    accept_adaptation_proposal, generate_workspace_adaptation, reject_adaptation_proposal,
+    review_adaptation_proposal,
+};
 use commands::workspace_attention::generate_workspace_attention;
 use commands::layout::{
     create_layout, delete_layout, get_layout, get_layout_snapshot, reset_layout, update_layout,
@@ -207,6 +211,10 @@ pub fn run() {
             generate_workspace_recommendation_engine,
             generate_workspace_operating_state,
             generate_workspace_pattern,
+            generate_workspace_adaptation,
+            review_adaptation_proposal,
+            accept_adaptation_proposal,
+            reject_adaptation_proposal,
             generate_decision_engine,
             select_decision_candidate,
             dismiss_decision_candidate,

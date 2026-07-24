@@ -1266,6 +1266,7 @@ export interface WorkspaceIntelligenceState {
   recommendation_engine: WorkspaceRecommendationEngineSummary;
   operating_state: WorkspaceOperatingStateSummary;
   pattern: WorkspacePatternSummary;
+  adaptation: WorkspaceAdaptationSummary;
   workspace_health: string;
   summary: string;
   authority_effect: string;
@@ -1920,6 +1921,110 @@ export interface WorkspacePatternSummary {
   pattern_summary: PatternSummary;
   explanation: string;
   summary: string;
+  authority_effect: string;
+}
+
+export type AdaptationKind =
+  | "layout_improvement"
+  | "application_grouping"
+  | "workspace_organization"
+  | "workflow_shortcut"
+  | "context_restoration"
+  | "task_organization";
+
+export type AdaptationTargetKind =
+  | "layout"
+  | "application_group"
+  | "composition"
+  | "continuity"
+  | "task_graph"
+  | "purpose"
+  | "environment";
+
+export type AdaptationStatus =
+  | "proposed"
+  | "reviewed"
+  | "accepted"
+  | "rejected";
+
+export interface AdaptationEvidence {
+  id: string;
+  source_model: string;
+  source_ref: string;
+  summary: string;
+}
+
+export interface AdaptationTarget {
+  kind: AdaptationTargetKind;
+  ref_id: string;
+  label: string;
+}
+
+export interface AdaptationImpact {
+  benefit: string;
+  risk: string;
+}
+
+export interface AdaptationProposal {
+  id: string;
+  kind: AdaptationKind;
+  title: string;
+  reason: string;
+  evidence: AdaptationEvidence[];
+  impact: AdaptationImpact;
+  target: AdaptationTarget;
+  status: AdaptationStatus;
+  related_pattern_id: string | null;
+  related_recommendation_id: string | null;
+  authority_effect: string;
+}
+
+export interface AdaptationSummary {
+  headline: string;
+  top_proposal_line: string;
+  review_line: string;
+  narrative: string;
+}
+
+export interface WorkspaceAdaptationState {
+  workspace_id: string;
+  generated_at: string;
+  label: string;
+  proposals: AdaptationProposal[];
+  proposal_count: number;
+  open_count: number;
+  adaptation_summary: AdaptationSummary;
+  explanation: string;
+  evidence: string[];
+  summary: string;
+  authority_effect: string;
+}
+
+export interface WorkspaceAdaptationSummary {
+  workspace_id: string;
+  generated_at: string;
+  label: string;
+  proposal_count: number;
+  open_count: number;
+  top_proposals: AdaptationProposal[];
+  adaptation_summary: AdaptationSummary;
+  explanation: string;
+  summary: string;
+  authority_effect: string;
+}
+
+export interface AdaptationHandoff {
+  proposal_id: string;
+  next_command: string;
+  goal_statement: string;
+  workspace_id: string;
+  note: string;
+  authority_effect: string;
+}
+
+export interface AdaptationActionResult {
+  proposal: AdaptationProposal | null;
+  handoff: AdaptationHandoff | null;
   authority_effect: string;
 }
 

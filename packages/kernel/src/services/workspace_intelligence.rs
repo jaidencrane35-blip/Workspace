@@ -24,7 +24,7 @@ use crate::services::{
     WorkspaceActivityGraphService, WorkspaceAttentionService, WorkspaceContinuityService,
     WorkspaceEnvironmentService, WorkspaceIntentService, WorkspaceCompositionService,
     WorkspacePurposeService, WorkspaceEvolutionService, WorkspaceRecommendationEngineService,
-    WorkspaceOperatingStateService, WorkspacePatternService,
+    WorkspaceOperatingStateService, WorkspacePatternService, WorkspaceAdaptationService,
 };
 
 pub(crate) struct WorkspaceIntelligenceService;
@@ -263,6 +263,20 @@ impl WorkspaceIntelligenceService {
         )?;
         let attention = full_attention.summary_projection(8);
 
+        let full_adaptation = WorkspaceAdaptationService::generate_with_inputs(
+            db,
+            actor,
+            ws,
+            &full_pattern,
+            &full_recommendation_engine,
+            &full_operating_state,
+            &full_composition,
+            &full_environment,
+            &full_continuity,
+            &full_purpose,
+        )?;
+        let adaptation = WorkspaceAdaptationService::summary_projection(&full_adaptation, 8);
+
         let memory = AiMemoryService::assemble_awareness(db, Some(ws), 10)
             .unwrap_or_else(|_| workspace_domain::AiMemoryAwareness::from_entries(Vec::new()));
         let personalization = AiPersonalizationService::assemble_awareness(db, Some(ws), 10, None)
@@ -425,6 +439,7 @@ impl WorkspaceIntelligenceService {
             recommendation_engine,
             operating_state,
             pattern,
+            adaptation,
             workspace_health: health_label,
             summary,
             authority_effect: WorkspaceIntelligenceState::AUTHORITY_EFFECT_NONE.into(),
