@@ -309,6 +309,45 @@ impl MutationCommand for RevokeAutomationContract {
     }
 }
 
+pub struct ResumeAutomationContract {
+    pub contract_id: String,
+}
+
+impl ResumeAutomationContract {
+    pub fn new(contract_id: String) -> Self {
+        Self { contract_id }
+    }
+}
+
+impl crate::commands::Command for ResumeAutomationContract {
+    fn name(&self) -> &'static str {
+        "ResumeAutomationContract"
+    }
+}
+
+impl MutationCommand for ResumeAutomationContract {
+    type Output = AutomationContract;
+
+    fn permission_subject(&self) -> PermissionSubject {
+        PermissionSubject::System
+    }
+
+    fn required_capability(&self) -> Capability {
+        Capability::work_context_write()
+    }
+
+    fn execute(&self, ctx: &CommandContext<'_>) -> Result<AutomationContract> {
+        if ctx.state.lifecycle != LifecycleState::Ready {
+            return Err(KernelError::NotReady);
+        }
+        AutomationContractService::resume(
+            &ctx.database,
+            &ctx.actor_context,
+            self.contract_id.clone(),
+        )
+    }
+}
+
 pub struct GetAutomationContract {
     pub contract_id: String,
 }
@@ -428,6 +467,10 @@ impl QueryCommand for PrepareAutomationContractIntent {
         if ctx.state.lifecycle != LifecycleState::Ready {
             return Err(KernelError::NotReady);
         }
-        AutomationContractService::prepare_intent_request(&ctx.database, self.contract_id)
+        AutomationContractService::prepare_intent_request(
+            &ctx.database,
+            &ctx.actor_context,
+            self.contract_id,
+        )
     }
 }

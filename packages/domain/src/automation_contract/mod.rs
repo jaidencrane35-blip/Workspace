@@ -1,8 +1,11 @@
-//! Governed Automation Contract foundation (Phase 4 Batch 6).
+//! Governed Automation Contract foundation (Phase 4 Batch 6 / 6.5).
 //!
 //! Durable, inspectable, revocable records of user-approved *future intent*.
 //! Non-executable. Approval of a contract is not execution authority.
 //! Triggers are definitions only — no workers, no automatic runs.
+//!
+//! Batch 6.5: definition fingerprints bind approval to an exact definition so
+//! consent cannot silently transfer after material edits.
 
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
@@ -40,6 +43,12 @@ pub enum AutomationContractError {
 
     #[error("automation contract is not active for future intent materialization")]
     NotActiveForIntent,
+
+    #[error("automation contract approval is stale for the current definition")]
+    StaleApproval,
+
+    #[error("invalid automation contract lifecycle transition")]
+    InvalidTransition,
 
     #[error(transparent)]
     Domain(#[from] DomainError),
@@ -113,7 +122,7 @@ impl AutomationContractApprovalState {
     }
 }
 
-/// Trigger kinds — definitions only in Batch 6 (no runners).
+/// Trigger kinds — definitions only (no runners).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum AutomationTriggerKind {
@@ -226,6 +235,11 @@ pub struct AutomationContract {
     pub required_capabilities: Vec<String>,
     pub approval_state: AutomationContractApprovalState,
     pub created_by_actor: String,
+    /// Actor who approved the bound definition (if any).
+    pub approved_by_actor: Option<String>,
+    pub approved_at: Option<String>,
+    /// Fingerprint of the definition that was approved. Must match current fingerprint.
+    pub approved_definition_fingerprint: Option<String>,
     pub created_at: String,
     pub updated_at: String,
     pub deleted: bool,
@@ -277,6 +291,9 @@ impl AutomationContract {
             required_capabilities: caps,
             approval_state: AutomationContractApprovalState::NotApproved,
             created_by_actor: created_by_actor.into().trim().to_string(),
+            approved_by_actor: None,
+            approved_at: None,
+            approved_definition_fingerprint: None,
             created_at: now.clone(),
             updated_at: now,
             deleted: false,
@@ -287,12 +304,52 @@ impl AutomationContract {
         self.updated_at = Utc::now().to_rfc3339();
     }
 
-    /// True only when both status and approval say the definition is live.
+    /// Fingerprint of material definition fields that approval binds to.
+    pub fn definition_fingerprint(&self) -> String {
+        let mut caps = self.required_capabilities.clone();
+        caps.sort();
+        let task = self
+            .task_id
+            .as_ref()
+            .map(|id| id.as_str())
+            .unwrap_or("");
+        format!(
+            "v1|ws={}|project={}|task={}|scope={}|trigger={}|trigger_def={}|intent={}|caps={}",
+            self.workspace_id.as_str(),
+            self.project_id.as_str(),
+            task,
+            self.scope.as_str(),
+            self.trigger_definition.kind.as_str(),
+            self.trigger_definition.definition,
+            self.intent_definition.statement,
+            caps.join(",")
+        )
+    }
+
+    /// True only when status, approval, and fingerprint all agree the definition is live.
     /// Still does **not** authorize execution.
     pub fn is_active_definition(&self) -> bool {
         !self.deleted
             && self.status == AutomationContractStatus::Approved
             && self.approval_state == AutomationContractApprovalState::Approved
+            && self.approval_matches_current_definition()
+    }
+
+    pub fn approval_matches_current_definition(&self) -> bool {
+        match &self.approved_definition_fingerprint {
+            Some(approved) => approved == &self.definition_fingerprint(),
+            None => false,
+        }
+    }
+
+    /// Clear consent so it cannot transfer to a modified definition.
+    pub fn invalidate_approval(&mut self) {
+        self.status = AutomationContractStatus::Draft;
+        self.approval_state = AutomationContractApprovalState::NotApproved;
+        self.approved_by_actor = None;
+        self.approved_at = None;
+        self.approved_definition_fingerprint = None;
+        self.touch();
     }
 
     pub fn request_approval(&mut self) -> Result<(), AutomationContractError> {
@@ -302,21 +359,37 @@ impl AutomationContract {
                 AutomationContractStatus::Revoked | AutomationContractStatus::Completed
             )
         {
-            return Err(AutomationContractError::NotActiveForIntent);
+            return Err(AutomationContractError::InvalidTransition);
         }
         self.status = AutomationContractStatus::PendingApproval;
         self.approval_state = AutomationContractApprovalState::Pending;
+        // Pending is not yet bound — clear any prior approval binding.
+        self.approved_by_actor = None;
+        self.approved_at = None;
+        self.approved_definition_fingerprint = None;
         self.touch();
         Ok(())
     }
 
-    pub fn approve_definition(&mut self) -> Result<(), AutomationContractError> {
-        if self.deleted || self.status == AutomationContractStatus::Revoked {
-            return Err(AutomationContractError::NotActiveForIntent);
+    pub fn approve_definition(
+        &mut self,
+        approved_by_actor: impl Into<String>,
+    ) -> Result<(), AutomationContractError> {
+        if self.deleted
+            || matches!(
+                self.status,
+                AutomationContractStatus::Revoked | AutomationContractStatus::Completed
+            )
+        {
+            return Err(AutomationContractError::InvalidTransition);
         }
+        let now = Utc::now().to_rfc3339();
         self.status = AutomationContractStatus::Approved;
         self.approval_state = AutomationContractApprovalState::Approved;
-        self.touch();
+        self.approved_by_actor = Some(approved_by_actor.into().trim().to_string());
+        self.approved_at = Some(now.clone());
+        self.approved_definition_fingerprint = Some(self.definition_fingerprint());
+        self.updated_at = now;
         Ok(())
     }
 
@@ -329,12 +402,30 @@ impl AutomationContract {
         Ok(())
     }
 
+    /// Resume a paused contract only if approval still matches the current definition.
+    pub fn resume(&mut self) -> Result<(), AutomationContractError> {
+        if self.deleted
+            || self.status != AutomationContractStatus::Paused
+            || self.approval_state != AutomationContractApprovalState::Approved
+        {
+            return Err(AutomationContractError::InvalidTransition);
+        }
+        if !self.approval_matches_current_definition() {
+            self.invalidate_approval();
+            return Err(AutomationContractError::StaleApproval);
+        }
+        self.status = AutomationContractStatus::Approved;
+        self.touch();
+        Ok(())
+    }
+
     pub fn revoke(&mut self) -> Result<(), AutomationContractError> {
         if self.deleted || self.status == AutomationContractStatus::Completed {
-            return Err(AutomationContractError::NotActiveForIntent);
+            return Err(AutomationContractError::InvalidTransition);
         }
         self.status = AutomationContractStatus::Revoked;
         self.approval_state = AutomationContractApprovalState::Revoked;
+        self.approved_definition_fingerprint = None;
         self.touch();
         Ok(())
     }
@@ -352,6 +443,9 @@ pub struct AutomationContractSummary {
     pub intent_statement: String,
     pub required_capabilities: Vec<String>,
     pub created_by_actor: String,
+    pub approved_by_actor: Option<String>,
+    pub definition_fingerprint: String,
+    pub approval_matches_definition: bool,
 }
 
 impl From<&AutomationContract> for AutomationContractSummary {
@@ -366,6 +460,9 @@ impl From<&AutomationContract> for AutomationContractSummary {
             intent_statement: contract.intent_definition.statement.clone(),
             required_capabilities: contract.required_capabilities.clone(),
             created_by_actor: contract.created_by_actor.clone(),
+            approved_by_actor: contract.approved_by_actor.clone(),
+            definition_fingerprint: contract.definition_fingerprint(),
+            approval_matches_definition: contract.approval_matches_current_definition(),
         }
     }
 }
@@ -382,7 +479,12 @@ pub struct AutomationContractIntentRequest {
     pub task_id: Option<String>,
     pub intent_statement: String,
     pub required_capabilities: Vec<String>,
+    pub requesting_actor_id: String,
+    pub definition_fingerprint: String,
+    pub approved_by_actor: Option<String>,
+    pub approved_at: Option<String>,
     pub governance_note: String,
+    pub audit_metadata: String,
 }
 
 impl AutomationContractIntentRequest {
@@ -393,10 +495,33 @@ impl AutomationContractIntentRequest {
 
     pub fn from_active_contract(
         contract: &AutomationContract,
+        requesting_actor_id: impl Into<String>,
     ) -> Result<Self, AutomationContractError> {
+        if contract.status == AutomationContractStatus::Paused {
+            return Err(AutomationContractError::NotActiveForIntent);
+        }
+        if contract.approval_state == AutomationContractApprovalState::Approved
+            && !contract.approval_matches_current_definition()
+        {
+            return Err(AutomationContractError::StaleApproval);
+        }
         if !contract.is_active_definition() {
             return Err(AutomationContractError::NotActiveForIntent);
         }
+        let fingerprint = contract.definition_fingerprint();
+        let requesting_actor_id = requesting_actor_id.into();
+        let audit_metadata = serde_json::json!({
+            "contract_id": contract.id.as_str(),
+            "workspace_id": contract.workspace_id.as_str(),
+            "project_id": contract.project_id.as_str(),
+            "task_id": contract.task_id.as_ref().map(|id| id.as_str()),
+            "definition_fingerprint": fingerprint,
+            "approved_by_actor": contract.approved_by_actor,
+            "requesting_actor_id": requesting_actor_id,
+            "authority_effect": "none",
+            "execution_authorized": false,
+        })
+        .to_string();
         Ok(Self {
             contract_id: contract.id.to_string(),
             workspace_id: contract.workspace_id.to_string(),
@@ -404,7 +529,12 @@ impl AutomationContractIntentRequest {
             task_id: contract.task_id.as_ref().map(|id| id.to_string()),
             intent_statement: contract.intent_definition.statement.clone(),
             required_capabilities: contract.required_capabilities.clone(),
+            requesting_actor_id,
+            definition_fingerprint: fingerprint,
+            approved_by_actor: contract.approved_by_actor.clone(),
+            approved_at: contract.approved_at.clone(),
             governance_note: Self::GOVERNANCE_NOTE.into(),
+            audit_metadata,
         })
     }
 }
@@ -436,9 +566,8 @@ fn normalize_optional_text(value: Option<String>) -> Option<String> {
 mod tests {
     use super::*;
 
-    #[test]
-    fn approval_does_not_imply_active_when_paused() {
-        let mut contract = AutomationContract::new(
+    fn sample() -> AutomationContract {
+        AutomationContract::new(
             "ws-1",
             "proj-1",
             None,
@@ -452,8 +581,13 @@ mod tests {
             vec!["application.launch".into()],
             "local-user",
         )
-        .unwrap();
-        contract.approve_definition().unwrap();
+        .unwrap()
+    }
+
+    #[test]
+    fn approval_does_not_imply_active_when_paused() {
+        let mut contract = sample();
+        contract.approve_definition("approver").unwrap();
         assert!(contract.is_active_definition());
         contract.pause().unwrap();
         assert!(!contract.is_active_definition());
@@ -465,20 +599,31 @@ mod tests {
 
     #[test]
     fn revoked_contract_cannot_materialize_intent() {
-        let mut contract = AutomationContract::new(
-            "ws-1",
-            "proj-1",
-            None,
-            "Dev env",
-            None,
-            AutomationTriggerDefinition::manual(),
-            AutomationIntentDefinition::new("Request prepare coding workspace.").unwrap(),
-            vec![],
-            "local-user",
-        )
-        .unwrap();
-        contract.approve_definition().unwrap();
+        let mut contract = sample();
+        contract.approve_definition("approver").unwrap();
         contract.revoke().unwrap();
-        assert!(AutomationContractIntentRequest::from_active_contract(&contract).is_err());
+        assert!(
+            AutomationContractIntentRequest::from_active_contract(&contract, "local-user").is_err()
+        );
+    }
+
+    #[test]
+    fn intent_change_breaks_fingerprint_match() {
+        let mut contract = sample();
+        contract.approve_definition("approver").unwrap();
+        assert!(contract.approval_matches_current_definition());
+        contract.intent_definition =
+            AutomationIntentDefinition::new("Request a different outcome.").unwrap();
+        assert!(!contract.approval_matches_current_definition());
+        assert!(!contract.is_active_definition());
+    }
+
+    #[test]
+    fn resume_requires_matching_fingerprint() {
+        let mut contract = sample();
+        contract.approve_definition("approver").unwrap();
+        contract.pause().unwrap();
+        contract.resume().unwrap();
+        assert!(contract.is_active_definition());
     }
 }

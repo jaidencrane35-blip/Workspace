@@ -5,7 +5,8 @@ use crate::commands::application::{CreateApplication, DeleteApplication, GetAppl
 use crate::commands::automation_contract::{
     ApproveAutomationContract, CreateAutomationContract, GetAutomationContract,
     ListAutomationContracts, PauseAutomationContract, PrepareAutomationContractIntent,
-    RequestAutomationContractApproval, RevokeAutomationContract, UpdateAutomationContract,
+    RequestAutomationContractApproval, ResumeAutomationContract, RevokeAutomationContract,
+    UpdateAutomationContract,
 };
 use crate::commands::execute_intent_request::ExecuteIntentRequest;
 use crate::commands::create_suggestion_intent_request::CreateSuggestionIntentRequest;
@@ -2046,6 +2047,16 @@ impl CommandHandler {
     ) -> Result<AutomationContract> {
         CommandPipeline::new(kernel.command_context(actor, intent))
             .execute_mutation(PauseAutomationContract::new(contract_id))
+    }
+
+    pub fn resume_automation_contract(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        contract_id: String,
+    ) -> Result<AutomationContract> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_mutation(ResumeAutomationContract::new(contract_id))
     }
 
     pub fn revoke_automation_contract(

@@ -84,6 +84,10 @@ Integrity audit and hardening of Workspace Intelligence — isolation, read-only
 
 Governed automation contract foundation — durable Project/Task-scoped definitions with approval lifecycle, trigger/intent templates, intelligence surfacing, and `PrepareAutomationContractIntent` boundary. No workers, no autonomous execution. See [Governed Automation Contracts](GOVERNED-AUTOMATION-CONTRACTS.md).
 
+## Phase 4 Batch 6.5 (done)
+
+Integrity audit and hardening — definition fingerprints, stale-approval invalidation, prepare metadata, trust UX, CASE 1–10. Trigger engine readiness: **READY WITH CONDITIONS**. See [Governed Automation Contract Integrity Audit](GOVERNED-AUTOMATION-CONTRACT-INTEGRITY-AUDIT.md).
+
 ---
 
 ## Never build

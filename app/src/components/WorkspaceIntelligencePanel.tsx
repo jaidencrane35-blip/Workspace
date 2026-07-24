@@ -176,9 +176,11 @@ export function WorkspaceIntelligencePanel({
       <section>
         <h3>Automation contracts</h3>
         <p className="muted">
-          Durable records of approved future intent. Approving a definition does
-          not authorize execution — every action still passes the Permission
-          Gateway. No automatic runs in this release.
+          These are stored intent definitions you may approve for later use.
+          Approval is consent for this exact definition — not a permanent
+          permission, not guaranteed execution, and not autonomous AI. Changing
+          intent, trigger, or capabilities clears approval. Nothing runs unless
+          it later enters the Command Pipeline and Permission Gateway.
         </p>
         <div className="row">
           <input
@@ -244,9 +246,14 @@ export function WorkspaceIntelligencePanel({
                   Intent: {contract.intent_definition.statement}
                 </div>
                 <div className="muted">
-                  Capabilities:{" "}
-                  {contract.required_capabilities.join(", ") || "none listed"} ·
-                  Approved by actor field: {contract.created_by_actor}
+                  Required capabilities (still checked at execution):{" "}
+                  {contract.required_capabilities.join(", ") || "none listed"}
+                </div>
+                <div className="muted">
+                  Created by: {contract.created_by_actor}
+                  {contract.approved_by_actor
+                    ? ` · Definition approved by: ${contract.approved_by_actor}`
+                    : " · Definition not approved"}
                 </div>
                 <div className="row">
                   <button
@@ -274,7 +281,7 @@ export function WorkspaceIntelligencePanel({
                         contract.status !== "draft")
                     }
                     onClick={() =>
-                      void run("Contract definition approved", async () => {
+                      void run("Definition approved (not execution)", async () => {
                         const next = await invokeIpc<AutomationContract>(
                           "approve_automation_contract",
                           { contractId: contract.id },
@@ -303,6 +310,23 @@ export function WorkspaceIntelligencePanel({
                     }
                   >
                     Pause
+                  </button>
+                  <button
+                    type="button"
+                    disabled={busy || contract.status !== "paused"}
+                    onClick={() =>
+                      void run("Contract resumed", async () => {
+                        const next = await invokeIpc<AutomationContract>(
+                          "resume_automation_contract",
+                          { contractId: contract.id },
+                        );
+                        setContracts((prev) =>
+                          prev.map((c) => (c.id === next.id ? next : c)),
+                        );
+                      })
+                    }
+                  >
+                    Resume
                   </button>
                   <button
                     type="button"
@@ -394,8 +418,15 @@ export function WorkspaceIntelligencePanel({
                   <li key={contract.id}>
                     <strong>{contract.name}</strong>
                     <div className="muted">
-                      {contract.status} / {contract.approval_state} —{" "}
-                      {contract.intent_statement}
+                      {contract.status} / {contract.approval_state}
+                      {contract.approved_by_actor
+                        ? ` · approved by ${contract.approved_by_actor}`
+                        : ""}{" "}
+                      — {contract.intent_statement}
+                    </div>
+                    <div className="muted">
+                      Consent matches definition:{" "}
+                      {contract.approval_matches_definition ? "yes" : "no"}
                     </div>
                   </li>
                 ))}

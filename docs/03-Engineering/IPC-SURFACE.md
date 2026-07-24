@@ -51,8 +51,9 @@
 | `generate_workspace_intelligence` | Product + diagnostic: read-only workspace understanding |
 | `compare_workspace_intelligence_states` | Product + diagnostic: compare intelligence snapshots |
 | `create_automation_contract` / `list_automation_contracts` / `get_automation_contract` | Product: governed automation contract definitions |
+| `update_automation_contract` | Product: edit definition (material edits invalidate approval) |
 | `request_automation_contract_approval` / `approve_automation_contract` | Product: definition approval lifecycle (≠ execution) |
-| `pause_automation_contract` / `revoke_automation_contract` | Product: pause/revoke definitions |
+| `pause_automation_contract` / `resume_automation_contract` / `revoke_automation_contract` | Product: pause/resume/revoke definitions |
 | `prepare_automation_contract_intent` | Boundary only: materialize future Intent template (no execute) |
 | `create_memory_entry` / `list_memory_entries` / `get_memory_context` | Diagnostic governed memory (informational) |
 | `delete_memory_entry` / `clear_memory_entries` | Diagnostic memory lifecycle |

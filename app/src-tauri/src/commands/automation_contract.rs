@@ -172,6 +172,70 @@ pub fn pause_automation_contract(
 }
 
 #[tauri::command]
+pub fn resume_automation_contract(
+    contract_id: String,
+    kernel: State<'_, Arc<Mutex<WorkspaceKernel>>>,
+) -> IpcResponse<AutomationContract> {
+    match kernel.lock() {
+        Ok(kernel) => match CommandHandler::resume_automation_contract(
+            &kernel,
+            ipc_actor_context(),
+            ipc_intent_context(),
+            contract_id,
+        ) {
+            Ok(contract) => IpcResponse::success(contract),
+            Err(error) => IpcResponse::failure(CommandError::from(error)),
+        },
+        Err(_) => IpcResponse::failure(CommandError::new(
+            "internal_error",
+            "Workspace core is temporarily unavailable.",
+        )),
+    }
+}
+
+#[tauri::command]
+#[allow(clippy::too_many_arguments)]
+pub fn update_automation_contract(
+    contract_id: String,
+    name: Option<String>,
+    description: Option<Option<String>>,
+    intent_statement: Option<String>,
+    trigger_kind: Option<String>,
+    trigger_definition: Option<String>,
+    required_capabilities: Option<Vec<String>>,
+    kernel: State<'_, Arc<Mutex<WorkspaceKernel>>>,
+) -> IpcResponse<AutomationContract> {
+    let kind = match trigger_kind {
+        Some(value) => match parse_trigger_kind(&value) {
+            Ok(kind) => Some(kind),
+            Err(error) => return IpcResponse::failure(error),
+        },
+        None => None,
+    };
+    match kernel.lock() {
+        Ok(kernel) => match CommandHandler::update_automation_contract(
+            &kernel,
+            ipc_actor_context(),
+            ipc_intent_context(),
+            contract_id,
+            name,
+            description,
+            intent_statement,
+            kind,
+            trigger_definition,
+            required_capabilities,
+        ) {
+            Ok(contract) => IpcResponse::success(contract),
+            Err(error) => IpcResponse::failure(CommandError::from(error)),
+        },
+        Err(_) => IpcResponse::failure(CommandError::new(
+            "internal_error",
+            "Workspace core is temporarily unavailable.",
+        )),
+    }
+}
+
+#[tauri::command]
 pub fn revoke_automation_contract(
     contract_id: String,
     kernel: State<'_, Arc<Mutex<WorkspaceKernel>>>,

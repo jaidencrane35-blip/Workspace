@@ -96,7 +96,8 @@ pub use application::{CreateApplication, DeleteApplication, GetApplication};
 pub use automation_contract::{
     ApproveAutomationContract, CreateAutomationContract, GetAutomationContract,
     ListAutomationContracts, PauseAutomationContract, PrepareAutomationContractIntent,
-    RequestAutomationContractApproval, RevokeAutomationContract, UpdateAutomationContract,
+    RequestAutomationContractApproval, ResumeAutomationContract, RevokeAutomationContract,
+    UpdateAutomationContract,
 };
 pub use layout::{
     CreateLayout, DeleteLayout, GetLayout, GetLayoutSnapshot, ResetLayout, UpdateLayout,

@@ -167,7 +167,7 @@ Foundation     Decisions       Core Platform     Feature Expansion   Maturity
 
 **Goal:** Application launching, AI observation/suggestion, and user-approved automation.
 
-**Status:** Phase 3 intelligence batches 1–7 complete; Phase 4 Batches 1–6 complete (governed automation contract foundation / S68–71). Next: trigger runners remain deferred — contracts are definitions only. See [Intelligence Roadmap](../05-AI/INTELLIGENCE-ROADMAP.md).
+**Status:** Phase 3 intelligence batches 1–7 complete; Phase 4 Batches 1–6.5 complete (automation contracts + integrity hardening / S68–72). Next: trigger evaluation only under fingerprint + gateway conditions. See [Intelligence Roadmap](../05-AI/INTELLIGENCE-ROADMAP.md).
 
 ### Expected Deliverables
 

@@ -746,6 +746,9 @@ export interface AutomationContract {
   required_capabilities: string[];
   approval_state: AutomationContractApprovalState;
   created_by_actor: string;
+  approved_by_actor: string | null;
+  approved_at: string | null;
+  approved_definition_fingerprint: string | null;
   created_at: string;
   updated_at: string;
   deleted: boolean;
@@ -761,6 +764,9 @@ export interface AutomationContractSummary {
   intent_statement: string;
   required_capabilities: string[];
   created_by_actor: string;
+  approved_by_actor: string | null;
+  definition_fingerprint: string;
+  approval_matches_definition: boolean;
 }
 
 export interface AutomationContractIntentRequest {
@@ -770,7 +776,12 @@ export interface AutomationContractIntentRequest {
   task_id: string | null;
   intent_statement: string;
   required_capabilities: string[];
+  requesting_actor_id: string;
+  definition_fingerprint: string;
+  approved_by_actor: string | null;
+  approved_at: string | null;
   governance_note: string;
+  audit_metadata: string;
 }
 
 export interface WorkspaceIntelligenceState {

@@ -30,11 +30,13 @@ impl<'a> AutomationContractRepository<'a> {
                 id, workspace_id, project_id, task_id, name, description, status,
                 trigger_kind, trigger_definition, intent_statement, scope,
                 required_capabilities, approval_state, created_by_actor,
+                approved_by_actor, approved_at, approved_definition_fingerprint,
                 created_at, updated_at, deleted
              ) VALUES (
                 :id, :workspace_id, :project_id, :task_id, :name, :description, :status,
                 :trigger_kind, :trigger_definition, :intent_statement, :scope,
                 :required_capabilities, :approval_state, :created_by_actor,
+                :approved_by_actor, :approved_at, :approved_definition_fingerprint,
                 :created_at, :updated_at, :deleted
              )
              ON CONFLICT(id) DO UPDATE SET
@@ -47,6 +49,9 @@ impl<'a> AutomationContractRepository<'a> {
                 scope = excluded.scope,
                 required_capabilities = excluded.required_capabilities,
                 approval_state = excluded.approval_state,
+                approved_by_actor = excluded.approved_by_actor,
+                approved_at = excluded.approved_at,
+                approved_definition_fingerprint = excluded.approved_definition_fingerprint,
                 updated_at = excluded.updated_at,
                 deleted = excluded.deleted",
             rusqlite::named_params! {
@@ -64,6 +69,9 @@ impl<'a> AutomationContractRepository<'a> {
                 ":required_capabilities": caps,
                 ":approval_state": contract.approval_state.as_str(),
                 ":created_by_actor": &contract.created_by_actor,
+                ":approved_by_actor": &contract.approved_by_actor,
+                ":approved_at": &contract.approved_at,
+                ":approved_definition_fingerprint": &contract.approved_definition_fingerprint,
                 ":created_at": &contract.created_at,
                 ":updated_at": &contract.updated_at,
                 ":deleted": deleted,
@@ -77,6 +85,7 @@ impl<'a> AutomationContractRepository<'a> {
             "SELECT id, workspace_id, project_id, task_id, name, description, status,
                     trigger_kind, trigger_definition, intent_statement, scope,
                     required_capabilities, approval_state, created_by_actor,
+                    approved_by_actor, approved_at, approved_definition_fingerprint,
                     created_at, updated_at, deleted
              FROM automation_contracts WHERE id = ?1",
         )?;
@@ -97,6 +106,7 @@ impl<'a> AutomationContractRepository<'a> {
             "SELECT id, workspace_id, project_id, task_id, name, description, status,
                     trigger_kind, trigger_definition, intent_statement, scope,
                     required_capabilities, approval_state, created_by_actor,
+                    approved_by_actor, approved_at, approved_definition_fingerprint,
                     created_at, updated_at, deleted
              FROM automation_contracts
              WHERE workspace_id = ?1 AND deleted = 0
@@ -162,8 +172,11 @@ fn map_contract(row: &rusqlite::Row<'_>) -> rusqlite::Result<AutomationContract>
         required_capabilities,
         approval_state,
         created_by_actor: row.get(13)?,
-        created_at: row.get(14)?,
-        updated_at: row.get(15)?,
-        deleted: row.get::<_, i64>(16)? != 0,
+        approved_by_actor: row.get(14)?,
+        approved_at: row.get(15)?,
+        approved_definition_fingerprint: row.get(16)?,
+        created_at: row.get(17)?,
+        updated_at: row.get(18)?,
+        deleted: row.get::<_, i64>(19)? != 0,
     })
 }
