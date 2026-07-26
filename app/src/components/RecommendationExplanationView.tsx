@@ -5,6 +5,7 @@ import type {
   RecommendationDecisionContext,
   RecommendationDecisionIntakeCompatibility,
   RecommendationDecisionIntakeInspection,
+  RecommendationDecisionIntakePackageSeal,
   RecommendationDecisionIntakeProceedDenial,
   RecommendationDecisionIntakeRequest,
   RecommendationDecisionReadiness,
@@ -154,6 +155,11 @@ export function RecommendationExplanationBlock({
           denial={item.decision_intake_proceed_denial}
         />
       ) : null}
+      {item.decision_intake_package_seal ? (
+        <RecommendationDecisionIntakePackageSealBlock
+          seal={item.decision_intake_package_seal}
+        />
+      ) : null}
     </div>
   );
 }
@@ -269,6 +275,33 @@ export function RecommendationDecisionIntakeProceedDenialBlock({
         permission: {denial.permission_effect}
       </div>
       <div>{denial.note}</div>
+    </div>
+  );
+}
+
+/** Frozen intake digest — seal ≠ proceed / adapter / handoff. */
+export function RecommendationDecisionIntakePackageSealBlock({
+  seal,
+}: {
+  seal: RecommendationDecisionIntakePackageSeal;
+}) {
+  return (
+    <div
+      className="recommendation-decision-intake-package-seal muted"
+      style={{ marginTop: 4 }}
+    >
+      <div>
+        Intake seal: <strong>{seal.seal_state}</strong>
+        {" · "}
+        match: {seal.package_matches_seal ? "yes" : "no"}
+        {" · "}
+        proceed: {seal.proceed_authorized ? "authorized" : "denied"}
+        {" · "}
+        adapter: {seal.adapter_invokable ? "invokable" : "blocked"}
+        {" · "}
+        owner: {seal.current_owner}
+      </div>
+      <div>{seal.note}</div>
     </div>
   );
 }

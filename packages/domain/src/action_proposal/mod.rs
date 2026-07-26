@@ -659,6 +659,10 @@ pub struct RecommendationLifecycleOverlay {
     #[serde(default)]
     pub decision_confirmation:
         Option<crate::workspace_recommendation::RecommendationDecisionConfirmation>,
+    /// Frozen intake package seal after proceed denial (Sprint 252).
+    #[serde(default)]
+    pub decision_intake_package_seal:
+        Option<crate::workspace_recommendation::RecommendationDecisionIntakePackageSeal>,
     pub updated_at: String,
     pub authority_effect: String,
 }
@@ -685,6 +689,7 @@ impl RecommendationLifecycleOverlay {
             prior_outcomes: Vec::new(),
             content_fingerprint: None,
             decision_confirmation: None,
+            decision_intake_package_seal: None,
             updated_at: updated_at.into(),
             authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
         }
@@ -705,6 +710,14 @@ impl RecommendationLifecycleOverlay {
         confirmation: crate::workspace_recommendation::RecommendationDecisionConfirmation,
     ) -> Self {
         self.decision_confirmation = Some(confirmation);
+        self
+    }
+
+    pub fn with_decision_intake_package_seal(
+        mut self,
+        seal: crate::workspace_recommendation::RecommendationDecisionIntakePackageSeal,
+    ) -> Self {
+        self.decision_intake_package_seal = Some(seal);
         self
     }
 
@@ -796,6 +809,10 @@ pub struct RecommendationReviewActionResult {
     #[serde(default)]
     pub decision_intake_proceed_denial:
         Option<crate::workspace_recommendation::RecommendationDecisionIntakeProceedDenial>,
+    /// Frozen intake package digest — seal ≠ handoff / adapter.
+    #[serde(default)]
+    pub decision_intake_package_seal:
+        Option<crate::workspace_recommendation::RecommendationDecisionIntakePackageSeal>,
     pub explanation: String,
     pub authority_effect: String,
 }
@@ -4121,6 +4138,7 @@ mod tests {
                 decision_intake_inspection: None,
                 decision_intake_compatibility: None,
                 decision_intake_proceed_denial: None,
+                decision_intake_package_seal: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
         }
     }

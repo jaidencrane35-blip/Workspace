@@ -1,5 +1,5 @@
-//! Sprint 242 — Recommendation Decision Intake Compatibility
-//! (version pin / field floor — compatible ≠ handoff / transfer / DE ownership).
+//! Sprint 252 — Recommendation Decision Intake Package Seal
+//! (frozen digest — seal ≠ proceed / adapter / handoff / DE ownership).
 
 use crate::commands::handler::CommandHandler;
 use crate::error::KernelError;
@@ -7,6 +7,7 @@ use workspace_domain::{
     AttentionReason, AttentionSignal, AttentionSourceType, RecommendationConfidence,
     RecommendationDecisionConfirmation, RecommendationDecisionContext,
     RecommendationDecisionIntakeCompatibility, RecommendationDecisionIntakeInspection,
+    RecommendationDecisionIntakePackageSeal, RecommendationDecisionIntakeProceedDenial,
     RecommendationDecisionIntakeRequest, RecommendationDecisionReadiness, RecommendationEvidence,
     RecommendationExplanationView, RecommendationItem, RecommendationKind,
     RecommendationOutcomeView,
@@ -82,12 +83,9 @@ fn accepted_ready_item() -> RecommendationItem {
     }
 }
 
-fn confirmed_bundle() -> (
-    RecommendationDecisionContext,
-    RecommendationDecisionReadiness,
-    RecommendationDecisionConfirmation,
+fn sealed_bundle() -> (
     RecommendationDecisionIntakeRequest,
-    RecommendationDecisionIntakeInspection,
+    RecommendationDecisionIntakePackageSeal,
 ) {
     let mut item = accepted_ready_item();
     item.explanation = Some(RecommendationExplanationView::from_item(&item));
@@ -113,59 +111,55 @@ fn confirmed_bundle() -> (
         &confirmation,
         &readiness,
     );
-    (context, readiness, confirmation, intake, inspection)
-}
-
-/// CASE 1 — Valid inspectable intake is compatible but never transfer/handoff.
-#[test]
-fn case1_compatible_is_not_handoff_or_transfer() {
-    let (_ctx, _rd, _conf, intake, inspection) = confirmed_bundle();
-    assert!(inspection.safe_to_inspect);
     let compatibility =
         RecommendationDecisionIntakeCompatibility::derive_from_inspection(&intake, &inspection);
-    assert!(compatibility.compatible);
-    assert!(compatibility.inspection_valid);
-    assert!(compatibility.version_current);
-    assert!(compatibility.field_floor_satisfied);
-    assert_eq!(
-        compatibility.contract_version,
-        RecommendationDecisionIntakeCompatibility::CONTRACT_VERSION
+    let denial =
+        RecommendationDecisionIntakeProceedDenial::derive_from_compatibility(&compatibility);
+    let seal = RecommendationDecisionIntakePackageSeal::derive_from_proceed_denial(
+        &intake,
+        &compatibility,
+        &denial,
+        "t-seal",
     );
+    (intake, seal)
+}
+
+/// CASE 1 — Compatible denial seals package; proceed/adapter remain denied.
+#[test]
+fn case1_seal_does_not_authorize_proceed_or_adapter() {
+    let (intake, seal) = sealed_bundle();
+    assert!(seal.sealed);
     assert_eq!(
-        compatibility.schema_version,
-        RecommendationDecisionIntakeCompatibility::SCHEMA_VERSION
+        seal.seal_state,
+        RecommendationDecisionIntakePackageSeal::STATE_SEALED
     );
+    assert!(seal.package_matches_seal);
+    assert!(seal.assert_matches_intake(&intake).is_ok());
+    assert!(!seal.proceed_authorized);
+    assert!(!seal.consume_authorized);
+    assert!(!seal.adapter_invokable);
+    assert!(!seal.may_proceed());
+    assert!(!seal.may_invoke_adapter());
+    assert!(seal.attempt_authorize_proceed().is_err());
+    assert!(seal.attempt_invoke_adapter().is_err());
+    assert!(seal.attempt_mutate_after_seal().is_err());
+    assert!(seal.assert_seal_is_not_handoff().is_ok());
     assert_eq!(
-        compatibility.producer,
-        RecommendationDecisionIntakeCompatibility::PRODUCER
+        seal.current_owner,
+        RecommendationDecisionIntakePackageSeal::OWNER_RECOMMENDATION
     );
-    assert_eq!(
-        compatibility.declared_consumer,
-        RecommendationDecisionIntakeCompatibility::DECLARED_CONSUMER
-    );
-    assert!(!compatibility.transfer_authorized);
-    assert!(!compatibility.may_migrate);
-    assert!(!compatibility.handoff_performed);
-    assert!(compatibility.decision_engine_object_id.is_none());
-    assert_eq!(compatibility.authority_effect, "none");
-    assert!(compatibility.assert_non_transfer().is_ok());
-    assert!(compatibility.attempt_handoff().is_err());
-    assert!(compatibility.attempt_transfer().is_err());
-    assert!(compatibility.attempt_migrate().is_err());
 }
 
 /// CASE 2 — No execution authority / Gateway path.
 #[test]
 fn case2_no_execution_or_gateway() {
-    let (_ctx, _rd, _conf, intake, inspection) = confirmed_bundle();
-    let compatibility =
-        RecommendationDecisionIntakeCompatibility::derive_from_inspection(&intake, &inspection);
-    assert!(!compatibility.may_invoke_gateway());
-    assert!(!compatibility.may_create_decision_engine_object());
-    assert!(!compatibility.may_create_intent());
-    assert!(RecommendationDecisionIntakeCompatibility::attempt_execute().is_err());
-    assert!(compatibility.attempt_create_decision_engine_object().is_err());
-    assert!(compatibility.attempt_create_intent().is_err());
+    let (_intake, seal) = sealed_bundle();
+    assert!(!seal.may_invoke_gateway());
+    assert!(!seal.may_create_decision_engine_object());
+    assert!(!seal.may_create_intent());
+    assert!(RecommendationDecisionIntakePackageSeal::attempt_execute().is_err());
+    assert!(seal.attempt_create_decision_engine_object().is_err());
+    assert!(seal.attempt_handoff().is_err());
     assert_blocked(
         "recommendation_engine",
         CommandHandler::workspace_recommendation_engine_attempt_execute(),
@@ -176,73 +170,72 @@ fn case2_no_execution_or_gateway() {
     );
 }
 
-/// CASE 3 — Schema/contract mismatch → incompatible; no DE ownership.
+/// CASE 3 — Drifted / stale intake fails seal match; cannot progress.
 #[test]
-fn case3_version_mismatch_blocks_compatible() {
-    let (_ctx, _rd, _conf, intake, inspection) = confirmed_bundle();
-    let compatibility = RecommendationDecisionIntakeCompatibility::evaluate(
-        &intake,
-        &inspection,
-        "recommendation_decision_intake:v99",
-        99,
+fn case3_stale_intake_cannot_progress() {
+    let (mut intake, seal) = sealed_bundle();
+    intake.title = "Drifted title".into();
+    let verified = seal.reverify_against(&intake);
+    assert!(!verified.package_matches_seal);
+    assert_eq!(
+        verified.seal_state,
+        RecommendationDecisionIntakePackageSeal::STATE_SEAL_MISMATCH
     );
-    assert!(!compatibility.compatible);
-    assert!(!compatibility.version_current);
-    assert!(compatibility.decision_engine_object_id.is_none());
-    assert!(!compatibility.transfer_authorized);
-    assert!(compatibility.attempt_create_decision_engine_object().is_err());
+    assert!(verified.assert_matches_intake(&intake).is_err());
+    assert!(!verified.proceed_authorized);
+    assert!(!verified.adapter_invokable);
+    assert!(verified.attempt_invoke_adapter().is_err());
+    assert!(verified.attempt_authorize_proceed().is_err());
 }
 
-/// CASE 4 — Failed / stale inspection cannot progress to compatible.
+/// CASE 4 — No DE ownership transfer from seal.
 #[test]
-fn case4_invalid_stale_intake_cannot_progress() {
-    let (mut context, readiness, confirmation, intake, _) = confirmed_bundle();
-    context.continuity_fingerprint = "stale-fingerprint".into();
-    let stale = RecommendationDecisionIntakeInspection::verify(
-        &intake,
-        &context,
-        &confirmation,
-        &readiness,
+fn case4_no_de_ownership_transfer() {
+    let (_intake, seal) = sealed_bundle();
+    assert!(seal.decision_engine_object_id.is_none());
+    assert!(!seal.handoff_performed);
+    assert_eq!(
+        seal.current_owner,
+        RecommendationDecisionIntakePackageSeal::OWNER_RECOMMENDATION
     );
-    assert!(!stale.safe_to_inspect);
-    let compatibility =
-        RecommendationDecisionIntakeCompatibility::derive_from_inspection(&intake, &stale);
-    assert!(!compatibility.compatible);
-    assert!(!compatibility.inspection_valid);
-    assert!(!compatibility.transfer_authorized);
-    assert!(compatibility.attempt_handoff().is_err());
+    assert!(seal.attempt_create_decision_engine_object().is_err());
+    assert!(seal.attempt_create_intent().is_err());
+    assert!(seal.attempt_handoff().is_err());
 }
 
-/// CASE 5 — Non-authoritative / DE ownership violation → incompatible.
+/// CASE 5 — Provenance remains intact; digest is stable for unchanged intake.
 #[test]
-fn case5_no_de_ownership_transfer() {
-    let (_ctx, _rd, _conf, mut intake, inspection) = confirmed_bundle();
-    intake.handoff_performed = true;
-    intake.decision_engine_object_id = Some("de:fake".into());
-    let compatibility =
-        RecommendationDecisionIntakeCompatibility::derive_from_inspection(&intake, &inspection);
-    assert!(!compatibility.compatible);
-    assert!(compatibility.decision_engine_object_id.is_none());
-    assert!(!compatibility.transfer_authorized);
-    assert!(compatibility.attempt_create_decision_engine_object().is_err());
-    assert!(compatibility.assert_non_transfer().is_ok());
-}
-
-/// CASE 6 — Provenance/version identity remains intact; may_mutate_provenance false.
-#[test]
-fn case6_provenance_and_identity_intact() {
-    let (_ctx, _rd, _conf, intake, inspection) = confirmed_bundle();
+fn case5_provenance_and_digest_intact() {
+    let (intake, seal) = sealed_bundle();
     let before_refs = intake.evidence_refs.clone();
     let before_fingerprint = intake.continuity_fingerprint.clone();
-    let compatibility =
-        RecommendationDecisionIntakeCompatibility::derive_from_inspection(&intake, &inspection);
-    assert!(compatibility.compatible);
+    let digest = RecommendationDecisionIntakePackageSeal::package_digest(&intake);
+    assert_eq!(seal.intake_package_digest, digest);
+    assert_eq!(
+        seal.continuity_fingerprint_at_seal,
+        intake.continuity_fingerprint
+    );
+    assert!(!seal.may_mutate_provenance());
+    assert!(!intake.may_mutate_provenance());
     assert_eq!(intake.evidence_refs, before_refs);
     assert_eq!(intake.continuity_fingerprint, before_fingerprint);
-    assert!(!intake.may_mutate_provenance());
-    assert!(!compatibility.may_mutate_provenance());
-    assert_eq!(
-        compatibility.required_field_floor,
-        RecommendationDecisionIntakeCompatibility::required_field_floor()
+}
+
+/// CASE 6 — Accept / required confirmation still emits no seal.
+#[test]
+fn case6_previous_lifecycle_semantics_unchanged() {
+    let mut item = accepted_ready_item();
+    item.explanation = Some(RecommendationExplanationView::from_item(&item));
+    let context = RecommendationDecisionContext::assemble("ws-1", &item, &[]);
+    let readiness = RecommendationDecisionReadiness::assess_from_context(&context);
+    let required = RecommendationDecisionConfirmation::derive_from_boundary(
+        &workspace_domain::RecommendationDecisionBoundary::from_context_and_readiness(
+            &context, &readiness,
+        ),
+    );
+    assert!(
+        RecommendationDecisionIntakeRequest::try_assemble(&context, &readiness, &required)
+            .is_none(),
+        "accept/required must not assemble intake or seal"
     );
 }

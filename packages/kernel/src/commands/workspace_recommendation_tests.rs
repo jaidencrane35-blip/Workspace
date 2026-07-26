@@ -881,6 +881,16 @@ fn case24_confirm_future_decision_remains_non_authoritative() {
         assert!(denial.assert_compatible_is_not_permission().is_ok());
         assert!(denial.attempt_authorize_proceed().is_err());
         assert!(denial.attempt_invoke_adapter().is_err());
+        let seal = confirmed
+            .decision_intake_package_seal
+            .expect("confirm emits intake package seal");
+        assert!(seal.sealed);
+        assert!(seal.package_matches_seal);
+        assert!(!seal.proceed_authorized);
+        assert!(!seal.adapter_invokable);
+        assert!(seal.attempt_mutate_after_seal().is_err());
+        assert!(seal.attempt_invoke_adapter().is_err());
+        assert!(seal.assert_seal_is_not_handoff().is_ok());
     }
     assert_cannot_execute(CommandHandler::workspace_recommendation_engine_attempt_execute());
     assert_cannot_execute(CommandHandler::decision_engine_attempt_execute());
@@ -1077,6 +1087,7 @@ fn case16_orphan_overlays_expire_on_regenerate() {
                 prior_outcomes: Vec::new(),
                 content_fingerprint: Some("stale".into()),
                 decision_confirmation: None,
+                decision_intake_package_seal: None,
                 updated_at: "t0".into(),
                 authority_effect: RecommendationLifecycleOverlay::AUTHORITY_EFFECT_NONE.into(),
             })

@@ -266,6 +266,9 @@ pub struct RecommendationItem {
     /// Explicit denial that compatibility is not proceed permission (Sprint 247+) — never handoff.
     #[serde(default)]
     pub decision_intake_proceed_denial: Option<RecommendationDecisionIntakeProceedDenial>,
+    /// Frozen intake package digest after proceed denial (Sprint 252+) — never adapter/handoff.
+    #[serde(default)]
+    pub decision_intake_package_seal: Option<RecommendationDecisionIntakePackageSeal>,
     pub authority_effect: String,
 }
 
@@ -1772,6 +1775,240 @@ impl RecommendationDecisionIntakeProceedDenial {
         &self,
     ) -> Result<(), WorkspaceRecommendationEngineError> {
         if self.proceed_authorized
+            || self.consume_authorized
+            || self.adapter_invokable
+            || self.handoff_performed
+            || self.decision_engine_object_id.is_some()
+            || self.permission_effect != Self::PERMISSION_EFFECT_NONE
+            || self.authority_effect != Self::AUTHORITY_EFFECT_NONE
+            || self.current_owner != Self::OWNER_RECOMMENDATION
+        {
+            return Err(WorkspaceRecommendationEngineError::CannotBecomeHandoff);
+        }
+        Ok(())
+    }
+}
+
+/// Frozen RE intake package snapshot after proceed denial (Sprint 252).
+///
+/// Digests the intake body so a future consumer cannot silently consume a drifted
+/// package. Seal does not authorize proceed, adapter, DE ownership, or handoff.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RecommendationDecisionIntakePackageSeal {
+    pub recommendation_id: String,
+    pub intake_package_digest: String,
+    pub continuity_fingerprint_at_seal: String,
+    pub contract_version: String,
+    pub confirmation_intent: String,
+    pub confirmed_at: String,
+    pub eligibility_state: String,
+    pub sealed: bool,
+    /// `sealed` | `seal_mismatch`
+    pub seal_state: String,
+    pub package_matches_seal: bool,
+    pub sealed_at: String,
+    pub current_owner: String,
+    pub proceed_authorized: bool,
+    pub consume_authorized: bool,
+    pub adapter_invokable: bool,
+    pub handoff_performed: bool,
+    pub decision_engine_object_id: Option<String>,
+    pub permission_effect: String,
+    pub note: String,
+    pub authority_effect: String,
+}
+
+impl RecommendationDecisionIntakePackageSeal {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+    pub const PERMISSION_EFFECT_NONE: &'static str = "none";
+    pub const OWNER_RECOMMENDATION: &'static str = "recommendation_engine";
+    pub const STATE_SEALED: &'static str = "sealed";
+    pub const STATE_SEAL_MISMATCH: &'static str = "seal_mismatch";
+
+    /// Deterministic digest of intake identity/provenance fields (not a score).
+    pub fn package_digest(intake: &RecommendationDecisionIntakeRequest) -> String {
+        let evidence = intake.evidence_refs.join("|");
+        let keys = intake.explanation_keys.join("|");
+        let payload = [
+            intake.recommendation_id.as_str(),
+            intake.workspace_id.as_str(),
+            intake.confirmation_intent.as_str(),
+            intake.confirmed_at.as_str(),
+            intake.kind.as_str(),
+            intake.title.as_str(),
+            intake.suggested_goal_statement.as_str(),
+            intake.continuity_fingerprint.as_str(),
+            intake.explanation_ref.as_deref().unwrap_or(""),
+            evidence.as_str(),
+            keys.as_str(),
+            intake.outcome_id.as_deref().unwrap_or(""),
+            intake.related_task_id.as_deref().unwrap_or(""),
+            intake.related_attention_id.as_deref().unwrap_or(""),
+            intake.related_decision_id.as_deref().unwrap_or(""),
+            intake.intake_state.as_str(),
+            if intake.handoff_performed {
+                "handoff"
+            } else {
+                "no_handoff"
+            },
+            intake
+                .decision_engine_object_id
+                .as_deref()
+                .unwrap_or("none"),
+        ]
+        .join("\u{1f}");
+        format!(
+            "digest:{}:{}",
+            RecommendationDecisionIntakeCompatibility::CONTRACT_VERSION,
+            payload
+        )
+    }
+
+    /// Seal intake after proceed denial. Never authorizes proceed/adapter.
+    pub fn derive_from_proceed_denial(
+        intake: &RecommendationDecisionIntakeRequest,
+        compatibility: &RecommendationDecisionIntakeCompatibility,
+        denial: &RecommendationDecisionIntakeProceedDenial,
+        sealed_at: impl Into<String>,
+    ) -> Self {
+        let sealed_at = sealed_at.into();
+        let digest = Self::package_digest(intake);
+        Self {
+            recommendation_id: intake.recommendation_id.clone(),
+            intake_package_digest: digest,
+            continuity_fingerprint_at_seal: intake.continuity_fingerprint.clone(),
+            contract_version: compatibility.contract_version.clone(),
+            confirmation_intent: intake.confirmation_intent.clone(),
+            confirmed_at: intake.confirmed_at.clone(),
+            eligibility_state: denial.eligibility_state.clone(),
+            sealed: true,
+            seal_state: Self::STATE_SEALED.into(),
+            package_matches_seal: true,
+            sealed_at,
+            current_owner: Self::OWNER_RECOMMENDATION.into(),
+            proceed_authorized: false,
+            consume_authorized: false,
+            adapter_invokable: false,
+            handoff_performed: false,
+            decision_engine_object_id: None,
+            permission_effect: Self::PERMISSION_EFFECT_NONE.into(),
+            note: "Intake package sealed for future consideration. Seal freezes the RE-owned \
+                   snapshot digest; it does not authorize proceed, adapter invocation, handoff, \
+                   or Decision Engine ownership."
+                .into(),
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        }
+    }
+
+    /// Re-check a stored seal against a live (possibly drifted) intake package.
+    pub fn reverify_against(mut self, intake: &RecommendationDecisionIntakeRequest) -> Self {
+        let matches = self.intake_package_digest == Self::package_digest(intake)
+            && self.recommendation_id == intake.recommendation_id;
+        self.package_matches_seal = matches;
+        self.seal_state = if matches {
+            Self::STATE_SEALED.into()
+        } else {
+            Self::STATE_SEAL_MISMATCH.into()
+        };
+        // Proceed denial remains absolute even when the package still matches.
+        self.proceed_authorized = false;
+        self.consume_authorized = false;
+        self.adapter_invokable = false;
+        self.handoff_performed = false;
+        self.decision_engine_object_id = None;
+        self.permission_effect = Self::PERMISSION_EFFECT_NONE.into();
+        self.authority_effect = Self::AUTHORITY_EFFECT_NONE.into();
+        if !matches {
+            self.note = "Sealed intake digest does not match live package. Stale/drifted artifact \
+                         cannot progress; proceed/adapter/handoff remain denied."
+                .into();
+        }
+        self
+    }
+
+    pub fn assert_matches_intake(
+        &self,
+        intake: &RecommendationDecisionIntakeRequest,
+    ) -> Result<(), WorkspaceRecommendationEngineError> {
+        if self.intake_package_digest == Self::package_digest(intake)
+            && self.package_matches_seal
+            && self.seal_state == Self::STATE_SEALED
+        {
+            Ok(())
+        } else {
+            Err(WorkspaceRecommendationEngineError::CannotBecomeHandoff)
+        }
+    }
+
+    pub fn attempt_mutate_after_seal(&self) -> Result<(), WorkspaceRecommendationEngineError> {
+        if self.sealed {
+            Err(WorkspaceRecommendationEngineError::CannotBecomeHandoff)
+        } else {
+            Ok(())
+        }
+    }
+
+    pub fn may_proceed(&self) -> bool {
+        false
+    }
+
+    pub fn may_consume(&self) -> bool {
+        false
+    }
+
+    pub fn may_invoke_adapter(&self) -> bool {
+        false
+    }
+
+    pub fn attempt_authorize_proceed(&self) -> Result<(), WorkspaceRecommendationEngineError> {
+        Err(WorkspaceRecommendationEngineError::CannotBecomeHandoff)
+    }
+
+    pub fn attempt_consume(&self) -> Result<(), WorkspaceRecommendationEngineError> {
+        Err(WorkspaceRecommendationEngineError::CannotBecomeHandoff)
+    }
+
+    pub fn attempt_invoke_adapter(&self) -> Result<(), WorkspaceRecommendationEngineError> {
+        Err(WorkspaceRecommendationEngineError::CannotBecomeHandoff)
+    }
+
+    pub fn attempt_execute() -> Result<(), WorkspaceRecommendationEngineError> {
+        Err(WorkspaceRecommendationEngineError::CannotExecute)
+    }
+
+    pub fn attempt_handoff(&self) -> Result<(), WorkspaceRecommendationEngineError> {
+        Err(WorkspaceRecommendationEngineError::CannotBecomeHandoff)
+    }
+
+    pub fn attempt_create_decision_engine_object(
+        &self,
+    ) -> Result<(), WorkspaceRecommendationEngineError> {
+        Err(WorkspaceRecommendationEngineError::CannotBecomeHandoff)
+    }
+
+    pub fn attempt_create_intent(&self) -> Result<(), WorkspaceRecommendationEngineError> {
+        Err(WorkspaceRecommendationEngineError::CannotBecomeHandoff)
+    }
+
+    pub fn may_create_decision_engine_object(&self) -> bool {
+        false
+    }
+
+    pub fn may_create_intent(&self) -> bool {
+        false
+    }
+
+    pub fn may_invoke_gateway(&self) -> bool {
+        false
+    }
+
+    pub fn may_mutate_provenance(&self) -> bool {
+        false
+    }
+
+    pub fn assert_seal_is_not_handoff(&self) -> Result<(), WorkspaceRecommendationEngineError> {
+        if !self.sealed
+            || self.proceed_authorized
             || self.consume_authorized
             || self.adapter_invokable
             || self.handoff_performed
