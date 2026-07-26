@@ -41,6 +41,15 @@ pub enum ActionProposalError {
     #[error("adaptation apply is future-only; controlled change surface not active")]
     AdaptationApplyNotImplemented,
 
+    #[error("unapproved adaptation cannot enter controlled change surface")]
+    UnapprovedControlledChangeForbidden,
+
+    #[error("change evaluation cannot rewrite history or provenance")]
+    ChangeEvaluationCannotRewriteHistory,
+
+    #[error("behaviour version publish / runtime apply is future-only")]
+    BehaviourVersionPublishNotImplemented,
+
     #[error(transparent)]
     Domain(#[from] DomainError),
 }
@@ -694,13 +703,222 @@ pub struct AdaptationReviewAuditEvent {
     pub note: Option<String>,
 }
 
+/// Rollback metadata for a controlled change (architecture — no auto-rollback).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ChangeRollbackMetadata {
+    pub rollback_to_version_id: String,
+    pub rollback_reason_template: String,
+    /// Always false — rollback is explicit and governed.
+    pub may_auto_rollback: bool,
+}
+
+impl ChangeRollbackMetadata {
+    pub fn for_previous(previous_version_id: impl Into<String>) -> Self {
+        let rollback_to_version_id = previous_version_id.into();
+        Self {
+            rollback_reason_template: format!(
+                "Roll back controlled change to {rollback_to_version_id}"
+            ),
+            rollback_to_version_id,
+            may_auto_rollback: false,
+        }
+    }
+}
+
+/// Audit metadata attached to a ControlledChangeSurface.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ControlledChangeAuditMetadata {
+    pub created_at: String,
+    pub approval_reference: String,
+    pub review_audit_actions: Vec<String>,
+}
+
+/// Lifecycle for versioned behaviour definitions (architecture only).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum BehaviourVersionLifecycle {
+    /// Draft prepared from an approved ControlledChangeSurface — not runtime-active.
+    Draft,
+    /// Future only — publishing is blocked in Sprint 142.
+    Published,
+    Superseded,
+    RolledBack,
+}
+
+impl BehaviourVersionLifecycle {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Draft => "draft",
+            Self::Published => "published",
+            Self::Superseded => "superseded",
+            Self::RolledBack => "rolled_back",
+        }
+    }
+
+    pub fn allows_transition(self, to: Self) -> bool {
+        matches!(
+            (self, to),
+            (Self::Draft, Self::Published)
+                | (Self::Published, Self::Superseded)
+                | (Self::Published, Self::RolledBack)
+                | (Self::Superseded, Self::RolledBack)
+        )
+    }
+}
+
+/// Versioned behaviour identity — does **not** mutate runtime cognition.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct BehaviourVersion {
+    pub id: String,
+    pub creation_source: String,
+    pub change_reason: String,
+    pub approval_reference: String,
+    pub previous_version_id: Option<String>,
+    pub lifecycle: BehaviourVersionLifecycle,
+    /// Frozen provenance from the originating recommendation chain.
+    pub provenance: RecommendationProvenance,
+    pub authority_effect: String,
+}
+
+impl BehaviourVersion {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+    pub const CREATION_SOURCE_OUTCOME_ADAPTATION: &'static str = "outcome_adaptation";
+    pub const BASELINE_ID: &'static str = "behaviour:v0_baseline";
+
+    pub fn draft_from_surface(
+        surface: &ControlledChangeSurface,
+    ) -> Result<Self, ActionProposalError> {
+        if surface.authority_effect != Self::AUTHORITY_EFFECT_NONE {
+            return Err(ActionProposalError::CannotExecute);
+        }
+        Ok(Self {
+            id: surface.target_version_id.clone(),
+            creation_source: Self::CREATION_SOURCE_OUTCOME_ADAPTATION.into(),
+            change_reason: surface.approved_change.clone(),
+            approval_reference: surface.originating_proposal_id.clone(),
+            previous_version_id: Some(surface.previous_version_id.clone()),
+            lifecycle: BehaviourVersionLifecycle::Draft,
+            provenance: surface.provenance.clone(),
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        })
+    }
+
+    /// Unapproved proposals must not create behaviour versions.
+    pub fn from_unapproved_proposal(
+        _proposal: &OutcomeAdaptationProposal,
+    ) -> Result<Self, ActionProposalError> {
+        Err(ActionProposalError::UnapprovedControlledChangeForbidden)
+    }
+
+    /// Prepare a rollback draft — preserves provenance; does not mutate history.
+    pub fn prepare_rollback_draft(&self, at_note: impl Into<String>) -> Result<Self, ActionProposalError> {
+        let previous = self
+            .previous_version_id
+            .clone()
+            .unwrap_or_else(|| Self::BASELINE_ID.into());
+        let _ = at_note;
+        Ok(Self {
+            id: format!("behaviour:rollback:{}", self.id),
+            creation_source: Self::CREATION_SOURCE_OUTCOME_ADAPTATION.into(),
+            change_reason: format!("rollback to {previous}"),
+            approval_reference: self.approval_reference.clone(),
+            previous_version_id: Some(previous),
+            lifecycle: BehaviourVersionLifecycle::Draft,
+            provenance: self.provenance.clone(),
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        })
+    }
+
+    pub fn may_mutate_runtime(&self) -> bool {
+        false
+    }
+
+    pub fn may_bypass_permission_gateway(&self) -> bool {
+        false
+    }
+
+    pub fn attempt_publish(&self) -> Result<(), ActionProposalError> {
+        Err(ActionProposalError::BehaviourVersionPublishNotImplemented)
+    }
+
+    pub fn attempt_mutate_runtime() -> Result<(), ActionProposalError> {
+        Err(ActionProposalError::CannotExecute)
+    }
+}
+
+/// Evaluation of a governed change — observational; cannot rewrite history.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ChangeEvaluation {
+    pub id: String,
+    pub change_reference: String,
+    pub observed_effects: Vec<String>,
+    pub success_criteria: Vec<String>,
+    pub rollback_recommendation: Option<String>,
+    /// Immutable snapshot of provenance at evaluation time.
+    pub provenance_snapshot: RecommendationProvenance,
+    pub authority_effect: String,
+}
+
+impl ChangeEvaluation {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+
+    pub fn from_behaviour_version(
+        version: &BehaviourVersion,
+        observed_effects: Vec<String>,
+        success_criteria: Vec<String>,
+        rollback_recommendation: Option<String>,
+    ) -> Self {
+        Self {
+            id: format!("change_eval:{}", version.id),
+            change_reference: version.id.clone(),
+            observed_effects,
+            success_criteria,
+            rollback_recommendation,
+            provenance_snapshot: version.provenance.clone(),
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        }
+    }
+
+    pub fn may_rewrite_history(&self) -> bool {
+        false
+    }
+
+    pub fn may_mutate_runtime(&self) -> bool {
+        false
+    }
+
+    pub fn may_bypass_permission_gateway(&self) -> bool {
+        false
+    }
+
+    pub fn attempt_rewrite_provenance(&mut self) -> Result<(), ActionProposalError> {
+        Err(ActionProposalError::ChangeEvaluationCannotRewriteHistory)
+    }
+
+    pub fn attempt_mutate_runtime() -> Result<(), ActionProposalError> {
+        Err(ActionProposalError::CannotExecute)
+    }
+}
+
 /// Future boundary: Approved Adaptation → Controlled Change Surface → Versioned Behaviour.
 ///
-/// Architecture only in Sprint 141 — never mutates runtime cognition.
+/// Architecture only — never mutates runtime cognition. Sprint 142 expands required fields.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ControlledChangeSurface {
+    /// Originating `OutcomeAdaptationProposal` id.
+    pub originating_proposal_id: String,
+    /// Sprint 141 alias field (same as originating_proposal_id).
     pub adaptation_proposal_id: String,
+    pub approved_change: String,
+    pub reviewer: AdaptationReviewerIdentity,
+    pub previous_version_id: String,
+    pub target_version_id: String,
+    pub rollback: ChangeRollbackMetadata,
+    pub audit: ControlledChangeAuditMetadata,
+    /// Frozen provenance — never rewritten by evaluation or rollback drafts.
+    pub provenance: RecommendationProvenance,
     pub approved_at: Option<String>,
+    /// Legacy Sprint 141 label (equals target_version_id).
     pub version_target: String,
     pub authority_effect: String,
 }
@@ -713,20 +931,54 @@ impl ControlledChangeSurface {
         proposal: &OutcomeAdaptationProposal,
     ) -> Result<Self, ActionProposalError> {
         if !proposal.review_status.is_approved() {
-            return Err(ActionProposalError::InvalidLifecycleTransition {
-                from: proposal.review_status.as_str().into(),
-                to: "controlled_change_surface".into(),
-            });
+            return Err(ActionProposalError::UnapprovedControlledChangeForbidden);
         }
         if proposal.review_status.is_terminal_without_apply() {
             return Err(ActionProposalError::RejectedAdaptationCannotApply);
         }
+        let reviewer = proposal
+            .reviewer
+            .clone()
+            .ok_or(ActionProposalError::AdaptationReviewerRequired)?;
+        let previous_version_id = BehaviourVersion::BASELINE_ID.to_string();
+        let target_version_id = format!("behaviour:from:{}", proposal.id);
+        let approved_at = proposal.decided_at.clone().unwrap_or_else(|| "approved".into());
         Ok(Self {
+            originating_proposal_id: proposal.id.clone(),
             adaptation_proposal_id: proposal.id.clone(),
-            approved_at: proposal.decided_at.clone(),
-            version_target: Self::VERSION_TARGET_FUTURE.into(),
+            approved_change: proposal.proposed_change.clone(),
+            reviewer,
+            previous_version_id: previous_version_id.clone(),
+            target_version_id: target_version_id.clone(),
+            rollback: ChangeRollbackMetadata::for_previous(previous_version_id),
+            audit: ControlledChangeAuditMetadata {
+                created_at: approved_at.clone(),
+                approval_reference: proposal.id.clone(),
+                review_audit_actions: proposal
+                    .audit_events
+                    .iter()
+                    .map(|e| e.action.clone())
+                    .collect(),
+            },
+            provenance: proposal.provenance.clone(),
+            approved_at: Some(approved_at),
+            version_target: target_version_id,
             authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
         })
+    }
+
+    /// Explicit guard — unapproved proposals never yield a surface.
+    pub fn from_unapproved_proposal(
+        proposal: &OutcomeAdaptationProposal,
+    ) -> Result<Self, ActionProposalError> {
+        if proposal.review_status.is_approved() {
+            return Self::from_approved_proposal(proposal);
+        }
+        Err(ActionProposalError::UnapprovedControlledChangeForbidden)
+    }
+
+    pub fn to_behaviour_version_draft(&self) -> Result<BehaviourVersion, ActionProposalError> {
+        BehaviourVersion::draft_from_surface(self)
     }
 
     pub fn may_mutate_runtime_cognition(&self) -> bool {
@@ -1382,5 +1634,65 @@ mod tests {
         assert!(!proposal.may_bypass_permission_gateway());
         let surface = ControlledChangeSurface::from_approved_proposal(&proposal);
         assert!(surface.is_err());
+    }
+
+    #[test]
+    fn controlled_change_requires_approval_and_preserves_provenance() {
+        let item = sample_item();
+        let mut record = RecommendationGovernanceRecord::from_recommendation_item(&item, "t0");
+        record
+            .transition(RecommendationLifecycleState::Available, "t1", None)
+            .unwrap();
+        record
+            .transition(RecommendationLifecycleState::Presented, "t2", None)
+            .unwrap();
+        record.accept("t3", None).unwrap();
+        let outcome = record.record_outcome("t4").unwrap();
+        let provenance = outcome.provenance.clone();
+        let mut proposal = outcome.to_adaptation_proposal(
+            "presentation",
+            "Prefer structured DisplayReason",
+            "Clearer rationale",
+        );
+        assert_eq!(
+            ControlledChangeSurface::from_unapproved_proposal(&proposal),
+            Err(ActionProposalError::UnapprovedControlledChangeForbidden)
+        );
+        assert_eq!(
+            BehaviourVersion::from_unapproved_proposal(&proposal),
+            Err(ActionProposalError::UnapprovedControlledChangeForbidden)
+        );
+        proposal.require_review().unwrap();
+        proposal
+            .approve(
+                AdaptationReviewerIdentity::local_user("local_user"),
+                "t-ok",
+            )
+            .unwrap();
+        let surface = ControlledChangeSurface::from_approved_proposal(&proposal).unwrap();
+        assert_eq!(surface.originating_proposal_id, proposal.id);
+        assert_eq!(surface.approved_change, "Prefer structured DisplayReason");
+        assert_eq!(surface.reviewer.actor_id, "local_user");
+        assert_eq!(surface.previous_version_id, BehaviourVersion::BASELINE_ID);
+        assert!(!surface.rollback.may_auto_rollback);
+        assert_eq!(surface.provenance, provenance);
+        let version = surface.to_behaviour_version_draft().unwrap();
+        assert_eq!(version.lifecycle, BehaviourVersionLifecycle::Draft);
+        assert_eq!(version.provenance, provenance);
+        assert!(version.attempt_publish().is_err());
+        let rollback = version.prepare_rollback_draft("note").unwrap();
+        assert_eq!(rollback.provenance, provenance);
+        let mut evaluation = ChangeEvaluation::from_behaviour_version(
+            &version,
+            vec!["display clearer".into()],
+            vec!["user understands reason".into()],
+            Some("rollback if confusion increases".into()),
+        );
+        assert!(!evaluation.may_rewrite_history());
+        assert!(evaluation.attempt_rewrite_provenance().is_err());
+        assert_eq!(evaluation.provenance_snapshot, provenance);
+        assert!(!surface.may_bypass_permission_gateway());
+        assert!(!version.may_bypass_permission_gateway());
+        assert!(!evaluation.may_bypass_permission_gateway());
     }
 }

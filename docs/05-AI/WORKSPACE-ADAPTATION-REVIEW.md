@@ -119,15 +119,21 @@ Gateway authority. Approving adaptation never issues `CapabilityGrant`.
 
 ## Future change application boundary
 
-Architecture only (Sprint 141 — not implemented as runtime mutation):
+Architecture only (Sprint 141–142 — not implemented as runtime mutation):
 
 ```
 Approved Adaptation
     ↓
 ControlledChangeSurface
     ↓
-Versioned Behaviour (future_behaviour_version)
+BehaviourVersion (Draft)
+    ↓
+ChangeEvaluation (observational)
+    ↓
+Versioned Behaviour (future publish via Gateway)
 ```
+
+See [WORKSPACE-CONTROLLED-CHANGE.md](./WORKSPACE-CONTROLLED-CHANGE.md).
 
 Rules:
 
@@ -148,6 +154,8 @@ Rules:
 | `AdaptationReviewerIdentity` | Who may approve/reject |
 | `AdaptationReviewAuditEvent` | Review audit trail |
 | `ControlledChangeSurface` | Future apply boundary (non-mutating) |
+| `BehaviourVersion` | Versioned behaviour draft (Sprint 142) |
+| `ChangeEvaluation` | Observational evaluation (Sprint 142) |
 
 Guards:
 
@@ -160,6 +168,7 @@ Guards:
 
 ## Related docs
 
+- [WORKSPACE-CONTROLLED-CHANGE.md](./WORKSPACE-CONTROLLED-CHANGE.md)
 - [WORKSPACE-ADAPTATION-GOVERNANCE.md](./WORKSPACE-ADAPTATION-GOVERNANCE.md)
 - [WORKSPACE-ADAPTATION-PROPOSAL.md](./WORKSPACE-ADAPTATION-PROPOSAL.md)
 - [WORKSPACE-RECOMMENDATION-OUTCOME.md](./WORKSPACE-RECOMMENDATION-OUTCOME.md)

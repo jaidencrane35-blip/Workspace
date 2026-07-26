@@ -40,6 +40,10 @@ never auto-applies or rescoring. See
 [WORKSPACE-ADAPTATION-REVIEW.md](./WORKSPACE-ADAPTATION-REVIEW.md).
 LocalUser reviewer required; self-approval forbidden; approve ≠ apply ≠ Gateway grant.
 
+**Sprint 142:** Controlled change & evaluation —
+[WORKSPACE-CONTROLLED-CHANGE.md](./WORKSPACE-CONTROLLED-CHANGE.md).
+BehaviourVersion drafts + ChangeEvaluation; no runtime cognition mutation.
+
 ---
 
 ## Ownership
