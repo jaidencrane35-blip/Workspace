@@ -1072,12 +1072,15 @@ impl WorkspaceRecommendationEngineService {
             overlay.outcome.clone()
         };
 
-        let next = RecommendationLifecycleOverlay::from_governance_record(
+        let mut next = RecommendationLifecycleOverlay::from_governance_record(
             workspace_id.clone(),
             &record,
             outcome.clone(),
             now,
         );
+        next.content_fingerprint = overlay
+            .content_fingerprint
+            .or_else(|| Some(item.continuity_fingerprint()));
         Self::upsert_overlay(db, &next)?;
         Self::audit_lifecycle(db, actor, audit_event, &item, &next)?;
 
@@ -1091,38 +1094,128 @@ impl WorkspaceRecommendationEngineService {
         })
     }
 
+    /// Continuity on regenerate (Sprint 197–201):
+    /// - open overlays whose source vanished → Expired + outcome
+    /// - open overlays whose content fingerprint changed → Superseded + new Available
+    /// - terminal overlays with fingerprint change → new Available generation (audit only;
+    ///   Accepted/Rejected cannot transition; history remains in prior outcome/audit)
+    /// - active surfaces prefer non-terminal candidates via summary_projection
     fn project_lifecycle_overlays(
         db: &Arc<Mutex<Database>>,
         actor: &ActorContext,
         mut state: WorkspaceRecommendationEngineState,
     ) -> Result<WorkspaceRecommendationEngineState> {
         let now = recommendation_engine_now_rfc3339();
+        let actor_id = actor.actor.id.to_string();
         let overlays = Self::load_overlays(db, &state.workspace_id)?;
         let mut by_id: HashMap<String, RecommendationLifecycleOverlay> = overlays
             .into_iter()
             .map(|o| (o.native_id.clone(), o))
             .collect();
+        let live_ids: HashSet<String> = state.candidates.iter().map(|c| c.id.clone()).collect();
 
-        for item in &state.candidates {
-            if by_id.contains_key(&item.id) {
+        // Expire open overlays whose regenerable source no longer exists.
+        let orphan_ids: Vec<String> = by_id
+            .keys()
+            .filter(|id| !live_ids.contains(*id))
+            .cloned()
+            .collect();
+        for native_id in orphan_ids {
+            let Some(overlay) = by_id.get(&native_id).cloned() else {
+                continue;
+            };
+            if !overlay.lifecycle_state.is_open() {
                 continue;
             }
-            let mut record = RecommendationGovernanceRecord::from_recommendation_item(item, &now);
-            record
-                .transition(
-                    RecommendationLifecycleState::Available,
-                    now.clone(),
-                    Some(actor.actor.id.to_string()),
-                )
-                .map_err(map_lifecycle_err)?;
-            let overlay = RecommendationLifecycleOverlay::from_governance_record(
-                state.workspace_id.clone(),
-                &record,
+            let expired = Self::resolve_open_overlay(
+                db,
+                actor,
+                &overlay,
                 None,
-                now.clone(),
-            );
-            Self::upsert_overlay(db, &overlay)?;
-            by_id.insert(item.id.clone(), overlay);
+                RecommendationLifecycleState::Expired,
+                "workspace.recommendation_engine.expired",
+                &now,
+                &actor_id,
+            )?;
+            by_id.insert(native_id, expired);
+        }
+
+        for item in &state.candidates {
+            let fingerprint = item.continuity_fingerprint();
+            match by_id.get(&item.id).cloned() {
+                None => {
+                    let overlay = Self::new_available_overlay(
+                        &state.workspace_id,
+                        item,
+                        &fingerprint,
+                        &now,
+                        &actor_id,
+                    )?;
+                    Self::upsert_overlay(db, &overlay)?;
+                    by_id.insert(item.id.clone(), overlay);
+                }
+                Some(existing) => {
+                    let fingerprint_matches = existing
+                        .content_fingerprint
+                        .as_deref()
+                        .map(|fp| fp == fingerprint.as_str())
+                        .unwrap_or(false);
+                    if fingerprint_matches {
+                        continue;
+                    }
+                    if existing.content_fingerprint.is_none() {
+                        // Backfill fingerprint for pre-197 overlays without
+                        // superseding or reopening terminal history.
+                        let mut updated = existing.clone();
+                        updated.content_fingerprint = Some(fingerprint);
+                        updated.updated_at = now.clone();
+                        Self::upsert_overlay(db, &updated)?;
+                        by_id.insert(item.id.clone(), updated);
+                        continue;
+                    }
+                    if existing.lifecycle_state.is_open() {
+                        let _superseded = Self::resolve_open_overlay(
+                            db,
+                            actor,
+                            &existing,
+                            Some(item),
+                            RecommendationLifecycleState::Superseded,
+                            "workspace.recommendation_engine.superseded",
+                            &now,
+                            &actor_id,
+                        )?;
+                        let fresh = Self::new_available_overlay(
+                            &state.workspace_id,
+                            item,
+                            &fingerprint,
+                            &now,
+                            &actor_id,
+                        )?;
+                        Self::upsert_overlay(db, &fresh)?;
+                        by_id.insert(item.id.clone(), fresh);
+                        continue;
+                    }
+                    // Terminal + material content change (or source returned after
+                    // Expired/Superseded): open a new Available generation. Prior
+                    // resolution remains in audit / previous outcome_json overwrite.
+                    Self::audit_lifecycle(
+                        db,
+                        actor,
+                        "workspace.recommendation_engine.generation_reopened",
+                        item,
+                        &existing,
+                    )?;
+                    let fresh = Self::new_available_overlay(
+                        &state.workspace_id,
+                        item,
+                        &fingerprint,
+                        &now,
+                        &actor_id,
+                    )?;
+                    Self::upsert_overlay(db, &fresh)?;
+                    by_id.insert(item.id.clone(), fresh);
+                }
+            }
         }
 
         for item in &mut state.candidates {
@@ -1131,6 +1224,105 @@ impl WorkspaceRecommendationEngineService {
             }
         }
         Ok(state)
+    }
+
+    fn new_available_overlay(
+        workspace_id: &str,
+        item: &RecommendationItem,
+        fingerprint: &str,
+        now: &str,
+        actor_id: &str,
+    ) -> Result<RecommendationLifecycleOverlay> {
+        let mut record = RecommendationGovernanceRecord::from_recommendation_item(item, now);
+        record
+            .transition(
+                RecommendationLifecycleState::Available,
+                now.to_string(),
+                Some(actor_id.into()),
+            )
+            .map_err(map_lifecycle_err)?;
+        Ok(
+            RecommendationLifecycleOverlay::from_governance_record(
+                workspace_id,
+                &record,
+                None,
+                now,
+            )
+            .with_content_fingerprint(fingerprint),
+        )
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn resolve_open_overlay(
+        db: &Arc<Mutex<Database>>,
+        actor: &ActorContext,
+        overlay: &RecommendationLifecycleOverlay,
+        live_item: Option<&RecommendationItem>,
+        to: RecommendationLifecycleState,
+        audit_event: &str,
+        now: &str,
+        actor_id: &str,
+    ) -> Result<RecommendationLifecycleOverlay> {
+        let mut record = match live_item {
+            Some(item) => {
+                let mut record =
+                    RecommendationGovernanceRecord::from_recommendation_item(item, &overlay.created_at);
+                record.lifecycle.state = overlay.lifecycle_state;
+                record.lifecycle.presented_at = overlay.presented_at.clone();
+                record.lifecycle.resolved_at = overlay.resolved_at.clone();
+                record.lifecycle.resolution_type = overlay.resolution_type;
+                record.lifecycle.transition_actor_id = overlay.actor_id.clone();
+                record
+            }
+            None => overlay.to_governance_record_for_continuity(),
+        };
+        if record.lifecycle.state == RecommendationLifecycleState::Created {
+            record
+                .transition(
+                    RecommendationLifecycleState::Available,
+                    now.to_string(),
+                    Some(actor_id.into()),
+                )
+                .map_err(map_lifecycle_err)?;
+        }
+        record
+            .transition(to, now.to_string(), Some(actor_id.into()))
+            .map_err(map_lifecycle_err)?;
+        let outcome = record.record_outcome(now).map_err(map_lifecycle_err)?;
+        let next = RecommendationLifecycleOverlay::from_governance_record(
+            overlay.workspace_id.clone(),
+            &record,
+            Some(outcome),
+            now,
+        )
+        .with_content_fingerprint(
+            overlay
+                .content_fingerprint
+                .clone()
+                .unwrap_or_else(|| "continuity".into()),
+        );
+        Self::upsert_overlay(db, &next)?;
+        if let Some(item) = live_item {
+            Self::audit_lifecycle(db, actor, audit_event, item, &next)?;
+        } else {
+            AuditService::record_ai_planning_event(
+                db,
+                actor,
+                &IntentContext::user_request(),
+                audit_event,
+                true,
+                json!({
+                    "workspace_id": next.workspace_id,
+                    "recommendation_id": next.native_id,
+                    "lifecycle_state": next.lifecycle_state.as_str(),
+                    "resolution_type": next.resolution_type.map(|r| r.as_str()),
+                    "authority_effect": "none",
+                    "continuity": "source_absent",
+                })
+                .to_string(),
+            )?;
+        }
+        Ok(next)
     }
 
     fn load_overlays(

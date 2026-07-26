@@ -71,14 +71,14 @@ Three id namespaces remain distinct by design:
 | Stage | Behavior |
 |-------|----------|
 | **Creation** | Ephemeral projection (`generate` / `generate_with_inputs`) |
-| **Presentation** | Intelligence summary + Work / Operator surfaces |
-| **Acceptance** | Not supported |
-| **Rejection** | Not supported |
-| **Expiry** | N/A — rebuilt each generate |
+| **Presentation** | Intelligence summary + Work / Operator surfaces; `present_recommendation` lifecycle |
+| **Acceptance** | Human decision record only (`accept_recommendation`) — never executes |
+| **Rejection** | Human decision record only (`reject_recommendation`) — never executes |
+| **Expiry / Supersession** | Continuity on regenerate (orphan → Expired; fingerprint change → Superseded) |
 
-**Persistence:** none for payloads. Audit: `workspace.recommendation_engine.generated`.  
-**Immutable fields:** entire candidate payload (regenerated).  
-**Mutable fields:** none.
+**Persistence:** payloads regenerable; lifecycle overlay + outcomes durable.  
+**Immutable fields:** reasoning provenance / candidate evidence (regenerated, not rewritten).  
+**Mutable fields:** lifecycle overlay only (`authority_effect: none`).
 
 Attention-derived items clone `attention_reasons` verbatim; other sources leave them empty
 (reason + evidence only).

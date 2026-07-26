@@ -144,6 +144,18 @@ remain hard-fail.
 
 IPC: `present_recommendation` / `accept_recommendation` / `reject_recommendation`.
 
+## Continuity on regenerate (Sprints 197–201)
+
+| Rule | Behavior |
+|------|----------|
+| Orphan open overlay | Source id absent from live candidates → `Expired` + `RecommendationOutcome` (`expired_without_action`) |
+| Content change (open) | Fingerprint mismatch on Available/Presented → `Superseded` + outcome, then new `Available` generation |
+| Content change (terminal) | Accepted/Rejected/Expired/Superseded with new fingerprint → new `Available` generation (prior resolution stays in audit; Accepted cannot transition) |
+| Active surfaces | `summary_projection` / Intelligence top candidates exclude terminal lifecycle states |
+| Fingerprint | Deterministic from kind/title/reason/impact/evidence summaries — **not** a score; never mutates cognition |
+
+Expire / supersede are continuity transitions only — never execute, never grant authority, never auto-learn.
+
 ---
 
 ## Related docs

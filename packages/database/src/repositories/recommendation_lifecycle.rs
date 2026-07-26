@@ -27,8 +27,9 @@ impl<'a> RecommendationLifecycleRepository<'a> {
         self.db.connection().execute(
             "INSERT INTO recommendation_lifecycle (
                 workspace_id, native_id, lifecycle_state, created_at, presented_at,
-                resolved_at, resolution_type, actor_id, outcome_json, updated_at, authority_effect
-             ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)
+                resolved_at, resolution_type, actor_id, outcome_json, content_fingerprint,
+                updated_at, authority_effect
+             ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)
              ON CONFLICT(workspace_id, native_id) DO UPDATE SET
                 lifecycle_state = excluded.lifecycle_state,
                 created_at = excluded.created_at,
@@ -37,6 +38,7 @@ impl<'a> RecommendationLifecycleRepository<'a> {
                 resolution_type = excluded.resolution_type,
                 actor_id = excluded.actor_id,
                 outcome_json = excluded.outcome_json,
+                content_fingerprint = excluded.content_fingerprint,
                 updated_at = excluded.updated_at,
                 authority_effect = excluded.authority_effect",
             (
@@ -49,6 +51,7 @@ impl<'a> RecommendationLifecycleRepository<'a> {
                 overlay.resolution_type.map(|r| r.as_str().to_string()),
                 &overlay.actor_id,
                 &outcome_json,
+                &overlay.content_fingerprint,
                 &overlay.updated_at,
                 &overlay.authority_effect,
             ),
@@ -63,7 +66,8 @@ impl<'a> RecommendationLifecycleRepository<'a> {
     ) -> Result<Option<RecommendationLifecycleOverlay>> {
         let mut stmt = self.db.connection().prepare(
             "SELECT workspace_id, native_id, lifecycle_state, created_at, presented_at,
-                    resolved_at, resolution_type, actor_id, outcome_json, updated_at, authority_effect
+                    resolved_at, resolution_type, actor_id, outcome_json, content_fingerprint,
+                    updated_at, authority_effect
              FROM recommendation_lifecycle
              WHERE workspace_id = ?1 AND native_id = ?2",
         )?;
@@ -77,7 +81,8 @@ impl<'a> RecommendationLifecycleRepository<'a> {
     pub fn list_overlays(&self, workspace_id: &str) -> Result<Vec<RecommendationLifecycleOverlay>> {
         let mut stmt = self.db.connection().prepare(
             "SELECT workspace_id, native_id, lifecycle_state, created_at, presented_at,
-                    resolved_at, resolution_type, actor_id, outcome_json, updated_at, authority_effect
+                    resolved_at, resolution_type, actor_id, outcome_json, content_fingerprint,
+                    updated_at, authority_effect
              FROM recommendation_lifecycle
              WHERE workspace_id = ?1",
         )?;
@@ -120,7 +125,8 @@ fn map_overlay(row: &rusqlite::Row<'_>) -> rusqlite::Result<RecommendationLifecy
         resolution_type,
         actor_id: row.get(7)?,
         outcome,
-        updated_at: row.get(9)?,
-        authority_effect: row.get(10)?,
+        content_fingerprint: row.get(9)?,
+        updated_at: row.get(10)?,
+        authority_effect: row.get(11)?,
     })
 }

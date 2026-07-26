@@ -294,6 +294,22 @@ impl RecommendationLifecycleState {
         }
     }
 
+    /// Open (reviewable) states — eligible for expire / supersede continuity.
+    pub fn is_open(self) -> bool {
+        matches!(
+            self,
+            Self::Created | Self::Available | Self::Presented
+        )
+    }
+
+    /// Terminal resolution states — excluded from active suggestion surfaces.
+    pub fn is_terminal(self) -> bool {
+        matches!(
+            self,
+            Self::Accepted | Self::Rejected | Self::Expired | Self::Superseded
+        )
+    }
+
     /// Valid transitions for governance continuity (architecture contract).
     pub fn allows_transition(self, to: Self) -> bool {
         use RecommendationLifecycleState::*;
@@ -633,6 +649,9 @@ pub struct RecommendationLifecycleOverlay {
     pub resolution_type: Option<RecommendationResolutionType>,
     pub actor_id: Option<String>,
     pub outcome: Option<RecommendationOutcome>,
+    /// Continuity fingerprint of the regenerable candidate payload (Sprint 197).
+    #[serde(default)]
+    pub content_fingerprint: Option<String>,
     pub updated_at: String,
     pub authority_effect: String,
 }
@@ -656,9 +675,15 @@ impl RecommendationLifecycleOverlay {
             resolution_type: record.lifecycle.resolution_type,
             actor_id: record.lifecycle.transition_actor_id.clone(),
             outcome,
+            content_fingerprint: None,
             updated_at: updated_at.into(),
             authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
         }
+    }
+
+    pub fn with_content_fingerprint(mut self, fingerprint: impl Into<String>) -> Self {
+        self.content_fingerprint = Some(fingerprint.into());
+        self
     }
 
     pub fn apply_to_item(&self, item: &mut crate::workspace_recommendation::RecommendationItem) {
@@ -666,6 +691,41 @@ impl RecommendationLifecycleOverlay {
         item.lifecycle_presented_at = self.presented_at.clone();
         item.lifecycle_resolved_at = self.resolved_at.clone();
         item.lifecycle_resolution_type = self.resolution_type.map(|r| r.as_str().into());
+    }
+
+    /// Rebuild a governance record for continuity transitions when the live item is gone.
+    pub fn to_governance_record_for_continuity(&self) -> RecommendationGovernanceRecord {
+        RecommendationGovernanceRecord {
+            identity: RecommendationIdentity {
+                native_id: self.native_id.clone(),
+                family: RecommendationFamily::RecommendationEngine,
+                source_domain: "recommendation_engine".into(),
+                originating_reasoning_ref: None,
+                decision_ref: None,
+                action_proposal_ref: None,
+            },
+            provenance: RecommendationProvenance {
+                recommendation_id: self.native_id.clone(),
+                family: RecommendationFamily::RecommendationEngine,
+                source_evidence: Vec::new(),
+                reasoning_origins: Vec::new(),
+                explanation_keys: Vec::new(),
+                experience_trace_match_keys: Vec::new(),
+                confidence: None,
+                priority_or_impact: None,
+                related_attention_id: None,
+                future_capability_target: None,
+            },
+            lifecycle: RecommendationLifecycle {
+                state: self.lifecycle_state,
+                created_at: self.created_at.clone(),
+                presented_at: self.presented_at.clone(),
+                resolved_at: self.resolved_at.clone(),
+                resolution_type: self.resolution_type,
+                transition_actor_id: self.actor_id.clone(),
+            },
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        }
     }
 }
 

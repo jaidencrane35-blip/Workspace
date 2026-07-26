@@ -137,6 +137,31 @@ pub struct RecommendationItem {
 
 impl RecommendationItem {
     pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+
+    /// Active for suggestion surfaces — terminal lifecycle states are history only.
+    pub fn is_active_lifecycle(&self) -> bool {
+        match self.lifecycle_state.as_deref() {
+            None | Some("created") | Some("available") | Some("presented") => true,
+            Some("accepted")
+            | Some("rejected")
+            | Some("expired")
+            | Some("superseded") => false,
+            Some(_) => true,
+        }
+    }
+
+    /// Deterministic continuity fingerprint for expire/supersede (not a score).
+    pub fn continuity_fingerprint(&self) -> String {
+        let evidence: Vec<&str> = self.evidence.iter().map(|e| e.summary.as_str()).collect();
+        format!(
+            "{}|{}|{}|{}|{}",
+            self.kind.as_str(),
+            self.title,
+            self.reason,
+            self.impact,
+            evidence.join(";")
+        )
+    }
 }
 
 /// Full Recommendation Engine snapshot.
@@ -159,13 +184,20 @@ impl WorkspaceRecommendationEngineState {
     pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
 
     pub fn summary_projection(&self, limit: usize) -> WorkspaceRecommendationEngineSummary {
+        let active: Vec<RecommendationItem> = self
+            .candidates
+            .iter()
+            .filter(|c| c.is_active_lifecycle())
+            .cloned()
+            .collect();
         WorkspaceRecommendationEngineSummary {
             workspace_id: self.workspace_id.clone(),
             generated_at: self.generated_at.clone(),
             label: self.label.clone(),
-            candidate_count: self.candidate_count,
+            // Surface count reflects still-actionable suggestions.
+            candidate_count: active.len(),
             relationship_count: self.relationship_count,
-            top_candidates: self.candidates.iter().take(limit).cloned().collect(),
+            top_candidates: active.into_iter().take(limit).collect(),
             explanation: self.explanation.clone(),
             summary: self.summary.clone(),
             authority_effect: self.authority_effect.clone(),

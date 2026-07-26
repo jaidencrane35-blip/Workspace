@@ -625,3 +625,195 @@ fn assert_cannot_execute(result: Result<(), KernelError>) {
         Ok(()) => panic!("must not succeed at attempt_execute"),
     }
 }
+
+/// CASE 16 — Open overlays whose source vanished expire with an outcome (no execute).
+#[test]
+fn case16_orphan_overlays_expire_on_regenerate() {
+    use workspace_database::RecommendationLifecycleRepository;
+    use workspace_domain::{
+        RecommendationLifecycleOverlay, RecommendationLifecycleState,
+    };
+
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let (ws, _) = seed(&kernel);
+    let local = ActorContext::local_user();
+    let intent = IntentContext::user_request();
+    let _ = CommandHandler::generate_workspace_recommendation_engine(
+        &kernel,
+        local.clone(),
+        intent.clone(),
+        ws.clone(),
+    )
+    .unwrap();
+
+    let orphan_id = "recommendation:orphan:continuity-test".to_string();
+    {
+        let db = kernel.shared_database();
+        let guard = db.lock().unwrap();
+        RecommendationLifecycleRepository::new(&guard)
+            .upsert_overlay(&RecommendationLifecycleOverlay {
+                workspace_id: ws.clone(),
+                native_id: orphan_id.clone(),
+                lifecycle_state: RecommendationLifecycleState::Available,
+                created_at: "t0".into(),
+                presented_at: None,
+                resolved_at: None,
+                resolution_type: None,
+                actor_id: Some(local.actor.id.to_string()),
+                outcome: None,
+                content_fingerprint: Some("stale".into()),
+                updated_at: "t0".into(),
+                authority_effect: RecommendationLifecycleOverlay::AUTHORITY_EFFECT_NONE.into(),
+            })
+            .unwrap();
+    }
+
+    let _ = CommandHandler::generate_workspace_recommendation_engine(
+        &kernel,
+        local,
+        intent,
+        ws.clone(),
+    )
+    .unwrap();
+
+    let db = kernel.shared_database();
+    let guard = db.lock().unwrap();
+    let overlay = RecommendationLifecycleRepository::new(&guard)
+        .get_overlay(&ws, &orphan_id)
+        .unwrap()
+        .expect("orphan overlay retained as Expired");
+    assert_eq!(
+        overlay.lifecycle_state,
+        RecommendationLifecycleState::Expired
+    );
+    assert_eq!(overlay.authority_effect, "none");
+    let outcome = overlay.outcome.expect("expire records outcome");
+    assert_eq!(outcome.user_decision.as_str(), "expired");
+    assert!(!outcome.is_system_failure());
+    assert_cannot_execute(CommandHandler::workspace_recommendation_engine_attempt_execute());
+}
+
+/// CASE 17 — Material content change supersedes open overlays, then opens Available.
+#[test]
+fn case17_content_change_supersedes_open_overlay() {
+    use workspace_database::RecommendationLifecycleRepository;
+    use workspace_domain::RecommendationLifecycleState;
+
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let (ws, _) = seed(&kernel);
+    let local = ActorContext::local_user();
+    let intent = IntentContext::user_request();
+    let state = CommandHandler::generate_workspace_recommendation_engine(
+        &kernel,
+        local.clone(),
+        intent.clone(),
+        ws.clone(),
+    )
+    .unwrap();
+    let id = state.candidates[0].id.clone();
+
+    {
+        let db = kernel.shared_database();
+        let guard = db.lock().unwrap();
+        let mut overlay = RecommendationLifecycleRepository::new(&guard)
+            .get_overlay(&ws, &id)
+            .unwrap()
+            .expect("overlay from generate");
+        overlay.content_fingerprint = Some("old-fingerprint-before-change".into());
+        overlay.lifecycle_state = RecommendationLifecycleState::Presented;
+        overlay.presented_at = Some("t-presented".into());
+        RecommendationLifecycleRepository::new(&guard)
+            .upsert_overlay(&overlay)
+            .unwrap();
+    }
+
+    let after = CommandHandler::generate_workspace_recommendation_engine(
+        &kernel,
+        local,
+        intent,
+        ws.clone(),
+    )
+    .unwrap();
+    let item = after
+        .candidates
+        .iter()
+        .find(|c| c.id == id)
+        .expect("live candidate");
+    assert_eq!(item.lifecycle_state.as_deref(), Some("available"));
+    assert!(item.is_active_lifecycle());
+
+    let db = kernel.shared_database();
+    let guard = db.lock().unwrap();
+    let overlay = RecommendationLifecycleRepository::new(&guard)
+        .get_overlay(&ws, &id)
+        .unwrap()
+        .unwrap();
+    assert_eq!(
+        overlay.lifecycle_state,
+        RecommendationLifecycleState::Available
+    );
+    assert_eq!(
+        overlay.content_fingerprint.as_deref(),
+        Some(item.continuity_fingerprint().as_str())
+    );
+    assert_eq!(overlay.authority_effect, "none");
+    assert_cannot_execute(CommandHandler::workspace_recommendation_engine_attempt_execute());
+}
+
+/// CASE 18 — Terminal resolutions stay out of active summary surfaces.
+#[test]
+fn case18_terminal_excluded_from_active_summary() {
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let (ws, _) = seed(&kernel);
+    let local = ActorContext::local_user();
+    let intent = IntentContext::user_request();
+    let state = CommandHandler::generate_workspace_recommendation_engine(
+        &kernel,
+        local.clone(),
+        intent.clone(),
+        ws.clone(),
+    )
+    .unwrap();
+    assert!(!state.candidates.is_empty());
+    let id = state.candidates[0].id.clone();
+    let before_active = state
+        .summary_projection(12)
+        .top_candidates
+        .len();
+
+    CommandHandler::accept_recommendation(
+        &kernel,
+        local.clone(),
+        intent.clone(),
+        ws.clone(),
+        id.clone(),
+    )
+    .unwrap();
+
+    let after = CommandHandler::generate_workspace_recommendation_engine(
+        &kernel,
+        local,
+        intent,
+        ws,
+    )
+    .unwrap();
+    let accepted = after
+        .candidates
+        .iter()
+        .find(|c| c.id == id)
+        .expect("accepted remains in full snapshot for history");
+    assert_eq!(accepted.lifecycle_state.as_deref(), Some("accepted"));
+    assert!(!accepted.is_active_lifecycle());
+
+    let summary = after.summary_projection(12);
+    assert!(
+        summary
+            .top_candidates
+            .iter()
+            .all(|c| c.id != id && c.is_active_lifecycle()),
+        "accepted must not appear in active top_candidates"
+    );
+    assert!(summary.candidate_count <= before_active);
+    assert_eq!(summary.authority_effect, "none");
+    assert_cannot_execute(CommandHandler::workspace_recommendation_engine_attempt_execute());
+}
