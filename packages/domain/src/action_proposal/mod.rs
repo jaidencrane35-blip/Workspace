@@ -71,6 +71,12 @@ pub enum ActionProposalError {
     #[error("reviewer cannot bypass or rewrite provenance")]
     ReviewerCannotBypassProvenance,
 
+    #[error("governance risk requirements not met for review routing")]
+    GovernanceRiskRequirementsNotMet,
+
+    #[error("governance risk metadata cannot mutate cognition or scoring")]
+    GovernanceRiskCannotMutateCognition,
+
     #[error(transparent)]
     Domain(#[from] DomainError),
 }
@@ -929,7 +935,7 @@ pub struct GovernanceActorRefs {
     pub publisher_actor_id: Option<String>,
 }
 
-/// Risk classification for adaptation governance policy (Sprint 144).
+/// Risk classification for adaptation governance policy (Sprint 144–145).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum AdaptationRiskClass {
@@ -946,9 +952,13 @@ impl AdaptationRiskClass {
             Self::High => "high",
         }
     }
+
+    pub fn requires_stronger_review(self) -> bool {
+        matches!(self, Self::High)
+    }
 }
 
-/// Who may review under a GovernancePolicy.
+/// Who may review under a GovernancePolicy / GovernanceRisk.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct GovernanceReviewerRequirements {
     pub required_actor_type: String,
@@ -965,6 +975,239 @@ pub struct GovernanceExpiryRules {
     pub review_ttl: Option<String>,
     pub publish_request_ttl: Option<String>,
     pub expired_blocks_approval: bool,
+}
+
+/// Impact classification for a governed change (Sprint 145).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum GovernanceImpactClass {
+    PresentationOnly,
+    WorkflowHint,
+    BehaviourVersionDraft,
+    /// Classified only to reject — never a valid publish path.
+    CognitionScoringMutation,
+    /// Classified only to reject — execution stays on Permission Gateway.
+    ExecutionAuthority,
+}
+
+impl GovernanceImpactClass {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::PresentationOnly => "presentation_only",
+            Self::WorkflowHint => "workflow_hint",
+            Self::BehaviourVersionDraft => "behaviour_version_draft",
+            Self::CognitionScoringMutation => "cognition_scoring_mutation",
+            Self::ExecutionAuthority => "execution_authority",
+        }
+    }
+
+    pub fn is_forbidden_adaptation_path(self) -> bool {
+        matches!(
+            self,
+            Self::CognitionScoringMutation | Self::ExecutionAuthority
+        )
+    }
+}
+
+/// Change risk profile that drives review routing (Sprint 145).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct GovernanceRisk {
+    pub id: String,
+    pub risk_level: AdaptationRiskClass,
+    pub affected_domain: String,
+    pub impact_classification: GovernanceImpactClass,
+    pub review_requirements: GovernanceReviewerRequirements,
+    pub approval_threshold: u32,
+    /// High-risk approvals must carry explicit conditions.
+    pub requires_conditions: bool,
+    pub authority_effect: String,
+}
+
+impl GovernanceRisk {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+
+    pub fn classify_from_proposal(proposal: &OutcomeAdaptationProposal) -> Self {
+        let area = proposal.affected_area.to_lowercase();
+        let (level, impact) = if area.contains("scoring")
+            || area.contains("attention_weight")
+            || area.contains("decision_weight")
+            || area.contains("cognition")
+        {
+            (
+                AdaptationRiskClass::High,
+                GovernanceImpactClass::CognitionScoringMutation,
+            )
+        } else if area.contains("permission")
+            || area.contains("capability")
+            || area.contains("gateway")
+            || area.contains("execution")
+        {
+            (
+                AdaptationRiskClass::High,
+                GovernanceImpactClass::ExecutionAuthority,
+            )
+        } else if area.contains("behaviour") || area.contains("workflow") {
+            (
+                AdaptationRiskClass::High,
+                GovernanceImpactClass::BehaviourVersionDraft,
+            )
+        } else if area.contains("presentation") || area.contains("experience") {
+            (
+                AdaptationRiskClass::Low,
+                GovernanceImpactClass::PresentationOnly,
+            )
+        } else {
+            (
+                AdaptationRiskClass::Medium,
+                GovernanceImpactClass::WorkflowHint,
+            )
+        };
+        Self::from_level(level, proposal.affected_area.clone(), impact)
+    }
+
+    pub fn from_level(
+        risk_level: AdaptationRiskClass,
+        affected_domain: impl Into<String>,
+        impact_classification: GovernanceImpactClass,
+    ) -> Self {
+        let affected_domain = affected_domain.into();
+        let (min_reviewers, approval_threshold, requires_conditions) = match risk_level {
+            AdaptationRiskClass::Low => (1, 1, false),
+            AdaptationRiskClass::Medium => (1, 1, false),
+            AdaptationRiskClass::High => (2, 2, true),
+        };
+        Self {
+            id: format!(
+                "governance_risk:{}:{}:{}",
+                risk_level.as_str(),
+                impact_classification.as_str(),
+                affected_domain
+            ),
+            risk_level,
+            affected_domain,
+            impact_classification,
+            review_requirements: GovernanceReviewerRequirements {
+                required_actor_type: AdaptationReviewerIdentity::LOCAL_USER_TYPE.into(),
+                min_reviewers,
+                allow_self_approval: false,
+                require_rationale: true,
+            },
+            approval_threshold,
+            requires_conditions,
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        }
+    }
+
+    pub fn required_reviewer_count(&self) -> u32 {
+        self.review_requirements
+            .min_reviewers
+            .max(self.approval_threshold)
+    }
+
+    pub fn enforce_not_cognition_mutation(&self) -> Result<(), ActionProposalError> {
+        if self.impact_classification.is_forbidden_adaptation_path() {
+            return Err(ActionProposalError::GovernanceRiskCannotMutateCognition);
+        }
+        Ok(())
+    }
+
+    pub fn may_mutate_cognition(&self) -> bool {
+        false
+    }
+
+    pub fn may_silently_change_scoring(&self) -> bool {
+        false
+    }
+
+    pub fn may_execute(&self) -> bool {
+        false
+    }
+
+    pub fn may_bypass_permission_gateway(&self) -> bool {
+        false
+    }
+
+    pub fn attempt_execute() -> Result<(), ActionProposalError> {
+        Err(ActionProposalError::CannotExecute)
+    }
+
+    pub fn attempt_mutate_cognition() -> Result<(), ActionProposalError> {
+        Err(ActionProposalError::GovernanceRiskCannotMutateCognition)
+    }
+}
+
+/// Review routing: Change → Risk → Policy → Required Reviewers → Decisions.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct GovernanceReviewRouting {
+    pub risk: GovernanceRisk,
+    pub policy: GovernancePolicy,
+    pub required_reviewer_count: u32,
+    pub required_reviewer_actor_type: String,
+    pub change_reference: String,
+    pub provenance: RecommendationProvenance,
+    pub authority_effect: String,
+}
+
+impl GovernanceReviewRouting {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+
+    pub fn route_change(
+        proposal: &OutcomeAdaptationProposal,
+        risk: Option<GovernanceRisk>,
+    ) -> Result<Self, ActionProposalError> {
+        let risk = risk.unwrap_or_else(|| GovernanceRisk::classify_from_proposal(proposal));
+        risk.enforce_not_cognition_mutation()?;
+        let policy = GovernancePolicy::from_risk(&risk);
+        Ok(Self {
+            required_reviewer_count: risk.required_reviewer_count(),
+            required_reviewer_actor_type: risk.review_requirements.required_actor_type.clone(),
+            change_reference: proposal.id.clone(),
+            provenance: proposal.provenance.clone(),
+            policy,
+            risk,
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        })
+    }
+
+    pub fn enforce_decisions(
+        &self,
+        proposal: &OutcomeAdaptationProposal,
+        decisions: &[GovernanceReviewDecision],
+    ) -> Result<(), ActionProposalError> {
+        self.risk.enforce_not_cognition_mutation()?;
+        self.policy
+            .enforce_approval_requirements(proposal, decisions)?;
+        if self.risk.requires_conditions
+            && decisions
+                .iter()
+                .filter(|d| d.decision == GovernanceReviewDecisionKind::Approve)
+                .any(|d| d.conditions.is_empty())
+        {
+            return Err(ActionProposalError::GovernanceRiskRequirementsNotMet);
+        }
+        for decision in decisions {
+            if !decision.retains_provenance(&self.provenance) {
+                return Err(ActionProposalError::ReviewerCannotBypassProvenance);
+            }
+        }
+        Ok(())
+    }
+
+    pub fn may_execute(&self) -> bool {
+        false
+    }
+
+    pub fn may_mutate_cognition(&self) -> bool {
+        false
+    }
+
+    pub fn may_bypass_permission_gateway(&self) -> bool {
+        false
+    }
+
+    pub fn attempt_execute() -> Result<(), ActionProposalError> {
+        Err(ActionProposalError::CannotExecute)
+    }
 }
 
 /// Policy layer governing how adaptation changes are reviewed (Sprint 144).
@@ -987,17 +1230,25 @@ impl GovernancePolicy {
     pub const DOMAIN_OUTCOME_ADAPTATION: &'static str = "outcome_adaptation";
 
     pub fn for_outcome_adaptation() -> Self {
+        Self::from_risk(&GovernanceRisk::from_level(
+            AdaptationRiskClass::Medium,
+            Self::DOMAIN_OUTCOME_ADAPTATION,
+            GovernanceImpactClass::WorkflowHint,
+        ))
+    }
+
+    /// Build policy requirements from a classified GovernanceRisk (Sprint 145 routing).
+    pub fn from_risk(risk: &GovernanceRisk) -> Self {
         Self {
-            id: "governance_policy:outcome_adaptation:v1".into(),
-            governed_domain: Self::DOMAIN_OUTCOME_ADAPTATION.into(),
-            risk_classification: AdaptationRiskClass::Medium,
-            reviewer_requirements: GovernanceReviewerRequirements {
-                required_actor_type: AdaptationReviewerIdentity::LOCAL_USER_TYPE.into(),
-                min_reviewers: 1,
-                allow_self_approval: false,
-                require_rationale: true,
-            },
-            approval_threshold: 1,
+            id: format!(
+                "governance_policy:{}:{}",
+                risk.risk_level.as_str(),
+                risk.affected_domain
+            ),
+            governed_domain: risk.affected_domain.clone(),
+            risk_classification: risk.risk_level,
+            reviewer_requirements: risk.review_requirements.clone(),
+            approval_threshold: risk.approval_threshold,
             expiry_rules: GovernanceExpiryRules {
                 proposal_ttl: Some("P7D".into()),
                 review_ttl: Some("P3D".into()),
@@ -2512,5 +2763,76 @@ mod tests {
             )
             .expect_err("empty decisions must fail threshold");
         assert!(!policy.may_bypass_permission_gateway());
+    }
+
+    #[test]
+    fn governance_risk_routing_requires_stronger_high_risk_review() {
+        let item = sample_item();
+        let mut record = RecommendationGovernanceRecord::from_recommendation_item(&item, "t0");
+        record
+            .transition(RecommendationLifecycleState::Available, "t1", None)
+            .unwrap();
+        record
+            .transition(RecommendationLifecycleState::Presented, "t2", None)
+            .unwrap();
+        record.accept("t3", None).unwrap();
+        let outcome = record.record_outcome("t4").unwrap();
+        let provenance = outcome.provenance.clone();
+        let mut proposal = outcome.to_adaptation_proposal(
+            "behaviour_workflow",
+            "Draft behaviour version hint",
+            "Governed draft only",
+        );
+        proposal.require_review().unwrap();
+        proposal
+            .approve(
+                AdaptationReviewerIdentity::local_user("local_user"),
+                "t-ok",
+            )
+            .unwrap();
+        assert!(GovernanceRisk::attempt_execute().is_err());
+        assert!(GovernanceRisk::attempt_mutate_cognition().is_err());
+        let scoring = outcome.to_adaptation_proposal(
+            "attention_weight_scoring",
+            "Retune attention",
+            "forbidden",
+        );
+        assert_eq!(
+            GovernanceReviewRouting::route_change(&scoring, None),
+            Err(ActionProposalError::GovernanceRiskCannotMutateCognition)
+        );
+        let routing = GovernanceReviewRouting::route_change(&proposal, None).unwrap();
+        assert_eq!(routing.risk.risk_level, AdaptationRiskClass::High);
+        assert!(routing.risk.risk_level.requires_stronger_review());
+        assert_eq!(routing.required_reviewer_count, 2);
+        assert!(!routing.may_mutate_cognition());
+        let one = GovernanceReviewDecision::new(
+            &routing.policy,
+            AdaptationReviewerIdentity::local_user("reviewer_a"),
+            GovernanceReviewDecisionKind::Approve,
+            "First approval",
+            "t1",
+            vec!["no runtime activation".into()],
+            &provenance,
+        )
+        .unwrap();
+        assert_eq!(
+            routing.enforce_decisions(&proposal, &[one.clone()]),
+            Err(ActionProposalError::GovernancePolicyRequirementsNotMet)
+        );
+        let two = GovernanceReviewDecision::new(
+            &routing.policy,
+            AdaptationReviewerIdentity::local_user("reviewer_b"),
+            GovernanceReviewDecisionKind::Approve,
+            "Second approval",
+            "t2",
+            vec!["no scoring mutation".into()],
+            &provenance,
+        )
+        .unwrap();
+        routing
+            .enforce_decisions(&proposal, &[one, two])
+            .unwrap();
+        assert!(!routing.may_bypass_permission_gateway());
     }
 }

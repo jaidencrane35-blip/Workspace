@@ -52,6 +52,10 @@ Full chain traceability; publish requests never activate runtime.
 [WORKSPACE-GOVERNANCE-POLICY.md](./WORKSPACE-GOVERNANCE-POLICY.md).
 Policy → Review Decision → Ledger → PublishRequest; never execution authority.
 
+**Sprint 145:** Governance risk classification & review routing —
+[WORKSPACE-GOVERNANCE-RISK.md](./WORKSPACE-GOVERNANCE-RISK.md).
+High-risk requires stronger review; cognition mutation impacts rejected.
+
 ---
 
 ## Ownership

@@ -7,6 +7,10 @@ Sprint 144 — policy layer that governs how adaptation changes are reviewed.
 ## Principle
 
 ```
+Change
+    ↓
+Risk Classification (Sprint 145)
+    ↓
 GovernancePolicy
     ↓
 GovernanceReviewDecision (human)
@@ -15,6 +19,8 @@ GovernanceRecord (ledger)
     ↓
 PublishRequest
 ```
+
+See [WORKSPACE-GOVERNANCE-RISK.md](./WORKSPACE-GOVERNANCE-RISK.md).
 
 Permission / CapabilityBound policies remain the **execution** policy path.
 Adaptation GovernancePolicy is the **change-review** policy path.
@@ -105,6 +111,7 @@ Publish approval can re-check policy via `approve_for_publish_under_policy`.
 
 ## Related docs
 
+- [WORKSPACE-GOVERNANCE-RISK.md](./WORKSPACE-GOVERNANCE-RISK.md)
 - [WORKSPACE-GOVERNANCE-LEDGER.md](./WORKSPACE-GOVERNANCE-LEDGER.md)
 - [WORKSPACE-CONTROLLED-CHANGE.md](./WORKSPACE-CONTROLLED-CHANGE.md)
 - [WORKSPACE-ADAPTATION-REVIEW.md](./WORKSPACE-ADAPTATION-REVIEW.md)
