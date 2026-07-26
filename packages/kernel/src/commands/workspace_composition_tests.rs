@@ -7,9 +7,8 @@ use crate::error::KernelError;
 use crate::WorkspaceKernel;
 use workspace_domain::{
     ActorContext, CompositionMemberKind, ConceptOwnerKind, IntentContext, PLATFORM_CONCEPT_OWNERS,
-    TaskPriority, TaskRelationshipKind,
+    TaskPriority, TaskRelationshipKind, WorkspaceState,
 };
-use workspace_windows_integration::DesktopWindowSnapshot;
 
 fn seed(kernel: &WorkspaceKernel) -> (String, String, String) {
     let local = ActorContext::local_user();
@@ -60,19 +59,19 @@ fn seed(kernel: &WorkspaceKernel) -> (String, String, String) {
     (workspace_id, app.id.to_string(), project.id.to_string())
 }
 
-fn windows_with_vscode() -> Vec<DesktopWindowSnapshot> {
-    vec![DesktopWindowSnapshot::legacy(
+fn state_with_vscode() -> WorkspaceState {
+    WorkspaceState::from_windows(vec![WorkspaceState::fixture_window(
         "0xc1",
         "main.rs - VS Code",
         501,
         true,
-    )]
+    )])
 }
 
-fn compose_with_windows(
+fn compose_with_state(
     kernel: &WorkspaceKernel,
     ws: &str,
-    windows: &[DesktopWindowSnapshot],
+    workspace_state: &WorkspaceState,
 ) -> workspace_domain::WorkspaceCompositionState {
     let local = ActorContext::local_user();
     let intent = IntentContext::user_request();
@@ -90,11 +89,11 @@ fn compose_with_windows(
         ws.to_string(),
     )
     .unwrap();
-    let environment = crate::services::WorkspaceEnvironmentService::generate_with_inputs(
+    let environment = crate::services::WorkspaceEnvironmentService::generate_from_state(
         &kernel.shared_database(),
         &local,
         ws,
-        windows,
+        workspace_state,
         &apps,
         &workflow,
         None,
@@ -152,7 +151,7 @@ fn compose_with_windows(
 fn case1_compositions_derive_from_existing_models() {
     let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
     let (ws, app_id, _) = seed(&kernel);
-    let state = compose_with_windows(&kernel, &ws, &windows_with_vscode());
+    let state = compose_with_state(&kernel, &ws, &state_with_vscode());
     assert_eq!(state.authority_effect, "none");
     assert!(state.members.iter().any(|m| {
         m.kind == CompositionMemberKind::Application
@@ -172,11 +171,11 @@ fn case1_compositions_derive_from_existing_models() {
 fn case2_environment_changes_update_compositions() {
     let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
     let (ws, _, _) = seed(&kernel);
-    let empty = compose_with_windows(&kernel, &ws, &[]);
+    let empty = compose_with_state(&kernel, &ws, &WorkspaceState::from_windows(vec![]));
     assert_eq!(empty.present_application_count, 0);
     assert!(empty.missing_application_count >= 1);
 
-    let with_app = compose_with_windows(&kernel, &ws, &windows_with_vscode());
+    let with_app = compose_with_state(&kernel, &ws, &state_with_vscode());
     assert_eq!(with_app.present_application_count, 1);
     assert_eq!(with_app.missing_application_count, 0);
     assert_eq!(with_app.window_count, 1);
@@ -220,7 +219,7 @@ fn case3_task_graph_relationships_appear() {
     )
     .unwrap();
 
-    let state = compose_with_windows(&kernel, &ws, &windows_with_vscode());
+    let state = compose_with_state(&kernel, &ws, &state_with_vscode());
     assert!(state.task_node_count >= 1);
     assert!(state
         .members
@@ -237,7 +236,7 @@ fn case3_task_graph_relationships_appear() {
 fn case4_continuity_contributes_correctly() {
     let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
     let (ws, _, _) = seed(&kernel);
-    let state = compose_with_windows(&kernel, &ws, &windows_with_vscode());
+    let state = compose_with_state(&kernel, &ws, &state_with_vscode());
     assert!(
         state
             .members
@@ -260,7 +259,7 @@ fn case5_attention_references_compositions() {
     let local = ActorContext::local_user();
     let intent = IntentContext::user_request();
     // Missing app gap → composition gap → Attention Composition source.
-    let _ = compose_with_windows(&kernel, &ws, &[]);
+    let _ = compose_with_state(&kernel, &ws, &WorkspaceState::from_windows(vec![]));
     let attention = CommandHandler::generate_workspace_attention(
         &kernel,
         local,

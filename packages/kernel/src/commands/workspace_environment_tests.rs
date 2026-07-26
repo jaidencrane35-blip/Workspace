@@ -1,4 +1,4 @@
-//! Workspace Environment Model tests (Phase 5 / Sprint 119).
+//! Workspace Environment Model tests (Phase 5 / Sprint 119–121).
 
 use crate::commands::create_workspace::CreateWorkspace;
 use crate::commands::pipeline::CommandPipeline;
@@ -9,9 +9,8 @@ use workspace_database::ObservationPassRepository;
 use workspace_domain::{
     ActorContext, ConceptOwnerKind, EnvironmentWindowState, IntentContext,
     ObservedMonitor, ObservedWindow, PLATFORM_CONCEPT_OWNERS, TaskPriority,
-    WorkspaceObservationPass, WorkspaceObservationSnapshot, WorkspaceState, WorkspaceStateWindow,
+    WorkspaceObservationPass, WorkspaceObservationSnapshot, WorkspaceState,
 };
-use workspace_windows_integration::DesktopWindowSnapshot;
 
 fn seed(kernel: &WorkspaceKernel) -> (String, String) {
     let local = ActorContext::local_user();
@@ -67,19 +66,8 @@ fn state_window(
     title: &str,
     process_id: i32,
     focused: bool,
-) -> WorkspaceStateWindow {
-    WorkspaceStateWindow {
-        stable_window_id: None,
-        hwnd: hwnd.into(),
-        title: title.into(),
-        process_id,
-        process_name: None,
-        visible: true,
-        focused,
-        minimized: false,
-        monitor_index: Some(0),
-        monitor_name: Some("Primary".into()),
-    }
+) -> workspace_domain::WorkspaceStateWindow {
+    WorkspaceState::fixture_window(hwnd, title, process_id, focused)
 }
 
 fn load_apps(
@@ -416,41 +404,5 @@ fn generate_path_matches_generate_from_state_after_observation() {
     assert_eq!(
         workspace_state.metadata.observation_pass_id.as_deref(),
         Some(pass_id)
-    );
-}
-
-#[test]
-fn transitional_generate_with_inputs_still_works() {
-    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
-    let (ws, app_id) = seed(&kernel);
-    let local = ActorContext::local_user();
-    let windows = vec![DesktopWindowSnapshot::legacy(
-        "0x1",
-        "main.rs - Visual Studio Code",
-        100,
-        true,
-    )];
-    let apps = load_apps(&kernel, &ws);
-    let workflow = CommandHandler::get_workflow_context(
-        &kernel,
-        local.clone(),
-        IntentContext::user_request(),
-        ws.clone(),
-    )
-    .unwrap();
-    let state = crate::services::WorkspaceEnvironmentService::generate_with_inputs(
-        &kernel.shared_database(),
-        &local,
-        &ws,
-        &windows,
-        &apps,
-        &workflow,
-        None,
-        None,
-    )
-    .unwrap();
-    assert_eq!(
-        state.windows[0].matched_application_id.as_deref(),
-        Some(app_id.as_str())
     );
 }

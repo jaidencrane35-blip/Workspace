@@ -74,6 +74,24 @@ This gateway is the **only** future path for event-driven observation. It is not
 
 **WorkspaceIntelligenceService** also consumes **WorkspaceState** (Sprint 120): one `WorkspaceStateEngine::get_current` load per intelligence cycle, passed into `WorkspaceEnvironmentService::generate_from_state`. It does not load observation snapshots or DesktopWindowSnapshot on the production path.
 
+**Sprint 121 — sole runtime desktop model.** Production stack:
+
+```
+Observation
+        ↓
+WorkspaceStateEngine
+        ↓
+WorkspaceState
+        ↓
+Environment
+        ↓
+Intelligence
+        ↓
+Future consumers
+```
+
+`DesktopWindowSnapshot` is **legacy compatibility only** (IPC DTO / windows-integration capture). `DesktopWindowService` is a thin adapter that maps `WorkspaceState` → `DesktopWindowSnapshot` for `get_desktop_windows`. Prefer `get_workspace_state` / `WorkspaceStateEngine` for all new consumers. Environment no longer exposes a DesktopWindowSnapshot `generate_with_inputs` adapter.
+
 ---
 
 ## Represents

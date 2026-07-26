@@ -18,13 +18,15 @@ Observation → Delta → WorkspaceStateEngine → WorkspaceState
                                               ↓
                          WorkspaceIntelligenceService (understanding)
                                               ↓
-                         Assistant / Recommendations (interfaces)
+                         Future consumers / Assistant / Recommendations
 ```
 
 The AI is not the product. The Workspace is the product.
 Intelligence is informational. Authority remains at the Permission Gateway only.
 
 `WorkspaceIntelligenceService` loads **one** `WorkspaceState` per generate cycle (Sprint 120) and passes it into Environment — it does not read observation snapshots or DesktopWindowSnapshot directly.
+
+`DesktopWindowSnapshot` is legacy IPC/platform compatibility only (Sprint 121). Runtime desktop truth is **WorkspaceState**.
 
 ---
 

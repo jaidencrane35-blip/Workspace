@@ -264,6 +264,7 @@ fn legacy_desktop_window_service_reads_latest_snapshot() {
     let intent = IntentContext::user_request();
     capture_with_stub(&kernel, &local, &intent).unwrap();
 
+    // Legacy IPC adapter over WorkspaceState (Sprint 121).
     let windows = DesktopWindowService::list_recent(&kernel.shared_database(), Some(10)).unwrap();
     assert_eq!(windows.len(), 4);
     assert!(windows.iter().any(|window| window.focused));
@@ -273,6 +274,7 @@ fn legacy_desktop_window_service_reads_latest_snapshot() {
 #[test]
 fn list_recent_returns_empty_without_snapshot() {
     let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    // Legacy IPC adapter over WorkspaceState (Sprint 121).
     let windows = DesktopWindowService::list_recent(&kernel.shared_database(), Some(10)).unwrap();
     assert!(windows.is_empty());
 }

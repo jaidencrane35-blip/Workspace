@@ -1,48 +1,44 @@
-//! Desktop window read model — adapter over persisted observation snapshots.
+//! Legacy desktop-window IPC adapter over WorkspaceState (Sprint 121).
 //!
-//! Kernel never calls Win32 or live enumerators in production. Observation
-//! capture is owned by `WorkspaceObservationService`.
+//! Production desktop truth is WorkspaceState. This service maps projected
+//! state windows into the historical `DesktopWindowSnapshot` DTO for
+//! `get_desktop_windows` and similar title-awareness callers.
+//!
+//! Prefer `get_workspace_state` / `WorkspaceStateEngine` for new consumers.
 
 use std::sync::{Arc, Mutex};
 
 use workspace_database::Database;
-use workspace_domain::{ObservedMonitor, ObservedWindow, WorkspaceObservationSnapshot};
+use workspace_domain::{ActorContext, IntentContext, WorkspaceStateWindow};
 use workspace_windows_integration::DesktopWindowSnapshot;
 
 use crate::error::Result;
-use crate::services::WorkspaceObservationService;
+use crate::services::WorkspaceStateEngine;
 
 const DEFAULT_LIMIT: usize = 50;
 const MAX_LIMIT: usize = 200;
 
-/// Adapts persisted observation snapshots into legacy desktop window DTOs.
+/// Compatibility adapter: WorkspaceState → DesktopWindowSnapshot DTOs.
 pub struct DesktopWindowService;
 
 impl DesktopWindowService {
-    /// Returns windows from the latest persisted observation snapshot, or empty when none exists.
+    /// Returns windows from the latest WorkspaceState projection, or empty.
     pub fn list_recent(
         db: &Arc<Mutex<Database>>,
         limit: Option<usize>,
     ) -> Result<Vec<DesktopWindowSnapshot>> {
-        let Some(snapshot) = WorkspaceObservationService::get_latest_snapshot(db)? else {
-            return Ok(Vec::new());
-        };
-        Ok(Self::windows_from_snapshot(&snapshot, limit))
-    }
-
-    /// Maps one observation snapshot into bounded desktop window DTOs.
-    pub fn windows_from_snapshot(
-        snapshot: &WorkspaceObservationSnapshot,
-        limit: Option<usize>,
-    ) -> Vec<DesktopWindowSnapshot> {
         let limit = limit.unwrap_or(DEFAULT_LIMIT).clamp(1, MAX_LIMIT);
-        let mut windows: Vec<DesktopWindowSnapshot> = snapshot
+        let state = WorkspaceStateEngine::get_current(
+            db,
+            &ActorContext::system(),
+            &IntentContext::user_request(),
+        )?;
+        Ok(state
             .windows
-            .iter()
-            .map(|window| map_observed_window(window, &snapshot.monitors))
-            .collect();
-        windows.truncate(limit);
-        windows
+            .into_iter()
+            .take(limit)
+            .map(map_state_window)
+            .collect())
     }
 
     #[cfg(test)]
@@ -62,17 +58,10 @@ impl DesktopWindowService {
     }
 }
 
-fn map_observed_window(
-    window: &ObservedWindow,
-    monitors: &[ObservedMonitor],
-) -> DesktopWindowSnapshot {
-    let monitor = window
-        .monitor_id
-        .as_ref()
-        .and_then(|monitor_id| monitors.iter().find(|monitor| monitor.id == *monitor_id));
+fn map_state_window(window: WorkspaceStateWindow) -> DesktopWindowSnapshot {
     DesktopWindowSnapshot {
-        hwnd: window.hwnd.clone(),
-        title: window.title.clone(),
+        hwnd: window.hwnd,
+        title: window.title,
         process_id: window.process_id as u32,
         visible: window.visible,
         focused: window.focused,
@@ -81,8 +70,8 @@ fn map_observed_window(
         y: window.y,
         width: window.width,
         height: window.height,
-        monitor_index: monitor.map(|monitor| monitor.monitor_index),
-        monitor_name: monitor.map(|monitor| monitor.name.clone()),
+        monitor_index: window.monitor_index,
+        monitor_name: window.monitor_name,
     }
 }
 

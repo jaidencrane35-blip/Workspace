@@ -1,7 +1,7 @@
-//! Workspace Environment Model (Phase 5 / Sprint 119).
+//! Workspace Environment Model (Phase 5 / Sprints 119–121).
 //!
 //! Aggregates WorkspaceState with apps, workflow, task graph, and layout.
-//! Primary runtime input is WorkspaceState (not raw observation snapshots).
+//! Primary runtime input is WorkspaceState (not raw observation or DesktopWindowSnapshot).
 //! Never enumerates Win32. Never executes or moves windows.
 
 use std::collections::HashMap;
@@ -16,7 +16,6 @@ use workspace_domain::{
     TaskGraph, WorkflowContext, WorkspaceEnvironmentState, WorkspaceEnvironmentSummary,
     WorkspaceId, WorkspaceState, WorkspaceStateWindow,
 };
-use workspace_windows_integration::DesktopWindowSnapshot;
 
 use crate::error::{KernelError, Result};
 use crate::services::{
@@ -268,34 +267,6 @@ impl WorkspaceEnvironmentService {
         Ok(state)
     }
 
-    /// Transitional path for Intelligence / tests still supplying desktop window DTOs.
-    ///
-    /// Converts into WorkspaceState then uses [`generate_from_state`]. Does not load
-    /// observation snapshots or call DesktopWindowService.
-    #[allow(clippy::too_many_arguments)]
-    pub(crate) fn generate_with_inputs(
-        db: &Arc<Mutex<Database>>,
-        actor: &ActorContext,
-        workspace_id: impl Into<String>,
-        windows: &[DesktopWindowSnapshot],
-        applications: &[ApplicationReference],
-        workflow: &WorkflowContext,
-        task_graph: Option<&TaskGraph>,
-        layout: Option<&Layout>,
-    ) -> Result<WorkspaceEnvironmentState> {
-        let workspace_state = workspace_state_from_desktop_snapshots(windows);
-        Self::generate_from_state(
-            db,
-            actor,
-            workspace_id,
-            &workspace_state,
-            applications,
-            workflow,
-            task_graph,
-            layout,
-        )
-    }
-
     pub(crate) fn summary_projection(
         state: &WorkspaceEnvironmentState,
         limit: usize,
@@ -354,25 +325,6 @@ impl WorkspaceEnvironmentService {
             .to_string(),
         )
     }
-}
-
-fn workspace_state_from_desktop_snapshots(windows: &[DesktopWindowSnapshot]) -> WorkspaceState {
-    let state_windows: Vec<WorkspaceStateWindow> = windows
-        .iter()
-        .map(|snap| WorkspaceStateWindow {
-            stable_window_id: None,
-            hwnd: snap.hwnd.clone(),
-            title: snap.title.clone(),
-            process_id: snap.process_id as i32,
-            process_name: None,
-            visible: snap.visible,
-            focused: snap.focused,
-            minimized: snap.minimized,
-            monitor_index: snap.monitor_index,
-            monitor_name: snap.monitor_name.clone(),
-        })
-        .collect();
-    WorkspaceState::from_windows(state_windows)
 }
 
 fn window_state_from_state_window(snap: &WorkspaceStateWindow) -> EnvironmentWindowState {

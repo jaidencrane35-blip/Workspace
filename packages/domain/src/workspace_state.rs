@@ -55,6 +55,10 @@ pub struct WorkspaceStateWindow {
     pub visible: bool,
     pub focused: bool,
     pub minimized: bool,
+    pub x: i32,
+    pub y: i32,
+    pub width: i32,
+    pub height: i32,
     pub monitor_index: Option<i32>,
     pub monitor_name: Option<String>,
 }
@@ -74,6 +78,10 @@ impl WorkspaceStateWindow {
             visible: window.visible,
             focused: window.focused,
             minimized: window.minimized,
+            x: window.x,
+            y: window.y,
+            width: window.width,
+            height: window.height,
             monitor_index: monitor.map(|monitor| monitor.monitor_index),
             monitor_name: monitor.map(|monitor| monitor.name.clone()),
         }
@@ -169,7 +177,7 @@ impl WorkspaceState {
         }
     }
 
-    /// Test / transitional helper: build state from already-projected window rows.
+    /// Test / fixture helper: build state from already-projected window rows.
     pub fn from_windows(windows: Vec<WorkspaceStateWindow>) -> Self {
         let focused_window = windows
             .iter()
@@ -192,6 +200,31 @@ impl WorkspaceState {
             active_applications,
             windows,
             authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        }
+    }
+
+    /// Fixture window builder for Environment / Composition tests.
+    pub fn fixture_window(
+        hwnd: impl Into<String>,
+        title: impl Into<String>,
+        process_id: i32,
+        focused: bool,
+    ) -> WorkspaceStateWindow {
+        WorkspaceStateWindow {
+            stable_window_id: None,
+            hwnd: hwnd.into(),
+            title: title.into(),
+            process_id,
+            process_name: None,
+            visible: true,
+            focused,
+            minimized: false,
+            x: 0,
+            y: 0,
+            width: 800,
+            height: 600,
+            monitor_index: Some(0),
+            monitor_name: Some("Primary".into()),
         }
     }
 }

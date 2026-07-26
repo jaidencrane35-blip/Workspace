@@ -98,7 +98,7 @@ use crate::security::{PermissionRequest, PermissionSubject};
 use crate::services::{
     AiAssistantService, AiEvaluationService, AiOrchestrationService, AiParticipationService,
     AiPlanningService, ConfigurationService, DecisionEngineService, DecisionQueueService,
-    DesktopWindowService, TaskGraphService, WorkspaceEnvironmentService,
+    TaskGraphService, WorkspaceEnvironmentService, WorkspaceStateEngine,
     WorkspaceCompositionService, WorkspacePurposeService, WorkspaceEvolutionService,
     WorkspaceRecommendationEngineService, WorkspaceOperatingStateService,
     WorkspacePatternService, WorkspaceAdaptationService, WorkspaceReadinessService,
@@ -417,11 +417,16 @@ impl CommandHandler {
 
             let titles = match environment_override {
                 Some(titles) => titles,
-                None => DesktopWindowService::list_recent(&kernel.shared_database(), Some(50))?
-                    .into_iter()
-                    .map(|window| window.title)
-                    .filter(|title| !title.trim().is_empty())
-                    .collect(),
+                None => WorkspaceStateEngine::get_current(
+                    &kernel.shared_database(),
+                    &ActorContext::system(),
+                    &IntentContext::user_request(),
+                )?
+                .windows
+                .into_iter()
+                .map(|window| window.title)
+                .filter(|title| !title.trim().is_empty())
+                .collect(),
             };
 
             let awareness =
@@ -658,11 +663,16 @@ impl CommandHandler {
             )?;
             let titles = match environment_override {
                 Some(titles) => titles,
-                None => DesktopWindowService::list_recent(&kernel.shared_database(), Some(50))?
-                    .into_iter()
-                    .map(|window| window.title)
-                    .filter(|title| !title.trim().is_empty())
-                    .collect(),
+                None => WorkspaceStateEngine::get_current(
+                    &kernel.shared_database(),
+                    &ActorContext::system(),
+                    &IntentContext::user_request(),
+                )?
+                .windows
+                .into_iter()
+                .map(|window| window.title)
+                .filter(|title| !title.trim().is_empty())
+                .collect(),
             };
             Some(AiPlanningService::awareness_from_context(
                 &workspace_context,
