@@ -54,6 +54,14 @@ impl CapturedDesktopWindow {
             title: self.title.clone(),
             process_id: self.process_id,
             visible: self.visible,
+            focused: self.focused,
+            minimized: self.minimized,
+            x: self.x,
+            y: self.y,
+            width: self.width,
+            height: self.height,
+            monitor_index: self.monitor_index,
+            monitor_name: None,
         }
     }
 }

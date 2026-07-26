@@ -33,8 +33,7 @@ impl QueryCommand for GetDesktopWindows {
     }
 
     fn required_capability(&self) -> Capability {
-        // Window observation supports application awareness; reuse application read.
-        Capability::application_read()
+        Capability::desktop_read()
     }
 
     fn governance_class(&self) -> GovernanceClass {
@@ -52,33 +51,88 @@ impl QueryCommand for GetDesktopWindows {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::commands::initialize::InitializeWorkspace;
+    use crate::commands::initialize::{InitializeWorkspace, InitializeWorkspaceResult};
+    use crate::commands::GateObservationRead;
     use crate::commands::pipeline::CommandPipeline;
     use crate::events::EventBus;
     use crate::policy::AlwaysAllowPolicy;
-    use crate::security::AllowAllPermissionGate;
-    use workspace_domain::{ActorContext, CapabilitySet, IntentContext};
+    use crate::security::{AllowAllPermissionGate, StandardPermissionGate};
+    use crate::services::WorkspaceObservationService;
+    use workspace_domain::{Actor, ActorContext, CapabilitySet, IntentContext};
+    use workspace_windows_integration::StubDesktopCapturer;
 
-    #[test]
-    fn get_desktop_windows_is_governed_query() {
-        let bus = EventBus::new();
-        let init = InitializeWorkspace::in_memory().execute(&bus).unwrap();
-        let ctx = CommandContext {
+    fn local_ctx<'a>(
+        init: &'a InitializeWorkspaceResult,
+        bus: &'a EventBus,
+    ) -> CommandContext<'a> {
+        CommandContext {
             actor_context: ActorContext::local_user(),
             intent_context: IntentContext::user_request(),
             capability_set: CapabilitySet::local_user_standard(),
             state: &init.state,
             database: init.database.shared(),
-            event_bus: &bus,
+            event_bus: bus,
             permission_gate: &AllowAllPermissionGate,
             permission_policy: &AlwaysAllowPolicy,
-        };
+        }
+    }
+
+    #[test]
+    fn get_desktop_windows_is_governed_query() {
+        let bus = EventBus::new();
+        let init = InitializeWorkspace::in_memory().execute(&bus).unwrap();
+        let ctx = local_ctx(&init, &bus);
 
         let windows = CommandPipeline::new(ctx)
             .execute_query(GetDesktopWindows::new(Some(10)))
             .unwrap();
 
-        // Stub or live — must succeed; live titles are non-empty when present.
-        assert!(windows.iter().all(|w| !w.title.trim().is_empty()));
+        assert!(windows.is_empty());
+    }
+
+    #[test]
+    fn get_desktop_windows_requires_desktop_read() {
+        let bus = EventBus::new();
+        let init = InitializeWorkspace::in_memory().execute(&bus).unwrap();
+        let ctx = CommandContext {
+            actor_context: ActorContext::new(Actor::ai_assistant("ai-desktop").unwrap()),
+            intent_context: IntentContext::user_request(),
+            capability_set: CapabilitySet::for_actor_type(workspace_domain::ActorType::AIAssistant),
+            state: &init.state,
+            database: init.database.shared(),
+            event_bus: &bus,
+            permission_gate: &StandardPermissionGate,
+            permission_policy: &AlwaysAllowPolicy,
+        };
+
+        let result = CommandPipeline::new(ctx).execute_query(GetDesktopWindows::new(Some(10)));
+        match result {
+            Err(KernelError::PermissionDenied(_)) | Err(KernelError::ApprovalRequired { .. }) => {}
+            other => panic!("expected permission failure, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn get_desktop_windows_reads_persisted_snapshot() {
+        let bus = EventBus::new();
+        let init = InitializeWorkspace::in_memory().execute(&bus).unwrap();
+        let local = ActorContext::local_user();
+        let intent = IntentContext::user_request();
+        CommandPipeline::new(local_ctx(&init, &bus))
+            .execute_query(GateObservationRead)
+            .unwrap();
+        WorkspaceObservationService::capture_with(
+            &init.database.shared(),
+            &local,
+            &intent,
+            &StubDesktopCapturer::fixture_dual_monitor(),
+        )
+        .unwrap();
+
+        let windows = CommandPipeline::new(local_ctx(&init, &bus))
+            .execute_query(GetDesktopWindows::new(Some(10)))
+            .unwrap();
+        assert_eq!(windows.len(), 4);
+        assert!(windows.iter().any(|window| window.focused));
     }
 }

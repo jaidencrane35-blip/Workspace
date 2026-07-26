@@ -5,10 +5,22 @@ use crate::commands::pipeline::CommandPipeline;
 use crate::commands::CommandHandler;
 use crate::error::KernelError;
 use crate::WorkspaceKernel;
+use crate::services::WorkspaceObservationService;
 use workspace_domain::{
     ActorContext, ConceptOwnerKind, IntentContext, NavigationPathKind, PLATFORM_CONCEPT_OWNERS,
     TaskPriority, WorkspaceNavigationState,
 };
+use workspace_windows_integration::StubDesktopCapturer;
+
+fn capture_fixture(kernel: &WorkspaceKernel, local: &ActorContext, intent: &IntentContext) {
+    WorkspaceObservationService::capture_with(
+        &kernel.shared_database(),
+        local,
+        intent,
+        &StubDesktopCapturer::fixture_dual_monitor(),
+    )
+    .unwrap();
+}
 
 fn seed(kernel: &WorkspaceKernel) -> String {
     let local = ActorContext::local_user();
@@ -195,6 +207,7 @@ fn case7_deterministic_regeneration() {
     let ws = seed(&kernel);
     let local = ActorContext::local_user();
     let intent = IntentContext::user_request();
+    capture_fixture(&kernel, &local, &intent);
     let a = CommandHandler::generate_workspace_navigation(
         &kernel,
         local.clone(),

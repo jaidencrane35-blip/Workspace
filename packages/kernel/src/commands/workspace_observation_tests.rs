@@ -10,7 +10,7 @@ use crate::error::KernelError;
 use crate::services::{DesktopWindowService, WorkspaceObservationCaptureResult, WorkspaceObservationService};
 use crate::WorkspaceKernel;
 use workspace_domain::{Actor, ActorContext, IntentContext};
-use workspace_windows_integration::{StubDesktopCapturer, StubWindowEnumerator};
+use workspace_windows_integration::StubDesktopCapturer;
 
 fn capture_with_stub(
     kernel: &WorkspaceKernel,
@@ -166,20 +166,66 @@ fn legacy_desktop_window_service_reads_latest_snapshot() {
     capture_with_stub(&kernel, &local, &intent).unwrap();
 
     let windows = DesktopWindowService::list_recent(&kernel.shared_database(), Some(10)).unwrap();
-    assert_eq!(windows.len(), 3);
-    assert!(windows.iter().all(|window| window.visible));
+    assert_eq!(windows.len(), 4);
+    assert!(windows.iter().any(|window| window.focused));
+    assert!(windows.iter().any(|window| window.minimized));
 }
 
 #[test]
-fn legacy_enumerator_path_still_works_without_snapshot() {
+fn list_recent_returns_empty_without_snapshot() {
     let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
-    let windows = DesktopWindowService::list_with(
-        &kernel.shared_database(),
-        &StubWindowEnumerator,
-        Some(10),
+    let windows = DesktopWindowService::list_recent(&kernel.shared_database(), Some(10)).unwrap();
+    assert!(windows.is_empty());
+}
+
+#[test]
+fn single_snapshot_propagates_to_environment_and_intelligence() {
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let local = ActorContext::local_user();
+    let intent = IntentContext::user_request();
+    let workspace = CommandPipeline::new(kernel.command_context(local.clone(), intent.clone()))
+        .execute_mutation(crate::commands::create_workspace::CreateWorkspace::new(
+            "Observation WS".into(),
+        ))
+        .unwrap();
+    let ws = workspace.id.to_string();
+    let captured = capture_with_stub(&kernel, &local, &intent).unwrap();
+    let focused_hwnd = captured
+        .snapshot
+        .windows
+        .iter()
+        .find(|window| window.focused)
+        .map(|window| window.hwnd.clone())
+        .expect("focused hwnd");
+
+    let environment = CommandHandler::generate_workspace_environment(
+        &kernel,
+        local.clone(),
+        intent.clone(),
+        ws.clone(),
     )
     .unwrap();
-    assert!(windows.is_empty());
+    assert_eq!(
+        environment
+            .windows
+            .iter()
+            .find(|window| window.state == workspace_domain::EnvironmentWindowState::Focused)
+            .map(|window| window.hwnd.clone())
+            .as_deref(),
+        Some(focused_hwnd.as_str())
+    );
+
+    let intelligence = CommandHandler::generate_workspace_intelligence(
+        &kernel,
+        local,
+        intent,
+        ws,
+    )
+    .unwrap();
+    assert_eq!(
+        intelligence.environment.focused_window_title.as_deref(),
+        Some("Fixture Focus")
+    );
 }
 
 #[test]

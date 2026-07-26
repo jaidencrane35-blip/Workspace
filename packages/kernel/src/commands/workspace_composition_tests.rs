@@ -61,12 +61,12 @@ fn seed(kernel: &WorkspaceKernel) -> (String, String, String) {
 }
 
 fn windows_with_vscode() -> Vec<DesktopWindowSnapshot> {
-    vec![DesktopWindowSnapshot {
-        hwnd: "0xc1".into(),
-        title: "main.rs - VS Code".into(),
-        process_id: 501,
-        visible: true,
-    }]
+    vec![DesktopWindowSnapshot::legacy(
+        "0xc1",
+        "main.rs - VS Code",
+        501,
+        true,
+    )]
 }
 
 fn compose_with_windows(

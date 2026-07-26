@@ -14,7 +14,11 @@
 The Workspace remains a companion over Windows. The Environment Model understands **where work is happening** without becoming an OS.
 
 ```
-DesktopWindowService (SoT for raw windows)
+WorkspaceObservationService (SoT for desktop observation)
+        ↓
+SQLite observation snapshots
+        ↓
+DesktopWindowService (adapter/read model)
         ↓
 Workspace Environment Model   ← this document
         ↓
@@ -27,13 +31,13 @@ Attention / Intelligence / Continuity consumers
 
 - Running applications (matched to registered Workspace apps)
 - Application windows and window groups
-- Window state (open / focused; minimized unknown without deeper Win32)
-- Soft display label (monitors not yet exposed by enumerator)
+- Window state (open / focused / minimized from observation snapshots)
+- Display label from observed monitor assignment
 - Workspace / project / task association via WorkflowContext
 - Layout association (canvas layout — not OS monitors)
 - Gaps: missing apps, disconnected work
 
-Does **not** duplicate Windows Integration — aggregates `DesktopWindowService`.
+Does **not** capture or enumerate the OS — aggregates persisted observation via `DesktopWindowService`.
 
 ---
 

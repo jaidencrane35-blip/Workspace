@@ -6,7 +6,8 @@ use crate::commands::CommandHandler;
 use crate::error::KernelError;
 use crate::WorkspaceKernel;
 use workspace_domain::{
-    ActorContext, ConceptOwnerKind, IntentContext, PLATFORM_CONCEPT_OWNERS, TaskPriority,
+    ActorContext, ConceptOwnerKind, EnvironmentWindowState, IntentContext, PLATFORM_CONCEPT_OWNERS,
+    TaskPriority,
 };
 use workspace_windows_integration::DesktopWindowSnapshot;
 
@@ -64,12 +65,12 @@ fn environment_aggregates_windows_to_applications() {
     let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
     let (ws, app_id) = seed(&kernel);
     let local = ActorContext::local_user();
-    let windows = vec![DesktopWindowSnapshot {
-        hwnd: "0x1".into(),
-        title: "main.rs - Visual Studio Code".into(),
-        process_id: 100,
-        visible: true,
-    }];
+    let windows = vec![DesktopWindowSnapshot::legacy(
+        "0x1",
+        "main.rs - Visual Studio Code",
+        100,
+        true,
+    )];
     let apps = {
         let db = kernel.shared_database();
         let guard = db.lock().unwrap();
@@ -114,12 +115,12 @@ fn missing_applications_and_disconnected_work_surface_gaps() {
     let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
     let (ws, _) = seed(&kernel);
     let local = ActorContext::local_user();
-    let windows = vec![DesktopWindowSnapshot {
-        hwnd: "0x2".into(),
-        title: "Unrelated Notepad".into(),
-        process_id: 200,
-        visible: true,
-    }];
+    let windows = vec![DesktopWindowSnapshot::legacy(
+        "0x2",
+        "Unrelated Notepad",
+        200,
+        true,
+    )];
     let apps = {
         let db = kernel.shared_database();
         let guard = db.lock().unwrap();
@@ -157,18 +158,8 @@ fn window_groups_form_by_application() {
     let (ws, _) = seed(&kernel);
     let local = ActorContext::local_user();
     let windows = vec![
-        DesktopWindowSnapshot {
-            hwnd: "0x3".into(),
-            title: "a - Visual Studio Code".into(),
-            process_id: 10,
-            visible: true,
-        },
-        DesktopWindowSnapshot {
-            hwnd: "0x4".into(),
-            title: "b - Visual Studio Code".into(),
-            process_id: 10,
-            visible: true,
-        },
+        DesktopWindowSnapshot::legacy("0x3", "a - Visual Studio Code", 10, true),
+        DesktopWindowSnapshot::legacy("0x4", "b - Visual Studio Code", 10, true),
     ];
     let apps = {
         let db = kernel.shared_database();
@@ -248,4 +239,57 @@ fn environment_concept_ownership_registered() {
             && c.owner == "WorkspaceEnvironmentService"
             && c.kind == ConceptOwnerKind::Aggregator
     }));
+}
+
+#[test]
+fn environment_uses_observation_focus_not_list_order() {
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let (ws, _) = seed(&kernel);
+    let local = ActorContext::local_user();
+    let mut background = DesktopWindowSnapshot::legacy("0x10", "Background App", 10, true);
+    background.focused = false;
+    let mut focused = DesktopWindowSnapshot::legacy("0x11", "Focused App", 11, true);
+    focused.focused = true;
+    let windows = vec![background, focused];
+    let apps = {
+        let db = kernel.shared_database();
+        let guard = db.lock().unwrap();
+        workspace_database::ApplicationRepository::new(&guard)
+            .list_by_workspace(&workspace_domain::WorkspaceId::new(ws.clone()).unwrap())
+            .unwrap()
+    };
+    let workflow = CommandHandler::get_workflow_context(
+        &kernel,
+        local.clone(),
+        IntentContext::user_request(),
+        ws.clone(),
+    )
+    .unwrap();
+    let state = crate::services::WorkspaceEnvironmentService::generate_with_inputs(
+        &kernel.shared_database(),
+        &local,
+        &ws,
+        &windows,
+        &apps,
+        &workflow,
+        None,
+        None,
+    )
+    .unwrap();
+    let focused_window = state
+        .windows
+        .iter()
+        .find(|window| window.hwnd == "0x11")
+        .expect("focused window row");
+    assert_eq!(focused_window.state, EnvironmentWindowState::Focused);
+    assert_eq!(
+        state.focused_window_id.as_deref(),
+        Some(focused_window.id.as_str())
+    );
+    let background_window = state
+        .windows
+        .iter()
+        .find(|window| window.hwnd == "0x10")
+        .expect("background window row");
+    assert_eq!(background_window.state, EnvironmentWindowState::Open);
 }

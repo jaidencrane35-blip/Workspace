@@ -1,6 +1,6 @@
 //! Workspace Environment Model (Phase 5).
 //!
-//! Aggregates DesktopWindowService observations with apps, workflow, task graph,
+//! Aggregates persisted observation snapshots with apps, workflow, task graph,
 //! and layout. Never enumerates Win32 directly. Never executes or moves windows.
 
 use std::collections::HashMap;
@@ -20,6 +20,7 @@ use workspace_windows_integration::DesktopWindowSnapshot;
 use crate::error::{KernelError, Result};
 use crate::services::{
     AuditService, DesktopWindowService, LayoutService, TaskGraphService, WorkspaceIntentService,
+    WorkspaceObservationService,
 };
 
 pub(crate) struct WorkspaceEnvironmentService;
@@ -32,7 +33,10 @@ impl WorkspaceEnvironmentService {
         workspace_id: impl Into<String>,
     ) -> Result<WorkspaceEnvironmentState> {
         let workspace_id = workspace_id.into();
-        let windows = DesktopWindowService::list_recent(&db, Some(50)).unwrap_or_default();
+        let windows = WorkspaceObservationService::get_latest_snapshot(&db)?
+            .as_ref()
+            .map(|snapshot| DesktopWindowService::windows_from_snapshot(snapshot, Some(50)))
+            .unwrap_or_default();
         let workflow =
             WorkspaceIntentService::get_workflow_context_readonly(db, &workspace_id)?;
         let task_graph = TaskGraphService::generate(db, actor, workspace_id.clone()).ok();
@@ -76,15 +80,9 @@ impl WorkspaceEnvironmentService {
             .collect();
 
         let mut env_windows = Vec::new();
-        for (index, snap) in windows.iter().enumerate() {
+        for snap in windows.iter() {
             let matched = match_application(snap, applications);
-            let state = if index == 0 && snap.visible {
-                EnvironmentWindowState::Focused
-            } else if snap.visible {
-                EnvironmentWindowState::Open
-            } else {
-                EnvironmentWindowState::Unknown
-            };
+            let state = window_state_from_snapshot(snap);
             let (project_id, task_id) = if matched.is_some() {
                 (active_project.clone(), active_task.clone())
             } else {
@@ -112,8 +110,7 @@ impl WorkspaceEnvironmentService {
                 project_id,
                 task_id,
                 layout_id,
-                display_label: "Display placement unknown (enumerator does not expose monitors)."
-                    .into(),
+                display_label: display_label_for_window(snap),
                 explanation,
                 authority_effect: EnvironmentWindow::AUTHORITY_EFFECT_NONE.into(),
             });
@@ -325,6 +322,26 @@ impl WorkspaceEnvironmentService {
             })
             .to_string(),
         )
+    }
+}
+
+fn window_state_from_snapshot(snap: &DesktopWindowSnapshot) -> EnvironmentWindowState {
+    if snap.focused {
+        EnvironmentWindowState::Focused
+    } else if snap.minimized {
+        EnvironmentWindowState::Minimized
+    } else if snap.visible {
+        EnvironmentWindowState::Open
+    } else {
+        EnvironmentWindowState::Unknown
+    }
+}
+
+fn display_label_for_window(snap: &DesktopWindowSnapshot) -> String {
+    match (&snap.monitor_name, snap.monitor_index) {
+        (Some(name), Some(index)) => format!("{name} (monitor {index})"),
+        (None, Some(index)) => format!("Monitor {index}"),
+        _ => "Monitor placement unknown".into(),
     }
 }
 

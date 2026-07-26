@@ -135,6 +135,14 @@ export interface DesktopWindowSnapshot {
   title: string;
   process_id: number;
   visible: boolean;
+  focused: boolean;
+  minimized: boolean;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  monitor_index: number | null;
+  monitor_name: string | null;
 }
 
 export interface ApplicationReference {

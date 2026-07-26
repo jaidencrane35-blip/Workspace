@@ -28,7 +28,7 @@ use crate::services::{
     WorkspaceReadinessService, WorkspaceSessionService, WorkspaceExperienceService,
     WorkspaceWorkContextService, WorkspaceNavigationService, WorkspaceMilestoneService,
     WorkspaceWorkingStyleService, WorkspaceTransitionService, WorkspaceInteractionService,
-    WorkspaceProfileService,
+    WorkspaceProfileService, WorkspaceObservationService,
 };
 
 pub(crate) struct WorkspaceIntelligenceService;
@@ -106,7 +106,11 @@ impl WorkspaceIntelligenceService {
         let full_task_graph = TaskGraphService::generate(db, actor, ws)?;
         let task_graph = full_task_graph.summary_projection(8);
 
-        let windows = DesktopWindowService::list_recent(db, Some(50)).unwrap_or_default();
+        let observation_snapshot = WorkspaceObservationService::get_latest_snapshot(db)?;
+        let windows = observation_snapshot
+            .as_ref()
+            .map(|snapshot| DesktopWindowService::windows_from_snapshot(snapshot, Some(50)))
+            .unwrap_or_default();
         let applications = {
             let guard = db
                 .lock()
