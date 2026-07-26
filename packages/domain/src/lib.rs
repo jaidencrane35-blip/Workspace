@@ -201,9 +201,9 @@ pub use workspace_activity::{
     WorkspaceActivityGraph, WorkspaceActivityGraphSummary,
 };
 pub use workspace_attention::{
-    AttentionCategory, AttentionConfidence, AttentionItem, AttentionPriority, AttentionSourceType,
-    AttentionState, AttentionUrgency, WorkspaceAttentionError, WorkspaceAttentionState,
-    WorkspaceAttentionSummary,
+    normalize_attention_reasons, AttentionCategory, AttentionConfidence, AttentionItem,
+    AttentionPriority, AttentionReason, AttentionSignal, AttentionSourceType, AttentionState,
+    AttentionUrgency, WorkspaceAttentionError, WorkspaceAttentionState, WorkspaceAttentionSummary,
 };
 pub use workspace_continuity::{
     ContinuityFacet, ContinuityFacetKind, WorkspaceContinuityError, WorkspaceContinuityState,

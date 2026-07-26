@@ -20,9 +20,10 @@ use serde_json::json;
 use workspace_database::Database;
 use workspace_domain::{
     ActorContext, AttentionCategory, AttentionConfidence, AttentionItem, AttentionPriority,
-    AttentionSourceType, AttentionState, AttentionUrgency, ContinuityFacetKind, DecisionPriority,
-    DecisionQueue, DecisionSourceType, DecisionState, IntentContext, WorkspaceActivityGraph,
-    WorkspaceAttentionState, WorkspaceContinuityState, WorkspaceId,
+    AttentionReason, AttentionSignal, AttentionSourceType, AttentionState, AttentionUrgency,
+    ContinuityFacetKind, DecisionPriority, DecisionQueue, DecisionSourceType, DecisionState,
+    IntentContext, WorkspaceActivityGraph, WorkspaceAttentionState, WorkspaceContinuityState,
+    WorkspaceId,
 };
 
 use crate::error::{KernelError, Result};
@@ -433,6 +434,12 @@ impl WorkspaceAttentionService {
                 format!("confidence {}", pattern.confidence.as_str()),
                 "source Pattern Model".into(),
             ];
+            let reasons = vec![reason(
+                AttentionSourceType::Pattern,
+                AttentionSignal::PatternObservation,
+                score as i32,
+                "pattern.observation",
+            )];
             out.push(AttentionItem::project(
                 ws,
                 AttentionSourceType::Pattern,
@@ -443,6 +450,7 @@ impl WorkspaceAttentionService {
                 AttentionConfidence::Medium,
                 score,
                 factors,
+                reasons,
                 pattern.title.clone(),
                 format!(
                     "{}. Impact: {}. Pattern context only — Attention surfaces; never executes.",
@@ -496,6 +504,12 @@ impl WorkspaceAttentionService {
                 format!("confidence {}", candidate.confidence.as_str()),
                 "source Recommendation Engine".into(),
             ];
+            let reasons = vec![reason(
+                AttentionSourceType::RecommendationEngine,
+                AttentionSignal::RecommendationCandidate,
+                score as i32,
+                "recommendation.candidate",
+            )];
             out.push(AttentionItem::project(
                 ws,
                 AttentionSourceType::RecommendationEngine,
@@ -506,6 +520,7 @@ impl WorkspaceAttentionService {
                 AttentionConfidence::High,
                 score,
                 factors,
+                reasons,
                 candidate.title.clone(),
                 format!(
                     "{}. Impact: {}. Suggestion only — Attention surfaces; never executes.",
@@ -552,6 +567,12 @@ impl WorkspaceAttentionService {
                 format!("base {score} for evolution insight {}", insight.kind.as_str()),
                 "source Evolution".into(),
             ];
+            let reasons = vec![reason(
+                AttentionSourceType::Evolution,
+                AttentionSignal::EvolutionInsight,
+                score as i32,
+                "evolution.insight",
+            )];
             out.push(AttentionItem::project(
                 ws,
                 AttentionSourceType::Evolution,
@@ -561,13 +582,10 @@ impl WorkspaceAttentionService {
                 urgency,
                 AttentionConfidence::Medium,
                 score,
-                factors.clone(),
+                factors,
+                reasons,
                 insight.title.clone(),
-                format!(
-                    "{}. Score factors: {}.",
-                    insight.explanation,
-                    score_factors_join(&factors)
-                ),
+                insight.explanation.clone(),
                 now.to_string(),
                 AttentionState::Visible,
             )?);
@@ -586,6 +604,12 @@ impl WorkspaceAttentionService {
             "base 42 for Purpose outcome context".into(),
             "source Purpose Model".into(),
         ];
+        let reasons = vec![reason(
+            AttentionSourceType::Purpose,
+            AttentionSignal::PurposeOutcome,
+            42,
+            "purpose.outcome",
+        )];
         out.push(AttentionItem::project(
             ws,
             AttentionSourceType::Purpose,
@@ -595,13 +619,10 @@ impl WorkspaceAttentionService {
             AttentionUrgency::Whenever,
             AttentionConfidence::Medium,
             42,
-            factors.clone(),
+            factors,
+            reasons,
             format!("Working toward: {}", purpose.label),
-            format!(
-                "{}. Score factors: {}.",
-                purpose.explanation,
-                score_factors_join(&factors)
-            ),
+            purpose.explanation.clone(),
             now.to_string(),
             AttentionState::Visible,
         )?);
@@ -627,6 +648,12 @@ impl WorkspaceAttentionService {
                 format!("base {score} for purpose obstacle {}", obstacle.kind),
                 "source Purpose".into(),
             ];
+            let reasons = vec![reason(
+                AttentionSourceType::Purpose,
+                AttentionSignal::PurposeObstacle,
+                score as i32,
+                &format!("purpose.obstacle.{}", obstacle.kind),
+            )];
             out.push(AttentionItem::project(
                 ws,
                 AttentionSourceType::Purpose,
@@ -636,13 +663,10 @@ impl WorkspaceAttentionService {
                 urgency,
                 AttentionConfidence::Medium,
                 score,
-                factors.clone(),
+                factors,
+                reasons,
                 obstacle.title.clone(),
-                format!(
-                    "{}. Score factors: {}.",
-                    obstacle.explanation,
-                    score_factors_join(&factors)
-                ),
+                obstacle.explanation.clone(),
                 now.to_string(),
                 AttentionState::Visible,
             )?);
@@ -687,6 +711,12 @@ impl WorkspaceAttentionService {
                 format!("base {score} for composition gap {}", gap.kind),
                 "source Composition".into(),
             ];
+            let reasons = vec![reason(
+                AttentionSourceType::Composition,
+                AttentionSignal::CompositionGap,
+                score as i32,
+                &format!("composition.gap.{}", gap.kind),
+            )];
             out.push(AttentionItem::project(
                 ws,
                 AttentionSourceType::Composition,
@@ -696,13 +726,10 @@ impl WorkspaceAttentionService {
                 urgency,
                 AttentionConfidence::Medium,
                 score,
-                factors.clone(),
+                factors,
+                reasons,
                 gap.title.clone(),
-                format!(
-                    "{}. Score factors: {}.",
-                    gap.explanation,
-                    score_factors_join(&factors)
-                ),
+                gap.explanation.clone(),
                 now.to_string(),
                 AttentionState::Visible,
             )?);
@@ -738,6 +765,16 @@ impl WorkspaceAttentionService {
                 format!("base {score} for environment gap {}", gap.kind),
                 "source Environment".into(),
             ];
+            let signal = match gap.kind.as_str() {
+                "missing_application" => AttentionSignal::MissingApplication,
+                _ => AttentionSignal::EnvironmentDisconnect,
+            };
+            let reasons = vec![reason(
+                AttentionSourceType::Environment,
+                signal,
+                score as i32,
+                &format!("environment.gap.{}", gap.kind),
+            )];
             out.push(AttentionItem::project(
                 ws,
                 AttentionSourceType::Environment,
@@ -747,13 +784,10 @@ impl WorkspaceAttentionService {
                 urgency,
                 AttentionConfidence::Medium,
                 score,
-                factors.clone(),
+                factors,
+                reasons,
                 gap.title.clone(),
-                format!(
-                    "{}. Score factors: {}.",
-                    gap.explanation,
-                    score_factors_join(&factors)
-                ),
+                gap.explanation.clone(),
                 now.to_string(),
                 AttentionState::Visible,
             )?);
@@ -798,12 +832,32 @@ impl WorkspaceAttentionService {
                 format!("base {base} for Task Graph {}", node.task.status.as_str()),
                 "source TaskGraph".into(),
             ];
-            score += u32::from(node.task.priority.rank()) * 4;
+            let priority_boost = u32::from(node.task.priority.rank()) * 4;
+            score += priority_boost;
             factors.push(format!(
                 "+{} priority {}",
-                u32::from(node.task.priority.rank()) * 4,
+                priority_boost,
                 node.task.priority.as_str()
             ));
+            let signal = match node.task.status {
+                workspace_domain::WorkspaceTaskStatus::Blocked => AttentionSignal::BlockedTask,
+                workspace_domain::WorkspaceTaskStatus::Waiting => AttentionSignal::WaitingTask,
+                _ => AttentionSignal::InProgressTask,
+            };
+            let mut reasons = vec![reason(
+                AttentionSourceType::TaskGraph,
+                signal,
+                base as i32,
+                &format!("task.base.{}", node.task.status.as_str()),
+            )];
+            if priority_boost > 0 {
+                reasons.push(reason(
+                    AttentionSourceType::TaskGraph,
+                    AttentionSignal::HighPriorityIntent,
+                    priority_boost as i32,
+                    &format!("task.priority.{}", node.task.priority.as_str()),
+                ));
+            }
             let explanation = node
                 .waiting_reason
                 .clone()
@@ -817,12 +871,10 @@ impl WorkspaceAttentionService {
                 urgency,
                 AttentionConfidence::High,
                 score,
-                factors.clone(),
+                factors,
+                reasons,
                 node.task.title.clone(),
-                format!(
-                    "{explanation}. Score factors: {}.",
-                    score_factors_join(&factors)
-                ),
+                explanation,
                 now.to_string(),
                 AttentionState::Visible,
             )?);
@@ -857,18 +909,51 @@ impl WorkspaceAttentionService {
 
             let mut score = base;
             let mut factors = vec![format!("base {base} for {}", category.as_str())];
+            let base_signal = if is_blocker {
+                AttentionSignal::BlockedAction
+            } else {
+                AttentionSignal::OutstandingDecision
+            };
+            let mut reasons = vec![reason(
+                AttentionSourceType::DecisionQueue,
+                base_signal,
+                base as i32,
+                if is_blocker {
+                    "decision.base.blocker"
+                } else {
+                    "decision.base.outstanding"
+                },
+            )];
             match item.priority {
                 DecisionPriority::Critical => {
                     score += 20;
                     factors.push("+20 DecisionPriority::Critical".into());
+                    reasons.push(reason(
+                        AttentionSourceType::DecisionQueue,
+                        AttentionSignal::HighPriorityIntent,
+                        20,
+                        "decision.priority.critical",
+                    ));
                 }
                 DecisionPriority::High => {
                     score += 12;
                     factors.push("+12 DecisionPriority::High".into());
+                    reasons.push(reason(
+                        AttentionSourceType::DecisionQueue,
+                        AttentionSignal::HighPriorityIntent,
+                        12,
+                        "decision.priority.high",
+                    ));
                 }
                 DecisionPriority::Normal => {
                     score += 4;
                     factors.push("+4 DecisionPriority::Normal".into());
+                    reasons.push(reason(
+                        AttentionSourceType::DecisionQueue,
+                        AttentionSignal::HighPriorityIntent,
+                        4,
+                        "decision.priority.normal",
+                    ));
                 }
                 DecisionPriority::Low => {
                     factors.push("+0 DecisionPriority::Low".into());
@@ -877,6 +962,12 @@ impl WorkspaceAttentionService {
             if item.decision_state == DecisionState::Deferred {
                 score = score.saturating_sub(8);
                 factors.push("-8 deferred in Decision Queue".into());
+                reasons.push(reason(
+                    AttentionSourceType::DecisionQueue,
+                    base_signal,
+                    -8,
+                    "decision.deferred",
+                ));
             }
 
             let priority = score_to_priority(score);
@@ -885,7 +976,6 @@ impl WorkspaceAttentionService {
             } else {
                 AttentionState::Visible
             };
-            let factors_text = score_factors_join(&factors);
 
             out.push(AttentionItem::project(
                 ws,
@@ -897,10 +987,11 @@ impl WorkspaceAttentionService {
                 AttentionConfidence::High,
                 score,
                 factors,
+                reasons,
                 item.title.clone(),
                 format!(
-                    "{}. Score factors: {}. Decision Queue remains authoritative.",
-                    item.explanation, factors_text
+                    "{}. Decision Queue remains authoritative.",
+                    item.explanation
                 ),
                 item.created_at.clone(),
                 state,
@@ -924,6 +1015,20 @@ impl WorkspaceAttentionService {
                 "base 60 for interrupted work".into(),
                 "source Continuity::InterruptedWork".into(),
             ];
+            let reasons = vec![
+                reason(
+                    AttentionSourceType::Continuity,
+                    AttentionSignal::InterruptedWork,
+                    score as i32,
+                    "continuity.interrupted",
+                ),
+                reason(
+                    AttentionSourceType::Continuity,
+                    AttentionSignal::UnfinishedContinuity,
+                    score as i32,
+                    "continuity.unfinished",
+                ),
+            ];
             out.push(AttentionItem::project(
                 ws,
                 AttentionSourceType::Continuity,
@@ -933,17 +1038,13 @@ impl WorkspaceAttentionService {
                 AttentionUrgency::Soon,
                 AttentionConfidence::Medium,
                 score,
-                factors.clone(),
+                factors,
+                reasons,
                 facet.title.clone(),
-                format!(
-                    "{}. Score factors: {}.",
-                    facet.why,
-                    score_factors_join(&factors)
-                ),
+                facet.why.clone(),
                 now.to_string(),
                 AttentionState::Visible,
             )?);
-            let _ = score;
         }
 
         for facet in &continuity.resumable_work {
@@ -951,6 +1052,12 @@ impl WorkspaceAttentionService {
                 "base 40 for resumable work".into(),
                 "source Continuity::ResumableWork".into(),
             ];
+            let reasons = vec![reason(
+                AttentionSourceType::Continuity,
+                AttentionSignal::ResumableWork,
+                40,
+                "continuity.resumable",
+            )];
             out.push(AttentionItem::project(
                 ws,
                 AttentionSourceType::Continuity,
@@ -960,13 +1067,10 @@ impl WorkspaceAttentionService {
                 AttentionUrgency::Soon,
                 AttentionConfidence::Medium,
                 40,
-                factors.clone(),
+                factors,
+                reasons,
                 facet.title.clone(),
-                format!(
-                    "{}. Score factors: {}.",
-                    facet.why,
-                    score_factors_join(&factors)
-                ),
+                facet.why.clone(),
                 now.to_string(),
                 AttentionState::Visible,
             )?);
@@ -996,6 +1100,12 @@ impl WorkspaceAttentionService {
                 format!("base {score} for active commitment"),
                 "source Continuity::ActiveCommitment (status only)".into(),
             ];
+            let reasons = vec![reason(
+                AttentionSourceType::AutomationContract,
+                AttentionSignal::CommitmentPending,
+                score as i32,
+                "continuity.commitment",
+            )];
             out.push(AttentionItem::project(
                 ws,
                 AttentionSourceType::AutomationContract,
@@ -1005,13 +1115,10 @@ impl WorkspaceAttentionService {
                 urgency,
                 AttentionConfidence::High,
                 score,
-                factors.clone(),
+                factors,
+                reasons,
                 facet.title.clone(),
-                format!(
-                    "{}. Score factors: {}.",
-                    facet.why,
-                    score_factors_join(&factors)
-                ),
+                facet.why.clone(),
                 now.to_string(),
                 AttentionState::Visible,
             )?);
@@ -1022,6 +1129,12 @@ impl WorkspaceAttentionService {
                 "base 15 for dormant project (can wait)".into(),
                 "source Continuity::DormantProject".into(),
             ];
+            let reasons = vec![reason(
+                AttentionSourceType::Continuity,
+                AttentionSignal::DormantWork,
+                15,
+                "continuity.dormant",
+            )];
             out.push(AttentionItem::project(
                 ws,
                 AttentionSourceType::Continuity,
@@ -1031,13 +1144,10 @@ impl WorkspaceAttentionService {
                 AttentionUrgency::Whenever,
                 AttentionConfidence::Low,
                 15,
-                factors.clone(),
+                factors,
+                reasons,
                 facet.title.clone(),
-                format!(
-                    "{}. Score factors: {}.",
-                    facet.why,
-                    score_factors_join(&factors)
-                ),
+                facet.why.clone(),
                 now.to_string(),
                 AttentionState::Visible,
             )?);
@@ -1048,6 +1158,12 @@ impl WorkspaceAttentionService {
                 "base 35 for current focus".into(),
                 "source WorkflowContext via Continuity".into(),
             ];
+            let reasons = vec![reason(
+                AttentionSourceType::WorkflowContext,
+                AttentionSignal::CurrentFocus,
+                35,
+                "continuity.focus",
+            )];
             out.push(AttentionItem::project(
                 ws,
                 AttentionSourceType::WorkflowContext,
@@ -1057,13 +1173,10 @@ impl WorkspaceAttentionService {
                 AttentionUrgency::Whenever,
                 AttentionConfidence::High,
                 35,
-                factors.clone(),
+                factors,
+                reasons,
                 focus.title.clone(),
-                format!(
-                    "{}. Score factors: {}.",
-                    focus.why,
-                    score_factors_join(&factors)
-                ),
+                focus.why.clone(),
                 now.to_string(),
                 AttentionState::Visible,
             )?);
@@ -1090,6 +1203,12 @@ impl WorkspaceAttentionService {
                 "base 10 for recent progress (informative)".into(),
                 "source Activity Graph timeline".into(),
             ];
+            let reasons = vec![reason(
+                AttentionSourceType::ActivityGraph,
+                AttentionSignal::ActivityProgress,
+                10,
+                "activity.progress",
+            )];
             out.push(AttentionItem::project(
                 ws,
                 AttentionSourceType::ActivityGraph,
@@ -1099,12 +1218,10 @@ impl WorkspaceAttentionService {
                 AttentionUrgency::Whenever,
                 AttentionConfidence::Medium,
                 10,
-                factors.clone(),
+                factors,
+                reasons,
                 activity.summary.clone(),
-                format!(
-                    "Showing because Activity Graph lists recent related work. Score factors: {}.",
-                    score_factors_join(&factors)
-                ),
+                "Showing because Activity Graph lists recent related work.".to_string(),
                 activity.timestamp.clone(),
                 AttentionState::Visible,
             )?);
@@ -1172,6 +1289,11 @@ fn score_to_priority(score: u32) -> AttentionPriority {
     }
 }
 
-fn score_factors_join(factors: &[String]) -> String {
-    factors.join("; ")
+fn reason(
+    source: AttentionSourceType,
+    signal: AttentionSignal,
+    weight: i32,
+    key: &str,
+) -> AttentionReason {
+    AttentionReason::new(source, signal, weight, key)
 }

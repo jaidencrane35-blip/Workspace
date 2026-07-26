@@ -28,6 +28,8 @@ Intelligence is informational. Authority remains at the Permission Gateway only.
 
 Runtime desktop truth is **WorkspaceState** only (Sprint 123 finalized IPC/UI surfaces).
 
+**Attention vs Recommendations (Sprint 126):** Attention answers “what deserves focus?” with ranked items + structured `reasons`. The Recommendation Engine answers “what could the user do?”. Intelligence `recommended_actions` are Attention tops re-projected for Assistant display — not a merge of those systems and not automation.
+
 ---
 
 ## Intent model (durable, non-executable)

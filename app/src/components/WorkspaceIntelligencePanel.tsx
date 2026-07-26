@@ -1634,6 +1634,14 @@ export function WorkspaceIntelligencePanel({
                       score {item.score} · {item.category} · {item.attention_state}
                     </div>
                     <div className="muted">{item.explanation}</div>
+                    {item.reasons.length > 0 ? (
+                      <div className="muted mono">
+                        reasons:{" "}
+                        {item.reasons
+                          .map((r) => `${r.explanation_key}(${r.weight})`)
+                          .join(" · ")}
+                      </div>
+                    ) : null}
                   </li>
                 ))}
               </ul>

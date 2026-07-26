@@ -1088,6 +1088,37 @@ export type AttentionState =
   | "resolved"
   | "expired";
 
+export type AttentionSignal =
+  | "outstanding_decision"
+  | "blocked_action"
+  | "blocked_task"
+  | "waiting_task"
+  | "in_progress_task"
+  | "interrupted_work"
+  | "unfinished_continuity"
+  | "resumable_work"
+  | "current_focus"
+  | "dormant_work"
+  | "commitment_pending"
+  | "environment_disconnect"
+  | "missing_application"
+  | "composition_gap"
+  | "high_priority_intent"
+  | "purpose_obstacle"
+  | "purpose_outcome"
+  | "evolution_insight"
+  | "activity_progress"
+  | "recommendation_candidate"
+  | "pattern_observation";
+
+/** Structured why-attention reason (independent of score math). */
+export interface AttentionReason {
+  source: AttentionSourceType;
+  signal: AttentionSignal;
+  weight: number;
+  explanation_key: string;
+}
+
 export interface AttentionItem {
   id: string;
   workspace_id: string;
@@ -1099,6 +1130,7 @@ export interface AttentionItem {
   confidence: AttentionConfidence;
   score: number;
   score_factors: string[];
+  reasons: AttentionReason[];
   title: string;
   explanation: string;
   created_at: string;

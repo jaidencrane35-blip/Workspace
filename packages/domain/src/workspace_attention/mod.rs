@@ -1,4 +1,4 @@
-//! Workspace Attention Engine foundation (Phase 5 Batch 2 / Sprint 125).
+//! Workspace Attention Engine foundation (Phase 5 Batch 2 / Sprints 125–126).
 //!
 //! A governed prioritization layer over Workspace context.
 //!
@@ -8,8 +8,14 @@
 //! Continuity, Activity Graph, Task Graph, Composition, Purpose, Evolution.
 //!
 //! **Inference outputs** (this model): `score`, `priority`, `urgency`, `category`,
-//! ranked `top_items`. Attention never observes the desktop, never executes, and
-//! never persists user decisions.
+//! ranked `top_items`, and structured `reasons`. Attention never observes the desktop,
+//! never executes, and never persists user decisions.
+//!
+//! # Score vs explanation
+//!
+//! - `score` / `score_factors` — how the priority value was computed
+//! - `reasons` — why the item received attention (structured, UI-ready keys)
+//! - `explanation` — short narrative from the source (not a second scoring path)
 //!
 //! No authority, no execution, no duplicate persistence.
 
@@ -77,6 +83,114 @@ impl AttentionSourceType {
             Self::Pattern => "pattern",
         }
     }
+}
+
+/// Structured signal explaining why an item received attention.
+///
+/// Keys are stable contracts for UI/i18n — not hardcoded display strings.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum AttentionSignal {
+    OutstandingDecision,
+    BlockedAction,
+    BlockedTask,
+    WaitingTask,
+    InProgressTask,
+    InterruptedWork,
+    UnfinishedContinuity,
+    ResumableWork,
+    CurrentFocus,
+    DormantWork,
+    CommitmentPending,
+    EnvironmentDisconnect,
+    MissingApplication,
+    CompositionGap,
+    HighPriorityIntent,
+    PurposeObstacle,
+    PurposeOutcome,
+    EvolutionInsight,
+    ActivityProgress,
+    RecommendationCandidate,
+    PatternObservation,
+}
+
+impl AttentionSignal {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::OutstandingDecision => "outstanding_decision",
+            Self::BlockedAction => "blocked_action",
+            Self::BlockedTask => "blocked_task",
+            Self::WaitingTask => "waiting_task",
+            Self::InProgressTask => "in_progress_task",
+            Self::InterruptedWork => "interrupted_work",
+            Self::UnfinishedContinuity => "unfinished_continuity",
+            Self::ResumableWork => "resumable_work",
+            Self::CurrentFocus => "current_focus",
+            Self::DormantWork => "dormant_work",
+            Self::CommitmentPending => "commitment_pending",
+            Self::EnvironmentDisconnect => "environment_disconnect",
+            Self::MissingApplication => "missing_application",
+            Self::CompositionGap => "composition_gap",
+            Self::HighPriorityIntent => "high_priority_intent",
+            Self::PurposeObstacle => "purpose_obstacle",
+            Self::PurposeOutcome => "purpose_outcome",
+            Self::EvolutionInsight => "evolution_insight",
+            Self::ActivityProgress => "activity_progress",
+            Self::RecommendationCandidate => "recommendation_candidate",
+            Self::PatternObservation => "pattern_observation",
+        }
+    }
+}
+
+/// One structured reason an Attention Item was ranked.
+///
+/// Independent of score math: UI may render `explanation_key` without recomputing scores.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AttentionReason {
+    pub source: AttentionSourceType,
+    pub signal: AttentionSignal,
+    /// Contribution toward the item score (may be negative). Not a second score.
+    pub weight: i32,
+    /// Stable key for localization / UI (e.g. `decision.priority.critical`).
+    pub explanation_key: String,
+}
+
+impl AttentionReason {
+    pub fn new(
+        source: AttentionSourceType,
+        signal: AttentionSignal,
+        weight: i32,
+        explanation_key: impl Into<String>,
+    ) -> Self {
+        Self {
+            source,
+            signal,
+            weight,
+            explanation_key: explanation_key.into(),
+        }
+    }
+}
+
+/// Deduplicate by `explanation_key` (keep highest weight) and order
+/// weight DESC, then explanation_key ASC.
+pub fn normalize_attention_reasons(reasons: Vec<AttentionReason>) -> Vec<AttentionReason> {
+    let mut by_key: std::collections::BTreeMap<String, AttentionReason> =
+        std::collections::BTreeMap::new();
+    for reason in reasons {
+        match by_key.get(&reason.explanation_key) {
+            Some(existing) if existing.weight >= reason.weight => {}
+            _ => {
+                by_key.insert(reason.explanation_key.clone(), reason);
+            }
+        }
+    }
+    let mut out: Vec<_> = by_key.into_values().collect();
+    out.sort_by(|a, b| {
+        b.weight
+            .cmp(&a.weight)
+            .then(a.explanation_key.cmp(&b.explanation_key))
+    });
+    out
 }
 
 /// Product category for attention grouping.
@@ -205,8 +319,9 @@ impl AttentionState {
 
 /// One scored, explainable attention **inference** over an upstream fact source.
 ///
-/// `source_type` / `source_id` point at facts owned elsewhere. `score`, `priority`,
-/// `urgency`, and `category` are Attention inference — not observation facts.
+/// `source_type` / `source_id` point at facts owned elsewhere. `score` /
+/// `score_factors` are scoring inference; `reasons` explain why attention was
+/// granted — independent of score math.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AttentionItem {
     pub id: AttentionItemId,
@@ -217,11 +332,14 @@ pub struct AttentionItem {
     pub priority: AttentionPriority,
     pub urgency: AttentionUrgency,
     pub confidence: AttentionConfidence,
-    /// Deterministic score (higher = more attention). Explainable via `score_factors`.
+    /// Deterministic score (higher = more attention). Math via `score_factors`.
     pub score: u32,
-    /// Human-readable factor list used to compute `score`.
+    /// Human-readable factor list used to compute `score` (not UI copy).
     pub score_factors: Vec<String>,
+    /// Structured reasons why this item received attention (not score recomputation).
+    pub reasons: Vec<AttentionReason>,
     pub title: String,
+    /// Short narrative from the source fact — not a duplicate of scoring.
     pub explanation: String,
     pub created_at: String,
     pub expires_at: Option<String>,
@@ -252,6 +370,7 @@ impl AttentionItem {
         confidence: AttentionConfidence,
         score: u32,
         score_factors: Vec<String>,
+        reasons: Vec<AttentionReason>,
         title: impl Into<String>,
         explanation: impl Into<String>,
         created_at: impl Into<String>,
@@ -269,6 +388,7 @@ impl AttentionItem {
             confidence,
             score,
             score_factors,
+            reasons: normalize_attention_reasons(reasons),
             title: title.into(),
             explanation: explanation.into(),
             created_at: created_at.into(),
@@ -392,5 +512,116 @@ impl Default for WorkspaceAttentionSummary {
             summary: String::new(),
             authority_effect: AttentionItem::AUTHORITY_EFFECT_NONE.into(),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn normalize_reasons_dedupes_and_orders() {
+        let normalized = normalize_attention_reasons(vec![
+            AttentionReason::new(
+                AttentionSourceType::DecisionQueue,
+                AttentionSignal::OutstandingDecision,
+                70,
+                "decision.base.outstanding",
+            ),
+            AttentionReason::new(
+                AttentionSourceType::DecisionQueue,
+                AttentionSignal::HighPriorityIntent,
+                12,
+                "decision.priority.high",
+            ),
+            AttentionReason::new(
+                AttentionSourceType::DecisionQueue,
+                AttentionSignal::OutstandingDecision,
+                50,
+                "decision.base.outstanding",
+            ),
+            AttentionReason::new(
+                AttentionSourceType::DecisionQueue,
+                AttentionSignal::HighPriorityIntent,
+                20,
+                "decision.priority.critical",
+            ),
+        ]);
+        assert_eq!(normalized.len(), 3);
+        assert_eq!(normalized[0].explanation_key, "decision.base.outstanding");
+        assert_eq!(normalized[0].weight, 70);
+        assert_eq!(normalized[1].explanation_key, "decision.priority.critical");
+        assert_eq!(normalized[2].explanation_key, "decision.priority.high");
+    }
+
+    #[test]
+    fn empty_reasons_normalize_to_empty() {
+        assert!(normalize_attention_reasons(vec![]).is_empty());
+    }
+
+    #[test]
+    fn project_keeps_score_independent_of_reason_order() {
+        let a = AttentionItem::project(
+            "ws",
+            AttentionSourceType::TaskGraph,
+            "t1",
+            AttentionCategory::Blocker,
+            AttentionPriority::Critical,
+            AttentionUrgency::Immediate,
+            AttentionConfidence::High,
+            88,
+            vec!["base 88".into()],
+            vec![
+                AttentionReason::new(
+                    AttentionSourceType::TaskGraph,
+                    AttentionSignal::BlockedTask,
+                    88,
+                    "task.blocked",
+                ),
+                AttentionReason::new(
+                    AttentionSourceType::TaskGraph,
+                    AttentionSignal::HighPriorityIntent,
+                    8,
+                    "task.priority.high",
+                ),
+            ],
+            "Blocked",
+            "Task is blocked.",
+            "now",
+            AttentionState::Visible,
+        )
+        .unwrap();
+        let b = AttentionItem::project(
+            "ws",
+            AttentionSourceType::TaskGraph,
+            "t1",
+            AttentionCategory::Blocker,
+            AttentionPriority::Critical,
+            AttentionUrgency::Immediate,
+            AttentionConfidence::High,
+            88,
+            vec!["base 88".into()],
+            vec![
+                AttentionReason::new(
+                    AttentionSourceType::TaskGraph,
+                    AttentionSignal::HighPriorityIntent,
+                    8,
+                    "task.priority.high",
+                ),
+                AttentionReason::new(
+                    AttentionSourceType::TaskGraph,
+                    AttentionSignal::BlockedTask,
+                    88,
+                    "task.blocked",
+                ),
+            ],
+            "Blocked",
+            "Task is blocked.",
+            "now",
+            AttentionState::Visible,
+        )
+        .unwrap();
+        assert_eq!(a.score, b.score);
+        assert_eq!(a.reasons, b.reasons);
     }
 }

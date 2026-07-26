@@ -164,7 +164,26 @@ fn case4_every_item_has_explanation() {
     for item in &attention.items {
         assert!(!item.explanation.is_empty());
         assert!(!item.score_factors.is_empty());
-        assert!(item.explanation.contains("Score factors"));
+        assert!(
+            !item.reasons.is_empty(),
+            "item {} missing structured reasons",
+            item.id.as_str()
+        );
+        let mut keys = std::collections::HashSet::new();
+        for reason in &item.reasons {
+            assert!(!reason.explanation_key.is_empty());
+            assert!(
+                keys.insert(reason.explanation_key.clone()),
+                "duplicate reason key {}",
+                reason.explanation_key
+            );
+        }
+        for window in item.reasons.windows(2) {
+            assert!(
+                window[0].weight >= window[1].weight,
+                "reasons not ordered by weight"
+            );
+        }
     }
 }
 
@@ -581,4 +600,62 @@ fn case12_environment_owns_desktop_gaps_over_composition() {
         i.source_type == workspace_domain::AttentionSourceType::Composition
             && i.source_id.starts_with("incomplete_membership:")
     }));
+}
+
+/// CASE 13 — Identical inputs produce identical structured reasons; Intelligence preserves them.
+#[test]
+fn case13_reasons_stable_and_intelligence_preserves_attention() {
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let (ws, project_id, _) = seed_project(&kernel);
+    seed_pending_contract(&kernel, ws.clone(), project_id);
+    let local = ActorContext::local_user();
+    let intent = IntentContext::user_request();
+    let a = CommandHandler::generate_workspace_attention(
+        &kernel,
+        local.clone(),
+        intent.clone(),
+        ws.clone(),
+    )
+    .unwrap();
+    let b = CommandHandler::generate_workspace_attention(
+        &kernel,
+        local.clone(),
+        intent.clone(),
+        ws.clone(),
+    )
+    .unwrap();
+    let reason_fingerprint = |items: &[workspace_domain::AttentionItem]| {
+        items
+            .iter()
+            .filter(|i| i.score >= 35)
+            .map(|i| {
+                (
+                    i.id.as_str().to_string(),
+                    i.score,
+                    i.reasons
+                        .iter()
+                        .map(|r| (r.explanation_key.clone(), r.weight, r.signal.as_str()))
+                        .collect::<Vec<_>>(),
+                )
+            })
+            .collect::<Vec<_>>()
+    };
+    assert_eq!(reason_fingerprint(&a.items), reason_fingerprint(&b.items));
+
+    let intel =
+        CommandHandler::generate_workspace_intelligence(&kernel, local, intent, ws).unwrap();
+    assert_eq!(intel.attention.authority_effect, "none");
+    // Intelligence embeds Attention (may enrich with RE/Pattern); base items keep reasons.
+    for top in &intel.attention.top_items {
+        if let Some(source) = a.items.iter().find(|i| i.id.as_str() == top.id.as_str()) {
+            assert_eq!(top.score, source.score);
+            assert_eq!(top.reasons, source.reasons);
+        } else {
+            assert!(
+                !top.reasons.is_empty(),
+                "enrich-only item {} missing reasons",
+                top.id.as_str()
+            );
+        }
+    }
 }
