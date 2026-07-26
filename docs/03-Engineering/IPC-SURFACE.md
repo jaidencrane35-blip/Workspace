@@ -25,7 +25,6 @@
 | `create_suggestion_intent_request` / `execute_intent_request` | Diagnostic |
 | `get_execution_outcomes` / `get_execution_states` | Diagnostic |
 | `request_execution_cancellation` | Diagnostic |
-| `get_desktop_windows` | Diagnostic (legacy): maps WorkspaceState windows → DesktopWindowSnapshot DTO; prefer `get_workspace_state` |
 | `capture_workspace_observation` | Diagnostic: governed desktop perception capture via CaptureCoordinator (`desktop.read`; rejects concurrent captures) |
 | `get_latest_workspace_observation` | Diagnostic: latest observation snapshot (`desktop.read`) |
 | `get_workspace_observation_by_id` | Diagnostic: observation snapshot by pass id (`desktop.read`) |

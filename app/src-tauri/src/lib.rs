@@ -79,7 +79,6 @@ use commands::layout::{
 };
 use commands::analytics::get_workspace_metrics;
 use commands::context::get_workspace_context;
-use commands::desktop_window::get_desktop_windows;
 use commands::workspace_observation::{
     capture_workspace_observation, get_latest_observation_delta, get_latest_workspace_observation,
     get_observation_scheduler_status, get_workspace_observation_by_id,
@@ -163,7 +162,6 @@ pub fn run() {
             accept_suggestion,
             reject_suggestion,
             get_suggestion_lifecycle,
-            get_desktop_windows,
             capture_workspace_observation,
             get_latest_workspace_observation,
             get_workspace_observation_by_id,

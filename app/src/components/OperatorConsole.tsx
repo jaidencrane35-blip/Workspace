@@ -56,7 +56,6 @@ import type {
   ApplicationReference,
   ApprovalDecisionResult,
   CancellationRequest,
-  DesktopWindowSnapshot,
   ExecutionOutcome,
   ExecutionReconciliation,
   IntentExecutionRequest,
@@ -72,6 +71,8 @@ import type {
   SuggestionLifecycleRecord,
   Workspace,
   WorkspaceContext,
+  WorkspaceState,
+  WorkspaceStateWindow,
   Zone,
 } from "../types/domain";
 import type {
@@ -137,8 +138,11 @@ export function OperatorConsole({
   const [executionStates, setExecutionStates] = useState<
     ExecutionReconciliation[]
   >([]);
-  const [desktopWindows, setDesktopWindows] = useState<DesktopWindowSnapshot[]>(
-    [],
+  const [workspaceStateWindows, setWorkspaceStateWindows] = useState<
+    WorkspaceStateWindow[]
+  >([]);
+  const [workspaceStateMeta, setWorkspaceStateMeta] = useState<string | null>(
+    null,
   );
   const [lastIntent, setLastIntent] = useState<SuggestionIntentRequest | null>(
     null,
@@ -461,13 +465,15 @@ export function OperatorConsole({
       setSettings(next);
     });
 
-  const refreshDesktopWindows = () =>
-    run("Desktop windows refreshed", async () => {
-      const windows = await invokeIpc<DesktopWindowSnapshot[]>(
-        "get_desktop_windows",
-        { limit: 50 },
+  const refreshWorkspaceState = () =>
+    run("WorkspaceState refreshed", async () => {
+      const state = await invokeIpc<WorkspaceState>("get_workspace_state");
+      setWorkspaceStateWindows(state.windows);
+      setWorkspaceStateMeta(
+        `${state.metadata.window_count} windows · pass ${
+          state.metadata.observation_pass_id ?? "none"
+        }`,
       );
-      setDesktopWindows(windows);
     });
 
   const registerAndLaunch = () => {
@@ -3420,27 +3426,35 @@ export function OperatorConsole({
       </section>
 
       <section>
-        <h2>Desktop windows</h2>
+        <h2>WorkspaceState</h2>
         <p className="muted">
-          Win32 enumeration via Windows Integration Layer (observation only).
+          Canonical runtime desktop projection via WorkspaceStateEngine
+          (observation + delta). Not live Win32 enumeration.
         </p>
         <div className="row">
           <button
             type="button"
             disabled={busy}
-            onClick={() => void refreshDesktopWindows()}
+            onClick={() => void refreshWorkspaceState()}
           >
-            Refresh windows
+            Refresh WorkspaceState
           </button>
         </div>
-        {desktopWindows.length === 0 ? (
-          <p className="muted">No windows listed yet — click refresh.</p>
+        {workspaceStateMeta ? (
+          <p className="muted mono">{workspaceStateMeta}</p>
+        ) : null}
+        {workspaceStateWindows.length === 0 ? (
+          <p className="muted">
+            No projected windows yet — capture an observation, then refresh.
+          </p>
         ) : (
           <ul className="list compact">
-            {desktopWindows.map((w) => (
+            {workspaceStateWindows.map((w) => (
               <li key={w.hwnd}>
                 <strong>{w.title}</strong>{" "}
                 <span className="mono">pid {w.process_id}</span>
+                {w.focused ? " · focused" : ""}
+                {w.minimized ? " · minimized" : ""}
               </li>
             ))}
           </ul>

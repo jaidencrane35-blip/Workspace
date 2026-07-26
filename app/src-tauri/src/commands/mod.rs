@@ -29,7 +29,6 @@ pub mod workspace_profile;
 pub mod workspace_observation;
 pub mod workspace_state;
 pub mod context;
-pub mod desktop_window;
 pub mod error;
 pub mod health;
 pub mod layout;

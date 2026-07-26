@@ -122,7 +122,7 @@ Workspace Task Graph foundation (Sprints 82–83) — persistent canonical work 
 
 ## Phase 5 Batch 5 (done)
 
-Workspace Environment Model foundation (Sprint 84) — live desktop read model aggregating Windows Integration with work context; Intelligence and Attention become environment-aware. No window control or autonomy. See [Workspace Environment Model](WORKSPACE-ENVIRONMENT-MODEL.md).
+Workspace Environment Model foundation (Sprint 84; runtime input modernized Sprints 119–123) — live desktop read model consuming **WorkspaceState** (via WorkspaceStateEngine) with work context; Intelligence and Attention become environment-aware. No window control or autonomy. See [Workspace Environment Model](WORKSPACE-ENVIRONMENT-MODEL.md).
 
 ## Phase 5 Batch 6 (done)
 

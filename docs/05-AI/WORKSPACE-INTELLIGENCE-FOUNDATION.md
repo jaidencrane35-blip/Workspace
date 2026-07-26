@@ -24,9 +24,9 @@ Observation → Delta → WorkspaceStateEngine → WorkspaceState
 The AI is not the product. The Workspace is the product.
 Intelligence is informational. Authority remains at the Permission Gateway only.
 
-`WorkspaceIntelligenceService` loads **one** `WorkspaceState` per generate cycle (Sprint 120) and passes it into Environment — it does not read observation snapshots or DesktopWindowSnapshot directly.
+`WorkspaceIntelligenceService` loads **one** `WorkspaceState` per generate cycle (Sprint 120) and passes it into Environment — it does not read observation snapshots or platform capture DTOs directly.
 
-`DesktopWindowSnapshot` is legacy IPC/platform compatibility only (Sprint 121). Runtime desktop truth is **WorkspaceState**.
+Runtime desktop truth is **WorkspaceState** only (Sprint 123 finalized IPC/UI surfaces).
 
 ---
 
@@ -50,7 +50,7 @@ Capabilities: `work_context.read` / `work_context.write`.
 
 - Current workspace / project / task
 - Recent goals and activity
-- Desktop understanding via **WorkspaceState** → Environment (not raw observation / DesktopWindowSnapshot)
+- Desktop understanding via **WorkspaceState** → Environment (not raw observation or platform capture DTOs)
 - Memory awareness (counts / types — not raw content dump)
 - Pending plans and approvals
 - Blocked actions

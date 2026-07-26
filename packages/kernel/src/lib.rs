@@ -32,7 +32,7 @@ pub use security::{
 };
 pub use services::{
     ActionCatalogService, AuditService, CapabilityResolver, ConfigurationService,
-    DatabaseServiceHandle, DesktopWindowService, ExecutionCancellationService,
+    DatabaseServiceHandle, ExecutionCancellationService,
     ExecutionContextService, ExecutionGuardService, ExecutionOutcomeService,
     ExecutionReconciliationService, GovernedIntentExecutionService, ObservationService,
     ServiceRegistry, ServiceStatus, SuggestionIntentService, SuggestionLifecycleService,

@@ -54,7 +54,6 @@ use crate::commands::workspace_observation::{
     GetObservationSchedulerStatus, GetWorkspaceObservationById, GetWorkspaceObservationStatus,
 };
 use crate::commands::workspace_state::GetWorkspaceState;
-use crate::commands::get_desktop_windows::GetDesktopWindows;
 use crate::commands::get_execution_outcomes::GetExecutionOutcomes;
 use crate::commands::get_execution_state::GetExecutionState;
 use crate::commands::get_execution_states::GetExecutionStates;
@@ -149,7 +148,6 @@ use workspace_domain::{
     Workspace, WorkspaceContext, WorkspaceId, WorkspaceMetrics, WorkspaceSnapshot,
     CapabilityDiscovery, Zone, ZoneId,
 };
-use workspace_windows_integration::DesktopWindowSnapshot;
 
 /// Executes kernel commands and coordinates services + events.
 pub struct CommandHandler;
@@ -1826,16 +1824,6 @@ impl CommandHandler {
     ) -> Result<Vec<SuggestionLifecycleRecord>> {
         CommandPipeline::new(kernel.command_context(actor, intent))
             .execute_query(GetSuggestionLifecycle::new(limit))
-    }
-
-    pub fn get_desktop_windows(
-        kernel: &WorkspaceKernel,
-        actor: ActorContext,
-        intent: IntentContext,
-        limit: Option<usize>,
-    ) -> Result<Vec<DesktopWindowSnapshot>> {
-        CommandPipeline::new(kernel.command_context(actor, intent))
-            .execute_query(GetDesktopWindows::new(limit))
     }
 
     pub fn capture_workspace_observation(

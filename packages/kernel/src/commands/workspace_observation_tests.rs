@@ -7,7 +7,9 @@ use crate::commands::{
 };
 use crate::commands::CommandHandler;
 use crate::error::KernelError;
-use crate::services::{DesktopWindowService, WorkspaceObservationCaptureResult, WorkspaceObservationService};
+use crate::services::{
+    WorkspaceObservationCaptureResult, WorkspaceObservationService, WorkspaceStateEngine,
+};
 use crate::WorkspaceKernel;
 use chrono::{Duration, Utc};
 use workspace_database::ObservationPassRepository;
@@ -258,25 +260,27 @@ fn governance_blocks_unauthorized_actor() {
 }
 
 #[test]
-fn legacy_desktop_window_service_reads_latest_snapshot() {
+fn workspace_state_engine_reads_latest_snapshot() {
     let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
     let local = ActorContext::local_user();
     let intent = IntentContext::user_request();
     capture_with_stub(&kernel, &local, &intent).unwrap();
 
-    // Legacy IPC adapter over WorkspaceState (Sprint 121).
-    let windows = DesktopWindowService::list_recent(&kernel.shared_database(), Some(10)).unwrap();
-    assert_eq!(windows.len(), 4);
-    assert!(windows.iter().any(|window| window.focused));
-    assert!(windows.iter().any(|window| window.minimized));
+    let state =
+        WorkspaceStateEngine::get_current(&kernel.shared_database(), &local, &intent).unwrap();
+    assert_eq!(state.windows.len(), 4);
+    assert!(state.windows.iter().any(|window| window.focused));
+    assert!(state.windows.iter().any(|window| window.minimized));
 }
 
 #[test]
-fn list_recent_returns_empty_without_snapshot() {
+fn workspace_state_empty_without_snapshot() {
     let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
-    // Legacy IPC adapter over WorkspaceState (Sprint 121).
-    let windows = DesktopWindowService::list_recent(&kernel.shared_database(), Some(10)).unwrap();
-    assert!(windows.is_empty());
+    let local = ActorContext::local_user();
+    let intent = IntentContext::user_request();
+    let state =
+        WorkspaceStateEngine::get_current(&kernel.shared_database(), &local, &intent).unwrap();
+    assert!(state.windows.is_empty());
 }
 
 #[test]

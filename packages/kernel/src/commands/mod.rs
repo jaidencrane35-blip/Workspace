@@ -38,7 +38,6 @@ mod get_action_catalog;
 mod get_ai_evaluation_history;
 mod get_actor_capabilities;
 mod get_audit_history;
-mod get_desktop_windows;
 mod get_execution_outcomes;
 mod get_execution_state;
 mod get_execution_states;
@@ -190,7 +189,6 @@ pub use get_ai_evaluation_history::GetAiEvaluationHistory;
 pub use get_actor_capabilities::GetActorCapabilities;
 pub use get_audit_history::GetAuditHistory;
 pub use get_permission_approvals::GetPermissionApprovals;
-pub use get_desktop_windows::GetDesktopWindows;
 pub use workspace_observation::{
     CaptureWorkspaceObservation, GateObservationRead, GetLatestObservationDelta,
     GetLatestWorkspaceObservation, GetObservationSchedulerStatus, GetWorkspaceObservationById,

@@ -484,7 +484,21 @@ Fixed app chrome (Canvas | Operator). Prototype shell only — not production vi
 
 Abstracts all Windows API interactions. Only this layer communicates directly with the OS.
 
-**Sprint 35–36:** `packages/windows-integration` provides `WindowEnumerator` + Win32 `EnumWindows` (stub off-Windows). Kernel `GetDesktopWindows` is a governed read (`application_read`); Operator console can list visible top-level window titles. No focus/control APIs yet.
+**Capture path:** `packages/windows-integration` provides `DesktopCapturer` (Win32 on Windows, stub off-Windows). Captured facts persist as observation snapshots.
+
+**Canonical runtime desktop model (Sprint 118–123):**
+
+```
+Observation
+    ↓
+WorkspaceStateEngine
+    ↓
+WorkspaceState
+    ↓
+Environment / Intelligence / Operator Console
+```
+
+`get_workspace_state` is the governed read of the projected runtime model (`desktop.read`). Operator Console lists windows from **WorkspaceState**, not live Win32 enumeration. Platform `DesktopWindowSnapshot` may still exist inside windows-integration as a capture/enumerator DTO — it is not a production runtime desktop model and is not exposed over IPC.
 
 ### 6.7 Permission Gateway
 

@@ -133,7 +133,7 @@ Foundation     Decisions       Core Platform     Feature Expansion   Maturity
 - [x] Spatial Workspace Canvas shell prototype — Sprint 33: CanvasShell, zone drag, pan/zoom (DEC-009)
 - [x] SQLite schema v1 (layouts, preferences) — verified existing Sprint 02/13 schema (no redesign)
 - [x] Layout save/restore — Sprint 34: ensureLayout + update_layout on canvas interaction
-- [x] Windows Integration Layer (basic window enumeration) — Sprint 35–36: windows-integration crate + GetDesktopWindows IPC
+- [x] Windows Integration Layer (basic window enumeration / capture) — Sprint 35–36; runtime desktop model is WorkspaceState (Sprints 118–123); Operator uses `get_workspace_state`
 - [x] Phase 1 harden: CI cargo test + ROADMAP/DEC-011 honesty — Sprint 37
 - [x] Phase 1 harden: canvas resize + canvas-first create + Operator diagnostic label — Sprint 38
 - [x] Foundation hardening: seal service mutators, ActionIntentValidationService rename, IPC inventory — Sprint 39
