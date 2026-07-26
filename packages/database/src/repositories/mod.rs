@@ -14,6 +14,7 @@ mod widget;
 mod workspace;
 mod workspace_intent;
 mod workspace_profile;
+mod observation;
 mod zone;
 
 pub use ai_memory::AiMemoryRepository;
@@ -32,4 +33,8 @@ pub use widget::WidgetRepository;
 pub use workspace::WorkspaceRepository;
 pub use workspace_intent::WorkspaceIntentRepository;
 pub use workspace_profile::WorkspaceProfileRepository;
+pub use observation::{
+    ObservationMonitorRepository, ObservationPassRepository, ObservationWindowIdentityRepository,
+    ObservationWindowRepository,
+};
 pub use zone::ZoneRepository;

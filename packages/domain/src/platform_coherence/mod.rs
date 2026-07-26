@@ -90,6 +90,26 @@ pub const PLATFORM_CONCEPT_OWNERS: &[ConceptOwnership] = &[
         kind: ConceptOwnerKind::DurableStore,
     },
     ConceptOwnership {
+        concept: "desktop_observation_pass",
+        owner: "WorkspaceObservationService",
+        kind: ConceptOwnerKind::DurableStore,
+    },
+    ConceptOwnership {
+        concept: "observed_window",
+        owner: "WorkspaceObservationService",
+        kind: ConceptOwnerKind::DurableStore,
+    },
+    ConceptOwnership {
+        concept: "observed_monitor",
+        owner: "WorkspaceObservationService",
+        kind: ConceptOwnerKind::DurableStore,
+    },
+    ConceptOwnership {
+        concept: "window_identity_registry",
+        owner: "WorkspaceObservationService",
+        kind: ConceptOwnerKind::DurableStore,
+    },
+    ConceptOwnership {
         concept: "environment",
         owner: "WorkspaceEnvironmentService",
         kind: ConceptOwnerKind::Aggregator,
@@ -225,6 +245,10 @@ pub mod vocabulary {
     pub const DECISION_CANDIDATE: &str = "Decision Candidate";
     pub const TASK_GRAPH: &str = "Task Graph";
     pub const WORKSPACE_TASK: &str = "Workspace Task";
+    pub const DESKTOP_OBSERVATION: &str = "Desktop Observation";
+    pub const OBSERVED_WINDOW: &str = "Observed Window";
+    pub const OBSERVED_MONITOR: &str = "Observed Monitor";
+    pub const WINDOW_IDENTITY: &str = "Window Identity";
     pub const ENVIRONMENT: &str = "Environment";
     pub const ENVIRONMENT_WINDOW: &str = "Environment Window";
     pub const COMPOSITION: &str = "Composition";

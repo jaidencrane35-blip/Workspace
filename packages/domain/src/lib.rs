@@ -59,6 +59,7 @@ pub mod workspace_working_style;
 pub mod workspace_transition;
 pub mod workspace_interaction;
 pub mod workspace_profile;
+pub mod workspace_observation;
 pub mod workspace_continuity;
 pub mod workspace_task_graph;
 pub mod workspace_environment;
@@ -313,6 +314,11 @@ pub use workspace_profile::{
     WorkspaceProfileMember, WorkspaceProfileMemberInput, WorkspaceProfileMemberType,
     WorkspaceProfileRelationship, WorkspaceProfileState, WorkspaceProfileStateComparison,
     WorkspaceProfileStatus, WorkspaceProfileSummary, WorkspaceProfileValidation,
+};
+pub use workspace_observation::{
+    empty_stub_snapshot, observation_now_rfc3339, ObservationWindowIdentity, ObservedMonitor,
+    ObservedWindow, WindowIdentityConfidence, WorkspaceObservationError, WorkspaceObservationPass,
+    WorkspaceObservationSnapshot,
 };
 pub use workspace_environment::{
     build_environment_summary, now_rfc3339, validate_workspace_id, EnvironmentApplication,

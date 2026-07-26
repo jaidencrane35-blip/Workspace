@@ -19,7 +19,8 @@ pub use repositories::{
     AiMemoryRepository, ApplicationRepository, AuditRepository, AutomationContractRepository,
     AutomationTriggerRepository, DecisionEngineRepository, DecisionQueueRepository, GraphRepository,
     LayoutRepository, PermissionApprovalRepository, TaskGraphRepository, UserPreferenceRepository,
-    WidgetRepository, WorkspaceProfileRepository, WorkspaceRepository, WorkspaceIntentRepository,
-    ZoneRepository,
+    WidgetRepository, WorkspaceProfileRepository, ObservationMonitorRepository,
+    ObservationPassRepository, ObservationWindowIdentityRepository, ObservationWindowRepository,
+    WorkspaceRepository, WorkspaceIntentRepository, ZoneRepository,
 };
 pub use settings::SettingsRepository;
