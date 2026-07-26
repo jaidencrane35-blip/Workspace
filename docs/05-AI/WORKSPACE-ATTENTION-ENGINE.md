@@ -64,7 +64,9 @@ No new persistence. Synthetic ids: `attention:{source_type}:{source_id}`.
 `AttentionReason`: `{ source, signal, weight, explanation_key }`  
 Reasons are normalized: unique `explanation_key`, ordered weight DESC then key ASC.  
 Experience translates `explanation_key` into `DisplayReason` wording (Sprint 130);
-Attention never invents display strings.
+wording is owned by the canonical catalog at
+`packages/kernel/resources/explanation-catalog.json` (Sprint 131). Attention never
+invents display strings.
 
 Reason weights **sum to `score`** — there is exactly one scoring path, and `reasons`
 expose it rather than restate it. A reason with no score contribution is not a reason.

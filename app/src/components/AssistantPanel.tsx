@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { invokeIpc } from "../lib/ipc";
+import { DecisionReasonList, DisplayReasonList } from "./DisplayReasonList";
 import type {
   AiAssistantActionPreview,
   AiAssistantPlanComparison,
@@ -342,20 +343,36 @@ export function AssistantPanel({
               Same Attention Engine as the Work tab. Assistant may explain why
               something is prioritized — never change attention, approve, or
               execute.
+              {workspaceIntel.attention.top_items.length > 0 ? (
+                <div className="assistant-attention-reasons">
+                  {workspaceIntel.attention.top_items.slice(0, 4).map((item) => (
+                    <div key={item.id}>
+                      <strong>{item.title}</strong>
+                      <DisplayReasonList reasons={item.reasons} />
+                    </div>
+                  ))}
+                </div>
+              ) : null}
             </dd>
             <dt>Decision Engine</dt>
             <dd>
               {workspaceIntel.decision_engine.summary}{" "}
               {workspaceIntel.decision_engine.top_candidates.length === 0
                 ? "No open recommendations."
-                : `Top: ${workspaceIntel.decision_engine.top_candidates
-                    .map(
-                      (c) =>
-                        `${c.title} (${c.explanation.confidence}, score ${c.score.total})`,
-                    )
-                    .join("; ")}.`}{" "}
+                : workspaceIntel.decision_engine.top_candidates
+                    .slice(0, 2)
+                    .map((c) => c.title)
+                    .join("; ")}{" "}
               Explain-only here — accept/dismiss/postpone live on the Work tab.
               Never executes.
+              {workspaceIntel.decision_engine.top_candidates[0] ? (
+                <DecisionReasonList
+                  reasons={
+                    workspaceIntel.decision_engine.top_candidates[0].explanation
+                      .reasons
+                  }
+                />
+              ) : null}
             </dd>
             <dt>Task Graph</dt>
             <dd>
@@ -422,6 +439,26 @@ export function AssistantPanel({
               Same Recommendation Engine as the Work tab. Assistant may explain
               and compare options — never accept, execute, or convert into
               actions silently.
+              {workspaceIntel.recommendation_engine.top_candidates[0]
+                ?.attention_reasons.length ? (
+                <DisplayReasonList
+                  reasons={
+                    workspaceIntel.recommendation_engine.top_candidates[0]
+                      .attention_reasons
+                  }
+                />
+              ) : null}
+            </dd>
+            <dt>Recommended actions</dt>
+            <dd>
+              {workspaceIntel.recommended_actions.length === 0
+                ? "None projected from Attention."
+                : workspaceIntel.recommended_actions.slice(0, 3).map((rec) => (
+                    <div key={rec.id}>
+                      <strong>{rec.title}</strong>
+                      <DisplayReasonList reasons={rec.reasons} />
+                    </div>
+                  ))}
             </dd>
             <dt>Operating State</dt>
             <dd>

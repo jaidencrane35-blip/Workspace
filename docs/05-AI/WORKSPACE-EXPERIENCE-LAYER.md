@@ -48,18 +48,23 @@ Structured reasons reach Experience intact: `AttentionItem.reasons`, and downstr
 `app/src/lib/explanationResolver.ts` (UI mirror). Known keys get curated wording;
 unknown keys fall back safely with the unresolved key still visible — never hidden.
 
-UI always keeps `AttentionReason[]` alongside `DisplayReason[]`. Display never
-replaces structured identity with text. Importance is derived from `|weight|` only
+**Sprint 131 — single catalog:** Wording lives in one file only:
+`packages/kernel/resources/explanation-catalog.json`. Rust loads it via
+`include_str!`; the UI consumes a generated copy at
+`app/src/generated/explanationCatalog.ts` (`node scripts/sync-explanation-catalog.mjs`).
+Do not duplicate mappings in resolver code.
+
+UI always keeps `AttentionReason[]` alongside `DisplayReason[]`. Shared component:
+`DisplayReasonList` / `DecisionReasonList`. Importance is derived from `|weight|` only
 (≥50 high, ≥25 medium, else low) and does not change Attention ranking or scores.
+
+**Rule:** UI does not interpret cognition. Experience translates cognition.
 
 | Layer | Explains |
 |-------|----------|
-| Attention | Why does this deserve focus? |
-| Decision | What should be considered? |
-| Experience | How is that meaning communicated? |
-
-Wording, translation, and formatting live here. Domain models carry only `source`,
-`signal`, `weight`, and `explanation_key`.
+| Facts (Environment, Task Graph, …) | What the workspace is |
+| Inference (`AttentionReason`, `DecisionReason`) | Why / what to consider |
+| Experience (`DisplayReason`) | How meaning is communicated |
 
 ## Experience groupings (presentation only)
 

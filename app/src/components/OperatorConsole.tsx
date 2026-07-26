@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { IpcCommandError, invokeIpc } from "../lib/ipc";
+import { DisplayReasonList } from "./DisplayReasonList";
 import type {
   ActionCatalog,
   AiAssistantPlanComparison,
@@ -1284,6 +1285,10 @@ export function OperatorConsole({
             {workspaceIntelligence.recommended_actions.slice(0, 3).map((rec) => (
               <li key={rec.id}>
                 {rec.title} — {rec.explanation}
+                <DisplayReasonList
+                  reasons={rec.reasons}
+                  showUnresolvedKey
+                />
               </li>
             ))}
           </ul>

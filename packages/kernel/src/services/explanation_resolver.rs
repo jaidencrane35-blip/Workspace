@@ -1,16 +1,13 @@
-//! Experience explanation resolver (Sprint 130).
+//! Experience explanation resolver (Sprint 130–131).
 //!
 //! Translates stable `AttentionReason.explanation_key` values into user-facing
-//! `DisplayReason` wording. Owns presentation only — never scores, ranks, or
-//! re-infers. Domain keeps `signal` / `source` / `weight` / `explanation_key`;
-//! this module owns human wording.
+//! `DisplayReason` wording via the canonical catalog. Owns presentation only.
 
 use workspace_domain::{AttentionReason, DisplayImportance, DisplayReason};
 
+use super::explanation_catalog::{fallback_title_for_signal, lookup_explanation_key};
+
 /// Resolve one Attention reason into display wording.
-///
-/// Known keys get a curated title + description. Unknown keys fall back safely
-/// without being hidden — the unresolved key stays visible in the description.
 pub(crate) fn resolve_attention_reason(reason: &AttentionReason) -> DisplayReason {
     let importance = DisplayImportance::from_weight(reason.weight);
     let signal = reason.signal.as_str().to_string();
@@ -18,7 +15,7 @@ pub(crate) fn resolve_attention_reason(reason: &AttentionReason) -> DisplayReaso
     let explanation_key = reason.explanation_key.clone();
     let weight = reason.weight;
 
-    if let Some((title, description)) = lookup_key(&explanation_key) {
+    if let Some((title, description)) = lookup_explanation_key(&explanation_key) {
         return DisplayReason {
             title: title.to_string(),
             description: description.to_string(),
@@ -31,9 +28,8 @@ pub(crate) fn resolve_attention_reason(reason: &AttentionReason) -> DisplayReaso
         };
     }
 
-    // Safe fallback — never silent. Preserve identity; use signal for a readable title.
     DisplayReason {
-        title: fallback_title(&signal),
+        title: fallback_title_for_signal(&signal),
         description: format!(
             "No Experience translation for '{explanation_key}' yet \
              (signal {signal} from {source}, weight {weight})."
@@ -52,222 +48,10 @@ pub(crate) fn resolve_attention_reasons(reasons: &[AttentionReason]) -> Vec<Disp
     reasons.iter().map(resolve_attention_reason).collect()
 }
 
-fn fallback_title(signal: &str) -> String {
-    match signal {
-        "outstanding_decision" => "Outstanding decision needs attention".into(),
-        "blocked_action" => "Blocked action needs attention".into(),
-        "blocked_task" => "Blocked task needs attention".into(),
-        "waiting_task" => "Waiting task needs attention".into(),
-        "in_progress_task" => "In-progress task needs attention".into(),
-        "interrupted_work" => "Interrupted work needs attention".into(),
-        "resumable_work" => "Resumable work needs attention".into(),
-        "current_focus" => "Current focus needs attention".into(),
-        "dormant_work" => "Dormant work needs attention".into(),
-        "commitment_pending" => "Pending commitment needs attention".into(),
-        "environment_disconnect" => "Environment disconnect needs attention".into(),
-        "missing_application" => "Missing application needs attention".into(),
-        "composition_gap" => "Composition gap needs attention".into(),
-        "high_priority_intent" => "High-priority intent needs attention".into(),
-        "purpose_obstacle" => "Purpose obstacle needs attention".into(),
-        "purpose_outcome" => "Purpose outcome needs attention".into(),
-        "evolution_insight" => "Evolution insight needs attention".into(),
-        "activity_progress" => "Recent activity needs attention".into(),
-        "recommendation_candidate" => "Recommendation needs attention".into(),
-        "pattern_observation" => "Pattern observation needs attention".into(),
-        other => format!("Attention signal '{other}' needs attention"),
-    }
-}
-
-fn lookup_key(key: &str) -> Option<(&'static str, &'static str)> {
-    // Exact matches first.
-    if let Some(pair) = exact_catalog(key) {
-        return Some(pair);
-    }
-    // Prefixed / parameterized keys emitted by Attention.
-    if let Some(rest) = key.strip_prefix("task.base.") {
-        return Some(match rest {
-            "blocked" => (
-                "Blocked task needs attention",
-                "because work is currently waiting on completion",
-            ),
-            "waiting" => (
-                "Waiting task needs attention",
-                "because this task is waiting on a dependency",
-            ),
-            "in_progress" => (
-                "In-progress task needs attention",
-                "because active work is underway and still open",
-            ),
-            "ready" => (
-                "Ready task needs attention",
-                "because open work is ready to continue",
-            ),
-            _ => (
-                "Open task needs attention",
-                "because Task Graph still lists this work as open",
-            ),
-        });
-    }
-    if let Some(rest) = key.strip_prefix("task.priority.") {
-        return Some(match rest {
-            "critical" => (
-                "Critical priority raises focus",
-                "because this task is marked critical",
-            ),
-            "high" => (
-                "High priority raises focus",
-                "because this task is marked high priority",
-            ),
-            "normal" => (
-                "Normal priority contributes to focus",
-                "because this task carries a normal priority band",
-            ),
-            "low" => (
-                "Low priority still contributes",
-                "because open low-priority work remains on the graph",
-            ),
-            _ => (
-                "Task priority contributes to focus",
-                "because Task Graph priority influenced this ranking",
-            ),
-        });
-    }
-    if let Some(rest) = key.strip_prefix("purpose.obstacle.") {
-        return Some(match rest {
-            "blocked_task" => (
-                "Purpose blocked by a task",
-                "because a blocked Task Graph node sits on the path to Purpose",
-            ),
-            "blocked_work" => (
-                "Purpose blocked by open work",
-                "because blocked Continuity work is stalling Purpose progress",
-            ),
-            "interrupted_work" => (
-                "Purpose interrupted",
-                "because interrupted work is pulling focus away from Purpose",
-            ),
-            "outstanding_decisions" => (
-                "Purpose waiting on decisions",
-                "because outstanding decisions gate Purpose progress",
-            ),
-            other if other.starts_with("composition:") => (
-                "Purpose blocked by composition",
-                "because a Composition gap is obstructing Purpose progress",
-            ),
-            _ => (
-                "Purpose obstacle needs attention",
-                "because Purpose reports an obstacle on the current path",
-            ),
-        });
-    }
-    if let Some(rest) = key.strip_prefix("composition.gap.") {
-        return Some(match rest {
-            "disconnected_work" => (
-                "Composition is disconnected from work",
-                "because the working environment does not match active work",
-            ),
-            "missing_application" => (
-                "Composition is missing an application",
-                "because a required application is not present in the composition",
-            ),
-            _ => (
-                "Composition gap needs attention",
-                "because Composition reports a membership gap",
-            ),
-        });
-    }
-    if let Some(rest) = key.strip_prefix("environment.gap.") {
-        return Some(match rest {
-            "disconnected_work" => (
-                "Desktop is disconnected from work",
-                "because open windows do not align with active work",
-            ),
-            "missing_application" => (
-                "Required application is missing",
-                "because Environment expects an application that is not present",
-            ),
-            _ => (
-                "Environment gap needs attention",
-                "because Environment reports a desktop–work gap",
-            ),
-        });
-    }
-    None
-}
-
-fn exact_catalog(key: &str) -> Option<(&'static str, &'static str)> {
-    Some(match key {
-        "decision.base.blocker" => (
-            "Blocked decision needs attention",
-            "because a blocked Decision Queue item is stopping progress",
-        ),
-        "decision.base.outstanding" => (
-            "Outstanding decision needs attention",
-            "because a pending Decision Queue item still needs a human choice",
-        ),
-        "decision.priority.critical" => (
-            "Critical decision raises focus",
-            "because this Decision Queue item is marked critical",
-        ),
-        "decision.priority.high" => (
-            "High-priority decision raises focus",
-            "because this Decision Queue item is marked high priority",
-        ),
-        "decision.priority.normal" => (
-            "Decision contributes to focus",
-            "because this Decision Queue item carries normal priority",
-        ),
-        "decision.deferred" => (
-            "Deferred decision still matters",
-            "because a deferred Decision Queue item remains unresolved",
-        ),
-        "continuity.interrupted" => (
-            "Interrupted work needs attention",
-            "because Continuity shows work that was left unfinished",
-        ),
-        "continuity.resumable" => (
-            "Resumable work is ready",
-            "because Continuity can pick up where you left off",
-        ),
-        "continuity.commitment" => (
-            "Pending commitment needs attention",
-            "because an automation commitment is still awaiting resolution",
-        ),
-        "continuity.dormant" => (
-            "Dormant work needs attention",
-            "because Continuity shows work that has gone quiet",
-        ),
-        "continuity.focus" => (
-            "Current focus needs attention",
-            "because Continuity identifies this as the active focus",
-        ),
-        "activity.progress" => (
-            "Recent progress is worth noticing",
-            "because Activity Graph recorded related work recently",
-        ),
-        "purpose.outcome" => (
-            "Purpose progress is visible",
-            "because Purpose reports meaningful progress toward the goal",
-        ),
-        "evolution.insight" => (
-            "Workspace evolution needs attention",
-            "because Evolution surfaced how work recently changed",
-        ),
-        "recommendation.candidate" => (
-            "A next-step suggestion is available",
-            "because the Recommendation Engine proposed a candidate action",
-        ),
-        "pattern.observation" => (
-            "A work pattern was observed",
-            "because Pattern Model noticed a recurring workspace signal",
-        ),
-        _ => return None,
-    })
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
+    use super::super::explanation_catalog::catalog_version;
     use workspace_domain::{AttentionSignal, AttentionSourceType};
 
     fn reason(key: &str, signal: AttentionSignal, weight: i32) -> AttentionReason {
@@ -343,7 +127,6 @@ mod tests {
             assert_eq!(display.source, source.source.as_str());
             assert_eq!(display.weight, source.weight);
         }
-        // Order preserved — Experience must not re-rank.
         assert_eq!(displayed[0].explanation_key, "continuity.interrupted");
         assert_eq!(displayed[1].explanation_key, "activity.progress");
     }
@@ -364,8 +147,12 @@ mod tests {
             .map(|d| (d.explanation_key.clone(), d.weight))
             .collect();
         assert_eq!(before, after);
-        // Input order kept even when later weight is higher — no re-sort.
         assert!(displayed[1].weight > displayed[0].weight);
         assert_eq!(displayed[0].explanation_key, "decision.priority.high");
+    }
+
+    #[test]
+    fn catalog_version_is_loaded() {
+        assert_eq!(catalog_version(), 1);
     }
 }

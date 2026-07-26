@@ -131,6 +131,7 @@ mod workspace_adaptation_tests;
 mod workspace_readiness_tests;
 mod workspace_session_tests;
 mod workspace_experience_tests;
+mod workspace_experience_contract_tests;
 mod workspace_work_context_tests;
 mod workspace_navigation_tests;
 mod workspace_milestone_tests;
