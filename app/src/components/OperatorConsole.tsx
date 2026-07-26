@@ -35,6 +35,9 @@ import type {
   WorkspaceWorkingStyleState,
   WorkspaceWorkingStyleComparison,
   WorkspaceWorkingStyleValidation,
+  WorkspaceTransitionState,
+  WorkspaceTransitionComparison,
+  WorkspaceTransitionValidation,
   AiOrchestratedPlan,
   AiPlan,
   AiPlanEvaluationReport,
@@ -212,6 +215,10 @@ export function OperatorConsole({
     useState<WorkspaceWorkingStyleState | null>(null);
   const [priorWorkingStyle, setPriorWorkingStyle] =
     useState<WorkspaceWorkingStyleState | null>(null);
+  const [transitionState, setTransitionState] =
+    useState<WorkspaceTransitionState | null>(null);
+  const [priorTransitions, setPriorTransitions] =
+    useState<WorkspaceTransitionState | null>(null);
   const [activeProject, setActiveProject] = useState<Project | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [memoryEntries, setMemoryEntries] = useState<MemoryEntry[]>([]);
@@ -2281,6 +2288,91 @@ export function OperatorConsole({
               Observed {workingStyleState.observed_count} · Explicit prefs{" "}
               {workingStyleState.preference_count} · authority{" "}
               {workingStyleState.authority_effect}
+            </li>
+          </ul>
+        )}
+      </section>
+
+      <section>
+        <h2>Workspace Transitions (diagnostics)</h2>
+        <p className="muted">
+          Movement explanation — Generate / Inspect / Compare / Validate. Never
+          restores, launches, or executes.
+        </p>
+        <div className="row">
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("Transitions generated", async () => {
+                if (!workspace) return;
+                const state = await invokeIpc<WorkspaceTransitionState>(
+                  "generate_workspace_transitions",
+                  { workspaceId: workspace.id },
+                );
+                if (transitionState) setPriorTransitions(transitionState);
+                setTransitionState(state);
+              })
+            }
+          >
+            Generate transitions
+          </button>
+          <button
+            type="button"
+            disabled={busy || !transitionState}
+            onClick={() =>
+              void run("Transitions inspected", async () => {
+                if (!transitionState) return;
+                onMessage(
+                  `${transitionState.transition_summary.narrative} Evidence: ${transitionState.evidence.slice(0, 3).join(" · ")}`,
+                );
+              })
+            }
+          >
+            Inspect transitions
+          </button>
+          <button
+            type="button"
+            disabled={busy || !transitionState || !priorTransitions}
+            onClick={() =>
+              void run("Transitions compared", async () => {
+                if (!transitionState || !priorTransitions) return;
+                const comparison =
+                  await invokeIpc<WorkspaceTransitionComparison>(
+                    "compare_workspace_transitions",
+                    { left: priorTransitions, right: transitionState },
+                  );
+                onMessage(comparison.differences.join(" · "));
+              })
+            }
+          >
+            Compare transitions
+          </button>
+          <button
+            type="button"
+            disabled={busy || !transitionState}
+            onClick={() =>
+              void run("Transitions validated", async () => {
+                if (!transitionState) return;
+                const report = await invokeIpc<WorkspaceTransitionValidation>(
+                  "validate_workspace_transitions",
+                  { state: transitionState },
+                );
+                onMessage(report.messages.join(" · "));
+              })
+            }
+          >
+            Validate transitions
+          </button>
+        </div>
+        {transitionState && (
+          <ul className="muted">
+            <li>{transitionState.transition_summary.headline}</li>
+            <li>{transitionState.transition_summary.left_off_line}</li>
+            <li>
+              Returning {transitionState.returning_count} · Switching{" "}
+              {transitionState.switching_count} · authority{" "}
+              {transitionState.authority_effect}
             </li>
           </ul>
         )}

@@ -32,6 +32,7 @@ use crate::commands::workspace_work_context::GateWorkContextEngineRead;
 use crate::commands::workspace_navigation::GateNavigationRead;
 use crate::commands::workspace_milestone::GateMilestoneRead;
 use crate::commands::workspace_working_style::GateWorkingStyleRead;
+use crate::commands::workspace_transition::GateTransitionRead;
 use crate::commands::workspace_activity::GateActivityGraphRead;
 use crate::commands::workspace_attention::GateAttentionRead;
 use crate::commands::workspace_continuity::GateContinuityRead;
@@ -94,7 +95,7 @@ use crate::services::{
     WorkspacePatternService, WorkspaceAdaptationService, WorkspaceReadinessService,
     WorkspaceSessionService, WorkspaceExperienceService, WorkspaceWorkContextService,
     WorkspaceNavigationService, WorkspaceMilestoneService, WorkspaceWorkingStyleService,
-    WorkspaceActivityGraphService,
+    WorkspaceTransitionService, WorkspaceActivityGraphService,
     WorkspaceAttentionService, WorkspaceContextService, WorkspaceContinuityService,
     WorkspaceIntelligenceService,
 };
@@ -116,6 +117,7 @@ use workspace_domain::{
     WorkspaceNavigationComparison, WorkspaceNavigationState, WorkspaceNavigationValidation,
     WorkspaceMilestoneComparison, WorkspaceMilestoneState, WorkspaceMilestoneValidation,
     WorkspaceWorkingStyleComparison, WorkspaceWorkingStyleState, WorkspaceWorkingStyleValidation,
+    WorkspaceTransitionComparison, WorkspaceTransitionState, WorkspaceTransitionValidation,
     WorkspaceTask, WorkspaceTaskPriority, WorkspaceTaskStatus,
     WorkspaceIntelligenceComparison, WorkspaceIntelligenceState, AiPlan, AiPlanEvaluationReport,
     AiPlanSubmissionResult,
@@ -3335,6 +3337,64 @@ impl CommandHandler {
     /// Architecture guard — Working Style must never execute or authorize.
     pub fn workspace_working_style_attempt_execute() -> Result<()> {
         WorkspaceWorkingStyleService::attempt_execute()
+    }
+
+    /// Project Workspace Transitions (movement explanation — never restores or executes).
+    pub fn generate_workspace_transitions(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceTransitionState> {
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent.clone()))
+            .execute_query(GateTransitionRead)?;
+        let _ = Self::get_workflow_context(
+            kernel,
+            actor.clone(),
+            intent.clone(),
+            workspace_id.clone(),
+        )?;
+        let workspace =
+            Self::get_workspace(kernel, actor.clone(), intent, workspace_id.clone())?;
+        let health = kernel.health();
+        WorkspaceTransitionService::generate(
+            &kernel.shared_database(),
+            &actor,
+            &kernel.orchestrated_plans(),
+            &kernel.assistant_workflows(),
+            workspace_id,
+            workspace.name,
+            health.status.clone(),
+        )
+    }
+
+    /// Compare two transition snapshots (informational).
+    pub fn compare_workspace_transitions(
+        left: &WorkspaceTransitionState,
+        right: &WorkspaceTransitionState,
+    ) -> WorkspaceTransitionComparison {
+        WorkspaceTransitionService::compare(left, right)
+    }
+
+    /// Validate a transition snapshot (Operator / IPC) and audit.
+    pub fn validate_workspace_transitions(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        state: &WorkspaceTransitionState,
+    ) -> Result<WorkspaceTransitionValidation> {
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent))
+            .execute_query(GateTransitionRead)?;
+        WorkspaceTransitionService::validate_and_audit(
+            &kernel.shared_database(),
+            &actor,
+            state,
+        )
+    }
+
+    /// Architecture guard — Transitions must never execute or authorize.
+    pub fn workspace_transitions_attempt_execute() -> Result<()> {
+        WorkspaceTransitionService::attempt_execute()
     }
 
     /// Read-only workspace intelligence aggregation. Capability-gated; never executes.

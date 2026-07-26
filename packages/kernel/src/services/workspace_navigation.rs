@@ -673,6 +673,26 @@ impl WorkspaceNavigationService {
         Ok(next)
     }
 
+    /// Reference Transitions as evidence only — Navigation never performs them.
+    pub(crate) fn enrich_with_transition(
+        navigation: &WorkspaceNavigationState,
+        transition: &workspace_domain::WorkspaceTransitionState,
+    ) -> Result<WorkspaceNavigationState> {
+        let mut next = navigation.clone();
+        let marker = format!(
+            "transition:count={},returning={}",
+            transition.transition_count, transition.returning_count
+        );
+        if !next.evidence.iter().any(|e| e.starts_with("transition:")) {
+            next.evidence.push(marker.clone());
+        }
+        next.explanation = format!(
+            "{} References Transitions as evidence only ({}) — Navigation does not perform them.",
+            next.explanation, marker
+        );
+        Ok(next)
+    }
+
     pub(crate) fn attempt_execute() -> Result<()> {
         Err(KernelError::from(
             workspace_domain::WorkspaceNavigationError::CannotExecute,

@@ -441,6 +441,26 @@ impl WorkspaceExperienceService {
         Ok(next)
     }
 
+    /// Reference Transitions as evidence only — Experience never restores.
+    pub(crate) fn enrich_with_transition(
+        experience: &WorkspaceExperienceState,
+        transition: &workspace_domain::WorkspaceTransitionState,
+    ) -> Result<WorkspaceExperienceState> {
+        let mut next = experience.clone();
+        let marker = format!(
+            "transition:count={},returning={}",
+            transition.transition_count, transition.returning_count
+        );
+        if !next.evidence.iter().any(|e| e.starts_with("transition:")) {
+            next.evidence.push(marker.clone());
+        }
+        next.explanation = format!(
+            "{} References Transitions as evidence only ({}) — Experience never restores or executes.",
+            next.explanation, marker
+        );
+        Ok(next)
+    }
+
     pub(crate) fn attempt_execute() -> Result<()> {
         Err(KernelError::from(
             workspace_domain::WorkspaceExperienceError::CannotExecute,

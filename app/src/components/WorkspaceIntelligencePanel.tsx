@@ -37,6 +37,8 @@ import type {
   WorkspaceMilestoneComparison,
   WorkspaceWorkingStyleState,
   WorkspaceWorkingStyleComparison,
+  WorkspaceTransitionState,
+  WorkspaceTransitionComparison,
   WorkspaceIntelligenceState,
 } from "../types/domain";
 
@@ -127,6 +129,11 @@ export function WorkspaceIntelligencePanel({
   const [workingStyleCompareNote, setWorkingStyleCompareNote] = useState<
     string | null
   >(null);
+  const [transitionState, setTransitionState] =
+    useState<WorkspaceTransitionState | null>(null);
+  const [transitionCompareNote, setTransitionCompareNote] = useState<
+    string | null
+  >(null);
   const [lastHandoff, setLastHandoff] = useState<string | null>(null);
   const [contractName, setContractName] = useState(
     "Prepare coding environment",
@@ -182,6 +189,8 @@ export function WorkspaceIntelligencePanel({
       setMilestoneCompareNote(null);
       setWorkingStyleState(null);
       setWorkingStyleCompareNote(null);
+      setTransitionState(null);
+      setTransitionCompareNote(null);
       setLastHandoff(null);
       setState(null);
       return;
@@ -204,6 +213,7 @@ export function WorkspaceIntelligencePanel({
           navigation,
           milestones,
           workingStyle,
+          transitions,
           decisions,
           graphTasks,
           adapt,
@@ -248,6 +258,10 @@ export function WorkspaceIntelligencePanel({
               "generate_workspace_working_style",
               { workspaceId: workspace.id },
             ),
+            invokeIpc<WorkspaceTransitionState>(
+              "generate_workspace_transitions",
+              { workspaceId: workspace.id },
+            ),
             invokeIpc<DecisionEngineState>("generate_decision_engine", {
               workspaceId: workspace.id,
             }),
@@ -270,6 +284,7 @@ export function WorkspaceIntelligencePanel({
           setNavigationState(navigation);
           setMilestoneState(milestones);
           setWorkingStyleState(workingStyle);
+          setTransitionState(transitions);
           setDecisionEngine(decisions);
           setTaskGraph(graphTasks);
           setAdaptationState(adapt);
@@ -888,6 +903,104 @@ export function WorkspaceIntelligencePanel({
           </>
         ) : (
           <p className="muted">No working style snapshot yet.</p>
+        )}
+      </section>
+
+      <section>
+        <h3>Recent transitions</h3>
+        <p className="muted">
+          Movement between work states — where you left off, what changed, what
+          you are entering. Explanation only; never restores or executes.
+        </p>
+        <div className="row">
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("Transitions refreshed", async () => {
+                if (!workspace) return;
+                const next = await invokeIpc<WorkspaceTransitionState>(
+                  "generate_workspace_transitions",
+                  { workspaceId: workspace.id },
+                );
+                setTransitionState(next);
+                setTransitionCompareNote(null);
+              })
+            }
+          >
+            Refresh transitions
+          </button>
+          <button
+            type="button"
+            disabled={busy || !workspace || !transitionState}
+            onClick={() =>
+              void run("Transitions compared", async () => {
+                if (!workspace || !transitionState) return;
+                const next = await invokeIpc<WorkspaceTransitionState>(
+                  "generate_workspace_transitions",
+                  { workspaceId: workspace.id },
+                );
+                const comparison =
+                  await invokeIpc<WorkspaceTransitionComparison>(
+                    "compare_workspace_transitions",
+                    { left: transitionState, right: next },
+                  );
+                setTransitionState(next);
+                setTransitionCompareNote(comparison.differences.join(" · "));
+              })
+            }
+          >
+            Compare transitions
+          </button>
+        </div>
+        {transitionState ? (
+          <>
+            <p>
+              <strong>{transitionState.transition_summary.headline}</strong>
+            </p>
+            <p>Where you left off: {transitionState.transition_summary.left_off_line}</p>
+            <p className="muted">
+              Current transition:{" "}
+              {transitionState.transition_summary.current_transition_line}
+            </p>
+            <p className="muted">
+              Changed since last session:{" "}
+              {transitionState.transition_summary.changed_line}
+            </p>
+            <p className="muted">
+              Returned work: {transitionState.transition_summary.returned_line}
+            </p>
+            <p className="muted">
+              Context switches:{" "}
+              {transitionState.transition_summary.context_switch_line}
+            </p>
+            <p className="muted">
+              Interrupted work:{" "}
+              {transitionState.transition_summary.interrupted_line}
+            </p>
+            <ul className="intelligence-list">
+              {transitionState.transitions.slice(0, 6).map((t) => (
+                <li key={t.id}>
+                  <strong>
+                    {t.kind}: {t.title}
+                  </strong>
+                  <div className="muted">
+                    {t.previous_state} → {t.current_state}
+                  </div>
+                  <div className="muted">{t.why}</div>
+                </li>
+              ))}
+            </ul>
+            <p className="muted">
+              authority: {transitionState.authority_effect} ·{" "}
+              {transitionState.transition_count} transition(s)
+            </p>
+            {transitionCompareNote && (
+              <p className="muted">Compare: {transitionCompareNote}</p>
+            )}
+          </>
+        ) : (
+          <p className="muted">No transition snapshot yet.</p>
         )}
       </section>
 

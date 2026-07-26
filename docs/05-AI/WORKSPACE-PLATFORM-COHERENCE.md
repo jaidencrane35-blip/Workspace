@@ -115,6 +115,7 @@ Intelligence and Assistant must consume, never re-own, these answers. Session co
 | navigation | `WorkspaceNavigationService` | Aggregator (interaction paths; owns nothing) |
 | milestones | `WorkspaceMilestoneService` | Aggregator (progress coordination; owns nothing) |
 | working_style | `WorkspaceWorkingStyleService` | Aggregator (operating patterns; owns nothing) |
+| transition | `WorkspaceTransitionService` | Aggregator (movement explanation; owns nothing) |
 | decision_candidate | `DecisionEngineService` | Aggregator (+ outcome overlay) |
 | Workspace Intelligence | consumer only | Envelope |
 
@@ -126,10 +127,10 @@ Decision Queue → Activity → Continuity → Task Graph
 → Attention → Recommendation Engine → Operating State → Pattern
 → Readiness → Adaptation → Decision Engine → assemble
 → Session → Experience → Work Context → Navigation → Milestones
-→ Working Style (embed + evidence-only enrich)
+→ Working Style → Transition (embed + evidence-only enrich)
 ```
 
-**Rule:** Prefer Intelligence `generate_with_inputs`. Standalone `generate` is for IPC refresh / diagnostics. Nested Decision Queue consumers must use `aggregate_readonly`. Work Context, Navigation, Milestones, and Working Style never regenerate upstream projections.
+**Rule:** Prefer Intelligence `generate_with_inputs`. Standalone `generate` is for IPC refresh / diagnostics. Nested Decision Queue consumers must use `aggregate_readonly`. Work Context, Navigation, Milestones, Working Style, and Transition never regenerate upstream projections.
 
 See [Workspace Cognition Integrity Audit](WORKSPACE-COGNITION-INTEGRITY-AUDIT.md).
 

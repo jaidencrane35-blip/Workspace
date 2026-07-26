@@ -286,6 +286,20 @@ impl WorkspaceAttentionService {
         Ok(next)
     }
 
+    /// Reference Transitions as evidence only — never restores or executes.
+    pub(crate) fn enrich_with_transition(
+        attention: &WorkspaceAttentionState,
+        transition: &workspace_domain::WorkspaceTransitionState,
+    ) -> Result<WorkspaceAttentionState> {
+        let mut next = attention.clone();
+        next.summary = format!(
+            "{} Transition evidence (informational only): {} movement(s), {} returning — \
+             Attention consumes Transitions as evidence only and never performs them.",
+            next.summary, transition.transition_count, transition.returning_count
+        );
+        Ok(next)
+    }
+
     /// Reference Navigation as evidence only — does not re-rank or add authority.
     pub(crate) fn enrich_with_navigation(
         attention: &WorkspaceAttentionState,

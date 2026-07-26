@@ -27,6 +27,7 @@ Canonical product language. Prefer these terms in UI, docs, and Assistant copy.
 | **Workspace Navigation** | Interaction paths over existing understanding (where to inspect next; owns nothing) | Planner, Router, Session, Work Context, Experience |
 | **Workspace Milestones** | Coordination projection of progress toward meaningful outcomes (owns nothing) | Planner, Scheduler, Project management, Task Graph |
 | **Workspace Working Style** | Observable operating-pattern projection (owns nothing; observed ≠ preferred) | Profiling, Surveillance, Prediction, Preferences |
+| **Workspace Transition** | Semantic movement between work states (owns nothing; never restores) | Restoration, Automation, Scheduler, Executor |
 | **Suggestion** | Legacy deterministic context hint (diagnostic/Sprint 20) | Recommendation in product Work UI |
 | **Intent** | Pipeline request entering Command Pipeline | Proposal, Decision |
 | **Activity** | Synthetic Activity Graph node (read model) | Audit event, Decision |

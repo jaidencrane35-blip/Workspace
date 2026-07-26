@@ -184,6 +184,10 @@ Workspace Milestone Engine foundation (Sprint 98) — progress coordination over
 
 Workspace Working Style Model foundation (Sprint 99) — observable operating patterns; Intelligence embeds `working_style` after Milestones; separates observed behaviour from explicit preference; evidence-only consumption; never profiles/predicts/executes. See [Workspace Working Style Model](WORKSPACE-WORKING-STYLE-MODEL.md).
 
+## Phase 6 Batch 7 (done)
+
+Workspace Transition Engine foundation (Sprint 100) — explains movement between work states; Intelligence embeds `transition` after Working Style; evidence-only consumption; never restores/automates/executes. See [Workspace Transition Engine](WORKSPACE-TRANSITION-ENGINE.md).
+
 ---
 
 ## Never build

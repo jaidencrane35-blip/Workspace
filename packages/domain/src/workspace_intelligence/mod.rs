@@ -22,6 +22,7 @@ use crate::workspace_work_context::WorkspaceWorkContextSummary;
 use crate::workspace_navigation::WorkspaceNavigationSummary;
 use crate::workspace_milestone::WorkspaceMilestoneSummary;
 use crate::workspace_working_style::WorkspaceWorkingStyleSummary;
+use crate::workspace_transition::WorkspaceTransitionSummary;
 use crate::workspace_environment::WorkspaceEnvironmentSummary;
 use crate::workspace_task_graph::TaskGraphSummary;
 use crate::workspace_activity::WorkspaceActivityGraphSummary;
@@ -159,6 +160,9 @@ pub struct WorkspaceIntelligenceState {
     /// Working Style Model summary (Phase 6). How work usually happens — never profiles/executes.
     /// Embedded after Milestones. Separates observed behaviour from explicit preference.
     pub working_style: WorkspaceWorkingStyleSummary,
+    /// Transition Engine summary (Phase 6). Movement between work states — never restores/executes.
+    /// Embedded after Working Style.
+    pub transition: WorkspaceTransitionSummary,
     pub workspace_health: String,
     pub summary: String,
     /// Explicit marker for audits and UI: this state grants nothing.
@@ -259,6 +263,17 @@ impl WorkspaceIntelligenceComparison {
                 left.working_style.preference_count,
                 right.working_style.observation_count,
                 right.working_style.preference_count
+            ));
+        }
+        if left.transition.transition_count != right.transition.transition_count
+            || left.transition.current_transition_title != right.transition.current_transition_title
+        {
+            differences.push(format!(
+                "Transition: {:?} ({}) → {:?} ({})",
+                left.transition.current_transition_title,
+                left.transition.transition_count,
+                right.transition.current_transition_title,
+                right.transition.transition_count
             ));
         }
         if differences.is_empty() {

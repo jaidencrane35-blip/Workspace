@@ -11,6 +11,7 @@ import type {
   WorkspaceNavigationState,
   WorkspaceMilestoneState,
   WorkspaceWorkingStyleState,
+  WorkspaceTransitionState,
   WorkspaceIntelligenceState,
 } from "../types/domain";
 import { assistantProductState } from "../types/domain";
@@ -65,6 +66,8 @@ export function AssistantPanel({
     useState<WorkspaceMilestoneState | null>(null);
   const [workingStyleState, setWorkingStyleState] =
     useState<WorkspaceWorkingStyleState | null>(null);
+  const [transitionState, setTransitionState] =
+    useState<WorkspaceTransitionState | null>(null);
 
   const productState = assistantProductState(workflow?.state);
   const canConfirm = workflow?.state === "awaiting_confirmation";
@@ -146,6 +149,7 @@ export function AssistantPanel({
                   navigation,
                   milestones,
                   workingStyle,
+                  transitions,
                 ] =
                   await Promise.all([
                   invokeIpc<WorkspaceIntelligenceState>(
@@ -172,6 +176,10 @@ export function AssistantPanel({
                     "generate_workspace_working_style",
                     { workspaceId: workspace.id },
                   ),
+                  invokeIpc<WorkspaceTransitionState>(
+                    "generate_workspace_transitions",
+                    { workspaceId: workspace.id },
+                  ),
                 ]);
                 setWorkspaceIntel(intel);
                 setExperienceState(experience);
@@ -179,12 +187,22 @@ export function AssistantPanel({
                 setNavigationState(navigation);
                 setMilestoneState(milestones);
                 setWorkingStyleState(workingStyle);
+                setTransitionState(transitions);
               })
             }
           >
             Load workspace intelligence
           </button>
         </div>
+        {transitionState && (
+          <dl>
+            <dt>Transitions</dt>
+            <dd>
+              {transitionState.transition_summary.narrative} Assistant explains
+              movement between states — never restores or executes.
+            </dd>
+          </dl>
+        )}
         {workingStyleState && (
           <dl>
             <dt>Working Style</dt>
@@ -438,6 +456,12 @@ export function AssistantPanel({
               the Work tab. Assistant may explain observed patterns and
               explicit preferences separately — never claims certainty or
               changes behaviour.
+            </dd>
+            <dt>Transitions</dt>
+            <dd>
+              {workspaceIntel.transition.summary} Same Transition Engine as the
+              Work tab. Assistant may explain where you left off and what
+              changed — never restores or executes.
             </dd>
             <dt>Continuity</dt>
             <dd>

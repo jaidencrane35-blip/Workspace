@@ -466,6 +466,26 @@ impl WorkspaceSessionService {
         Ok(next)
     }
 
+    /// Reference Transitions as evidence only — Session never performs them.
+    pub(crate) fn enrich_with_transition(
+        session: &WorkspaceSessionState,
+        transition: &workspace_domain::WorkspaceTransitionState,
+    ) -> Result<WorkspaceSessionState> {
+        let mut next = session.clone();
+        let marker = format!(
+            "transition:count={},returning={}",
+            transition.transition_count, transition.returning_count
+        );
+        if !next.evidence.iter().any(|e| e.starts_with("transition:")) {
+            next.evidence.push(marker.clone());
+        }
+        next.explanation = format!(
+            "{} References Transitions as evidence only ({}) — Session remains canonical runtime.",
+            next.explanation, marker
+        );
+        Ok(next)
+    }
+
     /// Reference Navigation as evidence only — does not own or mutate Navigation.
     pub(crate) fn enrich_with_navigation(
         session: &WorkspaceSessionState,

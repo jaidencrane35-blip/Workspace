@@ -702,6 +702,26 @@ impl WorkspaceAdaptationService {
         Ok(state)
     }
 
+    /// Reference Transitions without performing restoration or automation.
+    pub(crate) fn enrich_with_transition(
+        adaptation: &WorkspaceAdaptationState,
+        transition: &workspace_domain::WorkspaceTransitionState,
+    ) -> Result<WorkspaceAdaptationState> {
+        let mut state = adaptation.clone();
+        let marker = format!(
+            "transition:count={},returning={}",
+            transition.transition_count, transition.returning_count
+        );
+        if !state.evidence.iter().any(|e| e.starts_with("transition:")) {
+            state.evidence.push(marker.clone());
+        }
+        state.explanation = format!(
+            "{} References Transitions as evidence only ({}) — never restores or executes them.",
+            state.explanation, marker
+        );
+        Ok(state)
+    }
+
     /// Reference Navigation without applying or owning it.
     pub(crate) fn enrich_with_navigation(
         adaptation: &WorkspaceAdaptationState,

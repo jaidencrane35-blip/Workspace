@@ -1277,6 +1277,8 @@ export interface WorkspaceIntelligenceState {
   milestones: WorkspaceMilestoneSummary;
   /** How work usually happens — after Milestones; never profiles/executes. */
   working_style: WorkspaceWorkingStyleSummary;
+  /** Movement between work states — after Working Style; never restores/executes. */
+  transition: WorkspaceTransitionSummary;
   workspace_health: string;
   summary: string;
   authority_effect: string;
@@ -2858,6 +2860,136 @@ export interface WorkspaceWorkingStyleComparison {
 }
 
 export interface WorkspaceWorkingStyleValidation {
+  valid: boolean;
+  messages: string[];
+  authority_effect: string;
+}
+
+export type TransitionKind =
+  | "entering_context"
+  | "leaving_context"
+  | "returning_to_work"
+  | "switching_focus"
+  | "continuing_interrupted_work"
+  | "completing_work_state"
+  | "starting_new_work_state";
+
+export type TransitionRelationKind =
+  | "previous"
+  | "current"
+  | "returned_from"
+  | "interrupted_by"
+  | "continued_into"
+  | "related_to"
+  | "blocked_by";
+
+export type TransitionConfidence = "high" | "medium" | "low";
+
+export interface TransitionEvidence {
+  label: string;
+  source_projection: string;
+  source_ref: string;
+  why: string;
+}
+
+export interface TransitionAssociation {
+  id: string;
+  label: string;
+  kind: string;
+  source_projection: string;
+  source_ref: string;
+  why: string;
+}
+
+export interface WorkspaceTransition {
+  id: string;
+  kind: TransitionKind;
+  title: string;
+  previous_state: string;
+  current_state: string;
+  changed_elements: string[];
+  evidence: TransitionEvidence[];
+  related_context: TransitionAssociation[];
+  related_milestones: TransitionAssociation[];
+  open_decisions: TransitionAssociation[];
+  interrupted_work: TransitionAssociation[];
+  confidence: TransitionConfidence;
+  explanation: string;
+  why: string;
+  authority_effect: string;
+}
+
+export interface TransitionRelationship {
+  id: string;
+  from_transition_id: string;
+  to_ref: string;
+  kind: TransitionRelationKind;
+  why: string;
+  authority_effect: string;
+}
+
+export interface TransitionSummary {
+  headline: string;
+  left_off_line: string;
+  current_transition_line: string;
+  changed_line: string;
+  returned_line: string;
+  context_switch_line: string;
+  interrupted_line: string;
+  narrative: string;
+}
+
+export interface WorkspaceTransitionState {
+  workspace_id: string;
+  workspace_name: string;
+  generated_at: string;
+  label: string;
+  transition_summary: TransitionSummary;
+  transitions: WorkspaceTransition[];
+  relationships: TransitionRelationship[];
+  current_transition_id: string | null;
+  transition_count: number;
+  returning_count: number;
+  switching_count: number;
+  interrupted_count: number;
+  session_generated_at: string;
+  experience_generated_at: string;
+  work_context_generated_at: string;
+  navigation_generated_at: string;
+  milestones_generated_at: string;
+  working_style_generated_at: string;
+  intelligence_generated_at: string;
+  explanation: string;
+  evidence: string[];
+  summary: string;
+  authority_effect: string;
+}
+
+export interface WorkspaceTransitionSummary {
+  workspace_id: string;
+  workspace_name: string;
+  generated_at: string;
+  label: string;
+  transition_summary: TransitionSummary;
+  transition_count: number;
+  returning_count: number;
+  switching_count: number;
+  interrupted_count: number;
+  current_transition_title: string | null;
+  top_transitions: WorkspaceTransition[];
+  explanation: string;
+  summary: string;
+  authority_effect: string;
+}
+
+export interface WorkspaceTransitionComparison {
+  left_workspace_id: string;
+  right_workspace_id: string;
+  differences: string[];
+  authority_effect: string;
+}
+
+export interface WorkspaceTransitionValidation {
   valid: boolean;
   messages: string[];
   authority_effect: string;

@@ -770,6 +770,28 @@ impl WorkspaceRecommendationEngineService {
         Ok(state)
     }
 
+    /// Reference Transitions as evidence only — never performs transitions.
+    pub(crate) fn enrich_with_transition(
+        recommendations: &WorkspaceRecommendationEngineState,
+        transition: &workspace_domain::WorkspaceTransitionState,
+    ) -> Result<WorkspaceRecommendationEngineState> {
+        let mut state = recommendations.clone();
+        let marker = format!(
+            "transition:count={},returning={},current={:?}",
+            transition.transition_count,
+            transition.returning_count,
+            transition.current_transition().map(|t| &t.title)
+        );
+        if !state.evidence.iter().any(|e| e.starts_with("transition:")) {
+            state.evidence.push(marker.clone());
+        }
+        state.explanation = format!(
+            "{} References Transitions as evidence only ({}) — does not restore or execute.",
+            state.explanation, marker
+        );
+        Ok(state)
+    }
+
     /// Reference Navigation without mutating navigation ownership or ranking authority.
     pub(crate) fn enrich_with_navigation(
         recommendations: &WorkspaceRecommendationEngineState,
