@@ -72,6 +72,10 @@ WorkspaceState
 | Audit | `RuntimeDiagnosticArchive` | Append-only retention; no delete/mutate |
 | Audit | `RuntimeArchitectureOwnershipValidation` | Conflict detection; descriptive only |
 | Audit | `RuntimeDiagnosticHistoricalIntegrity` | Evidence + archive + non-authoritative checks |
+| Audit | `RuntimeDiagnosticConsumptionContract` | Allowed consumers/modes; forbids command/recommendation/authority |
+| Audit | `RuntimeDiagnosticInterpretationView` | Findings with severity/confidence/scope/source/limitations |
+| Audit | `RuntimeProjectionBoundaryRegistry` | Diagnostics ≠ Experience ≠ Governance ≠ Audit ≠ Continuity |
+| Audit | `RuntimeDiagnosticRestorationView` | Read-only rehydration from archive; no mutate/delete |
 
 Authority: `authority_effect: none` (`GOVERNANCE_AUTHORITY_EFFECT_NONE`).
 
@@ -111,6 +115,17 @@ heal, approve, or execute pathways.
 
 Reports and evidence bundles always `is_authoritative() == false` and
 `is_decision() == false`. No deletion or mutation of archived history.
+
+### Diagnostic consumption
+
+| Allowed | Forbidden |
+|---------|-----------|
+| Observe / Explain / ArchiveInspect | Command, Recommendation, Authority, Approval |
+| Operator / Overview / ArchitectureReview consumers | Driving Experience translation |
+| Read-only restoration from archive | Entering Command Pipeline / Gateway |
+
+`RuntimeDiagnosticInterpretationView` structures findings with severity, confidence,
+scope, source, and limitations — observational meaning only.
 
 No hidden repair, auto-heal, or silent mutation paths.
 

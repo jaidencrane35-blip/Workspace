@@ -15,6 +15,8 @@
 //! validation/interpretation — still observational only.
 //! Diagnostic evidence integrity and append-only retention archive sealed
 //! history without deletion, mutation, or authority.
+//! Diagnostic consumption contracts define how surfaces may observe findings
+//! without treating them as commands, recommendations, or authority.
 
 mod diagnostics;
 pub use diagnostics::*;
@@ -200,6 +202,9 @@ pub enum WorkspaceRuntimeError {
 
     #[error("runtime diagnostic evidence is observational and cannot become a decision")]
     DiagnosticEvidenceNotAuthoritative,
+
+    #[error("runtime diagnostic consumption forbids commands, recommendations, or authority")]
+    DiagnosticConsumptionForbidden,
 }
 
 // ---------------------------------------------------------------------------
