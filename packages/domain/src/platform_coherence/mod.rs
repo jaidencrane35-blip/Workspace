@@ -219,6 +219,21 @@ pub const PLATFORM_CONCEPT_OWNERS: &[ConceptOwnership] = &[
         owner: "AiPersonalizationService",
         kind: ConceptOwnerKind::DurableStore,
     },
+    ConceptOwnership {
+        concept: "workspace_runtime_context",
+        owner: "WorkspaceRuntimeContext (domain projection)",
+        kind: ConceptOwnerKind::Aggregator,
+    },
+    ConceptOwnership {
+        concept: "workspace_runtime_health",
+        owner: "WorkspaceRuntimeHealth (domain projection)",
+        kind: ConceptOwnerKind::Aggregator,
+    },
+    ConceptOwnership {
+        concept: "governance_runtime_summary",
+        owner: "Governance (visible summaries only)",
+        kind: ConceptOwnerKind::Derived,
+    },
 ];
 
 /// Canonical user-facing vocabulary tokens (Batch 9.5).

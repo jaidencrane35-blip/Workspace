@@ -28,6 +28,9 @@ This batch does not introduce execution paths, modify authority, or weaken gover
 Automation readiness (no autonomy yet) —
 [WORKSPACE-AUTOMATION-READINESS.md](./WORKSPACE-AUTOMATION-READINESS.md).
 
+**Sprints 170–175:** Runtime integration of governance via read-only projections —
+[WORKSPACE-RUNTIME-CONTEXT.md](./WORKSPACE-RUNTIME-CONTEXT.md).
+
 ---
 
 ## Assessment summary

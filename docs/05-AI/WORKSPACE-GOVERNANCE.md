@@ -103,10 +103,19 @@ canonical documentation. No behaviour or capability removal.
 
 ---
 
+## Runtime integration (Sprints 170–175)
+
+Governance summaries surface through read-only runtime contracts — see
+[WORKSPACE-RUNTIME-CONTEXT.md](./WORKSPACE-RUNTIME-CONTEXT.md).
+Governance remains visible, never authoritative.
+
+---
+
 ## Specialized docs (canonical detail)
 
 | Topic | Doc |
 |-------|-----|
+| Runtime context & health | [WORKSPACE-RUNTIME-CONTEXT.md](./WORKSPACE-RUNTIME-CONTEXT.md) |
 | Ledger & publish labels | [WORKSPACE-GOVERNANCE-LEDGER.md](./WORKSPACE-GOVERNANCE-LEDGER.md) |
 | Policy | [WORKSPACE-GOVERNANCE-POLICY.md](./WORKSPACE-GOVERNANCE-POLICY.md) |
 | Risk | [WORKSPACE-GOVERNANCE-RISK.md](./WORKSPACE-GOVERNANCE-RISK.md) |

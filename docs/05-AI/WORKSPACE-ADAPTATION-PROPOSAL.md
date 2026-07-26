@@ -102,6 +102,9 @@ Failure/recovery lifecycle; never deletes provenance or grants authority.
 [WORKSPACE-GOVERNANCE.md](./WORKSPACE-GOVERNANCE.md).
 Aggregate roots, ownership boundaries, shared authority marker, doc index.
 
+**Sprint 170–175:** Runtime integration (read-only) —
+[WORKSPACE-RUNTIME-CONTEXT.md](./WORKSPACE-RUNTIME-CONTEXT.md).
+
 ---
 
 ## Ownership

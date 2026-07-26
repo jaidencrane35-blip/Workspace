@@ -69,6 +69,7 @@ pub mod workspace_task_graph;
 pub mod workspace_environment;
 pub mod workspace_intent;
 pub mod workspace_intelligence;
+pub mod workspace_runtime;
 
 pub use action_catalog::{
     ActionCatalog, ActionCatalogEntry, ActionCatalogError, AiActionAwareness,
@@ -410,6 +411,13 @@ pub use workspace_intelligence::{
     BlockedActionSummary, IntelligenceApplicationSummary, IntelligenceHighlight,
     PendingDecisionSummary, RecentActivityItem, WorkspaceIntelligenceComparison,
     WorkspaceIntelligenceError, WorkspaceIntelligenceState, WorkspaceRecommendation,
+};
+pub use workspace_runtime::{
+    CognitionContextBundle, CognitionContextProjection, CognitionProjectionKind,
+    GovernanceRuntimeSummary, OperatorContextProjection, RuntimeGovernanceIntegrationPoint,
+    RuntimeGovernanceVisibilitySurface, SubsystemHealthEntry, WorkspaceHealthLevel,
+    WorkspaceRuntimeCoherence, WorkspaceRuntimeContext, WorkspaceRuntimeError,
+    WorkspaceRuntimeHealth, WorkspaceRuntimeIntegrationContract,
 };
 pub use layout::{
     Layout, LayoutBounds, LayoutError, LayoutMetadata, LayoutNode, LayoutSnapshot, Position2D,
