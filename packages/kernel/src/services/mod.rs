@@ -47,6 +47,7 @@ mod observation_startup_trigger;
 mod observation_scheduled_trigger;
 mod observation_scheduler;
 mod observation_delta;
+mod observation_event_gateway;
 mod workspace_scope;
 mod trigger_evaluator;
 mod configuration;
@@ -134,6 +135,7 @@ pub(crate) use observation_scheduler::{
     ObservationScheduler, ObservationSchedulerDiagnostics,
 };
 pub(crate) use observation_delta::ObservationDeltaService;
+pub(crate) use observation_event_gateway::ObservationEventGateway;
 pub(crate) use workspace_scope::{approval_belongs_to_workspace, plan_belongs_to_workspace};
 pub use context::WorkspaceContextService;
 pub use database::DatabaseServiceHandle;

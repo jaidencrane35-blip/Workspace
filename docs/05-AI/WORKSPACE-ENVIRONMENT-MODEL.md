@@ -37,12 +37,26 @@ Workspace Environment Model   ← this document
 Attention / Intelligence / Continuity consumers
 ```
 
+**Future event-driven path (Sprint 117 — gateway only; Event admission still rejected):**
+
+```
+OS / adapter event (not wired yet)
+        ↓
+ObservationEventGateway  (validate → normalize → map)
+        ↓
+ObservationTriggerAuthority
+        ↓
+Admission (Event rejected until enabled)
+```
+
+This gateway is the **only** future path for event-driven observation. It is not a Win32 listener, not a hook, and not automation.
 **CaptureCoordinator** owns capture request admission and concurrency (no queue). It does **not** schedule, timer, or event-hook captures. Actual Win32 capture and persistence remain in `WorkspaceObservationService`. Capture requests carry provenance (`source` / optional `reason` / `context`) into distinguishable lifecycle audits (`requested` → `started` → `completed` | `failed`, or `rejected_concurrent`).
 
 **ObservationScheduler** owns schedule timing (`ObservationScheduleConfig`: `enabled`, `interval_seconds`). Starts after Ready on production `WorkspaceKernel::initialize`, stops on `begin_shutdown`, stays disabled for in-memory tests. Ticks call only `ObservationScheduledTrigger` (context `schedule:ObservationScheduler`). No Event/Plugin callers. Runtime health is exposed via `get_observation_scheduler_status` (`ObservationSchedulerStatus`) — read-only, no control, no snapshot load. Lifecycle audits: `workspace.observation.scheduler.started` / `.stopped` / `.tick`.
 
-**ObservationTriggerAuthority** evaluates `ObservationTriggerRequest`s: audit received → **admission policy** → refresh policy → ignore / block / accept → `CaptureCoordinator` only when capture is needed. Admission allows `Manual` / `System` / `Scheduled` and rejects `Event` / `Plugin`; rate-limits repeated admits (process-local cooldown). Callers: `ObservationStartupTrigger` (once at Ready) and `ObservationScheduledTrigger` (explicit tick or scheduler tick). Scheduled freshness is `NotStale`.
+**ObservationTriggerAuthority** evaluates `ObservationTriggerRequest`s: audit received → **admission policy** → refresh policy → ignore / block / accept → `CaptureCoordinator` only when capture is needed. Admission allows `Manual` / `System` / `Scheduled` and rejects `Event` / `Plugin`; rate-limits repeated admits (process-local cooldown). Callers: `ObservationStartupTrigger` (once at Ready), `ObservationScheduledTrigger` (explicit tick or scheduler tick), and `ObservationEventGateway` (normalized events — admitted path not enabled). Scheduled freshness is `NotStale`.
 
+**ObservationEventGateway** accepts `ObservationEvent` contracts, validates/normalizes them, and maps to `ObservationTriggerRequest` (`source=Event`, `reason=normalized_event`). It does **not** listen to the OS, call Win32, capture, schedule, or hook events. Until Event admission is enabled, gateway forwards are rejected before capture.
 **ObservationRefreshPolicyService** answers whether a new observation should be requested (`FreshEnough` / `RefreshRequired` / `ObservationUnavailable` / `RefreshBlocked`). It is read-only: it does **not** capture. Consumer freshness needs (`ObservationConsumerFreshnessNeed`) are contracts only — not yet wired into Environment / Intelligence.
 
 **Observation status** (`get_workspace_observation_status`) reports whether a snapshot exists, its age/freshness, counts, and last capture failure. It is read-only diagnostics: it does **not** trigger capture and does **not** repair stale observations.

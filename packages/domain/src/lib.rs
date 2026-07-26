@@ -61,6 +61,7 @@ pub mod workspace_interaction;
 pub mod workspace_profile;
 pub mod workspace_observation;
 pub mod workspace_observation_delta;
+pub mod workspace_observation_event;
 pub mod workspace_continuity;
 pub mod workspace_task_graph;
 pub mod workspace_environment;
@@ -337,6 +338,9 @@ pub use workspace_observation_delta::{
     compare_observation_snapshots, ObservationFocusedWindowChange, ObservationMinimizedChange,
     ObservationMonitorAssignmentChange, ObservationWindowMove, ObservationWindowRef,
     ObservationWindowResize, WorkspaceObservationDelta,
+};
+pub use workspace_observation_event::{
+    ObservationEvent, ObservationEventError, ObservationEventKind,
 };
 pub use workspace_environment::{
     build_environment_summary, now_rfc3339, validate_workspace_id, EnvironmentApplication,

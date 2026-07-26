@@ -1571,13 +1571,33 @@ export interface WorkspaceObservationDelta {
   authority_effect: string;
 }
 
-/** Capture request origin (Scheduled/Event/Plugin callers not implemented yet). */
+/** Capture request origin. Event enters via ObservationEventGateway only (admission still rejects). */
 export type CaptureRequestSource =
   | "manual"
   | "system"
   | "scheduled"
   | "event"
   | "plugin";
+
+/** Contract-only observation event kinds (Sprint 117). */
+export type ObservationEventKind =
+  | "window_changed"
+  | "focus_changed"
+  | "monitor_changed"
+  | "display_configuration_changed"
+  | "desktop_state_changed"
+  | "unknown";
+
+/** Canonical internal event before ObservationTriggerAuthority (not an OS hook). */
+export interface ObservationEvent {
+  source: string;
+  event_kind: ObservationEventKind;
+  timestamp: string;
+  context: string | null;
+  correlation_id: string | null;
+  metadata: string;
+  authority_effect: string;
+}
 
 /** Provenance attachable to observation capture lifecycle. */
 export interface CaptureProvenance {

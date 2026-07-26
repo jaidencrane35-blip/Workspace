@@ -352,7 +352,9 @@ pub fn observation_u32_to_i32(value: u32, field: &str) -> Result<i32> {
 
 /// Who requested an observation capture (orchestration contract only).
 ///
-/// Callers for `Scheduled` / `Event` / `Plugin` are not implemented yet — define the contract only.
+/// `Event` callers must enter through `ObservationEventGateway` (Sprint 117).
+/// `Plugin` callers are not implemented yet — contract only. Admission still
+/// rejects `Event` / `Plugin` until those sources are enabled.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum CaptureRequestSource {
