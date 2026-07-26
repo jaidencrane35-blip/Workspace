@@ -66,6 +66,7 @@ fn sample_recommendation() -> RecommendationItem {
                 decision_intake: None,
                 decision_intake_inspection: None,
                 decision_intake_compatibility: None,
+                decision_intake_proceed_denial: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
     }
 }

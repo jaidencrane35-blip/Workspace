@@ -5,6 +5,7 @@ import type {
   RecommendationDecisionContext,
   RecommendationDecisionIntakeCompatibility,
   RecommendationDecisionIntakeInspection,
+  RecommendationDecisionIntakeProceedDenial,
   RecommendationDecisionIntakeRequest,
   RecommendationDecisionReadiness,
   RecommendationHistoryEntry,
@@ -148,6 +149,11 @@ export function RecommendationExplanationBlock({
           compatibility={item.decision_intake_compatibility}
         />
       ) : null}
+      {item.decision_intake_proceed_denial ? (
+        <RecommendationDecisionIntakeProceedDenialBlock
+          denial={item.decision_intake_proceed_denial}
+        />
+      ) : null}
     </div>
   );
 }
@@ -236,6 +242,33 @@ export function RecommendationDecisionIntakeCompatibilityBlock({
         authority: {compatibility.authority_effect}
       </div>
       <div>{compatibility.note}</div>
+    </div>
+  );
+}
+
+/** Compatible ≠ proceed / consume / adapter permission. */
+export function RecommendationDecisionIntakeProceedDenialBlock({
+  denial,
+}: {
+  denial: RecommendationDecisionIntakeProceedDenial;
+}) {
+  return (
+    <div
+      className="recommendation-decision-intake-proceed-denial muted"
+      style={{ marginTop: 4 }}
+    >
+      <div>
+        Intake proceed: <strong>denied</strong>
+        {" · "}
+        {denial.eligibility_state}
+        {" · "}
+        adapter: {denial.adapter_invokable ? "invokable" : "blocked"}
+        {" · "}
+        owner: {denial.current_owner}
+        {" · "}
+        permission: {denial.permission_effect}
+      </div>
+      <div>{denial.note}</div>
     </div>
   );
 }

@@ -2183,6 +2183,28 @@ export interface RecommendationItem {
   decision_intake_inspection?: RecommendationDecisionIntakeInspection | null;
   /** Versioned intake package identity — compatible ≠ transfer / handoff. */
   decision_intake_compatibility?: RecommendationDecisionIntakeCompatibility | null;
+  /** Compatible ≠ proceed / consume / adapter permission. */
+  decision_intake_proceed_denial?: RecommendationDecisionIntakeProceedDenial | null;
+  authority_effect: string;
+}
+
+/** Explicit denial that compatibility is not proceed permission. */
+export interface RecommendationDecisionIntakeProceedDenial {
+  recommendation_id: string;
+  compatibility_compatible: boolean;
+  contract_version: string;
+  current_owner: string;
+  declared_consumer_role: string;
+  /** identity_pin_only | incompatible_blocked */
+  eligibility_state: string;
+  proceed_authorized: boolean;
+  consume_authorized: boolean;
+  adapter_invokable: boolean;
+  permission_effect: string;
+  denial_reasons: string[];
+  handoff_performed: boolean;
+  decision_engine_object_id: string | null;
+  note: string;
   authority_effect: string;
 }
 
@@ -2399,6 +2421,7 @@ export interface RecommendationReviewActionResult {
   decision_intake?: RecommendationDecisionIntakeRequest | null;
   decision_intake_inspection?: RecommendationDecisionIntakeInspection | null;
   decision_intake_compatibility?: RecommendationDecisionIntakeCompatibility | null;
+  decision_intake_proceed_denial?: RecommendationDecisionIntakeProceedDenial | null;
   explanation: string;
   authority_effect: string;
 }

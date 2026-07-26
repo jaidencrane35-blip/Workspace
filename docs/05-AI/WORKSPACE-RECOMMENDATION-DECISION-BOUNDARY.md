@@ -35,7 +35,8 @@ Remaining before a future handoff could exist:
 2. ~~Typed intake payload~~ — see [WORKSPACE-RECOMMENDATION-DECISION-INTAKE.md](./WORKSPACE-RECOMMENDATION-DECISION-INTAKE.md)
 3. ~~Intake inspection (safe inspect ≠ handoff)~~ — see [WORKSPACE-RECOMMENDATION-DECISION-INTAKE-INSPECTION.md](./WORKSPACE-RECOMMENDATION-DECISION-INTAKE-INSPECTION.md)
 4. ~~Intake compatibility (version pin ≠ transfer)~~ — see [WORKSPACE-RECOMMENDATION-DECISION-INTAKE-COMPATIBILITY.md](./WORKSPACE-RECOMMENDATION-DECISION-INTAKE-COMPATIBILITY.md)
-5. Optional **adapter** that maps intake → DE object creation without merging domains
+5. ~~Proceed denial (compatible ≠ permission)~~ — see [WORKSPACE-RECOMMENDATION-DECISION-INTAKE-PROCEED-DENIAL.md](./WORKSPACE-RECOMMENDATION-DECISION-INTAKE-PROCEED-DENIAL.md)
+6. Optional **adapter** that maps intake → DE object creation without merging domains
 
 ---
 

@@ -19,11 +19,14 @@ RecommendationDecisionIntakeCompatibility
         ✗ compatible ≠ transfer / migrate / handoff
         ✗ declared_consumer ≠ current owner
         ✗ no DE object / intent / Gateway
+        ↓ RecommendationDecisionIntakeProceedDenial (compatible ≠ permission)
+        ✗ proceed / consume / adapter always denied
         ↓ (future DE adapter — separate increment)
 ```
 
 `compatible` means a future consumer may **pin** this package identity.
 It does **not** authorize ownership transfer, migration, handoff, or execution.
+See [WORKSPACE-RECOMMENDATION-DECISION-INTAKE-PROCEED-DENIAL.md](./WORKSPACE-RECOMMENDATION-DECISION-INTAKE-PROCEED-DENIAL.md).
 
 ---
 
@@ -64,6 +67,7 @@ Invalid / stale inspection → `compatible = false` (cannot progress).
 
 ## Related
 
+- [WORKSPACE-RECOMMENDATION-DECISION-INTAKE-PROCEED-DENIAL.md](./WORKSPACE-RECOMMENDATION-DECISION-INTAKE-PROCEED-DENIAL.md)
 - [WORKSPACE-RECOMMENDATION-DECISION-INTAKE-INSPECTION.md](./WORKSPACE-RECOMMENDATION-DECISION-INTAKE-INSPECTION.md)
 - [WORKSPACE-RECOMMENDATION-DECISION-INTAKE.md](./WORKSPACE-RECOMMENDATION-DECISION-INTAKE.md)
 - [WORKSPACE-DECISION-ENGINE.md](./WORKSPACE-DECISION-ENGINE.md)

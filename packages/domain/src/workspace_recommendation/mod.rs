@@ -263,6 +263,9 @@ pub struct RecommendationItem {
     /// Versioned intake package identity for future consumers (Sprint 242+) — never transfer.
     #[serde(default)]
     pub decision_intake_compatibility: Option<RecommendationDecisionIntakeCompatibility>,
+    /// Explicit denial that compatibility is not proceed permission (Sprint 247+) — never handoff.
+    #[serde(default)]
+    pub decision_intake_proceed_denial: Option<RecommendationDecisionIntakeProceedDenial>,
     pub authority_effect: String,
 }
 
@@ -1612,6 +1615,170 @@ impl RecommendationDecisionIntakeCompatibility {
             || self.may_migrate
             || self.decision_engine_object_id.is_some()
             || self.authority_effect != Self::AUTHORITY_EFFECT_NONE
+        {
+            return Err(WorkspaceRecommendationEngineError::CannotBecomeHandoff);
+        }
+        Ok(())
+    }
+}
+
+/// Explicit denial that intake compatibility is not proceed/consume permission (Sprint 247).
+///
+/// Closes the misread that `compatible=true` + `declared_consumer=decision_engine`
+/// authorizes adapter invocation, DE ownership, or handoff. Always denies proceed.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RecommendationDecisionIntakeProceedDenial {
+    pub recommendation_id: String,
+    pub compatibility_compatible: bool,
+    pub contract_version: String,
+    pub current_owner: String,
+    /// Always pin-only — never current owner.
+    pub declared_consumer_role: String,
+    /// `identity_pin_only` | `incompatible_blocked`
+    pub eligibility_state: String,
+    pub proceed_authorized: bool,
+    pub consume_authorized: bool,
+    pub adapter_invokable: bool,
+    pub permission_effect: String,
+    pub denial_reasons: Vec<String>,
+    pub handoff_performed: bool,
+    pub decision_engine_object_id: Option<String>,
+    pub note: String,
+    pub authority_effect: String,
+}
+
+impl RecommendationDecisionIntakeProceedDenial {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+    pub const PERMISSION_EFFECT_NONE: &'static str = "none";
+    pub const OWNER_RECOMMENDATION: &'static str = "recommendation_engine";
+    pub const CONSUMER_ROLE_PIN_ONLY: &'static str = "future_reader_pin_only";
+    pub const STATE_IDENTITY_PIN_ONLY: &'static str = "identity_pin_only";
+    pub const STATE_INCOMPATIBLE_BLOCKED: &'static str = "incompatible_blocked";
+
+    /// Derive proceed denial from compatibility. Compatible never upgrades to proceed.
+    pub fn derive_from_compatibility(
+        compatibility: &RecommendationDecisionIntakeCompatibility,
+    ) -> Self {
+        let mut denial_reasons = vec![
+            "compatibility_is_not_permission".into(),
+            "proceed_requires_future_decision_engine_adapter".into(),
+            "recommendation_engine_retains_ownership".into(),
+        ];
+        if !compatibility.compatible {
+            denial_reasons.insert(
+                0,
+                "identity_mismatch_or_invalid_inspection_blocks_progression".into(),
+            );
+        }
+        if !compatibility.version_current {
+            denial_reasons.insert(0, "contract_version_mismatch_blocks_progression".into());
+        }
+
+        let eligibility_state = if compatibility.compatible {
+            Self::STATE_IDENTITY_PIN_ONLY
+        } else {
+            Self::STATE_INCOMPATIBLE_BLOCKED
+        };
+
+        let note = if compatibility.compatible {
+            "Intake identity pin is compatible. Compatible is not permission to proceed, \
+             consume, invoke an adapter, transfer ownership, or create Decision Engine objects."
+                .into()
+        } else {
+            "Intake identity is incompatible or blocked. Progression denied; no proceed, \
+             consume, adapter, handoff, or DE ownership."
+                .into()
+        };
+
+        Self {
+            recommendation_id: compatibility.recommendation_id.clone(),
+            compatibility_compatible: compatibility.compatible,
+            contract_version: compatibility.contract_version.clone(),
+            current_owner: Self::OWNER_RECOMMENDATION.into(),
+            declared_consumer_role: Self::CONSUMER_ROLE_PIN_ONLY.into(),
+            eligibility_state: eligibility_state.into(),
+            proceed_authorized: false,
+            consume_authorized: false,
+            adapter_invokable: false,
+            permission_effect: Self::PERMISSION_EFFECT_NONE.into(),
+            denial_reasons,
+            handoff_performed: false,
+            decision_engine_object_id: None,
+            note,
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        }
+    }
+
+    pub fn may_proceed(&self) -> bool {
+        false
+    }
+
+    pub fn may_consume(&self) -> bool {
+        false
+    }
+
+    pub fn may_invoke_adapter(&self) -> bool {
+        false
+    }
+
+    pub fn attempt_authorize_proceed(&self) -> Result<(), WorkspaceRecommendationEngineError> {
+        Err(WorkspaceRecommendationEngineError::CannotBecomeHandoff)
+    }
+
+    pub fn attempt_consume(&self) -> Result<(), WorkspaceRecommendationEngineError> {
+        Err(WorkspaceRecommendationEngineError::CannotBecomeHandoff)
+    }
+
+    pub fn attempt_invoke_adapter(&self) -> Result<(), WorkspaceRecommendationEngineError> {
+        Err(WorkspaceRecommendationEngineError::CannotBecomeHandoff)
+    }
+
+    pub fn attempt_execute() -> Result<(), WorkspaceRecommendationEngineError> {
+        Err(WorkspaceRecommendationEngineError::CannotExecute)
+    }
+
+    pub fn attempt_handoff(&self) -> Result<(), WorkspaceRecommendationEngineError> {
+        Err(WorkspaceRecommendationEngineError::CannotBecomeHandoff)
+    }
+
+    pub fn attempt_create_decision_engine_object(
+        &self,
+    ) -> Result<(), WorkspaceRecommendationEngineError> {
+        Err(WorkspaceRecommendationEngineError::CannotBecomeHandoff)
+    }
+
+    pub fn attempt_create_intent(&self) -> Result<(), WorkspaceRecommendationEngineError> {
+        Err(WorkspaceRecommendationEngineError::CannotBecomeHandoff)
+    }
+
+    pub fn may_create_decision_engine_object(&self) -> bool {
+        false
+    }
+
+    pub fn may_create_intent(&self) -> bool {
+        false
+    }
+
+    pub fn may_invoke_gateway(&self) -> bool {
+        false
+    }
+
+    pub fn may_mutate_provenance(&self) -> bool {
+        false
+    }
+
+    /// Assert compatibility pin never grants proceed/consume/adapter permission.
+    pub fn assert_compatible_is_not_permission(
+        &self,
+    ) -> Result<(), WorkspaceRecommendationEngineError> {
+        if self.proceed_authorized
+            || self.consume_authorized
+            || self.adapter_invokable
+            || self.handoff_performed
+            || self.decision_engine_object_id.is_some()
+            || self.permission_effect != Self::PERMISSION_EFFECT_NONE
+            || self.authority_effect != Self::AUTHORITY_EFFECT_NONE
+            || self.current_owner != Self::OWNER_RECOMMENDATION
         {
             return Err(WorkspaceRecommendationEngineError::CannotBecomeHandoff);
         }

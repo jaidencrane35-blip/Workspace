@@ -872,6 +872,15 @@ fn case24_confirm_future_decision_remains_non_authoritative() {
         assert!(compatibility.attempt_handoff().is_err());
         assert!(compatibility.attempt_transfer().is_err());
         assert!(compatibility.decision_engine_object_id.is_none());
+        let denial = confirmed
+            .decision_intake_proceed_denial
+            .expect("confirm emits proceed denial");
+        assert!(!denial.proceed_authorized);
+        assert!(!denial.consume_authorized);
+        assert!(!denial.adapter_invokable);
+        assert!(denial.assert_compatible_is_not_permission().is_ok());
+        assert!(denial.attempt_authorize_proceed().is_err());
+        assert!(denial.attempt_invoke_adapter().is_err());
     }
     assert_cannot_execute(CommandHandler::workspace_recommendation_engine_attempt_execute());
     assert_cannot_execute(CommandHandler::decision_engine_attempt_execute());

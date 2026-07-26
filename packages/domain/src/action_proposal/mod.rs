@@ -792,6 +792,10 @@ pub struct RecommendationReviewActionResult {
     #[serde(default)]
     pub decision_intake_compatibility:
         Option<crate::workspace_recommendation::RecommendationDecisionIntakeCompatibility>,
+    /// Compatible ≠ proceed / consume / adapter permission.
+    #[serde(default)]
+    pub decision_intake_proceed_denial:
+        Option<crate::workspace_recommendation::RecommendationDecisionIntakeProceedDenial>,
     pub explanation: String,
     pub authority_effect: String,
 }
@@ -4116,6 +4120,7 @@ mod tests {
                 decision_intake: None,
                 decision_intake_inspection: None,
                 decision_intake_compatibility: None,
+                decision_intake_proceed_denial: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
         }
     }
