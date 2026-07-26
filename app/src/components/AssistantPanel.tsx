@@ -6,6 +6,7 @@ import type {
   AiAssistantProductState,
   AiAssistantWorkflow,
   Workspace,
+  WorkspaceExperienceState,
   WorkspaceIntelligenceState,
 } from "../types/domain";
 import { assistantProductState } from "../types/domain";
@@ -50,6 +51,8 @@ export function AssistantPanel({
   const [expandedStepId, setExpandedStepId] = useState<string | null>(null);
   const [workspaceIntel, setWorkspaceIntel] =
     useState<WorkspaceIntelligenceState | null>(null);
+  const [experienceState, setExperienceState] =
+    useState<WorkspaceExperienceState | null>(null);
 
   const productState = assistantProductState(workflow?.state);
   const canConfirm = workflow?.state === "awaiting_confirmation";
@@ -114,7 +117,8 @@ export function AssistantPanel({
       <section>
         <h3>Shared workspace understanding</h3>
         <p className="muted">
-          Same generate_workspace_intelligence path as the Work tab — read-only.
+          Same Experience + Intelligence paths as the Work tab — explain only;
+          never edit or own state.
         </p>
         <div className="row">
           <button
@@ -123,17 +127,38 @@ export function AssistantPanel({
             onClick={() =>
               void run("Workspace understanding loaded", async () => {
                 if (!workspace) return;
-                const state = await invokeIpc<WorkspaceIntelligenceState>(
-                  "generate_workspace_intelligence",
-                  { workspaceId: workspace.id },
-                );
-                setWorkspaceIntel(state);
+                const [intel, experience] = await Promise.all([
+                  invokeIpc<WorkspaceIntelligenceState>(
+                    "generate_workspace_intelligence",
+                    { workspaceId: workspace.id },
+                  ),
+                  invokeIpc<WorkspaceExperienceState>(
+                    "generate_workspace_experience",
+                    { workspaceId: workspace.id },
+                  ),
+                ]);
+                setWorkspaceIntel(intel);
+                setExperienceState(experience);
               })
             }
           >
             Load workspace intelligence
           </button>
         </div>
+        {experienceState && (
+          <dl>
+            <dt>Experience</dt>
+            <dd>
+              {experienceState.experience_summary.narrative} Assistant explains
+              this calm Work view — never edits Experience or Session.
+            </dd>
+            <dt>Focus / next</dt>
+            <dd>
+              {experienceState.experience_summary.focus_line} Next:{" "}
+              {experienceState.experience_summary.next_line}
+            </dd>
+          </dl>
+        )}
         {workspaceIntel && (
           <dl>
             <dt>Summary</dt>
@@ -302,10 +327,15 @@ export function AssistantPanel({
             </dd>
             <dt>Working Session</dt>
             <dd>
-              Session is the Work tab runtime view projected from this
-              Intelligence snapshot. Assistant may explain what you were doing,
-              what is blocked, and what is ready — never restore, launch, or
-              execute from Session.
+              Session is the canonical runtime model behind Experience.
+              Assistant may explain what you were doing, what is blocked, and
+              what is ready — never restore, launch, or execute from Session.
+            </dd>
+            <dt>Workspace Experience</dt>
+            <dd>
+              Same Experience Layer as the Work tab. Assistant consumes it to
+              explain focus, blockers, waiting, and next steps — never edits or
+              owns presentation state.
             </dd>
             <dt>Continuity</dt>
             <dd>

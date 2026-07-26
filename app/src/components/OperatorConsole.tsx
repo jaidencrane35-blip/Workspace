@@ -21,6 +21,8 @@ import type {
   WorkspaceReadinessState,
   WorkspaceSessionState,
   WorkspaceSessionComparison,
+  WorkspaceExperienceState,
+  WorkspaceExperienceComparison,
   AiOrchestratedPlan,
   AiPlan,
   AiPlanEvaluationReport,
@@ -178,6 +180,10 @@ export function OperatorConsole({
     useState<WorkspaceSessionState | null>(null);
   const [priorSession, setPriorSession] =
     useState<WorkspaceSessionState | null>(null);
+  const [experienceState, setExperienceState] =
+    useState<WorkspaceExperienceState | null>(null);
+  const [priorExperience, setPriorExperience] =
+    useState<WorkspaceExperienceState | null>(null);
   const [activeProject, setActiveProject] = useState<Project | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [memoryEntries, setMemoryEntries] = useState<MemoryEntry[]>([]);
@@ -1994,10 +2000,98 @@ export function OperatorConsole({
       </section>
 
       <section>
+        <h2>Workspace Experience (diagnostics)</h2>
+        <p className="muted">
+          Presentation over Session — Generate / Explain / Validate / Compare.
+          Never executes, prepares, restores, or owns data.
+        </p>
+        <div className="row">
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("Experience generated", async () => {
+                if (!workspace) return;
+                const state = await invokeIpc<WorkspaceExperienceState>(
+                  "generate_workspace_experience",
+                  { workspaceId: workspace.id },
+                );
+                if (experienceState) setPriorExperience(experienceState);
+                setExperienceState(state);
+              })
+            }
+          >
+            Generate experience
+          </button>
+          <button
+            type="button"
+            disabled={busy || !experienceState}
+            onClick={() =>
+              void run("Experience explained", async () => {
+                if (!experienceState) return;
+                onMessage(
+                  `${experienceState.experience_summary.narrative} Evidence: ${experienceState.evidence.slice(0, 3).join(" · ")}`,
+                );
+              })
+            }
+          >
+            Explain experience
+          </button>
+          <button
+            type="button"
+            disabled={busy || !experienceState || !priorExperience}
+            onClick={() =>
+              void run("Experiences compared", async () => {
+                if (!experienceState || !priorExperience) return;
+                const comparison =
+                  await invokeIpc<WorkspaceExperienceComparison>(
+                    "compare_workspace_experiences",
+                    { left: priorExperience, right: experienceState },
+                  );
+                onMessage(comparison.differences.join(" · "));
+              })
+            }
+          >
+            Compare experiences
+          </button>
+          <button
+            type="button"
+            disabled={busy || !experienceState}
+            onClick={() =>
+              void run("Experience validated", async () => {
+                if (!experienceState) return;
+                onMessage(
+                  experienceState.authority_effect === "none" &&
+                    experienceState.explanation.includes("owns no")
+                    ? `Valid: authority none · ${experienceState.section_count} sections · immediate ${experienceState.immediate_count} · from Session ${experienceState.session_generated_at}`
+                    : "Experience validation concerns found.",
+                );
+              })
+            }
+          >
+            Validate experience
+          </button>
+        </div>
+        {experienceState && (
+          <ul className="muted">
+            <li>{experienceState.experience_summary.headline}</li>
+            <li>{experienceState.experience_summary.focus_line}</li>
+            <li>
+              Immediate {experienceState.immediate_count} · Highlighted{" "}
+              {experienceState.highlighted_count} · Collapsed{" "}
+              {experienceState.collapsed_count} · Deferred{" "}
+              {experienceState.deferred_count} · authority{" "}
+              {experienceState.authority_effect}
+            </li>
+          </ul>
+        )}
+      </section>
+
+      <section>
         <h2>Workspace Session (diagnostics)</h2>
         <p className="muted">
           Runtime orchestration over Intelligence — inspect / compare / explain.
-          Never executes, prepares, or restores.
+          Never executes, prepares, or restores. Canonical input to Experience.
         </p>
         <div className="row">
           <button

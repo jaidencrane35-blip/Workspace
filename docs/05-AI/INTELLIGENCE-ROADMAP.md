@@ -164,6 +164,10 @@ Architectural integrity & hardening audit of the cognition stack through Sprint 
 
 Workspace Session Engine foundation (Sprint 94) — runtime orchestration projection over Intelligence; Work default view; owns no source data; never executes/prepares/restores. See [Workspace Session Engine](WORKSPACE-SESSION-ENGINE.md).
 
+## Phase 6 Batch 2 (done)
+
+Workspace Experience Layer foundation (Sprint 95) — presentation projection over Session; calm Work surface groupings with deterministic visibility; Assistant explain-only; owns no data/cognition/authority. See [Workspace Experience Layer](WORKSPACE-EXPERIENCE-LAYER.md).
+
 ---
 
 ## Never build

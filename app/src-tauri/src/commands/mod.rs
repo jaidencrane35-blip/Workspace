@@ -18,6 +18,7 @@ pub mod workspace_pattern;
 pub mod workspace_adaptation;
 pub mod workspace_readiness;
 pub mod workspace_session;
+pub mod workspace_experience;
 pub mod context;
 pub mod desktop_window;
 pub mod error;

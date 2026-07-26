@@ -19,6 +19,7 @@ mod workspace_adaptation;
 mod workspace_readiness;
 mod workspace_intelligence;
 mod workspace_session;
+mod workspace_experience;
 mod context;
 mod execute_intent_request;
 mod create_suggestion_intent_request;
@@ -121,6 +122,7 @@ mod workspace_pattern_tests;
 mod workspace_adaptation_tests;
 mod workspace_readiness_tests;
 mod workspace_session_tests;
+mod workspace_experience_tests;
 #[cfg(test)]
 mod ai_memory_tests;
 #[cfg(test)]

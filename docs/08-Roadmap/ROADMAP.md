@@ -167,7 +167,7 @@ Foundation     Decisions       Core Platform     Feature Expansion   Maturity
 
 **Goal:** Application launching, AI observation/suggestion, and user-approved automation.
 
-**Status:** Phase 3–5.5 complete; Phase 6 Batch 1 Session Engine foundation complete. Next: deepen session-aware UX and governed capabilities via Intent → Gateway without treating projections as SoT. See [Intelligence Roadmap](../05-AI/INTELLIGENCE-ROADMAP.md) and [Workspace Session Engine](../05-AI/WORKSPACE-SESSION-ENGINE.md).
+**Status:** Phase 3–5.5 complete; Phase 6 Batch 1 Session Engine and Batch 2 Experience Layer foundations complete. Next: deepen experience-led UX and governed capabilities via Intent → Gateway without treating projections as SoT. See [Intelligence Roadmap](../05-AI/INTELLIGENCE-ROADMAP.md), [Workspace Session Engine](../05-AI/WORKSPACE-SESSION-ENGINE.md), and [Workspace Experience Layer](../05-AI/WORKSPACE-EXPERIENCE-LAYER.md).
 
 ### Expected Deliverables
 

@@ -2285,6 +2285,99 @@ export interface WorkspaceSessionComparison {
   authority_effect: string;
 }
 
+export type ExperienceSectionKind =
+  | "primary_focus"
+  | "todays_work"
+  | "suggested_attention"
+  | "waiting_on"
+  | "blocked_work"
+  | "recent_progress"
+  | "recommended_next_step"
+  | "helpful_improvements"
+  | "session_health";
+
+export type ExperienceVisibility =
+  | "immediate"
+  | "highlighted"
+  | "collapsed"
+  | "deferred";
+
+export interface ExperienceItem {
+  id: string;
+  title: string;
+  summary: string;
+  visibility: ExperienceVisibility;
+  why: string;
+  source_session_field: string;
+  source_ref: string;
+  authority_effect: string;
+}
+
+export interface ExperienceSection {
+  kind: ExperienceSectionKind;
+  title: string;
+  visibility: ExperienceVisibility;
+  items: ExperienceItem[];
+  item_count: number;
+  collapsed_hint: string | null;
+  why: string;
+  source_session_field: string;
+}
+
+export interface ExperienceSummary {
+  headline: string;
+  focus_line: string;
+  matters_line: string;
+  blocked_line: string;
+  ready_line: string;
+  next_line: string;
+  narrative: string;
+}
+
+export interface WorkspaceExperienceState {
+  workspace_id: string;
+  workspace_name: string;
+  generated_at: string;
+  label: string;
+  experience_summary: ExperienceSummary;
+  sections: ExperienceSection[];
+  section_count: number;
+  immediate_count: number;
+  highlighted_count: number;
+  collapsed_count: number;
+  deferred_count: number;
+  session_generated_at: string;
+  explanation: string;
+  evidence: string[];
+  summary: string;
+  authority_effect: string;
+}
+
+export interface WorkspaceExperienceSummary {
+  workspace_id: string;
+  workspace_name: string;
+  generated_at: string;
+  label: string;
+  experience_summary: ExperienceSummary;
+  section_count: number;
+  immediate_count: number;
+  highlighted_count: number;
+  collapsed_count: number;
+  deferred_count: number;
+  top_sections: ExperienceSection[];
+  session_generated_at: string;
+  explanation: string;
+  summary: string;
+  authority_effect: string;
+}
+
+export interface WorkspaceExperienceComparison {
+  left_workspace_id: string;
+  right_workspace_id: string;
+  differences: string[];
+  authority_effect: string;
+}
+
 export interface WorkspaceIntelligenceComparison {
   left_workspace_id: string;
   right_workspace_id: string;

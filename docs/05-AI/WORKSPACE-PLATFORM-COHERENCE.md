@@ -110,6 +110,7 @@ Intelligence and Assistant must consume, never re-own, these answers. Session co
 | adaptation_proposal | `WorkspaceAdaptationService` | Aggregator (+ process-local status) |
 | readiness | `WorkspaceReadinessService` | Aggregator |
 | session | `WorkspaceSessionService` | Aggregator (runtime projection; owns nothing) |
+| experience | `WorkspaceExperienceService` | Aggregator (presentation over Session; owns nothing) |
 | decision_candidate | `DecisionEngineService` | Aggregator (+ outcome overlay) |
 | Workspace Intelligence | consumer only | Envelope |
 

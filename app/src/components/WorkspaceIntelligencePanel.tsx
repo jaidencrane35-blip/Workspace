@@ -27,6 +27,8 @@ import type {
   WorkspaceReadinessState,
   WorkspaceSessionState,
   WorkspaceSessionComparison,
+  WorkspaceExperienceState,
+  WorkspaceExperienceComparison,
   WorkspaceIntelligenceState,
 } from "../types/domain";
 
@@ -92,6 +94,11 @@ export function WorkspaceIntelligencePanel({
   const [sessionCompareNote, setSessionCompareNote] = useState<string | null>(
     null,
   );
+  const [experienceState, setExperienceState] =
+    useState<WorkspaceExperienceState | null>(null);
+  const [experienceCompareNote, setExperienceCompareNote] = useState<
+    string | null
+  >(null);
   const [lastHandoff, setLastHandoff] = useState<string | null>(null);
   const [contractName, setContractName] = useState(
     "Prepare coding environment",
@@ -137,6 +144,8 @@ export function WorkspaceIntelligencePanel({
       setReadinessState(null);
       setSessionState(null);
       setSessionCompareNote(null);
+      setExperienceState(null);
+      setExperienceCompareNote(null);
       setLastHandoff(null);
       setState(null);
       return;
@@ -154,6 +163,7 @@ export function WorkspaceIntelligencePanel({
           queue,
           intel,
           session,
+          experience,
           decisions,
           graphTasks,
           adapt,
@@ -180,6 +190,9 @@ export function WorkspaceIntelligencePanel({
             invokeIpc<WorkspaceSessionState>("generate_workspace_session", {
               workspaceId: workspace.id,
             }),
+            invokeIpc<WorkspaceExperienceState>("generate_workspace_experience", {
+              workspaceId: workspace.id,
+            }),
             invokeIpc<DecisionEngineState>("generate_decision_engine", {
               workspaceId: workspace.id,
             }),
@@ -197,6 +210,7 @@ export function WorkspaceIntelligencePanel({
           setDecisionQueue(queue);
           setState(intel);
           setSessionState(session);
+          setExperienceState(experience);
           setDecisionEngine(decisions);
           setTaskGraph(graphTasks);
           setAdaptationState(adapt);
@@ -230,10 +244,139 @@ export function WorkspaceIntelligencePanel({
         <p className="assistant-kicker">Work</p>
         <h2>Where you are. What needs attention. How work connects.</h2>
         <p className="lede">
-          Session is the default runtime view — one coherent snapshot over
-          existing understanding. Nothing here executes or grants permission.
+          Experience presents one calm product view over your Session. Nothing
+          here executes or grants permission.
         </p>
       </header>
+
+      <section>
+        <h3>Your workspace</h3>
+        <p className="muted">
+          Presentation over Session — Immediate and Highlighted first; collapsed
+          and deferred details stay out of the way.
+        </p>
+        <div className="row">
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("Experience refreshed", async () => {
+                if (!workspace) return;
+                const next = await invokeIpc<WorkspaceExperienceState>(
+                  "generate_workspace_experience",
+                  { workspaceId: workspace.id },
+                );
+                setExperienceState(next);
+                setExperienceCompareNote(null);
+              })
+            }
+          >
+            Refresh experience
+          </button>
+          <button
+            type="button"
+            disabled={busy || !workspace || !experienceState}
+            onClick={() =>
+              void run("Experience compared", async () => {
+                if (!workspace || !experienceState) return;
+                const next = await invokeIpc<WorkspaceExperienceState>(
+                  "generate_workspace_experience",
+                  { workspaceId: workspace.id },
+                );
+                const comparison =
+                  await invokeIpc<WorkspaceExperienceComparison>(
+                    "compare_workspace_experiences",
+                    { left: experienceState, right: next },
+                  );
+                setExperienceState(next);
+                setExperienceCompareNote(comparison.differences.join(" · "));
+              })
+            }
+          >
+            Compare experience
+          </button>
+        </div>
+        {experienceState ? (
+          <>
+            <p>
+              <strong>{experienceState.experience_summary.headline}</strong>
+            </p>
+            <p>{experienceState.experience_summary.focus_line}</p>
+            <p className="muted">
+              {experienceState.experience_summary.matters_line}
+            </p>
+            <p className="muted">
+              {experienceState.experience_summary.blocked_line}
+            </p>
+            <p className="muted">
+              {experienceState.experience_summary.ready_line}
+            </p>
+            <p className="muted">
+              Next: {experienceState.experience_summary.next_line}
+            </p>
+            <ul className="intelligence-list">
+              {experienceState.sections
+                .filter(
+                  (section) =>
+                    section.visibility === "immediate" ||
+                    section.visibility === "highlighted",
+                )
+                .map((section) => (
+                  <li key={section.kind}>
+                    <strong>
+                      {section.title}
+                      {section.visibility === "highlighted" ? " · highlighted" : ""}
+                    </strong>
+                    {section.items.length === 0 ? (
+                      <div className="muted">
+                        {section.collapsed_hint ?? "Nothing here right now."}
+                      </div>
+                    ) : (
+                      section.items.slice(0, 3).map((item) => (
+                        <div key={item.id} className="muted">
+                          {item.title}
+                          {item.summary ? ` — ${item.summary}` : ""}
+                        </div>
+                      ))
+                    )}
+                  </li>
+                ))}
+            </ul>
+            <details>
+              <summary className="muted">
+                Collapsed / deferred ({experienceState.collapsed_count +
+                  experienceState.deferred_count})
+              </summary>
+              <ul className="intelligence-list">
+                {experienceState.sections
+                  .filter(
+                    (section) =>
+                      section.visibility === "collapsed" ||
+                      section.visibility === "deferred",
+                  )
+                  .map((section) => (
+                    <li key={section.kind}>
+                      <strong>{section.title}</strong>
+                      <div className="muted">
+                        {section.collapsed_hint ??
+                          `${section.item_count} item(s) · from ${section.source_session_field}`}
+                      </div>
+                    </li>
+                  ))}
+              </ul>
+            </details>
+            <p className="muted">
+              authority: {experienceState.authority_effect} · from Session{" "}
+              {experienceState.session_generated_at}
+            </p>
+            {experienceCompareNote && (
+              <p className="muted">Compare: {experienceCompareNote}</p>
+            )}
+          </>
+        ) : (
+          <p className="muted">No experience snapshot yet.</p>
+        )}
+      </section>
 
       <section>
         <h3>Working session</h3>

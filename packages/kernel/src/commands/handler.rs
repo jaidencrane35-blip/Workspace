@@ -27,6 +27,7 @@ use crate::commands::workspace_adaptation::{GateAdaptationRead, GateAdaptationWr
 use crate::commands::workspace_readiness::GateReadinessRead;
 use crate::commands::workspace_intelligence::GateIntelligenceRead;
 use crate::commands::workspace_session::GateSessionRead;
+use crate::commands::workspace_experience::GateExperienceRead;
 use crate::commands::workspace_activity::GateActivityGraphRead;
 use crate::commands::workspace_attention::GateAttentionRead;
 use crate::commands::workspace_continuity::GateContinuityRead;
@@ -87,8 +88,8 @@ use crate::services::{
     WorkspaceCompositionService, WorkspacePurposeService, WorkspaceEvolutionService,
     WorkspaceRecommendationEngineService, WorkspaceOperatingStateService,
     WorkspacePatternService, WorkspaceAdaptationService, WorkspaceReadinessService,
-    WorkspaceSessionService, WorkspaceActivityGraphService, WorkspaceAttentionService,
-    WorkspaceContextService,
+    WorkspaceSessionService, WorkspaceExperienceService, WorkspaceActivityGraphService,
+    WorkspaceAttentionService, WorkspaceContextService,
     WorkspaceContinuityService, WorkspaceIntelligenceService,
 };
 use crate::WorkspaceKernel;
@@ -103,7 +104,8 @@ use workspace_domain::{
     WorkspaceContinuityState, WorkspaceEnvironmentState, WorkspaceCompositionState,
     WorkspacePurposeState, WorkspaceEvolutionState, WorkspaceRecommendationEngineState,
     WorkspaceOperatingState, WorkspacePatternState, AdaptationActionResult, WorkspaceAdaptationState,
-    WorkspaceReadinessState, WorkspaceSessionComparison, WorkspaceSessionState, WorkspaceTask,
+    WorkspaceReadinessState, WorkspaceSessionComparison, WorkspaceSessionState,
+    WorkspaceExperienceComparison, WorkspaceExperienceState, WorkspaceTask,
     WorkspaceTaskPriority, WorkspaceTaskStatus,
     WorkspaceIntelligenceComparison, WorkspaceIntelligenceState, AiPlan, AiPlanEvaluationReport,
     AiPlanSubmissionResult,
@@ -3049,6 +3051,48 @@ impl CommandHandler {
     /// Architecture guard — Session must never execute, prepare, or restore.
     pub fn workspace_session_attempt_execute() -> Result<()> {
         WorkspaceSessionService::attempt_execute()
+    }
+
+    /// Project Workspace Experience (presentation over Session — never executes).
+    pub fn generate_workspace_experience(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceExperienceState> {
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent.clone()))
+            .execute_query(GateExperienceRead)?;
+        let _ = Self::get_workflow_context(
+            kernel,
+            actor.clone(),
+            intent.clone(),
+            workspace_id.clone(),
+        )?;
+        let workspace =
+            Self::get_workspace(kernel, actor.clone(), intent, workspace_id.clone())?;
+        let health = kernel.health();
+        WorkspaceExperienceService::generate(
+            &kernel.shared_database(),
+            &actor,
+            &kernel.orchestrated_plans(),
+            &kernel.assistant_workflows(),
+            workspace_id,
+            workspace.name,
+            health.status.clone(),
+        )
+    }
+
+    /// Compare two experience snapshots (informational).
+    pub fn compare_workspace_experiences(
+        left: &WorkspaceExperienceState,
+        right: &WorkspaceExperienceState,
+    ) -> WorkspaceExperienceComparison {
+        WorkspaceExperienceService::compare(left, right)
+    }
+
+    /// Architecture guard — Experience must never execute or authorize.
+    pub fn workspace_experience_attempt_execute() -> Result<()> {
+        WorkspaceExperienceService::attempt_execute()
     }
 
     /// Read-only workspace intelligence aggregation. Capability-gated; never executes.

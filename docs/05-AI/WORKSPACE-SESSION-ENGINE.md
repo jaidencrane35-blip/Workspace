@@ -35,8 +35,11 @@ Independent remain: Decision Queue, Recommendation Engine, Readiness, Adaptation
 ```
 Human Intent
   → Workspace Understanding (Intelligence + cognition)
-  → Session (runtime orchestration for UI)
+  → Session (canonical runtime orchestration)
+  → Experience (presentation for Work / Assistant)
   → Planning (human-initiated)
   → Permission Gateway
   → Execution
 ```
+
+Session feeds Experience. Experience does not replace Session as the runtime model.
