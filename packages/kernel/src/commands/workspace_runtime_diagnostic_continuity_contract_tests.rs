@@ -74,7 +74,7 @@ fn capture_pair(workspace_id: &str) -> (
         &capabilities,
         &verification,
         &coherence,
-        Some(&overview),
+        Some(overview.id.as_str()),
     );
     (snap_a, snap_b, provenance, overview)
 }

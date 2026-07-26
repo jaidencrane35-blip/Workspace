@@ -70,7 +70,7 @@ fn evolved(workspace_id: &str) -> (
         &capabilities,
         &verification,
         &coherence,
-        Some(&overview),
+        Some(overview.id.as_str()),
     );
     let continuity =
         RuntimeDiagnosticContinuityRecord::link(None, &snapshot, &provenance, "c0");

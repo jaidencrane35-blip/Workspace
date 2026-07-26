@@ -89,6 +89,7 @@ WorkspaceState
 | Audit | `RuntimeDiagnosticExplanationConsistency` | Explanation ↔ trust/lineage consistency |
 | Audit | `RuntimeDiagnosticMaturityAssessment` | Meta-diagnostic readiness/completeness/health |
 | Consol. | `RuntimeDiagnosticSubsystemBoundary` | Observes only; never owns facts/scoring/Experience/Gateway |
+| Audit | `RuntimeDiagnosticModuleLayering` | foundation→history→surface→meta; overview by artifact id |
 
 Authority: `authority_effect: none` (`GOVERNANCE_AUTHORITY_EFFECT_NONE`).
 
@@ -98,13 +99,18 @@ Authority: `authority_effect: none` (`GOVERNANCE_AUTHORITY_EFFECT_NONE`).
 packages/domain/src/workspace_runtime/
   mod.rs                 # runtime context, health, coherence (170–175)
   diagnostics/
-    mod.rs               # flat re-exports + SubsystemBoundary
-    foundation.rs        # graph, capabilities, snapshot, consistency, overview, review
+    mod.rs               # flat re-exports + SubsystemBoundary + ModuleLayering
+    foundation.rs        # graph, capabilities, snapshot, consistency
     history.rs           # provenance, evolution, continuity, evidence, archive
-    surface.rs           # consumption, interpretation, boundaries, restoration
+    surface.rs           # consumption, interpretation, boundaries, restoration,
+                         # operator overview, architecture review
     meta.rs              # trust, lineage, closure, catalog, interop, maturity, explanation
     tests.rs             # domain unit tests
 ```
+
+Dependency direction (hard): `foundation → history → surface → meta`.
+Lower layers must not import higher-layer types. History cites operator overview
+by artifact id only (`overview_id: Option<&str>`), never by surface type.
 
 Public types remain available via `workspace_domain::*` / `workspace_runtime::*` (flat exports).
 
@@ -121,7 +127,8 @@ Public types remain available via `workspace_domain::*` / `workspace_runtime::*`
 | Diagnostics | Observational contracts | Observe, compare, archive, explain |
 
 Canonical table: `RuntimeArchitectureOwnershipRegistry::canonical()` (`canonical:v1`).
-Validation: `RuntimeArchitectureOwnershipValidation` + `RuntimeDiagnosticSubsystemBoundary`.
+Validation: `RuntimeArchitectureOwnershipValidation` + `RuntimeDiagnosticSubsystemBoundary`
++ `RuntimeDiagnosticModuleLayering`.
 
 ### Diagnostic lifecycle
 

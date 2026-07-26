@@ -139,7 +139,7 @@ fn case4_evolution_validates_continuity_and_blocks_repair() {
         &capabilities,
         &verification,
         &coherence,
-        Some(&overview),
+        Some(overview.id.as_str()),
     );
     let continuity =
         RuntimeDiagnosticContinuityRecord::link(None, &snap_a, &provenance, "c0");
@@ -170,7 +170,7 @@ fn case5_operator_explanation_with_evolution_exposes_change_not_actions() {
         &capabilities,
         &verification,
         &coherence,
-        Some(&overview),
+        Some(overview.id.as_str()),
     );
     let continuity =
         RuntimeDiagnosticContinuityRecord::link(None, &snap_a, &provenance, "c0");

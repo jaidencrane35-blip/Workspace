@@ -125,7 +125,7 @@ fn diagnostic_provenance_and_continuity_are_immutable() {
         &capabilities,
         &verification,
         &coherence,
-        Some(&overview),
+        Some(overview.id.as_str()),
     );
     assert!(provenance.cites_snapshot(&snapshot.id));
     assert!(provenance.ownership.boundaries_respected());
@@ -188,7 +188,7 @@ fn diagnostic_evolution_compares_validates_and_stays_read_only() {
         &capabilities,
         &verification,
         &coherence,
-        Some(&overview),
+        Some(overview.id.as_str()),
     );
     let continuity =
         RuntimeDiagnosticContinuityRecord::link(None, &snapshot, &provenance, "e0");
@@ -243,7 +243,7 @@ fn diagnostic_evolution_compares_validates_and_stays_read_only() {
         &capabilities,
         &verification,
         &coherence,
-        Some(&overview),
+        Some(overview.id.as_str()),
     );
     let continuity3 = RuntimeDiagnosticContinuityRecord::link(
         Some(&snapshot),
@@ -303,7 +303,7 @@ fn diagnostic_evidence_archive_and_integrity_are_non_authoritative() {
         &capabilities,
         &verification,
         &coherence,
-        Some(&overview),
+        Some(overview.id.as_str()),
     );
     let continuity =
         RuntimeDiagnosticContinuityRecord::link(None, &snapshot, &provenance, "arch0");
@@ -373,7 +373,7 @@ fn diagnostic_consumption_interpretation_and_restoration_are_read_only() {
         &capabilities,
         &verification,
         &coherence,
-        Some(&overview),
+        Some(overview.id.as_str()),
     );
     let continuity =
         RuntimeDiagnosticContinuityRecord::link(None, &snapshot, &provenance, "c-cons");
@@ -451,7 +451,7 @@ fn diagnostic_trust_compatibility_and_lineage_are_informational() {
         &capabilities,
         &verification,
         &coherence,
-        Some(&overview),
+        Some(overview.id.as_str()),
     );
     let continuity =
         RuntimeDiagnosticContinuityRecord::link(None, &snapshot, &provenance, "c-trust");
@@ -538,7 +538,7 @@ fn diagnostic_closure_catalog_interop_and_explanation_integrity() {
         &capabilities,
         &verification,
         &coherence,
-        Some(&overview),
+        Some(overview.id.as_str()),
     );
     let continuity =
         RuntimeDiagnosticContinuityRecord::link(None, &snapshot, &provenance, "c-close");
@@ -639,7 +639,7 @@ fn diagnostic_maturity_is_meta_only_and_ready_when_consistent() {
         &capabilities,
         &verification,
         &coherence,
-        Some(&overview),
+        Some(overview.id.as_str()),
     );
     let continuity =
         RuntimeDiagnosticContinuityRecord::link(None, &snapshot, &provenance, "c-mat");
@@ -736,4 +736,13 @@ fn diagnostic_subsystem_boundary_remains_observational_only() {
     assert!(!boundary.may_enter_command_pipeline);
     assert!(boundary.attempt_execute().is_err());
     assert!(boundary.attempt_enter_command_pipeline().is_err());
+}
+
+#[test]
+fn diagnostic_module_layering_keeps_projections_out_of_foundation() {
+    let layering = RuntimeDiagnosticModuleLayering::canonical();
+    assert!(layering.respected());
+    assert!(!layering.foundation_owns_operator_projections);
+    assert!(layering.overview_cited_by_artifact_id_only);
+    assert!(layering.attempt_execute().is_err());
 }

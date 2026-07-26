@@ -11,8 +11,8 @@ use crate::workspace_runtime::{
 };
 
 use super::{
-    OperatorRuntimeOverview, RuntimeCapabilityMap, RuntimeConsistencySeverity,
-    RuntimeConsistencyVerification, RuntimeDependencyGraph, RuntimeDiagnosticSnapshot,
+    RuntimeCapabilityMap, RuntimeConsistencySeverity, RuntimeConsistencyVerification,
+    RuntimeDependencyGraph, RuntimeDiagnosticSnapshot,
 };
 
 // ---------------------------------------------------------------------------
@@ -148,7 +148,8 @@ impl RuntimeDiagnosticProvenance {
         capabilities: &RuntimeCapabilityMap,
         verification: &RuntimeConsistencyVerification,
         coherence: &WorkspaceRuntimeCoherence,
-        overview: Option<&OperatorRuntimeOverview>,
+        // Optional operator-overview artifact id only — history must not depend on surface types.
+        overview_id: Option<&str>,
     ) -> Self {
         let mut source_refs = vec![
             RuntimeDiagnosticSourceRef {
@@ -176,10 +177,10 @@ impl RuntimeDiagnosticProvenance {
                 artifact_id: coherence.id.clone(),
             },
         ];
-        if let Some(o) = overview {
+        if let Some(id) = overview_id {
             source_refs.push(RuntimeDiagnosticSourceRef {
                 kind: RuntimeDiagnosticSourceKind::OperatorOverview,
-                artifact_id: o.id.clone(),
+                artifact_id: id.to_string(),
             });
         }
         Self {

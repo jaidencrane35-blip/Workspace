@@ -70,7 +70,7 @@ fn maturity_bundle(workspace_id: &str) -> RuntimeDiagnosticMaturityAssessment {
         &capabilities,
         &verification,
         &coherence,
-        Some(&overview),
+        Some(overview.id.as_str()),
     );
     let continuity =
         RuntimeDiagnosticContinuityRecord::link(None, &snapshot, &provenance, "c0");
