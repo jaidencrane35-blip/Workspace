@@ -4,6 +4,9 @@
 //! **Never executes.** Native family IDs are preserved — never collapsed into one namespace.
 //! Reasoning provenance is immutable; lifecycle metadata mutates separately.
 
+mod governance_contracts;
+pub use governance_contracts::*;
+
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -106,6 +109,21 @@ pub enum ActionProposalError {
 
     #[error("governance timeline events are immutable")]
     GovernanceTimelineImmutable,
+
+    #[error("governance obligation/condition cannot execute or grant authority")]
+    GovernanceConditionCannotExecute,
+
+    #[error("governance condition contract blocked: {0}")]
+    GovernanceConditionBlocked(String),
+
+    #[error("governance compatibility contract blocked: {0}")]
+    GovernanceCompatibilityBlocked(String),
+
+    #[error("governance integrity verification cannot repair or mutate")]
+    GovernanceIntegrityCannotMutate,
+
+    #[error("governance archive is append-only; deletion forbidden")]
+    GovernanceArchiveImmutable,
 
     #[error(transparent)]
     Domain(#[from] DomainError),

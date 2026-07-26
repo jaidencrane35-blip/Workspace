@@ -76,6 +76,18 @@ Validation/migration/rollback gates; activation still blocked.
 [WORKSPACE-GOVERNANCE-FAILURE-HANDLING.md](./WORKSPACE-GOVERNANCE-FAILURE-HANDLING.md).
 Failure/recovery lifecycle; never deletes provenance or grants authority.
 
+**Sprint 151:** Governance conditions & obligations —
+[WORKSPACE-GOVERNANCE-CONDITIONS.md](./WORKSPACE-GOVERNANCE-CONDITIONS.md).
+
+**Sprint 152:** Governance compatibility & dependencies —
+[WORKSPACE-GOVERNANCE-COMPATIBILITY.md](./WORKSPACE-GOVERNANCE-COMPATIBILITY.md).
+
+**Sprint 153:** Governance integrity verification —
+[WORKSPACE-GOVERNANCE-INTEGRITY.md](./WORKSPACE-GOVERNANCE-INTEGRITY.md).
+
+**Sprint 154:** Governance archive & historical preservation —
+[WORKSPACE-GOVERNANCE-ARCHIVE.md](./WORKSPACE-GOVERNANCE-ARCHIVE.md).
+
 ---
 
 ## Ownership
