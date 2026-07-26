@@ -269,6 +269,9 @@ pub struct RecommendationItem {
     /// Frozen intake package digest after proceed denial (Sprint 252+) — never adapter/handoff.
     #[serde(default)]
     pub decision_intake_package_seal: Option<RecommendationDecisionIntakePackageSeal>,
+    /// Prepared RE→future-DE adapter path (Sprint 257+) — never invokes adapter or creates DE objects.
+    #[serde(default)]
+    pub decision_intake_adapter_preparation: Option<RecommendationDecisionIntakeAdapterPreparation>,
     pub authority_effect: String,
 }
 
@@ -2011,6 +2014,233 @@ impl RecommendationDecisionIntakePackageSeal {
             || self.proceed_authorized
             || self.consume_authorized
             || self.adapter_invokable
+            || self.handoff_performed
+            || self.decision_engine_object_id.is_some()
+            || self.permission_effect != Self::PERMISSION_EFFECT_NONE
+            || self.authority_effect != Self::AUTHORITY_EFFECT_NONE
+            || self.current_owner != Self::OWNER_RECOMMENDATION
+        {
+            return Err(WorkspaceRecommendationEngineError::CannotBecomeHandoff);
+        }
+        Ok(())
+    }
+}
+
+/// Controlled RE → future-DE adapter boundary preparation (Sprint 257).
+///
+/// Records that a user-confirmed, sealed intake may be prepared for a *future*
+/// adapter path. Does not invoke the adapter, create Decision Engine objects,
+/// intents, commands, or Gateway grants. Ownership remains Recommendation Engine.
+/// Reversible via `revoke`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RecommendationDecisionIntakeAdapterPreparation {
+    pub recommendation_id: String,
+    pub workspace_id: String,
+    /// `prepared` | `revoked`
+    pub preparation_state: String,
+    pub prepared_at: Option<String>,
+    pub revoked_at: Option<String>,
+    pub confirmation_intent: String,
+    pub sealed_intake_package_digest: String,
+    pub contract_version: String,
+    pub continuity_fingerprint_at_prep: String,
+    /// False when live seal no longer matches the prepared digest.
+    pub seal_aligned: bool,
+    pub current_owner: String,
+    pub declared_consumer_role: String,
+    pub adapter_invoked: bool,
+    pub mapping_performed: bool,
+    pub decision_engine_object_id: Option<String>,
+    /// Documentation of intended future mapping only — never executed.
+    pub suggested_mapping_notes: Vec<String>,
+    pub proceed_authorized: bool,
+    pub handoff_performed: bool,
+    pub permission_effect: String,
+    pub note: String,
+    pub authority_effect: String,
+}
+
+impl RecommendationDecisionIntakeAdapterPreparation {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+    pub const PERMISSION_EFFECT_NONE: &'static str = "none";
+    pub const OWNER_RECOMMENDATION: &'static str = "recommendation_engine";
+    pub const CONSUMER_ROLE_ADAPTER_READER: &'static str = "future_adapter_reader_only";
+    pub const STATE_PREPARED: &'static str = "prepared";
+    pub const STATE_REVOKED: &'static str = "revoked";
+
+    pub fn suggested_mapping_notes() -> Vec<String> {
+        vec![
+            "future_only: intake.title → DecisionCandidate.title (DE-owned creation later)".into(),
+            "future_only: intake.suggested_goal_statement → informational goal_statement string"
+                .into(),
+            "future_only: intake.recommendation_id → DecisionCandidate.recommendation_id".into(),
+            "future_only: evidence/explanation refs → DecisionExplanation inputs".into(),
+            "never: score synthesis, next_command, submit_assistant_goal, Gateway, ownership transfer"
+                .into(),
+        ]
+    }
+
+    /// Prepare adapter path only when confirmation + matching seal are present.
+    /// Never invokes adapter or creates DE objects.
+    pub fn try_prepare(
+        intake: &RecommendationDecisionIntakeRequest,
+        confirmation: &RecommendationDecisionConfirmation,
+        seal: &RecommendationDecisionIntakePackageSeal,
+        prepared_at: impl Into<String>,
+    ) -> Option<Self> {
+        if confirmation.confirmation_state != RecommendationDecisionConfirmation::STATE_CONFIRMED {
+            return None;
+        }
+        if !matches!(
+            confirmation.confirmation_intent.as_str(),
+            RecommendationDecisionConfirmation::INTENT_CREATE_FUTURE_DECISION
+                | RecommendationDecisionConfirmation::INTENT_REQUEST_ACTION_REVIEW
+        ) {
+            return None;
+        }
+        if !seal.sealed
+            || !seal.package_matches_seal
+            || seal.seal_state != RecommendationDecisionIntakePackageSeal::STATE_SEALED
+        {
+            return None;
+        }
+        if seal.assert_matches_intake(intake).is_err() {
+            return None;
+        }
+        let prepared_at = prepared_at.into();
+        Some(Self {
+            recommendation_id: intake.recommendation_id.clone(),
+            workspace_id: intake.workspace_id.clone(),
+            preparation_state: Self::STATE_PREPARED.into(),
+            prepared_at: Some(prepared_at),
+            revoked_at: None,
+            confirmation_intent: confirmation.confirmation_intent.clone(),
+            sealed_intake_package_digest: seal.intake_package_digest.clone(),
+            contract_version: seal.contract_version.clone(),
+            continuity_fingerprint_at_prep: seal.continuity_fingerprint_at_seal.clone(),
+            seal_aligned: true,
+            current_owner: Self::OWNER_RECOMMENDATION.into(),
+            declared_consumer_role: Self::CONSUMER_ROLE_ADAPTER_READER.into(),
+            adapter_invoked: false,
+            mapping_performed: false,
+            decision_engine_object_id: None,
+            suggested_mapping_notes: Self::suggested_mapping_notes(),
+            proceed_authorized: false,
+            handoff_performed: false,
+            permission_effect: Self::PERMISSION_EFFECT_NONE.into(),
+            note: "Adapter path prepared against sealed intake digest. Preparation is not \
+                   adapter invocation, Decision Engine object creation, intent creation, \
+                   ownership transfer, or execution authority. Reversible via revoke."
+                .into(),
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        })
+    }
+
+    /// Reversible withdrawal of adapter preparation — no DE/Gateway side effects.
+    pub fn revoke(&mut self, revoked_at: impl Into<String>) -> Result<(), WorkspaceRecommendationEngineError> {
+        if self.adapter_invoked
+            || self.mapping_performed
+            || self.decision_engine_object_id.is_some()
+            || self.handoff_performed
+        {
+            return Err(WorkspaceRecommendationEngineError::CannotBecomeHandoff);
+        }
+        self.preparation_state = Self::STATE_REVOKED.into();
+        self.revoked_at = Some(revoked_at.into());
+        self.proceed_authorized = false;
+        self.note = "Adapter preparation revoked. No Decision Engine objects, intents, or \
+                     Gateway grants were created. Recommendation Engine retains ownership."
+            .into();
+        Ok(())
+    }
+
+    /// Re-check preparation against a live (possibly drifted) seal.
+    pub fn rebind_to_seal(mut self, seal: &RecommendationDecisionIntakePackageSeal) -> Self {
+        self.seal_aligned = self.preparation_state == Self::STATE_PREPARED
+            && seal.package_matches_seal
+            && seal.intake_package_digest == self.sealed_intake_package_digest
+            && seal.seal_state == RecommendationDecisionIntakePackageSeal::STATE_SEALED;
+        self.adapter_invoked = false;
+        self.mapping_performed = false;
+        self.decision_engine_object_id = None;
+        self.proceed_authorized = false;
+        self.handoff_performed = false;
+        self.permission_effect = Self::PERMISSION_EFFECT_NONE.into();
+        self.authority_effect = Self::AUTHORITY_EFFECT_NONE.into();
+        self.current_owner = Self::OWNER_RECOMMENDATION.into();
+        if self.preparation_state == Self::STATE_PREPARED && !self.seal_aligned {
+            self.note = "Adapter preparation exists but sealed digest is no longer aligned. \
+                         Progression blocked; invoke/create-DE remain denied. Revoke or re-confirm."
+                .into();
+        }
+        self
+    }
+
+    /// Active only when prepared and seal still aligned — still not invoke/ownership.
+    pub fn is_active_preparation(&self) -> bool {
+        self.preparation_state == Self::STATE_PREPARED && self.seal_aligned
+    }
+
+    pub fn may_invoke_adapter(&self) -> bool {
+        false
+    }
+
+    pub fn may_proceed(&self) -> bool {
+        false
+    }
+
+    pub fn attempt_invoke_adapter(&self) -> Result<(), WorkspaceRecommendationEngineError> {
+        Err(WorkspaceRecommendationEngineError::CannotBecomeHandoff)
+    }
+
+    pub fn attempt_perform_mapping(&self) -> Result<(), WorkspaceRecommendationEngineError> {
+        Err(WorkspaceRecommendationEngineError::CannotBecomeHandoff)
+    }
+
+    pub fn attempt_authorize_proceed(&self) -> Result<(), WorkspaceRecommendationEngineError> {
+        Err(WorkspaceRecommendationEngineError::CannotBecomeHandoff)
+    }
+
+    pub fn attempt_execute() -> Result<(), WorkspaceRecommendationEngineError> {
+        Err(WorkspaceRecommendationEngineError::CannotExecute)
+    }
+
+    pub fn attempt_handoff(&self) -> Result<(), WorkspaceRecommendationEngineError> {
+        Err(WorkspaceRecommendationEngineError::CannotBecomeHandoff)
+    }
+
+    pub fn attempt_create_decision_engine_object(
+        &self,
+    ) -> Result<(), WorkspaceRecommendationEngineError> {
+        Err(WorkspaceRecommendationEngineError::CannotBecomeHandoff)
+    }
+
+    pub fn attempt_create_intent(&self) -> Result<(), WorkspaceRecommendationEngineError> {
+        Err(WorkspaceRecommendationEngineError::CannotBecomeHandoff)
+    }
+
+    pub fn may_create_decision_engine_object(&self) -> bool {
+        false
+    }
+
+    pub fn may_create_intent(&self) -> bool {
+        false
+    }
+
+    pub fn may_invoke_gateway(&self) -> bool {
+        false
+    }
+
+    pub fn may_mutate_provenance(&self) -> bool {
+        false
+    }
+
+    pub fn assert_preparation_is_not_invocation(
+        &self,
+    ) -> Result<(), WorkspaceRecommendationEngineError> {
+        if self.adapter_invoked
+            || self.mapping_performed
+            || self.proceed_authorized
             || self.handoff_performed
             || self.decision_engine_object_id.is_some()
             || self.permission_effect != Self::PERMISSION_EFFECT_NONE

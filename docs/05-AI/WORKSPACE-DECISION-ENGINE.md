@@ -73,12 +73,13 @@ Accept returns a **planner handoff** (`submit_assistant_goal`). The UI (or calle
 
 Decision Engine does **not** consume Recommendation Engine accept events.
 Recommendation accept records lifecycle + `RecommendationOutcome` and projects
-context, readiness, boundary, and confirmation only (see
-[WORKSPACE-RECOMMENDATION-DECISION-CONFIRMATION.md](./WORKSPACE-RECOMMENDATION-DECISION-CONFIRMATION.md)).
+context through sealed intake + adapter *preparation* only (see
+[WORKSPACE-RECOMMENDATION-DECISION-INTAKE-ADAPTER-PREPARATION.md](./WORKSPACE-RECOMMENDATION-DECISION-INTAKE-ADAPTER-PREPARATION.md)).
 Namespaces remain separate (`recommendation:*` vs `engine_decision:*`).
 Accept means recommendation agreement — never a Decision Engine object, intent, or
 execution authorization. Confirmation may record desire for *future* DE consideration
-without creating one. `handoff_state` remains `handoff_not_performed`.
+without creating one. Adapter preparation is reversible and non-invoking.
+`handoff_state` remains `handoff_not_performed`.
 
 ---
 

@@ -151,3 +151,27 @@ pub fn decline_recommendation_decision(
         )),
     }
 }
+
+#[tauri::command]
+pub fn revoke_recommendation_adapter_preparation(
+    workspace_id: String,
+    recommendation_id: String,
+    kernel: State<'_, Arc<Mutex<WorkspaceKernel>>>,
+) -> IpcResponse<RecommendationReviewActionResult> {
+    match kernel.lock() {
+        Ok(kernel) => match CommandHandler::revoke_recommendation_adapter_preparation(
+            &kernel,
+            ipc_actor_context(),
+            ipc_intent_context(),
+            workspace_id,
+            recommendation_id,
+        ) {
+            Ok(result) => IpcResponse::success(result),
+            Err(error) => IpcResponse::failure(CommandError::from(error)),
+        },
+        Err(_) => IpcResponse::failure(CommandError::new(
+            "internal_error",
+            "Workspace core is temporarily unavailable.",
+        )),
+    }
+}

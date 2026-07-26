@@ -2187,6 +2187,34 @@ export interface RecommendationItem {
   decision_intake_proceed_denial?: RecommendationDecisionIntakeProceedDenial | null;
   /** Frozen intake package digest — seal ≠ handoff / adapter. */
   decision_intake_package_seal?: RecommendationDecisionIntakePackageSeal | null;
+  /** Prepared adapter path — prepare ≠ invoke / DE ownership. */
+  decision_intake_adapter_preparation?: RecommendationDecisionIntakeAdapterPreparation | null;
+  authority_effect: string;
+}
+
+/** Prepared RE→future-DE adapter path — never invokes adapter or creates DE objects. */
+export interface RecommendationDecisionIntakeAdapterPreparation {
+  recommendation_id: string;
+  workspace_id: string;
+  /** prepared | revoked */
+  preparation_state: string;
+  prepared_at: string | null;
+  revoked_at: string | null;
+  confirmation_intent: string;
+  sealed_intake_package_digest: string;
+  contract_version: string;
+  continuity_fingerprint_at_prep: string;
+  seal_aligned: boolean;
+  current_owner: string;
+  declared_consumer_role: string;
+  adapter_invoked: boolean;
+  mapping_performed: boolean;
+  decision_engine_object_id: string | null;
+  suggested_mapping_notes: string[];
+  proceed_authorized: boolean;
+  handoff_performed: boolean;
+  permission_effect: string;
+  note: string;
   authority_effect: string;
 }
 
@@ -2450,6 +2478,7 @@ export interface RecommendationReviewActionResult {
   decision_intake_compatibility?: RecommendationDecisionIntakeCompatibility | null;
   decision_intake_proceed_denial?: RecommendationDecisionIntakeProceedDenial | null;
   decision_intake_package_seal?: RecommendationDecisionIntakePackageSeal | null;
+  decision_intake_adapter_preparation?: RecommendationDecisionIntakeAdapterPreparation | null;
   explanation: string;
   authority_effect: string;
 }

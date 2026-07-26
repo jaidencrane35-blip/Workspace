@@ -38,6 +38,7 @@ use commands::workspace_evolution::generate_workspace_evolution;
 use commands::workspace_recommendation::{
     accept_recommendation, confirm_recommendation_decision, decline_recommendation_decision,
     generate_workspace_recommendation_engine, present_recommendation, reject_recommendation,
+    revoke_recommendation_adapter_preparation,
 };
 use commands::workspace_operating_state::generate_workspace_operating_state;
 use commands::workspace_pattern::generate_workspace_pattern;
@@ -261,6 +262,7 @@ pub fn run() {
             reject_recommendation,
             confirm_recommendation_decision,
             decline_recommendation_decision,
+            revoke_recommendation_adapter_preparation,
             generate_workspace_operating_state,
             generate_workspace_pattern,
             generate_workspace_adaptation,

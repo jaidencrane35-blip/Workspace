@@ -1,9 +1,9 @@
 use crate::connection::Database;
 use crate::error::Result;
 use workspace_domain::{
-    RecommendationDecisionConfirmation, RecommendationDecisionIntakePackageSeal,
-    RecommendationLifecycleOverlay, RecommendationLifecycleState, RecommendationOutcome,
-    RecommendationResolutionType,
+    RecommendationDecisionConfirmation, RecommendationDecisionIntakeAdapterPreparation,
+    RecommendationDecisionIntakePackageSeal, RecommendationLifecycleOverlay,
+    RecommendationLifecycleState, RecommendationOutcome, RecommendationResolutionType,
 };
 
 /// Persistence for Recommendation Engine lifecycle overlay only.
@@ -50,12 +50,21 @@ impl<'a> RecommendationLifecycleRepository<'a> {
             })?),
             None => None,
         };
+        let adapter_preparation_json = match &overlay.decision_intake_adapter_preparation {
+            Some(prep) => Some(serde_json::to_string(prep).map_err(|e| {
+                crate::error::DatabaseError::Migration(format!(
+                    "recommendation adapter preparation serialize: {e}"
+                ))
+            })?),
+            None => None,
+        };
         self.db.connection().execute(
             "INSERT INTO recommendation_lifecycle (
                 workspace_id, native_id, lifecycle_state, created_at, presented_at,
                 resolved_at, resolution_type, actor_id, outcome_json, prior_outcomes_json,
-                content_fingerprint, confirmation_json, intake_seal_json, updated_at, authority_effect
-             ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)
+                content_fingerprint, confirmation_json, intake_seal_json,
+                adapter_preparation_json, updated_at, authority_effect
+             ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16)
              ON CONFLICT(workspace_id, native_id) DO UPDATE SET
                 lifecycle_state = excluded.lifecycle_state,
                 created_at = excluded.created_at,
@@ -68,6 +77,7 @@ impl<'a> RecommendationLifecycleRepository<'a> {
                 content_fingerprint = excluded.content_fingerprint,
                 confirmation_json = excluded.confirmation_json,
                 intake_seal_json = excluded.intake_seal_json,
+                adapter_preparation_json = excluded.adapter_preparation_json,
                 updated_at = excluded.updated_at,
                 authority_effect = excluded.authority_effect",
             (
@@ -84,6 +94,7 @@ impl<'a> RecommendationLifecycleRepository<'a> {
                 &overlay.content_fingerprint,
                 &confirmation_json,
                 &intake_seal_json,
+                &adapter_preparation_json,
                 &overlay.updated_at,
                 &overlay.authority_effect,
             ),
@@ -99,7 +110,8 @@ impl<'a> RecommendationLifecycleRepository<'a> {
         let mut stmt = self.db.connection().prepare(
             "SELECT workspace_id, native_id, lifecycle_state, created_at, presented_at,
                     resolved_at, resolution_type, actor_id, outcome_json, prior_outcomes_json,
-                    content_fingerprint, confirmation_json, intake_seal_json, updated_at, authority_effect
+                    content_fingerprint, confirmation_json, intake_seal_json,
+                    adapter_preparation_json, updated_at, authority_effect
              FROM recommendation_lifecycle
              WHERE workspace_id = ?1 AND native_id = ?2",
         )?;
@@ -114,7 +126,8 @@ impl<'a> RecommendationLifecycleRepository<'a> {
         let mut stmt = self.db.connection().prepare(
             "SELECT workspace_id, native_id, lifecycle_state, created_at, presented_at,
                     resolved_at, resolution_type, actor_id, outcome_json, prior_outcomes_json,
-                    content_fingerprint, confirmation_json, intake_seal_json, updated_at, authority_effect
+                    content_fingerprint, confirmation_json, intake_seal_json,
+                    adapter_preparation_json, updated_at, authority_effect
              FROM recommendation_lifecycle
              WHERE workspace_id = ?1",
         )?;
@@ -184,6 +197,21 @@ fn map_overlay(row: &rusqlite::Row<'_>) -> rusqlite::Result<RecommendationLifecy
         ),
         None => None,
     };
+    let adapter_preparation_json: Option<String> = row.get(13)?;
+    let decision_intake_adapter_preparation = match adapter_preparation_json.as_deref() {
+        Some(raw) => Some(
+            serde_json::from_str::<RecommendationDecisionIntakeAdapterPreparation>(raw).map_err(
+                |_| {
+                    rusqlite::Error::InvalidColumnType(
+                        13,
+                        "adapter_preparation_json".into(),
+                        rusqlite::types::Type::Text,
+                    )
+                },
+            )?,
+        ),
+        None => None,
+    };
     Ok(RecommendationLifecycleOverlay {
         workspace_id: row.get(0)?,
         native_id: row.get(1)?,
@@ -198,7 +226,8 @@ fn map_overlay(row: &rusqlite::Row<'_>) -> rusqlite::Result<RecommendationLifecy
         content_fingerprint: row.get(10)?,
         decision_confirmation,
         decision_intake_package_seal,
-        updated_at: row.get(13)?,
-        authority_effect: row.get(14)?,
+        decision_intake_adapter_preparation,
+        updated_at: row.get(14)?,
+        authority_effect: row.get(15)?,
     })
 }

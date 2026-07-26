@@ -3044,6 +3044,26 @@ impl CommandHandler {
         )
     }
 
+    /// Revoke prepared adapter path — reversible; never invokes adapter or creates DE objects.
+    pub fn revoke_recommendation_adapter_preparation(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        recommendation_id: String,
+    ) -> Result<RecommendationReviewActionResult> {
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent))
+            .execute_mutation(GateRecommendationEngineWrite)?;
+        WorkspaceRecommendationEngineService::revoke_recommendation_adapter_preparation(
+            &kernel.shared_database(),
+            &actor,
+            &kernel.orchestrated_plans(),
+            &kernel.assistant_workflows(),
+            workspace_id,
+            recommendation_id,
+        )
+    }
+
     /// Aggregate Workspace Operating State (read-only current-situation snapshot).
     pub fn generate_workspace_operating_state(
         kernel: &WorkspaceKernel,

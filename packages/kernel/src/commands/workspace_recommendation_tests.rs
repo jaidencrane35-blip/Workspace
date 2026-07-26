@@ -891,6 +891,33 @@ fn case24_confirm_future_decision_remains_non_authoritative() {
         assert!(seal.attempt_mutate_after_seal().is_err());
         assert!(seal.attempt_invoke_adapter().is_err());
         assert!(seal.assert_seal_is_not_handoff().is_ok());
+        let prep = confirmed
+            .decision_intake_adapter_preparation
+            .expect("confirm emits adapter preparation");
+        assert!(prep.is_active_preparation());
+        assert!(!prep.adapter_invoked);
+        assert!(!prep.mapping_performed);
+        assert!(prep.attempt_invoke_adapter().is_err());
+        assert!(prep.attempt_perform_mapping().is_err());
+        assert!(prep.attempt_create_decision_engine_object().is_err());
+        assert!(prep.assert_preparation_is_not_invocation().is_ok());
+        let revoked = CommandHandler::revoke_recommendation_adapter_preparation(
+            &kernel,
+            local.clone(),
+            intent.clone(),
+            ws.clone(),
+            id.clone(),
+        )
+        .unwrap();
+        let revoked_prep = revoked
+            .decision_intake_adapter_preparation
+            .expect("revoke returns preparation");
+        assert!(!revoked_prep.is_active_preparation());
+        assert_eq!(
+            revoked_prep.preparation_state,
+            workspace_domain::RecommendationDecisionIntakeAdapterPreparation::STATE_REVOKED
+        );
+        assert!(revoked_prep.attempt_invoke_adapter().is_err());
     }
     assert_cannot_execute(CommandHandler::workspace_recommendation_engine_attempt_execute());
     assert_cannot_execute(CommandHandler::decision_engine_attempt_execute());
@@ -1088,6 +1115,7 @@ fn case16_orphan_overlays_expire_on_regenerate() {
                 content_fingerprint: Some("stale".into()),
                 decision_confirmation: None,
                 decision_intake_package_seal: None,
+                decision_intake_adapter_preparation: None,
                 updated_at: "t0".into(),
                 authority_effect: RecommendationLifecycleOverlay::AUTHORITY_EFFECT_NONE.into(),
             })

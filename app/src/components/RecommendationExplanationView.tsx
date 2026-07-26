@@ -3,6 +3,7 @@ import type {
   RecommendationDecisionBoundary,
   RecommendationDecisionConfirmation,
   RecommendationDecisionContext,
+  RecommendationDecisionIntakeAdapterPreparation,
   RecommendationDecisionIntakeCompatibility,
   RecommendationDecisionIntakeInspection,
   RecommendationDecisionIntakePackageSeal,
@@ -160,6 +161,11 @@ export function RecommendationExplanationBlock({
           seal={item.decision_intake_package_seal}
         />
       ) : null}
+      {item.decision_intake_adapter_preparation ? (
+        <RecommendationDecisionIntakeAdapterPreparationBlock
+          preparation={item.decision_intake_adapter_preparation}
+        />
+      ) : null}
     </div>
   );
 }
@@ -302,6 +308,33 @@ export function RecommendationDecisionIntakePackageSealBlock({
         owner: {seal.current_owner}
       </div>
       <div>{seal.note}</div>
+    </div>
+  );
+}
+
+/** Adapter preparation — prepare ≠ invoke / DE ownership. */
+export function RecommendationDecisionIntakeAdapterPreparationBlock({
+  preparation,
+}: {
+  preparation: RecommendationDecisionIntakeAdapterPreparation;
+}) {
+  return (
+    <div
+      className="recommendation-decision-intake-adapter-preparation muted"
+      style={{ marginTop: 4 }}
+    >
+      <div>
+        Adapter preparation: <strong>{preparation.preparation_state}</strong>
+        {" · "}
+        seal aligned: {preparation.seal_aligned ? "yes" : "no"}
+        {" · "}
+        invoked: {preparation.adapter_invoked ? "yes" : "no"}
+        {" · "}
+        mapping: {preparation.mapping_performed ? "performed" : "not performed"}
+        {" · "}
+        owner: {preparation.current_owner}
+      </div>
+      <div>{preparation.note}</div>
     </div>
   );
 }

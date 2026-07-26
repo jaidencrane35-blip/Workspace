@@ -156,6 +156,7 @@ mod workspace_recommendation_decision_intake_inspection_contract_tests;
 mod workspace_recommendation_decision_intake_compatibility_contract_tests;
 mod workspace_recommendation_decision_intake_proceed_denial_contract_tests;
 mod workspace_recommendation_decision_intake_package_seal_contract_tests;
+mod workspace_recommendation_decision_intake_adapter_preparation_contract_tests;
 #[cfg(test)]
 mod workspace_adaptation_governance_contract_tests;
 #[cfg(test)]

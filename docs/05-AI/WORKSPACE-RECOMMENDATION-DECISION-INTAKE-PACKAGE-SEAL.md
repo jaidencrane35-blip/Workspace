@@ -20,7 +20,8 @@ RecommendationDecisionIntakePackageSeal
         ✗ seal ≠ proceed / consume / adapter
         ✗ seal ≠ handoff / DE ownership
         ✗ seal_mismatch blocks progression
-        ↓ (future DE adapter — separate increment)
+        ↓ RecommendationDecisionIntakeAdapterPreparation (prepare ≠ invoke)
+        ↓ (future adapter invocation — separate increment)
 ```
 
 Seal freezes the RE-owned intake snapshot. It does **not** authorize proceed,

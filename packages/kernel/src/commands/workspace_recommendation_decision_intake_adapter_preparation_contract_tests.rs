@@ -1,16 +1,16 @@
-//! Sprint 252 — Recommendation Decision Intake Package Seal
-//! (frozen digest — seal ≠ proceed / adapter / handoff / DE ownership).
+//! Sprint 257 — Recommendation Decision Intake Adapter Preparation
+//! (prepare ≠ invoke / DE ownership / Gateway / handoff).
 
 use crate::commands::handler::CommandHandler;
 use crate::error::KernelError;
 use workspace_domain::{
     AttentionReason, AttentionSignal, AttentionSourceType, RecommendationConfidence,
     RecommendationDecisionConfirmation, RecommendationDecisionContext,
-    RecommendationDecisionIntakeCompatibility, RecommendationDecisionIntakeInspection,
-    RecommendationDecisionIntakePackageSeal, RecommendationDecisionIntakeProceedDenial,
-    RecommendationDecisionIntakeRequest, RecommendationDecisionReadiness, RecommendationEvidence,
-    RecommendationExplanationView, RecommendationItem, RecommendationKind,
-    RecommendationOutcomeView,
+    RecommendationDecisionIntakeAdapterPreparation, RecommendationDecisionIntakeCompatibility,
+    RecommendationDecisionIntakeInspection, RecommendationDecisionIntakePackageSeal,
+    RecommendationDecisionIntakeProceedDenial, RecommendationDecisionIntakeRequest,
+    RecommendationDecisionReadiness, RecommendationEvidence, RecommendationExplanationView,
+    RecommendationItem, RecommendationKind, RecommendationOutcomeView,
 };
 
 fn assert_blocked(label: &str, result: Result<(), KernelError>) {
@@ -84,9 +84,10 @@ fn accepted_ready_item() -> RecommendationItem {
     }
 }
 
-fn sealed_bundle() -> (
+fn prepared_bundle() -> (
     RecommendationDecisionIntakeRequest,
     RecommendationDecisionIntakePackageSeal,
+    RecommendationDecisionIntakeAdapterPreparation,
 ) {
     let mut item = accepted_ready_item();
     item.explanation = Some(RecommendationExplanationView::from_item(&item));
@@ -105,7 +106,7 @@ fn sealed_bundle() -> (
         .unwrap();
     let intake =
         RecommendationDecisionIntakeRequest::try_assemble(&context, &readiness, &confirmation)
-            .expect("confirmed ready item must assemble intake");
+            .expect("intake");
     let inspection = RecommendationDecisionIntakeInspection::verify(
         &intake,
         &context,
@@ -122,45 +123,48 @@ fn sealed_bundle() -> (
         &denial,
         "t-seal",
     );
-    (intake, seal)
+    let prep = RecommendationDecisionIntakeAdapterPreparation::try_prepare(
+        &intake,
+        &confirmation,
+        &seal,
+        "t-prep",
+    )
+    .expect("matching seal + confirmation must prepare");
+    (intake, seal, prep)
 }
 
-/// CASE 1 — Compatible denial seals package; proceed/adapter remain denied.
+/// CASE 1 — Prep is active but never invoke/mapping/ownership transfer.
 #[test]
-fn case1_seal_does_not_authorize_proceed_or_adapter() {
-    let (intake, seal) = sealed_bundle();
-    assert!(seal.sealed);
+fn case1_prepare_is_not_invoke_or_ownership() {
+    let (_intake, _seal, prep) = prepared_bundle();
+    assert!(prep.is_active_preparation());
     assert_eq!(
-        seal.seal_state,
-        RecommendationDecisionIntakePackageSeal::STATE_SEALED
+        prep.preparation_state,
+        RecommendationDecisionIntakeAdapterPreparation::STATE_PREPARED
     );
-    assert!(seal.package_matches_seal);
-    assert!(seal.assert_matches_intake(&intake).is_ok());
-    assert!(!seal.proceed_authorized);
-    assert!(!seal.consume_authorized);
-    assert!(!seal.adapter_invokable);
-    assert!(!seal.may_proceed());
-    assert!(!seal.may_invoke_adapter());
-    assert!(seal.attempt_authorize_proceed().is_err());
-    assert!(seal.attempt_invoke_adapter().is_err());
-    assert!(seal.attempt_mutate_after_seal().is_err());
-    assert!(seal.assert_seal_is_not_handoff().is_ok());
+    assert!(!prep.adapter_invoked);
+    assert!(!prep.mapping_performed);
+    assert!(!prep.proceed_authorized);
+    assert!(!prep.handoff_performed);
+    assert!(prep.decision_engine_object_id.is_none());
     assert_eq!(
-        seal.current_owner,
-        RecommendationDecisionIntakePackageSeal::OWNER_RECOMMENDATION
+        prep.current_owner,
+        RecommendationDecisionIntakeAdapterPreparation::OWNER_RECOMMENDATION
     );
+    assert!(prep.attempt_invoke_adapter().is_err());
+    assert!(prep.attempt_perform_mapping().is_err());
+    assert!(prep.attempt_create_decision_engine_object().is_err());
+    assert!(prep.assert_preparation_is_not_invocation().is_ok());
 }
 
-/// CASE 2 — No execution authority / Gateway path.
+/// CASE 2 — No execution / Gateway path.
 #[test]
 fn case2_no_execution_or_gateway() {
-    let (_intake, seal) = sealed_bundle();
-    assert!(!seal.may_invoke_gateway());
-    assert!(!seal.may_create_decision_engine_object());
-    assert!(!seal.may_create_intent());
-    assert!(RecommendationDecisionIntakePackageSeal::attempt_execute().is_err());
-    assert!(seal.attempt_create_decision_engine_object().is_err());
-    assert!(seal.attempt_handoff().is_err());
+    let (_intake, _seal, prep) = prepared_bundle();
+    assert!(!prep.may_invoke_gateway());
+    assert!(!prep.may_create_intent());
+    assert!(RecommendationDecisionIntakeAdapterPreparation::attempt_execute().is_err());
+    assert!(prep.attempt_handoff().is_err());
     assert_blocked(
         "recommendation_engine",
         CommandHandler::workspace_recommendation_engine_attempt_execute(),
@@ -171,60 +175,81 @@ fn case2_no_execution_or_gateway() {
     );
 }
 
-/// CASE 3 — Drifted / stale intake fails seal match; cannot progress.
+/// CASE 3 — Seal mismatch blocks active preparation progression.
 #[test]
-fn case3_stale_intake_cannot_progress() {
-    let (mut intake, seal) = sealed_bundle();
-    intake.title = "Drifted title".into();
-    let verified = seal.reverify_against(&intake);
-    assert!(!verified.package_matches_seal);
-    assert_eq!(
-        verified.seal_state,
-        RecommendationDecisionIntakePackageSeal::STATE_SEAL_MISMATCH
+fn case3_invalid_stale_seal_blocks_progression() {
+    let mut item = accepted_ready_item();
+    item.explanation = Some(RecommendationExplanationView::from_item(&item));
+    let context = RecommendationDecisionContext::assemble("ws-1", &item, &[]);
+    let readiness = RecommendationDecisionReadiness::assess_from_context(&context);
+    let mut confirmation = RecommendationDecisionConfirmation::derive_from_boundary(
+        &workspace_domain::RecommendationDecisionBoundary::from_context_and_readiness(
+            &context, &readiness,
+        ),
     );
-    assert!(verified.assert_matches_intake(&intake).is_err());
-    assert!(!verified.proceed_authorized);
-    assert!(!verified.adapter_invokable);
-    assert!(verified.attempt_invoke_adapter().is_err());
-    assert!(verified.attempt_authorize_proceed().is_err());
+    confirmation
+        .confirm(
+            RecommendationDecisionConfirmation::INTENT_CREATE_FUTURE_DECISION,
+            "t-confirm",
+        )
+        .unwrap();
+    let (mut intake, seal, prep) = prepared_bundle();
+    intake.title = "Drifted".into();
+    let mismatched = seal.reverify_against(&intake);
+    assert!(!mismatched.package_matches_seal);
+    let rebound = prep.rebind_to_seal(&mismatched);
+    assert!(!rebound.is_active_preparation());
+    assert!(!rebound.seal_aligned);
+    assert!(rebound.attempt_invoke_adapter().is_err());
+    assert!(
+        RecommendationDecisionIntakeAdapterPreparation::try_prepare(
+            &intake,
+            &confirmation,
+            &mismatched,
+            "t",
+        )
+        .is_none()
+    );
 }
 
-/// CASE 4 — No DE ownership transfer from seal.
+/// CASE 4 — Revoke is reversible and keeps ownership on RE.
 #[test]
-fn case4_no_de_ownership_transfer() {
-    let (_intake, seal) = sealed_bundle();
-    assert!(seal.decision_engine_object_id.is_none());
-    assert!(!seal.handoff_performed);
+fn case4_revoke_is_reversible_without_de_side_effects() {
+    let (_intake, _seal, mut prep) = prepared_bundle();
+    prep.revoke("t-revoke").unwrap();
+    assert!(!prep.is_active_preparation());
     assert_eq!(
-        seal.current_owner,
-        RecommendationDecisionIntakePackageSeal::OWNER_RECOMMENDATION
+        prep.preparation_state,
+        RecommendationDecisionIntakeAdapterPreparation::STATE_REVOKED
     );
-    assert!(seal.attempt_create_decision_engine_object().is_err());
-    assert!(seal.attempt_create_intent().is_err());
-    assert!(seal.attempt_handoff().is_err());
+    assert!(prep.revoked_at.as_deref() == Some("t-revoke"));
+    assert!(prep.decision_engine_object_id.is_none());
+    assert!(!prep.adapter_invoked);
+    assert!(prep.attempt_invoke_adapter().is_err());
+    assert_eq!(
+        prep.current_owner,
+        RecommendationDecisionIntakeAdapterPreparation::OWNER_RECOMMENDATION
+    );
 }
 
-/// CASE 5 — Provenance remains intact; digest is stable for unchanged intake.
+/// CASE 5 — Provenance / mapping notes informational only.
 #[test]
-fn case5_provenance_and_digest_intact() {
-    let (intake, seal) = sealed_bundle();
-    let before_refs = intake.evidence_refs.clone();
-    let before_fingerprint = intake.continuity_fingerprint.clone();
-    let digest = RecommendationDecisionIntakePackageSeal::package_digest(&intake);
-    assert_eq!(seal.intake_package_digest, digest);
-    assert_eq!(
-        seal.continuity_fingerprint_at_seal,
-        intake.continuity_fingerprint
-    );
-    assert!(!seal.may_mutate_provenance());
-    assert!(!intake.may_mutate_provenance());
-    assert_eq!(intake.evidence_refs, before_refs);
-    assert_eq!(intake.continuity_fingerprint, before_fingerprint);
+fn case5_provenance_intact_mapping_not_performed() {
+    let (intake, _seal, prep) = prepared_bundle();
+    let before = intake.evidence_refs.clone();
+    assert!(!prep.mapping_performed);
+    assert!(!prep.suggested_mapping_notes.is_empty());
+    assert!(prep
+        .suggested_mapping_notes
+        .iter()
+        .any(|n| n.starts_with("never:")));
+    assert!(!prep.may_mutate_provenance());
+    assert_eq!(intake.evidence_refs, before);
 }
 
-/// CASE 6 — Accept / required confirmation still emits no seal.
+/// CASE 6 — Accept/required confirmation still emits no preparation.
 #[test]
-fn case6_previous_lifecycle_semantics_unchanged() {
+fn case6_previous_semantics_unchanged() {
     let mut item = accepted_ready_item();
     item.explanation = Some(RecommendationExplanationView::from_item(&item));
     let context = RecommendationDecisionContext::assemble("ws-1", &item, &[]);
@@ -236,7 +261,6 @@ fn case6_previous_lifecycle_semantics_unchanged() {
     );
     assert!(
         RecommendationDecisionIntakeRequest::try_assemble(&context, &readiness, &required)
-            .is_none(),
-        "accept/required must not assemble intake or seal"
+            .is_none()
     );
 }
