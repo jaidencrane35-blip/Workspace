@@ -42,6 +42,11 @@ import type {
   WorkspaceInteractionComparison,
   WorkspaceInteractionValidation,
   InteractionSelectResult,
+  WorkspaceProfileState,
+  WorkspaceProfileStateComparison,
+  WorkspaceProfileValidation,
+  WorkspaceProfile,
+  WorkspaceProfileMemberInput,
   AiOrchestratedPlan,
   AiPlan,
   AiPlanEvaluationReport,
@@ -227,6 +232,10 @@ export function OperatorConsole({
     useState<WorkspaceInteractionState | null>(null);
   const [priorInteractions, setPriorInteractions] =
     useState<WorkspaceInteractionState | null>(null);
+  const [profileState, setProfileState] =
+    useState<WorkspaceProfileState | null>(null);
+  const [priorProfileState, setPriorProfileState] =
+    useState<WorkspaceProfileState | null>(null);
   const [activeProject, setActiveProject] = useState<Project | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [memoryEntries, setMemoryEntries] = useState<MemoryEntry[]>([]);
@@ -2491,6 +2500,125 @@ export function OperatorConsole({
               {interactionState.decision_count} · Recommendations{" "}
               {interactionState.recommendation_count} · authority{" "}
               {interactionState.authority_effect}
+            </li>
+          </ul>
+        )}
+      </section>
+
+      <section>
+        <h2>Workspace Profiles (diagnostics)</h2>
+        <p className="muted">
+          Durable user-owned setups — Create / Inspect / Compare / Validate.
+          Never launches, restores, or executes.
+        </p>
+        <div className="row">
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("Profile created", async () => {
+                if (!workspace) return;
+                const members: WorkspaceProfileMemberInput[] = [
+                  {
+                    member_type: "application",
+                    reference_id: "vscode",
+                    relationship: "expected",
+                    evidence: "Operator-created Development setup",
+                    label: "VS Code",
+                  },
+                  {
+                    member_type: "application",
+                    reference_id: "terminal",
+                    relationship: "expected",
+                    evidence: "Operator-created Development setup",
+                    label: "Terminal",
+                  },
+                ];
+                if (activeProject) {
+                  members.push({
+                    member_type: "project",
+                    reference_id: activeProject.id,
+                    relationship: "preferred",
+                    evidence: "Active project reference",
+                    label: activeProject.name,
+                  });
+                }
+                await invokeIpc<WorkspaceProfile>("create_workspace_profile", {
+                  workspaceId: workspace.id,
+                  name: "Development setup",
+                  description: "Operator diagnostic profile",
+                  members,
+                });
+                const state = await invokeIpc<WorkspaceProfileState>(
+                  "generate_workspace_profile_state",
+                  { workspaceId: workspace.id },
+                );
+                if (profileState) setPriorProfileState(profileState);
+                setProfileState(state);
+              })
+            }
+          >
+            Create profile
+          </button>
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("Profiles generated", async () => {
+                if (!workspace) return;
+                const state = await invokeIpc<WorkspaceProfileState>(
+                  "generate_workspace_profile_state",
+                  { workspaceId: workspace.id },
+                );
+                if (profileState) setPriorProfileState(profileState);
+                setProfileState(state);
+              })
+            }
+          >
+            Inspect profiles
+          </button>
+          <button
+            type="button"
+            disabled={busy || !profileState || !priorProfileState}
+            onClick={() =>
+              void run("Profiles compared", async () => {
+                if (!profileState || !priorProfileState) return;
+                const comparison =
+                  await invokeIpc<WorkspaceProfileStateComparison>(
+                    "compare_workspace_profile_states",
+                    { left: priorProfileState, right: profileState },
+                  );
+                onMessage(comparison.differences.join(" · "));
+              })
+            }
+          >
+            Compare profiles
+          </button>
+          <button
+            type="button"
+            disabled={busy || !profileState}
+            onClick={() =>
+              void run("Profiles validated", async () => {
+                if (!profileState) return;
+                const report = await invokeIpc<WorkspaceProfileValidation>(
+                  "validate_workspace_profile_state",
+                  { state: profileState },
+                );
+                onMessage(report.messages.join(" · "));
+              })
+            }
+          >
+            Validate profiles
+          </button>
+        </div>
+        {profileState && (
+          <ul className="muted">
+            <li>{profileState.profile_summary.headline}</li>
+            <li>{profileState.profile_summary.alignment_line}</li>
+            <li>
+              Profiles {profileState.profile_count} · Active{" "}
+              {profileState.active_count} · authority{" "}
+              {profileState.authority_effect}
             </li>
           </ul>
         )}

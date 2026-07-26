@@ -36,6 +36,7 @@ use crate::commands::workspace_transition::GateTransitionRead;
 use crate::commands::workspace_interaction::{
     GateWorkspaceInteractionRead, GateWorkspaceInteractionWrite,
 };
+use crate::commands::workspace_profile::{GateWorkspaceProfileRead, GateWorkspaceProfileWrite};
 use crate::commands::workspace_activity::GateActivityGraphRead;
 use crate::commands::workspace_attention::GateAttentionRead;
 use crate::commands::workspace_continuity::GateContinuityRead;
@@ -98,7 +99,8 @@ use crate::services::{
     WorkspacePatternService, WorkspaceAdaptationService, WorkspaceReadinessService,
     WorkspaceSessionService, WorkspaceExperienceService, WorkspaceWorkContextService,
     WorkspaceNavigationService, WorkspaceMilestoneService, WorkspaceWorkingStyleService,
-    WorkspaceTransitionService, WorkspaceInteractionService, WorkspaceActivityGraphService,
+    WorkspaceTransitionService, WorkspaceInteractionService, WorkspaceProfileService,
+    WorkspaceActivityGraphService,
     WorkspaceAttentionService, WorkspaceContextService, WorkspaceContinuityService,
     WorkspaceIntelligenceService,
 };
@@ -123,6 +125,9 @@ use workspace_domain::{
     WorkspaceTransitionComparison, WorkspaceTransitionState, WorkspaceTransitionValidation,
     InteractionSelectResult, WorkspaceInteractionComparison, WorkspaceInteractionState,
     WorkspaceInteractionValidation,
+    WorkspaceProfile, WorkspaceProfileComparison, WorkspaceProfileMemberInput,
+    WorkspaceProfileState, WorkspaceProfileStateComparison, WorkspaceProfileStatus,
+    WorkspaceProfileValidation,
     WorkspaceTask, WorkspaceTaskPriority, WorkspaceTaskStatus,
     WorkspaceIntelligenceComparison, WorkspaceIntelligenceState, AiPlan, AiPlanEvaluationReport,
     AiPlanSubmissionResult,
@@ -3483,6 +3488,163 @@ impl CommandHandler {
     /// Architecture guard — Interactions must never execute or authorize.
     pub fn workspace_interactions_attempt_execute() -> Result<()> {
         WorkspaceInteractionService::attempt_execute()
+    }
+
+    /// Create a durable Workspace Environment Profile (user-owned; never executes).
+    pub fn create_workspace_profile(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        name: String,
+        description: String,
+        members: Vec<WorkspaceProfileMemberInput>,
+    ) -> Result<WorkspaceProfile> {
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent.clone()))
+            .execute_mutation(GateWorkspaceProfileWrite)?;
+        let _ = Self::get_workflow_context(
+            kernel,
+            actor.clone(),
+            intent,
+            workspace_id.clone(),
+        )?;
+        WorkspaceProfileService::create(
+            &kernel.shared_database(),
+            &actor,
+            workspace_id,
+            name,
+            description,
+            members,
+        )
+    }
+
+    /// Update a Workspace Environment Profile (never executes).
+    pub fn update_workspace_profile(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        profile_id: String,
+        name: Option<String>,
+        description: Option<String>,
+        status: Option<WorkspaceProfileStatus>,
+        members: Option<Vec<WorkspaceProfileMemberInput>>,
+    ) -> Result<WorkspaceProfile> {
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent))
+            .execute_mutation(GateWorkspaceProfileWrite)?;
+        WorkspaceProfileService::update(
+            &kernel.shared_database(),
+            &actor,
+            profile_id,
+            name,
+            description,
+            status,
+            members,
+        )
+    }
+
+    /// List profiles for a workspace.
+    pub fn list_workspace_profiles(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        limit: Option<usize>,
+    ) -> Result<Vec<WorkspaceProfile>> {
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent.clone()))
+            .execute_query(GateWorkspaceProfileRead)?;
+        let _ = Self::get_workflow_context(kernel, actor, intent, workspace_id.clone())?;
+        WorkspaceProfileService::list(
+            &kernel.shared_database(),
+            workspace_id,
+            limit.unwrap_or(50),
+        )
+    }
+
+    /// Get one profile by id.
+    pub fn get_workspace_profile(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        profile_id: String,
+    ) -> Result<WorkspaceProfile> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GateWorkspaceProfileRead)?;
+        WorkspaceProfileService::get(&kernel.shared_database(), profile_id)
+    }
+
+    /// Generate profile state + comparisons against current workspace (informational).
+    pub fn generate_workspace_profile_state(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceProfileState> {
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent.clone()))
+            .execute_query(GateWorkspaceProfileRead)?;
+        let intelligence = Self::generate_workspace_intelligence(
+            kernel,
+            actor.clone(),
+            intent,
+            workspace_id,
+        )?;
+        WorkspaceProfileService::generate_state(
+            &kernel.shared_database(),
+            &actor,
+            &intelligence,
+        )
+    }
+
+    /// Compare one profile against current workspace (informational).
+    pub fn compare_workspace_profile(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        profile_id: String,
+    ) -> Result<WorkspaceProfileComparison> {
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent.clone()))
+            .execute_query(GateWorkspaceProfileRead)?;
+        let intelligence = Self::generate_workspace_intelligence(
+            kernel,
+            actor.clone(),
+            intent,
+            workspace_id,
+        )?;
+        WorkspaceProfileService::compare_one(
+            &kernel.shared_database(),
+            &actor,
+            &intelligence,
+            profile_id,
+        )
+    }
+
+    /// Compare two profile state snapshots (informational).
+    pub fn compare_workspace_profile_states(
+        left: &WorkspaceProfileState,
+        right: &WorkspaceProfileState,
+    ) -> WorkspaceProfileStateComparison {
+        WorkspaceProfileService::compare_states(left, right)
+    }
+
+    /// Validate a profile state snapshot.
+    pub fn validate_workspace_profile_state(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        state: &WorkspaceProfileState,
+    ) -> Result<WorkspaceProfileValidation> {
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent))
+            .execute_query(GateWorkspaceProfileRead)?;
+        WorkspaceProfileService::validate_and_audit(
+            &kernel.shared_database(),
+            &actor,
+            state,
+        )
+    }
+
+    /// Architecture guard — Profiles must never execute or authorize.
+    pub fn workspace_profiles_attempt_execute() -> Result<()> {
+        WorkspaceProfileService::attempt_execute()
     }
 
     /// Read-only workspace intelligence aggregation. Capability-gated; never executes.

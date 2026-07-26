@@ -25,6 +25,7 @@ pub mod workspace_milestone;
 pub mod workspace_working_style;
 pub mod workspace_transition;
 pub mod workspace_interaction;
+pub mod workspace_profile;
 pub mod context;
 pub mod desktop_window;
 pub mod error;

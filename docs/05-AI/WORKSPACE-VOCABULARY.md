@@ -29,6 +29,7 @@ Canonical product language. Prefer these terms in UI, docs, and Assistant copy.
 | **Workspace Working Style** | Observable operating-pattern projection (owns nothing; observed ≠ preferred) | Profiling, Surveillance, Prediction, Preferences |
 | **Workspace Transition** | Semantic movement between work states (owns nothing; never restores) | Restoration, Automation, Scheduler, Executor |
 | **Workspace Interaction** | Unified interaction opportunities over understanding (owns nothing; select → Intent handoff only) | Planner, Executor, Recommendation Engine, Decision Queue, Automation |
+| **Workspace Profile** | Durable user-owned preferred environment setup (references entities; never activates) | UserPreferenceProfile, Automation, Restoration, Environment Model live aggregator |
 | **Suggestion** | Legacy deterministic context hint (diagnostic/Sprint 20) | Recommendation in product Work UI |
 | **Intent** | Pipeline request entering Command Pipeline | Proposal, Decision |
 | **Activity** | Synthetic Activity Graph node (read model) | Audit event, Decision |

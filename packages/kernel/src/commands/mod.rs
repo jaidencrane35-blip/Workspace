@@ -26,6 +26,7 @@ mod workspace_milestone;
 mod workspace_working_style;
 mod workspace_transition;
 mod workspace_interaction;
+mod workspace_profile;
 mod context;
 mod execute_intent_request;
 mod create_suggestion_intent_request;
@@ -135,6 +136,7 @@ mod workspace_milestone_tests;
 mod workspace_working_style_tests;
 mod workspace_transition_tests;
 mod workspace_interaction_tests;
+mod workspace_profile_tests;
 #[cfg(test)]
 mod ai_memory_tests;
 #[cfg(test)]

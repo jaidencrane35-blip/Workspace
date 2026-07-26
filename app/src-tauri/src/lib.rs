@@ -68,6 +68,11 @@ use commands::workspace_interaction::{
     compare_workspace_interactions, generate_workspace_interactions,
     select_workspace_interaction, validate_workspace_interactions,
 };
+use commands::workspace_profile::{
+    compare_workspace_profile, compare_workspace_profile_states, create_workspace_profile,
+    generate_workspace_profile_state, get_workspace_profile, list_workspace_profiles,
+    update_workspace_profile, validate_workspace_profile_state,
+};
 use commands::workspace_attention::generate_workspace_attention;
 use commands::layout::{
     create_layout, delete_layout, get_layout, get_layout_snapshot, reset_layout, update_layout,
@@ -265,6 +270,14 @@ pub fn run() {
             compare_workspace_interactions,
             validate_workspace_interactions,
             select_workspace_interaction,
+            create_workspace_profile,
+            update_workspace_profile,
+            list_workspace_profiles,
+            get_workspace_profile,
+            generate_workspace_profile_state,
+            compare_workspace_profile,
+            compare_workspace_profile_states,
+            validate_workspace_profile_state,
             generate_decision_engine,
             select_decision_candidate,
             dismiss_decision_candidate,

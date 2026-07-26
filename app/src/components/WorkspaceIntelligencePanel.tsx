@@ -42,6 +42,10 @@ import type {
   WorkspaceInteractionState,
   WorkspaceInteractionComparison,
   InteractionSelectResult,
+  WorkspaceProfileState,
+  WorkspaceProfileComparison,
+  WorkspaceProfile,
+  WorkspaceProfileMemberInput,
   WorkspaceIntelligenceState,
 } from "../types/domain";
 
@@ -142,6 +146,11 @@ export function WorkspaceIntelligencePanel({
   const [interactionCompareNote, setInteractionCompareNote] = useState<
     string | null
   >(null);
+  const [profileState, setProfileState] =
+    useState<WorkspaceProfileState | null>(null);
+  const [profileCompareNote, setProfileCompareNote] = useState<string | null>(
+    null,
+  );
   const [lastHandoff, setLastHandoff] = useState<string | null>(null);
   const [contractName, setContractName] = useState(
     "Prepare coding environment",
@@ -201,6 +210,8 @@ export function WorkspaceIntelligencePanel({
       setTransitionCompareNote(null);
       setInteractionState(null);
       setInteractionCompareNote(null);
+      setProfileState(null);
+      setProfileCompareNote(null);
       setLastHandoff(null);
       setState(null);
       return;
@@ -225,6 +236,7 @@ export function WorkspaceIntelligencePanel({
           workingStyle,
           transitions,
           interactions,
+          profileSnapshot,
           decisions,
           graphTasks,
           adapt,
@@ -277,6 +289,10 @@ export function WorkspaceIntelligencePanel({
               "generate_workspace_interactions",
               { workspaceId: workspace.id },
             ),
+            invokeIpc<WorkspaceProfileState>(
+              "generate_workspace_profile_state",
+              { workspaceId: workspace.id },
+            ),
             invokeIpc<DecisionEngineState>("generate_decision_engine", {
               workspaceId: workspace.id,
             }),
@@ -301,6 +317,7 @@ export function WorkspaceIntelligencePanel({
           setWorkingStyleState(workingStyle);
           setTransitionState(transitions);
           setInteractionState(interactions);
+          setProfileState(profileSnapshot);
           setDecisionEngine(decisions);
           setTaskGraph(graphTasks);
           setAdaptationState(adapt);
@@ -1131,6 +1148,144 @@ export function WorkspaceIntelligencePanel({
           </>
         ) : (
           <p className="muted">No interaction snapshot yet.</p>
+        )}
+      </section>
+
+      <section>
+        <h3>Workspace Profiles</h3>
+        <p className="muted">
+          User-owned preferred setups. Shows available profiles, alignment,
+          differences, and evidence. Describes environments — never activates,
+          launches, or restores.
+        </p>
+        <div className="row">
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("Profiles refreshed", async () => {
+                if (!workspace) return;
+                const next = await invokeIpc<WorkspaceProfileState>(
+                  "generate_workspace_profile_state",
+                  { workspaceId: workspace.id },
+                );
+                setProfileState(next);
+                setProfileCompareNote(null);
+              })
+            }
+          >
+            Refresh profiles
+          </button>
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("Development profile created", async () => {
+                if (!workspace) return;
+                const members: WorkspaceProfileMemberInput[] = [];
+                if (projects[0]) {
+                  members.push({
+                    member_type: "project",
+                    reference_id: projects[0].id,
+                    relationship: "preferred",
+                    evidence: "User included active project in Development setup",
+                    label: projects[0].name,
+                  });
+                }
+                members.push({
+                  member_type: "application",
+                  reference_id: "vscode",
+                  relationship: "expected",
+                  evidence: "Development setups usually include VS Code",
+                  label: "VS Code",
+                });
+                members.push({
+                  member_type: "application",
+                  reference_id: "terminal",
+                  relationship: "expected",
+                  evidence: "Development setups usually include a terminal",
+                  label: "Terminal",
+                });
+                await invokeIpc<WorkspaceProfile>("create_workspace_profile", {
+                  workspaceId: workspace.id,
+                  name: "Development setup",
+                  description: "Preferred coding environment",
+                  members,
+                });
+                const next = await invokeIpc<WorkspaceProfileState>(
+                  "generate_workspace_profile_state",
+                  { workspaceId: workspace.id },
+                );
+                setProfileState(next);
+              })
+            }
+          >
+            Create Development setup
+          </button>
+          <button
+            type="button"
+            disabled={busy || !workspace || !profileState?.profiles[0]}
+            onClick={() =>
+              void run("Profile compared", async () => {
+                if (!workspace || !profileState?.profiles[0]) return;
+                const comparison =
+                  await invokeIpc<WorkspaceProfileComparison>(
+                    "compare_workspace_profile",
+                    {
+                      workspaceId: workspace.id,
+                      profileId: profileState.profiles[0].id,
+                    },
+                  );
+                setProfileCompareNote(
+                  `${comparison.alignment}: matched ${comparison.matched_count}, missing ${comparison.missing_count}`,
+                );
+              })
+            }
+          >
+            Compare first profile
+          </button>
+        </div>
+        {profileState ? (
+          <>
+            <p>
+              <strong>{profileState.profile_summary.headline}</strong>
+            </p>
+            <p className="muted">{profileState.profile_summary.alignment_line}</p>
+            <p className="muted">{profileState.profile_summary.missing_line}</p>
+            <ul className="intelligence-list">
+              {profileState.profiles.slice(0, 6).map((profile) => {
+                const cmp = profileState.comparisons.find(
+                  (c) => c.profile_id === profile.id,
+                );
+                return (
+                  <li key={profile.id}>
+                    <strong>{profile.name}</strong>
+                    <div className="muted">{profile.description || "No description"}</div>
+                    <div className="muted">
+                      Members: {profile.members.map((m) => m.label || m.reference_id).join(", ") || "none"}
+                    </div>
+                    {cmp && (
+                      <div className="muted">
+                        Alignment: {cmp.alignment} · missing{" "}
+                        {cmp.missing_members
+                          .map((m) => m.label || m.reference_id)
+                          .join(", ") || "none"}
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+            <p className="muted">
+              authority: {profileState.authority_effect} ·{" "}
+              {profileState.profile_count} profile(s)
+            </p>
+            {profileCompareNote && (
+              <p className="muted">Compare: {profileCompareNote}</p>
+            )}
+          </>
+        ) : (
+          <p className="muted">No profile snapshot yet.</p>
         )}
       </section>
 

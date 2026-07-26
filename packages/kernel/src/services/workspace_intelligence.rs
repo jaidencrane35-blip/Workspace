@@ -28,6 +28,7 @@ use crate::services::{
     WorkspaceReadinessService, WorkspaceSessionService, WorkspaceExperienceService,
     WorkspaceWorkContextService, WorkspaceNavigationService, WorkspaceMilestoneService,
     WorkspaceWorkingStyleService, WorkspaceTransitionService, WorkspaceInteractionService,
+    WorkspaceProfileService,
 };
 
 pub(crate) struct WorkspaceIntelligenceService;
@@ -479,12 +480,13 @@ impl WorkspaceIntelligenceService {
             working_style: Default::default(),
             transition: Default::default(),
             interaction: Default::default(),
+            profiles: Default::default(),
             workspace_health: health_label,
             summary,
             authority_effect: WorkspaceIntelligenceState::AUTHORITY_EFFECT_NONE.into(),
         };
 
-        // Phase 6: Session → Experience → Work Context → Navigation → Milestones → Working Style → Transition → Interaction.
+        // Phase 6: Session → … → Transition → Interaction → Profiles.
         let session = WorkspaceSessionService::generate_with_inputs(db, actor, &state)?;
         let experience = WorkspaceExperienceService::generate_with_inputs(db, actor, &session)?;
         let work_context = WorkspaceWorkContextService::generate_with_inputs(
@@ -627,6 +629,10 @@ impl WorkspaceIntelligenceService {
             &transition,
         )?;
         state.interaction = interaction.summary_projection(8);
+
+        // Profiles are durable user-owned data — comparison only; never executes.
+        let profiles = WorkspaceProfileService::generate_state(db, actor, &state)?;
+        state.profiles = profiles.summary_projection(6);
 
         Self::audit_generated(db, actor, &state)?;
         Ok(state)

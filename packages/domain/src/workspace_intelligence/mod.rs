@@ -24,6 +24,7 @@ use crate::workspace_milestone::WorkspaceMilestoneSummary;
 use crate::workspace_working_style::WorkspaceWorkingStyleSummary;
 use crate::workspace_transition::WorkspaceTransitionSummary;
 use crate::workspace_interaction::WorkspaceInteractionSummary;
+use crate::workspace_profile::WorkspaceProfileSummary;
 use crate::workspace_environment::WorkspaceEnvironmentSummary;
 use crate::workspace_task_graph::TaskGraphSummary;
 use crate::workspace_activity::WorkspaceActivityGraphSummary;
@@ -167,6 +168,9 @@ pub struct WorkspaceIntelligenceState {
     /// Interaction Model summary (Phase 6). What the user can interact with — never executes.
     /// Embedded after Transition. Owns nothing; aggregates existing cognition.
     pub interaction: WorkspaceInteractionSummary,
+    /// Workspace Environment Profiles summary (Phase 6). User-owned setups — never executes.
+    /// Embedded after Interaction. Durable references only; comparison is informational.
+    pub profiles: WorkspaceProfileSummary,
     pub workspace_health: String,
     pub summary: String,
     /// Explicit marker for audits and UI: this state grants nothing.
@@ -289,6 +293,17 @@ impl WorkspaceIntelligenceComparison {
                 left.interaction.decision_count,
                 right.interaction.item_count,
                 right.interaction.decision_count
+            ));
+        }
+        if left.profiles.profile_count != right.profiles.profile_count
+            || left.profiles.best_profile_name != right.profiles.best_profile_name
+        {
+            differences.push(format!(
+                "Profiles: {} ({:?}) → {} ({:?})",
+                left.profiles.profile_count,
+                left.profiles.best_profile_name,
+                right.profiles.profile_count,
+                right.profiles.best_profile_name
             ));
         }
         if differences.is_empty() {

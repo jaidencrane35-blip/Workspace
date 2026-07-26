@@ -1281,6 +1281,8 @@ export interface WorkspaceIntelligenceState {
   transition: WorkspaceTransitionSummary;
   /** What the user can interact with — after Transition; never executes. */
   interaction: WorkspaceInteractionSummary;
+  /** User-owned environment setups — after Interaction; never executes. */
+  profiles: WorkspaceProfileSummary;
   workspace_health: string;
   summary: string;
   authority_effect: string;
@@ -3110,6 +3112,143 @@ export interface WorkspaceInteractionComparison {
 }
 
 export interface WorkspaceInteractionValidation {
+  valid: boolean;
+  messages: string[];
+  authority_effect: string;
+}
+
+export type WorkspaceProfileStatus = "active" | "archived";
+
+export type WorkspaceProfileMemberType =
+  | "application"
+  | "layout"
+  | "project"
+  | "task"
+  | "work_context"
+  | "preference";
+
+export type WorkspaceProfileRelationship =
+  | "expected"
+  | "preferred"
+  | "related";
+
+export type WorkspaceProfileAlignment =
+  | "aligned"
+  | "partial"
+  | "divergent"
+  | "empty";
+
+export interface WorkspaceProfileMember {
+  id: string;
+  profile_id: string;
+  member_type: WorkspaceProfileMemberType;
+  reference_id: string;
+  relationship: WorkspaceProfileRelationship;
+  evidence: string;
+  label: string;
+  authority_effect: string;
+}
+
+export interface WorkspaceProfileMemberInput {
+  member_type: WorkspaceProfileMemberType;
+  reference_id: string;
+  relationship: WorkspaceProfileRelationship;
+  evidence: string;
+  label: string;
+}
+
+export interface WorkspaceProfile {
+  id: string;
+  workspace_id: string;
+  name: string;
+  description: string;
+  status: WorkspaceProfileStatus;
+  members: WorkspaceProfileMember[];
+  created_at: string;
+  updated_at: string;
+  authority_effect: string;
+}
+
+export interface WorkspaceProfileEvidence {
+  label: string;
+  member_type: string;
+  reference_id: string;
+  why: string;
+}
+
+export interface WorkspaceProfileDifference {
+  kind: string;
+  member_type: string;
+  reference_id: string;
+  expected: string;
+  observed: string;
+  why: string;
+}
+
+export interface WorkspaceProfileComparison {
+  profile_id: string;
+  profile_name: string;
+  workspace_id: string;
+  alignment: WorkspaceProfileAlignment;
+  matching_evidence: WorkspaceProfileEvidence[];
+  differences: WorkspaceProfileDifference[];
+  missing_members: WorkspaceProfileMember[];
+  matched_count: number;
+  missing_count: number;
+  explanation: string;
+  authority_effect: string;
+}
+
+export interface ProfileSummaryLines {
+  headline: string;
+  alignment_line: string;
+  missing_line: string;
+  narrative: string;
+}
+
+export interface WorkspaceProfileState {
+  workspace_id: string;
+  workspace_name: string;
+  generated_at: string;
+  label: string;
+  profile_summary: ProfileSummaryLines;
+  profiles: WorkspaceProfile[];
+  comparisons: WorkspaceProfileComparison[];
+  profile_count: number;
+  active_count: number;
+  best_alignment: WorkspaceProfileAlignment | null;
+  best_profile_name: string | null;
+  explanation: string;
+  evidence: string[];
+  summary: string;
+  authority_effect: string;
+}
+
+export interface WorkspaceProfileSummary {
+  workspace_id: string;
+  workspace_name: string;
+  generated_at: string;
+  label: string;
+  profile_summary: ProfileSummaryLines;
+  profile_count: number;
+  active_count: number;
+  best_alignment: string | null;
+  best_profile_name: string | null;
+  top_profiles: WorkspaceProfile[];
+  top_comparisons: WorkspaceProfileComparison[];
+  explanation: string;
+  summary: string;
+  authority_effect: string;
+}
+
+export interface WorkspaceProfileStateComparison {
+  left_workspace_id: string;
+  right_workspace_id: string;
+  differences: string[];
+  authority_effect: string;
+}
+
+export interface WorkspaceProfileValidation {
   valid: boolean;
   messages: string[];
   authority_effect: string;

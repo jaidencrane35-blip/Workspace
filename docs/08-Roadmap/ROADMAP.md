@@ -167,7 +167,7 @@ Foundation     Decisions       Core Platform     Feature Expansion   Maturity
 
 **Goal:** Application launching, AI observation/suggestion, and user-approved automation.
 
-**Status:** Phase 3–5.5 complete; Phase 6 Batches 1–7 (Session → Transition) plus Interaction Model foundation complete. Next: deepen understanding-led UX and governed capabilities via Intent → Gateway without treating projections as SoT. See [Intelligence Roadmap](../05-AI/INTELLIGENCE-ROADMAP.md) and Phase 6 engine docs under `05-AI/`.
+**Status:** Phase 3–5.5 complete; Phase 6 through Interaction + Environment Profiles foundations complete. Next: deepen understanding-led UX and governed capabilities via Intent → Gateway without treating projections as SoT. See [Intelligence Roadmap](../05-AI/INTELLIGENCE-ROADMAP.md) and Phase 6 engine docs under `05-AI/`.
 
 ### Expected Deliverables
 

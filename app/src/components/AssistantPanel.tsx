@@ -13,6 +13,7 @@ import type {
   WorkspaceWorkingStyleState,
   WorkspaceTransitionState,
   WorkspaceInteractionState,
+  WorkspaceProfileState,
   WorkspaceIntelligenceState,
 } from "../types/domain";
 import { assistantProductState } from "../types/domain";
@@ -71,6 +72,8 @@ export function AssistantPanel({
     useState<WorkspaceTransitionState | null>(null);
   const [interactionState, setInteractionState] =
     useState<WorkspaceInteractionState | null>(null);
+  const [profileState, setProfileState] =
+    useState<WorkspaceProfileState | null>(null);
 
   const productState = assistantProductState(workflow?.state);
   const canConfirm = workflow?.state === "awaiting_confirmation";
@@ -154,6 +157,7 @@ export function AssistantPanel({
                   workingStyle,
                   transitions,
                   interactions,
+                  profiles,
                 ] =
                   await Promise.all([
                   invokeIpc<WorkspaceIntelligenceState>(
@@ -188,6 +192,10 @@ export function AssistantPanel({
                     "generate_workspace_interactions",
                     { workspaceId: workspace.id },
                   ),
+                  invokeIpc<WorkspaceProfileState>(
+                    "generate_workspace_profile_state",
+                    { workspaceId: workspace.id },
+                  ),
                 ]);
                 setWorkspaceIntel(intel);
                 setExperienceState(experience);
@@ -197,12 +205,25 @@ export function AssistantPanel({
                 setWorkingStyleState(workingStyle);
                 setTransitionState(transitions);
                 setInteractionState(interactions);
+                setProfileState(profiles);
               })
             }
           >
             Load workspace intelligence
           </button>
         </div>
+        {profileState && (
+          <dl>
+            <dt>Workspace Profiles</dt>
+            <dd>
+              {profileState.profile_summary.narrative}{" "}
+              {profileState.best_profile_name
+                ? `Closest: ${profileState.best_profile_name}. `
+                : ""}
+              Assistant explains profiles only — cannot activate them.
+            </dd>
+          </dl>
+        )}
         {interactionState && (
           <dl>
             <dt>Interactions</dt>

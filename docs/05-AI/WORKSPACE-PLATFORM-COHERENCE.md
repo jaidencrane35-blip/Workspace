@@ -117,6 +117,7 @@ Intelligence and Assistant must consume, never re-own, these answers. Session co
 | working_style | `WorkspaceWorkingStyleService` | Aggregator (operating patterns; owns nothing) |
 | transition | `WorkspaceTransitionService` | Aggregator (movement explanation; owns nothing) |
 | interaction | `WorkspaceInteractionService` | Aggregator (interaction opportunities; owns nothing; select → Intent handoff) |
+| workspace_profile | `WorkspaceProfileService` | DurableStore (user-owned setups; comparison informational) |
 | decision_candidate | `DecisionEngineService` | Aggregator (+ outcome overlay) |
 | Workspace Intelligence | consumer only | Envelope |
 
@@ -130,9 +131,10 @@ Decision Queue → Activity → Continuity → Task Graph
 → Session → Experience → Work Context → Navigation → Milestones
 → Working Style → Transition (embed + evidence-only enrich)
 → Interaction (embed after Transition; opportunities only)
+→ Profiles (embed after Interaction; durable user-owned setups; comparison only)
 ```
 
-**Rule:** Prefer Intelligence `generate_with_inputs`. Standalone `generate` is for IPC refresh / diagnostics. Nested Decision Queue consumers must use `aggregate_readonly`. Work Context, Navigation, Milestones, Working Style, Transition, and Interaction never regenerate upstream projections.
+**Rule:** Prefer Intelligence `generate_with_inputs`. Standalone `generate` is for IPC refresh / diagnostics. Nested Decision Queue consumers must use `aggregate_readonly`. Work Context, Navigation, Milestones, Working Style, Transition, and Interaction never regenerate upstream projections. Profiles are a DurableStore — they persist user-owned data and never own Task Graph, Memory, or permissions.
 
 See [Workspace Cognition Integrity Audit](WORKSPACE-COGNITION-INTEGRITY-AUDIT.md).
 

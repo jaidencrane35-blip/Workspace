@@ -58,6 +58,7 @@ pub mod workspace_milestone;
 pub mod workspace_working_style;
 pub mod workspace_transition;
 pub mod workspace_interaction;
+pub mod workspace_profile;
 pub mod workspace_continuity;
 pub mod workspace_task_graph;
 pub mod workspace_environment;
@@ -168,7 +169,7 @@ pub use ids::{
     CapabilityGrantId, IntentId, LayoutId, MemoryEntryId, ModelId, ModelProviderId,
     DecisionCandidateId, DecisionItemId, PermissionApprovalRequestId, ProjectId, TaskId,
     TriggerEventId, UserPreferenceId, WidgetId, WorkGoalId, AttentionItemId, ContinuityFacetId,
-    WorkspaceActivityId, WorkspaceId, WorkspaceTaskId, ZoneId,
+    WorkspaceActivityId, WorkspaceId, WorkspaceProfileId, WorkspaceTaskId, ZoneId,
 };
 pub use automation_contract::{
     AutomationContract, AutomationContractApprovalState, AutomationContractError,
@@ -304,6 +305,14 @@ pub use workspace_interaction::{
     InteractionKind, InteractionPriority, InteractionSelectResult, InteractionSummary,
     WorkspaceInteractionComparison, WorkspaceInteractionError, WorkspaceInteractionState,
     WorkspaceInteractionSummary, WorkspaceInteractionValidation,
+};
+pub use workspace_profile::{
+    build_profile_summary, profile_now_rfc3339, validate_profile_workspace_id, ProfileSummaryLines,
+    WorkspaceProfile, WorkspaceProfileAlignment, WorkspaceProfileComparison,
+    WorkspaceProfileDifference, WorkspaceProfileError, WorkspaceProfileEvidence,
+    WorkspaceProfileMember, WorkspaceProfileMemberInput, WorkspaceProfileMemberType,
+    WorkspaceProfileRelationship, WorkspaceProfileState, WorkspaceProfileStateComparison,
+    WorkspaceProfileStatus, WorkspaceProfileSummary, WorkspaceProfileValidation,
 };
 pub use workspace_environment::{
     build_environment_summary, now_rfc3339, validate_workspace_id, EnvironmentApplication,

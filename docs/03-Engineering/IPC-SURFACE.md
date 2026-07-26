@@ -108,6 +108,14 @@
 | `compare_workspace_interactions` | Product: compare two interaction snapshots (informational) |
 | `validate_workspace_interactions` | Product: validate interaction invariants (informational) |
 | `select_workspace_interaction` | Product: select opportunity → Intent handoff only (never executes) |
+| `create_workspace_profile` | Product: create durable Environment Profile (never executes) |
+| `update_workspace_profile` | Product: update durable Environment Profile (never executes) |
+| `list_workspace_profiles` | Product: list profiles for a workspace |
+| `get_workspace_profile` | Product: get one profile by id |
+| `generate_workspace_profile_state` | Product: profile read model + alignment compare (informational) |
+| `compare_workspace_profile` | Product: compare one profile vs current workspace (informational) |
+| `compare_workspace_profile_states` | Product: compare two profile state snapshots (informational) |
+| `validate_workspace_profile_state` | Product: validate profile state invariants (informational) |
 | `create_memory_entry` / `list_memory_entries` / `get_memory_context` | Diagnostic governed memory (informational) |
 | `delete_memory_entry` / `clear_memory_entries` | Diagnostic memory lifecycle |
 | `diagnose_ai_plan_preview` | Diagnostic memory-aware plan (no execution) |
