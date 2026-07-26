@@ -40,7 +40,8 @@ Remaining before a future handoff could exist:
 7. ~~Adapter preparation (prepare ≠ invoke)~~ — see [WORKSPACE-RECOMMENDATION-DECISION-INTAKE-ADAPTER-PREPARATION.md](./WORKSPACE-RECOMMENDATION-DECISION-INTAKE-ADAPTER-PREPARATION.md)
 8. ~~Handoff request (request ≠ performed / DE object)~~ — see [WORKSPACE-RECOMMENDATION-DECISION-HANDOFF-REQUEST.md](./WORKSPACE-RECOMMENDATION-DECISION-HANDOFF-REQUEST.md)
 9. ~~DE acceptance (accept ≠ ownership transfer / DE object)~~ — see [WORKSPACE-RECOMMENDATION-DECISION-ENGINE-ACCEPTANCE.md](./WORKSPACE-RECOMMENDATION-DECISION-ENGINE-ACCEPTANCE.md)
-10. Optional **DE-owned object creation / adapter invocation** after acceptance — still separate domains; not execution
+10. ~~DE intake receipt (observe ≠ DecisionCandidate)~~ — see [WORKSPACE-DECISION-ENGINE-INTAKE-RECEIPT.md](./WORKSPACE-DECISION-ENGINE-INTAKE-RECEIPT.md)
+11. Optional **DE-owned object creation / adapter invocation** after observation — still separate domains; not execution
 
 ---
 

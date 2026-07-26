@@ -1227,12 +1227,39 @@ export interface DecisionCandidate {
   authority_effect: string;
 }
 
+/** DE-owned observational receipt of an accepted RE sealed package — not a candidate. */
+export interface DecisionEngineIntakeReceipt {
+  workspace_id: string;
+  recommendation_id: string;
+  /** observed | seal_mismatch */
+  receipt_state: string;
+  acceptance_state: string;
+  ownership_state: string;
+  ownership_transferred: boolean;
+  current_owner: string;
+  sealed_intake_package_digest: string;
+  seal_aligned: boolean;
+  contract_version: string;
+  contract_family: string;
+  decision_engine_object_id: string | null;
+  creates_decision_candidate: boolean;
+  creates_goal: boolean;
+  creates_intent: boolean;
+  adapter_invoked: boolean;
+  planner_invoked: boolean;
+  handoff_command: string | null;
+  note: string;
+  authority_effect: string;
+}
+
 export interface DecisionEngineState {
   workspace_id: string;
   generated_at: string;
   context: DecisionContext;
   candidates: DecisionCandidate[];
   top_candidates: DecisionCandidate[];
+  /** Observational RE intake receipts — never DecisionCandidates. */
+  intake_receipts?: DecisionEngineIntakeReceipt[];
   summary: string;
   authority_effect: string;
 }

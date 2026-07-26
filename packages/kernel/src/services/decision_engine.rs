@@ -1,20 +1,22 @@
 //! Governed Decision Engine (Phase 5 — Sprints 80–81).
 //!
 //! Synthesizes Attention + memory + personalization + goals into ranked
-//! DecisionCandidates. Never executes, never grants authority, never plans.
+//! DecisionCandidates. Observes accepted Recommendation Engine sealed packages
+//! as informational intake receipts only. Never executes, never grants authority,
+//! never plans, never mutates Recommendation Engine overlays.
 
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 use chrono::Utc;
 use serde_json::json;
-use workspace_database::{Database, DecisionEngineRepository};
+use workspace_database::{Database, DecisionEngineRepository, RecommendationLifecycleRepository};
 use workspace_domain::{
     ActorContext, AttentionItem, DecisionCandidate, DecisionContext, DecisionEngineActionResult,
-    DecisionEngineError, DecisionEngineHandoff, DecisionEngineOverlay, DecisionEngineState,
-    DecisionEngineSummary, DecisionExplanation, DecisionOutcome, DecisionQueue, DecisionReason,
-    DecisionScore, DecisionSourceType, DecisionState, IntelligenceHighlight, IntentContext,
-    WorkspaceAttentionState, WorkspaceId, WorkGoal, WorkflowContext,
+    DecisionEngineError, DecisionEngineHandoff, DecisionEngineIntakeReceipt, DecisionEngineOverlay,
+    DecisionEngineState, DecisionEngineSummary, DecisionExplanation, DecisionOutcome, DecisionQueue,
+    DecisionReason, DecisionScore, DecisionSourceType, DecisionState, IntelligenceHighlight,
+    IntentContext, WorkspaceAttentionState, WorkspaceId, WorkGoal, WorkflowContext,
 };
 
 use crate::error::{KernelError, Result};
@@ -246,10 +248,54 @@ impl DecisionEngineService {
             }
         }
 
-        let state = DecisionEngineState::from_candidates(ws, context, candidates);
+        let intake_receipts = Self::observe_recommendation_intake_receipts(db, ws)?;
+        let state = DecisionEngineState::from_candidates(ws, context, candidates)
+            .with_intake_receipts(intake_receipts);
+        debug_assert!(state
+            .intake_receipts
+            .iter()
+            .all(|r| r.assert_observational_only().is_ok()));
+        debug_assert!(state
+            .intake_receipts
+            .iter()
+            .all(|r| r.decision_engine_object_id.is_none() && r.handoff_command.is_none()));
         Self::audit_generated(db, actor, &state)?;
         Self::audit_rank_changes(db, actor, &state, &previous_ranks)?;
         Ok(state)
+    }
+
+    /// Read-only observation of accepted RE sealed packages — never mutates RE overlays.
+    fn observe_recommendation_intake_receipts(
+        db: &Arc<Mutex<Database>>,
+        workspace_id: &str,
+    ) -> Result<Vec<DecisionEngineIntakeReceipt>> {
+        let guard = db
+            .lock()
+            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+        let overlays =
+            RecommendationLifecycleRepository::new(&guard).list_overlays(workspace_id)?;
+        drop(guard);
+        let mut receipts = Vec::new();
+        for overlay in overlays {
+            let (Some(acceptance), Some(seal)) = (
+                overlay.decision_engine_acceptance.as_ref(),
+                overlay.decision_intake_package_seal.as_ref(),
+            ) else {
+                continue;
+            };
+            if let Some(receipt) = DecisionEngineIntakeReceipt::try_observe(acceptance, seal) {
+                debug_assert!(receipt.assert_observational_only().is_ok());
+                debug_assert!(!receipt.creates_decision_candidate);
+                debug_assert!(!receipt.ownership_transferred);
+                debug_assert_eq!(
+                    receipt.current_owner,
+                    DecisionEngineIntakeReceipt::OWNER_RECOMMENDATION
+                );
+                receipts.push(receipt);
+            }
+        }
+        receipts.sort_by(|a, b| a.recommendation_id.cmp(&b.recommendation_id));
+        Ok(receipts)
     }
 
     pub(crate) fn summary_projection(

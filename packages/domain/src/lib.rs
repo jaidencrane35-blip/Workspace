@@ -233,8 +233,8 @@ pub use automation_trigger::{
 };
 pub use decision_engine::{
     DecisionCandidate, DecisionContext, DecisionEngineActionResult, DecisionEngineError,
-    DecisionEngineHandoff, DecisionEngineOverlay, DecisionEngineState, DecisionEngineSummary,
-    DecisionExplanation, DecisionOutcome, DecisionReason, DecisionScore,
+    DecisionEngineHandoff, DecisionEngineIntakeReceipt, DecisionEngineOverlay, DecisionEngineState,
+    DecisionEngineSummary, DecisionExplanation, DecisionOutcome, DecisionReason, DecisionScore,
 };
 pub use decision_queue::{
     DecisionActionResult, DecisionCategory, DecisionHandoff, DecisionItem, DecisionLifecycleOverlay,

@@ -175,6 +175,9 @@ pub struct DecisionEngineState {
     pub context: DecisionContext,
     pub candidates: Vec<DecisionCandidate>,
     pub top_candidates: Vec<DecisionCandidate>,
+    /// Observational receipts of accepted RE sealed packages — never candidates.
+    #[serde(default)]
+    pub intake_receipts: Vec<DecisionEngineIntakeReceipt>,
     pub summary: String,
     pub authority_effect: String,
 }
@@ -210,9 +213,23 @@ impl DecisionEngineState {
             context,
             candidates,
             top_candidates,
+            intake_receipts: Vec::new(),
             summary,
             authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
         }
+    }
+
+    /// Attach DE-owned observational RE intake receipts without changing scoring or candidates.
+    pub fn with_intake_receipts(mut self, receipts: Vec<DecisionEngineIntakeReceipt>) -> Self {
+        let observed = receipts.iter().filter(|r| r.is_observed()).count();
+        self.summary = format!(
+            "{} Intake receipts: {} ({} seal-aligned).",
+            self.summary,
+            receipts.len(),
+            observed
+        );
+        self.intake_receipts = receipts;
+        self
     }
 
     pub fn summary_projection(&self, limit: usize) -> DecisionEngineSummary {
@@ -275,4 +292,182 @@ pub struct DecisionEngineHandoff {
     pub workspace_id: String,
     pub note: String,
     pub authority_effect: String,
+}
+
+/// DE-owned observational receipt of an accepted RE sealed handoff package.
+///
+/// Reads Recommendation Engine acceptance + package seal alignment only.
+/// Does not create `DecisionCandidate`, goals, intents, planner handoffs,
+/// adapter invocations, ownership transfer, or Gateway grants.
+/// Does not mutate Recommendation Engine overlays.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DecisionEngineIntakeReceipt {
+    pub workspace_id: String,
+    pub recommendation_id: String,
+    /// `observed` | `seal_mismatch`
+    pub receipt_state: String,
+    pub acceptance_state: String,
+    pub ownership_state: String,
+    /// Always false — observation ≠ ownership transfer.
+    pub ownership_transferred: bool,
+    /// Remains Recommendation Engine; DE only observes.
+    pub current_owner: String,
+    pub sealed_intake_package_digest: String,
+    pub seal_aligned: bool,
+    pub contract_version: String,
+    pub contract_family: String,
+    /// Always `None` — receipt is not a Decision Engine object.
+    pub decision_engine_object_id: Option<String>,
+    pub creates_decision_candidate: bool,
+    pub creates_goal: bool,
+    pub creates_intent: bool,
+    pub adapter_invoked: bool,
+    pub planner_invoked: bool,
+    /// Always `None` — distinct from `DecisionCandidate.handoff_command`.
+    pub handoff_command: Option<String>,
+    pub note: String,
+    pub authority_effect: String,
+}
+
+impl DecisionEngineIntakeReceipt {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+    pub const STATE_OBSERVED: &'static str = "observed";
+    pub const STATE_SEAL_MISMATCH: &'static str = "seal_mismatch";
+    pub const OWNER_RECOMMENDATION: &'static str = "recommendation_engine";
+
+    /// Observe an accepted RE package when seal identity is present.
+    /// Returns `None` unless acceptance is `accepted` for future DE ownership.
+    pub fn try_observe(
+        acceptance: &crate::workspace_recommendation::RecommendationDecisionEngineAcceptance,
+        seal: &crate::workspace_recommendation::RecommendationDecisionIntakePackageSeal,
+    ) -> Option<Self> {
+        use crate::workspace_recommendation::RecommendationDecisionEngineAcceptance as Acc;
+        if acceptance.acceptance_state != Acc::STATE_ACCEPTED {
+            return None;
+        }
+        if acceptance.ownership_transferred
+            || acceptance.decision_engine_object_id.is_some()
+            || acceptance.current_owner != Acc::OWNER_RECOMMENDATION
+        {
+            return None;
+        }
+        let seal_aligned = seal.sealed
+            && seal.package_matches_seal
+            && seal.seal_state
+                == crate::workspace_recommendation::RecommendationDecisionIntakePackageSeal::STATE_SEALED
+            && seal.intake_package_digest == acceptance.sealed_intake_package_digest;
+        let receipt_state = if seal_aligned {
+            Self::STATE_OBSERVED
+        } else {
+            Self::STATE_SEAL_MISMATCH
+        };
+        Some(Self {
+            workspace_id: acceptance.workspace_id.clone(),
+            recommendation_id: acceptance.recommendation_id.clone(),
+            receipt_state: receipt_state.into(),
+            acceptance_state: acceptance.acceptance_state.clone(),
+            ownership_state: acceptance.ownership_state.clone(),
+            ownership_transferred: false,
+            current_owner: Self::OWNER_RECOMMENDATION.into(),
+            sealed_intake_package_digest: acceptance.sealed_intake_package_digest.clone(),
+            seal_aligned,
+            contract_version: acceptance.contract_version.clone(),
+            contract_family: acceptance.contract_family.clone(),
+            decision_engine_object_id: None,
+            creates_decision_candidate: false,
+            creates_goal: false,
+            creates_intent: false,
+            adapter_invoked: false,
+            planner_invoked: false,
+            handoff_command: None,
+            note: if seal_aligned {
+                "Decision Engine observed accepted Recommendation Engine sealed package. \
+                 Observation is not DecisionCandidate creation, goal/intent creation, \
+                 ownership transfer, adapter invocation, planner handoff, or execution."
+                    .into()
+            } else {
+                "Decision Engine saw accepted Recommendation Engine package but seal is not aligned. \
+                 Progression blocked; no DecisionCandidate or ownership transfer."
+                    .into()
+            },
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        })
+    }
+
+    pub fn is_observed(&self) -> bool {
+        self.receipt_state == Self::STATE_OBSERVED && self.seal_aligned
+    }
+
+    pub fn may_create_decision_candidate(&self) -> bool {
+        false
+    }
+
+    pub fn may_create_goal(&self) -> bool {
+        false
+    }
+
+    pub fn may_create_intent(&self) -> bool {
+        false
+    }
+
+    pub fn may_transfer_ownership(&self) -> bool {
+        false
+    }
+
+    pub fn may_invoke_adapter(&self) -> bool {
+        false
+    }
+
+    pub fn may_invoke_planner(&self) -> bool {
+        false
+    }
+
+    pub fn may_invoke_gateway(&self) -> bool {
+        false
+    }
+
+    pub fn attempt_create_decision_candidate(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_create_goal(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_create_intent(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_transfer_ownership(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_invoke_adapter(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_invoke_planner(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_execute() -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn assert_observational_only(&self) -> Result<(), DecisionEngineError> {
+        if self.creates_decision_candidate
+            || self.creates_goal
+            || self.creates_intent
+            || self.adapter_invoked
+            || self.planner_invoked
+            || self.ownership_transferred
+            || self.decision_engine_object_id.is_some()
+            || self.handoff_command.is_some()
+            || self.authority_effect != Self::AUTHORITY_EFFECT_NONE
+            || self.current_owner != Self::OWNER_RECOMMENDATION
+        {
+            return Err(DecisionEngineError::CannotExecute);
+        }
+        Ok(())
+    }
 }

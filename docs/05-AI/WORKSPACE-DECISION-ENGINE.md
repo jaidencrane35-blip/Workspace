@@ -71,15 +71,20 @@ Accept returns a **planner handoff** (`submit_assistant_goal`). The UI (or calle
 
 ### Distinct from Recommendation Engine accept
 
-Decision Engine does **not** consume Recommendation Engine accept events.
-Recommendation accept records lifecycle + `RecommendationOutcome` and projects
-context through sealed intake + adapter *preparation* only (see
-[WORKSPACE-RECOMMENDATION-DECISION-INTAKE-ADAPTER-PREPARATION.md](./WORKSPACE-RECOMMENDATION-DECISION-INTAKE-ADAPTER-PREPARATION.md)).
+Recommendation Engine accept remains agreement-only. After RE confirmation → seal →
+handoff request → `DecisionEngineAcceptance`, Decision Engine may **observe** the
+accepted sealed package as a `DecisionEngineIntakeReceipt`.
+
+Observation is DE-owned and informational only:
+
+- Does **not** create `DecisionCandidate`, goals, or intents
+- Does **not** transfer ownership (RE remains `current_owner`)
+- Does **not** set `handoff_command` / invoke planner
+- Does **not** mutate Recommendation Engine overlays
+- Seal mismatch → `seal_mismatch` receipt; still no candidate
+
 Namespaces remain separate (`recommendation:*` vs `engine_decision:*`).
-Accept means recommendation agreement — never a Decision Engine object, intent, or
-execution authorization. Confirmation may record desire for *future* DE consideration
-without creating one. Adapter preparation is reversible and non-invoking.
-`handoff_state` remains `handoff_not_performed`.
+Existing Attention/graph/goal synthesis is unchanged.
 
 ---
 
