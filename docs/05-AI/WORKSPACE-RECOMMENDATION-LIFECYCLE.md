@@ -94,6 +94,7 @@ Terminal for further progress: Accepted, Rejected, Expired, Superseded
 | Persistence (today) | `recommendation_lifecycle` overlay keyed by `(workspace_id, native_id)` — payloads remain regenerable |
 | Surfaces | Operator Console + Work Intelligence Present / Accept / Reject (decision records only); `RecommendationExplanationView` explains why shown |
 | Explanation | Structured evidence / keys / lifecycle notes — never CoT, never authority, never Decision Engine handoff |
+| Decision readiness | `RecommendationDecisionReadiness` — informational prerequisites only; accept never creates DE intents/commands |
 
 ### Lifecycle metadata (mutable)
 
@@ -119,10 +120,15 @@ Presented → Accepted
     ↓
 authority_effect remains "none"
     ↓
-optional handoff command (submit_assistant_goal, …)
+RecommendationOutcome + RecommendationDecisionReadiness (read-only)
+    ↓
+[future] optional DE handoff — Decision Engine owns intents/goals
     ↓
 CommandPipeline → Permission Gateway (only if a privileged command is issued later)
 ```
+
+Acceptance today stops at outcome + readiness assessment (`handoff_deferred` when
+prerequisites are met). It does **not** emit `submit_assistant_goal` or any command.
 
 `ActionProposal::attempt_execute()` and recommendation/decision `attempt_execute` guards
 remain hard-fail.

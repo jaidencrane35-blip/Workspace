@@ -131,11 +131,28 @@ handoff is emitted from recommendation acceptance (Decision Engine remains separ
 
 ---
 
+## Decision readiness (Sprints 212–216)
+
+Read-only `RecommendationDecisionReadiness` assesses whether an accepted recommendation
+has provenance, lifecycle completion, outcome history, explanation, and decision context
+for a *future* Decision Engine handoff.
+
+| May | Must not |
+|-----|----------|
+| Surface `incomplete` / `blocked` / `handoff_deferred` | Create intents, goals, or commands |
+| Block readiness when context is missing | Call Permission Gateway |
+| Inform operators that handoff is deferred | Merge Recommendation and Decision authority |
+
+See [WORKSPACE-RECOMMENDATION-DECISION-READINESS.md](./WORKSPACE-RECOMMENDATION-DECISION-READINESS.md).
+
+---
+
 ## Related docs
 
 - [WORKSPACE-ADAPTATION-GOVERNANCE.md](./WORKSPACE-ADAPTATION-GOVERNANCE.md)
 - [WORKSPACE-ADAPTATION-REVIEW.md](./WORKSPACE-ADAPTATION-REVIEW.md)
 - [WORKSPACE-RECOMMENDATION-LIFECYCLE.md](./WORKSPACE-RECOMMENDATION-LIFECYCLE.md)
+- [WORKSPACE-RECOMMENDATION-DECISION-READINESS.md](./WORKSPACE-RECOMMENDATION-DECISION-READINESS.md)
 - [WORKSPACE-RECOMMENDATION-PROVENANCE.md](./WORKSPACE-RECOMMENDATION-PROVENANCE.md)
 - [WORKSPACE-AUTOMATION-READINESS.md](./WORKSPACE-AUTOMATION-READINESS.md)
 - [WORKSPACE-ADAPTATION-PROPOSAL.md](./WORKSPACE-ADAPTATION-PROPOSAL.md)

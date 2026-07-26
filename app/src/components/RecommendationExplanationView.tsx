@@ -1,5 +1,6 @@
 import { DisplayReasonList } from "./DisplayReasonList";
 import type {
+  RecommendationDecisionReadiness,
   RecommendationHistoryEntry,
   RecommendationItem,
   RecommendationOutcomeView,
@@ -114,6 +115,32 @@ export function RecommendationExplanationBlock({
           </div>
         )}
       {item.outcome ? <RecommendationOutcomeBlock outcome={item.outcome} /> : null}
+      {item.decision_readiness ? (
+        <RecommendationDecisionReadinessBlock readiness={item.decision_readiness} />
+      ) : null}
+    </div>
+  );
+}
+
+/** Read-only RE→DE readiness — never handoff, never commands. */
+export function RecommendationDecisionReadinessBlock({
+  readiness,
+}: {
+  readiness: RecommendationDecisionReadiness;
+}) {
+  return (
+    <div className="recommendation-decision-readiness muted" style={{ marginTop: 4 }}>
+      <div>
+        Decision readiness: <strong>{readiness.readiness_state}</strong>
+        {" · "}
+        future handoff eligible: {readiness.ready_for_future_handoff ? "yes" : "no"}
+        {" · "}
+        authority: {readiness.authority_effect}
+      </div>
+      <div>{readiness.note}</div>
+      {readiness.missing.length > 0 && (
+        <div className="mono">Missing: {readiness.missing.join(", ")}</div>
+      )}
     </div>
   );
 }

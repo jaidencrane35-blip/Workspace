@@ -272,7 +272,8 @@ pub use workspace_evolution::{
 };
 pub use workspace_recommendation::{
     build_recommendation_engine_summary, recommendation_engine_now_rfc3339,
-    validate_recommendation_engine_workspace_id, RecommendationConfidence, RecommendationEvidence,
+    validate_recommendation_engine_workspace_id, RecommendationConfidence,
+    RecommendationDecisionPrerequisite, RecommendationDecisionReadiness, RecommendationEvidence,
     RecommendationExplanationView, RecommendationHistoryEntry, RecommendationItem,
     RecommendationKind, RecommendationOutcomeView, RecommendationRelationship,
     WorkspaceRecommendationEngineError, WorkspaceRecommendationEngineState,

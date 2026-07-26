@@ -233,6 +233,9 @@ pub struct RecommendationItem {
     /// Structured outcome projection when resolved (Sprint 207+) — immutable feedback.
     #[serde(default)]
     pub outcome: Option<RecommendationOutcomeView>,
+    /// Read-only Decision Engine handoff readiness (Sprint 212+) — never creates commands.
+    #[serde(default)]
+    pub decision_readiness: Option<RecommendationDecisionReadiness>,
     pub authority_effect: String,
 }
 
@@ -271,6 +274,198 @@ pub struct RecommendationHistoryEntry {
 
 impl RecommendationHistoryEntry {
     pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+}
+
+/// One prerequisite for a future Recommendation → Decision Engine handoff (Sprint 212).
+///
+/// Informational only — satisfaction never creates intents, commands, or Gateway grants.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RecommendationDecisionPrerequisite {
+    pub id: String,
+    pub label: String,
+    pub satisfied: bool,
+    pub detail: String,
+}
+
+/// Read-only assessment of whether an accepted recommendation has enough continuity
+/// for a *future* Decision Engine handoff.
+///
+/// Never emits handoff, never creates goals/commands, never calls Permission Gateway.
+/// Decision Engine remains responsible for intents/goals when that path is wired.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RecommendationDecisionReadiness {
+    pub recommendation_id: String,
+    pub outcome_id: Option<String>,
+    pub lifecycle_state: String,
+    /// `incomplete` | `blocked` | `handoff_deferred`
+    pub readiness_state: String,
+    pub prerequisites: Vec<RecommendationDecisionPrerequisite>,
+    pub missing: Vec<String>,
+    /// True only when accepted + all prerequisites satisfied. Still does **not** hand off.
+    pub ready_for_future_handoff: bool,
+    pub note: String,
+    pub authority_effect: String,
+}
+
+impl RecommendationDecisionReadiness {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+    pub const STATE_INCOMPLETE: &'static str = "incomplete";
+    pub const STATE_BLOCKED: &'static str = "blocked";
+    pub const STATE_HANDOFF_DEFERRED: &'static str = "handoff_deferred";
+
+    pub const PREREQ_PROVENANCE: &'static str = "has_provenance";
+    pub const PREREQ_LIFECYCLE: &'static str = "has_lifecycle_completion";
+    pub const PREREQ_OUTCOME: &'static str = "has_outcome_history";
+    pub const PREREQ_EXPLANATION: &'static str = "has_explanation";
+    pub const PREREQ_DECISION_CONTEXT: &'static str = "has_required_decision_context";
+
+    /// Assess handoff prerequisites from a projected recommendation item.
+    pub fn assess(item: &RecommendationItem) -> Self {
+        let lifecycle_state = item
+            .lifecycle_state
+            .clone()
+            .unwrap_or_else(|| "available".into());
+        let outcome_id = item.outcome.as_ref().map(|o| o.outcome_id.clone());
+
+        let has_provenance = !item.evidence.is_empty()
+            || !item.attention_reasons.is_empty()
+            || item
+                .explanation
+                .as_ref()
+                .map(|e| !e.evidence_refs.is_empty() || !e.explanation_keys.is_empty())
+                .unwrap_or(false);
+        let has_lifecycle_completion = lifecycle_state == "accepted";
+        let has_outcome_history = item.outcome.is_some();
+        let has_explanation = item
+            .explanation
+            .as_ref()
+            .map(|e| !e.why_suggested.trim().is_empty())
+            .unwrap_or(false)
+            || !item.reason.trim().is_empty();
+        let has_required_decision_context = item.related_task_id.is_some()
+            || item.related_attention_id.is_some()
+            || item.related_decision_id.is_some()
+            || item
+                .related_purpose_label
+                .as_ref()
+                .map(|s| !s.trim().is_empty())
+                .unwrap_or(false);
+
+        let prerequisites = vec![
+            RecommendationDecisionPrerequisite {
+                id: Self::PREREQ_PROVENANCE.into(),
+                label: "Has provenance".into(),
+                satisfied: has_provenance,
+                detail: if has_provenance {
+                    "Evidence, attention reasons, or explanation refs present.".into()
+                } else {
+                    "Missing evidence / provenance grounding.".into()
+                },
+            },
+            RecommendationDecisionPrerequisite {
+                id: Self::PREREQ_LIFECYCLE.into(),
+                label: "Has lifecycle completion".into(),
+                satisfied: has_lifecycle_completion,
+                detail: if has_lifecycle_completion {
+                    "Accepted as a human decision record.".into()
+                } else {
+                    format!("Lifecycle is '{lifecycle_state}' — future DE handoff requires accepted.")
+                },
+            },
+            RecommendationDecisionPrerequisite {
+                id: Self::PREREQ_OUTCOME.into(),
+                label: "Has outcome history".into(),
+                satisfied: has_outcome_history,
+                detail: if has_outcome_history {
+                    "Immutable outcome recorded.".into()
+                } else {
+                    "No recommendation outcome recorded yet.".into()
+                },
+            },
+            RecommendationDecisionPrerequisite {
+                id: Self::PREREQ_EXPLANATION.into(),
+                label: "Has explanation".into(),
+                satisfied: has_explanation,
+                detail: if has_explanation {
+                    "Structured why-suggested / reason available.".into()
+                } else {
+                    "Missing explanation surface.".into()
+                },
+            },
+            RecommendationDecisionPrerequisite {
+                id: Self::PREREQ_DECISION_CONTEXT.into(),
+                label: "Has required decision context".into(),
+                satisfied: has_required_decision_context,
+                detail: if has_required_decision_context {
+                    "Task, attention, decision, or purpose context available for a future DE handoff."
+                        .into()
+                } else {
+                    "Missing related task/attention/decision/purpose context — blocks readiness."
+                        .into()
+                },
+            },
+        ];
+        let missing: Vec<String> = prerequisites
+            .iter()
+            .filter(|p| !p.satisfied)
+            .map(|p| p.id.clone())
+            .collect();
+        let all_met = missing.is_empty();
+        let (readiness_state, ready_for_future_handoff, note) = if !has_lifecycle_completion {
+            (
+                Self::STATE_INCOMPLETE.into(),
+                false,
+                "Decision readiness incomplete until the recommendation is accepted with an outcome. \
+                 Recommendation Engine never creates Decision Engine intents or commands."
+                    .into(),
+            )
+        } else if !all_met {
+            (
+                Self::STATE_BLOCKED.into(),
+                false,
+                "Accepted outcome recorded, but missing prerequisites block future Decision Engine \
+                 handoff eligibility. Informational only — no commands created."
+                    .into(),
+            )
+        } else {
+            (
+                Self::STATE_HANDOFF_DEFERRED.into(),
+                true,
+                "Prerequisites satisfied for a future Decision Engine handoff contract. Handoff is \
+                 intentionally deferred — Decision Engine remains responsible for intents/goals; \
+                 Recommendation acceptance does not create commands or call Permission Gateway."
+                    .into(),
+            )
+        };
+
+        Self {
+            recommendation_id: item.id.clone(),
+            outcome_id,
+            lifecycle_state,
+            readiness_state,
+            prerequisites,
+            missing,
+            ready_for_future_handoff,
+            note,
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        }
+    }
+
+    pub fn attempt_execute() -> Result<(), WorkspaceRecommendationEngineError> {
+        Err(WorkspaceRecommendationEngineError::CannotExecute)
+    }
+
+    pub fn may_create_decision_commands(&self) -> bool {
+        false
+    }
+
+    pub fn may_invoke_gateway(&self) -> bool {
+        false
+    }
+
+    pub fn may_mutate_provenance(&self) -> bool {
+        false
+    }
 }
 
 impl RecommendationItem {

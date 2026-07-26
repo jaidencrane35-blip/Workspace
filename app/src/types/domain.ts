@@ -2169,6 +2169,33 @@ export interface RecommendationItem {
   explanation?: RecommendationExplanationView | null;
   /** Structured outcome when resolved — immutable feedback only. */
   outcome?: RecommendationOutcomeView | null;
+  /** Read-only Decision Engine handoff readiness — never creates commands. */
+  decision_readiness?: RecommendationDecisionReadiness | null;
+  authority_effect: string;
+}
+
+/** Prerequisite for a future Recommendation → Decision Engine handoff. */
+export interface RecommendationDecisionPrerequisite {
+  id: string;
+  label: string;
+  satisfied: boolean;
+  detail: string;
+}
+
+/**
+ * Read-only assessment of future DE handoff eligibility.
+ * Informational only — never creates intents/commands or calls Gateway.
+ */
+export interface RecommendationDecisionReadiness {
+  recommendation_id: string;
+  outcome_id: string | null;
+  lifecycle_state: string;
+  /** incomplete | blocked | handoff_deferred */
+  readiness_state: string;
+  prerequisites: RecommendationDecisionPrerequisite[];
+  missing: string[];
+  ready_for_future_handoff: boolean;
+  note: string;
   authority_effect: string;
 }
 
@@ -2210,6 +2237,7 @@ export interface RecommendationReviewActionResult {
   recommendation_id: string;
   lifecycle_state: string;
   outcome: RecommendationOutcome | null;
+  decision_readiness?: RecommendationDecisionReadiness | null;
   explanation: string;
   authority_effect: string;
 }

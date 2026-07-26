@@ -17,7 +17,8 @@ use workspace_domain::{
     RecommendationEvidence, RecommendationExplanationView, RecommendationGovernanceRecord,
     RecommendationHistoryEntry, RecommendationItem, RecommendationKind,
     RecommendationLifecycleOverlay, RecommendationLifecycleState, RecommendationOutcome,
-    RecommendationOutcomeView, RecommendationRelationship, RecommendationReviewActionResult,
+    RecommendationDecisionReadiness, RecommendationOutcomeView, RecommendationRelationship,
+    RecommendationReviewActionResult,
     TaskGraph, WorkspaceAttentionState, WorkspaceCompositionState, WorkspaceContinuityState,
     WorkspaceEnvironmentState, WorkspaceEvolutionState, WorkspacePurposeState,
     WorkspaceRecommendationEngineError, WorkspaceRecommendationEngineState,
@@ -192,6 +193,7 @@ impl WorkspaceRecommendationEngineService {
                 lifecycle_resolution_type: None,
                 explanation: None,
                 outcome: None,
+                decision_readiness: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
             });
             relationships.push(RecommendationRelationship {
@@ -250,6 +252,7 @@ impl WorkspaceRecommendationEngineService {
                 lifecycle_resolution_type: None,
                 explanation: None,
                 outcome: None,
+                decision_readiness: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
             });
         }
@@ -287,6 +290,7 @@ impl WorkspaceRecommendationEngineService {
                     lifecycle_resolution_type: None,
                     explanation: None,
                     outcome: None,
+                    decision_readiness: None,
                     authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
@@ -332,6 +336,7 @@ impl WorkspaceRecommendationEngineService {
                     lifecycle_resolution_type: None,
                     explanation: None,
                 outcome: None,
+                decision_readiness: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
@@ -365,6 +370,7 @@ impl WorkspaceRecommendationEngineService {
                     lifecycle_resolution_type: None,
                     explanation: None,
                     outcome: None,
+                    decision_readiness: None,
                     authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
@@ -420,6 +426,7 @@ impl WorkspaceRecommendationEngineService {
                     lifecycle_resolution_type: None,
                     explanation: None,
                 outcome: None,
+                decision_readiness: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
@@ -466,6 +473,7 @@ impl WorkspaceRecommendationEngineService {
                     lifecycle_resolution_type: None,
                     explanation: None,
                 outcome: None,
+                decision_readiness: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
@@ -510,6 +518,7 @@ impl WorkspaceRecommendationEngineService {
                     lifecycle_resolution_type: None,
                     explanation: None,
                 outcome: None,
+                decision_readiness: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
@@ -541,6 +550,7 @@ impl WorkspaceRecommendationEngineService {
                     lifecycle_resolution_type: None,
                     explanation: None,
                     outcome: None,
+                    decision_readiness: None,
                     authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
@@ -586,6 +596,7 @@ impl WorkspaceRecommendationEngineService {
                     lifecycle_resolution_type: None,
                     explanation: None,
                     outcome: None,
+                    decision_readiness: None,
                     authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
@@ -708,6 +719,7 @@ impl WorkspaceRecommendationEngineService {
                 lifecycle_resolution_type: None,
                 explanation: None,
                 outcome: None,
+                decision_readiness: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
             };
             crate::services::WorkspacePatternService::audit_used_for_recommendation(
@@ -799,6 +811,7 @@ impl WorkspaceRecommendationEngineService {
                 lifecycle_resolution_type: None,
                 explanation: None,
                 outcome: None,
+                decision_readiness: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
             });
         }
@@ -942,6 +955,7 @@ impl WorkspaceRecommendationEngineService {
                 });
             }
             Self::attach_explanation_views(&mut state);
+            Self::attach_decision_readiness(&mut state);
         }
         Ok(state)
     }
@@ -1115,11 +1129,28 @@ impl WorkspaceRecommendationEngineService {
         Self::upsert_overlay(db, &next)?;
         Self::audit_lifecycle(db, actor, audit_event, &item, &next)?;
 
+        let mut assessed = item;
+        next.apply_to_item(&mut assessed);
+        if let Some(ref recorded) = outcome {
+            assessed.outcome = Some(project_outcome_view(recorded));
+        }
+        if assessed.explanation.is_none() {
+            assessed.explanation = Some(RecommendationExplanationView::from_item(&assessed));
+        }
+        let decision_readiness = RecommendationDecisionReadiness::assess(&assessed);
+        debug_assert_eq!(
+            decision_readiness.authority_effect,
+            RecommendationDecisionReadiness::AUTHORITY_EFFECT_NONE
+        );
+        debug_assert!(!decision_readiness.may_create_decision_commands());
+        debug_assert!(!decision_readiness.may_invoke_gateway());
+
         Ok(RecommendationReviewActionResult {
             workspace_id,
             recommendation_id,
             lifecycle_state: next.lifecycle_state.as_str().into(),
             outcome,
+            decision_readiness: Some(decision_readiness),
             explanation: explanation.into(),
             authority_effect: RecommendationReviewActionResult::AUTHORITY_EFFECT_NONE.into(),
         })
@@ -1260,6 +1291,7 @@ impl WorkspaceRecommendationEngineService {
             }
         }
         Self::attach_explanation_views(&mut state);
+        Self::attach_decision_readiness(&mut state);
         state.history = Self::build_history_from_overlays(by_id.values());
         state.history_count = state.history.len();
         Ok(state)
@@ -1327,6 +1359,21 @@ impl WorkspaceRecommendationEngineService {
             }
             debug_assert_eq!(view.authority_effect, RecommendationExplanationView::AUTHORITY_EFFECT_NONE);
             item.explanation = Some(view);
+        }
+    }
+
+    /// Project read-only Decision Engine readiness — never creates handoff/commands.
+    fn attach_decision_readiness(state: &mut WorkspaceRecommendationEngineState) {
+        for item in &mut state.candidates {
+            let readiness = RecommendationDecisionReadiness::assess(item);
+            debug_assert_eq!(
+                readiness.authority_effect,
+                RecommendationDecisionReadiness::AUTHORITY_EFFECT_NONE
+            );
+            debug_assert!(!readiness.may_create_decision_commands());
+            debug_assert!(!readiness.may_invoke_gateway());
+            debug_assert!(!readiness.may_mutate_provenance());
+            item.decision_readiness = Some(readiness);
         }
     }
 

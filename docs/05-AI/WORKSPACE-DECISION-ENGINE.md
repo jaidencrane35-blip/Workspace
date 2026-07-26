@@ -69,6 +69,14 @@ Attention → memory/prefs/goals/queue context → Decision Engine → ranked ca
 
 Accept returns a **planner handoff** (`submit_assistant_goal`). The UI (or caller) invokes the Planner explicitly. Decision Engine never creates plans itself.
 
+### Distinct from Recommendation Engine accept
+
+Decision Engine does **not** consume Recommendation Engine accept events.
+Recommendation accept records lifecycle + `RecommendationOutcome` and projects
+`RecommendationDecisionReadiness` only (see
+[WORKSPACE-RECOMMENDATION-DECISION-READINESS.md](./WORKSPACE-RECOMMENDATION-DECISION-READINESS.md)).
+Namespaces remain separate (`recommendation:*` vs `engine_decision:*`).
+
 ---
 
 ## Audits

@@ -682,6 +682,60 @@ fn case21_outcome_history_is_visible_and_non_executive() {
     assert_cannot_execute(CommandHandler::workspace_recommendation_engine_attempt_execute());
 }
 
+/// CASE 23 — Accept returns Decision readiness; never creates DE handoff/commands.
+#[test]
+fn case23_accept_returns_decision_readiness_without_handoff() {
+    use workspace_domain::RecommendationDecisionReadiness;
+
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let (ws, _) = seed(&kernel);
+    let local = ActorContext::local_user();
+    let intent = IntentContext::user_request();
+    let state = CommandHandler::generate_workspace_recommendation_engine(
+        &kernel,
+        local.clone(),
+        intent.clone(),
+        ws.clone(),
+    )
+    .unwrap();
+    let id = state.candidates[0].id.clone();
+    let accepted = CommandHandler::accept_recommendation(
+        &kernel,
+        local.clone(),
+        intent.clone(),
+        ws.clone(),
+        id.clone(),
+    )
+    .unwrap();
+    let readiness = accepted
+        .decision_readiness
+        .expect("accept projects decision readiness");
+    assert_eq!(
+        readiness.authority_effect,
+        RecommendationDecisionReadiness::AUTHORITY_EFFECT_NONE
+    );
+    assert!(!readiness.may_create_decision_commands());
+    assert!(!readiness.may_invoke_gateway());
+    assert!(
+        readiness.readiness_state == RecommendationDecisionReadiness::STATE_HANDOFF_DEFERRED
+            || readiness.readiness_state == RecommendationDecisionReadiness::STATE_BLOCKED
+    );
+    assert!(!accepted.explanation.to_lowercase().contains("planner"));
+    assert_cannot_execute(CommandHandler::workspace_recommendation_engine_attempt_execute());
+    assert_cannot_execute(CommandHandler::decision_engine_attempt_execute());
+
+    let after = CommandHandler::generate_workspace_recommendation_engine(
+        &kernel, local, intent, ws,
+    )
+    .unwrap();
+    let item = after.candidates.iter().find(|c| c.id == id).unwrap();
+    assert!(item.decision_readiness.is_some());
+    assert_eq!(
+        item.decision_readiness.as_ref().unwrap().authority_effect,
+        "none"
+    );
+}
+
 /// CASE 22 — Supersede retains prior outcomes; provenance/reasoning untouched.
 #[test]
 fn case22_supersede_retains_prior_outcomes_without_mutating_reasoning() {
