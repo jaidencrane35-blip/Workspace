@@ -1503,6 +1503,74 @@ export interface WorkspaceObservationStatus {
   authority_effect: string;
 }
 
+/** Lightweight window identity for observation deltas. */
+export interface ObservationWindowRef {
+  stable_window_id: string | null;
+  hwnd: string;
+  title: string;
+  process_id: number;
+}
+
+export interface ObservationFocusedWindowChange {
+  previous: ObservationWindowRef | null;
+  current: ObservationWindowRef | null;
+}
+
+export interface ObservationWindowMove {
+  stable_window_id: string | null;
+  hwnd: string;
+  title: string;
+  from_x: number;
+  from_y: number;
+  to_x: number;
+  to_y: number;
+}
+
+export interface ObservationWindowResize {
+  stable_window_id: string | null;
+  hwnd: string;
+  title: string;
+  from_width: number;
+  from_height: number;
+  to_width: number;
+  to_height: number;
+}
+
+export interface ObservationMinimizedChange {
+  stable_window_id: string | null;
+  hwnd: string;
+  title: string;
+  was_minimized: boolean;
+  is_minimized: boolean;
+}
+
+export interface ObservationMonitorAssignmentChange {
+  stable_window_id: string | null;
+  hwnd: string;
+  title: string;
+  from_monitor_index: number | null;
+  to_monitor_index: number | null;
+  from_monitor_name: string | null;
+  to_monitor_name: string | null;
+}
+
+/** Read-only facts describing change between two observation snapshots. */
+export interface WorkspaceObservationDelta {
+  previous_pass_id: string | null;
+  current_pass_id: string | null;
+  previous_captured_at: string | null;
+  current_captured_at: string | null;
+  opened_windows: ObservationWindowRef[];
+  closed_windows: ObservationWindowRef[];
+  focused_window_changed: ObservationFocusedWindowChange | null;
+  moved_windows: ObservationWindowMove[];
+  resized_windows: ObservationWindowResize[];
+  minimized_changes: ObservationMinimizedChange[];
+  monitor_changes: ObservationMonitorAssignmentChange[];
+  has_changes: boolean;
+  authority_effect: string;
+}
+
 /** Capture request origin (Scheduled/Event/Plugin callers not implemented yet). */
 export type CaptureRequestSource =
   | "manual"

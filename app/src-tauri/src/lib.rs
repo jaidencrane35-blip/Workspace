@@ -81,7 +81,7 @@ use commands::analytics::get_workspace_metrics;
 use commands::context::get_workspace_context;
 use commands::desktop_window::get_desktop_windows;
 use commands::workspace_observation::{
-    capture_workspace_observation, get_latest_workspace_observation,
+    capture_workspace_observation, get_latest_observation_delta, get_latest_workspace_observation,
     get_observation_scheduler_status, get_workspace_observation_by_id,
     get_workspace_observation_status,
 };
@@ -168,6 +168,7 @@ pub fn run() {
             get_workspace_observation_by_id,
             get_workspace_observation_status,
             get_observation_scheduler_status,
+            get_latest_observation_delta,
             create_application,
             launch_application,
             get_permission_approvals,

@@ -60,6 +60,7 @@ pub mod workspace_transition;
 pub mod workspace_interaction;
 pub mod workspace_profile;
 pub mod workspace_observation;
+pub mod workspace_observation_delta;
 pub mod workspace_continuity;
 pub mod workspace_task_graph;
 pub mod workspace_environment;
@@ -331,6 +332,11 @@ pub use workspace_observation::{
     OBSERVATION_FRESH_THRESHOLD_SECS, OBSERVATION_STALE_THRESHOLD_SECS,
     OBSERVATION_TRIGGER_ADMIT_WINDOW_SECS, OBSERVATION_TRIGGER_MAX_ADMITS_PER_WINDOW,
     OBSERVATION_TRIGGER_MIN_ADMIT_INTERVAL_SECS,
+};
+pub use workspace_observation_delta::{
+    compare_observation_snapshots, ObservationFocusedWindowChange, ObservationMinimizedChange,
+    ObservationMonitorAssignmentChange, ObservationWindowMove, ObservationWindowRef,
+    ObservationWindowResize, WorkspaceObservationDelta,
 };
 pub use workspace_environment::{
     build_environment_summary, now_rfc3339, validate_workspace_id, EnvironmentApplication,

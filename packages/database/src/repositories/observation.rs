@@ -204,6 +204,32 @@ impl<'a> ObservationPassRepository<'a> {
         };
         self.load_snapshot(&pass.id)
     }
+
+    /// Loads the immediately previous full snapshot (second-most-recent).
+    ///
+    /// Does not scan full history — `LIMIT 1 OFFSET 1` only.
+    pub fn load_previous_snapshot(&self) -> Result<Option<WorkspaceObservationSnapshot>> {
+        let Some(pass) = self.get_previous()? else {
+            return Ok(None);
+        };
+        self.load_snapshot(&pass.id)
+    }
+
+    /// Header for the immediately previous observation pass.
+    pub fn get_previous(&self) -> Result<Option<WorkspaceObservationPass>> {
+        let mut stmt = self.db.connection().prepare(
+            "SELECT id, captured_at, schema_version, source, foreground_hwnd,
+                    window_count, monitor_count, duration_ms, metadata_json
+             FROM observation_passes
+             ORDER BY captured_at DESC, id DESC
+             LIMIT 1 OFFSET 1",
+        )?;
+        let mut rows = stmt.query([])?;
+        if let Some(row) = rows.next()? {
+            return Ok(Some(map_pass_row(row)?));
+        }
+        Ok(None)
+    }
 }
 
 /// Persistence for observed monitors within a pass.
@@ -737,6 +763,32 @@ mod tests {
             .list_by_ids(&[format!("pass-a-identity")])
             .unwrap();
         assert_eq!(identities.len(), 1);
+    }
+
+    #[test]
+    fn load_previous_snapshot_returns_second_latest() {
+        let db = test_db();
+        let repo = ObservationPassRepository::new(&db);
+        assert!(repo.load_previous_snapshot().unwrap().is_none());
+
+        let mut first = sample_snapshot("pass-older");
+        first.pass.captured_at = "2026-07-26T10:00:00Z".into();
+        // Avoid identity PK collision with second insert.
+        first.identities.clear();
+        first.windows[0].stable_window_id = Some("stable-shared".into());
+        repo.insert_snapshot(&first).unwrap();
+        assert!(repo.load_previous_snapshot().unwrap().is_none());
+
+        let mut second = sample_snapshot("pass-newer");
+        second.pass.captured_at = "2026-07-26T10:01:00Z".into();
+        second.identities.clear();
+        second.windows[0].stable_window_id = Some("stable-shared".into());
+        repo.insert_snapshot(&second).unwrap();
+
+        let previous = repo.load_previous_snapshot().unwrap().expect("previous");
+        assert_eq!(previous.pass.id, "pass-older");
+        let latest = repo.load_latest_snapshot().unwrap().expect("latest");
+        assert_eq!(latest.pass.id, "pass-newer");
     }
 
     #[test]

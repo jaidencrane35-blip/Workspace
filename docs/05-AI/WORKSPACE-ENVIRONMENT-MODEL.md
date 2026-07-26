@@ -47,6 +47,8 @@ Attention / Intelligence / Continuity consumers
 
 **Observation status** (`get_workspace_observation_status`) reports whether a snapshot exists, its age/freshness, counts, and last capture failure. It is read-only diagnostics: it does **not** trigger capture and does **not** repair stale observations.
 
+**Observation delta** (`get_latest_observation_delta`) compares the latest and immediately previous persisted snapshots into `WorkspaceObservationDelta` facts (opened/closed/focus/moved/resized/minimized/monitor). Pure comparison — no capture, no decisions, no automation. Fewer than two snapshots yields an empty/no-change delta.
+
 ---
 
 ## Represents

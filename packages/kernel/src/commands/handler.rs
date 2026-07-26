@@ -50,8 +50,8 @@ use crate::commands::get_actor_capabilities::GetActorCapabilities;
 use crate::commands::get_audit_history::GetAuditHistory;
 use crate::commands::get_permission_approvals::GetPermissionApprovals;
 use crate::commands::workspace_observation::{
-    CaptureWorkspaceObservation, GetLatestWorkspaceObservation, GetObservationSchedulerStatus,
-    GetWorkspaceObservationById, GetWorkspaceObservationStatus,
+    CaptureWorkspaceObservation, GetLatestObservationDelta, GetLatestWorkspaceObservation,
+    GetObservationSchedulerStatus, GetWorkspaceObservationById, GetWorkspaceObservationStatus,
 };
 use crate::commands::get_desktop_windows::GetDesktopWindows;
 use crate::commands::get_execution_outcomes::GetExecutionOutcomes;
@@ -133,7 +133,8 @@ use workspace_domain::{
     WorkspaceProfile, WorkspaceProfileComparison, WorkspaceProfileMemberInput,
     WorkspaceProfileState, WorkspaceProfileStateComparison, WorkspaceProfileStatus,
     WorkspaceProfileValidation, WorkspaceObservationSnapshot, WorkspaceObservationStatus,
-    ObservationSchedulerStatus, WorkspaceTask, WorkspaceTaskPriority, WorkspaceTaskStatus,
+    ObservationSchedulerStatus, WorkspaceObservationDelta, WorkspaceTask, WorkspaceTaskPriority,
+    WorkspaceTaskStatus,
     WorkspaceIntelligenceComparison, WorkspaceIntelligenceState, AiPlan, AiPlanEvaluationReport,
     AiPlanSubmissionResult,
     AiProposalAuthorityOutcome, AiProposalEvaluation, AiProposalSubmission, ApplicationId,
@@ -1873,6 +1874,15 @@ impl CommandHandler {
         Ok(ObservationSchedulerDiagnostics::get_status(
             kernel.observation_scheduler(),
         ))
+    }
+
+    pub fn get_latest_observation_delta(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+    ) -> Result<WorkspaceObservationDelta> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetLatestObservationDelta)
     }
 
     /// Architecture guard — Observation Layer must never execute.

@@ -30,6 +30,8 @@
 | `get_latest_workspace_observation` | Diagnostic: latest observation snapshot (`desktop.read`) |
 | `get_workspace_observation_by_id` | Diagnostic: observation snapshot by pass id (`desktop.read`) |
 | `get_workspace_observation_status` | Diagnostic: observation freshness/status metadata only (`desktop.read`; never triggers capture) |
+| `get_observation_scheduler_status` | Diagnostic: observation scheduler runtime health (`desktop.read`; no control) |
+| `get_latest_observation_delta` | Diagnostic: latest vs previous observation delta facts (`desktop.read`; empty when &lt;2 snapshots) |
 | `create_application` / `launch_application` | Diagnostic (governed launch) |
 | `request_ai_application_launch` | Diagnostic AI simulation (`AiActionRequest` → pipeline → ApprovalRequired) |
 | `diagnose_ai_workspace_plan` | Diagnostic AI planning (workspace context → proposals → governed submissions) |

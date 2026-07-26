@@ -2,8 +2,8 @@
 
 use crate::commands::pipeline::CommandPipeline;
 use crate::commands::{
-    CaptureWorkspaceObservation, GateObservationRead, GetLatestWorkspaceObservation,
-    GetWorkspaceObservationById, GetWorkspaceObservationStatus,
+    CaptureWorkspaceObservation, GateObservationRead, GetLatestObservationDelta,
+    GetLatestWorkspaceObservation, GetWorkspaceObservationById, GetWorkspaceObservationStatus,
 };
 use crate::commands::CommandHandler;
 use crate::error::KernelError;
@@ -446,6 +446,31 @@ fn scheduler_status_reports_disabled_in_memory_kernel() {
     assert!(!status.running);
     assert_eq!(status.ticks_emitted, 0);
     assert_eq!(status.authority_effect, "none");
+}
+
+#[test]
+fn latest_observation_delta_empty_with_zero_or_one_snapshot() {
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let local = ActorContext::local_user();
+    let intent = IntentContext::user_request();
+
+    let empty = CommandHandler::get_latest_observation_delta(&kernel, local.clone(), intent.clone())
+        .unwrap();
+    assert!(!empty.has_changes);
+    assert!(empty.current_pass_id.is_none());
+
+    capture_with_stub(&kernel, &local, &intent).unwrap();
+    let first = CommandHandler::get_latest_observation_delta(&kernel, local.clone(), intent.clone())
+        .unwrap();
+    assert!(!first.has_changes);
+    assert!(first.current_pass_id.is_some());
+    assert!(first.previous_pass_id.is_none());
+
+    // Pipeline path
+    let via_cmd = CommandPipeline::new(kernel.command_context(local, intent))
+        .execute_query(GetLatestObservationDelta)
+        .unwrap();
+    assert_eq!(via_cmd.current_pass_id, first.current_pass_id);
 }
 
 #[test]

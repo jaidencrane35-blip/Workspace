@@ -5,10 +5,12 @@ use crate::lifecycle::LifecycleState;
 use crate::policy::GovernanceClass;
 use crate::security::PermissionSubject;
 use crate::services::{
-    CaptureCoordinator, WorkspaceObservationCaptureResult, WorkspaceObservationService,
+    CaptureCoordinator, ObservationDeltaService, WorkspaceObservationCaptureResult,
+    WorkspaceObservationService,
 };
 use workspace_domain::{
-    Capability, CaptureRequest, WorkspaceObservationSnapshot, WorkspaceObservationStatus,
+    Capability, CaptureRequest, WorkspaceObservationDelta, WorkspaceObservationSnapshot,
+    WorkspaceObservationStatus,
 };
 
 /// Capability gate for desktop observation reads (perception only).
@@ -184,6 +186,42 @@ impl QueryCommand for GetObservationSchedulerStatus {
             return Err(KernelError::NotReady);
         }
         Ok(())
+    }
+}
+
+/// Returns the delta between the latest and immediately previous observation snapshots.
+pub struct GetLatestObservationDelta;
+
+impl crate::commands::Command for GetLatestObservationDelta {
+    fn name(&self) -> &'static str {
+        "GetLatestObservationDelta"
+    }
+}
+
+impl QueryCommand for GetLatestObservationDelta {
+    type Output = WorkspaceObservationDelta;
+
+    fn permission_subject(&self) -> PermissionSubject {
+        PermissionSubject::System
+    }
+
+    fn required_capability(&self) -> Capability {
+        Capability::desktop_read()
+    }
+
+    fn governance_class(&self) -> GovernanceClass {
+        GovernanceClass::Governed
+    }
+
+    fn execute(self, ctx: &CommandContext<'_>) -> Result<WorkspaceObservationDelta> {
+        if ctx.state.lifecycle != LifecycleState::Ready {
+            return Err(KernelError::NotReady);
+        }
+        ObservationDeltaService::get_latest(
+            &ctx.database,
+            &ctx.actor_context,
+            &ctx.intent_context,
+        )
     }
 }
 
