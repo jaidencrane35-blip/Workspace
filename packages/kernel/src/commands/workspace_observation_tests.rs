@@ -3,14 +3,28 @@
 use crate::commands::pipeline::CommandPipeline;
 use crate::commands::{
     CaptureWorkspaceObservation, GateObservationRead, GetLatestWorkspaceObservation,
-    GetWorkspaceObservationById,
+    GetWorkspaceObservationById, GetWorkspaceObservationStatus,
 };
 use crate::commands::CommandHandler;
 use crate::error::KernelError;
 use crate::services::{DesktopWindowService, WorkspaceObservationCaptureResult, WorkspaceObservationService};
 use crate::WorkspaceKernel;
-use workspace_domain::{Actor, ActorContext, IntentContext};
-use workspace_windows_integration::StubDesktopCapturer;
+use chrono::{Duration, Utc};
+use workspace_database::ObservationPassRepository;
+use workspace_domain::{Actor, ActorContext, IntentContext, ObservationFreshness};
+use workspace_windows_integration::{
+    DesktopCapturer, DesktopObservationCapture, StubDesktopCapturer, WindowsIntegrationError,
+};
+
+struct FailingDesktopCapturer;
+
+impl DesktopCapturer for FailingDesktopCapturer {
+    fn capture_desktop(&self) -> workspace_windows_integration::Result<DesktopObservationCapture> {
+        Err(WindowsIntegrationError::EnumerationFailed(
+            "forced capture failure".into(),
+        ))
+    }
+}
 
 fn capture_with_stub(
     kernel: &WorkspaceKernel,
@@ -317,4 +331,121 @@ fn observation_authority_guard_fails_execution() {
         Err(KernelError::Config(message)) => assert!(message.contains("cannot execute")),
         other => panic!("expected config guard failure, got {other:?}"),
     }
+}
+
+#[test]
+fn status_reports_unavailable_without_observation() {
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let local = ActorContext::local_user();
+    let intent = IntentContext::user_request();
+    let status = CommandPipeline::new(kernel.command_context(local, intent))
+        .execute_query(GetWorkspaceObservationStatus)
+        .unwrap();
+    assert!(!status.has_observation);
+    assert_eq!(status.freshness, ObservationFreshness::Unavailable);
+    assert!(status.pass_id.is_none());
+    assert!(status.last_failure.is_none());
+}
+
+#[test]
+fn status_reports_recent_observation_metadata() {
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let local = ActorContext::local_user();
+    let intent = IntentContext::user_request();
+    let captured = capture_with_stub(&kernel, &local, &intent).unwrap();
+    let status = CommandPipeline::new(kernel.command_context(local, intent))
+        .execute_query(GetWorkspaceObservationStatus)
+        .unwrap();
+    assert!(status.has_observation);
+    assert_eq!(status.pass_id.as_deref(), Some(captured.snapshot_id.as_str()));
+    assert_eq!(status.window_count, Some(4));
+    assert_eq!(status.monitor_count, Some(2));
+    assert_eq!(status.identity_count, Some(4));
+    assert!(status.age_seconds.is_some());
+    assert!(matches!(
+        status.freshness,
+        ObservationFreshness::Fresh | ObservationFreshness::Recent
+    ));
+}
+
+#[test]
+fn status_reports_stale_observation() {
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let local = ActorContext::local_user();
+    let intent = IntentContext::user_request();
+    let captured = capture_with_stub(&kernel, &local, &intent).unwrap();
+    {
+        let db = kernel.shared_database();
+        let guard = db.lock().unwrap();
+        let stale_at = (Utc::now() - Duration::seconds(600)).to_rfc3339();
+        guard
+            .connection()
+            .execute(
+                "UPDATE observation_passes SET captured_at = ?1 WHERE id = ?2",
+                (&stale_at, &captured.snapshot_id),
+            )
+            .unwrap();
+    }
+    let status = WorkspaceObservationService::get_status_at(
+        &kernel.shared_database(),
+        &local,
+        &intent,
+        Utc::now(),
+    )
+    .unwrap();
+    assert_eq!(status.freshness, ObservationFreshness::Stale);
+    assert!(status.age_seconds.unwrap() >= 600);
+}
+
+#[test]
+fn status_surfaces_capture_failure() {
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let local = ActorContext::local_user();
+    let intent = IntentContext::user_request();
+    let err = WorkspaceObservationService::capture_with(
+        &kernel.shared_database(),
+        &local,
+        &intent,
+        &FailingDesktopCapturer,
+    )
+    .unwrap_err();
+    assert!(matches!(err, KernelError::WindowsIntegration { .. }));
+
+    let status = CommandPipeline::new(kernel.command_context(local, intent))
+        .execute_query(GetWorkspaceObservationStatus)
+        .unwrap();
+    let failure = status.last_failure.expect("failure");
+    assert_eq!(failure.error_class.as_str(), "windows_integration");
+    assert!(failure.message.contains("forced capture failure"));
+}
+
+#[test]
+fn status_requires_desktop_read() {
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let ai = ActorContext::new(Actor::ai_assistant("ai-status").unwrap());
+    let ctx = kernel.command_context(ai, IntentContext::user_request());
+    let result = CommandPipeline::new(ctx).execute_query(GetWorkspaceObservationStatus);
+    match result {
+        Err(KernelError::PermissionDenied(_)) | Err(KernelError::ApprovalRequired { .. }) => {}
+        other => panic!("expected permission failure, got {other:?}"),
+    }
+}
+
+#[test]
+fn status_query_uses_metadata_not_full_snapshot_collections() {
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let local = ActorContext::local_user();
+    let intent = IntentContext::user_request();
+    capture_with_stub(&kernel, &local, &intent).unwrap();
+    let db = kernel.shared_database();
+    let guard = db.lock().unwrap();
+    let metadata = ObservationPassRepository::new(&guard)
+        .get_latest_metadata()
+        .unwrap()
+        .expect("metadata");
+    // Metadata carries counts only — callers must not expect child collections here.
+    assert_eq!(metadata.window_count, 4);
+    assert_eq!(metadata.monitor_count, 2);
+    assert_eq!(metadata.identity_count, 4);
+    assert!(!metadata.id.is_empty());
 }

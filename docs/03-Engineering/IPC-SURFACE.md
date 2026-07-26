@@ -26,6 +26,10 @@
 | `get_execution_outcomes` / `get_execution_states` | Diagnostic |
 | `request_execution_cancellation` | Diagnostic |
 | `get_desktop_windows` | Diagnostic |
+| `capture_workspace_observation` | Diagnostic: governed desktop perception capture (`desktop.read`) |
+| `get_latest_workspace_observation` | Diagnostic: latest observation snapshot (`desktop.read`) |
+| `get_workspace_observation_by_id` | Diagnostic: observation snapshot by pass id (`desktop.read`) |
+| `get_workspace_observation_status` | Diagnostic: observation freshness/status metadata only (`desktop.read`; never triggers capture) |
 | `create_application` / `launch_application` | Diagnostic (governed launch) |
 | `request_ai_application_launch` | Diagnostic AI simulation (`AiActionRequest` → pipeline → ApprovalRequired) |
 | `diagnose_ai_workspace_plan` | Diagnostic AI planning (workspace context → proposals → governed submissions) |

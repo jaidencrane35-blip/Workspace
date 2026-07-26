@@ -51,7 +51,7 @@ use crate::commands::get_audit_history::GetAuditHistory;
 use crate::commands::get_permission_approvals::GetPermissionApprovals;
 use crate::commands::workspace_observation::{
     CaptureWorkspaceObservation, GetLatestWorkspaceObservation,
-    GetWorkspaceObservationById,
+    GetWorkspaceObservationById, GetWorkspaceObservationStatus,
 };
 use crate::commands::get_desktop_windows::GetDesktopWindows;
 use crate::commands::get_execution_outcomes::GetExecutionOutcomes;
@@ -132,7 +132,7 @@ use workspace_domain::{
     WorkspaceInteractionValidation,
     WorkspaceProfile, WorkspaceProfileComparison, WorkspaceProfileMemberInput,
     WorkspaceProfileState, WorkspaceProfileStateComparison, WorkspaceProfileStatus,
-    WorkspaceProfileValidation, WorkspaceObservationSnapshot,
+    WorkspaceProfileValidation, WorkspaceObservationSnapshot, WorkspaceObservationStatus,
     WorkspaceTask, WorkspaceTaskPriority, WorkspaceTaskStatus,
     WorkspaceIntelligenceComparison, WorkspaceIntelligenceState, AiPlan, AiPlanEvaluationReport,
     AiPlanSubmissionResult,
@@ -1851,6 +1851,15 @@ impl CommandHandler {
     ) -> Result<Option<WorkspaceObservationSnapshot>> {
         CommandPipeline::new(kernel.command_context(actor, intent))
             .execute_query(GetWorkspaceObservationById::new(pass_id))
+    }
+
+    pub fn get_workspace_observation_status(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+    ) -> Result<WorkspaceObservationStatus> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetWorkspaceObservationStatus)
     }
 
     /// Architecture guard — Observation Layer must never execute.

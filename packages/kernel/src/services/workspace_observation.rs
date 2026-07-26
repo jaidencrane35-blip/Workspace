@@ -10,11 +10,13 @@ use serde_json::json;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use workspace_database::{Database, ObservationPassRepository};
+use chrono::Utc;
 use workspace_domain::{
-    observation_now_rfc3339, observation_u32_to_i32, observation_u64_to_i32,
-    observation_usize_to_i32, IntentContext, ObservationWindowIdentity, ObservedMonitor,
-    ObservedWindow, WindowIdentityConfidence, WorkspaceObservationError, WorkspaceObservationPass,
-    WorkspaceObservationSnapshot,
+    build_observation_status, observation_now_rfc3339, observation_u32_to_i32,
+    observation_u64_to_i32, observation_usize_to_i32, IntentContext, ObservationCaptureErrorClass,
+    ObservationCaptureFailure, ObservationWindowIdentity, ObservedMonitor, ObservedWindow,
+    WindowIdentityConfidence, WorkspaceObservationError, WorkspaceObservationPass,
+    WorkspaceObservationSnapshot, WorkspaceObservationStatus,
 };
 use workspace_windows_integration::{
     platform_desktop_capturer, CapturedDesktopMonitor, CapturedDesktopWindow, DesktopCapturer,
@@ -46,10 +48,94 @@ impl WorkspaceObservationService {
         intent: &IntentContext,
         capturer: &dyn DesktopCapturer,
     ) -> Result<WorkspaceObservationCaptureResult> {
-        let capture = capturer.capture_desktop().map_err(|error| KernelError::WindowsIntegration {
-            message: error.to_string(),
+        let capture = match capturer.capture_desktop() {
+            Ok(capture) => capture,
+            Err(error) => {
+                let message = error.to_string();
+                Self::record_capture_failure(
+                    db,
+                    ObservationCaptureErrorClass::WindowsIntegration,
+                    &message,
+                    Some("win32"),
+                )?;
+                return Err(KernelError::WindowsIntegration { message });
+            }
+        };
+        match Self::persist_capture(db, actor, intent, capture) {
+            Ok(result) => {
+                Self::clear_capture_failure(db)?;
+                Ok(result)
+            }
+            Err(error) => {
+                let (class, source) = classify_capture_error(&error);
+                let _ = Self::record_capture_failure(db, class, &error.to_string(), source);
+                Err(error)
+            }
+        }
+    }
+
+    /// Lightweight observation pipeline status — metadata only, never a full snapshot.
+    pub(crate) fn get_status(
+        db: &Arc<Mutex<Database>>,
+        actor: &ActorContext,
+        intent: &IntentContext,
+    ) -> Result<WorkspaceObservationStatus> {
+        Self::get_status_at(db, actor, intent, Utc::now())
+    }
+
+    pub(crate) fn get_status_at(
+        db: &Arc<Mutex<Database>>,
+        actor: &ActorContext,
+        intent: &IntentContext,
+        now: chrono::DateTime<Utc>,
+    ) -> Result<WorkspaceObservationStatus> {
+        let (metadata, last_failure) = {
+            let guard = db.lock().map_err(|_| KernelError::NotReady)?;
+            let repo = ObservationPassRepository::new(&guard);
+            (repo.get_latest_metadata()?, repo.get_capture_failure()?)
+        };
+        let status = build_observation_status(metadata.as_ref(), last_failure, now)
+            .map_err(|error| KernelError::Config(error.to_string()))?;
+        AuditService::record_ai_planning_event(
+            db,
+            actor,
+            intent,
+            "workspace.observation.status_read",
+            true,
+            json!({
+                "has_observation": status.has_observation,
+                "freshness": status.freshness.as_str(),
+                "pass_id": status.pass_id,
+                "age_seconds": status.age_seconds,
+                "has_failure": status.last_failure.is_some(),
+                "authority_effect": "none",
+            })
+            .to_string(),
+        )?;
+        Ok(status)
+    }
+
+    fn record_capture_failure(
+        db: &Arc<Mutex<Database>>,
+        error_class: ObservationCaptureErrorClass,
+        message: &str,
+        source: Option<&str>,
+    ) -> Result<()> {
+        let guard = db.lock().map_err(|_| KernelError::NotReady)?;
+        ObservationPassRepository::new(&guard).record_capture_failure(&ObservationCaptureFailure {
+            failed_at: observation_now_rfc3339(),
+            error_class,
+            message: message.into(),
+            source: source.map(str::to_string),
+            authority_effect: ObservationCaptureFailure::AUTHORITY_EFFECT_NONE.into(),
         })?;
-        Self::persist_capture(db, actor, intent, capture)
+        Ok(())
+    }
+
+    fn clear_capture_failure(db: &Arc<Mutex<Database>>) -> Result<()> {
+        let guard = db.lock().map_err(|_| KernelError::NotReady)?;
+        ObservationPassRepository::new(&guard).clear_capture_failure()?;
+        Ok(())
     }
 
     pub(crate) fn get_latest_snapshot(
@@ -489,6 +575,26 @@ fn edit_distance(left: &str, right: &str) -> usize {
 
 fn map_observation_error(error: WorkspaceObservationError) -> KernelError {
     KernelError::Config(error.to_string())
+}
+
+fn classify_capture_error(error: &KernelError) -> (ObservationCaptureErrorClass, Option<&'static str>) {
+    match error {
+        KernelError::WindowsIntegration { .. } => {
+            (ObservationCaptureErrorClass::WindowsIntegration, Some("win32"))
+        }
+        KernelError::Database(_) => (ObservationCaptureErrorClass::Persistence, Some("sqlite")),
+        KernelError::Config(message)
+            if message.contains("validation")
+                || message.contains("window_count")
+                || message.contains("focused")
+                || message.contains("monitor")
+                || message.contains("NumericOverflow")
+                || message.contains("overflow") =>
+        {
+            (ObservationCaptureErrorClass::Validation, Some("observation"))
+        }
+        _ => (ObservationCaptureErrorClass::Internal, None),
+    }
 }
 
 #[cfg(test)]

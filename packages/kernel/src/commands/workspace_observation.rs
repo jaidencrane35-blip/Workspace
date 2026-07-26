@@ -5,7 +5,7 @@ use crate::lifecycle::LifecycleState;
 use crate::policy::GovernanceClass;
 use crate::security::PermissionSubject;
 use crate::services::{WorkspaceObservationCaptureResult, WorkspaceObservationService};
-use workspace_domain::{Capability, WorkspaceObservationSnapshot};
+use workspace_domain::{Capability, WorkspaceObservationSnapshot, WorkspaceObservationStatus};
 
 /// Capability gate for desktop observation reads (perception only).
 pub struct GateObservationRead;
@@ -104,6 +104,42 @@ impl QueryCommand for GetLatestWorkspaceObservation {
             return Err(KernelError::NotReady);
         }
         WorkspaceObservationService::get_latest(
+            &ctx.database,
+            &ctx.actor_context,
+            &ctx.intent_context,
+        )
+    }
+}
+
+/// Returns lightweight observation pipeline status (metadata only).
+pub struct GetWorkspaceObservationStatus;
+
+impl crate::commands::Command for GetWorkspaceObservationStatus {
+    fn name(&self) -> &'static str {
+        "GetWorkspaceObservationStatus"
+    }
+}
+
+impl QueryCommand for GetWorkspaceObservationStatus {
+    type Output = WorkspaceObservationStatus;
+
+    fn permission_subject(&self) -> PermissionSubject {
+        PermissionSubject::System
+    }
+
+    fn required_capability(&self) -> Capability {
+        Capability::desktop_read()
+    }
+
+    fn governance_class(&self) -> GovernanceClass {
+        GovernanceClass::Governed
+    }
+
+    fn execute(self, ctx: &CommandContext<'_>) -> Result<WorkspaceObservationStatus> {
+        if ctx.state.lifecycle != LifecycleState::Ready {
+            return Err(KernelError::NotReady);
+        }
+        WorkspaceObservationService::get_status(
             &ctx.database,
             &ctx.actor_context,
             &ctx.intent_context,

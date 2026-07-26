@@ -1469,6 +1469,40 @@ export interface WorkspaceObservationCaptureResult {
   snapshot: WorkspaceObservationSnapshot;
 }
 
+export type ObservationFreshness =
+  | "unavailable"
+  | "fresh"
+  | "recent"
+  | "stale";
+
+export type ObservationCaptureErrorClass =
+  | "windows_integration"
+  | "validation"
+  | "persistence"
+  | "internal";
+
+export interface ObservationCaptureFailure {
+  failed_at: string;
+  error_class: ObservationCaptureErrorClass;
+  message: string;
+  source: string | null;
+  authority_effect: string;
+}
+
+export interface WorkspaceObservationStatus {
+  has_observation: boolean;
+  freshness: ObservationFreshness;
+  pass_id: string | null;
+  captured_at: string | null;
+  age_seconds: number | null;
+  window_count: number | null;
+  monitor_count: number | null;
+  identity_count: number | null;
+  source: string | null;
+  last_failure: ObservationCaptureFailure | null;
+  authority_effect: string;
+}
+
 export type EnvironmentWindowState = "open" | "minimized" | "focused" | "unknown";
 
 export interface EnvironmentWindow {

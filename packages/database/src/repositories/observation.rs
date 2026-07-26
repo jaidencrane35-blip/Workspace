@@ -1,8 +1,9 @@
 use crate::connection::Database;
 use crate::error::Result;
 use workspace_domain::{
-    ObservationWindowIdentity, ObservedMonitor, ObservedWindow, WindowIdentityConfidence,
-    WorkspaceObservationError, WorkspaceObservationPass, WorkspaceObservationSnapshot,
+    ObservationCaptureErrorClass, ObservationCaptureFailure, ObservationWindowIdentity,
+    ObservedMonitor, ObservedWindow, WindowIdentityConfidence, WorkspaceObservationError,
+    WorkspaceObservationPass, WorkspaceObservationPassMetadata, WorkspaceObservationSnapshot,
 };
 
 /// Persistence for observation pass headers (system-scoped desktop truth).
@@ -63,6 +64,81 @@ impl<'a> ObservationPassRepository<'a> {
             return Ok(Some(map_pass_row(row)?));
         }
         Ok(None)
+    }
+
+    /// Lightweight latest-pass metadata — no window/monitor/identity row loads.
+    pub fn get_latest_metadata(&self) -> Result<Option<WorkspaceObservationPassMetadata>> {
+        let mut stmt = self.db.connection().prepare(
+            "SELECT id, captured_at, source, window_count, monitor_count
+             FROM observation_passes
+             ORDER BY captured_at DESC, id DESC
+             LIMIT 1",
+        )?;
+        let mut rows = stmt.query([])?;
+        let Some(row) = rows.next()? else {
+            return Ok(None);
+        };
+        let id: String = row.get(0)?;
+        let captured_at: String = row.get(1)?;
+        let source: String = row.get(2)?;
+        let window_count: i32 = row.get(3)?;
+        let monitor_count: i32 = row.get(4)?;
+        let identity_count = count_pass_identities_on(self.db.connection(), &id)?;
+        Ok(Some(WorkspaceObservationPassMetadata {
+            id,
+            captured_at,
+            source,
+            window_count,
+            monitor_count,
+            identity_count,
+        }))
+    }
+
+    pub fn record_capture_failure(&self, failure: &ObservationCaptureFailure) -> Result<()> {
+        self.db.connection().execute(
+            "INSERT INTO observation_capture_failures (id, failed_at, error_class, message, source)
+             VALUES (1, ?1, ?2, ?3, ?4)
+             ON CONFLICT(id) DO UPDATE SET
+                failed_at = excluded.failed_at,
+                error_class = excluded.error_class,
+                message = excluded.message,
+                source = excluded.source",
+            (
+                &failure.failed_at,
+                failure.error_class.as_str(),
+                &failure.message,
+                failure.source.as_deref(),
+            ),
+        )?;
+        Ok(())
+    }
+
+    pub fn clear_capture_failure(&self) -> Result<()> {
+        self.db
+            .connection()
+            .execute("DELETE FROM observation_capture_failures WHERE id = 1", [])?;
+        Ok(())
+    }
+
+    pub fn get_capture_failure(&self) -> Result<Option<ObservationCaptureFailure>> {
+        let mut stmt = self.db.connection().prepare(
+            "SELECT failed_at, error_class, message, source
+             FROM observation_capture_failures
+             WHERE id = 1",
+        )?;
+        let mut rows = stmt.query([])?;
+        let Some(row) = rows.next()? else {
+            return Ok(None);
+        };
+        let error_class = ObservationCaptureErrorClass::parse(row.get::<_, String>(1)?.as_str())
+            .map_err(map_domain_error)?;
+        Ok(Some(ObservationCaptureFailure {
+            failed_at: row.get(0)?,
+            error_class,
+            message: row.get(2)?,
+            source: row.get(3)?,
+            authority_effect: ObservationCaptureFailure::AUTHORITY_EFFECT_NONE.into(),
+        }))
     }
 
     /// Retention foundation — keep the newest `keep` passes; delete older passes (cascade).
@@ -480,6 +556,17 @@ fn purge_unreferenced_identities_on(conn: &rusqlite::Connection) -> Result<usize
     Ok(deleted)
 }
 
+fn count_pass_identities_on(conn: &rusqlite::Connection, pass_id: &str) -> Result<i32> {
+    let count: i64 = conn.query_row(
+        "SELECT COUNT(DISTINCT stable_window_id)
+         FROM observation_windows
+         WHERE pass_id = ?1 AND stable_window_id IS NOT NULL",
+        [pass_id],
+        |row| row.get(0),
+    )?;
+    Ok(count as i32)
+}
+
 fn map_pass_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<WorkspaceObservationPass> {
     Ok(WorkspaceObservationPass {
         id: row.get(0)?,
@@ -874,5 +961,37 @@ mod tests {
             .list_by_process_ids(&[100])
             .unwrap();
         assert_eq!(identities.len(), 1);
+    }
+
+    #[test]
+    fn latest_metadata_returns_counts_without_child_collections() {
+        let db = test_db();
+        let repo = ObservationPassRepository::new(&db);
+        repo.insert_snapshot(&sample_snapshot("pass-meta")).unwrap();
+        let metadata = repo.get_latest_metadata().unwrap().expect("metadata");
+        assert_eq!(metadata.id, "pass-meta");
+        assert_eq!(metadata.window_count, 1);
+        assert_eq!(metadata.monitor_count, 1);
+        assert_eq!(metadata.identity_count, 1);
+        assert_eq!(metadata.source, "test_inject");
+    }
+
+    #[test]
+    fn capture_failure_round_trips_and_clears() {
+        let db = test_db();
+        let repo = ObservationPassRepository::new(&db);
+        repo.record_capture_failure(&ObservationCaptureFailure {
+            failed_at: "2026-07-26T12:00:00Z".into(),
+            error_class: ObservationCaptureErrorClass::Validation,
+            message: "forced".into(),
+            source: Some("test".into()),
+            authority_effect: ObservationCaptureFailure::AUTHORITY_EFFECT_NONE.into(),
+        })
+        .unwrap();
+        let loaded = repo.get_capture_failure().unwrap().expect("failure");
+        assert_eq!(loaded.error_class, ObservationCaptureErrorClass::Validation);
+        assert_eq!(loaded.message, "forced");
+        repo.clear_capture_failure().unwrap();
+        assert!(repo.get_capture_failure().unwrap().is_none());
     }
 }

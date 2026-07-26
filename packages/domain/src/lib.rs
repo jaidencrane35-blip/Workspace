@@ -316,10 +316,13 @@ pub use workspace_profile::{
     WorkspaceProfileStatus, WorkspaceProfileSummary, WorkspaceProfileValidation,
 };
 pub use workspace_observation::{
-    empty_stub_snapshot, observation_now_rfc3339, observation_u32_to_i32, observation_u64_to_i32,
-    observation_usize_to_i32, ObservationWindowIdentity, ObservedMonitor, ObservedWindow,
+    build_observation_status, empty_stub_snapshot, observation_age_seconds, observation_freshness,
+    observation_now_rfc3339, observation_u32_to_i32, observation_u64_to_i32,
+    observation_usize_to_i32, ObservationCaptureErrorClass, ObservationCaptureFailure,
+    ObservationFreshness, ObservationWindowIdentity, ObservedMonitor, ObservedWindow,
     WindowIdentityConfidence, WorkspaceObservationError, WorkspaceObservationPass,
-    WorkspaceObservationSnapshot,
+    WorkspaceObservationPassMetadata, WorkspaceObservationSnapshot, WorkspaceObservationStatus,
+    OBSERVATION_FRESH_THRESHOLD_SECS, OBSERVATION_STALE_THRESHOLD_SECS,
 };
 pub use workspace_environment::{
     build_environment_summary, now_rfc3339, validate_workspace_id, EnvironmentApplication,

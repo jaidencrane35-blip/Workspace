@@ -25,6 +25,8 @@ Workspace Environment Model   ← this document
 Attention / Intelligence / Continuity consumers
 ```
 
+**Observation status** (`get_workspace_observation_status`) reports whether a snapshot exists, its age/freshness, counts, and last capture failure. It is read-only diagnostics: it does **not** trigger capture and does **not** repair stale observations.
+
 ---
 
 ## Represents
