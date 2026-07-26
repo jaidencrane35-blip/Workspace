@@ -15,8 +15,9 @@ use workspace_domain::{
     validate_recommendation_engine_workspace_id, ActionProposalError, ActorContext,
     AttentionCategory, DecisionQueue, IntentContext, RecommendationConfidence,
     RecommendationEvidence, RecommendationExplanationView, RecommendationGovernanceRecord,
-    RecommendationItem, RecommendationKind, RecommendationLifecycleOverlay,
-    RecommendationLifecycleState, RecommendationRelationship, RecommendationReviewActionResult,
+    RecommendationHistoryEntry, RecommendationItem, RecommendationKind,
+    RecommendationLifecycleOverlay, RecommendationLifecycleState, RecommendationOutcome,
+    RecommendationOutcomeView, RecommendationRelationship, RecommendationReviewActionResult,
     TaskGraph, WorkspaceAttentionState, WorkspaceCompositionState, WorkspaceContinuityState,
     WorkspaceEnvironmentState, WorkspaceEvolutionState, WorkspacePurposeState,
     WorkspaceRecommendationEngineError, WorkspaceRecommendationEngineState,
@@ -190,6 +191,7 @@ impl WorkspaceRecommendationEngineService {
                 lifecycle_resolved_at: None,
                 lifecycle_resolution_type: None,
                 explanation: None,
+                outcome: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
             });
             relationships.push(RecommendationRelationship {
@@ -247,6 +249,7 @@ impl WorkspaceRecommendationEngineService {
                 lifecycle_resolved_at: None,
                 lifecycle_resolution_type: None,
                 explanation: None,
+                outcome: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
             });
         }
@@ -283,6 +286,7 @@ impl WorkspaceRecommendationEngineService {
                     lifecycle_resolved_at: None,
                     lifecycle_resolution_type: None,
                     explanation: None,
+                    outcome: None,
                     authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
@@ -327,6 +331,7 @@ impl WorkspaceRecommendationEngineService {
                     lifecycle_resolved_at: None,
                     lifecycle_resolution_type: None,
                     explanation: None,
+                outcome: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
@@ -359,6 +364,7 @@ impl WorkspaceRecommendationEngineService {
                     lifecycle_resolved_at: None,
                     lifecycle_resolution_type: None,
                     explanation: None,
+                    outcome: None,
                     authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
@@ -413,6 +419,7 @@ impl WorkspaceRecommendationEngineService {
                     lifecycle_resolved_at: None,
                     lifecycle_resolution_type: None,
                     explanation: None,
+                outcome: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
@@ -458,6 +465,7 @@ impl WorkspaceRecommendationEngineService {
                     lifecycle_resolved_at: None,
                     lifecycle_resolution_type: None,
                     explanation: None,
+                outcome: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
@@ -501,6 +509,7 @@ impl WorkspaceRecommendationEngineService {
                     lifecycle_resolved_at: None,
                     lifecycle_resolution_type: None,
                     explanation: None,
+                outcome: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
@@ -531,6 +540,7 @@ impl WorkspaceRecommendationEngineService {
                     lifecycle_resolved_at: None,
                     lifecycle_resolution_type: None,
                     explanation: None,
+                    outcome: None,
                     authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
@@ -575,6 +585,7 @@ impl WorkspaceRecommendationEngineService {
                     lifecycle_resolved_at: None,
                     lifecycle_resolution_type: None,
                     explanation: None,
+                    outcome: None,
                     authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
@@ -616,6 +627,8 @@ impl WorkspaceRecommendationEngineService {
             relationship_count: relationships.len(),
             candidates,
             relationships,
+            history: Vec::new(),
+            history_count: 0,
             explanation,
             evidence,
             summary,
@@ -694,6 +707,7 @@ impl WorkspaceRecommendationEngineService {
                 lifecycle_resolved_at: None,
                 lifecycle_resolution_type: None,
                 explanation: None,
+                outcome: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
             };
             crate::services::WorkspacePatternService::audit_used_for_recommendation(
@@ -784,6 +798,7 @@ impl WorkspaceRecommendationEngineService {
                 lifecycle_resolved_at: None,
                 lifecycle_resolution_type: None,
                 explanation: None,
+                outcome: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
             });
         }
@@ -1082,7 +1097,7 @@ impl WorkspaceRecommendationEngineService {
             to,
             RecommendationLifecycleState::Accepted | RecommendationLifecycleState::Rejected
         ) {
-            Some(record.record_outcome(now.clone()).map_err(map_lifecycle_err)?)
+            Some(Self::record_outcome_with_experience(&record, &item, &now)?)
         } else {
             overlay.outcome.clone()
         };
@@ -1092,7 +1107,8 @@ impl WorkspaceRecommendationEngineService {
             &record,
             outcome.clone(),
             now,
-        );
+        )
+        .with_prior_outcomes(overlay.prior_outcomes.clone());
         next.content_fingerprint = overlay
             .content_fingerprint
             .or_else(|| Some(item.continuity_fingerprint()));
@@ -1189,7 +1205,7 @@ impl WorkspaceRecommendationEngineService {
                         continue;
                     }
                     if existing.lifecycle_state.is_open() {
-                        let _superseded = Self::resolve_open_overlay(
+                        let superseded = Self::resolve_open_overlay(
                             db,
                             actor,
                             &existing,
@@ -1205,14 +1221,15 @@ impl WorkspaceRecommendationEngineService {
                             &fingerprint,
                             &now,
                             &actor_id,
-                        )?;
+                        )?
+                        .with_prior_outcomes(superseded.carried_outcomes());
                         Self::upsert_overlay(db, &fresh)?;
                         by_id.insert(item.id.clone(), fresh);
                         continue;
                     }
                     // Terminal + material content change (or source returned after
                     // Expired/Superseded): open a new Available generation. Prior
-                    // resolution remains in audit / previous outcome_json overwrite.
+                    // outcomes are retained on the overlay for history reconstruction.
                     Self::audit_lifecycle(
                         db,
                         actor,
@@ -1226,7 +1243,8 @@ impl WorkspaceRecommendationEngineService {
                         &fingerprint,
                         &now,
                         &actor_id,
-                    )?;
+                    )?
+                    .with_prior_outcomes(existing.carried_outcomes());
                     Self::upsert_overlay(db, &fresh)?;
                     by_id.insert(item.id.clone(), fresh);
                 }
@@ -1236,10 +1254,59 @@ impl WorkspaceRecommendationEngineService {
         for item in &mut state.candidates {
             if let Some(overlay) = by_id.get(&item.id) {
                 overlay.apply_to_item(item);
+                if let Some(outcome) = &overlay.outcome {
+                    item.outcome = Some(project_outcome_view(outcome));
+                }
             }
         }
         Self::attach_explanation_views(&mut state);
+        state.history = Self::build_history_from_overlays(by_id.values());
+        state.history_count = state.history.len();
         Ok(state)
+    }
+
+    fn build_history_from_overlays<'a>(
+        overlays: impl Iterator<Item = &'a RecommendationLifecycleOverlay>,
+    ) -> Vec<RecommendationHistoryEntry> {
+        let mut entries = Vec::new();
+        for overlay in overlays {
+            for outcome in overlay.carried_outcomes() {
+                let resolution = outcome
+                    .lifecycle_resolution
+                    .map(|r| r.as_str().to_string())
+                    .unwrap_or_else(|| overlay.lifecycle_state.as_str().into());
+                entries.push(RecommendationHistoryEntry {
+                    native_id: overlay.native_id.clone(),
+                    lifecycle_state: resolution,
+                    outcome: project_outcome_view(&outcome),
+                    resolved_at: Some(outcome.recorded_at.clone()),
+                    authority_effect: RecommendationHistoryEntry::AUTHORITY_EFFECT_NONE.into(),
+                });
+            }
+        }
+        entries.sort_by(|a, b| {
+            b.resolved_at
+                .cmp(&a.resolved_at)
+                .then_with(|| a.native_id.cmp(&b.native_id))
+        });
+        entries
+    }
+
+    fn record_outcome_with_experience(
+        record: &RecommendationGovernanceRecord,
+        item: &RecommendationItem,
+        recorded_at: &str,
+    ) -> Result<RecommendationOutcome> {
+        let mut outcome = record
+            .record_outcome(recorded_at)
+            .map_err(map_lifecycle_err)?;
+        let keys = experience_keys_for_item(item);
+        if !keys.is_empty() {
+            outcome = outcome.with_experience_trace_match_keys(keys);
+        }
+        assert_eq!(outcome.authority_effect, RecommendationOutcome::AUTHORITY_EFFECT_NONE);
+        assert!(!outcome.is_system_failure());
+        Ok(outcome)
     }
 
     /// Project structured explanation views — Experience traces as provenance only.
@@ -1325,13 +1392,17 @@ impl WorkspaceRecommendationEngineService {
         record
             .transition(to, now.to_string(), Some(actor_id.into()))
             .map_err(map_lifecycle_err)?;
-        let outcome = record.record_outcome(now).map_err(map_lifecycle_err)?;
+        let outcome = match live_item {
+            Some(item) => Self::record_outcome_with_experience(&record, item, now)?,
+            None => record.record_outcome(now).map_err(map_lifecycle_err)?,
+        };
         let next = RecommendationLifecycleOverlay::from_governance_record(
             overlay.workspace_id.clone(),
             &record,
             Some(outcome),
             now,
         )
+        .with_prior_outcomes(overlay.prior_outcomes.clone())
         .with_content_fingerprint(
             overlay
                 .content_fingerprint
@@ -1454,6 +1525,45 @@ fn map_lifecycle_err(error: ActionProposalError) -> KernelError {
             message: other.to_string(),
         },
     }
+}
+
+fn project_outcome_view(outcome: &RecommendationOutcome) -> RecommendationOutcomeView {
+    RecommendationOutcomeView {
+        outcome_id: outcome.id.clone(),
+        recommendation_id: outcome.identity.native_id.clone(),
+        user_decision: outcome.user_decision.as_str().into(),
+        result_kind: outcome.result_kind.as_str().into(),
+        lifecycle_resolution: outcome
+            .lifecycle_resolution
+            .map(|r| r.as_str().into()),
+        recorded_at: outcome.recorded_at.clone(),
+        explanation_keys: outcome.provenance.explanation_keys.clone(),
+        evidence_refs: outcome
+            .provenance
+            .source_evidence
+            .iter()
+            .map(|e| e.source_ref.clone())
+            .collect(),
+        experience_trace_match_keys: outcome.experience_trace_match_keys.clone(),
+        is_system_failure: outcome.is_system_failure(),
+        authority_effect: RecommendationOutcomeView::AUTHORITY_EFFECT_NONE.into(),
+    }
+}
+
+fn experience_keys_for_item(item: &RecommendationItem) -> Vec<String> {
+    if let Some(view) = &item.explanation {
+        if !view.experience_trace_match_keys.is_empty() {
+            return view.experience_trace_match_keys.clone();
+        }
+    }
+    item.attention_reasons
+        .iter()
+        .map(|reason| {
+            resolve_attention_reason_traced(reason, Some("recommendation_outcome"))
+                .resolver_path
+                .match_key
+        })
+        .collect()
 }
 
 fn kind_rank(kind: RecommendationKind) -> u8 {

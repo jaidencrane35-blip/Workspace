@@ -230,7 +230,47 @@ pub struct RecommendationItem {
     /// Structured surface explanation (Sprint 202+) — None until projected.
     #[serde(default)]
     pub explanation: Option<RecommendationExplanationView>,
+    /// Structured outcome projection when resolved (Sprint 207+) — immutable feedback.
+    #[serde(default)]
+    pub outcome: Option<RecommendationOutcomeView>,
     pub authority_effect: String,
+}
+
+/// Surface projection of a recommendation outcome (Sprint 207).
+///
+/// Informational feedback only — never executes, never mutates reasoning, never scores.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RecommendationOutcomeView {
+    pub outcome_id: String,
+    pub recommendation_id: String,
+    pub user_decision: String,
+    pub result_kind: String,
+    pub lifecycle_resolution: Option<String>,
+    pub recorded_at: String,
+    pub explanation_keys: Vec<String>,
+    pub evidence_refs: Vec<String>,
+    pub experience_trace_match_keys: Vec<String>,
+    /// Always false for recommendation outcomes (rejection/expiry are valid).
+    pub is_system_failure: bool,
+    pub authority_effect: String,
+}
+
+impl RecommendationOutcomeView {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+}
+
+/// Historical continuity entry for Operator / Work (Sprint 207).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RecommendationHistoryEntry {
+    pub native_id: String,
+    pub lifecycle_state: String,
+    pub outcome: RecommendationOutcomeView,
+    pub resolved_at: Option<String>,
+    pub authority_effect: String,
+}
+
+impl RecommendationHistoryEntry {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
 }
 
 impl RecommendationItem {
@@ -272,6 +312,11 @@ pub struct WorkspaceRecommendationEngineState {
     pub relationships: Vec<RecommendationRelationship>,
     pub candidate_count: usize,
     pub relationship_count: usize,
+    /// Terminal / orphan outcomes for historical continuity (not actionable).
+    #[serde(default)]
+    pub history: Vec<RecommendationHistoryEntry>,
+    #[serde(default)]
+    pub history_count: usize,
     pub explanation: String,
     pub evidence: Vec<String>,
     pub summary: String,

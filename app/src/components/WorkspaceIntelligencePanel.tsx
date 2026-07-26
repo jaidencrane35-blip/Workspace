@@ -7,6 +7,7 @@ import {
 import {
   isActiveRecommendation,
   RecommendationExplanationBlock,
+  RecommendationHistoryList,
 } from "./RecommendationExplanationView";
 import type {
   AutomationContract,
@@ -2356,13 +2357,8 @@ export function WorkspaceIntelligencePanel({
                 recommendationEngine.candidates.filter(isActiveRecommendation)
                   .length
               }{" "}
-              · history{" "}
-              {
-                recommendationEngine.candidates.filter(
-                  (c) => !isActiveRecommendation(c),
-                ).length
-              }{" "}
-              · authority: {recommendationEngine.authority_effect}
+              · history {recommendationEngine.history_count ?? 0} · authority:{" "}
+              {recommendationEngine.authority_effect}
             </p>
             {recommendationEngine.candidates.filter(isActiveRecommendation)
               .length > 0 && (
@@ -2455,24 +2451,14 @@ export function WorkspaceIntelligencePanel({
                   ))}
               </ul>
             )}
-            {recommendationEngine.candidates.some(
-              (c) => !isActiveRecommendation(c),
-            ) && (
+            {(recommendationEngine.history?.length ?? 0) > 0 && (
               <>
-                <p className="muted">History (terminal — not actionable)</p>
-                <ul className="intelligence-list">
-                  {recommendationEngine.candidates
-                    .filter((c) => !isActiveRecommendation(c))
-                    .slice(0, 3)
-                    .map((item) => (
-                      <li key={item.id}>
-                        <strong>
-                          [{item.lifecycle_state}] {item.title}
-                        </strong>
-                        <RecommendationExplanationBlock item={item} />
-                      </li>
-                    ))}
-                </ul>
+                <p className="muted">
+                  Outcome history (immutable feedback — not actionable)
+                </p>
+                <RecommendationHistoryList
+                  history={(recommendationEngine.history ?? []).slice(0, 5)}
+                />
               </>
             )}
           </>

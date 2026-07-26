@@ -116,6 +116,21 @@ experience keys → lifecycle resolution → optional downstream ExecutionOutcom
 
 ---
 
+## Runtime visibility (Sprints 207–211)
+
+| Surface | Behavior |
+|---------|----------|
+| `RecommendationOutcomeView` | Projected onto resolved candidates + `WorkspaceRecommendationEngineState.history` |
+| `prior_outcomes` on overlay | Retains immutable outcomes across supersede / generation reopen |
+| Experience keys on outcome | Attached at record time from explanation / Attention catalog traces — evidence only |
+| Operator / Work | Active suggestions vs outcome history lists; history never actionable |
+
+**Still deferred:** Recommendation accept → Decision Engine / Assistant planner handoff.
+Outcomes + provenance are now reconstructible, but no `goal_statement` / `next_command`
+handoff is emitted from recommendation acceptance (Decision Engine remains separate).
+
+---
+
 ## Related docs
 
 - [WORKSPACE-ADAPTATION-GOVERNANCE.md](./WORKSPACE-ADAPTATION-GOVERNANCE.md)

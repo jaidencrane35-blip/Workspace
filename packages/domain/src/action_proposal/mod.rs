@@ -649,6 +649,9 @@ pub struct RecommendationLifecycleOverlay {
     pub resolution_type: Option<RecommendationResolutionType>,
     pub actor_id: Option<String>,
     pub outcome: Option<RecommendationOutcome>,
+    /// Prior outcomes retained across supersede / generation reopen (Sprint 207).
+    #[serde(default)]
+    pub prior_outcomes: Vec<RecommendationOutcome>,
     /// Continuity fingerprint of the regenerable candidate payload (Sprint 197).
     #[serde(default)]
     pub content_fingerprint: Option<String>,
@@ -675,6 +678,7 @@ impl RecommendationLifecycleOverlay {
             resolution_type: record.lifecycle.resolution_type,
             actor_id: record.lifecycle.transition_actor_id.clone(),
             outcome,
+            prior_outcomes: Vec::new(),
             content_fingerprint: None,
             updated_at: updated_at.into(),
             authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
@@ -684,6 +688,20 @@ impl RecommendationLifecycleOverlay {
     pub fn with_content_fingerprint(mut self, fingerprint: impl Into<String>) -> Self {
         self.content_fingerprint = Some(fingerprint.into());
         self
+    }
+
+    pub fn with_prior_outcomes(mut self, prior: Vec<RecommendationOutcome>) -> Self {
+        self.prior_outcomes = prior;
+        self
+    }
+
+    /// Accumulate current + prior outcomes when opening a new generation.
+    pub fn carried_outcomes(&self) -> Vec<RecommendationOutcome> {
+        let mut carried = self.prior_outcomes.clone();
+        if let Some(outcome) = &self.outcome {
+            carried.push(outcome.clone());
+        }
+        carried
     }
 
     pub fn apply_to_item(&self, item: &mut crate::workspace_recommendation::RecommendationItem) {
@@ -4052,6 +4070,7 @@ mod tests {
             lifecycle_resolved_at: None,
             lifecycle_resolution_type: None,
             explanation: None,
+                outcome: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
         }
     }

@@ -4,6 +4,7 @@ import { DisplayReasonList } from "./DisplayReasonList";
 import {
   isActiveRecommendation,
   RecommendationExplanationBlock,
+  RecommendationHistoryList,
 } from "./RecommendationExplanationView";
 import type {
   ActionCatalog,
@@ -1872,13 +1873,8 @@ export function OperatorConsole({
                   recommendationEngine.candidates.filter(isActiveRecommendation)
                     .length
                 }{" "}
-                · history{" "}
-                {
-                  recommendationEngine.candidates.filter(
-                    (c) => !isActiveRecommendation(c),
-                  ).length
-                }{" "}
-                · authority {recommendationEngine.authority_effect}
+                · history {recommendationEngine.history_count ?? 0} · authority{" "}
+                {recommendationEngine.authority_effect}
               </li>
             </ul>
             {recommendationEngine.candidates
@@ -1970,24 +1966,15 @@ export function OperatorConsole({
                   </div>
                 </div>
               ))}
-            {recommendationEngine.candidates.some(
-              (c) => !isActiveRecommendation(c),
-            ) && (
+            {(recommendationEngine.history?.length ?? 0) > 0 && (
               <>
                 <p className="muted" style={{ marginTop: 12 }}>
-                  History (terminal — not actionable)
+                  Outcome history (immutable feedback — not actionable, never
+                  executes)
                 </p>
-                {recommendationEngine.candidates
-                  .filter((c) => !isActiveRecommendation(c))
-                  .slice(0, 3)
-                  .map((item) => (
-                    <div key={item.id} className="muted" style={{ marginTop: 8 }}>
-                      <strong>
-                        [{item.lifecycle_state}] {item.title}
-                      </strong>
-                      <RecommendationExplanationBlock item={item} />
-                    </div>
-                  ))}
+                <RecommendationHistoryList
+                  history={(recommendationEngine.history ?? []).slice(0, 6)}
+                />
               </>
             )}
           </>

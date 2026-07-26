@@ -1,5 +1,9 @@
 import { DisplayReasonList } from "./DisplayReasonList";
-import type { RecommendationItem } from "../types/domain";
+import type {
+  RecommendationHistoryEntry,
+  RecommendationItem,
+  RecommendationOutcomeView,
+} from "../types/domain";
 
 function isTerminalLifecycle(state: string | null | undefined): boolean {
   return (
@@ -109,6 +113,62 @@ export function RecommendationExplanationBlock({
             {view.experience_trace_match_keys.slice(0, 3).join(", ")}
           </div>
         )}
+      {item.outcome ? <RecommendationOutcomeBlock outcome={item.outcome} /> : null}
     </div>
+  );
+}
+
+/** Immutable outcome feedback — never execution, never scoring. */
+export function RecommendationOutcomeBlock({
+  outcome,
+}: {
+  outcome: RecommendationOutcomeView;
+}) {
+  return (
+    <div className="recommendation-outcome muted" style={{ marginTop: 4 }}>
+      <div>
+        Outcome: <strong>{outcome.user_decision}</strong> · {outcome.result_kind}
+        {" · "}
+        authority: {outcome.authority_effect}
+        {outcome.is_system_failure ? " · system failure" : " · not a system failure"}
+      </div>
+      <div className="mono">Recorded {outcome.recorded_at}</div>
+      {outcome.explanation_keys.length > 0 && (
+        <div className="mono">
+          Provenance keys: {outcome.explanation_keys.join(", ")}
+        </div>
+      )}
+      {outcome.evidence_refs.length > 0 && (
+        <div className="mono">
+          Evidence refs: {outcome.evidence_refs.slice(0, 4).join(" · ")}
+        </div>
+      )}
+      {outcome.experience_trace_match_keys.length > 0 && (
+        <div className="mono">
+          Experience refs (evidence only):{" "}
+          {outcome.experience_trace_match_keys.slice(0, 3).join(", ")}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function RecommendationHistoryList({
+  history,
+}: {
+  history: RecommendationHistoryEntry[];
+}) {
+  if (!history.length) return null;
+  return (
+    <ul className="intelligence-list">
+      {history.map((entry) => (
+        <li key={`${entry.native_id}:${entry.outcome.outcome_id}:${entry.outcome.recorded_at}`}>
+          <strong>
+            [{entry.lifecycle_state}] {entry.native_id}
+          </strong>
+          <RecommendationOutcomeBlock outcome={entry.outcome} />
+        </li>
+      ))}
+    </ul>
   );
 }

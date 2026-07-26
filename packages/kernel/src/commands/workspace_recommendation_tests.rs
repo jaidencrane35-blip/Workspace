@@ -626,6 +626,119 @@ fn assert_cannot_execute(result: Result<(), KernelError>) {
     }
 }
 
+/// CASE 21 — Outcomes project into history with Experience refs; cannot execute.
+#[test]
+fn case21_outcome_history_is_visible_and_non_executive() {
+    use workspace_domain::RecommendationOutcome;
+
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let (ws, _) = seed(&kernel);
+    let local = ActorContext::local_user();
+    let intent = IntentContext::user_request();
+    let state = CommandHandler::generate_workspace_recommendation_engine(
+        &kernel,
+        local.clone(),
+        intent.clone(),
+        ws.clone(),
+    )
+    .unwrap();
+    let id = state.candidates[0].id.clone();
+
+    let accepted = CommandHandler::accept_recommendation(
+        &kernel,
+        local.clone(),
+        intent.clone(),
+        ws.clone(),
+        id.clone(),
+    )
+    .unwrap();
+    assert!(accepted.outcome.is_some());
+    assert_eq!(accepted.authority_effect, "none");
+
+    let after = CommandHandler::generate_workspace_recommendation_engine(
+        &kernel,
+        local,
+        intent,
+        ws,
+    )
+    .unwrap();
+    assert!(after.history_count >= 1);
+    let entry = after
+        .history
+        .iter()
+        .find(|h| h.native_id == id)
+        .expect("accepted outcome in history");
+    assert_eq!(entry.outcome.user_decision, "accepted");
+    assert_eq!(entry.outcome.authority_effect, "none");
+    assert!(!entry.outcome.is_system_failure);
+    assert_eq!(entry.authority_effect, "none");
+    let item = after.candidates.iter().find(|c| c.id == id).unwrap();
+    assert!(item.outcome.is_some());
+    assert_eq!(
+        item.outcome.as_ref().unwrap().outcome_id,
+        entry.outcome.outcome_id
+    );
+    assert!(RecommendationOutcome::attempt_execute().is_err());
+    assert_cannot_execute(CommandHandler::workspace_recommendation_engine_attempt_execute());
+}
+
+/// CASE 22 — Supersede retains prior outcomes; provenance/reasoning untouched.
+#[test]
+fn case22_supersede_retains_prior_outcomes_without_mutating_reasoning() {
+    use workspace_database::RecommendationLifecycleRepository;
+    use workspace_domain::{RecommendationLifecycleState, RecommendationProvenance};
+
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let (ws, _) = seed(&kernel);
+    let local = ActorContext::local_user();
+    let intent = IntentContext::user_request();
+    let state = CommandHandler::generate_workspace_recommendation_engine(
+        &kernel,
+        local.clone(),
+        intent.clone(),
+        ws.clone(),
+    )
+    .unwrap();
+    let id = state.candidates[0].id.clone();
+    let before_prov = RecommendationProvenance::from_recommendation_item(&state.candidates[0]);
+
+    {
+        let db = kernel.shared_database();
+        let guard = db.lock().unwrap();
+        let mut overlay = RecommendationLifecycleRepository::new(&guard)
+            .get_overlay(&ws, &id)
+            .unwrap()
+            .unwrap();
+        overlay.content_fingerprint = Some("stale-for-supersede".into());
+        overlay.lifecycle_state = RecommendationLifecycleState::Presented;
+        overlay.presented_at = Some("t-presented".into());
+        RecommendationLifecycleRepository::new(&guard)
+            .upsert_overlay(&overlay)
+            .unwrap();
+    }
+
+    let after = CommandHandler::generate_workspace_recommendation_engine(
+        &kernel,
+        local,
+        intent,
+        ws.clone(),
+    )
+    .unwrap();
+    assert!(
+        after.history.iter().any(|h| {
+            h.native_id == id && h.outcome.user_decision == "superseded"
+        }),
+        "superseded outcome must remain in history"
+    );
+    let item = after.candidates.iter().find(|c| c.id == id).unwrap();
+    assert_eq!(item.lifecycle_state.as_deref(), Some("available"));
+    let after_prov = RecommendationProvenance::from_recommendation_item(item);
+    assert_eq!(after_prov.reasoning_origins, before_prov.reasoning_origins);
+    assert_eq!(after_prov.explanation_keys, before_prov.explanation_keys);
+    assert_cannot_execute(CommandHandler::workspace_recommendation_engine_attempt_execute());
+    assert_cannot_execute(CommandHandler::decision_engine_attempt_execute());
+}
+
 /// CASE 19 — Explanation views are non-authoritative and grounded in evidence/keys.
 #[test]
 fn case19_explanation_views_are_non_authoritative() {
@@ -757,6 +870,7 @@ fn case16_orphan_overlays_expire_on_regenerate() {
                 resolution_type: None,
                 actor_id: Some(local.actor.id.to_string()),
                 outcome: None,
+                prior_outcomes: Vec::new(),
                 content_fingerprint: Some("stale".into()),
                 updated_at: "t0".into(),
                 authority_effect: RecommendationLifecycleOverlay::AUTHORITY_EFFECT_NONE.into(),

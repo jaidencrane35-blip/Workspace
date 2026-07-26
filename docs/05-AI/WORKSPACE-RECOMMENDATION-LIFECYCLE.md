@@ -157,6 +157,15 @@ IPC: `present_recommendation` / `accept_recommendation` / `reject_recommendation
 
 Expire / supersede are continuity transitions only — never execute, never grant authority, never auto-learn.
 
+## Outcome history (Sprints 207–211)
+
+| Concern | Behavior |
+|---------|----------|
+| Current outcome | On overlay + projected onto terminal candidates |
+| Prior outcomes | `prior_outcomes` retained when content supersedes or generation reopens |
+| History list | `state.history` / `history_count` for Operator / Work (immutable feedback) |
+| Decision Engine | Handoff still **deferred** — acceptance records outcomes only |
+
 ---
 
 ## Related docs

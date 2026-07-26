@@ -2167,15 +2167,41 @@ export interface RecommendationItem {
   lifecycle_resolution_type?: string | null;
   /** Structured surface explanation — null until projected. */
   explanation?: RecommendationExplanationView | null;
+  /** Structured outcome when resolved — immutable feedback only. */
+  outcome?: RecommendationOutcomeView | null;
   authority_effect: string;
 }
 
+/** Compact IPC outcome on review actions. */
 export interface RecommendationOutcome {
   id: string;
   lifecycle_resolution: string | null;
   user_decision: string;
   result_kind: string;
   recorded_at: string;
+  authority_effect: string;
+}
+
+/** Structured outcome projection for Operator / Work history. */
+export interface RecommendationOutcomeView {
+  outcome_id: string;
+  recommendation_id: string;
+  user_decision: string;
+  result_kind: string;
+  lifecycle_resolution: string | null;
+  recorded_at: string;
+  explanation_keys: string[];
+  evidence_refs: string[];
+  experience_trace_match_keys: string[];
+  is_system_failure: boolean;
+  authority_effect: string;
+}
+
+export interface RecommendationHistoryEntry {
+  native_id: string;
+  lifecycle_state: string;
+  outcome: RecommendationOutcomeView;
+  resolved_at: string | null;
   authority_effect: string;
 }
 
@@ -2196,6 +2222,8 @@ export interface WorkspaceRecommendationEngineState {
   relationships: RecommendationRelationship[];
   candidate_count: number;
   relationship_count: number;
+  history?: RecommendationHistoryEntry[];
+  history_count?: number;
   explanation: string;
   evidence: string[];
   summary: string;

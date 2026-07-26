@@ -43,6 +43,7 @@ fn proposal() -> workspace_domain::OutcomeAdaptationProposal {
             lifecycle_resolved_at: None,
             lifecycle_resolution_type: None,
             explanation: None,
+                outcome: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
         },
         "t0",
