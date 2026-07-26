@@ -1,14 +1,23 @@
-//! Win32 EnumWindows-backed enumerator and process launcher (Windows only).
+//! Win32 desktop capture and legacy enumeration (Windows only).
 
 use std::ffi::OsString;
 use std::os::windows::ffi::OsStringExt;
 use std::process::Command;
+use std::time::Instant;
 
-use windows::Win32::Foundation::{BOOL, HWND, LPARAM};
+use windows::Win32::Foundation::{BOOL, HWND, LPARAM, RECT};
+use windows::Win32::Graphics::Gdi::{
+    EnumDisplayMonitors, GetMonitorInfoW, HDC, HMONITOR, MONITORINFO, MONITORINFOEXW,
+};
 use windows::Win32::UI::WindowsAndMessaging::{
-    EnumWindows, GetWindowTextLengthW, GetWindowTextW, GetWindowThreadProcessId, IsWindowVisible,
+    EnumWindows, GetForegroundWindow, GetWindowRect, GetWindowTextLengthW, GetWindowTextW,
+    GetWindowThreadProcessId, IsIconic, IsWindowVisible, MONITORINFOF_PRIMARY,
 };
 
+use super::capture::{
+    monitor_index_for_window_bounds, CaptureMetadata, CapturedDesktopMonitor,
+    CapturedDesktopWindow, DesktopCapturer, DesktopObservationCapture,
+};
 use super::enumerator::{DesktopWindowSnapshot, WindowEnumerator};
 use super::launcher::{ProcessLaunchOutcome, ProcessLaunchRequest, ProcessLauncher};
 use crate::error::{Result, WindowsIntegrationError};
@@ -18,12 +27,34 @@ pub struct Win32WindowEnumerator;
 
 impl WindowEnumerator for Win32WindowEnumerator {
     fn enumerate_windows(&self) -> Result<Vec<DesktopWindowSnapshot>> {
-        let mut collected: Vec<DesktopWindowSnapshot> = Vec::new();
-        let ctx = &mut collected as *mut Vec<DesktopWindowSnapshot>;
+        Ok(self.capture_desktop()?.legacy_window_snapshots())
+    }
+}
 
-        // SAFETY: EnumWindows invokes the callback synchronously on this thread.
-        // `ctx` remains valid for the duration of the call.
-        let ok = unsafe { EnumWindows(Some(enum_proc), LPARAM(ctx as isize)) };
+impl DesktopCapturer for Win32WindowEnumerator {
+    fn capture_desktop(&self) -> Result<DesktopObservationCapture> {
+        let started = Instant::now();
+        let monitors = enumerate_monitors()?;
+        let foreground = unsafe { GetForegroundWindow() };
+        let foreground_hwnd = if foreground.0.is_null() {
+            None
+        } else {
+            Some(hwnd_to_string(foreground))
+        };
+
+        let mut ctx = CaptureContext {
+            monitors: monitors.clone(),
+            foreground,
+            windows: Vec::new(),
+            z_order: 0,
+        };
+
+        let ok = unsafe {
+            EnumWindows(
+                Some(capture_enum_proc),
+                LPARAM(&mut ctx as *mut CaptureContext as isize),
+            )
+        };
 
         if ok.is_err() {
             return Err(WindowsIntegrationError::EnumerationFailed(
@@ -31,20 +62,35 @@ impl WindowEnumerator for Win32WindowEnumerator {
             ));
         }
 
-        Ok(collected)
+        Ok(DesktopObservationCapture {
+            foreground_hwnd,
+            windows: ctx.windows,
+            monitors,
+            metadata: CaptureMetadata {
+                source: "win32".into(),
+                duration_ms: Some(started.elapsed().as_millis() as u64),
+            },
+        })
     }
 }
 
-unsafe extern "system" fn enum_proc(hwnd: HWND, lparam: LPARAM) -> BOOL {
-    let list = &mut *(lparam.0 as *mut Vec<DesktopWindowSnapshot>);
+struct CaptureContext {
+    monitors: Vec<CapturedDesktopMonitor>,
+    foreground: HWND,
+    windows: Vec<CapturedDesktopWindow>,
+    z_order: i32,
+}
+
+unsafe extern "system" fn capture_enum_proc(hwnd: HWND, lparam: LPARAM) -> BOOL {
+    let ctx = &mut *(lparam.0 as *mut CaptureContext);
 
     let visible = unsafe { IsWindowVisible(hwnd) }.as_bool();
-    if !visible {
+    let minimized = unsafe { IsIconic(hwnd) }.as_bool();
+    if !visible && !minimized {
         return BOOL(1);
     }
 
     let title = unsafe { read_window_title(hwnd) };
-    // Skip untitled tool / ghost windows for Phase 1 readability.
     if title.trim().is_empty() {
         return BOOL(1);
     }
@@ -54,14 +100,129 @@ unsafe extern "system" fn enum_proc(hwnd: HWND, lparam: LPARAM) -> BOOL {
         GetWindowThreadProcessId(hwnd, Some(&mut process_id));
     }
 
-    list.push(DesktopWindowSnapshot {
-        hwnd: format!("0x{:016X}", hwnd.0 as usize),
+    let rect = match unsafe { read_window_rect(hwnd) } {
+        Some(rect) => rect,
+        None => return BOOL(1),
+    };
+
+    let monitor_index = monitor_index_for_window_bounds(
+        rect.x,
+        rect.y,
+        rect.width,
+        rect.height,
+        &ctx.monitors,
+    );
+
+    let z_order = ctx.z_order;
+    ctx.z_order += 1;
+
+    ctx.windows.push(CapturedDesktopWindow {
+        hwnd: hwnd_to_string(hwnd),
         title,
         process_id,
         visible,
+        minimized,
+        focused: hwnd == ctx.foreground,
+        x: rect.x,
+        y: rect.y,
+        width: rect.width,
+        height: rect.height,
+        monitor_index,
+        z_order: Some(z_order),
     });
 
     BOOL(1)
+}
+
+struct WindowRect {
+    x: i32,
+    y: i32,
+    width: i32,
+    height: i32,
+}
+
+unsafe fn read_window_rect(hwnd: HWND) -> Option<WindowRect> {
+    let mut rect = RECT::default();
+    unsafe { GetWindowRect(hwnd, &mut rect) }.ok()?;
+    let width = rect.right - rect.left;
+    let height = rect.bottom - rect.top;
+    Some(WindowRect {
+        x: rect.left,
+        y: rect.top,
+        width,
+        height,
+    })
+}
+
+fn enumerate_monitors() -> Result<Vec<CapturedDesktopMonitor>> {
+    let mut collected: Vec<CapturedDesktopMonitor> = Vec::new();
+    let ctx = &mut collected as *mut Vec<CapturedDesktopMonitor>;
+
+    let ok = unsafe {
+        EnumDisplayMonitors(
+            None,
+            None,
+            Some(monitor_enum_proc),
+            LPARAM(ctx as isize),
+        )
+    };
+
+    if !ok.as_bool() {
+        return Err(WindowsIntegrationError::EnumerationFailed(
+            "EnumDisplayMonitors returned an error".into(),
+        ));
+    }
+
+    collected.sort_by_key(|monitor| monitor.index);
+    Ok(collected)
+}
+
+unsafe extern "system" fn monitor_enum_proc(
+    hmonitor: HMONITOR,
+    _hdc: HDC,
+    _rect: *mut RECT,
+    lparam: LPARAM,
+) -> BOOL {
+    let list = &mut *(lparam.0 as *mut Vec<CapturedDesktopMonitor>);
+
+    let mut info = MONITORINFOEXW::default();
+    info.monitorInfo.cbSize = std::mem::size_of::<MONITORINFOEXW>() as u32;
+
+    if !unsafe { GetMonitorInfoW(hmonitor, &mut info.monitorInfo as *mut MONITORINFO) }.as_bool() {
+        return BOOL(1);
+    }
+
+    let monitor = &info.monitorInfo;
+    let name = OsString::from_wide(
+        &info.szDevice[..info
+            .szDevice
+            .iter()
+            .position(|&ch| ch == 0)
+            .unwrap_or(info.szDevice.len())],
+    )
+    .to_string_lossy()
+    .into_owned();
+
+    let index = list.len() as i32;
+    list.push(CapturedDesktopMonitor {
+        index,
+        name,
+        x: monitor.rcMonitor.left,
+        y: monitor.rcMonitor.top,
+        width: monitor.rcMonitor.right - monitor.rcMonitor.left,
+        height: monitor.rcMonitor.bottom - monitor.rcMonitor.top,
+        work_x: monitor.rcWork.left,
+        work_y: monitor.rcWork.top,
+        work_width: monitor.rcWork.right - monitor.rcWork.left,
+        work_height: monitor.rcWork.bottom - monitor.rcWork.top,
+        is_primary: (monitor.dwFlags & MONITORINFOF_PRIMARY) != 0,
+    });
+
+    BOOL(1)
+}
+
+fn hwnd_to_string(hwnd: HWND) -> String {
+    format!("0x{:016X}", hwnd.0 as usize)
 }
 
 unsafe fn read_window_title(hwnd: HWND) -> String {
@@ -116,10 +277,36 @@ mod tests {
     use super::*;
 
     #[test]
-    fn enumerates_without_panic() {
+    fn capture_includes_foreground_hwnd_when_present() {
+        let capture = Win32WindowEnumerator.capture_desktop().unwrap();
+        if capture.windows.iter().any(|window| window.focused) {
+            assert!(capture.foreground_hwnd.is_some());
+            let focused = capture.windows.iter().find(|window| window.focused).unwrap();
+            assert_eq!(capture.foreground_hwnd.as_deref(), Some(focused.hwnd.as_str()));
+        }
+    }
+
+    #[test]
+    fn capture_records_window_bounds_when_windows_exist() {
+        let capture = Win32WindowEnumerator.capture_desktop().unwrap();
+        for window in &capture.windows {
+            assert!(!window.title.trim().is_empty());
+            assert!(window.hwnd.starts_with("0x"));
+            assert!(window.width != 0 || window.minimized);
+        }
+    }
+
+    #[test]
+    fn capture_enumerates_monitors_on_windows() {
+        let capture = Win32WindowEnumerator.capture_desktop().unwrap();
+        assert!(!capture.monitors.is_empty());
+        assert!(capture.monitors.iter().any(|monitor| monitor.is_primary));
+    }
+
+    #[test]
+    fn legacy_enumeration_still_works() {
         let result = Win32WindowEnumerator.enumerate_windows();
         assert!(result.is_ok());
-        // May be empty in headless CI; when present, titles are non-empty.
         for window in result.unwrap() {
             assert!(!window.title.trim().is_empty());
             assert!(window.hwnd.starts_with("0x"));

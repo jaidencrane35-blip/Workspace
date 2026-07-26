@@ -3,6 +3,7 @@
 //! Only this crate talks to OS window and process APIs. Kernel and UI consume
 //! traits — never Win32 directly.
 
+mod capture;
 mod enumerator;
 mod error;
 mod launcher;
@@ -10,10 +11,14 @@ mod launcher;
 mod win32;
 mod stub;
 
+pub use capture::{
+    monitor_index_for_point, monitor_index_for_window_bounds, CaptureMetadata,
+    CapturedDesktopMonitor, CapturedDesktopWindow, DesktopCapturer, DesktopObservationCapture,
+};
 pub use enumerator::{DesktopWindowSnapshot, WindowEnumerator};
 pub use error::{WindowsIntegrationError, Result};
 pub use launcher::{ProcessLaunchOutcome, ProcessLaunchRequest, ProcessLauncher};
-pub use stub::{StubProcessLauncher, StubWindowEnumerator};
+pub use stub::{dual_monitor_fixture, StubDesktopCapturer, StubProcessLauncher, StubWindowEnumerator};
 #[cfg(windows)]
 pub use win32::{Win32ProcessLauncher, Win32WindowEnumerator};
 
@@ -26,6 +31,18 @@ pub fn platform_window_enumerator() -> Box<dyn WindowEnumerator> {
     #[cfg(not(windows))]
     {
         Box::new(StubWindowEnumerator)
+    }
+}
+
+/// Returns the platform desktop capturer: Win32 on Windows, stub elsewhere.
+pub fn platform_desktop_capturer() -> Box<dyn DesktopCapturer> {
+    #[cfg(windows)]
+    {
+        Box::new(Win32WindowEnumerator)
+    }
+    #[cfg(not(windows))]
+    {
+        Box::new(StubDesktopCapturer::default())
     }
 }
 
