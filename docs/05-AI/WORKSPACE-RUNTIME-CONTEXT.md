@@ -1,6 +1,6 @@
 # Workspace Runtime Context & Integration
 
-Sprints 170–181 + diagnostic provenance/continuity + diagnostic evolution — read-only runtime integration.
+Sprints 170–181 + runtime diagnostic subsystem (provenance → maturity) — read-only.
 
 **Governance is visible, never authoritative. No execution. No automation. No runtime publication.
 Published remains BLOCKED. Scoring and WorkspaceState ownership unchanged.**
@@ -21,11 +21,9 @@ Intent → Command Pipeline → Permission Gateway → Allow → Execution
 | `WorkspaceRuntimeContext` (Sprint 171) | Canonical cognition operating context |
 | Kernel `WorkspaceHealth` | Lifecycle health label |
 | `WorkspaceRuntimeHealth` (Sprint 174) | Observational runtime health aggregate |
-| Readiness Model | Preparedness for current work — distinct |
+| Readiness Model | Preparedness for current work — distinct from diagnostic maturity |
 | Work Continuity Engine | Where work left off / resume — **not** diagnostic continuity |
-| `RuntimeDiagnosticContinuityRecord` | Observational link between diagnostic snapshots |
-| `RuntimeDiagnosticComparison` | Structured snapshot-to-snapshot deltas (diagnostic only) |
-| `RuntimeDiagnosticLifecycleRecord` | Captured → Provenanced → ContinuityLinked → Superseded |
+| `RuntimeDiagnosticSubsystemBoundary` | Hard invariant: diagnostics observe/explain only |
 
 ---
 
@@ -65,7 +63,7 @@ WorkspaceState
 | Audit | `RuntimeDiagnosticContinuityRecord` | Prior→current snapshot deltas; no rewrite/heal |
 | Audit | `OperatorRuntimeExplanation` | Explains overview via provenance/continuity; not an execution surface |
 | Audit | `RuntimeDiagnosticComparison` | Structured compare; severity labels; no actions |
-| Audit | `RuntimeDiagnosticLifecycleRecord` | Snapshot lineage phases; immutable |
+| Audit | `RuntimeDiagnosticLifecycleRecord` | Captured → … → Archived; immutable |
 | Audit | `RuntimeArchitectureOwnershipRegistry` | Explicit artifact→owner table |
 | Audit | `RuntimeDiagnosticEvolutionReport` | Validates provenance/continuity/lifecycle; operator-safe interpretation |
 | Audit | `RuntimeDiagnosticEvidenceBundle` | Sealed immutable refs + digests; never a decision |
@@ -90,29 +88,48 @@ WorkspaceState
 | Audit | `RuntimeDiagnosticReferenceIntegrity` | Cross-domain read-only reference validation |
 | Audit | `RuntimeDiagnosticExplanationConsistency` | Explanation ↔ trust/lineage consistency |
 | Audit | `RuntimeDiagnosticMaturityAssessment` | Meta-diagnostic readiness/completeness/health |
+| Consol. | `RuntimeDiagnosticSubsystemBoundary` | Observes only; never owns facts/scoring/Experience/Gateway |
 
 Authority: `authority_effect: none` (`GOVERNANCE_AUTHORITY_EFFECT_NONE`).
 
-Module: `packages/domain/src/workspace_runtime/` (`mod.rs` + `diagnostics.rs`).
+### Module layout
 
-### Diagnostic ownership (post–181 audit)
+```
+packages/domain/src/workspace_runtime/
+  mod.rs                 # runtime context, health, coherence (170–175)
+  diagnostics/
+    mod.rs               # flat re-exports + SubsystemBoundary
+    foundation.rs        # graph, capabilities, snapshot, consistency, overview, review
+    history.rs           # provenance, evolution, continuity, evidence, archive
+    surface.rs           # consumption, interpretation, boundaries, restoration
+    meta.rs              # trust, lineage, closure, catalog, interop, maturity, explanation
+    tests.rs             # domain unit tests
+```
 
-| Artifact | Owner / role |
-|----------|----------------|
-| Graph, capability map, snapshot, verification | Observational diagnostics |
-| Attention / Decision scoring | Cognition subsystems (unchanged) |
-| Kernel `WorkspaceHealth` | Kernel lifecycle (distinct) |
-| `WorkspaceRuntimeHealth` | Observational observer only |
-| Operator overview / explanation | Operator projection — never executes |
+Public types remain available via `workspace_domain::*` / `workspace_runtime::*` (flat exports).
+
+### Ownership boundaries
+
+| Domain | Owns | Diagnostics may |
+|--------|------|-----------------|
+| WorkspaceState | Facts | Observe presence only |
+| Cognition | Reasoning / scoring | Cite labels; never change scores |
+| Experience | Translation | Must not drive |
+| Governance | Change review | Cite non-authoritative summaries |
+| Permission Gateway | Execution authority | Never enter / never Allow |
+| Operator projections | Read-only labels | Explain; never execute |
+| Diagnostics | Observational contracts | Observe, compare, archive, explain |
 
 Canonical table: `RuntimeArchitectureOwnershipRegistry::canonical()` (`canonical:v1`).
-Validation: `RuntimeArchitectureOwnershipValidation` (conflict detection only).
+Validation: `RuntimeArchitectureOwnershipValidation` + `RuntimeDiagnosticSubsystemBoundary`.
 
 ### Diagnostic lifecycle
 
 ```
 Captured → Provenanced → ContinuityLinked → Compared → Evolved → Superseded → Archived
 ```
+
+`RestoredView` is **currency**, not a lifecycle phase.
 
 `RuntimeDiagnosticEvolutionReport` validates that continuity deltas match
 `RuntimeDiagnosticComparison`, provenance cites the current snapshot, and

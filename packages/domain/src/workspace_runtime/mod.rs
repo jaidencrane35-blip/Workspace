@@ -23,6 +23,9 @@
 //! cross-domain interoperability, and explanation integrity.
 //! Diagnostic maturity assesses catalog/reference/explanation readiness as
 //! meta-diagnostics only — never prescriptive or executable.
+//!
+//! Diagnostics module layout (`diagnostics/`):
+//! `foundation` → `history` → `surface` → `meta` (flat `pub use` for API stability).
 
 mod diagnostics;
 pub use diagnostics::*;
