@@ -411,7 +411,7 @@ impl WorkspaceAttentionService {
         now: &str,
     ) -> Result<Vec<AttentionItem>> {
         let mut out = Vec::new();
-        for pattern in patterns.patterns.iter().take(4) {
+        for pattern in &patterns.patterns {
             let (category, score, urgency) = match pattern.kind {
                 workspace_domain::PatternKind::DecisionPattern => (
                     AttentionCategory::RequiresDecision,
@@ -460,7 +460,7 @@ impl WorkspaceAttentionService {
                 AttentionState::New,
             )?);
         }
-        Ok(out)
+        Ok(cap_by_rank(out, 4))
     }
 
     fn from_recommendation_engine(
@@ -469,7 +469,7 @@ impl WorkspaceAttentionService {
         now: &str,
     ) -> Result<Vec<AttentionItem>> {
         let mut out = Vec::new();
-        for candidate in recommendations.candidates.iter().take(4) {
+        for candidate in &recommendations.candidates {
             let (category, score, urgency) = match candidate.kind {
                 workspace_domain::RecommendationKind::ResolveBlocker => (
                     AttentionCategory::Blocker,
@@ -530,7 +530,7 @@ impl WorkspaceAttentionService {
                 AttentionState::New,
             )?);
         }
-        Ok(out)
+        Ok(cap_by_rank(out, 4))
     }
 
     fn from_evolution(
@@ -539,7 +539,7 @@ impl WorkspaceAttentionService {
         now: &str,
     ) -> Result<Vec<AttentionItem>> {
         let mut out = Vec::new();
-        for insight in evolution.insights.iter().take(4) {
+        for insight in &evolution.insights {
             let (category, score, urgency) = match insight.kind {
                 workspace_domain::EvolutionInsightKind::InterruptedWork => (
                     AttentionCategory::Interrupted,
@@ -590,7 +590,7 @@ impl WorkspaceAttentionService {
                 AttentionState::Visible,
             )?);
         }
-        Ok(out)
+        Ok(cap_by_rank(out, 4))
     }
 
     fn from_purpose(
@@ -626,7 +626,8 @@ impl WorkspaceAttentionService {
             now.to_string(),
             AttentionState::Visible,
         )?);
-        for obstacle in purpose.obstacles.iter().take(4) {
+        let mut obstacles = Vec::new();
+        for obstacle in &purpose.obstacles {
             let (category, score, urgency) = match obstacle.kind.as_str() {
                 "blocked_task" | "blocked_work" | "interrupted_work" => (
                     AttentionCategory::Blocker,
@@ -654,7 +655,7 @@ impl WorkspaceAttentionService {
                 score as i32,
                 &format!("purpose.obstacle.{}", obstacle.kind),
             )];
-            out.push(AttentionItem::project(
+            obstacles.push(AttentionItem::project(
                 ws,
                 AttentionSourceType::Purpose,
                 format!("{}:{}", obstacle.kind, obstacle.title),
@@ -671,6 +672,7 @@ impl WorkspaceAttentionService {
                 AttentionState::Visible,
             )?);
         }
+        out.extend(cap_by_rank(obstacles, 4));
         Ok(out)
     }
 
@@ -681,7 +683,7 @@ impl WorkspaceAttentionService {
         environment_present: bool,
     ) -> Result<Vec<AttentionItem>> {
         let mut out = Vec::new();
-        for gap in composition.gaps.iter().take(5) {
+        for gap in &composition.gaps {
             // Environment owns desktop-like gaps when present (Sprint 125 dedup).
             if environment_present
                 && ENVIRONMENT_OWNED_GAP_KINDS
@@ -734,7 +736,7 @@ impl WorkspaceAttentionService {
                 AttentionState::Visible,
             )?);
         }
-        Ok(out)
+        Ok(cap_by_rank(out, 5))
     }
 
     fn from_environment(
@@ -743,7 +745,7 @@ impl WorkspaceAttentionService {
         now: &str,
     ) -> Result<Vec<AttentionItem>> {
         let mut out = Vec::new();
-        for gap in environment.gaps.iter().take(5) {
+        for gap in &environment.gaps {
             let (category, score, urgency) = match gap.kind.as_str() {
                 "disconnected_work" => (
                     AttentionCategory::Interrupted,
@@ -792,7 +794,7 @@ impl WorkspaceAttentionService {
                 AttentionState::Visible,
             )?);
         }
-        Ok(out)
+        Ok(cap_by_rank(out, 5))
     }
 
     fn from_task_graph(
@@ -1015,20 +1017,12 @@ impl WorkspaceAttentionService {
                 "base 60 for interrupted work".into(),
                 "source Continuity::InterruptedWork".into(),
             ];
-            let reasons = vec![
-                reason(
-                    AttentionSourceType::Continuity,
-                    AttentionSignal::InterruptedWork,
-                    score as i32,
-                    "continuity.interrupted",
-                ),
-                reason(
-                    AttentionSourceType::Continuity,
-                    AttentionSignal::UnfinishedContinuity,
-                    score as i32,
-                    "continuity.unfinished",
-                ),
-            ];
+            let reasons = vec![reason(
+                AttentionSourceType::Continuity,
+                AttentionSignal::InterruptedWork,
+                score as i32,
+                "continuity.interrupted",
+            )];
             out.push(AttentionItem::project(
                 ws,
                 AttentionSourceType::Continuity,
@@ -1191,6 +1185,9 @@ impl WorkspaceAttentionService {
         now: &str,
     ) -> Result<Vec<AttentionItem>> {
         let mut out = Vec::new();
+        // The only source whose cut is ordering-based by design: all activity items score
+        // equally, so recency is the selection criterion. Timeline order is Activity Graph's
+        // contract, not an incidental input order.
         // Walk newest-first, skipping audit noise so recent real work stays visible.
         for activity in graph.timeline.iter().rev() {
             if matches!(
@@ -1296,4 +1293,18 @@ fn reason(
     key: &str,
 ) -> AttentionReason {
     AttentionReason::new(source, signal, weight, key)
+}
+
+/// Cap a source projection by attention rank, never by upstream collection order.
+///
+/// Truncating the raw input would let an upstream reordering silently change which
+/// facts reach Attention. Score DESC then id ASC keeps the cut deterministic.
+fn cap_by_rank(mut items: Vec<AttentionItem>, limit: usize) -> Vec<AttentionItem> {
+    items.sort_by(|a, b| {
+        b.score
+            .cmp(&a.score)
+            .then(a.id.as_str().cmp(b.id.as_str()))
+    });
+    items.truncate(limit);
+    items
 }

@@ -34,6 +34,9 @@ Deterministic rules only — not AI reasoning:
 | Collapsed | Available but out of the way when empty or secondary |
 | Deferred | Timeline / progress kept off the primary plane |
 
+"High-priority attention" means Attention's own `priority` band. Experience presents that
+banding; it never re-derives one from a raw `score` threshold.
+
 ## Experience groupings (presentation only)
 
 - Primary Focus

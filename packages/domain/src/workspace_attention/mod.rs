@@ -17,6 +17,13 @@
 //! - `reasons` — why the item received attention (structured, UI-ready keys)
 //! - `explanation` — short narrative from the source (not a second scoring path)
 //!
+//! # Contract invariants (Sprint 127)
+//!
+//! 1. Item ids are unique within a snapshot (`from_items` enforces).
+//! 2. Ordering is deterministic: score DESC, priority rank ASC, id ASC.
+//! 3. `reasons` carry unique `explanation_key`s and their weights sum to `score`.
+//! 4. Consumers read `priority` for banding — never re-threshold `score`.
+//!
 //! No authority, no execution, no duplicate persistence.
 
 use chrono::Utc;
@@ -97,7 +104,6 @@ pub enum AttentionSignal {
     WaitingTask,
     InProgressTask,
     InterruptedWork,
-    UnfinishedContinuity,
     ResumableWork,
     CurrentFocus,
     DormantWork,
@@ -123,7 +129,6 @@ impl AttentionSignal {
             Self::WaitingTask => "waiting_task",
             Self::InProgressTask => "in_progress_task",
             Self::InterruptedWork => "interrupted_work",
-            Self::UnfinishedContinuity => "unfinished_continuity",
             Self::ResumableWork => "resumable_work",
             Self::CurrentFocus => "current_focus",
             Self::DormantWork => "dormant_work",
@@ -402,6 +407,7 @@ impl AttentionItem {
 /// Full attention snapshot — ranked inference over Workspace context.
 ///
 /// Ordering is deterministic: score DESC, priority rank ASC, id ASC.
+/// Ids are unique: the highest-ranked projection of an id wins.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct WorkspaceAttentionState {
     pub workspace_id: String,
@@ -427,6 +433,10 @@ impl WorkspaceAttentionState {
                 .then(a.priority.rank().cmp(&b.priority.rank()))
                 .then(a.id.as_str().cmp(b.id.as_str()))
         });
+        // Id uniqueness is a snapshot invariant, not a caller responsibility.
+        // Sorted first, so the surviving projection is the highest-ranked one.
+        let mut seen_ids = std::collections::HashSet::new();
+        items.retain(|item| seen_ids.insert(item.id.as_str().to_string()));
         let requires_decision_count = items
             .iter()
             .filter(|i| i.category == AttentionCategory::RequiresDecision)
@@ -557,6 +567,57 @@ mod tests {
     #[test]
     fn empty_reasons_normalize_to_empty() {
         assert!(normalize_attention_reasons(vec![]).is_empty());
+    }
+
+    fn item(source_id: &str, score: u32) -> AttentionItem {
+        AttentionItem::project(
+            "ws",
+            AttentionSourceType::TaskGraph,
+            source_id,
+            AttentionCategory::Informative,
+            AttentionPriority::Normal,
+            AttentionUrgency::Whenever,
+            AttentionConfidence::Medium,
+            score,
+            vec![format!("base {score}")],
+            vec![AttentionReason::new(
+                AttentionSourceType::TaskGraph,
+                AttentionSignal::InProgressTask,
+                score as i32,
+                "task.base.in_progress",
+            )],
+            source_id,
+            "narrative",
+            "now",
+            AttentionState::Visible,
+        )
+        .unwrap()
+    }
+
+    #[test]
+    fn from_items_enforces_unique_ids_keeping_highest_ranked() {
+        let state = WorkspaceAttentionState::from_items(
+            "ws",
+            vec![item("t1", 20), item("t2", 30), item("t1", 90)],
+        );
+        assert_eq!(state.items.len(), 2);
+        assert_eq!(state.items[0].score, 90);
+        assert_eq!(state.items[1].score, 30);
+    }
+
+    #[test]
+    fn from_items_order_is_independent_of_input_order() {
+        let forward =
+            WorkspaceAttentionState::from_items("ws", vec![item("a", 10), item("b", 10)]);
+        let reversed =
+            WorkspaceAttentionState::from_items("ws", vec![item("b", 10), item("a", 10)]);
+        let ids = |s: &WorkspaceAttentionState| {
+            s.items
+                .iter()
+                .map(|i| i.id.as_str().to_string())
+                .collect::<Vec<_>>()
+        };
+        assert_eq!(ids(&forward), ids(&reversed));
     }
 
     #[test]

@@ -30,6 +30,8 @@ Runtime desktop truth is **WorkspaceState** only (Sprint 123 finalized IPC/UI su
 
 **Attention vs Recommendations (Sprint 126):** Attention answers “what deserves focus?” with ranked items + structured `reasons`. The Recommendation Engine answers “what could the user do?”. Intelligence `recommended_actions` are Attention tops re-projected for Assistant display — not a merge of those systems and not automation.
 
+**Attention consumption rules (Sprint 127):** Intelligence preserves Attention's ranking and reasons verbatim. `recommendations_from_attention` re-labels the top items for Assistant display in Attention order — it does not sort, re-score, or rewrite `reasons`. Enrichment (`enrich_with_recommendations`, `enrich_with_patterns`) adds new items and re-ranks the merged set through `WorkspaceAttentionState::from_items`, so ordering and id uniqueness stay Attention-owned. Enrichers that only append narrative (`enrich_with_milestones`, `_navigation`, `_work_context`, `_working_style`, `_transition`) must never touch scores. Downstream consumers read `priority` for banding — see the consumer rules in [Workspace Attention Engine](WORKSPACE-ATTENTION-ENGINE.md).
+
 ---
 
 ## Intent model (durable, non-executable)

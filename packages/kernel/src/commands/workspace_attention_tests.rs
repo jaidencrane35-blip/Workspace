@@ -76,6 +76,72 @@ fn seed_pending_contract(kernel: &WorkspaceKernel, ws: String, project_id: Strin
     .unwrap();
 }
 
+/// Upstream facts, loaded once, so Attention can be exercised as a pure function.
+///
+/// Repeated `generate` calls are *not* input-identical: each call audits, the Activity
+/// Graph grows, and Purpose/Evolution legitimately re-infer. Determinism is a property
+/// of Attention over fixed facts, so the fixed-fact path is what the tests assert.
+type SharedFacts = (
+    workspace_domain::DecisionQueue,
+    workspace_domain::WorkspaceActivityGraph,
+    workspace_domain::WorkspaceContinuityState,
+    workspace_domain::TaskGraph,
+);
+
+fn shared_facts(kernel: &WorkspaceKernel, ws: &str) -> SharedFacts {
+    let local = ActorContext::local_user();
+    let queue = crate::services::DecisionQueueService::aggregate_readonly(
+        &kernel.shared_database(),
+        &local,
+        &kernel.orchestrated_plans(),
+        &kernel.assistant_workflows(),
+        ws.to_string(),
+    )
+    .unwrap();
+    let graph = crate::services::WorkspaceActivityGraphService::generate_with_decision_queue(
+        &kernel.shared_database(),
+        &local,
+        &kernel.orchestrated_plans(),
+        &kernel.assistant_workflows(),
+        ws.to_string(),
+        Some(&queue),
+    )
+    .unwrap();
+    let continuity = crate::services::WorkspaceContinuityService::generate_with_inputs(
+        &kernel.shared_database(),
+        &local,
+        ws.to_string(),
+        &queue,
+        &graph,
+    )
+    .unwrap();
+    let task_graph =
+        crate::services::TaskGraphService::generate(&kernel.shared_database(), &local, ws.to_string())
+            .unwrap();
+    (queue, graph, continuity, task_graph)
+}
+
+fn attention_from_facts(
+    kernel: &WorkspaceKernel,
+    ws: &str,
+    facts: &SharedFacts,
+) -> workspace_domain::WorkspaceAttentionState {
+    crate::services::WorkspaceAttentionService::generate_with_task_graph(
+        &kernel.shared_database(),
+        &ActorContext::local_user(),
+        ws.to_string(),
+        &facts.0,
+        &facts.1,
+        &facts.2,
+        Some(&facts.3),
+        None,
+        None,
+        None,
+        None,
+    )
+    .unwrap()
+}
+
 /// CASE 1 — Attention derives only from existing systems.
 #[test]
 fn case1_attention_derives_from_existing_systems() {
@@ -121,31 +187,32 @@ fn case2_attention_is_aggregator_only() {
     assert_eq!(owner.kind, ConceptOwnerKind::Aggregator);
 }
 
-/// CASE 3 — Attention scoring is deterministic.
+/// CASE 3 — Attention scoring is deterministic over identical facts.
 #[test]
 fn case3_scoring_is_deterministic() {
     let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
     let (ws, project_id, _) = seed_project(&kernel);
     seed_pending_contract(&kernel, ws.clone(), project_id);
-    let local = ActorContext::local_user();
-    let intent = IntentContext::user_request();
-    let a = CommandHandler::generate_workspace_attention(
-        &kernel,
-        local.clone(),
-        intent.clone(),
-        ws.clone(),
-    )
-    .unwrap();
-    let b = CommandHandler::generate_workspace_attention(&kernel, local, intent, ws).unwrap();
-    // Durable/scored attention (exclude ephemeral audit-backed informative noise).
-    let stable = |items: &[workspace_domain::AttentionItem]| {
+    let facts = shared_facts(&kernel, &ws);
+    let a = attention_from_facts(&kernel, &ws, &facts);
+    let b = attention_from_facts(&kernel, &ws, &facts);
+    assert!(!a.items.is_empty());
+    // Fixed facts, so the full ranking must match — no score filter needed.
+    let ranking = |items: &[workspace_domain::AttentionItem]| {
         items
             .iter()
-            .filter(|i| i.score >= 35)
-            .map(|i| (i.id.as_str().to_string(), i.score))
+            .map(|i| {
+                (
+                    i.id.as_str().to_string(),
+                    i.score,
+                    i.priority.as_str(),
+                    i.category.as_str(),
+                )
+            })
             .collect::<Vec<_>>()
     };
-    assert_eq!(stable(&a.items), stable(&b.items));
+    assert_eq!(ranking(&a.items), ranking(&b.items));
+    assert_eq!(ranking(&a.top_items), ranking(&b.top_items));
 }
 
 /// CASE 4 — Every Attention Item contains an explanation.
@@ -602,6 +669,113 @@ fn case12_environment_owns_desktop_gaps_over_composition() {
     }));
 }
 
+/// CASE 14 — Reason weights account for the whole score (no hidden scoring path).
+#[test]
+fn case14_reason_weights_sum_to_score() {
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let (ws, project_id, _) = seed_project(&kernel);
+    seed_pending_contract(&kernel, ws.clone(), project_id);
+    let attention = CommandHandler::generate_workspace_attention(
+        &kernel,
+        ActorContext::local_user(),
+        IntentContext::user_request(),
+        ws,
+    )
+    .unwrap();
+    assert!(!attention.items.is_empty());
+    for item in &attention.items {
+        let total: i32 = item.reasons.iter().map(|r| r.weight).sum();
+        assert_eq!(
+            total,
+            item.score as i32,
+            "reason weights for {} do not account for score",
+            item.id.as_str()
+        );
+    }
+}
+
+/// CASE 15 — Capped sources cut by attention rank, not by upstream input order.
+#[test]
+fn case15_source_caps_are_independent_of_input_order() {
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let (ws, _, _) = seed_project(&kernel);
+    let local = ActorContext::local_user();
+    let (queue, graph, continuity, _) = shared_facts(&kernel, &ws);
+
+    // Six gaps for a cap of five: the dropped one must be chosen by score, not position.
+    let gap = |kind: &str, n: usize| workspace_domain::EnvironmentGap {
+        kind: kind.into(),
+        title: format!("Gap {n}"),
+        explanation: "fixture".into(),
+        application_id: None,
+        project_id: None,
+        task_id: None,
+    };
+    let env = |gaps: Vec<workspace_domain::EnvironmentGap>| {
+        workspace_domain::WorkspaceEnvironmentState {
+            workspace_id: ws.clone(),
+            generated_at: chrono::Utc::now().to_rfc3339(),
+            active_project_id: None,
+            active_task_id: None,
+            windows: vec![],
+            applications: vec![],
+            window_groups: vec![],
+            layout_associations: vec![],
+            gaps,
+            focused_window_id: None,
+            running_application_count: 0,
+            missing_application_count: 0,
+            disconnected_work: true,
+            summary: "fixture".into(),
+            authority_effect: "none".into(),
+        }
+    };
+    let mut gaps = vec![
+        gap("missing_application", 1),
+        gap("missing_application", 2),
+        gap("missing_application", 3),
+        gap("missing_application", 4),
+        gap("missing_application", 5),
+        gap("disconnected_work", 6),
+    ];
+    let forward = env(gaps.clone());
+    gaps.reverse();
+    let reversed = env(gaps);
+
+    let selected = |environment: &workspace_domain::WorkspaceEnvironmentState| {
+        let state = crate::services::WorkspaceAttentionService::generate_with_task_graph(
+            &kernel.shared_database(),
+            &local,
+            ws.clone(),
+            &queue,
+            &graph,
+            &continuity,
+            None,
+            Some(environment),
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        let mut ids = state
+            .items
+            .iter()
+            .filter(|i| i.source_type == workspace_domain::AttentionSourceType::Environment)
+            .map(|i| i.id.as_str().to_string())
+            .collect::<Vec<_>>();
+        ids.sort();
+        ids
+    };
+
+    let forward_ids = selected(&forward);
+    assert_eq!(forward_ids.len(), 5);
+    assert_eq!(forward_ids, selected(&reversed));
+    // The higher-scoring disconnected_work gap survives the cap regardless of position.
+    assert!(forward_ids
+        .iter()
+        .any(|id| id.contains("disconnected_work:")));
+}
+
 /// CASE 13 — Identical inputs produce identical structured reasons; Intelligence preserves them.
 #[test]
 fn case13_reasons_stable_and_intelligence_preserves_attention() {
@@ -610,24 +784,12 @@ fn case13_reasons_stable_and_intelligence_preserves_attention() {
     seed_pending_contract(&kernel, ws.clone(), project_id);
     let local = ActorContext::local_user();
     let intent = IntentContext::user_request();
-    let a = CommandHandler::generate_workspace_attention(
-        &kernel,
-        local.clone(),
-        intent.clone(),
-        ws.clone(),
-    )
-    .unwrap();
-    let b = CommandHandler::generate_workspace_attention(
-        &kernel,
-        local.clone(),
-        intent.clone(),
-        ws.clone(),
-    )
-    .unwrap();
+    let facts = shared_facts(&kernel, &ws);
+    let a = attention_from_facts(&kernel, &ws, &facts);
+    let b = attention_from_facts(&kernel, &ws, &facts);
     let reason_fingerprint = |items: &[workspace_domain::AttentionItem]| {
         items
             .iter()
-            .filter(|i| i.score >= 35)
             .map(|i| {
                 (
                     i.id.as_str().to_string(),

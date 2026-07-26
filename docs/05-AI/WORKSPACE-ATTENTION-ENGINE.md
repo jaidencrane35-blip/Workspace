@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | **Purpose** | A governed prioritization layer over Workspace context |
-| **Status** | Foundation — ranked context with structured explanations (Sprint 126) |
+| **Status** | Foundation — ranked context with structured explanations; contract locked (Sprint 127) |
 | **Owner** | Lead Software Engineer |
 
 ---
@@ -65,6 +65,9 @@ No new persistence. Synthetic ids: `attention:{source_type}:{source_id}`.
 Reasons are normalized: unique `explanation_key`, ordered weight DESC then key ASC.  
 UI may display `explanation_key` without recomputing scores.
 
+Reason weights **sum to `score`** — there is exactly one scoring path, and `reasons`
+expose it rather than restate it. A reason with no score contribution is not a reason.
+
 ---
 
 ## Input signal owners
@@ -92,9 +95,21 @@ No fabricated ML signals. No deadline signal until Task Graph carries real deadl
 |--------|----------|
 | **Attention** | What deserves focus? |
 | **Recommendation Engine** | What could the user do? |
-| Intelligence `recommended_actions` | Attention tops re-labeled for Assistantdisplay — **not** a second Recommendation Engine |
+| Intelligence `recommended_actions` | Attention tops re-labeled for Assistant display — **not** a second Recommendation Engine |
 
 Do not merge Attention into Recommendations. Do not treat `recommended_actions` as actionable automation.
+
+### Consumer rules
+
+| Consumer | Reads | Must not |
+|----------|-------|----------|
+| Intelligence | `top_items` order, `reasons` | Re-rank, re-score, or rewrite reasons |
+| Decision Engine | `score` as one contribution to its own candidate score | Treat Attention rank as its own rank |
+| Operating State | `top_items`, `score_factors` as evidence | Re-threshold or re-band |
+| Session / Experience | `category`, `priority` | Re-derive banding from raw `score` |
+
+Consumers read `priority` for banding. A raw `score` threshold outside Attention is a
+duplicated prioritization rule and will drift from `score_to_priority`.
 
 ---
 
@@ -105,7 +120,20 @@ Do not merge Attention into Recommendations. Do not treat `recommended_actions` 
 | `generate_with_task_graph` | Preferred shared-input path (Intelligence / Operating State) |
 | `generate` | Standalone / IPC diagnostics — loads Environment via WorkspaceStateEngine once |
 
-Ordering is deterministic: score DESC → priority rank ASC → id ASC.
+## Determinism contract
+
+1. **Ordering** — score DESC → priority rank ASC → id ASC.
+2. **Unique ids** — enforced by `WorkspaceAttentionState::from_items`; the highest-ranked
+   projection of an id survives. Callers cannot emit a duplicate.
+3. **Ordering-independent cuts** — per-source caps are applied by attention rank
+   (score DESC, id ASC), never by upstream vector position. Truncating raw input would let
+   an upstream reordering silently change which facts reach Attention.
+4. **One exception, by design** — Activity Graph items all score equally, so recency is the
+   selection criterion. Timeline order is Activity Graph's contract, not incidental order.
+
+Determinism is a property of Attention **over fixed facts**. Two consecutive `generate`
+calls are not input-identical: each call audits, the Activity Graph grows, and
+Purpose/Evolution legitimately re-infer.
 
 ---
 

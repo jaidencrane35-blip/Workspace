@@ -231,6 +231,9 @@ impl WorkspaceSessionService {
             });
         }
         for item in intelligence.attention.top_items.iter().take(4) {
+            // Attention owns banding; this raw threshold is a known contract gap (Sprint 127
+            // audit). Narrowing it to `priority` changes the risk set, so it needs its own
+            // sprint alongside the upstream Evolution refresh nondeterminism.
             if matches!(
                 item.category,
                 AttentionCategory::Blocker | AttentionCategory::RequiresDecision

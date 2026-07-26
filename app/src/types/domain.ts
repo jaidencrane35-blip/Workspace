@@ -1095,7 +1095,6 @@ export type AttentionSignal =
   | "waiting_task"
   | "in_progress_task"
   | "interrupted_work"
-  | "unfinished_continuity"
   | "resumable_work"
   | "current_focus"
   | "dormant_work"
