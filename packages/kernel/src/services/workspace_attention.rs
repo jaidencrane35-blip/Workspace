@@ -257,6 +257,20 @@ impl WorkspaceAttentionService {
         ))
     }
 
+    /// Reference Milestones as evidence only — does not re-rank or add authority.
+    pub(crate) fn enrich_with_milestones(
+        attention: &WorkspaceAttentionState,
+        milestones: &workspace_domain::WorkspaceMilestoneState,
+    ) -> Result<WorkspaceAttentionState> {
+        let mut next = attention.clone();
+        next.summary = format!(
+            "{} Milestone evidence (informational only): {} outcome(s), {} blocked — \
+             Attention consumes Milestones as evidence only and does not plan from them.",
+            next.summary, milestones.milestone_count, milestones.blocked_count
+        );
+        Ok(next)
+    }
+
     /// Reference Navigation as evidence only — does not re-rank or add authority.
     pub(crate) fn enrich_with_navigation(
         attention: &WorkspaceAttentionState,

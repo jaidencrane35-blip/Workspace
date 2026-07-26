@@ -33,6 +33,8 @@ import type {
   WorkspaceWorkContextComparison,
   WorkspaceNavigationState,
   WorkspaceNavigationComparison,
+  WorkspaceMilestoneState,
+  WorkspaceMilestoneComparison,
   WorkspaceIntelligenceState,
 } from "../types/domain";
 
@@ -113,6 +115,11 @@ export function WorkspaceIntelligencePanel({
   const [navigationCompareNote, setNavigationCompareNote] = useState<
     string | null
   >(null);
+  const [milestoneState, setMilestoneState] =
+    useState<WorkspaceMilestoneState | null>(null);
+  const [milestoneCompareNote, setMilestoneCompareNote] = useState<
+    string | null
+  >(null);
   const [lastHandoff, setLastHandoff] = useState<string | null>(null);
   const [contractName, setContractName] = useState(
     "Prepare coding environment",
@@ -164,6 +171,8 @@ export function WorkspaceIntelligencePanel({
       setWorkContextCompareNote(null);
       setNavigationState(null);
       setNavigationCompareNote(null);
+      setMilestoneState(null);
+      setMilestoneCompareNote(null);
       setLastHandoff(null);
       setState(null);
       return;
@@ -184,6 +193,7 @@ export function WorkspaceIntelligencePanel({
           experience,
           workContext,
           navigation,
+          milestones,
           decisions,
           graphTasks,
           adapt,
@@ -220,6 +230,10 @@ export function WorkspaceIntelligencePanel({
             invokeIpc<WorkspaceNavigationState>("generate_workspace_navigation", {
               workspaceId: workspace.id,
             }),
+            invokeIpc<WorkspaceMilestoneState>(
+              "generate_workspace_milestones",
+              { workspaceId: workspace.id },
+            ),
             invokeIpc<DecisionEngineState>("generate_decision_engine", {
               workspaceId: workspace.id,
             }),
@@ -240,6 +254,7 @@ export function WorkspaceIntelligencePanel({
           setExperienceState(experience);
           setWorkContextState(workContext);
           setNavigationState(navigation);
+          setMilestoneState(milestones);
           setDecisionEngine(decisions);
           setTaskGraph(graphTasks);
           setAdaptationState(adapt);
@@ -637,6 +652,125 @@ export function WorkspaceIntelligencePanel({
           </>
         ) : (
           <p className="muted">No navigation snapshot yet.</p>
+        )}
+      </section>
+
+      <section>
+        <h3>Progress toward outcomes</h3>
+        <p className="muted">
+          Milestone coordination — current, upcoming, blocked, and completed
+          outcomes projected from existing understanding. Never plans or
+          executes.
+        </p>
+        <div className="row">
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("Milestones refreshed", async () => {
+                if (!workspace) return;
+                const next = await invokeIpc<WorkspaceMilestoneState>(
+                  "generate_workspace_milestones",
+                  { workspaceId: workspace.id },
+                );
+                setMilestoneState(next);
+                setMilestoneCompareNote(null);
+              })
+            }
+          >
+            Refresh milestones
+          </button>
+          <button
+            type="button"
+            disabled={busy || !workspace || !milestoneState}
+            onClick={() =>
+              void run("Milestones compared", async () => {
+                if (!workspace || !milestoneState) return;
+                const next = await invokeIpc<WorkspaceMilestoneState>(
+                  "generate_workspace_milestones",
+                  { workspaceId: workspace.id },
+                );
+                const comparison =
+                  await invokeIpc<WorkspaceMilestoneComparison>(
+                    "compare_workspace_milestones",
+                    { left: milestoneState, right: next },
+                  );
+                setMilestoneState(next);
+                setMilestoneCompareNote(comparison.differences.join(" · "));
+              })
+            }
+          >
+            Compare milestones
+          </button>
+        </div>
+        {milestoneState ? (
+          <>
+            <p>
+              <strong>{milestoneState.milestone_summary.headline}</strong>
+            </p>
+            <p>
+              Current: {milestoneState.milestone_summary.current_line}
+            </p>
+            <p className="muted">
+              Closest: {milestoneState.milestone_summary.closest_line}
+            </p>
+            <p className="muted">
+              Blocked: {milestoneState.milestone_summary.blocked_line}
+            </p>
+            <p className="muted">
+              Completed: {milestoneState.milestone_summary.completed_line}
+            </p>
+            <p className="muted">
+              Next attention:{" "}
+              {milestoneState.milestone_summary.next_attention_line}
+            </p>
+            <ul className="intelligence-list">
+              {milestoneState.milestones
+                .filter((m) =>
+                  ["current", "upcoming", "blocked", "completed"].includes(
+                    m.status,
+                  ),
+                )
+                .map((m) => (
+                  <li key={m.id}>
+                    <strong>
+                      {m.status}: {m.title}
+                    </strong>
+                    <div className="muted">
+                      {m.progress_percent}% · {m.readiness} — {m.why}
+                    </div>
+                    {m.dependencies.length > 0 && (
+                      <div className="muted">
+                        Depends on:{" "}
+                        {m.dependencies.map((d) => d.label).join(", ")}
+                      </div>
+                    )}
+                  </li>
+                ))}
+            </ul>
+            {milestoneState.relationships.length > 0 && (
+              <details>
+                <summary>Milestone dependencies</summary>
+                <ul className="muted">
+                  {milestoneState.relationships.map((r) => (
+                    <li key={r.id}>
+                      {r.kind}: {r.from_milestone_id} → {r.to_milestone_id} —{" "}
+                      {r.why}
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            )}
+            <p className="muted">
+              authority: {milestoneState.authority_effect} ·{" "}
+              {milestoneState.milestone_count} milestone(s)
+            </p>
+            {milestoneCompareNote && (
+              <p className="muted">Compare: {milestoneCompareNote}</p>
+            )}
+          </>
+        ) : (
+          <p className="muted">No milestone snapshot yet.</p>
         )}
       </section>
 

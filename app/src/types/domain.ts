@@ -1273,6 +1273,8 @@ export interface WorkspaceIntelligenceState {
   work_context: WorkspaceWorkContextSummary;
   /** Interaction paths over understanding — after Work Context; never executes. */
   navigation: WorkspaceNavigationSummary;
+  /** Progress toward meaningful outcomes — after Navigation; never plans/executes. */
+  milestones: WorkspaceMilestoneSummary;
   workspace_health: string;
   summary: string;
   authority_effect: string;
@@ -2624,6 +2626,136 @@ export interface WorkspaceNavigationComparison {
 }
 
 export interface WorkspaceNavigationValidation {
+  valid: boolean;
+  messages: string[];
+  authority_effect: string;
+}
+
+export type MilestoneStatus =
+  | "current"
+  | "upcoming"
+  | "blocked"
+  | "completed";
+
+export type MilestoneRelationKind =
+  | "current"
+  | "upcoming"
+  | "blocked"
+  | "completed"
+  | "depends_on"
+  | "contributes_to"
+  | "supersedes"
+  | "supports";
+
+export type MilestoneReadinessBand =
+  | "ready"
+  | "partially_ready"
+  | "blocked"
+  | "unknown";
+
+export interface MilestoneEvidence {
+  label: string;
+  source_projection: string;
+  source_ref: string;
+  why: string;
+}
+
+export interface MilestoneAssociation {
+  id: string;
+  label: string;
+  kind: string;
+  source_projection: string;
+  source_ref: string;
+  why: string;
+}
+
+export interface WorkspaceMilestone {
+  id: string;
+  title: string;
+  summary: string;
+  status: MilestoneStatus;
+  readiness: MilestoneReadinessBand;
+  progress_percent: number;
+  evidence: MilestoneEvidence[];
+  related_tasks: MilestoneAssociation[];
+  related_projects: MilestoneAssociation[];
+  supporting_contexts: MilestoneAssociation[];
+  outstanding_decisions: MilestoneAssociation[];
+  dependencies: MilestoneAssociation[];
+  why: string;
+  authority_effect: string;
+}
+
+export interface MilestoneRelationship {
+  id: string;
+  from_milestone_id: string;
+  to_milestone_id: string;
+  kind: MilestoneRelationKind;
+  why: string;
+  authority_effect: string;
+}
+
+export interface MilestoneSummary {
+  headline: string;
+  current_line: string;
+  closest_line: string;
+  blocked_line: string;
+  completed_line: string;
+  next_attention_line: string;
+  narrative: string;
+}
+
+export interface WorkspaceMilestoneState {
+  workspace_id: string;
+  workspace_name: string;
+  generated_at: string;
+  label: string;
+  milestone_summary: MilestoneSummary;
+  milestones: WorkspaceMilestone[];
+  relationships: MilestoneRelationship[];
+  current_milestone_id: string | null;
+  milestone_count: number;
+  current_count: number;
+  upcoming_count: number;
+  blocked_count: number;
+  completed_count: number;
+  session_generated_at: string;
+  experience_generated_at: string;
+  work_context_generated_at: string;
+  navigation_generated_at: string;
+  intelligence_generated_at: string;
+  explanation: string;
+  evidence: string[];
+  summary: string;
+  authority_effect: string;
+}
+
+export interface WorkspaceMilestoneSummary {
+  workspace_id: string;
+  workspace_name: string;
+  generated_at: string;
+  label: string;
+  milestone_summary: MilestoneSummary;
+  milestone_count: number;
+  current_count: number;
+  upcoming_count: number;
+  blocked_count: number;
+  completed_count: number;
+  current_milestone_title: string | null;
+  top_milestones: WorkspaceMilestone[];
+  explanation: string;
+  summary: string;
+  authority_effect: string;
+}
+
+export interface WorkspaceMilestoneComparison {
+  left_workspace_id: string;
+  right_workspace_id: string;
+  differences: string[];
+  authority_effect: string;
+}
+
+export interface WorkspaceMilestoneValidation {
   valid: boolean;
   messages: string[];
   authority_effect: string;

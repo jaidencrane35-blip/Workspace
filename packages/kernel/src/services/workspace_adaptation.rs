@@ -661,6 +661,26 @@ impl WorkspaceAdaptationService {
         )
     }
 
+    /// Reference Milestones without applying or owning them.
+    pub(crate) fn enrich_with_milestones(
+        adaptation: &WorkspaceAdaptationState,
+        milestones: &workspace_domain::WorkspaceMilestoneState,
+    ) -> Result<WorkspaceAdaptationState> {
+        let mut state = adaptation.clone();
+        let marker = format!(
+            "milestones:{}:blocked={}",
+            milestones.milestone_summary.current_line, milestones.blocked_count
+        );
+        if !state.evidence.iter().any(|e| e.starts_with("milestones:")) {
+            state.evidence.push(marker.clone());
+        }
+        state.explanation = format!(
+            "{} References Milestones as evidence only ({}) — never schedules or completes them.",
+            state.explanation, marker
+        );
+        Ok(state)
+    }
+
     /// Reference Navigation without applying or owning it.
     pub(crate) fn enrich_with_navigation(
         adaptation: &WorkspaceAdaptationState,

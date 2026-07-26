@@ -725,6 +725,28 @@ impl WorkspaceRecommendationEngineService {
         Ok(state)
     }
 
+    /// Reference Milestones without mutating milestone ownership or ranking authority.
+    pub(crate) fn enrich_with_milestones(
+        recommendations: &WorkspaceRecommendationEngineState,
+        milestones: &workspace_domain::WorkspaceMilestoneState,
+    ) -> Result<WorkspaceRecommendationEngineState> {
+        let mut state = recommendations.clone();
+        let marker = format!(
+            "milestones:current={:?},blocked={},count={}",
+            milestones.current_milestone().map(|m| &m.title),
+            milestones.blocked_count,
+            milestones.milestone_count
+        );
+        if !state.evidence.iter().any(|e| e.starts_with("milestones:")) {
+            state.evidence.push(marker.clone());
+        }
+        state.explanation = format!(
+            "{} References Milestones as evidence only ({}) — does not change Milestones.",
+            state.explanation, marker
+        );
+        Ok(state)
+    }
+
     /// Reference Navigation without mutating navigation ownership or ranking authority.
     pub(crate) fn enrich_with_navigation(
         recommendations: &WorkspaceRecommendationEngineState,

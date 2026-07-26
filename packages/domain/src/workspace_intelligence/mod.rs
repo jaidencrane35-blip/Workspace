@@ -20,6 +20,7 @@ use crate::workspace_adaptation::WorkspaceAdaptationSummary;
 use crate::workspace_readiness::WorkspaceReadinessSummary;
 use crate::workspace_work_context::WorkspaceWorkContextSummary;
 use crate::workspace_navigation::WorkspaceNavigationSummary;
+use crate::workspace_milestone::WorkspaceMilestoneSummary;
 use crate::workspace_environment::WorkspaceEnvironmentSummary;
 use crate::workspace_task_graph::TaskGraphSummary;
 use crate::workspace_activity::WorkspaceActivityGraphSummary;
@@ -151,6 +152,9 @@ pub struct WorkspaceIntelligenceState {
     /// Navigation Engine summary (Phase 6). Where to go next — never executes.
     /// Embedded after Work Context.
     pub navigation: WorkspaceNavigationSummary,
+    /// Milestone Engine summary (Phase 6). Progress toward outcomes — never executes.
+    /// Embedded after Navigation.
+    pub milestones: WorkspaceMilestoneSummary,
     pub workspace_health: String,
     pub summary: String,
     /// Explicit marker for audits and UI: this state grants nothing.
@@ -229,6 +233,17 @@ impl WorkspaceIntelligenceComparison {
                 left.navigation.blocked_count,
                 right.navigation.node_count,
                 right.navigation.blocked_count
+            ));
+        }
+        if left.milestones.milestone_count != right.milestones.milestone_count
+            || left.milestones.current_milestone_title != right.milestones.current_milestone_title
+        {
+            differences.push(format!(
+                "Milestones: {:?} ({}) → {:?} ({})",
+                left.milestones.current_milestone_title,
+                left.milestones.milestone_count,
+                right.milestones.current_milestone_title,
+                right.milestones.milestone_count
             ));
         }
         if differences.is_empty() {

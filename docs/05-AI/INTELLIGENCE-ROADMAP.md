@@ -176,6 +176,10 @@ Workspace Work Context Engine foundation (Sprint 96) — semantic kind-of-work p
 
 Workspace Navigation Engine foundation (Sprint 97) — interaction paths over understanding; Intelligence embeds `navigation` after Work Context; evidence-only consumption; never plans/executes/routes autonomously. See [Workspace Navigation Engine](WORKSPACE-NAVIGATION-ENGINE.md).
 
+## Phase 6 Batch 5 (done)
+
+Workspace Milestone Engine foundation (Sprint 98) — progress coordination over understanding; Intelligence embeds `milestones` after Navigation; evidence-only consumption; never plans/schedules/executes. See [Workspace Milestone Engine](WORKSPACE-MILESTONE-ENGINE.md).
+
 ---
 
 ## Never build

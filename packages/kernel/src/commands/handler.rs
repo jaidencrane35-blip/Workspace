@@ -30,6 +30,7 @@ use crate::commands::workspace_session::GateSessionRead;
 use crate::commands::workspace_experience::GateExperienceRead;
 use crate::commands::workspace_work_context::GateWorkContextEngineRead;
 use crate::commands::workspace_navigation::GateNavigationRead;
+use crate::commands::workspace_milestone::GateMilestoneRead;
 use crate::commands::workspace_activity::GateActivityGraphRead;
 use crate::commands::workspace_attention::GateAttentionRead;
 use crate::commands::workspace_continuity::GateContinuityRead;
@@ -91,8 +92,9 @@ use crate::services::{
     WorkspaceRecommendationEngineService, WorkspaceOperatingStateService,
     WorkspacePatternService, WorkspaceAdaptationService, WorkspaceReadinessService,
     WorkspaceSessionService, WorkspaceExperienceService, WorkspaceWorkContextService,
-    WorkspaceNavigationService, WorkspaceActivityGraphService, WorkspaceAttentionService,
-    WorkspaceContextService, WorkspaceContinuityService, WorkspaceIntelligenceService,
+    WorkspaceNavigationService, WorkspaceMilestoneService, WorkspaceActivityGraphService,
+    WorkspaceAttentionService, WorkspaceContextService, WorkspaceContinuityService,
+    WorkspaceIntelligenceService,
 };
 use crate::WorkspaceKernel;
 use workspace_domain::{
@@ -110,6 +112,7 @@ use workspace_domain::{
     WorkspaceExperienceComparison, WorkspaceExperienceState,
     WorkspaceWorkContextComparison, WorkspaceWorkContextState, WorkspaceWorkContextValidation,
     WorkspaceNavigationComparison, WorkspaceNavigationState, WorkspaceNavigationValidation,
+    WorkspaceMilestoneComparison, WorkspaceMilestoneState, WorkspaceMilestoneValidation,
     WorkspaceTask, WorkspaceTaskPriority, WorkspaceTaskStatus,
     WorkspaceIntelligenceComparison, WorkspaceIntelligenceState, AiPlan, AiPlanEvaluationReport,
     AiPlanSubmissionResult,
@@ -3213,6 +3216,64 @@ impl CommandHandler {
     /// Architecture guard — Navigation must never execute or authorize.
     pub fn workspace_navigation_attempt_execute() -> Result<()> {
         WorkspaceNavigationService::attempt_execute()
+    }
+
+    /// Project Workspace Milestones (coordination outcomes — never plans or executes).
+    pub fn generate_workspace_milestones(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceMilestoneState> {
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent.clone()))
+            .execute_query(GateMilestoneRead)?;
+        let _ = Self::get_workflow_context(
+            kernel,
+            actor.clone(),
+            intent.clone(),
+            workspace_id.clone(),
+        )?;
+        let workspace =
+            Self::get_workspace(kernel, actor.clone(), intent, workspace_id.clone())?;
+        let health = kernel.health();
+        WorkspaceMilestoneService::generate(
+            &kernel.shared_database(),
+            &actor,
+            &kernel.orchestrated_plans(),
+            &kernel.assistant_workflows(),
+            workspace_id,
+            workspace.name,
+            health.status.clone(),
+        )
+    }
+
+    /// Compare two milestone snapshots (informational).
+    pub fn compare_workspace_milestones(
+        left: &WorkspaceMilestoneState,
+        right: &WorkspaceMilestoneState,
+    ) -> WorkspaceMilestoneComparison {
+        WorkspaceMilestoneService::compare(left, right)
+    }
+
+    /// Validate a milestone snapshot (Operator / IPC) and audit.
+    pub fn validate_workspace_milestones(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        state: &WorkspaceMilestoneState,
+    ) -> Result<WorkspaceMilestoneValidation> {
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent))
+            .execute_query(GateMilestoneRead)?;
+        WorkspaceMilestoneService::validate_and_audit(
+            &kernel.shared_database(),
+            &actor,
+            state,
+        )
+    }
+
+    /// Architecture guard — Milestones must never execute or authorize.
+    pub fn workspace_milestones_attempt_execute() -> Result<()> {
+        WorkspaceMilestoneService::attempt_execute()
     }
 
     /// Read-only workspace intelligence aggregation. Capability-gated; never executes.

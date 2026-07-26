@@ -25,6 +25,7 @@ Canonical product language. Prefer these terms in UI, docs, and Assistant copy.
 | **Workspace Experience** | Presentation model over Session for the Work surface (visibility groupings only; owns nothing) | Session, Intelligence, Operating State, UI layout state |
 | **Work Context** | Semantic kind-of-work classification over Session/Experience/Intelligence (not a Project/Task/Session; owns nothing) | Project, Task, Session, Experience, Operating State |
 | **Workspace Navigation** | Interaction paths over existing understanding (where to inspect next; owns nothing) | Planner, Router, Session, Work Context, Experience |
+| **Workspace Milestones** | Coordination projection of progress toward meaningful outcomes (owns nothing) | Planner, Scheduler, Project management, Task Graph |
 | **Suggestion** | Legacy deterministic context hint (diagnostic/Sprint 20) | Recommendation in product Work UI |
 | **Intent** | Pipeline request entering Command Pipeline | Proposal, Decision |
 | **Activity** | Synthetic Activity Graph node (read model) | Audit event, Decision |

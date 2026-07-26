@@ -54,6 +54,7 @@ pub mod workspace_session;
 pub mod workspace_experience;
 pub mod workspace_work_context;
 pub mod workspace_navigation;
+pub mod workspace_milestone;
 pub mod workspace_continuity;
 pub mod workspace_task_graph;
 pub mod workspace_environment;
@@ -272,6 +273,13 @@ pub use workspace_navigation::{
     NavigationEdge, NavigationNode, NavigationPath, NavigationPathKind, NavigationRelationKind,
     NavigationSummary, WorkspaceNavigationComparison, WorkspaceNavigationError,
     WorkspaceNavigationState, WorkspaceNavigationSummary, WorkspaceNavigationValidation,
+};
+pub use workspace_milestone::{
+    build_milestone_summary, milestone_now_rfc3339, validate_milestone_workspace_id,
+    MilestoneAssociation, MilestoneEvidence, MilestoneReadinessBand, MilestoneRelationKind,
+    MilestoneRelationship, MilestoneStatus, MilestoneSummary, WorkspaceMilestone,
+    WorkspaceMilestoneComparison, WorkspaceMilestoneError, WorkspaceMilestoneState,
+    WorkspaceMilestoneSummary, WorkspaceMilestoneValidation,
 };
 pub use workspace_environment::{
     build_environment_summary, now_rfc3339, validate_workspace_id, EnvironmentApplication,

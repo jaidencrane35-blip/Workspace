@@ -9,6 +9,7 @@ import type {
   WorkspaceExperienceState,
   WorkspaceWorkContextState,
   WorkspaceNavigationState,
+  WorkspaceMilestoneState,
   WorkspaceIntelligenceState,
 } from "../types/domain";
 import { assistantProductState } from "../types/domain";
@@ -59,6 +60,8 @@ export function AssistantPanel({
     useState<WorkspaceWorkContextState | null>(null);
   const [navigationState, setNavigationState] =
     useState<WorkspaceNavigationState | null>(null);
+  const [milestoneState, setMilestoneState] =
+    useState<WorkspaceMilestoneState | null>(null);
 
   const productState = assistantProductState(workflow?.state);
   const canConfirm = workflow?.state === "awaiting_confirmation";
@@ -133,7 +136,7 @@ export function AssistantPanel({
             onClick={() =>
               void run("Workspace understanding loaded", async () => {
                 if (!workspace) return;
-                const [intel, experience, workContext, navigation] =
+                const [intel, experience, workContext, navigation, milestones] =
                   await Promise.all([
                   invokeIpc<WorkspaceIntelligenceState>(
                     "generate_workspace_intelligence",
@@ -151,17 +154,31 @@ export function AssistantPanel({
                     "generate_workspace_navigation",
                     { workspaceId: workspace.id },
                   ),
+                  invokeIpc<WorkspaceMilestoneState>(
+                    "generate_workspace_milestones",
+                    { workspaceId: workspace.id },
+                  ),
                 ]);
                 setWorkspaceIntel(intel);
                 setExperienceState(experience);
                 setWorkContextState(workContext);
                 setNavigationState(navigation);
+                setMilestoneState(milestones);
               })
             }
           >
             Load workspace intelligence
           </button>
         </div>
+        {milestoneState && (
+          <dl>
+            <dt>Milestones</dt>
+            <dd>
+              {milestoneState.milestone_summary.narrative} Assistant explains
+              progress toward outcomes — never plans, completes, or executes.
+            </dd>
+          </dl>
+        )}
         {navigationState && (
           <dl>
             <dt>Navigation</dt>
@@ -383,6 +400,12 @@ export function AssistantPanel({
               {workspaceIntel.navigation.summary} Same Navigation Engine as the
               Work tab. Assistant may explain paths and next inspections — never
               routes or executes.
+            </dd>
+            <dt>Milestones</dt>
+            <dd>
+              {workspaceIntel.milestones.summary} Same Milestone Engine as the
+              Work tab. Assistant may explain progress and blockers — never
+              plans, schedules, or executes.
             </dd>
             <dt>Continuity</dt>
             <dd>

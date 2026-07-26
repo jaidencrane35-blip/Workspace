@@ -632,6 +632,27 @@ impl WorkspaceNavigationService {
         Ok(report)
     }
 
+    /// Reference Milestones as evidence only — Navigation never owns milestones.
+    pub(crate) fn enrich_with_milestones(
+        navigation: &WorkspaceNavigationState,
+        milestones: &workspace_domain::WorkspaceMilestoneState,
+    ) -> Result<WorkspaceNavigationState> {
+        let mut next = navigation.clone();
+        let marker = format!(
+            "milestones:current={:?},count={}",
+            milestones.current_milestone().map(|m| &m.title),
+            milestones.milestone_count
+        );
+        if !next.evidence.iter().any(|e| e.starts_with("milestones:")) {
+            next.evidence.push(marker.clone());
+        }
+        next.explanation = format!(
+            "{} References Milestones as evidence only ({}) — Navigation does not own milestones.",
+            next.explanation, marker
+        );
+        Ok(next)
+    }
+
     pub(crate) fn attempt_execute() -> Result<()> {
         Err(KernelError::from(
             workspace_domain::WorkspaceNavigationError::CannotExecute,

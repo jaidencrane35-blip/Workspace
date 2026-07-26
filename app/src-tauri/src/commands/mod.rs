@@ -21,6 +21,7 @@ pub mod workspace_session;
 pub mod workspace_experience;
 pub mod workspace_work_context;
 pub mod workspace_navigation;
+pub mod workspace_milestone;
 pub mod context;
 pub mod desktop_window;
 pub mod error;

@@ -54,6 +54,9 @@ use commands::workspace_work_context::{
 use commands::workspace_navigation::{
     compare_workspace_navigation, generate_workspace_navigation, validate_workspace_navigation,
 };
+use commands::workspace_milestone::{
+    compare_workspace_milestones, generate_workspace_milestones, validate_workspace_milestones,
+};
 use commands::workspace_attention::generate_workspace_attention;
 use commands::layout::{
     create_layout, delete_layout, get_layout, get_layout_snapshot, reset_layout, update_layout,
@@ -238,6 +241,9 @@ pub fn run() {
             generate_workspace_navigation,
             compare_workspace_navigation,
             validate_workspace_navigation,
+            generate_workspace_milestones,
+            compare_workspace_milestones,
+            validate_workspace_milestones,
             generate_decision_engine,
             select_decision_candidate,
             dismiss_decision_candidate,

@@ -95,6 +95,9 @@
 | `generate_workspace_navigation` | Product: project inspection paths over understanding (never executes) |
 | `compare_workspace_navigation` | Product: compare two navigation snapshots (informational) |
 | `validate_workspace_navigation` | Product: validate navigation invariants (informational) |
+| `generate_workspace_milestones` | Product: project progress toward meaningful outcomes (never plans/executes) |
+| `compare_workspace_milestones` | Product: compare two milestone snapshots (informational) |
+| `validate_workspace_milestones` | Product: validate milestone invariants (informational) |
 | `create_memory_entry` / `list_memory_entries` / `get_memory_context` | Diagnostic governed memory (informational) |
 | `delete_memory_entry` / `clear_memory_entries` | Diagnostic memory lifecycle |
 | `diagnose_ai_plan_preview` | Diagnostic memory-aware plan (no execution) |

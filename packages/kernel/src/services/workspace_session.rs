@@ -425,6 +425,27 @@ impl WorkspaceSessionService {
         WorkspaceSessionComparison::compare(left, right)
     }
 
+    /// Reference Milestones as evidence only — Session remains canonical runtime.
+    pub(crate) fn enrich_with_milestones(
+        session: &WorkspaceSessionState,
+        milestones: &workspace_domain::WorkspaceMilestoneState,
+    ) -> Result<WorkspaceSessionState> {
+        let mut next = session.clone();
+        let marker = format!(
+            "milestones:current={:?},blocked={}",
+            milestones.current_milestone().map(|m| &m.title),
+            milestones.blocked_count
+        );
+        if !next.evidence.iter().any(|e| e.starts_with("milestones:")) {
+            next.evidence.push(marker.clone());
+        }
+        next.explanation = format!(
+            "{} References Milestones as evidence only ({}) — Session remains canonical runtime.",
+            next.explanation, marker
+        );
+        Ok(next)
+    }
+
     /// Reference Navigation as evidence only — does not own or mutate Navigation.
     pub(crate) fn enrich_with_navigation(
         session: &WorkspaceSessionState,

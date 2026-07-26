@@ -29,6 +29,9 @@ import type {
   WorkspaceNavigationState,
   WorkspaceNavigationComparison,
   WorkspaceNavigationValidation,
+  WorkspaceMilestoneState,
+  WorkspaceMilestoneComparison,
+  WorkspaceMilestoneValidation,
   AiOrchestratedPlan,
   AiPlan,
   AiPlanEvaluationReport,
@@ -198,6 +201,10 @@ export function OperatorConsole({
     useState<WorkspaceNavigationState | null>(null);
   const [priorNavigation, setPriorNavigation] =
     useState<WorkspaceNavigationState | null>(null);
+  const [milestoneState, setMilestoneState] =
+    useState<WorkspaceMilestoneState | null>(null);
+  const [priorMilestones, setPriorMilestones] =
+    useState<WorkspaceMilestoneState | null>(null);
   const [activeProject, setActiveProject] = useState<Project | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [memoryEntries, setMemoryEntries] = useState<MemoryEntry[]>([]);
@@ -2094,6 +2101,93 @@ export function OperatorConsole({
               {navigationState.blocked_count} · Suggested{" "}
               {navigationState.suggested_count} · authority{" "}
               {navigationState.authority_effect}
+            </li>
+          </ul>
+        )}
+      </section>
+
+      <section>
+        <h2>Workspace Milestones (diagnostics)</h2>
+        <p className="muted">
+          Progress coordination — Generate / Inspect / Compare / Validate. Never
+          plans, schedules, completes, or executes.
+        </p>
+        <div className="row">
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("Milestones generated", async () => {
+                if (!workspace) return;
+                const state = await invokeIpc<WorkspaceMilestoneState>(
+                  "generate_workspace_milestones",
+                  { workspaceId: workspace.id },
+                );
+                if (milestoneState) setPriorMilestones(milestoneState);
+                setMilestoneState(state);
+              })
+            }
+          >
+            Generate milestones
+          </button>
+          <button
+            type="button"
+            disabled={busy || !milestoneState}
+            onClick={() =>
+              void run("Milestones inspected", async () => {
+                if (!milestoneState) return;
+                onMessage(
+                  `${milestoneState.milestone_summary.narrative} Evidence: ${milestoneState.evidence.slice(0, 3).join(" · ")}`,
+                );
+              })
+            }
+          >
+            Inspect milestones
+          </button>
+          <button
+            type="button"
+            disabled={busy || !milestoneState || !priorMilestones}
+            onClick={() =>
+              void run("Milestones compared", async () => {
+                if (!milestoneState || !priorMilestones) return;
+                const comparison =
+                  await invokeIpc<WorkspaceMilestoneComparison>(
+                    "compare_workspace_milestones",
+                    { left: priorMilestones, right: milestoneState },
+                  );
+                onMessage(comparison.differences.join(" · "));
+              })
+            }
+          >
+            Compare milestones
+          </button>
+          <button
+            type="button"
+            disabled={busy || !milestoneState}
+            onClick={() =>
+              void run("Milestones validated", async () => {
+                if (!milestoneState) return;
+                const report = await invokeIpc<WorkspaceMilestoneValidation>(
+                  "validate_workspace_milestones",
+                  { state: milestoneState },
+                );
+                onMessage(report.messages.join(" · "));
+              })
+            }
+          >
+            Validate milestones
+          </button>
+        </div>
+        {milestoneState && (
+          <ul className="muted">
+            <li>{milestoneState.milestone_summary.headline}</li>
+            <li>{milestoneState.milestone_summary.current_line}</li>
+            <li>
+              Current {milestoneState.current_count} · Upcoming{" "}
+              {milestoneState.upcoming_count} · Blocked{" "}
+              {milestoneState.blocked_count} · Completed{" "}
+              {milestoneState.completed_count} · authority{" "}
+              {milestoneState.authority_effect}
             </li>
           </ul>
         )}

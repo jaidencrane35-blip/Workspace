@@ -10,7 +10,8 @@ use workspace_domain::{
     WorkspaceEvolutionError, WorkspaceRecommendationEngineError, WorkspaceOperatingStateError,
     WorkspacePatternError, WorkspaceAdaptationError, WorkspaceReadinessError,
     WorkspaceSessionError, WorkspaceExperienceError, WorkspaceWorkContextError,
-    WorkspaceNavigationError, WorkspaceIntelligenceError, WorkspaceIntentError,
+    WorkspaceNavigationError, WorkspaceMilestoneError, WorkspaceIntelligenceError,
+    WorkspaceIntentError,
 };
 
 #[derive(Debug, Error)]
@@ -250,6 +251,9 @@ pub enum KernelError {
 
     #[error("Workspace navigation validation failed: {message}")]
     WorkspaceNavigationValidation { message: String },
+
+    #[error("Workspace milestone validation failed: {message}")]
+    WorkspaceMilestoneValidation { message: String },
 
     #[error("Workspace kernel initialization failed")]
     InitializationFailed,
@@ -622,6 +626,17 @@ impl From<WorkspaceNavigationError> for KernelError {
     }
 }
 
+impl From<WorkspaceMilestoneError> for KernelError {
+    fn from(error: WorkspaceMilestoneError) -> Self {
+        match error {
+            WorkspaceMilestoneError::Domain(domain) => KernelError::from(domain),
+            other => KernelError::WorkspaceMilestoneValidation {
+                message: other.to_string(),
+            },
+        }
+    }
+}
+
 impl KernelError {
     pub fn to_public(&self) -> PublicError {
         match self {
@@ -954,6 +969,10 @@ impl KernelError {
             },
             KernelError::WorkspaceNavigationValidation { message } => PublicError {
                 code: "workspace_navigation_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::WorkspaceMilestoneValidation { message } => PublicError {
+                code: "workspace_milestone_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::InitializationFailed => PublicError {
