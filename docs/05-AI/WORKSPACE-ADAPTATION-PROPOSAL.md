@@ -36,6 +36,10 @@ never auto-applies or rescoring. See
 [WORKSPACE-ADAPTATION-GOVERNANCE.md](./WORKSPACE-ADAPTATION-GOVERNANCE.md).
 `OutcomeAdaptationProposal` requires explicit review; never silent scoring mutation.
 
+**Sprint 141:** Adaptation review & change authority —
+[WORKSPACE-ADAPTATION-REVIEW.md](./WORKSPACE-ADAPTATION-REVIEW.md).
+LocalUser reviewer required; self-approval forbidden; approve ≠ apply ≠ Gateway grant.
+
 ---
 
 ## Ownership

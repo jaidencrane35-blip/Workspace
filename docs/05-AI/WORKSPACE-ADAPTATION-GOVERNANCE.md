@@ -83,6 +83,8 @@ Rules:
 - `may_silently_change_scoring() == false`
 - `attempt_apply()` / `attempt_execute()` hard-fail
 - Approve-for-handoff still does **not** execute — only unlocks a future Intent/Gateway path
+- Sprint 141: self-approval forbidden; Applied/Evaluated are future-only — see
+  [WORKSPACE-ADAPTATION-REVIEW.md](./WORKSPACE-ADAPTATION-REVIEW.md)
 
 Existing `AdaptationProposal` remains the Pattern/OS improvement aggregator; both stay
 non-executing and require human review before any handoff.
@@ -115,6 +117,7 @@ Provenance remains immutable across outcome recording and adaptation proposal cr
 
 ## Related docs
 
+- [WORKSPACE-ADAPTATION-REVIEW.md](./WORKSPACE-ADAPTATION-REVIEW.md)
 - [WORKSPACE-ADAPTATION-PROPOSAL.md](./WORKSPACE-ADAPTATION-PROPOSAL.md)
 - [WORKSPACE-RECOMMENDATION-OUTCOME.md](./WORKSPACE-RECOMMENDATION-OUTCOME.md)
 - [WORKSPACE-RECOMMENDATION-LIFECYCLE.md](./WORKSPACE-RECOMMENDATION-LIFECYCLE.md)

@@ -143,6 +143,8 @@ mod workspace_recommendation_lifecycle_contract_tests;
 mod workspace_recommendation_outcome_contract_tests;
 #[cfg(test)]
 mod workspace_adaptation_governance_contract_tests;
+#[cfg(test)]
+mod workspace_adaptation_review_contract_tests;
 mod workspace_work_context_tests;
 mod workspace_navigation_tests;
 mod workspace_milestone_tests;

@@ -26,6 +26,21 @@ pub enum ActionProposalError {
     #[error("recommendation outcome cannot execute or authorize")]
     OutcomeCannotExecute,
 
+    #[error("adaptation proposal cannot self-approve")]
+    AdaptationSelfApprovalForbidden,
+
+    #[error("adaptation approval requires a local_user reviewer")]
+    AdaptationReviewerRequired,
+
+    #[error("rejected adaptation proposal cannot apply")]
+    RejectedAdaptationCannotApply,
+
+    #[error("expired adaptation proposal cannot be approved or applied")]
+    ExpiredAdaptationCannotProceed,
+
+    #[error("adaptation apply is future-only; controlled change surface not active")]
+    AdaptationApplyNotImplemented,
+
     #[error(transparent)]
     Domain(#[from] DomainError),
 }
@@ -563,15 +578,29 @@ impl RecommendationOutcome {
     }
 }
 
-/// Review status for outcome-backed adaptation proposals (Sprint 140).
+/// Review / approval lifecycle for outcome-backed adaptation (Sprint 140–141).
+///
+/// Canonical chain (Sprint 141):
+/// `Proposed → PendingReview(AwaitingReview) → Approved|Rejected → Applied(future) → Evaluated`
+///
+/// Sprint 140 names `AwaitingReview` / `ApprovedForHandoff` are kept as the Pending /
+/// Approved wire values. `Reviewed` remains an optional audit acknowledgement step.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum OutcomeAdaptationReviewStatus {
     Proposed,
+    /// Pending Review (Sprint 141 name).
     AwaitingReview,
+    /// Optional human acknowledgement before Approved.
     Reviewed,
+    /// Approved for controlled change surface / handoff — **not** Applied.
     ApprovedForHandoff,
     Rejected,
+    Expired,
+    /// Future only — must not be reached by auto-apply.
+    Applied,
+    /// After Applied evaluation (future only).
+    Evaluated,
 }
 
 impl OutcomeAdaptationReviewStatus {
@@ -582,7 +611,36 @@ impl OutcomeAdaptationReviewStatus {
             Self::Reviewed => "reviewed",
             Self::ApprovedForHandoff => "approved_for_handoff",
             Self::Rejected => "rejected",
+            Self::Expired => "expired",
+            Self::Applied => "applied",
+            Self::Evaluated => "evaluated",
         }
+    }
+
+    /// Sprint 141 lifecycle label (human docs).
+    pub fn lifecycle_label(self) -> &'static str {
+        match self {
+            Self::Proposed => "Proposed",
+            Self::AwaitingReview => "Pending Review",
+            Self::Reviewed => "Reviewed",
+            Self::ApprovedForHandoff => "Approved",
+            Self::Rejected => "Rejected",
+            Self::Expired => "Expired",
+            Self::Applied => "Applied",
+            Self::Evaluated => "Evaluated",
+        }
+    }
+
+    pub fn is_pending_review(self) -> bool {
+        matches!(self, Self::AwaitingReview | Self::Reviewed)
+    }
+
+    pub fn is_approved(self) -> bool {
+        matches!(self, Self::ApprovedForHandoff)
+    }
+
+    pub fn is_terminal_without_apply(self) -> bool {
+        matches!(self, Self::Rejected | Self::Expired)
     }
 
     pub fn allows_transition(self, to: Self) -> bool {
@@ -590,11 +648,101 @@ impl OutcomeAdaptationReviewStatus {
             (self, to),
             (Self::Proposed, Self::AwaitingReview)
                 | (Self::Proposed, Self::Rejected)
+                | (Self::Proposed, Self::Expired)
                 | (Self::AwaitingReview, Self::Reviewed)
                 | (Self::AwaitingReview, Self::Rejected)
+                | (Self::AwaitingReview, Self::Expired)
                 | (Self::Reviewed, Self::ApprovedForHandoff)
                 | (Self::Reviewed, Self::Rejected)
+                | (Self::Reviewed, Self::Expired)
+                // Applied / Evaluated are architecture-only; transitions gated in methods.
+                | (Self::ApprovedForHandoff, Self::Applied)
+                | (Self::Applied, Self::Evaluated)
         )
+    }
+}
+
+/// Who may approve adaptation — distinct from Permission Gateway actors/grants.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AdaptationReviewerIdentity {
+    pub actor_id: String,
+    /// Must be `local_user` for approve/reject decisions in Sprint 141.
+    pub actor_type: String,
+}
+
+impl AdaptationReviewerIdentity {
+    pub const LOCAL_USER_TYPE: &'static str = "local_user";
+
+    pub fn local_user(actor_id: impl Into<String>) -> Self {
+        Self {
+            actor_id: actor_id.into(),
+            actor_type: Self::LOCAL_USER_TYPE.into(),
+        }
+    }
+
+    pub fn is_local_user(&self) -> bool {
+        self.actor_type == Self::LOCAL_USER_TYPE
+    }
+}
+
+/// Audit event for adaptation review (architecture record; not a capability grant).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AdaptationReviewAuditEvent {
+    pub at: String,
+    pub action: String,
+    pub actor_id: String,
+    pub note: Option<String>,
+}
+
+/// Future boundary: Approved Adaptation → Controlled Change Surface → Versioned Behaviour.
+///
+/// Architecture only in Sprint 141 — never mutates runtime cognition.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ControlledChangeSurface {
+    pub adaptation_proposal_id: String,
+    pub approved_at: Option<String>,
+    pub version_target: String,
+    pub authority_effect: String,
+}
+
+impl ControlledChangeSurface {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+    pub const VERSION_TARGET_FUTURE: &'static str = "future_behaviour_version";
+
+    pub fn from_approved_proposal(
+        proposal: &OutcomeAdaptationProposal,
+    ) -> Result<Self, ActionProposalError> {
+        if !proposal.review_status.is_approved() {
+            return Err(ActionProposalError::InvalidLifecycleTransition {
+                from: proposal.review_status.as_str().into(),
+                to: "controlled_change_surface".into(),
+            });
+        }
+        if proposal.review_status.is_terminal_without_apply() {
+            return Err(ActionProposalError::RejectedAdaptationCannotApply);
+        }
+        Ok(Self {
+            adaptation_proposal_id: proposal.id.clone(),
+            approved_at: proposal.decided_at.clone(),
+            version_target: Self::VERSION_TARGET_FUTURE.into(),
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        })
+    }
+
+    pub fn may_mutate_runtime_cognition(&self) -> bool {
+        false
+    }
+
+    pub fn may_bypass_permission_gateway(&self) -> bool {
+        false
+    }
+
+    pub fn attempt_apply() -> Result<(), ActionProposalError> {
+        Err(ActionProposalError::AdaptationApplyNotImplemented)
+    }
+
+    pub fn attempt_mutate_runtime_cognition() -> Result<(), ActionProposalError> {
+        Err(ActionProposalError::CannotExecute)
     }
 }
 
@@ -613,15 +761,25 @@ pub struct OutcomeAdaptationProposal {
     pub proposed_change: String,
     pub expected_effect: String,
     pub confidence: Option<String>,
-    /// Always true for outcome-backed proposals in Sprint 140.
+    /// Always true for outcome-backed proposals.
     pub review_required: bool,
     pub review_status: OutcomeAdaptationReviewStatus,
+    /// Proposer identity — cannot approve its own proposal.
+    pub proposed_by_actor_id: String,
+    pub proposed_by_actor_type: String,
+    pub reviewer: Option<AdaptationReviewerIdentity>,
+    pub decided_at: Option<String>,
+    pub expires_at: Option<String>,
+    pub rejection_reason: Option<String>,
+    pub audit_events: Vec<AdaptationReviewAuditEvent>,
     pub experience_trace_match_keys: Vec<String>,
     pub authority_effect: String,
 }
 
 impl OutcomeAdaptationProposal {
     pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+    pub const PROPOSER_ACTOR_ID: &'static str = "system:outcome_adaptation";
+    pub const PROPOSER_ACTOR_TYPE: &'static str = "system";
 
     pub fn from_outcome(
         outcome: &RecommendationOutcome,
@@ -640,22 +798,50 @@ impl OutcomeAdaptationProposal {
             confidence: outcome.quality.confidence_at_outcome.clone(),
             review_required: true,
             review_status: OutcomeAdaptationReviewStatus::Proposed,
+            proposed_by_actor_id: Self::PROPOSER_ACTOR_ID.into(),
+            proposed_by_actor_type: Self::PROPOSER_ACTOR_TYPE.into(),
+            reviewer: None,
+            decided_at: None,
+            expires_at: None,
+            rejection_reason: None,
+            audit_events: Vec::new(),
             experience_trace_match_keys: outcome.experience_trace_match_keys.clone(),
             authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
         }
     }
 
+    pub fn with_expiry(mut self, expires_at: impl Into<String>) -> Self {
+        self.expires_at = Some(expires_at.into());
+        self
+    }
+
     pub fn require_review(&mut self) -> Result<(), ActionProposalError> {
+        self.submit_for_review("review_requested", None)
+    }
+
+    pub fn submit_for_review(
+        &mut self,
+        at: impl Into<String>,
+        note: Option<String>,
+    ) -> Result<(), ActionProposalError> {
         if !self.review_required {
             self.review_required = true;
         }
-        self.transition_review(OutcomeAdaptationReviewStatus::AwaitingReview)
+        self.transition_review(OutcomeAdaptationReviewStatus::AwaitingReview)?;
+        self.push_audit(at, "submitted_for_review", Self::PROPOSER_ACTOR_ID, note);
+        Ok(())
     }
 
     pub fn transition_review(
         &mut self,
         to: OutcomeAdaptationReviewStatus,
     ) -> Result<(), ActionProposalError> {
+        if matches!(
+            to,
+            OutcomeAdaptationReviewStatus::Applied | OutcomeAdaptationReviewStatus::Evaluated
+        ) {
+            return Err(ActionProposalError::AdaptationApplyNotImplemented);
+        }
         if !self.review_status.allows_transition(to) {
             return Err(ActionProposalError::InvalidLifecycleTransition {
                 from: self.review_status.as_str().into(),
@@ -666,14 +852,108 @@ impl OutcomeAdaptationProposal {
         Ok(())
     }
 
-    /// Approve only after Reviewed — still does not execute or mutate cognition.
-    pub fn approve_for_handoff(&mut self) -> Result<(), ActionProposalError> {
+    /// Approve only with an explicit local_user reviewer — not self, not Gateway grant.
+    pub fn approve(
+        &mut self,
+        reviewer: AdaptationReviewerIdentity,
+        at: impl Into<String>,
+    ) -> Result<(), ActionProposalError> {
+        let at = at.into();
+        self.ensure_not_expired()?;
+        if !reviewer.is_local_user() {
+            return Err(ActionProposalError::AdaptationReviewerRequired);
+        }
+        if self.would_be_self_approval(&reviewer) {
+            return Err(ActionProposalError::AdaptationSelfApprovalForbidden);
+        }
+        if self.review_status == OutcomeAdaptationReviewStatus::Rejected {
+            return Err(ActionProposalError::RejectedAdaptationCannotApply);
+        }
+        // Allow Approved from Pending Review directly or via Reviewed.
+        if self.review_status == OutcomeAdaptationReviewStatus::AwaitingReview {
+            self.transition_review(OutcomeAdaptationReviewStatus::Reviewed)?;
+        }
         self.transition_review(OutcomeAdaptationReviewStatus::ApprovedForHandoff)?;
+        self.reviewer = Some(reviewer.clone());
+        self.decided_at = Some(at.clone());
+        self.push_audit(at, "approved", &reviewer.actor_id, None);
         assert_eq!(self.authority_effect, Self::AUTHORITY_EFFECT_NONE);
         Ok(())
     }
 
+    /// Sprint 140 helper — still requires a local_user reviewer identity.
+    pub fn approve_for_handoff(&mut self) -> Result<(), ActionProposalError> {
+        self.approve(AdaptationReviewerIdentity::local_user("local_user"), "approved")
+    }
+
+    pub fn reject(
+        &mut self,
+        reviewer: AdaptationReviewerIdentity,
+        at: impl Into<String>,
+        reason: impl Into<String>,
+    ) -> Result<(), ActionProposalError> {
+        let at = at.into();
+        let reason = reason.into();
+        self.ensure_not_expired()?;
+        if !reviewer.is_local_user() {
+            return Err(ActionProposalError::AdaptationReviewerRequired);
+        }
+        if self.would_be_self_approval(&reviewer) {
+            return Err(ActionProposalError::AdaptationSelfApprovalForbidden);
+        }
+        self.transition_review(OutcomeAdaptationReviewStatus::Rejected)?;
+        self.reviewer = Some(reviewer.clone());
+        self.decided_at = Some(at.clone());
+        self.rejection_reason = Some(reason.clone());
+        self.push_audit(at, "rejected", &reviewer.actor_id, Some(reason));
+        Ok(())
+    }
+
+    pub fn expire(&mut self, at: impl Into<String>) -> Result<(), ActionProposalError> {
+        let at = at.into();
+        self.transition_review(OutcomeAdaptationReviewStatus::Expired)?;
+        self.decided_at = Some(at.clone());
+        self.push_audit(at, "expired", Self::PROPOSER_ACTOR_ID, None);
+        Ok(())
+    }
+
+    fn ensure_not_expired(&self) -> Result<(), ActionProposalError> {
+        if self.review_status == OutcomeAdaptationReviewStatus::Expired {
+            return Err(ActionProposalError::ExpiredAdaptationCannotProceed);
+        }
+        Ok(())
+    }
+
+    fn would_be_self_approval(&self, reviewer: &AdaptationReviewerIdentity) -> bool {
+        reviewer.actor_id == self.proposed_by_actor_id
+            || reviewer.actor_id == self.id
+            || reviewer.actor_type == Self::PROPOSER_ACTOR_TYPE
+    }
+
+    fn push_audit(
+        &mut self,
+        at: impl Into<String>,
+        action: impl Into<String>,
+        actor_id: impl Into<String>,
+        note: Option<String>,
+    ) {
+        self.audit_events.push(AdaptationReviewAuditEvent {
+            at: at.into(),
+            action: action.into(),
+            actor_id: actor_id.into(),
+            note,
+        });
+    }
+
     pub fn may_auto_apply(&self) -> bool {
+        false
+    }
+
+    pub fn may_self_approve(&self) -> bool {
+        false
+    }
+
+    pub fn may_execute_from_approval(&self) -> bool {
         false
     }
 
@@ -685,17 +965,40 @@ impl OutcomeAdaptationProposal {
         false
     }
 
+    pub fn may_bypass_permission_gateway(&self) -> bool {
+        false
+    }
+
     pub fn requires_explicit_handling(&self) -> bool {
         self.review_required
     }
 
+    pub fn controlled_change_surface_ready(&self) -> bool {
+        self.review_status.is_approved() && self.authority_effect == Self::AUTHORITY_EFFECT_NONE
+    }
+
     /// Hard-fail — adaptation proposals never apply or execute from this type.
     pub fn attempt_apply() -> Result<(), ActionProposalError> {
-        Err(ActionProposalError::CannotExecute)
+        Err(ActionProposalError::AdaptationApplyNotImplemented)
+    }
+
+    pub fn attempt_apply_after_rejection(&self) -> Result<(), ActionProposalError> {
+        if self.review_status == OutcomeAdaptationReviewStatus::Rejected {
+            return Err(ActionProposalError::RejectedAdaptationCannotApply);
+        }
+        Err(ActionProposalError::AdaptationApplyNotImplemented)
+    }
+
+    pub fn attempt_mark_applied(&mut self) -> Result<(), ActionProposalError> {
+        Err(ActionProposalError::AdaptationApplyNotImplemented)
     }
 
     pub fn attempt_execute() -> Result<(), ActionProposalError> {
         Err(ActionProposalError::CannotExecute)
+    }
+
+    pub fn attempt_self_approve(&mut self) -> Result<(), ActionProposalError> {
+        Err(ActionProposalError::AdaptationSelfApprovalForbidden)
     }
 }
 
@@ -1013,6 +1316,7 @@ mod tests {
         );
         assert!(proposal.requires_explicit_handling());
         assert!(!proposal.may_auto_apply());
+        assert!(!proposal.may_self_approve());
         assert!(!proposal.may_mutate_cognition());
         assert!(!proposal.may_silently_change_scoring());
         proposal.require_review().unwrap();
@@ -1022,7 +1326,61 @@ mod tests {
         proposal.approve_for_handoff().unwrap();
         assert_eq!(proposal.provenance, provenance);
         assert_eq!(proposal.authority_effect, "none");
+        assert!(proposal.controlled_change_surface_ready());
         assert!(OutcomeAdaptationProposal::attempt_apply().is_err());
         assert!(OutcomeAdaptationProposal::attempt_execute().is_err());
+        assert!(proposal.attempt_mark_applied().is_err());
+    }
+
+    #[test]
+    fn adaptation_review_forbids_self_approve_and_rejected_apply() {
+        let item = sample_item();
+        let mut record = RecommendationGovernanceRecord::from_recommendation_item(&item, "t0");
+        record
+            .transition(RecommendationLifecycleState::Available, "t1", None)
+            .unwrap();
+        record
+            .transition(RecommendationLifecycleState::Presented, "t2", None)
+            .unwrap();
+        record.accept("t3", None).unwrap();
+        let outcome = record.record_outcome("t4").unwrap();
+        let mut proposal = outcome.to_adaptation_proposal("area", "change", "effect");
+        proposal.require_review().unwrap();
+        assert!(proposal.attempt_self_approve().is_err());
+        assert_eq!(
+            proposal.approve(
+                AdaptationReviewerIdentity {
+                    actor_id: OutcomeAdaptationProposal::PROPOSER_ACTOR_ID.into(),
+                    actor_type: "local_user".into(),
+                },
+                "t"
+            ),
+            Err(ActionProposalError::AdaptationSelfApprovalForbidden)
+        );
+        assert_eq!(
+            proposal.approve(
+                AdaptationReviewerIdentity {
+                    actor_id: "bot".into(),
+                    actor_type: "system".into(),
+                },
+                "t"
+            ),
+            Err(ActionProposalError::AdaptationReviewerRequired)
+        );
+        proposal
+            .reject(
+                AdaptationReviewerIdentity::local_user("local_user"),
+                "t-reject",
+                "not useful",
+            )
+            .unwrap();
+        assert_eq!(
+            proposal.attempt_apply_after_rejection(),
+            Err(ActionProposalError::RejectedAdaptationCannotApply)
+        );
+        assert!(!proposal.may_execute_from_approval());
+        assert!(!proposal.may_bypass_permission_gateway());
+        let surface = ControlledChangeSurface::from_approved_proposal(&proposal);
+        assert!(surface.is_err());
     }
 }

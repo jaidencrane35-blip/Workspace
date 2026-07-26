@@ -74,7 +74,8 @@ pub use action_catalog::{
     ActionCatalog, ActionCatalogEntry, ActionCatalogError, AiActionAwareness,
 };
 pub use action_proposal::{
-    ActionProposal, ActionProposalError, ActionProposalRisk, OutcomeAdaptationProposal,
+    ActionProposal, ActionProposalError, ActionProposalRisk, AdaptationReviewAuditEvent,
+    AdaptationReviewerIdentity, ControlledChangeSurface, OutcomeAdaptationProposal,
     OutcomeAdaptationReviewStatus, RecommendationFamily, RecommendationGovernanceRecord,
     RecommendationIdentity, RecommendationLifecycle, RecommendationLifecycleState,
     RecommendationOutcome, RecommendationOutcomeQuality, RecommendationProvenance,
