@@ -42,6 +42,7 @@ mod workspace_observation;
 mod capture_coordinator;
 mod observation_refresh_policy;
 mod observation_trigger_authority;
+mod observation_startup_trigger;
 mod workspace_scope;
 mod trigger_evaluator;
 mod configuration;
@@ -122,6 +123,7 @@ pub(crate) use observation_refresh_policy::ObservationRefreshPolicyService;
 pub(crate) use observation_trigger_authority::{
     ObservationTriggerAuthority, ObservationTriggerDecision,
 };
+pub(crate) use observation_startup_trigger::ObservationStartupTrigger;
 pub(crate) use workspace_scope::{approval_belongs_to_workspace, plan_belongs_to_workspace};
 pub use context::WorkspaceContextService;
 pub use database::DatabaseServiceHandle;

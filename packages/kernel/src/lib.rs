@@ -51,7 +51,9 @@ use commands::CommandContext;
 use events::AuditEventSubscriber;
 use policy::CapabilityBoundPolicy as DefaultPermissionPolicy;
 use security::StandardPermissionGate as DefaultPermissionGate;
-use services::{AssistantWorkflowStore, OrchestratedPlanStore};
+use services::{
+    AssistantWorkflowStore, ObservationStartupTrigger, OrchestratedPlanStore,
+};
 
 /// Kernel crate version aligned with application semver.
 pub const KERNEL_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -80,11 +82,17 @@ impl WorkspaceKernel {
         log::info!("workspace kernel startup beginning");
         let mut kernel = Self::bootstrap_shell(KERNEL_VERSION);
         CommandHandler::initialize_workspace(&mut kernel, db_path)?;
+        // First real observation trigger: once after Ready. Soft-fail only.
+        ObservationStartupTrigger::fire(&kernel);
         log::info!("workspace kernel ready");
         Ok(kernel)
     }
 
     /// Initializes with an in-memory database (tests).
+    ///
+    /// Does **not** fire the startup observation trigger — avoids Win32 capture
+    /// and leaves observation empty for deterministic fixtures. Tests exercise
+    /// [`ObservationStartupTrigger`] explicitly with injectable capturers.
     pub fn initialize_in_memory() -> Result<Self> {
         log::debug!("workspace kernel in-memory initialization");
         let mut kernel = Self::bootstrap_shell(KERNEL_VERSION);
