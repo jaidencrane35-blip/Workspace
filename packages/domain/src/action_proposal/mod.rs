@@ -5,7 +5,9 @@
 //! Reasoning provenance is immutable; lifecycle metadata mutates separately.
 
 mod governance_contracts;
+mod governance_workflow;
 pub use governance_contracts::*;
+pub use governance_workflow::*;
 
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -124,6 +126,21 @@ pub enum ActionProposalError {
 
     #[error("governance archive is append-only; deletion forbidden")]
     GovernanceArchiveImmutable,
+
+    #[error("governance review workflow cannot execute or publish")]
+    GovernanceReviewWorkflowBlocked(String),
+
+    #[error("governance conflict resolution cannot publish, execute, or rewrite history")]
+    GovernanceConflictResolutionBlocked(String),
+
+    #[error("governance decision package is immutable after seal")]
+    GovernanceDecisionPackageImmutable,
+
+    #[error("governance compliance verification cannot repair or grant authority")]
+    GovernanceComplianceCannotMutate,
+
+    #[error("governance readiness dashboard is a projection only; cannot execute")]
+    GovernanceDashboardCannotExecute,
 
     #[error(transparent)]
     Domain(#[from] DomainError),

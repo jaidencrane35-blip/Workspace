@@ -172,6 +172,16 @@ mod workspace_governance_compatibility_contract_tests;
 mod workspace_governance_integrity_contract_tests;
 #[cfg(test)]
 mod workspace_governance_archive_contract_tests;
+#[cfg(test)]
+mod workspace_governance_review_workflow_contract_tests;
+#[cfg(test)]
+mod workspace_governance_conflict_contract_tests;
+#[cfg(test)]
+mod workspace_governance_decision_package_contract_tests;
+#[cfg(test)]
+mod workspace_governance_compliance_contract_tests;
+#[cfg(test)]
+mod workspace_governance_dashboard_contract_tests;
 mod workspace_work_context_tests;
 mod workspace_navigation_tests;
 mod workspace_milestone_tests;
