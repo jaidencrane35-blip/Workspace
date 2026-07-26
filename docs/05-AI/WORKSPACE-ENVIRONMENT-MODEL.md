@@ -14,6 +14,10 @@
 The Workspace remains a companion over Windows. The Environment Model understands **where work is happening** without becoming an OS.
 
 ```
+Caller (manual command today; future triggers later)
+        ↓
+CaptureCoordinator (single-flight lifecycle authority)
+        ↓
 WorkspaceObservationService (SoT for desktop observation)
         ↓
 SQLite observation snapshots
@@ -24,6 +28,8 @@ Workspace Environment Model   ← this document
         ↓
 Attention / Intelligence / Continuity consumers
 ```
+
+**CaptureCoordinator** owns capture request admission and concurrency (no queue). It does **not** schedule, timer, or event-hook captures. Actual Win32 capture and persistence remain in `WorkspaceObservationService`.
 
 **Observation status** (`get_workspace_observation_status`) reports whether a snapshot exists, its age/freshness, counts, and last capture failure. It is read-only diagnostics: it does **not** trigger capture and does **not** repair stale observations.
 

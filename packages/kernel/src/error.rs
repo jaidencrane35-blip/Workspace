@@ -92,6 +92,9 @@ pub enum KernelError {
     #[error("Observation validation failed: {message}")]
     ObservationValidation { message: String },
 
+    #[error("Observation capture already in progress")]
+    ObservationCaptureInProgress,
+
     #[error("Analytics validation failed: {message}")]
     AnalyticsValidation { message: String },
 
@@ -797,6 +800,10 @@ impl KernelError {
             KernelError::ObservationValidation { message } => PublicError {
                 code: "observation_validation_error".into(),
                 message: message.clone(),
+            },
+            KernelError::ObservationCaptureInProgress => PublicError {
+                code: "observation_capture_in_progress".into(),
+                message: "An observation capture is already in progress.".into(),
             },
             KernelError::AnalyticsValidation { message } => PublicError {
                 code: "analytics_validation_error".into(),

@@ -318,9 +318,9 @@ pub use workspace_profile::{
 pub use workspace_observation::{
     build_observation_status, empty_stub_snapshot, observation_age_seconds, observation_freshness,
     observation_now_rfc3339, observation_u32_to_i32, observation_u64_to_i32,
-    observation_usize_to_i32, ObservationCaptureErrorClass, ObservationCaptureFailure,
-    ObservationFreshness, ObservationWindowIdentity, ObservedMonitor, ObservedWindow,
-    WindowIdentityConfidence, WorkspaceObservationError, WorkspaceObservationPass,
+    observation_usize_to_i32, CaptureRequest, CaptureRequestSource, ObservationCaptureErrorClass,
+    ObservationCaptureFailure, ObservationFreshness, ObservationWindowIdentity, ObservedMonitor,
+    ObservedWindow, WindowIdentityConfidence, WorkspaceObservationError, WorkspaceObservationPass,
     WorkspaceObservationPassMetadata, WorkspaceObservationSnapshot, WorkspaceObservationStatus,
     OBSERVATION_FRESH_THRESHOLD_SECS, OBSERVATION_STALE_THRESHOLD_SECS,
 };

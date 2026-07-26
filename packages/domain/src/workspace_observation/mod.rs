@@ -350,6 +350,69 @@ pub fn observation_u32_to_i32(value: u32, field: &str) -> Result<i32> {
     })
 }
 
+/// Who requested an observation capture (orchestration contract only).
+///
+/// Callers for `Scheduled` / `Event` are not implemented yet — define the contract only.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CaptureRequestSource {
+    Manual,
+    System,
+    Scheduled,
+    Event,
+}
+
+impl CaptureRequestSource {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Manual => "manual",
+            Self::System => "system",
+            Self::Scheduled => "scheduled",
+            Self::Event => "event",
+        }
+    }
+
+    pub fn parse(value: &str) -> Result<Self> {
+        match value {
+            "manual" => Ok(Self::Manual),
+            "system" => Ok(Self::System),
+            "scheduled" => Ok(Self::Scheduled),
+            "event" => Ok(Self::Event),
+            other => Err(WorkspaceObservationError::Invalid(format!(
+                "unknown capture request source: {other}"
+            ))),
+        }
+    }
+}
+
+/// Capture request contract for the observation orchestration boundary.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CaptureRequest {
+    pub source: CaptureRequestSource,
+}
+
+impl CaptureRequest {
+    pub fn new(source: CaptureRequestSource) -> Self {
+        Self { source }
+    }
+
+    pub fn manual() -> Self {
+        Self::new(CaptureRequestSource::Manual)
+    }
+
+    pub fn system() -> Self {
+        Self::new(CaptureRequestSource::System)
+    }
+
+    pub fn scheduled() -> Self {
+        Self::new(CaptureRequestSource::Scheduled)
+    }
+
+    pub fn event() -> Self {
+        Self::new(CaptureRequestSource::Event)
+    }
+}
+
 /// Freshness of the latest observation pass (informational only — never triggers capture).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -752,5 +815,21 @@ mod tests {
         let status = build_observation_status(None, None, now).unwrap();
         assert!(!status.has_observation);
         assert_eq!(status.freshness, ObservationFreshness::Unavailable);
+    }
+
+    #[test]
+    fn capture_request_source_contract() {
+        assert_eq!(CaptureRequest::manual().source, CaptureRequestSource::Manual);
+        assert_eq!(CaptureRequest::system().source, CaptureRequestSource::System);
+        assert_eq!(
+            CaptureRequest::scheduled().source,
+            CaptureRequestSource::Scheduled
+        );
+        assert_eq!(CaptureRequest::event().source, CaptureRequestSource::Event);
+        assert_eq!(
+            CaptureRequestSource::parse("manual").unwrap(),
+            CaptureRequestSource::Manual
+        );
+        assert!(CaptureRequestSource::parse("unknown").is_err());
     }
 }

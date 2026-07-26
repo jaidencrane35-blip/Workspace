@@ -26,7 +26,7 @@
 | `get_execution_outcomes` / `get_execution_states` | Diagnostic |
 | `request_execution_cancellation` | Diagnostic |
 | `get_desktop_windows` | Diagnostic |
-| `capture_workspace_observation` | Diagnostic: governed desktop perception capture (`desktop.read`) |
+| `capture_workspace_observation` | Diagnostic: governed desktop perception capture via CaptureCoordinator (`desktop.read`; rejects concurrent captures) |
 | `get_latest_workspace_observation` | Diagnostic: latest observation snapshot (`desktop.read`) |
 | `get_workspace_observation_by_id` | Diagnostic: observation snapshot by pass id (`desktop.read`) |
 | `get_workspace_observation_status` | Diagnostic: observation freshness/status metadata only (`desktop.read`; never triggers capture) |

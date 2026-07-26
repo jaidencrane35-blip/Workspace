@@ -39,6 +39,7 @@ mod workspace_transition;
 mod workspace_interaction;
 mod workspace_profile;
 mod workspace_observation;
+mod capture_coordinator;
 mod workspace_scope;
 mod trigger_evaluator;
 mod configuration;
@@ -112,6 +113,9 @@ pub(crate) use workspace_interaction::WorkspaceInteractionService;
 pub(crate) use workspace_profile::WorkspaceProfileService;
 pub use workspace_observation::WorkspaceObservationCaptureResult;
 pub(crate) use workspace_observation::WorkspaceObservationService;
+pub(crate) use capture_coordinator::{
+    CaptureCoordinator, CaptureCoordinatorResult, CaptureLifecycleState,
+};
 pub(crate) use workspace_scope::{approval_belongs_to_workspace, plan_belongs_to_workspace};
 pub use context::WorkspaceContextService;
 pub use database::DatabaseServiceHandle;

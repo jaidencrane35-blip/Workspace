@@ -4,8 +4,12 @@ use crate::error::{KernelError, Result};
 use crate::lifecycle::LifecycleState;
 use crate::policy::GovernanceClass;
 use crate::security::PermissionSubject;
-use crate::services::{WorkspaceObservationCaptureResult, WorkspaceObservationService};
-use workspace_domain::{Capability, WorkspaceObservationSnapshot, WorkspaceObservationStatus};
+use crate::services::{
+    CaptureCoordinator, WorkspaceObservationCaptureResult, WorkspaceObservationService,
+};
+use workspace_domain::{
+    Capability, CaptureRequest, WorkspaceObservationSnapshot, WorkspaceObservationStatus,
+};
 
 /// Capability gate for desktop observation reads (perception only).
 pub struct GateObservationRead;
@@ -67,11 +71,13 @@ impl QueryCommand for CaptureWorkspaceObservation {
         if ctx.state.lifecycle != LifecycleState::Ready {
             return Err(KernelError::NotReady);
         }
-        WorkspaceObservationService::capture(
+        let outcome = CaptureCoordinator::request_capture(
             &ctx.database,
             &ctx.actor_context,
             &ctx.intent_context,
-        )
+            CaptureRequest::manual(),
+        )?;
+        CaptureCoordinator::into_capture_result(outcome)
     }
 }
 

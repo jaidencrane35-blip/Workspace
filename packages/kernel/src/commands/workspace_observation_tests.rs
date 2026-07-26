@@ -33,6 +33,8 @@ fn capture_with_stub(
 ) -> Result<WorkspaceObservationCaptureResult, KernelError> {
     CommandPipeline::new(kernel.command_context(local.clone(), intent.clone()))
         .execute_query(GateObservationRead)?;
+    // Fixture seeding hits the observation service directly; production capture
+    // commands route exclusively through CaptureCoordinator.
     WorkspaceObservationService::capture_with(
         &kernel.shared_database(),
         local,
