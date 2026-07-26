@@ -14,7 +14,11 @@
 The Workspace remains a companion over Windows. The Environment Model understands **where work is happening** without becoming an OS.
 
 ```
-Caller (manual command today; future triggers later)
+ObservationTriggerRequest (future callers)
+        ↓
+ObservationTriggerAuthority
+        ↓
+ObservationRefreshPolicyService
         ↓
 CaptureCoordinator (single-flight lifecycle authority)
         ↓
@@ -30,6 +34,8 @@ Attention / Intelligence / Continuity consumers
 ```
 
 **CaptureCoordinator** owns capture request admission and concurrency (no queue). It does **not** schedule, timer, or event-hook captures. Actual Win32 capture and persistence remain in `WorkspaceObservationService`. Capture requests carry provenance (`source` / optional `reason` / `context`) into distinguishable lifecycle audits (`requested` → `started` → `completed` | `failed`, or `rejected_concurrent`).
+
+**ObservationTriggerAuthority** evaluates `ObservationTriggerRequest`s: audit received → refresh policy → ignore / block / accept → `CaptureCoordinator` only when capture is needed. It does **not** invent schedules, hooks, or startup capture. Callers for Scheduled / Event / Plugin are not wired yet.
 
 **ObservationRefreshPolicyService** answers whether a new observation should be requested (`FreshEnough` / `RefreshRequired` / `ObservationUnavailable` / `RefreshBlocked`). It is read-only: it does **not** capture. Consumer freshness needs (`ObservationConsumerFreshnessNeed`) are contracts only — not yet wired into Environment / Intelligence.
 

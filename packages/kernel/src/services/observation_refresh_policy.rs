@@ -96,11 +96,13 @@ mod tests {
     };
     use workspace_windows_integration::StubDesktopCapturer;
 
+    use crate::services::capture_coordinator::observation_flight_test_lock;
     use crate::services::WorkspaceObservationService;
     use crate::WorkspaceKernel;
 
     #[test]
     fn evaluate_unavailable_without_observation() {
+        let _lock = observation_flight_test_lock().lock().unwrap();
         let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
         let local = ActorContext::local_user();
         let intent = IntentContext::user_request();
@@ -122,6 +124,7 @@ mod tests {
 
     #[test]
     fn evaluate_fresh_enough_after_capture() {
+        let _lock = observation_flight_test_lock().lock().unwrap();
         let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
         let local = ActorContext::local_user();
         let intent = IntentContext::user_request();

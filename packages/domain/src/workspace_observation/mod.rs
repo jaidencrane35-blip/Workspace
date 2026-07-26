@@ -352,7 +352,7 @@ pub fn observation_u32_to_i32(value: u32, field: &str) -> Result<i32> {
 
 /// Who requested an observation capture (orchestration contract only).
 ///
-/// Callers for `Scheduled` / `Event` are not implemented yet — define the contract only.
+/// Callers for `Scheduled` / `Event` / `Plugin` are not implemented yet — define the contract only.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum CaptureRequestSource {
@@ -360,6 +360,7 @@ pub enum CaptureRequestSource {
     System,
     Scheduled,
     Event,
+    Plugin,
 }
 
 impl CaptureRequestSource {
@@ -369,6 +370,7 @@ impl CaptureRequestSource {
             Self::System => "system",
             Self::Scheduled => "scheduled",
             Self::Event => "event",
+            Self::Plugin => "plugin",
         }
     }
 
@@ -378,6 +380,7 @@ impl CaptureRequestSource {
             "system" => Ok(Self::System),
             "scheduled" => Ok(Self::Scheduled),
             "event" => Ok(Self::Event),
+            "plugin" => Ok(Self::Plugin),
             other => Err(WorkspaceObservationError::Invalid(format!(
                 "unknown capture request source: {other}"
             ))),
@@ -454,6 +457,10 @@ impl CaptureRequest {
 
     pub fn event() -> Self {
         Self::new(CaptureRequestSource::Event)
+    }
+
+    pub fn plugin() -> Self {
+        Self::new(CaptureRequestSource::Plugin)
     }
 
     pub fn with_reason(mut self, reason: impl Into<String>) -> Self {
@@ -587,6 +594,105 @@ impl ObservationConsumerFreshnessNeed {
     pub fn with_context(mut self, context: impl Into<String>) -> Self {
         self.context = Some(context.into());
         self
+    }
+}
+
+/// Trigger source for observation refresh requests (callers not implemented yet).
+///
+/// Includes `Plugin` beyond capture-only sources used by direct capture commands.
+pub type ObservationTriggerSource = CaptureRequestSource;
+
+/// Domain contract for an observation trigger (Sprint 110).
+///
+/// Evaluated by ObservationTriggerAuthority — does not itself capture.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ObservationTriggerRequest {
+    pub source: ObservationTriggerSource,
+    pub reason: Option<String>,
+    pub context: Option<String>,
+    pub freshness_requirement: ObservationFreshnessRequirement,
+}
+
+impl ObservationTriggerRequest {
+    pub fn new(
+        source: ObservationTriggerSource,
+        freshness_requirement: ObservationFreshnessRequirement,
+    ) -> Self {
+        Self {
+            source,
+            reason: None,
+            context: None,
+            freshness_requirement,
+        }
+    }
+
+    pub fn manual(freshness_requirement: ObservationFreshnessRequirement) -> Self {
+        Self::new(CaptureRequestSource::Manual, freshness_requirement)
+    }
+
+    pub fn system(freshness_requirement: ObservationFreshnessRequirement) -> Self {
+        Self::new(CaptureRequestSource::System, freshness_requirement)
+    }
+
+    pub fn scheduled(freshness_requirement: ObservationFreshnessRequirement) -> Self {
+        Self::new(CaptureRequestSource::Scheduled, freshness_requirement)
+    }
+
+    pub fn event(freshness_requirement: ObservationFreshnessRequirement) -> Self {
+        Self::new(CaptureRequestSource::Event, freshness_requirement)
+    }
+
+    pub fn plugin(freshness_requirement: ObservationFreshnessRequirement) -> Self {
+        Self::new(CaptureRequestSource::Plugin, freshness_requirement)
+    }
+
+    pub fn with_reason(mut self, reason: impl Into<String>) -> Self {
+        self.reason = Some(reason.into());
+        self
+    }
+
+    pub fn with_context(mut self, context: impl Into<String>) -> Self {
+        self.context = Some(context.into());
+        self
+    }
+
+    /// Build the CaptureRequest that CaptureCoordinator should receive.
+    pub fn to_capture_request(&self) -> CaptureRequest {
+        CaptureRequest {
+            source: self.source,
+            reason: self.reason.clone(),
+            context: self.context.clone(),
+        }
+    }
+
+    pub fn provenance(&self) -> CaptureProvenance {
+        CaptureProvenance {
+            source: self.source,
+            reason: self.reason.clone(),
+            context: self.context.clone(),
+        }
+    }
+}
+
+/// Auditable trigger authority outcome (capture payload attached in kernel).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ObservationTriggerOutcome {
+    AcceptedCapture,
+    IgnoredFresh,
+    BlockedCaptureInProgress,
+    /// Observation was unavailable and no capture completed (soft decline / failed path).
+    Unavailable,
+}
+
+impl ObservationTriggerOutcome {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::AcceptedCapture => "accepted_capture",
+            Self::IgnoredFresh => "ignored_fresh",
+            Self::BlockedCaptureInProgress => "blocked_capture_in_progress",
+            Self::Unavailable => "unavailable",
+        }
     }
 }
 
@@ -1050,11 +1156,35 @@ mod tests {
             CaptureRequestSource::Scheduled
         );
         assert_eq!(CaptureRequest::event().source, CaptureRequestSource::Event);
+        assert_eq!(CaptureRequest::plugin().source, CaptureRequestSource::Plugin);
+        assert_eq!(
+            CaptureRequestSource::parse("plugin").unwrap(),
+            CaptureRequestSource::Plugin
+        );
         assert_eq!(
             CaptureRequestSource::parse("manual").unwrap(),
             CaptureRequestSource::Manual
         );
         assert!(CaptureRequestSource::parse("unknown").is_err());
+    }
+
+    #[test]
+    fn observation_trigger_request_maps_to_capture_request() {
+        let trigger = ObservationTriggerRequest::plugin(
+            ObservationFreshnessRequirement::MaxAgeSeconds {
+                max_age_seconds: 45,
+            },
+        )
+        .with_reason("sync")
+        .with_context("plugin:x");
+        let capture = trigger.to_capture_request();
+        assert_eq!(capture.source, CaptureRequestSource::Plugin);
+        assert_eq!(capture.reason.as_deref(), Some("sync"));
+        assert_eq!(capture.context.as_deref(), Some("plugin:x"));
+        assert_eq!(
+            ObservationTriggerOutcome::IgnoredFresh.as_str(),
+            "ignored_fresh"
+        );
     }
 
     #[test]

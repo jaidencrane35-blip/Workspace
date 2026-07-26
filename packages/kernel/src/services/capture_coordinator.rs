@@ -258,9 +258,16 @@ impl CaptureCoordinator {
 }
 
 #[cfg(test)]
+pub(crate) fn observation_flight_test_lock() -> &'static std::sync::Mutex<()> {
+    use std::sync::{Mutex, OnceLock};
+    static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+    LOCK.get_or_init(|| Mutex::new(()))
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
-    use std::sync::{Arc, Barrier, Mutex, OnceLock};
+    use std::sync::{Arc, Barrier, Mutex};
     use std::thread;
 
     use workspace_domain::{ActorContext, IntentContext};
@@ -273,8 +280,7 @@ mod tests {
 
     /// Serialize coordinator tests so the process-wide flight bit cannot race.
     fn coordinator_test_lock() -> &'static Mutex<()> {
-        static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
-        LOCK.get_or_init(|| Mutex::new(()))
+        observation_flight_test_lock()
     }
 
     struct BlockingCapturer {

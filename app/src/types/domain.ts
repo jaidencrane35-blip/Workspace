@@ -1503,8 +1503,13 @@ export interface WorkspaceObservationStatus {
   authority_effect: string;
 }
 
-/** Capture request origin (Scheduled/Event callers not implemented yet). */
-export type CaptureRequestSource = "manual" | "system" | "scheduled" | "event";
+/** Capture request origin (Scheduled/Event/Plugin callers not implemented yet). */
+export type CaptureRequestSource =
+  | "manual"
+  | "system"
+  | "scheduled"
+  | "event"
+  | "plugin";
 
 /** Provenance attachable to observation capture lifecycle. */
 export interface CaptureProvenance {
@@ -1542,6 +1547,21 @@ export interface ObservationConsumerFreshnessNeed {
   requirement: ObservationFreshnessRequirement;
   context: string | null;
 }
+
+export type ObservationTriggerSource = CaptureRequestSource;
+
+export interface ObservationTriggerRequest {
+  source: ObservationTriggerSource;
+  reason: string | null;
+  context: string | null;
+  freshness_requirement: ObservationFreshnessRequirement;
+}
+
+export type ObservationTriggerOutcome =
+  | "accepted_capture"
+  | "ignored_fresh"
+  | "blocked_capture_in_progress"
+  | "unavailable";
 
 export type EnvironmentWindowState = "open" | "minimized" | "focused" | "unknown";
 
