@@ -63,6 +63,13 @@ This gateway is the **only** future path for event-driven observation. It is not
 
 **Observation delta** (`get_latest_observation_delta`) compares the latest and immediately previous persisted snapshots into `WorkspaceObservationDelta` facts (opened/closed/focus/moved/resized/minimized/monitor). Pure comparison — no capture, no decisions, no automation. Fewer than two snapshots yields an empty/no-change delta.
 
+**WorkspaceState** (`get_workspace_state`) is the canonical **runtime state projection**:
+- **Observation** = facts (persisted snapshots)
+- **Delta** = change between consecutive snapshots
+- **WorkspaceState** = current interpreted state built from latest observation + latest delta
+
+`WorkspaceStateEngine` is read-only: no persistence, capture, scheduling, Win32, AI, or automation. Distinct from kernel lifecycle `WorkspaceState` (version/ready).
+
 ---
 
 ## Represents

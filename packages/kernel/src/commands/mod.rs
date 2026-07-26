@@ -28,6 +28,7 @@ mod workspace_transition;
 mod workspace_interaction;
 mod workspace_profile;
 mod workspace_observation;
+mod workspace_state;
 mod context;
 mod execute_intent_request;
 mod create_suggestion_intent_request;
@@ -195,6 +196,7 @@ pub use workspace_observation::{
     GetLatestWorkspaceObservation, GetObservationSchedulerStatus, GetWorkspaceObservationById,
     GetWorkspaceObservationStatus,
 };
+pub use workspace_state::GetWorkspaceState;
 pub use get_execution_outcomes::GetExecutionOutcomes;
 pub use get_execution_state::GetExecutionState;
 pub use get_execution_states::GetExecutionStates;

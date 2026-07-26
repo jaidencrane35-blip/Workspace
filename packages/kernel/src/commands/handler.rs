@@ -53,6 +53,7 @@ use crate::commands::workspace_observation::{
     CaptureWorkspaceObservation, GetLatestObservationDelta, GetLatestWorkspaceObservation,
     GetObservationSchedulerStatus, GetWorkspaceObservationById, GetWorkspaceObservationStatus,
 };
+use crate::commands::workspace_state::GetWorkspaceState;
 use crate::commands::get_desktop_windows::GetDesktopWindows;
 use crate::commands::get_execution_outcomes::GetExecutionOutcomes;
 use crate::commands::get_execution_state::GetExecutionState;
@@ -133,7 +134,8 @@ use workspace_domain::{
     WorkspaceProfile, WorkspaceProfileComparison, WorkspaceProfileMemberInput,
     WorkspaceProfileState, WorkspaceProfileStateComparison, WorkspaceProfileStatus,
     WorkspaceProfileValidation, WorkspaceObservationSnapshot, WorkspaceObservationStatus,
-    ObservationSchedulerStatus, WorkspaceObservationDelta, WorkspaceTask, WorkspaceTaskPriority,
+    ObservationSchedulerStatus, WorkspaceObservationDelta,
+    WorkspaceState as ProjectedWorkspaceState, WorkspaceTask, WorkspaceTaskPriority,
     WorkspaceTaskStatus,
     WorkspaceIntelligenceComparison, WorkspaceIntelligenceState, AiPlan, AiPlanEvaluationReport,
     AiPlanSubmissionResult,
@@ -1883,6 +1885,15 @@ impl CommandHandler {
     ) -> Result<WorkspaceObservationDelta> {
         CommandPipeline::new(kernel.command_context(actor, intent))
             .execute_query(GetLatestObservationDelta)
+    }
+
+    pub fn get_workspace_state(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+    ) -> Result<ProjectedWorkspaceState> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetWorkspaceState)
     }
 
     /// Architecture guard — Observation Layer must never execute.

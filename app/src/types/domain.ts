@@ -1571,6 +1571,31 @@ export interface WorkspaceObservationDelta {
   authority_effect: string;
 }
 
+/** Canonical runtime state projection (observation + delta). Distinct from kernel lifecycle. */
+export interface WorkspaceStateMetadata {
+  state_id: string;
+  created_at: string;
+  observation_pass_id: string | null;
+  latest_delta_reference: string | null;
+  window_count: number;
+  monitor_count: number;
+  has_changes: boolean;
+  authority_effect: string;
+}
+
+export interface WorkspaceActiveApplication {
+  process_id: number;
+  process_name: string | null;
+  window_count: number;
+}
+
+export interface WorkspaceState {
+  metadata: WorkspaceStateMetadata;
+  focused_window: ObservationWindowRef | null;
+  active_applications: WorkspaceActiveApplication[];
+  authority_effect: string;
+}
+
 /** Capture request origin. Event enters via ObservationEventGateway only (admission still rejects). */
 export type CaptureRequestSource =
   | "manual"

@@ -62,6 +62,7 @@ pub mod workspace_profile;
 pub mod workspace_observation;
 pub mod workspace_observation_delta;
 pub mod workspace_observation_event;
+pub mod workspace_state;
 pub mod workspace_continuity;
 pub mod workspace_task_graph;
 pub mod workspace_environment;
@@ -341,6 +342,9 @@ pub use workspace_observation_delta::{
 };
 pub use workspace_observation_event::{
     ObservationEvent, ObservationEventError, ObservationEventKind,
+};
+pub use workspace_state::{
+    WorkspaceActiveApplication, WorkspaceState, WorkspaceStateMetadata,
 };
 pub use workspace_environment::{
     build_environment_summary, now_rfc3339, validate_workspace_id, EnvironmentApplication,
