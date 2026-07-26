@@ -5,7 +5,9 @@
 
 use workspace_domain::{AttentionReason, DisplayImportance, DisplayReason};
 
-use super::explanation_catalog::{fallback_title_for_signal, lookup_explanation_key};
+use super::explanation_catalog::{
+    fallback_title_for_signal, lookup_explanation_key, unknown_description,
+};
 
 /// Resolve one Attention reason into display wording.
 pub(crate) fn resolve_attention_reason(reason: &AttentionReason) -> DisplayReason {
@@ -30,10 +32,7 @@ pub(crate) fn resolve_attention_reason(reason: &AttentionReason) -> DisplayReaso
 
     DisplayReason {
         title: fallback_title_for_signal(&signal),
-        description: format!(
-            "No Experience translation for '{explanation_key}' yet \
-             (signal {signal} from {source}, weight {weight})."
-        ),
+        description: unknown_description(&explanation_key, &signal, &source, weight),
         importance,
         explanation_key,
         signal,
@@ -153,6 +152,6 @@ mod tests {
 
     #[test]
     fn catalog_version_is_loaded() {
-        assert_eq!(catalog_version(), 1);
+        assert_eq!(catalog_version(), 2);
     }
 }

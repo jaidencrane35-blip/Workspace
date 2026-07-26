@@ -38,10 +38,11 @@ Runtime desktop truth is **WorkspaceState** only (Sprint 123 finalized IPC/UI su
 
 Each layer keeps its own question. Attention explains why something deserves focus; Decision Engine explains what should be considered next, adding goal, memory, personalization, plan, and approval reasons of its own; Experience explains how it is shown. Decision Engine contributes Attention's `score` to its own candidate total but never reorders or rescores Attention itself.
 
-**Experience presentation contract (Sprint 131):** all user-facing surfaces resolve
+**Experience presentation contract (Sprint 131–132):** all user-facing surfaces resolve
 `AttentionReason.explanation_key` through the Experience catalog — never raw keys,
 never `score_factors` as rationale, never UI-invented wording. Canonical catalog:
-`packages/kernel/resources/explanation-catalog.json`. Operating State keeps
+`packages/kernel/resources/explanation-catalog.json` with sync verification
+(`pnpm verify:explanation-catalog`). Operating State keeps
 `score_factors` as arithmetic evidence only (valid diagnostic trail).
 
 Rule: **UI does not interpret cognition. Experience translates cognition.**

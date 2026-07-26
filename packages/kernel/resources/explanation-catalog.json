@@ -1,5 +1,18 @@
 {
-  "version": 1,
+  "version": 2,
+  "resolution": {
+    "order": [
+      "exact",
+      "prefix_suffix",
+      "prefix_pattern",
+      "prefix_fallback",
+      "unknown"
+    ],
+    "unknown": {
+      "description_template": "No Experience translation for '{explanation_key}' yet (signal {signal} from {source}, weight {weight}).",
+      "signal_title_fallback_template": "Attention signal '{signal}' needs attention"
+    }
+  },
   "exact": {
     "decision.base.blocker": {
       "title": "Blocked decision needs attention",
@@ -85,11 +98,11 @@
         "ready": {
           "title": "Ready task needs attention",
           "description": "because open work is ready to continue"
-        },
-        "*": {
-          "title": "Open task needs attention",
-          "description": "because Task Graph still lists this work as open"
         }
+      },
+      "fallback": {
+        "title": "Open task needs attention",
+        "description": "because Task Graph still lists this work as open"
       }
     },
     {
@@ -110,11 +123,11 @@
         "low": {
           "title": "Low priority still contributes",
           "description": "because open low-priority work remains on the graph"
-        },
-        "*": {
-          "title": "Task priority contributes to focus",
-          "description": "because Task Graph priority influenced this ranking"
         }
+      },
+      "fallback": {
+        "title": "Task priority contributes to focus",
+        "description": "because Task Graph priority influenced this ranking"
       }
     },
     {
@@ -135,15 +148,18 @@
         "outstanding_decisions": {
           "title": "Purpose waiting on decisions",
           "description": "because outstanding decisions gate Purpose progress"
-        },
-        "composition:*": {
+        }
+      },
+      "patterns": [
+        {
+          "starts_with": "composition:",
           "title": "Purpose blocked by composition",
           "description": "because a Composition gap is obstructing Purpose progress"
-        },
-        "*": {
-          "title": "Purpose obstacle needs attention",
-          "description": "because Purpose reports an obstacle on the current path"
         }
+      ],
+      "fallback": {
+        "title": "Purpose obstacle needs attention",
+        "description": "because Purpose reports an obstacle on the current path"
       }
     },
     {
@@ -156,11 +172,11 @@
         "missing_application": {
           "title": "Composition is missing an application",
           "description": "because a required application is not present in the composition"
-        },
-        "*": {
-          "title": "Composition gap needs attention",
-          "description": "because Composition reports a membership gap"
         }
+      },
+      "fallback": {
+        "title": "Composition gap needs attention",
+        "description": "because Composition reports a membership gap"
       }
     },
     {
@@ -173,11 +189,11 @@
         "missing_application": {
           "title": "Required application is missing",
           "description": "because Environment expects an application that is not present"
-        },
-        "*": {
-          "title": "Environment gap needs attention",
-          "description": "because Environment reports a desktop–work gap"
         }
+      },
+      "fallback": {
+        "title": "Environment gap needs attention",
+        "description": "because Environment reports a desktop–work gap"
       }
     }
   ],
@@ -202,5 +218,61 @@
     "activity_progress": "Recent activity needs attention",
     "recommendation_candidate": "Recommendation needs attention",
     "pattern_observation": "Pattern observation needs attention"
-  }
+  },
+  "contract_fixtures": [
+    {
+      "key": "task.base.blocked",
+      "signal": "blocked_task",
+      "source": "task_graph",
+      "weight": 40,
+      "known": true,
+      "title": "Blocked task needs attention",
+      "description": "because work is currently waiting on completion"
+    },
+    {
+      "key": "decision.base.outstanding",
+      "signal": "outstanding_decision",
+      "source": "decision_queue",
+      "weight": 55,
+      "known": true,
+      "title": "Outstanding decision needs attention",
+      "description": "because a pending Decision Queue item still needs a human choice"
+    },
+    {
+      "key": "purpose.obstacle.composition:missing_application",
+      "signal": "purpose_obstacle",
+      "source": "purpose",
+      "weight": 36,
+      "known": true,
+      "title": "Purpose blocked by composition",
+      "description": "because a Composition gap is obstructing Purpose progress"
+    },
+    {
+      "key": "purpose.obstacle.unlisted_kind",
+      "signal": "purpose_obstacle",
+      "source": "purpose",
+      "weight": 30,
+      "known": true,
+      "title": "Purpose obstacle needs attention",
+      "description": "because Purpose reports an obstacle on the current path"
+    },
+    {
+      "key": "task.base.unlisted_status",
+      "signal": "waiting_task",
+      "source": "task_graph",
+      "weight": 20,
+      "known": true,
+      "title": "Open task needs attention",
+      "description": "because Task Graph still lists this work as open"
+    },
+    {
+      "key": "future.contract.unknown",
+      "signal": "blocked_task",
+      "source": "task_graph",
+      "weight": 33,
+      "known": false,
+      "title": "Blocked task needs attention",
+      "description": "No Experience translation for 'future.contract.unknown' yet (signal blocked_task from task_graph, weight 33)."
+    }
+  ]
 }

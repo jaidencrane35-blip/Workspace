@@ -8,6 +8,7 @@
     "build": "tsc && vite build",
     "typecheck": "tsc --noEmit",
     "sync:explanation-catalog": "node ../scripts/sync-explanation-catalog.mjs",
+    "verify:explanation-catalog": "node ../scripts/verify-explanation-catalog.mjs",
     "tauri": "tauri"
   },
   "dependencies": {

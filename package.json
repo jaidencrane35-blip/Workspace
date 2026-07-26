@@ -7,8 +7,9 @@
   "scripts": {
     "dev": "pnpm --filter @workspace/app dev",
     "build": "pnpm --filter @workspace/app build",
-    "test": "pnpm --filter @workspace/tests test",
-    "typecheck": "pnpm --filter @workspace/app typecheck"
+    "test": "pnpm --filter @workspace/tests test && node scripts/verify-explanation-catalog.mjs",
+    "typecheck": "pnpm --filter @workspace/app typecheck",
+    "verify:explanation-catalog": "node scripts/verify-explanation-catalog.mjs"
   },
   "engines": {
     "node": ">=20"

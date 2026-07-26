@@ -54,6 +54,18 @@ unknown keys fall back safely with the unresolved key still visible — never hi
 `app/src/generated/explanationCatalog.ts` (`node scripts/sync-explanation-catalog.mjs`).
 Do not duplicate mappings in resolver code.
 
+**Sprint 132 — catalog contract hardening:** Catalog v2 owns resolution metadata
+(`resolution.order`, `prefix_rules.patterns`, `prefix_rules.fallback`,
+`resolution.unknown` templates). Resolver algorithms in Rust and TypeScript are
+generic — they read catalog shape only; no duplicated prefix/pattern rules in code.
+Dynamic keys follow explicit order: exact → prefix suffix → prefix pattern → prefix
+fallback → unknown. `contract_fixtures` in JSON drive cross-layer tests.
+
+Sync enforcement:
+- Regenerate: `node scripts/sync-explanation-catalog.mjs`
+- Verify: `pnpm verify:explanation-catalog` (or `node scripts/verify-explanation-catalog.mjs`)
+- Rust test `generated_ts_catalog_matches_json_source` also guards drift at `cargo test`
+
 UI always keeps `AttentionReason[]` alongside `DisplayReason[]`. Shared component:
 `DisplayReasonList` / `DecisionReasonList`. Importance is derived from `|weight|` only
 (≥50 high, ≥25 medium, else low) and does not change Attention ranking or scores.

@@ -1,7 +1,8 @@
-//! Experience explanation catalog contract tests (Sprint 131).
+//! Experience explanation catalog contract tests (Sprint 131–132).
 
 use crate::services::explanation_catalog::{
-    catalog_version, exact_key_count, fallback_title_for_signal, lookup_explanation_key,
+    contract_fixtures, fallback_title_for_signal, lookup_explanation_key,
+    lookup_explanation_key_with_tier, unknown_description, LookupTier,
 };
 use crate::services::explanation_resolver::{resolve_attention_reason, resolve_attention_reasons};
 use workspace_domain::{AttentionReason, AttentionSignal, AttentionSourceType};
@@ -10,12 +11,18 @@ fn reason(key: &str, signal: AttentionSignal, weight: i32) -> AttentionReason {
     AttentionReason::new(AttentionSourceType::TaskGraph, signal, weight, key)
 }
 
+fn reason_with_source(
+    key: &str,
+    signal: AttentionSignal,
+    source: AttentionSourceType,
+    weight: i32,
+) -> AttentionReason {
+    AttentionReason::new(source, signal, weight, key)
+}
+
 /// CASE 11 — Canonical catalog resolves the same contract as the Experience resolver.
 #[test]
 fn case11_catalog_and_resolver_agree_on_known_keys() {
-    assert_eq!(catalog_version(), 1);
-    assert!(exact_key_count() >= 16);
-
     let samples = [
         "task.base.blocked",
         "decision.base.outstanding",
@@ -44,7 +51,11 @@ fn case12_unknown_keys_fallback_and_preserve_identity() {
     assert_eq!(display.explanation_key, "future.contract.unknown");
     assert_eq!(display.weight, 33);
     assert_eq!(display.signal, "blocked_task");
-    assert!(display.description.contains("future.contract.unknown"));
+    assert!(
+        display.description.contains("future.contract.unknown"),
+        "unknown key must remain visible: {}",
+        display.description
+    );
     assert_eq!(
         display.title,
         fallback_title_for_signal(AttentionSignal::BlockedTask.as_str())
@@ -74,4 +85,65 @@ fn case13_rendering_is_deterministic_and_non_mutating() {
     assert_eq!(snapshot, after);
     assert_eq!(first[0].explanation_key, "decision.priority.high");
     assert_eq!(first[1].explanation_key, "decision.base.outstanding");
+}
+
+fn fixture_signal(signal: &str) -> AttentionSignal {
+    serde_json::from_str(&format!("\"{signal}\"")).unwrap_or_else(|_| {
+        panic!("fixture uses invalid signal {signal}")
+    })
+}
+
+fn fixture_source(source: &str) -> AttentionSourceType {
+    serde_json::from_str(&format!("\"{source}\"")).unwrap_or_else(|_| {
+        panic!("fixture uses invalid source {source}")
+    })
+}
+
+/// CASE 14 — Catalog contract fixtures drive cross-layer equivalence.
+#[test]
+fn case14_contract_fixtures_match_resolver_output() {
+    for fixture in contract_fixtures() {
+        let signal = fixture_signal(&fixture.signal);
+        let source = fixture_source(&fixture.source);
+        let display = resolve_attention_reason(&reason_with_source(
+            &fixture.key,
+            signal,
+            source,
+            fixture.weight,
+        ));
+        assert_eq!(display.known, fixture.known, "fixture {}", fixture.key);
+        assert_eq!(display.title, fixture.title, "fixture {}", fixture.key);
+        assert_eq!(
+            display.description, fixture.description,
+            "fixture {}",
+            fixture.key
+        );
+    }
+}
+
+/// CASE 15 — Explicit resolution order: suffix before pattern before fallback.
+#[test]
+fn case15_resolution_order_is_suffix_pattern_fallback() {
+    let (_, _, suffix) = lookup_explanation_key_with_tier("task.base.blocked").unwrap();
+    assert_eq!(suffix, LookupTier::PrefixSuffix);
+
+    let (_, _, pattern) =
+        lookup_explanation_key_with_tier("purpose.obstacle.composition:missing_application")
+            .unwrap();
+    assert_eq!(pattern, LookupTier::PrefixPattern);
+
+    let (_, _, fallback) =
+        lookup_explanation_key_with_tier("purpose.obstacle.unlisted_kind").unwrap();
+    assert_eq!(fallback, LookupTier::PrefixFallback);
+
+    assert!(lookup_explanation_key("future.contract.unknown").is_none());
+    assert_eq!(
+        unknown_description(
+            "future.contract.unknown",
+            "blocked_task",
+            "task_graph",
+            33
+        ),
+        "No Experience translation for 'future.contract.unknown' yet (signal blocked_task from task_graph, weight 33)."
+    );
 }

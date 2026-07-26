@@ -1,9 +1,8 @@
 /**
- * Experience explanation resolver (Sprint 130–131).
+ * Experience explanation resolver (Sprint 130–132).
  *
- * Translates AttentionReason.explanation_key via the canonical catalog
- * (app/src/generated/explanationCatalog.ts, synced from kernel resources).
- * Experience owns human wording; Domain keeps signal / source / weight / key.
+ * Translates AttentionReason.explanation_key via the canonical catalog.
+ * Resolution order and templates are catalog-owned — no duplicated rules here.
  */
 
 import catalog from "../generated/explanationCatalog";
@@ -24,6 +23,26 @@ export interface DisplayReason {
 
 type CatalogEntry = { title: string; description: string };
 
+type PrefixPattern = {
+  starts_with: string;
+  title: string;
+  description: string;
+};
+
+type PrefixRule = {
+  readonly prefix: string;
+  readonly suffixes?: Readonly<Record<string, CatalogEntry>>;
+  readonly patterns?: ReadonlyArray<PrefixPattern>;
+  readonly fallback?: CatalogEntry;
+};
+
+function applyTemplate(template: string, replacements: Record<string, string>): string {
+  return Object.entries(replacements).reduce(
+    (acc, [key, value]) => acc.split(`{${key}}`).join(value),
+    template,
+  );
+}
+
 export function displayImportanceFromWeight(weight: number): DisplayImportance {
   const magnitude = Math.abs(weight);
   if (magnitude >= 50) return "high";
@@ -31,35 +50,54 @@ export function displayImportanceFromWeight(weight: number): DisplayImportance {
   return "low";
 }
 
-function lookupKey(key: string): CatalogEntry | null {
+/** Catalog-owned resolution: exact → suffix → pattern → prefix fallback. */
+export function lookupCatalogEntry(key: string): CatalogEntry | null {
   const exact = catalog.exact[key as keyof typeof catalog.exact];
   if (exact) return exact;
 
-  for (const rule of catalog.prefix_rules) {
+  for (const rawRule of catalog.prefix_rules) {
+    const rule = rawRule as PrefixRule;
     if (!key.startsWith(rule.prefix)) continue;
     const rest = key.slice(rule.prefix.length);
-    const suffixes = rule.suffixes as Record<string, CatalogEntry>;
-    if (suffixes[rest]) return suffixes[rest];
-    for (const [suffixKey, entry] of Object.entries(suffixes)) {
-      if (suffixKey.endsWith(":*")) {
-        const prefix = suffixKey.slice(0, -2);
-        if (rest.startsWith(prefix)) return entry;
+    const suffixes = rule.suffixes as Record<string, CatalogEntry> | undefined;
+    if (suffixes?.[rest]) return suffixes[rest];
+    for (const pattern of rule.patterns ?? []) {
+      if (rest.startsWith(pattern.starts_with)) {
+        return { title: pattern.title, description: pattern.description };
       }
     }
-    if (suffixes["*"]) return suffixes["*"];
+    if (rule.fallback) return rule.fallback;
   }
   return null;
 }
 
 function fallbackTitle(signal: string): string {
   const titles = catalog.signal_titles as Record<string, string>;
-  return titles[signal] ?? `Attention signal '${signal}' needs attention`;
+  if (titles[signal]) return titles[signal];
+  const template =
+    catalog.resolution.unknown.signal_title_fallback_template;
+  return applyTemplate(template, { signal });
+}
+
+function unknownDescription(
+  explanationKey: string,
+  signal: string,
+  source: string,
+  weight: number,
+): string {
+  const template = catalog.resolution.unknown.description_template;
+  return applyTemplate(template, {
+    explanation_key: explanationKey,
+    signal,
+    source,
+    weight: String(weight),
+  });
 }
 
 /** Resolve one Attention reason into display wording. Deterministic; no ranking. */
 export function resolveAttentionReason(reason: AttentionReason): DisplayReason {
   const importance = displayImportanceFromWeight(reason.weight);
-  const looked = lookupKey(reason.explanation_key);
+  const looked = lookupCatalogEntry(reason.explanation_key);
   if (looked) {
     return {
       title: looked.title,
@@ -74,7 +112,12 @@ export function resolveAttentionReason(reason: AttentionReason): DisplayReason {
   }
   return {
     title: fallbackTitle(reason.signal),
-    description: `No Experience translation for '${reason.explanation_key}' yet (signal ${reason.signal} from ${reason.source}, weight ${reason.weight}).`,
+    description: unknownDescription(
+      reason.explanation_key,
+      reason.signal,
+      reason.source,
+      reason.weight,
+    ),
     importance,
     explanation_key: reason.explanation_key,
     signal: reason.signal,
@@ -91,10 +134,7 @@ export function resolveAttentionReasons(
   return reasons.map(resolveAttentionReason);
 }
 
-/**
- * Decision Engine reasons: prefer Attention translation when present;
- * otherwise keep Decision's own factual summary as the display title.
- */
+/** Decision Engine reasons: Attention translation when present; else Decision summary. */
 export function resolveDecisionReason(reason: DecisionReason): DisplayReason {
   if (reason.attention_reason) {
     return resolveAttentionReason(reason.attention_reason);
@@ -117,7 +157,6 @@ export function resolveDecisionReasons(
   return reasons.map(resolveDecisionReason);
 }
 
-/** Catalog version for contract diagnostics. */
 export function explanationCatalogVersion(): number {
   return catalog.version;
 }

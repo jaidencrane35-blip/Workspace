@@ -6,6 +6,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { stableStringify } from "./explanation-catalog-lib.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "..");
@@ -16,10 +17,11 @@ const catalog = JSON.parse(fs.readFileSync(src, "utf8"));
 fs.mkdirSync(path.dirname(out), { recursive: true });
 const header = `/** AUTO-GENERATED — do not edit. Source: packages/kernel/resources/explanation-catalog.json
  * Regenerate: node scripts/sync-explanation-catalog.mjs
+ * Verify: node scripts/verify-explanation-catalog.mjs
  */
 `;
 fs.writeFileSync(
   out,
-  `${header}export default ${JSON.stringify(catalog, null, 2)} as const;\n`,
+  `${header}export default ${stableStringify(catalog).trimEnd()} as const;\n`,
 );
 console.log(`Synced ${out}`);
