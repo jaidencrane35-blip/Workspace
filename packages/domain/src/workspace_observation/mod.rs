@@ -385,15 +385,59 @@ impl CaptureRequestSource {
     }
 }
 
+/// Provenance for a capture request — attachable to observation lifecycle audits.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CaptureProvenance {
+    pub source: CaptureRequestSource,
+    /// Optional reason the capture was requested.
+    pub reason: Option<String>,
+    /// Optional opaque context (consumer id, trigger id, etc.).
+    pub context: Option<String>,
+}
+
+impl CaptureProvenance {
+    pub fn new(source: CaptureRequestSource) -> Self {
+        Self {
+            source,
+            reason: None,
+            context: None,
+        }
+    }
+
+    pub fn with_reason(mut self, reason: impl Into<String>) -> Self {
+        self.reason = Some(reason.into());
+        self
+    }
+
+    pub fn with_context(mut self, context: impl Into<String>) -> Self {
+        self.context = Some(context.into());
+        self
+    }
+}
+
 /// Capture request contract for the observation orchestration boundary.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CaptureRequest {
     pub source: CaptureRequestSource,
+    pub reason: Option<String>,
+    pub context: Option<String>,
 }
 
 impl CaptureRequest {
     pub fn new(source: CaptureRequestSource) -> Self {
-        Self { source }
+        Self {
+            source,
+            reason: None,
+            context: None,
+        }
+    }
+
+    pub fn from_provenance(provenance: CaptureProvenance) -> Self {
+        Self {
+            source: provenance.source,
+            reason: provenance.reason,
+            context: provenance.context,
+        }
     }
 
     pub fn manual() -> Self {
@@ -410,6 +454,186 @@ impl CaptureRequest {
 
     pub fn event() -> Self {
         Self::new(CaptureRequestSource::Event)
+    }
+
+    pub fn with_reason(mut self, reason: impl Into<String>) -> Self {
+        self.reason = Some(reason.into());
+        self
+    }
+
+    pub fn with_context(mut self, context: impl Into<String>) -> Self {
+        self.context = Some(context.into());
+        self
+    }
+
+    /// Provenance projection for lifecycle attachment / auditing.
+    pub fn provenance(&self) -> CaptureProvenance {
+        CaptureProvenance {
+            source: self.source,
+            reason: self.reason.clone(),
+            context: self.context.clone(),
+        }
+    }
+}
+
+/// How fresh an observation must be for a consumer (contract only — never triggers capture).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub enum ObservationFreshnessRequirement {
+    /// Any persisted observation is acceptable.
+    AnyAvailable,
+    /// Must be classified `Fresh`.
+    Fresh,
+    /// Must not be `Stale` (`Fresh` or `Recent`).
+    NotStale,
+    /// Must be at most this many seconds old.
+    MaxAgeSeconds { max_age_seconds: i64 },
+}
+
+impl ObservationFreshnessRequirement {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::AnyAvailable => "any_available",
+            Self::Fresh => "fresh",
+            Self::NotStale => "not_stale",
+            Self::MaxAgeSeconds { .. } => "max_age_seconds",
+        }
+    }
+}
+
+/// Optional context for a refresh decision evaluation (never executes capture).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub struct ObservationRefreshContext {
+    pub consumer: Option<String>,
+    pub purpose: Option<String>,
+}
+
+impl ObservationRefreshContext {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn with_consumer(mut self, consumer: impl Into<String>) -> Self {
+        self.consumer = Some(consumer.into());
+        self
+    }
+
+    pub fn with_purpose(mut self, purpose: impl Into<String>) -> Self {
+        self.purpose = Some(purpose.into());
+        self
+    }
+}
+
+/// Why a refresh decision was blocked (read-only policy outcome).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ObservationRefreshBlockedReason {
+    CaptureInProgress,
+}
+
+impl ObservationRefreshBlockedReason {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::CaptureInProgress => "capture_in_progress",
+        }
+    }
+}
+
+/// Read-only answer to: should Workspace request a new observation?
+///
+/// Never captures. Never grants authority.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "decision", rename_all = "snake_case")]
+pub enum ObservationRefreshDecision {
+    FreshEnough,
+    RefreshRequired,
+    ObservationUnavailable,
+    RefreshBlocked {
+        reason: ObservationRefreshBlockedReason,
+    },
+}
+
+impl ObservationRefreshDecision {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::FreshEnough => "fresh_enough",
+            Self::RefreshRequired => "refresh_required",
+            Self::ObservationUnavailable => "observation_unavailable",
+            Self::RefreshBlocked { .. } => "refresh_blocked",
+        }
+    }
+}
+
+/// Consumer contract: express a freshness need without triggering capture.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ObservationConsumerFreshnessNeed {
+    pub consumer_id: String,
+    pub requirement: ObservationFreshnessRequirement,
+    pub context: Option<String>,
+}
+
+impl ObservationConsumerFreshnessNeed {
+    pub fn new(
+        consumer_id: impl Into<String>,
+        requirement: ObservationFreshnessRequirement,
+    ) -> Self {
+        Self {
+            consumer_id: consumer_id.into(),
+            requirement,
+            context: None,
+        }
+    }
+
+    pub fn with_context(mut self, context: impl Into<String>) -> Self {
+        self.context = Some(context.into());
+        self
+    }
+}
+
+/// Whether the current status satisfies a freshness requirement.
+pub fn observation_meets_freshness_requirement(
+    status: &WorkspaceObservationStatus,
+    requirement: &ObservationFreshnessRequirement,
+) -> bool {
+    if !status.has_observation || status.freshness == ObservationFreshness::Unavailable {
+        return false;
+    }
+    match requirement {
+        ObservationFreshnessRequirement::AnyAvailable => true,
+        ObservationFreshnessRequirement::Fresh => {
+            status.freshness == ObservationFreshness::Fresh
+        }
+        ObservationFreshnessRequirement::NotStale => matches!(
+            status.freshness,
+            ObservationFreshness::Fresh | ObservationFreshness::Recent
+        ),
+        ObservationFreshnessRequirement::MaxAgeSeconds { max_age_seconds } => status
+            .age_seconds
+            .map(|age| age <= *max_age_seconds)
+            .unwrap_or(false),
+    }
+}
+
+/// Pure refresh policy: decide whether a new observation should be requested.
+///
+/// Does not capture, schedule, or mutate observation state.
+pub fn decide_observation_refresh(
+    status: &WorkspaceObservationStatus,
+    requirement: &ObservationFreshnessRequirement,
+    capture_in_progress: bool,
+) -> ObservationRefreshDecision {
+    if capture_in_progress {
+        return ObservationRefreshDecision::RefreshBlocked {
+            reason: ObservationRefreshBlockedReason::CaptureInProgress,
+        };
+    }
+    if !status.has_observation || status.freshness == ObservationFreshness::Unavailable {
+        return ObservationRefreshDecision::ObservationUnavailable;
+    }
+    if observation_meets_freshness_requirement(status, requirement) {
+        ObservationRefreshDecision::FreshEnough
+    } else {
+        ObservationRefreshDecision::RefreshRequired
     }
 }
 
@@ -831,5 +1055,132 @@ mod tests {
             CaptureRequestSource::Manual
         );
         assert!(CaptureRequestSource::parse("unknown").is_err());
+    }
+
+    #[test]
+    fn capture_request_provenance_carries_reason_and_context() {
+        let request = CaptureRequest::system()
+            .with_reason("startup_seed")
+            .with_context("kernel:boot");
+        let provenance = request.provenance();
+        assert_eq!(provenance.source, CaptureRequestSource::System);
+        assert_eq!(provenance.reason.as_deref(), Some("startup_seed"));
+        assert_eq!(provenance.context.as_deref(), Some("kernel:boot"));
+
+        let round_trip = CaptureRequest::from_provenance(
+            CaptureProvenance::new(CaptureRequestSource::Manual)
+                .with_reason("user")
+                .with_context("ipc"),
+        );
+        assert_eq!(round_trip.source, CaptureRequestSource::Manual);
+        assert_eq!(round_trip.reason.as_deref(), Some("user"));
+        assert_eq!(round_trip.context.as_deref(), Some("ipc"));
+    }
+
+    fn status_with_freshness(
+        freshness: ObservationFreshness,
+        age_seconds: Option<i64>,
+    ) -> WorkspaceObservationStatus {
+        WorkspaceObservationStatus {
+            has_observation: freshness != ObservationFreshness::Unavailable,
+            freshness,
+            pass_id: Some("pass-1".into()),
+            captured_at: Some("2026-07-26T12:00:00Z".into()),
+            age_seconds,
+            window_count: Some(1),
+            monitor_count: Some(1),
+            identity_count: Some(1),
+            source: Some("stub".into()),
+            last_failure: None,
+            authority_effect: WorkspaceObservationStatus::AUTHORITY_EFFECT_NONE.into(),
+        }
+    }
+
+    #[test]
+    fn refresh_decision_outcomes() {
+        let fresh = status_with_freshness(ObservationFreshness::Fresh, Some(10));
+        assert_eq!(
+            decide_observation_refresh(
+                &fresh,
+                &ObservationFreshnessRequirement::Fresh,
+                false
+            ),
+            ObservationRefreshDecision::FreshEnough
+        );
+
+        let recent = status_with_freshness(ObservationFreshness::Recent, Some(120));
+        assert_eq!(
+            decide_observation_refresh(
+                &recent,
+                &ObservationFreshnessRequirement::Fresh,
+                false
+            ),
+            ObservationRefreshDecision::RefreshRequired
+        );
+        assert_eq!(
+            decide_observation_refresh(
+                &recent,
+                &ObservationFreshnessRequirement::NotStale,
+                false
+            ),
+            ObservationRefreshDecision::FreshEnough
+        );
+
+        let stale = status_with_freshness(ObservationFreshness::Stale, Some(400));
+        assert_eq!(
+            decide_observation_refresh(
+                &stale,
+                &ObservationFreshnessRequirement::NotStale,
+                false
+            ),
+            ObservationRefreshDecision::RefreshRequired
+        );
+
+        assert_eq!(
+            decide_observation_refresh(
+                &WorkspaceObservationStatus::unavailable(None),
+                &ObservationFreshnessRequirement::AnyAvailable,
+                false
+            ),
+            ObservationRefreshDecision::ObservationUnavailable
+        );
+
+        assert_eq!(
+            decide_observation_refresh(
+                &fresh,
+                &ObservationFreshnessRequirement::AnyAvailable,
+                true
+            ),
+            ObservationRefreshDecision::RefreshBlocked {
+                reason: ObservationRefreshBlockedReason::CaptureInProgress,
+            }
+        );
+    }
+
+    #[test]
+    fn freshness_requirement_max_age_comparison() {
+        let status = status_with_freshness(ObservationFreshness::Recent, Some(90));
+        assert!(observation_meets_freshness_requirement(
+            &status,
+            &ObservationFreshnessRequirement::MaxAgeSeconds {
+                max_age_seconds: 120
+            }
+        ));
+        assert!(!observation_meets_freshness_requirement(
+            &status,
+            &ObservationFreshnessRequirement::MaxAgeSeconds {
+                max_age_seconds: 60
+            }
+        ));
+
+        let need = ObservationConsumerFreshnessNeed::new(
+            "environment",
+            ObservationFreshnessRequirement::MaxAgeSeconds {
+                max_age_seconds: 30,
+            },
+        )
+        .with_context("generate");
+        assert_eq!(need.consumer_id, "environment");
+        assert_eq!(need.context.as_deref(), Some("generate"));
     }
 }

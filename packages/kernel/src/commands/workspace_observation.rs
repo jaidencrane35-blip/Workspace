@@ -75,7 +75,9 @@ impl QueryCommand for CaptureWorkspaceObservation {
             &ctx.database,
             &ctx.actor_context,
             &ctx.intent_context,
-            CaptureRequest::manual(),
+            CaptureRequest::manual()
+                .with_reason("manual_capture")
+                .with_context("command:CaptureWorkspaceObservation"),
         )?;
         CaptureCoordinator::into_capture_result(outcome)
     }

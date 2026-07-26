@@ -1503,6 +1503,46 @@ export interface WorkspaceObservationStatus {
   authority_effect: string;
 }
 
+/** Capture request origin (Scheduled/Event callers not implemented yet). */
+export type CaptureRequestSource = "manual" | "system" | "scheduled" | "event";
+
+/** Provenance attachable to observation capture lifecycle. */
+export interface CaptureProvenance {
+  source: CaptureRequestSource;
+  reason: string | null;
+  context: string | null;
+}
+
+export interface CaptureRequest {
+  source: CaptureRequestSource;
+  reason: string | null;
+  context: string | null;
+}
+
+/** Consumer freshness contract — does not trigger capture. */
+export type ObservationFreshnessRequirement =
+  | { kind: "any_available" }
+  | { kind: "fresh" }
+  | { kind: "not_stale" }
+  | { kind: "max_age_seconds"; max_age_seconds: number };
+
+export type ObservationRefreshBlockedReason = "capture_in_progress";
+
+export type ObservationRefreshDecision =
+  | { decision: "fresh_enough" }
+  | { decision: "refresh_required" }
+  | { decision: "observation_unavailable" }
+  | {
+      decision: "refresh_blocked";
+      reason: ObservationRefreshBlockedReason;
+    };
+
+export interface ObservationConsumerFreshnessNeed {
+  consumer_id: string;
+  requirement: ObservationFreshnessRequirement;
+  context: string | null;
+}
+
 export type EnvironmentWindowState = "open" | "minimized" | "focused" | "unknown";
 
 export interface EnvironmentWindow {

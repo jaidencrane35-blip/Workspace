@@ -316,13 +316,16 @@ pub use workspace_profile::{
     WorkspaceProfileStatus, WorkspaceProfileSummary, WorkspaceProfileValidation,
 };
 pub use workspace_observation::{
-    build_observation_status, empty_stub_snapshot, observation_age_seconds, observation_freshness,
+    build_observation_status, decide_observation_refresh, empty_stub_snapshot,
+    observation_age_seconds, observation_freshness, observation_meets_freshness_requirement,
     observation_now_rfc3339, observation_u32_to_i32, observation_u64_to_i32,
-    observation_usize_to_i32, CaptureRequest, CaptureRequestSource, ObservationCaptureErrorClass,
-    ObservationCaptureFailure, ObservationFreshness, ObservationWindowIdentity, ObservedMonitor,
-    ObservedWindow, WindowIdentityConfidence, WorkspaceObservationError, WorkspaceObservationPass,
-    WorkspaceObservationPassMetadata, WorkspaceObservationSnapshot, WorkspaceObservationStatus,
-    OBSERVATION_FRESH_THRESHOLD_SECS, OBSERVATION_STALE_THRESHOLD_SECS,
+    observation_usize_to_i32, CaptureProvenance, CaptureRequest, CaptureRequestSource,
+    ObservationCaptureErrorClass, ObservationCaptureFailure, ObservationConsumerFreshnessNeed,
+    ObservationFreshness, ObservationFreshnessRequirement, ObservationRefreshBlockedReason,
+    ObservationRefreshContext, ObservationRefreshDecision, ObservationWindowIdentity,
+    ObservedMonitor, ObservedWindow, WindowIdentityConfidence, WorkspaceObservationError,
+    WorkspaceObservationPass, WorkspaceObservationPassMetadata, WorkspaceObservationSnapshot,
+    WorkspaceObservationStatus, OBSERVATION_FRESH_THRESHOLD_SECS, OBSERVATION_STALE_THRESHOLD_SECS,
 };
 pub use workspace_environment::{
     build_environment_summary, now_rfc3339, validate_workspace_id, EnvironmentApplication,

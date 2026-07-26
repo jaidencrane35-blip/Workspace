@@ -29,7 +29,9 @@ Workspace Environment Model   ← this document
 Attention / Intelligence / Continuity consumers
 ```
 
-**CaptureCoordinator** owns capture request admission and concurrency (no queue). It does **not** schedule, timer, or event-hook captures. Actual Win32 capture and persistence remain in `WorkspaceObservationService`.
+**CaptureCoordinator** owns capture request admission and concurrency (no queue). It does **not** schedule, timer, or event-hook captures. Actual Win32 capture and persistence remain in `WorkspaceObservationService`. Capture requests carry provenance (`source` / optional `reason` / `context`) into distinguishable lifecycle audits (`requested` → `started` → `completed` | `failed`, or `rejected_concurrent`).
+
+**ObservationRefreshPolicyService** answers whether a new observation should be requested (`FreshEnough` / `RefreshRequired` / `ObservationUnavailable` / `RefreshBlocked`). It is read-only: it does **not** capture. Consumer freshness needs (`ObservationConsumerFreshnessNeed`) are contracts only — not yet wired into Environment / Intelligence.
 
 **Observation status** (`get_workspace_observation_status`) reports whether a snapshot exists, its age/freshness, counts, and last capture failure. It is read-only diagnostics: it does **not** trigger capture and does **not** repair stale observations.
 

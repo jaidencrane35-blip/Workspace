@@ -1,4 +1,4 @@
-//! Observation capture orchestration boundary (Sprint 108).
+//! Observation capture orchestration boundary (Sprint 108–109).
 //!
 //! Sole entry for capture requests. Delegates implementation to
 //! [`WorkspaceObservationService`]. Does not schedule, queue, or auto-trigger.
@@ -10,12 +10,13 @@
 use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
 use std::sync::{Arc, Mutex};
 
+use serde_json::json;
 use workspace_database::Database;
 use workspace_domain::{ActorContext, CaptureRequest, IntentContext};
 use workspace_windows_integration::DesktopCapturer;
 
 use crate::error::{KernelError, Result};
-use crate::services::{WorkspaceObservationCaptureResult, WorkspaceObservationService};
+use crate::services::{AuditService, WorkspaceObservationCaptureResult, WorkspaceObservationService};
 
 /// Internal capture lifecycle phases (not exposed over IPC / UI).
 #[repr(u8)]
@@ -25,6 +26,7 @@ pub(crate) enum CaptureLifecycleState {
     Started = 2,
     Completed = 3,
     Failed = 4,
+    RejectedConcurrent = 5,
 }
 
 impl CaptureLifecycleState {
@@ -34,7 +36,28 @@ impl CaptureLifecycleState {
             2 => Some(Self::Started),
             3 => Some(Self::Completed),
             4 => Some(Self::Failed),
+            5 => Some(Self::RejectedConcurrent),
             _ => None,
+        }
+    }
+
+    pub(crate) fn as_str(self) -> &'static str {
+        match self {
+            Self::Requested => "requested",
+            Self::Started => "started",
+            Self::Completed => "completed",
+            Self::Failed => "failed",
+            Self::RejectedConcurrent => "rejected_concurrent",
+        }
+    }
+
+    fn audit_event_type(self) -> &'static str {
+        match self {
+            Self::Requested => "workspace.observation.capture.requested",
+            Self::Started => "workspace.observation.capture.started",
+            Self::Completed => "workspace.observation.capture.completed",
+            Self::Failed => "workspace.observation.capture.failed",
+            Self::RejectedConcurrent => "workspace.observation.capture.rejected_concurrent",
         }
     }
 }
@@ -85,7 +108,9 @@ impl CaptureCoordinator {
         intent: &IntentContext,
         request: CaptureRequest,
     ) -> Result<CaptureCoordinatorResult> {
-        Self::run_capture(request, || WorkspaceObservationService::capture(db, actor, intent))
+        Self::run_capture(db, actor, intent, request, || {
+            WorkspaceObservationService::capture(db, actor, intent)
+        })
     }
 
     /// Request a capture with an injectable capturer (tests / fixtures).
@@ -96,31 +121,117 @@ impl CaptureCoordinator {
         request: CaptureRequest,
         capturer: &dyn DesktopCapturer,
     ) -> Result<CaptureCoordinatorResult> {
-        Self::run_capture(request, || {
+        Self::run_capture(db, actor, intent, request, || {
             WorkspaceObservationService::capture_with(db, actor, intent, capturer)
         })
     }
 
     fn run_capture(
+        db: &Arc<Mutex<Database>>,
+        actor: &ActorContext,
+        intent: &IntentContext,
         request: CaptureRequest,
         capture_fn: impl FnOnce() -> Result<WorkspaceObservationCaptureResult>,
     ) -> Result<CaptureCoordinatorResult> {
-        let _request = request; // reserved for future audit / trigger attribution
         record_lifecycle(CaptureLifecycleState::Requested);
+        Self::audit_lifecycle(
+            db,
+            actor,
+            intent,
+            &request,
+            CaptureLifecycleState::Requested,
+            true,
+            None,
+            None,
+        )?;
+
         let Some(_guard) = CaptureFlightGuard::try_acquire() else {
+            record_lifecycle(CaptureLifecycleState::RejectedConcurrent);
+            Self::audit_lifecycle(
+                db,
+                actor,
+                intent,
+                &request,
+                CaptureLifecycleState::RejectedConcurrent,
+                false,
+                None,
+                Some("observation capture already in progress"),
+            )?;
             return Ok(CaptureCoordinatorResult::RejectedConcurrent);
         };
+
         record_lifecycle(CaptureLifecycleState::Started);
+        Self::audit_lifecycle(
+            db,
+            actor,
+            intent,
+            &request,
+            CaptureLifecycleState::Started,
+            true,
+            None,
+            None,
+        )?;
+
         match capture_fn() {
             Ok(capture) => {
                 record_lifecycle(CaptureLifecycleState::Completed);
+                Self::audit_lifecycle(
+                    db,
+                    actor,
+                    intent,
+                    &request,
+                    CaptureLifecycleState::Completed,
+                    true,
+                    Some(capture.snapshot_id.as_str()),
+                    None,
+                )?;
                 Ok(CaptureCoordinatorResult::Completed(capture))
             }
             Err(error) => {
                 record_lifecycle(CaptureLifecycleState::Failed);
+                let _ = Self::audit_lifecycle(
+                    db,
+                    actor,
+                    intent,
+                    &request,
+                    CaptureLifecycleState::Failed,
+                    false,
+                    None,
+                    Some(&error.to_string()),
+                );
                 Err(error)
             }
         }
+    }
+
+    fn audit_lifecycle(
+        db: &Arc<Mutex<Database>>,
+        actor: &ActorContext,
+        intent: &IntentContext,
+        request: &CaptureRequest,
+        lifecycle: CaptureLifecycleState,
+        success: bool,
+        pass_id: Option<&str>,
+        error_message: Option<&str>,
+    ) -> Result<()> {
+        let provenance = request.provenance();
+        AuditService::record_ai_planning_event(
+            db,
+            actor,
+            intent,
+            lifecycle.audit_event_type(),
+            success,
+            json!({
+                "lifecycle": lifecycle.as_str(),
+                "source": provenance.source.as_str(),
+                "reason": provenance.reason,
+                "context": provenance.context,
+                "pass_id": pass_id,
+                "error": error_message,
+                "authority_effect": "none",
+            })
+            .to_string(),
+        )
     }
 
     /// Whether a capture is currently executing under the coordinator.
@@ -157,6 +268,7 @@ mod tests {
         DesktopCapturer, DesktopObservationCapture, StubDesktopCapturer, WindowsIntegrationError,
     };
 
+    use crate::services::AuditService;
     use crate::WorkspaceKernel;
 
     /// Serialize coordinator tests so the process-wide flight bit cannot race.
@@ -189,6 +301,14 @@ mod tests {
         }
     }
 
+    fn audit_types(db: &Arc<Mutex<workspace_database::Database>>) -> Vec<String> {
+        AuditService::list_recent(db, 50)
+            .unwrap()
+            .into_iter()
+            .map(|event| event.event_type)
+            .collect()
+    }
+
     #[test]
     fn coordinator_delegates_capture() {
         let _lock = coordinator_test_lock().lock().unwrap();
@@ -216,6 +336,42 @@ mod tests {
             }
             other => panic!("expected Completed, got {other:?}"),
         }
+    }
+
+    #[test]
+    fn request_provenance_audited_on_lifecycle() {
+        let _lock = coordinator_test_lock().lock().unwrap();
+        let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+        let db = kernel.shared_database();
+        let local = ActorContext::local_user();
+        let intent = IntentContext::user_request();
+        let request = CaptureRequest::manual()
+            .with_reason("diagnostic")
+            .with_context("ipc:capture_workspace_observation");
+
+        CaptureCoordinator::request_capture_with(
+            &db,
+            &local,
+            &intent,
+            request,
+            &StubDesktopCapturer::fixture_dual_monitor(),
+        )
+        .unwrap();
+
+        let events = AuditService::list_recent(&db, 20).unwrap();
+        let requested = events
+            .iter()
+            .find(|event| event.event_type == "workspace.observation.capture.requested")
+            .expect("requested audit");
+        let metadata = requested.metadata.as_deref().expect("metadata");
+        assert!(metadata.contains("diagnostic"));
+        assert!(metadata.contains("ipc:capture_workspace_observation"));
+        assert!(metadata.contains("\"source\":\"manual\""));
+
+        let types = audit_types(&db);
+        assert!(types.contains(&"workspace.observation.capture.requested".into()));
+        assert!(types.contains(&"workspace.observation.capture.started".into()));
+        assert!(types.contains(&"workspace.observation.capture.completed".into()));
     }
 
     #[test]
@@ -258,7 +414,7 @@ mod tests {
             &db,
             &local,
             &intent,
-            CaptureRequest::system(),
+            CaptureRequest::system().with_reason("overlap"),
             &StubDesktopCapturer::fixture_dual_monitor(),
         )
         .unwrap();
@@ -266,6 +422,13 @@ mod tests {
             second,
             CaptureCoordinatorResult::RejectedConcurrent
         ));
+        assert_eq!(
+            CaptureCoordinator::last_lifecycle(),
+            Some(CaptureLifecycleState::RejectedConcurrent)
+        );
+
+        let types = audit_types(&db);
+        assert!(types.contains(&"workspace.observation.capture.rejected_concurrent".into()));
 
         release.wait();
         let first_result = first.join().expect("first capture thread").unwrap();
@@ -284,11 +447,12 @@ mod tests {
     fn failure_releases_coordinator_state() {
         let _lock = coordinator_test_lock().lock().unwrap();
         let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+        let db = kernel.shared_database();
         let local = ActorContext::local_user();
         let intent = IntentContext::user_request();
 
         let err = CaptureCoordinator::request_capture_with(
-            &kernel.shared_database(),
+            &db,
             &local,
             &intent,
             CaptureRequest::manual(),
@@ -301,9 +465,10 @@ mod tests {
             CaptureCoordinator::last_lifecycle(),
             Some(CaptureLifecycleState::Failed)
         );
+        assert!(audit_types(&db).contains(&"workspace.observation.capture.failed".into()));
 
         let recovered = CaptureCoordinator::request_capture_with(
-            &kernel.shared_database(),
+            &db,
             &local,
             &intent,
             CaptureRequest::manual(),
