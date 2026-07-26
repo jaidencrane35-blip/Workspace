@@ -18,10 +18,14 @@ RecommendationOutcome
 RecommendationDecisionContext
         ↓ assess
 RecommendationDecisionReadiness
+        ↓
+RecommendationDecisionBoundary
         ✗ attempt_handoff() hard-fails
         ↓ (future explicit intake + user confirmation)
 Decision Engine owns goals / intents
 ```
+
+See [WORKSPACE-RECOMMENDATION-DECISION-BOUNDARY.md](./WORKSPACE-RECOMMENDATION-DECISION-BOUNDARY.md).
 
 `RecommendationDecisionContext` is **assessment/input only**. It is not a Decision Engine
 candidate, not an intent, and not a handoff payload.

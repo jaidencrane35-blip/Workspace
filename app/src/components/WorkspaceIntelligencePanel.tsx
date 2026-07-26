@@ -2323,8 +2323,9 @@ export function WorkspaceIntelligencePanel({
           Evolution, Purpose, Task Graph, Composition, Decision Queue, and
           Environment. Explanation shows why a suggestion is shown (evidence,
           lifecycle, Experience catalog keys). Present / Accept / Reject record
-          human decisions only — never execute. Distinct from Decision Engine
-          accept/handoff below.
+          recommendation agreement only — not a Decision Engine object, intent,
+          or execution authority. Distinct from Decision Engine accept/handoff
+          below.
         </p>
         <div className="row">
           <button

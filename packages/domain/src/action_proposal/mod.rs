@@ -760,6 +760,9 @@ pub struct RecommendationReviewActionResult {
     /// Read-only RE→DE readiness — never a handoff payload, never commands.
     #[serde(default)]
     pub decision_readiness: Option<crate::workspace_recommendation::RecommendationDecisionReadiness>,
+    /// Explicit RE↔DE ownership / intent boundary — never executes.
+    #[serde(default)]
+    pub decision_boundary: Option<crate::workspace_recommendation::RecommendationDecisionBoundary>,
     pub explanation: String,
     pub authority_effect: String,
 }
@@ -4079,6 +4082,7 @@ mod tests {
                 outcome: None,
                 decision_context: None,
                 decision_readiness: None,
+                decision_boundary: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
         }
     }

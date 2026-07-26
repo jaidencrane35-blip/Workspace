@@ -46,6 +46,7 @@ fn proposal() -> workspace_domain::OutcomeAdaptationProposal {
                 outcome: None,
                 decision_context: None,
                 decision_readiness: None,
+                decision_boundary: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
         },
         "t0",

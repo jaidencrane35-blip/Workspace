@@ -147,6 +147,8 @@ mod workspace_recommendation_decision_readiness_contract_tests;
 #[cfg(test)]
 mod workspace_recommendation_decision_context_contract_tests;
 #[cfg(test)]
+mod workspace_recommendation_decision_boundary_contract_tests;
+#[cfg(test)]
 mod workspace_adaptation_governance_contract_tests;
 #[cfg(test)]
 mod workspace_adaptation_review_contract_tests;

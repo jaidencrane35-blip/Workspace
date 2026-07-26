@@ -1817,7 +1817,8 @@ export function OperatorConsole({
           Continuity, Evolution, Purpose, Task Graph, Composition, Decision
           Queue, Environment. Explanation views show why a suggestion is shown
           (evidence, lifecycle, catalog keys). Present / Accept / Reject record
-          human decision only — never execute, never Decision Engine handoff.
+          recommendation agreement only — not a Decision Engine object, intent,
+          or execution authority. Handoff not performed.
         </p>
         <div className="row">
           <button

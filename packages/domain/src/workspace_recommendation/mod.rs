@@ -242,6 +242,9 @@ pub struct RecommendationItem {
     /// Read-only Decision Engine handoff readiness (Sprint 212+) — never creates commands.
     #[serde(default)]
     pub decision_readiness: Option<RecommendationDecisionReadiness>,
+    /// Explicit RE↔DE ownership / intent boundary (Sprint 222+) — never executes.
+    #[serde(default)]
+    pub decision_boundary: Option<RecommendationDecisionBoundary>,
     pub authority_effect: String,
 }
 
@@ -671,6 +674,188 @@ impl RecommendationDecisionReadiness {
 
     pub fn may_mutate_provenance(&self) -> bool {
         false
+    }
+}
+
+/// Explicit separation between recommendation acceptance and future Decision Engine intake
+/// (Sprint 222).
+///
+/// Classifies the human decision and ownership so operators cannot confuse accept with
+/// intent creation, Decision Engine objects, or execution authority.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RecommendationDecisionBoundary {
+    pub recommendation_id: String,
+    /// `recommendation_only` | `context_ready` | `awaiting_decision_engine_intake`
+    pub transition_state: String,
+    /// Always `handoff_not_performed` until an explicit future intake sprint.
+    pub handoff_state: String,
+    /// What the human decision means — never execution authorization.
+    /// `none` | `recommendation_agreement` | `recommendation_rejection` | `recommendation_terminal`
+    pub user_intent_kind: String,
+    pub recommendation_owner: String,
+    pub decision_owner: String,
+    pub execution_owner: String,
+    pub governance_owner: String,
+    pub experience_owner: String,
+    /// True when lifecycle is accepted — still a recommendation decision only.
+    pub accepted_as_recommendation_decision: bool,
+    pub creates_intent: bool,
+    pub creates_decision_engine_object: bool,
+    pub grants_execution_authority: bool,
+    pub handoff_performed: bool,
+    pub note: String,
+    pub authority_effect: String,
+}
+
+impl RecommendationDecisionBoundary {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+
+    pub const STATE_RECOMMENDATION_ONLY: &'static str = "recommendation_only";
+    pub const STATE_CONTEXT_READY: &'static str = "context_ready";
+    pub const STATE_AWAITING_DECISION_ENGINE_INTAKE: &'static str =
+        "awaiting_decision_engine_intake";
+    pub const HANDOFF_NOT_PERFORMED: &'static str = "handoff_not_performed";
+
+    pub const INTENT_NONE: &'static str = "none";
+    pub const INTENT_AGREEMENT: &'static str = "recommendation_agreement";
+    pub const INTENT_REJECTION: &'static str = "recommendation_rejection";
+    pub const INTENT_TERMINAL: &'static str = "recommendation_terminal";
+
+    pub const OWNER_RECOMMENDATION: &'static str = "recommendation_engine";
+    pub const OWNER_DECISION: &'static str = "decision_engine";
+    pub const OWNER_GATEWAY: &'static str = "permission_gateway";
+    pub const OWNER_GOVERNANCE: &'static str = "governance";
+    pub const OWNER_EXPERIENCE: &'static str = "experience";
+
+    /// Derive boundary from assembled context + readiness (observational only).
+    pub fn from_context_and_readiness(
+        context: &RecommendationDecisionContext,
+        readiness: &RecommendationDecisionReadiness,
+    ) -> Self {
+        let user_decision = context.user_decision.as_deref();
+        let accepted = context.lifecycle_state == "accepted"
+            || user_decision == Some("accepted");
+        let user_intent_kind = match user_decision {
+            Some("accepted") => Self::INTENT_AGREEMENT,
+            Some("rejected") => Self::INTENT_REJECTION,
+            Some("expired") | Some("superseded") => Self::INTENT_TERMINAL,
+            _ if accepted => Self::INTENT_AGREEMENT,
+            _ => Self::INTENT_NONE,
+        };
+
+        let transition_state = if readiness.ready_for_future_handoff && context.complete {
+            Self::STATE_AWAITING_DECISION_ENGINE_INTAKE
+        } else if accepted && context.complete {
+            Self::STATE_CONTEXT_READY
+        } else if accepted && !context.complete {
+            // Accepted agreement recorded, but intake context still incomplete.
+            Self::STATE_RECOMMENDATION_ONLY
+        } else {
+            Self::STATE_RECOMMENDATION_ONLY
+        };
+
+        let note = match transition_state {
+            s if s == Self::STATE_AWAITING_DECISION_ENGINE_INTAKE => {
+                "Boundary: recommendation agreement recorded; context ready for *future* Decision \
+                 Engine intake. Handoff not performed — Decision Engine owns goals/intents; \
+                 Gateway owns execution."
+                    .into()
+            }
+            s if s == Self::STATE_CONTEXT_READY => {
+                "Boundary: decision context is complete, but readiness does not authorize intake. \
+                 Handoff not performed; accepted recommendation is not an intent."
+                    .into()
+            }
+            _ if accepted => {
+                "Boundary: accepted as a recommendation decision only (agreement with a suggestion). \
+                 Not a request for action, not an intent, not execution authority. Handoff not performed."
+                    .into()
+            }
+            _ => {
+                "Boundary: recommendation remains Recommendation Engine–owned. No Decision Engine \
+                 object, intent, or execution authority."
+                    .into()
+            }
+        };
+
+        Self {
+            recommendation_id: context.recommendation_id.clone(),
+            transition_state: transition_state.into(),
+            handoff_state: Self::HANDOFF_NOT_PERFORMED.into(),
+            user_intent_kind: user_intent_kind.into(),
+            recommendation_owner: Self::OWNER_RECOMMENDATION.into(),
+            decision_owner: Self::OWNER_DECISION.into(),
+            execution_owner: Self::OWNER_GATEWAY.into(),
+            governance_owner: Self::OWNER_GOVERNANCE.into(),
+            experience_owner: Self::OWNER_EXPERIENCE.into(),
+            accepted_as_recommendation_decision: accepted,
+            creates_intent: false,
+            creates_decision_engine_object: false,
+            grants_execution_authority: false,
+            handoff_performed: false,
+            note,
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        }
+    }
+
+    pub fn attempt_execute() -> Result<(), WorkspaceRecommendationEngineError> {
+        Err(WorkspaceRecommendationEngineError::CannotExecute)
+    }
+
+    pub fn attempt_handoff(&self) -> Result<(), WorkspaceRecommendationEngineError> {
+        Err(WorkspaceRecommendationEngineError::CannotBecomeHandoff)
+    }
+
+    pub fn attempt_create_intent(&self) -> Result<(), WorkspaceRecommendationEngineError> {
+        Err(WorkspaceRecommendationEngineError::CannotBecomeHandoff)
+    }
+
+    pub fn attempt_create_decision_engine_object(
+        &self,
+    ) -> Result<(), WorkspaceRecommendationEngineError> {
+        Err(WorkspaceRecommendationEngineError::CannotBecomeHandoff)
+    }
+
+    pub fn attempt_authorize_execution(&self) -> Result<(), WorkspaceRecommendationEngineError> {
+        Err(WorkspaceRecommendationEngineError::CannotExecute)
+    }
+
+    pub fn may_create_intent(&self) -> bool {
+        false
+    }
+
+    pub fn may_create_decision_engine_object(&self) -> bool {
+        false
+    }
+
+    pub fn may_grant_execution_authority(&self) -> bool {
+        false
+    }
+
+    pub fn may_invoke_gateway(&self) -> bool {
+        false
+    }
+
+    pub fn may_mutate_provenance(&self) -> bool {
+        false
+    }
+
+    /// Rejection guards: acceptance / completeness / readiness never cross ownership lines.
+    pub fn assert_rejection_guards(&self) -> Result<(), WorkspaceRecommendationEngineError> {
+        if self.creates_intent
+            || self.creates_decision_engine_object
+            || self.grants_execution_authority
+            || self.handoff_performed
+            || self.handoff_state != Self::HANDOFF_NOT_PERFORMED
+            || self.authority_effect != Self::AUTHORITY_EFFECT_NONE
+        {
+            return Err(WorkspaceRecommendationEngineError::CannotBecomeHandoff);
+        }
+        if self.accepted_as_recommendation_decision && self.user_intent_kind == Self::INTENT_AGREEMENT
+        {
+            // Accepted ≠ intent / execution — already encoded by flags above.
+        }
+        Ok(())
     }
 }
 

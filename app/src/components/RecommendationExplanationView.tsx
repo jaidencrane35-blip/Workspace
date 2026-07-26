@@ -1,5 +1,6 @@
 import { DisplayReasonList } from "./DisplayReasonList";
 import type {
+  RecommendationDecisionBoundary,
   RecommendationDecisionContext,
   RecommendationDecisionReadiness,
   RecommendationHistoryEntry,
@@ -122,6 +123,42 @@ export function RecommendationExplanationBlock({
       {item.decision_readiness ? (
         <RecommendationDecisionReadinessBlock readiness={item.decision_readiness} />
       ) : null}
+      {item.decision_boundary ? (
+        <RecommendationDecisionBoundaryBlock boundary={item.decision_boundary} />
+      ) : null}
+    </div>
+  );
+}
+
+/** Explicit RE↔DE boundary — accept ≠ decision created / action approved / execution. */
+export function RecommendationDecisionBoundaryBlock({
+  boundary,
+}: {
+  boundary: RecommendationDecisionBoundary;
+}) {
+  return (
+    <div className="recommendation-decision-boundary muted" style={{ marginTop: 4 }}>
+      <div>
+        Decision boundary: <strong>{boundary.transition_state}</strong>
+        {" · "}
+        handoff: {boundary.handoff_state}
+        {" · "}
+        intent kind: {boundary.user_intent_kind}
+        {" · "}
+        authority: {boundary.authority_effect}
+      </div>
+      <div>{boundary.note}</div>
+      <div>
+        Creates intent: {boundary.creates_intent ? "yes" : "no"}
+        {" · "}
+        DE object: {boundary.creates_decision_engine_object ? "yes" : "no"}
+        {" · "}
+        execution authorised: {boundary.grants_execution_authority ? "yes" : "no"}
+      </div>
+      <div className="mono">
+        Owners: RE={boundary.recommendation_owner} · DE={boundary.decision_owner} ·
+        Gateway={boundary.execution_owner}
+      </div>
     </div>
   );
 }

@@ -707,6 +707,8 @@ fn case23_accept_returns_decision_readiness_without_handoff() {
         id.clone(),
     )
     .unwrap();
+    use workspace_domain::RecommendationDecisionBoundary;
+
     let context = accepted
         .decision_context
         .expect("accept projects decision context");
@@ -728,6 +730,20 @@ fn case23_accept_returns_decision_readiness_without_handoff() {
         readiness.readiness_state == RecommendationDecisionReadiness::STATE_HANDOFF_DEFERRED
             || readiness.readiness_state == RecommendationDecisionReadiness::STATE_BLOCKED
     );
+    let boundary = accepted
+        .decision_boundary
+        .expect("accept projects decision boundary");
+    assert_eq!(
+        boundary.user_intent_kind,
+        RecommendationDecisionBoundary::INTENT_AGREEMENT
+    );
+    assert!(!boundary.creates_intent);
+    assert!(!boundary.grants_execution_authority);
+    assert_eq!(
+        boundary.handoff_state,
+        RecommendationDecisionBoundary::HANDOFF_NOT_PERFORMED
+    );
+    assert!(boundary.assert_rejection_guards().is_ok());
     assert!(!accepted.explanation.to_lowercase().contains("planner"));
     assert_cannot_execute(CommandHandler::workspace_recommendation_engine_attempt_execute());
     assert_cannot_execute(CommandHandler::decision_engine_attempt_execute());
@@ -739,6 +755,7 @@ fn case23_accept_returns_decision_readiness_without_handoff() {
     let item = after.candidates.iter().find(|c| c.id == id).unwrap();
     assert!(item.decision_context.is_some());
     assert!(item.decision_readiness.is_some());
+    assert!(item.decision_boundary.is_some());
     assert_eq!(
         item.decision_readiness.as_ref().unwrap().authority_effect,
         "none"
@@ -749,6 +766,10 @@ fn case23_accept_returns_decision_readiness_without_handoff() {
         .unwrap()
         .decision_engine_object_id
         .is_none());
+    assert_eq!(
+        item.decision_boundary.as_ref().unwrap().handoff_state,
+        RecommendationDecisionBoundary::HANDOFF_NOT_PERFORMED
+    );
 }
 
 /// CASE 22 — Supersede retains prior outcomes; provenance/reasoning untouched.

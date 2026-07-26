@@ -2173,6 +2173,31 @@ export interface RecommendationItem {
   decision_context?: RecommendationDecisionContext | null;
   /** Read-only Decision Engine handoff readiness — never creates commands. */
   decision_readiness?: RecommendationDecisionReadiness | null;
+  /** Explicit RE↔DE ownership / intent boundary — never executes. */
+  decision_boundary?: RecommendationDecisionBoundary | null;
+  authority_effect: string;
+}
+
+/** Explicit separation: recommendation acceptance ≠ DE intake / execution. */
+export interface RecommendationDecisionBoundary {
+  recommendation_id: string;
+  /** recommendation_only | context_ready | awaiting_decision_engine_intake */
+  transition_state: string;
+  /** Always handoff_not_performed today. */
+  handoff_state: string;
+  /** none | recommendation_agreement | recommendation_rejection | recommendation_terminal */
+  user_intent_kind: string;
+  recommendation_owner: string;
+  decision_owner: string;
+  execution_owner: string;
+  governance_owner: string;
+  experience_owner: string;
+  accepted_as_recommendation_decision: boolean;
+  creates_intent: boolean;
+  creates_decision_engine_object: boolean;
+  grants_execution_authority: boolean;
+  handoff_performed: boolean;
+  note: string;
   authority_effect: string;
 }
 
@@ -2276,6 +2301,7 @@ export interface RecommendationReviewActionResult {
   outcome: RecommendationOutcome | null;
   decision_context?: RecommendationDecisionContext | null;
   decision_readiness?: RecommendationDecisionReadiness | null;
+  decision_boundary?: RecommendationDecisionBoundary | null;
   explanation: string;
   authority_effect: string;
 }
