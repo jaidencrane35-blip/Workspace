@@ -1591,8 +1591,9 @@ export function WorkspaceIntelligencePanel({
       <section>
         <h3>What deserves attention</h3>
         <p className="muted">
-          Canonical prioritization — explainable scores only. Attention never
-          executes or grants permission.
+          Governed prioritization over Workspace context — explainable scores
+          only. Attention never observes the desktop, never executes, and never
+          grants permission.
         </p>
         <div className="row">
           <button

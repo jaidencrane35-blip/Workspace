@@ -38,7 +38,7 @@ Deterministic rules only — not AI reasoning:
 
 - Primary Focus
 - Today's Work
-- Suggested Attention
+- Session decisions (Decision Queue pointers from Session — not Attention Engine)
 - Waiting On
 - Blocked Work
 - Recent Progress

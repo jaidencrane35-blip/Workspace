@@ -414,3 +414,171 @@ fn case10_governance_surfaces_remain_green() {
     assert_eq!(intel.authority_effect, "none");
     assert_eq!(intel.attention.workspace_id, attention.workspace_id);
 }
+
+/// CASE 11 — Item IDs are unique; ordering is deterministic (score, priority, id).
+#[test]
+fn case11_unique_ids_and_deterministic_ordering() {
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let (ws, project_id, _) = seed_project(&kernel);
+    seed_pending_contract(&kernel, ws.clone(), project_id);
+    let attention = CommandHandler::generate_workspace_attention(
+        &kernel,
+        ActorContext::local_user(),
+        IntentContext::user_request(),
+        ws,
+    )
+    .unwrap();
+    let mut ids = std::collections::HashSet::new();
+    for item in &attention.items {
+        assert!(
+            ids.insert(item.id.as_str().to_string()),
+            "duplicate attention id {}",
+            item.id.as_str()
+        );
+        assert!(item.id.as_str().starts_with("attention:"));
+    }
+    for window in attention.items.windows(2) {
+        let (a, b) = (&window[0], &window[1]);
+        assert!(
+            a.score > b.score
+                || (a.score == b.score
+                    && (a.priority.rank() < b.priority.rank()
+                        || (a.priority.rank() == b.priority.rank()
+                            && a.id.as_str() <= b.id.as_str()))),
+            "non-deterministic order: {}@{} before {}@{}",
+            a.id.as_str(),
+            a.score,
+            b.id.as_str(),
+            b.score
+        );
+    }
+}
+
+/// CASE 12 — Environment owns desktop-like gaps over Composition when both present.
+#[test]
+fn case12_environment_owns_desktop_gaps_over_composition() {
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let (ws, _, _) = seed_project(&kernel);
+    let local = ActorContext::local_user();
+    let queue = crate::services::DecisionQueueService::aggregate_readonly(
+        &kernel.shared_database(),
+        &local,
+        &kernel.orchestrated_plans(),
+        &kernel.assistant_workflows(),
+        ws.clone(),
+    )
+    .unwrap();
+    let graph = crate::services::WorkspaceActivityGraphService::generate_with_decision_queue(
+        &kernel.shared_database(),
+        &local,
+        &kernel.orchestrated_plans(),
+        &kernel.assistant_workflows(),
+        ws.clone(),
+        Some(&queue),
+    )
+    .unwrap();
+    let continuity = crate::services::WorkspaceContinuityService::generate_with_inputs(
+        &kernel.shared_database(),
+        &local,
+        ws.clone(),
+        &queue,
+        &graph,
+    )
+    .unwrap();
+
+    let env = workspace_domain::WorkspaceEnvironmentState {
+        workspace_id: ws.clone(),
+        generated_at: chrono::Utc::now().to_rfc3339(),
+        active_project_id: None,
+        active_task_id: None,
+        windows: vec![],
+        applications: vec![],
+        window_groups: vec![],
+        layout_associations: vec![],
+        gaps: vec![workspace_domain::EnvironmentGap {
+            kind: "disconnected_work".into(),
+            title: "Disconnected desktop work".into(),
+            explanation: "Active work without matching windows.".into(),
+            application_id: None,
+            project_id: None,
+            task_id: None,
+        }],
+        focused_window_id: None,
+        running_application_count: 0,
+        missing_application_count: 0,
+        disconnected_work: true,
+        summary: "fixture".into(),
+        authority_effect: "none".into(),
+    };
+    let composition = workspace_domain::WorkspaceCompositionState {
+        workspace_id: ws.clone(),
+        generated_at: chrono::Utc::now().to_rfc3339(),
+        label: "fixture".into(),
+        active_project_id: None,
+        active_project_name: None,
+        active_task_id: None,
+        focus_label: None,
+        members: vec![],
+        relationships: vec![],
+        gaps: vec![
+            workspace_domain::CompositionGap {
+                kind: "disconnected_work".into(),
+                title: "Disconnected desktop work".into(),
+                explanation: "Duplicate desktop gap from Composition.".into(),
+                evidence: vec![],
+                member_id: None,
+            },
+            workspace_domain::CompositionGap {
+                kind: "incomplete_membership".into(),
+                title: "Logical composition gap".into(),
+                explanation: "Composition-owned logical gap.".into(),
+                evidence: vec![],
+                member_id: None,
+            },
+        ],
+        present_application_count: 0,
+        missing_application_count: 0,
+        task_node_count: 0,
+        window_count: 0,
+        outstanding_decision_count: 0,
+        explanation: "fixture".into(),
+        evidence: vec![],
+        summary: "fixture".into(),
+        authority_effect: "none".into(),
+    };
+
+    let attention = crate::services::WorkspaceAttentionService::generate_with_task_graph(
+        &kernel.shared_database(),
+        &local,
+        ws,
+        &queue,
+        &graph,
+        &continuity,
+        None,
+        Some(&env),
+        Some(&composition),
+        None,
+        None,
+    )
+    .unwrap();
+
+    assert_eq!(
+        attention
+            .items
+            .iter()
+            .filter(|i| {
+                i.source_type == workspace_domain::AttentionSourceType::Environment
+                    && i.source_id.starts_with("disconnected_work:")
+            })
+            .count(),
+        1
+    );
+    assert!(!attention.items.iter().any(|i| {
+        i.source_type == workspace_domain::AttentionSourceType::Composition
+            && i.source_id.starts_with("disconnected_work:")
+    }));
+    assert!(attention.items.iter().any(|i| {
+        i.source_type == workspace_domain::AttentionSourceType::Composition
+            && i.source_id.starts_with("incomplete_membership:")
+    }));
+}

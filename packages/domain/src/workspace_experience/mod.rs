@@ -57,7 +57,7 @@ impl ExperienceSectionKind {
         match self {
             Self::PrimaryFocus => "Primary Focus",
             Self::TodaysWork => "Today's Work",
-            Self::SuggestedAttention => "Suggested Attention",
+            Self::SuggestedAttention => "Session decisions",
             Self::WaitingOn => "Waiting On",
             Self::BlockedWork => "Blocked Work",
             Self::RecentProgress => "Recent Progress",

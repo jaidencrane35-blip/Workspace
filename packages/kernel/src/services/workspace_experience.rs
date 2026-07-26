@@ -120,7 +120,8 @@ impl WorkspaceExperienceService {
             work_items,
         ));
 
-        // Suggested Attention — decisions (immediate if any, else collapsed).
+        // Session decisions — Decision Queue pointers from Session (not Attention Engine).
+        // Vocabulary: distinct from Workspace Attention prioritization.
         let attention_items: Vec<ExperienceItem> = session
             .decisions
             .iter()
@@ -154,7 +155,8 @@ impl WorkspaceExperienceService {
             ExperienceSectionKind::SuggestedAttention,
             attention_vis,
             "session.decisions",
-            "Suggested Attention presents Decision Queue pointers from Session.",
+            "Session decisions present Decision Queue pointers from Session — \
+             not the Attention Engine prioritization layer.",
             attention_items,
         ));
 

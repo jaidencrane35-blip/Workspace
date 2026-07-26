@@ -1,6 +1,16 @@
-//! Workspace Attention Engine foundation (Phase 5 Batch 2).
+//! Workspace Attention Engine foundation (Phase 5 Batch 2 / Sprint 125).
 //!
-//! Pure read model — projects which existing information deserves attention.
+//! A governed prioritization layer over Workspace context.
+//!
+//! # Facts vs inference
+//!
+//! **Fact inputs** (owned elsewhere): Environment (← WorkspaceState), Decision Queue,
+//! Continuity, Activity Graph, Task Graph, Composition, Purpose, Evolution.
+//!
+//! **Inference outputs** (this model): `score`, `priority`, `urgency`, `category`,
+//! ranked `top_items`. Attention never observes the desktop, never executes, and
+//! never persists user decisions.
+//!
 //! No authority, no execution, no duplicate persistence.
 
 use chrono::Utc;
@@ -193,7 +203,10 @@ impl AttentionState {
     }
 }
 
-/// One scored, explainable attention projection.
+/// One scored, explainable attention **inference** over an upstream fact source.
+///
+/// `source_type` / `source_id` point at facts owned elsewhere. `score`, `priority`,
+/// `urgency`, and `category` are Attention inference — not observation facts.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AttentionItem {
     pub id: AttentionItemId,
@@ -266,7 +279,9 @@ impl AttentionItem {
     }
 }
 
-/// Full attention snapshot.
+/// Full attention snapshot — ranked inference over Workspace context.
+///
+/// Ordering is deterministic: score DESC, priority rank ASC, id ASC.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct WorkspaceAttentionState {
     pub workspace_id: String,

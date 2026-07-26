@@ -1,6 +1,16 @@
-//! Workspace Attention Engine (Phase 5 Batch 2).
+//! Workspace Attention Engine (Phase 5 Batch 2 / Sprint 125).
 //!
-//! Deterministic prioritization over Continuity, Decision Queue, and Activity Graph.
+//! Governed prioritization layer over Workspace context.
+//!
+//! # Contract
+//!
+//! **Facts (inputs):** Decision Queue, Continuity, Activity Graph, Task Graph,
+//! Environment (← WorkspaceState), Composition, Purpose, Evolution.
+//! Attention never reads Observation snapshots, DesktopWindow DTOs, or Win32.
+//!
+//! **Inference (outputs):** score, priority, urgency, category, ranked top items.
+//! Attention items are projections — not a second source of truth.
+//!
 //! Never executes, never grants authority, never persists payloads.
 
 use std::collections::HashSet;
@@ -18,13 +28,21 @@ use workspace_domain::{
 use crate::error::{KernelError, Result};
 use crate::services::{
     AssistantWorkflowStore, AuditService, DecisionQueueService, OrchestratedPlanStore,
-    WorkspaceActivityGraphService, WorkspaceContinuityService,
+    WorkspaceActivityGraphService, WorkspaceContinuityService, WorkspaceEnvironmentService,
+    WorkspaceStateEngine,
 };
+
+/// Desktop-like gap kinds owned by Environment (← WorkspaceState).
+/// Composition must not re-project these when Environment is present.
+const ENVIRONMENT_OWNED_GAP_KINDS: &[&str] = &["disconnected_work", "missing_application"];
 
 pub(crate) struct WorkspaceAttentionService;
 
 impl WorkspaceAttentionService {
-    /// Standalone generate — builds Continuity then Attention without Intelligence.
+    /// Standalone / IPC generate — diagnostics refresh.
+    ///
+    /// Desktop path is canonical: WorkspaceStateEngine → WorkspaceState → Environment.
+    /// Preferred product path is [`Self::generate_with_task_graph`] via Intelligence.
     pub(crate) fn generate(
         db: &Arc<Mutex<Database>>,
         actor: &ActorContext,
@@ -55,12 +73,56 @@ impl WorkspaceAttentionService {
             &queue,
             &graph,
         )?;
-        let task_graph = crate::services::TaskGraphService::generate(db, actor, workspace_id.clone())?;
-        let environment =
-            crate::services::WorkspaceEnvironmentService::generate(db, actor, workspace_id.clone()).ok();
+        let task_graph =
+            crate::services::TaskGraphService::generate(db, actor, workspace_id.clone())?;
+
+        // Canonical desktop facts: one WorkspaceState load → Environment.
+        let workspace_state = WorkspaceStateEngine::get_current(
+            db,
+            actor,
+            &IntentContext::user_request(),
+        )?;
         let workflow =
             crate::services::WorkspaceIntentService::get_workflow_context_readonly(db, &workspace_id)
                 .ok();
+        let environment = match &workflow {
+            Some(wf) => {
+                let applications = {
+                    let guard = db
+                        .lock()
+                        .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+                    let wid = WorkspaceId::new(workspace_id.clone()).map_err(KernelError::Domain)?;
+                    workspace_database::ApplicationRepository::new(&guard)
+                        .list_by_workspace(&wid)
+                        .map_err(KernelError::from)
+                };
+                match applications {
+                    Ok(apps) => {
+                        let layout = {
+                            let guard = db.lock().ok();
+                            guard.and_then(|g| {
+                                let wid = WorkspaceId::new(&workspace_id).ok()?;
+                                crate::services::LayoutService::load_by_workspace(&g, &wid).ok()
+                            })
+                        };
+                        WorkspaceEnvironmentService::generate_from_state(
+                            db,
+                            actor,
+                            &workspace_id,
+                            &workspace_state,
+                            &apps,
+                            wf,
+                            Some(&task_graph),
+                            layout.as_ref(),
+                        )
+                        .ok()
+                    }
+                    Err(_) => None,
+                }
+            }
+            None => None,
+        };
+
         let composition = match (&environment, &workflow) {
             (Some(env), Some(wf)) => {
                 crate::services::WorkspaceCompositionService::generate_with_inputs(
@@ -136,30 +198,11 @@ impl WorkspaceAttentionService {
         )
     }
 
-    /// Preferred path — Intelligence injects DQ + AG + Continuity (+ optional Task Graph).
-    pub(crate) fn generate_with_inputs(
-        db: &Arc<Mutex<Database>>,
-        actor: &ActorContext,
-        workspace_id: impl Into<String>,
-        decision_queue: &DecisionQueue,
-        activity_graph: &WorkspaceActivityGraph,
-        continuity: &WorkspaceContinuityState,
-    ) -> Result<WorkspaceAttentionState> {
-        Self::generate_with_task_graph(
-            db,
-            actor,
-            workspace_id,
-            decision_queue,
-            activity_graph,
-            continuity,
-            None,
-            None,
-            None,
-            None,
-            None,
-        )
-    }
-
+    /// Canonical shared-input path — Intelligence / Operating State inject upstream facts.
+    ///
+    /// Desktop facts must arrive as `environment` (built from WorkspaceState). Attention
+    /// never loads Observation or DesktopWindow itself.
+    #[allow(clippy::too_many_arguments)]
     pub(crate) fn generate_with_task_graph(
         db: &Arc<Mutex<Database>>,
         actor: &ActorContext,
@@ -210,7 +253,8 @@ impl WorkspaceAttentionService {
             }
         }
         if let Some(comp) = composition {
-            for item in Self::from_composition(ws, comp, &now)? {
+            // Prefer Environment for desktop gaps when both are present.
+            for item in Self::from_composition(ws, comp, &now, environment.is_some())? {
                 if seen.insert(item.id.to_string()) {
                     items.push(item);
                 }
@@ -610,9 +654,18 @@ impl WorkspaceAttentionService {
         ws: &str,
         composition: &workspace_domain::WorkspaceCompositionState,
         now: &str,
+        environment_present: bool,
     ) -> Result<Vec<AttentionItem>> {
         let mut out = Vec::new();
         for gap in composition.gaps.iter().take(5) {
+            // Environment owns desktop-like gaps when present (Sprint 125 dedup).
+            if environment_present
+                && ENVIRONMENT_OWNED_GAP_KINDS
+                    .iter()
+                    .any(|kind| *kind == gap.kind.as_str())
+            {
+                continue;
+            }
             let (category, score, urgency) = match gap.kind.as_str() {
                 "disconnected_work" => (
                     AttentionCategory::Interrupted,
