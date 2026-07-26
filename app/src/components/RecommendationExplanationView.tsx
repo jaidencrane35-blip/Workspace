@@ -3,6 +3,7 @@ import type {
   RecommendationDecisionBoundary,
   RecommendationDecisionConfirmation,
   RecommendationDecisionContext,
+  RecommendationDecisionEngineAcceptance,
   RecommendationDecisionHandoffRequest,
   RecommendationDecisionIntakeAdapterPreparation,
   RecommendationDecisionIntakeCompatibility,
@@ -170,6 +171,11 @@ export function RecommendationExplanationBlock({
       {item.decision_handoff_request ? (
         <RecommendationDecisionHandoffRequestBlock
           request={item.decision_handoff_request}
+        />
+      ) : null}
+      {item.decision_engine_acceptance ? (
+        <RecommendationDecisionEngineAcceptanceBlock
+          acceptance={item.decision_engine_acceptance}
         />
       ) : null}
     </div>
@@ -368,6 +374,33 @@ export function RecommendationDecisionHandoffRequestBlock({
         owner: {request.current_owner}
       </div>
       <div>{request.note}</div>
+    </div>
+  );
+}
+
+/** DE acceptance — accept ≠ ownership transfer / DE object / execution. */
+export function RecommendationDecisionEngineAcceptanceBlock({
+  acceptance,
+}: {
+  acceptance: RecommendationDecisionEngineAcceptance;
+}) {
+  return (
+    <div
+      className="recommendation-decision-engine-acceptance muted"
+      style={{ marginTop: 4 }}
+    >
+      <div>
+        DE acceptance: <strong>{acceptance.acceptance_state}</strong>
+        {" · "}
+        ownership: {acceptance.ownership_state}
+        {" · "}
+        transferred: {acceptance.ownership_transferred ? "yes" : "no"}
+        {" · "}
+        DE object: {acceptance.decision_engine_object_id ?? "none"}
+        {" · "}
+        owner: {acceptance.current_owner}
+      </div>
+      <div>{acceptance.note}</div>
     </div>
   );
 }

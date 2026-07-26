@@ -1,10 +1,10 @@
 use crate::connection::Database;
 use crate::error::Result;
 use workspace_domain::{
-    RecommendationDecisionConfirmation, RecommendationDecisionHandoffRequest,
-    RecommendationDecisionIntakeAdapterPreparation, RecommendationDecisionIntakePackageSeal,
-    RecommendationLifecycleOverlay, RecommendationLifecycleState, RecommendationOutcome,
-    RecommendationResolutionType,
+    RecommendationDecisionConfirmation, RecommendationDecisionEngineAcceptance,
+    RecommendationDecisionHandoffRequest, RecommendationDecisionIntakeAdapterPreparation,
+    RecommendationDecisionIntakePackageSeal, RecommendationLifecycleOverlay,
+    RecommendationLifecycleState, RecommendationOutcome, RecommendationResolutionType,
 };
 
 /// Persistence for Recommendation Engine lifecycle overlay only.
@@ -67,13 +67,22 @@ impl<'a> RecommendationLifecycleRepository<'a> {
             })?),
             None => None,
         };
+        let decision_engine_acceptance_json = match &overlay.decision_engine_acceptance {
+            Some(acceptance) => Some(serde_json::to_string(acceptance).map_err(|e| {
+                crate::error::DatabaseError::Migration(format!(
+                    "recommendation decision engine acceptance serialize: {e}"
+                ))
+            })?),
+            None => None,
+        };
         self.db.connection().execute(
             "INSERT INTO recommendation_lifecycle (
                 workspace_id, native_id, lifecycle_state, created_at, presented_at,
                 resolved_at, resolution_type, actor_id, outcome_json, prior_outcomes_json,
                 content_fingerprint, confirmation_json, intake_seal_json,
-                adapter_preparation_json, handoff_request_json, updated_at, authority_effect
-             ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17)
+                adapter_preparation_json, handoff_request_json, decision_engine_acceptance_json,
+                updated_at, authority_effect
+             ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18)
              ON CONFLICT(workspace_id, native_id) DO UPDATE SET
                 lifecycle_state = excluded.lifecycle_state,
                 created_at = excluded.created_at,
@@ -88,6 +97,7 @@ impl<'a> RecommendationLifecycleRepository<'a> {
                 intake_seal_json = excluded.intake_seal_json,
                 adapter_preparation_json = excluded.adapter_preparation_json,
                 handoff_request_json = excluded.handoff_request_json,
+                decision_engine_acceptance_json = excluded.decision_engine_acceptance_json,
                 updated_at = excluded.updated_at,
                 authority_effect = excluded.authority_effect",
             rusqlite::params![
@@ -106,6 +116,7 @@ impl<'a> RecommendationLifecycleRepository<'a> {
                 &intake_seal_json,
                 &adapter_preparation_json,
                 &handoff_request_json,
+                &decision_engine_acceptance_json,
                 &overlay.updated_at,
                 &overlay.authority_effect,
             ],
@@ -122,7 +133,8 @@ impl<'a> RecommendationLifecycleRepository<'a> {
             "SELECT workspace_id, native_id, lifecycle_state, created_at, presented_at,
                     resolved_at, resolution_type, actor_id, outcome_json, prior_outcomes_json,
                     content_fingerprint, confirmation_json, intake_seal_json,
-                    adapter_preparation_json, handoff_request_json, updated_at, authority_effect
+                    adapter_preparation_json, handoff_request_json, decision_engine_acceptance_json,
+                    updated_at, authority_effect
              FROM recommendation_lifecycle
              WHERE workspace_id = ?1 AND native_id = ?2",
         )?;
@@ -138,7 +150,8 @@ impl<'a> RecommendationLifecycleRepository<'a> {
             "SELECT workspace_id, native_id, lifecycle_state, created_at, presented_at,
                     resolved_at, resolution_type, actor_id, outcome_json, prior_outcomes_json,
                     content_fingerprint, confirmation_json, intake_seal_json,
-                    adapter_preparation_json, handoff_request_json, updated_at, authority_effect
+                    adapter_preparation_json, handoff_request_json, decision_engine_acceptance_json,
+                    updated_at, authority_effect
              FROM recommendation_lifecycle
              WHERE workspace_id = ?1",
         )?;
@@ -236,6 +249,19 @@ fn map_overlay(row: &rusqlite::Row<'_>) -> rusqlite::Result<RecommendationLifecy
         ),
         None => None,
     };
+    let decision_engine_acceptance_json: Option<String> = row.get(15)?;
+    let decision_engine_acceptance = match decision_engine_acceptance_json.as_deref() {
+        Some(raw) => Some(
+            serde_json::from_str::<RecommendationDecisionEngineAcceptance>(raw).map_err(|_| {
+                rusqlite::Error::InvalidColumnType(
+                    15,
+                    "decision_engine_acceptance_json".into(),
+                    rusqlite::types::Type::Text,
+                )
+            })?,
+        ),
+        None => None,
+    };
     Ok(RecommendationLifecycleOverlay {
         workspace_id: row.get(0)?,
         native_id: row.get(1)?,
@@ -252,7 +278,8 @@ fn map_overlay(row: &rusqlite::Row<'_>) -> rusqlite::Result<RecommendationLifecy
         decision_intake_package_seal,
         decision_intake_adapter_preparation,
         decision_handoff_request,
-        updated_at: row.get(15)?,
-        authority_effect: row.get(16)?,
+        decision_engine_acceptance,
+        updated_at: row.get(16)?,
+        authority_effect: row.get(17)?,
     })
 }

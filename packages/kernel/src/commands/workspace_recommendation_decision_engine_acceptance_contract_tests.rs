@@ -1,11 +1,12 @@
-//! Sprint 257 — Recommendation Decision Intake Adapter Preparation
-//! (prepare ≠ invoke / DE ownership / Gateway / handoff).
+//! Sprint 267 — Recommendation Decision Engine Acceptance
+//! (accept ≠ ownership transfer / DE object / adapter / Gateway).
 
 use crate::commands::handler::CommandHandler;
 use crate::error::KernelError;
 use workspace_domain::{
     AttentionReason, AttentionSignal, AttentionSourceType, RecommendationConfidence,
     RecommendationDecisionConfirmation, RecommendationDecisionContext,
+    RecommendationDecisionEngineAcceptance, RecommendationDecisionHandoffRequest,
     RecommendationDecisionIntakeAdapterPreparation, RecommendationDecisionIntakeCompatibility,
     RecommendationDecisionIntakeInspection, RecommendationDecisionIntakePackageSeal,
     RecommendationDecisionIntakeProceedDenial, RecommendationDecisionIntakeRequest,
@@ -86,10 +87,9 @@ fn accepted_ready_item() -> RecommendationItem {
     }
 }
 
-fn prepared_bundle() -> (
-    RecommendationDecisionIntakeRequest,
-    RecommendationDecisionIntakePackageSeal,
-    RecommendationDecisionIntakeAdapterPreparation,
+fn awaiting_bundle() -> (
+    RecommendationDecisionHandoffRequest,
+    RecommendationDecisionEngineAcceptance,
 ) {
     let mut item = accepted_ready_item();
     item.explanation = Some(RecommendationExplanationView::from_item(&item));
@@ -131,42 +131,73 @@ fn prepared_bundle() -> (
         &seal,
         "t-prep",
     )
-    .expect("matching seal + confirmation must prepare");
-    (intake, seal, prep)
+    .expect("prep");
+    let request = RecommendationDecisionHandoffRequest::try_request(
+        &prep,
+        &confirmation,
+        &seal,
+        &compatibility,
+        "t-request",
+    )
+    .expect("request");
+    let acceptance =
+        RecommendationDecisionEngineAcceptance::derive_from_handoff_request(&request)
+            .expect("awaiting acceptance");
+    (request, acceptance)
 }
 
-/// CASE 1 — Prep is active but never invoke/mapping/ownership transfer.
+/// CASE 1 — Acceptance awaiting ≠ ownership transfer / DE object.
 #[test]
-fn case1_prepare_is_not_invoke_or_ownership() {
-    let (_intake, _seal, prep) = prepared_bundle();
-    assert!(prep.is_active_preparation());
+fn case1_acceptance_is_not_ownership_transfer_or_de_object() {
+    let (request, mut acceptance) = awaiting_bundle();
+    assert!(request.is_active_request());
+    assert!(acceptance.is_awaiting());
+    assert!(!acceptance.ownership_transferred);
+    assert!(acceptance.decision_engine_object_id.is_none());
     assert_eq!(
-        prep.preparation_state,
-        RecommendationDecisionIntakeAdapterPreparation::STATE_PREPARED
+        acceptance.current_owner,
+        RecommendationDecisionEngineAcceptance::OWNER_RECOMMENDATION
     );
-    assert!(!prep.adapter_invoked);
-    assert!(!prep.mapping_performed);
-    assert!(!prep.proceed_authorized);
-    assert!(!prep.handoff_performed);
-    assert!(prep.decision_engine_object_id.is_none());
+    acceptance.accept("t-accept").unwrap();
+    assert!(acceptance.is_accepted_for_future());
+    assert!(!acceptance.ownership_transferred);
     assert_eq!(
-        prep.current_owner,
-        RecommendationDecisionIntakeAdapterPreparation::OWNER_RECOMMENDATION
+        acceptance.declared_future_owner.as_deref(),
+        Some(RecommendationDecisionEngineAcceptance::OWNER_DECISION)
     );
-    assert!(prep.attempt_invoke_adapter().is_err());
-    assert!(prep.attempt_perform_mapping().is_err());
-    assert!(prep.attempt_create_decision_engine_object().is_err());
-    assert!(prep.assert_preparation_is_not_invocation().is_ok());
+    assert_eq!(
+        acceptance.current_owner,
+        RecommendationDecisionEngineAcceptance::OWNER_RECOMMENDATION
+    );
+    assert!(acceptance.attempt_transfer_ownership().is_err());
+    assert!(acceptance.attempt_create_decision_engine_object().is_err());
+    assert!(acceptance.assert_acceptance_is_not_ownership_transfer().is_ok());
 }
 
-/// CASE 2 — No execution / Gateway path.
+/// CASE 2 — Acceptance ≠ adapter invocation / performed handoff.
 #[test]
-fn case2_no_execution_or_gateway() {
-    let (_intake, _seal, prep) = prepared_bundle();
-    assert!(!prep.may_invoke_gateway());
-    assert!(!prep.may_create_intent());
-    assert!(RecommendationDecisionIntakeAdapterPreparation::attempt_execute().is_err());
-    assert!(prep.attempt_handoff().is_err());
+fn case2_acceptance_is_not_adapter_or_handoff() {
+    let (_request, mut acceptance) = awaiting_bundle();
+    acceptance.accept("t-accept").unwrap();
+    assert!(!acceptance.adapter_invoked);
+    assert!(!acceptance.handoff_performed);
+    assert!(!acceptance.may_invoke_adapter());
+    assert!(acceptance.attempt_invoke_adapter().is_err());
+    assert!(acceptance.attempt_perform_handoff().is_err());
+}
+
+/// CASE 3 — Acceptance ≠ execution; Gateway untouched.
+#[test]
+fn case3_acceptance_is_not_execution_gateway_untouched() {
+    let (_request, mut acceptance) = awaiting_bundle();
+    acceptance.accept("t-accept").unwrap();
+    assert!(!acceptance.may_invoke_gateway());
+    assert!(!acceptance.may_create_intent());
+    assert!(RecommendationDecisionEngineAcceptance::attempt_execute().is_err());
+    assert_eq!(
+        acceptance.permission_effect,
+        RecommendationDecisionEngineAcceptance::PERMISSION_EFFECT_NONE
+    );
     assert_blocked(
         "recommendation_engine",
         CommandHandler::workspace_recommendation_engine_attempt_execute(),
@@ -177,92 +208,57 @@ fn case2_no_execution_or_gateway() {
     );
 }
 
-/// CASE 3 — Seal mismatch blocks active preparation progression.
+/// CASE 4 — Provenance / seal identity remain intact.
 #[test]
-fn case3_invalid_stale_seal_blocks_progression() {
-    let mut item = accepted_ready_item();
-    item.explanation = Some(RecommendationExplanationView::from_item(&item));
-    let context = RecommendationDecisionContext::assemble("ws-1", &item, &[]);
-    let readiness = RecommendationDecisionReadiness::assess_from_context(&context);
-    let mut confirmation = RecommendationDecisionConfirmation::derive_from_boundary(
-        &workspace_domain::RecommendationDecisionBoundary::from_context_and_readiness(
-            &context, &readiness,
-        ),
-    );
-    confirmation
-        .confirm(
-            RecommendationDecisionConfirmation::INTENT_CREATE_FUTURE_DECISION,
-            "t-confirm",
-        )
-        .unwrap();
-    let (mut intake, seal, prep) = prepared_bundle();
-    intake.title = "Drifted".into();
-    let mismatched = seal.reverify_against(&intake);
-    assert!(!mismatched.package_matches_seal);
-    let rebound = prep.rebind_to_seal(&mismatched);
-    assert!(!rebound.is_active_preparation());
-    assert!(!rebound.seal_aligned);
-    assert!(rebound.attempt_invoke_adapter().is_err());
+fn case4_provenance_remains_immutable() {
+    let (request, mut acceptance) = awaiting_bundle();
+    let digest = request.sealed_intake_package_digest.clone();
+    let version = request.contract_version.clone();
+    acceptance.accept("t-accept").unwrap();
+    assert!(!acceptance.may_mutate_provenance());
+    assert_eq!(acceptance.sealed_intake_package_digest, digest);
+    assert_eq!(acceptance.contract_version, version);
+    assert_eq!(acceptance.confirmation_intent, request.confirmation_intent);
+}
+
+/// CASE 5 — Revoke / inactive request blocks progression.
+#[test]
+fn case5_revoke_and_inactive_request_block_progression() {
+    let (mut request, mut acceptance) = awaiting_bundle();
+    acceptance.accept("t-accept").unwrap();
+    assert!(acceptance.is_accepted_for_future());
+    acceptance.revoke("t-revoke").unwrap();
+    assert!(!acceptance.is_accepted_for_future());
+    assert!(!acceptance.ownership_transferred);
+    assert!(acceptance.attempt_transfer_ownership().is_err());
+
+    let (_request2, awaiting) = awaiting_bundle();
+    request.revoke("t-revoke-request").unwrap();
+    let rebound = awaiting.rebind_to_handoff_request(&request);
+    assert!(!rebound.is_awaiting());
     assert!(
-        RecommendationDecisionIntakeAdapterPreparation::try_prepare(
-            &intake,
-            &confirmation,
-            &mismatched,
-            "t",
-        )
-        .is_none()
+        RecommendationDecisionEngineAcceptance::derive_from_handoff_request(&request).is_none()
     );
 }
 
-/// CASE 4 — Revoke is reversible and keeps ownership on RE.
+/// CASE 6 — Decline keeps RE ownership without DE side effects.
 #[test]
-fn case4_revoke_is_reversible_without_de_side_effects() {
-    let (_intake, _seal, mut prep) = prepared_bundle();
-    prep.revoke("t-revoke").unwrap();
-    assert!(!prep.is_active_preparation());
+fn case6_decline_retains_recommendation_ownership() {
+    let (_request, mut acceptance) = awaiting_bundle();
+    acceptance.decline("t-decline").unwrap();
     assert_eq!(
-        prep.preparation_state,
-        RecommendationDecisionIntakeAdapterPreparation::STATE_REVOKED
+        acceptance.acceptance_state,
+        RecommendationDecisionEngineAcceptance::STATE_DECLINED
     );
-    assert!(prep.revoked_at.as_deref() == Some("t-revoke"));
-    assert!(prep.decision_engine_object_id.is_none());
-    assert!(!prep.adapter_invoked);
-    assert!(prep.attempt_invoke_adapter().is_err());
     assert_eq!(
-        prep.current_owner,
-        RecommendationDecisionIntakeAdapterPreparation::OWNER_RECOMMENDATION
+        acceptance.ownership_state,
+        RecommendationDecisionEngineAcceptance::OWNERSHIP_DECLINED
     );
-}
-
-/// CASE 5 — Provenance / mapping notes informational only.
-#[test]
-fn case5_provenance_intact_mapping_not_performed() {
-    let (intake, _seal, prep) = prepared_bundle();
-    let before = intake.evidence_refs.clone();
-    assert!(!prep.mapping_performed);
-    assert!(!prep.suggested_mapping_notes.is_empty());
-    assert!(prep
-        .suggested_mapping_notes
-        .iter()
-        .any(|n| n.starts_with("never:")));
-    assert!(!prep.may_mutate_provenance());
-    assert_eq!(intake.evidence_refs, before);
-}
-
-/// CASE 6 — Accept/required confirmation still emits no preparation.
-#[test]
-fn case6_previous_semantics_unchanged() {
-    let mut item = accepted_ready_item();
-    item.explanation = Some(RecommendationExplanationView::from_item(&item));
-    let context = RecommendationDecisionContext::assemble("ws-1", &item, &[]);
-    let readiness = RecommendationDecisionReadiness::assess_from_context(&context);
-    let required = RecommendationDecisionConfirmation::derive_from_boundary(
-        &workspace_domain::RecommendationDecisionBoundary::from_context_and_readiness(
-            &context, &readiness,
-        ),
-    );
-    assert!(
-        RecommendationDecisionIntakeRequest::try_assemble(&context, &readiness, &required)
-            .is_none()
+    assert!(acceptance.declared_future_owner.is_none());
+    assert!(!acceptance.ownership_transferred);
+    assert!(acceptance.decision_engine_object_id.is_none());
+    assert_eq!(
+        acceptance.current_owner,
+        RecommendationDecisionEngineAcceptance::OWNER_RECOMMENDATION
     );
 }

@@ -18,11 +18,11 @@ use workspace_domain::{
     RecommendationHistoryEntry, RecommendationItem, RecommendationKind,
     RecommendationLifecycleOverlay, RecommendationLifecycleState, RecommendationOutcome,
     RecommendationDecisionBoundary, RecommendationDecisionConfirmation,
-    RecommendationDecisionContext, RecommendationDecisionHandoffRequest,
-    RecommendationDecisionIntakeAdapterPreparation, RecommendationDecisionIntakeCompatibility,
-    RecommendationDecisionIntakeInspection, RecommendationDecisionIntakePackageSeal,
-    RecommendationDecisionIntakeProceedDenial, RecommendationDecisionIntakeRequest,
-    RecommendationDecisionReadiness,
+    RecommendationDecisionContext, RecommendationDecisionEngineAcceptance,
+    RecommendationDecisionHandoffRequest, RecommendationDecisionIntakeAdapterPreparation,
+    RecommendationDecisionIntakeCompatibility, RecommendationDecisionIntakeInspection,
+    RecommendationDecisionIntakePackageSeal, RecommendationDecisionIntakeProceedDenial,
+    RecommendationDecisionIntakeRequest, RecommendationDecisionReadiness,
     RecommendationOutcomeView,
     RecommendationRelationship, RecommendationReviewActionResult,
     TaskGraph, WorkspaceAttentionState, WorkspaceCompositionState, WorkspaceContinuityState,
@@ -210,6 +210,7 @@ impl WorkspaceRecommendationEngineService {
                 decision_intake_package_seal: None,
                 decision_intake_adapter_preparation: None,
                 decision_handoff_request: None,
+                decision_engine_acceptance: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
             });
             relationships.push(RecommendationRelationship {
@@ -279,6 +280,7 @@ impl WorkspaceRecommendationEngineService {
                 decision_intake_package_seal: None,
                 decision_intake_adapter_preparation: None,
                 decision_handoff_request: None,
+                decision_engine_acceptance: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
             });
         }
@@ -327,6 +329,7 @@ impl WorkspaceRecommendationEngineService {
                 decision_intake_package_seal: None,
                 decision_intake_adapter_preparation: None,
                     decision_handoff_request: None,
+                    decision_engine_acceptance: None,
                     authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
@@ -383,6 +386,7 @@ impl WorkspaceRecommendationEngineService {
                 decision_intake_package_seal: None,
                 decision_intake_adapter_preparation: None,
                 decision_handoff_request: None,
+                decision_engine_acceptance: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
@@ -427,6 +431,7 @@ impl WorkspaceRecommendationEngineService {
                 decision_intake_package_seal: None,
                 decision_intake_adapter_preparation: None,
                     decision_handoff_request: None,
+                    decision_engine_acceptance: None,
                     authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
@@ -493,6 +498,7 @@ impl WorkspaceRecommendationEngineService {
                 decision_intake_package_seal: None,
                 decision_intake_adapter_preparation: None,
                 decision_handoff_request: None,
+                decision_engine_acceptance: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
@@ -550,6 +556,7 @@ impl WorkspaceRecommendationEngineService {
                 decision_intake_package_seal: None,
                 decision_intake_adapter_preparation: None,
                 decision_handoff_request: None,
+                decision_engine_acceptance: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
@@ -605,6 +612,7 @@ impl WorkspaceRecommendationEngineService {
                 decision_intake_package_seal: None,
                 decision_intake_adapter_preparation: None,
                 decision_handoff_request: None,
+                decision_engine_acceptance: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
@@ -647,6 +655,7 @@ impl WorkspaceRecommendationEngineService {
                 decision_intake_package_seal: None,
                 decision_intake_adapter_preparation: None,
                     decision_handoff_request: None,
+                    decision_engine_acceptance: None,
                     authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
@@ -703,6 +712,7 @@ impl WorkspaceRecommendationEngineService {
                 decision_intake_package_seal: None,
                 decision_intake_adapter_preparation: None,
                     decision_handoff_request: None,
+                    decision_engine_acceptance: None,
                     authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
@@ -836,6 +846,7 @@ impl WorkspaceRecommendationEngineService {
                 decision_intake_package_seal: None,
                 decision_intake_adapter_preparation: None,
                 decision_handoff_request: None,
+                decision_engine_acceptance: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
             };
             crate::services::WorkspacePatternService::audit_used_for_recommendation(
@@ -938,6 +949,7 @@ impl WorkspaceRecommendationEngineService {
                 decision_intake_package_seal: None,
                 decision_intake_adapter_preparation: None,
                 decision_handoff_request: None,
+                decision_engine_acceptance: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
             });
         }
@@ -1083,6 +1095,7 @@ impl WorkspaceRecommendationEngineService {
             Self::attach_explanation_views(&mut state);
               Self::attach_decision_readiness(
                   &mut state,
+                  &HashMap::new(),
                   &HashMap::new(),
                   &HashMap::new(),
                   &HashMap::new(),
@@ -1380,6 +1393,7 @@ impl WorkspaceRecommendationEngineService {
         let decision_intake_package_seal = None;
         let decision_intake_adapter_preparation = None;
         let decision_handoff_request = None;
+        let decision_engine_acceptance = None;
 
         Self::upsert_overlay(db, &next)?;
         Self::audit_lifecycle(db, actor, audit_event, &assessed, &next)?;
@@ -1400,6 +1414,7 @@ impl WorkspaceRecommendationEngineService {
             decision_intake_package_seal,
             decision_intake_adapter_preparation,
             decision_handoff_request,
+            decision_engine_acceptance,
             explanation: explanation.into(),
             authority_effect: RecommendationReviewActionResult::AUTHORITY_EFFECT_NONE.into(),
         })
@@ -1585,9 +1600,24 @@ impl WorkspaceRecommendationEngineService {
             }
             _ => None,
         };
+        let decision_engine_acceptance = decision_handoff_request.as_ref().and_then(|request| {
+            let acceptance =
+                RecommendationDecisionEngineAcceptance::derive_from_handoff_request(request);
+            if let Some(ref boundary) = acceptance {
+                debug_assert!(boundary.assert_acceptance_is_not_ownership_transfer().is_ok());
+                debug_assert!(boundary.is_awaiting());
+                debug_assert!(!boundary.ownership_transferred);
+                debug_assert!(boundary.decision_engine_object_id.is_none());
+                debug_assert!(boundary.attempt_transfer_ownership().is_err());
+                debug_assert!(boundary.attempt_create_decision_engine_object().is_err());
+                debug_assert!(!boundary.may_invoke_gateway());
+            }
+            acceptance
+        });
         overlay.decision_intake_package_seal = decision_intake_package_seal.clone();
         overlay.decision_intake_adapter_preparation = decision_intake_adapter_preparation.clone();
         overlay.decision_handoff_request = decision_handoff_request.clone();
+        overlay.decision_engine_acceptance = decision_engine_acceptance.clone();
         Self::upsert_overlay(db, &overlay)?;
         Self::audit_lifecycle(db, actor, audit_event, &item, &overlay)?;
 
@@ -1606,6 +1636,7 @@ impl WorkspaceRecommendationEngineService {
             debug_assert!(decision_intake_package_seal.is_none());
             debug_assert!(decision_intake_adapter_preparation.is_none());
             debug_assert!(decision_handoff_request.is_none());
+            debug_assert!(decision_engine_acceptance.is_none());
         }
 
         Ok(RecommendationReviewActionResult {
@@ -1624,6 +1655,7 @@ impl WorkspaceRecommendationEngineService {
             decision_intake_package_seal,
             decision_intake_adapter_preparation,
             decision_handoff_request,
+            decision_engine_acceptance,
             explanation: explanation.into(),
             authority_effect: RecommendationReviewActionResult::AUTHORITY_EFFECT_NONE.into(),
         })
@@ -1673,8 +1705,16 @@ impl WorkspaceRecommendationEngineService {
             debug_assert!(!request.handoff_performed);
             debug_assert!(request.attempt_perform_handoff().is_err());
         }
+        let mut engine_acceptance = overlay.decision_engine_acceptance.clone();
+        if let Some(ref mut acceptance) = engine_acceptance {
+            acceptance.revoke(&now).map_err(|e| KernelError::from(e))?;
+            debug_assert!(!acceptance.is_awaiting());
+            debug_assert!(!acceptance.ownership_transferred);
+            debug_assert!(acceptance.attempt_transfer_ownership().is_err());
+        }
         overlay.decision_intake_adapter_preparation = Some(preparation.clone());
         overlay.decision_handoff_request = handoff_request.clone();
+        overlay.decision_engine_acceptance = engine_acceptance.clone();
         overlay.updated_at = now;
         overlay.actor_id = Some(actor.actor.id.to_string());
         Self::upsert_overlay(db, &overlay)?;
@@ -1702,8 +1742,139 @@ impl WorkspaceRecommendationEngineService {
             decision_intake_package_seal: overlay.decision_intake_package_seal.clone(),
             decision_intake_adapter_preparation: Some(preparation),
             decision_handoff_request: handoff_request,
+            decision_engine_acceptance: engine_acceptance,
             explanation: "Adapter preparation revoked — no DE objects or Gateway grants created."
                 .into(),
+            authority_effect: RecommendationReviewActionResult::AUTHORITY_EFFECT_NONE.into(),
+        })
+    }
+
+    /// Record Decision Engine acceptance of handoff request — never transfers ownership or creates DE objects.
+    pub(crate) fn accept_recommendation_decision_engine_acceptance(
+        db: &Arc<Mutex<Database>>,
+        actor: &ActorContext,
+        orchestrated_plans: &Arc<Mutex<OrchestratedPlanStore>>,
+        assistant_workflows: &Arc<Mutex<AssistantWorkflowStore>>,
+        workspace_id: impl Into<String>,
+        recommendation_id: impl Into<String>,
+    ) -> Result<RecommendationReviewActionResult> {
+        Self::update_decision_engine_acceptance(
+            db,
+            actor,
+            orchestrated_plans,
+            assistant_workflows,
+            workspace_id,
+            recommendation_id,
+            true,
+            "workspace.recommendation_engine.decision_engine_accepted",
+            "Decision Engine acceptance recorded for future ownership only — no transfer, DE object, intent, or Gateway grant.",
+        )
+    }
+
+    /// Decline Decision Engine acceptance of handoff request — never executes.
+    pub(crate) fn decline_recommendation_decision_engine_acceptance(
+        db: &Arc<Mutex<Database>>,
+        actor: &ActorContext,
+        orchestrated_plans: &Arc<Mutex<OrchestratedPlanStore>>,
+        assistant_workflows: &Arc<Mutex<AssistantWorkflowStore>>,
+        workspace_id: impl Into<String>,
+        recommendation_id: impl Into<String>,
+    ) -> Result<RecommendationReviewActionResult> {
+        Self::update_decision_engine_acceptance(
+            db,
+            actor,
+            orchestrated_plans,
+            assistant_workflows,
+            workspace_id,
+            recommendation_id,
+            false,
+            "workspace.recommendation_engine.decision_engine_declined",
+            "Decision Engine declined handoff request — Recommendation Engine retains ownership; no DE object or Gateway grant.",
+        )
+    }
+
+    fn update_decision_engine_acceptance(
+        db: &Arc<Mutex<Database>>,
+        actor: &ActorContext,
+        orchestrated_plans: &Arc<Mutex<OrchestratedPlanStore>>,
+        assistant_workflows: &Arc<Mutex<AssistantWorkflowStore>>,
+        workspace_id: impl Into<String>,
+        recommendation_id: impl Into<String>,
+        accept: bool,
+        audit_event: &str,
+        explanation: &str,
+    ) -> Result<RecommendationReviewActionResult> {
+        let workspace_id = workspace_id.into();
+        let recommendation_id = recommendation_id.into();
+        let state = Self::generate(
+            db,
+            actor,
+            orchestrated_plans,
+            assistant_workflows,
+            workspace_id.clone(),
+        )?;
+        let item = state
+            .candidates
+            .iter()
+            .find(|c| c.id == recommendation_id)
+            .cloned()
+            .ok_or_else(|| KernelError::from(WorkspaceRecommendationEngineError::NotFound))?;
+        let mut overlay = Self::load_overlay(db, &workspace_id, &recommendation_id)?
+            .ok_or_else(|| KernelError::from(WorkspaceRecommendationEngineError::NotFound))?;
+        let handoff = overlay
+            .decision_handoff_request
+            .clone()
+            .ok_or_else(|| KernelError::from(WorkspaceRecommendationEngineError::NotFound))?;
+        if !handoff.is_active_request() {
+            return Err(KernelError::from(
+                WorkspaceRecommendationEngineError::AcceptanceCannotCreateAuthority,
+            ));
+        }
+        let mut acceptance = overlay
+            .decision_engine_acceptance
+            .clone()
+            .or_else(|| {
+                RecommendationDecisionEngineAcceptance::derive_from_handoff_request(&handoff)
+            })
+            .ok_or_else(|| KernelError::from(WorkspaceRecommendationEngineError::NotFound))?;
+        acceptance = acceptance.rebind_to_handoff_request(&handoff);
+        let now = recommendation_engine_now_rfc3339();
+        if accept {
+            acceptance.accept(&now).map_err(KernelError::from)?;
+            debug_assert!(acceptance.is_accepted_for_future());
+        } else {
+            acceptance.decline(&now).map_err(KernelError::from)?;
+            debug_assert!(!acceptance.is_accepted_for_future());
+        }
+        debug_assert!(!acceptance.ownership_transferred);
+        debug_assert!(acceptance.decision_engine_object_id.is_none());
+        debug_assert!(acceptance.attempt_transfer_ownership().is_err());
+        debug_assert!(acceptance.attempt_create_decision_engine_object().is_err());
+        debug_assert!(acceptance.assert_acceptance_is_not_ownership_transfer().is_ok());
+        overlay.decision_engine_acceptance = Some(acceptance.clone());
+        overlay.updated_at = now;
+        overlay.actor_id = Some(actor.actor.id.to_string());
+        Self::upsert_overlay(db, &overlay)?;
+        Self::audit_lifecycle(db, actor, audit_event, &item, &overlay)?;
+
+        Ok(RecommendationReviewActionResult {
+            workspace_id,
+            recommendation_id,
+            lifecycle_state: overlay.lifecycle_state.as_str().into(),
+            outcome: overlay.outcome.clone(),
+            decision_context: item.decision_context,
+            decision_readiness: item.decision_readiness,
+            decision_boundary: item.decision_boundary,
+            decision_confirmation: overlay.decision_confirmation.clone(),
+            decision_intake: item.decision_intake,
+            decision_intake_inspection: item.decision_intake_inspection,
+            decision_intake_compatibility: item.decision_intake_compatibility,
+            decision_intake_proceed_denial: item.decision_intake_proceed_denial,
+            decision_intake_package_seal: overlay.decision_intake_package_seal.clone(),
+            decision_intake_adapter_preparation: overlay.decision_intake_adapter_preparation.clone(),
+            decision_handoff_request: overlay.decision_handoff_request.clone(),
+            decision_engine_acceptance: Some(acceptance),
+            explanation: explanation.into(),
             authority_effect: RecommendationReviewActionResult::AUTHORITY_EFFECT_NONE.into(),
         })
     }
@@ -1882,12 +2053,22 @@ impl WorkspaceRecommendationEngineService {
                     .map(|r| (id.clone(), r))
             })
             .collect();
+        let acceptance_by_id: HashMap<String, RecommendationDecisionEngineAcceptance> = by_id
+            .iter()
+            .filter_map(|(id, overlay)| {
+                overlay
+                    .decision_engine_acceptance
+                    .clone()
+                    .map(|a| (id.clone(), a))
+            })
+            .collect();
         Self::attach_decision_readiness(
             &mut state,
             &confirmation_by_id,
             &seal_by_id,
             &prep_by_id,
             &handoff_by_id,
+            &acceptance_by_id,
         );
         Ok(state)
     }
@@ -1964,6 +2145,7 @@ impl WorkspaceRecommendationEngineService {
         seal_by_id: &HashMap<String, RecommendationDecisionIntakePackageSeal>,
         prep_by_id: &HashMap<String, RecommendationDecisionIntakeAdapterPreparation>,
         handoff_by_id: &HashMap<String, RecommendationDecisionHandoffRequest>,
+        acceptance_by_id: &HashMap<String, RecommendationDecisionEngineAcceptance>,
     ) {
         let mut history_refs_by_id: HashMap<String, Vec<String>> = HashMap::new();
         for entry in &state.history {
@@ -2137,6 +2319,22 @@ impl WorkspaceRecommendationEngineService {
                 }
                 _ => None,
             };
+            let decision_engine_acceptance = match (
+                decision_handoff_request.as_ref(),
+                acceptance_by_id.get(&item.id),
+            ) {
+                (Some(request), Some(stored)) => {
+                    let acceptance = stored.clone().rebind_to_handoff_request(request);
+                    debug_assert!(acceptance.assert_acceptance_is_not_ownership_transfer().is_ok());
+                    debug_assert!(!acceptance.ownership_transferred);
+                    debug_assert!(acceptance.attempt_transfer_ownership().is_err());
+                    Some(acceptance)
+                }
+                (Some(request), None) => {
+                    RecommendationDecisionEngineAcceptance::derive_from_handoff_request(request)
+                }
+                _ => None,
+            };
             if let Some(ref request) = intake {
                 debug_assert!(request.assert_non_authoritative().is_ok());
                 debug_assert!(request.decision_engine_object_id.is_none());
@@ -2155,6 +2353,7 @@ impl WorkspaceRecommendationEngineService {
             item.decision_intake_package_seal = intake_package_seal;
             item.decision_intake_adapter_preparation = intake_adapter_preparation;
             item.decision_handoff_request = decision_handoff_request;
+            item.decision_engine_acceptance = decision_engine_acceptance;
         }
     }
 

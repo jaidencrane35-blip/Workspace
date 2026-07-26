@@ -41,6 +41,12 @@ pub enum WorkspaceRecommendationEngineError {
     #[error("recommendation decision confirmation cannot create decisions, intents, or execute")]
     ConfirmationCannotCreateAuthority,
 
+    #[error("recommendation decision engine acceptance transition not allowed from {from} to {to}")]
+    InvalidAcceptanceTransition { from: String, to: String },
+
+    #[error("recommendation decision engine acceptance cannot transfer ownership, create DE objects, or execute")]
+    AcceptanceCannotCreateAuthority,
+
     #[error(transparent)]
     Domain(#[from] DomainError),
 }
@@ -275,6 +281,9 @@ pub struct RecommendationItem {
     /// Non-executing handoff request to future DE (Sprint 262+) — request ≠ performed / DE object.
     #[serde(default)]
     pub decision_handoff_request: Option<RecommendationDecisionHandoffRequest>,
+    /// Non-executing DE acceptance boundary (Sprint 267+) — accept ≠ ownership transfer / DE object.
+    #[serde(default)]
+    pub decision_engine_acceptance: Option<RecommendationDecisionEngineAcceptance>,
     pub authority_effect: String,
 }
 
@@ -2476,6 +2485,314 @@ impl RecommendationDecisionHandoffRequest {
             || self.current_owner != Self::OWNER_RECOMMENDATION
         {
             return Err(WorkspaceRecommendationEngineError::CannotBecomeHandoff);
+        }
+        Ok(())
+    }
+}
+
+/// Non-executing Decision Engine acceptance boundary (Sprint 267).
+///
+/// Records whether a future Decision Engine accepts or declines an active handoff
+/// request. Acceptance records *future* ownership intent only —
+/// `ownership_transferred` remains false, no DE object is created, adapter is not
+/// invoked, and Recommendation Engine remains `current_owner`. Reversible via revoke.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RecommendationDecisionEngineAcceptance {
+    pub recommendation_id: String,
+    pub workspace_id: String,
+    /// `awaiting_acceptance` | `accepted` | `declined` | `revoked`
+    pub acceptance_state: String,
+    /// `retained_by_recommendation` | `accepted_for_future_decision_engine` | `declined_by_decision_engine`
+    pub ownership_state: String,
+    /// Always false — acceptance ≠ performed ownership transfer.
+    pub ownership_transferred: bool,
+    pub current_owner: String,
+    /// `decision_engine` when accepted for future ownership; otherwise none.
+    pub declared_future_owner: Option<String>,
+    pub handoff_request_state: String,
+    pub handoff_requested: bool,
+    pub sealed_intake_package_digest: String,
+    pub contract_version: String,
+    pub contract_family: String,
+    pub confirmation_intent: String,
+    pub accepted_at: Option<String>,
+    pub declined_at: Option<String>,
+    pub revoked_at: Option<String>,
+    pub decision_engine_object_id: Option<String>,
+    pub adapter_invoked: bool,
+    pub handoff_performed: bool,
+    pub permission_effect: String,
+    pub note: String,
+    pub authority_effect: String,
+}
+
+impl RecommendationDecisionEngineAcceptance {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+    pub const PERMISSION_EFFECT_NONE: &'static str = "none";
+    pub const OWNER_RECOMMENDATION: &'static str = "recommendation_engine";
+    pub const OWNER_DECISION: &'static str = "decision_engine";
+
+    pub const STATE_AWAITING: &'static str = "awaiting_acceptance";
+    pub const STATE_ACCEPTED: &'static str = "accepted";
+    pub const STATE_DECLINED: &'static str = "declined";
+    pub const STATE_REVOKED: &'static str = "revoked";
+
+    pub const OWNERSHIP_RETAINED: &'static str = "retained_by_recommendation";
+    pub const OWNERSHIP_ACCEPTED_FUTURE: &'static str = "accepted_for_future_decision_engine";
+    pub const OWNERSHIP_DECLINED: &'static str = "declined_by_decision_engine";
+
+    /// Derive awaiting acceptance only from an active handoff request.
+    pub fn derive_from_handoff_request(
+        request: &RecommendationDecisionHandoffRequest,
+    ) -> Option<Self> {
+        if !request.is_active_request() {
+            return None;
+        }
+        Some(Self {
+            recommendation_id: request.recommendation_id.clone(),
+            workspace_id: request.workspace_id.clone(),
+            acceptance_state: Self::STATE_AWAITING.into(),
+            ownership_state: Self::OWNERSHIP_RETAINED.into(),
+            ownership_transferred: false,
+            current_owner: Self::OWNER_RECOMMENDATION.into(),
+            declared_future_owner: None,
+            handoff_request_state: request.request_state.clone(),
+            handoff_requested: request.handoff_requested,
+            sealed_intake_package_digest: request.sealed_intake_package_digest.clone(),
+            contract_version: request.contract_version.clone(),
+            contract_family: request.contract_family.clone(),
+            confirmation_intent: request.confirmation_intent.clone(),
+            accepted_at: None,
+            declined_at: None,
+            revoked_at: None,
+            decision_engine_object_id: None,
+            adapter_invoked: false,
+            handoff_performed: false,
+            permission_effect: Self::PERMISSION_EFFECT_NONE.into(),
+            note: "Awaiting Decision Engine acceptance of sealed handoff request. \
+                   Acceptance is not ownership transfer, DE object creation, adapter \
+                   invocation, or execution authority. Recommendation Engine retains ownership."
+                .into(),
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        })
+    }
+
+    pub fn allows_transition(&self, to: &str) -> bool {
+        match (self.acceptance_state.as_str(), to) {
+            (Self::STATE_AWAITING, Self::STATE_ACCEPTED)
+            | (Self::STATE_AWAITING, Self::STATE_DECLINED)
+            | (Self::STATE_AWAITING, Self::STATE_REVOKED)
+            | (Self::STATE_ACCEPTED, Self::STATE_REVOKED)
+            | (Self::STATE_DECLINED, Self::STATE_REVOKED) => true,
+            (from, to) if from == to => true,
+            _ => false,
+        }
+    }
+
+    /// Record DE acceptance of the handoff request for *future* ownership — never transfers now.
+    pub fn accept(
+        &mut self,
+        at: impl Into<String>,
+    ) -> Result<(), WorkspaceRecommendationEngineError> {
+        if !self.handoff_requested {
+            return Err(WorkspaceRecommendationEngineError::AcceptanceCannotCreateAuthority);
+        }
+        if !self.allows_transition(Self::STATE_ACCEPTED) {
+            return Err(WorkspaceRecommendationEngineError::InvalidAcceptanceTransition {
+                from: self.acceptance_state.clone(),
+                to: Self::STATE_ACCEPTED.into(),
+            });
+        }
+        let at = at.into();
+        self.acceptance_state = Self::STATE_ACCEPTED.into();
+        self.ownership_state = Self::OWNERSHIP_ACCEPTED_FUTURE.into();
+        self.ownership_transferred = false;
+        self.current_owner = Self::OWNER_RECOMMENDATION.into();
+        self.declared_future_owner = Some(Self::OWNER_DECISION.into());
+        self.accepted_at = Some(at);
+        self.declined_at = None;
+        self.decision_engine_object_id = None;
+        self.adapter_invoked = false;
+        self.handoff_performed = false;
+        self.permission_effect = Self::PERMISSION_EFFECT_NONE.into();
+        self.authority_effect = Self::AUTHORITY_EFFECT_NONE.into();
+        self.note = "Decision Engine acceptance recorded for future ownership of sealed intake. \
+                     Ownership is not transferred yet; no Decision object, intent, adapter \
+                     invocation, or Gateway grant was created. Recommendation Engine remains owner."
+            .into();
+        Ok(())
+    }
+
+    /// Decline DE acceptance — RE retains ownership; no DE object or transfer.
+    pub fn decline(
+        &mut self,
+        at: impl Into<String>,
+    ) -> Result<(), WorkspaceRecommendationEngineError> {
+        if !self.allows_transition(Self::STATE_DECLINED) {
+            return Err(WorkspaceRecommendationEngineError::InvalidAcceptanceTransition {
+                from: self.acceptance_state.clone(),
+                to: Self::STATE_DECLINED.into(),
+            });
+        }
+        self.acceptance_state = Self::STATE_DECLINED.into();
+        self.ownership_state = Self::OWNERSHIP_DECLINED.into();
+        self.ownership_transferred = false;
+        self.current_owner = Self::OWNER_RECOMMENDATION.into();
+        self.declared_future_owner = None;
+        self.declined_at = Some(at.into());
+        self.accepted_at = None;
+        self.decision_engine_object_id = None;
+        self.adapter_invoked = false;
+        self.handoff_performed = false;
+        self.permission_effect = Self::PERMISSION_EFFECT_NONE.into();
+        self.authority_effect = Self::AUTHORITY_EFFECT_NONE.into();
+        self.note = "Decision Engine declined the handoff request. Recommendation Engine retains \
+                     ownership. No Decision object, intent, adapter invocation, or Gateway grant."
+            .into();
+        Ok(())
+    }
+
+    /// Reversible withdrawal of acceptance boundary — no DE/Gateway side effects.
+    pub fn revoke(
+        &mut self,
+        revoked_at: impl Into<String>,
+    ) -> Result<(), WorkspaceRecommendationEngineError> {
+        if self.ownership_transferred
+            || self.adapter_invoked
+            || self.handoff_performed
+            || self.decision_engine_object_id.is_some()
+        {
+            return Err(WorkspaceRecommendationEngineError::AcceptanceCannotCreateAuthority);
+        }
+        if !self.allows_transition(Self::STATE_REVOKED)
+            && self.acceptance_state != Self::STATE_REVOKED
+        {
+            return Err(WorkspaceRecommendationEngineError::InvalidAcceptanceTransition {
+                from: self.acceptance_state.clone(),
+                to: Self::STATE_REVOKED.into(),
+            });
+        }
+        self.acceptance_state = Self::STATE_REVOKED.into();
+        self.ownership_state = Self::OWNERSHIP_RETAINED.into();
+        self.ownership_transferred = false;
+        self.current_owner = Self::OWNER_RECOMMENDATION.into();
+        self.declared_future_owner = None;
+        self.revoked_at = Some(revoked_at.into());
+        self.handoff_requested = false;
+        self.note = "Decision Engine acceptance boundary revoked. No ownership transfer, DE \
+                     objects, intents, or Gateway grants occurred. Recommendation Engine retains ownership."
+            .into();
+        Ok(())
+    }
+
+    /// Re-check against live handoff request — inactive request blocks progression.
+    pub fn rebind_to_handoff_request(
+        mut self,
+        request: &RecommendationDecisionHandoffRequest,
+    ) -> Self {
+        self.handoff_request_state = request.request_state.clone();
+        self.handoff_requested = request.is_active_request();
+        self.sealed_intake_package_digest = request.sealed_intake_package_digest.clone();
+        self.contract_version = request.contract_version.clone();
+        self.contract_family = request.contract_family.clone();
+        self.confirmation_intent = request.confirmation_intent.clone();
+        self.ownership_transferred = false;
+        self.adapter_invoked = false;
+        self.handoff_performed = false;
+        self.decision_engine_object_id = None;
+        self.permission_effect = Self::PERMISSION_EFFECT_NONE.into();
+        self.authority_effect = Self::AUTHORITY_EFFECT_NONE.into();
+        self.current_owner = Self::OWNER_RECOMMENDATION.into();
+        if self.acceptance_state == Self::STATE_AWAITING && !self.handoff_requested {
+            self.note = "Acceptance awaits handoff request, but request is no longer active. \
+                         Progression blocked; ownership remains on Recommendation Engine."
+                .into();
+        }
+        if self.acceptance_state == Self::STATE_ACCEPTED {
+            self.declared_future_owner = Some(Self::OWNER_DECISION.into());
+            self.ownership_state = Self::OWNERSHIP_ACCEPTED_FUTURE.into();
+            if !self.handoff_requested {
+                self.note = "Prior DE acceptance exists but handoff request is no longer active. \
+                             Ownership was never transferred; Recommendation Engine remains owner."
+                    .into();
+            }
+        }
+        self
+    }
+
+    pub fn is_awaiting(&self) -> bool {
+        self.acceptance_state == Self::STATE_AWAITING && self.handoff_requested
+    }
+
+    pub fn is_accepted_for_future(&self) -> bool {
+        self.acceptance_state == Self::STATE_ACCEPTED
+            && self.ownership_state == Self::OWNERSHIP_ACCEPTED_FUTURE
+            && !self.ownership_transferred
+            && self.current_owner == Self::OWNER_RECOMMENDATION
+    }
+
+    pub fn may_transfer_ownership(&self) -> bool {
+        false
+    }
+
+    pub fn may_invoke_adapter(&self) -> bool {
+        false
+    }
+
+    pub fn attempt_transfer_ownership(&self) -> Result<(), WorkspaceRecommendationEngineError> {
+        Err(WorkspaceRecommendationEngineError::AcceptanceCannotCreateAuthority)
+    }
+
+    pub fn attempt_invoke_adapter(&self) -> Result<(), WorkspaceRecommendationEngineError> {
+        Err(WorkspaceRecommendationEngineError::AcceptanceCannotCreateAuthority)
+    }
+
+    pub fn attempt_execute() -> Result<(), WorkspaceRecommendationEngineError> {
+        Err(WorkspaceRecommendationEngineError::CannotExecute)
+    }
+
+    pub fn attempt_create_decision_engine_object(
+        &self,
+    ) -> Result<(), WorkspaceRecommendationEngineError> {
+        Err(WorkspaceRecommendationEngineError::AcceptanceCannotCreateAuthority)
+    }
+
+    pub fn attempt_create_intent(&self) -> Result<(), WorkspaceRecommendationEngineError> {
+        Err(WorkspaceRecommendationEngineError::AcceptanceCannotCreateAuthority)
+    }
+
+    pub fn attempt_perform_handoff(&self) -> Result<(), WorkspaceRecommendationEngineError> {
+        Err(WorkspaceRecommendationEngineError::CannotBecomeHandoff)
+    }
+
+    pub fn may_create_decision_engine_object(&self) -> bool {
+        false
+    }
+
+    pub fn may_create_intent(&self) -> bool {
+        false
+    }
+
+    pub fn may_invoke_gateway(&self) -> bool {
+        false
+    }
+
+    pub fn may_mutate_provenance(&self) -> bool {
+        false
+    }
+
+    pub fn assert_acceptance_is_not_ownership_transfer(
+        &self,
+    ) -> Result<(), WorkspaceRecommendationEngineError> {
+        if self.ownership_transferred
+            || self.adapter_invoked
+            || self.handoff_performed
+            || self.decision_engine_object_id.is_some()
+            || self.permission_effect != Self::PERMISSION_EFFECT_NONE
+            || self.authority_effect != Self::AUTHORITY_EFFECT_NONE
+            || self.current_owner != Self::OWNER_RECOMMENDATION
+        {
+            return Err(WorkspaceRecommendationEngineError::AcceptanceCannotCreateAuthority);
         }
         Ok(())
     }

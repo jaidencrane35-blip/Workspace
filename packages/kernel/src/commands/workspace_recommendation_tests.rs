@@ -910,6 +910,32 @@ fn case24_confirm_future_decision_remains_non_authoritative() {
         assert!(handoff.decision_engine_object_id.is_none());
         assert!(handoff.attempt_perform_handoff().is_err());
         assert!(handoff.assert_request_is_not_performed_handoff().is_ok());
+        let awaiting = confirmed
+            .decision_engine_acceptance
+            .expect("confirm emits awaiting DE acceptance");
+        assert!(awaiting.is_awaiting());
+        assert!(!awaiting.ownership_transferred);
+        assert!(awaiting.decision_engine_object_id.is_none());
+        assert!(awaiting.attempt_transfer_ownership().is_err());
+        let accepted = CommandHandler::accept_recommendation_decision_engine_acceptance(
+            &kernel,
+            local.clone(),
+            intent.clone(),
+            ws.clone(),
+            id.clone(),
+        )
+        .unwrap();
+        let acceptance = accepted
+            .decision_engine_acceptance
+            .expect("accept returns acceptance");
+        assert!(acceptance.is_accepted_for_future());
+        assert!(!acceptance.ownership_transferred);
+        assert_eq!(
+            acceptance.current_owner,
+            workspace_domain::RecommendationDecisionEngineAcceptance::OWNER_RECOMMENDATION
+        );
+        assert!(acceptance.attempt_transfer_ownership().is_err());
+        assert!(acceptance.attempt_create_decision_engine_object().is_err());
         let revoked = CommandHandler::revoke_recommendation_adapter_preparation(
             &kernel,
             local.clone(),
@@ -934,6 +960,12 @@ fn case24_confirm_future_decision_remains_non_authoritative() {
         assert!(!revoked_handoff.handoff_requested);
         assert!(!revoked_handoff.handoff_performed);
         assert!(revoked_handoff.attempt_perform_handoff().is_err());
+        let revoked_acceptance = revoked
+            .decision_engine_acceptance
+            .expect("prep revoke cascades to DE acceptance");
+        assert!(!revoked_acceptance.is_awaiting());
+        assert!(!revoked_acceptance.ownership_transferred);
+        assert!(revoked_acceptance.attempt_transfer_ownership().is_err());
     }
     assert_cannot_execute(CommandHandler::workspace_recommendation_engine_attempt_execute());
     assert_cannot_execute(CommandHandler::decision_engine_attempt_execute());
@@ -1133,6 +1165,7 @@ fn case16_orphan_overlays_expire_on_regenerate() {
                 decision_intake_package_seal: None,
                 decision_intake_adapter_preparation: None,
                 decision_handoff_request: None,
+                decision_engine_acceptance: None,
                 updated_at: "t0".into(),
                 authority_effect: RecommendationLifecycleOverlay::AUTHORITY_EFFECT_NONE.into(),
             })

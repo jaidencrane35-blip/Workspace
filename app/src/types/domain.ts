@@ -2191,6 +2191,37 @@ export interface RecommendationItem {
   decision_intake_adapter_preparation?: RecommendationDecisionIntakeAdapterPreparation | null;
   /** Non-executing handoff request — request ≠ performed handoff / DE object. */
   decision_handoff_request?: RecommendationDecisionHandoffRequest | null;
+  /** Non-executing DE acceptance — accept ≠ ownership transfer / DE object. */
+  decision_engine_acceptance?: RecommendationDecisionEngineAcceptance | null;
+  authority_effect: string;
+}
+
+/** Non-executing DE acceptance of handoff request — never transfers ownership or creates DE objects. */
+export interface RecommendationDecisionEngineAcceptance {
+  recommendation_id: string;
+  workspace_id: string;
+  /** awaiting_acceptance | accepted | declined | revoked */
+  acceptance_state: string;
+  /** retained_by_recommendation | accepted_for_future_decision_engine | declined_by_decision_engine */
+  ownership_state: string;
+  /** Always false — acceptance ≠ performed ownership transfer. */
+  ownership_transferred: boolean;
+  current_owner: string;
+  declared_future_owner: string | null;
+  handoff_request_state: string;
+  handoff_requested: boolean;
+  sealed_intake_package_digest: string;
+  contract_version: string;
+  contract_family: string;
+  confirmation_intent: string;
+  accepted_at: string | null;
+  declined_at: string | null;
+  revoked_at: string | null;
+  decision_engine_object_id: string | null;
+  adapter_invoked: boolean;
+  handoff_performed: boolean;
+  permission_effect: string;
+  note: string;
   authority_effect: string;
 }
 
@@ -2511,6 +2542,7 @@ export interface RecommendationReviewActionResult {
   decision_intake_package_seal?: RecommendationDecisionIntakePackageSeal | null;
   decision_intake_adapter_preparation?: RecommendationDecisionIntakeAdapterPreparation | null;
   decision_handoff_request?: RecommendationDecisionHandoffRequest | null;
+  decision_engine_acceptance?: RecommendationDecisionEngineAcceptance | null;
   explanation: string;
   authority_effect: string;
 }

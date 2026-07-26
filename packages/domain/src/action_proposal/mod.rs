@@ -671,6 +671,10 @@ pub struct RecommendationLifecycleOverlay {
     #[serde(default)]
     pub decision_handoff_request:
         Option<crate::workspace_recommendation::RecommendationDecisionHandoffRequest>,
+    /// Non-executing DE acceptance boundary (Sprint 267) — accept ≠ ownership transfer.
+    #[serde(default)]
+    pub decision_engine_acceptance:
+        Option<crate::workspace_recommendation::RecommendationDecisionEngineAcceptance>,
     pub updated_at: String,
     pub authority_effect: String,
 }
@@ -700,6 +704,7 @@ impl RecommendationLifecycleOverlay {
             decision_intake_package_seal: None,
             decision_intake_adapter_preparation: None,
             decision_handoff_request: None,
+            decision_engine_acceptance: None,
             updated_at: updated_at.into(),
             authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
         }
@@ -831,6 +836,10 @@ pub struct RecommendationReviewActionResult {
     #[serde(default)]
     pub decision_handoff_request:
         Option<crate::workspace_recommendation::RecommendationDecisionHandoffRequest>,
+    /// Non-executing DE acceptance — accept ≠ ownership transfer / DE object.
+    #[serde(default)]
+    pub decision_engine_acceptance:
+        Option<crate::workspace_recommendation::RecommendationDecisionEngineAcceptance>,
     pub explanation: String,
     pub authority_effect: String,
 }
@@ -4159,6 +4168,7 @@ mod tests {
                 decision_intake_package_seal: None,
                 decision_intake_adapter_preparation: None,
                 decision_handoff_request: None,
+                decision_engine_acceptance: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
         }
     }

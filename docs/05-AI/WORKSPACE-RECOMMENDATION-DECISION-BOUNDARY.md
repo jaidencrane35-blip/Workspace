@@ -39,7 +39,8 @@ Remaining before a future handoff could exist:
 6. ~~Intake package seal (frozen digest ≠ handoff)~~ — see [WORKSPACE-RECOMMENDATION-DECISION-INTAKE-PACKAGE-SEAL.md](./WORKSPACE-RECOMMENDATION-DECISION-INTAKE-PACKAGE-SEAL.md)
 7. ~~Adapter preparation (prepare ≠ invoke)~~ — see [WORKSPACE-RECOMMENDATION-DECISION-INTAKE-ADAPTER-PREPARATION.md](./WORKSPACE-RECOMMENDATION-DECISION-INTAKE-ADAPTER-PREPARATION.md)
 8. ~~Handoff request (request ≠ performed / DE object)~~ — see [WORKSPACE-RECOMMENDATION-DECISION-HANDOFF-REQUEST.md](./WORKSPACE-RECOMMENDATION-DECISION-HANDOFF-REQUEST.md)
-9. Optional **DE acceptance / adapter invocation** that maps sealed intake → DE object creation without merging domains
+9. ~~DE acceptance (accept ≠ ownership transfer / DE object)~~ — see [WORKSPACE-RECOMMENDATION-DECISION-ENGINE-ACCEPTANCE.md](./WORKSPACE-RECOMMENDATION-DECISION-ENGINE-ACCEPTANCE.md)
+10. Optional **DE-owned object creation / adapter invocation** after acceptance — still separate domains; not execution
 
 ---
 

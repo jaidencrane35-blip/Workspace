@@ -24,7 +24,7 @@ RecommendationDecisionHandoffRequest
         ✗ request ≠ DE object / intent
         ✗ request ≠ adapter invoke / Gateway / ownership transfer
         ✗ revoke blocks progression
-        ↓ (future DE acceptance — separate increment; still not execution)
+        ↓ RecommendationDecisionEngineAcceptance (accept ≠ ownership transfer)
 ```
 
 A handoff request means Recommendation Engine asks a *future* Decision Engine to

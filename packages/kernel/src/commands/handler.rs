@@ -3064,6 +3064,46 @@ impl CommandHandler {
         )
     }
 
+    /// Record Decision Engine acceptance of handoff request — never transfers ownership or creates DE objects.
+    pub fn accept_recommendation_decision_engine_acceptance(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        recommendation_id: String,
+    ) -> Result<RecommendationReviewActionResult> {
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent))
+            .execute_mutation(GateRecommendationEngineWrite)?;
+        WorkspaceRecommendationEngineService::accept_recommendation_decision_engine_acceptance(
+            &kernel.shared_database(),
+            &actor,
+            &kernel.orchestrated_plans(),
+            &kernel.assistant_workflows(),
+            workspace_id,
+            recommendation_id,
+        )
+    }
+
+    /// Decline Decision Engine acceptance of handoff request — never executes.
+    pub fn decline_recommendation_decision_engine_acceptance(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        recommendation_id: String,
+    ) -> Result<RecommendationReviewActionResult> {
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent))
+            .execute_mutation(GateRecommendationEngineWrite)?;
+        WorkspaceRecommendationEngineService::decline_recommendation_decision_engine_acceptance(
+            &kernel.shared_database(),
+            &actor,
+            &kernel.orchestrated_plans(),
+            &kernel.assistant_workflows(),
+            workspace_id,
+            recommendation_id,
+        )
+    }
+
     /// Aggregate Workspace Operating State (read-only current-situation snapshot).
     pub fn generate_workspace_operating_state(
         kernel: &WorkspaceKernel,
