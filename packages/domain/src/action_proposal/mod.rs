@@ -77,6 +77,12 @@ pub enum ActionProposalError {
     #[error("governance risk metadata cannot mutate cognition or scoring")]
     GovernanceRiskCannotMutateCognition,
 
+    #[error("governance decision evidence is required for approval")]
+    GovernanceDecisionEvidenceRequired,
+
+    #[error("publication readiness cannot activate runtime changes")]
+    PublicationReadinessCannotActivate,
+
     #[error(transparent)]
     Domain(#[from] DomainError),
 }
@@ -1356,6 +1362,253 @@ impl GovernanceReviewDecisionKind {
     }
 }
 
+/// Dissent / concern recorded during review — append-only; never erases approvals.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct GovernanceDissentRecord {
+    pub id: String,
+    pub reviewer_actor_id: String,
+    pub concern: String,
+    pub timestamp: String,
+}
+
+/// Evidence package required for governance decisions (Sprint 146).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct GovernanceDecisionEvidence {
+    pub id: String,
+    pub supporting_evidence_references: Vec<String>,
+    pub reviewer_concerns: Vec<String>,
+    pub required_conditions: Vec<String>,
+    pub dissent_records: Vec<GovernanceDissentRecord>,
+    pub final_rationale: String,
+    pub provenance_snapshot: RecommendationProvenance,
+    pub risk_reference: Option<String>,
+    pub authority_effect: String,
+}
+
+impl GovernanceDecisionEvidence {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+
+    pub fn assemble(
+        risk: &GovernanceRisk,
+        supporting_evidence_references: Vec<String>,
+        reviewer_concerns: Vec<String>,
+        required_conditions: Vec<String>,
+        final_rationale: impl Into<String>,
+        provenance: &RecommendationProvenance,
+    ) -> Result<Self, ActionProposalError> {
+        let final_rationale = final_rationale.into();
+        if supporting_evidence_references.is_empty() || final_rationale.trim().is_empty() {
+            return Err(ActionProposalError::GovernanceDecisionEvidenceRequired);
+        }
+        Ok(Self {
+            id: format!("gov_evidence:{}", risk.id),
+            supporting_evidence_references,
+            reviewer_concerns,
+            required_conditions,
+            dissent_records: Vec::new(),
+            final_rationale,
+            provenance_snapshot: provenance.clone(),
+            risk_reference: Some(risk.id.clone()),
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        })
+    }
+
+    pub fn validate_for_approval(&self) -> Result<(), ActionProposalError> {
+        if self.supporting_evidence_references.is_empty() || self.final_rationale.trim().is_empty()
+        {
+            return Err(ActionProposalError::GovernanceDecisionEvidenceRequired);
+        }
+        Ok(())
+    }
+
+    /// Append dissent — never removes prior approvals or evidence history.
+    pub fn record_dissent(
+        &mut self,
+        reviewer_actor_id: impl Into<String>,
+        concern: impl Into<String>,
+        timestamp: impl Into<String>,
+    ) {
+        let reviewer_actor_id = reviewer_actor_id.into();
+        let concern = concern.into();
+        let timestamp = timestamp.into();
+        self.dissent_records.push(GovernanceDissentRecord {
+            id: format!("dissent:{}:{}", reviewer_actor_id, self.dissent_records.len()),
+            reviewer_actor_id: reviewer_actor_id.clone(),
+            concern: concern.clone(),
+            timestamp,
+        });
+        self.reviewer_concerns.push(concern);
+    }
+
+    pub fn dissent_count(&self) -> usize {
+        self.dissent_records.len()
+    }
+
+    pub fn may_grant_execution_authority(&self) -> bool {
+        false
+    }
+
+    pub fn may_bypass_permission_gateway(&self) -> bool {
+        false
+    }
+
+    pub fn may_erase_approval_history(&self) -> bool {
+        false
+    }
+
+    pub fn attempt_grant_execution_authority() -> Result<(), ActionProposalError> {
+        Err(ActionProposalError::GovernanceCannotGrantAuthority)
+    }
+
+    pub fn attempt_execute() -> Result<(), ActionProposalError> {
+        Err(ActionProposalError::CannotExecute)
+    }
+}
+
+/// Publication readiness lifecycle (architecture only — Sprint 146).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum PublicationReadinessState {
+    Draft,
+    RiskReviewed,
+    Approved,
+    ReadyForPublication,
+    /// Future only — activation hard-fails.
+    Published,
+}
+
+impl PublicationReadinessState {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Draft => "draft",
+            Self::RiskReviewed => "risk_reviewed",
+            Self::Approved => "approved",
+            Self::ReadyForPublication => "ready_for_publication",
+            Self::Published => "published",
+        }
+    }
+
+    pub fn allows_transition(self, to: Self) -> bool {
+        matches!(
+            (self, to),
+            (Self::Draft, Self::RiskReviewed)
+                | (Self::RiskReviewed, Self::Approved)
+                | (Self::Approved, Self::ReadyForPublication)
+                | (Self::ReadyForPublication, Self::Published)
+        )
+    }
+}
+
+/// Tracks readiness before future publication — never activates runtime.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PublicationReadiness {
+    pub id: String,
+    pub state: PublicationReadinessState,
+    pub evidence_reference: String,
+    pub governance_record_id: Option<String>,
+    pub risk_reference: Option<String>,
+    /// Append-only state history (dissent / later states never erase prior entries).
+    pub history: Vec<PublicationReadinessState>,
+    pub provenance: RecommendationProvenance,
+    pub authority_effect: String,
+}
+
+impl PublicationReadiness {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+
+    pub fn draft_from_evidence(evidence: &GovernanceDecisionEvidence) -> Self {
+        Self {
+            id: format!("pub_readiness:{}", evidence.id),
+            state: PublicationReadinessState::Draft,
+            evidence_reference: evidence.id.clone(),
+            governance_record_id: None,
+            risk_reference: evidence.risk_reference.clone(),
+            history: vec![PublicationReadinessState::Draft],
+            provenance: evidence.provenance_snapshot.clone(),
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        }
+    }
+
+    fn transition(&mut self, to: PublicationReadinessState) -> Result<(), ActionProposalError> {
+        if to == PublicationReadinessState::Published {
+            return Err(ActionProposalError::PublicationReadinessCannotActivate);
+        }
+        if !self.state.allows_transition(to) {
+            return Err(ActionProposalError::InvalidLifecycleTransition {
+                from: self.state.as_str().into(),
+                to: to.as_str().into(),
+            });
+        }
+        self.state = to;
+        self.history.push(to);
+        Ok(())
+    }
+
+    pub fn mark_risk_reviewed(&mut self) -> Result<(), ActionProposalError> {
+        self.transition(PublicationReadinessState::RiskReviewed)
+    }
+
+    pub fn mark_approved(
+        &mut self,
+        evidence: &GovernanceDecisionEvidence,
+    ) -> Result<(), ActionProposalError> {
+        evidence.validate_for_approval()?;
+        self.transition(PublicationReadinessState::Approved)
+    }
+
+    pub fn mark_ready_for_publication(
+        &mut self,
+        evidence: &GovernanceDecisionEvidence,
+    ) -> Result<(), ActionProposalError> {
+        evidence.validate_for_approval()?;
+        self.transition(PublicationReadinessState::ReadyForPublication)
+    }
+
+    pub fn with_governance_record(mut self, record: &GovernanceRecord) -> Self {
+        self.governance_record_id = Some(record.id.clone());
+        self
+    }
+
+    /// Dissent never removes prior history entries (including Approved / Ready).
+    pub fn history_preserves_approvals(&self) -> bool {
+        let approved_positions: Vec<_> = self
+            .history
+            .iter()
+            .enumerate()
+            .filter(|(_, s)| **s == PublicationReadinessState::Approved)
+            .map(|(i, _)| i)
+            .collect();
+        if approved_positions.is_empty() {
+            return true;
+        }
+        // Every Approved entry remains present; history only grows.
+        approved_positions
+            .iter()
+            .all(|&i| self.history.get(i) == Some(&PublicationReadinessState::Approved))
+            && self.history.contains(&PublicationReadinessState::Approved)
+    }
+
+    pub fn may_activate_runtime(&self) -> bool {
+        false
+    }
+
+    pub fn may_grant_execution_authority(&self) -> bool {
+        false
+    }
+
+    pub fn may_bypass_permission_gateway(&self) -> bool {
+        false
+    }
+
+    pub fn attempt_activate_published(&mut self) -> Result<(), ActionProposalError> {
+        Err(ActionProposalError::PublicationReadinessCannotActivate)
+    }
+
+    pub fn attempt_execute() -> Result<(), ActionProposalError> {
+        Err(ActionProposalError::CannotExecute)
+    }
+}
+
 /// Explicit human review decision — cannot bypass provenance or execute.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct GovernanceReviewDecision {
@@ -1366,6 +1619,8 @@ pub struct GovernanceReviewDecision {
     pub rationale: String,
     pub timestamp: String,
     pub conditions: Vec<String>,
+    /// Sprint 146 — optional link to assembled decision evidence.
+    pub evidence_reference: Option<String>,
     pub provenance_snapshot: RecommendationProvenance,
     pub authority_effect: String,
 }
@@ -1402,9 +1657,15 @@ impl GovernanceReviewDecision {
             rationale,
             timestamp: timestamp.into(),
             conditions,
+            evidence_reference: None,
             provenance_snapshot: provenance.clone(),
             authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
         })
+    }
+
+    pub fn with_evidence(mut self, evidence: &GovernanceDecisionEvidence) -> Self {
+        self.evidence_reference = Some(evidence.id.clone());
+        self
     }
 
     pub fn may_bypass_provenance(&self) -> bool {
@@ -1467,6 +1728,12 @@ pub struct GovernanceRecord {
     pub policy_reference: Option<String>,
     /// Sprint 144 — review decision ids applied under policy.
     pub review_decision_references: Vec<String>,
+    /// Sprint 146 — decision evidence package.
+    pub evidence_reference: Option<String>,
+    /// Sprint 146 — dissent ids (append-only; never erase approvals).
+    pub dissent_references: Vec<String>,
+    /// Sprint 146 — publication readiness state label.
+    pub publication_readiness: Option<PublicationReadinessState>,
     pub actors: GovernanceActorRefs,
     pub timestamps: GovernanceTimestamps,
     pub provenance: RecommendationProvenance,
@@ -1505,6 +1772,9 @@ impl GovernanceRecord {
             rollback_reference: rollback_version.map(|v| v.id.clone()),
             policy_reference: None,
             review_decision_references: Vec::new(),
+            evidence_reference: None,
+            dissent_references: Vec::new(),
+            publication_readiness: None,
             actors: GovernanceActorRefs {
                 proposer_actor_id: proposal.proposed_by_actor_id.clone(),
                 reviewer_actor_id: proposal.reviewer.as_ref().map(|r| r.actor_id.clone()),
@@ -1563,6 +1833,38 @@ impl GovernanceRecord {
                     self.approval_reference = Some(format!("approval:policy:{}", policy.id));
                 }
             }
+        }
+        Ok(self)
+    }
+
+    /// Risk → Evidence → Review Decision → Ledger (Sprint 146).
+    pub fn with_evidence_and_readiness(
+        mut self,
+        evidence: &GovernanceDecisionEvidence,
+        readiness: &PublicationReadiness,
+        decisions: &[GovernanceReviewDecision],
+    ) -> Result<Self, ActionProposalError> {
+        evidence.validate_for_approval()?;
+        if readiness.evidence_reference != evidence.id {
+            return Err(ActionProposalError::GovernanceDecisionEvidenceRequired);
+        }
+        for decision in decisions {
+            if decision.decision == GovernanceReviewDecisionKind::Approve
+                && decision.evidence_reference.as_deref() != Some(evidence.id.as_str())
+            {
+                return Err(ActionProposalError::GovernanceDecisionEvidenceRequired);
+            }
+            if !decision.retains_provenance(&self.provenance) {
+                return Err(ActionProposalError::ReviewerCannotBypassProvenance);
+            }
+        }
+        let prior_approval = self.approval_reference.clone();
+        self.evidence_reference = Some(evidence.id.clone());
+        self.dissent_references = evidence.dissent_records.iter().map(|d| d.id.clone()).collect();
+        self.publication_readiness = Some(readiness.state);
+        // Dissent must not erase prior approval history on the ledger.
+        if prior_approval.is_some() {
+            self.approval_reference = prior_approval;
         }
         Ok(self)
     }
@@ -2834,5 +3136,105 @@ mod tests {
             .enforce_decisions(&proposal, &[one, two])
             .unwrap();
         assert!(!routing.may_bypass_permission_gateway());
+    }
+
+    #[test]
+    fn governance_decision_evidence_and_readiness_without_activation() {
+        let item = sample_item();
+        let mut record = RecommendationGovernanceRecord::from_recommendation_item(&item, "t0");
+        record
+            .transition(RecommendationLifecycleState::Available, "t1", None)
+            .unwrap();
+        record
+            .transition(RecommendationLifecycleState::Presented, "t2", None)
+            .unwrap();
+        record.accept("t3", None).unwrap();
+        let outcome = record.record_outcome("t4").unwrap();
+        let provenance = outcome.provenance.clone();
+        let mut proposal = outcome.to_adaptation_proposal(
+            "experience_presentation",
+            "Keep DisplayReason primary",
+            "Consistent rationale",
+        );
+        proposal.require_review().unwrap();
+        proposal
+            .approve(
+                AdaptationReviewerIdentity::local_user("local_user"),
+                "t-ok",
+            )
+            .unwrap();
+        let risk = GovernanceRisk::classify_from_proposal(&proposal);
+        assert_eq!(
+            GovernanceDecisionEvidence::assemble(
+                &risk,
+                vec![],
+                vec![],
+                vec![],
+                "missing refs",
+                &provenance,
+            ),
+            Err(ActionProposalError::GovernanceDecisionEvidenceRequired)
+        );
+        let mut evidence = GovernanceDecisionEvidence::assemble(
+            &risk,
+            vec![
+                format!("outcome:{}", outcome.id),
+                "exact:continuity.resumable".into(),
+            ],
+            vec![],
+            vec!["no scoring mutation".into()],
+            "Evidence supports presentation-only change",
+            &provenance,
+        )
+        .unwrap();
+        assert!(!evidence.may_grant_execution_authority());
+        assert!(GovernanceDecisionEvidence::attempt_grant_execution_authority().is_err());
+        let policy = GovernancePolicy::from_risk(&risk);
+        let decision = GovernanceReviewDecision::new(
+            &policy,
+            AdaptationReviewerIdentity::local_user("local_user"),
+            GovernanceReviewDecisionKind::Approve,
+            "Approve with evidence",
+            "t-dec",
+            vec!["no scoring mutation".into()],
+            &provenance,
+        )
+        .unwrap()
+        .with_evidence(&evidence);
+        let mut readiness = PublicationReadiness::draft_from_evidence(&evidence);
+        readiness.mark_risk_reviewed().unwrap();
+        readiness.mark_approved(&evidence).unwrap();
+        readiness.mark_ready_for_publication(&evidence).unwrap();
+        assert!(readiness.attempt_activate_published().is_err());
+        assert!(!readiness.may_activate_runtime());
+        evidence.record_dissent("reviewer_c", "Minor wording concern", "t-dissent");
+        assert_eq!(evidence.dissent_count(), 1);
+        assert!(!evidence.may_erase_approval_history());
+        assert!(readiness.history_preserves_approvals());
+        assert!(readiness
+            .history
+            .contains(&PublicationReadinessState::Approved));
+        let surface = ControlledChangeSurface::from_approved_proposal(&proposal).unwrap();
+        let version = surface.to_behaviour_version_draft().unwrap();
+        let evaluation =
+            ChangeEvaluation::from_behaviour_version(&version, vec![], vec![], None);
+        let governance = GovernanceRecord::from_adaptation_chain(
+            &proposal,
+            Some(&surface),
+            Some(&version),
+            Some(&evaluation),
+            None,
+        )
+        .with_policy_and_decisions(&policy, &proposal, &[decision.clone()])
+        .unwrap()
+        .with_evidence_and_readiness(&evidence, &readiness, &[decision])
+        .unwrap();
+        assert_eq!(governance.evidence_reference.as_deref(), Some(evidence.id.as_str()));
+        assert_eq!(governance.dissent_references.len(), 1);
+        assert!(governance.approval_reference.is_some());
+        assert_eq!(
+            governance.publication_readiness,
+            Some(PublicationReadinessState::ReadyForPublication)
+        );
     }
 }

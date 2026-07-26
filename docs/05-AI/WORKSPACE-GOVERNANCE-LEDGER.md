@@ -53,7 +53,9 @@ Builder: `GovernanceRecord::from_adaptation_chain(...)`.
 Policy attachment: `with_policy_and_decisions` — see
 [WORKSPACE-GOVERNANCE-POLICY.md](./WORKSPACE-GOVERNANCE-POLICY.md) (Sprint 144).
 
-Ledger fields (Sprint 144): `policy_reference`, `review_decision_references`.
+Ledger fields (Sprint 144): `policy_reference`, `review_decision_references`.  
+Ledger fields (Sprint 146): `evidence_reference`, `dissent_references`, `publication_readiness`
+— see [WORKSPACE-GOVERNANCE-EVIDENCE.md](./WORKSPACE-GOVERNANCE-EVIDENCE.md).
 
 ---
 

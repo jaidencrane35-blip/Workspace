@@ -56,6 +56,10 @@ Policy → Review Decision → Ledger → PublishRequest; never execution author
 [WORKSPACE-GOVERNANCE-RISK.md](./WORKSPACE-GOVERNANCE-RISK.md).
 High-risk requires stronger review; cognition mutation impacts rejected.
 
+**Sprint 146:** Governance decision evidence & publication readiness —
+[WORKSPACE-GOVERNANCE-EVIDENCE.md](./WORKSPACE-GOVERNANCE-EVIDENCE.md).
+Evidence required for approval; readiness never activates runtime.
+
 ---
 
 ## Ownership

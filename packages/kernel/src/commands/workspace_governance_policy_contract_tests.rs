@@ -203,6 +203,7 @@ fn case3_approval_requirements_are_enforced() {
         rationale: "I propose and approve".into(),
         timestamp: "t".into(),
         conditions: vec![],
+        evidence_reference: None,
         provenance_snapshot: provenance,
         authority_effect: "none".into(),
     };
