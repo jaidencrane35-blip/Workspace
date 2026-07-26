@@ -76,6 +76,11 @@ WorkspaceState
 | Audit | `RuntimeDiagnosticInterpretationView` | Findings with severity/confidence/scope/source/limitations |
 | Audit | `RuntimeProjectionBoundaryRegistry` | Diagnostics ≠ Experience ≠ Governance ≠ Audit ≠ Continuity |
 | Audit | `RuntimeDiagnosticRestorationView` | Read-only rehydration from archive; no mutate/delete |
+| Audit | `RuntimeDiagnosticContractIdentity` | Family + `runtime_diagnostics:v1` + schema_version |
+| Audit | `RuntimeDiagnosticCompatibilityContract` | Identity-only compatibility; no migration apply |
+| Audit | `RuntimeDiagnosticLineageRecord` | Lifecycle steps + currency (current/historical/restored) |
+| Audit | `RuntimeDiagnosticTrustRecord` | Producer version, limitations, currency — informational |
+| Audit | `RuntimeDiagnosticLineageValidation` | Ordering + restoration read-only checks |
 
 Authority: `authority_effect: none` (`GOVERNANCE_AUTHORITY_EFFECT_NONE`).
 
@@ -126,6 +131,18 @@ Reports and evidence bundles always `is_authoritative() == false` and
 
 `RuntimeDiagnosticInterpretationView` structures findings with severity, confidence,
 scope, source, and limitations — observational meaning only.
+
+### Trust & compatibility identity
+
+| Field | Meaning |
+|-------|---------|
+| `RUNTIME_DIAGNOSTICS_CONTRACT_VERSION` | `runtime_diagnostics:v1` |
+| `RUNTIME_DIAGNOSTICS_SCHEMA_VERSION` | `1` (compatibility floor identity) |
+| Currency | `current` / `historical` / `restored_view` |
+
+`RuntimeDiagnosticCompatibilityContract` reuses schema-version as identity only —
+`may_migrate == false`; `attempt_migrate` hard-fails. Distinct from
+`GovernanceCompatibilityContract` and from AuditService / Continuity Engine archives.
 
 No hidden repair, auto-heal, or silent mutation paths.
 

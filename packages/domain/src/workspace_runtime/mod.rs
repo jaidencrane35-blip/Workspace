@@ -17,6 +17,8 @@
 //! history without deletion, mutation, or authority.
 //! Diagnostic consumption contracts define how surfaces may observe findings
 //! without treating them as commands, recommendations, or authority.
+//! Diagnostic trust/compatibility identities and lineage records let consumers
+//! know producer version and currency — informational only; no migration apply.
 
 mod diagnostics;
 pub use diagnostics::*;
@@ -205,6 +207,9 @@ pub enum WorkspaceRuntimeError {
 
     #[error("runtime diagnostic consumption forbids commands, recommendations, or authority")]
     DiagnosticConsumptionForbidden,
+
+    #[error("runtime diagnostic compatibility is identity-only; migration apply forbidden")]
+    DiagnosticCompatibilityReadOnly,
 }
 
 // ---------------------------------------------------------------------------
