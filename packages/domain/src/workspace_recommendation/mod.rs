@@ -254,6 +254,9 @@ pub struct RecommendationItem {
     /// Explicit confirmation beyond accept-as-agreement (Sprint 227+) — never creates DE/intent.
     #[serde(default)]
     pub decision_confirmation: Option<RecommendationDecisionConfirmation>,
+    /// Typed future-DE intake package after confirmation (Sprint 232+) — never creates DE objects.
+    #[serde(default)]
+    pub decision_intake: Option<RecommendationDecisionIntakeRequest>,
     pub authority_effect: String,
 }
 
@@ -1061,6 +1064,143 @@ impl RecommendationDecisionConfirmation {
             || self.authority_effect != Self::AUTHORITY_EFFECT_NONE
         {
             return Err(WorkspaceRecommendationEngineError::ConfirmationCannotCreateAuthority);
+        }
+        Ok(())
+    }
+}
+
+/// Typed RE → future-DE intake package after user confirmation (Sprint 232).
+///
+/// Assembled only when confirmation is `confirmed` with a future-decision intent.
+/// Never creates `DecisionCandidate`, intents, commands, or Gateway grants.
+/// `handoff_performed` remains false — package only, not DE ownership transfer.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RecommendationDecisionIntakeRequest {
+    pub recommendation_id: String,
+    pub workspace_id: String,
+    pub confirmation_intent: String,
+    pub confirmed_at: String,
+    pub kind: String,
+    pub title: String,
+    /// Informational statement for a future DE — not a Goal/Intent object.
+    pub suggested_goal_statement: String,
+    pub continuity_fingerprint: String,
+    pub explanation_ref: Option<String>,
+    pub evidence_refs: Vec<String>,
+    pub explanation_keys: Vec<String>,
+    pub outcome_id: Option<String>,
+    pub related_task_id: Option<String>,
+    pub related_attention_id: Option<String>,
+    pub related_decision_id: Option<String>,
+    /// Always `None` — intake does not create DE objects.
+    pub decision_engine_object_id: Option<String>,
+    /// `requested` — emitted for future adapter consumption; not owned by DE yet.
+    pub intake_state: String,
+    pub handoff_performed: bool,
+    pub note: String,
+    pub authority_effect: String,
+}
+
+impl RecommendationDecisionIntakeRequest {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+    pub const STATE_REQUESTED: &'static str = "requested";
+
+    /// Assemble intake only when confirmation + context/readiness gates pass.
+    pub fn try_assemble(
+        context: &RecommendationDecisionContext,
+        readiness: &RecommendationDecisionReadiness,
+        confirmation: &RecommendationDecisionConfirmation,
+    ) -> Option<Self> {
+        if confirmation.confirmation_state != RecommendationDecisionConfirmation::STATE_CONFIRMED {
+            return None;
+        }
+        if !matches!(
+            confirmation.confirmation_intent.as_str(),
+            RecommendationDecisionConfirmation::INTENT_CREATE_FUTURE_DECISION
+                | RecommendationDecisionConfirmation::INTENT_REQUEST_ACTION_REVIEW
+        ) {
+            return None;
+        }
+        if !context.complete || !readiness.ready_for_future_handoff {
+            return None;
+        }
+        let confirmed_at = confirmation.confirmed_at.clone()?;
+        let suggested_goal_statement = format!(
+            "{} — {}",
+            context.title,
+            context
+                .explanation_ref
+                .as_deref()
+                .unwrap_or("recommendation agreement recorded")
+        );
+        Some(Self {
+            recommendation_id: context.recommendation_id.clone(),
+            workspace_id: context.workspace_id.clone(),
+            confirmation_intent: confirmation.confirmation_intent.clone(),
+            confirmed_at,
+            kind: context.kind.clone(),
+            title: context.title.clone(),
+            suggested_goal_statement,
+            continuity_fingerprint: context.continuity_fingerprint.clone(),
+            explanation_ref: context.explanation_ref.clone(),
+            evidence_refs: context.evidence_refs.clone(),
+            explanation_keys: context.explanation_keys.clone(),
+            outcome_id: context.outcome_id.clone(),
+            related_task_id: context.related_task_id.clone(),
+            related_attention_id: context.related_attention_id.clone(),
+            related_decision_id: context.related_decision_id.clone(),
+            decision_engine_object_id: None,
+            intake_state: Self::STATE_REQUESTED.into(),
+            handoff_performed: false,
+            note: "Intake request assembled for future Decision Engine consideration. \
+                   Not a Decision Engine object, not an intent, not execution authority. \
+                   Handoff not performed — Decision Engine remains owner of object creation."
+                .into(),
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        })
+    }
+
+    pub fn attempt_execute() -> Result<(), WorkspaceRecommendationEngineError> {
+        Err(WorkspaceRecommendationEngineError::CannotExecute)
+    }
+
+    pub fn attempt_handoff(&self) -> Result<(), WorkspaceRecommendationEngineError> {
+        Err(WorkspaceRecommendationEngineError::CannotBecomeHandoff)
+    }
+
+    pub fn attempt_create_decision_engine_object(
+        &self,
+    ) -> Result<(), WorkspaceRecommendationEngineError> {
+        Err(WorkspaceRecommendationEngineError::CannotBecomeHandoff)
+    }
+
+    pub fn attempt_create_intent(&self) -> Result<(), WorkspaceRecommendationEngineError> {
+        Err(WorkspaceRecommendationEngineError::CannotBecomeHandoff)
+    }
+
+    pub fn may_create_decision_engine_object(&self) -> bool {
+        false
+    }
+
+    pub fn may_create_intent(&self) -> bool {
+        false
+    }
+
+    pub fn may_invoke_gateway(&self) -> bool {
+        false
+    }
+
+    pub fn may_mutate_provenance(&self) -> bool {
+        false
+    }
+
+    pub fn assert_non_authoritative(&self) -> Result<(), WorkspaceRecommendationEngineError> {
+        if self.handoff_performed
+            || self.decision_engine_object_id.is_some()
+            || self.authority_effect != Self::AUTHORITY_EFFECT_NONE
+            || self.intake_state != Self::STATE_REQUESTED
+        {
+            return Err(WorkspaceRecommendationEngineError::CannotBecomeHandoff);
         }
         Ok(())
     }

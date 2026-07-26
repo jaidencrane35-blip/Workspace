@@ -2177,6 +2177,34 @@ export interface RecommendationItem {
   decision_boundary?: RecommendationDecisionBoundary | null;
   /** Explicit confirmation beyond accept — never creates DE/intent/execution. */
   decision_confirmation?: RecommendationDecisionConfirmation | null;
+  /** Typed future-DE intake package after confirmation — never creates DE objects. */
+  decision_intake?: RecommendationDecisionIntakeRequest | null;
+  authority_effect: string;
+}
+
+/** Typed RE→future-DE intake package — not a Decision Engine object. */
+export interface RecommendationDecisionIntakeRequest {
+  recommendation_id: string;
+  workspace_id: string;
+  confirmation_intent: string;
+  confirmed_at: string;
+  kind: string;
+  title: string;
+  suggested_goal_statement: string;
+  continuity_fingerprint: string;
+  explanation_ref: string | null;
+  evidence_refs: string[];
+  explanation_keys: string[];
+  outcome_id: string | null;
+  related_task_id: string | null;
+  related_attention_id: string | null;
+  related_decision_id: string | null;
+  /** Always null — intake does not create DE objects. */
+  decision_engine_object_id: string | null;
+  /** requested — package only. */
+  intake_state: string;
+  handoff_performed: boolean;
+  note: string;
   authority_effect: string;
 }
 
@@ -2325,6 +2353,7 @@ export interface RecommendationReviewActionResult {
   decision_readiness?: RecommendationDecisionReadiness | null;
   decision_boundary?: RecommendationDecisionBoundary | null;
   decision_confirmation?: RecommendationDecisionConfirmation | null;
+  decision_intake?: RecommendationDecisionIntakeRequest | null;
   explanation: string;
   authority_effect: string;
 }

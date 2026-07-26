@@ -18,9 +18,13 @@ User accepted recommendation (agreement only)
 RecommendationDecisionConfirmation
   required | not_required | confirmed | declined
         ✗ does not create Decision / Intent / Gateway grant
-        ↓ (future adapter + handoff after confirmed)
+        ↓ (when confirmed)
+RecommendationDecisionIntakeRequest (typed package only)
+        ↓ (future DE adapter)
 Decision Engine owns decision creation
 ```
+
+See [WORKSPACE-RECOMMENDATION-DECISION-INTAKE.md](./WORKSPACE-RECOMMENDATION-DECISION-INTAKE.md).
 
 | Step | Meaning |
 |------|---------|

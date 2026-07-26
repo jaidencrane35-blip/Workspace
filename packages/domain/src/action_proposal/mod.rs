@@ -780,6 +780,10 @@ pub struct RecommendationReviewActionResult {
     #[serde(default)]
     pub decision_confirmation:
         Option<crate::workspace_recommendation::RecommendationDecisionConfirmation>,
+    /// Typed future-DE intake package after confirmation — never creates DE objects.
+    #[serde(default)]
+    pub decision_intake:
+        Option<crate::workspace_recommendation::RecommendationDecisionIntakeRequest>,
     pub explanation: String,
     pub authority_effect: String,
 }
@@ -4101,6 +4105,7 @@ mod tests {
                 decision_readiness: None,
                 decision_boundary: None,
                 decision_confirmation: None,
+                decision_intake: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
         }
     }

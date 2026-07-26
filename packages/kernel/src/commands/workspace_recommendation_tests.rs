@@ -826,6 +826,7 @@ fn case24_confirm_future_decision_remains_non_authoritative() {
         RecommendationDecisionConfirmation::STATE_CONFIRMED
     );
 
+    assert!(accepted.decision_intake.is_none(), "accept must not emit intake");
     if confirmation.confirmation_state
         == RecommendationDecisionConfirmation::STATE_REQUIRED
     {
@@ -849,6 +850,11 @@ fn case24_confirm_future_decision_remains_non_authoritative() {
         assert!(!c.handoff_performed);
         assert!(c.attempt_create_intent().is_err());
         assert!(c.attempt_handoff().is_err());
+        let intake = confirmed.decision_intake.expect("confirm emits intake package");
+        assert!(intake.decision_engine_object_id.is_none());
+        assert!(!intake.handoff_performed);
+        assert!(intake.attempt_create_decision_engine_object().is_err());
+        assert!(intake.attempt_handoff().is_err());
     }
     assert_cannot_execute(CommandHandler::workspace_recommendation_engine_attempt_execute());
     assert_cannot_execute(CommandHandler::decision_engine_attempt_execute());

@@ -3,6 +3,7 @@ import type {
   RecommendationDecisionBoundary,
   RecommendationDecisionConfirmation,
   RecommendationDecisionContext,
+  RecommendationDecisionIntakeRequest,
   RecommendationDecisionReadiness,
   RecommendationHistoryEntry,
   RecommendationItem,
@@ -132,6 +133,41 @@ export function RecommendationExplanationBlock({
           confirmation={item.decision_confirmation}
         />
       ) : null}
+      {item.decision_intake ? (
+        <RecommendationDecisionIntakeBlock intake={item.decision_intake} />
+      ) : null}
+    </div>
+  );
+}
+
+/** Typed future-DE intake package — not a Decision object or handoff. */
+export function RecommendationDecisionIntakeBlock({
+  intake,
+}: {
+  intake: RecommendationDecisionIntakeRequest;
+}) {
+  return (
+    <div className="recommendation-decision-intake muted" style={{ marginTop: 4 }}>
+      <div>
+        Decision intake: <strong>{intake.intake_state}</strong>
+        {" · "}
+        intent: {intake.confirmation_intent}
+        {" · "}
+        DE object: {intake.decision_engine_object_id ?? "none"}
+        {" · "}
+        handoff: {intake.handoff_performed ? "performed" : "not performed"}
+        {" · "}
+        authority: {intake.authority_effect}
+      </div>
+      <div>{intake.note}</div>
+      <div>
+        Suggested goal (informational): {intake.suggested_goal_statement}
+      </div>
+      {intake.evidence_refs.length > 0 && (
+        <div className="mono">
+          Evidence refs: {intake.evidence_refs.slice(0, 4).join(" · ")}
+        </div>
+      )}
     </div>
   );
 }

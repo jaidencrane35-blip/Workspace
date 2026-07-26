@@ -22,16 +22,18 @@ RecommendationDecisionReadiness
 RecommendationDecisionBoundary
         ↓
 RecommendationDecisionConfirmation
+        ↓
+RecommendationDecisionIntakeRequest
         ✗ no DE object / intent / Gateway
-        ↓ (future explicit adapter after confirmed)
-Decision Engine intake (not implemented)
+        ↓ (future explicit DE adapter after confirmed intake)
+Decision Engine object creation (not implemented)
 ```
 
 Remaining before a future handoff could exist:
 
 1. ~~Explicit user confirmation~~ — see [WORKSPACE-RECOMMENDATION-DECISION-CONFIRMATION.md](./WORKSPACE-RECOMMENDATION-DECISION-CONFIRMATION.md)
-2. Optional **adapter** that maps confirmed context → DE intake without merging domains
-3. **Handoff payload** owned/emitted only after confirmation (`DecisionEngineHandoff`-shaped)
+2. ~~Typed intake payload~~ — see [WORKSPACE-RECOMMENDATION-DECISION-INTAKE.md](./WORKSPACE-RECOMMENDATION-DECISION-INTAKE.md)
+3. Optional **adapter** that maps intake → DE object creation without merging domains
 
 ---
 
