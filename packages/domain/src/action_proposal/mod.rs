@@ -3,13 +3,14 @@
 //! Governance shapes between recommendations and future Permission Gateway work.
 //! **Never executes.** Native family IDs are preserved — never collapsed into one namespace.
 //! Reasoning provenance is immutable; lifecycle metadata mutates separately.
+//!
+//! Consolidated governance aggregates live in [`governance`] (Sprints 165–169):
+//! preconditions (`contracts`), review-ops (`workflow`), observability (`ops`).
+//! Ledger / policy / publication-prep types in this module remain the inward
+//! dependency targets. See `docs/05-AI/WORKSPACE-GOVERNANCE.md`.
 
-mod governance_contracts;
-mod governance_ops;
-mod governance_workflow;
-pub use governance_contracts::*;
-pub use governance_ops::*;
-pub use governance_workflow::*;
+mod governance;
+pub use governance::*;
 
 use serde::{Deserialize, Serialize};
 use thiserror::Error;

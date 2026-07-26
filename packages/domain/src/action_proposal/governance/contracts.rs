@@ -1,15 +1,17 @@
-//! Sprints 151–154 — governance conditions, compatibility, integrity, archive.
+//! Preconditions aggregate — conditions, compatibility, integrity, archive (151–154).
 //!
 //! Architecture contracts only. No runtime publication, activation, or execution.
+//! Part of the consolidated governance subsystem (Sprints 165–169).
 
 use serde::{Deserialize, Serialize};
 
-use super::{
+use super::super::{
     ActionProposalError, BehaviourVersion, GovernanceDecisionEvidence, GovernanceLifecycleStage,
     GovernanceRecord, GovernanceReviewDecision, GovernanceReviewDecisionKind, GovernanceTimeline,
     OutcomeAdaptationProposal, PublicationEnvironment, PublicationReadiness,
     RecommendationProvenance,
 };
+use super::GOVERNANCE_AUTHORITY_EFFECT_NONE;
 
 // ---------------------------------------------------------------------------
 // Sprint 151 — Governance Condition & Obligation Contract
@@ -84,7 +86,7 @@ pub struct GovernanceConditionContract {
 }
 
 impl GovernanceConditionContract {
-    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+    pub const AUTHORITY_EFFECT_NONE: &'static str = GOVERNANCE_AUTHORITY_EFFECT_NONE;
 
     pub fn from_decision(decision: &GovernanceReviewDecision) -> Result<Self, ActionProposalError> {
         if decision.decision != GovernanceReviewDecisionKind::Approve {
@@ -292,7 +294,7 @@ pub struct GovernanceCompatibilityContract {
 }
 
 impl GovernanceCompatibilityContract {
-    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+    pub const AUTHORITY_EFFECT_NONE: &'static str = GOVERNANCE_AUTHORITY_EFFECT_NONE;
     pub const DEFAULT_SCHEMA_VERSION_FLOOR: i32 = 1;
 
     pub fn from_publication_environment(
@@ -493,7 +495,7 @@ pub struct GovernanceIntegrityVerification {
 }
 
 impl GovernanceIntegrityVerification {
-    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+    pub const AUTHORITY_EFFECT_NONE: &'static str = GOVERNANCE_AUTHORITY_EFFECT_NONE;
 
     pub fn verify_timeline(
         timeline: &GovernanceTimeline,
@@ -787,7 +789,7 @@ pub struct GovernanceArchiveContract {
 }
 
 impl GovernanceArchiveContract {
-    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+    pub const AUTHORITY_EFFECT_NONE: &'static str = GOVERNANCE_AUTHORITY_EFFECT_NONE;
 
     pub fn new(archive_id: impl Into<String>) -> Self {
         Self {
@@ -1015,7 +1017,7 @@ mod tests {
             dissent_immutable_refs: Vec::new(),
             authority_effect: GovernanceTimeline::AUTHORITY_EFFECT_NONE.into(),
         };
-        timeline.events.push(super::super::GovernanceTimelineEvent {
+        timeline.events.push(crate::action_proposal::GovernanceTimelineEvent {
             id: "e1".into(),
             stage: GovernanceLifecycleStage::ChangeProposal,
             at: "t0".into(),

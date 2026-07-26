@@ -1,14 +1,17 @@
-//! Sprints 160–164 — notifications, delegation, metrics, reporting, export.
+//! Observability aggregate — notifications, delegation, metrics, reports, export (160–164).
 //!
 //! Architecture contracts only. No runtime publication, activation, or execution.
+//! Part of the consolidated governance subsystem (Sprints 165–169).
 
 use serde::{Deserialize, Serialize};
 
+use super::super::{
+    ActionProposalError, AdaptationReviewerIdentity, GovernanceDecisionEvidence, GovernanceRisk,
+    OutcomeAdaptationProposal, PublicationReadiness, RecommendationProvenance,
+};
 use super::{
-    ActionProposalError, AdaptationReviewerIdentity, GovernanceArchiveContract,
-    GovernanceCompatibilityContract, GovernanceComplianceContract, GovernanceDecisionEvidence,
-    GovernanceDecisionPackage, GovernanceRisk, OutcomeAdaptationProposal, PublicationReadiness,
-    RecommendationProvenance,
+    GovernanceArchiveContract, GovernanceCompatibilityContract, GovernanceComplianceContract,
+    GovernanceDecisionPackage, GOVERNANCE_AUTHORITY_EFFECT_NONE,
 };
 
 // ---------------------------------------------------------------------------
@@ -117,7 +120,7 @@ pub struct GovernanceNotificationContract {
 }
 
 impl GovernanceNotificationContract {
-    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+    pub const AUTHORITY_EFFECT_NONE: &'static str = GOVERNANCE_AUTHORITY_EFFECT_NONE;
 
     pub fn new(proposal: &OutcomeAdaptationProposal) -> Self {
         Self {
@@ -279,7 +282,7 @@ pub struct GovernanceDelegationContract {
 }
 
 impl GovernanceDelegationContract {
-    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+    pub const AUTHORITY_EFFECT_NONE: &'static str = GOVERNANCE_AUTHORITY_EFFECT_NONE;
     pub const DEFAULT_MAX_CHAIN_DEPTH: u32 = 3;
     pub const SCOPE_REVIEW_ONLY: &'static str = "governance_review_only";
 
@@ -475,7 +478,7 @@ pub struct GovernanceMetricsContract {
 }
 
 impl GovernanceMetricsContract {
-    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+    pub const AUTHORITY_EFFECT_NONE: &'static str = GOVERNANCE_AUTHORITY_EFFECT_NONE;
 
     pub fn new(proposal: &OutcomeAdaptationProposal) -> Self {
         Self {
@@ -580,7 +583,7 @@ pub struct GovernanceReportContract {
 }
 
 impl GovernanceReportContract {
-    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+    pub const AUTHORITY_EFFECT_NONE: &'static str = GOVERNANCE_AUTHORITY_EFFECT_NONE;
 
     pub fn governance_summary(
         proposal: &OutcomeAdaptationProposal,
@@ -774,7 +777,7 @@ pub struct GovernanceExportPackage {
 }
 
 impl GovernanceExportPackage {
-    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+    pub const AUTHORITY_EFFECT_NONE: &'static str = GOVERNANCE_AUTHORITY_EFFECT_NONE;
     pub const VERSION_METADATA: &'static str = "governance_export:v1";
 
     pub fn from_artifacts(

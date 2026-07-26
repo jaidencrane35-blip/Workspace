@@ -131,6 +131,7 @@ rewrite history. Publication does not activate Attention/Decision scoring.
 
 ## Related docs
 
+- [WORKSPACE-GOVERNANCE.md](./WORKSPACE-GOVERNANCE.md) *(canonical index — Ledger aggregate)*
 - [WORKSPACE-GOVERNANCE-POLICY.md](./WORKSPACE-GOVERNANCE-POLICY.md)
 - [WORKSPACE-CONTROLLED-CHANGE.md](./WORKSPACE-CONTROLLED-CHANGE.md)
 - [WORKSPACE-ADAPTATION-REVIEW.md](./WORKSPACE-ADAPTATION-REVIEW.md)

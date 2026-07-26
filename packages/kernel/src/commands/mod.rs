@@ -192,6 +192,8 @@ mod workspace_governance_metrics_contract_tests;
 mod workspace_governance_reporting_contract_tests;
 #[cfg(test)]
 mod workspace_governance_export_contract_tests;
+#[cfg(test)]
+mod workspace_governance_consolidation_contract_tests;
 mod workspace_work_context_tests;
 mod workspace_navigation_tests;
 mod workspace_milestone_tests;

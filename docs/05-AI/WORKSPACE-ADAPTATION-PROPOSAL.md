@@ -96,11 +96,11 @@ Failure/recovery lifecycle; never deletes provenance or grants authority.
 [WORKSPACE-GOVERNANCE-DASHBOARD.md](./WORKSPACE-GOVERNANCE-DASHBOARD.md).
 
 **Sprint 160–164:** Notifications, delegation, metrics, reporting, export —
-[WORKSPACE-GOVERNANCE-NOTIFICATIONS.md](./WORKSPACE-GOVERNANCE-NOTIFICATIONS.md),
-[WORKSPACE-GOVERNANCE-DELEGATION.md](./WORKSPACE-GOVERNANCE-DELEGATION.md),
-[WORKSPACE-GOVERNANCE-METRICS.md](./WORKSPACE-GOVERNANCE-METRICS.md),
-[WORKSPACE-GOVERNANCE-REPORTING.md](./WORKSPACE-GOVERNANCE-REPORTING.md),
-[WORKSPACE-GOVERNANCE-EXPORT.md](./WORKSPACE-GOVERNANCE-EXPORT.md).
+[WORKSPACE-GOVERNANCE.md](./WORKSPACE-GOVERNANCE.md) (observability aggregate).
+
+**Sprint 165–169:** Governance consolidation —
+[WORKSPACE-GOVERNANCE.md](./WORKSPACE-GOVERNANCE.md).
+Aggregate roots, ownership boundaries, shared authority marker, doc index.
 
 ---
 

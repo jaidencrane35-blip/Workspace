@@ -1,16 +1,19 @@
-//! Sprints 155–159 — review workflow, conflict, decision package, compliance, dashboard.
+//! Review-ops aggregate — workflow, conflict, package, compliance, dashboard (155–159).
 //!
 //! Architecture contracts only. No runtime publication, activation, or execution.
+//! Part of the consolidated governance subsystem (Sprints 165–169).
 
 use serde::{Deserialize, Serialize};
 
+use super::super::{
+    ActionProposalError, AdaptationReviewerIdentity, GovernanceDecisionEvidence,
+    GovernanceObligationStatus, GovernanceReviewDecision, GovernanceReviewDecisionKind,
+    GovernanceRisk, OutcomeAdaptationProposal, PublicationReadiness, PublicationReadinessState,
+    PublicationSafetyContract, PublicationSafetyLifecycleState, RecommendationProvenance,
+};
 use super::{
-    ActionProposalError, AdaptationReviewerIdentity, GovernanceArchiveContract,
-    GovernanceCompatibilityContract, GovernanceConditionContract, GovernanceDecisionEvidence,
-    GovernanceIntegrityVerification, GovernanceObligationStatus, GovernanceReviewDecision,
-    GovernanceReviewDecisionKind, GovernanceRisk, OutcomeAdaptationProposal,
-    PublicationReadiness, PublicationReadinessState, PublicationSafetyContract,
-    PublicationSafetyLifecycleState, RecommendationProvenance,
+    GovernanceArchiveContract, GovernanceCompatibilityContract, GovernanceConditionContract,
+    GovernanceIntegrityVerification, GOVERNANCE_AUTHORITY_EFFECT_NONE,
 };
 
 // ---------------------------------------------------------------------------
@@ -121,7 +124,7 @@ pub struct GovernanceReviewWorkflowContract {
 }
 
 impl GovernanceReviewWorkflowContract {
-    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+    pub const AUTHORITY_EFFECT_NONE: &'static str = GOVERNANCE_AUTHORITY_EFFECT_NONE;
 
     pub fn begin(
         proposal: &OutcomeAdaptationProposal,
@@ -477,7 +480,7 @@ pub struct GovernanceConflictResolutionContract {
 }
 
 impl GovernanceConflictResolutionContract {
-    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+    pub const AUTHORITY_EFFECT_NONE: &'static str = GOVERNANCE_AUTHORITY_EFFECT_NONE;
 
     pub fn from_decisions(
         proposal: &OutcomeAdaptationProposal,
@@ -671,7 +674,7 @@ pub struct GovernanceDecisionPackage {
 }
 
 impl GovernanceDecisionPackage {
-    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+    pub const AUTHORITY_EFFECT_NONE: &'static str = GOVERNANCE_AUTHORITY_EFFECT_NONE;
 
     pub fn assemble(
         proposal: &OutcomeAdaptationProposal,
@@ -807,7 +810,7 @@ pub struct GovernanceComplianceContract {
 }
 
 impl GovernanceComplianceContract {
-    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+    pub const AUTHORITY_EFFECT_NONE: &'static str = GOVERNANCE_AUTHORITY_EFFECT_NONE;
 
     pub fn verify(
         package: &GovernanceDecisionPackage,
@@ -1068,7 +1071,7 @@ pub struct GovernanceReadinessDashboardProjection {
 }
 
 impl GovernanceReadinessDashboardProjection {
-    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+    pub const AUTHORITY_EFFECT_NONE: &'static str = GOVERNANCE_AUTHORITY_EFFECT_NONE;
 
     pub fn project(
         proposal: &OutcomeAdaptationProposal,
