@@ -68,6 +68,10 @@ Human operating surface + publication boundary; UI cannot approve execution.
 [WORKSPACE-GOVERNANCE-LIFECYCLE.md](./WORKSPACE-GOVERNANCE-LIFECYCLE.md).
 End-to-end stages preserve provenance; timeline events immutable.
 
+**Sprint 149:** Publication safety contract —
+[WORKSPACE-PUBLICATION-SAFETY.md](./WORKSPACE-PUBLICATION-SAFETY.md).
+Validation/migration/rollback gates; activation still blocked.
+
 ---
 
 ## Ownership

@@ -89,6 +89,12 @@ pub enum ActionProposalError {
     #[error("publication environment cannot activate runtime changes")]
     PublicationEnvironmentCannotActivate,
 
+    #[error("publication safety validation failed: {0}")]
+    PublicationSafetyValidationFailed(String),
+
+    #[error("publication safety contract blocks progression: {0}")]
+    PublicationSafetyBlocked(String),
+
     #[error("governance lifecycle integrity validation failed: {0}")]
     GovernanceLifecycleIntegrityFailed(String),
 
@@ -1863,6 +1869,322 @@ impl PublicationEnvironment {
 
     pub fn attempt_execute() -> Result<(), ActionProposalError> {
         Err(ActionProposalError::CannotExecute)
+    }
+}
+
+/// Publication safety lifecycle (architecture only — Sprint 149).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum PublicationSafetyLifecycleState {
+    ReadyForPublication,
+    Validation,
+    MigrationPrepared,
+    RollbackPrepared,
+    ReleaseApproved,
+    /// Future only — activation hard-fails.
+    Published,
+    ValidationFailed,
+}
+
+impl PublicationSafetyLifecycleState {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::ReadyForPublication => "ready_for_publication",
+            Self::Validation => "validation",
+            Self::MigrationPrepared => "migration_prepared",
+            Self::RollbackPrepared => "rollback_prepared",
+            Self::ReleaseApproved => "release_approved",
+            Self::Published => "published",
+            Self::ValidationFailed => "validation_failed",
+        }
+    }
+
+    pub fn allows_transition(self, to: Self) -> bool {
+        matches!(
+            (self, to),
+            (Self::ReadyForPublication, Self::Validation)
+                | (Self::Validation, Self::MigrationPrepared)
+                | (Self::Validation, Self::ValidationFailed)
+                | (Self::MigrationPrepared, Self::RollbackPrepared)
+                | (Self::RollbackPrepared, Self::ReleaseApproved)
+                | (Self::ReleaseApproved, Self::Published)
+        )
+    }
+}
+
+/// Compatibility check gate for future publication.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PublicationCompatibilityCheck {
+    pub name: String,
+    pub passed: bool,
+    pub detail: String,
+}
+
+/// Migration requirement (architecture — does not apply SQL).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PublicationMigrationRequirement {
+    pub migration_id: String,
+    pub description: String,
+    pub prepared: bool,
+}
+
+/// Rollback requirement — history must remain preserved.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PublicationRollbackRequirement {
+    pub rollback_to: String,
+    pub history_preserved: bool,
+    pub prepared: bool,
+}
+
+/// Named validation gate.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PublicationValidationGate {
+    pub name: String,
+    pub required: bool,
+    pub passed: bool,
+}
+
+/// Failure handling policy for publication safety.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PublicationFailureHandling {
+    pub on_validation_failure: String,
+    pub on_activation_attempt: String,
+    pub preserves_history: bool,
+}
+
+impl PublicationFailureHandling {
+    pub fn default_safe() -> Self {
+        Self {
+            on_validation_failure: "block_publication".into(),
+            on_activation_attempt: "hard_fail".into(),
+            preserves_history: true,
+        }
+    }
+}
+
+/// Safety requirements a future publication system must satisfy before activation (Sprint 149).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PublicationSafetyContract {
+    pub id: String,
+    pub readiness_reference: String,
+    pub environment_reference: String,
+    pub compatibility_checks: Vec<PublicationCompatibilityCheck>,
+    pub migration_requirements: Vec<PublicationMigrationRequirement>,
+    pub rollback_requirements: Vec<PublicationRollbackRequirement>,
+    pub validation_gates: Vec<PublicationValidationGate>,
+    pub failure_handling: PublicationFailureHandling,
+    pub lifecycle_state: PublicationSafetyLifecycleState,
+    pub lifecycle_history: Vec<PublicationSafetyLifecycleState>,
+    pub provenance: RecommendationProvenance,
+    pub authority_effect: String,
+}
+
+impl PublicationSafetyContract {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+
+    pub fn from_ready(
+        readiness: &PublicationReadiness,
+        environment: &PublicationEnvironment,
+    ) -> Result<Self, ActionProposalError> {
+        if readiness.state != PublicationReadinessState::ReadyForPublication {
+            return Err(ActionProposalError::PublicationSafetyBlocked(
+                "readiness must be ReadyForPublication".into(),
+            ));
+        }
+        let compatibility_checks: Vec<_> = environment
+            .compatibility_requirements
+            .iter()
+            .map(|req| PublicationCompatibilityCheck {
+                name: req.clone(),
+                passed: true,
+                detail: format!("compatibility requirement declared: {req}"),
+            })
+            .collect();
+        let mut gates = vec![
+            PublicationValidationGate {
+                name: "readiness_ready".into(),
+                required: true,
+                passed: true,
+            },
+            PublicationValidationGate {
+                name: "environment_bound".into(),
+                required: true,
+                passed: !environment.governance_record_id.is_empty(),
+            },
+            PublicationValidationGate {
+                name: "authority_effect_none".into(),
+                required: true,
+                passed: environment.authority_effect
+                    == PublicationEnvironment::AUTHORITY_EFFECT_NONE
+                    && readiness.authority_effect == PublicationReadiness::AUTHORITY_EFFECT_NONE,
+            },
+        ];
+        for check in &compatibility_checks {
+            gates.push(PublicationValidationGate {
+                name: format!("compat:{}", check.name),
+                required: true,
+                passed: check.passed,
+            });
+        }
+        Ok(Self {
+            id: format!("publication_safety:{}", readiness.id),
+            readiness_reference: readiness.id.clone(),
+            environment_reference: environment.id.clone(),
+            compatibility_checks,
+            migration_requirements: vec![PublicationMigrationRequirement {
+                migration_id: "behaviour:future_migration".into(),
+                description: "Prepare ordered behaviour migration (architecture only)".into(),
+                prepared: false,
+            }],
+            rollback_requirements: vec![PublicationRollbackRequirement {
+                rollback_to: environment.rollback_scope.clone(),
+                history_preserved: true,
+                prepared: false,
+            }],
+            validation_gates: gates,
+            failure_handling: PublicationFailureHandling::default_safe(),
+            lifecycle_state: PublicationSafetyLifecycleState::ReadyForPublication,
+            lifecycle_history: vec![PublicationSafetyLifecycleState::ReadyForPublication],
+            provenance: readiness.provenance.clone(),
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        })
+    }
+
+    fn transition(
+        &mut self,
+        to: PublicationSafetyLifecycleState,
+    ) -> Result<(), ActionProposalError> {
+        if to == PublicationSafetyLifecycleState::Published {
+            return Err(ActionProposalError::PublicationActivationNotImplemented);
+        }
+        if !self.lifecycle_state.allows_transition(to) {
+            return Err(ActionProposalError::InvalidLifecycleTransition {
+                from: self.lifecycle_state.as_str().into(),
+                to: to.as_str().into(),
+            });
+        }
+        self.lifecycle_state = to;
+        self.lifecycle_history.push(to);
+        Ok(())
+    }
+
+    /// Run validation gates — failure blocks publication progression.
+    pub fn run_validation(&mut self) -> Result<(), ActionProposalError> {
+        self.transition(PublicationSafetyLifecycleState::Validation)?;
+        let failed: Vec<_> = self
+            .validation_gates
+            .iter()
+            .filter(|g| g.required && !g.passed)
+            .map(|g| g.name.clone())
+            .collect();
+        if !failed.is_empty() {
+            self.lifecycle_state = PublicationSafetyLifecycleState::ValidationFailed;
+            self.lifecycle_history
+                .push(PublicationSafetyLifecycleState::ValidationFailed);
+            return Err(ActionProposalError::PublicationSafetyValidationFailed(
+                failed.join(","),
+            ));
+        }
+        Ok(())
+    }
+
+    pub fn with_failed_gate(mut self, gate_name: impl Into<String>) -> Self {
+        let name = gate_name.into();
+        if let Some(gate) = self.validation_gates.iter_mut().find(|g| g.name == name) {
+            gate.passed = false;
+        } else {
+            self.validation_gates.push(PublicationValidationGate {
+                name,
+                required: true,
+                passed: false,
+            });
+        }
+        self
+    }
+
+    pub fn prepare_migration(&mut self) -> Result<(), ActionProposalError> {
+        if self.lifecycle_state == PublicationSafetyLifecycleState::ValidationFailed {
+            return Err(ActionProposalError::PublicationSafetyBlocked(
+                "validation failed".into(),
+            ));
+        }
+        if self.lifecycle_state == PublicationSafetyLifecycleState::ReadyForPublication {
+            self.run_validation()?;
+        }
+        if self.lifecycle_state != PublicationSafetyLifecycleState::Validation {
+            return Err(ActionProposalError::PublicationSafetyBlocked(
+                "must validate before migration prepare".into(),
+            ));
+        }
+        for req in &mut self.migration_requirements {
+            req.prepared = true;
+        }
+        self.transition(PublicationSafetyLifecycleState::MigrationPrepared)
+    }
+
+    pub fn prepare_rollback(&mut self) -> Result<(), ActionProposalError> {
+        self.transition(PublicationSafetyLifecycleState::RollbackPrepared)?;
+        for req in &mut self.rollback_requirements {
+            req.prepared = true;
+            req.history_preserved = true;
+        }
+        Ok(())
+    }
+
+    /// Release approval for a future publish — still does not activate runtime.
+    pub fn approve_release(&mut self) -> Result<(), ActionProposalError> {
+        self.transition(PublicationSafetyLifecycleState::ReleaseApproved)?;
+        assert_eq!(self.authority_effect, Self::AUTHORITY_EFFECT_NONE);
+        Ok(())
+    }
+
+    pub fn rollback_preserves_history(&self) -> bool {
+        self.failure_handling.preserves_history
+            && self
+                .rollback_requirements
+                .iter()
+                .all(|r| r.history_preserved)
+            && !self.lifecycle_history.is_empty()
+    }
+
+    pub fn may_execute_commands(&self) -> bool {
+        false
+    }
+
+    pub fn may_bypass_permission_gateway(&self) -> bool {
+        false
+    }
+
+    pub fn may_mutate_cognition(&self) -> bool {
+        false
+    }
+
+    pub fn may_rewrite_provenance(&self) -> bool {
+        false
+    }
+
+    pub fn may_activate_runtime(&self) -> bool {
+        false
+    }
+
+    pub fn attempt_publish_activate(&mut self) -> Result<(), ActionProposalError> {
+        Err(ActionProposalError::PublicationActivationNotImplemented)
+    }
+
+    pub fn attempt_execute() -> Result<(), ActionProposalError> {
+        Err(ActionProposalError::CannotExecute)
+    }
+
+    pub fn attempt_bypass_gateway() -> Result<(), ActionProposalError> {
+        Err(ActionProposalError::GovernanceCannotGrantAuthority)
+    }
+
+    pub fn attempt_mutate_cognition() -> Result<(), ActionProposalError> {
+        Err(ActionProposalError::GovernanceRiskCannotMutateCognition)
+    }
+
+    pub fn attempt_rewrite_provenance() -> Result<(), ActionProposalError> {
+        Err(ActionProposalError::ChangeEvaluationCannotRewriteHistory)
     }
 }
 
@@ -4022,5 +4344,106 @@ mod tests {
         assert!(rejected
             .stages()
             .contains(&GovernanceLifecycleStage::RejectedVisible));
+    }
+
+    #[test]
+    fn publication_safety_blocks_failed_validation_and_activation() {
+        let item = sample_item();
+        let mut record = RecommendationGovernanceRecord::from_recommendation_item(&item, "t0");
+        record
+            .transition(RecommendationLifecycleState::Available, "t1", None)
+            .unwrap();
+        record
+            .transition(RecommendationLifecycleState::Presented, "t2", None)
+            .unwrap();
+        record.accept("t3", None).unwrap();
+        let outcome = record.record_outcome("t4").unwrap();
+        let provenance = outcome.provenance.clone();
+        let mut proposal = outcome.to_adaptation_proposal(
+            "experience_presentation",
+            "Keep DisplayReason primary",
+            "Consistent rationale",
+        );
+        proposal.require_review().unwrap();
+        proposal
+            .approve(
+                AdaptationReviewerIdentity::local_user("local_user"),
+                "t-ok",
+            )
+            .unwrap();
+        let risk = GovernanceRisk::classify_from_proposal(&proposal);
+        let evidence = GovernanceDecisionEvidence::assemble(
+            &risk,
+            vec!["outcome:x".into()],
+            vec![],
+            vec![],
+            "Evidenced",
+            &provenance,
+        )
+        .unwrap();
+        let policy = GovernancePolicy::from_risk(&risk);
+        let decision = GovernanceReviewDecision::new(
+            &policy,
+            AdaptationReviewerIdentity::local_user("local_user"),
+            GovernanceReviewDecisionKind::Approve,
+            "Approve",
+            "t-dec",
+            vec![],
+            &provenance,
+        )
+        .unwrap()
+        .with_evidence(&evidence);
+        let mut readiness = PublicationReadiness::draft_from_evidence(&evidence);
+        readiness.mark_risk_reviewed().unwrap();
+        readiness.mark_approved(&evidence).unwrap();
+        readiness.mark_ready_for_publication(&evidence).unwrap();
+        let governance = GovernanceRecord::from_adaptation_chain(
+            &proposal, None, None, None, None,
+        )
+        .with_policy_and_decisions(&policy, &proposal, &[decision.clone()])
+        .unwrap()
+        .with_evidence_and_readiness(&evidence, &readiness, &[decision.clone()])
+        .unwrap();
+        let workspace = GovernanceWorkspace::from_governance_bundle(
+            &proposal,
+            &governance,
+            Some(&evidence),
+            Some(&risk),
+            &[decision],
+            Some(&readiness),
+        );
+        let env = PublicationEnvironment::from_governance_workspace(
+            &workspace,
+            "workspace:local",
+            vec!["schema_compatible".into()],
+            BehaviourVersion::BASELINE_ID,
+            PublicationRolloutStage::StagedCanary,
+        );
+        let mut failed = PublicationSafetyContract::from_ready(&readiness, &env)
+            .unwrap()
+            .with_failed_gate("compat:schema_compatible");
+        assert!(failed.run_validation().is_err());
+        assert_eq!(
+            failed.lifecycle_state,
+            PublicationSafetyLifecycleState::ValidationFailed
+        );
+        assert!(failed.prepare_migration().is_err());
+        assert!(failed.lifecycle_history.contains(
+            &PublicationSafetyLifecycleState::ReadyForPublication
+        ));
+
+        let mut ok = PublicationSafetyContract::from_ready(&readiness, &env).unwrap();
+        ok.prepare_migration().unwrap();
+        ok.prepare_rollback().unwrap();
+        assert!(ok.rollback_preserves_history());
+        ok.approve_release().unwrap();
+        assert!(!ok.may_execute_commands());
+        assert!(!ok.may_bypass_permission_gateway());
+        assert!(!ok.may_mutate_cognition());
+        assert!(!ok.may_rewrite_provenance());
+        assert!(ok.attempt_publish_activate().is_err());
+        assert!(PublicationSafetyContract::attempt_execute().is_err());
+        assert!(PublicationSafetyContract::attempt_bypass_gateway().is_err());
+        assert_eq!(ok.provenance, provenance);
     }
 }
