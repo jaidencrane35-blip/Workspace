@@ -1,8 +1,8 @@
 use crate::connection::Database;
 use crate::error::Result;
 use workspace_domain::{
-    RecommendationLifecycleOverlay, RecommendationLifecycleState, RecommendationOutcome,
-    RecommendationResolutionType,
+    RecommendationDecisionConfirmation, RecommendationLifecycleOverlay,
+    RecommendationLifecycleState, RecommendationOutcome, RecommendationResolutionType,
 };
 
 /// Persistence for Recommendation Engine lifecycle overlay only.
@@ -33,12 +33,20 @@ impl<'a> RecommendationLifecycleRepository<'a> {
                 ))
             })?)
         };
+        let confirmation_json = match &overlay.decision_confirmation {
+            Some(confirmation) => Some(serde_json::to_string(confirmation).map_err(|e| {
+                crate::error::DatabaseError::Migration(format!(
+                    "recommendation confirmation serialize: {e}"
+                ))
+            })?),
+            None => None,
+        };
         self.db.connection().execute(
             "INSERT INTO recommendation_lifecycle (
                 workspace_id, native_id, lifecycle_state, created_at, presented_at,
                 resolved_at, resolution_type, actor_id, outcome_json, prior_outcomes_json,
-                content_fingerprint, updated_at, authority_effect
-             ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)
+                content_fingerprint, confirmation_json, updated_at, authority_effect
+             ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)
              ON CONFLICT(workspace_id, native_id) DO UPDATE SET
                 lifecycle_state = excluded.lifecycle_state,
                 created_at = excluded.created_at,
@@ -49,6 +57,7 @@ impl<'a> RecommendationLifecycleRepository<'a> {
                 outcome_json = excluded.outcome_json,
                 prior_outcomes_json = excluded.prior_outcomes_json,
                 content_fingerprint = excluded.content_fingerprint,
+                confirmation_json = excluded.confirmation_json,
                 updated_at = excluded.updated_at,
                 authority_effect = excluded.authority_effect",
             (
@@ -63,6 +72,7 @@ impl<'a> RecommendationLifecycleRepository<'a> {
                 &outcome_json,
                 &prior_outcomes_json,
                 &overlay.content_fingerprint,
+                &confirmation_json,
                 &overlay.updated_at,
                 &overlay.authority_effect,
             ),
@@ -78,7 +88,7 @@ impl<'a> RecommendationLifecycleRepository<'a> {
         let mut stmt = self.db.connection().prepare(
             "SELECT workspace_id, native_id, lifecycle_state, created_at, presented_at,
                     resolved_at, resolution_type, actor_id, outcome_json, prior_outcomes_json,
-                    content_fingerprint, updated_at, authority_effect
+                    content_fingerprint, confirmation_json, updated_at, authority_effect
              FROM recommendation_lifecycle
              WHERE workspace_id = ?1 AND native_id = ?2",
         )?;
@@ -93,7 +103,7 @@ impl<'a> RecommendationLifecycleRepository<'a> {
         let mut stmt = self.db.connection().prepare(
             "SELECT workspace_id, native_id, lifecycle_state, created_at, presented_at,
                     resolved_at, resolution_type, actor_id, outcome_json, prior_outcomes_json,
-                    content_fingerprint, updated_at, authority_effect
+                    content_fingerprint, confirmation_json, updated_at, authority_effect
              FROM recommendation_lifecycle
              WHERE workspace_id = ?1",
         )?;
@@ -137,6 +147,19 @@ fn map_overlay(row: &rusqlite::Row<'_>) -> rusqlite::Result<RecommendationLifecy
         })?,
         None => Vec::new(),
     };
+    let confirmation_json: Option<String> = row.get(11)?;
+    let decision_confirmation = match confirmation_json.as_deref() {
+        Some(raw) => Some(
+            serde_json::from_str::<RecommendationDecisionConfirmation>(raw).map_err(|_| {
+                rusqlite::Error::InvalidColumnType(
+                    11,
+                    "confirmation_json".into(),
+                    rusqlite::types::Type::Text,
+                )
+            })?,
+        ),
+        None => None,
+    };
     Ok(RecommendationLifecycleOverlay {
         workspace_id: row.get(0)?,
         native_id: row.get(1)?,
@@ -149,7 +172,8 @@ fn map_overlay(row: &rusqlite::Row<'_>) -> rusqlite::Result<RecommendationLifecy
         outcome,
         prior_outcomes,
         content_fingerprint: row.get(10)?,
-        updated_at: row.get(11)?,
-        authority_effect: row.get(12)?,
+        decision_confirmation,
+        updated_at: row.get(12)?,
+        authority_effect: row.get(13)?,
     })
 }

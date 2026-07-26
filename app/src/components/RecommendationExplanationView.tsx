@@ -1,6 +1,7 @@
 import { DisplayReasonList } from "./DisplayReasonList";
 import type {
   RecommendationDecisionBoundary,
+  RecommendationDecisionConfirmation,
   RecommendationDecisionContext,
   RecommendationDecisionReadiness,
   RecommendationHistoryEntry,
@@ -126,6 +127,11 @@ export function RecommendationExplanationBlock({
       {item.decision_boundary ? (
         <RecommendationDecisionBoundaryBlock boundary={item.decision_boundary} />
       ) : null}
+      {item.decision_confirmation ? (
+        <RecommendationDecisionConfirmationBlock
+          confirmation={item.decision_confirmation}
+        />
+      ) : null}
     </div>
   );
 }
@@ -158,6 +164,44 @@ export function RecommendationDecisionBoundaryBlock({
       <div className="mono">
         Owners: RE={boundary.recommendation_owner} · DE={boundary.decision_owner} ·
         Gateway={boundary.execution_owner}
+      </div>
+    </div>
+  );
+}
+
+/** Accept ≠ confirmation — confirmation never creates Decision / Intent / execution. */
+export function RecommendationDecisionConfirmationBlock({
+  confirmation,
+}: {
+  confirmation: RecommendationDecisionConfirmation;
+}) {
+  return (
+    <div
+      className="recommendation-decision-confirmation muted"
+      style={{ marginTop: 4 }}
+    >
+      <div>
+        Decision confirmation: <strong>{confirmation.confirmation_state}</strong>
+        {" · "}
+        intent: {confirmation.confirmation_intent}
+        {" · "}
+        handoff: {confirmation.handoff_performed ? "performed" : "not performed"}
+        {" · "}
+        authority: {confirmation.authority_effect}
+      </div>
+      <div>{confirmation.note}</div>
+      <div>
+        Creates Decision: {confirmation.creates_decision_engine_object ? "yes" : "no"}
+        {" · "}
+        Creates intent: {confirmation.creates_intent ? "yes" : "no"}
+        {" · "}
+        Execution authorised:{" "}
+        {confirmation.grants_execution_authority ? "yes" : "no"}
+      </div>
+      <div className="mono">
+        Owners: RE={confirmation.recommendation_owner} · User=
+        {confirmation.confirmation_owner} · DE={confirmation.decision_owner} ·
+        Gateway={confirmation.execution_owner}
       </div>
     </div>
   );

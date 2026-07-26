@@ -35,6 +35,12 @@ pub enum WorkspaceRecommendationEngineError {
     #[error("recommendation decision context/readiness cannot become a handoff or intent")]
     CannotBecomeHandoff,
 
+    #[error("recommendation decision confirmation transition not allowed from {from} to {to}")]
+    InvalidConfirmationTransition { from: String, to: String },
+
+    #[error("recommendation decision confirmation cannot create decisions, intents, or execute")]
+    ConfirmationCannotCreateAuthority,
+
     #[error(transparent)]
     Domain(#[from] DomainError),
 }
@@ -245,6 +251,9 @@ pub struct RecommendationItem {
     /// Explicit RE↔DE ownership / intent boundary (Sprint 222+) — never executes.
     #[serde(default)]
     pub decision_boundary: Option<RecommendationDecisionBoundary>,
+    /// Explicit confirmation beyond accept-as-agreement (Sprint 227+) — never creates DE/intent.
+    #[serde(default)]
+    pub decision_confirmation: Option<RecommendationDecisionConfirmation>,
     pub authority_effect: String,
 }
 
@@ -854,6 +863,204 @@ impl RecommendationDecisionBoundary {
         if self.accepted_as_recommendation_decision && self.user_intent_kind == Self::INTENT_AGREEMENT
         {
             // Accepted ≠ intent / execution — already encoded by flags above.
+        }
+        Ok(())
+    }
+}
+
+/// Explicit user confirmation between recommendation acceptance and future DE creation
+/// (Sprint 227).
+///
+/// Accept remains agreement-only. Confirmation records whether the user wants a *future*
+/// Decision Engine consideration — still never creates DE objects, intents, or Gateway grants.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RecommendationDecisionConfirmation {
+    pub recommendation_id: String,
+    /// `not_required` | `required` | `confirmed` | `declined`
+    pub confirmation_state: String,
+    /// `agreement_only` | `create_future_decision` | `request_action_review`
+    pub confirmation_intent: String,
+    pub recommendation_owner: String,
+    pub confirmation_owner: String,
+    pub decision_owner: String,
+    pub execution_owner: String,
+    pub creates_decision_engine_object: bool,
+    pub creates_intent: bool,
+    pub grants_execution_authority: bool,
+    pub handoff_performed: bool,
+    pub confirmed_at: Option<String>,
+    pub note: String,
+    pub authority_effect: String,
+}
+
+impl RecommendationDecisionConfirmation {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+
+    pub const STATE_NOT_REQUIRED: &'static str = "not_required";
+    pub const STATE_REQUIRED: &'static str = "required";
+    pub const STATE_CONFIRMED: &'static str = "confirmed";
+    pub const STATE_DECLINED: &'static str = "declined";
+
+    pub const INTENT_AGREEMENT_ONLY: &'static str = "agreement_only";
+    pub const INTENT_CREATE_FUTURE_DECISION: &'static str = "create_future_decision";
+    pub const INTENT_REQUEST_ACTION_REVIEW: &'static str = "request_action_review";
+
+    pub const OWNER_RECOMMENDATION: &'static str = "recommendation_engine";
+    pub const OWNER_USER: &'static str = "user";
+    pub const OWNER_DECISION: &'static str = "decision_engine";
+    pub const OWNER_GATEWAY: &'static str = "permission_gateway";
+
+    /// Derive initial confirmation from boundary — accept never sets `confirmed`.
+    pub fn derive_from_boundary(boundary: &RecommendationDecisionBoundary) -> Self {
+        let (confirmation_state, note) = if boundary.transition_state
+            == RecommendationDecisionBoundary::STATE_AWAITING_DECISION_ENGINE_INTAKE
+        {
+            (
+                Self::STATE_REQUIRED,
+                "Confirmation required for future Decision Engine consideration. Accept remains \
+                 agreement only — confirming still does not create a Decision object, intent, or \
+                 execution authority."
+                    .into(),
+            )
+        } else {
+            (
+                Self::STATE_NOT_REQUIRED,
+                "Confirmation not required. Recommendation acceptance (if any) is agreement only; \
+                 no future Decision Engine intake requested."
+                    .into(),
+            )
+        };
+        Self {
+            recommendation_id: boundary.recommendation_id.clone(),
+            confirmation_state: confirmation_state.into(),
+            confirmation_intent: Self::INTENT_AGREEMENT_ONLY.into(),
+            recommendation_owner: Self::OWNER_RECOMMENDATION.into(),
+            confirmation_owner: Self::OWNER_USER.into(),
+            decision_owner: Self::OWNER_DECISION.into(),
+            execution_owner: Self::OWNER_GATEWAY.into(),
+            creates_decision_engine_object: false,
+            creates_intent: false,
+            grants_execution_authority: false,
+            handoff_performed: false,
+            confirmed_at: None,
+            note,
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        }
+    }
+
+    pub fn allows_transition(&self, to: &str) -> bool {
+        match (self.confirmation_state.as_str(), to) {
+            (Self::STATE_REQUIRED, Self::STATE_CONFIRMED)
+            | (Self::STATE_REQUIRED, Self::STATE_DECLINED) => true,
+            (from, to) if from == to => true,
+            _ => false,
+        }
+    }
+
+    /// Record user confirmation for *future* DE consideration — never creates DE/intent.
+    pub fn confirm(
+        &mut self,
+        confirmation_intent: &str,
+        at: impl Into<String>,
+    ) -> Result<(), WorkspaceRecommendationEngineError> {
+        if !matches!(
+            confirmation_intent,
+            Self::INTENT_CREATE_FUTURE_DECISION | Self::INTENT_REQUEST_ACTION_REVIEW
+        ) {
+            return Err(WorkspaceRecommendationEngineError::ConfirmationCannotCreateAuthority);
+        }
+        if !self.allows_transition(Self::STATE_CONFIRMED) {
+            return Err(WorkspaceRecommendationEngineError::InvalidConfirmationTransition {
+                from: self.confirmation_state.clone(),
+                to: Self::STATE_CONFIRMED.into(),
+            });
+        }
+        self.confirmation_state = Self::STATE_CONFIRMED.into();
+        self.confirmation_intent = confirmation_intent.into();
+        self.confirmed_at = Some(at.into());
+        self.creates_decision_engine_object = false;
+        self.creates_intent = false;
+        self.grants_execution_authority = false;
+        self.handoff_performed = false;
+        self.authority_effect = Self::AUTHORITY_EFFECT_NONE.into();
+        self.note = "User confirmed desire for future Decision Engine consideration. Confirmation \
+                     is not Decision creation, not an intent, and not execution authorization. \
+                     Handoff not performed."
+            .into();
+        Ok(())
+    }
+
+    /// Decline future DE consideration — accept/agreement history remains intact.
+    pub fn decline(
+        &mut self,
+        at: impl Into<String>,
+    ) -> Result<(), WorkspaceRecommendationEngineError> {
+        if !self.allows_transition(Self::STATE_DECLINED) {
+            return Err(WorkspaceRecommendationEngineError::InvalidConfirmationTransition {
+                from: self.confirmation_state.clone(),
+                to: Self::STATE_DECLINED.into(),
+            });
+        }
+        self.confirmation_state = Self::STATE_DECLINED.into();
+        self.confirmation_intent = Self::INTENT_AGREEMENT_ONLY.into();
+        self.confirmed_at = Some(at.into());
+        self.creates_decision_engine_object = false;
+        self.creates_intent = false;
+        self.grants_execution_authority = false;
+        self.handoff_performed = false;
+        self.authority_effect = Self::AUTHORITY_EFFECT_NONE.into();
+        self.note = "User declined future Decision Engine consideration. Recommendation agreement \
+                     (if any) remains; no Decision object, intent, or execution authority."
+            .into();
+        Ok(())
+    }
+
+    pub fn attempt_execute() -> Result<(), WorkspaceRecommendationEngineError> {
+        Err(WorkspaceRecommendationEngineError::CannotExecute)
+    }
+
+    pub fn attempt_create_intent(&self) -> Result<(), WorkspaceRecommendationEngineError> {
+        Err(WorkspaceRecommendationEngineError::ConfirmationCannotCreateAuthority)
+    }
+
+    pub fn attempt_create_decision_engine_object(
+        &self,
+    ) -> Result<(), WorkspaceRecommendationEngineError> {
+        Err(WorkspaceRecommendationEngineError::ConfirmationCannotCreateAuthority)
+    }
+
+    pub fn attempt_handoff(&self) -> Result<(), WorkspaceRecommendationEngineError> {
+        Err(WorkspaceRecommendationEngineError::CannotBecomeHandoff)
+    }
+
+    pub fn may_create_intent(&self) -> bool {
+        false
+    }
+
+    pub fn may_create_decision_engine_object(&self) -> bool {
+        false
+    }
+
+    pub fn may_grant_execution_authority(&self) -> bool {
+        false
+    }
+
+    pub fn may_invoke_gateway(&self) -> bool {
+        false
+    }
+
+    pub fn may_mutate_provenance(&self) -> bool {
+        false
+    }
+
+    pub fn assert_non_authoritative(&self) -> Result<(), WorkspaceRecommendationEngineError> {
+        if self.creates_intent
+            || self.creates_decision_engine_object
+            || self.grants_execution_authority
+            || self.handoff_performed
+            || self.authority_effect != Self::AUTHORITY_EFFECT_NONE
+        {
+            return Err(WorkspaceRecommendationEngineError::ConfirmationCannotCreateAuthority);
         }
         Ok(())
     }

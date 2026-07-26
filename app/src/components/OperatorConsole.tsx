@@ -1818,7 +1818,8 @@ export function OperatorConsole({
           Queue, Environment. Explanation views show why a suggestion is shown
           (evidence, lifecycle, catalog keys). Present / Accept / Reject record
           recommendation agreement only — not a Decision Engine object, intent,
-          or execution authority. Handoff not performed.
+          or execution authority. Confirm future decision is a separate step and
+          still does not create a Decision or authorize execution.
         </p>
         <div className="row">
           <button
@@ -1964,6 +1965,66 @@ export function OperatorConsole({
                     >
                       Reject
                     </button>
+                    {item.decision_confirmation?.confirmation_state ===
+                      "required" && (
+                      <>
+                        <button
+                          type="button"
+                          disabled={busy || !workspace}
+                          onClick={() =>
+                            void run(
+                              "Future decision consideration confirmed (no DE object)",
+                              async () => {
+                                if (!workspace) return;
+                                await invokeIpc(
+                                  "confirm_recommendation_decision",
+                                  {
+                                    workspaceId: workspace.id,
+                                    recommendationId: item.id,
+                                    confirmationIntent: "create_future_decision",
+                                  },
+                                );
+                                const state =
+                                  await invokeIpc<WorkspaceRecommendationEngineState>(
+                                    "generate_workspace_recommendation_engine",
+                                    { workspaceId: workspace.id },
+                                  );
+                                setRecommendationEngine(state);
+                              },
+                            )
+                          }
+                        >
+                          Confirm future decision
+                        </button>
+                        <button
+                          type="button"
+                          disabled={busy || !workspace}
+                          onClick={() =>
+                            void run(
+                              "Future decision consideration declined",
+                              async () => {
+                                if (!workspace) return;
+                                await invokeIpc(
+                                  "decline_recommendation_decision",
+                                  {
+                                    workspaceId: workspace.id,
+                                    recommendationId: item.id,
+                                  },
+                                );
+                                const state =
+                                  await invokeIpc<WorkspaceRecommendationEngineState>(
+                                    "generate_workspace_recommendation_engine",
+                                    { workspaceId: workspace.id },
+                                  );
+                                setRecommendationEngine(state);
+                              },
+                            )
+                          }
+                        >
+                          Decline future decision
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               ))}

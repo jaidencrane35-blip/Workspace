@@ -3002,6 +3002,48 @@ impl CommandHandler {
         )
     }
 
+    /// Confirm desire for future Decision Engine consideration — never creates DE/intent.
+    pub fn confirm_recommendation_decision(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        recommendation_id: String,
+        confirmation_intent: String,
+    ) -> Result<RecommendationReviewActionResult> {
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent))
+            .execute_mutation(GateRecommendationEngineWrite)?;
+        WorkspaceRecommendationEngineService::confirm_recommendation_decision(
+            &kernel.shared_database(),
+            &actor,
+            &kernel.orchestrated_plans(),
+            &kernel.assistant_workflows(),
+            workspace_id,
+            recommendation_id,
+            confirmation_intent,
+        )
+    }
+
+    /// Decline future Decision Engine consideration — never executes.
+    pub fn decline_recommendation_decision(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        recommendation_id: String,
+    ) -> Result<RecommendationReviewActionResult> {
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent))
+            .execute_mutation(GateRecommendationEngineWrite)?;
+        WorkspaceRecommendationEngineService::decline_recommendation_decision(
+            &kernel.shared_database(),
+            &actor,
+            &kernel.orchestrated_plans(),
+            &kernel.assistant_workflows(),
+            workspace_id,
+            recommendation_id,
+        )
+    }
+
     /// Aggregate Workspace Operating State (read-only current-situation snapshot).
     pub fn generate_workspace_operating_state(
         kernel: &WorkspaceKernel,

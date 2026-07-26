@@ -2324,8 +2324,8 @@ export function WorkspaceIntelligencePanel({
           Environment. Explanation shows why a suggestion is shown (evidence,
           lifecycle, Experience catalog keys). Present / Accept / Reject record
           recommendation agreement only — not a Decision Engine object, intent,
-          or execution authority. Distinct from Decision Engine accept/handoff
-          below.
+          or execution authority. Confirm future decision is separate and still
+          creates nothing. Distinct from Decision Engine accept/handoff below.
         </p>
         <div className="row">
           <button
@@ -2447,6 +2447,67 @@ export function WorkspaceIntelligencePanel({
                         >
                           Reject
                         </button>
+                        {item.decision_confirmation?.confirmation_state ===
+                          "required" && (
+                          <>
+                            <button
+                              type="button"
+                              disabled={busy || !workspace}
+                              onClick={() =>
+                                void run(
+                                  "Future decision consideration confirmed (no DE object)",
+                                  async () => {
+                                    if (!workspace) return;
+                                    await invokeIpc(
+                                      "confirm_recommendation_decision",
+                                      {
+                                        workspaceId: workspace.id,
+                                        recommendationId: item.id,
+                                        confirmationIntent:
+                                          "create_future_decision",
+                                      },
+                                    );
+                                    const next =
+                                      await invokeIpc<WorkspaceRecommendationEngineState>(
+                                        "generate_workspace_recommendation_engine",
+                                        { workspaceId: workspace.id },
+                                      );
+                                    setRecommendationEngine(next);
+                                  },
+                                )
+                              }
+                            >
+                              Confirm future decision
+                            </button>
+                            <button
+                              type="button"
+                              disabled={busy || !workspace}
+                              onClick={() =>
+                                void run(
+                                  "Future decision consideration declined",
+                                  async () => {
+                                    if (!workspace) return;
+                                    await invokeIpc(
+                                      "decline_recommendation_decision",
+                                      {
+                                        workspaceId: workspace.id,
+                                        recommendationId: item.id,
+                                      },
+                                    );
+                                    const next =
+                                      await invokeIpc<WorkspaceRecommendationEngineState>(
+                                        "generate_workspace_recommendation_engine",
+                                        { workspaceId: workspace.id },
+                                      );
+                                    setRecommendationEngine(next);
+                                  },
+                                )
+                              }
+                            >
+                              Decline future decision
+                            </button>
+                          </>
+                        )}
                       </div>
                     </li>
                   ))}

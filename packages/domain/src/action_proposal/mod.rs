@@ -655,6 +655,10 @@ pub struct RecommendationLifecycleOverlay {
     /// Continuity fingerprint of the regenerable candidate payload (Sprint 197).
     #[serde(default)]
     pub content_fingerprint: Option<String>,
+    /// Explicit confirmation beyond accept-as-agreement (Sprint 227).
+    #[serde(default)]
+    pub decision_confirmation:
+        Option<crate::workspace_recommendation::RecommendationDecisionConfirmation>,
     pub updated_at: String,
     pub authority_effect: String,
 }
@@ -680,6 +684,7 @@ impl RecommendationLifecycleOverlay {
             outcome,
             prior_outcomes: Vec::new(),
             content_fingerprint: None,
+            decision_confirmation: None,
             updated_at: updated_at.into(),
             authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
         }
@@ -692,6 +697,14 @@ impl RecommendationLifecycleOverlay {
 
     pub fn with_prior_outcomes(mut self, prior: Vec<RecommendationOutcome>) -> Self {
         self.prior_outcomes = prior;
+        self
+    }
+
+    pub fn with_decision_confirmation(
+        mut self,
+        confirmation: crate::workspace_recommendation::RecommendationDecisionConfirmation,
+    ) -> Self {
+        self.decision_confirmation = Some(confirmation);
         self
     }
 
@@ -763,6 +776,10 @@ pub struct RecommendationReviewActionResult {
     /// Explicit RE↔DE ownership / intent boundary — never executes.
     #[serde(default)]
     pub decision_boundary: Option<crate::workspace_recommendation::RecommendationDecisionBoundary>,
+    /// Explicit confirmation beyond accept — never creates DE/intent/execution.
+    #[serde(default)]
+    pub decision_confirmation:
+        Option<crate::workspace_recommendation::RecommendationDecisionConfirmation>,
     pub explanation: String,
     pub authority_effect: String,
 }
@@ -4083,6 +4100,7 @@ mod tests {
                 decision_context: None,
                 decision_readiness: None,
                 decision_boundary: None,
+                decision_confirmation: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
         }
     }

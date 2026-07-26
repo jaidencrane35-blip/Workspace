@@ -17,8 +17,8 @@ use workspace_domain::{
     RecommendationEvidence, RecommendationExplanationView, RecommendationGovernanceRecord,
     RecommendationHistoryEntry, RecommendationItem, RecommendationKind,
     RecommendationLifecycleOverlay, RecommendationLifecycleState, RecommendationOutcome,
-    RecommendationDecisionBoundary, RecommendationDecisionContext, RecommendationDecisionReadiness,
-    RecommendationOutcomeView,
+    RecommendationDecisionBoundary, RecommendationDecisionConfirmation,
+    RecommendationDecisionContext, RecommendationDecisionReadiness, RecommendationOutcomeView,
     RecommendationRelationship, RecommendationReviewActionResult,
     TaskGraph, WorkspaceAttentionState, WorkspaceCompositionState, WorkspaceContinuityState,
     WorkspaceEnvironmentState, WorkspaceEvolutionState, WorkspacePurposeState,
@@ -197,6 +197,7 @@ impl WorkspaceRecommendationEngineService {
                 decision_context: None,
                 decision_readiness: None,
                 decision_boundary: None,
+                decision_confirmation: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
             });
             relationships.push(RecommendationRelationship {
@@ -258,6 +259,7 @@ impl WorkspaceRecommendationEngineService {
                 decision_context: None,
                 decision_readiness: None,
                 decision_boundary: None,
+                decision_confirmation: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
             });
         }
@@ -298,6 +300,7 @@ impl WorkspaceRecommendationEngineService {
                     decision_context: None,
                 decision_readiness: None,
                 decision_boundary: None,
+                decision_confirmation: None,
                     authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
@@ -346,6 +349,7 @@ impl WorkspaceRecommendationEngineService {
                 decision_context: None,
                 decision_readiness: None,
                 decision_boundary: None,
+                decision_confirmation: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
@@ -382,6 +386,7 @@ impl WorkspaceRecommendationEngineService {
                     decision_context: None,
                 decision_readiness: None,
                 decision_boundary: None,
+                decision_confirmation: None,
                     authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
@@ -440,6 +445,7 @@ impl WorkspaceRecommendationEngineService {
                 decision_context: None,
                 decision_readiness: None,
                 decision_boundary: None,
+                decision_confirmation: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
@@ -489,6 +495,7 @@ impl WorkspaceRecommendationEngineService {
                 decision_context: None,
                 decision_readiness: None,
                 decision_boundary: None,
+                decision_confirmation: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
@@ -536,6 +543,7 @@ impl WorkspaceRecommendationEngineService {
                 decision_context: None,
                 decision_readiness: None,
                 decision_boundary: None,
+                decision_confirmation: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
@@ -570,6 +578,7 @@ impl WorkspaceRecommendationEngineService {
                     decision_context: None,
                 decision_readiness: None,
                 decision_boundary: None,
+                decision_confirmation: None,
                     authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
@@ -618,6 +627,7 @@ impl WorkspaceRecommendationEngineService {
                     decision_context: None,
                 decision_readiness: None,
                 decision_boundary: None,
+                decision_confirmation: None,
                     authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
@@ -743,6 +753,7 @@ impl WorkspaceRecommendationEngineService {
                 decision_context: None,
                 decision_readiness: None,
                 decision_boundary: None,
+                decision_confirmation: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
             };
             crate::services::WorkspacePatternService::audit_used_for_recommendation(
@@ -837,6 +848,7 @@ impl WorkspaceRecommendationEngineService {
                 decision_context: None,
                 decision_readiness: None,
                 decision_boundary: None,
+                decision_confirmation: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
             });
         }
@@ -980,7 +992,7 @@ impl WorkspaceRecommendationEngineService {
                 });
             }
             Self::attach_explanation_views(&mut state);
-            Self::attach_decision_readiness(&mut state);
+            Self::attach_decision_readiness(&mut state, &HashMap::new());
         }
         Ok(state)
     }
@@ -1048,6 +1060,53 @@ impl WorkspaceRecommendationEngineService {
             RecommendationLifecycleState::Rejected,
             "workspace.recommendation_engine.rejected",
             "Rejected as a human decision record only — valid outcome, not a system failure.",
+        )
+    }
+
+    /// Confirm desire for *future* Decision Engine consideration — never creates DE/intent.
+    pub(crate) fn confirm_recommendation_decision(
+        db: &Arc<Mutex<Database>>,
+        actor: &ActorContext,
+        orchestrated_plans: &Arc<Mutex<OrchestratedPlanStore>>,
+        assistant_workflows: &Arc<Mutex<AssistantWorkflowStore>>,
+        workspace_id: impl Into<String>,
+        recommendation_id: impl Into<String>,
+        confirmation_intent: impl Into<String>,
+    ) -> Result<RecommendationReviewActionResult> {
+        Self::update_confirmation(
+            db,
+            actor,
+            orchestrated_plans,
+            assistant_workflows,
+            workspace_id,
+            recommendation_id,
+            confirmation_intent.into(),
+            true,
+            "workspace.recommendation_engine.decision_confirmed",
+            "Confirmation recorded for future Decision Engine consideration only — does not create a Decision object, intent, or execution authority.",
+        )
+    }
+
+    /// Decline future Decision Engine consideration — never executes.
+    pub(crate) fn decline_recommendation_decision(
+        db: &Arc<Mutex<Database>>,
+        actor: &ActorContext,
+        orchestrated_plans: &Arc<Mutex<OrchestratedPlanStore>>,
+        assistant_workflows: &Arc<Mutex<AssistantWorkflowStore>>,
+        workspace_id: impl Into<String>,
+        recommendation_id: impl Into<String>,
+    ) -> Result<RecommendationReviewActionResult> {
+        Self::update_confirmation(
+            db,
+            actor,
+            orchestrated_plans,
+            assistant_workflows,
+            workspace_id,
+            recommendation_id,
+            RecommendationDecisionConfirmation::INTENT_AGREEMENT_ONLY.into(),
+            false,
+            "workspace.recommendation_engine.decision_declined",
+            "Future Decision Engine consideration declined — recommendation agreement (if any) remains; no Decision object, intent, or execution.",
         )
     }
 
@@ -1145,14 +1204,12 @@ impl WorkspaceRecommendationEngineService {
             workspace_id.clone(),
             &record,
             outcome.clone(),
-            now,
+            now.clone(),
         )
         .with_prior_outcomes(overlay.prior_outcomes.clone());
         next.content_fingerprint = overlay
             .content_fingerprint
             .or_else(|| Some(item.continuity_fingerprint()));
-        Self::upsert_overlay(db, &next)?;
-        Self::audit_lifecycle(db, actor, audit_event, &item, &next)?;
 
         let mut assessed = item;
         next.apply_to_item(&mut assessed);
@@ -1196,6 +1253,29 @@ impl WorkspaceRecommendationEngineService {
         debug_assert!(decision_boundary.attempt_handoff().is_err());
         debug_assert!(decision_boundary.attempt_create_intent().is_err());
 
+        // Accept ≠ confirmation: derive/required at most; never auto-confirm.
+        let decision_confirmation = match (
+            to,
+            overlay.decision_confirmation.clone(),
+        ) {
+            (RecommendationLifecycleState::Accepted, _) => {
+                RecommendationDecisionConfirmation::derive_from_boundary(&decision_boundary)
+            }
+            (_, Some(existing)) => existing,
+            (_, None) => {
+                RecommendationDecisionConfirmation::derive_from_boundary(&decision_boundary)
+            }
+        };
+        debug_assert_ne!(
+            decision_confirmation.confirmation_state,
+            RecommendationDecisionConfirmation::STATE_CONFIRMED
+        );
+        debug_assert!(decision_confirmation.assert_non_authoritative().is_ok());
+        next.decision_confirmation = Some(decision_confirmation.clone());
+
+        Self::upsert_overlay(db, &next)?;
+        Self::audit_lifecycle(db, actor, audit_event, &assessed, &next)?;
+
         Ok(RecommendationReviewActionResult {
             workspace_id,
             recommendation_id,
@@ -1204,6 +1284,80 @@ impl WorkspaceRecommendationEngineService {
             decision_context: Some(decision_context),
             decision_readiness: Some(decision_readiness),
             decision_boundary: Some(decision_boundary),
+            decision_confirmation: Some(decision_confirmation),
+            explanation: explanation.into(),
+            authority_effect: RecommendationReviewActionResult::AUTHORITY_EFFECT_NONE.into(),
+        })
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn update_confirmation(
+        db: &Arc<Mutex<Database>>,
+        actor: &ActorContext,
+        orchestrated_plans: &Arc<Mutex<OrchestratedPlanStore>>,
+        assistant_workflows: &Arc<Mutex<AssistantWorkflowStore>>,
+        workspace_id: impl Into<String>,
+        recommendation_id: impl Into<String>,
+        confirmation_intent: String,
+        confirm: bool,
+        audit_event: &str,
+        explanation: &str,
+    ) -> Result<RecommendationReviewActionResult> {
+        let workspace_id = workspace_id.into();
+        let recommendation_id = recommendation_id.into();
+        let state = Self::generate(
+            db,
+            actor,
+            orchestrated_plans,
+            assistant_workflows,
+            workspace_id.clone(),
+        )?;
+        let item = state
+            .candidates
+            .iter()
+            .find(|c| c.id == recommendation_id)
+            .cloned()
+            .ok_or_else(|| KernelError::from(WorkspaceRecommendationEngineError::NotFound))?;
+        let mut overlay = Self::load_overlay(db, &workspace_id, &recommendation_id)?
+            .ok_or_else(|| KernelError::from(WorkspaceRecommendationEngineError::NotFound))?;
+
+        let boundary = item.decision_boundary.clone().unwrap_or_else(|| {
+            let ctx = RecommendationDecisionContext::assemble(&workspace_id, &item, &[]);
+            let readiness = RecommendationDecisionReadiness::assess_from_context(&ctx);
+            RecommendationDecisionBoundary::from_context_and_readiness(&ctx, &readiness)
+        });
+        let mut confirmation = overlay.decision_confirmation.clone().unwrap_or_else(|| {
+            RecommendationDecisionConfirmation::derive_from_boundary(&boundary)
+        });
+        let now = recommendation_engine_now_rfc3339();
+        if confirm {
+            confirmation
+                .confirm(&confirmation_intent, &now)
+                .map_err(|e| KernelError::from(e))?;
+        } else {
+            confirmation.decline(&now).map_err(|e| KernelError::from(e))?;
+        }
+        debug_assert!(confirmation.assert_non_authoritative().is_ok());
+        debug_assert!(!confirmation.handoff_performed);
+        debug_assert!(confirmation.attempt_create_intent().is_err());
+        debug_assert!(confirmation.attempt_create_decision_engine_object().is_err());
+        debug_assert!(confirmation.attempt_handoff().is_err());
+
+        overlay.decision_confirmation = Some(confirmation.clone());
+        overlay.updated_at = now;
+        overlay.actor_id = Some(actor.actor.id.to_string());
+        Self::upsert_overlay(db, &overlay)?;
+        Self::audit_lifecycle(db, actor, audit_event, &item, &overlay)?;
+
+        Ok(RecommendationReviewActionResult {
+            workspace_id,
+            recommendation_id,
+            lifecycle_state: overlay.lifecycle_state.as_str().into(),
+            outcome: overlay.outcome.clone(),
+            decision_context: item.decision_context.clone(),
+            decision_readiness: item.decision_readiness.clone(),
+            decision_boundary: Some(boundary),
+            decision_confirmation: Some(confirmation),
             explanation: explanation.into(),
             authority_effect: RecommendationReviewActionResult::AUTHORITY_EFFECT_NONE.into(),
         })
@@ -1347,7 +1501,16 @@ impl WorkspaceRecommendationEngineService {
         state.history = Self::build_history_from_overlays(by_id.values());
         state.history_count = state.history.len();
         // Context/readiness after history so outcome_history_refs are meaningful.
-        Self::attach_decision_readiness(&mut state);
+        let confirmation_by_id: HashMap<String, RecommendationDecisionConfirmation> = by_id
+            .iter()
+            .filter_map(|(id, overlay)| {
+                overlay
+                    .decision_confirmation
+                    .clone()
+                    .map(|c| (id.clone(), c))
+            })
+            .collect();
+        Self::attach_decision_readiness(&mut state, &confirmation_by_id);
         Ok(state)
     }
 
@@ -1416,8 +1579,11 @@ impl WorkspaceRecommendationEngineService {
         }
     }
 
-    /// Project decision context + readiness — observational only; never handoff/commands.
-    fn attach_decision_readiness(state: &mut WorkspaceRecommendationEngineState) {
+    /// Project decision context + readiness + confirmation — observational only.
+    fn attach_decision_readiness(
+        state: &mut WorkspaceRecommendationEngineState,
+        confirmation_by_id: &HashMap<String, RecommendationDecisionConfirmation>,
+    ) {
         let mut history_refs_by_id: HashMap<String, Vec<String>> = HashMap::new();
         for entry in &state.history {
             history_refs_by_id
@@ -1466,9 +1632,20 @@ impl WorkspaceRecommendationEngineService {
             debug_assert!(boundary.attempt_create_intent().is_err());
             debug_assert!(boundary.attempt_authorize_execution().is_err());
 
+            let confirmation = confirmation_by_id
+                .get(&item.id)
+                .cloned()
+                .unwrap_or_else(|| {
+                    RecommendationDecisionConfirmation::derive_from_boundary(&boundary)
+                });
+            debug_assert!(confirmation.assert_non_authoritative().is_ok());
+            debug_assert!(!confirmation.may_create_intent());
+            debug_assert!(!confirmation.may_invoke_gateway());
+
             item.decision_context = Some(context);
             item.decision_readiness = Some(readiness);
             item.decision_boundary = Some(boundary);
+            item.decision_confirmation = Some(confirmation);
         }
     }
 

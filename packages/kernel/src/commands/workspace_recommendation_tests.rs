@@ -730,6 +730,8 @@ fn case23_accept_returns_decision_readiness_without_handoff() {
         readiness.readiness_state == RecommendationDecisionReadiness::STATE_HANDOFF_DEFERRED
             || readiness.readiness_state == RecommendationDecisionReadiness::STATE_BLOCKED
     );
+    use workspace_domain::RecommendationDecisionConfirmation;
+
     let boundary = accepted
         .decision_boundary
         .expect("accept projects decision boundary");
@@ -744,6 +746,19 @@ fn case23_accept_returns_decision_readiness_without_handoff() {
         RecommendationDecisionBoundary::HANDOFF_NOT_PERFORMED
     );
     assert!(boundary.assert_rejection_guards().is_ok());
+    let confirmation = accepted
+        .decision_confirmation
+        .expect("accept projects decision confirmation");
+    // Accept ≠ confirmation: never auto-confirmed.
+    assert_ne!(
+        confirmation.confirmation_state,
+        RecommendationDecisionConfirmation::STATE_CONFIRMED
+    );
+    assert_eq!(
+        confirmation.confirmation_intent,
+        RecommendationDecisionConfirmation::INTENT_AGREEMENT_ONLY
+    );
+    assert!(!confirmation.creates_intent);
     assert!(!accepted.explanation.to_lowercase().contains("planner"));
     assert_cannot_execute(CommandHandler::workspace_recommendation_engine_attempt_execute());
     assert_cannot_execute(CommandHandler::decision_engine_attempt_execute());
@@ -756,6 +771,7 @@ fn case23_accept_returns_decision_readiness_without_handoff() {
     assert!(item.decision_context.is_some());
     assert!(item.decision_readiness.is_some());
     assert!(item.decision_boundary.is_some());
+    assert!(item.decision_confirmation.is_some());
     assert_eq!(
         item.decision_readiness.as_ref().unwrap().authority_effect,
         "none"
@@ -770,6 +786,72 @@ fn case23_accept_returns_decision_readiness_without_handoff() {
         item.decision_boundary.as_ref().unwrap().handoff_state,
         RecommendationDecisionBoundary::HANDOFF_NOT_PERFORMED
     );
+    assert_ne!(
+        item.decision_confirmation
+            .as_ref()
+            .unwrap()
+            .confirmation_state,
+        RecommendationDecisionConfirmation::STATE_CONFIRMED
+    );
+}
+
+/// CASE 24 — Confirm future decision does not create DE/intent; accept ≠ confirmed.
+#[test]
+fn case24_confirm_future_decision_remains_non_authoritative() {
+    use workspace_domain::RecommendationDecisionConfirmation;
+
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let (ws, _) = seed(&kernel);
+    let local = ActorContext::local_user();
+    let intent = IntentContext::user_request();
+    let state = CommandHandler::generate_workspace_recommendation_engine(
+        &kernel,
+        local.clone(),
+        intent.clone(),
+        ws.clone(),
+    )
+    .unwrap();
+    let id = state.candidates[0].id.clone();
+    let accepted = CommandHandler::accept_recommendation(
+        &kernel,
+        local.clone(),
+        intent.clone(),
+        ws.clone(),
+        id.clone(),
+    )
+    .unwrap();
+    let confirmation = accepted.decision_confirmation.expect("confirmation");
+    assert_ne!(
+        confirmation.confirmation_state,
+        RecommendationDecisionConfirmation::STATE_CONFIRMED
+    );
+
+    if confirmation.confirmation_state
+        == RecommendationDecisionConfirmation::STATE_REQUIRED
+    {
+        let confirmed = CommandHandler::confirm_recommendation_decision(
+            &kernel,
+            local.clone(),
+            intent.clone(),
+            ws.clone(),
+            id.clone(),
+            RecommendationDecisionConfirmation::INTENT_CREATE_FUTURE_DECISION.into(),
+        )
+        .unwrap();
+        let c = confirmed.decision_confirmation.expect("confirmed");
+        assert_eq!(
+            c.confirmation_state,
+            RecommendationDecisionConfirmation::STATE_CONFIRMED
+        );
+        assert!(!c.creates_intent);
+        assert!(!c.creates_decision_engine_object);
+        assert!(!c.grants_execution_authority);
+        assert!(!c.handoff_performed);
+        assert!(c.attempt_create_intent().is_err());
+        assert!(c.attempt_handoff().is_err());
+    }
+    assert_cannot_execute(CommandHandler::workspace_recommendation_engine_attempt_execute());
+    assert_cannot_execute(CommandHandler::decision_engine_attempt_execute());
 }
 
 /// CASE 22 — Supersede retains prior outcomes; provenance/reasoning untouched.
@@ -962,6 +1044,7 @@ fn case16_orphan_overlays_expire_on_regenerate() {
                 outcome: None,
                 prior_outcomes: Vec::new(),
                 content_fingerprint: Some("stale".into()),
+                decision_confirmation: None,
                 updated_at: "t0".into(),
                 authority_effect: RecommendationLifecycleOverlay::AUTHORITY_EFFECT_NONE.into(),
             })

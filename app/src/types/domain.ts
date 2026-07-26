@@ -2175,6 +2175,28 @@ export interface RecommendationItem {
   decision_readiness?: RecommendationDecisionReadiness | null;
   /** Explicit RE↔DE ownership / intent boundary — never executes. */
   decision_boundary?: RecommendationDecisionBoundary | null;
+  /** Explicit confirmation beyond accept — never creates DE/intent/execution. */
+  decision_confirmation?: RecommendationDecisionConfirmation | null;
+  authority_effect: string;
+}
+
+/** Explicit confirmation: accept ≠ want future Decision Engine creation. */
+export interface RecommendationDecisionConfirmation {
+  recommendation_id: string;
+  /** not_required | required | confirmed | declined */
+  confirmation_state: string;
+  /** agreement_only | create_future_decision | request_action_review */
+  confirmation_intent: string;
+  recommendation_owner: string;
+  confirmation_owner: string;
+  decision_owner: string;
+  execution_owner: string;
+  creates_decision_engine_object: boolean;
+  creates_intent: boolean;
+  grants_execution_authority: boolean;
+  handoff_performed: boolean;
+  confirmed_at: string | null;
+  note: string;
   authority_effect: string;
 }
 
@@ -2302,6 +2324,7 @@ export interface RecommendationReviewActionResult {
   decision_context?: RecommendationDecisionContext | null;
   decision_readiness?: RecommendationDecisionReadiness | null;
   decision_boundary?: RecommendationDecisionBoundary | null;
+  decision_confirmation?: RecommendationDecisionConfirmation | null;
   explanation: string;
   authority_effect: string;
 }
