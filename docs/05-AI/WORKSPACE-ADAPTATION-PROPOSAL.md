@@ -60,6 +60,10 @@ High-risk requires stronger review; cognition mutation impacts rejected.
 [WORKSPACE-GOVERNANCE-EVIDENCE.md](./WORKSPACE-GOVERNANCE-EVIDENCE.md).
 Evidence required for approval; readiness never activates runtime.
 
+**Sprint 147:** Governance workspace & publication environment —
+[WORKSPACE-GOVERNANCE-WORKSPACE.md](./WORKSPACE-GOVERNANCE-WORKSPACE.md).
+Human operating surface + publication boundary; UI cannot approve execution.
+
 ---
 
 ## Ownership

@@ -15,7 +15,9 @@ GovernanceReviewDecision
     ↓
 GovernanceRecord
     ↓
-PublishRequest / PublicationReadiness
+PublicationReadiness / PublishRequest
+    ↓
+GovernanceWorkspace → PublicationEnvironment (Sprint 147)
 ```
 
 ---
@@ -90,6 +92,7 @@ Approving `GovernanceReviewDecision`s should carry `evidence_reference` via `wit
 
 ## Related docs
 
+- [WORKSPACE-GOVERNANCE-WORKSPACE.md](./WORKSPACE-GOVERNANCE-WORKSPACE.md)
 - [WORKSPACE-GOVERNANCE-RISK.md](./WORKSPACE-GOVERNANCE-RISK.md)
 - [WORKSPACE-GOVERNANCE-POLICY.md](./WORKSPACE-GOVERNANCE-POLICY.md)
 - [WORKSPACE-GOVERNANCE-LEDGER.md](./WORKSPACE-GOVERNANCE-LEDGER.md)

@@ -83,6 +83,12 @@ pub enum ActionProposalError {
     #[error("publication readiness cannot activate runtime changes")]
     PublicationReadinessCannotActivate,
 
+    #[error("governance workspace UI cannot approve execution")]
+    GovernanceWorkspaceCannotApproveExecution,
+
+    #[error("publication environment cannot activate runtime changes")]
+    PublicationEnvironmentCannotActivate,
+
     #[error(transparent)]
     Domain(#[from] DomainError),
 }
@@ -1602,6 +1608,251 @@ impl PublicationReadiness {
 
     pub fn attempt_activate_published(&mut self) -> Result<(), ActionProposalError> {
         Err(ActionProposalError::PublicationReadinessCannotActivate)
+    }
+
+    pub fn attempt_execute() -> Result<(), ActionProposalError> {
+        Err(ActionProposalError::CannotExecute)
+    }
+}
+
+/// Architecture-only proposal panel for GovernanceWorkspace (Sprint 147).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct GovernanceProposalView {
+    pub proposal_reference: String,
+    pub affected_area: String,
+    pub proposed_change: String,
+    pub expected_effect: String,
+}
+
+/// Architecture-only evidence panel.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct GovernanceEvidenceView {
+    pub evidence_reference: Option<String>,
+    pub supporting_evidence_references: Vec<String>,
+    pub dissent_count: usize,
+    pub final_rationale: Option<String>,
+}
+
+/// Architecture-only risk panel.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct GovernanceRiskView {
+    pub risk_reference: Option<String>,
+    pub risk_level: Option<String>,
+    pub impact_classification: Option<String>,
+    pub required_reviewer_count: Option<u32>,
+}
+
+/// Architecture-only reviewer panel.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct GovernanceReviewerView {
+    pub reviewer_actor_ids: Vec<String>,
+    pub required_actor_type: String,
+}
+
+/// Decision history row for governance visibility (append-only display).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct GovernanceDecisionHistoryEntry {
+    pub decision_reference: String,
+    pub decision: String,
+    pub reviewer_actor_id: String,
+    pub timestamp: String,
+    pub evidence_reference: Option<String>,
+}
+
+/// Human governance operating surface — visibility only; never executes (Sprint 147).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct GovernanceWorkspace {
+    pub id: String,
+    pub governance_record_id: String,
+    pub proposal_view: GovernanceProposalView,
+    pub evidence_view: GovernanceEvidenceView,
+    pub risk_view: GovernanceRiskView,
+    pub reviewer_view: GovernanceReviewerView,
+    pub decision_history: Vec<GovernanceDecisionHistoryEntry>,
+    pub readiness_state: Option<PublicationReadinessState>,
+    pub provenance: RecommendationProvenance,
+    pub authority_effect: String,
+}
+
+impl GovernanceWorkspace {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+
+    pub fn from_governance_bundle(
+        proposal: &OutcomeAdaptationProposal,
+        record: &GovernanceRecord,
+        evidence: Option<&GovernanceDecisionEvidence>,
+        risk: Option<&GovernanceRisk>,
+        decisions: &[GovernanceReviewDecision],
+        readiness: Option<&PublicationReadiness>,
+    ) -> Self {
+        let reviewer_actor_ids: Vec<_> = decisions
+            .iter()
+            .map(|d| d.reviewer.actor_id.clone())
+            .collect();
+        let decision_history = decisions
+            .iter()
+            .map(|d| GovernanceDecisionHistoryEntry {
+                decision_reference: d.id.clone(),
+                decision: d.decision.as_str().into(),
+                reviewer_actor_id: d.reviewer.actor_id.clone(),
+                timestamp: d.timestamp.clone(),
+                evidence_reference: d.evidence_reference.clone(),
+            })
+            .collect();
+        Self {
+            id: format!("governance_workspace:{}", record.id),
+            governance_record_id: record.id.clone(),
+            proposal_view: GovernanceProposalView {
+                proposal_reference: proposal.id.clone(),
+                affected_area: proposal.affected_area.clone(),
+                proposed_change: proposal.proposed_change.clone(),
+                expected_effect: proposal.expected_effect.clone(),
+            },
+            evidence_view: GovernanceEvidenceView {
+                evidence_reference: evidence.map(|e| e.id.clone()),
+                supporting_evidence_references: evidence
+                    .map(|e| e.supporting_evidence_references.clone())
+                    .unwrap_or_default(),
+                dissent_count: evidence.map(|e| e.dissent_count()).unwrap_or(0),
+                final_rationale: evidence.map(|e| e.final_rationale.clone()),
+            },
+            risk_view: GovernanceRiskView {
+                risk_reference: risk.map(|r| r.id.clone()),
+                risk_level: risk.map(|r| r.risk_level.as_str().into()),
+                impact_classification: risk.map(|r| r.impact_classification.as_str().into()),
+                required_reviewer_count: risk.map(|r| r.required_reviewer_count()),
+            },
+            reviewer_view: GovernanceReviewerView {
+                reviewer_actor_ids,
+                required_actor_type: AdaptationReviewerIdentity::LOCAL_USER_TYPE.into(),
+            },
+            decision_history,
+            readiness_state: readiness
+                .map(|r| r.state)
+                .or(record.publication_readiness),
+            provenance: record.provenance.clone(),
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        }
+    }
+
+    pub fn preserves_provenance(&self, expected: &RecommendationProvenance) -> bool {
+        &self.provenance == expected
+    }
+
+    pub fn may_approve_execution(&self) -> bool {
+        false
+    }
+
+    pub fn may_grant_execution_authority(&self) -> bool {
+        false
+    }
+
+    pub fn may_bypass_permission_gateway(&self) -> bool {
+        false
+    }
+
+    pub fn attempt_approve_execution() -> Result<(), ActionProposalError> {
+        Err(ActionProposalError::GovernanceWorkspaceCannotApproveExecution)
+    }
+
+    pub fn attempt_execute() -> Result<(), ActionProposalError> {
+        Err(ActionProposalError::CannotExecute)
+    }
+}
+
+/// Staged rollout concept for publication environment (architecture only).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum PublicationRolloutStage {
+    None,
+    StagedCanary,
+    StagedPercent,
+    Full,
+}
+
+impl PublicationRolloutStage {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::None => "none",
+            Self::StagedCanary => "staged_canary",
+            Self::StagedPercent => "staged_percent",
+            Self::Full => "full",
+        }
+    }
+}
+
+/// Publication environment boundary — never activates runtime (Sprint 147).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PublicationEnvironment {
+    pub id: String,
+    pub publication_target: String,
+    pub workspace_scope: String,
+    pub compatibility_requirements: Vec<String>,
+    pub rollback_scope: String,
+    pub staged_rollout: PublicationRolloutStage,
+    pub governance_workspace_id: String,
+    pub governance_record_id: String,
+    pub provenance: RecommendationProvenance,
+    pub authority_effect: String,
+}
+
+impl PublicationEnvironment {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+    pub const TARGET_FUTURE_BEHAVIOUR: &'static str = "future_behaviour_version";
+
+    pub fn from_governance_workspace(
+        workspace: &GovernanceWorkspace,
+        workspace_scope: impl Into<String>,
+        compatibility_requirements: Vec<String>,
+        rollback_scope: impl Into<String>,
+        staged_rollout: PublicationRolloutStage,
+    ) -> Self {
+        Self {
+            id: format!("publication_env:{}", workspace.id),
+            publication_target: Self::TARGET_FUTURE_BEHAVIOUR.into(),
+            workspace_scope: workspace_scope.into(),
+            compatibility_requirements,
+            rollback_scope: rollback_scope.into(),
+            staged_rollout,
+            governance_workspace_id: workspace.id.clone(),
+            governance_record_id: workspace.governance_record_id.clone(),
+            provenance: workspace.provenance.clone(),
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        }
+    }
+
+    pub fn preserves_provenance(&self, expected: &RecommendationProvenance) -> bool {
+        &self.provenance == expected
+    }
+
+    pub fn may_activate_runtime(&self) -> bool {
+        false
+    }
+
+    pub fn may_grant_execution_authority(&self) -> bool {
+        false
+    }
+
+    pub fn may_bypass_permission_gateway(&self) -> bool {
+        false
+    }
+
+    /// Visibility / routing helper — does not create or activate a published version.
+    pub fn bind_publish_request(
+        &self,
+        request: &PublishRequest,
+    ) -> Result<(), ActionProposalError> {
+        if request.governance_record_id != self.governance_record_id {
+            return Err(ActionProposalError::PublicationRequiresApproval);
+        }
+        if self.authority_effect != Self::AUTHORITY_EFFECT_NONE {
+            return Err(ActionProposalError::CannotExecute);
+        }
+        Ok(())
+    }
+
+    pub fn attempt_activate() -> Result<(), ActionProposalError> {
+        Err(ActionProposalError::PublicationEnvironmentCannotActivate)
     }
 
     pub fn attempt_execute() -> Result<(), ActionProposalError> {
@@ -3236,5 +3487,89 @@ mod tests {
             governance.publication_readiness,
             Some(PublicationReadinessState::ReadyForPublication)
         );
+    }
+
+    #[test]
+    fn governance_workspace_and_publication_environment_are_non_executing() {
+        let item = sample_item();
+        let mut record = RecommendationGovernanceRecord::from_recommendation_item(&item, "t0");
+        record
+            .transition(RecommendationLifecycleState::Available, "t1", None)
+            .unwrap();
+        record
+            .transition(RecommendationLifecycleState::Presented, "t2", None)
+            .unwrap();
+        record.accept("t3", None).unwrap();
+        let outcome = record.record_outcome("t4").unwrap();
+        let provenance = outcome.provenance.clone();
+        let mut proposal = outcome.to_adaptation_proposal(
+            "experience_presentation",
+            "Keep DisplayReason primary",
+            "Consistent rationale",
+        );
+        proposal.require_review().unwrap();
+        proposal
+            .approve(
+                AdaptationReviewerIdentity::local_user("local_user"),
+                "t-ok",
+            )
+            .unwrap();
+        let risk = GovernanceRisk::classify_from_proposal(&proposal);
+        let evidence = GovernanceDecisionEvidence::assemble(
+            &risk,
+            vec!["outcome:x".into(), "exact:continuity.resumable".into()],
+            vec![],
+            vec!["no activation".into()],
+            "Presentation change evidenced",
+            &provenance,
+        )
+        .unwrap();
+        let policy = GovernancePolicy::from_risk(&risk);
+        let decision = GovernanceReviewDecision::new(
+            &policy,
+            AdaptationReviewerIdentity::local_user("local_user"),
+            GovernanceReviewDecisionKind::Approve,
+            "Approve",
+            "t-dec",
+            vec!["no activation".into()],
+            &provenance,
+        )
+        .unwrap()
+        .with_evidence(&evidence);
+        let mut readiness = PublicationReadiness::draft_from_evidence(&evidence);
+        readiness.mark_risk_reviewed().unwrap();
+        readiness.mark_approved(&evidence).unwrap();
+        readiness.mark_ready_for_publication(&evidence).unwrap();
+        let governance = GovernanceRecord::from_adaptation_chain(
+            &proposal, None, None, None, None,
+        )
+        .with_policy_and_decisions(&policy, &proposal, &[decision.clone()])
+        .unwrap()
+        .with_evidence_and_readiness(&evidence, &readiness, &[decision.clone()])
+        .unwrap();
+        let workspace = GovernanceWorkspace::from_governance_bundle(
+            &proposal,
+            &governance,
+            Some(&evidence),
+            Some(&risk),
+            &[decision],
+            Some(&readiness),
+        );
+        assert!(workspace.preserves_provenance(&provenance));
+        assert!(!workspace.may_approve_execution());
+        assert!(GovernanceWorkspace::attempt_approve_execution().is_err());
+        assert!(GovernanceWorkspace::attempt_execute().is_err());
+        let env = PublicationEnvironment::from_governance_workspace(
+            &workspace,
+            "workspace:local",
+            vec!["schema_compatible".into()],
+            BehaviourVersion::BASELINE_ID,
+            PublicationRolloutStage::StagedCanary,
+        );
+        assert!(env.preserves_provenance(&provenance));
+        assert!(!env.may_activate_runtime());
+        assert!(PublicationEnvironment::attempt_activate().is_err());
+        assert!(!env.may_bypass_permission_gateway());
+        assert_eq!(env.governance_workspace_id, workspace.id);
     }
 }
