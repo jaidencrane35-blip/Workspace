@@ -29,6 +29,8 @@ import type {
   WorkspaceSessionComparison,
   WorkspaceExperienceState,
   WorkspaceExperienceComparison,
+  WorkspaceWorkContextState,
+  WorkspaceWorkContextComparison,
   WorkspaceIntelligenceState,
 } from "../types/domain";
 
@@ -99,6 +101,11 @@ export function WorkspaceIntelligencePanel({
   const [experienceCompareNote, setExperienceCompareNote] = useState<
     string | null
   >(null);
+  const [workContextState, setWorkContextState] =
+    useState<WorkspaceWorkContextState | null>(null);
+  const [workContextCompareNote, setWorkContextCompareNote] = useState<
+    string | null
+  >(null);
   const [lastHandoff, setLastHandoff] = useState<string | null>(null);
   const [contractName, setContractName] = useState(
     "Prepare coding environment",
@@ -146,6 +153,8 @@ export function WorkspaceIntelligencePanel({
       setSessionCompareNote(null);
       setExperienceState(null);
       setExperienceCompareNote(null);
+      setWorkContextState(null);
+      setWorkContextCompareNote(null);
       setLastHandoff(null);
       setState(null);
       return;
@@ -164,6 +173,7 @@ export function WorkspaceIntelligencePanel({
           intel,
           session,
           experience,
+          workContext,
           decisions,
           graphTasks,
           adapt,
@@ -193,6 +203,10 @@ export function WorkspaceIntelligencePanel({
             invokeIpc<WorkspaceExperienceState>("generate_workspace_experience", {
               workspaceId: workspace.id,
             }),
+            invokeIpc<WorkspaceWorkContextState>(
+              "generate_workspace_work_context",
+              { workspaceId: workspace.id },
+            ),
             invokeIpc<DecisionEngineState>("generate_decision_engine", {
               workspaceId: workspace.id,
             }),
@@ -211,6 +225,7 @@ export function WorkspaceIntelligencePanel({
           setState(intel);
           setSessionState(session);
           setExperienceState(experience);
+          setWorkContextState(workContext);
           setDecisionEngine(decisions);
           setTaskGraph(graphTasks);
           setAdaptationState(adapt);
@@ -375,6 +390,136 @@ export function WorkspaceIntelligencePanel({
           </>
         ) : (
           <p className="muted">No experience snapshot yet.</p>
+        )}
+      </section>
+
+      <section>
+        <h3>Current work context</h3>
+        <p className="muted">
+          What kind of work this is — semantic projection over Session,
+          Experience, and Intelligence. Never plans or executes.
+        </p>
+        <div className="row">
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("Work context refreshed", async () => {
+                if (!workspace) return;
+                const next = await invokeIpc<WorkspaceWorkContextState>(
+                  "generate_workspace_work_context",
+                  { workspaceId: workspace.id },
+                );
+                setWorkContextState(next);
+                setWorkContextCompareNote(null);
+              })
+            }
+          >
+            Refresh work context
+          </button>
+          <button
+            type="button"
+            disabled={busy || !workspace || !workContextState}
+            onClick={() =>
+              void run("Work context compared", async () => {
+                if (!workspace || !workContextState) return;
+                const next = await invokeIpc<WorkspaceWorkContextState>(
+                  "generate_workspace_work_context",
+                  { workspaceId: workspace.id },
+                );
+                const comparison =
+                  await invokeIpc<WorkspaceWorkContextComparison>(
+                    "compare_workspace_work_contexts",
+                    { left: workContextState, right: next },
+                  );
+                setWorkContextState(next);
+                setWorkContextCompareNote(comparison.differences.join(" · "));
+              })
+            }
+          >
+            Compare work context
+          </button>
+        </div>
+        {workContextState ? (
+          <>
+            <p>
+              <strong>
+                {workContextState.contexts.find(
+                  (c) => c.id === workContextState.primary_context_id,
+                )?.name ?? workContextState.summary}
+              </strong>
+            </p>
+            <p className="muted">{workContextState.summary}</p>
+            <ul className="intelligence-list">
+              {workContextState.contexts
+                .filter((c) => c.current_status === "active" || c.current_status === "blocked")
+                .map((ctx) => (
+                  <li key={ctx.id}>
+                    <strong>
+                      {ctx.name} · {ctx.context_type} · {ctx.current_status}
+                    </strong>
+                    <div className="muted">Focus: {ctx.suggested_focus}</div>
+                    {ctx.blocked_reasons[0] && (
+                      <div className="muted">Blocked: {ctx.blocked_reasons[0]}</div>
+                    )}
+                    <div className="muted">
+                      Evidence:{" "}
+                      {ctx.evidence
+                        .slice(0, 3)
+                        .map((e) => e.label)
+                        .join(", ")}
+                    </div>
+                    <div className="muted">
+                      Projects:{" "}
+                      {ctx.associated_projects.map((p) => p.label).join(", ") ||
+                        "none"}
+                    </div>
+                    <div className="muted">
+                      Tasks:{" "}
+                      {ctx.associated_tasks.map((t) => t.label).join(", ") ||
+                        "none"}
+                    </div>
+                    <div className="muted">
+                      Apps:{" "}
+                      {ctx.associated_applications
+                        .map((a) => a.label)
+                        .join(", ") || "none"}
+                    </div>
+                  </li>
+                ))}
+            </ul>
+            <details>
+              <summary className="muted">
+                Dormant / candidate ({workContextState.dormant_count +
+                  workContextState.candidate_count})
+              </summary>
+              <ul className="intelligence-list">
+                {workContextState.contexts
+                  .filter(
+                    (c) =>
+                      c.current_status === "dormant" ||
+                      c.current_status === "candidate",
+                  )
+                  .map((ctx) => (
+                    <li key={ctx.id}>
+                      <strong>{ctx.name}</strong>
+                      <div className="muted">
+                        {ctx.current_status} · {ctx.why}
+                      </div>
+                    </li>
+                  ))}
+              </ul>
+            </details>
+            <p className="muted">
+              authority: {workContextState.authority_effect} · from Session{" "}
+              {workContextState.session_generated_at}
+            </p>
+            {workContextCompareNote && (
+              <p className="muted">Compare: {workContextCompareNote}</p>
+            )}
+          </>
+        ) : (
+          <p className="muted">No work context snapshot yet.</p>
         )}
       </section>
 

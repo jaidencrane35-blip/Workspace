@@ -28,6 +28,7 @@ use crate::commands::workspace_readiness::GateReadinessRead;
 use crate::commands::workspace_intelligence::GateIntelligenceRead;
 use crate::commands::workspace_session::GateSessionRead;
 use crate::commands::workspace_experience::GateExperienceRead;
+use crate::commands::workspace_work_context::GateWorkContextEngineRead;
 use crate::commands::workspace_activity::GateActivityGraphRead;
 use crate::commands::workspace_attention::GateAttentionRead;
 use crate::commands::workspace_continuity::GateContinuityRead;
@@ -88,8 +89,8 @@ use crate::services::{
     WorkspaceCompositionService, WorkspacePurposeService, WorkspaceEvolutionService,
     WorkspaceRecommendationEngineService, WorkspaceOperatingStateService,
     WorkspacePatternService, WorkspaceAdaptationService, WorkspaceReadinessService,
-    WorkspaceSessionService, WorkspaceExperienceService, WorkspaceActivityGraphService,
-    WorkspaceAttentionService, WorkspaceContextService,
+    WorkspaceSessionService, WorkspaceExperienceService, WorkspaceWorkContextService,
+    WorkspaceActivityGraphService, WorkspaceAttentionService, WorkspaceContextService,
     WorkspaceContinuityService, WorkspaceIntelligenceService,
 };
 use crate::WorkspaceKernel;
@@ -105,8 +106,9 @@ use workspace_domain::{
     WorkspacePurposeState, WorkspaceEvolutionState, WorkspaceRecommendationEngineState,
     WorkspaceOperatingState, WorkspacePatternState, AdaptationActionResult, WorkspaceAdaptationState,
     WorkspaceReadinessState, WorkspaceSessionComparison, WorkspaceSessionState,
-    WorkspaceExperienceComparison, WorkspaceExperienceState, WorkspaceTask,
-    WorkspaceTaskPriority, WorkspaceTaskStatus,
+    WorkspaceExperienceComparison, WorkspaceExperienceState,
+    WorkspaceWorkContextComparison, WorkspaceWorkContextState, WorkspaceWorkContextValidation,
+    WorkspaceTask, WorkspaceTaskPriority, WorkspaceTaskStatus,
     WorkspaceIntelligenceComparison, WorkspaceIntelligenceState, AiPlan, AiPlanEvaluationReport,
     AiPlanSubmissionResult,
     AiProposalAuthorityOutcome, AiProposalEvaluation, AiProposalSubmission, ApplicationId,
@@ -3093,6 +3095,64 @@ impl CommandHandler {
     /// Architecture guard — Experience must never execute or authorize.
     pub fn workspace_experience_attempt_execute() -> Result<()> {
         WorkspaceExperienceService::attempt_execute()
+    }
+
+    /// Project Workspace Work Context (semantic kind-of-work over Session/Experience/Intelligence).
+    pub fn generate_workspace_work_context(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceWorkContextState> {
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent.clone()))
+            .execute_query(GateWorkContextEngineRead)?;
+        let _ = Self::get_workflow_context(
+            kernel,
+            actor.clone(),
+            intent.clone(),
+            workspace_id.clone(),
+        )?;
+        let workspace =
+            Self::get_workspace(kernel, actor.clone(), intent, workspace_id.clone())?;
+        let health = kernel.health();
+        WorkspaceWorkContextService::generate(
+            &kernel.shared_database(),
+            &actor,
+            &kernel.orchestrated_plans(),
+            &kernel.assistant_workflows(),
+            workspace_id,
+            workspace.name,
+            health.status.clone(),
+        )
+    }
+
+    /// Compare two work-context snapshots (informational).
+    pub fn compare_workspace_work_contexts(
+        left: &WorkspaceWorkContextState,
+        right: &WorkspaceWorkContextState,
+    ) -> WorkspaceWorkContextComparison {
+        WorkspaceWorkContextService::compare(left, right)
+    }
+
+    /// Validate a work-context snapshot (Operator / IPC) and audit.
+    pub fn validate_workspace_work_context(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        state: &WorkspaceWorkContextState,
+    ) -> Result<WorkspaceWorkContextValidation> {
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent))
+            .execute_query(GateWorkContextEngineRead)?;
+        WorkspaceWorkContextService::validate_and_audit(
+            &kernel.shared_database(),
+            &actor,
+            state,
+        )
+    }
+
+    /// Architecture guard — Work Context must never execute or authorize.
+    pub fn workspace_work_context_attempt_execute() -> Result<()> {
+        WorkspaceWorkContextService::attempt_execute()
     }
 
     /// Read-only workspace intelligence aggregation. Capability-gated; never executes.

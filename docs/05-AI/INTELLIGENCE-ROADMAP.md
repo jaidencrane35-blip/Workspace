@@ -168,6 +168,10 @@ Workspace Session Engine foundation (Sprint 94) — runtime orchestration projec
 
 Workspace Experience Layer foundation (Sprint 95) — presentation projection over Session; calm Work surface groupings with deterministic visibility; Assistant explain-only; owns no data/cognition/authority. See [Workspace Experience Layer](WORKSPACE-EXPERIENCE-LAYER.md).
 
+## Phase 6 Batch 3 (done)
+
+Workspace Work Context Engine foundation (Sprint 96) — semantic kind-of-work projection over Session/Experience/Intelligence; Intelligence embeds `work_context`; Attention/RE/Adaptation may reference as evidence only; never plans/executes/persists. See [Workspace Work Context Engine](WORKSPACE-WORK-CONTEXT-ENGINE.md).
+
 ---
 
 ## Never build

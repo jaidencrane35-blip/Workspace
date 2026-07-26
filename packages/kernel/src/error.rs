@@ -9,8 +9,8 @@ use workspace_domain::{
     WorkspaceEnvironmentError, WorkspaceCompositionError, WorkspacePurposeError,
     WorkspaceEvolutionError, WorkspaceRecommendationEngineError, WorkspaceOperatingStateError,
     WorkspacePatternError, WorkspaceAdaptationError, WorkspaceReadinessError,
-    WorkspaceSessionError, WorkspaceExperienceError, WorkspaceIntelligenceError,
-    WorkspaceIntentError,
+    WorkspaceSessionError, WorkspaceExperienceError, WorkspaceWorkContextError,
+    WorkspaceIntelligenceError, WorkspaceIntentError,
 };
 
 #[derive(Debug, Error)]
@@ -244,6 +244,9 @@ pub enum KernelError {
 
     #[error("Workspace experience validation failed: {message}")]
     WorkspaceExperienceValidation { message: String },
+
+    #[error("Workspace work context validation failed: {message}")]
+    WorkspaceWorkContextValidation { message: String },
 
     #[error("Workspace kernel initialization failed")]
     InitializationFailed,
@@ -594,6 +597,17 @@ impl From<WorkspaceExperienceError> for KernelError {
     }
 }
 
+impl From<WorkspaceWorkContextError> for KernelError {
+    fn from(error: WorkspaceWorkContextError) -> Self {
+        match error {
+            WorkspaceWorkContextError::Domain(domain) => KernelError::from(domain),
+            other => KernelError::WorkspaceWorkContextValidation {
+                message: other.to_string(),
+            },
+        }
+    }
+}
+
 impl KernelError {
     pub fn to_public(&self) -> PublicError {
         match self {
@@ -918,6 +932,10 @@ impl KernelError {
             },
             KernelError::WorkspaceExperienceValidation { message } => PublicError {
                 code: "workspace_experience_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::WorkspaceWorkContextValidation { message } => PublicError {
+                code: "workspace_work_context_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::InitializationFailed => PublicError {

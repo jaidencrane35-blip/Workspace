@@ -257,6 +257,32 @@ impl WorkspaceAttentionService {
         ))
     }
 
+    /// Reference Work Context as evidence only — does not re-rank or add authority.
+    /// Does not regenerate Work Context — avoids circular regen.
+    pub(crate) fn enrich_with_work_context(
+        attention: &WorkspaceAttentionState,
+        work_context: &workspace_domain::WorkspaceWorkContextState,
+    ) -> Result<WorkspaceAttentionState> {
+        let mut next = attention.clone();
+        if let Some(primary) = work_context.primary_context() {
+            next.summary = format!(
+                "{} Context evidence (informational only): {} [{} / {}] — \
+                 Attention consumes Work Context as evidence only and does not re-rank from it.",
+                next.summary,
+                primary.name,
+                primary.context_type.as_str(),
+                primary.confidence.as_str()
+            );
+        } else {
+            next.summary = format!(
+                "{} Context evidence (informational only): {} context(s) — \
+                 Attention consumes Work Context as evidence only.",
+                next.summary, work_context.context_count
+            );
+        }
+        Ok(next)
+    }
+
     /// Merge Pattern Model observations into an Attention snapshot (CASE 7).
     /// Does not regenerate Pattern — avoids circular regen.
     pub(crate) fn enrich_with_patterns(

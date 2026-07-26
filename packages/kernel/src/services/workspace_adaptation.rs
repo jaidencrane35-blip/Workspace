@@ -661,6 +661,29 @@ impl WorkspaceAdaptationService {
         )
     }
 
+    /// Reference Work Context without applying or owning it.
+    pub(crate) fn enrich_with_work_context(
+        adaptation: &WorkspaceAdaptationState,
+        work_context: &workspace_domain::WorkspaceWorkContextState,
+    ) -> Result<WorkspaceAdaptationState> {
+        let mut state = adaptation.clone();
+        if let Some(primary) = work_context.primary_context() {
+            let marker = format!(
+                "work_context:{}:{}",
+                primary.name,
+                primary.context_type.as_str()
+            );
+            if !state.evidence.iter().any(|e| e.contains("work_context:")) {
+                state.evidence.push(marker.clone());
+            }
+            state.explanation = format!(
+                "{} References Work Context as evidence only ({}) — never applies context changes.",
+                state.explanation, marker
+            );
+        }
+        Ok(state)
+    }
+
     pub(crate) fn attempt_execute() -> Result<()> {
         Err(KernelError::from(
             workspace_domain::WorkspaceAdaptationError::CannotExecute,

@@ -23,6 +23,7 @@ Canonical product language. Prefer these terms in UI, docs, and Assistant copy.
 | **Workspace Readiness** | Preparedness for current work (ready / partially ready / blocked; never prepares) | WorkspaceHealth, Recommendation, Adaptation |
 | **Workspace Session** | Runtime orchestration snapshot over Intelligence (canonical runtime model; owns nothing) | Continuity session_anchor, Intelligence, Operating State, Experience |
 | **Workspace Experience** | Presentation model over Session for the Work surface (visibility groupings only; owns nothing) | Session, Intelligence, Operating State, UI layout state |
+| **Work Context** | Semantic kind-of-work classification over Session/Experience/Intelligence (not a Project/Task/Session; owns nothing) | Project, Task, Session, Experience, Operating State |
 | **Suggestion** | Legacy deterministic context hint (diagnostic/Sprint 20) | Recommendation in product Work UI |
 | **Intent** | Pipeline request entering Command Pipeline | Proposal, Decision |
 | **Activity** | Synthetic Activity Graph node (read model) | Audit event, Decision |

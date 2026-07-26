@@ -1269,6 +1269,8 @@ export interface WorkspaceIntelligenceState {
   adaptation: WorkspaceAdaptationSummary;
   /** Preparedness for current work — distinct from workspace_health (kernel lifecycle). */
   readiness: WorkspaceReadinessSummary;
+  /** Semantic kind-of-work — after Experience; never executes. */
+  work_context: WorkspaceWorkContextSummary;
   workspace_health: string;
   summary: string;
   authority_effect: string;
@@ -2375,6 +2377,132 @@ export interface WorkspaceExperienceComparison {
   left_workspace_id: string;
   right_workspace_id: string;
   differences: string[];
+  authority_effect: string;
+}
+
+export type WorkContextType =
+  | "development"
+  | "research"
+  | "administration"
+  | "communication"
+  | "creative"
+  | "learning"
+  | "operations"
+  | "planning"
+  | "custom";
+
+export type WorkContextStatus =
+  | "active"
+  | "interrupted"
+  | "blocked"
+  | "dormant"
+  | "candidate";
+
+export type WorkContextConfidence = "high" | "medium" | "low";
+
+export type WorkContextRelationKind =
+  | "primary"
+  | "supporting"
+  | "nested"
+  | "recently_active"
+  | "interrupted"
+  | "dormant"
+  | "candidate";
+
+export interface WorkContextEvidence {
+  label: string;
+  source_projection: string;
+  source_ref: string;
+  why: string;
+}
+
+export interface WorkContextAssociation {
+  id: string;
+  label: string;
+  kind: string;
+  source_projection: string;
+  source_ref: string;
+  why: string;
+}
+
+export interface WorkContext {
+  id: string;
+  name: string;
+  context_type: WorkContextType;
+  evidence: WorkContextEvidence[];
+  confidence: WorkContextConfidence;
+  associated_projects: WorkContextAssociation[];
+  associated_tasks: WorkContextAssociation[];
+  associated_applications: WorkContextAssociation[];
+  associated_purpose: WorkContextAssociation | null;
+  associated_decisions: WorkContextAssociation[];
+  associated_activity: WorkContextAssociation[];
+  current_status: WorkContextStatus;
+  suggested_focus: string;
+  blocked_reasons: string[];
+  recent_progress: string[];
+  why: string;
+  authority_effect: string;
+}
+
+export interface WorkContextRelationship {
+  from_context_id: string;
+  to_context_id: string;
+  kind: WorkContextRelationKind;
+  why: string;
+  authority_effect: string;
+}
+
+export interface WorkspaceWorkContextState {
+  workspace_id: string;
+  workspace_name: string;
+  generated_at: string;
+  label: string;
+  contexts: WorkContext[];
+  primary_context_id: string | null;
+  relationships: WorkContextRelationship[];
+  context_count: number;
+  active_count: number;
+  blocked_count: number;
+  dormant_count: number;
+  candidate_count: number;
+  session_generated_at: string;
+  experience_generated_at: string;
+  intelligence_generated_at: string;
+  explanation: string;
+  evidence: string[];
+  summary: string;
+  authority_effect: string;
+}
+
+export interface WorkspaceWorkContextSummary {
+  workspace_id: string;
+  workspace_name: string;
+  generated_at: string;
+  label: string;
+  context_count: number;
+  active_count: number;
+  blocked_count: number;
+  dormant_count: number;
+  candidate_count: number;
+  primary_context_name: string | null;
+  primary_context_type: string | null;
+  top_contexts: WorkContext[];
+  explanation: string;
+  summary: string;
+  authority_effect: string;
+}
+
+export interface WorkspaceWorkContextComparison {
+  left_workspace_id: string;
+  right_workspace_id: string;
+  differences: string[];
+  authority_effect: string;
+}
+
+export interface WorkspaceWorkContextValidation {
+  valid: boolean;
+  messages: string[];
   authority_effect: string;
 }
 

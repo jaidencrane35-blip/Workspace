@@ -60,6 +60,7 @@ Human Intent
   → Workspace Understanding (Intelligence + cognition)
   → Session (canonical runtime orchestration)
   → Experience (presentation for Work / Assistant)
+  → Work Context (semantic kind-of-work)
   → Planning (human-initiated)
   → Permission Gateway
   → Execution

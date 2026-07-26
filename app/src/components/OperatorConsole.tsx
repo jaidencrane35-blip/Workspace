@@ -23,6 +23,9 @@ import type {
   WorkspaceSessionComparison,
   WorkspaceExperienceState,
   WorkspaceExperienceComparison,
+  WorkspaceWorkContextState,
+  WorkspaceWorkContextComparison,
+  WorkspaceWorkContextValidation,
   AiOrchestratedPlan,
   AiPlan,
   AiPlanEvaluationReport,
@@ -184,6 +187,10 @@ export function OperatorConsole({
     useState<WorkspaceExperienceState | null>(null);
   const [priorExperience, setPriorExperience] =
     useState<WorkspaceExperienceState | null>(null);
+  const [workContextState, setWorkContextState] =
+    useState<WorkspaceWorkContextState | null>(null);
+  const [priorWorkContext, setPriorWorkContext] =
+    useState<WorkspaceWorkContextState | null>(null);
   const [activeProject, setActiveProject] = useState<Project | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [memoryEntries, setMemoryEntries] = useState<MemoryEntry[]>([]);
@@ -1994,6 +2001,95 @@ export function OperatorConsole({
             <li>
               {readinessState.overall_status} · {readinessState.gap_count} gap(s)
               · authority {readinessState.authority_effect}
+            </li>
+          </ul>
+        )}
+      </section>
+
+      <section>
+        <h2>Workspace Work Context (diagnostics)</h2>
+        <p className="muted">
+          Semantic kind-of-work — Generate / Inspect / Compare / Validate. Never
+          plans, launches, or executes.
+        </p>
+        <div className="row">
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("Work context generated", async () => {
+                if (!workspace) return;
+                const state = await invokeIpc<WorkspaceWorkContextState>(
+                  "generate_workspace_work_context",
+                  { workspaceId: workspace.id },
+                );
+                if (workContextState) setPriorWorkContext(workContextState);
+                setWorkContextState(state);
+              })
+            }
+          >
+            Generate work context
+          </button>
+          <button
+            type="button"
+            disabled={busy || !workContextState}
+            onClick={() =>
+              void run("Work context inspected", async () => {
+                if (!workContextState) return;
+                const primary = workContextState.contexts.find(
+                  (c) => c.id === workContextState.primary_context_id,
+                );
+                onMessage(
+                  `${workContextState.summary} Primary: ${primary?.name ?? "none"} (${primary?.context_type ?? "n/a"}). Evidence: ${workContextState.evidence.slice(0, 3).join(" · ")}`,
+                );
+              })
+            }
+          >
+            Inspect work context
+          </button>
+          <button
+            type="button"
+            disabled={busy || !workContextState || !priorWorkContext}
+            onClick={() =>
+              void run("Work contexts compared", async () => {
+                if (!workContextState || !priorWorkContext) return;
+                const comparison =
+                  await invokeIpc<WorkspaceWorkContextComparison>(
+                    "compare_workspace_work_contexts",
+                    { left: priorWorkContext, right: workContextState },
+                  );
+                onMessage(comparison.differences.join(" · "));
+              })
+            }
+          >
+            Compare work contexts
+          </button>
+          <button
+            type="button"
+            disabled={busy || !workContextState}
+            onClick={() =>
+              void run("Work context validated", async () => {
+                if (!workContextState) return;
+                const report = await invokeIpc<WorkspaceWorkContextValidation>(
+                  "validate_workspace_work_context",
+                  { state: workContextState },
+                );
+                onMessage(report.messages.join(" · "));
+              })
+            }
+          >
+            Validate work context
+          </button>
+        </div>
+        {workContextState && (
+          <ul className="muted">
+            <li>{workContextState.summary}</li>
+            <li>
+              Contexts {workContextState.context_count} · Active{" "}
+              {workContextState.active_count} · Blocked{" "}
+              {workContextState.blocked_count} · Dormant{" "}
+              {workContextState.dormant_count} · authority{" "}
+              {workContextState.authority_effect}
             </li>
           </ul>
         )}

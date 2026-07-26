@@ -52,6 +52,7 @@ pub mod workspace_adaptation;
 pub mod workspace_readiness;
 pub mod workspace_session;
 pub mod workspace_experience;
+pub mod workspace_work_context;
 pub mod workspace_continuity;
 pub mod workspace_task_graph;
 pub mod workspace_environment;
@@ -257,6 +258,13 @@ pub use workspace_experience::{
     ExperienceItem, ExperienceSection, ExperienceSectionKind, ExperienceSummary,
     ExperienceVisibility, WorkspaceExperienceComparison, WorkspaceExperienceError,
     WorkspaceExperienceState, WorkspaceExperienceSummary,
+};
+pub use workspace_work_context::{
+    build_work_context_summary, validate_work_context_workspace_id, work_context_now_rfc3339,
+    WorkContext, WorkContextAssociation, WorkContextConfidence, WorkContextEvidence,
+    WorkContextRelationKind, WorkContextRelationship, WorkContextStatus, WorkContextType,
+    WorkspaceWorkContextComparison, WorkspaceWorkContextError, WorkspaceWorkContextState,
+    WorkspaceWorkContextSummary, WorkspaceWorkContextValidation,
 };
 pub use workspace_environment::{
     build_environment_summary, now_rfc3339, validate_workspace_id, EnvironmentApplication,

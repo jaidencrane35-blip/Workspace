@@ -725,6 +725,42 @@ impl WorkspaceRecommendationEngineService {
         Ok(state)
     }
 
+    /// Reference Work Context without mutating context ownership or ranking authority.
+    /// Appends evidence / explanation only — does not regenerate Work Context.
+    pub(crate) fn enrich_with_work_context(
+        recommendations: &WorkspaceRecommendationEngineState,
+        work_context: &workspace_domain::WorkspaceWorkContextState,
+    ) -> Result<WorkspaceRecommendationEngineState> {
+        let mut state = recommendations.clone();
+        if let Some(primary) = work_context.primary_context() {
+            let marker = format!(
+                "work_context:{}:{} ({})",
+                primary.name,
+                primary.context_type.as_str(),
+                primary.confidence.as_str()
+            );
+            if !state.evidence.iter().any(|e| e.contains("work_context:")) {
+                state.evidence.push(marker.clone());
+            }
+            state.explanation = format!(
+                "{} References Work Context as evidence only ({}) — does not change Work Context.",
+                state.explanation, marker
+            );
+            for candidate in state.candidates.iter_mut().take(3) {
+                candidate.evidence.push(workspace_domain::RecommendationEvidence {
+                    id: format!("ev:work_context:{}", primary.id),
+                    source_model: "work_context".into(),
+                    source_ref: primary.id.clone(),
+                    summary: format!(
+                        "Current work kind appears to be {} — suggestion framing only.",
+                        primary.name
+                    ),
+                });
+            }
+        }
+        Ok(state)
+    }
+
     pub(crate) fn attempt_execute() -> Result<()> {
         Err(KernelError::from(
             workspace_domain::WorkspaceRecommendationEngineError::CannotExecute,

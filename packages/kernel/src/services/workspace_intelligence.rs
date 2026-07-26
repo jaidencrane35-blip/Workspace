@@ -25,7 +25,8 @@ use crate::services::{
     WorkspaceEnvironmentService, WorkspaceIntentService, WorkspaceCompositionService,
     WorkspacePurposeService, WorkspaceEvolutionService, WorkspaceRecommendationEngineService,
     WorkspaceOperatingStateService, WorkspacePatternService, WorkspaceAdaptationService,
-    WorkspaceReadinessService,
+    WorkspaceReadinessService, WorkspaceSessionService, WorkspaceExperienceService,
+    WorkspaceWorkContextService,
 };
 
 pub(crate) struct WorkspaceIntelligenceService;
@@ -436,7 +437,8 @@ impl WorkspaceIntelligenceService {
             pending_automation_proposals.len(),
         );
 
-        let state = WorkspaceIntelligenceState {
+        // Assemble cognition envelope first (work_context filled after Experience).
+        let mut state = WorkspaceIntelligenceState {
             workspace_id: ws.to_string(),
             workspace_name,
             generated_at: Utc::now().to_rfc3339(),
@@ -470,10 +472,43 @@ impl WorkspaceIntelligenceService {
             pattern,
             adaptation,
             readiness,
+            work_context: Default::default(),
             workspace_health: health_label,
             summary,
             authority_effect: WorkspaceIntelligenceState::AUTHORITY_EFFECT_NONE.into(),
         };
+
+        // Phase 6: Session → Experience → Work Context (consume, never regenerate cognition).
+        let session = WorkspaceSessionService::generate_with_inputs(db, actor, &state)?;
+        let experience = WorkspaceExperienceService::generate_with_inputs(db, actor, &session)?;
+        let work_context = WorkspaceWorkContextService::generate_with_inputs(
+            db,
+            actor,
+            &state,
+            &session,
+            &experience,
+        )?;
+
+        // Evidence-only consumption — does not grant authority or mutate Work Context.
+        let enriched_attention =
+            WorkspaceAttentionService::enrich_with_work_context(&full_attention, &work_context)?;
+        let enriched_recommendations =
+            WorkspaceRecommendationEngineService::enrich_with_work_context(
+                &full_recommendation_engine,
+                &work_context,
+            )?;
+        let enriched_adaptation = WorkspaceAdaptationService::enrich_with_work_context(
+            &full_adaptation,
+            &work_context,
+        )?;
+
+        state.attention = enriched_attention.summary_projection(8);
+        state.recommendation_engine =
+            WorkspaceRecommendationEngineService::summary_projection(&enriched_recommendations, 6);
+        state.adaptation =
+            WorkspaceAdaptationService::summary_projection(&enriched_adaptation, 8);
+        state.work_context = work_context.summary_projection(5);
+        state.recommended_actions = Self::recommendations_from_attention(&enriched_attention);
 
         Self::audit_generated(db, actor, &state)?;
         Ok(state)

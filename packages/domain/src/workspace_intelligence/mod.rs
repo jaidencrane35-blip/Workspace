@@ -18,6 +18,7 @@ use crate::workspace_operating_state::WorkspaceOperatingStateSummary;
 use crate::workspace_pattern::WorkspacePatternSummary;
 use crate::workspace_adaptation::WorkspaceAdaptationSummary;
 use crate::workspace_readiness::WorkspaceReadinessSummary;
+use crate::workspace_work_context::WorkspaceWorkContextSummary;
 use crate::workspace_environment::WorkspaceEnvironmentSummary;
 use crate::workspace_task_graph::TaskGraphSummary;
 use crate::workspace_activity::WorkspaceActivityGraphSummary;
@@ -143,6 +144,9 @@ pub struct WorkspaceIntelligenceState {
     /// Readiness Model summary (Phase 5). Preparedness for current work — never executes.
     /// Distinct from runtime `workspace_health` (kernel lifecycle).
     pub readiness: WorkspaceReadinessSummary,
+    /// Work Context Engine summary (Phase 6). What kind of work — never executes.
+    /// Embedded after Session/Experience projection; before future restoration systems.
+    pub work_context: WorkspaceWorkContextSummary,
     pub workspace_health: String,
     pub summary: String,
     /// Explicit marker for audits and UI: this state grants nothing.
@@ -199,6 +203,17 @@ impl WorkspaceIntelligenceComparison {
                 "Decision Engine open candidates: {} → {}",
                 left.decision_engine.open_count,
                 right.decision_engine.open_count
+            ));
+        }
+        if left.work_context.primary_context_type != right.work_context.primary_context_type
+            || left.work_context.context_count != right.work_context.context_count
+        {
+            differences.push(format!(
+                "Work Context: {:?} ({}) → {:?} ({})",
+                left.work_context.primary_context_type,
+                left.work_context.context_count,
+                right.work_context.primary_context_type,
+                right.work_context.context_count
             ));
         }
         if differences.is_empty() {

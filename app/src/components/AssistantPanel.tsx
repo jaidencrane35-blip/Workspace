@@ -7,6 +7,7 @@ import type {
   AiAssistantWorkflow,
   Workspace,
   WorkspaceExperienceState,
+  WorkspaceWorkContextState,
   WorkspaceIntelligenceState,
 } from "../types/domain";
 import { assistantProductState } from "../types/domain";
@@ -53,6 +54,8 @@ export function AssistantPanel({
     useState<WorkspaceIntelligenceState | null>(null);
   const [experienceState, setExperienceState] =
     useState<WorkspaceExperienceState | null>(null);
+  const [workContextState, setWorkContextState] =
+    useState<WorkspaceWorkContextState | null>(null);
 
   const productState = assistantProductState(workflow?.state);
   const canConfirm = workflow?.state === "awaiting_confirmation";
@@ -127,7 +130,7 @@ export function AssistantPanel({
             onClick={() =>
               void run("Workspace understanding loaded", async () => {
                 if (!workspace) return;
-                const [intel, experience] = await Promise.all([
+                const [intel, experience, workContext] = await Promise.all([
                   invokeIpc<WorkspaceIntelligenceState>(
                     "generate_workspace_intelligence",
                     { workspaceId: workspace.id },
@@ -136,15 +139,29 @@ export function AssistantPanel({
                     "generate_workspace_experience",
                     { workspaceId: workspace.id },
                   ),
+                  invokeIpc<WorkspaceWorkContextState>(
+                    "generate_workspace_work_context",
+                    { workspaceId: workspace.id },
+                  ),
                 ]);
                 setWorkspaceIntel(intel);
                 setExperienceState(experience);
+                setWorkContextState(workContext);
               })
             }
           >
             Load workspace intelligence
           </button>
         </div>
+        {workContextState && (
+          <dl>
+            <dt>Work Context</dt>
+            <dd>
+              {workContextState.summary} Assistant explains what kind of work
+              this is — never edits or owns Work Context.
+            </dd>
+          </dl>
+        )}
         {experienceState && (
           <dl>
             <dt>Experience</dt>
@@ -336,6 +353,12 @@ export function AssistantPanel({
               Same Experience Layer as the Work tab. Assistant consumes it to
               explain focus, blockers, waiting, and next steps — never edits or
               owns presentation state.
+            </dd>
+            <dt>Work Context</dt>
+            <dd>
+              {workspaceIntel.work_context.summary} Same Work Context Engine as
+              the Work tab. Assistant may explain the kind of work — never plans
+              or executes from Context.
             </dd>
             <dt>Continuity</dt>
             <dd>

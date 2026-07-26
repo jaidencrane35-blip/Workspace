@@ -47,6 +47,10 @@ use commands::workspace_session::{compare_workspace_sessions, generate_workspace
 use commands::workspace_experience::{
     compare_workspace_experiences, generate_workspace_experience,
 };
+use commands::workspace_work_context::{
+    compare_workspace_work_contexts, generate_workspace_work_context,
+    validate_workspace_work_context,
+};
 use commands::workspace_attention::generate_workspace_attention;
 use commands::layout::{
     create_layout, delete_layout, get_layout, get_layout_snapshot, reset_layout, update_layout,
@@ -225,6 +229,9 @@ pub fn run() {
             compare_workspace_sessions,
             generate_workspace_experience,
             compare_workspace_experiences,
+            generate_workspace_work_context,
+            compare_workspace_work_contexts,
+            validate_workspace_work_context,
             generate_decision_engine,
             select_decision_candidate,
             dismiss_decision_candidate,
