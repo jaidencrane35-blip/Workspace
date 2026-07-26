@@ -155,6 +155,38 @@ impl QueryCommand for GetWorkspaceObservationStatus {
     }
 }
 
+/// Returns observation scheduler runtime health (no snapshots, no control).
+pub struct GetObservationSchedulerStatus;
+
+impl crate::commands::Command for GetObservationSchedulerStatus {
+    fn name(&self) -> &'static str {
+        "GetObservationSchedulerStatus"
+    }
+}
+
+impl QueryCommand for GetObservationSchedulerStatus {
+    type Output = ();
+
+    fn permission_subject(&self) -> PermissionSubject {
+        PermissionSubject::System
+    }
+
+    fn required_capability(&self) -> Capability {
+        Capability::desktop_read()
+    }
+
+    fn governance_class(&self) -> GovernanceClass {
+        GovernanceClass::Governed
+    }
+
+    fn execute(self, ctx: &CommandContext<'_>) -> Result<()> {
+        if ctx.state.lifecycle != LifecycleState::Ready {
+            return Err(KernelError::NotReady);
+        }
+        Ok(())
+    }
+}
+
 /// Returns one persisted desktop observation snapshot by pass id.
 pub struct GetWorkspaceObservationById {
     pub pass_id: String,

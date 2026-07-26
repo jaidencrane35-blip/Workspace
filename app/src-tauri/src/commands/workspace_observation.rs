@@ -1,7 +1,9 @@
 use std::sync::{Arc, Mutex};
 
 use tauri::State;
-use workspace_domain::{WorkspaceObservationSnapshot, WorkspaceObservationStatus};
+use workspace_domain::{
+    ObservationSchedulerStatus, WorkspaceObservationSnapshot, WorkspaceObservationStatus,
+};
 use workspace_kernel::{CommandHandler, WorkspaceKernel};
 use workspace_kernel::services::WorkspaceObservationCaptureResult;
 
@@ -77,6 +79,26 @@ pub fn get_workspace_observation_status(
 ) -> IpcResponse<WorkspaceObservationStatus> {
     match kernel.lock() {
         Ok(kernel) => match CommandHandler::get_workspace_observation_status(
+            &kernel,
+            ipc_actor_context(),
+            ipc_intent_context(),
+        ) {
+            Ok(status) => IpcResponse::success(status),
+            Err(error) => IpcResponse::failure(CommandError::from(error)),
+        },
+        Err(_) => IpcResponse::failure(CommandError::new(
+            "internal_error",
+            "Workspace core is temporarily unavailable.",
+        )),
+    }
+}
+
+#[tauri::command]
+pub fn get_observation_scheduler_status(
+    kernel: State<'_, Arc<Mutex<WorkspaceKernel>>>,
+) -> IpcResponse<ObservationSchedulerStatus> {
+    match kernel.lock() {
+        Ok(kernel) => match CommandHandler::get_observation_scheduler_status(
             &kernel,
             ipc_actor_context(),
             ipc_intent_context(),

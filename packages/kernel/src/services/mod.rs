@@ -129,7 +129,9 @@ pub(crate) use observation_trigger_authority::{
 };
 pub(crate) use observation_startup_trigger::ObservationStartupTrigger;
 pub(crate) use observation_scheduled_trigger::ObservationScheduledTrigger;
-pub(crate) use observation_scheduler::ObservationScheduler;
+pub(crate) use observation_scheduler::{
+    ObservationScheduler, ObservationSchedulerDiagnostics,
+};
 pub(crate) use workspace_scope::{approval_belongs_to_workspace, plan_belongs_to_workspace};
 pub use context::WorkspaceContextService;
 pub use database::DatabaseServiceHandle;

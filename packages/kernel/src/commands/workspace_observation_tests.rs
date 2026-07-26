@@ -434,6 +434,21 @@ fn status_requires_desktop_read() {
 }
 
 #[test]
+fn scheduler_status_reports_disabled_in_memory_kernel() {
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let status = CommandHandler::get_observation_scheduler_status(
+        &kernel,
+        ActorContext::local_user(),
+        IntentContext::user_request(),
+    )
+    .unwrap();
+    assert!(!status.enabled);
+    assert!(!status.running);
+    assert_eq!(status.ticks_emitted, 0);
+    assert_eq!(status.authority_effect, "none");
+}
+
+#[test]
 fn status_query_uses_metadata_not_full_snapshot_collections() {
     let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
     let local = ActorContext::local_user();

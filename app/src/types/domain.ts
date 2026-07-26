@@ -1563,6 +1563,22 @@ export interface ObservationScheduleConfig {
   interval_seconds: number;
 }
 
+/** Read-only observation scheduler runtime health (no snapshots). */
+export interface ObservationSchedulerStatus {
+  running: boolean;
+  enabled: boolean;
+  interval_seconds: number;
+  started_at: string | null;
+  last_tick_at: string | null;
+  last_tick_duration_ms: number | null;
+  ticks_emitted: number;
+  captures_requested: number;
+  captures_skipped: number;
+  rate_limited_count: number;
+  consecutive_failures: number;
+  authority_effect: string;
+}
+
 export type ObservationTriggerOutcome =
   | "accepted_capture"
   | "ignored_fresh"

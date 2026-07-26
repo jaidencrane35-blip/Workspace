@@ -82,7 +82,8 @@ use commands::context::get_workspace_context;
 use commands::desktop_window::get_desktop_windows;
 use commands::workspace_observation::{
     capture_workspace_observation, get_latest_workspace_observation,
-    get_workspace_observation_by_id, get_workspace_observation_status,
+    get_observation_scheduler_status, get_workspace_observation_by_id,
+    get_workspace_observation_status,
 };
 use commands::discovery::{get_action_catalog, get_actor_capabilities};
 use commands::memory::{
@@ -166,6 +167,7 @@ pub fn run() {
             get_latest_workspace_observation,
             get_workspace_observation_by_id,
             get_workspace_observation_status,
+            get_observation_scheduler_status,
             create_application,
             launch_application,
             get_permission_approvals,

@@ -711,6 +711,46 @@ impl Default for ObservationScheduleConfig {
     }
 }
 
+/// Read-only runtime health of the observation schedule loop (Sprint 115).
+///
+/// Does not include observation snapshots. `authority_effect` is always `"none"`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ObservationSchedulerStatus {
+    pub running: bool,
+    pub enabled: bool,
+    pub interval_seconds: u64,
+    pub started_at: Option<String>,
+    pub last_tick_at: Option<String>,
+    pub last_tick_duration_ms: Option<u64>,
+    pub ticks_emitted: u64,
+    pub captures_requested: u64,
+    pub captures_skipped: u64,
+    pub rate_limited_count: u64,
+    pub consecutive_failures: u64,
+    pub authority_effect: String,
+}
+
+impl ObservationSchedulerStatus {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+
+    pub fn idle(config: &ObservationScheduleConfig) -> Self {
+        Self {
+            running: false,
+            enabled: config.enabled,
+            interval_seconds: config.interval_seconds,
+            started_at: None,
+            last_tick_at: None,
+            last_tick_duration_ms: None,
+            ticks_emitted: 0,
+            captures_requested: 0,
+            captures_skipped: 0,
+            rate_limited_count: 0,
+            consecutive_failures: 0,
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        }
+    }
+}
+
 /// Auditable trigger authority outcome (capture payload attached in kernel).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]

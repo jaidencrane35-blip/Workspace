@@ -50,7 +50,7 @@ use crate::commands::get_actor_capabilities::GetActorCapabilities;
 use crate::commands::get_audit_history::GetAuditHistory;
 use crate::commands::get_permission_approvals::GetPermissionApprovals;
 use crate::commands::workspace_observation::{
-    CaptureWorkspaceObservation, GetLatestWorkspaceObservation,
+    CaptureWorkspaceObservation, GetLatestWorkspaceObservation, GetObservationSchedulerStatus,
     GetWorkspaceObservationById, GetWorkspaceObservationStatus,
 };
 use crate::commands::get_desktop_windows::GetDesktopWindows;
@@ -105,7 +105,7 @@ use crate::services::{
     WorkspaceNavigationService, WorkspaceMilestoneService, WorkspaceWorkingStyleService,
     WorkspaceTransitionService, WorkspaceInteractionService, WorkspaceProfileService,
     WorkspaceObservationCaptureResult, WorkspaceObservationService,
-    WorkspaceActivityGraphService,
+    ObservationSchedulerDiagnostics, WorkspaceActivityGraphService,
     WorkspaceAttentionService, WorkspaceContextService, WorkspaceContinuityService,
     WorkspaceIntelligenceService,
 };
@@ -133,7 +133,7 @@ use workspace_domain::{
     WorkspaceProfile, WorkspaceProfileComparison, WorkspaceProfileMemberInput,
     WorkspaceProfileState, WorkspaceProfileStateComparison, WorkspaceProfileStatus,
     WorkspaceProfileValidation, WorkspaceObservationSnapshot, WorkspaceObservationStatus,
-    WorkspaceTask, WorkspaceTaskPriority, WorkspaceTaskStatus,
+    ObservationSchedulerStatus, WorkspaceTask, WorkspaceTaskPriority, WorkspaceTaskStatus,
     WorkspaceIntelligenceComparison, WorkspaceIntelligenceState, AiPlan, AiPlanEvaluationReport,
     AiPlanSubmissionResult,
     AiProposalAuthorityOutcome, AiProposalEvaluation, AiProposalSubmission, ApplicationId,
@@ -1860,6 +1860,19 @@ impl CommandHandler {
     ) -> Result<WorkspaceObservationStatus> {
         CommandPipeline::new(kernel.command_context(actor, intent))
             .execute_query(GetWorkspaceObservationStatus)
+    }
+
+    /// Scheduler runtime health only — does not load observation snapshots.
+    pub fn get_observation_scheduler_status(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+    ) -> Result<ObservationSchedulerStatus> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetObservationSchedulerStatus)?;
+        Ok(ObservationSchedulerDiagnostics::get_status(
+            kernel.observation_scheduler(),
+        ))
     }
 
     /// Architecture guard — Observation Layer must never execute.

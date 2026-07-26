@@ -192,7 +192,7 @@ pub use get_permission_approvals::GetPermissionApprovals;
 pub use get_desktop_windows::GetDesktopWindows;
 pub use workspace_observation::{
     CaptureWorkspaceObservation, GateObservationRead, GetLatestWorkspaceObservation,
-    GetWorkspaceObservationById, GetWorkspaceObservationStatus,
+    GetObservationSchedulerStatus, GetWorkspaceObservationById, GetWorkspaceObservationStatus,
 };
 pub use get_execution_outcomes::GetExecutionOutcomes;
 pub use get_execution_state::GetExecutionState;
