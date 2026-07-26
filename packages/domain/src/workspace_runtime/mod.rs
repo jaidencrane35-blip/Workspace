@@ -13,6 +13,8 @@
 //! mutating sources or overlapping the work Continuity Engine.
 //! Diagnostic evolution adds structured comparison, lifecycle phases, and
 //! validation/interpretation — still observational only.
+//! Diagnostic evidence integrity and append-only retention archive sealed
+//! history without deletion, mutation, or authority.
 
 mod diagnostics;
 pub use diagnostics::*;
@@ -192,6 +194,12 @@ pub enum WorkspaceRuntimeError {
 
     #[error("runtime diagnostic evolution cannot mutate, repair, or execute")]
     DiagnosticEvolutionReadOnly,
+
+    #[error("runtime diagnostic archive is append-only; deletion and mutation forbidden")]
+    DiagnosticArchiveImmutable,
+
+    #[error("runtime diagnostic evidence is observational and cannot become a decision")]
+    DiagnosticEvidenceNotAuthoritative,
 }
 
 // ---------------------------------------------------------------------------

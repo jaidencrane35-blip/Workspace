@@ -45,7 +45,7 @@ Assistant                → same Continuity model (explain only)
 | Read-only Continuity Engine | A second source of truth |
 | Projection of existing systems | Scheduler / worker / autonomous resume |
 | Explainable facets (why / evidence / what changed) | Hidden workflows |
-| Work / session continuity | Runtime diagnostic continuity (`RuntimeDiagnosticContinuityRecord`) |
+| Work / session continuity | Runtime diagnostic continuity / archive (`RuntimeDiagnosticContinuityRecord`, `RuntimeDiagnosticArchive`) |
 
 Restart survival = durable Phase 4 sources regenerate Continuity on read.
 

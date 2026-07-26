@@ -68,6 +68,10 @@ WorkspaceState
 | Audit | `RuntimeDiagnosticLifecycleRecord` | Snapshot lineage phases; immutable |
 | Audit | `RuntimeArchitectureOwnershipRegistry` | Explicit artifact→owner table |
 | Audit | `RuntimeDiagnosticEvolutionReport` | Validates provenance/continuity/lifecycle; operator-safe interpretation |
+| Audit | `RuntimeDiagnosticEvidenceBundle` | Sealed immutable refs + digests; never a decision |
+| Audit | `RuntimeDiagnosticArchive` | Append-only retention; no delete/mutate |
+| Audit | `RuntimeArchitectureOwnershipValidation` | Conflict detection; descriptive only |
+| Audit | `RuntimeDiagnosticHistoricalIntegrity` | Evidence + archive + non-authoritative checks |
 
 Authority: `authority_effect: none` (`GOVERNANCE_AUTHORITY_EFFECT_NONE`).
 
@@ -83,18 +87,30 @@ Module: `packages/domain/src/workspace_runtime/` (`mod.rs` + `diagnostics.rs`).
 | `WorkspaceRuntimeHealth` | Observational observer only |
 | Operator overview / explanation | Operator projection — never executes |
 
-Canonical table: `RuntimeArchitectureOwnershipRegistry::canonical()`.
+Canonical table: `RuntimeArchitectureOwnershipRegistry::canonical()` (`canonical:v1`).
+Validation: `RuntimeArchitectureOwnershipValidation` (conflict detection only).
 
 ### Diagnostic lifecycle
 
 ```
-Captured → Provenanced → ContinuityLinked → Superseded
+Captured → Provenanced → ContinuityLinked → Compared → Evolved → Superseded → Archived
 ```
 
 `RuntimeDiagnosticEvolutionReport` validates that continuity deltas match
 `RuntimeDiagnosticComparison`, provenance cites the current snapshot, and
 lifecycle ordering is respected. Interpretation is diagnostic only — no repair,
 heal, approve, or execute pathways.
+
+### Evidence integrity & retention
+
+| Concept | Role | Distinct from |
+|---------|------|---------------|
+| `RuntimeDiagnosticEvidenceBundle` | Sealed refs for snapshot/provenance/continuity/comparison/evolution | Governance decision evidence |
+| `RuntimeDiagnosticArchive` | Append-only retention of seals / supersession markers | `GovernanceArchiveContract` |
+| Work Continuity Engine | Resume / where work left off | Diagnostic continuity & archive |
+
+Reports and evidence bundles always `is_authoritative() == false` and
+`is_decision() == false`. No deletion or mutation of archived history.
 
 No hidden repair, auto-heal, or silent mutation paths.
 
