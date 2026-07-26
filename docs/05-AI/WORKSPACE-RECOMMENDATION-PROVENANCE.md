@@ -83,6 +83,24 @@ Three id namespaces remain distinct by design:
 Attention-derived items clone `attention_reasons` verbatim; other sources leave them empty
 (reason + evidence only).
 
+### Explanation view (Sprints 202–206)
+
+Domain type: `RecommendationExplanationView` on each `RecommendationItem.explanation`.
+
+| Field | Role |
+|-------|------|
+| `why_suggested` / `impact` / `confidence` | Structured surface copy from the candidate — not CoT |
+| `lifecycle_state` / `lifecycle_note` | Continuity-aware status for Available / Presented / terminal |
+| `source_domains` / `evidence_*` | Grounding refs for “why shown” |
+| `explanation_keys` | Experience catalog keys only |
+| `experience_trace_match_keys` | Optional resolver match keys — provenance/evidence only |
+| `continuity_fingerprint` | Continuity identity (not a score) |
+| `authority_effect` | Always `none` |
+
+Surfaces (Operator / Work) render active candidates with explanation blocks and keep
+terminal history separate. Explanation never grants authority, never opens Gateway,
+and never merges with Decision Engine handoff.
+
 ### Intelligence `recommended_actions`
 
 | Stage | Behavior |

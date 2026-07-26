@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { IpcCommandError, invokeIpc } from "../lib/ipc";
 import { DisplayReasonList } from "./DisplayReasonList";
+import {
+  isActiveRecommendation,
+  RecommendationExplanationBlock,
+} from "./RecommendationExplanationView";
 import type {
   ActionCatalog,
   AiAssistantPlanComparison,
@@ -1810,8 +1814,9 @@ export function OperatorConsole({
         <p className="muted">
           What might help next — suggestions only. Aggregates Attention,
           Continuity, Evolution, Purpose, Task Graph, Composition, Decision
-          Queue, Environment. Present / Accept / Reject record human decision
-          only — never execute or grant authority.
+          Queue, Environment. Explanation views show why a suggestion is shown
+          (evidence, lifecycle, catalog keys). Present / Accept / Reject record
+          human decision only — never execute, never Decision Engine handoff.
         </p>
         <div className="row">
           <button
@@ -1835,23 +1840,26 @@ export function OperatorConsole({
             type="button"
             disabled={busy || !recommendationEngine}
             onClick={() =>
-              void run("Recommendation evidence inspected", async () => {
+              void run("Recommendation explanations inspected", async () => {
                 if (!recommendationEngine) return;
+                const active = recommendationEngine.candidates.filter(
+                  isActiveRecommendation,
+                );
                 onMessage(
-                  recommendationEngine.candidates.length
-                    ? recommendationEngine.candidates
+                  active.length
+                    ? active
                         .slice(0, 5)
-                        .map(
-                          (c) =>
-                            `${c.kind}: ${c.title} (${c.lifecycle_state ?? "n/a"}) — ${c.reason}`,
-                        )
+                        .map((c) => {
+                          const ex = c.explanation;
+                          return `${c.kind}: ${c.title} [${ex?.lifecycle_state ?? c.lifecycle_state ?? "n/a"}] — ${ex?.why_suggested ?? c.reason} (authority ${ex?.authority_effect ?? c.authority_effect})`;
+                        })
                         .join(" · ")
-                    : "No candidates",
+                    : "No active candidates",
                 );
               })
             }
           >
-            Inspect candidates
+            Inspect explanations
           </button>
         </div>
         {recommendationEngine && (
@@ -1859,87 +1867,129 @@ export function OperatorConsole({
             <ul className="muted">
               <li>{recommendationEngine.summary}</li>
               <li>
-                Candidates {recommendationEngine.candidate_count} · authority{" "}
-                {recommendationEngine.authority_effect}
+                Active{" "}
+                {
+                  recommendationEngine.candidates.filter(isActiveRecommendation)
+                    .length
+                }{" "}
+                · history{" "}
+                {
+                  recommendationEngine.candidates.filter(
+                    (c) => !isActiveRecommendation(c),
+                  ).length
+                }{" "}
+                · authority {recommendationEngine.authority_effect}
               </li>
             </ul>
-            {recommendationEngine.candidates.slice(0, 4).map((item) => {
-              const resolved =
-                item.lifecycle_state === "accepted" ||
-                item.lifecycle_state === "rejected" ||
-                item.lifecycle_state === "expired" ||
-                item.lifecycle_state === "superseded";
-              return (
-                <div key={item.id} className="row" style={{ marginTop: 8 }}>
-                  <span className="muted">
-                    [{item.lifecycle_state ?? "available"}] {item.title}
-                  </span>
-                  <button
-                    type="button"
-                    disabled={busy || !workspace || resolved}
-                    onClick={() =>
-                      void run("Recommendation presented", async () => {
-                        if (!workspace) return;
-                        await invokeIpc("present_recommendation", {
-                          workspaceId: workspace.id,
-                          recommendationId: item.id,
-                        });
-                        const state =
-                          await invokeIpc<WorkspaceRecommendationEngineState>(
-                            "generate_workspace_recommendation_engine",
-                            { workspaceId: workspace.id },
-                          );
-                        setRecommendationEngine(state);
-                      })
-                    }
-                  >
-                    Present
-                  </button>
-                  <button
-                    type="button"
-                    disabled={busy || !workspace || resolved}
-                    onClick={() =>
-                      void run("Recommendation accepted (decision only)", async () => {
-                        if (!workspace) return;
-                        await invokeIpc("accept_recommendation", {
-                          workspaceId: workspace.id,
-                          recommendationId: item.id,
-                        });
-                        const state =
-                          await invokeIpc<WorkspaceRecommendationEngineState>(
-                            "generate_workspace_recommendation_engine",
-                            { workspaceId: workspace.id },
-                          );
-                        setRecommendationEngine(state);
-                      })
-                    }
-                  >
-                    Accept
-                  </button>
-                  <button
-                    type="button"
-                    disabled={busy || !workspace || resolved}
-                    onClick={() =>
-                      void run("Recommendation rejected (decision only)", async () => {
-                        if (!workspace) return;
-                        await invokeIpc("reject_recommendation", {
-                          workspaceId: workspace.id,
-                          recommendationId: item.id,
-                        });
-                        const state =
-                          await invokeIpc<WorkspaceRecommendationEngineState>(
-                            "generate_workspace_recommendation_engine",
-                            { workspaceId: workspace.id },
-                          );
-                        setRecommendationEngine(state);
-                      })
-                    }
-                  >
-                    Reject
-                  </button>
+            {recommendationEngine.candidates
+              .filter(isActiveRecommendation)
+              .slice(0, 4)
+              .map((item) => (
+                <div key={item.id} style={{ marginTop: 12 }}>
+                  <strong>
+                    [{item.kind}] {item.title}
+                  </strong>
+                  <RecommendationExplanationBlock
+                    item={item}
+                    showFingerprint
+                  />
+                  <div className="row">
+                    <button
+                      type="button"
+                      disabled={
+                        busy ||
+                        !workspace ||
+                        item.lifecycle_state === "presented"
+                      }
+                      onClick={() =>
+                        void run("Recommendation presented", async () => {
+                          if (!workspace) return;
+                          await invokeIpc("present_recommendation", {
+                            workspaceId: workspace.id,
+                            recommendationId: item.id,
+                          });
+                          const state =
+                            await invokeIpc<WorkspaceRecommendationEngineState>(
+                              "generate_workspace_recommendation_engine",
+                              { workspaceId: workspace.id },
+                            );
+                          setRecommendationEngine(state);
+                        })
+                      }
+                    >
+                      Present
+                    </button>
+                    <button
+                      type="button"
+                      disabled={busy || !workspace}
+                      onClick={() =>
+                        void run(
+                          "Recommendation accepted (decision only)",
+                          async () => {
+                            if (!workspace) return;
+                            await invokeIpc("accept_recommendation", {
+                              workspaceId: workspace.id,
+                              recommendationId: item.id,
+                            });
+                            const state =
+                              await invokeIpc<WorkspaceRecommendationEngineState>(
+                                "generate_workspace_recommendation_engine",
+                                { workspaceId: workspace.id },
+                              );
+                            setRecommendationEngine(state);
+                          },
+                        )
+                      }
+                    >
+                      Accept
+                    </button>
+                    <button
+                      type="button"
+                      disabled={busy || !workspace}
+                      onClick={() =>
+                        void run(
+                          "Recommendation rejected (decision only)",
+                          async () => {
+                            if (!workspace) return;
+                            await invokeIpc("reject_recommendation", {
+                              workspaceId: workspace.id,
+                              recommendationId: item.id,
+                            });
+                            const state =
+                              await invokeIpc<WorkspaceRecommendationEngineState>(
+                                "generate_workspace_recommendation_engine",
+                                { workspaceId: workspace.id },
+                              );
+                            setRecommendationEngine(state);
+                          },
+                        )
+                      }
+                    >
+                      Reject
+                    </button>
+                  </div>
                 </div>
-              );
-            })}
+              ))}
+            {recommendationEngine.candidates.some(
+              (c) => !isActiveRecommendation(c),
+            ) && (
+              <>
+                <p className="muted" style={{ marginTop: 12 }}>
+                  History (terminal — not actionable)
+                </p>
+                {recommendationEngine.candidates
+                  .filter((c) => !isActiveRecommendation(c))
+                  .slice(0, 3)
+                  .map((item) => (
+                    <div key={item.id} className="muted" style={{ marginTop: 8 }}>
+                      <strong>
+                        [{item.lifecycle_state}] {item.title}
+                      </strong>
+                      <RecommendationExplanationBlock item={item} />
+                    </div>
+                  ))}
+              </>
+            )}
           </>
         )}
       </section>

@@ -14,15 +14,17 @@ use workspace_domain::{
     build_recommendation_engine_summary, recommendation_engine_now_rfc3339,
     validate_recommendation_engine_workspace_id, ActionProposalError, ActorContext,
     AttentionCategory, DecisionQueue, IntentContext, RecommendationConfidence,
-    RecommendationEvidence, RecommendationGovernanceRecord, RecommendationItem, RecommendationKind,
-    RecommendationLifecycleOverlay, RecommendationLifecycleState, RecommendationRelationship,
-    RecommendationReviewActionResult, TaskGraph, WorkspaceAttentionState,
-    WorkspaceCompositionState, WorkspaceContinuityState, WorkspaceEnvironmentState,
-    WorkspaceEvolutionState, WorkspacePurposeState, WorkspaceRecommendationEngineError,
-    WorkspaceRecommendationEngineState, WorkspaceRecommendationEngineSummary,
+    RecommendationEvidence, RecommendationExplanationView, RecommendationGovernanceRecord,
+    RecommendationItem, RecommendationKind, RecommendationLifecycleOverlay,
+    RecommendationLifecycleState, RecommendationRelationship, RecommendationReviewActionResult,
+    TaskGraph, WorkspaceAttentionState, WorkspaceCompositionState, WorkspaceContinuityState,
+    WorkspaceEnvironmentState, WorkspaceEvolutionState, WorkspacePurposeState,
+    WorkspaceRecommendationEngineError, WorkspaceRecommendationEngineState,
+    WorkspaceRecommendationEngineSummary,
 };
 
 use crate::error::{KernelError, Result};
+use crate::services::explanation_resolver::resolve_attention_reason_traced;
 use crate::services::{
     AssistantWorkflowStore, AuditService, DecisionQueueService, OrchestratedPlanStore,
     TaskGraphService, WorkspaceActivityGraphService, WorkspaceAttentionService,
@@ -187,6 +189,7 @@ impl WorkspaceRecommendationEngineService {
                 lifecycle_presented_at: None,
                 lifecycle_resolved_at: None,
                 lifecycle_resolution_type: None,
+                explanation: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
             });
             relationships.push(RecommendationRelationship {
@@ -243,6 +246,7 @@ impl WorkspaceRecommendationEngineService {
                 lifecycle_presented_at: None,
                 lifecycle_resolved_at: None,
                 lifecycle_resolution_type: None,
+                explanation: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
             });
         }
@@ -278,6 +282,7 @@ impl WorkspaceRecommendationEngineService {
                     lifecycle_presented_at: None,
                     lifecycle_resolved_at: None,
                     lifecycle_resolution_type: None,
+                    explanation: None,
                     authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
@@ -321,7 +326,8 @@ impl WorkspaceRecommendationEngineService {
                     lifecycle_presented_at: None,
                     lifecycle_resolved_at: None,
                     lifecycle_resolution_type: None,
-                    authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
+                    explanation: None,
+                authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
         } else if let Some(focus) = &continuity.current_focus {
@@ -352,6 +358,7 @@ impl WorkspaceRecommendationEngineService {
                     lifecycle_presented_at: None,
                     lifecycle_resolved_at: None,
                     lifecycle_resolution_type: None,
+                    explanation: None,
                     authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
@@ -405,7 +412,8 @@ impl WorkspaceRecommendationEngineService {
                     lifecycle_presented_at: None,
                     lifecycle_resolved_at: None,
                     lifecycle_resolution_type: None,
-                    authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
+                    explanation: None,
+                authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
         }
@@ -449,7 +457,8 @@ impl WorkspaceRecommendationEngineService {
                     lifecycle_presented_at: None,
                     lifecycle_resolved_at: None,
                     lifecycle_resolution_type: None,
-                    authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
+                    explanation: None,
+                authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
         }
@@ -491,7 +500,8 @@ impl WorkspaceRecommendationEngineService {
                     lifecycle_presented_at: None,
                     lifecycle_resolved_at: None,
                     lifecycle_resolution_type: None,
-                    authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
+                    explanation: None,
+                authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
         } else if environment.disconnected_work {
@@ -520,6 +530,7 @@ impl WorkspaceRecommendationEngineService {
                     lifecycle_presented_at: None,
                     lifecycle_resolved_at: None,
                     lifecycle_resolution_type: None,
+                    explanation: None,
                     authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
@@ -563,6 +574,7 @@ impl WorkspaceRecommendationEngineService {
                     lifecycle_presented_at: None,
                     lifecycle_resolved_at: None,
                     lifecycle_resolution_type: None,
+                    explanation: None,
                     authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
@@ -681,6 +693,7 @@ impl WorkspaceRecommendationEngineService {
                 lifecycle_presented_at: None,
                 lifecycle_resolved_at: None,
                 lifecycle_resolution_type: None,
+                explanation: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
             };
             crate::services::WorkspacePatternService::audit_used_for_recommendation(
@@ -770,6 +783,7 @@ impl WorkspaceRecommendationEngineService {
                 lifecycle_presented_at: None,
                 lifecycle_resolved_at: None,
                 lifecycle_resolution_type: None,
+                explanation: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
             });
         }
@@ -912,6 +926,7 @@ impl WorkspaceRecommendationEngineService {
                     ),
                 });
             }
+            Self::attach_explanation_views(&mut state);
         }
         Ok(state)
     }
@@ -1223,7 +1238,29 @@ impl WorkspaceRecommendationEngineService {
                 overlay.apply_to_item(item);
             }
         }
+        Self::attach_explanation_views(&mut state);
         Ok(state)
+    }
+
+    /// Project structured explanation views — Experience traces as provenance only.
+    fn attach_explanation_views(state: &mut WorkspaceRecommendationEngineState) {
+        for item in &mut state.candidates {
+            let mut view = RecommendationExplanationView::from_item(item);
+            if !item.attention_reasons.is_empty() {
+                let keys: Vec<String> = item
+                    .attention_reasons
+                    .iter()
+                    .map(|reason| {
+                        resolve_attention_reason_traced(reason, Some("recommendation_explanation"))
+                            .resolver_path
+                            .match_key
+                    })
+                    .collect();
+                view = view.with_experience_trace_match_keys(keys);
+            }
+            debug_assert_eq!(view.authority_effect, RecommendationExplanationView::AUTHORITY_EFFECT_NONE);
+            item.explanation = Some(view);
+        }
     }
 
     fn new_available_overlay(

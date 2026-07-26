@@ -626,6 +626,102 @@ fn assert_cannot_execute(result: Result<(), KernelError>) {
     }
 }
 
+/// CASE 19 — Explanation views are non-authoritative and grounded in evidence/keys.
+#[test]
+fn case19_explanation_views_are_non_authoritative() {
+    use workspace_domain::RecommendationProvenance;
+
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let (ws, _) = seed(&kernel);
+    let state = CommandHandler::generate_workspace_recommendation_engine(
+        &kernel,
+        ActorContext::local_user(),
+        IntentContext::user_request(),
+        ws,
+    )
+    .unwrap();
+    assert!(!state.candidates.is_empty());
+    for candidate in &state.candidates {
+        let view = candidate
+            .explanation
+            .as_ref()
+            .expect("explanation view projected");
+        assert_eq!(view.authority_effect, "none");
+        assert_eq!(candidate.authority_effect, "none");
+        assert_eq!(view.why_suggested, candidate.reason);
+        assert!(!view.lifecycle_note.is_empty());
+        assert_eq!(view.evidence_summaries.len(), candidate.evidence.len());
+        // Catalog keys only — no free-form CoT field on the view.
+        assert_eq!(
+            view.explanation_keys.len(),
+            candidate.attention_reasons.len()
+        );
+        let provenance = RecommendationProvenance::from_recommendation_item(candidate);
+        assert_eq!(provenance.explanation_keys, view.explanation_keys);
+        assert_eq!(provenance.source_evidence, candidate.evidence);
+    }
+    assert_cannot_execute(CommandHandler::workspace_recommendation_engine_attempt_execute());
+}
+
+/// CASE 20 — Provenance immutable across lifecycle; terminal stays terminal; no handoff merge.
+#[test]
+fn case20_provenance_immutable_and_terminal_stays_terminal() {
+    use workspace_domain::RecommendationProvenance;
+
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let (ws, _) = seed(&kernel);
+    let local = ActorContext::local_user();
+    let intent = IntentContext::user_request();
+    let state = CommandHandler::generate_workspace_recommendation_engine(
+        &kernel,
+        local.clone(),
+        intent.clone(),
+        ws.clone(),
+    )
+    .unwrap();
+    let id = state.candidates[0].id.clone();
+    let before = RecommendationProvenance::from_recommendation_item(&state.candidates[0]);
+    let before_evidence = state.candidates[0].evidence.clone();
+    let before_reasons = state.candidates[0].attention_reasons.clone();
+
+    CommandHandler::accept_recommendation(
+        &kernel,
+        local.clone(),
+        intent.clone(),
+        ws.clone(),
+        id.clone(),
+    )
+    .unwrap();
+
+    let after = CommandHandler::generate_workspace_recommendation_engine(
+        &kernel,
+        local,
+        intent,
+        ws,
+    )
+    .unwrap();
+    let item = after
+        .candidates
+        .iter()
+        .find(|c| c.id == id)
+        .expect("accepted candidate retained in full snapshot");
+    assert_eq!(item.lifecycle_state.as_deref(), Some("accepted"));
+    assert!(!item.is_active_lifecycle());
+    assert_eq!(item.evidence, before_evidence);
+    assert_eq!(item.attention_reasons, before_reasons);
+    let after_prov = RecommendationProvenance::from_recommendation_item(item);
+    assert_eq!(after_prov.source_evidence, before.source_evidence);
+    assert_eq!(after_prov.reasoning_origins, before.reasoning_origins);
+    assert_eq!(after_prov.explanation_keys, before.explanation_keys);
+    let view = item.explanation.as_ref().expect("explanation after accept");
+    assert_eq!(view.authority_effect, "none");
+    assert!(view.lifecycle_note.to_lowercase().contains("decision record"));
+    // Recommendation accept must not imply Decision Engine handoff.
+    assert!(!view.lifecycle_note.to_lowercase().contains("planner"));
+    assert_cannot_execute(CommandHandler::workspace_recommendation_engine_attempt_execute());
+    assert_cannot_execute(CommandHandler::decision_engine_attempt_execute());
+}
+
 /// CASE 16 — Open overlays whose source vanished expire with an outcome (no execute).
 #[test]
 fn case16_orphan_overlays_expire_on_regenerate() {

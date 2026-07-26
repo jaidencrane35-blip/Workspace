@@ -102,6 +102,101 @@ pub struct RecommendationRelationship {
     pub evidence: Vec<String>,
 }
 
+/// Structured, non-authoritative explanation for Operator / Work surfaces (Sprint 202).
+///
+/// Grounds "why this recommendation is shown" in evidence refs, catalog explanation
+/// keys, lifecycle continuity, and optional Experience match keys.
+/// Never chain-of-thought, never a capability grant, never an execution path.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RecommendationExplanationView {
+    pub why_suggested: String,
+    pub impact: String,
+    pub confidence: String,
+    pub lifecycle_state: String,
+    pub lifecycle_note: String,
+    pub source_domains: Vec<String>,
+    pub evidence_summaries: Vec<String>,
+    pub evidence_refs: Vec<String>,
+    /// Catalog keys for Experience translation — not internal reasoning text.
+    pub explanation_keys: Vec<String>,
+    /// Optional Experience resolver match keys (evidence/provenance only).
+    pub experience_trace_match_keys: Vec<String>,
+    pub related_attention_id: Option<String>,
+    pub related_task_id: Option<String>,
+    pub related_decision_id: Option<String>,
+    pub continuity_fingerprint: String,
+    pub authority_effect: String,
+}
+
+impl RecommendationExplanationView {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+
+    pub fn from_item(item: &RecommendationItem) -> Self {
+        let lifecycle_state = item
+            .lifecycle_state
+            .clone()
+            .unwrap_or_else(|| "available".into());
+        let mut source_domains: Vec<String> = item
+            .evidence
+            .iter()
+            .map(|e| e.source_model.clone())
+            .collect();
+        source_domains.sort();
+        source_domains.dedup();
+        let explanation_keys: Vec<String> = item
+            .attention_reasons
+            .iter()
+            .map(|r| r.explanation_key.clone())
+            .collect();
+        Self {
+            why_suggested: item.reason.clone(),
+            impact: item.impact.clone(),
+            confidence: item.confidence.as_str().into(),
+            lifecycle_note: lifecycle_surface_note(
+                &lifecycle_state,
+                item.lifecycle_resolution_type.as_deref(),
+            ),
+            lifecycle_state,
+            source_domains,
+            evidence_summaries: item.evidence.iter().map(|e| e.summary.clone()).collect(),
+            evidence_refs: item.evidence.iter().map(|e| e.source_ref.clone()).collect(),
+            explanation_keys,
+            experience_trace_match_keys: Vec::new(),
+            related_attention_id: item.related_attention_id.clone(),
+            related_task_id: item.related_task_id.clone(),
+            related_decision_id: item.related_decision_id.clone(),
+            continuity_fingerprint: item.continuity_fingerprint(),
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        }
+    }
+
+    pub fn with_experience_trace_match_keys(mut self, keys: Vec<String>) -> Self {
+        self.experience_trace_match_keys = keys;
+        self
+    }
+}
+
+fn lifecycle_surface_note(state: &str, resolution: Option<&str>) -> String {
+    match state {
+        "created" => "Created — not yet available for review.".into(),
+        "available" => "Available for review — proposal only; does not execute.".into(),
+        "presented" => "Presented for human review — still a proposal.".into(),
+        "accepted" => {
+            "Accepted as a human decision record only — does not execute or grant authority."
+                .into()
+        }
+        "rejected" => "Rejected by human — valid outcome, not a system failure.".into(),
+        "expired" => "Expired — source no longer present or continuity ended.".into(),
+        "superseded" => "Superseded — replaced by newer content for the same identity.".into(),
+        other => format!(
+            "Lifecycle '{other}'{}",
+            resolution
+                .map(|r| format!(" ({r})"))
+                .unwrap_or_default()
+        ),
+    }
+}
+
 /// One typed next-step suggestion (not an instruction).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RecommendationItem {
@@ -132,6 +227,9 @@ pub struct RecommendationItem {
     pub lifecycle_resolved_at: Option<String>,
     #[serde(default)]
     pub lifecycle_resolution_type: Option<String>,
+    /// Structured surface explanation (Sprint 202+) — None until projected.
+    #[serde(default)]
+    pub explanation: Option<RecommendationExplanationView>,
     pub authority_effect: String,
 }
 

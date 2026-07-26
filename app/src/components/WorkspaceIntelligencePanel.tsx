@@ -4,6 +4,10 @@ import {
   DecisionReasonList,
   DisplayReasonList,
 } from "./DisplayReasonList";
+import {
+  isActiveRecommendation,
+  RecommendationExplanationBlock,
+} from "./RecommendationExplanationView";
 import type {
   AutomationContract,
   AutomationIntentProposal,
@@ -2316,9 +2320,10 @@ export function WorkspaceIntelligencePanel({
         <p className="muted">
           What might help next — suggestions grounded in Attention, Continuity,
           Evolution, Purpose, Task Graph, Composition, Decision Queue, and
-          Environment. Present / Accept / Reject record human decisions only —
-          never execute or grant authority. Distinct from Decision Engine
-          accept/handoff.
+          Environment. Explanation shows why a suggestion is shown (evidence,
+          lifecycle, Experience catalog keys). Present / Accept / Reject record
+          human decisions only — never execute. Distinct from Decision Engine
+          accept/handoff below.
         </p>
         <div className="row">
           <button
@@ -2346,48 +2351,37 @@ export function WorkspaceIntelligencePanel({
             <p>{recommendationEngine.summary}</p>
             <p className="muted">{recommendationEngine.explanation}</p>
             <p className="muted">
-              {recommendationEngine.candidate_count} candidate(s) · authority:{" "}
-              {recommendationEngine.authority_effect}
+              Active{" "}
+              {
+                recommendationEngine.candidates.filter(isActiveRecommendation)
+                  .length
+              }{" "}
+              · history{" "}
+              {
+                recommendationEngine.candidates.filter(
+                  (c) => !isActiveRecommendation(c),
+                ).length
+              }{" "}
+              · authority: {recommendationEngine.authority_effect}
             </p>
-            {recommendationEngine.candidates.length > 0 && (
+            {recommendationEngine.candidates.filter(isActiveRecommendation)
+              .length > 0 && (
               <ul className="intelligence-list">
-                {recommendationEngine.candidates.slice(0, 6).map((item) => {
-                  const resolved =
-                    item.lifecycle_state === "accepted" ||
-                    item.lifecycle_state === "rejected" ||
-                    item.lifecycle_state === "expired" ||
-                    item.lifecycle_state === "superseded";
-                  return (
+                {recommendationEngine.candidates
+                  .filter(isActiveRecommendation)
+                  .slice(0, 6)
+                  .map((item) => (
                     <li key={item.id}>
                       <strong>
                         [{item.kind}] {item.title}
                       </strong>
-                      <div className="muted">
-                        Lifecycle: {item.lifecycle_state ?? "available"}
-                        {item.lifecycle_resolution_type
-                          ? ` · ${item.lifecycle_resolution_type}`
-                          : ""}
-                      </div>
-                      <div className="muted">
-                        {item.attention_reasons.length === 0 ? (
-                          <>Why: {item.reason} · </>
-                        ) : null}
-                        Impact: {item.impact} · Confidence: {item.confidence}
-                      </div>
-                      {item.attention_reasons.length > 0 ? (
-                        <DisplayReasonList reasons={item.attention_reasons} />
-                      ) : null}
-                      <div className="muted">
-                        Evidence:{" "}
-                        {item.evidence.map((e) => e.summary).join(" · ")}
-                      </div>
+                      <RecommendationExplanationBlock item={item} />
                       <div className="row">
                         <button
                           type="button"
                           disabled={
                             busy ||
                             !workspace ||
-                            resolved ||
                             item.lifecycle_state === "presented"
                           }
                           onClick={() =>
@@ -2410,7 +2404,7 @@ export function WorkspaceIntelligencePanel({
                         </button>
                         <button
                           type="button"
-                          disabled={busy || !workspace || resolved}
+                          disabled={busy || !workspace}
                           onClick={() =>
                             void run(
                               "Recommendation accepted (decision only)",
@@ -2434,7 +2428,7 @@ export function WorkspaceIntelligencePanel({
                         </button>
                         <button
                           type="button"
-                          disabled={busy || !workspace || resolved}
+                          disabled={busy || !workspace}
                           onClick={() =>
                             void run(
                               "Recommendation rejected (decision only)",
@@ -2458,9 +2452,28 @@ export function WorkspaceIntelligencePanel({
                         </button>
                       </div>
                     </li>
-                  );
-                })}
+                  ))}
               </ul>
+            )}
+            {recommendationEngine.candidates.some(
+              (c) => !isActiveRecommendation(c),
+            ) && (
+              <>
+                <p className="muted">History (terminal — not actionable)</p>
+                <ul className="intelligence-list">
+                  {recommendationEngine.candidates
+                    .filter((c) => !isActiveRecommendation(c))
+                    .slice(0, 3)
+                    .map((item) => (
+                      <li key={item.id}>
+                        <strong>
+                          [{item.lifecycle_state}] {item.title}
+                        </strong>
+                        <RecommendationExplanationBlock item={item} />
+                      </li>
+                    ))}
+                </ul>
+              </>
             )}
           </>
         ) : (

@@ -2127,6 +2127,25 @@ export interface RecommendationRelationship {
   evidence: string[];
 }
 
+/** Structured, non-authoritative "why shown" view — never grants authority. */
+export interface RecommendationExplanationView {
+  why_suggested: string;
+  impact: string;
+  confidence: string;
+  lifecycle_state: string;
+  lifecycle_note: string;
+  source_domains: string[];
+  evidence_summaries: string[];
+  evidence_refs: string[];
+  explanation_keys: string[];
+  experience_trace_match_keys: string[];
+  related_attention_id: string | null;
+  related_task_id: string | null;
+  related_decision_id: string | null;
+  continuity_fingerprint: string;
+  authority_effect: string;
+}
+
 export interface RecommendationItem {
   id: string;
   kind: RecommendationKind;
@@ -2146,6 +2165,8 @@ export interface RecommendationItem {
   lifecycle_presented_at?: string | null;
   lifecycle_resolved_at?: string | null;
   lifecycle_resolution_type?: string | null;
+  /** Structured surface explanation — null until projected. */
+  explanation?: RecommendationExplanationView | null;
   authority_effect: string;
 }
 

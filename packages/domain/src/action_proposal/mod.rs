@@ -4051,7 +4051,8 @@ mod tests {
             lifecycle_presented_at: None,
             lifecycle_resolved_at: None,
             lifecycle_resolution_type: None,
-            authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
+            explanation: None,
+                authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
         }
     }
 

@@ -273,9 +273,9 @@ pub use workspace_evolution::{
 pub use workspace_recommendation::{
     build_recommendation_engine_summary, recommendation_engine_now_rfc3339,
     validate_recommendation_engine_workspace_id, RecommendationConfidence, RecommendationEvidence,
-    RecommendationItem, RecommendationKind, RecommendationRelationship,
-    WorkspaceRecommendationEngineError, WorkspaceRecommendationEngineState,
-    WorkspaceRecommendationEngineSummary,
+    RecommendationExplanationView, RecommendationItem, RecommendationKind,
+    RecommendationRelationship, WorkspaceRecommendationEngineError,
+    WorkspaceRecommendationEngineState, WorkspaceRecommendationEngineSummary,
 };
 pub use workspace_operating_state::{
     build_operating_state_summary, operating_state_now_rfc3339,

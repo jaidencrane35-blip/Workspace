@@ -92,7 +92,8 @@ Terminal for further progress: Accepted, Rejected, Expired, Superseded
 | Transition validation | Domain (`allows_transition` / `transition`) |
 | Transition actor | Recorded as actor id metadata — **not** a capability grant |
 | Persistence (today) | `recommendation_lifecycle` overlay keyed by `(workspace_id, native_id)` — payloads remain regenerable |
-| Surfaces | Operator Console + Work Intelligence Present / Accept / Reject (decision records only) |
+| Surfaces | Operator Console + Work Intelligence Present / Accept / Reject (decision records only); `RecommendationExplanationView` explains why shown |
+| Explanation | Structured evidence / keys / lifecycle notes — never CoT, never authority, never Decision Engine handoff |
 
 ### Lifecycle metadata (mutable)
 
