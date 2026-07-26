@@ -44,6 +44,10 @@ LocalUser reviewer required; self-approval forbidden; approve ≠ apply ≠ Gate
 [WORKSPACE-CONTROLLED-CHANGE.md](./WORKSPACE-CONTROLLED-CHANGE.md).
 BehaviourVersion drafts + ChangeEvaluation; no runtime cognition mutation.
 
+**Sprint 143:** Governance ledger & publication contract —
+[WORKSPACE-GOVERNANCE-LEDGER.md](./WORKSPACE-GOVERNANCE-LEDGER.md).
+Full chain traceability; publish requests never activate runtime.
+
 ---
 
 ## Ownership

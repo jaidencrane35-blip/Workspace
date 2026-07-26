@@ -16,8 +16,10 @@ BehaviourVersion (Draft — not runtime-active)
     ↓
 ChangeEvaluation (observational)
     ↓
-[future] Versioned Behaviour publish via governed Intent → Gateway
+[future] Governance Ledger + PublishRequest (no runtime activation)
 ```
+
+See [WORKSPACE-GOVERNANCE-LEDGER.md](./WORKSPACE-GOVERNANCE-LEDGER.md) (Sprint 143).
 
 Forbidden:
 
@@ -129,6 +131,7 @@ reasoning origins.
 
 ## Related docs
 
+- [WORKSPACE-GOVERNANCE-LEDGER.md](./WORKSPACE-GOVERNANCE-LEDGER.md)
 - [WORKSPACE-ADAPTATION-REVIEW.md](./WORKSPACE-ADAPTATION-REVIEW.md)
 - [WORKSPACE-ADAPTATION-GOVERNANCE.md](./WORKSPACE-ADAPTATION-GOVERNANCE.md)
 - [WORKSPACE-ADAPTATION-PROPOSAL.md](./WORKSPACE-ADAPTATION-PROPOSAL.md)

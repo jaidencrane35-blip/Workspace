@@ -50,6 +50,15 @@ pub enum ActionProposalError {
     #[error("behaviour version publish / runtime apply is future-only")]
     BehaviourVersionPublishNotImplemented,
 
+    #[error("publication requires prior approval and evaluation")]
+    PublicationRequiresApproval,
+
+    #[error("governance ledger cannot grant execution authority")]
+    GovernanceCannotGrantAuthority,
+
+    #[error("publication activation is future-only; runtime unchanged")]
+    PublicationActivationNotImplemented,
+
     #[error(transparent)]
     Domain(#[from] DomainError),
 }
@@ -900,6 +909,310 @@ impl ChangeEvaluation {
     }
 }
 
+/// Actor references on a governance ledger entry (not capability grants).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct GovernanceActorRefs {
+    pub proposer_actor_id: String,
+    pub reviewer_actor_id: Option<String>,
+    pub publisher_actor_id: Option<String>,
+}
+
+/// Timestamps for the governance chain (architecture ledger).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct GovernanceTimestamps {
+    pub proposed_at: Option<String>,
+    pub reviewed_at: Option<String>,
+    pub approved_at: Option<String>,
+    pub changed_at: Option<String>,
+    pub evaluated_at: Option<String>,
+    pub publish_requested_at: Option<String>,
+    /// Always `None` until a future activation sprint — never set by Sprint 143.
+    pub published_at: Option<String>,
+}
+
+/// Complete historical governance traceability record (Sprint 143).
+///
+/// Links proposal → review → approval → change → version → evaluation → rollback.
+/// Never grants execution authority.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct GovernanceRecord {
+    pub id: String,
+    pub proposal_reference: String,
+    pub review_reference: Option<String>,
+    pub approval_reference: Option<String>,
+    pub change_reference: Option<String>,
+    pub version_reference: Option<String>,
+    pub evaluation_reference: Option<String>,
+    pub rollback_reference: Option<String>,
+    pub actors: GovernanceActorRefs,
+    pub timestamps: GovernanceTimestamps,
+    pub provenance: RecommendationProvenance,
+    pub authority_effect: String,
+}
+
+impl GovernanceRecord {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+
+    pub fn from_adaptation_chain(
+        proposal: &OutcomeAdaptationProposal,
+        surface: Option<&ControlledChangeSurface>,
+        version: Option<&BehaviourVersion>,
+        evaluation: Option<&ChangeEvaluation>,
+        rollback_version: Option<&BehaviourVersion>,
+    ) -> Self {
+        let approved_at = proposal.decided_at.clone();
+        let review_reference = proposal
+            .audit_events
+            .iter()
+            .find(|e| e.action == "submitted_for_review")
+            .map(|e| format!("review:{}:{}", proposal.id, e.at));
+        let approval_reference = if proposal.review_status.is_approved() {
+            Some(format!("approval:{}", proposal.id))
+        } else {
+            None
+        };
+        Self {
+            id: format!("governance:{}", proposal.id),
+            proposal_reference: proposal.id.clone(),
+            review_reference,
+            approval_reference,
+            change_reference: surface.map(|s| s.originating_proposal_id.clone()),
+            version_reference: version.map(|v| v.id.clone()),
+            evaluation_reference: evaluation.map(|e| e.id.clone()),
+            rollback_reference: rollback_version.map(|v| v.id.clone()),
+            actors: GovernanceActorRefs {
+                proposer_actor_id: proposal.proposed_by_actor_id.clone(),
+                reviewer_actor_id: proposal.reviewer.as_ref().map(|r| r.actor_id.clone()),
+                publisher_actor_id: None,
+            },
+            timestamps: GovernanceTimestamps {
+                proposed_at: proposal
+                    .audit_events
+                    .first()
+                    .map(|e| e.at.clone())
+                    .or_else(|| Some("proposed".into())),
+                reviewed_at: proposal
+                    .audit_events
+                    .iter()
+                    .find(|e| e.action == "submitted_for_review")
+                    .map(|e| e.at.clone()),
+                approved_at: approved_at.clone(),
+                changed_at: surface.and_then(|s| s.approved_at.clone()),
+                evaluated_at: evaluation.map(|_| approved_at.clone().unwrap_or_else(|| "evaluated".into())),
+                publish_requested_at: None,
+                published_at: None,
+            },
+            provenance: proposal.provenance.clone(),
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        }
+    }
+
+    pub fn with_publish_request(mut self, request: &PublishRequest, at: impl Into<String>) -> Self {
+        self.timestamps.publish_requested_at = Some(at.into());
+        self.actors.publisher_actor_id = Some(request.requested_by.actor_id.clone());
+        self
+    }
+
+    pub fn retains_provenance(&self, expected: &RecommendationProvenance) -> bool {
+        &self.provenance == expected
+    }
+
+    pub fn may_grant_execution_authority(&self) -> bool {
+        false
+    }
+
+    pub fn may_bypass_permission_gateway(&self) -> bool {
+        false
+    }
+
+    pub fn attempt_grant_execution_authority() -> Result<(), ActionProposalError> {
+        Err(ActionProposalError::GovernanceCannotGrantAuthority)
+    }
+
+    pub fn attempt_execute() -> Result<(), ActionProposalError> {
+        Err(ActionProposalError::CannotExecute)
+    }
+}
+
+/// Status of an architecture-only publish request (Sprint 143).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum PublishRequestStatus {
+    Proposed,
+    AwaitingGovernanceReview,
+    ApprovedForPublish,
+    Rejected,
+    /// Label only — does not activate runtime behaviour.
+    PublishedRecorded,
+}
+
+impl PublishRequestStatus {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Proposed => "proposed",
+            Self::AwaitingGovernanceReview => "awaiting_governance_review",
+            Self::ApprovedForPublish => "approved_for_publish",
+            Self::Rejected => "rejected",
+            Self::PublishedRecorded => "published_recorded",
+        }
+    }
+
+    pub fn allows_transition(self, to: Self) -> bool {
+        matches!(
+            (self, to),
+            (Self::Proposed, Self::AwaitingGovernanceReview)
+                | (Self::Proposed, Self::Rejected)
+                | (Self::AwaitingGovernanceReview, Self::ApprovedForPublish)
+                | (Self::AwaitingGovernanceReview, Self::Rejected)
+        )
+    }
+}
+
+/// Architecture: Evaluated BehaviourVersion → PublishRequest → Governance Review → Published.
+///
+/// Never activates runtime cognition or grants Gateway authority.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PublishRequest {
+    pub id: String,
+    pub behaviour_version_id: String,
+    pub evaluation_reference: String,
+    pub governance_record_id: String,
+    pub status: PublishRequestStatus,
+    pub requested_by: AdaptationReviewerIdentity,
+    pub provenance: RecommendationProvenance,
+    pub authority_effect: String,
+}
+
+impl PublishRequest {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+
+    /// Build a publish request only when governance shows approval and an evaluation exists.
+    pub fn from_evaluated_version(
+        version: &BehaviourVersion,
+        evaluation: &ChangeEvaluation,
+        governance: &GovernanceRecord,
+        requested_by: AdaptationReviewerIdentity,
+    ) -> Result<Self, ActionProposalError> {
+        if governance.approval_reference.is_none() {
+            return Err(ActionProposalError::PublicationRequiresApproval);
+        }
+        if governance.evaluation_reference.as_deref() != Some(evaluation.id.as_str()) {
+            return Err(ActionProposalError::PublicationRequiresApproval);
+        }
+        if evaluation.change_reference != version.id {
+            return Err(ActionProposalError::PublicationRequiresApproval);
+        }
+        if !requested_by.is_local_user() {
+            return Err(ActionProposalError::AdaptationReviewerRequired);
+        }
+        if version.lifecycle != BehaviourVersionLifecycle::Draft {
+            return Err(ActionProposalError::BehaviourVersionPublishNotImplemented);
+        }
+        Ok(Self {
+            id: format!("publish_request:{}", version.id),
+            behaviour_version_id: version.id.clone(),
+            evaluation_reference: evaluation.id.clone(),
+            governance_record_id: governance.id.clone(),
+            status: PublishRequestStatus::Proposed,
+            requested_by,
+            provenance: version.provenance.clone(),
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        })
+    }
+
+    pub fn submit_for_governance_review(&mut self) -> Result<(), ActionProposalError> {
+        self.transition(PublishRequestStatus::AwaitingGovernanceReview)
+    }
+
+    pub fn approve_for_publish(
+        &mut self,
+        reviewer: &AdaptationReviewerIdentity,
+    ) -> Result<(), ActionProposalError> {
+        if !reviewer.is_local_user() {
+            return Err(ActionProposalError::AdaptationReviewerRequired);
+        }
+        self.transition(PublishRequestStatus::ApprovedForPublish)?;
+        assert_eq!(self.authority_effect, Self::AUTHORITY_EFFECT_NONE);
+        Ok(())
+    }
+
+    pub fn reject_publish(
+        &mut self,
+        reviewer: &AdaptationReviewerIdentity,
+    ) -> Result<(), ActionProposalError> {
+        if !reviewer.is_local_user() {
+            return Err(ActionProposalError::AdaptationReviewerRequired);
+        }
+        self.transition(PublishRequestStatus::Rejected)
+    }
+
+    fn transition(&mut self, to: PublishRequestStatus) -> Result<(), ActionProposalError> {
+        if !self.status.allows_transition(to) {
+            return Err(ActionProposalError::InvalidLifecycleTransition {
+                from: self.status.as_str().into(),
+                to: to.as_str().into(),
+            });
+        }
+        // PublishedRecorded / activation is never reachable via transition.
+        if to == PublishRequestStatus::PublishedRecorded {
+            return Err(ActionProposalError::PublicationActivationNotImplemented);
+        }
+        self.status = to;
+        Ok(())
+    }
+
+    /// Hard-fail — publication does not activate runtime behaviour in Sprint 143.
+    pub fn attempt_activate_published_version(&self) -> Result<(), ActionProposalError> {
+        Err(ActionProposalError::PublicationActivationNotImplemented)
+    }
+
+    pub fn attempt_record_published_without_approval() -> Result<(), ActionProposalError> {
+        Err(ActionProposalError::PublicationRequiresApproval)
+    }
+
+    pub fn may_grant_execution_authority(&self) -> bool {
+        false
+    }
+
+    pub fn may_bypass_permission_gateway(&self) -> bool {
+        false
+    }
+
+    pub fn attempt_grant_execution_authority() -> Result<(), ActionProposalError> {
+        Err(ActionProposalError::GovernanceCannotGrantAuthority)
+    }
+
+    pub fn attempt_execute() -> Result<(), ActionProposalError> {
+        Err(ActionProposalError::CannotExecute)
+    }
+}
+
+/// Architecture-only published version marker — cannot be created in Sprint 143.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PublishedVersionRecord {
+    pub id: String,
+    pub behaviour_version_id: String,
+    pub publish_request_id: String,
+    pub governance_record_id: String,
+    pub authority_effect: String,
+}
+
+impl PublishedVersionRecord {
+    pub fn attempt_from_publish_request(
+        _request: &PublishRequest,
+    ) -> Result<Self, ActionProposalError> {
+        Err(ActionProposalError::PublicationActivationNotImplemented)
+    }
+
+    pub fn may_activate_runtime(&self) -> bool {
+        false
+    }
+
+    pub fn may_grant_execution_authority(&self) -> bool {
+        false
+    }
+}
+
 /// Future boundary: Approved Adaptation → Controlled Change Surface → Versioned Behaviour.
 ///
 /// Architecture only — never mutates runtime cognition. Sprint 142 expands required fields.
@@ -1694,5 +2007,74 @@ mod tests {
         assert!(!surface.may_bypass_permission_gateway());
         assert!(!version.may_bypass_permission_gateway());
         assert!(!evaluation.may_bypass_permission_gateway());
+    }
+
+    #[test]
+    fn governance_ledger_and_publish_require_approval_without_authority() {
+        let item = sample_item();
+        let mut record = RecommendationGovernanceRecord::from_recommendation_item(&item, "t0");
+        record
+            .transition(RecommendationLifecycleState::Available, "t1", None)
+            .unwrap();
+        record
+            .transition(RecommendationLifecycleState::Presented, "t2", None)
+            .unwrap();
+        record.accept("t3", None).unwrap();
+        let outcome = record.record_outcome("t4").unwrap();
+        let provenance = outcome.provenance.clone();
+        let mut proposal = outcome.to_adaptation_proposal(
+            "presentation",
+            "Prefer structured DisplayReason",
+            "Clearer rationale",
+        );
+        proposal.require_review().unwrap();
+        // Unapproved: no publish.
+        let incomplete = GovernanceRecord::from_adaptation_chain(
+            &proposal, None, None, None, None,
+        );
+        assert!(incomplete.approval_reference.is_none());
+        proposal
+            .approve(
+                AdaptationReviewerIdentity::local_user("local_user"),
+                "t-ok",
+            )
+            .unwrap();
+        let surface = ControlledChangeSurface::from_approved_proposal(&proposal).unwrap();
+        let version = surface.to_behaviour_version_draft().unwrap();
+        let rollback = version.prepare_rollback_draft("safer").unwrap();
+        let evaluation = ChangeEvaluation::from_behaviour_version(
+            &version,
+            vec!["clearer display".into()],
+            vec!["users understand".into()],
+            Some("rollback if confusion".into()),
+        );
+        let governance = GovernanceRecord::from_adaptation_chain(
+            &proposal,
+            Some(&surface),
+            Some(&version),
+            Some(&evaluation),
+            Some(&rollback),
+        );
+        assert!(governance.retains_provenance(&provenance));
+        assert_eq!(governance.rollback_reference.as_deref(), Some(rollback.id.as_str()));
+        assert!(!governance.may_grant_execution_authority());
+        assert!(GovernanceRecord::attempt_grant_execution_authority().is_err());
+        let mut publish = PublishRequest::from_evaluated_version(
+            &version,
+            &evaluation,
+            &governance,
+            AdaptationReviewerIdentity::local_user("local_user"),
+        )
+        .unwrap();
+        publish.submit_for_governance_review().unwrap();
+        publish
+            .approve_for_publish(&AdaptationReviewerIdentity::local_user("local_user"))
+            .unwrap();
+        assert!(publish.attempt_activate_published_version().is_err());
+        assert!(PublishedVersionRecord::attempt_from_publish_request(&publish).is_err());
+        assert!(PublishRequest::attempt_record_published_without_approval().is_err());
+        assert!(!publish.may_grant_execution_authority());
+        assert_eq!(publish.provenance, provenance);
+        assert_eq!(rollback.provenance, provenance);
     }
 }

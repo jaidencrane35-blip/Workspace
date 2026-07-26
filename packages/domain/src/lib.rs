@@ -77,11 +77,12 @@ pub use action_proposal::{
     ActionProposal, ActionProposalError, ActionProposalRisk, AdaptationReviewAuditEvent,
     AdaptationReviewerIdentity, BehaviourVersion, BehaviourVersionLifecycle, ChangeEvaluation,
     ChangeRollbackMetadata, ControlledChangeAuditMetadata, ControlledChangeSurface,
-    OutcomeAdaptationProposal, OutcomeAdaptationReviewStatus, RecommendationFamily,
-    RecommendationGovernanceRecord, RecommendationIdentity, RecommendationLifecycle,
-    RecommendationLifecycleState, RecommendationOutcome, RecommendationOutcomeQuality,
-    RecommendationProvenance, RecommendationResolutionType, RecommendationResultKind,
-    RecommendationUserDecision,
+    GovernanceActorRefs, GovernanceRecord, GovernanceTimestamps, OutcomeAdaptationProposal,
+    OutcomeAdaptationReviewStatus, PublishRequest, PublishRequestStatus, PublishedVersionRecord,
+    RecommendationFamily, RecommendationGovernanceRecord, RecommendationIdentity,
+    RecommendationLifecycle, RecommendationLifecycleState, RecommendationOutcome,
+    RecommendationOutcomeQuality, RecommendationProvenance, RecommendationResolutionType,
+    RecommendationResultKind, RecommendationUserDecision,
 };
 pub use actor::{
     Actor, ActorContext, ActorMetadata, ActorType, LOCAL_USER_ACTOR_ID, SYSTEM_ACTOR_ID,
