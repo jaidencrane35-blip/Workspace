@@ -241,6 +241,13 @@ impl Capability {
             scope: CapabilityScope::WorkContext,
         }
     }
+
+    pub fn desktop_read() -> Self {
+        Self {
+            id: CapabilityId::new("desktop.read").expect("desktop.read is valid"),
+            scope: CapabilityScope::System,
+        }
+    }
 }
 
 impl CapabilitySet {
@@ -301,6 +308,7 @@ impl CapabilitySet {
             .with_capability(&Capability::personalization_write())
             .with_capability(&Capability::work_context_read())
             .with_capability(&Capability::work_context_write())
+            .with_capability(&Capability::desktop_read())
     }
 
     /// Capabilities attributed to system lifecycle operations.

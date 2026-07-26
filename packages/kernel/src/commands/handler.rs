@@ -49,6 +49,10 @@ use crate::commands::get_ai_evaluation_history::GetAiEvaluationHistory;
 use crate::commands::get_actor_capabilities::GetActorCapabilities;
 use crate::commands::get_audit_history::GetAuditHistory;
 use crate::commands::get_permission_approvals::GetPermissionApprovals;
+use crate::commands::workspace_observation::{
+    CaptureWorkspaceObservation, GetLatestWorkspaceObservation,
+    GetWorkspaceObservationById,
+};
 use crate::commands::get_desktop_windows::GetDesktopWindows;
 use crate::commands::get_execution_outcomes::GetExecutionOutcomes;
 use crate::commands::get_execution_state::GetExecutionState;
@@ -100,6 +104,7 @@ use crate::services::{
     WorkspaceSessionService, WorkspaceExperienceService, WorkspaceWorkContextService,
     WorkspaceNavigationService, WorkspaceMilestoneService, WorkspaceWorkingStyleService,
     WorkspaceTransitionService, WorkspaceInteractionService, WorkspaceProfileService,
+    WorkspaceObservationCaptureResult, WorkspaceObservationService,
     WorkspaceActivityGraphService,
     WorkspaceAttentionService, WorkspaceContextService, WorkspaceContinuityService,
     WorkspaceIntelligenceService,
@@ -127,7 +132,7 @@ use workspace_domain::{
     WorkspaceInteractionValidation,
     WorkspaceProfile, WorkspaceProfileComparison, WorkspaceProfileMemberInput,
     WorkspaceProfileState, WorkspaceProfileStateComparison, WorkspaceProfileStatus,
-    WorkspaceProfileValidation,
+    WorkspaceProfileValidation, WorkspaceObservationSnapshot,
     WorkspaceTask, WorkspaceTaskPriority, WorkspaceTaskStatus,
     WorkspaceIntelligenceComparison, WorkspaceIntelligenceState, AiPlan, AiPlanEvaluationReport,
     AiPlanSubmissionResult,
@@ -409,7 +414,7 @@ impl CommandHandler {
 
             let titles = match environment_override {
                 Some(titles) => titles,
-                None => DesktopWindowService::list_recent(Some(50))?
+                None => DesktopWindowService::list_recent(&kernel.shared_database(), Some(50))?
                     .into_iter()
                     .map(|window| window.title)
                     .filter(|title| !title.trim().is_empty())
@@ -650,7 +655,7 @@ impl CommandHandler {
             )?;
             let titles = match environment_override {
                 Some(titles) => titles,
-                None => DesktopWindowService::list_recent(Some(50))?
+                None => DesktopWindowService::list_recent(&kernel.shared_database(), Some(50))?
                     .into_iter()
                     .map(|window| window.title)
                     .filter(|title| !title.trim().is_empty())
@@ -1818,6 +1823,39 @@ impl CommandHandler {
     ) -> Result<Vec<DesktopWindowSnapshot>> {
         CommandPipeline::new(kernel.command_context(actor, intent))
             .execute_query(GetDesktopWindows::new(limit))
+    }
+
+    pub fn capture_workspace_observation(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+    ) -> Result<WorkspaceObservationCaptureResult> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(CaptureWorkspaceObservation)
+    }
+
+    pub fn get_latest_workspace_observation(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+    ) -> Result<Option<WorkspaceObservationSnapshot>> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetLatestWorkspaceObservation)
+    }
+
+    pub fn get_workspace_observation_by_id(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        pass_id: String,
+    ) -> Result<Option<WorkspaceObservationSnapshot>> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetWorkspaceObservationById::new(pass_id))
+    }
+
+    /// Architecture guard — Observation Layer must never execute.
+    pub fn workspace_observation_attempt_execute() -> Result<()> {
+        WorkspaceObservationService::attempt_execute()
     }
 
     pub fn create_suggestion_intent_request(

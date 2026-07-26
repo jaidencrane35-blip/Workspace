@@ -106,7 +106,7 @@ impl WorkspaceIntelligenceService {
         let full_task_graph = TaskGraphService::generate(db, actor, ws)?;
         let task_graph = full_task_graph.summary_projection(8);
 
-        let windows = DesktopWindowService::list_recent(Some(50)).unwrap_or_default();
+        let windows = DesktopWindowService::list_recent(db, Some(50)).unwrap_or_default();
         let applications = {
             let guard = db
                 .lock()

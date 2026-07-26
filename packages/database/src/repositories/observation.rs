@@ -382,6 +382,17 @@ impl<'a> ObservationWindowIdentityRepository<'a> {
         rows.collect::<std::result::Result<Vec<_>, _>>()
             .map_err(Into::into)
     }
+
+    pub fn list_all(&self) -> Result<Vec<ObservationWindowIdentity>> {
+        let mut stmt = self.db.connection().prepare(
+            "SELECT id, process_id, title_fingerprint, first_seen_at, last_seen_at, last_hwnd, confidence
+             FROM observation_window_identities
+             ORDER BY last_seen_at DESC, id ASC",
+        )?;
+        let rows = stmt.query_map([], map_identity_row)?;
+        rows.collect::<std::result::Result<Vec<_>, _>>()
+            .map_err(Into::into)
+    }
 }
 
 fn bool_to_int(value: bool) -> i32 {

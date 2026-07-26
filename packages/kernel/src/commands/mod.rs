@@ -27,6 +27,7 @@ mod workspace_working_style;
 mod workspace_transition;
 mod workspace_interaction;
 mod workspace_profile;
+mod workspace_observation;
 mod context;
 mod execute_intent_request;
 mod create_suggestion_intent_request;
@@ -137,6 +138,7 @@ mod workspace_working_style_tests;
 mod workspace_transition_tests;
 mod workspace_interaction_tests;
 mod workspace_profile_tests;
+mod workspace_observation_tests;
 #[cfg(test)]
 mod ai_memory_tests;
 #[cfg(test)]
@@ -188,6 +190,10 @@ pub use get_actor_capabilities::GetActorCapabilities;
 pub use get_audit_history::GetAuditHistory;
 pub use get_permission_approvals::GetPermissionApprovals;
 pub use get_desktop_windows::GetDesktopWindows;
+pub use workspace_observation::{
+    CaptureWorkspaceObservation, GateObservationRead, GetLatestWorkspaceObservation,
+    GetWorkspaceObservationById,
+};
 pub use get_execution_outcomes::GetExecutionOutcomes;
 pub use get_execution_state::GetExecutionState;
 pub use get_execution_states::GetExecutionStates;

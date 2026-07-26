@@ -1380,6 +1380,87 @@ export interface TaskGraphSummary {
   authority_effect: string;
 }
 
+export type WindowIdentityConfidence = "high" | "medium" | "low" | "ephemeral";
+
+export interface WorkspaceObservationPass {
+  id: string;
+  captured_at: string;
+  schema_version: number;
+  source: string;
+  foreground_hwnd: string | null;
+  window_count: number;
+  monitor_count: number;
+  duration_ms: number | null;
+  metadata_json: string;
+  authority_effect: string;
+}
+
+export interface ObservedMonitor {
+  id: string;
+  pass_id: string;
+  monitor_index: number;
+  name: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  work_x: number;
+  work_y: number;
+  work_w: number;
+  work_h: number;
+  is_primary: boolean;
+  dpi_scale: number | null;
+  authority_effect: string;
+}
+
+export interface ObservedWindow {
+  id: string;
+  pass_id: string;
+  hwnd: string;
+  stable_window_id: string | null;
+  title: string;
+  process_id: number;
+  process_name: string | null;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  monitor_id: string | null;
+  visible: boolean;
+  minimized: boolean;
+  focused: boolean;
+  z_order: number | null;
+  authority_effect: string;
+}
+
+export interface ObservationWindowIdentity {
+  id: string;
+  process_id: number;
+  title_fingerprint: string;
+  first_seen_at: string;
+  last_seen_at: string;
+  last_hwnd: string;
+  confidence: WindowIdentityConfidence;
+  authority_effect: string;
+}
+
+export interface WorkspaceObservationSnapshot {
+  pass: WorkspaceObservationPass;
+  windows: ObservedWindow[];
+  monitors: ObservedMonitor[];
+  identities: ObservationWindowIdentity[];
+  authority_effect: string;
+}
+
+export interface WorkspaceObservationCaptureResult {
+  snapshot_id: string;
+  captured_at: string;
+  window_count: number;
+  monitor_count: number;
+  identity_count: number;
+  snapshot: WorkspaceObservationSnapshot;
+}
+
 export type EnvironmentWindowState = "open" | "minimized" | "focused" | "unknown";
 
 export interface EnvironmentWindow {

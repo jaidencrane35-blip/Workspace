@@ -32,7 +32,7 @@ impl WorkspaceEnvironmentService {
         workspace_id: impl Into<String>,
     ) -> Result<WorkspaceEnvironmentState> {
         let workspace_id = workspace_id.into();
-        let windows = DesktopWindowService::list_recent(Some(50)).unwrap_or_default();
+        let windows = DesktopWindowService::list_recent(&db, Some(50)).unwrap_or_default();
         let workflow =
             WorkspaceIntentService::get_workflow_context_readonly(db, &workspace_id)?;
         let task_graph = TaskGraphService::generate(db, actor, workspace_id.clone()).ok();

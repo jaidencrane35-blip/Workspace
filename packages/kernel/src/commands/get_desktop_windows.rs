@@ -45,7 +45,7 @@ impl QueryCommand for GetDesktopWindows {
         if ctx.state.lifecycle != LifecycleState::Ready {
             return Err(KernelError::NotReady);
         }
-        DesktopWindowService::list_recent(self.limit)
+        DesktopWindowService::list_recent(&ctx.database, self.limit)
     }
 }
 
