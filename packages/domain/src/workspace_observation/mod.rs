@@ -40,6 +40,9 @@ pub enum WorkspaceObservationError {
     #[error("observation snapshot validation failed: {0}")]
     Invalid(String),
 
+    #[error("observation numeric field overflow: {0}")]
+    NumericOverflow(String),
+
     #[error("observation layer cannot execute, move windows, or authorize")]
     CannotExecute,
 
@@ -218,6 +221,35 @@ impl WorkspaceObservationSnapshot {
             return Err(WorkspaceObservationError::MonitorCountMismatch);
         }
 
+        let monitor_ids: std::collections::HashSet<&str> =
+            self.monitors.iter().map(|monitor| monitor.id.as_str()).collect();
+        let focused_count = self.windows.iter().filter(|window| window.focused).count();
+        if focused_count > 1 {
+            return Err(WorkspaceObservationError::Invalid(
+                "at most one window may be focused".into(),
+            ));
+        }
+        if let Some(foreground) = self.pass.foreground_hwnd.as_deref() {
+            let focused = self.windows.iter().find(|window| window.focused);
+            match focused {
+                Some(window) if window.hwnd != foreground => {
+                    return Err(WorkspaceObservationError::Invalid(
+                        "focused window hwnd does not match foreground_hwnd".into(),
+                    ));
+                }
+                None => {
+                    return Err(WorkspaceObservationError::Invalid(
+                        "foreground_hwnd set but no focused window".into(),
+                    ));
+                }
+                Some(_) => {}
+            }
+        } else if focused_count == 1 {
+            return Err(WorkspaceObservationError::Invalid(
+                "focused window present but foreground_hwnd is missing".into(),
+            ));
+        }
+
         for window in &self.windows {
             if window.pass_id != self.pass.id {
                 return Err(WorkspaceObservationError::WindowPassMismatch);
@@ -230,6 +262,14 @@ impl WorkspaceObservationSnapshot {
                     "window {} has authority",
                     window.id
                 )));
+            }
+            if let Some(monitor_id) = window.monitor_id.as_deref() {
+                if !monitor_ids.contains(monitor_id) {
+                    return Err(WorkspaceObservationError::Invalid(format!(
+                        "window {} references unknown monitor {}",
+                        window.id, monitor_id
+                    )));
+                }
             }
         }
 
@@ -254,8 +294,60 @@ impl WorkspaceObservationSnapshot {
             }
         }
 
+        // Identity linkage is enforced only when identities are present (capture path).
+        // Loaded historical snapshots omit live registry enrichment and may carry
+        // stable_window_id references without embedding identity rows.
+        if !self.identities.is_empty() {
+            let identity_ids: std::collections::HashSet<&str> = self
+                .identities
+                .iter()
+                .map(|identity| identity.id.as_str())
+                .collect();
+            for window in &self.windows {
+                if let Some(stable_id) = window.stable_window_id.as_deref() {
+                    if !identity_ids.contains(stable_id) {
+                        return Err(WorkspaceObservationError::Invalid(format!(
+                            "window {} references unknown identity {}",
+                            window.id, stable_id
+                        )));
+                    }
+                }
+            }
+            for identity in &self.identities {
+                if !self
+                    .windows
+                    .iter()
+                    .any(|window| window.stable_window_id.as_deref() == Some(identity.id.as_str()))
+                {
+                    return Err(WorkspaceObservationError::Invalid(format!(
+                        "identity {} is not linked to any window",
+                        identity.id
+                    )));
+                }
+            }
+        }
+
         Ok(())
     }
+}
+
+/// Checked conversion helpers for observation numeric fields.
+pub fn observation_u64_to_i32(value: u64, field: &str) -> Result<i32> {
+    i32::try_from(value).map_err(|_| {
+        WorkspaceObservationError::NumericOverflow(format!("{field} exceeds i32 range"))
+    })
+}
+
+pub fn observation_usize_to_i32(value: usize, field: &str) -> Result<i32> {
+    i32::try_from(value).map_err(|_| {
+        WorkspaceObservationError::NumericOverflow(format!("{field} exceeds i32 range"))
+    })
+}
+
+pub fn observation_u32_to_i32(value: u32, field: &str) -> Result<i32> {
+    i32::try_from(value).map_err(|_| {
+        WorkspaceObservationError::NumericOverflow(format!("{field} exceeds i32 range"))
+    })
 }
 
 /// RFC3339 timestamp helper for observation passes.
@@ -395,5 +487,53 @@ mod tests {
             WorkspaceObservationSnapshot::attempt_execute(),
             Err(WorkspaceObservationError::CannotExecute)
         );
+    }
+
+    #[test]
+    fn rejects_multiple_focused_windows() {
+        let mut snapshot = sample_snapshot();
+        snapshot.windows.push(ObservedWindow {
+            id: "win-2".into(),
+            pass_id: snapshot.pass.id.clone(),
+            hwnd: "0x0000000000000002".into(),
+            stable_window_id: None,
+            title: "Other".into(),
+            process_id: 1,
+            process_name: None,
+            x: 0,
+            y: 0,
+            width: 10,
+            height: 10,
+            monitor_id: Some("mon-1".into()),
+            visible: true,
+            minimized: false,
+            focused: true,
+            z_order: Some(1),
+            authority_effect: ObservedWindow::AUTHORITY_EFFECT_NONE.into(),
+        });
+        snapshot.pass.window_count = 2;
+        assert!(matches!(
+            snapshot.validate(),
+            Err(WorkspaceObservationError::Invalid(message)) if message.contains("at most one")
+        ));
+    }
+
+    #[test]
+    fn rejects_unknown_monitor_reference() {
+        let mut snapshot = sample_snapshot();
+        snapshot.windows[0].monitor_id = Some("missing-mon".into());
+        assert!(matches!(
+            snapshot.validate(),
+            Err(WorkspaceObservationError::Invalid(message)) if message.contains("unknown monitor")
+        ));
+    }
+
+    #[test]
+    fn checked_numeric_conversions() {
+        assert_eq!(observation_u32_to_i32(42, "process_id").unwrap(), 42);
+        assert!(matches!(
+            observation_u64_to_i32(u64::from(u32::MAX) + 1, "duration_ms"),
+            Err(WorkspaceObservationError::NumericOverflow(_))
+        ));
     }
 }

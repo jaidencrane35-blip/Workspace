@@ -316,8 +316,9 @@ pub use workspace_profile::{
     WorkspaceProfileStatus, WorkspaceProfileSummary, WorkspaceProfileValidation,
 };
 pub use workspace_observation::{
-    empty_stub_snapshot, observation_now_rfc3339, ObservationWindowIdentity, ObservedMonitor,
-    ObservedWindow, WindowIdentityConfidence, WorkspaceObservationError, WorkspaceObservationPass,
+    empty_stub_snapshot, observation_now_rfc3339, observation_u32_to_i32, observation_u64_to_i32,
+    observation_usize_to_i32, ObservationWindowIdentity, ObservedMonitor, ObservedWindow,
+    WindowIdentityConfidence, WorkspaceObservationError, WorkspaceObservationPass,
     WorkspaceObservationSnapshot,
 };
 pub use workspace_environment::{

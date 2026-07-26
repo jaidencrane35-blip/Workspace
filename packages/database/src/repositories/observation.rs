@@ -67,142 +67,54 @@ impl<'a> ObservationPassRepository<'a> {
 
     /// Retention foundation — keep the newest `keep` passes; delete older passes (cascade).
     pub fn purge_older_than_keep(&self, keep: usize) -> Result<usize> {
-        let keep = keep.max(1) as i64;
-        let deleted = self.db.connection().execute(
-            "DELETE FROM observation_passes
-             WHERE id NOT IN (
-                SELECT id FROM observation_passes
-                ORDER BY captured_at DESC, id DESC
-                LIMIT ?1
-             )",
-            [keep],
-        )?;
-        Ok(deleted)
+        purge_older_than_keep_on(self.db.connection(), keep)
     }
 
     /// Inserts a full snapshot transactionally after domain validation.
     pub fn insert_snapshot(&self, snapshot: &WorkspaceObservationSnapshot) -> Result<()> {
-        snapshot
-            .validate()
-            .map_err(map_domain_error)?;
+        snapshot.validate().map_err(map_domain_error)?;
+        self.db.transaction(|tx| insert_snapshot_on(tx.connection(), snapshot))
+    }
 
+    /// Atomically loads scoped identities, builds a snapshot, inserts it, and applies retention.
+    pub fn persist_reconciled_snapshot<E, F>(
+        &self,
+        process_ids: &[i32],
+        build: F,
+        pass_retention: usize,
+    ) -> Result<WorkspaceObservationSnapshot>
+    where
+        F: FnOnce(&[ObservationWindowIdentity]) -> std::result::Result<WorkspaceObservationSnapshot, E>,
+        E: std::fmt::Display,
+    {
         self.db.transaction(|tx| {
             let conn = tx.connection();
-            conn.execute(
-                "INSERT INTO observation_passes (
-                    id, captured_at, schema_version, source, foreground_hwnd,
-                    window_count, monitor_count, duration_ms, metadata_json
-                 ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
-                (
-                    &snapshot.pass.id,
-                    &snapshot.pass.captured_at,
-                    snapshot.pass.schema_version,
-                    &snapshot.pass.source,
-                    snapshot.pass.foreground_hwnd.as_deref(),
-                    snapshot.pass.window_count,
-                    snapshot.pass.monitor_count,
-                    snapshot.pass.duration_ms,
-                    &snapshot.pass.metadata_json,
-                ),
-            )?;
-            for monitor in &snapshot.monitors {
-                conn.execute(
-                    "INSERT INTO observation_monitors (
-                        id, pass_id, monitor_index, name, x, y, width, height,
-                        work_x, work_y, work_w, work_h, is_primary, dpi_scale
-                     ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)",
-                    (
-                        &monitor.id,
-                        &monitor.pass_id,
-                        monitor.monitor_index,
-                        &monitor.name,
-                        monitor.x,
-                        monitor.y,
-                        monitor.width,
-                        monitor.height,
-                        monitor.work_x,
-                        monitor.work_y,
-                        monitor.work_w,
-                        monitor.work_h,
-                        bool_to_int(monitor.is_primary),
-                        monitor.dpi_scale,
-                    ),
-                )?;
-            }
-            for window in &snapshot.windows {
-                conn.execute(
-                    "INSERT INTO observation_windows (
-                        id, pass_id, hwnd, stable_window_id, title, process_id, process_name,
-                        x, y, width, height, monitor_id, visible, minimized, focused, z_order
-                     ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16)",
-                    (
-                        &window.id,
-                        &window.pass_id,
-                        &window.hwnd,
-                        window.stable_window_id.as_deref(),
-                        &window.title,
-                        window.process_id,
-                        window.process_name.as_deref(),
-                        window.x,
-                        window.y,
-                        window.width,
-                        window.height,
-                        window.monitor_id.as_deref(),
-                        bool_to_int(window.visible),
-                        bool_to_int(window.minimized),
-                        bool_to_int(window.focused),
-                        window.z_order,
-                    ),
-                )?;
-            }
-            for identity in &snapshot.identities {
-                conn.execute(
-                    "INSERT INTO observation_window_identities (
-                        id, process_id, title_fingerprint, first_seen_at, last_seen_at, last_hwnd, confidence
-                     ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
-                     ON CONFLICT(id) DO UPDATE SET
-                        process_id = excluded.process_id,
-                        title_fingerprint = excluded.title_fingerprint,
-                        last_seen_at = excluded.last_seen_at,
-                        last_hwnd = excluded.last_hwnd,
-                        confidence = excluded.confidence",
-                    (
-                        &identity.id,
-                        identity.process_id,
-                        &identity.title_fingerprint,
-                        &identity.first_seen_at,
-                        &identity.last_seen_at,
-                        &identity.last_hwnd,
-                        identity.confidence.as_str(),
-                    ),
-                )?;
-            }
-            Ok(())
+            let existing = list_identities_by_process_ids_on(conn, process_ids)?;
+            let snapshot = build(&existing).map_err(|error| map_domain_display(error))?;
+            snapshot.validate().map_err(map_domain_error)?;
+            insert_snapshot_on(conn, &snapshot)?;
+            purge_older_than_keep_on(conn, pass_retention)?;
+            purge_unreferenced_identities_on(conn)?;
+            Ok(snapshot)
         })
     }
 
     /// Loads a full snapshot by pass id.
+    ///
+    /// Identities are omitted: the shared identity registry is live and must not be
+    /// presented as historical pass state. Window `stable_window_id` links remain.
     pub fn load_snapshot(&self, pass_id: &str) -> Result<Option<WorkspaceObservationSnapshot>> {
         let Some(pass) = self.get(pass_id)? else {
             return Ok(None);
         };
         let windows = ObservationWindowRepository::new(self.db).list_by_pass(pass_id)?;
         let monitors = ObservationMonitorRepository::new(self.db).list_by_pass(pass_id)?;
-        let identity_ids: Vec<String> = windows
-            .iter()
-            .filter_map(|window| window.stable_window_id.clone())
-            .collect();
-        let identities = if identity_ids.is_empty() {
-            Vec::new()
-        } else {
-            ObservationWindowIdentityRepository::new(self.db).list_by_ids(&identity_ids)?
-        };
 
         let snapshot = WorkspaceObservationSnapshot {
             pass,
             windows,
             monitors,
-            identities,
+            identities: Vec::new(),
             authority_effect: WorkspaceObservationSnapshot::AUTHORITY_EFFECT_NONE.into(),
         };
         snapshot.validate().map_err(map_domain_error)?;
@@ -393,6 +305,16 @@ impl<'a> ObservationWindowIdentityRepository<'a> {
         rows.collect::<std::result::Result<Vec<_>, _>>()
             .map_err(Into::into)
     }
+
+    /// Scoped lookup for capture reconciliation — only identities for observed process ids.
+    pub fn list_by_process_ids(&self, process_ids: &[i32]) -> Result<Vec<ObservationWindowIdentity>> {
+        list_identities_by_process_ids_on(self.db.connection(), process_ids)
+    }
+
+    /// Removes identities not referenced by any retained observation window.
+    pub fn purge_unreferenced(&self) -> Result<usize> {
+        purge_unreferenced_identities_on(self.db.connection())
+    }
 }
 
 fn bool_to_int(value: bool) -> i32 {
@@ -405,6 +327,157 @@ fn int_to_bool(value: i32) -> bool {
 
 fn map_domain_error(error: WorkspaceObservationError) -> crate::error::DatabaseError {
     crate::error::DatabaseError::Migration(error.to_string())
+}
+
+fn map_domain_display(error: impl std::fmt::Display) -> crate::error::DatabaseError {
+    crate::error::DatabaseError::Migration(error.to_string())
+}
+
+fn insert_snapshot_on(
+    conn: &rusqlite::Connection,
+    snapshot: &WorkspaceObservationSnapshot,
+) -> Result<()> {
+    conn.execute(
+        "INSERT INTO observation_passes (
+            id, captured_at, schema_version, source, foreground_hwnd,
+            window_count, monitor_count, duration_ms, metadata_json
+         ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+        (
+            &snapshot.pass.id,
+            &snapshot.pass.captured_at,
+            snapshot.pass.schema_version,
+            &snapshot.pass.source,
+            snapshot.pass.foreground_hwnd.as_deref(),
+            snapshot.pass.window_count,
+            snapshot.pass.monitor_count,
+            snapshot.pass.duration_ms,
+            &snapshot.pass.metadata_json,
+        ),
+    )?;
+    for monitor in &snapshot.monitors {
+        conn.execute(
+            "INSERT INTO observation_monitors (
+                id, pass_id, monitor_index, name, x, y, width, height,
+                work_x, work_y, work_w, work_h, is_primary, dpi_scale
+             ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)",
+            (
+                &monitor.id,
+                &monitor.pass_id,
+                monitor.monitor_index,
+                &monitor.name,
+                monitor.x,
+                monitor.y,
+                monitor.width,
+                monitor.height,
+                monitor.work_x,
+                monitor.work_y,
+                monitor.work_w,
+                monitor.work_h,
+                bool_to_int(monitor.is_primary),
+                monitor.dpi_scale,
+            ),
+        )?;
+    }
+    for window in &snapshot.windows {
+        conn.execute(
+            "INSERT INTO observation_windows (
+                id, pass_id, hwnd, stable_window_id, title, process_id, process_name,
+                x, y, width, height, monitor_id, visible, minimized, focused, z_order
+             ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16)",
+            (
+                &window.id,
+                &window.pass_id,
+                &window.hwnd,
+                window.stable_window_id.as_deref(),
+                &window.title,
+                window.process_id,
+                window.process_name.as_deref(),
+                window.x,
+                window.y,
+                window.width,
+                window.height,
+                window.monitor_id.as_deref(),
+                bool_to_int(window.visible),
+                bool_to_int(window.minimized),
+                bool_to_int(window.focused),
+                window.z_order,
+            ),
+        )?;
+    }
+    for identity in &snapshot.identities {
+        conn.execute(
+            "INSERT INTO observation_window_identities (
+                id, process_id, title_fingerprint, first_seen_at, last_seen_at, last_hwnd, confidence
+             ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
+             ON CONFLICT(id) DO UPDATE SET
+                process_id = excluded.process_id,
+                title_fingerprint = excluded.title_fingerprint,
+                last_seen_at = excluded.last_seen_at,
+                last_hwnd = excluded.last_hwnd,
+                confidence = excluded.confidence",
+            (
+                &identity.id,
+                identity.process_id,
+                &identity.title_fingerprint,
+                &identity.first_seen_at,
+                &identity.last_seen_at,
+                &identity.last_hwnd,
+                identity.confidence.as_str(),
+            ),
+        )?;
+    }
+    Ok(())
+}
+
+fn purge_older_than_keep_on(conn: &rusqlite::Connection, keep: usize) -> Result<usize> {
+    let keep = keep.max(1) as i64;
+    let deleted = conn.execute(
+        "DELETE FROM observation_passes
+         WHERE id NOT IN (
+            SELECT id FROM observation_passes
+            ORDER BY captured_at DESC, id DESC
+            LIMIT ?1
+         )",
+        [keep],
+    )?;
+    Ok(deleted)
+}
+
+fn list_identities_by_process_ids_on(
+    conn: &rusqlite::Connection,
+    process_ids: &[i32],
+) -> Result<Vec<ObservationWindowIdentity>> {
+    if process_ids.is_empty() {
+        return Ok(Vec::new());
+    }
+    let placeholders = process_ids
+        .iter()
+        .enumerate()
+        .map(|(index, _)| format!("?{}", index + 1))
+        .collect::<Vec<_>>()
+        .join(", ");
+    let sql = format!(
+        "SELECT id, process_id, title_fingerprint, first_seen_at, last_seen_at, last_hwnd, confidence
+         FROM observation_window_identities
+         WHERE process_id IN ({placeholders})
+         ORDER BY last_seen_at DESC, id ASC"
+    );
+    let mut stmt = conn.prepare(&sql)?;
+    let rows = stmt.query_map(rusqlite::params_from_iter(process_ids.iter().copied()), map_identity_row)?;
+    rows.collect::<std::result::Result<Vec<_>, _>>()
+        .map_err(Into::into)
+}
+
+fn purge_unreferenced_identities_on(conn: &rusqlite::Connection) -> Result<usize> {
+    let deleted = conn.execute(
+        "DELETE FROM observation_window_identities
+         WHERE id NOT IN (
+            SELECT DISTINCT stable_window_id FROM observation_windows
+            WHERE stable_window_id IS NOT NULL
+         )",
+        [],
+    )?;
+    Ok(deleted)
 }
 
 fn map_pass_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<WorkspaceObservationPass> {
@@ -567,7 +640,16 @@ mod tests {
         assert_eq!(loaded.pass.id, "pass-a");
         assert_eq!(loaded.windows.len(), 1);
         assert_eq!(loaded.monitors.len(), 1);
-        assert_eq!(loaded.identities.len(), 1);
+        // Historical loads omit live identity registry state.
+        assert!(loaded.identities.is_empty());
+        assert_eq!(
+            loaded.windows[0].stable_window_id.as_deref(),
+            Some("pass-a-identity")
+        );
+        let identities = ObservationWindowIdentityRepository::new(&db)
+            .list_by_ids(&[format!("pass-a-identity")])
+            .unwrap();
+        assert_eq!(identities.len(), 1);
     }
 
     #[test]
@@ -673,5 +755,124 @@ mod tests {
             .list_by_ids(&[format!("pass-id-identity")])
             .unwrap();
         assert_eq!(identities[0].confidence, WindowIdentityConfidence::Ephemeral);
+    }
+
+    #[test]
+    fn historical_snapshot_does_not_embed_mutated_identity_state() {
+        let db = test_db();
+        let repo = ObservationPassRepository::new(&db);
+        let first = sample_snapshot("pass-hist");
+        repo.insert_snapshot(&first).unwrap();
+
+        let mut second = sample_snapshot("pass-later");
+        second.pass.captured_at = "2026-07-26T12:00:00Z".into();
+        second.identities[0].id = "pass-hist-identity".into();
+        second.identities[0].last_seen_at = "2026-07-26T12:00:00Z".into();
+        second.identities[0].last_hwnd = "0xCHANGED".into();
+        second.identities[0].confidence = WindowIdentityConfidence::Low;
+        second.windows[0].stable_window_id = Some("pass-hist-identity".into());
+        second.windows[0].id = "pass-later-win".into();
+        second.monitors[0].id = "pass-later-mon".into();
+        second.windows[0].monitor_id = Some("pass-later-mon".into());
+        second.monitors[0].pass_id = "pass-later".into();
+        second.windows[0].pass_id = "pass-later".into();
+        repo.insert_snapshot(&second).unwrap();
+
+        let historical = repo.load_snapshot("pass-hist").unwrap().expect("historical");
+        assert!(historical.identities.is_empty());
+        assert_eq!(
+            historical.windows[0].stable_window_id.as_deref(),
+            Some("pass-hist-identity")
+        );
+        // Live registry was mutated by later capture; historical payload must not claim it.
+        let live = ObservationWindowIdentityRepository::new(&db)
+            .list_by_ids(&[format!("pass-hist-identity")])
+            .unwrap();
+        assert_eq!(live[0].last_hwnd, "0xCHANGED");
+        assert_eq!(live[0].confidence, WindowIdentityConfidence::Low);
+    }
+
+    #[test]
+    fn scoped_process_id_lookup_excludes_unrelated_identities() {
+        let db = test_db();
+        let repo = ObservationPassRepository::new(&db);
+        repo.insert_snapshot(&sample_snapshot("pass-scope")).unwrap();
+        let mut unrelated = sample_snapshot("pass-other");
+        unrelated.identities[0].id = "other-identity".into();
+        unrelated.identities[0].process_id = 999;
+        unrelated.windows[0].stable_window_id = Some("other-identity".into());
+        unrelated.windows[0].process_id = 999;
+        unrelated.windows[0].id = "other-win".into();
+        unrelated.monitors[0].id = "other-mon".into();
+        unrelated.windows[0].monitor_id = Some("other-mon".into());
+        repo.insert_snapshot(&unrelated).unwrap();
+
+        let scoped = ObservationWindowIdentityRepository::new(&db)
+            .list_by_process_ids(&[100])
+            .unwrap();
+        assert!(scoped.iter().all(|identity| identity.process_id == 100));
+        assert!(!scoped.iter().any(|identity| identity.id == "other-identity"));
+    }
+
+    #[test]
+    fn unreferenced_identities_are_purged_after_pass_retention() {
+        let db = test_db();
+        let repo = ObservationPassRepository::new(&db);
+        for index in 0..3 {
+            let mut snapshot = sample_snapshot(&format!("pass-ret-{index}"));
+            snapshot.pass.captured_at = format!("2026-07-26T10:00:{index:02}Z");
+            snapshot.identities[0].id = format!("identity-{index}");
+            snapshot.windows[0].stable_window_id = Some(format!("identity-{index}"));
+            repo.insert_snapshot(&snapshot).unwrap();
+        }
+        repo.purge_older_than_keep(1).unwrap();
+        let deleted = ObservationWindowIdentityRepository::new(&db)
+            .purge_unreferenced()
+            .unwrap();
+        assert!(deleted >= 2);
+        let remaining = ObservationWindowIdentityRepository::new(&db)
+            .list_all()
+            .unwrap();
+        assert_eq!(remaining.len(), 1);
+        assert_eq!(remaining[0].id, "identity-2");
+    }
+
+    #[test]
+    fn atomic_persist_rolls_back_on_failure() {
+        let db = test_db();
+        let repo = ObservationPassRepository::new(&db);
+        let error = repo
+            .persist_reconciled_snapshot(&[100], |_| -> std::result::Result<_, WorkspaceObservationError> {
+                Err(WorkspaceObservationError::Invalid("forced failure".into()))
+            }, 50)
+            .unwrap_err();
+        assert!(error.to_string().contains("forced failure"));
+        let count: i64 = db
+            .connection()
+            .query_row("SELECT COUNT(*) FROM observation_passes", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(count, 0);
+    }
+
+    #[test]
+    fn atomic_persist_commits_snapshot_and_scoped_identities() {
+        let db = test_db();
+        let repo = ObservationPassRepository::new(&db);
+        let snapshot = repo
+            .persist_reconciled_snapshot(
+                &[100],
+                |_| {
+                    Ok::<_, WorkspaceObservationError>(sample_snapshot("pass-atomic"))
+                },
+                50,
+            )
+            .unwrap();
+        assert_eq!(snapshot.pass.id, "pass-atomic");
+        let loaded = repo.load_snapshot("pass-atomic").unwrap().expect("loaded");
+        assert_eq!(loaded.windows.len(), 1);
+        let identities = ObservationWindowIdentityRepository::new(&db)
+            .list_by_process_ids(&[100])
+            .unwrap();
+        assert_eq!(identities.len(), 1);
     }
 }

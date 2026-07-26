@@ -115,6 +115,89 @@ fn identity_matching_high_and_low_confidence() {
 }
 
 #[test]
+fn same_process_windows_get_distinct_identities() {
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let local = ActorContext::local_user();
+    let intent = IntentContext::user_request();
+    let mut fixture = workspace_windows_integration::DesktopObservationCapture::empty_stub();
+    fixture.metadata.source = "test".into();
+    fixture.foreground_hwnd = Some("0xA".into());
+    fixture.monitors = workspace_windows_integration::dual_monitor_fixture().monitors;
+    fixture.windows = vec![
+        workspace_windows_integration::CapturedDesktopWindow {
+            hwnd: "0xA".into(),
+            title: "Google".into(),
+            process_id: 5000,
+            visible: true,
+            minimized: false,
+            focused: true,
+            x: 0,
+            y: 0,
+            width: 800,
+            height: 600,
+            monitor_index: Some(0),
+            z_order: Some(0),
+        },
+        workspace_windows_integration::CapturedDesktopWindow {
+            hwnd: "0xB".into(),
+            title: "Settings".into(),
+            process_id: 5000,
+            visible: true,
+            minimized: false,
+            focused: false,
+            x: 100,
+            y: 100,
+            width: 400,
+            height: 300,
+            monitor_index: Some(0),
+            z_order: Some(1),
+        },
+    ];
+    let result = WorkspaceObservationService::capture_with(
+        &kernel.shared_database(),
+        &local,
+        &intent,
+        &StubDesktopCapturer::new(fixture),
+    )
+    .unwrap();
+    assert_eq!(result.identity_count, 2);
+    assert_ne!(
+        result.snapshot.windows[0].stable_window_id,
+        result.snapshot.windows[1].stable_window_id
+    );
+}
+
+#[test]
+fn historical_observation_omits_live_identity_mutations() {
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let local = ActorContext::local_user();
+    let intent = IntentContext::user_request();
+    let first = capture_with_stub(&kernel, &local, &intent).unwrap();
+    let first_id = first.snapshot_id.clone();
+
+    let mut second = workspace_windows_integration::dual_monitor_fixture();
+    second.windows[0].title = "Fixture Focus Totally Changed".into();
+    WorkspaceObservationService::capture_with(
+        &kernel.shared_database(),
+        &local,
+        &intent,
+        &StubDesktopCapturer::new(second),
+    )
+    .unwrap();
+
+    let historical = CommandPipeline::new(kernel.command_context(local, intent))
+        .execute_query(GetWorkspaceObservationById::new(first_id))
+        .unwrap()
+        .expect("historical");
+    assert!(historical.identities.is_empty());
+    assert!(!historical.windows[0]
+        .stable_window_id
+        .as_deref()
+        .unwrap_or("")
+        .is_empty());
+}
+
+#[test]
 fn new_window_creates_identity_on_capture() {
     let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
     let local = ActorContext::local_user();

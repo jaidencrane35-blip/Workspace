@@ -1,23 +1,24 @@
-//! Workspace Observation Layer — durable desktop perception (Phase 6 / Sprint 105).
+//! Workspace Observation Layer — durable desktop perception (Phase 6 / Sprint 105–107A).
 //!
 //! Captures OS desktop state, reconciles window identities, persists snapshots.
 //! Never executes, matches applications, or grants authority.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};
 
 use serde_json::json;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use workspace_database::{Database, ObservationPassRepository, ObservationWindowIdentityRepository};
+use workspace_database::{Database, ObservationPassRepository};
 use workspace_domain::{
-    observation_now_rfc3339, IntentContext, ObservationWindowIdentity, ObservedMonitor,
-    ObservedWindow,     WindowIdentityConfidence, WorkspaceObservationPass,
+    observation_now_rfc3339, observation_u32_to_i32, observation_u64_to_i32,
+    observation_usize_to_i32, IntentContext, ObservationWindowIdentity, ObservedMonitor,
+    ObservedWindow, WindowIdentityConfidence, WorkspaceObservationError, WorkspaceObservationPass,
     WorkspaceObservationSnapshot,
 };
 use workspace_windows_integration::{
-    platform_desktop_capturer, CapturedDesktopMonitor, CapturedDesktopWindow,
-    DesktopCapturer, DesktopObservationCapture,
+    platform_desktop_capturer, CapturedDesktopMonitor, CapturedDesktopWindow, DesktopCapturer,
+    DesktopObservationCapture,
 };
 
 use crate::error::{KernelError, Result};
@@ -99,17 +100,15 @@ impl WorkspaceObservationService {
         capture: DesktopObservationCapture,
     ) -> Result<WorkspaceObservationCaptureResult> {
         let captured_at = observation_now_rfc3339();
-        let existing = {
+        let process_ids = capture_process_ids(&capture)?;
+        let snapshot = {
             let guard = db.lock().map_err(|_| KernelError::NotReady)?;
-            ObservationWindowIdentityRepository::new(&guard).list_all()?
+            ObservationPassRepository::new(&guard).persist_reconciled_snapshot(
+                &process_ids,
+                |existing| build_snapshot(&capture, existing, &captured_at),
+                DEFAULT_PASS_RETENTION,
+            )?
         };
-        let snapshot = build_snapshot(&capture, &existing, &captured_at)?;
-        {
-            let guard = db.lock().map_err(|_| KernelError::NotReady)?;
-            let repo = ObservationPassRepository::new(&guard);
-            repo.insert_snapshot(&snapshot)?;
-            repo.purge_older_than_keep(DEFAULT_PASS_RETENTION)?;
-        }
         AuditService::record_ai_planning_event(
             db,
             actor,
@@ -173,11 +172,22 @@ pub struct WorkspaceObservationCaptureResult {
     pub snapshot: WorkspaceObservationSnapshot,
 }
 
+fn capture_process_ids(capture: &DesktopObservationCapture) -> Result<Vec<i32>> {
+    let mut ids = HashSet::new();
+    for window in &capture.windows {
+        ids.insert(observation_u32_to_i32(window.process_id, "process_id")
+            .map_err(map_observation_error)?);
+    }
+    let mut ordered: Vec<i32> = ids.into_iter().collect();
+    ordered.sort_unstable();
+    Ok(ordered)
+}
+
 fn build_snapshot(
     capture: &DesktopObservationCapture,
     existing: &[ObservationWindowIdentity],
     captured_at: &str,
-) -> Result<WorkspaceObservationSnapshot> {
+) -> std::result::Result<WorkspaceObservationSnapshot, WorkspaceObservationError> {
     let pass_id = Uuid::new_v4().to_string();
     let mut monitor_ids: HashMap<i32, String> = HashMap::new();
     let monitors: Vec<ObservedMonitor> = capture
@@ -192,7 +202,7 @@ fn build_snapshot(
         existing,
         captured_at,
         &monitor_ids,
-    );
+    )?;
 
     let metadata_json = json!({
         "capture_source": capture.metadata.source,
@@ -207,9 +217,13 @@ fn build_snapshot(
             schema_version: WorkspaceObservationPass::DEFAULT_SCHEMA_VERSION,
             source: capture.metadata.source.clone(),
             foreground_hwnd: capture.foreground_hwnd.clone(),
-            window_count: windows.len() as i32,
-            monitor_count: monitors.len() as i32,
-            duration_ms: capture.metadata.duration_ms.map(|value| value as i32),
+            window_count: observation_usize_to_i32(windows.len(), "window_count")?,
+            monitor_count: observation_usize_to_i32(monitors.len(), "monitor_count")?,
+            duration_ms: capture
+                .metadata
+                .duration_ms
+                .map(|value| observation_u64_to_i32(value, "duration_ms"))
+                .transpose()?,
             metadata_json,
             authority_effect: WorkspaceObservationPass::AUTHORITY_EFFECT_NONE.into(),
         },
@@ -218,8 +232,7 @@ fn build_snapshot(
         identities,
         authority_effect: WorkspaceObservationSnapshot::AUTHORITY_EFFECT_NONE.into(),
     };
-    snapshot.validate()
-        .map_err(|error| KernelError::Config(error.to_string()))?;
+    snapshot.validate()?;
     Ok(snapshot)
 }
 
@@ -255,47 +268,64 @@ fn reconcile_windows(
     existing: &[ObservationWindowIdentity],
     captured_at: &str,
     monitor_ids: &HashMap<i32, String>,
-) -> (Vec<ObservationWindowIdentity>, Vec<ObservedWindow>) {
+) -> std::result::Result<(Vec<ObservationWindowIdentity>, Vec<ObservedWindow>), WorkspaceObservationError>
+{
     let mut identities: Vec<ObservationWindowIdentity> = Vec::new();
     let mut observed: Vec<ObservedWindow> = Vec::new();
+    let mut claimed: HashSet<String> = HashSet::new();
 
     for window in windows {
         let (identity, stable_id) =
-            reconcile_identity(window, existing, captured_at, &mut identities);
+            reconcile_identity(window, existing, captured_at, &identities, &claimed)?;
+        if let Some(stable_id) = &stable_id {
+            claimed.insert(stable_id.clone());
+        }
         if let Some(identity) = identity {
             upsert_identity(&mut identities, identity);
         }
-        observed.push(map_window(pass_id, window, stable_id, monitor_ids));
+        observed.push(map_window(pass_id, window, stable_id, monitor_ids)?);
     }
 
-    (identities, observed)
+    Ok((identities, observed))
 }
 
+/// Identity matching rules (Sprint 107A):
+/// 1. process_id + exact title fingerprint → High (HWND-churn resilient)
+/// 2. process_id + close title → Medium
+/// 3. process_id + same last_hwnd → Low (title diverged, handle stable)
+/// 4. otherwise → Ephemeral (never process_id alone)
 fn reconcile_identity(
     window: &CapturedDesktopWindow,
     existing: &[ObservationWindowIdentity],
     captured_at: &str,
-    pending: &mut Vec<ObservationWindowIdentity>,
-) -> (Option<ObservationWindowIdentity>, Option<String>) {
+    pending: &[ObservationWindowIdentity],
+    claimed: &HashSet<String>,
+) -> std::result::Result<(Option<ObservationWindowIdentity>, Option<String>), WorkspaceObservationError>
+{
     let fingerprint = title_fingerprint(&window.title);
-    let process_id = window.process_id as i32;
+    let process_id = observation_u32_to_i32(window.process_id, "process_id")?;
 
-    if let Some(identity) = find_high_confidence(existing, pending, process_id, &fingerprint) {
-        let updated = refresh_identity(identity, window, captured_at, WindowIdentityConfidence::High);
-        return (Some(updated.clone()), Some(updated.id));
+    if let Some(identity) =
+        find_high_confidence(existing, pending, claimed, process_id, &fingerprint)
+    {
+        let updated =
+            refresh_identity(identity, window, captured_at, WindowIdentityConfidence::High);
+        return Ok((Some(updated.clone()), Some(updated.id)));
     }
 
     if let Some(identity) =
-        find_medium_confidence(existing, pending, process_id, &window.title, &fingerprint)
+        find_medium_confidence(existing, pending, claimed, process_id, &window.title, &fingerprint)
     {
         let updated =
             refresh_identity(identity, window, captured_at, WindowIdentityConfidence::Medium);
-        return (Some(updated.clone()), Some(updated.id));
+        return Ok((Some(updated.clone()), Some(updated.id)));
     }
 
-    if let Some(identity) = find_low_confidence(existing, pending, process_id) {
+    if let Some(identity) =
+        find_low_confidence(existing, pending, claimed, process_id, &window.hwnd)
+    {
         let updated = refresh_identity(identity, window, captured_at, WindowIdentityConfidence::Low);
-        return (Some(updated.clone()), Some(updated.id));
+        return Ok((Some(updated.clone()), Some(updated.id)));
     }
 
     let identity = ObservationWindowIdentity {
@@ -308,12 +338,13 @@ fn reconcile_identity(
         confidence: WindowIdentityConfidence::Ephemeral,
         authority_effect: ObservationWindowIdentity::AUTHORITY_EFFECT_NONE.into(),
     };
-    (Some(identity.clone()), Some(identity.id))
+    Ok((Some(identity.clone()), Some(identity.id)))
 }
 
 fn find_high_confidence<'a>(
     existing: &'a [ObservationWindowIdentity],
     pending: &'a [ObservationWindowIdentity],
+    claimed: &HashSet<String>,
     process_id: i32,
     fingerprint: &str,
 ) -> Option<&'a ObservationWindowIdentity> {
@@ -321,13 +352,16 @@ fn find_high_confidence<'a>(
         .iter()
         .chain(pending.iter())
         .find(|identity| {
-            identity.process_id == process_id && identity.title_fingerprint == fingerprint
+            !claimed.contains(&identity.id)
+                && identity.process_id == process_id
+                && identity.title_fingerprint == fingerprint
         })
 }
 
 fn find_medium_confidence<'a>(
     existing: &'a [ObservationWindowIdentity],
     pending: &'a [ObservationWindowIdentity],
+    claimed: &HashSet<String>,
     process_id: i32,
     title: &str,
     fingerprint: &str,
@@ -336,7 +370,8 @@ fn find_medium_confidence<'a>(
         .iter()
         .chain(pending.iter())
         .find(|identity| {
-            identity.process_id == process_id
+            !claimed.contains(&identity.id)
+                && identity.process_id == process_id
                 && identity.title_fingerprint != fingerprint
                 && titles_are_close(title, &identity.title_fingerprint)
         })
@@ -345,13 +380,19 @@ fn find_medium_confidence<'a>(
 fn find_low_confidence<'a>(
     existing: &'a [ObservationWindowIdentity],
     pending: &'a [ObservationWindowIdentity],
+    claimed: &HashSet<String>,
     process_id: i32,
+    hwnd: &str,
 ) -> Option<&'a ObservationWindowIdentity> {
+    // Low confidence requires HWND continuity — never process_id alone.
     existing
         .iter()
         .chain(pending.iter())
-        .filter(|identity| identity.process_id == process_id)
-        .max_by(|left, right| left.last_seen_at.cmp(&right.last_seen_at))
+        .find(|identity| {
+            !claimed.contains(&identity.id)
+                && identity.process_id == process_id
+                && identity.last_hwnd == hwnd
+        })
 }
 
 fn refresh_identity(
@@ -363,7 +404,7 @@ fn refresh_identity(
     ObservationWindowIdentity {
         id: identity.id.clone(),
         process_id: identity.process_id,
-        title_fingerprint: identity.title_fingerprint.clone(),
+        title_fingerprint: title_fingerprint(&window.title),
         first_seen_at: identity.first_seen_at.clone(),
         last_seen_at: captured_at.into(),
         last_hwnd: window.hwnd.clone(),
@@ -385,14 +426,14 @@ fn map_window(
     window: &CapturedDesktopWindow,
     stable_window_id: Option<String>,
     monitor_ids: &HashMap<i32, String>,
-) -> ObservedWindow {
-    ObservedWindow {
+) -> std::result::Result<ObservedWindow, WorkspaceObservationError> {
+    Ok(ObservedWindow {
         id: Uuid::new_v4().to_string(),
         pass_id: pass_id.into(),
         hwnd: window.hwnd.clone(),
         stable_window_id,
         title: window.title.clone(),
-        process_id: window.process_id as i32,
+        process_id: observation_u32_to_i32(window.process_id, "process_id")?,
         process_name: None,
         x: window.x,
         y: window.y,
@@ -406,7 +447,7 @@ fn map_window(
         focused: window.focused,
         z_order: window.z_order,
         authority_effect: ObservedWindow::AUTHORITY_EFFECT_NONE.into(),
-    }
+    })
 }
 
 fn title_fingerprint(title: &str) -> String {
@@ -446,9 +487,14 @@ fn edit_distance(left: &str, right: &str) -> usize {
     previous[right_chars.len()]
 }
 
+fn map_observation_error(error: WorkspaceObservationError) -> KernelError {
+    KernelError::Config(error.to_string())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use workspace_database::ObservationWindowIdentityRepository;
     use workspace_windows_integration::StubDesktopCapturer;
 
     fn in_memory_db() -> Arc<Mutex<Database>> {
@@ -460,23 +506,32 @@ mod tests {
         Arc::new(Mutex::new(db))
     }
 
+    fn sample_window(
+        hwnd: &str,
+        title: &str,
+        process_id: u32,
+        focused: bool,
+    ) -> CapturedDesktopWindow {
+        CapturedDesktopWindow {
+            hwnd: hwnd.into(),
+            title: title.into(),
+            process_id,
+            visible: true,
+            minimized: false,
+            focused,
+            x: 0,
+            y: 0,
+            width: 100,
+            height: 100,
+            monitor_index: Some(0),
+            z_order: Some(0),
+        }
+    }
+
     #[test]
-    fn high_confidence_matches_exact_title() {
-        let confidence = reconcile_identity(
-            &CapturedDesktopWindow {
-                hwnd: "0x1".into(),
-                title: "Fixture Focus".into(),
-                process_id: 100,
-                visible: true,
-                minimized: false,
-                focused: true,
-                x: 0,
-                y: 0,
-                width: 100,
-                height: 100,
-                monitor_index: Some(0),
-                z_order: Some(0),
-            },
+    fn high_confidence_matches_exact_title_across_hwnd_change() {
+        let (identity, stable_id) = reconcile_identity(
+            &sample_window("0xNEW", "Fixture Focus", 100, true),
             &[ObservationWindowIdentity {
                 id: "identity-1".into(),
                 process_id: 100,
@@ -488,76 +543,109 @@ mod tests {
                 authority_effect: ObservationWindowIdentity::AUTHORITY_EFFECT_NONE.into(),
             }],
             "2026-07-26T11:00:00Z",
-            &mut Vec::new(),
-        );
-        let (Some(identity), Some(stable_id)) = confidence else {
-            panic!("expected matched identity");
-        };
-        assert_eq!(stable_id, "identity-1");
+            &[],
+            &HashSet::new(),
+        )
+        .unwrap();
+        let identity = identity.expect("matched");
+        assert_eq!(stable_id.as_deref(), Some("identity-1"));
         assert_eq!(identity.confidence, WindowIdentityConfidence::High);
+        assert_eq!(identity.last_hwnd, "0xNEW");
     }
 
     #[test]
-    fn low_confidence_matches_process_only() {
-        let confidence = reconcile_identity(
-            &CapturedDesktopWindow {
-                hwnd: "0x2".into(),
-                title: "Different Title".into(),
-                process_id: 200,
-                visible: true,
-                minimized: false,
-                focused: false,
-                x: 0,
-                y: 0,
-                width: 100,
-                height: 100,
-                monitor_index: None,
-                z_order: None,
-            },
+    fn low_confidence_requires_hwnd_continuity_not_process_alone() {
+        let (identity, _) = reconcile_identity(
+            &sample_window("0xSAME", "Different Title", 200, false),
             &[ObservationWindowIdentity {
                 id: "identity-2".into(),
                 process_id: 200,
                 title_fingerprint: "other".into(),
                 first_seen_at: "2026-07-26T10:00:00Z".into(),
                 last_seen_at: "2026-07-26T10:00:00Z".into(),
-                last_hwnd: "0xOLD".into(),
+                last_hwnd: "0xSAME".into(),
                 confidence: WindowIdentityConfidence::Low,
                 authority_effect: ObservationWindowIdentity::AUTHORITY_EFFECT_NONE.into(),
             }],
             "2026-07-26T11:00:00Z",
-            &mut Vec::new(),
+            &[],
+            &HashSet::new(),
+        )
+        .unwrap();
+        assert_eq!(
+            identity.expect("matched").confidence,
+            WindowIdentityConfidence::Low
         );
-        let (Some(identity), _) = confidence else {
-            panic!("expected matched identity");
-        };
-        assert_eq!(identity.confidence, WindowIdentityConfidence::Low);
+    }
+
+    #[test]
+    fn same_process_different_titles_create_distinct_identities() {
+        let existing = Vec::new();
+        let monitors = HashMap::from([(0, "mon".into())]);
+        let (identities, windows) = reconcile_windows(
+            "pass",
+            &[
+                sample_window("0xA", "Google", 5000, true),
+                sample_window("0xB", "Settings", 5000, false),
+            ],
+            &existing,
+            "2026-07-26T11:00:00Z",
+            &monitors,
+        )
+        .unwrap();
+        assert_eq!(identities.len(), 2);
+        assert_ne!(
+            windows[0].stable_window_id.as_deref(),
+            windows[1].stable_window_id.as_deref()
+        );
+        assert_eq!(
+            identities[0].confidence,
+            WindowIdentityConfidence::Ephemeral
+        );
+        assert_eq!(
+            identities[1].confidence,
+            WindowIdentityConfidence::Ephemeral
+        );
+    }
+
+    #[test]
+    fn pid_reuse_with_unrelated_title_is_not_high_confidence() {
+        let (identity, stable_id) = reconcile_identity(
+            &sample_window("0xNEW", "Completely Different App", 5000, false),
+            &[ObservationWindowIdentity {
+                id: "stale".into(),
+                process_id: 5000,
+                title_fingerprint: "old browser tab".into(),
+                first_seen_at: "2026-07-01T10:00:00Z".into(),
+                last_seen_at: "2026-07-01T10:00:00Z".into(),
+                last_hwnd: "0xOLD".into(),
+                confidence: WindowIdentityConfidence::High,
+                authority_effect: ObservationWindowIdentity::AUTHORITY_EFFECT_NONE.into(),
+            }],
+            "2026-07-26T11:00:00Z",
+            &[],
+            &HashSet::new(),
+        )
+        .unwrap();
+        let identity = identity.expect("new identity");
+        assert_ne!(stable_id.as_deref(), Some("stale"));
+        assert_eq!(identity.confidence, WindowIdentityConfidence::Ephemeral);
     }
 
     #[test]
     fn new_window_creates_ephemeral_identity() {
-        let confidence = reconcile_identity(
-            &CapturedDesktopWindow {
-                hwnd: "0x3".into(),
-                title: "Brand New".into(),
-                process_id: 999,
-                visible: true,
-                minimized: false,
-                focused: false,
-                x: 0,
-                y: 0,
-                width: 100,
-                height: 100,
-                monitor_index: None,
-                z_order: None,
-            },
+        let (identity, _) = reconcile_identity(
+            &sample_window("0x3", "Brand New", 999, false),
             &[],
             "2026-07-26T11:00:00Z",
-            &mut Vec::new(),
+            &[],
+            &HashSet::new(),
+        )
+        .unwrap();
+        assert_eq!(
+            identity.expect("new").confidence,
+            WindowIdentityConfidence::Ephemeral
         );
-        let (Some(identity), _) = confidence else {
-            panic!("expected new identity");
-        };
-        assert_eq!(identity.confidence, WindowIdentityConfidence::Ephemeral);
     }
 
     #[test]
@@ -584,6 +672,7 @@ mod tests {
         assert_eq!(latest.pass.id, result.snapshot_id);
         assert_eq!(latest.windows.len(), 4);
         assert_eq!(latest.monitors.len(), 2);
+        assert!(latest.identities.is_empty());
     }
 
     #[test]
@@ -608,5 +697,131 @@ mod tests {
             result.snapshot.pass.foreground_hwnd.as_deref(),
             Some(focused.hwnd.as_str())
         );
+    }
+
+    #[test]
+    fn historical_snapshot_integrity_after_identity_mutation() {
+        let db = in_memory_db();
+        let actor = ActorContext::local_user();
+        let intent = IntentContext::user_request();
+        let first = WorkspaceObservationService::capture_with(
+            &db,
+            &actor,
+            &intent,
+            &StubDesktopCapturer::fixture_dual_monitor(),
+        )
+        .unwrap();
+        let first_id = first.snapshot_id.clone();
+        let first_stable = first.snapshot.windows[0]
+            .stable_window_id
+            .clone()
+            .expect("stable id");
+
+        let mut second_fixture = workspace_windows_integration::dual_monitor_fixture();
+        second_fixture.windows[0].title = "Fixture Focus Renamed A Lot".into();
+        second_fixture.windows[0].hwnd = "0xCHANGEDHWND".into();
+        second_fixture.foreground_hwnd = Some("0xCHANGEDHWND".into());
+        WorkspaceObservationService::capture_with(
+            &db,
+            &actor,
+            &intent,
+            &StubDesktopCapturer::new(second_fixture),
+        )
+        .unwrap();
+
+        let historical = WorkspaceObservationService::get_by_id(&db, &actor, &intent, first_id)
+            .unwrap()
+            .expect("historical");
+        assert!(historical.identities.is_empty());
+        assert_eq!(
+            historical.windows[0].stable_window_id.as_deref(),
+            Some(first_stable.as_str())
+        );
+    }
+
+    #[test]
+    fn scoped_lookup_ignores_unrelated_identity_table() {
+        let db = in_memory_db();
+        let actor = ActorContext::local_user();
+        let intent = IntentContext::user_request();
+        {
+            let guard = db.lock().unwrap();
+            for index in 0..40 {
+                let identity = ObservationWindowIdentity {
+                    id: format!("noise-{index}"),
+                    process_id: 10_000 + index,
+                    title_fingerprint: format!("noise title {index}"),
+                    first_seen_at: "2026-07-01T00:00:00Z".into(),
+                    last_seen_at: "2026-07-01T00:00:00Z".into(),
+                    last_hwnd: format!("0xNOISE{index:04}"),
+                    confidence: WindowIdentityConfidence::Ephemeral,
+                    authority_effect: ObservationWindowIdentity::AUTHORITY_EFFECT_NONE.into(),
+                };
+                ObservationWindowIdentityRepository::new(&guard)
+                    .upsert_all(&[identity])
+                    .unwrap();
+            }
+        }
+
+        let result = WorkspaceObservationService::capture_with(
+            &db,
+            &actor,
+            &intent,
+            &StubDesktopCapturer::fixture_dual_monitor(),
+        )
+        .unwrap();
+        assert_eq!(result.window_count, 4);
+        assert_eq!(result.identity_count, 4);
+    }
+
+    #[test]
+    fn identity_retention_keeps_referenced_removes_orphans() {
+        let db = in_memory_db();
+        let actor = ActorContext::local_user();
+        let intent = IntentContext::user_request();
+        WorkspaceObservationService::capture_with(
+            &db,
+            &actor,
+            &intent,
+            &StubDesktopCapturer::fixture_dual_monitor(),
+        )
+        .unwrap();
+        {
+            let guard = db.lock().unwrap();
+            ObservationWindowIdentityRepository::new(&guard)
+                .upsert_all(&[ObservationWindowIdentity {
+                    id: "orphan-identity".into(),
+                    process_id: 42,
+                    title_fingerprint: "orphan".into(),
+                    first_seen_at: "2026-01-01T00:00:00Z".into(),
+                    last_seen_at: "2026-01-01T00:00:00Z".into(),
+                    last_hwnd: "0xORPHAN".into(),
+                    confidence: WindowIdentityConfidence::Ephemeral,
+                    authority_effect: ObservationWindowIdentity::AUTHORITY_EFFECT_NONE.into(),
+                }])
+                .unwrap();
+        }
+        WorkspaceObservationService::capture_with(
+            &db,
+            &actor,
+            &intent,
+            &StubDesktopCapturer::fixture_dual_monitor(),
+        )
+        .unwrap();
+        let guard = db.lock().unwrap();
+        let identities = ObservationWindowIdentityRepository::new(&guard)
+            .list_all()
+            .unwrap();
+        assert!(!identities.iter().any(|identity| identity.id == "orphan-identity"));
+        assert!(!identities.is_empty());
+    }
+
+    #[test]
+    fn numeric_overflow_fails_explicitly() {
+        let error = observation_u64_to_i32(u64::from(u32::MAX) + 1, "duration_ms").unwrap_err();
+        assert!(matches!(
+            error,
+            WorkspaceObservationError::NumericOverflow(_)
+        ));
     }
 }
