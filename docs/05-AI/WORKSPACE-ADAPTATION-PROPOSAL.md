@@ -64,6 +64,10 @@ Evidence required for approval; readiness never activates runtime.
 [WORKSPACE-GOVERNANCE-WORKSPACE.md](./WORKSPACE-GOVERNANCE-WORKSPACE.md).
 Human operating surface + publication boundary; UI cannot approve execution.
 
+**Sprint 148:** Governance lifecycle integrity & timeline —
+[WORKSPACE-GOVERNANCE-LIFECYCLE.md](./WORKSPACE-GOVERNANCE-LIFECYCLE.md).
+End-to-end stages preserve provenance; timeline events immutable.
+
 ---
 
 ## Ownership

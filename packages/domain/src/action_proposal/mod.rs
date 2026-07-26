@@ -89,6 +89,12 @@ pub enum ActionProposalError {
     #[error("publication environment cannot activate runtime changes")]
     PublicationEnvironmentCannotActivate,
 
+    #[error("governance lifecycle integrity validation failed: {0}")]
+    GovernanceLifecycleIntegrityFailed(String),
+
+    #[error("governance timeline events are immutable")]
+    GovernanceTimelineImmutable,
+
     #[error(transparent)]
     Domain(#[from] DomainError),
 }
@@ -1860,6 +1866,343 @@ impl PublicationEnvironment {
     }
 }
 
+/// Stages of the end-to-end governance lifecycle (Sprint 148).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum GovernanceLifecycleStage {
+    ChangeProposal,
+    RiskClassification,
+    EvidenceCollection,
+    Review,
+    Decision,
+    GovernanceRecordPersisted,
+    WorkspacePresentation,
+    PublicationReadinessReached,
+    RejectedVisible,
+}
+
+impl GovernanceLifecycleStage {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::ChangeProposal => "change_proposal",
+            Self::RiskClassification => "risk_classification",
+            Self::EvidenceCollection => "evidence_collection",
+            Self::Review => "review",
+            Self::Decision => "decision",
+            Self::GovernanceRecordPersisted => "governance_record",
+            Self::WorkspacePresentation => "workspace_presentation",
+            Self::PublicationReadinessReached => "publication_readiness",
+            Self::RejectedVisible => "rejected_visible",
+        }
+    }
+}
+
+/// Immutable governance timeline event.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct GovernanceTimelineEvent {
+    pub id: String,
+    pub stage: GovernanceLifecycleStage,
+    pub at: String,
+    pub actor_reference: Option<String>,
+    pub evidence_reference: Option<String>,
+    pub decision_reference: Option<String>,
+    pub note: Option<String>,
+}
+
+/// End-to-end governance timeline — append-only events; never grants authority (Sprint 148).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct GovernanceTimeline {
+    pub id: String,
+    pub events: Vec<GovernanceTimelineEvent>,
+    pub provenance: RecommendationProvenance,
+    /// Rejected changes remain historically visible on the timeline.
+    pub rejected_visible: bool,
+    /// Dissent ids captured immutably (never erased).
+    pub dissent_immutable_refs: Vec<String>,
+    pub authority_effect: String,
+}
+
+impl GovernanceTimeline {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+
+    pub fn begin(proposal: &OutcomeAdaptationProposal, at: impl Into<String>) -> Self {
+        let at = at.into();
+        let mut timeline = Self {
+            id: format!("governance_timeline:{}", proposal.id),
+            events: Vec::new(),
+            provenance: proposal.provenance.clone(),
+            rejected_visible: false,
+            dissent_immutable_refs: Vec::new(),
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        };
+        timeline.append_event(
+            GovernanceLifecycleStage::ChangeProposal,
+            at,
+            Some(proposal.proposed_by_actor_id.clone()),
+            None,
+            None,
+            Some(format!("proposal:{}", proposal.id)),
+        );
+        timeline
+    }
+
+    fn append_event(
+        &mut self,
+        stage: GovernanceLifecycleStage,
+        at: impl Into<String>,
+        actor_reference: Option<String>,
+        evidence_reference: Option<String>,
+        decision_reference: Option<String>,
+        note: Option<String>,
+    ) {
+        let idx = self.events.len();
+        self.events.push(GovernanceTimelineEvent {
+            id: format!("{}:{}:{}", self.id, stage.as_str(), idx),
+            stage,
+            at: at.into(),
+            actor_reference,
+            evidence_reference,
+            decision_reference,
+            note,
+        });
+    }
+
+    /// Build and validate a complete lifecycle timeline from governance artifacts.
+    pub fn from_full_lifecycle(
+        proposal: &OutcomeAdaptationProposal,
+        risk: &GovernanceRisk,
+        evidence: &GovernanceDecisionEvidence,
+        decisions: &[GovernanceReviewDecision],
+        record: &GovernanceRecord,
+        workspace: &GovernanceWorkspace,
+        readiness: &PublicationReadiness,
+        at_prefix: &str,
+    ) -> Result<Self, ActionProposalError> {
+        let mut timeline = Self::begin(proposal, format!("{at_prefix}:proposal"));
+        timeline.append_event(
+            GovernanceLifecycleStage::RiskClassification,
+            format!("{at_prefix}:risk"),
+            None,
+            None,
+            None,
+            Some(risk.id.clone()),
+        );
+        timeline.append_event(
+            GovernanceLifecycleStage::EvidenceCollection,
+            format!("{at_prefix}:evidence"),
+            None,
+            Some(evidence.id.clone()),
+            None,
+            Some(format!("refs:{}", evidence.supporting_evidence_references.len())),
+        );
+        timeline.append_event(
+            GovernanceLifecycleStage::Review,
+            format!("{at_prefix}:review"),
+            record.actors.reviewer_actor_id.clone(),
+            Some(evidence.id.clone()),
+            None,
+            Some("review_submitted".into()),
+        );
+        for (i, decision) in decisions.iter().enumerate() {
+            timeline.append_event(
+                GovernanceLifecycleStage::Decision,
+                format!("{at_prefix}:decision:{i}"),
+                Some(decision.reviewer.actor_id.clone()),
+                decision.evidence_reference.clone(),
+                Some(decision.id.clone()),
+                Some(decision.decision.as_str().into()),
+            );
+            if decision.decision == GovernanceReviewDecisionKind::Reject {
+                timeline.rejected_visible = true;
+                timeline.append_event(
+                    GovernanceLifecycleStage::RejectedVisible,
+                    format!("{at_prefix}:rejected:{i}"),
+                    Some(decision.reviewer.actor_id.clone()),
+                    decision.evidence_reference.clone(),
+                    Some(decision.id.clone()),
+                    Some("rejected_remains_visible".into()),
+                );
+            }
+        }
+        timeline.dissent_immutable_refs = evidence
+            .dissent_records
+            .iter()
+            .map(|d| d.id.clone())
+            .collect();
+        timeline.append_event(
+            GovernanceLifecycleStage::GovernanceRecordPersisted,
+            format!("{at_prefix}:record"),
+            record.actors.reviewer_actor_id.clone(),
+            record.evidence_reference.clone(),
+            record.review_decision_references.first().cloned(),
+            Some(record.id.clone()),
+        );
+        timeline.append_event(
+            GovernanceLifecycleStage::WorkspacePresentation,
+            format!("{at_prefix}:workspace"),
+            None,
+            workspace.evidence_view.evidence_reference.clone(),
+            workspace
+                .decision_history
+                .first()
+                .map(|d| d.decision_reference.clone()),
+            Some(workspace.id.clone()),
+        );
+        timeline.append_event(
+            GovernanceLifecycleStage::PublicationReadinessReached,
+            format!("{at_prefix}:readiness"),
+            None,
+            Some(readiness.evidence_reference.clone()),
+            None,
+            Some(readiness.state.as_str().into()),
+        );
+        timeline.validate_lifecycle_integrity()?;
+        if !timeline.provenance_survives(&proposal.provenance)
+            || !workspace.preserves_provenance(&proposal.provenance)
+            || record.provenance != proposal.provenance
+        {
+            return Err(ActionProposalError::GovernanceLifecycleIntegrityFailed(
+                "provenance broken across lifecycle".into(),
+            ));
+        }
+        Ok(timeline)
+    }
+
+    /// Rejected-only path: proposal → risk → evidence → reject decision → visible history.
+    pub fn from_rejected_lifecycle(
+        proposal: &OutcomeAdaptationProposal,
+        risk: &GovernanceRisk,
+        evidence: &GovernanceDecisionEvidence,
+        reject_decision: &GovernanceReviewDecision,
+        at_prefix: &str,
+    ) -> Result<Self, ActionProposalError> {
+        if reject_decision.decision != GovernanceReviewDecisionKind::Reject {
+            return Err(ActionProposalError::GovernanceLifecycleIntegrityFailed(
+                "expected reject decision".into(),
+            ));
+        }
+        let mut timeline = Self::begin(proposal, format!("{at_prefix}:proposal"));
+        timeline.append_event(
+            GovernanceLifecycleStage::RiskClassification,
+            format!("{at_prefix}:risk"),
+            None,
+            None,
+            None,
+            Some(risk.id.clone()),
+        );
+        timeline.append_event(
+            GovernanceLifecycleStage::EvidenceCollection,
+            format!("{at_prefix}:evidence"),
+            None,
+            Some(evidence.id.clone()),
+            None,
+            None,
+        );
+        timeline.append_event(
+            GovernanceLifecycleStage::Review,
+            format!("{at_prefix}:review"),
+            Some(reject_decision.reviewer.actor_id.clone()),
+            Some(evidence.id.clone()),
+            None,
+            None,
+        );
+        timeline.append_event(
+            GovernanceLifecycleStage::Decision,
+            format!("{at_prefix}:decision"),
+            Some(reject_decision.reviewer.actor_id.clone()),
+            reject_decision.evidence_reference.clone(),
+            Some(reject_decision.id.clone()),
+            Some("reject".into()),
+        );
+        timeline.rejected_visible = true;
+        timeline.append_event(
+            GovernanceLifecycleStage::RejectedVisible,
+            format!("{at_prefix}:rejected_visible"),
+            Some(reject_decision.reviewer.actor_id.clone()),
+            reject_decision.evidence_reference.clone(),
+            Some(reject_decision.id.clone()),
+            Some("historically_visible".into()),
+        );
+        timeline.dissent_immutable_refs = evidence
+            .dissent_records
+            .iter()
+            .map(|d| d.id.clone())
+            .collect();
+        if !timeline.provenance_survives(&proposal.provenance) {
+            return Err(ActionProposalError::GovernanceLifecycleIntegrityFailed(
+                "provenance broken on rejected path".into(),
+            ));
+        }
+        Ok(timeline)
+    }
+
+    pub fn validate_lifecycle_integrity(&self) -> Result<(), ActionProposalError> {
+        let required = [
+            GovernanceLifecycleStage::ChangeProposal,
+            GovernanceLifecycleStage::RiskClassification,
+            GovernanceLifecycleStage::EvidenceCollection,
+            GovernanceLifecycleStage::Review,
+            GovernanceLifecycleStage::Decision,
+            GovernanceLifecycleStage::GovernanceRecordPersisted,
+            GovernanceLifecycleStage::WorkspacePresentation,
+            GovernanceLifecycleStage::PublicationReadinessReached,
+        ];
+        for stage in required {
+            if !self.events.iter().any(|e| e.stage == stage) {
+                return Err(ActionProposalError::GovernanceLifecycleIntegrityFailed(
+                    format!("missing stage {}", stage.as_str()),
+                ));
+            }
+        }
+        if self.authority_effect != Self::AUTHORITY_EFFECT_NONE {
+            return Err(ActionProposalError::GovernanceLifecycleIntegrityFailed(
+                "authority_effect must be none".into(),
+            ));
+        }
+        Ok(())
+    }
+
+    pub fn provenance_survives(&self, expected: &RecommendationProvenance) -> bool {
+        &self.provenance == expected
+    }
+
+    pub fn stages(&self) -> Vec<GovernanceLifecycleStage> {
+        self.events.iter().map(|e| e.stage).collect()
+    }
+
+    pub fn may_rewrite_events(&self) -> bool {
+        false
+    }
+
+    pub fn may_execute(&self) -> bool {
+        false
+    }
+
+    pub fn may_grant_execution_authority(&self) -> bool {
+        false
+    }
+
+    pub fn may_bypass_permission_gateway(&self) -> bool {
+        false
+    }
+
+    pub fn may_activate_runtime(&self) -> bool {
+        false
+    }
+
+    pub fn attempt_rewrite_event(&mut self) -> Result<(), ActionProposalError> {
+        Err(ActionProposalError::GovernanceTimelineImmutable)
+    }
+
+    pub fn attempt_execute() -> Result<(), ActionProposalError> {
+        Err(ActionProposalError::CannotExecute)
+    }
+
+    pub fn attempt_activate_runtime() -> Result<(), ActionProposalError> {
+        Err(ActionProposalError::PublicationReadinessCannotActivate)
+    }
+}
+
 /// Explicit human review decision — cannot bypass provenance or execute.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct GovernanceReviewDecision {
@@ -3571,5 +3914,113 @@ mod tests {
         assert!(PublicationEnvironment::attempt_activate().is_err());
         assert!(!env.may_bypass_permission_gateway());
         assert_eq!(env.governance_workspace_id, workspace.id);
+    }
+
+    #[test]
+    fn governance_timeline_preserves_provenance_and_cannot_execute() {
+        let item = sample_item();
+        let mut record = RecommendationGovernanceRecord::from_recommendation_item(&item, "t0");
+        record
+            .transition(RecommendationLifecycleState::Available, "t1", None)
+            .unwrap();
+        record
+            .transition(RecommendationLifecycleState::Presented, "t2", None)
+            .unwrap();
+        record.accept("t3", None).unwrap();
+        let outcome = record.record_outcome("t4").unwrap();
+        let provenance = outcome.provenance.clone();
+        let mut proposal = outcome.to_adaptation_proposal(
+            "experience_presentation",
+            "Keep DisplayReason primary",
+            "Consistent rationale",
+        );
+        proposal.require_review().unwrap();
+        proposal
+            .approve(
+                AdaptationReviewerIdentity::local_user("local_user"),
+                "t-ok",
+            )
+            .unwrap();
+        let risk = GovernanceRisk::classify_from_proposal(&proposal);
+        let mut evidence = GovernanceDecisionEvidence::assemble(
+            &risk,
+            vec!["outcome:x".into(), "exact:continuity.resumable".into()],
+            vec![],
+            vec!["no activation".into()],
+            "Evidenced",
+            &provenance,
+        )
+        .unwrap();
+        evidence.record_dissent("reviewer_b", "Minor concern", "t-d");
+        let policy = GovernancePolicy::from_risk(&risk);
+        let decision = GovernanceReviewDecision::new(
+            &policy,
+            AdaptationReviewerIdentity::local_user("local_user"),
+            GovernanceReviewDecisionKind::Approve,
+            "Approve",
+            "t-dec",
+            vec!["no activation".into()],
+            &provenance,
+        )
+        .unwrap()
+        .with_evidence(&evidence);
+        let mut readiness = PublicationReadiness::draft_from_evidence(&evidence);
+        readiness.mark_risk_reviewed().unwrap();
+        readiness.mark_approved(&evidence).unwrap();
+        readiness.mark_ready_for_publication(&evidence).unwrap();
+        let governance = GovernanceRecord::from_adaptation_chain(
+            &proposal, None, None, None, None,
+        )
+        .with_policy_and_decisions(&policy, &proposal, &[decision.clone()])
+        .unwrap()
+        .with_evidence_and_readiness(&evidence, &readiness, &[decision.clone()])
+        .unwrap();
+        let workspace = GovernanceWorkspace::from_governance_bundle(
+            &proposal,
+            &governance,
+            Some(&evidence),
+            Some(&risk),
+            &[decision.clone()],
+            Some(&readiness),
+        );
+        let mut timeline = GovernanceTimeline::from_full_lifecycle(
+            &proposal,
+            &risk,
+            &evidence,
+            &[decision],
+            &governance,
+            &workspace,
+            &readiness,
+            "t",
+        )
+        .unwrap();
+        assert!(timeline.provenance_survives(&provenance));
+        assert_eq!(timeline.dissent_immutable_refs.len(), 1);
+        assert!(!timeline.may_rewrite_events());
+        assert!(timeline.attempt_rewrite_event().is_err());
+        assert!(GovernanceTimeline::attempt_execute().is_err());
+        assert!(GovernanceTimeline::attempt_activate_runtime().is_err());
+        assert!(!timeline.may_bypass_permission_gateway());
+
+        let reject = GovernanceReviewDecision::new(
+            &policy,
+            AdaptationReviewerIdentity::local_user("local_user"),
+            GovernanceReviewDecisionKind::Reject,
+            "Not a fit",
+            "t-rej",
+            vec![],
+            &provenance,
+        )
+        .unwrap()
+        .with_evidence(&evidence);
+        let rejected = GovernanceTimeline::from_rejected_lifecycle(
+            &proposal, &risk, &evidence, &reject, "r",
+        )
+        .unwrap();
+        assert!(rejected.rejected_visible);
+        assert!(rejected.provenance_survives(&provenance));
+        assert!(rejected
+            .stages()
+            .contains(&GovernanceLifecycleStage::RejectedVisible));
     }
 }
