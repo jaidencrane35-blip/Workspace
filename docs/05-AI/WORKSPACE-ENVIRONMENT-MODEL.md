@@ -17,6 +17,8 @@ The Workspace remains a companion over Windows. The Environment Model understand
 ObservationTriggerRequest
   (startup: System / startup_initialization)
         ↓
+ObservationTriggerAdmissionPolicy
+        ↓
 ObservationTriggerAuthority
         ↓
 ObservationRefreshPolicyService
@@ -36,7 +38,7 @@ Attention / Intelligence / Continuity consumers
 
 **CaptureCoordinator** owns capture request admission and concurrency (no queue). It does **not** schedule, timer, or event-hook captures. Actual Win32 capture and persistence remain in `WorkspaceObservationService`. Capture requests carry provenance (`source` / optional `reason` / `context`) into distinguishable lifecycle audits (`requested` → `started` → `completed` | `failed`, or `rejected_concurrent`).
 
-**ObservationTriggerAuthority** evaluates `ObservationTriggerRequest`s: audit received → refresh policy → ignore / block / accept → `CaptureCoordinator` only when capture is needed. The first real caller is **startup-only**: `ObservationStartupTrigger` fires once from `WorkspaceKernel::initialize` after Ready (not from in-memory test init). Freshness requirement is `AnyAvailable` — capture when missing, ignore when any observation already exists. Scheduled / Event / Plugin callers are not wired yet.
+**ObservationTriggerAuthority** evaluates `ObservationTriggerRequest`s: audit received → **admission policy** → refresh policy → ignore / block / accept → `CaptureCoordinator` only when capture is needed. Admission rejects unwired sources (`Scheduled` / `Event` / `Plugin`) and rate-limits repeated admits (process-local cooldown). The first real caller is **startup-only**: `ObservationStartupTrigger` fires once from `WorkspaceKernel::initialize` after Ready (not from in-memory test init). Freshness requirement is `AnyAvailable` — capture when missing, ignore when any observation already exists.
 
 **ObservationRefreshPolicyService** answers whether a new observation should be requested (`FreshEnough` / `RefreshRequired` / `ObservationUnavailable` / `RefreshBlocked`). It is read-only: it does **not** capture. Consumer freshness needs (`ObservationConsumerFreshnessNeed`) are contracts only — not yet wired into Environment / Intelligence.
 

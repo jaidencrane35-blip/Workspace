@@ -92,7 +92,8 @@ mod tests {
 
     use crate::services::capture_coordinator::observation_flight_test_lock;
     use crate::services::{
-        AuditService, ObservationTriggerDecision, WorkspaceObservationService,
+        AuditService, ObservationTriggerAdmissionPolicy, ObservationTriggerDecision,
+        WorkspaceObservationService,
     };
 
     struct FailingCapturer;
@@ -103,6 +104,16 @@ mod tests {
                 "startup forced failure".into(),
             ))
         }
+    }
+
+    fn begin_startup_test() {
+        ObservationTriggerAdmissionPolicy::reset_for_tests();
+    }
+
+    fn startup_test_lock() -> std::sync::MutexGuard<'static, ()> {
+        observation_flight_test_lock()
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
     }
 
     #[test]
@@ -131,7 +142,8 @@ mod tests {
 
     #[test]
     fn no_observation_startup_results_in_capture() {
-        let _lock = observation_flight_test_lock().lock().unwrap();
+        let _lock = startup_test_lock();
+        begin_startup_test();
         let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
 
         let decision = ObservationStartupTrigger::run_with(
@@ -158,7 +170,8 @@ mod tests {
 
     #[test]
     fn fresh_observation_startup_ignored_by_policy() {
-        let _lock = observation_flight_test_lock().lock().unwrap();
+        let _lock = startup_test_lock();
+        begin_startup_test();
         let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
         let local = ActorContext::local_user();
         let intent = IntentContext::user_request();
@@ -201,7 +214,8 @@ mod tests {
 
     #[test]
     fn startup_provenance_preserved_through_capture_lifecycle() {
-        let _lock = observation_flight_test_lock().lock().unwrap();
+        let _lock = startup_test_lock();
+        begin_startup_test();
         let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
         let db = kernel.shared_database();
 
@@ -241,7 +255,8 @@ mod tests {
 
     #[test]
     fn startup_failure_visible_on_observation_failure_path() {
-        let _lock = observation_flight_test_lock().lock().unwrap();
+        let _lock = startup_test_lock();
+        begin_startup_test();
         let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
 
         let err = ObservationStartupTrigger::run_with(&kernel, &FailingCapturer).unwrap_err();

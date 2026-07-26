@@ -279,8 +279,10 @@ mod tests {
     use crate::WorkspaceKernel;
 
     /// Serialize coordinator tests so the process-wide flight bit cannot race.
-    fn coordinator_test_lock() -> &'static Mutex<()> {
+    fn coordinator_test_lock() -> std::sync::MutexGuard<'static, ()> {
         observation_flight_test_lock()
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
     }
 
     struct BlockingCapturer {
@@ -317,7 +319,7 @@ mod tests {
 
     #[test]
     fn coordinator_delegates_capture() {
-        let _lock = coordinator_test_lock().lock().unwrap();
+        let _lock = coordinator_test_lock();
         let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
         let local = ActorContext::local_user();
         let intent = IntentContext::user_request();
@@ -346,7 +348,7 @@ mod tests {
 
     #[test]
     fn request_provenance_audited_on_lifecycle() {
-        let _lock = coordinator_test_lock().lock().unwrap();
+        let _lock = coordinator_test_lock();
         let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
         let db = kernel.shared_database();
         let local = ActorContext::local_user();
@@ -382,7 +384,7 @@ mod tests {
 
     #[test]
     fn concurrent_capture_rejected() {
-        let _lock = coordinator_test_lock().lock().unwrap();
+        let _lock = coordinator_test_lock();
         let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
         let db = kernel.shared_database();
         let local = ActorContext::local_user();
@@ -451,7 +453,7 @@ mod tests {
 
     #[test]
     fn failure_releases_coordinator_state() {
-        let _lock = coordinator_test_lock().lock().unwrap();
+        let _lock = coordinator_test_lock();
         let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
         let db = kernel.shared_database();
         let local = ActorContext::local_user();
@@ -490,7 +492,7 @@ mod tests {
 
     #[test]
     fn success_releases_coordinator_state() {
-        let _lock = coordinator_test_lock().lock().unwrap();
+        let _lock = coordinator_test_lock();
         let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
         let local = ActorContext::local_user();
         let intent = IntentContext::user_request();
@@ -520,7 +522,7 @@ mod tests {
 
     #[test]
     fn into_capture_result_maps_busy_to_kernel_error() {
-        let _lock = coordinator_test_lock().lock().unwrap();
+        let _lock = coordinator_test_lock();
         let err = CaptureCoordinator::into_capture_result(
             CaptureCoordinatorResult::RejectedConcurrent,
         )

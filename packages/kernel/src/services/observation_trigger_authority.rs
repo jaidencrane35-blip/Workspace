@@ -1,4 +1,4 @@
-//! Observation trigger authority (Sprint 110).
+//! Observation trigger authority (Sprint 110–112).
 //!
 //! Sole evaluation boundary for observation trigger requests.
 //! Does not schedule, hook, or invent triggers — only decides and optionally
@@ -7,7 +7,7 @@
 //! ```text
 //! ObservationTriggerRequest
 //!         ↓
-//! ObservationTriggerAuthority
+//! ObservationTriggerAdmissionPolicy
 //!         ↓
 //! ObservationRefreshPolicyService
 //!         ↓
@@ -22,14 +22,15 @@ use serde_json::json;
 use workspace_database::Database;
 use workspace_domain::{
     ActorContext, IntentContext, ObservationFreshnessRequirement, ObservationRefreshContext,
-    ObservationRefreshDecision, ObservationTriggerOutcome, ObservationTriggerRequest,
+    ObservationRefreshDecision, ObservationTriggerAdmissionDecision, ObservationTriggerOutcome,
+    ObservationTriggerRequest,
 };
 use workspace_windows_integration::DesktopCapturer;
 
 use crate::error::Result;
 use crate::services::{
     AuditService, CaptureCoordinator, CaptureCoordinatorResult, ObservationRefreshPolicyService,
-    WorkspaceObservationCaptureResult,
+    ObservationTriggerAdmissionPolicy, WorkspaceObservationCaptureResult,
 };
 
 /// Trigger authority decision with optional capture payload.
@@ -41,6 +42,8 @@ pub(crate) enum ObservationTriggerDecision {
     BlockedCaptureInProgress,
     /// Observation unavailable and capture did not complete.
     Unavailable,
+    RateLimited { explanation: String },
+    RejectedSource { explanation: String },
 }
 
 impl ObservationTriggerDecision {
@@ -50,6 +53,8 @@ impl ObservationTriggerDecision {
             Self::IgnoredFresh => ObservationTriggerOutcome::IgnoredFresh,
             Self::BlockedCaptureInProgress => ObservationTriggerOutcome::BlockedCaptureInProgress,
             Self::Unavailable => ObservationTriggerOutcome::Unavailable,
+            Self::RateLimited { .. } => ObservationTriggerOutcome::RateLimited,
+            Self::RejectedSource { .. } => ObservationTriggerOutcome::RejectedSource,
         }
     }
 }
@@ -88,6 +93,25 @@ impl ObservationTriggerAuthority {
     ) -> Result<ObservationTriggerDecision> {
         Self::audit_received(db, actor, intent, &request)?;
 
+        let admission = ObservationTriggerAdmissionPolicy::evaluate(&request);
+        match &admission {
+            ObservationTriggerAdmissionDecision::RateLimited { explanation } => {
+                Self::audit_rate_limited(db, actor, intent, &request, explanation)?;
+                return Ok(ObservationTriggerDecision::RateLimited {
+                    explanation: explanation.clone(),
+                });
+            }
+            ObservationTriggerAdmissionDecision::RejectedSource { explanation } => {
+                Self::audit_rejected(db, actor, intent, &request, explanation)?;
+                return Ok(ObservationTriggerDecision::RejectedSource {
+                    explanation: explanation.clone(),
+                });
+            }
+            ObservationTriggerAdmissionDecision::Admitted => {
+                ObservationTriggerAdmissionPolicy::record_admitted();
+            }
+        }
+
         let refresh = ObservationRefreshPolicyService::evaluate(
             db,
             actor,
@@ -111,6 +135,7 @@ impl ObservationTriggerAuthority {
 
         match &decision {
             ObservationTriggerDecision::AcceptedCapture(_) => {
+                ObservationTriggerAdmissionPolicy::record_capture();
                 Self::audit_accepted(db, actor, intent, &request, &refresh)?;
             }
             ObservationTriggerDecision::IgnoredFresh
@@ -118,6 +143,8 @@ impl ObservationTriggerAuthority {
             | ObservationTriggerDecision::Unavailable => {
                 Self::audit_ignored(db, actor, intent, &request, &refresh, decision.outcome())?;
             }
+            ObservationTriggerDecision::RateLimited { .. }
+            | ObservationTriggerDecision::RejectedSource { .. } => {}
         }
 
         Ok(decision)
@@ -167,6 +194,7 @@ impl ObservationTriggerAuthority {
             request,
             None,
             None,
+            None,
         )
     }
 
@@ -186,6 +214,7 @@ impl ObservationTriggerAuthority {
             request,
             Some(refresh),
             Some(ObservationTriggerOutcome::AcceptedCapture),
+            None,
         )
     }
 
@@ -206,6 +235,47 @@ impl ObservationTriggerAuthority {
             request,
             Some(refresh),
             Some(outcome),
+            None,
+        )
+    }
+
+    fn audit_rate_limited(
+        db: &Arc<Mutex<Database>>,
+        actor: &ActorContext,
+        intent: &IntentContext,
+        request: &ObservationTriggerRequest,
+        explanation: &str,
+    ) -> Result<()> {
+        Self::audit(
+            db,
+            actor,
+            intent,
+            "workspace.observation.trigger.rate_limited",
+            true,
+            request,
+            None,
+            Some(ObservationTriggerOutcome::RateLimited),
+            Some(explanation),
+        )
+    }
+
+    fn audit_rejected(
+        db: &Arc<Mutex<Database>>,
+        actor: &ActorContext,
+        intent: &IntentContext,
+        request: &ObservationTriggerRequest,
+        explanation: &str,
+    ) -> Result<()> {
+        Self::audit(
+            db,
+            actor,
+            intent,
+            "workspace.observation.trigger.rejected",
+            true,
+            request,
+            None,
+            Some(ObservationTriggerOutcome::RejectedSource),
+            Some(explanation),
         )
     }
 
@@ -218,6 +288,7 @@ impl ObservationTriggerAuthority {
         request: &ObservationTriggerRequest,
         refresh: Option<&ObservationRefreshDecision>,
         outcome: Option<ObservationTriggerOutcome>,
+        explanation: Option<&str>,
     ) -> Result<()> {
         let provenance = request.provenance();
         AuditService::record_ai_planning_event(
@@ -239,6 +310,7 @@ impl ObservationTriggerAuthority {
                 },
                 "refresh_decision": refresh.map(|value| value.as_str()),
                 "outcome": outcome.map(|value| value.as_str()),
+                "explanation": explanation,
                 "authority_effect": "none",
             })
             .to_string(),
@@ -249,7 +321,7 @@ impl ObservationTriggerAuthority {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::sync::{Arc, Barrier, Mutex};
+    use std::sync::{Arc, Barrier};
     use std::thread;
 
     use workspace_domain::{CaptureRequest, CaptureRequestSource};
@@ -258,11 +330,20 @@ mod tests {
     };
 
     use crate::services::capture_coordinator::observation_flight_test_lock;
-    use crate::services::{AuditService, CaptureCoordinator, WorkspaceObservationService};
+    use crate::services::{
+        AuditService, CaptureCoordinator, ObservationTriggerAdmissionPolicy,
+        WorkspaceObservationService,
+    };
     use crate::WorkspaceKernel;
 
-    fn trigger_test_lock() -> &'static Mutex<()> {
+    fn trigger_test_lock() -> std::sync::MutexGuard<'static, ()> {
         observation_flight_test_lock()
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+    }
+
+    fn begin_trigger_test() {
+        ObservationTriggerAdmissionPolicy::reset_for_tests();
     }
 
     struct BlockingCapturer {
@@ -281,7 +362,8 @@ mod tests {
 
     #[test]
     fn fresh_observation_ignores_trigger() {
-        let _lock = trigger_test_lock().lock().unwrap();
+        let _lock = trigger_test_lock();
+        begin_trigger_test();
         let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
         let db = kernel.shared_database();
         let local = ActorContext::local_user();
@@ -323,7 +405,8 @@ mod tests {
 
     #[test]
     fn unavailable_observation_accepts_trigger() {
-        let _lock = trigger_test_lock().lock().unwrap();
+        let _lock = trigger_test_lock();
+        begin_trigger_test();
         let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
         let db = kernel.shared_database();
         let local = ActorContext::local_user();
@@ -359,7 +442,8 @@ mod tests {
 
     #[test]
     fn concurrent_capture_blocks_trigger() {
-        let _lock = trigger_test_lock().lock().unwrap();
+        let _lock = trigger_test_lock();
+        begin_trigger_test();
         let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
         let db = kernel.shared_database();
         let local = ActorContext::local_user();
@@ -393,7 +477,7 @@ mod tests {
             &db,
             &local,
             &intent,
-            ObservationTriggerRequest::event(ObservationFreshnessRequirement::Fresh)
+            ObservationTriggerRequest::manual(ObservationFreshnessRequirement::Fresh)
                 .with_reason("overlap"),
             &StubDesktopCapturer::fixture_dual_monitor(),
         )
@@ -410,21 +494,22 @@ mod tests {
 
     #[test]
     fn trigger_creates_coordinator_request_with_provenance() {
-        let _lock = trigger_test_lock().lock().unwrap();
+        let _lock = trigger_test_lock();
+        begin_trigger_test();
         let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
         let db = kernel.shared_database();
         let local = ActorContext::local_user();
         let intent = IntentContext::user_request();
 
-        let request = ObservationTriggerRequest::plugin(ObservationFreshnessRequirement::NotStale)
-            .with_reason("plugin_refresh")
-            .with_context("plugin:demo");
+        let request = ObservationTriggerRequest::system(ObservationFreshnessRequirement::NotStale)
+            .with_reason("system_refresh")
+            .with_context("system:demo");
 
-        assert_eq!(request.source, CaptureRequestSource::Plugin);
+        assert_eq!(request.source, CaptureRequestSource::System);
         let capture_req = request.to_capture_request();
-        assert_eq!(capture_req.source, CaptureRequestSource::Plugin);
-        assert_eq!(capture_req.reason.as_deref(), Some("plugin_refresh"));
-        assert_eq!(capture_req.context.as_deref(), Some("plugin:demo"));
+        assert_eq!(capture_req.source, CaptureRequestSource::System);
+        assert_eq!(capture_req.reason.as_deref(), Some("system_refresh"));
+        assert_eq!(capture_req.context.as_deref(), Some("system:demo"));
 
         let decision = ObservationTriggerAuthority::handle_with(
             &db,
@@ -445,22 +530,23 @@ mod tests {
             .find(|event| event.event_type == "workspace.observation.trigger.received")
             .expect("received");
         let metadata = received.metadata.as_deref().expect("metadata");
-        assert!(metadata.contains("plugin_refresh"));
-        assert!(metadata.contains("plugin:demo"));
-        assert!(metadata.contains("\"source\":\"plugin\""));
+        assert!(metadata.contains("system_refresh"));
+        assert!(metadata.contains("system:demo"));
+        assert!(metadata.contains("\"source\":\"system\""));
 
         let capture_requested = events
             .iter()
             .find(|event| event.event_type == "workspace.observation.capture.requested")
             .expect("capture requested");
         let capture_meta = capture_requested.metadata.as_deref().expect("metadata");
-        assert!(capture_meta.contains("plugin_refresh"));
-        assert!(capture_meta.contains("\"source\":\"plugin\""));
+        assert!(capture_meta.contains("system_refresh"));
+        assert!(capture_meta.contains("\"source\":\"system\""));
     }
 
     #[test]
     fn stale_observation_refresh_required_accepts_trigger() {
-        let _lock = trigger_test_lock().lock().unwrap();
+        let _lock = trigger_test_lock();
+        begin_trigger_test();
         let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
         let db = kernel.shared_database();
         let local = ActorContext::local_user();
@@ -474,7 +560,6 @@ mod tests {
         )
         .unwrap();
 
-        // Force stale captured_at so Fresh requirement fails.
         {
             let guard = db.lock().unwrap();
             guard
@@ -490,7 +575,7 @@ mod tests {
             &db,
             &local,
             &intent,
-            ObservationTriggerRequest::scheduled(ObservationFreshnessRequirement::Fresh)
+            ObservationTriggerRequest::manual(ObservationFreshnessRequirement::Fresh)
                 .with_reason("stale_repair"),
             &StubDesktopCapturer::fixture_dual_monitor(),
         )
@@ -500,5 +585,128 @@ mod tests {
             decision,
             ObservationTriggerDecision::AcceptedCapture(_)
         ));
+    }
+
+    #[test]
+    fn repeated_trigger_rate_limited_and_audited() {
+        let _lock = trigger_test_lock();
+        begin_trigger_test();
+        let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+        let db = kernel.shared_database();
+        let local = ActorContext::local_user();
+        let intent = IntentContext::user_request();
+        let capturer = StubDesktopCapturer::fixture_dual_monitor();
+
+        let first = ObservationTriggerAuthority::handle_with(
+            &db,
+            &local,
+            &intent,
+            ObservationTriggerRequest::manual(ObservationFreshnessRequirement::AnyAvailable)
+                .with_reason("first")
+                .with_context("test:rate"),
+            &capturer,
+        )
+        .unwrap();
+        assert!(matches!(
+            first,
+            ObservationTriggerDecision::AcceptedCapture(_)
+        ));
+
+        let second = ObservationTriggerAuthority::handle_with(
+            &db,
+            &local,
+            &intent,
+            ObservationTriggerRequest::manual(ObservationFreshnessRequirement::Fresh)
+                .with_reason("second")
+                .with_context("test:rate"),
+            &capturer,
+        )
+        .unwrap();
+        assert!(matches!(
+            second,
+            ObservationTriggerDecision::RateLimited { .. }
+        ));
+
+        let events = AuditService::list_recent(&db, 40).unwrap();
+        let rate_limited = events
+            .iter()
+            .find(|event| event.event_type == "workspace.observation.trigger.rate_limited")
+            .expect("rate_limited audit");
+        let meta = rate_limited.metadata.as_deref().expect("metadata");
+        assert!(meta.contains("\"source\":\"manual\""));
+        assert!(meta.contains("second"));
+        assert!(meta.contains("test:rate"));
+        assert!(meta.contains("minimum admit interval") || meta.contains("rate"));
+
+        let capture_starts = events
+            .iter()
+            .filter(|event| event.event_type == "workspace.observation.capture.started")
+            .count();
+        assert_eq!(capture_starts, 1);
+    }
+
+    #[test]
+    fn startup_system_trigger_allowed() {
+        let _lock = trigger_test_lock();
+        begin_trigger_test();
+        let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+        let db = kernel.shared_database();
+        let actor = ActorContext::system();
+        let intent = IntentContext::system_startup();
+
+        let decision = ObservationTriggerAuthority::handle_with(
+            &db,
+            &actor,
+            &intent,
+            crate::services::ObservationStartupTrigger::trigger_request(),
+            &StubDesktopCapturer::fixture_dual_monitor(),
+        )
+        .unwrap();
+        assert!(matches!(
+            decision,
+            ObservationTriggerDecision::AcceptedCapture(_)
+        ));
+    }
+
+    #[test]
+    fn rejected_source_does_not_capture() {
+        let _lock = trigger_test_lock();
+        begin_trigger_test();
+        let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+        let db = kernel.shared_database();
+        let local = ActorContext::local_user();
+        let intent = IntentContext::user_request();
+
+        let decision = ObservationTriggerAuthority::handle_with(
+            &db,
+            &local,
+            &intent,
+            ObservationTriggerRequest::plugin(ObservationFreshnessRequirement::AnyAvailable)
+                .with_reason("plugin_probe")
+                .with_context("plugin:blocked"),
+            &StubDesktopCapturer::fixture_dual_monitor(),
+        )
+        .unwrap();
+        assert!(matches!(
+            decision,
+            ObservationTriggerDecision::RejectedSource { .. }
+        ));
+
+        let events = AuditService::list_recent(&db, 20).unwrap();
+        assert!(events.iter().any(|event| {
+            event.event_type == "workspace.observation.trigger.rejected"
+        }));
+        assert!(!events.iter().any(|event| {
+            event.event_type == "workspace.observation.capture.started"
+                || event.event_type == "workspace.observation.refresh_evaluated"
+        }));
+        let rejected = events
+            .iter()
+            .find(|event| event.event_type == "workspace.observation.trigger.rejected")
+            .unwrap();
+        let meta = rejected.metadata.as_deref().unwrap();
+        assert!(meta.contains("\"source\":\"plugin\""));
+        assert!(meta.contains("plugin_probe"));
+        assert!(meta.contains("plugin:blocked"));
     }
 }

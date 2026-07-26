@@ -1561,7 +1561,14 @@ export type ObservationTriggerOutcome =
   | "accepted_capture"
   | "ignored_fresh"
   | "blocked_capture_in_progress"
-  | "unavailable";
+  | "unavailable"
+  | "rate_limited"
+  | "rejected_source";
+
+export type ObservationTriggerAdmissionDecision =
+  | { decision: "admitted" }
+  | { decision: "rate_limited"; explanation: string }
+  | { decision: "rejected_source"; explanation: string };
 
 export type EnvironmentWindowState = "open" | "minimized" | "focused" | "unknown";
 

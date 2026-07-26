@@ -683,6 +683,10 @@ pub enum ObservationTriggerOutcome {
     BlockedCaptureInProgress,
     /// Observation was unavailable and no capture completed (soft decline / failed path).
     Unavailable,
+    /// Trigger storm protection: cooldown / rate window exceeded.
+    RateLimited,
+    /// Trigger source is not admitted for execution yet.
+    RejectedSource,
 }
 
 impl ObservationTriggerOutcome {
@@ -692,9 +696,52 @@ impl ObservationTriggerOutcome {
             Self::IgnoredFresh => "ignored_fresh",
             Self::BlockedCaptureInProgress => "blocked_capture_in_progress",
             Self::Unavailable => "unavailable",
+            Self::RateLimited => "rate_limited",
+            Self::RejectedSource => "rejected_source",
         }
     }
 }
+
+/// Whether a trigger request may proceed past admission (Sprint 112).
+///
+/// Pure decision — never captures.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "decision", rename_all = "snake_case")]
+pub enum ObservationTriggerAdmissionDecision {
+    Admitted,
+    RateLimited { explanation: String },
+    RejectedSource { explanation: String },
+}
+
+impl ObservationTriggerAdmissionDecision {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Admitted => "admitted",
+            Self::RateLimited { .. } => "rate_limited",
+            Self::RejectedSource { .. } => "rejected_source",
+        }
+    }
+
+    pub fn is_admitted(&self) -> bool {
+        matches!(self, Self::Admitted)
+    }
+
+    pub fn explanation(&self) -> Option<&str> {
+        match self {
+            Self::Admitted => None,
+            Self::RateLimited { explanation } | Self::RejectedSource { explanation } => {
+                Some(explanation.as_str())
+            }
+        }
+    }
+}
+
+/// Default minimum gap between admitted triggers (process-local rate state).
+pub const OBSERVATION_TRIGGER_MIN_ADMIT_INTERVAL_SECS: u64 = 30;
+/// Sliding window for admission counting.
+pub const OBSERVATION_TRIGGER_ADMIT_WINDOW_SECS: u64 = 300;
+/// Max admissions inside the sliding window.
+pub const OBSERVATION_TRIGGER_MAX_ADMITS_PER_WINDOW: u32 = 8;
 
 /// Whether the current status satisfies a freshness requirement.
 pub fn observation_meets_freshness_requirement(

@@ -41,6 +41,7 @@ mod workspace_profile;
 mod workspace_observation;
 mod capture_coordinator;
 mod observation_refresh_policy;
+mod observation_trigger_admission;
 mod observation_trigger_authority;
 mod observation_startup_trigger;
 mod workspace_scope;
@@ -120,6 +121,7 @@ pub(crate) use capture_coordinator::{
     CaptureCoordinator, CaptureCoordinatorResult, CaptureLifecycleState,
 };
 pub(crate) use observation_refresh_policy::ObservationRefreshPolicyService;
+pub(crate) use observation_trigger_admission::ObservationTriggerAdmissionPolicy;
 pub(crate) use observation_trigger_authority::{
     ObservationTriggerAuthority, ObservationTriggerDecision,
 };

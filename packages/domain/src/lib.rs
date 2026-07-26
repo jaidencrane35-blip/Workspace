@@ -322,11 +322,13 @@ pub use workspace_observation::{
     observation_usize_to_i32, CaptureProvenance, CaptureRequest, CaptureRequestSource,
     ObservationCaptureErrorClass, ObservationCaptureFailure, ObservationConsumerFreshnessNeed,
     ObservationFreshness, ObservationFreshnessRequirement, ObservationRefreshBlockedReason,
-    ObservationRefreshContext, ObservationRefreshDecision, ObservationTriggerOutcome,
-    ObservationTriggerRequest, ObservationTriggerSource, ObservationWindowIdentity,
-    ObservedMonitor, ObservedWindow, WindowIdentityConfidence, WorkspaceObservationError,
-    WorkspaceObservationPass, WorkspaceObservationPassMetadata, WorkspaceObservationSnapshot,
-    WorkspaceObservationStatus, OBSERVATION_FRESH_THRESHOLD_SECS, OBSERVATION_STALE_THRESHOLD_SECS,
+    ObservationRefreshContext, ObservationRefreshDecision, ObservationTriggerAdmissionDecision,
+    ObservationTriggerOutcome, ObservationTriggerRequest, ObservationTriggerSource,
+    ObservationWindowIdentity, ObservedMonitor, ObservedWindow, WindowIdentityConfidence,
+    WorkspaceObservationError, WorkspaceObservationPass, WorkspaceObservationPassMetadata,
+    WorkspaceObservationSnapshot, WorkspaceObservationStatus, OBSERVATION_FRESH_THRESHOLD_SECS,
+    OBSERVATION_STALE_THRESHOLD_SECS, OBSERVATION_TRIGGER_ADMIT_WINDOW_SECS,
+    OBSERVATION_TRIGGER_MAX_ADMITS_PER_WINDOW, OBSERVATION_TRIGGER_MIN_ADMIT_INTERVAL_SECS,
 };
 pub use workspace_environment::{
     build_environment_summary, now_rfc3339, validate_workspace_id, EnvironmentApplication,
