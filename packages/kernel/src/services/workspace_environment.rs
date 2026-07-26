@@ -13,13 +13,15 @@ use workspace_domain::{
     build_environment_summary, now_rfc3339, validate_workspace_id, ActorContext,
     ApplicationReference, EnvironmentApplication, EnvironmentGap, EnvironmentLayoutAssociation,
     EnvironmentWindow, EnvironmentWindowGroup, EnvironmentWindowState, IntentContext, Layout,
-    TaskGraph, WorkflowContext, WorkspaceEnvironmentState, WorkspaceEnvironmentSummary,
-    WorkspaceId, WorkspaceState, WorkspaceStateWindow,
+    ObservationConsumerFreshnessNeed, ObservationRefreshContext, TaskGraph, WorkflowContext,
+    WorkspaceEnvironmentState, WorkspaceEnvironmentSummary, WorkspaceId, WorkspaceState,
+    WorkspaceStateWindow,
 };
 
 use crate::error::{KernelError, Result};
 use crate::services::{
-    AuditService, LayoutService, TaskGraphService, WorkspaceIntentService, WorkspaceStateEngine,
+    AuditService, CaptureCoordinator, LayoutService, ObservationRefreshPolicyService,
+    TaskGraphService, WorkspaceIntentService, WorkspaceObservationService, WorkspaceStateEngine,
 };
 
 pub(crate) struct WorkspaceEnvironmentService;
@@ -245,6 +247,16 @@ impl WorkspaceEnvironmentService {
             disconnected_work,
         );
 
+        let intent = IntentContext::user_request();
+        let need = ObservationConsumerFreshnessNeed::for_environment();
+        let status = WorkspaceObservationService::get_status(db, actor, &intent)?;
+        let refresh_decision = ObservationRefreshPolicyService::decide(
+            &status,
+            &need.requirement,
+            CaptureCoordinator::is_capture_in_progress(),
+        );
+        Self::audit_freshness_evaluated(db, actor, &intent, &need, &status, refresh_decision.as_str())?;
+
         let state = WorkspaceEnvironmentState {
             workspace_id: ws.to_string(),
             generated_at: now_rfc3339(),
@@ -259,6 +271,10 @@ impl WorkspaceEnvironmentService {
             running_application_count,
             missing_application_count,
             disconnected_work,
+            observation_freshness: status.freshness.as_str().into(),
+            observation_refresh_decision: refresh_decision.as_str().into(),
+            observation_age_seconds: status.age_seconds,
+            observation_has_observation: status.has_observation,
             summary,
             authority_effect: WorkspaceEnvironmentState::AUTHORITY_EFFECT_NONE.into(),
         };
@@ -299,6 +315,40 @@ impl WorkspaceEnvironmentService {
         LayoutService::load_by_workspace(&guard, &workspace_id).ok()
     }
 
+    fn audit_freshness_evaluated(
+        db: &Arc<Mutex<Database>>,
+        actor: &ActorContext,
+        intent: &IntentContext,
+        need: &ObservationConsumerFreshnessNeed,
+        status: &workspace_domain::WorkspaceObservationStatus,
+        decision: &str,
+    ) -> Result<()> {
+        let _ = ObservationRefreshContext::new()
+            .with_consumer(need.consumer_id.clone())
+            .with_purpose(
+                need.context
+                    .clone()
+                    .unwrap_or_else(|| "environment_generate".into()),
+            );
+        AuditService::record_ai_planning_event(
+            db,
+            actor,
+            intent,
+            "workspace.environment.freshness_evaluated",
+            true,
+            json!({
+                "consumer": need.consumer_id,
+                "requirement": need.requirement.as_str(),
+                "decision": decision,
+                "freshness": status.freshness.as_str(),
+                "age_seconds": status.age_seconds,
+                "has_observation": status.has_observation,
+                "authority_effect": "none",
+            })
+            .to_string(),
+        )
+    }
+
     fn audit_generated(
         db: &Arc<Mutex<Database>>,
         actor: &ActorContext,
@@ -317,6 +367,8 @@ impl WorkspaceEnvironmentService {
                 "running_application_count": state.running_application_count,
                 "missing_application_count": state.missing_application_count,
                 "disconnected_work": state.disconnected_work,
+                "observation_freshness": state.observation_freshness,
+                "observation_refresh_decision": state.observation_refresh_decision,
                 "observation_pass_id": workspace_state.metadata.observation_pass_id,
                 "latest_delta_reference": workspace_state.metadata.latest_delta_reference,
                 "workspace_state_has_changes": workspace_state.metadata.has_changes,

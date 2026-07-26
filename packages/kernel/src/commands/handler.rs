@@ -51,8 +51,9 @@ use crate::commands::get_actor_capabilities::GetActorCapabilities;
 use crate::commands::get_audit_history::GetAuditHistory;
 use crate::commands::get_permission_approvals::GetPermissionApprovals;
 use crate::commands::workspace_observation::{
-    CaptureWorkspaceObservation, GetLatestObservationDelta, GetLatestWorkspaceObservation,
-    GetObservationSchedulerStatus, GetWorkspaceObservationById, GetWorkspaceObservationStatus,
+    CaptureWorkspaceObservation, GateObservationRead, GetLatestObservationDelta,
+    GetLatestWorkspaceObservation, GetObservationSchedulerStatus, GetWorkspaceObservationById,
+    GetWorkspaceObservationStatus,
 };
 use crate::commands::workspace_state::GetWorkspaceState;
 use crate::commands::get_execution_outcomes::GetExecutionOutcomes;
@@ -106,7 +107,7 @@ use crate::services::{
     WorkspaceWorkContextService,
     WorkspaceNavigationService, WorkspaceMilestoneService, WorkspaceWorkingStyleService,
     WorkspaceTransitionService, WorkspaceInteractionService, WorkspaceProfileService,
-    WorkspaceObservationCaptureResult, WorkspaceObservationService,
+    WorkspaceObservationCaptureResult, WorkspaceObservationService, ObservationTriggerAuthority,
     ObservationSchedulerDiagnostics, WorkspaceActivityGraphService,
     WorkspaceAttentionService, WorkspaceContextService, WorkspaceContinuityService,
     WorkspaceIntelligenceService,
@@ -135,7 +136,8 @@ use workspace_domain::{
     WorkspaceProfile, WorkspaceProfileComparison, WorkspaceProfileMemberInput,
     WorkspaceProfileState, WorkspaceProfileStateComparison, WorkspaceProfileStatus,
     WorkspaceProfileValidation, WorkspaceObservationSnapshot, WorkspaceObservationStatus,
-    ObservationSchedulerStatus, WorkspaceObservationDelta,
+    ObservationConsumerFreshnessNeed, ObservationFreshnessEnsureResult, ObservationSchedulerStatus,
+    WorkspaceObservationDelta,
     WorkspaceState as ProjectedWorkspaceState, WorkspaceTask, WorkspaceTaskPriority,
     WorkspaceTaskStatus,
     WorkspaceIntelligenceComparison, WorkspaceIntelligenceState, AiPlan, AiPlanEvaluationReport,
@@ -1863,6 +1865,30 @@ impl CommandHandler {
     ) -> Result<WorkspaceObservationStatus> {
         CommandPipeline::new(kernel.command_context(actor, intent))
             .execute_query(GetWorkspaceObservationStatus)
+    }
+
+    /// Explicit Manual ensure for a consumer freshness need via TriggerAuthority.
+    /// Never Event/Plugin. Never silent — caller must invoke deliberately.
+    pub fn ensure_observation_freshness(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        consumer_id: Option<String>,
+    ) -> Result<ObservationFreshnessEnsureResult> {
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent.clone()))
+            .execute_query(GateObservationRead)?;
+        let need = match consumer_id.as_deref() {
+            Some(ObservationConsumerFreshnessNeed::INTELLIGENCE_CONSUMER) => {
+                ObservationConsumerFreshnessNeed::for_intelligence()
+            }
+            _ => ObservationConsumerFreshnessNeed::for_environment(),
+        };
+        ObservationTriggerAuthority::ensure_for_consumer(
+            &kernel.shared_database(),
+            &actor,
+            &intent,
+            &need,
+        )
     }
 
     /// Scheduler runtime health only — does not load observation snapshots.

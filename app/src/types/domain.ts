@@ -1523,6 +1523,19 @@ export interface WorkspaceObservationStatus {
   authority_effect: string;
 }
 
+/** Explicit Manual ensure via TriggerAuthority — never silent automation. */
+export interface ObservationFreshnessEnsureResult {
+  consumer_id: string;
+  trigger_outcome: string;
+  refresh_decision: string;
+  freshness_before: string;
+  freshness_after: string;
+  age_seconds_after: number | null;
+  captured: boolean;
+  explanation: string;
+  authority_effect: string;
+}
+
 /** Lightweight window identity for observation deltas. */
 export interface ObservationWindowRef {
   stable_window_id: string | null;
@@ -1813,6 +1826,10 @@ export interface WorkspaceEnvironmentState {
   running_application_count: number;
   missing_application_count: number;
   disconnected_work: boolean;
+  observation_freshness: string;
+  observation_refresh_decision: string;
+  observation_age_seconds: number | null;
+  observation_has_observation: boolean;
   summary: string;
   authority_effect: string;
 }
@@ -1828,6 +1845,10 @@ export interface WorkspaceEnvironmentSummary {
   focused_window_title: string | null;
   top_applications: EnvironmentApplication[];
   top_gaps: EnvironmentGap[];
+  observation_freshness: string;
+  observation_refresh_decision: string;
+  observation_age_seconds: number | null;
+  observation_has_observation: boolean;
   summary: string;
   authority_effect: string;
 }
@@ -2562,6 +2583,7 @@ export interface WorkspaceRuntimeOperatorView {
   architecture_review_passed: boolean;
   consistency_has_errors: boolean;
   diagnostic_snapshot_id: string;
+  observation_status: WorkspaceObservationStatus | null;
   publication_blocked: boolean;
   authority_effect: string;
 }

@@ -128,6 +128,8 @@ pub(crate) use workspace_observation::WorkspaceObservationService;
 pub(crate) use capture_coordinator::{
     CaptureCoordinator, CaptureCoordinatorResult, CaptureLifecycleState,
 };
+#[cfg(test)]
+pub(crate) use capture_coordinator::observation_flight_test_lock;
 pub(crate) use observation_refresh_policy::ObservationRefreshPolicyService;
 pub(crate) use observation_trigger_admission::ObservationTriggerAdmissionPolicy;
 pub(crate) use observation_trigger_authority::{

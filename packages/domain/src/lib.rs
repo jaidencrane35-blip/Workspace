@@ -369,6 +369,7 @@ pub use workspace_observation::{
     observation_now_rfc3339, observation_u32_to_i32, observation_u64_to_i32,
     observation_usize_to_i32, CaptureProvenance, CaptureRequest, CaptureRequestSource,
     ObservationCaptureErrorClass, ObservationCaptureFailure, ObservationConsumerFreshnessNeed,
+    ObservationFreshnessEnsureResult,
     ObservationFreshness, ObservationFreshnessRequirement, ObservationRefreshBlockedReason,
     ObservationRefreshContext, ObservationRefreshDecision, ObservationScheduleConfig,
     ObservationSchedulerStatus, ObservationTriggerAdmissionDecision, ObservationTriggerOutcome,

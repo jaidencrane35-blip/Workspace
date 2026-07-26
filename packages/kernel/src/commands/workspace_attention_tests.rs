@@ -593,6 +593,10 @@ fn case12_environment_owns_desktop_gaps_over_composition() {
         running_application_count: 0,
         missing_application_count: 0,
         disconnected_work: true,
+        observation_freshness: "unavailable".into(),
+        observation_refresh_decision: "observation_unavailable".into(),
+        observation_age_seconds: None,
+        observation_has_observation: false,
         summary: "fixture".into(),
         authority_effect: "none".into(),
     };
@@ -726,6 +730,10 @@ fn case15_source_caps_are_independent_of_input_order() {
             running_application_count: 0,
             missing_application_count: 0,
             disconnected_work: true,
+            observation_freshness: "unavailable".into(),
+            observation_refresh_decision: "observation_unavailable".into(),
+            observation_age_seconds: None,
+            observation_has_observation: false,
             summary: "fixture".into(),
             authority_effect: "none".into(),
         }

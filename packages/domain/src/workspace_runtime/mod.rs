@@ -41,6 +41,7 @@ use crate::workspace_environment::WorkspaceEnvironmentSummary;
 use crate::workspace_experience::WorkspaceExperienceSummary;
 use crate::workspace_intelligence::WorkspaceIntelligenceState;
 use crate::workspace_recommendation::WorkspaceRecommendationEngineSummary;
+use crate::workspace_observation::{ObservationFreshness, WorkspaceObservationStatus};
 use crate::workspace_state::WorkspaceState;
 
 // ---------------------------------------------------------------------------
@@ -604,6 +605,14 @@ impl WorkspaceRuntimeHealth {
     pub const AUTHORITY_EFFECT_NONE: &'static str = GOVERNANCE_AUTHORITY_EFFECT_NONE;
 
     pub fn observe(ctx: &WorkspaceRuntimeContext) -> Self {
+        Self::observe_with_observation_status(ctx, None)
+    }
+
+    /// Prefer live [`WorkspaceObservationStatus`] when available (Sprints 187–190).
+    pub fn observe_with_observation_status(
+        ctx: &WorkspaceRuntimeContext,
+        observation_status: Option<&WorkspaceObservationStatus>,
+    ) -> Self {
         let mut subsystems = Vec::new();
         let mut degraded = Vec::new();
 
@@ -666,15 +675,33 @@ impl WorkspaceRuntimeHealth {
             WorkspaceHealthLevel::Unknown
         };
 
-        let stale_observations = ctx.workspace_state.as_ref().is_none_or(|s| {
+        let presence_stale = ctx.workspace_state.as_ref().is_none_or(|s| {
             s.metadata.window_count == 0 && s.metadata.observation_pass_id.is_none()
         });
-        let observation_freshness = if stale_observations {
-            WorkspaceHealthLevel::Stale
-        } else if ctx.workspace_state.is_some() {
-            WorkspaceHealthLevel::Healthy
-        } else {
-            WorkspaceHealthLevel::Unknown
+        let (stale_observations, observation_freshness) = match observation_status {
+            Some(status) => {
+                let stale = matches!(
+                    status.freshness,
+                    ObservationFreshness::Stale | ObservationFreshness::Unavailable
+                );
+                let level = match status.freshness {
+                    ObservationFreshness::Fresh => WorkspaceHealthLevel::Healthy,
+                    ObservationFreshness::Recent => WorkspaceHealthLevel::Degraded,
+                    ObservationFreshness::Stale => WorkspaceHealthLevel::Stale,
+                    ObservationFreshness::Unavailable => WorkspaceHealthLevel::Unknown,
+                };
+                (stale, level)
+            }
+            None => {
+                let level = if presence_stale {
+                    WorkspaceHealthLevel::Stale
+                } else if ctx.workspace_state.is_some() {
+                    WorkspaceHealthLevel::Healthy
+                } else {
+                    WorkspaceHealthLevel::Unknown
+                };
+                (presence_stale, level)
+            }
         };
 
         let overall = [
@@ -837,6 +864,8 @@ pub struct WorkspaceRuntimeOperatorView {
     pub architecture_review_passed: bool,
     pub consistency_has_errors: bool,
     pub diagnostic_snapshot_id: String,
+    /// Live observation pipeline status (age/freshness) — observational only.
+    pub observation_status: Option<WorkspaceObservationStatus>,
     pub publication_blocked: bool,
     pub authority_effect: String,
 }
@@ -853,6 +882,7 @@ impl WorkspaceRuntimeOperatorView {
         review: &RuntimeArchitectureReview,
         verification: &RuntimeConsistencyVerification,
         snapshot_id: impl Into<String>,
+        observation_status: Option<WorkspaceObservationStatus>,
     ) -> Self {
         Self {
             workspace_id: ctx.workspace_id.clone(),
@@ -865,6 +895,7 @@ impl WorkspaceRuntimeOperatorView {
             architecture_review_passed: review.passed(),
             consistency_has_errors: verification.has_errors(),
             diagnostic_snapshot_id: snapshot_id.into(),
+            observation_status,
             publication_blocked: true,
             authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
         }

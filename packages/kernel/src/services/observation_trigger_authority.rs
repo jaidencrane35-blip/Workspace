@@ -21,9 +21,9 @@ use std::sync::{Arc, Mutex};
 use serde_json::json;
 use workspace_database::Database;
 use workspace_domain::{
-    ActorContext, IntentContext, ObservationFreshnessRequirement, ObservationRefreshContext,
-    ObservationRefreshDecision, ObservationTriggerAdmissionDecision, ObservationTriggerOutcome,
-    ObservationTriggerRequest,
+    ActorContext, IntentContext, ObservationConsumerFreshnessNeed, ObservationFreshnessEnsureResult,
+    ObservationFreshnessRequirement, ObservationRefreshContext, ObservationRefreshDecision,
+    ObservationTriggerAdmissionDecision, ObservationTriggerOutcome, ObservationTriggerRequest,
 };
 use workspace_windows_integration::DesktopCapturer;
 
@@ -31,6 +31,7 @@ use crate::error::Result;
 use crate::services::{
     AuditService, CaptureCoordinator, CaptureCoordinatorResult, ObservationRefreshPolicyService,
     ObservationTriggerAdmissionPolicy, WorkspaceObservationCaptureResult,
+    WorkspaceObservationService,
 };
 
 /// Trigger authority decision with optional capture payload.
@@ -82,6 +83,61 @@ impl ObservationTriggerAuthority {
         capturer: &dyn DesktopCapturer,
     ) -> Result<ObservationTriggerDecision> {
         Self::handle_inner(db, actor, intent, request, Some(capturer))
+    }
+
+    /// Explicit operator/manual ensure path for a consumer freshness need.
+    ///
+    /// Uses Manual trigger source only — never Event/Plugin. Does not silently
+    /// automate; caller must invoke this path deliberately.
+    pub(crate) fn ensure_for_consumer(
+        db: &Arc<Mutex<Database>>,
+        actor: &ActorContext,
+        intent: &IntentContext,
+        need: &ObservationConsumerFreshnessNeed,
+    ) -> Result<ObservationFreshnessEnsureResult> {
+        let before = WorkspaceObservationService::get_status(db, actor, intent)?;
+        let refresh_before = ObservationRefreshPolicyService::decide(
+            &before,
+            &need.requirement,
+            CaptureCoordinator::is_capture_in_progress(),
+        );
+        let request = ObservationTriggerRequest::manual(need.requirement.clone())
+            .with_reason(format!("ensure_freshness:{}", need.consumer_id))
+            .with_context(
+                need.context
+                    .clone()
+                    .unwrap_or_else(|| format!("consumer:{}", need.consumer_id)),
+            );
+        let decision = Self::handle(db, actor, intent, request)?;
+        let after = WorkspaceObservationService::get_status(db, actor, intent)?;
+        let captured = matches!(decision, ObservationTriggerDecision::AcceptedCapture(_));
+        let explanation = match &decision {
+            ObservationTriggerDecision::AcceptedCapture(_) => {
+                "Capture completed via TriggerAuthority for consumer freshness need.".into()
+            }
+            ObservationTriggerDecision::IgnoredFresh => {
+                "Observation already meets consumer freshness requirement.".into()
+            }
+            ObservationTriggerDecision::BlockedCaptureInProgress => {
+                "Capture blocked — another observation capture is in progress.".into()
+            }
+            ObservationTriggerDecision::Unavailable => {
+                "Observation unavailable and capture did not complete.".into()
+            }
+            ObservationTriggerDecision::RateLimited { explanation } => explanation.clone(),
+            ObservationTriggerDecision::RejectedSource { explanation } => explanation.clone(),
+        };
+        Ok(ObservationFreshnessEnsureResult {
+            consumer_id: need.consumer_id.clone(),
+            trigger_outcome: decision.outcome().as_str().into(),
+            refresh_decision: refresh_before.as_str().into(),
+            freshness_before: before.freshness.as_str().into(),
+            freshness_after: after.freshness.as_str().into(),
+            age_seconds_after: after.age_seconds,
+            captured,
+            explanation,
+            authority_effect: ObservationFreshnessEnsureResult::AUTHORITY_EFFECT_NONE.into(),
+        })
     }
 
     fn handle_inner(

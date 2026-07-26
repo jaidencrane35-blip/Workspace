@@ -28,7 +28,7 @@ use crate::services::{
     WorkspaceReadinessService, WorkspaceSessionService, WorkspaceExperienceService,
     WorkspaceWorkContextService, WorkspaceNavigationService, WorkspaceMilestoneService,
     WorkspaceWorkingStyleService, WorkspaceTransitionService, WorkspaceInteractionService,
-    WorkspaceProfileService, WorkspaceStateEngine,
+    WorkspaceProfileService, WorkspaceObservationService, WorkspaceStateEngine,
 };
 
 pub(crate) struct WorkspaceIntelligenceService;
@@ -135,6 +135,35 @@ impl WorkspaceIntelligenceService {
             layout.as_ref(),
         )?;
         let environment = WorkspaceEnvironmentService::summary_projection(&full_environment, 6);
+        // Consumer freshness need for Intelligence — evaluate only; never auto-capture.
+        {
+            use workspace_domain::ObservationConsumerFreshnessNeed;
+            use crate::services::{CaptureCoordinator, ObservationRefreshPolicyService};
+            let intent = IntentContext::user_request();
+            let need = ObservationConsumerFreshnessNeed::for_intelligence();
+            let status = WorkspaceObservationService::get_status(db, actor, &intent)?;
+            let decision = ObservationRefreshPolicyService::decide(
+                &status,
+                &need.requirement,
+                CaptureCoordinator::is_capture_in_progress(),
+            );
+            AuditService::record_ai_planning_event(
+                db,
+                actor,
+                &intent,
+                "workspace.intelligence.freshness_evaluated",
+                true,
+                json!({
+                    "consumer": need.consumer_id,
+                    "requirement": need.requirement.as_str(),
+                    "decision": decision.as_str(),
+                    "freshness": status.freshness.as_str(),
+                    "environment_refresh_decision": environment.observation_refresh_decision,
+                    "authority_effect": "none",
+                })
+                .to_string(),
+            )?;
+        }
 
         let full_composition = WorkspaceCompositionService::generate_with_inputs(
             db,

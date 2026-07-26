@@ -127,6 +127,12 @@ pub struct WorkspaceEnvironmentState {
     pub running_application_count: usize,
     pub missing_application_count: usize,
     pub disconnected_work: bool,
+    /// Latest observation freshness label (observational — never triggers capture).
+    pub observation_freshness: String,
+    /// Refresh policy decision for Environment's consumer need (`NotStale`).
+    pub observation_refresh_decision: String,
+    pub observation_age_seconds: Option<i64>,
+    pub observation_has_observation: bool,
     pub summary: String,
     pub authority_effect: String,
 }
@@ -150,6 +156,10 @@ impl WorkspaceEnvironmentState {
                 .map(|w| w.title.clone()),
             top_applications: self.applications.iter().take(limit).cloned().collect(),
             top_gaps: self.gaps.iter().take(limit).cloned().collect(),
+            observation_freshness: self.observation_freshness.clone(),
+            observation_refresh_decision: self.observation_refresh_decision.clone(),
+            observation_age_seconds: self.observation_age_seconds,
+            observation_has_observation: self.observation_has_observation,
             summary: self.summary.clone(),
             authority_effect: self.authority_effect.clone(),
         }
@@ -169,6 +179,10 @@ pub struct WorkspaceEnvironmentSummary {
     pub focused_window_title: Option<String>,
     pub top_applications: Vec<EnvironmentApplication>,
     pub top_gaps: Vec<EnvironmentGap>,
+    pub observation_freshness: String,
+    pub observation_refresh_decision: String,
+    pub observation_age_seconds: Option<i64>,
+    pub observation_has_observation: bool,
     pub summary: String,
     pub authority_effect: String,
 }
@@ -186,6 +200,10 @@ impl Default for WorkspaceEnvironmentSummary {
             focused_window_title: None,
             top_applications: Vec::new(),
             top_gaps: Vec::new(),
+            observation_freshness: "unavailable".into(),
+            observation_refresh_decision: "observation_unavailable".into(),
+            observation_age_seconds: None,
+            observation_has_observation: false,
             summary: String::new(),
             authority_effect: WorkspaceEnvironmentState::AUTHORITY_EFFECT_NONE.into(),
         }

@@ -20,7 +20,8 @@ use workspace_domain::{
 use crate::error::{KernelError, Result};
 use crate::services::{
     AssistantWorkflowStore, AuditService, OrchestratedPlanStore, WorkspaceExperienceService,
-    WorkspaceIntelligenceService, WorkspaceSessionService, WorkspaceStateEngine,
+    WorkspaceIntelligenceService, WorkspaceObservationService, WorkspaceSessionService,
+    WorkspaceStateEngine,
 };
 
 pub(crate) struct WorkspaceRuntimeService;
@@ -74,7 +75,12 @@ impl WorkspaceRuntimeService {
             governance,
         );
 
-        let health = WorkspaceRuntimeHealth::observe(&ctx);
+        let observation_status =
+            WorkspaceObservationService::get_status(db, actor, intent).ok();
+        let health = WorkspaceRuntimeHealth::observe_with_observation_status(
+            &ctx,
+            observation_status.as_ref(),
+        );
         let operator = OperatorContextProjection::from_runtime_context(&ctx, &health);
         let integration = WorkspaceRuntimeIntegrationContract::audit_default(&workspace_id);
         let coherence =
@@ -126,6 +132,7 @@ impl WorkspaceRuntimeService {
             &review,
             &verification,
             snapshot.id.clone(),
+            observation_status,
         );
 
         AuditService::record_ai_planning_event(

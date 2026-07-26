@@ -582,6 +582,24 @@ pub struct ObservationConsumerFreshnessNeed {
 }
 
 impl ObservationConsumerFreshnessNeed {
+    pub const ENVIRONMENT_CONSUMER: &'static str = "workspace_environment";
+    pub const INTELLIGENCE_CONSUMER: &'static str = "workspace_intelligence";
+
+    /// Canonical Environment consumer need — never triggers capture by itself.
+    pub fn for_environment() -> Self {
+        Self::new(Self::ENVIRONMENT_CONSUMER, ObservationFreshnessRequirement::NotStale)
+            .with_context("environment_generate")
+    }
+
+    /// Canonical Intelligence consumer need — never triggers capture by itself.
+    pub fn for_intelligence() -> Self {
+        Self::new(
+            Self::INTELLIGENCE_CONSUMER,
+            ObservationFreshnessRequirement::NotStale,
+        )
+        .with_context("intelligence_generate")
+    }
+
     pub fn new(
         consumer_id: impl Into<String>,
         requirement: ObservationFreshnessRequirement,
@@ -779,6 +797,27 @@ impl ObservationTriggerOutcome {
             Self::RejectedSource => "rejected_source",
         }
     }
+}
+
+/// Explicit freshness ensure result (operator/manual path via TriggerAuthority).
+///
+/// Never grants execution authority. Capture only occurs when TriggerAuthority admits
+/// Manual/System/Scheduled and refresh policy requires it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ObservationFreshnessEnsureResult {
+    pub consumer_id: String,
+    pub trigger_outcome: String,
+    pub refresh_decision: String,
+    pub freshness_before: String,
+    pub freshness_after: String,
+    pub age_seconds_after: Option<i64>,
+    pub captured: bool,
+    pub explanation: String,
+    pub authority_effect: String,
+}
+
+impl ObservationFreshnessEnsureResult {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
 }
 
 /// Whether a trigger request may proceed past admission (Sprint 112).

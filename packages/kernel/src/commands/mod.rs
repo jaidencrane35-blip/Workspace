@@ -200,6 +200,8 @@ mod workspace_runtime_integration_contract_tests;
 #[cfg(test)]
 mod workspace_runtime_projection_contract_tests;
 #[cfg(test)]
+mod workspace_observation_freshness_wiring_contract_tests;
+#[cfg(test)]
 mod workspace_runtime_diagnostics_contract_tests;
 #[cfg(test)]
 mod workspace_runtime_diagnostic_continuity_contract_tests;

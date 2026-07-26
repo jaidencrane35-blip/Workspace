@@ -2,8 +2,8 @@ use std::sync::{Arc, Mutex};
 
 use tauri::State;
 use workspace_domain::{
-    ObservationSchedulerStatus, WorkspaceObservationDelta, WorkspaceObservationSnapshot,
-    WorkspaceObservationStatus,
+    ObservationFreshnessEnsureResult, ObservationSchedulerStatus, WorkspaceObservationDelta,
+    WorkspaceObservationSnapshot, WorkspaceObservationStatus,
 };
 use workspace_kernel::{CommandHandler, WorkspaceKernel};
 use workspace_kernel::services::WorkspaceObservationCaptureResult;
@@ -125,6 +125,28 @@ pub fn get_latest_observation_delta(
             ipc_intent_context(),
         ) {
             Ok(delta) => IpcResponse::success(delta),
+            Err(error) => IpcResponse::failure(CommandError::from(error)),
+        },
+        Err(_) => IpcResponse::failure(CommandError::new(
+            "internal_error",
+            "Workspace core is temporarily unavailable.",
+        )),
+    }
+}
+
+#[tauri::command]
+pub fn ensure_observation_freshness(
+    consumer_id: Option<String>,
+    kernel: State<'_, Arc<Mutex<WorkspaceKernel>>>,
+) -> IpcResponse<ObservationFreshnessEnsureResult> {
+    match kernel.lock() {
+        Ok(kernel) => match CommandHandler::ensure_observation_freshness(
+            &kernel,
+            ipc_actor_context(),
+            ipc_intent_context(),
+            consumer_id,
+        ) {
+            Ok(result) => IpcResponse::success(result),
             Err(error) => IpcResponse::failure(CommandError::from(error)),
         },
         Err(_) => IpcResponse::failure(CommandError::new(

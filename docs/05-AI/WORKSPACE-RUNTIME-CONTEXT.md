@@ -202,6 +202,11 @@ consistency flags). IPC: `generate_workspace_runtime_overview`. Governance label
 come from readiness + decision-queue counts via `GovernanceRuntimeSummary::from_labels`
 — `publication_blocked` stays true; Gateway untouched.
 
+Observation freshness (Sprints 187–191): runtime health prefers live
+`WorkspaceObservationStatus`; Environment/Intelligence evaluate consumer freshness
+needs without auto-capture; Operator may call `ensure_observation_freshness`
+(Manual TriggerAuthority only).
+
 ---
 
 ## Related docs

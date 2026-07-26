@@ -21,6 +21,9 @@ import type {
   WorkspaceAdaptationState,
   WorkspaceReadinessState,
   WorkspaceRuntimeOperatorView,
+  WorkspaceObservationStatus,
+  ObservationSchedulerStatus,
+  ObservationFreshnessEnsureResult,
   WorkspaceSessionState,
   WorkspaceSessionComparison,
   WorkspaceExperienceState,
@@ -208,6 +211,12 @@ export function OperatorConsole({
     useState<WorkspaceReadinessState | null>(null);
   const [runtimeOverview, setRuntimeOverview] =
     useState<WorkspaceRuntimeOperatorView | null>(null);
+  const [observationStatus, setObservationStatus] =
+    useState<WorkspaceObservationStatus | null>(null);
+  const [schedulerStatus, setSchedulerStatus] =
+    useState<ObservationSchedulerStatus | null>(null);
+  const [freshnessEnsure, setFreshnessEnsure] =
+    useState<ObservationFreshnessEnsureResult | null>(null);
   const [sessionState, setSessionState] =
     useState<WorkspaceSessionState | null>(null);
   const [priorSession, setPriorSession] =
@@ -2112,6 +2121,14 @@ export function OperatorConsole({
               {runtimeOverview.architecture_review_passed ? "passed" : "fail"}
             </li>
             <li>
+              Observation{" "}
+              {runtimeOverview.observation_status?.freshness ?? "unknown"}
+              {runtimeOverview.observation_status?.age_seconds != null
+                ? ` · age ${runtimeOverview.observation_status.age_seconds}s`
+                : ""}{" "}
+              · stale={String(runtimeOverview.health.stale_observations)}
+            </li>
+            <li>
               {runtimeOverview.overview.dependency_summary} ·{" "}
               {runtimeOverview.overview.capability_summary}
             </li>
@@ -2119,6 +2136,100 @@ export function OperatorConsole({
               Snapshot {runtimeOverview.diagnostic_snapshot_id} · authority{" "}
               {runtimeOverview.authority_effect}
             </li>
+          </ul>
+        )}
+      </section>
+
+      <section>
+        <h2>Observation Freshness (diagnostics)</h2>
+        <p className="muted">
+          Consumer freshness needs are evaluated by Environment/Intelligence.
+          Ensure uses Manual TriggerAuthority only — never Event/Plugin, never
+          silent automation.
+        </p>
+        <div className="row">
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() =>
+              void run("Observation status loaded", async () => {
+                const status = await invokeIpc<WorkspaceObservationStatus>(
+                  "get_workspace_observation_status",
+                );
+                setObservationStatus(status);
+              })
+            }
+          >
+            Inspect observation status
+          </button>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() =>
+              void run("Scheduler status loaded", async () => {
+                const status = await invokeIpc<ObservationSchedulerStatus>(
+                  "get_observation_scheduler_status",
+                );
+                setSchedulerStatus(status);
+              })
+            }
+          >
+            Inspect scheduler
+          </button>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() =>
+              void run("Observation freshness ensure evaluated", async () => {
+                const result = await invokeIpc<ObservationFreshnessEnsureResult>(
+                  "ensure_observation_freshness",
+                  { consumerId: "workspace_environment" },
+                );
+                setFreshnessEnsure(result);
+                const status = await invokeIpc<WorkspaceObservationStatus>(
+                  "get_workspace_observation_status",
+                );
+                setObservationStatus(status);
+              })
+            }
+          >
+            Ensure freshness (manual)
+          </button>
+        </div>
+        {observationStatus && (
+          <ul className="muted">
+            <li>
+              Freshness {observationStatus.freshness}
+              {observationStatus.age_seconds != null
+                ? ` · age ${observationStatus.age_seconds}s`
+                : ""}{" "}
+              · has={String(observationStatus.has_observation)}
+            </li>
+            {observationStatus.last_failure && (
+              <li>
+                Last failure {observationStatus.last_failure.error_class}:{" "}
+                {observationStatus.last_failure.message}
+              </li>
+            )}
+          </ul>
+        )}
+        {schedulerStatus && (
+          <ul className="muted">
+            <li>
+              Scheduler enabled={String(schedulerStatus.enabled)} · running=
+              {String(schedulerStatus.running)} · interval{" "}
+              {schedulerStatus.interval_seconds}s
+            </li>
+          </ul>
+        )}
+        {freshnessEnsure && (
+          <ul className="muted">
+            <li>
+              {freshnessEnsure.consumer_id}: {freshnessEnsure.trigger_outcome} ·{" "}
+              {freshnessEnsure.freshness_before}→{freshnessEnsure.freshness_after}{" "}
+              · captured={String(freshnessEnsure.captured)}
+            </li>
+            <li>{freshnessEnsure.explanation}</li>
           </ul>
         )}
       </section>
