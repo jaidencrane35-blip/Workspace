@@ -135,6 +135,8 @@ mod workspace_experience_tests;
 mod workspace_experience_contract_tests;
 #[cfg(test)]
 mod workspace_cognition_pipeline_contract_tests;
+#[cfg(test)]
+mod workspace_recommendation_provenance_contract_tests;
 mod workspace_work_context_tests;
 mod workspace_navigation_tests;
 mod workspace_milestone_tests;
