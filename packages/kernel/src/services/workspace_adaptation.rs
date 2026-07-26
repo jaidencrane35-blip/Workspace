@@ -681,6 +681,27 @@ impl WorkspaceAdaptationService {
         Ok(state)
     }
 
+    /// Reference Working Style without applying style as behaviour change.
+    pub(crate) fn enrich_with_working_style(
+        adaptation: &WorkspaceAdaptationState,
+        working_style: &workspace_domain::WorkspaceWorkingStyleState,
+    ) -> Result<WorkspaceAdaptationState> {
+        let mut state = adaptation.clone();
+        let marker = format!(
+            "working_style:obs={},prefs={}",
+            working_style.observation_count, working_style.preference_count
+        );
+        if !state.evidence.iter().any(|e| e.starts_with("working_style:")) {
+            state.evidence.push(marker.clone());
+        }
+        state.explanation = format!(
+            "{} References Working Style as evidence only ({}) — never automatically applies \
+             style-driven changes.",
+            state.explanation, marker
+        );
+        Ok(state)
+    }
+
     /// Reference Navigation without applying or owning it.
     pub(crate) fn enrich_with_navigation(
         adaptation: &WorkspaceAdaptationState,

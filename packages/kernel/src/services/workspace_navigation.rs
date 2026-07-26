@@ -653,6 +653,26 @@ impl WorkspaceNavigationService {
         Ok(next)
     }
 
+    /// Reference Working Style as evidence only — Navigation never owns style.
+    pub(crate) fn enrich_with_working_style(
+        navigation: &WorkspaceNavigationState,
+        working_style: &workspace_domain::WorkspaceWorkingStyleState,
+    ) -> Result<WorkspaceNavigationState> {
+        let mut next = navigation.clone();
+        let marker = format!(
+            "working_style:obs={},prefs={}",
+            working_style.observation_count, working_style.preference_count
+        );
+        if !next.evidence.iter().any(|e| e.starts_with("working_style:")) {
+            next.evidence.push(marker.clone());
+        }
+        next.explanation = format!(
+            "{} References Working Style as evidence only ({}) — Navigation does not own style.",
+            next.explanation, marker
+        );
+        Ok(next)
+    }
+
     pub(crate) fn attempt_execute() -> Result<()> {
         Err(KernelError::from(
             workspace_domain::WorkspaceNavigationError::CannotExecute,

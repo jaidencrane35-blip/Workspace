@@ -31,6 +31,7 @@ use crate::commands::workspace_experience::GateExperienceRead;
 use crate::commands::workspace_work_context::GateWorkContextEngineRead;
 use crate::commands::workspace_navigation::GateNavigationRead;
 use crate::commands::workspace_milestone::GateMilestoneRead;
+use crate::commands::workspace_working_style::GateWorkingStyleRead;
 use crate::commands::workspace_activity::GateActivityGraphRead;
 use crate::commands::workspace_attention::GateAttentionRead;
 use crate::commands::workspace_continuity::GateContinuityRead;
@@ -92,7 +93,8 @@ use crate::services::{
     WorkspaceRecommendationEngineService, WorkspaceOperatingStateService,
     WorkspacePatternService, WorkspaceAdaptationService, WorkspaceReadinessService,
     WorkspaceSessionService, WorkspaceExperienceService, WorkspaceWorkContextService,
-    WorkspaceNavigationService, WorkspaceMilestoneService, WorkspaceActivityGraphService,
+    WorkspaceNavigationService, WorkspaceMilestoneService, WorkspaceWorkingStyleService,
+    WorkspaceActivityGraphService,
     WorkspaceAttentionService, WorkspaceContextService, WorkspaceContinuityService,
     WorkspaceIntelligenceService,
 };
@@ -113,6 +115,7 @@ use workspace_domain::{
     WorkspaceWorkContextComparison, WorkspaceWorkContextState, WorkspaceWorkContextValidation,
     WorkspaceNavigationComparison, WorkspaceNavigationState, WorkspaceNavigationValidation,
     WorkspaceMilestoneComparison, WorkspaceMilestoneState, WorkspaceMilestoneValidation,
+    WorkspaceWorkingStyleComparison, WorkspaceWorkingStyleState, WorkspaceWorkingStyleValidation,
     WorkspaceTask, WorkspaceTaskPriority, WorkspaceTaskStatus,
     WorkspaceIntelligenceComparison, WorkspaceIntelligenceState, AiPlan, AiPlanEvaluationReport,
     AiPlanSubmissionResult,
@@ -3274,6 +3277,64 @@ impl CommandHandler {
     /// Architecture guard — Milestones must never execute or authorize.
     pub fn workspace_milestones_attempt_execute() -> Result<()> {
         WorkspaceMilestoneService::attempt_execute()
+    }
+
+    /// Project Workspace Working Style (operating patterns — never profiles or executes).
+    pub fn generate_workspace_working_style(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceWorkingStyleState> {
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent.clone()))
+            .execute_query(GateWorkingStyleRead)?;
+        let _ = Self::get_workflow_context(
+            kernel,
+            actor.clone(),
+            intent.clone(),
+            workspace_id.clone(),
+        )?;
+        let workspace =
+            Self::get_workspace(kernel, actor.clone(), intent, workspace_id.clone())?;
+        let health = kernel.health();
+        WorkspaceWorkingStyleService::generate(
+            &kernel.shared_database(),
+            &actor,
+            &kernel.orchestrated_plans(),
+            &kernel.assistant_workflows(),
+            workspace_id,
+            workspace.name,
+            health.status.clone(),
+        )
+    }
+
+    /// Compare two working-style snapshots (informational).
+    pub fn compare_workspace_working_styles(
+        left: &WorkspaceWorkingStyleState,
+        right: &WorkspaceWorkingStyleState,
+    ) -> WorkspaceWorkingStyleComparison {
+        WorkspaceWorkingStyleService::compare(left, right)
+    }
+
+    /// Validate a working-style snapshot (Operator / IPC) and audit.
+    pub fn validate_workspace_working_style(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        state: &WorkspaceWorkingStyleState,
+    ) -> Result<WorkspaceWorkingStyleValidation> {
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent))
+            .execute_query(GateWorkingStyleRead)?;
+        WorkspaceWorkingStyleService::validate_and_audit(
+            &kernel.shared_database(),
+            &actor,
+            state,
+        )
+    }
+
+    /// Architecture guard — Working Style must never execute or authorize.
+    pub fn workspace_working_style_attempt_execute() -> Result<()> {
+        WorkspaceWorkingStyleService::attempt_execute()
     }
 
     /// Read-only workspace intelligence aggregation. Capability-gated; never executes.

@@ -747,6 +747,29 @@ impl WorkspaceRecommendationEngineService {
         Ok(state)
     }
 
+    /// Reference Working Style as evidence only — never creates actions from style.
+    pub(crate) fn enrich_with_working_style(
+        recommendations: &WorkspaceRecommendationEngineState,
+        working_style: &workspace_domain::WorkspaceWorkingStyleState,
+    ) -> Result<WorkspaceRecommendationEngineState> {
+        let mut state = recommendations.clone();
+        let marker = format!(
+            "working_style:obs={},prefs={},rhythm={}",
+            working_style.observation_count,
+            working_style.preference_count,
+            working_style.rhythm_count
+        );
+        if !state.evidence.iter().any(|e| e.starts_with("working_style:")) {
+            state.evidence.push(marker.clone());
+        }
+        state.explanation = format!(
+            "{} References Working Style as evidence only ({}) — does not change Working Style \
+             or create actions from observations.",
+            state.explanation, marker
+        );
+        Ok(state)
+    }
+
     /// Reference Navigation without mutating navigation ownership or ranking authority.
     pub(crate) fn enrich_with_navigation(
         recommendations: &WorkspaceRecommendationEngineState,

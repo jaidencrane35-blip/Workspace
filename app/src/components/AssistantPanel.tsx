@@ -10,6 +10,7 @@ import type {
   WorkspaceWorkContextState,
   WorkspaceNavigationState,
   WorkspaceMilestoneState,
+  WorkspaceWorkingStyleState,
   WorkspaceIntelligenceState,
 } from "../types/domain";
 import { assistantProductState } from "../types/domain";
@@ -62,6 +63,8 @@ export function AssistantPanel({
     useState<WorkspaceNavigationState | null>(null);
   const [milestoneState, setMilestoneState] =
     useState<WorkspaceMilestoneState | null>(null);
+  const [workingStyleState, setWorkingStyleState] =
+    useState<WorkspaceWorkingStyleState | null>(null);
 
   const productState = assistantProductState(workflow?.state);
   const canConfirm = workflow?.state === "awaiting_confirmation";
@@ -136,7 +139,14 @@ export function AssistantPanel({
             onClick={() =>
               void run("Workspace understanding loaded", async () => {
                 if (!workspace) return;
-                const [intel, experience, workContext, navigation, milestones] =
+                const [
+                  intel,
+                  experience,
+                  workContext,
+                  navigation,
+                  milestones,
+                  workingStyle,
+                ] =
                   await Promise.all([
                   invokeIpc<WorkspaceIntelligenceState>(
                     "generate_workspace_intelligence",
@@ -158,18 +168,33 @@ export function AssistantPanel({
                     "generate_workspace_milestones",
                     { workspaceId: workspace.id },
                   ),
+                  invokeIpc<WorkspaceWorkingStyleState>(
+                    "generate_workspace_working_style",
+                    { workspaceId: workspace.id },
+                  ),
                 ]);
                 setWorkspaceIntel(intel);
                 setExperienceState(experience);
                 setWorkContextState(workContext);
                 setNavigationState(navigation);
                 setMilestoneState(milestones);
+                setWorkingStyleState(workingStyle);
               })
             }
           >
             Load workspace intelligence
           </button>
         </div>
+        {workingStyleState && (
+          <dl>
+            <dt>Working Style</dt>
+            <dd>
+              {workingStyleState.style_summary.narrative} Assistant explains
+              how work usually happens — never claims certainty, never
+              profiles, never executes.
+            </dd>
+          </dl>
+        )}
         {milestoneState && (
           <dl>
             <dt>Milestones</dt>
@@ -406,6 +431,13 @@ export function AssistantPanel({
               {workspaceIntel.milestones.summary} Same Milestone Engine as the
               Work tab. Assistant may explain progress and blockers — never
               plans, schedules, or executes.
+            </dd>
+            <dt>Working Style</dt>
+            <dd>
+              {workspaceIntel.working_style.summary} Same Working Style Model as
+              the Work tab. Assistant may explain observed patterns and
+              explicit preferences separately — never claims certainty or
+              changes behaviour.
             </dd>
             <dt>Continuity</dt>
             <dd>

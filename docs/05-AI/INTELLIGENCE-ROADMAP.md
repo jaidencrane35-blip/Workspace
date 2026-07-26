@@ -180,6 +180,10 @@ Workspace Navigation Engine foundation (Sprint 97) — interaction paths over un
 
 Workspace Milestone Engine foundation (Sprint 98) — progress coordination over understanding; Intelligence embeds `milestones` after Navigation; evidence-only consumption; never plans/schedules/executes. See [Workspace Milestone Engine](WORKSPACE-MILESTONE-ENGINE.md).
 
+## Phase 6 Batch 6 (done)
+
+Workspace Working Style Model foundation (Sprint 99) — observable operating patterns; Intelligence embeds `working_style` after Milestones; separates observed behaviour from explicit preference; evidence-only consumption; never profiles/predicts/executes. See [Workspace Working Style Model](WORKSPACE-WORKING-STYLE-MODEL.md).
+
 ---
 
 ## Never build

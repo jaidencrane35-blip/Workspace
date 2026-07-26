@@ -32,6 +32,9 @@ import type {
   WorkspaceMilestoneState,
   WorkspaceMilestoneComparison,
   WorkspaceMilestoneValidation,
+  WorkspaceWorkingStyleState,
+  WorkspaceWorkingStyleComparison,
+  WorkspaceWorkingStyleValidation,
   AiOrchestratedPlan,
   AiPlan,
   AiPlanEvaluationReport,
@@ -205,6 +208,10 @@ export function OperatorConsole({
     useState<WorkspaceMilestoneState | null>(null);
   const [priorMilestones, setPriorMilestones] =
     useState<WorkspaceMilestoneState | null>(null);
+  const [workingStyleState, setWorkingStyleState] =
+    useState<WorkspaceWorkingStyleState | null>(null);
+  const [priorWorkingStyle, setPriorWorkingStyle] =
+    useState<WorkspaceWorkingStyleState | null>(null);
   const [activeProject, setActiveProject] = useState<Project | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [memoryEntries, setMemoryEntries] = useState<MemoryEntry[]>([]);
@@ -2188,6 +2195,92 @@ export function OperatorConsole({
               {milestoneState.blocked_count} · Completed{" "}
               {milestoneState.completed_count} · authority{" "}
               {milestoneState.authority_effect}
+            </li>
+          </ul>
+        )}
+      </section>
+
+      <section>
+        <h2>Workspace Working Style (diagnostics)</h2>
+        <p className="muted">
+          Operating patterns — Generate / Inspect / Compare / Validate. Never
+          profiles, predicts, or executes. Observed ≠ preferred.
+        </p>
+        <div className="row">
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("Working style generated", async () => {
+                if (!workspace) return;
+                const state = await invokeIpc<WorkspaceWorkingStyleState>(
+                  "generate_workspace_working_style",
+                  { workspaceId: workspace.id },
+                );
+                if (workingStyleState) setPriorWorkingStyle(workingStyleState);
+                setWorkingStyleState(state);
+              })
+            }
+          >
+            Generate working style
+          </button>
+          <button
+            type="button"
+            disabled={busy || !workingStyleState}
+            onClick={() =>
+              void run("Working style inspected", async () => {
+                if (!workingStyleState) return;
+                onMessage(
+                  `${workingStyleState.style_summary.narrative} Evidence: ${workingStyleState.evidence.slice(0, 3).join(" · ")}`,
+                );
+              })
+            }
+          >
+            Inspect working style
+          </button>
+          <button
+            type="button"
+            disabled={busy || !workingStyleState || !priorWorkingStyle}
+            onClick={() =>
+              void run("Working styles compared", async () => {
+                if (!workingStyleState || !priorWorkingStyle) return;
+                const comparison =
+                  await invokeIpc<WorkspaceWorkingStyleComparison>(
+                    "compare_workspace_working_styles",
+                    { left: priorWorkingStyle, right: workingStyleState },
+                  );
+                onMessage(comparison.differences.join(" · "));
+              })
+            }
+          >
+            Compare working styles
+          </button>
+          <button
+            type="button"
+            disabled={busy || !workingStyleState}
+            onClick={() =>
+              void run("Working style validated", async () => {
+                if (!workingStyleState) return;
+                const report =
+                  await invokeIpc<WorkspaceWorkingStyleValidation>(
+                    "validate_workspace_working_style",
+                    { state: workingStyleState },
+                  );
+                onMessage(report.messages.join(" · "));
+              })
+            }
+          >
+            Validate working style
+          </button>
+        </div>
+        {workingStyleState && (
+          <ul className="muted">
+            <li>{workingStyleState.style_summary.headline}</li>
+            <li>{workingStyleState.style_summary.observed_vs_preferred_line}</li>
+            <li>
+              Observed {workingStyleState.observed_count} · Explicit prefs{" "}
+              {workingStyleState.preference_count} · authority{" "}
+              {workingStyleState.authority_effect}
             </li>
           </ul>
         )}

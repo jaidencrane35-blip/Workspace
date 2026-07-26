@@ -1275,6 +1275,8 @@ export interface WorkspaceIntelligenceState {
   navigation: WorkspaceNavigationSummary;
   /** Progress toward meaningful outcomes — after Navigation; never plans/executes. */
   milestones: WorkspaceMilestoneSummary;
+  /** How work usually happens — after Milestones; never profiles/executes. */
+  working_style: WorkspaceWorkingStyleSummary;
   workspace_health: string;
   summary: string;
   authority_effect: string;
@@ -2756,6 +2758,106 @@ export interface WorkspaceMilestoneComparison {
 }
 
 export interface WorkspaceMilestoneValidation {
+  valid: boolean;
+  messages: string[];
+  authority_effect: string;
+}
+
+export type WorkingStyleKind =
+  | "rhythm"
+  | "organization"
+  | "workflow"
+  | "interaction_preference"
+  | "observed_usage"
+  | "context_switching";
+
+export type WorkingStyleOrigin =
+  | "observed_behaviour"
+  | "explicit_preference";
+
+export type WorkingStyleConfidence = "high" | "medium" | "low";
+
+export interface WorkingStyleEvidence {
+  label: string;
+  source_projection: string;
+  source_ref: string;
+  why: string;
+}
+
+export interface WorkingStyleObservation {
+  id: string;
+  kind: WorkingStyleKind;
+  origin: WorkingStyleOrigin;
+  title: string;
+  summary: string;
+  confidence: WorkingStyleConfidence;
+  evidence: WorkingStyleEvidence[];
+  affected_context: string;
+  explanation: string;
+  why: string;
+  authority_effect: string;
+}
+
+export interface WorkingStyleSummary {
+  headline: string;
+  rhythm_line: string;
+  organization_line: string;
+  workflow_line: string;
+  context_switching_line: string;
+  preference_line: string;
+  observed_vs_preferred_line: string;
+  narrative: string;
+}
+
+export interface WorkspaceWorkingStyleState {
+  workspace_id: string;
+  workspace_name: string;
+  generated_at: string;
+  label: string;
+  style_summary: WorkingStyleSummary;
+  observations: WorkingStyleObservation[];
+  observation_count: number;
+  observed_count: number;
+  preference_count: number;
+  rhythm_count: number;
+  organization_count: number;
+  workflow_count: number;
+  context_switching_count: number;
+  session_generated_at: string;
+  experience_generated_at: string;
+  work_context_generated_at: string;
+  navigation_generated_at: string;
+  milestones_generated_at: string;
+  intelligence_generated_at: string;
+  explanation: string;
+  evidence: string[];
+  summary: string;
+  authority_effect: string;
+}
+
+export interface WorkspaceWorkingStyleSummary {
+  workspace_id: string;
+  workspace_name: string;
+  generated_at: string;
+  label: string;
+  style_summary: WorkingStyleSummary;
+  observation_count: number;
+  observed_count: number;
+  preference_count: number;
+  top_observations: WorkingStyleObservation[];
+  explanation: string;
+  summary: string;
+  authority_effect: string;
+}
+
+export interface WorkspaceWorkingStyleComparison {
+  left_workspace_id: string;
+  right_workspace_id: string;
+  differences: string[];
+  authority_effect: string;
+}
+
+export interface WorkspaceWorkingStyleValidation {
   valid: boolean;
   messages: string[];
   authority_effect: string;

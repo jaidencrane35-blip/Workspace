@@ -446,6 +446,26 @@ impl WorkspaceSessionService {
         Ok(next)
     }
 
+    /// Reference Working Style as evidence only — Session never owns style.
+    pub(crate) fn enrich_with_working_style(
+        session: &WorkspaceSessionState,
+        working_style: &workspace_domain::WorkspaceWorkingStyleState,
+    ) -> Result<WorkspaceSessionState> {
+        let mut next = session.clone();
+        let marker = format!(
+            "working_style:obs={},prefs={}",
+            working_style.observation_count, working_style.preference_count
+        );
+        if !next.evidence.iter().any(|e| e.starts_with("working_style:")) {
+            next.evidence.push(marker.clone());
+        }
+        next.explanation = format!(
+            "{} References Working Style as evidence only ({}) — Session remains canonical runtime.",
+            next.explanation, marker
+        );
+        Ok(next)
+    }
+
     /// Reference Navigation as evidence only — does not own or mutate Navigation.
     pub(crate) fn enrich_with_navigation(
         session: &WorkspaceSessionState,

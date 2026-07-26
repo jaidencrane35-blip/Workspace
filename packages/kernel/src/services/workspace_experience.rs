@@ -421,6 +421,26 @@ impl WorkspaceExperienceService {
         WorkspaceExperienceComparison::compare(left, right)
     }
 
+    /// Reference Working Style as evidence only — Experience never owns style.
+    pub(crate) fn enrich_with_working_style(
+        experience: &WorkspaceExperienceState,
+        working_style: &workspace_domain::WorkspaceWorkingStyleState,
+    ) -> Result<WorkspaceExperienceState> {
+        let mut next = experience.clone();
+        let marker = format!(
+            "working_style:obs={},prefs={}",
+            working_style.observation_count, working_style.preference_count
+        );
+        if !next.evidence.iter().any(|e| e.starts_with("working_style:")) {
+            next.evidence.push(marker.clone());
+        }
+        next.explanation = format!(
+            "{} References Working Style as evidence only ({}) — Experience remains presentation only.",
+            next.explanation, marker
+        );
+        Ok(next)
+    }
+
     pub(crate) fn attempt_execute() -> Result<()> {
         Err(KernelError::from(
             workspace_domain::WorkspaceExperienceError::CannotExecute,

@@ -35,6 +35,8 @@ import type {
   WorkspaceNavigationComparison,
   WorkspaceMilestoneState,
   WorkspaceMilestoneComparison,
+  WorkspaceWorkingStyleState,
+  WorkspaceWorkingStyleComparison,
   WorkspaceIntelligenceState,
 } from "../types/domain";
 
@@ -120,6 +122,11 @@ export function WorkspaceIntelligencePanel({
   const [milestoneCompareNote, setMilestoneCompareNote] = useState<
     string | null
   >(null);
+  const [workingStyleState, setWorkingStyleState] =
+    useState<WorkspaceWorkingStyleState | null>(null);
+  const [workingStyleCompareNote, setWorkingStyleCompareNote] = useState<
+    string | null
+  >(null);
   const [lastHandoff, setLastHandoff] = useState<string | null>(null);
   const [contractName, setContractName] = useState(
     "Prepare coding environment",
@@ -173,6 +180,8 @@ export function WorkspaceIntelligencePanel({
       setNavigationCompareNote(null);
       setMilestoneState(null);
       setMilestoneCompareNote(null);
+      setWorkingStyleState(null);
+      setWorkingStyleCompareNote(null);
       setLastHandoff(null);
       setState(null);
       return;
@@ -194,6 +203,7 @@ export function WorkspaceIntelligencePanel({
           workContext,
           navigation,
           milestones,
+          workingStyle,
           decisions,
           graphTasks,
           adapt,
@@ -234,6 +244,10 @@ export function WorkspaceIntelligencePanel({
               "generate_workspace_milestones",
               { workspaceId: workspace.id },
             ),
+            invokeIpc<WorkspaceWorkingStyleState>(
+              "generate_workspace_working_style",
+              { workspaceId: workspace.id },
+            ),
             invokeIpc<DecisionEngineState>("generate_decision_engine", {
               workspaceId: workspace.id,
             }),
@@ -255,6 +269,7 @@ export function WorkspaceIntelligencePanel({
           setWorkContextState(workContext);
           setNavigationState(navigation);
           setMilestoneState(milestones);
+          setWorkingStyleState(workingStyle);
           setDecisionEngine(decisions);
           setTaskGraph(graphTasks);
           setAdaptationState(adapt);
@@ -771,6 +786,108 @@ export function WorkspaceIntelligencePanel({
           </>
         ) : (
           <p className="muted">No milestone snapshot yet.</p>
+        )}
+      </section>
+
+      <section>
+        <h3>How this Workspace usually works</h3>
+        <p className="muted">
+          Working Style — observable operating patterns. Observed behaviour is
+          kept separate from explicit preferences. Never profiles or executes.
+        </p>
+        <div className="row">
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("Working style refreshed", async () => {
+                if (!workspace) return;
+                const next = await invokeIpc<WorkspaceWorkingStyleState>(
+                  "generate_workspace_working_style",
+                  { workspaceId: workspace.id },
+                );
+                setWorkingStyleState(next);
+                setWorkingStyleCompareNote(null);
+              })
+            }
+          >
+            Refresh working style
+          </button>
+          <button
+            type="button"
+            disabled={busy || !workspace || !workingStyleState}
+            onClick={() =>
+              void run("Working style compared", async () => {
+                if (!workspace || !workingStyleState) return;
+                const next = await invokeIpc<WorkspaceWorkingStyleState>(
+                  "generate_workspace_working_style",
+                  { workspaceId: workspace.id },
+                );
+                const comparison =
+                  await invokeIpc<WorkspaceWorkingStyleComparison>(
+                    "compare_workspace_working_styles",
+                    { left: workingStyleState, right: next },
+                  );
+                setWorkingStyleState(next);
+                setWorkingStyleCompareNote(comparison.differences.join(" · "));
+              })
+            }
+          >
+            Compare working style
+          </button>
+        </div>
+        {workingStyleState ? (
+          <>
+            <p>
+              <strong>{workingStyleState.style_summary.headline}</strong>
+            </p>
+            <p className="muted">
+              Common workflows: {workingStyleState.style_summary.workflow_line}
+            </p>
+            <p className="muted">
+              Typical contexts:{" "}
+              {workingStyleState.style_summary.context_switching_line}
+            </p>
+            <p className="muted">
+              Frequent arrangements:{" "}
+              {workingStyleState.style_summary.organization_line}
+            </p>
+            <p className="muted">
+              Observed patterns: {workingStyleState.style_summary.rhythm_line}
+            </p>
+            <p className="muted">
+              Explicit preferences:{" "}
+              {workingStyleState.style_summary.preference_line}
+            </p>
+            <p>
+              Observed vs preferred:{" "}
+              {workingStyleState.style_summary.observed_vs_preferred_line}
+            </p>
+            <ul className="intelligence-list">
+              {workingStyleState.observations.slice(0, 8).map((obs) => (
+                <li key={obs.id}>
+                  <strong>
+                    [{obs.origin}] {obs.title}
+                  </strong>
+                  <div className="muted">
+                    {obs.confidence} · {obs.kind} — {obs.summary}
+                  </div>
+                  <div className="muted">{obs.why}</div>
+                </li>
+              ))}
+            </ul>
+            <p className="muted">
+              authority: {workingStyleState.authority_effect} ·{" "}
+              {workingStyleState.observation_count} observation(s) ·{" "}
+              {workingStyleState.preference_count} explicit preference(s). Never
+              certainty.
+            </p>
+            {workingStyleCompareNote && (
+              <p className="muted">Compare: {workingStyleCompareNote}</p>
+            )}
+          </>
+        ) : (
+          <p className="muted">No working style snapshot yet.</p>
         )}
       </section>
 

@@ -21,6 +21,7 @@ use crate::workspace_readiness::WorkspaceReadinessSummary;
 use crate::workspace_work_context::WorkspaceWorkContextSummary;
 use crate::workspace_navigation::WorkspaceNavigationSummary;
 use crate::workspace_milestone::WorkspaceMilestoneSummary;
+use crate::workspace_working_style::WorkspaceWorkingStyleSummary;
 use crate::workspace_environment::WorkspaceEnvironmentSummary;
 use crate::workspace_task_graph::TaskGraphSummary;
 use crate::workspace_activity::WorkspaceActivityGraphSummary;
@@ -155,6 +156,9 @@ pub struct WorkspaceIntelligenceState {
     /// Milestone Engine summary (Phase 6). Progress toward outcomes — never executes.
     /// Embedded after Navigation.
     pub milestones: WorkspaceMilestoneSummary,
+    /// Working Style Model summary (Phase 6). How work usually happens — never profiles/executes.
+    /// Embedded after Milestones. Separates observed behaviour from explicit preference.
+    pub working_style: WorkspaceWorkingStyleSummary,
     pub workspace_health: String,
     pub summary: String,
     /// Explicit marker for audits and UI: this state grants nothing.
@@ -244,6 +248,17 @@ impl WorkspaceIntelligenceComparison {
                 left.milestones.milestone_count,
                 right.milestones.current_milestone_title,
                 right.milestones.milestone_count
+            ));
+        }
+        if left.working_style.observation_count != right.working_style.observation_count
+            || left.working_style.preference_count != right.working_style.preference_count
+        {
+            differences.push(format!(
+                "Working Style: {} obs / {} prefs → {} obs / {} prefs",
+                left.working_style.observation_count,
+                left.working_style.preference_count,
+                right.working_style.observation_count,
+                right.working_style.preference_count
             ));
         }
         if differences.is_empty() {

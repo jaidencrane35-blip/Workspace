@@ -271,6 +271,21 @@ impl WorkspaceAttentionService {
         Ok(next)
     }
 
+    /// Reference Working Style as evidence only — never profiles or controls behaviour.
+    pub(crate) fn enrich_with_working_style(
+        attention: &WorkspaceAttentionState,
+        working_style: &workspace_domain::WorkspaceWorkingStyleState,
+    ) -> Result<WorkspaceAttentionState> {
+        let mut next = attention.clone();
+        next.summary = format!(
+            "{} Working Style evidence (informational only): {} observation(s), {} explicit \
+             preference(s) — Attention consumes Working Style as evidence only and never \
+             treats observation as intent.",
+            next.summary, working_style.observation_count, working_style.preference_count
+        );
+        Ok(next)
+    }
+
     /// Reference Navigation as evidence only — does not re-rank or add authority.
     pub(crate) fn enrich_with_navigation(
         attention: &WorkspaceAttentionState,

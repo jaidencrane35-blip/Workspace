@@ -55,6 +55,7 @@ pub mod workspace_experience;
 pub mod workspace_work_context;
 pub mod workspace_navigation;
 pub mod workspace_milestone;
+pub mod workspace_working_style;
 pub mod workspace_continuity;
 pub mod workspace_task_graph;
 pub mod workspace_environment;
@@ -280,6 +281,13 @@ pub use workspace_milestone::{
     MilestoneRelationship, MilestoneStatus, MilestoneSummary, WorkspaceMilestone,
     WorkspaceMilestoneComparison, WorkspaceMilestoneError, WorkspaceMilestoneState,
     WorkspaceMilestoneSummary, WorkspaceMilestoneValidation,
+};
+pub use workspace_working_style::{
+    build_working_style_summary, validate_working_style_workspace_id, working_style_now_rfc3339,
+    WorkingStyleConfidence, WorkingStyleEvidence, WorkingStyleKind, WorkingStyleObservation,
+    WorkingStyleOrigin, WorkingStyleSummary, WorkspaceWorkingStyleComparison,
+    WorkspaceWorkingStyleError, WorkspaceWorkingStyleState, WorkspaceWorkingStyleSummary,
+    WorkspaceWorkingStyleValidation,
 };
 pub use workspace_environment::{
     build_environment_summary, now_rfc3339, validate_workspace_id, EnvironmentApplication,

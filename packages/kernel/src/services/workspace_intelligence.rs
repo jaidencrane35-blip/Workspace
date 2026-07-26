@@ -27,6 +27,7 @@ use crate::services::{
     WorkspaceOperatingStateService, WorkspacePatternService, WorkspaceAdaptationService,
     WorkspaceReadinessService, WorkspaceSessionService, WorkspaceExperienceService,
     WorkspaceWorkContextService, WorkspaceNavigationService, WorkspaceMilestoneService,
+    WorkspaceWorkingStyleService,
 };
 
 pub(crate) struct WorkspaceIntelligenceService;
@@ -475,12 +476,13 @@ impl WorkspaceIntelligenceService {
             work_context: Default::default(),
             navigation: Default::default(),
             milestones: Default::default(),
+            working_style: Default::default(),
             workspace_health: health_label,
             summary,
             authority_effect: WorkspaceIntelligenceState::AUTHORITY_EFFECT_NONE.into(),
         };
 
-        // Phase 6: Session → Experience → Work Context → Navigation → Milestones.
+        // Phase 6: Session → Experience → Work Context → Navigation → Milestones → Working Style.
         let session = WorkspaceSessionService::generate_with_inputs(db, actor, &state)?;
         let experience = WorkspaceExperienceService::generate_with_inputs(db, actor, &session)?;
         let work_context = WorkspaceWorkContextService::generate_with_inputs(
@@ -507,45 +509,71 @@ impl WorkspaceIntelligenceService {
             &work_context,
             &navigation,
         )?;
-
-        // Evidence-only consumption — does not grant authority or mutate Milestones.
-        let enriched_attention = WorkspaceAttentionService::enrich_with_milestones(
-            &WorkspaceAttentionService::enrich_with_navigation(
-                &WorkspaceAttentionService::enrich_with_work_context(
-                    &full_attention,
-                    &work_context,
-                )?,
-                &navigation,
-            )?,
+        let working_style = WorkspaceWorkingStyleService::generate_with_inputs(
+            db,
+            actor,
+            &state,
+            &session,
+            &experience,
+            &work_context,
+            &navigation,
             &milestones,
         )?;
-        let enriched_recommendations =
-            WorkspaceRecommendationEngineService::enrich_with_milestones(
-                &WorkspaceRecommendationEngineService::enrich_with_navigation(
-                    &WorkspaceRecommendationEngineService::enrich_with_work_context(
-                        &full_recommendation_engine,
+
+        // Evidence-only consumption — does not grant authority or mutate Working Style.
+        let enriched_attention = WorkspaceAttentionService::enrich_with_working_style(
+            &WorkspaceAttentionService::enrich_with_milestones(
+                &WorkspaceAttentionService::enrich_with_navigation(
+                    &WorkspaceAttentionService::enrich_with_work_context(
+                        &full_attention,
                         &work_context,
                     )?,
                     &navigation,
                 )?,
                 &milestones,
-            )?;
-        let enriched_adaptation = WorkspaceAdaptationService::enrich_with_milestones(
-            &WorkspaceAdaptationService::enrich_with_navigation(
-                &WorkspaceAdaptationService::enrich_with_work_context(
-                    &full_adaptation,
-                    &work_context,
-                )?,
-                &navigation,
             )?,
-            &milestones,
+            &working_style,
         )?;
-        let _enriched_session = WorkspaceSessionService::enrich_with_milestones(
-            &WorkspaceSessionService::enrich_with_navigation(&session, &navigation)?,
-            &milestones,
+        let enriched_recommendations =
+            WorkspaceRecommendationEngineService::enrich_with_working_style(
+                &WorkspaceRecommendationEngineService::enrich_with_milestones(
+                    &WorkspaceRecommendationEngineService::enrich_with_navigation(
+                        &WorkspaceRecommendationEngineService::enrich_with_work_context(
+                            &full_recommendation_engine,
+                            &work_context,
+                        )?,
+                        &navigation,
+                    )?,
+                    &milestones,
+                )?,
+                &working_style,
+            )?;
+        let enriched_adaptation = WorkspaceAdaptationService::enrich_with_working_style(
+            &WorkspaceAdaptationService::enrich_with_milestones(
+                &WorkspaceAdaptationService::enrich_with_navigation(
+                    &WorkspaceAdaptationService::enrich_with_work_context(
+                        &full_adaptation,
+                        &work_context,
+                    )?,
+                    &navigation,
+                )?,
+                &milestones,
+            )?,
+            &working_style,
         )?;
-        let enriched_navigation =
-            WorkspaceNavigationService::enrich_with_milestones(&navigation, &milestones)?;
+        let _enriched_session = WorkspaceSessionService::enrich_with_working_style(
+            &WorkspaceSessionService::enrich_with_milestones(
+                &WorkspaceSessionService::enrich_with_navigation(&session, &navigation)?,
+                &milestones,
+            )?,
+            &working_style,
+        )?;
+        let _enriched_experience =
+            WorkspaceExperienceService::enrich_with_working_style(&experience, &working_style)?;
+        let enriched_navigation = WorkspaceNavigationService::enrich_with_working_style(
+            &WorkspaceNavigationService::enrich_with_milestones(&navigation, &milestones)?,
+            &working_style,
+        )?;
 
         state.attention = enriched_attention.summary_projection(8);
         state.recommendation_engine =
@@ -555,6 +583,7 @@ impl WorkspaceIntelligenceService {
         state.work_context = work_context.summary_projection(5);
         state.navigation = enriched_navigation.summary_projection(6);
         state.milestones = milestones.summary_projection(6);
+        state.working_style = working_style.summary_projection(6);
         state.recommended_actions = Self::recommendations_from_attention(&enriched_attention);
 
         Self::audit_generated(db, actor, &state)?;
