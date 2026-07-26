@@ -53,6 +53,7 @@ pub mod workspace_readiness;
 pub mod workspace_session;
 pub mod workspace_experience;
 pub mod workspace_work_context;
+pub mod workspace_navigation;
 pub mod workspace_continuity;
 pub mod workspace_task_graph;
 pub mod workspace_environment;
@@ -265,6 +266,12 @@ pub use workspace_work_context::{
     WorkContextRelationKind, WorkContextRelationship, WorkContextStatus, WorkContextType,
     WorkspaceWorkContextComparison, WorkspaceWorkContextError, WorkspaceWorkContextState,
     WorkspaceWorkContextSummary, WorkspaceWorkContextValidation,
+};
+pub use workspace_navigation::{
+    build_navigation_summary, navigation_now_rfc3339, validate_navigation_workspace_id,
+    NavigationEdge, NavigationNode, NavigationPath, NavigationPathKind, NavigationRelationKind,
+    NavigationSummary, WorkspaceNavigationComparison, WorkspaceNavigationError,
+    WorkspaceNavigationState, WorkspaceNavigationSummary, WorkspaceNavigationValidation,
 };
 pub use workspace_environment::{
     build_environment_summary, now_rfc3339, validate_workspace_id, EnvironmentApplication,

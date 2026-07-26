@@ -150,6 +150,11 @@ pub const PLATFORM_CONCEPT_OWNERS: &[ConceptOwnership] = &[
         kind: ConceptOwnerKind::Aggregator,
     },
     ConceptOwnership {
+        concept: "navigation",
+        owner: "WorkspaceNavigationService",
+        kind: ConceptOwnerKind::Aggregator,
+    },
+    ConceptOwnership {
         concept: "permission_approval",
         owner: "PermissionApprovalService",
         kind: ConceptOwnerKind::DurableStore,
@@ -219,4 +224,6 @@ pub mod vocabulary {
     pub const WORKSPACE_EXPERIENCE: &str = "Workspace Experience";
     pub const WORK_CONTEXT: &str = "Work Context";
     pub const WORKSPACE_WORK_CONTEXT: &str = "Workspace Work Context";
+    pub const NAVIGATION: &str = "Navigation";
+    pub const WORKSPACE_NAVIGATION: &str = "Workspace Navigation";
 }

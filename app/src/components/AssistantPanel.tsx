@@ -8,6 +8,7 @@ import type {
   Workspace,
   WorkspaceExperienceState,
   WorkspaceWorkContextState,
+  WorkspaceNavigationState,
   WorkspaceIntelligenceState,
 } from "../types/domain";
 import { assistantProductState } from "../types/domain";
@@ -56,6 +57,8 @@ export function AssistantPanel({
     useState<WorkspaceExperienceState | null>(null);
   const [workContextState, setWorkContextState] =
     useState<WorkspaceWorkContextState | null>(null);
+  const [navigationState, setNavigationState] =
+    useState<WorkspaceNavigationState | null>(null);
 
   const productState = assistantProductState(workflow?.state);
   const canConfirm = workflow?.state === "awaiting_confirmation";
@@ -130,7 +133,8 @@ export function AssistantPanel({
             onClick={() =>
               void run("Workspace understanding loaded", async () => {
                 if (!workspace) return;
-                const [intel, experience, workContext] = await Promise.all([
+                const [intel, experience, workContext, navigation] =
+                  await Promise.all([
                   invokeIpc<WorkspaceIntelligenceState>(
                     "generate_workspace_intelligence",
                     { workspaceId: workspace.id },
@@ -143,16 +147,30 @@ export function AssistantPanel({
                     "generate_workspace_work_context",
                     { workspaceId: workspace.id },
                   ),
+                  invokeIpc<WorkspaceNavigationState>(
+                    "generate_workspace_navigation",
+                    { workspaceId: workspace.id },
+                  ),
                 ]);
                 setWorkspaceIntel(intel);
                 setExperienceState(experience);
                 setWorkContextState(workContext);
+                setNavigationState(navigation);
               })
             }
           >
             Load workspace intelligence
           </button>
         </div>
+        {navigationState && (
+          <dl>
+            <dt>Navigation</dt>
+            <dd>
+              {navigationState.navigation_summary.narrative} Assistant explains
+              where to look — never routes or executes.
+            </dd>
+          </dl>
+        )}
         {workContextState && (
           <dl>
             <dt>Work Context</dt>
@@ -359,6 +377,12 @@ export function AssistantPanel({
               {workspaceIntel.work_context.summary} Same Work Context Engine as
               the Work tab. Assistant may explain the kind of work — never plans
               or executes from Context.
+            </dd>
+            <dt>Navigation</dt>
+            <dd>
+              {workspaceIntel.navigation.summary} Same Navigation Engine as the
+              Work tab. Assistant may explain paths and next inspections — never
+              routes or executes.
             </dd>
             <dt>Continuity</dt>
             <dd>

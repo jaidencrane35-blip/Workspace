@@ -29,6 +29,7 @@ use crate::commands::workspace_intelligence::GateIntelligenceRead;
 use crate::commands::workspace_session::GateSessionRead;
 use crate::commands::workspace_experience::GateExperienceRead;
 use crate::commands::workspace_work_context::GateWorkContextEngineRead;
+use crate::commands::workspace_navigation::GateNavigationRead;
 use crate::commands::workspace_activity::GateActivityGraphRead;
 use crate::commands::workspace_attention::GateAttentionRead;
 use crate::commands::workspace_continuity::GateContinuityRead;
@@ -90,8 +91,8 @@ use crate::services::{
     WorkspaceRecommendationEngineService, WorkspaceOperatingStateService,
     WorkspacePatternService, WorkspaceAdaptationService, WorkspaceReadinessService,
     WorkspaceSessionService, WorkspaceExperienceService, WorkspaceWorkContextService,
-    WorkspaceActivityGraphService, WorkspaceAttentionService, WorkspaceContextService,
-    WorkspaceContinuityService, WorkspaceIntelligenceService,
+    WorkspaceNavigationService, WorkspaceActivityGraphService, WorkspaceAttentionService,
+    WorkspaceContextService, WorkspaceContinuityService, WorkspaceIntelligenceService,
 };
 use crate::WorkspaceKernel;
 use workspace_domain::{
@@ -108,6 +109,7 @@ use workspace_domain::{
     WorkspaceReadinessState, WorkspaceSessionComparison, WorkspaceSessionState,
     WorkspaceExperienceComparison, WorkspaceExperienceState,
     WorkspaceWorkContextComparison, WorkspaceWorkContextState, WorkspaceWorkContextValidation,
+    WorkspaceNavigationComparison, WorkspaceNavigationState, WorkspaceNavigationValidation,
     WorkspaceTask, WorkspaceTaskPriority, WorkspaceTaskStatus,
     WorkspaceIntelligenceComparison, WorkspaceIntelligenceState, AiPlan, AiPlanEvaluationReport,
     AiPlanSubmissionResult,
@@ -3153,6 +3155,64 @@ impl CommandHandler {
     /// Architecture guard — Work Context must never execute or authorize.
     pub fn workspace_work_context_attempt_execute() -> Result<()> {
         WorkspaceWorkContextService::attempt_execute()
+    }
+
+    /// Project Workspace Navigation (interaction paths over understanding — never executes).
+    pub fn generate_workspace_navigation(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceNavigationState> {
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent.clone()))
+            .execute_query(GateNavigationRead)?;
+        let _ = Self::get_workflow_context(
+            kernel,
+            actor.clone(),
+            intent.clone(),
+            workspace_id.clone(),
+        )?;
+        let workspace =
+            Self::get_workspace(kernel, actor.clone(), intent, workspace_id.clone())?;
+        let health = kernel.health();
+        WorkspaceNavigationService::generate(
+            &kernel.shared_database(),
+            &actor,
+            &kernel.orchestrated_plans(),
+            &kernel.assistant_workflows(),
+            workspace_id,
+            workspace.name,
+            health.status.clone(),
+        )
+    }
+
+    /// Compare two navigation snapshots (informational).
+    pub fn compare_workspace_navigation(
+        left: &WorkspaceNavigationState,
+        right: &WorkspaceNavigationState,
+    ) -> WorkspaceNavigationComparison {
+        WorkspaceNavigationService::compare(left, right)
+    }
+
+    /// Validate a navigation snapshot (Operator / IPC) and audit.
+    pub fn validate_workspace_navigation(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        state: &WorkspaceNavigationState,
+    ) -> Result<WorkspaceNavigationValidation> {
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent))
+            .execute_query(GateNavigationRead)?;
+        WorkspaceNavigationService::validate_and_audit(
+            &kernel.shared_database(),
+            &actor,
+            state,
+        )
+    }
+
+    /// Architecture guard — Navigation must never execute or authorize.
+    pub fn workspace_navigation_attempt_execute() -> Result<()> {
+        WorkspaceNavigationService::attempt_execute()
     }
 
     /// Read-only workspace intelligence aggregation. Capability-gated; never executes.

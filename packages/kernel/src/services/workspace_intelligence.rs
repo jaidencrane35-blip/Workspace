@@ -26,7 +26,7 @@ use crate::services::{
     WorkspacePurposeService, WorkspaceEvolutionService, WorkspaceRecommendationEngineService,
     WorkspaceOperatingStateService, WorkspacePatternService, WorkspaceAdaptationService,
     WorkspaceReadinessService, WorkspaceSessionService, WorkspaceExperienceService,
-    WorkspaceWorkContextService,
+    WorkspaceWorkContextService, WorkspaceNavigationService,
 };
 
 pub(crate) struct WorkspaceIntelligenceService;
@@ -473,12 +473,13 @@ impl WorkspaceIntelligenceService {
             adaptation,
             readiness,
             work_context: Default::default(),
+            navigation: Default::default(),
             workspace_health: health_label,
             summary,
             authority_effect: WorkspaceIntelligenceState::AUTHORITY_EFFECT_NONE.into(),
         };
 
-        // Phase 6: Session → Experience → Work Context (consume, never regenerate cognition).
+        // Phase 6: Session → Experience → Work Context → Navigation.
         let session = WorkspaceSessionService::generate_with_inputs(db, actor, &state)?;
         let experience = WorkspaceExperienceService::generate_with_inputs(db, actor, &session)?;
         let work_context = WorkspaceWorkContextService::generate_with_inputs(
@@ -488,19 +489,37 @@ impl WorkspaceIntelligenceService {
             &session,
             &experience,
         )?;
-
-        // Evidence-only consumption — does not grant authority or mutate Work Context.
-        let enriched_attention =
-            WorkspaceAttentionService::enrich_with_work_context(&full_attention, &work_context)?;
-        let enriched_recommendations =
-            WorkspaceRecommendationEngineService::enrich_with_work_context(
-                &full_recommendation_engine,
-                &work_context,
-            )?;
-        let enriched_adaptation = WorkspaceAdaptationService::enrich_with_work_context(
-            &full_adaptation,
+        let navigation = WorkspaceNavigationService::generate_with_inputs(
+            db,
+            actor,
+            &state,
+            &session,
+            &experience,
             &work_context,
         )?;
+
+        // Evidence-only consumption — does not grant authority or mutate Navigation.
+        let enriched_attention = WorkspaceAttentionService::enrich_with_navigation(
+            &WorkspaceAttentionService::enrich_with_work_context(&full_attention, &work_context)?,
+            &navigation,
+        )?;
+        let enriched_recommendations =
+            WorkspaceRecommendationEngineService::enrich_with_navigation(
+                &WorkspaceRecommendationEngineService::enrich_with_work_context(
+                    &full_recommendation_engine,
+                    &work_context,
+                )?,
+                &navigation,
+            )?;
+        let enriched_adaptation = WorkspaceAdaptationService::enrich_with_navigation(
+            &WorkspaceAdaptationService::enrich_with_work_context(
+                &full_adaptation,
+                &work_context,
+            )?,
+            &navigation,
+        )?;
+        let _enriched_session =
+            WorkspaceSessionService::enrich_with_navigation(&session, &navigation)?;
 
         state.attention = enriched_attention.summary_projection(8);
         state.recommendation_engine =
@@ -508,6 +527,7 @@ impl WorkspaceIntelligenceService {
         state.adaptation =
             WorkspaceAdaptationService::summary_projection(&enriched_adaptation, 8);
         state.work_context = work_context.summary_projection(5);
+        state.navigation = navigation.summary_projection(6);
         state.recommended_actions = Self::recommendations_from_attention(&enriched_attention);
 
         Self::audit_generated(db, actor, &state)?;

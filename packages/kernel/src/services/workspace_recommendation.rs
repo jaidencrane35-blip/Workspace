@@ -725,6 +725,28 @@ impl WorkspaceRecommendationEngineService {
         Ok(state)
     }
 
+    /// Reference Navigation without mutating navigation ownership or ranking authority.
+    pub(crate) fn enrich_with_navigation(
+        recommendations: &WorkspaceRecommendationEngineState,
+        navigation: &workspace_domain::WorkspaceNavigationState,
+    ) -> Result<WorkspaceRecommendationEngineState> {
+        let mut state = recommendations.clone();
+        let marker = format!(
+            "navigation:nodes={},blocked={},next={}",
+            navigation.node_count,
+            navigation.blocked_count,
+            navigation.navigation_summary.next_inspection_line
+        );
+        if !state.evidence.iter().any(|e| e.starts_with("navigation:")) {
+            state.evidence.push(marker.clone());
+        }
+        state.explanation = format!(
+            "{} References Navigation as evidence only ({}) — does not change Navigation.",
+            state.explanation, marker
+        );
+        Ok(state)
+    }
+
     /// Reference Work Context without mutating context ownership or ranking authority.
     /// Appends evidence / explanation only — does not regenerate Work Context.
     pub(crate) fn enrich_with_work_context(

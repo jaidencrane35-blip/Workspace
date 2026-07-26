@@ -425,6 +425,26 @@ impl WorkspaceSessionService {
         WorkspaceSessionComparison::compare(left, right)
     }
 
+    /// Reference Navigation as evidence only — does not own or mutate Navigation.
+    pub(crate) fn enrich_with_navigation(
+        session: &WorkspaceSessionState,
+        navigation: &workspace_domain::WorkspaceNavigationState,
+    ) -> Result<WorkspaceSessionState> {
+        let mut next = session.clone();
+        let marker = format!(
+            "navigation:current={},blocked={}",
+            navigation.navigation_summary.current_path_line, navigation.blocked_count
+        );
+        if !next.evidence.iter().any(|e| e.starts_with("navigation:")) {
+            next.evidence.push(marker.clone());
+        }
+        next.explanation = format!(
+            "{} References Navigation as evidence only ({}) — Session remains canonical runtime.",
+            next.explanation, marker
+        );
+        Ok(next)
+    }
+
     pub(crate) fn attempt_execute() -> Result<()> {
         Err(KernelError::from(
             workspace_domain::WorkspaceSessionError::CannotExecute,

@@ -31,6 +31,8 @@ import type {
   WorkspaceExperienceComparison,
   WorkspaceWorkContextState,
   WorkspaceWorkContextComparison,
+  WorkspaceNavigationState,
+  WorkspaceNavigationComparison,
   WorkspaceIntelligenceState,
 } from "../types/domain";
 
@@ -106,6 +108,11 @@ export function WorkspaceIntelligencePanel({
   const [workContextCompareNote, setWorkContextCompareNote] = useState<
     string | null
   >(null);
+  const [navigationState, setNavigationState] =
+    useState<WorkspaceNavigationState | null>(null);
+  const [navigationCompareNote, setNavigationCompareNote] = useState<
+    string | null
+  >(null);
   const [lastHandoff, setLastHandoff] = useState<string | null>(null);
   const [contractName, setContractName] = useState(
     "Prepare coding environment",
@@ -155,6 +162,8 @@ export function WorkspaceIntelligencePanel({
       setExperienceCompareNote(null);
       setWorkContextState(null);
       setWorkContextCompareNote(null);
+      setNavigationState(null);
+      setNavigationCompareNote(null);
       setLastHandoff(null);
       setState(null);
       return;
@@ -174,6 +183,7 @@ export function WorkspaceIntelligencePanel({
           session,
           experience,
           workContext,
+          navigation,
           decisions,
           graphTasks,
           adapt,
@@ -207,6 +217,9 @@ export function WorkspaceIntelligencePanel({
               "generate_workspace_work_context",
               { workspaceId: workspace.id },
             ),
+            invokeIpc<WorkspaceNavigationState>("generate_workspace_navigation", {
+              workspaceId: workspace.id,
+            }),
             invokeIpc<DecisionEngineState>("generate_decision_engine", {
               workspaceId: workspace.id,
             }),
@@ -226,6 +239,7 @@ export function WorkspaceIntelligencePanel({
           setSessionState(session);
           setExperienceState(experience);
           setWorkContextState(workContext);
+          setNavigationState(navigation);
           setDecisionEngine(decisions);
           setTaskGraph(graphTasks);
           setAdaptationState(adapt);
@@ -520,6 +534,109 @@ export function WorkspaceIntelligencePanel({
           </>
         ) : (
           <p className="muted">No work context snapshot yet.</p>
+        )}
+      </section>
+
+      <section>
+        <h3>Workspace navigation</h3>
+        <p className="muted">
+          Where to go next — interaction paths over existing understanding.
+          Inspection only; never executes or routes autonomously.
+        </p>
+        <div className="row">
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("Navigation refreshed", async () => {
+                if (!workspace) return;
+                const next = await invokeIpc<WorkspaceNavigationState>(
+                  "generate_workspace_navigation",
+                  { workspaceId: workspace.id },
+                );
+                setNavigationState(next);
+                setNavigationCompareNote(null);
+              })
+            }
+          >
+            Refresh navigation
+          </button>
+          <button
+            type="button"
+            disabled={busy || !workspace || !navigationState}
+            onClick={() =>
+              void run("Navigation compared", async () => {
+                if (!workspace || !navigationState) return;
+                const next = await invokeIpc<WorkspaceNavigationState>(
+                  "generate_workspace_navigation",
+                  { workspaceId: workspace.id },
+                );
+                const comparison =
+                  await invokeIpc<WorkspaceNavigationComparison>(
+                    "compare_workspace_navigation",
+                    { left: navigationState, right: next },
+                  );
+                setNavigationState(next);
+                setNavigationCompareNote(comparison.differences.join(" · "));
+              })
+            }
+          >
+            Compare navigation
+          </button>
+        </div>
+        {navigationState ? (
+          <>
+            <p>
+              <strong>{navigationState.navigation_summary.headline}</strong>
+            </p>
+            <p className="muted">
+              Path: {navigationState.navigation_summary.breadcrumb_line}
+            </p>
+            <p>{navigationState.navigation_summary.current_path_line}</p>
+            <p className="muted">
+              Related: {navigationState.navigation_summary.related_line}
+            </p>
+            <p className="muted">
+              Blocked: {navigationState.navigation_summary.blocked_line}
+            </p>
+            <p className="muted">
+              Next inspection:{" "}
+              {navigationState.navigation_summary.next_inspection_line}
+            </p>
+            <ul className="intelligence-list">
+              {navigationState.paths
+                .filter((p) =>
+                  [
+                    "current_focus",
+                    "blocking_item",
+                    "suggested_destination",
+                    "possible_next_inspection",
+                    "related_work",
+                    "dependency_chain",
+                  ].includes(p.kind),
+                )
+                .map((path) => (
+                  <li key={path.kind}>
+                    <strong>{path.title}</strong>
+                    {path.nodes.slice(0, 3).map((node) => (
+                      <div key={node.id} className="muted">
+                        {node.label}
+                        {node.summary ? ` — ${node.summary}` : ""}
+                      </div>
+                    ))}
+                  </li>
+                ))}
+            </ul>
+            <p className="muted">
+              authority: {navigationState.authority_effect} ·{" "}
+              {navigationState.node_count} stop(s)
+            </p>
+            {navigationCompareNote && (
+              <p className="muted">Compare: {navigationCompareNote}</p>
+            )}
+          </>
+        ) : (
+          <p className="muted">No navigation snapshot yet.</p>
         )}
       </section>
 

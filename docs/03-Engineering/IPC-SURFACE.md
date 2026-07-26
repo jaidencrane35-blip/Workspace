@@ -92,6 +92,9 @@
 | `generate_workspace_work_context` | Product: classify semantic kind-of-work (never executes) |
 | `compare_workspace_work_contexts` | Product: compare two work-context snapshots (informational) |
 | `validate_workspace_work_context` | Product: validate work-context invariants (informational) |
+| `generate_workspace_navigation` | Product: project inspection paths over understanding (never executes) |
+| `compare_workspace_navigation` | Product: compare two navigation snapshots (informational) |
+| `validate_workspace_navigation` | Product: validate navigation invariants (informational) |
 | `create_memory_entry` / `list_memory_entries` / `get_memory_context` | Diagnostic governed memory (informational) |
 | `delete_memory_entry` / `clear_memory_entries` | Diagnostic memory lifecycle |
 | `diagnose_ai_plan_preview` | Diagnostic memory-aware plan (no execution) |

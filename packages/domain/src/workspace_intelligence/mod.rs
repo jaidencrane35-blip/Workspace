@@ -19,6 +19,7 @@ use crate::workspace_pattern::WorkspacePatternSummary;
 use crate::workspace_adaptation::WorkspaceAdaptationSummary;
 use crate::workspace_readiness::WorkspaceReadinessSummary;
 use crate::workspace_work_context::WorkspaceWorkContextSummary;
+use crate::workspace_navigation::WorkspaceNavigationSummary;
 use crate::workspace_environment::WorkspaceEnvironmentSummary;
 use crate::workspace_task_graph::TaskGraphSummary;
 use crate::workspace_activity::WorkspaceActivityGraphSummary;
@@ -147,6 +148,9 @@ pub struct WorkspaceIntelligenceState {
     /// Work Context Engine summary (Phase 6). What kind of work — never executes.
     /// Embedded after Session/Experience projection; before future restoration systems.
     pub work_context: WorkspaceWorkContextSummary,
+    /// Navigation Engine summary (Phase 6). Where to go next — never executes.
+    /// Embedded after Work Context.
+    pub navigation: WorkspaceNavigationSummary,
     pub workspace_health: String,
     pub summary: String,
     /// Explicit marker for audits and UI: this state grants nothing.
@@ -214,6 +218,17 @@ impl WorkspaceIntelligenceComparison {
                 left.work_context.context_count,
                 right.work_context.primary_context_type,
                 right.work_context.context_count
+            ));
+        }
+        if left.navigation.node_count != right.navigation.node_count
+            || left.navigation.blocked_count != right.navigation.blocked_count
+        {
+            differences.push(format!(
+                "Navigation nodes/blocked: {}/{} → {}/{}",
+                left.navigation.node_count,
+                left.navigation.blocked_count,
+                right.navigation.node_count,
+                right.navigation.blocked_count
             ));
         }
         if differences.is_empty() {

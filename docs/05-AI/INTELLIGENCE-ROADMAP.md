@@ -172,6 +172,10 @@ Workspace Experience Layer foundation (Sprint 95) — presentation projection ov
 
 Workspace Work Context Engine foundation (Sprint 96) — semantic kind-of-work projection over Session/Experience/Intelligence; Intelligence embeds `work_context`; Attention/RE/Adaptation may reference as evidence only; never plans/executes/persists. See [Workspace Work Context Engine](WORKSPACE-WORK-CONTEXT-ENGINE.md).
 
+## Phase 6 Batch 4 (done)
+
+Workspace Navigation Engine foundation (Sprint 97) — interaction paths over understanding; Intelligence embeds `navigation` after Work Context; evidence-only consumption; never plans/executes/routes autonomously. See [Workspace Navigation Engine](WORKSPACE-NAVIGATION-ENGINE.md).
+
 ---
 
 ## Never build

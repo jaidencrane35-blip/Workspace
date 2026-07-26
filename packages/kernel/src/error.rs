@@ -10,7 +10,7 @@ use workspace_domain::{
     WorkspaceEvolutionError, WorkspaceRecommendationEngineError, WorkspaceOperatingStateError,
     WorkspacePatternError, WorkspaceAdaptationError, WorkspaceReadinessError,
     WorkspaceSessionError, WorkspaceExperienceError, WorkspaceWorkContextError,
-    WorkspaceIntelligenceError, WorkspaceIntentError,
+    WorkspaceNavigationError, WorkspaceIntelligenceError, WorkspaceIntentError,
 };
 
 #[derive(Debug, Error)]
@@ -247,6 +247,9 @@ pub enum KernelError {
 
     #[error("Workspace work context validation failed: {message}")]
     WorkspaceWorkContextValidation { message: String },
+
+    #[error("Workspace navigation validation failed: {message}")]
+    WorkspaceNavigationValidation { message: String },
 
     #[error("Workspace kernel initialization failed")]
     InitializationFailed,
@@ -608,6 +611,17 @@ impl From<WorkspaceWorkContextError> for KernelError {
     }
 }
 
+impl From<WorkspaceNavigationError> for KernelError {
+    fn from(error: WorkspaceNavigationError) -> Self {
+        match error {
+            WorkspaceNavigationError::Domain(domain) => KernelError::from(domain),
+            other => KernelError::WorkspaceNavigationValidation {
+                message: other.to_string(),
+            },
+        }
+    }
+}
+
 impl KernelError {
     pub fn to_public(&self) -> PublicError {
         match self {
@@ -936,6 +950,10 @@ impl KernelError {
             },
             KernelError::WorkspaceWorkContextValidation { message } => PublicError {
                 code: "workspace_work_context_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::WorkspaceNavigationValidation { message } => PublicError {
+                code: "workspace_navigation_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::InitializationFailed => PublicError {

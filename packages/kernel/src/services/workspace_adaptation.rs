@@ -661,6 +661,26 @@ impl WorkspaceAdaptationService {
         )
     }
 
+    /// Reference Navigation without applying or owning it.
+    pub(crate) fn enrich_with_navigation(
+        adaptation: &WorkspaceAdaptationState,
+        navigation: &workspace_domain::WorkspaceNavigationState,
+    ) -> Result<WorkspaceAdaptationState> {
+        let mut state = adaptation.clone();
+        let marker = format!(
+            "navigation:{}:blocked={}",
+            navigation.navigation_summary.current_path_line, navigation.blocked_count
+        );
+        if !state.evidence.iter().any(|e| e.starts_with("navigation:")) {
+            state.evidence.push(marker.clone());
+        }
+        state.explanation = format!(
+            "{} References Navigation as evidence only ({}) — never routes or applies navigation.",
+            state.explanation, marker
+        );
+        Ok(state)
+    }
+
     /// Reference Work Context without applying or owning it.
     pub(crate) fn enrich_with_work_context(
         adaptation: &WorkspaceAdaptationState,

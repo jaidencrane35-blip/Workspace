@@ -1271,6 +1271,8 @@ export interface WorkspaceIntelligenceState {
   readiness: WorkspaceReadinessSummary;
   /** Semantic kind-of-work — after Experience; never executes. */
   work_context: WorkspaceWorkContextSummary;
+  /** Interaction paths over understanding — after Work Context; never executes. */
+  navigation: WorkspaceNavigationSummary;
   workspace_health: string;
   summary: string;
   authority_effect: string;
@@ -2501,6 +2503,127 @@ export interface WorkspaceWorkContextComparison {
 }
 
 export interface WorkspaceWorkContextValidation {
+  valid: boolean;
+  messages: string[];
+  authority_effect: string;
+}
+
+export type NavigationPathKind =
+  | "current_focus"
+  | "suggested_destination"
+  | "related_work"
+  | "blocking_item"
+  | "connected_task"
+  | "connected_project"
+  | "connected_context"
+  | "relevant_decision"
+  | "relevant_recommendation"
+  | "recent_change"
+  | "possible_next_inspection"
+  | "dependency_chain"
+  | "breadcrumb";
+
+export type NavigationRelationKind =
+  | "current"
+  | "related"
+  | "depends_on"
+  | "blocked_by"
+  | "supports"
+  | "leads_to"
+  | "recently_visited"
+  | "suggested_next"
+  | "dormant"
+  | "disconnected";
+
+export interface NavigationNode {
+  id: string;
+  label: string;
+  kind: NavigationPathKind;
+  summary: string;
+  why: string;
+  source_projection: string;
+  source_ref: string;
+  authority_effect: string;
+}
+
+export interface NavigationEdge {
+  id: string;
+  from_node_id: string;
+  to_node_id: string;
+  kind: NavigationRelationKind;
+  why: string;
+  authority_effect: string;
+}
+
+export interface NavigationPath {
+  kind: NavigationPathKind;
+  title: string;
+  nodes: NavigationNode[];
+  node_count: number;
+  why: string;
+}
+
+export interface NavigationSummary {
+  headline: string;
+  current_path_line: string;
+  related_line: string;
+  blocked_line: string;
+  next_inspection_line: string;
+  breadcrumb_line: string;
+  narrative: string;
+}
+
+export interface WorkspaceNavigationState {
+  workspace_id: string;
+  workspace_name: string;
+  generated_at: string;
+  label: string;
+  navigation_summary: NavigationSummary;
+  paths: NavigationPath[];
+  nodes: NavigationNode[];
+  edges: NavigationEdge[];
+  breadcrumbs: NavigationNode[];
+  path_count: number;
+  node_count: number;
+  edge_count: number;
+  blocked_count: number;
+  suggested_count: number;
+  session_generated_at: string;
+  experience_generated_at: string;
+  work_context_generated_at: string;
+  intelligence_generated_at: string;
+  explanation: string;
+  evidence: string[];
+  summary: string;
+  authority_effect: string;
+}
+
+export interface WorkspaceNavigationSummary {
+  workspace_id: string;
+  workspace_name: string;
+  generated_at: string;
+  label: string;
+  navigation_summary: NavigationSummary;
+  path_count: number;
+  node_count: number;
+  edge_count: number;
+  blocked_count: number;
+  suggested_count: number;
+  top_paths: NavigationPath[];
+  breadcrumbs: NavigationNode[];
+  explanation: string;
+  summary: string;
+  authority_effect: string;
+}
+
+export interface WorkspaceNavigationComparison {
+  left_workspace_id: string;
+  right_workspace_id: string;
+  differences: string[];
+  authority_effect: string;
+}
+
+export interface WorkspaceNavigationValidation {
   valid: boolean;
   messages: string[];
   authority_effect: string;

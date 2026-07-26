@@ -26,6 +26,9 @@ import type {
   WorkspaceWorkContextState,
   WorkspaceWorkContextComparison,
   WorkspaceWorkContextValidation,
+  WorkspaceNavigationState,
+  WorkspaceNavigationComparison,
+  WorkspaceNavigationValidation,
   AiOrchestratedPlan,
   AiPlan,
   AiPlanEvaluationReport,
@@ -191,6 +194,10 @@ export function OperatorConsole({
     useState<WorkspaceWorkContextState | null>(null);
   const [priorWorkContext, setPriorWorkContext] =
     useState<WorkspaceWorkContextState | null>(null);
+  const [navigationState, setNavigationState] =
+    useState<WorkspaceNavigationState | null>(null);
+  const [priorNavigation, setPriorNavigation] =
+    useState<WorkspaceNavigationState | null>(null);
   const [activeProject, setActiveProject] = useState<Project | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [memoryEntries, setMemoryEntries] = useState<MemoryEntry[]>([]);
@@ -2001,6 +2008,92 @@ export function OperatorConsole({
             <li>
               {readinessState.overall_status} · {readinessState.gap_count} gap(s)
               · authority {readinessState.authority_effect}
+            </li>
+          </ul>
+        )}
+      </section>
+
+      <section>
+        <h2>Workspace Navigation (diagnostics)</h2>
+        <p className="muted">
+          Interaction paths — Generate / Inspect / Compare / Validate. Never
+          plans, routes autonomously, or executes.
+        </p>
+        <div className="row">
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("Navigation generated", async () => {
+                if (!workspace) return;
+                const state = await invokeIpc<WorkspaceNavigationState>(
+                  "generate_workspace_navigation",
+                  { workspaceId: workspace.id },
+                );
+                if (navigationState) setPriorNavigation(navigationState);
+                setNavigationState(state);
+              })
+            }
+          >
+            Generate navigation
+          </button>
+          <button
+            type="button"
+            disabled={busy || !navigationState}
+            onClick={() =>
+              void run("Navigation inspected", async () => {
+                if (!navigationState) return;
+                onMessage(
+                  `${navigationState.navigation_summary.narrative} Evidence: ${navigationState.evidence.slice(0, 3).join(" · ")}`,
+                );
+              })
+            }
+          >
+            Inspect navigation
+          </button>
+          <button
+            type="button"
+            disabled={busy || !navigationState || !priorNavigation}
+            onClick={() =>
+              void run("Navigations compared", async () => {
+                if (!navigationState || !priorNavigation) return;
+                const comparison =
+                  await invokeIpc<WorkspaceNavigationComparison>(
+                    "compare_workspace_navigation",
+                    { left: priorNavigation, right: navigationState },
+                  );
+                onMessage(comparison.differences.join(" · "));
+              })
+            }
+          >
+            Compare navigation
+          </button>
+          <button
+            type="button"
+            disabled={busy || !navigationState}
+            onClick={() =>
+              void run("Navigation validated", async () => {
+                if (!navigationState) return;
+                const report = await invokeIpc<WorkspaceNavigationValidation>(
+                  "validate_workspace_navigation",
+                  { state: navigationState },
+                );
+                onMessage(report.messages.join(" · "));
+              })
+            }
+          >
+            Validate navigation
+          </button>
+        </div>
+        {navigationState && (
+          <ul className="muted">
+            <li>{navigationState.navigation_summary.headline}</li>
+            <li>{navigationState.navigation_summary.breadcrumb_line}</li>
+            <li>
+              Nodes {navigationState.node_count} · Blocked{" "}
+              {navigationState.blocked_count} · Suggested{" "}
+              {navigationState.suggested_count} · authority{" "}
+              {navigationState.authority_effect}
             </li>
           </ul>
         )}

@@ -257,6 +257,20 @@ impl WorkspaceAttentionService {
         ))
     }
 
+    /// Reference Navigation as evidence only — does not re-rank or add authority.
+    pub(crate) fn enrich_with_navigation(
+        attention: &WorkspaceAttentionState,
+        navigation: &workspace_domain::WorkspaceNavigationState,
+    ) -> Result<WorkspaceAttentionState> {
+        let mut next = attention.clone();
+        next.summary = format!(
+            "{} Navigation evidence (informational only): {} stop(s), {} blocked — \
+             Attention consumes Navigation as evidence only and does not route from it.",
+            next.summary, navigation.node_count, navigation.blocked_count
+        );
+        Ok(next)
+    }
+
     /// Reference Work Context as evidence only — does not re-rank or add authority.
     /// Does not regenerate Work Context — avoids circular regen.
     pub(crate) fn enrich_with_work_context(
