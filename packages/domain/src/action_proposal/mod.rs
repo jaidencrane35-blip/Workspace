@@ -5,8 +5,10 @@
 //! Reasoning provenance is immutable; lifecycle metadata mutates separately.
 
 mod governance_contracts;
+mod governance_ops;
 mod governance_workflow;
 pub use governance_contracts::*;
+pub use governance_ops::*;
 pub use governance_workflow::*;
 
 use serde::{Deserialize, Serialize};
@@ -141,6 +143,21 @@ pub enum ActionProposalError {
 
     #[error("governance readiness dashboard is a projection only; cannot execute")]
     GovernanceDashboardCannotExecute,
+
+    #[error("governance notification is informational only; cannot execute or grant authority")]
+    GovernanceNotificationCannotExecute,
+
+    #[error("governance delegation blocked: {0}")]
+    GovernanceDelegationBlocked(String),
+
+    #[error("governance metrics are observational only; cannot optimise or adapt")]
+    GovernanceMetricsCannotMutate,
+
+    #[error("governance reporting is a projection only; cannot execute")]
+    GovernanceReportCannotExecute,
+
+    #[error("governance export is read-only; import/sync/publish forbidden")]
+    GovernanceExportForbidden(String),
 
     #[error(transparent)]
     Domain(#[from] DomainError),
