@@ -33,6 +33,7 @@ Remaining before a future handoff could exist:
 
 1. ~~Explicit user confirmation~~ — see [WORKSPACE-RECOMMENDATION-DECISION-CONFIRMATION.md](./WORKSPACE-RECOMMENDATION-DECISION-CONFIRMATION.md)
 2. ~~Typed intake payload~~ — see [WORKSPACE-RECOMMENDATION-DECISION-INTAKE.md](./WORKSPACE-RECOMMENDATION-DECISION-INTAKE.md)
+3. ~~Intake inspection (safe inspect ≠ handoff)~~ — see [WORKSPACE-RECOMMENDATION-DECISION-INTAKE-INSPECTION.md](./WORKSPACE-RECOMMENDATION-DECISION-INTAKE-INSPECTION.md)
 3. Optional **adapter** that maps intake → DE object creation without merging domains
 
 ---

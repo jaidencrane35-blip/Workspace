@@ -72,6 +72,7 @@ fn accepted_ready_item() -> RecommendationItem {
         decision_boundary: None,
         decision_confirmation: None,
                 decision_intake: None,
+                decision_intake_inspection: None,
         authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
     }
 }

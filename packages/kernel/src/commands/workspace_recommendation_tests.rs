@@ -855,6 +855,14 @@ fn case24_confirm_future_decision_remains_non_authoritative() {
         assert!(!intake.handoff_performed);
         assert!(intake.attempt_create_decision_engine_object().is_err());
         assert!(intake.attempt_handoff().is_err());
+        let inspection = confirmed
+            .decision_intake_inspection
+            .expect("confirm emits intake inspection");
+        assert!(inspection.safe_to_inspect);
+        assert!(!inspection.handoff_performed);
+        assert!(inspection.attempt_handoff().is_err());
+        assert!(!inspection.may_create_decision_engine_object());
+        assert!(!inspection.may_invoke_gateway());
     }
     assert_cannot_execute(CommandHandler::workspace_recommendation_engine_attempt_execute());
     assert_cannot_execute(CommandHandler::decision_engine_attempt_execute());

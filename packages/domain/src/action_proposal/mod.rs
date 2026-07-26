@@ -784,6 +784,10 @@ pub struct RecommendationReviewActionResult {
     #[serde(default)]
     pub decision_intake:
         Option<crate::workspace_recommendation::RecommendationDecisionIntakeRequest>,
+    /// Integrity inspection of intake — inspect ≠ handoff / DE ownership.
+    #[serde(default)]
+    pub decision_intake_inspection:
+        Option<crate::workspace_recommendation::RecommendationDecisionIntakeInspection>,
     pub explanation: String,
     pub authority_effect: String,
 }
@@ -4106,6 +4110,7 @@ mod tests {
                 decision_boundary: None,
                 decision_confirmation: None,
                 decision_intake: None,
+                decision_intake_inspection: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
         }
     }

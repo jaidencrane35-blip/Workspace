@@ -2179,6 +2179,25 @@ export interface RecommendationItem {
   decision_confirmation?: RecommendationDecisionConfirmation | null;
   /** Typed future-DE intake package after confirmation — never creates DE objects. */
   decision_intake?: RecommendationDecisionIntakeRequest | null;
+  /** Integrity inspection of intake — inspect ≠ handoff / DE ownership. */
+  decision_intake_inspection?: RecommendationDecisionIntakeInspection | null;
+  authority_effect: string;
+}
+
+/** Read-only integrity check of intake for a future consumer — never a handoff. */
+export interface RecommendationDecisionIntakeInspection {
+  recommendation_id: string;
+  /** valid | stale_context | binding_failed | fingerprint_mismatch | provenance_mismatch | non_authoritative_violation */
+  inspection_state: string;
+  safe_to_inspect: boolean;
+  fingerprint_matches: boolean;
+  confirmation_bound: boolean;
+  context_compatible: boolean;
+  provenance_intact: boolean;
+  ownership_intact: boolean;
+  findings: string[];
+  handoff_performed: boolean;
+  note: string;
   authority_effect: string;
 }
 
@@ -2354,6 +2373,7 @@ export interface RecommendationReviewActionResult {
   decision_boundary?: RecommendationDecisionBoundary | null;
   decision_confirmation?: RecommendationDecisionConfirmation | null;
   decision_intake?: RecommendationDecisionIntakeRequest | null;
+  decision_intake_inspection?: RecommendationDecisionIntakeInspection | null;
   explanation: string;
   authority_effect: string;
 }

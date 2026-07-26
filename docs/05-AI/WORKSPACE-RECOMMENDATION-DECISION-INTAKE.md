@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | **Purpose** | Typed package for *future* Decision Engine intake after confirmation |
-| **Status** | Sprints 232–236 — assemble only |
+| **Status** | Sprints 232–236 — assemble only; inspection in Sprint 237 |
 | **Authority** | Always `none` |
 
 ---
@@ -17,11 +17,14 @@ RecommendationDecisionIntakeRequest (intake_state = requested)
         ✗ no DecisionCandidate
         ✗ no intent / goal / Gateway
         ✗ handoff_performed = false
+        ↓ RecommendationDecisionIntakeInspection::verify (read-only)
+        ✗ inspect ≠ handoff / DE ownership
         ↓ (future DE adapter — Decision Engine owns object creation)
 ```
 
 Intake is **not** DE ownership transfer. It is the structured evidence package a future
-adapter may consume.
+adapter may consume. See
+[WORKSPACE-RECOMMENDATION-DECISION-INTAKE-INSPECTION.md](./WORKSPACE-RECOMMENDATION-DECISION-INTAKE-INSPECTION.md).
 
 ---
 
@@ -59,6 +62,7 @@ Accept / required / declined → no intake.
 
 ## Related
 
+- [WORKSPACE-RECOMMENDATION-DECISION-INTAKE-INSPECTION.md](./WORKSPACE-RECOMMENDATION-DECISION-INTAKE-INSPECTION.md)
 - [WORKSPACE-RECOMMENDATION-DECISION-CONFIRMATION.md](./WORKSPACE-RECOMMENDATION-DECISION-CONFIRMATION.md)
 - [WORKSPACE-RECOMMENDATION-DECISION-BOUNDARY.md](./WORKSPACE-RECOMMENDATION-DECISION-BOUNDARY.md)
 - [WORKSPACE-DECISION-ENGINE.md](./WORKSPACE-DECISION-ENGINE.md)

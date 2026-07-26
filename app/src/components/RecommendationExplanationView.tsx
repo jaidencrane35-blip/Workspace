@@ -3,6 +3,7 @@ import type {
   RecommendationDecisionBoundary,
   RecommendationDecisionConfirmation,
   RecommendationDecisionContext,
+  RecommendationDecisionIntakeInspection,
   RecommendationDecisionIntakeRequest,
   RecommendationDecisionReadiness,
   RecommendationHistoryEntry,
@@ -136,6 +137,11 @@ export function RecommendationExplanationBlock({
       {item.decision_intake ? (
         <RecommendationDecisionIntakeBlock intake={item.decision_intake} />
       ) : null}
+      {item.decision_intake_inspection ? (
+        <RecommendationDecisionIntakeInspectionBlock
+          inspection={item.decision_intake_inspection}
+        />
+      ) : null}
     </div>
   );
 }
@@ -167,6 +173,34 @@ export function RecommendationDecisionIntakeBlock({
         <div className="mono">
           Evidence refs: {intake.evidence_refs.slice(0, 4).join(" · ")}
         </div>
+      )}
+    </div>
+  );
+}
+
+/** Intake integrity inspection — safe_to_inspect ≠ handoff / DE ownership. */
+export function RecommendationDecisionIntakeInspectionBlock({
+  inspection,
+}: {
+  inspection: RecommendationDecisionIntakeInspection;
+}) {
+  return (
+    <div
+      className="recommendation-decision-intake-inspection muted"
+      style={{ marginTop: 4 }}
+    >
+      <div>
+        Intake inspection: <strong>{inspection.inspection_state}</strong>
+        {" · "}
+        safe to inspect: {inspection.safe_to_inspect ? "yes" : "no"}
+        {" · "}
+        handoff: {inspection.handoff_performed ? "performed" : "not performed"}
+        {" · "}
+        authority: {inspection.authority_effect}
+      </div>
+      <div>{inspection.note}</div>
+      {inspection.findings.length > 0 && (
+        <div>Findings: {inspection.findings.slice(0, 3).join(" · ")}</div>
       )}
     </div>
   );

@@ -257,6 +257,9 @@ pub struct RecommendationItem {
     /// Typed future-DE intake package after confirmation (Sprint 232+) — never creates DE objects.
     #[serde(default)]
     pub decision_intake: Option<RecommendationDecisionIntakeRequest>,
+    /// Integrity inspection of intake for future consumers (Sprint 237+) — never a handoff.
+    #[serde(default)]
+    pub decision_intake_inspection: Option<RecommendationDecisionIntakeInspection>,
     pub authority_effect: String,
 }
 
@@ -1200,6 +1203,207 @@ impl RecommendationDecisionIntakeRequest {
             || self.authority_effect != Self::AUTHORITY_EFFECT_NONE
             || self.intake_state != Self::STATE_REQUESTED
         {
+            return Err(WorkspaceRecommendationEngineError::CannotBecomeHandoff);
+        }
+        Ok(())
+    }
+}
+
+/// Read-only integrity inspection of an intake request for a future consumer (Sprint 237).
+///
+/// Proves a consumer may safely inspect intake without that inspection becoming a handoff
+/// path or DE ownership transfer. Does not create Decision Engine objects.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RecommendationDecisionIntakeInspection {
+    pub recommendation_id: String,
+    /// `valid` | `stale_context` | `binding_failed` | `fingerprint_mismatch`
+    /// | `provenance_mismatch` | `non_authoritative_violation`
+    pub inspection_state: String,
+    /// True only when all integrity checks pass and intake remains non-authoritative.
+    pub safe_to_inspect: bool,
+    pub fingerprint_matches: bool,
+    pub confirmation_bound: bool,
+    pub context_compatible: bool,
+    pub provenance_intact: bool,
+    pub ownership_intact: bool,
+    pub findings: Vec<String>,
+    pub handoff_performed: bool,
+    pub note: String,
+    pub authority_effect: String,
+}
+
+impl RecommendationDecisionIntakeInspection {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+    pub const STATE_VALID: &'static str = "valid";
+    pub const STATE_STALE_CONTEXT: &'static str = "stale_context";
+    pub const STATE_BINDING_FAILED: &'static str = "binding_failed";
+    pub const STATE_FINGERPRINT_MISMATCH: &'static str = "fingerprint_mismatch";
+    pub const STATE_PROVENANCE_MISMATCH: &'static str = "provenance_mismatch";
+    pub const STATE_NON_AUTHORITATIVE_VIOLATION: &'static str = "non_authoritative_violation";
+
+    /// Re-bind intake to live context/confirmation/readiness without transferring ownership.
+    pub fn verify(
+        intake: &RecommendationDecisionIntakeRequest,
+        context: &RecommendationDecisionContext,
+        confirmation: &RecommendationDecisionConfirmation,
+        readiness: &RecommendationDecisionReadiness,
+    ) -> Self {
+        let mut findings = Vec::new();
+
+        let non_auth_ok = intake.assert_non_authoritative().is_ok();
+        if !non_auth_ok {
+            findings.push(
+                "Intake violates non-authoritative contract (handoff, DE object, or state)."
+                    .into(),
+            );
+        }
+
+        let fingerprint_matches =
+            intake.continuity_fingerprint == context.continuity_fingerprint;
+        if !fingerprint_matches {
+            findings.push("Continuity fingerprint does not match live decision context.".into());
+        }
+
+        let confirmation_bound = intake.recommendation_id == confirmation.recommendation_id
+            && confirmation.confirmation_state
+                == RecommendationDecisionConfirmation::STATE_CONFIRMED
+            && confirmation.confirmation_intent == intake.confirmation_intent
+            && confirmation.confirmed_at.as_deref() == Some(intake.confirmed_at.as_str());
+        if !confirmation_bound {
+            findings.push(
+                "Confirmation binding failed — intake is not bound to a live confirmed decision."
+                    .into(),
+            );
+        }
+
+        let context_compatible = context.complete
+            && readiness.ready_for_future_handoff
+            && context.recommendation_id == intake.recommendation_id
+            && context.workspace_id == intake.workspace_id
+            && context.kind == intake.kind
+            && context.title == intake.title;
+        if !context_compatible {
+            findings.push(
+                "Context incompatible or stale — complete/ready gates or identity fields mismatch."
+                    .into(),
+            );
+        }
+
+        let provenance_intact = intake.explanation_ref == context.explanation_ref
+            && intake.evidence_refs == context.evidence_refs
+            && intake.explanation_keys == context.explanation_keys
+            && intake.outcome_id == context.outcome_id
+            && intake.related_task_id == context.related_task_id
+            && intake.related_attention_id == context.related_attention_id
+            && intake.related_decision_id == context.related_decision_id;
+        if !provenance_intact {
+            findings.push(
+                "Provenance refs drifted from live decision context (evidence/explanation/related)."
+                    .into(),
+            );
+        }
+
+        let ownership_intact = confirmation.recommendation_owner
+            == RecommendationDecisionConfirmation::OWNER_RECOMMENDATION
+            && intake.intake_state == RecommendationDecisionIntakeRequest::STATE_REQUESTED
+            && intake.decision_engine_object_id.is_none()
+            && !intake.handoff_performed
+            && confirmation.decision_owner == RecommendationDecisionConfirmation::OWNER_DECISION;
+        if !ownership_intact {
+            findings.push(
+                "Ownership integrity failed — RE must own intake; DE must not own it yet.".into(),
+            );
+        }
+
+        let safe_to_inspect = non_auth_ok
+            && fingerprint_matches
+            && confirmation_bound
+            && context_compatible
+            && provenance_intact
+            && ownership_intact;
+
+        let inspection_state = if !non_auth_ok || !ownership_intact {
+            Self::STATE_NON_AUTHORITATIVE_VIOLATION
+        } else if !confirmation_bound {
+            Self::STATE_BINDING_FAILED
+        } else if !fingerprint_matches {
+            Self::STATE_FINGERPRINT_MISMATCH
+        } else if !provenance_intact {
+            Self::STATE_PROVENANCE_MISMATCH
+        } else if !context_compatible {
+            Self::STATE_STALE_CONTEXT
+        } else {
+            Self::STATE_VALID
+        };
+
+        let note = if safe_to_inspect {
+            "Intake inspection valid — future consumer may inspect this package. Inspection is \
+             not a handoff, not DE ownership, and not execution authority."
+                .into()
+        } else {
+            format!(
+                "Intake inspection failed ({inspection_state}). Package must not be treated as \
+                 handoff-ready or Decision Engine–owned. Findings: {}",
+                findings.join(" ")
+            )
+        };
+
+        Self {
+            recommendation_id: intake.recommendation_id.clone(),
+            inspection_state: inspection_state.into(),
+            safe_to_inspect,
+            fingerprint_matches,
+            confirmation_bound,
+            context_compatible,
+            provenance_intact,
+            ownership_intact,
+            findings,
+            handoff_performed: false,
+            note,
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        }
+    }
+
+    pub fn attempt_execute() -> Result<(), WorkspaceRecommendationEngineError> {
+        Err(WorkspaceRecommendationEngineError::CannotExecute)
+    }
+
+    pub fn attempt_handoff(&self) -> Result<(), WorkspaceRecommendationEngineError> {
+        Err(WorkspaceRecommendationEngineError::CannotBecomeHandoff)
+    }
+
+    pub fn attempt_create_decision_engine_object(
+        &self,
+    ) -> Result<(), WorkspaceRecommendationEngineError> {
+        Err(WorkspaceRecommendationEngineError::CannotBecomeHandoff)
+    }
+
+    pub fn attempt_create_intent(&self) -> Result<(), WorkspaceRecommendationEngineError> {
+        Err(WorkspaceRecommendationEngineError::CannotBecomeHandoff)
+    }
+
+    pub fn may_create_decision_engine_object(&self) -> bool {
+        false
+    }
+
+    pub fn may_create_intent(&self) -> bool {
+        false
+    }
+
+    pub fn may_invoke_gateway(&self) -> bool {
+        false
+    }
+
+    pub fn may_mutate_provenance(&self) -> bool {
+        false
+    }
+
+    /// Assert this inspection record itself carries no handoff/execution authority.
+    /// Does **not** mean a consumer may hand off — use `attempt_handoff()` for that (always fails).
+    pub fn assert_inspection_is_not_handoff(
+        &self,
+    ) -> Result<(), WorkspaceRecommendationEngineError> {
+        if self.handoff_performed || self.authority_effect != Self::AUTHORITY_EFFECT_NONE {
             return Err(WorkspaceRecommendationEngineError::CannotBecomeHandoff);
         }
         Ok(())

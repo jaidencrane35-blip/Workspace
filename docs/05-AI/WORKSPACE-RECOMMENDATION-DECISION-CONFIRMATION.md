@@ -20,11 +20,13 @@ RecommendationDecisionConfirmation
         ✗ does not create Decision / Intent / Gateway grant
         ↓ (when confirmed)
 RecommendationDecisionIntakeRequest (typed package only)
+        ↓ RecommendationDecisionIntakeInspection (safe inspect ≠ handoff)
         ↓ (future DE adapter)
 Decision Engine owns decision creation
 ```
 
-See [WORKSPACE-RECOMMENDATION-DECISION-INTAKE.md](./WORKSPACE-RECOMMENDATION-DECISION-INTAKE.md).
+See [WORKSPACE-RECOMMENDATION-DECISION-INTAKE.md](./WORKSPACE-RECOMMENDATION-DECISION-INTAKE.md)
+and [WORKSPACE-RECOMMENDATION-DECISION-INTAKE-INSPECTION.md](./WORKSPACE-RECOMMENDATION-DECISION-INTAKE-INSPECTION.md).
 
 | Step | Meaning |
 |------|---------|
