@@ -45,6 +45,7 @@ mod observation_trigger_admission;
 mod observation_trigger_authority;
 mod observation_startup_trigger;
 mod observation_scheduled_trigger;
+mod observation_scheduler;
 mod workspace_scope;
 mod trigger_evaluator;
 mod configuration;
@@ -128,6 +129,7 @@ pub(crate) use observation_trigger_authority::{
 };
 pub(crate) use observation_startup_trigger::ObservationStartupTrigger;
 pub(crate) use observation_scheduled_trigger::ObservationScheduledTrigger;
+pub(crate) use observation_scheduler::ObservationScheduler;
 pub(crate) use workspace_scope::{approval_belongs_to_workspace, plan_belongs_to_workspace};
 pub use context::WorkspaceContextService;
 pub use database::DatabaseServiceHandle;

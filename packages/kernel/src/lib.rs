@@ -52,8 +52,9 @@ use events::AuditEventSubscriber;
 use policy::CapabilityBoundPolicy as DefaultPermissionPolicy;
 use security::StandardPermissionGate as DefaultPermissionGate;
 use services::{
-    AssistantWorkflowStore, ObservationStartupTrigger, OrchestratedPlanStore,
+    AssistantWorkflowStore, ObservationScheduler, ObservationStartupTrigger, OrchestratedPlanStore,
 };
+use workspace_domain::ObservationScheduleConfig;
 
 /// Kernel crate version aligned with application semver.
 pub const KERNEL_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -74,6 +75,8 @@ pub struct WorkspaceKernel {
     orchestrated_plans: Arc<Mutex<OrchestratedPlanStore>>,
     /// Diagnostic in-memory assistant workflows (interface only, not authority).
     assistant_workflows: Arc<Mutex<AssistantWorkflowStore>>,
+    /// Observation schedule runtime (disabled for in-memory test kernels).
+    observation_scheduler: ObservationScheduler,
 }
 
 impl WorkspaceKernel {
@@ -84,15 +87,16 @@ impl WorkspaceKernel {
         CommandHandler::initialize_workspace(&mut kernel, db_path)?;
         // First real observation trigger: once after Ready. Soft-fail only.
         ObservationStartupTrigger::fire(&kernel);
+        // Schedule runtime ownership — starts only after Ready.
+        kernel.start_observation_scheduler(ObservationScheduleConfig::enabled_default());
         log::info!("workspace kernel ready");
         Ok(kernel)
     }
 
     /// Initializes with an in-memory database (tests).
     ///
-    /// Does **not** fire the startup observation trigger — avoids Win32 capture
-    /// and leaves observation empty for deterministic fixtures. Tests exercise
-    /// [`ObservationStartupTrigger`] explicitly with injectable capturers.
+    /// Does **not** fire the startup observation trigger or start the observation
+    /// scheduler — avoids Win32 capture and keeps fixtures deterministic.
     pub fn initialize_in_memory() -> Result<Self> {
         log::debug!("workspace kernel in-memory initialization");
         let mut kernel = Self::bootstrap_shell(KERNEL_VERSION);
@@ -180,7 +184,22 @@ impl WorkspaceKernel {
     }
 
     pub fn begin_shutdown(&mut self) {
+        self.observation_scheduler.stop();
         CommandHandler::shutdown(self);
+    }
+
+    pub(crate) fn observation_scheduler(&self) -> &ObservationScheduler {
+        &self.observation_scheduler
+    }
+
+    pub(crate) fn observation_scheduler_mut(&mut self) -> &mut ObservationScheduler {
+        &mut self.observation_scheduler
+    }
+
+    pub(crate) fn start_observation_scheduler(&mut self, config: ObservationScheduleConfig) {
+        let db = self.database.shared();
+        self.observation_scheduler.configure(config);
+        self.observation_scheduler.start(db);
     }
 
     pub(crate) fn apply_runtime(
@@ -240,6 +259,7 @@ impl WorkspaceKernel {
             permission_policy: Arc::new(DefaultPermissionPolicy),
             orchestrated_plans: Arc::new(Mutex::new(OrchestratedPlanStore::new())),
             assistant_workflows: Arc::new(Mutex::new(AssistantWorkflowStore::new())),
+            observation_scheduler: ObservationScheduler::new(ObservationScheduleConfig::disabled()),
         }
     }
 }

@@ -14,9 +14,9 @@
 The Workspace remains a companion over Windows. The Environment Model understands **where work is happening** without becoming an OS.
 
 ```
-ObservationTriggerRequest
-  (startup: System / startup_initialization)
-  (scheduled tick: Scheduled / scheduled_refresh — explicit only, no timer)
+ObservationScheduler (runtime ticks; production initialize only)
+        ↓
+ObservationScheduledTrigger (Scheduled / scheduled_refresh)
         ↓
 ObservationTriggerAdmissionPolicy
         ↓
@@ -39,7 +39,9 @@ Attention / Intelligence / Continuity consumers
 
 **CaptureCoordinator** owns capture request admission and concurrency (no queue). It does **not** schedule, timer, or event-hook captures. Actual Win32 capture and persistence remain in `WorkspaceObservationService`. Capture requests carry provenance (`source` / optional `reason` / `context`) into distinguishable lifecycle audits (`requested` → `started` → `completed` | `failed`, or `rejected_concurrent`).
 
-**ObservationTriggerAuthority** evaluates `ObservationTriggerRequest`s: audit received → **admission policy** → refresh policy → ignore / block / accept → `CaptureCoordinator` only when capture is needed. Admission allows `Manual` / `System` / `Scheduled` and rejects `Event` / `Plugin`; rate-limits repeated admits (process-local cooldown). Callers: `ObservationStartupTrigger` (once at Ready) and `ObservationScheduledTrigger` (explicit tick only — **no timer owned**). Scheduled freshness is `NotStale`.
+**ObservationScheduler** owns schedule timing (`ObservationScheduleConfig`: `enabled`, `interval_seconds`). Starts after Ready on production `WorkspaceKernel::initialize`, stops on `begin_shutdown`, stays disabled for in-memory tests. Ticks call only `ObservationScheduledTrigger` (context `schedule:ObservationScheduler`). No Event/Plugin callers.
+
+**ObservationTriggerAuthority** evaluates `ObservationTriggerRequest`s: audit received → **admission policy** → refresh policy → ignore / block / accept → `CaptureCoordinator` only when capture is needed. Admission allows `Manual` / `System` / `Scheduled` and rejects `Event` / `Plugin`; rate-limits repeated admits (process-local cooldown). Callers: `ObservationStartupTrigger` (once at Ready) and `ObservationScheduledTrigger` (explicit tick or scheduler tick). Scheduled freshness is `NotStale`.
 
 **ObservationRefreshPolicyService** answers whether a new observation should be requested (`FreshEnough` / `RefreshRequired` / `ObservationUnavailable` / `RefreshBlocked`). It is read-only: it does **not** capture. Consumer freshness needs (`ObservationConsumerFreshnessNeed`) are contracts only — not yet wired into Environment / Intelligence.
 

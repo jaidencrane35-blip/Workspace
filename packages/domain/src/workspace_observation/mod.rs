@@ -674,6 +674,43 @@ impl ObservationTriggerRequest {
     }
 }
 
+/// Minimal observation schedule configuration (Sprint 114).
+///
+/// Not persisted and not exposed via UI in this sprint.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ObservationScheduleConfig {
+    pub enabled: bool,
+    pub interval_seconds: u64,
+}
+
+impl ObservationScheduleConfig {
+    pub const DEFAULT_INTERVAL_SECONDS: u64 = 300;
+
+    pub fn disabled() -> Self {
+        Self {
+            enabled: false,
+            interval_seconds: Self::DEFAULT_INTERVAL_SECONDS,
+        }
+    }
+
+    pub fn enabled_with_interval(interval_seconds: u64) -> Self {
+        Self {
+            enabled: true,
+            interval_seconds: interval_seconds.max(1),
+        }
+    }
+
+    pub fn enabled_default() -> Self {
+        Self::enabled_with_interval(Self::DEFAULT_INTERVAL_SECONDS)
+    }
+}
+
+impl Default for ObservationScheduleConfig {
+    fn default() -> Self {
+        Self::disabled()
+    }
+}
+
 /// Auditable trigger authority outcome (capture payload attached in kernel).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]

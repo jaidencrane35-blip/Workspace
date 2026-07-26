@@ -1557,6 +1557,12 @@ export interface ObservationTriggerRequest {
   freshness_requirement: ObservationFreshnessRequirement;
 }
 
+/** Minimal schedule config — not persisted / no UI in this sprint. */
+export interface ObservationScheduleConfig {
+  enabled: boolean;
+  interval_seconds: number;
+}
+
 export type ObservationTriggerOutcome =
   | "accepted_capture"
   | "ignored_fresh"

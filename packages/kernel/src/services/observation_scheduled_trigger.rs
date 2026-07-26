@@ -42,14 +42,17 @@ impl ObservationScheduledTrigger {
         kernel: &WorkspaceKernel,
         context: Option<String>,
     ) -> Result<ObservationTriggerDecision> {
+        Self::on_tick_from_db(&kernel.shared_database(), context)
+    }
+
+    /// Schedule-runtime / low-level path: database handle only (no Win32 here).
+    pub(crate) fn on_tick_from_db(
+        db: &std::sync::Arc<std::sync::Mutex<workspace_database::Database>>,
+        context: Option<String>,
+    ) -> Result<ObservationTriggerDecision> {
         let actor = ActorContext::system();
         let intent = IntentContext::system_startup();
-        ObservationTriggerAuthority::handle(
-            &kernel.shared_database(),
-            &actor,
-            &intent,
-            Self::trigger_request(context),
-        )
+        ObservationTriggerAuthority::handle(db, &actor, &intent, Self::trigger_request(context))
     }
 
     /// Test/fixture path with an injectable capturer (still via trigger authority).
@@ -58,10 +61,18 @@ impl ObservationScheduledTrigger {
         context: Option<String>,
         capturer: &dyn DesktopCapturer,
     ) -> Result<ObservationTriggerDecision> {
+        Self::on_tick_from_db_with(&kernel.shared_database(), context, capturer)
+    }
+
+    pub(crate) fn on_tick_from_db_with(
+        db: &std::sync::Arc<std::sync::Mutex<workspace_database::Database>>,
+        context: Option<String>,
+        capturer: &dyn DesktopCapturer,
+    ) -> Result<ObservationTriggerDecision> {
         let actor = ActorContext::system();
         let intent = IntentContext::system_startup();
         ObservationTriggerAuthority::handle_with(
-            &kernel.shared_database(),
+            db,
             &actor,
             &intent,
             Self::trigger_request(context),
