@@ -272,6 +272,9 @@ pub struct RecommendationItem {
     /// Prepared RE→future-DE adapter path (Sprint 257+) — never invokes adapter or creates DE objects.
     #[serde(default)]
     pub decision_intake_adapter_preparation: Option<RecommendationDecisionIntakeAdapterPreparation>,
+    /// Non-executing handoff request to future DE (Sprint 262+) — request ≠ performed / DE object.
+    #[serde(default)]
+    pub decision_handoff_request: Option<RecommendationDecisionHandoffRequest>,
     pub authority_effect: String,
 }
 
@@ -2242,6 +2245,231 @@ impl RecommendationDecisionIntakeAdapterPreparation {
             || self.mapping_performed
             || self.proceed_authorized
             || self.handoff_performed
+            || self.decision_engine_object_id.is_some()
+            || self.permission_effect != Self::PERMISSION_EFFECT_NONE
+            || self.authority_effect != Self::AUTHORITY_EFFECT_NONE
+            || self.current_owner != Self::OWNER_RECOMMENDATION
+        {
+            return Err(WorkspaceRecommendationEngineError::CannotBecomeHandoff);
+        }
+        Ok(())
+    }
+}
+
+/// Non-executing RE → future-DE handoff *request* artifact (Sprint 262).
+///
+/// Declares that Recommendation Engine is requesting future Decision Engine
+/// consideration of a sealed, prepared intake. Does **not** perform handoff,
+/// create DE objects, invoke the adapter, create intents, or grant Gateway
+/// authority. Ownership remains Recommendation Engine until a future explicit
+/// DE acceptance (separate increment). Reversible via `revoke`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RecommendationDecisionHandoffRequest {
+    pub recommendation_id: String,
+    pub workspace_id: String,
+    /// `requested` | `revoked`
+    pub request_state: String,
+    /// True only while `requested` and preparation/seal remain valid.
+    pub handoff_requested: bool,
+    /// Always false — request ≠ performed handoff.
+    pub handoff_performed: bool,
+    pub requested_at: Option<String>,
+    pub revoked_at: Option<String>,
+    pub confirmation_intent: String,
+    pub confirmed_at: String,
+    pub sealed_intake_package_digest: String,
+    pub contract_version: String,
+    pub contract_family: String,
+    pub continuity_fingerprint: String,
+    pub preparation_state_at_request: String,
+    pub preparation_prepared_at: Option<String>,
+    /// False when preparation is revoked or seal no longer aligned.
+    pub preparation_active: bool,
+    pub seal_aligned: bool,
+    pub current_owner: String,
+    pub decision_engine_object_id: Option<String>,
+    pub adapter_invoked: bool,
+    pub permission_effect: String,
+    pub note: String,
+    pub authority_effect: String,
+}
+
+impl RecommendationDecisionHandoffRequest {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+    pub const PERMISSION_EFFECT_NONE: &'static str = "none";
+    pub const OWNER_RECOMMENDATION: &'static str = "recommendation_engine";
+    pub const STATE_REQUESTED: &'static str = "requested";
+    pub const STATE_REVOKED: &'static str = "revoked";
+
+    /// Emit a handoff *request* only from active preparation + confirmation + seal + identity.
+    /// Never performs handoff or creates DE objects.
+    pub fn try_request(
+        preparation: &RecommendationDecisionIntakeAdapterPreparation,
+        confirmation: &RecommendationDecisionConfirmation,
+        seal: &RecommendationDecisionIntakePackageSeal,
+        compatibility: &RecommendationDecisionIntakeCompatibility,
+        requested_at: impl Into<String>,
+    ) -> Option<Self> {
+        if !preparation.is_active_preparation() {
+            return None;
+        }
+        if confirmation.confirmation_state != RecommendationDecisionConfirmation::STATE_CONFIRMED {
+            return None;
+        }
+        if confirmation.confirmed_at.is_none() {
+            return None;
+        }
+        if !seal.sealed
+            || !seal.package_matches_seal
+            || seal.seal_state != RecommendationDecisionIntakePackageSeal::STATE_SEALED
+        {
+            return None;
+        }
+        if seal.intake_package_digest != preparation.sealed_intake_package_digest {
+            return None;
+        }
+        if !compatibility.compatible {
+            return None;
+        }
+        let requested_at = requested_at.into();
+        Some(Self {
+            recommendation_id: preparation.recommendation_id.clone(),
+            workspace_id: preparation.workspace_id.clone(),
+            request_state: Self::STATE_REQUESTED.into(),
+            handoff_requested: true,
+            handoff_performed: false,
+            requested_at: Some(requested_at),
+            revoked_at: None,
+            confirmation_intent: confirmation.confirmation_intent.clone(),
+            confirmed_at: confirmation.confirmed_at.clone().unwrap_or_default(),
+            sealed_intake_package_digest: seal.intake_package_digest.clone(),
+            contract_version: compatibility.contract_version.clone(),
+            contract_family: compatibility.contract_family.clone(),
+            continuity_fingerprint: preparation.continuity_fingerprint_at_prep.clone(),
+            preparation_state_at_request: preparation.preparation_state.clone(),
+            preparation_prepared_at: preparation.prepared_at.clone(),
+            preparation_active: true,
+            seal_aligned: true,
+            current_owner: Self::OWNER_RECOMMENDATION.into(),
+            decision_engine_object_id: None,
+            adapter_invoked: false,
+            permission_effect: Self::PERMISSION_EFFECT_NONE.into(),
+            note: "Handoff requested to future Decision Engine for sealed, prepared intake. \
+                   Request is not handoff performance, DE object creation, adapter invocation, \
+                   ownership transfer, or execution authority. Reversible via revoke."
+                .into(),
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        })
+    }
+
+    /// Reversible withdrawal of the handoff request — no DE/Gateway side effects.
+    pub fn revoke(
+        &mut self,
+        revoked_at: impl Into<String>,
+    ) -> Result<(), WorkspaceRecommendationEngineError> {
+        if self.handoff_performed
+            || self.adapter_invoked
+            || self.decision_engine_object_id.is_some()
+        {
+            return Err(WorkspaceRecommendationEngineError::CannotBecomeHandoff);
+        }
+        self.request_state = Self::STATE_REVOKED.into();
+        self.handoff_requested = false;
+        self.revoked_at = Some(revoked_at.into());
+        self.preparation_active = false;
+        self.note = "Handoff request revoked. No Decision Engine objects, intents, or Gateway \
+                     grants were created. Recommendation Engine retains ownership."
+            .into();
+        Ok(())
+    }
+
+    /// Re-check request against live preparation — revoked/misaligned prep blocks progression.
+    pub fn rebind_to_preparation(
+        mut self,
+        preparation: &RecommendationDecisionIntakeAdapterPreparation,
+    ) -> Self {
+        let prep_active = preparation.is_active_preparation()
+            && preparation.sealed_intake_package_digest == self.sealed_intake_package_digest;
+        self.preparation_active = prep_active;
+        self.seal_aligned = prep_active && preparation.seal_aligned;
+        if self.request_state == Self::STATE_REQUESTED {
+            self.handoff_requested = prep_active && self.seal_aligned;
+            if !self.handoff_requested {
+                self.note = "Handoff request exists but preparation is no longer active/aligned. \
+                             Progression blocked; handoff_performed remains false. Revoke or re-confirm."
+                    .into();
+            }
+        } else {
+            self.handoff_requested = false;
+        }
+        self.handoff_performed = false;
+        self.adapter_invoked = false;
+        self.decision_engine_object_id = None;
+        self.permission_effect = Self::PERMISSION_EFFECT_NONE.into();
+        self.authority_effect = Self::AUTHORITY_EFFECT_NONE.into();
+        self.current_owner = Self::OWNER_RECOMMENDATION.into();
+        self
+    }
+
+    pub fn is_active_request(&self) -> bool {
+        self.request_state == Self::STATE_REQUESTED
+            && self.handoff_requested
+            && self.preparation_active
+            && self.seal_aligned
+            && !self.handoff_performed
+    }
+
+    pub fn may_perform_handoff(&self) -> bool {
+        false
+    }
+
+    pub fn may_invoke_adapter(&self) -> bool {
+        false
+    }
+
+    pub fn attempt_perform_handoff(&self) -> Result<(), WorkspaceRecommendationEngineError> {
+        Err(WorkspaceRecommendationEngineError::CannotBecomeHandoff)
+    }
+
+    pub fn attempt_invoke_adapter(&self) -> Result<(), WorkspaceRecommendationEngineError> {
+        Err(WorkspaceRecommendationEngineError::CannotBecomeHandoff)
+    }
+
+    pub fn attempt_execute() -> Result<(), WorkspaceRecommendationEngineError> {
+        Err(WorkspaceRecommendationEngineError::CannotExecute)
+    }
+
+    pub fn attempt_create_decision_engine_object(
+        &self,
+    ) -> Result<(), WorkspaceRecommendationEngineError> {
+        Err(WorkspaceRecommendationEngineError::CannotBecomeHandoff)
+    }
+
+    pub fn attempt_create_intent(&self) -> Result<(), WorkspaceRecommendationEngineError> {
+        Err(WorkspaceRecommendationEngineError::CannotBecomeHandoff)
+    }
+
+    pub fn may_create_decision_engine_object(&self) -> bool {
+        false
+    }
+
+    pub fn may_create_intent(&self) -> bool {
+        false
+    }
+
+    pub fn may_invoke_gateway(&self) -> bool {
+        false
+    }
+
+    pub fn may_mutate_provenance(&self) -> bool {
+        false
+    }
+
+    pub fn assert_request_is_not_performed_handoff(
+        &self,
+    ) -> Result<(), WorkspaceRecommendationEngineError> {
+        if self.handoff_performed
+            || self.adapter_invoked
             || self.decision_engine_object_id.is_some()
             || self.permission_effect != Self::PERMISSION_EFFECT_NONE
             || self.authority_effect != Self::AUTHORITY_EFFECT_NONE

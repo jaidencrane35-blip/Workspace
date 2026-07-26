@@ -54,19 +54,18 @@ See [WORKSPACE-RECOMMENDATION-DECISION-CONTEXT.md](./WORKSPACE-RECOMMENDATION-DE
 
 ---
 
-## Missing future handoff contract (not implemented)
+## Handoff request contract (non-executing)
 
-A later sprint may add an optional `RecommendationDecisionHandoff` mirroring
-`DecisionEngineHandoff` / `AdaptationHandoff` (`next_command`, `goal_statement`, …)
-with `authority_effect: "none"`, emitted only when readiness is `handoff_deferred`
-**and** an explicit human/UI step requests it. Decision Engine remains the owner of
-intent/goal creation.
+Sprint 262 adds `RecommendationDecisionHandoffRequest` — a typed *request*
+artifact after adapter preparation. It is **not** `DecisionEngineHandoff` /
+`AdaptationHandoff` (no `next_command`, no planner submit). See
+[WORKSPACE-RECOMMENDATION-DECISION-HANDOFF-REQUEST.md](./WORKSPACE-RECOMMENDATION-DECISION-HANDOFF-REQUEST.md).
 
-Until then:
+Still true:
 
-- `RecommendationReviewActionResult.decision_readiness` is projected
-- No `handoff` field is populated from recommendation accept
-- Decision Engine does **not** consume Recommendation Engine accept events
+- `handoff_performed` remains `false`
+- Decision Engine does **not** accept or own the package yet
+- No Gateway / Command Pipeline / intent creation from this path
 
 ---
 

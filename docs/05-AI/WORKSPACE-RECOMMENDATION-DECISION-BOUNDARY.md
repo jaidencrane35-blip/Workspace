@@ -38,7 +38,8 @@ Remaining before a future handoff could exist:
 5. ~~Proceed denial (compatible ≠ permission)~~ — see [WORKSPACE-RECOMMENDATION-DECISION-INTAKE-PROCEED-DENIAL.md](./WORKSPACE-RECOMMENDATION-DECISION-INTAKE-PROCEED-DENIAL.md)
 6. ~~Intake package seal (frozen digest ≠ handoff)~~ — see [WORKSPACE-RECOMMENDATION-DECISION-INTAKE-PACKAGE-SEAL.md](./WORKSPACE-RECOMMENDATION-DECISION-INTAKE-PACKAGE-SEAL.md)
 7. ~~Adapter preparation (prepare ≠ invoke)~~ — see [WORKSPACE-RECOMMENDATION-DECISION-INTAKE-ADAPTER-PREPARATION.md](./WORKSPACE-RECOMMENDATION-DECISION-INTAKE-ADAPTER-PREPARATION.md)
-8. Optional **adapter invocation** that maps sealed intake → DE object creation without merging domains
+8. ~~Handoff request (request ≠ performed / DE object)~~ — see [WORKSPACE-RECOMMENDATION-DECISION-HANDOFF-REQUEST.md](./WORKSPACE-RECOMMENDATION-DECISION-HANDOFF-REQUEST.md)
+9. Optional **DE acceptance / adapter invocation** that maps sealed intake → DE object creation without merging domains
 
 ---
 

@@ -667,6 +667,10 @@ pub struct RecommendationLifecycleOverlay {
     #[serde(default)]
     pub decision_intake_adapter_preparation:
         Option<crate::workspace_recommendation::RecommendationDecisionIntakeAdapterPreparation>,
+    /// Non-executing handoff request after preparation (Sprint 262) — never performs handoff.
+    #[serde(default)]
+    pub decision_handoff_request:
+        Option<crate::workspace_recommendation::RecommendationDecisionHandoffRequest>,
     pub updated_at: String,
     pub authority_effect: String,
 }
@@ -695,6 +699,7 @@ impl RecommendationLifecycleOverlay {
             decision_confirmation: None,
             decision_intake_package_seal: None,
             decision_intake_adapter_preparation: None,
+            decision_handoff_request: None,
             updated_at: updated_at.into(),
             authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
         }
@@ -822,6 +827,10 @@ pub struct RecommendationReviewActionResult {
     #[serde(default)]
     pub decision_intake_adapter_preparation:
         Option<crate::workspace_recommendation::RecommendationDecisionIntakeAdapterPreparation>,
+    /// Non-executing handoff request — request ≠ performed handoff / DE object.
+    #[serde(default)]
+    pub decision_handoff_request:
+        Option<crate::workspace_recommendation::RecommendationDecisionHandoffRequest>,
     pub explanation: String,
     pub authority_effect: String,
 }
@@ -4149,6 +4158,7 @@ mod tests {
                 decision_intake_proceed_denial: None,
                 decision_intake_package_seal: None,
                 decision_intake_adapter_preparation: None,
+                decision_handoff_request: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
         }
     }

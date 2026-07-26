@@ -901,6 +901,15 @@ fn case24_confirm_future_decision_remains_non_authoritative() {
         assert!(prep.attempt_perform_mapping().is_err());
         assert!(prep.attempt_create_decision_engine_object().is_err());
         assert!(prep.assert_preparation_is_not_invocation().is_ok());
+        let handoff = confirmed
+            .decision_handoff_request
+            .expect("confirm emits handoff request");
+        assert!(handoff.is_active_request());
+        assert!(handoff.handoff_requested);
+        assert!(!handoff.handoff_performed);
+        assert!(handoff.decision_engine_object_id.is_none());
+        assert!(handoff.attempt_perform_handoff().is_err());
+        assert!(handoff.assert_request_is_not_performed_handoff().is_ok());
         let revoked = CommandHandler::revoke_recommendation_adapter_preparation(
             &kernel,
             local.clone(),
@@ -918,6 +927,13 @@ fn case24_confirm_future_decision_remains_non_authoritative() {
             workspace_domain::RecommendationDecisionIntakeAdapterPreparation::STATE_REVOKED
         );
         assert!(revoked_prep.attempt_invoke_adapter().is_err());
+        let revoked_handoff = revoked
+            .decision_handoff_request
+            .expect("prep revoke cascades to handoff request");
+        assert!(!revoked_handoff.is_active_request());
+        assert!(!revoked_handoff.handoff_requested);
+        assert!(!revoked_handoff.handoff_performed);
+        assert!(revoked_handoff.attempt_perform_handoff().is_err());
     }
     assert_cannot_execute(CommandHandler::workspace_recommendation_engine_attempt_execute());
     assert_cannot_execute(CommandHandler::decision_engine_attempt_execute());
@@ -1116,6 +1132,7 @@ fn case16_orphan_overlays_expire_on_regenerate() {
                 decision_confirmation: None,
                 decision_intake_package_seal: None,
                 decision_intake_adapter_preparation: None,
+                decision_handoff_request: None,
                 updated_at: "t0".into(),
                 authority_effect: RecommendationLifecycleOverlay::AUTHORITY_EFFECT_NONE.into(),
             })

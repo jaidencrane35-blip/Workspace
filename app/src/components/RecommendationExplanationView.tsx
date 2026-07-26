@@ -3,6 +3,7 @@ import type {
   RecommendationDecisionBoundary,
   RecommendationDecisionConfirmation,
   RecommendationDecisionContext,
+  RecommendationDecisionHandoffRequest,
   RecommendationDecisionIntakeAdapterPreparation,
   RecommendationDecisionIntakeCompatibility,
   RecommendationDecisionIntakeInspection,
@@ -164,6 +165,11 @@ export function RecommendationExplanationBlock({
       {item.decision_intake_adapter_preparation ? (
         <RecommendationDecisionIntakeAdapterPreparationBlock
           preparation={item.decision_intake_adapter_preparation}
+        />
+      ) : null}
+      {item.decision_handoff_request ? (
+        <RecommendationDecisionHandoffRequestBlock
+          request={item.decision_handoff_request}
         />
       ) : null}
     </div>
@@ -335,6 +341,33 @@ export function RecommendationDecisionIntakeAdapterPreparationBlock({
         owner: {preparation.current_owner}
       </div>
       <div>{preparation.note}</div>
+    </div>
+  );
+}
+
+/** Handoff request — request ≠ performed handoff / DE object / execution. */
+export function RecommendationDecisionHandoffRequestBlock({
+  request,
+}: {
+  request: RecommendationDecisionHandoffRequest;
+}) {
+  return (
+    <div
+      className="recommendation-decision-handoff-request muted"
+      style={{ marginTop: 4 }}
+    >
+      <div>
+        Handoff request: <strong>{request.request_state}</strong>
+        {" · "}
+        requested: {request.handoff_requested ? "yes" : "no"}
+        {" · "}
+        performed: {request.handoff_performed ? "yes" : "no"}
+        {" · "}
+        DE object: {request.decision_engine_object_id ?? "none"}
+        {" · "}
+        owner: {request.current_owner}
+      </div>
+      <div>{request.note}</div>
     </div>
   );
 }

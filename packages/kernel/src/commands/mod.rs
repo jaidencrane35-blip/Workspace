@@ -158,6 +158,8 @@ mod workspace_recommendation_decision_intake_proceed_denial_contract_tests;
 mod workspace_recommendation_decision_intake_package_seal_contract_tests;
 mod workspace_recommendation_decision_intake_adapter_preparation_contract_tests;
 #[cfg(test)]
+mod workspace_recommendation_decision_handoff_request_contract_tests;
+#[cfg(test)]
 mod workspace_adaptation_governance_contract_tests;
 #[cfg(test)]
 mod workspace_adaptation_review_contract_tests;

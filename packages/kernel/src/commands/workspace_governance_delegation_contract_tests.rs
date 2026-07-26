@@ -48,6 +48,7 @@ fn proposal() -> workspace_domain::OutcomeAdaptationProposal {
                 decision_intake_proceed_denial: None,
                 decision_intake_package_seal: None,
                 decision_intake_adapter_preparation: None,
+                decision_handoff_request: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
         },
         "t0",

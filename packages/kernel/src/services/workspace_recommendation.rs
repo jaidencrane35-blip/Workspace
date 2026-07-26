@@ -18,10 +18,11 @@ use workspace_domain::{
     RecommendationHistoryEntry, RecommendationItem, RecommendationKind,
     RecommendationLifecycleOverlay, RecommendationLifecycleState, RecommendationOutcome,
     RecommendationDecisionBoundary, RecommendationDecisionConfirmation,
-    RecommendationDecisionContext, RecommendationDecisionIntakeAdapterPreparation,
-    RecommendationDecisionIntakeCompatibility, RecommendationDecisionIntakeInspection,
-    RecommendationDecisionIntakePackageSeal, RecommendationDecisionIntakeProceedDenial,
-    RecommendationDecisionIntakeRequest, RecommendationDecisionReadiness,
+    RecommendationDecisionContext, RecommendationDecisionHandoffRequest,
+    RecommendationDecisionIntakeAdapterPreparation, RecommendationDecisionIntakeCompatibility,
+    RecommendationDecisionIntakeInspection, RecommendationDecisionIntakePackageSeal,
+    RecommendationDecisionIntakeProceedDenial, RecommendationDecisionIntakeRequest,
+    RecommendationDecisionReadiness,
     RecommendationOutcomeView,
     RecommendationRelationship, RecommendationReviewActionResult,
     TaskGraph, WorkspaceAttentionState, WorkspaceCompositionState, WorkspaceContinuityState,
@@ -208,6 +209,7 @@ impl WorkspaceRecommendationEngineService {
                 decision_intake_proceed_denial: None,
                 decision_intake_package_seal: None,
                 decision_intake_adapter_preparation: None,
+                decision_handoff_request: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
             });
             relationships.push(RecommendationRelationship {
@@ -276,6 +278,7 @@ impl WorkspaceRecommendationEngineService {
                 decision_intake_proceed_denial: None,
                 decision_intake_package_seal: None,
                 decision_intake_adapter_preparation: None,
+                decision_handoff_request: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
             });
         }
@@ -323,6 +326,7 @@ impl WorkspaceRecommendationEngineService {
                 decision_intake_proceed_denial: None,
                 decision_intake_package_seal: None,
                 decision_intake_adapter_preparation: None,
+                    decision_handoff_request: None,
                     authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
@@ -378,6 +382,7 @@ impl WorkspaceRecommendationEngineService {
                 decision_intake_proceed_denial: None,
                 decision_intake_package_seal: None,
                 decision_intake_adapter_preparation: None,
+                decision_handoff_request: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
@@ -421,6 +426,7 @@ impl WorkspaceRecommendationEngineService {
                 decision_intake_proceed_denial: None,
                 decision_intake_package_seal: None,
                 decision_intake_adapter_preparation: None,
+                    decision_handoff_request: None,
                     authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
@@ -486,6 +492,7 @@ impl WorkspaceRecommendationEngineService {
                 decision_intake_proceed_denial: None,
                 decision_intake_package_seal: None,
                 decision_intake_adapter_preparation: None,
+                decision_handoff_request: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
@@ -542,6 +549,7 @@ impl WorkspaceRecommendationEngineService {
                 decision_intake_proceed_denial: None,
                 decision_intake_package_seal: None,
                 decision_intake_adapter_preparation: None,
+                decision_handoff_request: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
@@ -596,6 +604,7 @@ impl WorkspaceRecommendationEngineService {
                 decision_intake_proceed_denial: None,
                 decision_intake_package_seal: None,
                 decision_intake_adapter_preparation: None,
+                decision_handoff_request: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
@@ -637,6 +646,7 @@ impl WorkspaceRecommendationEngineService {
                 decision_intake_proceed_denial: None,
                 decision_intake_package_seal: None,
                 decision_intake_adapter_preparation: None,
+                    decision_handoff_request: None,
                     authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
@@ -692,6 +702,7 @@ impl WorkspaceRecommendationEngineService {
                 decision_intake_proceed_denial: None,
                 decision_intake_package_seal: None,
                 decision_intake_adapter_preparation: None,
+                    decision_handoff_request: None,
                     authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
@@ -824,6 +835,7 @@ impl WorkspaceRecommendationEngineService {
                 decision_intake_proceed_denial: None,
                 decision_intake_package_seal: None,
                 decision_intake_adapter_preparation: None,
+                decision_handoff_request: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
             };
             crate::services::WorkspacePatternService::audit_used_for_recommendation(
@@ -925,6 +937,7 @@ impl WorkspaceRecommendationEngineService {
                 decision_intake_proceed_denial: None,
                 decision_intake_package_seal: None,
                 decision_intake_adapter_preparation: None,
+                decision_handoff_request: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
             });
         }
@@ -1068,12 +1081,13 @@ impl WorkspaceRecommendationEngineService {
                 });
             }
             Self::attach_explanation_views(&mut state);
-            Self::attach_decision_readiness(
-                &mut state,
-                &HashMap::new(),
-                &HashMap::new(),
-                &HashMap::new(),
-            );
+              Self::attach_decision_readiness(
+                  &mut state,
+                  &HashMap::new(),
+                  &HashMap::new(),
+                  &HashMap::new(),
+                  &HashMap::new(),
+              );
         }
         Ok(state)
     }
@@ -1365,6 +1379,7 @@ impl WorkspaceRecommendationEngineService {
         let decision_intake_proceed_denial = None;
         let decision_intake_package_seal = None;
         let decision_intake_adapter_preparation = None;
+        let decision_handoff_request = None;
 
         Self::upsert_overlay(db, &next)?;
         Self::audit_lifecycle(db, actor, audit_event, &assessed, &next)?;
@@ -1384,6 +1399,7 @@ impl WorkspaceRecommendationEngineService {
             decision_intake_proceed_denial,
             decision_intake_package_seal,
             decision_intake_adapter_preparation,
+            decision_handoff_request,
             explanation: explanation.into(),
             authority_effect: RecommendationReviewActionResult::AUTHORITY_EFFECT_NONE.into(),
         })
@@ -1542,8 +1558,36 @@ impl WorkspaceRecommendationEngineService {
             }
             _ => None,
         };
+        let decision_handoff_request = match (
+            decision_intake_adapter_preparation.as_ref(),
+            decision_intake_package_seal.as_ref(),
+            decision_intake_compatibility.as_ref(),
+        ) {
+            (Some(prep), Some(seal), Some(compat)) if confirm => {
+                let request = RecommendationDecisionHandoffRequest::try_request(
+                    prep,
+                    &confirmation,
+                    seal,
+                    compat,
+                    &now,
+                );
+                if let Some(ref handoff_request) = request {
+                    debug_assert!(handoff_request.assert_request_is_not_performed_handoff().is_ok());
+                    debug_assert!(handoff_request.is_active_request());
+                    debug_assert!(handoff_request.handoff_requested);
+                    debug_assert!(!handoff_request.handoff_performed);
+                    debug_assert!(handoff_request.decision_engine_object_id.is_none());
+                    debug_assert!(handoff_request.attempt_perform_handoff().is_err());
+                    debug_assert!(handoff_request.attempt_create_decision_engine_object().is_err());
+                    debug_assert!(!handoff_request.may_invoke_gateway());
+                }
+                request
+            }
+            _ => None,
+        };
         overlay.decision_intake_package_seal = decision_intake_package_seal.clone();
         overlay.decision_intake_adapter_preparation = decision_intake_adapter_preparation.clone();
+        overlay.decision_handoff_request = decision_handoff_request.clone();
         Self::upsert_overlay(db, &overlay)?;
         Self::audit_lifecycle(db, actor, audit_event, &item, &overlay)?;
 
@@ -1561,6 +1605,7 @@ impl WorkspaceRecommendationEngineService {
             debug_assert!(decision_intake_proceed_denial.is_none());
             debug_assert!(decision_intake_package_seal.is_none());
             debug_assert!(decision_intake_adapter_preparation.is_none());
+            debug_assert!(decision_handoff_request.is_none());
         }
 
         Ok(RecommendationReviewActionResult {
@@ -1578,6 +1623,7 @@ impl WorkspaceRecommendationEngineService {
             decision_intake_proceed_denial,
             decision_intake_package_seal,
             decision_intake_adapter_preparation,
+            decision_handoff_request,
             explanation: explanation.into(),
             authority_effect: RecommendationReviewActionResult::AUTHORITY_EFFECT_NONE.into(),
         })
@@ -1619,7 +1665,16 @@ impl WorkspaceRecommendationEngineService {
             .map_err(|e| KernelError::from(e))?;
         debug_assert!(!preparation.is_active_preparation());
         debug_assert!(preparation.attempt_invoke_adapter().is_err());
+        let mut handoff_request = overlay.decision_handoff_request.clone();
+        if let Some(ref mut request) = handoff_request {
+            request.revoke(&now).map_err(|e| KernelError::from(e))?;
+            debug_assert!(!request.is_active_request());
+            debug_assert!(!request.handoff_requested);
+            debug_assert!(!request.handoff_performed);
+            debug_assert!(request.attempt_perform_handoff().is_err());
+        }
         overlay.decision_intake_adapter_preparation = Some(preparation.clone());
+        overlay.decision_handoff_request = handoff_request.clone();
         overlay.updated_at = now;
         overlay.actor_id = Some(actor.actor.id.to_string());
         Self::upsert_overlay(db, &overlay)?;
@@ -1646,6 +1701,7 @@ impl WorkspaceRecommendationEngineService {
             decision_intake_proceed_denial: item.decision_intake_proceed_denial,
             decision_intake_package_seal: overlay.decision_intake_package_seal.clone(),
             decision_intake_adapter_preparation: Some(preparation),
+            decision_handoff_request: handoff_request,
             explanation: "Adapter preparation revoked — no DE objects or Gateway grants created."
                 .into(),
             authority_effect: RecommendationReviewActionResult::AUTHORITY_EFFECT_NONE.into(),
@@ -1817,7 +1873,22 @@ impl WorkspaceRecommendationEngineService {
                     .map(|p| (id.clone(), p))
             })
             .collect();
-        Self::attach_decision_readiness(&mut state, &confirmation_by_id, &seal_by_id, &prep_by_id);
+        let handoff_by_id: HashMap<String, RecommendationDecisionHandoffRequest> = by_id
+            .iter()
+            .filter_map(|(id, overlay)| {
+                overlay
+                    .decision_handoff_request
+                    .clone()
+                    .map(|r| (id.clone(), r))
+            })
+            .collect();
+        Self::attach_decision_readiness(
+            &mut state,
+            &confirmation_by_id,
+            &seal_by_id,
+            &prep_by_id,
+            &handoff_by_id,
+        );
         Ok(state)
     }
 
@@ -1892,6 +1963,7 @@ impl WorkspaceRecommendationEngineService {
         confirmation_by_id: &HashMap<String, RecommendationDecisionConfirmation>,
         seal_by_id: &HashMap<String, RecommendationDecisionIntakePackageSeal>,
         prep_by_id: &HashMap<String, RecommendationDecisionIntakeAdapterPreparation>,
+        handoff_by_id: &HashMap<String, RecommendationDecisionHandoffRequest>,
     ) {
         let mut history_refs_by_id: HashMap<String, Vec<String>> = HashMap::new();
         for entry in &state.history {
@@ -2041,6 +2113,30 @@ impl WorkspaceRecommendationEngineService {
                 }
                 _ => None,
             };
+            let decision_handoff_request = match (
+                intake_adapter_preparation.as_ref(),
+                handoff_by_id.get(&item.id),
+                intake_package_seal.as_ref(),
+                intake_compatibility.as_ref(),
+            ) {
+                (Some(prep), Some(stored), _, _) => {
+                    let request = stored.clone().rebind_to_preparation(prep);
+                    debug_assert!(request.assert_request_is_not_performed_handoff().is_ok());
+                    debug_assert!(!request.handoff_performed);
+                    debug_assert!(request.attempt_perform_handoff().is_err());
+                    Some(request)
+                }
+                (Some(prep), None, Some(seal), Some(compat)) => {
+                    RecommendationDecisionHandoffRequest::try_request(
+                        prep,
+                        &confirmation,
+                        seal,
+                        compat,
+                        recommendation_engine_now_rfc3339(),
+                    )
+                }
+                _ => None,
+            };
             if let Some(ref request) = intake {
                 debug_assert!(request.assert_non_authoritative().is_ok());
                 debug_assert!(request.decision_engine_object_id.is_none());
@@ -2058,6 +2154,7 @@ impl WorkspaceRecommendationEngineService {
             item.decision_intake_proceed_denial = intake_proceed_denial;
             item.decision_intake_package_seal = intake_package_seal;
             item.decision_intake_adapter_preparation = intake_adapter_preparation;
+            item.decision_handoff_request = decision_handoff_request;
         }
     }
 

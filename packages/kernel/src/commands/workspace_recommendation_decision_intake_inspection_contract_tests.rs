@@ -78,6 +78,7 @@ fn accepted_ready_item() -> RecommendationItem {
         decision_intake_proceed_denial: None,
         decision_intake_package_seal: None,
         decision_intake_adapter_preparation: None,
+        decision_handoff_request: None,
         authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
     }
 }

@@ -20,7 +20,7 @@ RecommendationDecisionIntakeAdapterPreparation
         ✗ prepare ≠ DE object / intent / mapping
         ✗ prepare ≠ Gateway / ownership transfer
         ✗ revoke restores non-active preparation
-        ↓ (future adapter invocation — separate increment; still DE-owned creation)
+        ↓ RecommendationDecisionHandoffRequest (request ≠ performed handoff)
 ```
 
 Preparation means the sealed intake is explicitly ready for a *future* adapter
