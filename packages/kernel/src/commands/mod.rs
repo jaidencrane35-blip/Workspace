@@ -161,6 +161,7 @@ mod workspace_governance_workspace_contract_tests;
 mod workspace_governance_lifecycle_contract_tests;
 #[cfg(test)]
 mod workspace_publication_safety_contract_tests;
+mod workspace_governance_failure_contract_tests;
 mod workspace_work_context_tests;
 mod workspace_navigation_tests;
 mod workspace_milestone_tests;

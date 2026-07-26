@@ -95,6 +95,12 @@ pub enum ActionProposalError {
     #[error("publication safety contract blocks progression: {0}")]
     PublicationSafetyBlocked(String),
 
+    #[error("governance failure recovery cannot execute or activate: {0}")]
+    GovernanceFailureRecoveryBlocked(String),
+
+    #[error("governance failure handling blocks provenance deletion")]
+    GovernanceFailureCannotDeleteProvenance,
+
     #[error("governance lifecycle integrity validation failed: {0}")]
     GovernanceLifecycleIntegrityFailed(String),
 
@@ -2185,6 +2191,369 @@ impl PublicationSafetyContract {
 
     pub fn attempt_rewrite_provenance() -> Result<(), ActionProposalError> {
         Err(ActionProposalError::ChangeEvaluationCannotRewriteHistory)
+    }
+}
+
+/// Failure category across governance / publication preparation (Sprint 150).
+/// Pattern sources are audited separately — categories do not merge authority domains.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum GovernanceFailureCategory {
+    /// Pattern from MigrationRunner apply failures — block progression, keep prior state.
+    MigrationApply,
+    /// Pattern from command validation precondition failures.
+    CommandValidation,
+    /// Pattern from Permission Gateway Deny — never reinterpreted as Allow.
+    PermissionDenial,
+    /// Pattern from audit write/trail failures — never erase prior trail.
+    AuditTrail,
+    /// Pattern from review / policy expiry blocking further approval.
+    ReviewExpiry,
+    /// Pattern from publication safety validation gates.
+    PublicationValidation,
+    /// Pattern from explicit reject decisions — remain historically visible.
+    ReviewRejection,
+}
+
+impl GovernanceFailureCategory {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::MigrationApply => "migration_apply",
+            Self::CommandValidation => "command_validation",
+            Self::PermissionDenial => "permission_denial",
+            Self::AuditTrail => "audit_trail",
+            Self::ReviewExpiry => "review_expiry",
+            Self::PublicationValidation => "publication_validation",
+            Self::ReviewRejection => "review_rejection",
+        }
+    }
+
+    pub fn pattern_source(self) -> &'static str {
+        match self {
+            Self::MigrationApply => "MigrationRunner.apply_all failure",
+            Self::CommandValidation => "Command validation preconditions",
+            Self::PermissionDenial => "Permission Gateway Deny",
+            Self::AuditTrail => "AuditService failure / append-only trail",
+            Self::ReviewExpiry => "GovernancePolicyExpired / proposal expire",
+            Self::PublicationValidation => "PublicationSafetyContract validation gates",
+            Self::ReviewRejection => "GovernanceReviewDecision Reject",
+        }
+    }
+}
+
+/// Recovery lifecycle for governance failures (architecture only — Sprint 150).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum GovernanceFailureRecoveryState {
+    FailureDetected,
+    Recorded,
+    RecoveryPlanned,
+    Recovered,
+    Abandoned,
+}
+
+impl GovernanceFailureRecoveryState {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::FailureDetected => "failure_detected",
+            Self::Recorded => "recorded",
+            Self::RecoveryPlanned => "recovery_planned",
+            Self::Recovered => "recovered",
+            Self::Abandoned => "abandoned",
+        }
+    }
+
+    pub fn allows_transition(self, to: Self) -> bool {
+        matches!(
+            (self, to),
+            (Self::FailureDetected, Self::Recorded)
+                | (Self::Recorded, Self::RecoveryPlanned)
+                | (Self::RecoveryPlanned, Self::Recovered)
+                | (Self::RecoveryPlanned, Self::Abandoned)
+        )
+    }
+
+    /// Abandoned and Recovered remain historically visible; never erased.
+    pub fn remains_visible(self) -> bool {
+        matches!(
+            self,
+            Self::FailureDetected
+                | Self::Recorded
+                | Self::RecoveryPlanned
+                | Self::Recovered
+                | Self::Abandoned
+        )
+    }
+}
+
+/// Recovery requirements attached to a failure record (architecture — no execution).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct GovernanceFailureRecoveryRequirement {
+    pub description: String,
+    pub preserves_provenance: bool,
+    pub preserves_evidence: bool,
+    pub grants_authority: bool,
+    pub activates_runtime: bool,
+    pub bypasses_gateway: bool,
+}
+
+impl GovernanceFailureRecoveryRequirement {
+    pub fn default_safe(description: impl Into<String>) -> Self {
+        Self {
+            description: description.into(),
+            preserves_provenance: true,
+            preserves_evidence: true,
+            grants_authority: false,
+            activates_runtime: false,
+            bypasses_gateway: false,
+        }
+    }
+
+    pub fn is_safe(&self) -> bool {
+        self.preserves_provenance
+            && self.preserves_evidence
+            && !self.grants_authority
+            && !self.activates_runtime
+            && !self.bypasses_gateway
+    }
+}
+
+/// Failure handling across governance and publication preparation (Sprint 150).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct GovernanceFailureState {
+    pub id: String,
+    pub category: GovernanceFailureCategory,
+    pub lifecycle_stage: GovernanceLifecycleStage,
+    pub actors: GovernanceActorRefs,
+    pub recovery_requirements: Vec<GovernanceFailureRecoveryRequirement>,
+    pub preserved_evidence_references: Vec<String>,
+    pub recovery_state: GovernanceFailureRecoveryState,
+    pub recovery_history: Vec<GovernanceFailureRecoveryState>,
+    pub provenance: RecommendationProvenance,
+    /// Abandoned / rejected / failed paths remain visible in history.
+    pub historically_visible: bool,
+    pub detail: String,
+    pub authority_effect: String,
+}
+
+impl GovernanceFailureState {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+
+    pub fn detect(
+        category: GovernanceFailureCategory,
+        lifecycle_stage: GovernanceLifecycleStage,
+        actors: GovernanceActorRefs,
+        preserved_evidence_references: Vec<String>,
+        provenance: RecommendationProvenance,
+        detail: impl Into<String>,
+    ) -> Self {
+        let detail = detail.into();
+        Self {
+            id: format!(
+                "governance_failure:{}:{}",
+                category.as_str(),
+                lifecycle_stage.as_str()
+            ),
+            category,
+            lifecycle_stage,
+            actors,
+            recovery_requirements: vec![GovernanceFailureRecoveryRequirement::default_safe(
+                format!("recover from {}", category.as_str()),
+            )],
+            preserved_evidence_references,
+            recovery_state: GovernanceFailureRecoveryState::FailureDetected,
+            recovery_history: vec![GovernanceFailureRecoveryState::FailureDetected],
+            provenance,
+            historically_visible: true,
+            detail,
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        }
+    }
+
+    /// Failed review reject — history and evidence retained.
+    pub fn from_failed_review(
+        reject_decision: &GovernanceReviewDecision,
+        evidence: &GovernanceDecisionEvidence,
+        actors: GovernanceActorRefs,
+    ) -> Result<Self, ActionProposalError> {
+        if reject_decision.decision != GovernanceReviewDecisionKind::Reject {
+            return Err(ActionProposalError::GovernanceFailureRecoveryBlocked(
+                "expected reject decision for failed review failure state".into(),
+            ));
+        }
+        let mut refs = vec![evidence.id.clone()];
+        if let Some(eref) = &reject_decision.evidence_reference {
+            if !refs.contains(eref) {
+                refs.push(eref.clone());
+            }
+        }
+        Ok(Self::detect(
+            GovernanceFailureCategory::ReviewRejection,
+            GovernanceLifecycleStage::RejectedVisible,
+            actors,
+            refs,
+            reject_decision.provenance_snapshot.clone(),
+            format!("review rejected: {}", reject_decision.id),
+        ))
+    }
+
+    /// Failed publication validation — evidence and readiness history retained.
+    pub fn from_publication_validation_failure(
+        safety: &PublicationSafetyContract,
+        evidence_reference: impl Into<String>,
+        actors: GovernanceActorRefs,
+    ) -> Self {
+        Self::detect(
+            GovernanceFailureCategory::PublicationValidation,
+            GovernanceLifecycleStage::PublicationReadinessReached,
+            actors,
+            vec![evidence_reference.into(), safety.readiness_reference.clone()],
+            safety.provenance.clone(),
+            format!(
+                "publication validation failed at {:?}",
+                safety.lifecycle_state
+            ),
+        )
+    }
+
+    /// Review / policy expiry — blocks approval; never grants authority.
+    pub fn from_review_expiry(
+        proposal: &OutcomeAdaptationProposal,
+        evidence_references: Vec<String>,
+        actors: GovernanceActorRefs,
+    ) -> Self {
+        Self::detect(
+            GovernanceFailureCategory::ReviewExpiry,
+            GovernanceLifecycleStage::Review,
+            actors,
+            evidence_references,
+            proposal.provenance.clone(),
+            format!("review expired for proposal {}", proposal.id),
+        )
+    }
+
+    fn transition(
+        &mut self,
+        to: GovernanceFailureRecoveryState,
+    ) -> Result<(), ActionProposalError> {
+        if !self.recovery_state.allows_transition(to) {
+            return Err(ActionProposalError::InvalidLifecycleTransition {
+                from: self.recovery_state.as_str().into(),
+                to: to.as_str().into(),
+            });
+        }
+        self.recovery_state = to;
+        self.recovery_history.push(to);
+        self.historically_visible = true;
+        Ok(())
+    }
+
+    pub fn record(&mut self) -> Result<(), ActionProposalError> {
+        self.transition(GovernanceFailureRecoveryState::Recorded)?;
+        assert!(!self.preserved_evidence_references.is_empty() || self.category
+            == GovernanceFailureCategory::PermissionDenial);
+        Ok(())
+    }
+
+    pub fn plan_recovery(
+        &mut self,
+        requirement: GovernanceFailureRecoveryRequirement,
+    ) -> Result<(), ActionProposalError> {
+        if self.recovery_state == GovernanceFailureRecoveryState::FailureDetected {
+            self.record()?;
+        }
+        if !requirement.is_safe() {
+            return Err(ActionProposalError::GovernanceFailureRecoveryBlocked(
+                "recovery requirement would violate safety invariants".into(),
+            ));
+        }
+        self.recovery_requirements.push(requirement);
+        self.transition(GovernanceFailureRecoveryState::RecoveryPlanned)
+    }
+
+    pub fn mark_recovered(&mut self) -> Result<(), ActionProposalError> {
+        self.transition(GovernanceFailureRecoveryState::Recovered)?;
+        assert_eq!(self.authority_effect, Self::AUTHORITY_EFFECT_NONE);
+        Ok(())
+    }
+
+    /// Abandoned changes remain historically visible — never deleted.
+    pub fn abandon(&mut self) -> Result<(), ActionProposalError> {
+        self.transition(GovernanceFailureRecoveryState::Abandoned)?;
+        self.historically_visible = true;
+        Ok(())
+    }
+
+    pub fn preserves_provenance(&self, expected: &RecommendationProvenance) -> bool {
+        &self.provenance == expected
+            && self
+                .recovery_requirements
+                .iter()
+                .all(|r| r.preserves_provenance)
+    }
+
+    pub fn preserves_evidence(&self) -> bool {
+        !self.preserved_evidence_references.is_empty()
+            && self
+                .recovery_requirements
+                .iter()
+                .all(|r| r.preserves_evidence)
+    }
+
+    pub fn abandoned_remains_visible(&self) -> bool {
+        self.historically_visible
+            && self
+                .recovery_history
+                .iter()
+                .any(|s| *s == GovernanceFailureRecoveryState::Abandoned)
+            && self.recovery_state.remains_visible()
+    }
+
+    pub fn may_delete_provenance(&self) -> bool {
+        false
+    }
+
+    pub fn may_grant_authority(&self) -> bool {
+        false
+    }
+
+    pub fn may_activate_runtime(&self) -> bool {
+        false
+    }
+
+    pub fn may_bypass_permission_gateway(&self) -> bool {
+        false
+    }
+
+    pub fn may_execute(&self) -> bool {
+        false
+    }
+
+    pub fn attempt_delete_provenance(&self) -> Result<(), ActionProposalError> {
+        Err(ActionProposalError::GovernanceFailureCannotDeleteProvenance)
+    }
+
+    pub fn attempt_grant_authority() -> Result<(), ActionProposalError> {
+        Err(ActionProposalError::GovernanceCannotGrantAuthority)
+    }
+
+    pub fn attempt_activate_runtime() -> Result<(), ActionProposalError> {
+        Err(ActionProposalError::PublicationActivationNotImplemented)
+    }
+
+    pub fn attempt_bypass_gateway() -> Result<(), ActionProposalError> {
+        Err(ActionProposalError::GovernanceCannotGrantAuthority)
+    }
+
+    /// Recovery planning never executes commands or activates runtime.
+    pub fn attempt_recovery_execute(&self) -> Result<(), ActionProposalError> {
+        Err(ActionProposalError::GovernanceFailureRecoveryBlocked(
+            "recovery cannot execute".into(),
+        ))
+    }
+
+    pub fn attempt_execute() -> Result<(), ActionProposalError> {
+        Err(ActionProposalError::CannotExecute)
     }
 }
 
@@ -4445,5 +4814,138 @@ mod tests {
         assert!(PublicationSafetyContract::attempt_execute().is_err());
         assert!(PublicationSafetyContract::attempt_bypass_gateway().is_err());
         assert_eq!(ok.provenance, provenance);
+    }
+
+    #[test]
+    fn governance_failure_preserves_history_and_blocks_recovery_execution() {
+        let item = sample_item();
+        let mut record = RecommendationGovernanceRecord::from_recommendation_item(&item, "t0");
+        record
+            .transition(RecommendationLifecycleState::Available, "t1", None)
+            .unwrap();
+        record
+            .transition(RecommendationLifecycleState::Presented, "t2", None)
+            .unwrap();
+        record.accept("t3", None).unwrap();
+        let outcome = record.record_outcome("t4").unwrap();
+        let provenance = outcome.provenance.clone();
+        let mut proposal = outcome.to_adaptation_proposal(
+            "experience_presentation",
+            "Keep DisplayReason primary",
+            "Consistent rationale",
+        );
+        proposal.require_review().unwrap();
+        proposal
+            .approve(
+                AdaptationReviewerIdentity::local_user("local_user"),
+                "t-ok",
+            )
+            .unwrap();
+        let risk = GovernanceRisk::classify_from_proposal(&proposal);
+        let evidence = GovernanceDecisionEvidence::assemble(
+            &risk,
+            vec!["outcome:x".into()],
+            vec![],
+            vec![],
+            "Evidenced",
+            &provenance,
+        )
+        .unwrap();
+        let policy = GovernancePolicy::from_risk(&risk);
+        let reject = GovernanceReviewDecision::new(
+            &policy,
+            AdaptationReviewerIdentity::local_user("local_user"),
+            GovernanceReviewDecisionKind::Reject,
+            "Not a fit",
+            "t-rej",
+            vec![],
+            &provenance,
+        )
+        .unwrap()
+        .with_evidence(&evidence);
+        let actors = GovernanceActorRefs {
+            proposer_actor_id: proposal.proposed_by_actor_id.clone(),
+            reviewer_actor_id: Some("local_user".into()),
+            publisher_actor_id: None,
+        };
+        let mut failure =
+            GovernanceFailureState::from_failed_review(&reject, &evidence, actors.clone())
+                .unwrap();
+        failure.record().unwrap();
+        failure
+            .plan_recovery(GovernanceFailureRecoveryRequirement::default_safe(
+                "document rejection; no re-apply",
+            ))
+            .unwrap();
+        failure.abandon().unwrap();
+        assert!(failure.preserves_provenance(&provenance));
+        assert!(failure.preserves_evidence());
+        assert!(failure.abandoned_remains_visible());
+        assert!(!failure.may_delete_provenance());
+        assert!(!failure.may_grant_authority());
+        assert!(!failure.may_activate_runtime());
+        assert!(!failure.may_bypass_permission_gateway());
+        assert!(failure.attempt_delete_provenance().is_err());
+        assert!(failure.attempt_recovery_execute().is_err());
+        assert!(GovernanceFailureState::attempt_execute().is_err());
+        assert!(GovernanceFailureState::attempt_bypass_gateway().is_err());
+        assert!(GovernanceFailureState::attempt_activate_runtime().is_err());
+        assert_eq!(
+            failure.category.pattern_source(),
+            "GovernanceReviewDecision Reject"
+        );
+
+        let approve = GovernanceReviewDecision::new(
+            &policy,
+            AdaptationReviewerIdentity::local_user("local_user"),
+            GovernanceReviewDecisionKind::Approve,
+            "Approve",
+            "t-dec",
+            vec![],
+            &provenance,
+        )
+        .unwrap()
+        .with_evidence(&evidence);
+        let mut readiness = PublicationReadiness::draft_from_evidence(&evidence);
+        readiness.mark_risk_reviewed().unwrap();
+        readiness.mark_approved(&evidence).unwrap();
+        readiness.mark_ready_for_publication(&evidence).unwrap();
+        let governance = GovernanceRecord::from_adaptation_chain(
+            &proposal, None, None, None, None,
+        )
+        .with_policy_and_decisions(&policy, &proposal, &[approve.clone()])
+        .unwrap()
+        .with_evidence_and_readiness(&evidence, &readiness, &[approve.clone()])
+        .unwrap();
+        let workspace = GovernanceWorkspace::from_governance_bundle(
+            &proposal,
+            &governance,
+            Some(&evidence),
+            Some(&risk),
+            &[approve],
+            Some(&readiness),
+        );
+        let env = PublicationEnvironment::from_governance_workspace(
+            &workspace,
+            "workspace:local",
+            vec!["schema_compatible".into()],
+            BehaviourVersion::BASELINE_ID,
+            PublicationRolloutStage::StagedCanary,
+        );
+        let mut safety = PublicationSafetyContract::from_ready(&readiness, &env)
+            .unwrap()
+            .with_failed_gate("compat:schema_compatible");
+        let _ = safety.run_validation();
+        let validation_failure = GovernanceFailureState::from_publication_validation_failure(
+            &safety,
+            evidence.id.clone(),
+            actors,
+        );
+        assert!(validation_failure.preserves_evidence());
+        assert!(validation_failure.preserves_provenance(&provenance));
+        assert_eq!(
+            validation_failure.category,
+            GovernanceFailureCategory::PublicationValidation
+        );
     }
 }

@@ -72,6 +72,10 @@ End-to-end stages preserve provenance; timeline events immutable.
 [WORKSPACE-PUBLICATION-SAFETY.md](./WORKSPACE-PUBLICATION-SAFETY.md).
 Validation/migration/rollback gates; activation still blocked.
 
+**Sprint 150:** Governance resilience & failure contract —
+[WORKSPACE-GOVERNANCE-FAILURE-HANDLING.md](./WORKSPACE-GOVERNANCE-FAILURE-HANDLING.md).
+Failure/recovery lifecycle; never deletes provenance or grants authority.
+
 ---
 
 ## Ownership
