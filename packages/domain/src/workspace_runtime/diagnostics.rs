@@ -3612,6 +3612,429 @@ impl RuntimeDiagnosticExplanationIntegrity {
     }
 }
 
+// ---------------------------------------------------------------------------
+// Runtime Diagnostic Maturity (post–closure audit)
+// ---------------------------------------------------------------------------
+//
+// Closure delivered catalog/interop/explanation surfaces, but lacked a
+// meta-diagnostic readiness assessment: catalog registration integrity,
+// contract dependency ordering, cross-domain reference integrity, and
+// explanation consistency. Distinct from Workspace Readiness Model.
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RuntimeDiagnosticMaturityLevel {
+    Incomplete,
+    Degraded,
+    Ready,
+    Mature,
+}
+
+impl RuntimeDiagnosticMaturityLevel {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Incomplete => "incomplete",
+            Self::Degraded => "degraded",
+            Self::Ready => "ready",
+            Self::Mature => "mature",
+        }
+    }
+}
+
+/// Required dependency ordering among catalog families (consumer → prerequisite).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RuntimeDiagnosticContractDependency {
+    pub family: RuntimeDiagnosticContractFamily,
+    pub requires: RuntimeDiagnosticContractFamily,
+}
+
+impl RuntimeDiagnosticContractDependency {
+    pub fn canonical_chain() -> Vec<Self> {
+        use RuntimeDiagnosticContractFamily::*;
+        let edge = |family, requires| Self { family, requires };
+        vec![
+            edge(Provenance, Snapshot),
+            edge(Continuity, Provenance),
+            edge(Comparison, Continuity),
+            edge(Evolution, Comparison),
+            edge(Evidence, Evolution),
+            edge(Archive, Evidence),
+            edge(Consumption, Evolution),
+            edge(Interpretation, Consumption),
+            edge(Restoration, Archive),
+            edge(Lineage, Evolution),
+            edge(Trust, Lineage),
+            edge(Trust, Interpretation),
+        ]
+    }
+}
+
+/// Registration integrity for the static contract catalog.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RuntimeDiagnosticCatalogIntegrity {
+    pub id: String,
+    pub no_duplicate_families: bool,
+    pub none_executable: bool,
+    pub ownership_consistent: bool,
+    pub required_families_present: bool,
+    pub dependency_order_ok: bool,
+    pub missing_families: Vec<String>,
+    pub diagnostics: Vec<String>,
+    pub authority_effect: String,
+}
+
+impl RuntimeDiagnosticCatalogIntegrity {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = AUTH_NONE;
+
+    pub fn verify(catalog: &RuntimeDiagnosticContractCatalog) -> Self {
+        let mut diagnostics = Vec::new();
+        let mut seen = std::collections::HashSet::new();
+        let mut no_duplicate_families = true;
+        for e in &catalog.entries {
+            if !seen.insert(e.identity.family) {
+                no_duplicate_families = false;
+                diagnostics.push(format!(
+                    "duplicate catalog family: {}",
+                    e.identity.family.as_str()
+                ));
+            }
+        }
+        let none_executable = catalog.none_executable();
+        if !none_executable {
+            diagnostics.push("catalog contains executable entries".into());
+        }
+        let ownership_consistent = catalog.entries.iter().all(|e| {
+            e.owner == RuntimeDiagnosticOwnershipRole::ObservationalDiagnostics
+        });
+        if !ownership_consistent {
+            diagnostics.push("catalog ownership must remain ObservationalDiagnostics".into());
+        }
+
+        let present: std::collections::HashSet<_> =
+            catalog.entries.iter().map(|e| e.identity.family).collect();
+        let required = [
+            RuntimeDiagnosticContractFamily::Snapshot,
+            RuntimeDiagnosticContractFamily::Provenance,
+            RuntimeDiagnosticContractFamily::Continuity,
+            RuntimeDiagnosticContractFamily::Comparison,
+            RuntimeDiagnosticContractFamily::Evolution,
+            RuntimeDiagnosticContractFamily::Evidence,
+            RuntimeDiagnosticContractFamily::Archive,
+            RuntimeDiagnosticContractFamily::Consumption,
+            RuntimeDiagnosticContractFamily::Interpretation,
+            RuntimeDiagnosticContractFamily::Ownership,
+            RuntimeDiagnosticContractFamily::Restoration,
+            RuntimeDiagnosticContractFamily::Lineage,
+            RuntimeDiagnosticContractFamily::Trust,
+        ];
+        let mut missing_families = Vec::new();
+        for f in required {
+            if !present.contains(&f) {
+                missing_families.push(f.as_str().into());
+            }
+        }
+        let required_families_present = missing_families.is_empty();
+        if !required_families_present {
+            diagnostics.push(format!("missing catalog families: {missing_families:?}"));
+        }
+
+        let index_of = |f: RuntimeDiagnosticContractFamily| {
+            catalog
+                .entries
+                .iter()
+                .position(|e| e.identity.family == f)
+        };
+        let mut dependency_order_ok = true;
+        for dep in RuntimeDiagnosticContractDependency::canonical_chain() {
+            match (index_of(dep.requires), index_of(dep.family)) {
+                (Some(req_i), Some(fam_i)) if req_i < fam_i => {}
+                (Some(_), Some(_)) => {
+                    dependency_order_ok = false;
+                    diagnostics.push(format!(
+                        "dependency order violated: {} requires {}",
+                        dep.family.as_str(),
+                        dep.requires.as_str()
+                    ));
+                }
+                _ => {
+                    // Missing families already reported.
+                }
+            }
+        }
+
+        if diagnostics.is_empty() {
+            diagnostics.push("catalog integrity passed".into());
+        }
+        Self {
+            id: format!("runtime_diagnostic_catalog_integrity:{}", catalog.id),
+            no_duplicate_families,
+            none_executable,
+            ownership_consistent,
+            required_families_present,
+            dependency_order_ok,
+            missing_families,
+            diagnostics,
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        }
+    }
+
+    pub fn passed(&self) -> bool {
+        self.no_duplicate_families
+            && self.none_executable
+            && self.ownership_consistent
+            && self.required_families_present
+            && self.dependency_order_ok
+    }
+}
+
+/// Cross-domain reference integrity — read-only refs; ownership unchanged.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RuntimeDiagnosticReferenceIntegrity {
+    pub id: String,
+    pub interop_ok: bool,
+    pub experience_not_driven: bool,
+    pub foreign_ownership_forbidden: bool,
+    pub diagnostics: Vec<String>,
+    pub authority_effect: String,
+}
+
+impl RuntimeDiagnosticReferenceIntegrity {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = AUTH_NONE;
+
+    pub fn verify(interop: &RuntimeDiagnosticInteropContract) -> Self {
+        let mut diagnostics = Vec::new();
+        let interop_ok = interop.boundaries_respected();
+        if !interop_ok {
+            diagnostics.push("interop boundaries violated".into());
+        }
+        let experience_not_driven = interop
+            .entries
+            .iter()
+            .find(|e| e.domain == RuntimeDiagnosticInteropDomain::ExperienceTranslation)
+            .is_some_and(|e| !e.may_reference_read_only && !e.may_own && !e.may_emit_commands);
+        if !experience_not_driven {
+            diagnostics.push("experience translation must not be driven by diagnostics".into());
+        }
+        let foreign_ownership_forbidden = interop.entries.iter().all(|e| !e.may_own);
+        if !foreign_ownership_forbidden {
+            diagnostics.push("foreign domain ownership claimed".into());
+        }
+        if diagnostics.is_empty() {
+            diagnostics.push("reference integrity passed".into());
+        }
+        Self {
+            id: format!("runtime_diagnostic_reference_integrity:{}", interop.id),
+            interop_ok,
+            experience_not_driven,
+            foreign_ownership_forbidden,
+            diagnostics,
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        }
+    }
+
+    pub fn passed(&self) -> bool {
+        self.interop_ok && self.experience_not_driven && self.foreign_ownership_forbidden
+    }
+}
+
+/// Validates operator explanation integrity is internally consistent.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RuntimeDiagnosticExplanationConsistency {
+    pub id: String,
+    pub answers_complete: bool,
+    pub trust_link_ok: bool,
+    pub lineage_link_ok: bool,
+    pub currency_match: bool,
+    pub version_match: bool,
+    pub no_actions: bool,
+    pub diagnostics: Vec<String>,
+    pub authority_effect: String,
+}
+
+impl RuntimeDiagnosticExplanationConsistency {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = AUTH_NONE;
+
+    pub fn verify(
+        integrity: &RuntimeDiagnosticExplanationIntegrity,
+        trust: &RuntimeDiagnosticTrustRecord,
+        lineage: &RuntimeDiagnosticLineageRecord,
+        explanation: Option<&OperatorRuntimeExplanation>,
+    ) -> Self {
+        let mut diagnostics = Vec::new();
+        let answers_complete = integrity.answers_complete;
+        if !answers_complete {
+            diagnostics.push("explanation integrity answers incomplete".into());
+        }
+        let trust_link_ok = integrity.trust_id == trust.id;
+        if !trust_link_ok {
+            diagnostics.push("explanation trust_id mismatch".into());
+        }
+        let lineage_link_ok = integrity.lineage_id == lineage.id;
+        if !lineage_link_ok {
+            diagnostics.push("explanation lineage_id mismatch".into());
+        }
+        let currency_match = integrity.currency == lineage.currency;
+        if !currency_match {
+            diagnostics.push("explanation currency mismatch".into());
+        }
+        let version_match = integrity.contract_version == trust.producer.contract_version
+            && integrity.schema_version == trust.producer.schema_version;
+        if !version_match {
+            diagnostics.push("explanation contract version mismatch".into());
+        }
+        let no_actions = match explanation {
+            None => true,
+            Some(e) => !e.exposes_actions() && !e.is_execution_surface(),
+        };
+        if !no_actions {
+            diagnostics.push("operator explanation exposes actions".into());
+        }
+        if diagnostics.is_empty() {
+            diagnostics.push("explanation consistency passed".into());
+        }
+        Self {
+            id: format!(
+                "runtime_diagnostic_explanation_consistency:{}",
+                integrity.id
+            ),
+            answers_complete,
+            trust_link_ok,
+            lineage_link_ok,
+            currency_match,
+            version_match,
+            no_actions,
+            diagnostics,
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        }
+    }
+
+    pub fn passed(&self) -> bool {
+        self.answers_complete
+            && self.trust_link_ok
+            && self.lineage_link_ok
+            && self.currency_match
+            && self.version_match
+            && self.no_actions
+    }
+}
+
+/// Meta-diagnostic maturity assessment of the diagnostic subsystem itself.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RuntimeDiagnosticMaturityAssessment {
+    pub id: String,
+    pub workspace_id: String,
+    pub level: RuntimeDiagnosticMaturityLevel,
+    pub completeness_score: u8,
+    pub health: WorkspaceHealthLevel,
+    pub catalog_integrity_ok: bool,
+    pub reference_integrity_ok: bool,
+    pub explanation_consistency_ok: bool,
+    pub lifecycle_closure_ok: bool,
+    pub diagnostics: Vec<String>,
+    pub meta_diagnostic_only: bool,
+    pub authority_effect: String,
+}
+
+impl RuntimeDiagnosticMaturityAssessment {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = AUTH_NONE;
+
+    pub fn assess(
+        workspace_id: impl Into<String>,
+        catalog_integrity: &RuntimeDiagnosticCatalogIntegrity,
+        reference_integrity: &RuntimeDiagnosticReferenceIntegrity,
+        explanation_consistency: &RuntimeDiagnosticExplanationConsistency,
+        lifecycle_closure: &RuntimeDiagnosticLifecycleClosure,
+    ) -> Self {
+        let workspace_id = workspace_id.into();
+        let mut diagnostics = Vec::new();
+        let catalog_integrity_ok = catalog_integrity.passed();
+        let reference_integrity_ok = reference_integrity.passed();
+        let explanation_consistency_ok = explanation_consistency.passed();
+        let lifecycle_closure_ok = lifecycle_closure.closed();
+
+        let mut score: u8 = 0;
+        if catalog_integrity_ok {
+            score += 30;
+        } else {
+            diagnostics.extend(catalog_integrity.diagnostics.iter().cloned());
+        }
+        if reference_integrity_ok {
+            score += 20;
+        } else {
+            diagnostics.extend(reference_integrity.diagnostics.iter().cloned());
+        }
+        if explanation_consistency_ok {
+            score += 25;
+        } else {
+            diagnostics.extend(explanation_consistency.diagnostics.iter().cloned());
+        }
+        if lifecycle_closure_ok {
+            score += 25;
+        } else {
+            diagnostics.push("lifecycle closure not closed".into());
+        }
+
+        let level = match score {
+            100 => RuntimeDiagnosticMaturityLevel::Mature,
+            75..=99 => RuntimeDiagnosticMaturityLevel::Ready,
+            40..=74 => RuntimeDiagnosticMaturityLevel::Degraded,
+            _ => RuntimeDiagnosticMaturityLevel::Incomplete,
+        };
+        let health = match level {
+            RuntimeDiagnosticMaturityLevel::Mature | RuntimeDiagnosticMaturityLevel::Ready => {
+                WorkspaceHealthLevel::Healthy
+            }
+            RuntimeDiagnosticMaturityLevel::Degraded => WorkspaceHealthLevel::Degraded,
+            RuntimeDiagnosticMaturityLevel::Incomplete => WorkspaceHealthLevel::Unknown,
+        };
+        if diagnostics.is_empty() {
+            diagnostics.push("diagnostic maturity assessment passed".into());
+        }
+        Self {
+            id: format!("runtime_diagnostic_maturity:{workspace_id}"),
+            workspace_id,
+            level,
+            completeness_score: score,
+            health,
+            catalog_integrity_ok,
+            reference_integrity_ok,
+            explanation_consistency_ok,
+            lifecycle_closure_ok,
+            diagnostics,
+            meta_diagnostic_only: true,
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        }
+    }
+
+    pub fn ready(&self) -> bool {
+        self.meta_diagnostic_only
+            && matches!(
+                self.level,
+                RuntimeDiagnosticMaturityLevel::Ready | RuntimeDiagnosticMaturityLevel::Mature
+            )
+            && self.catalog_integrity_ok
+            && self.reference_integrity_ok
+            && self.explanation_consistency_ok
+            && self.lifecycle_closure_ok
+    }
+
+    pub fn may_prescribe(&self) -> bool {
+        false
+    }
+
+    pub fn may_execute(&self) -> bool {
+        false
+    }
+
+    pub fn attempt_prescribe(&self) -> Result<(), WorkspaceRuntimeError> {
+        Err(WorkspaceRuntimeError::DiagnosticMaturityReadOnly)
+    }
+
+    pub fn attempt_execute() -> Result<(), WorkspaceRuntimeError> {
+        Err(WorkspaceRuntimeError::CannotExecute)
+    }
+}
+
 /// Observational continuity between diagnostic snapshots — not work continuity.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RuntimeDiagnosticContinuityRecord {
@@ -4451,5 +4874,107 @@ mod tests {
         assert!(explanation.why.iter().any(|w| w.starts_with("currency=")));
         assert!(explanation.why.iter().any(|w| w.starts_with("what_changed:")));
         assert!(explanation.why.iter().any(|w| w.starts_with("why_changed:")));
+    }
+
+    #[test]
+    fn diagnostic_maturity_is_meta_only_and_ready_when_consistent() {
+        let (ctx, health, graph, capabilities, snapshot, verification, overview, _review) =
+            sample_bundle();
+        let integration = WorkspaceRuntimeIntegrationContract::audit_default("ws-diag");
+        let operator = OperatorContextProjection::from_runtime_context(&ctx, &health);
+        let coherence =
+            WorkspaceRuntimeCoherence::review(&ctx, &integration, &health, &operator);
+        let provenance = RuntimeDiagnosticProvenance::from_capture(
+            &snapshot,
+            &ctx,
+            &health,
+            &graph,
+            &capabilities,
+            &verification,
+            &coherence,
+            Some(&overview),
+        );
+        let continuity =
+            RuntimeDiagnosticContinuityRecord::link(None, &snapshot, &provenance, "c-mat");
+        let evolution = RuntimeDiagnosticEvolutionReport::evaluate(
+            None,
+            &snapshot,
+            &provenance,
+            &continuity,
+            Some(RuntimeDiagnosticLifecyclePhase::Provenanced),
+            "eval-mat",
+        );
+        let interpretation = RuntimeDiagnosticInterpretationView::from_evolution(&evolution);
+        let evidence = RuntimeDiagnosticEvidenceBundle::seal(
+            &evolution,
+            &provenance,
+            &continuity,
+            "seal-mat",
+        );
+        let mut archive = RuntimeDiagnosticArchive::new("ws-diag");
+        let entry = archive.archive_evidence(&evidence, "a-mat").unwrap().clone();
+        let restoration = RuntimeDiagnosticRestorationView::rehydrate(
+            &archive,
+            &entry,
+            Some(&evidence),
+            "rest-mat",
+        );
+        let lineage = RuntimeDiagnosticLineageRecord::assemble(
+            &snapshot,
+            &provenance,
+            &continuity,
+            &evolution,
+            Some(&entry.id),
+            Some(&restoration.id),
+            false,
+        );
+        let closure = RuntimeDiagnosticLifecycleClosure::evaluate(&lineage);
+        let catalog = RuntimeDiagnosticContractCatalog::canonical();
+        let catalog_integrity = RuntimeDiagnosticCatalogIntegrity::verify(&catalog);
+        assert!(catalog_integrity.passed());
+        let interop = RuntimeDiagnosticInteropContract::canonical();
+        let reference_integrity = RuntimeDiagnosticReferenceIntegrity::verify(&interop);
+        assert!(reference_integrity.passed());
+        let trust = RuntimeDiagnosticTrustRecord::attest(
+            &interpretation,
+            &lineage,
+            &RuntimeDiagnosticCompatibilityContract::canonical(),
+            &RuntimeProjectionBoundaryRegistry::canonical(),
+        );
+        let integrity = RuntimeDiagnosticExplanationIntegrity::compose(
+            &continuity,
+            &interpretation,
+            &trust,
+            &lineage,
+        );
+        let explanation = OperatorRuntimeExplanation::explain_with_trust(
+            &overview,
+            &provenance,
+            &continuity,
+            &evolution,
+            &interpretation,
+            &integrity,
+        );
+        let explanation_consistency = RuntimeDiagnosticExplanationConsistency::verify(
+            &integrity,
+            &trust,
+            &lineage,
+            Some(&explanation),
+        );
+        assert!(explanation_consistency.passed());
+        let maturity = RuntimeDiagnosticMaturityAssessment::assess(
+            "ws-diag",
+            &catalog_integrity,
+            &reference_integrity,
+            &explanation_consistency,
+            &closure,
+        );
+        assert!(maturity.ready());
+        assert!(maturity.meta_diagnostic_only);
+        assert_eq!(maturity.completeness_score, 100);
+        assert_eq!(maturity.level, RuntimeDiagnosticMaturityLevel::Mature);
+        assert!(!maturity.may_prescribe());
+        assert!(maturity.attempt_prescribe().is_err());
+        assert!(RuntimeDiagnosticMaturityAssessment::attempt_execute().is_err());
     }
 }

@@ -21,6 +21,8 @@
 //! know producer version and currency — informational only; no migration apply.
 //! Diagnostic closure adds terminal lifecycle validation, static contract catalog,
 //! cross-domain interoperability, and explanation integrity.
+//! Diagnostic maturity assesses catalog/reference/explanation readiness as
+//! meta-diagnostics only — never prescriptive or executable.
 
 mod diagnostics;
 pub use diagnostics::*;
@@ -215,6 +217,9 @@ pub enum WorkspaceRuntimeError {
 
     #[error("runtime diagnostic closure forbids mutation, loading, or foreign ownership")]
     DiagnosticClosureReadOnly,
+
+    #[error("runtime diagnostic maturity assessment is meta-diagnostic only")]
+    DiagnosticMaturityReadOnly,
 }
 
 // ---------------------------------------------------------------------------

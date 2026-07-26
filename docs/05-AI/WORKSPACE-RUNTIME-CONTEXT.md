@@ -86,6 +86,10 @@ WorkspaceState
 | Audit | `RuntimeDiagnosticCompatibilityReport` | Catalog vs compatibility identity report |
 | Audit | `RuntimeDiagnosticInteropContract` | Read-only coexistence with Governance/Audit/Continuity/Experience |
 | Audit | `RuntimeDiagnosticExplanationIntegrity` | what/why/who/version/currency for operator explanations |
+| Audit | `RuntimeDiagnosticCatalogIntegrity` | Registration integrity + dependency ordering |
+| Audit | `RuntimeDiagnosticReferenceIntegrity` | Cross-domain read-only reference validation |
+| Audit | `RuntimeDiagnosticExplanationConsistency` | Explanation ↔ trust/lineage consistency |
+| Audit | `RuntimeDiagnosticMaturityAssessment` | Meta-diagnostic readiness/completeness/health |
 
 Authority: `authority_effect: none` (`GOVERNANCE_AUTHORITY_EFFECT_NONE`).
 
@@ -157,6 +161,12 @@ scope, source, and limitations — observational meaning only.
 | Contract catalog | Static discoverable entries; `executable == false`; no dynamic load |
 | Interop | May cite Governance/Audit/Continuity/Operator read-only; must not own or drive Experience |
 | Explanation integrity | Operator answers what/why/who/version/currency via trust + lineage |
+
+### Maturity (meta-diagnostic)
+
+`RuntimeDiagnosticMaturityAssessment` scores catalog integrity, reference integrity,
+explanation consistency, and lifecycle closure. It is observational only — distinct
+from the Workspace Readiness Model and never prescriptive.
 
 No hidden repair, auto-heal, or silent mutation paths.
 
