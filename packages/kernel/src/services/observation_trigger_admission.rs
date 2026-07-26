@@ -53,7 +53,9 @@ impl ObservationTriggerAdmissionPolicy {
     pub(crate) fn source_is_admitted(source: CaptureRequestSource) -> bool {
         matches!(
             source,
-            CaptureRequestSource::Manual | CaptureRequestSource::System
+            CaptureRequestSource::Manual
+                | CaptureRequestSource::System
+                | CaptureRequestSource::Scheduled
         )
     }
 
@@ -165,7 +167,7 @@ mod tests {
     use crate::services::capture_coordinator::observation_flight_test_lock;
 
     #[test]
-    fn admits_manual_and_system_rejects_unwired_sources() {
+    fn admits_manual_system_scheduled_rejects_unwired_sources() {
         let _lock = observation_flight_test_lock()
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner());
@@ -176,7 +178,7 @@ mod tests {
         assert!(ObservationTriggerAdmissionPolicy::source_is_admitted(
             CaptureRequestSource::System
         ));
-        assert!(!ObservationTriggerAdmissionPolicy::source_is_admitted(
+        assert!(ObservationTriggerAdmissionPolicy::source_is_admitted(
             CaptureRequestSource::Scheduled
         ));
         assert!(!ObservationTriggerAdmissionPolicy::source_is_admitted(
@@ -193,6 +195,12 @@ mod tests {
             rejected,
             ObservationTriggerAdmissionDecision::RejectedSource { .. }
         ));
+
+        let scheduled = ObservationTriggerAdmissionPolicy::evaluate(
+            &ObservationTriggerRequest::scheduled(ObservationFreshnessRequirement::NotStale)
+                .with_reason("scheduled_refresh"),
+        );
+        assert!(scheduled.is_admitted());
     }
 
     #[test]
