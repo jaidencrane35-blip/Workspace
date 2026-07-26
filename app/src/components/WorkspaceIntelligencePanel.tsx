@@ -1635,9 +1635,11 @@ export function WorkspaceIntelligencePanel({
                       [{item.priority}/{item.urgency}] {item.title}
                     </strong>
                     <div className="muted">
-                      score {item.score} · {item.category} · {item.attention_state}
+                      {item.category} · {item.attention_state}
                     </div>
-                    <div className="muted">{item.explanation}</div>
+                    {item.reasons.length === 0 ? (
+                      <div className="muted">{item.explanation}</div>
+                    ) : null}
                     <DisplayReasonList reasons={item.reasons} />
                   </li>
                 ))}
@@ -2422,10 +2424,8 @@ export function WorkspaceIntelligencePanel({
                       {candidate.title}
                     </strong>
                     <div className="muted">
-                      Confidence {candidate.explanation.confidence} · score{" "}
-                      {candidate.score.total} · {candidate.outcome}
+                      Confidence {candidate.explanation.confidence} · {candidate.outcome}
                     </div>
-                    <div>{candidate.explanation.headline}</div>
                     <DecisionReasonList
                       reasons={candidate.explanation.reasons}
                     />
@@ -2839,7 +2839,9 @@ export function WorkspaceIntelligencePanel({
               {state.recommended_actions.map((rec) => (
                 <li key={rec.id}>
                   <strong>{rec.title}</strong>
-                  <div className="muted">{rec.explanation}</div>
+                  {rec.reasons.length === 0 ? (
+                    <div className="muted">{rec.explanation}</div>
+                  ) : null}
                   <DisplayReasonList reasons={rec.reasons} />
                 </li>
               ))}

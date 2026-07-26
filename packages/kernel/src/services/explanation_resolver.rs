@@ -1,9 +1,11 @@
-//! Experience explanation resolver (Sprint 130–131).
+//! Experience translation resolver (Sprint 130–133).
 //!
-//! Translates stable `AttentionReason.explanation_key` values into user-facing
-//! `DisplayReason` wording via the canonical catalog. Owns presentation only.
+//! Unified boundary: structured `AttentionReason` / `DecisionReason` → `DisplayReason`.
+//! Wording comes from the canonical catalog only.
 
-use workspace_domain::{AttentionReason, DisplayImportance, DisplayReason};
+use workspace_domain::{
+    AttentionReason, DecisionReason, DisplayImportance, DisplayReason,
+};
 
 use super::explanation_catalog::{
     fallback_title_for_signal, lookup_explanation_key, unknown_description,
@@ -47,11 +49,32 @@ pub(crate) fn resolve_attention_reasons(reasons: &[AttentionReason]) -> Vec<Disp
     reasons.iter().map(resolve_attention_reason).collect()
 }
 
+/// Decision Engine reasons: Attention translation when present; else Decision summary path.
+pub(crate) fn resolve_decision_reason(reason: &DecisionReason) -> DisplayReason {
+    if let Some(attention) = &reason.attention_reason {
+        return resolve_attention_reason(attention);
+    }
+    DisplayReason {
+        title: reason.summary.clone(),
+        description: reason.kind.clone(),
+        importance: DisplayImportance::Medium,
+        explanation_key: format!("decision.{}", reason.kind),
+        signal: reason.kind.clone(),
+        source: "decision_engine".into(),
+        weight: 0,
+        known: true,
+    }
+}
+
+pub(crate) fn resolve_decision_reasons(reasons: &[DecisionReason]) -> Vec<DisplayReason> {
+    reasons.iter().map(resolve_decision_reason).collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use super::super::explanation_catalog::catalog_version;
-    use workspace_domain::{AttentionSignal, AttentionSourceType};
+    use workspace_domain::{AttentionSignal, AttentionSourceType, DecisionReason};
 
     fn reason(key: &str, signal: AttentionSignal, weight: i32) -> AttentionReason {
         AttentionReason::new(AttentionSourceType::TaskGraph, signal, weight, key)
@@ -153,5 +176,37 @@ mod tests {
     #[test]
     fn catalog_version_is_loaded() {
         assert_eq!(catalog_version(), 2);
+    }
+
+    #[test]
+    fn decision_native_reason_uses_experience_summary_path() {
+        let reason = DecisionReason {
+            kind: "goal_alignment".into(),
+            summary: "Active goal still needs progress".into(),
+            evidence_ref: None,
+            attention_reason: None,
+        };
+        let display = resolve_decision_reason(&reason);
+        assert!(display.known);
+        assert_eq!(display.title, "Active goal still needs progress");
+        assert_eq!(display.description, "goal_alignment");
+        assert_eq!(display.explanation_key, "decision.goal_alignment");
+    }
+
+    #[test]
+    fn decision_attention_backed_reason_delegates_to_catalog() {
+        let reason = DecisionReason {
+            kind: "attention".into(),
+            summary: "ignored when attention present".into(),
+            evidence_ref: None,
+            attention_reason: Some(reason(
+                "decision.base.outstanding",
+                AttentionSignal::OutstandingDecision,
+                48,
+            )),
+        };
+        let display = resolve_decision_reason(&reason);
+        assert_eq!(display.title, "Outstanding decision needs attention");
+        assert_eq!(display.explanation_key, "decision.base.outstanding");
     }
 }

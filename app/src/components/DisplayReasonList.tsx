@@ -3,7 +3,7 @@ import {
   resolveAttentionReasons,
   resolveDecisionReasons,
   type DisplayReason,
-} from "../lib/explanationResolver";
+} from "../lib/experienceTranslation";
 
 interface DisplayReasonListProps {
   /** Structured source reasons — always preserved; never replaced by display text. */

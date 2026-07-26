@@ -72,6 +72,12 @@ UI always keeps `AttentionReason[]` alongside `DisplayReason[]`. Shared componen
 
 **Rule:** UI does not interpret cognition. Experience translates cognition.
 
+**Sprint 133 — unified translation boundary:** See
+[WORKSPACE-EXPERIENCE-CONTRACT.md](./WORKSPACE-EXPERIENCE-CONTRACT.md). UI imports
+`app/src/lib/experienceTranslation.ts`; kernel uses `explanation_resolver.rs`.
+`DisplayReason` remains the display model for structured reasoning; domain
+`ExperienceItem` stays scoped to Session presentation groupings — no merge required.
+
 | Layer | Explains |
 |-------|----------|
 | Facts (Environment, Task Graph, …) | What the workspace is |

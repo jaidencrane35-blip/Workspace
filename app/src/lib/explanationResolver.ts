@@ -1,8 +1,8 @@
 /**
- * Experience explanation resolver (Sprint 130–132).
+ * Experience explanation resolver (Sprint 130–133).
  *
- * Translates AttentionReason.explanation_key via the canonical catalog.
- * Resolution order and templates are catalog-owned — no duplicated rules here.
+ * Low-level resolver — UI components should import from `experienceTranslation.ts`.
+ * Translates structured reasoning via the canonical catalog.
  */
 
 import catalog from "../generated/explanationCatalog";

@@ -4,8 +4,11 @@ use crate::services::explanation_catalog::{
     contract_fixtures, fallback_title_for_signal, lookup_explanation_key,
     lookup_explanation_key_with_tier, unknown_description, LookupTier,
 };
-use crate::services::explanation_resolver::{resolve_attention_reason, resolve_attention_reasons};
-use workspace_domain::{AttentionReason, AttentionSignal, AttentionSourceType};
+use crate::services::explanation_resolver::{
+    resolve_attention_reason, resolve_attention_reasons, resolve_decision_reason,
+    resolve_decision_reasons,
+};
+use workspace_domain::{AttentionReason, AttentionSignal, AttentionSourceType, DecisionReason};
 
 fn reason(key: &str, signal: AttentionSignal, weight: i32) -> AttentionReason {
     AttentionReason::new(AttentionSourceType::TaskGraph, signal, weight, key)
@@ -146,4 +149,65 @@ fn case15_resolution_order_is_suffix_pattern_fallback() {
         ),
         "No Experience translation for 'future.contract.unknown' yet (signal blocked_task from task_graph, weight 33)."
     );
+}
+
+/// CASE 16 — Decision-native reasons translate through Experience without Attention keys.
+#[test]
+fn case16_decision_native_reasons_use_experience_path() {
+    let reason = DecisionReason {
+        kind: "memory_relevance".into(),
+        summary: "Recent memory is relevant".into(),
+        evidence_ref: Some("memory:abc".into()),
+        attention_reason: None,
+    };
+    let display = resolve_decision_reason(&reason);
+    assert!(display.known);
+    assert_eq!(display.title, reason.summary);
+    assert_eq!(display.description, reason.kind);
+    assert_eq!(display.explanation_key, "decision.memory_relevance");
+}
+
+/// CASE 17 — UI contract: batch decision translation is deterministic.
+#[test]
+fn case17_decision_reason_batch_is_deterministic() {
+    let reasons = vec![
+        DecisionReason {
+            kind: "attention".into(),
+            summary: "unused".into(),
+            evidence_ref: None,
+            attention_reason: Some(reason(
+                "task.base.blocked",
+                AttentionSignal::BlockedTask,
+                40,
+            )),
+        },
+        DecisionReason {
+            kind: "plan_ready".into(),
+            summary: "Plan is ready to review".into(),
+            evidence_ref: None,
+            attention_reason: None,
+        },
+    ];
+    assert_eq!(
+        resolve_decision_reasons(&reasons),
+        resolve_decision_reasons(&reasons)
+    );
+}
+
+/// CASE 18 — Translation never mutates structured Domain reasoning.
+#[test]
+fn case18_translation_preserves_domain_reason_structure() {
+    let attention = reason("pattern.observation", AttentionSignal::PatternObservation, 15);
+    let decision = DecisionReason {
+        kind: "attention".into(),
+        summary: "via attention".into(),
+        evidence_ref: None,
+        attention_reason: Some(attention.clone()),
+    };
+    let before_key = attention.explanation_key.clone();
+    let before_weight = attention.weight;
+    let _ = resolve_attention_reason(&attention);
+    let _ = resolve_decision_reason(&decision);
+    assert_eq!(attention.explanation_key, before_key);
+    assert_eq!(attention.weight, before_weight);
 }
