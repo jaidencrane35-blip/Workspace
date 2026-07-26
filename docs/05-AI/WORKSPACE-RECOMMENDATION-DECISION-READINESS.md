@@ -14,10 +14,12 @@
 Recommendation Engine (suggest + lifecycle + outcome)
         ↓ human accept
 RecommendationOutcome (immutable)
-        ↓ read-only assess
+        ↓ assemble (read-only)
+RecommendationDecisionContext
+        ↓ assess_from_context
 RecommendationDecisionReadiness
-        ✗ no auto handoff
-        ↓ (future, explicit sprint)
+        ✗ attempt_handoff() hard-fails
+        ↓ (future, explicit sprint + user confirmation)
 Decision Engine owns intents / goals / planner handoff
         ↓
 Command Pipeline → Permission Gateway → Execution
@@ -25,6 +27,7 @@ Command Pipeline → Permission Gateway → Execution
 
 Recommendation acceptance records a human decision and outcome only.
 It does **not** call Decision Engine, create `WorkGoal` / intents, or invoke Permission Gateway.
+See [WORKSPACE-RECOMMENDATION-DECISION-CONTEXT.md](./WORKSPACE-RECOMMENDATION-DECISION-CONTEXT.md).
 
 ---
 
@@ -81,6 +84,7 @@ Until then:
 
 ## Related
 
+- [WORKSPACE-RECOMMENDATION-DECISION-CONTEXT.md](./WORKSPACE-RECOMMENDATION-DECISION-CONTEXT.md)
 - [WORKSPACE-RECOMMENDATION-OUTCOME.md](./WORKSPACE-RECOMMENDATION-OUTCOME.md)
 - [WORKSPACE-RECOMMENDATION-LIFECYCLE.md](./WORKSPACE-RECOMMENDATION-LIFECYCLE.md)
 - [WORKSPACE-DECISION-ENGINE.md](./WORKSPACE-DECISION-ENGINE.md)

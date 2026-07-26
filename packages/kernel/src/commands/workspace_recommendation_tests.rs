@@ -707,6 +707,13 @@ fn case23_accept_returns_decision_readiness_without_handoff() {
         id.clone(),
     )
     .unwrap();
+    let context = accepted
+        .decision_context
+        .expect("accept projects decision context");
+    assert!(!context.handoff_performed);
+    assert!(context.decision_engine_object_id.is_none());
+    assert!(!context.may_create_intent());
+    assert!(context.attempt_handoff().is_err());
     let readiness = accepted
         .decision_readiness
         .expect("accept projects decision readiness");
@@ -716,6 +723,7 @@ fn case23_accept_returns_decision_readiness_without_handoff() {
     );
     assert!(!readiness.may_create_decision_commands());
     assert!(!readiness.may_invoke_gateway());
+    assert!(readiness.attempt_handoff().is_err());
     assert!(
         readiness.readiness_state == RecommendationDecisionReadiness::STATE_HANDOFF_DEFERRED
             || readiness.readiness_state == RecommendationDecisionReadiness::STATE_BLOCKED
@@ -729,11 +737,18 @@ fn case23_accept_returns_decision_readiness_without_handoff() {
     )
     .unwrap();
     let item = after.candidates.iter().find(|c| c.id == id).unwrap();
+    assert!(item.decision_context.is_some());
     assert!(item.decision_readiness.is_some());
     assert_eq!(
         item.decision_readiness.as_ref().unwrap().authority_effect,
         "none"
     );
+    assert!(item
+        .decision_context
+        .as_ref()
+        .unwrap()
+        .decision_engine_object_id
+        .is_none());
 }
 
 /// CASE 22 — Supersede retains prior outcomes; provenance/reasoning untouched.

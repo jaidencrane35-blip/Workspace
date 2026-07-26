@@ -754,6 +754,9 @@ pub struct RecommendationReviewActionResult {
     pub recommendation_id: String,
     pub lifecycle_state: String,
     pub outcome: Option<RecommendationOutcome>,
+    /// Structured future-DE intake context — observational only.
+    #[serde(default)]
+    pub decision_context: Option<crate::workspace_recommendation::RecommendationDecisionContext>,
     /// Read-only RE→DE readiness — never a handoff payload, never commands.
     #[serde(default)]
     pub decision_readiness: Option<crate::workspace_recommendation::RecommendationDecisionReadiness>,
@@ -4074,6 +4077,7 @@ mod tests {
             lifecycle_resolution_type: None,
             explanation: None,
                 outcome: None,
+                decision_context: None,
                 decision_readiness: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
         }

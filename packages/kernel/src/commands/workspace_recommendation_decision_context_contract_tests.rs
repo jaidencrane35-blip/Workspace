@@ -1,11 +1,12 @@
-//! Sprint 212 — Recommendation → Decision Engine readiness contract (informational only).
+//! Sprint 217 — Recommendation Decision Context contract (assessment/input only).
 
 use crate::commands::handler::CommandHandler;
 use crate::error::KernelError;
 use workspace_domain::{
     AttentionReason, AttentionSignal, AttentionSourceType, RecommendationConfidence,
-    RecommendationDecisionReadiness, RecommendationEvidence, RecommendationExplanationView,
-    RecommendationItem, RecommendationKind, RecommendationOutcomeView,
+    RecommendationDecisionContext, RecommendationDecisionReadiness, RecommendationEvidence,
+    RecommendationExplanationView, RecommendationItem, RecommendationKind,
+    RecommendationOutcomeView,
 };
 
 fn assert_cannot_execute(label: &str, result: Result<(), KernelError>) {
@@ -14,13 +15,14 @@ fn assert_cannot_execute(label: &str, result: Result<(), KernelError>) {
             let message = err.to_string().to_lowercase();
             assert!(
                 message.contains("cannot execute")
+                    || message.contains("cannot become")
                     || message.contains("cannot")
                     || message.contains("grant")
                     || message.contains("authorize"),
-                "{label}: expected CannotExecute-style error, got {err}"
+                "{label}: expected CannotExecute/CannotBecomeHandoff-style error, got {err}"
             );
         }
-        Ok(()) => panic!("{label}: must not succeed at attempt_execute"),
+        Ok(()) => panic!("{label}: must not succeed"),
     }
 }
 
@@ -67,105 +69,120 @@ fn base_item() -> RecommendationItem {
             authority_effect: RecommendationOutcomeView::AUTHORITY_EFFECT_NONE.into(),
         }),
         decision_context: None,
-                decision_readiness: None,
+        decision_readiness: None,
         authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
     }
 }
 
-/// CASE 1 — Readiness is informational only (no commands, no Gateway).
+/// CASE 1 — Context assembly is read-only / non-executive.
 #[test]
-fn case1_readiness_is_informational_only() {
+fn case1_context_assembly_is_read_only() {
     let mut item = base_item();
     item.explanation = Some(RecommendationExplanationView::from_item(&item));
-    let readiness = RecommendationDecisionReadiness::assess(&item);
+    let before = item.evidence.clone();
+    let context = RecommendationDecisionContext::assemble("ws-1", &item, &[]);
     assert_eq!(
-        readiness.authority_effect,
-        RecommendationDecisionReadiness::AUTHORITY_EFFECT_NONE
+        context.authority_effect,
+        RecommendationDecisionContext::AUTHORITY_EFFECT_NONE
     );
-    assert!(!readiness.may_create_decision_commands());
-    assert!(!readiness.may_invoke_gateway());
-    assert!(!readiness.may_mutate_provenance());
-    assert!(RecommendationDecisionReadiness::attempt_execute().is_err());
-    assert!(readiness.attempt_handoff().is_err());
+    assert!(!context.handoff_performed);
+    assert!(context.decision_engine_object_id.is_none());
+    assert!(!context.may_create_intent());
+    assert!(!context.may_become_decision_engine_object());
+    assert!(!context.may_invoke_gateway());
+    assert!(!context.may_mutate_provenance());
+    assert!(RecommendationDecisionContext::attempt_execute().is_err());
+    assert!(context.attempt_handoff().is_err());
+    assert_eq!(item.evidence, before);
     assert_cannot_execute(
         "recommendation_engine",
         CommandHandler::workspace_recommendation_engine_attempt_execute(),
     );
-    assert_cannot_execute(
-        "decision_engine",
-        CommandHandler::decision_engine_attempt_execute(),
-    );
 }
 
-/// CASE 2 — Missing decision context blocks readiness even after accept/outcome.
+/// CASE 2 — Incomplete context blocks readiness.
 #[test]
-fn case2_missing_context_blocks_readiness() {
+fn case2_incomplete_context_blocks_readiness() {
     let mut item = base_item();
     item.related_attention_id = None;
     item.related_task_id = None;
     item.related_decision_id = None;
     item.related_purpose_label = None;
     item.explanation = Some(RecommendationExplanationView::from_item(&item));
-    let readiness = RecommendationDecisionReadiness::assess(&item);
+    let context = RecommendationDecisionContext::assemble("ws-1", &item, &[]);
+    assert!(!context.complete);
+    assert!(context
+        .missing
+        .iter()
+        .any(|m| m == RecommendationDecisionReadiness::PREREQ_DECISION_CONTEXT));
+    let readiness = RecommendationDecisionReadiness::assess_from_context(&context);
     assert_eq!(
         readiness.readiness_state,
         RecommendationDecisionReadiness::STATE_BLOCKED
     );
     assert!(!readiness.ready_for_future_handoff);
-    assert!(readiness
-        .missing
-        .iter()
-        .any(|m| m == RecommendationDecisionReadiness::PREREQ_DECISION_CONTEXT));
-    assert!(!readiness.may_create_decision_commands());
+    assert!(readiness.attempt_handoff().is_err());
 }
 
-/// CASE 3 — Complete prerequisites yield handoff_deferred (still no execution).
+/// CASE 3 — Accepted recommendation does not become an intent / DE object.
 #[test]
-fn case3_complete_prerequisites_are_handoff_deferred() {
+fn case3_accepted_recommendation_does_not_become_intent() {
     let mut item = base_item();
     item.explanation = Some(RecommendationExplanationView::from_item(&item));
-    let readiness = RecommendationDecisionReadiness::assess(&item);
-    assert!(readiness.missing.is_empty(), "missing={:?}", readiness.missing);
-    assert_eq!(
-        readiness.readiness_state,
-        RecommendationDecisionReadiness::STATE_HANDOFF_DEFERRED
-    );
+    let context = RecommendationDecisionContext::assemble("ws-1", &item, &[]);
+    assert!(context.complete);
+    assert_eq!(context.user_decision.as_deref(), Some("accepted"));
+    assert!(!context.may_create_intent());
+    assert!(!context.may_become_decision_engine_object());
+    assert!(context.decision_engine_object_id.is_none());
+    assert!(!context.handoff_performed);
+    let readiness = RecommendationDecisionReadiness::assess_from_context(&context);
     assert!(readiness.ready_for_future_handoff);
-    assert!(!readiness.may_create_decision_commands());
-    assert!(!readiness.may_invoke_gateway());
-    assert!(RecommendationDecisionReadiness::attempt_execute().is_err());
-}
-
-/// CASE 4 — Incomplete lifecycle is not ready; provenance remains untouched by assess.
-#[test]
-fn case4_incomplete_lifecycle_and_immutable_provenance() {
-    let mut item = base_item();
-    item.lifecycle_state = Some("presented".into());
-    item.outcome = None;
-    item.explanation = Some(RecommendationExplanationView::from_item(&item));
-    let before_evidence = item.evidence.clone();
-    let before_reasons = item.attention_reasons.clone();
-    let readiness = RecommendationDecisionReadiness::assess(&item);
-    assert_eq!(
-        readiness.readiness_state,
-        RecommendationDecisionReadiness::STATE_INCOMPLETE
+    assert!(readiness.attempt_handoff().is_err());
+    assert_cannot_execute(
+        "decision_engine",
+        CommandHandler::decision_engine_attempt_execute(),
     );
-    assert!(!readiness.ready_for_future_handoff);
-    assert_eq!(item.evidence, before_evidence);
-    assert_eq!(item.attention_reasons, before_reasons);
-    assert!(!readiness.may_mutate_provenance());
 }
 
-/// CASE 5 — Gateway remains isolated from readiness assessment.
+/// CASE 4 — Gateway remains isolated from context assembly.
 #[test]
-fn case5_gateway_remains_isolated() {
+fn case4_gateway_remains_isolated() {
     let mut item = base_item();
     item.explanation = Some(RecommendationExplanationView::from_item(&item));
-    let readiness = RecommendationDecisionReadiness::assess(&item);
-    assert_eq!(readiness.authority_effect, "none");
-    assert!(!readiness.may_invoke_gateway());
+    let context = RecommendationDecisionContext::assemble("ws-1", &item, &[]);
+    assert!(!context.may_invoke_gateway());
+    assert_eq!(context.authority_effect, "none");
     assert_cannot_execute(
         "recommendation_engine",
         CommandHandler::workspace_recommendation_engine_attempt_execute(),
     );
+}
+
+/// CASE 5 — Provenance remains immutable across context/readiness assessment.
+#[test]
+fn case5_provenance_remains_immutable() {
+    let mut item = base_item();
+    item.explanation = Some(RecommendationExplanationView::from_item(&item));
+    let before_evidence = item.evidence.clone();
+    let before_reasons = item.attention_reasons.clone();
+    let before_keys = item
+        .explanation
+        .as_ref()
+        .map(|e| e.explanation_keys.clone())
+        .unwrap();
+    let context = RecommendationDecisionContext::assemble(
+        "ws-1",
+        &item,
+        &["recommendation_outcome:prior".into()],
+    );
+    let _readiness = RecommendationDecisionReadiness::assess_from_context(&context);
+    assert_eq!(item.evidence, before_evidence);
+    assert_eq!(item.attention_reasons, before_reasons);
+    assert_eq!(
+        item.explanation.as_ref().unwrap().explanation_keys,
+        before_keys
+    );
+    assert!(!context.may_mutate_provenance());
+    assert!(context.outcome_history_refs.contains(&"recommendation_outcome:prior".into()));
 }

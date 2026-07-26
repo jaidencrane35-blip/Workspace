@@ -2169,8 +2169,45 @@ export interface RecommendationItem {
   explanation?: RecommendationExplanationView | null;
   /** Structured outcome when resolved — immutable feedback only. */
   outcome?: RecommendationOutcomeView | null;
+  /** Structured future-DE intake context — observational only. */
+  decision_context?: RecommendationDecisionContext | null;
   /** Read-only Decision Engine handoff readiness — never creates commands. */
   decision_readiness?: RecommendationDecisionReadiness | null;
+  authority_effect: string;
+}
+
+/**
+ * Structured intake snapshot for a future Decision Engine.
+ * Not a DE object, intent, or handoff — observational only.
+ */
+export interface RecommendationDecisionContext {
+  workspace_id: string;
+  recommendation_id: string;
+  kind: string;
+  title: string;
+  family: string;
+  explanation_ref: string | null;
+  explanation_keys: string[];
+  evidence_refs: string[];
+  experience_trace_match_keys: string[];
+  continuity_fingerprint: string;
+  lifecycle_state: string;
+  lifecycle_resolution: string | null;
+  outcome_id: string | null;
+  outcome_history_refs: string[];
+  user_decision: string | null;
+  result_kind: string | null;
+  related_task_id: string | null;
+  related_attention_id: string | null;
+  related_decision_id: string | null;
+  related_purpose_label: string | null;
+  missing: string[];
+  complete: boolean;
+  /** Always null until future DE intake wiring. */
+  decision_engine_object_id: string | null;
+  /** Always false — context never performs handoff. */
+  handoff_performed: boolean;
+  note: string;
   authority_effect: string;
 }
 
@@ -2237,6 +2274,7 @@ export interface RecommendationReviewActionResult {
   recommendation_id: string;
   lifecycle_state: string;
   outcome: RecommendationOutcome | null;
+  decision_context?: RecommendationDecisionContext | null;
   decision_readiness?: RecommendationDecisionReadiness | null;
   explanation: string;
   authority_effect: string;

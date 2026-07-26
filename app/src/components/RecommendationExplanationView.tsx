@@ -1,5 +1,6 @@
 import { DisplayReasonList } from "./DisplayReasonList";
 import type {
+  RecommendationDecisionContext,
   RecommendationDecisionReadiness,
   RecommendationHistoryEntry,
   RecommendationItem,
@@ -115,9 +116,49 @@ export function RecommendationExplanationBlock({
           </div>
         )}
       {item.outcome ? <RecommendationOutcomeBlock outcome={item.outcome} /> : null}
+      {item.decision_context ? (
+        <RecommendationDecisionContextBlock context={item.decision_context} />
+      ) : null}
       {item.decision_readiness ? (
         <RecommendationDecisionReadinessBlock readiness={item.decision_readiness} />
       ) : null}
+    </div>
+  );
+}
+
+/** Observational future-DE intake context — never a DE object or handoff. */
+export function RecommendationDecisionContextBlock({
+  context,
+}: {
+  context: RecommendationDecisionContext;
+}) {
+  return (
+    <div className="recommendation-decision-context muted" style={{ marginTop: 4 }}>
+      <div>
+        Decision context:{" "}
+        <strong>{context.complete ? "complete" : "incomplete"}</strong>
+        {" · "}
+        handoff performed: {context.handoff_performed ? "yes" : "no"}
+        {" · "}
+        DE object: {context.decision_engine_object_id ?? "none"}
+        {" · "}
+        authority: {context.authority_effect}
+      </div>
+      <div>{context.note}</div>
+      {context.user_decision && (
+        <div>
+          User decision record: {context.user_decision}
+          {context.result_kind ? ` · ${context.result_kind}` : ""}
+        </div>
+      )}
+      {context.missing.length > 0 && (
+        <div className="mono">Missing: {context.missing.join(", ")}</div>
+      )}
+      {context.outcome_history_refs.length > 0 && (
+        <div className="mono">
+          Outcome history refs: {context.outcome_history_refs.slice(0, 3).join(", ")}
+        </div>
+      )}
     </div>
   );
 }
@@ -133,9 +174,10 @@ export function RecommendationDecisionReadinessBlock({
       <div>
         Decision readiness: <strong>{readiness.readiness_state}</strong>
         {" · "}
-        future handoff eligible: {readiness.ready_for_future_handoff ? "yes" : "no"}
+        future consideration eligible:{" "}
+        {readiness.ready_for_future_handoff ? "yes" : "no"}
         {" · "}
-        authority: {readiness.authority_effect}
+        not a Decision Engine object · authority: {readiness.authority_effect}
       </div>
       <div>{readiness.note}</div>
       {readiness.missing.length > 0 && (

@@ -143,7 +143,8 @@ for a *future* Decision Engine handoff.
 | Block readiness when context is missing | Call Permission Gateway |
 | Inform operators that handoff is deferred | Merge Recommendation and Decision authority |
 
-See [WORKSPACE-RECOMMENDATION-DECISION-READINESS.md](./WORKSPACE-RECOMMENDATION-DECISION-READINESS.md).
+See [WORKSPACE-RECOMMENDATION-DECISION-READINESS.md](./WORKSPACE-RECOMMENDATION-DECISION-READINESS.md)
+and [WORKSPACE-RECOMMENDATION-DECISION-CONTEXT.md](./WORKSPACE-RECOMMENDATION-DECISION-CONTEXT.md).
 
 ---
 
