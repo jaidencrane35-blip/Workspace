@@ -151,6 +151,62 @@ fn case15_resolution_order_is_suffix_pattern_fallback() {
     );
 }
 
+/// CASE 19 — Reasoning models stay separate; Recommendation reuses AttentionReason.
+#[test]
+fn case19_reasoning_models_remain_separate_with_adapters_only() {
+    let attention = reason("task.base.blocked", AttentionSignal::BlockedTask, 40);
+    let decision = DecisionReason {
+        kind: "attention".into(),
+        summary: "via attention".into(),
+        evidence_ref: None,
+        attention_reason: Some(attention.clone()),
+    };
+    let display_from_decision = resolve_decision_reason(&decision);
+    let display_from_attention = resolve_attention_reason(&attention);
+    assert_eq!(display_from_decision.title, display_from_attention.title);
+    assert_eq!(
+        display_from_decision.explanation_key,
+        display_from_attention.explanation_key
+    );
+    assert!(
+        std::any::type_name::<workspace_domain::RecommendationItem>()
+            .contains("RecommendationItem")
+    );
+    assert_ne!(
+        std::any::type_name::<AttentionReason>(),
+        std::any::type_name::<DecisionReason>()
+    );
+}
+
+/// CASE 20 — Operator-style diagnostic fields are not required on DisplayReason.
+#[test]
+fn case20_display_reason_carries_experience_payload_not_diagnostic_scores() {
+    let display = resolve_attention_reason(&reason(
+        "decision.base.outstanding",
+        AttentionSignal::OutstandingDecision,
+        55,
+    ));
+    assert!(display.known);
+    assert!(!display.title.contains("score"));
+    assert!(!display.description.contains("score_factors"));
+}
+
+/// CASE 21 — Batch translation preserves Domain object immutability.
+#[test]
+fn case21_batch_translation_does_not_mutate_domain_reasons() {
+    let reasons = vec![
+        reason("pattern.observation", AttentionSignal::PatternObservation, 20),
+        reason("evolution.insight", AttentionSignal::EvolutionInsight, 35),
+    ];
+    let keys_before: Vec<_> = reasons.iter().map(|r| r.explanation_key.clone()).collect();
+    let weights_before: Vec<_> = reasons.iter().map(|r| r.weight).collect();
+    let _ = resolve_attention_reasons(&reasons);
+    let keys_after: Vec<_> = reasons.iter().map(|r| r.explanation_key.clone()).collect();
+    let weights_after: Vec<_> = reasons.iter().map(|r| r.weight).collect();
+    assert_eq!(keys_before, keys_after);
+    assert_eq!(weights_before, weights_after);
+}
+
 /// CASE 16 — Decision-native reasons translate through Experience without Attention keys.
 #[test]
 fn case16_decision_native_reasons_use_experience_path() {

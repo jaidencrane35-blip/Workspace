@@ -2356,8 +2356,10 @@ export function WorkspaceIntelligencePanel({
                       [{item.kind}] {item.title}
                     </strong>
                     <div className="muted">
-                      Why: {item.reason} · Impact: {item.impact} · Confidence:{" "}
-                      {item.confidence}
+                      {item.attention_reasons.length === 0 ? (
+                        <>Why: {item.reason} · </>
+                      ) : null}
+                      Impact: {item.impact} · Confidence: {item.confidence}
                     </div>
                     {item.attention_reasons.length > 0 ? (
                       <DisplayReasonList reasons={item.attention_reasons} />

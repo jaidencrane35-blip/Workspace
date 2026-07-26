@@ -123,3 +123,9 @@ Human Intent
 | Work | Default calm product view over Experience |
 | Assistant | Explains the same Experience — never edits |
 | Operator | Generate / Explain / Validate / Compare diagnostics |
+
+## Semantic integrity
+
+Sprint 134 adds [WORKSPACE-SEMANTIC-INTEGRITY.md](./WORKSPACE-SEMANTIC-INTEGRITY.md):
+Domain owns meaning; Experience translates; UI renders. UI import boundary enforced
+via `pnpm verify:ui-experience-boundary`.

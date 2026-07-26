@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit",
     "sync:explanation-catalog": "node ../scripts/sync-explanation-catalog.mjs",
     "verify:explanation-catalog": "node ../scripts/verify-explanation-catalog.mjs",
+    "verify:ui-experience-boundary": "node ../scripts/verify-ui-experience-boundary.mjs",
     "tauri": "tauri"
   },
   "dependencies": {

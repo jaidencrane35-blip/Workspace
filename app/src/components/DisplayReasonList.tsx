@@ -1,4 +1,4 @@
-import type { AttentionReason, DecisionReason } from "../types/domain";
+import type { AttentionReason, DecisionReason } from "../lib/experienceTranslation";
 import {
   resolveAttentionReasons,
   resolveDecisionReasons,

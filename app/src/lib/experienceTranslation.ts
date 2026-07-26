@@ -1,9 +1,11 @@
 /**
- * Unified Experience translation boundary (Sprint 133).
+ * Unified Experience translation boundary (Sprint 133–134).
  *
- * All user-facing rationale copy must flow through these exports.
- * UI components import from here — not from cognition types directly.
+ * Public UI import surface for Experience translation.
+ * Panels use DisplayReasonList; only this module and DisplayReasonList touch resolver internals.
  */
+
+export type { AttentionReason, DecisionReason } from "../types/domain";
 
 export {
   displayImportanceFromWeight,

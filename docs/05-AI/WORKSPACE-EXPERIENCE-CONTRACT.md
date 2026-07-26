@@ -140,6 +140,13 @@ Verification:
 | `rec.explanation` when `reasons` present | Work Intelligence | Invalid leakage | Removed (reasons only) |
 | `score_factors` in UI | — | — | Not present (type-only) |
 
+Automated check: `pnpm verify:ui-experience-boundary`
+
+## Sprint 134 — semantic integrity
+
+See [WORKSPACE-SEMANTIC-INTEGRITY.md](./WORKSPACE-SEMANTIC-INTEGRITY.md) for the
+full meaning-flow contract, reasoning-model relationship audit, and coverage table.
+
 ## Related docs
 
 - [WORKSPACE-EXPERIENCE-LAYER.md](./WORKSPACE-EXPERIENCE-LAYER.md)
