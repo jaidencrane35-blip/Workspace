@@ -23,6 +23,11 @@ Human Intent
 
 This batch does not introduce execution paths, modify authority, or weaken governance.
 
+**Sprint 136:** Full cognition layer map —
+[WORKSPACE-COGNITION-PIPELINE-CONTRACT.md](./WORKSPACE-COGNITION-PIPELINE-CONTRACT.md).
+Automation readiness (no autonomy yet) —
+[WORKSPACE-AUTOMATION-READINESS.md](./WORKSPACE-AUTOMATION-READINESS.md).
+
 ---
 
 ## Assessment summary
