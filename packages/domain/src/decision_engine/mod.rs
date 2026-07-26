@@ -9,6 +9,7 @@ use thiserror::Error;
 
 use crate::errors::DomainError;
 use crate::ids::{DecisionCandidateId, WorkspaceId};
+use crate::workspace_attention::AttentionReason;
 
 /// Decision Engine validation errors.
 #[derive(Debug, Error, PartialEq, Eq)]
@@ -30,11 +31,18 @@ pub enum DecisionEngineError {
 }
 
 /// Structured reason supporting a recommendation (never chain-of-thought).
+///
+/// When the rationale originates in Attention, `attention_reason` carries the upstream
+/// `AttentionReason` verbatim so the chain facts → signals → reasons → decisions stays
+/// traceable. `summary` remains a factual restatement for surfaces that render text;
+/// translation belongs to Experience, keyed off `attention_reason.explanation_key`.
+/// Reasons Decision Engine derives itself (goal, memory, plan, approval) leave it `None`.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DecisionReason {
     pub kind: String,
     pub summary: String,
     pub evidence_ref: Option<String>,
+    pub attention_reason: Option<AttentionReason>,
 }
 
 /// Deterministic score breakdown.

@@ -441,12 +441,22 @@ impl DecisionEngineService {
                 item.category.as_str()
             ),
             evidence_ref: Some(item.id.to_string()),
+            attention_reason: None,
         }];
-        for factor in item.score_factors.iter().take(3) {
+        // Attention's own structured reasons, carried whole and in Attention's order.
+        // These replace the former `score_factors` strings, which narrated score math
+        // rather than explaining why the item deserved focus.
+        for attention_reason in &item.reasons {
             reasons.push(DecisionReason {
-                kind: "attention_factor".into(),
-                summary: factor.clone(),
+                kind: "attention_signal".into(),
+                summary: format!(
+                    "Attention signal {} from {} (weight {})",
+                    attention_reason.signal.as_str(),
+                    attention_reason.source.as_str(),
+                    attention_reason.weight
+                ),
                 evidence_ref: Some(item.id.to_string()),
+                attention_reason: Some(attention_reason.clone()),
             });
         }
         if let Some(goal) = goals.first() {
@@ -454,6 +464,7 @@ impl DecisionEngineService {
                 kind: "goal".into(),
                 summary: format!("Related to current goal: {}", goal.description),
                 evidence_ref: Some(goal.id.to_string()),
+                attention_reason: None,
             });
         }
         if let Some(mem) = memory.first() {
@@ -461,6 +472,7 @@ impl DecisionEngineService {
                 kind: "memory".into(),
                 summary: format!("Memory supports this: {}", mem.summary),
                 evidence_ref: Some(mem.id.clone()),
+                attention_reason: None,
             });
         }
         if let Some(pref) = prefs.first() {
@@ -468,6 +480,7 @@ impl DecisionEngineService {
                 kind: "personalization".into(),
                 summary: format!("Preference: {} = {}", pref.label, pref.summary),
                 evidence_ref: Some(pref.id.clone()),
+                attention_reason: None,
             });
         }
         if !pending_plans.is_empty() {
@@ -475,6 +488,7 @@ impl DecisionEngineService {
                 kind: "plan".into(),
                 summary: "Unfinished plan exists in Decision Queue.".into(),
                 evidence_ref: Some(pending_plans[0].source_id.clone()),
+                attention_reason: None,
             });
         }
         if !pending_approvals.is_empty() {
@@ -485,6 +499,7 @@ impl DecisionEngineService {
                     pending_approvals.len()
                 ),
                 evidence_ref: Some(pending_approvals[0].source_id.clone()),
+                attention_reason: None,
             });
         }
 
@@ -496,6 +511,9 @@ impl DecisionEngineService {
             "low"
         };
 
+        // `score.factors` stays string-based on purpose: it is the arithmetic trail behind
+        // `total`, not the rationale. Attention's score math explains `attention_contribution`
+        // the same way "memory +8" explains the rest.
         let mut factors = item.score_factors.clone();
         if memory_contribution > 0 {
             factors.push(format!("memory +{memory_contribution}"));
@@ -584,18 +602,21 @@ impl DecisionEngineService {
                 node.task.priority.as_str()
             ),
             evidence_ref: Some(node.task.id.to_string()),
+            attention_reason: None,
         }];
         if let Some(reason) = &node.waiting_reason {
             reasons.push(DecisionReason {
                 kind: "dependency".into(),
                 summary: reason.clone(),
                 evidence_ref: node.dependency_ids.first().cloned(),
+                attention_reason: None,
             });
         }
         reasons.push(DecisionReason {
             kind: "progress".into(),
             summary: format!("Task is {}% complete.", node.task.progress_percent),
             evidence_ref: Some(node.task.id.to_string()),
+            attention_reason: None,
         });
 
         let confidence = if total >= 80 {
@@ -674,12 +695,16 @@ impl DecisionEngineService {
             kind: "goal".into(),
             summary: format!("Continue work toward goal: {}", goal.description),
             evidence_ref: Some(goal.id.to_string()),
+            attention_reason: None,
         }];
         if let Some(item) = attention.top_items.first() {
+            // A cross-reference to what Attention ranked first, not a projection of that
+            // item's rationale — so this stays Decision Engine's own evidence.
             reasons.push(DecisionReason {
                 kind: "attention".into(),
                 summary: format!("Attention also highlights: {}", item.title),
                 evidence_ref: Some(item.id.to_string()),
+                attention_reason: None,
             });
         }
         if let Some(mem) = memory.first() {
@@ -687,6 +712,7 @@ impl DecisionEngineService {
                 kind: "memory".into(),
                 summary: format!("Memory: {}", mem.summary),
                 evidence_ref: Some(mem.id.clone()),
+                attention_reason: None,
             });
         }
         if let Some(pref) = prefs.first() {
@@ -694,6 +720,7 @@ impl DecisionEngineService {
                 kind: "personalization".into(),
                 summary: format!("Preference: {}", pref.label),
                 evidence_ref: Some(pref.id.clone()),
+                attention_reason: None,
             });
         }
 
@@ -752,12 +779,14 @@ impl DecisionEngineService {
             kind: "bootstrap".into(),
             summary: "Attention has no scored items — define current work.".into(),
             evidence_ref: None,
+            attention_reason: None,
         }];
         if let Some(goal) = goals.first() {
             reasons.push(DecisionReason {
                 kind: "goal".into(),
                 summary: format!("Existing goal available: {}", goal.description),
                 evidence_ref: Some(goal.id.to_string()),
+                attention_reason: None,
             });
         }
 

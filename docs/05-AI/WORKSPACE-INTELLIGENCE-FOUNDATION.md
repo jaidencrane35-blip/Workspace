@@ -34,6 +34,10 @@ Runtime desktop truth is **WorkspaceState** only (Sprint 123 finalized IPC/UI su
 
 **Evaluation is not observation (Sprint 128):** one Intelligence generate writes roughly fifty audit events. Those reach the Activity Graph as `AuditSignal` entries, so cognitive consumers must window the timeline through `WorkspaceActivityGraph::cognitive_timeline()`, which excludes telemetry *before* taking the newest N. Filtering inside the loop instead let a single evaluation burst fill windows of 5, 8, and 20 entirely, changing the next evaluation's inputs. Telemetry remains fully audited and visible in the timeline — it simply never counts as a cognitive source fact. `recommended_actions` now carry the Attention item's `reasons` verbatim rather than dropping them at the Assistant boundary.
 
+**Structured rationale downstream (Sprint 129):** rationale stays structured past Attention instead of collapsing into strings. `DecisionReason.attention_reason` carries the originating `AttentionReason` whole, and `RecommendationItem.attention_reasons` does the same for Attention-derived suggestions; both are empty or `None` when the reasoning is the consumer's own. Decision Engine previously rebuilt attention rationale from the first three `score_factors` strings, which described score math rather than why the item mattered, and discarded `reasons` entirely.
+
+Each layer keeps its own question. Attention explains why something deserves focus; Decision Engine explains what should be considered next, adding goal, memory, personalization, plan, and approval reasons of its own; Experience explains how it is shown. Decision Engine contributes Attention's `score` to its own candidate total but never reorders or rescores Attention itself.
+
 ---
 
 ## Intent model (durable, non-executable)

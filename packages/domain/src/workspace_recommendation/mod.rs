@@ -12,6 +12,7 @@ use thiserror::Error;
 
 use crate::errors::DomainError;
 use crate::ids::WorkspaceId;
+use crate::workspace_attention::AttentionReason;
 
 /// Recommendation Engine validation errors.
 #[derive(Debug, Error, PartialEq, Eq)]
@@ -106,6 +107,10 @@ pub struct RecommendationItem {
     pub impact: String,
     pub confidence: RecommendationConfidence,
     pub related_attention_id: Option<String>,
+    /// Structured reasons carried verbatim from the Attention item named by
+    /// `related_attention_id`, in Attention's order. Empty when the suggestion derives
+    /// from another model (Continuity, Task Graph, Composition, Pattern, Readiness).
+    pub attention_reasons: Vec<AttentionReason>,
     pub related_task_id: Option<String>,
     pub related_purpose_label: Option<String>,
     pub related_decision_id: Option<String>,

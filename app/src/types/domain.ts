@@ -1177,6 +1177,8 @@ export interface DecisionReason {
   kind: string;
   summary: string;
   evidence_ref: string | null;
+  /** Set when the rationale came from Attention; render `explanation_key`, not `summary`. */
+  attention_reason: AttentionReason | null;
 }
 
 export interface DecisionScore {
@@ -2113,6 +2115,8 @@ export interface RecommendationItem {
   impact: string;
   confidence: RecommendationConfidence;
   related_attention_id: string | null;
+  /** Carried from the Attention item in `related_attention_id`; empty for other sources. */
+  attention_reasons: AttentionReason[];
   related_task_id: string | null;
   related_purpose_label: string | null;
   related_decision_id: string | null;

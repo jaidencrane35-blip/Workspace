@@ -2427,8 +2427,8 @@ export function WorkspaceIntelligencePanel({
                     </div>
                     <div>{candidate.explanation.headline}</div>
                     <ul className="muted">
-                      {candidate.explanation.reasons.map((reason) => (
-                        <li key={`${candidate.id}-${reason.kind}-${reason.summary}`}>
+                      {candidate.explanation.reasons.map((reason, index) => (
+                        <li key={`${candidate.id}-${reason.kind}-${index}`}>
                           {reason.summary}
                         </li>
                       ))}

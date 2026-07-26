@@ -68,6 +68,21 @@ UI may display `explanation_key` without recomputing scores.
 Reason weights **sum to `score`** — there is exactly one scoring path, and `reasons`
 expose it rather than restate it. A reason with no score contribution is not a reason.
 
+`score_factors` is the arithmetic trail and stays string-based on purpose. It explains how
+the number was reached, not why the item matters, so it is **not** the rationale channel:
+downstream layers carry `reasons` (Sprint 129).
+
+### Who explains what
+
+| Layer | Explains |
+|-------|----------|
+| Attention | Why this deserves focus |
+| Decision Engine | What should be considered next |
+| Experience | How it is shown |
+
+The chain is facts → signals → reasons → decisions → presentation. Each hop carries
+`AttentionReason` whole; no hop is allowed to flatten it into prose and drop the structure.
+
 ---
 
 ## Input signal owners
@@ -104,7 +119,8 @@ Do not merge Attention into Recommendations. Do not treat `recommended_actions` 
 | Consumer | Reads | Must not |
 |----------|-------|----------|
 | Intelligence | `top_items` order, `reasons` | Re-rank, re-score, or rewrite reasons |
-| Decision Engine | `score` as one contribution to its own candidate score | Treat Attention rank as its own rank |
+| Decision Engine | `score` as one contribution to its own candidate score; `reasons` carried whole | Treat Attention rank as its own rank, or restate reasons as prose |
+| Recommendation Engine | `reasons` carried whole into `attention_reasons` | Invent reasons for non-Attention suggestions |
 | Operating State | `top_items`, `score_factors` as evidence | Re-threshold or re-band |
 | Session / Experience | `category`, `priority` | Re-derive banding from raw `score` |
 

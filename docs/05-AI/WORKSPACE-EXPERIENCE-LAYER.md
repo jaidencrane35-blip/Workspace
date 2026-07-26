@@ -37,6 +37,18 @@ Deterministic rules only — not AI reasoning:
 "High-priority attention" means Attention's own `priority` band. Experience presents that
 banding; it never re-derives one from a raw `score` threshold.
 
+### Rendering rationale
+
+Structured reasons reach Experience intact: `AttentionItem.reasons`, and downstream
+`DecisionReason.attention_reason` / `RecommendationItem.attention_reasons` (Sprint 129).
+Where one is present, render its `explanation_key` — that key is the translation contract.
+The sibling `summary` strings are factual fallbacks for surfaces without a string table,
+not the intended display text.
+
+Wording, translation, and formatting live here. Domain models carry only `source`,
+`signal`, `weight`, and `explanation_key`; Experience explains **how it is shown**, never
+what deserves focus or what to consider next.
+
 ## Experience groupings (presentation only)
 
 - Primary Focus

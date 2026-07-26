@@ -130,8 +130,129 @@ fn case2_attention_changes_reprioritize() {
     assert!(after.context.attention_item_count >= before.context.attention_item_count);
     assert!(!after.top_candidates.is_empty());
     assert!(after.top_candidates[0].explanation.reasons.iter().any(|r| {
-        r.kind == "attention" || r.kind == "attention_factor" || r.kind == "approval"
+        r.kind == "attention" || r.kind == "attention_signal" || r.kind == "approval"
     }));
+}
+
+/// CASE 12 — Attention reasons reach Decision Engine structurally, and Decision Engine
+/// neither reorders nor rescores what Attention ranked.
+#[test]
+fn case12_attention_reasons_survive_into_decision_candidates() {
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let (ws, project_id, _) = seed_project(&kernel);
+    seed_pending_contract(&kernel, ws.clone(), project_id);
+    let intel = CommandHandler::generate_workspace_intelligence(
+        &kernel,
+        ActorContext::local_user(),
+        IntentContext::user_request(),
+        ws.clone(),
+    )
+    .unwrap();
+    let engine = CommandHandler::generate_decision_engine(
+        &kernel,
+        ActorContext::local_user(),
+        IntentContext::user_request(),
+        ws,
+    )
+    .unwrap();
+
+    let mut checked = 0;
+    for candidate in &engine.candidates {
+        let Some(ref attention_id) = candidate.attention_item_id else {
+            continue;
+        };
+        let Some(source) = intel
+            .attention
+            .top_items
+            .iter()
+            .find(|i| i.id.as_str() == attention_id)
+        else {
+            continue;
+        };
+        // Every Attention reason arrives whole and in Attention's order.
+        let carried: Vec<_> = candidate
+            .explanation
+            .reasons
+            .iter()
+            .filter_map(|r| r.attention_reason.clone())
+            .collect();
+        assert_eq!(
+            carried, source.reasons,
+            "candidate {} lost or reordered Attention reasons",
+            candidate.id
+        );
+        // Decision Engine adds its own framing but never rewrites the upstream weighting.
+        assert_eq!(
+            candidate.score.attention_contribution,
+            source.score.min(100),
+            "candidate {} rescored the Attention item",
+            candidate.id
+        );
+        checked += 1;
+    }
+    assert!(
+        checked > 0,
+        "expected at least one Attention-derived decision candidate"
+    );
+}
+
+/// CASE 13 — Rationale is structured end to end: no Attention-sourced reason is left as
+/// bare text, and repeated generation is stable.
+#[test]
+fn case13_attention_rationale_is_structured_and_deterministic() {
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let (ws, project_id, _) = seed_project(&kernel);
+    seed_pending_contract(&kernel, ws.clone(), project_id);
+    let generate = || {
+        CommandHandler::generate_decision_engine(
+            &kernel,
+            ActorContext::local_user(),
+            IntentContext::user_request(),
+            ws.clone(),
+        )
+        .unwrap()
+    };
+    let first = generate();
+    let second = generate();
+
+    let rationale = |state: &workspace_domain::DecisionEngineState| {
+        state
+            .candidates
+            .iter()
+            .map(|c| {
+                let reasons: Vec<_> = c
+                    .explanation
+                    .reasons
+                    .iter()
+                    .map(|r| {
+                        (
+                            r.kind.clone(),
+                            r.attention_reason
+                                .as_ref()
+                                .map(|a| (a.signal.as_str(), a.weight)),
+                        )
+                    })
+                    .collect();
+                (c.id.to_string(), reasons)
+            })
+            .collect::<Vec<_>>()
+    };
+    assert_eq!(rationale(&first), rationale(&second));
+
+    for candidate in &first.candidates {
+        for reason in &candidate.explanation.reasons {
+            if reason.kind == "attention_signal" {
+                let attention_reason = reason
+                    .attention_reason
+                    .as_ref()
+                    .expect("attention_signal reason must carry structured data");
+                assert!(
+                    !attention_reason.explanation_key.is_empty(),
+                    "structured reason needs a key for Experience to translate"
+                );
+            }
+        }
+    }
 }
 
 /// CASE 3 — Preferences removed → explanations update.

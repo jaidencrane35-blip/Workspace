@@ -403,3 +403,79 @@ fn case10_governance_surfaces_remain_green() {
     .unwrap();
     let _ = CommandHandler::generate_workspace_purpose(&kernel, local, intent, ws).unwrap();
 }
+
+/// CASE 11 — Attention-derived suggestions carry Attention's structured reasons;
+/// suggestions from other models carry none.
+#[test]
+fn case11_attention_reasons_survive_recommendation_generation() {
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let (ws, _) = seed(&kernel);
+    let local = ActorContext::local_user();
+    let intent = IntentContext::user_request();
+    let intel = CommandHandler::generate_workspace_intelligence(
+        &kernel,
+        local.clone(),
+        intent.clone(),
+        ws.clone(),
+    )
+    .unwrap();
+    let state =
+        CommandHandler::generate_workspace_recommendation_engine(&kernel, local, intent, ws)
+            .unwrap();
+
+    for candidate in &state.candidates {
+        match candidate.related_attention_id {
+            Some(ref attention_id) => {
+                let source = intel
+                    .attention
+                    .top_items
+                    .iter()
+                    .find(|i| i.id.as_str() == attention_id);
+                if let Some(source) = source {
+                    assert_eq!(
+                        candidate.attention_reasons, source.reasons,
+                        "candidate {} altered Attention reasons",
+                        candidate.id
+                    );
+                }
+            }
+            None => assert!(
+                candidate.attention_reasons.is_empty(),
+                "candidate {} claims Attention reasons without an Attention source",
+                candidate.id
+            ),
+        }
+    }
+}
+
+/// CASE 12 — Same Attention input yields the same reasons in the same order.
+#[test]
+fn case12_recommendation_reason_ordering_is_deterministic() {
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let (ws, _) = seed(&kernel);
+    let generate = || {
+        CommandHandler::generate_workspace_recommendation_engine(
+            &kernel,
+            ActorContext::local_user(),
+            IntentContext::user_request(),
+            ws.clone(),
+        )
+        .unwrap()
+    };
+    let projection = |state: &workspace_domain::WorkspaceRecommendationEngineState| {
+        state
+            .candidates
+            .iter()
+            .map(|c| {
+                (
+                    c.id.clone(),
+                    c.attention_reasons
+                        .iter()
+                        .map(|r| (r.signal.as_str(), r.source.as_str(), r.weight))
+                        .collect::<Vec<_>>(),
+                )
+            })
+            .collect::<Vec<_>>()
+    };
+    assert_eq!(projection(&generate()), projection(&generate()));
+}
