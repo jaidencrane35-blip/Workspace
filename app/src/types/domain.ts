@@ -2491,6 +2491,81 @@ export interface WorkspaceReadinessSummary {
   authority_effect: string;
 }
 
+export type WorkspaceHealthLevel =
+  | "unknown"
+  | "healthy"
+  | "degraded"
+  | "stale"
+  | "blocked";
+
+export interface SubsystemHealthEntry {
+  subsystem: string;
+  level: WorkspaceHealthLevel;
+  detail: string;
+}
+
+export interface WorkspaceRuntimeHealth {
+  id: string;
+  workspace_id: string;
+  overall: WorkspaceHealthLevel;
+  subsystems: SubsystemHealthEntry[];
+  degraded_services: string[];
+  stale_observations: boolean;
+  observation_freshness: WorkspaceHealthLevel;
+  governance_readiness: WorkspaceHealthLevel;
+  cognition_readiness: WorkspaceHealthLevel;
+  experience_readiness: WorkspaceHealthLevel;
+  publication_blocked: boolean;
+  authority_effect: string;
+}
+
+export interface OperatorContextProjection {
+  id: string;
+  workspace_id: string;
+  runtime_health_label: string;
+  cognition_health_label: string;
+  governance_health_label: string;
+  observation_freshness_label: string;
+  publication_readiness_label: string;
+  publication_blocked: boolean;
+  review_status_label: string;
+  generated_at: string;
+  authority_effect: string;
+}
+
+export interface OperatorRuntimeOverview {
+  id: string;
+  workspace_id: string;
+  generated_at: string;
+  health_overall: WorkspaceHealthLevel;
+  runtime_context_id: string;
+  operator_context_id: string;
+  diagnostic_snapshot_id: string;
+  consistency_has_errors: boolean;
+  dependency_summary: string;
+  capability_summary: string;
+  governance_summary: string;
+  coherence_ok: boolean;
+  publication_blocked: boolean;
+  authority_effect: string;
+}
+
+/** Live runtime projection wiring (Sprints 182–185) — observational only. */
+export interface WorkspaceRuntimeOperatorView {
+  workspace_id: string;
+  generated_at: string;
+  runtime_context_id: string;
+  health: WorkspaceRuntimeHealth;
+  operator_context: OperatorContextProjection;
+  overview: OperatorRuntimeOverview;
+  coherence_ok: boolean;
+  architecture_review_passed: boolean;
+  consistency_has_errors: boolean;
+  diagnostic_snapshot_id: string;
+  publication_blocked: boolean;
+  authority_effect: string;
+}
+
 export type SessionMemberKind =
   | "project"
   | "task"

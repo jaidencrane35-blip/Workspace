@@ -25,6 +25,7 @@ use crate::commands::workspace_operating_state::GateOperatingStateRead;
 use crate::commands::workspace_pattern::GatePatternRead;
 use crate::commands::workspace_adaptation::{GateAdaptationRead, GateAdaptationWrite};
 use crate::commands::workspace_readiness::GateReadinessRead;
+use crate::commands::workspace_runtime::GateRuntimeRead;
 use crate::commands::workspace_intelligence::GateIntelligenceRead;
 use crate::commands::workspace_session::GateSessionRead;
 use crate::commands::workspace_experience::GateExperienceRead;
@@ -101,7 +102,8 @@ use crate::services::{
     WorkspaceCompositionService, WorkspacePurposeService, WorkspaceEvolutionService,
     WorkspaceRecommendationEngineService, WorkspaceOperatingStateService,
     WorkspacePatternService, WorkspaceAdaptationService, WorkspaceReadinessService,
-    WorkspaceSessionService, WorkspaceExperienceService, WorkspaceWorkContextService,
+    WorkspaceRuntimeService, WorkspaceSessionService, WorkspaceExperienceService,
+    WorkspaceWorkContextService,
     WorkspaceNavigationService, WorkspaceMilestoneService, WorkspaceWorkingStyleService,
     WorkspaceTransitionService, WorkspaceInteractionService, WorkspaceProfileService,
     WorkspaceObservationCaptureResult, WorkspaceObservationService,
@@ -121,8 +123,8 @@ use workspace_domain::{
     WorkspaceContinuityState, WorkspaceEnvironmentState, WorkspaceCompositionState,
     WorkspacePurposeState, WorkspaceEvolutionState, WorkspaceRecommendationEngineState,
     WorkspaceOperatingState, WorkspacePatternState, AdaptationActionResult, WorkspaceAdaptationState,
-    WorkspaceReadinessState, WorkspaceSessionComparison, WorkspaceSessionState,
-    WorkspaceExperienceComparison, WorkspaceExperienceState,
+    WorkspaceReadinessState, WorkspaceRuntimeOperatorView, WorkspaceSessionComparison,
+    WorkspaceSessionState, WorkspaceExperienceComparison, WorkspaceExperienceState,
     WorkspaceWorkContextComparison, WorkspaceWorkContextState, WorkspaceWorkContextValidation,
     WorkspaceNavigationComparison, WorkspaceNavigationState, WorkspaceNavigationValidation,
     WorkspaceMilestoneComparison, WorkspaceMilestoneState, WorkspaceMilestoneValidation,
@@ -3085,6 +3087,41 @@ impl CommandHandler {
     /// Architecture guard — Readiness must never execute or prepare.
     pub fn workspace_readiness_attempt_execute() -> Result<()> {
         WorkspaceReadinessService::attempt_execute()
+    }
+
+    /// Project live Workspace Runtime Operator View (context/health/overview — never executes).
+    pub fn generate_workspace_runtime_overview(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceRuntimeOperatorView> {
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent.clone()))
+            .execute_query(GateRuntimeRead)?;
+        let _ = Self::get_workflow_context(
+            kernel,
+            actor.clone(),
+            intent.clone(),
+            workspace_id.clone(),
+        )?;
+        let workspace =
+            Self::get_workspace(kernel, actor.clone(), intent.clone(), workspace_id.clone())?;
+        let health = kernel.health();
+        WorkspaceRuntimeService::project(
+            &kernel.shared_database(),
+            &actor,
+            &intent,
+            &kernel.orchestrated_plans(),
+            &kernel.assistant_workflows(),
+            workspace_id,
+            workspace.name,
+            health.status.clone(),
+        )
+    }
+
+    /// Architecture guard — Runtime projection must never execute.
+    pub fn workspace_runtime_attempt_execute() -> Result<()> {
+        WorkspaceRuntimeService::attempt_execute()
     }
 
     /// Architecture guard — Intelligence must never execute.

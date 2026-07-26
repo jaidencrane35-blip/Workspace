@@ -817,6 +817,72 @@ impl WorkspaceRuntimeCoherence {
     }
 }
 
+// ---------------------------------------------------------------------------
+// Sprint 182–185 — Operator runtime projection (live wiring DTO)
+// ---------------------------------------------------------------------------
+
+/// Operator-facing runtime projection assembled from live foundations.
+///
+/// Composition only — never owns WorkspaceState, scoring, Experience translation,
+/// governance authority, or Gateway execution. Distinct from diagnostic meta-contracts.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct WorkspaceRuntimeOperatorView {
+    pub workspace_id: String,
+    pub generated_at: String,
+    pub runtime_context_id: String,
+    pub health: WorkspaceRuntimeHealth,
+    pub operator_context: OperatorContextProjection,
+    pub overview: OperatorRuntimeOverview,
+    pub coherence_ok: bool,
+    pub architecture_review_passed: bool,
+    pub consistency_has_errors: bool,
+    pub diagnostic_snapshot_id: String,
+    pub publication_blocked: bool,
+    pub authority_effect: String,
+}
+
+impl WorkspaceRuntimeOperatorView {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = GOVERNANCE_AUTHORITY_EFFECT_NONE;
+
+    pub fn compose(
+        ctx: &WorkspaceRuntimeContext,
+        health: WorkspaceRuntimeHealth,
+        operator_context: OperatorContextProjection,
+        overview: OperatorRuntimeOverview,
+        coherence: &WorkspaceRuntimeCoherence,
+        review: &RuntimeArchitectureReview,
+        verification: &RuntimeConsistencyVerification,
+        snapshot_id: impl Into<String>,
+    ) -> Self {
+        Self {
+            workspace_id: ctx.workspace_id.clone(),
+            generated_at: ctx.generated_at.clone(),
+            runtime_context_id: ctx.id.clone(),
+            health,
+            operator_context,
+            overview,
+            coherence_ok: coherence.coherent,
+            architecture_review_passed: review.passed(),
+            consistency_has_errors: verification.has_errors(),
+            diagnostic_snapshot_id: snapshot_id.into(),
+            publication_blocked: true,
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        }
+    }
+
+    pub fn may_execute(&self) -> bool {
+        false
+    }
+
+    pub fn may_change_scoring(&self) -> bool {
+        false
+    }
+
+    pub fn attempt_execute() -> Result<(), WorkspaceRuntimeError> {
+        Err(WorkspaceRuntimeError::CannotExecute)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -91,6 +91,7 @@
 | `accept_adaptation_proposal` | Product: accept adaptation → Intent handoff only (never executes) |
 | `reject_adaptation_proposal` | Product: reject adaptation (audit only; no workspace mutation) |
 | `generate_workspace_readiness` | Product: aggregate preparedness for current work (never prepares/executes) |
+| `generate_workspace_runtime_overview` | Product/diagnostic: live runtime context/health/operator overview (never executes) |
 | `generate_workspace_session` | Product: project runtime working session from Intelligence (never executes) |
 | `compare_workspace_sessions` | Product: compare two session snapshots (informational) |
 | `generate_workspace_experience` | Product: present Session as calm Work experience (never executes) |

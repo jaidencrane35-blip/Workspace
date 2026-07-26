@@ -221,18 +221,23 @@ pub const PLATFORM_CONCEPT_OWNERS: &[ConceptOwnership] = &[
     },
     ConceptOwnership {
         concept: "workspace_runtime_context",
-        owner: "WorkspaceRuntimeContext (domain projection)",
+        owner: "WorkspaceRuntimeService",
         kind: ConceptOwnerKind::Aggregator,
     },
     ConceptOwnership {
         concept: "workspace_runtime_health",
-        owner: "WorkspaceRuntimeHealth (domain projection)",
+        owner: "WorkspaceRuntimeService",
         kind: ConceptOwnerKind::Aggregator,
     },
     ConceptOwnership {
         concept: "governance_runtime_summary",
         owner: "Governance (visible summaries only)",
         kind: ConceptOwnerKind::Derived,
+    },
+    ConceptOwnership {
+        concept: "workspace_runtime_operator_view",
+        owner: "WorkspaceRuntimeService",
+        kind: ConceptOwnerKind::Aggregator,
     },
 ];
 

@@ -43,6 +43,7 @@ use commands::workspace_adaptation::{
     review_adaptation_proposal,
 };
 use commands::workspace_readiness::generate_workspace_readiness;
+use commands::workspace_runtime::generate_workspace_runtime_overview;
 use commands::workspace_session::{compare_workspace_sessions, generate_workspace_session};
 use commands::workspace_experience::{
     compare_workspace_experiences, generate_workspace_experience,
@@ -258,6 +259,7 @@ pub fn run() {
             accept_adaptation_proposal,
             reject_adaptation_proposal,
             generate_workspace_readiness,
+            generate_workspace_runtime_overview,
             generate_workspace_session,
             compare_workspace_sessions,
             generate_workspace_experience,

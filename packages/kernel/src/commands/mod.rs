@@ -17,6 +17,7 @@ mod workspace_operating_state;
 mod workspace_pattern;
 mod workspace_adaptation;
 mod workspace_readiness;
+mod workspace_runtime;
 mod workspace_intelligence;
 mod workspace_session;
 mod workspace_experience;
@@ -196,6 +197,8 @@ mod workspace_governance_export_contract_tests;
 mod workspace_governance_consolidation_contract_tests;
 #[cfg(test)]
 mod workspace_runtime_integration_contract_tests;
+#[cfg(test)]
+mod workspace_runtime_projection_contract_tests;
 #[cfg(test)]
 mod workspace_runtime_diagnostics_contract_tests;
 #[cfg(test)]

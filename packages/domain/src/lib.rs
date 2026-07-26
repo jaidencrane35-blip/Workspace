@@ -450,7 +450,7 @@ pub use workspace_runtime::{
     RuntimeProjectionBoundaryLayer, RuntimeProjectionBoundaryRegistry, RuntimeSubsystemNode,
     RuntimeVisibilityScope, SubsystemHealthEntry, WorkspaceHealthLevel, WorkspaceRuntimeCoherence,
     WorkspaceRuntimeContext, WorkspaceRuntimeError, WorkspaceRuntimeHealth,
-    WorkspaceRuntimeIntegrationContract,
+    WorkspaceRuntimeIntegrationContract, WorkspaceRuntimeOperatorView,
 };
 pub use layout::{
     Layout, LayoutBounds, LayoutError, LayoutMetadata, LayoutNode, LayoutSnapshot, Position2D,

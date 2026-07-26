@@ -17,6 +17,7 @@ pub mod workspace_operating_state;
 pub mod workspace_pattern;
 pub mod workspace_adaptation;
 pub mod workspace_readiness;
+pub mod workspace_runtime;
 pub mod workspace_session;
 pub mod workspace_experience;
 pub mod workspace_work_context;

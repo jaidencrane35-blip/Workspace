@@ -1,6 +1,6 @@
 # Workspace Runtime Context & Integration
 
-Sprints 170–181 + runtime diagnostic subsystem (provenance → maturity) — read-only.
+Sprints 170–181 + runtime diagnostic subsystem (provenance → maturity) + live projection wiring (182–185) — read-only.
 
 **Governance is visible, never authoritative. No execution. No automation. No runtime publication.
 Published remains BLOCKED. Scoring and WorkspaceState ownership unchanged.**
@@ -193,6 +193,14 @@ explanation consistency, and lifecycle closure. It is observational only — dis
 from the Workspace Readiness Model and never prescriptive.
 
 No hidden repair, auto-heal, or silent mutation paths.
+
+### Live projection wiring (Sprints 182–185)
+
+`WorkspaceRuntimeService` assembles live foundations into
+`WorkspaceRuntimeOperatorView` (health + operator context + overview + coherence /
+consistency flags). IPC: `generate_workspace_runtime_overview`. Governance labels
+come from readiness + decision-queue counts via `GovernanceRuntimeSummary::from_labels`
+— `publication_blocked` stays true; Gateway untouched.
 
 ---
 

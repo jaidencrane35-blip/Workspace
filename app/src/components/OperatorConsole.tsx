@@ -20,6 +20,7 @@ import type {
   WorkspacePatternState,
   WorkspaceAdaptationState,
   WorkspaceReadinessState,
+  WorkspaceRuntimeOperatorView,
   WorkspaceSessionState,
   WorkspaceSessionComparison,
   WorkspaceExperienceState,
@@ -205,6 +206,8 @@ export function OperatorConsole({
     useState<WorkspaceAdaptationState | null>(null);
   const [readinessState, setReadinessState] =
     useState<WorkspaceReadinessState | null>(null);
+  const [runtimeOverview, setRuntimeOverview] =
+    useState<WorkspaceRuntimeOperatorView | null>(null);
   const [sessionState, setSessionState] =
     useState<WorkspaceSessionState | null>(null);
   const [priorSession, setPriorSession] =
@@ -2057,6 +2060,64 @@ export function OperatorConsole({
             <li>
               {readinessState.overall_status} · {readinessState.gap_count} gap(s)
               · authority {readinessState.authority_effect}
+            </li>
+          </ul>
+        )}
+      </section>
+
+      <section>
+        <h2>Workspace Runtime (diagnostics)</h2>
+        <p className="muted">
+          Live operating context, observational health, and operator overview —
+          never executes, scores, or unblocks publication. Distinct from
+          readiness preparedness and kernel lifecycle health.
+        </p>
+        <div className="row">
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("Runtime overview projected", async () => {
+                if (!workspace) return;
+                const view = await invokeIpc<WorkspaceRuntimeOperatorView>(
+                  "generate_workspace_runtime_overview",
+                  { workspaceId: workspace.id },
+                );
+                setRuntimeOverview(view);
+              })
+            }
+          >
+            Inspect runtime overview
+          </button>
+          <button
+            type="button"
+            disabled={busy || !runtimeOverview}
+            onClick={() =>
+              void run("Runtime governance labels inspected", async () => {
+                if (!runtimeOverview) return;
+                onMessage(
+                  `${runtimeOverview.overview.governance_summary} · review ${runtimeOverview.operator_context.review_status_label} · publication blocked=${runtimeOverview.publication_blocked}`,
+                );
+              })
+            }
+          >
+            Inspect governance labels
+          </button>
+        </div>
+        {runtimeOverview && (
+          <ul className="muted">
+            <li>
+              Health {runtimeOverview.health.overall} · coherence{" "}
+              {runtimeOverview.coherence_ok ? "ok" : "fail"} · review{" "}
+              {runtimeOverview.architecture_review_passed ? "passed" : "fail"}
+            </li>
+            <li>
+              {runtimeOverview.overview.dependency_summary} ·{" "}
+              {runtimeOverview.overview.capability_summary}
+            </li>
+            <li>
+              Snapshot {runtimeOverview.diagnostic_snapshot_id} · authority{" "}
+              {runtimeOverview.authority_effect}
             </li>
           </ul>
         )}
