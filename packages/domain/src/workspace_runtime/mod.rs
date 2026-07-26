@@ -1,4 +1,4 @@
-//! Workspace runtime integration — Sprints 170–175.
+//! Workspace runtime integration — Sprints 170–181.
 //!
 //! Read-only contracts that make governance and cognition context visible to the
 //! runtime without granting authority or changing scoring / WorkspaceState ownership.
@@ -6,6 +6,12 @@
 //! Naming note: Sprint 19 [`crate::context::WorkspaceContext`] remains the
 //! execution/capability read composition. This module’s
 //! [`WorkspaceRuntimeContext`] is the cognition + governance operating context.
+//!
+//! Sprints 176–181 (`diagnostics`) add dependency graph, capability map, snapshots,
+//! consistency verification, and operator overview — all observational.
+
+mod diagnostics;
+pub use diagnostics::*;
 
 use serde::{Deserialize, Serialize};
 
@@ -173,6 +179,9 @@ pub enum WorkspaceRuntimeError {
 
     #[error("workspace runtime health is observational only")]
     HealthNotPrescriptive,
+
+    #[error("workspace runtime consistency verification cannot repair or mutate")]
+    ConsistencyCannotMutate,
 }
 
 // ---------------------------------------------------------------------------

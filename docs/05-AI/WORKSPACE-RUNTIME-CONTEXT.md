@@ -1,9 +1,15 @@
 # Workspace Runtime Context & Integration
 
-Sprints 170–175 — read-only runtime integration of governance into the Workspace operating surface.
+Sprints 170–181 — read-only runtime integration, diagnostics, and operator overview.
 
 **Governance is visible, never authoritative. No execution. No automation. No runtime publication.
 Published remains BLOCKED. Scoring and WorkspaceState ownership unchanged.**
+
+Execution authority remains:
+
+```
+Intent → Command Pipeline → Permission Gateway → Allow → Execution
+```
 
 ---
 
@@ -44,8 +50,16 @@ WorkspaceState
 | 173 | `OperatorContextProjection` | Domain projection only; not UI |
 | 174 | `WorkspaceRuntimeHealth` | Observational; never prescriptive |
 | 175 | `WorkspaceRuntimeCoherence` | Structural chain review |
+| 176 | `RuntimeDependencyGraph` | Subsystem nodes/edges; cycle detection; diagnostics only |
+| 177 | `RuntimeCapabilityMap` | Provided/consumed services; visibility/authority scopes; descriptive |
+| 178 | `RuntimeDiagnosticSnapshot` | Immutable observational snapshot |
+| 179 | `RuntimeConsistencyVerification` | Detects architecture issues; never auto-repairs |
+| 180 | `OperatorRuntimeOverview` | Operator domain projection of runtime state; not UI |
+| 181 | `RuntimeArchitectureReview` | Ownership, layering, authority, cohesion review |
 
 Authority: `authority_effect: none` (`GOVERNANCE_AUTHORITY_EFFECT_NONE`).
+
+Module: `packages/domain/src/workspace_runtime/` (`mod.rs` + `diagnostics.rs`).
 
 ---
 
