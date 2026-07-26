@@ -20,6 +20,12 @@ pub enum ActionProposalError {
     #[error("invalid recommendation lifecycle transition from {from} to {to}")]
     InvalidLifecycleTransition { from: String, to: String },
 
+    #[error("recommendation outcome requires a resolved lifecycle state")]
+    OutcomeRequiresResolution,
+
+    #[error("recommendation outcome cannot execute or authorize")]
+    OutcomeCannotExecute,
+
     #[error(transparent)]
     Domain(#[from] DomainError),
 }
@@ -359,6 +365,187 @@ impl RecommendationGovernanceRecord {
         assert_eq!(self.authority_effect, Self::AUTHORITY_EFFECT_NONE);
         Ok(())
     }
+
+    /// Record a governance outcome after resolution. Preserves provenance by clone.
+    pub fn record_outcome(
+        &self,
+        recorded_at: impl Into<String>,
+    ) -> Result<RecommendationOutcome, ActionProposalError> {
+        RecommendationOutcome::from_governance_record(self, recorded_at)
+    }
+}
+
+/// Human decision captured at outcome time (distinct from system success/failure).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RecommendationUserDecision {
+    Accepted,
+    Rejected,
+    /// Returned to available / postponed without final resolution.
+    Deferred,
+    Expired,
+    Superseded,
+}
+
+impl RecommendationUserDecision {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Accepted => "accepted",
+            Self::Rejected => "rejected",
+            Self::Deferred => "deferred",
+            Self::Expired => "expired",
+            Self::Superseded => "superseded",
+        }
+    }
+}
+
+/// Resulting outcome kind — rejection/expiry are **not** system failures.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RecommendationResultKind {
+    /// Human accepted; follow-through / handoff may occur later under Gateway.
+    AcceptedFollowThrough,
+    /// Human rejected — valid outcome, not a failure.
+    RejectedByUser,
+    /// Timed out / source gone — valid outcome, not a failure.
+    ExpiredWithoutAction,
+    /// Replaced by a newer recommendation — valid outcome, not a failure.
+    Superseded,
+    /// Architecture: later link to a Gateway-gated execution outcome (optional).
+    DownstreamExecutionLinked,
+}
+
+impl RecommendationResultKind {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::AcceptedFollowThrough => "accepted_follow_through",
+            Self::RejectedByUser => "rejected_by_user",
+            Self::ExpiredWithoutAction => "expired_without_action",
+            Self::Superseded => "superseded",
+            Self::DownstreamExecutionLinked => "downstream_execution_linked",
+        }
+    }
+
+    /// System failure semantics for feedback — user rejection/expiry never count as failure.
+    pub fn is_system_failure(self) -> bool {
+        false
+    }
+}
+
+/// Quality / confidence metadata for feedback (never mutates scoring automatically).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RecommendationOutcomeQuality {
+    pub confidence_at_outcome: Option<String>,
+    pub useful_to_user: Option<bool>,
+    pub notes: Option<String>,
+}
+
+impl RecommendationOutcomeQuality {
+    pub fn from_provenance(provenance: &RecommendationProvenance) -> Self {
+        Self {
+            confidence_at_outcome: provenance.confidence.clone(),
+            useful_to_user: None,
+            notes: None,
+        }
+    }
+}
+
+/// True recommendation outcome record (Sprint 139).
+///
+/// Completes the loop: Evidence → … → Decision → Outcome.
+/// May inform future Adaptation proposals; must not mutate historical reasoning,
+/// silently rescore Attention/Decision, or execute.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RecommendationOutcome {
+    pub id: String,
+    pub identity: RecommendationIdentity,
+    /// Frozen provenance snapshot at outcome time (immutable copy).
+    pub provenance: RecommendationProvenance,
+    pub lifecycle_resolution: Option<RecommendationResolutionType>,
+    pub user_decision: RecommendationUserDecision,
+    pub result_kind: RecommendationResultKind,
+    pub recorded_at: String,
+    pub quality: RecommendationOutcomeQuality,
+    /// Experience translation match keys for the full debug chain.
+    pub experience_trace_match_keys: Vec<String>,
+    pub authority_effect: String,
+}
+
+impl RecommendationOutcome {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+
+    pub fn from_governance_record(
+        record: &RecommendationGovernanceRecord,
+        recorded_at: impl Into<String>,
+    ) -> Result<Self, ActionProposalError> {
+        let resolution = record
+            .lifecycle
+            .resolution_type
+            .ok_or(ActionProposalError::OutcomeRequiresResolution)?;
+        let (user_decision, result_kind) = match resolution {
+            RecommendationResolutionType::Accepted => (
+                RecommendationUserDecision::Accepted,
+                RecommendationResultKind::AcceptedFollowThrough,
+            ),
+            RecommendationResolutionType::Rejected => (
+                RecommendationUserDecision::Rejected,
+                RecommendationResultKind::RejectedByUser,
+            ),
+            RecommendationResolutionType::Expired => (
+                RecommendationUserDecision::Expired,
+                RecommendationResultKind::ExpiredWithoutAction,
+            ),
+            RecommendationResolutionType::Superseded => (
+                RecommendationUserDecision::Superseded,
+                RecommendationResultKind::Superseded,
+            ),
+        };
+        Ok(Self {
+            id: format!("recommendation_outcome:{}", record.identity.native_id),
+            identity: record.identity.clone(),
+            provenance: record.provenance.clone(),
+            lifecycle_resolution: Some(resolution),
+            user_decision,
+            result_kind,
+            recorded_at: recorded_at.into(),
+            quality: RecommendationOutcomeQuality::from_provenance(&record.provenance),
+            experience_trace_match_keys: record.provenance.experience_trace_match_keys.clone(),
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        })
+    }
+
+    pub fn with_experience_trace_match_keys(mut self, keys: Vec<String>) -> Self {
+        self.experience_trace_match_keys = keys;
+        self
+    }
+
+    pub fn with_useful_flag(mut self, useful: bool) -> Self {
+        self.quality.useful_to_user = Some(useful);
+        self
+    }
+
+    /// Rejection and expiry are valid outcomes — never treated as system failure here.
+    pub fn is_system_failure(&self) -> bool {
+        self.result_kind.is_system_failure()
+    }
+
+    /// Hard-fail — outcomes never execute or authorize.
+    pub fn attempt_execute() -> Result<(), ActionProposalError> {
+        Err(ActionProposalError::OutcomeCannotExecute)
+    }
+
+    /// Feedback boundary: may be read by future Adaptation as evidence — never auto-applied.
+    pub fn may_inform_future_adaptation(&self) -> bool {
+        true
+    }
+
+    pub fn may_mutate_historical_reasoning(&self) -> bool {
+        false
+    }
+
+    pub fn may_silently_change_scoring(&self) -> bool {
+        false
+    }
 }
 
 /// Risk metadata for a future ActionProposal (architecture only).
@@ -592,5 +779,66 @@ mod tests {
             expired.lifecycle.resolution_type,
             Some(RecommendationResolutionType::Expired)
         );
+    }
+
+    #[test]
+    fn rejection_and_expiry_are_not_system_failures() {
+        let item = sample_item();
+        let mut rejected = RecommendationGovernanceRecord::from_recommendation_item(&item, "t0");
+        rejected
+            .transition(RecommendationLifecycleState::Available, "t1", None)
+            .unwrap();
+        rejected
+            .transition(RecommendationLifecycleState::Presented, "t2", None)
+            .unwrap();
+        rejected
+            .transition(RecommendationLifecycleState::Rejected, "t3", None)
+            .unwrap();
+        let outcome = rejected.record_outcome("t4").unwrap();
+        assert_eq!(
+            outcome.result_kind,
+            RecommendationResultKind::RejectedByUser
+        );
+        assert!(!outcome.is_system_failure());
+        assert_eq!(outcome.provenance, rejected.provenance);
+        assert!(RecommendationOutcome::attempt_execute().is_err());
+
+        let mut expired = RecommendationGovernanceRecord::from_recommendation_item(&item, "t0");
+        expired
+            .transition(RecommendationLifecycleState::Expired, "t1", None)
+            .unwrap();
+        let outcome = expired.record_outcome("t2").unwrap();
+        assert_eq!(
+            outcome.result_kind,
+            RecommendationResultKind::ExpiredWithoutAction
+        );
+        assert!(!outcome.is_system_failure());
+        assert!(!outcome.may_mutate_historical_reasoning());
+        assert!(!outcome.may_silently_change_scoring());
+        assert!(outcome.may_inform_future_adaptation());
+    }
+
+    #[test]
+    fn outcome_preserves_provenance_and_experience_keys() {
+        let item = sample_item();
+        let mut record = RecommendationGovernanceRecord::from_recommendation_item(&item, "t0");
+        record.provenance = record.provenance.with_experience_trace_match_keys(vec![
+            "prefix_suffix:task.base.blocked".into(),
+        ]);
+        let provenance = record.provenance.clone();
+        record
+            .transition(RecommendationLifecycleState::Available, "t1", None)
+            .unwrap();
+        record
+            .transition(RecommendationLifecycleState::Presented, "t2", None)
+            .unwrap();
+        record.accept("t3", None).unwrap();
+        let outcome = record.record_outcome("t4").unwrap();
+        assert_eq!(outcome.provenance, provenance);
+        assert_eq!(
+            outcome.experience_trace_match_keys,
+            vec!["prefix_suffix:task.base.blocked"]
+        );
+        assert_eq!(outcome.authority_effect, "none");
     }
 }

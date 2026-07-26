@@ -28,6 +28,10 @@ Intent → Planning → Command Pipeline → Permission Gateway → Execution �
 
 Accept returns an Intent handoff only. Adaptation never skips governance.
 
+**Sprint 139:** `RecommendationOutcome` may inform future Adaptation as evidence only —
+never auto-applies or rescoring. See
+[WORKSPACE-RECOMMENDATION-OUTCOME.md](./WORKSPACE-RECOMMENDATION-OUTCOME.md).
+
 ---
 
 ## Ownership
