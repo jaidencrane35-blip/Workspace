@@ -48,6 +48,10 @@ BehaviourVersion drafts + ChangeEvaluation; no runtime cognition mutation.
 [WORKSPACE-GOVERNANCE-LEDGER.md](./WORKSPACE-GOVERNANCE-LEDGER.md).
 Full chain traceability; publish requests never activate runtime.
 
+**Sprint 144:** Governance policy & human review —
+[WORKSPACE-GOVERNANCE-POLICY.md](./WORKSPACE-GOVERNANCE-POLICY.md).
+Policy → Review Decision → Ledger → PublishRequest; never execution authority.
+
 ---
 
 ## Ownership

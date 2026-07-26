@@ -59,6 +59,18 @@ pub enum ActionProposalError {
     #[error("publication activation is future-only; runtime unchanged")]
     PublicationActivationNotImplemented,
 
+    #[error("governance policy approval requirements not met")]
+    GovernancePolicyRequirementsNotMet,
+
+    #[error("governance review rationale is required")]
+    GovernanceReviewRationaleRequired,
+
+    #[error("governance policy expiry blocks further approval")]
+    GovernancePolicyExpired,
+
+    #[error("reviewer cannot bypass or rewrite provenance")]
+    ReviewerCannotBypassProvenance,
+
     #[error(transparent)]
     Domain(#[from] DomainError),
 }
@@ -917,6 +929,262 @@ pub struct GovernanceActorRefs {
     pub publisher_actor_id: Option<String>,
 }
 
+/// Risk classification for adaptation governance policy (Sprint 144).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum AdaptationRiskClass {
+    Low,
+    Medium,
+    High,
+}
+
+impl AdaptationRiskClass {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Low => "low",
+            Self::Medium => "medium",
+            Self::High => "high",
+        }
+    }
+}
+
+/// Who may review under a GovernancePolicy.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct GovernanceReviewerRequirements {
+    pub required_actor_type: String,
+    pub min_reviewers: u32,
+    pub allow_self_approval: bool,
+    pub require_rationale: bool,
+}
+
+/// Expiry rules for adaptation governance (architecture).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct GovernanceExpiryRules {
+    /// Descriptive TTL for proposals (e.g. `P7D`).
+    pub proposal_ttl: Option<String>,
+    pub review_ttl: Option<String>,
+    pub publish_request_ttl: Option<String>,
+    pub expired_blocks_approval: bool,
+}
+
+/// Policy layer governing how adaptation changes are reviewed (Sprint 144).
+///
+/// Distinct from Permission / CapabilityBound policies — never grants execution.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct GovernancePolicy {
+    pub id: String,
+    pub governed_domain: String,
+    pub risk_classification: AdaptationRiskClass,
+    pub reviewer_requirements: GovernanceReviewerRequirements,
+    /// Number of approving LocalUser decisions required.
+    pub approval_threshold: u32,
+    pub expiry_rules: GovernanceExpiryRules,
+    pub authority_effect: String,
+}
+
+impl GovernancePolicy {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+    pub const DOMAIN_OUTCOME_ADAPTATION: &'static str = "outcome_adaptation";
+
+    pub fn for_outcome_adaptation() -> Self {
+        Self {
+            id: "governance_policy:outcome_adaptation:v1".into(),
+            governed_domain: Self::DOMAIN_OUTCOME_ADAPTATION.into(),
+            risk_classification: AdaptationRiskClass::Medium,
+            reviewer_requirements: GovernanceReviewerRequirements {
+                required_actor_type: AdaptationReviewerIdentity::LOCAL_USER_TYPE.into(),
+                min_reviewers: 1,
+                allow_self_approval: false,
+                require_rationale: true,
+            },
+            approval_threshold: 1,
+            expiry_rules: GovernanceExpiryRules {
+                proposal_ttl: Some("P7D".into()),
+                review_ttl: Some("P3D".into()),
+                publish_request_ttl: Some("P3D".into()),
+                expired_blocks_approval: true,
+            },
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        }
+    }
+
+    pub fn reviewer_satisfies(&self, reviewer: &AdaptationReviewerIdentity) -> bool {
+        reviewer.actor_type == self.reviewer_requirements.required_actor_type
+            && reviewer.is_local_user()
+    }
+
+    pub fn evaluate_expiry(
+        &self,
+        proposal: &OutcomeAdaptationProposal,
+    ) -> Result<(), ActionProposalError> {
+        if self.expiry_rules.expired_blocks_approval
+            && proposal.review_status == OutcomeAdaptationReviewStatus::Expired
+        {
+            return Err(ActionProposalError::GovernancePolicyExpired);
+        }
+        Ok(())
+    }
+
+    /// Enforce reviewer + approval threshold before publish / ledger advancement.
+    pub fn enforce_approval_requirements(
+        &self,
+        proposal: &OutcomeAdaptationProposal,
+        decisions: &[GovernanceReviewDecision],
+    ) -> Result<(), ActionProposalError> {
+        self.evaluate_expiry(proposal)?;
+        if self.reviewer_requirements.require_rationale
+            && decisions.iter().any(|d| d.rationale.trim().is_empty())
+        {
+            return Err(ActionProposalError::GovernanceReviewRationaleRequired);
+        }
+        for decision in decisions {
+            if !self.reviewer_satisfies(&decision.reviewer) {
+                return Err(ActionProposalError::AdaptationReviewerRequired);
+            }
+            if !self.reviewer_requirements.allow_self_approval
+                && (decision.reviewer.actor_id == proposal.proposed_by_actor_id
+                    || decision.reviewer.actor_type == OutcomeAdaptationProposal::PROPOSER_ACTOR_TYPE)
+            {
+                return Err(ActionProposalError::AdaptationSelfApprovalForbidden);
+            }
+            if decision.may_bypass_provenance() {
+                return Err(ActionProposalError::ReviewerCannotBypassProvenance);
+            }
+        }
+        let approving: Vec<_> = decisions
+            .iter()
+            .filter(|d| d.decision == GovernanceReviewDecisionKind::Approve)
+            .collect();
+        let unique_reviewers: std::collections::BTreeSet<_> =
+            approving.iter().map(|d| d.reviewer.actor_id.as_str()).collect();
+        if unique_reviewers.len() < self.reviewer_requirements.min_reviewers as usize
+            || approving.len() < self.approval_threshold as usize
+        {
+            return Err(ActionProposalError::GovernancePolicyRequirementsNotMet);
+        }
+        Ok(())
+    }
+
+    pub fn may_execute(&self) -> bool {
+        false
+    }
+
+    pub fn may_grant_execution_authority(&self) -> bool {
+        false
+    }
+
+    pub fn may_bypass_permission_gateway(&self) -> bool {
+        false
+    }
+
+    pub fn attempt_execute() -> Result<(), ActionProposalError> {
+        Err(ActionProposalError::CannotExecute)
+    }
+
+    pub fn attempt_grant_execution_authority() -> Result<(), ActionProposalError> {
+        Err(ActionProposalError::GovernanceCannotGrantAuthority)
+    }
+}
+
+/// Human review decision under a GovernancePolicy (Sprint 144).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum GovernanceReviewDecisionKind {
+    Approve,
+    Reject,
+    RequestChanges,
+}
+
+impl GovernanceReviewDecisionKind {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Approve => "approve",
+            Self::Reject => "reject",
+            Self::RequestChanges => "request_changes",
+        }
+    }
+}
+
+/// Explicit human review decision — cannot bypass provenance or execute.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct GovernanceReviewDecision {
+    pub id: String,
+    pub policy_id: String,
+    pub reviewer: AdaptationReviewerIdentity,
+    pub decision: GovernanceReviewDecisionKind,
+    pub rationale: String,
+    pub timestamp: String,
+    pub conditions: Vec<String>,
+    pub provenance_snapshot: RecommendationProvenance,
+    pub authority_effect: String,
+}
+
+impl GovernanceReviewDecision {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+
+    pub fn new(
+        policy: &GovernancePolicy,
+        reviewer: AdaptationReviewerIdentity,
+        decision: GovernanceReviewDecisionKind,
+        rationale: impl Into<String>,
+        timestamp: impl Into<String>,
+        conditions: Vec<String>,
+        provenance: &RecommendationProvenance,
+    ) -> Result<Self, ActionProposalError> {
+        let rationale = rationale.into();
+        if policy.reviewer_requirements.require_rationale && rationale.trim().is_empty() {
+            return Err(ActionProposalError::GovernanceReviewRationaleRequired);
+        }
+        if !policy.reviewer_satisfies(&reviewer) {
+            return Err(ActionProposalError::AdaptationReviewerRequired);
+        }
+        Ok(Self {
+            id: format!(
+                "gov_review:{}:{}:{}",
+                policy.id,
+                reviewer.actor_id,
+                decision.as_str()
+            ),
+            policy_id: policy.id.clone(),
+            reviewer,
+            decision,
+            rationale,
+            timestamp: timestamp.into(),
+            conditions,
+            provenance_snapshot: provenance.clone(),
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        })
+    }
+
+    pub fn may_bypass_provenance(&self) -> bool {
+        false
+    }
+
+    pub fn may_rewrite_provenance(&self) -> bool {
+        false
+    }
+
+    pub fn may_execute(&self) -> bool {
+        false
+    }
+
+    pub fn may_bypass_permission_gateway(&self) -> bool {
+        false
+    }
+
+    pub fn retains_provenance(&self, expected: &RecommendationProvenance) -> bool {
+        &self.provenance_snapshot == expected
+    }
+
+    pub fn attempt_bypass_provenance() -> Result<(), ActionProposalError> {
+        Err(ActionProposalError::ReviewerCannotBypassProvenance)
+    }
+
+    pub fn attempt_execute() -> Result<(), ActionProposalError> {
+        Err(ActionProposalError::CannotExecute)
+    }
+}
+
 /// Timestamps for the governance chain (architecture ledger).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct GovernanceTimestamps {
@@ -944,6 +1212,10 @@ pub struct GovernanceRecord {
     pub version_reference: Option<String>,
     pub evaluation_reference: Option<String>,
     pub rollback_reference: Option<String>,
+    /// Sprint 144 — policy that governed this ledger entry.
+    pub policy_reference: Option<String>,
+    /// Sprint 144 — review decision ids applied under policy.
+    pub review_decision_references: Vec<String>,
     pub actors: GovernanceActorRefs,
     pub timestamps: GovernanceTimestamps,
     pub provenance: RecommendationProvenance,
@@ -980,6 +1252,8 @@ impl GovernanceRecord {
             version_reference: version.map(|v| v.id.clone()),
             evaluation_reference: evaluation.map(|e| e.id.clone()),
             rollback_reference: rollback_version.map(|v| v.id.clone()),
+            policy_reference: None,
+            review_decision_references: Vec::new(),
             actors: GovernanceActorRefs {
                 proposer_actor_id: proposal.proposed_by_actor_id.clone(),
                 reviewer_actor_id: proposal.reviewer.as_ref().map(|r| r.actor_id.clone()),
@@ -998,13 +1272,48 @@ impl GovernanceRecord {
                     .map(|e| e.at.clone()),
                 approved_at: approved_at.clone(),
                 changed_at: surface.and_then(|s| s.approved_at.clone()),
-                evaluated_at: evaluation.map(|_| approved_at.clone().unwrap_or_else(|| "evaluated".into())),
+                evaluated_at: evaluation.map(|_| {
+                    approved_at
+                        .clone()
+                        .unwrap_or_else(|| "evaluated".into())
+                }),
                 publish_requested_at: None,
                 published_at: None,
             },
             provenance: proposal.provenance.clone(),
             authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
         }
+    }
+
+    /// Attach policy + review decisions: Policy → Review Decision → Ledger → PublishRequest.
+    pub fn with_policy_and_decisions(
+        mut self,
+        policy: &GovernancePolicy,
+        proposal: &OutcomeAdaptationProposal,
+        decisions: &[GovernanceReviewDecision],
+    ) -> Result<Self, ActionProposalError> {
+        policy.enforce_approval_requirements(proposal, decisions)?;
+        for decision in decisions {
+            if !decision.retains_provenance(&self.provenance) {
+                return Err(ActionProposalError::ReviewerCannotBypassProvenance);
+            }
+        }
+        self.policy_reference = Some(policy.id.clone());
+        self.review_decision_references = decisions.iter().map(|d| d.id.clone()).collect();
+        if let Some(last) = decisions.last() {
+            self.actors.reviewer_actor_id = Some(last.reviewer.actor_id.clone());
+            self.timestamps.reviewed_at = Some(last.timestamp.clone());
+            if decisions
+                .iter()
+                .any(|d| d.decision == GovernanceReviewDecisionKind::Approve)
+            {
+                self.timestamps.approved_at = Some(last.timestamp.clone());
+                if self.approval_reference.is_none() {
+                    self.approval_reference = Some(format!("approval:policy:{}", policy.id));
+                }
+            }
+        }
+        Ok(self)
     }
 
     pub fn with_publish_request(mut self, request: &PublishRequest, at: impl Into<String>) -> Self {
@@ -1120,6 +1429,23 @@ impl PublishRequest {
         })
     }
 
+    /// Policy → Review Decision → GovernanceRecord → PublishRequest.
+    pub fn from_evaluated_version_under_policy(
+        version: &BehaviourVersion,
+        evaluation: &ChangeEvaluation,
+        governance: &GovernanceRecord,
+        policy: &GovernancePolicy,
+        proposal: &OutcomeAdaptationProposal,
+        decisions: &[GovernanceReviewDecision],
+        requested_by: AdaptationReviewerIdentity,
+    ) -> Result<Self, ActionProposalError> {
+        if governance.policy_reference.as_deref() != Some(policy.id.as_str()) {
+            return Err(ActionProposalError::GovernancePolicyRequirementsNotMet);
+        }
+        policy.enforce_approval_requirements(proposal, decisions)?;
+        Self::from_evaluated_version(version, evaluation, governance, requested_by)
+    }
+
     pub fn submit_for_governance_review(&mut self) -> Result<(), ActionProposalError> {
         self.transition(PublishRequestStatus::AwaitingGovernanceReview)
     }
@@ -1134,6 +1460,17 @@ impl PublishRequest {
         self.transition(PublishRequestStatus::ApprovedForPublish)?;
         assert_eq!(self.authority_effect, Self::AUTHORITY_EFFECT_NONE);
         Ok(())
+    }
+
+    pub fn approve_for_publish_under_policy(
+        &mut self,
+        policy: &GovernancePolicy,
+        proposal: &OutcomeAdaptationProposal,
+        decisions: &[GovernanceReviewDecision],
+        reviewer: &AdaptationReviewerIdentity,
+    ) -> Result<(), ActionProposalError> {
+        policy.enforce_approval_requirements(proposal, decisions)?;
+        self.approve_for_publish(reviewer)
     }
 
     pub fn reject_publish(
@@ -2076,5 +2413,104 @@ mod tests {
         assert!(!publish.may_grant_execution_authority());
         assert_eq!(publish.provenance, provenance);
         assert_eq!(rollback.provenance, provenance);
+    }
+
+    #[test]
+    fn governance_policy_enforces_review_without_execution() {
+        let item = sample_item();
+        let mut record = RecommendationGovernanceRecord::from_recommendation_item(&item, "t0");
+        record
+            .transition(RecommendationLifecycleState::Available, "t1", None)
+            .unwrap();
+        record
+            .transition(RecommendationLifecycleState::Presented, "t2", None)
+            .unwrap();
+        record.accept("t3", None).unwrap();
+        let outcome = record.record_outcome("t4").unwrap();
+        let provenance = outcome.provenance.clone();
+        let mut proposal = outcome.to_adaptation_proposal(
+            "presentation",
+            "Prefer structured DisplayReason",
+            "Clearer rationale",
+        );
+        proposal.require_review().unwrap();
+        proposal
+            .approve(
+                AdaptationReviewerIdentity::local_user("local_user"),
+                "t-ok",
+            )
+            .unwrap();
+        let policy = GovernancePolicy::for_outcome_adaptation();
+        assert!(!policy.may_execute());
+        assert!(GovernancePolicy::attempt_execute().is_err());
+        assert!(GovernanceReviewDecision::attempt_bypass_provenance().is_err());
+        // Empty rationale rejected.
+        assert_eq!(
+            GovernanceReviewDecision::new(
+                &policy,
+                AdaptationReviewerIdentity::local_user("local_user"),
+                GovernanceReviewDecisionKind::Approve,
+                "   ",
+                "t-dec",
+                vec![],
+                &provenance,
+            ),
+            Err(ActionProposalError::GovernanceReviewRationaleRequired)
+        );
+        let decision = GovernanceReviewDecision::new(
+            &policy,
+            AdaptationReviewerIdentity::local_user("local_user"),
+            GovernanceReviewDecisionKind::Approve,
+            "Meets presentation standards",
+            "t-dec",
+            vec!["no scoring mutation".into()],
+            &provenance,
+        )
+        .unwrap();
+        assert!(decision.retains_provenance(&provenance));
+        assert!(!decision.may_bypass_provenance());
+        let surface = ControlledChangeSurface::from_approved_proposal(&proposal).unwrap();
+        let version = surface.to_behaviour_version_draft().unwrap();
+        let evaluation = ChangeEvaluation::from_behaviour_version(
+            &version,
+            vec!["clearer".into()],
+            vec!["understood".into()],
+            None,
+        );
+        // Without decisions, policy requirements fail.
+        assert_eq!(
+            policy.enforce_approval_requirements(&proposal, &[]),
+            Err(ActionProposalError::GovernancePolicyRequirementsNotMet)
+        );
+        let governance = GovernanceRecord::from_adaptation_chain(
+            &proposal,
+            Some(&surface),
+            Some(&version),
+            Some(&evaluation),
+            None,
+        )
+        .with_policy_and_decisions(&policy, &proposal, &[decision.clone()])
+        .unwrap();
+        assert_eq!(governance.policy_reference.as_deref(), Some(policy.id.as_str()));
+        let mut publish = PublishRequest::from_evaluated_version_under_policy(
+            &version,
+            &evaluation,
+            &governance,
+            &policy,
+            &proposal,
+            &[decision],
+            AdaptationReviewerIdentity::local_user("local_user"),
+        )
+        .unwrap();
+        publish.submit_for_governance_review().unwrap();
+        publish
+            .approve_for_publish_under_policy(
+                &policy,
+                &proposal,
+                &[],
+                &AdaptationReviewerIdentity::local_user("local_user"),
+            )
+            .expect_err("empty decisions must fail threshold");
+        assert!(!policy.may_bypass_permission_gateway());
     }
 }

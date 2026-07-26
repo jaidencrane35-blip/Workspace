@@ -75,9 +75,11 @@ pub use action_catalog::{
 };
 pub use action_proposal::{
     ActionProposal, ActionProposalError, ActionProposalRisk, AdaptationReviewAuditEvent,
-    AdaptationReviewerIdentity, BehaviourVersion, BehaviourVersionLifecycle, ChangeEvaluation,
-    ChangeRollbackMetadata, ControlledChangeAuditMetadata, ControlledChangeSurface,
-    GovernanceActorRefs, GovernanceRecord, GovernanceTimestamps, OutcomeAdaptationProposal,
+    AdaptationReviewerIdentity, AdaptationRiskClass, BehaviourVersion, BehaviourVersionLifecycle,
+    ChangeEvaluation, ChangeRollbackMetadata, ControlledChangeAuditMetadata,
+    ControlledChangeSurface, GovernanceActorRefs, GovernanceExpiryRules, GovernancePolicy,
+    GovernanceRecord, GovernanceReviewDecision, GovernanceReviewDecisionKind,
+    GovernanceReviewerRequirements, GovernanceTimestamps, OutcomeAdaptationProposal,
     OutcomeAdaptationReviewStatus, PublishRequest, PublishRequestStatus, PublishedVersionRecord,
     RecommendationFamily, RecommendationGovernanceRecord, RecommendationIdentity,
     RecommendationLifecycle, RecommendationLifecycleState, RecommendationOutcome,

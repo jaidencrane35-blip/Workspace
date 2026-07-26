@@ -50,6 +50,10 @@ Guards:
 - `authority_effect: none`
 
 Builder: `GovernanceRecord::from_adaptation_chain(...)`.
+Policy attachment: `with_policy_and_decisions` — see
+[WORKSPACE-GOVERNANCE-POLICY.md](./WORKSPACE-GOVERNANCE-POLICY.md) (Sprint 144).
+
+Ledger fields (Sprint 144): `policy_reference`, `review_decision_references`.
 
 ---
 
@@ -125,6 +129,7 @@ rewrite history. Publication does not activate Attention/Decision scoring.
 
 ## Related docs
 
+- [WORKSPACE-GOVERNANCE-POLICY.md](./WORKSPACE-GOVERNANCE-POLICY.md)
 - [WORKSPACE-CONTROLLED-CHANGE.md](./WORKSPACE-CONTROLLED-CHANGE.md)
 - [WORKSPACE-ADAPTATION-REVIEW.md](./WORKSPACE-ADAPTATION-REVIEW.md)
 - [WORKSPACE-ADAPTATION-GOVERNANCE.md](./WORKSPACE-ADAPTATION-GOVERNANCE.md)

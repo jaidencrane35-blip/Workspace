@@ -149,6 +149,8 @@ mod workspace_adaptation_review_contract_tests;
 mod workspace_controlled_change_contract_tests;
 #[cfg(test)]
 mod workspace_governance_ledger_contract_tests;
+#[cfg(test)]
+mod workspace_governance_policy_contract_tests;
 mod workspace_work_context_tests;
 mod workspace_navigation_tests;
 mod workspace_milestone_tests;
