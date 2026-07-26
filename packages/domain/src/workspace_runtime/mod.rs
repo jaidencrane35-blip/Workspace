@@ -11,6 +11,8 @@
 //! consistency verification, and operator overview — all observational.
 //! Diagnostic provenance/continuity records link snapshots over time without
 //! mutating sources or overlapping the work Continuity Engine.
+//! Diagnostic evolution adds structured comparison, lifecycle phases, and
+//! validation/interpretation — still observational only.
 
 mod diagnostics;
 pub use diagnostics::*;
@@ -187,6 +189,9 @@ pub enum WorkspaceRuntimeError {
 
     #[error("runtime diagnostic history cannot be rewritten or healed")]
     DiagnosticHistoryImmutable,
+
+    #[error("runtime diagnostic evolution cannot mutate, repair, or execute")]
+    DiagnosticEvolutionReadOnly,
 }
 
 // ---------------------------------------------------------------------------

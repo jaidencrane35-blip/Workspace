@@ -1,6 +1,6 @@
 # Workspace Runtime Context & Integration
 
-Sprints 170–181 + post-audit diagnostic provenance/continuity — read-only runtime integration.
+Sprints 170–181 + diagnostic provenance/continuity + diagnostic evolution — read-only runtime integration.
 
 **Governance is visible, never authoritative. No execution. No automation. No runtime publication.
 Published remains BLOCKED. Scoring and WorkspaceState ownership unchanged.**
@@ -24,6 +24,8 @@ Intent → Command Pipeline → Permission Gateway → Allow → Execution
 | Readiness Model | Preparedness for current work — distinct |
 | Work Continuity Engine | Where work left off / resume — **not** diagnostic continuity |
 | `RuntimeDiagnosticContinuityRecord` | Observational link between diagnostic snapshots |
+| `RuntimeDiagnosticComparison` | Structured snapshot-to-snapshot deltas (diagnostic only) |
+| `RuntimeDiagnosticLifecycleRecord` | Captured → Provenanced → ContinuityLinked → Superseded |
 
 ---
 
@@ -62,6 +64,10 @@ WorkspaceState
 | Audit | `RuntimeDiagnosticOwnershipBoundary` | Diagnostics observe; kernel lifecycle health distinct; operator projects |
 | Audit | `RuntimeDiagnosticContinuityRecord` | Prior→current snapshot deltas; no rewrite/heal |
 | Audit | `OperatorRuntimeExplanation` | Explains overview via provenance/continuity; not an execution surface |
+| Audit | `RuntimeDiagnosticComparison` | Structured compare; severity labels; no actions |
+| Audit | `RuntimeDiagnosticLifecycleRecord` | Snapshot lineage phases; immutable |
+| Audit | `RuntimeArchitectureOwnershipRegistry` | Explicit artifact→owner table |
+| Audit | `RuntimeDiagnosticEvolutionReport` | Validates provenance/continuity/lifecycle; operator-safe interpretation |
 
 Authority: `authority_effect: none` (`GOVERNANCE_AUTHORITY_EFFECT_NONE`).
 
@@ -76,6 +82,19 @@ Module: `packages/domain/src/workspace_runtime/` (`mod.rs` + `diagnostics.rs`).
 | Kernel `WorkspaceHealth` | Kernel lifecycle (distinct) |
 | `WorkspaceRuntimeHealth` | Observational observer only |
 | Operator overview / explanation | Operator projection — never executes |
+
+Canonical table: `RuntimeArchitectureOwnershipRegistry::canonical()`.
+
+### Diagnostic lifecycle
+
+```
+Captured → Provenanced → ContinuityLinked → Superseded
+```
+
+`RuntimeDiagnosticEvolutionReport` validates that continuity deltas match
+`RuntimeDiagnosticComparison`, provenance cites the current snapshot, and
+lifecycle ordering is respected. Interpretation is diagnostic only — no repair,
+heal, approve, or execute pathways.
 
 No hidden repair, auto-heal, or silent mutation paths.
 

@@ -520,6 +520,16 @@ pub enum RuntimeConsistencySeverity {
     Error,
 }
 
+impl RuntimeConsistencySeverity {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Info => "info",
+            Self::Warning => "warning",
+            Self::Error => "error",
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RuntimeConsistencyDiagnostic {
     pub kind: RuntimeConsistencyCheckKind,
@@ -1084,6 +1094,570 @@ impl RuntimeDiagnosticProvenance {
     }
 }
 
+// ---------------------------------------------------------------------------
+// Runtime Diagnostic Evolution (post–continuity audit)
+// ---------------------------------------------------------------------------
+//
+// Provenance + continuity link snapshots, but lacked structured comparison,
+// lifecycle phases, and validation that continuity matches observational diffs.
+// All evolution contracts remain diagnostic-only.
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RuntimeDiagnosticDeltaKind {
+    HealthOverall,
+    DependencyTopology,
+    CapabilityInventory,
+    GatewayAuthoritySignal,
+    CognitionProjectionSet,
+    GovernanceSummary,
+    None,
+}
+
+impl RuntimeDiagnosticDeltaKind {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::HealthOverall => "health_overall",
+            Self::DependencyTopology => "dependency_topology",
+            Self::CapabilityInventory => "capability_inventory",
+            Self::GatewayAuthoritySignal => "gateway_authority_signal",
+            Self::CognitionProjectionSet => "cognition_projection_set",
+            Self::GovernanceSummary => "governance_summary",
+            Self::None => "none",
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RuntimeDiagnosticDelta {
+    pub kind: RuntimeDiagnosticDeltaKind,
+    pub detail: String,
+    pub severity: RuntimeConsistencySeverity,
+}
+
+/// Structured observational comparison of two diagnostic snapshots.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RuntimeDiagnosticComparison {
+    pub id: String,
+    pub before_snapshot_id: String,
+    pub after_snapshot_id: String,
+    pub deltas: Vec<RuntimeDiagnosticDelta>,
+    pub authority_effect: String,
+}
+
+impl RuntimeDiagnosticComparison {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = AUTH_NONE;
+
+    pub fn compare(
+        before: &RuntimeDiagnosticSnapshot,
+        after: &RuntimeDiagnosticSnapshot,
+    ) -> Self {
+        let mut deltas = Vec::new();
+        if before.health_overall != after.health_overall {
+            deltas.push(RuntimeDiagnosticDelta {
+                kind: RuntimeDiagnosticDeltaKind::HealthOverall,
+                detail: format!(
+                    "health_overall:{}→{}",
+                    before.health_overall.as_str(),
+                    after.health_overall.as_str()
+                ),
+                severity: RuntimeConsistencySeverity::Warning,
+            });
+        }
+        if before.dependency_node_count != after.dependency_node_count
+            || before.dependency_edge_count != after.dependency_edge_count
+            || before.dependency_has_cycles != after.dependency_has_cycles
+        {
+            let severity = if before.dependency_has_cycles != after.dependency_has_cycles {
+                RuntimeConsistencySeverity::Error
+            } else {
+                RuntimeConsistencySeverity::Info
+            };
+            deltas.push(RuntimeDiagnosticDelta {
+                kind: RuntimeDiagnosticDeltaKind::DependencyTopology,
+                detail: format!(
+                    "dependency_counts:{}n/{}e→{}n/{}e cycles:{}→{}",
+                    before.dependency_node_count,
+                    before.dependency_edge_count,
+                    after.dependency_node_count,
+                    after.dependency_edge_count,
+                    before.dependency_has_cycles,
+                    after.dependency_has_cycles
+                ),
+                severity,
+            });
+        }
+        if before.capability_entry_count != after.capability_entry_count {
+            deltas.push(RuntimeDiagnosticDelta {
+                kind: RuntimeDiagnosticDeltaKind::CapabilityInventory,
+                detail: format!(
+                    "capability_entry_count:{}→{}",
+                    before.capability_entry_count, after.capability_entry_count
+                ),
+                severity: RuntimeConsistencySeverity::Info,
+            });
+        }
+        if before.gateway_sole_execution != after.gateway_sole_execution {
+            deltas.push(RuntimeDiagnosticDelta {
+                kind: RuntimeDiagnosticDeltaKind::GatewayAuthoritySignal,
+                detail: format!(
+                    "gateway_sole_execution:{}→{}",
+                    before.gateway_sole_execution, after.gateway_sole_execution
+                ),
+                severity: RuntimeConsistencySeverity::Error,
+            });
+        }
+        if before.cognition_projection_kinds != after.cognition_projection_kinds {
+            deltas.push(RuntimeDiagnosticDelta {
+                kind: RuntimeDiagnosticDeltaKind::CognitionProjectionSet,
+                detail: "cognition_projection_kinds_changed".into(),
+                severity: RuntimeConsistencySeverity::Info,
+            });
+        }
+        if before.governance != after.governance {
+            deltas.push(RuntimeDiagnosticDelta {
+                kind: RuntimeDiagnosticDeltaKind::GovernanceSummary,
+                detail: "governance_summary_changed".into(),
+                severity: RuntimeConsistencySeverity::Warning,
+            });
+        }
+        if deltas.is_empty() {
+            deltas.push(RuntimeDiagnosticDelta {
+                kind: RuntimeDiagnosticDeltaKind::None,
+                detail: "no_observational_delta".into(),
+                severity: RuntimeConsistencySeverity::Info,
+            });
+        }
+        Self {
+            id: format!(
+                "runtime_diagnostic_comparison:{}:{}",
+                before.id, after.id
+            ),
+            before_snapshot_id: before.id.clone(),
+            after_snapshot_id: after.id.clone(),
+            deltas,
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        }
+    }
+
+    pub fn operator_safe_details(&self) -> Vec<String> {
+        self.deltas.iter().map(|d| d.detail.clone()).collect()
+    }
+
+    pub fn has_authority_regression(&self) -> bool {
+        self.deltas
+            .iter()
+            .any(|d| d.kind == RuntimeDiagnosticDeltaKind::GatewayAuthoritySignal)
+    }
+
+    pub fn may_execute(&self) -> bool {
+        false
+    }
+
+    pub fn attempt_execute() -> Result<(), WorkspaceRuntimeError> {
+        Err(WorkspaceRuntimeError::CannotExecute)
+    }
+}
+
+/// Lifecycle phases for diagnostic snapshot lineage — observational only.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RuntimeDiagnosticLifecyclePhase {
+    Captured,
+    Provenanced,
+    ContinuityLinked,
+    Superseded,
+}
+
+impl RuntimeDiagnosticLifecyclePhase {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Captured => "captured",
+            Self::Provenanced => "provenanced",
+            Self::ContinuityLinked => "continuity_linked",
+            Self::Superseded => "superseded",
+        }
+    }
+
+    pub fn may_transition_to(self, next: Self) -> bool {
+        matches!(
+            (self, next),
+            (Self::Captured, Self::Provenanced)
+                | (Self::Provenanced, Self::ContinuityLinked)
+                | (Self::ContinuityLinked, Self::Superseded)
+                | (Self::Provenanced, Self::Superseded)
+        )
+    }
+}
+
+/// Immutable lifecycle record for one diagnostic snapshot in a lineage.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RuntimeDiagnosticLifecycleRecord {
+    pub id: String,
+    pub workspace_id: String,
+    pub snapshot_id: String,
+    pub provenance_id: Option<String>,
+    pub continuity_id: Option<String>,
+    pub phase: RuntimeDiagnosticLifecyclePhase,
+    pub recorded_at: String,
+    pub previous_snapshot_id: Option<String>,
+    pub authority_effect: String,
+}
+
+impl RuntimeDiagnosticLifecycleRecord {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = AUTH_NONE;
+
+    pub fn captured(snapshot: &RuntimeDiagnosticSnapshot, at: impl Into<String>) -> Self {
+        Self {
+            id: format!("runtime_diagnostic_lifecycle:{}:captured", snapshot.id),
+            workspace_id: snapshot.workspace_id.clone(),
+            snapshot_id: snapshot.id.clone(),
+            provenance_id: None,
+            continuity_id: None,
+            phase: RuntimeDiagnosticLifecyclePhase::Captured,
+            recorded_at: at.into(),
+            previous_snapshot_id: None,
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        }
+    }
+
+    pub fn provenanced(
+        snapshot: &RuntimeDiagnosticSnapshot,
+        provenance: &RuntimeDiagnosticProvenance,
+        at: impl Into<String>,
+    ) -> Self {
+        Self {
+            id: format!("runtime_diagnostic_lifecycle:{}:provenanced", snapshot.id),
+            workspace_id: snapshot.workspace_id.clone(),
+            snapshot_id: snapshot.id.clone(),
+            provenance_id: Some(provenance.id.clone()),
+            continuity_id: None,
+            phase: RuntimeDiagnosticLifecyclePhase::Provenanced,
+            recorded_at: at.into(),
+            previous_snapshot_id: None,
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        }
+    }
+
+    pub fn continuity_linked(
+        snapshot: &RuntimeDiagnosticSnapshot,
+        provenance: &RuntimeDiagnosticProvenance,
+        continuity: &RuntimeDiagnosticContinuityRecord,
+        at: impl Into<String>,
+    ) -> Self {
+        Self {
+            id: format!(
+                "runtime_diagnostic_lifecycle:{}:continuity_linked",
+                snapshot.id
+            ),
+            workspace_id: snapshot.workspace_id.clone(),
+            snapshot_id: snapshot.id.clone(),
+            provenance_id: Some(provenance.id.clone()),
+            continuity_id: Some(continuity.id.clone()),
+            phase: RuntimeDiagnosticLifecyclePhase::ContinuityLinked,
+            recorded_at: at.into(),
+            previous_snapshot_id: continuity.previous_snapshot_id.clone(),
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        }
+    }
+
+    pub fn superseded(
+        prior: &RuntimeDiagnosticSnapshot,
+        successor_id: impl Into<String>,
+        at: impl Into<String>,
+    ) -> Self {
+        let successor_id = successor_id.into();
+        Self {
+            id: format!(
+                "runtime_diagnostic_lifecycle:{}:superseded:{}",
+                prior.id, successor_id
+            ),
+            workspace_id: prior.workspace_id.clone(),
+            snapshot_id: prior.id.clone(),
+            provenance_id: None,
+            continuity_id: None,
+            phase: RuntimeDiagnosticLifecyclePhase::Superseded,
+            recorded_at: at.into(),
+            previous_snapshot_id: Some(successor_id),
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        }
+    }
+
+    pub fn may_mutate(&self) -> bool {
+        false
+    }
+
+    pub fn may_execute(&self) -> bool {
+        false
+    }
+
+    pub fn attempt_mutate(&self) -> Result<(), WorkspaceRuntimeError> {
+        Err(WorkspaceRuntimeError::DiagnosticHistoryImmutable)
+    }
+
+    pub fn attempt_execute() -> Result<(), WorkspaceRuntimeError> {
+        Err(WorkspaceRuntimeError::CannotExecute)
+    }
+}
+
+/// Canonical ownership table for runtime architecture artifacts.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RuntimeArchitectureOwnershipEntry {
+    pub artifact: String,
+    pub owner: RuntimeDiagnosticOwnershipRole,
+    pub notes: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RuntimeArchitectureOwnershipRegistry {
+    pub entries: Vec<RuntimeArchitectureOwnershipEntry>,
+    pub authority_effect: String,
+}
+
+impl RuntimeArchitectureOwnershipRegistry {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = AUTH_NONE;
+
+    pub fn canonical() -> Self {
+        let entry = |artifact: &str, owner: RuntimeDiagnosticOwnershipRole, notes: &str| {
+            RuntimeArchitectureOwnershipEntry {
+                artifact: artifact.into(),
+                owner,
+                notes: notes.into(),
+            }
+        };
+        Self {
+            entries: vec![
+                entry(
+                    "RuntimeDependencyGraph",
+                    RuntimeDiagnosticOwnershipRole::ObservationalDiagnostics,
+                    "diagnostics contract; not a cognition owner",
+                ),
+                entry(
+                    "RuntimeCapabilityMap",
+                    RuntimeDiagnosticOwnershipRole::ObservationalDiagnostics,
+                    "descriptive inventory only",
+                ),
+                entry(
+                    "WorkspaceRuntimeHealth",
+                    RuntimeDiagnosticOwnershipRole::ObservationalDiagnostics,
+                    "observes presence/readiness labels; never prescribes",
+                ),
+                entry(
+                    "WorkspaceRuntimeCoherence",
+                    RuntimeDiagnosticOwnershipRole::ObservationalDiagnostics,
+                    "structural chain review only",
+                ),
+                entry(
+                    "GovernanceRuntimeSummary",
+                    RuntimeDiagnosticOwnershipRole::ObservationalDiagnostics,
+                    "embedded non-authoritative labels",
+                ),
+                entry(
+                    "OperatorContextProjection",
+                    RuntimeDiagnosticOwnershipRole::OperatorProjection,
+                    "read-only labels; not UI and not execution",
+                ),
+                entry(
+                    "OperatorRuntimeOverview",
+                    RuntimeDiagnosticOwnershipRole::OperatorProjection,
+                    "read-only overview projection",
+                ),
+                entry(
+                    "OperatorRuntimeExplanation",
+                    RuntimeDiagnosticOwnershipRole::OperatorProjection,
+                    "exposes what changed; never actions",
+                ),
+                entry(
+                    "Attention/Decision scoring",
+                    RuntimeDiagnosticOwnershipRole::CognitionSubsystem,
+                    "diagnostics must not alter scoring",
+                ),
+                entry(
+                    "Kernel WorkspaceHealth",
+                    RuntimeDiagnosticOwnershipRole::KernelLifecycleHealth,
+                    "distinct from WorkspaceRuntimeHealth",
+                ),
+            ],
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        }
+    }
+
+    pub fn owner_of(&self, artifact: &str) -> Option<RuntimeDiagnosticOwnershipRole> {
+        self.entries
+            .iter()
+            .find(|e| e.artifact == artifact)
+            .map(|e| e.owner)
+    }
+
+    pub fn operator_artifacts_are_projections_only(&self) -> bool {
+        self.entries
+            .iter()
+            .filter(|e| e.artifact.starts_with("Operator"))
+            .all(|e| e.owner == RuntimeDiagnosticOwnershipRole::OperatorProjection)
+    }
+}
+
+/// Validates and interprets diagnostic evolution — never repairs or executes.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RuntimeDiagnosticEvolutionReport {
+    pub id: String,
+    pub workspace_id: String,
+    pub lifecycle: RuntimeDiagnosticLifecycleRecord,
+    pub comparison: Option<RuntimeDiagnosticComparison>,
+    pub provenance_consistent: bool,
+    pub continuity_consistent: bool,
+    pub lifecycle_ordering_ok: bool,
+    pub ownership_ok: bool,
+    pub operator_safe_summary: Vec<String>,
+    pub diagnostics: Vec<String>,
+    pub authority_effect: String,
+}
+
+impl RuntimeDiagnosticEvolutionReport {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = AUTH_NONE;
+
+    pub fn evaluate(
+        previous: Option<&RuntimeDiagnosticSnapshot>,
+        current: &RuntimeDiagnosticSnapshot,
+        provenance: &RuntimeDiagnosticProvenance,
+        continuity: &RuntimeDiagnosticContinuityRecord,
+        prior_phase: Option<RuntimeDiagnosticLifecyclePhase>,
+        at: impl Into<String>,
+    ) -> Self {
+        let at = at.into();
+        let mut diagnostics = Vec::new();
+        let comparison = previous.map(|prev| RuntimeDiagnosticComparison::compare(prev, current));
+
+        let provenance_consistent = provenance.cites_snapshot(&current.id)
+            && provenance.ownership.boundaries_respected()
+            && continuity.provenance_id == provenance.id;
+        if !provenance_consistent {
+            diagnostics.push("provenance/continuity linkage inconsistent".into());
+        }
+
+        let continuity_consistent = continuity.current_snapshot_id == current.id
+            && continuity.previous_snapshot_id.as_deref() == previous.map(|p| p.id.as_str())
+            && match &comparison {
+                None => continuity.is_initial(),
+                Some(cmp) => {
+                    let expected = cmp.operator_safe_details();
+                    continuity.what_changed == expected
+                }
+            };
+        if !continuity_consistent {
+            diagnostics.push("continuity deltas do not match structured comparison".into());
+        }
+
+        let lifecycle = RuntimeDiagnosticLifecycleRecord::continuity_linked(
+            current,
+            provenance,
+            continuity,
+            &at,
+        );
+        let lifecycle_ordering_ok = match prior_phase {
+            None => true,
+            Some(phase) => {
+                phase.may_transition_to(RuntimeDiagnosticLifecyclePhase::ContinuityLinked)
+                    || phase == RuntimeDiagnosticLifecyclePhase::ContinuityLinked
+            }
+        };
+        if !lifecycle_ordering_ok {
+            diagnostics.push(format!(
+                "invalid lifecycle ordering from {}",
+                prior_phase.map(|p| p.as_str()).unwrap_or("none")
+            ));
+        }
+
+        let registry = RuntimeArchitectureOwnershipRegistry::canonical();
+        let ownership_ok = registry.operator_artifacts_are_projections_only()
+            && provenance.ownership.boundaries_respected();
+        if !ownership_ok {
+            diagnostics.push("ownership registry/boundary violation".into());
+        }
+
+        let mut operator_safe_summary = vec![
+            format!("lifecycle={}", lifecycle.phase.as_str()),
+            "interpretation=diagnostic_only".into(),
+            "actions=none".into(),
+            "execution_authority=permission_gateway_only".into(),
+        ];
+        if let Some(cmp) = &comparison {
+            for d in &cmp.deltas {
+                operator_safe_summary.push(format!(
+                    "delta:{}:{}:{}",
+                    d.kind.as_str(),
+                    d.severity.as_str(),
+                    d.detail
+                ));
+            }
+            if cmp.has_authority_regression() {
+                operator_safe_summary
+                    .push("signal:gateway_authority_observation_changed".into());
+            }
+        } else {
+            operator_safe_summary.push("delta:initial_diagnostic_snapshot".into());
+        }
+
+        // Strip accidental action-like phrasing from operator surface.
+        operator_safe_summary.retain(|s| {
+            let lower = s.to_lowercase();
+            !lower.contains("repair")
+                && !lower.contains("auto_heal")
+                && !lower.contains("approve:")
+                && !lower.starts_with("action:")
+                && !lower.contains("may_execute=true")
+        });
+
+        if diagnostics.is_empty() {
+            diagnostics.push("diagnostic evolution validation passed".into());
+        }
+
+        Self {
+            id: format!("runtime_diagnostic_evolution:{}:{}", current.workspace_id, at),
+            workspace_id: current.workspace_id.clone(),
+            lifecycle,
+            comparison,
+            provenance_consistent,
+            continuity_consistent,
+            lifecycle_ordering_ok,
+            ownership_ok,
+            operator_safe_summary,
+            diagnostics,
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        }
+    }
+
+    pub fn passed(&self) -> bool {
+        self.provenance_consistent
+            && self.continuity_consistent
+            && self.lifecycle_ordering_ok
+            && self.ownership_ok
+            && !self.operator_safe_summary.iter().any(|s| {
+                let l = s.to_lowercase();
+                l.contains("repair")
+                    || l.contains("auto_heal")
+                    || l.starts_with("action:")
+                    || l.contains("may_execute=true")
+            })
+    }
+
+    pub fn may_repair(&self) -> bool {
+        false
+    }
+
+    pub fn may_execute(&self) -> bool {
+        false
+    }
+
+    pub fn attempt_repair(&self) -> Result<(), WorkspaceRuntimeError> {
+        Err(WorkspaceRuntimeError::DiagnosticEvolutionReadOnly)
+    }
+
+    pub fn attempt_execute() -> Result<(), WorkspaceRuntimeError> {
+        Err(WorkspaceRuntimeError::CannotExecute)
+    }
+}
+
 /// Observational continuity between diagnostic snapshots — not work continuity.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RuntimeDiagnosticContinuityRecord {
@@ -1108,57 +1682,11 @@ impl RuntimeDiagnosticContinuityRecord {
         recorded_at: impl Into<String>,
     ) -> Self {
         let recorded_at = recorded_at.into();
-        let mut what_changed = Vec::new();
-        match previous {
-            None => what_changed.push("initial_diagnostic_snapshot".into()),
-            Some(prev) => {
-                if prev.health_overall != current.health_overall {
-                    what_changed.push(format!(
-                        "health_overall:{}→{}",
-                        prev.health_overall.as_str(),
-                        current.health_overall.as_str()
-                    ));
-                }
-                if prev.dependency_node_count != current.dependency_node_count
-                    || prev.dependency_edge_count != current.dependency_edge_count
-                {
-                    what_changed.push(format!(
-                        "dependency_counts:{}n/{}e→{}n/{}e",
-                        prev.dependency_node_count,
-                        prev.dependency_edge_count,
-                        current.dependency_node_count,
-                        current.dependency_edge_count
-                    ));
-                }
-                if prev.dependency_has_cycles != current.dependency_has_cycles {
-                    what_changed.push(format!(
-                        "dependency_has_cycles:{}→{}",
-                        prev.dependency_has_cycles, current.dependency_has_cycles
-                    ));
-                }
-                if prev.capability_entry_count != current.capability_entry_count {
-                    what_changed.push(format!(
-                        "capability_entry_count:{}→{}",
-                        prev.capability_entry_count, current.capability_entry_count
-                    ));
-                }
-                if prev.gateway_sole_execution != current.gateway_sole_execution {
-                    what_changed.push(format!(
-                        "gateway_sole_execution:{}→{}",
-                        prev.gateway_sole_execution, current.gateway_sole_execution
-                    ));
-                }
-                if prev.cognition_projection_kinds != current.cognition_projection_kinds {
-                    what_changed.push("cognition_projection_kinds_changed".into());
-                }
-                if prev.governance != current.governance {
-                    what_changed.push("governance_summary_changed".into());
-                }
-                if what_changed.is_empty() {
-                    what_changed.push("no_observational_delta".into());
-                }
-            }
-        }
+        let what_changed = match previous {
+            None => vec!["initial_diagnostic_snapshot".into()],
+            Some(prev) => RuntimeDiagnosticComparison::compare(prev, current)
+                .operator_safe_details(),
+        };
         Self {
             id: format!(
                 "runtime_diagnostic_continuity:{}:{}",
@@ -1241,12 +1769,40 @@ impl OperatorRuntimeExplanation {
         }
     }
 
+    /// Explain using evolution report safe summaries — still not an execution surface.
+    pub fn explain_with_evolution(
+        overview: &OperatorRuntimeOverview,
+        provenance: &RuntimeDiagnosticProvenance,
+        continuity: &RuntimeDiagnosticContinuityRecord,
+        evolution: &RuntimeDiagnosticEvolutionReport,
+    ) -> Self {
+        let mut base = Self::explain(overview, provenance, continuity);
+        for line in &evolution.operator_safe_summary {
+            if !base.why.iter().any(|w| w == line) {
+                base.why.push(line.clone());
+            }
+        }
+        base.why.push(format!("evolution_passed={}", evolution.passed()));
+        base
+    }
+
     pub fn may_execute(&self) -> bool {
         false
     }
 
     pub fn is_execution_surface(&self) -> bool {
         false
+    }
+
+    pub fn exposes_actions(&self) -> bool {
+        self.why.iter().any(|w| {
+            let l = w.to_lowercase();
+            l.contains("repair")
+                || l.contains("auto_heal")
+                || l.contains("approve:")
+                || l.starts_with("action:")
+                || l.contains("may_execute=true")
+        })
     }
 
     pub fn attempt_execute() -> Result<(), WorkspaceRuntimeError> {
@@ -1426,5 +1982,116 @@ mod tests {
         assert!(!explanation.is_execution_surface());
         assert!(explanation.publication_blocked);
         assert!(OperatorRuntimeExplanation::attempt_execute().is_err());
+    }
+
+    #[test]
+    fn diagnostic_evolution_compares_validates_and_stays_read_only() {
+        let (ctx, health, graph, capabilities, snapshot, verification, overview, _review) =
+            sample_bundle();
+        let integration = WorkspaceRuntimeIntegrationContract::audit_default("ws-diag");
+        let operator = OperatorContextProjection::from_runtime_context(&ctx, &health);
+        let coherence =
+            WorkspaceRuntimeCoherence::review(&ctx, &integration, &health, &operator);
+        let provenance = RuntimeDiagnosticProvenance::from_capture(
+            &snapshot,
+            &ctx,
+            &health,
+            &graph,
+            &capabilities,
+            &verification,
+            &coherence,
+            Some(&overview),
+        );
+        let continuity =
+            RuntimeDiagnosticContinuityRecord::link(None, &snapshot, &provenance, "e0");
+        let evolution = RuntimeDiagnosticEvolutionReport::evaluate(
+            None,
+            &snapshot,
+            &provenance,
+            &continuity,
+            Some(RuntimeDiagnosticLifecyclePhase::Provenanced),
+            "e-eval-0",
+        );
+        assert!(evolution.passed());
+        assert!(evolution.lifecycle_ordering_ok);
+        assert!(evolution.may_repair() == false);
+        assert!(evolution.attempt_repair().is_err());
+
+        let snapshot2 = RuntimeDiagnosticSnapshot::capture(
+            &ctx,
+            &health,
+            &CognitionContextProjection::project_all(&ctx),
+            &graph,
+            &capabilities,
+            "t-snap-evo-2",
+        );
+        let comparison = RuntimeDiagnosticComparison::compare(&snapshot, &snapshot2);
+        assert!(comparison
+            .deltas
+            .iter()
+            .any(|d| d.kind == RuntimeDiagnosticDeltaKind::None));
+        let continuity2 = RuntimeDiagnosticContinuityRecord::link(
+            Some(&snapshot),
+            &snapshot2,
+            &provenance,
+            "e1",
+        );
+        // Provenance cites snap1; evolution against snap2 should fail provenance consistency.
+        let evolution_mismatch = RuntimeDiagnosticEvolutionReport::evaluate(
+            Some(&snapshot),
+            &snapshot2,
+            &provenance,
+            &continuity2,
+            Some(RuntimeDiagnosticLifecyclePhase::Provenanced),
+            "e-eval-1",
+        );
+        assert!(!evolution_mismatch.provenance_consistent);
+
+        let provenance2 = RuntimeDiagnosticProvenance::from_capture(
+            &snapshot2,
+            &ctx,
+            &health,
+            &graph,
+            &capabilities,
+            &verification,
+            &coherence,
+            Some(&overview),
+        );
+        let continuity3 = RuntimeDiagnosticContinuityRecord::link(
+            Some(&snapshot),
+            &snapshot2,
+            &provenance2,
+            "e2",
+        );
+        let evolution_ok = RuntimeDiagnosticEvolutionReport::evaluate(
+            Some(&snapshot),
+            &snapshot2,
+            &provenance2,
+            &continuity3,
+            Some(RuntimeDiagnosticLifecyclePhase::Provenanced),
+            "e-eval-2",
+        );
+        assert!(evolution_ok.passed());
+        assert!(evolution_ok.continuity_consistent);
+
+        let registry = RuntimeArchitectureOwnershipRegistry::canonical();
+        assert!(registry.operator_artifacts_are_projections_only());
+        assert_eq!(
+            registry.owner_of("RuntimeDependencyGraph"),
+            Some(RuntimeDiagnosticOwnershipRole::ObservationalDiagnostics)
+        );
+
+        let explanation = OperatorRuntimeExplanation::explain_with_evolution(
+            &overview,
+            &provenance2,
+            &continuity3,
+            &evolution_ok,
+        );
+        assert!(!explanation.is_execution_surface());
+        assert!(!explanation.exposes_actions());
+        assert!(RuntimeDiagnosticLifecyclePhase::Captured
+            .may_transition_to(RuntimeDiagnosticLifecyclePhase::Provenanced));
+        assert!(!RuntimeDiagnosticLifecyclePhase::Captured
+            .may_transition_to(RuntimeDiagnosticLifecyclePhase::Superseded));
     }
 }
