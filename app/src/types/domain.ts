@@ -2682,6 +2682,20 @@ export type ExperienceVisibility =
   | "collapsed"
   | "deferred";
 
+export type DisplayImportance = "high" | "medium" | "low";
+
+/** Experience translation of one AttentionReason — keep source reasons alongside. */
+export interface DisplayReason {
+  title: string;
+  description: string;
+  importance: DisplayImportance;
+  explanation_key: string;
+  signal: string;
+  source: string;
+  weight: number;
+  known: boolean;
+}
+
 export interface ExperienceItem {
   id: string;
   title: string;

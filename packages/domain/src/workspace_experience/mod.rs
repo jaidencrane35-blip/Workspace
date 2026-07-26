@@ -137,6 +137,59 @@ pub struct ExperienceSummary {
     pub narrative: String,
 }
 
+/// Presentation importance band for a translated Attention reason.
+///
+/// Derived from `|weight|` only — never from ranking or score. Experience owns
+/// this banding for display; Attention still owns the underlying weight.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum DisplayImportance {
+    High,
+    Medium,
+    Low,
+}
+
+impl DisplayImportance {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::High => "high",
+            Self::Medium => "medium",
+            Self::Low => "low",
+        }
+    }
+
+    /// Deterministic band from reason weight magnitude.
+    pub fn from_weight(weight: i32) -> Self {
+        let magnitude = weight.unsigned_abs();
+        if magnitude >= 50 {
+            Self::High
+        } else if magnitude >= 25 {
+            Self::Medium
+        } else {
+            Self::Low
+        }
+    }
+}
+
+/// Experience translation of one `AttentionReason`.
+///
+/// Structure only — wording is produced by the Experience resolver, not Domain.
+/// Always retain the source `AttentionReason` alongside this; display never replaces
+/// structured identity with text.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DisplayReason {
+    pub title: String,
+    pub description: String,
+    pub importance: DisplayImportance,
+    /// Echo of the source key — identity for UI projection and unknown-key surfacing.
+    pub explanation_key: String,
+    pub signal: String,
+    pub source: String,
+    pub weight: i32,
+    /// `true` when Experience had a known translation; `false` for safe fallback.
+    pub known: bool,
+}
+
 /// Full Experience Layer snapshot — presentation only.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct WorkspaceExperienceState {

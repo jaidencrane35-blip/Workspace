@@ -390,6 +390,9 @@ impl WorkspaceOperatingStateService {
                 current_value: item.title.clone(),
                 source_model: "attention".into(),
                 source_ref: item.id.to_string(),
+                // Sprint 130: keep score_factors as arithmetic evidence. Structured
+                // AttentionReason translation belongs to Experience rendering, not here —
+                // replacing this with DisplayReason titles would lose the score trail.
                 evidence: item.score_factors.clone(),
                 authority_effect: OperatingSignal::AUTHORITY_EFFECT_NONE.into(),
             });

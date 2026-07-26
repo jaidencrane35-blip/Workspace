@@ -265,9 +265,9 @@ pub use workspace_session::{
 };
 pub use workspace_experience::{
     build_experience_summary, experience_now_rfc3339, validate_experience_workspace_id,
-    ExperienceItem, ExperienceSection, ExperienceSectionKind, ExperienceSummary,
-    ExperienceVisibility, WorkspaceExperienceComparison, WorkspaceExperienceError,
-    WorkspaceExperienceState, WorkspaceExperienceSummary,
+    DisplayImportance, DisplayReason, ExperienceItem, ExperienceSection, ExperienceSectionKind,
+    ExperienceSummary, ExperienceVisibility, WorkspaceExperienceComparison,
+    WorkspaceExperienceError, WorkspaceExperienceState, WorkspaceExperienceSummary,
 };
 pub use workspace_work_context::{
     build_work_context_summary, validate_work_context_workspace_id, work_context_now_rfc3339,

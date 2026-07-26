@@ -41,13 +41,25 @@ banding; it never re-derives one from a raw `score` threshold.
 
 Structured reasons reach Experience intact: `AttentionItem.reasons`, and downstream
 `DecisionReason.attention_reason` / `RecommendationItem.attention_reasons` (Sprint 129).
-Where one is present, render its `explanation_key` — that key is the translation contract.
-The sibling `summary` strings are factual fallbacks for surfaces without a string table,
-not the intended display text.
+
+**Sprint 130 — explanation resolver:** Experience translates `explanation_key` into
+`DisplayReason { title, description, importance }` via
+`packages/kernel/src/services/explanation_resolver.rs` (canonical) and
+`app/src/lib/explanationResolver.ts` (UI mirror). Known keys get curated wording;
+unknown keys fall back safely with the unresolved key still visible — never hidden.
+
+UI always keeps `AttentionReason[]` alongside `DisplayReason[]`. Display never
+replaces structured identity with text. Importance is derived from `|weight|` only
+(≥50 high, ≥25 medium, else low) and does not change Attention ranking or scores.
+
+| Layer | Explains |
+|-------|----------|
+| Attention | Why does this deserve focus? |
+| Decision | What should be considered? |
+| Experience | How is that meaning communicated? |
 
 Wording, translation, and formatting live here. Domain models carry only `source`,
-`signal`, `weight`, and `explanation_key`; Experience explains **how it is shown**, never
-what deserves focus or what to consider next.
+`signal`, `weight`, and `explanation_key`.
 
 ## Experience groupings (presentation only)
 

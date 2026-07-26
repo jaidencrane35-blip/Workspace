@@ -31,6 +31,7 @@ mod workspace_adaptation;
 mod workspace_readiness;
 mod workspace_session;
 mod workspace_experience;
+mod explanation_resolver;
 mod workspace_work_context;
 mod workspace_navigation;
 mod workspace_milestone;

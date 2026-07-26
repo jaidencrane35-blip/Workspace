@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react";
 import { invokeIpc } from "../lib/ipc";
+import {
+  resolveAttentionReasons,
+  resolveDecisionReason,
+} from "../lib/explanationResolver";
 import type {
   AutomationContract,
   AutomationIntentProposal,
@@ -1635,12 +1639,31 @@ export function WorkspaceIntelligencePanel({
                     </div>
                     <div className="muted">{item.explanation}</div>
                     {item.reasons.length > 0 ? (
-                      <div className="muted mono">
-                        reasons:{" "}
-                        {item.reasons
-                          .map((r) => `${r.explanation_key}(${r.weight})`)
-                          .join(" · ")}
-                      </div>
+                      <ul className="muted">
+                        {resolveAttentionReasons(item.reasons).map(
+                          (display, index) => {
+                            const source = item.reasons[index];
+                            return (
+                              <li
+                                key={`${item.id}-${display.explanation_key}-${index}`}
+                              >
+                                <strong>{display.title}</strong>
+                                <div>
+                                  {display.description}
+                                  {display.known ? "" : " · untranslated key"}
+                                </div>
+                                <div className="mono">
+                                  {display.explanation_key} · weight{" "}
+                                  {display.weight} · {display.importance}
+                                  {source
+                                    ? ` · signal ${source.signal}`
+                                    : ""}
+                                </div>
+                              </li>
+                            );
+                          },
+                        )}
+                      </ul>
                     ) : null}
                   </li>
                 ))}
@@ -2360,6 +2383,20 @@ export function WorkspaceIntelligencePanel({
                       Why: {item.reason} · Impact: {item.impact} · Confidence:{" "}
                       {item.confidence}
                     </div>
+                    {item.attention_reasons.length > 0 ? (
+                      <ul className="muted">
+                        {resolveAttentionReasons(item.attention_reasons).map(
+                          (display, index) => (
+                            <li
+                              key={`${item.id}-att-${display.explanation_key}-${index}`}
+                            >
+                              <strong>{display.title}</strong> —{" "}
+                              {display.description}
+                            </li>
+                          ),
+                        )}
+                      </ul>
+                    ) : null}
                     <div className="muted">
                       Evidence:{" "}
                       {item.evidence.map((e) => e.summary).join(" · ")}
@@ -2427,11 +2464,24 @@ export function WorkspaceIntelligencePanel({
                     </div>
                     <div>{candidate.explanation.headline}</div>
                     <ul className="muted">
-                      {candidate.explanation.reasons.map((reason, index) => (
-                        <li key={`${candidate.id}-${reason.kind}-${index}`}>
-                          {reason.summary}
-                        </li>
-                      ))}
+                      {candidate.explanation.reasons.map((reason, index) => {
+                        const display = resolveDecisionReason(reason);
+                        return (
+                          <li key={`${candidate.id}-${reason.kind}-${index}`}>
+                            <strong>{display.title}</strong>
+                            {display.description &&
+                            display.description !== reason.kind ? (
+                              <div>{display.description}</div>
+                            ) : null}
+                            {reason.attention_reason ? (
+                              <div className="mono">
+                                {reason.attention_reason.explanation_key} ·
+                                weight {reason.attention_reason.weight}
+                              </div>
+                            ) : null}
+                          </li>
+                        );
+                      })}
                     </ul>
                     {candidate.related_goal_ids.length > 0 && (
                       <div className="muted">
@@ -2844,6 +2894,20 @@ export function WorkspaceIntelligencePanel({
                 <li key={rec.id}>
                   <strong>{rec.title}</strong>
                   <div className="muted">{rec.explanation}</div>
+                  {rec.reasons.length > 0 ? (
+                    <ul className="muted">
+                      {resolveAttentionReasons(rec.reasons).map(
+                        (display, index) => (
+                          <li
+                            key={`${rec.id}-${display.explanation_key}-${index}`}
+                          >
+                            <strong>{display.title}</strong> —{" "}
+                            {display.description}
+                          </li>
+                        ),
+                      )}
+                    </ul>
+                  ) : null}
                 </li>
               ))}
             </ul>
