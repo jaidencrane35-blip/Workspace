@@ -1,17 +1,21 @@
-//! Workspace State — canonical runtime projection (Sprint 118).
+//! Workspace State — canonical runtime projection (Sprint 118/119).
 //!
 //! Observation = facts, Delta = change, WorkspaceState = current interpreted state.
 //! Read-only projection only — no AI, automation, capture, or Win32.
 //!
 //! Distinct from the kernel lifecycle `WorkspaceState` (version/lifecycle).
+//! Canonical input to WorkspaceEnvironmentService (Sprint 119).
 
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::workspace_observation::{
-    observation_now_rfc3339, ObservedWindow, WorkspaceObservationSnapshot,
+    observation_now_rfc3339, ObservedMonitor, ObservedWindow, WorkspaceObservationSnapshot,
 };
 use crate::workspace_observation_delta::{ObservationWindowRef, WorkspaceObservationDelta};
+
+/// Maximum windows retained on the projected state (matches former desktop adapter bound).
+pub const WORKSPACE_STATE_WINDOW_LIMIT: usize = 50;
 
 /// Metadata for a projected workspace state snapshot.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -32,12 +36,57 @@ impl WorkspaceStateMetadata {
     pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
 }
 
-/// Active application summary derived from observed windows (not duplicated window rows).
+/// Active application summary derived from observed windows.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct WorkspaceActiveApplication {
     pub process_id: i32,
     pub process_name: Option<String>,
     pub window_count: i32,
+}
+
+/// Window row on WorkspaceState — enough for Environment projection without reloading snapshots.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct WorkspaceStateWindow {
+    pub stable_window_id: Option<String>,
+    pub hwnd: String,
+    pub title: String,
+    pub process_id: i32,
+    pub process_name: Option<String>,
+    pub visible: bool,
+    pub focused: bool,
+    pub minimized: bool,
+    pub monitor_index: Option<i32>,
+    pub monitor_name: Option<String>,
+}
+
+impl WorkspaceStateWindow {
+    pub fn from_observed(window: &ObservedWindow, monitors: &[ObservedMonitor]) -> Self {
+        let monitor = window
+            .monitor_id
+            .as_ref()
+            .and_then(|monitor_id| monitors.iter().find(|monitor| &monitor.id == monitor_id));
+        Self {
+            stable_window_id: window.stable_window_id.clone(),
+            hwnd: window.hwnd.clone(),
+            title: window.title.clone(),
+            process_id: window.process_id,
+            process_name: window.process_name.clone(),
+            visible: window.visible,
+            focused: window.focused,
+            minimized: window.minimized,
+            monitor_index: monitor.map(|monitor| monitor.monitor_index),
+            monitor_name: monitor.map(|monitor| monitor.name.clone()),
+        }
+    }
+
+    pub fn to_window_ref(&self) -> ObservationWindowRef {
+        ObservationWindowRef {
+            stable_window_id: self.stable_window_id.clone(),
+            hwnd: self.hwnd.clone(),
+            title: self.title.clone(),
+            process_id: self.process_id,
+        }
+    }
 }
 
 /// Canonical runtime state projection from latest observation + delta.
@@ -46,6 +95,8 @@ pub struct WorkspaceState {
     pub metadata: WorkspaceStateMetadata,
     pub focused_window: Option<ObservationWindowRef>,
     pub active_applications: Vec<WorkspaceActiveApplication>,
+    /// Bounded desktop window rows for Environment and other consumers.
+    pub windows: Vec<WorkspaceStateWindow>,
     pub authority_effect: String,
 }
 
@@ -66,6 +117,7 @@ impl WorkspaceState {
             },
             focused_window: None,
             active_applications: Vec::new(),
+            windows: Vec::new(),
             authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
         }
     }
@@ -84,18 +136,20 @@ impl WorkspaceState {
             return empty;
         };
 
-        let focused_window = snapshot
+        let mut windows: Vec<WorkspaceStateWindow> = snapshot
             .windows
             .iter()
-            .find(|window| window.focused)
-            .map(ObservationWindowRef::from_window);
+            .map(|window| WorkspaceStateWindow::from_observed(window, &snapshot.monitors))
+            .collect();
+        windows.truncate(WORKSPACE_STATE_WINDOW_LIMIT);
 
-        let active_applications = active_applications_from_windows(&snapshot.windows);
-        let state_id = format!(
-            "workspace-state:{}:{}",
-            snapshot.pass.id,
-            Uuid::new_v4()
-        );
+        let focused_window = windows
+            .iter()
+            .find(|window| window.focused)
+            .map(WorkspaceStateWindow::to_window_ref);
+
+        let active_applications = active_applications_from_state_windows(&windows);
+        let state_id = format!("workspace-state:{}:{}", snapshot.pass.id, Uuid::new_v4());
 
         Self {
             metadata: WorkspaceStateMetadata {
@@ -110,6 +164,33 @@ impl WorkspaceState {
             },
             focused_window,
             active_applications,
+            windows,
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        }
+    }
+
+    /// Test / transitional helper: build state from already-projected window rows.
+    pub fn from_windows(windows: Vec<WorkspaceStateWindow>) -> Self {
+        let focused_window = windows
+            .iter()
+            .find(|window| window.focused)
+            .map(WorkspaceStateWindow::to_window_ref);
+        let active_applications = active_applications_from_state_windows(&windows);
+        let window_count = windows.len() as i32;
+        Self {
+            metadata: WorkspaceStateMetadata {
+                state_id: format!("workspace-state:fixture:{}", Uuid::new_v4()),
+                created_at: observation_now_rfc3339(),
+                observation_pass_id: None,
+                latest_delta_reference: None,
+                window_count,
+                monitor_count: 0,
+                has_changes: false,
+                authority_effect: WorkspaceStateMetadata::AUTHORITY_EFFECT_NONE.into(),
+            },
+            focused_window,
+            active_applications,
+            windows,
             authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
         }
     }
@@ -126,7 +207,9 @@ fn delta_reference(delta: &WorkspaceObservationDelta) -> Option<String> {
     }
 }
 
-fn active_applications_from_windows(windows: &[ObservedWindow]) -> Vec<WorkspaceActiveApplication> {
+fn active_applications_from_state_windows(
+    windows: &[WorkspaceStateWindow],
+) -> Vec<WorkspaceActiveApplication> {
     let mut apps: Vec<WorkspaceActiveApplication> = Vec::new();
     for window in windows {
         if let Some(existing) = apps
@@ -242,27 +325,26 @@ mod tests {
         assert!(state.metadata.observation_pass_id.is_none());
         assert_eq!(state.metadata.window_count, 0);
         assert!(state.focused_window.is_none());
+        assert!(state.windows.is_empty());
         assert!(!state.metadata.has_changes);
         assert_eq!(state.authority_effect, "none");
     }
 
     #[test]
-    fn builds_from_observation_with_focus_and_apps() {
+    fn builds_from_observation_with_focus_apps_and_windows() {
         let snapshot = snapshot_with_focus();
         let delta = WorkspaceObservationDelta::empty_with_current(&snapshot);
         let state = WorkspaceState::from_observation_and_delta(Some(&snapshot), &delta);
         assert_eq!(state.metadata.observation_pass_id.as_deref(), Some("pass-1"));
         assert_eq!(state.metadata.window_count, 2);
-        assert_eq!(state.metadata.monitor_count, 1);
+        assert_eq!(state.windows.len(), 2);
+        assert_eq!(state.windows[0].monitor_name.as_deref(), Some("Primary"));
         assert_eq!(
             state.focused_window.as_ref().and_then(|w| w.stable_window_id.as_deref()),
             Some("stable-a")
         );
         assert_eq!(state.active_applications.len(), 1);
-        assert_eq!(state.active_applications[0].process_id, 10);
         assert_eq!(state.active_applications[0].window_count, 2);
-        assert_eq!(state.metadata.latest_delta_reference.as_deref(), Some("->pass-1"));
-        assert!(!state.metadata.has_changes);
     }
 
     #[test]

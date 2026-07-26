@@ -1,7 +1,8 @@
-//! Workspace Environment Model (Phase 5).
+//! Workspace Environment Model (Phase 5 / Sprint 119).
 //!
-//! Aggregates persisted observation snapshots with apps, workflow, task graph,
-//! and layout. Never enumerates Win32 directly. Never executes or moves windows.
+//! Aggregates WorkspaceState with apps, workflow, task graph, and layout.
+//! Primary runtime input is WorkspaceState (not raw observation snapshots).
+//! Never enumerates Win32. Never executes or moves windows.
 
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
@@ -13,40 +14,40 @@ use workspace_domain::{
     ApplicationReference, EnvironmentApplication, EnvironmentGap, EnvironmentLayoutAssociation,
     EnvironmentWindow, EnvironmentWindowGroup, EnvironmentWindowState, IntentContext, Layout,
     TaskGraph, WorkflowContext, WorkspaceEnvironmentState, WorkspaceEnvironmentSummary,
-    WorkspaceId,
+    WorkspaceId, WorkspaceState, WorkspaceStateWindow,
 };
 use workspace_windows_integration::DesktopWindowSnapshot;
 
 use crate::error::{KernelError, Result};
 use crate::services::{
-    AuditService, DesktopWindowService, LayoutService, TaskGraphService, WorkspaceIntentService,
-    WorkspaceObservationService,
+    AuditService, LayoutService, TaskGraphService, WorkspaceIntentService, WorkspaceStateEngine,
 };
 
 pub(crate) struct WorkspaceEnvironmentService;
 
 impl WorkspaceEnvironmentService {
-    /// Standalone generate for a workspace.
+    /// Standalone generate for a workspace — loads WorkspaceState via the state engine.
     pub(crate) fn generate(
         db: &Arc<Mutex<Database>>,
         actor: &ActorContext,
         workspace_id: impl Into<String>,
     ) -> Result<WorkspaceEnvironmentState> {
         let workspace_id = workspace_id.into();
-        let windows = WorkspaceObservationService::get_latest_snapshot(&db)?
-            .as_ref()
-            .map(|snapshot| DesktopWindowService::windows_from_snapshot(snapshot, Some(50)))
-            .unwrap_or_default();
+        let workspace_state = WorkspaceStateEngine::get_current(
+            db,
+            actor,
+            &IntentContext::user_request(),
+        )?;
         let workflow =
             WorkspaceIntentService::get_workflow_context_readonly(db, &workspace_id)?;
         let task_graph = TaskGraphService::generate(db, actor, workspace_id.clone()).ok();
         let layout = Self::load_layout(db, &workspace_id);
         let apps = Self::list_apps(db, &workspace_id)?;
-        Self::generate_with_inputs(
+        Self::generate_from_state(
             db,
             actor,
             &workspace_id,
-            &windows,
+            &workspace_state,
             &apps,
             &workflow,
             task_graph.as_ref(),
@@ -54,13 +55,13 @@ impl WorkspaceEnvironmentService {
         )
     }
 
-    /// Preferred path — Intelligence injects shared inputs; windows can be stubbed in tests.
+    /// Preferred production path — Environment consumes WorkspaceState.
     #[allow(clippy::too_many_arguments)]
-    pub(crate) fn generate_with_inputs(
+    pub(crate) fn generate_from_state(
         db: &Arc<Mutex<Database>>,
         actor: &ActorContext,
         workspace_id: impl Into<String>,
-        windows: &[DesktopWindowSnapshot],
+        workspace_state: &WorkspaceState,
         applications: &[ApplicationReference],
         workflow: &WorkflowContext,
         task_graph: Option<&TaskGraph>,
@@ -73,16 +74,14 @@ impl WorkspaceEnvironmentService {
             .as_ref()
             .map(|id| id.to_string());
         let active_task = workflow.active_task_id.as_ref().map(|id| id.to_string());
+        let windows = &workspace_state.windows;
 
-        let titles_lower: Vec<_> = windows
-            .iter()
-            .map(|w| w.title.to_lowercase())
-            .collect();
+        let titles_lower: Vec<_> = windows.iter().map(|w| w.title.to_lowercase()).collect();
 
         let mut env_windows = Vec::new();
         for snap in windows.iter() {
             let matched = match_application(snap, applications);
-            let state = window_state_from_snapshot(snap);
+            let state = window_state_from_state_window(snap);
             let (project_id, task_id) = if matched.is_some() {
                 (active_project.clone(), active_task.clone())
             } else {
@@ -103,7 +102,7 @@ impl WorkspaceEnvironmentService {
                 id: format!("env_window:{}", snap.hwnd),
                 hwnd: snap.hwnd.clone(),
                 title: snap.title.clone(),
-                process_id: snap.process_id,
+                process_id: snap.process_id as u32,
                 state,
                 matched_application_id: matched.as_ref().map(|a| a.id.to_string()),
                 matched_application_name: matched.as_ref().map(|a| a.name.clone()),
@@ -116,20 +115,23 @@ impl WorkspaceEnvironmentService {
             });
         }
 
-        let focused_window_id = env_windows
-            .iter()
-            .find(|w| w.state == EnvironmentWindowState::Focused)
-            .map(|w| w.id.clone());
+        // Prefer WorkspaceState focused_window when present; fall back to scan.
+        let focused_window_id = workspace_state
+            .focused_window
+            .as_ref()
+            .map(|window| format!("env_window:{}", window.hwnd))
+            .or_else(|| {
+                env_windows
+                    .iter()
+                    .find(|w| w.state == EnvironmentWindowState::Focused)
+                    .map(|w| w.id.clone())
+            });
 
         let mut env_apps = Vec::new();
         for app in applications {
             let matched_windows: Vec<_> = env_windows
                 .iter()
-                .filter(|w| {
-                    w.matched_application_id
-                        .as_deref()
-                        == Some(app.id.as_str())
-                })
+                .filter(|w| w.matched_application_id.as_deref() == Some(app.id.as_str()))
                 .collect();
             let appears_running = !matched_windows.is_empty()
                 || app_matches_titles(&app.name, app.identifier.as_deref(), &titles_lower);
@@ -200,7 +202,6 @@ impl WorkspaceEnvironmentService {
         let disconnected_work = (active_project.is_some() || active_task.is_some())
             && !has_matched_window
             && !windows.is_empty();
-        // Also disconnected if active work exists but no windows at all (stub / empty desktop).
         let disconnected_work = disconnected_work
             || ((active_project.is_some() || active_task.is_some())
                 && windows.is_empty()
@@ -235,10 +236,8 @@ impl WorkspaceEnvironmentService {
             }
         }
 
-        let running_application_count =
-            env_apps.iter().filter(|a| a.appears_running).count();
-        let missing_application_count =
-            env_apps.iter().filter(|a| !a.appears_running).count();
+        let running_application_count = env_apps.iter().filter(|a| a.appears_running).count();
+        let missing_application_count = env_apps.iter().filter(|a| !a.appears_running).count();
         let summary = build_environment_summary(
             ws,
             env_windows.len(),
@@ -265,8 +264,36 @@ impl WorkspaceEnvironmentService {
             authority_effect: WorkspaceEnvironmentState::AUTHORITY_EFFECT_NONE.into(),
         };
 
-        Self::audit_generated(db, actor, &state)?;
+        Self::audit_generated(db, actor, &state, workspace_state)?;
         Ok(state)
+    }
+
+    /// Transitional path for Intelligence / tests still supplying desktop window DTOs.
+    ///
+    /// Converts into WorkspaceState then uses [`generate_from_state`]. Does not load
+    /// observation snapshots or call DesktopWindowService.
+    #[allow(clippy::too_many_arguments)]
+    pub(crate) fn generate_with_inputs(
+        db: &Arc<Mutex<Database>>,
+        actor: &ActorContext,
+        workspace_id: impl Into<String>,
+        windows: &[DesktopWindowSnapshot],
+        applications: &[ApplicationReference],
+        workflow: &WorkflowContext,
+        task_graph: Option<&TaskGraph>,
+        layout: Option<&Layout>,
+    ) -> Result<WorkspaceEnvironmentState> {
+        let workspace_state = workspace_state_from_desktop_snapshots(windows);
+        Self::generate_from_state(
+            db,
+            actor,
+            workspace_id,
+            &workspace_state,
+            applications,
+            workflow,
+            task_graph,
+            layout,
+        )
     }
 
     pub(crate) fn summary_projection(
@@ -305,6 +332,7 @@ impl WorkspaceEnvironmentService {
         db: &Arc<Mutex<Database>>,
         actor: &ActorContext,
         state: &WorkspaceEnvironmentState,
+        workspace_state: &WorkspaceState,
     ) -> Result<()> {
         AuditService::record_ai_planning_event(
             db,
@@ -318,6 +346,9 @@ impl WorkspaceEnvironmentService {
                 "running_application_count": state.running_application_count,
                 "missing_application_count": state.missing_application_count,
                 "disconnected_work": state.disconnected_work,
+                "observation_pass_id": workspace_state.metadata.observation_pass_id,
+                "latest_delta_reference": workspace_state.metadata.latest_delta_reference,
+                "workspace_state_has_changes": workspace_state.metadata.has_changes,
                 "authority_effect": "none",
             })
             .to_string(),
@@ -325,7 +356,26 @@ impl WorkspaceEnvironmentService {
     }
 }
 
-fn window_state_from_snapshot(snap: &DesktopWindowSnapshot) -> EnvironmentWindowState {
+fn workspace_state_from_desktop_snapshots(windows: &[DesktopWindowSnapshot]) -> WorkspaceState {
+    let state_windows: Vec<WorkspaceStateWindow> = windows
+        .iter()
+        .map(|snap| WorkspaceStateWindow {
+            stable_window_id: None,
+            hwnd: snap.hwnd.clone(),
+            title: snap.title.clone(),
+            process_id: snap.process_id as i32,
+            process_name: None,
+            visible: snap.visible,
+            focused: snap.focused,
+            minimized: snap.minimized,
+            monitor_index: snap.monitor_index,
+            monitor_name: snap.monitor_name.clone(),
+        })
+        .collect();
+    WorkspaceState::from_windows(state_windows)
+}
+
+fn window_state_from_state_window(snap: &WorkspaceStateWindow) -> EnvironmentWindowState {
     if snap.focused {
         EnvironmentWindowState::Focused
     } else if snap.minimized {
@@ -337,7 +387,7 @@ fn window_state_from_snapshot(snap: &DesktopWindowSnapshot) -> EnvironmentWindow
     }
 }
 
-fn display_label_for_window(snap: &DesktopWindowSnapshot) -> String {
+fn display_label_for_window(snap: &WorkspaceStateWindow) -> String {
     match (&snap.monitor_name, snap.monitor_index) {
         (Some(name), Some(index)) => format!("{name} (monitor {index})"),
         (None, Some(index)) => format!("Monitor {index}"),
@@ -346,12 +396,16 @@ fn display_label_for_window(snap: &DesktopWindowSnapshot) -> String {
 }
 
 fn match_application<'a>(
-    snap: &DesktopWindowSnapshot,
+    snap: &WorkspaceStateWindow,
     applications: &'a [ApplicationReference],
 ) -> Option<&'a ApplicationReference> {
     let title = snap.title.to_lowercase();
     applications.iter().find(|app| {
-        app_matches_titles(&app.name, app.identifier.as_deref(), std::slice::from_ref(&title))
+        app_matches_titles(
+            &app.name,
+            app.identifier.as_deref(),
+            std::slice::from_ref(&title),
+        )
     })
 }
 

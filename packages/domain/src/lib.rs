@@ -344,7 +344,8 @@ pub use workspace_observation_event::{
     ObservationEvent, ObservationEventError, ObservationEventKind,
 };
 pub use workspace_state::{
-    WorkspaceActiveApplication, WorkspaceState, WorkspaceStateMetadata,
+    WorkspaceActiveApplication, WorkspaceState, WorkspaceStateMetadata, WorkspaceStateWindow,
+    WORKSPACE_STATE_WINDOW_LIMIT,
 };
 pub use workspace_environment::{
     build_environment_summary, now_rfc3339, validate_workspace_id, EnvironmentApplication,

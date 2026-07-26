@@ -30,9 +30,9 @@ WorkspaceObservationService (SoT for desktop observation)
         ↓
 SQLite observation snapshots
         ↓
-DesktopWindowService (adapter/read model)
+WorkspaceStateEngine → WorkspaceState (canonical runtime projection)
         ↓
-Workspace Environment Model   ← this document
+Workspace Environment Model   ← this document (consumes WorkspaceState)
         ↓
 Attention / Intelligence / Continuity consumers
 ```
@@ -69,6 +69,8 @@ This gateway is the **only** future path for event-driven observation. It is not
 - **WorkspaceState** = current interpreted state built from latest observation + latest delta
 
 `WorkspaceStateEngine` is read-only: no persistence, capture, scheduling, Win32, AI, or automation. Distinct from kernel lifecycle `WorkspaceState` (version/ready).
+
+**WorkspaceEnvironmentService** consumes **WorkspaceState** as its primary runtime input (Sprint 119). It no longer loads observation snapshots or DesktopWindowService on the production `generate` path. Registered-app matching, gaps, groups, workflow, and layout binding remain Environment responsibilities. Intelligence still uses a transitional `generate_with_inputs` adapter until its own migration.
 
 ---
 

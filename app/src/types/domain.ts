@@ -1589,10 +1589,25 @@ export interface WorkspaceActiveApplication {
   window_count: number;
 }
 
+/** Window row on WorkspaceState for Environment and other consumers. */
+export interface WorkspaceStateWindow {
+  stable_window_id: string | null;
+  hwnd: string;
+  title: string;
+  process_id: number;
+  process_name: string | null;
+  visible: boolean;
+  focused: boolean;
+  minimized: boolean;
+  monitor_index: number | null;
+  monitor_name: string | null;
+}
+
 export interface WorkspaceState {
   metadata: WorkspaceStateMetadata;
   focused_window: ObservationWindowRef | null;
   active_applications: WorkspaceActiveApplication[];
+  windows: WorkspaceStateWindow[];
   authority_effect: string;
 }
 
