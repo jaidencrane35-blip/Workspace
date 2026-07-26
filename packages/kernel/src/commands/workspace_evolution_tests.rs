@@ -117,29 +117,20 @@ fn case3_evolution_is_deterministic() {
     assert_eq!(ids, sorted);
     ids.dedup();
     assert_eq!(ids.len(), a.insights.len());
-    // Stable kinds (purpose / composition) survive a second generate despite audit noise.
+    // A second generate sees the first one's audit trail. Since evaluation telemetry is no
+    // longer a cognitive input (Sprint 128), the whole insight set must survive — not just
+    // a hand-picked subset of kinds.
     let b = CommandHandler::generate_workspace_evolution(&kernel, local, intent, ws).unwrap();
     assert_eq!(a.label, b.label);
     assert_eq!(a.authority_effect, b.authority_effect);
-    let stable = |state: &workspace_domain::WorkspaceEvolutionState| {
-        let mut kinds: Vec<_> = state
+    let insight_ids = |state: &workspace_domain::WorkspaceEvolutionState| {
+        state
             .insights
             .iter()
-            .filter(|i| {
-                matches!(
-                    i.kind,
-                    EvolutionInsightKind::PurposeProgression
-                        | EvolutionInsightKind::CompositionShift
-                        | EvolutionInsightKind::FocusChange
-                        | EvolutionInsightKind::TaskProgression
-                )
-            })
-            .map(|i| i.kind.as_str().to_string())
-            .collect();
-        kinds.sort();
-        kinds
+            .map(|i| (i.id.clone(), i.kind.as_str().to_string(), i.title.clone()))
+            .collect::<Vec<_>>()
     };
-    assert_eq!(stable(&a), stable(&b));
+    assert_eq!(insight_ids(&a), insight_ids(&b));
 }
 
 /// CASE 4 — Evolution explanations are user understandable.
@@ -314,4 +305,66 @@ fn case10_governance_surfaces_remain_green() {
     )
     .unwrap();
     let _ = CommandHandler::generate_workspace_composition(&kernel, local, intent, ws).unwrap();
+}
+
+/// CASE 11 — Evaluation does not feed itself: a full Intelligence cycle writes audit
+/// events, but the next cycle over unchanged work produces the same cognition.
+#[test]
+fn case11_evaluation_does_not_contaminate_its_own_inputs() {
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let (ws, _) = seed(&kernel);
+    let local = ActorContext::local_user();
+    let intent = IntentContext::user_request();
+    let generate = || {
+        CommandHandler::generate_workspace_intelligence(
+            &kernel,
+            local.clone(),
+            intent.clone(),
+            ws.clone(),
+        )
+        .unwrap()
+    };
+
+    let first = generate();
+    let audits_after_first =
+        crate::services::AuditService::list_recent(&kernel.shared_database(), 500)
+            .unwrap()
+            .len();
+    let second = generate();
+    let audits_after_second =
+        crate::services::AuditService::list_recent(&kernel.shared_database(), 500)
+            .unwrap()
+            .len();
+    // The loop is only meaningful if evaluation really does write audit history, and it
+    // writes enough of it to have swamped the analysis windows before Sprint 128.
+    assert!(
+        audits_after_second - audits_after_first > 20,
+        "evaluation should still emit telemetry (delta was {})",
+        audits_after_second - audits_after_first
+    );
+
+    let insights = |state: &workspace_domain::WorkspaceIntelligenceState| {
+        state
+            .evolution
+            .top_insights
+            .iter()
+            .map(|i| i.id.clone())
+            .collect::<Vec<_>>()
+    };
+    assert_eq!(insights(&first), insights(&second));
+
+    let attention = |state: &workspace_domain::WorkspaceIntelligenceState| {
+        state
+            .attention
+            .top_items
+            .iter()
+            .map(|i| (i.id.as_str().to_string(), i.score))
+            .collect::<Vec<_>>()
+    };
+    assert_eq!(attention(&first), attention(&second));
+
+    let progress = |state: &workspace_domain::WorkspaceIntelligenceState| {
+        state.purpose.recent_progress.clone()
+    };
+    assert_eq!(progress(&first), progress(&second));
 }

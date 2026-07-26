@@ -237,6 +237,20 @@ impl WorkspaceActivityGraph {
         }
     }
 
+    /// Newest-first timeline with evaluation telemetry excluded (Sprint 128).
+    ///
+    /// `AuditSignal` entries record what the system did *while* thinking — generating
+    /// Attention, Purpose, Evolution, and so on. Every cognitive consumer already skipped
+    /// them, but skipping inside a `take(n)` loop let a burst of telemetry consume the
+    /// window and push real work out of view, so the next evaluation saw different facts.
+    /// Window through this method instead: filter first, then take.
+    pub fn cognitive_timeline(&self) -> impl Iterator<Item = &WorkspaceActivity> {
+        self.timeline
+            .iter()
+            .rev()
+            .filter(|a| a.activity_type != ActivityType::AuditSignal)
+    }
+
     pub fn summary(&self, limit: usize) -> WorkspaceActivityGraphSummary {
         let recent: Vec<_> = self
             .timeline
@@ -280,5 +294,51 @@ impl Default for WorkspaceActivityGraphSummary {
             recent_timeline: Vec::new(),
             authority_effect: WorkspaceActivity::AUTHORITY_EFFECT_NONE.into(),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn activity(activity_type: ActivityType, source_id: &str, timestamp: &str) -> WorkspaceActivity {
+        WorkspaceActivity::aggregate(
+            "ws",
+            activity_type,
+            ActivitySourceType::Audit,
+            source_id,
+            source_id,
+            "explanation",
+            timestamp,
+            "system",
+            "System",
+            None,
+            None,
+            None,
+            Vec::new(),
+            false,
+        )
+        .unwrap()
+    }
+
+    #[test]
+    fn cognitive_timeline_filters_telemetry_before_windowing() {
+        let graph = WorkspaceActivityGraph::from_activities(
+            "ws",
+            vec![
+                activity(ActivityType::Task, "real-work", "2026-01-01T00:00:00Z"),
+                activity(ActivityType::AuditSignal, "eval-1", "2026-01-01T00:00:01Z"),
+                activity(ActivityType::AuditSignal, "eval-2", "2026-01-01T00:00:02Z"),
+                activity(ActivityType::AuditSignal, "eval-3", "2026-01-01T00:00:03Z"),
+            ],
+        );
+        // A burst of newer telemetry must not push real work out of a small window.
+        let windowed: Vec<_> = graph
+            .cognitive_timeline()
+            .take(2)
+            .map(|a| a.source_id.clone())
+            .collect();
+        assert_eq!(windowed, vec!["real-work".to_string()]);
+        assert_eq!(graph.timeline.len(), 4, "telemetry stays in the timeline");
     }
 }

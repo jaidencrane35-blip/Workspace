@@ -776,6 +776,37 @@ fn case15_source_caps_are_independent_of_input_order() {
         .any(|id| id.contains("disconnected_work:")));
 }
 
+/// CASE 16 — Attention-projected recommendations carry the item's structured reasons.
+#[test]
+fn case16_recommended_actions_preserve_attention_reasons() {
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let (ws, project_id, _) = seed_project(&kernel);
+    seed_pending_contract(&kernel, ws.clone(), project_id);
+    let intel = CommandHandler::generate_workspace_intelligence(
+        &kernel,
+        ActorContext::local_user(),
+        IntentContext::user_request(),
+        ws,
+    )
+    .unwrap();
+    for rec in &intel.recommended_actions {
+        if rec.kind == "bootstrap" {
+            continue;
+        }
+        let source = intel
+            .attention
+            .top_items
+            .iter()
+            .find(|i| rec.id == format!("rec-attention-{}", i.id))
+            .expect("recommendation re-projects an Attention top item");
+        assert_eq!(
+            rec.reasons, source.reasons,
+            "recommendation {} dropped or rewrote Attention reasons",
+            rec.id
+        );
+    }
+}
+
 /// CASE 13 — Identical inputs produce identical structured reasons; Intelligence preserves them.
 #[test]
 fn case13_reasons_stable_and_intelligence_preserves_attention() {

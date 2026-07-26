@@ -7,6 +7,7 @@ use thiserror::Error;
 
 use crate::errors::DomainError;
 use crate::automation_contract::AutomationContractSummary;
+use crate::workspace_attention::AttentionReason;
 use crate::automation_trigger::{AutomationIntentProposalSummary, TriggerRejectionSummary};
 use crate::decision_engine::DecisionEngineSummary;
 use crate::decision_queue::DecisionQueueSummary;
@@ -52,6 +53,9 @@ pub struct WorkspaceRecommendation {
     pub title: String,
     pub explanation: String,
     pub kind: String,
+    /// Structured "why" carried through from the Attention item this re-projects.
+    /// Empty for bootstrap entries, which have no Attention source.
+    pub reasons: Vec<AttentionReason>,
 }
 
 /// Highlight drawn from memory (informational).

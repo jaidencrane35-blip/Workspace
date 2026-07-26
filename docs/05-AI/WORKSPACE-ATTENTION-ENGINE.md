@@ -108,6 +108,8 @@ Do not merge Attention into Recommendations. Do not treat `recommended_actions` 
 | Operating State | `top_items`, `score_factors` as evidence | Re-threshold or re-band |
 | Session / Experience | `category`, `priority` | Re-derive banding from raw `score` |
 
+Session reads `priority` as of Sprint 128; the earlier `score >= 50` threshold is gone.
+
 Consumers read `priority` for banding. A raw `score` threshold outside Attention is a
 duplicated prioritization rule and will drift from `score_to_priority`.
 
@@ -130,10 +132,12 @@ duplicated prioritization rule and will drift from `score_to_priority`.
    an upstream reordering silently change which facts reach Attention.
 4. **One exception, by design** — Activity Graph items all score equally, so recency is the
    selection criterion. Timeline order is Activity Graph's contract, not incidental order.
+5. **No evaluation feedback** (Sprint 128) — Attention reads the Activity Graph through
+   `cognitive_timeline()`, which drops evaluation telemetry before windowing. Generating
+   Attention cannot change what the next Attention sees.
 
-Determinism is a property of Attention **over fixed facts**. Two consecutive `generate`
-calls are not input-identical: each call audits, the Activity Graph grows, and
-Purpose/Evolution legitimately re-infer.
+Determinism is a property of Attention **over fixed facts**, and since Sprint 128 repeated
+`generate` calls over unchanged work are also stable end to end.
 
 ---
 

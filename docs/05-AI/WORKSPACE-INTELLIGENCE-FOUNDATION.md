@@ -32,6 +32,8 @@ Runtime desktop truth is **WorkspaceState** only (Sprint 123 finalized IPC/UI su
 
 **Attention consumption rules (Sprint 127):** Intelligence preserves Attention's ranking and reasons verbatim. `recommendations_from_attention` re-labels the top items for Assistant display in Attention order — it does not sort, re-score, or rewrite `reasons`. Enrichment (`enrich_with_recommendations`, `enrich_with_patterns`) adds new items and re-ranks the merged set through `WorkspaceAttentionState::from_items`, so ordering and id uniqueness stay Attention-owned. Enrichers that only append narrative (`enrich_with_milestones`, `_navigation`, `_work_context`, `_working_style`, `_transition`) must never touch scores. Downstream consumers read `priority` for banding — see the consumer rules in [Workspace Attention Engine](WORKSPACE-ATTENTION-ENGINE.md).
 
+**Evaluation is not observation (Sprint 128):** one Intelligence generate writes roughly fifty audit events. Those reach the Activity Graph as `AuditSignal` entries, so cognitive consumers must window the timeline through `WorkspaceActivityGraph::cognitive_timeline()`, which excludes telemetry *before* taking the newest N. Filtering inside the loop instead let a single evaluation burst fill windows of 5, 8, and 20 entirely, changing the next evaluation's inputs. Telemetry remains fully audited and visible in the timeline — it simply never counts as a cognitive source fact. `recommended_actions` now carry the Attention item's `reasons` verbatim rather than dropping them at the Assistant boundary.
+
 ---
 
 ## Intent model (durable, non-executable)

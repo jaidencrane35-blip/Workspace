@@ -656,6 +656,7 @@ impl WorkspaceIntelligenceService {
                 title: item.title.clone(),
                 explanation: item.explanation.clone(),
                 kind: format!("attention:{}", item.category.as_str()),
+                reasons: item.reasons.clone(),
             })
             .collect::<Vec<_>>();
 
@@ -666,6 +667,7 @@ impl WorkspaceIntelligenceService {
                 explanation:
                     "Suggested because Attention has no scored items for this workspace.".into(),
                 kind: "bootstrap".into(),
+                reasons: Vec::new(),
             });
         }
 

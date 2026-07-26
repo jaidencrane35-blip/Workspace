@@ -10,9 +10,9 @@ use serde_json::json;
 use workspace_database::Database;
 use workspace_domain::{
     build_session_summary, session_now_rfc3339, validate_session_workspace_id, ActorContext,
-    AttentionCategory, IntentContext, SessionDecisionRef, SessionFocus, SessionHealth,
-    SessionInterruption, SessionMember, SessionMemberKind, SessionMomentum, SessionReadinessView,
-    SessionRecommendationRef, SessionRisk, SessionSummary, SessionTimelineItem,
+    AttentionCategory, AttentionPriority, IntentContext, SessionDecisionRef, SessionFocus,
+    SessionHealth, SessionInterruption, SessionMember, SessionMemberKind, SessionMomentum,
+    SessionReadinessView, SessionRecommendationRef, SessionRisk, SessionSummary, SessionTimelineItem,
     WorkspaceIntelligenceState, WorkspaceSessionComparison, WorkspaceSessionState,
     WorkspaceSessionSummary,
 };
@@ -231,14 +231,14 @@ impl WorkspaceSessionService {
             });
         }
         for item in intelligence.attention.top_items.iter().take(4) {
-            // Attention owns banding; this raw threshold is a known contract gap (Sprint 127
-            // audit). Narrowing it to `priority` changes the risk set, so it needs its own
-            // sprint alongside the upstream Evolution refresh nondeterminism.
+            // Attention owns banding — Session reads `priority`, never re-thresholds `score`.
             if matches!(
                 item.category,
                 AttentionCategory::Blocker | AttentionCategory::RequiresDecision
-            ) || item.score >= 50
-            {
+            ) || matches!(
+                item.priority,
+                AttentionPriority::Critical | AttentionPriority::High
+            ) {
                 risks.push(SessionRisk {
                     id: format!("session:risk:attention:{}", item.id.as_str()),
                     title: item.title.clone(),

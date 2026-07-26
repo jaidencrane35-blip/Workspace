@@ -127,14 +127,9 @@ impl WorkspaceEvolutionService {
         let mut relationships = Vec::new();
         let mut evidence = Vec::new();
 
-        // Activity timeline backbone (skip AuditSignal — Activity Graph remains SoT).
-        for activity_item in activity.timeline.iter().rev().take(20) {
-            if matches!(
-                activity_item.activity_type,
-                workspace_domain::ActivityType::AuditSignal
-            ) {
-                continue;
-            }
+        // Activity timeline backbone (Activity Graph remains SoT). Telemetry is excluded
+        // before windowing so evaluation bursts cannot displace real work.
+        for activity_item in activity.cognitive_timeline().take(20) {
             let eid = format!("evolution:activity:{}", activity_item.id);
             events.push(EvolutionEvent {
                 id: eid.clone(),

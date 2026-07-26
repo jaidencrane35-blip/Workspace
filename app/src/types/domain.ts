@@ -663,6 +663,8 @@ export interface WorkspaceRecommendation {
   title: string;
   explanation: string;
   kind: string;
+  /** Carried through from the Attention item; empty for bootstrap entries. */
+  reasons: AttentionReason[];
 }
 
 export interface IntelligenceHighlight {

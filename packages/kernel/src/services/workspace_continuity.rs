@@ -334,7 +334,7 @@ impl WorkspaceContinuityService {
                 None,
             )?);
         }
-        for activity in graph.timeline.iter().rev().take(20) {
+        for activity in graph.cognitive_timeline().take(20) {
             if !activity.unresolved {
                 continue;
             }
@@ -505,7 +505,8 @@ impl WorkspaceContinuityService {
         session_anchor: &str,
     ) -> Result<Vec<ContinuityFacet>> {
         let mut out = Vec::new();
-        for activity in graph.timeline.iter().rev().take(8) {
+        // "Recent progress" means work the user did, not evaluations the system ran.
+        for activity in graph.cognitive_timeline().take(8) {
             out.push(ContinuityFacet::project(
                 ws,
                 ContinuityFacetKind::RecentProgress,

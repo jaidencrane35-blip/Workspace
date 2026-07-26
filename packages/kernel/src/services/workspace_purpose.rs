@@ -430,14 +430,8 @@ impl WorkspacePurposeService {
             });
         }
 
-        // Activity recent progress (skip audits).
-        for activity_item in activity.timeline.iter().rev().take(8) {
-            if matches!(
-                activity_item.activity_type,
-                workspace_domain::ActivityType::AuditSignal
-            ) {
-                continue;
-            }
+        // Activity recent progress — telemetry excluded before windowing.
+        for activity_item in activity.cognitive_timeline().take(8) {
             let eid = format!("evidence:activity:{}", activity_item.id);
             evidence_items.push(PurposeEvidence {
                 id: eid,

@@ -1188,14 +1188,7 @@ impl WorkspaceAttentionService {
         // The only source whose cut is ordering-based by design: all activity items score
         // equally, so recency is the selection criterion. Timeline order is Activity Graph's
         // contract, not an incidental input order.
-        // Walk newest-first, skipping audit noise so recent real work stays visible.
-        for activity in graph.timeline.iter().rev() {
-            if matches!(
-                activity.activity_type,
-                workspace_domain::ActivityType::AuditSignal
-            ) {
-                continue;
-            }
+        for activity in graph.cognitive_timeline().take(3) {
             let factors = vec![
                 "base 10 for recent progress (informative)".into(),
                 "source Activity Graph timeline".into(),
@@ -1222,9 +1215,6 @@ impl WorkspaceAttentionService {
                 activity.timestamp.clone(),
                 AttentionState::Visible,
             )?);
-            if out.len() >= 3 {
-                break;
-            }
         }
         let _ = now;
         Ok(out)

@@ -405,14 +405,8 @@ impl WorkspaceCompositionService {
             ));
         }
 
-        // Recent activity (informative members).
-        for activity_item in activity.timeline.iter().rev().take(5) {
-            if matches!(
-                activity_item.activity_type,
-                workspace_domain::ActivityType::AuditSignal
-            ) {
-                continue;
-            }
+        // Recent activity (informative members) — telemetry excluded before windowing.
+        for activity_item in activity.cognitive_timeline().take(5) {
             let member_id = format!("member:activity:{}", activity_item.id);
             members.push(CompositionMember {
                 id: member_id,
