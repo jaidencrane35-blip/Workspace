@@ -300,6 +300,13 @@ export function AssistantPanel({
               Same Readiness Model as the Work tab. Assistant may explain blockers
               and missing context — never prepare or fix the Workspace.
             </dd>
+            <dt>Working Session</dt>
+            <dd>
+              Session is the Work tab runtime view projected from this
+              Intelligence snapshot. Assistant may explain what you were doing,
+              what is blocked, and what is ready — never restore, launch, or
+              execute from Session.
+            </dd>
             <dt>Continuity</dt>
             <dd>
               {workspaceIntel.continuity.summary}{" "}

@@ -9,7 +9,7 @@ use workspace_domain::{
     WorkspaceEnvironmentError, WorkspaceCompositionError, WorkspacePurposeError,
     WorkspaceEvolutionError, WorkspaceRecommendationEngineError, WorkspaceOperatingStateError,
     WorkspacePatternError, WorkspaceAdaptationError, WorkspaceReadinessError,
-    WorkspaceIntelligenceError, WorkspaceIntentError,
+    WorkspaceSessionError, WorkspaceIntelligenceError, WorkspaceIntentError,
 };
 
 #[derive(Debug, Error)]
@@ -237,6 +237,9 @@ pub enum KernelError {
 
     #[error("Workspace readiness validation failed: {message}")]
     WorkspaceReadinessValidation { message: String },
+
+    #[error("Workspace session validation failed: {message}")]
+    WorkspaceSessionValidation { message: String },
 
     #[error("Workspace kernel initialization failed")]
     InitializationFailed,
@@ -565,6 +568,17 @@ impl From<WorkspaceReadinessError> for KernelError {
     }
 }
 
+impl From<WorkspaceSessionError> for KernelError {
+    fn from(error: WorkspaceSessionError) -> Self {
+        match error {
+            WorkspaceSessionError::Domain(domain) => KernelError::from(domain),
+            other => KernelError::WorkspaceSessionValidation {
+                message: other.to_string(),
+            },
+        }
+    }
+}
+
 impl KernelError {
     pub fn to_public(&self) -> PublicError {
         match self {
@@ -881,6 +895,10 @@ impl KernelError {
             },
             KernelError::WorkspaceReadinessValidation { message } => PublicError {
                 code: "workspace_readiness_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::WorkspaceSessionValidation { message } => PublicError {
+                code: "workspace_session_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::InitializationFailed => PublicError {

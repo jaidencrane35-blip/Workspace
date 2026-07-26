@@ -167,7 +167,7 @@ Foundation     Decisions       Core Platform     Feature Expansion   Maturity
 
 **Goal:** Application launching, AI observation/suggestion, and user-approved automation.
 
-**Status:** Phase 3–4 complete; Phase 5 cognition foundations through Readiness (Sprint 92) complete; Phase 5.5 integrity audit + hardening complete. Next: Phase 6 capabilities must enter via Intent → Gateway without treating projections as SoT. See [Intelligence Roadmap](../05-AI/INTELLIGENCE-ROADMAP.md) and [Workspace Cognition Integrity Audit](../05-AI/WORKSPACE-COGNITION-INTEGRITY-AUDIT.md).
+**Status:** Phase 3–5.5 complete; Phase 6 Batch 1 Session Engine foundation complete. Next: deepen session-aware UX and governed capabilities via Intent → Gateway without treating projections as SoT. See [Intelligence Roadmap](../05-AI/INTELLIGENCE-ROADMAP.md) and [Workspace Session Engine](../05-AI/WORKSPACE-SESSION-ENGINE.md).
 
 ### Expected Deliverables
 

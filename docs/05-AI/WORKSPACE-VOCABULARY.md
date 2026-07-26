@@ -21,6 +21,7 @@ Canonical product language. Prefer these terms in UI, docs, and Assistant copy.
 | **Pattern** | Recurring structure observation from existing workspace signals (never predicts or profiles) | Memory, Analytics, Preference |
 | **Adaptation Proposal** | Possible Workspace improvement for human review (never applies; accept → Intent handoff) | Recommendation, Automation Contract |
 | **Workspace Readiness** | Preparedness for current work (ready / partially ready / blocked; never prepares) | WorkspaceHealth, Recommendation, Adaptation |
+| **Workspace Session** | Runtime orchestration snapshot over Intelligence for the Work experience (owns nothing) | Continuity session_anchor, Intelligence, Operating State |
 | **Suggestion** | Legacy deterministic context hint (diagnostic/Sprint 20) | Recommendation in product Work UI |
 | **Intent** | Pipeline request entering Command Pipeline | Proposal, Decision |
 | **Activity** | Synthetic Activity Graph node (read model) | Audit event, Decision |

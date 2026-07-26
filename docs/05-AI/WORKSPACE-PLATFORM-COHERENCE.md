@@ -84,9 +84,10 @@ This batch does not introduce execution paths, modify authority, or weaken gover
 | What commonly repeats? | **Pattern Model** |
 | How could the Workspace improve? | **Adaptation Proposal** |
 | Can I continue working? | **Readiness Model** (≠ WorkspaceHealth) |
+| What is happening right now (runtime UI)? | **Workspace Session** (consumes Intelligence) |
 | Workspace understanding narrative | **Workspace Intelligence** (consumes the above) |
 
-Intelligence and Assistant must consume, never re-own, these answers.
+Intelligence and Assistant must consume, never re-own, these answers. Session consumes Intelligence and feeds UI — never the reverse.
 
 ---
 
@@ -108,6 +109,7 @@ Intelligence and Assistant must consume, never re-own, these answers.
 | pattern | `WorkspacePatternService` | Aggregator |
 | adaptation_proposal | `WorkspaceAdaptationService` | Aggregator (+ process-local status) |
 | readiness | `WorkspaceReadinessService` | Aggregator |
+| session | `WorkspaceSessionService` | Aggregator (runtime projection; owns nothing) |
 | decision_candidate | `DecisionEngineService` | Aggregator (+ outcome overlay) |
 | Workspace Intelligence | consumer only | Envelope |
 

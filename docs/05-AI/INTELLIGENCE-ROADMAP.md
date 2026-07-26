@@ -160,6 +160,10 @@ Workspace Readiness Model foundation (Sprint 92) — preparedness for current wo
 
 Architectural integrity & hardening audit of the cognition stack through Sprint 92 — ownership map, authority framing, assemble-order rules, `GateIntelligenceRead`, `attempt_execute` guards for remaining aggregators, Work UI regenerate fan-out reduction. No new features. See [Workspace Cognition Integrity Audit](WORKSPACE-COGNITION-INTEGRITY-AUDIT.md).
 
+## Phase 6 Batch 1 (done)
+
+Workspace Session Engine foundation (Sprint 94) — runtime orchestration projection over Intelligence; Work default view; owns no source data; never executes/prepares/restores. See [Workspace Session Engine](WORKSPACE-SESSION-ENGINE.md).
+
 ---
 
 ## Never build

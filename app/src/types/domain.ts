@@ -2111,6 +2111,180 @@ export interface WorkspaceReadinessSummary {
   authority_effect: string;
 }
 
+export type SessionMemberKind =
+  | "project"
+  | "task"
+  | "purpose"
+  | "application"
+  | "decision"
+  | "recommendation"
+  | "adaptation"
+  | "continuity_facet"
+  | "pattern"
+  | "composition";
+
+export interface SessionMember {
+  id: string;
+  kind: SessionMemberKind;
+  label: string;
+  why: string;
+  source_projection: string;
+  source_ref: string;
+  authority_effect: string;
+}
+
+export interface SessionFocus {
+  project_label: string | null;
+  task_label: string | null;
+  purpose_label: string;
+  continuity_focus: string | null;
+  composition_label: string | null;
+  why: string;
+  source_projection: string;
+  authority_effect: string;
+}
+
+export interface SessionTimelineItem {
+  id: string;
+  summary: string;
+  timestamp: string;
+  why: string;
+  source_projection: string;
+  source_ref: string;
+}
+
+export interface SessionDecisionRef {
+  id: string;
+  title: string;
+  summary: string;
+  priority_line: string;
+  why: string;
+  source_projection: string;
+  source_ref: string;
+}
+
+export interface SessionRecommendationRef {
+  id: string;
+  title: string;
+  reason: string;
+  why: string;
+  source_projection: string;
+  source_ref: string;
+}
+
+export interface SessionReadinessView {
+  overall_status: ReadinessStatus;
+  status_line: string;
+  gap_line: string;
+  gap_count: number;
+  why: string;
+  source_projection: string;
+}
+
+export interface SessionRisk {
+  id: string;
+  title: string;
+  explanation: string;
+  why: string;
+  source_projection: string;
+  source_ref: string;
+}
+
+export interface SessionHealth {
+  kernel_health: string;
+  readiness_status: ReadinessStatus;
+  note: string;
+  why: string;
+  source_projection: string;
+}
+
+export interface SessionInterruption {
+  id: string;
+  title: string;
+  summary: string;
+  why: string;
+  source_projection: string;
+  source_ref: string;
+}
+
+export interface SessionMomentum {
+  progress_line: string;
+  evolution_line: string;
+  activity_count: number;
+  open_task_count: number;
+  why: string;
+  source_projection: string;
+}
+
+export interface SessionSummary {
+  headline: string;
+  doing_line: string;
+  matters_line: string;
+  blocked_line: string;
+  ready_line: string;
+  changed_line: string;
+  narrative: string;
+}
+
+export interface WorkspaceSessionState {
+  workspace_id: string;
+  workspace_name: string;
+  generated_at: string;
+  label: string;
+  session_summary: SessionSummary;
+  members: SessionMember[];
+  focus: SessionFocus;
+  timeline: SessionTimelineItem[];
+  decisions: SessionDecisionRef[];
+  recommendations: SessionRecommendationRef[];
+  readiness: SessionReadinessView;
+  risks: SessionRisk[];
+  health: SessionHealth;
+  interruptions: SessionInterruption[];
+  momentum: SessionMomentum;
+  member_count: number;
+  decision_count: number;
+  recommendation_count: number;
+  risk_count: number;
+  interruption_count: number;
+  intelligence_generated_at: string;
+  explanation: string;
+  evidence: string[];
+  summary: string;
+  authority_effect: string;
+}
+
+export interface WorkspaceSessionSummary {
+  workspace_id: string;
+  workspace_name: string;
+  generated_at: string;
+  label: string;
+  session_summary: SessionSummary;
+  focus: SessionFocus;
+  readiness: SessionReadinessView;
+  health: SessionHealth;
+  momentum: SessionMomentum;
+  member_count: number;
+  decision_count: number;
+  recommendation_count: number;
+  risk_count: number;
+  interruption_count: number;
+  top_decisions: SessionDecisionRef[];
+  top_recommendations: SessionRecommendationRef[];
+  top_risks: SessionRisk[];
+  intelligence_generated_at: string;
+  explanation: string;
+  summary: string;
+  authority_effect: string;
+}
+
+export interface WorkspaceSessionComparison {
+  left_workspace_id: string;
+  right_workspace_id: string;
+  differences: string[];
+  authority_effect: string;
+}
+
 export interface WorkspaceIntelligenceComparison {
   left_workspace_id: string;
   right_workspace_id: string;

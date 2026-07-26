@@ -19,6 +19,8 @@ import type {
   WorkspacePatternState,
   WorkspaceAdaptationState,
   WorkspaceReadinessState,
+  WorkspaceSessionState,
+  WorkspaceSessionComparison,
   AiOrchestratedPlan,
   AiPlan,
   AiPlanEvaluationReport,
@@ -172,6 +174,10 @@ export function OperatorConsole({
     useState<WorkspaceAdaptationState | null>(null);
   const [readinessState, setReadinessState] =
     useState<WorkspaceReadinessState | null>(null);
+  const [sessionState, setSessionState] =
+    useState<WorkspaceSessionState | null>(null);
+  const [priorSession, setPriorSession] =
+    useState<WorkspaceSessionState | null>(null);
   const [activeProject, setActiveProject] = useState<Project | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [memoryEntries, setMemoryEntries] = useState<MemoryEntry[]>([]);
@@ -1982,6 +1988,92 @@ export function OperatorConsole({
             <li>
               {readinessState.overall_status} · {readinessState.gap_count} gap(s)
               · authority {readinessState.authority_effect}
+            </li>
+          </ul>
+        )}
+      </section>
+
+      <section>
+        <h2>Workspace Session (diagnostics)</h2>
+        <p className="muted">
+          Runtime orchestration over Intelligence — inspect / compare / explain.
+          Never executes, prepares, or restores.
+        </p>
+        <div className="row">
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("Session inspected", async () => {
+                if (!workspace) return;
+                const state = await invokeIpc<WorkspaceSessionState>(
+                  "generate_workspace_session",
+                  { workspaceId: workspace.id },
+                );
+                if (sessionState) setPriorSession(sessionState);
+                setSessionState(state);
+              })
+            }
+          >
+            Inspect session
+          </button>
+          <button
+            type="button"
+            disabled={busy || !sessionState}
+            onClick={() =>
+              void run("Session explained", async () => {
+                if (!sessionState) return;
+                onMessage(
+                  `${sessionState.session_summary.narrative} Evidence: ${sessionState.evidence.slice(0, 3).join(" · ")}`,
+                );
+              })
+            }
+          >
+            Explain session
+          </button>
+          <button
+            type="button"
+            disabled={busy || !sessionState || !priorSession}
+            onClick={() =>
+              void run("Sessions compared", async () => {
+                if (!sessionState || !priorSession) return;
+                const comparison = await invokeIpc<WorkspaceSessionComparison>(
+                  "compare_workspace_sessions",
+                  { left: priorSession, right: sessionState },
+                );
+                onMessage(comparison.differences.join(" · "));
+              })
+            }
+          >
+            Compare sessions
+          </button>
+          <button
+            type="button"
+            disabled={busy || !sessionState}
+            onClick={() =>
+              void run("Session validated", async () => {
+                if (!sessionState) return;
+                onMessage(
+                  sessionState.authority_effect === "none" &&
+                    sessionState.explanation.includes("owns no source data")
+                    ? `Valid: authority none · ${sessionState.member_count} members · from Intelligence ${sessionState.intelligence_generated_at}`
+                    : "Session validation concerns found.",
+                );
+              })
+            }
+          >
+            Validate session
+          </button>
+        </div>
+        {sessionState && (
+          <ul className="muted">
+            <li>{sessionState.session_summary.headline}</li>
+            <li>{sessionState.session_summary.doing_line}</li>
+            <li>
+              Decisions {sessionState.decision_count} · Risks{" "}
+              {sessionState.risk_count} · Readiness{" "}
+              {sessionState.readiness.overall_status} · authority{" "}
+              {sessionState.authority_effect}
             </li>
           </ul>
         )}

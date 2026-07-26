@@ -25,6 +25,8 @@ import type {
   WorkspaceAdaptationState,
   AdaptationActionResult,
   WorkspaceReadinessState,
+  WorkspaceSessionState,
+  WorkspaceSessionComparison,
   WorkspaceIntelligenceState,
 } from "../types/domain";
 
@@ -85,6 +87,11 @@ export function WorkspaceIntelligencePanel({
     useState<WorkspaceAdaptationState | null>(null);
   const [readinessState, setReadinessState] =
     useState<WorkspaceReadinessState | null>(null);
+  const [sessionState, setSessionState] =
+    useState<WorkspaceSessionState | null>(null);
+  const [sessionCompareNote, setSessionCompareNote] = useState<string | null>(
+    null,
+  );
   const [lastHandoff, setLastHandoff] = useState<string | null>(null);
   const [contractName, setContractName] = useState(
     "Prepare coding environment",
@@ -128,6 +135,8 @@ export function WorkspaceIntelligencePanel({
       setPatternState(null);
       setAdaptationState(null);
       setReadinessState(null);
+      setSessionState(null);
+      setSessionCompareNote(null);
       setLastHandoff(null);
       setState(null);
       return;
@@ -144,6 +153,7 @@ export function WorkspaceIntelligencePanel({
           listedProposals,
           queue,
           intel,
+          session,
           decisions,
           graphTasks,
           adapt,
@@ -167,6 +177,9 @@ export function WorkspaceIntelligencePanel({
               "generate_workspace_intelligence",
               { workspaceId: workspace.id },
             ),
+            invokeIpc<WorkspaceSessionState>("generate_workspace_session", {
+              workspaceId: workspace.id,
+            }),
             invokeIpc<DecisionEngineState>("generate_decision_engine", {
               workspaceId: workspace.id,
             }),
@@ -183,6 +196,7 @@ export function WorkspaceIntelligencePanel({
           setProposals(listedProposals);
           setDecisionQueue(queue);
           setState(intel);
+          setSessionState(session);
           setDecisionEngine(decisions);
           setTaskGraph(graphTasks);
           setAdaptationState(adapt);
@@ -216,12 +230,95 @@ export function WorkspaceIntelligencePanel({
         <p className="assistant-kicker">Work</p>
         <h2>Where you are. What needs attention. How work connects.</h2>
         <p className="lede">
-          One Workspace operating environment — Continuity, Attention, Task
-          Graph, Environment, Composition, Purpose, Evolution, Decision Engine,
-          Decision Queue, then Activity. Nothing here executes or grants
-          permission.
+          Session is the default runtime view — one coherent snapshot over
+          existing understanding. Nothing here executes or grants permission.
         </p>
       </header>
+
+      <section>
+        <h3>Working session</h3>
+        <p className="muted">
+          Runtime orchestration over Workspace Intelligence. Owns no source
+          data. Decision Queue, Recommendations, Readiness, and Adaptations
+          remain independent.
+        </p>
+        <div className="row">
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("Session refreshed", async () => {
+                if (!workspace) return;
+                const next = await invokeIpc<WorkspaceSessionState>(
+                  "generate_workspace_session",
+                  { workspaceId: workspace.id },
+                );
+                setSessionState(next);
+                setSessionCompareNote(null);
+              })
+            }
+          >
+            Refresh session
+          </button>
+          <button
+            type="button"
+            disabled={busy || !workspace || !sessionState}
+            onClick={() =>
+              void run("Session compared", async () => {
+                if (!workspace || !sessionState) return;
+                const next = await invokeIpc<WorkspaceSessionState>(
+                  "generate_workspace_session",
+                  { workspaceId: workspace.id },
+                );
+                const comparison = await invokeIpc<WorkspaceSessionComparison>(
+                  "compare_workspace_sessions",
+                  { left: sessionState, right: next },
+                );
+                setSessionState(next);
+                setSessionCompareNote(comparison.differences.join(" · "));
+              })
+            }
+          >
+            Compare session
+          </button>
+        </div>
+        {sessionState ? (
+          <>
+            <p>
+              <strong>{sessionState.session_summary.headline}</strong>
+            </p>
+            <p>{sessionState.session_summary.doing_line}</p>
+            <p className="muted">{sessionState.session_summary.matters_line}</p>
+            <p className="muted">{sessionState.session_summary.blocked_line}</p>
+            <p className="muted">{sessionState.session_summary.ready_line}</p>
+            <p className="muted">{sessionState.session_summary.changed_line}</p>
+            <p className="muted">
+              Focus: {sessionState.focus.project_label ?? "no project"} /{" "}
+              {sessionState.focus.task_label ?? "no task"} · Decisions{" "}
+              {sessionState.decision_count} · Risks {sessionState.risk_count} ·
+              Readiness {sessionState.readiness.overall_status} · authority:{" "}
+              {sessionState.authority_effect}
+            </p>
+            {sessionState.risks.length > 0 && (
+              <ul className="intelligence-list">
+                {sessionState.risks.slice(0, 4).map((risk) => (
+                  <li key={risk.id}>
+                    <strong>{risk.title}</strong>
+                    <div className="muted">
+                      {risk.explanation} · from {risk.source_projection}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {sessionCompareNote && (
+              <p className="muted">Compare: {sessionCompareNote}</p>
+            )}
+          </>
+        ) : (
+          <p className="muted">No session snapshot yet.</p>
+        )}
+      </section>
 
       <section>
         <h3>Current work</h3>
