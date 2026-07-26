@@ -84,6 +84,7 @@
 | `review_adaptation_proposal` | Product: mark adaptation reviewed (audit only) |
 | `accept_adaptation_proposal` | Product: accept adaptation → Intent handoff only (never executes) |
 | `reject_adaptation_proposal` | Product: reject adaptation (audit only; no workspace mutation) |
+| `generate_workspace_readiness` | Product: aggregate preparedness for current work (never prepares/executes) |
 | `create_memory_entry` / `list_memory_entries` / `get_memory_context` | Diagnostic governed memory (informational) |
 | `delete_memory_entry` / `clear_memory_entries` | Diagnostic memory lifecycle |
 | `diagnose_ai_plan_preview` | Diagnostic memory-aware plan (no execution) |

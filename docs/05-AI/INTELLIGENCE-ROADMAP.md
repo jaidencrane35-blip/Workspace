@@ -152,6 +152,10 @@ Workspace Pattern Model foundation (Sprint 90) — recurring structures from Act
 
 Workspace Adaptation Proposal foundation (Sprint 91) — possible improvements from Pattern + Recommendation + Operating State + Composition; human review required; accept → Intent handoff only. Never mutates layout or bypasses Gateway. See [Workspace Adaptation Proposal](WORKSPACE-ADAPTATION-PROPOSAL.md).
 
+## Phase 5 Batch 13 (done)
+
+Workspace Readiness Model foundation (Sprint 92) — preparedness for current work from Operating State + Environment + Composition + Task Graph + Purpose + Continuity + Evolution + Patterns + Decision Queue; Recommendation and Adaptation may consume gaps; never prepares or executes. Distinct from runtime WorkspaceHealth. See [Workspace Readiness Model](WORKSPACE-READINESS-MODEL.md).
+
 ---
 
 ## Never build

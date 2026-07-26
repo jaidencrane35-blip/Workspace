@@ -16,6 +16,7 @@ mod workspace_recommendation;
 mod workspace_operating_state;
 mod workspace_pattern;
 mod workspace_adaptation;
+mod workspace_readiness;
 mod context;
 mod execute_intent_request;
 mod create_suggestion_intent_request;
@@ -116,6 +117,7 @@ mod workspace_operating_state_tests;
 mod workspace_pattern_tests;
 #[cfg(test)]
 mod workspace_adaptation_tests;
+mod workspace_readiness_tests;
 #[cfg(test)]
 mod ai_memory_tests;
 #[cfg(test)]

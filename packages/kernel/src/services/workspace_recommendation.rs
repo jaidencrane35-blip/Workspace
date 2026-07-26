@@ -649,6 +649,82 @@ impl WorkspaceRecommendationEngineService {
         Ok(state)
     }
 
+    /// Merge Readiness gaps into recommendations as evidence-only context.
+    /// Does not regenerate Readiness — avoids circular regen.
+    pub(crate) fn enrich_with_readiness(
+        recommendations: &WorkspaceRecommendationEngineState,
+        readiness: &workspace_domain::WorkspaceReadinessState,
+    ) -> Result<WorkspaceRecommendationEngineState> {
+        let mut state = recommendations.clone();
+        let mut seen: HashSet<String> = state.candidates.iter().map(|c| c.id.clone()).collect();
+        for gap in readiness
+            .assessments
+            .iter()
+            .flat_map(|a| a.gaps.iter())
+            .take(4)
+        {
+            let id = format!("recommendation:from_readiness:{}", gap.id);
+            if !seen.insert(id.clone()) {
+                continue;
+            }
+            let kind = match gap.kind.as_str() {
+                "pending_approval" | "pending_decisions" => RecommendationKind::ReviewDecision,
+                "blocked_tasks" | "unresolved_dependencies" | "continuity_blocker" => {
+                    RecommendationKind::ResolveBlocker
+                }
+                "interrupted_work" | "thin_context" => RecommendationKind::RestoreContext,
+                "missing_applications" | "disconnected_work" | "composition_gap" => {
+                    RecommendationKind::ReorganizeWorkspace
+                }
+                _ => RecommendationKind::ContinueWork,
+            };
+            state.candidates.push(RecommendationItem {
+                id,
+                kind,
+                title: format!("Address readiness gap: {}", gap.title),
+                reason: format!(
+                    "Readiness gap ({}): {}. Suggestion only — readiness never prepares or executes.",
+                    gap.kind, gap.explanation
+                ),
+                evidence: vec![RecommendationEvidence {
+                    id: format!("ev:readiness:{}", gap.id),
+                    source_model: format!("readiness:{}", gap.source_model),
+                    source_ref: gap.source_ref.clone(),
+                    summary: gap.impact.clone(),
+                }],
+                impact: gap.impact.clone(),
+                confidence: match readiness.overall_status {
+                    workspace_domain::ReadinessStatus::Blocked => RecommendationConfidence::High,
+                    workspace_domain::ReadinessStatus::PartiallyReady => {
+                        RecommendationConfidence::Medium
+                    }
+                    workspace_domain::ReadinessStatus::Ready => RecommendationConfidence::Low,
+                },
+                related_attention_id: None,
+                related_task_id: None,
+                related_purpose_label: Some(readiness.label.clone()),
+                related_decision_id: None,
+                authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
+            });
+        }
+        state.candidates.sort_by(|a, b| {
+            kind_rank(a.kind)
+                .cmp(&kind_rank(b.kind))
+                .then_with(|| a.id.cmp(&b.id))
+        });
+        if state.candidates.len() > 12 {
+            state.candidates.truncate(12);
+        }
+        state.candidate_count = state.candidates.len();
+        state.evidence.push(format!(
+            "Readiness gaps used as evidence: {} (status: {})",
+            readiness.gap_count,
+            readiness.overall_status.as_str()
+        ));
+        state.summary = build_recommendation_engine_summary(&state.label, state.candidate_count);
+        Ok(state)
+    }
+
     pub(crate) fn attempt_execute() -> Result<()> {
         Err(KernelError::from(
             workspace_domain::WorkspaceRecommendationEngineError::CannotExecute,

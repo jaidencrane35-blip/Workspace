@@ -1267,6 +1267,8 @@ export interface WorkspaceIntelligenceState {
   operating_state: WorkspaceOperatingStateSummary;
   pattern: WorkspacePatternSummary;
   adaptation: WorkspaceAdaptationSummary;
+  /** Preparedness for current work — distinct from workspace_health (kernel lifecycle). */
+  readiness: WorkspaceReadinessSummary;
   workspace_health: string;
   summary: string;
   authority_effect: string;
@@ -2025,6 +2027,87 @@ export interface AdaptationHandoff {
 export interface AdaptationActionResult {
   proposal: AdaptationProposal | null;
   handoff: AdaptationHandoff | null;
+  authority_effect: string;
+}
+
+export type ReadinessKind =
+  | "environment_readiness"
+  | "context_readiness"
+  | "task_readiness"
+  | "decision_readiness"
+  | "purpose_readiness";
+
+export type ReadinessStatus = "ready" | "partially_ready" | "blocked";
+
+export interface ReadinessSignal {
+  id: string;
+  source_model: string;
+  source_ref: string;
+  summary: string;
+}
+
+export interface ReadinessGap {
+  id: string;
+  kind: string;
+  title: string;
+  explanation: string;
+  impact: string;
+  source_model: string;
+  source_ref: string;
+}
+
+export interface ReadinessAssessment {
+  id: string;
+  kind: ReadinessKind;
+  title: string;
+  status: ReadinessStatus;
+  reason: string;
+  signals: ReadinessSignal[];
+  gaps: ReadinessGap[];
+  impact: string;
+  authority_effect: string;
+}
+
+export interface ReadinessSummary {
+  headline: string;
+  status_line: string;
+  gap_line: string;
+  narrative: string;
+}
+
+export interface WorkspaceReadinessState {
+  workspace_id: string;
+  generated_at: string;
+  label: string;
+  overall_status: ReadinessStatus;
+  assessments: ReadinessAssessment[];
+  assessment_count: number;
+  gap_count: number;
+  ready_count: number;
+  partially_ready_count: number;
+  blocked_count: number;
+  readiness_summary: ReadinessSummary;
+  explanation: string;
+  evidence: string[];
+  summary: string;
+  authority_effect: string;
+}
+
+export interface WorkspaceReadinessSummary {
+  workspace_id: string;
+  generated_at: string;
+  label: string;
+  overall_status: ReadinessStatus;
+  assessment_count: number;
+  gap_count: number;
+  ready_count: number;
+  partially_ready_count: number;
+  blocked_count: number;
+  top_assessments: ReadinessAssessment[];
+  top_gaps: ReadinessGap[];
+  readiness_summary: ReadinessSummary;
+  explanation: string;
+  summary: string;
   authority_effect: string;
 }
 

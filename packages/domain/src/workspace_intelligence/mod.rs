@@ -17,6 +17,7 @@ use crate::workspace_recommendation::WorkspaceRecommendationEngineSummary;
 use crate::workspace_operating_state::WorkspaceOperatingStateSummary;
 use crate::workspace_pattern::WorkspacePatternSummary;
 use crate::workspace_adaptation::WorkspaceAdaptationSummary;
+use crate::workspace_readiness::WorkspaceReadinessSummary;
 use crate::workspace_environment::WorkspaceEnvironmentSummary;
 use crate::workspace_task_graph::TaskGraphSummary;
 use crate::workspace_activity::WorkspaceActivityGraphSummary;
@@ -136,6 +137,9 @@ pub struct WorkspaceIntelligenceState {
     pub pattern: WorkspacePatternSummary,
     /// Adaptation Proposal summary (Phase 5). Possible improvements — never executes.
     pub adaptation: WorkspaceAdaptationSummary,
+    /// Readiness Model summary (Phase 5). Preparedness for current work — never executes.
+    /// Distinct from runtime `workspace_health` (kernel lifecycle).
+    pub readiness: WorkspaceReadinessSummary,
     pub workspace_health: String,
     pub summary: String,
     /// Explicit marker for audits and UI: this state grants nothing.

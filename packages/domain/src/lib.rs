@@ -49,6 +49,7 @@ pub mod workspace_recommendation;
 pub mod workspace_operating_state;
 pub mod workspace_pattern;
 pub mod workspace_adaptation;
+pub mod workspace_readiness;
 pub mod workspace_continuity;
 pub mod workspace_task_graph;
 pub mod workspace_environment;
@@ -235,6 +236,12 @@ pub use workspace_adaptation::{
     AdaptationKind, AdaptationProposal, AdaptationStatus, AdaptationSummary, AdaptationTarget,
     AdaptationTargetKind, WorkspaceAdaptationError, WorkspaceAdaptationState,
     WorkspaceAdaptationSummary,
+};
+pub use workspace_readiness::{
+    build_readiness_summary, readiness_now_rfc3339, validate_readiness_workspace_id,
+    ReadinessAssessment, ReadinessGap, ReadinessKind, ReadinessSignal, ReadinessStatus,
+    ReadinessSummary, WorkspaceReadinessError, WorkspaceReadinessState,
+    WorkspaceReadinessSummary,
 };
 pub use workspace_environment::{
     build_environment_summary, now_rfc3339, validate_workspace_id, EnvironmentApplication,

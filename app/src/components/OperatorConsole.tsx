@@ -18,6 +18,7 @@ import type {
   WorkspaceOperatingState,
   WorkspacePatternState,
   WorkspaceAdaptationState,
+  WorkspaceReadinessState,
   AiOrchestratedPlan,
   AiPlan,
   AiPlanEvaluationReport,
@@ -169,6 +170,8 @@ export function OperatorConsole({
     useState<WorkspacePatternState | null>(null);
   const [adaptationState, setAdaptationState] =
     useState<WorkspaceAdaptationState | null>(null);
+  const [readinessState, setReadinessState] =
+    useState<WorkspaceReadinessState | null>(null);
   const [activeProject, setActiveProject] = useState<Project | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [memoryEntries, setMemoryEntries] = useState<MemoryEntry[]>([]);
@@ -1926,6 +1929,59 @@ export function OperatorConsole({
             <li>
               Open {adaptationState.open_count} · authority{" "}
               {adaptationState.authority_effect}
+            </li>
+          </ul>
+        )}
+      </section>
+
+      <section>
+        <h2>Workspace Readiness (diagnostics)</h2>
+        <p className="muted">
+          Preparedness for current work — informational only. Never prepares,
+          launches, or executes. Distinct from runtime health.
+        </p>
+        <div className="row">
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("Readiness assessed", async () => {
+                if (!workspace) return;
+                const state = await invokeIpc<WorkspaceReadinessState>(
+                  "generate_workspace_readiness",
+                  { workspaceId: workspace.id },
+                );
+                setReadinessState(state);
+              })
+            }
+          >
+            Inspect readiness
+          </button>
+          <button
+            type="button"
+            disabled={busy || !readinessState}
+            onClick={() =>
+              void run("Readiness assessments inspected", async () => {
+                if (!readinessState) return;
+                onMessage(
+                  readinessState.assessments.length
+                    ? readinessState.assessments
+                        .map((a) => `${a.kind}: ${a.status}`)
+                        .join(" · ")
+                    : readinessState.summary,
+                );
+              })
+            }
+          >
+            Inspect assessments
+          </button>
+        </div>
+        {readinessState && (
+          <ul className="muted">
+            <li>{readinessState.readiness_summary.status_line}</li>
+            <li>
+              {readinessState.overall_status} · {readinessState.gap_count} gap(s)
+              · authority {readinessState.authority_effect}
             </li>
           </ul>
         )}

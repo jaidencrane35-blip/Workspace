@@ -24,6 +24,7 @@ use crate::commands::workspace_recommendation::GateRecommendationEngineRead;
 use crate::commands::workspace_operating_state::GateOperatingStateRead;
 use crate::commands::workspace_pattern::GatePatternRead;
 use crate::commands::workspace_adaptation::{GateAdaptationRead, GateAdaptationWrite};
+use crate::commands::workspace_readiness::GateReadinessRead;
 use crate::commands::workspace_activity::GateActivityGraphRead;
 use crate::commands::workspace_attention::GateAttentionRead;
 use crate::commands::workspace_continuity::GateContinuityRead;
@@ -83,7 +84,7 @@ use crate::services::{
     DesktopWindowService, TaskGraphService, WorkspaceEnvironmentService,
     WorkspaceCompositionService, WorkspacePurposeService, WorkspaceEvolutionService,
     WorkspaceRecommendationEngineService, WorkspaceOperatingStateService,
-    WorkspacePatternService, WorkspaceAdaptationService,
+    WorkspacePatternService, WorkspaceAdaptationService, WorkspaceReadinessService,
     WorkspaceActivityGraphService, WorkspaceAttentionService, WorkspaceContextService,
     WorkspaceContinuityService, WorkspaceIntelligenceService,
 };
@@ -98,7 +99,8 @@ use workspace_domain::{
     WorkGoal, WorkflowContext, WorkspaceActivity, WorkspaceActivityGraph, WorkspaceAttentionState,
     WorkspaceContinuityState, WorkspaceEnvironmentState, WorkspaceCompositionState,
     WorkspacePurposeState, WorkspaceEvolutionState, WorkspaceRecommendationEngineState,
-    WorkspaceOperatingState,     WorkspacePatternState, AdaptationActionResult, WorkspaceAdaptationState, WorkspaceTask,
+    WorkspaceOperatingState, WorkspacePatternState, AdaptationActionResult, WorkspaceAdaptationState,
+    WorkspaceReadinessState, WorkspaceTask,
     WorkspaceTaskPriority, WorkspaceTaskStatus,
     WorkspaceIntelligenceComparison, WorkspaceIntelligenceState, AiPlan, AiPlanEvaluationReport,
     AiPlanSubmissionResult,
@@ -2948,6 +2950,35 @@ impl CommandHandler {
     /// Architecture guard — Adaptation must never execute.
     pub fn workspace_adaptation_attempt_execute() -> Result<()> {
         WorkspaceAdaptationService::attempt_execute()
+    }
+
+    /// Aggregate Workspace Readiness Model (read-only preparedness projection).
+    pub fn generate_workspace_readiness(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceReadinessState> {
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent.clone()))
+            .execute_query(GateReadinessRead)?;
+        let _ = Self::get_workflow_context(
+            kernel,
+            actor.clone(),
+            intent,
+            workspace_id.clone(),
+        )?;
+        WorkspaceReadinessService::generate(
+            &kernel.shared_database(),
+            &actor,
+            &kernel.orchestrated_plans(),
+            &kernel.assistant_workflows(),
+            workspace_id,
+        )
+    }
+
+    /// Architecture guard — Readiness must never execute or prepare.
+    pub fn workspace_readiness_attempt_execute() -> Result<()> {
+        WorkspaceReadinessService::attempt_execute()
     }
 
     /// Read-only workspace intelligence aggregation. Capability-gated; never executes.

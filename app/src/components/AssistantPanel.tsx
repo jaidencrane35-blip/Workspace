@@ -291,6 +291,15 @@ export function AssistantPanel({
               Same Adaptation layer as the Work tab. Assistant may explain and
               compare — never accept or apply adaptations.
             </dd>
+            <dt>Workspace Readiness</dt>
+            <dd>
+              {workspaceIntel.readiness.readiness_summary.status_line}{" "}
+              {workspaceIntel.readiness.top_gaps.length > 0
+                ? `Gap: ${workspaceIntel.readiness.top_gaps[0].title}. `
+                : ""}
+              Same Readiness Model as the Work tab. Assistant may explain blockers
+              and missing context — never prepare or fix the Workspace.
+            </dd>
             <dt>Continuity</dt>
             <dd>
               {workspaceIntel.continuity.summary}{" "}

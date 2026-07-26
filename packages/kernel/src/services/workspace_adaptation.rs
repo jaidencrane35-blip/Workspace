@@ -17,7 +17,7 @@ use workspace_domain::{
     AdaptationTargetKind, IntentContext, PatternKind, RecommendationKind, WorkspaceAdaptationState,
     WorkspaceAdaptationSummary, WorkspaceCompositionState, WorkspaceContinuityState,
     WorkspaceEnvironmentState, WorkspaceOperatingState, WorkspacePatternState,
-    WorkspacePurposeState, WorkspaceRecommendationEngineState,
+    WorkspacePurposeState, WorkspaceReadinessState, WorkspaceRecommendationEngineState,
 };
 
 use crate::error::{KernelError, Result};
@@ -154,6 +154,7 @@ impl WorkspaceAdaptationService {
             &environment,
             &continuity,
             &purpose,
+            None,
         )
     }
 
@@ -170,6 +171,7 @@ impl WorkspaceAdaptationService {
         environment: &WorkspaceEnvironmentState,
         continuity: &WorkspaceContinuityState,
         purpose: &WorkspacePurposeState,
+        readiness: Option<&WorkspaceReadinessState>,
     ) -> Result<WorkspaceAdaptationState> {
         let workspace_id =
             validate_adaptation_workspace_id(workspace_id).map_err(KernelError::from)?;
@@ -452,6 +454,66 @@ impl WorkspaceAdaptationService {
                     authority_effect: AdaptationProposal::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
+        }
+
+        // Readiness gaps may inform adaptation proposals (consumer only — no ownership).
+        if let Some(readiness) = readiness {
+            for gap in readiness
+                .assessments
+                .iter()
+                .flat_map(|a| a.gaps.iter())
+                .take(3)
+            {
+                let id = format!("adaptation:readiness:{}", gap.id);
+                if !seen.insert(id.clone()) {
+                    continue;
+                }
+                let kind = match gap.kind.as_str() {
+                    "interrupted_work" | "thin_context" => AdaptationKind::ContextRestoration,
+                    "missing_applications" | "disconnected_work" | "composition_gap" => {
+                        AdaptationKind::WorkspaceOrganization
+                    }
+                    "blocked_tasks" | "unresolved_dependencies" => {
+                        AdaptationKind::TaskOrganization
+                    }
+                    _ => AdaptationKind::WorkflowShortcut,
+                };
+                proposals.push(AdaptationProposal {
+                    id,
+                    kind,
+                    title: format!("Improve readiness: {}", gap.title),
+                    reason: format!(
+                        "Readiness reports gap \"{}\" (status {}). Adaptation proposes a possible improvement — never prepares the Workspace.",
+                        gap.title,
+                        readiness.overall_status.as_str()
+                    ),
+                    evidence: vec![AdaptationEvidence {
+                        id: format!("ev:readiness:{}", gap.id),
+                        source_model: format!("readiness:{}", gap.source_model),
+                        source_ref: gap.source_ref.clone(),
+                        summary: gap.explanation.clone(),
+                    }],
+                    impact: AdaptationImpact {
+                        benefit: gap.impact.clone(),
+                        risk: "Closing this gap requires human Intent through the Gateway — Adaptation never applies it."
+                            .into(),
+                    },
+                    target: AdaptationTarget {
+                        kind: AdaptationTargetKind::Purpose,
+                        ref_id: gap.source_ref.clone(),
+                        label: readiness.label.clone(),
+                    },
+                    status: AdaptationStatus::Proposed,
+                    related_pattern_id: None,
+                    related_recommendation_id: None,
+                    authority_effect: AdaptationProposal::AUTHORITY_EFFECT_NONE.into(),
+                });
+            }
+            evidence.push(format!(
+                "Readiness gaps considered: {} ({})",
+                readiness.gap_count,
+                readiness.overall_status.as_str()
+            ));
         }
 
         proposals.sort_by(|a, b| {

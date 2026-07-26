@@ -24,6 +24,7 @@ import type {
   WorkspacePatternState,
   WorkspaceAdaptationState,
   AdaptationActionResult,
+  WorkspaceReadinessState,
   WorkspaceIntelligenceState,
 } from "../types/domain";
 
@@ -82,6 +83,8 @@ export function WorkspaceIntelligencePanel({
     useState<WorkspacePatternState | null>(null);
   const [adaptationState, setAdaptationState] =
     useState<WorkspaceAdaptationState | null>(null);
+  const [readinessState, setReadinessState] =
+    useState<WorkspaceReadinessState | null>(null);
   const [lastHandoff, setLastHandoff] = useState<string | null>(null);
   const [contractName, setContractName] = useState(
     "Prepare coding environment",
@@ -124,6 +127,7 @@ export function WorkspaceIntelligencePanel({
       setOperatingState(null);
       setPatternState(null);
       setAdaptationState(null);
+      setReadinessState(null);
       setLastHandoff(null);
       setState(null);
       return;
@@ -150,6 +154,7 @@ export function WorkspaceIntelligencePanel({
           ops,
           pat,
           adapt,
+          ready,
         ] = await Promise.all([
             invokeIpc<Project[]>("list_projects", {
               workspaceId: workspace.id,
@@ -214,6 +219,9 @@ export function WorkspaceIntelligencePanel({
             invokeIpc<WorkspaceAdaptationState>("generate_workspace_adaptation", {
               workspaceId: workspace.id,
             }),
+            invokeIpc<WorkspaceReadinessState>("generate_workspace_readiness", {
+              workspaceId: workspace.id,
+            }),
           ]);
         if (!cancelled) {
           setProjects(listed);
@@ -234,6 +242,7 @@ export function WorkspaceIntelligencePanel({
           setOperatingState(ops);
           setPatternState(pat);
           setAdaptationState(adapt);
+          setReadinessState(ready);
         }
       } catch (err: unknown) {
         if (!cancelled) {
@@ -938,6 +947,66 @@ export function WorkspaceIntelligencePanel({
           </>
         ) : (
           <p className="muted">No pattern snapshot yet.</p>
+        )}
+      </section>
+
+      <section>
+        <h3>Can I Continue Working?</h3>
+        <p className="muted">
+          Readiness — preparedness for current work from Operating State,
+          Environment, Composition, Task Graph, Purpose, Continuity, Evolution,
+          Patterns, and Decision Queue. Describes gaps only; never prepares or
+          executes. Distinct from runtime health.
+        </p>
+        <div className="row">
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("Readiness refreshed", async () => {
+                if (!workspace) return;
+                const next = await invokeIpc<WorkspaceReadinessState>(
+                  "generate_workspace_readiness",
+                  { workspaceId: workspace.id },
+                );
+                setReadinessState(next);
+              })
+            }
+          >
+            Refresh readiness
+          </button>
+        </div>
+        {readinessState ? (
+          <>
+            <p>
+              <strong>{readinessState.readiness_summary.headline}</strong>
+            </p>
+            <p>{readinessState.readiness_summary.status_line}</p>
+            <p className="muted">{readinessState.readiness_summary.narrative}</p>
+            <p className="muted">
+              Status: {readinessState.overall_status} · {readinessState.gap_count}{" "}
+              gap(s) · authority: {readinessState.authority_effect}
+            </p>
+            {readinessState.assessments.length > 0 && (
+              <ul className="intelligence-list">
+                {readinessState.assessments.map((item) => (
+                  <li key={item.id}>
+                    <strong>
+                      [{item.kind}] {item.title} — {item.status}
+                    </strong>
+                    <div className="muted">
+                      Why: {item.reason} · Impact: {item.impact}
+                      {item.gaps.length > 0
+                        ? ` · Gaps: ${item.gaps.map((g) => g.title).join("; ")}`
+                        : ""}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
+        ) : (
+          <p className="muted">No readiness snapshot yet.</p>
         )}
       </section>
 

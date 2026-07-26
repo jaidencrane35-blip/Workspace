@@ -25,6 +25,7 @@ use crate::services::{
     WorkspaceEnvironmentService, WorkspaceIntentService, WorkspaceCompositionService,
     WorkspacePurposeService, WorkspaceEvolutionService, WorkspaceRecommendationEngineService,
     WorkspaceOperatingStateService, WorkspacePatternService, WorkspaceAdaptationService,
+    WorkspaceReadinessService,
 };
 
 pub(crate) struct WorkspaceIntelligenceService;
@@ -240,23 +241,48 @@ impl WorkspaceIntelligenceService {
         let pattern = WorkspacePatternService::summary_projection(&full_pattern, 8);
 
         // Recommendation Engine may consume patterns as evidence (no circular regen).
-        let full_recommendation_engine =
+        let recommendation_with_patterns =
             WorkspaceRecommendationEngineService::enrich_with_patterns(
                 db,
                 actor,
                 &base_recommendation_engine,
                 &full_pattern,
             )?;
-        let recommendation_engine = WorkspaceRecommendationEngineService::summary_projection(
-            &full_recommendation_engine,
-            8,
-        );
 
         // Attention may surface pattern-informed context after Pattern is built.
         let attention_with_patterns = WorkspaceAttentionService::enrich_with_patterns(
             &attention_with_recs,
             &full_pattern,
         )?;
+
+        // Readiness consumes OS + Pattern + upstream aggregators (before RE/Adaptation enrich).
+        let full_readiness = WorkspaceReadinessService::generate_with_inputs(
+            db,
+            actor,
+            ws,
+            &full_operating_state,
+            &full_environment,
+            &full_composition,
+            &full_task_graph,
+            &full_purpose,
+            &full_continuity,
+            &full_evolution,
+            &full_pattern,
+            &full_decision_queue,
+        )?;
+        let readiness = WorkspaceReadinessService::summary_projection(&full_readiness, 8);
+
+        // Recommendation Engine may consume readiness gaps as evidence (no circular regen).
+        let full_recommendation_engine =
+            WorkspaceRecommendationEngineService::enrich_with_readiness(
+                &recommendation_with_patterns,
+                &full_readiness,
+            )?;
+        let recommendation_engine = WorkspaceRecommendationEngineService::summary_projection(
+            &full_recommendation_engine,
+            8,
+        );
+
         let full_attention = WorkspaceAttentionService::enrich_with_recommendations(
             &attention_with_patterns,
             &full_recommendation_engine,
@@ -274,6 +300,7 @@ impl WorkspaceIntelligenceService {
             &full_environment,
             &full_continuity,
             &full_purpose,
+            Some(&full_readiness),
         )?;
         let adaptation = WorkspaceAdaptationService::summary_projection(&full_adaptation, 8);
 
@@ -440,6 +467,7 @@ impl WorkspaceIntelligenceService {
             operating_state,
             pattern,
             adaptation,
+            readiness,
             workspace_health: health_label,
             summary,
             authority_effect: WorkspaceIntelligenceState::AUTHORITY_EFFECT_NONE.into(),
