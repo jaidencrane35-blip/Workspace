@@ -81,6 +81,11 @@ WorkspaceState
 | Audit | `RuntimeDiagnosticLineageRecord` | Lifecycle steps + currency (current/historical/restored) |
 | Audit | `RuntimeDiagnosticTrustRecord` | Producer version, limitations, currency — informational |
 | Audit | `RuntimeDiagnosticLineageValidation` | Ordering + restoration read-only checks |
+| Audit | `RuntimeDiagnosticLifecycleClosure` | Terminal/invalid transitions; RestoredView = currency not phase |
+| Audit | `RuntimeDiagnosticContractCatalog` | Static registration/discovery; none executable |
+| Audit | `RuntimeDiagnosticCompatibilityReport` | Catalog vs compatibility identity report |
+| Audit | `RuntimeDiagnosticInteropContract` | Read-only coexistence with Governance/Audit/Continuity/Experience |
+| Audit | `RuntimeDiagnosticExplanationIntegrity` | what/why/who/version/currency for operator explanations |
 
 Authority: `authority_effect: none` (`GOVERNANCE_AUTHORITY_EFFECT_NONE`).
 
@@ -143,6 +148,15 @@ scope, source, and limitations — observational meaning only.
 `RuntimeDiagnosticCompatibilityContract` reuses schema-version as identity only —
 `may_migrate == false`; `attempt_migrate` hard-fails. Distinct from
 `GovernanceCompatibilityContract` and from AuditService / Continuity Engine archives.
+
+### Closure & interoperability
+
+| Rule | Detail |
+|------|--------|
+| Terminal phase | `Archived` (`is_terminal`); `RestoredView` is currency only |
+| Contract catalog | Static discoverable entries; `executable == false`; no dynamic load |
+| Interop | May cite Governance/Audit/Continuity/Operator read-only; must not own or drive Experience |
+| Explanation integrity | Operator answers what/why/who/version/currency via trust + lineage |
 
 No hidden repair, auto-heal, or silent mutation paths.
 

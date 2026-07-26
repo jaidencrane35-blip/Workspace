@@ -202,6 +202,7 @@ mod workspace_runtime_diagnostic_evolution_contract_tests;
 mod workspace_runtime_diagnostic_integrity_contract_tests;
 mod workspace_runtime_diagnostic_consumption_contract_tests;
 mod workspace_runtime_diagnostic_trust_contract_tests;
+mod workspace_runtime_diagnostic_closure_contract_tests;
 mod workspace_work_context_tests;
 mod workspace_navigation_tests;
 mod workspace_milestone_tests;

@@ -19,6 +19,8 @@
 //! without treating them as commands, recommendations, or authority.
 //! Diagnostic trust/compatibility identities and lineage records let consumers
 //! know producer version and currency — informational only; no migration apply.
+//! Diagnostic closure adds terminal lifecycle validation, static contract catalog,
+//! cross-domain interoperability, and explanation integrity.
 
 mod diagnostics;
 pub use diagnostics::*;
@@ -210,6 +212,9 @@ pub enum WorkspaceRuntimeError {
 
     #[error("runtime diagnostic compatibility is identity-only; migration apply forbidden")]
     DiagnosticCompatibilityReadOnly,
+
+    #[error("runtime diagnostic closure forbids mutation, loading, or foreign ownership")]
+    DiagnosticClosureReadOnly,
 }
 
 // ---------------------------------------------------------------------------

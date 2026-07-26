@@ -1313,6 +1313,15 @@ impl RuntimeDiagnosticLifecyclePhase {
                 | (Self::Provenanced, Self::Superseded)
         )
     }
+
+    /// Retention terminal — history kept; RestoredView is currency, not a phase.
+    pub fn is_terminal(self) -> bool {
+        matches!(self, Self::Archived)
+    }
+
+    pub fn is_invalid_standalone(self) -> bool {
+        false
+    }
 }
 
 /// Immutable lifecycle record for one diagnostic snapshot in a lineage.
@@ -3189,6 +3198,420 @@ impl RuntimeDiagnosticLineageValidation {
     }
 }
 
+// ---------------------------------------------------------------------------
+// Runtime Diagnostic Closure (post–trust audit)
+// ---------------------------------------------------------------------------
+//
+// Trust/lineage cover producer version and currency, but lacked terminal-state
+// closure, static contract catalog/discovery, cross-domain interoperability
+// declarations, and explanation integrity tying trust into operator answers.
+
+/// Lifecycle closure check — terminal + invalid transition detection; no mutation.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RuntimeDiagnosticLifecycleClosure {
+    pub id: String,
+    pub snapshot_id: String,
+    pub current_phase: RuntimeDiagnosticLifecyclePhase,
+    pub terminal: bool,
+    pub ordering_ok: bool,
+    pub invalid_transitions: Vec<String>,
+    pub restored_view_is_currency_not_phase: bool,
+    pub authority_effect: String,
+}
+
+impl RuntimeDiagnosticLifecycleClosure {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = AUTH_NONE;
+
+    pub fn evaluate(lineage: &RuntimeDiagnosticLineageRecord) -> Self {
+        let mut invalid_transitions = Vec::new();
+        let mut prev: Option<RuntimeDiagnosticLifecyclePhase> = None;
+        for step in &lineage.steps {
+            if let Some(p) = prev {
+                if p != step.phase && !p.may_transition_to(step.phase) {
+                    invalid_transitions.push(format!(
+                        "{}→{}",
+                        p.as_str(),
+                        step.phase.as_str()
+                    ));
+                }
+            }
+            prev = Some(step.phase);
+        }
+        let terminal = lineage.current_phase.is_terminal()
+            || (lineage.currency == RuntimeDiagnosticCurrency::Historical
+                && lineage.current_phase == RuntimeDiagnosticLifecyclePhase::Superseded)
+            || lineage.currency == RuntimeDiagnosticCurrency::RestoredView;
+        Self {
+            id: format!("runtime_diagnostic_lifecycle_closure:{}", lineage.snapshot_id),
+            snapshot_id: lineage.snapshot_id.clone(),
+            current_phase: lineage.current_phase,
+            terminal,
+            ordering_ok: invalid_transitions.is_empty() && lineage.ordering_ok(),
+            invalid_transitions,
+            restored_view_is_currency_not_phase: true,
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        }
+    }
+
+    pub fn closed(&self) -> bool {
+        self.ordering_ok
+            && self.invalid_transitions.is_empty()
+            && self.restored_view_is_currency_not_phase
+            && self.authority_effect == Self::AUTHORITY_EFFECT_NONE
+    }
+
+    pub fn attempt_mutate(&self) -> Result<(), WorkspaceRuntimeError> {
+        Err(WorkspaceRuntimeError::DiagnosticClosureReadOnly)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RuntimeDiagnosticContractCatalogEntry {
+    pub identity: RuntimeDiagnosticContractIdentity,
+    pub owner: RuntimeDiagnosticOwnershipRole,
+    pub discoverable: bool,
+    pub executable: bool,
+    pub notes: String,
+}
+
+/// Static registration/discovery catalog — no dynamic loading or execution.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RuntimeDiagnosticContractCatalog {
+    pub id: String,
+    pub entries: Vec<RuntimeDiagnosticContractCatalogEntry>,
+    pub authority_effect: String,
+}
+
+impl RuntimeDiagnosticContractCatalog {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = AUTH_NONE;
+
+    pub fn canonical() -> Self {
+        let entry = |family: RuntimeDiagnosticContractFamily,
+                     owner: RuntimeDiagnosticOwnershipRole,
+                     notes: &str| RuntimeDiagnosticContractCatalogEntry {
+            identity: RuntimeDiagnosticContractIdentity::canonical(family),
+            owner,
+            discoverable: true,
+            executable: false,
+            notes: notes.into(),
+        };
+        Self {
+            id: "runtime_diagnostic_contract_catalog:canonical".into(),
+            entries: vec![
+                entry(
+                    RuntimeDiagnosticContractFamily::Snapshot,
+                    RuntimeDiagnosticOwnershipRole::ObservationalDiagnostics,
+                    "point-in-time observational capture",
+                ),
+                entry(
+                    RuntimeDiagnosticContractFamily::Provenance,
+                    RuntimeDiagnosticOwnershipRole::ObservationalDiagnostics,
+                    "input citations",
+                ),
+                entry(
+                    RuntimeDiagnosticContractFamily::Continuity,
+                    RuntimeDiagnosticOwnershipRole::ObservationalDiagnostics,
+                    "diagnostic continuity ≠ work continuity",
+                ),
+                entry(
+                    RuntimeDiagnosticContractFamily::Comparison,
+                    RuntimeDiagnosticOwnershipRole::ObservationalDiagnostics,
+                    "structured deltas",
+                ),
+                entry(
+                    RuntimeDiagnosticContractFamily::Evolution,
+                    RuntimeDiagnosticOwnershipRole::ObservationalDiagnostics,
+                    "validation/interpretation",
+                ),
+                entry(
+                    RuntimeDiagnosticContractFamily::Evidence,
+                    RuntimeDiagnosticOwnershipRole::ObservationalDiagnostics,
+                    "sealed digests",
+                ),
+                entry(
+                    RuntimeDiagnosticContractFamily::Archive,
+                    RuntimeDiagnosticOwnershipRole::ObservationalDiagnostics,
+                    "append-only retention",
+                ),
+                entry(
+                    RuntimeDiagnosticContractFamily::Consumption,
+                    RuntimeDiagnosticOwnershipRole::ObservationalDiagnostics,
+                    "allowed consumers only",
+                ),
+                entry(
+                    RuntimeDiagnosticContractFamily::Interpretation,
+                    RuntimeDiagnosticOwnershipRole::ObservationalDiagnostics,
+                    "structured findings",
+                ),
+                entry(
+                    RuntimeDiagnosticContractFamily::Ownership,
+                    RuntimeDiagnosticOwnershipRole::ObservationalDiagnostics,
+                    "descriptive ownership",
+                ),
+                entry(
+                    RuntimeDiagnosticContractFamily::Restoration,
+                    RuntimeDiagnosticOwnershipRole::ObservationalDiagnostics,
+                    "read-only rehydration",
+                ),
+                entry(
+                    RuntimeDiagnosticContractFamily::Lineage,
+                    RuntimeDiagnosticOwnershipRole::ObservationalDiagnostics,
+                    "lifecycle steps + currency",
+                ),
+                entry(
+                    RuntimeDiagnosticContractFamily::Trust,
+                    RuntimeDiagnosticOwnershipRole::ObservationalDiagnostics,
+                    "informational trust envelope",
+                ),
+            ],
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        }
+    }
+
+    pub fn discover(&self) -> Vec<&RuntimeDiagnosticContractCatalogEntry> {
+        self.entries.iter().filter(|e| e.discoverable).collect()
+    }
+
+    pub fn none_executable(&self) -> bool {
+        self.entries.iter().all(|e| !e.executable)
+    }
+
+    pub fn compatibility_report(
+        &self,
+        compatibility: &RuntimeDiagnosticCompatibilityContract,
+    ) -> RuntimeDiagnosticCompatibilityReport {
+        RuntimeDiagnosticCompatibilityReport::from_catalog(self, compatibility)
+    }
+
+    pub fn attempt_dynamic_load(&self) -> Result<(), WorkspaceRuntimeError> {
+        Err(WorkspaceRuntimeError::DiagnosticClosureReadOnly)
+    }
+
+    pub fn attempt_execute() -> Result<(), WorkspaceRuntimeError> {
+        Err(WorkspaceRuntimeError::CannotExecute)
+    }
+}
+
+/// Compatibility reporting over the static catalog — identity only.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RuntimeDiagnosticCompatibilityReport {
+    pub id: String,
+    pub catalog_id: String,
+    pub compatible_families: Vec<String>,
+    pub incompatible_families: Vec<String>,
+    pub schema_version_floor: i32,
+    pub may_migrate: bool,
+    pub authority_effect: String,
+}
+
+impl RuntimeDiagnosticCompatibilityReport {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = AUTH_NONE;
+
+    pub fn from_catalog(
+        catalog: &RuntimeDiagnosticContractCatalog,
+        compatibility: &RuntimeDiagnosticCompatibilityContract,
+    ) -> Self {
+        let mut compatible_families = Vec::new();
+        let mut incompatible_families = Vec::new();
+        for e in &catalog.entries {
+            if compatibility.is_compatible(&e.identity) {
+                compatible_families.push(e.identity.family.as_str().into());
+            } else {
+                incompatible_families.push(e.identity.family.as_str().into());
+            }
+        }
+        Self {
+            id: format!("runtime_diagnostic_compatibility_report:{}", catalog.id),
+            catalog_id: catalog.id.clone(),
+            compatible_families,
+            incompatible_families,
+            schema_version_floor: compatibility.schema_version_floor,
+            may_migrate: false,
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        }
+    }
+
+    pub fn all_compatible(&self) -> bool {
+        self.incompatible_families.is_empty() && !self.may_migrate
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RuntimeDiagnosticInteropDomain {
+    GovernanceRecords,
+    AuditService,
+    WorkContinuity,
+    OperatorProjection,
+    ExperienceTranslation,
+}
+
+impl RuntimeDiagnosticInteropDomain {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::GovernanceRecords => "governance_records",
+            Self::AuditService => "audit_service",
+            Self::WorkContinuity => "work_continuity",
+            Self::OperatorProjection => "operator_projection",
+            Self::ExperienceTranslation => "experience_translation",
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RuntimeDiagnosticInteropEntry {
+    pub domain: RuntimeDiagnosticInteropDomain,
+    pub may_reference_read_only: bool,
+    pub may_own: bool,
+    pub may_emit_commands: bool,
+    pub notes: String,
+}
+
+/// Cross-domain coexistence — references read-only; ownership remains separate.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RuntimeDiagnosticInteropContract {
+    pub id: String,
+    pub entries: Vec<RuntimeDiagnosticInteropEntry>,
+    pub authority_effect: String,
+}
+
+impl RuntimeDiagnosticInteropContract {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = AUTH_NONE;
+
+    pub fn canonical() -> Self {
+        let entry = |domain: RuntimeDiagnosticInteropDomain,
+                     may_reference_read_only: bool,
+                     notes: &str| RuntimeDiagnosticInteropEntry {
+            domain,
+            may_reference_read_only,
+            may_own: false,
+            may_emit_commands: false,
+            notes: notes.into(),
+        };
+        Self {
+            id: "runtime_diagnostic_interop:canonical".into(),
+            entries: vec![
+                entry(
+                    RuntimeDiagnosticInteropDomain::GovernanceRecords,
+                    true,
+                    "may cite governance summary labels; never owns ledger/decisions",
+                ),
+                entry(
+                    RuntimeDiagnosticInteropDomain::AuditService,
+                    true,
+                    "diagnostic archive ≠ AuditService command trail",
+                ),
+                entry(
+                    RuntimeDiagnosticInteropDomain::WorkContinuity,
+                    true,
+                    "diagnostic continuity ≠ Continuity Engine resume facets",
+                ),
+                entry(
+                    RuntimeDiagnosticInteropDomain::OperatorProjection,
+                    true,
+                    "operator may consume explanations; never executes",
+                ),
+                entry(
+                    RuntimeDiagnosticInteropDomain::ExperienceTranslation,
+                    false,
+                    "diagnostics must not drive Experience translation",
+                ),
+            ],
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        }
+    }
+
+    pub fn boundaries_respected(&self) -> bool {
+        self.entries.iter().all(|e| !e.may_own && !e.may_emit_commands)
+            && self
+                .entries
+                .iter()
+                .find(|e| e.domain == RuntimeDiagnosticInteropDomain::ExperienceTranslation)
+                .is_some_and(|e| !e.may_reference_read_only)
+            && self.authority_effect == Self::AUTHORITY_EFFECT_NONE
+    }
+
+    pub fn attempt_own_foreign(&self) -> Result<(), WorkspaceRuntimeError> {
+        Err(WorkspaceRuntimeError::DiagnosticClosureReadOnly)
+    }
+
+    pub fn attempt_execute() -> Result<(), WorkspaceRuntimeError> {
+        Err(WorkspaceRuntimeError::CannotExecute)
+    }
+}
+
+/// Operator explanation integrity — answers what/why/who/version/currency.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RuntimeDiagnosticExplanationIntegrity {
+    pub id: String,
+    pub workspace_id: String,
+    pub what_changed: Vec<String>,
+    pub why_changed: Vec<String>,
+    pub produced_by: String,
+    pub contract_version: String,
+    pub schema_version: i32,
+    pub currency: RuntimeDiagnosticCurrency,
+    pub trust_id: String,
+    pub lineage_id: String,
+    pub answers_complete: bool,
+    pub authority_effect: String,
+}
+
+impl RuntimeDiagnosticExplanationIntegrity {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = AUTH_NONE;
+
+    pub fn compose(
+        continuity: &RuntimeDiagnosticContinuityRecord,
+        interpretation: &RuntimeDiagnosticInterpretationView,
+        trust: &RuntimeDiagnosticTrustRecord,
+        lineage: &RuntimeDiagnosticLineageRecord,
+    ) -> Self {
+        let what_changed = continuity.what_changed.clone();
+        let mut why_changed = interpretation
+            .findings
+            .iter()
+            .map(|f| format!("{}:{}", f.scope.as_str(), f.detail))
+            .collect::<Vec<_>>();
+        if why_changed.is_empty() {
+            why_changed.push("no_structured_findings".into());
+        }
+        let answers_complete = !what_changed.is_empty()
+            && !why_changed.is_empty()
+            && !trust.producer.contract_version.is_empty()
+            && trust.trustworthy()
+            && lineage.ordering_ok();
+        Self {
+            id: format!(
+                "runtime_diagnostic_explanation_integrity:{}",
+                trust.workspace_id
+            ),
+            workspace_id: trust.workspace_id.clone(),
+            what_changed,
+            why_changed,
+            produced_by: format!(
+                "family={}:version={}",
+                trust.producer.family.as_str(),
+                trust.producer.contract_version
+            ),
+            contract_version: trust.producer.contract_version.clone(),
+            schema_version: trust.producer.schema_version,
+            currency: lineage.currency,
+            trust_id: trust.id.clone(),
+            lineage_id: lineage.id.clone(),
+            answers_complete,
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        }
+    }
+
+    pub fn may_execute(&self) -> bool {
+        false
+    }
+
+    pub fn attempt_execute() -> Result<(), WorkspaceRuntimeError> {
+        Err(WorkspaceRuntimeError::CannotExecute)
+    }
+}
+
 /// Observational continuity between diagnostic snapshots — not work continuity.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RuntimeDiagnosticContinuityRecord {
@@ -3338,6 +3761,46 @@ impl OperatorRuntimeExplanation {
             }
         }
         base.why.push("consumption=observe_explain_only".into());
+        base
+    }
+
+    /// Explain with trust/lineage integrity — what/why/who/version/currency.
+    pub fn explain_with_trust(
+        overview: &OperatorRuntimeOverview,
+        provenance: &RuntimeDiagnosticProvenance,
+        continuity: &RuntimeDiagnosticContinuityRecord,
+        evolution: &RuntimeDiagnosticEvolutionReport,
+        interpretation: &RuntimeDiagnosticInterpretationView,
+        integrity: &RuntimeDiagnosticExplanationIntegrity,
+    ) -> Self {
+        let mut base = Self::explain_with_interpretation(
+            overview,
+            provenance,
+            continuity,
+            evolution,
+            interpretation,
+        );
+        base.why.push(format!("produced_by={}", integrity.produced_by));
+        base.why.push(format!("contract_version={}", integrity.contract_version));
+        base.why.push(format!("schema_version={}", integrity.schema_version));
+        base.why.push(format!("currency={}", integrity.currency.as_str()));
+        base.why.push(format!("trust_id={}", integrity.trust_id));
+        base.why.push(format!(
+            "explanation_integrity_complete={}",
+            integrity.answers_complete
+        ));
+        for w in &integrity.what_changed {
+            let line = format!("what_changed:{w}");
+            if !base.why.iter().any(|x| x == &line) {
+                base.why.push(line);
+            }
+        }
+        for w in &integrity.why_changed {
+            let line = format!("why_changed:{w}");
+            if !base.why.iter().any(|x| x == &line) {
+                base.why.push(line);
+            }
+        }
         base
     }
 
@@ -3887,5 +4350,106 @@ mod tests {
             .iter()
             .any(|l| l.contains("contract_version=")));
         assert!(trust.limitations.iter().any(|l| l.contains("currency=")));
+    }
+
+    #[test]
+    fn diagnostic_closure_catalog_interop_and_explanation_integrity() {
+        let (ctx, health, graph, capabilities, snapshot, verification, overview, _review) =
+            sample_bundle();
+        let integration = WorkspaceRuntimeIntegrationContract::audit_default("ws-diag");
+        let operator = OperatorContextProjection::from_runtime_context(&ctx, &health);
+        let coherence =
+            WorkspaceRuntimeCoherence::review(&ctx, &integration, &health, &operator);
+        let provenance = RuntimeDiagnosticProvenance::from_capture(
+            &snapshot,
+            &ctx,
+            &health,
+            &graph,
+            &capabilities,
+            &verification,
+            &coherence,
+            Some(&overview),
+        );
+        let continuity =
+            RuntimeDiagnosticContinuityRecord::link(None, &snapshot, &provenance, "c-close");
+        let evolution = RuntimeDiagnosticEvolutionReport::evaluate(
+            None,
+            &snapshot,
+            &provenance,
+            &continuity,
+            Some(RuntimeDiagnosticLifecyclePhase::Provenanced),
+            "eval-close",
+        );
+        let interpretation = RuntimeDiagnosticInterpretationView::from_evolution(&evolution);
+        let evidence = RuntimeDiagnosticEvidenceBundle::seal(
+            &evolution,
+            &provenance,
+            &continuity,
+            "seal-close",
+        );
+        let mut archive = RuntimeDiagnosticArchive::new("ws-diag");
+        let entry = archive.archive_evidence(&evidence, "a-close").unwrap().clone();
+        let restoration = RuntimeDiagnosticRestorationView::rehydrate(
+            &archive,
+            &entry,
+            Some(&evidence),
+            "rest-close",
+        );
+        let lineage = RuntimeDiagnosticLineageRecord::assemble(
+            &snapshot,
+            &provenance,
+            &continuity,
+            &evolution,
+            Some(&entry.id),
+            Some(&restoration.id),
+            false,
+        );
+        let closure = RuntimeDiagnosticLifecycleClosure::evaluate(&lineage);
+        assert!(closure.closed());
+        assert!(closure.terminal);
+        assert!(closure.restored_view_is_currency_not_phase);
+        assert!(RuntimeDiagnosticLifecyclePhase::Archived.is_terminal());
+        assert!(!RuntimeDiagnosticLifecyclePhase::Evolved.is_terminal());
+        assert!(closure.attempt_mutate().is_err());
+
+        let catalog = RuntimeDiagnosticContractCatalog::canonical();
+        assert!(catalog.none_executable());
+        assert!(!catalog.discover().is_empty());
+        assert!(catalog.attempt_dynamic_load().is_err());
+        let report = catalog.compatibility_report(
+            &RuntimeDiagnosticCompatibilityContract::canonical(),
+        );
+        assert!(report.all_compatible());
+
+        let interop = RuntimeDiagnosticInteropContract::canonical();
+        assert!(interop.boundaries_respected());
+        assert!(interop.attempt_own_foreign().is_err());
+
+        let trust = RuntimeDiagnosticTrustRecord::attest(
+            &interpretation,
+            &lineage,
+            &RuntimeDiagnosticCompatibilityContract::canonical(),
+            &RuntimeProjectionBoundaryRegistry::canonical(),
+        );
+        let integrity = RuntimeDiagnosticExplanationIntegrity::compose(
+            &continuity,
+            &interpretation,
+            &trust,
+            &lineage,
+        );
+        assert!(integrity.answers_complete);
+        let explanation = OperatorRuntimeExplanation::explain_with_trust(
+            &overview,
+            &provenance,
+            &continuity,
+            &evolution,
+            &interpretation,
+            &integrity,
+        );
+        assert!(!explanation.is_execution_surface());
+        assert!(explanation.why.iter().any(|w| w.starts_with("produced_by=")));
+        assert!(explanation.why.iter().any(|w| w.starts_with("currency=")));
+        assert!(explanation.why.iter().any(|w| w.starts_with("what_changed:")));
+        assert!(explanation.why.iter().any(|w| w.starts_with("why_changed:")));
     }
 }
