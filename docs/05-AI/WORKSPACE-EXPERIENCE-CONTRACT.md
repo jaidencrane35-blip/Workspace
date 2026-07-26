@@ -147,8 +147,16 @@ Automated check: `pnpm verify:ui-experience-boundary`
 See [WORKSPACE-SEMANTIC-INTEGRITY.md](./WORKSPACE-SEMANTIC-INTEGRITY.md) for the
 full meaning-flow contract, reasoning-model relationship audit, and coverage table.
 
+## Sprint 135 — translation traces
+
+Optional developer traces (`ExperienceTranslationTrace`) record resolver path and
+DisplayReason for a given cognition input. See
+[WORKSPACE-EXPERIENCE-DEBUGGING.md](./WORKSPACE-EXPERIENCE-DEBUGGING.md).
+Normal UI must continue to render `DisplayReason` only.
+
 ## Related docs
 
+- [WORKSPACE-EXPERIENCE-DEBUGGING.md](./WORKSPACE-EXPERIENCE-DEBUGGING.md)
 - [WORKSPACE-EXPERIENCE-LAYER.md](./WORKSPACE-EXPERIENCE-LAYER.md)
 - [WORKSPACE-ATTENTION-ENGINE.md](./WORKSPACE-ATTENTION-ENGINE.md)
 - [WORKSPACE-INTELLIGENCE-FOUNDATION.md](./WORKSPACE-INTELLIGENCE-FOUNDATION.md)

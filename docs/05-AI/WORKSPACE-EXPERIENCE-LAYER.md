@@ -129,3 +129,7 @@ Human Intent
 Sprint 134 adds [WORKSPACE-SEMANTIC-INTEGRITY.md](./WORKSPACE-SEMANTIC-INTEGRITY.md):
 Domain owns meaning; Experience translates; UI renders. UI import boundary enforced
 via `pnpm verify:ui-experience-boundary`.
+
+Sprint 135 adds optional Experience translation traces for developer debugging —
+see [WORKSPACE-EXPERIENCE-DEBUGGING.md](./WORKSPACE-EXPERIENCE-DEBUGGING.md). Traces
+must not appear on Work/Assistant surfaces.

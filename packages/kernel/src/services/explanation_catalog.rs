@@ -72,6 +72,16 @@ pub(crate) enum LookupTier {
     PrefixFallback,
 }
 
+/// Catalog match with resolver-path identity for Experience traces.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct CatalogMatch {
+    pub title: &'static str,
+    pub description: &'static str,
+    pub tier: LookupTier,
+    /// e.g. `exact:decision.base.outstanding` or `prefix_pattern:purpose.obstacle.composition:*`
+    pub match_key: String,
+}
+
 static CATALOG: OnceLock<ExplanationCatalog> = OnceLock::new();
 
 fn catalog() -> &'static ExplanationCatalog {
@@ -85,46 +95,57 @@ fn catalog() -> &'static ExplanationCatalog {
 ///
 /// Order (catalog-owned): exact → prefix suffix → prefix pattern → prefix fallback.
 pub(crate) fn lookup_explanation_key(key: &str) -> Option<(&'static str, &'static str)> {
-    lookup_explanation_key_with_tier(key).map(|(title, desc, _)| (title, desc))
+    lookup_catalog_match(key).map(|m| (m.title, m.description))
 }
 
 pub(crate) fn lookup_explanation_key_with_tier(
     key: &str,
 ) -> Option<(&'static str, &'static str, LookupTier)> {
+    lookup_catalog_match(key).map(|m| (m.title, m.description, m.tier))
+}
+
+pub(crate) fn lookup_catalog_match(key: &str) -> Option<CatalogMatch> {
     let cat = catalog();
     if let Some(entry) = cat.exact.get(key) {
-        return Some((
-            leak_str(&entry.title),
-            leak_str(&entry.description),
-            LookupTier::Exact,
-        ));
+        return Some(CatalogMatch {
+            title: leak_str(&entry.title),
+            description: leak_str(&entry.description),
+            tier: LookupTier::Exact,
+            match_key: format!("exact:{key}"),
+        });
     }
     for rule in &cat.prefix_rules {
         let Some(rest) = key.strip_prefix(rule.prefix.as_str()) else {
             continue;
         };
         if let Some(entry) = rule.suffixes.get(rest) {
-            return Some((
-                leak_str(&entry.title),
-                leak_str(&entry.description),
-                LookupTier::PrefixSuffix,
-            ));
+            return Some(CatalogMatch {
+                title: leak_str(&entry.title),
+                description: leak_str(&entry.description),
+                tier: LookupTier::PrefixSuffix,
+                match_key: format!("prefix_suffix:{key}"),
+            });
         }
         for pattern in &rule.patterns {
             if rest.starts_with(pattern.starts_with.as_str()) {
-                return Some((
-                    leak_str(&pattern.title),
-                    leak_str(&pattern.description),
-                    LookupTier::PrefixPattern,
-                ));
+                return Some(CatalogMatch {
+                    title: leak_str(&pattern.title),
+                    description: leak_str(&pattern.description),
+                    tier: LookupTier::PrefixPattern,
+                    match_key: format!(
+                        "prefix_pattern:{}{}*",
+                        rule.prefix, pattern.starts_with
+                    ),
+                });
             }
         }
         if let Some(entry) = &rule.fallback {
-            return Some((
-                leak_str(&entry.title),
-                leak_str(&entry.description),
-                LookupTier::PrefixFallback,
-            ));
+            return Some(CatalogMatch {
+                title: leak_str(&entry.title),
+                description: leak_str(&entry.description),
+                tier: LookupTier::PrefixFallback,
+                match_key: format!("prefix_fallback:{}*", rule.prefix),
+            });
         }
     }
     None

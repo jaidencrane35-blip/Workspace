@@ -5,10 +5,13 @@ use crate::services::explanation_catalog::{
     lookup_explanation_key_with_tier, unknown_description, LookupTier,
 };
 use crate::services::explanation_resolver::{
-    resolve_attention_reason, resolve_attention_reasons, resolve_decision_reason,
-    resolve_decision_reasons,
+    resolve_attention_reason, resolve_attention_reason_traced, resolve_attention_reasons,
+    resolve_decision_reason, resolve_decision_reason_traced, resolve_decision_reasons,
 };
-use workspace_domain::{AttentionReason, AttentionSignal, AttentionSourceType, DecisionReason};
+use workspace_domain::{
+    AttentionReason, AttentionSignal, AttentionSourceType, DecisionReason,
+    ExperienceResolverPathKind,
+};
 
 fn reason(key: &str, signal: AttentionSignal, weight: i32) -> AttentionReason {
     AttentionReason::new(AttentionSourceType::TaskGraph, signal, weight, key)
@@ -266,4 +269,131 @@ fn case18_translation_preserves_domain_reason_structure() {
     let _ = resolve_decision_reason(&decision);
     assert_eq!(attention.explanation_key, before_key);
     assert_eq!(attention.weight, before_weight);
+}
+
+/// CASE 22 — Translation traces do not mutate Domain reasoning.
+#[test]
+fn case22_trace_does_not_mutate_domain_reasoning() {
+    let attention = reason("task.base.blocked", AttentionSignal::BlockedTask, 40);
+    let before = attention.clone();
+    let trace = resolve_attention_reason_traced(&attention, Some("test"));
+    assert_eq!(attention, before);
+    assert_eq!(trace.display.explanation_key, attention.explanation_key);
+    assert_eq!(trace.source_reasoning_type, "attention_reason");
+}
+
+/// CASE 23 — Same input produces deterministic traces.
+#[test]
+fn case23_same_input_produces_deterministic_trace() {
+    let input = reason(
+        "purpose.obstacle.composition:missing_application",
+        AttentionSignal::PurposeObstacle,
+        36,
+    );
+    let a = resolve_attention_reason_traced(&input, Some("operator"));
+    let b = resolve_attention_reason_traced(&input, Some("operator"));
+    assert_eq!(a, b);
+    assert_eq!(
+        a.resolver_path.kind,
+        ExperienceResolverPathKind::PrefixPattern
+    );
+    assert_eq!(
+        a.resolver_path.match_key,
+        "prefix_pattern:purpose.obstacle.composition:*"
+    );
+}
+
+/// CASE 24 — Unknown keys produce a safe unknown-path trace.
+#[test]
+fn case24_unknown_keys_produce_safe_trace() {
+    let input = reason("future.debug.unknown", AttentionSignal::BlockedTask, 7);
+    let trace = resolve_attention_reason_traced(&input, None);
+    assert_eq!(trace.resolver_path.kind, ExperienceResolverPathKind::Unknown);
+    assert_eq!(
+        trace.resolver_path.match_key,
+        "unknown:future.debug.unknown"
+    );
+    assert!(!trace.display.known);
+    assert!(trace.display.description.contains("future.debug.unknown"));
+}
+
+/// CASE 25 — Resolver path is recorded correctly across tiers.
+#[test]
+fn case25_resolver_path_recorded_correctly() {
+    let exact = resolve_attention_reason_traced(
+        &reason(
+            "decision.base.outstanding",
+            AttentionSignal::OutstandingDecision,
+            55,
+        ),
+        None,
+    );
+    assert_eq!(exact.resolver_path.kind, ExperienceResolverPathKind::Exact);
+    assert_eq!(
+        exact.resolver_path.match_key,
+        "exact:decision.base.outstanding"
+    );
+
+    let suffix = resolve_attention_reason_traced(
+        &reason("task.base.blocked", AttentionSignal::BlockedTask, 40),
+        None,
+    );
+    assert_eq!(
+        suffix.resolver_path.kind,
+        ExperienceResolverPathKind::PrefixSuffix
+    );
+    assert_eq!(
+        suffix.resolver_path.match_key,
+        "prefix_suffix:task.base.blocked"
+    );
+
+    let fallback = resolve_attention_reason_traced(
+        &reason("purpose.obstacle.unlisted_kind", AttentionSignal::PurposeObstacle, 30),
+        None,
+    );
+    assert_eq!(
+        fallback.resolver_path.kind,
+        ExperienceResolverPathKind::PrefixFallback
+    );
+    assert_eq!(
+        fallback.resolver_path.match_key,
+        "prefix_fallback:purpose.obstacle.*"
+    );
+
+    let decision = resolve_decision_reason_traced(
+        &DecisionReason {
+            kind: "goal_alignment".into(),
+            summary: "Active goal still needs progress".into(),
+            evidence_ref: None,
+            attention_reason: None,
+        },
+        Some("test"),
+    );
+    assert_eq!(
+        decision.resolver_path.kind,
+        ExperienceResolverPathKind::DecisionNative
+    );
+    assert_eq!(
+        decision.resolver_path.match_key,
+        "decision_native:decision.goal_alignment"
+    );
+}
+
+/// CASE 26 — DisplayReason output matches the trace display payload.
+#[test]
+fn case26_display_reason_matches_trace_result() {
+    let samples = [
+        reason("continuity.interrupted", AttentionSignal::InterruptedWork, 60),
+        reason("future.contract.unknown", AttentionSignal::BlockedTask, 33),
+        reason(
+            "purpose.obstacle.composition:gap",
+            AttentionSignal::PurposeObstacle,
+            20,
+        ),
+    ];
+    for sample in samples {
+        let display = resolve_attention_reason(&sample);
+        let trace = resolve_attention_reason_traced(&sample, None);
+        assert_eq!(display, trace.display);
+    }
 }

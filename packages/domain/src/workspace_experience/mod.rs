@@ -190,6 +190,74 @@ pub struct DisplayReason {
     pub known: bool,
 }
 
+/// Which catalog resolution branch produced a `DisplayReason` (Sprint 135).
+///
+/// Developer diagnostic only — never required for user-facing rendering.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ExperienceResolverPathKind {
+    Exact,
+    PrefixSuffix,
+    PrefixPattern,
+    PrefixFallback,
+    Unknown,
+    /// Decision reason without `attention_reason` — summary/kind path.
+    DecisionNative,
+}
+
+impl ExperienceResolverPathKind {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Exact => "exact",
+            Self::PrefixSuffix => "prefix_suffix",
+            Self::PrefixPattern => "prefix_pattern",
+            Self::PrefixFallback => "prefix_fallback",
+            Self::Unknown => "unknown",
+            Self::DecisionNative => "decision_native",
+        }
+    }
+}
+
+/// Catalog match descriptor used by Experience translation traces.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ExperienceResolverPath {
+    pub kind: ExperienceResolverPathKind,
+    /// Match identity, e.g. `exact:decision.base.outstanding` or
+    /// `prefix_pattern:purpose.obstacle.composition:*`.
+    pub match_key: String,
+}
+
+impl ExperienceResolverPath {
+    pub fn new(kind: ExperienceResolverPathKind, match_key: impl Into<String>) -> Self {
+        Self {
+            kind,
+            match_key: match_key.into(),
+        }
+    }
+
+    /// Compact developer label: `kind:\nmatch_key`.
+    pub fn label(&self) -> String {
+        format!("{}:\n{}", self.kind.as_str(), self.match_key)
+    }
+}
+
+/// Developer-only Experience translation trace (Sprint 135).
+///
+/// Answers: "What cognition produced this displayed explanation?"
+/// Does not mutate Domain reasoning. Must not be rendered on Work/Assistant surfaces.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ExperienceTranslationTrace {
+    /// `attention_reason` | `decision_reason`
+    pub source_reasoning_type: String,
+    /// Stable source identity (explanation_key or decision kind).
+    pub source_identifier: String,
+    pub explanation_key: String,
+    pub resolver_path: ExperienceResolverPath,
+    pub display: DisplayReason,
+    /// Optional surface tag set by the caller (`operator`, `test`, …).
+    pub rendering_surface: Option<String>,
+}
+
 /// Full Experience Layer snapshot — presentation only.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct WorkspaceExperienceState {
