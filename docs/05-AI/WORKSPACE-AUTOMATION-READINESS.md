@@ -150,6 +150,9 @@ See [WORKSPACE-EXPERIENCE-DEBUGGING.md](./WORKSPACE-EXPERIENCE-DEBUGGING.md).
 **Sprint 137:** Recommendation provenance contract and ActionProposal architecture —
 [WORKSPACE-RECOMMENDATION-PROVENANCE.md](./WORKSPACE-RECOMMENDATION-PROVENANCE.md).
 
+**Sprint 138:** Recommendation identity & lifecycle —
+[WORKSPACE-RECOMMENDATION-LIFECYCLE.md](./WORKSPACE-RECOMMENDATION-LIFECYCLE.md).
+
 ---
 
 ## Related docs

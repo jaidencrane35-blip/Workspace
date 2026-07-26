@@ -40,8 +40,12 @@ Question this contract answers:
 | **Confidence / priority metadata** | Display/strength hints — not authority | `RecommendationConfidence`, Attention priority/score, DecisionScore |
 | **Optional future capability target** | What capability a future ActionProposal might request | Architecture-only on `ActionProposal.requested_capability` — **not a grant** |
 
-Domain helper: `RecommendationProvenance` / `ActionProposal` in
-`packages/domain/src/action_proposal/` (Sprint 137 architecture types).
+Domain helper: `RecommendationProvenance` / `ActionProposal` /
+`RecommendationIdentity` / `RecommendationLifecycle` in
+`packages/domain/src/action_proposal/` (Sprint 137–138).
+
+Identity & lifecycle contract:
+[WORKSPACE-RECOMMENDATION-LIFECYCLE.md](./WORKSPACE-RECOMMENDATION-LIFECYCLE.md).
 
 ---
 
@@ -204,6 +208,7 @@ Future work should close provenance durability **before** autonomy — see
 
 ## Related docs
 
+- [WORKSPACE-RECOMMENDATION-LIFECYCLE.md](./WORKSPACE-RECOMMENDATION-LIFECYCLE.md)
 - [WORKSPACE-AUTOMATION-READINESS.md](./WORKSPACE-AUTOMATION-READINESS.md)
 - [WORKSPACE-COGNITION-PIPELINE-CONTRACT.md](./WORKSPACE-COGNITION-PIPELINE-CONTRACT.md)
 - [WORKSPACE-RECOMMENDATION-ENGINE.md](./WORKSPACE-RECOMMENDATION-ENGINE.md)

@@ -29,6 +29,9 @@ Existing systems remain authoritative. The Recommendation Engine invents nothing
 **Sprint 137:** Provenance contract and future ActionProposal boundary —
 [WORKSPACE-RECOMMENDATION-PROVENANCE.md](./WORKSPACE-RECOMMENDATION-PROVENANCE.md).
 
+**Sprint 138:** Identity & lifecycle —
+[WORKSPACE-RECOMMENDATION-LIFECYCLE.md](./WORKSPACE-RECOMMENDATION-LIFECYCLE.md).
+
 ---
 
 ## Ownership

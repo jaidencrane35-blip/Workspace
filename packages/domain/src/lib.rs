@@ -75,7 +75,8 @@ pub use action_catalog::{
 };
 pub use action_proposal::{
     ActionProposal, ActionProposalError, ActionProposalRisk, RecommendationFamily,
-    RecommendationProvenance,
+    RecommendationGovernanceRecord, RecommendationIdentity, RecommendationLifecycle,
+    RecommendationLifecycleState, RecommendationProvenance, RecommendationResolutionType,
 };
 pub use actor::{
     Actor, ActorContext, ActorMetadata, ActorType, LOCAL_USER_ACTOR_ID, SYSTEM_ACTOR_ID,

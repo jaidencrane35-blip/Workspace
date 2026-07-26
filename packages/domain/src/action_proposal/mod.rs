@@ -1,8 +1,8 @@
-//! Action Proposal architecture (Sprint 137).
+//! Action Proposal + Recommendation identity/lifecycle (Sprint 137–138).
 //!
-//! Governance bridge shape between recommendations and future Permission Gateway work.
-//! **Never executes.** Not wired to CommandPipeline. Authority remains `"none"` until a
-//! future privileged command obtains Gateway Allow.
+//! Governance shapes between recommendations and future Permission Gateway work.
+//! **Never executes.** Native family IDs are preserved — never collapsed into one namespace.
+//! Reasoning provenance is immutable; lifecycle metadata mutates separately.
 
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -11,11 +11,14 @@ use crate::errors::DomainError;
 use crate::workspace_attention::AttentionReason;
 use crate::workspace_recommendation::{RecommendationEvidence, RecommendationItem};
 
-/// Action-proposal validation errors.
+/// Action-proposal / recommendation governance errors.
 #[derive(Debug, Error, PartialEq, Eq)]
 pub enum ActionProposalError {
     #[error("action proposal cannot execute or authorize")]
     CannotExecute,
+
+    #[error("invalid recommendation lifecycle transition from {from} to {to}")]
+    InvalidLifecycleTransition { from: String, to: String },
 
     #[error(transparent)]
     Domain(#[from] DomainError),
@@ -42,9 +45,226 @@ impl RecommendationFamily {
             Self::DecisionQueue => "decision_queue",
         }
     }
+
+    /// Native ID prefix convention for this family (documentation + validation aid).
+    pub fn native_id_prefix(self) -> &'static str {
+        match self {
+            Self::RecommendationEngine => "recommendation:",
+            Self::DecisionEngine => "engine_decision:",
+            Self::Intelligence => "rec-attention-",
+            Self::Adaptation => "adaptation:",
+            Self::DecisionQueue => "decision:",
+        }
+    }
+}
+
+/// Unified Recommendation Identity contract (Sprint 138).
+///
+/// Does **not** replace native family IDs. It records cross-references so governance
+/// can follow Evidence → Recommendation → Decision → ActionProposal without merging
+/// namespaces (`recommendation:*`, `rec-attention-*`, `engine_decision:*`, …).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RecommendationIdentity {
+    /// Native id in the source family (unchanged).
+    pub native_id: String,
+    pub family: RecommendationFamily,
+    /// Source domain label (e.g. `attention`, `task_graph`, `continuity`).
+    pub source_domain: String,
+    /// Originating reasoning reference (Attention item id, explanation_key, …).
+    pub originating_reasoning_ref: Option<String>,
+    /// Decision Engine / Queue reference when one exists.
+    pub decision_ref: Option<String>,
+    /// Optional ActionProposal id once prepared (architecture only).
+    pub action_proposal_ref: Option<String>,
+}
+
+impl RecommendationIdentity {
+    pub fn from_recommendation_item(item: &RecommendationItem) -> Self {
+        Self {
+            native_id: item.id.clone(),
+            family: RecommendationFamily::RecommendationEngine,
+            source_domain: item
+                .evidence
+                .first()
+                .map(|e| e.source_model.clone())
+                .unwrap_or_else(|| "recommendation_engine".into()),
+            originating_reasoning_ref: item
+                .related_attention_id
+                .clone()
+                .or_else(|| {
+                    item.attention_reasons
+                        .first()
+                        .map(|r| r.explanation_key.clone())
+                }),
+            decision_ref: item.related_decision_id.clone(),
+            action_proposal_ref: None,
+        }
+    }
+
+    pub fn with_action_proposal_ref(mut self, proposal_id: impl Into<String>) -> Self {
+        self.action_proposal_ref = Some(proposal_id.into());
+        self
+    }
+
+    pub fn with_decision_ref(mut self, decision_id: impl Into<String>) -> Self {
+        self.decision_ref = Some(decision_id.into());
+        self
+    }
+}
+
+/// Recommendation lifecycle states (Sprint 138).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RecommendationLifecycleState {
+    Created,
+    Available,
+    Presented,
+    Accepted,
+    Rejected,
+    Expired,
+    Superseded,
+}
+
+impl RecommendationLifecycleState {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Created => "created",
+            Self::Available => "available",
+            Self::Presented => "presented",
+            Self::Accepted => "accepted",
+            Self::Rejected => "rejected",
+            Self::Expired => "expired",
+            Self::Superseded => "superseded",
+        }
+    }
+
+    pub fn parse(value: &str) -> Result<Self, ActionProposalError> {
+        match value {
+            "created" => Ok(Self::Created),
+            "available" => Ok(Self::Available),
+            "presented" => Ok(Self::Presented),
+            "accepted" => Ok(Self::Accepted),
+            "rejected" => Ok(Self::Rejected),
+            "expired" => Ok(Self::Expired),
+            "superseded" => Ok(Self::Superseded),
+            other => Err(ActionProposalError::InvalidLifecycleTransition {
+                from: other.into(),
+                to: "parse".into(),
+            }),
+        }
+    }
+
+    /// Valid transitions for governance continuity (architecture contract).
+    pub fn allows_transition(self, to: Self) -> bool {
+        use RecommendationLifecycleState::*;
+        matches!(
+            (self, to),
+            (Created, Available)
+                | (Created, Expired)
+                | (Created, Superseded)
+                | (Available, Presented)
+                | (Available, Expired)
+                | (Available, Superseded)
+                | (Available, Rejected)
+                | (Presented, Accepted)
+                | (Presented, Rejected)
+                | (Presented, Expired)
+                | (Presented, Superseded)
+                | (Presented, Available) // may leave view without resolution
+        )
+    }
+}
+
+/// How a recommendation was resolved (lifecycle metadata only).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RecommendationResolutionType {
+    Accepted,
+    Rejected,
+    Expired,
+    Superseded,
+}
+
+impl RecommendationResolutionType {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Accepted => "accepted",
+            Self::Rejected => "rejected",
+            Self::Expired => "expired",
+            Self::Superseded => "superseded",
+        }
+    }
+}
+
+/// Mutable lifecycle metadata — never mutates reasoning provenance.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RecommendationLifecycle {
+    pub state: RecommendationLifecycleState,
+    pub created_at: String,
+    pub presented_at: Option<String>,
+    pub resolved_at: Option<String>,
+    pub resolution_type: Option<RecommendationResolutionType>,
+    /// Who drove the transition (actor id) — not a capability grant.
+    pub transition_actor_id: Option<String>,
+}
+
+impl RecommendationLifecycle {
+    pub fn created(now: impl Into<String>) -> Self {
+        Self {
+            state: RecommendationLifecycleState::Created,
+            created_at: now.into(),
+            presented_at: None,
+            resolved_at: None,
+            resolution_type: None,
+            transition_actor_id: None,
+        }
+    }
+
+    pub fn transition(
+        &mut self,
+        to: RecommendationLifecycleState,
+        at: impl Into<String>,
+        actor_id: Option<String>,
+    ) -> Result<(), ActionProposalError> {
+        if !self.state.allows_transition(to) {
+            return Err(ActionProposalError::InvalidLifecycleTransition {
+                from: self.state.as_str().into(),
+                to: to.as_str().into(),
+            });
+        }
+        let at = at.into();
+        match to {
+            RecommendationLifecycleState::Presented => {
+                self.presented_at = Some(at);
+            }
+            RecommendationLifecycleState::Accepted => {
+                self.resolved_at = Some(at);
+                self.resolution_type = Some(RecommendationResolutionType::Accepted);
+            }
+            RecommendationLifecycleState::Rejected => {
+                self.resolved_at = Some(at);
+                self.resolution_type = Some(RecommendationResolutionType::Rejected);
+            }
+            RecommendationLifecycleState::Expired => {
+                self.resolved_at = Some(at);
+                self.resolution_type = Some(RecommendationResolutionType::Expired);
+            }
+            RecommendationLifecycleState::Superseded => {
+                self.resolved_at = Some(at);
+                self.resolution_type = Some(RecommendationResolutionType::Superseded);
+            }
+            RecommendationLifecycleState::Available | RecommendationLifecycleState::Created => {}
+        }
+        self.state = to;
+        self.transition_actor_id = actor_id;
+        Ok(())
+    }
 }
 
 /// Required provenance for answering: "Why was this recommendation created?"
+///
+/// **Immutable after construction** for reasoning fields — clone and attach traces
+/// via builders that return new values; never rewrite `reasoning_origins`.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RecommendationProvenance {
     pub recommendation_id: String,
@@ -94,6 +314,53 @@ impl RecommendationProvenance {
     }
 }
 
+/// Governance record: identity + immutable provenance + mutable lifecycle.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RecommendationGovernanceRecord {
+    pub identity: RecommendationIdentity,
+    pub provenance: RecommendationProvenance,
+    pub lifecycle: RecommendationLifecycle,
+    pub authority_effect: String,
+}
+
+impl RecommendationGovernanceRecord {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+
+    pub fn from_recommendation_item(
+        item: &RecommendationItem,
+        created_at: impl Into<String>,
+    ) -> Self {
+        let provenance = RecommendationProvenance::from_recommendation_item(item);
+        let identity = RecommendationIdentity::from_recommendation_item(item);
+        Self {
+            identity,
+            provenance,
+            lifecycle: RecommendationLifecycle::created(created_at),
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        }
+    }
+
+    pub fn transition(
+        &mut self,
+        to: RecommendationLifecycleState,
+        at: impl Into<String>,
+        actor_id: Option<String>,
+    ) -> Result<(), ActionProposalError> {
+        self.lifecycle.transition(to, at, actor_id)
+    }
+
+    /// Acceptance updates lifecycle only — never grants authority or executes.
+    pub fn accept(
+        &mut self,
+        at: impl Into<String>,
+        actor_id: Option<String>,
+    ) -> Result<(), ActionProposalError> {
+        self.transition(RecommendationLifecycleState::Accepted, at, actor_id)?;
+        assert_eq!(self.authority_effect, Self::AUTHORITY_EFFECT_NONE);
+        Ok(())
+    }
+}
+
 /// Risk metadata for a future ActionProposal (architecture only).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ActionProposalRisk {
@@ -114,13 +381,13 @@ impl ActionProposalRisk {
 
 /// Future bridge: recommendation + provenance → permission-controlled action request.
 ///
-/// Sprint 137 defines the shape only. Creating an `ActionProposal` never launches,
-/// grants capabilities, or bypasses Permission Gateway.
+/// Creating an `ActionProposal` never launches, grants capabilities, or bypasses Gateway.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ActionProposal {
     pub id: String,
     pub workspace_id: String,
     pub recommendation_ref: String,
+    pub identity: RecommendationIdentity,
     pub provenance: RecommendationProvenance,
     /// Capability that would be requested in a future privileged command (not granted).
     pub requested_capability: Option<String>,
@@ -140,10 +407,14 @@ impl ActionProposal {
         item: &RecommendationItem,
     ) -> Self {
         let provenance = RecommendationProvenance::from_recommendation_item(item);
+        let id = format!("action_proposal:{}", item.id);
+        let identity =
+            RecommendationIdentity::from_recommendation_item(item).with_action_proposal_ref(&id);
         Self {
-            id: format!("action_proposal:{}", item.id),
+            id,
             workspace_id: workspace_id.into(),
             recommendation_ref: item.id.clone(),
+            identity,
             requested_capability: provenance.future_capability_target.clone(),
             permission_requirements: Vec::new(),
             risk: ActionProposalRisk::informational(),
@@ -237,6 +508,10 @@ mod tests {
             proposal.provenance.experience_trace_match_keys,
             vec!["prefix_suffix:task.base.blocked"]
         );
+        assert_eq!(
+            proposal.identity.action_proposal_ref.as_deref(),
+            Some(proposal.id.as_str())
+        );
         assert!(ActionProposal::attempt_execute().is_err());
     }
 
@@ -246,5 +521,76 @@ mod tests {
         let before = item.clone();
         let _ = ActionProposal::from_recommendation_item("ws-1", &item);
         assert_eq!(item, before);
+    }
+
+    #[test]
+    fn identity_preserves_native_id_namespace() {
+        let item = sample_item();
+        let identity = RecommendationIdentity::from_recommendation_item(&item);
+        assert_eq!(identity.native_id, item.id);
+        assert!(identity
+            .native_id
+            .starts_with(RecommendationFamily::RecommendationEngine.native_id_prefix()));
+        assert_eq!(identity.source_domain, "attention");
+        assert_eq!(
+            identity.originating_reasoning_ref.as_deref(),
+            Some("attention:task:1")
+        );
+    }
+
+    #[test]
+    fn lifecycle_valid_transitions_and_rejects_invalid() {
+        let mut life = RecommendationLifecycle::created("t0");
+        assert_eq!(life.state, RecommendationLifecycleState::Created);
+        life.transition(RecommendationLifecycleState::Available, "t1", None)
+            .unwrap();
+        life.transition(RecommendationLifecycleState::Presented, "t2", Some("user".into()))
+            .unwrap();
+        assert_eq!(life.presented_at.as_deref(), Some("t2"));
+        life.transition(RecommendationLifecycleState::Accepted, "t3", Some("user".into()))
+            .unwrap();
+        assert_eq!(
+            life.resolution_type,
+            Some(RecommendationResolutionType::Accepted)
+        );
+
+        let err = life
+            .transition(RecommendationLifecycleState::Available, "t4", None)
+            .unwrap_err();
+        match err {
+            ActionProposalError::InvalidLifecycleTransition { from, to } => {
+                assert_eq!(from, "accepted");
+                assert_eq!(to, "available");
+            }
+            other => panic!("unexpected {other:?}"),
+        }
+    }
+
+    #[test]
+    fn accept_and_expire_do_not_mutate_provenance_or_execute() {
+        let item = sample_item();
+        let mut record = RecommendationGovernanceRecord::from_recommendation_item(&item, "t0");
+        let provenance_before = record.provenance.clone();
+        record
+            .transition(RecommendationLifecycleState::Available, "t1", None)
+            .unwrap();
+        record
+            .transition(RecommendationLifecycleState::Presented, "t2", None)
+            .unwrap();
+        record.accept("t3", Some("local_user".into())).unwrap();
+        assert_eq!(record.provenance, provenance_before);
+        assert_eq!(record.authority_effect, "none");
+        assert!(ActionProposal::attempt_execute().is_err());
+
+        let mut expired = RecommendationGovernanceRecord::from_recommendation_item(&item, "t0");
+        let provenance_before = expired.provenance.clone();
+        expired
+            .transition(RecommendationLifecycleState::Expired, "t1", None)
+            .unwrap();
+        assert_eq!(expired.provenance, provenance_before);
+        assert_eq!(
+            expired.lifecycle.resolution_type,
+            Some(RecommendationResolutionType::Expired)
+        );
     }
 }
