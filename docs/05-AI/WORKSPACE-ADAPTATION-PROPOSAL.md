@@ -32,6 +32,10 @@ Accept returns an Intent handoff only. Adaptation never skips governance.
 never auto-applies or rescoring. See
 [WORKSPACE-RECOMMENDATION-OUTCOME.md](./WORKSPACE-RECOMMENDATION-OUTCOME.md).
 
+**Sprint 140:** Adaptation governance —
+[WORKSPACE-ADAPTATION-GOVERNANCE.md](./WORKSPACE-ADAPTATION-GOVERNANCE.md).
+`OutcomeAdaptationProposal` requires explicit review; never silent scoring mutation.
+
 ---
 
 ## Ownership

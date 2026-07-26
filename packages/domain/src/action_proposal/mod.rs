@@ -546,6 +546,157 @@ impl RecommendationOutcome {
     pub fn may_silently_change_scoring(&self) -> bool {
         false
     }
+
+    /// Build a governed adaptation proposal from this outcome — never auto-applies.
+    pub fn to_adaptation_proposal(
+        &self,
+        affected_area: impl Into<String>,
+        proposed_change: impl Into<String>,
+        expected_effect: impl Into<String>,
+    ) -> OutcomeAdaptationProposal {
+        OutcomeAdaptationProposal::from_outcome(
+            self,
+            affected_area,
+            proposed_change,
+            expected_effect,
+        )
+    }
+}
+
+/// Review status for outcome-backed adaptation proposals (Sprint 140).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum OutcomeAdaptationReviewStatus {
+    Proposed,
+    AwaitingReview,
+    Reviewed,
+    ApprovedForHandoff,
+    Rejected,
+}
+
+impl OutcomeAdaptationReviewStatus {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Proposed => "proposed",
+            Self::AwaitingReview => "awaiting_review",
+            Self::Reviewed => "reviewed",
+            Self::ApprovedForHandoff => "approved_for_handoff",
+            Self::Rejected => "rejected",
+        }
+    }
+
+    pub fn allows_transition(self, to: Self) -> bool {
+        matches!(
+            (self, to),
+            (Self::Proposed, Self::AwaitingReview)
+                | (Self::Proposed, Self::Rejected)
+                | (Self::AwaitingReview, Self::Reviewed)
+                | (Self::AwaitingReview, Self::Rejected)
+                | (Self::Reviewed, Self::ApprovedForHandoff)
+                | (Self::Reviewed, Self::Rejected)
+        )
+    }
+}
+
+/// Architecture: Adaptation Proposal driven by `RecommendationOutcome`.
+///
+/// Distinct from workspace `AdaptationProposal` (Pattern/OS aggregation).
+/// Requires explicit review. Never auto-applies, never mutates scoring, never executes.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct OutcomeAdaptationProposal {
+    pub id: String,
+    pub source_outcome_id: String,
+    pub source_recommendation_id: String,
+    /// Frozen provenance from the source outcome.
+    pub provenance: RecommendationProvenance,
+    pub affected_area: String,
+    pub proposed_change: String,
+    pub expected_effect: String,
+    pub confidence: Option<String>,
+    /// Always true for outcome-backed proposals in Sprint 140.
+    pub review_required: bool,
+    pub review_status: OutcomeAdaptationReviewStatus,
+    pub experience_trace_match_keys: Vec<String>,
+    pub authority_effect: String,
+}
+
+impl OutcomeAdaptationProposal {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+
+    pub fn from_outcome(
+        outcome: &RecommendationOutcome,
+        affected_area: impl Into<String>,
+        proposed_change: impl Into<String>,
+        expected_effect: impl Into<String>,
+    ) -> Self {
+        Self {
+            id: format!("adaptation_from_outcome:{}", outcome.id),
+            source_outcome_id: outcome.id.clone(),
+            source_recommendation_id: outcome.identity.native_id.clone(),
+            provenance: outcome.provenance.clone(),
+            affected_area: affected_area.into(),
+            proposed_change: proposed_change.into(),
+            expected_effect: expected_effect.into(),
+            confidence: outcome.quality.confidence_at_outcome.clone(),
+            review_required: true,
+            review_status: OutcomeAdaptationReviewStatus::Proposed,
+            experience_trace_match_keys: outcome.experience_trace_match_keys.clone(),
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        }
+    }
+
+    pub fn require_review(&mut self) -> Result<(), ActionProposalError> {
+        if !self.review_required {
+            self.review_required = true;
+        }
+        self.transition_review(OutcomeAdaptationReviewStatus::AwaitingReview)
+    }
+
+    pub fn transition_review(
+        &mut self,
+        to: OutcomeAdaptationReviewStatus,
+    ) -> Result<(), ActionProposalError> {
+        if !self.review_status.allows_transition(to) {
+            return Err(ActionProposalError::InvalidLifecycleTransition {
+                from: self.review_status.as_str().into(),
+                to: to.as_str().into(),
+            });
+        }
+        self.review_status = to;
+        Ok(())
+    }
+
+    /// Approve only after Reviewed — still does not execute or mutate cognition.
+    pub fn approve_for_handoff(&mut self) -> Result<(), ActionProposalError> {
+        self.transition_review(OutcomeAdaptationReviewStatus::ApprovedForHandoff)?;
+        assert_eq!(self.authority_effect, Self::AUTHORITY_EFFECT_NONE);
+        Ok(())
+    }
+
+    pub fn may_auto_apply(&self) -> bool {
+        false
+    }
+
+    pub fn may_mutate_cognition(&self) -> bool {
+        false
+    }
+
+    pub fn may_silently_change_scoring(&self) -> bool {
+        false
+    }
+
+    pub fn requires_explicit_handling(&self) -> bool {
+        self.review_required
+    }
+
+    /// Hard-fail — adaptation proposals never apply or execute from this type.
+    pub fn attempt_apply() -> Result<(), ActionProposalError> {
+        Err(ActionProposalError::CannotExecute)
+    }
+
+    pub fn attempt_execute() -> Result<(), ActionProposalError> {
+        Err(ActionProposalError::CannotExecute)
+    }
 }
 
 /// Risk metadata for a future ActionProposal (architecture only).
@@ -840,5 +991,38 @@ mod tests {
             vec!["prefix_suffix:task.base.blocked"]
         );
         assert_eq!(outcome.authority_effect, "none");
+    }
+
+    #[test]
+    fn outcome_adaptation_requires_review_and_cannot_apply() {
+        let item = sample_item();
+        let mut record = RecommendationGovernanceRecord::from_recommendation_item(&item, "t0");
+        record
+            .transition(RecommendationLifecycleState::Available, "t1", None)
+            .unwrap();
+        record
+            .transition(RecommendationLifecycleState::Presented, "t2", None)
+            .unwrap();
+        record.accept("t3", None).unwrap();
+        let outcome = record.record_outcome("t4").unwrap();
+        let provenance = outcome.provenance.clone();
+        let mut proposal = outcome.to_adaptation_proposal(
+            "attention_presentation",
+            "Prefer structured DisplayReason lists for similar blockers",
+            "Clearer rationale on future blocker recommendations",
+        );
+        assert!(proposal.requires_explicit_handling());
+        assert!(!proposal.may_auto_apply());
+        assert!(!proposal.may_mutate_cognition());
+        assert!(!proposal.may_silently_change_scoring());
+        proposal.require_review().unwrap();
+        proposal
+            .transition_review(OutcomeAdaptationReviewStatus::Reviewed)
+            .unwrap();
+        proposal.approve_for_handoff().unwrap();
+        assert_eq!(proposal.provenance, provenance);
+        assert_eq!(proposal.authority_effect, "none");
+        assert!(OutcomeAdaptationProposal::attempt_apply().is_err());
+        assert!(OutcomeAdaptationProposal::attempt_execute().is_err());
     }
 }
