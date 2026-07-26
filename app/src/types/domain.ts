@@ -2181,6 +2181,30 @@ export interface RecommendationItem {
   decision_intake?: RecommendationDecisionIntakeRequest | null;
   /** Integrity inspection of intake — inspect ≠ handoff / DE ownership. */
   decision_intake_inspection?: RecommendationDecisionIntakeInspection | null;
+  /** Versioned intake package identity — compatible ≠ transfer / handoff. */
+  decision_intake_compatibility?: RecommendationDecisionIntakeCompatibility | null;
+  authority_effect: string;
+}
+
+/** Versioned intake package pin for a future consumer — never transfer/handoff. */
+export interface RecommendationDecisionIntakeCompatibility {
+  recommendation_id: string;
+  contract_family: string;
+  contract_version: string;
+  schema_version: number;
+  producer: string;
+  declared_consumer: string;
+  required_field_floor: string[];
+  inspection_valid: boolean;
+  field_floor_satisfied: boolean;
+  version_current: boolean;
+  compatible: boolean;
+  may_migrate: boolean;
+  transfer_authorized: boolean;
+  handoff_performed: boolean;
+  decision_engine_object_id: string | null;
+  findings: string[];
+  note: string;
   authority_effect: string;
 }
 
@@ -2374,6 +2398,7 @@ export interface RecommendationReviewActionResult {
   decision_confirmation?: RecommendationDecisionConfirmation | null;
   decision_intake?: RecommendationDecisionIntakeRequest | null;
   decision_intake_inspection?: RecommendationDecisionIntakeInspection | null;
+  decision_intake_compatibility?: RecommendationDecisionIntakeCompatibility | null;
   explanation: string;
   authority_effect: string;
 }

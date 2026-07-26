@@ -18,9 +18,9 @@ use workspace_domain::{
     RecommendationHistoryEntry, RecommendationItem, RecommendationKind,
     RecommendationLifecycleOverlay, RecommendationLifecycleState, RecommendationOutcome,
     RecommendationDecisionBoundary, RecommendationDecisionConfirmation,
-    RecommendationDecisionContext, RecommendationDecisionIntakeInspection,
-    RecommendationDecisionIntakeRequest, RecommendationDecisionReadiness,
-    RecommendationOutcomeView,
+    RecommendationDecisionContext, RecommendationDecisionIntakeCompatibility,
+    RecommendationDecisionIntakeInspection, RecommendationDecisionIntakeRequest,
+    RecommendationDecisionReadiness, RecommendationOutcomeView,
     RecommendationRelationship, RecommendationReviewActionResult,
     TaskGraph, WorkspaceAttentionState, WorkspaceCompositionState, WorkspaceContinuityState,
     WorkspaceEnvironmentState, WorkspaceEvolutionState, WorkspacePurposeState,
@@ -202,6 +202,7 @@ impl WorkspaceRecommendationEngineService {
                 decision_confirmation: None,
                 decision_intake: None,
                 decision_intake_inspection: None,
+                decision_intake_compatibility: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
             });
             relationships.push(RecommendationRelationship {
@@ -266,6 +267,7 @@ impl WorkspaceRecommendationEngineService {
                 decision_confirmation: None,
                 decision_intake: None,
                 decision_intake_inspection: None,
+                decision_intake_compatibility: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
             });
         }
@@ -309,6 +311,7 @@ impl WorkspaceRecommendationEngineService {
                 decision_confirmation: None,
                 decision_intake: None,
                 decision_intake_inspection: None,
+                decision_intake_compatibility: None,
                     authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
@@ -360,6 +363,7 @@ impl WorkspaceRecommendationEngineService {
                 decision_confirmation: None,
                 decision_intake: None,
                 decision_intake_inspection: None,
+                decision_intake_compatibility: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
@@ -399,6 +403,7 @@ impl WorkspaceRecommendationEngineService {
                 decision_confirmation: None,
                 decision_intake: None,
                 decision_intake_inspection: None,
+                decision_intake_compatibility: None,
                     authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
@@ -460,6 +465,7 @@ impl WorkspaceRecommendationEngineService {
                 decision_confirmation: None,
                 decision_intake: None,
                 decision_intake_inspection: None,
+                decision_intake_compatibility: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
@@ -512,6 +518,7 @@ impl WorkspaceRecommendationEngineService {
                 decision_confirmation: None,
                 decision_intake: None,
                 decision_intake_inspection: None,
+                decision_intake_compatibility: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
@@ -562,6 +569,7 @@ impl WorkspaceRecommendationEngineService {
                 decision_confirmation: None,
                 decision_intake: None,
                 decision_intake_inspection: None,
+                decision_intake_compatibility: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
@@ -599,6 +607,7 @@ impl WorkspaceRecommendationEngineService {
                 decision_confirmation: None,
                 decision_intake: None,
                 decision_intake_inspection: None,
+                decision_intake_compatibility: None,
                     authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
@@ -650,6 +659,7 @@ impl WorkspaceRecommendationEngineService {
                 decision_confirmation: None,
                 decision_intake: None,
                 decision_intake_inspection: None,
+                decision_intake_compatibility: None,
                     authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
@@ -778,6 +788,7 @@ impl WorkspaceRecommendationEngineService {
                 decision_confirmation: None,
                 decision_intake: None,
                 decision_intake_inspection: None,
+                decision_intake_compatibility: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
             };
             crate::services::WorkspacePatternService::audit_used_for_recommendation(
@@ -875,6 +886,7 @@ impl WorkspaceRecommendationEngineService {
                 decision_confirmation: None,
                 decision_intake: None,
                 decision_intake_inspection: None,
+                decision_intake_compatibility: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
             });
         }
@@ -1306,6 +1318,7 @@ impl WorkspaceRecommendationEngineService {
         );
         debug_assert!(decision_intake.is_none());
         let decision_intake_inspection = None;
+        let decision_intake_compatibility = None;
 
         Self::upsert_overlay(db, &next)?;
         Self::audit_lifecycle(db, actor, audit_event, &assessed, &next)?;
@@ -1321,6 +1334,7 @@ impl WorkspaceRecommendationEngineService {
             decision_confirmation: Some(decision_confirmation),
             decision_intake,
             decision_intake_inspection,
+            decision_intake_compatibility,
             explanation: explanation.into(),
             authority_effect: RecommendationReviewActionResult::AUTHORITY_EFFECT_NONE.into(),
         })
@@ -1409,6 +1423,23 @@ impl WorkspaceRecommendationEngineService {
             debug_assert!(!inspection.may_invoke_gateway());
             inspection
         });
+        let decision_intake_compatibility =
+            match (decision_intake.as_ref(), decision_intake_inspection.as_ref()) {
+                (Some(intake), Some(inspection)) => {
+                    let compatibility =
+                        RecommendationDecisionIntakeCompatibility::derive_from_inspection(
+                            intake, inspection,
+                        );
+                    debug_assert!(compatibility.assert_non_transfer().is_ok());
+                    debug_assert!(!compatibility.transfer_authorized);
+                    debug_assert!(!compatibility.may_migrate);
+                    debug_assert!(compatibility.attempt_handoff().is_err());
+                    debug_assert!(compatibility.attempt_transfer().is_err());
+                    debug_assert!(!compatibility.may_invoke_gateway());
+                    Some(compatibility)
+                }
+                _ => None,
+            };
         if let Some(ref intake) = decision_intake {
             debug_assert!(intake.assert_non_authoritative().is_ok());
             debug_assert!(intake.decision_engine_object_id.is_none());
@@ -1419,6 +1450,7 @@ impl WorkspaceRecommendationEngineService {
         if !confirm {
             debug_assert!(decision_intake.is_none());
             debug_assert!(decision_intake_inspection.is_none());
+            debug_assert!(decision_intake_compatibility.is_none());
         }
 
         Ok(RecommendationReviewActionResult {
@@ -1432,6 +1464,7 @@ impl WorkspaceRecommendationEngineService {
             decision_confirmation: Some(confirmation),
             decision_intake,
             decision_intake_inspection,
+            decision_intake_compatibility,
             explanation: explanation.into(),
             authority_effect: RecommendationReviewActionResult::AUTHORITY_EFFECT_NONE.into(),
         })
@@ -1734,6 +1767,20 @@ impl WorkspaceRecommendationEngineService {
                 debug_assert!(!inspection.may_invoke_gateway());
                 inspection
             });
+            let intake_compatibility =
+                match (intake.as_ref(), intake_inspection.as_ref()) {
+                    (Some(request), Some(inspection)) => {
+                        let compatibility =
+                            RecommendationDecisionIntakeCompatibility::derive_from_inspection(
+                                request, inspection,
+                            );
+                        debug_assert!(compatibility.assert_non_transfer().is_ok());
+                        debug_assert!(!compatibility.transfer_authorized);
+                        debug_assert!(compatibility.attempt_migrate().is_err());
+                        Some(compatibility)
+                    }
+                    _ => None,
+                };
             if let Some(ref request) = intake {
                 debug_assert!(request.assert_non_authoritative().is_ok());
                 debug_assert!(request.decision_engine_object_id.is_none());
@@ -1747,6 +1794,7 @@ impl WorkspaceRecommendationEngineService {
             item.decision_confirmation = Some(confirmation);
             item.decision_intake = intake;
             item.decision_intake_inspection = intake_inspection;
+            item.decision_intake_compatibility = intake_compatibility;
         }
     }
 

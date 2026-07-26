@@ -18,6 +18,8 @@ RecommendationDecisionIntakeInspection
         ✗ inspection ≠ handoff
         ✗ inspection ≠ DE object / intent
         ✗ inspection ≠ Gateway / execution
+        ↓ RecommendationDecisionIntakeCompatibility (version pin)
+        ✗ compatible ≠ transfer / handoff
         ↓ (future DE adapter — separate increment)
 ```
 
@@ -52,6 +54,7 @@ It does **not** authorize handoff, Decision Engine object creation, or execution
 
 ## Related
 
+- [WORKSPACE-RECOMMENDATION-DECISION-INTAKE-COMPATIBILITY.md](./WORKSPACE-RECOMMENDATION-DECISION-INTAKE-COMPATIBILITY.md)
 - [WORKSPACE-RECOMMENDATION-DECISION-INTAKE.md](./WORKSPACE-RECOMMENDATION-DECISION-INTAKE.md)
 - [WORKSPACE-RECOMMENDATION-DECISION-CONFIRMATION.md](./WORKSPACE-RECOMMENDATION-DECISION-CONFIRMATION.md)
 - [WORKSPACE-DECISION-ENGINE.md](./WORKSPACE-DECISION-ENGINE.md)

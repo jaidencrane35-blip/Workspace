@@ -19,6 +19,8 @@ RecommendationDecisionIntakeRequest (intake_state = requested)
         ✗ handoff_performed = false
         ↓ RecommendationDecisionIntakeInspection::verify (read-only)
         ✗ inspect ≠ handoff / DE ownership
+        ↓ RecommendationDecisionIntakeCompatibility (version pin)
+        ✗ compatible ≠ transfer / handoff
         ↓ (future DE adapter — Decision Engine owns object creation)
 ```
 

@@ -260,6 +260,9 @@ pub struct RecommendationItem {
     /// Integrity inspection of intake for future consumers (Sprint 237+) — never a handoff.
     #[serde(default)]
     pub decision_intake_inspection: Option<RecommendationDecisionIntakeInspection>,
+    /// Versioned intake package identity for future consumers (Sprint 242+) — never transfer.
+    #[serde(default)]
+    pub decision_intake_compatibility: Option<RecommendationDecisionIntakeCompatibility>,
     pub authority_effect: String,
 }
 
@@ -1404,6 +1407,212 @@ impl RecommendationDecisionIntakeInspection {
         &self,
     ) -> Result<(), WorkspaceRecommendationEngineError> {
         if self.handoff_performed || self.authority_effect != Self::AUTHORITY_EFFECT_NONE {
+            return Err(WorkspaceRecommendationEngineError::CannotBecomeHandoff);
+        }
+        Ok(())
+    }
+}
+
+/// Versioned package identity for an inspectable intake (Sprint 242).
+///
+/// Pins `recommendation_decision_intake:v1` for a future consumer without authorizing
+/// migrate, transfer, DE ownership, or handoff. Compatible ≠ handoff-ready.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RecommendationDecisionIntakeCompatibility {
+    pub recommendation_id: String,
+    pub contract_family: String,
+    pub contract_version: String,
+    pub schema_version: i32,
+    pub producer: String,
+    /// Declared future reader — never current owner.
+    pub declared_consumer: String,
+    pub required_field_floor: Vec<String>,
+    pub inspection_valid: bool,
+    pub field_floor_satisfied: bool,
+    pub version_current: bool,
+    /// True only when inspection is valid, version current, field floor met, ownership still RE.
+    pub compatible: bool,
+    pub may_migrate: bool,
+    pub transfer_authorized: bool,
+    pub handoff_performed: bool,
+    pub decision_engine_object_id: Option<String>,
+    pub findings: Vec<String>,
+    pub note: String,
+    pub authority_effect: String,
+}
+
+impl RecommendationDecisionIntakeCompatibility {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+    pub const CONTRACT_FAMILY: &'static str = "recommendation_decision_intake";
+    pub const CONTRACT_VERSION: &'static str = "recommendation_decision_intake:v1";
+    pub const SCHEMA_VERSION: i32 = 1;
+    pub const PRODUCER: &'static str = "recommendation_engine";
+    pub const DECLARED_CONSUMER: &'static str = "decision_engine";
+
+    pub fn required_field_floor() -> Vec<String> {
+        vec![
+            "recommendation_id".into(),
+            "workspace_id".into(),
+            "confirmation_intent".into(),
+            "confirmed_at".into(),
+            "kind".into(),
+            "title".into(),
+            "suggested_goal_statement".into(),
+            "continuity_fingerprint".into(),
+            "intake_state".into(),
+        ]
+    }
+
+    /// Derive compatibility from a verified inspection + intake package.
+    /// Invalid/stale inspection never yields `compatible = true`.
+    pub fn derive_from_inspection(
+        intake: &RecommendationDecisionIntakeRequest,
+        inspection: &RecommendationDecisionIntakeInspection,
+    ) -> Self {
+        Self::evaluate(
+            intake,
+            inspection,
+            Self::CONTRACT_VERSION,
+            Self::SCHEMA_VERSION,
+        )
+    }
+
+    /// Evaluate against an expected contract/schema pin (for mismatch tests and future pins).
+    pub fn evaluate(
+        intake: &RecommendationDecisionIntakeRequest,
+        inspection: &RecommendationDecisionIntakeInspection,
+        expected_contract_version: &str,
+        expected_schema_version: i32,
+    ) -> Self {
+        let mut findings = Vec::new();
+        let inspection_valid = inspection.safe_to_inspect
+            && inspection.inspection_state == RecommendationDecisionIntakeInspection::STATE_VALID;
+        if !inspection_valid {
+            findings.push(
+                "Intake inspection is not valid — package must not progress beyond inspect."
+                    .into(),
+            );
+        }
+
+        let version_current = expected_contract_version == Self::CONTRACT_VERSION
+            && expected_schema_version == Self::SCHEMA_VERSION;
+        if !version_current {
+            findings.push(format!(
+                "Contract/schema mismatch: expected {expected_contract_version}#{expected_schema_version}, \
+                 producer emits {}#{}",
+                Self::CONTRACT_VERSION,
+                Self::SCHEMA_VERSION
+            ));
+        }
+
+        let field_floor_satisfied = !intake.recommendation_id.is_empty()
+            && !intake.workspace_id.is_empty()
+            && !intake.confirmation_intent.is_empty()
+            && !intake.confirmed_at.is_empty()
+            && !intake.kind.is_empty()
+            && !intake.title.is_empty()
+            && !intake.suggested_goal_statement.is_empty()
+            && !intake.continuity_fingerprint.is_empty()
+            && intake.intake_state == RecommendationDecisionIntakeRequest::STATE_REQUESTED;
+        if !field_floor_satisfied {
+            findings.push("Required intake field floor not satisfied for schema v1.".into());
+        }
+
+        let ownership_ok = intake.assert_non_authoritative().is_ok()
+            && intake.decision_engine_object_id.is_none()
+            && !intake.handoff_performed;
+        if !ownership_ok {
+            findings.push(
+                "Ownership/non-authoritative violation — RE must retain package; DE must not own."
+                    .into(),
+            );
+        }
+
+        let compatible =
+            inspection_valid && version_current && field_floor_satisfied && ownership_ok;
+
+        let note = if compatible {
+            "Intake package compatible with recommendation_decision_intake:v1. Future consumer \
+             may pin this identity. Compatible is not transfer, migrate, handoff, or DE ownership."
+                .into()
+        } else {
+            format!(
+                "Intake package incompatible for future consumer pin. Findings: {}",
+                findings.join(" ")
+            )
+        };
+
+        Self {
+            recommendation_id: intake.recommendation_id.clone(),
+            contract_family: Self::CONTRACT_FAMILY.into(),
+            contract_version: Self::CONTRACT_VERSION.into(),
+            schema_version: Self::SCHEMA_VERSION,
+            producer: Self::PRODUCER.into(),
+            declared_consumer: Self::DECLARED_CONSUMER.into(),
+            required_field_floor: Self::required_field_floor(),
+            inspection_valid,
+            field_floor_satisfied,
+            version_current,
+            compatible,
+            may_migrate: false,
+            transfer_authorized: false,
+            handoff_performed: false,
+            decision_engine_object_id: None,
+            findings,
+            note,
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        }
+    }
+
+    pub fn attempt_execute() -> Result<(), WorkspaceRecommendationEngineError> {
+        Err(WorkspaceRecommendationEngineError::CannotExecute)
+    }
+
+    pub fn attempt_handoff(&self) -> Result<(), WorkspaceRecommendationEngineError> {
+        Err(WorkspaceRecommendationEngineError::CannotBecomeHandoff)
+    }
+
+    pub fn attempt_migrate(&self) -> Result<(), WorkspaceRecommendationEngineError> {
+        Err(WorkspaceRecommendationEngineError::CannotBecomeHandoff)
+    }
+
+    pub fn attempt_transfer(&self) -> Result<(), WorkspaceRecommendationEngineError> {
+        Err(WorkspaceRecommendationEngineError::CannotBecomeHandoff)
+    }
+
+    pub fn attempt_create_decision_engine_object(
+        &self,
+    ) -> Result<(), WorkspaceRecommendationEngineError> {
+        Err(WorkspaceRecommendationEngineError::CannotBecomeHandoff)
+    }
+
+    pub fn attempt_create_intent(&self) -> Result<(), WorkspaceRecommendationEngineError> {
+        Err(WorkspaceRecommendationEngineError::CannotBecomeHandoff)
+    }
+
+    pub fn may_create_decision_engine_object(&self) -> bool {
+        false
+    }
+
+    pub fn may_create_intent(&self) -> bool {
+        false
+    }
+
+    pub fn may_invoke_gateway(&self) -> bool {
+        false
+    }
+
+    pub fn may_mutate_provenance(&self) -> bool {
+        false
+    }
+
+    pub fn assert_non_transfer(&self) -> Result<(), WorkspaceRecommendationEngineError> {
+        if self.transfer_authorized
+            || self.handoff_performed
+            || self.may_migrate
+            || self.decision_engine_object_id.is_some()
+            || self.authority_effect != Self::AUTHORITY_EFFECT_NONE
+        {
             return Err(WorkspaceRecommendationEngineError::CannotBecomeHandoff);
         }
         Ok(())

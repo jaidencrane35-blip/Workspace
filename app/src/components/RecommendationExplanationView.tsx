@@ -3,6 +3,7 @@ import type {
   RecommendationDecisionBoundary,
   RecommendationDecisionConfirmation,
   RecommendationDecisionContext,
+  RecommendationDecisionIntakeCompatibility,
   RecommendationDecisionIntakeInspection,
   RecommendationDecisionIntakeRequest,
   RecommendationDecisionReadiness,
@@ -142,6 +143,11 @@ export function RecommendationExplanationBlock({
           inspection={item.decision_intake_inspection}
         />
       ) : null}
+      {item.decision_intake_compatibility ? (
+        <RecommendationDecisionIntakeCompatibilityBlock
+          compatibility={item.decision_intake_compatibility}
+        />
+      ) : null}
     </div>
   );
 }
@@ -202,6 +208,34 @@ export function RecommendationDecisionIntakeInspectionBlock({
       {inspection.findings.length > 0 && (
         <div>Findings: {inspection.findings.slice(0, 3).join(" · ")}</div>
       )}
+    </div>
+  );
+}
+
+/** Intake compatibility pin — compatible ≠ transfer / handoff / DE ownership. */
+export function RecommendationDecisionIntakeCompatibilityBlock({
+  compatibility,
+}: {
+  compatibility: RecommendationDecisionIntakeCompatibility;
+}) {
+  return (
+    <div
+      className="recommendation-decision-intake-compatibility muted"
+      style={{ marginTop: 4 }}
+    >
+      <div>
+        Intake compatibility:{" "}
+        <strong>{compatibility.compatible ? "compatible" : "incompatible"}</strong>
+        {" · "}
+        {compatibility.contract_version}
+        {" · "}
+        schema {compatibility.schema_version}
+        {" · "}
+        transfer: {compatibility.transfer_authorized ? "authorized" : "denied"}
+        {" · "}
+        authority: {compatibility.authority_effect}
+      </div>
+      <div>{compatibility.note}</div>
     </div>
   );
 }

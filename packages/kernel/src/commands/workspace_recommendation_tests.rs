@@ -863,6 +863,15 @@ fn case24_confirm_future_decision_remains_non_authoritative() {
         assert!(inspection.attempt_handoff().is_err());
         assert!(!inspection.may_create_decision_engine_object());
         assert!(!inspection.may_invoke_gateway());
+        let compatibility = confirmed
+            .decision_intake_compatibility
+            .expect("confirm emits intake compatibility");
+        assert!(compatibility.compatible);
+        assert!(!compatibility.transfer_authorized);
+        assert!(!compatibility.may_migrate);
+        assert!(compatibility.attempt_handoff().is_err());
+        assert!(compatibility.attempt_transfer().is_err());
+        assert!(compatibility.decision_engine_object_id.is_none());
     }
     assert_cannot_execute(CommandHandler::workspace_recommendation_engine_attempt_execute());
     assert_cannot_execute(CommandHandler::decision_engine_attempt_execute());

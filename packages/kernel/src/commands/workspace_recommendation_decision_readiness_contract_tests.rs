@@ -72,6 +72,7 @@ fn base_item() -> RecommendationItem {
                 decision_confirmation: None,
                 decision_intake: None,
                 decision_intake_inspection: None,
+                decision_intake_compatibility: None,
         authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
     }
 }

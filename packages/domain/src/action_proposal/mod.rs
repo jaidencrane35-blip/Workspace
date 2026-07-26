@@ -788,6 +788,10 @@ pub struct RecommendationReviewActionResult {
     #[serde(default)]
     pub decision_intake_inspection:
         Option<crate::workspace_recommendation::RecommendationDecisionIntakeInspection>,
+    /// Versioned intake package identity — compatible ≠ transfer / handoff.
+    #[serde(default)]
+    pub decision_intake_compatibility:
+        Option<crate::workspace_recommendation::RecommendationDecisionIntakeCompatibility>,
     pub explanation: String,
     pub authority_effect: String,
 }
@@ -4111,6 +4115,7 @@ mod tests {
                 decision_confirmation: None,
                 decision_intake: None,
                 decision_intake_inspection: None,
+                decision_intake_compatibility: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
         }
     }
