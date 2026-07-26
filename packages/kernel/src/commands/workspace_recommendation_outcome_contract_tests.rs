@@ -48,6 +48,10 @@ fn sample_item() -> RecommendationItem {
         related_task_id: Some("task:9".into()),
         related_purpose_label: None,
         related_decision_id: None,
+        lifecycle_state: None,
+        lifecycle_presented_at: None,
+        lifecycle_resolved_at: None,
+        lifecycle_resolution_type: None,
         authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
     }
 }

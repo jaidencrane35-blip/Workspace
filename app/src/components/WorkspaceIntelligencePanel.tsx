@@ -2316,8 +2316,9 @@ export function WorkspaceIntelligencePanel({
         <p className="muted">
           What might help next — suggestions grounded in Attention, Continuity,
           Evolution, Purpose, Task Graph, Composition, Decision Queue, and
-          Environment. Never executes, accepts, or grants authority. Distinct
-          from Decision Engine accept/handoff.
+          Environment. Present / Accept / Reject record human decisions only —
+          never execute or grant authority. Distinct from Decision Engine
+          accept/handoff.
         </p>
         <div className="row">
           <button
@@ -2350,26 +2351,115 @@ export function WorkspaceIntelligencePanel({
             </p>
             {recommendationEngine.candidates.length > 0 && (
               <ul className="intelligence-list">
-                {recommendationEngine.candidates.slice(0, 6).map((item) => (
-                  <li key={item.id}>
-                    <strong>
-                      [{item.kind}] {item.title}
-                    </strong>
-                    <div className="muted">
-                      {item.attention_reasons.length === 0 ? (
-                        <>Why: {item.reason} · </>
+                {recommendationEngine.candidates.slice(0, 6).map((item) => {
+                  const resolved =
+                    item.lifecycle_state === "accepted" ||
+                    item.lifecycle_state === "rejected" ||
+                    item.lifecycle_state === "expired" ||
+                    item.lifecycle_state === "superseded";
+                  return (
+                    <li key={item.id}>
+                      <strong>
+                        [{item.kind}] {item.title}
+                      </strong>
+                      <div className="muted">
+                        Lifecycle: {item.lifecycle_state ?? "available"}
+                        {item.lifecycle_resolution_type
+                          ? ` · ${item.lifecycle_resolution_type}`
+                          : ""}
+                      </div>
+                      <div className="muted">
+                        {item.attention_reasons.length === 0 ? (
+                          <>Why: {item.reason} · </>
+                        ) : null}
+                        Impact: {item.impact} · Confidence: {item.confidence}
+                      </div>
+                      {item.attention_reasons.length > 0 ? (
+                        <DisplayReasonList reasons={item.attention_reasons} />
                       ) : null}
-                      Impact: {item.impact} · Confidence: {item.confidence}
-                    </div>
-                    {item.attention_reasons.length > 0 ? (
-                      <DisplayReasonList reasons={item.attention_reasons} />
-                    ) : null}
-                    <div className="muted">
-                      Evidence:{" "}
-                      {item.evidence.map((e) => e.summary).join(" · ")}
-                    </div>
-                  </li>
-                ))}
+                      <div className="muted">
+                        Evidence:{" "}
+                        {item.evidence.map((e) => e.summary).join(" · ")}
+                      </div>
+                      <div className="row">
+                        <button
+                          type="button"
+                          disabled={
+                            busy ||
+                            !workspace ||
+                            resolved ||
+                            item.lifecycle_state === "presented"
+                          }
+                          onClick={() =>
+                            void run("Recommendation presented", async () => {
+                              if (!workspace) return;
+                              await invokeIpc("present_recommendation", {
+                                workspaceId: workspace.id,
+                                recommendationId: item.id,
+                              });
+                              const next =
+                                await invokeIpc<WorkspaceRecommendationEngineState>(
+                                  "generate_workspace_recommendation_engine",
+                                  { workspaceId: workspace.id },
+                                );
+                              setRecommendationEngine(next);
+                            })
+                          }
+                        >
+                          Present
+                        </button>
+                        <button
+                          type="button"
+                          disabled={busy || !workspace || resolved}
+                          onClick={() =>
+                            void run(
+                              "Recommendation accepted (decision only)",
+                              async () => {
+                                if (!workspace) return;
+                                await invokeIpc("accept_recommendation", {
+                                  workspaceId: workspace.id,
+                                  recommendationId: item.id,
+                                });
+                                const next =
+                                  await invokeIpc<WorkspaceRecommendationEngineState>(
+                                    "generate_workspace_recommendation_engine",
+                                    { workspaceId: workspace.id },
+                                  );
+                                setRecommendationEngine(next);
+                              },
+                            )
+                          }
+                        >
+                          Accept
+                        </button>
+                        <button
+                          type="button"
+                          disabled={busy || !workspace || resolved}
+                          onClick={() =>
+                            void run(
+                              "Recommendation rejected (decision only)",
+                              async () => {
+                                if (!workspace) return;
+                                await invokeIpc("reject_recommendation", {
+                                  workspaceId: workspace.id,
+                                  recommendationId: item.id,
+                                });
+                                const next =
+                                  await invokeIpc<WorkspaceRecommendationEngineState>(
+                                    "generate_workspace_recommendation_engine",
+                                    { workspaceId: workspace.id },
+                                  );
+                                setRecommendationEngine(next);
+                              },
+                            )
+                          }
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </>

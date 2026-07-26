@@ -91,8 +91,8 @@ Terminal for further progress: Accepted, Rejected, Expired, Superseded
 | State machine contract | Domain (`RecommendationLifecycle`) |
 | Transition validation | Domain (`allows_transition` / `transition`) |
 | Transition actor | Recorded as actor id metadata — **not** a capability grant |
-| Persistence (today) | Decision Engine / Queue outcome overlays only; Recommendation Engine still ephemeral |
-| Persistence (future) | Lifecycle overlay keyed by `RecommendationIdentity` — payloads remain regenerable |
+| Persistence (today) | `recommendation_lifecycle` overlay keyed by `(workspace_id, native_id)` — payloads remain regenerable |
+| Surfaces | Operator Console + Work Intelligence Present / Accept / Reject (decision records only) |
 
 ### Lifecycle metadata (mutable)
 
@@ -132,7 +132,17 @@ remain hard-fail.
 
 `RecommendationGovernanceRecord` = Identity + Provenance + Lifecycle.
 
-Used for contract tests and future durability — not wired to automation in Sprint 138.
+## Runtime wiring (Sprints 192–196)
+
+| Step | Behavior |
+|------|----------|
+| Generate | Ensures `Available` overlay for each regenerable candidate; projects lifecycle onto `RecommendationItem` |
+| Present | `Available → Presented` via `GateRecommendationEngineWrite` |
+| Accept | Auto-presents if still Available, then `Presented → Accepted`; persists `RecommendationOutcome` |
+| Reject | `Available\|Presented → Rejected`; persists `RecommendationOutcome` |
+| Authority | `authority_effect` remains `none`; no score mutation; no Gateway bypass |
+
+IPC: `present_recommendation` / `accept_recommendation` / `reject_recommendation`.
 
 ---
 

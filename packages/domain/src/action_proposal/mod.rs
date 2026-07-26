@@ -334,6 +334,19 @@ impl RecommendationResolutionType {
             Self::Superseded => "superseded",
         }
     }
+
+    pub fn parse(value: &str) -> Result<Self, ActionProposalError> {
+        match value {
+            "accepted" => Ok(Self::Accepted),
+            "rejected" => Ok(Self::Rejected),
+            "expired" => Ok(Self::Expired),
+            "superseded" => Ok(Self::Superseded),
+            other => Err(ActionProposalError::InvalidLifecycleTransition {
+                from: other.into(),
+                to: "parse_resolution".into(),
+            }),
+        }
+    }
 }
 
 /// Mutable lifecycle metadata — never mutates reasoning provenance.
@@ -603,6 +616,72 @@ pub struct RecommendationOutcome {
     /// Experience translation match keys for the full debug chain.
     pub experience_trace_match_keys: Vec<String>,
     pub authority_effect: String,
+}
+
+/// Durable lifecycle overlay for Recommendation Engine candidates (Sprint 192).
+///
+/// Stores lifecycle + optional outcome snapshot only — never full candidate payloads.
+/// Distinct from Decision Engine / Decision Queue overlays.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RecommendationLifecycleOverlay {
+    pub workspace_id: String,
+    pub native_id: String,
+    pub lifecycle_state: RecommendationLifecycleState,
+    pub created_at: String,
+    pub presented_at: Option<String>,
+    pub resolved_at: Option<String>,
+    pub resolution_type: Option<RecommendationResolutionType>,
+    pub actor_id: Option<String>,
+    pub outcome: Option<RecommendationOutcome>,
+    pub updated_at: String,
+    pub authority_effect: String,
+}
+
+impl RecommendationLifecycleOverlay {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+
+    pub fn from_governance_record(
+        workspace_id: impl Into<String>,
+        record: &RecommendationGovernanceRecord,
+        outcome: Option<RecommendationOutcome>,
+        updated_at: impl Into<String>,
+    ) -> Self {
+        Self {
+            workspace_id: workspace_id.into(),
+            native_id: record.identity.native_id.clone(),
+            lifecycle_state: record.lifecycle.state,
+            created_at: record.lifecycle.created_at.clone(),
+            presented_at: record.lifecycle.presented_at.clone(),
+            resolved_at: record.lifecycle.resolved_at.clone(),
+            resolution_type: record.lifecycle.resolution_type,
+            actor_id: record.lifecycle.transition_actor_id.clone(),
+            outcome,
+            updated_at: updated_at.into(),
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        }
+    }
+
+    pub fn apply_to_item(&self, item: &mut crate::workspace_recommendation::RecommendationItem) {
+        item.lifecycle_state = Some(self.lifecycle_state.as_str().into());
+        item.lifecycle_presented_at = self.presented_at.clone();
+        item.lifecycle_resolved_at = self.resolved_at.clone();
+        item.lifecycle_resolution_type = self.resolution_type.map(|r| r.as_str().into());
+    }
+}
+
+/// IPC/service result for present / accept / reject — never executes.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RecommendationReviewActionResult {
+    pub workspace_id: String,
+    pub recommendation_id: String,
+    pub lifecycle_state: String,
+    pub outcome: Option<RecommendationOutcome>,
+    pub explanation: String,
+    pub authority_effect: String,
+}
+
+impl RecommendationReviewActionResult {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
 }
 
 impl RecommendationOutcome {
@@ -3908,6 +3987,10 @@ mod tests {
             related_task_id: Some("task:1".into()),
             related_purpose_label: None,
             related_decision_id: None,
+            lifecycle_state: None,
+            lifecycle_presented_at: None,
+            lifecycle_resolved_at: None,
+            lifecycle_resolution_type: None,
             authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
         }
     }

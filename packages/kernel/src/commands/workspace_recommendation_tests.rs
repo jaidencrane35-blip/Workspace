@@ -479,3 +479,149 @@ fn case12_recommendation_reason_ordering_is_deterministic() {
     };
     assert_eq!(projection(&generate()), projection(&generate()));
 }
+
+/// CASE 13 — Generate projects durable Available lifecycle overlays.
+#[test]
+fn case13_generate_projects_lifecycle_available() {
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let (ws, _) = seed(&kernel);
+    let state = CommandHandler::generate_workspace_recommendation_engine(
+        &kernel,
+        ActorContext::local_user(),
+        IntentContext::user_request(),
+        ws,
+    )
+    .unwrap();
+    assert!(!state.candidates.is_empty());
+    for candidate in &state.candidates {
+        assert_eq!(
+            candidate.lifecycle_state.as_deref(),
+            Some("available"),
+            "candidate {} missing Available overlay",
+            candidate.id
+        );
+        assert_eq!(candidate.authority_effect, "none");
+    }
+}
+
+/// CASE 14 — Present / accept / reject record human decisions only; accept never executes.
+#[test]
+fn case14_recommendation_review_records_decision_only() {
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let (ws, _) = seed(&kernel);
+    let local = ActorContext::local_user();
+    let intent = IntentContext::user_request();
+    let state = CommandHandler::generate_workspace_recommendation_engine(
+        &kernel,
+        local.clone(),
+        intent.clone(),
+        ws.clone(),
+    )
+    .unwrap();
+    let id = state.candidates[0].id.clone();
+
+    let presented = CommandHandler::present_recommendation(
+        &kernel,
+        local.clone(),
+        intent.clone(),
+        ws.clone(),
+        id.clone(),
+    )
+    .unwrap();
+    assert_eq!(presented.lifecycle_state, "presented");
+    assert!(presented.outcome.is_none());
+    assert_eq!(presented.authority_effect, "none");
+
+    let accepted = CommandHandler::accept_recommendation(
+        &kernel,
+        local.clone(),
+        intent.clone(),
+        ws.clone(),
+        id.clone(),
+    )
+    .unwrap();
+    assert_eq!(accepted.lifecycle_state, "accepted");
+    assert_eq!(accepted.authority_effect, "none");
+    let outcome = accepted.outcome.expect("accept must record outcome");
+    assert_eq!(outcome.user_decision.as_str(), "accepted");
+    assert_eq!(outcome.authority_effect, "none");
+    assert!(!outcome.is_system_failure());
+
+    let after = CommandHandler::generate_workspace_recommendation_engine(
+        &kernel,
+        local.clone(),
+        intent.clone(),
+        ws.clone(),
+    )
+    .unwrap();
+    let item = after
+        .candidates
+        .iter()
+        .find(|c| c.id == id)
+        .expect("accepted candidate still projected");
+    assert_eq!(item.lifecycle_state.as_deref(), Some("accepted"));
+    assert_eq!(item.lifecycle_resolution_type.as_deref(), Some("accepted"));
+
+    assert_cannot_execute(CommandHandler::workspace_recommendation_engine_attempt_execute());
+
+    // Reject path on a different candidate (or re-seed) — use second if present.
+    if let Some(other) = state.candidates.get(1).map(|c| c.id.clone()) {
+        let rejected = CommandHandler::reject_recommendation(
+            &kernel,
+            local,
+            intent,
+            ws,
+            other.clone(),
+        )
+        .unwrap();
+        assert_eq!(rejected.lifecycle_state, "rejected");
+        assert_eq!(rejected.authority_effect, "none");
+        let reject_outcome = rejected.outcome.expect("reject must record outcome");
+        assert_eq!(reject_outcome.user_decision.as_str(), "rejected");
+        assert!(!reject_outcome.is_system_failure());
+    }
+}
+
+/// CASE 15 — Accept from Available auto-presents then accepts; still no execution.
+#[test]
+fn case15_accept_from_available_auto_presents() {
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let (ws, _) = seed(&kernel);
+    let local = ActorContext::local_user();
+    let intent = IntentContext::user_request();
+    let state = CommandHandler::generate_workspace_recommendation_engine(
+        &kernel,
+        local.clone(),
+        intent.clone(),
+        ws.clone(),
+    )
+    .unwrap();
+    let id = state.candidates[0].id.clone();
+    let accepted = CommandHandler::accept_recommendation(
+        &kernel,
+        local,
+        intent,
+        ws,
+        id,
+    )
+    .unwrap();
+    assert_eq!(accepted.lifecycle_state, "accepted");
+    assert!(accepted.outcome.is_some());
+    assert_eq!(accepted.authority_effect, "none");
+    assert_cannot_execute(CommandHandler::workspace_recommendation_engine_attempt_execute());
+}
+
+fn assert_cannot_execute(result: Result<(), KernelError>) {
+    match result {
+        Err(err) => {
+            let message = err.to_string().to_lowercase();
+            assert!(
+                message.contains("cannot execute")
+                    || message.contains("cannot")
+                    || message.contains("authorize"),
+                "expected CannotExecute-style error, got {err}"
+            );
+        }
+        Ok(()) => panic!("must not succeed at attempt_execute"),
+    }
+}

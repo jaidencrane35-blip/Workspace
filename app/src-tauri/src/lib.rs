@@ -35,7 +35,10 @@ use commands::workspace_environment::generate_workspace_environment;
 use commands::workspace_composition::generate_workspace_composition;
 use commands::workspace_purpose::generate_workspace_purpose;
 use commands::workspace_evolution::generate_workspace_evolution;
-use commands::workspace_recommendation::generate_workspace_recommendation_engine;
+use commands::workspace_recommendation::{
+    accept_recommendation, generate_workspace_recommendation_engine, present_recommendation,
+    reject_recommendation,
+};
 use commands::workspace_operating_state::generate_workspace_operating_state;
 use commands::workspace_pattern::generate_workspace_pattern;
 use commands::workspace_adaptation::{
@@ -253,6 +256,9 @@ pub fn run() {
             generate_workspace_purpose,
             generate_workspace_evolution,
             generate_workspace_recommendation_engine,
+            present_recommendation,
+            accept_recommendation,
+            reject_recommendation,
             generate_workspace_operating_state,
             generate_workspace_pattern,
             generate_workspace_adaptation,

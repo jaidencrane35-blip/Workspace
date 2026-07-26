@@ -2141,6 +2141,29 @@ export interface RecommendationItem {
   related_task_id: string | null;
   related_purpose_label: string | null;
   related_decision_id: string | null;
+  /** Lifecycle overlay projection — null until durable overlay applied. */
+  lifecycle_state?: string | null;
+  lifecycle_presented_at?: string | null;
+  lifecycle_resolved_at?: string | null;
+  lifecycle_resolution_type?: string | null;
+  authority_effect: string;
+}
+
+export interface RecommendationOutcome {
+  id: string;
+  lifecycle_resolution: string | null;
+  user_decision: string;
+  result_kind: string;
+  recorded_at: string;
+  authority_effect: string;
+}
+
+export interface RecommendationReviewActionResult {
+  workspace_id: string;
+  recommendation_id: string;
+  lifecycle_state: string;
+  outcome: RecommendationOutcome | null;
+  explanation: string;
   authority_effect: string;
 }
 

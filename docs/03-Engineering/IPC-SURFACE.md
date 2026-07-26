@@ -84,7 +84,10 @@
 | `generate_workspace_composition` | Product: aggregate logical working environment Composition (never launches or groups) |
 | `generate_workspace_purpose` | Product: aggregate why-work-exists Purpose Model (never executes or owns goals) |
 | `generate_workspace_evolution` | Product: aggregate how-work-changed Evolution Model (never stores a second history) |
-| `generate_workspace_recommendation_engine` | Product: aggregate what-might-help-next suggestions (never executes or accepts) |
+| `generate_workspace_recommendation_engine` | Product: aggregate what-might-help-next suggestions (never executes) |
+| `present_recommendation` | Product: mark recommendation Presented (lifecycle overlay only) |
+| `accept_recommendation` | Product: record human accept decision + outcome (never executes) |
+| `reject_recommendation` | Product: record human reject decision + outcome (never executes) |
 | `generate_workspace_operating_state` | Product: aggregate what-is-happening-now snapshot (never executes or persists) |
 | `generate_workspace_pattern` | Product: aggregate recurring structures (never predicts, profiles, or executes) |
 | `generate_workspace_adaptation` | Product: aggregate possible improvement proposals (never applies) |

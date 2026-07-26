@@ -20,6 +20,15 @@ pub enum WorkspaceRecommendationEngineError {
     #[error("recommendation engine requires a workspace id")]
     MissingWorkspace,
 
+    #[error("recommendation candidate not found")]
+    NotFound,
+
+    #[error("recommendation lifecycle transition not allowed from {from} to {to}")]
+    InvalidLifecycleTransition { from: String, to: String },
+
+    #[error("recommendation outcome requires a resolved lifecycle state")]
+    OutcomeRequiresResolution,
+
     #[error("recommendation engine cannot execute or authorize")]
     CannotExecute,
 
@@ -114,6 +123,15 @@ pub struct RecommendationItem {
     pub related_task_id: Option<String>,
     pub related_purpose_label: Option<String>,
     pub related_decision_id: Option<String>,
+    /// Lifecycle overlay projection (Sprint 192+) — None until durable overlay applied.
+    #[serde(default)]
+    pub lifecycle_state: Option<String>,
+    #[serde(default)]
+    pub lifecycle_presented_at: Option<String>,
+    #[serde(default)]
+    pub lifecycle_resolved_at: Option<String>,
+    #[serde(default)]
+    pub lifecycle_resolution_type: Option<String>,
     pub authority_effect: String,
 }
 

@@ -112,8 +112,9 @@ pub use action_proposal::{
     PublicationRolloutStage, PublicationSafetyContract, PublicationSafetyLifecycleState,
     PublicationValidationGate, PublishRequest, PublishRequestStatus, PublishedVersionRecord,
     RecommendationFamily, RecommendationGovernanceRecord, RecommendationIdentity,
-    RecommendationLifecycle, RecommendationLifecycleState, RecommendationOutcome,
-    RecommendationOutcomeQuality, RecommendationProvenance, RecommendationResolutionType,
+    RecommendationLifecycle, RecommendationLifecycleOverlay, RecommendationLifecycleState,
+    RecommendationOutcome, RecommendationOutcomeQuality, RecommendationProvenance,
+    RecommendationResolutionType, RecommendationReviewActionResult,
     RecommendationResultKind, RecommendationUserDecision,
 };
 pub use actor::{

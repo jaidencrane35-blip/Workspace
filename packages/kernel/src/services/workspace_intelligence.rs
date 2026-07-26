@@ -314,6 +314,8 @@ impl WorkspaceIntelligenceService {
         // Recommendation Engine may consume readiness gaps as evidence (no circular regen).
         let full_recommendation_engine =
             WorkspaceRecommendationEngineService::enrich_with_readiness(
+                db,
+                actor,
                 &recommendation_with_patterns,
                 &full_readiness,
             )?;

@@ -20,7 +20,9 @@ use crate::commands::workspace_environment::GateEnvironmentRead;
 use crate::commands::workspace_composition::GateCompositionRead;
 use crate::commands::workspace_purpose::GatePurposeRead;
 use crate::commands::workspace_evolution::GateEvolutionRead;
-use crate::commands::workspace_recommendation::GateRecommendationEngineRead;
+use crate::commands::workspace_recommendation::{
+    GateRecommendationEngineRead, GateRecommendationEngineWrite,
+};
 use crate::commands::workspace_operating_state::GateOperatingStateRead;
 use crate::commands::workspace_pattern::GatePatternRead;
 use crate::commands::workspace_adaptation::{GateAdaptationRead, GateAdaptationWrite};
@@ -122,7 +124,8 @@ use workspace_domain::{
     TaskRelationshipKind, TaskStatus, TriggerEvaluationResult, TriggerEvent, TriggerEventType,
     WorkGoal, WorkflowContext, WorkspaceActivity, WorkspaceActivityGraph, WorkspaceAttentionState,
     WorkspaceContinuityState, WorkspaceEnvironmentState, WorkspaceCompositionState,
-    WorkspacePurposeState, WorkspaceEvolutionState, WorkspaceRecommendationEngineState,
+    WorkspacePurposeState, WorkspaceEvolutionState, RecommendationReviewActionResult,
+    WorkspaceRecommendationEngineState,
     WorkspaceOperatingState, WorkspacePatternState, AdaptationActionResult, WorkspaceAdaptationState,
     WorkspaceReadinessState, WorkspaceRuntimeOperatorView, WorkspaceSessionComparison,
     WorkspaceSessionState, WorkspaceExperienceComparison, WorkspaceExperienceState,
@@ -2937,6 +2940,66 @@ impl CommandHandler {
     /// Architecture guard — Recommendation Engine must never execute.
     pub fn workspace_recommendation_engine_attempt_execute() -> Result<()> {
         WorkspaceRecommendationEngineService::attempt_execute()
+    }
+
+    /// Present a Recommendation Engine candidate for human review — lifecycle only.
+    pub fn present_recommendation(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        recommendation_id: String,
+    ) -> Result<RecommendationReviewActionResult> {
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent))
+            .execute_mutation(GateRecommendationEngineWrite)?;
+        WorkspaceRecommendationEngineService::present_recommendation(
+            &kernel.shared_database(),
+            &actor,
+            &kernel.orchestrated_plans(),
+            &kernel.assistant_workflows(),
+            workspace_id,
+            recommendation_id,
+        )
+    }
+
+    /// Accept a Recommendation Engine candidate — records human decision only; never executes.
+    pub fn accept_recommendation(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        recommendation_id: String,
+    ) -> Result<RecommendationReviewActionResult> {
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent))
+            .execute_mutation(GateRecommendationEngineWrite)?;
+        WorkspaceRecommendationEngineService::accept_recommendation(
+            &kernel.shared_database(),
+            &actor,
+            &kernel.orchestrated_plans(),
+            &kernel.assistant_workflows(),
+            workspace_id,
+            recommendation_id,
+        )
+    }
+
+    /// Reject a Recommendation Engine candidate — records human decision only; never executes.
+    pub fn reject_recommendation(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        recommendation_id: String,
+    ) -> Result<RecommendationReviewActionResult> {
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent))
+            .execute_mutation(GateRecommendationEngineWrite)?;
+        WorkspaceRecommendationEngineService::reject_recommendation(
+            &kernel.shared_database(),
+            &actor,
+            &kernel.orchestrated_plans(),
+            &kernel.assistant_workflows(),
+            workspace_id,
+            recommendation_id,
+        )
     }
 
     /// Aggregate Workspace Operating State (read-only current-situation snapshot).

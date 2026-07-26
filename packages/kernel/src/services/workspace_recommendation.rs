@@ -2,21 +2,24 @@
 //!
 //! Aggregates Attention + Continuity + Evolution + Purpose + Task Graph +
 //! Composition + Decision Queue + Environment into typed next-step suggestions.
-//! Never executes, never accepts into planner, never persists candidates.
+//! Never executes, never accepts into planner.
+//! Candidate payloads remain regenerable; only lifecycle overlays persist.
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};
 
 use serde_json::json;
-use workspace_database::Database;
+use workspace_database::{Database, RecommendationLifecycleRepository};
 use workspace_domain::{
     build_recommendation_engine_summary, recommendation_engine_now_rfc3339,
-    validate_recommendation_engine_workspace_id, ActorContext, AttentionCategory, DecisionQueue,
-    IntentContext, RecommendationConfidence, RecommendationEvidence, RecommendationItem,
-    RecommendationKind, RecommendationRelationship, TaskGraph, WorkspaceAttentionState,
+    validate_recommendation_engine_workspace_id, ActionProposalError, ActorContext,
+    AttentionCategory, DecisionQueue, IntentContext, RecommendationConfidence,
+    RecommendationEvidence, RecommendationGovernanceRecord, RecommendationItem, RecommendationKind,
+    RecommendationLifecycleOverlay, RecommendationLifecycleState, RecommendationRelationship,
+    RecommendationReviewActionResult, TaskGraph, WorkspaceAttentionState,
     WorkspaceCompositionState, WorkspaceContinuityState, WorkspaceEnvironmentState,
-    WorkspaceEvolutionState, WorkspacePurposeState, WorkspaceRecommendationEngineState,
-    WorkspaceRecommendationEngineSummary,
+    WorkspaceEvolutionState, WorkspacePurposeState, WorkspaceRecommendationEngineError,
+    WorkspaceRecommendationEngineState, WorkspaceRecommendationEngineSummary,
 };
 
 use crate::error::{KernelError, Result};
@@ -180,6 +183,10 @@ impl WorkspaceRecommendationEngineService {
                 related_task_id: None,
                 related_purpose_label: Some(purpose.label.clone()),
                 related_decision_id: None,
+                lifecycle_state: None,
+                lifecycle_presented_at: None,
+                lifecycle_resolved_at: None,
+                lifecycle_resolution_type: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
             });
             relationships.push(RecommendationRelationship {
@@ -232,6 +239,10 @@ impl WorkspaceRecommendationEngineService {
                 related_task_id: None,
                 related_purpose_label: Some(purpose.label.clone()),
                 related_decision_id: Some(item.source_id.clone()),
+                lifecycle_state: None,
+                lifecycle_presented_at: None,
+                lifecycle_resolved_at: None,
+                lifecycle_resolution_type: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
             });
         }
@@ -263,6 +274,10 @@ impl WorkspaceRecommendationEngineService {
                     related_task_id: None,
                     related_purpose_label: Some(purpose.label.clone()),
                     related_decision_id: None,
+                    lifecycle_state: None,
+                    lifecycle_presented_at: None,
+                    lifecycle_resolved_at: None,
+                    lifecycle_resolution_type: None,
                     authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
@@ -302,6 +317,10 @@ impl WorkspaceRecommendationEngineService {
                     related_task_id: None,
                     related_purpose_label: Some(purpose.label.clone()),
                     related_decision_id: None,
+                    lifecycle_state: None,
+                    lifecycle_presented_at: None,
+                    lifecycle_resolved_at: None,
+                    lifecycle_resolution_type: None,
                     authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
@@ -329,6 +348,10 @@ impl WorkspaceRecommendationEngineService {
                     related_task_id: None,
                     related_purpose_label: Some(purpose.label.clone()),
                     related_decision_id: None,
+                    lifecycle_state: None,
+                    lifecycle_presented_at: None,
+                    lifecycle_resolved_at: None,
+                    lifecycle_resolution_type: None,
                     authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
@@ -378,6 +401,10 @@ impl WorkspaceRecommendationEngineService {
                     related_task_id: None,
                     related_purpose_label: Some(purpose.label.clone()),
                     related_decision_id: None,
+                    lifecycle_state: None,
+                    lifecycle_presented_at: None,
+                    lifecycle_resolved_at: None,
+                    lifecycle_resolution_type: None,
                     authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
@@ -418,6 +445,10 @@ impl WorkspaceRecommendationEngineService {
                     related_task_id: Some(node.task.id.to_string()),
                     related_purpose_label: Some(purpose.label.clone()),
                     related_decision_id: None,
+                    lifecycle_state: None,
+                    lifecycle_presented_at: None,
+                    lifecycle_resolved_at: None,
+                    lifecycle_resolution_type: None,
                     authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
@@ -456,6 +487,10 @@ impl WorkspaceRecommendationEngineService {
                     related_task_id: None,
                     related_purpose_label: Some(purpose.label.clone()),
                     related_decision_id: None,
+                    lifecycle_state: None,
+                    lifecycle_presented_at: None,
+                    lifecycle_resolved_at: None,
+                    lifecycle_resolution_type: None,
                     authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
@@ -481,6 +516,10 @@ impl WorkspaceRecommendationEngineService {
                     related_task_id: None,
                     related_purpose_label: Some(purpose.label.clone()),
                     related_decision_id: None,
+                    lifecycle_state: None,
+                    lifecycle_presented_at: None,
+                    lifecycle_resolved_at: None,
+                    lifecycle_resolution_type: None,
                     authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
@@ -520,6 +559,10 @@ impl WorkspaceRecommendationEngineService {
                     related_task_id: None,
                     related_purpose_label: Some(purpose.label.clone()),
                     related_decision_id: None,
+                    lifecycle_state: None,
+                    lifecycle_presented_at: None,
+                    lifecycle_resolved_at: None,
+                    lifecycle_resolution_type: None,
                     authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
                 });
             }
@@ -567,6 +610,7 @@ impl WorkspaceRecommendationEngineService {
             authority_effect: WorkspaceRecommendationEngineState::AUTHORITY_EFFECT_NONE.into(),
         };
 
+        let state = Self::project_lifecycle_overlays(db, actor, state)?;
         Self::audit_generated(db, actor, &state)?;
         Ok(state)
     }
@@ -633,6 +677,10 @@ impl WorkspaceRecommendationEngineService {
                 related_task_id: None,
                 related_purpose_label: Some(patterns.label.clone()),
                 related_decision_id: None,
+                lifecycle_state: None,
+                lifecycle_presented_at: None,
+                lifecycle_resolved_at: None,
+                lifecycle_resolution_type: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
             };
             crate::services::WorkspacePatternService::audit_used_for_recommendation(
@@ -657,12 +705,14 @@ impl WorkspaceRecommendationEngineService {
             patterns.pattern_count
         ));
         state.summary = build_recommendation_engine_summary(&state.label, state.candidate_count);
-        Ok(state)
+        Self::project_lifecycle_overlays(db, actor, state)
     }
 
     /// Merge Readiness gaps into recommendations as evidence-only context.
     /// Does not regenerate Readiness — avoids circular regen.
     pub(crate) fn enrich_with_readiness(
+        db: &Arc<Mutex<Database>>,
+        actor: &ActorContext,
         recommendations: &WorkspaceRecommendationEngineState,
         readiness: &workspace_domain::WorkspaceReadinessState,
     ) -> Result<WorkspaceRecommendationEngineState> {
@@ -716,6 +766,10 @@ impl WorkspaceRecommendationEngineService {
                 related_task_id: None,
                 related_purpose_label: Some(readiness.label.clone()),
                 related_decision_id: None,
+                lifecycle_state: None,
+                lifecycle_presented_at: None,
+                lifecycle_resolved_at: None,
+                lifecycle_resolution_type: None,
                 authority_effect: RecommendationItem::AUTHORITY_EFFECT_NONE.into(),
             });
         }
@@ -734,7 +788,7 @@ impl WorkspaceRecommendationEngineService {
             readiness.overall_status.as_str()
         ));
         state.summary = build_recommendation_engine_summary(&state.label, state.candidate_count);
-        Ok(state)
+        Self::project_lifecycle_overlays(db, actor, state)
     }
 
     /// Reference Milestones without mutating milestone ownership or ranking authority.
@@ -862,10 +916,277 @@ impl WorkspaceRecommendationEngineService {
         Ok(state)
     }
 
+    /// Mark a recommendation as presented on a human surface — lifecycle only.
+    pub(crate) fn present_recommendation(
+        db: &Arc<Mutex<Database>>,
+        actor: &ActorContext,
+        orchestrated_plans: &Arc<Mutex<OrchestratedPlanStore>>,
+        assistant_workflows: &Arc<Mutex<AssistantWorkflowStore>>,
+        workspace_id: impl Into<String>,
+        recommendation_id: impl Into<String>,
+    ) -> Result<RecommendationReviewActionResult> {
+        Self::review_transition(
+            db,
+            actor,
+            orchestrated_plans,
+            assistant_workflows,
+            workspace_id,
+            recommendation_id,
+            RecommendationLifecycleState::Presented,
+            "workspace.recommendation_engine.presented",
+            "Presented for human review — still a proposal only.",
+        )
+    }
+
+    /// Record human acceptance — lifecycle + outcome only. Never executes.
+    pub(crate) fn accept_recommendation(
+        db: &Arc<Mutex<Database>>,
+        actor: &ActorContext,
+        orchestrated_plans: &Arc<Mutex<OrchestratedPlanStore>>,
+        assistant_workflows: &Arc<Mutex<AssistantWorkflowStore>>,
+        workspace_id: impl Into<String>,
+        recommendation_id: impl Into<String>,
+    ) -> Result<RecommendationReviewActionResult> {
+        Self::review_transition(
+            db,
+            actor,
+            orchestrated_plans,
+            assistant_workflows,
+            workspace_id,
+            recommendation_id,
+            RecommendationLifecycleState::Accepted,
+            "workspace.recommendation_engine.accepted",
+            "Accepted as a human decision record only — does not execute or grant authority. Any follow-through must use Intent → Command Pipeline → Permission Gateway.",
+        )
+    }
+
+    /// Record human rejection — lifecycle + outcome only. Never executes.
+    pub(crate) fn reject_recommendation(
+        db: &Arc<Mutex<Database>>,
+        actor: &ActorContext,
+        orchestrated_plans: &Arc<Mutex<OrchestratedPlanStore>>,
+        assistant_workflows: &Arc<Mutex<AssistantWorkflowStore>>,
+        workspace_id: impl Into<String>,
+        recommendation_id: impl Into<String>,
+    ) -> Result<RecommendationReviewActionResult> {
+        Self::review_transition(
+            db,
+            actor,
+            orchestrated_plans,
+            assistant_workflows,
+            workspace_id,
+            recommendation_id,
+            RecommendationLifecycleState::Rejected,
+            "workspace.recommendation_engine.rejected",
+            "Rejected as a human decision record only — valid outcome, not a system failure.",
+        )
+    }
+
     pub(crate) fn attempt_execute() -> Result<()> {
         Err(KernelError::from(
-            workspace_domain::WorkspaceRecommendationEngineError::CannotExecute,
+            WorkspaceRecommendationEngineError::CannotExecute,
         ))
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn review_transition(
+        db: &Arc<Mutex<Database>>,
+        actor: &ActorContext,
+        orchestrated_plans: &Arc<Mutex<OrchestratedPlanStore>>,
+        assistant_workflows: &Arc<Mutex<AssistantWorkflowStore>>,
+        workspace_id: impl Into<String>,
+        recommendation_id: impl Into<String>,
+        to: RecommendationLifecycleState,
+        audit_event: &str,
+        explanation: &str,
+    ) -> Result<RecommendationReviewActionResult> {
+        let workspace_id = workspace_id.into();
+        let recommendation_id = recommendation_id.into();
+        let state = Self::generate(
+            db,
+            actor,
+            orchestrated_plans,
+            assistant_workflows,
+            workspace_id.clone(),
+        )?;
+        let item = state
+            .candidates
+            .iter()
+            .find(|c| c.id == recommendation_id)
+            .cloned()
+            .ok_or_else(|| KernelError::from(WorkspaceRecommendationEngineError::NotFound))?;
+
+        let now = recommendation_engine_now_rfc3339();
+        let actor_id = actor.actor.id.to_string();
+        let overlay = Self::load_overlay(db, &workspace_id, &recommendation_id)?
+            .unwrap_or_else(|| {
+                let record = RecommendationGovernanceRecord::from_recommendation_item(&item, &now);
+                RecommendationLifecycleOverlay::from_governance_record(
+                    workspace_id.clone(),
+                    &record,
+                    None,
+                    now.clone(),
+                )
+            });
+
+        let mut record = RecommendationGovernanceRecord::from_recommendation_item(&item, &overlay.created_at);
+        record.lifecycle.state = overlay.lifecycle_state;
+        record.lifecycle.presented_at = overlay.presented_at.clone();
+        record.lifecycle.resolved_at = overlay.resolved_at.clone();
+        record.lifecycle.resolution_type = overlay.resolution_type;
+        record.lifecycle.transition_actor_id = overlay.actor_id.clone();
+
+        // Ensure Available before Present/Accept/Reject when still Created.
+        if record.lifecycle.state == RecommendationLifecycleState::Created {
+            record
+                .transition(
+                    RecommendationLifecycleState::Available,
+                    now.clone(),
+                    Some(actor_id.clone()),
+                )
+                .map_err(map_lifecycle_err)?;
+        }
+        // Accept requires Presented — auto-present when still Available.
+        if to == RecommendationLifecycleState::Accepted
+            && record.lifecycle.state == RecommendationLifecycleState::Available
+        {
+            record
+                .transition(
+                    RecommendationLifecycleState::Presented,
+                    now.clone(),
+                    Some(actor_id.clone()),
+                )
+                .map_err(map_lifecycle_err)?;
+        }
+
+        record
+            .transition(to, now.clone(), Some(actor_id.clone()))
+            .map_err(map_lifecycle_err)?;
+
+        let outcome = if matches!(
+            to,
+            RecommendationLifecycleState::Accepted | RecommendationLifecycleState::Rejected
+        ) {
+            Some(record.record_outcome(now.clone()).map_err(map_lifecycle_err)?)
+        } else {
+            overlay.outcome.clone()
+        };
+
+        let next = RecommendationLifecycleOverlay::from_governance_record(
+            workspace_id.clone(),
+            &record,
+            outcome.clone(),
+            now,
+        );
+        Self::upsert_overlay(db, &next)?;
+        Self::audit_lifecycle(db, actor, audit_event, &item, &next)?;
+
+        Ok(RecommendationReviewActionResult {
+            workspace_id,
+            recommendation_id,
+            lifecycle_state: next.lifecycle_state.as_str().into(),
+            outcome,
+            explanation: explanation.into(),
+            authority_effect: RecommendationReviewActionResult::AUTHORITY_EFFECT_NONE.into(),
+        })
+    }
+
+    fn project_lifecycle_overlays(
+        db: &Arc<Mutex<Database>>,
+        actor: &ActorContext,
+        mut state: WorkspaceRecommendationEngineState,
+    ) -> Result<WorkspaceRecommendationEngineState> {
+        let now = recommendation_engine_now_rfc3339();
+        let overlays = Self::load_overlays(db, &state.workspace_id)?;
+        let mut by_id: HashMap<String, RecommendationLifecycleOverlay> = overlays
+            .into_iter()
+            .map(|o| (o.native_id.clone(), o))
+            .collect();
+
+        for item in &state.candidates {
+            if by_id.contains_key(&item.id) {
+                continue;
+            }
+            let mut record = RecommendationGovernanceRecord::from_recommendation_item(item, &now);
+            record
+                .transition(
+                    RecommendationLifecycleState::Available,
+                    now.clone(),
+                    Some(actor.actor.id.to_string()),
+                )
+                .map_err(map_lifecycle_err)?;
+            let overlay = RecommendationLifecycleOverlay::from_governance_record(
+                state.workspace_id.clone(),
+                &record,
+                None,
+                now.clone(),
+            );
+            Self::upsert_overlay(db, &overlay)?;
+            by_id.insert(item.id.clone(), overlay);
+        }
+
+        for item in &mut state.candidates {
+            if let Some(overlay) = by_id.get(&item.id) {
+                overlay.apply_to_item(item);
+            }
+        }
+        Ok(state)
+    }
+
+    fn load_overlays(
+        db: &Arc<Mutex<Database>>,
+        workspace_id: &str,
+    ) -> Result<Vec<RecommendationLifecycleOverlay>> {
+        let guard = db
+            .lock()
+            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+        Ok(RecommendationLifecycleRepository::new(&guard).list_overlays(workspace_id)?)
+    }
+
+    fn load_overlay(
+        db: &Arc<Mutex<Database>>,
+        workspace_id: &str,
+        native_id: &str,
+    ) -> Result<Option<RecommendationLifecycleOverlay>> {
+        let guard = db
+            .lock()
+            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+        Ok(RecommendationLifecycleRepository::new(&guard).get_overlay(workspace_id, native_id)?)
+    }
+
+    fn upsert_overlay(
+        db: &Arc<Mutex<Database>>,
+        overlay: &RecommendationLifecycleOverlay,
+    ) -> Result<()> {
+        let guard = db
+            .lock()
+            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+        RecommendationLifecycleRepository::new(&guard).upsert_overlay(overlay)?;
+        Ok(())
+    }
+
+    fn audit_lifecycle(
+        db: &Arc<Mutex<Database>>,
+        actor: &ActorContext,
+        event: &str,
+        item: &RecommendationItem,
+        overlay: &RecommendationLifecycleOverlay,
+    ) -> Result<()> {
+        AuditService::record_ai_planning_event(
+            db,
+            actor,
+            &IntentContext::user_request(),
+            event,
+            true,
+            json!({
+                "workspace_id": overlay.workspace_id,
+                "recommendation_id": item.id,
+                "lifecycle_state": overlay.lifecycle_state.as_str(),
+                "resolution_type": overlay.resolution_type.map(|r| r.as_str()),
+                "authority_effect": "none",
+            })
+            .to_string(),
+        )
     }
 
     fn audit_generated(
@@ -886,6 +1207,23 @@ impl WorkspaceRecommendationEngineService {
             })
             .to_string(),
         )
+    }
+}
+
+fn map_lifecycle_err(error: ActionProposalError) -> KernelError {
+    match error {
+        ActionProposalError::InvalidLifecycleTransition { from, to } => {
+            KernelError::from(WorkspaceRecommendationEngineError::InvalidLifecycleTransition {
+                from,
+                to,
+            })
+        }
+        ActionProposalError::OutcomeRequiresResolution => {
+            KernelError::from(WorkspaceRecommendationEngineError::OutcomeRequiresResolution)
+        }
+        other => KernelError::WorkspaceRecommendationEngineValidation {
+            message: other.to_string(),
+        },
     }
 }
 

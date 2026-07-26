@@ -1810,7 +1810,8 @@ export function OperatorConsole({
         <p className="muted">
           What might help next — suggestions only. Aggregates Attention,
           Continuity, Evolution, Purpose, Task Graph, Composition, Decision
-          Queue, Environment. Never executes or grants authority.
+          Queue, Environment. Present / Accept / Reject record human decision
+          only — never execute or grant authority.
         </p>
         <div className="row">
           <button
@@ -1842,7 +1843,7 @@ export function OperatorConsole({
                         .slice(0, 5)
                         .map(
                           (c) =>
-                            `${c.kind}: ${c.title} (${c.confidence}) — ${c.reason}`,
+                            `${c.kind}: ${c.title} (${c.lifecycle_state ?? "n/a"}) — ${c.reason}`,
                         )
                         .join(" · ")
                     : "No candidates",
@@ -1854,13 +1855,92 @@ export function OperatorConsole({
           </button>
         </div>
         {recommendationEngine && (
-          <ul className="muted">
-            <li>{recommendationEngine.summary}</li>
-            <li>
-              Candidates {recommendationEngine.candidate_count} · authority{" "}
-              {recommendationEngine.authority_effect}
-            </li>
-          </ul>
+          <>
+            <ul className="muted">
+              <li>{recommendationEngine.summary}</li>
+              <li>
+                Candidates {recommendationEngine.candidate_count} · authority{" "}
+                {recommendationEngine.authority_effect}
+              </li>
+            </ul>
+            {recommendationEngine.candidates.slice(0, 4).map((item) => {
+              const resolved =
+                item.lifecycle_state === "accepted" ||
+                item.lifecycle_state === "rejected" ||
+                item.lifecycle_state === "expired" ||
+                item.lifecycle_state === "superseded";
+              return (
+                <div key={item.id} className="row" style={{ marginTop: 8 }}>
+                  <span className="muted">
+                    [{item.lifecycle_state ?? "available"}] {item.title}
+                  </span>
+                  <button
+                    type="button"
+                    disabled={busy || !workspace || resolved}
+                    onClick={() =>
+                      void run("Recommendation presented", async () => {
+                        if (!workspace) return;
+                        await invokeIpc("present_recommendation", {
+                          workspaceId: workspace.id,
+                          recommendationId: item.id,
+                        });
+                        const state =
+                          await invokeIpc<WorkspaceRecommendationEngineState>(
+                            "generate_workspace_recommendation_engine",
+                            { workspaceId: workspace.id },
+                          );
+                        setRecommendationEngine(state);
+                      })
+                    }
+                  >
+                    Present
+                  </button>
+                  <button
+                    type="button"
+                    disabled={busy || !workspace || resolved}
+                    onClick={() =>
+                      void run("Recommendation accepted (decision only)", async () => {
+                        if (!workspace) return;
+                        await invokeIpc("accept_recommendation", {
+                          workspaceId: workspace.id,
+                          recommendationId: item.id,
+                        });
+                        const state =
+                          await invokeIpc<WorkspaceRecommendationEngineState>(
+                            "generate_workspace_recommendation_engine",
+                            { workspaceId: workspace.id },
+                          );
+                        setRecommendationEngine(state);
+                      })
+                    }
+                  >
+                    Accept
+                  </button>
+                  <button
+                    type="button"
+                    disabled={busy || !workspace || resolved}
+                    onClick={() =>
+                      void run("Recommendation rejected (decision only)", async () => {
+                        if (!workspace) return;
+                        await invokeIpc("reject_recommendation", {
+                          workspaceId: workspace.id,
+                          recommendationId: item.id,
+                        });
+                        const state =
+                          await invokeIpc<WorkspaceRecommendationEngineState>(
+                            "generate_workspace_recommendation_engine",
+                            { workspaceId: workspace.id },
+                          );
+                        setRecommendationEngine(state);
+                      })
+                    }
+                  >
+                    Reject
+                  </button>
+                </div>
+              );
+            })}
+          </>
         )}
       </section>
 
