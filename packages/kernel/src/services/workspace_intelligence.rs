@@ -20,7 +20,7 @@ use crate::error::{KernelError, Result};
 use crate::services::{
     list_rejection_summaries, AiMemoryService, AiPersonalizationService, AssistantWorkflowStore,
     AuditService, AutomationContractService, DecisionEngineService, DecisionQueueService,
-    DesktopWindowService, OrchestratedPlanStore, TaskGraphService, TriggerEvaluatorService,
+    OrchestratedPlanStore, TaskGraphService, TriggerEvaluatorService,
     WorkspaceActivityGraphService, WorkspaceAttentionService, WorkspaceContinuityService,
     WorkspaceEnvironmentService, WorkspaceIntentService, WorkspaceCompositionService,
     WorkspacePurposeService, WorkspaceEvolutionService, WorkspaceRecommendationEngineService,
@@ -28,7 +28,7 @@ use crate::services::{
     WorkspaceReadinessService, WorkspaceSessionService, WorkspaceExperienceService,
     WorkspaceWorkContextService, WorkspaceNavigationService, WorkspaceMilestoneService,
     WorkspaceWorkingStyleService, WorkspaceTransitionService, WorkspaceInteractionService,
-    WorkspaceProfileService, WorkspaceObservationService,
+    WorkspaceProfileService, WorkspaceStateEngine,
 };
 
 pub(crate) struct WorkspaceIntelligenceService;
@@ -106,11 +106,12 @@ impl WorkspaceIntelligenceService {
         let full_task_graph = TaskGraphService::generate(db, actor, ws)?;
         let task_graph = full_task_graph.summary_projection(8);
 
-        let observation_snapshot = WorkspaceObservationService::get_latest_snapshot(db)?;
-        let windows = observation_snapshot
-            .as_ref()
-            .map(|snapshot| DesktopWindowService::windows_from_snapshot(snapshot, Some(50)))
-            .unwrap_or_default();
+        // One WorkspaceState instance for the intelligence generation cycle.
+        let workspace_state = WorkspaceStateEngine::get_current(
+            db,
+            actor,
+            &IntentContext::user_request(),
+        )?;
         let applications = {
             let guard = db
                 .lock()
@@ -123,11 +124,11 @@ impl WorkspaceIntelligenceService {
                 crate::services::LayoutService::load_by_workspace(&g, &workspace_id).ok()
             })
         };
-        let full_environment = WorkspaceEnvironmentService::generate_with_inputs(
+        let full_environment = WorkspaceEnvironmentService::generate_from_state(
             db,
             actor,
             ws,
-            &windows,
+            &workspace_state,
             &applications,
             &workflow_context,
             Some(&full_task_graph),

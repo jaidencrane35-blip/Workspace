@@ -12,19 +12,19 @@
 ## Permanent principle
 
 ```
-Workspace
-    ↓
-Project / Task / Goal (intent)
-    ↓
-Workspace Intelligence (understanding)
-    ↓
-Assistant / Recommendations (interfaces)
-    ↓
-Plan → Permission Gateway → Execution
+Observation → Delta → WorkspaceStateEngine → WorkspaceState
+                                              ↓
+                         WorkspaceEnvironmentService
+                                              ↓
+                         WorkspaceIntelligenceService (understanding)
+                                              ↓
+                         Assistant / Recommendations (interfaces)
 ```
 
 The AI is not the product. The Workspace is the product.
 Intelligence is informational. Authority remains at the Permission Gateway only.
+
+`WorkspaceIntelligenceService` loads **one** `WorkspaceState` per generate cycle (Sprint 120) and passes it into Environment — it does not read observation snapshots or DesktopWindowSnapshot directly.
 
 ---
 
@@ -48,6 +48,8 @@ Capabilities: `work_context.read` / `work_context.write`.
 
 - Current workspace / project / task
 - Recent goals and activity
+- Desktop understanding via **WorkspaceState** → Environment (not raw observation / DesktopWindowSnapshot)
+- Memory awareness (counts / types — not raw content dump)
 - Pending plans and approvals
 - Blocked actions
 - Recommendations with explanations

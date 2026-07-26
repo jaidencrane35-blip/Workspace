@@ -70,7 +70,9 @@ This gateway is the **only** future path for event-driven observation. It is not
 
 `WorkspaceStateEngine` is read-only: no persistence, capture, scheduling, Win32, AI, or automation. Distinct from kernel lifecycle `WorkspaceState` (version/ready).
 
-**WorkspaceEnvironmentService** consumes **WorkspaceState** as its primary runtime input (Sprint 119). It no longer loads observation snapshots or DesktopWindowService on the production `generate` path. Registered-app matching, gaps, groups, workflow, and layout binding remain Environment responsibilities. Intelligence still uses a transitional `generate_with_inputs` adapter until its own migration.
+**WorkspaceEnvironmentService** consumes **WorkspaceState** as its primary runtime input (Sprint 119). It no longer loads observation snapshots or DesktopWindowService on the production `generate` path. Registered-app matching, gaps, groups, workflow, and layout binding remain Environment responsibilities.
+
+**WorkspaceIntelligenceService** also consumes **WorkspaceState** (Sprint 120): one `WorkspaceStateEngine::get_current` load per intelligence cycle, passed into `WorkspaceEnvironmentService::generate_from_state`. It does not load observation snapshots or DesktopWindowSnapshot on the production path.
 
 ---
 
@@ -84,7 +86,7 @@ This gateway is the **only** future path for event-driven observation. It is not
 - Layout association (canvas layout — not OS monitors)
 - Gaps: missing apps, disconnected work
 
-Does **not** capture or enumerate the OS — aggregates persisted observation via `DesktopWindowService`.
+Does **not** capture or enumerate the OS — aggregates via **WorkspaceState** (observation + delta projection).
 
 ---
 

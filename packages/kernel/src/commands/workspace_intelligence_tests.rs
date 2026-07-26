@@ -982,3 +982,156 @@ fn phase55_intelligence_embeds_readiness_without_authority() {
     assert_eq!(state.recommendation_engine.authority_effect, "none");
     assert!(!state.readiness.readiness_summary.headline.is_empty());
 }
+
+/// Sprint 120 — Intelligence environment path matches WorkspaceState → generate_from_state.
+#[test]
+fn intelligence_environment_matches_workspace_state_path() {
+    use workspace_database::ObservationPassRepository;
+    use workspace_domain::{
+        ObservedMonitor, ObservedWindow, WorkspaceObservationPass, WorkspaceObservationSnapshot,
+    };
+
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let (ws, app_a, _) = seed_workspace(&kernel, "Intel State Path");
+    let local = ActorContext::local_user();
+    let intent = IntentContext::user_request();
+
+    // Rename seeded app so title matching works like Environment fixtures.
+    let _ = app_a;
+    CommandHandler::create_application(
+        &kernel,
+        local.clone(),
+        intent.clone(),
+        ws.clone(),
+        "Visual Studio Code".into(),
+        Some("Code.exe".into()),
+        None,
+    )
+    .unwrap();
+
+    let pass_id = "intel-pass-1";
+    let snapshot = WorkspaceObservationSnapshot {
+        pass: WorkspaceObservationPass {
+            id: pass_id.into(),
+            captured_at: "2026-07-26T13:00:00Z".into(),
+            schema_version: 1,
+            source: "test_inject".into(),
+            foreground_hwnd: Some("0xBB".into()),
+            window_count: 1,
+            monitor_count: 1,
+            duration_ms: Some(1),
+            metadata_json: "{}".into(),
+            authority_effect: WorkspaceObservationPass::AUTHORITY_EFFECT_NONE.into(),
+        },
+        monitors: vec![ObservedMonitor {
+            id: format!("{pass_id}-mon"),
+            pass_id: pass_id.into(),
+            monitor_index: 0,
+            name: "Primary".into(),
+            x: 0,
+            y: 0,
+            width: 1920,
+            height: 1080,
+            work_x: 0,
+            work_y: 0,
+            work_w: 1920,
+            work_h: 1040,
+            is_primary: true,
+            dpi_scale: None,
+            authority_effect: ObservedMonitor::AUTHORITY_EFFECT_NONE.into(),
+        }],
+        windows: vec![ObservedWindow {
+            id: format!("{pass_id}-win"),
+            pass_id: pass_id.into(),
+            hwnd: "0xBB".into(),
+            stable_window_id: Some("stable-code".into()),
+            title: "main.rs - Visual Studio Code".into(),
+            process_id: 9001,
+            process_name: Some("Code.exe".into()),
+            x: 0,
+            y: 0,
+            width: 800,
+            height: 600,
+            monitor_id: Some(format!("{pass_id}-mon")),
+            visible: true,
+            minimized: false,
+            focused: true,
+            z_order: Some(0),
+            authority_effect: ObservedWindow::AUTHORITY_EFFECT_NONE.into(),
+        }],
+        identities: Vec::new(),
+        authority_effect: WorkspaceObservationSnapshot::AUTHORITY_EFFECT_NONE.into(),
+    };
+    {
+        let db = kernel.shared_database();
+        ObservationPassRepository::new(&db.lock().unwrap())
+            .insert_snapshot(&snapshot)
+            .unwrap();
+    }
+
+    let intel = CommandHandler::generate_workspace_intelligence(
+        &kernel,
+        local.clone(),
+        intent.clone(),
+        ws.clone(),
+    )
+    .unwrap();
+    assert_eq!(intel.authority_effect, "none");
+    assert_eq!(intel.environment.authority_effect, "none");
+    assert!(
+        intel.environment.running_application_count >= 1
+            || intel.environment.summary.to_lowercase().contains("visual")
+            || !intel.environment.summary.is_empty(),
+        "environment summary should reflect desktop state: {}",
+        intel.environment.summary
+    );
+
+    let workspace_state = crate::services::WorkspaceStateEngine::get_current(
+        &kernel.shared_database(),
+        &local,
+        &intent,
+    )
+    .unwrap();
+    assert_eq!(
+        workspace_state.metadata.observation_pass_id.as_deref(),
+        Some(pass_id)
+    );
+    assert_eq!(
+        workspace_state
+            .focused_window
+            .as_ref()
+            .map(|w| w.hwnd.as_str()),
+        Some("0xBB")
+    );
+
+    let apps = {
+        let db = kernel.shared_database();
+        let guard = db.lock().unwrap();
+        workspace_database::ApplicationRepository::new(&guard)
+            .list_by_workspace(&workspace_domain::WorkspaceId::new(ws.clone()).unwrap())
+            .unwrap()
+    };
+    let workflow =
+        CommandHandler::get_workflow_context(&kernel, local.clone(), intent, ws.clone()).unwrap();
+    let task_graph =
+        crate::services::TaskGraphService::generate(&kernel.shared_database(), &local, &ws).ok();
+    let via_state = crate::services::WorkspaceEnvironmentService::generate_from_state(
+        &kernel.shared_database(),
+        &local,
+        &ws,
+        &workspace_state,
+        &apps,
+        &workflow,
+        task_graph.as_ref(),
+        None,
+    )
+    .unwrap();
+    let env_summary =
+        crate::services::WorkspaceEnvironmentService::summary_projection(&via_state, 6);
+
+    assert_eq!(
+        intel.environment.running_application_count,
+        env_summary.running_application_count
+    );
+    assert_eq!(intel.environment.window_count, env_summary.window_count);
+}
