@@ -11,7 +11,7 @@ use workspace_domain::{
     WorkspacePatternError, WorkspaceAdaptationError, WorkspaceReadinessError,
     WorkspaceSessionError, WorkspaceExperienceError, WorkspaceWorkContextError,
     WorkspaceNavigationError, WorkspaceMilestoneError, WorkspaceWorkingStyleError,
-    WorkspaceTransitionError, WorkspaceIntelligenceError,
+    WorkspaceTransitionError, WorkspaceInteractionError, WorkspaceIntelligenceError,
     WorkspaceIntentError,
 };
 
@@ -261,6 +261,9 @@ pub enum KernelError {
 
     #[error("Workspace transition validation failed: {message}")]
     WorkspaceTransitionValidation { message: String },
+
+    #[error("Workspace interaction validation failed: {message}")]
+    WorkspaceInteractionValidation { message: String },
 
     #[error("Workspace kernel initialization failed")]
     InitializationFailed,
@@ -666,6 +669,17 @@ impl From<WorkspaceTransitionError> for KernelError {
     }
 }
 
+impl From<WorkspaceInteractionError> for KernelError {
+    fn from(error: WorkspaceInteractionError) -> Self {
+        match error {
+            WorkspaceInteractionError::Domain(domain) => KernelError::from(domain),
+            other => KernelError::WorkspaceInteractionValidation {
+                message: other.to_string(),
+            },
+        }
+    }
+}
+
 impl KernelError {
     pub fn to_public(&self) -> PublicError {
         match self {
@@ -1010,6 +1024,10 @@ impl KernelError {
             },
             KernelError::WorkspaceTransitionValidation { message } => PublicError {
                 code: "workspace_transition_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::WorkspaceInteractionValidation { message } => PublicError {
+                code: "workspace_interaction_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::InitializationFailed => PublicError {

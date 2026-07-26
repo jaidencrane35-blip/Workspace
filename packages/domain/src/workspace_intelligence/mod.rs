@@ -23,6 +23,7 @@ use crate::workspace_navigation::WorkspaceNavigationSummary;
 use crate::workspace_milestone::WorkspaceMilestoneSummary;
 use crate::workspace_working_style::WorkspaceWorkingStyleSummary;
 use crate::workspace_transition::WorkspaceTransitionSummary;
+use crate::workspace_interaction::WorkspaceInteractionSummary;
 use crate::workspace_environment::WorkspaceEnvironmentSummary;
 use crate::workspace_task_graph::TaskGraphSummary;
 use crate::workspace_activity::WorkspaceActivityGraphSummary;
@@ -163,6 +164,9 @@ pub struct WorkspaceIntelligenceState {
     /// Transition Engine summary (Phase 6). Movement between work states — never restores/executes.
     /// Embedded after Working Style.
     pub transition: WorkspaceTransitionSummary,
+    /// Interaction Model summary (Phase 6). What the user can interact with — never executes.
+    /// Embedded after Transition. Owns nothing; aggregates existing cognition.
+    pub interaction: WorkspaceInteractionSummary,
     pub workspace_health: String,
     pub summary: String,
     /// Explicit marker for audits and UI: this state grants nothing.
@@ -274,6 +278,17 @@ impl WorkspaceIntelligenceComparison {
                 left.transition.transition_count,
                 right.transition.current_transition_title,
                 right.transition.transition_count
+            ));
+        }
+        if left.interaction.item_count != right.interaction.item_count
+            || left.interaction.decision_count != right.interaction.decision_count
+        {
+            differences.push(format!(
+                "Interaction: {} items / {} decisions → {} items / {} decisions",
+                left.interaction.item_count,
+                left.interaction.decision_count,
+                right.interaction.item_count,
+                right.interaction.decision_count
             ));
         }
         if differences.is_empty() {

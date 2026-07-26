@@ -57,6 +57,7 @@ pub mod workspace_navigation;
 pub mod workspace_milestone;
 pub mod workspace_working_style;
 pub mod workspace_transition;
+pub mod workspace_interaction;
 pub mod workspace_continuity;
 pub mod workspace_task_graph;
 pub mod workspace_environment;
@@ -296,6 +297,13 @@ pub use workspace_transition::{
     TransitionRelationKind, TransitionRelationship, TransitionSummary, WorkspaceTransition,
     WorkspaceTransitionComparison, WorkspaceTransitionError, WorkspaceTransitionState,
     WorkspaceTransitionSummary, WorkspaceTransitionValidation,
+};
+pub use workspace_interaction::{
+    build_interaction_summary, interaction_now_rfc3339, validate_interaction_workspace_id,
+    InteractionEvidence, InteractionHandoff, InteractionItem, InteractionItemState,
+    InteractionKind, InteractionPriority, InteractionSelectResult, InteractionSummary,
+    WorkspaceInteractionComparison, WorkspaceInteractionError, WorkspaceInteractionState,
+    WorkspaceInteractionSummary, WorkspaceInteractionValidation,
 };
 pub use workspace_environment::{
     build_environment_summary, now_rfc3339, validate_workspace_id, EnvironmentApplication,

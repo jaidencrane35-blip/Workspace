@@ -39,6 +39,9 @@ import type {
   WorkspaceWorkingStyleComparison,
   WorkspaceTransitionState,
   WorkspaceTransitionComparison,
+  WorkspaceInteractionState,
+  WorkspaceInteractionComparison,
+  InteractionSelectResult,
   WorkspaceIntelligenceState,
 } from "../types/domain";
 
@@ -134,6 +137,11 @@ export function WorkspaceIntelligencePanel({
   const [transitionCompareNote, setTransitionCompareNote] = useState<
     string | null
   >(null);
+  const [interactionState, setInteractionState] =
+    useState<WorkspaceInteractionState | null>(null);
+  const [interactionCompareNote, setInteractionCompareNote] = useState<
+    string | null
+  >(null);
   const [lastHandoff, setLastHandoff] = useState<string | null>(null);
   const [contractName, setContractName] = useState(
     "Prepare coding environment",
@@ -191,6 +199,8 @@ export function WorkspaceIntelligencePanel({
       setWorkingStyleCompareNote(null);
       setTransitionState(null);
       setTransitionCompareNote(null);
+      setInteractionState(null);
+      setInteractionCompareNote(null);
       setLastHandoff(null);
       setState(null);
       return;
@@ -214,6 +224,7 @@ export function WorkspaceIntelligencePanel({
           milestones,
           workingStyle,
           transitions,
+          interactions,
           decisions,
           graphTasks,
           adapt,
@@ -262,6 +273,10 @@ export function WorkspaceIntelligencePanel({
               "generate_workspace_transitions",
               { workspaceId: workspace.id },
             ),
+            invokeIpc<WorkspaceInteractionState>(
+              "generate_workspace_interactions",
+              { workspaceId: workspace.id },
+            ),
             invokeIpc<DecisionEngineState>("generate_decision_engine", {
               workspaceId: workspace.id,
             }),
@@ -285,6 +300,7 @@ export function WorkspaceIntelligencePanel({
           setMilestoneState(milestones);
           setWorkingStyleState(workingStyle);
           setTransitionState(transitions);
+          setInteractionState(interactions);
           setDecisionEngine(decisions);
           setTaskGraph(graphTasks);
           setAdaptationState(adapt);
@@ -1001,6 +1017,120 @@ export function WorkspaceIntelligencePanel({
           </>
         ) : (
           <p className="muted">No transition snapshot yet.</p>
+        )}
+      </section>
+
+      <section>
+        <h3>Things you can do</h3>
+        <p className="muted">
+          Unified interaction opportunities over existing understanding. Shows
+          why each item exists, its source, and the expected next step. Selecting
+          creates an Intent handoff only — never executes.
+        </p>
+        <div className="row">
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("Interactions refreshed", async () => {
+                if (!workspace) return;
+                const next = await invokeIpc<WorkspaceInteractionState>(
+                  "generate_workspace_interactions",
+                  { workspaceId: workspace.id },
+                );
+                setInteractionState(next);
+                setInteractionCompareNote(null);
+              })
+            }
+          >
+            Refresh interactions
+          </button>
+          <button
+            type="button"
+            disabled={busy || !workspace || !interactionState}
+            onClick={() =>
+              void run("Interactions compared", async () => {
+                if (!workspace || !interactionState) return;
+                const next = await invokeIpc<WorkspaceInteractionState>(
+                  "generate_workspace_interactions",
+                  { workspaceId: workspace.id },
+                );
+                const comparison =
+                  await invokeIpc<WorkspaceInteractionComparison>(
+                    "compare_workspace_interactions",
+                    { left: interactionState, right: next },
+                  );
+                setInteractionState(next);
+                setInteractionCompareNote(comparison.differences.join(" · "));
+              })
+            }
+          >
+            Compare interactions
+          </button>
+        </div>
+        {interactionState ? (
+          <>
+            <p>
+              <strong>{interactionState.interaction_summary.headline}</strong>
+            </p>
+            <p className="muted">
+              {interactionState.interaction_summary.narrative}
+            </p>
+            <ul className="intelligence-list">
+              {interactionState.items.slice(0, 8).map((item) => (
+                <li key={item.id}>
+                  <strong>{item.title}</strong>
+                  <div className="muted">{item.why}</div>
+                  <div className="muted">
+                    Source: {item.source_projection} · Next:{" "}
+                    {item.available_action}
+                  </div>
+                  <button
+                    type="button"
+                    disabled={busy || !workspace}
+                    onClick={() =>
+                      void run("Interaction handoff created", async () => {
+                        if (!workspace) return;
+                        const result =
+                          await invokeIpc<InteractionSelectResult>(
+                            "select_workspace_interaction",
+                            {
+                              workspaceId: workspace.id,
+                              interactionId: item.id,
+                            },
+                          );
+                        setLastHandoff(
+                          result.handoff
+                            ? `${result.handoff.next_command}: ${result.handoff.intent_statement}`
+                            : "No handoff",
+                        );
+                        const next =
+                          await invokeIpc<WorkspaceInteractionState>(
+                            "generate_workspace_interactions",
+                            { workspaceId: workspace.id },
+                          );
+                        setInteractionState(next);
+                      })
+                    }
+                  >
+                    Select (Intent handoff)
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <p className="muted">
+              authority: {interactionState.authority_effect} ·{" "}
+              {interactionState.item_count} opportunity(ies)
+            </p>
+            {interactionCompareNote && (
+              <p className="muted">Compare: {interactionCompareNote}</p>
+            )}
+            {lastHandoff && (
+              <p className="muted">Last handoff: {lastHandoff}</p>
+            )}
+          </>
+        ) : (
+          <p className="muted">No interaction snapshot yet.</p>
         )}
       </section>
 

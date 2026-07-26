@@ -104,6 +104,10 @@
 | `generate_workspace_transitions` | Product: explain movement between work states (never restores/executes) |
 | `compare_workspace_transitions` | Product: compare two transition snapshots (informational) |
 | `validate_workspace_transitions` | Product: validate transition invariants (informational) |
+| `generate_workspace_interactions` | Product: project interaction opportunities (never executes) |
+| `compare_workspace_interactions` | Product: compare two interaction snapshots (informational) |
+| `validate_workspace_interactions` | Product: validate interaction invariants (informational) |
+| `select_workspace_interaction` | Product: select opportunity → Intent handoff only (never executes) |
 | `create_memory_entry` / `list_memory_entries` / `get_memory_context` | Diagnostic governed memory (informational) |
 | `delete_memory_entry` / `clear_memory_entries` | Diagnostic memory lifecycle |
 | `diagnose_ai_plan_preview` | Diagnostic memory-aware plan (no execution) |

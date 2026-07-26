@@ -38,6 +38,10 @@ import type {
   WorkspaceTransitionState,
   WorkspaceTransitionComparison,
   WorkspaceTransitionValidation,
+  WorkspaceInteractionState,
+  WorkspaceInteractionComparison,
+  WorkspaceInteractionValidation,
+  InteractionSelectResult,
   AiOrchestratedPlan,
   AiPlan,
   AiPlanEvaluationReport,
@@ -219,6 +223,10 @@ export function OperatorConsole({
     useState<WorkspaceTransitionState | null>(null);
   const [priorTransitions, setPriorTransitions] =
     useState<WorkspaceTransitionState | null>(null);
+  const [interactionState, setInteractionState] =
+    useState<WorkspaceInteractionState | null>(null);
+  const [priorInteractions, setPriorInteractions] =
+    useState<WorkspaceInteractionState | null>(null);
   const [activeProject, setActiveProject] = useState<Project | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [memoryEntries, setMemoryEntries] = useState<MemoryEntry[]>([]);
@@ -2373,6 +2381,116 @@ export function OperatorConsole({
               Returning {transitionState.returning_count} · Switching{" "}
               {transitionState.switching_count} · authority{" "}
               {transitionState.authority_effect}
+            </li>
+          </ul>
+        )}
+      </section>
+
+      <section>
+        <h2>Workspace Interactions (diagnostics)</h2>
+        <p className="muted">
+          Unified opportunities — Generate / Inspect / Validate / Compare. Select
+          creates Intent handoff only. Never executes.
+        </p>
+        <div className="row">
+          <button
+            type="button"
+            disabled={busy || !workspace}
+            onClick={() =>
+              void run("Interactions generated", async () => {
+                if (!workspace) return;
+                const state = await invokeIpc<WorkspaceInteractionState>(
+                  "generate_workspace_interactions",
+                  { workspaceId: workspace.id },
+                );
+                if (interactionState) setPriorInteractions(interactionState);
+                setInteractionState(state);
+              })
+            }
+          >
+            Generate interactions
+          </button>
+          <button
+            type="button"
+            disabled={busy || !interactionState}
+            onClick={() =>
+              void run("Interactions inspected", async () => {
+                if (!interactionState) return;
+                onMessage(
+                  `${interactionState.interaction_summary.narrative} Evidence: ${interactionState.evidence.slice(0, 3).join(" · ")}`,
+                );
+              })
+            }
+          >
+            Inspect interactions
+          </button>
+          <button
+            type="button"
+            disabled={busy || !interactionState || !priorInteractions}
+            onClick={() =>
+              void run("Interactions compared", async () => {
+                if (!interactionState || !priorInteractions) return;
+                const comparison =
+                  await invokeIpc<WorkspaceInteractionComparison>(
+                    "compare_workspace_interactions",
+                    { left: priorInteractions, right: interactionState },
+                  );
+                onMessage(comparison.differences.join(" · "));
+              })
+            }
+          >
+            Compare interactions
+          </button>
+          <button
+            type="button"
+            disabled={busy || !interactionState}
+            onClick={() =>
+              void run("Interactions validated", async () => {
+                if (!interactionState) return;
+                const report =
+                  await invokeIpc<WorkspaceInteractionValidation>(
+                    "validate_workspace_interactions",
+                    { state: interactionState },
+                  );
+                onMessage(report.messages.join(" · "));
+              })
+            }
+          >
+            Validate interactions
+          </button>
+          <button
+            type="button"
+            disabled={busy || !workspace || !interactionState?.items[0]}
+            onClick={() =>
+              void run("Interaction selected (handoff)", async () => {
+                if (!workspace || !interactionState?.items[0]) return;
+                const result = await invokeIpc<InteractionSelectResult>(
+                  "select_workspace_interaction",
+                  {
+                    workspaceId: workspace.id,
+                    interactionId: interactionState.items[0].id,
+                  },
+                );
+                onMessage(
+                  result.handoff
+                    ? `Handoff → ${result.handoff.next_command}: ${result.handoff.intent_statement}`
+                    : "No handoff",
+                );
+              })
+            }
+          >
+            Select first (handoff)
+          </button>
+        </div>
+        {interactionState && (
+          <ul className="muted">
+            <li>{interactionState.interaction_summary.headline}</li>
+            <li>{interactionState.interaction_summary.continue_line}</li>
+            <li>
+              Items {interactionState.item_count} · Decisions{" "}
+              {interactionState.decision_count} · Recommendations{" "}
+              {interactionState.recommendation_count} · authority{" "}
+              {interactionState.authority_effect}
             </li>
           </ul>
         )}

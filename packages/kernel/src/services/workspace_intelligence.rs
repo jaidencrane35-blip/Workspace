@@ -27,7 +27,7 @@ use crate::services::{
     WorkspaceOperatingStateService, WorkspacePatternService, WorkspaceAdaptationService,
     WorkspaceReadinessService, WorkspaceSessionService, WorkspaceExperienceService,
     WorkspaceWorkContextService, WorkspaceNavigationService, WorkspaceMilestoneService,
-    WorkspaceWorkingStyleService, WorkspaceTransitionService,
+    WorkspaceWorkingStyleService, WorkspaceTransitionService, WorkspaceInteractionService,
 };
 
 pub(crate) struct WorkspaceIntelligenceService;
@@ -478,12 +478,13 @@ impl WorkspaceIntelligenceService {
             milestones: Default::default(),
             working_style: Default::default(),
             transition: Default::default(),
+            interaction: Default::default(),
             workspace_health: health_label,
             summary,
             authority_effect: WorkspaceIntelligenceState::AUTHORITY_EFFECT_NONE.into(),
         };
 
-        // Phase 6: Session → Experience → Work Context → Navigation → Milestones → Working Style → Transition.
+        // Phase 6: Session → Experience → Work Context → Navigation → Milestones → Working Style → Transition → Interaction.
         let session = WorkspaceSessionService::generate_with_inputs(db, actor, &state)?;
         let experience = WorkspaceExperienceService::generate_with_inputs(db, actor, &session)?;
         let work_context = WorkspaceWorkContextService::generate_with_inputs(
@@ -615,6 +616,17 @@ impl WorkspaceIntelligenceService {
         state.working_style = working_style.summary_projection(6);
         state.transition = transition.summary_projection(6);
         state.recommended_actions = Self::recommendations_from_attention(&enriched_attention);
+
+        // Interaction consumes assembled cognition (after Transition) — never creates new cognition.
+        let interaction = WorkspaceInteractionService::generate_with_inputs(
+            db,
+            actor,
+            &state,
+            &session,
+            &experience,
+            &transition,
+        )?;
+        state.interaction = interaction.summary_projection(8);
 
         Self::audit_generated(db, actor, &state)?;
         Ok(state)

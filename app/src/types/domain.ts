@@ -1279,6 +1279,8 @@ export interface WorkspaceIntelligenceState {
   working_style: WorkspaceWorkingStyleSummary;
   /** Movement between work states — after Working Style; never restores/executes. */
   transition: WorkspaceTransitionSummary;
+  /** What the user can interact with — after Transition; never executes. */
+  interaction: WorkspaceInteractionSummary;
   workspace_health: string;
   summary: string;
   authority_effect: string;
@@ -2990,6 +2992,124 @@ export interface WorkspaceTransitionComparison {
 }
 
 export interface WorkspaceTransitionValidation {
+  valid: boolean;
+  messages: string[];
+  authority_effect: string;
+}
+
+export type InteractionKind =
+  | "continue_work"
+  | "review_decision"
+  | "inspect_recommendation"
+  | "review_adaptation"
+  | "resolve_blocker"
+  | "open_context"
+  | "review_progress"
+  | "understand_change";
+
+export type InteractionItemState = "available" | "selected" | "handed_off";
+
+export type InteractionPriority = "high" | "medium" | "low";
+
+export interface InteractionEvidence {
+  label: string;
+  source_projection: string;
+  source_ref: string;
+  why: string;
+}
+
+export interface InteractionItem {
+  id: string;
+  kind: InteractionKind;
+  source_projection: string;
+  title: string;
+  description: string;
+  explanation: string;
+  available_action: string;
+  required_intent: string;
+  state: InteractionItemState;
+  priority: InteractionPriority;
+  evidence: InteractionEvidence[];
+  why: string;
+  authority_effect: string;
+}
+
+export interface InteractionSummary {
+  headline: string;
+  continue_line: string;
+  decision_line: string;
+  recommendation_line: string;
+  adaptation_line: string;
+  blocker_line: string;
+  progress_line: string;
+  narrative: string;
+}
+
+export interface WorkspaceInteractionState {
+  workspace_id: string;
+  workspace_name: string;
+  generated_at: string;
+  label: string;
+  interaction_summary: InteractionSummary;
+  items: InteractionItem[];
+  item_count: number;
+  continue_count: number;
+  decision_count: number;
+  recommendation_count: number;
+  adaptation_count: number;
+  blocker_count: number;
+  session_generated_at: string;
+  experience_generated_at: string;
+  transition_generated_at: string;
+  intelligence_generated_at: string;
+  explanation: string;
+  evidence: string[];
+  summary: string;
+  authority_effect: string;
+}
+
+export interface WorkspaceInteractionSummary {
+  workspace_id: string;
+  workspace_name: string;
+  generated_at: string;
+  label: string;
+  interaction_summary: InteractionSummary;
+  item_count: number;
+  continue_count: number;
+  decision_count: number;
+  recommendation_count: number;
+  adaptation_count: number;
+  blocker_count: number;
+  top_items: InteractionItem[];
+  explanation: string;
+  summary: string;
+  authority_effect: string;
+}
+
+export interface InteractionHandoff {
+  interaction_id: string;
+  kind: InteractionKind;
+  next_command: string;
+  intent_statement: string;
+  workspace_id: string;
+  note: string;
+  authority_effect: string;
+}
+
+export interface InteractionSelectResult {
+  item: InteractionItem | null;
+  handoff: InteractionHandoff | null;
+  authority_effect: string;
+}
+
+export interface WorkspaceInteractionComparison {
+  left_workspace_id: string;
+  right_workspace_id: string;
+  differences: string[];
+  authority_effect: string;
+}
+
+export interface WorkspaceInteractionValidation {
   valid: boolean;
   messages: string[];
   authority_effect: string;

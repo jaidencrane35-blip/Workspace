@@ -33,6 +33,9 @@ use crate::commands::workspace_navigation::GateNavigationRead;
 use crate::commands::workspace_milestone::GateMilestoneRead;
 use crate::commands::workspace_working_style::GateWorkingStyleRead;
 use crate::commands::workspace_transition::GateTransitionRead;
+use crate::commands::workspace_interaction::{
+    GateWorkspaceInteractionRead, GateWorkspaceInteractionWrite,
+};
 use crate::commands::workspace_activity::GateActivityGraphRead;
 use crate::commands::workspace_attention::GateAttentionRead;
 use crate::commands::workspace_continuity::GateContinuityRead;
@@ -95,7 +98,7 @@ use crate::services::{
     WorkspacePatternService, WorkspaceAdaptationService, WorkspaceReadinessService,
     WorkspaceSessionService, WorkspaceExperienceService, WorkspaceWorkContextService,
     WorkspaceNavigationService, WorkspaceMilestoneService, WorkspaceWorkingStyleService,
-    WorkspaceTransitionService, WorkspaceActivityGraphService,
+    WorkspaceTransitionService, WorkspaceInteractionService, WorkspaceActivityGraphService,
     WorkspaceAttentionService, WorkspaceContextService, WorkspaceContinuityService,
     WorkspaceIntelligenceService,
 };
@@ -118,6 +121,8 @@ use workspace_domain::{
     WorkspaceMilestoneComparison, WorkspaceMilestoneState, WorkspaceMilestoneValidation,
     WorkspaceWorkingStyleComparison, WorkspaceWorkingStyleState, WorkspaceWorkingStyleValidation,
     WorkspaceTransitionComparison, WorkspaceTransitionState, WorkspaceTransitionValidation,
+    InteractionSelectResult, WorkspaceInteractionComparison, WorkspaceInteractionState,
+    WorkspaceInteractionValidation,
     WorkspaceTask, WorkspaceTaskPriority, WorkspaceTaskStatus,
     WorkspaceIntelligenceComparison, WorkspaceIntelligenceState, AiPlan, AiPlanEvaluationReport,
     AiPlanSubmissionResult,
@@ -3395,6 +3400,89 @@ impl CommandHandler {
     /// Architecture guard — Transitions must never execute or authorize.
     pub fn workspace_transitions_attempt_execute() -> Result<()> {
         WorkspaceTransitionService::attempt_execute()
+    }
+
+    /// Project Workspace Interactions (opportunities — never executes).
+    pub fn generate_workspace_interactions(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceInteractionState> {
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent.clone()))
+            .execute_query(GateWorkspaceInteractionRead)?;
+        let _ = Self::get_workflow_context(
+            kernel,
+            actor.clone(),
+            intent.clone(),
+            workspace_id.clone(),
+        )?;
+        let workspace =
+            Self::get_workspace(kernel, actor.clone(), intent, workspace_id.clone())?;
+        let health = kernel.health();
+        WorkspaceInteractionService::generate(
+            &kernel.shared_database(),
+            &actor,
+            &kernel.orchestrated_plans(),
+            &kernel.assistant_workflows(),
+            workspace_id,
+            workspace.name,
+            health.status.clone(),
+        )
+    }
+
+    /// Compare two interaction snapshots (informational).
+    pub fn compare_workspace_interactions(
+        left: &WorkspaceInteractionState,
+        right: &WorkspaceInteractionState,
+    ) -> WorkspaceInteractionComparison {
+        WorkspaceInteractionService::compare(left, right)
+    }
+
+    /// Validate an interaction snapshot (Operator / IPC) and audit.
+    pub fn validate_workspace_interactions(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        state: &WorkspaceInteractionState,
+    ) -> Result<WorkspaceInteractionValidation> {
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent))
+            .execute_query(GateWorkspaceInteractionRead)?;
+        WorkspaceInteractionService::validate_and_audit(
+            &kernel.shared_database(),
+            &actor,
+            state,
+        )
+    }
+
+    /// Select an interaction — returns Intent handoff only. Never executes.
+    pub fn select_workspace_interaction(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        interaction_id: String,
+    ) -> Result<InteractionSelectResult> {
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent.clone()))
+            .execute_mutation(GateWorkspaceInteractionWrite)?;
+        let workspace =
+            Self::get_workspace(kernel, actor.clone(), intent, workspace_id.clone())?;
+        let health = kernel.health();
+        WorkspaceInteractionService::select(
+            &kernel.shared_database(),
+            &actor,
+            &kernel.orchestrated_plans(),
+            &kernel.assistant_workflows(),
+            workspace_id,
+            workspace.name,
+            health.status.clone(),
+            interaction_id,
+        )
+    }
+
+    /// Architecture guard — Interactions must never execute or authorize.
+    pub fn workspace_interactions_attempt_execute() -> Result<()> {
+        WorkspaceInteractionService::attempt_execute()
     }
 
     /// Read-only workspace intelligence aggregation. Capability-gated; never executes.

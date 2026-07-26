@@ -12,6 +12,7 @@ import type {
   WorkspaceMilestoneState,
   WorkspaceWorkingStyleState,
   WorkspaceTransitionState,
+  WorkspaceInteractionState,
   WorkspaceIntelligenceState,
 } from "../types/domain";
 import { assistantProductState } from "../types/domain";
@@ -68,6 +69,8 @@ export function AssistantPanel({
     useState<WorkspaceWorkingStyleState | null>(null);
   const [transitionState, setTransitionState] =
     useState<WorkspaceTransitionState | null>(null);
+  const [interactionState, setInteractionState] =
+    useState<WorkspaceInteractionState | null>(null);
 
   const productState = assistantProductState(workflow?.state);
   const canConfirm = workflow?.state === "awaiting_confirmation";
@@ -150,6 +153,7 @@ export function AssistantPanel({
                   milestones,
                   workingStyle,
                   transitions,
+                  interactions,
                 ] =
                   await Promise.all([
                   invokeIpc<WorkspaceIntelligenceState>(
@@ -180,6 +184,10 @@ export function AssistantPanel({
                     "generate_workspace_transitions",
                     { workspaceId: workspace.id },
                   ),
+                  invokeIpc<WorkspaceInteractionState>(
+                    "generate_workspace_interactions",
+                    { workspaceId: workspace.id },
+                  ),
                 ]);
                 setWorkspaceIntel(intel);
                 setExperienceState(experience);
@@ -188,12 +196,23 @@ export function AssistantPanel({
                 setMilestoneState(milestones);
                 setWorkingStyleState(workingStyle);
                 setTransitionState(transitions);
+                setInteractionState(interactions);
               })
             }
           >
             Load workspace intelligence
           </button>
         </div>
+        {interactionState && (
+          <dl>
+            <dt>Interactions</dt>
+            <dd>
+              {interactionState.interaction_summary.narrative} Assistant
+              explains opportunities only — never silently executes. Selecting
+              an interaction creates Intent handoff; Gateway remains required.
+            </dd>
+          </dl>
+        )}
         {transitionState && (
           <dl>
             <dt>Transitions</dt>
