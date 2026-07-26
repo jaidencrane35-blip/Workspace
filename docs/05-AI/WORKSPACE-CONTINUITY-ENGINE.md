@@ -45,6 +45,7 @@ Assistant                → same Continuity model (explain only)
 | Read-only Continuity Engine | A second source of truth |
 | Projection of existing systems | Scheduler / worker / autonomous resume |
 | Explainable facets (why / evidence / what changed) | Hidden workflows |
+| Work / session continuity | Runtime diagnostic continuity (`RuntimeDiagnosticContinuityRecord`) |
 
 Restart survival = durable Phase 4 sources regenerate Continuity on read.
 
@@ -66,6 +67,7 @@ Current Focus · Interrupted Work · Resumable Work · Outstanding Decisions · 
 ## Related
 
 - [Workspace Platform Coherence](WORKSPACE-PLATFORM-COHERENCE.md)
+- [Workspace Runtime Context](WORKSPACE-RUNTIME-CONTEXT.md) (diagnostic provenance/continuity ≠ this engine)
 - [Workspace Vocabulary](WORKSPACE-VOCABULARY.md)
 - [Workspace Activity Graph](WORKSPACE-ACTIVITY-GRAPH.md)
 - [Governed Decision Queue](GOVERNED-DECISION-QUEUE.md)

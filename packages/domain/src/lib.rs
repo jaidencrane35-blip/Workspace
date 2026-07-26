@@ -414,15 +414,17 @@ pub use workspace_intelligence::{
 };
 pub use workspace_runtime::{
     CognitionContextBundle, CognitionContextProjection, CognitionProjectionKind,
-    GovernanceRuntimeSummary, OperatorContextProjection, OperatorRuntimeOverview,
-    RuntimeArchitectureReview, RuntimeCapabilityEntry, RuntimeCapabilityMap,
-    RuntimeConsistencyCheckKind, RuntimeConsistencyDiagnostic, RuntimeConsistencySeverity,
-    RuntimeConsistencyVerification, RuntimeDependencyEdge, RuntimeDependencyGraph,
-    RuntimeDependencyKind, RuntimeDiagnosticSnapshot, RuntimeGovernanceIntegrationPoint,
+    GovernanceRuntimeSummary, OperatorContextProjection, OperatorRuntimeExplanation,
+    OperatorRuntimeOverview, RuntimeArchitectureReview, RuntimeAuthorityScope,
+    RuntimeCapabilityEntry, RuntimeCapabilityMap, RuntimeConsistencyCheckKind,
+    RuntimeConsistencyDiagnostic, RuntimeConsistencySeverity, RuntimeConsistencyVerification,
+    RuntimeDependencyEdge, RuntimeDependencyGraph, RuntimeDependencyKind,
+    RuntimeDiagnosticContinuityRecord, RuntimeDiagnosticOwnershipBoundary,
+    RuntimeDiagnosticOwnershipRole, RuntimeDiagnosticProvenance, RuntimeDiagnosticSnapshot,
+    RuntimeDiagnosticSourceKind, RuntimeDiagnosticSourceRef, RuntimeGovernanceIntegrationPoint,
     RuntimeGovernanceVisibilitySurface, RuntimeSubsystemNode, RuntimeVisibilityScope,
-    RuntimeAuthorityScope, SubsystemHealthEntry, WorkspaceHealthLevel, WorkspaceRuntimeCoherence,
-    WorkspaceRuntimeContext, WorkspaceRuntimeError, WorkspaceRuntimeHealth,
-    WorkspaceRuntimeIntegrationContract,
+    SubsystemHealthEntry, WorkspaceHealthLevel, WorkspaceRuntimeCoherence, WorkspaceRuntimeContext,
+    WorkspaceRuntimeError, WorkspaceRuntimeHealth, WorkspaceRuntimeIntegrationContract,
 };
 pub use layout::{
     Layout, LayoutBounds, LayoutError, LayoutMetadata, LayoutNode, LayoutSnapshot, Position2D,

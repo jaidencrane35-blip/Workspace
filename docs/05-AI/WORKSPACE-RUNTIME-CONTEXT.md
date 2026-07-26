@@ -1,6 +1,6 @@
 # Workspace Runtime Context & Integration
 
-Sprints 170–181 — read-only runtime integration, diagnostics, and operator overview.
+Sprints 170–181 + post-audit diagnostic provenance/continuity — read-only runtime integration.
 
 **Governance is visible, never authoritative. No execution. No automation. No runtime publication.
 Published remains BLOCKED. Scoring and WorkspaceState ownership unchanged.**
@@ -22,6 +22,8 @@ Intent → Command Pipeline → Permission Gateway → Allow → Execution
 | Kernel `WorkspaceHealth` | Lifecycle health label |
 | `WorkspaceRuntimeHealth` (Sprint 174) | Observational runtime health aggregate |
 | Readiness Model | Preparedness for current work — distinct |
+| Work Continuity Engine | Where work left off / resume — **not** diagnostic continuity |
+| `RuntimeDiagnosticContinuityRecord` | Observational link between diagnostic snapshots |
 
 ---
 
@@ -56,10 +58,26 @@ WorkspaceState
 | 179 | `RuntimeConsistencyVerification` | Detects architecture issues; never auto-repairs |
 | 180 | `OperatorRuntimeOverview` | Operator domain projection of runtime state; not UI |
 | 181 | `RuntimeArchitectureReview` | Ownership, layering, authority, cohesion review |
+| Audit | `RuntimeDiagnosticProvenance` | Cites snapshot inputs; history immutable |
+| Audit | `RuntimeDiagnosticOwnershipBoundary` | Diagnostics observe; kernel lifecycle health distinct; operator projects |
+| Audit | `RuntimeDiagnosticContinuityRecord` | Prior→current snapshot deltas; no rewrite/heal |
+| Audit | `OperatorRuntimeExplanation` | Explains overview via provenance/continuity; not an execution surface |
 
 Authority: `authority_effect: none` (`GOVERNANCE_AUTHORITY_EFFECT_NONE`).
 
 Module: `packages/domain/src/workspace_runtime/` (`mod.rs` + `diagnostics.rs`).
+
+### Diagnostic ownership (post–181 audit)
+
+| Artifact | Owner / role |
+|----------|----------------|
+| Graph, capability map, snapshot, verification | Observational diagnostics |
+| Attention / Decision scoring | Cognition subsystems (unchanged) |
+| Kernel `WorkspaceHealth` | Kernel lifecycle (distinct) |
+| `WorkspaceRuntimeHealth` | Observational observer only |
+| Operator overview / explanation | Operator projection — never executes |
+
+No hidden repair, auto-heal, or silent mutation paths.
 
 ---
 
@@ -68,5 +86,6 @@ Module: `packages/domain/src/workspace_runtime/` (`mod.rs` + `diagnostics.rs`).
 - [WORKSPACE-GOVERNANCE.md](./WORKSPACE-GOVERNANCE.md)
 - [WORKSPACE-PLATFORM-COHERENCE.md](./WORKSPACE-PLATFORM-COHERENCE.md)
 - [WORKSPACE-COGNITION-PIPELINE-CONTRACT.md](./WORKSPACE-COGNITION-PIPELINE-CONTRACT.md)
+- [WORKSPACE-CONTINUITY-ENGINE.md](./WORKSPACE-CONTINUITY-ENGINE.md) (work continuity ≠ diagnostic continuity)
 - [WORKSPACE-READINESS-MODEL.md](./WORKSPACE-READINESS-MODEL.md)
 - [../07-Security/PERMISSION-ARCHITECTURE.md](../07-Security/PERMISSION-ARCHITECTURE.md)

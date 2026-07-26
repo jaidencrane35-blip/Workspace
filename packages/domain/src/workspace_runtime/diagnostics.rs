@@ -885,6 +885,375 @@ impl RuntimeArchitectureReview {
     }
 }
 
+// ---------------------------------------------------------------------------
+// Runtime Diagnostic Provenance & Continuity (post–181 audit)
+// ---------------------------------------------------------------------------
+//
+// Highest-value gap after 170–181: snapshots were point-in-time without provenance
+// of inputs or historical continuity between captures. Distinct from the work
+// Continuity Engine (`workspace_continuity`) — this layer is diagnostic-only.
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RuntimeDiagnosticSourceKind {
+    RuntimeContext,
+    RuntimeHealth,
+    DependencyGraph,
+    CapabilityMap,
+    ConsistencyVerification,
+    CoherenceReview,
+    OperatorOverview,
+}
+
+impl RuntimeDiagnosticSourceKind {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::RuntimeContext => "runtime_context",
+            Self::RuntimeHealth => "runtime_health",
+            Self::DependencyGraph => "dependency_graph",
+            Self::CapabilityMap => "capability_map",
+            Self::ConsistencyVerification => "consistency_verification",
+            Self::CoherenceReview => "coherence_review",
+            Self::OperatorOverview => "operator_overview",
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RuntimeDiagnosticSourceRef {
+    pub kind: RuntimeDiagnosticSourceKind,
+    pub artifact_id: String,
+}
+
+/// Ownership roles for diagnostic vs subsystem vs lifecycle health — boundary only.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RuntimeDiagnosticOwnershipRole {
+    /// Owns observational diagnostic contracts (graph, map, snapshot, verify).
+    ObservationalDiagnostics,
+    /// Owns scoring/reasoning — diagnostics observe, never mutate.
+    CognitionSubsystem,
+    /// Kernel lifecycle health label — distinct from WorkspaceRuntimeHealth.
+    KernelLifecycleHealth,
+    /// Projects labels for operators — never owns sources or executes.
+    OperatorProjection,
+}
+
+impl RuntimeDiagnosticOwnershipRole {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::ObservationalDiagnostics => "observational_diagnostics",
+            Self::CognitionSubsystem => "cognition_subsystem",
+            Self::KernelLifecycleHealth => "kernel_lifecycle_health",
+            Self::OperatorProjection => "operator_projection",
+        }
+    }
+}
+
+/// Declares who observes vs who owns facts for runtime diagnostics.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RuntimeDiagnosticOwnershipBoundary {
+    pub snapshot_owner: RuntimeDiagnosticOwnershipRole,
+    pub health_observer: RuntimeDiagnosticOwnershipRole,
+    pub lifecycle_health_owner: RuntimeDiagnosticOwnershipRole,
+    pub operator_role: RuntimeDiagnosticOwnershipRole,
+    pub may_mutate_sources: bool,
+    pub may_prescribe_healing: bool,
+    pub authority_effect: String,
+}
+
+impl RuntimeDiagnosticOwnershipBoundary {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = AUTH_NONE;
+
+    pub fn canonical() -> Self {
+        Self {
+            snapshot_owner: RuntimeDiagnosticOwnershipRole::ObservationalDiagnostics,
+            health_observer: RuntimeDiagnosticOwnershipRole::ObservationalDiagnostics,
+            lifecycle_health_owner: RuntimeDiagnosticOwnershipRole::KernelLifecycleHealth,
+            operator_role: RuntimeDiagnosticOwnershipRole::OperatorProjection,
+            may_mutate_sources: false,
+            may_prescribe_healing: false,
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        }
+    }
+
+    pub fn boundaries_respected(&self) -> bool {
+        !self.may_mutate_sources
+            && !self.may_prescribe_healing
+            && self.snapshot_owner == RuntimeDiagnosticOwnershipRole::ObservationalDiagnostics
+            && self.operator_role == RuntimeDiagnosticOwnershipRole::OperatorProjection
+            && self.lifecycle_health_owner == RuntimeDiagnosticOwnershipRole::KernelLifecycleHealth
+            && self.authority_effect == Self::AUTHORITY_EFFECT_NONE
+    }
+
+    pub fn attempt_mutate_sources(&self) -> Result<(), WorkspaceRuntimeError> {
+        Err(WorkspaceRuntimeError::DiagnosticHistoryImmutable)
+    }
+
+    pub fn attempt_heal(&self) -> Result<(), WorkspaceRuntimeError> {
+        Err(WorkspaceRuntimeError::DiagnosticHistoryImmutable)
+    }
+}
+
+/// Provenance for one diagnostic snapshot — cites inputs; does not own them.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RuntimeDiagnosticProvenance {
+    pub id: String,
+    pub workspace_id: String,
+    pub snapshot_id: String,
+    pub captured_at: String,
+    pub source_refs: Vec<RuntimeDiagnosticSourceRef>,
+    pub ownership: RuntimeDiagnosticOwnershipBoundary,
+    pub authority_effect: String,
+}
+
+impl RuntimeDiagnosticProvenance {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = AUTH_NONE;
+
+    pub fn from_capture(
+        snapshot: &RuntimeDiagnosticSnapshot,
+        ctx: &WorkspaceRuntimeContext,
+        health: &WorkspaceRuntimeHealth,
+        graph: &RuntimeDependencyGraph,
+        capabilities: &RuntimeCapabilityMap,
+        verification: &RuntimeConsistencyVerification,
+        coherence: &WorkspaceRuntimeCoherence,
+        overview: Option<&OperatorRuntimeOverview>,
+    ) -> Self {
+        let mut source_refs = vec![
+            RuntimeDiagnosticSourceRef {
+                kind: RuntimeDiagnosticSourceKind::RuntimeContext,
+                artifact_id: ctx.id.clone(),
+            },
+            RuntimeDiagnosticSourceRef {
+                kind: RuntimeDiagnosticSourceKind::RuntimeHealth,
+                artifact_id: health.id.clone(),
+            },
+            RuntimeDiagnosticSourceRef {
+                kind: RuntimeDiagnosticSourceKind::DependencyGraph,
+                artifact_id: graph.id.clone(),
+            },
+            RuntimeDiagnosticSourceRef {
+                kind: RuntimeDiagnosticSourceKind::CapabilityMap,
+                artifact_id: capabilities.id.clone(),
+            },
+            RuntimeDiagnosticSourceRef {
+                kind: RuntimeDiagnosticSourceKind::ConsistencyVerification,
+                artifact_id: verification.id.clone(),
+            },
+            RuntimeDiagnosticSourceRef {
+                kind: RuntimeDiagnosticSourceKind::CoherenceReview,
+                artifact_id: coherence.id.clone(),
+            },
+        ];
+        if let Some(o) = overview {
+            source_refs.push(RuntimeDiagnosticSourceRef {
+                kind: RuntimeDiagnosticSourceKind::OperatorOverview,
+                artifact_id: o.id.clone(),
+            });
+        }
+        Self {
+            id: format!("runtime_diagnostic_provenance:{}", snapshot.id),
+            workspace_id: snapshot.workspace_id.clone(),
+            snapshot_id: snapshot.id.clone(),
+            captured_at: snapshot.captured_at.clone(),
+            source_refs,
+            ownership: RuntimeDiagnosticOwnershipBoundary::canonical(),
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        }
+    }
+
+    pub fn cites_snapshot(&self, snapshot_id: &str) -> bool {
+        self.snapshot_id == snapshot_id
+    }
+
+    pub fn may_rewrite_history(&self) -> bool {
+        false
+    }
+
+    pub fn may_execute(&self) -> bool {
+        false
+    }
+
+    pub fn attempt_rewrite_history(&self) -> Result<(), WorkspaceRuntimeError> {
+        Err(WorkspaceRuntimeError::DiagnosticHistoryImmutable)
+    }
+
+    pub fn attempt_execute() -> Result<(), WorkspaceRuntimeError> {
+        Err(WorkspaceRuntimeError::CannotExecute)
+    }
+}
+
+/// Observational continuity between diagnostic snapshots — not work continuity.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RuntimeDiagnosticContinuityRecord {
+    pub id: String,
+    pub workspace_id: String,
+    pub previous_snapshot_id: Option<String>,
+    pub current_snapshot_id: String,
+    pub recorded_at: String,
+    pub what_changed: Vec<String>,
+    pub provenance_id: String,
+    pub authority_effect: String,
+}
+
+impl RuntimeDiagnosticContinuityRecord {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = AUTH_NONE;
+
+    /// Link prior → current snapshot with observational field diffs only.
+    pub fn link(
+        previous: Option<&RuntimeDiagnosticSnapshot>,
+        current: &RuntimeDiagnosticSnapshot,
+        provenance: &RuntimeDiagnosticProvenance,
+        recorded_at: impl Into<String>,
+    ) -> Self {
+        let recorded_at = recorded_at.into();
+        let mut what_changed = Vec::new();
+        match previous {
+            None => what_changed.push("initial_diagnostic_snapshot".into()),
+            Some(prev) => {
+                if prev.health_overall != current.health_overall {
+                    what_changed.push(format!(
+                        "health_overall:{}→{}",
+                        prev.health_overall.as_str(),
+                        current.health_overall.as_str()
+                    ));
+                }
+                if prev.dependency_node_count != current.dependency_node_count
+                    || prev.dependency_edge_count != current.dependency_edge_count
+                {
+                    what_changed.push(format!(
+                        "dependency_counts:{}n/{}e→{}n/{}e",
+                        prev.dependency_node_count,
+                        prev.dependency_edge_count,
+                        current.dependency_node_count,
+                        current.dependency_edge_count
+                    ));
+                }
+                if prev.dependency_has_cycles != current.dependency_has_cycles {
+                    what_changed.push(format!(
+                        "dependency_has_cycles:{}→{}",
+                        prev.dependency_has_cycles, current.dependency_has_cycles
+                    ));
+                }
+                if prev.capability_entry_count != current.capability_entry_count {
+                    what_changed.push(format!(
+                        "capability_entry_count:{}→{}",
+                        prev.capability_entry_count, current.capability_entry_count
+                    ));
+                }
+                if prev.gateway_sole_execution != current.gateway_sole_execution {
+                    what_changed.push(format!(
+                        "gateway_sole_execution:{}→{}",
+                        prev.gateway_sole_execution, current.gateway_sole_execution
+                    ));
+                }
+                if prev.cognition_projection_kinds != current.cognition_projection_kinds {
+                    what_changed.push("cognition_projection_kinds_changed".into());
+                }
+                if prev.governance != current.governance {
+                    what_changed.push("governance_summary_changed".into());
+                }
+                if what_changed.is_empty() {
+                    what_changed.push("no_observational_delta".into());
+                }
+            }
+        }
+        Self {
+            id: format!(
+                "runtime_diagnostic_continuity:{}:{}",
+                current.workspace_id, recorded_at
+            ),
+            workspace_id: current.workspace_id.clone(),
+            previous_snapshot_id: previous.map(|p| p.id.clone()),
+            current_snapshot_id: current.id.clone(),
+            recorded_at,
+            what_changed,
+            provenance_id: provenance.id.clone(),
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        }
+    }
+
+    pub fn is_initial(&self) -> bool {
+        self.previous_snapshot_id.is_none()
+    }
+
+    pub fn may_mutate_prior(&self) -> bool {
+        false
+    }
+
+    pub fn may_execute(&self) -> bool {
+        false
+    }
+
+    pub fn attempt_mutate_prior(&self) -> Result<(), WorkspaceRuntimeError> {
+        Err(WorkspaceRuntimeError::DiagnosticHistoryImmutable)
+    }
+
+    pub fn attempt_execute() -> Result<(), WorkspaceRuntimeError> {
+        Err(WorkspaceRuntimeError::CannotExecute)
+    }
+}
+
+/// Operator-facing explanation of runtime diagnostics — projection only, not UI.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct OperatorRuntimeExplanation {
+    pub id: String,
+    pub workspace_id: String,
+    pub overview_id: String,
+    pub provenance_id: String,
+    pub continuity_id: String,
+    pub why: Vec<String>,
+    pub publication_blocked: bool,
+    pub authority_effect: String,
+}
+
+impl OperatorRuntimeExplanation {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = AUTH_NONE;
+
+    pub fn explain(
+        overview: &OperatorRuntimeOverview,
+        provenance: &RuntimeDiagnosticProvenance,
+        continuity: &RuntimeDiagnosticContinuityRecord,
+    ) -> Self {
+        let mut why = vec![
+            format!("health={}", overview.health_overall.as_str()),
+            format!("coherence_ok={}", overview.coherence_ok),
+            format!("consistency_has_errors={}", overview.consistency_has_errors),
+            format!("dependency={}", overview.dependency_summary),
+            format!("capability={}", overview.capability_summary),
+            format!("governance={}", overview.governance_summary),
+            format!("provenance_sources={}", provenance.source_refs.len()),
+        ];
+        for delta in &continuity.what_changed {
+            why.push(format!("continuity:{delta}"));
+        }
+        why.push("execution_authority=permission_gateway_only".into());
+        Self {
+            id: format!("operator_runtime_explanation:{}", overview.workspace_id),
+            workspace_id: overview.workspace_id.clone(),
+            overview_id: overview.id.clone(),
+            provenance_id: provenance.id.clone(),
+            continuity_id: continuity.id.clone(),
+            why,
+            publication_blocked: true,
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        }
+    }
+
+    pub fn may_execute(&self) -> bool {
+        false
+    }
+
+    pub fn is_execution_surface(&self) -> bool {
+        false
+    }
+
+    pub fn attempt_execute() -> Result<(), WorkspaceRuntimeError> {
+        Err(WorkspaceRuntimeError::CannotExecute)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -994,5 +1363,68 @@ mod tests {
         assert!(overview.coherence_ok);
         assert!(review.passed());
         assert!(!graph.has_cycles());
+    }
+
+    #[test]
+    fn diagnostic_provenance_and_continuity_are_immutable() {
+        let (ctx, health, graph, capabilities, snapshot, verification, overview, _review) =
+            sample_bundle();
+        let integration = WorkspaceRuntimeIntegrationContract::audit_default("ws-diag");
+        let operator = OperatorContextProjection::from_runtime_context(&ctx, &health);
+        let coherence =
+            WorkspaceRuntimeCoherence::review(&ctx, &integration, &health, &operator);
+        let provenance = RuntimeDiagnosticProvenance::from_capture(
+            &snapshot,
+            &ctx,
+            &health,
+            &graph,
+            &capabilities,
+            &verification,
+            &coherence,
+            Some(&overview),
+        );
+        assert!(provenance.cites_snapshot(&snapshot.id));
+        assert!(provenance.ownership.boundaries_respected());
+        assert!(!provenance.may_rewrite_history());
+        assert!(provenance.attempt_rewrite_history().is_err());
+        assert!(RuntimeDiagnosticOwnershipBoundary::canonical()
+            .attempt_heal()
+            .is_err());
+
+        let continuity = RuntimeDiagnosticContinuityRecord::link(
+            None,
+            &snapshot,
+            &provenance,
+            "t-cont-0",
+        );
+        assert!(continuity.is_initial());
+        assert!(!continuity.may_mutate_prior());
+        assert!(continuity.attempt_mutate_prior().is_err());
+
+        let snapshot2 = RuntimeDiagnosticSnapshot::capture(
+            &ctx,
+            &health,
+            &CognitionContextProjection::project_all(&ctx),
+            &graph,
+            &capabilities,
+            "t-snap-2",
+        );
+        let continuity2 = RuntimeDiagnosticContinuityRecord::link(
+            Some(&snapshot),
+            &snapshot2,
+            &provenance,
+            "t-cont-1",
+        );
+        assert!(!continuity2.is_initial());
+        assert!(continuity2
+            .what_changed
+            .iter()
+            .any(|d| d == "no_observational_delta"));
+
+        let explanation =
+            OperatorRuntimeExplanation::explain(&overview, &provenance, &continuity);
+        assert!(!explanation.is_execution_surface());
+        assert!(explanation.publication_blocked);
+        assert!(OperatorRuntimeExplanation::attempt_execute().is_err());
     }
 }

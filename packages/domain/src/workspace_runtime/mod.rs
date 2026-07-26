@@ -1,4 +1,4 @@
-//! Workspace runtime integration — Sprints 170–181.
+//! Workspace runtime integration — Sprints 170–181 + diagnostic continuity.
 //!
 //! Read-only contracts that make governance and cognition context visible to the
 //! runtime without granting authority or changing scoring / WorkspaceState ownership.
@@ -9,6 +9,8 @@
 //!
 //! Sprints 176–181 (`diagnostics`) add dependency graph, capability map, snapshots,
 //! consistency verification, and operator overview — all observational.
+//! Diagnostic provenance/continuity records link snapshots over time without
+//! mutating sources or overlapping the work Continuity Engine.
 
 mod diagnostics;
 pub use diagnostics::*;
@@ -182,6 +184,9 @@ pub enum WorkspaceRuntimeError {
 
     #[error("workspace runtime consistency verification cannot repair or mutate")]
     ConsistencyCannotMutate,
+
+    #[error("runtime diagnostic history cannot be rewritten or healed")]
+    DiagnosticHistoryImmutable,
 }
 
 // ---------------------------------------------------------------------------
