@@ -167,7 +167,7 @@ Foundation     Decisions       Core Platform     Feature Expansion   Maturity
 
 **Goal:** Application launching, AI observation/suggestion, and user-approved automation.
 
-**Status:** Phase 3–4 complete; Phase 5 Continuity, Attention, Decision Engine, Task Graph, Environment Model, Composition Engine, Purpose Model, Evolution Model, Recommendation Engine, Operating State, Pattern Model, Adaptation Proposal, and Readiness Model foundations complete. Next: deepen readiness-aware experience without autonomous preparation. See [Intelligence Roadmap](../05-AI/INTELLIGENCE-ROADMAP.md) and [Workspace Readiness Model](../05-AI/WORKSPACE-READINESS-MODEL.md).
+**Status:** Phase 3–4 complete; Phase 5 cognition foundations through Readiness (Sprint 92) complete; Phase 5.5 integrity audit + hardening complete. Next: Phase 6 capabilities must enter via Intent → Gateway without treating projections as SoT. See [Intelligence Roadmap](../05-AI/INTELLIGENCE-ROADMAP.md) and [Workspace Cognition Integrity Audit](../05-AI/WORKSPACE-COGNITION-INTEGRITY-AUDIT.md).
 
 ### Expected Deliverables
 

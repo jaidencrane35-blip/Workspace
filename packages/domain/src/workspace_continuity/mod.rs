@@ -19,6 +19,9 @@ pub enum WorkspaceContinuityError {
     #[error("continuity requires a workspace id")]
     MissingWorkspace,
 
+    #[error("continuity cannot execute or authorize")]
+    CannotExecute,
+
     #[error(transparent)]
     Domain(#[from] DomainError),
 }

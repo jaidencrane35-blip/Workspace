@@ -34,6 +34,9 @@ pub enum DecisionQueueError {
     #[error("decision queue cannot authorize permissions")]
     CannotAuthorizePermissions,
 
+    #[error("decision queue cannot execute or grant authority")]
+    CannotExecute,
+
     #[error("decision accept requires source subsystem handoff")]
     RequiresSourceHandoff,
 

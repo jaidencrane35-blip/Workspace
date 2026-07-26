@@ -79,9 +79,50 @@ This batch does not introduce execution paths, modify authority, or weaken gover
 | What is the current project/task? | **WorkflowContext** (`set_active_work`) |
 | Where did I leave off / what changed? | **Continuity Engine** |
 | What deserves attention now? | **Attention Engine** |
+| What might help next? | **Recommendation Engine** (not Attention tops) |
+| What is happening now? | **Operating State** |
+| What commonly repeats? | **Pattern Model** |
+| How could the Workspace improve? | **Adaptation Proposal** |
+| Can I continue working? | **Readiness Model** (≠ WorkspaceHealth) |
 | Workspace understanding narrative | **Workspace Intelligence** (consumes the above) |
 
 Intelligence and Assistant must consume, never re-own, these answers.
+
+---
+
+## Cognition ownership (Phase 5 → 5.5)
+
+| Concept | Owner | Kind |
+|---------|-------|------|
+| environment | `WorkspaceEnvironmentService` | Aggregator |
+| composition | `WorkspaceCompositionService` | Aggregator |
+| workspace_task | `TaskGraphService` | DurableStore |
+| purpose | `WorkspacePurposeService` | Aggregator |
+| activity | `WorkspaceActivityGraphService` | Aggregator |
+| evolution | `WorkspaceEvolutionService` | Aggregator |
+| continuity | `WorkspaceContinuityService` | Aggregator |
+| decision_item | `DecisionQueueService` | Aggregator (+ lifecycle overlay) |
+| attention | `WorkspaceAttentionService` | Aggregator |
+| recommendation_candidate | `WorkspaceRecommendationEngineService` | Aggregator |
+| operating_state | `WorkspaceOperatingStateService` | Aggregator |
+| pattern | `WorkspacePatternService` | Aggregator |
+| adaptation_proposal | `WorkspaceAdaptationService` | Aggregator (+ process-local status) |
+| readiness | `WorkspaceReadinessService` | Aggregator |
+| decision_candidate | `DecisionEngineService` | Aggregator (+ outcome overlay) |
+| Workspace Intelligence | consumer only | Envelope |
+
+### Canonical Intelligence assemble order
+
+```
+Decision Queue → Activity → Continuity → Task Graph
+→ Environment → Composition → Purpose → Evolution
+→ Attention → Recommendation Engine → Operating State → Pattern
+→ Readiness → Adaptation → Decision Engine → assemble
+```
+
+**Rule:** Prefer Intelligence `generate_with_inputs`. Standalone `generate` is for IPC refresh / diagnostics. Nested Decision Queue consumers must use `aggregate_readonly`.
+
+See [Workspace Cognition Integrity Audit](WORKSPACE-COGNITION-INTEGRITY-AUDIT.md).
 
 ---
 
@@ -96,3 +137,4 @@ Intelligence and Assistant must consume, never re-own, these answers.
 - [Governed Decision Queue](GOVERNED-DECISION-QUEUE.md)
 - [Workspace Activity Graph](WORKSPACE-ACTIVITY-GRAPH.md)
 - [Workspace Intelligence Foundation](WORKSPACE-INTELLIGENCE-FOUNDATION.md)
+- [Workspace Cognition Integrity Audit](WORKSPACE-COGNITION-INTEGRITY-AUDIT.md)

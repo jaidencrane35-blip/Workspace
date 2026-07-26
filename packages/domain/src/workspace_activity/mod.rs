@@ -22,6 +22,9 @@ pub enum WorkspaceActivityError {
     #[error("activity not found")]
     NotFound,
 
+    #[error("activity graph cannot execute or authorize")]
+    CannotExecute,
+
     #[error(transparent)]
     Domain(#[from] DomainError),
 }

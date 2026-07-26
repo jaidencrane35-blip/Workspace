@@ -25,6 +25,9 @@ pub enum WorkspaceAttentionError {
     #[error("attention requires a workspace id")]
     MissingWorkspace,
 
+    #[error("attention cannot execute or authorize")]
+    CannotExecute,
+
     #[error(transparent)]
     Domain(#[from] DomainError),
 }

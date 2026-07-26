@@ -187,6 +187,13 @@ impl WorkspaceActivityGraphService {
         Ok(graph)
     }
 
+    /// Architecture guard — Activity Graph must never execute.
+    pub(crate) fn attempt_execute() -> Result<()> {
+        Err(KernelError::from(
+            workspace_domain::WorkspaceActivityError::CannotExecute,
+        ))
+    }
+
     fn adapt_work_context(
         db: &Arc<Mutex<Database>>,
         workspace_id: &str,

@@ -135,26 +135,18 @@ export function WorkspaceIntelligencePanel({
     let cancelled = false;
     void (async () => {
       try {
+        // Phase 5.5 hardening: do not Promise.all every standalone aggregator.
+        // Intelligence is the shared-input path; full projections refresh on demand.
+        // Interactive surfaces (Decision Queue / Engine / Adaptation / Task Graph) load once.
         const [
           listed,
           listedContracts,
           listedProposals,
           queue,
-          graph,
           intel,
-          cont,
-          attn,
           decisions,
           graphTasks,
-          env,
-          comp,
-          purp,
-          evo,
-          rec,
-          ops,
-          pat,
           adapt,
-          ready,
         ] = await Promise.all([
             invokeIpc<Project[]>("list_projects", {
               workspaceId: workspace.id,
@@ -171,55 +163,17 @@ export function WorkspaceIntelligencePanel({
             invokeIpc<DecisionQueue>("generate_decision_queue", {
               workspaceId: workspace.id,
             }),
-            invokeIpc<WorkspaceActivityGraph>(
-              "generate_workspace_activity_graph",
-              { workspaceId: workspace.id },
-            ),
             invokeIpc<WorkspaceIntelligenceState>(
               "generate_workspace_intelligence",
               { workspaceId: workspace.id },
             ),
-            invokeIpc<WorkspaceContinuityState>("generate_workspace_continuity", {
-              workspaceId: workspace.id,
-            }),
-            invokeIpc<WorkspaceAttentionState>("generate_workspace_attention", {
-              workspaceId: workspace.id,
-            }),
             invokeIpc<DecisionEngineState>("generate_decision_engine", {
               workspaceId: workspace.id,
             }),
             invokeIpc<TaskGraph>("generate_task_graph", {
               workspaceId: workspace.id,
             }),
-            invokeIpc<WorkspaceEnvironmentState>(
-              "generate_workspace_environment",
-              { workspaceId: workspace.id },
-            ),
-            invokeIpc<WorkspaceCompositionState>(
-              "generate_workspace_composition",
-              { workspaceId: workspace.id },
-            ),
-            invokeIpc<WorkspacePurposeState>("generate_workspace_purpose", {
-              workspaceId: workspace.id,
-            }),
-            invokeIpc<WorkspaceEvolutionState>("generate_workspace_evolution", {
-              workspaceId: workspace.id,
-            }),
-            invokeIpc<WorkspaceRecommendationEngineState>(
-              "generate_workspace_recommendation_engine",
-              { workspaceId: workspace.id },
-            ),
-            invokeIpc<WorkspaceOperatingState>(
-              "generate_workspace_operating_state",
-              { workspaceId: workspace.id },
-            ),
-            invokeIpc<WorkspacePatternState>("generate_workspace_pattern", {
-              workspaceId: workspace.id,
-            }),
             invokeIpc<WorkspaceAdaptationState>("generate_workspace_adaptation", {
-              workspaceId: workspace.id,
-            }),
-            invokeIpc<WorkspaceReadinessState>("generate_workspace_readiness", {
               workspaceId: workspace.id,
             }),
           ]);
@@ -228,21 +182,22 @@ export function WorkspaceIntelligencePanel({
           setContracts(listedContracts);
           setProposals(listedProposals);
           setDecisionQueue(queue);
-          setActivityGraph(graph);
           setState(intel);
-          setContinuity(cont);
-          setAttention(attn);
           setDecisionEngine(decisions);
           setTaskGraph(graphTasks);
-          setEnvironment(env);
-          setComposition(comp);
-          setPurpose(purp);
-          setEvolution(evo);
-          setRecommendationEngine(rec);
-          setOperatingState(ops);
-          setPatternState(pat);
           setAdaptationState(adapt);
-          setReadinessState(ready);
+          // Pure projections: show Intelligence summaries until explicit Refresh.
+          setActivityGraph(null);
+          setContinuity(null);
+          setAttention(null);
+          setEnvironment(null);
+          setComposition(null);
+          setPurpose(null);
+          setEvolution(null);
+          setRecommendationEngine(null);
+          setOperatingState(null);
+          setPatternState(null);
+          setReadinessState(null);
         }
       } catch (err: unknown) {
         if (!cancelled) {
@@ -398,10 +353,15 @@ export function WorkspaceIntelligencePanel({
           <>
             <p>{state.summary}</p>
             <p className="muted">
-              Health: {state.workspace_health} · Authority effect:{" "}
+              Health: {state.workspace_health} (kernel lifecycle) · Readiness:{" "}
+              {state.readiness.overall_status} · Authority effect:{" "}
               {state.authority_effect} · Active:{" "}
               {state.current_project?.name ?? "no project"} /{" "}
               {state.current_task?.title ?? "no task"}
+            </p>
+            <p className="muted">
+              Load uses Intelligence once (shared-input path). Pure projections
+              refresh on demand — avoids regenerating Operating State diamonds.
             </p>
           </>
         )}
@@ -469,7 +429,11 @@ export function WorkspaceIntelligencePanel({
             )}
           </>
         ) : (
-          <p className="muted">No continuity snapshot yet.</p>
+          <p className="muted">
+            {state?.continuity.summary
+              ? `Intelligence summary: ${state.continuity.summary} Refresh for full Continuity detail.`
+              : "No continuity snapshot yet."}
+          </p>
         )}
       </section>
 
@@ -524,7 +488,11 @@ export function WorkspaceIntelligencePanel({
             )}
           </>
         ) : (
-          <p className="muted">No attention snapshot yet.</p>
+          <p className="muted">
+            {state?.attention.summary
+              ? `Intelligence summary: ${state.attention.summary} Refresh for full Attention detail.`
+              : "No attention snapshot yet."}
+          </p>
         )}
       </section>
 
@@ -651,7 +619,11 @@ export function WorkspaceIntelligencePanel({
             )}
           </>
         ) : (
-          <p className="muted">No environment snapshot yet.</p>
+          <p className="muted">
+            {state?.environment.summary
+              ? `Intelligence summary: ${state.environment.summary} Refresh for full Environment detail.`
+              : "No environment snapshot yet."}
+          </p>
         )}
       </section>
 
@@ -723,7 +695,11 @@ export function WorkspaceIntelligencePanel({
             )}
           </>
         ) : (
-          <p className="muted">No composition snapshot yet.</p>
+          <p className="muted">
+            {state?.composition.summary
+              ? `Intelligence summary: ${state.composition.summary} Refresh for full Composition detail.`
+              : "No composition snapshot yet."}
+          </p>
         )}
       </section>
 
@@ -788,7 +764,11 @@ export function WorkspaceIntelligencePanel({
             )}
           </>
         ) : (
-          <p className="muted">No purpose snapshot yet.</p>
+          <p className="muted">
+            {state?.purpose.summary
+              ? `Intelligence summary: ${state.purpose.summary} Refresh for full Purpose detail.`
+              : "No purpose snapshot yet."}
+          </p>
         )}
       </section>
 
@@ -840,7 +820,11 @@ export function WorkspaceIntelligencePanel({
             )}
           </>
         ) : (
-          <p className="muted">No evolution snapshot yet.</p>
+          <p className="muted">
+            {state?.evolution.summary
+              ? `Intelligence summary: ${state.evolution.summary} Refresh for full Evolution detail.`
+              : "No evolution snapshot yet."}
+          </p>
         )}
       </section>
 
@@ -889,7 +873,11 @@ export function WorkspaceIntelligencePanel({
             </p>
           </>
         ) : (
-          <p className="muted">No operating state snapshot yet.</p>
+          <p className="muted">
+            {state?.operating_state.summary
+              ? `Intelligence summary: ${state.operating_state.summary} Refresh for full Operating State detail.`
+              : "No operating state snapshot yet."}
+          </p>
         )}
       </section>
 
@@ -946,7 +934,11 @@ export function WorkspaceIntelligencePanel({
             )}
           </>
         ) : (
-          <p className="muted">No pattern snapshot yet.</p>
+          <p className="muted">
+            {state?.pattern.summary
+              ? `Intelligence summary: ${state.pattern.summary} Refresh for full Pattern detail.`
+              : "No pattern snapshot yet."}
+          </p>
         )}
       </section>
 
@@ -1006,7 +998,11 @@ export function WorkspaceIntelligencePanel({
             )}
           </>
         ) : (
-          <p className="muted">No readiness snapshot yet.</p>
+          <p className="muted">
+            {state?.readiness.summary
+              ? `Intelligence summary: ${state.readiness.summary} Refresh for full Readiness detail.`
+              : "No readiness snapshot yet."}
+          </p>
         )}
       </section>
 
@@ -1214,7 +1210,11 @@ export function WorkspaceIntelligencePanel({
             )}
           </>
         ) : (
-          <p className="muted">No recommendation engine snapshot yet.</p>
+          <p className="muted">
+            {state?.recommendation_engine.summary
+              ? `Intelligence summary: ${state.recommendation_engine.summary} Refresh for full Recommendation Engine detail.`
+              : "No recommendation engine snapshot yet."}
+          </p>
         )}
       </section>
 
@@ -1418,7 +1418,11 @@ export function WorkspaceIntelligencePanel({
           </p>
         )}
         {!activityGraph || activityGraph.timeline.length === 0 ? (
-          <p className="muted">No activity yet for this workspace.</p>
+          <p className="muted">
+            {state && state.activity_graph.activity_count > 0
+              ? `Intelligence summary: ${state.activity_graph.activity_count} activit(ies), ${state.activity_graph.unresolved_count} unresolved. Refresh for full Activity Graph detail.`
+              : "No activity yet for this workspace."}
+          </p>
         ) : (
           <ul className="intelligence-list">
             {[...activityGraph.timeline].reverse().slice(0, 20).map((item) => (

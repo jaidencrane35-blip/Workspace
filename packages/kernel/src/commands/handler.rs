@@ -25,6 +25,7 @@ use crate::commands::workspace_operating_state::GateOperatingStateRead;
 use crate::commands::workspace_pattern::GatePatternRead;
 use crate::commands::workspace_adaptation::{GateAdaptationRead, GateAdaptationWrite};
 use crate::commands::workspace_readiness::GateReadinessRead;
+use crate::commands::workspace_intelligence::GateIntelligenceRead;
 use crate::commands::workspace_activity::GateActivityGraphRead;
 use crate::commands::workspace_attention::GateAttentionRead;
 use crate::commands::workspace_continuity::GateContinuityRead;
@@ -2981,6 +2982,31 @@ impl CommandHandler {
         WorkspaceReadinessService::attempt_execute()
     }
 
+    /// Architecture guard — Intelligence must never execute.
+    pub fn workspace_intelligence_attempt_execute() -> Result<()> {
+        WorkspaceIntelligenceService::attempt_execute()
+    }
+
+    /// Architecture guard — Decision Queue must never execute or grant.
+    pub fn decision_queue_attempt_execute() -> Result<()> {
+        DecisionQueueService::attempt_execute()
+    }
+
+    /// Architecture guard — Attention must never execute.
+    pub fn workspace_attention_attempt_execute() -> Result<()> {
+        WorkspaceAttentionService::attempt_execute()
+    }
+
+    /// Architecture guard — Continuity must never execute.
+    pub fn workspace_continuity_attempt_execute() -> Result<()> {
+        WorkspaceContinuityService::attempt_execute()
+    }
+
+    /// Architecture guard — Activity Graph must never execute.
+    pub fn workspace_activity_attempt_execute() -> Result<()> {
+        WorkspaceActivityGraphService::attempt_execute()
+    }
+
     /// Read-only workspace intelligence aggregation. Capability-gated; never executes.
     pub fn generate_workspace_intelligence(
         kernel: &WorkspaceKernel,
@@ -2988,7 +3014,9 @@ impl CommandHandler {
         intent: IntentContext,
         workspace_id: String,
     ) -> Result<WorkspaceIntelligenceState> {
-        // Gate on work_context.read via existing query path before aggregating.
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent.clone()))
+            .execute_query(GateIntelligenceRead)?;
+        // Also require workflow-context read (same capability class) before aggregating.
         let _ =
             Self::get_workflow_context(kernel, actor.clone(), intent.clone(), workspace_id.clone())?;
         let workspace = Self::get_workspace(kernel, actor.clone(), intent.clone(), workspace_id.clone())?;

@@ -31,6 +31,9 @@ pub enum WorkspaceIntelligenceError {
     #[error("workspace intelligence requires a workspace id")]
     MissingWorkspace,
 
+    #[error("workspace intelligence cannot execute or authorize")]
+    CannotExecute,
+
     #[error(transparent)]
     Domain(#[from] DomainError),
 }

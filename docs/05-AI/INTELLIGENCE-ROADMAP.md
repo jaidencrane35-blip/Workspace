@@ -156,6 +156,10 @@ Workspace Adaptation Proposal foundation (Sprint 91) — possible improvements f
 
 Workspace Readiness Model foundation (Sprint 92) — preparedness for current work from Operating State + Environment + Composition + Task Graph + Purpose + Continuity + Evolution + Patterns + Decision Queue; Recommendation and Adaptation may consume gaps; never prepares or executes. Distinct from runtime WorkspaceHealth. See [Workspace Readiness Model](WORKSPACE-READINESS-MODEL.md).
 
+## Phase 5.5 (done)
+
+Architectural integrity & hardening audit of the cognition stack through Sprint 92 — ownership map, authority framing, assemble-order rules, `GateIntelligenceRead`, `attempt_execute` guards for remaining aggregators, Work UI regenerate fan-out reduction. No new features. See [Workspace Cognition Integrity Audit](WORKSPACE-COGNITION-INTEGRITY-AUDIT.md).
+
 ---
 
 ## Never build

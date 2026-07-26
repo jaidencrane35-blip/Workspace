@@ -72,6 +72,8 @@ impl WorkspaceIntelligenceService {
         let recent_trigger_rejections =
             list_rejection_summaries(db, ws, 20).unwrap_or_default();
         // Decision Queue is the sole pending-decision aggregation (persist overlays once).
+        // Phase 5.5: intentional sole-writer on the Intelligence product path — nested
+        // consumers must use aggregate_readonly. Not a Gateway grant; overlay presentation only.
         let full_decision_queue = DecisionQueueService::generate(
             db,
             actor,
@@ -535,6 +537,13 @@ impl WorkspaceIntelligenceService {
              Contract(s), {pending_proposals} pending Intent Proposal(s). \
              Intelligence is informational only — Decision Queue organizes attention."
         )
+    }
+
+    /// Architecture guard — Intelligence must never execute.
+    pub(crate) fn attempt_execute() -> Result<()> {
+        Err(KernelError::from(
+            workspace_domain::WorkspaceIntelligenceError::CannotExecute,
+        ))
     }
 
     fn audit_generated(

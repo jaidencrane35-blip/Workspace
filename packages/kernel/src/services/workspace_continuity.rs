@@ -656,6 +656,13 @@ impl WorkspaceContinuityService {
         )
     }
 
+    /// Architecture guard — Continuity must never execute.
+    pub(crate) fn attempt_execute() -> Result<()> {
+        Err(KernelError::from(
+            workspace_domain::WorkspaceContinuityError::CannotExecute,
+        ))
+    }
+
     fn audit_generated(
         db: &Arc<Mutex<Database>>,
         actor: &ActorContext,

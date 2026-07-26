@@ -980,6 +980,13 @@ impl WorkspaceAttentionService {
         Ok(out)
     }
 
+    /// Architecture guard — Attention must never execute.
+    pub(crate) fn attempt_execute() -> Result<()> {
+        Err(KernelError::from(
+            workspace_domain::WorkspaceAttentionError::CannotExecute,
+        ))
+    }
+
     fn audit_generated(
         db: &Arc<Mutex<Database>>,
         actor: &ActorContext,

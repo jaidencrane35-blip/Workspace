@@ -934,3 +934,51 @@ fn generate_does_not_create_workflow_context_row() {
     assert_eq!(again.authority_effect, "none");
     assert!(again.workflow_context.active_project_id.is_none());
 }
+
+/// Phase 5.5 — architecture guards for layers that previously lacked attempt_execute.
+#[test]
+fn phase55_attempt_execute_guards_reject() {
+    for (label, result) in [
+        (
+            "intelligence",
+            CommandHandler::workspace_intelligence_attempt_execute(),
+        ),
+        ("decision_queue", CommandHandler::decision_queue_attempt_execute()),
+        ("attention", CommandHandler::workspace_attention_attempt_execute()),
+        ("continuity", CommandHandler::workspace_continuity_attempt_execute()),
+        ("activity", CommandHandler::workspace_activity_attempt_execute()),
+    ] {
+        match result {
+            Err(KernelError::WorkspaceIntelligenceValidation { message })
+            | Err(KernelError::DecisionQueueValidation { message })
+            | Err(KernelError::WorkspaceAttentionValidation { message })
+            | Err(KernelError::WorkspaceContinuityValidation { message })
+            | Err(KernelError::WorkspaceActivityValidation { message }) => {
+                assert!(
+                    message.contains("cannot execute") || message.contains("grant"),
+                    "{label}: {message}"
+                );
+            }
+            other => panic!("{label}: expected validation CannotExecute, got {other:?}"),
+        }
+    }
+}
+
+/// Phase 5.5 — Intelligence remains authority_effect none with readiness embedded.
+#[test]
+fn phase55_intelligence_embeds_readiness_without_authority() {
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let (ws, _, _) = seed_workspace(&kernel, "Intel Phase55");
+    let state = CommandHandler::generate_workspace_intelligence(
+        &kernel,
+        ActorContext::local_user(),
+        IntentContext::user_request(),
+        ws,
+    )
+    .unwrap();
+    assert_eq!(state.authority_effect, "none");
+    assert_eq!(state.readiness.authority_effect, "none");
+    assert_eq!(state.adaptation.authority_effect, "none");
+    assert_eq!(state.recommendation_engine.authority_effect, "none");
+    assert!(!state.readiness.readiness_summary.headline.is_empty());
+}

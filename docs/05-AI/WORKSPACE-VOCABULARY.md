@@ -14,8 +14,9 @@ Canonical product language. Prefer these terms in UI, docs, and Assistant copy.
 | **Decision** | Inbox item in the Decision Queue (human attention) | Approval (unless it is one) |
 | **Permission Approval** | Gateway consent for a capability/command | Decision (broader), Contract Approval |
 | **Contract Approval** | Consent for an Automation Contract *definition* | Permission Approval, execution grant |
-| **Recommendation** | Advisory next step from Intelligence Attention projection (never executes) | Suggestion (product UI), Proposal |
-| **Recommendation Candidate** | Typed next-step suggestion from Recommendation Engine (never executes or accepts) | Decision Engine candidate, Attention projection |
+| **Attention priority** | Prioritized existing signal from Attention Engine (Intelligence field `recommended_actions`) | Recommendation Engine candidate |
+| **Recommendation** | Prefer **Attention priority** or **Recommendation Candidate** — avoid bare “Recommendation” in new UI | Suggestion (product UI), Proposal |
+| **Recommendation Candidate** | Typed next-step suggestion from Recommendation Engine (never executes or accepts) | Decision Engine candidate, Attention priority |
 | **Operating State** | Unified current-situation snapshot over understanding systems (never executes) | WorkflowContext, Intelligence |
 | **Pattern** | Recurring structure observation from existing workspace signals (never predicts or profiles) | Memory, Analytics, Preference |
 | **Adaptation Proposal** | Possible Workspace improvement for human review (never applies; accept → Intent handoff) | Recommendation, Automation Contract |

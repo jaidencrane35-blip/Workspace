@@ -69,6 +69,11 @@ impl DecisionQueueService {
         )
     }
 
+    /// Architecture guard — Decision Queue must never execute or grant authority.
+    pub(crate) fn attempt_execute() -> Result<()> {
+        Err(KernelError::from(DecisionQueueError::CannotExecute))
+    }
+
     fn aggregate(
         db: &Arc<Mutex<Database>>,
         actor: &ActorContext,
