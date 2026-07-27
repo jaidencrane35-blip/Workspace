@@ -276,6 +276,9 @@ pub struct DecisionEngineState {
     /// DE-owned comparative ranking of scored candidates — never selection/planner.
     #[serde(default)]
     pub candidate_ranking: Option<DecisionCandidateRanking>,
+    /// DE-owned selection decisions after ranking — never execution/planner.
+    #[serde(default)]
+    pub candidate_selections: Vec<DecisionCandidateSelection>,
     pub summary: String,
     pub authority_effect: String,
 }
@@ -325,6 +328,7 @@ impl DecisionEngineState {
             evaluation_resolutions: Vec::new(),
             candidate_scores: Vec::new(),
             candidate_ranking: None,
+            candidate_selections: Vec::new(),
             summary,
             authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
         }
@@ -533,6 +537,19 @@ impl DecisionEngineState {
             if ranking.entries.len() == 1 { "y" } else { "ies" }
         );
         self.candidate_ranking = Some(ranking);
+        self
+    }
+
+    /// Attach DE-owned selection decisions without execution or planner handoff.
+    pub fn with_candidate_selections(mut self, selections: Vec<DecisionCandidateSelection>) -> Self {
+        let selected = selections.iter().filter(|s| s.is_selected()).count();
+        self.summary = format!(
+            "{} Candidate selections: {} ({} selected).",
+            self.summary,
+            selections.len(),
+            selected
+        );
+        self.candidate_selections = selections;
         self
     }
 
@@ -4155,6 +4172,321 @@ impl DecisionCandidateRanking {
             || self.authority_effect != Self::AUTHORITY_EFFECT_NONE
             || !self.ranking_id.starts_with(Self::ID_PREFIX)
             || self.ranked_at.is_empty()
+        {
+            return Err(DecisionEngineError::CannotExecute);
+        }
+        Ok(())
+    }
+}
+
+/// Input for projecting or applying DE-owned selection after ranking.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DecisionCandidateSelectionInput {
+    pub candidate: DecisionCandidate,
+    pub score: Option<DecisionCandidateScore>,
+    pub ranking: Option<DecisionCandidateRanking>,
+    pub ranking_entry: Option<DecisionCandidateRankingEntry>,
+    pub lifecycle_integration: DecisionCandidateLifecycleIntegration,
+    pub intake_withdrawn_or_invalidated: bool,
+    pub existing_selection: Option<DecisionCandidateSelection>,
+}
+
+/// DE-owned selection decision after ranking — progression intent only.
+///
+/// Distinct from [`DecisionOutcome::Selected`] lifecycle / planner handoff.
+/// Never executes, plans, creates goals/intents, or mutates Recommendation Engine.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DecisionCandidateSelection {
+    pub selection_id: String,
+    pub workspace_id: String,
+    pub decision_candidate_id: String,
+    /// `native` | `recommendation_intake`
+    pub origin: String,
+    /// `awaiting_selection` | `selected` | `rejected` | `withdrawn`
+    pub selection_state: String,
+    pub ranking_id: Option<String>,
+    pub ranking_position: Option<u32>,
+    pub score_id: Option<String>,
+    pub has_ranking_entry: bool,
+    pub has_score: bool,
+    pub provenance_valid: bool,
+    pub lifecycle_valid: bool,
+    pub candidate_active: bool,
+    pub intake_candidate_id: Option<String>,
+    pub creation_request_id: Option<String>,
+    pub package_seal_digest: Option<String>,
+    pub recommendation_reference: Option<String>,
+    pub selected_at: Option<String>,
+    pub selection_reason: Option<String>,
+    pub creates_goal: bool,
+    pub creates_intent: bool,
+    pub adapter_invoked: bool,
+    pub planner_invoked: bool,
+    pub ownership_transferred: bool,
+    pub mutates_recommendation_engine: bool,
+    pub mutates_candidate_outcome: bool,
+    pub handoff_command: Option<String>,
+    pub note: String,
+    pub authority_effect: String,
+}
+
+impl DecisionCandidateSelection {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+    pub const STATE_AWAITING: &'static str = "awaiting_selection";
+    pub const STATE_SELECTED: &'static str = "selected";
+    pub const STATE_REJECTED: &'static str = "rejected";
+    pub const STATE_WITHDRAWN: &'static str = "withdrawn";
+    pub const ID_PREFIX: &'static str = "engine_decision_selection:";
+    pub const ACTION_SELECT: &'static str = "select";
+    pub const ACTION_REJECT: &'static str = "reject";
+
+    pub fn synthetic_id(decision_candidate_id: &str) -> String {
+        format!("{}{decision_candidate_id}", Self::ID_PREFIX)
+    }
+
+    pub fn is_awaiting(&self) -> bool {
+        self.selection_state == Self::STATE_AWAITING
+    }
+
+    pub fn is_selected(&self) -> bool {
+        self.selection_state == Self::STATE_SELECTED
+    }
+
+    pub fn is_rejected(&self) -> bool {
+        self.selection_state == Self::STATE_REJECTED
+    }
+
+    pub fn is_withdrawn(&self) -> bool {
+        self.selection_state == Self::STATE_WITHDRAWN
+    }
+
+    pub fn derive_batch(inputs: &[DecisionCandidateSelectionInput]) -> Vec<Self> {
+        let mut out: Vec<Self> = inputs.iter().map(Self::derive).collect();
+        out.sort_by(|a, b| a.decision_candidate_id.cmp(&b.decision_candidate_id));
+        out
+    }
+
+    pub fn derive(input: &DecisionCandidateSelectionInput) -> Self {
+        if let Some(existing) = &input.existing_selection {
+            if existing.is_selected() || existing.is_rejected() {
+                return existing.clone();
+            }
+        }
+
+        let candidate = &input.candidate;
+        let origin = DecisionCandidateLifecycleIntegration::classify_origin(candidate);
+        let provenance_valid =
+            DecisionCandidateLifecycleIntegration::provenance_valid_for_origin(origin, candidate);
+        let lifecycle_valid = input.lifecycle_integration.is_integrated()
+            && input.lifecycle_integration.decision_candidate_id == candidate.id.as_str();
+        let candidate_active = matches!(
+            candidate.outcome,
+            DecisionOutcome::Open | DecisionOutcome::Postponed
+        ) && !input.intake_withdrawn_or_invalidated;
+        let has_score = input
+            .score
+            .as_ref()
+            .is_some_and(|s| s.decision_candidate_id == candidate.id.as_str());
+        let has_ranking_entry = input
+            .ranking_entry
+            .as_ref()
+            .is_some_and(|e| e.decision_candidate_id == candidate.id.as_str());
+
+        let selection_state = if input.intake_withdrawn_or_invalidated
+            || !candidate_active
+            || !provenance_valid
+            || !lifecycle_valid
+            || !candidate.id.as_str().starts_with("engine_decision:")
+        {
+            Self::STATE_WITHDRAWN
+        } else if has_ranking_entry && has_score && provenance_valid && lifecycle_valid {
+            Self::STATE_AWAITING
+        } else {
+            // Missing ranking/score — not selectable; projected withdrawn from selection path.
+            Self::STATE_WITHDRAWN
+        };
+
+        Self {
+            selection_id: Self::synthetic_id(candidate.id.as_str()),
+            workspace_id: candidate.workspace_id.as_str().to_string(),
+            decision_candidate_id: candidate.id.as_str().to_string(),
+            origin: origin.into(),
+            selection_state: selection_state.into(),
+            ranking_id: input.ranking.as_ref().map(|r| r.ranking_id.clone()),
+            ranking_position: input.ranking_entry.as_ref().map(|e| e.rank),
+            score_id: input.score.as_ref().map(|s| s.score_id.clone()),
+            has_ranking_entry,
+            has_score,
+            provenance_valid,
+            lifecycle_valid,
+            candidate_active,
+            intake_candidate_id: candidate.intake_candidate_id.clone(),
+            creation_request_id: candidate.creation_request_id.clone(),
+            package_seal_digest: candidate.package_seal_digest.clone(),
+            recommendation_reference: candidate.recommendation_id.clone(),
+            selected_at: None,
+            selection_reason: None,
+            creates_goal: false,
+            creates_intent: false,
+            adapter_invoked: false,
+            planner_invoked: false,
+            ownership_transferred: false,
+            mutates_recommendation_engine: false,
+            mutates_candidate_outcome: false,
+            handoff_command: None,
+            note: format!(
+                "Decision Engine candidate selection ({selection_state}; origin={origin}). \
+                 Progression decision only — not execution, planner, Gateway, goals, intents, \
+                 candidate outcome mutation, or Recommendation Engine mutation."
+            ),
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        }
+    }
+
+    /// Apply select/reject on an awaiting selection. Never executes or mutates outcome/RE.
+    pub fn try_select(
+        input: &DecisionCandidateSelectionInput,
+        action: impl Into<String>,
+        reason: impl Into<String>,
+        selected_at: impl Into<String>,
+    ) -> Result<(Self, DecisionCandidate), DecisionEngineError> {
+        let projected = Self::derive(input);
+        if projected.is_withdrawn() {
+            return Err(DecisionEngineError::InvalidTransition {
+                from: projected.selection_state,
+                to: "select".into(),
+            });
+        }
+        if !projected.is_awaiting() {
+            return Err(DecisionEngineError::InvalidTransition {
+                from: projected.selection_state,
+                to: "select".into(),
+            });
+        }
+        if input
+            .existing_selection
+            .as_ref()
+            .is_some_and(|s| s.is_selected() || s.is_rejected())
+        {
+            return Err(DecisionEngineError::InvalidTransition {
+                from: projected.selection_state,
+                to: "already_decided".into(),
+            });
+        }
+
+        // Explicit gate failures for contract clarity.
+        if !projected.has_ranking_entry {
+            return Err(DecisionEngineError::InvalidTransition {
+                from: "missing_ranking".into(),
+                to: "select".into(),
+            });
+        }
+        if !projected.has_score {
+            return Err(DecisionEngineError::InvalidTransition {
+                from: "missing_score".into(),
+                to: "select".into(),
+            });
+        }
+        if !projected.provenance_valid {
+            return Err(DecisionEngineError::InvalidTransition {
+                from: "invalid_provenance".into(),
+                to: "select".into(),
+            });
+        }
+        if !projected.candidate_active || input.intake_withdrawn_or_invalidated {
+            return Err(DecisionEngineError::InvalidTransition {
+                from: "withdrawn".into(),
+                to: "select".into(),
+            });
+        }
+
+        let action = action.into();
+        let next_state = match action.as_str() {
+            Self::ACTION_SELECT | Self::STATE_SELECTED => Self::STATE_SELECTED,
+            Self::ACTION_REJECT | Self::STATE_REJECTED => Self::STATE_REJECTED,
+            other => {
+                return Err(DecisionEngineError::InvalidTransition {
+                    from: projected.selection_state,
+                    to: other.into(),
+                });
+            }
+        };
+
+        let selected_at = selected_at.into();
+        let reason = reason.into();
+        let before = input.candidate.clone();
+        let mut decided = projected;
+        decided.selection_state = next_state.into();
+        decided.selected_at = Some(selected_at);
+        decided.selection_reason = Some(reason);
+        decided.note = format!(
+            "Decision Engine candidate selection ({}) for origin {}. \
+             Progression decision only — no execution, planner, Gateway, goals, intents, \
+             candidate outcome mutation, or Recommendation Engine mutation.",
+            decided.selection_state, decided.origin
+        );
+
+        let after = before.clone();
+        DecisionCandidateLifecycleIntegration::assert_provenance_retained(&before, &after)?;
+        if after.score != before.score || after.outcome != before.outcome {
+            return Err(DecisionEngineError::CannotExecute);
+        }
+        decided.assert_selection_only()?;
+        Ok((decided, after))
+    }
+
+    pub fn may_execute(&self) -> bool {
+        false
+    }
+
+    pub fn may_invoke_planner(&self) -> bool {
+        false
+    }
+
+    pub fn may_invoke_gateway(&self) -> bool {
+        false
+    }
+
+    pub fn may_create_goal(&self) -> bool {
+        false
+    }
+
+    pub fn may_create_intent(&self) -> bool {
+        false
+    }
+
+    pub fn attempt_execute() -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_invoke_planner(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_invoke_gateway(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_create_goal(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_create_intent(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn assert_selection_only(&self) -> Result<(), DecisionEngineError> {
+        if self.creates_goal
+            || self.creates_intent
+            || self.adapter_invoked
+            || self.planner_invoked
+            || self.ownership_transferred
+            || self.mutates_recommendation_engine
+            || self.mutates_candidate_outcome
+            || self.handoff_command.is_some()
+            || self.authority_effect != Self::AUTHORITY_EFFECT_NONE
+            || !self.selection_id.starts_with(Self::ID_PREFIX)
+            || ((self.is_selected() || self.is_rejected()) && self.selected_at.is_none())
         {
             return Err(DecisionEngineError::CannotExecute);
         }

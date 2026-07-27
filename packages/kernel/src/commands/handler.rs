@@ -2715,6 +2715,33 @@ impl CommandHandler {
             .ok_or_else(|| KernelError::from(workspace_domain::DecisionEngineError::NotFound))
     }
 
+    /// Resolve DE-owned selection after ranking — never executes or planner-handoffs.
+    pub fn resolve_decision_candidate_selection(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        candidate_id: String,
+        action: String,
+        reason: String,
+    ) -> Result<(
+        workspace_domain::DecisionCandidateSelection,
+        workspace_domain::DecisionCandidate,
+    )> {
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent))
+            .execute_mutation(GateDecisionEngineWrite)?;
+        DecisionEngineService::resolve_decision_candidate_selection(
+            &kernel.shared_database(),
+            &actor,
+            &kernel.orchestrated_plans(),
+            &kernel.assistant_workflows(),
+            workspace_id,
+            candidate_id,
+            action,
+            reason,
+        )
+    }
+
     /// Architecture guard — Decision Engine must never execute.
     pub fn decision_engine_attempt_execute() -> Result<()> {
         DecisionEngineService::attempt_execute()

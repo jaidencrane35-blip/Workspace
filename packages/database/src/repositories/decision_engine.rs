@@ -2,9 +2,10 @@ use crate::connection::Database;
 use crate::error::Result;
 use workspace_domain::{
     DecisionCandidateEvaluationOriginContract, DecisionCandidateEvaluationResolution,
-    DecisionCandidateScore, DecisionEngineCandidateCreation, DecisionEngineIntakeCandidate,
-    DecisionEngineIntakeCandidateLifecycle, DecisionEngineIntakeDisposition,
-    DecisionEngineIntakeEvaluation, DecisionEngineOverlay, DecisionOutcome, DecisionScore,
+    DecisionCandidateScore, DecisionCandidateSelection, DecisionEngineCandidateCreation,
+    DecisionEngineIntakeCandidate, DecisionEngineIntakeCandidateLifecycle,
+    DecisionEngineIntakeDisposition, DecisionEngineIntakeEvaluation, DecisionEngineOverlay,
+    DecisionOutcome, DecisionScore,
 };
 
 /// Persistence for Decision Engine lifecycle overlay and intake candidates.
@@ -536,6 +537,74 @@ impl<'a> DecisionEngineRepository<'a> {
         rows.collect::<std::result::Result<Vec<_>, _>>()
             .map_err(Into::into)
     }
+
+    /// Persist selected/rejected progression decisions only.
+    pub fn upsert_candidate_selection(
+        &self,
+        selection: &DecisionCandidateSelection,
+    ) -> Result<()> {
+        if !selection.is_selected() && !selection.is_rejected() {
+            return Ok(());
+        }
+        let selected_at = selection.selected_at.as_deref().unwrap_or_default();
+        self.db.connection().execute(
+            "INSERT INTO decision_candidate_selection (
+                workspace_id, selection_id, decision_candidate_id, origin, selection_state,
+                ranking_id, ranking_position, score_id, recommendation_reference,
+                package_seal_digest, intake_candidate_id, creation_request_id,
+                selection_reason, selected_at, updated_at
+             ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?14)
+             ON CONFLICT(workspace_id, selection_id) DO UPDATE SET
+                decision_candidate_id = excluded.decision_candidate_id,
+                origin = excluded.origin,
+                selection_state = excluded.selection_state,
+                ranking_id = excluded.ranking_id,
+                ranking_position = excluded.ranking_position,
+                score_id = excluded.score_id,
+                recommendation_reference = excluded.recommendation_reference,
+                package_seal_digest = excluded.package_seal_digest,
+                intake_candidate_id = excluded.intake_candidate_id,
+                creation_request_id = excluded.creation_request_id,
+                selection_reason = excluded.selection_reason,
+                selected_at = excluded.selected_at,
+                updated_at = excluded.updated_at",
+            (
+                &selection.workspace_id,
+                &selection.selection_id,
+                &selection.decision_candidate_id,
+                &selection.origin,
+                &selection.selection_state,
+                &selection.ranking_id,
+                selection.ranking_position,
+                &selection.score_id,
+                &selection.recommendation_reference,
+                &selection.package_seal_digest,
+                &selection.intake_candidate_id,
+                &selection.creation_request_id,
+                &selection.selection_reason,
+                selected_at,
+            ),
+        )?;
+        Ok(())
+    }
+
+    pub fn list_candidate_selections(
+        &self,
+        workspace_id: &str,
+    ) -> Result<Vec<DecisionCandidateSelection>> {
+        let mut stmt = self.db.connection().prepare(
+            "SELECT workspace_id, selection_id, decision_candidate_id, origin, selection_state,
+                    ranking_id, ranking_position, score_id, recommendation_reference,
+                    package_seal_digest, intake_candidate_id, creation_request_id,
+                    selection_reason, selected_at
+             FROM decision_candidate_selection
+             WHERE workspace_id = ?1
+             ORDER BY selection_id ASC",
+        )?;
+        let rows = stmt.query_map([workspace_id], map_candidate_selection)?;
+        rows.collect::<std::result::Result<Vec<_>, _>>()
+            .map_err(Into::into)
+    }
 }
 
 fn map_overlay(row: &rusqlite::Row<'_>) -> rusqlite::Result<DecisionEngineOverlay> {
@@ -805,5 +874,49 @@ fn map_candidate_score(row: &rusqlite::Row<'_>) -> rusqlite::Result<DecisionCand
              Persisted scoring result only — no ranking or selection."
         ),
         authority_effect: DecisionCandidateScore::AUTHORITY_EFFECT_NONE.into(),
+    })
+}
+
+fn map_candidate_selection(
+    row: &rusqlite::Row<'_>,
+) -> rusqlite::Result<DecisionCandidateSelection> {
+    let origin: String = row.get(3)?;
+    let selection_state: String = row.get(4)?;
+    let ranking_id: Option<String> = row.get(5)?;
+    let ranking_position: Option<i64> = row.get(6)?;
+    let score_id: Option<String> = row.get(7)?;
+    Ok(DecisionCandidateSelection {
+        workspace_id: row.get(0)?,
+        selection_id: row.get(1)?,
+        decision_candidate_id: row.get(2)?,
+        origin: origin.clone(),
+        selection_state: selection_state.clone(),
+        ranking_id,
+        ranking_position: ranking_position.map(|p| p as u32),
+        score_id,
+        has_ranking_entry: true,
+        has_score: true,
+        provenance_valid: true,
+        lifecycle_valid: true,
+        candidate_active: true,
+        recommendation_reference: row.get(8)?,
+        package_seal_digest: row.get(9)?,
+        intake_candidate_id: row.get(10)?,
+        creation_request_id: row.get(11)?,
+        selection_reason: row.get(12)?,
+        selected_at: Some(row.get(13)?),
+        creates_goal: false,
+        creates_intent: false,
+        adapter_invoked: false,
+        planner_invoked: false,
+        ownership_transferred: false,
+        mutates_recommendation_engine: false,
+        mutates_candidate_outcome: false,
+        handoff_command: None,
+        note: format!(
+            "Decision Engine candidate selection ({selection_state}; origin={origin}). \
+             Persisted progression decision only — no execution or planner."
+        ),
+        authority_effect: DecisionCandidateSelection::AUTHORITY_EFFECT_NONE.into(),
     })
 }

@@ -55,7 +55,8 @@ Remaining before a future handoff could exist:
 22. ~~DE candidate evaluation resolution (accepted/rejected for scoring path; ≠ DecisionScore)~~ — see [WORKSPACE-DECISION-ENGINE-CANDIDATE-EVALUATION-RESOLUTION.md](./WORKSPACE-DECISION-ENGINE-CANDIDATE-EVALUATION-RESOLUTION.md)
 23. ~~DE DecisionScore (scoring result only; ≠ ranking / planner / Gateway)~~ — see [WORKSPACE-DECISION-ENGINE-CANDIDATE-SCORE.md](./WORKSPACE-DECISION-ENGINE-CANDIDATE-SCORE.md)
 24. ~~DE candidate ranking (comparative ordering only; ≠ selection / planner / Gateway)~~ — see [WORKSPACE-DECISION-ENGINE-CANDIDATE-RANKING.md](./WORKSPACE-DECISION-ENGINE-CANDIDATE-RANKING.md)
-25. Optional **selection / adapter / planner handoff** after ranking — still separate; not execution
+25. ~~DE candidate selection (progression decision only; ≠ execution / planner / Gateway)~~ — see [WORKSPACE-DECISION-ENGINE-CANDIDATE-SELECTION.md](./WORKSPACE-DECISION-ENGINE-CANDIDATE-SELECTION.md)
+26. Optional **adapter / planner handoff** after selection — still separate; not execution
 
 ---
 
