@@ -120,6 +120,8 @@ mod decision_engine_intake_eligibility_contract_tests;
 #[cfg(test)]
 mod decision_engine_intake_candidate_contract_tests;
 #[cfg(test)]
+mod decision_engine_intake_candidate_lifecycle_contract_tests;
+#[cfg(test)]
 mod task_graph_tests;
 #[cfg(test)]
 mod workspace_environment_tests;

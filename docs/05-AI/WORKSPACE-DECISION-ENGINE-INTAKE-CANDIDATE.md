@@ -17,6 +17,8 @@ DecisionEngineIntakeEligibility
 DecisionEngineIntakeCandidate
   state =
     observed | ready_for_future_evaluation | blocked | withdrawn
+  lifecycle =
+    active | withdrawn | invalidated
   namespace = engine_decision_intake:*
         ✗ IntakeCandidate ≠ DecisionCandidate
         ✗ ≠ goal / intent / planner / Gateway / score / rank
@@ -27,7 +29,8 @@ DecisionEngineIntakeCandidate
 ## Creation rules
 
 Allowed only when receipt observed, assessment valid, eligibility eligible,
-acceptance active, and package seal matches.
+acceptance active, and package seal matches. New candidates start lifecycle
+`active`.
 
 Blocked for declined/revoked acceptance, seal mismatch, superseded,
 duplicate digest, or stale package.
@@ -38,7 +41,11 @@ DE-owned table `decision_engine_intake_candidate`. Thin identity + lifecycle
 state only — never stores Recommendation Engine payloads. Unique per
 `(workspace_id, package_seal_digest)` so duplicate intakes cannot materialize.
 
+Lifecycle details:
+[WORKSPACE-DECISION-ENGINE-INTAKE-CANDIDATE-LIFECYCLE.md](./WORKSPACE-DECISION-ENGINE-INTAKE-CANDIDATE-LIFECYCLE.md)
+
 ## Related
 
 - [WORKSPACE-DECISION-ENGINE-INTAKE-ELIGIBILITY.md](./WORKSPACE-DECISION-ENGINE-INTAKE-ELIGIBILITY.md)
+- [WORKSPACE-DECISION-ENGINE-INTAKE-CANDIDATE-LIFECYCLE.md](./WORKSPACE-DECISION-ENGINE-INTAKE-CANDIDATE-LIFECYCLE.md)
 - [WORKSPACE-DECISION-ENGINE.md](./WORKSPACE-DECISION-ENGINE.md)

@@ -393,6 +393,7 @@ impl DecisionEngineService {
         let mut existing = repo.list_intake_candidates(workspace_id)?;
 
         // Create or refresh eligible intake candidates (digest uniqueness blocks duplicates).
+        // Preserve withdrawn/invalidated DE lifecycle — never auto-reactivate invalidated.
         for mut candidate in created {
             if let Some(prior) =
                 repo.get_intake_candidate_by_digest(workspace_id, &candidate.package_seal_digest)?
@@ -402,7 +403,12 @@ impl DecisionEngineService {
                     continue;
                 }
                 candidate.created_at = prior.created_at;
-                candidate.state = DecisionEngineIntakeCandidate::STATE_READY.into();
+                if prior.lifecycle.is_invalidated() || prior.lifecycle.is_withdrawn() {
+                    candidate.lifecycle = prior.lifecycle;
+                    candidate.state = prior.state;
+                } else {
+                    candidate.state = DecisionEngineIntakeCandidate::STATE_READY.into();
+                }
             }
             debug_assert!(candidate.assert_intake_only().is_ok());
             repo.upsert_intake_candidate(&candidate)?;
@@ -421,17 +427,13 @@ impl DecisionEngineService {
 
         existing = repo.list_intake_candidates(workspace_id)?;
         for mut stored in existing {
-            let eligibility = eligibility_by_rec.get(stored.recommendation_reference.as_str()).copied();
+            let eligibility = eligibility_by_rec
+                .get(stored.recommendation_reference.as_str())
+                .copied();
             let acceptance_state = acceptance_by_rec
                 .get(&stored.recommendation_reference)
                 .map(String::as_str);
-            if eligibility.is_some_and(|e| {
-                e.is_eligible && e.sealed_intake_package_digest == stored.package_seal_digest
-            }) {
-                stored.state = DecisionEngineIntakeCandidate::STATE_READY.into();
-            } else {
-                stored.reevaluate(eligibility, acceptance_state);
-            }
+            stored.apply_source_reevaluation(eligibility, acceptance_state, &now);
             repo.upsert_intake_candidate(&stored)?;
         }
 

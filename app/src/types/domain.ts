@@ -1227,6 +1227,15 @@ export interface DecisionCandidate {
   authority_effect: string;
 }
 
+/** DE-owned intake candidate lifecycle — not DecisionCandidate / planner / execution lifecycle. */
+export interface DecisionEngineIntakeCandidateLifecycle {
+  /** active | withdrawn | invalidated */
+  lifecycle_state: string;
+  reason: string | null;
+  updated_at: string;
+  authority_effect: string;
+}
+
 /** DE-owned intake lifecycle acknowledgement — not a DecisionCandidate. */
 export interface DecisionEngineIntakeCandidate {
   intake_candidate_id: string;
@@ -1239,6 +1248,7 @@ export interface DecisionEngineIntakeCandidate {
   created_at: string;
   /** observed | ready_for_future_evaluation | blocked | withdrawn */
   state: string;
+  lifecycle: DecisionEngineIntakeCandidateLifecycle;
   /** Always false — IntakeCandidate ≠ DecisionCandidate. */
   is_decision_candidate: boolean;
   creates_decision_candidate: boolean;

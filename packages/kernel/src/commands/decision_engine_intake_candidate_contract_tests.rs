@@ -232,14 +232,15 @@ fn case4_superseded_blocks_creation() {
     );
 }
 
-/// CASE 5 — Revoked acceptance blocks creation / withdraws existing.
+/// CASE 5 — Revoked acceptance blocks creation / invalidates existing lifecycle.
 #[test]
-fn case5_revoked_acceptance_blocks_and_withdraws() {
+fn case5_revoked_acceptance_blocks_and_invalidates() {
     let (receipt, mut acceptance, seal) = accepted_chain("task-5");
     let (receipt, assessment, eligibility) = pipeline(receipt, true, false, true);
     let mut candidate =
         DecisionEngineIntakeCandidate::try_create(&receipt, &assessment, &eligibility, "t-create")
             .expect("created while accepted");
+    assert!(candidate.lifecycle.is_active());
     acceptance.revoke("t-revoke").unwrap();
     assert!(DecisionEngineIntakeReceipt::try_observe(&acceptance, &seal).is_none());
     let (receipt2, assessment2, eligibility2) = pipeline(receipt.clone(), false, false, false);
@@ -247,13 +248,15 @@ fn case5_revoked_acceptance_blocks_and_withdraws() {
         DecisionEngineIntakeCandidate::try_create(&receipt2, &assessment2, &eligibility2, "t")
             .is_none()
     );
-    candidate.reevaluate(
+    candidate.apply_source_reevaluation(
         None,
         Some(RecommendationDecisionEngineAcceptance::STATE_REVOKED),
+        "t-invalidate",
     );
+    assert!(candidate.lifecycle.is_invalidated());
     assert_eq!(
-        candidate.state,
-        DecisionEngineIntakeCandidate::STATE_WITHDRAWN
+        candidate.lifecycle.reason.as_deref(),
+        Some(workspace_domain::DecisionEngineIntakeCandidateLifecycle::REASON_ACCEPTANCE_REVOKED)
     );
     assert!(!candidate.ownership_transferred);
 }
@@ -289,6 +292,7 @@ fn case6_duplicate_intake_blocked() {
     );
     assert_eq!(created.len(), 1);
     assert_eq!(created[0].state, DecisionEngineIntakeCandidate::STATE_READY);
+    assert!(created[0].lifecycle.is_active());
 }
 
 /// CASE 7 — IntakeCandidate is not DecisionCandidate.

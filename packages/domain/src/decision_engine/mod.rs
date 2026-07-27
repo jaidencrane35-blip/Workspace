@@ -278,15 +278,12 @@ impl DecisionEngineState {
 
     /// Attach DE-owned intake candidates without changing scoring or DecisionCandidates.
     pub fn with_intake_candidates(mut self, candidates: Vec<DecisionEngineIntakeCandidate>) -> Self {
-        let ready = candidates
-            .iter()
-            .filter(|c| c.state == DecisionEngineIntakeCandidate::STATE_READY)
-            .count();
+        let active = candidates.iter().filter(|c| c.lifecycle.is_active()).count();
         self.summary = format!(
-            "{} Intake candidates: {} ({} ready for future evaluation).",
+            "{} Intake candidates: {} ({} active).",
             self.summary,
             candidates.len(),
-            ready
+            active
         );
         self.intake_candidates = candidates;
         self
@@ -1034,6 +1031,137 @@ impl DecisionEngineIntakeEligibility {
     }
 }
 
+/// DE-owned lifecycle for an intake candidate (not DecisionCandidate / planner / execution).
+///
+/// Mutates only Decision Engine state. Never touches Recommendation Engine overlays.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DecisionEngineIntakeCandidateLifecycle {
+    /// `active` | `withdrawn` | `invalidated`
+    pub lifecycle_state: String,
+    pub reason: Option<String>,
+    pub updated_at: String,
+    pub authority_effect: String,
+}
+
+impl DecisionEngineIntakeCandidateLifecycle {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+    pub const STATE_ACTIVE: &'static str = "active";
+    pub const STATE_WITHDRAWN: &'static str = "withdrawn";
+    pub const STATE_INVALIDATED: &'static str = "invalidated";
+
+    pub const REASON_SEAL_MISMATCH: &'static str = "package_seal_mismatch";
+    pub const REASON_ACCEPTANCE_REVOKED: &'static str = "acceptance_revoked";
+    pub const REASON_SUPERSEDED: &'static str = "recommendation_superseded";
+    pub const REASON_DE_WITHDRAWAL: &'static str = "decision_engine_withdrawal";
+
+    pub fn start_active(updated_at: impl Into<String>) -> Self {
+        Self {
+            lifecycle_state: Self::STATE_ACTIVE.into(),
+            reason: None,
+            updated_at: updated_at.into(),
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        }
+    }
+
+    pub fn is_active(&self) -> bool {
+        self.lifecycle_state == Self::STATE_ACTIVE
+    }
+
+    pub fn is_withdrawn(&self) -> bool {
+        self.lifecycle_state == Self::STATE_WITHDRAWN
+    }
+
+    pub fn is_invalidated(&self) -> bool {
+        self.lifecycle_state == Self::STATE_INVALIDATED
+    }
+
+    pub fn allows_transition(&self, to: &str) -> bool {
+        match (self.lifecycle_state.as_str(), to) {
+            (from, to) if from == to => true,
+            (Self::STATE_ACTIVE, Self::STATE_WITHDRAWN)
+            | (Self::STATE_ACTIVE, Self::STATE_INVALIDATED)
+            | (Self::STATE_WITHDRAWN, Self::STATE_INVALIDATED) => true,
+            // invalidated → active is never allowed; withdrawn → active is DE-explicit only (not here).
+            (Self::STATE_INVALIDATED, _) => false,
+            _ => false,
+        }
+    }
+
+    /// DE-owned withdrawal — does not mutate Recommendation Engine records.
+    pub fn withdraw(&mut self, at: impl Into<String>) -> Result<(), DecisionEngineError> {
+        if !self.allows_transition(Self::STATE_WITHDRAWN) {
+            return Err(DecisionEngineError::InvalidTransition {
+                from: self.lifecycle_state.clone(),
+                to: Self::STATE_WITHDRAWN.into(),
+            });
+        }
+        self.lifecycle_state = Self::STATE_WITHDRAWN.into();
+        self.reason = Some(Self::REASON_DE_WITHDRAWAL.into());
+        self.updated_at = at.into();
+        self.authority_effect = Self::AUTHORITY_EFFECT_NONE.into();
+        Ok(())
+    }
+
+    /// Invalidate from invalid source package facts. Terminal against reactivation.
+    pub fn invalidate(
+        &mut self,
+        reason: impl Into<String>,
+        at: impl Into<String>,
+    ) -> Result<(), DecisionEngineError> {
+        if self.is_invalidated() {
+            self.reason = Some(reason.into());
+            self.updated_at = at.into();
+            return Ok(());
+        }
+        if !self.allows_transition(Self::STATE_INVALIDATED) {
+            return Err(DecisionEngineError::InvalidTransition {
+                from: self.lifecycle_state.clone(),
+                to: Self::STATE_INVALIDATED.into(),
+            });
+        }
+        self.lifecycle_state = Self::STATE_INVALIDATED.into();
+        self.reason = Some(reason.into());
+        self.updated_at = at.into();
+        self.authority_effect = Self::AUTHORITY_EFFECT_NONE.into();
+        Ok(())
+    }
+
+    /// Reactivation is never allowed from invalidated.
+    pub fn attempt_reactivate(&mut self) -> Result<(), DecisionEngineError> {
+        if self.is_invalidated() {
+            return Err(DecisionEngineError::InvalidTransition {
+                from: Self::STATE_INVALIDATED.into(),
+                to: Self::STATE_ACTIVE.into(),
+            });
+        }
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn may_create_decision_candidate(&self) -> bool {
+        false
+    }
+
+    pub fn may_create_goal(&self) -> bool {
+        false
+    }
+
+    pub fn may_create_intent(&self) -> bool {
+        false
+    }
+
+    pub fn may_invoke_planner(&self) -> bool {
+        false
+    }
+
+    pub fn may_invoke_gateway(&self) -> bool {
+        false
+    }
+
+    pub fn attempt_execute() -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+}
+
 /// DE-owned intake lifecycle acknowledgement for an eligible RE sealed package.
 ///
 /// Represents that Decision Engine has accepted the package for *future* evaluation.
@@ -1051,6 +1179,8 @@ pub struct DecisionEngineIntakeCandidate {
     pub created_at: String,
     /// `observed` | `ready_for_future_evaluation` | `blocked` | `withdrawn`
     pub state: String,
+    /// DE-owned lifecycle — distinct from DecisionCandidate outcome lifecycle.
+    pub lifecycle: DecisionEngineIntakeCandidateLifecycle,
     /// Always false — IntakeCandidate ≠ DecisionCandidate.
     pub is_decision_candidate: bool,
     pub creates_decision_candidate: bool,
@@ -1079,6 +1209,7 @@ impl DecisionEngineIntakeCandidate {
     }
 
     /// Create only when receipt, assessment, and eligibility all clear the gate.
+    /// New eligible intake candidates start lifecycle `active`.
     /// Never creates a DecisionCandidate / goal / intent / planner handoff.
     pub fn try_create(
         receipt: &DecisionEngineIntakeReceipt,
@@ -1089,6 +1220,7 @@ impl DecisionEngineIntakeCandidate {
         if !Self::creation_allowed(receipt, assessment, eligibility) {
             return None;
         }
+        let created_at = created_at.into();
         let recommendation_id = receipt.recommendation_id.clone();
         Some(Self {
             intake_candidate_id: Self::synthetic_id(&recommendation_id),
@@ -1098,8 +1230,9 @@ impl DecisionEngineIntakeCandidate {
             package_seal_digest: receipt.sealed_intake_package_digest.clone(),
             acceptance_reference: format!("{}{recommendation_id}", Self::ACCEPTANCE_REF_PREFIX),
             compatibility_version: receipt.contract_version.clone(),
-            created_at: created_at.into(),
+            created_at: created_at.clone(),
             state: Self::STATE_READY.into(),
+            lifecycle: DecisionEngineIntakeCandidateLifecycle::start_active(created_at),
             is_decision_candidate: false,
             creates_decision_candidate: false,
             creates_goal: false,
@@ -1174,32 +1307,60 @@ impl DecisionEngineIntakeCandidate {
         created
     }
 
-    /// Reevaluate a persisted intake candidate when RE/eligibility conditions change.
-    pub fn reevaluate(
+    /// DE-owned withdrawal — only mutates Decision Engine lifecycle state.
+    pub fn withdraw(&mut self, at: impl Into<String>) -> Result<(), DecisionEngineError> {
+        self.lifecycle.withdraw(at)?;
+        self.state = Self::STATE_WITHDRAWN.into();
+        self.note = "Decision Engine withdrew intake candidate. Recommendation Engine overlays \
+                     were not mutated. No DecisionCandidate, goal, intent, planner handoff, \
+                     or ownership transfer."
+            .into();
+        Ok(())
+    }
+
+    /// Apply source-driven invalidation (seal mismatch / revoked / superseded).
+    /// Never reactivates an invalidated lifecycle.
+    pub fn apply_source_reevaluation(
         &mut self,
         eligibility: Option<&DecisionEngineIntakeEligibility>,
         acceptance_state: Option<&str>,
+        at: impl Into<String>,
     ) {
-        if eligibility.is_some_and(|e| e.is_eligible)
-            && self.package_seal_digest
-                == eligibility
-                    .map(|e| e.sealed_intake_package_digest.as_str())
-                    .unwrap_or_default()
-        {
-            self.state = Self::STATE_READY.into();
+        let at = at.into();
+        if self.lifecycle.is_invalidated() {
             return;
         }
-        match acceptance_state {
+        if eligibility.is_some_and(|e| {
+            e.is_eligible && e.sealed_intake_package_digest == self.package_seal_digest
+        }) {
+            // Eligible again: keep withdrawn as DE decision; never revive invalidated.
+            if self.lifecycle.is_active() {
+                self.state = Self::STATE_READY.into();
+            }
+            return;
+        }
+
+        let reason = if eligibility.is_some_and(|e| e.is_superseded) {
+            DecisionEngineIntakeCandidateLifecycle::REASON_SUPERSEDED
+        } else if matches!(
+            acceptance_state,
             Some(
                 crate::workspace_recommendation::RecommendationDecisionEngineAcceptance::STATE_REVOKED
                 | crate::workspace_recommendation::RecommendationDecisionEngineAcceptance::STATE_DECLINED,
-            ) => {
-                self.state = Self::STATE_WITHDRAWN.into();
-            }
-            _ => {
-                self.state = Self::STATE_BLOCKED.into();
-            }
-        }
+            )
+        ) {
+            DecisionEngineIntakeCandidateLifecycle::REASON_ACCEPTANCE_REVOKED
+        } else {
+            DecisionEngineIntakeCandidateLifecycle::REASON_SEAL_MISMATCH
+        };
+
+        let _ = self.lifecycle.invalidate(reason, at);
+        self.state = Self::STATE_BLOCKED.into();
+        self.note = format!(
+            "Decision Engine invalidated intake candidate ({reason}). Recommendation Engine \
+             overlays were not mutated. No DecisionCandidate, goal, intent, planner handoff, \
+             or ownership transfer."
+        );
     }
 
     pub fn may_create_decision_candidate(&self) -> bool {
@@ -1268,6 +1429,8 @@ impl DecisionEngineIntakeCandidate {
             || self.ownership_transferred
             || self.handoff_command.is_some()
             || self.authority_effect != Self::AUTHORITY_EFFECT_NONE
+            || self.lifecycle.authority_effect
+                != DecisionEngineIntakeCandidateLifecycle::AUTHORITY_EFFECT_NONE
             || !self.intake_candidate_id.starts_with(Self::ID_PREFIX)
         {
             return Err(DecisionEngineError::CannotExecute);

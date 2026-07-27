@@ -96,9 +96,12 @@ without creating one. See
 
 When eligibility is `eligible`, Decision Engine may materialize a DE-owned
 `DecisionEngineIntakeCandidate` (`engine_decision_intake:*`) — an intake
-lifecycle acknowledgement for future evaluation, not a ranked
-`DecisionCandidate`. See
-[WORKSPACE-DECISION-ENGINE-INTAKE-CANDIDATE.md](./WORKSPACE-DECISION-ENGINE-INTAKE-CANDIDATE.md).
+acknowledgement for future evaluation, not a ranked `DecisionCandidate`.
+Its DE-owned lifecycle (`active` / `withdrawn` / `invalidated`) is managed
+separately from DecisionCandidate outcomes. See
+[WORKSPACE-DECISION-ENGINE-INTAKE-CANDIDATE.md](./WORKSPACE-DECISION-ENGINE-INTAKE-CANDIDATE.md)
+and
+[WORKSPACE-DECISION-ENGINE-INTAKE-CANDIDATE-LIFECYCLE.md](./WORKSPACE-DECISION-ENGINE-INTAKE-CANDIDATE-LIFECYCLE.md).
 
 Namespaces remain separate
 (`recommendation:*` vs `engine_decision:*` vs `engine_decision_intake:*`).

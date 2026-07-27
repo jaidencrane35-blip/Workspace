@@ -1,6 +1,9 @@
 use crate::connection::Database;
 use crate::error::Result;
-use workspace_domain::{DecisionEngineIntakeCandidate, DecisionEngineOverlay, DecisionOutcome};
+use workspace_domain::{
+    DecisionEngineIntakeCandidate, DecisionEngineIntakeCandidateLifecycle, DecisionEngineOverlay,
+    DecisionOutcome,
+};
 
 /// Persistence for Decision Engine lifecycle overlay and intake candidates.
 pub struct DecisionEngineRepository<'a> {
@@ -58,8 +61,9 @@ impl<'a> DecisionEngineRepository<'a> {
             "INSERT INTO decision_engine_intake_candidate (
                 workspace_id, intake_candidate_id, intake_receipt_reference,
                 recommendation_reference, package_seal_digest, acceptance_reference,
-                compatibility_version, state, created_at, updated_at
-             ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9)
+                compatibility_version, state, created_at, updated_at,
+                lifecycle_state, lifecycle_reason, lifecycle_updated_at
+             ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)
              ON CONFLICT(workspace_id, intake_candidate_id) DO UPDATE SET
                 intake_receipt_reference = excluded.intake_receipt_reference,
                 recommendation_reference = excluded.recommendation_reference,
@@ -67,7 +71,10 @@ impl<'a> DecisionEngineRepository<'a> {
                 acceptance_reference = excluded.acceptance_reference,
                 compatibility_version = excluded.compatibility_version,
                 state = excluded.state,
-                updated_at = excluded.updated_at",
+                updated_at = excluded.updated_at,
+                lifecycle_state = excluded.lifecycle_state,
+                lifecycle_reason = excluded.lifecycle_reason,
+                lifecycle_updated_at = excluded.lifecycle_updated_at",
             (
                 &candidate.workspace_id,
                 &candidate.intake_candidate_id,
@@ -78,6 +85,10 @@ impl<'a> DecisionEngineRepository<'a> {
                 &candidate.compatibility_version,
                 &candidate.state,
                 &candidate.created_at,
+                &candidate.lifecycle.updated_at,
+                &candidate.lifecycle.lifecycle_state,
+                &candidate.lifecycle.reason,
+                &candidate.lifecycle.updated_at,
             ),
         )?;
         Ok(())
@@ -90,7 +101,8 @@ impl<'a> DecisionEngineRepository<'a> {
         let mut stmt = self.db.connection().prepare(
             "SELECT workspace_id, intake_candidate_id, intake_receipt_reference,
                     recommendation_reference, package_seal_digest, acceptance_reference,
-                    compatibility_version, state, created_at
+                    compatibility_version, state, created_at,
+                    lifecycle_state, lifecycle_reason, lifecycle_updated_at
              FROM decision_engine_intake_candidate
              WHERE workspace_id = ?1
              ORDER BY intake_candidate_id ASC",
@@ -108,7 +120,8 @@ impl<'a> DecisionEngineRepository<'a> {
         let mut stmt = self.db.connection().prepare(
             "SELECT workspace_id, intake_candidate_id, intake_receipt_reference,
                     recommendation_reference, package_seal_digest, acceptance_reference,
-                    compatibility_version, state, created_at
+                    compatibility_version, state, created_at,
+                    lifecycle_state, lifecycle_reason, lifecycle_updated_at
              FROM decision_engine_intake_candidate
              WHERE workspace_id = ?1 AND package_seal_digest = ?2
              LIMIT 1",
@@ -136,6 +149,14 @@ fn map_overlay(row: &rusqlite::Row<'_>) -> rusqlite::Result<DecisionEngineOverla
 }
 
 fn map_intake_candidate(row: &rusqlite::Row<'_>) -> rusqlite::Result<DecisionEngineIntakeCandidate> {
+    let created_at: String = row.get(8)?;
+    let lifecycle_state: String = row
+        .get::<_, Option<String>>(9)?
+        .unwrap_or_else(|| DecisionEngineIntakeCandidateLifecycle::STATE_ACTIVE.into());
+    let lifecycle_reason: Option<String> = row.get(10)?;
+    let lifecycle_updated_at: String = row
+        .get::<_, Option<String>>(11)?
+        .unwrap_or_else(|| created_at.clone());
     Ok(DecisionEngineIntakeCandidate {
         workspace_id: row.get(0)?,
         intake_candidate_id: row.get(1)?,
@@ -145,7 +166,13 @@ fn map_intake_candidate(row: &rusqlite::Row<'_>) -> rusqlite::Result<DecisionEng
         acceptance_reference: row.get(5)?,
         compatibility_version: row.get(6)?,
         state: row.get(7)?,
-        created_at: row.get(8)?,
+        created_at,
+        lifecycle: DecisionEngineIntakeCandidateLifecycle {
+            lifecycle_state,
+            reason: lifecycle_reason,
+            updated_at: lifecycle_updated_at,
+            authority_effect: DecisionEngineIntakeCandidateLifecycle::AUTHORITY_EFFECT_NONE.into(),
+        },
         is_decision_candidate: false,
         creates_decision_candidate: false,
         creates_goal: false,
