@@ -76,7 +76,7 @@ impl AutomationContractService {
         {
             let guard = db
                 .lock()
-                .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+                .map_err(|_| KernelError::lock_poisoned("database"))?;
             AutomationContractRepository::new(&guard).upsert(&contract)?;
         }
         Self::audit(
@@ -182,7 +182,7 @@ impl AutomationContractService {
         {
             let guard = db
                 .lock()
-                .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+                .map_err(|_| KernelError::lock_poisoned("database"))?;
             AutomationContractRepository::new(&guard).upsert(&contract)?;
         }
         Self::audit(
@@ -216,7 +216,7 @@ impl AutomationContractService {
         {
             let guard = db
                 .lock()
-                .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+                .map_err(|_| KernelError::lock_poisoned("database"))?;
             AutomationContractRepository::new(&guard).upsert(&contract)?;
         }
         Self::audit(
@@ -250,7 +250,7 @@ impl AutomationContractService {
         {
             let guard = db
                 .lock()
-                .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+                .map_err(|_| KernelError::lock_poisoned("database"))?;
             AutomationContractRepository::new(&guard).upsert(&contract)?;
         }
         Self::audit(
@@ -279,7 +279,7 @@ impl AutomationContractService {
         {
             let guard = db
                 .lock()
-                .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+                .map_err(|_| KernelError::lock_poisoned("database"))?;
             AutomationContractRepository::new(&guard).upsert(&contract)?;
         }
         Self::audit(
@@ -305,7 +305,7 @@ impl AutomationContractService {
         {
             let guard = db
                 .lock()
-                .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+                .map_err(|_| KernelError::lock_poisoned("database"))?;
             AutomationContractRepository::new(&guard).upsert(&contract)?;
         }
         Self::audit(
@@ -333,7 +333,7 @@ impl AutomationContractService {
         {
             let guard = db
                 .lock()
-                .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+                .map_err(|_| KernelError::lock_poisoned("database"))?;
             AutomationContractRepository::new(&guard).upsert(&contract)?;
         }
         Self::audit(
@@ -357,7 +357,7 @@ impl AutomationContractService {
             AutomationContractId::new(contract_id.into()).map_err(KernelError::Domain)?;
         let guard = db
             .lock()
-            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+            .map_err(|_| KernelError::lock_poisoned("database"))?;
         AutomationContractRepository::new(&guard)
             .get(&contract_id)?
             .ok_or_else(|| KernelError::AutomationContractValidation {
@@ -373,7 +373,7 @@ impl AutomationContractService {
         let workspace_id = workspace_id.into();
         let guard = db
             .lock()
-            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+            .map_err(|_| KernelError::lock_poisoned("database"))?;
         let contracts = AutomationContractRepository::new(&guard)
             .list_by_workspace(&workspace_id, limit.unwrap_or(50))?;
         let repo = WorkspaceIntentRepository::new(&guard);
@@ -421,7 +421,7 @@ impl AutomationContractService {
             {
                 let guard = db
                     .lock()
-                    .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+                    .map_err(|_| KernelError::lock_poisoned("database"))?;
                 AutomationContractRepository::new(&guard).upsert(&contract)?;
             }
             Self::audit(
@@ -467,7 +467,7 @@ impl AutomationContractService {
         let project_id = ProjectId::new(project_id).map_err(KernelError::Domain)?;
         let guard = db
             .lock()
-            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+            .map_err(|_| KernelError::lock_poisoned("database"))?;
         let project = WorkspaceIntentRepository::new(&guard)
             .get_project(&project_id)?
             .ok_or_else(|| KernelError::AutomationContractValidation {
@@ -490,7 +490,7 @@ impl AutomationContractService {
         let task_id = TaskId::new(task_id).map_err(KernelError::Domain)?;
         let guard = db
             .lock()
-            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+            .map_err(|_| KernelError::lock_poisoned("database"))?;
         let task = WorkspaceIntentRepository::new(&guard)
             .get_task(&task_id)?
             .ok_or_else(|| KernelError::AutomationContractValidation {

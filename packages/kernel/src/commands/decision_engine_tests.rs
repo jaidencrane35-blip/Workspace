@@ -415,10 +415,8 @@ fn case6_accept_hands_off_to_planner() {
 fn case7_execution_attempt_blocked() {
     let err = CommandHandler::decision_engine_attempt_execute().unwrap_err();
     match err {
-        KernelError::DecisionEngineValidation { message } => {
-            assert!(message.contains("cannot execute") || message.contains("authorize"));
-        }
-        other => panic!("expected DecisionEngineValidation, got {other:?}"),
+        KernelError::DecisionEngineCannotExecute => {}
+        other => panic!("expected DecisionEngineCannotExecute, got {other:?}"),
     }
 }
 

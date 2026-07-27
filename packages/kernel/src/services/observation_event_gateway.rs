@@ -34,7 +34,9 @@ impl ObservationEventGateway {
     pub(crate) fn normalize(event: ObservationEvent) -> Result<ObservationEvent> {
         event
             .normalize()
-            .map_err(|error| KernelError::Config(error.to_string()))
+            .map_err(|error| KernelError::ObservationValidation {
+                message: error.to_string(),
+            })
     }
 
     /// Map a normalized event to an Event-source trigger request.
@@ -114,7 +116,7 @@ mod tests {
     fn invalid_event_rejection() {
         let bad = ObservationEvent::new("", ObservationEventKind::Unknown, "2026-07-26T12:00:00Z");
         let err = ObservationEventGateway::normalize(bad).unwrap_err();
-        assert!(matches!(err, KernelError::Config(_)));
+        assert!(matches!(err, KernelError::ObservationValidation { .. }));
         assert!(err.to_string().contains("source"));
     }
 

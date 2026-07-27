@@ -70,7 +70,8 @@ fn delete_zone_removes_graph_node() {
 
     init.database.with_database(|db| {
         assert!(!GraphService::exists(db, &zone.resource_ref()).unwrap());
-    });
+        Ok(())
+    }).unwrap();
 }
 
 #[test]
@@ -151,7 +152,8 @@ fn widget_lifecycle_through_commands() {
 
     init.database.with_database(|db| {
         assert!(!GraphService::exists(db, &widget.resource_ref()).unwrap());
-    });
+        Ok(())
+    }).unwrap();
 }
 
 #[test]

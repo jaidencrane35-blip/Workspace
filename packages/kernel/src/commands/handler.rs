@@ -899,7 +899,7 @@ impl CommandHandler {
             let db = kernel.shared_database();
             let guard = db
                 .lock()
-                .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+                .map_err(|_| KernelError::lock_poisoned("database"))?;
             if let Some(request) =
                 crate::services::PermissionApprovalService::get_request(&guard, &request_id)?
             {

@@ -367,10 +367,8 @@ fn case8_recommendations_survive_regeneration() {
 #[test]
 fn case9_recommendations_cannot_bypass_gateway() {
     match CommandHandler::workspace_recommendation_engine_attempt_execute() {
-        Err(KernelError::WorkspaceRecommendationEngineValidation { message }) => {
-            assert!(message.contains("cannot execute"));
-        }
-        other => panic!("expected WorkspaceRecommendationEngineValidation, got {other:?}"),
+        Err(KernelError::RecommendationCannotExecute) => {}
+        other => panic!("expected RecommendationCannotExecute, got {other:?}"),
     }
 }
 

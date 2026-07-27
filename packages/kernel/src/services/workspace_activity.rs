@@ -59,7 +59,7 @@ impl WorkspaceActivityGraphService {
         let applications = {
             let guard = db
                 .lock()
-                .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+                .map_err(|_| KernelError::lock_poisoned("database"))?;
             ApplicationRepository::new(&guard).list_by_workspace(&workspace_id)?
         };
         let app_ids: HashSet<String> = applications.iter().map(|a| a.id.to_string()).collect();
@@ -67,12 +67,12 @@ impl WorkspaceActivityGraphService {
         let plans = {
             let guard = orchestrated_plans
                 .lock()
-                .map_err(|_| KernelError::Config("orchestrated plan store lock poisoned".into()))?;
+                .map_err(|_| KernelError::lock_poisoned("orchestrated plan store"))?;
             guard.list_all()
         };
         let workflows = {
             let guard = assistant_workflows.lock().map_err(|_| {
-                KernelError::Config("assistant workflow store lock poisoned".into())
+                KernelError::lock_poisoned("assistant workflow store")
             })?;
             guard.list_all()
         };
@@ -534,7 +534,7 @@ impl WorkspaceActivityGraphService {
         let approvals = {
             let guard = db
                 .lock()
-                .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+                .map_err(|_| KernelError::lock_poisoned("database"))?;
             PermissionApprovalService::list_recent(&guard, Some(100))?
         };
         let mut out = Vec::new();

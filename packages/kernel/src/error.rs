@@ -27,6 +27,16 @@ pub enum KernelError {
     #[error("Configuration error: {0}")]
     Config(String),
 
+    /// Infrastructure or runtime failure that is not user-correctable configuration.
+    /// Prefer this over [`KernelError::Config`] for lock poison and similar faults.
+    #[error("Internal error: {message}")]
+    Internal { message: String },
+
+    /// Architectural integrity failure (release-safe invariant / boundary violation).
+    /// Distinct from operational projection validation and subsystem validation.
+    #[error("Integrity violation: {message}")]
+    IntegrityViolation { message: String },
+
     #[error("Workspace kernel is not ready")]
     NotReady,
 
@@ -215,6 +225,12 @@ pub enum KernelError {
     #[error("Decision engine validation failed: {message}")]
     DecisionEngineValidation { message: String },
 
+    #[error("Decision candidate not found")]
+    DecisionEngineNotFound,
+
+    #[error("Decision engine cannot execute or authorize")]
+    DecisionEngineCannotExecute,
+
     #[error("Task graph validation failed: {message}")]
     TaskGraphValidation { message: String },
 
@@ -232,6 +248,12 @@ pub enum KernelError {
 
     #[error("Workspace recommendation engine validation failed: {message}")]
     WorkspaceRecommendationEngineValidation { message: String },
+
+    #[error("Recommendation candidate not found")]
+    RecommendationNotFound,
+
+    #[error("Recommendation engine cannot execute or authorize")]
+    RecommendationCannotExecute,
 
     #[error("Workspace operating state validation failed: {message}")]
     WorkspaceOperatingStateValidation { message: String },
@@ -482,6 +504,8 @@ impl From<DecisionEngineError> for KernelError {
     fn from(error: DecisionEngineError) -> Self {
         match error {
             DecisionEngineError::Domain(domain) => KernelError::from(domain),
+            DecisionEngineError::NotFound => KernelError::DecisionEngineNotFound,
+            DecisionEngineError::CannotExecute => KernelError::DecisionEngineCannotExecute,
             other => KernelError::DecisionEngineValidation {
                 message: other.to_string(),
             },
@@ -548,6 +572,13 @@ impl From<WorkspaceRecommendationEngineError> for KernelError {
     fn from(error: WorkspaceRecommendationEngineError) -> Self {
         match error {
             WorkspaceRecommendationEngineError::Domain(domain) => KernelError::from(domain),
+            WorkspaceRecommendationEngineError::NotFound => KernelError::RecommendationNotFound,
+            WorkspaceRecommendationEngineError::CannotExecute
+            | WorkspaceRecommendationEngineError::CannotBecomeHandoff
+            | WorkspaceRecommendationEngineError::ConfirmationCannotCreateAuthority
+            | WorkspaceRecommendationEngineError::AcceptanceCannotCreateAuthority => {
+                KernelError::RecommendationCannotExecute
+            }
             other => KernelError::WorkspaceRecommendationEngineValidation {
                 message: other.to_string(),
             },
@@ -699,6 +730,20 @@ impl From<WorkspaceProfileError> for KernelError {
 }
 
 impl KernelError {
+    /// Infrastructure failure helper for poisoned synchronization primitives.
+    pub fn lock_poisoned(resource: &str) -> Self {
+        KernelError::Internal {
+            message: format!("{resource} lock poisoned"),
+        }
+    }
+
+    /// Architectural integrity failure helper (release-safe invariant boundaries).
+    pub fn integrity_violation(message: impl Into<String>) -> Self {
+        KernelError::IntegrityViolation {
+            message: message.into(),
+        }
+    }
+
     pub fn to_public(&self) -> PublicError {
         match self {
             KernelError::Database(_) => PublicError {
@@ -708,6 +753,14 @@ impl KernelError {
             KernelError::Config(_) => PublicError {
                 code: "config_error".into(),
                 message: "Configuration could not be processed.".into(),
+            },
+            KernelError::Internal { .. } => PublicError {
+                code: "internal_error".into(),
+                message: "Workspace core is temporarily unavailable.".into(),
+            },
+            KernelError::IntegrityViolation { message } => PublicError {
+                code: "integrity_violation".into(),
+                message: message.clone(),
             },
             KernelError::NotReady => PublicError {
                 code: "not_ready".into(),
@@ -980,6 +1033,14 @@ impl KernelError {
                 code: "decision_engine_validation_error".into(),
                 message: message.clone(),
             },
+            KernelError::DecisionEngineNotFound => PublicError {
+                code: "decision_engine_not_found".into(),
+                message: "The requested decision candidate was not found.".into(),
+            },
+            KernelError::DecisionEngineCannotExecute => PublicError {
+                code: "decision_engine_cannot_execute".into(),
+                message: "The decision engine cannot execute or authorize actions.".into(),
+            },
             KernelError::TaskGraphValidation { message } => PublicError {
                 code: "task_graph_validation_error".into(),
                 message: message.clone(),
@@ -1003,6 +1064,14 @@ impl KernelError {
             KernelError::WorkspaceRecommendationEngineValidation { message } => PublicError {
                 code: "workspace_recommendation_engine_validation_error".into(),
                 message: message.clone(),
+            },
+            KernelError::RecommendationNotFound => PublicError {
+                code: "recommendation_not_found".into(),
+                message: "The requested recommendation candidate was not found.".into(),
+            },
+            KernelError::RecommendationCannotExecute => PublicError {
+                code: "recommendation_cannot_execute".into(),
+                message: "The recommendation engine cannot execute or authorize actions.".into(),
             },
             KernelError::WorkspaceOperatingStateValidation { message } => PublicError {
                 code: "workspace_operating_state_validation_error".into(),

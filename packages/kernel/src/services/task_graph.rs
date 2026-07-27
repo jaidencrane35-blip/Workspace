@@ -165,7 +165,7 @@ impl TaskGraphService {
         {
             let guard = db
                 .lock()
-                .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+                .map_err(|_| KernelError::lock_poisoned("database"))?;
             TaskGraphRepository::new(&guard).insert_relationship(&rel)?;
         }
 
@@ -224,7 +224,7 @@ impl TaskGraphService {
         {
             let guard = db
                 .lock()
-                .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+                .map_err(|_| KernelError::lock_poisoned("database"))?;
             TaskGraphRepository::new(&guard).delete_relationship(&relationship_id)?;
         }
         Self::audit(
@@ -275,7 +275,7 @@ impl TaskGraphService {
             let existing = {
                 let guard = db
                     .lock()
-                    .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+                    .map_err(|_| KernelError::lock_poisoned("database"))?;
                 TaskGraphRepository::new(&guard)
                     .find_by_intent_task(workspace_id, intent.id.as_str())?
             };
@@ -355,7 +355,7 @@ impl TaskGraphService {
     ) -> Result<(Vec<WorkspaceTask>, Vec<TaskRelationship>)> {
         let guard = db
             .lock()
-            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+            .map_err(|_| KernelError::lock_poisoned("database"))?;
         let repo = TaskGraphRepository::new(&guard);
         Ok((repo.list_tasks(workspace_id)?, repo.list_relationships(workspace_id)?))
     }
@@ -363,14 +363,14 @@ impl TaskGraphService {
     fn get_task(db: &Arc<Mutex<Database>>, id: &str) -> Result<Option<WorkspaceTask>> {
         let guard = db
             .lock()
-            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+            .map_err(|_| KernelError::lock_poisoned("database"))?;
         Ok(TaskGraphRepository::new(&guard).get_task(id)?)
     }
 
     fn persist_task(db: &Arc<Mutex<Database>>, task: &WorkspaceTask) -> Result<()> {
         let guard = db
             .lock()
-            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+            .map_err(|_| KernelError::lock_poisoned("database"))?;
         TaskGraphRepository::new(&guard).upsert_task(task)?;
         Ok(())
     }

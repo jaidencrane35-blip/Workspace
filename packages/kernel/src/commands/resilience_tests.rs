@@ -251,7 +251,7 @@ mod resilience_tests {
                         workspace_domain::DecisionCandidate::AUTHORITY_EFFECT_NONE
                     );
                 }
-                Err(KernelError::ProjectionValidation { message }) => {
+                Err(KernelError::IntegrityViolation { message }) => {
                     // Validation correctly rejected invalid state
                     assert!(
                         message.contains("integrity violation"),

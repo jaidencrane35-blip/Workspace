@@ -404,7 +404,7 @@ impl DecisionEngineService {
     )> {
         let guard = db
             .lock()
-            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+            .map_err(|_| KernelError::lock_poisoned("database"))?;
         let overlays =
             RecommendationLifecycleRepository::new(&guard).list_overlays(workspace_id)?;
         drop(guard);
@@ -478,7 +478,7 @@ impl DecisionEngineService {
 
         let guard = db
             .lock()
-            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+            .map_err(|_| KernelError::lock_poisoned("database"))?;
         let repo = DecisionEngineRepository::new(&guard);
         let mut existing = repo.list_intake_candidates(workspace_id)?;
 
@@ -539,7 +539,7 @@ impl DecisionEngineService {
     ) -> Result<Vec<DecisionEngineIntakeEvaluation>> {
         let guard = db
             .lock()
-            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+            .map_err(|_| KernelError::lock_poisoned("database"))?;
         let mut evaluations =
             DecisionEngineRepository::new(&guard).list_intake_evaluations(workspace_id)?;
         drop(guard);
@@ -564,7 +564,7 @@ impl DecisionEngineService {
 
         let guard = db
             .lock()
-            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+            .map_err(|_| KernelError::lock_poisoned("database"))?;
         let repo = DecisionEngineRepository::new(&guard);
         let candidate = repo
             .get_intake_candidate(&workspace_id, &intake_candidate_id)?
@@ -588,7 +588,7 @@ impl DecisionEngineService {
     ) -> Result<Vec<DecisionEngineIntakeDisposition>> {
         let guard = db
             .lock()
-            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+            .map_err(|_| KernelError::lock_poisoned("database"))?;
         let mut dispositions =
             DecisionEngineRepository::new(&guard).list_intake_dispositions(workspace_id)?;
         drop(guard);
@@ -663,7 +663,7 @@ impl DecisionEngineService {
     ) -> Result<Vec<DecisionEngineCandidateCreation>> {
         let guard = db
             .lock()
-            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+            .map_err(|_| KernelError::lock_poisoned("database"))?;
         let mut creations =
             DecisionEngineRepository::new(&guard).list_candidate_creations(workspace_id)?;
         drop(guard);
@@ -714,7 +714,7 @@ impl DecisionEngineService {
     ) -> Result<Vec<DecisionCandidateEvaluationOriginContract>> {
         let guard = db
             .lock()
-            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+            .map_err(|_| KernelError::lock_poisoned("database"))?;
         let mut contracts =
             DecisionEngineRepository::new(&guard).list_evaluation_origin_contracts(workspace_id)?;
         drop(guard);
@@ -756,7 +756,7 @@ impl DecisionEngineService {
     ) -> Result<Vec<DecisionCandidateEvaluationResolution>> {
         let guard = db
             .lock()
-            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+            .map_err(|_| KernelError::lock_poisoned("database"))?;
         let mut resolutions =
             DecisionEngineRepository::new(&guard).list_evaluation_resolutions(workspace_id)?;
         drop(guard);
@@ -888,7 +888,7 @@ impl DecisionEngineService {
         crate::services::validate_candidate_score_unchanged(&candidate, &unchanged)?;
         let guard = db
             .lock()
-            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+            .map_err(|_| KernelError::lock_poisoned("database"))?;
         DecisionEngineRepository::new(&guard).upsert_evaluation_resolution(&resolved)?;
         drop(guard);
         Ok((resolved, unchanged))
@@ -962,7 +962,7 @@ impl DecisionEngineService {
         crate::services::validate_candidate_score_outcome_unchanged(&candidate, &unchanged)?;
         let guard = db
             .lock()
-            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+            .map_err(|_| KernelError::lock_poisoned("database"))?;
         DecisionEngineRepository::new(&guard).upsert_candidate_score(&score)?;
         drop(guard);
         Ok((score, unchanged))
@@ -1050,7 +1050,7 @@ impl DecisionEngineService {
         crate::services::validate_candidate_score_outcome_unchanged(&candidate, &unchanged)?;
         let guard = db
             .lock()
-            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+            .map_err(|_| KernelError::lock_poisoned("database"))?;
         DecisionEngineRepository::new(&guard).upsert_candidate_selection(&selection)?;
         drop(guard);
         Ok((selection, unchanged))
@@ -1128,7 +1128,7 @@ impl DecisionEngineService {
         crate::services::validate_candidate_score_outcome_unchanged(&candidate, &unchanged)?;
         let guard = db
             .lock()
-            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+            .map_err(|_| KernelError::lock_poisoned("database"))?;
         DecisionEngineRepository::new(&guard).upsert_progression_request(&request)?;
         drop(guard);
         Ok((request, unchanged))
@@ -1211,7 +1211,7 @@ impl DecisionEngineService {
         crate::services::validate_candidate_score_outcome_unchanged(&candidate, &unchanged)?;
         let guard = db
             .lock()
-            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+            .map_err(|_| KernelError::lock_poisoned("database"))?;
         DecisionEngineRepository::new(&guard)
             .upsert_progression_acknowledgement(&acknowledgement)?;
         drop(guard);
@@ -1224,7 +1224,7 @@ impl DecisionEngineService {
     ) -> Result<Vec<DecisionCandidateScore>> {
         let guard = db
             .lock()
-            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+            .map_err(|_| KernelError::lock_poisoned("database"))?;
         let mut scores =
             DecisionEngineRepository::new(&guard).list_candidate_scores(workspace_id)?;
         drop(guard);
@@ -1287,7 +1287,7 @@ impl DecisionEngineService {
     ) -> Result<Vec<DecisionCandidateSelection>> {
         let guard = db
             .lock()
-            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+            .map_err(|_| KernelError::lock_poisoned("database"))?;
         let mut selections =
             DecisionEngineRepository::new(&guard).list_candidate_selections(workspace_id)?;
         drop(guard);
@@ -1356,7 +1356,7 @@ impl DecisionEngineService {
     ) -> Result<Vec<DecisionCandidateProgressionRequest>> {
         let guard = db
             .lock()
-            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+            .map_err(|_| KernelError::lock_poisoned("database"))?;
         let mut requests =
             DecisionEngineRepository::new(&guard).list_progression_requests(workspace_id)?;
         drop(guard);
@@ -1418,7 +1418,7 @@ impl DecisionEngineService {
     ) -> Result<Vec<DecisionCandidateProgressionAcknowledgement>> {
         let guard = db
             .lock()
-            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+            .map_err(|_| KernelError::lock_poisoned("database"))?;
         let mut acks =
             DecisionEngineRepository::new(&guard).list_progression_acknowledgements(workspace_id)?;
         drop(guard);
@@ -1523,7 +1523,7 @@ impl DecisionEngineService {
         crate::services::validate_candidate_score_unchanged(&candidate, &unchanged)?;
         let guard = db
             .lock()
-            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+            .map_err(|_| KernelError::lock_poisoned("database"))?;
         DecisionEngineRepository::new(&guard).upsert_evaluation_origin_contract(&contract)?;
         drop(guard);
         Ok((contract, unchanged))
@@ -1606,7 +1606,7 @@ impl DecisionEngineService {
 
         let guard = db
             .lock()
-            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+            .map_err(|_| KernelError::lock_poisoned("database"))?;
         let repo = DecisionEngineRepository::new(&guard);
         repo.upsert_candidate_creation(&creation)?;
         repo.upsert_overlay(&DecisionEngineOverlay {
@@ -1637,7 +1637,7 @@ impl DecisionEngineService {
 
         let guard = db
             .lock()
-            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+            .map_err(|_| KernelError::lock_poisoned("database"))?;
         let repo = DecisionEngineRepository::new(&guard);
         let candidate = repo
             .get_intake_candidate(&workspace_id, &intake_candidate_id)?
@@ -2263,7 +2263,7 @@ impl DecisionEngineService {
     ) -> Result<HashMap<String, DecisionOutcome>> {
         let guard = db
             .lock()
-            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+            .map_err(|_| KernelError::lock_poisoned("database"))?;
         let overlays = DecisionEngineRepository::new(&guard).list_overlays(workspace_id)?;
         Ok(overlays
             .into_iter()
@@ -2274,7 +2274,7 @@ impl DecisionEngineService {
     fn upsert_overlay(db: &Arc<Mutex<Database>>, overlay: &DecisionEngineOverlay) -> Result<()> {
         let guard = db
             .lock()
-            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+            .map_err(|_| KernelError::lock_poisoned("database"))?;
         DecisionEngineRepository::new(&guard).upsert_overlay(overlay)?;
         Ok(())
     }

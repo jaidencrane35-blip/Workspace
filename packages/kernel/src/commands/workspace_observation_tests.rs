@@ -336,8 +336,10 @@ fn single_snapshot_propagates_to_environment_and_intelligence() {
 #[test]
 fn observation_authority_guard_fails_execution() {
     match CommandHandler::workspace_observation_attempt_execute() {
-        Err(KernelError::Config(message)) => assert!(message.contains("cannot execute")),
-        other => panic!("expected config guard failure, got {other:?}"),
+        Err(KernelError::IntegrityViolation { message }) => {
+            assert!(message.contains("cannot execute"))
+        }
+        other => panic!("expected integrity guard failure, got {other:?}"),
     }
 }
 

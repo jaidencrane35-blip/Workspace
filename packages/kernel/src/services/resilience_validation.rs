@@ -24,7 +24,7 @@ use workspace_domain::{
 use crate::error::{KernelError, Result};
 
 fn map_marker<E: std::fmt::Display>(label: &str, result: std::result::Result<(), E>) -> Result<()> {
-    result.map_err(|e| KernelError::ProjectionValidation {
+    result.map_err(|e| KernelError::IntegrityViolation {
         message: format!("integrity violation: {label}: {e}"),
     })
 }
@@ -33,7 +33,7 @@ fn require(cond: bool, message: impl Into<String>) -> Result<()> {
     if cond {
         Ok(())
     } else {
-        Err(KernelError::ProjectionValidation {
+        Err(KernelError::IntegrityViolation {
             message: message.into(),
         })
     }
@@ -54,21 +54,21 @@ pub fn validate_intake_receipts_observational(
     for receipt in receipts {
         // Validate no outbound hooks that could mutate RE
         if receipt.decision_engine_object_id.is_some() {
-            return Err(KernelError::ProjectionValidation {
+            return Err(KernelError::IntegrityViolation {
                 message:
                     "integrity violation: intake receipt must not own decision_engine_object_id"
                         .to_string(),
             });
         }
         if receipt.handoff_command.is_some() {
-            return Err(KernelError::ProjectionValidation {
+            return Err(KernelError::IntegrityViolation {
                 message: "integrity violation: intake receipt must not carry handoff_command"
                     .to_string(),
             });
         }
         // Validate observational marker
         if let Err(e) = receipt.assert_observational_only() {
-            return Err(KernelError::ProjectionValidation {
+            return Err(KernelError::IntegrityViolation {
                 message: format!(
                     "integrity violation: intake receipt observational marker failed: {}",
                     e
@@ -86,14 +86,14 @@ pub fn validate_intake_candidates_phase(
 ) -> Result<()> {
     for candidate in candidates {
         if candidate.is_decision_candidate {
-            return Err(KernelError::ProjectionValidation {
+            return Err(KernelError::IntegrityViolation {
                 message:
                     "integrity violation: intake candidate must not be marked as decision_candidate"
                         .to_string(),
             });
         }
         if candidate.handoff_command.is_some() {
-            return Err(KernelError::ProjectionValidation {
+            return Err(KernelError::IntegrityViolation {
                 message:
                     "integrity violation: intake candidate must not carry handoff_command"
                         .to_string(),
@@ -101,7 +101,7 @@ pub fn validate_intake_candidates_phase(
         }
         // Validate intake-only marker
         if let Err(e) = candidate.assert_intake_only() {
-            return Err(KernelError::ProjectionValidation {
+            return Err(KernelError::IntegrityViolation {
                 message: format!(
                     "integrity violation: intake candidate phase marker failed: {}",
                     e
@@ -119,20 +119,20 @@ pub fn validate_intake_evaluations_phase(
 ) -> Result<()> {
     for evaluation in evaluations {
         if evaluation.creates_decision_candidate {
-            return Err(KernelError::ProjectionValidation {
+            return Err(KernelError::IntegrityViolation {
                 message: "integrity violation: intake evaluation must not create_decision_candidate"
                     .to_string(),
             });
         }
         if evaluation.handoff_command.is_some() {
-            return Err(KernelError::ProjectionValidation {
+            return Err(KernelError::IntegrityViolation {
                 message: "integrity violation: intake evaluation must not carry handoff_command"
                     .to_string(),
             });
         }
         // Validate evaluation-only marker
         if let Err(e) = evaluation.assert_evaluation_only() {
-            return Err(KernelError::ProjectionValidation {
+            return Err(KernelError::IntegrityViolation {
                 message: format!(
                     "integrity violation: intake evaluation phase marker failed: {}",
                     e
@@ -150,20 +150,20 @@ pub fn validate_candidate_creations_bounded(
 ) -> Result<()> {
     for creation in creations {
         if creation.creates_decision_score {
-            return Err(KernelError::ProjectionValidation {
+            return Err(KernelError::IntegrityViolation {
                 message: "integrity violation: candidate creation must not create_decision_score"
                     .to_string(),
             });
         }
         if creation.planner_invoked {
-            return Err(KernelError::ProjectionValidation {
+            return Err(KernelError::IntegrityViolation {
                 message:
                     "integrity violation: candidate creation must not invoke planner directly"
                         .to_string(),
             });
         }
         if creation.handoff_command.is_some() {
-            return Err(KernelError::ProjectionValidation {
+            return Err(KernelError::IntegrityViolation {
                 message:
                     "integrity violation: candidate creation must not carry handoff_command"
                         .to_string(),
@@ -171,7 +171,7 @@ pub fn validate_candidate_creations_bounded(
         }
         // Validate creation boundary marker
         if let Err(e) = creation.assert_creation_boundary() {
-            return Err(KernelError::ProjectionValidation {
+            return Err(KernelError::IntegrityViolation {
                 message: format!(
                     "integrity violation: candidate creation boundary marker failed: {}",
                     e
@@ -189,34 +189,34 @@ pub fn validate_candidate_selections_bounded(
 ) -> Result<()> {
     for selection in selections {
         if selection.planner_invoked {
-            return Err(KernelError::ProjectionValidation {
+            return Err(KernelError::IntegrityViolation {
                 message: "integrity violation: candidate selection must not invoke planner"
                     .to_string(),
             });
         }
         if selection.mutates_candidate_outcome {
-            return Err(KernelError::ProjectionValidation {
+            return Err(KernelError::IntegrityViolation {
                 message:
                     "integrity violation: candidate selection must not mutate candidate outcome"
                         .to_string(),
             });
         }
         if selection.handoff_command.is_some() {
-            return Err(KernelError::ProjectionValidation {
+            return Err(KernelError::IntegrityViolation {
                 message:
                     "integrity violation: candidate selection must not carry handoff_command"
                         .to_string(),
             });
         }
         if selection.mutates_recommendation_engine {
-            return Err(KernelError::ProjectionValidation {
+            return Err(KernelError::IntegrityViolation {
                 message: "integrity violation: candidate selection must not mutate recommendation engine"
                     .to_string(),
             });
         }
         // Validate selection-only marker
         if let Err(e) = selection.assert_selection_only() {
-            return Err(KernelError::ProjectionValidation {
+            return Err(KernelError::IntegrityViolation {
                 message: format!(
                     "integrity violation: candidate selection marker failed: {}",
                     e
@@ -234,26 +234,26 @@ pub fn validate_progression_requests_bounded(
 ) -> Result<()> {
     for request in requests {
         if request.planner_invoked {
-            return Err(KernelError::ProjectionValidation {
+            return Err(KernelError::IntegrityViolation {
                 message: "integrity violation: progression request must not invoke planner"
                     .to_string(),
             });
         }
         if request.mutates_candidate_outcome {
-            return Err(KernelError::ProjectionValidation {
+            return Err(KernelError::IntegrityViolation {
                 message: "integrity violation: progression request must not mutate outcome"
                     .to_string(),
             });
         }
         if request.handoff_command.is_some() {
-            return Err(KernelError::ProjectionValidation {
+            return Err(KernelError::IntegrityViolation {
                 message:
                     "integrity violation: progression request must not carry handoff_command"
                         .to_string(),
             });
         }
         if request.mutates_recommendation_engine {
-            return Err(KernelError::ProjectionValidation {
+            return Err(KernelError::IntegrityViolation {
                 message:
                     "integrity violation: progression request must not mutate recommendation engine"
                         .to_string(),
@@ -261,7 +261,7 @@ pub fn validate_progression_requests_bounded(
         }
         // Validate request-only marker
         if let Err(e) = request.assert_request_only() {
-            return Err(KernelError::ProjectionValidation {
+            return Err(KernelError::IntegrityViolation {
                 message: format!(
                     "integrity violation: progression request marker failed: {}",
                     e
@@ -288,32 +288,32 @@ pub fn validate_decision_engine_state_integrity(state: &DecisionEngineState) -> 
     // Validate scoring integrity: scores should not auto-rank or select
     for score in &state.candidate_scores {
         if score.ranking_applied {
-            return Err(KernelError::ProjectionValidation {
+            return Err(KernelError::IntegrityViolation {
                 message: "integrity violation: candidate score must not have ranking_applied"
                     .to_string(),
             });
         }
         if score.selects_candidate {
-            return Err(KernelError::ProjectionValidation {
+            return Err(KernelError::IntegrityViolation {
                 message: "integrity violation: candidate score must not select_candidate"
                     .to_string(),
             });
         }
         if score.planner_invoked {
-            return Err(KernelError::ProjectionValidation {
+            return Err(KernelError::IntegrityViolation {
                 message: "integrity violation: candidate score must not invoke planner"
                     .to_string(),
             });
         }
         if score.handoff_command.is_some() {
-            return Err(KernelError::ProjectionValidation {
+            return Err(KernelError::IntegrityViolation {
                 message: "integrity violation: candidate score must not carry handoff_command"
                     .to_string(),
             });
         }
         // Validate score-only marker
         if let Err(e) = score.assert_score_only() {
-            return Err(KernelError::ProjectionValidation {
+            return Err(KernelError::IntegrityViolation {
                 message: format!(
                     "integrity violation: candidate score marker failed: {}",
                     e
@@ -325,33 +325,33 @@ pub fn validate_decision_engine_state_integrity(state: &DecisionEngineState) -> 
     // Validate ranking integrity: ranking does not auto-select without explicit user action
     if let Some(ranking) = &state.candidate_ranking {
         if ranking.selects_candidate {
-            return Err(KernelError::ProjectionValidation {
+            return Err(KernelError::IntegrityViolation {
                 message:
                     "integrity violation: candidate ranking must not auto-select candidate"
                         .to_string(),
             });
         }
         if ranking.selected_candidate_id.is_some() {
-            return Err(KernelError::ProjectionValidation {
+            return Err(KernelError::IntegrityViolation {
                 message: "integrity violation: candidate ranking must not populate selected_candidate_id"
                     .to_string(),
             });
         }
         if ranking.planner_invoked {
-            return Err(KernelError::ProjectionValidation {
+            return Err(KernelError::IntegrityViolation {
                 message: "integrity violation: candidate ranking must not invoke planner"
                     .to_string(),
             });
         }
         if ranking.handoff_command.is_some() {
-            return Err(KernelError::ProjectionValidation {
+            return Err(KernelError::IntegrityViolation {
                 message: "integrity violation: candidate ranking must not carry handoff_command"
                     .to_string(),
             });
         }
         // Validate ranking-only marker
         if let Err(e) = ranking.assert_ranking_only() {
-            return Err(KernelError::ProjectionValidation {
+            return Err(KernelError::IntegrityViolation {
                 message: format!(
                     "integrity violation: candidate ranking marker failed: {}",
                     e
@@ -369,19 +369,19 @@ pub fn validate_decision_engine_state_integrity(state: &DecisionEngineState) -> 
 /// - Cannot create intent
 pub fn validate_decision_context_boundary(context: &RecommendationDecisionContext) -> Result<()> {
     if context.handoff_performed {
-        return Err(KernelError::ProjectionValidation {
+        return Err(KernelError::IntegrityViolation {
             message: "integrity violation: recommendation decision context must not have handoff_performed"
                 .to_string(),
         });
     }
     if context.decision_engine_object_id.is_some() {
-        return Err(KernelError::ProjectionValidation {
+        return Err(KernelError::IntegrityViolation {
             message: "integrity violation: recommendation decision context must not own decision_engine_object_id"
                 .to_string(),
         });
     }
     if context.may_create_intent() {
-        return Err(KernelError::ProjectionValidation {
+        return Err(KernelError::IntegrityViolation {
             message: "integrity violation: recommendation decision context must not be able to create_intent"
                 .to_string(),
         });
@@ -395,7 +395,7 @@ pub fn validate_decision_context_boundary(context: &RecommendationDecisionContex
 /// - Cannot invoke execution gateway
 pub fn validate_decision_readiness_boundary(readiness: &RecommendationDecisionReadiness) -> Result<()> {
     if readiness.authority_effect != "none" {
-        return Err(KernelError::ProjectionValidation {
+        return Err(KernelError::IntegrityViolation {
             message: format!(
                 "integrity violation: recommendation decision readiness authority_effect must be 'none', got '{}'",
                 readiness.authority_effect
@@ -403,13 +403,13 @@ pub fn validate_decision_readiness_boundary(readiness: &RecommendationDecisionRe
         });
     }
     if readiness.may_create_decision_commands() {
-        return Err(KernelError::ProjectionValidation {
+        return Err(KernelError::IntegrityViolation {
             message: "integrity violation: recommendation decision readiness must not be able to create_decision_commands"
                 .to_string(),
         });
     }
     if readiness.may_invoke_gateway() {
-        return Err(KernelError::ProjectionValidation {
+        return Err(KernelError::IntegrityViolation {
             message: "integrity violation: recommendation decision readiness must not be able to invoke_gateway"
                 .to_string(),
         });
@@ -423,19 +423,19 @@ pub fn validate_decision_readiness_boundary(readiness: &RecommendationDecisionRe
 /// - Rejection guards are properly applied
 pub fn validate_decision_boundary_constraints(boundary: &RecommendationDecisionBoundary) -> Result<()> {
     if boundary.creates_intent {
-        return Err(KernelError::ProjectionValidation {
+        return Err(KernelError::IntegrityViolation {
             message: "integrity violation: recommendation decision boundary must not create_intent"
                 .to_string(),
         });
     }
     if boundary.grants_execution_authority {
-        return Err(KernelError::ProjectionValidation {
+        return Err(KernelError::IntegrityViolation {
             message: "integrity violation: recommendation decision boundary must not grant_execution_authority"
                 .to_string(),
         });
     }
     if let Err(e) = boundary.assert_rejection_guards() {
-        return Err(KernelError::ProjectionValidation {
+        return Err(KernelError::IntegrityViolation {
             message: format!(
                 "integrity violation: recommendation decision boundary rejection guards failed: {}",
                 e
@@ -443,13 +443,13 @@ pub fn validate_decision_boundary_constraints(boundary: &RecommendationDecisionB
         });
     }
     if boundary.attempt_handoff().is_ok() {
-        return Err(KernelError::ProjectionValidation {
+        return Err(KernelError::IntegrityViolation {
             message: "integrity violation: recommendation decision boundary must not allow handoff"
                 .to_string(),
         });
     }
     if boundary.attempt_create_intent().is_ok() {
-        return Err(KernelError::ProjectionValidation {
+        return Err(KernelError::IntegrityViolation {
             message: "integrity violation: recommendation decision boundary must not allow intent creation"
                 .to_string(),
         });
@@ -464,13 +464,13 @@ pub fn validate_decision_confirmation_non_authoritative(
     confirmation: &RecommendationDecisionConfirmation,
 ) -> Result<()> {
     if confirmation.confirmation_state == "confirmed" {
-        return Err(KernelError::ProjectionValidation {
+        return Err(KernelError::IntegrityViolation {
             message: "integrity violation: recommendation decision confirmation must not be auto-confirmed"
                 .to_string(),
         });
     }
     if let Err(e) = confirmation.assert_non_authoritative() {
-        return Err(KernelError::ProjectionValidation {
+        return Err(KernelError::IntegrityViolation {
             message: format!(
                 "integrity violation: recommendation decision confirmation non-authoritative check failed: {}",
                 e
@@ -523,22 +523,22 @@ pub fn validate_evaluation_resolution_only(
 
 pub fn validate_candidate_score_only(score: &DecisionCandidateScore) -> Result<()> {
     if score.ranking_applied {
-        return Err(KernelError::ProjectionValidation {
+        return Err(KernelError::IntegrityViolation {
             message: "integrity violation: candidate score must not have ranking_applied".into(),
         });
     }
     if score.selects_candidate {
-        return Err(KernelError::ProjectionValidation {
+        return Err(KernelError::IntegrityViolation {
             message: "integrity violation: candidate score must not select_candidate".into(),
         });
     }
     if score.planner_invoked {
-        return Err(KernelError::ProjectionValidation {
+        return Err(KernelError::IntegrityViolation {
             message: "integrity violation: candidate score must not invoke planner".into(),
         });
     }
     if score.handoff_command.is_some() {
-        return Err(KernelError::ProjectionValidation {
+        return Err(KernelError::IntegrityViolation {
             message: "integrity violation: candidate score must not carry handoff_command".into(),
         });
     }
@@ -547,23 +547,23 @@ pub fn validate_candidate_score_only(score: &DecisionCandidateScore) -> Result<(
 
 pub fn validate_candidate_ranking_only(ranking: &DecisionCandidateRanking) -> Result<()> {
     if ranking.selects_candidate {
-        return Err(KernelError::ProjectionValidation {
+        return Err(KernelError::IntegrityViolation {
             message: "integrity violation: candidate ranking must not auto-select candidate".into(),
         });
     }
     if ranking.selected_candidate_id.is_some() {
-        return Err(KernelError::ProjectionValidation {
+        return Err(KernelError::IntegrityViolation {
             message: "integrity violation: candidate ranking must not populate selected_candidate_id"
                 .into(),
         });
     }
     if ranking.planner_invoked {
-        return Err(KernelError::ProjectionValidation {
+        return Err(KernelError::IntegrityViolation {
             message: "integrity violation: candidate ranking must not invoke planner".into(),
         });
     }
     if ranking.handoff_command.is_some() {
-        return Err(KernelError::ProjectionValidation {
+        return Err(KernelError::IntegrityViolation {
             message: "integrity violation: candidate ranking must not carry handoff_command".into(),
         });
     }
@@ -1004,7 +1004,7 @@ mod tests {
     fn accept_path_rejects_unexpected_intake() {
         let err = validate_accept_emits_no_intake(false).unwrap_err();
         match err {
-            KernelError::ProjectionValidation { message } => {
+            KernelError::IntegrityViolation { message } => {
                 assert!(message.contains("accept path must not emit decision intake"));
             }
             other => panic!("unexpected error: {other:?}"),

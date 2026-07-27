@@ -31,7 +31,9 @@ This document is a Phase Resilience Contract Verification readiness audit. It is
 - Status (2026-07-27): **Addressed** for RE/DE production paths. Critical
   `debug_assert!` checks in `decision_engine.rs` and
   `workspace_recommendation.rs` were converted to release-safe validation via
-  `resilience_validation.rs` returning `KernelError::ProjectionValidation`.
+  `resilience_validation.rs` returning `KernelError::IntegrityViolation`
+  (architectural integrity failures; distinct from operational
+  `ProjectionValidation`).
 - Historical risk note: `debug_assert!` is compiled out in release builds. Those
   invariants were therefore not enforced in production binaries prior to this
   hardening pass.
@@ -113,7 +115,7 @@ Repair order item 1 is complete:
 - Critical RE/DE production-path `debug_assert!` checks in
   `packages/kernel/src/services/decision_engine.rs` and
   `packages/kernel/src/services/workspace_recommendation.rs` now return
-  `KernelError::ProjectionValidation` through
+  `KernelError::IntegrityViolation` through
   `packages/kernel/src/services/resilience_validation.rs`.
 - Existing contract and resilience tests exercise these release-safe paths.
 

@@ -50,7 +50,7 @@ impl AiMemoryService {
         {
             let guard = db
                 .lock()
-                .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+                .map_err(|_| KernelError::lock_poisoned("database"))?;
             AiMemoryRepository::new(&guard).upsert(&entry)?;
         }
 
@@ -67,7 +67,7 @@ impl AiMemoryService {
         let entries = {
             let guard = db
                 .lock()
-                .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+                .map_err(|_| KernelError::lock_poisoned("database"))?;
             AiMemoryRepository::new(&guard).list_active(workspace_id, limit)?
         };
         Self::audit_access(db, actor, workspace_id, entries.len())?;
@@ -82,7 +82,7 @@ impl AiMemoryService {
         let entries = {
             let guard = db
                 .lock()
-                .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+                .map_err(|_| KernelError::lock_poisoned("database"))?;
             AiMemoryRepository::new(&guard).list_active(workspace_id, limit)?
         };
         Ok(AiMemoryAwareness::from_entries(entries))
@@ -98,7 +98,7 @@ impl AiMemoryService {
         let entry = {
             let guard = db
                 .lock()
-                .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+                .map_err(|_| KernelError::lock_poisoned("database"))?;
             let repo = AiMemoryRepository::new(&guard);
             let mut entry = repo.get(&id)?.ok_or_else(|| {
                 KernelError::AiMemoryValidation {
@@ -128,7 +128,7 @@ impl AiMemoryService {
         let cleared = {
             let guard = db
                 .lock()
-                .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+                .map_err(|_| KernelError::lock_poisoned("database"))?;
             AiMemoryRepository::new(&guard).clear_active(memory_type, workspace_id, &updated_at)?
         };
         let metadata = json!({

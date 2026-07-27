@@ -57,7 +57,7 @@ impl AiAssistantService {
     ) -> Result<AiAssistantWorkflow> {
         let mut guard = store
             .lock()
-            .map_err(|_| KernelError::Config("assistant workflow store lock poisoned".into()))?;
+            .map_err(|_| KernelError::lock_poisoned("assistant workflow store"))?;
         Ok(guard.insert(workflow))
     }
 
@@ -67,7 +67,7 @@ impl AiAssistantService {
     ) -> Result<AiAssistantWorkflow> {
         let guard = store
             .lock()
-            .map_err(|_| KernelError::Config("assistant workflow store lock poisoned".into()))?;
+            .map_err(|_| KernelError::lock_poisoned("assistant workflow store"))?;
         guard
             .get(workflow_id)
             .ok_or_else(|| KernelError::AiAssistantValidation {
@@ -81,7 +81,7 @@ impl AiAssistantService {
     ) -> Result<AiAssistantWorkflow> {
         let mut guard = store
             .lock()
-            .map_err(|_| KernelError::Config("assistant workflow store lock poisoned".into()))?;
+            .map_err(|_| KernelError::lock_poisoned("assistant workflow store"))?;
         Ok(guard.upsert(workflow))
     }
 

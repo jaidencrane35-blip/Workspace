@@ -112,7 +112,9 @@ impl PermissionGateway {
         granted: &CapabilitySet,
     ) -> Result<()> {
         let (effective, active_grants) = {
-            let guard = db.lock().expect("database lock poisoned");
+            let guard = db
+                .lock()
+                .map_err(|_| KernelError::lock_poisoned("database"))?;
             PermissionApprovalService::merge_active_grants(
                 &guard,
                 &request.actor,
@@ -129,7 +131,9 @@ impl PermissionGateway {
 
         if let GatewayDecision::ApprovalRequired { reason, .. } = &decision {
             let pending = {
-                let guard = db.lock().expect("database lock poisoned");
+                let guard = db
+                    .lock()
+                    .map_err(|_| KernelError::lock_poisoned("database"))?;
                 PermissionApprovalService::ensure_pending_request(&guard, request, reason)?
             };
             decision = GatewayDecision::ApprovalRequired {
@@ -143,7 +147,9 @@ impl PermissionGateway {
         match decision {
             GatewayDecision::Allow { .. } => {
                 if let Some(grant_id) = matching_grant {
-                    let guard = db.lock().expect("database lock poisoned");
+                    let guard = db
+                        .lock()
+                        .map_err(|_| KernelError::lock_poisoned("database"))?;
                     PermissionApprovalService::consume_grant(&guard, &grant_id)?;
                 }
                 Ok(())

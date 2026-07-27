@@ -31,7 +31,7 @@ impl WorkspaceIntentService {
         {
             let guard = db
                 .lock()
-                .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+                .map_err(|_| KernelError::lock_poisoned("database"))?;
             WorkspaceIntentRepository::new(&guard).upsert_project(&project)?;
         }
         Self::audit_intent(db, actor, "workspace.intent.created", &project.id.to_string(), "project")?;
@@ -50,7 +50,7 @@ impl WorkspaceIntentService {
         let mut project = {
             let guard = db
                 .lock()
-                .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+                .map_err(|_| KernelError::lock_poisoned("database"))?;
             WorkspaceIntentRepository::new(&guard)
                 .get_project(&project_id)?
                 .ok_or_else(|| KernelError::WorkspaceIntentValidation {
@@ -83,7 +83,7 @@ impl WorkspaceIntentService {
         {
             let guard = db
                 .lock()
-                .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+                .map_err(|_| KernelError::lock_poisoned("database"))?;
             WorkspaceIntentRepository::new(&guard).upsert_project(&project)?;
         }
         Self::audit_intent(db, actor, "workspace.intent.updated", &project.id.to_string(), "project")?;
@@ -97,7 +97,7 @@ impl WorkspaceIntentService {
         let project_id = ProjectId::new(project_id.into()).map_err(KernelError::Domain)?;
         let guard = db
             .lock()
-            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+            .map_err(|_| KernelError::lock_poisoned("database"))?;
         WorkspaceIntentRepository::new(&guard)
             .get_project(&project_id)?
             .ok_or_else(|| KernelError::WorkspaceIntentValidation {
@@ -112,7 +112,7 @@ impl WorkspaceIntentService {
     ) -> Result<Vec<Project>> {
         let guard = db
             .lock()
-            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+            .map_err(|_| KernelError::lock_poisoned("database"))?;
         WorkspaceIntentRepository::new(&guard)
             .list_projects(workspace_id, limit)
             .map_err(Into::into)
@@ -131,7 +131,7 @@ impl WorkspaceIntentService {
         {
             let guard = db
                 .lock()
-                .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+                .map_err(|_| KernelError::lock_poisoned("database"))?;
             let project = WorkspaceIntentRepository::new(&guard)
                 .get_project(&ProjectId::new(project_id.clone()).map_err(KernelError::Domain)?)?
                 .ok_or_else(|| KernelError::WorkspaceIntentValidation {
@@ -147,7 +147,7 @@ impl WorkspaceIntentService {
         {
             let guard = db
                 .lock()
-                .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+                .map_err(|_| KernelError::lock_poisoned("database"))?;
             WorkspaceIntentRepository::new(&guard).upsert_task(&task)?;
         }
         Self::audit_intent(db, actor, "workspace.intent.created", &task.id.to_string(), "task")?;
@@ -166,7 +166,7 @@ impl WorkspaceIntentService {
         let mut task = {
             let guard = db
                 .lock()
-                .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+                .map_err(|_| KernelError::lock_poisoned("database"))?;
             WorkspaceIntentRepository::new(&guard)
                 .get_task(&task_id)?
                 .ok_or_else(|| KernelError::WorkspaceIntentValidation {
@@ -192,7 +192,7 @@ impl WorkspaceIntentService {
         {
             let guard = db
                 .lock()
-                .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+                .map_err(|_| KernelError::lock_poisoned("database"))?;
             WorkspaceIntentRepository::new(&guard).upsert_task(&task)?;
         }
         Self::audit_intent(db, actor, "workspace.intent.updated", &task.id.to_string(), "task")?;
@@ -206,7 +206,7 @@ impl WorkspaceIntentService {
         let task_id = TaskId::new(task_id.into()).map_err(KernelError::Domain)?;
         let guard = db
             .lock()
-            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+            .map_err(|_| KernelError::lock_poisoned("database"))?;
         WorkspaceIntentRepository::new(&guard)
             .get_task(&task_id)?
             .ok_or_else(|| KernelError::WorkspaceIntentValidation {
@@ -222,7 +222,7 @@ impl WorkspaceIntentService {
     ) -> Result<Vec<Task>> {
         let guard = db
             .lock()
-            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+            .map_err(|_| KernelError::lock_poisoned("database"))?;
         WorkspaceIntentRepository::new(&guard)
             .list_tasks(workspace_id, project_id, limit)
             .map_err(Into::into)
@@ -241,7 +241,7 @@ impl WorkspaceIntentService {
         {
             let guard = db
                 .lock()
-                .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+                .map_err(|_| KernelError::lock_poisoned("database"))?;
             WorkspaceIntentRepository::new(&guard).upsert_goal(&goal)?;
         }
         Self::audit_intent(db, actor, "workspace.intent.created", &goal.id.to_string(), "goal")?;
@@ -255,7 +255,7 @@ impl WorkspaceIntentService {
     ) -> Result<Vec<WorkGoal>> {
         let guard = db
             .lock()
-            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+            .map_err(|_| KernelError::lock_poisoned("database"))?;
         WorkspaceIntentRepository::new(&guard)
             .list_goals(workspace_id, limit)
             .map_err(Into::into)
@@ -269,7 +269,7 @@ impl WorkspaceIntentService {
         let workspace_id = WorkspaceId::new(workspace_id).map_err(KernelError::Domain)?;
         let guard = db
             .lock()
-            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+            .map_err(|_| KernelError::lock_poisoned("database"))?;
         if let Some(existing) =
             WorkspaceIntentRepository::new(&guard).get_workflow_context(workspace_id.as_str())?
         {
@@ -285,7 +285,7 @@ impl WorkspaceIntentService {
         let workspace_id = WorkspaceId::new(workspace_id).map_err(KernelError::Domain)?;
         let guard = db
             .lock()
-            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+            .map_err(|_| KernelError::lock_poisoned("database"))?;
         let repo = WorkspaceIntentRepository::new(&guard);
         if let Some(existing) = repo.get_workflow_context(workspace_id.as_str())? {
             return Ok(existing);
@@ -342,7 +342,7 @@ impl WorkspaceIntentService {
         {
             let guard = db
                 .lock()
-                .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+                .map_err(|_| KernelError::lock_poisoned("database"))?;
             WorkspaceIntentRepository::new(&guard).upsert_workflow_context(&context)?;
         }
         Self::audit_context_updated(db, actor, &context)?;

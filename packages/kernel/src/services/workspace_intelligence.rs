@@ -115,7 +115,7 @@ impl WorkspaceIntelligenceService {
         let applications = {
             let guard = db
                 .lock()
-                .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+                .map_err(|_| KernelError::lock_poisoned("database"))?;
             ApplicationRepository::new(&guard).list_by_workspace(&workspace_id)?
         };
         let layout = {

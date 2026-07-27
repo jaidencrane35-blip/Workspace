@@ -303,7 +303,7 @@ impl WorkspaceEnvironmentService {
         let workspace_id = WorkspaceId::new(workspace_id).map_err(KernelError::Domain)?;
         let guard = db
             .lock()
-            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+            .map_err(|_| KernelError::lock_poisoned("database"))?;
         ApplicationRepository::new(&guard)
             .list_by_workspace(&workspace_id)
             .map_err(Into::into)

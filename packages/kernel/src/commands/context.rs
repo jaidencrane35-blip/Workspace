@@ -21,11 +21,14 @@ pub struct CommandContext<'a> {
 }
 
 impl CommandContext<'_> {
-    pub fn with_database<F, R>(&self, f: F) -> R
+    pub fn with_database<F, R>(&self, f: F) -> crate::error::Result<R>
     where
-        F: FnOnce(&Database) -> R,
+        F: FnOnce(&Database) -> crate::error::Result<R>,
     {
-        let guard = self.database.lock().expect("database lock poisoned");
+        let guard = self
+            .database
+            .lock()
+            .map_err(|_| crate::error::KernelError::lock_poisoned("database"))?;
         f(&guard)
     }
 

@@ -48,7 +48,7 @@ impl TriggerEvaluatorService {
         {
             let guard = db
                 .lock()
-                .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+                .map_err(|_| KernelError::lock_poisoned("database"))?;
             AutomationTriggerRepository::new(&guard).insert_event(&event)?;
         }
         Self::audit(
@@ -77,7 +77,7 @@ impl TriggerEvaluatorService {
         let event = {
             let guard = db
                 .lock()
-                .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+                .map_err(|_| KernelError::lock_poisoned("database"))?;
             AutomationTriggerRepository::new(&guard)
                 .get_event(&event_id)?
                 .ok_or_else(|| KernelError::AutomationTriggerValidation {
@@ -88,7 +88,7 @@ impl TriggerEvaluatorService {
         let contracts = {
             let guard = db
                 .lock()
-                .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+                .map_err(|_| KernelError::lock_poisoned("database"))?;
             AutomationContractRepository::new(&guard)
                 .list_by_workspace(event.workspace_id.as_str(), 200)?
         };
@@ -103,7 +103,7 @@ impl TriggerEvaluatorService {
                         AutomationIntentProposal::from_match(&contract, &event, explanation);
                     {
                         let guard = db.lock().map_err(|_| {
-                            KernelError::Config("database lock poisoned".into())
+                            KernelError::lock_poisoned("database")
                         })?;
                         AutomationTriggerRepository::new(&guard).upsert_proposal(&proposal)?;
                     }
@@ -130,7 +130,7 @@ impl TriggerEvaluatorService {
                     };
                     {
                         let guard = db.lock().map_err(|_| {
-                            KernelError::Config("database lock poisoned".into())
+                            KernelError::lock_poisoned("database")
                         })?;
                         AutomationTriggerRepository::new(&guard).insert_rejection(
                             &Uuid::new_v4().to_string(),
@@ -206,7 +206,7 @@ impl TriggerEvaluatorService {
         let workspace_id = workspace_id.into();
         let guard = db
             .lock()
-            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+            .map_err(|_| KernelError::lock_poisoned("database"))?;
         AutomationTriggerRepository::new(&guard)
             .list_events(&workspace_id, limit.unwrap_or(50))
             .map_err(Into::into)
@@ -221,7 +221,7 @@ impl TriggerEvaluatorService {
         let workspace_id = workspace_id.into();
         let guard = db
             .lock()
-            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+            .map_err(|_| KernelError::lock_poisoned("database"))?;
         AutomationTriggerRepository::new(&guard)
             .list_proposals(
                 &workspace_id,
@@ -241,7 +241,7 @@ impl TriggerEvaluatorService {
         let mut proposal = {
             let guard = db
                 .lock()
-                .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+                .map_err(|_| KernelError::lock_poisoned("database"))?;
             AutomationTriggerRepository::new(&guard)
                 .get_proposal(&proposal_id)?
                 .ok_or_else(|| KernelError::AutomationTriggerValidation {
@@ -252,7 +252,7 @@ impl TriggerEvaluatorService {
         {
             let guard = db
                 .lock()
-                .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+                .map_err(|_| KernelError::lock_poisoned("database"))?;
             AutomationTriggerRepository::new(&guard).upsert_proposal(&proposal)?;
         }
         Self::audit(
@@ -281,7 +281,7 @@ impl TriggerEvaluatorService {
         let mut proposal = {
             let guard = db
                 .lock()
-                .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+                .map_err(|_| KernelError::lock_poisoned("database"))?;
             AutomationTriggerRepository::new(&guard)
                 .get_proposal(&proposal_id)?
                 .ok_or_else(|| KernelError::AutomationTriggerValidation {
@@ -292,7 +292,7 @@ impl TriggerEvaluatorService {
         {
             let guard = db
                 .lock()
-                .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+                .map_err(|_| KernelError::lock_poisoned("database"))?;
             AutomationTriggerRepository::new(&guard).upsert_proposal(&proposal)?;
         }
         Self::audit(
@@ -438,7 +438,7 @@ pub(crate) fn list_rejection_summaries(
 ) -> Result<Vec<TriggerRejectionSummary>> {
     let guard = db
         .lock()
-        .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+        .map_err(|_| KernelError::lock_poisoned("database"))?;
     Ok(AutomationTriggerRepository::new(&guard)
         .list_rejections(workspace_id, limit)?
         .into_iter()

@@ -181,7 +181,10 @@ impl WorkspaceRuntimeService {
     }
 
     pub(crate) fn attempt_execute() -> Result<()> {
-        WorkspaceRuntimeOperatorView::attempt_execute()
-            .map_err(|error| KernelError::Config(error.to_string()))
+        WorkspaceRuntimeOperatorView::attempt_execute().map_err(|error| {
+            KernelError::integrity_violation(format!(
+                "workspace runtime cannot execute: {error}"
+            ))
+        })
     }
 }

@@ -57,7 +57,7 @@ impl AiOrchestrationService {
     ) -> Result<AiOrchestratedPlan> {
         let mut guard = store
             .lock()
-            .map_err(|_| KernelError::Config("orchestrated plan store lock poisoned".into()))?;
+            .map_err(|_| KernelError::lock_poisoned("orchestrated plan store"))?;
         Ok(guard.insert(plan))
     }
 
@@ -67,7 +67,7 @@ impl AiOrchestrationService {
     ) -> Result<AiOrchestratedPlan> {
         let guard = store
             .lock()
-            .map_err(|_| KernelError::Config("orchestrated plan store lock poisoned".into()))?;
+            .map_err(|_| KernelError::lock_poisoned("orchestrated plan store"))?;
         guard
             .get(plan_id)
             .ok_or_else(|| KernelError::AiOrchestrationValidation {
@@ -81,7 +81,7 @@ impl AiOrchestrationService {
     ) -> Result<AiOrchestratedPlan> {
         let mut guard = store
             .lock()
-            .map_err(|_| KernelError::Config("orchestrated plan store lock poisoned".into()))?;
+            .map_err(|_| KernelError::lock_poisoned("orchestrated plan store"))?;
         Ok(guard.upsert(plan))
     }
 

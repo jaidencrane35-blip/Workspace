@@ -91,7 +91,7 @@ impl WorkspaceAttentionService {
                 let applications = {
                     let guard = db
                         .lock()
-                        .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+                        .map_err(|_| KernelError::lock_poisoned("database"))?;
                     let wid = WorkspaceId::new(workspace_id.clone()).map_err(KernelError::Domain)?;
                     workspace_database::ApplicationRepository::new(&guard)
                         .list_by_workspace(&wid)

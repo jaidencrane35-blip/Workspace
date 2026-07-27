@@ -48,7 +48,7 @@ impl AiPersonalizationService {
         {
             let guard = db
                 .lock()
-                .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+                .map_err(|_| KernelError::lock_poisoned("database"))?;
             UserPreferenceRepository::new(&guard).upsert(&preference)?;
         }
 
@@ -69,7 +69,7 @@ impl AiPersonalizationService {
         let preference = {
             let guard = db
                 .lock()
-                .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+                .map_err(|_| KernelError::lock_poisoned("database"))?;
             let repo = UserPreferenceRepository::new(&guard);
             let mut preference = repo.get(&id)?.ok_or_else(|| {
                 KernelError::AiPersonalizationValidation {
@@ -95,7 +95,7 @@ impl AiPersonalizationService {
         let preferences = {
             let guard = db
                 .lock()
-                .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+                .map_err(|_| KernelError::lock_poisoned("database"))?;
             UserPreferenceRepository::new(&guard).list_active(workspace_id, limit)?
         };
         let enabled = Self::is_enabled(db)?;
@@ -144,7 +144,7 @@ impl AiPersonalizationService {
         let preferences = {
             let guard = db
                 .lock()
-                .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+                .map_err(|_| KernelError::lock_poisoned("database"))?;
             UserPreferenceRepository::new(&guard).list_active(workspace_id, limit)?
         };
         Ok(AiPersonalizationAwareness::from_preferences(
@@ -163,7 +163,7 @@ impl AiPersonalizationService {
         let preference = {
             let guard = db
                 .lock()
-                .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+                .map_err(|_| KernelError::lock_poisoned("database"))?;
             let repo = UserPreferenceRepository::new(&guard);
             let mut preference = repo.get(&id)?.ok_or_else(|| {
                 KernelError::AiPersonalizationValidation {
@@ -195,7 +195,7 @@ impl AiPersonalizationService {
         {
             let guard = db
                 .lock()
-                .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+                .map_err(|_| KernelError::lock_poisoned("database"))?;
             ConfigurationService::update(&guard, update)?;
         }
         let metadata = json!({
@@ -217,7 +217,7 @@ impl AiPersonalizationService {
     pub(crate) fn is_enabled(db: &Arc<Mutex<Database>>) -> Result<bool> {
         let guard = db
             .lock()
-            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+            .map_err(|_| KernelError::lock_poisoned("database"))?;
         Ok(ConfigurationService::load(&guard)?.personalization_enabled)
     }
 

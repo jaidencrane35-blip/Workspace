@@ -95,7 +95,9 @@ impl WorkspaceObservationService {
             (repo.get_latest_metadata()?, repo.get_capture_failure()?)
         };
         let status = build_observation_status(metadata.as_ref(), last_failure, now)
-            .map_err(|error| KernelError::Config(error.to_string()))?;
+            .map_err(|error| KernelError::ObservationValidation {
+                message: error.to_string(),
+            })?;
         AuditService::record_ai_planning_event(
             db,
             actor,
@@ -175,8 +177,11 @@ impl WorkspaceObservationService {
     }
 
     pub(crate) fn attempt_execute() -> Result<()> {
-        WorkspaceObservationSnapshot::attempt_execute()
-            .map_err(|error| KernelError::Config(error.to_string()))
+        WorkspaceObservationSnapshot::attempt_execute().map_err(|error| {
+            KernelError::integrity_violation(format!(
+                "workspace observation cannot execute: {error}"
+            ))
+        })
     }
 
     fn persist_capture(
@@ -574,7 +579,9 @@ fn edit_distance(left: &str, right: &str) -> usize {
 }
 
 fn map_observation_error(error: WorkspaceObservationError) -> KernelError {
-    KernelError::Config(error.to_string())
+    KernelError::ObservationValidation {
+        message: error.to_string(),
+    }
 }
 
 fn classify_capture_error(error: &KernelError) -> (ObservationCaptureErrorClass, Option<&'static str>) {
@@ -583,7 +590,7 @@ fn classify_capture_error(error: &KernelError) -> (ObservationCaptureErrorClass,
             (ObservationCaptureErrorClass::WindowsIntegration, Some("win32"))
         }
         KernelError::Database(_) => (ObservationCaptureErrorClass::Persistence, Some("sqlite")),
-        KernelError::Config(message)
+        KernelError::ObservationValidation { message }
             if message.contains("validation")
                 || message.contains("window_count")
                 || message.contains("focused")
@@ -592,6 +599,20 @@ fn classify_capture_error(error: &KernelError) -> (ObservationCaptureErrorClass,
                 || message.contains("overflow") =>
         {
             (ObservationCaptureErrorClass::Validation, Some("observation"))
+        }
+        KernelError::Config(message)
+            if message.contains("validation")
+                || message.contains("window_count")
+                || message.contains("focused")
+                || message.contains("monitor")
+                || message.contains("NumericOverflow")
+                || message.contains("overflow") =>
+        {
+            // Legacy config-mapped observation failures remain classified as validation.
+            (ObservationCaptureErrorClass::Validation, Some("observation"))
+        }
+        KernelError::Internal { .. } | KernelError::IntegrityViolation { .. } => {
+            (ObservationCaptureErrorClass::Internal, None)
         }
         _ => (ObservationCaptureErrorClass::Internal, None),
     }

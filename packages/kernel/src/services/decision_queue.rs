@@ -94,7 +94,7 @@ impl DecisionQueueService {
         let applications = {
             let guard = db
                 .lock()
-                .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+                .map_err(|_| KernelError::lock_poisoned("database"))?;
             ApplicationRepository::new(&guard)
                 .list_by_workspace(&workspace_id)?
         };
@@ -103,12 +103,12 @@ impl DecisionQueueService {
         let plans = {
             let guard = orchestrated_plans
                 .lock()
-                .map_err(|_| KernelError::Config("orchestrated plan store lock poisoned".into()))?;
+                .map_err(|_| KernelError::lock_poisoned("orchestrated plan store"))?;
             guard.list_all()
         };
         let workflows = {
             let guard = assistant_workflows.lock().map_err(|_| {
-                KernelError::Config("assistant workflow store lock poisoned".into())
+                KernelError::lock_poisoned("assistant workflow store")
             })?;
             guard.list_all()
         };
@@ -170,7 +170,7 @@ impl DecisionQueueService {
         let overlays = {
             let guard = db
                 .lock()
-                .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+                .map_err(|_| KernelError::lock_poisoned("database"))?;
             DecisionQueueRepository::new(&guard).list_overlays(ws)?
         };
         let overlay_map: HashMap<(String, String), DecisionLifecycleOverlay> = overlays
@@ -223,7 +223,7 @@ impl DecisionQueueService {
                     };
                     let guard = db
                         .lock()
-                        .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+                        .map_err(|_| KernelError::lock_poisoned("database"))?;
                     DecisionQueueRepository::new(&guard).delete_overlay(ws, source_type, source_id)?;
                     let _ = overlay;
                 }
@@ -531,7 +531,7 @@ impl DecisionQueueService {
         };
         let guard = db
             .lock()
-            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+            .map_err(|_| KernelError::lock_poisoned("database"))?;
         DecisionQueueRepository::new(&guard)
             .upsert_overlay(&overlay)
             .map_err(Into::into)
@@ -547,7 +547,7 @@ impl DecisionQueueService {
         let approvals = {
             let guard = db
                 .lock()
-                .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+                .map_err(|_| KernelError::lock_poisoned("database"))?;
             PermissionApprovalService::list_recent(&guard, Some(50))?
         };
         let mut items = Vec::new();

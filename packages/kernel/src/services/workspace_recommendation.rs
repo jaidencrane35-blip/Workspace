@@ -2413,7 +2413,7 @@ impl WorkspaceRecommendationEngineService {
     ) -> Result<Vec<RecommendationLifecycleOverlay>> {
         let guard = db
             .lock()
-            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+            .map_err(|_| KernelError::lock_poisoned("database"))?;
         Ok(RecommendationLifecycleRepository::new(&guard).list_overlays(workspace_id)?)
     }
 
@@ -2424,7 +2424,7 @@ impl WorkspaceRecommendationEngineService {
     ) -> Result<Option<RecommendationLifecycleOverlay>> {
         let guard = db
             .lock()
-            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+            .map_err(|_| KernelError::lock_poisoned("database"))?;
         Ok(RecommendationLifecycleRepository::new(&guard).get_overlay(workspace_id, native_id)?)
     }
 
@@ -2434,7 +2434,7 @@ impl WorkspaceRecommendationEngineService {
     ) -> Result<()> {
         let guard = db
             .lock()
-            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+            .map_err(|_| KernelError::lock_poisoned("database"))?;
         RecommendationLifecycleRepository::new(&guard).upsert_overlay(overlay)?;
         Ok(())
     }
