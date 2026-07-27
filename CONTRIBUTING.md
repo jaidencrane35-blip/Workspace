@@ -22,9 +22,9 @@ Thank you for contributing to Workspace. This repository is in its foundation ph
 - Link related documents bidirectionally where appropriate.
 - If a change affects product direction, architecture, UX, or AI behaviour, flag it in [Open Questions](docs/09-Decisions/OPEN-QUESTIONS.md) or add a Decision Log entry.
 
-### Code Changes (When Implementation Begins)
+### Code Changes
 
-- No production code until architecture and sprint planning approve the scope.
+- Keep implementation within approved architecture and sprint scope.
 - Every change must satisfy the [Definition of Done](docs/03-Engineering/DEFINITION-OF-DONE.md).
 - Follow [Repository Standards](docs/03-Engineering/REPOSITORY-STANDARDS.md) for branch naming, commits, and PRs.
 - Record significant technical decisions in the [Decision Log](docs/09-Decisions/DECISION-LOG.md).

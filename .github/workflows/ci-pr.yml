@@ -48,5 +48,5 @@ jobs:
       - name: Cargo test
         run: cargo test --workspace
 
-      - name: Frontend placeholder test
+      - name: Frontend contract tests
         run: pnpm test

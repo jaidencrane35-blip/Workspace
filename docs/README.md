@@ -72,6 +72,7 @@ How the team builds, reviews, and maintains the codebase.
 | [Dependency Policy](03-Engineering/DEPENDENCY-POLICY.md) | Dependency approval, vulnerabilities, lock files |
 | [IPC Surface Inventory](03-Engineering/IPC-SURFACE.md) | Used vs quarantined Tauri commands |
 | [Foundation Hardening Report](03-Engineering/FOUNDATION-HARDENING-REPORT.md) | Phase 1 foundation audit results |
+| [Audit Reports Index](03-Engineering/AUDIT-REPORTS-INDEX.md) | Index of point-in-time architecture/engineering audits |
 
 ### 04 — UX
 
@@ -91,6 +92,7 @@ AI behaviour, permissions, and boundaries.
 | [AI Operating Model](05-AI/AI-OPERATING-MODEL.md) | Responsibilities, limits, approval boundaries, escalation |
 | [Memory Policy](05-AI/MEMORY-POLICY.md) | What may be stored, retention, user control, deletion |
 | [Confidence Policy](05-AI/CONFIDENCE-POLICY.md) | Confidence levels, suggestion thresholds, uncertainty |
+| [AI Architecture Index](05-AI/README.md) | Navigation hub for Recommendation/Decision/Governance contracts |
 
 ### 06 — Plugins
 
@@ -109,6 +111,7 @@ Security principles and risk tracking.
 | [Security Principles](07-Security/SECURITY-PRINCIPLES.md) | Security values and review requirements |
 | [Threat Model](07-Security/THREAT-MODEL.md) | Initial STRIDE analysis by subsystem |
 | [Risk Register](07-Security/RISK-REGISTER.md) | Identified risks and mitigation strategies |
+| [Permission Architecture](07-Security/PERMISSION-ARCHITECTURE.md) | Permission Gateway boundaries and approval flow |
 
 ### 08 — Roadmap
 
@@ -125,7 +128,7 @@ Decision tracking and unresolved questions.
 | Document | Description |
 |----------|-------------|
 | [Decision Log](09-Decisions/DECISION-LOG.md) | Record of all significant decisions |
-| [Open Questions](09-Decisions/OPEN-QUESTIONS.md) | 10 open decisions requiring review |
+| [Open Questions](09-Decisions/OPEN-QUESTIONS.md) | Active unresolved decisions requiring review |
 
 ### 10 — Sprints
 
@@ -154,6 +157,7 @@ See [Documentation Standards](03-Engineering/DOCUMENTATION-STANDARDS.md) for ful
 
 **Phase 0 — Foundation:** Complete  
 **Phase 0.5 — Decision Recording:** Complete  
-**Phase 1 — Core Platform:** Ready to begin
+**Phase 1 — Core Platform:** Complete  
+**Current execution:** Ongoing multi-sprint implementation through Sprint 102
 
 See [Roadmap](08-Roadmap/ROADMAP.md) and [Decision Log](09-Decisions/DECISION-LOG.md) (DEC-006 through DEC-014).

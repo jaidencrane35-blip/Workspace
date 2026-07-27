@@ -92,7 +92,7 @@ No production architecture (module structure, API contracts, data models) is imp
 
 ## 4. System Layers (Conceptual)
 
-These layers describe intent, not implementation. Technology mapping is a future decision.
+These layers describe intent, not implementation details. Technology mapping is established in DEC-007.
 
 ```
 ┌──────────────────────────────────────────────┐

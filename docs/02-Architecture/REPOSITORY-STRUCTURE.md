@@ -68,7 +68,7 @@ Workspace/
 │   └── README.md
 │
 ├── tests/                      # Cross-package integration and E2E tests
-│   ├── placeholder.test.ts     # Sprint 01 Vitest placeholder
+│   ├── *.test.ts               # Frontend contract tests
 │   └── vitest.config.ts
 │
 ├── tools/                      # Developer tooling and generators (placeholder)
@@ -167,38 +167,35 @@ Expectations:
 
 ---
 
-## 6. Current State (Phase 1 — Sprint 38)
+## 6. Current State (through Sprint 102)
 
-Phase 1 scaffolding is in progress. Implemented structure:
+Core structure in active use:
 
 ```
 Workspace/
-├── app/                    # Tauri + IPC + operator console + spatial canvas shell
+├── app/                    # Tauri + IPC shell + React frontend
 ├── packages/
-│   ├── domain/             # … execution_reconciliation list fold
-│   ├── kernel/             # … GetExecutionStates + context enrichment + IPC-ready handlers
-│   └── database/           # Repositories + graph + layout tables
+│   ├── domain/             # Contract models, governance entities, decision/recommendation types
+│   ├── kernel/             # Command pipeline, permission gates, runtime services
+│   ├── database/           # SQLite repositories and persistence boundaries
+│   └── windows-integration/# Windows integration abstraction layer
+├── scripts/                # Verification and catalog boundary tooling
+├── tests/                  # Vitest contract suites
+├── docs/                   # Governance + architecture + sprint history
 ```
 
-Resource services own graph-backed entity persistence. Layout owns spatial state. Projection aggregates derived read models. Action intents provide metadata-first command mapping. Capability discovery derives actor authority from existing policy without a permission database. Observation derives a neutral, read-only activity stream over the audit trail without adding persistence. Analytics deterministically aggregates observations into `WorkspaceMetrics` — the "Learn" stage — with no AI and no persistence. Context deterministically composes state, activity, metrics, authority, execution outcome summary, and reconciled execution states into `WorkspaceContext` — the "Context" boundary — with no persistence and no inference. Suggestion derives deterministic **proposals** from `WorkspaceContext` via simple threshold rules — the "Suggest" stage — with no AI and no suggestion store. Sprints 21–29 build the governed execution intelligence pipeline (approval → execution → outcomes → guard → cancellation → reconciliation). Sprint 30 adds **Execution States Projection Foundation** — bounded list reconciliation over outcome history. Sprint 31 enriches **WorkspaceContext** with those reconciled states without persistence or automation. Sprint 32 wires **execution IPC** (S23–S30) and an **operator console** so the suggestion→intent→execute path is exercisable front-to-back without Spatial Canvas. Sprint 33 adds the **Spatial Workspace Canvas shell** (DEC-009). Sprint 34 wires **layout save/restore** through existing layout IPC.
-
-Implementation directories will be created during Phase 1 scaffolding.
+Domain and kernel boundaries are now implemented and tested, including recommendation/decision contracts, governed command routing, and runtime validation layers.
 
 ---
 
-## 7. Phase 1 Additions
-
-These directories may be added as the project matures:
+## 7. Future Additions
 
 | Directory | When |
 |-----------|------|
-| `.github/workflows/` | CI/CD setup (Phase 1) |
-| `app/` | Application scaffolding (Phase 1) |
-| `packages/` | First module creation (Phase 1) |
 | `plugins/` | Plugin SDK ready (Phase 2+) |
 | `tests/e2e/` | E2E framework selected (Phase 2) |
 
-Each addition requires a Decision Log entry if it changes the structure defined here.
+Structural additions that change top-level ownership still require a Decision Log entry.
 
 ---
 

@@ -97,7 +97,7 @@ Names must be descriptive. Avoid abbreviations except widely understood ones (`i
 
 ### 2.10 Formatting
 
-- Automated formatter enforced via CI (specific tool TBD with stack selection)
+- Automated formatter policy is planned; formatter tool and CI enforcement are tracked in [CI/CD Plan](CI-CD-PLAN.md)
 - No formatting debates in code review — formatter is authority
 - Line length: 100 characters (soft limit; break for readability)
 
@@ -135,7 +135,7 @@ Names must be descriptive. Avoid abbreviations except widely understood ones (`i
 - Follow Rust standard naming: `snake_case` functions/modules, `PascalCase` types
 - Use `Result<T, E>` for fallible operations — no unwrap in production code
 - Domain logic in `packages/` crates; Tauri command handlers are thin adapters
-- `clippy` warnings treated as errors in CI
+- `clippy` is recommended locally; CI enforcement is planned and tracked in [CI/CD Plan](CI-CD-PLAN.md)
 - Public API documented with `///` doc comments
 - Error types defined per crate using `thiserror` or equivalent
 

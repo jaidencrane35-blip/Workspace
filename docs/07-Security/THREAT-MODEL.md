@@ -2,7 +2,7 @@
 
 | Field | Value |
 |-------|-------|
-| **Purpose** | Identify threats to Workspace subsystems and define initial mitigations before Phase 1 implementation |
+| **Purpose** | Identify threats to Workspace subsystems and define mitigations as implementation evolves |
 | **Owner** | Project Owner |
 | **Dependencies** | [Security Principles](SECURITY-PRINCIPLES.md), [AI Operating Model](../05-AI/AI-OPERATING-MODEL.md), [Plugin Architecture Vision](../06-Plugins/PLUGIN-ARCHITECTURE-VISION.md), [System Overview](../02-Architecture/SYSTEM-OVERVIEW.md) |
 | **Update Process** | Review before Phase 1 implementation and after each major subsystem is added. Update when new attack surface is introduced. |
@@ -11,7 +11,7 @@
 
 ## 1. Scope
 
-This initial threat model covers the conceptual architecture defined in Phase 0. It will be refined when technology stack (OQ-001) and Windows integration model (OQ-014) are decided.
+This threat model covers the implemented architecture baseline and is iteratively refined as subsystems evolve. Technology stack and Windows integration decisions are resolved (DEC-007, DEC-008).
 
 **In scope:** Platform Kernel, Domain Services, AI Subsystem, Plugin Runtime, Windows Integration Layer, stored user data.
 
@@ -171,7 +171,7 @@ See [Testing Strategy](../03-Engineering/TESTING-STRATEGY.md).
 
 | Trigger | Action |
 |---------|--------|
-| Phase 1 start | Review against chosen stack and Windows model |
+| Major architecture change | Review against current stack and Windows model |
 | AI subsystem implementation | Deep review of TA-* threats |
 | Plugin runtime implementation | Deep review of TP-* threats |
 | Pre-release | Full threat model review |

@@ -18,7 +18,7 @@
 | `main` | Production-ready code and approved documentation | Protected; requires PR review |
 | `develop` | Integration branch for active development (when needed) | Protected; requires PR review |
 
-During Phase 0 (documentation only), all work merges directly to `main` via PR.
+Historical note: during Phase 0 (documentation-only), all work merged directly to `main` via PR.
 
 ### 1.2 Working Branches
 

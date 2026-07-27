@@ -2,65 +2,68 @@
 
 | Field | Value |
 |-------|-------|
-| **Purpose** | Define the future continuous integration and delivery pipeline for Workspace |
+| **Purpose** | Define current and planned CI/CD governance for Workspace |
 | **Owner** | Lead Software Engineer |
 | **Dependencies** | [Repository Standards](REPOSITORY-STANDARDS.md), [Testing Strategy](TESTING-STRATEGY.md), [Definition of Done](DEFINITION-OF-DONE.md), [Dependency Policy](DEPENDENCY-POLICY.md) |
-| **Update Process** | Update when technology stack is selected (OQ-001) and when pipeline stages change. Record material changes in Decision Log. |
+| **Update Process** | Update when workflow steps, branch protection, or release policy changes. |
 
 ---
 
-## 1. Status
+## 1. Current CI Status
 
-**Sprint 01 CI implemented.** PR workflow runs on `windows-latest` via [`.github/workflows/ci-pr.yml`](../../.github/workflows/ci-pr.yml). Full release packaging and `tauri build` installer generation are not yet required.
+Active workflow: [`.github/workflows/ci-pr.yml`](../../.github/workflows/ci-pr.yml)
 
-See [Sprint 01](../10-Sprints/sprints/2026-07-23-sprint-01.md) for scope.
+Current CI runs on `windows-latest` and executes:
+
+- `pnpm install`
+- `pnpm typecheck`
+- `pnpm build`
+- `cargo check --workspace`
+- `cargo build --workspace`
+- `cargo test --workspace`
+- `pnpm test`
+
+Installer packaging and release publishing are not automated yet.
 
 ---
 
 ## 2. Pipeline Goals
 
-- Every PR passes automated quality checks before merge
-- No secrets committed to the repository
-- Tests run on every PR
-- Build succeeds on every PR
-- Dependency vulnerabilities detected automatically
-- Main branch always represents a buildable state
+- Keep `main` buildable
+- Enforce typed, tested, and audited PRs
+- Keep architecture contracts validated in CI
+- Expand security checks without destabilizing delivery
 
 ---
 
-## 3. Pipeline Stages
+## 3. Validation Layers
 
-### Stage 1: Validate (Every PR)
+### Layer A — Implemented PR Gates
 
-| Check | Description | Blocks Merge |
-|-------|-------------|--------------|
-| **Lint** | Code style and static analysis | Yes |
-| **Type check** | Type safety verification (when applicable) | Yes |
-| **Format check** | Automated formatter compliance | Yes |
-| **Secret scan** | Detect credentials in diff | Yes |
-| **Documentation links** | Verify internal doc links (future) | No (warn) |
+| Check | Status | Blocks Merge |
+|-------|--------|--------------|
+| TypeScript typecheck | Implemented | Yes |
+| Frontend build | Implemented | Yes |
+| Rust workspace check/build/test | Implemented | Yes |
+| Frontend contract tests (`pnpm test`) | Implemented | Yes |
 
-### Stage 2: Test (Every PR)
+### Layer B — Planned Additions
 
-| Check | Description | Blocks Merge |
-|-------|-------------|--------------|
-| **Unit tests** | Package-level unit tests | Yes |
-| **Integration tests** | Cross-module tests (when applicable) | Yes |
-| **AI behaviour tests** | Permission and confidence tests (Phase 2+) | Yes |
+| Check | Status | Blocks Merge |
+|-------|--------|--------------|
+| Lint | Planned | Yes |
+| Formatter check | Planned | Yes |
+| Dependency vulnerability scan | Planned | Yes (Critical/High) |
+| Secret scan | Planned | Yes |
+| Documentation link check | Planned | No (warn) |
 
-### Stage 3: Build (Every PR)
+### Layer C — Main/Release Extensions
 
-| Check | Description | Blocks Merge |
-|-------|-------------|--------------|
-| **Build** | Full application build succeeds | Yes |
-| **Package audit** | Dependency vulnerability scan | Yes (Critical/High) |
-
-### Stage 4: E2E (Main branch and release candidates)
-
-| Check | Description | Blocks Merge |
-|-------|-------------|--------------|
-| **E2E tests** | End-to-end user flow tests | Yes (main) |
-| **Performance smoke** | Startup time within budget | No (warn initially) |
+| Check | Status | Blocks Merge |
+|-------|--------|--------------|
+| E2E smoke suite | Planned | Yes (main/release) |
+| Performance smoke | Planned | Warn initially |
+| Packaging verification | Planned | Yes (release) |
 
 ---
 
@@ -68,9 +71,9 @@ See [Sprint 01](../10-Sprints/sprints/2026-07-23-sprint-01.md) for scope.
 
 | Branch | Pipeline |
 |--------|----------|
-| Feature branches | Stages 1–3 on PR |
-| `main` | Stages 1–4 on merge |
-| Release branches | Full pipeline + release validation |
+| Feature branches | Layer A via PR |
+| `main` | Layer A (+ Layer C as adopted) |
+| Release branches | Full release validation set |
 
 See [Repository Standards](REPOSITORY-STANDARDS.md).
 
@@ -78,31 +81,28 @@ See [Repository Standards](REPOSITORY-STANDARDS.md).
 
 ## 5. Branch Protection Intentions
 
-When CI is operational, `main` branch protection will require:
+Target repository settings for `main`:
 
-- [ ] Pull request required before merge
-- [ ] At least one approval
-- [ ] Status checks must pass (Stages 1–3 minimum)
-- [ ] Branches must be up to date before merge
-- [ ] No force pushes
-- [ ] No direct commits to `main`
-
-Configuration applied via GitHub repository settings when Phase 1 begins.
+- Pull request required before merge
+- At least one approval
+- Required status checks must pass
+- No force pushes
+- No direct commits
 
 ---
 
 ## 6. Release Validation
 
-Before any release tag:
+Before release tags:
 
 | Validation | Requirement |
 |------------|-------------|
-| All CI stages pass on release commit | Required |
-| Definition of Done met for all release items | Required |
-| No Critical or High dependency vulnerabilities | Required |
-| Threat model reviewed for release scope | Required (Phase 2+) |
+| Required CI checks pass | Required |
+| Definition of Done met | Required |
+| No unresolved Critical/High dependency vulnerabilities | Required |
+| Threat model reviewed for release scope | Required |
 | Changelog updated | Required |
-| Version number follows semver | Required |
+| Version updated according to semver policy | Required |
 
 ---
 
@@ -110,40 +110,36 @@ Before any release tag:
 
 | Environment | Purpose | Deployment |
 |-------------|---------|------------|
-| **Local** | Developer machine | Manual |
-| **CI** | Automated testing | Every PR |
-| **Staging** | Pre-release validation | Manual (future) |
-| **Production** | User releases | Tagged releases (future) |
+| Local | Developer validation | Manual |
+| CI | PR and merge validation | Automated |
+| Staging | Pre-release verification | Planned |
+| Production | User releases | Planned |
 
-No production deployment pipeline until distribution model is decided (OQ-009).
-
----
-
-## 8. Planned Workflow Files
-
-When stack is selected, create in `.github/workflows/`:
-
-| File | Trigger | Stages |
-|------|---------|--------|
-| `ci-pr.yml` | Pull request | 1–3 |
-| `ci-main.yml` | Push to main | 1–4 |
-| `dependency-audit.yml` | Weekly schedule | Package audit |
-| `secret-scan.yml` | Pull request | Secret scan |
-
-Exact tooling (GitHub Actions runners, cache strategy, monorepo CI) depends on OQ-001 and OQ-019.
+Distribution automation remains aligned with OQ-009 resolution.
 
 ---
 
-## 9. Implementation Checklist (Phase 1)
+## 8. Workflow Inventory
 
-- [ ] Technology stack selected (OQ-001)
-- [ ] Monorepo tooling selected (OQ-019)
-- [ ] Lint and format tools configured
-- [ ] Unit test framework configured
-- [ ] `ci-pr.yml` created and passing
-- [ ] Branch protection enabled on `main`
+| File | Purpose | State |
+|------|---------|-------|
+| `ci-pr.yml` | PR and push validation | Implemented |
+| `ci-main.yml` | Main-specific checks | Planned |
+| `dependency-audit.yml` | Scheduled vulnerability scans | Planned |
+| `secret-scan.yml` | Secret detection | Planned |
+
+---
+
+## 9. Governance Checklist
+
+- [x] Technology stack selected (DEC-007)
+- [x] Monorepo tooling selected (DEC-012)
+- [x] Unit/integration framework selected (Cargo + Vitest)
+- [x] `ci-pr.yml` active
+- [ ] Lint and format gates in CI
 - [ ] Dependency audit workflow active
-- [ ] Secret scanning active
+- [ ] Secret scanning workflow active
+- [ ] Branch protection enforced in repository settings
 
 ---
 

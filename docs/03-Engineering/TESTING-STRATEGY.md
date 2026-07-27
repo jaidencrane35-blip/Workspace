@@ -17,7 +17,10 @@
 - External dependencies (Windows APIs, devices) are mocked in unit tests
 - Tests must run in CI on every PR
 
-Specific test frameworks will be selected with the technology stack (OQ-001).
+Current baseline frameworks:
+
+- Rust crates: `cargo test`
+- Frontend/contracts: `vitest` in `tests/`
 
 ---
 
@@ -171,7 +174,7 @@ Derived from [Threat Model](../07-Security/THREAT-MODEL.md):
 
 ## 9. Coverage Expectations
 
-Specific coverage targets will be set when stack is selected. Initial guidance:
+Coverage targets remain guidance (not hard merge gates) until dedicated tooling is added:
 
 | Layer | Target |
 |-------|--------|

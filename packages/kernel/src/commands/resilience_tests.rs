@@ -240,16 +240,15 @@ mod resilience_tests {
                 local.clone(),
                 intent.clone(),
                 ws.clone(),
-                candidate.id.clone(),
+                candidate.id.to_string(),
             );
 
             // Either succeeds with proper immutability, or fails gracefully
             match result {
                 Ok(action_result) => {
-                    // Verify selection doesn't mutate outcome
-                    assert!(
-                        !action_result.created.iter().any(|c| c.contains("outcome_mutated")),
-                        "Selection must not mutate candidate outcome"
+                    assert_eq!(
+                        action_result.authority_effect,
+                        workspace_domain::DecisionCandidate::AUTHORITY_EFFECT_NONE
                     );
                 }
                 Err(KernelError::ProjectionValidation { message }) => {

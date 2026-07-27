@@ -5,7 +5,7 @@
 | **Purpose** | Define rules for adding, auditing, and managing third-party dependencies |
 | **Owner** | Lead Software Engineer |
 | **Dependencies** | [Security Principles](../07-Security/SECURITY-PRINCIPLES.md), [CI/CD Plan](CI-CD-PLAN.md), [Threat Model](../07-Security/THREAT-MODEL.md) |
-| **Update Process** | Update when package manager is selected (OQ-001) and when license is decided (OQ-010). |
+| **Update Process** | Update when dependency tooling, license policy, or CI audit policy changes. |
 
 ---
 
@@ -110,7 +110,7 @@ If AI model libraries are added (OQ-004):
 
 ## 6. License Compatibility
 
-Pending OQ-010 resolution. Interim rules:
+Project license is MIT (DEC-006). Dependency license rules:
 
 | License Type | Status |
 |--------------|--------|
@@ -125,7 +125,7 @@ Run license audit as part of CI when tooling is available.
 
 ## 7. Monorepo Dependency Management
 
-When monorepo tooling is selected (OQ-019):
+Monorepo tooling is selected (DEC-012):
 
 - Shared dependencies hoisted where possible
 - Per-package dependencies declared in package manifest

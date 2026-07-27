@@ -8,20 +8,8 @@ import {
   resolveAttentionReasonTraced,
   resolveDecisionReasonTraced,
 } from "../app/src/lib/experienceTranslation";
-import type {
-  AttentionReason,
-  DecisionReason,
-} from "../app/src/types/domain";
-
-const attentionReason = (
-  explanationKey: string,
-  weight = 40,
-): AttentionReason => ({
-  source: "task_graph",
-  signal: "blocked_task",
-  weight,
-  explanation_key: explanationKey,
-});
+import type { DecisionReason } from "../app/src/types/domain";
+import { attentionReason } from "./fixtures/attentionReason";
 
 describe("Experience translation traces", () => {
   it("does not mutate domain reasoning", () => {

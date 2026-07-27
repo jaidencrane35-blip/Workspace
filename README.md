@@ -1,52 +1,27 @@
 # Workspace
 
-> One workspace that brings your PC, phone, audio, and apps together.
+Adaptive Windows-first workspace runtime built with Tauri, React, TypeScript, Rust, and SQLite.
 
-Workspace is an adaptive desktop environment that unifies applications, windows, devices, audio, automation, and AI into a single operating experience — without replacing Windows.
+## Current State
 
-**Status:** Phase 1 Sprint 01 complete — architecture validation scaffold in place.
-
----
-
-## Mission
-
-Users should eventually feel:
-
-- *"Everything is finally organised."*
-- *"My desktop works the way I want it to."*
-
-The software adapts to the user. The user never adapts to the software.
-
----
-
-## Repository Status
-
-| Area | Status |
-|------|--------|
-| Documentation | Complete (Phase 0 + 0.5) |
-| Architecture | Decisions recorded (DEC-006–015) |
-| Technology stack | Tauri + React + TypeScript + Rust + SQLite |
-| Implementation | Phase 1 Sprint 01 — scaffold validated |
-| CI/CD | PR workflow active (`.github/workflows/ci-pr.yml`) |
-
----
+- Architecture and governance foundations are established and actively maintained.
+- Runtime implementation spans Tauri IPC, kernel command pipeline, recommendation/decision services, and domain contracts.
+- CI runs typecheck, frontend build, Rust check/build/test, and frontend contract tests.
+- Sprint history currently extends through Sprint 102.
 
 ## Developer Setup
 
 ### Prerequisites
 
-| Tool | Version | Notes |
-|------|---------|-------|
-| Node.js | ≥ 20 | Required for frontend tooling |
-| pnpm | 9.x | `corepack enable` then `corepack prepare pnpm@9.15.0 --activate` |
-| Rust | stable | Install via [rustup](https://rustup.rs/) |
-| Windows SDK | — | Required for Tauri on Windows (Visual Studio Build Tools) |
+| Tool | Version |
+|------|---------|
+| Node.js | >= 20 |
+| pnpm | 9.x |
+| Rust | stable (Rust >= 1.85 required by lockfile) |
 
 ### Install
 
-```powershell
-git clone https://github.com/jaidencrane35-blip/Workspace.git
-cd Workspace
+```bash
 corepack enable
 pnpm install
 ```
@@ -55,62 +30,46 @@ pnpm install
 
 | Command | Purpose |
 |---------|---------|
-| `pnpm dev` | Launch Tauri dev shell (React + Rust IPC) |
-| `pnpm build` | Build React frontend (`app/dist`) |
-| `pnpm typecheck` | TypeScript validation |
-| `pnpm test` | Run placeholder Vitest suite |
-| `cargo check --workspace` | Validate Rust workspace |
-| `cargo build --workspace` | Build all Rust crates including Tauri shell |
-| `cargo test -p workspace-database` | Run database crate tests |
+| `pnpm dev` | Launch app package dev command (`tauri dev`) |
+| `pnpm typecheck` | TypeScript typecheck for app |
+| `pnpm build` | App frontend build (`tsc && vite build`) |
+| `pnpm test` | Frontend contract tests (Vitest suite in `tests/`) |
+| `pnpm verify:explanation-catalog` | Verify generated explanation catalog parity |
+| `pnpm verify:ui-experience-boundary` | Verify UI import boundary contract |
+| `cargo check -p workspace-kernel` | Validate kernel crate |
+| `cargo test -p workspace-domain` | Run domain contract tests |
+| `cargo test -p workspace-windows-integration` | Run windows-integration tests |
 
-### Repository Layout
+## Repository Layout
 
+```text
+app/         Tauri shell + React frontend + IPC adapters
+packages/    Rust crates: domain, database, kernel, windows-integration
+scripts/     Governance and verification scripts
+tests/       Frontend contract tests (Vitest)
+docs/        Architecture, engineering, AI, security, roadmap, and sprints
+plugins/     Placeholder for plugin-related documentation/artifacts
+tools/       Placeholder for tool docs
 ```
-app/                 Tauri + React application shell
-packages/
-  kernel/            Platform Kernel boundary (placeholder)
-  database/          SQLite persistence foundation
-plugins/             Future first-party plugins (placeholder)
-tools/               Developer tooling (placeholder)
-tests/               Cross-package tests
-docs/                Project documentation
-```
 
-See [Repository Structure](docs/02-Architecture/REPOSITORY-STRUCTURE.md) for the full layout.
-
----
+See `docs/02-Architecture/REPOSITORY-STRUCTURE.md` for structural rules.
 
 ## Documentation
 
-All project knowledge lives in [`docs/`](docs/README.md). Start here:
+Start at `docs/README.md` for the canonical index. Key entry points:
 
-| Document | Purpose |
-|----------|---------|
-| [Project Constitution](docs/00-Constitution/PROJECT-CONSTITUTION.md) | Non-negotiable project rules |
-| [Product Vision](docs/01-Product/PRODUCT-VISION.md) | What we are building and why |
-| [Architecture Principles](docs/02-Architecture/ARCHITECTURE-PRINCIPLES.md) | How the system is designed |
-| [Engineering Principles](docs/03-Engineering/ENGINEERING-PRINCIPLES.md) | How we build |
-| [Roadmap](docs/08-Roadmap/ROADMAP.md) | Planned phases and milestones |
-| [Open Questions](docs/09-Decisions/OPEN-QUESTIONS.md) | Unresolved decisions requiring review |
-| [Sprint 01](docs/10-Sprints/sprints/2026-07-23-sprint-01.md) | Phase 1 architecture validation |
-
----
-
-## Core Philosophy
-
-- Workspace **enhances** Windows; it does not replace it.
-- The user is **always in control**.
-- AI follows: **Observe → Learn → Suggest → Receive Permission → Automate**.
-- Architecture, documentation, and planning take priority over shortcuts.
-
----
+- `docs/00-Constitution/PROJECT-CONSTITUTION.md`
+- `docs/02-Architecture/ARCHITECTURE-PRINCIPLES.md`
+- `docs/03-Engineering/ENGINEERING-PRINCIPLES.md`
+- `docs/05-AI/WORKSPACE-RECOMMENDATION-ENGINE.md`
+- `docs/05-AI/WORKSPACE-DECISION-ENGINE.md`
+- `docs/08-Roadmap/ROADMAP.md`
+- `docs/09-Decisions/DECISION-LOG.md`
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for workflow, standards, and review expectations.
-
----
+See `CONTRIBUTING.md` for workflow and governance expectations.
 
 ## License
 
-MIT License. See [LICENSE](LICENSE) and [DEC-006](docs/09-Decisions/DECISION-LOG.md).
+MIT. See `LICENSE`.
