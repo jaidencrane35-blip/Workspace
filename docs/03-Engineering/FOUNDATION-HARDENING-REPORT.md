@@ -1,5 +1,8 @@
 # Foundation Hardening Report
 
+> Historical snapshot (2026-07-24). Metrics and status statements in this
+> report are point-in-time and may differ from current repository state.
+
 | Field | Value |
 |-------|-------|
 | **Date** | 2026-07-24 |

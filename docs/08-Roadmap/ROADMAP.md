@@ -72,7 +72,7 @@ Foundation     Decisions       Core Platform     Feature Expansion   Maturity
 | MIT License added to repository | **Done** |
 | Remaining open questions do not block Phase 1 scaffolding | **Done** |
 
-**Phase 1 is ready to begin after final verification.**
+**Phase 1 readiness gate was completed.**
 
 ---
 
@@ -96,7 +96,7 @@ Foundation     Decisions       Core Platform     Feature Expansion   Maturity
 
 - [x] pnpm workspace and Cargo workspace configuration — Sprint 01
 - [x] Tauri application scaffolding (`app/`) — Sprint 01
-- [x] Platform kernel placeholder (`packages/kernel`) — Sprint 01 boundary only
+- [x] Platform kernel foundation (`packages/kernel`) — expanded through Sprints 02–39
 - [x] SQLite foundation (`packages/database`) — Sprint 01
 - [x] Workspace Core state + configuration foundation — Sprint 02
 - [x] Settings persistence (SQLite) — Sprint 02

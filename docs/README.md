@@ -160,4 +160,4 @@ See [Documentation Standards](03-Engineering/DOCUMENTATION-STANDARDS.md) for ful
 **Phase 1 — Core Platform:** Complete  
 **Current execution:** Ongoing multi-sprint implementation through Sprint 102
 
-See [Roadmap](08-Roadmap/ROADMAP.md) and [Decision Log](09-Decisions/DECISION-LOG.md) (DEC-006 through DEC-014).
+See [Roadmap](08-Roadmap/ROADMAP.md) and [Decision Log](09-Decisions/DECISION-LOG.md) for current decisions and phase status.

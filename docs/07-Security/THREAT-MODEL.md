@@ -5,7 +5,7 @@
 | **Purpose** | Identify threats to Workspace subsystems and define mitigations as implementation evolves |
 | **Owner** | Project Owner |
 | **Dependencies** | [Security Principles](SECURITY-PRINCIPLES.md), [AI Operating Model](../05-AI/AI-OPERATING-MODEL.md), [Plugin Architecture Vision](../06-Plugins/PLUGIN-ARCHITECTURE-VISION.md), [System Overview](../02-Architecture/SYSTEM-OVERVIEW.md) |
-| **Update Process** | Review before Phase 1 implementation and after each major subsystem is added. Update when new attack surface is introduced. |
+| **Update Process** | Review at major phase boundaries and after each major subsystem change. Update when new attack surface is introduced. |
 
 ---
 
