@@ -15,6 +15,7 @@ use workspace_domain::{
     ActorContext, AttentionItem, DecisionCandidate, DecisionCandidateEvaluationOriginContract,
     DecisionCandidateEvaluationOriginInput, DecisionCandidateEvaluationResolution,
     DecisionCandidateEvaluationResolutionInput, DecisionCandidateLifecycleIntegration,
+    DecisionCandidateProgressionAcknowledgement, DecisionCandidateProgressionAcknowledgementInput,
     DecisionCandidateProgressionRequest, DecisionCandidateProgressionRequestInput,
     DecisionCandidateRanking, DecisionCandidateRankingMemberInput, DecisionCandidateScore,
     DecisionCandidateScoreInput, DecisionCandidateSelection, DecisionCandidateSelectionInput,
@@ -355,6 +356,14 @@ impl DecisionEngineService {
             &candidate_selections,
             &persisted_progression,
         );
+        let persisted_acks = Self::load_progression_acknowledgements(db, ws)?;
+        let progression_acknowledgements = Self::project_progression_acknowledgements(
+            &candidates,
+            &lifecycle_integrations,
+            &intake_candidates,
+            &progression_requests,
+            &persisted_acks,
+        );
         let state = DecisionEngineState::from_candidates(ws, context, candidates)
             .with_intake_receipts(intake_receipts)
             .with_intake_assessments(intake_assessments)
@@ -371,7 +380,8 @@ impl DecisionEngineService {
             .with_candidate_scores(candidate_scores)
             .with_candidate_ranking(candidate_ranking)
             .with_candidate_selections(candidate_selections)
-            .with_progression_requests(progression_requests);
+            .with_progression_requests(progression_requests)
+            .with_progression_acknowledgements(progression_acknowledgements);
         debug_assert!(state
             .intake_receipts
             .iter()
@@ -503,6 +513,16 @@ impl DecisionEngineService {
                 && !r.mutates_candidate_outcome
                 && r.handoff_command.is_none()
                 && !r.mutates_recommendation_engine
+        }));
+        debug_assert!(state
+            .progression_acknowledgements
+            .iter()
+            .all(|a| a.assert_acknowledgement_only().is_ok()));
+        debug_assert!(state.progression_acknowledgements.iter().all(|a| {
+            !a.planner_invoked
+                && !a.mutates_candidate_outcome
+                && a.handoff_command.is_none()
+                && !a.mutates_recommendation_engine
         }));
         Self::audit_generated(db, actor, &state)?;
         Self::audit_rank_changes(db, actor, &state, &previous_ranks)?;
@@ -1254,6 +1274,91 @@ impl DecisionEngineService {
         Ok((request, unchanged))
     }
 
+    /// Acknowledge a DE-owned progression request — never planner/execution.
+    pub(crate) fn acknowledge_decision_candidate_progression(
+        db: &Arc<Mutex<Database>>,
+        actor: &ActorContext,
+        orchestrated_plans: &Arc<Mutex<OrchestratedPlanStore>>,
+        assistant_workflows: &Arc<Mutex<AssistantWorkflowStore>>,
+        workspace_id: impl Into<String>,
+        candidate_id: impl Into<String>,
+        action: impl Into<String>,
+        reason: impl Into<String>,
+    ) -> Result<(DecisionCandidateProgressionAcknowledgement, DecisionCandidate)> {
+        let workspace_id = workspace_id.into();
+        let candidate_id = candidate_id.into();
+        let action = action.into();
+        let reason = reason.into();
+        let now = Utc::now().to_rfc3339();
+        let state = Self::generate(
+            db,
+            actor,
+            orchestrated_plans,
+            assistant_workflows,
+            workspace_id.clone(),
+        )?;
+        let candidate = state
+            .candidates
+            .iter()
+            .find(|c| c.id.as_str() == candidate_id)
+            .cloned()
+            .ok_or_else(|| KernelError::from(DecisionEngineError::NotFound))?;
+        let integration = state
+            .lifecycle_integrations
+            .iter()
+            .find(|i| i.decision_candidate_id == candidate_id)
+            .cloned()
+            .ok_or_else(|| KernelError::from(DecisionEngineError::NotFound))?;
+        let progression_request = state
+            .progression_requests
+            .iter()
+            .find(|r| r.decision_candidate_id == candidate_id)
+            .cloned()
+            .ok_or_else(|| KernelError::from(DecisionEngineError::NotFound))?;
+        let existing = state
+            .progression_acknowledgements
+            .iter()
+            .find(|a| {
+                a.decision_candidate_id == candidate_id
+                    && (a.is_acknowledged() || a.is_rejected())
+            })
+            .cloned();
+        let intake_withdrawn_or_invalidated = candidate
+            .intake_candidate_id
+            .as_deref()
+            .and_then(|intake_id| {
+                state
+                    .intake_candidates
+                    .iter()
+                    .find(|c| c.intake_candidate_id == intake_id)
+            })
+            .is_some_and(|intake| {
+                intake.lifecycle.is_withdrawn() || intake.lifecycle.is_invalidated()
+            });
+        let input = DecisionCandidateProgressionAcknowledgementInput {
+            candidate: candidate.clone(),
+            progression_request,
+            lifecycle_integration: integration,
+            intake_withdrawn_or_invalidated,
+            existing_acknowledgement: existing,
+        };
+        let (acknowledgement, unchanged) =
+            DecisionCandidateProgressionAcknowledgement::try_acknowledge(
+                &input, action, reason, now,
+            )
+            .map_err(KernelError::from)?;
+        debug_assert!(acknowledgement.assert_acknowledgement_only().is_ok());
+        debug_assert_eq!(unchanged.score, candidate.score);
+        debug_assert_eq!(unchanged.outcome, candidate.outcome);
+        let guard = db
+            .lock()
+            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+        DecisionEngineRepository::new(&guard)
+            .upsert_progression_acknowledgement(&acknowledgement)?;
+        drop(guard);
+        Ok((acknowledgement, unchanged))
+    }
+
     fn load_candidate_scores(
         db: &Arc<Mutex<Database>>,
         workspace_id: &str,
@@ -1446,6 +1551,68 @@ impl DecisionEngineService {
             })
             .collect();
         DecisionCandidateProgressionRequest::derive_batch(&inputs)
+    }
+
+    fn load_progression_acknowledgements(
+        db: &Arc<Mutex<Database>>,
+        workspace_id: &str,
+    ) -> Result<Vec<DecisionCandidateProgressionAcknowledgement>> {
+        let guard = db
+            .lock()
+            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+        let mut acks =
+            DecisionEngineRepository::new(&guard).list_progression_acknowledgements(workspace_id)?;
+        drop(guard);
+        acks.sort_by(|a, b| a.acknowledgement_id.cmp(&b.acknowledgement_id));
+        Ok(acks)
+    }
+
+    fn project_progression_acknowledgements(
+        candidates: &[DecisionCandidate],
+        integrations: &[DecisionCandidateLifecycleIntegration],
+        intake_candidates: &[DecisionEngineIntakeCandidate],
+        requests: &[DecisionCandidateProgressionRequest],
+        persisted: &[DecisionCandidateProgressionAcknowledgement],
+    ) -> Vec<DecisionCandidateProgressionAcknowledgement> {
+        let integration_by_id: HashMap<&str, &DecisionCandidateLifecycleIntegration> = integrations
+            .iter()
+            .map(|i| (i.decision_candidate_id.as_str(), i))
+            .collect();
+        let request_by_id: HashMap<&str, &DecisionCandidateProgressionRequest> = requests
+            .iter()
+            .map(|r| (r.decision_candidate_id.as_str(), r))
+            .collect();
+        let intake_by_id: HashMap<&str, &DecisionEngineIntakeCandidate> = intake_candidates
+            .iter()
+            .map(|c| (c.intake_candidate_id.as_str(), c))
+            .collect();
+        let persisted_by_id: HashMap<&str, &DecisionCandidateProgressionAcknowledgement> = persisted
+            .iter()
+            .map(|a| (a.decision_candidate_id.as_str(), a))
+            .collect();
+        let inputs: Vec<DecisionCandidateProgressionAcknowledgementInput> = candidates
+            .iter()
+            .filter_map(|candidate| {
+                let id = candidate.id.as_str();
+                let integration = integration_by_id.get(id).copied()?;
+                let progression_request = request_by_id.get(id).copied()?;
+                let intake_withdrawn_or_invalidated = candidate
+                    .intake_candidate_id
+                    .as_deref()
+                    .and_then(|intake_id| intake_by_id.get(intake_id).copied())
+                    .is_some_and(|intake| {
+                        intake.lifecycle.is_withdrawn() || intake.lifecycle.is_invalidated()
+                    });
+                Some(DecisionCandidateProgressionAcknowledgementInput {
+                    candidate: candidate.clone(),
+                    progression_request: progression_request.clone(),
+                    lifecycle_integration: integration.clone(),
+                    intake_withdrawn_or_invalidated,
+                    existing_acknowledgement: persisted_by_id.get(id).copied().cloned(),
+                })
+            })
+            .collect();
+        DecisionCandidateProgressionAcknowledgement::derive_batch(&inputs)
     }
 
     /// Acknowledge origin evaluation contract for a DecisionCandidate.

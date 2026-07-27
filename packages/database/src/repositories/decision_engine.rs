@@ -2,10 +2,11 @@ use crate::connection::Database;
 use crate::error::Result;
 use workspace_domain::{
     DecisionCandidateEvaluationOriginContract, DecisionCandidateEvaluationResolution,
-    DecisionCandidateProgressionRequest, DecisionCandidateScore, DecisionCandidateSelection,
-    DecisionEngineCandidateCreation, DecisionEngineIntakeCandidate,
-    DecisionEngineIntakeCandidateLifecycle, DecisionEngineIntakeDisposition,
-    DecisionEngineIntakeEvaluation, DecisionEngineOverlay, DecisionOutcome, DecisionScore,
+    DecisionCandidateProgressionAcknowledgement, DecisionCandidateProgressionRequest,
+    DecisionCandidateScore, DecisionCandidateSelection, DecisionEngineCandidateCreation,
+    DecisionEngineIntakeCandidate, DecisionEngineIntakeCandidateLifecycle,
+    DecisionEngineIntakeDisposition, DecisionEngineIntakeEvaluation, DecisionEngineOverlay,
+    DecisionOutcome, DecisionScore,
 };
 
 /// Persistence for Decision Engine lifecycle overlay and intake candidates.
@@ -677,6 +678,83 @@ impl<'a> DecisionEngineRepository<'a> {
         rows.collect::<std::result::Result<Vec<_>, _>>()
             .map_err(Into::into)
     }
+
+    /// Persist acknowledged/rejected progression receipts only.
+    pub fn upsert_progression_acknowledgement(
+        &self,
+        acknowledgement: &DecisionCandidateProgressionAcknowledgement,
+    ) -> Result<()> {
+        if !acknowledgement.is_acknowledged() && !acknowledgement.is_rejected() {
+            return Ok(());
+        }
+        let acknowledged_at = acknowledgement
+            .acknowledged_at
+            .as_deref()
+            .unwrap_or_default();
+        self.db.connection().execute(
+            "INSERT INTO decision_candidate_progression_acknowledgement (
+                workspace_id, acknowledgement_id, decision_candidate_id, origin,
+                acknowledgement_state, request_id, request_state, selection_id,
+                ranking_id, score_id, recommendation_reference, package_seal_digest,
+                intake_candidate_id, creation_request_id, acknowledgement_reason,
+                acknowledged_at, updated_at
+             ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?16)
+             ON CONFLICT(workspace_id, acknowledgement_id) DO UPDATE SET
+                decision_candidate_id = excluded.decision_candidate_id,
+                origin = excluded.origin,
+                acknowledgement_state = excluded.acknowledgement_state,
+                request_id = excluded.request_id,
+                request_state = excluded.request_state,
+                selection_id = excluded.selection_id,
+                ranking_id = excluded.ranking_id,
+                score_id = excluded.score_id,
+                recommendation_reference = excluded.recommendation_reference,
+                package_seal_digest = excluded.package_seal_digest,
+                intake_candidate_id = excluded.intake_candidate_id,
+                creation_request_id = excluded.creation_request_id,
+                acknowledgement_reason = excluded.acknowledgement_reason,
+                acknowledged_at = excluded.acknowledged_at,
+                updated_at = excluded.updated_at",
+            (
+                &acknowledgement.workspace_id,
+                &acknowledgement.acknowledgement_id,
+                &acknowledgement.decision_candidate_id,
+                &acknowledgement.origin,
+                &acknowledgement.acknowledgement_state,
+                &acknowledgement.request_id,
+                &acknowledgement.request_state,
+                &acknowledgement.selection_id,
+                &acknowledgement.ranking_id,
+                &acknowledgement.score_id,
+                &acknowledgement.recommendation_reference,
+                &acknowledgement.package_seal_digest,
+                &acknowledgement.intake_candidate_id,
+                &acknowledgement.creation_request_id,
+                &acknowledgement.acknowledgement_reason,
+                acknowledged_at,
+            ),
+        )?;
+        Ok(())
+    }
+
+    pub fn list_progression_acknowledgements(
+        &self,
+        workspace_id: &str,
+    ) -> Result<Vec<DecisionCandidateProgressionAcknowledgement>> {
+        let mut stmt = self.db.connection().prepare(
+            "SELECT workspace_id, acknowledgement_id, decision_candidate_id, origin,
+                    acknowledgement_state, request_id, request_state, selection_id,
+                    ranking_id, score_id, recommendation_reference, package_seal_digest,
+                    intake_candidate_id, creation_request_id, acknowledgement_reason,
+                    acknowledged_at
+             FROM decision_candidate_progression_acknowledgement
+             WHERE workspace_id = ?1
+             ORDER BY acknowledgement_id ASC",
+        )?;
+        let rows = stmt.query_map([workspace_id], map_progression_acknowledgement)?;
+        rows.collect::<std::result::Result<Vec<_>, _>>()
+            .map_err(Into::into)
+    }
 }
 
 fn map_overlay(row: &rusqlite::Row<'_>) -> rusqlite::Result<DecisionEngineOverlay> {
@@ -1033,5 +1111,47 @@ fn map_progression_request(
              Persisted downstream consideration request only — no planner or execution."
         ),
         authority_effect: DecisionCandidateProgressionRequest::AUTHORITY_EFFECT_NONE.into(),
+    })
+}
+
+fn map_progression_acknowledgement(
+    row: &rusqlite::Row<'_>,
+) -> rusqlite::Result<DecisionCandidateProgressionAcknowledgement> {
+    let origin: String = row.get(3)?;
+    let acknowledgement_state: String = row.get(4)?;
+    Ok(DecisionCandidateProgressionAcknowledgement {
+        workspace_id: row.get(0)?,
+        acknowledgement_id: row.get(1)?,
+        decision_candidate_id: row.get(2)?,
+        origin: origin.clone(),
+        acknowledgement_state: acknowledgement_state.clone(),
+        request_id: row.get(5)?,
+        request_state: row.get(6)?,
+        selection_id: row.get(7)?,
+        ranking_id: row.get(8)?,
+        score_id: row.get(9)?,
+        request_valid: true,
+        provenance_valid: true,
+        lifecycle_valid: true,
+        candidate_active: true,
+        recommendation_reference: row.get(10)?,
+        package_seal_digest: row.get(11)?,
+        intake_candidate_id: row.get(12)?,
+        creation_request_id: row.get(13)?,
+        acknowledgement_reason: row.get(14)?,
+        acknowledged_at: Some(row.get(15)?),
+        creates_goal: false,
+        creates_intent: false,
+        adapter_invoked: false,
+        planner_invoked: false,
+        ownership_transferred: false,
+        mutates_recommendation_engine: false,
+        mutates_candidate_outcome: false,
+        handoff_command: None,
+        note: format!(
+            "Decision Engine progression acknowledgement ({acknowledgement_state}; origin={origin}). \
+             Persisted receipt only — no planner or execution."
+        ),
+        authority_effect: DecisionCandidateProgressionAcknowledgement::AUTHORITY_EFFECT_NONE.into(),
     })
 }

@@ -146,6 +146,8 @@ mod decision_engine_candidate_selection_contract_tests;
 #[cfg(test)]
 mod decision_engine_candidate_progression_request_contract_tests;
 #[cfg(test)]
+mod decision_engine_candidate_progression_acknowledgement_contract_tests;
+#[cfg(test)]
 mod task_graph_tests;
 #[cfg(test)]
 mod workspace_environment_tests;

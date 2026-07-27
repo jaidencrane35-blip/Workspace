@@ -282,6 +282,9 @@ pub struct DecisionEngineState {
     /// DE-owned progression requests after selection — never planner/execution.
     #[serde(default)]
     pub progression_requests: Vec<DecisionCandidateProgressionRequest>,
+    /// DE-owned progression acknowledgements — never planner/execution.
+    #[serde(default)]
+    pub progression_acknowledgements: Vec<DecisionCandidateProgressionAcknowledgement>,
     pub summary: String,
     pub authority_effect: String,
 }
@@ -333,6 +336,7 @@ impl DecisionEngineState {
             candidate_ranking: None,
             candidate_selections: Vec::new(),
             progression_requests: Vec::new(),
+            progression_acknowledgements: Vec::new(),
             summary,
             authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
         }
@@ -570,6 +574,22 @@ impl DecisionEngineState {
             requested
         );
         self.progression_requests = requests;
+        self
+    }
+
+    /// Attach DE-owned progression acknowledgements without planner or execution.
+    pub fn with_progression_acknowledgements(
+        mut self,
+        acknowledgements: Vec<DecisionCandidateProgressionAcknowledgement>,
+    ) -> Self {
+        let acknowledged = acknowledgements.iter().filter(|a| a.is_acknowledged()).count();
+        self.summary = format!(
+            "{} Progression acknowledgements: {} ({} acknowledged).",
+            self.summary,
+            acknowledgements.len(),
+            acknowledged
+        );
+        self.progression_acknowledgements = acknowledgements;
         self
     }
 
@@ -4805,6 +4825,331 @@ impl DecisionCandidateProgressionRequest {
             || self.authority_effect != Self::AUTHORITY_EFFECT_NONE
             || !self.request_id.starts_with(Self::ID_PREFIX)
             || (self.is_requested() && self.requested_at.is_none())
+        {
+            return Err(DecisionEngineError::CannotExecute);
+        }
+        Ok(())
+    }
+}
+
+/// Input for projecting or applying DE-owned progression acknowledgement.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DecisionCandidateProgressionAcknowledgementInput {
+    pub candidate: DecisionCandidate,
+    pub progression_request: DecisionCandidateProgressionRequest,
+    pub lifecycle_integration: DecisionCandidateLifecycleIntegration,
+    pub intake_withdrawn_or_invalidated: bool,
+    pub existing_acknowledgement: Option<DecisionCandidateProgressionAcknowledgement>,
+}
+
+/// DE-owned acknowledgement that a progression request was received and is
+/// eligible for a future downstream workflow — without executing anything.
+///
+/// Distinct from planner handoff, goals, intents, Gateway, and Command Pipeline.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DecisionCandidateProgressionAcknowledgement {
+    pub acknowledgement_id: String,
+    pub workspace_id: String,
+    pub decision_candidate_id: String,
+    /// `native` | `recommendation_intake`
+    pub origin: String,
+    /// `awaiting_acknowledgement` | `acknowledged` | `rejected` | `expired`
+    pub acknowledgement_state: String,
+    pub request_id: String,
+    pub request_state: String,
+    pub selection_id: String,
+    pub ranking_id: Option<String>,
+    pub score_id: Option<String>,
+    pub request_valid: bool,
+    pub provenance_valid: bool,
+    pub lifecycle_valid: bool,
+    pub candidate_active: bool,
+    pub intake_candidate_id: Option<String>,
+    pub creation_request_id: Option<String>,
+    pub package_seal_digest: Option<String>,
+    pub recommendation_reference: Option<String>,
+    pub acknowledged_at: Option<String>,
+    pub acknowledgement_reason: Option<String>,
+    pub creates_goal: bool,
+    pub creates_intent: bool,
+    pub adapter_invoked: bool,
+    pub planner_invoked: bool,
+    pub ownership_transferred: bool,
+    pub mutates_recommendation_engine: bool,
+    pub mutates_candidate_outcome: bool,
+    pub handoff_command: Option<String>,
+    pub note: String,
+    pub authority_effect: String,
+}
+
+impl DecisionCandidateProgressionAcknowledgement {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+    pub const STATE_AWAITING: &'static str = "awaiting_acknowledgement";
+    pub const STATE_ACKNOWLEDGED: &'static str = "acknowledged";
+    pub const STATE_REJECTED: &'static str = "rejected";
+    pub const STATE_EXPIRED: &'static str = "expired";
+    pub const ID_PREFIX: &'static str = "engine_decision_progression_ack:";
+    pub const ACTION_ACKNOWLEDGE: &'static str = "acknowledge";
+    pub const ACTION_REJECT: &'static str = "reject";
+
+    pub fn synthetic_id(decision_candidate_id: &str) -> String {
+        format!("{}{decision_candidate_id}", Self::ID_PREFIX)
+    }
+
+    pub fn is_awaiting(&self) -> bool {
+        self.acknowledgement_state == Self::STATE_AWAITING
+    }
+
+    pub fn is_acknowledged(&self) -> bool {
+        self.acknowledgement_state == Self::STATE_ACKNOWLEDGED
+    }
+
+    pub fn is_rejected(&self) -> bool {
+        self.acknowledgement_state == Self::STATE_REJECTED
+    }
+
+    pub fn is_expired(&self) -> bool {
+        self.acknowledgement_state == Self::STATE_EXPIRED
+    }
+
+    pub fn derive_batch(inputs: &[DecisionCandidateProgressionAcknowledgementInput]) -> Vec<Self> {
+        let mut out: Vec<Self> = inputs.iter().map(Self::derive).collect();
+        out.sort_by(|a, b| a.decision_candidate_id.cmp(&b.decision_candidate_id));
+        out
+    }
+
+    pub fn derive(input: &DecisionCandidateProgressionAcknowledgementInput) -> Self {
+        if let Some(existing) = &input.existing_acknowledgement {
+            if existing.is_acknowledged() || existing.is_rejected() {
+                return existing.clone();
+            }
+        }
+
+        let candidate = &input.candidate;
+        let request = &input.progression_request;
+        let origin = DecisionCandidateLifecycleIntegration::classify_origin(candidate);
+        let provenance_valid =
+            DecisionCandidateLifecycleIntegration::provenance_valid_for_origin(origin, candidate);
+        let lifecycle_valid = input.lifecycle_integration.is_integrated()
+            && input.lifecycle_integration.decision_candidate_id == candidate.id.as_str();
+        let candidate_active = matches!(
+            candidate.outcome,
+            DecisionOutcome::Open | DecisionOutcome::Postponed
+        ) && !input.intake_withdrawn_or_invalidated;
+        let request_valid = request.is_requested()
+            && request.decision_candidate_id == candidate.id.as_str()
+            && !request.is_cancelled()
+            && !request.is_blocked();
+
+        let acknowledgement_state = if input.intake_withdrawn_or_invalidated
+            || !candidate_active
+            || !provenance_valid
+            || !lifecycle_valid
+            || !candidate.id.as_str().starts_with("engine_decision:")
+        {
+            // Request path no longer valid for acknowledgement.
+            if request.is_requested() {
+                Self::STATE_EXPIRED
+            } else {
+                Self::STATE_REJECTED
+            }
+        } else if request_valid && provenance_valid && lifecycle_valid && candidate_active {
+            Self::STATE_AWAITING
+        } else {
+            Self::STATE_REJECTED
+        };
+
+        Self {
+            acknowledgement_id: Self::synthetic_id(candidate.id.as_str()),
+            workspace_id: candidate.workspace_id.as_str().to_string(),
+            decision_candidate_id: candidate.id.as_str().to_string(),
+            origin: origin.into(),
+            acknowledgement_state: acknowledgement_state.into(),
+            request_id: request.request_id.clone(),
+            request_state: request.request_state.clone(),
+            selection_id: request.selection_id.clone(),
+            ranking_id: request.ranking_id.clone(),
+            score_id: request.score_id.clone(),
+            request_valid,
+            provenance_valid,
+            lifecycle_valid,
+            candidate_active,
+            intake_candidate_id: candidate.intake_candidate_id.clone(),
+            creation_request_id: candidate.creation_request_id.clone(),
+            package_seal_digest: candidate.package_seal_digest.clone(),
+            recommendation_reference: candidate.recommendation_id.clone(),
+            acknowledged_at: None,
+            acknowledgement_reason: None,
+            creates_goal: false,
+            creates_intent: false,
+            adapter_invoked: false,
+            planner_invoked: false,
+            ownership_transferred: false,
+            mutates_recommendation_engine: false,
+            mutates_candidate_outcome: false,
+            handoff_command: None,
+            note: format!(
+                "Decision Engine progression acknowledgement ({acknowledgement_state}; origin={origin}). \
+                 Receipt only — not planner, Gateway, goals, intents, execution, or Recommendation Engine mutation."
+            ),
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        }
+    }
+
+    /// Acknowledge or reject a pending progression request receipt.
+    /// Never invokes planner, Gateway, or mutates candidate/RE.
+    pub fn try_acknowledge(
+        input: &DecisionCandidateProgressionAcknowledgementInput,
+        action: impl Into<String>,
+        reason: impl Into<String>,
+        acknowledged_at: impl Into<String>,
+    ) -> Result<(Self, DecisionCandidate), DecisionEngineError> {
+        let projected = Self::derive(input);
+        if projected.is_expired() {
+            return Err(DecisionEngineError::InvalidTransition {
+                from: projected.acknowledgement_state,
+                to: "acknowledge".into(),
+            });
+        }
+        if projected.is_rejected() && !projected.is_awaiting() {
+            let from = if !projected.request_valid {
+                "invalid_request"
+            } else if !projected.provenance_valid {
+                "invalid_provenance"
+            } else if input.intake_withdrawn_or_invalidated {
+                "withdrawn"
+            } else {
+                "rejected"
+            };
+            return Err(DecisionEngineError::InvalidTransition {
+                from: from.into(),
+                to: "acknowledge".into(),
+            });
+        }
+        if !projected.is_awaiting() {
+            return Err(DecisionEngineError::InvalidTransition {
+                from: projected.acknowledgement_state,
+                to: "acknowledge".into(),
+            });
+        }
+        if input
+            .existing_acknowledgement
+            .as_ref()
+            .is_some_and(|a| a.is_acknowledged() || a.is_rejected())
+        {
+            return Err(DecisionEngineError::InvalidTransition {
+                from: projected.acknowledgement_state,
+                to: "already_decided".into(),
+            });
+        }
+        if !input.progression_request.is_requested() || !projected.request_valid {
+            return Err(DecisionEngineError::InvalidTransition {
+                from: "invalid_request".into(),
+                to: "acknowledge".into(),
+            });
+        }
+        if !projected.provenance_valid {
+            return Err(DecisionEngineError::InvalidTransition {
+                from: "invalid_provenance".into(),
+                to: "acknowledge".into(),
+            });
+        }
+        if input.intake_withdrawn_or_invalidated || !projected.candidate_active {
+            return Err(DecisionEngineError::InvalidTransition {
+                from: "withdrawn".into(),
+                to: "acknowledge".into(),
+            });
+        }
+
+        let action = action.into();
+        let next_state = match action.as_str() {
+            Self::ACTION_ACKNOWLEDGE | Self::STATE_ACKNOWLEDGED => Self::STATE_ACKNOWLEDGED,
+            Self::ACTION_REJECT | Self::STATE_REJECTED => Self::STATE_REJECTED,
+            other => {
+                return Err(DecisionEngineError::InvalidTransition {
+                    from: projected.acknowledgement_state,
+                    to: other.into(),
+                });
+            }
+        };
+
+        let acknowledged_at = acknowledged_at.into();
+        let reason = reason.into();
+        let before = input.candidate.clone();
+        let mut decided = projected;
+        decided.acknowledgement_state = next_state.into();
+        decided.acknowledged_at = Some(acknowledged_at);
+        decided.acknowledgement_reason = Some(reason);
+        decided.note = format!(
+            "Decision Engine progression acknowledgement ({}; origin={}). \
+             Receipt only — not planner, Gateway, goals, intents, execution, or Recommendation Engine mutation.",
+            decided.acknowledgement_state, decided.origin
+        );
+
+        let after = before.clone();
+        DecisionCandidateLifecycleIntegration::assert_provenance_retained(&before, &after)?;
+        if after.score != before.score || after.outcome != before.outcome {
+            return Err(DecisionEngineError::CannotExecute);
+        }
+        decided.assert_acknowledgement_only()?;
+        Ok((decided, after))
+    }
+
+    pub fn may_execute(&self) -> bool {
+        false
+    }
+
+    pub fn may_invoke_planner(&self) -> bool {
+        false
+    }
+
+    pub fn may_invoke_gateway(&self) -> bool {
+        false
+    }
+
+    pub fn may_create_goal(&self) -> bool {
+        false
+    }
+
+    pub fn may_create_intent(&self) -> bool {
+        false
+    }
+
+    pub fn attempt_execute() -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_invoke_planner(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_invoke_gateway(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_create_goal(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_create_intent(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn assert_acknowledgement_only(&self) -> Result<(), DecisionEngineError> {
+        if self.creates_goal
+            || self.creates_intent
+            || self.adapter_invoked
+            || self.planner_invoked
+            || self.ownership_transferred
+            || self.mutates_recommendation_engine
+            || self.mutates_candidate_outcome
+            || self.handoff_command.is_some()
+            || self.authority_effect != Self::AUTHORITY_EFFECT_NONE
+            || !self.acknowledgement_id.starts_with(Self::ID_PREFIX)
+            || (self.is_acknowledged() && self.acknowledged_at.is_none())
+            || (self.is_rejected()
+                && self.acknowledgement_reason.is_some()
+                && self.acknowledged_at.is_none())
         {
             return Err(DecisionEngineError::CannotExecute);
         }

@@ -2767,6 +2767,33 @@ impl CommandHandler {
         )
     }
 
+    /// Acknowledge DE-owned progression request — never planner/execution.
+    pub fn acknowledge_decision_candidate_progression(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        candidate_id: String,
+        action: String,
+        reason: String,
+    ) -> Result<(
+        workspace_domain::DecisionCandidateProgressionAcknowledgement,
+        workspace_domain::DecisionCandidate,
+    )> {
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent))
+            .execute_mutation(GateDecisionEngineWrite)?;
+        DecisionEngineService::acknowledge_decision_candidate_progression(
+            &kernel.shared_database(),
+            &actor,
+            &kernel.orchestrated_plans(),
+            &kernel.assistant_workflows(),
+            workspace_id,
+            candidate_id,
+            action,
+            reason,
+        )
+    }
+
     /// Architecture guard — Decision Engine must never execute.
     pub fn decision_engine_attempt_execute() -> Result<()> {
         DecisionEngineService::attempt_execute()
