@@ -189,7 +189,7 @@ export function RecommendationDecisionIntakeBlock({
   intake: RecommendationDecisionIntakeRequest;
 }) {
   return (
-    <div className="recommendation-decision-intake muted" style={{ marginTop: 4 }}>
+    <div className="recommendation-decision-intake muted explain-block">
       <div>
         Decision intake: <strong>{intake.intake_state}</strong>
         {" · "}
@@ -221,10 +221,7 @@ export function RecommendationDecisionIntakeInspectionBlock({
   inspection: RecommendationDecisionIntakeInspection;
 }) {
   return (
-    <div
-      className="recommendation-decision-intake-inspection muted"
-      style={{ marginTop: 4 }}
-    >
+    <div className="recommendation-decision-intake-inspection muted explain-block">
       <div>
         Intake inspection: <strong>{inspection.inspection_state}</strong>
         {" · "}
@@ -249,12 +246,9 @@ export function RecommendationDecisionIntakeCompatibilityBlock({
   compatibility: RecommendationDecisionIntakeCompatibility;
 }) {
   return (
-    <div
-      className="recommendation-decision-intake-compatibility muted"
-      style={{ marginTop: 4 }}
-    >
+    <div className="recommendation-decision-intake-compatibility muted explain-block">
       <div>
-        Intake compatibility:{" "}
+        Intake compatibility: {" "}
         <strong>{compatibility.compatible ? "compatible" : "incompatible"}</strong>
         {" · "}
         {compatibility.contract_version}
@@ -277,10 +271,7 @@ export function RecommendationDecisionIntakeProceedDenialBlock({
   denial: RecommendationDecisionIntakeProceedDenial;
 }) {
   return (
-    <div
-      className="recommendation-decision-intake-proceed-denial muted"
-      style={{ marginTop: 4 }}
-    >
+    <div className="recommendation-decision-intake-proceed-denial muted explain-block">
       <div>
         Intake proceed: <strong>denied</strong>
         {" · "}
@@ -304,10 +295,7 @@ export function RecommendationDecisionIntakePackageSealBlock({
   seal: RecommendationDecisionIntakePackageSeal;
 }) {
   return (
-    <div
-      className="recommendation-decision-intake-package-seal muted"
-      style={{ marginTop: 4 }}
-    >
+    <div className="recommendation-decision-intake-package-seal muted explain-block">
       <div>
         Intake seal: <strong>{seal.seal_state}</strong>
         {" · "}
@@ -331,10 +319,7 @@ export function RecommendationDecisionIntakeAdapterPreparationBlock({
   preparation: RecommendationDecisionIntakeAdapterPreparation;
 }) {
   return (
-    <div
-      className="recommendation-decision-intake-adapter-preparation muted"
-      style={{ marginTop: 4 }}
-    >
+    <div className="recommendation-decision-intake-adapter-preparation muted explain-block">
       <div>
         Adapter preparation: <strong>{preparation.preparation_state}</strong>
         {" · "}
@@ -358,10 +343,7 @@ export function RecommendationDecisionHandoffRequestBlock({
   request: RecommendationDecisionHandoffRequest;
 }) {
   return (
-    <div
-      className="recommendation-decision-handoff-request muted"
-      style={{ marginTop: 4 }}
-    >
+    <div className="recommendation-decision-handoff-request muted explain-block">
       <div>
         Handoff request: <strong>{request.request_state}</strong>
         {" · "}
@@ -385,10 +367,7 @@ export function RecommendationDecisionEngineAcceptanceBlock({
   acceptance: RecommendationDecisionEngineAcceptance;
 }) {
   return (
-    <div
-      className="recommendation-decision-engine-acceptance muted"
-      style={{ marginTop: 4 }}
-    >
+    <div className="recommendation-decision-engine-acceptance muted explain-block">
       <div>
         DE acceptance: <strong>{acceptance.acceptance_state}</strong>
         {" · "}
@@ -412,7 +391,7 @@ export function RecommendationDecisionBoundaryBlock({
   boundary: RecommendationDecisionBoundary;
 }) {
   return (
-    <div className="recommendation-decision-boundary muted" style={{ marginTop: 4 }}>
+    <div className="recommendation-decision-boundary muted explain-block">
       <div>
         Decision boundary: <strong>{boundary.transition_state}</strong>
         {" · "}
@@ -445,10 +424,7 @@ export function RecommendationDecisionConfirmationBlock({
   confirmation: RecommendationDecisionConfirmation;
 }) {
   return (
-    <div
-      className="recommendation-decision-confirmation muted"
-      style={{ marginTop: 4 }}
-    >
+    <div className="recommendation-decision-confirmation muted explain-block">
       <div>
         Decision confirmation: <strong>{confirmation.confirmation_state}</strong>
         {" · "}
@@ -464,7 +440,7 @@ export function RecommendationDecisionConfirmationBlock({
         {" · "}
         Creates intent: {confirmation.creates_intent ? "yes" : "no"}
         {" · "}
-        Execution authorised:{" "}
+        Execution authorised: {" "}
         {confirmation.grants_execution_authority ? "yes" : "no"}
       </div>
       <div className="mono">
@@ -483,9 +459,9 @@ export function RecommendationDecisionContextBlock({
   context: RecommendationDecisionContext;
 }) {
   return (
-    <div className="recommendation-decision-context muted" style={{ marginTop: 4 }}>
+    <div className="recommendation-decision-context muted explain-block">
       <div>
-        Decision context:{" "}
+        Decision context: {" "}
         <strong>{context.complete ? "complete" : "incomplete"}</strong>
         {" · "}
         handoff performed: {context.handoff_performed ? "yes" : "no"}
@@ -520,11 +496,11 @@ export function RecommendationDecisionReadinessBlock({
   readiness: RecommendationDecisionReadiness;
 }) {
   return (
-    <div className="recommendation-decision-readiness muted" style={{ marginTop: 4 }}>
+    <div className="recommendation-decision-readiness muted explain-block">
       <div>
         Decision readiness: <strong>{readiness.readiness_state}</strong>
         {" · "}
-        future consideration eligible:{" "}
+        future consideration eligible: {" "}
         {readiness.ready_for_future_handoff ? "yes" : "no"}
         {" · "}
         not a Decision Engine object · authority: {readiness.authority_effect}
@@ -544,7 +520,7 @@ export function RecommendationOutcomeBlock({
   outcome: RecommendationOutcomeView;
 }) {
   return (
-    <div className="recommendation-outcome muted" style={{ marginTop: 4 }}>
+    <div className="recommendation-outcome muted explain-block">
       <div>
         Outcome: <strong>{outcome.user_decision}</strong> · {outcome.result_kind}
         {" · "}
@@ -564,7 +540,7 @@ export function RecommendationOutcomeBlock({
       )}
       {outcome.experience_trace_match_keys.length > 0 && (
         <div className="mono">
-          Experience refs (evidence only):{" "}
+          Experience refs (evidence only): {" "}
           {outcome.experience_trace_match_keys.slice(0, 3).join(", ")}
         </div>
       )}

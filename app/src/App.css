@@ -398,6 +398,26 @@ button:not(:disabled):hover {
   line-height: 1.4;
 }
 
+/* Small presentation utilities used by explanation blocks */
+.explain-block {
+  margin-top: 0.5rem;
+}
+
+/* Focus styles for accessibility */
+button:focus {
+  outline: 2px solid #6b8aab;
+  outline-offset: 2px;
+}
+
+/* h3 headings used throughout panels: keep consistent with section h2 styling */
+section h3, .container h3 {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+  color: #9aa8b4;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
 .assistant-plan-header {
   display: flex;
   flex-direction: column;
