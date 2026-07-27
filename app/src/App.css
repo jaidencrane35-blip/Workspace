@@ -403,6 +403,11 @@ button:not(:disabled):hover {
   margin-top: 0.5rem;
 }
 
+/* Small input sizing utility */
+.input-wide {
+  min-width: 16rem;
+}
+
 /* Focus styles for accessibility */
 button:focus {
   outline: 2px solid #6b8aab;

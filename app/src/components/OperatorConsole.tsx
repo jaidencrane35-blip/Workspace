@@ -1883,7 +1883,7 @@ export function OperatorConsole({
               .filter(isActiveRecommendation)
               .slice(0, 4)
               .map((item) => (
-                <div key={item.id} style={{ marginTop: 12 }}>
+                <div key={item.id} className="explain-block">
                   <strong>
                     [{item.kind}] {item.title}
                   </strong>
@@ -2030,7 +2030,7 @@ export function OperatorConsole({
               ))}
             {(recommendationEngine.history?.length ?? 0) > 0 && (
               <>
-                <p className="muted" style={{ marginTop: 12 }}>
+                <p className="muted explain-block">
                   Outcome history (immutable feedback — not actionable, never
                   executes)
                 </p>
@@ -3261,7 +3261,7 @@ export function OperatorConsole({
             disabled={busy}
             onChange={(event) => setAssistantGoal(event.target.value)}
             aria-label="Assistant goal"
-            style={{ minWidth: "16rem" }}
+            className="input-wide"
           />
           <button
             type="button"
