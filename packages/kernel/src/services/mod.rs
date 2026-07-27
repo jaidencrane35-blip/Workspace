@@ -70,6 +70,7 @@ mod observation;
 mod permission_approval;
 mod projection;
 mod registry;
+mod resilience_validation;
 mod suggestion;
 mod suggestion_intent;
 mod suggestion_lifecycle;
@@ -99,6 +100,11 @@ pub(crate) use automation_contract::AutomationContractService;
 pub use configuration::ConfigurationService;
 pub(crate) use decision_engine::DecisionEngineService;
 pub(crate) use decision_queue::DecisionQueueService;
+pub(crate) use resilience_validation::{
+    validate_decision_engine_state_integrity, validate_decision_context_boundary,
+    validate_decision_readiness_boundary, validate_decision_boundary_constraints,
+    validate_decision_confirmation_non_authoritative,
+};
 pub(crate) use task_graph::TaskGraphService;
 pub(crate) use trigger_evaluator::{list_rejection_summaries, TriggerEvaluatorService};
 pub(crate) use workspace_activity::WorkspaceActivityGraphService;

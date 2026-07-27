@@ -112,6 +112,8 @@ mod workspace_attention_tests;
 #[cfg(test)]
 mod decision_engine_tests;
 #[cfg(test)]
+mod resilience_tests;
+#[cfg(test)]
 mod decision_engine_intake_receipt_contract_tests;
 #[cfg(test)]
 mod decision_engine_intake_assessment_contract_tests;

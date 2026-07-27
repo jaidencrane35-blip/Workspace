@@ -1334,32 +1334,23 @@ impl WorkspaceRecommendationEngineService {
             .collect();
         let decision_context =
             RecommendationDecisionContext::assemble(&workspace_id, &assessed, &history_refs);
-        debug_assert!(!decision_context.handoff_performed);
-        debug_assert!(decision_context.decision_engine_object_id.is_none());
-        debug_assert!(!decision_context.may_create_intent());
-        debug_assert!(decision_context.attempt_handoff().is_err());
+
+        // Enforce resilience invariants: Recommendation Engine must not have handoff/intent capability.
+        crate::services::validate_decision_context_boundary(&decision_context)?;
+
         let decision_readiness =
             RecommendationDecisionReadiness::assess_from_context(&decision_context);
-        debug_assert_eq!(
-            decision_readiness.authority_effect,
-            RecommendationDecisionReadiness::AUTHORITY_EFFECT_NONE
-        );
-        debug_assert!(!decision_readiness.may_create_decision_commands());
-        debug_assert!(!decision_readiness.may_invoke_gateway());
-        debug_assert!(decision_readiness.attempt_handoff().is_err());
+
+        // Enforce resilience invariants: Authority must be "none"; cannot create commands.
+        crate::services::validate_decision_readiness_boundary(&decision_readiness)?;
+
         let decision_boundary = RecommendationDecisionBoundary::from_context_and_readiness(
             &decision_context,
             &decision_readiness,
         );
-        debug_assert_eq!(
-            decision_boundary.handoff_state,
-            RecommendationDecisionBoundary::HANDOFF_NOT_PERFORMED
-        );
-        debug_assert!(!decision_boundary.creates_intent);
-        debug_assert!(!decision_boundary.grants_execution_authority);
-        debug_assert!(decision_boundary.assert_rejection_guards().is_ok());
-        debug_assert!(decision_boundary.attempt_handoff().is_err());
-        debug_assert!(decision_boundary.attempt_create_intent().is_err());
+
+        // Enforce resilience invariants: Decision boundary cannot grant authority or create intent.
+        crate::services::validate_decision_boundary_constraints(&decision_boundary)?;
 
         // Accept ≠ confirmation: derive/required at most; never auto-confirm.
         let decision_confirmation = match (
@@ -1374,11 +1365,9 @@ impl WorkspaceRecommendationEngineService {
                 RecommendationDecisionConfirmation::derive_from_boundary(&decision_boundary)
             }
         };
-        debug_assert_ne!(
-            decision_confirmation.confirmation_state,
-            RecommendationDecisionConfirmation::STATE_CONFIRMED
-        );
-        debug_assert!(decision_confirmation.assert_non_authoritative().is_ok());
+
+        // Enforce resilience invariants: Confirmation must be non-authoritative.
+        crate::services::validate_decision_confirmation_non_authoritative(&decision_confirmation)?;
         next.decision_confirmation = Some(decision_confirmation.clone());
         // Accept never emits intake — confirmation required first.
         let decision_intake = RecommendationDecisionIntakeRequest::try_assemble(
