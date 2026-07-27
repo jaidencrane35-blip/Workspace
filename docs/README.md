@@ -71,6 +71,7 @@ How the team builds, reviews, and maintains the codebase.
 | [Testing Strategy](03-Engineering/TESTING-STRATEGY.md) | Unit, integration, E2E, and AI behaviour testing |
 | [Dependency Policy](03-Engineering/DEPENDENCY-POLICY.md) | Dependency approval, vulnerabilities, lock files |
 | [IPC Surface Inventory](03-Engineering/IPC-SURFACE.md) | Used vs quarantined Tauri commands |
+| [Kernel Error Taxonomy](03-Engineering/KERNEL-ERROR-TAXONOMY.md) | Failure classes and boundary rules for `KernelError` |
 | [Foundation Hardening Report](03-Engineering/FOUNDATION-HARDENING-REPORT.md) | Phase 1 foundation audit results |
 | [Audit Reports Index](03-Engineering/AUDIT-REPORTS-INDEX.md) | Index of point-in-time architecture/engineering audits |
 
