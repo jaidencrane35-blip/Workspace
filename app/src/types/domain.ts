@@ -1227,6 +1227,30 @@ export interface DecisionCandidate {
   authority_effect: string;
 }
 
+/** DE-owned promotion boundary — readiness for future DecisionCandidate promotion only. */
+export interface DecisionEngineIntakePromotionBoundary {
+  workspace_id: string;
+  intake_candidate_id: string;
+  recommendation_reference: string;
+  /** not_ready | promotion_allowed | promotion_blocked | promoted */
+  boundary_state: string;
+  evaluation_complete: boolean;
+  disposition_retained: boolean;
+  intake_active: boolean;
+  acceptance_active: boolean;
+  seal_aligned: boolean;
+  evidence: string[];
+  creates_decision_candidate: boolean;
+  creates_goal: boolean;
+  creates_intent: boolean;
+  adapter_invoked: boolean;
+  planner_invoked: boolean;
+  ownership_transferred: boolean;
+  handoff_command: string | null;
+  note: string;
+  authority_effect: string;
+}
+
 /** DE-owned intake disposition — lifecycle decision, not planning authority. */
 export interface DecisionEngineIntakeDisposition {
   disposition_id: string;
@@ -1404,6 +1428,8 @@ export interface DecisionEngineState {
   intake_evaluations?: DecisionEngineIntakeEvaluation[];
   /** DE-owned intake dispositions — never DecisionCandidates or planning authority. */
   intake_dispositions?: DecisionEngineIntakeDisposition[];
+  /** DE-owned promotion boundaries — never DecisionCandidate creation. */
+  intake_promotion_boundaries?: DecisionEngineIntakePromotionBoundary[];
   summary: string;
   authority_effect: string;
 }

@@ -126,6 +126,8 @@ mod decision_engine_intake_evaluation_contract_tests;
 #[cfg(test)]
 mod decision_engine_intake_disposition_contract_tests;
 #[cfg(test)]
+mod decision_engine_intake_promotion_boundary_contract_tests;
+#[cfg(test)]
 mod task_graph_tests;
 #[cfg(test)]
 mod workspace_environment_tests;

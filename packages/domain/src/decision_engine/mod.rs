@@ -193,6 +193,9 @@ pub struct DecisionEngineState {
     /// DE-owned intake dispositions — lifecycle decisions, never planning authority.
     #[serde(default)]
     pub intake_dispositions: Vec<DecisionEngineIntakeDisposition>,
+    /// DE-owned promotion boundary — readiness for *future* DecisionCandidate promotion only.
+    #[serde(default)]
+    pub intake_promotion_boundaries: Vec<DecisionEngineIntakePromotionBoundary>,
     pub summary: String,
     pub authority_effect: String,
 }
@@ -234,6 +237,7 @@ impl DecisionEngineState {
             intake_candidates: Vec::new(),
             intake_evaluations: Vec::new(),
             intake_dispositions: Vec::new(),
+            intake_promotion_boundaries: Vec::new(),
             summary,
             authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
         }
@@ -322,6 +326,25 @@ impl DecisionEngineState {
             dispositions.len()
         );
         self.intake_dispositions = dispositions;
+        self
+    }
+
+    /// Attach DE-owned promotion boundaries without changing scoring or DecisionCandidates.
+    pub fn with_intake_promotion_boundaries(
+        mut self,
+        boundaries: Vec<DecisionEngineIntakePromotionBoundary>,
+    ) -> Self {
+        let allowed = boundaries
+            .iter()
+            .filter(|b| b.is_promotion_allowed())
+            .count();
+        self.summary = format!(
+            "{} Intake promotion boundaries: {} ({} promotion_allowed).",
+            self.summary,
+            boundaries.len(),
+            allowed
+        );
+        self.intake_promotion_boundaries = boundaries;
         self
     }
 
@@ -1782,6 +1805,227 @@ impl DecisionEngineIntakeDisposition {
             || self.authority_effect != Self::AUTHORITY_EFFECT_NONE
             || !Self::is_valid_state(&self.disposition_state)
             || !self.disposition_id.starts_with(Self::ID_PREFIX)
+        {
+            return Err(DecisionEngineError::CannotExecute);
+        }
+        Ok(())
+    }
+}
+
+/// Grounded inputs for recomputing a promotion boundary (not persisted).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DecisionEngineIntakePromotionBoundaryInput {
+    pub candidate: DecisionEngineIntakeCandidate,
+    pub evaluation: Option<DecisionEngineIntakeEvaluation>,
+    pub disposition: Option<DecisionEngineIntakeDisposition>,
+    pub acceptance_active: bool,
+    pub seal_aligned: bool,
+    /// Future promotion event marker — never set by this boundary alone.
+    pub previously_promoted: bool,
+}
+
+/// DE-owned boundary: when an intake artifact MAY become eligible for promotion
+/// into the native DecisionCandidate domain.
+///
+/// This is not promotion, DecisionCandidate creation, scoring, or planning.
+/// Fully derivable from intake candidate + evaluation + disposition + seal/acceptance facts.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DecisionEngineIntakePromotionBoundary {
+    pub workspace_id: String,
+    pub intake_candidate_id: String,
+    pub recommendation_reference: String,
+    /// `not_ready` | `promotion_allowed` | `promotion_blocked` | `promoted`
+    pub boundary_state: String,
+    pub evaluation_complete: bool,
+    pub disposition_retained: bool,
+    pub intake_active: bool,
+    pub acceptance_active: bool,
+    pub seal_aligned: bool,
+    pub evidence: Vec<String>,
+    pub creates_decision_candidate: bool,
+    pub creates_goal: bool,
+    pub creates_intent: bool,
+    pub adapter_invoked: bool,
+    pub planner_invoked: bool,
+    pub ownership_transferred: bool,
+    pub handoff_command: Option<String>,
+    pub note: String,
+    pub authority_effect: String,
+}
+
+impl DecisionEngineIntakePromotionBoundary {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+    pub const STATE_NOT_READY: &'static str = "not_ready";
+    pub const STATE_PROMOTION_ALLOWED: &'static str = "promotion_allowed";
+    pub const STATE_PROMOTION_BLOCKED: &'static str = "promotion_blocked";
+    pub const STATE_PROMOTED: &'static str = "promoted";
+
+    pub fn is_promotion_allowed(&self) -> bool {
+        self.boundary_state == Self::STATE_PROMOTION_ALLOWED
+    }
+
+    pub fn derive_batch(
+        inputs: &[DecisionEngineIntakePromotionBoundaryInput],
+    ) -> Vec<Self> {
+        let mut out: Vec<Self> = inputs.iter().map(Self::derive).collect();
+        out.sort_by(|a, b| a.intake_candidate_id.cmp(&b.intake_candidate_id));
+        out
+    }
+
+    pub fn derive(input: &DecisionEngineIntakePromotionBoundaryInput) -> Self {
+        let candidate = &input.candidate;
+        let intake_active = candidate.lifecycle.is_active();
+        let evaluation_complete = input
+            .evaluation
+            .as_ref()
+            .is_some_and(|e| {
+                e.intake_candidate_id == candidate.intake_candidate_id
+                    && e.evaluation_state == DecisionEngineIntakeEvaluation::STATE_EVALUATED
+            });
+        let disposition_retained = input.disposition.as_ref().is_some_and(|d| {
+            d.intake_candidate_id == candidate.intake_candidate_id
+                && d.disposition_state == DecisionEngineIntakeDisposition::STATE_RETAINED
+        });
+        let disposition_declined = input.disposition.as_ref().is_some_and(|d| {
+            d.intake_candidate_id == candidate.intake_candidate_id
+                && (d.disposition_state == DecisionEngineIntakeDisposition::STATE_DISMISSED
+                    || d.disposition_state == DecisionEngineIntakeDisposition::STATE_DEFERRED)
+        });
+
+        let mut evidence = Vec::new();
+        if intake_active {
+            evidence.push("intake_active".into());
+        } else if candidate.lifecycle.is_withdrawn() {
+            evidence.push("intake_withdrawn".into());
+        } else if candidate.lifecycle.is_invalidated() {
+            evidence.push("intake_invalidated".into());
+        }
+        if evaluation_complete {
+            evidence.push("evaluation_complete".into());
+        } else {
+            evidence.push("evaluation_incomplete".into());
+        }
+        if disposition_retained {
+            evidence.push("disposition_retained".into());
+        } else if disposition_declined {
+            evidence.push("disposition_not_retained".into());
+        } else {
+            evidence.push("disposition_missing".into());
+        }
+        if input.acceptance_active {
+            evidence.push("acceptance_active".into());
+        } else {
+            evidence.push("acceptance_inactive".into());
+        }
+        if input.seal_aligned {
+            evidence.push("seal_aligned".into());
+        } else {
+            evidence.push("seal_mismatch".into());
+        }
+
+        let boundary_state = if input.previously_promoted {
+            evidence.push("previously_promoted".into());
+            Self::STATE_PROMOTED
+        } else if candidate.lifecycle.is_withdrawn()
+            || candidate.lifecycle.is_invalidated()
+            || !input.acceptance_active
+            || !input.seal_aligned
+            || disposition_declined
+        {
+            Self::STATE_PROMOTION_BLOCKED
+        } else if !evaluation_complete || !disposition_retained || !intake_active {
+            Self::STATE_NOT_READY
+        } else {
+            evidence.push("promotion_allowed".into());
+            Self::STATE_PROMOTION_ALLOWED
+        };
+
+        Self {
+            workspace_id: candidate.workspace_id.clone(),
+            intake_candidate_id: candidate.intake_candidate_id.clone(),
+            recommendation_reference: candidate.recommendation_reference.clone(),
+            boundary_state: boundary_state.into(),
+            evaluation_complete,
+            disposition_retained,
+            intake_active,
+            acceptance_active: input.acceptance_active,
+            seal_aligned: input.seal_aligned,
+            evidence,
+            creates_decision_candidate: false,
+            creates_goal: false,
+            creates_intent: false,
+            adapter_invoked: false,
+            planner_invoked: false,
+            ownership_transferred: false,
+            handoff_command: None,
+            note: format!(
+                "Decision Engine intake promotion boundary ({boundary_state}). Readiness only — \
+                 not DecisionCandidate creation, scoring, planner handoff, Gateway grant, \
+                 goal/intent creation, or ownership transfer."
+            ),
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        }
+    }
+
+    pub fn may_create_decision_candidate(&self) -> bool {
+        false
+    }
+
+    pub fn may_create_goal(&self) -> bool {
+        false
+    }
+
+    pub fn may_create_intent(&self) -> bool {
+        false
+    }
+
+    pub fn may_invoke_planner(&self) -> bool {
+        false
+    }
+
+    pub fn may_invoke_gateway(&self) -> bool {
+        false
+    }
+
+    pub fn may_transfer_ownership(&self) -> bool {
+        false
+    }
+
+    pub fn attempt_create_decision_candidate(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_create_goal(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_create_intent(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_invoke_planner(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_transfer_ownership(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_execute() -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn assert_boundary_only(&self) -> Result<(), DecisionEngineError> {
+        if self.creates_decision_candidate
+            || self.creates_goal
+            || self.creates_intent
+            || self.adapter_invoked
+            || self.planner_invoked
+            || self.ownership_transferred
+            || self.handoff_command.is_some()
+            || self.authority_effect != Self::AUTHORITY_EFFECT_NONE
+            || (self.is_promotion_allowed()
+                && self.boundary_state != Self::STATE_PROMOTION_ALLOWED)
         {
             return Err(DecisionEngineError::CannotExecute);
         }

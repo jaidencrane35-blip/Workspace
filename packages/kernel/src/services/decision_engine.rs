@@ -16,7 +16,9 @@ use workspace_domain::{
     DecisionEngineError, DecisionEngineHandoff, DecisionEngineIntakeAssessment,
     DecisionEngineIntakeAssessmentInput, DecisionEngineIntakeCandidate,
     DecisionEngineIntakeDisposition, DecisionEngineIntakeEligibility,
-    DecisionEngineIntakeEvaluation, DecisionEngineIntakeReceipt, DecisionEngineOverlay,
+    DecisionEngineIntakeEvaluation, DecisionEngineIntakePromotionBoundary,
+    DecisionEngineIntakePromotionBoundaryInput, DecisionEngineIntakeReceipt,
+    DecisionEngineOverlay,
     DecisionEngineState, DecisionEngineSummary, DecisionExplanation, DecisionOutcome, DecisionQueue,
     DecisionReason, DecisionScore, DecisionSourceType, DecisionState, IntelligenceHighlight,
     IntentContext, RecommendationLifecycleState, WorkspaceAttentionState, WorkspaceId, WorkGoal,
@@ -263,13 +265,21 @@ impl DecisionEngineService {
         )?;
         let intake_evaluations = Self::load_intake_evaluations(db, ws)?;
         let intake_dispositions = Self::load_intake_dispositions(db, ws)?;
+        let intake_promotion_boundaries = Self::project_intake_promotion_boundaries(
+            &intake_candidates,
+            &intake_evaluations,
+            &intake_dispositions,
+            &intake_receipts,
+            &intake_eligibilities,
+        );
         let state = DecisionEngineState::from_candidates(ws, context, candidates)
             .with_intake_receipts(intake_receipts)
             .with_intake_assessments(intake_assessments)
             .with_intake_eligibilities(intake_eligibilities)
             .with_intake_candidates(intake_candidates)
             .with_intake_evaluations(intake_evaluations)
-            .with_intake_dispositions(intake_dispositions);
+            .with_intake_dispositions(intake_dispositions)
+            .with_intake_promotion_boundaries(intake_promotion_boundaries);
         debug_assert!(state
             .intake_receipts
             .iter()
@@ -318,6 +328,14 @@ impl DecisionEngineService {
             .intake_dispositions
             .iter()
             .all(|d| !d.creates_decision_candidate && d.handoff_command.is_none()));
+        debug_assert!(state
+            .intake_promotion_boundaries
+            .iter()
+            .all(|b| b.assert_boundary_only().is_ok()));
+        debug_assert!(state
+            .intake_promotion_boundaries
+            .iter()
+            .all(|b| !b.creates_decision_candidate && b.handoff_command.is_none()));
         Self::audit_generated(db, actor, &state)?;
         Self::audit_rank_changes(db, actor, &state, &previous_ranks)?;
         Ok(state)
@@ -525,6 +543,64 @@ impl DecisionEngineService {
         drop(guard);
         dispositions.sort_by(|a, b| a.disposition_id.cmp(&b.disposition_id));
         Ok(dispositions)
+    }
+
+    /// Project promotion readiness from intake aggregates + seal/acceptance facts.
+    /// Never creates DecisionCandidates. Never mutates Recommendation Engine overlays.
+    fn project_intake_promotion_boundaries(
+        candidates: &[DecisionEngineIntakeCandidate],
+        evaluations: &[DecisionEngineIntakeEvaluation],
+        dispositions: &[DecisionEngineIntakeDisposition],
+        receipts: &[DecisionEngineIntakeReceipt],
+        eligibilities: &[DecisionEngineIntakeEligibility],
+    ) -> Vec<DecisionEngineIntakePromotionBoundary> {
+        let evaluation_by_id: HashMap<&str, &DecisionEngineIntakeEvaluation> = evaluations
+            .iter()
+            .map(|e| (e.intake_candidate_id.as_str(), e))
+            .collect();
+        let disposition_by_id: HashMap<&str, &DecisionEngineIntakeDisposition> = dispositions
+            .iter()
+            .map(|d| (d.intake_candidate_id.as_str(), d))
+            .collect();
+        let receipt_by_rec: HashMap<&str, &DecisionEngineIntakeReceipt> = receipts
+            .iter()
+            .map(|r| (r.recommendation_id.as_str(), r))
+            .collect();
+        let eligibility_by_rec: HashMap<&str, &DecisionEngineIntakeEligibility> = eligibilities
+            .iter()
+            .map(|e| (e.recommendation_id.as_str(), e))
+            .collect();
+
+        let inputs: Vec<DecisionEngineIntakePromotionBoundaryInput> = candidates
+            .iter()
+            .map(|candidate| {
+                let rec = candidate.recommendation_reference.as_str();
+                let eligibility = eligibility_by_rec.get(rec).copied();
+                let receipt = receipt_by_rec.get(rec).copied();
+                let acceptance_active = eligibility
+                    .map(|e| e.acceptance_active)
+                    .unwrap_or(false);
+                let seal_aligned = eligibility
+                    .map(|e| e.seal_aligned)
+                    .or_else(|| receipt.map(|r| r.seal_aligned && r.is_observed()))
+                    .unwrap_or(false);
+                DecisionEngineIntakePromotionBoundaryInput {
+                    candidate: candidate.clone(),
+                    evaluation: evaluation_by_id
+                        .get(candidate.intake_candidate_id.as_str())
+                        .copied()
+                        .cloned(),
+                    disposition: disposition_by_id
+                        .get(candidate.intake_candidate_id.as_str())
+                        .copied()
+                        .cloned(),
+                    acceptance_active,
+                    seal_aligned,
+                    previously_promoted: false,
+                }
+            })
+            .collect();
+        DecisionEngineIntakePromotionBoundary::derive_batch(&inputs)
     }
 
     /// Persist a DE-owned intake disposition for an active evaluated intake only.

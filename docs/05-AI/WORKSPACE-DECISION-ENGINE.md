@@ -102,12 +102,16 @@ separately from DecisionCandidate outcomes. Active intake candidates may receive
 a DE-owned `DecisionEngineIntakeEvaluation` (examination record only — not
 planning authority), then a `DecisionEngineIntakeDisposition`
 (`retained` / `dismissed` / `deferred`) recording what DE does with that
-evaluation — still not planning authority. See
+evaluation — still not planning authority. A projected
+`DecisionEngineIntakePromotionBoundary` then answers whether retained intake
+may become eligible for *future* DecisionCandidate promotion — without
+performing promotion. See
 [WORKSPACE-DECISION-ENGINE-INTAKE-CANDIDATE.md](./WORKSPACE-DECISION-ENGINE-INTAKE-CANDIDATE.md),
 [WORKSPACE-DECISION-ENGINE-INTAKE-CANDIDATE-LIFECYCLE.md](./WORKSPACE-DECISION-ENGINE-INTAKE-CANDIDATE-LIFECYCLE.md),
 [WORKSPACE-DECISION-ENGINE-INTAKE-EVALUATION.md](./WORKSPACE-DECISION-ENGINE-INTAKE-EVALUATION.md),
+[WORKSPACE-DECISION-ENGINE-INTAKE-DISPOSITION.md](./WORKSPACE-DECISION-ENGINE-INTAKE-DISPOSITION.md),
 and
-[WORKSPACE-DECISION-ENGINE-INTAKE-DISPOSITION.md](./WORKSPACE-DECISION-ENGINE-INTAKE-DISPOSITION.md).
+[WORKSPACE-DECISION-ENGINE-INTAKE-PROMOTION-BOUNDARY.md](./WORKSPACE-DECISION-ENGINE-INTAKE-PROMOTION-BOUNDARY.md).
 
 Namespaces remain separate
 (`recommendation:*` vs `engine_decision:*` vs `engine_decision_intake:*`).
