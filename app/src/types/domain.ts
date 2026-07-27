@@ -1227,6 +1227,27 @@ export interface DecisionCandidate {
   authority_effect: string;
 }
 
+/** DE-owned intake disposition — lifecycle decision, not planning authority. */
+export interface DecisionEngineIntakeDisposition {
+  disposition_id: string;
+  workspace_id: string;
+  intake_candidate_id: string;
+  evaluation_id: string;
+  disposed_at: string;
+  /** retained | dismissed | deferred */
+  disposition_state: string;
+  disposition_reason: string;
+  creates_decision_candidate: boolean;
+  creates_goal: boolean;
+  creates_intent: boolean;
+  adapter_invoked: boolean;
+  planner_invoked: boolean;
+  ownership_transferred: boolean;
+  handoff_command: string | null;
+  note: string;
+  authority_effect: string;
+}
+
 /** DE-owned intake evaluation — examination record, not planning authority. */
 export interface DecisionEngineIntakeEvaluation {
   evaluation_id: string;
@@ -1381,6 +1402,8 @@ export interface DecisionEngineState {
   intake_candidates?: DecisionEngineIntakeCandidate[];
   /** DE-owned intake evaluations — never DecisionCandidates or planning authority. */
   intake_evaluations?: DecisionEngineIntakeEvaluation[];
+  /** DE-owned intake dispositions — never DecisionCandidates or planning authority. */
+  intake_dispositions?: DecisionEngineIntakeDisposition[];
   summary: string;
   authority_effect: string;
 }

@@ -235,7 +235,8 @@ pub use decision_engine::{
     DecisionCandidate, DecisionContext, DecisionEngineActionResult, DecisionEngineError,
     DecisionEngineHandoff, DecisionEngineIntakeAssessment, DecisionEngineIntakeAssessmentInput,
     DecisionEngineIntakeCandidate, DecisionEngineIntakeCandidateLifecycle,
-    DecisionEngineIntakeEligibility, DecisionEngineIntakeEvaluation, DecisionEngineIntakeReceipt,
+    DecisionEngineIntakeDisposition, DecisionEngineIntakeEligibility,
+    DecisionEngineIntakeEvaluation, DecisionEngineIntakeReceipt,
     DecisionEngineOverlay, DecisionEngineState, DecisionEngineSummary,
     DecisionExplanation, DecisionOutcome, DecisionReason, DecisionScore,
 };

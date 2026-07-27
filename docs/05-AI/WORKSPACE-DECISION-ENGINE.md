@@ -100,11 +100,14 @@ acknowledgement for future evaluation, not a ranked `DecisionCandidate`.
 Its DE-owned lifecycle (`active` / `withdrawn` / `invalidated`) is managed
 separately from DecisionCandidate outcomes. Active intake candidates may receive
 a DE-owned `DecisionEngineIntakeEvaluation` (examination record only — not
-planning authority). See
+planning authority), then a `DecisionEngineIntakeDisposition`
+(`retained` / `dismissed` / `deferred`) recording what DE does with that
+evaluation — still not planning authority. See
 [WORKSPACE-DECISION-ENGINE-INTAKE-CANDIDATE.md](./WORKSPACE-DECISION-ENGINE-INTAKE-CANDIDATE.md),
 [WORKSPACE-DECISION-ENGINE-INTAKE-CANDIDATE-LIFECYCLE.md](./WORKSPACE-DECISION-ENGINE-INTAKE-CANDIDATE-LIFECYCLE.md),
+[WORKSPACE-DECISION-ENGINE-INTAKE-EVALUATION.md](./WORKSPACE-DECISION-ENGINE-INTAKE-EVALUATION.md),
 and
-[WORKSPACE-DECISION-ENGINE-INTAKE-EVALUATION.md](./WORKSPACE-DECISION-ENGINE-INTAKE-EVALUATION.md).
+[WORKSPACE-DECISION-ENGINE-INTAKE-DISPOSITION.md](./WORKSPACE-DECISION-ENGINE-INTAKE-DISPOSITION.md).
 
 Namespaces remain separate
 (`recommendation:*` vs `engine_decision:*` vs `engine_decision_intake:*`).

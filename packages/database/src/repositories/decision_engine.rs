@@ -2,7 +2,8 @@ use crate::connection::Database;
 use crate::error::Result;
 use workspace_domain::{
     DecisionEngineIntakeCandidate, DecisionEngineIntakeCandidateLifecycle,
-    DecisionEngineIntakeEvaluation, DecisionEngineOverlay, DecisionOutcome,
+    DecisionEngineIntakeDisposition, DecisionEngineIntakeEvaluation, DecisionEngineOverlay,
+    DecisionOutcome,
 };
 
 /// Persistence for Decision Engine lifecycle overlay and intake candidates.
@@ -196,6 +197,71 @@ impl<'a> DecisionEngineRepository<'a> {
         rows.collect::<std::result::Result<Vec<_>, _>>()
             .map_err(Into::into)
     }
+
+    pub fn get_intake_evaluation_for_candidate(
+        &self,
+        workspace_id: &str,
+        intake_candidate_id: &str,
+    ) -> Result<Option<DecisionEngineIntakeEvaluation>> {
+        let mut stmt = self.db.connection().prepare(
+            "SELECT workspace_id, evaluation_id, intake_candidate_id, evaluated_at,
+                    evaluation_state, evaluation_reason
+             FROM decision_engine_intake_evaluation
+             WHERE workspace_id = ?1 AND intake_candidate_id = ?2
+             LIMIT 1",
+        )?;
+        let mut rows =
+            stmt.query_map((workspace_id, intake_candidate_id), map_intake_evaluation)?;
+        match rows.next() {
+            Some(row) => Ok(Some(row?)),
+            None => Ok(None),
+        }
+    }
+
+    pub fn upsert_intake_disposition(
+        &self,
+        disposition: &DecisionEngineIntakeDisposition,
+    ) -> Result<()> {
+        self.db.connection().execute(
+            "INSERT INTO decision_engine_intake_disposition (
+                workspace_id, disposition_id, intake_candidate_id, evaluation_id,
+                disposed_at, disposition_state, disposition_reason, updated_at
+             ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?5)
+             ON CONFLICT(workspace_id, disposition_id) DO UPDATE SET
+                intake_candidate_id = excluded.intake_candidate_id,
+                evaluation_id = excluded.evaluation_id,
+                disposed_at = excluded.disposed_at,
+                disposition_state = excluded.disposition_state,
+                disposition_reason = excluded.disposition_reason,
+                updated_at = excluded.updated_at",
+            (
+                &disposition.workspace_id,
+                &disposition.disposition_id,
+                &disposition.intake_candidate_id,
+                &disposition.evaluation_id,
+                &disposition.disposed_at,
+                &disposition.disposition_state,
+                &disposition.disposition_reason,
+            ),
+        )?;
+        Ok(())
+    }
+
+    pub fn list_intake_dispositions(
+        &self,
+        workspace_id: &str,
+    ) -> Result<Vec<DecisionEngineIntakeDisposition>> {
+        let mut stmt = self.db.connection().prepare(
+            "SELECT workspace_id, disposition_id, intake_candidate_id, evaluation_id,
+                    disposed_at, disposition_state, disposition_reason
+             FROM decision_engine_intake_disposition
+             WHERE workspace_id = ?1
+             ORDER BY disposition_id ASC",
+        )?;
+        let rows = stmt.query_map([workspace_id], map_intake_disposition)?;
+        rows.collect::<std::result::Result<Vec<_>, _>>()
+            .map_err(Into::into)
+    }
 }
 
 fn map_overlay(row: &rusqlite::Row<'_>) -> rusqlite::Result<DecisionEngineOverlay> {
@@ -272,5 +338,31 @@ fn map_intake_evaluation(row: &rusqlite::Row<'_>) -> rusqlite::Result<DecisionEn
             "Decision Engine intake evaluation ({evaluation_state}). Examination record only."
         ),
         authority_effect: DecisionEngineIntakeEvaluation::AUTHORITY_EFFECT_NONE.into(),
+    })
+}
+
+fn map_intake_disposition(
+    row: &rusqlite::Row<'_>,
+) -> rusqlite::Result<DecisionEngineIntakeDisposition> {
+    let disposition_state: String = row.get(5)?;
+    Ok(DecisionEngineIntakeDisposition {
+        workspace_id: row.get(0)?,
+        disposition_id: row.get(1)?,
+        intake_candidate_id: row.get(2)?,
+        evaluation_id: row.get(3)?,
+        disposed_at: row.get(4)?,
+        disposition_state: disposition_state.clone(),
+        disposition_reason: row.get(6)?,
+        creates_decision_candidate: false,
+        creates_goal: false,
+        creates_intent: false,
+        adapter_invoked: false,
+        planner_invoked: false,
+        ownership_transferred: false,
+        handoff_command: None,
+        note: format!(
+            "Decision Engine intake disposition ({disposition_state}). Lifecycle decision only."
+        ),
+        authority_effect: DecisionEngineIntakeDisposition::AUTHORITY_EFFECT_NONE.into(),
     })
 }

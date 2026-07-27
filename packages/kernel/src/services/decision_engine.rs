@@ -15,8 +15,8 @@ use workspace_domain::{
     ActorContext, AttentionItem, DecisionCandidate, DecisionContext, DecisionEngineActionResult,
     DecisionEngineError, DecisionEngineHandoff, DecisionEngineIntakeAssessment,
     DecisionEngineIntakeAssessmentInput, DecisionEngineIntakeCandidate,
-    DecisionEngineIntakeEligibility, DecisionEngineIntakeEvaluation, DecisionEngineIntakeReceipt,
-    DecisionEngineOverlay,
+    DecisionEngineIntakeDisposition, DecisionEngineIntakeEligibility,
+    DecisionEngineIntakeEvaluation, DecisionEngineIntakeReceipt, DecisionEngineOverlay,
     DecisionEngineState, DecisionEngineSummary, DecisionExplanation, DecisionOutcome, DecisionQueue,
     DecisionReason, DecisionScore, DecisionSourceType, DecisionState, IntelligenceHighlight,
     IntentContext, RecommendationLifecycleState, WorkspaceAttentionState, WorkspaceId, WorkGoal,
@@ -262,12 +262,14 @@ impl DecisionEngineService {
             &intake_eligibilities,
         )?;
         let intake_evaluations = Self::load_intake_evaluations(db, ws)?;
+        let intake_dispositions = Self::load_intake_dispositions(db, ws)?;
         let state = DecisionEngineState::from_candidates(ws, context, candidates)
             .with_intake_receipts(intake_receipts)
             .with_intake_assessments(intake_assessments)
             .with_intake_eligibilities(intake_eligibilities)
             .with_intake_candidates(intake_candidates)
-            .with_intake_evaluations(intake_evaluations);
+            .with_intake_evaluations(intake_evaluations)
+            .with_intake_dispositions(intake_dispositions);
         debug_assert!(state
             .intake_receipts
             .iter()
@@ -308,6 +310,14 @@ impl DecisionEngineService {
             .intake_evaluations
             .iter()
             .all(|e| !e.creates_decision_candidate && e.handoff_command.is_none()));
+        debug_assert!(state
+            .intake_dispositions
+            .iter()
+            .all(|d| d.assert_disposition_only().is_ok()));
+        debug_assert!(state
+            .intake_dispositions
+            .iter()
+            .all(|d| !d.creates_decision_candidate && d.handoff_command.is_none()));
         Self::audit_generated(db, actor, &state)?;
         Self::audit_rank_changes(db, actor, &state, &previous_ranks)?;
         Ok(state)
@@ -501,6 +511,64 @@ impl DecisionEngineService {
         repo.upsert_intake_evaluation(&evaluation)?;
         drop(guard);
         Ok(evaluation)
+    }
+
+    fn load_intake_dispositions(
+        db: &Arc<Mutex<Database>>,
+        workspace_id: &str,
+    ) -> Result<Vec<DecisionEngineIntakeDisposition>> {
+        let guard = db
+            .lock()
+            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+        let mut dispositions =
+            DecisionEngineRepository::new(&guard).list_intake_dispositions(workspace_id)?;
+        drop(guard);
+        dispositions.sort_by(|a, b| a.disposition_id.cmp(&b.disposition_id));
+        Ok(dispositions)
+    }
+
+    /// Persist a DE-owned intake disposition for an active evaluated intake only.
+    /// Never mutates Recommendation Engine overlays. Never creates DecisionCandidates.
+    pub(crate) fn dispose_intake_candidate(
+        db: &Arc<Mutex<Database>>,
+        workspace_id: impl Into<String>,
+        intake_candidate_id: impl Into<String>,
+        disposition_state: impl Into<String>,
+        disposition_reason: impl Into<String>,
+    ) -> Result<DecisionEngineIntakeDisposition> {
+        let workspace_id = workspace_id.into();
+        let intake_candidate_id = intake_candidate_id.into();
+        let disposition_state = disposition_state.into();
+        let disposition_reason = disposition_reason.into();
+        let now = Utc::now().to_rfc3339();
+
+        let guard = db
+            .lock()
+            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+        let repo = DecisionEngineRepository::new(&guard);
+        let candidate = repo
+            .get_intake_candidate(&workspace_id, &intake_candidate_id)?
+            .ok_or_else(|| KernelError::from(DecisionEngineError::NotFound))?;
+        let evaluation = repo
+            .get_intake_evaluation_for_candidate(&workspace_id, &intake_candidate_id)?
+            .ok_or_else(|| {
+                KernelError::from(DecisionEngineError::InvalidTransition {
+                    from: "unevaluated".into(),
+                    to: "dispose".into(),
+                })
+            })?;
+        let disposition = DecisionEngineIntakeDisposition::try_dispose(
+            &candidate,
+            &evaluation,
+            disposition_state,
+            disposition_reason,
+            now,
+        )
+        .map_err(KernelError::from)?;
+        debug_assert!(disposition.assert_disposition_only().is_ok());
+        repo.upsert_intake_disposition(&disposition)?;
+        drop(guard);
+        Ok(disposition)
     }
 
     pub(crate) fn summary_projection(

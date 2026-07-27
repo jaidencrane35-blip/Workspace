@@ -46,7 +46,8 @@ Remaining before a future handoff could exist:
 13. ~~DE intake candidate (acknowledgement ≠ DecisionCandidate)~~ — see [WORKSPACE-DECISION-ENGINE-INTAKE-CANDIDATE.md](./WORKSPACE-DECISION-ENGINE-INTAKE-CANDIDATE.md)
 14. ~~DE intake candidate lifecycle (active/withdrawn/invalidated ≠ DecisionCandidate lifecycle)~~ — see [WORKSPACE-DECISION-ENGINE-INTAKE-CANDIDATE-LIFECYCLE.md](./WORKSPACE-DECISION-ENGINE-INTAKE-CANDIDATE-LIFECYCLE.md)
 15. ~~DE intake evaluation (examine ≠ DecisionCandidate / planning authority)~~ — see [WORKSPACE-DECISION-ENGINE-INTAKE-EVALUATION.md](./WORKSPACE-DECISION-ENGINE-INTAKE-EVALUATION.md)
-16. Optional **DecisionCandidate creation / adapter invocation** after evaluated intake — still separate domains; not execution
+16. ~~DE intake disposition (retain/dismiss/defer ≠ DecisionCandidate / planning)~~ — see [WORKSPACE-DECISION-ENGINE-INTAKE-DISPOSITION.md](./WORKSPACE-DECISION-ENGINE-INTAKE-DISPOSITION.md)
+17. Optional **DecisionCandidate creation / adapter invocation** after retained disposition — still separate domains; not execution
 
 ---
 

@@ -190,6 +190,9 @@ pub struct DecisionEngineState {
     /// DE-owned intake evaluations — examination records, never planning authority.
     #[serde(default)]
     pub intake_evaluations: Vec<DecisionEngineIntakeEvaluation>,
+    /// DE-owned intake dispositions — lifecycle decisions, never planning authority.
+    #[serde(default)]
+    pub intake_dispositions: Vec<DecisionEngineIntakeDisposition>,
     pub summary: String,
     pub authority_effect: String,
 }
@@ -230,6 +233,7 @@ impl DecisionEngineState {
             intake_eligibilities: Vec::new(),
             intake_candidates: Vec::new(),
             intake_evaluations: Vec::new(),
+            intake_dispositions: Vec::new(),
             summary,
             authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
         }
@@ -304,6 +308,20 @@ impl DecisionEngineState {
             evaluations.len()
         );
         self.intake_evaluations = evaluations;
+        self
+    }
+
+    /// Attach DE-owned intake dispositions without changing scoring or DecisionCandidates.
+    pub fn with_intake_dispositions(
+        mut self,
+        dispositions: Vec<DecisionEngineIntakeDisposition>,
+    ) -> Self {
+        self.summary = format!(
+            "{} Intake dispositions: {}.",
+            self.summary,
+            dispositions.len()
+        );
+        self.intake_dispositions = dispositions;
         self
     }
 
@@ -1601,6 +1619,169 @@ impl DecisionEngineIntakeEvaluation {
             || self.authority_effect != Self::AUTHORITY_EFFECT_NONE
             || !Self::is_valid_state(&self.evaluation_state)
             || !self.evaluation_id.starts_with(Self::ID_PREFIX)
+        {
+            return Err(DecisionEngineError::CannotExecute);
+        }
+        Ok(())
+    }
+}
+
+/// DE-owned disposition for an evaluated intake candidate.
+///
+/// Records what Decision Engine does with an examined intake (retain / dismiss / defer).
+/// Never creates DecisionCandidates, goals, intents, planner work, or execution authority.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DecisionEngineIntakeDisposition {
+    pub disposition_id: String,
+    pub workspace_id: String,
+    pub intake_candidate_id: String,
+    pub evaluation_id: String,
+    pub disposed_at: String,
+    /// `retained` | `dismissed` | `deferred`
+    pub disposition_state: String,
+    pub disposition_reason: String,
+    pub creates_decision_candidate: bool,
+    pub creates_goal: bool,
+    pub creates_intent: bool,
+    pub adapter_invoked: bool,
+    pub planner_invoked: bool,
+    pub ownership_transferred: bool,
+    pub handoff_command: Option<String>,
+    pub note: String,
+    pub authority_effect: String,
+}
+
+impl DecisionEngineIntakeDisposition {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+    pub const STATE_RETAINED: &'static str = "retained";
+    pub const STATE_DISMISSED: &'static str = "dismissed";
+    pub const STATE_DEFERRED: &'static str = "deferred";
+    pub const ID_PREFIX: &'static str = "engine_decision_intake_disp:";
+
+    pub fn synthetic_id(intake_candidate_id: &str) -> String {
+        format!("{}{intake_candidate_id}", Self::ID_PREFIX)
+    }
+
+    pub fn is_valid_state(state: &str) -> bool {
+        matches!(
+            state,
+            Self::STATE_RETAINED | Self::STATE_DISMISSED | Self::STATE_DEFERRED
+        )
+    }
+
+    /// Dispose only an active, evaluated intake candidate.
+    /// Withdrawn, invalidated, and unevaluated intakes are rejected.
+    pub fn try_dispose(
+        candidate: &DecisionEngineIntakeCandidate,
+        evaluation: &DecisionEngineIntakeEvaluation,
+        disposition_state: impl Into<String>,
+        disposition_reason: impl Into<String>,
+        disposed_at: impl Into<String>,
+    ) -> Result<Self, DecisionEngineError> {
+        if !candidate.lifecycle.is_active() {
+            return Err(DecisionEngineError::InvalidTransition {
+                from: candidate.lifecycle.lifecycle_state.clone(),
+                to: "dispose".into(),
+            });
+        }
+        if evaluation.intake_candidate_id != candidate.intake_candidate_id
+            || evaluation.workspace_id != candidate.workspace_id
+            || !DecisionEngineIntakeEvaluation::is_valid_state(&evaluation.evaluation_state)
+        {
+            return Err(DecisionEngineError::InvalidTransition {
+                from: "unevaluated".into(),
+                to: "dispose".into(),
+            });
+        }
+        let disposition_state = disposition_state.into();
+        if !Self::is_valid_state(&disposition_state) {
+            return Err(DecisionEngineError::InvalidOutcome(disposition_state));
+        }
+        let disposed_at = disposed_at.into();
+        let disposition_reason = disposition_reason.into();
+        Ok(Self {
+            disposition_id: Self::synthetic_id(&candidate.intake_candidate_id),
+            workspace_id: candidate.workspace_id.clone(),
+            intake_candidate_id: candidate.intake_candidate_id.clone(),
+            evaluation_id: evaluation.evaluation_id.clone(),
+            disposed_at,
+            disposition_state: disposition_state.clone(),
+            disposition_reason,
+            creates_decision_candidate: false,
+            creates_goal: false,
+            creates_intent: false,
+            adapter_invoked: false,
+            planner_invoked: false,
+            ownership_transferred: false,
+            handoff_command: None,
+            note: format!(
+                "Decision Engine intake disposition ({disposition_state}). Lifecycle decision only — \
+                 not DecisionCandidate creation, goal/intent creation, planner handoff, Gateway \
+                 grant, adapter invocation, or ownership transfer."
+            ),
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        })
+    }
+
+    pub fn may_create_decision_candidate(&self) -> bool {
+        false
+    }
+
+    pub fn may_create_goal(&self) -> bool {
+        false
+    }
+
+    pub fn may_create_intent(&self) -> bool {
+        false
+    }
+
+    pub fn may_invoke_planner(&self) -> bool {
+        false
+    }
+
+    pub fn may_invoke_gateway(&self) -> bool {
+        false
+    }
+
+    pub fn may_transfer_ownership(&self) -> bool {
+        false
+    }
+
+    pub fn attempt_create_decision_candidate(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_create_goal(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_create_intent(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_invoke_planner(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_transfer_ownership(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_execute() -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn assert_disposition_only(&self) -> Result<(), DecisionEngineError> {
+        if self.creates_decision_candidate
+            || self.creates_goal
+            || self.creates_intent
+            || self.adapter_invoked
+            || self.planner_invoked
+            || self.ownership_transferred
+            || self.handoff_command.is_some()
+            || self.authority_effect != Self::AUTHORITY_EFFECT_NONE
+            || !Self::is_valid_state(&self.disposition_state)
+            || !self.disposition_id.starts_with(Self::ID_PREFIX)
         {
             return Err(DecisionEngineError::CannotExecute);
         }
