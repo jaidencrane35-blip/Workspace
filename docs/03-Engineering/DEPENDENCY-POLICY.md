@@ -75,9 +75,9 @@ Document new dependencies in the PR description with justification.
 | **Lock files committed** | Yes — `pnpm-lock.yaml` and `Cargo.lock` committed (DEC-012) |
 | **Lock file updates** | Intentional only — update when adding/upgrading dependencies |
 | **Lock file in PR review** | Reviewers check for unexpected dependency changes |
-| **Specific manager** | Determined when stack is selected (OQ-001, OQ-019) |
+| **Specific manager** | `pnpm` selected in root `package.json` (OQ-001, OQ-019) |
 
-Current `.gitignore` has lock file entries commented out pending this policy. When stack is selected, uncomment the appropriate lock file and commit it.
+Current `.gitignore` confirms commit policy for `pnpm-lock.yaml` and `Cargo.lock`; package manager selection is complete.
 
 ---
 

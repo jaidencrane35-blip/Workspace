@@ -143,7 +143,7 @@ See [`.gitignore`](../../.gitignore).
 - All documentation in `docs/`
 - Configuration templates (`.env.example`)
 - CI/CD configuration
-- Lock files (once package manager is selected — policy TBD)
+- Lock files (`pnpm-lock.yaml`, `Cargo.lock`) — package manager is selected and committed
 
 ### 4.3 File Size
 

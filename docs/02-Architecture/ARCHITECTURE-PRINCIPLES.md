@@ -83,7 +83,7 @@ No production architecture (module structure, API contracts, data models) is imp
 | Constraint | Rationale |
 |------------|-----------|
 | Windows-first | Primary platform; others are future consideration |
-| Desktop-native | Not a web app pretending to be desktop — technology choice TBD |
+| Desktop-native | Not a web app pretending to be desktop — implemented as a Tauri-based desktop shell on Windows |
 | Extensible via plugins | Third-party and first-party features share extension model |
 | AI is a subsystem, not the product | AI supports the workspace; it does not define it |
 | No silent side effects | All state-changing operations are auditable |
