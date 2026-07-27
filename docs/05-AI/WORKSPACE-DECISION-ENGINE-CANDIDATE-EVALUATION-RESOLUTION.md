@@ -42,7 +42,11 @@ DecisionCandidateEvaluationResolution
 Only `accepted_for_scoring` / `rejected_for_scoring` (non-derivable decisions).
 Table: `decision_candidate_evaluation_resolution`.
 
+Scoring itself is a separate artifact — see
+[WORKSPACE-DECISION-ENGINE-CANDIDATE-SCORE.md](./WORKSPACE-DECISION-ENGINE-CANDIDATE-SCORE.md).
+
 ## Related
 
 - [WORKSPACE-DECISION-ENGINE-CANDIDATE-EVALUATION-ORIGIN.md](./WORKSPACE-DECISION-ENGINE-CANDIDATE-EVALUATION-ORIGIN.md)
+- [WORKSPACE-DECISION-ENGINE-CANDIDATE-SCORE.md](./WORKSPACE-DECISION-ENGINE-CANDIDATE-SCORE.md)
 - [WORKSPACE-DECISION-ENGINE.md](./WORKSPACE-DECISION-ENGINE.md)

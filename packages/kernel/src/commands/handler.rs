@@ -2677,6 +2677,29 @@ impl CommandHandler {
         )
     }
 
+    /// Create a DE-owned DecisionScore for an accepted candidate — never ranks/selects/plans.
+    pub fn score_decision_candidate(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        candidate_id: String,
+    ) -> Result<(
+        workspace_domain::DecisionCandidateScore,
+        workspace_domain::DecisionCandidate,
+    )> {
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent))
+            .execute_mutation(GateDecisionEngineWrite)?;
+        DecisionEngineService::score_decision_candidate(
+            &kernel.shared_database(),
+            &actor,
+            &kernel.orchestrated_plans(),
+            &kernel.assistant_workflows(),
+            workspace_id,
+            candidate_id,
+        )
+    }
+
     /// Architecture guard — Decision Engine must never execute.
     pub fn decision_engine_attempt_execute() -> Result<()> {
         DecisionEngineService::attempt_execute()

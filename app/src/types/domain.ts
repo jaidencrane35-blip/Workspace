@@ -1266,6 +1266,34 @@ export interface DecisionCandidateEvaluationResolution {
   authority_effect: string;
 }
 
+/** DE-owned DecisionScore result — scoring only; never ranks/selects/plans. */
+export interface DecisionCandidateScore {
+  score_id: string;
+  workspace_id: string;
+  decision_candidate_id: string;
+  /** native | recommendation_intake */
+  origin: string;
+  resolution_id: string;
+  score: DecisionScore;
+  scoring_factors: string[];
+  scored_at: string;
+  intake_candidate_id: string | null;
+  creation_request_id: string | null;
+  package_seal_digest: string | null;
+  recommendation_reference: string | null;
+  ranking_applied: boolean;
+  selects_candidate: boolean;
+  creates_goal: boolean;
+  creates_intent: boolean;
+  adapter_invoked: boolean;
+  planner_invoked: boolean;
+  ownership_transferred: boolean;
+  mutates_recommendation_engine: boolean;
+  handoff_command: string | null;
+  note: string;
+  authority_effect: string;
+}
+
 /** DE-owned evaluation origin contract — origin rules only, never scoring. */
 export interface DecisionCandidateEvaluationOriginContract {
   evaluation_id: string;
@@ -1593,6 +1621,8 @@ export interface DecisionEngineState {
   evaluation_origin_contracts?: DecisionCandidateEvaluationOriginContract[];
   /** DE-owned evaluation resolutions — scoring-path admission only, never scores. */
   evaluation_resolutions?: DecisionCandidateEvaluationResolution[];
+  /** DE-owned DecisionScore results — scoring only; never ranking/selection. */
+  candidate_scores?: DecisionCandidateScore[];
   summary: string;
   authority_effect: string;
 }

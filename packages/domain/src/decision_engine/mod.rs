@@ -270,6 +270,9 @@ pub struct DecisionEngineState {
     /// DE-owned evaluation resolutions — scoring-path admission only, never scores.
     #[serde(default)]
     pub evaluation_resolutions: Vec<DecisionCandidateEvaluationResolution>,
+    /// DE-owned DecisionScore results for accepted candidates — never ranking/selection.
+    #[serde(default)]
+    pub candidate_scores: Vec<DecisionCandidateScore>,
     pub summary: String,
     pub authority_effect: String,
 }
@@ -317,6 +320,7 @@ impl DecisionEngineState {
             lifecycle_integrations: Vec::new(),
             evaluation_origin_contracts: Vec::new(),
             evaluation_resolutions: Vec::new(),
+            candidate_scores: Vec::new(),
             summary,
             authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
         }
@@ -506,6 +510,13 @@ impl DecisionEngineState {
             accepted
         );
         self.evaluation_resolutions = resolutions;
+        self
+    }
+
+    /// Attach DE-owned DecisionScore results without ranking, selecting, or planner handoff.
+    pub fn with_candidate_scores(mut self, scores: Vec<DecisionCandidateScore>) -> Self {
+        self.summary = format!("{} DecisionScores: {}.", self.summary, scores.len());
+        self.candidate_scores = scores;
         self
     }
 
@@ -3619,6 +3630,283 @@ impl DecisionCandidateEvaluationResolution {
             || !self.resolution_id.starts_with(Self::ID_PREFIX)
             || ((self.is_accepted_for_scoring() || self.is_rejected_for_scoring())
                 && self.resolved_at.is_none())
+        {
+            return Err(DecisionEngineError::CannotExecute);
+        }
+        Ok(())
+    }
+}
+
+/// Input for creating a DE-owned DecisionScore result for an accepted candidate.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DecisionCandidateScoreInput {
+    pub candidate: DecisionCandidate,
+    pub resolution: DecisionCandidateEvaluationResolution,
+    pub lifecycle_integration: DecisionCandidateLifecycleIntegration,
+    pub intake_withdrawn_or_invalidated: bool,
+    pub existing_score: Option<DecisionCandidateScore>,
+}
+
+/// DE-owned DecisionScore artifact — scoring result only.
+///
+/// Created only after `EvaluationResolution.accepted_for_scoring`. Never ranks,
+/// selects, plans, executes, or mutates Recommendation Engine.
+///
+/// Distinct from the embedded [`DecisionScore`] breakdown value type used on
+/// candidates for synthesis explainability.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DecisionCandidateScore {
+    pub score_id: String,
+    pub workspace_id: String,
+    pub decision_candidate_id: String,
+    /// `native` | `recommendation_intake`
+    pub origin: String,
+    pub resolution_id: String,
+    /// Score value / breakdown (identity of the scoring result payload).
+    pub score: DecisionScore,
+    /// Explicit scoring factors/reasons for explainability.
+    pub scoring_factors: Vec<String>,
+    pub scored_at: String,
+    pub intake_candidate_id: Option<String>,
+    pub creation_request_id: Option<String>,
+    pub package_seal_digest: Option<String>,
+    pub recommendation_reference: Option<String>,
+    pub ranking_applied: bool,
+    pub selects_candidate: bool,
+    pub creates_goal: bool,
+    pub creates_intent: bool,
+    pub adapter_invoked: bool,
+    pub planner_invoked: bool,
+    pub ownership_transferred: bool,
+    pub mutates_recommendation_engine: bool,
+    pub handoff_command: Option<String>,
+    pub note: String,
+    pub authority_effect: String,
+}
+
+impl DecisionCandidateScore {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+    pub const ID_PREFIX: &'static str = "engine_decision_score:";
+
+    pub fn synthetic_id(decision_candidate_id: &str) -> String {
+        format!("{}{decision_candidate_id}", Self::ID_PREFIX)
+    }
+
+    /// Deterministic origin-aware score value — not a peer ranking.
+    pub fn compute_score(candidate: &DecisionCandidate, origin: &str) -> DecisionScore {
+        if origin == DecisionCandidate::ORIGIN_NATIVE {
+            let mut score = candidate.score.clone();
+            let mut factors = vec!["decision_score:native".into()];
+            factors.extend(score.factors.iter().cloned());
+            if factors.len() == 1 {
+                factors.push("native_synthesis_score".into());
+            }
+            score.factors = factors;
+            score
+        } else if origin == DecisionCandidate::ORIGIN_RECOMMENDATION_INTAKE {
+            DecisionScore {
+                total: 40,
+                attention_contribution: 0,
+                memory_contribution: 0,
+                personalization_contribution: 0,
+                goal_contribution: 0,
+                factors: vec![
+                    "decision_score:recommendation_intake".into(),
+                    "intake_baseline".into(),
+                    "provenance_aligned".into(),
+                ],
+            }
+        } else {
+            DecisionCandidate::unscored()
+        }
+    }
+
+    /// Create a DecisionScore result when resolution admits scoring.
+    /// Never ranks, selects, plans, or mutates Recommendation Engine / candidate outcome.
+    pub fn try_create(
+        input: &DecisionCandidateScoreInput,
+        scored_at: impl Into<String>,
+    ) -> Result<(Self, DecisionCandidate), DecisionEngineError> {
+        if let Some(existing) = &input.existing_score {
+            let after = input.candidate.clone();
+            DecisionCandidateLifecycleIntegration::assert_provenance_retained(
+                &input.candidate,
+                &after,
+            )?;
+            if after.score != input.candidate.score || after.outcome != input.candidate.outcome {
+                return Err(DecisionEngineError::CannotExecute);
+            }
+            existing.assert_score_only()?;
+            return Ok((existing.clone(), after));
+        }
+
+        let candidate = &input.candidate;
+        let resolution = &input.resolution;
+        let integration = &input.lifecycle_integration;
+
+        if resolution.is_rejected_for_scoring() {
+            return Err(DecisionEngineError::InvalidTransition {
+                from: resolution.resolution_state.clone(),
+                to: "score".into(),
+            });
+        }
+        if resolution.is_blocked() || resolution.is_awaiting() {
+            return Err(DecisionEngineError::InvalidTransition {
+                from: resolution.resolution_state.clone(),
+                to: "score".into(),
+            });
+        }
+        if !resolution.is_accepted_for_scoring() {
+            return Err(DecisionEngineError::InvalidTransition {
+                from: resolution.resolution_state.clone(),
+                to: "score".into(),
+            });
+        }
+
+        let origin = DecisionCandidateLifecycleIntegration::classify_origin(candidate);
+        let provenance_valid =
+            DecisionCandidateLifecycleIntegration::provenance_valid_for_origin(origin, candidate);
+        let lifecycle_valid = integration.is_integrated()
+            && integration.decision_candidate_id == candidate.id.as_str()
+            && resolution.decision_candidate_id == candidate.id.as_str();
+        let candidate_active = matches!(
+            candidate.outcome,
+            DecisionOutcome::Open | DecisionOutcome::Postponed
+        ) && !input.intake_withdrawn_or_invalidated;
+
+        if !provenance_valid
+            || !lifecycle_valid
+            || input.intake_withdrawn_or_invalidated
+            || !candidate_active
+            || !candidate.id.as_str().starts_with("engine_decision:")
+            || resolution.package_seal_digest != candidate.package_seal_digest
+        {
+            return Err(DecisionEngineError::InvalidTransition {
+                from: "accepted_for_scoring".into(),
+                to: "score_blocked".into(),
+            });
+        }
+
+        // Invalid source package for intake: empty seal when intake-originated.
+        if origin == DecisionCandidate::ORIGIN_RECOMMENDATION_INTAKE
+            && candidate
+                .package_seal_digest
+                .as_deref()
+                .is_none_or(|d| d.is_empty())
+        {
+            return Err(DecisionEngineError::InvalidTransition {
+                from: "accepted_for_scoring".into(),
+                to: "invalid_source_package".into(),
+            });
+        }
+
+        let score_value = Self::compute_score(candidate, origin);
+        let scored_at = scored_at.into();
+        let before = candidate.clone();
+        let score = Self {
+            score_id: Self::synthetic_id(candidate.id.as_str()),
+            workspace_id: candidate.workspace_id.as_str().to_string(),
+            decision_candidate_id: candidate.id.as_str().to_string(),
+            origin: origin.into(),
+            resolution_id: resolution.resolution_id.clone(),
+            scoring_factors: score_value.factors.clone(),
+            score: score_value,
+            scored_at,
+            intake_candidate_id: candidate.intake_candidate_id.clone(),
+            creation_request_id: candidate.creation_request_id.clone(),
+            package_seal_digest: candidate.package_seal_digest.clone(),
+            recommendation_reference: candidate.recommendation_id.clone(),
+            ranking_applied: false,
+            selects_candidate: false,
+            creates_goal: false,
+            creates_intent: false,
+            adapter_invoked: false,
+            planner_invoked: false,
+            ownership_transferred: false,
+            mutates_recommendation_engine: false,
+            handoff_command: None,
+            note: format!(
+                "Decision Engine DecisionScore for origin {origin}. \
+                 Scoring result only — not ranking, selection, planner, Gateway, \
+                 goals, intents, or Recommendation Engine mutation."
+            ),
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        };
+
+        let after = before.clone();
+        DecisionCandidateLifecycleIntegration::assert_provenance_retained(&before, &after)?;
+        if after.score != before.score || after.outcome != before.outcome {
+            return Err(DecisionEngineError::CannotExecute);
+        }
+        score.assert_score_only()?;
+        Ok((score, after))
+    }
+
+    pub fn may_rank(&self) -> bool {
+        false
+    }
+
+    pub fn may_select(&self) -> bool {
+        false
+    }
+
+    pub fn may_invoke_planner(&self) -> bool {
+        false
+    }
+
+    pub fn may_invoke_gateway(&self) -> bool {
+        false
+    }
+
+    pub fn may_create_goal(&self) -> bool {
+        false
+    }
+
+    pub fn may_create_intent(&self) -> bool {
+        false
+    }
+
+    pub fn attempt_rank(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_select(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_invoke_planner(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_invoke_gateway(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_create_goal(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_create_intent(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_execute() -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn assert_score_only(&self) -> Result<(), DecisionEngineError> {
+        if self.ranking_applied
+            || self.selects_candidate
+            || self.creates_goal
+            || self.creates_intent
+            || self.adapter_invoked
+            || self.planner_invoked
+            || self.ownership_transferred
+            || self.mutates_recommendation_engine
+            || self.handoff_command.is_some()
+            || self.authority_effect != Self::AUTHORITY_EFFECT_NONE
+            || !self.score_id.starts_with(Self::ID_PREFIX)
+            || self.scored_at.is_empty()
         {
             return Err(DecisionEngineError::CannotExecute);
         }

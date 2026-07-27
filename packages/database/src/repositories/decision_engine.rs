@@ -2,9 +2,9 @@ use crate::connection::Database;
 use crate::error::Result;
 use workspace_domain::{
     DecisionCandidateEvaluationOriginContract, DecisionCandidateEvaluationResolution,
-    DecisionEngineCandidateCreation, DecisionEngineIntakeCandidate,
+    DecisionCandidateScore, DecisionEngineCandidateCreation, DecisionEngineIntakeCandidate,
     DecisionEngineIntakeCandidateLifecycle, DecisionEngineIntakeDisposition,
-    DecisionEngineIntakeEvaluation, DecisionEngineOverlay, DecisionOutcome,
+    DecisionEngineIntakeEvaluation, DecisionEngineOverlay, DecisionOutcome, DecisionScore,
 };
 
 /// Persistence for Decision Engine lifecycle overlay and intake candidates.
@@ -468,6 +468,74 @@ impl<'a> DecisionEngineRepository<'a> {
         rows.collect::<std::result::Result<Vec<_>, _>>()
             .map_err(Into::into)
     }
+
+    /// Persist a DE-owned DecisionScore result (historical identity).
+    pub fn upsert_candidate_score(&self, score: &DecisionCandidateScore) -> Result<()> {
+        let factors_json = serde_json::to_string(&score.scoring_factors).unwrap_or_else(|_| "[]".into());
+        self.db.connection().execute(
+            "INSERT INTO decision_candidate_score (
+                workspace_id, score_id, decision_candidate_id, origin, resolution_id,
+                score_total, attention_contribution, memory_contribution,
+                personalization_contribution, goal_contribution, scoring_factors_json,
+                scored_at, recommendation_reference, package_seal_digest,
+                intake_candidate_id, creation_request_id, updated_at
+             ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?12)
+             ON CONFLICT(workspace_id, score_id) DO UPDATE SET
+                decision_candidate_id = excluded.decision_candidate_id,
+                origin = excluded.origin,
+                resolution_id = excluded.resolution_id,
+                score_total = excluded.score_total,
+                attention_contribution = excluded.attention_contribution,
+                memory_contribution = excluded.memory_contribution,
+                personalization_contribution = excluded.personalization_contribution,
+                goal_contribution = excluded.goal_contribution,
+                scoring_factors_json = excluded.scoring_factors_json,
+                scored_at = excluded.scored_at,
+                recommendation_reference = excluded.recommendation_reference,
+                package_seal_digest = excluded.package_seal_digest,
+                intake_candidate_id = excluded.intake_candidate_id,
+                creation_request_id = excluded.creation_request_id,
+                updated_at = excluded.updated_at",
+            (
+                &score.workspace_id,
+                &score.score_id,
+                &score.decision_candidate_id,
+                &score.origin,
+                &score.resolution_id,
+                score.score.total,
+                score.score.attention_contribution,
+                score.score.memory_contribution,
+                score.score.personalization_contribution,
+                score.score.goal_contribution,
+                factors_json,
+                &score.scored_at,
+                &score.recommendation_reference,
+                &score.package_seal_digest,
+                &score.intake_candidate_id,
+                &score.creation_request_id,
+            ),
+        )?;
+        Ok(())
+    }
+
+    pub fn list_candidate_scores(
+        &self,
+        workspace_id: &str,
+    ) -> Result<Vec<DecisionCandidateScore>> {
+        let mut stmt = self.db.connection().prepare(
+            "SELECT workspace_id, score_id, decision_candidate_id, origin, resolution_id,
+                    score_total, attention_contribution, memory_contribution,
+                    personalization_contribution, goal_contribution, scoring_factors_json,
+                    scored_at, recommendation_reference, package_seal_digest,
+                    intake_candidate_id, creation_request_id
+             FROM decision_candidate_score
+             WHERE workspace_id = ?1
+             ORDER BY score_id ASC",
+        )?;
+        let rows = stmt.query_map([workspace_id], map_candidate_score)?;
+        rows.collect::<std::result::Result<Vec<_>, _>>()
+            .map_err(Into::into)
+    }
 }
 
 fn map_overlay(row: &rusqlite::Row<'_>) -> rusqlite::Result<DecisionEngineOverlay> {
@@ -694,5 +762,48 @@ fn map_evaluation_resolution(
              Persisted scoring-path admission only — no DecisionScore or ranking."
         ),
         authority_effect: DecisionCandidateEvaluationResolution::AUTHORITY_EFFECT_NONE.into(),
+    })
+}
+
+fn map_candidate_score(row: &rusqlite::Row<'_>) -> rusqlite::Result<DecisionCandidateScore> {
+    let origin: String = row.get(3)?;
+    let factors_json: String = row.get(10)?;
+    let scoring_factors: Vec<String> =
+        serde_json::from_str(&factors_json).unwrap_or_default();
+    let score = DecisionScore {
+        total: row.get(5)?,
+        attention_contribution: row.get(6)?,
+        memory_contribution: row.get(7)?,
+        personalization_contribution: row.get(8)?,
+        goal_contribution: row.get(9)?,
+        factors: scoring_factors.clone(),
+    };
+    Ok(DecisionCandidateScore {
+        workspace_id: row.get(0)?,
+        score_id: row.get(1)?,
+        decision_candidate_id: row.get(2)?,
+        origin: origin.clone(),
+        resolution_id: row.get(4)?,
+        score,
+        scoring_factors,
+        scored_at: row.get(11)?,
+        recommendation_reference: row.get(12)?,
+        package_seal_digest: row.get(13)?,
+        intake_candidate_id: row.get(14)?,
+        creation_request_id: row.get(15)?,
+        ranking_applied: false,
+        selects_candidate: false,
+        creates_goal: false,
+        creates_intent: false,
+        adapter_invoked: false,
+        planner_invoked: false,
+        ownership_transferred: false,
+        mutates_recommendation_engine: false,
+        handoff_command: None,
+        note: format!(
+            "Decision Engine DecisionScore for origin {origin}. \
+             Persisted scoring result only — no ranking or selection."
+        ),
+        authority_effect: DecisionCandidateScore::AUTHORITY_EFFECT_NONE.into(),
     })
 }

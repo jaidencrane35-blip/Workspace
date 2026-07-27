@@ -15,7 +15,8 @@ use workspace_domain::{
     ActorContext, AttentionItem, DecisionCandidate, DecisionCandidateEvaluationOriginContract,
     DecisionCandidateEvaluationOriginInput, DecisionCandidateEvaluationResolution,
     DecisionCandidateEvaluationResolutionInput, DecisionCandidateLifecycleIntegration,
-    DecisionContext, DecisionEngineActionResult, DecisionEngineCandidateCreation,
+    DecisionCandidateScore, DecisionCandidateScoreInput, DecisionContext,
+    DecisionEngineActionResult, DecisionEngineCandidateCreation,
     DecisionEngineCandidateCreationInput, DecisionEngineCandidateCreationRequest,
     DecisionEngineError, DecisionEngineHandoff, DecisionEngineIntakeAssessment,
     DecisionEngineIntakeAssessmentInput, DecisionEngineIntakeCandidate,
@@ -327,6 +328,7 @@ impl DecisionEngineService {
             &intake_candidates,
             &persisted_resolutions,
         );
+        let candidate_scores = Self::load_candidate_scores(db, ws)?;
         let state = DecisionEngineState::from_candidates(ws, context, candidates)
             .with_intake_receipts(intake_receipts)
             .with_intake_assessments(intake_assessments)
@@ -339,7 +341,8 @@ impl DecisionEngineService {
             .with_candidate_creations(candidate_creations)
             .with_lifecycle_integrations(lifecycle_integrations)
             .with_evaluation_origin_contracts(evaluation_origin_contracts)
-            .with_evaluation_resolutions(evaluation_resolutions);
+            .with_evaluation_resolutions(evaluation_resolutions)
+            .with_candidate_scores(candidate_scores);
         debug_assert!(state
             .intake_receipts
             .iter()
@@ -431,6 +434,16 @@ impl DecisionEngineService {
             .all(|r| r.assert_resolution_only().is_ok()));
         debug_assert!(state.evaluation_resolutions.iter().all(|r| {
             !r.scoring_applied && !r.ranking_applied && !r.creates_decision_score
+        }));
+        debug_assert!(state
+            .candidate_scores
+            .iter()
+            .all(|s| s.assert_score_only().is_ok()));
+        debug_assert!(state.candidate_scores.iter().all(|s| {
+            !s.ranking_applied
+                && !s.selects_candidate
+                && !s.planner_invoked
+                && s.handoff_command.is_none()
         }));
         Self::audit_generated(db, actor, &state)?;
         Self::audit_rank_changes(db, actor, &state, &previous_ranks)?;
@@ -937,6 +950,95 @@ impl DecisionEngineService {
         DecisionEngineRepository::new(&guard).upsert_evaluation_resolution(&resolved)?;
         drop(guard);
         Ok((resolved, unchanged))
+    }
+
+    /// Create a DE-owned DecisionScore for an accepted_for_scoring candidate.
+    /// Never ranks, selects, plans, executes, or mutates Recommendation Engine.
+    pub(crate) fn score_decision_candidate(
+        db: &Arc<Mutex<Database>>,
+        actor: &ActorContext,
+        orchestrated_plans: &Arc<Mutex<OrchestratedPlanStore>>,
+        assistant_workflows: &Arc<Mutex<AssistantWorkflowStore>>,
+        workspace_id: impl Into<String>,
+        candidate_id: impl Into<String>,
+    ) -> Result<(DecisionCandidateScore, DecisionCandidate)> {
+        let workspace_id = workspace_id.into();
+        let candidate_id = candidate_id.into();
+        let now = Utc::now().to_rfc3339();
+        let state = Self::generate(
+            db,
+            actor,
+            orchestrated_plans,
+            assistant_workflows,
+            workspace_id.clone(),
+        )?;
+        let candidate = state
+            .candidates
+            .iter()
+            .find(|c| c.id.as_str() == candidate_id)
+            .cloned()
+            .ok_or_else(|| KernelError::from(DecisionEngineError::NotFound))?;
+        let integration = state
+            .lifecycle_integrations
+            .iter()
+            .find(|i| i.decision_candidate_id == candidate_id)
+            .cloned()
+            .ok_or_else(|| KernelError::from(DecisionEngineError::NotFound))?;
+        let resolution = state
+            .evaluation_resolutions
+            .iter()
+            .find(|r| r.decision_candidate_id == candidate_id)
+            .cloned()
+            .ok_or_else(|| KernelError::from(DecisionEngineError::NotFound))?;
+        let existing = state
+            .candidate_scores
+            .iter()
+            .find(|s| s.decision_candidate_id == candidate_id)
+            .cloned();
+        let intake_withdrawn_or_invalidated = candidate
+            .intake_candidate_id
+            .as_deref()
+            .and_then(|intake_id| {
+                state
+                    .intake_candidates
+                    .iter()
+                    .find(|c| c.intake_candidate_id == intake_id)
+            })
+            .is_some_and(|intake| {
+                intake.lifecycle.is_withdrawn() || intake.lifecycle.is_invalidated()
+            });
+        let input = DecisionCandidateScoreInput {
+            candidate: candidate.clone(),
+            resolution,
+            lifecycle_integration: integration,
+            intake_withdrawn_or_invalidated,
+            existing_score: existing,
+        };
+        let (score, unchanged) =
+            DecisionCandidateScore::try_create(&input, now).map_err(KernelError::from)?;
+        debug_assert!(score.assert_score_only().is_ok());
+        debug_assert_eq!(unchanged.score, candidate.score);
+        debug_assert_eq!(unchanged.outcome, candidate.outcome);
+        let guard = db
+            .lock()
+            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+        DecisionEngineRepository::new(&guard).upsert_candidate_score(&score)?;
+        drop(guard);
+        Ok((score, unchanged))
+    }
+
+    fn load_candidate_scores(
+        db: &Arc<Mutex<Database>>,
+        workspace_id: &str,
+    ) -> Result<Vec<DecisionCandidateScore>> {
+        let guard = db
+            .lock()
+            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+        let mut scores =
+            DecisionEngineRepository::new(&guard).list_candidate_scores(workspace_id)?;
+        drop(guard);
+        scores.sort_by(|a, b| a.score_id.cmp(&b.score_id));
+        Ok(scores)
     }
 
     /// Acknowledge origin evaluation contract for a DecisionCandidate.
