@@ -2700,6 +2700,21 @@ impl CommandHandler {
         )
     }
 
+    /// Project DE-owned comparative ranking of scored candidates — never selects/plans.
+    pub fn rank_decision_candidates(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<workspace_domain::DecisionCandidateRanking> {
+        CommandPipeline::new(kernel.command_context(actor.clone(), intent.clone()))
+            .execute_query(GateDecisionEngineRead)?;
+        let state = Self::generate_decision_engine(kernel, actor, intent, workspace_id)?;
+        state
+            .candidate_ranking
+            .ok_or_else(|| KernelError::from(workspace_domain::DecisionEngineError::NotFound))
+    }
+
     /// Architecture guard — Decision Engine must never execute.
     pub fn decision_engine_attempt_execute() -> Result<()> {
         DecisionEngineService::attempt_execute()

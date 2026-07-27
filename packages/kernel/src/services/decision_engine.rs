@@ -15,18 +15,18 @@ use workspace_domain::{
     ActorContext, AttentionItem, DecisionCandidate, DecisionCandidateEvaluationOriginContract,
     DecisionCandidateEvaluationOriginInput, DecisionCandidateEvaluationResolution,
     DecisionCandidateEvaluationResolutionInput, DecisionCandidateLifecycleIntegration,
-    DecisionCandidateScore, DecisionCandidateScoreInput, DecisionContext,
-    DecisionEngineActionResult, DecisionEngineCandidateCreation,
-    DecisionEngineCandidateCreationInput, DecisionEngineCandidateCreationRequest,
-    DecisionEngineError, DecisionEngineHandoff, DecisionEngineIntakeAssessment,
-    DecisionEngineIntakeAssessmentInput, DecisionEngineIntakeCandidate,
-    DecisionEngineIntakeDisposition, DecisionEngineIntakeEligibility,
-    DecisionEngineIntakeEvaluation, DecisionEngineIntakePromotionBoundary,
-    DecisionEngineIntakePromotionBoundaryInput, DecisionEngineIntakeReceipt,
-    DecisionEngineOverlay, DecisionEngineState, DecisionEngineSummary, DecisionExplanation,
-    DecisionOutcome, DecisionQueue, DecisionReason, DecisionScore, DecisionSourceType,
-    DecisionState, IntelligenceHighlight, IntentContext, RecommendationLifecycleState,
-    WorkspaceAttentionState, WorkspaceId, WorkGoal, WorkflowContext,
+    DecisionCandidateRanking, DecisionCandidateRankingMemberInput, DecisionCandidateScore,
+    DecisionCandidateScoreInput, DecisionContext, DecisionEngineActionResult,
+    DecisionEngineCandidateCreation, DecisionEngineCandidateCreationInput,
+    DecisionEngineCandidateCreationRequest, DecisionEngineError, DecisionEngineHandoff,
+    DecisionEngineIntakeAssessment, DecisionEngineIntakeAssessmentInput,
+    DecisionEngineIntakeCandidate, DecisionEngineIntakeDisposition,
+    DecisionEngineIntakeEligibility, DecisionEngineIntakeEvaluation,
+    DecisionEngineIntakePromotionBoundary, DecisionEngineIntakePromotionBoundaryInput,
+    DecisionEngineIntakeReceipt, DecisionEngineOverlay, DecisionEngineState, DecisionEngineSummary,
+    DecisionExplanation, DecisionOutcome, DecisionQueue, DecisionReason, DecisionScore,
+    DecisionSourceType, DecisionState, IntelligenceHighlight, IntentContext,
+    RecommendationLifecycleState, WorkspaceAttentionState, WorkspaceId, WorkGoal, WorkflowContext,
 };
 
 use crate::error::{KernelError, Result};
@@ -329,6 +329,13 @@ impl DecisionEngineService {
             &persisted_resolutions,
         );
         let candidate_scores = Self::load_candidate_scores(db, ws)?;
+        let candidate_ranking = Self::project_candidate_ranking(
+            ws,
+            &candidates,
+            &lifecycle_integrations,
+            &intake_candidates,
+            &candidate_scores,
+        );
         let state = DecisionEngineState::from_candidates(ws, context, candidates)
             .with_intake_receipts(intake_receipts)
             .with_intake_assessments(intake_assessments)
@@ -342,7 +349,8 @@ impl DecisionEngineService {
             .with_lifecycle_integrations(lifecycle_integrations)
             .with_evaluation_origin_contracts(evaluation_origin_contracts)
             .with_evaluation_resolutions(evaluation_resolutions)
-            .with_candidate_scores(candidate_scores);
+            .with_candidate_scores(candidate_scores)
+            .with_candidate_ranking(candidate_ranking);
         debug_assert!(state
             .intake_receipts
             .iter()
@@ -444,6 +452,16 @@ impl DecisionEngineService {
                 && !s.selects_candidate
                 && !s.planner_invoked
                 && s.handoff_command.is_none()
+        }));
+        debug_assert!(state
+            .candidate_ranking
+            .as_ref()
+            .is_none_or(|r| r.assert_ranking_only().is_ok()));
+        debug_assert!(state.candidate_ranking.as_ref().is_none_or(|r| {
+            !r.selects_candidate
+                && r.selected_candidate_id.is_none()
+                && !r.planner_invoked
+                && r.handoff_command.is_none()
         }));
         Self::audit_generated(db, actor, &state)?;
         Self::audit_rank_changes(db, actor, &state, &previous_ranks)?;
@@ -1039,6 +1057,55 @@ impl DecisionEngineService {
         drop(guard);
         scores.sort_by(|a, b| a.score_id.cmp(&b.score_id));
         Ok(scores)
+    }
+
+    /// Project DE-owned comparative ranking from scored candidates — never selects.
+    fn project_candidate_ranking(
+        workspace_id: &str,
+        candidates: &[DecisionCandidate],
+        integrations: &[DecisionCandidateLifecycleIntegration],
+        intake_candidates: &[DecisionEngineIntakeCandidate],
+        scores: &[DecisionCandidateScore],
+    ) -> DecisionCandidateRanking {
+        let integration_by_id: HashMap<&str, &DecisionCandidateLifecycleIntegration> = integrations
+            .iter()
+            .map(|i| (i.decision_candidate_id.as_str(), i))
+            .collect();
+        let score_by_id: HashMap<&str, &DecisionCandidateScore> = scores
+            .iter()
+            .map(|s| (s.decision_candidate_id.as_str(), s))
+            .collect();
+        let intake_by_id: HashMap<&str, &DecisionEngineIntakeCandidate> = intake_candidates
+            .iter()
+            .map(|c| (c.intake_candidate_id.as_str(), c))
+            .collect();
+        let inputs: Vec<DecisionCandidateRankingMemberInput> = candidates
+            .iter()
+            .filter_map(|candidate| {
+                let id = candidate.id.as_str();
+                let integration = integration_by_id.get(id).copied()?;
+                let intake_withdrawn_or_invalidated = candidate
+                    .intake_candidate_id
+                    .as_deref()
+                    .and_then(|intake_id| intake_by_id.get(intake_id).copied())
+                    .is_some_and(|intake| {
+                        intake.lifecycle.is_withdrawn() || intake.lifecycle.is_invalidated()
+                    });
+                Some(DecisionCandidateRankingMemberInput {
+                    candidate: candidate.clone(),
+                    score: score_by_id.get(id).copied().cloned(),
+                    lifecycle_integration: integration.clone(),
+                    intake_withdrawn_or_invalidated,
+                })
+            })
+            .collect();
+        let ranking = DecisionCandidateRanking::derive(
+            workspace_id,
+            Utc::now().to_rfc3339(),
+            &inputs,
+        );
+        debug_assert!(ranking.assert_ranking_only().is_ok());
+        ranking
     }
 
     /// Acknowledge origin evaluation contract for a DecisionCandidate.

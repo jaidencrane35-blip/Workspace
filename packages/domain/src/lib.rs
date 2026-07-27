@@ -235,6 +235,7 @@ pub use decision_engine::{
     DecisionCandidate, DecisionCandidateEvaluationOriginContract,
     DecisionCandidateEvaluationOriginInput, DecisionCandidateEvaluationResolution,
     DecisionCandidateEvaluationResolutionInput, DecisionCandidateLifecycleIntegration,
+    DecisionCandidateRanking, DecisionCandidateRankingEntry, DecisionCandidateRankingMemberInput,
     DecisionCandidateScore, DecisionCandidateScoreInput, DecisionContext,
     DecisionEngineActionResult, DecisionEngineCandidateCreation,
     DecisionEngineCandidateCreationInput, DecisionEngineCandidateCreationRequest,

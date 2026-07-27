@@ -54,7 +54,8 @@ Remaining before a future handoff could exist:
 21. ~~DE candidate evaluation origin contract (origin rules; evaluated ≠ scoring)~~ — see [WORKSPACE-DECISION-ENGINE-CANDIDATE-EVALUATION-ORIGIN.md](./WORKSPACE-DECISION-ENGINE-CANDIDATE-EVALUATION-ORIGIN.md)
 22. ~~DE candidate evaluation resolution (accepted/rejected for scoring path; ≠ DecisionScore)~~ — see [WORKSPACE-DECISION-ENGINE-CANDIDATE-EVALUATION-RESOLUTION.md](./WORKSPACE-DECISION-ENGINE-CANDIDATE-EVALUATION-RESOLUTION.md)
 23. ~~DE DecisionScore (scoring result only; ≠ ranking / planner / Gateway)~~ — see [WORKSPACE-DECISION-ENGINE-CANDIDATE-SCORE.md](./WORKSPACE-DECISION-ENGINE-CANDIDATE-SCORE.md)
-24. Optional **ranking / adapter / planner handoff** after DecisionScore — still separate; not execution
+24. ~~DE candidate ranking (comparative ordering only; ≠ selection / planner / Gateway)~~ — see [WORKSPACE-DECISION-ENGINE-CANDIDATE-RANKING.md](./WORKSPACE-DECISION-ENGINE-CANDIDATE-RANKING.md)
+25. Optional **selection / adapter / planner handoff** after ranking — still separate; not execution
 
 ---
 

@@ -273,6 +273,9 @@ pub struct DecisionEngineState {
     /// DE-owned DecisionScore results for accepted candidates — never ranking/selection.
     #[serde(default)]
     pub candidate_scores: Vec<DecisionCandidateScore>,
+    /// DE-owned comparative ranking of scored candidates — never selection/planner.
+    #[serde(default)]
+    pub candidate_ranking: Option<DecisionCandidateRanking>,
     pub summary: String,
     pub authority_effect: String,
 }
@@ -321,6 +324,7 @@ impl DecisionEngineState {
             evaluation_origin_contracts: Vec::new(),
             evaluation_resolutions: Vec::new(),
             candidate_scores: Vec::new(),
+            candidate_ranking: None,
             summary,
             authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
         }
@@ -517,6 +521,18 @@ impl DecisionEngineState {
     pub fn with_candidate_scores(mut self, scores: Vec<DecisionCandidateScore>) -> Self {
         self.summary = format!("{} DecisionScores: {}.", self.summary, scores.len());
         self.candidate_scores = scores;
+        self
+    }
+
+    /// Attach DE-owned comparative ranking without selecting or planner handoff.
+    pub fn with_candidate_ranking(mut self, ranking: DecisionCandidateRanking) -> Self {
+        self.summary = format!(
+            "{} Candidate ranking: {} entr{}.",
+            self.summary,
+            ranking.entries.len(),
+            if ranking.entries.len() == 1 { "y" } else { "ies" }
+        );
+        self.candidate_ranking = Some(ranking);
         self
     }
 
@@ -3907,6 +3923,238 @@ impl DecisionCandidateScore {
             || self.authority_effect != Self::AUTHORITY_EFFECT_NONE
             || !self.score_id.starts_with(Self::ID_PREFIX)
             || self.scored_at.is_empty()
+        {
+            return Err(DecisionEngineError::CannotExecute);
+        }
+        Ok(())
+    }
+}
+
+/// Input for projecting one candidate into a DE-owned comparative ranking.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DecisionCandidateRankingMemberInput {
+    pub candidate: DecisionCandidate,
+    pub score: Option<DecisionCandidateScore>,
+    pub lifecycle_integration: DecisionCandidateLifecycleIntegration,
+    pub intake_withdrawn_or_invalidated: bool,
+}
+
+/// One ordered position in a DecisionCandidateRanking — not a selection.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DecisionCandidateRankingEntry {
+    /// 1-based comparative position (not a winner/selection).
+    pub rank: u32,
+    pub decision_candidate_id: String,
+    pub score_id: String,
+    /// `native` | `recommendation_intake`
+    pub origin: String,
+    pub score_total: u32,
+    pub package_seal_digest: Option<String>,
+    pub recommendation_reference: Option<String>,
+}
+
+/// DE-owned comparative ordering of scored candidates.
+///
+/// Projected from valid [`DecisionCandidateScore`] artifacts. Never selects,
+/// plans, executes, or mutates Recommendation Engine / candidate lifecycle.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DecisionCandidateRanking {
+    pub ranking_id: String,
+    pub workspace_id: String,
+    pub ranked_at: String,
+    pub entries: Vec<DecisionCandidateRankingEntry>,
+    pub ranking_factors: Vec<String>,
+    pub selects_candidate: bool,
+    pub selected_candidate_id: Option<String>,
+    pub creates_goal: bool,
+    pub creates_intent: bool,
+    pub adapter_invoked: bool,
+    pub planner_invoked: bool,
+    pub ownership_transferred: bool,
+    pub mutates_recommendation_engine: bool,
+    pub handoff_command: Option<String>,
+    pub note: String,
+    pub authority_effect: String,
+}
+
+impl DecisionCandidateRanking {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+    pub const ID_PREFIX: &'static str = "engine_decision_ranking:";
+
+    pub fn synthetic_id(workspace_id: &str) -> String {
+        format!("{}{workspace_id}", Self::ID_PREFIX)
+    }
+
+    /// Eligibility for a ranking entry — does not select or mutate.
+    pub fn try_rank_member(
+        input: &DecisionCandidateRankingMemberInput,
+    ) -> Result<DecisionCandidateRankingEntry, DecisionEngineError> {
+        let candidate = &input.candidate;
+        let Some(score) = &input.score else {
+            return Err(DecisionEngineError::InvalidTransition {
+                from: "unscored".into(),
+                to: "rank".into(),
+            });
+        };
+
+        if score.decision_candidate_id != candidate.id.as_str() {
+            return Err(DecisionEngineError::InvalidTransition {
+                from: "score_mismatch".into(),
+                to: "rank".into(),
+            });
+        }
+
+        let origin = DecisionCandidateLifecycleIntegration::classify_origin(candidate);
+        let provenance_valid =
+            DecisionCandidateLifecycleIntegration::provenance_valid_for_origin(origin, candidate);
+        let lifecycle_valid = input.lifecycle_integration.is_integrated()
+            && input.lifecycle_integration.decision_candidate_id == candidate.id.as_str();
+        let candidate_active = matches!(
+            candidate.outcome,
+            DecisionOutcome::Open | DecisionOutcome::Postponed
+        ) && !input.intake_withdrawn_or_invalidated;
+
+        if input.intake_withdrawn_or_invalidated {
+            return Err(DecisionEngineError::InvalidTransition {
+                from: "withdrawn".into(),
+                to: "rank".into(),
+            });
+        }
+        if !provenance_valid {
+            return Err(DecisionEngineError::InvalidTransition {
+                from: "invalid_provenance".into(),
+                to: "rank".into(),
+            });
+        }
+        if !lifecycle_valid
+            || !candidate_active
+            || !candidate.id.as_str().starts_with("engine_decision:")
+            || score.assert_score_only().is_err()
+        {
+            return Err(DecisionEngineError::InvalidTransition {
+                from: "ineligible".into(),
+                to: "rank".into(),
+            });
+        }
+
+        Ok(DecisionCandidateRankingEntry {
+            // Assigned by derive after sort.
+            rank: 0,
+            decision_candidate_id: candidate.id.as_str().to_string(),
+            score_id: score.score_id.clone(),
+            origin: origin.into(),
+            score_total: score.score.total,
+            package_seal_digest: candidate.package_seal_digest.clone(),
+            recommendation_reference: candidate.recommendation_id.clone(),
+        })
+    }
+
+    /// Project comparative ordering from scored active candidates.
+    /// Excludes missing scores, withdrawn, and invalid-provenance members.
+    /// Never selects a winner or mutates candidate lifecycle.
+    pub fn derive(
+        workspace_id: impl Into<String>,
+        ranked_at: impl Into<String>,
+        inputs: &[DecisionCandidateRankingMemberInput],
+    ) -> Self {
+        let workspace_id = workspace_id.into();
+        let ranked_at = ranked_at.into();
+        let mut entries: Vec<DecisionCandidateRankingEntry> = inputs
+            .iter()
+            .filter_map(|input| Self::try_rank_member(input).ok())
+            .collect();
+        entries.sort_by(|a, b| {
+            b.score_total
+                .cmp(&a.score_total)
+                .then(a.decision_candidate_id.cmp(&b.decision_candidate_id))
+        });
+        for (idx, entry) in entries.iter_mut().enumerate() {
+            entry.rank = (idx as u32).saturating_add(1);
+        }
+
+        Self {
+            ranking_id: Self::synthetic_id(&workspace_id),
+            workspace_id,
+            ranked_at,
+            entries,
+            ranking_factors: vec![
+                "decision_ranking:score_total_desc".into(),
+                "decision_ranking:candidate_id_asc_tiebreak".into(),
+                "decision_ranking:scored_active_only".into(),
+            ],
+            selects_candidate: false,
+            selected_candidate_id: None,
+            creates_goal: false,
+            creates_intent: false,
+            adapter_invoked: false,
+            planner_invoked: false,
+            ownership_transferred: false,
+            mutates_recommendation_engine: false,
+            handoff_command: None,
+            note: "Decision Engine candidate ranking — comparative ordering of scored candidates only. \
+                 Not selection, planner handoff, Gateway, goals, intents, or Recommendation Engine mutation."
+                .into(),
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        }
+    }
+
+    pub fn may_select(&self) -> bool {
+        false
+    }
+
+    pub fn may_invoke_planner(&self) -> bool {
+        false
+    }
+
+    pub fn may_invoke_gateway(&self) -> bool {
+        false
+    }
+
+    pub fn may_create_goal(&self) -> bool {
+        false
+    }
+
+    pub fn may_create_intent(&self) -> bool {
+        false
+    }
+
+    pub fn attempt_select(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_invoke_planner(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_invoke_gateway(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_create_goal(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_create_intent(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_execute() -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn assert_ranking_only(&self) -> Result<(), DecisionEngineError> {
+        if self.selects_candidate
+            || self.selected_candidate_id.is_some()
+            || self.creates_goal
+            || self.creates_intent
+            || self.adapter_invoked
+            || self.planner_invoked
+            || self.ownership_transferred
+            || self.mutates_recommendation_engine
+            || self.handoff_command.is_some()
+            || self.authority_effect != Self::AUTHORITY_EFFECT_NONE
+            || !self.ranking_id.starts_with(Self::ID_PREFIX)
+            || self.ranked_at.is_empty()
         {
             return Err(DecisionEngineError::CannotExecute);
         }

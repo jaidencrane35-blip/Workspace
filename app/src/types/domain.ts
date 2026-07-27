@@ -1294,6 +1294,39 @@ export interface DecisionCandidateScore {
   authority_effect: string;
 }
 
+/** One ordered position in DecisionCandidateRanking — not a selection. */
+export interface DecisionCandidateRankingEntry {
+  /** 1-based comparative position (not a winner). */
+  rank: number;
+  decision_candidate_id: string;
+  score_id: string;
+  /** native | recommendation_intake */
+  origin: string;
+  score_total: number;
+  package_seal_digest: string | null;
+  recommendation_reference: string | null;
+}
+
+/** DE-owned comparative ranking of scored candidates — never selects/plans. */
+export interface DecisionCandidateRanking {
+  ranking_id: string;
+  workspace_id: string;
+  ranked_at: string;
+  entries: DecisionCandidateRankingEntry[];
+  ranking_factors: string[];
+  selects_candidate: boolean;
+  selected_candidate_id: string | null;
+  creates_goal: boolean;
+  creates_intent: boolean;
+  adapter_invoked: boolean;
+  planner_invoked: boolean;
+  ownership_transferred: boolean;
+  mutates_recommendation_engine: boolean;
+  handoff_command: string | null;
+  note: string;
+  authority_effect: string;
+}
+
 /** DE-owned evaluation origin contract — origin rules only, never scoring. */
 export interface DecisionCandidateEvaluationOriginContract {
   evaluation_id: string;
@@ -1623,6 +1656,8 @@ export interface DecisionEngineState {
   evaluation_resolutions?: DecisionCandidateEvaluationResolution[];
   /** DE-owned DecisionScore results — scoring only; never ranking/selection. */
   candidate_scores?: DecisionCandidateScore[];
+  /** DE-owned comparative ranking — never selection/planner. */
+  candidate_ranking?: DecisionCandidateRanking | null;
   summary: string;
   authority_effect: string;
 }

@@ -119,7 +119,9 @@ eligibility without scoring or ranking.
 evaluated candidate into a future scoring path — still without scoring.
 When admitted (`accepted_for_scoring`), a DE-owned `DecisionCandidateScore`
 (DecisionScore result) may be created — scoring only; never ranking, selection,
-planner, Gateway, goals, or intents. See
+planner, Gateway, goals, or intents.
+`DecisionCandidateRanking` then projects comparative ordering of valid scores —
+still without selection, planner, Gateway, goals, or intents. See
 [WORKSPACE-DECISION-ENGINE-INTAKE-CANDIDATE.md](./WORKSPACE-DECISION-ENGINE-INTAKE-CANDIDATE.md),
 [WORKSPACE-DECISION-ENGINE-INTAKE-CANDIDATE-LIFECYCLE.md](./WORKSPACE-DECISION-ENGINE-INTAKE-CANDIDATE-LIFECYCLE.md),
 [WORKSPACE-DECISION-ENGINE-INTAKE-EVALUATION.md](./WORKSPACE-DECISION-ENGINE-INTAKE-EVALUATION.md),
@@ -130,8 +132,9 @@ planner, Gateway, goals, or intents. See
 [WORKSPACE-DECISION-ENGINE-CANDIDATE-LIFECYCLE-INTEGRATION.md](./WORKSPACE-DECISION-ENGINE-CANDIDATE-LIFECYCLE-INTEGRATION.md),
 [WORKSPACE-DECISION-ENGINE-CANDIDATE-EVALUATION-ORIGIN.md](./WORKSPACE-DECISION-ENGINE-CANDIDATE-EVALUATION-ORIGIN.md),
 [WORKSPACE-DECISION-ENGINE-CANDIDATE-EVALUATION-RESOLUTION.md](./WORKSPACE-DECISION-ENGINE-CANDIDATE-EVALUATION-RESOLUTION.md),
+[WORKSPACE-DECISION-ENGINE-CANDIDATE-SCORE.md](./WORKSPACE-DECISION-ENGINE-CANDIDATE-SCORE.md),
 and
-[WORKSPACE-DECISION-ENGINE-CANDIDATE-SCORE.md](./WORKSPACE-DECISION-ENGINE-CANDIDATE-SCORE.md).
+[WORKSPACE-DECISION-ENGINE-CANDIDATE-RANKING.md](./WORKSPACE-DECISION-ENGINE-CANDIDATE-RANKING.md).
 
 Namespaces remain separate
 (`recommendation:*` vs `engine_decision:*` vs `engine_decision_intake:*`).
