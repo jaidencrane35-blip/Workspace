@@ -338,7 +338,7 @@ impl DecisionEngineService {
             &lifecycle_integrations,
             &intake_candidates,
             &candidate_scores,
-        );
+        )?;
         let persisted_selections = Self::load_candidate_selections(db, ws)?;
         let candidate_selections = Self::project_candidate_selections(
             &candidates,
@@ -419,7 +419,7 @@ impl DecisionEngineService {
             let Some(receipt) = DecisionEngineIntakeReceipt::try_observe(acceptance, seal) else {
                 continue;
             };
-            debug_assert!(receipt.assert_observational_only().is_ok());
+            crate::services::validate_intake_receipt_observational(&receipt)?;
             let acceptance_active = acceptance.acceptance_state
                 == workspace_domain::RecommendationDecisionEngineAcceptance::STATE_ACCEPTED
                 && acceptance.revoked_at.is_none()
@@ -500,7 +500,7 @@ impl DecisionEngineService {
                     candidate.state = DecisionEngineIntakeCandidate::STATE_READY.into();
                 }
             }
-            debug_assert!(candidate.assert_intake_only().is_ok());
+            crate::services::validate_intake_candidate_phase(&candidate)?;
             repo.upsert_intake_candidate(&candidate)?;
         }
 
@@ -576,7 +576,7 @@ impl DecisionEngineService {
             now,
         )
         .map_err(KernelError::from)?;
-        debug_assert!(evaluation.assert_evaluation_only().is_ok());
+        crate::services::validate_intake_evaluation_phase(&evaluation)?;
         repo.upsert_intake_evaluation(&evaluation)?;
         drop(guard);
         Ok(evaluation)
@@ -884,8 +884,8 @@ impl DecisionEngineService {
         let (resolved, unchanged) =
             DecisionCandidateEvaluationResolution::try_resolve(&input, resolution, reason, now)
                 .map_err(KernelError::from)?;
-        debug_assert!(resolved.assert_resolution_only().is_ok());
-        debug_assert_eq!(unchanged.score, candidate.score);
+        crate::services::validate_evaluation_resolution_only(&resolved)?;
+        crate::services::validate_candidate_score_unchanged(&candidate, &unchanged)?;
         let guard = db
             .lock()
             .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
@@ -958,9 +958,8 @@ impl DecisionEngineService {
         };
         let (score, unchanged) =
             DecisionCandidateScore::try_create(&input, now).map_err(KernelError::from)?;
-        debug_assert!(score.assert_score_only().is_ok());
-        debug_assert_eq!(unchanged.score, candidate.score);
-        debug_assert_eq!(unchanged.outcome, candidate.outcome);
+        crate::services::validate_candidate_score_only(&score)?;
+        crate::services::validate_candidate_score_outcome_unchanged(&candidate, &unchanged)?;
         let guard = db
             .lock()
             .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
@@ -1047,9 +1046,8 @@ impl DecisionEngineService {
         let (selection, unchanged) =
             DecisionCandidateSelection::try_select(&input, action, reason, now)
                 .map_err(KernelError::from)?;
-        debug_assert!(selection.assert_selection_only().is_ok());
-        debug_assert_eq!(unchanged.score, candidate.score);
-        debug_assert_eq!(unchanged.outcome, candidate.outcome);
+        crate::services::validate_candidate_selection_bounded(&selection)?;
+        crate::services::validate_candidate_score_outcome_unchanged(&candidate, &unchanged)?;
         let guard = db
             .lock()
             .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
@@ -1126,9 +1124,8 @@ impl DecisionEngineService {
         let (request, unchanged) =
             DecisionCandidateProgressionRequest::try_request(&input, reason, now)
                 .map_err(KernelError::from)?;
-        debug_assert!(request.assert_request_only().is_ok());
-        debug_assert_eq!(unchanged.score, candidate.score);
-        debug_assert_eq!(unchanged.outcome, candidate.outcome);
+        crate::services::validate_progression_request_bounded(&request)?;
+        crate::services::validate_candidate_score_outcome_unchanged(&candidate, &unchanged)?;
         let guard = db
             .lock()
             .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
@@ -1210,9 +1207,8 @@ impl DecisionEngineService {
                 &input, action, reason, now,
             )
             .map_err(KernelError::from)?;
-        debug_assert!(acknowledgement.assert_acknowledgement_only().is_ok());
-        debug_assert_eq!(unchanged.score, candidate.score);
-        debug_assert_eq!(unchanged.outcome, candidate.outcome);
+        crate::services::validate_progression_acknowledgement_only(&acknowledgement)?;
+        crate::services::validate_candidate_score_outcome_unchanged(&candidate, &unchanged)?;
         let guard = db
             .lock()
             .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
@@ -1243,7 +1239,7 @@ impl DecisionEngineService {
         integrations: &[DecisionCandidateLifecycleIntegration],
         intake_candidates: &[DecisionEngineIntakeCandidate],
         scores: &[DecisionCandidateScore],
-    ) -> DecisionCandidateRanking {
+    ) -> Result<DecisionCandidateRanking> {
         let integration_by_id: HashMap<&str, &DecisionCandidateLifecycleIntegration> = integrations
             .iter()
             .map(|i| (i.decision_candidate_id.as_str(), i))
@@ -1281,8 +1277,8 @@ impl DecisionEngineService {
             Utc::now().to_rfc3339(),
             &inputs,
         );
-        debug_assert!(ranking.assert_ranking_only().is_ok());
-        ranking
+        crate::services::validate_candidate_ranking_only(&ranking)?;
+        Ok(ranking)
     }
 
     fn load_candidate_selections(
@@ -1523,8 +1519,8 @@ impl DecisionEngineService {
         let (contract, unchanged) =
             DecisionCandidateEvaluationOriginContract::try_evaluate(&input, now)
                 .map_err(KernelError::from)?;
-        debug_assert!(contract.assert_evaluation_contract_only().is_ok());
-        debug_assert_eq!(unchanged.score, candidate.score);
+        crate::services::validate_evaluation_origin_contract_only(&contract)?;
+        crate::services::validate_candidate_score_unchanged(&candidate, &unchanged)?;
         let guard = db
             .lock()
             .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
@@ -1605,9 +1601,8 @@ impl DecisionEngineService {
 
         let (creation, candidate) =
             DecisionEngineCandidateCreation::try_create(&input, now).map_err(KernelError::from)?;
-        debug_assert!(creation.assert_creation_boundary().is_ok());
-        debug_assert_eq!(candidate.score.total, 0);
-        debug_assert!(candidate.handoff_command.is_empty());
+        crate::services::validate_candidate_creation_bounded(&creation)?;
+        crate::services::validate_new_intake_candidate_bootstrap(&candidate)?;
 
         let guard = db
             .lock()
@@ -1663,7 +1658,7 @@ impl DecisionEngineService {
             now,
         )
         .map_err(KernelError::from)?;
-        debug_assert!(disposition.assert_disposition_only().is_ok());
+        crate::services::validate_intake_disposition_only(&disposition)?;
         repo.upsert_intake_disposition(&disposition)?;
         drop(guard);
         Ok(disposition)
@@ -1777,13 +1772,8 @@ impl DecisionEngineService {
         let (integration, updated) =
             DecisionCandidateLifecycleIntegration::try_apply_outcome(&candidate, to)
                 .map_err(KernelError::from)?;
-        debug_assert!(integration.assert_integration_only().is_ok());
-        debug_assert!(
-            DecisionCandidateLifecycleIntegration::assert_provenance_retained(
-                &candidate, &updated
-            )
-            .is_ok()
-        );
+        crate::services::validate_lifecycle_integration_only(&integration)?;
+        crate::services::validate_provenance_retained(&candidate, &updated)?;
 
         let key = Self::candidate_key(&updated);
         Self::upsert_overlay(

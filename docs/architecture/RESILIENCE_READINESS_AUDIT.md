@@ -28,10 +28,13 @@ This document is a Phase Resilience Contract Verification readiness audit. It is
 
 ### P0: Debug-only invariants in critical runtime services
 
-- `packages/kernel/src/services/decision_engine.rs` contains a large number of `debug_assert!` validations enforcing DE/RE boundary semantics and candidate lifecycle constraints.
-- `packages/kernel/src/services/workspace_recommendation.rs` also uses `debug_assert!` to validate recommendation lifecycle states and rejection/hand-off boundaries.
-- Risk: `debug_assert!` is compiled out in release builds. These invariants are therefore not enforced in production binaries, creating a gap between design intention and runtime behavior.
-- Impact: A broken invariant may allow unauthorized DE mutation of RE overlays, invalid candidate lifecycles, or incorrect transition states without failing loud enough.
+- Status (2026-07-27): **Addressed** for RE/DE production paths. Critical
+  `debug_assert!` checks in `decision_engine.rs` and
+  `workspace_recommendation.rs` were converted to release-safe validation via
+  `resilience_validation.rs` returning `KernelError::ProjectionValidation`.
+- Historical risk note: `debug_assert!` is compiled out in release builds. Those
+  invariants were therefore not enforced in production binaries prior to this
+  hardening pass.
 
 ### P1: Frontend domain contract drift
 
@@ -101,4 +104,22 @@ This document is a Phase Resilience Contract Verification readiness audit. It is
 
 ## Conclusion
 
-The repository shows a solid architecture with strong intended boundaries between Recommendation and Decision Engines and an explicit Tauri IPC layer. The highest-risk gap is the use of release-disabled `debug_assert!` checks to enforce critical RE/DE lifecycle invariants. Hardening those checks into runtime validation, adding release-mode coverage tests, and reducing frontend domain drift are the most valuable next steps for Phase Resilience Contract Verification readiness.
+The repository shows a solid architecture with strong intended boundaries between Recommendation and Decision Engines and an explicit Tauri IPC layer. The highest-risk gap was the use of release-disabled `debug_assert!` checks to enforce critical RE/DE lifecycle invariants.
+
+### Runtime Invariant Hardening status (2026-07-27)
+
+Repair order item 1 is complete:
+
+- Critical RE/DE production-path `debug_assert!` checks in
+  `packages/kernel/src/services/decision_engine.rs` and
+  `packages/kernel/src/services/workspace_recommendation.rs` now return
+  `KernelError::ProjectionValidation` through
+  `packages/kernel/src/services/resilience_validation.rs`.
+- Existing contract and resilience tests exercise these release-safe paths.
+
+Remaining recommended follow-ups (not part of this phase):
+
+2. Dedicated release-mode CI variant for invariant contracts.
+3. Frontend/back-end domain parity automation.
+4. IPC surface usage inventory and quarantine tightening.
+5. Provenance persistence audit for recommendation/decision artifacts.

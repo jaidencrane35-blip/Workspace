@@ -101,9 +101,23 @@ pub use configuration::ConfigurationService;
 pub(crate) use decision_engine::DecisionEngineService;
 pub(crate) use decision_queue::DecisionQueueService;
 pub(crate) use resilience_validation::{
-    validate_decision_engine_state_integrity, validate_decision_context_boundary,
-    validate_decision_readiness_boundary, validate_decision_boundary_constraints,
-    validate_decision_confirmation_non_authoritative,
+    validate_accept_emits_no_intake, validate_adapter_preparation_boundary,
+    validate_candidate_creation_bounded, validate_candidate_ranking_only,
+    validate_candidate_score_only, validate_candidate_score_outcome_unchanged,
+    validate_candidate_score_unchanged, validate_candidate_selection_bounded,
+    validate_confirmation_post_action, validate_decision_boundary_constraints,
+    validate_decision_confirmation_non_authoritative, validate_decision_context_boundary,
+    validate_decision_engine_state_integrity, validate_decision_readiness_boundary,
+    validate_decline_clears_intake_pipeline, validate_engine_acceptance_boundary,
+    validate_evaluation_origin_contract_only, validate_evaluation_resolution_only,
+    validate_explanation_view_non_authoritative, validate_handoff_request_boundary,
+    validate_intake_candidate_phase, validate_intake_compatibility_boundary,
+    validate_intake_disposition_only, validate_intake_evaluation_phase,
+    validate_intake_inspection_boundary, validate_intake_package_seal_boundary,
+    validate_intake_proceed_denial_boundary, validate_intake_receipt_observational,
+    validate_intake_request_non_authoritative, validate_lifecycle_integration_only,
+    validate_new_intake_candidate_bootstrap, validate_progression_acknowledgement_only,
+    validate_progression_request_bounded, validate_provenance_retained,
 };
 pub(crate) use task_graph::TaskGraphService;
 pub(crate) use trigger_evaluator::{list_rejection_summaries, TriggerEvaluatorService};

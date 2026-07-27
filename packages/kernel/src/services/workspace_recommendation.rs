@@ -1092,15 +1092,15 @@ impl WorkspaceRecommendationEngineService {
                     ),
                 });
             }
-            Self::attach_explanation_views(&mut state);
-              Self::attach_decision_readiness(
-                  &mut state,
-                  &HashMap::new(),
-                  &HashMap::new(),
-                  &HashMap::new(),
-                  &HashMap::new(),
-                  &HashMap::new(),
-              );
+            Self::attach_explanation_views(&mut state)?;
+            Self::attach_decision_readiness(
+                &mut state,
+                &HashMap::new(),
+                &HashMap::new(),
+                &HashMap::new(),
+                &HashMap::new(),
+                &HashMap::new(),
+            )?;
         }
         Ok(state)
     }
@@ -1375,7 +1375,7 @@ impl WorkspaceRecommendationEngineService {
             &decision_readiness,
             &decision_confirmation,
         );
-        debug_assert!(decision_intake.is_none());
+        crate::services::validate_accept_emits_no_intake(decision_intake.is_none())?;
         let decision_intake_inspection = None;
         let decision_intake_compatibility = None;
         let decision_intake_proceed_denial = None;
@@ -1456,11 +1456,7 @@ impl WorkspaceRecommendationEngineService {
         } else {
             confirmation.decline(&now).map_err(|e| KernelError::from(e))?;
         }
-        debug_assert!(confirmation.assert_non_authoritative().is_ok());
-        debug_assert!(!confirmation.handoff_performed);
-        debug_assert!(confirmation.attempt_create_intent().is_err());
-        debug_assert!(confirmation.attempt_create_decision_engine_object().is_err());
-        debug_assert!(confirmation.attempt_handoff().is_err());
+        crate::services::validate_confirmation_post_action(&confirmation)?;
 
         overlay.decision_confirmation = Some(confirmation.clone());
         overlay.updated_at = now.clone();
@@ -1477,19 +1473,19 @@ impl WorkspaceRecommendationEngineService {
             &readiness,
             &confirmation,
         );
-        let decision_intake_inspection = decision_intake.as_ref().map(|intake| {
-            let inspection = RecommendationDecisionIntakeInspection::verify(
-                intake,
-                &context,
-                &confirmation,
-                &readiness,
-            );
-            debug_assert!(inspection.assert_inspection_is_not_handoff().is_ok());
-            debug_assert!(inspection.attempt_handoff().is_err());
-            debug_assert!(inspection.attempt_create_decision_engine_object().is_err());
-            debug_assert!(!inspection.may_invoke_gateway());
-            inspection
-        });
+        let decision_intake_inspection = match decision_intake.as_ref() {
+            Some(intake) => {
+                let inspection = RecommendationDecisionIntakeInspection::verify(
+                    intake,
+                    &context,
+                    &confirmation,
+                    &readiness,
+                );
+                crate::services::validate_intake_inspection_boundary(&inspection)?;
+                Some(inspection)
+            }
+            None => None,
+        };
         let decision_intake_compatibility =
             match (decision_intake.as_ref(), decision_intake_inspection.as_ref()) {
                 (Some(intake), Some(inspection)) => {
@@ -1497,28 +1493,20 @@ impl WorkspaceRecommendationEngineService {
                         RecommendationDecisionIntakeCompatibility::derive_from_inspection(
                             intake, inspection,
                         );
-                    debug_assert!(compatibility.assert_non_transfer().is_ok());
-                    debug_assert!(!compatibility.transfer_authorized);
-                    debug_assert!(!compatibility.may_migrate);
-                    debug_assert!(compatibility.attempt_handoff().is_err());
-                    debug_assert!(compatibility.attempt_transfer().is_err());
-                    debug_assert!(!compatibility.may_invoke_gateway());
+                    crate::services::validate_intake_compatibility_boundary(&compatibility)?;
                     Some(compatibility)
                 }
                 _ => None,
             };
-        let decision_intake_proceed_denial = decision_intake_compatibility.as_ref().map(|compat| {
-            let denial =
-                RecommendationDecisionIntakeProceedDenial::derive_from_compatibility(compat);
-            debug_assert!(denial.assert_compatible_is_not_permission().is_ok());
-            debug_assert!(!denial.proceed_authorized);
-            debug_assert!(!denial.consume_authorized);
-            debug_assert!(!denial.adapter_invokable);
-            debug_assert!(denial.attempt_authorize_proceed().is_err());
-            debug_assert!(denial.attempt_invoke_adapter().is_err());
-            debug_assert!(!denial.may_invoke_gateway());
-            denial
-        });
+        let decision_intake_proceed_denial = match decision_intake_compatibility.as_ref() {
+            Some(compat) => {
+                let denial =
+                    RecommendationDecisionIntakeProceedDenial::derive_from_compatibility(compat);
+                crate::services::validate_intake_proceed_denial_boundary(&denial)?;
+                Some(denial)
+            }
+            None => None,
+        };
         let decision_intake_package_seal = match (
             decision_intake.as_ref(),
             decision_intake_compatibility.as_ref(),
@@ -1528,12 +1516,7 @@ impl WorkspaceRecommendationEngineService {
                 let seal = RecommendationDecisionIntakePackageSeal::derive_from_proceed_denial(
                     intake, compat, denial, &now,
                 );
-                debug_assert!(seal.assert_seal_is_not_handoff().is_ok());
-                debug_assert!(seal.assert_matches_intake(intake).is_ok());
-                debug_assert!(seal.attempt_mutate_after_seal().is_err());
-                debug_assert!(!seal.proceed_authorized);
-                debug_assert!(!seal.adapter_invokable);
-                debug_assert!(seal.attempt_invoke_adapter().is_err());
+                crate::services::validate_intake_package_seal_boundary(&seal, Some(intake))?;
                 Some(seal)
             }
             _ => None,
@@ -1550,13 +1533,7 @@ impl WorkspaceRecommendationEngineService {
                     &now,
                 );
                 if let Some(ref preparation) = prep {
-                    debug_assert!(preparation.assert_preparation_is_not_invocation().is_ok());
-                    debug_assert!(preparation.is_active_preparation());
-                    debug_assert!(!preparation.adapter_invoked);
-                    debug_assert!(!preparation.mapping_performed);
-                    debug_assert!(preparation.attempt_invoke_adapter().is_err());
-                    debug_assert!(preparation.attempt_create_decision_engine_object().is_err());
-                    debug_assert!(!preparation.may_invoke_gateway());
+                    crate::services::validate_adapter_preparation_boundary(preparation, Some(true))?;
                 }
                 prep
             }
@@ -1576,33 +1553,27 @@ impl WorkspaceRecommendationEngineService {
                     &now,
                 );
                 if let Some(ref handoff_request) = request {
-                    debug_assert!(handoff_request.assert_request_is_not_performed_handoff().is_ok());
-                    debug_assert!(handoff_request.is_active_request());
-                    debug_assert!(handoff_request.handoff_requested);
-                    debug_assert!(!handoff_request.handoff_performed);
-                    debug_assert!(handoff_request.decision_engine_object_id.is_none());
-                    debug_assert!(handoff_request.attempt_perform_handoff().is_err());
-                    debug_assert!(handoff_request.attempt_create_decision_engine_object().is_err());
-                    debug_assert!(!handoff_request.may_invoke_gateway());
+                    crate::services::validate_handoff_request_boundary(handoff_request, Some(true))?;
                 }
                 request
             }
             _ => None,
         };
-        let decision_engine_acceptance = decision_handoff_request.as_ref().and_then(|request| {
-            let acceptance =
-                RecommendationDecisionEngineAcceptance::derive_from_handoff_request(request);
-            if let Some(ref boundary) = acceptance {
-                debug_assert!(boundary.assert_acceptance_is_not_ownership_transfer().is_ok());
-                debug_assert!(boundary.is_awaiting());
-                debug_assert!(!boundary.ownership_transferred);
-                debug_assert!(boundary.decision_engine_object_id.is_none());
-                debug_assert!(boundary.attempt_transfer_ownership().is_err());
-                debug_assert!(boundary.attempt_create_decision_engine_object().is_err());
-                debug_assert!(!boundary.may_invoke_gateway());
+        let decision_engine_acceptance = match decision_handoff_request.as_ref() {
+            Some(request) => {
+                let acceptance =
+                    RecommendationDecisionEngineAcceptance::derive_from_handoff_request(request);
+                if let Some(ref boundary) = acceptance {
+                    crate::services::validate_engine_acceptance_boundary(
+                        boundary,
+                        Some(true),
+                        None,
+                    )?;
+                }
+                acceptance
             }
-            acceptance
-        });
+            None => None,
+        };
         overlay.decision_intake_package_seal = decision_intake_package_seal.clone();
         overlay.decision_intake_adapter_preparation = decision_intake_adapter_preparation.clone();
         overlay.decision_handoff_request = decision_handoff_request.clone();
@@ -1611,21 +1582,19 @@ impl WorkspaceRecommendationEngineService {
         Self::audit_lifecycle(db, actor, audit_event, &item, &overlay)?;
 
         if let Some(ref intake) = decision_intake {
-            debug_assert!(intake.assert_non_authoritative().is_ok());
-            debug_assert!(intake.decision_engine_object_id.is_none());
-            debug_assert!(!intake.handoff_performed);
-            debug_assert!(intake.attempt_create_decision_engine_object().is_err());
-            debug_assert!(intake.attempt_handoff().is_err());
+            crate::services::validate_intake_request_non_authoritative(intake)?;
         }
         if !confirm {
-            debug_assert!(decision_intake.is_none());
-            debug_assert!(decision_intake_inspection.is_none());
-            debug_assert!(decision_intake_compatibility.is_none());
-            debug_assert!(decision_intake_proceed_denial.is_none());
-            debug_assert!(decision_intake_package_seal.is_none());
-            debug_assert!(decision_intake_adapter_preparation.is_none());
-            debug_assert!(decision_handoff_request.is_none());
-            debug_assert!(decision_engine_acceptance.is_none());
+            crate::services::validate_decline_clears_intake_pipeline(
+                decision_intake.is_none(),
+                decision_intake_inspection.is_none(),
+                decision_intake_compatibility.is_none(),
+                decision_intake_proceed_denial.is_none(),
+                decision_intake_package_seal.is_none(),
+                decision_intake_adapter_preparation.is_none(),
+                decision_handoff_request.is_none(),
+                decision_engine_acceptance.is_none(),
+            )?;
         }
 
         Ok(RecommendationReviewActionResult {
@@ -1684,22 +1653,20 @@ impl WorkspaceRecommendationEngineService {
         preparation
             .revoke(&now)
             .map_err(|e| KernelError::from(e))?;
-        debug_assert!(!preparation.is_active_preparation());
-        debug_assert!(preparation.attempt_invoke_adapter().is_err());
+        crate::services::validate_adapter_preparation_boundary(&preparation, Some(false))?;
         let mut handoff_request = overlay.decision_handoff_request.clone();
         if let Some(ref mut request) = handoff_request {
             request.revoke(&now).map_err(|e| KernelError::from(e))?;
-            debug_assert!(!request.is_active_request());
-            debug_assert!(!request.handoff_requested);
-            debug_assert!(!request.handoff_performed);
-            debug_assert!(request.attempt_perform_handoff().is_err());
+            crate::services::validate_handoff_request_boundary(request, Some(false))?;
         }
         let mut engine_acceptance = overlay.decision_engine_acceptance.clone();
         if let Some(ref mut acceptance) = engine_acceptance {
             acceptance.revoke(&now).map_err(|e| KernelError::from(e))?;
-            debug_assert!(!acceptance.is_awaiting());
-            debug_assert!(!acceptance.ownership_transferred);
-            debug_assert!(acceptance.attempt_transfer_ownership().is_err());
+            crate::services::validate_engine_acceptance_boundary(
+                acceptance,
+                Some(false),
+                None,
+            )?;
         }
         overlay.decision_intake_adapter_preparation = Some(preparation.clone());
         overlay.decision_handoff_request = handoff_request.clone();
@@ -1830,16 +1797,19 @@ impl WorkspaceRecommendationEngineService {
         let now = recommendation_engine_now_rfc3339();
         if accept {
             acceptance.accept(&now).map_err(KernelError::from)?;
-            debug_assert!(acceptance.is_accepted_for_future());
+            crate::services::validate_engine_acceptance_boundary(
+                &acceptance,
+                None,
+                Some(true),
+            )?;
         } else {
             acceptance.decline(&now).map_err(KernelError::from)?;
-            debug_assert!(!acceptance.is_accepted_for_future());
+            crate::services::validate_engine_acceptance_boundary(
+                &acceptance,
+                None,
+                Some(false),
+            )?;
         }
-        debug_assert!(!acceptance.ownership_transferred);
-        debug_assert!(acceptance.decision_engine_object_id.is_none());
-        debug_assert!(acceptance.attempt_transfer_ownership().is_err());
-        debug_assert!(acceptance.attempt_create_decision_engine_object().is_err());
-        debug_assert!(acceptance.assert_acceptance_is_not_ownership_transfer().is_ok());
         overlay.decision_engine_acceptance = Some(acceptance.clone());
         overlay.updated_at = now;
         overlay.actor_id = Some(actor.actor.id.to_string());
@@ -2002,7 +1972,7 @@ impl WorkspaceRecommendationEngineService {
                 }
             }
         }
-        Self::attach_explanation_views(&mut state);
+        Self::attach_explanation_views(&mut state)?;
         state.history = Self::build_history_from_overlays(by_id.values());
         state.history_count = state.history.len();
         // Context/readiness after history so outcome_history_refs are meaningful.
@@ -2058,7 +2028,7 @@ impl WorkspaceRecommendationEngineService {
             &prep_by_id,
             &handoff_by_id,
             &acceptance_by_id,
-        );
+        )?;
         Ok(state)
     }
 
@@ -2107,7 +2077,7 @@ impl WorkspaceRecommendationEngineService {
     }
 
     /// Project structured explanation views — Experience traces as provenance only.
-    fn attach_explanation_views(state: &mut WorkspaceRecommendationEngineState) {
+    fn attach_explanation_views(state: &mut WorkspaceRecommendationEngineState) -> Result<()> {
         for item in &mut state.candidates {
             let mut view = RecommendationExplanationView::from_item(item);
             if !item.attention_reasons.is_empty() {
@@ -2122,9 +2092,10 @@ impl WorkspaceRecommendationEngineService {
                     .collect();
                 view = view.with_experience_trace_match_keys(keys);
             }
-            debug_assert_eq!(view.authority_effect, RecommendationExplanationView::AUTHORITY_EFFECT_NONE);
+            crate::services::validate_explanation_view_non_authoritative(&view)?;
             item.explanation = Some(view);
         }
+        Ok(())
     }
 
     /// Project decision context + readiness + confirmation — observational only.
@@ -2135,7 +2106,7 @@ impl WorkspaceRecommendationEngineService {
         prep_by_id: &HashMap<String, RecommendationDecisionIntakeAdapterPreparation>,
         handoff_by_id: &HashMap<String, RecommendationDecisionHandoffRequest>,
         acceptance_by_id: &HashMap<String, RecommendationDecisionEngineAcceptance>,
-    ) {
+    ) -> Result<()> {
         let mut history_refs_by_id: HashMap<String, Vec<String>> = HashMap::new();
         for entry in &state.history {
             history_refs_by_id
@@ -2151,38 +2122,14 @@ impl WorkspaceRecommendationEngineService {
                 .unwrap_or_default();
             let context =
                 RecommendationDecisionContext::assemble(&workspace_id, item, &refs);
-            debug_assert_eq!(
-                context.authority_effect,
-                RecommendationDecisionContext::AUTHORITY_EFFECT_NONE
-            );
-            debug_assert!(!context.handoff_performed);
-            debug_assert!(context.decision_engine_object_id.is_none());
-            debug_assert!(!context.may_create_intent());
-            debug_assert!(!context.may_become_decision_engine_object());
-            debug_assert!(context.attempt_handoff().is_err());
+            crate::services::validate_decision_context_boundary(&context)?;
 
             let readiness = RecommendationDecisionReadiness::assess_from_context(&context);
-            debug_assert_eq!(
-                readiness.authority_effect,
-                RecommendationDecisionReadiness::AUTHORITY_EFFECT_NONE
-            );
-            debug_assert!(!readiness.may_create_decision_commands());
-            debug_assert!(!readiness.may_invoke_gateway());
-            debug_assert!(!readiness.may_mutate_provenance());
-            debug_assert!(readiness.attempt_handoff().is_err());
+            crate::services::validate_decision_readiness_boundary(&readiness)?;
 
             let boundary =
                 RecommendationDecisionBoundary::from_context_and_readiness(&context, &readiness);
-            debug_assert_eq!(
-                boundary.handoff_state,
-                RecommendationDecisionBoundary::HANDOFF_NOT_PERFORMED
-            );
-            debug_assert!(!boundary.creates_intent);
-            debug_assert!(!boundary.creates_decision_engine_object);
-            debug_assert!(!boundary.grants_execution_authority);
-            debug_assert!(boundary.assert_rejection_guards().is_ok());
-            debug_assert!(boundary.attempt_create_intent().is_err());
-            debug_assert!(boundary.attempt_authorize_execution().is_err());
+            crate::services::validate_decision_boundary_constraints(&boundary)?;
 
             let confirmation = confirmation_by_id
                 .get(&item.id)
@@ -2190,28 +2137,26 @@ impl WorkspaceRecommendationEngineService {
                 .unwrap_or_else(|| {
                     RecommendationDecisionConfirmation::derive_from_boundary(&boundary)
                 });
-            debug_assert!(confirmation.assert_non_authoritative().is_ok());
-            debug_assert!(!confirmation.may_create_intent());
-            debug_assert!(!confirmation.may_invoke_gateway());
+            crate::services::validate_confirmation_post_action(&confirmation)?;
 
             let intake = RecommendationDecisionIntakeRequest::try_assemble(
                 &context,
                 &readiness,
                 &confirmation,
             );
-            let intake_inspection = intake.as_ref().map(|request| {
-                let inspection = RecommendationDecisionIntakeInspection::verify(
-                    request,
-                    &context,
-                    &confirmation,
-                    &readiness,
-                );
-                debug_assert!(inspection.assert_inspection_is_not_handoff().is_ok());
-                debug_assert!(inspection.attempt_handoff().is_err());
-                debug_assert!(!inspection.may_create_decision_engine_object());
-                debug_assert!(!inspection.may_invoke_gateway());
-                inspection
-            });
+            let intake_inspection = match intake.as_ref() {
+                Some(request) => {
+                    let inspection = RecommendationDecisionIntakeInspection::verify(
+                        request,
+                        &context,
+                        &confirmation,
+                        &readiness,
+                    );
+                    crate::services::validate_intake_inspection_boundary(&inspection)?;
+                    Some(inspection)
+                }
+                None => None,
+            };
             let intake_compatibility =
                 match (intake.as_ref(), intake_inspection.as_ref()) {
                     (Some(request), Some(inspection)) => {
@@ -2219,22 +2164,20 @@ impl WorkspaceRecommendationEngineService {
                             RecommendationDecisionIntakeCompatibility::derive_from_inspection(
                                 request, inspection,
                             );
-                        debug_assert!(compatibility.assert_non_transfer().is_ok());
-                        debug_assert!(!compatibility.transfer_authorized);
-                        debug_assert!(compatibility.attempt_migrate().is_err());
+                        crate::services::validate_intake_compatibility_boundary(&compatibility)?;
                         Some(compatibility)
                     }
                     _ => None,
                 };
-            let intake_proceed_denial = intake_compatibility.as_ref().map(|compat| {
-                let denial =
-                    RecommendationDecisionIntakeProceedDenial::derive_from_compatibility(compat);
-                debug_assert!(denial.assert_compatible_is_not_permission().is_ok());
-                debug_assert!(!denial.proceed_authorized);
-                debug_assert!(!denial.adapter_invokable);
-                debug_assert!(denial.attempt_consume().is_err());
-                denial
-            });
+            let intake_proceed_denial = match intake_compatibility.as_ref() {
+                Some(compat) => {
+                    let denial =
+                        RecommendationDecisionIntakeProceedDenial::derive_from_compatibility(compat);
+                    crate::services::validate_intake_proceed_denial_boundary(&denial)?;
+                    Some(denial)
+                }
+                None => None,
+            };
             let intake_package_seal = match (
                 intake.as_ref(),
                 intake_compatibility.as_ref(),
@@ -2243,10 +2186,7 @@ impl WorkspaceRecommendationEngineService {
             ) {
                 (Some(request), _, _, Some(stored)) => {
                     let seal = stored.clone().reverify_against(request);
-                    debug_assert!(seal.assert_seal_is_not_handoff().is_ok());
-                    debug_assert!(!seal.proceed_authorized);
-                    debug_assert!(!seal.adapter_invokable);
-                    debug_assert!(seal.attempt_mutate_after_seal().is_err());
+                    crate::services::validate_intake_package_seal_boundary(&seal, Some(request))?;
                     Some(seal)
                 }
                 (Some(request), Some(compat), Some(denial), None) => {
@@ -2257,7 +2197,7 @@ impl WorkspaceRecommendationEngineService {
                         denial,
                         recommendation_engine_now_rfc3339(),
                     );
-                    debug_assert!(seal.assert_seal_is_not_handoff().is_ok());
+                    crate::services::validate_intake_package_seal_boundary(&seal, Some(request))?;
                     Some(seal)
                 }
                 _ => None,
@@ -2269,18 +2209,23 @@ impl WorkspaceRecommendationEngineService {
             ) {
                 (Some(seal), Some(stored), _) => {
                     let prep = stored.clone().rebind_to_seal(seal);
-                    debug_assert!(prep.assert_preparation_is_not_invocation().is_ok());
-                    debug_assert!(!prep.adapter_invoked);
-                    debug_assert!(prep.attempt_invoke_adapter().is_err());
+                    crate::services::validate_adapter_preparation_boundary(&prep, None)?;
                     Some(prep)
                 }
                 (Some(seal), None, Some(request)) => {
-                    RecommendationDecisionIntakeAdapterPreparation::try_prepare(
+                    let prep = RecommendationDecisionIntakeAdapterPreparation::try_prepare(
                         request,
                         &confirmation,
                         seal,
                         recommendation_engine_now_rfc3339(),
-                    )
+                    );
+                    if let Some(ref preparation) = prep {
+                        crate::services::validate_adapter_preparation_boundary(
+                            preparation,
+                            None,
+                        )?;
+                    }
+                    prep
                 }
                 _ => None,
             };
@@ -2292,19 +2237,21 @@ impl WorkspaceRecommendationEngineService {
             ) {
                 (Some(prep), Some(stored), _, _) => {
                     let request = stored.clone().rebind_to_preparation(prep);
-                    debug_assert!(request.assert_request_is_not_performed_handoff().is_ok());
-                    debug_assert!(!request.handoff_performed);
-                    debug_assert!(request.attempt_perform_handoff().is_err());
+                    crate::services::validate_handoff_request_boundary(&request, None)?;
                     Some(request)
                 }
                 (Some(prep), None, Some(seal), Some(compat)) => {
-                    RecommendationDecisionHandoffRequest::try_request(
+                    let request = RecommendationDecisionHandoffRequest::try_request(
                         prep,
                         &confirmation,
                         seal,
                         compat,
                         recommendation_engine_now_rfc3339(),
-                    )
+                    );
+                    if let Some(ref handoff_request) = request {
+                        crate::services::validate_handoff_request_boundary(handoff_request, None)?;
+                    }
+                    request
                 }
                 _ => None,
             };
@@ -2314,21 +2261,31 @@ impl WorkspaceRecommendationEngineService {
             ) {
                 (Some(request), Some(stored)) => {
                     let acceptance = stored.clone().rebind_to_handoff_request(request);
-                    debug_assert!(acceptance.assert_acceptance_is_not_ownership_transfer().is_ok());
-                    debug_assert!(!acceptance.ownership_transferred);
-                    debug_assert!(acceptance.attempt_transfer_ownership().is_err());
+                    crate::services::validate_engine_acceptance_boundary(
+                        &acceptance,
+                        None,
+                        None,
+                    )?;
                     Some(acceptance)
                 }
                 (Some(request), None) => {
-                    RecommendationDecisionEngineAcceptance::derive_from_handoff_request(request)
+                    let acceptance =
+                        RecommendationDecisionEngineAcceptance::derive_from_handoff_request(
+                            request,
+                        );
+                    if let Some(ref boundary) = acceptance {
+                        crate::services::validate_engine_acceptance_boundary(
+                            boundary,
+                            None,
+                            None,
+                        )?;
+                    }
+                    acceptance
                 }
                 _ => None,
             };
             if let Some(ref request) = intake {
-                debug_assert!(request.assert_non_authoritative().is_ok());
-                debug_assert!(request.decision_engine_object_id.is_none());
-                debug_assert!(!request.handoff_performed);
-                debug_assert!(request.attempt_create_decision_engine_object().is_err());
+                crate::services::validate_intake_request_non_authoritative(request)?;
             }
 
             item.decision_context = Some(context);
@@ -2344,6 +2301,7 @@ impl WorkspaceRecommendationEngineService {
             item.decision_handoff_request = decision_handoff_request;
             item.decision_engine_acceptance = decision_engine_acceptance;
         }
+        Ok(())
     }
 
     fn new_available_overlay(
