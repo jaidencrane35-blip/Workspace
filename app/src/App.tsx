@@ -172,10 +172,11 @@ export default function App() {
     <main className="app-shell">
       <header className="app-chrome">
         <h1>Workspace</h1>
-        <nav className="tabs" aria-label="Primary">
+        <nav className="tabs" aria-label="Primary workspace views">
           <button
             type="button"
             className={view === "canvas" ? "tab active" : "tab"}
+            aria-current={view === "canvas" ? "page" : undefined}
             onClick={() => setView("canvas")}
           >
             Canvas
@@ -183,6 +184,7 @@ export default function App() {
           <button
             type="button"
             className={view === "work" ? "tab active" : "tab"}
+            aria-current={view === "work" ? "page" : undefined}
             onClick={() => setView("work")}
           >
             Work
@@ -190,6 +192,7 @@ export default function App() {
           <button
             type="button"
             className={view === "assistant" ? "tab active" : "tab"}
+            aria-current={view === "assistant" ? "page" : undefined}
             onClick={() => setView("assistant")}
           >
             Assistant
@@ -197,6 +200,7 @@ export default function App() {
           <button
             type="button"
             className={view === "operator" ? "tab active" : "tab"}
+            aria-current={view === "operator" ? "page" : undefined}
             onClick={() => setView("operator")}
           >
             Diagnostic
@@ -204,8 +208,26 @@ export default function App() {
         </nav>
       </header>
 
-      {error && <p className="error banner">Error: {error}</p>}
-      {message && <p className="ok banner">{message}</p>}
+      {error && (
+        <p
+          className="error banner"
+          role="status"
+          aria-live="assertive"
+          aria-atomic="true"
+        >
+          Error: {error}
+        </p>
+      )}
+      {message && (
+        <p
+          className="ok banner"
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          {message}
+        </p>
+      )}
 
       {view === "canvas" ? (
         !bootstrapped ? (

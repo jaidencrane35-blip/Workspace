@@ -715,13 +715,18 @@ export function AssistantPanel({
                       type="button"
                       className="linkish"
                       disabled={busy}
+                      aria-expanded={open}
+                      aria-controls={`assistant-explanation-${action.step_id}`}
                       onClick={() => void toggleExplanation(action)}
                     >
                       {open ? "Hide explanation" : "Why this?"}
                     </button>
                   </div>
                   {open && detail && (
-                    <dl className="assistant-explanation">
+                    <dl
+                      id={`assistant-explanation-${action.step_id}`}
+                      className="assistant-explanation"
+                    >
                       <dt>Why suggested</dt>
                       <dd>{detail.why_suggested}</dd>
                       <dt>Why permission</dt>

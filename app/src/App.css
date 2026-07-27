@@ -52,7 +52,17 @@ body {
 
 .banner {
   margin: 0;
-  padding: 0.65rem 1.25rem;
+  padding: 0.75rem 1.25rem;
+  border-left: 4px solid transparent;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.error.banner {
+  border-color: #f87171;
+}
+
+.ok.banner {
+  border-color: #86efac;
 }
 
 .container {
@@ -396,6 +406,21 @@ button:not(:disabled):hover {
   color: #9aa8b4;
   font-size: 0.85rem;
   line-height: 1.4;
+}
+
+.assistant-panel dl {
+  margin: 1rem 0 0;
+}
+
+.assistant-panel dt {
+  margin-top: 1rem;
+  font-weight: 600;
+  color: #dbe3eb;
+}
+
+.assistant-panel dd {
+  margin: 0.35rem 0 0 0;
+  line-height: 1.6;
 }
 
 /* Small presentation utilities used by explanation blocks */
