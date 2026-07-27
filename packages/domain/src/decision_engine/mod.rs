@@ -187,6 +187,9 @@ pub struct DecisionEngineState {
     /// DE-owned intake lifecycle acknowledgements — never DecisionCandidates.
     #[serde(default)]
     pub intake_candidates: Vec<DecisionEngineIntakeCandidate>,
+    /// DE-owned intake evaluations — examination records, never planning authority.
+    #[serde(default)]
+    pub intake_evaluations: Vec<DecisionEngineIntakeEvaluation>,
     pub summary: String,
     pub authority_effect: String,
 }
@@ -226,6 +229,7 @@ impl DecisionEngineState {
             intake_assessments: Vec::new(),
             intake_eligibilities: Vec::new(),
             intake_candidates: Vec::new(),
+            intake_evaluations: Vec::new(),
             summary,
             authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
         }
@@ -286,6 +290,20 @@ impl DecisionEngineState {
             active
         );
         self.intake_candidates = candidates;
+        self
+    }
+
+    /// Attach DE-owned intake evaluations without changing scoring or DecisionCandidates.
+    pub fn with_intake_evaluations(
+        mut self,
+        evaluations: Vec<DecisionEngineIntakeEvaluation>,
+    ) -> Self {
+        self.summary = format!(
+            "{} Intake evaluations: {}.",
+            self.summary,
+            evaluations.len()
+        );
+        self.intake_evaluations = evaluations;
         self
     }
 
@@ -1432,6 +1450,157 @@ impl DecisionEngineIntakeCandidate {
             || self.lifecycle.authority_effect
                 != DecisionEngineIntakeCandidateLifecycle::AUTHORITY_EFFECT_NONE
             || !self.intake_candidate_id.starts_with(Self::ID_PREFIX)
+        {
+            return Err(DecisionEngineError::CannotExecute);
+        }
+        Ok(())
+    }
+}
+
+/// DE-owned evaluation record for an active intake candidate.
+///
+/// Answers whether Decision Engine examined the intake candidate and the outcome.
+/// Never grants planning authority, creates DecisionCandidates, goals, intents,
+/// or mutates Recommendation Engine records.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DecisionEngineIntakeEvaluation {
+    pub evaluation_id: String,
+    pub workspace_id: String,
+    pub intake_candidate_id: String,
+    pub evaluated_at: String,
+    /// `evaluated` | `rejected` | `deferred`
+    pub evaluation_state: String,
+    pub evaluation_reason: String,
+    pub creates_decision_candidate: bool,
+    pub creates_goal: bool,
+    pub creates_intent: bool,
+    pub adapter_invoked: bool,
+    pub planner_invoked: bool,
+    pub ownership_transferred: bool,
+    pub handoff_command: Option<String>,
+    pub note: String,
+    pub authority_effect: String,
+}
+
+impl DecisionEngineIntakeEvaluation {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+    pub const STATE_EVALUATED: &'static str = "evaluated";
+    pub const STATE_REJECTED: &'static str = "rejected";
+    pub const STATE_DEFERRED: &'static str = "deferred";
+    pub const ID_PREFIX: &'static str = "engine_decision_intake_eval:";
+
+    pub fn synthetic_id(intake_candidate_id: &str) -> String {
+        format!("{}{intake_candidate_id}", Self::ID_PREFIX)
+    }
+
+    pub fn is_valid_state(state: &str) -> bool {
+        matches!(
+            state,
+            Self::STATE_EVALUATED | Self::STATE_REJECTED | Self::STATE_DEFERRED
+        )
+    }
+
+    /// Evaluate only an active intake candidate. Withdrawn/invalidated are rejected.
+    pub fn try_evaluate(
+        candidate: &DecisionEngineIntakeCandidate,
+        evaluation_state: impl Into<String>,
+        evaluation_reason: impl Into<String>,
+        evaluated_at: impl Into<String>,
+    ) -> Result<Self, DecisionEngineError> {
+        if !candidate.lifecycle.is_active() {
+            return Err(DecisionEngineError::InvalidTransition {
+                from: candidate.lifecycle.lifecycle_state.clone(),
+                to: "evaluate".into(),
+            });
+        }
+        let evaluation_state = evaluation_state.into();
+        if !Self::is_valid_state(&evaluation_state) {
+            return Err(DecisionEngineError::InvalidOutcome(evaluation_state));
+        }
+        let evaluated_at = evaluated_at.into();
+        let evaluation_reason = evaluation_reason.into();
+        Ok(Self {
+            evaluation_id: Self::synthetic_id(&candidate.intake_candidate_id),
+            workspace_id: candidate.workspace_id.clone(),
+            intake_candidate_id: candidate.intake_candidate_id.clone(),
+            evaluated_at,
+            evaluation_state: evaluation_state.clone(),
+            evaluation_reason,
+            creates_decision_candidate: false,
+            creates_goal: false,
+            creates_intent: false,
+            adapter_invoked: false,
+            planner_invoked: false,
+            ownership_transferred: false,
+            handoff_command: None,
+            note: format!(
+                "Decision Engine intake evaluation ({evaluation_state}). Examination record only — \
+                 not DecisionCandidate creation, goal/intent creation, planner handoff, Gateway \
+                 grant, adapter invocation, or ownership transfer."
+            ),
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        })
+    }
+
+    pub fn may_create_decision_candidate(&self) -> bool {
+        false
+    }
+
+    pub fn may_create_goal(&self) -> bool {
+        false
+    }
+
+    pub fn may_create_intent(&self) -> bool {
+        false
+    }
+
+    pub fn may_invoke_planner(&self) -> bool {
+        false
+    }
+
+    pub fn may_invoke_gateway(&self) -> bool {
+        false
+    }
+
+    pub fn may_transfer_ownership(&self) -> bool {
+        false
+    }
+
+    pub fn attempt_create_decision_candidate(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_create_goal(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_create_intent(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_invoke_planner(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_transfer_ownership(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_execute() -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn assert_evaluation_only(&self) -> Result<(), DecisionEngineError> {
+        if self.creates_decision_candidate
+            || self.creates_goal
+            || self.creates_intent
+            || self.adapter_invoked
+            || self.planner_invoked
+            || self.ownership_transferred
+            || self.handoff_command.is_some()
+            || self.authority_effect != Self::AUTHORITY_EFFECT_NONE
+            || !Self::is_valid_state(&self.evaluation_state)
+            || !self.evaluation_id.starts_with(Self::ID_PREFIX)
         {
             return Err(DecisionEngineError::CannotExecute);
         }

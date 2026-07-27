@@ -1,8 +1,8 @@
 use crate::connection::Database;
 use crate::error::Result;
 use workspace_domain::{
-    DecisionEngineIntakeCandidate, DecisionEngineIntakeCandidateLifecycle, DecisionEngineOverlay,
-    DecisionOutcome,
+    DecisionEngineIntakeCandidate, DecisionEngineIntakeCandidateLifecycle,
+    DecisionEngineIntakeEvaluation, DecisionEngineOverlay, DecisionOutcome,
 };
 
 /// Persistence for Decision Engine lifecycle overlay and intake candidates.
@@ -132,6 +132,70 @@ impl<'a> DecisionEngineRepository<'a> {
             None => Ok(None),
         }
     }
+
+    pub fn get_intake_candidate(
+        &self,
+        workspace_id: &str,
+        intake_candidate_id: &str,
+    ) -> Result<Option<DecisionEngineIntakeCandidate>> {
+        let mut stmt = self.db.connection().prepare(
+            "SELECT workspace_id, intake_candidate_id, intake_receipt_reference,
+                    recommendation_reference, package_seal_digest, acceptance_reference,
+                    compatibility_version, state, created_at,
+                    lifecycle_state, lifecycle_reason, lifecycle_updated_at
+             FROM decision_engine_intake_candidate
+             WHERE workspace_id = ?1 AND intake_candidate_id = ?2
+             LIMIT 1",
+        )?;
+        let mut rows = stmt.query_map((workspace_id, intake_candidate_id), map_intake_candidate)?;
+        match rows.next() {
+            Some(row) => Ok(Some(row?)),
+            None => Ok(None),
+        }
+    }
+
+    pub fn upsert_intake_evaluation(
+        &self,
+        evaluation: &DecisionEngineIntakeEvaluation,
+    ) -> Result<()> {
+        self.db.connection().execute(
+            "INSERT INTO decision_engine_intake_evaluation (
+                workspace_id, evaluation_id, intake_candidate_id, evaluated_at,
+                evaluation_state, evaluation_reason, updated_at
+             ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?4)
+             ON CONFLICT(workspace_id, evaluation_id) DO UPDATE SET
+                intake_candidate_id = excluded.intake_candidate_id,
+                evaluated_at = excluded.evaluated_at,
+                evaluation_state = excluded.evaluation_state,
+                evaluation_reason = excluded.evaluation_reason,
+                updated_at = excluded.updated_at",
+            (
+                &evaluation.workspace_id,
+                &evaluation.evaluation_id,
+                &evaluation.intake_candidate_id,
+                &evaluation.evaluated_at,
+                &evaluation.evaluation_state,
+                &evaluation.evaluation_reason,
+            ),
+        )?;
+        Ok(())
+    }
+
+    pub fn list_intake_evaluations(
+        &self,
+        workspace_id: &str,
+    ) -> Result<Vec<DecisionEngineIntakeEvaluation>> {
+        let mut stmt = self.db.connection().prepare(
+            "SELECT workspace_id, evaluation_id, intake_candidate_id, evaluated_at,
+                    evaluation_state, evaluation_reason
+             FROM decision_engine_intake_evaluation
+             WHERE workspace_id = ?1
+             ORDER BY evaluation_id ASC",
+        )?;
+        let rows = stmt.query_map([workspace_id], map_intake_evaluation)?;
+        rows.collect::<std::result::Result<Vec<_>, _>>()
+            .map_err(Into::into)
+    }
 }
 
 fn map_overlay(row: &rusqlite::Row<'_>) -> rusqlite::Result<DecisionEngineOverlay> {
@@ -185,5 +249,28 @@ fn map_intake_candidate(row: &rusqlite::Row<'_>) -> rusqlite::Result<DecisionEng
                Not a DecisionCandidate, goal, intent, planner handoff, or ownership transfer."
             .into(),
         authority_effect: DecisionEngineIntakeCandidate::AUTHORITY_EFFECT_NONE.into(),
+    })
+}
+
+fn map_intake_evaluation(row: &rusqlite::Row<'_>) -> rusqlite::Result<DecisionEngineIntakeEvaluation> {
+    let evaluation_state: String = row.get(4)?;
+    Ok(DecisionEngineIntakeEvaluation {
+        workspace_id: row.get(0)?,
+        evaluation_id: row.get(1)?,
+        intake_candidate_id: row.get(2)?,
+        evaluated_at: row.get(3)?,
+        evaluation_state: evaluation_state.clone(),
+        evaluation_reason: row.get(5)?,
+        creates_decision_candidate: false,
+        creates_goal: false,
+        creates_intent: false,
+        adapter_invoked: false,
+        planner_invoked: false,
+        ownership_transferred: false,
+        handoff_command: None,
+        note: format!(
+            "Decision Engine intake evaluation ({evaluation_state}). Examination record only."
+        ),
+        authority_effect: DecisionEngineIntakeEvaluation::AUTHORITY_EFFECT_NONE.into(),
     })
 }

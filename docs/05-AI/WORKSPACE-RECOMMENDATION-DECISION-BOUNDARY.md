@@ -45,7 +45,8 @@ Remaining before a future handoff could exist:
 12. ~~DE intake eligibility (eligible ≠ create candidate)~~ — see [WORKSPACE-DECISION-ENGINE-INTAKE-ELIGIBILITY.md](./WORKSPACE-DECISION-ENGINE-INTAKE-ELIGIBILITY.md)
 13. ~~DE intake candidate (acknowledgement ≠ DecisionCandidate)~~ — see [WORKSPACE-DECISION-ENGINE-INTAKE-CANDIDATE.md](./WORKSPACE-DECISION-ENGINE-INTAKE-CANDIDATE.md)
 14. ~~DE intake candidate lifecycle (active/withdrawn/invalidated ≠ DecisionCandidate lifecycle)~~ — see [WORKSPACE-DECISION-ENGINE-INTAKE-CANDIDATE-LIFECYCLE.md](./WORKSPACE-DECISION-ENGINE-INTAKE-CANDIDATE-LIFECYCLE.md)
-15. Optional **DecisionCandidate creation / adapter invocation** after active intake candidate — still separate domains; not execution
+15. ~~DE intake evaluation (examine ≠ DecisionCandidate / planning authority)~~ — see [WORKSPACE-DECISION-ENGINE-INTAKE-EVALUATION.md](./WORKSPACE-DECISION-ENGINE-INTAKE-EVALUATION.md)
+16. Optional **DecisionCandidate creation / adapter invocation** after evaluated intake — still separate domains; not execution
 
 ---
 

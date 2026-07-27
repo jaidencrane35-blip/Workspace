@@ -15,7 +15,8 @@ use workspace_domain::{
     ActorContext, AttentionItem, DecisionCandidate, DecisionContext, DecisionEngineActionResult,
     DecisionEngineError, DecisionEngineHandoff, DecisionEngineIntakeAssessment,
     DecisionEngineIntakeAssessmentInput, DecisionEngineIntakeCandidate,
-    DecisionEngineIntakeEligibility, DecisionEngineIntakeReceipt, DecisionEngineOverlay,
+    DecisionEngineIntakeEligibility, DecisionEngineIntakeEvaluation, DecisionEngineIntakeReceipt,
+    DecisionEngineOverlay,
     DecisionEngineState, DecisionEngineSummary, DecisionExplanation, DecisionOutcome, DecisionQueue,
     DecisionReason, DecisionScore, DecisionSourceType, DecisionState, IntelligenceHighlight,
     IntentContext, RecommendationLifecycleState, WorkspaceAttentionState, WorkspaceId, WorkGoal,
@@ -260,11 +261,13 @@ impl DecisionEngineService {
             &intake_assessments,
             &intake_eligibilities,
         )?;
+        let intake_evaluations = Self::load_intake_evaluations(db, ws)?;
         let state = DecisionEngineState::from_candidates(ws, context, candidates)
             .with_intake_receipts(intake_receipts)
             .with_intake_assessments(intake_assessments)
             .with_intake_eligibilities(intake_eligibilities)
-            .with_intake_candidates(intake_candidates);
+            .with_intake_candidates(intake_candidates)
+            .with_intake_evaluations(intake_evaluations);
         debug_assert!(state
             .intake_receipts
             .iter()
@@ -297,6 +300,14 @@ impl DecisionEngineService {
             .intake_candidates
             .iter()
             .all(|c| !c.is_decision_candidate && c.handoff_command.is_none()));
+        debug_assert!(state
+            .intake_evaluations
+            .iter()
+            .all(|e| e.assert_evaluation_only().is_ok()));
+        debug_assert!(state
+            .intake_evaluations
+            .iter()
+            .all(|e| !e.creates_decision_candidate && e.handoff_command.is_none()));
         Self::audit_generated(db, actor, &state)?;
         Self::audit_rank_changes(db, actor, &state, &previous_ranks)?;
         Ok(state)
@@ -441,6 +452,55 @@ impl DecisionEngineService {
         drop(guard);
         out.sort_by(|a, b| a.intake_candidate_id.cmp(&b.intake_candidate_id));
         Ok(out)
+    }
+
+    fn load_intake_evaluations(
+        db: &Arc<Mutex<Database>>,
+        workspace_id: &str,
+    ) -> Result<Vec<DecisionEngineIntakeEvaluation>> {
+        let guard = db
+            .lock()
+            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+        let mut evaluations =
+            DecisionEngineRepository::new(&guard).list_intake_evaluations(workspace_id)?;
+        drop(guard);
+        evaluations.sort_by(|a, b| a.evaluation_id.cmp(&b.evaluation_id));
+        Ok(evaluations)
+    }
+
+    /// Persist a DE-owned intake evaluation for an active intake candidate only.
+    /// Never mutates Recommendation Engine overlays. Never creates DecisionCandidates.
+    pub(crate) fn evaluate_intake_candidate(
+        db: &Arc<Mutex<Database>>,
+        workspace_id: impl Into<String>,
+        intake_candidate_id: impl Into<String>,
+        evaluation_state: impl Into<String>,
+        evaluation_reason: impl Into<String>,
+    ) -> Result<DecisionEngineIntakeEvaluation> {
+        let workspace_id = workspace_id.into();
+        let intake_candidate_id = intake_candidate_id.into();
+        let evaluation_state = evaluation_state.into();
+        let evaluation_reason = evaluation_reason.into();
+        let now = Utc::now().to_rfc3339();
+
+        let guard = db
+            .lock()
+            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+        let repo = DecisionEngineRepository::new(&guard);
+        let candidate = repo
+            .get_intake_candidate(&workspace_id, &intake_candidate_id)?
+            .ok_or_else(|| KernelError::from(DecisionEngineError::NotFound))?;
+        let evaluation = DecisionEngineIntakeEvaluation::try_evaluate(
+            &candidate,
+            evaluation_state,
+            evaluation_reason,
+            now,
+        )
+        .map_err(KernelError::from)?;
+        debug_assert!(evaluation.assert_evaluation_only().is_ok());
+        repo.upsert_intake_evaluation(&evaluation)?;
+        drop(guard);
+        Ok(evaluation)
     }
 
     pub(crate) fn summary_projection(
