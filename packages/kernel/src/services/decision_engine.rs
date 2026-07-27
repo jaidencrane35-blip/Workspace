@@ -16,9 +16,9 @@ use workspace_domain::{
     DecisionEngineError, DecisionEngineHandoff, DecisionEngineIntakeAssessment,
     DecisionEngineIntakeAssessmentInput, DecisionEngineIntakeCandidate,
     DecisionEngineIntakeDisposition, DecisionEngineIntakeEligibility,
-    DecisionEngineIntakeEvaluation, DecisionEngineIntakePromotionBoundary,
-    DecisionEngineIntakePromotionBoundaryInput, DecisionEngineIntakeReceipt,
-    DecisionEngineOverlay,
+    DecisionEngineCandidateCreationRequest, DecisionEngineIntakeEvaluation,
+    DecisionEngineIntakePromotionBoundary, DecisionEngineIntakePromotionBoundaryInput,
+    DecisionEngineIntakeReceipt, DecisionEngineOverlay,
     DecisionEngineState, DecisionEngineSummary, DecisionExplanation, DecisionOutcome, DecisionQueue,
     DecisionReason, DecisionScore, DecisionSourceType, DecisionState, IntelligenceHighlight,
     IntentContext, RecommendationLifecycleState, WorkspaceAttentionState, WorkspaceId, WorkGoal,
@@ -272,6 +272,8 @@ impl DecisionEngineService {
             &intake_receipts,
             &intake_eligibilities,
         );
+        let candidate_creation_requests =
+            DecisionEngineCandidateCreationRequest::derive_batch(&intake_promotion_boundaries);
         let state = DecisionEngineState::from_candidates(ws, context, candidates)
             .with_intake_receipts(intake_receipts)
             .with_intake_assessments(intake_assessments)
@@ -279,7 +281,8 @@ impl DecisionEngineService {
             .with_intake_candidates(intake_candidates)
             .with_intake_evaluations(intake_evaluations)
             .with_intake_dispositions(intake_dispositions)
-            .with_intake_promotion_boundaries(intake_promotion_boundaries);
+            .with_intake_promotion_boundaries(intake_promotion_boundaries)
+            .with_candidate_creation_requests(candidate_creation_requests);
         debug_assert!(state
             .intake_receipts
             .iter()
@@ -336,6 +339,14 @@ impl DecisionEngineService {
             .intake_promotion_boundaries
             .iter()
             .all(|b| !b.creates_decision_candidate && b.handoff_command.is_none()));
+        debug_assert!(state
+            .candidate_creation_requests
+            .iter()
+            .all(|r| r.assert_request_only().is_ok()));
+        debug_assert!(state
+            .candidate_creation_requests
+            .iter()
+            .all(|r| !r.creates_decision_candidate && !r.creates_decision_score));
         Self::audit_generated(db, actor, &state)?;
         Self::audit_rank_changes(db, actor, &state, &previous_ranks)?;
         Ok(state)

@@ -48,7 +48,8 @@ Remaining before a future handoff could exist:
 15. ~~DE intake evaluation (examine ≠ DecisionCandidate / planning authority)~~ — see [WORKSPACE-DECISION-ENGINE-INTAKE-EVALUATION.md](./WORKSPACE-DECISION-ENGINE-INTAKE-EVALUATION.md)
 16. ~~DE intake disposition (retain/dismiss/defer ≠ DecisionCandidate / planning)~~ — see [WORKSPACE-DECISION-ENGINE-INTAKE-DISPOSITION.md](./WORKSPACE-DECISION-ENGINE-INTAKE-DISPOSITION.md)
 17. ~~DE intake promotion boundary (promotion_allowed ≠ DecisionCandidate creation)~~ — see [WORKSPACE-DECISION-ENGINE-INTAKE-PROMOTION-BOUNDARY.md](./WORKSPACE-DECISION-ENGINE-INTAKE-PROMOTION-BOUNDARY.md)
-18. Optional **DecisionCandidate creation / adapter invocation** after promotion_allowed — still separate domains; not execution
+18. ~~DE candidate creation request (requested ≠ DecisionCandidate creation)~~ — see [WORKSPACE-DECISION-ENGINE-CANDIDATE-CREATION-REQUEST.md](./WORKSPACE-DECISION-ENGINE-CANDIDATE-CREATION-REQUEST.md)
+19. Optional **DecisionCandidate creation / adapter invocation** after requested — still separate domains; not execution
 
 ---
 

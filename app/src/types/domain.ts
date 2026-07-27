@@ -1227,6 +1227,31 @@ export interface DecisionCandidate {
   authority_effect: string;
 }
 
+/** DE-owned candidate creation request — request only, not DecisionCandidate creation. */
+export interface DecisionEngineCandidateCreationRequest {
+  request_id: string;
+  workspace_id: string;
+  intake_candidate_id: string;
+  recommendation_reference: string;
+  /** not_requested | requested | rejected | created */
+  request_state: string;
+  promotion_boundary_state: string;
+  disposition_retained: boolean;
+  acceptance_active: boolean;
+  seal_aligned: boolean;
+  evidence: string[];
+  creates_decision_candidate: boolean;
+  creates_decision_score: boolean;
+  creates_goal: boolean;
+  creates_intent: boolean;
+  adapter_invoked: boolean;
+  planner_invoked: boolean;
+  ownership_transferred: boolean;
+  handoff_command: string | null;
+  note: string;
+  authority_effect: string;
+}
+
 /** DE-owned promotion boundary — readiness for future DecisionCandidate promotion only. */
 export interface DecisionEngineIntakePromotionBoundary {
   workspace_id: string;
@@ -1430,6 +1455,8 @@ export interface DecisionEngineState {
   intake_dispositions?: DecisionEngineIntakeDisposition[];
   /** DE-owned promotion boundaries — never DecisionCandidate creation. */
   intake_promotion_boundaries?: DecisionEngineIntakePromotionBoundary[];
+  /** DE-owned candidate creation requests — never DecisionCandidate creation. */
+  candidate_creation_requests?: DecisionEngineCandidateCreationRequest[];
   summary: string;
   authority_effect: string;
 }

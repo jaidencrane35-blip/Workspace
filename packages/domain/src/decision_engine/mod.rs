@@ -196,6 +196,9 @@ pub struct DecisionEngineState {
     /// DE-owned promotion boundary — readiness for *future* DecisionCandidate promotion only.
     #[serde(default)]
     pub intake_promotion_boundaries: Vec<DecisionEngineIntakePromotionBoundary>,
+    /// DE-owned candidate creation requests — request only, never DecisionCandidate creation.
+    #[serde(default)]
+    pub candidate_creation_requests: Vec<DecisionEngineCandidateCreationRequest>,
     pub summary: String,
     pub authority_effect: String,
 }
@@ -238,6 +241,7 @@ impl DecisionEngineState {
             intake_evaluations: Vec::new(),
             intake_dispositions: Vec::new(),
             intake_promotion_boundaries: Vec::new(),
+            candidate_creation_requests: Vec::new(),
             summary,
             authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
         }
@@ -345,6 +349,22 @@ impl DecisionEngineState {
             allowed
         );
         self.intake_promotion_boundaries = boundaries;
+        self
+    }
+
+    /// Attach DE-owned candidate creation requests without creating DecisionCandidates.
+    pub fn with_candidate_creation_requests(
+        mut self,
+        requests: Vec<DecisionEngineCandidateCreationRequest>,
+    ) -> Self {
+        let requested = requests.iter().filter(|r| r.is_requested()).count();
+        self.summary = format!(
+            "{} Candidate creation requests: {} ({} requested).",
+            self.summary,
+            requests.len(),
+            requested
+        );
+        self.candidate_creation_requests = requests;
         self
     }
 
@@ -2026,6 +2046,187 @@ impl DecisionEngineIntakePromotionBoundary {
             || self.authority_effect != Self::AUTHORITY_EFFECT_NONE
             || (self.is_promotion_allowed()
                 && self.boundary_state != Self::STATE_PROMOTION_ALLOWED)
+        {
+            return Err(DecisionEngineError::CannotExecute);
+        }
+        Ok(())
+    }
+}
+
+/// DE-owned request that an eligible intake artifact seek conversion into
+/// the native DecisionCandidate domain.
+///
+/// This is not DecisionCandidate creation, scoring, planner handoff, or execution.
+/// Fully derivable from the promotion boundary — never persisted in this increment.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DecisionEngineCandidateCreationRequest {
+    pub request_id: String,
+    pub workspace_id: String,
+    pub intake_candidate_id: String,
+    pub recommendation_reference: String,
+    /// `not_requested` | `requested` | `rejected` | `created`
+    pub request_state: String,
+    pub promotion_boundary_state: String,
+    pub disposition_retained: bool,
+    pub acceptance_active: bool,
+    pub seal_aligned: bool,
+    pub evidence: Vec<String>,
+    pub creates_decision_candidate: bool,
+    pub creates_decision_score: bool,
+    pub creates_goal: bool,
+    pub creates_intent: bool,
+    pub adapter_invoked: bool,
+    pub planner_invoked: bool,
+    pub ownership_transferred: bool,
+    pub handoff_command: Option<String>,
+    pub note: String,
+    pub authority_effect: String,
+}
+
+impl DecisionEngineCandidateCreationRequest {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+    pub const STATE_NOT_REQUESTED: &'static str = "not_requested";
+    pub const STATE_REQUESTED: &'static str = "requested";
+    pub const STATE_REJECTED: &'static str = "rejected";
+    pub const STATE_CREATED: &'static str = "created";
+    pub const ID_PREFIX: &'static str = "engine_decision_intake_creation_request:";
+
+    pub fn synthetic_id(intake_candidate_id: &str) -> String {
+        format!("{}{intake_candidate_id}", Self::ID_PREFIX)
+    }
+
+    pub fn is_requested(&self) -> bool {
+        self.request_state == Self::STATE_REQUESTED
+    }
+
+    pub fn derive_batch(
+        boundaries: &[DecisionEngineIntakePromotionBoundary],
+    ) -> Vec<Self> {
+        let mut out: Vec<Self> = boundaries.iter().map(Self::derive).collect();
+        out.sort_by(|a, b| a.intake_candidate_id.cmp(&b.intake_candidate_id));
+        out
+    }
+
+    /// Derive creation-request state from promotion boundary facts only.
+    /// Never sets `created` — reserved for a future DecisionCandidate creation event.
+    pub fn derive(boundary: &DecisionEngineIntakePromotionBoundary) -> Self {
+        let request_state = match boundary.boundary_state.as_str() {
+            DecisionEngineIntakePromotionBoundary::STATE_PROMOTION_ALLOWED
+                if boundary.disposition_retained
+                    && boundary.acceptance_active
+                    && boundary.seal_aligned
+                    && boundary.intake_active =>
+            {
+                Self::STATE_REQUESTED
+            }
+            DecisionEngineIntakePromotionBoundary::STATE_PROMOTION_BLOCKED => Self::STATE_REJECTED,
+            _ => Self::STATE_NOT_REQUESTED,
+        };
+
+        let mut evidence = boundary.evidence.clone();
+        match request_state {
+            Self::STATE_REQUESTED => evidence.push("creation_requested".into()),
+            Self::STATE_REJECTED => evidence.push("creation_rejected".into()),
+            _ => evidence.push("creation_not_requested".into()),
+        }
+
+        Self {
+            request_id: Self::synthetic_id(&boundary.intake_candidate_id),
+            workspace_id: boundary.workspace_id.clone(),
+            intake_candidate_id: boundary.intake_candidate_id.clone(),
+            recommendation_reference: boundary.recommendation_reference.clone(),
+            request_state: request_state.into(),
+            promotion_boundary_state: boundary.boundary_state.clone(),
+            disposition_retained: boundary.disposition_retained,
+            acceptance_active: boundary.acceptance_active,
+            seal_aligned: boundary.seal_aligned,
+            evidence,
+            creates_decision_candidate: false,
+            creates_decision_score: false,
+            creates_goal: false,
+            creates_intent: false,
+            adapter_invoked: false,
+            planner_invoked: false,
+            ownership_transferred: false,
+            handoff_command: None,
+            note: format!(
+                "Decision Engine candidate creation request ({request_state}). Request only — \
+                 not DecisionCandidate creation, scoring, planner handoff, Gateway grant, \
+                 goal/intent creation, or ownership transfer."
+            ),
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        }
+    }
+
+    pub fn may_create_decision_candidate(&self) -> bool {
+        false
+    }
+
+    pub fn may_create_decision_score(&self) -> bool {
+        false
+    }
+
+    pub fn may_create_goal(&self) -> bool {
+        false
+    }
+
+    pub fn may_create_intent(&self) -> bool {
+        false
+    }
+
+    pub fn may_invoke_planner(&self) -> bool {
+        false
+    }
+
+    pub fn may_invoke_gateway(&self) -> bool {
+        false
+    }
+
+    pub fn may_transfer_ownership(&self) -> bool {
+        false
+    }
+
+    pub fn attempt_create_decision_candidate(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_create_decision_score(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_create_goal(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_create_intent(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_invoke_planner(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_transfer_ownership(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_execute() -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn assert_request_only(&self) -> Result<(), DecisionEngineError> {
+        if self.creates_decision_candidate
+            || self.creates_decision_score
+            || self.creates_goal
+            || self.creates_intent
+            || self.adapter_invoked
+            || self.planner_invoked
+            || self.ownership_transferred
+            || self.handoff_command.is_some()
+            || self.authority_effect != Self::AUTHORITY_EFFECT_NONE
+            || self.request_state == Self::STATE_CREATED
+            || !self.request_id.starts_with(Self::ID_PREFIX)
+            || (self.is_requested() && self.request_state != Self::STATE_REQUESTED)
         {
             return Err(DecisionEngineError::CannotExecute);
         }
