@@ -18,6 +18,8 @@ DecisionEngineIntakeAssessment
   assessment_state =
     blocked | superseded | duplicate | stale | valid | eligible_for_future_candidate
   eligible_for_future_candidate = informational only
+        ↓
+DecisionEngineIntakeEligibility (separate gate; still ≠ create candidate)
         ✗ assess ≠ DecisionCandidate creation
         ✗ assess ≠ goal / intent / planner / Gateway
         ✗ assess ≠ ownership transfer
@@ -32,4 +34,5 @@ Not persisted. Fully derivable from receipt + RE overlay facts
 ## Related
 
 - [WORKSPACE-DECISION-ENGINE-INTAKE-RECEIPT.md](./WORKSPACE-DECISION-ENGINE-INTAKE-RECEIPT.md)
+- [WORKSPACE-DECISION-ENGINE-INTAKE-ELIGIBILITY.md](./WORKSPACE-DECISION-ENGINE-INTAKE-ELIGIBILITY.md)
 - [WORKSPACE-DECISION-ENGINE.md](./WORKSPACE-DECISION-ENGINE.md)

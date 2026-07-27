@@ -14,7 +14,8 @@ use workspace_database::{Database, DecisionEngineRepository, RecommendationLifec
 use workspace_domain::{
     ActorContext, AttentionItem, DecisionCandidate, DecisionContext, DecisionEngineActionResult,
     DecisionEngineError, DecisionEngineHandoff, DecisionEngineIntakeAssessment,
-    DecisionEngineIntakeAssessmentInput, DecisionEngineIntakeReceipt, DecisionEngineOverlay,
+    DecisionEngineIntakeAssessmentInput, DecisionEngineIntakeEligibility,
+    DecisionEngineIntakeReceipt, DecisionEngineOverlay,
     DecisionEngineState, DecisionEngineSummary, DecisionExplanation, DecisionOutcome, DecisionQueue,
     DecisionReason, DecisionScore, DecisionSourceType, DecisionState, IntelligenceHighlight,
     IntentContext, RecommendationLifecycleState, WorkspaceAttentionState, WorkspaceId, WorkGoal,
@@ -250,11 +251,12 @@ impl DecisionEngineService {
             }
         }
 
-        let (intake_receipts, intake_assessments) =
-            Self::observe_and_assess_recommendation_intakes(db, ws)?;
+        let (intake_receipts, intake_assessments, intake_eligibilities) =
+            Self::project_recommendation_intake_observations(db, ws)?;
         let state = DecisionEngineState::from_candidates(ws, context, candidates)
             .with_intake_receipts(intake_receipts)
-            .with_intake_assessments(intake_assessments);
+            .with_intake_assessments(intake_assessments)
+            .with_intake_eligibilities(intake_eligibilities);
         debug_assert!(state
             .intake_receipts
             .iter()
@@ -271,19 +273,28 @@ impl DecisionEngineService {
             .intake_assessments
             .iter()
             .all(|a| !a.creates_decision_candidate && a.handoff_command.is_none()));
+        debug_assert!(state
+            .intake_eligibilities
+            .iter()
+            .all(|e| e.assert_observational_only().is_ok()));
+        debug_assert!(state
+            .intake_eligibilities
+            .iter()
+            .all(|e| !e.creates_decision_candidate && e.handoff_command.is_none()));
         Self::audit_generated(db, actor, &state)?;
         Self::audit_rank_changes(db, actor, &state, &previous_ranks)?;
         Ok(state)
     }
 
-    /// Read-only observation + assessment of accepted RE sealed packages.
+    /// Read-only observation + assessment + eligibility of accepted RE sealed packages.
     /// Never mutates Recommendation Engine overlays. Never creates candidates.
-    fn observe_and_assess_recommendation_intakes(
+    fn project_recommendation_intake_observations(
         db: &Arc<Mutex<Database>>,
         workspace_id: &str,
     ) -> Result<(
         Vec<DecisionEngineIntakeReceipt>,
         Vec<DecisionEngineIntakeAssessment>,
+        Vec<DecisionEngineIntakeEligibility>,
     )> {
         let guard = db
             .lock()
@@ -332,8 +343,10 @@ impl DecisionEngineService {
         }
         inputs.sort_by(|a, b| a.receipt.recommendation_id.cmp(&b.receipt.recommendation_id));
         let assessments = DecisionEngineIntakeAssessment::assess_batch(&inputs);
-        let receipts = inputs.into_iter().map(|i| i.receipt).collect();
-        Ok((receipts, assessments))
+        let receipts: Vec<_> = inputs.into_iter().map(|i| i.receipt).collect();
+        let eligibilities =
+            DecisionEngineIntakeEligibility::derive_batch(&receipts, &assessments);
+        Ok((receipts, assessments, eligibilities))
     }
 
     pub(crate) fn summary_projection(

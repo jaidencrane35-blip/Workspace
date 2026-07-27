@@ -42,7 +42,8 @@ Remaining before a future handoff could exist:
 9. ~~DE acceptance (accept ≠ ownership transfer / DE object)~~ — see [WORKSPACE-RECOMMENDATION-DECISION-ENGINE-ACCEPTANCE.md](./WORKSPACE-RECOMMENDATION-DECISION-ENGINE-ACCEPTANCE.md)
 10. ~~DE intake receipt (observe ≠ DecisionCandidate)~~ — see [WORKSPACE-DECISION-ENGINE-INTAKE-RECEIPT.md](./WORKSPACE-DECISION-ENGINE-INTAKE-RECEIPT.md)
 11. ~~DE intake assessment (eligible ≠ create candidate)~~ — see [WORKSPACE-DECISION-ENGINE-INTAKE-ASSESSMENT.md](./WORKSPACE-DECISION-ENGINE-INTAKE-ASSESSMENT.md)
-12. Optional **DE-owned object creation / adapter invocation** after eligible assessment — still separate domains; not execution
+12. ~~DE intake eligibility (eligible ≠ create candidate)~~ — see [WORKSPACE-DECISION-ENGINE-INTAKE-ELIGIBILITY.md](./WORKSPACE-DECISION-ENGINE-INTAKE-ELIGIBILITY.md)
+13. Optional **DE-owned object creation / adapter invocation** after eligible gate — still separate domains; not execution
 
 ---
 

@@ -1227,6 +1227,35 @@ export interface DecisionCandidate {
   authority_effect: string;
 }
 
+/** DE-owned observational eligibility for future candidate consideration — not a candidate. */
+export interface DecisionEngineIntakeEligibility {
+  workspace_id: string;
+  recommendation_id: string;
+  sealed_intake_package_digest: string;
+  /** not_eligible | blocked | duplicate | superseded | stale | eligible */
+  eligibility_state: string;
+  /** Informational only — never means create candidate. */
+  is_eligible: boolean;
+  receipt_observed: boolean;
+  seal_aligned: boolean;
+  acceptance_active: boolean;
+  assessment_valid: boolean;
+  is_duplicate: boolean;
+  is_superseded: boolean;
+  is_stale: boolean;
+  evidence: string[];
+  creates_decision_candidate: boolean;
+  creates_goal: boolean;
+  creates_intent: boolean;
+  adapter_invoked: boolean;
+  planner_invoked: boolean;
+  ownership_transferred: boolean;
+  decision_engine_object_id: string | null;
+  handoff_command: string | null;
+  note: string;
+  authority_effect: string;
+}
+
 /** DE-owned observational assessment of an intake receipt — not a candidate. */
 export interface DecisionEngineIntakeAssessment {
   workspace_id: string;
@@ -1291,6 +1320,8 @@ export interface DecisionEngineState {
   intake_receipts?: DecisionEngineIntakeReceipt[];
   /** Observational intake assessments — never DecisionCandidates. */
   intake_assessments?: DecisionEngineIntakeAssessment[];
+  /** Observational intake eligibility — never DecisionCandidates. */
+  intake_eligibilities?: DecisionEngineIntakeEligibility[];
   summary: string;
   authority_effect: string;
 }

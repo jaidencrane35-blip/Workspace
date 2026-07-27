@@ -85,9 +85,14 @@ Observation is DE-owned and informational only:
 
 `DecisionEngineIntakeAssessment` then evaluates each receipt (projected, not
 persisted): blocked / superseded / duplicate / stale /
-`eligible_for_future_candidate`. Eligibility is informational only — never
+`eligible_for_future_candidate`. Assessment is informational only — never
 creates a candidate. See
 [WORKSPACE-DECISION-ENGINE-INTAKE-ASSESSMENT.md](./WORKSPACE-DECISION-ENGINE-INTAKE-ASSESSMENT.md).
+
+`DecisionEngineIntakeEligibility` is a separate projected gate answering
+whether an assessment may ever become a future DecisionCandidate — still
+without creating one. See
+[WORKSPACE-DECISION-ENGINE-INTAKE-ELIGIBILITY.md](./WORKSPACE-DECISION-ENGINE-INTAKE-ELIGIBILITY.md).
 
 Namespaces remain separate (`recommendation:*` vs `engine_decision:*`).
 Existing Attention/graph/goal synthesis and scoring are unchanged.
