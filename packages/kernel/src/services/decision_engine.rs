@@ -12,17 +12,18 @@ use chrono::Utc;
 use serde_json::json;
 use workspace_database::{Database, DecisionEngineRepository, RecommendationLifecycleRepository};
 use workspace_domain::{
-    ActorContext, AttentionItem, DecisionCandidate, DecisionContext, DecisionEngineActionResult,
-    DecisionEngineCandidateCreation, DecisionEngineCandidateCreationInput,
-    DecisionEngineCandidateCreationRequest, DecisionEngineError, DecisionEngineHandoff,
-    DecisionEngineIntakeAssessment, DecisionEngineIntakeAssessmentInput,
-    DecisionEngineIntakeCandidate, DecisionEngineIntakeDisposition,
-    DecisionEngineIntakeEligibility, DecisionEngineIntakeEvaluation,
-    DecisionEngineIntakePromotionBoundary, DecisionEngineIntakePromotionBoundaryInput,
-    DecisionEngineIntakeReceipt, DecisionEngineOverlay, DecisionEngineState,
-    DecisionEngineSummary, DecisionExplanation, DecisionOutcome, DecisionQueue, DecisionReason,
-    DecisionScore, DecisionSourceType, DecisionState, IntelligenceHighlight, IntentContext,
-    RecommendationLifecycleState, WorkspaceAttentionState, WorkspaceId, WorkGoal, WorkflowContext,
+    ActorContext, AttentionItem, DecisionCandidate, DecisionCandidateLifecycleIntegration,
+    DecisionContext, DecisionEngineActionResult, DecisionEngineCandidateCreation,
+    DecisionEngineCandidateCreationInput, DecisionEngineCandidateCreationRequest,
+    DecisionEngineError, DecisionEngineHandoff, DecisionEngineIntakeAssessment,
+    DecisionEngineIntakeAssessmentInput, DecisionEngineIntakeCandidate,
+    DecisionEngineIntakeDisposition, DecisionEngineIntakeEligibility,
+    DecisionEngineIntakeEvaluation, DecisionEngineIntakePromotionBoundary,
+    DecisionEngineIntakePromotionBoundaryInput, DecisionEngineIntakeReceipt,
+    DecisionEngineOverlay, DecisionEngineState, DecisionEngineSummary, DecisionExplanation,
+    DecisionOutcome, DecisionQueue, DecisionReason, DecisionScore, DecisionSourceType,
+    DecisionState, IntelligenceHighlight, IntentContext, RecommendationLifecycleState,
+    WorkspaceAttentionState, WorkspaceId, WorkGoal, WorkflowContext,
 };
 
 use crate::error::{KernelError, Result};
@@ -308,6 +309,8 @@ impl DecisionEngineService {
                     .map_err(KernelError::from)?,
             );
         }
+        let lifecycle_integrations =
+            DecisionCandidateLifecycleIntegration::derive_batch(&candidates);
         let state = DecisionEngineState::from_candidates(ws, context, candidates)
             .with_intake_receipts(intake_receipts)
             .with_intake_assessments(intake_assessments)
@@ -317,7 +320,8 @@ impl DecisionEngineService {
             .with_intake_dispositions(intake_dispositions)
             .with_intake_promotion_boundaries(intake_promotion_boundaries)
             .with_candidate_creation_requests(candidate_creation_requests)
-            .with_candidate_creations(candidate_creations);
+            .with_candidate_creations(candidate_creations)
+            .with_lifecycle_integrations(lifecycle_integrations);
         debug_assert!(state
             .intake_receipts
             .iter()
@@ -388,6 +392,13 @@ impl DecisionEngineService {
             .all(|c| c.assert_creation_boundary().is_ok()));
         debug_assert!(state.candidate_creations.iter().all(|c| {
             !c.creates_decision_score && !c.planner_invoked && c.handoff_command.is_none()
+        }));
+        debug_assert!(state
+            .lifecycle_integrations
+            .iter()
+            .all(|i| i.assert_integration_only().is_ok()));
+        debug_assert!(state.lifecycle_integrations.iter().all(|i| {
+            i.provenance_immutable && !i.scoring_applied && !i.planner_invoked
         }));
         Self::audit_generated(db, actor, &state)?;
         Self::audit_rank_changes(db, actor, &state, &previous_ranks)?;
@@ -951,14 +962,18 @@ impl DecisionEngineService {
             .cloned()
             .ok_or_else(|| KernelError::from(DecisionEngineError::NotFound))?;
 
-        if !candidate.outcome.allows_transition(to) {
-            return Err(KernelError::from(DecisionEngineError::InvalidTransition {
-                from: candidate.outcome.as_str().into(),
-                to: to.as_str().into(),
-            }));
-        }
+        let (integration, updated) =
+            DecisionCandidateLifecycleIntegration::try_apply_outcome(&candidate, to)
+                .map_err(KernelError::from)?;
+        debug_assert!(integration.assert_integration_only().is_ok());
+        debug_assert!(
+            DecisionCandidateLifecycleIntegration::assert_provenance_retained(
+                &candidate, &updated
+            )
+            .is_ok()
+        );
 
-        let key = Self::candidate_key(&candidate);
+        let key = Self::candidate_key(&updated);
         Self::upsert_overlay(
             db,
             &DecisionEngineOverlay {
@@ -970,11 +985,20 @@ impl DecisionEngineService {
             },
         )?;
 
-        let mut updated = candidate.clone();
-        updated.outcome = to;
-        Self::audit_lifecycle(db, actor, audit_event, &updated, json!({}))?;
+        Self::audit_lifecycle(
+            db,
+            actor,
+            audit_event,
+            &updated,
+            json!({
+                "origin": integration.origin,
+                "integration_state": integration.integration_state,
+                "provenance_immutable": true,
+            }),
+        )?;
 
-        let handoff = if include_handoff {
+        // Recommendation-intake candidates remain non-planner-connected in this boundary.
+        let handoff = if include_handoff && updated.is_native_origin() {
             Some(DecisionEngineHandoff {
                 candidate_id: updated.id.to_string(),
                 next_command: DecisionCandidate::HANDOFF_SUBMIT_ASSISTANT_GOAL.into(),
@@ -1144,6 +1168,7 @@ impl DecisionEngineService {
             intake_candidate_id: None,
             creation_request_id: None,
             package_seal_digest: None,
+            origin: DecisionCandidate::ORIGIN_NATIVE.into(),
             score: DecisionScore {
                 total,
                 attention_contribution,
@@ -1238,6 +1263,7 @@ impl DecisionEngineService {
             intake_candidate_id: None,
             creation_request_id: None,
             package_seal_digest: None,
+            origin: DecisionCandidate::ORIGIN_NATIVE.into(),
             score: DecisionScore {
                 total,
                 attention_contribution,
@@ -1337,6 +1363,7 @@ impl DecisionEngineService {
             intake_candidate_id: None,
             creation_request_id: None,
             package_seal_digest: None,
+            origin: DecisionCandidate::ORIGIN_NATIVE.into(),
             score: DecisionScore {
                 total,
                 attention_contribution,
@@ -1405,6 +1432,7 @@ impl DecisionEngineService {
             intake_candidate_id: None,
             creation_request_id: None,
             package_seal_digest: None,
+            origin: DecisionCandidate::ORIGIN_NATIVE.into(),
             score: DecisionScore {
                 total,
                 attention_contribution: 0,

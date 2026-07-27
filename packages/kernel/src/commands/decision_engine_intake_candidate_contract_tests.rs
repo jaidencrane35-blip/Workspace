@@ -384,6 +384,7 @@ fn case12_synthesis_unchanged_by_intake_candidates() {
         intake_candidate_id: None,
         creation_request_id: None,
         package_seal_digest: None,
+        origin: DecisionCandidate::ORIGIN_NATIVE.into(),
         score: DecisionScore {
             total: 10,
             attention_contribution: 10,

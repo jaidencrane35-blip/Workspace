@@ -1221,6 +1221,8 @@ export interface DecisionCandidate {
   intake_candidate_id?: string | null;
   creation_request_id?: string | null;
   package_seal_digest?: string | null;
+  /** native | recommendation_intake */
+  origin?: string;
   score: DecisionScore;
   explanation: DecisionExplanation;
   related_goal_ids: string[];
@@ -1228,6 +1230,35 @@ export interface DecisionCandidate {
   outcome: DecisionOutcome;
   created_at: string;
   handoff_command: string;
+  authority_effect: string;
+}
+
+/** DE-owned lifecycle integration — origin-aware, provenance-preserving. */
+export interface DecisionCandidateLifecycleIntegration {
+  integration_id: string;
+  workspace_id: string;
+  decision_candidate_id: string;
+  /** native | recommendation_intake */
+  origin: string;
+  outcome: string;
+  intake_candidate_id: string | null;
+  creation_request_id: string | null;
+  package_seal_digest: string | null;
+  recommendation_reference: string | null;
+  /** integrated | blocked | provenance_invalid */
+  integration_state: string;
+  provenance_immutable: boolean;
+  provenance_complete: boolean;
+  scoring_applied: boolean;
+  ranking_applied: boolean;
+  creates_decision_score: boolean;
+  creates_goal: boolean;
+  creates_intent: boolean;
+  adapter_invoked: boolean;
+  planner_invoked: boolean;
+  ownership_transferred: boolean;
+  handoff_command: string | null;
+  note: string;
   authority_effect: string;
 }
 
@@ -1490,6 +1521,8 @@ export interface DecisionEngineState {
   candidate_creation_requests?: DecisionEngineCandidateCreationRequest[];
   /** DE-owned candidate creation boundary — may create DecisionCandidate without scoring. */
   candidate_creations?: DecisionEngineCandidateCreation[];
+  /** DE-owned lifecycle integrations — origin-aware, no scoring/planner. */
+  lifecycle_integrations?: DecisionCandidateLifecycleIntegration[];
   summary: string;
   authority_effect: string;
 }

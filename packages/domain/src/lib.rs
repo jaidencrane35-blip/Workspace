@@ -232,16 +232,16 @@ pub use automation_trigger::{
     TriggerRejection, TriggerRejectionSummary,
 };
 pub use decision_engine::{
-    DecisionCandidate, DecisionContext, DecisionEngineActionResult,
-    DecisionEngineCandidateCreation, DecisionEngineCandidateCreationInput,
-    DecisionEngineCandidateCreationRequest, DecisionEngineError, DecisionEngineHandoff,
-    DecisionEngineIntakeAssessment, DecisionEngineIntakeAssessmentInput,
-    DecisionEngineIntakeCandidate, DecisionEngineIntakeCandidateLifecycle,
-    DecisionEngineIntakeDisposition, DecisionEngineIntakeEligibility,
-    DecisionEngineIntakeEvaluation, DecisionEngineIntakePromotionBoundary,
-    DecisionEngineIntakePromotionBoundaryInput, DecisionEngineIntakeReceipt,
-    DecisionEngineOverlay, DecisionEngineState, DecisionEngineSummary, DecisionExplanation,
-    DecisionOutcome, DecisionReason, DecisionScore,
+    DecisionCandidate, DecisionCandidateLifecycleIntegration, DecisionContext,
+    DecisionEngineActionResult, DecisionEngineCandidateCreation,
+    DecisionEngineCandidateCreationInput, DecisionEngineCandidateCreationRequest,
+    DecisionEngineError, DecisionEngineHandoff, DecisionEngineIntakeAssessment,
+    DecisionEngineIntakeAssessmentInput, DecisionEngineIntakeCandidate,
+    DecisionEngineIntakeCandidateLifecycle, DecisionEngineIntakeDisposition,
+    DecisionEngineIntakeEligibility, DecisionEngineIntakeEvaluation,
+    DecisionEngineIntakePromotionBoundary, DecisionEngineIntakePromotionBoundaryInput,
+    DecisionEngineIntakeReceipt, DecisionEngineOverlay, DecisionEngineState,
+    DecisionEngineSummary, DecisionExplanation, DecisionOutcome, DecisionReason, DecisionScore,
 };
 pub use decision_queue::{
     DecisionActionResult, DecisionCategory, DecisionHandoff, DecisionItem, DecisionLifecycleOverlay,

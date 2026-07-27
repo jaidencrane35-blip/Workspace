@@ -313,6 +313,7 @@ fn case9_synthesis_unchanged() {
         intake_candidate_id: None,
         creation_request_id: None,
         package_seal_digest: None,
+        origin: DecisionCandidate::ORIGIN_NATIVE.into(),
         score: DecisionScore {
             total: 10,
             attention_contribution: 10,

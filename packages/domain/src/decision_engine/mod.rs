@@ -127,6 +127,10 @@ pub struct DecisionContext {
     pub task_graph_blocked_count: usize,
 }
 
+fn default_decision_candidate_origin() -> String {
+    DecisionCandidate::ORIGIN_NATIVE.into()
+}
+
 /// One ranked, explainable recommendation candidate.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DecisionCandidate {
@@ -146,6 +150,9 @@ pub struct DecisionCandidate {
     /// Recommendation package seal digest when created from intake (else None).
     #[serde(default)]
     pub package_seal_digest: Option<String>,
+    /// `native` | `recommendation_intake` — origin remains visible; never merged.
+    #[serde(default = "default_decision_candidate_origin")]
+    pub origin: String,
     pub score: DecisionScore,
     pub explanation: DecisionExplanation,
     pub related_goal_ids: Vec<String>,
@@ -161,6 +168,8 @@ impl DecisionCandidate {
     pub const HANDOFF_SUBMIT_ASSISTANT_GOAL: &'static str = "submit_assistant_goal";
     /// Empty handoff — intake-created candidates never invoke planner in this increment.
     pub const HANDOFF_NONE: &'static str = "";
+    pub const ORIGIN_NATIVE: &'static str = "native";
+    pub const ORIGIN_RECOMMENDATION_INTAKE: &'static str = "recommendation_intake";
 
     pub fn synthetic_id(source_key: &str) -> DecisionCandidateId {
         DecisionCandidateId::new(format!("engine_decision:{source_key}"))
@@ -177,6 +186,33 @@ impl DecisionCandidate {
             goal_contribution: 0,
             factors: Vec::new(),
         }
+    }
+
+    pub fn is_recommendation_intake(&self) -> bool {
+        self.origin == Self::ORIGIN_RECOMMENDATION_INTAKE
+            || self.id.as_str().starts_with("engine_decision:intake:")
+    }
+
+    pub fn is_native_origin(&self) -> bool {
+        !self.is_recommendation_intake()
+    }
+
+    pub fn has_complete_intake_provenance(&self) -> bool {
+        self.intake_candidate_id
+            .as_ref()
+            .is_some_and(|v| !v.is_empty())
+            && self
+                .creation_request_id
+                .as_ref()
+                .is_some_and(|v| !v.is_empty())
+            && self
+                .package_seal_digest
+                .as_ref()
+                .is_some_and(|v| !v.is_empty())
+            && self
+                .recommendation_id
+                .as_ref()
+                .is_some_and(|v| !v.is_empty())
     }
 }
 
@@ -225,6 +261,9 @@ pub struct DecisionEngineState {
     /// DE-owned candidate creation boundary — may create DecisionCandidate without scoring.
     #[serde(default)]
     pub candidate_creations: Vec<DecisionEngineCandidateCreation>,
+    /// DE-owned lifecycle integration — origin-aware DE lifecycle without merging sources.
+    #[serde(default)]
+    pub lifecycle_integrations: Vec<DecisionCandidateLifecycleIntegration>,
     pub summary: String,
     pub authority_effect: String,
 }
@@ -269,6 +308,7 @@ impl DecisionEngineState {
             intake_promotion_boundaries: Vec::new(),
             candidate_creation_requests: Vec::new(),
             candidate_creations: Vec::new(),
+            lifecycle_integrations: Vec::new(),
             summary,
             authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
         }
@@ -408,6 +448,22 @@ impl DecisionEngineState {
             created
         );
         self.candidate_creations = creations;
+        self
+    }
+
+    /// Attach DE-owned lifecycle integrations without scoring or planner handoff.
+    pub fn with_lifecycle_integrations(
+        mut self,
+        integrations: Vec<DecisionCandidateLifecycleIntegration>,
+    ) -> Self {
+        let integrated = integrations.iter().filter(|i| i.is_integrated()).count();
+        self.summary = format!(
+            "{} Lifecycle integrations: {} ({} integrated).",
+            self.summary,
+            integrations.len(),
+            integrated
+        );
+        self.lifecycle_integrations = integrations;
         self
     }
 
@@ -2554,6 +2610,7 @@ impl DecisionEngineCandidateCreation {
             intake_candidate_id: Some(creation.intake_candidate_id.clone()),
             creation_request_id: Some(creation.creation_request_id.clone()),
             package_seal_digest: Some(creation.package_seal_digest.clone()),
+            origin: DecisionCandidate::ORIGIN_RECOMMENDATION_INTAKE.into(),
             score: DecisionCandidate::unscored(),
             explanation: DecisionExplanation {
                 headline: "Created from approved Decision Engine intake".into(),
@@ -2620,6 +2677,7 @@ impl DecisionEngineCandidateCreation {
             intake_candidate_id: Some(self.intake_candidate_id.clone()),
             creation_request_id: Some(self.creation_request_id.clone()),
             package_seal_digest: Some(self.package_seal_digest.clone()),
+            origin: DecisionCandidate::ORIGIN_RECOMMENDATION_INTAKE.into(),
             score: DecisionCandidate::unscored(),
             explanation: DecisionExplanation {
                 headline: "Created from approved Decision Engine intake".into(),
@@ -2694,6 +2752,266 @@ impl DecisionEngineCandidateCreation {
                     .unwrap_or("")
                     .starts_with("engine_decision:"))
             || (!self.is_created() && self.creates_decision_candidate)
+        {
+            return Err(DecisionEngineError::CannotExecute);
+        }
+        Ok(())
+    }
+}
+
+/// DE-owned integration of DecisionCandidates into the normal DE lifecycle
+/// without merging native and recommendation_intake origins.
+///
+/// Projected only — outcomes continue to persist via `decision_engine_lifecycle`.
+/// Never scores, ranks, plans, grants, or mutates Recommendation Engine records.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DecisionCandidateLifecycleIntegration {
+    pub integration_id: String,
+    pub workspace_id: String,
+    pub decision_candidate_id: String,
+    /// `native` | `recommendation_intake`
+    pub origin: String,
+    pub outcome: String,
+    pub intake_candidate_id: Option<String>,
+    pub creation_request_id: Option<String>,
+    pub package_seal_digest: Option<String>,
+    pub recommendation_reference: Option<String>,
+    /// `integrated` | `blocked` | `provenance_invalid`
+    pub integration_state: String,
+    pub provenance_immutable: bool,
+    pub provenance_complete: bool,
+    pub scoring_applied: bool,
+    pub ranking_applied: bool,
+    pub creates_decision_score: bool,
+    pub creates_goal: bool,
+    pub creates_intent: bool,
+    pub adapter_invoked: bool,
+    pub planner_invoked: bool,
+    pub ownership_transferred: bool,
+    pub handoff_command: Option<String>,
+    pub note: String,
+    pub authority_effect: String,
+}
+
+impl DecisionCandidateLifecycleIntegration {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+    pub const STATE_INTEGRATED: &'static str = "integrated";
+    pub const STATE_BLOCKED: &'static str = "blocked";
+    pub const STATE_PROVENANCE_INVALID: &'static str = "provenance_invalid";
+    pub const ID_PREFIX: &'static str = "engine_decision_lifecycle_integration:";
+
+    pub fn synthetic_id(decision_candidate_id: &str) -> String {
+        format!("{}{decision_candidate_id}", Self::ID_PREFIX)
+    }
+
+    pub fn is_integrated(&self) -> bool {
+        self.integration_state == Self::STATE_INTEGRATED
+    }
+
+    pub fn classify_origin(candidate: &DecisionCandidate) -> &'static str {
+        if candidate.origin == DecisionCandidate::ORIGIN_RECOMMENDATION_INTAKE
+            || candidate.id.as_str().starts_with("engine_decision:intake:")
+            || candidate.intake_candidate_id.is_some()
+            || candidate.creation_request_id.is_some()
+            || candidate.package_seal_digest.is_some()
+        {
+            DecisionCandidate::ORIGIN_RECOMMENDATION_INTAKE
+        } else {
+            DecisionCandidate::ORIGIN_NATIVE
+        }
+    }
+
+    pub fn provenance_valid_for_origin(
+        origin: &str,
+        candidate: &DecisionCandidate,
+    ) -> bool {
+        if origin == DecisionCandidate::ORIGIN_NATIVE {
+            // Native candidates must not carry intake provenance (origin separation).
+            candidate.intake_candidate_id.is_none()
+                && candidate.creation_request_id.is_none()
+                && candidate.package_seal_digest.is_none()
+                && !candidate.id.as_str().starts_with("engine_decision:intake:")
+        } else if origin == DecisionCandidate::ORIGIN_RECOMMENDATION_INTAKE {
+            candidate.has_complete_intake_provenance()
+                && candidate
+                    .intake_candidate_id
+                    .as_deref()
+                    .is_some_and(|id| id.starts_with("engine_decision_intake:"))
+                && candidate
+                    .creation_request_id
+                    .as_deref()
+                    .is_some_and(|id| {
+                        id.starts_with(DecisionEngineCandidateCreationRequest::ID_PREFIX)
+                    })
+                && candidate.id.as_str().starts_with("engine_decision:intake:")
+        } else {
+            false
+        }
+    }
+
+    pub fn derive_batch(candidates: &[DecisionCandidate]) -> Vec<Self> {
+        let mut out: Vec<Self> = candidates.iter().map(Self::derive).collect();
+        out.sort_by(|a, b| a.decision_candidate_id.cmp(&b.decision_candidate_id));
+        out
+    }
+
+    pub fn derive(candidate: &DecisionCandidate) -> Self {
+        let origin = Self::classify_origin(candidate);
+        let provenance_complete = candidate.has_complete_intake_provenance();
+        let provenance_ok = Self::provenance_valid_for_origin(origin, candidate);
+
+        let (integration_state, evidence_note) = if !provenance_ok {
+            (Self::STATE_PROVENANCE_INVALID, "provenance_invalid")
+        } else if !candidate.id.as_str().starts_with("engine_decision:") {
+            (Self::STATE_BLOCKED, "non_decision_namespace")
+        } else {
+            (Self::STATE_INTEGRATED, "lifecycle_integrated")
+        };
+
+        Self {
+            integration_id: Self::synthetic_id(candidate.id.as_str()),
+            workspace_id: candidate.workspace_id.as_str().to_string(),
+            decision_candidate_id: candidate.id.as_str().to_string(),
+            origin: origin.into(),
+            outcome: candidate.outcome.as_str().into(),
+            intake_candidate_id: candidate.intake_candidate_id.clone(),
+            creation_request_id: candidate.creation_request_id.clone(),
+            package_seal_digest: candidate.package_seal_digest.clone(),
+            recommendation_reference: candidate.recommendation_id.clone(),
+            integration_state: integration_state.into(),
+            provenance_immutable: true,
+            provenance_complete,
+            scoring_applied: false,
+            ranking_applied: false,
+            creates_decision_score: false,
+            creates_goal: false,
+            creates_intent: false,
+            adapter_invoked: false,
+            planner_invoked: false,
+            ownership_transferred: false,
+            handoff_command: None,
+            note: format!(
+                "Decision Engine lifecycle integration ({integration_state}; origin={origin}; \
+                 {evidence_note}). Origin preserved; provenance immutable; no scoring, ranking, \
+                 planner handoff, Gateway, goals, intents, or execution."
+            ),
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        }
+    }
+
+    /// Apply a DE lifecycle outcome while preserving origin and provenance.
+    /// Never scores, plans, grants, or clears recommendation provenance.
+    pub fn try_apply_outcome(
+        candidate: &DecisionCandidate,
+        to: DecisionOutcome,
+    ) -> Result<(Self, DecisionCandidate), DecisionEngineError> {
+        let integration = Self::derive(candidate);
+        if !integration.is_integrated() {
+            return Err(DecisionEngineError::InvalidTransition {
+                from: integration.integration_state,
+                to: to.as_str().into(),
+            });
+        }
+        if !candidate.outcome.allows_transition(to) {
+            return Err(DecisionEngineError::InvalidTransition {
+                from: candidate.outcome.as_str().into(),
+                to: to.as_str().into(),
+            });
+        }
+
+        let before = candidate.clone();
+        let mut updated = candidate.clone();
+        updated.outcome = to;
+        // Re-assert origin classification and never strip provenance.
+        updated.origin = Self::classify_origin(&before).into();
+        updated.intake_candidate_id = before.intake_candidate_id.clone();
+        updated.creation_request_id = before.creation_request_id.clone();
+        updated.package_seal_digest = before.package_seal_digest.clone();
+        updated.recommendation_id = before.recommendation_id.clone();
+        // Recommendation-intake candidates remain non-planner-connected.
+        if updated.is_recommendation_intake() {
+            updated.handoff_command = DecisionCandidate::HANDOFF_NONE.into();
+        }
+
+        Self::assert_provenance_retained(&before, &updated)?;
+        let mut next = Self::derive(&updated);
+        next.note = format!(
+            "Decision Engine lifecycle integration applied outcome {} for origin {}. \
+             Provenance retained; no scoring, planner handoff, Gateway, or execution.",
+            to.as_str(),
+            next.origin
+        );
+        next.assert_integration_only()?;
+        Ok((next, updated))
+    }
+
+    pub fn assert_provenance_retained(
+        before: &DecisionCandidate,
+        after: &DecisionCandidate,
+    ) -> Result<(), DecisionEngineError> {
+        if before.intake_candidate_id != after.intake_candidate_id
+            || before.creation_request_id != after.creation_request_id
+            || before.package_seal_digest != after.package_seal_digest
+            || before.recommendation_id != after.recommendation_id
+            || Self::classify_origin(before) != Self::classify_origin(after)
+        {
+            return Err(DecisionEngineError::CannotExecute);
+        }
+        if after.is_recommendation_intake() && !after.has_complete_intake_provenance() {
+            return Err(DecisionEngineError::CannotExecute);
+        }
+        Ok(())
+    }
+
+    /// Reject any attempt to clear intake provenance from a recommendation-derived candidate.
+    pub fn attempt_strip_provenance(
+        candidate: &DecisionCandidate,
+    ) -> Result<DecisionCandidate, DecisionEngineError> {
+        let _ = candidate;
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn may_create_decision_score(&self) -> bool {
+        false
+    }
+
+    pub fn may_rank(&self) -> bool {
+        false
+    }
+
+    pub fn may_invoke_planner(&self) -> bool {
+        false
+    }
+
+    pub fn may_invoke_gateway(&self) -> bool {
+        false
+    }
+
+    pub fn attempt_create_decision_score(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_invoke_planner(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_execute() -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn assert_integration_only(&self) -> Result<(), DecisionEngineError> {
+        if !self.provenance_immutable
+            || self.scoring_applied
+            || self.ranking_applied
+            || self.creates_decision_score
+            || self.creates_goal
+            || self.creates_intent
+            || self.adapter_invoked
+            || self.planner_invoked
+            || self.ownership_transferred
+            || self.handoff_command.is_some()
+            || self.authority_effect != Self::AUTHORITY_EFFECT_NONE
+            || !self.integration_id.starts_with(Self::ID_PREFIX)
         {
             return Err(DecisionEngineError::CannotExecute);
         }

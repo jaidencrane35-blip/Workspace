@@ -50,7 +50,8 @@ Remaining before a future handoff could exist:
 17. ~~DE intake promotion boundary (promotion_allowed ≠ DecisionCandidate creation)~~ — see [WORKSPACE-DECISION-ENGINE-INTAKE-PROMOTION-BOUNDARY.md](./WORKSPACE-DECISION-ENGINE-INTAKE-PROMOTION-BOUNDARY.md)
 18. ~~DE candidate creation request (requested ≠ DecisionCandidate creation)~~ — see [WORKSPACE-DECISION-ENGINE-CANDIDATE-CREATION-REQUEST.md](./WORKSPACE-DECISION-ENGINE-CANDIDATE-CREATION-REQUEST.md)
 19. ~~DE candidate creation (creates DecisionCandidate without scoring / planner / Gateway)~~ — see [WORKSPACE-DECISION-ENGINE-CANDIDATE-CREATION.md](./WORKSPACE-DECISION-ENGINE-CANDIDATE-CREATION.md)
-20. Optional **scoring / adapter / planner handoff** after native DecisionCandidate exists — still separate; not execution
+20. ~~DE candidate lifecycle integration (origin-aware lifecycle; provenance immutable; no scoring/planner)~~ — see [WORKSPACE-DECISION-ENGINE-CANDIDATE-LIFECYCLE-INTEGRATION.md](./WORKSPACE-DECISION-ENGINE-CANDIDATE-LIFECYCLE-INTEGRATION.md)
+21. Optional **scoring / adapter / planner handoff** after integrated DecisionCandidate — still separate; not execution
 
 ---
 
