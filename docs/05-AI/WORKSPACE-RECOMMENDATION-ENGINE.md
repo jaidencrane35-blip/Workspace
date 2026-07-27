@@ -77,4 +77,6 @@ Must not: execute, approve, grant permissions, modify tasks/projects, trigger au
 
 Audit: `workspace.recommendation_engine.generated` with `authority_effect: none`.
 
+Recommendation Engine accept is agreement-only. After confirmation, a sealed package may issue a non-executing handoff request to Decision Engine for intake observation. See [WORKSPACE-DECISION-ENGINE.md](./WORKSPACE-DECISION-ENGINE.md) and [WORKSPACE-RECOMMENDATION-DECISION-HANDOFF-REQUEST.md](./WORKSPACE-RECOMMENDATION-DECISION-HANDOFF-REQUEST.md) for the intake/handoff contract.
+
 IPC: `generate_workspace_recommendation_engine`

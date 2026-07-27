@@ -17,6 +17,10 @@ Canonical product language. Prefer these terms in UI, docs, and Assistant copy.
 | **Attention priority** | Prioritized existing signal from Attention Engine (Intelligence field `recommended_actions`) | Recommendation Engine candidate |
 | **Recommendation** | Prefer **Attention priority** or **Recommendation Candidate** — avoid bare “Recommendation” in new UI | Suggestion (product UI), Proposal |
 | **Recommendation Candidate** | Typed next-step suggestion from Recommendation Engine (never executes or accepts) | Decision Engine candidate, Attention priority |
+| **DecisionCandidate** | Ranked candidate produced by Decision Engine after intake, scoring, and ranking | Recommendation Engine candidate, Attention priority |
+| **Package seal** | Immutable digest that freezes a Recommendation Engine intake package for Decision Engine review | Handshake, transfer, execution |
+| **Handoff request** | Non-executing request from Recommendation Engine for Decision Engine to consider a sealed package | Handoff perform, transfer of authority |
+| **Decision Engine acceptance** | Acknowledgement of a sealed handoff request without planner or execution authority | Planner handoff, execution |
 | **Operating State** | Unified current-situation snapshot over understanding systems (never executes) | WorkflowContext, Intelligence |
 | **Pattern** | Recurring structure observation from existing workspace signals (never predicts or profiles) | Memory, Analytics, Preference |
 | **Adaptation Proposal** | Possible Workspace improvement for human review (never applies; accept → Intent handoff) | Recommendation, Automation Contract |

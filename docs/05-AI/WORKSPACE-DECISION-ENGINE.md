@@ -67,7 +67,7 @@ Input order:
 Attention → memory/prefs/goals/queue context → Decision Engine → ranked candidates
 ```
 
-Accept returns a **planner handoff** (`submit_assistant_goal`). The UI (or caller) invokes the Planner explicitly. Decision Engine never creates plans itself.
+Accept returns a **planner handoff** (`submit_assistant_goal`). The UI (or caller) invokes the Planner explicitly. Decision Engine never creates plans itself. See [WORKSPACE-VOCABULARY.md](./WORKSPACE-VOCABULARY.md) for canonical product language around `Attention priority`, `Recommendation Candidate`, `DecisionCandidate`, and Decision Engine acceptance semantics.
 
 ### Distinct from Recommendation Engine accept
 
@@ -169,7 +169,7 @@ All carry `authority_effect: none`.
 
 ## Product UX
 
-Work tab **Recommended Actions**:
+Work tab **Recommended Actions** (product UI label; canonical docs prefer `Attention priority` / `Recommendation Candidate` for new copy):
 
 - Why this matters now
 - Confidence + supporting reasons
