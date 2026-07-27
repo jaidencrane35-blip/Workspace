@@ -14,8 +14,8 @@ use workspace_database::{Database, DecisionEngineRepository, RecommendationLifec
 use workspace_domain::{
     ActorContext, AttentionItem, DecisionCandidate, DecisionContext, DecisionEngineActionResult,
     DecisionEngineError, DecisionEngineHandoff, DecisionEngineIntakeAssessment,
-    DecisionEngineIntakeAssessmentInput, DecisionEngineIntakeEligibility,
-    DecisionEngineIntakeReceipt, DecisionEngineOverlay,
+    DecisionEngineIntakeAssessmentInput, DecisionEngineIntakeCandidate,
+    DecisionEngineIntakeEligibility, DecisionEngineIntakeReceipt, DecisionEngineOverlay,
     DecisionEngineState, DecisionEngineSummary, DecisionExplanation, DecisionOutcome, DecisionQueue,
     DecisionReason, DecisionScore, DecisionSourceType, DecisionState, IntelligenceHighlight,
     IntentContext, RecommendationLifecycleState, WorkspaceAttentionState, WorkspaceId, WorkGoal,
@@ -253,10 +253,18 @@ impl DecisionEngineService {
 
         let (intake_receipts, intake_assessments, intake_eligibilities) =
             Self::project_recommendation_intake_observations(db, ws)?;
+        let intake_candidates = Self::sync_intake_candidates(
+            db,
+            ws,
+            &intake_receipts,
+            &intake_assessments,
+            &intake_eligibilities,
+        )?;
         let state = DecisionEngineState::from_candidates(ws, context, candidates)
             .with_intake_receipts(intake_receipts)
             .with_intake_assessments(intake_assessments)
-            .with_intake_eligibilities(intake_eligibilities);
+            .with_intake_eligibilities(intake_eligibilities)
+            .with_intake_candidates(intake_candidates);
         debug_assert!(state
             .intake_receipts
             .iter()
@@ -281,6 +289,14 @@ impl DecisionEngineService {
             .intake_eligibilities
             .iter()
             .all(|e| !e.creates_decision_candidate && e.handoff_command.is_none()));
+        debug_assert!(state
+            .intake_candidates
+            .iter()
+            .all(|c| c.assert_intake_only().is_ok()));
+        debug_assert!(state
+            .intake_candidates
+            .iter()
+            .all(|c| !c.is_decision_candidate && c.handoff_command.is_none()));
         Self::audit_generated(db, actor, &state)?;
         Self::audit_rank_changes(db, actor, &state, &previous_ranks)?;
         Ok(state)
@@ -347,6 +363,82 @@ impl DecisionEngineService {
         let eligibilities =
             DecisionEngineIntakeEligibility::derive_batch(&receipts, &assessments);
         Ok((receipts, assessments, eligibilities))
+    }
+
+    /// Materialize DE-owned intake candidates for eligible intakes only.
+    /// Never mutates Recommendation Engine overlays. Never creates DecisionCandidates.
+    fn sync_intake_candidates(
+        db: &Arc<Mutex<Database>>,
+        workspace_id: &str,
+        receipts: &[DecisionEngineIntakeReceipt],
+        assessments: &[DecisionEngineIntakeAssessment],
+        eligibilities: &[DecisionEngineIntakeEligibility],
+    ) -> Result<Vec<DecisionEngineIntakeCandidate>> {
+        let now = Utc::now().to_rfc3339();
+        let created = DecisionEngineIntakeCandidate::create_batch(
+            receipts,
+            assessments,
+            eligibilities,
+            &now,
+        );
+        let eligibility_by_rec: HashMap<&str, &DecisionEngineIntakeEligibility> = eligibilities
+            .iter()
+            .map(|e| (e.recommendation_id.as_str(), e))
+            .collect();
+
+        let guard = db
+            .lock()
+            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+        let repo = DecisionEngineRepository::new(&guard);
+        let mut existing = repo.list_intake_candidates(workspace_id)?;
+
+        // Create or refresh eligible intake candidates (digest uniqueness blocks duplicates).
+        for mut candidate in created {
+            if let Some(prior) =
+                repo.get_intake_candidate_by_digest(workspace_id, &candidate.package_seal_digest)?
+            {
+                if prior.recommendation_reference != candidate.recommendation_reference {
+                    // Duplicate seal digest already acknowledged for another recommendation.
+                    continue;
+                }
+                candidate.created_at = prior.created_at;
+                candidate.state = DecisionEngineIntakeCandidate::STATE_READY.into();
+            }
+            debug_assert!(candidate.assert_intake_only().is_ok());
+            repo.upsert_intake_candidate(&candidate)?;
+        }
+
+        // Reevaluate previously stored intake candidates against current eligibility/acceptance.
+        let overlays =
+            RecommendationLifecycleRepository::new(&guard).list_overlays(workspace_id)?;
+        let acceptance_by_rec: HashMap<String, String> = overlays
+            .into_iter()
+            .filter_map(|o| {
+                o.decision_engine_acceptance
+                    .map(|a| (a.recommendation_id, a.acceptance_state))
+            })
+            .collect();
+
+        existing = repo.list_intake_candidates(workspace_id)?;
+        for mut stored in existing {
+            let eligibility = eligibility_by_rec.get(stored.recommendation_reference.as_str()).copied();
+            let acceptance_state = acceptance_by_rec
+                .get(&stored.recommendation_reference)
+                .map(String::as_str);
+            if eligibility.is_some_and(|e| {
+                e.is_eligible && e.sealed_intake_package_digest == stored.package_seal_digest
+            }) {
+                stored.state = DecisionEngineIntakeCandidate::STATE_READY.into();
+            } else {
+                stored.reevaluate(eligibility, acceptance_state);
+            }
+            repo.upsert_intake_candidate(&stored)?;
+        }
+
+        let mut out = repo.list_intake_candidates(workspace_id)?;
+        drop(guard);
+        out.sort_by(|a, b| a.intake_candidate_id.cmp(&b.intake_candidate_id));
+        Ok(out)
     }
 
     pub(crate) fn summary_projection(

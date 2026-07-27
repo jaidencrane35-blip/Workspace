@@ -43,7 +43,8 @@ Remaining before a future handoff could exist:
 10. ~~DE intake receipt (observe ≠ DecisionCandidate)~~ — see [WORKSPACE-DECISION-ENGINE-INTAKE-RECEIPT.md](./WORKSPACE-DECISION-ENGINE-INTAKE-RECEIPT.md)
 11. ~~DE intake assessment (eligible ≠ create candidate)~~ — see [WORKSPACE-DECISION-ENGINE-INTAKE-ASSESSMENT.md](./WORKSPACE-DECISION-ENGINE-INTAKE-ASSESSMENT.md)
 12. ~~DE intake eligibility (eligible ≠ create candidate)~~ — see [WORKSPACE-DECISION-ENGINE-INTAKE-ELIGIBILITY.md](./WORKSPACE-DECISION-ENGINE-INTAKE-ELIGIBILITY.md)
-13. Optional **DE-owned object creation / adapter invocation** after eligible gate — still separate domains; not execution
+13. ~~DE intake candidate (acknowledgement ≠ DecisionCandidate)~~ — see [WORKSPACE-DECISION-ENGINE-INTAKE-CANDIDATE.md](./WORKSPACE-DECISION-ENGINE-INTAKE-CANDIDATE.md)
+14. Optional **DecisionCandidate creation / adapter invocation** after intake candidate — still separate domains; not execution
 
 ---
 

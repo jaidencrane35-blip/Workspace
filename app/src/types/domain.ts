@@ -1227,6 +1227,31 @@ export interface DecisionCandidate {
   authority_effect: string;
 }
 
+/** DE-owned intake lifecycle acknowledgement — not a DecisionCandidate. */
+export interface DecisionEngineIntakeCandidate {
+  intake_candidate_id: string;
+  workspace_id: string;
+  intake_receipt_reference: string;
+  recommendation_reference: string;
+  package_seal_digest: string;
+  acceptance_reference: string;
+  compatibility_version: string;
+  created_at: string;
+  /** observed | ready_for_future_evaluation | blocked | withdrawn */
+  state: string;
+  /** Always false — IntakeCandidate ≠ DecisionCandidate. */
+  is_decision_candidate: boolean;
+  creates_decision_candidate: boolean;
+  creates_goal: boolean;
+  creates_intent: boolean;
+  adapter_invoked: boolean;
+  planner_invoked: boolean;
+  ownership_transferred: boolean;
+  handoff_command: string | null;
+  note: string;
+  authority_effect: string;
+}
+
 /** DE-owned observational eligibility for future candidate consideration — not a candidate. */
 export interface DecisionEngineIntakeEligibility {
   workspace_id: string;
@@ -1322,6 +1347,8 @@ export interface DecisionEngineState {
   intake_assessments?: DecisionEngineIntakeAssessment[];
   /** Observational intake eligibility — never DecisionCandidates. */
   intake_eligibilities?: DecisionEngineIntakeEligibility[];
+  /** DE-owned intake lifecycle acknowledgements — never DecisionCandidates. */
+  intake_candidates?: DecisionEngineIntakeCandidate[];
   summary: string;
   authority_effect: string;
 }

@@ -184,6 +184,9 @@ pub struct DecisionEngineState {
     /// Observational eligibility for future candidate consideration — never candidates.
     #[serde(default)]
     pub intake_eligibilities: Vec<DecisionEngineIntakeEligibility>,
+    /// DE-owned intake lifecycle acknowledgements — never DecisionCandidates.
+    #[serde(default)]
+    pub intake_candidates: Vec<DecisionEngineIntakeCandidate>,
     pub summary: String,
     pub authority_effect: String,
 }
@@ -222,6 +225,7 @@ impl DecisionEngineState {
             intake_receipts: Vec::new(),
             intake_assessments: Vec::new(),
             intake_eligibilities: Vec::new(),
+            intake_candidates: Vec::new(),
             summary,
             authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
         }
@@ -269,6 +273,22 @@ impl DecisionEngineState {
             eligible
         );
         self.intake_eligibilities = eligibilities;
+        self
+    }
+
+    /// Attach DE-owned intake candidates without changing scoring or DecisionCandidates.
+    pub fn with_intake_candidates(mut self, candidates: Vec<DecisionEngineIntakeCandidate>) -> Self {
+        let ready = candidates
+            .iter()
+            .filter(|c| c.state == DecisionEngineIntakeCandidate::STATE_READY)
+            .count();
+        self.summary = format!(
+            "{} Intake candidates: {} ({} ready for future evaluation).",
+            self.summary,
+            candidates.len(),
+            ready
+        );
+        self.intake_candidates = candidates;
         self
     }
 
@@ -1007,6 +1027,248 @@ impl DecisionEngineIntakeEligibility {
             || self.authority_effect != Self::AUTHORITY_EFFECT_NONE
             || (self.is_eligible && self.eligibility_state != Self::STATE_ELIGIBLE)
             || (!self.is_eligible && self.eligibility_state == Self::STATE_ELIGIBLE)
+        {
+            return Err(DecisionEngineError::CannotExecute);
+        }
+        Ok(())
+    }
+}
+
+/// DE-owned intake lifecycle acknowledgement for an eligible RE sealed package.
+///
+/// Represents that Decision Engine has accepted the package for *future* evaluation.
+/// This is not a `DecisionCandidate`, planner input, goal, intent, or executable path.
+/// Recommendation Engine retains recommendation ownership — no ownership transfer.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DecisionEngineIntakeCandidate {
+    pub intake_candidate_id: String,
+    pub workspace_id: String,
+    pub intake_receipt_reference: String,
+    pub recommendation_reference: String,
+    pub package_seal_digest: String,
+    pub acceptance_reference: String,
+    pub compatibility_version: String,
+    pub created_at: String,
+    /// `observed` | `ready_for_future_evaluation` | `blocked` | `withdrawn`
+    pub state: String,
+    /// Always false — IntakeCandidate ≠ DecisionCandidate.
+    pub is_decision_candidate: bool,
+    pub creates_decision_candidate: bool,
+    pub creates_goal: bool,
+    pub creates_intent: bool,
+    pub adapter_invoked: bool,
+    pub planner_invoked: bool,
+    pub ownership_transferred: bool,
+    pub handoff_command: Option<String>,
+    pub note: String,
+    pub authority_effect: String,
+}
+
+impl DecisionEngineIntakeCandidate {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+    pub const STATE_OBSERVED: &'static str = "observed";
+    pub const STATE_READY: &'static str = "ready_for_future_evaluation";
+    pub const STATE_BLOCKED: &'static str = "blocked";
+    pub const STATE_WITHDRAWN: &'static str = "withdrawn";
+    pub const ID_PREFIX: &'static str = "engine_decision_intake:";
+    pub const RECEIPT_REF_PREFIX: &'static str = "decision_engine_intake_receipt:";
+    pub const ACCEPTANCE_REF_PREFIX: &'static str = "recommendation_decision_engine_acceptance:";
+
+    pub fn synthetic_id(recommendation_id: &str) -> String {
+        format!("{}{recommendation_id}", Self::ID_PREFIX)
+    }
+
+    /// Create only when receipt, assessment, and eligibility all clear the gate.
+    /// Never creates a DecisionCandidate / goal / intent / planner handoff.
+    pub fn try_create(
+        receipt: &DecisionEngineIntakeReceipt,
+        assessment: &DecisionEngineIntakeAssessment,
+        eligibility: &DecisionEngineIntakeEligibility,
+        created_at: impl Into<String>,
+    ) -> Option<Self> {
+        if !Self::creation_allowed(receipt, assessment, eligibility) {
+            return None;
+        }
+        let recommendation_id = receipt.recommendation_id.clone();
+        Some(Self {
+            intake_candidate_id: Self::synthetic_id(&recommendation_id),
+            workspace_id: receipt.workspace_id.clone(),
+            intake_receipt_reference: format!("{}{recommendation_id}", Self::RECEIPT_REF_PREFIX),
+            recommendation_reference: recommendation_id.clone(),
+            package_seal_digest: receipt.sealed_intake_package_digest.clone(),
+            acceptance_reference: format!("{}{recommendation_id}", Self::ACCEPTANCE_REF_PREFIX),
+            compatibility_version: receipt.contract_version.clone(),
+            created_at: created_at.into(),
+            state: Self::STATE_READY.into(),
+            is_decision_candidate: false,
+            creates_decision_candidate: false,
+            creates_goal: false,
+            creates_intent: false,
+            adapter_invoked: false,
+            planner_invoked: false,
+            ownership_transferred: false,
+            handoff_command: None,
+            note: "Decision Engine intake candidate acknowledged eligible Recommendation Engine \
+                   sealed package for future evaluation. Not a DecisionCandidate, goal, intent, \
+                   planner handoff, Gateway grant, or ownership transfer."
+                .into(),
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        })
+    }
+
+    pub fn creation_allowed(
+        receipt: &DecisionEngineIntakeReceipt,
+        assessment: &DecisionEngineIntakeAssessment,
+        eligibility: &DecisionEngineIntakeEligibility,
+    ) -> bool {
+        receipt.is_observed()
+            && receipt.seal_aligned
+            && assessment.seal_valid
+            && assessment.acceptance_active
+            && assessment.receipt_current
+            && !assessment.is_duplicate
+            && !assessment.is_superseded
+            && !assessment.is_stale
+            && (assessment.assessment_state == DecisionEngineIntakeAssessment::STATE_ELIGIBLE
+                || assessment.eligible_for_future_candidate)
+            && eligibility.is_eligible
+            && eligibility.eligibility_state == DecisionEngineIntakeEligibility::STATE_ELIGIBLE
+            && eligibility.seal_aligned
+            && eligibility.acceptance_active
+            && !eligibility.is_duplicate
+            && !eligibility.is_superseded
+            && !eligibility.is_stale
+            && receipt.recommendation_id == assessment.recommendation_id
+            && receipt.recommendation_id == eligibility.recommendation_id
+            && receipt.sealed_intake_package_digest == assessment.sealed_intake_package_digest
+            && receipt.sealed_intake_package_digest == eligibility.sealed_intake_package_digest
+    }
+
+    /// Create intake candidates for eligible intakes only (deterministic order).
+    pub fn create_batch(
+        receipts: &[DecisionEngineIntakeReceipt],
+        assessments: &[DecisionEngineIntakeAssessment],
+        eligibilities: &[DecisionEngineIntakeEligibility],
+        created_at: &str,
+    ) -> Vec<Self> {
+        use std::collections::HashMap;
+        let receipt_by_id: HashMap<&str, &DecisionEngineIntakeReceipt> = receipts
+            .iter()
+            .map(|r| (r.recommendation_id.as_str(), r))
+            .collect();
+        let assessment_by_id: HashMap<&str, &DecisionEngineIntakeAssessment> = assessments
+            .iter()
+            .map(|a| (a.recommendation_id.as_str(), a))
+            .collect();
+        let mut created: Vec<Self> = eligibilities
+            .iter()
+            .filter(|e| e.is_eligible)
+            .filter_map(|eligibility| {
+                let id = eligibility.recommendation_id.as_str();
+                let receipt = receipt_by_id.get(id)?;
+                let assessment = assessment_by_id.get(id)?;
+                Self::try_create(receipt, assessment, eligibility, created_at)
+            })
+            .collect();
+        created.sort_by(|a, b| a.intake_candidate_id.cmp(&b.intake_candidate_id));
+        created
+    }
+
+    /// Reevaluate a persisted intake candidate when RE/eligibility conditions change.
+    pub fn reevaluate(
+        &mut self,
+        eligibility: Option<&DecisionEngineIntakeEligibility>,
+        acceptance_state: Option<&str>,
+    ) {
+        if eligibility.is_some_and(|e| e.is_eligible)
+            && self.package_seal_digest
+                == eligibility
+                    .map(|e| e.sealed_intake_package_digest.as_str())
+                    .unwrap_or_default()
+        {
+            self.state = Self::STATE_READY.into();
+            return;
+        }
+        match acceptance_state {
+            Some(
+                crate::workspace_recommendation::RecommendationDecisionEngineAcceptance::STATE_REVOKED
+                | crate::workspace_recommendation::RecommendationDecisionEngineAcceptance::STATE_DECLINED,
+            ) => {
+                self.state = Self::STATE_WITHDRAWN.into();
+            }
+            _ => {
+                self.state = Self::STATE_BLOCKED.into();
+            }
+        }
+    }
+
+    pub fn may_create_decision_candidate(&self) -> bool {
+        false
+    }
+
+    pub fn may_create_goal(&self) -> bool {
+        false
+    }
+
+    pub fn may_create_intent(&self) -> bool {
+        false
+    }
+
+    pub fn may_invoke_planner(&self) -> bool {
+        false
+    }
+
+    pub fn may_invoke_gateway(&self) -> bool {
+        false
+    }
+
+    pub fn may_create_planner_handoff(&self) -> bool {
+        false
+    }
+
+    pub fn may_transfer_ownership(&self) -> bool {
+        false
+    }
+
+    pub fn attempt_create_decision_candidate(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_create_goal(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_create_intent(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_invoke_planner(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_create_planner_handoff(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_transfer_ownership(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_execute() -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn assert_intake_only(&self) -> Result<(), DecisionEngineError> {
+        if self.is_decision_candidate
+            || self.creates_decision_candidate
+            || self.creates_goal
+            || self.creates_intent
+            || self.adapter_invoked
+            || self.planner_invoked
+            || self.ownership_transferred
+            || self.handoff_command.is_some()
+            || self.authority_effect != Self::AUTHORITY_EFFECT_NONE
+            || !self.intake_candidate_id.starts_with(Self::ID_PREFIX)
         {
             return Err(DecisionEngineError::CannotExecute);
         }

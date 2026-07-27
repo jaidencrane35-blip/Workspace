@@ -94,7 +94,14 @@ whether an assessment may ever become a future DecisionCandidate — still
 without creating one. See
 [WORKSPACE-DECISION-ENGINE-INTAKE-ELIGIBILITY.md](./WORKSPACE-DECISION-ENGINE-INTAKE-ELIGIBILITY.md).
 
-Namespaces remain separate (`recommendation:*` vs `engine_decision:*`).
+When eligibility is `eligible`, Decision Engine may materialize a DE-owned
+`DecisionEngineIntakeCandidate` (`engine_decision_intake:*`) — an intake
+lifecycle acknowledgement for future evaluation, not a ranked
+`DecisionCandidate`. See
+[WORKSPACE-DECISION-ENGINE-INTAKE-CANDIDATE.md](./WORKSPACE-DECISION-ENGINE-INTAKE-CANDIDATE.md).
+
+Namespaces remain separate
+(`recommendation:*` vs `engine_decision:*` vs `engine_decision_intake:*`).
 Existing Attention/graph/goal synthesis and scoring are unchanged.
 
 ---

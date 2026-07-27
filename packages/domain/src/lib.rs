@@ -234,8 +234,8 @@ pub use automation_trigger::{
 pub use decision_engine::{
     DecisionCandidate, DecisionContext, DecisionEngineActionResult, DecisionEngineError,
     DecisionEngineHandoff, DecisionEngineIntakeAssessment, DecisionEngineIntakeAssessmentInput,
-    DecisionEngineIntakeEligibility, DecisionEngineIntakeReceipt, DecisionEngineOverlay,
-    DecisionEngineState, DecisionEngineSummary,
+    DecisionEngineIntakeCandidate, DecisionEngineIntakeEligibility, DecisionEngineIntakeReceipt,
+    DecisionEngineOverlay, DecisionEngineState, DecisionEngineSummary,
     DecisionExplanation, DecisionOutcome, DecisionReason, DecisionScore,
 };
 pub use decision_queue::{

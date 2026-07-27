@@ -18,6 +18,8 @@ DecisionEngineIntakeEligibility
   eligibility_state =
     not_eligible | blocked | duplicate | superseded | stale | eligible
   is_eligible = informational only
+        ↓ eligible only
+DecisionEngineIntakeCandidate (DE-owned acknowledgement; still ≠ DecisionCandidate)
         ✗ eligible ≠ DecisionCandidate creation
         ✗ eligible ≠ score / ranking
         ✗ eligible ≠ goal / intent / planner / Gateway
@@ -34,4 +36,5 @@ Not persisted. Fully derivable from receipt + assessment
 
 - [WORKSPACE-DECISION-ENGINE-INTAKE-ASSESSMENT.md](./WORKSPACE-DECISION-ENGINE-INTAKE-ASSESSMENT.md)
 - [WORKSPACE-DECISION-ENGINE-INTAKE-RECEIPT.md](./WORKSPACE-DECISION-ENGINE-INTAKE-RECEIPT.md)
+- [WORKSPACE-DECISION-ENGINE-INTAKE-CANDIDATE.md](./WORKSPACE-DECISION-ENGINE-INTAKE-CANDIDATE.md)
 - [WORKSPACE-DECISION-ENGINE.md](./WORKSPACE-DECISION-ENGINE.md)
