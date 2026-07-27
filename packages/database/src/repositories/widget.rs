@@ -92,16 +92,17 @@ mod tests {
     use tempfile::tempdir;
     use workspace_domain::Workspace;
 
-    fn initialized_db() -> Database {
+    fn initialized_db() -> (tempfile::TempDir, Database) {
         let dir = tempdir().unwrap();
-        DatabaseService::initialize(dir.path().join("workspace.db"))
+        let db = DatabaseService::initialize(dir.path().join("workspace.db"))
             .unwrap()
-            .into_database()
+            .into_database();
+        (dir, db)
     }
 
     #[test]
     fn creates_and_loads_widget() {
-        let db = initialized_db();
+        let (_dir, db) = initialized_db();
         let workspace_id = WorkspaceId::new("ws-widget").unwrap();
         WorkspaceRepository::new(&db)
             .create(&Workspace {

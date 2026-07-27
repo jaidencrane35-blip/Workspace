@@ -219,11 +219,12 @@ mod tests {
     use tempfile::tempdir;
     use workspace_domain::Workspace;
 
-    fn initialized_db() -> Database {
+    fn initialized_db() -> (tempfile::TempDir, Database) {
         let dir = tempdir().unwrap();
-        DatabaseService::initialize(dir.path().join("workspace.db"))
+        let db = DatabaseService::initialize(dir.path().join("workspace.db"))
             .unwrap()
-            .into_database()
+            .into_database();
+        (dir, db)
     }
 
     fn seed_workspace(db: &Database, id: &str) {
@@ -239,7 +240,7 @@ mod tests {
 
     #[test]
     fn creates_and_loads_layout_with_nodes() {
-        let db = initialized_db();
+        let (_dir, db) = initialized_db();
         seed_workspace(&db, "ws-layout");
         let workspace_id = WorkspaceId::new("ws-layout").unwrap();
         let now = "2026-07-23T10:00:00Z".to_string();
@@ -276,7 +277,7 @@ mod tests {
 
     #[test]
     fn rejects_duplicate_workspace_layout() {
-        let db = initialized_db();
+        let (_dir, db) = initialized_db();
         seed_workspace(&db, "ws-dup");
         let workspace_id = WorkspaceId::new("ws-dup").unwrap();
         let now = "2026-07-23T10:00:00Z".to_string();
@@ -305,7 +306,7 @@ mod tests {
 
     #[test]
     fn updates_layout_nodes() {
-        let db = initialized_db();
+        let (_dir, db) = initialized_db();
         seed_workspace(&db, "ws-update");
         let workspace_id = WorkspaceId::new("ws-update").unwrap();
         let now = "2026-07-23T10:00:00Z".to_string();

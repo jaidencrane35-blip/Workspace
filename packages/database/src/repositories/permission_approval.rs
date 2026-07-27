@@ -283,16 +283,17 @@ mod tests {
     use crate::init::DatabaseService;
     use tempfile::tempdir;
 
-    fn test_db() -> Database {
+    fn test_db() -> (tempfile::TempDir, Database) {
         let dir = tempdir().unwrap();
-        DatabaseService::initialize(dir.path().join("workspace.db"))
+        let db = DatabaseService::initialize(dir.path().join("workspace.db"))
             .unwrap()
-            .into_database()
+            .into_database();
+        (dir, db)
     }
 
     #[test]
     fn creates_pending_request_and_lists_it() {
-        let db = test_db();
+        let (_dir, db) = test_db();
         let repo = PermissionApprovalRepository::new(&db);
         let request = PermissionApprovalRequest {
             id: PermissionApprovalRequestId::generate(),

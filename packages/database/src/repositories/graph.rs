@@ -145,16 +145,17 @@ mod tests {
     use workspace_domain::ResourceId;
     use tempfile::tempdir;
 
-    fn initialized_db() -> Database {
+    fn initialized_db() -> (tempfile::TempDir, Database) {
         let dir = tempdir().unwrap();
-        DatabaseService::initialize(dir.path().join("workspace.db"))
+        let db = DatabaseService::initialize(dir.path().join("workspace.db"))
             .unwrap()
-            .into_database()
+            .into_database();
+        (dir, db)
     }
 
     #[test]
     fn registers_and_removes_nodes() {
-        let db = initialized_db();
+        let (_dir, db) = initialized_db();
         let repo = GraphRepository::new(&db);
         let node = ResourceRef::new(
             ResourceKind::Workspace,
@@ -169,7 +170,7 @@ mod tests {
 
     #[test]
     fn rejects_duplicate_nodes() {
-        let db = initialized_db();
+        let (_dir, db) = initialized_db();
         let repo = GraphRepository::new(&db);
         let node = ResourceRef::new(
             ResourceKind::Zone,
@@ -185,7 +186,7 @@ mod tests {
 
     #[test]
     fn adds_contains_edge_between_nodes() {
-        let db = initialized_db();
+        let (_dir, db) = initialized_db();
         let repo = GraphRepository::new(&db);
         let workspace = ResourceRef::new(
             ResourceKind::Workspace,
@@ -203,7 +204,7 @@ mod tests {
 
     #[test]
     fn lists_edges_from_source() {
-        let db = initialized_db();
+        let (_dir, db) = initialized_db();
         let repo = GraphRepository::new(&db);
         let workspace = ResourceRef::new(
             ResourceKind::Workspace,
