@@ -381,6 +381,9 @@ fn case12_synthesis_unchanged_by_intake_candidates() {
         originating_goal: None,
         attention_item_id: None,
         recommendation_id: None,
+        intake_candidate_id: None,
+        creation_request_id: None,
+        package_seal_digest: None,
         score: DecisionScore {
             total: 10,
             attention_contribution: 10,

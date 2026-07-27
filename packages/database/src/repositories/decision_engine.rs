@@ -1,9 +1,9 @@
 use crate::connection::Database;
 use crate::error::Result;
 use workspace_domain::{
-    DecisionEngineIntakeCandidate, DecisionEngineIntakeCandidateLifecycle,
-    DecisionEngineIntakeDisposition, DecisionEngineIntakeEvaluation, DecisionEngineOverlay,
-    DecisionOutcome,
+    DecisionEngineCandidateCreation, DecisionEngineIntakeCandidate,
+    DecisionEngineIntakeCandidateLifecycle, DecisionEngineIntakeDisposition,
+    DecisionEngineIntakeEvaluation, DecisionEngineOverlay, DecisionOutcome,
 };
 
 /// Persistence for Decision Engine lifecycle overlay and intake candidates.
@@ -262,6 +262,93 @@ impl<'a> DecisionEngineRepository<'a> {
         rows.collect::<std::result::Result<Vec<_>, _>>()
             .map_err(Into::into)
     }
+
+    /// Persist a created DecisionCandidate provenance record (DE-owned only).
+    pub fn upsert_candidate_creation(
+        &self,
+        creation: &DecisionEngineCandidateCreation,
+    ) -> Result<()> {
+        if !creation.is_created() {
+            return Ok(());
+        }
+        let decision_candidate_id = creation
+            .decision_candidate_id
+            .as_deref()
+            .unwrap_or_default();
+        let title = creation.title.as_deref().unwrap_or_default();
+        let goal_statement = creation.goal_statement.as_deref().unwrap_or_default();
+        let created_at = creation.created_at.as_deref().unwrap_or_default();
+        self.db.connection().execute(
+            "INSERT INTO decision_engine_candidate_creation (
+                workspace_id, creation_id, intake_candidate_id, creation_request_id,
+                recommendation_reference, package_seal_digest, decision_candidate_id,
+                title, goal_statement, created_at, creation_state, updated_at
+             ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?10)
+             ON CONFLICT(workspace_id, creation_id) DO UPDATE SET
+                intake_candidate_id = excluded.intake_candidate_id,
+                creation_request_id = excluded.creation_request_id,
+                recommendation_reference = excluded.recommendation_reference,
+                package_seal_digest = excluded.package_seal_digest,
+                decision_candidate_id = excluded.decision_candidate_id,
+                title = excluded.title,
+                goal_statement = excluded.goal_statement,
+                created_at = excluded.created_at,
+                creation_state = excluded.creation_state,
+                updated_at = excluded.updated_at",
+            (
+                &creation.workspace_id,
+                &creation.creation_id,
+                &creation.intake_candidate_id,
+                &creation.creation_request_id,
+                &creation.recommendation_reference,
+                &creation.package_seal_digest,
+                decision_candidate_id,
+                title,
+                goal_statement,
+                created_at,
+                &creation.creation_state,
+            ),
+        )?;
+        Ok(())
+    }
+
+    pub fn list_candidate_creations(
+        &self,
+        workspace_id: &str,
+    ) -> Result<Vec<DecisionEngineCandidateCreation>> {
+        let mut stmt = self.db.connection().prepare(
+            "SELECT workspace_id, creation_id, intake_candidate_id, creation_request_id,
+                    recommendation_reference, package_seal_digest, decision_candidate_id,
+                    title, goal_statement, created_at, creation_state
+             FROM decision_engine_candidate_creation
+             WHERE workspace_id = ?1
+             ORDER BY creation_id ASC",
+        )?;
+        let rows = stmt.query_map([workspace_id], map_candidate_creation)?;
+        rows.collect::<std::result::Result<Vec<_>, _>>()
+            .map_err(Into::into)
+    }
+
+    pub fn get_candidate_creation_for_intake(
+        &self,
+        workspace_id: &str,
+        intake_candidate_id: &str,
+    ) -> Result<Option<DecisionEngineCandidateCreation>> {
+        let mut stmt = self.db.connection().prepare(
+            "SELECT workspace_id, creation_id, intake_candidate_id, creation_request_id,
+                    recommendation_reference, package_seal_digest, decision_candidate_id,
+                    title, goal_statement, created_at, creation_state
+             FROM decision_engine_candidate_creation
+             WHERE workspace_id = ?1 AND intake_candidate_id = ?2
+             LIMIT 1",
+        )?;
+        let mut rows =
+            stmt.query_map((workspace_id, intake_candidate_id), map_candidate_creation)?;
+        match rows.next() {
+            Some(row) => Ok(Some(row?)),
+            None => Ok(None),
+        }
+    }
 }
 
 fn map_overlay(row: &rusqlite::Row<'_>) -> rusqlite::Result<DecisionEngineOverlay> {
@@ -364,5 +451,38 @@ fn map_intake_disposition(
             "Decision Engine intake disposition ({disposition_state}). Lifecycle decision only."
         ),
         authority_effect: DecisionEngineIntakeDisposition::AUTHORITY_EFFECT_NONE.into(),
+    })
+}
+
+fn map_candidate_creation(
+    row: &rusqlite::Row<'_>,
+) -> rusqlite::Result<DecisionEngineCandidateCreation> {
+    let creation_state: String = row.get(10)?;
+    Ok(DecisionEngineCandidateCreation {
+        workspace_id: row.get(0)?,
+        creation_id: row.get(1)?,
+        intake_candidate_id: row.get(2)?,
+        creation_request_id: row.get(3)?,
+        recommendation_reference: row.get(4)?,
+        package_seal_digest: row.get(5)?,
+        decision_candidate_id: Some(row.get(6)?),
+        title: Some(row.get(7)?),
+        goal_statement: Some(row.get(8)?),
+        created_at: Some(row.get(9)?),
+        creation_state: creation_state.clone(),
+        evidence: vec!["decision_candidate_created".into()],
+        creates_decision_candidate: creation_state
+            == DecisionEngineCandidateCreation::STATE_CREATED,
+        creates_decision_score: false,
+        creates_goal: false,
+        creates_intent: false,
+        adapter_invoked: false,
+        planner_invoked: false,
+        ownership_transferred: false,
+        handoff_command: None,
+        note: "Decision Engine candidate creation (persisted). Native DecisionCandidate \
+               provenance only — no scoring, planner handoff, or Gateway grant."
+            .into(),
+        authority_effect: DecisionEngineCandidateCreation::AUTHORITY_EFFECT_NONE.into(),
     })
 }

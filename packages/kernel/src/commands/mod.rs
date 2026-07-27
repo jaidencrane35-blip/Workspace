@@ -130,6 +130,8 @@ mod decision_engine_intake_promotion_boundary_contract_tests;
 #[cfg(test)]
 mod decision_engine_candidate_creation_request_contract_tests;
 #[cfg(test)]
+mod decision_engine_candidate_creation_contract_tests;
+#[cfg(test)]
 mod task_graph_tests;
 #[cfg(test)]
 mod workspace_environment_tests;

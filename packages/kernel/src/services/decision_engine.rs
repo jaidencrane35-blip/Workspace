@@ -13,16 +13,16 @@ use serde_json::json;
 use workspace_database::{Database, DecisionEngineRepository, RecommendationLifecycleRepository};
 use workspace_domain::{
     ActorContext, AttentionItem, DecisionCandidate, DecisionContext, DecisionEngineActionResult,
-    DecisionEngineError, DecisionEngineHandoff, DecisionEngineIntakeAssessment,
-    DecisionEngineIntakeAssessmentInput, DecisionEngineIntakeCandidate,
-    DecisionEngineIntakeDisposition, DecisionEngineIntakeEligibility,
-    DecisionEngineCandidateCreationRequest, DecisionEngineIntakeEvaluation,
+    DecisionEngineCandidateCreation, DecisionEngineCandidateCreationInput,
+    DecisionEngineCandidateCreationRequest, DecisionEngineError, DecisionEngineHandoff,
+    DecisionEngineIntakeAssessment, DecisionEngineIntakeAssessmentInput,
+    DecisionEngineIntakeCandidate, DecisionEngineIntakeDisposition,
+    DecisionEngineIntakeEligibility, DecisionEngineIntakeEvaluation,
     DecisionEngineIntakePromotionBoundary, DecisionEngineIntakePromotionBoundaryInput,
-    DecisionEngineIntakeReceipt, DecisionEngineOverlay,
-    DecisionEngineState, DecisionEngineSummary, DecisionExplanation, DecisionOutcome, DecisionQueue,
-    DecisionReason, DecisionScore, DecisionSourceType, DecisionState, IntelligenceHighlight,
-    IntentContext, RecommendationLifecycleState, WorkspaceAttentionState, WorkspaceId, WorkGoal,
-    WorkflowContext,
+    DecisionEngineIntakeReceipt, DecisionEngineOverlay, DecisionEngineState,
+    DecisionEngineSummary, DecisionExplanation, DecisionOutcome, DecisionQueue, DecisionReason,
+    DecisionScore, DecisionSourceType, DecisionState, IntelligenceHighlight, IntentContext,
+    RecommendationLifecycleState, WorkspaceAttentionState, WorkspaceId, WorkGoal, WorkflowContext,
 };
 
 use crate::error::{KernelError, Result};
@@ -265,15 +265,49 @@ impl DecisionEngineService {
         )?;
         let intake_evaluations = Self::load_intake_evaluations(db, ws)?;
         let intake_dispositions = Self::load_intake_dispositions(db, ws)?;
+        let persisted_creations = Self::load_candidate_creations(db, ws)?;
+        let created_intake_ids: Vec<String> = persisted_creations
+            .iter()
+            .filter(|c| c.is_created())
+            .map(|c| c.intake_candidate_id.clone())
+            .collect();
         let intake_promotion_boundaries = Self::project_intake_promotion_boundaries(
             &intake_candidates,
             &intake_evaluations,
             &intake_dispositions,
             &intake_receipts,
             &intake_eligibilities,
+            &created_intake_ids,
         );
         let candidate_creation_requests =
-            DecisionEngineCandidateCreationRequest::derive_batch(&intake_promotion_boundaries);
+            DecisionEngineCandidateCreationRequest::derive_batch_with_created(
+                &intake_promotion_boundaries,
+                &created_intake_ids,
+            );
+        let candidate_creations = Self::project_candidate_creations(
+            &intake_candidates,
+            &intake_promotion_boundaries,
+            &candidate_creation_requests,
+            &persisted_creations,
+        );
+        // Merge intake-created DecisionCandidates without rescoring synthesis path.
+        for creation in persisted_creations.iter().filter(|c| c.is_created()) {
+            let key = DecisionEngineCandidateCreation::decision_candidate_source_key(
+                &creation.recommendation_reference,
+            );
+            if !seen.insert(key.clone()) {
+                continue;
+            }
+            let outcome = overlays
+                .get(&key)
+                .copied()
+                .unwrap_or(DecisionOutcome::Open);
+            candidates.push(
+                creation
+                    .to_decision_candidate(outcome)
+                    .map_err(KernelError::from)?,
+            );
+        }
         let state = DecisionEngineState::from_candidates(ws, context, candidates)
             .with_intake_receipts(intake_receipts)
             .with_intake_assessments(intake_assessments)
@@ -282,7 +316,8 @@ impl DecisionEngineService {
             .with_intake_evaluations(intake_evaluations)
             .with_intake_dispositions(intake_dispositions)
             .with_intake_promotion_boundaries(intake_promotion_boundaries)
-            .with_candidate_creation_requests(candidate_creation_requests);
+            .with_candidate_creation_requests(candidate_creation_requests)
+            .with_candidate_creations(candidate_creations);
         debug_assert!(state
             .intake_receipts
             .iter()
@@ -347,6 +382,13 @@ impl DecisionEngineService {
             .candidate_creation_requests
             .iter()
             .all(|r| !r.creates_decision_candidate && !r.creates_decision_score));
+        debug_assert!(state
+            .candidate_creations
+            .iter()
+            .all(|c| c.assert_creation_boundary().is_ok()));
+        debug_assert!(state.candidate_creations.iter().all(|c| {
+            !c.creates_decision_score && !c.planner_invoked && c.handoff_command.is_none()
+        }));
         Self::audit_generated(db, actor, &state)?;
         Self::audit_rank_changes(db, actor, &state, &previous_ranks)?;
         Ok(state)
@@ -564,6 +606,7 @@ impl DecisionEngineService {
         dispositions: &[DecisionEngineIntakeDisposition],
         receipts: &[DecisionEngineIntakeReceipt],
         eligibilities: &[DecisionEngineIntakeEligibility],
+        created_intake_ids: &[String],
     ) -> Vec<DecisionEngineIntakePromotionBoundary> {
         let evaluation_by_id: HashMap<&str, &DecisionEngineIntakeEvaluation> = evaluations
             .iter()
@@ -581,6 +624,8 @@ impl DecisionEngineService {
             .iter()
             .map(|e| (e.recommendation_id.as_str(), e))
             .collect();
+        let created: std::collections::HashSet<&str> =
+            created_intake_ids.iter().map(|s| s.as_str()).collect();
 
         let inputs: Vec<DecisionEngineIntakePromotionBoundaryInput> = candidates
             .iter()
@@ -607,11 +652,154 @@ impl DecisionEngineService {
                         .cloned(),
                     acceptance_active,
                     seal_aligned,
-                    previously_promoted: false,
+                    previously_promoted: created.contains(candidate.intake_candidate_id.as_str()),
                 }
             })
             .collect();
         DecisionEngineIntakePromotionBoundary::derive_batch(&inputs)
+    }
+
+    fn load_candidate_creations(
+        db: &Arc<Mutex<Database>>,
+        workspace_id: &str,
+    ) -> Result<Vec<DecisionEngineCandidateCreation>> {
+        let guard = db
+            .lock()
+            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+        let mut creations =
+            DecisionEngineRepository::new(&guard).list_candidate_creations(workspace_id)?;
+        drop(guard);
+        creations.sort_by(|a, b| a.creation_id.cmp(&b.creation_id));
+        Ok(creations)
+    }
+
+    fn project_candidate_creations(
+        intake_candidates: &[DecisionEngineIntakeCandidate],
+        boundaries: &[DecisionEngineIntakePromotionBoundary],
+        requests: &[DecisionEngineCandidateCreationRequest],
+        persisted: &[DecisionEngineCandidateCreation],
+    ) -> Vec<DecisionEngineCandidateCreation> {
+        let boundary_by_id: HashMap<&str, &DecisionEngineIntakePromotionBoundary> = boundaries
+            .iter()
+            .map(|b| (b.intake_candidate_id.as_str(), b))
+            .collect();
+        let request_by_id: HashMap<&str, &DecisionEngineCandidateCreationRequest> = requests
+            .iter()
+            .map(|r| (r.intake_candidate_id.as_str(), r))
+            .collect();
+        let persisted_by_id: HashMap<&str, &DecisionEngineCandidateCreation> = persisted
+            .iter()
+            .map(|c| (c.intake_candidate_id.as_str(), c))
+            .collect();
+
+        let inputs: Vec<DecisionEngineCandidateCreationInput> = intake_candidates
+            .iter()
+            .filter_map(|intake| {
+                let id = intake.intake_candidate_id.as_str();
+                let boundary = boundary_by_id.get(id).copied()?;
+                let request = request_by_id.get(id).copied()?;
+                Some(DecisionEngineCandidateCreationInput {
+                    creation_request: request.clone(),
+                    intake_candidate: intake.clone(),
+                    promotion_boundary: boundary.clone(),
+                    package_seal_digest: intake.package_seal_digest.clone(),
+                    existing_creation: persisted_by_id.get(id).copied().cloned(),
+                })
+            })
+            .collect();
+        DecisionEngineCandidateCreation::derive_batch(&inputs)
+    }
+
+    /// Persist DE-owned DecisionCandidate creation from an eligible creation request.
+    /// Never scores, plans, grants, or mutates Recommendation Engine overlays.
+    pub(crate) fn create_decision_candidate_from_intake(
+        db: &Arc<Mutex<Database>>,
+        workspace_id: impl Into<String>,
+        intake_candidate_id: impl Into<String>,
+    ) -> Result<(DecisionEngineCandidateCreation, DecisionCandidate)> {
+        let workspace_id = workspace_id.into();
+        let intake_candidate_id = intake_candidate_id.into();
+        let now = Utc::now().to_rfc3339();
+
+        let (intake_receipts, intake_assessments, intake_eligibilities) =
+            Self::project_recommendation_intake_observations(db, &workspace_id)?;
+        let intake_candidates = Self::sync_intake_candidates(
+            db,
+            &workspace_id,
+            &intake_receipts,
+            &intake_assessments,
+            &intake_eligibilities,
+        )?;
+        let intake_evaluations = Self::load_intake_evaluations(db, &workspace_id)?;
+        let intake_dispositions = Self::load_intake_dispositions(db, &workspace_id)?;
+        let persisted_creations = Self::load_candidate_creations(db, &workspace_id)?;
+        let created_intake_ids: Vec<String> = persisted_creations
+            .iter()
+            .filter(|c| c.is_created())
+            .map(|c| c.intake_candidate_id.clone())
+            .collect();
+        let boundaries = Self::project_intake_promotion_boundaries(
+            &intake_candidates,
+            &intake_evaluations,
+            &intake_dispositions,
+            &intake_receipts,
+            &intake_eligibilities,
+            &created_intake_ids,
+        );
+        let requests = DecisionEngineCandidateCreationRequest::derive_batch_with_created(
+            &boundaries,
+            &created_intake_ids,
+        );
+
+        let intake = intake_candidates
+            .iter()
+            .find(|c| c.intake_candidate_id == intake_candidate_id)
+            .cloned()
+            .ok_or_else(|| KernelError::from(DecisionEngineError::NotFound))?;
+        let package_seal_digest = intake.package_seal_digest.clone();
+        let boundary = boundaries
+            .iter()
+            .find(|b| b.intake_candidate_id == intake_candidate_id)
+            .cloned()
+            .ok_or_else(|| KernelError::from(DecisionEngineError::NotFound))?;
+        let request = requests
+            .iter()
+            .find(|r| r.intake_candidate_id == intake_candidate_id)
+            .cloned()
+            .ok_or_else(|| KernelError::from(DecisionEngineError::NotFound))?;
+        let existing = persisted_creations
+            .iter()
+            .find(|c| c.intake_candidate_id == intake_candidate_id)
+            .cloned();
+
+        let input = DecisionEngineCandidateCreationInput {
+            creation_request: request,
+            intake_candidate: intake,
+            promotion_boundary: boundary,
+            package_seal_digest,
+            existing_creation: existing,
+        };
+
+        let (creation, candidate) =
+            DecisionEngineCandidateCreation::try_create(&input, now).map_err(KernelError::from)?;
+        debug_assert!(creation.assert_creation_boundary().is_ok());
+        debug_assert_eq!(candidate.score.total, 0);
+        debug_assert!(candidate.handoff_command.is_empty());
+
+        let guard = db
+            .lock()
+            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+        let repo = DecisionEngineRepository::new(&guard);
+        repo.upsert_candidate_creation(&creation)?;
+        repo.upsert_overlay(&DecisionEngineOverlay {
+            workspace_id: workspace_id.clone(),
+            candidate_key: Self::candidate_key(&candidate),
+            outcome: candidate.outcome,
+            updated_at: creation.created_at.clone().unwrap_or_else(|| Utc::now().to_rfc3339()),
+            actor_id: "decision_engine".into(),
+        })?;
+        drop(guard);
+        Ok((creation, candidate))
     }
 
     /// Persist a DE-owned intake disposition for an active evaluated intake only.
@@ -953,6 +1141,9 @@ impl DecisionEngineService {
             originating_goal: goals.first().map(|g| g.description.clone()),
             attention_item_id: Some(item.id.to_string()),
             recommendation_id: Some(format!("rec-attention-{}", item.id)),
+            intake_candidate_id: None,
+            creation_request_id: None,
+            package_seal_digest: None,
             score: DecisionScore {
                 total,
                 attention_contribution,
@@ -1044,6 +1235,9 @@ impl DecisionEngineService {
             originating_goal: goals.first().map(|g| g.description.clone()),
             attention_item_id: None,
             recommendation_id: Some(format!("rec-graph-{}", node.task.id)),
+            intake_candidate_id: None,
+            creation_request_id: None,
+            package_seal_digest: None,
             score: DecisionScore {
                 total,
                 attention_contribution,
@@ -1140,6 +1334,9 @@ impl DecisionEngineService {
             originating_goal: Some(goal.description.clone()),
             attention_item_id: attention.top_items.first().map(|i| i.id.to_string()),
             recommendation_id: None,
+            intake_candidate_id: None,
+            creation_request_id: None,
+            package_seal_digest: None,
             score: DecisionScore {
                 total,
                 attention_contribution,
@@ -1205,6 +1402,9 @@ impl DecisionEngineService {
             originating_goal: goals.first().map(|g| g.description.clone()),
             attention_item_id: None,
             recommendation_id: Some("rec-idle".into()),
+            intake_candidate_id: None,
+            creation_request_id: None,
+            package_seal_digest: None,
             score: DecisionScore {
                 total,
                 attention_contribution: 0,

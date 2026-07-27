@@ -137,6 +137,15 @@ pub struct DecisionCandidate {
     pub originating_goal: Option<String>,
     pub attention_item_id: Option<String>,
     pub recommendation_id: Option<String>,
+    /// Provenance to DE intake candidate when created from intake (else None).
+    #[serde(default)]
+    pub intake_candidate_id: Option<String>,
+    /// Provenance to DE candidate creation request when created from intake (else None).
+    #[serde(default)]
+    pub creation_request_id: Option<String>,
+    /// Recommendation package seal digest when created from intake (else None).
+    #[serde(default)]
+    pub package_seal_digest: Option<String>,
     pub score: DecisionScore,
     pub explanation: DecisionExplanation,
     pub related_goal_ids: Vec<String>,
@@ -150,10 +159,24 @@ pub struct DecisionCandidate {
 impl DecisionCandidate {
     pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
     pub const HANDOFF_SUBMIT_ASSISTANT_GOAL: &'static str = "submit_assistant_goal";
+    /// Empty handoff — intake-created candidates never invoke planner in this increment.
+    pub const HANDOFF_NONE: &'static str = "";
 
     pub fn synthetic_id(source_key: &str) -> DecisionCandidateId {
         DecisionCandidateId::new(format!("engine_decision:{source_key}"))
             .expect("synthetic decision candidate id is valid")
+    }
+
+    /// Unscored placeholder — intake creation must not invent ranking behaviour.
+    pub fn unscored() -> DecisionScore {
+        DecisionScore {
+            total: 0,
+            attention_contribution: 0,
+            memory_contribution: 0,
+            personalization_contribution: 0,
+            goal_contribution: 0,
+            factors: Vec::new(),
+        }
     }
 }
 
@@ -199,6 +222,9 @@ pub struct DecisionEngineState {
     /// DE-owned candidate creation requests — request only, never DecisionCandidate creation.
     #[serde(default)]
     pub candidate_creation_requests: Vec<DecisionEngineCandidateCreationRequest>,
+    /// DE-owned candidate creation boundary — may create DecisionCandidate without scoring.
+    #[serde(default)]
+    pub candidate_creations: Vec<DecisionEngineCandidateCreation>,
     pub summary: String,
     pub authority_effect: String,
 }
@@ -242,6 +268,7 @@ impl DecisionEngineState {
             intake_dispositions: Vec::new(),
             intake_promotion_boundaries: Vec::new(),
             candidate_creation_requests: Vec::new(),
+            candidate_creations: Vec::new(),
             summary,
             authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
         }
@@ -365,6 +392,22 @@ impl DecisionEngineState {
             requested
         );
         self.candidate_creation_requests = requests;
+        self
+    }
+
+    /// Attach DE-owned candidate creation records (may reference created DecisionCandidates).
+    pub fn with_candidate_creations(
+        mut self,
+        creations: Vec<DecisionEngineCandidateCreation>,
+    ) -> Self {
+        let created = creations.iter().filter(|c| c.is_created()).count();
+        self.summary = format!(
+            "{} Candidate creations: {} ({} created).",
+            self.summary,
+            creations.len(),
+            created
+        );
+        self.candidate_creations = creations;
         self
     }
 
@@ -2102,31 +2145,62 @@ impl DecisionEngineCandidateCreationRequest {
     pub fn derive_batch(
         boundaries: &[DecisionEngineIntakePromotionBoundary],
     ) -> Vec<Self> {
-        let mut out: Vec<Self> = boundaries.iter().map(Self::derive).collect();
+        Self::derive_batch_with_created(boundaries, &[])
+    }
+
+    /// Derive requests; mark `created` when a DE candidate creation already exists.
+    pub fn derive_batch_with_created(
+        boundaries: &[DecisionEngineIntakePromotionBoundary],
+        created_intake_candidate_ids: &[String],
+    ) -> Vec<Self> {
+        let mut out: Vec<Self> = boundaries
+            .iter()
+            .map(|b| {
+                let already_created = created_intake_candidate_ids
+                    .iter()
+                    .any(|id| id == &b.intake_candidate_id);
+                Self::derive_with_created(b, already_created)
+            })
+            .collect();
         out.sort_by(|a, b| a.intake_candidate_id.cmp(&b.intake_candidate_id));
         out
     }
 
-    /// Derive creation-request state from promotion boundary facts only.
-    /// Never sets `created` — reserved for a future DecisionCandidate creation event.
+    /// Derive creation-request state from promotion boundary facts.
+    /// Sets `created` only when a DecisionCandidate creation event already occurred.
     pub fn derive(boundary: &DecisionEngineIntakePromotionBoundary) -> Self {
-        let request_state = match boundary.boundary_state.as_str() {
-            DecisionEngineIntakePromotionBoundary::STATE_PROMOTION_ALLOWED
-                if boundary.disposition_retained
-                    && boundary.acceptance_active
-                    && boundary.seal_aligned
-                    && boundary.intake_active =>
-            {
-                Self::STATE_REQUESTED
+        Self::derive_with_created(boundary, false)
+    }
+
+    pub fn derive_with_created(
+        boundary: &DecisionEngineIntakePromotionBoundary,
+        already_created: bool,
+    ) -> Self {
+        let request_state = if already_created {
+            Self::STATE_CREATED
+        } else {
+            match boundary.boundary_state.as_str() {
+                DecisionEngineIntakePromotionBoundary::STATE_PROMOTION_ALLOWED
+                    if boundary.disposition_retained
+                        && boundary.acceptance_active
+                        && boundary.seal_aligned
+                        && boundary.intake_active =>
+                {
+                    Self::STATE_REQUESTED
+                }
+                DecisionEngineIntakePromotionBoundary::STATE_PROMOTION_BLOCKED => {
+                    Self::STATE_REJECTED
+                }
+                DecisionEngineIntakePromotionBoundary::STATE_PROMOTED => Self::STATE_CREATED,
+                _ => Self::STATE_NOT_REQUESTED,
             }
-            DecisionEngineIntakePromotionBoundary::STATE_PROMOTION_BLOCKED => Self::STATE_REJECTED,
-            _ => Self::STATE_NOT_REQUESTED,
         };
 
         let mut evidence = boundary.evidence.clone();
         match request_state {
             Self::STATE_REQUESTED => evidence.push("creation_requested".into()),
             Self::STATE_REJECTED => evidence.push("creation_rejected".into()),
+            Self::STATE_CREATED => evidence.push("creation_completed".into()),
             _ => evidence.push("creation_not_requested".into()),
         }
 
@@ -2224,9 +2298,402 @@ impl DecisionEngineCandidateCreationRequest {
             || self.ownership_transferred
             || self.handoff_command.is_some()
             || self.authority_effect != Self::AUTHORITY_EFFECT_NONE
-            || self.request_state == Self::STATE_CREATED
             || !self.request_id.starts_with(Self::ID_PREFIX)
             || (self.is_requested() && self.request_state != Self::STATE_REQUESTED)
+        {
+            return Err(DecisionEngineError::CannotExecute);
+        }
+        Ok(())
+    }
+}
+
+/// Input for projecting or performing DE-owned DecisionCandidate creation.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DecisionEngineCandidateCreationInput {
+    pub creation_request: DecisionEngineCandidateCreationRequest,
+    pub intake_candidate: DecisionEngineIntakeCandidate,
+    pub promotion_boundary: DecisionEngineIntakePromotionBoundary,
+    pub package_seal_digest: String,
+    /// When present, creation already persisted — project as `created`.
+    pub existing_creation: Option<DecisionEngineCandidateCreation>,
+}
+
+/// DE-owned boundary for controlled creation of a native DecisionCandidate
+/// from an approved intake creation request.
+///
+/// May create a DecisionCandidate. Must not score, plan, grant, or execute.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DecisionEngineCandidateCreation {
+    pub creation_id: String,
+    pub workspace_id: String,
+    pub intake_candidate_id: String,
+    pub creation_request_id: String,
+    pub recommendation_reference: String,
+    pub package_seal_digest: String,
+    /// `blocked` | `eligible_for_creation` | `created`
+    pub creation_state: String,
+    pub decision_candidate_id: Option<String>,
+    pub title: Option<String>,
+    pub goal_statement: Option<String>,
+    pub created_at: Option<String>,
+    pub evidence: Vec<String>,
+    /// True only after a successful create in the `created` state.
+    pub creates_decision_candidate: bool,
+    pub creates_decision_score: bool,
+    pub creates_goal: bool,
+    pub creates_intent: bool,
+    pub adapter_invoked: bool,
+    pub planner_invoked: bool,
+    pub ownership_transferred: bool,
+    pub handoff_command: Option<String>,
+    pub note: String,
+    pub authority_effect: String,
+}
+
+impl DecisionEngineCandidateCreation {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+    pub const STATE_BLOCKED: &'static str = "blocked";
+    pub const STATE_ELIGIBLE: &'static str = "eligible_for_creation";
+    pub const STATE_CREATED: &'static str = "created";
+    pub const ID_PREFIX: &'static str = "engine_decision_creation:";
+    pub const CANDIDATE_SOURCE_PREFIX: &'static str = "intake:";
+
+    pub fn synthetic_id(intake_candidate_id: &str) -> String {
+        format!("{}{intake_candidate_id}", Self::ID_PREFIX)
+    }
+
+    pub fn decision_candidate_source_key(recommendation_reference: &str) -> String {
+        format!("{}{recommendation_reference}", Self::CANDIDATE_SOURCE_PREFIX)
+    }
+
+    pub fn is_created(&self) -> bool {
+        self.creation_state == Self::STATE_CREATED
+    }
+
+    pub fn is_eligible_for_creation(&self) -> bool {
+        self.creation_state == Self::STATE_ELIGIBLE
+    }
+
+    pub fn is_blocked(&self) -> bool {
+        self.creation_state == Self::STATE_BLOCKED
+    }
+
+    pub fn derive_batch(inputs: &[DecisionEngineCandidateCreationInput]) -> Vec<Self> {
+        let mut out: Vec<Self> = inputs.iter().map(Self::derive).collect();
+        out.sort_by(|a, b| a.intake_candidate_id.cmp(&b.intake_candidate_id));
+        out
+    }
+
+    pub fn derive(input: &DecisionEngineCandidateCreationInput) -> Self {
+        if let Some(existing) = &input.existing_creation {
+            return existing.clone();
+        }
+
+        let request = &input.creation_request;
+        let intake = &input.intake_candidate;
+        let boundary = &input.promotion_boundary;
+        let intake_active = intake.lifecycle.is_active();
+        let provenance_intact = !input.package_seal_digest.is_empty()
+            && input.package_seal_digest == intake.package_seal_digest
+            && request.recommendation_reference == intake.recommendation_reference
+            && request.intake_candidate_id == intake.intake_candidate_id
+            && boundary.intake_candidate_id == intake.intake_candidate_id;
+
+        let mut evidence = Vec::new();
+        if request.is_requested() {
+            evidence.push("creation_request_requested".into());
+        } else if request.request_state == DecisionEngineCandidateCreationRequest::STATE_REJECTED {
+            evidence.push("creation_request_rejected".into());
+        } else if request.request_state == DecisionEngineCandidateCreationRequest::STATE_CREATED {
+            evidence.push("creation_request_already_created".into());
+        } else {
+            evidence.push("creation_request_not_requested".into());
+        }
+        if intake_active {
+            evidence.push("intake_active".into());
+        } else if intake.lifecycle.is_withdrawn() {
+            evidence.push("intake_withdrawn".into());
+        } else if intake.lifecycle.is_invalidated() {
+            evidence.push("intake_invalidated".into());
+        } else {
+            evidence.push("intake_inactive".into());
+        }
+        if request.acceptance_active && boundary.acceptance_active {
+            evidence.push("acceptance_active".into());
+        } else {
+            evidence.push("acceptance_revoked".into());
+        }
+        if request.seal_aligned
+            && boundary.seal_aligned
+            && input.package_seal_digest == intake.package_seal_digest
+        {
+            evidence.push("seal_aligned".into());
+        } else {
+            evidence.push("seal_mismatch".into());
+        }
+        if boundary.is_promotion_allowed() {
+            evidence.push("promotion_allowed".into());
+        }
+        if provenance_intact {
+            evidence.push("provenance_intact".into());
+        } else {
+            evidence.push("provenance_broken".into());
+        }
+
+        let blocked = request.request_state
+            == DecisionEngineCandidateCreationRequest::STATE_REJECTED
+            || !intake_active
+            || intake.lifecycle.is_invalidated()
+            || !request.acceptance_active
+            || !boundary.acceptance_active
+            || !request.seal_aligned
+            || !boundary.seal_aligned
+            || input.package_seal_digest != intake.package_seal_digest
+            || !provenance_intact;
+
+        let eligible = !blocked
+            && request.is_requested()
+            && boundary.is_promotion_allowed()
+            && intake_active
+            && provenance_intact;
+
+        let creation_state = if eligible {
+            Self::STATE_ELIGIBLE
+        } else {
+            Self::STATE_BLOCKED
+        };
+
+        Self {
+            creation_id: Self::synthetic_id(&intake.intake_candidate_id),
+            workspace_id: intake.workspace_id.clone(),
+            intake_candidate_id: intake.intake_candidate_id.clone(),
+            creation_request_id: request.request_id.clone(),
+            recommendation_reference: intake.recommendation_reference.clone(),
+            package_seal_digest: input.package_seal_digest.clone(),
+            creation_state: creation_state.into(),
+            decision_candidate_id: None,
+            title: None,
+            goal_statement: None,
+            created_at: None,
+            evidence,
+            creates_decision_candidate: false,
+            creates_decision_score: false,
+            creates_goal: false,
+            creates_intent: false,
+            adapter_invoked: false,
+            planner_invoked: false,
+            ownership_transferred: false,
+            handoff_command: None,
+            note: format!(
+                "Decision Engine candidate creation ({creation_state}). Creation boundary only — \
+                 scoring, planner handoff, Gateway grant, goal/intent creation, and execution \
+                 remain forbidden."
+            ),
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        }
+    }
+
+    /// Create a DE-owned DecisionCandidate from an eligible creation projection.
+    /// Never scores, plans, grants, or mutates Recommendation Engine records.
+    pub fn try_create(
+        input: &DecisionEngineCandidateCreationInput,
+        created_at: impl Into<String>,
+    ) -> Result<(Self, DecisionCandidate), DecisionEngineError> {
+        let projected = Self::derive(input);
+        if !projected.is_eligible_for_creation() {
+            return Err(DecisionEngineError::InvalidTransition {
+                from: projected.creation_state,
+                to: Self::STATE_CREATED.into(),
+            });
+        }
+        if input.existing_creation.as_ref().is_some_and(|c| c.is_created()) {
+            return Err(DecisionEngineError::InvalidTransition {
+                from: Self::STATE_CREATED.into(),
+                to: Self::STATE_CREATED.into(),
+            });
+        }
+
+        let created_at = created_at.into();
+        let source_key =
+            Self::decision_candidate_source_key(&projected.recommendation_reference);
+        let candidate_id = DecisionCandidate::synthetic_id(&source_key);
+        let title = format!(
+            "Intake recommendation: {}",
+            projected.recommendation_reference
+        );
+        let goal_statement = format!(
+            "Consider accepted recommendation package {} (seal {}).",
+            projected.recommendation_reference, projected.package_seal_digest
+        );
+
+        let mut creation = projected;
+        creation.creation_state = Self::STATE_CREATED.into();
+        creation.decision_candidate_id = Some(candidate_id.as_str().to_string());
+        creation.title = Some(title.clone());
+        creation.goal_statement = Some(goal_statement.clone());
+        creation.created_at = Some(created_at.clone());
+        creation.creates_decision_candidate = true;
+        creation.evidence.push("decision_candidate_created".into());
+        creation.note = "Decision Engine created native DecisionCandidate from approved intake \
+                         creation request. No scoring, planner handoff, Gateway grant, goal, \
+                         intent, or Recommendation Engine mutation."
+            .into();
+
+        let workspace_id = WorkspaceId::new(&creation.workspace_id).map_err(|err| {
+            DecisionEngineError::Domain(err)
+        })?;
+
+        let candidate = DecisionCandidate {
+            id: candidate_id,
+            workspace_id,
+            title,
+            goal_statement,
+            originating_goal: None,
+            attention_item_id: None,
+            recommendation_id: Some(creation.recommendation_reference.clone()),
+            intake_candidate_id: Some(creation.intake_candidate_id.clone()),
+            creation_request_id: Some(creation.creation_request_id.clone()),
+            package_seal_digest: Some(creation.package_seal_digest.clone()),
+            score: DecisionCandidate::unscored(),
+            explanation: DecisionExplanation {
+                headline: "Created from approved Decision Engine intake".into(),
+                reasons: vec![DecisionReason {
+                    kind: "intake_creation".into(),
+                    summary: format!(
+                        "Promoted from intake {} via creation request {}",
+                        creation.intake_candidate_id, creation.creation_request_id
+                    ),
+                    evidence_ref: Some(creation.intake_candidate_id.clone()),
+                    attention_reason: None,
+                }],
+                confidence: "unscored".into(),
+            },
+            related_goal_ids: Vec::new(),
+            pending_approval_ids: Vec::new(),
+            outcome: DecisionOutcome::Open,
+            created_at,
+            handoff_command: DecisionCandidate::HANDOFF_NONE.into(),
+            authority_effect: DecisionCandidate::AUTHORITY_EFFECT_NONE.into(),
+        };
+
+        creation.assert_creation_boundary()?;
+        Ok((creation, candidate))
+    }
+
+    /// Rebuild DecisionCandidate from a persisted created record (still unscored).
+    pub fn to_decision_candidate(
+        &self,
+        outcome: DecisionOutcome,
+    ) -> Result<DecisionCandidate, DecisionEngineError> {
+        if !self.is_created() {
+            return Err(DecisionEngineError::InvalidTransition {
+                from: self.creation_state.clone(),
+                to: "materialize_decision_candidate".into(),
+            });
+        }
+        let candidate_id = self
+            .decision_candidate_id
+            .as_ref()
+            .ok_or(DecisionEngineError::NotFound)?;
+        let title = self.title.clone().ok_or(DecisionEngineError::NotFound)?;
+        let goal_statement = self
+            .goal_statement
+            .clone()
+            .ok_or(DecisionEngineError::NotFound)?;
+        let created_at = self
+            .created_at
+            .clone()
+            .ok_or(DecisionEngineError::NotFound)?;
+        let workspace_id =
+            WorkspaceId::new(&self.workspace_id).map_err(DecisionEngineError::Domain)?;
+        let id = DecisionCandidateId::new(candidate_id.clone())
+            .map_err(DecisionEngineError::Domain)?;
+
+        Ok(DecisionCandidate {
+            id,
+            workspace_id,
+            title,
+            goal_statement,
+            originating_goal: None,
+            attention_item_id: None,
+            recommendation_id: Some(self.recommendation_reference.clone()),
+            intake_candidate_id: Some(self.intake_candidate_id.clone()),
+            creation_request_id: Some(self.creation_request_id.clone()),
+            package_seal_digest: Some(self.package_seal_digest.clone()),
+            score: DecisionCandidate::unscored(),
+            explanation: DecisionExplanation {
+                headline: "Created from approved Decision Engine intake".into(),
+                reasons: vec![DecisionReason {
+                    kind: "intake_creation".into(),
+                    summary: format!(
+                        "Promoted from intake {} via creation request {}",
+                        self.intake_candidate_id, self.creation_request_id
+                    ),
+                    evidence_ref: Some(self.intake_candidate_id.clone()),
+                    attention_reason: None,
+                }],
+                confidence: "unscored".into(),
+            },
+            related_goal_ids: Vec::new(),
+            pending_approval_ids: Vec::new(),
+            outcome,
+            created_at,
+            handoff_command: DecisionCandidate::HANDOFF_NONE.into(),
+            authority_effect: DecisionCandidate::AUTHORITY_EFFECT_NONE.into(),
+        })
+    }
+
+    pub fn may_create_decision_score(&self) -> bool {
+        false
+    }
+
+    pub fn may_invoke_planner(&self) -> bool {
+        false
+    }
+
+    pub fn may_invoke_gateway(&self) -> bool {
+        false
+    }
+
+    pub fn may_create_goal(&self) -> bool {
+        false
+    }
+
+    pub fn may_create_intent(&self) -> bool {
+        false
+    }
+
+    pub fn attempt_create_decision_score(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_invoke_planner(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_execute() -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn assert_creation_boundary(&self) -> Result<(), DecisionEngineError> {
+        if self.creates_decision_score
+            || self.creates_goal
+            || self.creates_intent
+            || self.adapter_invoked
+            || self.planner_invoked
+            || self.ownership_transferred
+            || self.handoff_command.is_some()
+            || self.authority_effect != Self::AUTHORITY_EFFECT_NONE
+            || !self.creation_id.starts_with(Self::ID_PREFIX)
+            || (self.is_created() && !self.creates_decision_candidate)
+            || (self.is_created() && self.decision_candidate_id.is_none())
+            || (self.is_created()
+                && !self
+                    .decision_candidate_id
+                    .as_deref()
+                    .unwrap_or("")
+                    .starts_with("engine_decision:"))
+            || (!self.is_created() && self.creates_decision_candidate)
         {
             return Err(DecisionEngineError::CannotExecute);
         }

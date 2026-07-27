@@ -1217,6 +1217,10 @@ export interface DecisionCandidate {
   originating_goal: string | null;
   attention_item_id: string | null;
   recommendation_id: string | null;
+  /** Provenance when created from DE intake; otherwise null/undefined. */
+  intake_candidate_id?: string | null;
+  creation_request_id?: string | null;
+  package_seal_digest?: string | null;
   score: DecisionScore;
   explanation: DecisionExplanation;
   related_goal_ids: string[];
@@ -1224,6 +1228,33 @@ export interface DecisionCandidate {
   outcome: DecisionOutcome;
   created_at: string;
   handoff_command: string;
+  authority_effect: string;
+}
+
+/** DE-owned candidate creation boundary — may create DecisionCandidate without scoring. */
+export interface DecisionEngineCandidateCreation {
+  creation_id: string;
+  workspace_id: string;
+  intake_candidate_id: string;
+  creation_request_id: string;
+  recommendation_reference: string;
+  package_seal_digest: string;
+  /** blocked | eligible_for_creation | created */
+  creation_state: string;
+  decision_candidate_id: string | null;
+  title: string | null;
+  goal_statement: string | null;
+  created_at: string | null;
+  evidence: string[];
+  creates_decision_candidate: boolean;
+  creates_decision_score: boolean;
+  creates_goal: boolean;
+  creates_intent: boolean;
+  adapter_invoked: boolean;
+  planner_invoked: boolean;
+  ownership_transferred: boolean;
+  handoff_command: string | null;
+  note: string;
   authority_effect: string;
 }
 
@@ -1457,6 +1488,8 @@ export interface DecisionEngineState {
   intake_promotion_boundaries?: DecisionEngineIntakePromotionBoundary[];
   /** DE-owned candidate creation requests — never DecisionCandidate creation. */
   candidate_creation_requests?: DecisionEngineCandidateCreationRequest[];
+  /** DE-owned candidate creation boundary — may create DecisionCandidate without scoring. */
+  candidate_creations?: DecisionEngineCandidateCreation[];
   summary: string;
   authority_effect: string;
 }

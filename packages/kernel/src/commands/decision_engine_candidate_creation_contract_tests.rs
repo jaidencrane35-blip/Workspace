@@ -1,10 +1,11 @@
-//! Decision Engine Candidate Creation Request — request only
-//! (requested ≠ DecisionCandidate / scoring / planner / Gateway).
+//! Decision Engine Candidate Creation — may create DecisionCandidate
+//! without scoring / planner / Gateway / goals / intents.
 
 use crate::commands::handler::CommandHandler;
 use crate::error::KernelError;
 use workspace_domain::{
     AttentionReason, AttentionSignal, AttentionSourceType, DecisionCandidate, DecisionContext,
+    DecisionEngineCandidateCreation, DecisionEngineCandidateCreationInput,
     DecisionEngineCandidateCreationRequest, DecisionEngineIntakeAssessment,
     DecisionEngineIntakeAssessmentInput, DecisionEngineIntakeCandidate,
     DecisionEngineIntakeDisposition, DecisionEngineIntakeEligibility,
@@ -196,52 +197,59 @@ fn retained_evaluated(id_suffix: &str) -> (
     (candidate, evaluation, disposition, acceptance, seal)
 }
 
-fn boundary_for(
-    candidate: DecisionEngineIntakeCandidate,
-    evaluation: Option<DecisionEngineIntakeEvaluation>,
-    disposition: Option<DecisionEngineIntakeDisposition>,
+fn eligible_input(
+    id_suffix: &str,
     acceptance_active: bool,
     seal_aligned: bool,
-) -> DecisionEngineIntakePromotionBoundary {
-    DecisionEngineIntakePromotionBoundary::derive(&DecisionEngineIntakePromotionBoundaryInput {
-        candidate,
-        evaluation,
-        disposition,
-        acceptance_active,
-        seal_aligned,
-        previously_promoted: false,
-    })
+) -> DecisionEngineCandidateCreationInput {
+    let (candidate, evaluation, disposition, _, _) = retained_evaluated(id_suffix);
+    let package_seal_digest = if seal_aligned {
+        candidate.package_seal_digest.clone()
+    } else {
+        "mismatch-digest".into()
+    };
+    let boundary =
+        DecisionEngineIntakePromotionBoundary::derive(&DecisionEngineIntakePromotionBoundaryInput {
+            candidate: candidate.clone(),
+            evaluation: Some(evaluation),
+            disposition: Some(disposition),
+            acceptance_active,
+            seal_aligned,
+            previously_promoted: false,
+        });
+    let request = DecisionEngineCandidateCreationRequest::derive(&boundary);
+    DecisionEngineCandidateCreationInput {
+        creation_request: request,
+        intake_candidate: candidate,
+        promotion_boundary: boundary,
+        package_seal_digest,
+        existing_creation: None,
+    }
 }
 
-fn request_for(boundary: &DecisionEngineIntakePromotionBoundary) -> DecisionEngineCandidateCreationRequest {
-    DecisionEngineCandidateCreationRequest::derive(boundary)
-}
-
-/// CASE 1 — Promotion allowed creates creation request.
+/// CASE 1 — Valid creation request creates DecisionCandidate.
 #[test]
-fn case1_promotion_allowed_creates_request() {
-    let (candidate, evaluation, disposition, _, _) = retained_evaluated("ccr-1");
-    let boundary = boundary_for(
-        candidate,
-        Some(evaluation),
-        Some(disposition),
-        true,
-        true,
-    );
-    assert!(boundary.is_promotion_allowed());
-    let request = request_for(&boundary);
-    assert_eq!(
-        request.request_state,
-        DecisionEngineCandidateCreationRequest::STATE_REQUESTED
-    );
-    assert!(request.is_requested());
-    assert!(!request.creates_decision_candidate);
+fn case1_valid_request_creates_decision_candidate() {
+    let input = eligible_input("cc-1", true, true);
+    assert!(input.creation_request.is_requested());
+    assert!(input.promotion_boundary.is_promotion_allowed());
+    let projected = DecisionEngineCandidateCreation::derive(&input);
+    assert!(projected.is_eligible_for_creation());
+
+    let (creation, candidate) =
+        DecisionEngineCandidateCreation::try_create(&input, "t-created").expect("create");
+    assert!(creation.is_created());
+    assert!(creation.creates_decision_candidate);
+    assert!(candidate.id.as_str().starts_with("engine_decision:intake:"));
+    assert!(!candidate.id.as_str().starts_with("engine_decision_intake:"));
+    assert_eq!(candidate.score.total, 0);
+    assert!(candidate.handoff_command.is_empty());
 }
 
-/// CASE 2 — Blocked promotion cannot request creation.
+/// CASE 2 — Blocked request cannot create.
 #[test]
-fn case2_blocked_promotion_cannot_request() {
-    let (candidate, evaluation, _, _, _) = retained_evaluated("ccr-2");
+fn case2_blocked_request_cannot_create() {
+    let (candidate, evaluation, _, _, _) = retained_evaluated("cc-2");
     let dismissed = DecisionEngineIntakeDisposition::try_dispose(
         &candidate,
         &evaluation,
@@ -250,126 +258,150 @@ fn case2_blocked_promotion_cannot_request() {
         "t-disp",
     )
     .unwrap();
-    let boundary = boundary_for(candidate, Some(evaluation), Some(dismissed), true, true);
-    let request = request_for(&boundary);
-    assert_eq!(
-        request.request_state,
-        DecisionEngineCandidateCreationRequest::STATE_REJECTED
-    );
-    assert!(!request.is_requested());
+    let boundary =
+        DecisionEngineIntakePromotionBoundary::derive(&DecisionEngineIntakePromotionBoundaryInput {
+            candidate: candidate.clone(),
+            evaluation: Some(evaluation),
+            disposition: Some(dismissed),
+            acceptance_active: true,
+            seal_aligned: true,
+            previously_promoted: false,
+        });
+    let request = DecisionEngineCandidateCreationRequest::derive(&boundary);
+    let input = DecisionEngineCandidateCreationInput {
+        creation_request: request,
+        package_seal_digest: candidate.package_seal_digest.clone(),
+        intake_candidate: candidate,
+        promotion_boundary: boundary,
+        existing_creation: None,
+    };
+    assert!(DecisionEngineCandidateCreation::derive(&input).is_blocked());
+    assert!(DecisionEngineCandidateCreation::try_create(&input, "t").is_err());
 }
 
-/// CASE 3 — Withdrawn intake rejected.
+/// CASE 3 — Invalidated intake cannot create.
 #[test]
-fn case3_withdrawn_rejected() {
-    let (mut candidate, evaluation, disposition, _, _) = retained_evaluated("ccr-3");
-    candidate.withdraw("t-w").unwrap();
-    let boundary = boundary_for(
-        candidate,
-        Some(evaluation),
-        Some(disposition),
-        true,
-        true,
-    );
-    let request = request_for(&boundary);
-    assert_eq!(
-        request.request_state,
-        DecisionEngineCandidateCreationRequest::STATE_REJECTED
-    );
-}
-
-/// CASE 4 — Invalidated intake rejected.
-#[test]
-fn case4_invalidated_rejected() {
-    let (mut candidate, evaluation, disposition, _, _) = retained_evaluated("ccr-4");
-    candidate
+fn case3_invalidated_intake_cannot_create() {
+    let mut input = eligible_input("cc-3", true, true);
+    input
+        .intake_candidate
         .lifecycle
         .invalidate(
             workspace_domain::DecisionEngineIntakeCandidateLifecycle::REASON_SEAL_MISMATCH,
             "t-inv",
         )
         .unwrap();
-    let boundary = boundary_for(
-        candidate,
-        Some(evaluation),
-        Some(disposition),
-        true,
-        true,
-    );
-    let request = request_for(&boundary);
+    // Re-derive boundary/request against invalidated intake.
+    let boundary =
+        DecisionEngineIntakePromotionBoundary::derive(&DecisionEngineIntakePromotionBoundaryInput {
+            candidate: input.intake_candidate.clone(),
+            evaluation: None,
+            disposition: None,
+            acceptance_active: true,
+            seal_aligned: true,
+            previously_promoted: false,
+        });
+    input.promotion_boundary = boundary.clone();
+    input.creation_request = DecisionEngineCandidateCreationRequest::derive(&boundary);
+    assert!(DecisionEngineCandidateCreation::derive(&input).is_blocked());
+    assert!(DecisionEngineCandidateCreation::try_create(&input, "t").is_err());
+}
+
+/// CASE 4 — Seal mismatch blocks creation.
+#[test]
+fn case4_seal_mismatch_blocks_creation() {
+    let input = eligible_input("cc-4", true, false);
+    assert!(DecisionEngineCandidateCreation::derive(&input).is_blocked());
+    assert!(DecisionEngineCandidateCreation::try_create(&input, "t").is_err());
+}
+
+/// CASE 5 — Acceptance revoke blocks creation.
+#[test]
+fn case5_acceptance_revoke_blocks_creation() {
+    let input = eligible_input("cc-5", false, true);
+    assert!(DecisionEngineCandidateCreation::derive(&input).is_blocked());
+    assert!(DecisionEngineCandidateCreation::try_create(&input, "t").is_err());
+}
+
+/// CASE 6 — Created candidate has provenance back to intake.
+#[test]
+fn case6_created_candidate_has_provenance() {
+    let input = eligible_input("cc-6", true, true);
+    let (creation, candidate) =
+        DecisionEngineCandidateCreation::try_create(&input, "t-created").unwrap();
     assert_eq!(
-        request.request_state,
-        DecisionEngineCandidateCreationRequest::STATE_REJECTED
+        candidate.intake_candidate_id.as_deref(),
+        Some(creation.intake_candidate_id.as_str())
+    );
+    assert_eq!(
+        candidate.creation_request_id.as_deref(),
+        Some(creation.creation_request_id.as_str())
+    );
+    assert_eq!(
+        candidate.package_seal_digest.as_deref(),
+        Some(creation.package_seal_digest.as_str())
+    );
+    assert_eq!(
+        candidate.recommendation_id.as_deref(),
+        Some(creation.recommendation_reference.as_str())
     );
 }
 
-/// CASE 5 — Seal mismatch rejected.
+/// CASE 7 — Creation does not add scoring.
 #[test]
-fn case5_seal_mismatch_rejected() {
-    let (candidate, evaluation, disposition, _, _) = retained_evaluated("ccr-5");
-    let boundary = boundary_for(
-        candidate,
-        Some(evaluation),
-        Some(disposition),
-        true,
-        false,
-    );
-    let request = request_for(&boundary);
-    assert_eq!(
-        request.request_state,
-        DecisionEngineCandidateCreationRequest::STATE_REJECTED
-    );
-    assert!(!request.seal_aligned);
+fn case7_creation_does_not_add_scoring() {
+    let input = eligible_input("cc-7", true, true);
+    let (creation, candidate) =
+        DecisionEngineCandidateCreation::try_create(&input, "t-created").unwrap();
+    assert!(!creation.creates_decision_score);
+    assert!(!creation.may_create_decision_score());
+    assert!(creation.attempt_create_decision_score().is_err());
+    assert_eq!(candidate.score, DecisionCandidate::unscored());
+    assert!(candidate.score.factors.is_empty());
 }
 
-/// CASE 6–8 — Request does not create DecisionCandidate / scoring / planner / Gateway.
+/// CASE 8 — Creation does not invoke planner/Gateway.
 #[test]
-fn case6_to_8_no_candidate_scoring_planner_gateway() {
-    let (candidate, evaluation, disposition, _, _) = retained_evaluated("ccr-6");
-    let boundary = boundary_for(
-        candidate,
-        Some(evaluation),
-        Some(disposition),
-        true,
-        true,
-    );
-    let r = request_for(&boundary);
-    assert!(r.is_requested());
-    assert!(!r.creates_decision_candidate);
-    assert!(!r.creates_decision_score);
-    assert!(!r.may_create_decision_candidate());
-    assert!(!r.may_create_decision_score());
-    assert!(!r.may_invoke_planner());
-    assert!(!r.may_invoke_gateway());
-    assert!(r.attempt_create_decision_candidate().is_err());
-    assert!(r.attempt_create_decision_score().is_err());
-    assert!(r.attempt_invoke_planner().is_err());
-    assert!(DecisionEngineCandidateCreationRequest::attempt_execute().is_err());
-    assert!(r.assert_request_only().is_ok());
-    assert_ne!(
-        r.request_state,
-        DecisionEngineCandidateCreationRequest::STATE_CREATED
-    );
+fn case8_creation_does_not_invoke_planner_gateway() {
+    let input = eligible_input("cc-8", true, true);
+    let (creation, candidate) =
+        DecisionEngineCandidateCreation::try_create(&input, "t-created").unwrap();
+    assert!(!creation.planner_invoked);
+    assert!(!creation.may_invoke_planner());
+    assert!(!creation.may_invoke_gateway());
+    assert!(creation.attempt_invoke_planner().is_err());
+    assert!(DecisionEngineCandidateCreation::attempt_execute().is_err());
+    assert!(candidate.handoff_command.is_empty());
     assert_blocked(
         "decision_engine",
         CommandHandler::decision_engine_attempt_execute(),
     );
 }
 
-/// CASE 9 — RE overlays unchanged.
+/// CASE 9 — RE overlays remain unchanged.
 #[test]
 fn case9_recommendation_overlays_unchanged() {
-    let (candidate, evaluation, disposition, acceptance, seal) = retained_evaluated("ccr-7");
+    let (candidate, evaluation, disposition, acceptance, seal) = retained_evaluated("cc-9");
     let acceptance_before = acceptance.clone();
     let seal_before = seal.clone();
-    let boundary = boundary_for(
-        candidate,
-        Some(evaluation),
-        Some(disposition),
-        true,
-        true,
-    );
-    let _ = request_for(&boundary);
+    let boundary =
+        DecisionEngineIntakePromotionBoundary::derive(&DecisionEngineIntakePromotionBoundaryInput {
+            candidate: candidate.clone(),
+            evaluation: Some(evaluation),
+            disposition: Some(disposition),
+            acceptance_active: true,
+            seal_aligned: true,
+            previously_promoted: false,
+        });
+    let request = DecisionEngineCandidateCreationRequest::derive(&boundary);
+    let input = DecisionEngineCandidateCreationInput {
+        creation_request: request,
+        package_seal_digest: candidate.package_seal_digest.clone(),
+        intake_candidate: candidate,
+        promotion_boundary: boundary,
+        existing_creation: None,
+    };
+    let _ = DecisionEngineCandidateCreation::try_create(&input, "t-created").unwrap();
     assert_eq!(acceptance, acceptance_before);
     assert_eq!(seal, seal_before);
     assert_eq!(
@@ -378,7 +410,7 @@ fn case9_recommendation_overlays_unchanged() {
     );
 }
 
-/// CASE 10 — Existing DE synthesis unchanged.
+/// CASE 10 — Existing DE synthesis remains unchanged.
 #[test]
 fn case10_synthesis_unchanged() {
     let context = DecisionContext {
@@ -426,24 +458,19 @@ fn case10_synthesis_unchanged() {
     };
     let base = DecisionEngineState::from_candidates("ws-1", context, vec![decision]);
     let scores_before: Vec<_> = base.candidates.iter().map(|c| c.score.total).collect();
-    let (candidate, evaluation, disposition, _, _) = retained_evaluated("ccr-8");
-    let boundary = boundary_for(
-        candidate,
-        Some(evaluation),
-        Some(disposition),
-        true,
-        true,
-    );
-    let request = request_for(&boundary);
-    let with = base.with_candidate_creation_requests(vec![request]);
-    assert_eq!(
-        with.candidates
-            .iter()
-            .map(|c| c.score.total)
-            .collect::<Vec<_>>(),
-        scores_before
-    );
-    assert_eq!(with.candidates.len(), 1);
-    assert_eq!(with.candidate_creation_requests.len(), 1);
-    assert!(with.candidate_creation_requests[0].is_requested());
+    let input = eligible_input("cc-10", true, true);
+    let (creation, candidate) =
+        DecisionEngineCandidateCreation::try_create(&input, "t-created").unwrap();
+    let mut with_candidates = base.candidates.clone();
+    with_candidates.push(candidate);
+    let with = DecisionEngineState::from_candidates(
+        "ws-1",
+        base.context.clone(),
+        with_candidates,
+    )
+    .with_candidate_creations(vec![creation]);
+    assert_eq!(with.candidates[0].score.total, scores_before[0]);
+    assert_eq!(with.candidates.len(), 2);
+    assert_eq!(with.candidates[1].score.total, 0);
+    assert!(with.candidate_creations[0].is_created());
 }

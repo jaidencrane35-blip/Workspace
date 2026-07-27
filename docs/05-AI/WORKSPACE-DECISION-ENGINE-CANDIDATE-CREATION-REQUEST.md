@@ -29,7 +29,7 @@ DecisionEngineCandidateCreationRequest
 | `not_requested` | Promotion boundary not allowed (e.g. not_ready) |
 | `requested` | `promotion_allowed` + disposition retained + acceptance valid + seal aligned |
 | `rejected` | Promotion blocked (withdrawn / invalidated / seal / acceptance / non-retained) |
-| `created` | Reserved for a future DecisionCandidate creation event — never set here |
+| `created` | Set only after a `DecisionEngineCandidateCreation` event exists |
 
 ## Persistence
 

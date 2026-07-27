@@ -233,6 +233,7 @@ pub use automation_trigger::{
 };
 pub use decision_engine::{
     DecisionCandidate, DecisionContext, DecisionEngineActionResult,
+    DecisionEngineCandidateCreation, DecisionEngineCandidateCreationInput,
     DecisionEngineCandidateCreationRequest, DecisionEngineError, DecisionEngineHandoff,
     DecisionEngineIntakeAssessment, DecisionEngineIntakeAssessmentInput,
     DecisionEngineIntakeCandidate, DecisionEngineIntakeCandidateLifecycle,

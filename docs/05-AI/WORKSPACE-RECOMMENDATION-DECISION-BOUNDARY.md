@@ -49,7 +49,8 @@ Remaining before a future handoff could exist:
 16. ~~DE intake disposition (retain/dismiss/defer ≠ DecisionCandidate / planning)~~ — see [WORKSPACE-DECISION-ENGINE-INTAKE-DISPOSITION.md](./WORKSPACE-DECISION-ENGINE-INTAKE-DISPOSITION.md)
 17. ~~DE intake promotion boundary (promotion_allowed ≠ DecisionCandidate creation)~~ — see [WORKSPACE-DECISION-ENGINE-INTAKE-PROMOTION-BOUNDARY.md](./WORKSPACE-DECISION-ENGINE-INTAKE-PROMOTION-BOUNDARY.md)
 18. ~~DE candidate creation request (requested ≠ DecisionCandidate creation)~~ — see [WORKSPACE-DECISION-ENGINE-CANDIDATE-CREATION-REQUEST.md](./WORKSPACE-DECISION-ENGINE-CANDIDATE-CREATION-REQUEST.md)
-19. Optional **DecisionCandidate creation / adapter invocation** after requested — still separate domains; not execution
+19. ~~DE candidate creation (creates DecisionCandidate without scoring / planner / Gateway)~~ — see [WORKSPACE-DECISION-ENGINE-CANDIDATE-CREATION.md](./WORKSPACE-DECISION-ENGINE-CANDIDATE-CREATION.md)
+20. Optional **scoring / adapter / planner handoff** after native DecisionCandidate exists — still separate; not execution
 
 ---
 
