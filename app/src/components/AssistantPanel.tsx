@@ -838,8 +838,8 @@ export function AssistantPanel({
             {comparison.right.revision})
           </p>
           <ul>
-            {comparison.differences.map((diff) => (
-              <li key={diff}>{diff}</li>
+            {comparison.differences.map((diff, index) => (
+              <li key={`comparison-diff-${index}`}>{diff}</li>
             ))}
           </ul>
         </section>

@@ -175,6 +175,7 @@ export default function App() {
         <nav className="tabs" aria-label="Primary workspace views" role="tablist">
           <button
             type="button"
+            role="tab"
             className={view === "canvas" ? "tab active" : "tab"}
             aria-current={view === "canvas" ? "page" : undefined}
             aria-selected={view === "canvas"}
@@ -184,6 +185,7 @@ export default function App() {
           </button>
           <button
             type="button"
+            role="tab"
             className={view === "work" ? "tab active" : "tab"}
             aria-current={view === "work" ? "page" : undefined}
             aria-selected={view === "work"}
@@ -193,6 +195,7 @@ export default function App() {
           </button>
           <button
             type="button"
+            role="tab"
             className={view === "assistant" ? "tab active" : "tab"}
             aria-current={view === "assistant" ? "page" : undefined}
             aria-selected={view === "assistant"}
@@ -202,6 +205,7 @@ export default function App() {
           </button>
           <button
             type="button"
+            role="tab"
             className={view === "operator" ? "tab active" : "tab"}
             aria-current={view === "operator" ? "page" : undefined}
             aria-selected={view === "operator"}

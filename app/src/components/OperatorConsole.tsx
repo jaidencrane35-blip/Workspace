@@ -3487,8 +3487,8 @@ export function OperatorConsole({
               Compare rev {assistantComparison.left.revision} →{" "}
               {assistantComparison.right.revision}
             </li>
-            {assistantComparison.differences.map((diff) => (
-              <li key={diff}>{diff}</li>
+            {assistantComparison.differences.map((diff, index) => (
+              <li key={`assistant-comparison-diff-${index}`}>{diff}</li>
             ))}
           </ul>
         )}
