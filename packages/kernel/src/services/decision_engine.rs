@@ -13,10 +13,12 @@ use serde_json::json;
 use workspace_database::{Database, DecisionEngineRepository, RecommendationLifecycleRepository};
 use workspace_domain::{
     ActorContext, AttentionItem, DecisionCandidate, DecisionContext, DecisionEngineActionResult,
-    DecisionEngineError, DecisionEngineHandoff, DecisionEngineIntakeReceipt, DecisionEngineOverlay,
+    DecisionEngineError, DecisionEngineHandoff, DecisionEngineIntakeAssessment,
+    DecisionEngineIntakeAssessmentInput, DecisionEngineIntakeReceipt, DecisionEngineOverlay,
     DecisionEngineState, DecisionEngineSummary, DecisionExplanation, DecisionOutcome, DecisionQueue,
     DecisionReason, DecisionScore, DecisionSourceType, DecisionState, IntelligenceHighlight,
-    IntentContext, WorkspaceAttentionState, WorkspaceId, WorkGoal, WorkflowContext,
+    IntentContext, RecommendationLifecycleState, WorkspaceAttentionState, WorkspaceId, WorkGoal,
+    WorkflowContext,
 };
 
 use crate::error::{KernelError, Result};
@@ -248,9 +250,11 @@ impl DecisionEngineService {
             }
         }
 
-        let intake_receipts = Self::observe_recommendation_intake_receipts(db, ws)?;
+        let (intake_receipts, intake_assessments) =
+            Self::observe_and_assess_recommendation_intakes(db, ws)?;
         let state = DecisionEngineState::from_candidates(ws, context, candidates)
-            .with_intake_receipts(intake_receipts);
+            .with_intake_receipts(intake_receipts)
+            .with_intake_assessments(intake_assessments);
         debug_assert!(state
             .intake_receipts
             .iter()
@@ -259,23 +263,35 @@ impl DecisionEngineService {
             .intake_receipts
             .iter()
             .all(|r| r.decision_engine_object_id.is_none() && r.handoff_command.is_none()));
+        debug_assert!(state
+            .intake_assessments
+            .iter()
+            .all(|a| a.assert_observational_only().is_ok()));
+        debug_assert!(state
+            .intake_assessments
+            .iter()
+            .all(|a| !a.creates_decision_candidate && a.handoff_command.is_none()));
         Self::audit_generated(db, actor, &state)?;
         Self::audit_rank_changes(db, actor, &state, &previous_ranks)?;
         Ok(state)
     }
 
-    /// Read-only observation of accepted RE sealed packages — never mutates RE overlays.
-    fn observe_recommendation_intake_receipts(
+    /// Read-only observation + assessment of accepted RE sealed packages.
+    /// Never mutates Recommendation Engine overlays. Never creates candidates.
+    fn observe_and_assess_recommendation_intakes(
         db: &Arc<Mutex<Database>>,
         workspace_id: &str,
-    ) -> Result<Vec<DecisionEngineIntakeReceipt>> {
+    ) -> Result<(
+        Vec<DecisionEngineIntakeReceipt>,
+        Vec<DecisionEngineIntakeAssessment>,
+    )> {
         let guard = db
             .lock()
             .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
         let overlays =
             RecommendationLifecycleRepository::new(&guard).list_overlays(workspace_id)?;
         drop(guard);
-        let mut receipts = Vec::new();
+        let mut inputs = Vec::new();
         for overlay in overlays {
             let (Some(acceptance), Some(seal)) = (
                 overlay.decision_engine_acceptance.as_ref(),
@@ -283,19 +299,41 @@ impl DecisionEngineService {
             ) else {
                 continue;
             };
-            if let Some(receipt) = DecisionEngineIntakeReceipt::try_observe(acceptance, seal) {
-                debug_assert!(receipt.assert_observational_only().is_ok());
-                debug_assert!(!receipt.creates_decision_candidate);
-                debug_assert!(!receipt.ownership_transferred);
-                debug_assert_eq!(
-                    receipt.current_owner,
-                    DecisionEngineIntakeReceipt::OWNER_RECOMMENDATION
-                );
-                receipts.push(receipt);
-            }
+            let Some(receipt) = DecisionEngineIntakeReceipt::try_observe(acceptance, seal) else {
+                continue;
+            };
+            debug_assert!(receipt.assert_observational_only().is_ok());
+            let acceptance_active = acceptance.acceptance_state
+                == workspace_domain::RecommendationDecisionEngineAcceptance::STATE_ACCEPTED
+                && acceptance.revoked_at.is_none()
+                && !acceptance.ownership_transferred;
+            let handoff_active = overlay
+                .decision_handoff_request
+                .as_ref()
+                .map(|h| h.is_active_request())
+                .unwrap_or(false);
+            let prep_active = overlay
+                .decision_intake_adapter_preparation
+                .as_ref()
+                .map(|p| p.is_active_preparation())
+                .unwrap_or(false);
+            let receipt_current =
+                acceptance_active && handoff_active && prep_active && receipt.seal_aligned;
+            let lifecycle_superseded =
+                overlay.lifecycle_state == RecommendationLifecycleState::Superseded
+                    || overlay.resolution_type
+                        == Some(workspace_domain::RecommendationResolutionType::Superseded);
+            inputs.push(DecisionEngineIntakeAssessmentInput {
+                receipt,
+                acceptance_active,
+                lifecycle_superseded,
+                receipt_current,
+            });
         }
-        receipts.sort_by(|a, b| a.recommendation_id.cmp(&b.recommendation_id));
-        Ok(receipts)
+        inputs.sort_by(|a, b| a.receipt.recommendation_id.cmp(&b.receipt.recommendation_id));
+        let assessments = DecisionEngineIntakeAssessment::assess_batch(&inputs);
+        let receipts = inputs.into_iter().map(|i| i.receipt).collect();
+        Ok((receipts, assessments))
     }
 
     pub(crate) fn summary_projection(

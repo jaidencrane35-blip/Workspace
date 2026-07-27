@@ -114,6 +114,8 @@ mod decision_engine_tests;
 #[cfg(test)]
 mod decision_engine_intake_receipt_contract_tests;
 #[cfg(test)]
+mod decision_engine_intake_assessment_contract_tests;
+#[cfg(test)]
 mod task_graph_tests;
 #[cfg(test)]
 mod workspace_environment_tests;

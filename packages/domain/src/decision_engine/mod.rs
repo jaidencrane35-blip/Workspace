@@ -178,6 +178,9 @@ pub struct DecisionEngineState {
     /// Observational receipts of accepted RE sealed packages — never candidates.
     #[serde(default)]
     pub intake_receipts: Vec<DecisionEngineIntakeReceipt>,
+    /// Observational assessments of intake receipts — never candidates.
+    #[serde(default)]
+    pub intake_assessments: Vec<DecisionEngineIntakeAssessment>,
     pub summary: String,
     pub authority_effect: String,
 }
@@ -214,6 +217,7 @@ impl DecisionEngineState {
             candidates,
             top_candidates,
             intake_receipts: Vec::new(),
+            intake_assessments: Vec::new(),
             summary,
             authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
         }
@@ -229,6 +233,22 @@ impl DecisionEngineState {
             observed
         );
         self.intake_receipts = receipts;
+        self
+    }
+
+    /// Attach DE-owned observational intake assessments without changing scoring or candidates.
+    pub fn with_intake_assessments(mut self, assessments: Vec<DecisionEngineIntakeAssessment>) -> Self {
+        let eligible = assessments
+            .iter()
+            .filter(|a| a.eligible_for_future_candidate)
+            .count();
+        self.summary = format!(
+            "{} Intake assessments: {} ({} eligible for future candidate).",
+            self.summary,
+            assessments.len(),
+            eligible
+        );
+        self.intake_assessments = assessments;
         self
     }
 
@@ -465,6 +485,260 @@ impl DecisionEngineIntakeReceipt {
             || self.handoff_command.is_some()
             || self.authority_effect != Self::AUTHORITY_EFFECT_NONE
             || self.current_owner != Self::OWNER_RECOMMENDATION
+        {
+            return Err(DecisionEngineError::CannotExecute);
+        }
+        Ok(())
+    }
+}
+
+/// Grounded inputs for recomputing an intake assessment (not persisted).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DecisionEngineIntakeAssessmentInput {
+    pub receipt: DecisionEngineIntakeReceipt,
+    /// Acceptance still `accepted` and not revoked.
+    pub acceptance_active: bool,
+    /// RE lifecycle resolution is superseded.
+    pub lifecycle_superseded: bool,
+    /// Handoff request + adapter preparation still active for this package.
+    pub receipt_current: bool,
+}
+
+/// DE-owned observational assessment of an intake receipt.
+///
+/// Evaluates suitability for *future* DecisionCandidate consideration only.
+/// Fully derivable from receipt + RE overlay facts — never persisted.
+/// Never creates candidates, goals, intents, planner handoffs, or transfers ownership.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DecisionEngineIntakeAssessment {
+    pub workspace_id: String,
+    pub recommendation_id: String,
+    pub sealed_intake_package_digest: String,
+    /// `blocked` | `superseded` | `duplicate` | `stale` | `valid` | `eligible_for_future_candidate`
+    pub assessment_state: String,
+    pub receipt_observed: bool,
+    pub receipt_current: bool,
+    pub seal_valid: bool,
+    pub acceptance_active: bool,
+    pub is_duplicate: bool,
+    pub is_superseded: bool,
+    pub is_stale: bool,
+    /// Informational only — never means create candidate.
+    pub eligible_for_future_candidate: bool,
+    pub evidence: Vec<String>,
+    pub creates_decision_candidate: bool,
+    pub creates_goal: bool,
+    pub creates_intent: bool,
+    pub adapter_invoked: bool,
+    pub planner_invoked: bool,
+    pub ownership_transferred: bool,
+    pub decision_engine_object_id: Option<String>,
+    pub handoff_command: Option<String>,
+    pub note: String,
+    pub authority_effect: String,
+}
+
+impl DecisionEngineIntakeAssessment {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+    pub const STATE_BLOCKED: &'static str = "blocked";
+    pub const STATE_SUPERSEDED: &'static str = "superseded";
+    pub const STATE_DUPLICATE: &'static str = "duplicate";
+    pub const STATE_STALE: &'static str = "stale";
+    pub const STATE_VALID: &'static str = "valid";
+    pub const STATE_ELIGIBLE: &'static str = "eligible_for_future_candidate";
+
+    /// Recompute assessments for a workspace batch (duplicate detection needs peers).
+    pub fn assess_batch(inputs: &[DecisionEngineIntakeAssessmentInput]) -> Vec<Self> {
+        use std::collections::HashMap;
+        let mut primary_by_digest: HashMap<&str, &str> = HashMap::new();
+        for input in inputs {
+            let digest = input.receipt.sealed_intake_package_digest.as_str();
+            let id = input.receipt.recommendation_id.as_str();
+            primary_by_digest
+                .entry(digest)
+                .and_modify(|primary| {
+                    if id < *primary {
+                        *primary = id;
+                    }
+                })
+                .or_insert(id);
+        }
+        let mut assessments: Vec<Self> = inputs
+            .iter()
+            .map(|input| {
+                let digest = input.receipt.sealed_intake_package_digest.as_str();
+                let is_duplicate = primary_by_digest
+                    .get(digest)
+                    .map(|primary| *primary != input.receipt.recommendation_id.as_str())
+                    .unwrap_or(false)
+                    && inputs
+                        .iter()
+                        .filter(|i| {
+                            i.receipt.sealed_intake_package_digest
+                                == input.receipt.sealed_intake_package_digest
+                        })
+                        .count()
+                        > 1;
+                Self::assess_one(input, is_duplicate)
+            })
+            .collect();
+        assessments.sort_by(|a, b| a.recommendation_id.cmp(&b.recommendation_id));
+        assessments
+    }
+
+    fn assess_one(input: &DecisionEngineIntakeAssessmentInput, is_duplicate: bool) -> Self {
+        let receipt = &input.receipt;
+        let receipt_observed = receipt.is_observed();
+        let seal_valid = receipt.seal_aligned
+            && receipt.receipt_state == DecisionEngineIntakeReceipt::STATE_OBSERVED;
+        let acceptance_active = input.acceptance_active
+            && receipt.acceptance_state
+                == crate::workspace_recommendation::RecommendationDecisionEngineAcceptance::STATE_ACCEPTED;
+        let is_superseded = input.lifecycle_superseded;
+        let is_stale = acceptance_active && !input.receipt_current && !is_superseded;
+        let mut evidence = Vec::new();
+        if receipt_observed {
+            evidence.push("receipt_observed".into());
+        } else {
+            evidence.push("receipt_not_observed".into());
+        }
+        if seal_valid {
+            evidence.push("seal_valid".into());
+        } else {
+            evidence.push("seal_invalid".into());
+        }
+        if acceptance_active {
+            evidence.push("acceptance_active".into());
+        } else {
+            evidence.push("acceptance_inactive".into());
+        }
+        if input.receipt_current {
+            evidence.push("receipt_current".into());
+        } else {
+            evidence.push("receipt_not_current".into());
+        }
+        if is_superseded {
+            evidence.push("lifecycle_superseded".into());
+        }
+        if is_duplicate {
+            evidence.push("duplicate_seal_digest".into());
+        }
+
+        let (assessment_state, eligible) = if !receipt_observed || !seal_valid {
+            (Self::STATE_BLOCKED, false)
+        } else if is_superseded {
+            (Self::STATE_SUPERSEDED, false)
+        } else if is_duplicate {
+            (Self::STATE_DUPLICATE, false)
+        } else if is_stale || !acceptance_active || !input.receipt_current {
+            (Self::STATE_STALE, false)
+        } else if receipt_observed && seal_valid && acceptance_active && input.receipt_current {
+            // Structurally valid and clear for future consideration — informational only.
+            (Self::STATE_ELIGIBLE, true)
+        } else {
+            (Self::STATE_VALID, false)
+        };
+        if eligible {
+            evidence.push("eligible_for_future_candidate".into());
+        }
+
+        Self {
+            workspace_id: receipt.workspace_id.clone(),
+            recommendation_id: receipt.recommendation_id.clone(),
+            sealed_intake_package_digest: receipt.sealed_intake_package_digest.clone(),
+            assessment_state: assessment_state.into(),
+            receipt_observed,
+            receipt_current: input.receipt_current,
+            seal_valid,
+            acceptance_active,
+            is_duplicate,
+            is_superseded,
+            is_stale,
+            eligible_for_future_candidate: eligible,
+            evidence,
+            creates_decision_candidate: false,
+            creates_goal: false,
+            creates_intent: false,
+            adapter_invoked: false,
+            planner_invoked: false,
+            ownership_transferred: false,
+            decision_engine_object_id: None,
+            handoff_command: None,
+            note: if eligible {
+                "Intake assessment: eligible for future DecisionCandidate consideration. \
+                 Eligibility is informational only — no candidate, goal, intent, planner \
+                 handoff, or ownership transfer was created."
+                    .into()
+            } else {
+                format!(
+                    "Intake assessment: {assessment_state}. No DecisionCandidate, goal, intent, \
+                     planner handoff, or ownership transfer was created."
+                )
+            },
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        }
+    }
+
+    pub fn may_create_decision_candidate(&self) -> bool {
+        false
+    }
+
+    pub fn may_create_goal(&self) -> bool {
+        false
+    }
+
+    pub fn may_create_intent(&self) -> bool {
+        false
+    }
+
+    pub fn may_invoke_planner(&self) -> bool {
+        false
+    }
+
+    pub fn may_invoke_gateway(&self) -> bool {
+        false
+    }
+
+    pub fn may_transfer_ownership(&self) -> bool {
+        false
+    }
+
+    pub fn attempt_create_decision_candidate(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_create_goal(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_create_intent(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_invoke_planner(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_transfer_ownership(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_execute() -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn assert_observational_only(&self) -> Result<(), DecisionEngineError> {
+        if self.creates_decision_candidate
+            || self.creates_goal
+            || self.creates_intent
+            || self.adapter_invoked
+            || self.planner_invoked
+            || self.ownership_transferred
+            || self.decision_engine_object_id.is_some()
+            || self.handoff_command.is_some()
+            || self.authority_effect != Self::AUTHORITY_EFFECT_NONE
+            || (self.eligible_for_future_candidate
+                && self.assessment_state != Self::STATE_ELIGIBLE)
         {
             return Err(DecisionEngineError::CannotExecute);
         }

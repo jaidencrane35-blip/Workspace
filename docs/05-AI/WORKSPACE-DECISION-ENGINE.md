@@ -83,8 +83,14 @@ Observation is DE-owned and informational only:
 - Does **not** mutate Recommendation Engine overlays
 - Seal mismatch → `seal_mismatch` receipt; still no candidate
 
+`DecisionEngineIntakeAssessment` then evaluates each receipt (projected, not
+persisted): blocked / superseded / duplicate / stale /
+`eligible_for_future_candidate`. Eligibility is informational only — never
+creates a candidate. See
+[WORKSPACE-DECISION-ENGINE-INTAKE-ASSESSMENT.md](./WORKSPACE-DECISION-ENGINE-INTAKE-ASSESSMENT.md).
+
 Namespaces remain separate (`recommendation:*` vs `engine_decision:*`).
-Existing Attention/graph/goal synthesis is unchanged.
+Existing Attention/graph/goal synthesis and scoring are unchanged.
 
 ---
 
