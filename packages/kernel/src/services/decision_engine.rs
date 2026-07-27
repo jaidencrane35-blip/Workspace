@@ -15,6 +15,7 @@ use workspace_domain::{
     ActorContext, AttentionItem, DecisionCandidate, DecisionCandidateEvaluationOriginContract,
     DecisionCandidateEvaluationOriginInput, DecisionCandidateEvaluationResolution,
     DecisionCandidateEvaluationResolutionInput, DecisionCandidateLifecycleIntegration,
+    DecisionCandidateProgressionRequest, DecisionCandidateProgressionRequestInput,
     DecisionCandidateRanking, DecisionCandidateRankingMemberInput, DecisionCandidateScore,
     DecisionCandidateScoreInput, DecisionCandidateSelection, DecisionCandidateSelectionInput,
     DecisionContext, DecisionEngineActionResult, DecisionEngineCandidateCreation,
@@ -346,6 +347,14 @@ impl DecisionEngineService {
             &candidate_ranking,
             &persisted_selections,
         );
+        let persisted_progression = Self::load_progression_requests(db, ws)?;
+        let progression_requests = Self::project_progression_requests(
+            &candidates,
+            &lifecycle_integrations,
+            &intake_candidates,
+            &candidate_selections,
+            &persisted_progression,
+        );
         let state = DecisionEngineState::from_candidates(ws, context, candidates)
             .with_intake_receipts(intake_receipts)
             .with_intake_assessments(intake_assessments)
@@ -361,7 +370,8 @@ impl DecisionEngineService {
             .with_evaluation_resolutions(evaluation_resolutions)
             .with_candidate_scores(candidate_scores)
             .with_candidate_ranking(candidate_ranking)
-            .with_candidate_selections(candidate_selections);
+            .with_candidate_selections(candidate_selections)
+            .with_progression_requests(progression_requests);
         debug_assert!(state
             .intake_receipts
             .iter()
@@ -483,6 +493,16 @@ impl DecisionEngineService {
                 && !s.mutates_candidate_outcome
                 && s.handoff_command.is_none()
                 && !s.mutates_recommendation_engine
+        }));
+        debug_assert!(state
+            .progression_requests
+            .iter()
+            .all(|r| r.assert_request_only().is_ok()));
+        debug_assert!(state.progression_requests.iter().all(|r| {
+            !r.planner_invoked
+                && !r.mutates_candidate_outcome
+                && r.handoff_command.is_none()
+                && !r.mutates_recommendation_engine
         }));
         Self::audit_generated(db, actor, &state)?;
         Self::audit_rank_changes(db, actor, &state, &previous_ranks)?;
@@ -1155,6 +1175,85 @@ impl DecisionEngineService {
         Ok((selection, unchanged))
     }
 
+    /// Issue a DE-owned progression request after selection — never planner/execution.
+    pub(crate) fn request_decision_candidate_progression(
+        db: &Arc<Mutex<Database>>,
+        actor: &ActorContext,
+        orchestrated_plans: &Arc<Mutex<OrchestratedPlanStore>>,
+        assistant_workflows: &Arc<Mutex<AssistantWorkflowStore>>,
+        workspace_id: impl Into<String>,
+        candidate_id: impl Into<String>,
+        reason: impl Into<String>,
+    ) -> Result<(DecisionCandidateProgressionRequest, DecisionCandidate)> {
+        let workspace_id = workspace_id.into();
+        let candidate_id = candidate_id.into();
+        let reason = reason.into();
+        let now = Utc::now().to_rfc3339();
+        let state = Self::generate(
+            db,
+            actor,
+            orchestrated_plans,
+            assistant_workflows,
+            workspace_id.clone(),
+        )?;
+        let candidate = state
+            .candidates
+            .iter()
+            .find(|c| c.id.as_str() == candidate_id)
+            .cloned()
+            .ok_or_else(|| KernelError::from(DecisionEngineError::NotFound))?;
+        let integration = state
+            .lifecycle_integrations
+            .iter()
+            .find(|i| i.decision_candidate_id == candidate_id)
+            .cloned()
+            .ok_or_else(|| KernelError::from(DecisionEngineError::NotFound))?;
+        let selection = state
+            .candidate_selections
+            .iter()
+            .find(|s| s.decision_candidate_id == candidate_id)
+            .cloned()
+            .ok_or_else(|| KernelError::from(DecisionEngineError::NotFound))?;
+        let existing = state
+            .progression_requests
+            .iter()
+            .find(|r| {
+                r.decision_candidate_id == candidate_id && (r.is_requested() || r.is_cancelled())
+            })
+            .cloned();
+        let intake_withdrawn_or_invalidated = candidate
+            .intake_candidate_id
+            .as_deref()
+            .and_then(|intake_id| {
+                state
+                    .intake_candidates
+                    .iter()
+                    .find(|c| c.intake_candidate_id == intake_id)
+            })
+            .is_some_and(|intake| {
+                intake.lifecycle.is_withdrawn() || intake.lifecycle.is_invalidated()
+            });
+        let input = DecisionCandidateProgressionRequestInput {
+            candidate: candidate.clone(),
+            selection,
+            lifecycle_integration: integration,
+            intake_withdrawn_or_invalidated,
+            existing_request: existing,
+        };
+        let (request, unchanged) =
+            DecisionCandidateProgressionRequest::try_request(&input, reason, now)
+                .map_err(KernelError::from)?;
+        debug_assert!(request.assert_request_only().is_ok());
+        debug_assert_eq!(unchanged.score, candidate.score);
+        debug_assert_eq!(unchanged.outcome, candidate.outcome);
+        let guard = db
+            .lock()
+            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+        DecisionEngineRepository::new(&guard).upsert_progression_request(&request)?;
+        drop(guard);
+        Ok((request, unchanged))
+    }
+
     fn load_candidate_scores(
         db: &Arc<Mutex<Database>>,
         workspace_id: &str,
@@ -1285,6 +1384,68 @@ impl DecisionEngineService {
             })
             .collect();
         DecisionCandidateSelection::derive_batch(&inputs)
+    }
+
+    fn load_progression_requests(
+        db: &Arc<Mutex<Database>>,
+        workspace_id: &str,
+    ) -> Result<Vec<DecisionCandidateProgressionRequest>> {
+        let guard = db
+            .lock()
+            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+        let mut requests =
+            DecisionEngineRepository::new(&guard).list_progression_requests(workspace_id)?;
+        drop(guard);
+        requests.sort_by(|a, b| a.request_id.cmp(&b.request_id));
+        Ok(requests)
+    }
+
+    fn project_progression_requests(
+        candidates: &[DecisionCandidate],
+        integrations: &[DecisionCandidateLifecycleIntegration],
+        intake_candidates: &[DecisionEngineIntakeCandidate],
+        selections: &[DecisionCandidateSelection],
+        persisted: &[DecisionCandidateProgressionRequest],
+    ) -> Vec<DecisionCandidateProgressionRequest> {
+        let integration_by_id: HashMap<&str, &DecisionCandidateLifecycleIntegration> = integrations
+            .iter()
+            .map(|i| (i.decision_candidate_id.as_str(), i))
+            .collect();
+        let selection_by_id: HashMap<&str, &DecisionCandidateSelection> = selections
+            .iter()
+            .map(|s| (s.decision_candidate_id.as_str(), s))
+            .collect();
+        let intake_by_id: HashMap<&str, &DecisionEngineIntakeCandidate> = intake_candidates
+            .iter()
+            .map(|c| (c.intake_candidate_id.as_str(), c))
+            .collect();
+        let persisted_by_id: HashMap<&str, &DecisionCandidateProgressionRequest> = persisted
+            .iter()
+            .map(|r| (r.decision_candidate_id.as_str(), r))
+            .collect();
+        let inputs: Vec<DecisionCandidateProgressionRequestInput> = candidates
+            .iter()
+            .filter_map(|candidate| {
+                let id = candidate.id.as_str();
+                let integration = integration_by_id.get(id).copied()?;
+                let selection = selection_by_id.get(id).copied()?;
+                let intake_withdrawn_or_invalidated = candidate
+                    .intake_candidate_id
+                    .as_deref()
+                    .and_then(|intake_id| intake_by_id.get(intake_id).copied())
+                    .is_some_and(|intake| {
+                        intake.lifecycle.is_withdrawn() || intake.lifecycle.is_invalidated()
+                    });
+                Some(DecisionCandidateProgressionRequestInput {
+                    candidate: candidate.clone(),
+                    selection: selection.clone(),
+                    lifecycle_integration: integration.clone(),
+                    intake_withdrawn_or_invalidated,
+                    existing_request: persisted_by_id.get(id).copied().cloned(),
+                })
+            })
+            .collect();
+        DecisionCandidateProgressionRequest::derive_batch(&inputs)
     }
 
     /// Acknowledge origin evaluation contract for a DecisionCandidate.

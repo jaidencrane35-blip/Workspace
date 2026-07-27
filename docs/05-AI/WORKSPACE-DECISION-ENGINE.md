@@ -124,6 +124,9 @@ planner, Gateway, goals, or intents.
 still without selection, planner, Gateway, goals, or intents.
 `DecisionCandidateSelection` then records whether DE chooses to progress a ranked
 candidate — still without execution, planner handoff, Gateway, goals, or intents.
+`DecisionCandidateProgressionRequest` then records that DE wants the selected
+candidate considered for downstream progression — still without planner, Gateway,
+goals, or intents.
 See
 [WORKSPACE-DECISION-ENGINE-INTAKE-CANDIDATE.md](./WORKSPACE-DECISION-ENGINE-INTAKE-CANDIDATE.md),
 [WORKSPACE-DECISION-ENGINE-INTAKE-CANDIDATE-LIFECYCLE.md](./WORKSPACE-DECISION-ENGINE-INTAKE-CANDIDATE-LIFECYCLE.md),
@@ -137,8 +140,9 @@ See
 [WORKSPACE-DECISION-ENGINE-CANDIDATE-EVALUATION-RESOLUTION.md](./WORKSPACE-DECISION-ENGINE-CANDIDATE-EVALUATION-RESOLUTION.md),
 [WORKSPACE-DECISION-ENGINE-CANDIDATE-SCORE.md](./WORKSPACE-DECISION-ENGINE-CANDIDATE-SCORE.md),
 [WORKSPACE-DECISION-ENGINE-CANDIDATE-RANKING.md](./WORKSPACE-DECISION-ENGINE-CANDIDATE-RANKING.md),
+[WORKSPACE-DECISION-ENGINE-CANDIDATE-SELECTION.md](./WORKSPACE-DECISION-ENGINE-CANDIDATE-SELECTION.md),
 and
-[WORKSPACE-DECISION-ENGINE-CANDIDATE-SELECTION.md](./WORKSPACE-DECISION-ENGINE-CANDIDATE-SELECTION.md).
+[WORKSPACE-DECISION-ENGINE-CANDIDATE-PROGRESSION-REQUEST.md](./WORKSPACE-DECISION-ENGINE-CANDIDATE-PROGRESSION-REQUEST.md).
 
 Namespaces remain separate
 (`recommendation:*` vs `engine_decision:*` vs `engine_decision_intake:*`).

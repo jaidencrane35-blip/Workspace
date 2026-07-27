@@ -2,10 +2,10 @@ use crate::connection::Database;
 use crate::error::Result;
 use workspace_domain::{
     DecisionCandidateEvaluationOriginContract, DecisionCandidateEvaluationResolution,
-    DecisionCandidateScore, DecisionCandidateSelection, DecisionEngineCandidateCreation,
-    DecisionEngineIntakeCandidate, DecisionEngineIntakeCandidateLifecycle,
-    DecisionEngineIntakeDisposition, DecisionEngineIntakeEvaluation, DecisionEngineOverlay,
-    DecisionOutcome, DecisionScore,
+    DecisionCandidateProgressionRequest, DecisionCandidateScore, DecisionCandidateSelection,
+    DecisionEngineCandidateCreation, DecisionEngineIntakeCandidate,
+    DecisionEngineIntakeCandidateLifecycle, DecisionEngineIntakeDisposition,
+    DecisionEngineIntakeEvaluation, DecisionEngineOverlay, DecisionOutcome, DecisionScore,
 };
 
 /// Persistence for Decision Engine lifecycle overlay and intake candidates.
@@ -605,6 +605,78 @@ impl<'a> DecisionEngineRepository<'a> {
         rows.collect::<std::result::Result<Vec<_>, _>>()
             .map_err(Into::into)
     }
+
+    /// Persist requested/cancelled progression requests only.
+    pub fn upsert_progression_request(
+        &self,
+        request: &DecisionCandidateProgressionRequest,
+    ) -> Result<()> {
+        if !request.is_requested() && !request.is_cancelled() {
+            return Ok(());
+        }
+        let requested_at = request.requested_at.as_deref().unwrap_or_default();
+        self.db.connection().execute(
+            "INSERT INTO decision_candidate_progression_request (
+                workspace_id, request_id, decision_candidate_id, origin, request_state,
+                selection_id, selection_state, ranking_id, ranking_position, score_id,
+                recommendation_reference, package_seal_digest, intake_candidate_id,
+                creation_request_id, request_reason, requested_at, updated_at
+             ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?16)
+             ON CONFLICT(workspace_id, request_id) DO UPDATE SET
+                decision_candidate_id = excluded.decision_candidate_id,
+                origin = excluded.origin,
+                request_state = excluded.request_state,
+                selection_id = excluded.selection_id,
+                selection_state = excluded.selection_state,
+                ranking_id = excluded.ranking_id,
+                ranking_position = excluded.ranking_position,
+                score_id = excluded.score_id,
+                recommendation_reference = excluded.recommendation_reference,
+                package_seal_digest = excluded.package_seal_digest,
+                intake_candidate_id = excluded.intake_candidate_id,
+                creation_request_id = excluded.creation_request_id,
+                request_reason = excluded.request_reason,
+                requested_at = excluded.requested_at,
+                updated_at = excluded.updated_at",
+            (
+                &request.workspace_id,
+                &request.request_id,
+                &request.decision_candidate_id,
+                &request.origin,
+                &request.request_state,
+                &request.selection_id,
+                &request.selection_state,
+                &request.ranking_id,
+                request.ranking_position,
+                &request.score_id,
+                &request.recommendation_reference,
+                &request.package_seal_digest,
+                &request.intake_candidate_id,
+                &request.creation_request_id,
+                &request.request_reason,
+                requested_at,
+            ),
+        )?;
+        Ok(())
+    }
+
+    pub fn list_progression_requests(
+        &self,
+        workspace_id: &str,
+    ) -> Result<Vec<DecisionCandidateProgressionRequest>> {
+        let mut stmt = self.db.connection().prepare(
+            "SELECT workspace_id, request_id, decision_candidate_id, origin, request_state,
+                    selection_id, selection_state, ranking_id, ranking_position, score_id,
+                    recommendation_reference, package_seal_digest, intake_candidate_id,
+                    creation_request_id, request_reason, requested_at
+             FROM decision_candidate_progression_request
+             WHERE workspace_id = ?1
+             ORDER BY request_id ASC",
+        )?;
+        let rows = stmt.query_map([workspace_id], map_progression_request)?;
+        rows.collect::<std::result::Result<Vec<_>, _>>()
+            .map_err(Into::into)
+    }
 }
 
 fn map_overlay(row: &rusqlite::Row<'_>) -> rusqlite::Result<DecisionEngineOverlay> {
@@ -918,5 +990,48 @@ fn map_candidate_selection(
              Persisted progression decision only — no execution or planner."
         ),
         authority_effect: DecisionCandidateSelection::AUTHORITY_EFFECT_NONE.into(),
+    })
+}
+
+fn map_progression_request(
+    row: &rusqlite::Row<'_>,
+) -> rusqlite::Result<DecisionCandidateProgressionRequest> {
+    let origin: String = row.get(3)?;
+    let request_state: String = row.get(4)?;
+    let ranking_position: Option<i64> = row.get(8)?;
+    Ok(DecisionCandidateProgressionRequest {
+        workspace_id: row.get(0)?,
+        request_id: row.get(1)?,
+        decision_candidate_id: row.get(2)?,
+        origin: origin.clone(),
+        request_state: request_state.clone(),
+        selection_id: row.get(5)?,
+        selection_state: row.get(6)?,
+        ranking_id: row.get(7)?,
+        ranking_position: ranking_position.map(|p| p as u32),
+        score_id: row.get(9)?,
+        selection_valid: true,
+        provenance_valid: true,
+        lifecycle_valid: true,
+        candidate_active: true,
+        recommendation_reference: row.get(10)?,
+        package_seal_digest: row.get(11)?,
+        intake_candidate_id: row.get(12)?,
+        creation_request_id: row.get(13)?,
+        request_reason: row.get(14)?,
+        requested_at: Some(row.get(15)?),
+        creates_goal: false,
+        creates_intent: false,
+        adapter_invoked: false,
+        planner_invoked: false,
+        ownership_transferred: false,
+        mutates_recommendation_engine: false,
+        mutates_candidate_outcome: false,
+        handoff_command: None,
+        note: format!(
+            "Decision Engine progression request ({request_state}; origin={origin}). \
+             Persisted downstream consideration request only — no planner or execution."
+        ),
+        authority_effect: DecisionCandidateProgressionRequest::AUTHORITY_EFFECT_NONE.into(),
     })
 }

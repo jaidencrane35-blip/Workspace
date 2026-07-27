@@ -279,6 +279,9 @@ pub struct DecisionEngineState {
     /// DE-owned selection decisions after ranking — never execution/planner.
     #[serde(default)]
     pub candidate_selections: Vec<DecisionCandidateSelection>,
+    /// DE-owned progression requests after selection — never planner/execution.
+    #[serde(default)]
+    pub progression_requests: Vec<DecisionCandidateProgressionRequest>,
     pub summary: String,
     pub authority_effect: String,
 }
@@ -329,6 +332,7 @@ impl DecisionEngineState {
             candidate_scores: Vec::new(),
             candidate_ranking: None,
             candidate_selections: Vec::new(),
+            progression_requests: Vec::new(),
             summary,
             authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
         }
@@ -550,6 +554,22 @@ impl DecisionEngineState {
             selected
         );
         self.candidate_selections = selections;
+        self
+    }
+
+    /// Attach DE-owned progression requests without planner handoff or execution.
+    pub fn with_progression_requests(
+        mut self,
+        requests: Vec<DecisionCandidateProgressionRequest>,
+    ) -> Self {
+        let requested = requests.iter().filter(|r| r.is_requested()).count();
+        self.summary = format!(
+            "{} Progression requests: {} ({} requested).",
+            self.summary,
+            requests.len(),
+            requested
+        );
+        self.progression_requests = requests;
         self
     }
 
@@ -4487,6 +4507,304 @@ impl DecisionCandidateSelection {
             || self.authority_effect != Self::AUTHORITY_EFFECT_NONE
             || !self.selection_id.starts_with(Self::ID_PREFIX)
             || ((self.is_selected() || self.is_rejected()) && self.selected_at.is_none())
+        {
+            return Err(DecisionEngineError::CannotExecute);
+        }
+        Ok(())
+    }
+}
+
+/// Input for projecting or applying a DE-owned progression request after selection.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DecisionCandidateProgressionRequestInput {
+    pub candidate: DecisionCandidate,
+    pub selection: DecisionCandidateSelection,
+    pub lifecycle_integration: DecisionCandidateLifecycleIntegration,
+    pub intake_withdrawn_or_invalidated: bool,
+    pub existing_request: Option<DecisionCandidateProgressionRequest>,
+}
+
+/// DE-owned non-executing request that a selected candidate be considered for
+/// downstream progression.
+///
+/// Distinct from planner handoff / Command Pipeline / Gateway. Never creates
+/// goals, intents, or mutates Recommendation Engine.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DecisionCandidateProgressionRequest {
+    pub request_id: String,
+    pub workspace_id: String,
+    pub decision_candidate_id: String,
+    /// `native` | `recommendation_intake`
+    pub origin: String,
+    /// `pending` | `requested` | `cancelled` | `blocked`
+    pub request_state: String,
+    pub selection_id: String,
+    pub selection_state: String,
+    pub ranking_id: Option<String>,
+    pub ranking_position: Option<u32>,
+    pub score_id: Option<String>,
+    pub selection_valid: bool,
+    pub provenance_valid: bool,
+    pub lifecycle_valid: bool,
+    pub candidate_active: bool,
+    pub intake_candidate_id: Option<String>,
+    pub creation_request_id: Option<String>,
+    pub package_seal_digest: Option<String>,
+    pub recommendation_reference: Option<String>,
+    pub requested_at: Option<String>,
+    pub request_reason: Option<String>,
+    pub creates_goal: bool,
+    pub creates_intent: bool,
+    pub adapter_invoked: bool,
+    pub planner_invoked: bool,
+    pub ownership_transferred: bool,
+    pub mutates_recommendation_engine: bool,
+    pub mutates_candidate_outcome: bool,
+    pub handoff_command: Option<String>,
+    pub note: String,
+    pub authority_effect: String,
+}
+
+impl DecisionCandidateProgressionRequest {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+    pub const STATE_PENDING: &'static str = "pending";
+    pub const STATE_REQUESTED: &'static str = "requested";
+    pub const STATE_CANCELLED: &'static str = "cancelled";
+    pub const STATE_BLOCKED: &'static str = "blocked";
+    pub const ID_PREFIX: &'static str = "engine_decision_progression_request:";
+
+    pub fn synthetic_id(decision_candidate_id: &str) -> String {
+        format!("{}{decision_candidate_id}", Self::ID_PREFIX)
+    }
+
+    pub fn is_pending(&self) -> bool {
+        self.request_state == Self::STATE_PENDING
+    }
+
+    pub fn is_requested(&self) -> bool {
+        self.request_state == Self::STATE_REQUESTED
+    }
+
+    pub fn is_cancelled(&self) -> bool {
+        self.request_state == Self::STATE_CANCELLED
+    }
+
+    pub fn is_blocked(&self) -> bool {
+        self.request_state == Self::STATE_BLOCKED
+    }
+
+    pub fn derive_batch(inputs: &[DecisionCandidateProgressionRequestInput]) -> Vec<Self> {
+        let mut out: Vec<Self> = inputs.iter().map(Self::derive).collect();
+        out.sort_by(|a, b| a.decision_candidate_id.cmp(&b.decision_candidate_id));
+        out
+    }
+
+    pub fn derive(input: &DecisionCandidateProgressionRequestInput) -> Self {
+        if let Some(existing) = &input.existing_request {
+            if existing.is_requested() || existing.is_cancelled() {
+                return existing.clone();
+            }
+        }
+
+        let candidate = &input.candidate;
+        let selection = &input.selection;
+        let origin = DecisionCandidateLifecycleIntegration::classify_origin(candidate);
+        let provenance_valid =
+            DecisionCandidateLifecycleIntegration::provenance_valid_for_origin(origin, candidate);
+        let lifecycle_valid = input.lifecycle_integration.is_integrated()
+            && input.lifecycle_integration.decision_candidate_id == candidate.id.as_str();
+        let candidate_active = matches!(
+            candidate.outcome,
+            DecisionOutcome::Open | DecisionOutcome::Postponed
+        ) && !input.intake_withdrawn_or_invalidated;
+        let selection_valid = selection.is_selected()
+            && selection.decision_candidate_id == candidate.id.as_str()
+            && !selection.is_withdrawn();
+
+        let request_state = if !selection_valid
+            || selection.is_withdrawn()
+            || input.intake_withdrawn_or_invalidated
+            || !provenance_valid
+            || !lifecycle_valid
+            || !candidate_active
+            || !candidate.id.as_str().starts_with("engine_decision:")
+        {
+            Self::STATE_BLOCKED
+        } else {
+            Self::STATE_PENDING
+        };
+
+        Self {
+            request_id: Self::synthetic_id(candidate.id.as_str()),
+            workspace_id: candidate.workspace_id.as_str().to_string(),
+            decision_candidate_id: candidate.id.as_str().to_string(),
+            origin: origin.into(),
+            request_state: request_state.into(),
+            selection_id: selection.selection_id.clone(),
+            selection_state: selection.selection_state.clone(),
+            ranking_id: selection.ranking_id.clone(),
+            ranking_position: selection.ranking_position,
+            score_id: selection.score_id.clone(),
+            selection_valid,
+            provenance_valid,
+            lifecycle_valid,
+            candidate_active,
+            intake_candidate_id: candidate.intake_candidate_id.clone(),
+            creation_request_id: candidate.creation_request_id.clone(),
+            package_seal_digest: candidate.package_seal_digest.clone(),
+            recommendation_reference: candidate.recommendation_id.clone(),
+            requested_at: None,
+            request_reason: None,
+            creates_goal: false,
+            creates_intent: false,
+            adapter_invoked: false,
+            planner_invoked: false,
+            ownership_transferred: false,
+            mutates_recommendation_engine: false,
+            mutates_candidate_outcome: false,
+            handoff_command: None,
+            note: format!(
+                "Decision Engine progression request ({request_state}; origin={origin}). \
+                 Downstream consideration request only — not planner, Gateway, goals, intents, \
+                 execution, or Recommendation Engine mutation."
+            ),
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        }
+    }
+
+    /// Issue a progression request for a pending selected candidate.
+    /// Never invokes planner, Gateway, or mutates candidate/RE.
+    pub fn try_request(
+        input: &DecisionCandidateProgressionRequestInput,
+        reason: impl Into<String>,
+        requested_at: impl Into<String>,
+    ) -> Result<(Self, DecisionCandidate), DecisionEngineError> {
+        let projected = Self::derive(input);
+        if projected.is_blocked() {
+            let from = if !projected.selection_valid {
+                "not_selected"
+            } else if !projected.provenance_valid {
+                "invalid_provenance"
+            } else if input.intake_withdrawn_or_invalidated || input.selection.is_withdrawn() {
+                "withdrawn"
+            } else {
+                "blocked"
+            };
+            return Err(DecisionEngineError::InvalidTransition {
+                from: from.into(),
+                to: "request".into(),
+            });
+        }
+        if !projected.is_pending() {
+            return Err(DecisionEngineError::InvalidTransition {
+                from: projected.request_state,
+                to: "request".into(),
+            });
+        }
+        if input
+            .existing_request
+            .as_ref()
+            .is_some_and(|r| r.is_requested() || r.is_cancelled())
+        {
+            return Err(DecisionEngineError::InvalidTransition {
+                from: projected.request_state,
+                to: "already_decided".into(),
+            });
+        }
+        if !input.selection.is_selected() {
+            return Err(DecisionEngineError::InvalidTransition {
+                from: "not_selected".into(),
+                to: "request".into(),
+            });
+        }
+        if !projected.provenance_valid {
+            return Err(DecisionEngineError::InvalidTransition {
+                from: "invalid_provenance".into(),
+                to: "request".into(),
+            });
+        }
+        if input.intake_withdrawn_or_invalidated || input.selection.is_withdrawn() {
+            return Err(DecisionEngineError::InvalidTransition {
+                from: "withdrawn".into(),
+                to: "request".into(),
+            });
+        }
+
+        let requested_at = requested_at.into();
+        let reason = reason.into();
+        let before = input.candidate.clone();
+        let mut requested = projected;
+        requested.request_state = Self::STATE_REQUESTED.into();
+        requested.requested_at = Some(requested_at);
+        requested.request_reason = Some(reason);
+        requested.note = format!(
+            "Decision Engine progression request (requested; origin={}). \
+             Downstream consideration request only — not planner, Gateway, goals, intents, \
+             execution, or Recommendation Engine mutation.",
+            requested.origin
+        );
+
+        let after = before.clone();
+        DecisionCandidateLifecycleIntegration::assert_provenance_retained(&before, &after)?;
+        if after.score != before.score || after.outcome != before.outcome {
+            return Err(DecisionEngineError::CannotExecute);
+        }
+        requested.assert_request_only()?;
+        Ok((requested, after))
+    }
+
+    pub fn may_execute(&self) -> bool {
+        false
+    }
+
+    pub fn may_invoke_planner(&self) -> bool {
+        false
+    }
+
+    pub fn may_invoke_gateway(&self) -> bool {
+        false
+    }
+
+    pub fn may_create_goal(&self) -> bool {
+        false
+    }
+
+    pub fn may_create_intent(&self) -> bool {
+        false
+    }
+
+    pub fn attempt_execute() -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_invoke_planner(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_invoke_gateway(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_create_goal(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_create_intent(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn assert_request_only(&self) -> Result<(), DecisionEngineError> {
+        if self.creates_goal
+            || self.creates_intent
+            || self.adapter_invoked
+            || self.planner_invoked
+            || self.ownership_transferred
+            || self.mutates_recommendation_engine
+            || self.mutates_candidate_outcome
+            || self.handoff_command.is_some()
+            || self.authority_effect != Self::AUTHORITY_EFFECT_NONE
+            || !self.request_id.starts_with(Self::ID_PREFIX)
+            || (self.is_requested() && self.requested_at.is_none())
         {
             return Err(DecisionEngineError::CannotExecute);
         }
