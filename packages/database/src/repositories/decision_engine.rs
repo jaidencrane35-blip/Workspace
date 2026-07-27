@@ -1,10 +1,10 @@
 use crate::connection::Database;
 use crate::error::Result;
 use workspace_domain::{
-    DecisionCandidateEvaluationOriginContract, DecisionEngineCandidateCreation,
-    DecisionEngineIntakeCandidate, DecisionEngineIntakeCandidateLifecycle,
-    DecisionEngineIntakeDisposition, DecisionEngineIntakeEvaluation, DecisionEngineOverlay,
-    DecisionOutcome,
+    DecisionCandidateEvaluationOriginContract, DecisionCandidateEvaluationResolution,
+    DecisionEngineCandidateCreation, DecisionEngineIntakeCandidate,
+    DecisionEngineIntakeCandidateLifecycle, DecisionEngineIntakeDisposition,
+    DecisionEngineIntakeEvaluation, DecisionEngineOverlay, DecisionOutcome,
 };
 
 /// Persistence for Decision Engine lifecycle overlay and intake candidates.
@@ -408,6 +408,66 @@ impl<'a> DecisionEngineRepository<'a> {
         rows.collect::<std::result::Result<Vec<_>, _>>()
             .map_err(Into::into)
     }
+
+    /// Persist accepted/rejected scoring-path resolutions only.
+    pub fn upsert_evaluation_resolution(
+        &self,
+        resolution: &DecisionCandidateEvaluationResolution,
+    ) -> Result<()> {
+        if !resolution.is_accepted_for_scoring() && !resolution.is_rejected_for_scoring() {
+            return Ok(());
+        }
+        let resolved_at = resolution.resolved_at.as_deref().unwrap_or_default();
+        self.db.connection().execute(
+            "INSERT INTO decision_candidate_evaluation_resolution (
+                workspace_id, resolution_id, decision_candidate_id, origin, resolution_state,
+                recommendation_reference, package_seal_digest, intake_candidate_id,
+                creation_request_id, resolution_reason, resolved_at, updated_at
+             ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?11)
+             ON CONFLICT(workspace_id, resolution_id) DO UPDATE SET
+                decision_candidate_id = excluded.decision_candidate_id,
+                origin = excluded.origin,
+                resolution_state = excluded.resolution_state,
+                recommendation_reference = excluded.recommendation_reference,
+                package_seal_digest = excluded.package_seal_digest,
+                intake_candidate_id = excluded.intake_candidate_id,
+                creation_request_id = excluded.creation_request_id,
+                resolution_reason = excluded.resolution_reason,
+                resolved_at = excluded.resolved_at,
+                updated_at = excluded.updated_at",
+            (
+                &resolution.workspace_id,
+                &resolution.resolution_id,
+                &resolution.decision_candidate_id,
+                &resolution.origin,
+                &resolution.resolution_state,
+                &resolution.recommendation_reference,
+                &resolution.package_seal_digest,
+                &resolution.intake_candidate_id,
+                &resolution.creation_request_id,
+                &resolution.resolution_reason,
+                resolved_at,
+            ),
+        )?;
+        Ok(())
+    }
+
+    pub fn list_evaluation_resolutions(
+        &self,
+        workspace_id: &str,
+    ) -> Result<Vec<DecisionCandidateEvaluationResolution>> {
+        let mut stmt = self.db.connection().prepare(
+            "SELECT workspace_id, resolution_id, decision_candidate_id, origin, resolution_state,
+                    recommendation_reference, package_seal_digest, intake_candidate_id,
+                    creation_request_id, resolution_reason, resolved_at
+             FROM decision_candidate_evaluation_resolution
+             WHERE workspace_id = ?1
+             ORDER BY resolution_id ASC",
+        )?;
+        let rows = stmt.query_map([workspace_id], map_evaluation_resolution)?;
+        rows.collect::<std::result::Result<Vec<_>, _>>()
+            .map_err(Into::into)
+    }
 }
 
 fn map_overlay(row: &rusqlite::Row<'_>) -> rusqlite::Result<DecisionEngineOverlay> {
@@ -595,5 +655,44 @@ fn map_evaluation_origin_contract(
              Persisted acknowledgment only — no scoring or ranking."
         ),
         authority_effect: DecisionCandidateEvaluationOriginContract::AUTHORITY_EFFECT_NONE.into(),
+    })
+}
+
+fn map_evaluation_resolution(
+    row: &rusqlite::Row<'_>,
+) -> rusqlite::Result<DecisionCandidateEvaluationResolution> {
+    let origin: String = row.get(3)?;
+    let resolution_state: String = row.get(4)?;
+    Ok(DecisionCandidateEvaluationResolution {
+        workspace_id: row.get(0)?,
+        resolution_id: row.get(1)?,
+        decision_candidate_id: row.get(2)?,
+        origin: origin.clone(),
+        resolution_state: resolution_state.clone(),
+        evaluation_complete: true,
+        lifecycle_valid: true,
+        provenance_valid: true,
+        candidate_active: true,
+        recommendation_reference: row.get(5)?,
+        package_seal_digest: row.get(6)?,
+        intake_candidate_id: row.get(7)?,
+        creation_request_id: row.get(8)?,
+        resolution_reason: row.get(9)?,
+        resolved_at: Some(row.get(10)?),
+        scoring_applied: false,
+        ranking_applied: false,
+        creates_decision_score: false,
+        creates_goal: false,
+        creates_intent: false,
+        adapter_invoked: false,
+        planner_invoked: false,
+        ownership_transferred: false,
+        mutates_recommendation_engine: false,
+        handoff_command: None,
+        note: format!(
+            "Decision Engine evaluation resolution ({resolution_state}; origin={origin}). \
+             Persisted scoring-path admission only — no DecisionScore or ranking."
+        ),
+        authority_effect: DecisionCandidateEvaluationResolution::AUTHORITY_EFFECT_NONE.into(),
     })
 }

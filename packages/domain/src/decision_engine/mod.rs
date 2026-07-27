@@ -267,6 +267,9 @@ pub struct DecisionEngineState {
     /// DE-owned evaluation-origin contracts — origin rules only, never scoring.
     #[serde(default)]
     pub evaluation_origin_contracts: Vec<DecisionCandidateEvaluationOriginContract>,
+    /// DE-owned evaluation resolutions — scoring-path admission only, never scores.
+    #[serde(default)]
+    pub evaluation_resolutions: Vec<DecisionCandidateEvaluationResolution>,
     pub summary: String,
     pub authority_effect: String,
 }
@@ -313,6 +316,7 @@ impl DecisionEngineState {
             candidate_creations: Vec::new(),
             lifecycle_integrations: Vec::new(),
             evaluation_origin_contracts: Vec::new(),
+            evaluation_resolutions: Vec::new(),
             summary,
             authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
         }
@@ -486,6 +490,22 @@ impl DecisionEngineState {
             evaluated
         );
         self.evaluation_origin_contracts = contracts;
+        self
+    }
+
+    /// Attach DE-owned evaluation resolutions without creating scores or ranks.
+    pub fn with_evaluation_resolutions(
+        mut self,
+        resolutions: Vec<DecisionCandidateEvaluationResolution>,
+    ) -> Self {
+        let accepted = resolutions.iter().filter(|r| r.is_accepted_for_scoring()).count();
+        self.summary = format!(
+            "{} Evaluation resolutions: {} ({} accepted_for_scoring).",
+            self.summary,
+            resolutions.len(),
+            accepted
+        );
+        self.evaluation_resolutions = resolutions;
         self
     }
 
@@ -3297,6 +3317,308 @@ impl DecisionCandidateEvaluationOriginContract {
             || self.authority_effect != Self::AUTHORITY_EFFECT_NONE
             || !self.evaluation_id.starts_with(Self::ID_PREFIX)
             || (self.is_evaluated() && self.evaluated_at.is_none())
+        {
+            return Err(DecisionEngineError::CannotExecute);
+        }
+        Ok(())
+    }
+}
+
+/// Input for projecting or applying evaluation resolution toward scoring admission.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DecisionCandidateEvaluationResolutionInput {
+    pub candidate: DecisionCandidate,
+    pub lifecycle_integration: DecisionCandidateLifecycleIntegration,
+    pub evaluation_origin: DecisionCandidateEvaluationOriginContract,
+    /// When recommendation_intake, optional intake lifecycle for withdrawn/invalidated checks.
+    pub intake_withdrawn_or_invalidated: bool,
+    /// Persisted accepted/rejected resolution, when present.
+    pub existing_resolution: Option<DecisionCandidateEvaluationResolution>,
+}
+
+/// DE-owned resolution of evaluation toward scoring-path admission.
+///
+/// Mirrors intake disposition after evaluation: decides whether a candidate may
+/// enter scoring — without creating DecisionScore, ranking, or planner handoff.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DecisionCandidateEvaluationResolution {
+    pub resolution_id: String,
+    pub workspace_id: String,
+    pub decision_candidate_id: String,
+    /// `native` | `recommendation_intake`
+    pub origin: String,
+    /// `awaiting_resolution` | `accepted_for_scoring` | `rejected_for_scoring` | `blocked`
+    pub resolution_state: String,
+    pub evaluation_complete: bool,
+    pub lifecycle_valid: bool,
+    pub provenance_valid: bool,
+    pub candidate_active: bool,
+    pub intake_candidate_id: Option<String>,
+    pub creation_request_id: Option<String>,
+    pub package_seal_digest: Option<String>,
+    pub recommendation_reference: Option<String>,
+    pub resolved_at: Option<String>,
+    pub resolution_reason: Option<String>,
+    pub scoring_applied: bool,
+    pub ranking_applied: bool,
+    pub creates_decision_score: bool,
+    pub creates_goal: bool,
+    pub creates_intent: bool,
+    pub adapter_invoked: bool,
+    pub planner_invoked: bool,
+    pub ownership_transferred: bool,
+    pub mutates_recommendation_engine: bool,
+    pub handoff_command: Option<String>,
+    pub note: String,
+    pub authority_effect: String,
+}
+
+impl DecisionCandidateEvaluationResolution {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+    pub const STATE_AWAITING: &'static str = "awaiting_resolution";
+    pub const STATE_ACCEPTED: &'static str = "accepted_for_scoring";
+    pub const STATE_REJECTED: &'static str = "rejected_for_scoring";
+    pub const STATE_BLOCKED: &'static str = "blocked";
+    pub const ID_PREFIX: &'static str = "engine_decision_evaluation_resolution:";
+    pub const RESOLVE_ACCEPT: &'static str = "accept_for_scoring";
+    pub const RESOLVE_REJECT: &'static str = "reject_for_scoring";
+
+    pub fn synthetic_id(decision_candidate_id: &str) -> String {
+        format!("{}{decision_candidate_id}", Self::ID_PREFIX)
+    }
+
+    pub fn is_accepted_for_scoring(&self) -> bool {
+        self.resolution_state == Self::STATE_ACCEPTED
+    }
+
+    pub fn is_rejected_for_scoring(&self) -> bool {
+        self.resolution_state == Self::STATE_REJECTED
+    }
+
+    pub fn is_blocked(&self) -> bool {
+        self.resolution_state == Self::STATE_BLOCKED
+    }
+
+    pub fn is_awaiting(&self) -> bool {
+        self.resolution_state == Self::STATE_AWAITING
+    }
+
+    pub fn derive_batch(inputs: &[DecisionCandidateEvaluationResolutionInput]) -> Vec<Self> {
+        let mut out: Vec<Self> = inputs.iter().map(Self::derive).collect();
+        out.sort_by(|a, b| a.decision_candidate_id.cmp(&b.decision_candidate_id));
+        out
+    }
+
+    pub fn derive(input: &DecisionCandidateEvaluationResolutionInput) -> Self {
+        if let Some(existing) = &input.existing_resolution {
+            if existing.is_accepted_for_scoring() || existing.is_rejected_for_scoring() {
+                return existing.clone();
+            }
+        }
+
+        let candidate = &input.candidate;
+        let integration = &input.lifecycle_integration;
+        let evaluation = &input.evaluation_origin;
+        let origin = DecisionCandidateLifecycleIntegration::classify_origin(candidate);
+        let provenance_valid =
+            DecisionCandidateLifecycleIntegration::provenance_valid_for_origin(origin, candidate);
+        let lifecycle_valid = integration.is_integrated()
+            && integration.decision_candidate_id == candidate.id.as_str();
+        let evaluation_complete = evaluation.is_evaluated()
+            && evaluation.decision_candidate_id == candidate.id.as_str();
+        let candidate_active = matches!(
+            candidate.outcome,
+            DecisionOutcome::Open | DecisionOutcome::Postponed
+        ) && !input.intake_withdrawn_or_invalidated;
+
+        let resolution_state = if !provenance_valid
+            || !lifecycle_valid
+            || input.intake_withdrawn_or_invalidated
+            || !candidate.id.as_str().starts_with("engine_decision:")
+        {
+            Self::STATE_BLOCKED
+        } else if evaluation_complete && candidate_active && provenance_valid && lifecycle_valid {
+            Self::STATE_AWAITING
+        } else if !evaluation_complete {
+            // Not yet evaluated — not awaiting resolution of evaluation.
+            Self::STATE_BLOCKED
+        } else {
+            // Evaluated but inactive (dismissed/expired/selected) — blocked for scoring path.
+            Self::STATE_BLOCKED
+        };
+
+        Self {
+            resolution_id: Self::synthetic_id(candidate.id.as_str()),
+            workspace_id: candidate.workspace_id.as_str().to_string(),
+            decision_candidate_id: candidate.id.as_str().to_string(),
+            origin: origin.into(),
+            resolution_state: resolution_state.into(),
+            evaluation_complete,
+            lifecycle_valid,
+            provenance_valid,
+            candidate_active,
+            intake_candidate_id: candidate.intake_candidate_id.clone(),
+            creation_request_id: candidate.creation_request_id.clone(),
+            package_seal_digest: candidate.package_seal_digest.clone(),
+            recommendation_reference: candidate.recommendation_id.clone(),
+            resolved_at: None,
+            resolution_reason: None,
+            scoring_applied: false,
+            ranking_applied: false,
+            creates_decision_score: false,
+            creates_goal: false,
+            creates_intent: false,
+            adapter_invoked: false,
+            planner_invoked: false,
+            ownership_transferred: false,
+            mutates_recommendation_engine: false,
+            handoff_command: None,
+            note: format!(
+                "Decision Engine evaluation resolution ({resolution_state}; origin={origin}). \
+                 Scoring-path admission only — not DecisionScore, ranking, planner, Gateway, \
+                 goals, intents, or Recommendation Engine mutation."
+            ),
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        }
+    }
+
+    /// Resolve an awaiting evaluation toward scoring admission or rejection.
+    /// Never creates DecisionScore, ranks, plans, or mutates Recommendation Engine.
+    pub fn try_resolve(
+        input: &DecisionCandidateEvaluationResolutionInput,
+        resolution: impl Into<String>,
+        reason: impl Into<String>,
+        resolved_at: impl Into<String>,
+    ) -> Result<(Self, DecisionCandidate), DecisionEngineError> {
+        let projected = Self::derive(input);
+        if !projected.is_awaiting() {
+            return Err(DecisionEngineError::InvalidTransition {
+                from: projected.resolution_state,
+                to: "resolve".into(),
+            });
+        }
+        if input
+            .existing_resolution
+            .as_ref()
+            .is_some_and(|r| r.is_accepted_for_scoring() || r.is_rejected_for_scoring())
+        {
+            return Err(DecisionEngineError::InvalidTransition {
+                from: projected.resolution_state,
+                to: "already_resolved".into(),
+            });
+        }
+
+        let resolution = resolution.into();
+        let next_state = match resolution.as_str() {
+            Self::RESOLVE_ACCEPT | Self::STATE_ACCEPTED => Self::STATE_ACCEPTED,
+            Self::RESOLVE_REJECT | Self::STATE_REJECTED => Self::STATE_REJECTED,
+            other => {
+                return Err(DecisionEngineError::InvalidTransition {
+                    from: projected.resolution_state,
+                    to: other.into(),
+                });
+            }
+        };
+
+        // Accept requires all gates still hold.
+        if next_state == Self::STATE_ACCEPTED
+            && (!projected.evaluation_complete
+                || !projected.lifecycle_valid
+                || !projected.provenance_valid
+                || !projected.candidate_active)
+        {
+            return Err(DecisionEngineError::InvalidTransition {
+                from: projected.resolution_state,
+                to: Self::STATE_ACCEPTED.into(),
+            });
+        }
+
+        let resolved_at = resolved_at.into();
+        let reason = reason.into();
+        let before = input.candidate.clone();
+        let mut resolved = projected;
+        resolved.resolution_state = next_state.into();
+        resolved.resolved_at = Some(resolved_at);
+        resolved.resolution_reason = Some(reason);
+        resolved.note = format!(
+            "Decision Engine evaluation resolution ({}) for origin {}. \
+             Scoring-path admission only — no DecisionScore, ranking, planner, Gateway, \
+             or Recommendation Engine mutation.",
+            resolved.resolution_state, resolved.origin
+        );
+
+        let after = before.clone();
+        DecisionCandidateLifecycleIntegration::assert_provenance_retained(&before, &after)?;
+        if after.score != before.score {
+            return Err(DecisionEngineError::CannotExecute);
+        }
+        resolved.assert_resolution_only()?;
+        Ok((resolved, after))
+    }
+
+    pub fn may_create_decision_score(&self) -> bool {
+        false
+    }
+
+    pub fn may_rank(&self) -> bool {
+        false
+    }
+
+    pub fn may_invoke_planner(&self) -> bool {
+        false
+    }
+
+    pub fn may_invoke_gateway(&self) -> bool {
+        false
+    }
+
+    pub fn may_create_goal(&self) -> bool {
+        false
+    }
+
+    pub fn may_create_intent(&self) -> bool {
+        false
+    }
+
+    pub fn attempt_create_decision_score(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_rank(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_invoke_planner(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_create_goal(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_create_intent(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_execute() -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn assert_resolution_only(&self) -> Result<(), DecisionEngineError> {
+        if self.scoring_applied
+            || self.ranking_applied
+            || self.creates_decision_score
+            || self.creates_goal
+            || self.creates_intent
+            || self.adapter_invoked
+            || self.planner_invoked
+            || self.ownership_transferred
+            || self.mutates_recommendation_engine
+            || self.handoff_command.is_some()
+            || self.authority_effect != Self::AUTHORITY_EFFECT_NONE
+            || !self.resolution_id.starts_with(Self::ID_PREFIX)
+            || ((self.is_accepted_for_scoring() || self.is_rejected_for_scoring())
+                && self.resolved_at.is_none())
         {
             return Err(DecisionEngineError::CannotExecute);
         }

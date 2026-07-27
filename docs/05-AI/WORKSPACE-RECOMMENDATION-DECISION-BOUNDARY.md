@@ -52,7 +52,8 @@ Remaining before a future handoff could exist:
 19. ~~DE candidate creation (creates DecisionCandidate without scoring / planner / Gateway)~~ — see [WORKSPACE-DECISION-ENGINE-CANDIDATE-CREATION.md](./WORKSPACE-DECISION-ENGINE-CANDIDATE-CREATION.md)
 20. ~~DE candidate lifecycle integration (origin-aware lifecycle; provenance immutable; no scoring/planner)~~ — see [WORKSPACE-DECISION-ENGINE-CANDIDATE-LIFECYCLE-INTEGRATION.md](./WORKSPACE-DECISION-ENGINE-CANDIDATE-LIFECYCLE-INTEGRATION.md)
 21. ~~DE candidate evaluation origin contract (origin rules; evaluated ≠ scoring)~~ — see [WORKSPACE-DECISION-ENGINE-CANDIDATE-EVALUATION-ORIGIN.md](./WORKSPACE-DECISION-ENGINE-CANDIDATE-EVALUATION-ORIGIN.md)
-22. Optional **scoring / adapter / planner handoff** after origin evaluation — still separate; not execution
+22. ~~DE candidate evaluation resolution (accepted/rejected for scoring path; ≠ DecisionScore)~~ — see [WORKSPACE-DECISION-ENGINE-CANDIDATE-EVALUATION-RESOLUTION.md](./WORKSPACE-DECISION-ENGINE-CANDIDATE-EVALUATION-RESOLUTION.md)
+23. Optional **scoring / adapter / planner handoff** after accepted_for_scoring — still separate; not execution
 
 ---
 

@@ -114,7 +114,9 @@ without scoring, planner handoff, Gateway, goals, or intents.
 DE outcome lifecycle while keeping `native` and `recommendation_intake` origins
 distinct and provenance immutable.
 `DecisionCandidateEvaluationOriginContract` defines origin-specific evaluation
-eligibility without scoring or ranking. See
+eligibility without scoring or ranking.
+`DecisionCandidateEvaluationResolution` then records whether DE admits an
+evaluated candidate into a future scoring path — still without scoring. See
 [WORKSPACE-DECISION-ENGINE-INTAKE-CANDIDATE.md](./WORKSPACE-DECISION-ENGINE-INTAKE-CANDIDATE.md),
 [WORKSPACE-DECISION-ENGINE-INTAKE-CANDIDATE-LIFECYCLE.md](./WORKSPACE-DECISION-ENGINE-INTAKE-CANDIDATE-LIFECYCLE.md),
 [WORKSPACE-DECISION-ENGINE-INTAKE-EVALUATION.md](./WORKSPACE-DECISION-ENGINE-INTAKE-EVALUATION.md),
@@ -123,8 +125,9 @@ eligibility without scoring or ranking. See
 [WORKSPACE-DECISION-ENGINE-CANDIDATE-CREATION-REQUEST.md](./WORKSPACE-DECISION-ENGINE-CANDIDATE-CREATION-REQUEST.md),
 [WORKSPACE-DECISION-ENGINE-CANDIDATE-CREATION.md](./WORKSPACE-DECISION-ENGINE-CANDIDATE-CREATION.md),
 [WORKSPACE-DECISION-ENGINE-CANDIDATE-LIFECYCLE-INTEGRATION.md](./WORKSPACE-DECISION-ENGINE-CANDIDATE-LIFECYCLE-INTEGRATION.md),
+[WORKSPACE-DECISION-ENGINE-CANDIDATE-EVALUATION-ORIGIN.md](./WORKSPACE-DECISION-ENGINE-CANDIDATE-EVALUATION-ORIGIN.md),
 and
-[WORKSPACE-DECISION-ENGINE-CANDIDATE-EVALUATION-ORIGIN.md](./WORKSPACE-DECISION-ENGINE-CANDIDATE-EVALUATION-ORIGIN.md).
+[WORKSPACE-DECISION-ENGINE-CANDIDATE-EVALUATION-RESOLUTION.md](./WORKSPACE-DECISION-ENGINE-CANDIDATE-EVALUATION-RESOLUTION.md).
 
 Namespaces remain separate
 (`recommendation:*` vs `engine_decision:*` vs `engine_decision_intake:*`).

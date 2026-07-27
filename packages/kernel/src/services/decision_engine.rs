@@ -13,7 +13,8 @@ use serde_json::json;
 use workspace_database::{Database, DecisionEngineRepository, RecommendationLifecycleRepository};
 use workspace_domain::{
     ActorContext, AttentionItem, DecisionCandidate, DecisionCandidateEvaluationOriginContract,
-    DecisionCandidateEvaluationOriginInput, DecisionCandidateLifecycleIntegration,
+    DecisionCandidateEvaluationOriginInput, DecisionCandidateEvaluationResolution,
+    DecisionCandidateEvaluationResolutionInput, DecisionCandidateLifecycleIntegration,
     DecisionContext, DecisionEngineActionResult, DecisionEngineCandidateCreation,
     DecisionEngineCandidateCreationInput, DecisionEngineCandidateCreationRequest,
     DecisionEngineError, DecisionEngineHandoff, DecisionEngineIntakeAssessment,
@@ -318,6 +319,14 @@ impl DecisionEngineService {
             &lifecycle_integrations,
             &persisted_eval_origins,
         );
+        let persisted_resolutions = Self::load_evaluation_resolutions(db, ws)?;
+        let evaluation_resolutions = Self::project_evaluation_resolutions(
+            &candidates,
+            &lifecycle_integrations,
+            &evaluation_origin_contracts,
+            &intake_candidates,
+            &persisted_resolutions,
+        );
         let state = DecisionEngineState::from_candidates(ws, context, candidates)
             .with_intake_receipts(intake_receipts)
             .with_intake_assessments(intake_assessments)
@@ -329,7 +338,8 @@ impl DecisionEngineService {
             .with_candidate_creation_requests(candidate_creation_requests)
             .with_candidate_creations(candidate_creations)
             .with_lifecycle_integrations(lifecycle_integrations)
-            .with_evaluation_origin_contracts(evaluation_origin_contracts);
+            .with_evaluation_origin_contracts(evaluation_origin_contracts)
+            .with_evaluation_resolutions(evaluation_resolutions);
         debug_assert!(state
             .intake_receipts
             .iter()
@@ -414,6 +424,13 @@ impl DecisionEngineService {
             .all(|c| c.assert_evaluation_contract_only().is_ok()));
         debug_assert!(state.evaluation_origin_contracts.iter().all(|c| {
             !c.scoring_applied && !c.ranking_applied && !c.creates_decision_score
+        }));
+        debug_assert!(state
+            .evaluation_resolutions
+            .iter()
+            .all(|r| r.assert_resolution_only().is_ok()));
+        debug_assert!(state.evaluation_resolutions.iter().all(|r| {
+            !r.scoring_applied && !r.ranking_applied && !r.creates_decision_score
         }));
         Self::audit_generated(db, actor, &state)?;
         Self::audit_rank_changes(db, actor, &state, &previous_ranks)?;
@@ -776,6 +793,150 @@ impl DecisionEngineService {
             })
             .collect();
         DecisionCandidateEvaluationOriginContract::derive_batch(&inputs)
+    }
+
+    fn load_evaluation_resolutions(
+        db: &Arc<Mutex<Database>>,
+        workspace_id: &str,
+    ) -> Result<Vec<DecisionCandidateEvaluationResolution>> {
+        let guard = db
+            .lock()
+            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+        let mut resolutions =
+            DecisionEngineRepository::new(&guard).list_evaluation_resolutions(workspace_id)?;
+        drop(guard);
+        resolutions.sort_by(|a, b| a.resolution_id.cmp(&b.resolution_id));
+        Ok(resolutions)
+    }
+
+    fn project_evaluation_resolutions(
+        candidates: &[DecisionCandidate],
+        integrations: &[DecisionCandidateLifecycleIntegration],
+        evaluations: &[DecisionCandidateEvaluationOriginContract],
+        intake_candidates: &[DecisionEngineIntakeCandidate],
+        persisted: &[DecisionCandidateEvaluationResolution],
+    ) -> Vec<DecisionCandidateEvaluationResolution> {
+        let integration_by_id: HashMap<&str, &DecisionCandidateLifecycleIntegration> = integrations
+            .iter()
+            .map(|i| (i.decision_candidate_id.as_str(), i))
+            .collect();
+        let evaluation_by_id: HashMap<&str, &DecisionCandidateEvaluationOriginContract> =
+            evaluations
+                .iter()
+                .map(|e| (e.decision_candidate_id.as_str(), e))
+                .collect();
+        let intake_by_id: HashMap<&str, &DecisionEngineIntakeCandidate> = intake_candidates
+            .iter()
+            .map(|c| (c.intake_candidate_id.as_str(), c))
+            .collect();
+        let persisted_by_id: HashMap<&str, &DecisionCandidateEvaluationResolution> = persisted
+            .iter()
+            .map(|r| (r.decision_candidate_id.as_str(), r))
+            .collect();
+        let inputs: Vec<DecisionCandidateEvaluationResolutionInput> = candidates
+            .iter()
+            .filter_map(|candidate| {
+                let id = candidate.id.as_str();
+                let integration = integration_by_id.get(id).copied()?;
+                let evaluation = evaluation_by_id.get(id).copied()?;
+                let intake_withdrawn_or_invalidated = candidate
+                    .intake_candidate_id
+                    .as_deref()
+                    .and_then(|intake_id| intake_by_id.get(intake_id).copied())
+                    .is_some_and(|intake| {
+                        intake.lifecycle.is_withdrawn() || intake.lifecycle.is_invalidated()
+                    });
+                Some(DecisionCandidateEvaluationResolutionInput {
+                    candidate: candidate.clone(),
+                    lifecycle_integration: integration.clone(),
+                    evaluation_origin: evaluation.clone(),
+                    intake_withdrawn_or_invalidated,
+                    existing_resolution: persisted_by_id.get(id).copied().cloned(),
+                })
+            })
+            .collect();
+        DecisionCandidateEvaluationResolution::derive_batch(&inputs)
+    }
+
+    /// Resolve evaluation toward scoring-path admission without creating scores.
+    pub(crate) fn resolve_decision_candidate_evaluation(
+        db: &Arc<Mutex<Database>>,
+        actor: &ActorContext,
+        orchestrated_plans: &Arc<Mutex<OrchestratedPlanStore>>,
+        assistant_workflows: &Arc<Mutex<AssistantWorkflowStore>>,
+        workspace_id: impl Into<String>,
+        candidate_id: impl Into<String>,
+        resolution: impl Into<String>,
+        reason: impl Into<String>,
+    ) -> Result<(DecisionCandidateEvaluationResolution, DecisionCandidate)> {
+        let workspace_id = workspace_id.into();
+        let candidate_id = candidate_id.into();
+        let resolution = resolution.into();
+        let reason = reason.into();
+        let now = Utc::now().to_rfc3339();
+        let state = Self::generate(
+            db,
+            actor,
+            orchestrated_plans,
+            assistant_workflows,
+            workspace_id.clone(),
+        )?;
+        let candidate = state
+            .candidates
+            .iter()
+            .find(|c| c.id.as_str() == candidate_id)
+            .cloned()
+            .ok_or_else(|| KernelError::from(DecisionEngineError::NotFound))?;
+        let integration = state
+            .lifecycle_integrations
+            .iter()
+            .find(|i| i.decision_candidate_id == candidate_id)
+            .cloned()
+            .ok_or_else(|| KernelError::from(DecisionEngineError::NotFound))?;
+        let evaluation = state
+            .evaluation_origin_contracts
+            .iter()
+            .find(|e| e.decision_candidate_id == candidate_id)
+            .cloned()
+            .ok_or_else(|| KernelError::from(DecisionEngineError::NotFound))?;
+        let existing = state
+            .evaluation_resolutions
+            .iter()
+            .find(|r| {
+                r.decision_candidate_id == candidate_id
+                    && (r.is_accepted_for_scoring() || r.is_rejected_for_scoring())
+            })
+            .cloned();
+        let intake_withdrawn_or_invalidated = candidate
+            .intake_candidate_id
+            .as_deref()
+            .and_then(|intake_id| {
+                state
+                    .intake_candidates
+                    .iter()
+                    .find(|c| c.intake_candidate_id == intake_id)
+            })
+            .is_some_and(|intake| {
+                intake.lifecycle.is_withdrawn() || intake.lifecycle.is_invalidated()
+            });
+        let input = DecisionCandidateEvaluationResolutionInput {
+            candidate: candidate.clone(),
+            lifecycle_integration: integration,
+            evaluation_origin: evaluation,
+            intake_withdrawn_or_invalidated,
+            existing_resolution: existing,
+        };
+        let (resolved, unchanged) =
+            DecisionCandidateEvaluationResolution::try_resolve(&input, resolution, reason, now)
+                .map_err(KernelError::from)?;
+        debug_assert!(resolved.assert_resolution_only().is_ok());
+        debug_assert_eq!(unchanged.score, candidate.score);
+        let guard = db
+            .lock()
+            .map_err(|_| KernelError::Config("database lock poisoned".into()))?;
+        DecisionEngineRepository::new(&guard).upsert_evaluation_resolution(&resolved)?;
+        drop(guard);
+        Ok((resolved, unchanged))
     }
 
     /// Acknowledge origin evaluation contract for a DecisionCandidate.
