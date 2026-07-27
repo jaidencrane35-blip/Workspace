@@ -172,11 +172,12 @@ export default function App() {
     <main className="app-shell">
       <header className="app-chrome">
         <h1>Workspace</h1>
-        <nav className="tabs" aria-label="Primary workspace views">
+        <nav className="tabs" aria-label="Primary workspace views" role="tablist">
           <button
             type="button"
             className={view === "canvas" ? "tab active" : "tab"}
             aria-current={view === "canvas" ? "page" : undefined}
+            aria-selected={view === "canvas"}
             onClick={() => setView("canvas")}
           >
             Canvas
@@ -185,6 +186,7 @@ export default function App() {
             type="button"
             className={view === "work" ? "tab active" : "tab"}
             aria-current={view === "work" ? "page" : undefined}
+            aria-selected={view === "work"}
             onClick={() => setView("work")}
           >
             Work
@@ -193,6 +195,7 @@ export default function App() {
             type="button"
             className={view === "assistant" ? "tab active" : "tab"}
             aria-current={view === "assistant" ? "page" : undefined}
+            aria-selected={view === "assistant"}
             onClick={() => setView("assistant")}
           >
             Assistant
@@ -201,6 +204,7 @@ export default function App() {
             type="button"
             className={view === "operator" ? "tab active" : "tab"}
             aria-current={view === "operator" ? "page" : undefined}
+            aria-selected={view === "operator"}
             onClick={() => setView("operator")}
           >
             Diagnostic

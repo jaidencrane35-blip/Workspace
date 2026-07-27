@@ -383,15 +383,6 @@ button:not(:disabled):hover {
   line-height: 1.4;
 }
 
-.assistant-summary h3,
-.assistant-plan h3,
-.assistant-compare h3 {
-  margin: 0 0 0.5rem;
-  font-size: 0.95rem;
-  color: #9aa8b4;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
 
 .assistant-influence {
   margin: 0.5rem 0 0;
@@ -510,14 +501,6 @@ button.linkish:not(:disabled):hover {
 }
 
 /* Workspace intelligence — Phase 4 Batch 5 */
-
-.intelligence-panel h3 {
-  margin: 0 0 0.5rem;
-  font-size: 0.95rem;
-  color: #9aa8b4;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
 
 .intelligence-hero h2 {
   margin: 0.35rem 0 0.5rem;
