@@ -1,9 +1,10 @@
 use crate::connection::Database;
 use crate::error::Result;
 use workspace_domain::{
-    DecisionEngineCandidateCreation, DecisionEngineIntakeCandidate,
-    DecisionEngineIntakeCandidateLifecycle, DecisionEngineIntakeDisposition,
-    DecisionEngineIntakeEvaluation, DecisionEngineOverlay, DecisionOutcome,
+    DecisionCandidateEvaluationOriginContract, DecisionEngineCandidateCreation,
+    DecisionEngineIntakeCandidate, DecisionEngineIntakeCandidateLifecycle,
+    DecisionEngineIntakeDisposition, DecisionEngineIntakeEvaluation, DecisionEngineOverlay,
+    DecisionOutcome,
 };
 
 /// Persistence for Decision Engine lifecycle overlay and intake candidates.
@@ -349,6 +350,64 @@ impl<'a> DecisionEngineRepository<'a> {
             None => Ok(None),
         }
     }
+
+    /// Persist an evaluated origin contract acknowledgment (never scores).
+    pub fn upsert_evaluation_origin_contract(
+        &self,
+        contract: &DecisionCandidateEvaluationOriginContract,
+    ) -> Result<()> {
+        if !contract.is_evaluated() {
+            return Ok(());
+        }
+        let evaluated_at = contract.evaluated_at.as_deref().unwrap_or_default();
+        self.db.connection().execute(
+            "INSERT INTO decision_candidate_evaluation_origin (
+                workspace_id, evaluation_id, decision_candidate_id, origin, evaluation_state,
+                recommendation_reference, package_seal_digest, intake_candidate_id,
+                creation_request_id, evaluated_at, updated_at
+             ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?10)
+             ON CONFLICT(workspace_id, evaluation_id) DO UPDATE SET
+                decision_candidate_id = excluded.decision_candidate_id,
+                origin = excluded.origin,
+                evaluation_state = excluded.evaluation_state,
+                recommendation_reference = excluded.recommendation_reference,
+                package_seal_digest = excluded.package_seal_digest,
+                intake_candidate_id = excluded.intake_candidate_id,
+                creation_request_id = excluded.creation_request_id,
+                evaluated_at = excluded.evaluated_at,
+                updated_at = excluded.updated_at",
+            (
+                &contract.workspace_id,
+                &contract.evaluation_id,
+                &contract.decision_candidate_id,
+                &contract.origin,
+                &contract.evaluation_state,
+                &contract.recommendation_reference,
+                &contract.package_seal_digest,
+                &contract.intake_candidate_id,
+                &contract.creation_request_id,
+                evaluated_at,
+            ),
+        )?;
+        Ok(())
+    }
+
+    pub fn list_evaluation_origin_contracts(
+        &self,
+        workspace_id: &str,
+    ) -> Result<Vec<DecisionCandidateEvaluationOriginContract>> {
+        let mut stmt = self.db.connection().prepare(
+            "SELECT workspace_id, evaluation_id, decision_candidate_id, origin, evaluation_state,
+                    recommendation_reference, package_seal_digest, intake_candidate_id,
+                    creation_request_id, evaluated_at
+             FROM decision_candidate_evaluation_origin
+             WHERE workspace_id = ?1
+             ORDER BY evaluation_id ASC",
+        )?;
+        let rows = stmt.query_map([workspace_id], map_evaluation_origin_contract)?;
+        rows.collect::<std::result::Result<Vec<_>, _>>()
+            .map_err(Into::into)
+    }
 }
 
 fn map_overlay(row: &rusqlite::Row<'_>) -> rusqlite::Result<DecisionEngineOverlay> {
@@ -484,5 +543,57 @@ fn map_candidate_creation(
                provenance only — no scoring, planner handoff, or Gateway grant."
             .into(),
         authority_effect: DecisionEngineCandidateCreation::AUTHORITY_EFFECT_NONE.into(),
+    })
+}
+
+fn map_evaluation_origin_contract(
+    row: &rusqlite::Row<'_>,
+) -> rusqlite::Result<DecisionCandidateEvaluationOriginContract> {
+    let origin: String = row.get(3)?;
+    let evaluation_state: String = row.get(4)?;
+    let recommendation_reference: Option<String> = row.get(5)?;
+    let package_seal_digest: Option<String> = row.get(6)?;
+    let intake_candidate_id: Option<String> = row.get(7)?;
+    let creation_request_id: Option<String> = row.get(8)?;
+    let evaluated_at: String = row.get(9)?;
+    let recommendation_visible = origin
+        == workspace_domain::DecisionCandidate::ORIGIN_RECOMMENDATION_INTAKE
+        && recommendation_reference
+            .as_ref()
+            .is_some_and(|v| !v.is_empty());
+    Ok(DecisionCandidateEvaluationOriginContract {
+        workspace_id: row.get(0)?,
+        evaluation_id: row.get(1)?,
+        decision_candidate_id: row.get(2)?,
+        origin: origin.clone(),
+        evaluation_state: evaluation_state.clone(),
+        lifecycle_valid: true,
+        provenance_valid: true,
+        origin_supported: DecisionCandidateEvaluationOriginContract::origin_supported(&origin),
+        recommendation_visible,
+        package_identity_traceable: origin
+            == workspace_domain::DecisionCandidate::ORIGIN_NATIVE
+            || (package_seal_digest.as_ref().is_some_and(|v| !v.is_empty())
+                && recommendation_visible),
+        intake_candidate_id,
+        creation_request_id,
+        package_seal_digest,
+        recommendation_reference,
+        evaluated_at: Some(evaluated_at),
+        scoring_applied: false,
+        ranking_applied: false,
+        creates_decision_score: false,
+        creates_goal: false,
+        creates_intent: false,
+        adapter_invoked: false,
+        planner_invoked: false,
+        ownership_transferred: false,
+        mutates_recommendation_engine: false,
+        handoff_command: None,
+        note: format!(
+            "Decision Engine evaluation origin contract ({evaluation_state}; origin={origin}). \
+             Persisted acknowledgment only — no scoring or ranking."
+        ),
+        authority_effect: DecisionCandidateEvaluationOriginContract::AUTHORITY_EFFECT_NONE.into(),
     })
 }

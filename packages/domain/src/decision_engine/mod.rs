@@ -264,6 +264,9 @@ pub struct DecisionEngineState {
     /// DE-owned lifecycle integration — origin-aware DE lifecycle without merging sources.
     #[serde(default)]
     pub lifecycle_integrations: Vec<DecisionCandidateLifecycleIntegration>,
+    /// DE-owned evaluation-origin contracts — origin rules only, never scoring.
+    #[serde(default)]
+    pub evaluation_origin_contracts: Vec<DecisionCandidateEvaluationOriginContract>,
     pub summary: String,
     pub authority_effect: String,
 }
@@ -309,6 +312,7 @@ impl DecisionEngineState {
             candidate_creation_requests: Vec::new(),
             candidate_creations: Vec::new(),
             lifecycle_integrations: Vec::new(),
+            evaluation_origin_contracts: Vec::new(),
             summary,
             authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
         }
@@ -464,6 +468,24 @@ impl DecisionEngineState {
             integrated
         );
         self.lifecycle_integrations = integrations;
+        self
+    }
+
+    /// Attach DE-owned evaluation-origin contracts without scoring or ranking.
+    pub fn with_evaluation_origin_contracts(
+        mut self,
+        contracts: Vec<DecisionCandidateEvaluationOriginContract>,
+    ) -> Self {
+        let eligible = contracts.iter().filter(|c| c.is_eligible_for_evaluation()).count();
+        let evaluated = contracts.iter().filter(|c| c.is_evaluated()).count();
+        self.summary = format!(
+            "{} Evaluation origin contracts: {} ({} eligible, {} evaluated).",
+            self.summary,
+            contracts.len(),
+            eligible,
+            evaluated
+        );
+        self.evaluation_origin_contracts = contracts;
         self
     }
 
@@ -3012,6 +3034,269 @@ impl DecisionCandidateLifecycleIntegration {
             || self.handoff_command.is_some()
             || self.authority_effect != Self::AUTHORITY_EFFECT_NONE
             || !self.integration_id.starts_with(Self::ID_PREFIX)
+        {
+            return Err(DecisionEngineError::CannotExecute);
+        }
+        Ok(())
+    }
+}
+
+/// Input for projecting or applying origin-aware DecisionCandidate evaluation.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DecisionCandidateEvaluationOriginInput {
+    pub candidate: DecisionCandidate,
+    pub lifecycle_integration: DecisionCandidateLifecycleIntegration,
+    /// Persisted evaluated contract, when present.
+    pub existing_evaluated: Option<DecisionCandidateEvaluationOriginContract>,
+}
+
+/// DE-owned contract defining how DecisionCandidate evaluation differs by origin.
+///
+/// This is not scoring, ranking, planner handoff, or execution.
+/// `evaluated` acknowledges the origin evaluation contract only — no DecisionScore.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DecisionCandidateEvaluationOriginContract {
+    pub evaluation_id: String,
+    pub workspace_id: String,
+    pub decision_candidate_id: String,
+    /// `native` | `recommendation_intake`
+    pub origin: String,
+    /// `unevaluated` | `eligible_for_evaluation` | `blocked` | `evaluated`
+    pub evaluation_state: String,
+    pub lifecycle_valid: bool,
+    pub provenance_valid: bool,
+    pub origin_supported: bool,
+    pub recommendation_visible: bool,
+    pub package_identity_traceable: bool,
+    pub intake_candidate_id: Option<String>,
+    pub creation_request_id: Option<String>,
+    pub package_seal_digest: Option<String>,
+    pub recommendation_reference: Option<String>,
+    pub evaluated_at: Option<String>,
+    pub scoring_applied: bool,
+    pub ranking_applied: bool,
+    pub creates_decision_score: bool,
+    pub creates_goal: bool,
+    pub creates_intent: bool,
+    pub adapter_invoked: bool,
+    pub planner_invoked: bool,
+    pub ownership_transferred: bool,
+    pub mutates_recommendation_engine: bool,
+    pub handoff_command: Option<String>,
+    pub note: String,
+    pub authority_effect: String,
+}
+
+impl DecisionCandidateEvaluationOriginContract {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+    pub const STATE_UNEVALUATED: &'static str = "unevaluated";
+    pub const STATE_ELIGIBLE: &'static str = "eligible_for_evaluation";
+    pub const STATE_BLOCKED: &'static str = "blocked";
+    pub const STATE_EVALUATED: &'static str = "evaluated";
+    pub const ID_PREFIX: &'static str = "engine_decision_evaluation_origin:";
+
+    pub fn synthetic_id(decision_candidate_id: &str) -> String {
+        format!("{}{decision_candidate_id}", Self::ID_PREFIX)
+    }
+
+    pub fn is_eligible_for_evaluation(&self) -> bool {
+        self.evaluation_state == Self::STATE_ELIGIBLE
+    }
+
+    pub fn is_blocked(&self) -> bool {
+        self.evaluation_state == Self::STATE_BLOCKED
+    }
+
+    pub fn is_evaluated(&self) -> bool {
+        self.evaluation_state == Self::STATE_EVALUATED
+    }
+
+    pub fn origin_supported(origin: &str) -> bool {
+        origin == DecisionCandidate::ORIGIN_NATIVE
+            || origin == DecisionCandidate::ORIGIN_RECOMMENDATION_INTAKE
+    }
+
+    pub fn derive_batch(inputs: &[DecisionCandidateEvaluationOriginInput]) -> Vec<Self> {
+        let mut out: Vec<Self> = inputs.iter().map(Self::derive).collect();
+        out.sort_by(|a, b| a.decision_candidate_id.cmp(&b.decision_candidate_id));
+        out
+    }
+
+    pub fn derive(input: &DecisionCandidateEvaluationOriginInput) -> Self {
+        if let Some(existing) = &input.existing_evaluated {
+            if existing.is_evaluated() {
+                return existing.clone();
+            }
+        }
+
+        let candidate = &input.candidate;
+        let integration = &input.lifecycle_integration;
+        let origin = DecisionCandidateLifecycleIntegration::classify_origin(candidate);
+        let origin_field = candidate.origin.trim();
+        let origin_supported = if origin_field.is_empty() {
+            // Empty field: allow classified origin from id/provenance.
+            Self::origin_supported(origin)
+        } else {
+            Self::origin_supported(origin_field)
+        };
+        let provenance_valid =
+            DecisionCandidateLifecycleIntegration::provenance_valid_for_origin(origin, candidate);
+        let lifecycle_valid = integration.is_integrated()
+            && integration.decision_candidate_id == candidate.id.as_str();
+        let recommendation_visible = origin == DecisionCandidate::ORIGIN_RECOMMENDATION_INTAKE
+            && candidate
+                .recommendation_id
+                .as_ref()
+                .is_some_and(|v| !v.is_empty());
+        let package_identity_traceable = origin == DecisionCandidate::ORIGIN_NATIVE
+            || (candidate
+                .package_seal_digest
+                .as_ref()
+                .is_some_and(|v| !v.is_empty())
+                && recommendation_visible);
+
+        let evaluation_state = if !origin_supported {
+            Self::STATE_BLOCKED
+        } else if !lifecycle_valid {
+            Self::STATE_BLOCKED
+        } else if origin == DecisionCandidate::ORIGIN_RECOMMENDATION_INTAKE && !provenance_valid {
+            Self::STATE_BLOCKED
+        } else if !provenance_valid {
+            // Native with leaked intake provenance, etc.
+            Self::STATE_BLOCKED
+        } else if lifecycle_valid && provenance_valid && origin_supported {
+            Self::STATE_ELIGIBLE
+        } else {
+            Self::STATE_UNEVALUATED
+        };
+
+        Self {
+            evaluation_id: Self::synthetic_id(candidate.id.as_str()),
+            workspace_id: candidate.workspace_id.as_str().to_string(),
+            decision_candidate_id: candidate.id.as_str().to_string(),
+            origin: origin.into(),
+            evaluation_state: evaluation_state.into(),
+            lifecycle_valid,
+            provenance_valid,
+            origin_supported,
+            recommendation_visible,
+            package_identity_traceable,
+            intake_candidate_id: candidate.intake_candidate_id.clone(),
+            creation_request_id: candidate.creation_request_id.clone(),
+            package_seal_digest: candidate.package_seal_digest.clone(),
+            recommendation_reference: candidate.recommendation_id.clone(),
+            evaluated_at: None,
+            scoring_applied: false,
+            ranking_applied: false,
+            creates_decision_score: false,
+            creates_goal: false,
+            creates_intent: false,
+            adapter_invoked: false,
+            planner_invoked: false,
+            ownership_transferred: false,
+            mutates_recommendation_engine: false,
+            handoff_command: None,
+            note: format!(
+                "Decision Engine evaluation origin contract ({evaluation_state}; origin={origin}). \
+                 Origin rules only — not scoring, ranking, planner handoff, Gateway, goals, \
+                 intents, execution, or Recommendation Engine mutation."
+            ),
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        }
+    }
+
+    /// Acknowledge origin evaluation contract without scoring or ranking.
+    /// Never mutates Recommendation Engine records or DecisionCandidate scores.
+    pub fn try_evaluate(
+        input: &DecisionCandidateEvaluationOriginInput,
+        evaluated_at: impl Into<String>,
+    ) -> Result<(Self, DecisionCandidate), DecisionEngineError> {
+        let projected = Self::derive(input);
+        if !projected.is_eligible_for_evaluation() {
+            return Err(DecisionEngineError::InvalidTransition {
+                from: projected.evaluation_state,
+                to: Self::STATE_EVALUATED.into(),
+            });
+        }
+        if input
+            .existing_evaluated
+            .as_ref()
+            .is_some_and(|e| e.is_evaluated())
+        {
+            return Err(DecisionEngineError::InvalidTransition {
+                from: Self::STATE_EVALUATED.into(),
+                to: Self::STATE_EVALUATED.into(),
+            });
+        }
+
+        let evaluated_at = evaluated_at.into();
+        let before = input.candidate.clone();
+        let mut evaluated = projected;
+        evaluated.evaluation_state = Self::STATE_EVALUATED.into();
+        evaluated.evaluated_at = Some(evaluated_at);
+        evaluated.note = format!(
+            "Decision Engine evaluation origin contract evaluated for origin {}. \
+             Contract acknowledgment only — no DecisionScore, ranking, planner, Gateway, \
+             or Recommendation Engine mutation.",
+            evaluated.origin
+        );
+
+        // Candidate identity/provenance/score unchanged.
+        let after = before.clone();
+        DecisionCandidateLifecycleIntegration::assert_provenance_retained(&before, &after)?;
+        if after.score != before.score {
+            return Err(DecisionEngineError::CannotExecute);
+        }
+        evaluated.assert_evaluation_contract_only()?;
+        Ok((evaluated, after))
+    }
+
+    pub fn may_create_decision_score(&self) -> bool {
+        false
+    }
+
+    pub fn may_rank(&self) -> bool {
+        false
+    }
+
+    pub fn may_invoke_planner(&self) -> bool {
+        false
+    }
+
+    pub fn may_invoke_gateway(&self) -> bool {
+        false
+    }
+
+    pub fn attempt_create_decision_score(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_rank(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_invoke_planner(&self) -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn attempt_execute() -> Result<(), DecisionEngineError> {
+        Err(DecisionEngineError::CannotExecute)
+    }
+
+    pub fn assert_evaluation_contract_only(&self) -> Result<(), DecisionEngineError> {
+        if self.scoring_applied
+            || self.ranking_applied
+            || self.creates_decision_score
+            || self.creates_goal
+            || self.creates_intent
+            || self.adapter_invoked
+            || self.planner_invoked
+            || self.ownership_transferred
+            || self.mutates_recommendation_engine
+            || self.handoff_command.is_some()
+            || self.authority_effect != Self::AUTHORITY_EFFECT_NONE
+            || !self.evaluation_id.starts_with(Self::ID_PREFIX)
+            || (self.is_evaluated() && self.evaluated_at.is_none())
         {
             return Err(DecisionEngineError::CannotExecute);
         }

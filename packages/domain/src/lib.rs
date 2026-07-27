@@ -232,8 +232,9 @@ pub use automation_trigger::{
     TriggerRejection, TriggerRejectionSummary,
 };
 pub use decision_engine::{
-    DecisionCandidate, DecisionCandidateLifecycleIntegration, DecisionContext,
-    DecisionEngineActionResult, DecisionEngineCandidateCreation,
+    DecisionCandidate, DecisionCandidateEvaluationOriginContract,
+    DecisionCandidateEvaluationOriginInput, DecisionCandidateLifecycleIntegration,
+    DecisionContext, DecisionEngineActionResult, DecisionEngineCandidateCreation,
     DecisionEngineCandidateCreationInput, DecisionEngineCandidateCreationRequest,
     DecisionEngineError, DecisionEngineHandoff, DecisionEngineIntakeAssessment,
     DecisionEngineIntakeAssessmentInput, DecisionEngineIntakeCandidate,

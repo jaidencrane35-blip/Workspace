@@ -1233,6 +1233,39 @@ export interface DecisionCandidate {
   authority_effect: string;
 }
 
+/** DE-owned evaluation origin contract — origin rules only, never scoring. */
+export interface DecisionCandidateEvaluationOriginContract {
+  evaluation_id: string;
+  workspace_id: string;
+  decision_candidate_id: string;
+  /** native | recommendation_intake */
+  origin: string;
+  /** unevaluated | eligible_for_evaluation | blocked | evaluated */
+  evaluation_state: string;
+  lifecycle_valid: boolean;
+  provenance_valid: boolean;
+  origin_supported: boolean;
+  recommendation_visible: boolean;
+  package_identity_traceable: boolean;
+  intake_candidate_id: string | null;
+  creation_request_id: string | null;
+  package_seal_digest: string | null;
+  recommendation_reference: string | null;
+  evaluated_at: string | null;
+  scoring_applied: boolean;
+  ranking_applied: boolean;
+  creates_decision_score: boolean;
+  creates_goal: boolean;
+  creates_intent: boolean;
+  adapter_invoked: boolean;
+  planner_invoked: boolean;
+  ownership_transferred: boolean;
+  mutates_recommendation_engine: boolean;
+  handoff_command: string | null;
+  note: string;
+  authority_effect: string;
+}
+
 /** DE-owned lifecycle integration — origin-aware, provenance-preserving. */
 export interface DecisionCandidateLifecycleIntegration {
   integration_id: string;
@@ -1523,6 +1556,8 @@ export interface DecisionEngineState {
   candidate_creations?: DecisionEngineCandidateCreation[];
   /** DE-owned lifecycle integrations — origin-aware, no scoring/planner. */
   lifecycle_integrations?: DecisionCandidateLifecycleIntegration[];
+  /** DE-owned evaluation origin contracts — origin rules only, never scoring. */
+  evaluation_origin_contracts?: DecisionCandidateEvaluationOriginContract[];
   summary: string;
   authority_effect: string;
 }

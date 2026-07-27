@@ -134,6 +134,8 @@ mod decision_engine_candidate_creation_contract_tests;
 #[cfg(test)]
 mod decision_engine_candidate_lifecycle_integration_contract_tests;
 #[cfg(test)]
+mod decision_engine_candidate_evaluation_origin_contract_tests;
+#[cfg(test)]
 mod task_graph_tests;
 #[cfg(test)]
 mod workspace_environment_tests;

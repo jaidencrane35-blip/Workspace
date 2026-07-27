@@ -112,7 +112,9 @@ explicit `DecisionEngineCandidateCreation` may then create a native
 without scoring, planner handoff, Gateway, goals, or intents.
 `DecisionCandidateLifecycleIntegration` then admits candidates into the normal
 DE outcome lifecycle while keeping `native` and `recommendation_intake` origins
-distinct and provenance immutable. See
+distinct and provenance immutable.
+`DecisionCandidateEvaluationOriginContract` defines origin-specific evaluation
+eligibility without scoring or ranking. See
 [WORKSPACE-DECISION-ENGINE-INTAKE-CANDIDATE.md](./WORKSPACE-DECISION-ENGINE-INTAKE-CANDIDATE.md),
 [WORKSPACE-DECISION-ENGINE-INTAKE-CANDIDATE-LIFECYCLE.md](./WORKSPACE-DECISION-ENGINE-INTAKE-CANDIDATE-LIFECYCLE.md),
 [WORKSPACE-DECISION-ENGINE-INTAKE-EVALUATION.md](./WORKSPACE-DECISION-ENGINE-INTAKE-EVALUATION.md),
@@ -120,8 +122,9 @@ distinct and provenance immutable. See
 [WORKSPACE-DECISION-ENGINE-INTAKE-PROMOTION-BOUNDARY.md](./WORKSPACE-DECISION-ENGINE-INTAKE-PROMOTION-BOUNDARY.md),
 [WORKSPACE-DECISION-ENGINE-CANDIDATE-CREATION-REQUEST.md](./WORKSPACE-DECISION-ENGINE-CANDIDATE-CREATION-REQUEST.md),
 [WORKSPACE-DECISION-ENGINE-CANDIDATE-CREATION.md](./WORKSPACE-DECISION-ENGINE-CANDIDATE-CREATION.md),
+[WORKSPACE-DECISION-ENGINE-CANDIDATE-LIFECYCLE-INTEGRATION.md](./WORKSPACE-DECISION-ENGINE-CANDIDATE-LIFECYCLE-INTEGRATION.md),
 and
-[WORKSPACE-DECISION-ENGINE-CANDIDATE-LIFECYCLE-INTEGRATION.md](./WORKSPACE-DECISION-ENGINE-CANDIDATE-LIFECYCLE-INTEGRATION.md).
+[WORKSPACE-DECISION-ENGINE-CANDIDATE-EVALUATION-ORIGIN.md](./WORKSPACE-DECISION-ENGINE-CANDIDATE-EVALUATION-ORIGIN.md).
 
 Namespaces remain separate
 (`recommendation:*` vs `engine_decision:*` vs `engine_decision_intake:*`).
