@@ -57,6 +57,7 @@ pub mod workspace_state_envelope;
 pub mod policy_governance;
 pub mod workspace_historical_reconstruction;
 pub mod workspace_temporal_intelligence;
+pub mod workspace_explanation;
 pub mod workspace_composition;
 pub mod workspace_purpose;
 pub mod workspace_evolution;
@@ -514,6 +515,12 @@ pub use workspace_temporal_intelligence::{
     TemporalIntelligenceError, TemporalIntelligenceHistoryEntry, TemporalIntelligenceSnapshot,
     TemporalIntelligenceSummary, TemporalProvenanceLink, UnderstandingCompleteness,
 };
+pub use workspace_explanation::{
+    EvidenceReference, ExplanationCompleteness, ExplanationConfidence, ExplanationConflict,
+    ExplanationGap, ExplanationPackage, ExplanationScope, ExplanationSection, ExplanationStatus,
+    WorkspaceExplanationError, WorkspaceExplanationHistoryEntry, WorkspaceExplanationSnapshot,
+    WorkspaceExplanationSummary, WorkspaceSituationExplanation,
+};
 pub use workspace_task_graph::{
     would_create_cycle, TaskDependency, TaskGraph, TaskGraphError, TaskGraphSummary, TaskHistoryEntry,
     TaskMetadata, TaskNode, TaskRelationship, TaskRelationshipKind, WorkspaceTask,
@@ -594,6 +601,8 @@ pub use recovery_contract::{
     recovery_must_not_fabricate_historical_reconstruction,
     recovery_must_not_fabricate_actionable_temporal_history,
     recovery_must_not_fabricate_temporal_intelligence,
+    recovery_must_not_fabricate_actionable_explanation_history,
+    recovery_must_not_fabricate_workspace_explanation,
     recovery_must_not_fabricate_learning, recovery_must_not_fabricate_orchestration, recovery_must_not_fabricate_reasoning,
     recovery_must_not_invent_completed, RECOVERY_DIAGNOSTIC_ATTEMPTED,
     RECOVERY_DIAGNOSTIC_COMPLETED, RECOVERY_DIAGNOSTIC_EVENT_TYPES, RECOVERY_DIAGNOSTIC_FAILED,

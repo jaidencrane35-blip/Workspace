@@ -81,6 +81,7 @@ export const PUBLIC_ERROR_CODES = [
   "policy_governance_validation_error",
   "historical_reconstruction_validation_error",
   "temporal_intelligence_validation_error",
+  "workspace_explanation_validation_error",
   "workspace_composition_validation_error",
   "workspace_continuity_validation_error",
   "workspace_environment_validation_error",

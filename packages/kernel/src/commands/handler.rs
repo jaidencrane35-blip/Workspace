@@ -131,6 +131,10 @@ use crate::commands::historical_reconstruction::{
 use crate::commands::temporal_intelligence::{
     ExplainTemporalChange, GenerateTemporalAnalysis, GetTemporalAnalysis, GetTemporalSummary,
 };
+use crate::commands::workspace_explanation::{
+    ExplainWorkspaceSituation, GenerateWorkspaceExplanation, GetWorkspaceExplanation,
+    GetWorkspaceExplanationSummary,
+};
 use crate::commands::zone::{CreateZone, DeleteZone, GetZone};
 use crate::config::{SettingsUpdate, WorkspaceSettings};
 use crate::error::{KernelError, Result};
@@ -197,6 +201,7 @@ use workspace_domain::{
     HistoricalChangeExplanation, HistoricalReconstructionSnapshot, HistoricalReconstructionSummary,
     RevisionComparison,
     TemporalChangeExplanation, TemporalIntelligenceSnapshot, TemporalIntelligenceSummary,
+    WorkspaceExplanationSnapshot, WorkspaceExplanationSummary, WorkspaceSituationExplanation,
     LayoutId, LayoutMetadata, LayoutNode, LayoutSnapshot, MemoryEntry, MemoryType,
     ModelProviderDescriptor, ModelResponse, Observation, PersonalizedPlanComparison,
     PreferenceCategory, PreferenceSource, Suggestion, SuggestionIntentRequest,
@@ -2789,6 +2794,52 @@ impl CommandHandler {
     /// Architecture guard — Temporal intelligence cannot execute / simulate / forecast.
     pub fn temporal_intelligence_attempt_execute() -> Result<()> {
         crate::services::WorkspaceTemporalIntelligenceService::attempt_execute()
+    }
+
+    pub fn generate_workspace_explanation(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceExplanationSnapshot> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_mutation(GenerateWorkspaceExplanation::new(workspace_id))
+    }
+
+    pub fn get_workspace_explanation(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceExplanationSnapshot> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetWorkspaceExplanation::new(workspace_id))
+    }
+
+    pub fn get_workspace_explanation_summary(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        history_limit: usize,
+    ) -> Result<WorkspaceExplanationSummary> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetWorkspaceExplanationSummary::new(workspace_id, history_limit))
+    }
+
+    pub fn explain_workspace_situation(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceSituationExplanation> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(ExplainWorkspaceSituation::new(workspace_id))
+    }
+
+    /// Architecture guard — Workspace explanation cannot execute / approve / mutate.
+    pub fn workspace_explanation_attempt_execute() -> Result<()> {
+        crate::services::WorkspaceExplanationService::attempt_execute()
     }
 
     #[allow(clippy::too_many_arguments)]

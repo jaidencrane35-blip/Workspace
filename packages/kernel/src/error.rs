@@ -15,7 +15,7 @@ use workspace_domain::{
     WorkspaceCognitiveGraphError, WorkspaceCognitiveOrchestrationError,
     WorkspaceLearningAdaptationError, WorkspaceCognitiveAgentCastError,
     WorkspaceCognitiveAutonomyError, WorkspaceStateEnvelopeError, PolicyGovernanceError,
-    HistoricalReconstructionError, TemporalIntelligenceError,
+    HistoricalReconstructionError, TemporalIntelligenceError, WorkspaceExplanationError,
     WorkspaceSessionError,
     WorkspaceTransitionError,
     WorkspaceWorkContextError, WorkspaceWorkingStyleError,
@@ -267,6 +267,9 @@ pub enum KernelError {
 
     #[error("Temporal intelligence validation failed: {message}")]
     TemporalIntelligenceValidation { message: String },
+
+    #[error("Workspace explanation validation failed: {message}")]
+    WorkspaceExplanationValidation { message: String },
 
     #[error("Workspace intelligence validation failed: {message}")]
     WorkspaceIntelligenceValidation { message: String },
@@ -614,6 +617,17 @@ impl From<TemporalIntelligenceError> for KernelError {
         match error {
             TemporalIntelligenceError::Domain(domain) => KernelError::from(domain),
             other => KernelError::TemporalIntelligenceValidation {
+                message: other.to_string(),
+            },
+        }
+    }
+}
+
+impl From<WorkspaceExplanationError> for KernelError {
+    fn from(error: WorkspaceExplanationError) -> Self {
+        match error {
+            WorkspaceExplanationError::Domain(domain) => KernelError::from(domain),
+            other => KernelError::WorkspaceExplanationValidation {
                 message: other.to_string(),
             },
         }
@@ -1312,6 +1326,10 @@ impl KernelError {
             },
             KernelError::TemporalIntelligenceValidation { message } => PublicError {
                 code: "temporal_intelligence_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::WorkspaceExplanationValidation { message } => PublicError {
+                code: "workspace_explanation_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::WorkspaceIntelligenceValidation { message } => PublicError {

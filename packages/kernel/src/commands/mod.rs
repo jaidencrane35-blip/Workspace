@@ -22,6 +22,7 @@ mod workspace_state_envelope;
 mod policy_governance;
 mod historical_reconstruction;
 mod temporal_intelligence;
+mod workspace_explanation;
 mod workspace_purpose;
 mod workspace_evolution;
 mod workspace_recommendation;
@@ -149,6 +150,8 @@ mod policy_governance_tests;
 mod historical_reconstruction_tests;
 #[cfg(test)]
 mod temporal_intelligence_tests;
+#[cfg(test)]
+mod workspace_explanation_tests;
 #[cfg(test)]
 mod workspace_attention_tests;
 #[cfg(test)]
@@ -456,5 +459,9 @@ pub use historical_reconstruction::{
 };
 pub use temporal_intelligence::{
     ExplainTemporalChange, GenerateTemporalAnalysis, GetTemporalAnalysis, GetTemporalSummary,
+};
+pub use workspace_explanation::{
+    ExplainWorkspaceSituation, GenerateWorkspaceExplanation, GetWorkspaceExplanation,
+    GetWorkspaceExplanationSummary,
 };
 pub use zone::{CreateZone, DeleteZone, GetZone};

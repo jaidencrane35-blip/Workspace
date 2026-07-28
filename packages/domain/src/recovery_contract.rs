@@ -30,6 +30,9 @@ use crate::workspace_historical_reconstruction::{
 use crate::workspace_temporal_intelligence::{
     TemporalIntelligenceHistoryEntry, TemporalIntelligenceSnapshot,
 };
+use crate::workspace_explanation::{
+    WorkspaceExplanationHistoryEntry, WorkspaceExplanationSnapshot,
+};
 use crate::workspace_reasoning_memory::{ReasoningHistoryEntry, ReasoningSnapshot};
 
 /// Documented startup in-progress sweep cap (must match
@@ -267,6 +270,26 @@ pub fn recovery_must_not_fabricate_temporal_intelligence(
 /// Fabricated actionable temporal-intelligence history must fail the recovery contract.
 pub fn recovery_must_not_fabricate_actionable_temporal_history(
     entry: &TemporalIntelligenceHistoryEntry,
+) -> bool {
+    entry.is_non_actionable()
+}
+
+/// Missing explanation remains missing — never invent sections or evidence on restart.
+pub fn recovery_must_not_fabricate_workspace_explanation(
+    snapshot: &WorkspaceExplanationSnapshot,
+) -> bool {
+    snapshot.is_non_commandable()
+        && snapshot.history.iter().all(|h| h.is_non_actionable())
+        && snapshot
+            .current
+            .as_ref()
+            .map(|c| c.is_non_executing())
+            .unwrap_or(true)
+}
+
+/// Fabricated actionable explanation history must fail the recovery contract.
+pub fn recovery_must_not_fabricate_actionable_explanation_history(
+    entry: &WorkspaceExplanationHistoryEntry,
 ) -> bool {
     entry.is_non_actionable()
 }
@@ -629,5 +652,30 @@ mod tests {
             authority_effect: "none".into(),
         };
         assert!(!recovery_must_not_fabricate_actionable_temporal_history(&bad));
+    }
+
+    #[test]
+    fn recovery_never_fabricates_workspace_explanation_on_empty_snapshot() {
+        let empty = WorkspaceExplanationSnapshot::assemble("ws", None, vec![], 0, "t0");
+        assert!(recovery_must_not_fabricate_workspace_explanation(&empty));
+        assert!(empty.current.is_none());
+    }
+
+    #[test]
+    fn recovery_rejects_actionable_explanation_history() {
+        let bad = WorkspaceExplanationHistoryEntry {
+            explanation_id: "workspace_explanation:1".into(),
+            status: "superseded".into(),
+            created_at: "t0".into(),
+            superseded_at: Some("t1".into()),
+            completeness: "unavailable".into(),
+            section_count: 0,
+            gap_count: 0,
+            conflict_count: 0,
+            terminal: true,
+            actionable: true,
+            authority_effect: "none".into(),
+        };
+        assert!(!recovery_must_not_fabricate_actionable_explanation_history(&bad));
     }
 }

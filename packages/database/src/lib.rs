@@ -26,7 +26,7 @@ pub use repositories::{
     CognitiveGraphRepository, CognitiveOrchestrationRepository, LearningAdaptationRepository,
     CognitiveAgentCastRepository, CognitiveAutonomyRepository, WorkspaceStateEnvelopeRepository,
     PolicyGovernanceRepository, HistoricalReconstructionRepository,
-    TemporalIntelligenceRepository,
+    TemporalIntelligenceRepository, WorkspaceExplanationRepository,
     WorkspaceRepository, WorkspaceIntentRepository, ZoneRepository,
 };
 pub use settings::SettingsRepository;
