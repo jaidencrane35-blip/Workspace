@@ -353,6 +353,14 @@ Rules:
 - Restart reconstructs durable current + history; missing coordination remains missing
   (never inferred clusters / intersections / attention ranks).
 
+### Cross-Workspace Intelligence (Programme III Batch 10)
+
+- **Current:** `CrossWorkspaceIntelligenceProjection.current` — patterns / themes / risk signals /
+  constraint patterns / gaps. Aggregate observations only; never centralises authority.
+- **History:** append-only (`terminal: true`, `actionable: false`, `authority_effect: none`).
+- **`history_count`** authoritative.
+- React may inspect — no execute / approve / recommend / prioritise / automate affordances.
+
 ## Serde defaults vs TypeScript required fields
 
 Rust history fields often use `#[serde(default)]` so older persisted / in-flight JSON

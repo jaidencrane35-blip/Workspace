@@ -3997,6 +3997,174 @@ export interface InsightCoordinationExplanation {
   actionable: boolean;
 }
 
+/** Programme III Batch 10 — Cross-Workspace Intelligence (aggregation ≠ authority). */
+export interface CrossWorkspaceEvidenceRef {
+  external_ref: string;
+  origin_domain: string;
+  workspace_id: string | null;
+  source_revision: string | null;
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface CrossWorkspacePattern {
+  pattern_id: string;
+  title: string;
+  body: string;
+  participating_workspaces: string[];
+  evidence_references: CrossWorkspaceEvidenceRef[];
+  confidence: number;
+  occurrence_count: number;
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface CrossWorkspaceTheme {
+  theme_id: string;
+  label: string;
+  description: string;
+  supporting_evidence: CrossWorkspaceEvidenceRef[];
+  contributing_workspaces: string[];
+  confidence: number;
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface CrossWorkspaceRiskSignal {
+  signal_id: string;
+  repeated_risk: string;
+  description: string;
+  supporting_lineage: CrossWorkspaceEvidenceRef[];
+  frequency: number;
+  participating_workspaces: string[];
+  confidence: number;
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface CrossWorkspaceConstraintPattern {
+  pattern_id: string;
+  title: string;
+  description: string;
+  evidence_references: CrossWorkspaceEvidenceRef[];
+  participating_workspaces: string[];
+  frequency: number;
+  confidence: number;
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface CrossWorkspaceGap {
+  gap_id: string;
+  missing_evidence: string;
+  affected_workspaces: string[];
+  uncertainty_explanation: string;
+  severity: string;
+  evidence_refs: CrossWorkspaceEvidenceRef[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface CrossWorkspaceAssessment {
+  assessment_id: string;
+  workspace_count: number;
+  available_workspace_count: number;
+  pattern_count: number;
+  theme_count: number;
+  risk_signal_count: number;
+  constraint_pattern_count: number;
+  gap_count: number;
+  coverage: number;
+  uncertainty: string[];
+  limitations: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface CrossWorkspaceIntelligenceSnapshot {
+  intelligence_id: string;
+  scope_id: string;
+  generated_at: string;
+  status: string;
+  superseded_at: string | null;
+  participating_workspaces: string[];
+  source_revisions: string[];
+  patterns: CrossWorkspacePattern[];
+  themes: CrossWorkspaceTheme[];
+  risk_signals: CrossWorkspaceRiskSignal[];
+  constraint_patterns: CrossWorkspaceConstraintPattern[];
+  gaps: CrossWorkspaceGap[];
+  assessment: CrossWorkspaceAssessment;
+  completeness: string;
+  provenance_links: CrossWorkspaceEvidenceRef[];
+  summary: string;
+  narrative: string;
+  limitations: string[];
+  authority_effect: string;
+  actionable: boolean;
+  terminal: boolean;
+}
+
+export interface CrossWorkspaceIntelligenceHistoryEntry {
+  intelligence_id: string;
+  status: string;
+  created_at: string;
+  superseded_at: string | null;
+  completeness: string;
+  pattern_count: number;
+  theme_count: number;
+  risk_signal_count: number;
+  constraint_pattern_count: number;
+  gap_count: number;
+  workspace_count: number;
+  terminal: boolean;
+  actionable: boolean;
+  authority_effect: string;
+}
+
+export interface CrossWorkspaceIntelligenceProjection {
+  scope_id: string;
+  generated_at: string;
+  current: CrossWorkspaceIntelligenceSnapshot | null;
+  history: CrossWorkspaceIntelligenceHistoryEntry[];
+  history_count: number;
+  authority_effect: string;
+}
+
+export interface CrossWorkspaceIntelligenceSummary {
+  scope_id: string;
+  generated_at: string;
+  has_current: boolean;
+  intelligence_id: string | null;
+  completeness: string | null;
+  pattern_count: number;
+  theme_count: number;
+  risk_signal_count: number;
+  constraint_pattern_count: number;
+  gap_count: number;
+  workspace_count: number;
+  history: CrossWorkspaceIntelligenceHistoryEntry[];
+  history_count: number;
+  authority_effect: string;
+}
+
+export interface CrossWorkspacePatternExplanation {
+  explanation_id: string;
+  scope_id: string;
+  completeness: string | null;
+  summary: string | null;
+  pattern_summaries: string[];
+  theme_summaries: string[];
+  risk_summaries: string[];
+  gaps: string[];
+  evidence_refs: string[];
+  uncertainty: string[];
+  narrative: string;
+  limitations: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
 export type WindowIdentityConfidence = "high" | "medium" | "low" | "ephemeral";
 
 export interface WorkspaceObservationPass {

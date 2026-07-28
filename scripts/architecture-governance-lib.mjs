@@ -15,7 +15,7 @@ const read = (file) => fs.readFileSync(file, "utf8");
 const sorted = (values) => [...new Set(values)].sort();
 
 /** Minimum MutationCommand inventory — dropping below this fails closed. */
-export const MUTATION_COMMAND_BASELINE = 70;
+export const MUTATION_COMMAND_BASELINE = 71;
 
 /** Capability id → authority owner (permission-token scope, not lifecycle owner). */
 export const CAPABILITY_AUTHORITY_OWNERS = {
@@ -111,6 +111,7 @@ export const HISTORY_STRUCTS = [
   "KnowledgeSynthesisHistoryEntry",
   "KnowledgeIntegrationHistoryEntry",
   "InsightCoordinationHistoryEntry",
+  "CrossWorkspaceIntelligenceHistoryEntry",
 ];
 
 export const PROJECTION_SUMMARY_STRUCTS = [
@@ -135,6 +136,7 @@ export const PROJECTION_SUMMARY_STRUCTS = [
   "KnowledgeSynthesisSummary",
   "KnowledgeIntegrationSummary",
   "InsightCoordinationSummary",
+  "CrossWorkspaceIntelligenceSummary",
 ];
 
 /** Append-only recovery diagnostic event types — evidence only, never commands. */
@@ -185,6 +187,7 @@ const LIFECYCLE_SERVICE_FILES = new Set([
   "workspace_knowledge_synthesis.rs",
   "workspace_knowledge_integration.rs",
   "workspace_insight_coordination.rs",
+  "workspace_cross_intelligence.rs",
 ]);
 
 /**
@@ -1653,6 +1656,92 @@ function insightCoordinationGuards(rootDir) {
   return violations;
 }
 
+
+/**
+ * Programme III Batch 10 — Cross-Workspace Intelligence guards.
+ * Aggregate understanding; never centralise authority / recommend / execute.
+ */
+function crossWorkspaceIntelligenceGuards(rootDir) {
+  const violations = [];
+  const servicePath = path.join(
+    rootDir,
+    "packages/kernel/src/services/workspace_cross_intelligence.rs",
+  );
+  const domainPath = path.join(
+    rootDir,
+    "packages/domain/src/workspace_cross_intelligence",
+  );
+  const repoPath = path.join(
+    rootDir,
+    "packages/database/src/repositories/workspace_cross_intelligence.rs",
+  );
+
+  const serviceFiles = fs.existsSync(servicePath) ? [servicePath] : [];
+  const domainFiles = fs.existsSync(domainPath) ? rustSources(domainPath) : [];
+  for (const file of [...serviceFiles, ...domainFiles]) {
+    const source = read(file);
+    const rel = path.relative(rootDir, file).replace(/\\/g, "/");
+    if (
+      /\bApplicationLaunchService\b/.test(source) ||
+      /\bExecutionLifecycleService\b/.test(source) ||
+      /\bTaskGraphService\b/.test(source) ||
+      /\bDecisionEngineService\b/.test(source) ||
+      /\bWorkspaceRecommendationEngineService\b/.test(source) ||
+      /std::process::Command/.test(source) ||
+      /workspace_windows_integration::/.test(source)
+    ) {
+      violations.push(
+        `${rel}: Cross-workspace intelligence must not import lifecycle/execution/recommendation services`,
+      );
+    }
+    if (
+      /PermissionGateway::/.test(source) ||
+      /\bCapabilityGrant\b/.test(source) ||
+      /CommandPipeline::/.test(source)
+    ) {
+      violations.push(
+        `${rel}: Cross-workspace intelligence must not own permissions, grant capabilities, or execute via Pipeline`,
+      );
+    }
+    if (
+      /WorkspaceStateCompositionService::generate\b/.test(source) ||
+      /WorkspaceHistoricalReconstructionService::generate\b/.test(source) ||
+      /WorkspaceTemporalIntelligenceService::generate\b/.test(source) ||
+      /PolicyGovernanceService::generate\b/.test(source) ||
+      /WorkspaceExplanationService::generate\b/.test(source) ||
+      /WorkspaceContextualUnderstandingService::generate\b/.test(source) ||
+      /WorkspaceKnowledgeSynthesisService::generate\b/.test(source) ||
+      /WorkspaceKnowledgeIntegrationService::generate\b/.test(source) ||
+      /WorkspaceInsightCoordinationService::generate\b/.test(source) ||
+      /WorkspacePlanningService::generate\b/.test(source)
+    ) {
+      violations.push(
+        `${rel}: Cross-workspace intelligence must not silently refresh foreign sources via generate`,
+      );
+    }
+  }
+
+  if (fs.existsSync(repoPath)) {
+    const source = read(repoPath);
+    if (
+      /WorkspaceCrossIntelligenceService/.test(source) ||
+      /use\s+workspace_kernel::/.test(source)
+    ) {
+      violations.push(
+        `packages/database/src/repositories/workspace_cross_intelligence.rs: repository must not call cross-workspace intelligence service`,
+      );
+    }
+  }
+
+  if (!fs.existsSync(domainPath) && !fs.existsSync(`${domainPath}.rs`)) {
+    violations.push(
+      "packages/domain/src/workspace_cross_intelligence missing; governance cannot verify cross-workspace DTOs",
+    );
+  }
+
+  return violations;
+}
+
 function checkDtoAuthorityFields(domainSources, structNames, label) {
 
   const violations = [];
@@ -1943,6 +2032,7 @@ export function auditArchitectureGovernance(rootDir, options = {}) {
   violations.push(...knowledgeSynthesisGuards(rootDir));
   violations.push(...knowledgeIntegrationGuards(rootDir));
   violations.push(...insightCoordinationGuards(rootDir));
+  violations.push(...crossWorkspaceIntelligenceGuards(rootDir));
 
   const domainSrc = path.join(rootDir, "packages/domain/src");
   const domainSources = fs.existsSync(domainSrc) ? rustSources(domainSrc) : [];

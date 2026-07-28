@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | **Purpose** | Establish one provenance-rich, read-only runtime view of operational, cognitive, governance, and evidence state while preserving all existing lifecycle and persistence authorities |
-| **Status** | Active — Batches 1–9 accepted (Batch 9 Insight Coordination implemented) |
+| **Status** | Active — Batches 1–10 accepted (Batch 10 Cross-Workspace Intelligence implemented) |
 | **Depends on** | Programme I governance / recovery; Programme II cognitive stack |
 | **Non-goals** | Event sourcing; authoritative replay logs; simulation; model hosting; autonomous execution; replacement permission system; replacement for domain-owned projections |
 
@@ -29,6 +29,8 @@
 18. **integration ≠ authority; retrieval ≠ truth; relevance ≠ correctness; confidence ≠ permission.**
 19. **Insight coordination coordinates already-derived understanding** — it does not plan, decide, recommend execution, or create authority.
 20. **coordination ≠ authority; prioritisation ≠ recommendation; intersection ≠ causation.**
+21. **Cross-workspace intelligence aggregates understanding only** — it never centralises authority or replaces per-workspace truth.
+22. **aggregation ≠ authority; frequency ≠ priority-as-action; statistics ≠ recommendations.**
 
 ## Batch map
 
@@ -43,6 +45,7 @@
 | **7** | Workspace Knowledge Synthesis | Provenance-bound structured knowledge artefacts | Done (accepted) |
 | **8** | Knowledge Integration / Retrieval Intelligence | Integrate/retrieve over accumulated evidence layers | Done (accepted) |
 | **9** | Workspace Insight Coordination | Coordinate cross-layer evidence relationships / unresolved areas | Done (accepted) |
+| **10** | Cross-Workspace Intelligence | Aggregate patterns across workspaces without centralising authority | Done (accepted) |
 
 ## Batch 8 summary (evidence-stack close)
 
@@ -77,10 +80,22 @@ Governing rule:
 
 > The workspace may understand more. It must never silently gain the power to decide more.
 
+
+## Batch 10 summary
+
+`WorkspaceCrossIntelligenceService` aggregates provenance-bound cross-workspace
+observations (`CrossWorkspacePattern` / `CrossWorkspaceTheme` /
+`CrossWorkspaceRiskSignal` / `CrossWorkspaceConstraintPattern` / `CrossWorkspaceGap`)
+from per-workspace Programme III projections via `load_snapshot` only.
+Aggregate understanding only — never centralises authority or replaces per-workspace truth.
+Commands: `GenerateCrossWorkspaceIntelligence`, `GetCrossWorkspaceIntelligence`,
+`GetCrossWorkspaceSummary`, `ExplainCrossWorkspacePattern`. Migration `061`.
+See [Cross-Workspace Intelligence Architecture](./CROSS-WORKSPACE-INTELLIGENCE-ARCHITECTURE.md).
+
 ## Sequencing rule
 
 Ship Batch *N* only when Batch *N−1* has durable contracts, tests, and governance ownership entries.
-Batches 1–9 are accepted. Batch 10 is gated on Batch 9 architecture acceptance.
+Batches 1–10 are accepted.
 
 Preserve P2 constraints from Batches 6–9:
 
@@ -102,6 +117,7 @@ Preserve P2 constraints from Batches 6–9:
 - [Knowledge Synthesis Architecture](./KNOWLEDGE-SYNTHESIS-ARCHITECTURE.md) (Batch 7)
 - [Knowledge Integration Architecture](./KNOWLEDGE-INTEGRATION-ARCHITECTURE.md) (Batch 8)
 - [Insight Coordination Architecture](./INSIGHT-COORDINATION-ARCHITECTURE.md) (Batch 9)
+- [Cross-Workspace Intelligence Architecture](./CROSS-WORKSPACE-INTELLIGENCE-ARCHITECTURE.md) (Batch 10)
 - [Programme II — Cognitive Workspace](./PROGRAMME-II-COGNITIVE-WORKSPACE.md)
 - [Projection Integrity](../03-Engineering/PROJECTION-INTEGRITY.md)
 - [Architecture Governance](../03-Engineering/ARCHITECTURE-GOVERNANCE.md)

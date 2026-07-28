@@ -93,6 +93,11 @@ import {
   isInsightCoordinationProjectionNonCommandable,
   insightCoordinationHistoryCountIsAuthoritative,
 } from "../app/src/components/insightCoordinationProjection";
+import {
+  isCrossWorkspaceIntelligenceHistoryNonActionable,
+  isCrossWorkspaceIntelligenceProjectionNonCommandable,
+  crossWorkspaceIntelligenceHistoryCountIsAuthoritative,
+} from "../app/src/components/crossWorkspaceIntelligenceProjection";
 import type {
   DecisionArtifactHistoryEntry,
   DecisionEngineSummary,
@@ -148,6 +153,9 @@ import type {
   InsightCoordinationHistoryEntry,
   InsightCoordinationProjection,
   InsightCoordinationSummary,
+  CrossWorkspaceIntelligenceHistoryEntry,
+  CrossWorkspaceIntelligenceProjection,
+  CrossWorkspaceIntelligenceSummary,
   RecommendationHistoryEntry,
   RecommendationItem,
   TaskGraphSummary,
@@ -1732,6 +1740,71 @@ describe("projection integrity — cognitive agent cast", () => {
     expect(Object.keys(nonCommand)).not.toContain("approve");
     expect(Object.keys(nonCommand)).not.toContain("recommend");
     expect(Object.keys(nonCommand)).not.toContain("dispatch");
+  });
+
+  it("keeps cross-workspace intelligence projections non-commandable with authoritative history_count", () => {
+    const historyEntry = (
+      overrides: Partial<CrossWorkspaceIntelligenceHistoryEntry> = {}
+    ): CrossWorkspaceIntelligenceHistoryEntry => ({
+      intelligence_id: "cross_workspace_intelligence:1",
+      status: "superseded",
+      created_at: "t0",
+      superseded_at: "t1",
+      completeness: "partial",
+      pattern_count: 2,
+      theme_count: 1,
+      risk_signal_count: 1,
+      constraint_pattern_count: 1,
+      gap_count: 1,
+      workspace_count: 2,
+      terminal: true,
+      actionable: false,
+      authority_effect: "none",
+      ...overrides,
+    });
+    const projection: CrossWorkspaceIntelligenceProjection = {
+      scope_id: "cross_workspace",
+      generated_at: "t2",
+      current: null,
+      history: [historyEntry()],
+      history_count: 3,
+      authority_effect: "none",
+    };
+    expect(isCrossWorkspaceIntelligenceProjectionNonCommandable(projection)).toBe(true);
+    expect(isCrossWorkspaceIntelligenceHistoryNonActionable(historyEntry())).toBe(true);
+    expect(
+      isCrossWorkspaceIntelligenceHistoryNonActionable(historyEntry({ actionable: true }))
+    ).toBe(false);
+
+    const summary: CrossWorkspaceIntelligenceSummary = {
+      scope_id: "cross_workspace",
+      generated_at: "t2",
+      has_current: false,
+      intelligence_id: null,
+      completeness: null,
+      pattern_count: 0,
+      theme_count: 0,
+      risk_signal_count: 0,
+      constraint_pattern_count: 0,
+      gap_count: 0,
+      workspace_count: 0,
+      history: [historyEntry()],
+      history_count: 3,
+      authority_effect: "none",
+    };
+    expect(crossWorkspaceIntelligenceHistoryCountIsAuthoritative(summary)).toBe(true);
+    expect(summary.history_count).toBeGreaterThanOrEqual(summary.history.length);
+
+    const nonCommand = {
+      intelligence_id: "cross_workspace_intelligence:1",
+      actionable: false,
+      terminal: true,
+      authority_effect: "none",
+    };
+    expect(Object.keys(nonCommand)).not.toContain("execute");
+    expect(Object.keys(nonCommand)).not.toContain("approve");
+    expect(Object.keys(nonCommand)).not.toContain("recommend");
+    expect(Object.keys(nonCommand)).not.toContain("prioritise");
   });
 });
 

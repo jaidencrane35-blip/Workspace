@@ -485,6 +485,28 @@ Enforced:
 
 See [Insight Coordination Architecture](../05-AI/INSIGHT-COORDINATION-ARCHITECTURE.md).
 
+## Cross-Workspace Intelligence (Programme III Batch 10)
+
+`WorkspaceCrossIntelligenceService` owns **cross-workspace aggregate artefacts only**.
+Aggregation ≠ authority; statistics ≠ recommendations.
+
+| Property | Value |
+|----------|-------|
+| Lifecycle owner | No |
+| Execution / recommend / decide / autonomy | No |
+| Per-workspace SoT replacement | No |
+| Cross-workspace aggregate projection owner | Yes |
+
+Enforced:
+
+- `CrossWorkspaceIntelligenceHistoryEntry` / `CrossWorkspaceIntelligenceSummary` contain no authority/command fields
+- Mutation inventory includes `GenerateCrossWorkspaceIntelligence` (baseline **71**)
+- Cannot import lifecycle/execution/recommendation services or call `PermissionGateway`
+- Cannot silently refresh foreign sources via `generate`
+- Repository cannot call the cross-workspace intelligence service
+
+See [Cross-Workspace Intelligence Architecture](../05-AI/CROSS-WORKSPACE-INTELLIGENCE-ARCHITECTURE.md).
+
 ## Capability boundary audit
 
 Enforced by `scripts/architecture-governance-lib.mjs`:
