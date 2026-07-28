@@ -113,6 +113,11 @@ import {
   isSemanticQueryProjectionNonCommandable,
   semanticQueryHistoryCountIsAuthoritative,
 } from "../app/src/components/semanticQueryProjection";
+import {
+  isEvidenceNavigationHistoryNonActionable,
+  isEvidenceNavigationProjectionNonCommandable,
+  evidenceNavigationHistoryCountIsAuthoritative,
+} from "../app/src/components/evidenceNavigationProjection";
 import type {
   DecisionArtifactHistoryEntry,
   DecisionEngineSummary,
@@ -180,6 +185,9 @@ import type {
   SemanticQueryHistoryEntry,
   WorkspaceSemanticQueryProjection,
   WorkspaceSemanticQuerySummary,
+  EvidenceNavigationHistoryEntry,
+  WorkspaceEvidenceNavigationProjection,
+  WorkspaceEvidenceNavigationSummary,
   RecommendationHistoryEntry,
   RecommendationItem,
   TaskGraphSummary,
@@ -2005,6 +2013,64 @@ describe("projection integrity — cognitive agent cast", () => {
 
     const nonCommand = {
       query_id: "semantic_query:1",
+      actionable: false,
+      terminal: true,
+      authority_effect: "none",
+    };
+    expect(Object.keys(nonCommand)).not.toContain("execute");
+    expect(Object.keys(nonCommand)).not.toContain("approve");
+    expect(Object.keys(nonCommand)).not.toContain("recommend");
+    expect(Object.keys(nonCommand)).not.toContain("automate");
+  });
+
+  it("keeps evidence navigation projections non-commandable with authoritative history_count", () => {
+    const historyEntry = (
+      overrides: Partial<EvidenceNavigationHistoryEntry> = {}
+    ): EvidenceNavigationHistoryEntry => ({
+      navigation_id: "evidence_navigation:1",
+      status: "superseded",
+      created_at: "t0",
+      superseded_at: "t1",
+      completeness: "partial",
+      path_count: 2,
+      gap_count: 1,
+      source_revision_count: 3,
+      terminal: true,
+      actionable: false,
+      authority_effect: "none",
+      ...overrides,
+    });
+    const projection: WorkspaceEvidenceNavigationProjection = {
+      workspace_id: "ws",
+      projected_at: "t2",
+      current: null,
+      history: [historyEntry()],
+      history_count: 3,
+      authority_effect: "none",
+    };
+    expect(isEvidenceNavigationProjectionNonCommandable(projection)).toBe(true);
+    expect(isEvidenceNavigationHistoryNonActionable(historyEntry())).toBe(true);
+    expect(
+      isEvidenceNavigationHistoryNonActionable(historyEntry({ actionable: true }))
+    ).toBe(false);
+
+    const summary: WorkspaceEvidenceNavigationSummary = {
+      workspace_id: "ws",
+      has_current: false,
+      completeness: null,
+      path_count: 0,
+      gap_count: 0,
+      narrative_summary: null,
+      history: [historyEntry()],
+      history_count: 3,
+      authority_effect: "none",
+      actionable: false,
+    };
+    expect(evidenceNavigationHistoryCountIsAuthoritative(summary)).toBe(true);
+    expect(summary.history_count).toBeGreaterThanOrEqual(summary.history.length);
+
+    const nonCommand = {
+      navigation_id: "evidence_navigation:1",
       actionable: false,
       terminal: true,
       authority_effect: "none",

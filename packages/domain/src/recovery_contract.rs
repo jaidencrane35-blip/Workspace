@@ -57,6 +57,9 @@ use crate::workspace_intelligence_hub::{
 use crate::workspace_semantic_query::{
     SemanticQueryHistoryEntry, WorkspaceSemanticQueryProjection,
 };
+use crate::workspace_evidence_navigation::{
+    EvidenceNavigationHistoryEntry, WorkspaceEvidenceNavigationProjection,
+};
 use crate::workspace_reasoning_memory::{ReasoningHistoryEntry, ReasoningSnapshot};
 
 /// Documented startup in-progress sweep cap (must match
@@ -474,6 +477,27 @@ pub fn recovery_must_not_fabricate_semantic_query(
 /// Fabricated actionable semantic-query history must fail the recovery contract.
 pub fn recovery_must_not_fabricate_actionable_semantic_query_history(
     entry: &SemanticQueryHistoryEntry,
+) -> bool {
+    entry.is_non_actionable()
+}
+
+
+/// Missing evidence navigation remains missing — never invent paths or continuity on restart.
+pub fn recovery_must_not_fabricate_evidence_navigation(
+    projection: &WorkspaceEvidenceNavigationProjection,
+) -> bool {
+    projection.is_non_commandable()
+        && projection.history.iter().all(|h| h.is_non_actionable())
+        && projection
+            .current
+            .as_ref()
+            .map(|c| c.is_non_executing())
+            .unwrap_or(true)
+}
+
+/// Fabricated actionable evidence-navigation history must fail the recovery contract.
+pub fn recovery_must_not_fabricate_actionable_evidence_navigation_history(
+    entry: &EvidenceNavigationHistoryEntry,
 ) -> bool {
     entry.is_non_actionable()
 }

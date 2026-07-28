@@ -4666,6 +4666,153 @@ export interface WorkspaceSemanticQueryExplanation {
   actionable: boolean;
 }
 
+/** Programme IV Batch 2 — Workspace Evidence Navigation Engine (navigate ≠ interpret). */
+export interface TraversalScope {
+  include_semantic_query: boolean;
+  include_intelligence_hub: boolean;
+  include_knowledge_integration: boolean;
+  include_knowledge_synthesis: boolean;
+  include_contextual: boolean;
+  include_explanation: boolean;
+  include_temporal: boolean;
+  include_reconstruction: boolean;
+  include_state: boolean;
+}
+
+export interface EvidenceNavigationSession {
+  session_id: string;
+  navigation_request: string;
+  entry_references: string[];
+  traversal_scope: TraversalScope;
+  traversal_depth: number;
+  authority_effect: string;
+  actionable: boolean;
+  executable: boolean;
+}
+
+export interface EvidenceNavigationEvidenceRef {
+  external_ref: string;
+  origin_domain: string;
+  source_revision: string | null;
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface EvidencePath {
+  path_id: string;
+  origin: string;
+  destination: string;
+  intermediate_references: string[];
+  evidence_lineage: EvidenceNavigationEvidenceRef[];
+  hop_count: number;
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface EvidenceNavigationDiagSummary {
+  summary_id: string;
+  reachable_evidence: string[];
+  unreachable_evidence: string[];
+  traversal_completeness: string;
+  path_count: number;
+  notes: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface NavigationGap {
+  gap_id: string;
+  gap_kind: string;
+  description: string;
+  affected_references: string[];
+  evidence_refs: EvidenceNavigationEvidenceRef[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface NavigationLineage {
+  lineage_id: string;
+  participating_snapshots: string[];
+  revisions: string[];
+  evidence_refs: EvidenceNavigationEvidenceRef[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface WorkspaceEvidenceNavigationSnapshot {
+  navigation_id: string;
+  workspace_id: string;
+  generated_at: string;
+  status: string;
+  superseded_at: string | null;
+  session: EvidenceNavigationSession;
+  paths: EvidencePath[];
+  summary: EvidenceNavigationDiagSummary;
+  gaps: NavigationGap[];
+  lineage: NavigationLineage;
+  completeness: string;
+  provenance_links: EvidenceNavigationEvidenceRef[];
+  source_revisions: string[];
+  narrative_summary: string;
+  narrative: string;
+  limitations: string[];
+  authority_effect: string;
+  actionable: boolean;
+  terminal: boolean;
+}
+
+export interface EvidenceNavigationHistoryEntry {
+  navigation_id: string;
+  status: string;
+  created_at: string;
+  superseded_at: string | null;
+  completeness: string;
+  path_count: number;
+  gap_count: number;
+  source_revision_count: number;
+  terminal: boolean;
+  actionable: boolean;
+  authority_effect: string;
+}
+
+export interface WorkspaceEvidenceNavigationProjection {
+  workspace_id: string;
+  current: WorkspaceEvidenceNavigationSnapshot | null;
+  history: EvidenceNavigationHistoryEntry[];
+  history_count: number;
+  projected_at: string;
+  authority_effect: string;
+}
+
+export interface WorkspaceEvidenceNavigationSummary {
+  workspace_id: string;
+  has_current: boolean;
+  completeness: string | null;
+  path_count: number;
+  gap_count: number;
+  narrative_summary: string | null;
+  history: EvidenceNavigationHistoryEntry[];
+  history_count: number;
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface WorkspaceEvidenceNavigationExplanation {
+  explanation_id: string;
+  workspace_id: string;
+  completeness: string | null;
+  narrative_summary: string | null;
+  path_summaries: string[];
+  gap_summaries: string[];
+  lineage_summaries: string[];
+  evidence_refs: string[];
+  uncertainty: string[];
+  narrative: string;
+  limitations: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
 export type WindowIdentityConfidence = "high" | "medium" | "low" | "ephemeral";
 
 export interface WorkspaceObservationPass {
@@ -6779,7 +6926,7 @@ export interface NavigationPath {
   why: string;
 }
 
-export interface NavigationSummary {
+export interface EvidenceNavigationDiagSummary {
   headline: string;
   current_path_line: string;
   related_line: string;
@@ -6794,7 +6941,7 @@ export interface WorkspaceNavigationState {
   workspace_name: string;
   generated_at: string;
   label: string;
-  navigation_summary: NavigationSummary;
+  navigation_summary: EvidenceNavigationDiagSummary;
   paths: NavigationPath[];
   nodes: NavigationNode[];
   edges: NavigationEdge[];
@@ -6819,7 +6966,7 @@ export interface WorkspaceNavigationSummary {
   workspace_name: string;
   generated_at: string;
   label: string;
-  navigation_summary: NavigationSummary;
+  navigation_summary: EvidenceNavigationDiagSummary;
   path_count: number;
   node_count: number;
   edge_count: number;

@@ -15,7 +15,7 @@ const read = (file) => fs.readFileSync(file, "utf8");
 const sorted = (values) => [...new Set(values)].sort();
 
 /** Minimum MutationCommand inventory — dropping below this fails closed. */
-export const MUTATION_COMMAND_BASELINE = 74;
+export const MUTATION_COMMAND_BASELINE = 75;
 
 /** Capability id → authority owner (permission-token scope, not lifecycle owner). */
 export const CAPABILITY_AUTHORITY_OWNERS = {
@@ -115,6 +115,7 @@ export const HISTORY_STRUCTS = [
   "DecisionSupportHistoryEntry",
   "IntelligenceHubHistoryEntry",
   "SemanticQueryHistoryEntry",
+  "EvidenceNavigationHistoryEntry",
 ];
 
 export const PROJECTION_SUMMARY_STRUCTS = [
@@ -143,6 +144,7 @@ export const PROJECTION_SUMMARY_STRUCTS = [
   "WorkspaceDecisionSupportSummary",
   "WorkspaceIntelligenceHubSummary",
   "WorkspaceSemanticQuerySummary",
+  "WorkspaceEvidenceNavigationSummary",
 ];
 
 /** Append-only recovery diagnostic event types — evidence only, never commands. */
@@ -197,6 +199,7 @@ const LIFECYCLE_SERVICE_FILES = new Set([
   "workspace_decision_support.rs",
   "workspace_intelligence_hub.rs",
   "workspace_semantic_query.rs",
+  "workspace_evidence_navigation.rs",
 ]);
 
 /**
@@ -2013,6 +2016,92 @@ function semanticQueryGuards(rootDir) {
   return violations;
 }
 
+
+/**
+ * Programme IV Batch 2 — Workspace Evidence Navigation Engine guards.
+ * Navigate evidence; never interpret, invent edges, recommend, or execute.
+ */
+function evidenceNavigationGuards(rootDir) {
+  const violations = [];
+  const servicePath = path.join(
+    rootDir,
+    "packages/kernel/src/services/workspace_evidence_navigation.rs",
+  );
+  const domainPath = path.join(
+    rootDir,
+    "packages/domain/src/workspace_evidence_navigation",
+  );
+  const repoPath = path.join(
+    rootDir,
+    "packages/database/src/repositories/workspace_evidence_navigation.rs",
+  );
+
+  const serviceFiles = fs.existsSync(servicePath) ? [servicePath] : [];
+  const domainFiles = fs.existsSync(domainPath) ? rustSources(domainPath) : [];
+  for (const file of [...serviceFiles, ...domainFiles]) {
+    const source = read(file);
+    const rel = path.relative(rootDir, file).replace(/\\/g, "/");
+    if (
+      /\bApplicationLaunchService\b/.test(source) ||
+      /\bExecutionLifecycleService\b/.test(source) ||
+      /\bTaskGraphService\b/.test(source) ||
+      /\bDecisionEngineService\b/.test(source) ||
+      /\bWorkspaceRecommendationEngineService\b/.test(source) ||
+      /std::process::Command/.test(source) ||
+      /workspace_windows_integration::/.test(source)
+    ) {
+      violations.push(
+        `${rel}: Evidence navigation must not import lifecycle/execution/recommendation/decision-engine services`,
+      );
+    }
+    if (
+      /PermissionGateway::/.test(source) ||
+      /\bCapabilityGrant\b/.test(source) ||
+      /CommandPipeline::/.test(source)
+    ) {
+      violations.push(
+        `${rel}: Evidence navigation must not own permissions, grant capabilities, or execute via Pipeline`,
+      );
+    }
+    if (
+      /WorkspaceSemanticQueryService::generate\b/.test(source) ||
+      /WorkspaceIntelligenceHubService::generate\b/.test(source) ||
+      /WorkspaceKnowledgeIntegrationService::generate\b/.test(source) ||
+      /WorkspaceKnowledgeSynthesisService::generate\b/.test(source) ||
+      /WorkspaceContextualUnderstandingService::generate\b/.test(source) ||
+      /WorkspaceExplanationService::generate\b/.test(source) ||
+      /WorkspaceTemporalIntelligenceService::generate\b/.test(source) ||
+      /WorkspaceHistoricalReconstructionService::generate\b/.test(source) ||
+      /WorkspaceStateCompositionService::generate\b/.test(source) ||
+      /WorkspacePlanningService::generate\b/.test(source)
+    ) {
+      violations.push(
+        `${rel}: Evidence navigation must not silently refresh foreign sources via generate`,
+      );
+    }
+  }
+
+  if (fs.existsSync(repoPath)) {
+    const source = read(repoPath);
+    if (
+      /WorkspaceEvidenceNavigationService/.test(source) ||
+      /use\s+workspace_kernel::/.test(source)
+    ) {
+      violations.push(
+        `packages/database/src/repositories/workspace_evidence_navigation.rs: repository must not call evidence navigation service`,
+      );
+    }
+  }
+
+  if (!fs.existsSync(domainPath) && !fs.existsSync(`${domainPath}.rs`)) {
+    violations.push(
+      "packages/domain/src/workspace_evidence_navigation missing; governance cannot verify evidence navigation DTOs",
+    );
+  }
+
+  return violations;
+}
+
 function checkDtoAuthorityFields(domainSources, structNames, label) {
 
   const violations = [];
@@ -2307,6 +2396,7 @@ export function auditArchitectureGovernance(rootDir, options = {}) {
   violations.push(...decisionSupportGuards(rootDir));
   violations.push(...intelligenceHubGuards(rootDir));
   violations.push(...semanticQueryGuards(rootDir));
+  violations.push(...evidenceNavigationGuards(rootDir));
 
   const domainSrc = path.join(rootDir, "packages/domain/src");
   const domainSources = fs.existsSync(domainSrc) ? rustSources(domainSrc) : [];

@@ -568,6 +568,23 @@ Canonical read-only semantic retrieval over Programmes II and III.
 
 See [Workspace Semantic Query Architecture](../05-AI/WORKSPACE-SEMANTIC-QUERY-ARCHITECTURE.md).
 
+## Workspace Evidence Navigation Engine (Programme IV Batch 2)
+
+Deterministic navigation of existing evidence paths.
+
+**Navigate evidence. Never interpret evidence.**
+
+- Owns paths / sessions / summaries / lineage / gaps only
+- Never owns semantic retrieval, reasoning, recommendation, execution, lifecycle, or policy
+- Upstream access via `load_snapshot` only — never foreign `::generate`
+- Never infers relationships or bridges missing lineage
+- History is evidence-only (`actionable: false`, `authority_effect: "none"`)
+- Mutation inventory includes `GenerateWorkspaceEvidenceNavigation` (baseline **75**)
+- History / projection DTO inventory length **26**
+
+See [Workspace Evidence Navigation Architecture](../05-AI/WORKSPACE-EVIDENCE-NAVIGATION-ARCHITECTURE.md).
+
+
 
 ## Capability boundary audit
 

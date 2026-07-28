@@ -389,6 +389,16 @@ Rules:
 - Relevance is diagnostic only — never ranking-as-authority
 
 
+
+### Workspace Evidence Navigation Engine (Programme IV Batch 2)
+
+- Dual-channel: `current` + `history` + authoritative `history_count`
+- History is evidence-only; never actionable
+- Projection helpers expose evidence paths, traversal trees, lineage views, completeness, diagnostics
+- Forbidden: execute, recommend, mutate, approve, automate
+- Paths are existing provenance only — never inferred edges
+
+
 ## Serde defaults vs TypeScript required fields
 
 Rust history fields often use `#[serde(default)]` so older persisted / in-flight JSON

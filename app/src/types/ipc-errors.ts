@@ -90,6 +90,7 @@ export const PUBLIC_ERROR_CODES = [
   "decision_support_validation_error",
   "intelligence_hub_validation_error",
   "semantic_query_validation_error",
+  "evidence_navigation_validation_error",
   "workspace_composition_validation_error",
   "workspace_continuity_validation_error",
   "workspace_environment_validation_error",

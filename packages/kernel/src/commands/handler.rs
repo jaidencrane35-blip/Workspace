@@ -164,6 +164,10 @@ use crate::commands::workspace_semantic_query::{
     ExplainWorkspaceSemanticQuery, GenerateWorkspaceSemanticQuery, GetWorkspaceSemanticQuery,
     GetWorkspaceSemanticQuerySummary,
 };
+use crate::commands::workspace_evidence_navigation::{
+    ExplainEvidenceNavigation, GenerateWorkspaceEvidenceNavigation, GetWorkspaceEvidenceNavigation,
+    GetWorkspaceEvidenceNavigationSummary,
+};
 use crate::commands::workspace_cross_intelligence::{
     ExplainCrossWorkspacePattern, GenerateCrossWorkspaceIntelligence, GetCrossWorkspaceIntelligence,
     GetCrossWorkspaceSummary,
@@ -248,6 +252,8 @@ use workspace_domain::{
     WorkspaceIntelligenceHubExplanation,
     WorkspaceSemanticQueryProjection, WorkspaceSemanticQuerySummary,
     WorkspaceSemanticQueryExplanation,
+    WorkspaceEvidenceNavigationProjection, WorkspaceEvidenceNavigationSummary,
+    WorkspaceEvidenceNavigationExplanation,
     LayoutId, LayoutMetadata, LayoutNode, LayoutSnapshot, MemoryEntry, MemoryType,
     ModelProviderDescriptor, ModelResponse, Observation, PersonalizedPlanComparison,
     PreferenceCategory, PreferenceSource, Suggestion, SuggestionIntentRequest,
@@ -3267,6 +3273,53 @@ impl CommandHandler {
     /// Architecture guard — Semantic query cannot execute / reason / recommend / invent.
     pub fn semantic_query_attempt_execute() -> Result<()> {
         crate::services::WorkspaceSemanticQueryService::attempt_execute()
+    }
+
+    pub fn generate_workspace_evidence_navigation(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceEvidenceNavigationProjection> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_mutation(GenerateWorkspaceEvidenceNavigation::new(workspace_id))
+    }
+
+    pub fn get_workspace_evidence_navigation(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceEvidenceNavigationProjection> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetWorkspaceEvidenceNavigation::new(workspace_id))
+    }
+
+    pub fn get_workspace_evidence_navigation_summary(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        history_limit: usize,
+    ) -> Result<WorkspaceEvidenceNavigationSummary> {
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_query(
+            GetWorkspaceEvidenceNavigationSummary::new(workspace_id, history_limit),
+        )
+    }
+
+    pub fn explain_evidence_navigation(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceEvidenceNavigationExplanation> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(ExplainEvidenceNavigation::new(workspace_id))
+    }
+
+    /// Architecture guard — Evidence navigation cannot execute / interpret / invent paths.
+    pub fn evidence_navigation_attempt_execute() -> Result<()> {
+        crate::services::WorkspaceEvidenceNavigationService::attempt_execute()
     }
 
     #[allow(clippy::too_many_arguments)]

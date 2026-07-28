@@ -20,6 +20,8 @@ Before conversational reasoning or assistants can safely operate, there must be 
 
 Programme IV starts with the **Workspace Semantic Query Engine** (Batch 1): the canonical read-only semantic retrieval layer over everything produced by Programmes II and III.
 
+Batch 2 adds the **Workspace Evidence Navigation Engine**: deterministic navigation through existing evidence paths — answering how evidence is connected, never what it means.
+
 ---
 
 ## Primary principle
@@ -42,6 +44,7 @@ The Query Engine:
 | Batch | Capability | Role |
 |---|---|---|
 | 1 | Workspace Semantic Query Engine | Canonical read-only semantic retrieval |
+| 2 | Workspace Evidence Navigation Engine | Deterministic navigation of existing evidence paths |
 
 Future Programme IV batches build conversational and assistant surfaces **on top of** this retrieval layer — never beside it, never replacing it.
 
@@ -61,6 +64,22 @@ Future Programme IV batches build conversational and assistant surfaces **on top
 It never owns cognitive model, planning, reasoning, graph, orchestration, learning, agent cast, autonomy, workspace state, policy, reconstruction, temporal intelligence, explanation, contextual understanding, knowledge, insight coordination, cross-workspace intelligence, decision support, intelligence hub, memory truth, execution, permissions, or lifecycle.
 
 ---
+
+
+---
+
+## Ownership boundary (Batch 2)
+
+`WorkspaceEvidenceNavigationService` owns only:
+
+- evidence paths
+- navigation sessions
+- navigation summaries
+- traversal metadata
+- navigation lineage
+- navigation gaps
+
+It never owns semantic retrieval, knowledge, contextual understanding, explanation, planning, reasoning, cognitive model, workspace state, policy, recommendations, decisions, execution, permissions, or lifecycle.
 
 ## Upstream access rule
 
@@ -116,6 +135,7 @@ Unknown remains unknown. Unavailable remains unavailable. Contradictions remain 
 ## Related documents
 
 - [Workspace Semantic Query Architecture](./WORKSPACE-SEMANTIC-QUERY-ARCHITECTURE.md)
+- [Workspace Evidence Navigation Architecture](./WORKSPACE-EVIDENCE-NAVIGATION-ARCHITECTURE.md)
 - [Programme III — Coherent Workspace Runtime](./PROGRAMME-III-COHERENT-WORKSPACE-RUNTIME.md)
 - [Programme II — Cognitive Workspace](./PROGRAMME-II-COGNITIVE-WORKSPACE.md)
 - [Projection Integrity](../03-Engineering/PROJECTION-INTEGRITY.md)

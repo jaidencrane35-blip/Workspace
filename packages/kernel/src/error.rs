@@ -18,7 +18,7 @@ use workspace_domain::{
     HistoricalReconstructionError, TemporalIntelligenceError, WorkspaceExplanationError,
     ContextualUnderstandingError, KnowledgeSynthesisError, KnowledgeIntegrationError,
     InsightCoordinationError, CrossWorkspaceIntelligenceError, DecisionSupportError,
-    IntelligenceHubError, SemanticQueryError,
+    IntelligenceHubError, SemanticQueryError, EvidenceNavigationError,
     WorkspaceSessionError,
     WorkspaceTransitionError,
     WorkspaceWorkContextError, WorkspaceWorkingStyleError,
@@ -297,6 +297,9 @@ pub enum KernelError {
 
     #[error("Semantic query validation failed: {message}")]
     SemanticQueryValidation { message: String },
+
+    #[error("Evidence navigation validation failed: {message}")]
+    EvidenceNavigationValidation { message: String },
 
     #[error("Workspace intelligence validation failed: {message}")]
     WorkspaceIntelligenceValidation { message: String },
@@ -743,6 +746,17 @@ impl From<SemanticQueryError> for KernelError {
         match error {
             SemanticQueryError::Domain(domain) => KernelError::from(domain),
             other => KernelError::SemanticQueryValidation {
+                message: other.to_string(),
+            },
+        }
+    }
+}
+
+impl From<EvidenceNavigationError> for KernelError {
+    fn from(error: EvidenceNavigationError) -> Self {
+        match error {
+            EvidenceNavigationError::Domain(domain) => KernelError::from(domain),
+            other => KernelError::EvidenceNavigationValidation {
                 message: other.to_string(),
             },
         }
@@ -1477,6 +1491,10 @@ impl KernelError {
             },
             KernelError::SemanticQueryValidation { message } => PublicError {
                 code: "semantic_query_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::EvidenceNavigationValidation { message } => PublicError {
+                code: "evidence_navigation_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::WorkspaceIntelligenceValidation { message } => PublicError {

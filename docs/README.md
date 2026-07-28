@@ -193,3 +193,4 @@ See [Roadmap](08-Roadmap/ROADMAP.md) and [Decision Log](09-Decisions/DECISION-LO
 
 - [Programme IV — Interaction Runtime](./05-AI/PROGRAMME-IV-INTERACTION-RUNTIME.md)
 - [Workspace Semantic Query Architecture](./05-AI/WORKSPACE-SEMANTIC-QUERY-ARCHITECTURE.md)
+- [Workspace Evidence Navigation Architecture](./05-AI/WORKSPACE-EVIDENCE-NAVIGATION-ARCHITECTURE.md)
