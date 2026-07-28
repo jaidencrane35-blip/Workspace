@@ -37,6 +37,7 @@ pub mod permission_approval;
 pub mod platform_coherence;
 pub mod projection;
 pub mod projection_contract;
+pub mod recovery_contract;
 pub mod resource;
 pub mod suggestion;
 pub mod suggestion_intent;
@@ -488,3 +489,7 @@ pub use projection::{
     WidgetSummary, WorkspaceSnapshot, ZoneSummary,
 };
 pub use projection_contract::{history_count_is_authoritative, history_json_is_non_commandable};
+pub use recovery_contract::{
+    history_evidence_is_complete, in_progress_claim_is_not_terminal_evidence,
+    recovered_stale_claim_is_non_retryable, recovery_must_not_fabricate_actionable_history,
+};

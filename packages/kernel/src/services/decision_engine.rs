@@ -1619,16 +1619,21 @@ impl DecisionEngineService {
         let guard = db
             .lock()
             .map_err(|_| KernelError::lock_poisoned("database"))?;
-        let repo = DecisionEngineRepository::new(&guard);
-        repo.upsert_candidate_creation(&creation).map_err(Self::map_persistence)?;
-        repo.upsert_overlay(&DecisionEngineOverlay {
+        let overlay = DecisionEngineOverlay {
             workspace_id: workspace_id.clone(),
             candidate_key: Self::candidate_key(&candidate),
             outcome: candidate.outcome,
             updated_at: creation.created_at.clone().unwrap_or_else(|| Utc::now().to_rfc3339()),
             actor_id: "decision_engine".into(),
-        })
-        .map_err(Self::map_persistence)?;
+        };
+        guard
+            .run_in_transaction(|database| {
+                let repo = DecisionEngineRepository::new(database);
+                repo.upsert_candidate_creation(&creation)?;
+                repo.upsert_overlay(&overlay)?;
+                Ok(())
+            })
+            .map_err(Self::map_persistence)?;
         drop(guard);
         Ok((creation, candidate))
     }

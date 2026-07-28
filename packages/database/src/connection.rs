@@ -33,6 +33,7 @@ impl Database {
 
         let connection = Connection::open(&path)?;
         Self::apply_connection_pragmas(&connection)?;
+        Self::apply_file_durability_pragmas(&connection)?;
 
         Ok(Self {
             connection,
@@ -44,8 +45,21 @@ impl Database {
     /// Applies per-connection pragmas. Foreign key enforcement is off by default
     /// in SQLite and must be enabled on every connection to honour the
     /// `ON DELETE CASCADE` / referential integrity declared in migrations.
+    ///
+    /// File databases also enable WAL + `synchronous=NORMAL` for crash-safer
+    /// durability without changing authority boundaries. In-memory databases
+    /// keep foreign_keys only (WAL is meaningless for `:memory:`).
     fn apply_connection_pragmas(connection: &Connection) -> Result<()> {
         connection.execute_batch("PRAGMA foreign_keys = ON;")?;
+        Ok(())
+    }
+
+    fn apply_file_durability_pragmas(connection: &Connection) -> Result<()> {
+        // WAL may return a row; ignore payload — failure surfaces as Err.
+        let _ = connection.query_row("PRAGMA journal_mode = WAL;", [], |row| {
+            row.get::<_, String>(0)
+        })?;
+        connection.execute_batch("PRAGMA synchronous = NORMAL;")?;
         Ok(())
     }
 
@@ -101,6 +115,33 @@ impl Database {
                     )),
                 }
             }
+        }
+    }
+
+    /// Transaction scope for repository multi-writes that already take `&Database`.
+    ///
+    /// Prefer this when dual-writing through existing repository methods that use
+    /// `Database::connection()` (same connection participates in BEGIN/COMMIT).
+    pub fn run_in_transaction<F, T>(&self, operation: F) -> Result<T>
+    where
+        F: FnOnce(&Self) -> Result<T>,
+    {
+        self.connection().execute_batch("BEGIN IMMEDIATE")?;
+        match operation(self) {
+            Ok(value) => {
+                self.connection()
+                    .execute_batch("COMMIT")
+                    .map_err(|error| {
+                        crate::error::DatabaseError::TransactionCommit(error.to_string())
+                    })?;
+                Ok(value)
+            }
+            Err(error) => match self.connection().execute_batch("ROLLBACK") {
+                Ok(()) => Err(error),
+                Err(rollback) => Err(crate::error::DatabaseError::TransactionRollback(format!(
+                    "operation failed: {error}; rollback failed: {rollback}"
+                ))),
+            },
         }
     }
 
@@ -253,5 +294,44 @@ mod tests {
             .query_row("SELECT COUNT(*) FROM workspaces", [], |row| row.get(0))
             .unwrap();
         assert_eq!(count, 0);
+    }
+
+    #[test]
+    fn run_in_transaction_rolls_back_partial_multi_write() {
+        let db = Database::open_in_memory().unwrap();
+        let runner = MigrationRunner::load_from_dir(crate::init::bundled_migrations_dir()).unwrap();
+        runner.apply_all(&db).unwrap();
+
+        let result: crate::error::Result<()> = db.run_in_transaction(|database| {
+            database.connection().execute(
+                "INSERT INTO workspaces (id, name, created_at, updated_at) VALUES (?1, ?2, ?3, ?4)",
+                ("pair-a", "A", "2026-07-28T10:00:00Z", "2026-07-28T10:00:00Z"),
+            )?;
+            Err(crate::error::DatabaseError::Migration(
+                "forced multi-write rollback".into(),
+            ))
+        });
+        assert!(result.is_err());
+        let count: i64 = db
+            .connection()
+            .query_row(
+                "SELECT COUNT(*) FROM workspaces WHERE id = 'pair-a'",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(count, 0);
+    }
+
+    #[test]
+    fn file_database_enables_wal_durability_pragmas() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("wal.db");
+        let db = Database::open(&path).unwrap();
+        let mode: String = db
+            .connection()
+            .query_row("PRAGMA journal_mode;", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(mode.to_lowercase(), "wal");
     }
 }

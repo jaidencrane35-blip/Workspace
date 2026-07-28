@@ -74,6 +74,8 @@ mod execution_outcome_tests;
 #[cfg(test)]
 mod execution_lifecycle_tests;
 #[cfg(test)]
+mod operational_recovery_tests;
+#[cfg(test)]
 mod suggestion_intent_tests;
 #[cfg(test)]
 mod suggestion_tests;

@@ -2003,13 +2003,10 @@ impl WorkspaceRecommendationEngineService {
                         continue;
                     }
                     if existing.lifecycle_state.is_open() {
-                        let superseded = Self::resolve_open_overlay(
-                            db,
-                            actor,
+                        let superseded = Self::build_resolved_open_overlay(
                             &existing,
                             Some(item),
                             RecommendationLifecycleState::Superseded,
-                            "workspace.recommendation_engine.superseded",
                             &now,
                             &actor_id,
                         )?;
@@ -2021,7 +2018,14 @@ impl WorkspaceRecommendationEngineService {
                             &actor_id,
                         )?
                         .with_prior_outcomes(superseded.carried_outcomes());
-                        Self::upsert_overlay(db, &fresh)?;
+                        Self::upsert_overlay_pair(db, &superseded, &fresh)?;
+                        Self::audit_lifecycle(
+                            db,
+                            actor,
+                            "workspace.recommendation_engine.superseded",
+                            item,
+                            &superseded,
+                        )?;
                         by_id.insert(item.id.clone(), fresh);
                         continue;
                     }
@@ -2043,7 +2047,9 @@ impl WorkspaceRecommendationEngineService {
                         &actor_id,
                     )?
                     .with_prior_outcomes(existing.carried_outcomes());
-                    Self::upsert_overlay(db, &fresh)?;
+                    // Keep terminal `existing` row unchanged; only insert fresh.
+                    // Atomic with a no-op-safe re-upsert of terminal identity.
+                    Self::upsert_overlay_pair(db, &existing, &fresh)?;
                     by_id.insert(item.id.clone(), fresh);
                 }
             }
@@ -2452,6 +2458,38 @@ impl WorkspaceRecommendationEngineService {
         now: &str,
         actor_id: &str,
     ) -> Result<RecommendationLifecycleOverlay> {
+        let next = Self::build_resolved_open_overlay(overlay, live_item, to, now, actor_id)?;
+        Self::upsert_overlay(db, &next)?;
+        if let Some(item) = live_item {
+            Self::audit_lifecycle(db, actor, audit_event, item, &next)?;
+        } else {
+            AuditService::record_ai_planning_event(
+                db,
+                actor,
+                &IntentContext::user_request(),
+                audit_event,
+                true,
+                json!({
+                    "workspace_id": next.workspace_id,
+                    "recommendation_id": next.native_id,
+                    "lifecycle_state": next.lifecycle_state.as_str(),
+                    "resolution_type": next.resolution_type.map(|r| r.as_str()),
+                    "authority_effect": "none",
+                    "continuity": "source_absent",
+                })
+                .to_string(),
+            )?;
+        }
+        Ok(next)
+    }
+
+    fn build_resolved_open_overlay(
+        overlay: &RecommendationLifecycleOverlay,
+        live_item: Option<&RecommendationItem>,
+        to: RecommendationLifecycleState,
+        now: &str,
+        actor_id: &str,
+    ) -> Result<RecommendationLifecycleOverlay> {
         let mut record = match live_item {
             Some(item) => {
                 let mut record =
@@ -2481,41 +2519,21 @@ impl WorkspaceRecommendationEngineService {
             Some(item) => Self::record_outcome_with_experience(&record, item, now)?,
             None => record.record_outcome(now).map_err(map_lifecycle_err)?,
         };
-        let next = RecommendationLifecycleOverlay::from_governance_record(
-            overlay.workspace_id.clone(),
-            &record,
-            Some(outcome),
-            now,
+        Ok(
+            RecommendationLifecycleOverlay::from_governance_record(
+                overlay.workspace_id.clone(),
+                &record,
+                Some(outcome),
+                now,
+            )
+            .with_prior_outcomes(overlay.prior_outcomes.clone())
+            .with_content_fingerprint(
+                overlay
+                    .content_fingerprint
+                    .clone()
+                    .unwrap_or_else(|| "continuity".into()),
+            ),
         )
-        .with_prior_outcomes(overlay.prior_outcomes.clone())
-        .with_content_fingerprint(
-            overlay
-                .content_fingerprint
-                .clone()
-                .unwrap_or_else(|| "continuity".into()),
-        );
-        Self::upsert_overlay(db, &next)?;
-        if let Some(item) = live_item {
-            Self::audit_lifecycle(db, actor, audit_event, item, &next)?;
-        } else {
-            AuditService::record_ai_planning_event(
-                db,
-                actor,
-                &IntentContext::user_request(),
-                audit_event,
-                true,
-                json!({
-                    "workspace_id": next.workspace_id,
-                    "recommendation_id": next.native_id,
-                    "lifecycle_state": next.lifecycle_state.as_str(),
-                    "resolution_type": next.resolution_type.map(|r| r.as_str()),
-                    "authority_effect": "none",
-                    "continuity": "source_absent",
-                })
-                .to_string(),
-            )?;
-        }
-        Ok(next)
     }
 
     fn load_overlays(
@@ -2548,6 +2566,27 @@ impl WorkspaceRecommendationEngineService {
             .map_err(|_| KernelError::lock_poisoned("database"))?;
         RecommendationLifecycleRepository::new(&guard)
             .upsert_overlay(overlay)
+            .map_err(KernelError::from_recommendation_persistence)?;
+        Ok(())
+    }
+
+    /// Persist two continuity overlays atomically (e.g. Superseded + fresh Available).
+    /// Recovery must not leave a terminal supersede without its replacement row.
+    fn upsert_overlay_pair(
+        db: &Arc<Mutex<Database>>,
+        first: &RecommendationLifecycleOverlay,
+        second: &RecommendationLifecycleOverlay,
+    ) -> Result<()> {
+        let guard = db
+            .lock()
+            .map_err(|_| KernelError::lock_poisoned("database"))?;
+        guard
+            .run_in_transaction(|database| {
+                let repo = RecommendationLifecycleRepository::new(database);
+                repo.upsert_overlay(first)?;
+                repo.upsert_overlay(second)?;
+                Ok(())
+            })
             .map_err(KernelError::from_recommendation_persistence)?;
         Ok(())
     }

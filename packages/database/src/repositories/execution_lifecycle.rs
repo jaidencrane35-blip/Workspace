@@ -139,6 +139,22 @@ impl<'a> ExecutionLifecycleRepository<'a> {
         rows.collect::<std::result::Result<Vec<_>, _>>()
             .map_err(Into::into)
     }
+
+    /// Lists in-progress claims for startup / recovery sweeps (indexed path).
+    pub fn list_in_progress(&self, limit: usize) -> Result<Vec<ExecutionLifecycleRecord>> {
+        let limit = limit.clamp(1, 500) as i64;
+        let mut stmt = self.db.connection().prepare(
+            "SELECT execution_request_id, suggestion_id, intent_id, state,
+                    retry_allowed, failure_reason, claimed_at, completed_at, updated_at
+             FROM execution_lifecycle
+             WHERE state = 'in_progress'
+             ORDER BY claimed_at ASC, execution_request_id ASC
+             LIMIT ?1",
+        )?;
+        let rows = stmt.query_map([limit], map_record)?;
+        rows.collect::<std::result::Result<Vec<_>, _>>()
+            .map_err(Into::into)
+    }
 }
 
 fn map_record(row: &rusqlite::Row<'_>) -> rusqlite::Result<ExecutionLifecycleRecord> {
@@ -479,5 +495,32 @@ mod tests {
             "2026-07-28T00:01:00Z",
         ).unwrap());
         assert!(!repository.insert_claim(&terminal).unwrap());
+    }
+
+    #[test]
+    fn list_in_progress_returns_only_active_claims() {
+        let dir = tempfile::tempdir().unwrap();
+        let db = DatabaseService::initialize(dir.path().join("workspace.db"))
+            .unwrap()
+            .into_database();
+        let repository = ExecutionLifecycleRepository::new(&db);
+
+        let mut active = claim();
+        active.execution_request_id = "execution:active".into();
+        active.suggestion_id = "active".into();
+        assert!(repository.insert_claim(&active).unwrap());
+
+        let mut done = claim();
+        done.execution_request_id = "execution:done".into();
+        done.suggestion_id = "done".into();
+        assert!(repository.insert_claim(&done).unwrap());
+        assert!(repository
+            .mark_completed(&done.execution_request_id, done.intent_id.as_deref(), "2026-07-28T00:01:00Z")
+            .unwrap());
+
+        let listed = repository.list_in_progress(50).unwrap();
+        assert_eq!(listed.len(), 1);
+        assert_eq!(listed[0].execution_request_id, "execution:active");
+        assert_eq!(listed[0].state, ExecutionState::InProgress);
     }
 }

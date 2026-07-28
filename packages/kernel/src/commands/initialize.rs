@@ -4,7 +4,6 @@ use workspace_database::DatabaseService;
 
 use crate::commands::Command;
 use crate::error::{KernelError, Result};
-use crate::events::types::{DomainEvent, WorkspaceReady, WorkspaceStarted};
 use crate::events::EventBus;
 use crate::lifecycle::LifecycleState;
 use crate::services::{ConfigurationService, DatabaseServiceHandle, ServiceRegistry, ServiceStatus};
@@ -46,12 +45,11 @@ impl InitializeWorkspace {
 
     pub fn execute(self, event_bus: &EventBus) -> Result<InitializeWorkspaceResult> {
         log::info!("COMMAND: InitializeWorkspace");
+        let _ = event_bus;
 
-        event_bus.publish(DomainEvent::WorkspaceStarted(WorkspaceStarted {
-            version: KERNEL_VERSION.to_string(),
-            intent: Some(workspace_domain::IntentContext::system_startup()),
-            capability: Some(workspace_domain::Capability::system_startup()),
-        }));
+        // Domain events WorkspaceStarted / WorkspaceReady are published by
+        // CommandHandler *after* apply_runtime registers AuditEventSubscriber,
+        // so startup evidence is durable. Do not publish here.
 
         let mut state = WorkspaceState::new(KERNEL_VERSION);
         let mut services = ServiceRegistry::new();
@@ -99,13 +97,6 @@ impl InitializeWorkspace {
         services.register(SERVICE_WORKSPACE, ServiceStatus::Healthy);
 
         state.transition(LifecycleState::Ready)?;
-
-        event_bus.publish(DomainEvent::WorkspaceReady(WorkspaceReady {
-            version: KERNEL_VERSION.to_string(),
-            lifecycle: LifecycleState::Ready,
-            intent: Some(workspace_domain::IntentContext::system_startup()),
-            capability: Some(workspace_domain::Capability::system_startup()),
-        }));
 
         Ok(InitializeWorkspaceResult {
             state,

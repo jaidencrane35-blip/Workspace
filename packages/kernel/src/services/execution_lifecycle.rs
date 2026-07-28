@@ -268,6 +268,31 @@ impl ExecutionLifecycleService {
             .collect()
     }
 
+    /// Startup / recovery sweep: apply existing stale-claim fail-closed rules.
+    ///
+    /// Does not invent retries or reopen terminals. Uses the same
+    /// `reconcile_stale` path as `get` / `list_recent`. Returns how many
+    /// in-progress rows were inspected (post-reconcile may be Failed).
+    pub(crate) fn reconcile_stale_claims_at_startup(
+        db: &Arc<Mutex<Database>>,
+    ) -> Result<usize> {
+        let guard = db
+            .lock()
+            .map_err(|_| KernelError::lock_poisoned("database"))?;
+        let repository = ExecutionLifecycleRepository::new(&guard);
+        let records = repository.list_in_progress(500).map_err(|source| {
+            KernelError::ExecutionLifecyclePersistence {
+                stage: "startup_list_in_progress",
+                source,
+            }
+        })?;
+        let count = records.len();
+        for record in records {
+            let _ = Self::reconcile_stale(&repository, record)?;
+        }
+        Ok(count)
+    }
+
     pub fn lifecycle_outcome(record: &ExecutionLifecycleRecord) -> Result<Option<ExecutionOutcome>> {
         if record.state == ExecutionState::InProgress {
             return Ok(None);

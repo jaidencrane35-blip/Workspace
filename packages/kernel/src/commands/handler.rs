@@ -96,13 +96,13 @@ use crate::commands::workspace_intent::{
 use crate::commands::zone::{CreateZone, DeleteZone, GetZone};
 use crate::config::{SettingsUpdate, WorkspaceSettings};
 use crate::error::{KernelError, Result};
-use crate::events::types::{DomainEvent, WorkspaceShutdown};
+use crate::events::types::{DomainEvent, WorkspaceReady, WorkspaceShutdown, WorkspaceStarted};
 use crate::lifecycle::LifecycleState;
 use crate::security::{PermissionGateway, PermissionSubject};
 use crate::services::{
     AiAssistantService, AiEvaluationService, AiOrchestrationService, AiParticipationService,
     AiPlanningService, ConfigurationService, DecisionEngineService, DecisionQueueService,
-    TaskGraphService, WorkspaceEnvironmentService, WorkspaceStateEngine,
+    ExecutionLifecycleService, TaskGraphService, WorkspaceEnvironmentService, WorkspaceStateEngine,
     WorkspaceCompositionService, WorkspacePurposeService, WorkspaceEvolutionService,
     WorkspaceRecommendationEngineService, WorkspaceOperatingStateService,
     WorkspacePatternService, WorkspaceAdaptationService, WorkspaceReadinessService,
@@ -147,7 +147,7 @@ use workspace_domain::{
     WorkspaceIntelligenceComparison, WorkspaceIntelligenceState, AiPlan, AiPlanEvaluationReport,
     AiPlanSubmissionResult,
     AiProposalAuthorityOutcome, AiProposalEvaluation, AiProposalSubmission, ApplicationId,
-    ApplicationReference, AuditEvent, Capability, CapabilitySet, Intent, IntentContext, Layout,
+    ApplicationReference, AuditEvent, Capability, CapabilitySet, IntentContext, Layout,
     LayoutId, LayoutMetadata, LayoutNode, LayoutSnapshot, MemoryEntry, MemoryType,
     ModelProviderDescriptor, ModelResponse, Observation, PersonalizedPlanComparison,
     PreferenceCategory, PreferenceSource, Suggestion, SuggestionIntentRequest,
@@ -168,13 +168,50 @@ impl CommandHandler {
     ) -> Result<()> {
         let result = InitializeWorkspace::at_path(db_path).execute(kernel.event_bus())?;
         kernel.apply_runtime(result.state, result.database, result.services);
+        Self::publish_startup_events(kernel);
+        Self::reconcile_execution_claims_at_startup(kernel);
         Ok(())
     }
 
     pub fn initialize_workspace_in_memory(kernel: &mut WorkspaceKernel) -> Result<()> {
         let result = InitializeWorkspace::in_memory().execute(kernel.event_bus())?;
         kernel.apply_runtime(result.state, result.database, result.services);
+        Self::publish_startup_events(kernel);
+        Self::reconcile_execution_claims_at_startup(kernel);
         Ok(())
+    }
+
+    /// Publish Started/Ready only after audit subscriber registration in apply_runtime.
+    fn publish_startup_events(kernel: &WorkspaceKernel) {
+        kernel.event_bus().publish(DomainEvent::WorkspaceStarted(WorkspaceStarted {
+            version: crate::KERNEL_VERSION.to_string(),
+            intent: Some(workspace_domain::IntentContext::system_startup()),
+            capability: Some(workspace_domain::Capability::system_startup()),
+        }));
+        kernel.event_bus().publish(DomainEvent::WorkspaceReady(WorkspaceReady {
+            version: crate::KERNEL_VERSION.to_string(),
+            lifecycle: LifecycleState::Ready,
+            intent: Some(workspace_domain::IntentContext::system_startup()),
+            capability: Some(workspace_domain::Capability::system_startup()),
+        }));
+    }
+
+    /// Invoke existing ExecutionLifecycleService stale rules — no new authority.
+    fn reconcile_execution_claims_at_startup(kernel: &WorkspaceKernel) {
+        match ExecutionLifecycleService::reconcile_stale_claims_at_startup(
+            &kernel.shared_database(),
+        ) {
+            Ok(count) => {
+                if count > 0 {
+                    log::info!(
+                        "startup recovery inspected {count} in-progress execution claim(s)"
+                    );
+                }
+            }
+            Err(error) => {
+                log::error!("startup execution claim reconciliation failed: {error}");
+            }
+        }
     }
 
     pub fn get_settings(
