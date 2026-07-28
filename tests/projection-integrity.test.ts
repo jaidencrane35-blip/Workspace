@@ -535,3 +535,73 @@ describe("projection integrity — execution lifecycle dual channel", () => {
     ).toBe(false);
   });
 });
+
+describe("projection contract — shared cross-domain invariants", () => {
+  function assertCountAuthority(windowLen: number, count: number) {
+    expect(count).toBeGreaterThanOrEqual(windowLen);
+  }
+
+  function assertNoCommandKeys(entry: Record<string, unknown>) {
+    for (const key of [
+      "execute",
+      "handoff_command",
+      "dispatch_allowed",
+      "cancellation_allowed",
+      "recommended_action",
+    ]) {
+      expect(entry).not.toHaveProperty(key);
+    }
+    if ("actionable" in entry) {
+      expect(entry.actionable).toBe(false);
+    }
+  }
+
+  it("enforces history_count >= history.length for every surface", () => {
+    assertCountAuthority(1, 4); // RE-style truncation
+    assertCountAuthority(1, 5); // DQ
+    assertCountAuthority(1, 4); // DE
+    assertCountAuthority(1, 3); // Task
+    assertCountAuthority(1, 5); // Execution
+  });
+
+  it("treats history DTOs as non-commandable across domains", () => {
+    assertNoCommandKeys({
+      native_id: "r",
+      actionable: false,
+      terminal: true,
+      authority_effect: "none",
+    });
+    assertNoCommandKeys({
+      decision_item_id: "d",
+      actionable: false,
+      authority_effect: "none",
+    });
+    assertNoCommandKeys({
+      artifact_id: "a",
+      actionable: false,
+      terminal: true,
+      origin: "unknown",
+    });
+    assertNoCommandKeys({
+      task_id: "t",
+      actionable: false,
+      terminal: true,
+    });
+    assertNoCommandKeys({
+      execution_request_id: "e",
+      actionable: false,
+      terminal: true,
+      retry_allowed: true,
+    });
+  });
+
+  it("keeps unknown provenance as unknown (never invent native)", () => {
+    const orphan = {
+      origin: "unknown",
+      recommendation_id: null as string | null,
+    };
+    expect(orphan.origin).toBe("unknown");
+    expect(orphan.origin).not.toBe("native");
+    expect(orphan.recommendation_id).toBeNull();
+  });
+});

@@ -1336,3 +1336,95 @@ fn case19_unknown_lifecycle_is_not_actionable() {
         .iter()
         .all(|item| item.id != candidate_id));
 }
+
+/// IPC / consumer generate returns sealed actionable-only projection.
+#[test]
+fn consumer_generate_is_sealed_after_terminal_accept() {
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let (ws, _) = seed(&kernel);
+    let local = ActorContext::local_user();
+    let intent = IntentContext::user_request();
+    let state = CommandHandler::generate_workspace_recommendation_engine(
+        &kernel,
+        local.clone(),
+        intent.clone(),
+        ws.clone(),
+    )
+    .unwrap();
+    assert!(
+        state.is_consumer_sealed(),
+        "fresh IPC projection must be sealed"
+    );
+    let id = state.candidates[0].id.clone();
+    CommandHandler::accept_recommendation(
+        &kernel,
+        local.clone(),
+        intent.clone(),
+        ws.clone(),
+        id.clone(),
+    )
+    .unwrap();
+    let after = CommandHandler::generate_workspace_recommendation_engine(
+        &kernel, local, intent, ws,
+    )
+    .unwrap();
+    assert!(after.is_consumer_sealed());
+    assert!(after.candidates.iter().all(|c| c.id != id));
+    assert!(after.history.iter().any(|h| h.native_id == id && !h.actionable));
+    assert!(after.history_count >= after.history.len());
+}
+
+/// Lifecycle mutation path can still address accepted recommendations for confirm.
+#[test]
+fn lifecycle_mutation_path_reaches_terminal_for_confirm() {
+    use workspace_domain::RecommendationDecisionConfirmation;
+
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let (ws, _) = seed(&kernel);
+    let local = ActorContext::local_user();
+    let intent = IntentContext::user_request();
+    let state = CommandHandler::generate_workspace_recommendation_engine(
+        &kernel,
+        local.clone(),
+        intent.clone(),
+        ws.clone(),
+    )
+    .unwrap();
+    let id = state.candidates[0].id.clone();
+    let accepted = CommandHandler::accept_recommendation(
+        &kernel,
+        local.clone(),
+        intent.clone(),
+        ws.clone(),
+        id.clone(),
+    )
+    .unwrap();
+    // Sealed consumer view no longer lists the id.
+    let sealed = CommandHandler::generate_workspace_recommendation_engine(
+        &kernel,
+        local.clone(),
+        intent.clone(),
+        ws.clone(),
+    )
+    .unwrap();
+    assert!(sealed.candidates.iter().all(|c| c.id != id));
+    assert!(sealed.is_consumer_sealed());
+
+    let confirmation = accepted.decision_confirmation.expect("confirmation");
+    if confirmation.confirmation_state
+        == RecommendationDecisionConfirmation::STATE_REQUIRED
+    {
+        let confirmed = CommandHandler::confirm_recommendation_decision(
+            &kernel,
+            local,
+            intent,
+            ws,
+            id,
+            RecommendationDecisionConfirmation::INTENT_CREATE_FUTURE_DECISION.into(),
+        );
+        assert!(
+            confirmed.is_ok(),
+            "mutation path must reach terminal overlay despite sealed IPC: {confirmed:?}"
+        );
+    }
+}

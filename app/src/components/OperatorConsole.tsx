@@ -2031,8 +2031,8 @@ export function OperatorConsole({
             {recommendationEngine.history_count > 0 && (
               <>
                 <p className="muted explain-block">
-                  Outcome history (immutable feedback — not actionable, never
-                  executes) · showing {recommendationEngine.history.length} of{" "}
+                  Evidence history (read-only — not active work; never executes)
+                  · showing {recommendationEngine.history.length} of{" "}
                   {recommendationEngine.history_count}
                 </p>
                 <RecommendationHistoryList
@@ -4050,14 +4050,16 @@ export function OperatorConsole({
             {executionStates.history_count > 0 && (
               <>
                 <p className="muted">
-                  Terminal history (evidence only — not actionable)
+                  Evidence history (terminal outcomes — not a dispatch queue)
                 </p>
                 <ul className="list compact">
                   {executionStates.history.map((h) => (
                     <li key={h.execution_request_id}>
                       <span className="mono">{h.execution_request_id}</span> —{" "}
                       {h.state}
-                      {h.retry_allowed ? " · retry eligible" : ""}
+                      {h.retry_allowed
+                        ? " · retry eligibility noted (informational — not a command)"
+                        : ""}
                       {h.failure_reason ? ` · ${h.failure_reason}` : ""}
                     </li>
                   ))}

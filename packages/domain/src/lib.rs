@@ -36,6 +36,7 @@ pub mod observation;
 pub mod permission_approval;
 pub mod platform_coherence;
 pub mod projection;
+pub mod projection_contract;
 pub mod resource;
 pub mod suggestion;
 pub mod suggestion_intent;
@@ -486,3 +487,4 @@ pub use projection::{
     ApplicationSummary, LayoutPlacementSummary, ProjectionError, ProjectionRelationship,
     WidgetSummary, WorkspaceSnapshot, ZoneSummary,
 };
+pub use projection_contract::{history_count_is_authoritative, history_json_is_non_commandable};

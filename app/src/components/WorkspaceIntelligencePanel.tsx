@@ -1726,8 +1726,9 @@ export function WorkspaceIntelligencePanel({
             {taskGraph.history_count > 0 && (
               <>
                 <p className="muted">
-                  Terminal task history (evidence only — not editable) · showing{" "}
-                  {taskGraph.history.length} of {taskGraph.history_count}
+                  Evidence history (completed/cancelled — not editable active
+                  work) · showing {taskGraph.history.length} of{" "}
+                  {taskGraph.history_count}
                 </p>
                 <ul className="intelligence-list">
                   {taskGraph.history.slice(0, 8).map((entry) => (
@@ -2542,7 +2543,7 @@ export function WorkspaceIntelligencePanel({
             {recommendationEngine.history_count > 0 && (
               <>
                 <p className="muted">
-                  Outcome history (immutable feedback — not actionable) ·
+                  Evidence history (read-only — not active work; no actions) ·
                   showing {recommendationEngine.history.length} of{" "}
                   {recommendationEngine.history_count}
                 </p>
@@ -2597,8 +2598,8 @@ export function WorkspaceIntelligencePanel({
             </p>
             {decisionEngine.history_count > 0 && (
               <div className="muted">
-                Terminal decision evidence (projection-only — not actionable;
-                showing {decisionEngine.history.length} of{" "}
+                Evidence history (read-only terminal artifacts — not a work
+                queue; showing {decisionEngine.history.length} of{" "}
                 {decisionEngine.history_count}):
                 <ul className="intelligence-list">
                   {decisionEngine.history.map((entry) => (
@@ -2843,9 +2844,8 @@ export function WorkspaceIntelligencePanel({
         {lastHandoff && <p className="muted">{lastHandoff}</p>}
         {decisionQueue && decisionQueue.history_count > 0 && (
             <div className="muted">
-              Terminal overlay history (projection-only — not actionable;
-              showing {decisionQueue.history.length} of{" "}
-              {decisionQueue.history_count}):
+              Evidence history (read-only overlays — not pending work; showing{" "}
+              {decisionQueue.history.length} of {decisionQueue.history_count}):
               <ul className="intelligence-list">
                 {decisionQueue.history.map((entry) => (
                   <li key={`${entry.source_type}:${entry.source_id}`}>

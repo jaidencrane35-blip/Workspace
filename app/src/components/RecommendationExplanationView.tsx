@@ -579,12 +579,13 @@ export function RecommendationHistoryList({
 }) {
   if (!history.length) return null;
   return (
-    <ul className="intelligence-list">
+    <ul className="intelligence-list" aria-label="Recommendation evidence history">
       {history.map((entry) => (
         <li key={`${entry.native_id}:${entry.outcome.outcome_id}:${entry.outcome.recorded_at}`}>
           <strong>
             [{entry.lifecycle_state}] {entry.native_id}
           </strong>
+          <span className="muted"> · evidence only</span>
           <RecommendationOutcomeBlock outcome={entry.outcome} />
         </li>
       ))}

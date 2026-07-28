@@ -442,9 +442,10 @@ export function AssistantPanel({
                 : ""}
               History evidence:{" "}
               {workspaceIntel.recommendation_engine.history_count} terminal
-              record(s) projected (not actionable). Same Recommendation Engine
-              as the Work tab. Assistant may explain and compare options — never
-              accept, execute, or convert into actions silently.
+              record(s) projected (read-only evidence — not active work). Same
+              Recommendation Engine as the Work tab. Assistant may explain and
+              compare options — never accept, execute, or convert into actions
+              silently.
               {workspaceIntel.recommendation_engine.top_candidates[0]
                 ?.attention_reasons.length ? (
                 <DisplayReasonList

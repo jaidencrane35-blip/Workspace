@@ -105,6 +105,31 @@ Do not conflate RE outcome identity with DQ/DE overlay/artifact identity.
 - Durable lifecycle outcomes cannot disappear because an actionable list is empty.
 - `get_execution_states` returns the dual-channel projection (not a flat mixed list).
 
+#### Outcome-only execution history (fallback)
+
+When **no durable lifecycle row** exists for an execution id, projections may fall back to
+audit-derived `ExecutionOutcome` evidence via `ExecutionLifecycleHistoryEntry::from_outcome`.
+
+Rules:
+
+- Fallback exists **only** when no durable lifecycle row is present.
+- **Reduced provenance is intentional** (e.g. empty `suggestion_id`, claimed_at derived from
+  outcome timestamp) — never invent a full lifecycle claim that did not exist.
+- **Unknown remains unknown** — empty/unknown outcome streams do not become fabricated
+  terminals.
+- Fallback is **evidence projection only** — it does not replace
+  `ExecutionLifecycleService` ownership of claim / complete / fail / cancel.
+- Consumers must not treat outcome-only history as a second lifecycle authority.
+
+### Recommendation Engine sealing
+
+- **Consumer / IPC APIs** (`generate`, `generate_with_inputs`, enrich paths) always return
+  **sealed** projections: `candidates` actionable-only; terminals only in `history`.
+- **Internal mutation views** (`generate_for_lifecycle_mutation` / unsealed assembly) may
+  retain terminal candidates so accept → confirm flows can address overlays.
+- Unsealed views must never be returned from IPC or React-facing summaries.
+- `WorkspaceRecommendationEngineState::is_consumer_sealed` asserts the consumer invariant.
+
 ### Observation layer
 
 - Observations are **derived evidence only** — disposable classifications of recorded activity.
@@ -112,6 +137,14 @@ Do not conflate RE outcome identity with DQ/DE overlay/artifact identity.
 - Projections must not imply observations caused state changes; durable audit / domain
   events remain the source of truth.
 - Observation execute attempts fail by contract.
+
+## Serde defaults vs TypeScript required fields
+
+Rust history fields often use `#[serde(default)]` so older persisted / in-flight JSON
+without `history` still deserializes. **Producers always emit** `history` + `history_count`.
+TypeScript marks these fields **required** so frontend consumers cannot invent absence via
+`?? 0` / `?? []`. Do not remove Rust defaults solely for symmetry — they are backwards
+compatibility for deserialize, not permission to omit on emit.
 
 ## Frontend responsibilities
 
@@ -122,6 +155,8 @@ Do not conflate RE outcome identity with DQ/DE overlay/artifact identity.
 - History helpers only verify projected non-actionability — they do not invent
   lifecycle or provenance.
 - History rendering has no mutation buttons, command handlers, or execution paths.
+- History sections must read as **evidence** (muted labels, “not a command” for retry
+  facts) — never styled as active work queues.
 
 ## Related
 

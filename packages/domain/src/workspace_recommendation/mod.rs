@@ -2880,6 +2880,19 @@ impl WorkspaceRecommendationEngineState {
             build_recommendation_engine_summary(&self.label, self.candidate_count);
     }
 
+    /// True when `candidates` are actionable-only (consumer/IPC sealed projection).
+    pub fn is_consumer_sealed(&self) -> bool {
+        self.candidate_count == self.candidates.len()
+            && self
+                .candidates
+                .iter()
+                .all(RecommendationItem::is_active_lifecycle)
+            && self
+                .history
+                .iter()
+                .all(|h| h.terminal && !h.actionable)
+    }
+
     pub fn summary_projection(&self, limit: usize) -> WorkspaceRecommendationEngineSummary {
         // Full state candidates are already actionable-only after overlay projection;
         // filter again so ad-hoc constructions remain safe.

@@ -153,7 +153,7 @@ impl WorkspaceRecommendationEngineService {
             &decision_queue,
             project.as_ref(),
         )?;
-        Self::generate_with_inputs(
+        Self::generate_with_inputs_unsealed(
             db,
             actor,
             &workspace_id,
@@ -175,9 +175,46 @@ impl WorkspaceRecommendationEngineService {
         })
     }
 
-    /// Preferred path — Intelligence injects shared aggregator inputs.
+    /// Preferred **consumer** path — Intelligence injects shared aggregator inputs.
+    ///
+    /// Always returns a **sealed** projection (`candidates` actionable-only).
+    /// Lifecycle mutation paths must use [`Self::generate_for_lifecycle_mutation`] /
+    /// [`Self::generate_with_inputs_unsealed`] instead.
     #[allow(clippy::too_many_arguments)]
     pub(crate) fn generate_with_inputs(
+        db: &Arc<Mutex<Database>>,
+        actor: &ActorContext,
+        workspace_id: impl Into<String>,
+        attention: &WorkspaceAttentionState,
+        continuity: &WorkspaceContinuityState,
+        evolution: &WorkspaceEvolutionState,
+        purpose: &WorkspacePurposeState,
+        task_graph: Option<&TaskGraph>,
+        composition: &WorkspaceCompositionState,
+        decision_queue: &DecisionQueue,
+        environment: &WorkspaceEnvironmentState,
+    ) -> Result<WorkspaceRecommendationEngineState> {
+        let state = Self::generate_with_inputs_unsealed(
+            db,
+            actor,
+            workspace_id,
+            attention,
+            continuity,
+            evolution,
+            purpose,
+            task_graph,
+            composition,
+            decision_queue,
+            environment,
+        )?;
+        Ok(Self::seal_actionable_projection(state))
+    }
+
+    /// Internal unsealed assembly — terminals remain addressable for lifecycle mutation.
+    ///
+    /// **Not** for IPC or React consumers. Prefer [`Self::generate_with_inputs`].
+    #[allow(clippy::too_many_arguments)]
+    fn generate_with_inputs_unsealed(
         db: &Arc<Mutex<Database>>,
         actor: &ActorContext,
         workspace_id: impl Into<String>,
@@ -2089,11 +2126,19 @@ impl WorkspaceRecommendationEngineService {
         state
     }
 
-    /// Seal for Intelligence / Operating State / other consumer injectors of `generate_with_inputs`.
+    /// Seal for callers that hold an unsealed intermediate (rare).
+    /// Prefer [`Self::generate_with_inputs`], which seals by contract.
     pub(crate) fn seal_consumer_projection(
         state: WorkspaceRecommendationEngineState,
     ) -> WorkspaceRecommendationEngineState {
         Self::seal_actionable_projection(state)
+    }
+
+    /// Consumer-facing invariant: actionable channel contains no terminal items.
+    pub(crate) fn assert_consumer_sealed(
+        state: &WorkspaceRecommendationEngineState,
+    ) -> bool {
+        state.is_consumer_sealed()
     }
 
     fn build_history_from_overlays<'a>(
