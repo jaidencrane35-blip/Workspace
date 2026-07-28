@@ -57,6 +57,13 @@ impl ExecutionCancellationService {
                         execution_request_id: execution_request_id.to_string(),
                     })
                 }
+                workspace_domain::ExecutionState::Cancelled => {
+                    Err(KernelError::ExecutionCancellationValidation {
+                        message: format!(
+                            "execution request '{execution_request_id}' is already cancelled"
+                        ),
+                    })
+                }
                 state => Err(KernelError::IntegrityViolation {
                     message: format!(
                         "invalid durable execution lifecycle state: {}",

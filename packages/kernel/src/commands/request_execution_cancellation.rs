@@ -11,7 +11,7 @@ use crate::commands::r#trait::MutationCommand;
 use crate::error::{KernelError, Result};
 use crate::lifecycle::LifecycleState;
 use crate::security::PermissionSubject;
-use crate::services::ExecutionCancellationService;
+use crate::services::{ExecutionCancellationService, ExecutionLifecycleService};
 use workspace_domain::{CancellationRequest, Capability, ResourceRef, WorkspaceId};
 
 /// Requests cancellation of a previously identified execution.
@@ -79,12 +79,17 @@ impl MutationCommand for RequestExecutionCancellation {
         ensure_workspace_exists(ctx, &self.workspace_id)?;
 
         let requested_by = ctx.actor_context.actor.id.to_string();
-        ExecutionCancellationService::prepare_request(
+        let request = ExecutionCancellationService::prepare_request(
             &ctx.database,
             &self.execution_request_id,
             &requested_by,
             &self.reason,
-        )
+        )?;
+        ExecutionLifecycleService::record_cancelled(
+            &ctx.database,
+            &self.execution_request_id,
+        )?;
+        Ok(request)
     }
 }
 

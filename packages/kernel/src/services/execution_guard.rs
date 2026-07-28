@@ -31,22 +31,25 @@ impl ExecutionGuardService {
 
         let execution_request_id = execution_request_id_for_suggestion(suggestion_id);
         if let Some(record) = ExecutionLifecycleService::get(db, &execution_request_id)? {
-            return match record.state {
+            match record.state {
                 workspace_domain::ExecutionState::Completed => {
-                    Ok(ExecutionGuardResult::AlreadyExecuted)
+                    return Ok(ExecutionGuardResult::AlreadyExecuted);
                 }
                 workspace_domain::ExecutionState::InProgress => {
-                    Err(KernelError::ExecutionInProgress {
+                    return Err(KernelError::ExecutionInProgress {
                         execution_request_id,
-                    })
+                    });
                 }
-                state => Err(KernelError::IntegrityViolation {
-                    message: format!(
-                        "invalid durable execution lifecycle state: {}",
-                        state.as_str()
-                    ),
-                }),
-            };
+                workspace_domain::ExecutionState::Cancelled => {}
+                state => {
+                    return Err(KernelError::IntegrityViolation {
+                        message: format!(
+                            "invalid durable execution lifecycle state: {}",
+                            state.as_str()
+                        ),
+                    });
+                }
+            }
         }
         let outcomes = ExecutionOutcomeService::list_recent(db, OUTCOME_SCAN_LIMIT)?;
         Ok(evaluate_execution_guard(&execution_request_id, &outcomes))

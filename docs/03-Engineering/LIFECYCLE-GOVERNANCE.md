@@ -22,7 +22,7 @@ Rejected transitions do not mutate state or emit a success event.
 | Recommendation activity projection | Only absent, `created`, `available`, and `presented` values are actionable; unknown persisted values fail closed | `accepted`, `rejected`, `expired`, `superseded`; unknown values are non-actionable |
 | Decision Engine intake evaluation | An active intake candidate may be evaluated once; a persisted evaluation cannot be overwritten by reevaluation | `evaluated`, `rejected`, `deferred` evaluation record |
 | Suggestion lifecycle projection | Observed audit states move from `created|presented` toward `accepted|rejected|expired`; repeated presentation is observationally valid | `accepted`, `rejected`, `expired` |
-| Governed intent execution | Unclaimed → `in_progress` before mapped dispatch → `completed` after success; dispatch errors release only the non-terminal claim | `completed`; unresolved `in_progress` remains non-dispatchable pending reconciliation |
+| Governed intent execution | Unclaimed or `cancelled` → `in_progress` before mapped dispatch → `completed` after success; dispatch errors release only the non-terminal claim; cancellation persists `cancelled` without blocking execution retry | `completed`; unresolved `in_progress` remains non-dispatchable pending reconciliation |
 
 ## Authority boundaries
 

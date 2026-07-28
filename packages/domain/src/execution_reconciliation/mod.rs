@@ -26,6 +26,9 @@ pub enum ExecutionReconciliationError {
 
     #[error("Completed execution lifecycle record requires completed_at")]
     MissingCompletedAt,
+
+    #[error("Non-completed execution lifecycle record must not have completed_at")]
+    UnexpectedCompletedAt,
 }
 
 /// Current interpreted state of a single execution request.
@@ -91,7 +94,10 @@ impl ExecutionLifecycleRecord {
                 return Err(ExecutionReconciliationError::EmptyLifecycleField(name));
             }
         }
-        if !matches!(self.state, ExecutionState::InProgress | ExecutionState::Completed) {
+        if !matches!(
+            self.state,
+            ExecutionState::InProgress | ExecutionState::Completed | ExecutionState::Cancelled
+        ) {
             return Err(ExecutionReconciliationError::InvalidState(
                 self.state.as_str().into(),
             ));
@@ -103,6 +109,9 @@ impl ExecutionLifecycleRecord {
                 .is_none_or(|value| value.trim().is_empty())
         {
             return Err(ExecutionReconciliationError::MissingCompletedAt);
+        }
+        if self.state != ExecutionState::Completed && self.completed_at.is_some() {
+            return Err(ExecutionReconciliationError::UnexpectedCompletedAt);
         }
         Ok(())
     }

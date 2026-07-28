@@ -41,7 +41,7 @@ Once `command.execute` has run, generic rollback is unavailable across heterogen
 
 The durable `command.authorized` row recorded **before** dispatch is the required execution evidence. Completion rows remain desirable for outcome analytics but are not a second dispatch gate.
 
-For `ExecuteIntentRequest`, `execution_lifecycle` is separate from secondary audit: it is the durable idempotency fact keyed by the existing `execution:{suggestion_id}` identity. A missing `command.executed` row therefore cannot make completed execution retryable.
+For `ExecuteIntentRequest`, `execution_lifecycle` is separate from secondary audit: it is the durable idempotency fact keyed by the existing `execution:{suggestion_id}` identity. A missing `command.executed` row therefore cannot make completed execution retryable. Cancellation requests persist `cancelled` in the same lifecycle before secondary audit; cancellation remains execution-retryable but cannot be requested twice.
 
 ## Recovery
 

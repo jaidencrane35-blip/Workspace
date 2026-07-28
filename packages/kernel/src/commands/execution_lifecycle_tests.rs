@@ -354,3 +354,71 @@ fn outcome_projection_preserves_history_and_global_recency() {
         "execution:newer"
     );
 }
+
+#[test]
+fn cancellation_audit_failure_remains_durable_and_nonduplicable() {
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let workspace = CommandHandler::create_workspace(
+        &kernel,
+        ActorContext::local_user(),
+        IntentContext::user_request(),
+        "Durable cancellation".into(),
+    )
+    .unwrap();
+    let suggestion_id = "missing-for-durable-cancel";
+    let execution_request_id = format!("execution:{suggestion_id}");
+    let _ = CommandHandler::execute_intent_request(
+        &kernel,
+        ActorContext::local_user(),
+        IntentContext::user_request(),
+        workspace.id.to_string(),
+        suggestion_id.into(),
+    );
+    {
+        let db = kernel.shared_database();
+        let guard = db.lock().unwrap();
+        guard
+            .connection()
+            .execute_batch(
+                "CREATE TRIGGER fail_cancellation_completion
+                 BEFORE INSERT ON audit_events
+                 WHEN NEW.event_type = 'command.executed'
+                  AND NEW.command_name = 'RequestExecutionCancellation'
+                 BEGIN
+                   SELECT RAISE(FAIL, 'injected cancellation audit failure');
+                 END;",
+            )
+            .unwrap();
+    }
+
+    CommandHandler::request_execution_cancellation(
+        &kernel,
+        ActorContext::local_user(),
+        IntentContext::user_request(),
+        workspace.id.to_string(),
+        execution_request_id.clone(),
+        "stop".into(),
+    )
+    .unwrap();
+    let retry = CommandHandler::request_execution_cancellation(
+        &kernel,
+        ActorContext::local_user(),
+        IntentContext::user_request(),
+        workspace.id.to_string(),
+        execution_request_id.clone(),
+        "stop again".into(),
+    );
+    assert!(matches!(
+        retry,
+        Err(KernelError::ExecutionCancellationValidation { .. })
+    ));
+
+    let state = ExecutionReconciliationService::reconcile(
+        &kernel.shared_database(),
+        &execution_request_id,
+    )
+    .unwrap();
+    assert_eq!(state.current_state, ExecutionState::Cancelled);
+    assert!(state.dispatch_allowed);
+    assert!(!state.cancellation_allowed);
+}

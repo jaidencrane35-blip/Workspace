@@ -129,6 +129,70 @@ impl ExecutionLifecycleService {
         }
     }
 
+    pub fn record_cancelled(
+        db: &Arc<Mutex<Database>>,
+        execution_request_id: &str,
+    ) -> Result<ExecutionLifecycleRecord> {
+        let suggestion_id = execution_request_id
+            .trim()
+            .strip_prefix("execution:")
+            .filter(|value| !value.is_empty())
+            .ok_or_else(|| KernelError::ExecutionReconciliationValidation {
+                message: format!(
+                    "invalid canonical execution request id: {execution_request_id}"
+                ),
+            })?;
+        let cancelled_at = Utc::now().to_rfc3339();
+        let guard = db
+            .lock()
+            .map_err(|_| KernelError::lock_poisoned("database"))?;
+        let repository = ExecutionLifecycleRepository::new(&guard);
+        let inserted = repository
+            .record_cancelled(execution_request_id, suggestion_id, &cancelled_at)
+            .map_err(|source| KernelError::ExecutionLifecyclePersistence {
+                stage: "cancellation",
+                source,
+            })?;
+        if !inserted {
+            return match repository.get(execution_request_id).map_err(|source| {
+                KernelError::ExecutionLifecyclePersistence {
+                    stage: "cancellation.read_existing",
+                    source,
+                }
+            })? {
+                Some(existing) if existing.state == ExecutionState::Completed => {
+                    Err(KernelError::CannotCancelCompletedExecution {
+                        execution_request_id: execution_request_id.into(),
+                    })
+                }
+                Some(existing) if existing.state == ExecutionState::InProgress => {
+                    Err(KernelError::ExecutionInProgress {
+                        execution_request_id: execution_request_id.into(),
+                    })
+                }
+                Some(_) => Err(KernelError::ExecutionCancellationValidation {
+                    message: format!(
+                        "execution request '{execution_request_id}' is already cancelled"
+                    ),
+                }),
+                None => Err(KernelError::IntegrityViolation {
+                    message: "execution cancellation conflicted but no lifecycle row exists".into(),
+                }),
+            };
+        }
+        repository
+            .get(execution_request_id)
+            .map_err(|source| KernelError::ExecutionLifecyclePersistence {
+                stage: "cancellation.read",
+                source,
+            })?
+            .ok_or_else(|| KernelError::IntegrityViolation {
+                message: format!(
+                    "cancelled execution lifecycle row disappeared: {execution_request_id}"
+                ),
+            })
+    }
+
     pub fn get(
         db: &Arc<Mutex<Database>>,
         execution_request_id: &str,
@@ -191,7 +255,7 @@ impl ExecutionLifecycleService {
         ExecutionReconciliation {
             execution_request_id: record.execution_request_id.clone(),
             current_state: record.state,
-            dispatch_allowed: false,
+            dispatch_allowed: record.state == ExecutionState::Cancelled,
             cancellation_allowed: false,
         }
     }

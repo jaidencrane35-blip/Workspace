@@ -19,7 +19,14 @@ impl<'a> ExecutionLifecycleRepository<'a> {
                 execution_request_id, suggestion_id, intent_id, state,
                 claimed_at, completed_at, updated_at
              ) VALUES (?1, ?2, ?3, 'in_progress', ?4, NULL, ?4)
-             ON CONFLICT(execution_request_id) DO NOTHING",
+             ON CONFLICT(execution_request_id) DO UPDATE SET
+                suggestion_id = excluded.suggestion_id,
+                intent_id = excluded.intent_id,
+                state = 'in_progress',
+                claimed_at = excluded.claimed_at,
+                completed_at = NULL,
+                updated_at = excluded.updated_at
+             WHERE execution_lifecycle.state = 'cancelled'",
             (
                 &record.execution_request_id,
                 &record.suggestion_id,
@@ -70,6 +77,23 @@ impl<'a> ExecutionLifecycleRepository<'a> {
             "DELETE FROM execution_lifecycle
              WHERE execution_request_id = ?1 AND state = 'in_progress'",
             [execution_request_id],
+        )?;
+        Ok(changed == 1)
+    }
+
+    pub fn record_cancelled(
+        &self,
+        execution_request_id: &str,
+        suggestion_id: &str,
+        cancelled_at: &str,
+    ) -> Result<bool> {
+        let changed = self.db.connection().execute(
+            "INSERT INTO execution_lifecycle (
+                execution_request_id, suggestion_id, intent_id, state,
+                claimed_at, completed_at, updated_at
+             ) VALUES (?1, ?2, NULL, 'cancelled', ?3, NULL, ?3)
+             ON CONFLICT(execution_request_id) DO NOTHING",
+            (execution_request_id, suggestion_id, cancelled_at),
         )?;
         Ok(changed == 1)
     }
@@ -192,5 +216,41 @@ mod tests {
             .unwrap();
         assert_eq!(record.state, ExecutionState::Completed);
         assert_eq!(record.suggestion_id, "legacy");
+    }
+
+    #[test]
+    fn cancelled_execution_can_be_reclaimed_for_retry() {
+        let dir = tempfile::tempdir().unwrap();
+        let db = DatabaseService::initialize(dir.path().join("workspace.db"))
+            .unwrap()
+            .into_database();
+        let repository = ExecutionLifecycleRepository::new(&db);
+        assert!(repository
+            .record_cancelled(
+                "execution:cancelled",
+                "cancelled",
+                "2026-07-28T00:00:00Z",
+            )
+            .unwrap());
+        assert!(!repository
+            .record_cancelled(
+                "execution:cancelled",
+                "cancelled",
+                "2026-07-28T00:01:00Z",
+            )
+            .unwrap());
+
+        let mut retry = claim();
+        retry.execution_request_id = "execution:cancelled".into();
+        retry.suggestion_id = "cancelled".into();
+        assert!(repository.insert_claim(&retry).unwrap());
+        assert_eq!(
+            repository
+                .get(&retry.execution_request_id)
+                .unwrap()
+                .unwrap()
+                .state,
+            ExecutionState::InProgress
+        );
     }
 }

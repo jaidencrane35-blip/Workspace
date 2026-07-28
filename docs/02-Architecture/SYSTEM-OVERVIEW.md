@@ -419,7 +419,7 @@ Audit metadata (execution_request_id, cancellation_status, reason)
 ExecutionOutcome(cancelled)  ← additive classifier
 ```
 
-Cancellation is a governed **request** boundary — not runtime interruption. Unknown and completed executions are rejected explicitly. No cancellation table, no IPC, no process/thread stop.
+Cancellation is a governed **request** boundary — not runtime interruption. Unknown and completed executions are rejected explicitly. The request persists `cancelled` in the shared execution lifecycle before its secondary audit; execution retry remains allowed while duplicate cancellation is rejected. No new IPC or process/thread stop is introduced.
 
 **Execution state reconciliation layer (Sprint 29):**
 
