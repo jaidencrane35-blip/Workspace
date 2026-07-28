@@ -45,6 +45,9 @@ use crate::workspace_knowledge_integration::{
 use crate::workspace_insight_coordination::{
     InsightCoordinationHistoryEntry, InsightCoordinationProjection,
 };
+use crate::workspace_cross_intelligence::{
+    CrossWorkspaceIntelligenceHistoryEntry, CrossWorkspaceIntelligenceProjection,
+};
 use crate::workspace_reasoning_memory::{ReasoningHistoryEntry, ReasoningSnapshot};
 
 /// Documented startup in-progress sweep cap (must match
@@ -382,6 +385,26 @@ pub fn recovery_must_not_fabricate_insight_coordination(
 /// Fabricated actionable insight-coordination history must fail the recovery contract.
 pub fn recovery_must_not_fabricate_actionable_insight_coordination_history(
     entry: &InsightCoordinationHistoryEntry,
+) -> bool {
+    entry.is_non_actionable()
+}
+
+/// Missing cross-workspace intelligence remains missing — never invent global patterns.
+pub fn recovery_must_not_fabricate_cross_workspace_intelligence(
+    projection: &CrossWorkspaceIntelligenceProjection,
+) -> bool {
+    projection.is_non_commandable()
+        && projection.history.iter().all(|h| h.is_non_actionable())
+        && projection
+            .current
+            .as_ref()
+            .map(|c| c.is_non_executing())
+            .unwrap_or(true)
+}
+
+/// Fabricated actionable cross-workspace history must fail the recovery contract.
+pub fn recovery_must_not_fabricate_actionable_cross_workspace_intelligence_history(
+    entry: &CrossWorkspaceIntelligenceHistoryEntry,
 ) -> bool {
     entry.is_non_actionable()
 }
@@ -880,6 +903,36 @@ mod tests {
             authority_effect: "none".into(),
         };
         assert!(!recovery_must_not_fabricate_actionable_insight_coordination_history(
+            &bad
+        ));
+    }
+
+    #[test]
+    fn recovery_never_fabricates_cross_workspace_on_empty_projection() {
+        let empty = CrossWorkspaceIntelligenceProjection::assemble(None, vec![], 0, "t0");
+        assert!(recovery_must_not_fabricate_cross_workspace_intelligence(&empty));
+        assert!(empty.current.is_none());
+    }
+
+    #[test]
+    fn recovery_rejects_actionable_cross_workspace_history() {
+        let bad = CrossWorkspaceIntelligenceHistoryEntry {
+            intelligence_id: "cross_workspace_intelligence:1".into(),
+            status: "superseded".into(),
+            created_at: "t0".into(),
+            superseded_at: Some("t1".into()),
+            completeness: "unavailable".into(),
+            pattern_count: 0,
+            theme_count: 0,
+            risk_signal_count: 0,
+            constraint_pattern_count: 0,
+            gap_count: 0,
+            workspace_count: 0,
+            terminal: true,
+            actionable: true,
+            authority_effect: "none".into(),
+        };
+        assert!(!recovery_must_not_fabricate_actionable_cross_workspace_intelligence_history(
             &bad
         ));
     }

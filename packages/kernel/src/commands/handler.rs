@@ -152,6 +152,10 @@ use crate::commands::workspace_insight_coordination::{
     ExplainInsightCoordination, GenerateInsightCoordination, GetInsightCoordination,
     GetInsightCoordinationSummary,
 };
+use crate::commands::workspace_cross_intelligence::{
+    ExplainCrossWorkspacePattern, GenerateCrossWorkspaceIntelligence, GetCrossWorkspaceIntelligence,
+    GetCrossWorkspaceSummary,
+};
 use crate::commands::zone::{CreateZone, DeleteZone, GetZone};
 use crate::config::{SettingsUpdate, WorkspaceSettings};
 use crate::error::{KernelError, Result};
@@ -224,6 +228,8 @@ use workspace_domain::{
     KnowledgeIntegrationProjection, KnowledgeIntegrationSummary, KnowledgeIntegrationExplanation,
     KnowledgeIntegrationResult,
     InsightCoordinationProjection, InsightCoordinationSummary, InsightCoordinationExplanation,
+    CrossWorkspaceIntelligenceProjection, CrossWorkspaceIntelligenceSummary,
+    CrossWorkspacePatternExplanation,
     LayoutId, LayoutMetadata, LayoutNode, LayoutSnapshot, MemoryEntry, MemoryType,
     ModelProviderDescriptor, ModelResponse, Observation, PersonalizedPlanComparison,
     PreferenceCategory, PreferenceSource, Suggestion, SuggestionIntentRequest,
@@ -3059,6 +3065,48 @@ impl CommandHandler {
     /// Architecture guard — Insight coordination cannot execute / approve / mutate.
     pub fn insight_coordination_attempt_execute() -> Result<()> {
         crate::services::WorkspaceInsightCoordinationService::attempt_execute()
+    }
+
+    pub fn generate_cross_workspace_intelligence(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+    ) -> Result<CrossWorkspaceIntelligenceProjection> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_mutation(GenerateCrossWorkspaceIntelligence::new())
+    }
+
+    pub fn get_cross_workspace_intelligence(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+    ) -> Result<CrossWorkspaceIntelligenceProjection> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetCrossWorkspaceIntelligence::new())
+    }
+
+    pub fn get_cross_workspace_summary(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        history_limit: usize,
+    ) -> Result<CrossWorkspaceIntelligenceSummary> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetCrossWorkspaceSummary::new(history_limit))
+    }
+
+    pub fn explain_cross_workspace_pattern(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+    ) -> Result<CrossWorkspacePatternExplanation> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(ExplainCrossWorkspacePattern::new())
+    }
+
+    /// Architecture guard — Cross-workspace intelligence cannot execute / approve / mutate.
+    pub fn cross_workspace_intelligence_attempt_execute() -> Result<()> {
+        crate::services::WorkspaceCrossIntelligenceService::attempt_execute()
     }
 
     #[allow(clippy::too_many_arguments)]

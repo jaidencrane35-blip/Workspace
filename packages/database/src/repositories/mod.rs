@@ -25,6 +25,7 @@ mod workspace_contextual_understanding;
 mod workspace_knowledge_synthesis;
 mod workspace_knowledge_integration;
 mod workspace_insight_coordination;
+mod workspace_cross_intelligence;
 mod graph;
 mod layout;
 mod permission_approval;
@@ -65,6 +66,7 @@ pub use workspace_contextual_understanding::WorkspaceContextualUnderstandingRepo
 pub use workspace_knowledge_synthesis::WorkspaceKnowledgeSynthesisRepository;
 pub use workspace_knowledge_integration::WorkspaceKnowledgeIntegrationRepository;
 pub use workspace_insight_coordination::InsightCoordinationRepository;
+pub use workspace_cross_intelligence::WorkspaceCrossIntelligenceRepository;
 pub use graph::GraphRepository;
 pub use layout::LayoutRepository;
 pub use permission_approval::PermissionApprovalRepository;

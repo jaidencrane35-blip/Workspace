@@ -62,6 +62,7 @@ pub mod workspace_contextual_understanding;
 pub mod workspace_knowledge_synthesis;
 pub mod workspace_knowledge_integration;
 pub mod workspace_insight_coordination;
+pub mod workspace_cross_intelligence;
 pub mod workspace_composition;
 pub mod workspace_purpose;
 pub mod workspace_evolution;
@@ -553,6 +554,14 @@ pub use workspace_insight_coordination::{
     InsightCoordinationStatus, InsightCoordinationSummary, InsightEvidenceRef, InsightGap,
     InsightIntersection,
 };
+pub use workspace_cross_intelligence::{
+    CrossWorkspaceAssessment, CrossWorkspaceCompleteness, CrossWorkspaceConstraintPattern,
+    CrossWorkspaceEvidenceRef, CrossWorkspaceGap, CrossWorkspaceIntelligenceError,
+    CrossWorkspaceIntelligenceHistoryEntry, CrossWorkspaceIntelligenceProjection,
+    CrossWorkspaceIntelligenceSnapshot, CrossWorkspaceIntelligenceStatus,
+    CrossWorkspaceIntelligenceSummary, CrossWorkspacePattern, CrossWorkspacePatternExplanation,
+    CrossWorkspaceRiskSignal, CrossWorkspaceTheme, WorkspaceContribution, CROSS_WORKSPACE_SCOPE,
+};
 pub use workspace_task_graph::{
     would_create_cycle, TaskDependency, TaskGraph, TaskGraphError, TaskGraphSummary, TaskHistoryEntry,
     TaskMetadata, TaskNode, TaskRelationship, TaskRelationshipKind, WorkspaceTask,
@@ -643,6 +652,8 @@ pub use recovery_contract::{
     recovery_must_not_fabricate_knowledge_integration,
     recovery_must_not_fabricate_actionable_insight_coordination_history,
     recovery_must_not_fabricate_insight_coordination,
+    recovery_must_not_fabricate_actionable_cross_workspace_intelligence_history,
+    recovery_must_not_fabricate_cross_workspace_intelligence,
     recovery_must_not_fabricate_learning, recovery_must_not_fabricate_orchestration, recovery_must_not_fabricate_reasoning,
     recovery_must_not_invent_completed, RECOVERY_DIAGNOSTIC_ATTEMPTED,
     RECOVERY_DIAGNOSTIC_COMPLETED, RECOVERY_DIAGNOSTIC_EVENT_TYPES, RECOVERY_DIAGNOSTIC_FAILED,

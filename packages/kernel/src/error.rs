@@ -17,7 +17,7 @@ use workspace_domain::{
     WorkspaceCognitiveAutonomyError, WorkspaceStateEnvelopeError, PolicyGovernanceError,
     HistoricalReconstructionError, TemporalIntelligenceError, WorkspaceExplanationError,
     ContextualUnderstandingError, KnowledgeSynthesisError, KnowledgeIntegrationError,
-    InsightCoordinationError,
+    InsightCoordinationError, CrossWorkspaceIntelligenceError,
     WorkspaceSessionError,
     WorkspaceTransitionError,
     WorkspaceWorkContextError, WorkspaceWorkingStyleError,
@@ -284,6 +284,9 @@ pub enum KernelError {
 
     #[error("Insight coordination validation failed: {message}")]
     InsightCoordinationValidation { message: String },
+
+    #[error("Cross-workspace intelligence validation failed: {message}")]
+    CrossWorkspaceIntelligenceValidation { message: String },
 
     #[error("Workspace intelligence validation failed: {message}")]
     WorkspaceIntelligenceValidation { message: String },
@@ -686,6 +689,17 @@ impl From<InsightCoordinationError> for KernelError {
         match error {
             InsightCoordinationError::Domain(domain) => KernelError::from(domain),
             other => KernelError::InsightCoordinationValidation {
+                message: other.to_string(),
+            },
+        }
+    }
+}
+
+impl From<CrossWorkspaceIntelligenceError> for KernelError {
+    fn from(error: CrossWorkspaceIntelligenceError) -> Self {
+        match error {
+            CrossWorkspaceIntelligenceError::Domain(domain) => KernelError::from(domain),
+            other => KernelError::CrossWorkspaceIntelligenceValidation {
                 message: other.to_string(),
             },
         }
@@ -1404,6 +1418,10 @@ impl KernelError {
             },
             KernelError::InsightCoordinationValidation { message } => PublicError {
                 code: "insight_coordination_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::CrossWorkspaceIntelligenceValidation { message } => PublicError {
+                code: "cross_workspace_intelligence_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::WorkspaceIntelligenceValidation { message } => PublicError {
