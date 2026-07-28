@@ -44,6 +44,7 @@ Recovery must **never**:
 - fabricate contextual understanding, situational certainty, conflict winners, or Complete understandings from gaps (`recovery_must_not_fabricate_contextual_understanding`)
 - fabricate knowledge concepts, relationships, synthesis confidence, or historical knowledge claims from missing evidence (`recovery_must_not_fabricate_knowledge_synthesis`)
 - fabricate knowledge integration hits, links, retrieval confidence, or historical integration claims from missing evidence (`recovery_must_not_fabricate_knowledge_integration`)
+- fabricate insight coordination clusters, intersections, attention ranks, or historical coordination claims from missing evidence (Batch 9 charter — `recovery_must_not_fabricate_insight_coordination` on implementation)
 - recreate desktop actions
 - bypass PermissionGateway / CommandPipeline for user mutations
 - silently “heal” lifecycle into an open actionable state

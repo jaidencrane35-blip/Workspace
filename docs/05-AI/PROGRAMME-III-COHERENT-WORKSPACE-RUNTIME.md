@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | **Purpose** | Establish one provenance-rich, read-only runtime view of operational, cognitive, governance, and evidence state while preserving all existing lifecycle and persistence authorities |
-| **Status** | Active — Batch 8 accepted; Programme III coherent evidence stack closed |
+| **Status** | Active — Batches 1–8 accepted; Batch 9 Insight Coordination charter drafted (pending review) |
 | **Depends on** | Programme I governance / recovery; Programme II cognitive stack |
 | **Non-goals** | Event sourcing; authoritative replay logs; simulation; model hosting; autonomous execution; replacement permission system; replacement for domain-owned projections |
 
@@ -27,6 +27,8 @@
 16. **Knowledge synthesis derives structured concepts from evidence** — it does not become memory truth, Cognitive Model, or decision authority.
 17. **Knowledge integration retrieves and joins evidence layers** — it does not invent truth, act autonomously, or replace Memory / Cognitive Model.
 18. **integration ≠ authority; retrieval ≠ truth; relevance ≠ correctness; confidence ≠ permission.**
+19. **Insight coordination coordinates already-derived understanding** — it does not plan, decide, recommend execution, or create authority.
+20. **coordination ≠ authority; prioritisation ≠ recommendation; intersection ≠ causation.**
 
 ## Batch map
 
@@ -40,47 +42,55 @@
 | **6** | Contextual Workspace Understanding | Richer situational understanding | Done (accepted) |
 | **7** | Workspace Knowledge Synthesis | Provenance-bound structured knowledge artefacts | Done (accepted) |
 | **8** | Knowledge Integration / Retrieval Intelligence | Integrate/retrieve over accumulated evidence layers | Done (accepted) |
+| **9** | Workspace Insight Coordination | Coordinate cross-layer evidence relationships / unresolved areas | Charter drafted — pending review |
 
-## Batch 8 summary
+## Batch 8 summary (evidence-stack close)
 
 `WorkspaceKnowledgeIntegrationService` assembles provenance-bound
-`KnowledgeIntegrationResult` artefacts (`KnowledgeEvidenceLink` /
-`IntegrationGap` / diagnostic `KnowledgeRetrievalConfidence`) over durable
-Programme III projections via `load_snapshot` only — including Knowledge Synthesis.
-Diagnostic retrieval confidence never becomes truth, Memory write, Cognitive Model
-mutation, policy outcome, automation, or priority. Integration links remain
-meaning-only (`references` / `relates_to` / `derived_from` / `supported_by`).
-Hits without lineage are invalid. Retrieval relevance ≠ factual authority.
-Commands: `GenerateWorkspaceKnowledgeIntegration`,
-`GetWorkspaceKnowledgeIntegration`, `GetWorkspaceKnowledgeIntegrationSummary`,
-`ExplainKnowledgeIntegration`, `RetrieveWorkspaceKnowledge`
-(`work_context.write` / `work_context.read`). Migration `059`.
+`KnowledgeIntegrationResult` artefacts over durable Programme III projections via
+`load_snapshot` only. Batch 8 closed the coherent **evidence stack**.
 See [Knowledge Integration Architecture](./KNOWLEDGE-INTEGRATION-ARCHITECTURE.md).
 
-**Preserve:** no new source of truth, no autonomous authority, no execution,
-no replacement of Memory / Cognitive Model / Knowledge Synthesis.
+## Batch 9 charter (draft)
 
-Programme III capability stack closes at Batch 8. No Batch 9 is implied.
-Further work requires a new programme charter.
+`WorkspaceInsightCoordinationService` will assemble provenance-bound coordination
+views (`InsightCluster` / `EvidenceIntersection` / `InsightGap` /
+`CoordinationAssessment`) over durable Programme III projections via
+`load_snapshot` only — including Knowledge Integration. Diagnostic prioritisation
+metadata never becomes recommendation, task, policy, autonomy, or permission
+authority. Intersections remain meaning-only. Clusters without lineage are invalid.
+Commands (proposed): `GenerateInsightCoordinationSnapshot`,
+`GetInsightCoordinationSnapshot`, `GetInsightCoordinationSummary`,
+`ExplainInsightCoordination` (`work_context.write` / `work_context.read`).
+Migration `060`.
+See [Insight Coordination Architecture](./INSIGHT-COORDINATION-ARCHITECTURE.md).
+
+**Do not begin Batch 9 implementation until the charter is reviewed and approved.**  
+**Do not begin Batch 10 until Batch 9 receives architecture acceptance.**
+
+**Preserve:** no new source of truth, no autonomous authority, no execution,
+no planner / decision / recommendation ownership, no replacement of Memory /
+Cognitive Model / Knowledge Synthesis / Knowledge Integration.
 
 Governing rule:
+
+> Coordinate understanding. Never create authority.
 
 > The workspace may understand more. It must never silently gain the power to decide more.
 
 ## Sequencing rule
 
 Ship Batch *N* only when Batch *N−1* has durable contracts, tests, and governance ownership entries.
-Batches 1–8 are accepted. Programme III coherent evidence stack is closed at Batch 8.
+Batches 1–8 are accepted. Batch 9 implementation is gated on charter review approval.
 
-Preserve P2 constraints from Batches 6–8:
+Preserve P2 constraints from Batches 6–9:
 
-- descriptive themes / concepts / hits only (no advice / prioritisation / recommendations)
-- diagnostic-only confidence
+- descriptive themes / concepts / hits / clusters only (no advice / action queues)
+- diagnostic-only confidence and attention metadata
 - meaning-only relationships (no causation / action)
-- no interpretive layer that merely duplicates Contextual Understanding or Knowledge Synthesis
-- Knowledge Synthesis must not become a second editable workspace ontology
-- Knowledge Integration must not mutate Knowledge Synthesis or rank “correct answers”
-- every concept / hit retains evidence → revision → origin domain lineage
+- prioritisation ≠ recommendation
+- no interpretive layer that merely duplicates Contextual Understanding, Knowledge Synthesis, or Knowledge Integration
+- every cluster / intersection retains evidence → revision → origin domain lineage
 
 ## Related
 
@@ -92,6 +102,7 @@ Preserve P2 constraints from Batches 6–8:
 - [Contextual Workspace Understanding Architecture](./CONTEXTUAL-WORKSPACE-UNDERSTANDING-ARCHITECTURE.md) (Batch 6)
 - [Knowledge Synthesis Architecture](./KNOWLEDGE-SYNTHESIS-ARCHITECTURE.md) (Batch 7)
 - [Knowledge Integration Architecture](./KNOWLEDGE-INTEGRATION-ARCHITECTURE.md) (Batch 8)
+- [Insight Coordination Architecture](./INSIGHT-COORDINATION-ARCHITECTURE.md) (Batch 9 charter)
 - [Programme II — Cognitive Workspace](./PROGRAMME-II-COGNITIVE-WORKSPACE.md)
 - [Projection Integrity](../03-Engineering/PROJECTION-INTEGRITY.md)
 - [Architecture Governance](../03-Engineering/ARCHITECTURE-GOVERNANCE.md)

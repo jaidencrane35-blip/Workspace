@@ -461,6 +461,32 @@ Enforced:
 
 See [Knowledge Integration Architecture](../05-AI/KNOWLEDGE-INTEGRATION-ARCHITECTURE.md).
 
+## Workspace Insight Coordination (Programme III Batch 9 — charter)
+
+`WorkspaceInsightCoordinationService` will own **coordination artefacts only**
+(`InsightCluster` / `EvidenceIntersection` / `InsightGap` / `CoordinationAssessment`).
+Charter pending review — not yet implemented.
+
+| Property | Value |
+|----------|-------|
+| Lifecycle owner | No |
+| Execution / approve / policy / task / plan / autonomous authority | No |
+| Planner / Recommendation / Decision / Autonomy ownership | No |
+| Memory / Cognitive Model / Knowledge Synthesis / Integration replacement | No |
+| Source of truth | No |
+| Insight coordination projection owner (proposed) | Yes |
+
+Expected on implementation:
+
+- `InsightCoordinationHistoryEntry` / `InsightCoordinationSummary` contain no authority/command fields
+- Mutation inventory includes `GenerateInsightCoordinationSnapshot` (baseline +1 → **70**)
+- Insight coordination cannot import lifecycle/execution / Recommendation / Decision services or call `PermissionGateway`
+- Insight coordination cannot silently refresh foreign sources via `generate`
+- Clusters / intersections require evidence refs; relationships meaning-only; prioritisation diagnostic only
+- Repository cannot call the insight coordination service
+
+See [Insight Coordination Architecture](../05-AI/INSIGHT-COORDINATION-ARCHITECTURE.md).
+
 ## Capability boundary audit
 
 Enforced by `scripts/architecture-governance-lib.mjs`:

@@ -620,7 +620,9 @@ Accepted when:
 ## Programme close
 
 Programme III Batch 8 closes the coherent evidence stack.
-No Batch 9 is implied by this architecture.
+Batch 9 (Insight Coordination) is a gated extension charter — see
+[Insight Coordination Architecture](./INSIGHT-COORDINATION-ARCHITECTURE.md).
+No Batch 10 is implied until Batch 9 is accepted.
 
 Governing rule (Programme III close):
 

@@ -337,6 +337,22 @@ Rules:
 - Restart reconstructs durable current + history; missing integration remains missing
   (never inferred hits / links / confidence).
 
+### Workspace Insight Coordination (Programme III Batch 9 — charter)
+
+- **Current (proposed):** dual-channel coordination projection with `InsightCluster` /
+  `EvidenceIntersection` / `InsightGap` / `CoordinationAssessment`.
+  Coordination views only; never Memory truth, planner, recommendation executor,
+  decision authority, or autonomy. Coordination ≠ authority; prioritisation ≠
+  recommendation; intersection ≠ causation; confidence ≠ permission.
+- **History (proposed):** superseded coordination via append-only history
+  (`terminal: true`, `actionable: false`, `authority_effect: none`).
+- **`history_count`** authoritative; summary windows may truncate `history`.
+- Completeness: Complete / Partial / Unknown / Contradictory / Unavailable.
+- `ExplainInsightCoordination` is non-authoritative.
+- React may inspect — no mutation, approval, or execution affordances.
+- Restart reconstructs durable current + history; missing coordination remains missing
+  (never inferred clusters / intersections / attention ranks).
+
 ## Serde defaults vs TypeScript required fields
 
 Rust history fields often use `#[serde(default)]` so older persisted / in-flight JSON

@@ -30,6 +30,7 @@ Canonical product language. Prefer these terms in UI, docs, and Assistant copy.
 | **Contextual Workspace Understanding** | Situational understanding from durable multi-surface evidence | Predictor, simulator, decision owner, certainty engine, planner |
 | **Workspace Knowledge Synthesis** | Provenance-bound derived concepts / clusters / relationships from evidence | Memory SoT, Cognitive Model, decision authority, causation engine, planner |
 | **Workspace Knowledge Integration** | Provenance-bound retrieval / join views over accumulated evidence layers (integration ≠ authority; retrieval ≠ truth; relevance ≠ correctness; confidence ≠ permission) | Memory SoT, second ontology, autonomous agent, decision authority, ranked-truth engine |
+| **Workspace Insight Coordination** | Read-only coordination of already-derived evidence products (clusters / intersections / unresolved areas; coordination ≠ authority; prioritisation ≠ recommendation) | Planner, Decision Engine, Recommendation executor, autonomy layer, policy authority, Memory/Cognitive Model |
 | **Graph History** | Terminal superseded graph snapshot evidence | Actionable graph mutations |
 | **Task** | Durable work item | Action |
 | **Action** | Executable catalog/command candidate | Task |
