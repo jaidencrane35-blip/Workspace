@@ -148,6 +148,10 @@ use crate::commands::workspace_knowledge_integration::{
     GetWorkspaceKnowledgeIntegration, GetWorkspaceKnowledgeIntegrationSummary,
     RetrieveWorkspaceKnowledge,
 };
+use crate::commands::workspace_insight_coordination::{
+    ExplainInsightCoordination, GenerateInsightCoordination, GetInsightCoordination,
+    GetInsightCoordinationSummary,
+};
 use crate::commands::zone::{CreateZone, DeleteZone, GetZone};
 use crate::config::{SettingsUpdate, WorkspaceSettings};
 use crate::error::{KernelError, Result};
@@ -219,6 +223,7 @@ use workspace_domain::{
     KnowledgeSynthesisProjection, KnowledgeSynthesisSummary, KnowledgeSynthesisExplanation,
     KnowledgeIntegrationProjection, KnowledgeIntegrationSummary, KnowledgeIntegrationExplanation,
     KnowledgeIntegrationResult,
+    InsightCoordinationProjection, InsightCoordinationSummary, InsightCoordinationExplanation,
     LayoutId, LayoutMetadata, LayoutNode, LayoutSnapshot, MemoryEntry, MemoryType,
     ModelProviderDescriptor, ModelResponse, Observation, PersonalizedPlanComparison,
     PreferenceCategory, PreferenceSource, Suggestion, SuggestionIntentRequest,
@@ -3007,6 +3012,53 @@ impl CommandHandler {
     /// Architecture guard — Knowledge integration cannot execute / approve / mutate.
     pub fn knowledge_integration_attempt_execute() -> Result<()> {
         crate::services::WorkspaceKnowledgeIntegrationService::attempt_execute()
+    }
+
+    pub fn generate_insight_coordination(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<InsightCoordinationProjection> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_mutation(GenerateInsightCoordination::new(workspace_id))
+    }
+
+    pub fn get_insight_coordination(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<InsightCoordinationProjection> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetInsightCoordination::new(workspace_id))
+    }
+
+    pub fn get_insight_coordination_summary(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        history_limit: usize,
+    ) -> Result<InsightCoordinationSummary> {
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_query(
+            GetInsightCoordinationSummary::new(workspace_id, history_limit),
+        )
+    }
+
+    pub fn explain_insight_coordination(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<InsightCoordinationExplanation> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(ExplainInsightCoordination::new(workspace_id))
+    }
+
+    /// Architecture guard — Insight coordination cannot execute / approve / mutate.
+    pub fn insight_coordination_attempt_execute() -> Result<()> {
+        crate::services::WorkspaceInsightCoordinationService::attempt_execute()
     }
 
     #[allow(clippy::too_many_arguments)]

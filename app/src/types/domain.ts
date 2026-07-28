@@ -3828,6 +3828,175 @@ export interface KnowledgeIntegrationExplanation {
   actionable: boolean;
 }
 
+/** Programme III Batch 9 — Insight Coordination (coordination ≠ authority). */
+export interface InsightCoordinationFrame {
+  focus: string | null;
+  include_state: boolean;
+  include_policy: boolean;
+  include_reconstruction: boolean;
+  include_temporal: boolean;
+  include_explanation: boolean;
+  include_contextual: boolean;
+  include_knowledge_synthesis: boolean;
+  include_knowledge_integration: boolean;
+}
+
+export interface InsightEvidenceRef {
+  external_ref: string;
+  origin_domain: string;
+  source_revision: string | null;
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface InsightCluster {
+  cluster_id: string;
+  title: string;
+  body: string;
+  related_sources: string[];
+  evidence_references: InsightEvidenceRef[];
+  contributing_domains: string[];
+  confidence: number;
+  evidence_density: number;
+  completeness: string;
+  attention_rank: number;
+  uncertainty: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface InsightIntersection {
+  intersection_id: string;
+  label: string;
+  overlap_explanation: string;
+  source_refs: InsightEvidenceRef[];
+  shared_themes: string[];
+  relationship_type: string;
+  confidence: number;
+  provenance: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface InsightAttentionSignal {
+  signal_id: string;
+  kind: string;
+  description: string;
+  magnitude: number;
+  related_refs: string[];
+  uncertainty: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface InsightGap {
+  gap_id: string;
+  missing_evidence: string;
+  affected_domains: string[];
+  uncertainty_explanation: string;
+  severity: string;
+  evidence_refs: InsightEvidenceRef[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface CoordinationAssessment {
+  assessment_id: string;
+  coverage: number;
+  contradictions_detected: number;
+  unresolved_areas: number;
+  cluster_count: number;
+  intersection_count: number;
+  attention_signal_count: number;
+  available_surfaces: number;
+  requested_surfaces: number;
+  uncertainty: string[];
+  limitations: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface InsightCoordinationSnapshot {
+  coordination_id: string;
+  workspace_id: string;
+  generated_at: string;
+  status: string;
+  superseded_at: string | null;
+  frame: InsightCoordinationFrame;
+  source_revisions: string[];
+  clusters: InsightCluster[];
+  intersections: InsightIntersection[];
+  attention_signals: InsightAttentionSignal[];
+  gaps: InsightGap[];
+  assessment: CoordinationAssessment;
+  completeness: string;
+  provenance_links: InsightEvidenceRef[];
+  summary: string;
+  narrative: string;
+  limitations: string[];
+  authority_effect: string;
+  actionable: boolean;
+  terminal: boolean;
+}
+
+export interface InsightCoordinationHistoryEntry {
+  coordination_id: string;
+  status: string;
+  created_at: string;
+  superseded_at: string | null;
+  completeness: string;
+  cluster_count: number;
+  intersection_count: number;
+  attention_signal_count: number;
+  gap_count: number;
+  source_revision_count: number;
+  terminal: boolean;
+  actionable: boolean;
+  authority_effect: string;
+}
+
+export interface InsightCoordinationProjection {
+  workspace_id: string;
+  generated_at: string;
+  current: InsightCoordinationSnapshot | null;
+  history: InsightCoordinationHistoryEntry[];
+  history_count: number;
+  authority_effect: string;
+}
+
+export interface InsightCoordinationSummary {
+  workspace_id: string;
+  generated_at: string;
+  has_current: boolean;
+  coordination_id: string | null;
+  completeness: string | null;
+  cluster_count: number;
+  intersection_count: number;
+  attention_signal_count: number;
+  gap_count: number;
+  source_revision_count: number;
+  history: InsightCoordinationHistoryEntry[];
+  history_count: number;
+  authority_effect: string;
+}
+
+export interface InsightCoordinationExplanation {
+  explanation_id: string;
+  workspace_id: string;
+  completeness: string | null;
+  summary: string | null;
+  cluster_summaries: string[];
+  intersection_summaries: string[];
+  attention_summaries: string[];
+  gaps: string[];
+  evidence_refs: string[];
+  uncertainty: string[];
+  narrative: string;
+  limitations: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
 export type WindowIdentityConfidence = "high" | "medium" | "low" | "ephemeral";
 
 export interface WorkspaceObservationPass {

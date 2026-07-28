@@ -4,7 +4,7 @@
 |-------|-------|
 | **Purpose** | Provide a governed **read-only coordination surface** that identifies relationships between existing Programme III evidence products and presents **diagnostic insight opportunities** — without becoming a planner, decision engine, autonomy layer, policy authority, recommendation executor, or knowledge / Cognitive Model replacement |
 | **Owner** | `WorkspaceInsightCoordinationService` (DurableStore — **coordination artefacts only**) |
-| **Status** | Charter draft — pending review before implementation |
+| **Status** | Active — Programme III Batch 9 implemented (charter ACCEPT) |
 | **Lifecycle owner** | No |
 | **Execution / replay authority** | No |
 | **Simulation / forecast / correction authority** | No |
@@ -183,7 +183,7 @@ Do **not** introduce:
 ### `WorkspaceInsightCoordinationService` owns
 
 - insight grouping (`InsightCluster`)
-- evidence intersection summaries (`EvidenceIntersection`)
+- evidence intersection summaries (`InsightIntersection`)
 - cross-layer relationship framing (meaning-only)
 - unresolved-area detection (`InsightGap`)
 - diagnostic prioritisation / attention metadata (`CoordinationAssessment` + cluster ordering fields)
@@ -233,7 +233,7 @@ Read only via `load_snapshot()` **only**:
 - direct foreign repository reads that bypass service envelopes
 - invent intersections without lineage
 
-## Domain model (charter)
+## Domain model (implemented)
 
 Minimal model aligned with Programme III dual-channel patterns.
 
@@ -250,7 +250,7 @@ Primary composed coordination artefact — **read-only analytical artefact**.
 | `frame` | Optional `InsightCoordinationFrame` (scope / surface selection) |
 | `source_revisions` | Revision-bound upstream refs used for this compose |
 | `clusters` | `InsightCluster[]` |
-| `intersections` | `EvidenceIntersection[]` |
+| `intersections` | `InsightIntersection[]` |
 | `gaps` | `InsightGap[]` |
 | `assessment` | `CoordinationAssessment` |
 | `completeness` | Explicit completeness state |
@@ -299,7 +299,7 @@ Grouped insight opportunity — descriptive coordination unit.
 | `authority_effect` | `"none"` |
 | `actionable` | `false` |
 
-### `EvidenceIntersection`
+### `InsightIntersection`
 
 Cross-product overlap summary with provenance lineage.
 
@@ -384,7 +384,7 @@ Batch 9 may attach **diagnostic attention metadata** so humans can scan crowded 
 If a UI sorts clusters by `attention_rank`, copy must read as **attention / evidence density**,
 never as a work queue or command list.
 
-## Service contract (charter)
+## Service contract (implemented)
 
 ### `WorkspaceInsightCoordinationService`
 
@@ -428,14 +428,14 @@ Negative guards (required tests):
 - `attempt_silent_refresh`
 - `attempt_emit_command`
 
-## Commands (charter)
+## Commands (implemented)
 
 Through `CommandPipeline` + `PermissionGateway`:
 
 | Command | Kind | Capability | Purpose |
 |---------|------|------------|---------|
-| `GenerateInsightCoordinationSnapshot` | Mutation | `work_context.write` | Persist a coordination artefact |
-| `GetInsightCoordinationSnapshot` | Query | `work_context.read` | Load current dual-channel projection |
+| `GenerateInsightCoordination` | Mutation | `work_context.write` | Persist a coordination artefact |
+| `GetInsightCoordination` | Query | `work_context.read` | Load current dual-channel projection |
 | `GetInsightCoordinationSummary` | Query | `work_context.read` | Summary + authoritative `history_count` |
 | `ExplainInsightCoordination` | Query | `work_context.read` | Explanation surface over current/last coordination |
 
@@ -453,7 +453,7 @@ PermissionGateway
 WorkspaceInsightCoordinationService
 ```
 
-## Persistence (charter)
+## Persistence (implemented)
 
 | Artefact | Role |
 |----------|------|
@@ -539,7 +539,7 @@ Never:
 
 | Knob | Expected delta |
 |------|----------------|
-| Mutation command baseline | +1 (`GenerateInsightCoordinationSnapshot`) → **70** |
+| Mutation command baseline | +1 (`GenerateInsightCoordination`) → **70** |
 | History / projection DTO inventory | +1 each → **21** |
 | Lifecycle service files | `workspace_insight_coordination.rs` |
 | Ownership registry | `insight_coordination` / `insight_coordination_snapshot` |
@@ -601,17 +601,17 @@ Implementation must create:
 7. React projection helpers + domain TS types
 8. Docs → Active after acceptance gates
 
-**Do not implement until this charter is reviewed and accepted.**
+Charter accepted. Implementation landed on `cursor/programme-iii-insight-coordination-34a5`.
 
 ## Documentation deliverables (this charter turn)
 
-- This architecture — status **Charter draft**
-- `PROGRAMME-III-COHERENT-WORKSPACE-RUNTIME.md` — Batch 9 charter drafted (extension after Batch 8 evidence-stack close)
+- This architecture — status **Active — Programme III Batch 9 implemented**
+- `PROGRAMME-III-COHERENT-WORKSPACE-RUNTIME.md` — Batch 9 Done
 - Pointers in governance / projection / recovery / vocabulary / README
 
-## Review gate
+## Programme status
 
-**Charter only — do not implement until this contract is reviewed and approved.**
+Batch 9 implemented. Do not begin Batch 10 until Batch 9 receives architecture acceptance.
 
 Governing rule:
 

@@ -88,6 +88,11 @@ import {
   isKnowledgeIntegrationProjectionNonCommandable,
   knowledgeIntegrationHistoryCountIsAuthoritative,
 } from "../app/src/components/knowledgeIntegrationProjection";
+import {
+  isInsightCoordinationHistoryNonActionable,
+  isInsightCoordinationProjectionNonCommandable,
+  insightCoordinationHistoryCountIsAuthoritative,
+} from "../app/src/components/insightCoordinationProjection";
 import type {
   DecisionArtifactHistoryEntry,
   DecisionEngineSummary,
@@ -140,6 +145,9 @@ import type {
   KnowledgeIntegrationHistoryEntry,
   KnowledgeIntegrationProjection,
   KnowledgeIntegrationSummary,
+  InsightCoordinationHistoryEntry,
+  InsightCoordinationProjection,
+  InsightCoordinationSummary,
   RecommendationHistoryEntry,
   RecommendationItem,
   TaskGraphSummary,
@@ -1660,6 +1668,69 @@ describe("projection integrity — cognitive agent cast", () => {
     expect(Object.keys(nonCommand)).not.toContain("execute");
     expect(Object.keys(nonCommand)).not.toContain("approve");
     expect(Object.keys(nonCommand)).not.toContain("should_execute");
+    expect(Object.keys(nonCommand)).not.toContain("dispatch");
+  });
+
+  it("keeps insight coordination projections non-commandable with authoritative history_count", () => {
+    const historyEntry = (
+      overrides: Partial<InsightCoordinationHistoryEntry> = {}
+    ): InsightCoordinationHistoryEntry => ({
+      coordination_id: "insight_coordination:1",
+      status: "superseded",
+      created_at: "t0",
+      superseded_at: "t1",
+      completeness: "partial",
+      cluster_count: 2,
+      intersection_count: 1,
+      attention_signal_count: 1,
+      gap_count: 1,
+      source_revision_count: 3,
+      terminal: true,
+      actionable: false,
+      authority_effect: "none",
+      ...overrides,
+    });
+    const projection: InsightCoordinationProjection = {
+      workspace_id: "ws",
+      generated_at: "t2",
+      current: null,
+      history: [historyEntry()],
+      history_count: 3,
+      authority_effect: "none",
+    };
+    expect(isInsightCoordinationProjectionNonCommandable(projection)).toBe(true);
+    expect(isInsightCoordinationHistoryNonActionable(historyEntry())).toBe(true);
+    expect(
+      isInsightCoordinationHistoryNonActionable(historyEntry({ actionable: true }))
+    ).toBe(false);
+
+    const summary: InsightCoordinationSummary = {
+      workspace_id: "ws",
+      generated_at: "t2",
+      has_current: false,
+      coordination_id: null,
+      completeness: null,
+      cluster_count: 0,
+      intersection_count: 0,
+      attention_signal_count: 0,
+      gap_count: 0,
+      source_revision_count: 0,
+      history: [historyEntry()],
+      history_count: 3,
+      authority_effect: "none",
+    };
+    expect(insightCoordinationHistoryCountIsAuthoritative(summary)).toBe(true);
+    expect(summary.history_count).toBeGreaterThanOrEqual(summary.history.length);
+
+    const nonCommand = {
+      coordination_id: "insight_coordination:1",
+      actionable: false,
+      terminal: true,
+      authority_effect: "none",
+    };
+    expect(Object.keys(nonCommand)).not.toContain("execute");
+    expect(Object.keys(nonCommand)).not.toContain("approve");
+    expect(Object.keys(nonCommand)).not.toContain("recommend");
     expect(Object.keys(nonCommand)).not.toContain("dispatch");
   });
 });

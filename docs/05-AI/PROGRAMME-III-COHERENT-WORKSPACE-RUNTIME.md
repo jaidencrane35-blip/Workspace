@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | **Purpose** | Establish one provenance-rich, read-only runtime view of operational, cognitive, governance, and evidence state while preserving all existing lifecycle and persistence authorities |
-| **Status** | Active — Batches 1–8 accepted; Batch 9 Insight Coordination charter drafted (pending review) |
+| **Status** | Active — Batches 1–9 accepted (Batch 9 Insight Coordination implemented) |
 | **Depends on** | Programme I governance / recovery; Programme II cognitive stack |
 | **Non-goals** | Event sourcing; authoritative replay logs; simulation; model hosting; autonomous execution; replacement permission system; replacement for domain-owned projections |
 
@@ -42,7 +42,7 @@
 | **6** | Contextual Workspace Understanding | Richer situational understanding | Done (accepted) |
 | **7** | Workspace Knowledge Synthesis | Provenance-bound structured knowledge artefacts | Done (accepted) |
 | **8** | Knowledge Integration / Retrieval Intelligence | Integrate/retrieve over accumulated evidence layers | Done (accepted) |
-| **9** | Workspace Insight Coordination | Coordinate cross-layer evidence relationships / unresolved areas | Charter drafted — pending review |
+| **9** | Workspace Insight Coordination | Coordinate cross-layer evidence relationships / unresolved areas | Done (accepted) |
 
 ## Batch 8 summary (evidence-stack close)
 
@@ -51,21 +51,20 @@
 `load_snapshot` only. Batch 8 closed the coherent **evidence stack**.
 See [Knowledge Integration Architecture](./KNOWLEDGE-INTEGRATION-ARCHITECTURE.md).
 
-## Batch 9 charter (draft)
+## Batch 9 summary
 
-`WorkspaceInsightCoordinationService` will assemble provenance-bound coordination
-views (`InsightCluster` / `EvidenceIntersection` / `InsightGap` /
-`CoordinationAssessment`) over durable Programme III projections via
-`load_snapshot` only — including Knowledge Integration. Diagnostic prioritisation
-metadata never becomes recommendation, task, policy, autonomy, or permission
-authority. Intersections remain meaning-only. Clusters without lineage are invalid.
-Commands (proposed): `GenerateInsightCoordinationSnapshot`,
-`GetInsightCoordinationSnapshot`, `GetInsightCoordinationSummary`,
-`ExplainInsightCoordination` (`work_context.write` / `work_context.read`).
-Migration `060`.
+`WorkspaceInsightCoordinationService` assembles provenance-bound coordination
+views (`InsightCluster` / `InsightIntersection` / `InsightGap` /
+`InsightAttentionSignal` / `CoordinationAssessment`) over durable Programme III
+projections via `load_snapshot` only — including Knowledge Integration.
+Diagnostic prioritisation metadata never becomes recommendation, task, policy,
+autonomy, or permission authority. Intersections remain meaning-only.
+Clusters without lineage are invalid.
+Commands: `GenerateInsightCoordination`, `GetInsightCoordination`,
+`GetInsightCoordinationSummary`, `ExplainInsightCoordination`
+(`work_context.write` / `work_context.read`). Migration `060`.
 See [Insight Coordination Architecture](./INSIGHT-COORDINATION-ARCHITECTURE.md).
 
-**Do not begin Batch 9 implementation until the charter is reviewed and approved.**  
 **Do not begin Batch 10 until Batch 9 receives architecture acceptance.**
 
 **Preserve:** no new source of truth, no autonomous authority, no execution,
@@ -81,7 +80,7 @@ Governing rule:
 ## Sequencing rule
 
 Ship Batch *N* only when Batch *N−1* has durable contracts, tests, and governance ownership entries.
-Batches 1–8 are accepted. Batch 9 implementation is gated on charter review approval.
+Batches 1–9 are accepted. Batch 10 is gated on Batch 9 architecture acceptance.
 
 Preserve P2 constraints from Batches 6–9:
 
@@ -102,7 +101,7 @@ Preserve P2 constraints from Batches 6–9:
 - [Contextual Workspace Understanding Architecture](./CONTEXTUAL-WORKSPACE-UNDERSTANDING-ARCHITECTURE.md) (Batch 6)
 - [Knowledge Synthesis Architecture](./KNOWLEDGE-SYNTHESIS-ARCHITECTURE.md) (Batch 7)
 - [Knowledge Integration Architecture](./KNOWLEDGE-INTEGRATION-ARCHITECTURE.md) (Batch 8)
-- [Insight Coordination Architecture](./INSIGHT-COORDINATION-ARCHITECTURE.md) (Batch 9 charter)
+- [Insight Coordination Architecture](./INSIGHT-COORDINATION-ARCHITECTURE.md) (Batch 9)
 - [Programme II — Cognitive Workspace](./PROGRAMME-II-COGNITIVE-WORKSPACE.md)
 - [Projection Integrity](../03-Engineering/PROJECTION-INTEGRITY.md)
 - [Architecture Governance](../03-Engineering/ARCHITECTURE-GOVERNANCE.md)

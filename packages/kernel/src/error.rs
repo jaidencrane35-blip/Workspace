@@ -17,6 +17,7 @@ use workspace_domain::{
     WorkspaceCognitiveAutonomyError, WorkspaceStateEnvelopeError, PolicyGovernanceError,
     HistoricalReconstructionError, TemporalIntelligenceError, WorkspaceExplanationError,
     ContextualUnderstandingError, KnowledgeSynthesisError, KnowledgeIntegrationError,
+    InsightCoordinationError,
     WorkspaceSessionError,
     WorkspaceTransitionError,
     WorkspaceWorkContextError, WorkspaceWorkingStyleError,
@@ -280,6 +281,9 @@ pub enum KernelError {
 
     #[error("Knowledge integration validation failed: {message}")]
     KnowledgeIntegrationValidation { message: String },
+
+    #[error("Insight coordination validation failed: {message}")]
+    InsightCoordinationValidation { message: String },
 
     #[error("Workspace intelligence validation failed: {message}")]
     WorkspaceIntelligenceValidation { message: String },
@@ -671,6 +675,17 @@ impl From<KnowledgeIntegrationError> for KernelError {
         match error {
             KnowledgeIntegrationError::Domain(domain) => KernelError::from(domain),
             other => KernelError::KnowledgeIntegrationValidation {
+                message: other.to_string(),
+            },
+        }
+    }
+}
+
+impl From<InsightCoordinationError> for KernelError {
+    fn from(error: InsightCoordinationError) -> Self {
+        match error {
+            InsightCoordinationError::Domain(domain) => KernelError::from(domain),
+            other => KernelError::InsightCoordinationValidation {
                 message: other.to_string(),
             },
         }
@@ -1385,6 +1400,10 @@ impl KernelError {
             },
             KernelError::KnowledgeIntegrationValidation { message } => PublicError {
                 code: "knowledge_integration_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::InsightCoordinationValidation { message } => PublicError {
+                code: "insight_coordination_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::WorkspaceIntelligenceValidation { message } => PublicError {

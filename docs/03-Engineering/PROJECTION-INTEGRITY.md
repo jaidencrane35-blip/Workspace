@@ -337,14 +337,14 @@ Rules:
 - Restart reconstructs durable current + history; missing integration remains missing
   (never inferred hits / links / confidence).
 
-### Workspace Insight Coordination (Programme III Batch 9 — charter)
+### Workspace Insight Coordination (Programme III Batch 9)
 
-- **Current (proposed):** dual-channel coordination projection with `InsightCluster` /
+- **Current:** dual-channel coordination projection with `InsightCluster` /
   `EvidenceIntersection` / `InsightGap` / `CoordinationAssessment`.
   Coordination views only; never Memory truth, planner, recommendation executor,
   decision authority, or autonomy. Coordination ≠ authority; prioritisation ≠
   recommendation; intersection ≠ causation; confidence ≠ permission.
-- **History (proposed):** superseded coordination via append-only history
+- **History:** superseded coordination via append-only history
   (`terminal: true`, `actionable: false`, `authority_effect: none`).
 - **`history_count`** authoritative; summary windows may truncate `history`.
 - Completeness: Complete / Partial / Unknown / Contradictory / Unavailable.

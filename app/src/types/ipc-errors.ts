@@ -85,6 +85,7 @@ export const PUBLIC_ERROR_CODES = [
   "contextual_understanding_validation_error",
   "knowledge_synthesis_validation_error",
   "knowledge_integration_validation_error",
+  "insight_coordination_validation_error",
   "workspace_composition_validation_error",
   "workspace_continuity_validation_error",
   "workspace_environment_validation_error",
