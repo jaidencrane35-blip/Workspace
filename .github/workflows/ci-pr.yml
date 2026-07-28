@@ -48,5 +48,8 @@ jobs:
       - name: Cargo test
         run: cargo test --workspace
 
+      - name: Architecture governance
+        run: pnpm verify:architecture-governance
+
       - name: Frontend contract tests
         run: pnpm test

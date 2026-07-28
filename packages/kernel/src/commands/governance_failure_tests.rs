@@ -237,10 +237,135 @@ fn mutation_command_declares_capability_path() {
 
 #[test]
 fn partial_state_recovery_does_not_fabricate_terminal_evidence() {
+    // Truncated history window under a higher authoritative count is valid;
+    // inventing rows to fill the gap is forbidden.
     let window: Vec<RecommendationHistoryEntry> = vec![];
     assert!(history_count_is_authoritative(window.len(), 0));
-    // Truncated window under a higher authoritative count is valid; inventing
-    // rows to fill the gap is forbidden.
     assert!(history_count_is_authoritative(window.len(), 3));
     assert!(window.is_empty(), "recovery must not invent history entries");
+}
+
+#[test]
+fn missing_projection_data_does_not_guess_lifecycle_or_fabricate_evidence() {
+    // Stale / missing outcome identity must fail closed as non-evidence.
+    let incomplete = RecommendationHistoryEntry {
+        native_id: "rec-stale".into(),
+        lifecycle_state: "accepted".into(),
+        outcome: RecommendationOutcomeView {
+            outcome_id: "   ".into(),
+            recommendation_id: "rec-stale".into(),
+            user_decision: "accepted".into(),
+            result_kind: "accepted_follow_through".into(),
+            lifecycle_resolution: Some("accepted".into()),
+            recorded_at: "t".into(),
+            explanation_keys: vec![],
+            evidence_refs: vec![],
+            experience_trace_match_keys: vec![],
+            is_system_failure: false,
+            authority_effect: "none".into(),
+        },
+        resolved_at: None,
+        terminal: true,
+        actionable: false,
+        authority_effect: "none".into(),
+    };
+    assert!(
+        !incomplete.is_non_actionable(),
+        "whitespace outcome_id must not count as projected terminal evidence"
+    );
+
+    // Stale cached projection that flips actionable must fail closed.
+    let stale_actionable = RecommendationHistoryEntry {
+        native_id: "rec-stale-act".into(),
+        lifecycle_state: "accepted".into(),
+        outcome: RecommendationOutcomeView {
+            outcome_id: "recommendation_outcome:rec-stale-act".into(),
+            recommendation_id: "rec-stale-act".into(),
+            user_decision: "accepted".into(),
+            result_kind: "accepted_follow_through".into(),
+            lifecycle_resolution: Some("accepted".into()),
+            recorded_at: "t".into(),
+            explanation_keys: vec![],
+            evidence_refs: vec![],
+            experience_trace_match_keys: vec![],
+            is_system_failure: false,
+            authority_effect: "none".into(),
+        },
+        resolved_at: Some("t".into()),
+        terminal: true,
+        actionable: true,
+        authority_effect: "none".into(),
+    };
+    assert!(
+        !stale_actionable.is_non_actionable(),
+        "stale actionable=true must not pass as non-actionable evidence"
+    );
+
+    let mut forged = serde_json::to_value(&stale_actionable).unwrap();
+    forged
+        .as_object_mut()
+        .unwrap()
+        .insert("lifecycle_state".into(), serde_json::json!("accepted"));
+    // Even with a terminal-looking label, actionable true keeps history commandable check failing.
+    assert!(!history_json_is_non_commandable(&forged));
+}
+
+#[test]
+fn partial_execution_claim_does_not_allow_unsafe_retry_or_fabricated_history() {
+    use crate::services::ExecutionLifecycleService;
+    use workspace_domain::{
+        ExecutionLifecycleHistoryEntry, ExecutionLifecycleProjection, ExecutionState,
+    };
+
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let db = kernel.shared_database();
+
+    // Partially persisted: claim succeeds (in_progress) — not terminal.
+    let claimed = ExecutionLifecycleService::claim(
+        &db,
+        "execution:gov-partial",
+        "suggestion:gov-partial",
+        Some("intent:gov-partial"),
+    )
+    .expect("claim");
+    assert_eq!(claimed.state, ExecutionState::InProgress);
+    assert!(
+        !claimed.retry_allowed,
+        "in-progress claim must not advertise retry"
+    );
+
+    // History projection must omit in-progress rows (no fabricated terminal).
+    assert!(
+        ExecutionLifecycleHistoryEntry::from_record(&claimed).is_none(),
+        "partial claim must not project as history evidence"
+    );
+
+    let projection = ExecutionLifecycleProjection::from_records(&[claimed], &[], 10);
+    assert_eq!(projection.history_count, 0);
+    assert!(
+        projection.history.is_empty(),
+        "partial recovery must not invent history entries"
+    );
+    assert_eq!(projection.actionable.len(), 1);
+
+    // Non-retryable failure: still no unsafe retry flag when retry_allowed=false.
+    ExecutionLifecycleService::mark_failed(
+        &db,
+        "execution:gov-partial",
+        false,
+        "governance_partial_failure",
+    )
+    .expect("mark_failed");
+    let failed = ExecutionLifecycleService::get(&db, "execution:gov-partial")
+        .expect("get")
+        .expect("present");
+    assert_eq!(failed.state, ExecutionState::Failed);
+    assert!(
+        !failed.retry_allowed,
+        "non-retryable failure must not enable unsafe retry"
+    );
+    let history = ExecutionLifecycleHistoryEntry::from_record(&failed).expect("terminal history");
+    assert!(history.is_non_actionable());
+    assert!(!history.actionable);
+    assert!(!history.retry_allowed);
 }

@@ -1,5 +1,5 @@
 {
-  "generated_at_note": "Inventory is derived from repository layout + Cargo edges; forbidden edges are enforced by verify:architecture-governance",
+  "generated_at_note": "Detector inventory derived from repository layout + Cargo edges. Not an authority — live verify:architecture-governance enforces rules and map drift.",
   "layers": [
     {
       "id": "react",
@@ -19,7 +19,7 @@
     {
       "id": "permission_gateway",
       "path": "packages/kernel/src/security",
-      "role": "Sole Allow/Deny/ApprovalRequired authority decision"
+      "role": "Sole Allow/Deny/ApprovalRequired via require()"
     },
     {
       "id": "services",
@@ -80,47 +80,56 @@
     {
       "from": "react",
       "to": "repositories",
-      "reason": "React must never open the database"
+      "reason": "React must never open the database",
+      "enforced": "react_import_scan"
     },
     {
       "from": "react",
       "to": "services",
-      "reason": "React must not call lifecycle services directly"
+      "reason": "React must not call lifecycle services directly",
+      "enforced": "react_import_scan"
     },
     {
       "from": "react",
       "to": "domain",
-      "reason": "React consumes IPC DTOs, not Rust domain crates"
+      "reason": "React consumes IPC DTOs, not Rust domain crates",
+      "enforced": "react_import_scan"
     },
     {
       "from": "react",
       "to": "execution",
-      "reason": "React must not spawn processes"
+      "reason": "React must not spawn processes",
+      "enforced": "react_import_scan"
     },
     {
       "from": "domain",
       "to": "execution",
-      "reason": "Domain models must not spawn processes"
+      "reason": "Domain models must not spawn processes",
+      "enforced": "cargo_edge"
     },
     {
       "from": "domain",
       "to": "repositories",
-      "reason": "Domain must not depend on persistence"
+      "reason": "Domain must not depend on persistence",
+      "enforced": "cargo_edge"
     },
     {
       "from": "repositories",
       "to": "services",
-      "reason": "Repositories must not call services"
+      "reason": "Repositories must not call services",
+      "enforced": "cargo_edge+import_scan"
     },
     {
       "from": "repositories",
       "to": "kernel_commands",
-      "reason": "Repositories must not import kernel"
+      "reason": "Repositories must not import kernel",
+      "enforced": "cargo_edge+import_scan"
     },
     {
       "from": "services",
-      "to": "permission_gateway",
-      "reason": "Services must not self-authorize; gateway runs before service entry"
+      "to": "permission_gateway_require",
+      "reason": "Services must not call PermissionGateway::require; evaluate() discovery probes remain allowed",
+      "enforced": "services_require_scan+call_site_allowlist"
     }
   ],
   "crate_edges": {
@@ -156,6 +165,11 @@
     "work_context.write": "WorkContext",
     "desktop.read": "System"
   },
+  "intentional_broad_capabilities": {
+    "work_context.write": "Shared write token for RE / DQ / DE / TaskGraph / adaptation gated mutations — lifecycle owners remain the domain services",
+    "audit.write": "Used for suggestion accept/reject and some execution bookkeeping commands — audit capability, not lifecycle ownership"
+  },
+  "mutation_command_baseline": 51,
   "mutation_capability_inventory": [
     {
       "command": "AcceptSuggestion",
@@ -413,26 +427,68 @@
       "authority_owner": "Zone"
     }
   ],
-  "permission_gateway_call_sites": [
+  "unused_capabilities": [
+    "system.shutdown",
+    "system.startup"
+  ],
+  "permission_gateway_require_sites": [
     {
       "file": "packages/kernel/src/commands/handler.rs",
-      "line": 4131
+      "line": 4131,
+      "kind": "require"
     },
     {
       "file": "packages/kernel/src/commands/pipeline.rs",
-      "line": 73
+      "line": 73,
+      "kind": "require"
     },
     {
       "file": "packages/kernel/src/commands/pipeline.rs",
-      "line": 161
+      "line": 161,
+      "kind": "require"
     }
   ],
+  "evidence": {
+    "source_trees": [
+      "react:23",
+      "ipc:64",
+      "kernel_commands:199",
+      "permission_gateway:5",
+      "services:81",
+      "domain:84",
+      "repositories:31",
+      "execution:7"
+    ],
+    "history_dtos_found": [
+      "RecommendationHistoryEntry",
+      "DecisionOverlayHistoryEntry",
+      "DecisionArtifactHistoryEntry",
+      "TaskHistoryEntry",
+      "ExecutionLifecycleHistoryEntry"
+    ],
+    "projection_dtos_found": [
+      "WorkspaceRecommendationEngineSummary",
+      "DecisionQueueSummary",
+      "DecisionEngineSummary",
+      "TaskGraphSummary",
+      "ExecutionLifecycleProjection"
+    ],
+    "mutation_commands": 51,
+    "query_commands": 70,
+    "assertions": [
+      "Found 5 history DTOs and verified command-field restrictions.",
+      "Found 5 projection summary DTOs and verified authority-field restrictions.",
+      "Found 51 mutation commands (≥ baseline 51) with capability paths."
+    ]
+  },
   "stats": {
     "mutation_commands": 51,
+    "query_commands": 70,
     "capability_catalog": 24,
+    "unused_capabilities": 2,
     "gateway_require_sites": 3,
+    "history_dtos_found": 5,
+    "projection_dtos_found": 5,
     "violation_count": 0
-  },
-  "verified_clean": true,
-  "violations": []
+  }
 }
