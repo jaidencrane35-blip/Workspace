@@ -632,12 +632,24 @@ fn execution_projection_separates_channels_and_survives_audit_wipe() {
     assert_eq!(failed.failure_reason.as_deref(), Some("denied"));
     assert_eq!(failed.state, ExecutionState::Failed);
 
-    // Audit wipe must not erase durable lifecycle evidence.
-    db.lock()
+    // Startup + lifecycle audit evidence is append-only. Destructive wipe must fail
+    // closed; durable execution_lifecycle projection must remain authoritative.
+    let audit_before = crate::services::AuditService::list_recent(&db, 50)
+        .unwrap()
+        .len();
+    assert!(
+        audit_before >= 2,
+        "startup Started/Ready must leave durable audit evidence"
+    );
+    let wipe = db
+        .lock()
         .unwrap()
         .connection()
-        .execute("DELETE FROM audit_events", [])
-        .unwrap();
+        .execute("DELETE FROM audit_events", []);
+    assert!(
+        wipe.is_err(),
+        "audit_events must remain append-only under recovery pressure"
+    );
 
     let after = ExecutionReconciliationService::projection(&db, 10).unwrap();
     assert_eq!(after.actionable.len(), before.actionable.len());
@@ -650,4 +662,11 @@ fn execution_projection_separates_channels_and_survives_audit_wipe() {
     assert!(after.history.iter().any(|h| {
         h.execution_request_id == "execution:proj-done" && h.state == ExecutionState::Completed
     }));
+    assert_eq!(
+        crate::services::AuditService::list_recent(&db, 50)
+            .unwrap()
+            .len(),
+        audit_before,
+        "failed wipe must not erase audit history"
+    );
 }

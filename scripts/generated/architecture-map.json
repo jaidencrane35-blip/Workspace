@@ -434,7 +434,7 @@
   "permission_gateway_require_sites": [
     {
       "file": "packages/kernel/src/commands/handler.rs",
-      "line": 4131,
+      "line": 4168,
       "kind": "require"
     },
     {
@@ -452,10 +452,10 @@
     "source_trees": [
       "react:23",
       "ipc:64",
-      "kernel_commands:199",
+      "kernel_commands:200",
       "permission_gateway:5",
       "services:81",
-      "domain:84",
+      "domain:85",
       "repositories:31",
       "execution:7"
     ],
