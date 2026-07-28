@@ -33,6 +33,7 @@ Canonical product language. Prefer these terms in UI, docs, and Assistant copy.
 | **Workspace Insight Coordination** | Read-only coordination of already-derived evidence products (clusters / intersections / unresolved areas; coordination ≠ authority; prioritisation ≠ recommendation) | Planner, Decision Engine, Recommendation executor, autonomy layer, policy authority, Memory/Cognitive Model |
 | **Cross-Workspace Intelligence** | Derived aggregate observations across independent workspaces (patterns / themes / repeated risks; aggregation ≠ authority) | Global brain, central SoT, execution engine, per-workspace truth replacement |
 | **Workspace Decision Support** | Decision-ready evidence packages (contexts / bundles / trade-offs; support ≠ decision) | Decision-maker, recommendation engine, execution authority, policy grant |
+| **Workspace Intelligence Hub** | Read-only aggregation of Programme III intelligence packages (aggregation ≠ reinterpretation) | New SoT, conflict resolver, recommendation engine, decision-maker, upstream authority replacement |
 | **Graph History** | Terminal superseded graph snapshot evidence | Actionable graph mutations |
 | **Task** | Durable work item | Action |
 | **Action** | Executable catalog/command candidate | Task |

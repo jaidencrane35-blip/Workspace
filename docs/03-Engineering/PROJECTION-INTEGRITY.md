@@ -370,6 +370,15 @@ Rules:
 - Trade-off summaries descriptive only — support ≠ decision; trade-off ≠ recommendation.
 - React may inspect — no decide / approve / recommend / execute affordances.
 
+### Workspace Intelligence Hub (Programme III Batch 12)
+
+- **Current:** `WorkspaceIntelligenceHubProjection.current` — packages / summary /
+  lineage / gaps / conflicts. Aggregates intelligence only; never replaces upstream authority.
+- **History:** append-only (`terminal: true`, `actionable: false`, `authority_effect: none`).
+- **`history_count`** authoritative.
+- Conflict records preserved — aggregation ≠ reinterpretation; conflict record ≠ resolution.
+- React may inspect — no decide / approve / recommend / execute / resolve affordances.
+
 ## Serde defaults vs TypeScript required fields
 
 Rust history fields often use `#[serde(default)]` so older persisted / in-flight JSON

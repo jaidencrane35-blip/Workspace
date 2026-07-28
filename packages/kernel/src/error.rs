@@ -18,6 +18,7 @@ use workspace_domain::{
     HistoricalReconstructionError, TemporalIntelligenceError, WorkspaceExplanationError,
     ContextualUnderstandingError, KnowledgeSynthesisError, KnowledgeIntegrationError,
     InsightCoordinationError, CrossWorkspaceIntelligenceError, DecisionSupportError,
+    IntelligenceHubError,
     WorkspaceSessionError,
     WorkspaceTransitionError,
     WorkspaceWorkContextError, WorkspaceWorkingStyleError,
@@ -290,6 +291,9 @@ pub enum KernelError {
 
     #[error("Decision support validation failed: {message}")]
     DecisionSupportValidation { message: String },
+
+    #[error("Intelligence hub validation failed: {message}")]
+    IntelligenceHubValidation { message: String },
 
     #[error("Workspace intelligence validation failed: {message}")]
     WorkspaceIntelligenceValidation { message: String },
@@ -714,6 +718,17 @@ impl From<DecisionSupportError> for KernelError {
         match error {
             DecisionSupportError::Domain(domain) => KernelError::from(domain),
             other => KernelError::DecisionSupportValidation {
+                message: other.to_string(),
+            },
+        }
+    }
+}
+
+impl From<IntelligenceHubError> for KernelError {
+    fn from(error: IntelligenceHubError) -> Self {
+        match error {
+            IntelligenceHubError::Domain(domain) => KernelError::from(domain),
+            other => KernelError::IntelligenceHubValidation {
                 message: other.to_string(),
             },
         }
@@ -1440,6 +1455,10 @@ impl KernelError {
             },
             KernelError::DecisionSupportValidation { message } => PublicError {
                 code: "decision_support_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::IntelligenceHubValidation { message } => PublicError {
+                code: "intelligence_hub_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::WorkspaceIntelligenceValidation { message } => PublicError {

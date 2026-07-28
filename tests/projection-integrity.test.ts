@@ -103,6 +103,11 @@ import {
   isDecisionSupportProjectionNonCommandable,
   decisionSupportHistoryCountIsAuthoritative,
 } from "../app/src/components/decisionSupportProjection";
+import {
+  isIntelligenceHubHistoryNonActionable,
+  isIntelligenceHubProjectionNonCommandable,
+  intelligenceHubHistoryCountIsAuthoritative,
+} from "../app/src/components/intelligenceHubProjection";
 import type {
   DecisionArtifactHistoryEntry,
   DecisionEngineSummary,
@@ -164,6 +169,9 @@ import type {
   DecisionSupportHistoryEntry,
   WorkspaceDecisionSupportProjection,
   WorkspaceDecisionSupportSummary,
+  IntelligenceHubHistoryEntry,
+  WorkspaceIntelligenceHubProjection,
+  WorkspaceIntelligenceHubSummary,
   RecommendationHistoryEntry,
   RecommendationItem,
   TaskGraphSummary,
@@ -1878,6 +1886,67 @@ describe("projection integrity — cognitive agent cast", () => {
     expect(Object.keys(nonCommand)).not.toContain("approve");
     expect(Object.keys(nonCommand)).not.toContain("recommend");
     expect(Object.keys(nonCommand)).not.toContain("decide");
+  });
+
+  it("keeps intelligence hub projections non-commandable with authoritative history_count", () => {
+    const historyEntry = (
+      overrides: Partial<IntelligenceHubHistoryEntry> = {}
+    ): IntelligenceHubHistoryEntry => ({
+      hub_id: "intelligence_hub:1",
+      status: "superseded",
+      created_at: "t0",
+      superseded_at: "t1",
+      completeness: "partial",
+      package_count: 5,
+      gap_count: 2,
+      conflict_count: 1,
+      source_revision_count: 4,
+      terminal: true,
+      actionable: false,
+      authority_effect: "none",
+      ...overrides,
+    });
+    const projection: WorkspaceIntelligenceHubProjection = {
+      workspace_id: "ws",
+      generated_at: "t2",
+      current: null,
+      history: [historyEntry()],
+      history_count: 3,
+      authority_effect: "none",
+    };
+    expect(isIntelligenceHubProjectionNonCommandable(projection)).toBe(true);
+    expect(isIntelligenceHubHistoryNonActionable(historyEntry())).toBe(true);
+    expect(
+      isIntelligenceHubHistoryNonActionable(historyEntry({ actionable: true }))
+    ).toBe(false);
+
+    const summary: WorkspaceIntelligenceHubSummary = {
+      workspace_id: "ws",
+      generated_at: "t2",
+      has_current: false,
+      hub_id: null,
+      completeness: null,
+      package_count: 0,
+      gap_count: 0,
+      conflict_count: 0,
+      source_revision_count: 0,
+      history: [historyEntry()],
+      history_count: 3,
+      authority_effect: "none",
+    };
+    expect(intelligenceHubHistoryCountIsAuthoritative(summary)).toBe(true);
+    expect(summary.history_count).toBeGreaterThanOrEqual(summary.history.length);
+
+    const nonCommand = {
+      hub_id: "intelligence_hub:1",
+      actionable: false,
+      terminal: true,
+      authority_effect: "none",
+    };
+    expect(Object.keys(nonCommand)).not.toContain("execute");
+    expect(Object.keys(nonCommand)).not.toContain("approve");
+    expect(Object.keys(nonCommand)).not.toContain("recommend");
+    expect(Object.keys(nonCommand)).not.toContain("resolve");
   });
 });
 

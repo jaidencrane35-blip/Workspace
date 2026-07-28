@@ -27,6 +27,7 @@ mod workspace_knowledge_integration;
 mod workspace_insight_coordination;
 mod workspace_cross_intelligence;
 mod workspace_decision_support;
+mod workspace_intelligence_hub;
 mod graph;
 mod layout;
 mod permission_approval;
@@ -69,6 +70,7 @@ pub use workspace_knowledge_integration::WorkspaceKnowledgeIntegrationRepository
 pub use workspace_insight_coordination::InsightCoordinationRepository;
 pub use workspace_cross_intelligence::WorkspaceCrossIntelligenceRepository;
 pub use workspace_decision_support::WorkspaceDecisionSupportRepository;
+pub use workspace_intelligence_hub::WorkspaceIntelligenceHubRepository;
 pub use graph::GraphRepository;
 pub use layout::LayoutRepository;
 pub use permission_approval::PermissionApprovalRepository;

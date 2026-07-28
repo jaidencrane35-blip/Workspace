@@ -51,6 +51,9 @@ use crate::workspace_cross_intelligence::{
 use crate::workspace_decision_support::{
     DecisionSupportHistoryEntry, WorkspaceDecisionSupportProjection,
 };
+use crate::workspace_intelligence_hub::{
+    IntelligenceHubHistoryEntry, WorkspaceIntelligenceHubProjection,
+};
 use crate::workspace_reasoning_memory::{ReasoningHistoryEntry, ReasoningSnapshot};
 
 /// Documented startup in-progress sweep cap (must match
@@ -428,6 +431,26 @@ pub fn recovery_must_not_fabricate_decision_support(
 /// Fabricated actionable decision-support history must fail the recovery contract.
 pub fn recovery_must_not_fabricate_actionable_decision_support_history(
     entry: &DecisionSupportHistoryEntry,
+) -> bool {
+    entry.is_non_actionable()
+}
+
+/// Missing intelligence hub remains missing — never invent intelligence packages on restart.
+pub fn recovery_must_not_fabricate_intelligence_hub(
+    projection: &WorkspaceIntelligenceHubProjection,
+) -> bool {
+    projection.is_non_commandable()
+        && projection.history.iter().all(|h| h.is_non_actionable())
+        && projection
+            .current
+            .as_ref()
+            .map(|c| c.is_non_executing())
+            .unwrap_or(true)
+}
+
+/// Fabricated actionable intelligence-hub history must fail the recovery contract.
+pub fn recovery_must_not_fabricate_actionable_intelligence_hub_history(
+    entry: &IntelligenceHubHistoryEntry,
 ) -> bool {
     entry.is_non_actionable()
 }
@@ -986,5 +1009,31 @@ mod tests {
             authority_effect: "none".into(),
         };
         assert!(!recovery_must_not_fabricate_actionable_decision_support_history(&bad));
+    }
+
+    #[test]
+    fn recovery_never_fabricates_intelligence_hub_on_empty_projection() {
+        let empty = WorkspaceIntelligenceHubProjection::assemble("ws", None, vec![], 0, "t0");
+        assert!(recovery_must_not_fabricate_intelligence_hub(&empty));
+        assert!(empty.current.is_none());
+    }
+
+    #[test]
+    fn recovery_rejects_actionable_intelligence_hub_history() {
+        let bad = IntelligenceHubHistoryEntry {
+            hub_id: "intelligence_hub:1".into(),
+            status: "superseded".into(),
+            created_at: "t0".into(),
+            superseded_at: Some("t1".into()),
+            completeness: "unavailable".into(),
+            package_count: 0,
+            gap_count: 0,
+            conflict_count: 0,
+            source_revision_count: 0,
+            terminal: true,
+            actionable: true,
+            authority_effect: "none".into(),
+        };
+        assert!(!recovery_must_not_fabricate_actionable_intelligence_hub_history(&bad));
     }
 }

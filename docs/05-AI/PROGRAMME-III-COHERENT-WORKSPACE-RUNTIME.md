@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | **Purpose** | Establish one provenance-rich, read-only runtime view of operational, cognitive, governance, and evidence state while preserving all existing lifecycle and persistence authorities |
-| **Status** | Active — Batches 1–11 accepted (Batch 11 Workspace Decision Support implemented) |
+| **Status** | Active — Batches 1–12 accepted (Batch 12 Workspace Intelligence Hub implemented) |
 | **Depends on** | Programme I governance / recovery; Programme II cognitive stack |
 | **Non-goals** | Event sourcing; authoritative replay logs; simulation; model hosting; autonomous execution; replacement permission system; replacement for domain-owned projections |
 
@@ -33,6 +33,8 @@
 22. **aggregation ≠ authority; frequency ≠ priority-as-action; statistics ≠ recommendations.**
 23. **Workspace decision support organises evidence for decision-ready understanding** — it never makes decisions, recommends actions, or grants permission.
 24. **support ≠ decision; trade-off ≠ recommendation; comparison ≠ ranking-as-authority; completeness ≠ permission.**
+25. **Workspace Intelligence Hub aggregates Programme III intelligence into observational packages** — it never replaces, overrides, or becomes authority for any upstream layer.
+26. **aggregation ≠ reinterpretation; hub package ≠ new SoT; conflict record ≠ resolution; lineage ≠ inferred provenance.**
 
 ## Batch map
 
@@ -49,6 +51,7 @@
 | **9** | Workspace Insight Coordination | Coordinate cross-layer evidence relationships / unresolved areas | Done (accepted) |
 | **10** | Cross-Workspace Intelligence | Aggregate patterns across workspaces without centralising authority | Done (accepted) |
 | **11** | Workspace Decision Support | Organise evidence into decision-ready support packages without deciding | Done (accepted) |
+| **12** | Workspace Intelligence Hub | Aggregate Programme III intelligence into one observational package | Done (accepted) |
 
 ## Batch 8 summary (evidence-stack close)
 
@@ -107,10 +110,21 @@ Commands: `GenerateWorkspaceDecisionSupport`, `GetWorkspaceDecisionSupport`,
 `GetWorkspaceDecisionSupportSummary`, `ExplainWorkspaceDecisionSupport`.
 Migration `062`. See [Workspace Decision Support Architecture](./WORKSPACE-DECISION-SUPPORT-ARCHITECTURE.md).
 
+## Batch 12 summary
+
+`WorkspaceIntelligenceHubService` aggregates provenance-bound intelligence packages
+(`IntelligencePackage` / `IntelligenceSummary` / `IntelligenceLineage` /
+`IntelligenceGap` / `IntelligenceConflict`) from Programme III projections via
+`load_snapshot` only — including Workspace Decision Support as a per-workspace surface.
+Aggregate intelligence. Never replace the intelligence that produced it.
+Commands: `GenerateWorkspaceIntelligenceHub`, `GetWorkspaceIntelligenceHub`,
+`GetWorkspaceIntelligenceHubSummary`, `ExplainWorkspaceIntelligence`.
+Migration `063`. See [Workspace Intelligence Hub Architecture](./WORKSPACE-INTELLIGENCE-HUB-ARCHITECTURE.md).
+
 ## Sequencing rule
 
 Ship Batch *N* only when Batch *N−1* has durable contracts, tests, and governance ownership entries.
-Batches 1–11 are accepted.
+Batches 1–12 are accepted.
 
 Preserve P2 constraints from Batches 6–9:
 
@@ -134,6 +148,7 @@ Preserve P2 constraints from Batches 6–9:
 - [Insight Coordination Architecture](./INSIGHT-COORDINATION-ARCHITECTURE.md) (Batch 9)
 - [Cross-Workspace Intelligence Architecture](./CROSS-WORKSPACE-INTELLIGENCE-ARCHITECTURE.md) (Batch 10)
 - [Workspace Decision Support Architecture](./WORKSPACE-DECISION-SUPPORT-ARCHITECTURE.md) (Batch 11)
+- [Workspace Intelligence Hub Architecture](./WORKSPACE-INTELLIGENCE-HUB-ARCHITECTURE.md) (Batch 12)
 - [Programme II — Cognitive Workspace](./PROGRAMME-II-COGNITIVE-WORKSPACE.md)
 - [Projection Integrity](../03-Engineering/PROJECTION-INTEGRITY.md)
 - [Architecture Governance](../03-Engineering/ARCHITECTURE-GOVERNANCE.md)

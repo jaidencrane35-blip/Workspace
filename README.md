@@ -63,6 +63,8 @@ Start at `docs/README.md` for the canonical index. Key entry points:
 - `docs/03-Engineering/ENGINEERING-PRINCIPLES.md`
 - `docs/05-AI/WORKSPACE-RECOMMENDATION-ENGINE.md`
 - `docs/05-AI/WORKSPACE-DECISION-ENGINE.md`
+- `docs/05-AI/PROGRAMME-III-COHERENT-WORKSPACE-RUNTIME.md`
+- `docs/05-AI/WORKSPACE-INTELLIGENCE-HUB-ARCHITECTURE.md`
 - `docs/08-Roadmap/ROADMAP.md`
 - `docs/09-Decisions/DECISION-LOG.md`
 

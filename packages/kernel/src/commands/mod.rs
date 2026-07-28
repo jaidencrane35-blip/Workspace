@@ -29,6 +29,7 @@ mod workspace_knowledge_integration;
 mod workspace_insight_coordination;
 mod workspace_cross_intelligence;
 mod workspace_decision_support;
+mod workspace_intelligence_hub;
 mod workspace_purpose;
 mod workspace_evolution;
 mod workspace_recommendation;
@@ -170,6 +171,8 @@ mod workspace_insight_coordination_tests;
 mod workspace_cross_intelligence_tests;
 #[cfg(test)]
 mod workspace_decision_support_tests;
+#[cfg(test)]
+mod workspace_intelligence_hub_tests;
 #[cfg(test)]
 mod workspace_attention_tests;
 #[cfg(test)]
@@ -506,5 +509,9 @@ pub use workspace_cross_intelligence::{
 pub use workspace_decision_support::{
     ExplainWorkspaceDecisionSupport, GenerateWorkspaceDecisionSupport, GetWorkspaceDecisionSupport,
     GetWorkspaceDecisionSupportSummary,
+};
+pub use workspace_intelligence_hub::{
+    ExplainWorkspaceIntelligence, GenerateWorkspaceIntelligenceHub, GetWorkspaceIntelligenceHub,
+    GetWorkspaceIntelligenceHubSummary,
 };
 pub use zone::{CreateZone, DeleteZone, GetZone};

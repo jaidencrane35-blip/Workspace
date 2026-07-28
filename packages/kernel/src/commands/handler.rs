@@ -156,6 +156,10 @@ use crate::commands::workspace_decision_support::{
     ExplainWorkspaceDecisionSupport, GenerateWorkspaceDecisionSupport, GetWorkspaceDecisionSupport,
     GetWorkspaceDecisionSupportSummary,
 };
+use crate::commands::workspace_intelligence_hub::{
+    ExplainWorkspaceIntelligence, GenerateWorkspaceIntelligenceHub, GetWorkspaceIntelligenceHub,
+    GetWorkspaceIntelligenceHubSummary,
+};
 use crate::commands::workspace_cross_intelligence::{
     ExplainCrossWorkspacePattern, GenerateCrossWorkspaceIntelligence, GetCrossWorkspaceIntelligence,
     GetCrossWorkspaceSummary,
@@ -236,6 +240,8 @@ use workspace_domain::{
     CrossWorkspacePatternExplanation,
     WorkspaceDecisionSupportProjection, WorkspaceDecisionSupportSummary,
     WorkspaceDecisionSupportExplanation,
+    WorkspaceIntelligenceHubProjection, WorkspaceIntelligenceHubSummary,
+    WorkspaceIntelligenceHubExplanation,
     LayoutId, LayoutMetadata, LayoutNode, LayoutSnapshot, MemoryEntry, MemoryType,
     ModelProviderDescriptor, ModelResponse, Observation, PersonalizedPlanComparison,
     PreferenceCategory, PreferenceSource, Suggestion, SuggestionIntentRequest,
@@ -3160,6 +3166,53 @@ impl CommandHandler {
     /// Architecture guard — Decision support cannot execute / decide / recommend.
     pub fn decision_support_attempt_execute() -> Result<()> {
         crate::services::WorkspaceDecisionSupportService::attempt_execute()
+    }
+
+    pub fn generate_workspace_intelligence_hub(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceIntelligenceHubProjection> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_mutation(GenerateWorkspaceIntelligenceHub::new(workspace_id))
+    }
+
+    pub fn get_workspace_intelligence_hub(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceIntelligenceHubProjection> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetWorkspaceIntelligenceHub::new(workspace_id))
+    }
+
+    pub fn get_workspace_intelligence_hub_summary(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        history_limit: usize,
+    ) -> Result<WorkspaceIntelligenceHubSummary> {
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_query(
+            GetWorkspaceIntelligenceHubSummary::new(workspace_id, history_limit),
+        )
+    }
+
+    pub fn explain_workspace_intelligence(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceIntelligenceHubExplanation> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(ExplainWorkspaceIntelligence::new(workspace_id))
+    }
+
+    /// Architecture guard — Intelligence hub cannot execute / decide / recommend / resolve.
+    pub fn intelligence_hub_attempt_execute() -> Result<()> {
+        crate::services::WorkspaceIntelligenceHubService::attempt_execute()
     }
 
     #[allow(clippy::too_many_arguments)]

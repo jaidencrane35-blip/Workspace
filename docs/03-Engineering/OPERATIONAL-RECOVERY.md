@@ -47,6 +47,7 @@ Recovery must **never**:
 - fabricate insight coordination clusters, intersections, attention ranks, or historical coordination claims from missing evidence (`recovery_must_not_fabricate_insight_coordination`)
 - fabricate cross-workspace patterns, statistics, or historical aggregate claims from missing evidence (`recovery_must_not_fabricate_cross_workspace_intelligence`)
 - fabricate decision contexts, trade-offs, or ranked choices from missing evidence (`recovery_must_not_fabricate_decision_support`)
+- fabricate intelligence packages, lineage rollups, or conflict resolutions from missing evidence (`recovery_must_not_fabricate_intelligence_hub`)
 - recreate desktop actions
 - bypass PermissionGateway / CommandPipeline for user mutations
 - silently “heal” lifecycle into an open actionable state

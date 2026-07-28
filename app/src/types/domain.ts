@@ -4340,6 +4340,172 @@ export interface WorkspaceDecisionSupportExplanation {
   actionable: boolean;
 }
 
+/** Programme III Batch 12 — Workspace Intelligence Hub (aggregation ≠ reinterpretation). */
+export interface IntelligenceHubFrame {
+  include_state: boolean;
+  include_policy: boolean;
+  include_reconstruction: boolean;
+  include_temporal: boolean;
+  include_explanation: boolean;
+  include_contextual: boolean;
+  include_knowledge_synthesis: boolean;
+  include_knowledge_integration: boolean;
+  include_insight: boolean;
+  include_cross_workspace: boolean;
+  include_decision_support: boolean;
+}
+
+export interface IntelligenceHubEvidenceRef {
+  external_ref: string;
+  origin_domain: string;
+  source_revision: string | null;
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface IntelligencePackage {
+  package_id: string;
+  surface: string;
+  artefact_ref: string;
+  source_revision: string | null;
+  availability: string;
+  evidence_refs: IntelligenceHubEvidenceRef[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface IntelligenceSummary {
+  summary_id: string;
+  available_surfaces: string[];
+  unavailable_surfaces: string[];
+  stale_surfaces: string[];
+  conflicting_surfaces: string[];
+  notes: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface IntelligenceLineage {
+  lineage_id: string;
+  upstream_sources: string[];
+  revisions: string[];
+  evidence_refs: IntelligenceHubEvidenceRef[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface IntelligenceGap {
+  gap_id: string;
+  missing_evidence: string;
+  affected_surfaces: string[];
+  uncertainty_explanation: string;
+  severity: string;
+  evidence_refs: IntelligenceHubEvidenceRef[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface IntelligenceConflict {
+  conflict_id: string;
+  description: string;
+  participating_surfaces: string[];
+  evidence_refs: IntelligenceHubEvidenceRef[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface IntelligenceHubAssessment {
+  assessment_id: string;
+  coverage: number;
+  package_count: number;
+  gap_count: number;
+  conflict_count: number;
+  uncertainty: string[];
+  limitations: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface WorkspaceIntelligenceHubSnapshot {
+  hub_id: string;
+  workspace_id: string;
+  generated_at: string;
+  status: string;
+  superseded_at: string | null;
+  frame: IntelligenceHubFrame;
+  source_revisions: string[];
+  packages: IntelligencePackage[];
+  summary: IntelligenceSummary;
+  lineage: IntelligenceLineage;
+  gaps: IntelligenceGap[];
+  conflicts: IntelligenceConflict[];
+  assessment: IntelligenceHubAssessment;
+  completeness: string;
+  provenance_links: IntelligenceHubEvidenceRef[];
+  narrative_summary: string;
+  narrative: string;
+  limitations: string[];
+  authority_effect: string;
+  actionable: boolean;
+  terminal: boolean;
+}
+
+export interface IntelligenceHubHistoryEntry {
+  hub_id: string;
+  status: string;
+  created_at: string;
+  superseded_at: string | null;
+  completeness: string;
+  package_count: number;
+  gap_count: number;
+  conflict_count: number;
+  source_revision_count: number;
+  terminal: boolean;
+  actionable: boolean;
+  authority_effect: string;
+}
+
+export interface WorkspaceIntelligenceHubProjection {
+  workspace_id: string;
+  generated_at: string;
+  current: WorkspaceIntelligenceHubSnapshot | null;
+  history: IntelligenceHubHistoryEntry[];
+  history_count: number;
+  authority_effect: string;
+}
+
+export interface WorkspaceIntelligenceHubSummary {
+  workspace_id: string;
+  generated_at: string;
+  has_current: boolean;
+  hub_id: string | null;
+  completeness: string | null;
+  package_count: number;
+  gap_count: number;
+  conflict_count: number;
+  source_revision_count: number;
+  history: IntelligenceHubHistoryEntry[];
+  history_count: number;
+  authority_effect: string;
+}
+
+export interface WorkspaceIntelligenceHubExplanation {
+  explanation_id: string;
+  workspace_id: string;
+  completeness: string | null;
+  narrative_summary: string | null;
+  package_summaries: string[];
+  gap_summaries: string[];
+  conflict_summaries: string[];
+  lineage_summaries: string[];
+  evidence_refs: string[];
+  uncertainty: string[];
+  narrative: string;
+  limitations: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
 export type WindowIdentityConfidence = "high" | "medium" | "low" | "ephemeral";
 
 export interface WorkspaceObservationPass {

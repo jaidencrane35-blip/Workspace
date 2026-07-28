@@ -64,6 +64,7 @@ pub mod workspace_knowledge_integration;
 pub mod workspace_insight_coordination;
 pub mod workspace_cross_intelligence;
 pub mod workspace_decision_support;
+pub mod workspace_intelligence_hub;
 pub mod workspace_composition;
 pub mod workspace_purpose;
 pub mod workspace_evolution;
@@ -570,6 +571,13 @@ pub use workspace_decision_support::{
     WorkspaceDecisionSupportExplanation, WorkspaceDecisionSupportProjection,
     WorkspaceDecisionSupportSnapshot, WorkspaceDecisionSupportSummary,
 };
+pub use workspace_intelligence_hub::{
+    IntelligenceConflict, IntelligenceGap, IntelligenceHubAssessment, IntelligenceHubCompleteness,
+    IntelligenceHubError, IntelligenceHubEvidenceRef, IntelligenceHubFrame, IntelligenceHubHistoryEntry,
+    IntelligenceHubStatus, IntelligenceLineage, IntelligencePackage, IntelligenceSummary,
+    WorkspaceIntelligenceHubExplanation, WorkspaceIntelligenceHubProjection,
+    WorkspaceIntelligenceHubSnapshot, WorkspaceIntelligenceHubSummary,
+};
 pub use workspace_task_graph::{
     would_create_cycle, TaskDependency, TaskGraph, TaskGraphError, TaskGraphSummary, TaskHistoryEntry,
     TaskMetadata, TaskNode, TaskRelationship, TaskRelationshipKind, WorkspaceTask,
@@ -664,6 +672,8 @@ pub use recovery_contract::{
     recovery_must_not_fabricate_cross_workspace_intelligence,
     recovery_must_not_fabricate_actionable_decision_support_history,
     recovery_must_not_fabricate_decision_support,
+    recovery_must_not_fabricate_actionable_intelligence_hub_history,
+    recovery_must_not_fabricate_intelligence_hub,
     recovery_must_not_fabricate_learning, recovery_must_not_fabricate_orchestration, recovery_must_not_fabricate_reasoning,
     recovery_must_not_invent_completed, RECOVERY_DIAGNOSTIC_ATTEMPTED,
     RECOVERY_DIAGNOSTIC_COMPLETED, RECOVERY_DIAGNOSTIC_EVENT_TYPES, RECOVERY_DIAGNOSTIC_FAILED,

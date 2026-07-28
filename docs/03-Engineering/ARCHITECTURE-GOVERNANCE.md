@@ -530,6 +530,29 @@ Enforced:
 
 See [Workspace Decision Support Architecture](../05-AI/WORKSPACE-DECISION-SUPPORT-ARCHITECTURE.md).
 
+## Workspace Intelligence Hub (Programme III Batch 12)
+
+`WorkspaceIntelligenceHubService` owns **intelligence hub artefacts only**.
+Aggregation ≠ reinterpretation; conflict record ≠ resolution.
+
+| Property | Value |
+|----------|-------|
+| Lifecycle owner | No |
+| Execution / recommend / decide / autonomy | No |
+| Upstream intelligence replacement | No |
+| Intelligence hub projection owner | Yes |
+
+Enforced:
+
+- `IntelligenceHubHistoryEntry` / `WorkspaceIntelligenceHubSummary` contain no authority/command fields
+- Mutation inventory includes `GenerateWorkspaceIntelligenceHub` (baseline **73**)
+- Cannot import lifecycle/execution/recommendation/decision-engine services or call `PermissionGateway`
+- Cannot silently refresh foreign sources via `generate` (including Decision Support / Insight / Cross-Workspace)
+- Conflict records preserved — never resolved by hub
+- Repository cannot call the intelligence hub service
+
+See [Workspace Intelligence Hub Architecture](../05-AI/WORKSPACE-INTELLIGENCE-HUB-ARCHITECTURE.md).
+
 ## Capability boundary audit
 
 Enforced by `scripts/architecture-governance-lib.mjs`:
