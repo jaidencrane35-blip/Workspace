@@ -17,7 +17,7 @@ use workspace_domain::{
     WorkspaceCognitiveAutonomyError, WorkspaceStateEnvelopeError, PolicyGovernanceError,
     HistoricalReconstructionError, TemporalIntelligenceError, WorkspaceExplanationError,
     ContextualUnderstandingError, KnowledgeSynthesisError, KnowledgeIntegrationError,
-    InsightCoordinationError, CrossWorkspaceIntelligenceError,
+    InsightCoordinationError, CrossWorkspaceIntelligenceError, DecisionSupportError,
     WorkspaceSessionError,
     WorkspaceTransitionError,
     WorkspaceWorkContextError, WorkspaceWorkingStyleError,
@@ -287,6 +287,9 @@ pub enum KernelError {
 
     #[error("Cross-workspace intelligence validation failed: {message}")]
     CrossWorkspaceIntelligenceValidation { message: String },
+
+    #[error("Decision support validation failed: {message}")]
+    DecisionSupportValidation { message: String },
 
     #[error("Workspace intelligence validation failed: {message}")]
     WorkspaceIntelligenceValidation { message: String },
@@ -700,6 +703,17 @@ impl From<CrossWorkspaceIntelligenceError> for KernelError {
         match error {
             CrossWorkspaceIntelligenceError::Domain(domain) => KernelError::from(domain),
             other => KernelError::CrossWorkspaceIntelligenceValidation {
+                message: other.to_string(),
+            },
+        }
+    }
+}
+
+impl From<DecisionSupportError> for KernelError {
+    fn from(error: DecisionSupportError) -> Self {
+        match error {
+            DecisionSupportError::Domain(domain) => KernelError::from(domain),
+            other => KernelError::DecisionSupportValidation {
                 message: other.to_string(),
             },
         }
@@ -1422,6 +1436,10 @@ impl KernelError {
             },
             KernelError::CrossWorkspaceIntelligenceValidation { message } => PublicError {
                 code: "cross_workspace_intelligence_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::DecisionSupportValidation { message } => PublicError {
+                code: "decision_support_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::WorkspaceIntelligenceValidation { message } => PublicError {

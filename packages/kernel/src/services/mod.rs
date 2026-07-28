@@ -37,6 +37,7 @@ mod workspace_knowledge_synthesis;
 mod workspace_knowledge_integration;
 mod workspace_insight_coordination;
 mod workspace_cross_intelligence;
+mod workspace_decision_support;
 mod workspace_continuity;
 mod workspace_environment;
 mod workspace_composition;
@@ -224,4 +225,5 @@ pub(crate) use workspace_knowledge_synthesis::WorkspaceKnowledgeSynthesisService
 pub(crate) use workspace_knowledge_integration::WorkspaceKnowledgeIntegrationService;
 pub(crate) use workspace_insight_coordination::WorkspaceInsightCoordinationService;
 pub(crate) use workspace_cross_intelligence::WorkspaceCrossIntelligenceService;
+pub(crate) use workspace_decision_support::WorkspaceDecisionSupportService;
 pub use zone::ZoneService;

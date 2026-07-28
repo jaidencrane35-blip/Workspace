@@ -63,6 +63,7 @@ pub mod workspace_knowledge_synthesis;
 pub mod workspace_knowledge_integration;
 pub mod workspace_insight_coordination;
 pub mod workspace_cross_intelligence;
+pub mod workspace_decision_support;
 pub mod workspace_composition;
 pub mod workspace_purpose;
 pub mod workspace_evolution;
@@ -562,6 +563,13 @@ pub use workspace_cross_intelligence::{
     CrossWorkspaceIntelligenceSummary, CrossWorkspacePattern, CrossWorkspacePatternExplanation,
     CrossWorkspaceRiskSignal, CrossWorkspaceTheme, WorkspaceContribution, CROSS_WORKSPACE_SCOPE,
 };
+pub use workspace_decision_support::{
+    DecisionSupportContext, DecisionDependency, DecisionSupportAssessment, DecisionSupportCompleteness,
+    DecisionSupportError, DecisionSupportEvidenceRef, DecisionSupportFrame, DecisionSupportGap,
+    DecisionSupportHistoryEntry, DecisionSupportStatus, EvidenceBundle, TradeoffSummary,
+    WorkspaceDecisionSupportExplanation, WorkspaceDecisionSupportProjection,
+    WorkspaceDecisionSupportSnapshot, WorkspaceDecisionSupportSummary,
+};
 pub use workspace_task_graph::{
     would_create_cycle, TaskDependency, TaskGraph, TaskGraphError, TaskGraphSummary, TaskHistoryEntry,
     TaskMetadata, TaskNode, TaskRelationship, TaskRelationshipKind, WorkspaceTask,
@@ -654,6 +662,8 @@ pub use recovery_contract::{
     recovery_must_not_fabricate_insight_coordination,
     recovery_must_not_fabricate_actionable_cross_workspace_intelligence_history,
     recovery_must_not_fabricate_cross_workspace_intelligence,
+    recovery_must_not_fabricate_actionable_decision_support_history,
+    recovery_must_not_fabricate_decision_support,
     recovery_must_not_fabricate_learning, recovery_must_not_fabricate_orchestration, recovery_must_not_fabricate_reasoning,
     recovery_must_not_invent_completed, RECOVERY_DIAGNOSTIC_ATTEMPTED,
     RECOVERY_DIAGNOSTIC_COMPLETED, RECOVERY_DIAGNOSTIC_EVENT_TYPES, RECOVERY_DIAGNOSTIC_FAILED,

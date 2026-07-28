@@ -361,6 +361,15 @@ Rules:
 - **`history_count`** authoritative.
 - React may inspect — no execute / approve / recommend / prioritise / automate affordances.
 
+### Workspace Decision Support (Programme III Batch 11)
+
+- **Current:** `WorkspaceDecisionSupportProjection.current` — contexts / evidence bundles /
+  trade-offs / dependencies / gaps. Organises evidence only; never decides.
+- **History:** append-only (`terminal: true`, `actionable: false`, `authority_effect: none`).
+- **`history_count`** authoritative.
+- Trade-off summaries descriptive only — support ≠ decision; trade-off ≠ recommendation.
+- React may inspect — no decide / approve / recommend / execute affordances.
+
 ## Serde defaults vs TypeScript required fields
 
 Rust history fields often use `#[serde(default)]` so older persisted / in-flight JSON

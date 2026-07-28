@@ -46,6 +46,7 @@ Recovery must **never**:
 - fabricate knowledge integration hits, links, retrieval confidence, or historical integration claims from missing evidence (`recovery_must_not_fabricate_knowledge_integration`)
 - fabricate insight coordination clusters, intersections, attention ranks, or historical coordination claims from missing evidence (`recovery_must_not_fabricate_insight_coordination`)
 - fabricate cross-workspace patterns, statistics, or historical aggregate claims from missing evidence (`recovery_must_not_fabricate_cross_workspace_intelligence`)
+- fabricate decision contexts, trade-offs, or ranked choices from missing evidence (`recovery_must_not_fabricate_decision_support`)
 - recreate desktop actions
 - bypass PermissionGateway / CommandPipeline for user mutations
 - silently “heal” lifecycle into an open actionable state

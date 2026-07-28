@@ -98,6 +98,11 @@ import {
   isCrossWorkspaceIntelligenceProjectionNonCommandable,
   crossWorkspaceIntelligenceHistoryCountIsAuthoritative,
 } from "../app/src/components/crossWorkspaceIntelligenceProjection";
+import {
+  isDecisionSupportHistoryNonActionable,
+  isDecisionSupportProjectionNonCommandable,
+  decisionSupportHistoryCountIsAuthoritative,
+} from "../app/src/components/decisionSupportProjection";
 import type {
   DecisionArtifactHistoryEntry,
   DecisionEngineSummary,
@@ -156,6 +161,9 @@ import type {
   CrossWorkspaceIntelligenceHistoryEntry,
   CrossWorkspaceIntelligenceProjection,
   CrossWorkspaceIntelligenceSummary,
+  DecisionSupportHistoryEntry,
+  WorkspaceDecisionSupportProjection,
+  WorkspaceDecisionSupportSummary,
   RecommendationHistoryEntry,
   RecommendationItem,
   TaskGraphSummary,
@@ -1805,6 +1813,71 @@ describe("projection integrity — cognitive agent cast", () => {
     expect(Object.keys(nonCommand)).not.toContain("approve");
     expect(Object.keys(nonCommand)).not.toContain("recommend");
     expect(Object.keys(nonCommand)).not.toContain("prioritise");
+  });
+
+  it("keeps decision support projections non-commandable with authoritative history_count", () => {
+    const historyEntry = (
+      overrides: Partial<DecisionSupportHistoryEntry> = {}
+    ): DecisionSupportHistoryEntry => ({
+      support_id: "decision_support:1",
+      status: "superseded",
+      created_at: "t0",
+      superseded_at: "t1",
+      completeness: "partial",
+      context_count: 1,
+      bundle_count: 1,
+      tradeoff_count: 1,
+      dependency_count: 2,
+      gap_count: 1,
+      source_revision_count: 3,
+      terminal: true,
+      actionable: false,
+      authority_effect: "none",
+      ...overrides,
+    });
+    const projection: WorkspaceDecisionSupportProjection = {
+      workspace_id: "ws",
+      generated_at: "t2",
+      current: null,
+      history: [historyEntry()],
+      history_count: 3,
+      authority_effect: "none",
+    };
+    expect(isDecisionSupportProjectionNonCommandable(projection)).toBe(true);
+    expect(isDecisionSupportHistoryNonActionable(historyEntry())).toBe(true);
+    expect(
+      isDecisionSupportHistoryNonActionable(historyEntry({ actionable: true }))
+    ).toBe(false);
+
+    const summary: WorkspaceDecisionSupportSummary = {
+      workspace_id: "ws",
+      generated_at: "t2",
+      has_current: false,
+      support_id: null,
+      completeness: null,
+      context_count: 0,
+      bundle_count: 0,
+      tradeoff_count: 0,
+      dependency_count: 0,
+      gap_count: 0,
+      source_revision_count: 0,
+      history: [historyEntry()],
+      history_count: 3,
+      authority_effect: "none",
+    };
+    expect(decisionSupportHistoryCountIsAuthoritative(summary)).toBe(true);
+    expect(summary.history_count).toBeGreaterThanOrEqual(summary.history.length);
+
+    const nonCommand = {
+      support_id: "decision_support:1",
+      actionable: false,
+      terminal: true,
+      authority_effect: "none",
+    };
+    expect(Object.keys(nonCommand)).not.toContain("execute");
+    expect(Object.keys(nonCommand)).not.toContain("approve");
+    expect(Object.keys(nonCommand)).not.toContain("recommend");
+    expect(Object.keys(nonCommand)).not.toContain("decide");
   });
 });
 

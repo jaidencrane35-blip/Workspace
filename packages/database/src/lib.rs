@@ -32,6 +32,7 @@ pub use repositories::{
     WorkspaceKnowledgeIntegrationRepository,
     InsightCoordinationRepository,
     WorkspaceCrossIntelligenceRepository,
+    WorkspaceDecisionSupportRepository,
     WorkspaceRepository, WorkspaceIntentRepository, ZoneRepository,
 };
 pub use settings::SettingsRepository;

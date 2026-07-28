@@ -4165,6 +4165,181 @@ export interface CrossWorkspacePatternExplanation {
   actionable: boolean;
 }
 
+/** Programme III Batch 11 — Workspace Decision Support (support ≠ decision). */
+export interface DecisionSupportFrame {
+  focus: string | null;
+  include_state: boolean;
+  include_policy: boolean;
+  include_reconstruction: boolean;
+  include_temporal: boolean;
+  include_explanation: boolean;
+  include_contextual: boolean;
+  include_knowledge_synthesis: boolean;
+  include_knowledge_integration: boolean;
+  include_insight: boolean;
+  include_cross_workspace: boolean;
+}
+
+export interface DecisionSupportEvidenceRef {
+  external_ref: string;
+  origin_domain: string;
+  source_revision: string | null;
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface DecisionSupportContext {
+  context_id: string;
+  decision_identifier: string;
+  scope: string;
+  participating_evidence: DecisionSupportEvidenceRef[];
+  lineage: string[];
+  completeness: string;
+  uncertainty: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface EvidenceBundle {
+  bundle_id: string;
+  supporting: DecisionSupportEvidenceRef[];
+  conflicting: DecisionSupportEvidenceRef[];
+  unavailable: DecisionSupportEvidenceRef[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface TradeoffSummary {
+  tradeoff_id: string;
+  title: string;
+  description: string;
+  competing_constraints: string[];
+  competing_objectives: string[];
+  competing_policies: string[];
+  evidence_quality_notes: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface DecisionDependency {
+  dependency_id: string;
+  from_ref: string;
+  to_ref: string;
+  kind: string;
+  evidence_refs: DecisionSupportEvidenceRef[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface DecisionSupportGap {
+  gap_id: string;
+  missing_evidence: string;
+  affected_surfaces: string[];
+  uncertainty_explanation: string;
+  severity: string;
+  evidence_refs: DecisionSupportEvidenceRef[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface DecisionSupportAssessment {
+  assessment_id: string;
+  coverage: number;
+  supporting_count: number;
+  conflicting_count: number;
+  unavailable_count: number;
+  gap_count: number;
+  uncertainty: string[];
+  limitations: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface WorkspaceDecisionSupportSnapshot {
+  support_id: string;
+  workspace_id: string;
+  generated_at: string;
+  status: string;
+  superseded_at: string | null;
+  frame: DecisionSupportFrame;
+  source_revisions: string[];
+  contexts: DecisionSupportContext[];
+  evidence_bundles: EvidenceBundle[];
+  tradeoffs: TradeoffSummary[];
+  dependencies: DecisionDependency[];
+  gaps: DecisionSupportGap[];
+  assessment: DecisionSupportAssessment;
+  completeness: string;
+  provenance_links: DecisionSupportEvidenceRef[];
+  summary: string;
+  narrative: string;
+  limitations: string[];
+  authority_effect: string;
+  actionable: boolean;
+  terminal: boolean;
+}
+
+export interface DecisionSupportHistoryEntry {
+  support_id: string;
+  status: string;
+  created_at: string;
+  superseded_at: string | null;
+  completeness: string;
+  context_count: number;
+  bundle_count: number;
+  tradeoff_count: number;
+  dependency_count: number;
+  gap_count: number;
+  source_revision_count: number;
+  terminal: boolean;
+  actionable: boolean;
+  authority_effect: string;
+}
+
+export interface WorkspaceDecisionSupportProjection {
+  workspace_id: string;
+  generated_at: string;
+  current: WorkspaceDecisionSupportSnapshot | null;
+  history: DecisionSupportHistoryEntry[];
+  history_count: number;
+  authority_effect: string;
+}
+
+export interface WorkspaceDecisionSupportSummary {
+  workspace_id: string;
+  generated_at: string;
+  has_current: boolean;
+  support_id: string | null;
+  completeness: string | null;
+  context_count: number;
+  bundle_count: number;
+  tradeoff_count: number;
+  dependency_count: number;
+  gap_count: number;
+  source_revision_count: number;
+  history: DecisionSupportHistoryEntry[];
+  history_count: number;
+  authority_effect: string;
+}
+
+export interface WorkspaceDecisionSupportExplanation {
+  explanation_id: string;
+  workspace_id: string;
+  completeness: string | null;
+  summary: string | null;
+  context_summaries: string[];
+  bundle_summaries: string[];
+  tradeoff_summaries: string[];
+  dependency_summaries: string[];
+  gaps: string[];
+  evidence_refs: string[];
+  uncertainty: string[];
+  narrative: string;
+  limitations: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
 export type WindowIdentityConfidence = "high" | "medium" | "low" | "ephemeral";
 
 export interface WorkspaceObservationPass {

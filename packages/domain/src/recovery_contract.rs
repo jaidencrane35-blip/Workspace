@@ -48,6 +48,9 @@ use crate::workspace_insight_coordination::{
 use crate::workspace_cross_intelligence::{
     CrossWorkspaceIntelligenceHistoryEntry, CrossWorkspaceIntelligenceProjection,
 };
+use crate::workspace_decision_support::{
+    DecisionSupportHistoryEntry, WorkspaceDecisionSupportProjection,
+};
 use crate::workspace_reasoning_memory::{ReasoningHistoryEntry, ReasoningSnapshot};
 
 /// Documented startup in-progress sweep cap (must match
@@ -405,6 +408,26 @@ pub fn recovery_must_not_fabricate_cross_workspace_intelligence(
 /// Fabricated actionable cross-workspace history must fail the recovery contract.
 pub fn recovery_must_not_fabricate_actionable_cross_workspace_intelligence_history(
     entry: &CrossWorkspaceIntelligenceHistoryEntry,
+) -> bool {
+    entry.is_non_actionable()
+}
+
+/// Missing decision support remains missing — never invent decision outcomes on restart.
+pub fn recovery_must_not_fabricate_decision_support(
+    projection: &WorkspaceDecisionSupportProjection,
+) -> bool {
+    projection.is_non_commandable()
+        && projection.history.iter().all(|h| h.is_non_actionable())
+        && projection
+            .current
+            .as_ref()
+            .map(|c| c.is_non_executing())
+            .unwrap_or(true)
+}
+
+/// Fabricated actionable decision-support history must fail the recovery contract.
+pub fn recovery_must_not_fabricate_actionable_decision_support_history(
+    entry: &DecisionSupportHistoryEntry,
 ) -> bool {
     entry.is_non_actionable()
 }
@@ -935,5 +958,33 @@ mod tests {
         assert!(!recovery_must_not_fabricate_actionable_cross_workspace_intelligence_history(
             &bad
         ));
+    }
+
+    #[test]
+    fn recovery_never_fabricates_decision_support_on_empty_projection() {
+        let empty = WorkspaceDecisionSupportProjection::assemble("ws", None, vec![], 0, "t0");
+        assert!(recovery_must_not_fabricate_decision_support(&empty));
+        assert!(empty.current.is_none());
+    }
+
+    #[test]
+    fn recovery_rejects_actionable_decision_support_history() {
+        let bad = DecisionSupportHistoryEntry {
+            support_id: "decision_support:1".into(),
+            status: "superseded".into(),
+            created_at: "t0".into(),
+            superseded_at: Some("t1".into()),
+            completeness: "unavailable".into(),
+            context_count: 0,
+            bundle_count: 0,
+            tradeoff_count: 0,
+            dependency_count: 0,
+            gap_count: 0,
+            source_revision_count: 0,
+            terminal: true,
+            actionable: true,
+            authority_effect: "none".into(),
+        };
+        assert!(!recovery_must_not_fabricate_actionable_decision_support_history(&bad));
     }
 }

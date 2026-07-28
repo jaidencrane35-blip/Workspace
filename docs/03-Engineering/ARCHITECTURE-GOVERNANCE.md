@@ -507,6 +507,29 @@ Enforced:
 
 See [Cross-Workspace Intelligence Architecture](../05-AI/CROSS-WORKSPACE-INTELLIGENCE-ARCHITECTURE.md).
 
+## Workspace Decision Support (Programme III Batch 11)
+
+`WorkspaceDecisionSupportService` owns **decision support artefacts only**.
+Support ≠ decision; trade-off ≠ recommendation.
+
+| Property | Value |
+|----------|-------|
+| Lifecycle owner | No |
+| Execution / recommend / decide / autonomy | No |
+| Decision Engine / Recommendation replacement | No |
+| Decision support projection owner | Yes |
+
+Enforced:
+
+- `DecisionSupportHistoryEntry` / `WorkspaceDecisionSupportSummary` contain no authority/command fields
+- Mutation inventory includes `GenerateWorkspaceDecisionSupport` (baseline **72**)
+- Cannot import lifecycle/execution/recommendation/decision-engine services or call `PermissionGateway`
+- Cannot silently refresh foreign sources via `generate`
+- Trade-off summaries descriptive only; forbidden recommendation phrases validated
+- Repository cannot call the decision support service
+
+See [Workspace Decision Support Architecture](../05-AI/WORKSPACE-DECISION-SUPPORT-ARCHITECTURE.md).
+
 ## Capability boundary audit
 
 Enforced by `scripts/architecture-governance-lib.mjs`:

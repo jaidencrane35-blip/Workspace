@@ -74,8 +74,8 @@ describe("architecture governance enforcement", () => {
     expect(FORBIDDEN_AUTHORITY_FIELDS).toContain("execute");
     expect(FORBIDDEN_HISTORY_FIELDS).toBe(FORBIDDEN_AUTHORITY_FIELDS);
     expect(FORBIDDEN_PROJECTION_COMMAND_FIELDS).toBe(FORBIDDEN_AUTHORITY_FIELDS);
-    expect(HISTORY_STRUCTS).toHaveLength(22);
-    expect(PROJECTION_SUMMARY_STRUCTS).toHaveLength(22);
+    expect(HISTORY_STRUCTS).toHaveLength(23);
+    expect(PROJECTION_SUMMARY_STRUCTS).toHaveLength(23);
   });
 
   it("documents intentional broad capabilities without treating them as lifecycle owners", () => {
