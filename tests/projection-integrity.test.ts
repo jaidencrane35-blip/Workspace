@@ -11,13 +11,20 @@ import {
   isDecisionOverlayHistoryNonActionable,
 } from "../app/src/components/decisionQueueProjection";
 import { isDecisionArtifactHistoryNonActionable } from "../app/src/components/decisionEngineProjection";
+import { isTaskHistoryNonActionable } from "../app/src/components/taskGraphProjection";
+import { isExecutionHistoryNonActionable } from "../app/src/components/executionLifecycleProjection";
 import type {
   DecisionArtifactHistoryEntry,
   DecisionEngineSummary,
   DecisionOverlayHistoryEntry,
   DecisionQueueSummary,
+  ExecutionLifecycleHistoryEntry,
+  ExecutionLifecycleProjection,
   RecommendationHistoryEntry,
   RecommendationItem,
+  TaskGraphSummary,
+  TaskHistoryEntry,
+  WorkspaceRecommendationEngineSummary,
 } from "../app/src/types/domain";
 
 function baseItem(
@@ -99,6 +106,8 @@ describe("projection integrity — recommendation lifecycle mirrors", () => {
         authority_effect: "none",
       },
       resolved_at: "t1",
+      terminal: true,
+      actionable: false,
       authority_effect: "none",
     };
     expect(hasProjectedTerminalEvidence(valid)).toBe(true);
@@ -114,11 +123,13 @@ describe("projection integrity — recommendation lifecycle mirrors", () => {
 
     const openState = { ...valid, lifecycle_state: "available" };
     expect(hasProjectedTerminalEvidence(openState)).toBe(false);
+
+    const actionableFlag = { ...valid, actionable: true };
+    expect(hasProjectedTerminalEvidence(actionableFlag)).toBe(false);
   });
 
-  it("summary contract includes optional history fields for IPC alignment", () => {
-    // Compile-time / structural: consumers may read history_count without inventing it.
-    const summary = {
+  it("summary contract requires history fields (strict IPC alignment)", () => {
+    const summary: WorkspaceRecommendationEngineSummary = {
       workspace_id: "ws",
       generated_at: "t",
       label: "L",
@@ -134,6 +145,49 @@ describe("projection integrity — recommendation lifecycle mirrors", () => {
     expect(summary.history_count).toBe(0);
     expect(Array.isArray(summary.history)).toBe(true);
     expect(summary.authority_effect).toBe("none");
+  });
+
+  it("treats history_count as authoritative over history.length for RE", () => {
+    const summary: WorkspaceRecommendationEngineSummary = {
+      workspace_id: "ws",
+      generated_at: "t",
+      label: "L",
+      candidate_count: 0,
+      relationship_count: 0,
+      top_candidates: [],
+      history: [
+        {
+          native_id: "rec-x",
+          lifecycle_state: "accepted",
+          outcome: {
+            outcome_id: "recommendation_outcome:rec-x",
+            recommendation_id: "rec-x",
+            user_decision: "accepted",
+            result_kind: "accepted_follow_through",
+            lifecycle_resolution: "accepted",
+            recorded_at: "t1",
+            explanation_keys: [],
+            evidence_refs: [],
+            experience_trace_match_keys: [],
+            is_system_failure: false,
+            authority_effect: "none",
+          },
+          resolved_at: "t1",
+          terminal: true,
+          actionable: false,
+          authority_effect: "none",
+        },
+      ],
+      history_count: 4,
+      explanation: "",
+      summary: "none open",
+      authority_effect: "none",
+    };
+    expect(summary.history.length).toBe(1);
+    expect(summary.history_count).toBe(4);
+    expect(summary.top_candidates.length === 0 && summary.history_count > 0).toBe(
+      true
+    );
   });
 });
 
@@ -352,5 +406,132 @@ describe("projection integrity — decision engine terminal artifact history", (
     expect(isDecisionArtifactHistoryNonActionable(orphan)).toBe(true);
     expect(orphan.origin).toBe("unknown");
     expect(orphan.origin).not.toBe("native");
+  });
+});
+
+describe("projection integrity — task graph terminal history", () => {
+  function taskHistory(
+    overrides: Partial<TaskHistoryEntry> = {}
+  ): TaskHistoryEntry {
+    return {
+      task_id: "task:1",
+      title: "Ship",
+      status: "completed",
+      progress_percent: 100,
+      explanation: "done",
+      updated_at: "t1",
+      terminal: true,
+      actionable: false,
+      authority_effect: "none",
+      ...overrides,
+    };
+  }
+
+  it("treats task history as non-actionable", () => {
+    expect(isTaskHistoryNonActionable(taskHistory())).toBe(true);
+    expect(
+      isTaskHistoryNonActionable(taskHistory({ status: "cancelled" }))
+    ).toBe(true);
+    expect(isTaskHistoryNonActionable(taskHistory({ actionable: true }))).toBe(
+      false
+    );
+    expect(
+      isTaskHistoryNonActionable(taskHistory({ status: "in_progress" }))
+    ).toBe(false);
+  });
+
+  it("keeps actionable top_nodes distinct from history with count authority", () => {
+    const summary: TaskGraphSummary = {
+      workspace_id: "ws",
+      generated_at: "t",
+      node_count: 1,
+      relationship_count: 0,
+      active_count: 1,
+      blocked_count: 0,
+      waiting_count: 0,
+      completed_count: 2,
+      progress_percent: 50,
+      top_nodes: [],
+      history: [taskHistory({ task_id: "task:done" })],
+      history_count: 3,
+      summary: "mixed",
+      integrity_ok: true,
+      authority_effect: "none",
+    };
+    expect(summary.history.length).toBe(1);
+    expect(summary.history_count).toBe(3);
+    expect(summary.history.every(isTaskHistoryNonActionable)).toBe(true);
+    expect(summary.history[0]).not.toHaveProperty("blocker_ids");
+    expect(summary.history[0]).not.toHaveProperty("handoff_command");
+  });
+});
+
+describe("projection integrity — execution lifecycle dual channel", () => {
+  function execHistory(
+    overrides: Partial<ExecutionLifecycleHistoryEntry> = {}
+  ): ExecutionLifecycleHistoryEntry {
+    return {
+      execution_request_id: "execution:1",
+      suggestion_id: "s-1",
+      intent_id: null,
+      state: "failed",
+      retry_allowed: true,
+      failure_reason: "gateway_denied",
+      claimed_at: "t0",
+      completed_at: null,
+      updated_at: "t1",
+      terminal: true,
+      actionable: false,
+      authority_effect: "none",
+      ...overrides,
+    };
+  }
+
+  it("treats execution history as non-actionable and preserves failure facts", () => {
+    const entry = execHistory();
+    expect(isExecutionHistoryNonActionable(entry)).toBe(true);
+    expect(entry.retry_allowed).toBe(true);
+    expect(entry.failure_reason).toBe("gateway_denied");
+    expect(entry).not.toHaveProperty("dispatch_allowed");
+    expect(entry).not.toHaveProperty("cancellation_allowed");
+  });
+
+  it("separates actionable in-flight from terminal history with count authority", () => {
+    const projection: ExecutionLifecycleProjection = {
+      actionable: [
+        {
+          execution_request_id: "execution:live",
+          suggestion_id: "s-live",
+          intent_id: null,
+          state: "in_progress",
+          claimed_at: "t0",
+          updated_at: "t1",
+          cancellation_allowed: false,
+          authority_effect: "none",
+        },
+      ],
+      history: [execHistory({ execution_request_id: "execution:fail" })],
+      history_count: 5,
+      authority_effect: "none",
+    };
+    expect(projection.actionable.every((e) => e.state === "in_progress")).toBe(
+      true
+    );
+    expect(projection.history.every(isExecutionHistoryNonActionable)).toBe(
+      true
+    );
+    expect(projection.history.length).toBe(1);
+    expect(projection.history_count).toBe(5);
+    expect(
+      projection.actionable.some(
+        (e) => e.execution_request_id === "execution:fail"
+      )
+    ).toBe(false);
+  });
+
+  it("never treats unknown as a known terminal", () => {
+    expect(
+      isExecutionHistoryNonActionable(execHistory({ state: "unknown" }))
+    ).toBe(false);
   });
 });

@@ -114,6 +114,42 @@ export interface ExecutionReconciliation {
   cancellation_allowed: boolean;
 }
 
+/** In-flight executions only — the actionable execution channel. */
+export interface ExecutionLifecycleActionableEntry {
+  execution_request_id: string;
+  suggestion_id: string;
+  intent_id: string | null;
+  state: ExecutionState;
+  claimed_at: string;
+  updated_at: string;
+  cancellation_allowed: boolean;
+  authority_effect: string;
+}
+
+/** Terminal execution evidence — never actionable / never command input. */
+export interface ExecutionLifecycleHistoryEntry {
+  execution_request_id: string;
+  suggestion_id: string;
+  intent_id: string | null;
+  state: ExecutionState;
+  retry_allowed: boolean;
+  failure_reason: string | null;
+  claimed_at: string;
+  completed_at: string | null;
+  updated_at: string;
+  terminal: boolean;
+  actionable: boolean;
+  authority_effect: string;
+}
+
+/** Dual-channel execution lifecycle projection. */
+export interface ExecutionLifecycleProjection {
+  actionable: ExecutionLifecycleActionableEntry[];
+  history: ExecutionLifecycleHistoryEntry[];
+  history_count: number;
+  authority_effect: string;
+}
+
 export interface CancellationRequest {
   id: string;
   execution_request_id: string;
@@ -1989,6 +2025,7 @@ export interface TaskRelationship {
 export interface TaskGraph {
   workspace_id: string;
   generated_at: string;
+  /** Actionable (open) work nodes only. */
   nodes: TaskNode[];
   relationships: TaskRelationship[];
   active_count: number;
@@ -1996,9 +2033,25 @@ export interface TaskGraph {
   waiting_count: number;
   completed_count: number;
   progress_percent: number;
+  /** Terminal task evidence — never editable / never actionable. */
+  history: TaskHistoryEntry[];
+  history_count: number;
   summary: string;
   integrity_ok: boolean;
   integrity_notes: string[];
+  authority_effect: string;
+}
+
+/** Compact non-actionable terminal Task Graph evidence. */
+export interface TaskHistoryEntry {
+  task_id: string;
+  title: string;
+  status: string;
+  progress_percent: number;
+  explanation: string;
+  updated_at: string;
+  terminal: boolean;
+  actionable: boolean;
   authority_effect: string;
 }
 
@@ -2012,7 +2065,10 @@ export interface TaskGraphSummary {
   waiting_count: number;
   completed_count: number;
   progress_percent: number;
+  /** Actionable open work only. */
   top_nodes: TaskNode[];
+  history: TaskHistoryEntry[];
+  history_count: number;
   summary: string;
   integrity_ok: boolean;
   authority_effect: string;
@@ -3193,6 +3249,8 @@ export interface RecommendationHistoryEntry {
   lifecycle_state: string;
   outcome: RecommendationOutcomeView;
   resolved_at: string | null;
+  terminal: boolean;
+  actionable: boolean;
   authority_effect: string;
 }
 
@@ -3221,12 +3279,13 @@ export interface WorkspaceRecommendationEngineState {
   workspace_id: string;
   generated_at: string;
   label: string;
+  /** Actionable candidates only — terminals live in history. */
   candidates: RecommendationItem[];
   relationships: RecommendationRelationship[];
   candidate_count: number;
   relationship_count: number;
-  history?: RecommendationHistoryEntry[];
-  history_count?: number;
+  history: RecommendationHistoryEntry[];
+  history_count: number;
   explanation: string;
   evidence: string[];
   summary: string;
@@ -3241,8 +3300,8 @@ export interface WorkspaceRecommendationEngineSummary {
   relationship_count: number;
   top_candidates: RecommendationItem[];
   /** Truncated terminal/orphan evidence — mirrors Rust summary_projection. */
-  history?: RecommendationHistoryEntry[];
-  history_count?: number;
+  history: RecommendationHistoryEntry[];
+  history_count: number;
   explanation: string;
   summary: string;
   authority_effect: string;

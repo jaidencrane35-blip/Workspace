@@ -583,3 +583,71 @@ fn stale_reconciliation_is_identical_for_get_and_list() {
         ExecutionState::Cancelled
     );
 }
+
+#[test]
+fn execution_projection_separates_channels_and_survives_audit_wipe() {
+    use crate::services::ExecutionReconciliationService;
+    use workspace_domain::ExecutionState;
+
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let db = kernel.shared_database();
+    ExecutionLifecycleService::claim(
+        &db,
+        "execution:proj-active",
+        "s-active",
+        Some("intent:test"),
+    )
+    .unwrap();
+    ExecutionLifecycleService::claim(
+        &db,
+        "execution:proj-fail",
+        "s-fail",
+        Some("intent:test"),
+    )
+    .unwrap();
+    ExecutionLifecycleService::mark_failed(&db, "execution:proj-fail", true, "denied").unwrap();
+    ExecutionLifecycleService::claim(
+        &db,
+        "execution:proj-done",
+        "s-done",
+        Some("intent:test"),
+    )
+    .unwrap();
+    ExecutionLifecycleService::complete(&db, "execution:proj-done", Some("intent:test")).unwrap();
+
+    let before = ExecutionReconciliationService::projection(&db, 10).unwrap();
+    assert_eq!(before.actionable.len(), 1);
+    assert_eq!(
+        before.actionable[0].execution_request_id,
+        "execution:proj-active"
+    );
+    assert_eq!(before.history_count, 2);
+    assert!(before.history.iter().all(|h| h.is_non_actionable()));
+    let failed = before
+        .history
+        .iter()
+        .find(|h| h.execution_request_id == "execution:proj-fail")
+        .unwrap();
+    assert!(failed.retry_allowed);
+    assert_eq!(failed.failure_reason.as_deref(), Some("denied"));
+    assert_eq!(failed.state, ExecutionState::Failed);
+
+    // Audit wipe must not erase durable lifecycle evidence.
+    db.lock()
+        .unwrap()
+        .connection()
+        .execute("DELETE FROM audit_events", [])
+        .unwrap();
+
+    let after = ExecutionReconciliationService::projection(&db, 10).unwrap();
+    assert_eq!(after.actionable.len(), before.actionable.len());
+    assert_eq!(after.history_count, before.history_count);
+    assert!(after.history.iter().any(|h| {
+        h.execution_request_id == "execution:proj-fail"
+            && h.failure_reason.as_deref() == Some("denied")
+            && h.retry_allowed
+    }));
+    assert!(after.history.iter().any(|h| {
+        h.execution_request_id == "execution:proj-done" && h.state == ExecutionState::Completed
+    }));
+}

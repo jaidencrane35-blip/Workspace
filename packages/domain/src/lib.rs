@@ -205,8 +205,9 @@ pub use execution_outcome::{
     ExecutionOutcomeError, ExecutionOutcomeStatus,
 };
 pub use execution_reconciliation::{
-    reconcile_execution_lifecycle, reconcile_execution_state, reconcile_execution_states, ExecutionLifecycleRecord,
-    ExecutionReconciliation, ExecutionReconciliationError, ExecutionState,
+    reconcile_execution_lifecycle, reconcile_execution_state, reconcile_execution_states,
+    ExecutionLifecycleActionableEntry, ExecutionLifecycleHistoryEntry, ExecutionLifecycleProjection,
+    ExecutionLifecycleRecord, ExecutionReconciliation, ExecutionReconciliationError, ExecutionState,
 };
 pub use entities::{
     ApplicationLaunchResult, ApplicationReference, WidgetReference, Workspace, Zone,
@@ -428,9 +429,9 @@ pub use workspace_intent::{
     WorkflowContext, WorkspaceIntentError,
 };
 pub use workspace_task_graph::{
-    would_create_cycle, TaskDependency, TaskGraph, TaskGraphError, TaskGraphSummary, TaskMetadata,
-    TaskNode, TaskRelationship, TaskRelationshipKind, WorkspaceTask, WorkspaceTaskPriority,
-    WorkspaceTaskStatus,
+    would_create_cycle, TaskDependency, TaskGraph, TaskGraphError, TaskGraphSummary, TaskHistoryEntry,
+    TaskMetadata, TaskNode, TaskRelationship, TaskRelationshipKind, WorkspaceTask,
+    WorkspaceTaskPriority, WorkspaceTaskStatus,
 };
 pub use workspace_intelligence::{
     BlockedActionSummary, IntelligenceApplicationSummary, IntelligenceHighlight,

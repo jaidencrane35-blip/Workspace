@@ -5,8 +5,8 @@ use std::sync::{Arc, Mutex};
 
 use tauri::State;
 use workspace_domain::{
-    CancellationRequest, ExecutionOutcome, ExecutionReconciliation, IntentExecutionRequest,
-    SuggestionIntentRequest,
+    CancellationRequest, ExecutionLifecycleProjection, ExecutionOutcome, ExecutionReconciliation,
+    IntentExecutionRequest, SuggestionIntentRequest,
 };
 use workspace_kernel::{CommandHandler, WorkspaceKernel};
 
@@ -110,12 +110,12 @@ pub fn get_execution_state(
     }
 }
 
-/// Bounded list of reconciled execution states (Sprint 30).
+/// Dual-channel execution lifecycle projection (actionable + history).
 #[tauri::command]
 pub fn get_execution_states(
     limit: Option<usize>,
     kernel: State<'_, Arc<Mutex<WorkspaceKernel>>>,
-) -> IpcResponse<Vec<ExecutionReconciliation>> {
+) -> IpcResponse<ExecutionLifecycleProjection> {
     match kernel.lock() {
         Ok(kernel) => match CommandHandler::get_execution_states(
             &kernel,
@@ -123,7 +123,7 @@ pub fn get_execution_states(
             ipc_intent_context(),
             limit,
         ) {
-            Ok(states) => IpcResponse::success(states),
+            Ok(projection) => IpcResponse::success(projection),
             Err(error) => IpcResponse::failure(CommandError::from(error)),
         },
         Err(_) => IpcResponse::failure(CommandError::new(
@@ -176,8 +176,9 @@ mod tests {
                 .unwrap();
         assert!(outcomes.iter().all(|o| o.validate().is_ok()));
 
-        let states =
+        let projection =
             CommandHandler::get_execution_states(&kernel, actor, intent, Some(10)).unwrap();
-        assert!(states.iter().all(|s| s.validate().is_ok()));
+        assert!(projection.history.iter().all(|h| h.is_non_actionable()));
+        assert_eq!(projection.authority_effect, "none");
     }
 }

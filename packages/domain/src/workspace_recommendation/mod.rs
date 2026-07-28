@@ -311,17 +311,36 @@ impl RecommendationOutcomeView {
 }
 
 /// Historical continuity entry for Operator / Work (Sprint 207).
+///
+/// Non-actionable evidence only — never convertible into command inputs.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RecommendationHistoryEntry {
     pub native_id: String,
     pub lifecycle_state: String,
     pub outcome: RecommendationOutcomeView,
     pub resolved_at: Option<String>,
+    /// Always `true` for projected history entries.
+    #[serde(default = "recommendation_history_terminal_default")]
+    pub terminal: bool,
+    /// Always `false` — terminal history never joins actionable candidates.
+    #[serde(default)]
+    pub actionable: bool,
     pub authority_effect: String,
+}
+
+fn recommendation_history_terminal_default() -> bool {
+    true
 }
 
 impl RecommendationHistoryEntry {
     pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+
+    pub fn is_non_actionable(&self) -> bool {
+        self.terminal
+            && !self.actionable
+            && self.authority_effect == Self::AUTHORITY_EFFECT_NONE
+            && !self.outcome.outcome_id.trim().is_empty()
+    }
 }
 
 /// Structured, non-executing intake snapshot for a *future* Decision Engine (Sprint 217).
@@ -2851,7 +2870,19 @@ pub struct WorkspaceRecommendationEngineState {
 impl WorkspaceRecommendationEngineState {
     pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
 
+    /// Seal full-state candidates to actionable-only after history is attached.
+    ///
+    /// Terminal evidence remains exclusively in `history` / `history_count`.
+    pub fn retain_actionable_candidates(&mut self) {
+        self.candidates.retain(|c| c.is_active_lifecycle());
+        self.candidate_count = self.candidates.len();
+        self.summary =
+            build_recommendation_engine_summary(&self.label, self.candidate_count);
+    }
+
     pub fn summary_projection(&self, limit: usize) -> WorkspaceRecommendationEngineSummary {
+        // Full state candidates are already actionable-only after overlay projection;
+        // filter again so ad-hoc constructions remain safe.
         let active: Vec<RecommendationItem> = self
             .candidates
             .iter()

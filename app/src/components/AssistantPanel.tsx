@@ -381,13 +381,14 @@ export function AssistantPanel({
             <dd>
               {workspaceIntel.task_graph.summary}{" "}
               {workspaceIntel.task_graph.top_nodes.length === 0
-                ? "No graph nodes."
+                ? "No active graph work."
                 : `Active work: ${workspaceIntel.task_graph.top_nodes
                     .slice(0, 3)
                     .map((n) => n.task.title)
                     .join("; ")}.`}{" "}
-              Same Task Graph as the Work tab. Assistant may explain — never
-              mutate or execute.
+              History evidence: {workspaceIntel.task_graph.history_count}{" "}
+              terminal task(s) retained (not editable). Same Task Graph as the
+              Work tab. Assistant may explain — never mutate or execute.
             </dd>
             <dt>Environment</dt>
             <dd>
@@ -440,7 +441,7 @@ export function AssistantPanel({
                 ? `Top: ${workspaceIntel.recommendation_engine.top_candidates[0].title}. `
                 : ""}
               History evidence:{" "}
-              {workspaceIntel.recommendation_engine.history_count ?? 0} terminal
+              {workspaceIntel.recommendation_engine.history_count} terminal
               record(s) projected (not actionable). Same Recommendation Engine
               as the Work tab. Assistant may explain and compare options — never
               accept, execute, or convert into actions silently.

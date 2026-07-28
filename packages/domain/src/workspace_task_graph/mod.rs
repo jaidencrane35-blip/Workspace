@@ -326,11 +326,60 @@ pub struct TaskDependency {
     pub relationship_id: String,
 }
 
+/// Compact non-actionable terminal Task Graph evidence for projection consumers.
+///
+/// History is read-only continuity — never editable, never merged into actionable
+/// `nodes` / `top_nodes`, and never a second lifecycle authority.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TaskHistoryEntry {
+    pub task_id: String,
+    pub title: String,
+    /// Terminal status (`completed` / `cancelled`).
+    pub status: String,
+    pub progress_percent: u8,
+    pub explanation: String,
+    pub updated_at: String,
+    /// Always `true` for projected history entries.
+    pub terminal: bool,
+    /// Always `false` — terminal history never joins active work.
+    pub actionable: bool,
+    pub authority_effect: String,
+}
+
+impl TaskHistoryEntry {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+
+    pub fn from_node(node: &TaskNode) -> Option<Self> {
+        if !node.task.status.is_terminal() {
+            return None;
+        }
+        Some(Self {
+            task_id: node.task.id.to_string(),
+            title: node.task.title.clone(),
+            status: node.task.status.as_str().into(),
+            progress_percent: node.task.progress_percent,
+            explanation: node.task.explanation.clone(),
+            updated_at: node.task.updated_at.clone(),
+            terminal: true,
+            actionable: false,
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        })
+    }
+
+    pub fn is_non_actionable(&self) -> bool {
+        self.terminal
+            && !self.actionable
+            && self.authority_effect == Self::AUTHORITY_EFFECT_NONE
+            && matches!(self.status.as_str(), "completed" | "cancelled")
+    }
+}
+
 /// Full Task Graph snapshot for a workspace.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TaskGraph {
     pub workspace_id: String,
     pub generated_at: String,
+    /// Actionable (open) work nodes only — terminals project into `history`.
     pub nodes: Vec<TaskNode>,
     pub relationships: Vec<TaskRelationship>,
     pub active_count: usize,
@@ -338,6 +387,11 @@ pub struct TaskGraph {
     pub waiting_count: usize,
     pub completed_count: usize,
     pub progress_percent: u8,
+    /// Terminal task evidence (completed/cancelled) — never actionable.
+    #[serde(default)]
+    pub history: Vec<TaskHistoryEntry>,
+    #[serde(default)]
+    pub history_count: usize,
     pub summary: String,
     pub integrity_ok: bool,
     pub integrity_notes: Vec<String>,
@@ -355,7 +409,7 @@ impl TaskGraph {
         integrity_notes: Vec<String>,
     ) -> Self {
         let workspace_id = workspace_id.into();
-        let nodes = enrich_nodes(&tasks, &relationships);
+        let all_nodes = enrich_nodes(&tasks, &relationships);
         let active_count = tasks
             .iter()
             .filter(|t| matches!(t.status, WorkspaceTaskStatus::InProgress | WorkspaceTaskStatus::Planned))
@@ -372,23 +426,37 @@ impl TaskGraph {
             .iter()
             .filter(|t| t.status == WorkspaceTaskStatus::Completed)
             .count();
-        let open: Vec<_> = tasks.iter().filter(|t| t.status.is_open()).collect();
         let progress_percent = if tasks.is_empty() {
             0
         } else {
             let sum: u32 = tasks.iter().map(|t| u32::from(t.progress_percent)).sum();
             (sum / tasks.len() as u32).min(100) as u8
         };
+        // Project terminal evidence before filtering — nodes become actionable-only.
+        let mut history: Vec<TaskHistoryEntry> = all_nodes
+            .iter()
+            .filter_map(TaskHistoryEntry::from_node)
+            .collect();
+        history.sort_by(|a, b| {
+            b.updated_at
+                .cmp(&a.updated_at)
+                .then_with(|| a.task_id.cmp(&b.task_id))
+        });
+        let history_count = history.len();
+        let nodes: Vec<TaskNode> = all_nodes
+            .into_iter()
+            .filter(|n| n.task.status.is_open())
+            .collect();
         let summary = format!(
-            "Task Graph — {total} task(s): {active} active, {blocked} blocked, {waiting} waiting, {completed} completed ({progress}% overall). Informational only.",
+            "Task Graph — {total} task(s): {active} active, {blocked} blocked, {waiting} waiting, {completed} completed ({progress}% overall); {history_count} terminal in history. Informational only.",
             total = tasks.len(),
             active = active_count,
             blocked = blocked_count,
             waiting = waiting_count,
             completed = completed_count,
             progress = progress_percent,
+            history_count = history_count,
         );
-        let _ = open;
         Self {
             workspace_id,
             generated_at: Utc::now().to_rfc3339(),
@@ -399,6 +467,8 @@ impl TaskGraph {
             waiting_count,
             completed_count,
             progress_percent,
+            history,
+            history_count,
             summary,
             integrity_ok,
             integrity_notes,
@@ -407,17 +477,27 @@ impl TaskGraph {
     }
 
     pub fn summary_projection(&self, limit: usize) -> TaskGraphSummary {
+        let actionable: Vec<TaskNode> = self
+            .nodes
+            .iter()
+            .filter(|n| n.task.status.is_open())
+            .cloned()
+            .collect();
+        let history: Vec<TaskHistoryEntry> = self.history.iter().take(limit).cloned().collect();
         TaskGraphSummary {
             workspace_id: self.workspace_id.clone(),
             generated_at: self.generated_at.clone(),
-            node_count: self.nodes.len(),
+            // Surface count reflects still-actionable open work.
+            node_count: actionable.len(),
             relationship_count: self.relationships.len(),
             active_count: self.active_count,
             blocked_count: self.blocked_count,
             waiting_count: self.waiting_count,
             completed_count: self.completed_count,
             progress_percent: self.progress_percent,
-            top_nodes: self.nodes.iter().take(limit).cloned().collect(),
+            top_nodes: actionable.into_iter().take(limit).collect(),
+            history,
+            history_count: self.history_count,
             summary: self.summary.clone(),
             integrity_ok: self.integrity_ok,
             authority_effect: self.authority_effect.clone(),
@@ -444,7 +524,13 @@ pub struct TaskGraphSummary {
     pub waiting_count: usize,
     pub completed_count: usize,
     pub progress_percent: u8,
+    /// Actionable open work only.
     pub top_nodes: Vec<TaskNode>,
+    /// Truncated terminal task evidence (never actionable).
+    #[serde(default)]
+    pub history: Vec<TaskHistoryEntry>,
+    #[serde(default)]
+    pub history_count: usize,
     pub summary: String,
     pub integrity_ok: bool,
     pub authority_effect: String,
@@ -463,6 +549,8 @@ impl Default for TaskGraphSummary {
             completed_count: 0,
             progress_percent: 0,
             top_nodes: Vec::new(),
+            history: Vec::new(),
+            history_count: 0,
             summary: String::new(),
             integrity_ok: true,
             authority_effect: WorkspaceTask::AUTHORITY_EFFECT_NONE.into(),
@@ -578,4 +666,102 @@ fn enrich_nodes(tasks: &[WorkspaceTask], relationships: &[TaskRelationship]) -> 
             }
         })
         .collect()
+}
+
+#[cfg(test)]
+mod projection_tests {
+    use super::*;
+
+    fn task(
+        title: &str,
+        status: WorkspaceTaskStatus,
+        progress: u8,
+        explanation: &str,
+    ) -> WorkspaceTask {
+        let mut t =
+            WorkspaceTask::new("ws-1", title, None, WorkspaceTaskPriority::Medium).unwrap();
+        if status != WorkspaceTaskStatus::Proposed {
+            t = t.transition_status(status, explanation).unwrap();
+        }
+        t.progress_percent = if status == WorkspaceTaskStatus::Completed {
+            100
+        } else {
+            progress
+        };
+        t.explanation = explanation.into();
+        t
+    }
+
+    #[test]
+    fn terminal_tasks_absent_from_actionable_present_in_history() {
+        let open = task("Open work", WorkspaceTaskStatus::InProgress, 40, "doing");
+        let open_id = open.id.to_string();
+        let done = task("Done work", WorkspaceTaskStatus::Completed, 100, "finished");
+        let done_id = done.id.to_string();
+        let cancelled = task("Dropped", WorkspaceTaskStatus::Cancelled, 10, "cancelled");
+        let cancelled_id = cancelled.id.to_string();
+
+        let graph = TaskGraph::from_parts(
+            "ws-1",
+            vec![open, done, cancelled],
+            Vec::new(),
+            true,
+            Vec::new(),
+        );
+
+        assert_eq!(graph.nodes.len(), 1);
+        assert_eq!(graph.nodes[0].task.id.to_string(), open_id);
+        assert!(graph.nodes.iter().all(|n| n.task.status.is_open()));
+        assert_eq!(graph.history_count, 2);
+        assert!(graph.history.iter().all(|h| h.is_non_actionable()));
+        assert!(graph.history.iter().any(|h| h.task_id == done_id));
+        assert!(graph.history.iter().any(|h| h.task_id == cancelled_id));
+        assert!(!graph.nodes.iter().any(|n| n.task.id.to_string() == done_id));
+
+        let summary = graph.summary_projection(1);
+        assert_eq!(summary.top_nodes.len(), 1);
+        assert_eq!(summary.top_nodes[0].task.id.to_string(), open_id);
+        assert_eq!(summary.history.len(), 1);
+        assert_eq!(summary.history_count, 2);
+        assert_eq!(summary.completed_count, 1);
+        assert!(summary.history.iter().all(|h| !h.actionable && h.terminal));
+    }
+
+    #[test]
+    fn history_preserves_completed_progress_and_explanation() {
+        let done = task(
+            "Ship it",
+            WorkspaceTaskStatus::Completed,
+            100,
+            "Delivered milestone A",
+        );
+        let graph = TaskGraph::from_parts("ws-1", vec![done], Vec::new(), true, Vec::new());
+        assert!(graph.nodes.is_empty());
+        assert_eq!(graph.history_count, 1);
+        let entry = &graph.history[0];
+        assert_eq!(entry.progress_percent, 100);
+        assert_eq!(entry.explanation, "Delivered milestone A");
+        assert_eq!(entry.status, "completed");
+        let json = serde_json::to_value(entry).unwrap();
+        assert!(json.get("handoff_command").is_none());
+        assert!(json.get("blocker_ids").is_none());
+    }
+
+    #[test]
+    fn no_duplicate_identity_across_channels() {
+        let open = task("Live", WorkspaceTaskStatus::Planned, 0, "queued");
+        let done = task("Past", WorkspaceTaskStatus::Completed, 100, "done");
+        let graph = TaskGraph::from_parts(
+            "ws-1",
+            vec![open, done],
+            Vec::new(),
+            true,
+            Vec::new(),
+        );
+        let actionable_ids: std::collections::HashSet<_> =
+            graph.nodes.iter().map(|n| n.task.id.to_string()).collect();
+        let history_ids: std::collections::HashSet<_> =
+            graph.history.iter().map(|h| h.task_id.clone()).collect();
+        assert!(actionable_ids.is_disjoint(&history_ids));
+    }
 }

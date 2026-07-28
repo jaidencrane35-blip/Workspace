@@ -1690,12 +1690,17 @@ export function WorkspaceIntelligencePanel({
             <p className="muted">
               {taskGraph.active_count} active · {taskGraph.blocked_count} blocked ·{" "}
               {taskGraph.waiting_count} waiting · {taskGraph.completed_count}{" "}
-              completed · {taskGraph.progress_percent}% · integrity{" "}
+              completed · history {taskGraph.history_count} ·{" "}
+              {taskGraph.progress_percent}% · integrity{" "}
               {taskGraph.integrity_ok ? "ok" : "issues"} · authority:{" "}
               {taskGraph.authority_effect}
             </p>
             {taskGraph.nodes.length === 0 ? (
-              <p className="muted">No graph tasks yet.</p>
+              <p className="muted">
+                {taskGraph.history_count > 0
+                  ? "No active graph work — terminal tasks retained in history."
+                  : "No graph tasks yet."}
+              </p>
             ) : (
               <ul className="intelligence-list">
                 {taskGraph.nodes.slice(0, 12).map((node) => (
@@ -1717,6 +1722,26 @@ export function WorkspaceIntelligencePanel({
                   </li>
                 ))}
               </ul>
+            )}
+            {taskGraph.history_count > 0 && (
+              <>
+                <p className="muted">
+                  Terminal task history (evidence only — not editable) · showing{" "}
+                  {taskGraph.history.length} of {taskGraph.history_count}
+                </p>
+                <ul className="intelligence-list">
+                  {taskGraph.history.slice(0, 8).map((entry) => (
+                    <li key={`${entry.task_id}:${entry.updated_at}`}>
+                      <strong>
+                        [{entry.status}] {entry.title}
+                      </strong>
+                      <div className="muted">
+                        {entry.progress_percent}% · {entry.explanation}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </>
             )}
           </>
         ) : (
@@ -2359,7 +2384,7 @@ export function WorkspaceIntelligencePanel({
                 recommendationEngine.candidates.filter(isActiveRecommendation)
                   .length
               }{" "}
-              · history {recommendationEngine.history_count ?? 0} · authority:{" "}
+              · history {recommendationEngine.history_count} · authority:{" "}
               {recommendationEngine.authority_effect}
             </p>
             {recommendationEngine.candidates.filter(isActiveRecommendation)
@@ -2514,13 +2539,15 @@ export function WorkspaceIntelligencePanel({
                   ))}
               </ul>
             )}
-            {(recommendationEngine.history?.length ?? 0) > 0 && (
+            {recommendationEngine.history_count > 0 && (
               <>
                 <p className="muted">
-                  Outcome history (immutable feedback — not actionable)
+                  Outcome history (immutable feedback — not actionable) ·
+                  showing {recommendationEngine.history.length} of{" "}
+                  {recommendationEngine.history_count}
                 </p>
                 <RecommendationHistoryList
-                  history={(recommendationEngine.history ?? []).slice(0, 5)}
+                  history={recommendationEngine.history.slice(0, 5)}
                 />
               </>
             )}

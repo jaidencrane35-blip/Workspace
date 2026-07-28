@@ -222,19 +222,21 @@ impl WorkspaceIntelligenceService {
         )?;
 
         let base_recommendation_engine =
-            WorkspaceRecommendationEngineService::generate_with_inputs(
-                db,
-                actor,
-                ws,
-                &base_attention,
-                &full_continuity,
-                &full_evolution,
-                &full_purpose,
-                Some(&full_task_graph),
-                &full_composition,
-                &full_decision_queue,
-                &full_environment,
-            )?;
+            WorkspaceRecommendationEngineService::seal_consumer_projection(
+                WorkspaceRecommendationEngineService::generate_with_inputs(
+                    db,
+                    actor,
+                    ws,
+                    &base_attention,
+                    &full_continuity,
+                    &full_evolution,
+                    &full_purpose,
+                    Some(&full_task_graph),
+                    &full_composition,
+                    &full_decision_queue,
+                    &full_environment,
+                )?,
+            );
 
         // Attention may surface recommendations after RE is built (no circular regen).
         let attention_with_recs = WorkspaceAttentionService::enrich_with_recommendations(

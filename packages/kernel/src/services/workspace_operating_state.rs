@@ -124,19 +124,21 @@ impl WorkspaceOperatingStateService {
             Some(&purpose),
             Some(&evolution),
         )?;
-        let recommendations = WorkspaceRecommendationEngineService::generate_with_inputs(
-            db,
-            actor,
-            workspace_id.clone(),
-            &base_attention,
-            &continuity,
-            &evolution,
-            &purpose,
-            Some(&task_graph),
-            &composition,
-            &decision_queue,
-            &environment,
-        )?;
+        let recommendations = WorkspaceRecommendationEngineService::seal_consumer_projection(
+            WorkspaceRecommendationEngineService::generate_with_inputs(
+                db,
+                actor,
+                workspace_id.clone(),
+                &base_attention,
+                &continuity,
+                &evolution,
+                &purpose,
+                Some(&task_graph),
+                &composition,
+                &decision_queue,
+                &environment,
+            )?,
+        );
         let attention = WorkspaceAttentionService::enrich_with_recommendations(
             &base_attention,
             &recommendations,

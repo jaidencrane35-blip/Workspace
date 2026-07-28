@@ -68,6 +68,19 @@ impl ExecutionState {
             _ => Err(ExecutionReconciliationError::InvalidState(value.to_string())),
         }
     }
+
+    /// In-flight executions only — terminals project into history.
+    pub fn is_actionable(self) -> bool {
+        matches!(self, Self::InProgress)
+    }
+
+    /// Durable lifecycle outcomes — never treated as missing evidence.
+    pub fn is_terminal(self) -> bool {
+        matches!(
+            self,
+            Self::Completed | Self::Failed | Self::Cancelled
+        )
+    }
 }
 
 /// Durable execution lifecycle fact keyed by the canonical execution request id.
@@ -166,6 +179,211 @@ impl ExecutionReconciliation {
         }
         ExecutionState::parse(self.current_state.as_str())?;
         Ok(())
+    }
+}
+
+/// Compact non-actionable terminal execution evidence for projection consumers.
+///
+/// Preserves retry eligibility, failure reason, and classification. Never
+/// executable and never merged into the actionable channel. Unknown provenance
+/// / state is never invented into a known terminal.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ExecutionLifecycleHistoryEntry {
+    pub execution_request_id: String,
+    pub suggestion_id: String,
+    pub intent_id: Option<String>,
+    pub state: ExecutionState,
+    pub retry_allowed: bool,
+    pub failure_reason: Option<String>,
+    pub claimed_at: String,
+    pub completed_at: Option<String>,
+    pub updated_at: String,
+    pub terminal: bool,
+    pub actionable: bool,
+    pub authority_effect: String,
+}
+
+impl ExecutionLifecycleHistoryEntry {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+
+    pub fn from_record(record: &ExecutionLifecycleRecord) -> Option<Self> {
+        if !record.state.is_terminal() {
+            return None;
+        }
+        Some(Self {
+            execution_request_id: record.execution_request_id.clone(),
+            suggestion_id: record.suggestion_id.clone(),
+            intent_id: record.intent_id.clone(),
+            state: record.state,
+            retry_allowed: record.retry_allowed,
+            failure_reason: record.failure_reason.clone(),
+            claimed_at: record.claimed_at.clone(),
+            completed_at: record.completed_at.clone(),
+            updated_at: record.updated_at.clone(),
+            terminal: true,
+            actionable: false,
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        })
+    }
+
+    /// Outcome-only fallback when no durable lifecycle row remains.
+    ///
+    /// Does not invent Unknown into a terminal — only Completed/Failed/Cancelled.
+    pub fn from_outcome(outcome: &ExecutionOutcome) -> Option<Self> {
+        let state = match outcome.status {
+            ExecutionOutcomeStatus::Completed => ExecutionState::Completed,
+            ExecutionOutcomeStatus::Failed => ExecutionState::Failed,
+            ExecutionOutcomeStatus::Cancelled => ExecutionState::Cancelled,
+        };
+        let retry_allowed = matches!(
+            outcome.status,
+            ExecutionOutcomeStatus::Failed | ExecutionOutcomeStatus::Cancelled
+        );
+        Some(Self {
+            execution_request_id: outcome.execution_request_id.clone(),
+            suggestion_id: outcome.suggestion_id.clone().unwrap_or_default(),
+            intent_id: outcome.intent_id.clone(),
+            state,
+            retry_allowed,
+            failure_reason: outcome.failure_reason.clone(),
+            claimed_at: outcome.completed_at.clone(),
+            completed_at: if state == ExecutionState::Completed {
+                Some(outcome.completed_at.clone())
+            } else {
+                None
+            },
+            updated_at: outcome.completed_at.clone(),
+            terminal: true,
+            actionable: false,
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        })
+    }
+
+    pub fn is_non_actionable(&self) -> bool {
+        self.terminal
+            && !self.actionable
+            && self.authority_effect == Self::AUTHORITY_EFFECT_NONE
+            && self.state.is_terminal()
+    }
+}
+
+/// In-flight execution projection — the only actionable execution channel.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ExecutionLifecycleActionableEntry {
+    pub execution_request_id: String,
+    pub suggestion_id: String,
+    pub intent_id: Option<String>,
+    pub state: ExecutionState,
+    pub claimed_at: String,
+    pub updated_at: String,
+    pub cancellation_allowed: bool,
+    pub authority_effect: String,
+}
+
+impl ExecutionLifecycleActionableEntry {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+
+    pub fn from_record(record: &ExecutionLifecycleRecord) -> Option<Self> {
+        if !record.state.is_actionable() {
+            return None;
+        }
+        let reconciliation = reconcile_execution_lifecycle(record);
+        Some(Self {
+            execution_request_id: record.execution_request_id.clone(),
+            suggestion_id: record.suggestion_id.clone(),
+            intent_id: record.intent_id.clone(),
+            state: record.state,
+            claimed_at: record.claimed_at.clone(),
+            updated_at: record.updated_at.clone(),
+            cancellation_allowed: reconciliation.cancellation_allowed,
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        })
+    }
+}
+
+/// Dual-channel execution lifecycle projection.
+///
+/// `actionable` = in-progress only. `history` + `history_count` = durable
+/// terminal outcomes. Unknown never defaults to a known terminal.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ExecutionLifecycleProjection {
+    pub actionable: Vec<ExecutionLifecycleActionableEntry>,
+    pub history: Vec<ExecutionLifecycleHistoryEntry>,
+    pub history_count: usize,
+    pub authority_effect: String,
+}
+
+impl ExecutionLifecycleProjection {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+
+    pub fn from_records(
+        records: &[ExecutionLifecycleRecord],
+        outcome_fallback: &[ExecutionOutcome],
+        history_limit: usize,
+    ) -> Self {
+        let mut seen = std::collections::HashSet::new();
+        let mut actionable = Vec::new();
+        let mut history = Vec::new();
+
+        for record in records {
+            // Unknown must remain unknown — never invent actionable/terminal.
+            if record.state == ExecutionState::Unknown {
+                continue;
+            }
+            seen.insert(record.execution_request_id.clone());
+            if let Some(entry) = ExecutionLifecycleActionableEntry::from_record(record) {
+                actionable.push(entry);
+            }
+            if let Some(entry) = ExecutionLifecycleHistoryEntry::from_record(record) {
+                history.push(entry);
+            }
+        }
+
+        for state in reconcile_execution_states(outcome_fallback) {
+            if !seen.insert(state.execution_request_id.clone()) {
+                continue;
+            }
+            // Unknown stays unknown — skip both channels.
+            if state.current_state == ExecutionState::Unknown {
+                continue;
+            }
+            if state.current_state.is_actionable() {
+                // Outcome-only in-progress is not represented without a lifecycle claim.
+                continue;
+            }
+            if let Some(outcome) = outcome_fallback
+                .iter()
+                .find(|o| o.execution_request_id == state.execution_request_id)
+            {
+                if let Some(entry) = ExecutionLifecycleHistoryEntry::from_outcome(outcome) {
+                    history.push(entry);
+                }
+            }
+        }
+
+        history.sort_by(|a, b| {
+            b.updated_at
+                .cmp(&a.updated_at)
+                .then_with(|| a.execution_request_id.cmp(&b.execution_request_id))
+        });
+        let history_count = history.len();
+        let history: Vec<_> = history.into_iter().take(history_limit).collect();
+
+        Self {
+            actionable,
+            history,
+            history_count,
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        }
+    }
+
+    pub fn empty() -> Self {
+        Self {
+            actionable: Vec::new(),
+            history: Vec::new(),
+            history_count: 0,
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        }
     }
 }
 
@@ -414,5 +632,133 @@ mod tests {
         let states = reconcile_execution_states(&outcomes);
         assert_eq!(states.len(), 1);
         assert_eq!(states[0].current_state, ExecutionState::Completed);
+    }
+
+    #[test]
+    fn projection_separates_actionable_from_terminal_history() {
+        let records = vec![
+            ExecutionLifecycleRecord {
+                execution_request_id: "execution:active".into(),
+                suggestion_id: "s-active".into(),
+                intent_id: None,
+                state: ExecutionState::InProgress,
+                retry_allowed: false,
+                failure_reason: None,
+                claimed_at: "t0".into(),
+                completed_at: None,
+                updated_at: "t1".into(),
+            },
+            ExecutionLifecycleRecord {
+                execution_request_id: "execution:failed".into(),
+                suggestion_id: "s-fail".into(),
+                intent_id: Some("intent:x".into()),
+                state: ExecutionState::Failed,
+                retry_allowed: true,
+                failure_reason: Some("gateway_denied".into()),
+                claimed_at: "t0".into(),
+                completed_at: None,
+                updated_at: "t2".into(),
+            },
+            ExecutionLifecycleRecord {
+                execution_request_id: "execution:done".into(),
+                suggestion_id: "s-done".into(),
+                intent_id: None,
+                state: ExecutionState::Completed,
+                retry_allowed: false,
+                failure_reason: None,
+                claimed_at: "t0".into(),
+                completed_at: Some("t3".into()),
+                updated_at: "t3".into(),
+            },
+        ];
+        let projection = ExecutionLifecycleProjection::from_records(&records, &[], 10);
+        assert_eq!(projection.actionable.len(), 1);
+        assert_eq!(
+            projection.actionable[0].execution_request_id,
+            "execution:active"
+        );
+        assert!(projection
+            .actionable
+            .iter()
+            .all(|e| e.state.is_actionable()));
+        assert_eq!(projection.history_count, 2);
+        assert!(projection.history.iter().all(|h| h.is_non_actionable()));
+        let failed = projection
+            .history
+            .iter()
+            .find(|h| h.execution_request_id == "execution:failed")
+            .expect("failed in history");
+        assert!(failed.retry_allowed);
+        assert_eq!(failed.failure_reason.as_deref(), Some("gateway_denied"));
+        assert!(!projection
+            .actionable
+            .iter()
+            .any(|e| e.execution_request_id == "execution:failed"));
+        assert!(!projection
+            .history
+            .iter()
+            .any(|h| h.execution_request_id == "execution:active"));
+    }
+
+    #[test]
+    fn projection_history_count_authoritative_over_window() {
+        let records: Vec<_> = (0..5)
+            .map(|i| ExecutionLifecycleRecord {
+                execution_request_id: format!("execution:{i}"),
+                suggestion_id: format!("s-{i}"),
+                intent_id: None,
+                state: ExecutionState::Completed,
+                retry_allowed: false,
+                failure_reason: None,
+                claimed_at: "t0".into(),
+                completed_at: Some(format!("t{i}")),
+                updated_at: format!("t{i}"),
+            })
+            .collect();
+        let projection = ExecutionLifecycleProjection::from_records(&records, &[], 2);
+        assert!(projection.actionable.is_empty());
+        assert_eq!(projection.history.len(), 2);
+        assert_eq!(projection.history_count, 5);
+    }
+
+    #[test]
+    fn unknown_state_never_invented_into_channels() {
+        let records = vec![ExecutionLifecycleRecord {
+            execution_request_id: "execution:mystery".into(),
+            suggestion_id: "s-x".into(),
+            intent_id: None,
+            state: ExecutionState::Unknown,
+            retry_allowed: false,
+            failure_reason: None,
+            claimed_at: "t0".into(),
+            completed_at: None,
+            updated_at: "t0".into(),
+        }];
+        let projection = ExecutionLifecycleProjection::from_records(&records, &[], 10);
+        assert!(projection.actionable.is_empty());
+        assert_eq!(projection.history_count, 0);
+        assert!(projection.history.is_empty());
+    }
+
+    #[test]
+    fn history_entry_not_convertible_to_reconciliation_dispatch_surface() {
+        let entry = ExecutionLifecycleHistoryEntry::from_record(&ExecutionLifecycleRecord {
+            execution_request_id: "execution:fail".into(),
+            suggestion_id: "s".into(),
+            intent_id: None,
+            state: ExecutionState::Failed,
+            retry_allowed: true,
+            failure_reason: Some("boom".into()),
+            claimed_at: "t0".into(),
+            completed_at: None,
+            updated_at: "t1".into(),
+        })
+        .unwrap();
+        assert!(entry.is_non_actionable());
+        assert!(!entry.actionable);
+        // History DTO must not expose cancel/dispatch command handles.
+        let json = serde_json::to_value(&entry).unwrap();
+        assert!(json.get("dispatch_allowed").is_none());
+        assert!(json.get("cancellation_allowed").is_none());
     }
 }

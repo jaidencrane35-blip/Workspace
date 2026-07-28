@@ -18,23 +18,35 @@ lifecycle evidence but must not invent, mutate, or erase it.
 | Summaries / IPC | Project canonical state; actionable surfaces exclude terminals without dropping history |
 | React | Projection-only rendering; no lifecycle ownership |
 
-## Shared projection contract (RE / DQ / DE)
+## Unified projection contract
 
-All three surfaces share the same consumption contract:
+Every major lifecycle projection exposes three channels:
 
 | Channel | Contents | Actionable? |
 |---------|----------|-------------|
-| Actionable projection | RE `top_candidates`; DQ `items`; DE `top_candidates` / actionable `candidates` | Yes |
-| Historical projection | `history` + **`history_count`** | Never |
+| Actionable / current | Active work only (`items`, `top_candidates`, `candidates`, `top_nodes`, execution `actionable`) | Yes |
+| Historical evidence | `history` window | Never |
+| Count authority | **`history_count`** | N/A (scalar) |
 
-Rules:
+Required rules:
 
-- **`history_count` is evidence authority.** `history.length` is only the returned
-  window (especially under `summary(limit)`). Empty actionable ≠ no evidence.
-- **Terminal evidence ≠ actionable candidate.** Terminal records must not appear
-  beside history in actionable collections.
-- **History is a non-actionable DTO.** No execute, mutate, or transition methods.
-- **React is projection-only.** No lifecycle ownership and no history action paths.
+- **`items` / actionable collections mean actionable only.** Terminals never share that channel.
+- **`history` means evidence only.** History DTOs are never convertible into command inputs
+  (no execute / dismiss / select / mutate / transition handlers).
+- **`history_count` is authoritative.** `history.length` is only the returned window
+  (especially under `summary(limit)`). Empty actionable ≠ no evidence.
+- **React is projection-only.** Action buttons may exist only on actionable projections.
+- **Unknown provenance stays unknown.** Never default unknown → known (`native`, invent origin, etc.).
+
+```
+actionable current state
+        |
+        |
+historical evidence projection
+        |
+        |
+immutable authoritative artifacts
+```
 
 ## Identity vocabulary
 
@@ -43,32 +55,73 @@ Rules:
 | **Source identity** | Owning subsystem key for a live decision | DQ `source_type` + `source_id`; DE `candidate_key` |
 | **Overlay identity** | Lifecycle row for presentation continuity | DQ `DecisionOverlayHistoryEntry`; DE `DecisionArtifactHistoryEntry` |
 | **Outcome identity** | Recommendation Engine terminal outcome evidence | `RecommendationHistoryEntry.outcome.outcome_id` |
+| **Task identity** | Task Graph node / terminal history | `TaskHistoryEntry.task_id` |
+| **Execution identity** | Execution request lifecycle | `ExecutionLifecycleHistoryEntry.execution_request_id` |
 
 Do not conflate RE outcome identity with DQ/DE overlay/artifact identity.
 
-## Surface-specific retention
+## Surface contracts
 
-1. **Decision Queue orphans retain overlays.** Missing live sources expire open
-   overlays (`Expired`) and keep already-terminal overlays. No DQ overlay
-   deletion API.
-2. **Decision Engine terminal artifacts project into history.** Outcomes
-   `selected` / `dismissed` / `expired` appear only in `history`. Actionable
-   `candidates` and `top_candidates` remain `open` / `postponed` only. No DE
-   overlay deletion API — retention is transition-based.
-3. **Orphan DE evidence may have reduced provenance.** When only an overlay row
-   remains, history uses `origin = unknown` and does **not** invent
-   `native` / `recommendation_intake`. Live-candidate history preserves known
-   origin and durable provenance fields.
-4. **Recommendation Engine** carries terminal continuity via
-   `history` / `history_count` with outcome identity on entries.
+### Recommendation Engine
+
+- **Actionable:** `candidates` (full state) and `top_candidates` (summary) — open lifecycle only
+  (`created` / `available` / `presented`).
+- **History:** `history` + `history_count` — accepted / rejected / expired / superseded outcomes
+  (and orphan overlays). Entries carry `terminal: true`, `actionable: false`.
+- Frontend TypeScript contracts require `history` / `history_count` (Rust always emits them).
+- Consumers must not invent counts via `?? 0` / `?? []`.
+
+### Decision Queue
+
+- **Actionable:** `items` — pending/open overlays only.
+- **History:** dismissed / expired / orphan overlays via `DecisionOverlayHistoryEntry` only.
+- Full queue and summaries share identical actionable filtering.
+- History cannot trigger view / dismiss / execute / transition.
+- No lifecycle deletion API (`delete_overlay` removed).
+
+### Decision Engine
+
+- **Actionable:** `candidates` / `top_candidates` — `open` / `postponed` only.
+- **History:** selected / dismissed / expired via `DecisionArtifactHistoryEntry` only.
+- History cannot select / dismiss / execute / mutate.
+- Orphan overlay provenance uses `origin = unknown` — never invent `native` /
+  `recommendation_intake`.
+- No DE overlay deletion API — retention is transition-based.
+
+### Task Graph
+
+- **Actionable:** `nodes` / `top_nodes` — open statuses only (`proposed` … `blocked`).
+- **History:** completed / cancelled via `TaskHistoryEntry` with progress + explanation retained.
+- Aggregate counts (`completed_count`, etc.) remain truthful scalars; they do not put
+  terminals back into actionable lists.
+- Historical task evidence is never editable state.
+
+### Execution Lifecycle
+
+- **Actionable:** `ExecutionLifecycleProjection.actionable` — `in_progress` only.
+- **History:** completed / failed / cancelled via `ExecutionLifecycleHistoryEntry`.
+- Failed history preserves `retry_allowed`, `failure_reason`, and state classification.
+- `Unknown` remains unknown — never invented into actionable or terminal channels.
+- Durable lifecycle outcomes cannot disappear because an actionable list is empty.
+- `get_execution_states` returns the dual-channel projection (not a flat mixed list).
+
+### Observation layer
+
+- Observations are **derived evidence only** — disposable classifications of recorded activity.
+- Observations are not lifecycle owners and cannot become command authorities.
+- Projections must not imply observations caused state changes; durable audit / domain
+  events remain the source of truth.
+- Observation execute attempts fail by contract.
 
 ## Frontend responsibilities
 
-- Prefer projected actionable lists (`top_candidates` / DQ `items`).
-- Use `history_count` for evidence presence; never infer absence from empty
-  actionable lists or truncated `history` arrays.
+- Prefer projected actionable lists (`top_candidates` / DQ `items` / Task `top_nodes` /
+  execution `actionable`).
+- Use `history_count` for evidence presence; never infer absence from empty actionable
+  lists or truncated `history` arrays.
 - History helpers only verify projected non-actionability — they do not invent
   lifecycle or provenance.
+- History rendering has no mutation buttons, command handlers, or execution paths.
 
 ## Related
 

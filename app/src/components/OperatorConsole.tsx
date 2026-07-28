@@ -68,7 +68,7 @@ import type {
   ApprovalDecisionResult,
   CancellationRequest,
   ExecutionOutcome,
-  ExecutionReconciliation,
+  ExecutionLifecycleProjection,
   IntentExecutionRequest,
   MemoryEntry,
   ModelProviderDescriptor,
@@ -146,9 +146,8 @@ export function OperatorConsole({
   const [lifecycle, setLifecycle] = useState<SuggestionLifecycleRecord[]>([]);
   const [context, setContext] = useState<WorkspaceContext | null>(null);
   const [outcomes, setOutcomes] = useState<ExecutionOutcome[]>([]);
-  const [executionStates, setExecutionStates] = useState<
-    ExecutionReconciliation[]
-  >([]);
+  const [executionStates, setExecutionStates] =
+    useState<ExecutionLifecycleProjection | null>(null);
   const [workspaceStateWindows, setWorkspaceStateWindows] = useState<
     WorkspaceStateWindow[]
   >([]);
@@ -323,7 +322,7 @@ export function OperatorConsole({
         invokeIpc<ExecutionOutcome[]>("get_execution_outcomes", {
           limit: 50,
         }),
-        invokeIpc<ExecutionReconciliation[]>("get_execution_states", {
+        invokeIpc<ExecutionLifecycleProjection>("get_execution_states", {
           limit: 50,
         }),
         invokeIpc<PermissionApprovalRequest[]>("get_permission_approvals", {
@@ -1876,7 +1875,7 @@ export function OperatorConsole({
                   recommendationEngine.candidates.filter(isActiveRecommendation)
                     .length
                 }{" "}
-                · history {recommendationEngine.history_count ?? 0} · authority{" "}
+                · history {recommendationEngine.history_count} · authority{" "}
                 {recommendationEngine.authority_effect}
               </li>
             </ul>
@@ -2029,14 +2028,15 @@ export function OperatorConsole({
                   </div>
                 </div>
               ))}
-            {(recommendationEngine.history?.length ?? 0) > 0 && (
+            {recommendationEngine.history_count > 0 && (
               <>
                 <p className="muted explain-block">
                   Outcome history (immutable feedback — not actionable, never
-                  executes)
+                  executes) · showing {recommendationEngine.history.length} of{" "}
+                  {recommendationEngine.history_count}
                 </p>
                 <RecommendationHistoryList
-                  history={(recommendationEngine.history ?? []).slice(0, 6)}
+                  history={recommendationEngine.history.slice(0, 6)}
                 />
               </>
             )}
@@ -4024,19 +4024,47 @@ export function OperatorConsole({
 
       <section>
         <h2>Reconciled states</h2>
-        {executionStates.length === 0 ? (
+        {!executionStates ||
+        (executionStates.actionable.length === 0 &&
+          executionStates.history_count === 0) ? (
           <p className="muted">No reconciled states.</p>
         ) : (
-          <ul className="list compact">
-            {executionStates.map((s) => (
-              <li key={s.execution_request_id}>
-                <span className="mono">{s.execution_request_id}</span> —{" "}
-                {s.current_state}
-                {s.dispatch_allowed ? " · dispatch ok" : " · dispatch blocked"}
-                {s.cancellation_allowed ? " · cancel ok" : " · cancel blocked"}
-              </li>
-            ))}
-          </ul>
+          <>
+            <p className="muted">
+              Actionable in-flight: {executionStates.actionable.length} ·
+              history {executionStates.history_count} terminal (showing{" "}
+              {executionStates.history.length}) · authority{" "}
+              {executionStates.authority_effect}
+            </p>
+            {executionStates.actionable.length > 0 && (
+              <ul className="list compact">
+                {executionStates.actionable.map((s) => (
+                  <li key={s.execution_request_id}>
+                    <span className="mono">{s.execution_request_id}</span> —{" "}
+                    {s.state}
+                    {s.cancellation_allowed ? " · cancel ok" : " · cancel blocked"}
+                  </li>
+                ))}
+              </ul>
+            )}
+            {executionStates.history_count > 0 && (
+              <>
+                <p className="muted">
+                  Terminal history (evidence only — not actionable)
+                </p>
+                <ul className="list compact">
+                  {executionStates.history.map((h) => (
+                    <li key={h.execution_request_id}>
+                      <span className="mono">{h.execution_request_id}</span> —{" "}
+                      {h.state}
+                      {h.retry_allowed ? " · retry eligible" : ""}
+                      {h.failure_reason ? ` · ${h.failure_reason}` : ""}
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </>
         )}
       </section>
 

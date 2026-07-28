@@ -152,6 +152,7 @@ use workspace_domain::{
     ModelProviderDescriptor, ModelResponse, Observation, PersonalizedPlanComparison,
     PreferenceCategory, PreferenceSource, Suggestion, SuggestionIntentRequest,
     SuggestionLifecycleRecord, IntentExecutionRequest, ExecutionOutcome, ExecutionReconciliation,
+    ExecutionLifecycleProjection,
     CancellationRequest, UserPreference, UserPreferenceProfile, WidgetId, WidgetReference,
     Workspace, WorkspaceContext, WorkspaceId, WorkspaceMetrics, WorkspaceSnapshot,
     CapabilityDiscovery, Zone, ZoneId,
@@ -1982,7 +1983,7 @@ impl CommandHandler {
         actor: ActorContext,
         intent: IntentContext,
         limit: Option<usize>,
-    ) -> Result<Vec<ExecutionReconciliation>> {
+    ) -> Result<ExecutionLifecycleProjection> {
         CommandPipeline::new(kernel.command_context(actor, intent))
             .execute_query(GetExecutionStates::new(limit))
     }

@@ -51,6 +51,43 @@ impl WorkspaceRecommendationEngineService {
         assistant_workflows: &Arc<Mutex<AssistantWorkflowStore>>,
         workspace_id: impl Into<String>,
     ) -> Result<WorkspaceRecommendationEngineState> {
+        Self::generate_maybe_sealed(
+            db,
+            actor,
+            orchestrated_plans,
+            assistant_workflows,
+            workspace_id,
+            true,
+        )
+    }
+
+    /// Lifecycle mutation lookup view — includes terminals still addressable by overlay id.
+    /// Never returned to IPC consumers; consumers always use sealed `generate`.
+    fn generate_for_lifecycle_mutation(
+        db: &Arc<Mutex<Database>>,
+        actor: &ActorContext,
+        orchestrated_plans: &Arc<Mutex<OrchestratedPlanStore>>,
+        assistant_workflows: &Arc<Mutex<AssistantWorkflowStore>>,
+        workspace_id: impl Into<String>,
+    ) -> Result<WorkspaceRecommendationEngineState> {
+        Self::generate_maybe_sealed(
+            db,
+            actor,
+            orchestrated_plans,
+            assistant_workflows,
+            workspace_id,
+            false,
+        )
+    }
+
+    fn generate_maybe_sealed(
+        db: &Arc<Mutex<Database>>,
+        actor: &ActorContext,
+        orchestrated_plans: &Arc<Mutex<OrchestratedPlanStore>>,
+        assistant_workflows: &Arc<Mutex<AssistantWorkflowStore>>,
+        workspace_id: impl Into<String>,
+        seal_actionable: bool,
+    ) -> Result<WorkspaceRecommendationEngineState> {
         let workspace_id = workspace_id.into();
         let attention = WorkspaceAttentionService::generate(
             db,
@@ -129,6 +166,13 @@ impl WorkspaceRecommendationEngineService {
             &decision_queue,
             &environment,
         )
+        .map(|state| {
+            if seal_actionable {
+                Self::seal_actionable_projection(state)
+            } else {
+                state
+            }
+        })
     }
 
     /// Preferred path — Intelligence injects shared aggregator inputs.
@@ -871,7 +915,9 @@ impl WorkspaceRecommendationEngineService {
             patterns.pattern_count
         ));
         state.summary = build_recommendation_engine_summary(&state.label, state.candidate_count);
-        Self::project_lifecycle_overlays(db, actor, state)
+        Ok(Self::seal_actionable_projection(Self::project_lifecycle_overlays(
+            db, actor, state,
+        )?))
     }
 
     /// Merge Readiness gaps into recommendations as evidence-only context.
@@ -968,7 +1014,9 @@ impl WorkspaceRecommendationEngineService {
             readiness.overall_status.as_str()
         ));
         state.summary = build_recommendation_engine_summary(&state.label, state.candidate_count);
-        Self::project_lifecycle_overlays(db, actor, state)
+        Ok(Self::seal_actionable_projection(Self::project_lifecycle_overlays(
+            db, actor, state,
+        )?))
     }
 
     /// Reference Milestones without mutating milestone ownership or ranking authority.
@@ -1238,7 +1286,7 @@ impl WorkspaceRecommendationEngineService {
     ) -> Result<RecommendationReviewActionResult> {
         let workspace_id = workspace_id.into();
         let recommendation_id = recommendation_id.into();
-        let state = Self::generate(
+        let state = Self::generate_for_lifecycle_mutation(
             db,
             actor,
             orchestrated_plans,
@@ -1424,7 +1472,7 @@ impl WorkspaceRecommendationEngineService {
     ) -> Result<RecommendationReviewActionResult> {
         let workspace_id = workspace_id.into();
         let recommendation_id = recommendation_id.into();
-        let state = Self::generate(
+        let state = Self::generate_for_lifecycle_mutation(
             db,
             actor,
             orchestrated_plans,
@@ -1630,7 +1678,7 @@ impl WorkspaceRecommendationEngineService {
     ) -> Result<RecommendationReviewActionResult> {
         let workspace_id = workspace_id.into();
         let recommendation_id = recommendation_id.into();
-        let state = Self::generate(
+        let state = Self::generate_for_lifecycle_mutation(
             db,
             actor,
             orchestrated_plans,
@@ -1762,7 +1810,7 @@ impl WorkspaceRecommendationEngineService {
     ) -> Result<RecommendationReviewActionResult> {
         let workspace_id = workspace_id.into();
         let recommendation_id = recommendation_id.into();
-        let state = Self::generate(
+        let state = Self::generate_for_lifecycle_mutation(
             db,
             actor,
             orchestrated_plans,
@@ -2029,7 +2077,23 @@ impl WorkspaceRecommendationEngineService {
             &handoff_by_id,
             &acceptance_by_id,
         )?;
+        // Consumer projections seal via `seal_actionable_projection` — mutation
+        // paths keep terminals addressable until commands complete.
         Ok(state)
+    }
+
+    fn seal_actionable_projection(
+        mut state: WorkspaceRecommendationEngineState,
+    ) -> WorkspaceRecommendationEngineState {
+        state.retain_actionable_candidates();
+        state
+    }
+
+    /// Seal for Intelligence / Operating State / other consumer injectors of `generate_with_inputs`.
+    pub(crate) fn seal_consumer_projection(
+        state: WorkspaceRecommendationEngineState,
+    ) -> WorkspaceRecommendationEngineState {
+        Self::seal_actionable_projection(state)
     }
 
     fn build_history_from_overlays<'a>(
@@ -2047,6 +2111,8 @@ impl WorkspaceRecommendationEngineService {
                     lifecycle_state: resolution,
                     outcome: project_outcome_view(&outcome),
                     resolved_at: Some(outcome.recorded_at.clone()),
+                    terminal: true,
+                    actionable: false,
                     authority_effect: RecommendationHistoryEntry::AUTHORITY_EFFECT_NONE.into(),
                 });
             }

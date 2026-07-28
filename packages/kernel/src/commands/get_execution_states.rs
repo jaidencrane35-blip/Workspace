@@ -7,12 +7,12 @@ use crate::lifecycle::LifecycleState;
 use crate::policy::GovernanceClass;
 use crate::security::PermissionSubject;
 use crate::services::ExecutionReconciliationService;
-use workspace_domain::{Capability, ExecutionReconciliation};
+use workspace_domain::{Capability, ExecutionLifecycleProjection};
 
 const DEFAULT_LIMIT: usize = 50;
 const MAX_LIMIT: usize = 200;
 
-/// Returns a derived list of current interpreted execution states.
+/// Returns a dual-channel execution lifecycle projection (actionable + history).
 pub struct GetExecutionStates {
     pub limit: usize,
 }
@@ -32,7 +32,7 @@ impl crate::commands::Command for GetExecutionStates {
 }
 
 impl QueryCommand for GetExecutionStates {
-    type Output = Vec<ExecutionReconciliation>;
+    type Output = ExecutionLifecycleProjection;
 
     fn permission_subject(&self) -> PermissionSubject {
         PermissionSubject::System
@@ -46,13 +46,13 @@ impl QueryCommand for GetExecutionStates {
         GovernanceClass::Governed
     }
 
-    fn execute(self, ctx: &CommandContext<'_>) -> Result<Vec<ExecutionReconciliation>> {
+    fn execute(self, ctx: &CommandContext<'_>) -> Result<ExecutionLifecycleProjection> {
         if ctx.state.lifecycle != LifecycleState::Ready {
             return Err(KernelError::NotReady);
         }
 
         let limit = self.limit.clamp(1, MAX_LIMIT);
-        ExecutionReconciliationService::list_recent(&ctx.database, limit)
+        ExecutionReconciliationService::projection(&ctx.database, limit)
     }
 }
 
@@ -100,15 +100,17 @@ mod tests {
             ExecuteIntentRequest::new(workspace.id.clone(), "missing-suggestion".into()),
         );
 
-        let states = CommandPipeline::new(ready_ctx(&init, &bus))
+        let projection = CommandPipeline::new(ready_ctx(&init, &bus))
             .execute_query(GetExecutionStates::new(Some(50)))
             .unwrap();
 
-        assert!(states.iter().any(|state| {
-            state.execution_request_id == "execution:missing-suggestion"
-                && state.current_state == ExecutionState::Failed
+        assert!(projection.history.iter().any(|entry| {
+            entry.execution_request_id == "execution:missing-suggestion"
+                && entry.state == ExecutionState::Failed
+                && entry.is_non_actionable()
         }));
-        assert!(states.iter().all(|state| state.validate().is_ok()));
+        assert!(projection.history.iter().all(|entry| entry.is_non_actionable()));
+        assert_eq!(projection.authority_effect, "none");
     }
 
     #[test]

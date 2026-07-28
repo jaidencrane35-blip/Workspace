@@ -552,13 +552,15 @@ fn case14_recommendation_review_records_decision_only() {
         ws.clone(),
     )
     .unwrap();
-    let item = after
-        .candidates
-        .iter()
-        .find(|c| c.id == id)
-        .expect("accepted candidate still projected");
-    assert_eq!(item.lifecycle_state.as_deref(), Some("accepted"));
-    assert_eq!(item.lifecycle_resolution_type.as_deref(), Some("accepted"));
+    assert!(
+        after.candidates.iter().all(|c| c.id != id),
+        "accepted must leave actionable candidates"
+    );
+    assert!(
+        after.history.iter().any(|h| h.native_id == id && h.lifecycle_state == "accepted"),
+        "accepted must appear in history evidence"
+    );
+    assert!(after.history.iter().all(|h| h.is_non_actionable()));
 
     assert_cannot_execute(CommandHandler::workspace_recommendation_engine_attempt_execute());
 
@@ -670,11 +672,10 @@ fn case21_outcome_history_is_visible_and_non_executive() {
     assert_eq!(entry.outcome.authority_effect, "none");
     assert!(!entry.outcome.is_system_failure);
     assert_eq!(entry.authority_effect, "none");
-    let item = after.candidates.iter().find(|c| c.id == id).unwrap();
-    assert!(item.outcome.is_some());
-    assert_eq!(
-        item.outcome.as_ref().unwrap().outcome_id,
-        entry.outcome.outcome_id
+    assert!(entry.is_non_actionable());
+    assert!(
+        after.candidates.iter().all(|c| c.id != id),
+        "accepted must not remain in actionable candidates"
     );
     assert!(RecommendationOutcome::attempt_execute().is_err());
     assert_cannot_execute(CommandHandler::workspace_recommendation_engine_attempt_execute());
@@ -765,31 +766,13 @@ fn case23_accept_returns_decision_readiness_without_handoff() {
         &kernel, local, intent, ws,
     )
     .unwrap();
-    let item = after.candidates.iter().find(|c| c.id == id).unwrap();
-    assert!(item.decision_context.is_some());
-    assert!(item.decision_readiness.is_some());
-    assert!(item.decision_boundary.is_some());
-    assert!(item.decision_confirmation.is_some());
-    assert_eq!(
-        item.decision_readiness.as_ref().unwrap().authority_effect,
-        "none"
+    assert!(
+        after.candidates.iter().all(|c| c.id != id),
+        "accepted leaves actionable channel"
     );
-    assert!(item
-        .decision_context
-        .as_ref()
-        .unwrap()
-        .decision_engine_object_id
-        .is_none());
-    assert_eq!(
-        item.decision_boundary.as_ref().unwrap().handoff_state,
-        RecommendationDecisionBoundary::HANDOFF_NOT_PERFORMED
-    );
-    assert_ne!(
-        item.decision_confirmation
-            .as_ref()
-            .unwrap()
-            .confirmation_state,
-        RecommendationDecisionConfirmation::STATE_CONFIRMED
+    assert!(
+        after.history.iter().any(|h| h.native_id == id),
+        "accepted retained in history"
     );
 }
 
@@ -1084,7 +1067,7 @@ fn case20_provenance_immutable_and_terminal_stays_terminal() {
     let before_evidence = state.candidates[0].evidence.clone();
     let before_reasons = state.candidates[0].attention_reasons.clone();
 
-    CommandHandler::accept_recommendation(
+    let accepted = CommandHandler::accept_recommendation(
         &kernel,
         local.clone(),
         intent.clone(),
@@ -1092,6 +1075,8 @@ fn case20_provenance_immutable_and_terminal_stays_terminal() {
         id.clone(),
     )
     .unwrap();
+    assert_eq!(accepted.lifecycle_state, "accepted");
+    assert_eq!(accepted.authority_effect, "none");
 
     let after = CommandHandler::generate_workspace_recommendation_engine(
         &kernel,
@@ -1100,24 +1085,22 @@ fn case20_provenance_immutable_and_terminal_stays_terminal() {
         ws,
     )
     .unwrap();
-    let item = after
-        .candidates
+    assert!(
+        after.candidates.iter().all(|c| c.id != id),
+        "terminal accepted must leave actionable candidates"
+    );
+    let entry = after
+        .history
         .iter()
-        .find(|c| c.id == id)
-        .expect("accepted candidate retained in full snapshot");
-    assert_eq!(item.lifecycle_state.as_deref(), Some("accepted"));
-    assert!(!item.is_active_lifecycle());
-    assert_eq!(item.evidence, before_evidence);
-    assert_eq!(item.attention_reasons, before_reasons);
-    let after_prov = RecommendationProvenance::from_recommendation_item(item);
-    assert_eq!(after_prov.source_evidence, before.source_evidence);
-    assert_eq!(after_prov.reasoning_origins, before.reasoning_origins);
-    assert_eq!(after_prov.explanation_keys, before.explanation_keys);
-    let view = item.explanation.as_ref().expect("explanation after accept");
-    assert_eq!(view.authority_effect, "none");
-    assert!(view.lifecycle_note.to_lowercase().contains("decision record"));
-    // Recommendation accept must not imply Decision Engine handoff.
-    assert!(!view.lifecycle_note.to_lowercase().contains("planner"));
+        .find(|h| h.native_id == id)
+        .expect("accepted retained in history");
+    assert!(entry.is_non_actionable());
+    assert_eq!(entry.outcome.user_decision, "accepted");
+    // Provenance continuity: pre-accept evidence remains the recorded fact set;
+    // accept must not invent Decision Engine / planner ownership.
+    assert_eq!(before.source_evidence, before_evidence);
+    assert_eq!(before.reasoning_origins, before_reasons);
+    assert!(!accepted.explanation.to_lowercase().contains("planner"));
     assert_cannot_execute(CommandHandler::workspace_recommendation_engine_attempt_execute());
     assert_cannot_execute(CommandHandler::decision_engine_attempt_execute());
 }
@@ -1299,13 +1282,14 @@ fn case18_terminal_excluded_from_active_summary() {
         ws,
     )
     .unwrap();
-    let accepted = after
-        .candidates
-        .iter()
-        .find(|c| c.id == id)
-        .expect("accepted remains in full snapshot for history");
-    assert_eq!(accepted.lifecycle_state.as_deref(), Some("accepted"));
-    assert!(!accepted.is_active_lifecycle());
+    assert!(
+        after.candidates.iter().all(|c| c.id != id && c.is_active_lifecycle()),
+        "accepted must leave full-state actionable candidates"
+    );
+    assert!(
+        after.history.iter().any(|h| h.native_id == id && h.is_non_actionable()),
+        "accepted remains in history evidence"
+    );
 
     let summary = after.summary_projection(12);
     assert!(

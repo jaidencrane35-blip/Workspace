@@ -48,7 +48,9 @@ export function hasProjectedTerminalEvidence(
   return (
     isTerminalLifecycle(entry.lifecycle_state) &&
     Boolean(entry.outcome?.outcome_id) &&
-    entry.authority_effect === "none"
+    entry.authority_effect === "none" &&
+    entry.terminal === true &&
+    entry.actionable === false
   );
 }
 

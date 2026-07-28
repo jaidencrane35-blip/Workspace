@@ -7,7 +7,10 @@
 use std::sync::{Arc, Mutex};
 
 use workspace_database::Database;
-use workspace_domain::{reconcile_execution_state, reconcile_execution_states, ExecutionReconciliation};
+use workspace_domain::{
+    reconcile_execution_state, reconcile_execution_states, ExecutionLifecycleProjection,
+    ExecutionReconciliation,
+};
 
 use super::{ExecutionLifecycleService, ExecutionOutcomeService};
 use crate::error::{KernelError, Result};
@@ -48,6 +51,20 @@ impl ExecutionReconciliationService {
                 message: error.to_string(),
             })?;
         Ok(reconciliation)
+    }
+
+    /// Dual-channel projection: in-progress actionable + terminal history evidence.
+    pub fn projection(
+        db: &Arc<Mutex<Database>>,
+        history_limit: usize,
+    ) -> Result<ExecutionLifecycleProjection> {
+        let lifecycle = ExecutionLifecycleService::list_recent(db, 500)?;
+        let outcomes = ExecutionOutcomeService::list_recent(db, OUTCOME_SCAN_LIMIT)?;
+        Ok(ExecutionLifecycleProjection::from_records(
+            &lifecycle,
+            &outcomes,
+            history_limit,
+        ))
     }
 
     /// Returns up to `limit` reconciled execution states, most recently seen first.
