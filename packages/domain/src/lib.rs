@@ -59,6 +59,7 @@ pub mod workspace_historical_reconstruction;
 pub mod workspace_temporal_intelligence;
 pub mod workspace_explanation;
 pub mod workspace_contextual_understanding;
+pub mod workspace_knowledge_synthesis;
 pub mod workspace_composition;
 pub mod workspace_purpose;
 pub mod workspace_evolution;
@@ -528,6 +529,13 @@ pub use workspace_contextual_understanding::{
     ContextualUnderstandingHistoryEntry, ContextualUnderstandingProjection,
     ContextualUnderstandingStatus, ContextualUnderstandingSummary, ContextualWorkspaceSnapshot,
     SituationalTheme, WorkspaceContextExplanation,
+};
+pub use workspace_knowledge_synthesis::{
+    KnowledgeCluster, KnowledgeCompleteness, KnowledgeConcept, KnowledgeConfidence,
+    KnowledgeEvidenceReference, KnowledgeGap, KnowledgeRelationship, KnowledgeSynthesisError,
+    KnowledgeSynthesisExplanation, KnowledgeSynthesisFrame, KnowledgeSynthesisHistoryEntry,
+    KnowledgeSynthesisProjection, KnowledgeSynthesisStatus, KnowledgeSynthesisSummary,
+    WorkspaceKnowledgeSynthesis,
 };
 pub use workspace_task_graph::{
     would_create_cycle, TaskDependency, TaskGraph, TaskGraphError, TaskGraphSummary, TaskHistoryEntry,
