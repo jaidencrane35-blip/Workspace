@@ -43,6 +43,8 @@ The durable `command.authorized` row recorded **before** dispatch is the require
 
 For `ExecuteIntentRequest`, `execution_lifecycle` is separate from secondary audit: it is the durable idempotency fact keyed by the existing `execution:{suggestion_id}` identity. A missing `command.executed` row therefore cannot make completed execution retryable. Cancellation requests persist `cancelled` in the same lifecycle before secondary audit; cancellation remains execution-retryable but cannot be requested twice.
 
+Durable lifecycle state takes precedence over contradictory audit evidence. Migration backfill uses audit only when no lifecycle row exists. Runtime reads reconcile `in_progress` claims older than five minutes to non-retryable `failed` consistently for single and list projections.
+
 ## Recovery
 
 1. Surface `audit_persistence_error` to the IPC caller (sanitized public code).

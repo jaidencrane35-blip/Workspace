@@ -77,17 +77,22 @@ impl MigrationRunner {
                 continue;
             }
 
-            db.connection().execute_batch(&migration.sql).map_err(|error| {
-                DatabaseError::Migration(format!(
-                    "migration '{}' failed during apply: {error}",
-                    migration.version
-                ))
+            db.transaction(|transaction| {
+                transaction
+                    .connection()
+                    .execute_batch(&migration.sql)
+                    .map_err(|error| {
+                        DatabaseError::Migration(format!(
+                            "migration '{}' failed during apply: {error}",
+                            migration.version
+                        ))
+                    })?;
+                transaction.connection().execute(
+                    "INSERT INTO _workspace_migrations (version, name) VALUES (?1, ?2)",
+                    (&migration.version, &migration.name),
+                )?;
+                Ok(())
             })?;
-
-            db.connection().execute(
-                "INSERT INTO _workspace_migrations (version, name) VALUES (?1, ?2)",
-                (&migration.version, &migration.name),
-            )?;
         }
 
         Ok(())
@@ -146,5 +151,40 @@ mod tests {
             }
             other => panic!("expected migration error, got {other:?}"),
         }
+    }
+
+    #[test]
+    fn failed_migration_rolls_back_schema_and_ledger() {
+        let db = Database::open_in_memory().unwrap();
+        let mut runner = MigrationRunner::new();
+        runner.register(Migration {
+            version: "998_atomic_failure".into(),
+            name: "atomic_failure".into(),
+            sql: "CREATE TABLE migration_partial (id TEXT);
+                  INSERT INTO missing_table (id) VALUES ('fail');"
+                .into(),
+        });
+
+        assert!(runner.apply_all(&db).is_err());
+        let table_count: i64 = db
+            .connection()
+            .query_row(
+                "SELECT COUNT(*) FROM sqlite_master
+                 WHERE type = 'table' AND name = 'migration_partial'",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        let ledger_count: i64 = db
+            .connection()
+            .query_row(
+                "SELECT COUNT(*) FROM _workspace_migrations
+                 WHERE version = '998_atomic_failure'",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(table_count, 0);
+        assert_eq!(ledger_count, 0);
     }
 }

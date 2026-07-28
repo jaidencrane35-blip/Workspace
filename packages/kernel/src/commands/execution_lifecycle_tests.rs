@@ -510,3 +510,76 @@ fn concurrent_claims_admit_exactly_one_execution() {
         1
     );
 }
+
+#[test]
+fn stale_reconciliation_is_identical_for_get_and_list() {
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let db = kernel.shared_database();
+    for suggestion in ["stale-list", "fresh-list", "completed-list", "failed-list"] {
+        ExecutionLifecycleService::claim(
+            &db,
+            &format!("execution:{suggestion}"),
+            suggestion,
+            Some("intent:test"),
+        )
+        .unwrap();
+    }
+    ExecutionLifecycleService::complete(
+        &db,
+        "execution:completed-list",
+        Some("intent:test"),
+    )
+    .unwrap();
+    ExecutionLifecycleService::mark_failed(
+        &db,
+        "execution:failed-list",
+        true,
+        "rolled back",
+    )
+    .unwrap();
+    ExecutionLifecycleService::record_cancelled(&db, "execution:cancelled-list").unwrap();
+    db.lock()
+        .unwrap()
+        .connection()
+        .execute(
+            "UPDATE execution_lifecycle
+             SET claimed_at = '2000-01-01T00:00:00Z',
+                 updated_at = '2000-01-01T00:00:00Z'
+             WHERE execution_request_id = 'execution:stale-list'",
+            [],
+        )
+        .unwrap();
+
+    let listed = ExecutionLifecycleService::list_recent(&db, 20).unwrap();
+    let listed_state = |id: &str| {
+        listed
+            .iter()
+            .find(|record| record.execution_request_id == id)
+            .unwrap()
+            .state
+    };
+    assert_eq!(listed_state("execution:stale-list"), ExecutionState::Failed);
+    assert_eq!(
+        ExecutionLifecycleService::get(&db, "execution:stale-list")
+            .unwrap()
+            .unwrap()
+            .state,
+        listed_state("execution:stale-list")
+    );
+    assert_eq!(
+        listed_state("execution:fresh-list"),
+        ExecutionState::InProgress
+    );
+    assert_eq!(
+        listed_state("execution:completed-list"),
+        ExecutionState::Completed
+    );
+    assert_eq!(
+        listed_state("execution:failed-list"),
+        ExecutionState::Failed
+    );
+    assert_eq!(
+        listed_state("execution:cancelled-list"),
+        ExecutionState::Cancelled
+    );
+}

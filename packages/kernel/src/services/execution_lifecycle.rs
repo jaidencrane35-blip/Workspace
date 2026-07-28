@@ -243,28 +243,9 @@ impl ExecutionLifecycleService {
                 stage: "read",
                 source,
             })?;
-        if let Some(record) = record.as_ref() {
-            if Self::is_stale(record)? {
-                repository
-                    .mark_failed(
-                        execution_request_id,
-                        false,
-                        "stale execution claim; dispatch outcome unknown",
-                        &Utc::now().to_rfc3339(),
-                    )
-                    .map_err(|source| KernelError::ExecutionLifecyclePersistence {
-                        stage: "stale_reconciliation",
-                        source,
-                    })?;
-                return repository.get(execution_request_id).map_err(|source| {
-                    KernelError::ExecutionLifecyclePersistence {
-                        stage: "stale_reconciliation.read",
-                        source,
-                    }
-                });
-            }
-        }
-        Ok(record)
+        record
+            .map(|record| Self::reconcile_stale(&repository, record))
+            .transpose()
     }
 
     pub fn list_recent(
@@ -274,12 +255,16 @@ impl ExecutionLifecycleService {
         let guard = db
             .lock()
             .map_err(|_| KernelError::lock_poisoned("database"))?;
-        ExecutionLifecycleRepository::new(&guard)
+        let repository = ExecutionLifecycleRepository::new(&guard);
+        repository
             .list_recent(limit)
             .map_err(|source| KernelError::ExecutionLifecyclePersistence {
                 stage: "list",
                 source,
-            })
+            })?
+            .into_iter()
+            .map(|record| Self::reconcile_stale(&repository, record))
+            .collect()
     }
 
     pub fn lifecycle_outcome(record: &ExecutionLifecycleRecord) -> Result<Option<ExecutionOutcome>> {
@@ -329,5 +314,37 @@ impl ExecutionLifecycleService {
             .signed_duration_since(claimed_at.with_timezone(&Utc))
             .num_seconds()
             >= 300)
+    }
+
+    fn reconcile_stale(
+        repository: &ExecutionLifecycleRepository<'_>,
+        record: ExecutionLifecycleRecord,
+    ) -> Result<ExecutionLifecycleRecord> {
+        if !Self::is_stale(&record)? {
+            return Ok(record);
+        }
+        repository
+            .mark_failed(
+                &record.execution_request_id,
+                false,
+                "stale execution claim; dispatch outcome unknown",
+                &Utc::now().to_rfc3339(),
+            )
+            .map_err(|source| KernelError::ExecutionLifecyclePersistence {
+                stage: "stale_reconciliation",
+                source,
+            })?;
+        repository
+            .get(&record.execution_request_id)
+            .map_err(|source| KernelError::ExecutionLifecyclePersistence {
+                stage: "stale_reconciliation.read",
+                source,
+            })?
+            .ok_or_else(|| KernelError::IntegrityViolation {
+                message: format!(
+                    "stale execution lifecycle row disappeared: {}",
+                    record.execution_request_id
+                ),
+            })
     }
 }
