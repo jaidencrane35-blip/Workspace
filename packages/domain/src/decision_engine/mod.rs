@@ -1786,6 +1786,19 @@ impl DecisionEngineIntakeEvaluation {
         )
     }
 
+    pub fn ensure_not_recorded(
+        existing: Option<&Self>,
+        requested_state: &str,
+    ) -> Result<(), DecisionEngineError> {
+        if let Some(existing) = existing {
+            return Err(DecisionEngineError::InvalidTransition {
+                from: existing.evaluation_state.clone(),
+                to: requested_state.into(),
+            });
+        }
+        Ok(())
+    }
+
     /// Evaluate only an active intake candidate. Withdrawn/invalidated are rejected.
     pub fn try_evaluate(
         candidate: &DecisionEngineIntakeCandidate,

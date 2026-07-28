@@ -379,3 +379,29 @@ fn case10_authority_effect_none() {
         assert!(e.assert_evaluation_only().is_ok());
     }
 }
+
+/// CASE 11 — persisted intake evaluation is terminal and cannot be overwritten.
+#[test]
+fn case11_duplicate_evaluation_rejected() {
+    let (candidate, _, _) = active_candidate("eval-8");
+    let existing = DecisionEngineIntakeEvaluation::try_evaluate(
+        &candidate,
+        DecisionEngineIntakeEvaluation::STATE_EVALUATED,
+        "first evaluation",
+        "t-eval-1",
+    )
+    .unwrap();
+
+    assert!(matches!(
+        DecisionEngineIntakeEvaluation::ensure_not_recorded(
+            Some(&existing),
+            DecisionEngineIntakeEvaluation::STATE_REJECTED,
+        ),
+        Err(workspace_domain::DecisionEngineError::InvalidTransition { .. })
+    ));
+    assert!(DecisionEngineIntakeEvaluation::ensure_not_recorded(
+        None,
+        DecisionEngineIntakeEvaluation::STATE_EVALUATED,
+    )
+    .is_ok());
+}
