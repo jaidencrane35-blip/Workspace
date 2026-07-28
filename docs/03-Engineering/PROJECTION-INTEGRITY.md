@@ -187,6 +187,17 @@ Rules:
 - React may inspect orchestration observations — no mutation or command conversion.
 - Restart reconstructs durable current + history; missing orchestration remains missing.
 
+### Learning & Adaptation (Programme II Batch 6)
+
+- **Current:** `LearningSnapshot.current` — observations, patterns, confidence updates,
+  adaptation candidates. Meta-evidence only; never auto-apply or mutate foreign domains.
+- **History:** superseded snapshots via append-only `workspace_learning_history` →
+  `LearningHistoryEntry` (`terminal: true`, `actionable: false`, `authority_effect: none`).
+- **`history_count`** is authoritative; summary windows may truncate `history`.
+- Adaptation candidates are suggestions (`actionable: false`). Missing outcomes stay unknown.
+- React may inspect learning evidence — no mutation or command conversion.
+- Restart reconstructs durable current + history; missing learning remains missing.
+
 ## Serde defaults vs TypeScript required fields
 
 Rust history fields often use `#[serde(default)]` so older persisted / in-flight JSON

@@ -12,7 +12,8 @@ use workspace_domain::{
     WorkspaceMilestoneError, WorkspaceNavigationError, WorkspaceOperatingStateError,
     WorkspacePatternError, WorkspacePlanningError, WorkspaceProfileError, WorkspacePurposeError,
     WorkspaceReadinessError, WorkspaceRecommendationEngineError, WorkspaceReasoningMemoryError,
-    WorkspaceCognitiveGraphError, WorkspaceCognitiveOrchestrationError, WorkspaceSessionError,
+    WorkspaceCognitiveGraphError, WorkspaceCognitiveOrchestrationError,
+    WorkspaceLearningAdaptationError, WorkspaceSessionError,
     WorkspaceTransitionError,
     WorkspaceWorkContextError, WorkspaceWorkingStyleError,
 };
@@ -242,6 +243,9 @@ pub enum KernelError {
 
     #[error("Workspace cognitive orchestration validation failed: {message}")]
     WorkspaceCognitiveOrchestrationValidation { message: String },
+
+    #[error("Workspace learning adaptation validation failed: {message}")]
+    WorkspaceLearningAdaptationValidation { message: String },
 
     #[error("Workspace intelligence validation failed: {message}")]
     WorkspaceIntelligenceValidation { message: String },
@@ -512,6 +516,17 @@ impl From<WorkspaceCognitiveOrchestrationError> for KernelError {
         match error {
             WorkspaceCognitiveOrchestrationError::Domain(domain) => KernelError::from(domain),
             other => KernelError::WorkspaceCognitiveOrchestrationValidation {
+                message: other.to_string(),
+            },
+        }
+    }
+}
+
+impl From<WorkspaceLearningAdaptationError> for KernelError {
+    fn from(error: WorkspaceLearningAdaptationError) -> Self {
+        match error {
+            WorkspaceLearningAdaptationError::Domain(domain) => KernelError::from(domain),
+            other => KernelError::WorkspaceLearningAdaptationValidation {
                 message: other.to_string(),
             },
         }
@@ -1182,6 +1197,10 @@ impl KernelError {
             },
             KernelError::WorkspaceCognitiveOrchestrationValidation { message } => PublicError {
                 code: "workspace_cognitive_orchestration_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::WorkspaceLearningAdaptationValidation { message } => PublicError {
+                code: "workspace_learning_adaptation_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::WorkspaceIntelligenceValidation { message } => PublicError {

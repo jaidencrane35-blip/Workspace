@@ -2450,6 +2450,120 @@ export interface WorkspaceOrchestrationSummary {
   authority_effect: string;
 }
 
+export interface LearningHistoryEntry {
+  learning_id: string;
+  status: string;
+  created_at: string;
+  superseded_at: string | null;
+  uncertainty: number;
+  observation_count: number;
+  pattern_count: number;
+  adaptation_count: number;
+  terminal: boolean;
+  actionable: boolean;
+  authority_effect: string;
+}
+
+export interface LearningObservation {
+  kind: string;
+  statement: string;
+  source_domain: string;
+  evidence_refs: string[];
+}
+
+export interface LearningPattern {
+  kind: string;
+  label: string;
+  statement: string;
+  occurrence_count: number;
+  evidence_refs: string[];
+  authority_effect: string;
+}
+
+export interface LearningSignal {
+  kind: string;
+  polarity: string;
+  statement: string;
+  evidence_refs: string[];
+}
+
+export interface ConfidenceUpdate {
+  subject_ref: string;
+  subject_kind: string;
+  confidence_before: number;
+  evidence_received: string;
+  confidence_after: number;
+  authority_effect: string;
+}
+
+export interface AdaptationCandidate {
+  id: string;
+  title: string;
+  suggestion: string;
+  evidence_summary: string;
+  supporting_evidence_refs: string[];
+  confidence: number;
+  terminal: boolean;
+  actionable: boolean;
+  authority_effect: string;
+}
+
+export interface LearningEvidenceLink {
+  external_ref: string;
+  kind: string;
+}
+
+export interface LearningMeta {
+  learning_id: string;
+  workspace_id: string;
+  status: string;
+  created_at: string;
+  superseded_at: string | null;
+  uncertainty: number;
+  observation_count: number;
+  pattern_count: number;
+  adaptation_count: number;
+  authority_effect: string;
+  terminal: boolean;
+  actionable: boolean;
+}
+
+export interface LearningView {
+  meta: LearningMeta;
+  observations: LearningObservation[];
+  patterns: LearningPattern[];
+  success_signals: LearningSignal[];
+  failure_signals: LearningSignal[];
+  confidence_updates: ConfidenceUpdate[];
+  adaptation_candidates: AdaptationCandidate[];
+  evidence_links: LearningEvidenceLink[];
+  uncertainty: number;
+  authority_effect: string;
+}
+
+export interface LearningSnapshot {
+  workspace_id: string;
+  generated_at: string;
+  current: LearningView | null;
+  history: LearningHistoryEntry[];
+  history_count: number;
+  authority_effect: string;
+}
+
+export interface LearningSummary {
+  workspace_id: string;
+  generated_at: string;
+  has_current: boolean;
+  learning_id: string | null;
+  observation_count: number;
+  pattern_count: number;
+  adaptation_count: number;
+  uncertainty: number | null;
+  history: LearningHistoryEntry[];
+  history_count: number;
+  authority_effect: string;
+}
+
 export type WindowIdentityConfidence = "high" | "medium" | "low" | "ephemeral";
 
 export interface WorkspaceObservationPass {

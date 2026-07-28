@@ -15,7 +15,7 @@ const read = (file) => fs.readFileSync(file, "utf8");
 const sorted = (values) => [...new Set(values)].sort();
 
 /** Minimum MutationCommand inventory — dropping below this fails closed. */
-export const MUTATION_COMMAND_BASELINE = 58;
+export const MUTATION_COMMAND_BASELINE = 59;
 
 /** Capability id → authority owner (permission-token scope, not lifecycle owner). */
 export const CAPABILITY_AUTHORITY_OWNERS = {
@@ -99,6 +99,7 @@ export const HISTORY_STRUCTS = [
   "ReasoningHistoryEntry",
   "CognitiveGraphHistoryEntry",
   "OrchestrationHistoryEntry",
+  "LearningHistoryEntry",
 ];
 
 export const PROJECTION_SUMMARY_STRUCTS = [
@@ -111,6 +112,7 @@ export const PROJECTION_SUMMARY_STRUCTS = [
   "ReasoningSummary",
   "CognitiveGraphSummary",
   "WorkspaceOrchestrationSummary",
+  "LearningSummary",
 ];
 
 /** Append-only recovery diagnostic event types — evidence only, never commands. */
@@ -149,6 +151,7 @@ const LIFECYCLE_SERVICE_FILES = new Set([
   "workspace_reasoning_memory.rs",
   "workspace_cognitive_graph.rs",
   "workspace_cognitive_orchestration.rs",
+  "workspace_learning_adaptation.rs",
 ]);
 
 /**
@@ -695,6 +698,77 @@ function cognitiveOrchestrationGuards(rootDir) {
   return violations;
 }
 
+
+/**
+ * Programme II Batch 6 — Learning & Adaptation governance guards.
+ * Learning observes outcomes; it must never execute or mutate foreign domains.
+ */
+function learningAdaptationGuards(rootDir) {
+  const violations = [];
+  const servicePath = path.join(
+    rootDir,
+    "packages/kernel/src/services/workspace_learning_adaptation.rs",
+  );
+  const domainPath = path.join(
+    rootDir,
+    "packages/domain/src/workspace_learning_adaptation",
+  );
+  const repoPath = path.join(
+    rootDir,
+    "packages/database/src/repositories/learning_adaptation.rs",
+  );
+
+  const serviceFiles = fs.existsSync(servicePath) ? [servicePath] : [];
+  const domainFiles = fs.existsSync(domainPath) ? rustSources(domainPath) : [];
+  for (const file of [...serviceFiles, ...domainFiles]) {
+    const source = read(file);
+    const rel = path.relative(rootDir, file).replace(/\\/g, "/");
+    if (
+      /ApplicationLaunchService/.test(source) ||
+      /ExecutionLifecycleService/.test(source) ||
+      /std::process::Command/.test(source) ||
+      /workspace_windows_integration::/.test(source)
+    ) {
+      violations.push(
+        `${rel}: Learning Adaptation must not import or invoke execution/launch services`,
+      );
+    }
+    if (
+      /WorkspacePlanningService::generate\b/.test(source) ||
+      /WorkspaceReasoningMemoryService::generate\b/.test(source) ||
+      /WorkspaceCognitiveGraphService::generate\b/.test(source) ||
+      /WorkspaceCognitiveOrchestrationService::generate\b/.test(source) ||
+      /TaskGraphService::generate\b/.test(source) ||
+      /DecisionEngineService::generate\b/.test(source) ||
+      /WorkspaceRecommendationEngineService::generate\b/.test(source)
+    ) {
+      violations.push(
+        `${rel}: Learning Adaptation must not mutate planning/task/decision domains via generate`,
+      );
+    }
+  }
+
+  if (fs.existsSync(repoPath)) {
+    const source = read(repoPath);
+    if (
+      /WorkspaceLearningAdaptationService/.test(source) ||
+      /use\s+workspace_kernel::/.test(source)
+    ) {
+      violations.push(
+        `packages/database/src/repositories/learning_adaptation.rs: repository must not call learning service`,
+      );
+    }
+  }
+
+  if (!fs.existsSync(domainPath) && !fs.existsSync(`${domainPath}.rs`)) {
+    violations.push(
+      "packages/domain/src/workspace_learning_adaptation missing; governance cannot verify learning DTOs",
+    );
+  }
+
+  return violations;
+}
+
 function checkDtoAuthorityFields(domainSources, structNames, label) {
   const violations = [];
   const found = [];
@@ -972,6 +1046,7 @@ export function auditArchitectureGovernance(rootDir, options = {}) {
 
   violations.push(...recommendationEngineProcessSpawn(rootDir));
   violations.push(...cognitiveOrchestrationGuards(rootDir));
+  violations.push(...learningAdaptationGuards(rootDir));
 
   const domainSrc = path.join(rootDir, "packages/domain/src");
   const domainSources = fs.existsSync(domainSrc) ? rustSources(domainSrc) : [];

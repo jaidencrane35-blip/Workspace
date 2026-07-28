@@ -11,6 +11,7 @@ use crate::workspace_cognitive_graph::{CognitiveGraphHistoryEntry, CognitiveGrap
 use crate::workspace_cognitive_orchestration::{
     OrchestrationHistoryEntry, WorkspaceOrchestrationSnapshot,
 };
+use crate::workspace_learning_adaptation::{LearningHistoryEntry, LearningSnapshot};
 use crate::workspace_reasoning_memory::{ReasoningHistoryEntry, ReasoningSnapshot};
 
 /// Documented startup in-progress sweep cap (must match
@@ -110,6 +111,24 @@ pub fn recovery_must_not_fabricate_orchestration(
 /// Fabricated actionable orchestration history must fail the recovery contract.
 pub fn recovery_must_not_fabricate_actionable_orchestration_history(
     entry: &OrchestrationHistoryEntry,
+) -> bool {
+    entry.is_non_actionable()
+}
+
+/// Missing learning remains missing — never invent lessons/success/failure on restart.
+pub fn recovery_must_not_fabricate_learning(snapshot: &LearningSnapshot) -> bool {
+    snapshot.is_non_commandable()
+        && snapshot.history.iter().all(|h| h.is_non_actionable())
+        && snapshot
+            .current
+            .as_ref()
+            .map(|c| c.is_non_executing())
+            .unwrap_or(true)
+}
+
+/// Fabricated actionable learning history must fail the recovery contract.
+pub fn recovery_must_not_fabricate_actionable_learning_history(
+    entry: &LearningHistoryEntry,
 ) -> bool {
     entry.is_non_actionable()
 }
@@ -286,5 +305,30 @@ mod tests {
             authority_effect: "none".into(),
         };
         assert!(!recovery_must_not_fabricate_actionable_orchestration_history(&bad));
+    }
+
+    #[test]
+    fn recovery_never_fabricates_learning_on_empty_snapshot() {
+        let empty = LearningSnapshot::assemble("ws", None, vec![], 0, "t0");
+        assert!(recovery_must_not_fabricate_learning(&empty));
+        assert!(empty.current.is_none());
+    }
+
+    #[test]
+    fn recovery_rejects_actionable_learning_history() {
+        let bad = LearningHistoryEntry {
+            learning_id: "learning:1".into(),
+            status: "superseded".into(),
+            created_at: "t0".into(),
+            superseded_at: Some("t1".into()),
+            uncertainty: 40,
+            observation_count: 0,
+            pattern_count: 0,
+            adaptation_count: 0,
+            terminal: true,
+            actionable: true,
+            authority_effect: "none".into(),
+        };
+        assert!(!recovery_must_not_fabricate_actionable_learning_history(&bad));
     }
 }

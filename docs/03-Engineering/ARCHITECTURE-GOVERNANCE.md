@@ -227,6 +227,25 @@ See [Cognitive Graph Architecture](../05-AI/COGNITIVE-GRAPH-ARCHITECTURE.md).
 
 See [Cognitive Orchestration Architecture](../05-AI/COGNITIVE-ORCHESTRATION-ARCHITECTURE.md).
 
+## Learning & Adaptation (Programme II Batch 6)
+
+`WorkspaceLearningAdaptationService` owns **meta-evidence / adaptation suggestions only**.
+
+| Property | Value |
+|----------|-------|
+| Lifecycle owner | No |
+| Execution authority | No |
+| Planning / decision authority | No |
+| Evidence / suggestion owner | Yes |
+
+- `LearningHistoryEntry` / `LearningSummary` contain no authority/command fields.
+- Mutation inventory includes `GenerateLearningSnapshot` (baseline floor raised).
+- Learning cannot import execution/launch services or call foreign `generate` paths.
+- Adaptation candidates remain `actionable=false` — never auto-applied.
+- Repository cannot call the learning service.
+
+See [Learning & Adaptation Architecture](../05-AI/LEARNING-ADAPTATION-ARCHITECTURE.md).
+
 ## Capability boundary audit
 
 Enforced by `scripts/architecture-governance-lib.mjs`:

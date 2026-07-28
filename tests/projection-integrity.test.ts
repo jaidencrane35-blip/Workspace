@@ -33,6 +33,11 @@ import {
   isOrchestrationSnapshotNonCommandable,
   orchestrationHistoryCountIsAuthoritative,
 } from "../app/src/components/orchestrationProjection";
+import {
+  isLearningHistoryNonActionable,
+  isLearningSnapshotNonCommandable,
+  learningHistoryCountIsAuthoritative,
+} from "../app/src/components/learningProjection";
 import type {
   DecisionArtifactHistoryEntry,
   DecisionEngineSummary,
@@ -52,6 +57,9 @@ import type {
   OrchestrationHistoryEntry,
   WorkspaceOrchestrationSnapshot,
   WorkspaceOrchestrationSummary,
+  LearningHistoryEntry,
+  LearningSnapshot,
+  LearningSummary,
   RecommendationHistoryEntry,
   RecommendationItem,
   TaskGraphSummary,
@@ -872,6 +880,71 @@ describe("projection integrity — cognitive orchestration", () => {
 
     const nonCommand = {
       orchestration_id: "orchestration:1",
+      actionable: false,
+      terminal: true,
+      authority_effect: "none",
+    };
+    expect(Object.keys(nonCommand)).not.toContain("execute");
+    expect(Object.keys(nonCommand)).not.toContain("command");
+    expect(Object.keys(nonCommand)).not.toContain("accept");
+  });
+});
+
+describe("projection integrity — learning adaptation", () => {
+  const historyEntry = (
+    overrides: Partial<LearningHistoryEntry> = {}
+  ): LearningHistoryEntry => ({
+    learning_id: "learning:1",
+    status: "superseded",
+    created_at: "t0",
+    superseded_at: "t1",
+    uncertainty: 40,
+    observation_count: 2,
+    pattern_count: 1,
+    adaptation_count: 1,
+    terminal: true,
+    actionable: false,
+    authority_effect: "none",
+    ...overrides,
+  });
+
+  it("marks learning history as non-actionable", () => {
+    expect(isLearningHistoryNonActionable(historyEntry())).toBe(true);
+    expect(
+      isLearningHistoryNonActionable(
+        historyEntry({ actionable: true, status: "superseded" })
+      )
+    ).toBe(false);
+  });
+
+  it("keeps learning snapshots non-commandable with authoritative history_count", () => {
+    const snapshot: LearningSnapshot = {
+      workspace_id: "ws",
+      generated_at: "t2",
+      current: null,
+      history: [historyEntry()],
+      history_count: 3,
+      authority_effect: "none",
+    };
+    expect(isLearningSnapshotNonCommandable(snapshot)).toBe(true);
+    const summary: LearningSummary = {
+      workspace_id: "ws",
+      generated_at: "t2",
+      has_current: false,
+      learning_id: null,
+      observation_count: 0,
+      pattern_count: 0,
+      adaptation_count: 0,
+      uncertainty: null,
+      history: [historyEntry()],
+      history_count: 3,
+      authority_effect: "none",
+    };
+    expect(learningHistoryCountIsAuthoritative(summary)).toBe(true);
+    expect(summary.history_count).toBeGreaterThanOrEqual(summary.history.length);
+
+    const nonCommand = {
+      learning_id: "learning:1",
       actionable: false,
       terminal: true,
       authority_effect: "none",

@@ -108,6 +108,9 @@ use crate::commands::workspace_cognitive_graph::{
 use crate::commands::workspace_cognitive_orchestration::{
     GenerateWorkspaceOrchestration, GetWorkspaceOrchestration, GetWorkspaceOrchestrationSummary,
 };
+use crate::commands::workspace_learning_adaptation::{
+    GenerateLearningSnapshot, GetLearningSnapshot, GetLearningSummary,
+};
 use crate::commands::zone::{CreateZone, DeleteZone, GetZone};
 use crate::config::{SettingsUpdate, WorkspaceSettings};
 use crate::error::{KernelError, Result};
@@ -166,6 +169,7 @@ use workspace_domain::{
     CognitiveRelation, IntentContext, Layout, PlanningSnapshot, PlanningSummary,
     ReasoningSnapshot, ReasoningSummary, CognitiveGraphSnapshot, CognitiveGraphSummary,
     WorkspaceOrchestrationSnapshot, WorkspaceOrchestrationSummary,
+    LearningSnapshot, LearningSummary,
     LayoutId, LayoutMetadata, LayoutNode, LayoutSnapshot, MemoryEntry, MemoryType,
     ModelProviderDescriptor, ModelResponse, Observation, PersonalizedPlanComparison,
     PreferenceCategory, PreferenceSource, Suggestion, SuggestionIntentRequest,
@@ -2461,6 +2465,42 @@ impl CommandHandler {
     /// Architecture guard — Orchestration must never execute.
     pub fn workspace_cognitive_orchestration_attempt_execute() -> Result<()> {
         crate::services::WorkspaceCognitiveOrchestrationService::attempt_execute()
+    }
+
+    pub fn generate_learning_snapshot(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<LearningSnapshot> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_mutation(GenerateLearningSnapshot::new(workspace_id))
+    }
+
+    pub fn get_learning_snapshot(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<LearningSnapshot> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetLearningSnapshot::new(workspace_id))
+    }
+
+    pub fn get_learning_summary(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        history_limit: usize,
+    ) -> Result<LearningSummary> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetLearningSummary::new(workspace_id, history_limit))
+    }
+
+    /// Architecture guard — Learning must never execute.
+    pub fn workspace_learning_adaptation_attempt_execute() -> Result<()> {
+        crate::services::WorkspaceLearningAdaptationService::attempt_execute()
     }
 
     #[allow(clippy::too_many_arguments)]

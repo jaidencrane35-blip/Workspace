@@ -103,6 +103,7 @@ AI behaviour, permissions, and boundaries.
 | [Reasoning Memory Architecture](05-AI/REASONING-MEMORY-ARCHITECTURE.md) | Batch 3 reasoning evidence / reflection layer |
 | [Cognitive Graph Architecture](05-AI/COGNITIVE-GRAPH-ARCHITECTURE.md) | Batch 4 cross-domain reference-only topology |
 | [Cognitive Orchestration Architecture](05-AI/COGNITIVE-ORCHESTRATION-ARCHITECTURE.md) | Batch 5 non-executing coordination / refresh ordering |
+| [Learning & Adaptation Architecture](05-AI/LEARNING-ADAPTATION-ARCHITECTURE.md) | Batch 6 observational learning / suggestion-only adaptation |
 | [Memory Policy](05-AI/MEMORY-POLICY.md) | What may be stored, retention, user control, deletion |
 | [Confidence Policy](05-AI/CONFIDENCE-POLICY.md) | Confidence levels, suggestion thresholds, uncertainty |
 | [AI Architecture Index](05-AI/README.md) | Navigation hub for Recommendation/Decision/Governance contracts |
