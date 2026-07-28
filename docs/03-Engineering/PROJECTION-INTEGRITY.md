@@ -261,6 +261,21 @@ Rules:
 - React may inspect — no mutation, replay, or command conversion.
 - Restart reconstructs durable current + history; missing reconstruction remains missing.
 
+### Temporal Intelligence (Programme III Batch 4)
+
+- **Current:** `TemporalIntelligenceSnapshot.current` — windowed analysis, revision-chain
+  summary, conflict explanations, diagnostic evidence-quality assessment. Understanding
+  projection only; never simulate, forecast, repair, or replay.
+- **History:** superseded analyses via append-only
+  `workspace_temporal_intelligence_history` → `TemporalIntelligenceHistoryEntry`
+  (`terminal: true`, `actionable: false`, `authority_effect: none`).
+- **`history_count`** is authoritative; summary windows may truncate `history`.
+- Completeness: Complete / Partial / Unknown / Contradictory / Unavailable.
+- Observed sequence ≠ cause. Evidence quality ≠ correctness. Conflicts are explained, not resolved.
+- `ExplainTemporalChange` is explanation-only.
+- React may inspect — no mutation, forecast, or command conversion.
+- Restart reconstructs durable current + history; missing analysis remains missing.
+
 ## Serde defaults vs TypeScript required fields
 
 Rust history fields often use `#[serde(default)]` so older persisted / in-flight JSON

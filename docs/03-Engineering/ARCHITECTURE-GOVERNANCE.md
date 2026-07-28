@@ -347,6 +347,26 @@ See [Policy & Governance Architecture](../05-AI/POLICY-GOVERNANCE-ARCHITECTURE.m
 
 See [Historical Workspace Reconstruction Architecture](../05-AI/HISTORICAL-WORKSPACE-RECONSTRUCTION-ARCHITECTURE.md).
 
+## Temporal Intelligence (Programme III Batch 4)
+
+`WorkspaceTemporalIntelligenceService` owns **temporal analysis / understanding evidence only**.
+
+| Property | Value |
+|----------|-------|
+| Lifecycle owner | No |
+| Execution / replay / simulation / forecast authority | No |
+| Source of truth | No |
+| Temporal analysis / projection owner | Yes |
+
+- `TemporalIntelligenceHistoryEntry` / `TemporalIntelligenceSummary` contain no authority/command fields.
+- Mutation inventory includes `GenerateTemporalAnalysis` (baseline floor raised).
+- Temporal intelligence cannot import lifecycle/execution services or call `PermissionGateway`.
+- Temporal intelligence cannot silently refresh foreign sources via `generate`.
+- Observed sequence ≠ cause. Evidence quality ≠ correctness. Conflicts explained, not resolved.
+- Repository cannot call the temporal intelligence service.
+
+See [Temporal Intelligence Architecture](../05-AI/TEMPORAL-INTELLIGENCE-ARCHITECTURE.md).
+
 ## Capability boundary audit
 
 Enforced by `scripts/architecture-governance-lib.mjs`:

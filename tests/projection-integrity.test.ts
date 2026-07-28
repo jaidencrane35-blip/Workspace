@@ -63,6 +63,11 @@ import {
   isHistoricalReconstructionHistoryNonActionable,
   isHistoricalReconstructionSnapshotNonCommandable,
 } from "../app/src/components/historicalReconstructionProjection";
+import {
+  isTemporalIntelligenceHistoryNonActionable,
+  isTemporalIntelligenceSnapshotNonCommandable,
+  temporalIntelligenceHistoryCountIsAuthoritative,
+} from "../app/src/components/temporalIntelligenceProjection";
 import type {
   DecisionArtifactHistoryEntry,
   DecisionEngineSummary,
@@ -100,6 +105,9 @@ import type {
   HistoricalReconstructionHistoryEntry,
   HistoricalReconstructionSnapshot,
   HistoricalReconstructionSummary,
+  TemporalIntelligenceHistoryEntry,
+  TemporalIntelligenceSnapshot,
+  TemporalIntelligenceSummary,
   RecommendationHistoryEntry,
   RecommendationItem,
   TaskGraphSummary,
@@ -1317,6 +1325,68 @@ describe("projection integrity — cognitive agent cast", () => {
     expect(Object.keys(nonCommand)).not.toContain("execute");
     expect(Object.keys(nonCommand)).not.toContain("replay");
     expect(Object.keys(nonCommand)).not.toContain("restore");
+  });
+
+  it("keeps temporal intelligence snapshots non-commandable with authoritative history_count", () => {
+    const historyEntry = (
+      overrides: Partial<TemporalIntelligenceHistoryEntry> = {}
+    ): TemporalIntelligenceHistoryEntry => ({
+      analysis_id: "temporal_analysis:1",
+      status: "superseded",
+      created_at: "t0",
+      superseded_at: "t1",
+      from_revision: "rev:a",
+      to_revision: "rev:b",
+      completeness: "partial",
+      conflict_count: 1,
+      gap_count: 0,
+      chain_ref_count: 2,
+      terminal: true,
+      actionable: false,
+      authority_effect: "none",
+      ...overrides,
+    });
+    const snapshot: TemporalIntelligenceSnapshot = {
+      workspace_id: "ws",
+      generated_at: "t2",
+      current: null,
+      history: [historyEntry()],
+      history_count: 3,
+      authority_effect: "none",
+    };
+    expect(isTemporalIntelligenceSnapshotNonCommandable(snapshot)).toBe(true);
+    expect(isTemporalIntelligenceHistoryNonActionable(historyEntry())).toBe(true);
+    expect(
+      isTemporalIntelligenceHistoryNonActionable(historyEntry({ actionable: true }))
+    ).toBe(false);
+
+    const summary: TemporalIntelligenceSummary = {
+      workspace_id: "ws",
+      generated_at: "t2",
+      has_current: false,
+      analysis_id: null,
+      from_revision: null,
+      to_revision: null,
+      completeness: null,
+      conflict_count: 0,
+      gap_count: 0,
+      history: [historyEntry()],
+      history_count: 3,
+      authority_effect: "none",
+    };
+    expect(temporalIntelligenceHistoryCountIsAuthoritative(summary)).toBe(true);
+    expect(summary.history_count).toBeGreaterThanOrEqual(summary.history.length);
+
+    const nonCommand = {
+      analysis_id: "temporal_analysis:1",
+      actionable: false,
+      terminal: true,
+      authority_effect: "none",
+    };
+    expect(Object.keys(nonCommand)).not.toContain("execute");
+    expect(Object.keys(nonCommand)).not.toContain("simulate");
+    expect(Object.keys(nonCommand)).not.toContain("forecast");
+    expect(Object.keys(nonCommand)).not.toContain("repair");
   });
 });
 

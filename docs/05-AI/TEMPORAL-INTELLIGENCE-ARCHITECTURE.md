@@ -4,7 +4,7 @@
 |-------|-------|
 | **Purpose** | Deepen historical understanding — organise, scope, and surface durable reconstruction evidence without inventing futures or rewriting pasts |
 | **Owner** | `WorkspaceTemporalIntelligenceService` (DurableStore — **understanding evidence only**) |
-| **Status** | Charter draft — pending review before implementation |
+| **Status** | Active — Programme III Batch 4 implemented |
 | **Lifecycle owner** | No |
 | **Execution / replay authority** | No |
 | **Simulation / forecast authority** | No |
@@ -262,18 +262,18 @@ Primary inputs (Batch 4 minimum):
 
 **No hidden source scraping. No lifecycle inspection shortcuts. No silent regeneration.**
 
-## Service contract (planned)
+## Service contract
 
 ### `WorkspaceTemporalIntelligenceService`
 
 Responsibilities:
 
-- accept a `TemporalWindow`
+- accept a `TemporalAnalysisWindow`
 - load durable reconstruction / envelope evidence within bounds
 - compose chain summaries and conflict explanations
 - record understanding completeness and evidence-quality signals
-- produce evidence-backed narratives
-- persist understanding artefacts (read-model)
+- produce evidence-backed sequence narratives
+- persist analysis artefacts (read-model)
 
 Must **not**:
 
@@ -290,15 +290,14 @@ Negative guards (tests): `attempt_execute`, `attempt_replay`, `attempt_simulate`
 `attempt_forecast`, `attempt_mutate_lifecycle`, `attempt_fabricate_cause`,
 `attempt_silent_refresh`.
 
-## Commands (planned)
+## Commands
 
 | Command | Kind | Capability | Purpose |
 |---------|------|------------|---------|
-| `GenerateTemporalUnderstanding` | Mutation | `work_context.write` | Persist an understanding artefact for a window |
-| `GetTemporalUnderstanding` | Query | `work_context.read` | Load current understanding snapshot |
-| `GetTemporalUnderstandingSummary` | Query | `work_context.read` | Summary + authoritative `history_count` |
-| `ExplainTemporalConflicts` | Query | `work_context.read` | Conflict explanation surface (evidence-backed) |
-| `SummariseRevisionChain` | Query | `work_context.read` | Long-chain summary without requiring a new persisted current |
+| `GenerateTemporalAnalysis` | Mutation | `work_context.write` | Persist an analysis artefact for a window |
+| `GetTemporalAnalysis` | Query | `work_context.read` | Load current analysis snapshot |
+| `GetTemporalSummary` | Query | `work_context.read` | Summary + authoritative `history_count` |
+| `ExplainTemporalChange` | Query | `work_context.read` | Evidence-backed sequence explanation surface |
 
 All commands:
 
@@ -308,7 +307,7 @@ IPC → CommandPipeline → PermissionGateway → WorkspaceTemporalIntelligenceS
 
 No repair commands. No simulate / forecast commands. No lifecycle controls.
 
-## Persistence (planned)
+## Persistence
 
 | Artefact | Role |
 |----------|------|
@@ -358,25 +357,25 @@ Recovery helpers (domain predicates):
 
 No recovery system may “repair” history or invent futures.
 
-## Governance additions (planned)
+## Governance additions
 
-Increase mutation baseline when `GenerateTemporalUnderstanding` lands.
+Mutation baseline includes `GenerateTemporalAnalysis`.
 
-Add guards detecting:
+Guards detect:
 
 - temporal intelligence importing lifecycle / execution / launch services
 - simulate / forecast / replay command paths
 - history / projection DTO command / authority fields
-- foreign `::generate` silent refresh from understanding compose path
+- foreign `::generate` silent refresh from analysis compose path
 - repository → service ownership leaks
 - source-domain writes from temporal intelligence repository
 
-Add ownership registry entries:
+Ownership registry entries:
 
 - `temporal_intelligence`
 - `temporal_intelligence_snapshot`
 
-History / projection DTO inventories gain:
+History / projection DTO inventories include:
 
 - `TemporalIntelligenceHistoryEntry`
 - `TemporalIntelligenceSummary`
@@ -442,13 +441,10 @@ Accept implementation only when:
 
 ## Review gate
 
-**This document is a charter/contract draft.**
+**Charter accepted (Architecture grade A).** Implementation proceeds only against this contract —
+no simulator, no forecaster, no SoT elevation, no autonomous correction.
 
-Do **not** begin Batch 4 implementation until this charter is reviewed and explicitly approved.
-After approval, implement only the contract herein — no simulator, no forecaster, no SoT elevation,
-no autonomous correction.
-
-Exercise the reconstruction layer against real complexity before expanding scope further.
+Observed sequence ≠ Cause unless causal evidence explicitly exists.
 
 ## Related
 

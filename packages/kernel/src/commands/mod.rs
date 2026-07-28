@@ -21,6 +21,7 @@ mod workspace_cognitive_autonomy;
 mod workspace_state_envelope;
 mod policy_governance;
 mod historical_reconstruction;
+mod temporal_intelligence;
 mod workspace_purpose;
 mod workspace_evolution;
 mod workspace_recommendation;
@@ -146,6 +147,8 @@ mod workspace_state_envelope_tests;
 mod policy_governance_tests;
 #[cfg(test)]
 mod historical_reconstruction_tests;
+#[cfg(test)]
+mod temporal_intelligence_tests;
 #[cfg(test)]
 mod workspace_attention_tests;
 #[cfg(test)]
@@ -450,5 +453,8 @@ pub use policy_governance::{
 pub use historical_reconstruction::{
     CompareWorkspaceRevisions, ExplainHistoricalChange, GenerateHistoricalWorkspaceView,
     GetHistoricalWorkspaceSummary, GetHistoricalWorkspaceView,
+};
+pub use temporal_intelligence::{
+    ExplainTemporalChange, GenerateTemporalAnalysis, GetTemporalAnalysis, GetTemporalSummary,
 };
 pub use zone::{CreateZone, DeleteZone, GetZone};

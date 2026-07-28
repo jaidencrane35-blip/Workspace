@@ -3141,6 +3141,128 @@ export interface HistoricalChangeExplanation {
   actionable: boolean;
 }
 
+export interface TemporalAnalysisWindow {
+  from_revision: string | null;
+  to_revision: string | null;
+  from_observed_at: string | null;
+  to_observed_at: string | null;
+  max_chain_length: number;
+  theme: string | null;
+}
+
+export interface RevisionChainSummary {
+  chain_id: string;
+  ordered_refs: string[];
+  observed_transitions: string[];
+  unchanged_spans: string[];
+  gap_spans: string[];
+  completeness: string;
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface TemporalConflictExplanation {
+  conflict_id: string;
+  subject_refs: string[];
+  description: string;
+  evidence_refs: string[];
+  uncertainty: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface EvidenceQualityAssessment {
+  assessment_id: string;
+  completeness: string;
+  provenance_coverage: number;
+  source_availability: string;
+  contradiction_density: number;
+  uncertainty: string[];
+  limitations: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface TemporalProvenanceLink {
+  external_ref: string;
+  kind: string;
+}
+
+export interface TemporalAnalysisView {
+  analysis_id: string;
+  workspace_id: string;
+  window: TemporalAnalysisWindow;
+  generated_at: string;
+  status: string;
+  superseded_at: string | null;
+  chain_summary: RevisionChainSummary;
+  conflict_explanations: TemporalConflictExplanation[];
+  evidence_quality: EvidenceQualityAssessment;
+  completeness: string;
+  gaps: EvidenceGap[];
+  provenance_links: TemporalProvenanceLink[];
+  narrative: string;
+  authority_effect: string;
+  actionable: boolean;
+  terminal: boolean;
+}
+
+export interface TemporalIntelligenceHistoryEntry {
+  analysis_id: string;
+  status: string;
+  created_at: string;
+  superseded_at: string | null;
+  from_revision: string | null;
+  to_revision: string | null;
+  completeness: string;
+  conflict_count: number;
+  gap_count: number;
+  chain_ref_count: number;
+  terminal: boolean;
+  actionable: boolean;
+  authority_effect: string;
+}
+
+export interface TemporalIntelligenceSnapshot {
+  workspace_id: string;
+  generated_at: string;
+  current: TemporalAnalysisView | null;
+  history: TemporalIntelligenceHistoryEntry[];
+  history_count: number;
+  authority_effect: string;
+}
+
+export interface TemporalIntelligenceSummary {
+  workspace_id: string;
+  generated_at: string;
+  has_current: boolean;
+  analysis_id: string | null;
+  from_revision: string | null;
+  to_revision: string | null;
+  completeness: string | null;
+  conflict_count: number;
+  gap_count: number;
+  history: TemporalIntelligenceHistoryEntry[];
+  history_count: number;
+  authority_effect: string;
+}
+
+export interface TemporalChangeExplanation {
+  explanation_id: string;
+  workspace_id: string;
+  from_revision: string | null;
+  to_revision: string | null;
+  completeness: string | null;
+  observed_sequences: string[];
+  conflict_descriptions: string[];
+  evidence_refs: string[];
+  gaps: string[];
+  uncertainty: string[];
+  narrative: string;
+  authority_effect: string;
+  actionable: boolean;
+}
+
 export type WindowIdentityConfidence = "high" | "medium" | "low" | "ephemeral";
 
 export interface WorkspaceObservationPass {

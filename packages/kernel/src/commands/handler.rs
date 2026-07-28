@@ -128,6 +128,9 @@ use crate::commands::historical_reconstruction::{
     CompareWorkspaceRevisions, ExplainHistoricalChange, GenerateHistoricalWorkspaceView,
     GetHistoricalWorkspaceSummary, GetHistoricalWorkspaceView,
 };
+use crate::commands::temporal_intelligence::{
+    ExplainTemporalChange, GenerateTemporalAnalysis, GetTemporalAnalysis, GetTemporalSummary,
+};
 use crate::commands::zone::{CreateZone, DeleteZone, GetZone};
 use crate::config::{SettingsUpdate, WorkspaceSettings};
 use crate::error::{KernelError, Result};
@@ -193,6 +196,7 @@ use workspace_domain::{
     PolicyGovernanceSnapshot, PolicyGovernanceSummary, GovernanceExplanation,
     HistoricalChangeExplanation, HistoricalReconstructionSnapshot, HistoricalReconstructionSummary,
     RevisionComparison,
+    TemporalChangeExplanation, TemporalIntelligenceSnapshot, TemporalIntelligenceSummary,
     LayoutId, LayoutMetadata, LayoutNode, LayoutSnapshot, MemoryEntry, MemoryType,
     ModelProviderDescriptor, ModelResponse, Observation, PersonalizedPlanComparison,
     PreferenceCategory, PreferenceSource, Suggestion, SuggestionIntentRequest,
@@ -2739,6 +2743,52 @@ impl CommandHandler {
     /// Architecture guard — Historical reconstruction cannot execute / replay.
     pub fn historical_reconstruction_attempt_execute() -> Result<()> {
         crate::services::WorkspaceHistoricalReconstructionService::attempt_execute()
+    }
+
+    pub fn generate_temporal_analysis(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<TemporalIntelligenceSnapshot> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_mutation(GenerateTemporalAnalysis::new(workspace_id))
+    }
+
+    pub fn get_temporal_analysis(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<TemporalIntelligenceSnapshot> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetTemporalAnalysis::new(workspace_id))
+    }
+
+    pub fn get_temporal_summary(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        history_limit: usize,
+    ) -> Result<TemporalIntelligenceSummary> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetTemporalSummary::new(workspace_id, history_limit))
+    }
+
+    pub fn explain_temporal_change(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<TemporalChangeExplanation> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(ExplainTemporalChange::new(workspace_id))
+    }
+
+    /// Architecture guard — Temporal intelligence cannot execute / simulate / forecast.
+    pub fn temporal_intelligence_attempt_execute() -> Result<()> {
+        crate::services::WorkspaceTemporalIntelligenceService::attempt_execute()
     }
 
     #[allow(clippy::too_many_arguments)]

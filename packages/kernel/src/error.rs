@@ -15,7 +15,7 @@ use workspace_domain::{
     WorkspaceCognitiveGraphError, WorkspaceCognitiveOrchestrationError,
     WorkspaceLearningAdaptationError, WorkspaceCognitiveAgentCastError,
     WorkspaceCognitiveAutonomyError, WorkspaceStateEnvelopeError, PolicyGovernanceError,
-    HistoricalReconstructionError,
+    HistoricalReconstructionError, TemporalIntelligenceError,
     WorkspaceSessionError,
     WorkspaceTransitionError,
     WorkspaceWorkContextError, WorkspaceWorkingStyleError,
@@ -264,6 +264,9 @@ pub enum KernelError {
 
     #[error("Historical reconstruction validation failed: {message}")]
     HistoricalReconstructionValidation { message: String },
+
+    #[error("Temporal intelligence validation failed: {message}")]
+    TemporalIntelligenceValidation { message: String },
 
     #[error("Workspace intelligence validation failed: {message}")]
     WorkspaceIntelligenceValidation { message: String },
@@ -600,6 +603,17 @@ impl From<HistoricalReconstructionError> for KernelError {
         match error {
             HistoricalReconstructionError::Domain(domain) => KernelError::from(domain),
             other => KernelError::HistoricalReconstructionValidation {
+                message: other.to_string(),
+            },
+        }
+    }
+}
+
+impl From<TemporalIntelligenceError> for KernelError {
+    fn from(error: TemporalIntelligenceError) -> Self {
+        match error {
+            TemporalIntelligenceError::Domain(domain) => KernelError::from(domain),
+            other => KernelError::TemporalIntelligenceValidation {
                 message: other.to_string(),
             },
         }
@@ -1294,6 +1308,10 @@ impl KernelError {
             },
             KernelError::HistoricalReconstructionValidation { message } => PublicError {
                 code: "historical_reconstruction_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::TemporalIntelligenceValidation { message } => PublicError {
+                code: "temporal_intelligence_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::WorkspaceIntelligenceValidation { message } => PublicError {
