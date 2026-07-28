@@ -109,6 +109,7 @@ AI behaviour, permissions, and boundaries.
 | [Programme III — Coherent Workspace Runtime](05-AI/PROGRAMME-III-COHERENT-WORKSPACE-RUNTIME.md) | Multi-batch coherent runtime programme charter |
 | [Unified Workspace State Architecture](05-AI/UNIFIED-WORKSPACE-STATE-ARCHITECTURE.md) | Programme III Batch 1 composition envelope |
 | [Policy & Governance Architecture](05-AI/POLICY-GOVERNANCE-ARCHITECTURE.md) | Programme III Batch 2 policy reasoning / evaluation evidence |
+| [Historical Workspace Reconstruction Architecture](05-AI/HISTORICAL-WORKSPACE-RECONSTRUCTION-ARCHITECTURE.md) | Programme III Batch 3 charter — temporal reconstruction (pending review) |
 | [Memory Policy](05-AI/MEMORY-POLICY.md) | What may be stored, retention, user control, deletion |
 | [Confidence Policy](05-AI/CONFIDENCE-POLICY.md) | Confidence levels, suggestion thresholds, uncertainty |
 | [AI Architecture Index](05-AI/README.md) | Navigation hub for Recommendation/Decision/Governance contracts |
