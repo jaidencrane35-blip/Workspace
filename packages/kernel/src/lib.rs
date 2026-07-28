@@ -184,7 +184,6 @@ impl WorkspaceKernel {
     }
 
     pub fn begin_shutdown(&mut self) {
-        self.observation_scheduler.stop();
         CommandHandler::shutdown(self);
     }
 
@@ -386,10 +385,15 @@ mod tests {
     #[test]
     fn shutdown_policy_denial_blocks_transition_and_is_audited() {
         let mut kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+        kernel.start_observation_scheduler(
+            ObservationScheduleConfig::enabled_with_interval(60),
+        );
+        assert!(kernel.observation_scheduler().is_running());
         kernel.permission_policy = Arc::new(DenyShutdownPolicy);
         kernel.begin_shutdown();
 
         assert_eq!(kernel.state().lifecycle, LifecycleState::Ready);
+        assert!(kernel.observation_scheduler().is_running());
         let history = AuditService::list_recent(&kernel.shared_database(), 30).unwrap();
         assert!(history.iter().any(|record| {
             record.event_type == "permission.denied"
@@ -398,6 +402,7 @@ mod tests {
         assert!(!history
             .iter()
             .any(|record| record.event_type == "system.workspace.shutdown"));
+        kernel.observation_scheduler_mut().stop();
     }
 
     #[test]

@@ -4147,6 +4147,7 @@ impl CommandHandler {
             log::error!("ShutdownWorkspace lifecycle transition rejected: {error}");
             return;
         }
+        kernel.observation_scheduler_mut().stop();
         kernel.event_bus().publish(DomainEvent::WorkspaceShutdown(WorkspaceShutdown {
             actor: Some(actor_context),
             intent: Some(intent_context),
