@@ -4,7 +4,7 @@
 |-------|-------|
 | **Purpose** | Deepen historical understanding — organise, scope, and surface durable reconstruction evidence without inventing futures or rewriting pasts |
 | **Owner** | `WorkspaceTemporalIntelligenceService` (DurableStore — **understanding evidence only**) |
-| **Status** | Active — Programme III Batch 4 implemented |
+| **Status** | Active — Programme III Batch 4 accepted |
 | **Lifecycle owner** | No |
 | **Execution / replay authority** | No |
 | **Simulation / forecast authority** | No |

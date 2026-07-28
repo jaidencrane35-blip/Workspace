@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | **Purpose** | Establish one provenance-rich, read-only runtime view of operational, cognitive, governance, and evidence state while preserving all existing lifecycle and persistence authorities |
-| **Status** | Active — Batch 4 Temporal Intelligence implemented |
+| **Status** | Active — Batch 4 accepted; Batch 5 charter drafted (pending review) |
 | **Depends on** | Programme I governance / recovery; Programme II cognitive stack |
 | **Non-goals** | Event sourcing; authoritative replay logs; simulation; model hosting; autonomous execution; replacement permission system; replacement for domain-owned projections |
 
@@ -22,6 +22,7 @@
 11. **Unknown context fails closed** — never assume Compliant / safe.
 12. **Reconstruction explains change over time** — it does not become the source of truth; no event sourcing; no replay authority.
 13. **Temporal intelligence organises evidence over time** — it does not predict, simulate, correct, or become truth.
+14. **Explanation Layer explains evidence** — it does not become the authority that changes reality.
 
 ## Batch map
 
@@ -30,8 +31,9 @@
 | **1** | Unified Workspace State Model | Canonical composition envelope | Done (accepted) |
 | **2** | Policy & Governance Engine | Context-aware policy reasoning / evidence | Done (accepted) |
 | **3** | Historical Workspace Reconstruction | Temporal comparison / change explanation | Done (accepted) |
-| **4** | Temporal Intelligence | Historical understanding extensions | Done (implemented) |
-| **5+** | Collaboration / Simulation / Local Intelligence | Build only after reconstruction exercised against real complexity | Planned |
+| **4** | Temporal Intelligence | Historical understanding extensions | Done (accepted) |
+| **5** | Workspace Explanation Layer | Cross-surface evidence-backed explanation | Charter drafted — pending review |
+| **6+** | Collaborative Understanding / Simulation / Local Intelligence | Only after explanation layer accepted + reconstruction exercised | Planned |
 
 ## Batch 2 summary
 
@@ -65,11 +67,23 @@ Commands: `GenerateTemporalAnalysis`, `GetTemporalAnalysis`, `GetTemporalSummary
 `ExplainTemporalChange`.
 See [Temporal Intelligence Architecture](./TEMPORAL-INTELLIGENCE-ARCHITECTURE.md).
 
+## Batch 5 charter (draft)
+
+`WorkspaceExplanationService` will compose evidence-backed explanation packages across
+state, policy, reconstruction, and temporal intelligence surfaces.
+Requested scope selects which upstreams to include; missing upstreams become gaps —
+never invented sections, causes, winners, or futures.
+See [Workspace Explanation Layer Architecture](./WORKSPACE-EXPLANATION-LAYER-ARCHITECTURE.md).
+
+**Do not begin Batch 5 implementation until the charter is reviewed and approved.**
+**Do not expand into simulation, forecasting, autonomous correction, or collaborative decision authority.**
+
 ## Sequencing rule
 
 Ship Batch *N* only when Batch *N−1* has durable contracts, tests, and governance ownership entries.
-Later batches that touch simulation / forecasting remain gated on reconstruction being
-exercised against real complexity.
+Batch 5 implementation is gated on charter review approval.
+Later batches that touch collaboration / simulation / forecasting remain gated on the
+explanation layer being accepted and reconstruction being exercised against real complexity.
 
 ## Related
 
@@ -77,6 +91,7 @@ exercised against real complexity.
 - [Policy & Governance Architecture](./POLICY-GOVERNANCE-ARCHITECTURE.md) (Batch 2)
 - [Historical Workspace Reconstruction Architecture](./HISTORICAL-WORKSPACE-RECONSTRUCTION-ARCHITECTURE.md) (Batch 3)
 - [Temporal Intelligence Architecture](./TEMPORAL-INTELLIGENCE-ARCHITECTURE.md) (Batch 4)
+- [Workspace Explanation Layer Architecture](./WORKSPACE-EXPLANATION-LAYER-ARCHITECTURE.md) (Batch 5 charter)
 - [Programme II — Cognitive Workspace](./PROGRAMME-II-COGNITIVE-WORKSPACE.md)
 - [Projection Integrity](../03-Engineering/PROJECTION-INTEGRITY.md)
 - [Architecture Governance](../03-Engineering/ARCHITECTURE-GOVERNANCE.md)
