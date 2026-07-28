@@ -10,11 +10,12 @@ use crate::commands::zone::CreateZone;
 use crate::error::{KernelError, Result};
 use crate::lifecycle::LifecycleState;
 use crate::security::PermissionSubject;
-use crate::services::ExecutionGuardService;
+use crate::services::{ExecutionGuardService, ExecutionLifecycleService};
 use crate::services::GovernedIntentExecutionService;
 use crate::services::LayoutService;
 use workspace_domain::{
-    ActionIntentRequest, Capability, IntentExecutionRequest, ResourceKind, ResourceRef, WorkspaceId,
+    execution_request_id_for_suggestion, ActionIntentRequest, Capability, IntentExecutionRequest,
+    ResourceKind, ResourceRef, WorkspaceId,
 };
 
 /// Executes a governed intent request derived from an approved suggestion bridge.
@@ -100,7 +101,34 @@ impl MutationCommand for ExecuteIntentRequest {
             Some(ctx.actor_context.actor.id.to_string()),
         )?;
 
-        dispatch_mapped_command(ctx, prepared.command_name, &prepared.action_intent)?;
+        let execution_request_id = execution_request_id_for_suggestion(&self.suggestion_id);
+        ExecutionLifecycleService::claim(
+            &ctx.database,
+            &execution_request_id,
+            &self.suggestion_id,
+            Some(prepared.execution_request.action_intent_id.as_str()),
+        )?;
+
+        if let Err(dispatch_error) =
+            dispatch_mapped_command(ctx, prepared.command_name, &prepared.action_intent)
+        {
+            if let Err(release_error) = ExecutionLifecycleService::release_failed_claim(
+                &ctx.database,
+                &execution_request_id,
+            ) {
+                log::error!(
+                    "execution dispatch failed ({dispatch_error}); claim release also failed: {release_error}"
+                );
+                return Err(release_error);
+            }
+            return Err(dispatch_error);
+        }
+
+        ExecutionLifecycleService::complete(
+            &ctx.database,
+            &execution_request_id,
+            Some(prepared.execution_request.action_intent_id.as_str()),
+        )?;
 
         prepared
             .execution_request

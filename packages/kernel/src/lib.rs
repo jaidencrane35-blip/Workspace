@@ -320,6 +320,87 @@ mod tests {
     }
 
     #[test]
+    fn shutdown_records_permission_gateway_decision() {
+        let mut kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+        kernel.begin_shutdown();
+
+        let history = AuditService::list_recent(&kernel.shared_database(), 30).unwrap();
+        assert!(history.iter().any(|record| {
+            record.event_type == "permission.allowed"
+                && record.command_name.as_deref() == Some("ShutdownWorkspace")
+                && record.actor_type == ActorType::System
+                && record.intent_type == Some(IntentType::SystemShutdown)
+                && record.capability.as_deref() == Some("system.shutdown")
+        }));
+    }
+
+    #[test]
+    fn repeated_shutdown_emits_one_domain_event() {
+        let mut kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+        kernel.begin_shutdown();
+        kernel.begin_shutdown();
+
+        let history = AuditService::list_recent(&kernel.shared_database(), 50).unwrap();
+        assert_eq!(
+            history
+                .iter()
+                .filter(|record| record.event_type == "system.workspace.shutdown")
+                .count(),
+            1
+        );
+        assert_eq!(kernel.state().lifecycle, LifecycleState::ShuttingDown);
+    }
+
+    #[test]
+    fn shutdown_permission_audit_failure_blocks_transition() {
+        let mut kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+        {
+            let db = kernel.shared_database();
+            let guard = db.lock().unwrap();
+            guard
+                .connection()
+                .execute_batch(
+                    "CREATE TRIGGER fail_shutdown_permission_audit
+                     BEFORE INSERT ON audit_events
+                     WHEN NEW.event_type = 'permission.allowed'
+                      AND NEW.command_name = 'ShutdownWorkspace'
+                     BEGIN
+                       SELECT RAISE(FAIL, 'injected shutdown permission audit failure');
+                     END;",
+                )
+                .unwrap();
+        }
+
+        kernel.begin_shutdown();
+        assert_eq!(kernel.state().lifecycle, LifecycleState::Ready);
+    }
+
+    struct DenyShutdownPolicy;
+
+    impl PermissionPolicy for DenyShutdownPolicy {
+        fn evaluate(&self, _context: &PolicyContext) -> Result<PolicyResult> {
+            Ok(PolicyResult::deny("shutdown denied by test policy"))
+        }
+    }
+
+    #[test]
+    fn shutdown_policy_denial_blocks_transition_and_is_audited() {
+        let mut kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+        kernel.permission_policy = Arc::new(DenyShutdownPolicy);
+        kernel.begin_shutdown();
+
+        assert_eq!(kernel.state().lifecycle, LifecycleState::Ready);
+        let history = AuditService::list_recent(&kernel.shared_database(), 30).unwrap();
+        assert!(history.iter().any(|record| {
+            record.event_type == "permission.denied"
+                && record.command_name.as_deref() == Some("ShutdownWorkspace")
+        }));
+        assert!(!history
+            .iter()
+            .any(|record| record.event_type == "system.workspace.shutdown"));
+    }
+
+    #[test]
     fn kernel_initializes_in_memory() {
         let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
         assert!(kernel.state().is_ready());

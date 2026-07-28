@@ -15,9 +15,10 @@ Governed execution must not proceed without durable authorization evidence. Sile
 | Permission Gateway decision | `permission.allowed`, `permission.denied`, `permission.approval_required` | **Fail-closed** | Return `KernelError::AuditPersistence` (`audit_persistence_error`); no allow/deny/approval outcome is returned as executable |
 | Command authorization (pre-handler) | `command.authorized` | **Fail-closed** | Handler is not invoked; no command side effects |
 | Command completion (post-handler) | `command.executed`, `command.failed` | **Documented best-effort exception** | Log persistence failure; preserve original command result/error |
+| Governed intent execution lifecycle | `execution_lifecycle` claim / completion | **Durable idempotency authority** | Claim failure blocks dispatch; unresolved claims block retry; completed rows remain terminal independently of completion audit |
 | Domain-event subscriber / AI operational | domain / AI audit rows | **Documented non-governed-execution exception** | Log and continue; not a CommandPipeline dispatch gate |
 
-There is no internal durable-retry queue. After storage recovers, callers retry the original command. A failed fail-closed attempt leaves no handler side effects, so retry is safe.
+There is no internal durable-retry queue. After storage recovers, callers retry when no execution claim exists. `ExecuteIntentRequest` creates a durable `in_progress` claim before mapped dispatch and marks it `completed` before returning success. Dispatch errors release the claim; unresolved claims remain non-dispatchable for explicit reconciliation.
 
 ## Fail-closed sequence
 
@@ -40,11 +41,13 @@ Once `command.execute` has run, generic rollback is unavailable across heterogen
 
 The durable `command.authorized` row recorded **before** dispatch is the required execution evidence. Completion rows remain desirable for outcome analytics but are not a second dispatch gate.
 
+For `ExecuteIntentRequest`, `execution_lifecycle` is separate from secondary audit: it is the durable idempotency fact keyed by the existing `execution:{suggestion_id}` identity. A missing `command.executed` row therefore cannot make completed execution retryable.
+
 ## Recovery
 
 1. Surface `audit_persistence_error` to the IPC caller (sanitized public code).
 2. Restore audit storage (disk, SQLite integrity, lock health).
-3. Retry the same command; pre-dispatch barriers run again and execute only after evidence persists.
+3. Retry the same command only when no durable execution claim exists. Completed claims return `duplicate_execution`; unresolved claims return `execution_in_progress`.
 
 ## Classification
 

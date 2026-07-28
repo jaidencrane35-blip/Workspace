@@ -379,7 +379,7 @@ classify_execution_outcome_event (pure)
 ExecutionOutcomeService::list_recent → GetExecutionOutcomes (governed, audit.read)
 ```
 
-Outcomes answer whether governed execution completed, failed, or was cancelled. Derived only — no outcome store, no AI feedback loops, no automatic retries. Audit remains authoritative.
+Outcomes answer whether governed execution completed, failed, or was cancelled. Failed and cancelled outcomes remain audit-derived. Durable completed lifecycle rows are merged into the projection so terminal completion does not depend on bounded audit history. There are no AI feedback loops or automatic retries.
 
 **Execution outcome context layer (Sprint 26):**
 
@@ -398,13 +398,14 @@ Execution context enrichment answers "what happened after previous executions?" 
 ```
 ExecuteIntentRequest (governed mutation)
     ↓
-ExecutionGuardService → ExecutionOutcomeService → Audit
+ExecutionGuardService → execution_lifecycle (durable claim/completion)
+                      → ExecutionOutcomeService → Audit (legacy/failure fallback)
     ↓
 Allowed → mapped command dispatch
 AlreadyExecuted → DuplicateExecution (existing failure audit path)
 ```
 
-Idempotency answers "has this execution request already completed?" using audit-derived outcomes and the existing `execution:{suggestion_id}` id. Only successful completions block; failures remain retryable. No idempotency table, no new capability, no IPC.
+Idempotency uses the existing `execution:{suggestion_id}` id. `ExecuteIntentRequest` claims that identity before mapped dispatch, marks it completed after successful dispatch, and releases it when dispatch returns an error. Completed and unresolved in-progress rows block redispatch across audit rollover and restart. Historical completed audits are backfilled during migration. No new capability or IPC is introduced.
 
 **Execution cancellation layer (Sprint 28):**
 
@@ -430,7 +431,7 @@ ExecutionReconciliationService → ExecutionReconciliation
 GetExecutionState (governed, audit.read)
 ```
 
-Reconciliation answers "what is the current interpreted state of `execution:X`?" by folding outcome facts into `Unknown | Completed | Failed | Cancelled` plus `dispatch_allowed` / `cancellation_allowed` flags aligned with Sprint 27–28 rules. No persistence, no mutation, no automation.
+Reconciliation answers "what is the current interpreted state of `execution:X`?" by applying durable lifecycle state first, then folding audit outcomes into `Unknown | InProgress | Completed | Failed | Cancelled`. Durable `InProgress` and `Completed` both block dispatch and cancellation; failed and cancelled audit outcomes retain existing retry semantics. Reconciliation itself remains read-only and non-automating.
 
 **Execution states projection layer (Sprint 30):**
 

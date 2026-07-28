@@ -205,8 +205,8 @@ pub use execution_outcome::{
     ExecutionOutcomeError, ExecutionOutcomeStatus,
 };
 pub use execution_reconciliation::{
-    reconcile_execution_state, reconcile_execution_states, ExecutionReconciliation,
-    ExecutionReconciliationError, ExecutionState,
+    reconcile_execution_state, reconcile_execution_states, ExecutionLifecycleRecord,
+    ExecutionReconciliation, ExecutionReconciliationError, ExecutionState,
 };
 pub use entities::{
     ApplicationLaunchResult, ApplicationReference, WidgetReference, Workspace, Zone,

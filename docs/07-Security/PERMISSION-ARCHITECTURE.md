@@ -48,7 +48,7 @@ Execution (only on Allow)
 | Path | Why |
 |------|-----|
 | `get_settings` (kernel convenience) | Read-only bootstrap helper; not a privileged desktop action |
-| `begin_shutdown` | Lifecycle teardown; audited as System actor |
+| `begin_shutdown` | Mutable lifecycle teardown cannot use immutable `CommandContext`; authorization still routes through `PermissionGateway` and persists the System decision |
 | Test stubs `AlwaysAllowPolicy` / `AllowAllPermissionGate` | **Test-only.** Production `WorkspaceKernel` wires `CapabilityBoundPolicy` + `StandardPermissionGate` |
 
 There is **no production AllowAll path**.

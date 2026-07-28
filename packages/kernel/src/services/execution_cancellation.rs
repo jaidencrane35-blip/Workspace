@@ -11,7 +11,7 @@ use workspace_domain::{
     CancellationRequest, CancellationStatus, ExecutionOutcomeStatus,
 };
 
-use super::ExecutionOutcomeService;
+use super::{ExecutionLifecycleService, ExecutionOutcomeService};
 use crate::error::{KernelError, Result};
 
 const OUTCOME_SCAN_LIMIT: usize = 200;
@@ -43,6 +43,27 @@ impl ExecutionCancellationService {
             return Err(KernelError::ExecutionCancellationValidation {
                 message: "requested_by must not be empty".into(),
             });
+        }
+
+        if let Some(record) = ExecutionLifecycleService::get(db, execution_request_id)? {
+            return match record.state {
+                workspace_domain::ExecutionState::Completed => {
+                    Err(KernelError::CannotCancelCompletedExecution {
+                        execution_request_id: execution_request_id.to_string(),
+                    })
+                }
+                workspace_domain::ExecutionState::InProgress => {
+                    Err(KernelError::ExecutionInProgress {
+                        execution_request_id: execution_request_id.to_string(),
+                    })
+                }
+                state => Err(KernelError::IntegrityViolation {
+                    message: format!(
+                        "invalid durable execution lifecycle state: {}",
+                        state.as_str()
+                    ),
+                }),
+            };
         }
 
         let outcomes = ExecutionOutcomeService::list_recent(db, OUTCOME_SCAN_LIMIT)?;
@@ -84,7 +105,11 @@ impl ExecutionCancellationService {
             .map_err(|error| KernelError::ExecutionCancellationValidation {
                 message: error.to_string(),
             })?;
-        assert_eq!(request.status, CancellationStatus::Requested);
+        if request.status != CancellationStatus::Requested {
+            return Err(KernelError::IntegrityViolation {
+                message: "new cancellation request did not enter requested state".into(),
+            });
+        }
         Ok(request)
     }
 }

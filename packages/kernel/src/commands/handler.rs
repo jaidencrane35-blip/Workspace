@@ -86,6 +86,7 @@ use crate::commands::personalization::{
 use crate::commands::pipeline::CommandPipeline;
 use crate::commands::reject_suggestion::RejectSuggestion;
 use crate::commands::request_execution_cancellation::RequestExecutionCancellation;
+use crate::commands::r#trait::permission_request;
 use crate::commands::update_settings::UpdateSettings;
 use crate::commands::widget::{CreateWidget, DeleteWidget, GetWidget};
 use crate::commands::workspace_intent::{
@@ -97,7 +98,7 @@ use crate::config::{SettingsUpdate, WorkspaceSettings};
 use crate::error::{KernelError, Result};
 use crate::events::types::{DomainEvent, WorkspaceShutdown};
 use crate::lifecycle::LifecycleState;
-use crate::security::{PermissionRequest, PermissionSubject};
+use crate::security::{PermissionGateway, PermissionSubject};
 use crate::services::{
     AiAssistantService, AiEvaluationService, AiOrchestrationService, AiParticipationService,
     AiPlanningService, ConfigurationService, DecisionEngineService, DecisionQueueService,
@@ -4115,16 +4116,28 @@ impl CommandHandler {
     }
 
     pub fn shutdown(kernel: &mut WorkspaceKernel) {
-        let request = PermissionRequest {
-            actor: Actor::system(),
-            intent: Intent::system_shutdown(),
-            capability: Capability::system_shutdown(),
-            command: "ShutdownWorkspace",
-            subject: PermissionSubject::System,
-            target_resource_id: None,
+        let actor_context = ActorContext::system();
+        let intent_context = IntentContext::system_shutdown();
+        let request = permission_request(
+            &actor_context,
+            &intent_context,
+            "ShutdownWorkspace",
+            PermissionSubject::System,
+            Capability::system_shutdown(),
+        );
+        let authorization = {
+            let context = kernel.command_context(actor_context.clone(), intent_context.clone());
+            PermissionGateway::require(
+                &context.database,
+                &context.actor_context,
+                &context.intent_context,
+                context.permission_policy,
+                context.permission_gate,
+                &request,
+                &context.capability_set,
+            )
         };
-
-        if let Err(error) = kernel.permission_gate().require(&request) {
+        if let Err(error) = authorization {
             log::error!("ShutdownWorkspace denied: {error}");
             return;
         }
@@ -4135,8 +4148,8 @@ impl CommandHandler {
             return;
         }
         kernel.event_bus().publish(DomainEvent::WorkspaceShutdown(WorkspaceShutdown {
-            actor: Some(ActorContext::system()),
-            intent: Some(IntentContext::system_shutdown()),
+            actor: Some(actor_context),
+            intent: Some(intent_context),
             capability: Some(Capability::system_shutdown()),
         }));
     }

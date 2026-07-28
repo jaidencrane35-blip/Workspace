@@ -20,6 +20,12 @@ pub enum ExecutionReconciliationError {
 
     #[error("Invalid execution state: {0}")]
     InvalidState(String),
+
+    #[error("Execution lifecycle field '{0}' must not be empty")]
+    EmptyLifecycleField(&'static str),
+
+    #[error("Completed execution lifecycle record requires completed_at")]
+    MissingCompletedAt,
 }
 
 /// Current interpreted state of a single execution request.
@@ -28,6 +34,8 @@ pub enum ExecutionReconciliationError {
 pub enum ExecutionState {
     /// No related outcomes in the provided history.
     Unknown,
+    /// Dispatch was durably claimed and has not reached a terminal update.
+    InProgress,
     /// A successful completion exists — terminal for dispatch and cancel.
     Completed,
     /// Failed without a later completion — retryable and cancellable.
@@ -40,6 +48,7 @@ impl ExecutionState {
     pub fn as_str(&self) -> &'static str {
         match self {
             Self::Unknown => "unknown",
+            Self::InProgress => "in_progress",
             Self::Completed => "completed",
             Self::Failed => "failed",
             Self::Cancelled => "cancelled",
@@ -49,11 +58,53 @@ impl ExecutionState {
     pub fn parse(value: &str) -> Result<Self, ExecutionReconciliationError> {
         match value {
             "unknown" => Ok(Self::Unknown),
+            "in_progress" => Ok(Self::InProgress),
             "completed" => Ok(Self::Completed),
             "failed" => Ok(Self::Failed),
             "cancelled" => Ok(Self::Cancelled),
             _ => Err(ExecutionReconciliationError::InvalidState(value.to_string())),
         }
+    }
+}
+
+/// Durable execution lifecycle fact keyed by the canonical execution request id.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ExecutionLifecycleRecord {
+    pub execution_request_id: String,
+    pub suggestion_id: String,
+    pub intent_id: Option<String>,
+    pub state: ExecutionState,
+    pub claimed_at: String,
+    pub completed_at: Option<String>,
+    pub updated_at: String,
+}
+
+impl ExecutionLifecycleRecord {
+    pub fn validate(&self) -> Result<(), ExecutionReconciliationError> {
+        for (name, value) in [
+            ("execution_request_id", self.execution_request_id.as_str()),
+            ("suggestion_id", self.suggestion_id.as_str()),
+            ("claimed_at", self.claimed_at.as_str()),
+            ("updated_at", self.updated_at.as_str()),
+        ] {
+            if value.trim().is_empty() {
+                return Err(ExecutionReconciliationError::EmptyLifecycleField(name));
+            }
+        }
+        if !matches!(self.state, ExecutionState::InProgress | ExecutionState::Completed) {
+            return Err(ExecutionReconciliationError::InvalidState(
+                self.state.as_str().into(),
+            ));
+        }
+        if self.state == ExecutionState::Completed
+            && self
+                .completed_at
+                .as_deref()
+                .is_none_or(|value| value.trim().is_empty())
+        {
+            return Err(ExecutionReconciliationError::MissingCompletedAt);
+        }
+        Ok(())
     }
 }
 
@@ -188,6 +239,24 @@ mod tests {
         assert!(!result.dispatch_allowed);
         assert!(!result.cancellation_allowed);
         assert!(result.validate().is_ok());
+    }
+
+    #[test]
+    fn durable_in_progress_record_is_valid_and_non_dispatchable() {
+        let record = ExecutionLifecycleRecord {
+            execution_request_id: "execution:s-1".into(),
+            suggestion_id: "s-1".into(),
+            intent_id: Some("intent:test".into()),
+            state: ExecutionState::InProgress,
+            claimed_at: "2026-07-28T00:00:00Z".into(),
+            completed_at: None,
+            updated_at: "2026-07-28T00:00:00Z".into(),
+        };
+        assert!(record.validate().is_ok());
+        assert_eq!(
+            ExecutionState::parse("in_progress").unwrap(),
+            ExecutionState::InProgress
+        );
     }
 
     #[test]

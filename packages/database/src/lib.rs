@@ -18,7 +18,8 @@ pub use migration::MigrationRunner;
 pub use repositories::{
     AiMemoryRepository, ApplicationRepository, AuditRepository, AutomationContractRepository,
     AutomationTriggerRepository, DecisionEngineRepository, DecisionQueueRepository, GraphRepository,
-    LayoutRepository, PermissionApprovalRepository, RecommendationLifecycleRepository,
+    ExecutionLifecycleRepository, LayoutRepository, PermissionApprovalRepository,
+    RecommendationLifecycleRepository,
     TaskGraphRepository, UserPreferenceRepository,
     WidgetRepository, WorkspaceProfileRepository, ObservationMonitorRepository,
     ObservationPassRepository, ObservationWindowIdentityRepository, ObservationWindowRepository,

@@ -102,6 +102,7 @@ export interface ExecutionOutcome {
 
 export type ExecutionState =
   | "unknown"
+  | "in_progress"
   | "completed"
   | "failed"
   | "cancelled";

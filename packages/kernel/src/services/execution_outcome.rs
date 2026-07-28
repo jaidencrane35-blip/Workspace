@@ -8,7 +8,7 @@ use std::sync::{Arc, Mutex};
 use workspace_database::Database;
 use workspace_domain::{outcome_from_audit_event, ExecutionOutcome};
 
-use super::AuditService;
+use super::{AuditService, ExecutionLifecycleService};
 use crate::error::{KernelError, Result};
 
 const MAX_AUDIT_SCAN: usize = 500;
@@ -26,10 +26,20 @@ impl ExecutionOutcomeService {
         let audit_events = AuditService::list_recent(db, scan)?;
 
         let mut outcomes = Vec::new();
+        let mut durable_completed = std::collections::HashSet::new();
+        for record in ExecutionLifecycleService::list_recent(db, limit)? {
+            if let Some(outcome) = ExecutionLifecycleService::completed_outcome(&record)? {
+                durable_completed.insert(outcome.execution_request_id.clone());
+                outcomes.push(outcome);
+            }
+        }
         for event in audit_events {
             let Some(outcome) = outcome_from_audit_event(&event) else {
                 continue;
             };
+            if durable_completed.contains(&outcome.execution_request_id) {
+                continue;
+            }
 
             outcome
                 .validate()
@@ -44,6 +54,7 @@ impl ExecutionOutcomeService {
             }
         }
 
+        outcomes.truncate(limit.max(1));
         Ok(outcomes)
     }
 }

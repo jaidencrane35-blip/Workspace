@@ -35,6 +35,8 @@ export const PUBLIC_ERROR_CODES = [
   "execution_cancellation_validation_error",
   "execution_context_validation_error",
   "execution_guard_validation_error",
+  "execution_in_progress",
+  "execution_lifecycle_persistence_error",
   "execution_outcome_validation_error",
   "execution_reconciliation_validation_error",
   "initialization_failed",

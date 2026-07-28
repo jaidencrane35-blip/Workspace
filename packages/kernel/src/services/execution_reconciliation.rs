@@ -9,7 +9,7 @@ use std::sync::{Arc, Mutex};
 use workspace_database::Database;
 use workspace_domain::{reconcile_execution_state, reconcile_execution_states, ExecutionReconciliation};
 
-use super::ExecutionOutcomeService;
+use super::{ExecutionLifecycleService, ExecutionOutcomeService};
 use crate::error::{KernelError, Result};
 
 const OUTCOME_SCAN_LIMIT: usize = 200;
@@ -30,6 +30,16 @@ impl ExecutionReconciliationService {
             });
         }
 
+        if let Some(record) = ExecutionLifecycleService::get(db, execution_request_id)? {
+            let reconciliation = ExecutionLifecycleService::reconciliation(&record);
+            reconciliation.validate().map_err(|error| {
+                KernelError::ExecutionReconciliationValidation {
+                    message: error.to_string(),
+                }
+            })?;
+            return Ok(reconciliation);
+        }
+
         let outcomes = ExecutionOutcomeService::list_recent(db, OUTCOME_SCAN_LIMIT)?;
         let reconciliation = reconcile_execution_state(execution_request_id, &outcomes);
         reconciliation
@@ -45,8 +55,20 @@ impl ExecutionReconciliationService {
         db: &Arc<Mutex<Database>>,
         limit: usize,
     ) -> Result<Vec<ExecutionReconciliation>> {
+        let mut states: Vec<_> = ExecutionLifecycleService::list_recent(db, limit.max(1))?
+            .iter()
+            .map(ExecutionLifecycleService::reconciliation)
+            .collect();
+        let mut seen: std::collections::HashSet<_> = states
+            .iter()
+            .map(|state| state.execution_request_id.clone())
+            .collect();
         let outcomes = ExecutionOutcomeService::list_recent(db, OUTCOME_SCAN_LIMIT)?;
-        let mut states = reconcile_execution_states(&outcomes);
+        states.extend(
+            reconcile_execution_states(&outcomes)
+                .into_iter()
+                .filter(|state| seen.insert(state.execution_request_id.clone())),
+        );
         states.truncate(limit.max(1));
         for state in &states {
             state.validate().map_err(|error| {

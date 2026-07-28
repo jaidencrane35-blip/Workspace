@@ -144,6 +144,16 @@ pub enum KernelError {
     #[error("Duplicate execution blocked for {execution_request_id}")]
     DuplicateExecution { execution_request_id: String },
 
+    #[error("Execution request is already in progress: {execution_request_id}")]
+    ExecutionInProgress { execution_request_id: String },
+
+    #[error("Execution lifecycle persistence failed at {stage}")]
+    ExecutionLifecyclePersistence {
+        stage: &'static str,
+        #[source]
+        source: DatabaseError,
+    },
+
     #[error("Execution cancellation validation failed: {message}")]
     ExecutionCancellationValidation { message: String },
 
@@ -913,6 +923,16 @@ impl KernelError {
                     "Execution request '{execution_request_id}' has already completed."
                 ),
             },
+            KernelError::ExecutionInProgress {
+                execution_request_id,
+            } => PublicError {
+                code: "execution_in_progress".into(),
+                message: format!("Execution request '{execution_request_id}' is already in progress."),
+            },
+            KernelError::ExecutionLifecyclePersistence { .. } => PublicError {
+                code: "execution_lifecycle_persistence_error".into(),
+                message: "Execution lifecycle state could not be persisted.".into(),
+            },
             KernelError::ExecutionCancellationValidation { message } => PublicError {
                 code: "execution_cancellation_validation_error".into(),
                 message: message.clone(),
@@ -1151,6 +1171,19 @@ mod tests {
     #[test]
     fn public_error_codes_preserve_failure_boundaries() {
         let cases = [
+            (
+                KernelError::ExecutionLifecyclePersistence {
+                    stage: "claim",
+                    source: DatabaseError::Migration("execution unavailable".into()),
+                },
+                "execution_lifecycle_persistence_error",
+            ),
+            (
+                KernelError::ExecutionInProgress {
+                    execution_request_id: "execution:s-1".into(),
+                },
+                "execution_in_progress",
+            ),
             (
                 KernelError::AuditPersistence {
                     stage: "permission.decision",
