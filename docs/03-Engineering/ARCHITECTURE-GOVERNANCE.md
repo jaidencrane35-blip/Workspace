@@ -327,6 +327,26 @@ See [Unified Workspace State Architecture](../05-AI/UNIFIED-WORKSPACE-STATE-ARCH
 
 See [Policy & Governance Architecture](../05-AI/POLICY-GOVERNANCE-ARCHITECTURE.md).
 
+## Historical Workspace Reconstruction (Programme III Batch 3)
+
+`WorkspaceHistoricalReconstructionService` owns **reconstruction explanation evidence only**.
+
+| Property | Value |
+|----------|-------|
+| Lifecycle owner | No |
+| Execution / replay authority | No |
+| Source of truth | No |
+| Temporal comparison / explanation owner | Yes |
+
+- `HistoricalReconstructionHistoryEntry` / `HistoricalReconstructionSummary` contain no authority/command fields.
+- Mutation inventory includes `GenerateHistoricalWorkspaceView` (baseline floor raised).
+- Reconstruction cannot import lifecycle/execution services or call `PermissionGateway`.
+- Reconstruction cannot silently refresh foreign sources via `generate`.
+- Missing evidence stays Unknown / gapped — never invented transitions.
+- Repository cannot call the reconstruction service.
+
+See [Historical Workspace Reconstruction Architecture](../05-AI/HISTORICAL-WORKSPACE-RECONSTRUCTION-ARCHITECTURE.md).
+
 ## Capability boundary audit
 
 Enforced by `scripts/architecture-governance-lib.mjs`:

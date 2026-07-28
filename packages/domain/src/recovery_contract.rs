@@ -24,6 +24,9 @@ use crate::workspace_state_envelope::{
 use crate::policy_governance::{
     PolicyGovernanceHistoryEntry, PolicyGovernanceSnapshot,
 };
+use crate::workspace_historical_reconstruction::{
+    HistoricalReconstructionHistoryEntry, HistoricalReconstructionSnapshot,
+};
 use crate::workspace_reasoning_memory::{ReasoningHistoryEntry, ReasoningSnapshot};
 
 /// Documented startup in-progress sweep cap (must match
@@ -221,6 +224,26 @@ pub fn recovery_must_not_fabricate_policy_governance(
 /// Fabricated actionable policy-governance history must fail the recovery contract.
 pub fn recovery_must_not_fabricate_actionable_policy_governance_history(
     entry: &PolicyGovernanceHistoryEntry,
+) -> bool {
+    entry.is_non_actionable()
+}
+
+/// Missing historical reconstruction remains missing — never invent transitions on restart.
+pub fn recovery_must_not_fabricate_historical_reconstruction(
+    snapshot: &HistoricalReconstructionSnapshot,
+) -> bool {
+    snapshot.is_non_commandable()
+        && snapshot.history.iter().all(|h| h.is_non_actionable())
+        && snapshot
+            .current
+            .as_ref()
+            .map(|c| c.is_non_executing())
+            .unwrap_or(true)
+}
+
+/// Fabricated actionable historical-reconstruction history must fail the recovery contract.
+pub fn recovery_must_not_fabricate_actionable_historical_history(
+    entry: &HistoricalReconstructionHistoryEntry,
 ) -> bool {
     entry.is_non_actionable()
 }
@@ -529,5 +552,32 @@ mod tests {
             authority_effect: "none".into(),
         };
         assert!(!recovery_must_not_fabricate_actionable_policy_governance_history(&bad));
+    }
+
+    #[test]
+    fn recovery_never_fabricates_historical_reconstruction_on_empty_snapshot() {
+        let empty = HistoricalReconstructionSnapshot::assemble("ws", None, vec![], 0, "t0");
+        assert!(recovery_must_not_fabricate_historical_reconstruction(&empty));
+        assert!(empty.current.is_none());
+    }
+
+    #[test]
+    fn recovery_rejects_actionable_historical_history() {
+        let bad = HistoricalReconstructionHistoryEntry {
+            reconstruction_id: "historical_reconstruction:1".into(),
+            status: "superseded".into(),
+            created_at: "t0".into(),
+            superseded_at: Some("t1".into()),
+            from_revision: None,
+            to_revision: None,
+            completeness: "unavailable".into(),
+            change_count: 0,
+            gap_count: 0,
+            comparison_count: 0,
+            terminal: true,
+            actionable: true,
+            authority_effect: "none".into(),
+        };
+        assert!(!recovery_must_not_fabricate_actionable_historical_history(&bad));
     }
 }

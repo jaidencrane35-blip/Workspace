@@ -124,6 +124,10 @@ use crate::commands::policy_governance::{
     ExplainGovernanceDecision, GenerateGovernanceEvaluation, GetGovernanceEvaluation,
     GetGovernanceSummary,
 };
+use crate::commands::historical_reconstruction::{
+    CompareWorkspaceRevisions, ExplainHistoricalChange, GenerateHistoricalWorkspaceView,
+    GetHistoricalWorkspaceSummary, GetHistoricalWorkspaceView,
+};
 use crate::commands::zone::{CreateZone, DeleteZone, GetZone};
 use crate::config::{SettingsUpdate, WorkspaceSettings};
 use crate::error::{KernelError, Result};
@@ -187,6 +191,8 @@ use workspace_domain::{
     CognitiveAutonomySnapshot, CognitiveAutonomySummary,
     WorkspaceStateSnapshot, WorkspaceStateSummary,
     PolicyGovernanceSnapshot, PolicyGovernanceSummary, GovernanceExplanation,
+    HistoricalChangeExplanation, HistoricalReconstructionSnapshot, HistoricalReconstructionSummary,
+    RevisionComparison,
     LayoutId, LayoutMetadata, LayoutNode, LayoutSnapshot, MemoryEntry, MemoryType,
     ModelProviderDescriptor, ModelResponse, Observation, PersonalizedPlanComparison,
     PreferenceCategory, PreferenceSource, Suggestion, SuggestionIntentRequest,
@@ -2673,6 +2679,66 @@ impl CommandHandler {
     /// Architecture guard — Policy engine cannot execute.
     pub fn policy_governance_attempt_execute() -> Result<()> {
         crate::services::PolicyGovernanceService::attempt_execute()
+    }
+
+    pub fn generate_historical_workspace_view(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<HistoricalReconstructionSnapshot> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_mutation(GenerateHistoricalWorkspaceView::new(workspace_id))
+    }
+
+    pub fn get_historical_workspace_view(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<HistoricalReconstructionSnapshot> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetHistoricalWorkspaceView::new(workspace_id))
+    }
+
+    pub fn get_historical_workspace_summary(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        history_limit: usize,
+    ) -> Result<HistoricalReconstructionSummary> {
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_query(
+            GetHistoricalWorkspaceSummary::new(workspace_id, history_limit),
+        )
+    }
+
+    pub fn compare_workspace_revisions(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        left_revision: String,
+        right_revision: String,
+    ) -> Result<RevisionComparison> {
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_query(
+            CompareWorkspaceRevisions::new(workspace_id, left_revision, right_revision),
+        )
+    }
+
+    pub fn explain_historical_change(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<HistoricalChangeExplanation> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(ExplainHistoricalChange::new(workspace_id))
+    }
+
+    /// Architecture guard — Historical reconstruction cannot execute / replay.
+    pub fn historical_reconstruction_attempt_execute() -> Result<()> {
+        crate::services::WorkspaceHistoricalReconstructionService::attempt_execute()
     }
 
     #[allow(clippy::too_many_arguments)]

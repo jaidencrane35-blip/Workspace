@@ -246,6 +246,21 @@ Rules:
 - React may inspect — no mutation or command conversion.
 - Restart reconstructs durable current + history; missing evaluation remains missing.
 
+### Historical Reconstruction (Programme III Batch 3)
+
+- **Current:** `HistoricalReconstructionSnapshot.current` — temporal snapshots, change
+  timeline, revision comparisons, completeness, evidence gaps. Explanation evidence only;
+  never replay or restore authority.
+- **History:** superseded reconstructions via append-only
+  `workspace_historical_reconstruction_history` → `HistoricalReconstructionHistoryEntry`
+  (`terminal: true`, `actionable: false`, `authority_effect: none`).
+- **`history_count`** is authoritative; summary windows may truncate `history`.
+- Completeness: Complete / Partial / Unknown / Contradictory / Unavailable.
+- No evidence found ≠ Nothing happened. Gaps remain gaps.
+- `CompareWorkspaceRevisions` / `ExplainHistoricalChange` are explanation-only.
+- React may inspect — no mutation, replay, or command conversion.
+- Restart reconstructs durable current + history; missing reconstruction remains missing.
+
 ## Serde defaults vs TypeScript required fields
 
 Rust history fields often use `#[serde(default)]` so older persisted / in-flight JSON

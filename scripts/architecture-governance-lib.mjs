@@ -15,7 +15,7 @@ const read = (file) => fs.readFileSync(file, "utf8");
 const sorted = (values) => [...new Set(values)].sort();
 
 /** Minimum MutationCommand inventory — dropping below this fails closed. */
-export const MUTATION_COMMAND_BASELINE = 63;
+export const MUTATION_COMMAND_BASELINE = 64;
 
 /** Capability id → authority owner (permission-token scope, not lifecycle owner). */
 export const CAPABILITY_AUTHORITY_OWNERS = {
@@ -104,6 +104,7 @@ export const HISTORY_STRUCTS = [
   "CognitiveAutonomyHistoryEntry",
   "WorkspaceStateHistoryEntry",
   "PolicyGovernanceHistoryEntry",
+  "HistoricalReconstructionHistoryEntry",
 ];
 
 export const PROJECTION_SUMMARY_STRUCTS = [
@@ -121,6 +122,7 @@ export const PROJECTION_SUMMARY_STRUCTS = [
   "CognitiveAutonomySummary",
   "WorkspaceStateSummary",
   "PolicyGovernanceSummary",
+  "HistoricalReconstructionSummary",
 ];
 
 /** Append-only recovery diagnostic event types — evidence only, never commands. */
@@ -164,6 +166,7 @@ const LIFECYCLE_SERVICE_FILES = new Set([
   "workspace_cognitive_autonomy.rs",
   "workspace_state_composition.rs",
   "policy_governance.rs",
+  "workspace_historical_reconstruction.rs",
 ]);
 
 /**
@@ -1072,6 +1075,84 @@ function policyGovernanceGuards(rootDir) {
   return violations;
 }
 
+/**
+ * Programme III Batch 3 — Historical Workspace Reconstruction guards.
+ * Reconstruction explains change; never becomes source of truth / replay / lifecycle.
+ */
+function historicalReconstructionGuards(rootDir) {
+  const violations = [];
+  const servicePath = path.join(
+    rootDir,
+    "packages/kernel/src/services/workspace_historical_reconstruction.rs",
+  );
+  const domainPath = path.join(
+    rootDir,
+    "packages/domain/src/workspace_historical_reconstruction",
+  );
+  const repoPath = path.join(
+    rootDir,
+    "packages/database/src/repositories/historical_reconstruction.rs",
+  );
+
+  const serviceFiles = fs.existsSync(servicePath) ? [servicePath] : [];
+  const domainFiles = fs.existsSync(domainPath) ? rustSources(domainPath) : [];
+  for (const file of [...serviceFiles, ...domainFiles]) {
+    const source = read(file);
+    const rel = path.relative(rootDir, file).replace(/\\/g, "/");
+    if (
+      /\bApplicationLaunchService\b/.test(source) ||
+      /\bExecutionLifecycleService\b/.test(source) ||
+      /\bTaskGraphService\b/.test(source) ||
+      /\bDecisionEngineService\b/.test(source) ||
+      /std::process::Command/.test(source) ||
+      /workspace_windows_integration::/.test(source)
+    ) {
+      violations.push(
+        `${rel}: Historical reconstruction must not import or invoke lifecycle/execution services`,
+      );
+    }
+    if (
+      /PermissionGateway::/.test(source) ||
+      /\bCapabilityGrant\b/.test(source) ||
+      /CommandPipeline::/.test(source)
+    ) {
+      violations.push(
+        `${rel}: Historical reconstruction must not own permissions, grant capabilities, or execute via Pipeline`,
+      );
+    }
+    if (
+      /WorkspaceStateCompositionService::generate\b/.test(source) ||
+      /PolicyGovernanceService::generate\b/.test(source) ||
+      /WorkspacePlanningService::generate\b/.test(source) ||
+      /WorkspaceCognitiveAutonomyService::generate\b/.test(source)
+    ) {
+      violations.push(
+        `${rel}: Historical reconstruction must not silently refresh foreign sources via generate`,
+      );
+    }
+  }
+
+  if (fs.existsSync(repoPath)) {
+    const source = read(repoPath);
+    if (
+      /WorkspaceHistoricalReconstructionService/.test(source) ||
+      /use\s+workspace_kernel::/.test(source)
+    ) {
+      violations.push(
+        `packages/database/src/repositories/historical_reconstruction.rs: repository must not call reconstruction service`,
+      );
+    }
+  }
+
+  if (!fs.existsSync(domainPath) && !fs.existsSync(`${domainPath}.rs`)) {
+    violations.push(
+      "packages/domain/src/workspace_historical_reconstruction missing; governance cannot verify reconstruction DTOs",
+    );
+  }
+
+  return violations;
+}
+
 function checkDtoAuthorityFields(domainSources, structNames, label) {
   const violations = [];
   const found = [];
@@ -1354,6 +1435,7 @@ export function auditArchitectureGovernance(rootDir, options = {}) {
   violations.push(...cognitiveAutonomyGuards(rootDir));
   violations.push(...workspaceStateEnvelopeGuards(rootDir));
   violations.push(...policyGovernanceGuards(rootDir));
+  violations.push(...historicalReconstructionGuards(rootDir));
 
   const domainSrc = path.join(rootDir, "packages/domain/src");
   const domainSources = fs.existsSync(domainSrc) ? rustSources(domainSrc) : [];

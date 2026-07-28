@@ -89,6 +89,20 @@ impl WorkspaceStateCompositionService {
         ))
     }
 
+    /// Read-only load of durable envelope bodies for historical reconstruction.
+    /// Never calls generate / silent refresh.
+    pub(crate) fn list_durable_envelopes(
+        db: &Arc<Mutex<Database>>,
+        workspace_id: impl Into<String>,
+    ) -> Result<Vec<WorkspaceStateEnvelope>> {
+        let workspace_id = workspace_id.into();
+        let guard = db
+            .lock()
+            .map_err(|_| KernelError::lock_poisoned("database"))?;
+        let repo = WorkspaceStateEnvelopeRepository::new(&guard);
+        Ok(repo.list_durable_envelopes(&workspace_id)?)
+    }
+
     pub(crate) fn attempt_execute() -> Result<()> {
         Err(KernelError::WorkspaceStateEnvelopeValidation {
             message: "Unified Workspace State cannot execute".into(),

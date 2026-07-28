@@ -29,6 +29,7 @@ mod workspace_cognitive_agent_cast;
 mod workspace_cognitive_autonomy;
 mod workspace_state_composition;
 mod policy_governance;
+mod workspace_historical_reconstruction;
 mod workspace_continuity;
 mod workspace_environment;
 mod workspace_composition;
@@ -208,4 +209,5 @@ pub(crate) use workspace_cognitive_agent_cast::WorkspaceCognitiveAgentCastServic
 pub(crate) use workspace_cognitive_autonomy::WorkspaceCognitiveAutonomyService;
 pub(crate) use workspace_state_composition::WorkspaceStateCompositionService;
 pub(crate) use policy_governance::PolicyGovernanceService;
+pub(crate) use workspace_historical_reconstruction::WorkspaceHistoricalReconstructionService;
 pub use zone::ZoneService;

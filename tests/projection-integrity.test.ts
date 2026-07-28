@@ -58,6 +58,11 @@ import {
   isPolicyGovernanceSnapshotNonCommandable,
   policyGovernanceHistoryCountIsAuthoritative,
 } from "../app/src/components/policyGovernanceProjection";
+import {
+  historicalReconstructionHistoryCountIsAuthoritative,
+  isHistoricalReconstructionHistoryNonActionable,
+  isHistoricalReconstructionSnapshotNonCommandable,
+} from "../app/src/components/historicalReconstructionProjection";
 import type {
   DecisionArtifactHistoryEntry,
   DecisionEngineSummary,
@@ -92,6 +97,9 @@ import type {
   PolicyGovernanceHistoryEntry,
   PolicyGovernanceSnapshot,
   PolicyGovernanceSummary,
+  HistoricalReconstructionHistoryEntry,
+  HistoricalReconstructionSnapshot,
+  HistoricalReconstructionSummary,
   RecommendationHistoryEntry,
   RecommendationItem,
   TaskGraphSummary,
@@ -1242,6 +1250,73 @@ describe("projection integrity — cognitive agent cast", () => {
     expect(Object.keys(nonCommand)).not.toContain("execute");
     expect(Object.keys(nonCommand)).not.toContain("grant");
     expect(Object.keys(nonCommand)).not.toContain("approve");
+  });
+
+  it("keeps historical reconstruction snapshots non-commandable with authoritative history_count", () => {
+    const historyEntry = (
+      overrides: Partial<HistoricalReconstructionHistoryEntry> = {}
+    ): HistoricalReconstructionHistoryEntry => ({
+      reconstruction_id: "historical_reconstruction:1",
+      status: "superseded",
+      created_at: "t0",
+      superseded_at: "t1",
+      from_revision: "rev:a",
+      to_revision: "rev:b",
+      completeness: "partial",
+      change_count: 1,
+      gap_count: 0,
+      comparison_count: 1,
+      terminal: true,
+      actionable: false,
+      authority_effect: "none",
+      ...overrides,
+    });
+    const snapshot: HistoricalReconstructionSnapshot = {
+      workspace_id: "ws",
+      generated_at: "t2",
+      current: null,
+      history: [historyEntry()],
+      history_count: 3,
+      authority_effect: "none",
+    };
+    expect(isHistoricalReconstructionSnapshotNonCommandable(snapshot)).toBe(true);
+    expect(isHistoricalReconstructionHistoryNonActionable(historyEntry())).toBe(
+      true
+    );
+    expect(
+      isHistoricalReconstructionHistoryNonActionable(
+        historyEntry({ actionable: true })
+      )
+    ).toBe(false);
+
+    const summary: HistoricalReconstructionSummary = {
+      workspace_id: "ws",
+      generated_at: "t2",
+      has_current: false,
+      reconstruction_id: null,
+      from_revision: null,
+      to_revision: null,
+      completeness: null,
+      change_count: 0,
+      gap_count: 0,
+      history: [historyEntry()],
+      history_count: 3,
+      authority_effect: "none",
+    };
+    expect(historicalReconstructionHistoryCountIsAuthoritative(summary)).toBe(
+      true
+    );
+    expect(summary.history_count).toBeGreaterThanOrEqual(summary.history.length);
+
+    const nonCommand = {
+      reconstruction_id: "historical_reconstruction:1",
+      actionable: false,
+      terminal: true,
+      authority_effect: "none",
+    };
+    expect(Object.keys(nonCommand)).not.toContain("execute");
+    expect(Object.keys(nonCommand)).not.toContain("replay");
+    expect(Object.keys(nonCommand)).not.toContain("restore");
   });
 });
 

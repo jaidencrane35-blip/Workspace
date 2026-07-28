@@ -127,6 +127,20 @@ impl<'a> WorkspaceStateEnvelopeRepository<'a> {
         self.list_by_status(workspace_id, EnvelopeStatus::Current)
     }
 
+    /// Load all durable envelope bodies (current + superseded + archived), oldest first.
+    /// Read-only evidence for historical reconstruction — never generates or repairs.
+    pub fn list_durable_envelopes(
+        &self,
+        workspace_id: &str,
+    ) -> Result<Vec<WorkspaceStateEnvelope>> {
+        let mut out = Vec::new();
+        out.extend(self.list_by_status(workspace_id, EnvelopeStatus::Current)?);
+        out.extend(self.list_by_status(workspace_id, EnvelopeStatus::Superseded)?);
+        out.extend(self.list_by_status(workspace_id, EnvelopeStatus::Archived)?);
+        out.sort_by(|a, b| a.generated_at.cmp(&b.generated_at));
+        Ok(out)
+    }
+
     pub fn list_by_status(
         &self,
         workspace_id: &str,

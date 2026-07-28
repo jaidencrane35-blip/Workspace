@@ -3018,6 +3018,129 @@ export interface PolicyGovernanceSummary {
   authority_effect: string;
 }
 
+export interface TemporalSnapshot {
+  snapshot_ref: string;
+  revision: string;
+  observed_at: string;
+  source_kind: string;
+  availability: string;
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface StateChangeEvidence {
+  change_id: string;
+  from_ref: string;
+  to_ref: string;
+  description: string;
+  evidence_refs: string[];
+  confidence: number;
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface EvidenceGap {
+  gap_id: string;
+  channel: string;
+  description: string;
+  severity: string;
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface RevisionComparison {
+  comparison_id: string;
+  left_revision: string;
+  right_revision: string;
+  added: string[];
+  removed: string[];
+  changed: string[];
+  unchanged_count: number;
+  result_status: string;
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface ReconstructionProvenanceLink {
+  external_ref: string;
+  kind: string;
+}
+
+export interface WorkspaceHistoricalView {
+  reconstruction_id: string;
+  workspace_id: string;
+  from_revision: string | null;
+  to_revision: string | null;
+  generated_at: string;
+  status: string;
+  superseded_at: string | null;
+  temporal_snapshots: TemporalSnapshot[];
+  timeline: StateChangeEvidence[];
+  comparisons: RevisionComparison[];
+  completeness: string;
+  gaps: EvidenceGap[];
+  provenance_links: ReconstructionProvenanceLink[];
+  explanation: string;
+  authority_effect: string;
+  actionable: boolean;
+  terminal: boolean;
+}
+
+export interface HistoricalReconstructionHistoryEntry {
+  reconstruction_id: string;
+  status: string;
+  created_at: string;
+  superseded_at: string | null;
+  from_revision: string | null;
+  to_revision: string | null;
+  completeness: string;
+  change_count: number;
+  gap_count: number;
+  comparison_count: number;
+  terminal: boolean;
+  actionable: boolean;
+  authority_effect: string;
+}
+
+export interface HistoricalReconstructionSnapshot {
+  workspace_id: string;
+  generated_at: string;
+  current: WorkspaceHistoricalView | null;
+  history: HistoricalReconstructionHistoryEntry[];
+  history_count: number;
+  authority_effect: string;
+}
+
+export interface HistoricalReconstructionSummary {
+  workspace_id: string;
+  generated_at: string;
+  has_current: boolean;
+  reconstruction_id: string | null;
+  from_revision: string | null;
+  to_revision: string | null;
+  completeness: string | null;
+  change_count: number;
+  gap_count: number;
+  history: HistoricalReconstructionHistoryEntry[];
+  history_count: number;
+  authority_effect: string;
+}
+
+export interface HistoricalChangeExplanation {
+  explanation_id: string;
+  workspace_id: string;
+  from_revision: string | null;
+  to_revision: string | null;
+  completeness: string | null;
+  observed_changes: string[];
+  evidence_refs: string[];
+  gaps: string[];
+  uncertainty: string[];
+  narrative: string;
+  authority_effect: string;
+  actionable: boolean;
+}
+
 export type WindowIdentityConfidence = "high" | "medium" | "low" | "ephemeral";
 
 export interface WorkspaceObservationPass {

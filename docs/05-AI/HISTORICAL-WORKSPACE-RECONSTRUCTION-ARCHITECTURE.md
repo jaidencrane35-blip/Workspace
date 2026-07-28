@@ -4,7 +4,7 @@
 |-------|-------|
 | **Purpose** | Temporal understanding — explain how workspace evidence changed over time |
 | **Owner** | `WorkspaceHistoricalReconstructionService` (DurableStore — **reconstruction evidence only**) |
-| **Status** | Charter draft — pending review before implementation |
+| **Status** | Active — Programme III Batch 3 implemented |
 | **Lifecycle owner** | No |
 | **Execution / replay authority** | No |
 | **Audit / policy / source authority** | No |
@@ -215,7 +215,7 @@ Primary inputs (Batch 3 minimum):
 
 Policy evaluations may be **referenced** as provenance when present; reconstruction must not re-run policy to invent compliance.
 
-## Service contract (planned)
+## Service contract
 
 ### `WorkspaceHistoricalReconstructionService`
 
@@ -237,14 +237,14 @@ Must **not**:
 
 Negative guards (tests): `attempt_execute`, `attempt_replay`, `attempt_mutate_lifecycle`, `attempt_fabricate_transition`, `attempt_silent_refresh`.
 
-## Commands (planned)
+## Commands
 
 | Command | Kind | Capability | Purpose |
 |---------|------|------------|---------|
-| `GenerateHistoricalReconstruction` | Mutation | `work_context.write` | Persist a reconstruction artefact for a revision window |
-| `GetHistoricalReconstruction` | Query | `work_context.read` | Load current reconstruction snapshot |
-| `GetHistoricalReconstructionSummary` | Query | `work_context.read` | Summary + authoritative `history_count` |
-| `CompareWorkspaceRevisions` | Query | `work_context.read` | Deterministic revision comparison without requiring a new persisted current (optional if folded into Get) |
+| `GenerateHistoricalWorkspaceView` | Mutation | `work_context.write` | Persist a reconstruction artefact for a revision window |
+| `GetHistoricalWorkspaceView` | Query | `work_context.read` | Load current reconstruction snapshot |
+| `GetHistoricalWorkspaceSummary` | Query | `work_context.read` | Summary + authoritative `history_count` |
+| `CompareWorkspaceRevisions` | Query | `work_context.read` | Deterministic revision comparison without requiring a new persisted current |
 | `ExplainHistoricalChange` | Query | `work_context.read` | Explanation surface over last/current reconstruction |
 
 All commands:
@@ -253,7 +253,7 @@ All commands:
 IPC → CommandPipeline → PermissionGateway → WorkspaceHistoricalReconstructionService
 ```
 
-## Persistence (planned)
+## Persistence
 
 | Artefact | Role |
 |----------|------|
@@ -297,11 +297,11 @@ Recovery helpers (domain predicates):
 - `recovery_must_not_fabricate_historical_reconstruction`
 - `recovery_must_not_fabricate_actionable_historical_history`
 
-## Governance additions (planned)
+## Governance additions
 
-Increase mutation baseline when `GenerateHistoricalReconstruction` lands.
+Mutation baseline includes `GenerateHistoricalWorkspaceView`.
 
-Add guards detecting:
+Guards detect:
 
 - reconstruction service importing lifecycle mutators / execution / launch services
 - replay / execution paths (`ExecutionLifecycleService`, process spawn, etc.)
@@ -310,12 +310,12 @@ Add guards detecting:
 - direct source writes from reconstruction repository
 - foreign `::generate` silent refresh from reconstruction compose path
 
-Add ownership registry entries:
+Ownership registry entries:
 
 - `historical_reconstruction`
 - `historical_reconstruction_snapshot`
 
-History / projection DTO inventories gain:
+History / projection DTO inventories include:
 
 - `HistoricalReconstructionHistoryEntry`
 - `HistoricalReconstructionSummary`
@@ -378,10 +378,8 @@ Accept implementation only when:
 
 ## Review gate
 
-**This document is a charter/contract draft.**
-
-Do **not** begin Batch 3 implementation until this charter is reviewed and explicitly approved.
-After approval, implement only the contract herein — no event store, no replay executor, no SoT elevation.
+**Charter accepted (Architecture grade A).** Implementation proceeds only against this contract —
+no event store, no replay executor, no SoT elevation.
 
 ## Related
 
