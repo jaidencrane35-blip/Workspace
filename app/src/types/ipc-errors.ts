@@ -82,6 +82,7 @@ export const PUBLIC_ERROR_CODES = [
   "historical_reconstruction_validation_error",
   "temporal_intelligence_validation_error",
   "workspace_explanation_validation_error",
+  "contextual_understanding_validation_error",
   "workspace_composition_validation_error",
   "workspace_continuity_validation_error",
   "workspace_environment_validation_error",

@@ -73,6 +73,11 @@ import {
   isWorkspaceExplanationSnapshotNonCommandable,
   workspaceExplanationHistoryCountIsAuthoritative,
 } from "../app/src/components/workspaceExplanationProjection";
+import {
+  isContextualUnderstandingHistoryNonActionable,
+  isContextualUnderstandingProjectionNonCommandable,
+  contextualUnderstandingHistoryCountIsAuthoritative,
+} from "../app/src/components/contextualUnderstandingProjection";
 import type {
   DecisionArtifactHistoryEntry,
   DecisionEngineSummary,
@@ -116,6 +121,9 @@ import type {
   WorkspaceExplanationHistoryEntry,
   WorkspaceExplanationSnapshot,
   WorkspaceExplanationSummary,
+  ContextualUnderstandingHistoryEntry,
+  ContextualUnderstandingProjection,
+  ContextualUnderstandingSummary,
   RecommendationHistoryEntry,
   RecommendationItem,
   TaskGraphSummary,
@@ -1453,6 +1461,65 @@ describe("projection integrity — cognitive agent cast", () => {
     expect(Object.keys(nonCommand)).not.toContain("execute");
     expect(Object.keys(nonCommand)).not.toContain("approve");
     expect(Object.keys(nonCommand)).not.toContain("resolve");
+    expect(Object.keys(nonCommand)).not.toContain("dispatch");
+  });
+
+  it("keeps contextual understanding projections non-commandable with authoritative history_count", () => {
+    const historyEntry = (
+      overrides: Partial<ContextualUnderstandingHistoryEntry> = {}
+    ): ContextualUnderstandingHistoryEntry => ({
+      understanding_id: "contextual_understanding:1",
+      status: "superseded",
+      created_at: "t0",
+      superseded_at: "t1",
+      completeness: "partial",
+      theme_count: 2,
+      gap_count: 1,
+      source_revision_count: 3,
+      terminal: true,
+      actionable: false,
+      authority_effect: "none",
+      ...overrides,
+    });
+    const projection: ContextualUnderstandingProjection = {
+      workspace_id: "ws",
+      generated_at: "t2",
+      current: null,
+      history: [historyEntry()],
+      history_count: 3,
+      authority_effect: "none",
+    };
+    expect(isContextualUnderstandingProjectionNonCommandable(projection)).toBe(true);
+    expect(isContextualUnderstandingHistoryNonActionable(historyEntry())).toBe(true);
+    expect(
+      isContextualUnderstandingHistoryNonActionable(historyEntry({ actionable: true }))
+    ).toBe(false);
+
+    const summary: ContextualUnderstandingSummary = {
+      workspace_id: "ws",
+      generated_at: "t2",
+      has_current: false,
+      understanding_id: null,
+      completeness: null,
+      theme_count: 0,
+      gap_count: 0,
+      source_revision_count: 0,
+      history: [historyEntry()],
+      history_count: 3,
+      authority_effect: "none",
+    };
+    expect(contextualUnderstandingHistoryCountIsAuthoritative(summary)).toBe(true);
+    expect(summary.history_count).toBeGreaterThanOrEqual(summary.history.length);
+
+    const nonCommand = {
+      understanding_id: "contextual_understanding:1",
+      actionable: false,
+      terminal: true,
+      authority_effect: "none",
+    };
+    expect(Object.keys(nonCommand)).not.toContain("execute");
+    expect(Object.keys(nonCommand)).not.toContain("approve");
+    expect(Object.keys(nonCommand)).not.toContain("recommend");
     expect(Object.keys(nonCommand)).not.toContain("dispatch");
   });
 });

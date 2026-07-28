@@ -135,6 +135,10 @@ use crate::commands::workspace_explanation::{
     ExplainWorkspaceSituation, GenerateWorkspaceExplanation, GetWorkspaceExplanation,
     GetWorkspaceExplanationSummary,
 };
+use crate::commands::workspace_contextual_understanding::{
+    ExplainWorkspaceContext, GenerateContextualWorkspaceUnderstanding,
+    GetContextualWorkspaceUnderstanding, GetContextualWorkspaceUnderstandingSummary,
+};
 use crate::commands::zone::{CreateZone, DeleteZone, GetZone};
 use crate::config::{SettingsUpdate, WorkspaceSettings};
 use crate::error::{KernelError, Result};
@@ -202,6 +206,7 @@ use workspace_domain::{
     RevisionComparison,
     TemporalChangeExplanation, TemporalIntelligenceSnapshot, TemporalIntelligenceSummary,
     WorkspaceExplanationSnapshot, WorkspaceExplanationSummary, WorkspaceSituationExplanation,
+    ContextualUnderstandingProjection, ContextualUnderstandingSummary, WorkspaceContextExplanation,
     LayoutId, LayoutMetadata, LayoutNode, LayoutSnapshot, MemoryEntry, MemoryType,
     ModelProviderDescriptor, ModelResponse, Observation, PersonalizedPlanComparison,
     PreferenceCategory, PreferenceSource, Suggestion, SuggestionIntentRequest,
@@ -2840,6 +2845,53 @@ impl CommandHandler {
     /// Architecture guard — Workspace explanation cannot execute / approve / mutate.
     pub fn workspace_explanation_attempt_execute() -> Result<()> {
         crate::services::WorkspaceExplanationService::attempt_execute()
+    }
+
+    pub fn generate_contextual_workspace_understanding(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<ContextualUnderstandingProjection> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_mutation(GenerateContextualWorkspaceUnderstanding::new(workspace_id))
+    }
+
+    pub fn get_contextual_workspace_understanding(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<ContextualUnderstandingProjection> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetContextualWorkspaceUnderstanding::new(workspace_id))
+    }
+
+    pub fn get_contextual_workspace_understanding_summary(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        history_limit: usize,
+    ) -> Result<ContextualUnderstandingSummary> {
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_query(
+            GetContextualWorkspaceUnderstandingSummary::new(workspace_id, history_limit),
+        )
+    }
+
+    pub fn explain_workspace_context(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceContextExplanation> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(ExplainWorkspaceContext::new(workspace_id))
+    }
+
+    /// Architecture guard — Contextual understanding cannot execute / approve / mutate.
+    pub fn contextual_understanding_attempt_execute() -> Result<()> {
+        crate::services::WorkspaceContextualUnderstandingService::attempt_execute()
     }
 
     #[allow(clippy::too_many_arguments)]

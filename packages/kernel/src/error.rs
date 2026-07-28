@@ -16,6 +16,7 @@ use workspace_domain::{
     WorkspaceLearningAdaptationError, WorkspaceCognitiveAgentCastError,
     WorkspaceCognitiveAutonomyError, WorkspaceStateEnvelopeError, PolicyGovernanceError,
     HistoricalReconstructionError, TemporalIntelligenceError, WorkspaceExplanationError,
+    ContextualUnderstandingError,
     WorkspaceSessionError,
     WorkspaceTransitionError,
     WorkspaceWorkContextError, WorkspaceWorkingStyleError,
@@ -270,6 +271,9 @@ pub enum KernelError {
 
     #[error("Workspace explanation validation failed: {message}")]
     WorkspaceExplanationValidation { message: String },
+
+    #[error("Contextual understanding validation failed: {message}")]
+    ContextualUnderstandingValidation { message: String },
 
     #[error("Workspace intelligence validation failed: {message}")]
     WorkspaceIntelligenceValidation { message: String },
@@ -628,6 +632,17 @@ impl From<WorkspaceExplanationError> for KernelError {
         match error {
             WorkspaceExplanationError::Domain(domain) => KernelError::from(domain),
             other => KernelError::WorkspaceExplanationValidation {
+                message: other.to_string(),
+            },
+        }
+    }
+}
+
+impl From<ContextualUnderstandingError> for KernelError {
+    fn from(error: ContextualUnderstandingError) -> Self {
+        match error {
+            ContextualUnderstandingError::Domain(domain) => KernelError::from(domain),
+            other => KernelError::ContextualUnderstandingValidation {
                 message: other.to_string(),
             },
         }
@@ -1330,6 +1345,10 @@ impl KernelError {
             },
             KernelError::WorkspaceExplanationValidation { message } => PublicError {
                 code: "workspace_explanation_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::ContextualUnderstandingValidation { message } => PublicError {
+                code: "contextual_understanding_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::WorkspaceIntelligenceValidation { message } => PublicError {

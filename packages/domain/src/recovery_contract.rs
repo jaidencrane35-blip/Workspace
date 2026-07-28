@@ -33,6 +33,9 @@ use crate::workspace_temporal_intelligence::{
 use crate::workspace_explanation::{
     WorkspaceExplanationHistoryEntry, WorkspaceExplanationSnapshot,
 };
+use crate::workspace_contextual_understanding::{
+    ContextualUnderstandingHistoryEntry, ContextualUnderstandingProjection,
+};
 use crate::workspace_reasoning_memory::{ReasoningHistoryEntry, ReasoningSnapshot};
 
 /// Documented startup in-progress sweep cap (must match
@@ -290,6 +293,26 @@ pub fn recovery_must_not_fabricate_workspace_explanation(
 /// Fabricated actionable explanation history must fail the recovery contract.
 pub fn recovery_must_not_fabricate_actionable_explanation_history(
     entry: &WorkspaceExplanationHistoryEntry,
+) -> bool {
+    entry.is_non_actionable()
+}
+
+/// Missing contextual understanding remains missing — never invent themes on restart.
+pub fn recovery_must_not_fabricate_contextual_understanding(
+    projection: &ContextualUnderstandingProjection,
+) -> bool {
+    projection.is_non_commandable()
+        && projection.history.iter().all(|h| h.is_non_actionable())
+        && projection
+            .current
+            .as_ref()
+            .map(|c| c.is_non_executing())
+            .unwrap_or(true)
+}
+
+/// Fabricated actionable contextual-understanding history must fail the recovery contract.
+pub fn recovery_must_not_fabricate_actionable_contextual_understanding_history(
+    entry: &ContextualUnderstandingHistoryEntry,
 ) -> bool {
     entry.is_non_actionable()
 }
@@ -677,5 +700,32 @@ mod tests {
             authority_effect: "none".into(),
         };
         assert!(!recovery_must_not_fabricate_actionable_explanation_history(&bad));
+    }
+
+    #[test]
+    fn recovery_never_fabricates_contextual_understanding_on_empty_projection() {
+        let empty = ContextualUnderstandingProjection::assemble("ws", None, vec![], 0, "t0");
+        assert!(recovery_must_not_fabricate_contextual_understanding(&empty));
+        assert!(empty.current.is_none());
+    }
+
+    #[test]
+    fn recovery_rejects_actionable_contextual_understanding_history() {
+        let bad = ContextualUnderstandingHistoryEntry {
+            understanding_id: "contextual_understanding:1".into(),
+            status: "superseded".into(),
+            created_at: "t0".into(),
+            superseded_at: Some("t1".into()),
+            completeness: "unavailable".into(),
+            theme_count: 0,
+            gap_count: 0,
+            source_revision_count: 0,
+            terminal: true,
+            actionable: true,
+            authority_effect: "none".into(),
+        };
+        assert!(!recovery_must_not_fabricate_actionable_contextual_understanding_history(
+            &bad
+        ));
     }
 }

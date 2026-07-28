@@ -3394,6 +3394,145 @@ export interface WorkspaceSituationExplanation {
   actionable: boolean;
 }
 
+export interface ContextFrame {
+  focus: string | null;
+  include_state: boolean;
+  include_policy: boolean;
+  include_reconstruction: boolean;
+  include_temporal: boolean;
+  include_explanation: boolean;
+  max_themes: number;
+}
+
+export interface ContextualEvidenceReference {
+  external_ref: string;
+  origin_domain: string;
+  source_revision: string | null;
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface ContextualGap {
+  gap_id: string;
+  surface: string;
+  description: string;
+  severity: string;
+  evidence_refs: ContextualEvidenceReference[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface ContextualInsight {
+  insight_id: string;
+  kind: string;
+  body: string;
+  evidence_refs: ContextualEvidenceReference[];
+  explanation_lineage: string[];
+  confidence: number;
+  uncertainty: string[];
+  limitations: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface SituationalTheme {
+  theme_id: string;
+  kind: string;
+  title: string;
+  body: string;
+  insights: ContextualInsight[];
+  evidence_refs: ContextualEvidenceReference[];
+  completeness: string;
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface ContextualUnderstandingConfidence {
+  assessment_id: string;
+  coverage: number;
+  available_surfaces: number;
+  requested_surfaces: number;
+  gap_count: number;
+  conflict_count: number;
+  uncertainty: string[];
+  limitations: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface ContextualWorkspaceSnapshot {
+  understanding_id: string;
+  workspace_id: string;
+  generated_at: string;
+  status: string;
+  superseded_at: string | null;
+  frame: ContextFrame;
+  source_revisions: string[];
+  themes: SituationalTheme[];
+  gaps: ContextualGap[];
+  confidence: ContextualUnderstandingConfidence;
+  completeness: string;
+  provenance_links: ContextualEvidenceReference[];
+  situation_summary: string;
+  narrative: string;
+  limitations: string[];
+  authority_effect: string;
+  actionable: boolean;
+  terminal: boolean;
+}
+
+export interface ContextualUnderstandingHistoryEntry {
+  understanding_id: string;
+  status: string;
+  created_at: string;
+  superseded_at: string | null;
+  completeness: string;
+  theme_count: number;
+  gap_count: number;
+  source_revision_count: number;
+  terminal: boolean;
+  actionable: boolean;
+  authority_effect: string;
+}
+
+export interface ContextualUnderstandingProjection {
+  workspace_id: string;
+  generated_at: string;
+  current: ContextualWorkspaceSnapshot | null;
+  history: ContextualUnderstandingHistoryEntry[];
+  history_count: number;
+  authority_effect: string;
+}
+
+export interface ContextualUnderstandingSummary {
+  workspace_id: string;
+  generated_at: string;
+  has_current: boolean;
+  understanding_id: string | null;
+  completeness: string | null;
+  theme_count: number;
+  gap_count: number;
+  source_revision_count: number;
+  history: ContextualUnderstandingHistoryEntry[];
+  history_count: number;
+  authority_effect: string;
+}
+
+export interface WorkspaceContextExplanation {
+  explanation_id: string;
+  workspace_id: string;
+  completeness: string | null;
+  situation_summary: string | null;
+  theme_summaries: string[];
+  gaps: string[];
+  evidence_refs: string[];
+  uncertainty: string[];
+  narrative: string;
+  limitations: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
 export type WindowIdentityConfidence = "high" | "medium" | "low" | "ephemeral";
 
 export interface WorkspaceObservationPass {
