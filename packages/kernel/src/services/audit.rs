@@ -117,6 +117,31 @@ impl AuditService {
         Self::append_at(db, event, "ai.operational")
     }
 
+    /// Append-only recovery diagnostic evidence (never a lifecycle transition).
+    ///
+    /// Event types are restricted to `system.recovery.*` constants. No command
+    /// name is attached — diagnostics are observational, not mutation authority.
+    pub fn record_recovery_diagnostic(
+        db: &Arc<Mutex<Database>>,
+        event_type: &str,
+        success: bool,
+        metadata: String,
+    ) -> Result<()> {
+        if !workspace_domain::recovery_diagnostic_event_type_is_non_commandable(event_type) {
+            return Err(KernelError::IntegrityViolation {
+                message: format!(
+                    "recovery diagnostic event type is not evidence-only: {event_type}"
+                ),
+            });
+        }
+        let actor = ActorContext::system();
+        let event = AuditEvent::from_actor(event_type, &actor.actor, success)
+            .with_intent_type(IntentContext::system_startup().intent.intent_type)
+            .with_capability(&Capability::system_startup())
+            .with_metadata(metadata);
+        Self::append_at(db, event, "recovery.diagnostic")
+    }
+
     pub fn record_domain_event(db: &Arc<Mutex<Database>>, event: &DomainEvent) -> Result<()> {
         let actor = event
             .actor()

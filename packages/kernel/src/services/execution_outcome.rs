@@ -12,6 +12,9 @@ use super::{AuditService, ExecutionLifecycleService};
 use crate::error::{KernelError, Result};
 
 const MAX_AUDIT_SCAN: usize = 500;
+/// Floor so startup/recovery observational audit rows cannot starve
+/// ExecuteIntentRequest outcome derivation when callers pass a small `limit`.
+const MIN_AUDIT_SCAN: usize = 64;
 
 /// Derives execution outcomes from persisted audit history.
 pub struct ExecutionOutcomeService;
@@ -22,7 +25,10 @@ impl ExecutionOutcomeService {
         db: &Arc<Mutex<Database>>,
         limit: usize,
     ) -> Result<Vec<ExecutionOutcome>> {
-        let scan = limit.saturating_mul(4).clamp(limit.max(1), MAX_AUDIT_SCAN);
+        let scan = limit
+            .saturating_mul(8)
+            .max(MIN_AUDIT_SCAN)
+            .clamp(limit.max(1), MAX_AUDIT_SCAN);
         let audit_events = AuditService::list_recent(db, scan)?;
 
         let mut outcomes = Vec::new();

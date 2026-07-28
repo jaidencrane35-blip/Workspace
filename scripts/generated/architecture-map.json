@@ -434,7 +434,7 @@
   "permission_gateway_require_sites": [
     {
       "file": "packages/kernel/src/commands/handler.rs",
-      "line": 4168,
+      "line": 4221,
       "kind": "require"
     },
     {
@@ -452,7 +452,7 @@
     "source_trees": [
       "react:23",
       "ipc:64",
-      "kernel_commands:200",
+      "kernel_commands:201",
       "permission_gateway:5",
       "services:81",
       "domain:85",
@@ -478,6 +478,7 @@
     "assertions": [
       "Found 5 history DTOs and verified command-field restrictions.",
       "Found 5 projection summary DTOs and verified authority-field restrictions.",
+      "Verified 3 recovery diagnostic event types remain evidence-only.",
       "Found 51 mutation commands (≥ baseline 51) with capability paths."
     ]
   },

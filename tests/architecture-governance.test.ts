@@ -12,6 +12,7 @@ import {
   INTENTIONAL_BROAD_CAPABILITIES,
   MUTATION_COMMAND_BASELINE,
   PROJECTION_SUMMARY_STRUCTS,
+  RECOVERY_DIAGNOSTIC_EVENT_TYPES,
   auditArchitectureGovernance,
   auditFailClosedExpectations,
   detectArchitectureMapDrift,
@@ -81,6 +82,22 @@ describe("architecture governance enforcement", () => {
     expect(INTENTIONAL_BROAD_CAPABILITIES["work_context.write"]).toMatch(
       /lifecycle owners remain/i,
     );
+  });
+
+  it("keeps recovery diagnostics evidence-only without mutation authority", () => {
+    expect(RECOVERY_DIAGNOSTIC_EVENT_TYPES).toEqual([
+      "system.recovery.startup.attempted",
+      "system.recovery.startup.completed",
+      "system.recovery.startup.failed",
+    ]);
+    expect(
+      audit.evidence.assertions.some((a) =>
+        a.includes("recovery diagnostic event types remain evidence-only"),
+      ),
+    ).toBe(true);
+    for (const entry of audit.mutationInventory) {
+      expect(entry.command).not.toMatch(/Recover|ReconcileStale|RetryStale/i);
+    }
   });
 
   it("reports unused catalog capabilities without failing the audit", () => {

@@ -105,6 +105,13 @@ export const PROJECTION_SUMMARY_STRUCTS = [
   "ExecutionLifecycleProjection",
 ];
 
+/** Append-only recovery diagnostic event types — evidence only, never commands. */
+export const RECOVERY_DIAGNOSTIC_EVENT_TYPES = [
+  "system.recovery.startup.attempted",
+  "system.recovery.startup.completed",
+  "system.recovery.startup.failed",
+];
+
 const LIFECYCLE_MUTATION_SERVICE_FNS = [
   "accept_recommendation",
   "reject_recommendation",
@@ -168,9 +175,11 @@ export const REQUIRED_SOURCE_TREES = [
 
 export const REQUIRED_FILES = [
   "packages/domain/src/capability/mod.rs",
+  "packages/domain/src/recovery_contract.rs",
   "packages/kernel/src/commands/handler.rs",
   "packages/kernel/src/commands/pipeline.rs",
   "packages/kernel/src/security/gateway.rs",
+  "docs/03-Engineering/OPERATIONAL-RECOVERY.md",
   "scripts/generated/architecture-map.json",
 ];
 
@@ -226,6 +235,83 @@ function findStructInSources(sources, structName) {
     }
   }
   return null;
+}
+
+/**
+ * Recovery diagnostics must remain evidence-only detectors — never mutation
+ * commands, retry authority, or lifecycle owners.
+ * @param {string} rootDir
+ * @param {{ command?: string, capabilityMethod?: string, capabilityId?: string }[]} mutations
+ */
+export function auditRecoveryDiagnosticsEvidenceOnly(rootDir, mutations = []) {
+  const violations = [];
+  const assertions = [];
+  const contractPath = path.join(rootDir, "packages/domain/src/recovery_contract.rs");
+  if (!fs.existsSync(contractPath)) {
+    violations.push(
+      "packages/domain/src/recovery_contract.rs missing — recovery evidence contract cannot be verified",
+    );
+    return { violations, assertions };
+  }
+  const contract = read(contractPath);
+  for (const eventType of RECOVERY_DIAGNOSTIC_EVENT_TYPES) {
+    if (!contract.includes(`"${eventType}"`)) {
+      violations.push(
+        `recovery_contract.rs missing diagnostic event type constant for ${eventType}`,
+      );
+    }
+    if (
+      /execute|retry|dispatch|mutate/.test(eventType) &&
+      !eventType.startsWith("system.recovery.")
+    ) {
+      violations.push(
+        `recovery diagnostic event type looks commandable: ${eventType}`,
+      );
+    }
+  }
+  if (
+    /\b(Database|mark_failed|execute_mutation|PermissionGateway|CommandPipeline)\b/.test(
+      contract,
+    )
+  ) {
+    violations.push(
+      "recovery_contract.rs must remain detector-only (no Database/lifecycle/pipeline symbols)",
+    );
+  }
+  if (!/detector predicates only/i.test(contract)) {
+    violations.push(
+      "recovery_contract.rs must declare detector-only ownership in module docs",
+    );
+  }
+
+  for (const entry of mutations) {
+    const name = entry.command ?? "";
+    if (
+      /Recover|ReconcileStale|RetryStale|FabricateRecovery/i.test(name) ||
+      RECOVERY_DIAGNOSTIC_EVENT_TYPES.some((t) => name.includes(t))
+    ) {
+      violations.push(
+        `MutationCommand ${name} must not expose recovery diagnostic / retry authority`,
+      );
+    }
+  }
+
+  const auditPath = path.join(rootDir, "packages/kernel/src/services/audit.rs");
+  if (fs.existsSync(auditPath)) {
+    const auditSrc = read(auditPath);
+    if (!/fn record_recovery_diagnostic\b/.test(auditSrc)) {
+      violations.push(
+        "AuditService::record_recovery_diagnostic missing — recovery diagnostics have no append path",
+      );
+    }
+  }
+
+  if (violations.length === 0) {
+    assertions.push(
+      `Verified ${RECOVERY_DIAGNOSTIC_EVENT_TYPES.length} recovery diagnostic event types remain evidence-only.`,
+    );
+  }
+  return { violations, assertions };
 }
 
 function listCapabilityConstructors(capabilitySource) {
@@ -953,6 +1039,13 @@ export function auditArchitectureGovernance(rootDir, options = {}) {
 
   evidence.mutation_commands = mutationInventory.length;
   evidence.query_commands = queries.length;
+
+  const recoveryDiag = auditRecoveryDiagnosticsEvidenceOnly(
+    rootDir,
+    mutationInventory,
+  );
+  violations.push(...recoveryDiag.violations);
+  evidence.assertions.push(...recoveryDiag.assertions);
 
   if (mutationInventory.length < MUTATION_COMMAND_BASELINE) {
     violations.push(

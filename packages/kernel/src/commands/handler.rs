@@ -101,7 +101,7 @@ use crate::lifecycle::LifecycleState;
 use crate::security::{PermissionGateway, PermissionSubject};
 use crate::services::{
     AiAssistantService, AiEvaluationService, AiOrchestrationService, AiParticipationService,
-    AiPlanningService, ConfigurationService, DecisionEngineService, DecisionQueueService,
+    AiPlanningService, AuditService, ConfigurationService, DecisionEngineService, DecisionQueueService,
     ExecutionLifecycleService, TaskGraphService, WorkspaceEnvironmentService, WorkspaceStateEngine,
     WorkspaceCompositionService, WorkspacePurposeService, WorkspaceEvolutionService,
     WorkspaceRecommendationEngineService, WorkspaceOperatingStateService,
@@ -197,19 +197,72 @@ impl CommandHandler {
     }
 
     /// Invoke existing ExecutionLifecycleService stale rules — no new authority.
+    ///
+    /// Emits append-only recovery diagnostics (attempted / completed / failed).
+    /// Diagnostics never mutate lifecycle. Ready continues even if reconcile or
+    /// diagnostic persistence fails (availability preserved; lifecycle truth
+    /// remains in execution_lifecycle rows and lazy get/list reconcile).
     fn reconcile_execution_claims_at_startup(kernel: &WorkspaceKernel) {
-        match ExecutionLifecycleService::reconcile_stale_claims_at_startup(
-            &kernel.shared_database(),
+        let db = kernel.shared_database();
+        let attempted_at = chrono::Utc::now().to_rfc3339();
+        if let Err(error) = AuditService::record_recovery_diagnostic(
+            &db,
+            workspace_domain::RECOVERY_DIAGNOSTIC_ATTEMPTED,
+            true,
+            serde_json::json!({
+                "authority_effect": "none",
+                "subsystem": workspace_domain::RECOVERY_SUBSYSTEM_EXECUTION_LIFECYCLE,
+                "attempted_at": attempted_at,
+                "sweep_limit": ExecutionLifecycleService::STARTUP_IN_PROGRESS_SWEEP_LIMIT,
+            })
+            .to_string(),
         ) {
+            log::error!("startup recovery attempted diagnostic failed: {error}");
+        }
+
+        match ExecutionLifecycleService::reconcile_stale_claims_at_startup(&db) {
             Ok(count) => {
                 if count > 0 {
                     log::info!(
                         "startup recovery inspected {count} in-progress execution claim(s)"
                     );
                 }
+                if let Err(error) = AuditService::record_recovery_diagnostic(
+                    &db,
+                    workspace_domain::RECOVERY_DIAGNOSTIC_COMPLETED,
+                    true,
+                    serde_json::json!({
+                        "authority_effect": "none",
+                        "subsystem": workspace_domain::RECOVERY_SUBSYSTEM_EXECUTION_LIFECYCLE,
+                        "attempted_at": attempted_at,
+                        "inspected_count": count,
+                        "sweep_limit": ExecutionLifecycleService::STARTUP_IN_PROGRESS_SWEEP_LIMIT,
+                    })
+                    .to_string(),
+                ) {
+                    log::error!("startup recovery completed diagnostic failed: {error}");
+                }
             }
             Err(error) => {
                 log::error!("startup execution claim reconciliation failed: {error}");
+                if let Err(diag_error) = AuditService::record_recovery_diagnostic(
+                    &db,
+                    workspace_domain::RECOVERY_DIAGNOSTIC_FAILED,
+                    false,
+                    serde_json::json!({
+                        "authority_effect": "none",
+                        "subsystem": workspace_domain::RECOVERY_SUBSYSTEM_EXECUTION_LIFECYCLE,
+                        "attempted_at": attempted_at,
+                        "failed_at": chrono::Utc::now().to_rfc3339(),
+                        "reason": error.to_string(),
+                        "sweep_limit": ExecutionLifecycleService::STARTUP_IN_PROGRESS_SWEEP_LIMIT,
+                    })
+                    .to_string(),
+                ) {
+                    log::error!(
+                        "startup recovery failed diagnostic also failed: {diag_error} (original: {error})"
+                    );
+                }
             }
         }
     }

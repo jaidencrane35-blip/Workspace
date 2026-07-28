@@ -13,6 +13,12 @@ use crate::error::{KernelError, Result};
 pub struct ExecutionLifecycleService;
 
 impl ExecutionLifecycleService {
+    /// Startup sweep inspects at most this many `in_progress` claims (oldest first).
+    /// Remaining stale rows reconcile lazily via `get` / `list_recent` using the
+    /// same `reconcile_stale` rules — no alternate authority.
+    pub const STARTUP_IN_PROGRESS_SWEEP_LIMIT: usize =
+        workspace_domain::STARTUP_IN_PROGRESS_SWEEP_LIMIT;
+
     /// Claim an execution identity. Crate-private — callers must enter via CommandPipeline.
     pub(crate) fn claim(
         db: &Arc<Mutex<Database>>,
@@ -280,12 +286,12 @@ impl ExecutionLifecycleService {
             .lock()
             .map_err(|_| KernelError::lock_poisoned("database"))?;
         let repository = ExecutionLifecycleRepository::new(&guard);
-        let records = repository.list_in_progress(500).map_err(|source| {
-            KernelError::ExecutionLifecyclePersistence {
+        let records = repository
+            .list_in_progress(Self::STARTUP_IN_PROGRESS_SWEEP_LIMIT)
+            .map_err(|source| KernelError::ExecutionLifecyclePersistence {
                 stage: "startup_list_in_progress",
                 source,
-            }
-        })?;
+            })?;
         let count = records.len();
         for record in records {
             let _ = Self::reconcile_stale(&repository, record)?;
