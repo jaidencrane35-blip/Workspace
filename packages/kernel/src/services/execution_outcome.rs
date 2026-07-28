@@ -26,20 +26,11 @@ impl ExecutionOutcomeService {
         let audit_events = AuditService::list_recent(db, scan)?;
 
         let mut outcomes = Vec::new();
-        let mut durable_completed = std::collections::HashSet::new();
-        for record in ExecutionLifecycleService::list_recent(db, limit)? {
-            if let Some(outcome) = ExecutionLifecycleService::completed_outcome(&record)? {
-                durable_completed.insert(outcome.execution_request_id.clone());
-                outcomes.push(outcome);
-            }
-        }
+        let mut audited_completed = std::collections::HashSet::new();
         for event in audit_events {
             let Some(outcome) = outcome_from_audit_event(&event) else {
                 continue;
             };
-            if durable_completed.contains(&outcome.execution_request_id) {
-                continue;
-            }
 
             outcome
                 .validate()
@@ -47,13 +38,26 @@ impl ExecutionOutcomeService {
                     message: error.to_string(),
                 })?;
 
+            if outcome.status == workspace_domain::ExecutionOutcomeStatus::Completed {
+                audited_completed.insert(outcome.execution_request_id.clone());
+            }
             outcomes.push(outcome);
-
-            if outcomes.len() >= limit {
-                break;
+        }
+        for record in ExecutionLifecycleService::list_recent(db, 500)? {
+            if audited_completed.contains(&record.execution_request_id) {
+                continue;
+            }
+            if let Some(outcome) = ExecutionLifecycleService::completed_outcome(&record)? {
+                outcomes.push(outcome);
             }
         }
 
+        outcomes.sort_by(|left, right| {
+            right
+                .completed_at
+                .cmp(&left.completed_at)
+                .then_with(|| left.execution_request_id.cmp(&right.execution_request_id))
+        });
         outcomes.truncate(limit.max(1));
         Ok(outcomes)
     }

@@ -55,21 +55,42 @@ impl ExecutionReconciliationService {
         db: &Arc<Mutex<Database>>,
         limit: usize,
     ) -> Result<Vec<ExecutionReconciliation>> {
-        let mut states: Vec<_> = ExecutionLifecycleService::list_recent(db, limit.max(1))?
+        let lifecycle = ExecutionLifecycleService::list_recent(db, 500)?;
+        let mut seen: std::collections::HashSet<_> = lifecycle
             .iter()
-            .map(ExecutionLifecycleService::reconciliation)
+            .map(|record| record.execution_request_id.clone())
             .collect();
-        let mut seen: std::collections::HashSet<_> = states
+        let mut states: Vec<_> = lifecycle
             .iter()
-            .map(|state| state.execution_request_id.clone())
+            .map(|record| {
+                (
+                    record.updated_at.clone(),
+                    ExecutionLifecycleService::reconciliation(record),
+                )
+            })
             .collect();
         let outcomes = ExecutionOutcomeService::list_recent(db, OUTCOME_SCAN_LIMIT)?;
-        states.extend(
-            reconcile_execution_states(&outcomes)
-                .into_iter()
-                .filter(|state| seen.insert(state.execution_request_id.clone())),
-        );
+        for state in reconcile_execution_states(&outcomes) {
+            if !seen.insert(state.execution_request_id.clone()) {
+                continue;
+            }
+            let occurred_at = outcomes
+                .iter()
+                .filter(|outcome| outcome.execution_request_id == state.execution_request_id)
+                .map(|outcome| outcome.completed_at.as_str())
+                .max()
+                .unwrap_or_default()
+                .to_string();
+            states.push((occurred_at, state));
+        }
+        states.sort_by(|(left_at, left), (right_at, right)| {
+            right_at.cmp(left_at).then_with(|| {
+                left.execution_request_id
+                    .cmp(&right.execution_request_id)
+            })
+        });
         states.truncate(limit.max(1));
+        let states: Vec<_> = states.into_iter().map(|(_, state)| state).collect();
         for state in &states {
             state.validate().map_err(|error| {
                 KernelError::ExecutionReconciliationValidation {

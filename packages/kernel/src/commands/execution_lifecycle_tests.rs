@@ -1,11 +1,13 @@
 use crate::error::KernelError;
 use crate::services::{
-    AuditService, ExecutionGuardService, ExecutionLifecycleService,
+    AuditService, ExecutionGuardService, ExecutionLifecycleService, ExecutionOutcomeService,
     ExecutionReconciliationService,
 };
 use crate::{CommandHandler, WorkspaceKernel};
+use workspace_database::ExecutionLifecycleRepository;
 use workspace_domain::{
-    Actor, ActorContext, AuditEvent, ExecutionState, IntentContext,
+    Actor, ActorContext, AuditEvent, ExecutionLifecycleRecord, ExecutionOutcomeStatus,
+    ExecutionState, IntentContext,
 };
 
 fn seed_executable(kernel: &WorkspaceKernel) -> (String, String) {
@@ -288,4 +290,67 @@ fn unresolved_claim_survives_restart_and_fails_closed() {
         ExecutionGuardService::ensure_allowed(&kernel.shared_database(), suggestion_id),
         Err(KernelError::ExecutionInProgress { .. })
     ));
+}
+
+#[test]
+fn outcome_projection_preserves_history_and_global_recency() {
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    {
+        let db = kernel.shared_database();
+        let guard = db.lock().unwrap();
+        let repository = ExecutionLifecycleRepository::new(&guard);
+        let record = ExecutionLifecycleRecord {
+            execution_request_id: "execution:historical".into(),
+            suggestion_id: "historical".into(),
+            intent_id: Some("intent:test".into()),
+            state: ExecutionState::InProgress,
+            claimed_at: "2026-01-01T00:00:00Z".into(),
+            completed_at: None,
+            updated_at: "2026-01-01T00:00:00Z".into(),
+        };
+        repository.insert_claim(&record).unwrap();
+        repository
+            .mark_completed(
+                &record.execution_request_id,
+                record.intent_id.as_deref(),
+                "2026-01-01T00:01:00Z",
+            )
+            .unwrap();
+    }
+
+    let mut earlier_failure =
+        AuditEvent::from_actor("command.failed", &Actor::local_user(), false)
+            .with_command_name("ExecuteIntentRequest")
+            .with_metadata(
+                r#"{"execution_request":true,"execution_request_id":"execution:historical","suggestion_id":"historical","execution_status":"failed"}"#,
+            );
+    earlier_failure.timestamp = "2025-12-31T23:59:00Z".into();
+    AuditService::append(&kernel.shared_database(), earlier_failure).unwrap();
+
+    let mut newer_failure =
+        AuditEvent::from_actor("command.failed", &Actor::local_user(), false)
+            .with_command_name("ExecuteIntentRequest")
+            .with_metadata(
+                r#"{"execution_request":true,"execution_request_id":"execution:newer","suggestion_id":"newer","execution_status":"failed"}"#,
+            );
+    newer_failure.timestamp = "2026-02-01T00:00:00Z".into();
+    AuditService::append(&kernel.shared_database(), newer_failure).unwrap();
+
+    let outcomes = ExecutionOutcomeService::list_recent(&kernel.shared_database(), 10).unwrap();
+    assert!(outcomes.iter().any(|outcome| {
+        outcome.execution_request_id == "execution:historical"
+            && outcome.status == ExecutionOutcomeStatus::Completed
+    }));
+    assert!(outcomes.iter().any(|outcome| {
+        outcome.execution_request_id == "execution:historical"
+            && outcome.status == ExecutionOutcomeStatus::Failed
+    }));
+    assert_eq!(
+        ExecutionOutcomeService::list_recent(&kernel.shared_database(), 1)
+            .unwrap()
+            .first()
+            .unwrap()
+            .execution_request_id,
+        "execution:newer"
+    );
 }
