@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | **Purpose** | Establish one provenance-rich, read-only runtime view of operational, cognitive, governance, and evidence state while preserving all existing lifecycle and persistence authorities |
-| **Status** | Active — Batch 6 accepted; Batch 7 gate open |
+| **Status** | Active — Batch 6 accepted; Batch 7 charter drafted (pending review) |
 | **Depends on** | Programme I governance / recovery; Programme II cognitive stack |
 | **Non-goals** | Event sourcing; authoritative replay logs; simulation; model hosting; autonomous execution; replacement permission system; replacement for domain-owned projections |
 
@@ -24,6 +24,7 @@
 13. **Temporal intelligence organises evidence over time** — it does not predict, simulate, correct, or become truth.
 14. **Explanation Layer explains evidence** — it does not become the authority that changes reality.
 15. **Contextual understanding organises situational meaning from durable evidence** — it does not decide, predict, simulate, or change reality.
+16. **Knowledge synthesis derives structured concepts from evidence** — it does not become memory truth, Cognitive Model, or decision authority.
 
 ## Batch map
 
@@ -35,16 +36,8 @@
 | **4** | Temporal Intelligence | Historical understanding extensions | Done (accepted) |
 | **5** | Workspace Explanation Layer | Cross-surface evidence-backed explanation | Done (accepted) |
 | **6** | Contextual Workspace Understanding | Richer situational understanding | Done (accepted) |
-| **7+** | Collaborative Understanding / Simulation / Local Intelligence | Only after Batch 6 audit ACCEPT + prior layers exercised | Planned |
-
-## Batch 5 summary
-
-`WorkspaceExplanationService` composes `ExplanationPackage` sections from durable
-state / policy / reconstruction / temporal snapshots via `load_snapshot` only.
-Surfaces gaps and conflicts; diagnostic `ExplanationConfidence` never becomes decision
-authority. Commands: `GenerateWorkspaceExplanation`, `GetWorkspaceExplanation`,
-`GetWorkspaceExplanationSummary`, `ExplainWorkspaceSituation`.
-See [Workspace Explanation Layer Architecture](./WORKSPACE-EXPLANATION-LAYER-ARCHITECTURE.md).
+| **7** | Workspace Knowledge Synthesis | Provenance-bound structured knowledge artefacts | Charter drafted — pending review |
+| **8** | Knowledge Integration / Retrieval Intelligence | Only after Batch 7 audit ACCEPT | Planned |
 
 ## Batch 6 summary
 
@@ -58,14 +51,35 @@ Commands: `GenerateContextualWorkspaceUnderstanding`, `GetContextualWorkspaceUnd
 (`work_context.write` / `work_context.read`). Migration `057`.
 See [Contextual Workspace Understanding Architecture](./CONTEXTUAL-WORKSPACE-UNDERSTANDING-ARCHITECTURE.md).
 
-**Do not expand into prediction, simulation, autonomous correction, or decision ownership.**
+## Batch 7 charter (draft)
+
+`WorkspaceKnowledgeSynthesisService` will derive provenance-bound
+`KnowledgeConcept` / `KnowledgeCluster` / `KnowledgeRelationship` / `KnowledgeGap`
+artefacts from durable Programme III projections via `load_snapshot` only.
+Diagnostic `KnowledgeConfidence` never becomes Memory truth, Cognitive Model mutation,
+policy outcome, automation, or priority authority. Relationships are meaning-only
+(`relates_to` / `overlaps` / …) — never causation or action.
+Commands (proposed): `GenerateWorkspaceKnowledgeSynthesis`, `GetWorkspaceKnowledgeSynthesis`,
+`GetWorkspaceKnowledgeSummary`, `ExplainKnowledgeSynthesis`. Migration `058`.
+See [Knowledge Synthesis Architecture](./KNOWLEDGE-SYNTHESIS-ARCHITECTURE.md).
+
+**Do not begin Batch 7 implementation until the charter is reviewed and approved.**
+
+**Do not expand into Memory replacement, Cognitive Model mutation, prediction, simulation,
+autonomous correction, or decision ownership.**
 
 ## Sequencing rule
 
 Ship Batch *N* only when Batch *N−1* has durable contracts, tests, and governance ownership entries.
-Batch 6 is accepted (architecture audit grade A). Batch 7 gate is open — start only with an
-explicit Batch 7 charter. Preserve P2 constraints: no prescriptive themes, diagnostic-only
-confidence, and no additional interpretive layers that duplicate Contextual Understanding.
+Batch 6 is accepted (architecture audit grade A). Batch 7 implementation is gated on charter
+review approval. Batch 8 remains gated on Batch 7 audit ACCEPT.
+
+Preserve P2 constraints from Batch 6:
+
+- descriptive themes / concepts only (no advice / prioritisation / recommendations)
+- diagnostic-only confidence
+- no interpretive layer that merely duplicates Contextual Understanding
+  (Batch 7 answers structured knowledge derivation — not “what is happening now”)
 
 ## Related
 
@@ -75,6 +89,7 @@ confidence, and no additional interpretive layers that duplicate Contextual Unde
 - [Temporal Intelligence Architecture](./TEMPORAL-INTELLIGENCE-ARCHITECTURE.md) (Batch 4)
 - [Workspace Explanation Layer Architecture](./WORKSPACE-EXPLANATION-LAYER-ARCHITECTURE.md) (Batch 5)
 - [Contextual Workspace Understanding Architecture](./CONTEXTUAL-WORKSPACE-UNDERSTANDING-ARCHITECTURE.md) (Batch 6)
+- [Knowledge Synthesis Architecture](./KNOWLEDGE-SYNTHESIS-ARCHITECTURE.md) (Batch 7 charter)
 - [Programme II — Cognitive Workspace](./PROGRAMME-II-COGNITIVE-WORKSPACE.md)
 - [Projection Integrity](../03-Engineering/PROJECTION-INTEGRITY.md)
 - [Architecture Governance](../03-Engineering/ARCHITECTURE-GOVERNANCE.md)

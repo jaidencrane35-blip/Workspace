@@ -540,15 +540,13 @@ Accepted when:
 **Implementation contract accepted and shipped.** Further work proceeds only against this contract —
 no simulator, no forecaster, no SoT elevation, no autonomous correction, no decision ownership.
 
-Do not start Batch 7 until Batch 6 is audited and accepted.
-
-Later candidates (not this batch): Collaborative Workspace Understanding / Simulation —
-still under the same rule: organise evidence into understanding; do not become the authority
-that changes reality.
+Batch 6 accepted (architecture audit grade A). Next: [Knowledge Synthesis](./KNOWLEDGE-SYNTHESIS-ARCHITECTURE.md)
+(Batch 7 — charter draft; pending review before implementation).
 
 ## Related
 
 - [Programme III — Coherent Workspace Runtime](./PROGRAMME-III-COHERENT-WORKSPACE-RUNTIME.md)
+- [Knowledge Synthesis Architecture](./KNOWLEDGE-SYNTHESIS-ARCHITECTURE.md) (Batch 7 charter)
 - [Workspace Explanation Layer Architecture](./WORKSPACE-EXPLANATION-LAYER-ARCHITECTURE.md) (Batch 5)
 - [Temporal Intelligence Architecture](./TEMPORAL-INTELLIGENCE-ARCHITECTURE.md) (Batch 4)
 - [Historical Workspace Reconstruction Architecture](./HISTORICAL-WORKSPACE-RECONSTRUCTION-ARCHITECTURE.md) (Batch 3)

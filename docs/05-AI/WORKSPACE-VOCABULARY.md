@@ -28,6 +28,7 @@ Canonical product language. Prefer these terms in UI, docs, and Assistant copy.
 | **Temporal Intelligence** | Scoped historical understanding over reconstruction evidence | Simulation, forecasting, autonomous correction, invented causes |
 | **Workspace Explanation Layer** | Cross-surface evidence-backed explanation package | Decision authority, simulator, command surface, conflict resolver |
 | **Contextual Workspace Understanding** | Situational understanding from durable multi-surface evidence | Predictor, simulator, decision owner, certainty engine, planner |
+| **Workspace Knowledge Synthesis** | Provenance-bound derived concepts / clusters / relationships from evidence | Memory SoT, Cognitive Model, decision authority, causation engine, planner |
 | **Graph History** | Terminal superseded graph snapshot evidence | Actionable graph mutations |
 | **Task** | Durable work item | Action |
 | **Action** | Executable catalog/command candidate | Task |

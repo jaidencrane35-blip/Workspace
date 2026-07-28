@@ -42,6 +42,7 @@ Recovery must **never**:
 - fabricate temporal causes, forecasts, simulations, or Complete understandings from gaps
 - fabricate explanation authority, approvals, conflict resolutions, or Complete packages from missing upstreams
 - fabricate contextual understanding, situational certainty, conflict winners, or Complete understandings from gaps (`recovery_must_not_fabricate_contextual_understanding`)
+- fabricate knowledge concepts, relationships, synthesis confidence, or historical knowledge claims from missing evidence (Batch 7 charter — `recovery_must_not_fabricate_knowledge_synthesis` on implementation)
 - recreate desktop actions
 - bypass PermissionGateway / CommandPipeline for user mutations
 - silently “heal” lifecycle into an open actionable state

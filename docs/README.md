@@ -112,7 +112,8 @@ AI behaviour, permissions, and boundaries.
 | [Historical Workspace Reconstruction Architecture](05-AI/HISTORICAL-WORKSPACE-RECONSTRUCTION-ARCHITECTURE.md) | Programme III Batch 3 temporal reconstruction / change explanation |
 | [Temporal Intelligence Architecture](05-AI/TEMPORAL-INTELLIGENCE-ARCHITECTURE.md) | Programme III Batch 4 temporal analysis / historical understanding extensions |
 | [Workspace Explanation Layer Architecture](05-AI/WORKSPACE-EXPLANATION-LAYER-ARCHITECTURE.md) | Programme III Batch 5 cross-surface evidence-backed explanation |
-| [Contextual Workspace Understanding Architecture](05-AI/CONTEXTUAL-WORKSPACE-UNDERSTANDING-ARCHITECTURE.md) | Programme III Batch 6 — situational understanding (Active) |
+| [Contextual Workspace Understanding Architecture](05-AI/CONTEXTUAL-WORKSPACE-UNDERSTANDING-ARCHITECTURE.md) | Programme III Batch 6 — situational understanding (Active / accepted) |
+| [Knowledge Synthesis Architecture](05-AI/KNOWLEDGE-SYNTHESIS-ARCHITECTURE.md) | Programme III Batch 7 — structured knowledge artefacts (charter draft) |
 | [Memory Policy](05-AI/MEMORY-POLICY.md) | What may be stored, retention, user control, deletion |
 | [Confidence Policy](05-AI/CONFIDENCE-POLICY.md) | Confidence levels, suggestion thresholds, uncertainty |
 | [AI Architecture Index](05-AI/README.md) | Navigation hub for Recommendation/Decision/Governance contracts |

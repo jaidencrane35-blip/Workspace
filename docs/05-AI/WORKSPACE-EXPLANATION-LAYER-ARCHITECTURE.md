@@ -449,7 +449,8 @@ decision authority.
 
 Explain evidence. Do not become the authority that changes reality.
 
-Batch 5 accepted. Next: [Contextual Workspace Understanding](./CONTEXTUAL-WORKSPACE-UNDERSTANDING-ARCHITECTURE.md) (Batch 6 — Active / implemented).
+Batch 5 accepted. Next: [Contextual Workspace Understanding](./CONTEXTUAL-WORKSPACE-UNDERSTANDING-ARCHITECTURE.md) (Batch 6 — accepted).
+Then: [Knowledge Synthesis](./KNOWLEDGE-SYNTHESIS-ARCHITECTURE.md) (Batch 7 — charter draft).
 
 ## Related
 

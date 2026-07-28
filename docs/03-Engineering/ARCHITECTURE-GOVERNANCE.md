@@ -410,6 +410,30 @@ See [Workspace Explanation Layer Architecture](../05-AI/WORKSPACE-EXPLANATION-LA
 
 See [Contextual Workspace Understanding Architecture](../05-AI/CONTEXTUAL-WORKSPACE-UNDERSTANDING-ARCHITECTURE.md).
 
+## Workspace Knowledge Synthesis (Programme III Batch 7 — charter)
+
+`WorkspaceKnowledgeSynthesisService` will own **synthesized knowledge artefacts only**
+(concepts / clusters / relationships / gaps). Charter pending review — not yet implemented.
+
+| Property | Value |
+|----------|-------|
+| Lifecycle owner | No |
+| Execution / approve / policy / task / plan authority | No |
+| Memory / Cognitive Model replacement | No |
+| Source of truth | No |
+| Knowledge synthesis / projection owner (proposed) | Yes |
+
+Expected on implementation:
+
+- `KnowledgeSynthesisHistoryEntry` / `KnowledgeSynthesisSummary` contain no authority/command fields
+- Mutation inventory includes `GenerateWorkspaceKnowledgeSynthesis` (baseline +1)
+- Knowledge synthesis cannot import lifecycle/execution services or call `PermissionGateway`
+- Knowledge synthesis cannot silently refresh foreign sources via `generate`
+- Concepts require evidence refs; relationships meaning-only; confidence diagnostic only
+- Repository cannot call the knowledge synthesis service
+
+See [Knowledge Synthesis Architecture](../05-AI/KNOWLEDGE-SYNTHESIS-ARCHITECTURE.md).
+
 ## Capability boundary audit
 
 Enforced by `scripts/architecture-governance-lib.mjs`:
