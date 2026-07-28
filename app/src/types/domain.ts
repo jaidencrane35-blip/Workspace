@@ -916,12 +916,17 @@ export interface DecisionActionResult {
 export interface DecisionQueue {
   workspace_id: string;
   generated_at: string;
+  /** Actionable overlay states only (`pending` / `viewed` / `deferred`). */
   items: DecisionItem[];
   pending_count: number;
   high_priority_count: number;
-  /** Terminal / orphan overlay evidence — never actionable. */
-  history?: DecisionOverlayHistoryEntry[];
-  history_count?: number;
+  /**
+   * Terminal / orphan overlay evidence window — never actionable.
+   * Length is a projection window, not the full evidence count.
+   */
+  history: DecisionOverlayHistoryEntry[];
+  /** Authoritative terminal evidence count (may exceed `history.length`). */
+  history_count: number;
   authority_effect: string;
 }
 
@@ -947,9 +952,13 @@ export interface DecisionQueueSummary {
   high_priority_count: number;
   /** Actionable overlay states only. */
   items: DecisionItem[];
-  /** Truncated terminal/orphan overlay evidence (never actionable). */
-  history?: DecisionOverlayHistoryEntry[];
-  history_count?: number;
+  /**
+   * Truncated terminal/orphan overlay evidence (never actionable).
+   * Length is a projection window, not the full evidence count.
+   */
+  history: DecisionOverlayHistoryEntry[];
+  /** Authoritative terminal evidence count (may exceed `history.length`). */
+  history_count: number;
   authority_effect: string;
 }
 

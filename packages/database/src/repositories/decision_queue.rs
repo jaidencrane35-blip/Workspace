@@ -85,20 +85,6 @@ impl<'a> DecisionQueueRepository<'a> {
             .map_err(Into::into)
     }
 
-    pub fn delete_overlay(
-        &self,
-        workspace_id: &str,
-        source_type: DecisionSourceType,
-        source_id: &str,
-    ) -> Result<()> {
-        self.db.connection().execute(
-            "DELETE FROM decision_item_lifecycle
-             WHERE workspace_id = ?1 AND source_type = ?2 AND source_id = ?3",
-            (workspace_id, source_type.as_str(), source_id),
-        )?;
-        Ok(())
-    }
-
     /// Resolve workspace for a source key (lifecycle overlay lookup).
     pub fn list_overlays_by_source(
         &self,

@@ -309,8 +309,7 @@ export function AssistantPanel({
               Decision Queue: {workspaceIntel.decision_queue.pending_count}{" "}
               decision(s) needing attention (
               {workspaceIntel.decision_queue.high_priority_count} high priority)
-              · history{" "}
-              {workspaceIntel.decision_queue.history_count ?? 0} terminal
+              · history {workspaceIntel.decision_queue.history_count} terminal
               overlay(s) (not actionable) ·{" "}
               {workspaceIntel.blocked_actions.length} blocked action(s)
               projected from the same queue.
@@ -565,7 +564,7 @@ export function AssistantPanel({
                     .map((i) => `[${i.priority}] ${i.title}`)
                     .join("; ")}.`}{" "}
               History evidence:{" "}
-              {workspaceIntel.decision_queue.history_count ?? 0} terminal
+              {workspaceIntel.decision_queue.history_count} terminal
               overlay(s) projected (not actionable). Same queue as the Work
               tab. Assistant may explain and prioritize — never accept, reject,
               defer, or execute.

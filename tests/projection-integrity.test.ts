@@ -153,9 +153,7 @@ describe("projection integrity — decision queue terminal overlay history", () 
   }
 
   it("treats projected history as non-actionable (matches Rust)", () => {
-    expect(
-      isDecisionOverlayHistoryNonActionable(historyEntry())
-    ).toBe(true);
+    expect(isDecisionOverlayHistoryNonActionable(historyEntry())).toBe(true);
     expect(
       isDecisionOverlayHistoryNonActionable(
         historyEntry({ decision_state: "expired", orphaned: true })
@@ -237,13 +235,37 @@ describe("projection integrity — decision queue terminal overlay history", () 
     expect(summary.items.every((i) => i.decision_state === "pending")).toBe(
       true
     );
-    expect(summary.history?.every(isDecisionOverlayHistoryNonActionable)).toBe(
+    expect(summary.history.every(isDecisionOverlayHistoryNonActionable)).toBe(
       true
     );
     expect(
-      summary.history?.some((h) => h.orphaned && h.decision_state === "expired")
+      summary.history.some((h) => h.orphaned && h.decision_state === "expired")
     ).toBe(true);
     expect(summary.history_count).toBe(2);
     expect(summary.items.some((i) => i.source_id === "orphan")).toBe(false);
+  });
+
+  it("treats history_count as authoritative over history.length window", () => {
+    const summary: DecisionQueueSummary = {
+      workspace_id: "ws",
+      generated_at: "t",
+      pending_count: 0,
+      high_priority_count: 0,
+      items: [],
+      history: [historyEntry({ source_id: "window-only" })],
+      history_count: 5,
+      authority_effect: "none",
+    };
+    expect(summary.history.length).toBe(1);
+    expect(summary.history_count).toBe(5);
+    expect(summary.items.length === 0 && summary.history_count > 0).toBe(true);
+  });
+
+  it("does not convert history entries into DecisionItems", () => {
+    const entry = historyEntry({ orphaned: true, decision_state: "expired" });
+    expect(isDecisionOverlayHistoryNonActionable(entry)).toBe(true);
+    expect(entry).not.toHaveProperty("recommended_action");
+    expect(entry).not.toHaveProperty("handoff_command");
+    expect(entry.actionable).toBe(false);
   });
 });

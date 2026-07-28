@@ -431,6 +431,9 @@ pub struct DecisionQueue {
 
 impl DecisionQueue {
     pub fn from_items(workspace_id: impl Into<String>, mut items: Vec<DecisionItem>) -> Self {
+        // Full queue and summary share the same separation: actionable states only in
+        // `items`. Terminal overlays project exclusively through `history`.
+        items.retain(|i| i.decision_state.is_actionable_overlay());
         items.sort_by(|a, b| {
             a.priority
                 .weight()
@@ -439,27 +442,13 @@ impl DecisionQueue {
                 .then(a.created_at.cmp(&b.created_at))
                 .then(a.id.as_str().cmp(b.id.as_str()))
         });
-        let pending_count = items
-            .iter()
-            .filter(|i| {
-                matches!(
-                    i.decision_state,
-                    DecisionState::Pending | DecisionState::Viewed | DecisionState::Deferred
-                )
-            })
-            .count();
+        let pending_count = items.len();
         let high_priority_count = items
             .iter()
             .filter(|i| {
                 matches!(
                     i.priority,
                     DecisionPriority::Critical | DecisionPriority::High
-                ) && !matches!(
-                    i.decision_state,
-                    DecisionState::Dismissed
-                        | DecisionState::Accepted
-                        | DecisionState::Rejected
-                        | DecisionState::Expired
                 )
             })
             .count();
@@ -587,16 +576,61 @@ mod projection_integrity_tests {
                 item(DecisionState::Viewed, "v"),
             ],
         );
+        // Full queue retains only actionable items — terminals are not duplicated here.
+        assert_eq!(queue.items.len(), 2);
+        assert!(queue
+            .items
+            .iter()
+            .all(|i| i.decision_state.is_actionable_overlay()));
+        assert!(!queue
+            .items
+            .iter()
+            .any(|i| i.source_id == "d" || i.source_id == "e"));
         let summary = queue.summary(10);
         assert_eq!(summary.items.len(), 2);
         assert!(summary
             .items
             .iter()
             .all(|i| i.decision_state.is_actionable_overlay()));
-        assert!(!summary
-            .items
-            .iter()
-            .any(|i| i.source_id == "d" || i.source_id == "e"));
+    }
+
+    #[test]
+    fn summary_truncates_history_window_but_preserves_history_count() {
+        let history = vec![
+            DecisionOverlayHistoryEntry::from_overlay(
+                &overlay(DecisionState::Dismissed, "d1"),
+                false,
+            )
+            .unwrap(),
+            DecisionOverlayHistoryEntry::from_overlay(
+                &overlay(DecisionState::Dismissed, "d2"),
+                true,
+            )
+            .unwrap(),
+            DecisionOverlayHistoryEntry::from_overlay(
+                &overlay(DecisionState::Expired, "e1"),
+                true,
+            )
+            .unwrap(),
+        ];
+        let queue = DecisionQueue::from_items("ws-1", vec![item(DecisionState::Pending, "p")])
+            .with_overlay_history(history);
+        let summary = queue.summary(2);
+        assert_eq!(summary.history.len(), 2, "returned window is truncated");
+        assert_eq!(
+            summary.history_count, 3,
+            "history_count remains full evidence count"
+        );
+        assert!(
+            summary.items.iter().all(|i| i.decision_state.is_actionable_overlay())
+        );
+        assert!(
+            !summary
+                .items
+                .iter()
+                .any(|i| summary.history.iter().any(|h| h.source_id == i.source_id)),
+            "same overlay must not appear in both items and history"
+        );
     }
 
     fn overlay(state: DecisionState, source_id: &str) -> DecisionLifecycleOverlay {

@@ -723,6 +723,193 @@ fn terminal_overlay_history_projects_orphans_and_excludes_from_actionable_summar
             || i.source_id == "orphan-dismissed"),
         "orphan overlays must not re-enter live items"
     );
+    assert!(
+        !queue.items.iter().any(|i| i.source_id == proposal.id.as_str()),
+        "dismissed live overlay must leave full-queue items (history only)"
+    );
+    for entry in &queue.history {
+        assert!(
+            !queue.items.iter().any(|i| {
+                i.source_type == entry.source_type && i.source_id == entry.source_id
+            }),
+            "same overlay must not appear in both actionable items and history"
+        );
+        assert!(
+            entry.is_non_actionable(),
+            "history entries cannot become actionable items"
+        );
+    }
+}
+
+/// aggregate_readonly must not expire/delete overlays; terminal orphans still project.
+#[test]
+fn aggregate_readonly_projects_terminal_orphans_without_mutating_overlays() {
+    use workspace_database::DecisionQueueRepository;
+    use workspace_domain::DecisionLifecycleOverlay;
+
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let (ws, _, _) = seed_project(&kernel);
+    let local = ActorContext::local_user();
+    let db = kernel.shared_database();
+
+    {
+        let guard = db.lock().unwrap();
+        let repo = DecisionQueueRepository::new(&guard);
+        repo.upsert_overlay(&DecisionLifecycleOverlay {
+            workspace_id: ws.clone(),
+            source_type: DecisionSourceType::IntentProposal,
+            source_id: "orphan-open".into(),
+            decision_state: DecisionState::Pending,
+            updated_at: "t0".into(),
+            actor_id: "local-user".into(),
+        })
+        .unwrap();
+        repo.upsert_overlay(&DecisionLifecycleOverlay {
+            workspace_id: ws.clone(),
+            source_type: DecisionSourceType::IntentProposal,
+            source_id: "orphan-dismissed".into(),
+            decision_state: DecisionState::Dismissed,
+            updated_at: "t0".into(),
+            actor_id: "local-user".into(),
+        })
+        .unwrap();
+        repo.upsert_overlay(&DecisionLifecycleOverlay {
+            workspace_id: ws.clone(),
+            source_type: DecisionSourceType::IntentProposal,
+            source_id: "orphan-expired".into(),
+            decision_state: DecisionState::Expired,
+            updated_at: "t0".into(),
+            actor_id: "local-user".into(),
+        })
+        .unwrap();
+    }
+
+    let queue = crate::services::DecisionQueueService::aggregate_readonly(
+        &db,
+        &local,
+        &kernel.orchestrated_plans(),
+        &kernel.assistant_workflows(),
+        ws.clone(),
+    )
+    .unwrap();
+
+    assert!(
+        queue
+            .history
+            .iter()
+            .any(|h| h.source_id == "orphan-dismissed"
+                && h.orphaned
+                && h.decision_state == DecisionState::Dismissed),
+        "orphan dismissed must project without generate writes"
+    );
+    assert!(
+        queue
+            .history
+            .iter()
+            .any(|h| h.source_id == "orphan-expired"
+                && h.orphaned
+                && h.decision_state == DecisionState::Expired),
+        "orphan expired must project without generate writes"
+    );
+    assert!(
+        !queue.history.iter().any(|h| h.source_id == "orphan-open"),
+        "open orphan is not terminal evidence until generate expires it"
+    );
+    assert!(
+        !queue.items.iter().any(|i| {
+            matches!(
+                i.decision_state,
+                DecisionState::Dismissed | DecisionState::Expired
+            )
+        }),
+        "readonly full queue still excludes terminals from items"
+    );
+
+    let guard = db.lock().unwrap();
+    let repo = DecisionQueueRepository::new(&guard);
+    assert_eq!(
+        repo.get_overlay(&ws, DecisionSourceType::IntentProposal, "orphan-open")
+            .unwrap()
+            .unwrap()
+            .decision_state,
+        DecisionState::Pending,
+        "readonly must not silently expire open orphans"
+    );
+    assert_eq!(
+        repo.get_overlay(&ws, DecisionSourceType::IntentProposal, "orphan-dismissed")
+            .unwrap()
+            .unwrap()
+            .decision_state,
+        DecisionState::Dismissed,
+        "readonly must not delete or mutate terminal overlays"
+    );
+}
+
+/// History identity is not an executable/actionable command input.
+#[test]
+fn history_identity_cannot_drive_overlay_actions_or_execution() {
+    use workspace_database::DecisionQueueRepository;
+    use workspace_domain::DecisionLifecycleOverlay;
+
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let (ws, _, _) = seed_project(&kernel);
+    let local = ActorContext::local_user();
+    let intent = IntentContext::user_request();
+    let db = kernel.shared_database();
+
+    {
+        let guard = db.lock().unwrap();
+        DecisionQueueRepository::new(&guard)
+            .upsert_overlay(&DecisionLifecycleOverlay {
+                workspace_id: ws.clone(),
+                source_type: DecisionSourceType::IntentProposal,
+                source_id: "orphan-dismissed".into(),
+                decision_state: DecisionState::Dismissed,
+                updated_at: "t0".into(),
+                actor_id: "local-user".into(),
+            })
+            .unwrap();
+    }
+
+    let queue =
+        CommandHandler::generate_decision_queue(&kernel, local.clone(), intent.clone(), ws.clone())
+            .unwrap();
+    let history_id = queue
+        .history
+        .iter()
+        .find(|h| h.source_id == "orphan-dismissed")
+        .expect("orphan dismissed projected")
+        .decision_item_id
+        .clone();
+
+    assert!(
+        !queue.items.iter().any(|i| i.id.as_str() == history_id),
+        "history DTO identity must not appear as an actionable DecisionItem"
+    );
+    let err = CommandHandler::mark_decision_item_viewed(
+        &kernel,
+        local.clone(),
+        intent.clone(),
+        ws.clone(),
+        history_id.clone(),
+    )
+    .unwrap_err();
+    assert!(matches!(err, KernelError::DecisionQueueValidation { .. }));
+
+    let err = CommandHandler::dismiss_decision_item(
+        &kernel,
+        local,
+        intent,
+        ws,
+        history_id,
+    )
+    .unwrap_err();
+    assert!(matches!(err, KernelError::DecisionQueueValidation { .. }));
+
+    assert!(
+        CommandHandler::decision_queue_attempt_execute().is_err(),
+        "Decision Queue has no execute path for history or items"
+    );
 }
 
 #[test]
