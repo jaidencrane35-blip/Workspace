@@ -3,8 +3,7 @@ use crate::error::Result;
 use workspace_domain::{
     OrchestrationArtefactKind, OrchestrationCycleDetected, OrchestrationDependency,
     OrchestrationEvidenceLink, OrchestrationHistoryEntry, OrchestrationObservation,
-    OrchestrationRefreshStage, OrchestrationStatus, WorkspaceOrchestrationMeta,
-    WorkspaceOrchestrationView,
+    OrchestrationStatus, WorkspaceOrchestrationMeta, WorkspaceOrchestrationView,
 };
 
 /// Persistence guards for Programme II cognitive orchestration projections.

@@ -13,9 +13,6 @@ use crate::errors::DomainError;
 
 #[derive(Debug, Error, PartialEq, Eq)]
 pub enum WorkspaceCognitiveOrchestrationError {
-    #[error("title must not be empty")]
-    EmptyTitle,
-
     #[error("invalid orchestration status: {0}")]
     InvalidStatus(String),
 
@@ -40,17 +37,6 @@ fn clamp_score(value: u8) -> Result<u8, WorkspaceCognitiveOrchestrationError> {
         Err(WorkspaceCognitiveOrchestrationError::InvalidScore(value))
     } else {
         Ok(value)
-    }
-}
-
-fn normalize_title(
-    title: impl Into<String>,
-) -> Result<String, WorkspaceCognitiveOrchestrationError> {
-    let trimmed = title.into().trim().to_string();
-    if trimmed.is_empty() {
-        Err(WorkspaceCognitiveOrchestrationError::EmptyTitle)
-    } else {
-        Ok(trimmed)
     }
 }
 
@@ -671,10 +657,5 @@ mod tests {
         assert_eq!(summary.history.len(), 1);
         assert_eq!(summary.history_count, 2);
         assert!(!summary.has_current);
-    }
-
-    #[test]
-    fn normalize_title_rejects_empty() {
-        assert!(normalize_title("  ").is_err());
     }
 }
