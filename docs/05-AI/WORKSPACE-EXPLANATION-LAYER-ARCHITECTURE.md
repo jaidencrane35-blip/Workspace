@@ -4,7 +4,7 @@
 |-------|-------|
 | **Purpose** | Compose evidence-backed explanations across Programme III surfaces — present what is known, unknown, conflicting, and limited without becoming the authority that changes reality |
 | **Owner** | `WorkspaceExplanationService` (DurableStore — **explanation evidence only**) |
-| **Status** | Active — Programme III Batch 5 implemented |
+| **Status** | Active — Programme III Batch 5 accepted |
 | **Lifecycle owner** | No |
 | **Execution / replay authority** | No |
 | **Simulation / forecast / correction authority** | No |

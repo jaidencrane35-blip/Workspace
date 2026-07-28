@@ -27,6 +27,7 @@ Canonical product language. Prefer these terms in UI, docs, and Assistant copy.
 | **Historical Reconstruction** | Temporal comparison / change explanation from durable evidence | Event sourcing, authoritative replay log, invented history |
 | **Temporal Intelligence** | Scoped historical understanding over reconstruction evidence | Simulation, forecasting, autonomous correction, invented causes |
 | **Workspace Explanation Layer** | Cross-surface evidence-backed explanation package | Decision authority, simulator, command surface, conflict resolver |
+| **Contextual Workspace Understanding** | Situational understanding from durable multi-surface evidence | Predictor, simulator, decision owner, certainty engine, planner |
 | **Graph History** | Terminal superseded graph snapshot evidence | Actionable graph mutations |
 | **Task** | Durable work item | Action |
 | **Action** | Executable catalog/command candidate | Task |
