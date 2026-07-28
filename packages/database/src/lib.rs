@@ -28,6 +28,7 @@ pub use repositories::{
     PolicyGovernanceRepository, HistoricalReconstructionRepository,
     TemporalIntelligenceRepository, WorkspaceExplanationRepository,
     WorkspaceContextualUnderstandingRepository,
+    WorkspaceKnowledgeSynthesisRepository,
     WorkspaceRepository, WorkspaceIntentRepository, ZoneRepository,
 };
 pub use settings::SettingsRepository;

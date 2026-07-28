@@ -78,6 +78,11 @@ import {
   isContextualUnderstandingProjectionNonCommandable,
   contextualUnderstandingHistoryCountIsAuthoritative,
 } from "../app/src/components/contextualUnderstandingProjection";
+import {
+  isKnowledgeSynthesisHistoryNonActionable,
+  isKnowledgeSynthesisProjectionNonCommandable,
+  knowledgeSynthesisHistoryCountIsAuthoritative,
+} from "../app/src/components/knowledgeSynthesisProjection";
 import type {
   DecisionArtifactHistoryEntry,
   DecisionEngineSummary,
@@ -124,6 +129,9 @@ import type {
   ContextualUnderstandingHistoryEntry,
   ContextualUnderstandingProjection,
   ContextualUnderstandingSummary,
+  KnowledgeSynthesisHistoryEntry,
+  KnowledgeSynthesisProjection,
+  KnowledgeSynthesisSummary,
   RecommendationHistoryEntry,
   RecommendationItem,
   TaskGraphSummary,
@@ -1520,6 +1528,69 @@ describe("projection integrity — cognitive agent cast", () => {
     expect(Object.keys(nonCommand)).not.toContain("execute");
     expect(Object.keys(nonCommand)).not.toContain("approve");
     expect(Object.keys(nonCommand)).not.toContain("recommend");
+    expect(Object.keys(nonCommand)).not.toContain("dispatch");
+  });
+
+  it("keeps knowledge synthesis projections non-commandable with authoritative history_count", () => {
+    const historyEntry = (
+      overrides: Partial<KnowledgeSynthesisHistoryEntry> = {}
+    ): KnowledgeSynthesisHistoryEntry => ({
+      synthesis_id: "knowledge_synthesis:1",
+      status: "superseded",
+      created_at: "t0",
+      superseded_at: "t1",
+      completeness: "partial",
+      concept_count: 2,
+      cluster_count: 1,
+      relationship_count: 1,
+      gap_count: 1,
+      source_revision_count: 3,
+      terminal: true,
+      actionable: false,
+      authority_effect: "none",
+      ...overrides,
+    });
+    const projection: KnowledgeSynthesisProjection = {
+      workspace_id: "ws",
+      generated_at: "t2",
+      current: null,
+      history: [historyEntry()],
+      history_count: 3,
+      authority_effect: "none",
+    };
+    expect(isKnowledgeSynthesisProjectionNonCommandable(projection)).toBe(true);
+    expect(isKnowledgeSynthesisHistoryNonActionable(historyEntry())).toBe(true);
+    expect(
+      isKnowledgeSynthesisHistoryNonActionable(historyEntry({ actionable: true }))
+    ).toBe(false);
+
+    const summary: KnowledgeSynthesisSummary = {
+      workspace_id: "ws",
+      generated_at: "t2",
+      has_current: false,
+      synthesis_id: null,
+      completeness: null,
+      concept_count: 0,
+      cluster_count: 0,
+      relationship_count: 0,
+      gap_count: 0,
+      source_revision_count: 0,
+      history: [historyEntry()],
+      history_count: 3,
+      authority_effect: "none",
+    };
+    expect(knowledgeSynthesisHistoryCountIsAuthoritative(summary)).toBe(true);
+    expect(summary.history_count).toBeGreaterThanOrEqual(summary.history.length);
+
+    const nonCommand = {
+      synthesis_id: "knowledge_synthesis:1",
+      actionable: false,
+      terminal: true,
+      authority_effect: "none",
+    };
+    expect(Object.keys(nonCommand)).not.toContain("execute");
+    expect(Object.keys(nonCommand)).not.toContain("approve");
+    expect(Object.keys(nonCommand)).not.toContain("causes");
     expect(Object.keys(nonCommand)).not.toContain("dispatch");
   });
 });

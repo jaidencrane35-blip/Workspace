@@ -24,6 +24,7 @@ mod historical_reconstruction;
 mod temporal_intelligence;
 mod workspace_explanation;
 mod workspace_contextual_understanding;
+mod workspace_knowledge_synthesis;
 mod workspace_purpose;
 mod workspace_evolution;
 mod workspace_recommendation;
@@ -155,6 +156,8 @@ mod temporal_intelligence_tests;
 mod workspace_explanation_tests;
 #[cfg(test)]
 mod workspace_contextual_understanding_tests;
+#[cfg(test)]
+mod workspace_knowledge_synthesis_tests;
 #[cfg(test)]
 mod workspace_attention_tests;
 #[cfg(test)]
@@ -470,5 +473,9 @@ pub use workspace_explanation::{
 pub use workspace_contextual_understanding::{
     ExplainWorkspaceContext, GenerateContextualWorkspaceUnderstanding,
     GetContextualWorkspaceUnderstanding, GetContextualWorkspaceUnderstandingSummary,
+};
+pub use workspace_knowledge_synthesis::{
+    ExplainKnowledgeSynthesis, GenerateWorkspaceKnowledgeSynthesis, GetWorkspaceKnowledgeSummary,
+    GetWorkspaceKnowledgeSynthesis,
 };
 pub use zone::{CreateZone, DeleteZone, GetZone};

@@ -33,6 +33,7 @@ mod workspace_historical_reconstruction;
 mod workspace_temporal_intelligence;
 mod workspace_explanation;
 mod workspace_contextual_understanding;
+mod workspace_knowledge_synthesis;
 mod workspace_continuity;
 mod workspace_environment;
 mod workspace_composition;
@@ -216,4 +217,5 @@ pub(crate) use workspace_historical_reconstruction::WorkspaceHistoricalReconstru
 pub(crate) use workspace_temporal_intelligence::WorkspaceTemporalIntelligenceService;
 pub(crate) use workspace_explanation::WorkspaceExplanationService;
 pub(crate) use workspace_contextual_understanding::WorkspaceContextualUnderstandingService;
+pub(crate) use workspace_knowledge_synthesis::WorkspaceKnowledgeSynthesisService;
 pub use zone::ZoneService;

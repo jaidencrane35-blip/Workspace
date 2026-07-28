@@ -36,6 +36,9 @@ use crate::workspace_explanation::{
 use crate::workspace_contextual_understanding::{
     ContextualUnderstandingHistoryEntry, ContextualUnderstandingProjection,
 };
+use crate::workspace_knowledge_synthesis::{
+    KnowledgeSynthesisHistoryEntry, KnowledgeSynthesisProjection,
+};
 use crate::workspace_reasoning_memory::{ReasoningHistoryEntry, ReasoningSnapshot};
 
 /// Documented startup in-progress sweep cap (must match
@@ -313,6 +316,26 @@ pub fn recovery_must_not_fabricate_contextual_understanding(
 /// Fabricated actionable contextual-understanding history must fail the recovery contract.
 pub fn recovery_must_not_fabricate_actionable_contextual_understanding_history(
     entry: &ContextualUnderstandingHistoryEntry,
+) -> bool {
+    entry.is_non_actionable()
+}
+
+/// Missing knowledge synthesis remains missing — never invent concepts on restart.
+pub fn recovery_must_not_fabricate_knowledge_synthesis(
+    projection: &KnowledgeSynthesisProjection,
+) -> bool {
+    projection.is_non_commandable()
+        && projection.history.iter().all(|h| h.is_non_actionable())
+        && projection
+            .current
+            .as_ref()
+            .map(|c| c.is_non_executing())
+            .unwrap_or(true)
+}
+
+/// Fabricated actionable knowledge-synthesis history must fail the recovery contract.
+pub fn recovery_must_not_fabricate_actionable_knowledge_synthesis_history(
+    entry: &KnowledgeSynthesisHistoryEntry,
 ) -> bool {
     entry.is_non_actionable()
 }
@@ -725,6 +748,35 @@ mod tests {
             authority_effect: "none".into(),
         };
         assert!(!recovery_must_not_fabricate_actionable_contextual_understanding_history(
+            &bad
+        ));
+    }
+
+    #[test]
+    fn recovery_never_fabricates_knowledge_synthesis_on_empty_projection() {
+        let empty = KnowledgeSynthesisProjection::assemble("ws", None, vec![], 0, "t0");
+        assert!(recovery_must_not_fabricate_knowledge_synthesis(&empty));
+        assert!(empty.current.is_none());
+    }
+
+    #[test]
+    fn recovery_rejects_actionable_knowledge_synthesis_history() {
+        let bad = KnowledgeSynthesisHistoryEntry {
+            synthesis_id: "knowledge_synthesis:1".into(),
+            status: "superseded".into(),
+            created_at: "t0".into(),
+            superseded_at: Some("t1".into()),
+            completeness: "unavailable".into(),
+            concept_count: 0,
+            cluster_count: 0,
+            relationship_count: 0,
+            gap_count: 0,
+            source_revision_count: 0,
+            terminal: true,
+            actionable: true,
+            authority_effect: "none".into(),
+        };
+        assert!(!recovery_must_not_fabricate_actionable_knowledge_synthesis_history(
             &bad
         ));
     }

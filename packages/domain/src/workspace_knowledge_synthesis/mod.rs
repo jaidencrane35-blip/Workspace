@@ -1470,10 +1470,12 @@ fn build_narrative(
 fn narrative_has_forbidden_patterns(text: &str) -> bool {
     let lower = text.to_lowercase();
     let forbidden = [
-        "causes",
+        "causes ",
+        " caused ",
         "should execute",
-        "recommend",
+        "recommend that you",
         "because the user",
+        "because the system",
         "revision a caused",
         "safe to act",
         "create task",
@@ -1486,6 +1488,8 @@ fn narrative_has_forbidden_patterns(text: &str) -> bool {
         "please execute",
         "requires_action",
         "should_execute",
+        "leads_to_action",
+        "should_trigger",
     ];
     forbidden.iter().any(|p| lower.contains(p))
 }

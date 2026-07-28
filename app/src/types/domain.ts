@@ -3533,6 +3533,163 @@ export interface WorkspaceContextExplanation {
   actionable: boolean;
 }
 
+export interface KnowledgeSynthesisFrame {
+  focus: string | null;
+  include_state: boolean;
+  include_policy: boolean;
+  include_reconstruction: boolean;
+  include_temporal: boolean;
+  include_explanation: boolean;
+  include_contextual: boolean;
+  max_concepts: number;
+}
+
+export interface KnowledgeEvidenceReference {
+  external_ref: string;
+  origin_domain: string;
+  source_revision: string | null;
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface KnowledgeGap {
+  gap_id: string;
+  surface: string;
+  description: string;
+  severity: string;
+  evidence_refs: KnowledgeEvidenceReference[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface KnowledgeConcept {
+  id: string;
+  label: string;
+  description: string;
+  evidence_refs: KnowledgeEvidenceReference[];
+  confidence: number;
+  uncertainty: string[];
+  provenance: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface KnowledgeCluster {
+  cluster_id: string;
+  kind: string;
+  label: string;
+  description: string;
+  concept_ids: string[];
+  evidence_refs: KnowledgeEvidenceReference[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface KnowledgeRelationship {
+  relationship_id: string;
+  kind: string;
+  from_ref: string;
+  to_ref: string;
+  evidence_refs: KnowledgeEvidenceReference[];
+  uncertainty: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface KnowledgeConfidence {
+  assessment_id: string;
+  coverage: number;
+  available_surfaces: number;
+  requested_surfaces: number;
+  gap_count: number;
+  conflict_count: number;
+  uncertainty: string[];
+  limitations: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface WorkspaceKnowledgeSynthesis {
+  synthesis_id: string;
+  workspace_id: string;
+  generated_at: string;
+  status: string;
+  superseded_at: string | null;
+  frame: KnowledgeSynthesisFrame;
+  source_revisions: string[];
+  concepts: KnowledgeConcept[];
+  clusters: KnowledgeCluster[];
+  relationships: KnowledgeRelationship[];
+  gaps: KnowledgeGap[];
+  confidence: KnowledgeConfidence;
+  completeness: string;
+  provenance_links: KnowledgeEvidenceReference[];
+  summary: string;
+  narrative: string;
+  limitations: string[];
+  authority_effect: string;
+  actionable: boolean;
+  terminal: boolean;
+}
+
+export interface KnowledgeSynthesisHistoryEntry {
+  synthesis_id: string;
+  status: string;
+  created_at: string;
+  superseded_at: string | null;
+  completeness: string;
+  concept_count: number;
+  cluster_count: number;
+  relationship_count: number;
+  gap_count: number;
+  source_revision_count: number;
+  terminal: boolean;
+  actionable: boolean;
+  authority_effect: string;
+}
+
+export interface KnowledgeSynthesisProjection {
+  workspace_id: string;
+  generated_at: string;
+  current: WorkspaceKnowledgeSynthesis | null;
+  history: KnowledgeSynthesisHistoryEntry[];
+  history_count: number;
+  authority_effect: string;
+}
+
+export interface KnowledgeSynthesisSummary {
+  workspace_id: string;
+  generated_at: string;
+  has_current: boolean;
+  synthesis_id: string | null;
+  completeness: string | null;
+  concept_count: number;
+  cluster_count: number;
+  relationship_count: number;
+  gap_count: number;
+  source_revision_count: number;
+  history: KnowledgeSynthesisHistoryEntry[];
+  history_count: number;
+  authority_effect: string;
+}
+
+export interface KnowledgeSynthesisExplanation {
+  explanation_id: string;
+  workspace_id: string;
+  completeness: string | null;
+  summary: string | null;
+  concept_summaries: string[];
+  cluster_summaries: string[];
+  relationship_summaries: string[];
+  gaps: string[];
+  evidence_refs: string[];
+  uncertainty: string[];
+  narrative: string;
+  limitations: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
 export type WindowIdentityConfidence = "high" | "medium" | "low" | "ephemeral";
 
 export interface WorkspaceObservationPass {

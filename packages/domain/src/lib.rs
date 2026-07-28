@@ -621,6 +621,8 @@ pub use recovery_contract::{
     recovery_must_not_fabricate_workspace_explanation,
     recovery_must_not_fabricate_actionable_contextual_understanding_history,
     recovery_must_not_fabricate_contextual_understanding,
+    recovery_must_not_fabricate_actionable_knowledge_synthesis_history,
+    recovery_must_not_fabricate_knowledge_synthesis,
     recovery_must_not_fabricate_learning, recovery_must_not_fabricate_orchestration, recovery_must_not_fabricate_reasoning,
     recovery_must_not_invent_completed, RECOVERY_DIAGNOSTIC_ATTEMPTED,
     RECOVERY_DIAGNOSTIC_COMPLETED, RECOVERY_DIAGNOSTIC_EVENT_TYPES, RECOVERY_DIAGNOSTIC_FAILED,

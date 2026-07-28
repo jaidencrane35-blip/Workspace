@@ -195,6 +195,16 @@ pub const PLATFORM_CONCEPT_OWNERS: &[ConceptOwnership] = &[
         kind: ConceptOwnerKind::DurableStore,
     },
     ConceptOwnership {
+        concept: "knowledge_synthesis",
+        owner: "WorkspaceKnowledgeSynthesisService",
+        kind: ConceptOwnerKind::DurableStore,
+    },
+    ConceptOwnership {
+        concept: "knowledge_synthesis_snapshot",
+        owner: "WorkspaceKnowledgeSynthesisService",
+        kind: ConceptOwnerKind::DurableStore,
+    },
+    ConceptOwnership {
         concept: "automation_contract",
         owner: "AutomationContractService",
         kind: ConceptOwnerKind::DurableStore,
