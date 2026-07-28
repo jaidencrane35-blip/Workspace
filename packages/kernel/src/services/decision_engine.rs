@@ -132,6 +132,7 @@ impl DecisionEngineService {
         let workspace_id = WorkspaceId::new(workspace_id.into()).map_err(KernelError::Domain)?;
         let ws = workspace_id.as_str();
         let overlays = Self::load_overlays(db, ws)?;
+        let overlay_rows: Vec<DecisionEngineOverlay> = overlays.values().cloned().collect();
         let previous_ranks = Self::previous_open_order(db, actor, ws);
 
         let attention_open = |state: DecisionState| {
@@ -364,6 +365,8 @@ impl DecisionEngineService {
             &progression_requests,
             &persisted_acks,
         );
+        let history =
+            DecisionEngineState::project_history_from_candidates(&candidates, &overlay_rows);
         let state = DecisionEngineState::from_candidates(ws, context, candidates)
             .with_intake_receipts(intake_receipts)
             .with_intake_assessments(intake_assessments)
@@ -381,14 +384,8 @@ impl DecisionEngineService {
             .with_candidate_ranking(candidate_ranking)
             .with_candidate_selections(candidate_selections)
             .with_progression_requests(progression_requests)
-            .with_progression_acknowledgements(progression_acknowledgements);
-
-        let overlay_rows: Vec<DecisionEngineOverlay> = overlays.into_values().collect();
-        let history = DecisionEngineState::project_history_from_candidates(
-            &state.candidates,
-            &overlay_rows,
-        );
-        let state = state.with_terminal_history(history);
+            .with_progression_acknowledgements(progression_acknowledgements)
+            .with_terminal_history(history);
 
         // Enforce resilience invariants at runtime (not just debug builds).
         // These invariants are critical to prevent RE/DE boundary violations.

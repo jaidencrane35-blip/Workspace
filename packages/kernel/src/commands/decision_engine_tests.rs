@@ -519,6 +519,13 @@ fn terminal_evidence_projects_into_history_and_summary() {
         "actionable candidates only"
     );
     assert!(
+        after
+            .candidates
+            .iter()
+            .all(|c| c.outcome.is_actionable()),
+        "full candidates collection must exclude terminals"
+    );
+    assert!(
         !after
             .top_candidates
             .iter()
@@ -526,13 +533,18 @@ fn terminal_evidence_projects_into_history_and_summary() {
         "dismissed candidate leaves actionable surface"
     );
     assert!(
+        !after.candidates.iter().any(|c| c.id == candidate.id),
+        "dismissed candidate must not remain in candidates"
+    );
+    assert!(
         after
             .history
             .iter()
             .any(|h| h.candidate_id == candidate.id.to_string()
                 && h.decision_state == "dismissed"
-                && h.is_non_actionable()),
-        "dismissed artifact remains visible in history"
+                && h.is_non_actionable()
+                && h.has_known_origin()),
+        "dismissed artifact remains visible in history with known origin"
     );
     assert!(
         after
@@ -540,8 +552,9 @@ fn terminal_evidence_projects_into_history_and_summary() {
             .iter()
             .any(|h| h.candidate_key == "attention:orphan-gone"
                 && h.decision_state == "expired"
-                && h.is_non_actionable()),
-        "orphan terminal overlay projects into history"
+                && h.is_non_actionable()
+                && h.has_unknown_origin()),
+        "orphan terminal overlay projects with unknown provenance"
     );
     assert!(summary.history_count >= 1);
     assert!(summary.history.iter().all(|h| !h.actionable && h.terminal));

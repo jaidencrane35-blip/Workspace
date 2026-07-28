@@ -235,6 +235,42 @@ fn decision_engine_repository_rejects_terminal_reopen() {
     );
 }
 
+/// Terminal overlays remain durable through transition-only retention — no delete API.
+#[test]
+fn decision_engine_repository_retains_terminal_overlays_without_deletion() {
+    let (_dir, db) = database();
+    let repo = DecisionEngineRepository::new(&db);
+    let dismissed = DecisionEngineOverlay {
+        workspace_id: "ws-1".into(),
+        candidate_key: "attention:keep".into(),
+        outcome: DecisionOutcome::Open,
+        updated_at: "t1".into(),
+        actor_id: "local-user".into(),
+    };
+    repo.upsert_overlay(&dismissed).unwrap();
+    let mut terminal = dismissed.clone();
+    terminal.outcome = DecisionOutcome::Dismissed;
+    terminal.updated_at = "t2".into();
+    repo.upsert_overlay(&terminal).unwrap();
+
+    // Same-terminal sync is allowed; evidence must remain listed.
+    terminal.updated_at = "t3".into();
+    repo.upsert_overlay(&terminal).unwrap();
+    let listed = repo.list_overlays("ws-1").unwrap();
+    assert_eq!(listed.len(), 1);
+    assert_eq!(listed[0].candidate_key, "attention:keep");
+    assert_eq!(listed[0].outcome, DecisionOutcome::Dismissed);
+
+    // Terminal cannot reopen (disappear into actionable) via repository.
+    let mut reopen = terminal.clone();
+    reopen.outcome = DecisionOutcome::Open;
+    assert!(repo.upsert_overlay(&reopen).is_err());
+    assert_eq!(
+        repo.list_overlays("ws-1").unwrap()[0].outcome,
+        DecisionOutcome::Dismissed
+    );
+}
+
 #[test]
 fn decision_engine_repository_rejects_evaluation_replacement() {
     let (_dir, db) = database();

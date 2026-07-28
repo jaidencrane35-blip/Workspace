@@ -341,4 +341,16 @@ describe("projection integrity — decision engine terminal artifact history", (
     expect(entry).not.toHaveProperty("score");
     expect(entry.actionable).toBe(false);
   });
+
+  it("treats orphan overlay provenance as unknown — never invented native", () => {
+    const orphan = deHistory({
+      origin: "unknown",
+      recommendation_id: null,
+      intake_candidate_id: null,
+      package_seal_digest: null,
+    });
+    expect(isDecisionArtifactHistoryNonActionable(orphan)).toBe(true);
+    expect(orphan.origin).toBe("unknown");
+    expect(orphan.origin).not.toBe("native");
+  });
 });

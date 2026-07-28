@@ -188,6 +188,8 @@ impl DecisionArtifactHistoryEntry {
     }
 
     /// Project retained terminal overlay evidence when no live candidate payload remains.
+    ///
+    /// Provenance is intentionally unknown — never invent `native` / intake origin.
     pub fn from_overlay(overlay: &DecisionEngineOverlay) -> Option<Self> {
         if !overlay.outcome.is_terminal() {
             return None;
@@ -201,7 +203,7 @@ impl DecisionArtifactHistoryEntry {
             created_at: overlay.updated_at.clone(),
             updated_at: overlay.updated_at.clone(),
             resolution_type: overlay.outcome.as_str().into(),
-            origin: DecisionCandidate::ORIGIN_NATIVE.into(),
+            origin: DecisionCandidate::ORIGIN_UNKNOWN.into(),
             recommendation_id: None,
             intake_candidate_id: None,
             package_seal_digest: None,
@@ -209,6 +211,15 @@ impl DecisionArtifactHistoryEntry {
             actionable: false,
             authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
         })
+    }
+
+    pub fn has_known_origin(&self) -> bool {
+        self.origin == DecisionCandidate::ORIGIN_NATIVE
+            || self.origin == DecisionCandidate::ORIGIN_RECOMMENDATION_INTAKE
+    }
+
+    pub fn has_unknown_origin(&self) -> bool {
+        self.origin == DecisionCandidate::ORIGIN_UNKNOWN || self.origin.is_empty()
     }
 
     pub fn is_non_actionable(&self) -> bool {
@@ -280,6 +291,8 @@ impl DecisionCandidate {
     pub const HANDOFF_NONE: &'static str = "";
     pub const ORIGIN_NATIVE: &'static str = "native";
     pub const ORIGIN_RECOMMENDATION_INTAKE: &'static str = "recommendation_intake";
+    /// Orphan overlay history without a live candidate payload — never invent origin.
+    pub const ORIGIN_UNKNOWN: &'static str = "unknown";
 
     pub fn synthetic_id(source_key: &str) -> DecisionCandidateId {
         DecisionCandidateId::new(format!("engine_decision:{source_key}"))
@@ -418,18 +431,15 @@ impl DecisionEngineState {
                 .cmp(&a.score.total)
                 .then(a.id.as_str().cmp(b.id.as_str()))
         });
-        let open: Vec<_> = candidates
-            .iter()
-            .filter(|c| c.outcome.is_actionable())
-            .cloned()
-            .collect();
-        let top_candidates: Vec<_> = open.iter().take(5).cloned().collect();
+        // Project terminal evidence before filtering — candidates become actionable-only.
         let history = Self::project_history_from_candidates(&candidates, &[]);
         let history_count = history.len();
+        candidates.retain(|c| c.outcome.is_actionable());
+        let top_candidates: Vec<_> = candidates.iter().take(5).cloned().collect();
         let summary = format!(
             "Decision Engine — {} candidate(s), {} open. Recommendations only; planner plans; gateway authorizes.",
             candidates.len(),
-            open.len()
+            candidates.len()
         );
         Self {
             workspace_id: workspace_id.into(),
@@ -5418,13 +5428,27 @@ mod terminal_evidence_projection_tests {
             ],
         );
         assert!(state
+            .candidates
+            .iter()
+            .all(|c| c.outcome.is_actionable()));
+        assert!(state
             .top_candidates
             .iter()
             .all(|c| c.outcome.is_actionable()));
+        assert!(!state.candidates.iter().any(|c| c.outcome.is_terminal()));
         assert!(!state
             .top_candidates
             .iter()
             .any(|c| c.outcome.is_terminal()));
+        assert_eq!(state.candidates.len(), 2);
+        assert!(state
+            .candidates
+            .iter()
+            .any(|c| c.outcome == DecisionOutcome::Open && c.id.as_str().contains("open-1")));
+        assert!(state
+            .candidates
+            .iter()
+            .any(|c| c.outcome == DecisionOutcome::Postponed));
         assert_eq!(state.history_count, 3);
         assert!(state.history.iter().all(|h| h.is_non_actionable()));
         assert!(state
@@ -5439,6 +5463,15 @@ mod terminal_evidence_projection_tests {
             .history
             .iter()
             .any(|h| h.candidate_key == "expired-1" && h.terminal));
+        for entry in &state.history {
+            assert!(
+                !state
+                    .candidates
+                    .iter()
+                    .any(|c| c.id.as_str() == entry.candidate_id),
+                "terminal must not duplicate into candidates"
+            );
+        }
     }
 
     #[test]
@@ -5474,6 +5507,12 @@ mod terminal_evidence_projection_tests {
         assert_eq!(history.len(), 1);
         assert_eq!(history[0].candidate_key, "attention:gone");
         assert!(history[0].is_non_actionable());
+        assert!(
+            history[0].has_unknown_origin(),
+            "orphan overlays must not invent native/intake origin"
+        );
+        assert_eq!(history[0].origin, DecisionCandidate::ORIGIN_UNKNOWN);
+        assert!(history[0].recommendation_id.is_none());
         assert!(DecisionArtifactHistoryEntry::from_overlay(
             &DecisionEngineOverlay {
                 workspace_id: "ws-1".into(),
@@ -5484,6 +5523,18 @@ mod terminal_evidence_projection_tests {
             }
         )
         .is_none());
+    }
+
+    #[test]
+    fn live_terminal_history_preserves_known_origin() {
+        let entry = DecisionArtifactHistoryEntry::from_candidate(
+            &candidate("dismissed-1", DecisionOutcome::Dismissed),
+            Some("t1"),
+        )
+        .unwrap();
+        assert!(entry.has_known_origin());
+        assert!(!entry.has_unknown_origin());
+        assert_eq!(entry.origin, DecisionCandidate::ORIGIN_NATIVE);
     }
 
     #[test]

@@ -1767,6 +1767,7 @@ export interface DecisionEngineState {
   workspace_id: string;
   generated_at: string;
   context: DecisionContext;
+  /** Actionable outcomes only (`open` / `postponed`) — terminals live in history. */
   candidates: DecisionCandidate[];
   /** Actionable outcomes only (`open` / `postponed`). */
   top_candidates: DecisionCandidate[];
@@ -1824,6 +1825,10 @@ export interface DecisionArtifactHistoryEntry {
   created_at: string;
   updated_at: string;
   resolution_type: string;
+  /**
+   * Provenance origin: `native` | `recommendation_intake` when known from a live
+   * candidate; `unknown` for orphan overlay-only history (never invented).
+   */
   origin: string;
   recommendation_id: string | null;
   intake_candidate_id: string | null;

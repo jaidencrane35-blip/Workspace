@@ -18,49 +18,57 @@ lifecycle evidence but must not invent, mutate, or erase it.
 | Summaries / IPC | Project canonical state; actionable surfaces exclude terminals without dropping history |
 | React | Projection-only rendering; no lifecycle ownership |
 
+## Shared projection contract (RE / DQ / DE)
+
+All three surfaces share the same consumption contract:
+
+| Channel | Contents | Actionable? |
+|---------|----------|-------------|
+| Actionable projection | RE `top_candidates`; DQ `items`; DE `top_candidates` / actionable `candidates` | Yes |
+| Historical projection | `history` + **`history_count`** | Never |
+
+Rules:
+
+- **`history_count` is evidence authority.** `history.length` is only the returned
+  window (especially under `summary(limit)`). Empty actionable ≠ no evidence.
+- **Terminal evidence ≠ actionable candidate.** Terminal records must not appear
+  beside history in actionable collections.
+- **History is a non-actionable DTO.** No execute, mutate, or transition methods.
+- **React is projection-only.** No lifecycle ownership and no history action paths.
+
 ## Identity vocabulary
 
 | Kind | Meaning | Examples |
 |------|---------|----------|
 | **Source identity** | Owning subsystem key for a live decision | DQ `source_type` + `source_id`; DE `candidate_key` |
-| **Overlay identity** | Lifecycle row for presentation continuity | DQ `DecisionLifecycleOverlay` / `DecisionOverlayHistoryEntry`; DE `DecisionEngineOverlay` / `DecisionArtifactHistoryEntry` |
+| **Overlay identity** | Lifecycle row for presentation continuity | DQ `DecisionOverlayHistoryEntry`; DE `DecisionArtifactHistoryEntry` |
 | **Outcome identity** | Recommendation Engine terminal outcome evidence | `RecommendationHistoryEntry.outcome.outcome_id` |
 
 Do not conflate RE outcome identity with DQ/DE overlay/artifact identity.
 
-## Rules
+## Surface-specific retention
 
-1. **Actionable ≠ absent evidence.** Compact summaries filter active candidates
-   but must carry `history` / `history_count` (Recommendation Engine, Decision
-   Queue, and Decision Engine) so consumers cannot infer “no evidence” from an
-   empty actionable list.
-2. **`history_count` is authoritative.** `history` is a truncated projection
-   window (`summary(limit)`). Full generate may return the complete history
-   (`history_count == history.length`). `history.length` must never be treated
-   as the full evidence count when a summary window is in use.
-3. **Decision Queue orphans retain overlays.** Missing live sources expire open
-   overlays (`Expired`) and keep already-terminal overlays. Overlays are **not
-   deleted** — there is no Decision Queue overlay deletion API.
-4. **Decision Engine terminal artifacts project into history.** Outcomes
-   `selected` / `dismissed` / `expired` appear only in `history` (via
-   `DecisionArtifactHistoryEntry`). Actionable `top_candidates` remain
-   `open` / `postponed` only. Orphan terminal overlays without a live candidate
-   still project into history.
-5. **Actionable / historical separation.**
-   - Actionable channel — open/interactive states only
-   - History channel — terminal evidence only
-   - The same identity must not appear in both channels.
-6. **History is non-actionable and non-executable.** Entries always project
-   `actionable: false` and `authority_effect: none`. They are not executable
-   items/candidates, cannot be converted into command inputs, and must not
-   drive lifecycle mutations or execution.
-7. **Frontend responsibilities.** React consumes projected fields only.
-   Recommendation active filtering mirrors `RecommendationItem::is_active_lifecycle`
-   (unknown states inactive). DQ/DE history helpers only verify projected
-   non-actionability — they do not own lifecycle or invent state.
-8. **Missing evidence is not inferred truth.** RE terminal history requires
-   projected outcome identity. DQ/DE terminal history requires projected
-   overlay/artifact identity. UI helpers must not synthesize resolutions.
+1. **Decision Queue orphans retain overlays.** Missing live sources expire open
+   overlays (`Expired`) and keep already-terminal overlays. No DQ overlay
+   deletion API.
+2. **Decision Engine terminal artifacts project into history.** Outcomes
+   `selected` / `dismissed` / `expired` appear only in `history`. Actionable
+   `candidates` and `top_candidates` remain `open` / `postponed` only. No DE
+   overlay deletion API — retention is transition-based.
+3. **Orphan DE evidence may have reduced provenance.** When only an overlay row
+   remains, history uses `origin = unknown` and does **not** invent
+   `native` / `recommendation_intake`. Live-candidate history preserves known
+   origin and durable provenance fields.
+4. **Recommendation Engine** carries terminal continuity via
+   `history` / `history_count` with outcome identity on entries.
+
+## Frontend responsibilities
+
+- Prefer projected actionable lists (`top_candidates` / DQ `items`).
+- Use `history_count` for evidence presence; never infer absence from empty
+  actionable lists or truncated `history` arrays.
+- History helpers only verify projected non-actionability — they do not invent
+  lifecycle or provenance.
 
 ## Related
 
