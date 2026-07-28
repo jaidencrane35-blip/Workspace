@@ -13,6 +13,12 @@ impl<'a> DecisionQueueRepository<'a> {
     }
 
     pub fn upsert_overlay(&self, overlay: &DecisionLifecycleOverlay) -> Result<()> {
+        if !overlay.decision_state.is_overlay_state() {
+            return Err(crate::error::DatabaseError::InvalidTransition(format!(
+                "decision queue overlay cannot persist source-owned state {}",
+                overlay.decision_state.as_str()
+            )));
+        }
         let changed = self.db.connection().execute(
             "INSERT INTO decision_item_lifecycle (
                 workspace_id, source_type, source_id, decision_state, updated_at, actor_id

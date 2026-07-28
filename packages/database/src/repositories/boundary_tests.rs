@@ -133,6 +133,9 @@ fn decision_queue_repository_rejects_dismissed_reopen() {
             .decision_state,
         DecisionState::Dismissed
     );
+    overlay.source_id = "source-owned".into();
+    overlay.decision_state = DecisionState::Accepted;
+    assert!(repo.upsert_overlay(&overlay).is_err());
 }
 
 #[test]
