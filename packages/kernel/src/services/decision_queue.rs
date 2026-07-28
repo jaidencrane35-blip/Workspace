@@ -16,9 +16,9 @@ use workspace_domain::{
     ActorContext, AiOrchestratedPlan, AiOrchestratedPlanState, AiPlanStepState,
     AutomationContractApprovalState, AutomationContractStatus, AutomationIntentProposalStatus,
     DecisionActionResult, DecisionCategory, DecisionHandoff, DecisionItem,
-    DecisionLifecycleOverlay, DecisionPriority, DecisionQueue, DecisionQueueError,
-    DecisionSourceType, DecisionState, IntentContext, PermissionApprovalRequest,
-    PermissionApprovalStatus, WorkspaceId,
+    DecisionLifecycleOverlay, DecisionOverlayHistoryEntry, DecisionPriority, DecisionQueue,
+    DecisionQueueError, DecisionSourceType, DecisionState, IntentContext,
+    PermissionApprovalRequest, PermissionApprovalStatus, WorkspaceId,
 };
 
 use crate::error::{KernelError, Result};
@@ -214,9 +214,13 @@ impl DecisionQueueService {
             }
         }
 
+        // Local overlay view for terminal history projection (includes in-memory expire).
+        let mut history_overlays = overlay_map.clone();
+
         if persist_overlays {
             // Retain terminal presentation evidence for vanished sources; expire open overlays.
             // Never delete overlays — deletion erased dismissed/expired continuity.
+            let now = Utc::now().to_rfc3339();
             for ((source_type, source_id), overlay) in &overlay_map {
                 if live_keys.contains(&(source_type.clone(), source_id.clone())) {
                     continue;
@@ -235,6 +239,13 @@ impl DecisionQueueService {
                     source_id,
                     DecisionState::Expired,
                 )?;
+                if let Some(local) =
+                    history_overlays.get_mut(&(source_type.as_str().to_string(), source_id.clone()))
+                {
+                    local.decision_state = DecisionState::Expired;
+                    local.updated_at = now.clone();
+                    local.actor_id = actor.actor.id.to_string();
+                }
                 let _ = Self::audit(
                     db,
                     actor,
@@ -252,7 +263,8 @@ impl DecisionQueueService {
             }
         }
 
-        let queue = DecisionQueue::from_items(ws, items);
+        let history = Self::project_overlay_history(&history_overlays, &live_keys);
+        let queue = DecisionQueue::from_items(ws, items).with_overlay_history(history);
         if persist_overlays {
             Self::audit(
                 db,
@@ -263,11 +275,33 @@ impl DecisionQueueService {
                     "item_count": queue.items.len(),
                     "pending_count": queue.pending_count,
                     "high_priority_count": queue.high_priority_count,
+                    "history_count": queue.history_count,
                     "authority_effect": "none",
                 }),
             )?;
         }
         Ok(queue)
+    }
+
+    /// Compact terminal overlay history — dismissed/expired/orphan evidence only.
+    fn project_overlay_history(
+        overlays: &HashMap<(String, String), DecisionLifecycleOverlay>,
+        live_keys: &HashSet<(String, String)>,
+    ) -> Vec<DecisionOverlayHistoryEntry> {
+        let mut entries: Vec<DecisionOverlayHistoryEntry> = overlays
+            .iter()
+            .filter_map(|(key, overlay)| {
+                let orphaned = !live_keys.contains(key);
+                DecisionOverlayHistoryEntry::from_overlay(overlay, orphaned)
+            })
+            .collect();
+        entries.sort_by(|a, b| {
+            b.updated_at
+                .cmp(&a.updated_at)
+                .then(a.source_type.as_str().cmp(b.source_type.as_str()))
+                .then(a.source_id.cmp(&b.source_id))
+        });
+        entries
     }
 
     pub(crate) fn mark_viewed(

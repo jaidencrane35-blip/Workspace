@@ -6,7 +6,13 @@ import {
   hasProjectedTerminalEvidence,
   isActiveRecommendation,
 } from "../app/src/components/RecommendationExplanationView";
+import {
+  decisionOverlayHistoryRetentionLabel,
+  isDecisionOverlayHistoryNonActionable,
+} from "../app/src/components/decisionQueueProjection";
 import type {
+  DecisionOverlayHistoryEntry,
+  DecisionQueueSummary,
   RecommendationHistoryEntry,
   RecommendationItem,
 } from "../app/src/types/domain";
@@ -125,5 +131,119 @@ describe("projection integrity — recommendation lifecycle mirrors", () => {
     expect(summary.history_count).toBe(0);
     expect(Array.isArray(summary.history)).toBe(true);
     expect(summary.authority_effect).toBe("none");
+  });
+});
+
+describe("projection integrity — decision queue terminal overlay history", () => {
+  function historyEntry(
+    overrides: Partial<DecisionOverlayHistoryEntry> = {}
+  ): DecisionOverlayHistoryEntry {
+    return {
+      decision_item_id: "decision:intent_proposal:x",
+      source_type: "intent_proposal",
+      source_id: "x",
+      decision_state: "dismissed",
+      orphaned: false,
+      updated_at: "t1",
+      actor_id: "local-user",
+      actionable: false,
+      authority_effect: "none",
+      ...overrides,
+    };
+  }
+
+  it("treats projected history as non-actionable (matches Rust)", () => {
+    expect(
+      isDecisionOverlayHistoryNonActionable(historyEntry())
+    ).toBe(true);
+    expect(
+      isDecisionOverlayHistoryNonActionable(
+        historyEntry({ decision_state: "expired", orphaned: true })
+      )
+    ).toBe(true);
+    expect(
+      isDecisionOverlayHistoryNonActionable(historyEntry({ actionable: true }))
+    ).toBe(false);
+    expect(
+      isDecisionOverlayHistoryNonActionable(
+        historyEntry({ decision_state: "pending" })
+      )
+    ).toBe(false);
+  });
+
+  it("distinguishes expired vs orphaned retention labels without inference", () => {
+    expect(
+      decisionOverlayHistoryRetentionLabel(
+        historyEntry({ decision_state: "dismissed", orphaned: false })
+      )
+    ).toBe("dismissed");
+    expect(
+      decisionOverlayHistoryRetentionLabel(
+        historyEntry({ decision_state: "dismissed", orphaned: true })
+      )
+    ).toBe("orphaned_dismissed");
+    expect(
+      decisionOverlayHistoryRetentionLabel(
+        historyEntry({ decision_state: "expired", orphaned: true })
+      )
+    ).toBe("orphaned_expired");
+  });
+
+  it("IPC summary shape keeps history distinct from actionable items", () => {
+    const summary: DecisionQueueSummary = {
+      workspace_id: "ws",
+      generated_at: "t",
+      pending_count: 1,
+      high_priority_count: 0,
+      items: [
+        {
+          id: "decision:intent_proposal:live",
+          workspace_id: "ws",
+          source_type: "intent_proposal",
+          source_id: "live",
+          category: "planning",
+          title: "Live",
+          summary: "s",
+          explanation: "e",
+          recommended_action: "a",
+          decision_state: "pending",
+          priority: "normal",
+          created_at: "t0",
+          expires_at: null,
+          actor_id: "local-user",
+          actor_type: "user",
+          project_id: null,
+          required_capabilities: [],
+          handoff_command: null,
+          authority_effect: "none",
+        },
+      ],
+      history: [
+        historyEntry({
+          source_id: "orphan",
+          decision_state: "expired",
+          orphaned: true,
+        }),
+        historyEntry({
+          source_id: "gone",
+          decision_state: "dismissed",
+          orphaned: true,
+        }),
+      ],
+      history_count: 2,
+      authority_effect: "none",
+    };
+
+    expect(summary.items.every((i) => i.decision_state === "pending")).toBe(
+      true
+    );
+    expect(summary.history?.every(isDecisionOverlayHistoryNonActionable)).toBe(
+      true
+    );
+    expect(
+      summary.history?.some((h) => h.orphaned && h.decision_state === "expired")
+    ).toBe(true);
+    expect(summary.history_count).toBe(2);
+    expect(summary.items.some((i) => i.source_id === "orphan")).toBe(false);
   });
 });

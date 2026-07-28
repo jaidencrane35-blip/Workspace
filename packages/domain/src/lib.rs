@@ -253,8 +253,8 @@ pub use decision_engine::{
 };
 pub use decision_queue::{
     DecisionActionResult, DecisionCategory, DecisionHandoff, DecisionItem, DecisionLifecycleOverlay,
-    DecisionPriority, DecisionQueue, DecisionQueueError, DecisionQueueSummary, DecisionSourceType,
-    DecisionState,
+    DecisionOverlayHistoryEntry, DecisionPriority, DecisionQueue, DecisionQueueError,
+    DecisionQueueSummary, DecisionSourceType, DecisionState,
 };
 pub use workspace_activity::{
     ActivitySourceType, ActivityType, WorkspaceActivity, WorkspaceActivityError,

@@ -358,6 +358,61 @@ pub struct DecisionActionResult {
     pub authority_effect: String,
 }
 
+/// Compact non-actionable terminal overlay evidence for projection consumers.
+///
+/// History is read-only continuity — never executable, never merged into actionable
+/// `items`, and never a second lifecycle authority.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DecisionOverlayHistoryEntry {
+    pub decision_item_id: String,
+    pub source_type: DecisionSourceType,
+    pub source_id: String,
+    /// Terminal overlay state (`dismissed` or `expired`).
+    pub decision_state: DecisionState,
+    /// Live aggregation source was absent when this entry was projected.
+    pub orphaned: bool,
+    pub updated_at: String,
+    pub actor_id: String,
+    /// Always `false` — terminal history never joins actionable queues.
+    pub actionable: bool,
+    pub authority_effect: String,
+}
+
+impl DecisionOverlayHistoryEntry {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+
+    /// Project retained terminal overlay evidence. Open overlays are excluded.
+    pub fn from_overlay(overlay: &DecisionLifecycleOverlay, orphaned: bool) -> Option<Self> {
+        if !matches!(
+            overlay.decision_state,
+            DecisionState::Dismissed | DecisionState::Expired
+        ) {
+            return None;
+        }
+        Some(Self {
+            decision_item_id: DecisionItem::synthetic_id(overlay.source_type, &overlay.source_id)
+                .to_string(),
+            source_type: overlay.source_type,
+            source_id: overlay.source_id.clone(),
+            decision_state: overlay.decision_state,
+            orphaned,
+            updated_at: overlay.updated_at.clone(),
+            actor_id: overlay.actor_id.clone(),
+            actionable: false,
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        })
+    }
+
+    pub fn is_non_actionable(&self) -> bool {
+        !self.actionable
+            && self.authority_effect == Self::AUTHORITY_EFFECT_NONE
+            && matches!(
+                self.decision_state,
+                DecisionState::Dismissed | DecisionState::Expired
+            )
+    }
+}
+
 /// Ordered Workspace Decision Queue snapshot.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DecisionQueue {
@@ -366,6 +421,11 @@ pub struct DecisionQueue {
     pub items: Vec<DecisionItem>,
     pub pending_count: usize,
     pub high_priority_count: usize,
+    /// Terminal / orphan overlay evidence (not actionable).
+    #[serde(default)]
+    pub history: Vec<DecisionOverlayHistoryEntry>,
+    #[serde(default)]
+    pub history_count: usize,
     pub authority_effect: String,
 }
 
@@ -409,8 +469,17 @@ impl DecisionQueue {
             items,
             pending_count,
             high_priority_count,
+            history: Vec::new(),
+            history_count: 0,
             authority_effect: DecisionItem::AUTHORITY_EFFECT_NONE.into(),
         }
+    }
+
+    /// Attach terminal overlay history without altering actionable `items`.
+    pub fn with_overlay_history(mut self, history: Vec<DecisionOverlayHistoryEntry>) -> Self {
+        self.history_count = history.len();
+        self.history = history;
+        self
     }
 
     pub fn summary(&self, limit: usize) -> DecisionQueueSummary {
@@ -420,12 +489,18 @@ impl DecisionQueue {
             .filter(|i| i.decision_state.is_actionable_overlay())
             .cloned()
             .collect();
+        // Actionable surface excludes terminals; history remains visible so Intelligence
+        // cannot treat "no pending items" as "no retained overlay evidence".
+        let history: Vec<DecisionOverlayHistoryEntry> =
+            self.history.iter().take(limit).cloned().collect();
         DecisionQueueSummary {
             workspace_id: self.workspace_id.clone(),
             generated_at: self.generated_at.clone(),
             pending_count: self.pending_count,
             high_priority_count: self.high_priority_count,
             items: actionable.into_iter().take(limit).collect(),
+            history,
+            history_count: self.history_count,
             authority_effect: self.authority_effect.clone(),
         }
     }
@@ -438,7 +513,13 @@ pub struct DecisionQueueSummary {
     pub generated_at: String,
     pub pending_count: usize,
     pub high_priority_count: usize,
+    /// Actionable overlay states only (`pending` / `viewed` / `deferred`).
     pub items: Vec<DecisionItem>,
+    /// Truncated terminal/orphan overlay evidence (never actionable).
+    #[serde(default)]
+    pub history: Vec<DecisionOverlayHistoryEntry>,
+    #[serde(default)]
+    pub history_count: usize,
     pub authority_effect: String,
 }
 
@@ -450,6 +531,8 @@ impl Default for DecisionQueueSummary {
             pending_count: 0,
             high_priority_count: 0,
             items: Vec::new(),
+            history: Vec::new(),
+            history_count: 0,
             authority_effect: DecisionItem::AUTHORITY_EFFECT_NONE.into(),
         }
     }
@@ -514,5 +597,88 @@ mod projection_integrity_tests {
             .items
             .iter()
             .any(|i| i.source_id == "d" || i.source_id == "e"));
+    }
+
+    fn overlay(state: DecisionState, source_id: &str) -> DecisionLifecycleOverlay {
+        DecisionLifecycleOverlay {
+            workspace_id: "ws-1".into(),
+            source_type: DecisionSourceType::IntentProposal,
+            source_id: source_id.into(),
+            decision_state: state,
+            updated_at: "t1".into(),
+            actor_id: "actor".into(),
+        }
+    }
+
+    #[test]
+    fn history_projects_dismissed_expired_and_orphaned_without_actionability() {
+        let dismissed = DecisionOverlayHistoryEntry::from_overlay(
+            &overlay(DecisionState::Dismissed, "d"),
+            false,
+        )
+        .expect("dismissed projects");
+        let orphan_dismissed = DecisionOverlayHistoryEntry::from_overlay(
+            &overlay(DecisionState::Dismissed, "od"),
+            true,
+        )
+        .expect("orphan dismissed projects");
+        let expired = DecisionOverlayHistoryEntry::from_overlay(
+            &overlay(DecisionState::Expired, "e"),
+            true,
+        )
+        .expect("expired orphan projects");
+
+        assert!(!dismissed.orphaned);
+        assert!(orphan_dismissed.orphaned);
+        assert_eq!(expired.decision_state, DecisionState::Expired);
+        assert!(expired.orphaned);
+        for entry in [&dismissed, &orphan_dismissed, &expired] {
+            assert!(entry.is_non_actionable());
+            assert!(!entry.actionable);
+            assert_eq!(
+                entry.authority_effect,
+                DecisionOverlayHistoryEntry::AUTHORITY_EFFECT_NONE
+            );
+            assert_eq!(
+                entry.source_type,
+                DecisionSourceType::IntentProposal
+            );
+        }
+        assert!(DecisionOverlayHistoryEntry::from_overlay(
+            &overlay(DecisionState::Pending, "open"),
+            true
+        )
+        .is_none());
+    }
+
+    #[test]
+    fn summary_carries_history_while_excluding_terminals_from_items() {
+        let history = vec![
+            DecisionOverlayHistoryEntry::from_overlay(
+                &overlay(DecisionState::Dismissed, "d"),
+                false,
+            )
+            .unwrap(),
+            DecisionOverlayHistoryEntry::from_overlay(
+                &overlay(DecisionState::Expired, "e"),
+                true,
+            )
+            .unwrap(),
+        ];
+        let queue = DecisionQueue::from_items(
+            "ws-1",
+            vec![
+                item(DecisionState::Pending, "p"),
+                item(DecisionState::Dismissed, "d"),
+            ],
+        )
+        .with_overlay_history(history);
+        let summary = queue.summary(10);
+        assert_eq!(summary.items.len(), 1);
+        assert_eq!(summary.items[0].source_id, "p");
+        assert_eq!(summary.history_count, 2);
+        assert_eq!(summary.history.len(), 2);
+        assert!(summary.history.iter().all(|h| h.is_non_actionable()));
+        assert!(summary.history.iter().any(|h| h.orphaned && h.source_id == "e"));
     }
 }

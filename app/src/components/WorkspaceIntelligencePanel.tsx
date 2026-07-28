@@ -2786,11 +2786,28 @@ export function WorkspaceIntelligencePanel({
         {decisionQueue && (
           <p className="muted">
             {decisionQueue.pending_count} needing attention ·{" "}
-            {decisionQueue.high_priority_count} high priority · authority:{" "}
+            {decisionQueue.high_priority_count} high priority · history{" "}
+            {decisionQueue.history_count ?? 0} terminal overlay(s) · authority:{" "}
             {decisionQueue.authority_effect}
           </p>
         )}
         {lastHandoff && <p className="muted">{lastHandoff}</p>}
+        {decisionQueue &&
+          (decisionQueue.history?.length ?? 0) > 0 && (
+            <div className="muted">
+              Terminal overlay history (projection-only — not actionable):
+              <ul className="intelligence-list">
+                {decisionQueue.history!.map((entry) => (
+                  <li key={`${entry.source_type}:${entry.source_id}`}>
+                    [{entry.decision_state}
+                    {entry.orphaned ? " · orphaned" : ""}] {entry.source_type}/
+                    {entry.source_id} · actionable: {String(entry.actionable)} ·
+                    authority: {entry.authority_effect}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         {!decisionQueue || decisionQueue.items.length === 0 ? (
           <p className="muted">No decisions require attention.</p>
         ) : (

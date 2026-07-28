@@ -309,7 +309,10 @@ export function AssistantPanel({
               Decision Queue: {workspaceIntel.decision_queue.pending_count}{" "}
               decision(s) needing attention (
               {workspaceIntel.decision_queue.high_priority_count} high priority)
-              · {workspaceIntel.blocked_actions.length} blocked action(s)
+              · history{" "}
+              {workspaceIntel.decision_queue.history_count ?? 0} terminal
+              overlay(s) (not actionable) ·{" "}
+              {workspaceIntel.blocked_actions.length} blocked action(s)
               projected from the same queue.
             </dd>
             <dt>Automation Contracts</dt>
@@ -561,8 +564,11 @@ export function AssistantPanel({
                 : `: ${workspaceIntel.decision_queue.items
                     .map((i) => `[${i.priority}] ${i.title}`)
                     .join("; ")}.`}{" "}
-              Same queue as the Work tab. Assistant may explain and prioritize —
-              never accept, reject, defer, or execute.
+              History evidence:{" "}
+              {workspaceIntel.decision_queue.history_count ?? 0} terminal
+              overlay(s) projected (not actionable). Same queue as the Work
+              tab. Assistant may explain and prioritize — never accept, reject,
+              defer, or execute.
             </dd>
             <dt>Activity Graph</dt>
             <dd>

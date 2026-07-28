@@ -21,17 +21,22 @@ lifecycle evidence but must not invent, mutate, or erase it.
 ## Rules
 
 1. **Actionable ≠ absent evidence.** Compact summaries filter active candidates
-   but must carry `history` / `history_count` (Recommendation Engine) so
-   consumers cannot infer “no evidence” from an empty actionable list.
+   but must carry `history` / `history_count` (Recommendation Engine and
+   Decision Queue) so consumers cannot infer “no evidence” from an empty
+   actionable list.
 2. **Decision Queue orphans retain overlays.** Missing live sources expire open
    overlays (`Expired`) and keep already-terminal overlays; overlays are not
    deleted.
 3. **Decision Queue summaries** expose only actionable overlay states
-   (`pending` / `viewed` / `deferred`). Full queue remains available for
-   Operator surfaces.
+   (`pending` / `viewed` / `deferred`) in `items`. Terminal / orphan overlay
+   evidence is projected on `history` / `history_count` via
+   `DecisionOverlayHistoryEntry` (`dismissed` / `expired`, with `orphaned`
+   when the live source is absent). History is never actionable and never
+   executable.
 4. **Frontend active filtering** mirrors `RecommendationItem::is_active_lifecycle`
    exactly (unknown states are inactive). Prefer projected `top_candidates`
-   when a summary is already available.
+   when a summary is already available. Decision Queue history helpers only
+   verify projected non-actionability — they do not own lifecycle.
 5. **Missing evidence is not inferred truth.** Terminal history entries must
    include projected outcome identity; UI helpers must not synthesize
    resolutions.

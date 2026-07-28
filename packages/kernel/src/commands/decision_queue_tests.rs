@@ -611,6 +611,120 @@ fn stale_overlays_expire_or_retain_instead_of_delete() {
     assert_eq!(dismissed.decision_state, DecisionState::Dismissed);
 }
 
+/// Terminal overlay history is projected for orphans/dismissed/expired — never into actionable items.
+#[test]
+fn terminal_overlay_history_projects_orphans_and_excludes_from_actionable_summary() {
+    use workspace_database::DecisionQueueRepository;
+    use workspace_domain::DecisionLifecycleOverlay;
+
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let (ws, project_id, _) = seed_project(&kernel);
+    let proposal = seed_pending_proposal(&kernel, ws.clone(), project_id);
+    let local = ActorContext::local_user();
+    let intent = IntentContext::user_request();
+    let db = kernel.shared_database();
+
+    {
+        let guard = db.lock().unwrap();
+        let repo = DecisionQueueRepository::new(&guard);
+        repo.upsert_overlay(&DecisionLifecycleOverlay {
+            workspace_id: ws.clone(),
+            source_type: DecisionSourceType::IntentProposal,
+            source_id: "orphan-open".into(),
+            decision_state: DecisionState::Pending,
+            updated_at: "t0".into(),
+            actor_id: "local-user".into(),
+        })
+        .unwrap();
+        repo.upsert_overlay(&DecisionLifecycleOverlay {
+            workspace_id: ws.clone(),
+            source_type: DecisionSourceType::IntentProposal,
+            source_id: "orphan-dismissed".into(),
+            decision_state: DecisionState::Dismissed,
+            updated_at: "t0".into(),
+            actor_id: "local-user".into(),
+        })
+        .unwrap();
+    }
+
+    let queue = CommandHandler::generate_decision_queue(
+        &kernel,
+        local.clone(),
+        intent.clone(),
+        ws.clone(),
+    )
+    .unwrap();
+    let live_item = queue
+        .items
+        .iter()
+        .find(|i| i.source_id == proposal.id.as_str())
+        .expect("live proposal still actionable on full queue");
+    CommandHandler::dismiss_decision_item(
+        &kernel,
+        local.clone(),
+        intent.clone(),
+        ws.clone(),
+        live_item.id.to_string(),
+    )
+    .unwrap();
+
+    let queue = CommandHandler::generate_decision_queue(&kernel, local, intent, ws).unwrap();
+    let summary = queue.summary(10);
+
+    assert!(
+        summary
+            .items
+            .iter()
+            .all(|i| i.decision_state.is_actionable_overlay()),
+        "actionable summary must exclude terminals"
+    );
+    assert!(
+        !summary.items.iter().any(|i| i.source_id == proposal.id.as_str()),
+        "dismissed live source must leave actionable summary"
+    );
+
+    assert!(queue.history_count >= 3, "dismissed live + orphan dismissed + orphan expired");
+    assert!(
+        queue
+            .history
+            .iter()
+            .any(|h| h.source_id == "orphan-dismissed"
+                && h.orphaned
+                && h.decision_state == DecisionState::Dismissed
+                && h.is_non_actionable()),
+        "orphan dismissed must be visible and non-actionable"
+    );
+    assert!(
+        queue
+            .history
+            .iter()
+            .any(|h| h.source_id == "orphan-open"
+                && h.orphaned
+                && h.decision_state == DecisionState::Expired
+                && h.is_non_actionable()),
+        "orphan expired must be visible and non-actionable"
+    );
+    assert!(
+        queue
+            .history
+            .iter()
+            .any(|h| h.source_id == proposal.id.as_str()
+                && !h.orphaned
+                && h.decision_state == DecisionState::Dismissed
+                && h.is_non_actionable()),
+        "dismissed live overlay must project into history"
+    );
+    assert!(
+        summary.history.iter().all(|h| !h.actionable && h.authority_effect == "none"),
+        "history channel must remain non-actionable on summary"
+    );
+    assert!(
+        !queue.items.iter().any(|i| i.source_id == "orphan-open"
+            || i.source_id == "orphan-dismissed"),
+        "orphan overlays must not re-enter live items"
+    );
+}
+
 #[test]
 fn dismiss_does_not_mutate_source_proposal() {
     let kernel = WorkspaceKernel::initialize_in_memory().unwrap();

@@ -919,6 +919,24 @@ export interface DecisionQueue {
   items: DecisionItem[];
   pending_count: number;
   high_priority_count: number;
+  /** Terminal / orphan overlay evidence — never actionable. */
+  history?: DecisionOverlayHistoryEntry[];
+  history_count?: number;
+  authority_effect: string;
+}
+
+export interface DecisionOverlayHistoryEntry {
+  decision_item_id: string;
+  source_type: DecisionSourceType;
+  source_id: string;
+  /** Terminal overlay state (`dismissed` or `expired`). */
+  decision_state: DecisionState;
+  /** Live aggregation source was absent when projected. */
+  orphaned: boolean;
+  updated_at: string;
+  actor_id: string;
+  /** Always false — history never joins actionable queues. */
+  actionable: boolean;
   authority_effect: string;
 }
 
@@ -927,7 +945,11 @@ export interface DecisionQueueSummary {
   generated_at: string;
   pending_count: number;
   high_priority_count: number;
+  /** Actionable overlay states only. */
   items: DecisionItem[];
+  /** Truncated terminal/orphan overlay evidence (never actionable). */
+  history?: DecisionOverlayHistoryEntry[];
+  history_count?: number;
   authority_effect: string;
 }
 
