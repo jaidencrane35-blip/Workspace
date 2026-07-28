@@ -102,9 +102,13 @@ impl<'a> RecommendationLifecycleRepository<'a> {
                 authority_effect = excluded.authority_effect
              WHERE recommendation_lifecycle.lifecycle_state = excluded.lifecycle_state
                 OR (recommendation_lifecycle.lifecycle_state = 'created'
-                    AND excluded.lifecycle_state IN ('available','expired','superseded'))
+                    AND excluded.lifecycle_state IN (
+                        'available','presented','accepted','rejected','expired','superseded'
+                    ))
                 OR (recommendation_lifecycle.lifecycle_state = 'available'
-                    AND excluded.lifecycle_state IN ('presented','expired','superseded','rejected'))
+                    AND excluded.lifecycle_state IN (
+                        'presented','accepted','rejected','expired','superseded'
+                    ))
                 OR (recommendation_lifecycle.lifecycle_state = 'presented'
                     AND excluded.lifecycle_state IN ('available','accepted','rejected','expired','superseded'))
                 OR (
