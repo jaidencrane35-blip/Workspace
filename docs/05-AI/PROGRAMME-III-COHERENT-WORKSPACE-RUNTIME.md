@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | **Purpose** | Establish one provenance-rich, read-only runtime view of operational, cognitive, governance, and evidence state while preserving all existing lifecycle and persistence authorities |
-| **Status** | Active — Batch 3 Historical Reconstruction implemented |
+| **Status** | Active — Batch 3 accepted; Batch 4 charter drafted (pending review) |
 | **Depends on** | Programme I governance / recovery; Programme II cognitive stack |
 | **Non-goals** | Event sourcing; authoritative replay logs; simulation; model hosting; autonomous execution; replacement permission system; replacement for domain-owned projections |
 
@@ -28,8 +28,9 @@
 |-------|-------|------|--------|
 | **1** | Unified Workspace State Model | Canonical composition envelope | Done (accepted) |
 | **2** | Policy & Governance Engine | Context-aware policy reasoning / evidence | Done (accepted) |
-| **3** | Historical Workspace Reconstruction | Temporal comparison / change explanation | Done (implemented) |
-| **4+** | Collaboration / Simulation / Local Intelligence | Build on coherent state + policy + history | Planned |
+| **3** | Historical Workspace Reconstruction | Temporal comparison / change explanation | Done (accepted) |
+| **4** | Temporal Intelligence | Historical understanding extensions | Charter drafted — pending review |
+| **5+** | Collaboration / Simulation / Local Intelligence | Build only after Batch 4 contract + reconstruction exercised | Planned |
 
 ## Batch 2 summary
 
@@ -52,16 +53,31 @@ Dual-channel `HistoricalReconstructionSnapshot`. Commands:
 `GetHistoricalWorkspaceSummary`, `CompareWorkspaceRevisions`, `ExplainHistoricalChange`.
 See [Historical Workspace Reconstruction Architecture](./HISTORICAL-WORKSPACE-RECONSTRUCTION-ARCHITECTURE.md).
 
+## Batch 4 charter (draft)
+
+`WorkspaceTemporalIntelligenceService` will deepen historical understanding over durable
+reconstruction evidence: scoped windows, long revision-chain summaries, conflict
+explanation surfaces, and evidence-quality signals.
+Understanding completeness remains explicit. Missing evidence never becomes invented
+causes, forecasts, or simulations.
+See [Temporal Intelligence Architecture](./TEMPORAL-INTELLIGENCE-ARCHITECTURE.md).
+
+**Do not begin Batch 4 implementation until the charter is reviewed and approved.**
+**Do not expand into simulation, forecasting, autonomous correction, or event sourcing.**
+
 ## Sequencing rule
 
 Ship Batch *N* only when Batch *N−1* has durable contracts, tests, and governance ownership entries.
-Batch 4+ remains gated on Batch 3 audit acceptance.
+Batch 4 implementation is gated on charter review approval.
+Later batches that touch simulation / forecasting remain gated on reconstruction being
+exercised against real complexity.
 
 ## Related
 
 - [Unified Workspace State Architecture](./UNIFIED-WORKSPACE-STATE-ARCHITECTURE.md) (Batch 1)
 - [Policy & Governance Architecture](./POLICY-GOVERNANCE-ARCHITECTURE.md) (Batch 2)
 - [Historical Workspace Reconstruction Architecture](./HISTORICAL-WORKSPACE-RECONSTRUCTION-ARCHITECTURE.md) (Batch 3)
+- [Temporal Intelligence Architecture](./TEMPORAL-INTELLIGENCE-ARCHITECTURE.md) (Batch 4 charter)
 - [Programme II — Cognitive Workspace](./PROGRAMME-II-COGNITIVE-WORKSPACE.md)
 - [Projection Integrity](../03-Engineering/PROJECTION-INTEGRITY.md)
 - [Architecture Governance](../03-Engineering/ARCHITECTURE-GOVERNANCE.md)

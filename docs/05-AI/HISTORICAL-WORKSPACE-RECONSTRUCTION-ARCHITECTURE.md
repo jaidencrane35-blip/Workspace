@@ -4,7 +4,7 @@
 |-------|-------|
 | **Purpose** | Temporal understanding — explain how workspace evidence changed over time |
 | **Owner** | `WorkspaceHistoricalReconstructionService` (DurableStore — **reconstruction evidence only**) |
-| **Status** | Active — Programme III Batch 3 implemented |
+| **Status** | Active — Programme III Batch 3 accepted |
 | **Lifecycle owner** | No |
 | **Execution / replay authority** | No |
 | **Audit / policy / source authority** | No |
@@ -384,6 +384,7 @@ no event store, no replay executor, no SoT elevation.
 ## Related
 
 - [Programme III — Coherent Workspace Runtime](./PROGRAMME-III-COHERENT-WORKSPACE-RUNTIME.md)
+- [Temporal Intelligence Architecture](./TEMPORAL-INTELLIGENCE-ARCHITECTURE.md) (Batch 4 charter)
 - [Unified Workspace State Architecture](./UNIFIED-WORKSPACE-STATE-ARCHITECTURE.md)
 - [Policy & Governance Architecture](./POLICY-GOVERNANCE-ARCHITECTURE.md)
 - [Projection Integrity](../03-Engineering/PROJECTION-INTEGRITY.md)
