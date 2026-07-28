@@ -449,6 +449,7 @@ Observed sequence ≠ Cause unless causal evidence explicitly exists.
 ## Related
 
 - [Programme III — Coherent Workspace Runtime](./PROGRAMME-III-COHERENT-WORKSPACE-RUNTIME.md)
+- [Workspace Explanation Layer Architecture](./WORKSPACE-EXPLANATION-LAYER-ARCHITECTURE.md) (Batch 5 charter)
 - [Historical Workspace Reconstruction Architecture](./HISTORICAL-WORKSPACE-RECONSTRUCTION-ARCHITECTURE.md)
 - [Unified Workspace State Architecture](./UNIFIED-WORKSPACE-STATE-ARCHITECTURE.md)
 - [Policy & Governance Architecture](./POLICY-GOVERNANCE-ARCHITECTURE.md)
