@@ -2564,6 +2564,131 @@ export interface LearningSummary {
   authority_effect: string;
 }
 
+export interface CognitiveAgent {
+  agent_id: string;
+  name: string;
+  role: string;
+  purpose: string;
+  specialisation: string;
+  constraints: string[];
+  confidence_profile: string;
+  created_at: string;
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface AgentPerspective {
+  perspective_id: string;
+  agent_id: string;
+  observation: string;
+  supporting_evidence: string[];
+  confidence: number;
+  uncertainty: number;
+  created_at: string;
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface AgentCritique {
+  critique_id: string;
+  agent_id: string;
+  target_reference: string;
+  concerns: string[];
+  risk_level: string;
+  evidence: string[];
+  confidence: number;
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface AgentSynthesis {
+  synthesis_id: string;
+  included_perspectives: string[];
+  agreement_points: string[];
+  disagreement_points: string[];
+  open_questions: string[];
+  confidence: number;
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface CastEvidenceLink {
+  external_ref: string;
+  kind: string;
+}
+
+export interface CognitiveAgentCastHistoryEntry {
+  cast_id: string;
+  status: string;
+  created_at: string;
+  superseded_at: string | null;
+  confidence: number;
+  uncertainty: number;
+  agent_count: number;
+  perspective_count: number;
+  critique_count: number;
+  synthesis_count: number;
+  terminal: boolean;
+  actionable: boolean;
+  authority_effect: string;
+}
+
+export interface CognitiveAgentCastMeta {
+  cast_id: string;
+  workspace_id: string;
+  status: string;
+  created_at: string;
+  superseded_at: string | null;
+  confidence: number;
+  uncertainty: number;
+  agent_count: number;
+  perspective_count: number;
+  critique_count: number;
+  synthesis_count: number;
+  authority_effect: string;
+  terminal: boolean;
+  actionable: boolean;
+}
+
+export interface CognitiveAgentCastView {
+  meta: CognitiveAgentCastMeta;
+  agents: CognitiveAgent[];
+  roles: string[];
+  perspectives: AgentPerspective[];
+  critiques: AgentCritique[];
+  syntheses: AgentSynthesis[];
+  confidence: number;
+  uncertainty: number;
+  evidence_links: CastEvidenceLink[];
+  source_references: CastEvidenceLink[];
+  authority_effect: string;
+}
+
+export interface CognitiveAgentCastSnapshot {
+  workspace_id: string;
+  generated_at: string;
+  current: CognitiveAgentCastView | null;
+  history: CognitiveAgentCastHistoryEntry[];
+  history_count: number;
+  authority_effect: string;
+}
+
+export interface CognitiveAgentCastSummary {
+  workspace_id: string;
+  generated_at: string;
+  has_current: boolean;
+  cast_id: string | null;
+  agent_count: number;
+  perspective_count: number;
+  critique_count: number;
+  synthesis_count: number;
+  confidence: number | null;
+  uncertainty: number | null;
+  history: CognitiveAgentCastHistoryEntry[];
+  history_count: number;
+  authority_effect: string;
+}
+
 export type WindowIdentityConfidence = "high" | "medium" | "low" | "ephemeral";
 
 export interface WorkspaceObservationPass {

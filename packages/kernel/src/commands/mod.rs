@@ -16,6 +16,7 @@ mod workspace_reasoning_memory;
 mod workspace_cognitive_graph;
 mod workspace_cognitive_orchestration;
 mod workspace_learning_adaptation;
+mod workspace_cognitive_agent_cast;
 mod workspace_purpose;
 mod workspace_evolution;
 mod workspace_recommendation;
@@ -131,6 +132,8 @@ mod workspace_cognitive_graph_tests;
 mod workspace_cognitive_orchestration_tests;
 #[cfg(test)]
 mod workspace_learning_adaptation_tests;
+#[cfg(test)]
+mod workspace_cognitive_agent_cast_tests;
 #[cfg(test)]
 mod workspace_attention_tests;
 #[cfg(test)]
@@ -418,5 +421,8 @@ pub use workspace_cognitive_orchestration::{
 };
 pub use workspace_learning_adaptation::{
     GenerateLearningSnapshot, GetLearningSnapshot, GetLearningSummary,
+};
+pub use workspace_cognitive_agent_cast::{
+    GenerateCognitiveAgentCast, GetCognitiveAgentCast, GetCognitiveAgentCastSummary,
 };
 pub use zone::{CreateZone, DeleteZone, GetZone};

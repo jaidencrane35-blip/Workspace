@@ -38,6 +38,11 @@ import {
   isLearningSnapshotNonCommandable,
   learningHistoryCountIsAuthoritative,
 } from "../app/src/components/learningProjection";
+import {
+  isCognitiveAgentCastHistoryNonActionable,
+  isCognitiveAgentCastSnapshotNonCommandable,
+  cognitiveAgentCastHistoryCountIsAuthoritative,
+} from "../app/src/components/cognitiveAgentCastProjection";
 import type {
   DecisionArtifactHistoryEntry,
   DecisionEngineSummary,
@@ -60,6 +65,9 @@ import type {
   LearningHistoryEntry,
   LearningSnapshot,
   LearningSummary,
+  CognitiveAgentCastHistoryEntry,
+  CognitiveAgentCastSnapshot,
+  CognitiveAgentCastSummary,
   RecommendationHistoryEntry,
   RecommendationItem,
   TaskGraphSummary,
@@ -945,6 +953,75 @@ describe("projection integrity — learning adaptation", () => {
 
     const nonCommand = {
       learning_id: "learning:1",
+      actionable: false,
+      terminal: true,
+      authority_effect: "none",
+    };
+    expect(Object.keys(nonCommand)).not.toContain("execute");
+    expect(Object.keys(nonCommand)).not.toContain("command");
+    expect(Object.keys(nonCommand)).not.toContain("accept");
+  });
+});
+
+describe("projection integrity — cognitive agent cast", () => {
+  const historyEntry = (
+    overrides: Partial<CognitiveAgentCastHistoryEntry> = {}
+  ): CognitiveAgentCastHistoryEntry => ({
+    cast_id: "cognitive_cast:1",
+    status: "superseded",
+    created_at: "t0",
+    superseded_at: "t1",
+    confidence: 60,
+    uncertainty: 40,
+    agent_count: 6,
+    perspective_count: 6,
+    critique_count: 1,
+    synthesis_count: 1,
+    terminal: true,
+    actionable: false,
+    authority_effect: "none",
+    ...overrides,
+  });
+
+  it("marks agent cast history as non-actionable", () => {
+    expect(isCognitiveAgentCastHistoryNonActionable(historyEntry())).toBe(true);
+    expect(
+      isCognitiveAgentCastHistoryNonActionable(
+        historyEntry({ actionable: true, status: "superseded" })
+      )
+    ).toBe(false);
+  });
+
+  it("keeps agent cast snapshots non-commandable with authoritative history_count", () => {
+    const snapshot: CognitiveAgentCastSnapshot = {
+      workspace_id: "ws",
+      generated_at: "t2",
+      current: null,
+      history: [historyEntry()],
+      history_count: 3,
+      authority_effect: "none",
+    };
+    expect(isCognitiveAgentCastSnapshotNonCommandable(snapshot)).toBe(true);
+    const summary: CognitiveAgentCastSummary = {
+      workspace_id: "ws",
+      generated_at: "t2",
+      has_current: false,
+      cast_id: null,
+      agent_count: 0,
+      perspective_count: 0,
+      critique_count: 0,
+      synthesis_count: 0,
+      confidence: null,
+      uncertainty: null,
+      history: [historyEntry()],
+      history_count: 3,
+      authority_effect: "none",
+    };
+    expect(cognitiveAgentCastHistoryCountIsAuthoritative(summary)).toBe(true);
+    expect(summary.history_count).toBeGreaterThanOrEqual(summary.history.length);
+
+    const nonCommand = {
+      cast_id: "cognitive_cast:1",
       actionable: false,
       terminal: true,
       authority_effect: "none",

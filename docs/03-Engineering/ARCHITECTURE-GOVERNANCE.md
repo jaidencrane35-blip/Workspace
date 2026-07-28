@@ -246,6 +246,25 @@ See [Cognitive Orchestration Architecture](../05-AI/COGNITIVE-ORCHESTRATION-ARCH
 
 See [Learning & Adaptation Architecture](../05-AI/LEARNING-ADAPTATION-ARCHITECTURE.md).
 
+## Cognitive Agent Cast (Programme II Batch 7)
+
+`WorkspaceCognitiveAgentCastService` owns **role / perspective / critique / synthesis evidence only**.
+
+| Property | Value |
+|----------|-------|
+| Lifecycle owner | No |
+| Execution authority | No |
+| Permission owner | No |
+| Evidence / coordination owner | Yes |
+
+- `CognitiveAgentCastHistoryEntry` / `CognitiveAgentCastSummary` contain no authority/command fields.
+- Mutation inventory includes `GenerateCognitiveAgentCast` (baseline floor raised).
+- Agent cast cannot import execution/launch services or mutate lifecycle domains.
+- Agents cannot become permission owners or call `PermissionGateway`.
+- Repository cannot call the agent cast service.
+
+See [Cognitive Agent Cast Architecture](../05-AI/COGNITIVE-AGENT-CAST-ARCHITECTURE.md).
+
 ## Capability boundary audit
 
 Enforced by `scripts/architecture-governance-lib.mjs`:

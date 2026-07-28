@@ -111,6 +111,9 @@ use crate::commands::workspace_cognitive_orchestration::{
 use crate::commands::workspace_learning_adaptation::{
     GenerateLearningSnapshot, GetLearningSnapshot, GetLearningSummary,
 };
+use crate::commands::workspace_cognitive_agent_cast::{
+    GenerateCognitiveAgentCast, GetCognitiveAgentCast, GetCognitiveAgentCastSummary,
+};
 use crate::commands::zone::{CreateZone, DeleteZone, GetZone};
 use crate::config::{SettingsUpdate, WorkspaceSettings};
 use crate::error::{KernelError, Result};
@@ -170,6 +173,7 @@ use workspace_domain::{
     ReasoningSnapshot, ReasoningSummary, CognitiveGraphSnapshot, CognitiveGraphSummary,
     WorkspaceOrchestrationSnapshot, WorkspaceOrchestrationSummary,
     LearningSnapshot, LearningSummary,
+    CognitiveAgentCastSnapshot, CognitiveAgentCastSummary,
     LayoutId, LayoutMetadata, LayoutNode, LayoutSnapshot, MemoryEntry, MemoryType,
     ModelProviderDescriptor, ModelResponse, Observation, PersonalizedPlanComparison,
     PreferenceCategory, PreferenceSource, Suggestion, SuggestionIntentRequest,
@@ -2501,6 +2505,42 @@ impl CommandHandler {
     /// Architecture guard — Learning must never execute.
     pub fn workspace_learning_adaptation_attempt_execute() -> Result<()> {
         crate::services::WorkspaceLearningAdaptationService::attempt_execute()
+    }
+
+    pub fn generate_cognitive_agent_cast(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<CognitiveAgentCastSnapshot> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_mutation(GenerateCognitiveAgentCast::new(workspace_id))
+    }
+
+    pub fn get_cognitive_agent_cast(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<CognitiveAgentCastSnapshot> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetCognitiveAgentCast::new(workspace_id))
+    }
+
+    pub fn get_cognitive_agent_cast_summary(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        history_limit: usize,
+    ) -> Result<CognitiveAgentCastSummary> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetCognitiveAgentCastSummary::new(workspace_id, history_limit))
+    }
+
+    /// Architecture guard — Agent Cast must never execute.
+    pub fn workspace_cognitive_agent_cast_attempt_execute() -> Result<()> {
+        crate::services::WorkspaceCognitiveAgentCastService::attempt_execute()
     }
 
     #[allow(clippy::too_many_arguments)]

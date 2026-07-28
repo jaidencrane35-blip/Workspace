@@ -22,10 +22,10 @@
 
 | Question | Contract |
 |----------|----------|
-| What survives restart? | Durable rows: execution lifecycle, recommendation/DE/DQ/task overlays, planning artefacts, reasoning records + history, cognitive graph snapshots + history, orchestration snapshots + history, learning snapshots + history, audit events, schema/migrations ledger |
-| What is reconstructed? | Projections re-derived from services on generate/load; execution stale claims reconciled via existing service rules; planning/reasoning/graph/orchestration/learning snapshots loaded from durable tables |
-| What is missing? | In-memory AI plan/workflow stores (diagnostic only); audit windows beyond scan limits; in-progress claims beyond the startup sweep cap until lazy reconcile; **absent reasoning/graph/orchestration/learning remains absent** |
-| What must fail closed? | Incomplete terminal evidence; empty capability grants; poisoned DB locks; interrupted migrations; non-retryable stale claims; fabricated reasoning, graph, orchestration, or learning structure |
+| What survives restart? | Durable rows: execution lifecycle, recommendation/DE/DQ/task overlays, planning artefacts, reasoning records + history, cognitive graph snapshots + history, orchestration snapshots + history, learning snapshots + history, cognitive agent cast snapshots + history, audit events, schema/migrations ledger |
+| What is reconstructed? | Projections re-derived from services on generate/load; execution stale claims reconciled via existing service rules; planning/reasoning/graph/orchestration/learning/agent-cast snapshots loaded from durable tables |
+| What is missing? | In-memory AI plan/workflow stores (diagnostic only); audit windows beyond scan limits; in-progress claims beyond the startup sweep cap until lazy reconcile; **absent reasoning/graph/orchestration/learning/agent-cast remains absent** |
+| What must fail closed? | Incomplete terminal evidence; empty capability grants; poisoned DB locks; interrupted migrations; non-retryable stale claims; fabricated reasoning, graph, orchestration, learning, or agent-cast structure |
 
 Recovery must **never**:
 
@@ -34,6 +34,7 @@ Recovery must **never**:
 - fabricate cognitive graph structure or invent missing relationships
 - fabricate orchestration state, dependencies, or refresh plans
 - fabricate learning lessons, success, or failure evidence
+- fabricate agents, perspectives, agreement, disagreement, or confidence
 - recreate desktop actions
 - bypass PermissionGateway / CommandPipeline for user mutations
 - silently “heal” lifecycle into an open actionable state

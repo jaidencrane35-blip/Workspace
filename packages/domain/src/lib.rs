@@ -51,6 +51,7 @@ pub mod workspace_reasoning_memory;
 pub mod workspace_cognitive_graph;
 pub mod workspace_cognitive_orchestration;
 pub mod workspace_learning_adaptation;
+pub mod workspace_cognitive_agent_cast;
 pub mod workspace_composition;
 pub mod workspace_purpose;
 pub mod workspace_evolution;
@@ -469,6 +470,12 @@ pub use workspace_learning_adaptation::{
     LearningMeta, LearningObservation, LearningPattern, LearningSignal, LearningSnapshot,
     LearningStatus, LearningSummary, LearningView, WorkspaceLearningAdaptationError,
 };
+pub use workspace_cognitive_agent_cast::{
+    default_cast_roles, AgentCritique, AgentPerspective, AgentSynthesis, CastEvidenceLink,
+    CastStatus, CognitiveAgent, CognitiveAgentCastHistoryEntry, CognitiveAgentCastMeta,
+    CognitiveAgentCastSnapshot, CognitiveAgentCastSummary, CognitiveAgentCastView,
+    WorkspaceCognitiveAgentCastError,
+};
 pub use workspace_task_graph::{
     would_create_cycle, TaskDependency, TaskGraph, TaskGraphError, TaskGraphSummary, TaskHistoryEntry,
     TaskMetadata, TaskNode, TaskRelationship, TaskRelationshipKind, WorkspaceTask,
@@ -537,6 +544,8 @@ pub use recovery_contract::{
     recovery_must_not_fabricate_actionable_reasoning_history,
     recovery_must_not_fabricate_cognitive_graph,
     recovery_must_not_fabricate_actionable_learning_history,
+    recovery_must_not_fabricate_actionable_agent_cast_history,
+    recovery_must_not_fabricate_cognitive_agent_cast,
     recovery_must_not_fabricate_learning, recovery_must_not_fabricate_orchestration, recovery_must_not_fabricate_reasoning,
     recovery_must_not_invent_completed, RECOVERY_DIAGNOSTIC_ATTEMPTED,
     RECOVERY_DIAGNOSTIC_COMPLETED, RECOVERY_DIAGNOSTIC_EVENT_TYPES, RECOVERY_DIAGNOSTIC_FAILED,

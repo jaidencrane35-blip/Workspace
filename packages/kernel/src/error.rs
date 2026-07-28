@@ -13,7 +13,7 @@ use workspace_domain::{
     WorkspacePatternError, WorkspacePlanningError, WorkspaceProfileError, WorkspacePurposeError,
     WorkspaceReadinessError, WorkspaceRecommendationEngineError, WorkspaceReasoningMemoryError,
     WorkspaceCognitiveGraphError, WorkspaceCognitiveOrchestrationError,
-    WorkspaceLearningAdaptationError, WorkspaceSessionError,
+    WorkspaceLearningAdaptationError, WorkspaceCognitiveAgentCastError, WorkspaceSessionError,
     WorkspaceTransitionError,
     WorkspaceWorkContextError, WorkspaceWorkingStyleError,
 };
@@ -246,6 +246,9 @@ pub enum KernelError {
 
     #[error("Workspace learning adaptation validation failed: {message}")]
     WorkspaceLearningAdaptationValidation { message: String },
+
+    #[error("Workspace cognitive agent cast validation failed: {message}")]
+    WorkspaceCognitiveAgentCastValidation { message: String },
 
     #[error("Workspace intelligence validation failed: {message}")]
     WorkspaceIntelligenceValidation { message: String },
@@ -527,6 +530,17 @@ impl From<WorkspaceLearningAdaptationError> for KernelError {
         match error {
             WorkspaceLearningAdaptationError::Domain(domain) => KernelError::from(domain),
             other => KernelError::WorkspaceLearningAdaptationValidation {
+                message: other.to_string(),
+            },
+        }
+    }
+}
+
+impl From<WorkspaceCognitiveAgentCastError> for KernelError {
+    fn from(error: WorkspaceCognitiveAgentCastError) -> Self {
+        match error {
+            WorkspaceCognitiveAgentCastError::Domain(domain) => KernelError::from(domain),
+            other => KernelError::WorkspaceCognitiveAgentCastValidation {
                 message: other.to_string(),
             },
         }
@@ -1201,6 +1215,10 @@ impl KernelError {
             },
             KernelError::WorkspaceLearningAdaptationValidation { message } => PublicError {
                 code: "workspace_learning_adaptation_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::WorkspaceCognitiveAgentCastValidation { message } => PublicError {
+                code: "workspace_cognitive_agent_cast_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::WorkspaceIntelligenceValidation { message } => PublicError {

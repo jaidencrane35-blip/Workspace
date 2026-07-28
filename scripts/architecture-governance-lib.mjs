@@ -15,7 +15,7 @@ const read = (file) => fs.readFileSync(file, "utf8");
 const sorted = (values) => [...new Set(values)].sort();
 
 /** Minimum MutationCommand inventory — dropping below this fails closed. */
-export const MUTATION_COMMAND_BASELINE = 59;
+export const MUTATION_COMMAND_BASELINE = 60;
 
 /** Capability id → authority owner (permission-token scope, not lifecycle owner). */
 export const CAPABILITY_AUTHORITY_OWNERS = {
@@ -100,6 +100,7 @@ export const HISTORY_STRUCTS = [
   "CognitiveGraphHistoryEntry",
   "OrchestrationHistoryEntry",
   "LearningHistoryEntry",
+  "CognitiveAgentCastHistoryEntry",
 ];
 
 export const PROJECTION_SUMMARY_STRUCTS = [
@@ -113,6 +114,7 @@ export const PROJECTION_SUMMARY_STRUCTS = [
   "CognitiveGraphSummary",
   "WorkspaceOrchestrationSummary",
   "LearningSummary",
+  "CognitiveAgentCastSummary",
 ];
 
 /** Append-only recovery diagnostic event types — evidence only, never commands. */
@@ -769,6 +771,78 @@ function learningAdaptationGuards(rootDir) {
   return violations;
 }
 
+
+/**
+ * Programme II Batch 7 — Cognitive Agent Cast governance guards.
+ * Agents are role representations; never actors, executors, or permission owners.
+ */
+function cognitiveAgentCastGuards(rootDir) {
+  const violations = [];
+  const servicePath = path.join(
+    rootDir,
+    "packages/kernel/src/services/workspace_cognitive_agent_cast.rs",
+  );
+  const domainPath = path.join(
+    rootDir,
+    "packages/domain/src/workspace_cognitive_agent_cast",
+  );
+  const repoPath = path.join(
+    rootDir,
+    "packages/database/src/repositories/cognitive_agent_cast.rs",
+  );
+
+  const serviceFiles = fs.existsSync(servicePath) ? [servicePath] : [];
+  const domainFiles = fs.existsSync(domainPath) ? rustSources(domainPath) : [];
+  for (const file of [...serviceFiles, ...domainFiles]) {
+    const source = read(file);
+    const rel = path.relative(rootDir, file).replace(/\\/g, "/");
+    if (
+      /\bApplicationLaunchService\b/.test(source) ||
+      /\bExecutionLifecycleService\b/.test(source) ||
+      /std::process::Command/.test(source) ||
+      /workspace_windows_integration::/.test(source)
+    ) {
+      violations.push(
+        `${rel}: Cognitive Agent Cast must not import or invoke execution/launch services`,
+      );
+    }
+    if (
+      /WorkspacePlanningService::generate\b/.test(source) ||
+      /WorkspaceReasoningMemoryService::generate\b/.test(source) ||
+      /WorkspaceCognitiveGraphService::generate\b/.test(source) ||
+      /WorkspaceCognitiveOrchestrationService::generate\b/.test(source) ||
+      /WorkspaceLearningAdaptationService::generate\b/.test(source) ||
+      /TaskGraphService::generate\b/.test(source) ||
+      /DecisionEngineService::generate\b/.test(source) ||
+      /PermissionGateway::/.test(source)
+    ) {
+      violations.push(
+        `${rel}: Cognitive Agent Cast must not mutate lifecycle domains or own permissions`,
+      );
+    }
+  }
+
+  if (fs.existsSync(repoPath)) {
+    const source = read(repoPath);
+    if (
+      /WorkspaceCognitiveAgentCastService/.test(source) ||
+      /use\s+workspace_kernel::/.test(source)
+    ) {
+      violations.push(
+        `packages/database/src/repositories/cognitive_agent_cast.rs: repository must not call agent cast service`,
+      );
+    }
+  }
+
+  if (!fs.existsSync(domainPath) && !fs.existsSync(`${domainPath}.rs`)) {
+    violations.push(
+      "packages/domain/src/workspace_cognitive_agent_cast missing; governance cannot verify agent cast DTOs",
+    );
+  }
+
+  return violations;
+}
+
 function checkDtoAuthorityFields(domainSources, structNames, label) {
   const violations = [];
   const found = [];
@@ -1047,6 +1121,7 @@ export function auditArchitectureGovernance(rootDir, options = {}) {
   violations.push(...recommendationEngineProcessSpawn(rootDir));
   violations.push(...cognitiveOrchestrationGuards(rootDir));
   violations.push(...learningAdaptationGuards(rootDir));
+  violations.push(...cognitiveAgentCastGuards(rootDir));
 
   const domainSrc = path.join(rootDir, "packages/domain/src");
   const domainSources = fs.existsSync(domainSrc) ? rustSources(domainSrc) : [];

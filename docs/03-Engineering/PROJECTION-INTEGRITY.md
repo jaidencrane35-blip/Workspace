@@ -198,6 +198,17 @@ Rules:
 - React may inspect learning evidence — no mutation or command conversion.
 - Restart reconstructs durable current + history; missing learning remains missing.
 
+### Cognitive Agent Cast (Programme II Batch 7)
+
+- **Current:** `CognitiveAgentCastSnapshot.current` — agents, perspectives, critiques,
+  syntheses. Role representations only; never execute or self-authorise.
+- **History:** superseded snapshots via append-only `workspace_cognitive_agent_cast_history` →
+  `CognitiveAgentCastHistoryEntry` (`terminal: true`, `actionable: false`, `authority_effect: none`).
+- **`history_count`** is authoritative; summary windows may truncate `history`.
+- Critiques are informational (cannot reject/block). Syntheses are summaries (not decisions).
+- React may inspect cast evidence — no mutation or command conversion.
+- Restart reconstructs durable current + history; missing cast remains missing.
+
 ## Serde defaults vs TypeScript required fields
 
 Rust history fields often use `#[serde(default)]` so older persisted / in-flight JSON

@@ -75,6 +75,7 @@ export const PUBLIC_ERROR_CODES = [
   "workspace_cognitive_graph_validation_error",
   "workspace_cognitive_orchestration_validation_error",
   "workspace_learning_adaptation_validation_error",
+  "workspace_cognitive_agent_cast_validation_error",
   "workspace_composition_validation_error",
   "workspace_continuity_validation_error",
   "workspace_environment_validation_error",
