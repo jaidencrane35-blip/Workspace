@@ -24,8 +24,21 @@ INSERT INTO execution_lifecycle (
     failure_reason, claimed_at, completed_at, updated_at
 )
 SELECT
-    execution_request_id, suggestion_id, intent_id, state, 0,
-    NULL, claimed_at, completed_at, updated_at
+    execution_request_id,
+    suggestion_id,
+    intent_id,
+    state,
+    CASE
+        WHEN state = 'cancelled' THEN 1
+        ELSE 0
+    END,
+    CASE
+        WHEN state = 'failed' THEN 'historical failure requires reconciliation'
+        ELSE NULL
+    END,
+    claimed_at,
+    completed_at,
+    updated_at
 FROM execution_lifecycle_041;
 
 DROP TABLE execution_lifecycle_041;

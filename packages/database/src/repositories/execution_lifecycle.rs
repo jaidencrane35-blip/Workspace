@@ -224,7 +224,7 @@ mod tests {
     }
 
     #[test]
-    fn migration_backfills_historical_completed_execution() {
+    fn restored_041_upgrades_and_backfills_historical_outcomes() {
         let db = Database::open_in_memory().unwrap();
         db.connection()
             .execute_batch(include_str!("../../migrations/004_audit.sql"))
@@ -273,6 +273,143 @@ mod tests {
                 .unwrap()
                 .state,
             ExecutionState::Cancelled
+        );
+    }
+
+    #[test]
+    fn fresh_database_applies_042_constraints() {
+        let dir = tempfile::tempdir().unwrap();
+        let db = DatabaseService::initialize(dir.path().join("workspace.db"))
+            .unwrap()
+            .into_database();
+        let repository = ExecutionLifecycleRepository::new(&db);
+        assert!(repository
+            .record_cancelled("execution:fresh", "fresh", "2026-07-28T00:00:00Z")
+            .unwrap());
+        let cancelled = repository.get("execution:fresh").unwrap().unwrap();
+        assert_eq!(cancelled.state, ExecutionState::Cancelled);
+        assert!(cancelled.retry_allowed);
+        assert!(db
+            .connection()
+            .execute(
+                "INSERT INTO execution_lifecycle (
+                    execution_request_id, suggestion_id, state, retry_allowed,
+                    claimed_at, updated_at
+                 ) VALUES ('execution:invalid', 'invalid', 'cancelled', 0, 't', 't')",
+                [],
+            )
+            .is_err());
+    }
+
+    #[test]
+    fn amended_041_cancelled_rows_upgrade_without_data_loss() {
+        let db = Database::open_in_memory().unwrap();
+        db.connection()
+            .execute_batch(include_str!("../../migrations/004_audit.sql"))
+            .unwrap();
+        db.connection()
+            .execute_batch(
+                "CREATE TABLE execution_lifecycle (
+                    execution_request_id TEXT PRIMARY KEY NOT NULL,
+                    suggestion_id TEXT NOT NULL,
+                    intent_id TEXT,
+                    state TEXT NOT NULL CHECK (state IN ('in_progress', 'completed', 'cancelled')),
+                    claimed_at TEXT NOT NULL,
+                    completed_at TEXT,
+                    updated_at TEXT NOT NULL,
+                    CHECK (
+                        (state IN ('in_progress', 'cancelled') AND completed_at IS NULL)
+                        OR (state = 'completed' AND completed_at IS NOT NULL)
+                    )
+                 );
+                 CREATE INDEX idx_execution_lifecycle_updated
+                    ON execution_lifecycle (updated_at DESC);
+                 INSERT INTO execution_lifecycle VALUES
+                    ('execution:cancelled-dev', 'cancelled-dev', NULL, 'cancelled',
+                     '2026-07-28T00:00:00Z', NULL, '2026-07-28T00:00:00Z'),
+                    ('execution:active-dev', 'active-dev', NULL, 'in_progress',
+                     '2026-07-28T00:01:00Z', NULL, '2026-07-28T00:01:00Z'),
+                    ('execution:done-dev', 'done-dev', 'intent:done', 'completed',
+                     '2026-07-28T00:02:00Z', '2026-07-28T00:03:00Z',
+                     '2026-07-28T00:03:00Z');",
+            )
+            .unwrap();
+        db.connection()
+            .execute_batch(include_str!(
+                "../../migrations/042_execution_lifecycle_failure_reconciliation.sql"
+            ))
+            .unwrap();
+
+        let repository = ExecutionLifecycleRepository::new(&db);
+        let cancelled = repository
+            .get("execution:cancelled-dev")
+            .unwrap()
+            .unwrap();
+        assert_eq!(cancelled.state, ExecutionState::Cancelled);
+        assert!(cancelled.retry_allowed);
+        assert_eq!(
+            repository
+                .get("execution:active-dev")
+                .unwrap()
+                .unwrap()
+                .state,
+            ExecutionState::InProgress
+        );
+        assert_eq!(
+            repository
+                .get("execution:done-dev")
+                .unwrap()
+                .unwrap()
+                .state,
+            ExecutionState::Completed
+        );
+        assert_eq!(
+            db.connection()
+                .query_row("SELECT COUNT(*) FROM execution_lifecycle", [], |row| row.get::<_, i64>(0))
+                .unwrap(),
+            3
+        );
+    }
+
+    #[test]
+    fn historical_failed_row_is_preserved_nonretryable() {
+        let db = Database::open_in_memory().unwrap();
+        db.connection()
+            .execute_batch(include_str!("../../migrations/004_audit.sql"))
+            .unwrap();
+        db.connection()
+            .execute_batch(
+                "CREATE TABLE execution_lifecycle (
+                    execution_request_id TEXT PRIMARY KEY NOT NULL,
+                    suggestion_id TEXT NOT NULL,
+                    intent_id TEXT,
+                    state TEXT NOT NULL,
+                    claimed_at TEXT NOT NULL,
+                    completed_at TEXT,
+                    updated_at TEXT NOT NULL
+                 );
+                 CREATE INDEX idx_execution_lifecycle_updated
+                    ON execution_lifecycle (updated_at DESC);
+                 INSERT INTO execution_lifecycle VALUES (
+                    'execution:failed-dev', 'failed-dev', NULL, 'failed',
+                    '2026-07-28T00:00:00Z', NULL, '2026-07-28T00:01:00Z'
+                 );",
+            )
+            .unwrap();
+        db.connection()
+            .execute_batch(include_str!(
+                "../../migrations/042_execution_lifecycle_failure_reconciliation.sql"
+            ))
+            .unwrap();
+        let failed = ExecutionLifecycleRepository::new(&db)
+            .get("execution:failed-dev")
+            .unwrap()
+            .unwrap();
+        assert_eq!(failed.state, ExecutionState::Failed);
+        assert!(!failed.retry_allowed);
+        assert_eq!(
+            failed.failure_reason.as_deref(),
+            Some("historical failure requires reconciliation")
         );
     }
 
