@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | **Purpose** | Establish one provenance-rich, read-only runtime view of operational, cognitive, governance, and evidence state while preserving all existing lifecycle and persistence authorities |
-| **Status** | Active — Batch 5 Workspace Explanation Layer implemented |
+| **Status** | Active — Batch 5 accepted; Batch 6 charter drafted (pending review) |
 | **Depends on** | Programme I governance / recovery; Programme II cognitive stack |
 | **Non-goals** | Event sourcing; authoritative replay logs; simulation; model hosting; autonomous execution; replacement permission system; replacement for domain-owned projections |
 
@@ -23,6 +23,7 @@
 12. **Reconstruction explains change over time** — it does not become the source of truth; no event sourcing; no replay authority.
 13. **Temporal intelligence organises evidence over time** — it does not predict, simulate, correct, or become truth.
 14. **Explanation Layer explains evidence** — it does not become the authority that changes reality.
+15. **Contextual understanding organises situational meaning from durable evidence** — it does not decide, predict, simulate, or change reality.
 
 ## Batch map
 
@@ -32,19 +33,9 @@
 | **2** | Policy & Governance Engine | Context-aware policy reasoning / evidence | Done (accepted) |
 | **3** | Historical Workspace Reconstruction | Temporal comparison / change explanation | Done (accepted) |
 | **4** | Temporal Intelligence | Historical understanding extensions | Done (accepted) |
-| **5** | Workspace Explanation Layer | Cross-surface evidence-backed explanation | Done (implemented) |
-| **6+** | Collaborative Understanding / Simulation / Local Intelligence | Only after Batch 5 audited + reconstruction exercised | Planned |
-
-## Batch 4 summary
-
-`WorkspaceTemporalIntelligenceService` deepens historical understanding over durable
-reconstruction evidence: scoped `TemporalAnalysisWindow`, `RevisionChainSummary`,
-`TemporalConflictExplanation`, and diagnostic `EvidenceQualityAssessment`.
-Sequence language only (observed follow-on ≠ cause). Conflicts are explained, not resolved.
-Evidence quality is diagnostic — never a correctness / authority score.
-Commands: `GenerateTemporalAnalysis`, `GetTemporalAnalysis`, `GetTemporalSummary`,
-`ExplainTemporalChange`.
-See [Temporal Intelligence Architecture](./TEMPORAL-INTELLIGENCE-ARCHITECTURE.md).
+| **5** | Workspace Explanation Layer | Cross-surface evidence-backed explanation | Done (accepted) |
+| **6** | Contextual Workspace Understanding | Richer situational understanding | Charter drafted — pending review |
+| **7+** | Collaborative Understanding / Simulation / Local Intelligence | Only after Batch 6 contract + prior layers exercised | Planned |
 
 ## Batch 5 summary
 
@@ -55,12 +46,23 @@ authority. Commands: `GenerateWorkspaceExplanation`, `GetWorkspaceExplanation`,
 `GetWorkspaceExplanationSummary`, `ExplainWorkspaceSituation`.
 See [Workspace Explanation Layer Architecture](./WORKSPACE-EXPLANATION-LAYER-ARCHITECTURE.md).
 
+## Batch 6 charter (draft)
+
+`WorkspaceContextualUnderstandingService` will turn state + policy + history + temporal +
+explanation evidence into richer situational understanding packages.
+Understanding confidence remains diagnostic (≠ truth). Provenance lineage is required on
+every claim. Persisted artefacts stay revision-bound — never previous-cache-as-truth.
+See [Contextual Workspace Understanding Architecture](./CONTEXTUAL-WORKSPACE-UNDERSTANDING-ARCHITECTURE.md).
+
+**Do not begin Batch 6 implementation until the charter is reviewed and approved.**
+**Do not expand into prediction, simulation, autonomous correction, or decision ownership.**
+
 ## Sequencing rule
 
 Ship Batch *N* only when Batch *N−1* has durable contracts, tests, and governance ownership entries.
-Do not start Batch 6 until Batch 5 is audited and accepted.
-Later batches that touch collaboration / simulation / forecasting remain gated on the
-explanation layer being accepted and reconstruction being exercised against real complexity.
+Batch 6 implementation is gated on charter review approval.
+Later batches that touch collaboration / simulation / forecasting remain gated on contextual
+understanding being accepted and prior layers being exercised against real complexity.
 
 ## Related
 
@@ -69,6 +71,7 @@ explanation layer being accepted and reconstruction being exercised against real
 - [Historical Workspace Reconstruction Architecture](./HISTORICAL-WORKSPACE-RECONSTRUCTION-ARCHITECTURE.md) (Batch 3)
 - [Temporal Intelligence Architecture](./TEMPORAL-INTELLIGENCE-ARCHITECTURE.md) (Batch 4)
 - [Workspace Explanation Layer Architecture](./WORKSPACE-EXPLANATION-LAYER-ARCHITECTURE.md) (Batch 5)
+- [Contextual Workspace Understanding Architecture](./CONTEXTUAL-WORKSPACE-UNDERSTANDING-ARCHITECTURE.md) (Batch 6 charter)
 - [Programme II — Cognitive Workspace](./PROGRAMME-II-COGNITIVE-WORKSPACE.md)
 - [Projection Integrity](../03-Engineering/PROJECTION-INTEGRITY.md)
 - [Architecture Governance](../03-Engineering/ARCHITECTURE-GOVERNANCE.md)
