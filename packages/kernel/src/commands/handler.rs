@@ -114,6 +114,9 @@ use crate::commands::workspace_learning_adaptation::{
 use crate::commands::workspace_cognitive_agent_cast::{
     GenerateCognitiveAgentCast, GetCognitiveAgentCast, GetCognitiveAgentCastSummary,
 };
+use crate::commands::workspace_cognitive_autonomy::{
+    GenerateCognitiveAutonomy, GetCognitiveAutonomy, GetCognitiveAutonomySummary,
+};
 use crate::commands::zone::{CreateZone, DeleteZone, GetZone};
 use crate::config::{SettingsUpdate, WorkspaceSettings};
 use crate::error::{KernelError, Result};
@@ -174,6 +177,7 @@ use workspace_domain::{
     WorkspaceOrchestrationSnapshot, WorkspaceOrchestrationSummary,
     LearningSnapshot, LearningSummary,
     CognitiveAgentCastSnapshot, CognitiveAgentCastSummary,
+    CognitiveAutonomySnapshot, CognitiveAutonomySummary,
     LayoutId, LayoutMetadata, LayoutNode, LayoutSnapshot, MemoryEntry, MemoryType,
     ModelProviderDescriptor, ModelResponse, Observation, PersonalizedPlanComparison,
     PreferenceCategory, PreferenceSource, Suggestion, SuggestionIntentRequest,
@@ -2541,6 +2545,42 @@ impl CommandHandler {
     /// Architecture guard — Agent Cast must never execute.
     pub fn workspace_cognitive_agent_cast_attempt_execute() -> Result<()> {
         crate::services::WorkspaceCognitiveAgentCastService::attempt_execute()
+    }
+
+    pub fn generate_cognitive_autonomy(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<CognitiveAutonomySnapshot> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_mutation(GenerateCognitiveAutonomy::new(workspace_id))
+    }
+
+    pub fn get_cognitive_autonomy(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<CognitiveAutonomySnapshot> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetCognitiveAutonomy::new(workspace_id))
+    }
+
+    pub fn get_cognitive_autonomy_summary(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        history_limit: usize,
+    ) -> Result<CognitiveAutonomySummary> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetCognitiveAutonomySummary::new(workspace_id, history_limit))
+    }
+
+    /// Architecture guard — Cognitive Autonomy must never execute.
+    pub fn workspace_cognitive_autonomy_attempt_execute() -> Result<()> {
+        crate::services::WorkspaceCognitiveAutonomyService::attempt_execute()
     }
 
     #[allow(clippy::too_many_arguments)]

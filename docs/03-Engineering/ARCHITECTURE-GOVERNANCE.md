@@ -265,6 +265,27 @@ See [Learning & Adaptation Architecture](../05-AI/LEARNING-ADAPTATION-ARCHITECTU
 
 See [Cognitive Agent Cast Architecture](../05-AI/COGNITIVE-AGENT-CAST-ARCHITECTURE.md).
 
+## Cognitive Autonomy (Programme II Batch 8)
+
+`WorkspaceCognitiveAutonomyService` owns **suggestion / opportunity / safety evidence only**.
+
+| Property | Value |
+|----------|-------|
+| Lifecycle owner | No |
+| Execution authority | No |
+| Permission owner | No |
+| Evidence / suggestion owner | Yes |
+
+- `CognitiveAutonomyHistoryEntry` / `CognitiveAutonomySummary` contain no authority/command fields.
+- Mutation inventory includes `GenerateCognitiveAutonomy` (baseline floor raised).
+- Autonomy cannot import execution/launch services or call foreign `generate` paths.
+- Autonomy cannot own permissions or call `PermissionGateway`.
+- Opportunities always require approval; proposals never carry executable payloads.
+- Confidence must never become authority.
+- Repository cannot call the autonomy service.
+
+See [Cognitive Autonomy Architecture](../05-AI/COGNITIVE-AUTONOMY-ARCHITECTURE.md).
+
 ## Capability boundary audit
 
 Enforced by `scripts/architecture-governance-lib.mjs`:

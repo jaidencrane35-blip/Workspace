@@ -105,6 +105,7 @@ AI behaviour, permissions, and boundaries.
 | [Cognitive Orchestration Architecture](05-AI/COGNITIVE-ORCHESTRATION-ARCHITECTURE.md) | Batch 5 non-executing coordination / refresh ordering |
 | [Learning & Adaptation Architecture](05-AI/LEARNING-ADAPTATION-ARCHITECTURE.md) | Batch 6 observational learning / suggestion-only adaptation |
 | [Cognitive Agent Cast Architecture](05-AI/COGNITIVE-AGENT-CAST-ARCHITECTURE.md) | Batch 7 cognitive roles / perspectives / critiques / syntheses |
+| [Cognitive Autonomy Architecture](05-AI/COGNITIVE-AUTONOMY-ARCHITECTURE.md) | Batch 8 governed suggestion / opportunity layer (Programme II final) |
 | [Memory Policy](05-AI/MEMORY-POLICY.md) | What may be stored, retention, user control, deletion |
 | [Confidence Policy](05-AI/CONFIDENCE-POLICY.md) | Confidence levels, suggestion thresholds, uncertainty |
 | [AI Architecture Index](05-AI/README.md) | Navigation hub for Recommendation/Decision/Governance contracts |

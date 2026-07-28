@@ -15,6 +15,9 @@ use crate::workspace_learning_adaptation::{LearningHistoryEntry, LearningSnapsho
 use crate::workspace_cognitive_agent_cast::{
     CognitiveAgentCastHistoryEntry, CognitiveAgentCastSnapshot,
 };
+use crate::workspace_cognitive_autonomy::{
+    CognitiveAutonomyHistoryEntry, CognitiveAutonomySnapshot,
+};
 use crate::workspace_reasoning_memory::{ReasoningHistoryEntry, ReasoningSnapshot};
 
 /// Documented startup in-progress sweep cap (must match
@@ -152,6 +155,26 @@ pub fn recovery_must_not_fabricate_cognitive_agent_cast(
 /// Fabricated actionable agent cast history must fail the recovery contract.
 pub fn recovery_must_not_fabricate_actionable_agent_cast_history(
     entry: &CognitiveAgentCastHistoryEntry,
+) -> bool {
+    entry.is_non_actionable()
+}
+
+/// Missing autonomy remains missing — never invent opportunities/confidence/approvals on restart.
+pub fn recovery_must_not_fabricate_cognitive_autonomy(
+    snapshot: &CognitiveAutonomySnapshot,
+) -> bool {
+    snapshot.is_non_commandable()
+        && snapshot.history.iter().all(|h| h.is_non_actionable())
+        && snapshot
+            .current
+            .as_ref()
+            .map(|c| c.is_non_executing())
+            .unwrap_or(true)
+}
+
+/// Fabricated actionable autonomy history must fail the recovery contract.
+pub fn recovery_must_not_fabricate_actionable_autonomy_history(
+    entry: &CognitiveAutonomyHistoryEntry,
 ) -> bool {
     entry.is_non_actionable()
 }
@@ -380,5 +403,31 @@ mod tests {
             authority_effect: "none".into(),
         };
         assert!(!recovery_must_not_fabricate_actionable_agent_cast_history(&bad));
+    }
+
+    #[test]
+    fn recovery_never_fabricates_autonomy_on_empty_snapshot() {
+        let empty = CognitiveAutonomySnapshot::assemble("ws", None, vec![], 0, "t0");
+        assert!(recovery_must_not_fabricate_cognitive_autonomy(&empty));
+        assert!(empty.current.is_none());
+    }
+
+    #[test]
+    fn recovery_rejects_actionable_autonomy_history() {
+        let bad = CognitiveAutonomyHistoryEntry {
+            autonomy_id: "cognitive_autonomy:1".into(),
+            status: "superseded".into(),
+            created_at: "t0".into(),
+            superseded_at: Some("t1".into()),
+            confidence: 50,
+            uncertainty: 40,
+            opportunity_count: 0,
+            proposal_count: 0,
+            recommendation_count: 0,
+            terminal: true,
+            actionable: true,
+            authority_effect: "none".into(),
+        };
+        assert!(!recovery_must_not_fabricate_actionable_autonomy_history(&bad));
     }
 }

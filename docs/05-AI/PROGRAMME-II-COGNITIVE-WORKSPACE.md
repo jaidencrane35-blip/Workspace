@@ -3,9 +3,9 @@
 | Field | Value |
 |-------|-------|
 | **Purpose** | Evolve Workspace from object/lifecycle/evidence awareness into a governed cognitive system |
-| **Status** | Active — Batch 7 in progress |
-| **Depends on** | Programme I governance, operational recovery, Intent/Task Graph, RE/DE/DQ, Planning, Reasoning Memory, Cognitive Graph, Orchestration, Learning |
-| **Non-goals** | Embeddings/vector RAG as architectural memory; silent autonomous mutation; duplicate lifecycle systems |
+| **Status** | Complete — Batch 8 shipped (Programme II closed) |
+| **Depends on** | Programme I governance, operational recovery, Intent/Task Graph, RE/DE/DQ, Planning, Reasoning Memory, Cognitive Graph, Orchestration, Learning, Agent Cast |
+| **Non-goals** | Embeddings/vector RAG as architectural memory; silent autonomous mutation; duplicate lifecycle systems; autonomous execution |
 
 ## Programme principles (non-negotiable)
 
@@ -21,6 +21,7 @@
 10. **Orchestration is coordination only** — never a planner, lifecycle owner, autonomy layer, or executor.
 11. **Learning is observational meta-evidence** — adaptation is suggestion-only; evidence precedes change; no self-modifying authority.
 12. **Cognitive agents are role representations** — not users, not actors, not executors; evidence only; cannot self-authorise.
+13. **Autonomy may suggest; authority must still approve** — confidence ≠ permission; proposals ≠ commands; execution remains external.
 
 ## Batch map
 
@@ -32,20 +33,44 @@
 | **4** | Cognitive Graph | Cross-domain reference-only integration topology | Done |
 | **5** | Orchestration Engine | Governed refresh ordering / staleness coordination | Done |
 | **6** | Adaptive Learning | Evidence-producing learning; proposes only | Done |
-| **7** | Multi-Agent Architecture | Governed cognitive roles with empty authority | Active |
-| **8** | Autonomous Workspace | Observe→Understand→Plan→Ask→Execute→Learn — gated on 1–7 | Planned |
+| **7** | Multi-Agent Architecture | Governed cognitive roles with empty authority | Done |
+| **8** | Governed Cognitive Autonomy | Suggestion / opportunity layer — never executes | Done |
 
-## Batch 7 summary
+## Final stack
 
-`WorkspaceCognitiveAgentCastService` represents specialised cognitive roles that
-contribute perspectives, critiques, and syntheses over prior Programme II evidence.
-Dual-channel `CognitiveAgentCastSnapshot`. History is append-only terminal evidence.
-Agents cannot execute, call commands, request permissions, or mutate lifecycles.
-See [Cognitive Agent Cast Architecture](./COGNITIVE-AGENT-CAST-ARCHITECTURE.md).
+```
+Cognitive Model
+        ↓
+Planning
+        ↓
+Reasoning Memory
+        ↓
+Cognitive Graph
+        ↓
+Orchestration
+        ↓
+Learning & Adaptation
+        ↓
+Agent Cast
+        ↓
+Governed Cognitive Autonomy
+```
 
-## Sequencing rule
+Autonomy is the top observational layer. It does not replace any prior architecture.
 
-Ship Batch *N* only when Batch *N−1* has durable contracts, tests, and governance ownership entries. Batch 8 is gated on 1–7. **Do not begin Batch 8 until Batch 7 is accepted.**
+## Batch 8 summary
+
+`WorkspaceCognitiveAutonomyService` evaluates cognitive, planning, reasoning, graph,
+orchestration, learning, and agent-cast evidence to produce autonomy opportunities,
+automation proposals, confidence assessments, safety constraints, and approval
+requirements. Dual-channel `CognitiveAutonomySnapshot`. History is append-only
+terminal evidence. Autonomy cannot execute, self-approve, grant permissions, or
+mutate lifecycles. See [Cognitive Autonomy Architecture](./COGNITIVE-AUTONOMY-ARCHITECTURE.md).
+
+## Programme complete
+
+Programme II is complete when Batch 8 is implemented and audited. Do not invent
+Batch 9 under this programme unless a new programme charter is opened.
 
 ## Related
 
@@ -56,5 +81,6 @@ Ship Batch *N* only when Batch *N−1* has durable contracts, tests, and governa
 - [Cognitive Orchestration Architecture](./COGNITIVE-ORCHESTRATION-ARCHITECTURE.md) (Batch 5)
 - [Learning & Adaptation Architecture](./LEARNING-ADAPTATION-ARCHITECTURE.md) (Batch 6)
 - [Cognitive Agent Cast Architecture](./COGNITIVE-AGENT-CAST-ARCHITECTURE.md) (Batch 7)
+- [Cognitive Autonomy Architecture](./COGNITIVE-AUTONOMY-ARCHITECTURE.md) (Batch 8)
 - [Projection Integrity](../03-Engineering/PROJECTION-INTEGRITY.md)
 - [Architecture Governance](../03-Engineering/ARCHITECTURE-GOVERNANCE.md)

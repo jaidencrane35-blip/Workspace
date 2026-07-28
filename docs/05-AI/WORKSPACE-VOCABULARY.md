@@ -21,6 +21,7 @@ Canonical product language. Prefer these terms in UI, docs, and Assistant copy.
 | **Cognitive Orchestration** | Coordination of refresh ordering / staleness (never executes) | Planner, lifecycle owner, autonomy layer |
 | **Learning & Adaptation** | Observational meta-evidence and suggestion-only adaptations | Self-modifying authority, auto-apply, upstream truth |
 | **Cognitive Agent Cast** | Specialised cognitive role perspectives (evidence only) | Actor, executor, permission owner, swarm autonomy |
+| **Cognitive Autonomy** | Governed suggestion / opportunity layer (approval always required) | Autonomous agent, self-approving executor, hidden workflow |
 | **Graph History** | Terminal superseded graph snapshot evidence | Actionable graph mutations |
 | **Task** | Durable work item | Action |
 | **Action** | Executable catalog/command candidate | Task |

@@ -13,7 +13,8 @@ use workspace_domain::{
     WorkspacePatternError, WorkspacePlanningError, WorkspaceProfileError, WorkspacePurposeError,
     WorkspaceReadinessError, WorkspaceRecommendationEngineError, WorkspaceReasoningMemoryError,
     WorkspaceCognitiveGraphError, WorkspaceCognitiveOrchestrationError,
-    WorkspaceLearningAdaptationError, WorkspaceCognitiveAgentCastError, WorkspaceSessionError,
+    WorkspaceLearningAdaptationError, WorkspaceCognitiveAgentCastError,
+    WorkspaceCognitiveAutonomyError, WorkspaceSessionError,
     WorkspaceTransitionError,
     WorkspaceWorkContextError, WorkspaceWorkingStyleError,
 };
@@ -249,6 +250,9 @@ pub enum KernelError {
 
     #[error("Workspace cognitive agent cast validation failed: {message}")]
     WorkspaceCognitiveAgentCastValidation { message: String },
+
+    #[error("Workspace cognitive autonomy validation failed: {message}")]
+    WorkspaceCognitiveAutonomyValidation { message: String },
 
     #[error("Workspace intelligence validation failed: {message}")]
     WorkspaceIntelligenceValidation { message: String },
@@ -541,6 +545,17 @@ impl From<WorkspaceCognitiveAgentCastError> for KernelError {
         match error {
             WorkspaceCognitiveAgentCastError::Domain(domain) => KernelError::from(domain),
             other => KernelError::WorkspaceCognitiveAgentCastValidation {
+                message: other.to_string(),
+            },
+        }
+    }
+}
+
+impl From<WorkspaceCognitiveAutonomyError> for KernelError {
+    fn from(error: WorkspaceCognitiveAutonomyError) -> Self {
+        match error {
+            WorkspaceCognitiveAutonomyError::Domain(domain) => KernelError::from(domain),
+            other => KernelError::WorkspaceCognitiveAutonomyValidation {
                 message: other.to_string(),
             },
         }
@@ -1219,6 +1234,10 @@ impl KernelError {
             },
             KernelError::WorkspaceCognitiveAgentCastValidation { message } => PublicError {
                 code: "workspace_cognitive_agent_cast_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::WorkspaceCognitiveAutonomyValidation { message } => PublicError {
+                code: "workspace_cognitive_autonomy_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::WorkspaceIntelligenceValidation { message } => PublicError {

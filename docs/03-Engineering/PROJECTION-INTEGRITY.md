@@ -209,6 +209,18 @@ Rules:
 - React may inspect cast evidence — no mutation or command conversion.
 - Restart reconstructs durable current + history; missing cast remains missing.
 
+### Cognitive Autonomy (Programme II Batch 8)
+
+- **Current:** `CognitiveAutonomySnapshot.current` — opportunities, proposals,
+  recommendations, safety assessments. Suggestions only; never execute or self-approve.
+- **History:** superseded snapshots via append-only `workspace_cognitive_autonomy_history` →
+  `CognitiveAutonomyHistoryEntry` (`terminal: true`, `actionable: false`, `authority_effect: none`).
+- **`history_count`** is authoritative; summary windows may truncate `history`.
+- Opportunities always require approval. Proposals have no executable command payload.
+- Safety assessments are evidence, not enforcement. Confidence ≠ permission.
+- React may inspect autonomy evidence — no mutation or command conversion.
+- Restart reconstructs durable current + history; missing autonomy remains missing.
+
 ## Serde defaults vs TypeScript required fields
 
 Rust history fields often use `#[serde(default)]` so older persisted / in-flight JSON

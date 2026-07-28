@@ -2689,6 +2689,126 @@ export interface CognitiveAgentCastSummary {
   authority_effect: string;
 }
 
+export interface AutonomyOpportunity {
+  opportunity_id: string;
+  target_reference: string;
+  description: string;
+  expected_value: string;
+  risk_level: string;
+  confidence: number;
+  required_approval: boolean;
+  evidence: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface AutomationProposal {
+  proposal_id: string;
+  title: string;
+  steps: string[];
+  dependencies: string[];
+  required_capabilities: string[];
+  approval_boundary: string;
+  confidence: number;
+  executable_payload: string | null;
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface AutonomySafetyAssessment {
+  assessment_id: string;
+  risks: string[];
+  constraints: string[];
+  failure_modes: string[];
+  required_controls: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface AutonomyRecommendation {
+  recommendation_id: string;
+  statement: string;
+  related_opportunity_ids: string[];
+  confidence: number;
+  requires_approval: boolean;
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface AutonomyEvidenceLink {
+  external_ref: string;
+  kind: string;
+}
+
+export interface CognitiveAutonomyHistoryEntry {
+  autonomy_id: string;
+  status: string;
+  created_at: string;
+  superseded_at: string | null;
+  confidence: number;
+  uncertainty: number;
+  opportunity_count: number;
+  proposal_count: number;
+  recommendation_count: number;
+  terminal: boolean;
+  actionable: boolean;
+  authority_effect: string;
+}
+
+export interface CognitiveAutonomyMeta {
+  autonomy_id: string;
+  workspace_id: string;
+  status: string;
+  created_at: string;
+  superseded_at: string | null;
+  confidence: number;
+  uncertainty: number;
+  opportunity_count: number;
+  proposal_count: number;
+  recommendation_count: number;
+  authority_effect: string;
+  terminal: boolean;
+  actionable: boolean;
+}
+
+export interface CognitiveAutonomyView {
+  meta: CognitiveAutonomyMeta;
+  opportunities: AutonomyOpportunity[];
+  proposals: AutomationProposal[];
+  recommendations: AutonomyRecommendation[];
+  risk_assessments: AutonomySafetyAssessment[];
+  approval_requirements: string[];
+  confidence: number;
+  uncertainty: number;
+  evidence_links: AutonomyEvidenceLink[];
+  constraints: string[];
+  authority_effect: string;
+}
+
+export interface CognitiveAutonomySnapshot {
+  workspace_id: string;
+  generated_at: string;
+  current: CognitiveAutonomyView | null;
+  history: CognitiveAutonomyHistoryEntry[];
+  history_count: number;
+  authority_effect: string;
+}
+
+export interface CognitiveAutonomySummary {
+  workspace_id: string;
+  generated_at: string;
+  has_current: boolean;
+  autonomy_id: string | null;
+  opportunity_count: number;
+  proposal_count: number;
+  recommendation_count: number;
+  confidence: number | null;
+  uncertainty: number | null;
+  history: CognitiveAutonomyHistoryEntry[];
+  history_count: number;
+  authority_effect: string;
+}
+
 export type WindowIdentityConfidence = "high" | "medium" | "low" | "ephemeral";
 
 export interface WorkspaceObservationPass {

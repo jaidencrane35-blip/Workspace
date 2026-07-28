@@ -24,7 +24,7 @@ pub use repositories::{
     ObservationMonitorRepository, ObservationPassRepository, ObservationWindowIdentityRepository,
     ObservationWindowRepository, WorkspacePlanningRepository, ReasoningMemoryRepository,
     CognitiveGraphRepository, CognitiveOrchestrationRepository, LearningAdaptationRepository,
-    CognitiveAgentCastRepository,
+    CognitiveAgentCastRepository, CognitiveAutonomyRepository,
     WorkspaceRepository, WorkspaceIntentRepository, ZoneRepository,
 };
 pub use settings::SettingsRepository;

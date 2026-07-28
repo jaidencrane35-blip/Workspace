@@ -43,6 +43,11 @@ import {
   isCognitiveAgentCastSnapshotNonCommandable,
   cognitiveAgentCastHistoryCountIsAuthoritative,
 } from "../app/src/components/cognitiveAgentCastProjection";
+import {
+  isCognitiveAutonomyHistoryNonActionable,
+  isCognitiveAutonomySnapshotNonCommandable,
+  cognitiveAutonomyHistoryCountIsAuthoritative,
+} from "../app/src/components/cognitiveAutonomyProjection";
 import type {
   DecisionArtifactHistoryEntry,
   DecisionEngineSummary,
@@ -68,6 +73,9 @@ import type {
   CognitiveAgentCastHistoryEntry,
   CognitiveAgentCastSnapshot,
   CognitiveAgentCastSummary,
+  CognitiveAutonomyHistoryEntry,
+  CognitiveAutonomySnapshot,
+  CognitiveAutonomySummary,
   RecommendationHistoryEntry,
   RecommendationItem,
   TaskGraphSummary,
@@ -1029,6 +1037,70 @@ describe("projection integrity — cognitive agent cast", () => {
     expect(Object.keys(nonCommand)).not.toContain("execute");
     expect(Object.keys(nonCommand)).not.toContain("command");
     expect(Object.keys(nonCommand)).not.toContain("accept");
+  });
+
+  it("keeps autonomy snapshots non-commandable with authoritative history_count", () => {
+    const historyEntry = (
+      overrides: Partial<CognitiveAutonomyHistoryEntry> = {}
+    ): CognitiveAutonomyHistoryEntry => ({
+      autonomy_id: "cognitive_autonomy:1",
+      status: "superseded",
+      created_at: "t0",
+      superseded_at: "t1",
+      confidence: 70,
+      uncertainty: 30,
+      opportunity_count: 1,
+      proposal_count: 1,
+      recommendation_count: 1,
+      terminal: true,
+      actionable: false,
+      authority_effect: "none",
+      ...overrides,
+    });
+    const snapshot: CognitiveAutonomySnapshot = {
+      workspace_id: "ws",
+      generated_at: "t2",
+      current: null,
+      history: [historyEntry()],
+      history_count: 3,
+      authority_effect: "none",
+    };
+    expect(isCognitiveAutonomySnapshotNonCommandable(snapshot)).toBe(true);
+    expect(isCognitiveAutonomyHistoryNonActionable(historyEntry())).toBe(true);
+    expect(
+      isCognitiveAutonomyHistoryNonActionable(
+        historyEntry({ actionable: true })
+      )
+    ).toBe(false);
+
+    const summary: CognitiveAutonomySummary = {
+      workspace_id: "ws",
+      generated_at: "t2",
+      has_current: false,
+      autonomy_id: null,
+      opportunity_count: 0,
+      proposal_count: 0,
+      recommendation_count: 0,
+      confidence: null,
+      uncertainty: null,
+      history: [historyEntry()],
+      history_count: 3,
+      authority_effect: "none",
+    };
+    expect(cognitiveAutonomyHistoryCountIsAuthoritative(summary)).toBe(true);
+    expect(summary.history_count).toBeGreaterThanOrEqual(summary.history.length);
+
+    const nonCommand = {
+      autonomy_id: "cognitive_autonomy:1",
+      actionable: false,
+      terminal: true,
+      authority_effect: "none",
+      executable_payload: null as string | null,
+    };
+    expect(Object.keys(nonCommand)).not.toContain("execute");
+    expect(Object.keys(nonCommand)).not.toContain("command");
+    expect(Object.keys(nonCommand)).not.toContain("permission");
+    expect(nonCommand.executable_payload).toBeNull();
   });
 });
 
