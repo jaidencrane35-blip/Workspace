@@ -72,6 +72,7 @@ How the team builds, reviews, and maintains the codebase.
 | [Dependency Policy](03-Engineering/DEPENDENCY-POLICY.md) | Dependency approval, vulnerabilities, lock files |
 | [IPC Surface Inventory](03-Engineering/IPC-SURFACE.md) | Used vs quarantined Tauri commands |
 | [Kernel Error Taxonomy](03-Engineering/KERNEL-ERROR-TAXONOMY.md) | Failure classes and boundary rules for `KernelError` |
+| [Governed Execution Audit Durability](03-Engineering/GOVERNED-AUDIT-DURABILITY.md) | Fail-closed vs best-effort audit persistence for governed commands |
 | [Foundation Hardening Report](03-Engineering/FOUNDATION-HARDENING-REPORT.md) | Phase 1 foundation audit results |
 | [Audit Reports Index](03-Engineering/AUDIT-REPORTS-INDEX.md) | Index of point-in-time architecture/engineering audits |
 

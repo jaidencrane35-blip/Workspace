@@ -79,7 +79,7 @@ impl<'a> CommandPipeline<'a> {
             &request,
             &self.ctx.capability_set,
         ) {
-            Self::record_command_failure(
+            Self::record_command_failure_best_effort(
                 &self.ctx,
                 command_name,
                 &capability,
@@ -90,11 +90,21 @@ impl<'a> CommandPipeline<'a> {
             return Err(error);
         }
 
+        // Command authorization evidence is the second fail-closed durability
+        // barrier. The handler is never called unless this record persists.
+        AuditService::record_command_authorized(
+            &self.ctx.database,
+            &self.ctx.actor_context,
+            &self.ctx.intent_context,
+            command_name,
+            &capability,
+        )?;
+
         match command.execute(&self.ctx) {
             Ok(output) => {
                 let resource_ref = command.audit_resource_ref(&output);
                 let metadata = command.audit_metadata(&output);
-                Self::record_command_success(
+                Self::record_command_success_best_effort(
                     &self.ctx,
                     command_name,
                     &capability,
@@ -104,7 +114,7 @@ impl<'a> CommandPipeline<'a> {
                 Ok(output)
             }
             Err(error) => {
-                Self::record_command_failure(
+                Self::record_command_failure_best_effort(
                     &self.ctx,
                     command_name,
                     &capability,
@@ -157,23 +167,54 @@ impl<'a> CommandPipeline<'a> {
             &request,
             &self.ctx.capability_set,
         ) {
-            Self::record_command_failure(&self.ctx, command_name, &capability, None, &error, None);
+            Self::record_command_failure_best_effort(
+                &self.ctx,
+                command_name,
+                &capability,
+                None,
+                &error,
+                None,
+            );
             return Err(error);
         }
 
+        AuditService::record_command_authorized(
+            &self.ctx.database,
+            &self.ctx.actor_context,
+            &self.ctx.intent_context,
+            command_name,
+            &capability,
+        )?;
+
         match command.execute(&self.ctx) {
             Ok(output) => {
-                Self::record_command_success(&self.ctx, command_name, &capability, None, None);
+                Self::record_command_success_best_effort(
+                    &self.ctx,
+                    command_name,
+                    &capability,
+                    None,
+                    None,
+                );
                 Ok(output)
             }
             Err(error) => {
-                Self::record_command_failure(&self.ctx, command_name, &capability, None, &error, None);
+                Self::record_command_failure_best_effort(
+                    &self.ctx,
+                    command_name,
+                    &capability,
+                    None,
+                    &error,
+                    None,
+                );
                 Err(error)
             }
         }
     }
 
-    fn record_command_success(
+    /// Explicit post-side-effect exception: completion audit is best-effort
+    /// because generic command rollback is unavailable. A durable
+    /// `command.authorized` record always exists before this point.
+    fn record_command_success_best_effort(
         ctx: &CommandContext<'_>,
         command_name: &str,
         capability: &workspace_domain::Capability,
@@ -194,7 +235,9 @@ impl<'a> CommandPipeline<'a> {
         }
     }
 
-    fn record_command_failure(
+    /// Explicit post-dispatch exception matching successful completion audit.
+    /// Persistence failure is logged; the original command error is preserved.
+    fn record_command_failure_best_effort(
         ctx: &CommandContext<'_>,
         command_name: &str,
         capability: &workspace_domain::Capability,
@@ -314,6 +357,53 @@ mod tests {
             permission_gate: gate,
             permission_policy: policy,
         }
+    }
+
+    fn fail_audit_event(
+        init: &crate::commands::initialize::InitializeWorkspaceResult,
+        event_type: &str,
+    ) {
+        init.database
+            .with_database(|db| {
+                db.connection()
+                    .execute_batch(&format!(
+                        "CREATE TRIGGER fail_selected_audit
+                         BEFORE INSERT ON audit_events
+                         WHEN NEW.event_type = '{event_type}'
+                         BEGIN
+                           SELECT RAISE(FAIL, 'injected audit persistence failure');
+                         END;"
+                    ))
+                    .unwrap();
+                Ok(())
+            })
+            .unwrap();
+    }
+
+    fn restore_audit_persistence(
+        init: &crate::commands::initialize::InitializeWorkspaceResult,
+    ) {
+        init.database
+            .with_database(|db| {
+                db.connection()
+                    .execute_batch("DROP TRIGGER fail_selected_audit;")
+                    .unwrap();
+                Ok(())
+            })
+            .unwrap();
+    }
+
+    fn workspace_count(
+        init: &crate::commands::initialize::InitializeWorkspaceResult,
+    ) -> i64 {
+        init.database
+            .with_database(|db| {
+                Ok(db
+                    .connection()
+                    .query_row("SELECT COUNT(*) FROM workspaces", [], |row| row.get(0))
+                    .unwrap())
+            })
+            .unwrap()
     }
 
     #[test]
@@ -636,5 +726,129 @@ mod tests {
             record.event_type == "permission.approval_required"
                 && record.command_name.as_deref() == Some("CreateWorkspace")
         }));
+    }
+
+    #[test]
+    fn permission_audit_failure_is_classified_and_blocks_execution() {
+        let bus = EventBus::new();
+        let init = InitializeWorkspace::in_memory().execute(&bus).unwrap();
+        fail_audit_event(&init, "permission.allowed");
+
+        let error = CommandPipeline::new(ready_context(
+            &bus,
+            &init,
+            &AllowAllPermissionGate,
+            &AlwaysAllowPolicy,
+            ActorContext::local_user(),
+            IntentContext::user_request(),
+        ))
+        .execute_mutation(CreateWorkspace::new("Must Not Execute".into()))
+        .unwrap_err();
+
+        assert!(matches!(
+            error,
+            KernelError::AuditPersistence {
+                stage: "permission.decision",
+                ..
+            }
+        ));
+        assert_eq!(workspace_count(&init), 0);
+    }
+
+    #[test]
+    fn command_authorization_audit_failure_blocks_execution() {
+        let bus = EventBus::new();
+        let init = InitializeWorkspace::in_memory().execute(&bus).unwrap();
+        fail_audit_event(&init, "command.authorized");
+
+        let error = CommandPipeline::new(ready_context(
+            &bus,
+            &init,
+            &AllowAllPermissionGate,
+            &AlwaysAllowPolicy,
+            ActorContext::local_user(),
+            IntentContext::user_request(),
+        ))
+        .execute_mutation(CreateWorkspace::new("Must Not Execute".into()))
+        .unwrap_err();
+
+        assert!(matches!(
+            error,
+            KernelError::AuditPersistence {
+                stage: "command.authorization",
+                ..
+            }
+        ));
+        assert_eq!(workspace_count(&init), 0);
+        let records = AuditService::list_recent(&init.database.shared(), 10).unwrap();
+        assert!(records
+            .iter()
+            .any(|record| record.event_type == "permission.allowed"));
+    }
+
+    #[test]
+    fn completion_audit_failure_preserves_durable_authorization() {
+        let bus = EventBus::new();
+        let init = InitializeWorkspace::in_memory().execute(&bus).unwrap();
+        fail_audit_event(&init, "command.executed");
+
+        CommandPipeline::new(ready_context(
+            &bus,
+            &init,
+            &AllowAllPermissionGate,
+            &AlwaysAllowPolicy,
+            ActorContext::local_user(),
+            IntentContext::user_request(),
+        ))
+        .execute_mutation(CreateWorkspace::new("Executed Once".into()))
+        .unwrap();
+
+        assert_eq!(workspace_count(&init), 1);
+        let records = AuditService::list_recent(&init.database.shared(), 10).unwrap();
+        assert!(records
+            .iter()
+            .any(|record| record.event_type == "command.authorized"));
+        assert!(!records
+            .iter()
+            .any(|record| record.event_type == "command.executed"));
+    }
+
+    #[test]
+    fn caller_retry_after_audit_recovery_executes_once() {
+        let bus = EventBus::new();
+        let init = InitializeWorkspace::in_memory().execute(&bus).unwrap();
+        fail_audit_event(&init, "command.authorized");
+
+        let first = CommandPipeline::new(ready_context(
+            &bus,
+            &init,
+            &AllowAllPermissionGate,
+            &AlwaysAllowPolicy,
+            ActorContext::local_user(),
+            IntentContext::user_request(),
+        ))
+        .execute_mutation(CreateWorkspace::new("Retry Once".into()));
+        assert!(matches!(
+            first,
+            Err(KernelError::AuditPersistence {
+                stage: "command.authorization",
+                ..
+            })
+        ));
+        assert_eq!(workspace_count(&init), 0);
+
+        restore_audit_persistence(&init);
+        CommandPipeline::new(ready_context(
+            &bus,
+            &init,
+            &AllowAllPermissionGate,
+            &AlwaysAllowPolicy,
+            ActorContext::local_user(),
+            IntentContext::user_request(),
+        ))
+        .execute_mutation(CreateWorkspace::new("Retry Once".into()))
+        .unwrap();
+
+        assert_eq!(workspace_count(&init), 1);
     }
 }

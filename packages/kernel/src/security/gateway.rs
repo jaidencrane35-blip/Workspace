@@ -142,7 +142,9 @@ impl PermissionGateway {
             };
         }
 
-        Self::record_decision(db, actor_context, intent_context, request, &decision);
+        // Permission evidence is a fail-closed prerequisite. No governed
+        // command may proceed when its authorization decision is not durable.
+        Self::record_decision(db, actor_context, intent_context, request, &decision)?;
 
         match decision {
             GatewayDecision::Allow { .. } => {
@@ -171,7 +173,7 @@ impl PermissionGateway {
         intent_context: &IntentContext,
         request: &PermissionRequest,
         decision: &GatewayDecision,
-    ) {
+    ) -> Result<()> {
         let (event_type, success, reason, approval_request_id) = match decision {
             GatewayDecision::Allow { reason } => {
                 ("permission.allowed", true, reason.as_str(), None)
@@ -206,7 +208,7 @@ impl PermissionGateway {
         })
         .to_string();
 
-        if let Err(error) = AuditService::record_permission_decision(
+        AuditService::record_permission_decision(
             db,
             actor_context,
             intent_context,
@@ -215,12 +217,7 @@ impl PermissionGateway {
             &request.capability,
             success,
             metadata,
-        ) {
-            log::error!(
-                "failed to record permission decision for {}: {error}",
-                request.command
-            );
-        }
+        )
     }
 }
 

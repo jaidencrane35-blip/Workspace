@@ -7,6 +7,11 @@ use crate::events::EventBus;
 use crate::services::AuditService;
 
 /// Persists domain events from the internal event bus to the audit trail.
+///
+/// Domain-event mirroring is a documented non-governed-execution exception:
+/// subscribers run after command side effects and cannot fail-close dispatch.
+/// Governed pre-dispatch evidence lives on the Permission Gateway /
+/// `command.authorized` path instead.
 pub struct AuditEventSubscriber;
 
 impl AuditEventSubscriber {

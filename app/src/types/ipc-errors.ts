@@ -16,6 +16,7 @@ export const PUBLIC_ERROR_CODES = [
   "analytics_validation_error",
   "application_not_found",
   "approval_required",
+  "audit_persistence_error",
   "automation_contract_validation_error",
   "automation_trigger_validation_error",
   "cannot_cancel_completed_execution",

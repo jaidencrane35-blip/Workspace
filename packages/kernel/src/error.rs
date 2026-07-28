@@ -20,6 +20,14 @@ pub enum KernelError {
     #[error("Database error")]
     Database(#[from] DatabaseError),
 
+    /// Durable audit evidence could not be persisted at a governed boundary.
+    #[error("Audit persistence failed at {stage}")]
+    AuditPersistence {
+        stage: &'static str,
+        #[source]
+        source: DatabaseError,
+    },
+
     #[error("Domain error: {0}")]
     Domain(DomainError),
 
@@ -749,6 +757,10 @@ impl KernelError {
                 code: "database_error".into(),
                 message: "A database operation failed.".into(),
             },
+            KernelError::AuditPersistence { .. } => PublicError {
+                code: "audit_persistence_error".into(),
+                message: "Required audit evidence could not be persisted.".into(),
+            },
             KernelError::Config(_) => PublicError {
                 code: "config_error".into(),
                 message: "Configuration could not be processed.".into(),
@@ -1139,6 +1151,13 @@ mod tests {
     #[test]
     fn public_error_codes_preserve_failure_boundaries() {
         let cases = [
+            (
+                KernelError::AuditPersistence {
+                    stage: "permission.decision",
+                    source: DatabaseError::Migration("audit unavailable".into()),
+                },
+                "audit_persistence_error",
+            ),
             (
                 KernelError::Internal {
                     message: "database lock poisoned".into(),

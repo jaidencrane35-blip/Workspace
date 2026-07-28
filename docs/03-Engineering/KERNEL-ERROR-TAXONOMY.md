@@ -11,6 +11,7 @@
 | Class | Variant(s) | Meaning |
 |-------|------------|---------|
 | Infrastructure | `Database`, `Internal` | Persistence / lock / runtime faults not caused by caller input |
+| Audit durability | `AuditPersistence` | Required governed audit evidence could not be persisted (`stage` names the boundary) |
 | Configuration | `Config`, `InvalidSettings` | True configuration/settings problems only |
 | Authorization | `PermissionDenied`, `ApprovalRequired`, `PermissionApproval*` | Permission Gateway outcomes |
 | Architectural integrity | `IntegrityViolation` | Release-safe RE/DE invariant and boundary failures |
@@ -26,9 +27,12 @@
 4. Observation validation failures use `ObservationValidation`, not `Config`.
 5. Permission Gateway failures remain `PermissionDenied` / `ApprovalRequired`.
 6. IPC surfaces expose sanitized `PublicError` codes via `KernelError::to_public()`.
+7. Fail-closed audit boundaries use `AuditPersistence` (public code `audit_persistence_error`), never silent soft-fail and never collapse into generic `Database` at those gates. See [Governed Execution Audit Durability](./GOVERNED-AUDIT-DURABILITY.md).
 
 ## Related
 
 - `packages/kernel/src/error.rs`
+- `packages/kernel/src/services/audit.rs`
 - `packages/kernel/src/services/resilience_validation.rs`
 - `docs/architecture/RESILIENCE_READINESS_AUDIT.md`
+- [Governed Execution Audit Durability](./GOVERNED-AUDIT-DURABILITY.md)
