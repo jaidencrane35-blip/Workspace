@@ -215,18 +215,40 @@ impl DecisionQueueService {
         }
 
         if persist_overlays {
-            // Drop stale overlays whose sources no longer exist (aggregation wins).
+            // Retain terminal presentation evidence for vanished sources; expire open overlays.
+            // Never delete overlays — deletion erased dismissed/expired continuity.
             for ((source_type, source_id), overlay) in &overlay_map {
-                if !live_keys.contains(&(source_type.clone(), source_id.clone())) {
-                    let Ok(source_type) = DecisionSourceType::parse(source_type) else {
-                        continue;
-                    };
-                    let guard = db
-                        .lock()
-                        .map_err(|_| KernelError::lock_poisoned("database"))?;
-                    DecisionQueueRepository::new(&guard).delete_overlay(ws, source_type, source_id)?;
-                    let _ = overlay;
+                if live_keys.contains(&(source_type.clone(), source_id.clone())) {
+                    continue;
                 }
+                let Ok(source_type) = DecisionSourceType::parse(source_type) else {
+                    continue;
+                };
+                if overlay.decision_state.is_terminal() {
+                    continue;
+                }
+                Self::write_overlay(
+                    db,
+                    actor,
+                    ws,
+                    source_type,
+                    source_id,
+                    DecisionState::Expired,
+                )?;
+                let _ = Self::audit(
+                    db,
+                    actor,
+                    "decision.item.expired",
+                    json!({
+                        "workspace_id": ws,
+                        "source_type": source_type.as_str(),
+                        "source_id": source_id,
+                        "from": overlay.decision_state.as_str(),
+                        "to": DecisionState::Expired.as_str(),
+                        "reason": "source_missing",
+                        "authority_effect": "none",
+                    }),
+                );
             }
         }
 

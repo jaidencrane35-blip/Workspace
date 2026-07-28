@@ -560,6 +560,57 @@ fn case10_restart_keeps_sources_authoritative() {
     }
 }
 
+/// Projection integrity — vanished sources expire open overlays; terminal overlays are retained.
+#[test]
+fn stale_overlays_expire_or_retain_instead_of_delete() {
+    use workspace_database::DecisionQueueRepository;
+    use workspace_domain::DecisionLifecycleOverlay;
+
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let (ws, _, _) = seed_project(&kernel);
+    let local = ActorContext::local_user();
+    let intent = IntentContext::user_request();
+    let db = kernel.shared_database();
+
+    {
+        let guard = db.lock().unwrap();
+        let repo = DecisionQueueRepository::new(&guard);
+        repo.upsert_overlay(&DecisionLifecycleOverlay {
+            workspace_id: ws.clone(),
+            source_type: DecisionSourceType::IntentProposal,
+            source_id: "orphan-open".into(),
+            decision_state: DecisionState::Pending,
+            updated_at: "t0".into(),
+            actor_id: "local-user".into(),
+        })
+        .unwrap();
+        repo.upsert_overlay(&DecisionLifecycleOverlay {
+            workspace_id: ws.clone(),
+            source_type: DecisionSourceType::IntentProposal,
+            source_id: "orphan-dismissed".into(),
+            decision_state: DecisionState::Dismissed,
+            updated_at: "t0".into(),
+            actor_id: "local-user".into(),
+        })
+        .unwrap();
+    }
+
+    CommandHandler::generate_decision_queue(&kernel, local, intent, ws.clone()).unwrap();
+
+    let guard = db.lock().unwrap();
+    let repo = DecisionQueueRepository::new(&guard);
+    let open = repo
+        .get_overlay(&ws, DecisionSourceType::IntentProposal, "orphan-open")
+        .unwrap()
+        .expect("open orphan overlay must be retained as expired");
+    assert_eq!(open.decision_state, DecisionState::Expired);
+    let dismissed = repo
+        .get_overlay(&ws, DecisionSourceType::IntentProposal, "orphan-dismissed")
+        .unwrap()
+        .expect("dismissed orphan overlay must be retained");
+    assert_eq!(dismissed.decision_state, DecisionState::Dismissed);
+}
+
 #[test]
 fn dismiss_does_not_mutate_source_proposal() {
     let kernel = WorkspaceKernel::initialize_in_memory().unwrap();

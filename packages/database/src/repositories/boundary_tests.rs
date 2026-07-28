@@ -419,6 +419,31 @@ fn decision_queue_repository_rejects_dismissed_reopen() {
 }
 
 #[test]
+fn decision_queue_repository_allows_open_to_expired_orphan_retention() {
+    let (_dir, db) = database();
+    let repo = DecisionQueueRepository::new(&db);
+    let mut overlay = DecisionLifecycleOverlay {
+        workspace_id: "ws-1".into(),
+        source_type: DecisionSourceType::IntentProposal,
+        source_id: "orphan-1".into(),
+        decision_state: DecisionState::Pending,
+        updated_at: "t1".into(),
+        actor_id: "local-user".into(),
+    };
+    repo.upsert_overlay(&overlay).unwrap();
+    overlay.decision_state = DecisionState::Expired;
+    overlay.updated_at = "t2".into();
+    repo.upsert_overlay(&overlay).unwrap();
+    assert_eq!(
+        repo.get_overlay("ws-1", DecisionSourceType::IntentProposal, "orphan-1")
+            .unwrap()
+            .unwrap()
+            .decision_state,
+        DecisionState::Expired
+    );
+}
+
+#[test]
 fn task_repository_rejects_terminal_reopen_but_allows_terminal_sync() {
     let (_dir, db) = database();
     let repo = TaskGraphRepository::new(&db);

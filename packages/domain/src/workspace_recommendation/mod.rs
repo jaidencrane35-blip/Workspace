@@ -2858,6 +2858,10 @@ impl WorkspaceRecommendationEngineState {
             .filter(|c| c.is_active_lifecycle())
             .cloned()
             .collect();
+        // Actionable surface excludes terminals; history remains visible on the summary so
+        // Intelligence/Assistant cannot treat "no top_candidates" as "no evidence".
+        let history: Vec<RecommendationHistoryEntry> =
+            self.history.iter().take(limit).cloned().collect();
         WorkspaceRecommendationEngineSummary {
             workspace_id: self.workspace_id.clone(),
             generated_at: self.generated_at.clone(),
@@ -2866,6 +2870,8 @@ impl WorkspaceRecommendationEngineState {
             candidate_count: active.len(),
             relationship_count: self.relationship_count,
             top_candidates: active.into_iter().take(limit).collect(),
+            history,
+            history_count: self.history_count,
             explanation: self.explanation.clone(),
             summary: self.summary.clone(),
             authority_effect: self.authority_effect.clone(),
@@ -2882,6 +2888,11 @@ pub struct WorkspaceRecommendationEngineSummary {
     pub candidate_count: usize,
     pub relationship_count: usize,
     pub top_candidates: Vec<RecommendationItem>,
+    /// Truncated terminal/orphan evidence for consumers that only receive the summary.
+    #[serde(default)]
+    pub history: Vec<RecommendationHistoryEntry>,
+    #[serde(default)]
+    pub history_count: usize,
     pub explanation: String,
     pub summary: String,
     pub authority_effect: String,
@@ -2896,6 +2907,8 @@ impl Default for WorkspaceRecommendationEngineSummary {
             candidate_count: 0,
             relationship_count: 0,
             top_candidates: Vec::new(),
+            history: Vec::new(),
+            history_count: 0,
             explanation: String::new(),
             summary: String::new(),
             authority_effect: WorkspaceRecommendationEngineState::AUTHORITY_EFFECT_NONE.into(),

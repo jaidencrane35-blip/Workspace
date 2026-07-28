@@ -1317,6 +1317,16 @@ fn case18_terminal_excluded_from_active_summary() {
     );
     assert!(summary.candidate_count <= before_active);
     assert_eq!(summary.authority_effect, "none");
+    // Projection integrity: summary must not erase terminal evidence.
+    assert!(
+        summary.history_count >= 1,
+        "summary must project history_count for terminal evidence"
+    );
+    assert!(
+        summary.history.iter().any(|h| h.native_id == id),
+        "summary history must include accepted terminal evidence"
+    );
+    assert!(summary.history.iter().all(|h| h.authority_effect == "none"));
     assert_cannot_execute(CommandHandler::workspace_recommendation_engine_attempt_execute());
 }
 

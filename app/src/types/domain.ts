@@ -3169,6 +3169,9 @@ export interface WorkspaceRecommendationEngineSummary {
   candidate_count: number;
   relationship_count: number;
   top_candidates: RecommendationItem[];
+  /** Truncated terminal/orphan evidence — mirrors Rust summary_projection. */
+  history?: RecommendationHistoryEntry[];
+  history_count?: number;
   explanation: string;
   summary: string;
   authority_effect: string;

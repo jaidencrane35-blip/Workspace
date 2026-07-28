@@ -436,9 +436,11 @@ export function AssistantPanel({
               {workspaceIntel.recommendation_engine.top_candidates.length > 0
                 ? `Top: ${workspaceIntel.recommendation_engine.top_candidates[0].title}. `
                 : ""}
-              Same Recommendation Engine as the Work tab. Assistant may explain
-              and compare options — never accept, execute, or convert into
-              actions silently.
+              History evidence:{" "}
+              {workspaceIntel.recommendation_engine.history_count ?? 0} terminal
+              record(s) projected (not actionable). Same Recommendation Engine
+              as the Work tab. Assistant may explain and compare options — never
+              accept, execute, or convert into actions silently.
               {workspaceIntel.recommendation_engine.top_candidates[0]
                 ?.attention_reasons.length ? (
                 <DisplayReasonList

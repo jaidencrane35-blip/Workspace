@@ -29,11 +29,11 @@ impl<'a> DecisionQueueRepository<'a> {
                 actor_id = excluded.actor_id
              WHERE decision_item_lifecycle.decision_state = excluded.decision_state
                 OR (decision_item_lifecycle.decision_state = 'pending'
-                    AND excluded.decision_state IN ('viewed','deferred','dismissed'))
+                    AND excluded.decision_state IN ('viewed','deferred','dismissed','expired'))
                 OR (decision_item_lifecycle.decision_state = 'viewed'
-                    AND excluded.decision_state IN ('deferred','dismissed'))
+                    AND excluded.decision_state IN ('deferred','dismissed','expired'))
                 OR (decision_item_lifecycle.decision_state = 'deferred'
-                    AND excluded.decision_state IN ('viewed','dismissed'))",
+                    AND excluded.decision_state IN ('viewed','dismissed','expired'))",
             (
                 &overlay.workspace_id,
                 overlay.source_type.as_str(),

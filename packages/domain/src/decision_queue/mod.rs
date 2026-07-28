@@ -149,10 +149,11 @@ impl DecisionState {
     }
 
     /// Overlay-persisted states (never store source payloads).
+    /// `Expired` is overlay-owned orphan retention when the live source disappears.
     pub fn is_overlay_state(self) -> bool {
         matches!(
             self,
-            Self::Pending | Self::Viewed | Self::Deferred | Self::Dismissed
+            Self::Pending | Self::Viewed | Self::Deferred | Self::Dismissed | Self::Expired
         )
     }
 
@@ -163,16 +164,27 @@ impl DecisionState {
         )
     }
 
+    /// Actionable presentation states for Intelligence / compact summaries.
+    pub fn is_actionable_overlay(self) -> bool {
+        matches!(
+            self,
+            Self::Pending | Self::Viewed | Self::Deferred
+        )
+    }
+
     pub fn allows_overlay_transition(self, next: Self) -> bool {
         matches!(
             (self, next),
             (Self::Pending, Self::Viewed)
                 | (Self::Pending, Self::Deferred)
                 | (Self::Pending, Self::Dismissed)
+                | (Self::Pending, Self::Expired)
                 | (Self::Viewed, Self::Deferred)
                 | (Self::Viewed, Self::Dismissed)
+                | (Self::Viewed, Self::Expired)
                 | (Self::Deferred, Self::Viewed)
                 | (Self::Deferred, Self::Dismissed)
+                | (Self::Deferred, Self::Expired)
         )
     }
 }
@@ -402,12 +414,18 @@ impl DecisionQueue {
     }
 
     pub fn summary(&self, limit: usize) -> DecisionQueueSummary {
+        let actionable: Vec<DecisionItem> = self
+            .items
+            .iter()
+            .filter(|i| i.decision_state.is_actionable_overlay())
+            .cloned()
+            .collect();
         DecisionQueueSummary {
             workspace_id: self.workspace_id.clone(),
             generated_at: self.generated_at.clone(),
             pending_count: self.pending_count,
             high_priority_count: self.high_priority_count,
-            items: self.items.iter().take(limit).cloned().collect(),
+            items: actionable.into_iter().take(limit).collect(),
             authority_effect: self.authority_effect.clone(),
         }
     }
@@ -446,4 +464,55 @@ pub struct DecisionLifecycleOverlay {
     pub decision_state: DecisionState,
     pub updated_at: String,
     pub actor_id: String,
+}
+
+#[cfg(test)]
+mod projection_integrity_tests {
+    use super::*;
+
+    fn item(state: DecisionState, source_id: &str) -> DecisionItem {
+        let mut item = DecisionItem::aggregate(
+            "ws-1",
+            DecisionSourceType::IntentProposal,
+            source_id,
+            DecisionCategory::Planning,
+            "title",
+            "summary",
+            "explanation",
+            "action",
+            DecisionPriority::Normal,
+            "t0",
+            "actor",
+            "user",
+            None,
+            vec![],
+            None,
+        )
+        .unwrap();
+        item.decision_state = state;
+        item
+    }
+
+    #[test]
+    fn summary_excludes_terminal_presentation_states() {
+        let queue = DecisionQueue::from_items(
+            "ws-1",
+            vec![
+                item(DecisionState::Pending, "p"),
+                item(DecisionState::Dismissed, "d"),
+                item(DecisionState::Expired, "e"),
+                item(DecisionState::Viewed, "v"),
+            ],
+        );
+        let summary = queue.summary(10);
+        assert_eq!(summary.items.len(), 2);
+        assert!(summary
+            .items
+            .iter()
+            .all(|i| i.decision_state.is_actionable_overlay()));
+        assert!(!summary
+            .items
+            .iter()
+            .any(|i| i.source_id == "d" || i.source_id == "e"));
+    }
 }

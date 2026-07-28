@@ -26,8 +26,30 @@ function isTerminalLifecycle(state: string | null | undefined): boolean {
   );
 }
 
+/**
+ * Mirrors Rust `RecommendationItem::is_active_lifecycle`.
+ * Unknown lifecycle strings are inactive — never inferred as actionable.
+ * Prefer projected `top_candidates` / summary surfaces when available.
+ */
 export function isActiveRecommendation(item: RecommendationItem): boolean {
-  return !isTerminalLifecycle(item.lifecycle_state);
+  const state = item.lifecycle_state;
+  return (
+    state == null ||
+    state === "created" ||
+    state === "available" ||
+    state === "presented"
+  );
+}
+
+/** Projection-only: terminal history entries must carry outcome evidence, not invent it. */
+export function hasProjectedTerminalEvidence(
+  entry: RecommendationHistoryEntry
+): boolean {
+  return (
+    isTerminalLifecycle(entry.lifecycle_state) &&
+    Boolean(entry.outcome?.outcome_id) &&
+    entry.authority_effect === "none"
+  );
 }
 
 interface Props {
