@@ -1,8 +1,9 @@
 //! Zone resource service — persistence and graph registration.
 
-use workspace_database::{Database, ZoneRepository};
+use workspace_database::{Database, GraphRepository, ZoneRepository};
 use workspace_domain::{
-    Addressable, ResourceId, ResourceKind, ResourceRef, WorkspaceId, Zone, ZoneId,
+    Addressable, GraphRelationship, ResourceId, ResourceKind, ResourceRef, WorkspaceId, Zone,
+    ZoneId,
 };
 
 use super::GraphService;
@@ -26,13 +27,27 @@ impl ZoneService {
             position_metadata,
         };
 
-        ZoneRepository::new(db).create(&zone)?;
-
         let parent = ResourceRef::new(
             ResourceKind::Workspace,
             ResourceId::new(workspace_id.as_str()).expect("workspace id is non-empty"),
         );
-        GraphService::register_child(db, &parent, &zone.resource_ref())?;
+        if !GraphService::exists(db, &parent)? {
+            return Err(KernelError::ResourceNotFound {
+                kind: ResourceKind::Workspace,
+            });
+        }
+        db.transaction(|transaction| {
+            let connection = transaction.connection();
+            ZoneRepository::create_on(connection, &zone)?;
+            GraphRepository::register_node_on(connection, &zone.resource_ref())?;
+            GraphRepository::add_edge_on(
+                connection,
+                &parent,
+                GraphRelationship::Contains,
+                &zone.resource_ref(),
+            )?;
+            Ok(())
+        })?;
 
         Ok(zone)
     }
@@ -112,5 +127,32 @@ mod tests {
 
         assert_eq!(zone.workspace_id, workspace.id);
         assert!(GraphService::exists(&db, &zone.resource_ref()).unwrap());
+    }
+
+    #[test]
+    fn graph_failure_rolls_back_zone_creation() {
+        let dir = tempdir().unwrap();
+        let db = DatabaseService::initialize(dir.path().join("workspace.db"))
+            .unwrap()
+            .into_database();
+        let workspace = WorkspaceService::create(&db, "Main".into()).unwrap();
+        db.connection()
+            .execute_batch(
+                "CREATE TRIGGER fail_graph_edge
+                 BEFORE INSERT ON graph_edges
+                 BEGIN SELECT RAISE(FAIL, 'injected graph failure'); END;",
+            )
+            .unwrap();
+
+        assert!(ZoneService::create(&db, workspace.id.clone(), "Atomic".into(), None).is_err());
+        let count: i64 = db
+            .connection()
+            .query_row(
+                "SELECT COUNT(*) FROM zones WHERE workspace_id = ?1",
+                [workspace.id.as_str()],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(count, 0);
     }
 }

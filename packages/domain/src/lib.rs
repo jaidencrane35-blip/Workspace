@@ -205,7 +205,7 @@ pub use execution_outcome::{
     ExecutionOutcomeError, ExecutionOutcomeStatus,
 };
 pub use execution_reconciliation::{
-    reconcile_execution_state, reconcile_execution_states, ExecutionLifecycleRecord,
+    reconcile_execution_lifecycle, reconcile_execution_state, reconcile_execution_states, ExecutionLifecycleRecord,
     ExecutionReconciliation, ExecutionReconciliationError, ExecutionState,
 };
 pub use entities::{

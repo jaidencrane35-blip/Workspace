@@ -112,23 +112,38 @@ impl MutationCommand for ExecuteIntentRequest {
         if let Err(dispatch_error) =
             dispatch_mapped_command(ctx, prepared.command_name, &prepared.action_intent)
         {
-            if let Err(release_error) = ExecutionLifecycleService::release_failed_claim(
+            if let Err(lifecycle_error) = ExecutionLifecycleService::mark_failed(
                 &ctx.database,
                 &execution_request_id,
+                true,
+                &dispatch_error.to_string(),
             ) {
                 log::error!(
-                    "execution dispatch failed ({dispatch_error}); claim release also failed: {release_error}"
+                    "execution dispatch failed ({dispatch_error}); failure persistence also failed: {lifecycle_error}"
                 );
-                return Err(release_error);
+                return Err(lifecycle_error);
             }
             return Err(dispatch_error);
         }
 
-        ExecutionLifecycleService::complete(
+        if let Err(completion_error) = ExecutionLifecycleService::complete(
             &ctx.database,
             &execution_request_id,
             Some(prepared.execution_request.action_intent_id.as_str()),
-        )?;
+        ) {
+            if let Err(failure_error) = ExecutionLifecycleService::mark_failed(
+                &ctx.database,
+                &execution_request_id,
+                false,
+                "dispatch succeeded but completion persistence failed",
+            ) {
+                log::error!(
+                    "execution completion failed ({completion_error}); failure persistence also failed: {failure_error}"
+                );
+                return Err(failure_error);
+            }
+            return Err(completion_error);
+        }
 
         prepared
             .execution_request

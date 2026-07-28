@@ -1,8 +1,8 @@
-//! Audit-derived execution idempotency guard (Sprint 27).
+//! Durable lifecycle-first execution idempotency guard.
 //!
 //! Consumes [`ExecutionOutcomeService`] history to decide whether an
 //! `ExecuteIntentRequest` may dispatch. Read-only — no repositories, mutation,
-//! or persistence beyond existing audit.
+//! Audit is a fallback for legacy execution identities without lifecycle rows.
 
 use std::sync::{Arc, Mutex};
 
@@ -31,25 +31,31 @@ impl ExecutionGuardService {
 
         let execution_request_id = execution_request_id_for_suggestion(suggestion_id);
         if let Some(record) = ExecutionLifecycleService::get(db, &execution_request_id)? {
-            match record.state {
+            let reconciliation = ExecutionLifecycleService::reconciliation(&record);
+            if reconciliation.dispatch_allowed {
+                return Ok(ExecutionGuardResult::Allowed);
+            }
+            return match record.state {
                 workspace_domain::ExecutionState::Completed => {
-                    return Ok(ExecutionGuardResult::AlreadyExecuted);
+                    Ok(ExecutionGuardResult::AlreadyExecuted)
                 }
                 workspace_domain::ExecutionState::InProgress => {
-                    return Err(KernelError::ExecutionInProgress {
+                    Err(KernelError::ExecutionInProgress {
                         execution_request_id,
-                    });
+                    })
                 }
-                workspace_domain::ExecutionState::Cancelled => {}
-                state => {
-                    return Err(KernelError::IntegrityViolation {
-                        message: format!(
-                            "invalid durable execution lifecycle state: {}",
-                            state.as_str()
-                        ),
-                    });
+                workspace_domain::ExecutionState::Failed => {
+                    Err(KernelError::ExecutionReconciliationRequired {
+                        execution_request_id,
+                    })
                 }
-            }
+                state => Err(KernelError::IntegrityViolation {
+                    message: format!(
+                        "invalid durable execution lifecycle state: {}",
+                        state.as_str()
+                    ),
+                }),
+            };
         }
         let outcomes = ExecutionOutcomeService::list_recent(db, OUTCOME_SCAN_LIMIT)?;
         Ok(evaluate_execution_guard(&execution_request_id, &outcomes))

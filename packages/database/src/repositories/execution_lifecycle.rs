@@ -16,17 +16,21 @@ impl<'a> ExecutionLifecycleRepository<'a> {
     pub fn insert_claim(&self, record: &ExecutionLifecycleRecord) -> Result<bool> {
         let changed = self.db.connection().execute(
             "INSERT INTO execution_lifecycle (
-                execution_request_id, suggestion_id, intent_id, state,
-                claimed_at, completed_at, updated_at
-             ) VALUES (?1, ?2, ?3, 'in_progress', ?4, NULL, ?4)
+                execution_request_id, suggestion_id, intent_id, state, retry_allowed,
+                failure_reason, claimed_at, completed_at, updated_at
+             ) VALUES (?1, ?2, ?3, 'in_progress', 0, NULL, ?4, NULL, ?4)
              ON CONFLICT(execution_request_id) DO UPDATE SET
                 suggestion_id = excluded.suggestion_id,
                 intent_id = excluded.intent_id,
                 state = 'in_progress',
+                retry_allowed = 0,
+                failure_reason = NULL,
                 claimed_at = excluded.claimed_at,
                 completed_at = NULL,
                 updated_at = excluded.updated_at
-             WHERE execution_lifecycle.state = 'cancelled'",
+             WHERE execution_lifecycle.state = 'cancelled'
+                OR (execution_lifecycle.state = 'failed'
+                    AND execution_lifecycle.retry_allowed = 1)",
             (
                 &record.execution_request_id,
                 &record.suggestion_id,
@@ -40,7 +44,7 @@ impl<'a> ExecutionLifecycleRepository<'a> {
     pub fn get(&self, execution_request_id: &str) -> Result<Option<ExecutionLifecycleRecord>> {
         let mut stmt = self.db.connection().prepare(
             "SELECT execution_request_id, suggestion_id, intent_id, state,
-                    claimed_at, completed_at, updated_at
+                    retry_allowed, failure_reason, claimed_at, completed_at, updated_at
              FROM execution_lifecycle
              WHERE execution_request_id = ?1
              LIMIT 1",
@@ -63,6 +67,8 @@ impl<'a> ExecutionLifecycleRepository<'a> {
             "UPDATE execution_lifecycle
              SET state = 'completed',
                  intent_id = COALESCE(?2, intent_id),
+                 retry_allowed = 0,
+                 failure_reason = NULL,
                  completed_at = ?3,
                  updated_at = ?3
              WHERE execution_request_id = ?1 AND state = 'in_progress'",
@@ -71,12 +77,27 @@ impl<'a> ExecutionLifecycleRepository<'a> {
         Ok(changed == 1)
     }
 
-    /// Releases only a non-terminal claim after dispatch returned an error.
-    pub fn release_in_progress(&self, execution_request_id: &str) -> Result<bool> {
+    pub fn mark_failed(
+        &self,
+        execution_request_id: &str,
+        retry_allowed: bool,
+        failure_reason: &str,
+        failed_at: &str,
+    ) -> Result<bool> {
         let changed = self.db.connection().execute(
-            "DELETE FROM execution_lifecycle
+            "UPDATE execution_lifecycle
+             SET state = 'failed',
+                 retry_allowed = ?2,
+                 failure_reason = ?3,
+                 completed_at = NULL,
+                 updated_at = ?4
              WHERE execution_request_id = ?1 AND state = 'in_progress'",
-            [execution_request_id],
+            (
+                execution_request_id,
+                i32::from(retry_allowed),
+                failure_reason,
+                failed_at,
+            ),
         )?;
         Ok(changed == 1)
     }
@@ -89,10 +110,17 @@ impl<'a> ExecutionLifecycleRepository<'a> {
     ) -> Result<bool> {
         let changed = self.db.connection().execute(
             "INSERT INTO execution_lifecycle (
-                execution_request_id, suggestion_id, intent_id, state,
-                claimed_at, completed_at, updated_at
-             ) VALUES (?1, ?2, NULL, 'cancelled', ?3, NULL, ?3)
-             ON CONFLICT(execution_request_id) DO NOTHING",
+                execution_request_id, suggestion_id, intent_id, state, retry_allowed,
+                failure_reason, claimed_at, completed_at, updated_at
+             ) VALUES (?1, ?2, NULL, 'cancelled', 1, NULL, ?3, NULL, ?3)
+             ON CONFLICT(execution_request_id) DO UPDATE SET
+                state = 'cancelled',
+                retry_allowed = 1,
+                failure_reason = NULL,
+                completed_at = NULL,
+                updated_at = excluded.updated_at
+             WHERE execution_lifecycle.state = 'failed'
+               AND execution_lifecycle.retry_allowed = 1",
             (execution_request_id, suggestion_id, cancelled_at),
         )?;
         Ok(changed == 1)
@@ -102,7 +130,7 @@ impl<'a> ExecutionLifecycleRepository<'a> {
         let limit = limit.clamp(1, 500) as i64;
         let mut stmt = self.db.connection().prepare(
             "SELECT execution_request_id, suggestion_id, intent_id, state,
-                    claimed_at, completed_at, updated_at
+                    retry_allowed, failure_reason, claimed_at, completed_at, updated_at
              FROM execution_lifecycle
              ORDER BY updated_at DESC, execution_request_id ASC
              LIMIT ?1",
@@ -123,9 +151,11 @@ fn map_record(row: &rusqlite::Row<'_>) -> rusqlite::Result<ExecutionLifecycleRec
         suggestion_id: row.get(1)?,
         intent_id: row.get(2)?,
         state,
-        claimed_at: row.get(4)?,
-        completed_at: row.get(5)?,
-        updated_at: row.get(6)?,
+        retry_allowed: row.get::<_, i32>(4)? != 0,
+        failure_reason: row.get(5)?,
+        claimed_at: row.get(6)?,
+        completed_at: row.get(7)?,
+        updated_at: row.get(8)?,
     })
 }
 
@@ -140,6 +170,8 @@ mod tests {
             suggestion_id: "s-1".into(),
             intent_id: Some("intent:test".into()),
             state: ExecutionState::InProgress,
+            retry_allowed: false,
+            failure_reason: None,
             claimed_at: "2026-07-28T00:00:00Z".into(),
             completed_at: None,
             updated_at: "2026-07-28T00:00:00Z".into(),
@@ -165,7 +197,12 @@ mod tests {
             )
             .unwrap());
         assert!(!repository
-            .release_in_progress(&record.execution_request_id)
+            .mark_failed(
+                &record.execution_request_id,
+                true,
+                "must remain completed",
+                "2026-07-28T00:02:00Z",
+            )
             .unwrap());
         assert!(!repository
             .mark_completed(
@@ -206,8 +243,21 @@ mod tests {
                 ),
             )
             .unwrap();
+        db.connection().execute(
+            "INSERT INTO audit_events (
+                id, timestamp, event_type, actor_type, actor_id,
+                command_name, success, metadata
+             ) VALUES ('audit-2', '2026-07-28T00:01:00Z', 'command.executed',
+                       'local_user', 'local-user', 'RequestExecutionCancellation', 1, ?1)",
+            [r#"{"execution_request_id":"execution:cancelled-legacy","cancellation_status":"requested"}"#],
+        ).unwrap();
         db.connection()
             .execute_batch(include_str!("../../migrations/041_execution_lifecycle.sql"))
+            .unwrap();
+        db.connection()
+            .execute_batch(include_str!(
+                "../../migrations/042_execution_lifecycle_failure_reconciliation.sql"
+            ))
             .unwrap();
 
         let record = ExecutionLifecycleRepository::new(&db)
@@ -216,6 +266,14 @@ mod tests {
             .unwrap();
         assert_eq!(record.state, ExecutionState::Completed);
         assert_eq!(record.suggestion_id, "legacy");
+        assert_eq!(
+            ExecutionLifecycleRepository::new(&db)
+                .get("execution:cancelled-legacy")
+                .unwrap()
+                .unwrap()
+                .state,
+            ExecutionState::Cancelled
+        );
     }
 
     #[test]
@@ -252,5 +310,37 @@ mod tests {
                 .state,
             ExecutionState::InProgress
         );
+    }
+
+    #[test]
+    fn retryable_failed_execution_can_be_reclaimed_but_terminal_failed_cannot() {
+        let dir = tempfile::tempdir().unwrap();
+        let db = DatabaseService::initialize(dir.path().join("workspace.db"))
+            .unwrap()
+            .into_database();
+        let repository = ExecutionLifecycleRepository::new(&db);
+        let mut retryable = claim();
+        retryable.execution_request_id = "execution:retryable".into();
+        retryable.suggestion_id = "retryable".into();
+        assert!(repository.insert_claim(&retryable).unwrap());
+        assert!(repository.mark_failed(
+            &retryable.execution_request_id,
+            true,
+            "rolled back",
+            "2026-07-28T00:01:00Z",
+        ).unwrap());
+        assert!(repository.insert_claim(&retryable).unwrap());
+
+        let mut terminal = claim();
+        terminal.execution_request_id = "execution:terminal-failed".into();
+        terminal.suggestion_id = "terminal-failed".into();
+        assert!(repository.insert_claim(&terminal).unwrap());
+        assert!(repository.mark_failed(
+            &terminal.execution_request_id,
+            false,
+            "outcome uncertain",
+            "2026-07-28T00:01:00Z",
+        ).unwrap());
+        assert!(!repository.insert_claim(&terminal).unwrap());
     }
 }

@@ -1,8 +1,8 @@
-//! Audit-derived execution reconciliation service (Sprint 29).
+//! Durable lifecycle-first execution reconciliation service.
 //!
 //! Consumes [`ExecutionOutcomeService`] and produces an
 //! [`ExecutionReconciliation`] for one execution request id. Read-only —
-//! no repositories, mutation, or persistence.
+//! Audit outcomes remain fallback evidence for legacy identities.
 
 use std::sync::{Arc, Mutex};
 

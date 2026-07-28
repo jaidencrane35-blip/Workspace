@@ -77,6 +77,8 @@ pub struct ExecutionLifecycleRecord {
     pub suggestion_id: String,
     pub intent_id: Option<String>,
     pub state: ExecutionState,
+    pub retry_allowed: bool,
+    pub failure_reason: Option<String>,
     pub claimed_at: String,
     pub completed_at: Option<String>,
     pub updated_at: String,
@@ -96,7 +98,10 @@ impl ExecutionLifecycleRecord {
         }
         if !matches!(
             self.state,
-            ExecutionState::InProgress | ExecutionState::Completed | ExecutionState::Cancelled
+            ExecutionState::InProgress
+                | ExecutionState::Completed
+                | ExecutionState::Failed
+                | ExecutionState::Cancelled
         ) {
             return Err(ExecutionReconciliationError::InvalidState(
                 self.state.as_str().into(),
@@ -113,7 +118,33 @@ impl ExecutionLifecycleRecord {
         if self.state != ExecutionState::Completed && self.completed_at.is_some() {
             return Err(ExecutionReconciliationError::UnexpectedCompletedAt);
         }
+        if self.state == ExecutionState::Failed
+            && self
+                .failure_reason
+                .as_deref()
+                .is_none_or(|reason| reason.trim().is_empty())
+        {
+            return Err(ExecutionReconciliationError::InvalidState(
+                "failed without failure_reason".into(),
+            ));
+        }
         Ok(())
+    }
+}
+
+pub fn reconcile_execution_lifecycle(
+    record: &ExecutionLifecycleRecord,
+) -> ExecutionReconciliation {
+    let (dispatch_allowed, cancellation_allowed) = match record.state {
+        ExecutionState::Cancelled => (true, false),
+        ExecutionState::Failed => (record.retry_allowed, record.retry_allowed),
+        _ => (false, false),
+    };
+    ExecutionReconciliation {
+        execution_request_id: record.execution_request_id.clone(),
+        current_state: record.state,
+        dispatch_allowed,
+        cancellation_allowed,
     }
 }
 
@@ -257,6 +288,8 @@ mod tests {
             suggestion_id: "s-1".into(),
             intent_id: Some("intent:test".into()),
             state: ExecutionState::InProgress,
+            retry_allowed: false,
+            failure_reason: None,
             claimed_at: "2026-07-28T00:00:00Z".into(),
             completed_at: None,
             updated_at: "2026-07-28T00:00:00Z".into(),

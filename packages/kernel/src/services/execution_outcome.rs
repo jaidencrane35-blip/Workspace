@@ -26,7 +26,7 @@ impl ExecutionOutcomeService {
         let audit_events = AuditService::list_recent(db, scan)?;
 
         let mut outcomes = Vec::new();
-        let mut audited_completed = std::collections::HashSet::new();
+        let mut audited_terminal = std::collections::HashSet::new();
         for event in audit_events {
             let Some(outcome) = outcome_from_audit_event(&event) else {
                 continue;
@@ -38,17 +38,20 @@ impl ExecutionOutcomeService {
                     message: error.to_string(),
                 })?;
 
-            if outcome.status == workspace_domain::ExecutionOutcomeStatus::Completed {
-                audited_completed.insert(outcome.execution_request_id.clone());
-            }
+            audited_terminal.insert((
+                outcome.execution_request_id.clone(),
+                outcome.status.as_str().to_string(),
+            ));
             outcomes.push(outcome);
         }
         for record in ExecutionLifecycleService::list_recent(db, 500)? {
-            if audited_completed.contains(&record.execution_request_id) {
-                continue;
-            }
-            if let Some(outcome) = ExecutionLifecycleService::completed_outcome(&record)? {
-                outcomes.push(outcome);
+            if let Some(outcome) = ExecutionLifecycleService::lifecycle_outcome(&record)? {
+                if !audited_terminal.contains(&(
+                    outcome.execution_request_id.clone(),
+                    outcome.status.as_str().to_string(),
+                )) {
+                    outcomes.push(outcome);
+                }
             }
         }
 

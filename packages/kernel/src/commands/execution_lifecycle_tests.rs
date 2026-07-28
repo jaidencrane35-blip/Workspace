@@ -9,6 +9,7 @@ use workspace_domain::{
     Actor, ActorContext, AuditEvent, ExecutionLifecycleRecord, ExecutionOutcomeStatus,
     ExecutionState, IntentContext,
 };
+use std::sync::{Arc, Barrier};
 
 fn seed_executable(kernel: &WorkspaceKernel) -> (String, String) {
     let actor = ActorContext::local_user();
@@ -154,7 +155,7 @@ fn claim_persistence_failure_blocks_dispatch() {
         ActorContext::local_user(),
         IntentContext::user_request(),
         workspace_id.clone(),
-        suggestion_id,
+        suggestion_id.clone(),
     )
     .unwrap_err();
     assert!(matches!(
@@ -206,9 +207,55 @@ fn completion_persistence_failure_leaves_non_dispatchable_claim() {
         ActorContext::local_user(),
         IntentContext::user_request(),
         workspace_id.clone(),
-        suggestion_id,
+        suggestion_id.clone(),
     );
-    assert!(matches!(retry, Err(KernelError::ExecutionInProgress { .. })));
+    assert!(matches!(
+        retry,
+        Err(KernelError::ExecutionReconciliationRequired { .. })
+    ));
+    assert_eq!(zone_count(&kernel, &workspace_id), count_before + 1);
+    let state = ExecutionReconciliationService::reconcile(
+        &kernel.shared_database(),
+        &format!("execution:{}", suggestion_id),
+    )
+    .unwrap();
+    assert_eq!(state.current_state, ExecutionState::Failed);
+    assert!(!state.dispatch_allowed);
+}
+
+#[test]
+fn partial_mapped_failure_rolls_back_and_persists_retryable_failure() {
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let (workspace_id, suggestion_id) = seed_executable(&kernel);
+    let count_before = zone_count(&kernel, &workspace_id);
+    {
+        let db = kernel.shared_database();
+        let guard = db.lock().unwrap();
+        guard.connection().execute_batch(
+            "CREATE TRIGGER fail_mapped_graph_edge BEFORE INSERT ON graph_edges
+             BEGIN SELECT RAISE(FAIL, 'injected graph edge failure'); END;",
+        ).unwrap();
+    }
+    assert!(CommandHandler::execute_intent_request(
+        &kernel,
+        ActorContext::local_user(),
+        IntentContext::user_request(),
+        workspace_id.clone(),
+        suggestion_id.clone(),
+    ).is_err());
+    assert_eq!(zone_count(&kernel, &workspace_id), count_before);
+    let state = ExecutionReconciliationService::reconcile(
+        &kernel.shared_database(),
+        &format!("execution:{suggestion_id}"),
+    ).unwrap();
+    assert_eq!(state.current_state, ExecutionState::Failed);
+    assert!(state.dispatch_allowed);
+    {
+        let db = kernel.shared_database();
+        db.lock().unwrap().connection()
+            .execute_batch("DROP TRIGGER fail_mapped_graph_edge;").unwrap();
+    }
+    execute(&kernel, &workspace_id, &suggestion_id);
     assert_eq!(zone_count(&kernel, &workspace_id), count_before + 1);
 }
 
@@ -276,6 +323,14 @@ fn unresolved_claim_survives_restart_and_fails_closed() {
             Some("intent:test"),
         )
         .unwrap();
+        let db = kernel.shared_database();
+        db.lock().unwrap().connection().execute(
+            "UPDATE execution_lifecycle
+             SET claimed_at = '2000-01-01T00:00:00Z',
+                 updated_at = '2000-01-01T00:00:00Z'
+             WHERE execution_request_id = ?1",
+            [&execution_request_id],
+        ).unwrap();
     }
 
     let kernel = WorkspaceKernel::initialize(&path).unwrap();
@@ -284,11 +339,11 @@ fn unresolved_claim_survives_restart_and_fails_closed() {
         &execution_request_id,
     )
     .unwrap();
-    assert_eq!(state.current_state, ExecutionState::InProgress);
+    assert_eq!(state.current_state, ExecutionState::Failed);
     assert!(!state.dispatch_allowed);
     assert!(matches!(
         ExecutionGuardService::ensure_allowed(&kernel.shared_database(), suggestion_id),
-        Err(KernelError::ExecutionInProgress { .. })
+        Err(KernelError::ExecutionReconciliationRequired { .. })
     ));
 }
 
@@ -304,6 +359,8 @@ fn outcome_projection_preserves_history_and_global_recency() {
             suggestion_id: "historical".into(),
             intent_id: Some("intent:test".into()),
             state: ExecutionState::InProgress,
+            retry_allowed: false,
+            failure_reason: None,
             claimed_at: "2026-01-01T00:00:00Z".into(),
             completed_at: None,
             updated_at: "2026-01-01T00:00:00Z".into(),
@@ -421,4 +478,35 @@ fn cancellation_audit_failure_remains_durable_and_nonduplicable() {
     assert_eq!(state.current_state, ExecutionState::Cancelled);
     assert!(state.dispatch_allowed);
     assert!(!state.cancellation_allowed);
+}
+
+#[test]
+fn concurrent_claims_admit_exactly_one_execution() {
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let db = kernel.shared_database();
+    let barrier = Arc::new(Barrier::new(3));
+    let mut handles = Vec::new();
+    for _ in 0..2 {
+        let db = Arc::clone(&db);
+        let barrier = Arc::clone(&barrier);
+        handles.push(std::thread::spawn(move || {
+            barrier.wait();
+            ExecutionLifecycleService::claim(
+                &db,
+                "execution:concurrent",
+                "concurrent",
+                Some("intent:test"),
+            )
+        }));
+    }
+    barrier.wait();
+    let results: Vec<_> = handles.into_iter().map(|handle| handle.join().unwrap()).collect();
+    assert_eq!(results.iter().filter(|result| result.is_ok()).count(), 1);
+    assert_eq!(
+        results
+            .iter()
+            .filter(|result| matches!(result, Err(KernelError::ExecutionInProgress { .. })))
+            .count(),
+        1
+    );
 }

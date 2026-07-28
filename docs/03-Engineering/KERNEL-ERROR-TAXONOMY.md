@@ -12,7 +12,7 @@
 |-------|------------|---------|
 | Infrastructure | `Database`, `Internal` | Persistence / lock / runtime faults not caused by caller input |
 | Audit durability | `AuditPersistence` | Required governed audit evidence could not be persisted (`stage` names the boundary) |
-| Execution durability | `ExecutionLifecyclePersistence`, `ExecutionInProgress`, `DuplicateExecution` | Durable execution claim/completion failure or deterministic redispatch denial |
+| Execution durability | `ExecutionLifecyclePersistence`, `ExecutionInProgress`, `ExecutionReconciliationRequired`, `DuplicateExecution` | Durable execution persistence failure or deterministic redispatch/reconciliation denial |
 | Configuration | `Config`, `InvalidSettings` | True configuration/settings problems only |
 | Authorization | `PermissionDenied`, `ApprovalRequired`, `PermissionApproval*` | Permission Gateway outcomes |
 | Architectural integrity | `IntegrityViolation` | Release-safe RE/DE invariant and boundary failures |

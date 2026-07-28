@@ -147,6 +147,9 @@ pub enum KernelError {
     #[error("Execution request is already in progress: {execution_request_id}")]
     ExecutionInProgress { execution_request_id: String },
 
+    #[error("Execution reconciliation required: {execution_request_id}")]
+    ExecutionReconciliationRequired { execution_request_id: String },
+
     #[error("Execution lifecycle persistence failed at {stage}")]
     ExecutionLifecyclePersistence {
         stage: &'static str,
@@ -929,6 +932,14 @@ impl KernelError {
                 code: "execution_in_progress".into(),
                 message: format!("Execution request '{execution_request_id}' is already in progress."),
             },
+            KernelError::ExecutionReconciliationRequired {
+                execution_request_id,
+            } => PublicError {
+                code: "execution_reconciliation_required".into(),
+                message: format!(
+                    "Execution request '{execution_request_id}' requires reconciliation."
+                ),
+            },
             KernelError::ExecutionLifecyclePersistence { .. } => PublicError {
                 code: "execution_lifecycle_persistence_error".into(),
                 message: "Execution lifecycle state could not be persisted.".into(),
@@ -1183,6 +1194,12 @@ mod tests {
                     execution_request_id: "execution:s-1".into(),
                 },
                 "execution_in_progress",
+            ),
+            (
+                KernelError::ExecutionReconciliationRequired {
+                    execution_request_id: "execution:s-1".into(),
+                },
+                "execution_reconciliation_required",
             ),
             (
                 KernelError::AuditPersistence {

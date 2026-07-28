@@ -13,7 +13,11 @@ impl<'a> ZoneRepository<'a> {
     }
 
     pub fn create(&self, zone: &Zone) -> Result<()> {
-        self.db.connection().execute(
+        Self::create_on(self.db.connection(), zone)
+    }
+
+    pub fn create_on(connection: &rusqlite::Connection, zone: &Zone) -> Result<()> {
+        connection.execute(
             "INSERT INTO zones (id, workspace_id, name, position_metadata) VALUES (?1, ?2, ?3, ?4)",
             (
                 zone.id.as_str(),

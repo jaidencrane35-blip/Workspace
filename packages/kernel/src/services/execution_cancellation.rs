@@ -1,8 +1,7 @@
 //! Governed execution cancellation service (Sprint 28).
 //!
-//! Validates cancellation requests against existing audit-derived outcomes.
-//! Produces a [`CancellationRequest`] decision only — no persistence, command
-//! dispatch, or runtime interruption.
+//! Validates cancellation requests against durable lifecycle first, then
+//! legacy audit-derived outcomes. Does not interrupt runtime execution.
 
 use std::sync::{Arc, Mutex};
 
@@ -46,6 +45,17 @@ impl ExecutionCancellationService {
         }
 
         if let Some(record) = ExecutionLifecycleService::get(db, execution_request_id)? {
+            let reconciliation = ExecutionLifecycleService::reconciliation(&record);
+            if reconciliation.cancellation_allowed {
+                let request =
+                    CancellationRequest::new(execution_request_id, requested_by.trim(), reason);
+                request.validate().map_err(|error| {
+                    KernelError::ExecutionCancellationValidation {
+                        message: error.to_string(),
+                    }
+                })?;
+                return Ok(request);
+            }
             return match record.state {
                 workspace_domain::ExecutionState::Completed => {
                     Err(KernelError::CannotCancelCompletedExecution {
@@ -62,6 +72,11 @@ impl ExecutionCancellationService {
                         message: format!(
                             "execution request '{execution_request_id}' is already cancelled"
                         ),
+                    })
+                }
+                workspace_domain::ExecutionState::Failed => {
+                    Err(KernelError::ExecutionReconciliationRequired {
+                        execution_request_id: execution_request_id.to_string(),
                     })
                 }
                 state => Err(KernelError::IntegrityViolation {

@@ -39,6 +39,7 @@ export const PUBLIC_ERROR_CODES = [
   "execution_lifecycle_persistence_error",
   "execution_outcome_validation_error",
   "execution_reconciliation_validation_error",
+  "execution_reconciliation_required",
   "initialization_failed",
   "integrity_violation",
   "intent_execution_validation_error",

@@ -1,10 +1,10 @@
 use std::sync::{Arc, Mutex};
 
-use chrono::Utc;
+use chrono::{DateTime, Utc};
 use workspace_database::{Database, ExecutionLifecycleRepository};
 use workspace_domain::{
-    ExecutionLifecycleRecord, ExecutionOutcome, ExecutionOutcomeStatus, ExecutionReconciliation,
-    ExecutionState,
+    reconcile_execution_lifecycle, ExecutionLifecycleRecord, ExecutionOutcome,
+    ExecutionOutcomeStatus, ExecutionReconciliation, ExecutionState,
 };
 
 use crate::error::{KernelError, Result};
@@ -25,6 +25,8 @@ impl ExecutionLifecycleService {
             suggestion_id: suggestion_id.trim().into(),
             intent_id: intent_id.map(str::to_string),
             state: ExecutionState::InProgress,
+            retry_allowed: false,
+            failure_reason: None,
             claimed_at: now.clone(),
             completed_at: None,
             updated_at: now,
@@ -60,9 +62,32 @@ impl ExecutionLifecycleService {
                     execution_request_id: record.execution_request_id,
                 })
             }
-            Some(_) => Err(KernelError::ExecutionInProgress {
-                execution_request_id: record.execution_request_id,
-            }),
+            Some(existing) if existing.state == ExecutionState::Failed => {
+                Err(KernelError::ExecutionReconciliationRequired {
+                    execution_request_id: record.execution_request_id,
+                })
+            }
+            Some(existing) => {
+                if Self::is_stale(&existing)? {
+                    repository
+                        .mark_failed(
+                            &existing.execution_request_id,
+                            false,
+                            "stale execution claim; dispatch outcome unknown",
+                            &Utc::now().to_rfc3339(),
+                        )
+                        .map_err(|source| KernelError::ExecutionLifecyclePersistence {
+                            stage: "stale_reconciliation",
+                            source,
+                        })?;
+                    return Err(KernelError::ExecutionReconciliationRequired {
+                        execution_request_id: record.execution_request_id,
+                    });
+                }
+                Err(KernelError::ExecutionInProgress {
+                    execution_request_id: record.execution_request_id,
+                })
+            }
             None => Err(KernelError::IntegrityViolation {
                 message: "execution claim conflicted but no lifecycle row exists".into(),
             }),
@@ -105,28 +130,39 @@ impl ExecutionLifecycleService {
             })
     }
 
-    pub fn release_failed_claim(
+    pub fn mark_failed(
         db: &Arc<Mutex<Database>>,
         execution_request_id: &str,
-    ) -> Result<()> {
+        retry_allowed: bool,
+        reason: &str,
+    ) -> Result<ExecutionLifecycleRecord> {
         let guard = db
             .lock()
             .map_err(|_| KernelError::lock_poisoned("database"))?;
-        let released = ExecutionLifecycleRepository::new(&guard)
-            .release_in_progress(execution_request_id)
+        let repository = ExecutionLifecycleRepository::new(&guard);
+        let failed_at = Utc::now().to_rfc3339();
+        let updated = repository
+            .mark_failed(execution_request_id, retry_allowed, reason, &failed_at)
             .map_err(|source| KernelError::ExecutionLifecyclePersistence {
-                stage: "failure_release",
+                stage: "failure",
                 source,
             })?;
-        if released {
-            Ok(())
-        } else {
-            Err(KernelError::IntegrityViolation {
+        if !updated {
+            return Err(KernelError::IntegrityViolation {
                 message: format!(
-                    "failed execution did not have a releasable claim: {execution_request_id}"
+                    "failed execution did not have an in-progress claim: {execution_request_id}"
                 ),
-            })
+            });
         }
+        repository
+            .get(execution_request_id)
+            .map_err(|source| KernelError::ExecutionLifecyclePersistence {
+                stage: "failure.read",
+                source,
+            })?
+            .ok_or_else(|| KernelError::IntegrityViolation {
+                message: format!("failed execution lifecycle row disappeared: {execution_request_id}"),
+            })
     }
 
     pub fn record_cancelled(
@@ -200,12 +236,35 @@ impl ExecutionLifecycleService {
         let guard = db
             .lock()
             .map_err(|_| KernelError::lock_poisoned("database"))?;
-        ExecutionLifecycleRepository::new(&guard)
+        let repository = ExecutionLifecycleRepository::new(&guard);
+        let record = repository
             .get(execution_request_id)
             .map_err(|source| KernelError::ExecutionLifecyclePersistence {
                 stage: "read",
                 source,
-            })
+            })?;
+        if let Some(record) = record.as_ref() {
+            if Self::is_stale(record)? {
+                repository
+                    .mark_failed(
+                        execution_request_id,
+                        false,
+                        "stale execution claim; dispatch outcome unknown",
+                        &Utc::now().to_rfc3339(),
+                    )
+                    .map_err(|source| KernelError::ExecutionLifecyclePersistence {
+                        stage: "stale_reconciliation",
+                        source,
+                    })?;
+                return repository.get(execution_request_id).map_err(|source| {
+                    KernelError::ExecutionLifecyclePersistence {
+                        stage: "stale_reconciliation.read",
+                        source,
+                    }
+                });
+            }
+        }
+        Ok(record)
     }
 
     pub fn list_recent(
@@ -223,8 +282,8 @@ impl ExecutionLifecycleService {
             })
     }
 
-    pub fn completed_outcome(record: &ExecutionLifecycleRecord) -> Result<Option<ExecutionOutcome>> {
-        if record.state != ExecutionState::Completed {
+    pub fn lifecycle_outcome(record: &ExecutionLifecycleRecord) -> Result<Option<ExecutionOutcome>> {
+        if record.state == ExecutionState::InProgress {
             return Ok(None);
         }
         record.validate().map_err(|error| {
@@ -232,31 +291,43 @@ impl ExecutionLifecycleService {
                 message: error.to_string(),
             }
         })?;
+        let status = match record.state {
+            ExecutionState::Completed => ExecutionOutcomeStatus::Completed,
+            ExecutionState::Failed => ExecutionOutcomeStatus::Failed,
+            ExecutionState::Cancelled => ExecutionOutcomeStatus::Cancelled,
+            _ => return Ok(None),
+        };
         Ok(Some(ExecutionOutcome {
             execution_request_id: record.execution_request_id.clone(),
-            status: ExecutionOutcomeStatus::Completed,
+            status,
             command_name: "ExecuteIntentRequest".into(),
-            completed_at: record.completed_at.clone().ok_or_else(|| {
-                KernelError::IntegrityViolation {
-                    message: format!(
-                        "completed execution lifecycle missing timestamp: {}",
-                        record.execution_request_id
-                    ),
-                }
-            })?,
-            success: true,
-            failure_reason: None,
+            completed_at: record.completed_at.clone().unwrap_or_else(|| record.updated_at.clone()),
+            success: status == ExecutionOutcomeStatus::Completed,
+            failure_reason: record.failure_reason.clone(),
             suggestion_id: Some(record.suggestion_id.clone()),
             intent_id: record.intent_id.clone(),
         }))
     }
 
     pub fn reconciliation(record: &ExecutionLifecycleRecord) -> ExecutionReconciliation {
-        ExecutionReconciliation {
-            execution_request_id: record.execution_request_id.clone(),
-            current_state: record.state,
-            dispatch_allowed: record.state == ExecutionState::Cancelled,
-            cancellation_allowed: false,
+        reconcile_execution_lifecycle(record)
+    }
+
+    fn is_stale(record: &ExecutionLifecycleRecord) -> Result<bool> {
+        if record.state != ExecutionState::InProgress {
+            return Ok(false);
         }
+        let claimed_at = DateTime::parse_from_rfc3339(&record.claimed_at).map_err(|_| {
+            KernelError::IntegrityViolation {
+                message: format!(
+                    "invalid execution claim timestamp: {}",
+                    record.execution_request_id
+                ),
+            }
+        })?;
+        Ok(Utc::now()
+            .signed_duration_since(claimed_at.with_timezone(&Utc))
+            .num_seconds()
+            >= 300)
     }
 }

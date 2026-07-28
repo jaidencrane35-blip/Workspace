@@ -18,7 +18,7 @@ Governed execution must not proceed without durable authorization evidence. Sile
 | Governed intent execution lifecycle | `execution_lifecycle` claim / completion | **Durable idempotency authority** | Claim failure blocks dispatch; unresolved claims block retry; completed rows remain terminal independently of completion audit |
 | Domain-event subscriber / AI operational | domain / AI audit rows | **Documented non-governed-execution exception** | Log and continue; not a CommandPipeline dispatch gate |
 
-There is no internal durable-retry queue. After storage recovers, callers retry when no execution claim exists. `ExecuteIntentRequest` creates a durable `in_progress` claim before mapped dispatch and marks it `completed` before returning success. Dispatch errors release the claim; unresolved claims remain non-dispatchable for explicit reconciliation.
+There is no internal durable-retry queue. `ExecuteIntentRequest` creates a durable `in_progress` claim before mapped dispatch and records `completed` or `failed`. Transactionally rolled-back dispatch failures are retryable; ambiguous completion failures and stale claims become non-retryable `failed` records requiring reconciliation.
 
 ## Fail-closed sequence
 
@@ -47,7 +47,7 @@ For `ExecuteIntentRequest`, `execution_lifecycle` is separate from secondary aud
 
 1. Surface `audit_persistence_error` to the IPC caller (sanitized public code).
 2. Restore audit storage (disk, SQLite integrity, lock health).
-3. Retry the same command only when no durable execution claim exists. Completed claims return `duplicate_execution`; unresolved claims return `execution_in_progress`.
+3. Retry only when durable reconciliation reports `dispatch_allowed`. Completed claims return `duplicate_execution`; fresh claims return `execution_in_progress`; stale or ambiguous failures return `execution_reconciliation_required`.
 
 ## Classification
 

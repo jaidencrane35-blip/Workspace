@@ -379,7 +379,7 @@ classify_execution_outcome_event (pure)
 ExecutionOutcomeService::list_recent → GetExecutionOutcomes (governed, audit.read)
 ```
 
-Outcomes answer whether governed execution completed, failed, or was cancelled. Failed and cancelled outcomes remain audit-derived. Durable completed lifecycle rows are merged into the projection so terminal completion does not depend on bounded audit history. There are no AI feedback loops or automatic retries.
+Outcomes answer whether governed execution completed, failed, or was cancelled. All three terminal outcomes are projected from durable lifecycle first; audit remains supplementary legacy evidence.
 
 **Execution outcome context layer (Sprint 26):**
 
@@ -405,7 +405,7 @@ Allowed → mapped command dispatch
 AlreadyExecuted → DuplicateExecution (existing failure audit path)
 ```
 
-Idempotency uses the existing `execution:{suggestion_id}` id. `ExecuteIntentRequest` claims that identity before mapped dispatch, marks it completed after successful dispatch, and releases it when dispatch returns an error. Completed and unresolved in-progress rows block redispatch across audit rollover and restart. Historical completed audits are backfilled during migration. No new capability or IPC is introduced.
+Idempotency uses the existing `execution:{suggestion_id}` id. `ExecuteIntentRequest` claims before mapped dispatch and records `completed` or durable `failed`. Rolled-back failures may retry; ambiguous failures and stale claims fail closed. Historical outcomes are backfilled during migration.
 
 **Execution cancellation layer (Sprint 28):**
 
@@ -431,7 +431,7 @@ ExecutionReconciliationService → ExecutionReconciliation
 GetExecutionState (governed, audit.read)
 ```
 
-Reconciliation answers "what is the current interpreted state of `execution:X`?" by applying durable lifecycle state first, then folding audit outcomes into `Unknown | InProgress | Completed | Failed | Cancelled`. Durable `InProgress` and `Completed` both block dispatch and cancellation; failed and cancelled audit outcomes retain existing retry semantics. Reconciliation itself remains read-only and non-automating.
+Reconciliation answers "what is the current interpreted state of `execution:X`?" from the durable lifecycle authority, with audit fallback only for legacy identities. Retry and cancellation flags are derived centrally from lifecycle state and failure retry classification.
 
 **Execution states projection layer (Sprint 30):**
 

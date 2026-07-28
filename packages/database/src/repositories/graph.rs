@@ -15,11 +15,15 @@ impl<'a> GraphRepository<'a> {
     }
 
     pub fn register_node(&self, resource: &ResourceRef) -> Result<()> {
-        if self.node_exists(resource)? {
+        Self::register_node_on(self.db.connection(), resource)
+    }
+
+    pub fn register_node_on(connection: &rusqlite::Connection, resource: &ResourceRef) -> Result<()> {
+        if Self::node_exists_on(connection, resource)? {
             return Err(DatabaseError::DuplicateResource(resource.canonical()));
         }
 
-        self.db.connection().execute(
+        connection.execute(
             "INSERT INTO graph_nodes (kind, id) VALUES (?1, ?2)",
             (kind_to_str(resource.kind), resource.id.as_str()),
         )?;
@@ -35,7 +39,11 @@ impl<'a> GraphRepository<'a> {
     }
 
     pub fn node_exists(&self, resource: &ResourceRef) -> Result<bool> {
-        let count: i64 = self.db.connection().query_row(
+        Self::node_exists_on(self.db.connection(), resource)
+    }
+
+    pub fn node_exists_on(connection: &rusqlite::Connection, resource: &ResourceRef) -> Result<bool> {
+        let count: i64 = connection.query_row(
             "SELECT COUNT(*) FROM graph_nodes WHERE kind = ?1 AND id = ?2",
             (kind_to_str(resource.kind), resource.id.as_str()),
             |row| row.get(0),
@@ -49,7 +57,16 @@ impl<'a> GraphRepository<'a> {
         relationship: GraphRelationship,
         target: &ResourceRef,
     ) -> Result<()> {
-        self.db.connection().execute(
+        Self::add_edge_on(self.db.connection(), source, relationship, target)
+    }
+
+    pub fn add_edge_on(
+        connection: &rusqlite::Connection,
+        source: &ResourceRef,
+        relationship: GraphRelationship,
+        target: &ResourceRef,
+    ) -> Result<()> {
+        connection.execute(
             "INSERT INTO graph_edges (id, source_kind, source_id, relationship, target_kind, target_id)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
             (
