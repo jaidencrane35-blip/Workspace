@@ -171,7 +171,7 @@ pub use discovery::CapabilityResolver;
 pub use execution_cancellation::ExecutionCancellationService;
 pub use execution_context::ExecutionContextService;
 pub use execution_guard::ExecutionGuardService;
-pub use execution_lifecycle::ExecutionLifecycleService;
+pub(crate) use execution_lifecycle::ExecutionLifecycleService;
 pub use execution_outcome::ExecutionOutcomeService;
 pub use execution_reconciliation::ExecutionReconciliationService;
 pub use graph::GraphService;

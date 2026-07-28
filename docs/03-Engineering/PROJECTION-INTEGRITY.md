@@ -160,6 +160,7 @@ compatibility for deserialize, not permission to omit on emit.
 
 ## Related
 
+- [Architecture Governance](./ARCHITECTURE-GOVERNANCE.md)
 - [Persistence Boundary Governance](./PERSISTENCE-BOUNDARY-GOVERNANCE.md)
 - [Lifecycle Governance](./LIFECYCLE-GOVERNANCE.md)
 - [Workspace Experience Contract](../05-AI/WORKSPACE-EXPERIENCE-CONTRACT.md)

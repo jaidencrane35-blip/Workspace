@@ -45,6 +45,7 @@ event system is introduced.
 
 ## Related
 
+- [Architecture Governance](./ARCHITECTURE-GOVERNANCE.md)
 - `packages/kernel/src/lifecycle/mod.rs`
 - `packages/kernel/src/state/mod.rs`
 - `packages/kernel/src/services/capture_coordinator.rs`

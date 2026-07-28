@@ -300,6 +300,8 @@ mod observation_tests;
 mod layout_tests;
 #[cfg(test)]
 mod projection_tests;
+#[cfg(test)]
+mod governance_failure_tests;
 mod layout;
 mod resource;
 #[cfg(test)]

@@ -1,0 +1,438 @@
+{
+  "generated_at_note": "Inventory is derived from repository layout + Cargo edges; forbidden edges are enforced by verify:architecture-governance",
+  "layers": [
+    {
+      "id": "react",
+      "path": "app/src",
+      "role": "Projection-only UI; IPC invoke only"
+    },
+    {
+      "id": "ipc",
+      "path": "app/src-tauri",
+      "role": "Tauri command edge; forwards to CommandHandler"
+    },
+    {
+      "id": "kernel_commands",
+      "path": "packages/kernel/src/commands",
+      "role": "CommandPipeline entry; declares required_capability"
+    },
+    {
+      "id": "permission_gateway",
+      "path": "packages/kernel/src/security",
+      "role": "Sole Allow/Deny/ApprovalRequired authority decision"
+    },
+    {
+      "id": "services",
+      "path": "packages/kernel/src/services",
+      "role": "Lifecycle owners; mutators pub(crate) after gateway Allow"
+    },
+    {
+      "id": "domain",
+      "path": "packages/domain/src",
+      "role": "Canonical models; no persistence or process spawn"
+    },
+    {
+      "id": "repositories",
+      "path": "packages/database/src",
+      "role": "Persistence guards; no service imports"
+    },
+    {
+      "id": "execution",
+      "path": "packages/windows-integration/src",
+      "role": "OS spawn / desktop capture — only via ApplicationLaunchService after gateway"
+    }
+  ],
+  "allowed_edges": [
+    [
+      "react",
+      "ipc"
+    ],
+    [
+      "ipc",
+      "kernel_commands"
+    ],
+    [
+      "kernel_commands",
+      "permission_gateway"
+    ],
+    [
+      "permission_gateway",
+      "services"
+    ],
+    [
+      "services",
+      "domain"
+    ],
+    [
+      "services",
+      "repositories"
+    ],
+    [
+      "repositories",
+      "domain"
+    ],
+    [
+      "services",
+      "execution"
+    ]
+  ],
+  "forbidden_edges": [
+    {
+      "from": "react",
+      "to": "repositories",
+      "reason": "React must never open the database"
+    },
+    {
+      "from": "react",
+      "to": "services",
+      "reason": "React must not call lifecycle services directly"
+    },
+    {
+      "from": "react",
+      "to": "domain",
+      "reason": "React consumes IPC DTOs, not Rust domain crates"
+    },
+    {
+      "from": "react",
+      "to": "execution",
+      "reason": "React must not spawn processes"
+    },
+    {
+      "from": "domain",
+      "to": "execution",
+      "reason": "Domain models must not spawn processes"
+    },
+    {
+      "from": "domain",
+      "to": "repositories",
+      "reason": "Domain must not depend on persistence"
+    },
+    {
+      "from": "repositories",
+      "to": "services",
+      "reason": "Repositories must not call services"
+    },
+    {
+      "from": "repositories",
+      "to": "kernel_commands",
+      "reason": "Repositories must not import kernel"
+    },
+    {
+      "from": "services",
+      "to": "permission_gateway",
+      "reason": "Services must not self-authorize; gateway runs before service entry"
+    }
+  ],
+  "crate_edges": {
+    "workspace-domain→workspace-database": false,
+    "workspace-domain→workspace-kernel": false,
+    "workspace-domain→workspace-windows-integration": false,
+    "workspace-database→workspace-kernel": false,
+    "workspace-database→workspace-windows-integration": false
+  },
+  "capability_authority_owners": {
+    "workspace.read": "Workspace",
+    "workspace.write": "Workspace",
+    "settings.read": "Settings",
+    "settings.write": "Settings",
+    "audit.read": "Audit",
+    "audit.write": "Audit",
+    "system.startup": "System",
+    "system.shutdown": "System",
+    "zone.read": "Zone",
+    "zone.write": "Zone",
+    "application.read": "Application",
+    "application.write": "Application",
+    "application.launch": "Application",
+    "widget.read": "Widget",
+    "widget.write": "Widget",
+    "layout.read": "Layout",
+    "layout.write": "Layout",
+    "memory.read": "Memory",
+    "memory.write": "Memory",
+    "personalization.read": "Personalization",
+    "personalization.write": "Personalization",
+    "work_context.read": "WorkContext",
+    "work_context.write": "WorkContext",
+    "desktop.read": "System"
+  },
+  "mutation_capability_inventory": [
+    {
+      "command": "AcceptSuggestion",
+      "capability": "audit.write",
+      "authority_owner": "Audit"
+    },
+    {
+      "command": "CreateApplication",
+      "capability": "application.write",
+      "authority_owner": "Application"
+    },
+    {
+      "command": "DeleteApplication",
+      "capability": "application.write",
+      "authority_owner": "Application"
+    },
+    {
+      "command": "CreateAutomationContract",
+      "capability": "work_context.write",
+      "authority_owner": "WorkContext"
+    },
+    {
+      "command": "UpdateAutomationContract",
+      "capability": "work_context.write",
+      "authority_owner": "WorkContext"
+    },
+    {
+      "command": "RequestAutomationContractApproval",
+      "capability": "work_context.write",
+      "authority_owner": "WorkContext"
+    },
+    {
+      "command": "ApproveAutomationContract",
+      "capability": "work_context.write",
+      "authority_owner": "WorkContext"
+    },
+    {
+      "command": "PauseAutomationContract",
+      "capability": "work_context.write",
+      "authority_owner": "WorkContext"
+    },
+    {
+      "command": "RevokeAutomationContract",
+      "capability": "work_context.write",
+      "authority_owner": "WorkContext"
+    },
+    {
+      "command": "ResumeAutomationContract",
+      "capability": "work_context.write",
+      "authority_owner": "WorkContext"
+    },
+    {
+      "command": "RecordTriggerEvent",
+      "capability": "work_context.write",
+      "authority_owner": "WorkContext"
+    },
+    {
+      "command": "EvaluateTriggers",
+      "capability": "work_context.write",
+      "authority_owner": "WorkContext"
+    },
+    {
+      "command": "RecordAndEvaluateTriggers",
+      "capability": "work_context.write",
+      "authority_owner": "WorkContext"
+    },
+    {
+      "command": "AcceptAutomationIntentProposal",
+      "capability": "work_context.write",
+      "authority_owner": "WorkContext"
+    },
+    {
+      "command": "RejectAutomationIntentProposal",
+      "capability": "work_context.write",
+      "authority_owner": "WorkContext"
+    },
+    {
+      "command": "CreateSuggestionIntentRequest",
+      "capability": "audit.write",
+      "authority_owner": "Audit"
+    },
+    {
+      "command": "CreateWorkspace",
+      "capability": "workspace.write",
+      "authority_owner": "Workspace"
+    },
+    {
+      "command": "DecideApproval",
+      "capability": "audit.write",
+      "authority_owner": "Audit"
+    },
+    {
+      "command": "GateDecisionEngineWrite",
+      "capability": "work_context.write",
+      "authority_owner": "WorkContext"
+    },
+    {
+      "command": "GateDecisionQueueWrite",
+      "capability": "work_context.write",
+      "authority_owner": "WorkContext"
+    },
+    {
+      "command": "ExecuteIntentRequest",
+      "capability": "audit.write",
+      "authority_owner": "Audit"
+    },
+    {
+      "command": "LaunchApplication",
+      "capability": "application.launch",
+      "authority_owner": "Application"
+    },
+    {
+      "command": "CreateLayout",
+      "capability": "layout.write",
+      "authority_owner": "Layout"
+    },
+    {
+      "command": "UpdateLayout",
+      "capability": "layout.write",
+      "authority_owner": "Layout"
+    },
+    {
+      "command": "DeleteLayout",
+      "capability": "layout.write",
+      "authority_owner": "Layout"
+    },
+    {
+      "command": "ResetLayout",
+      "capability": "layout.write",
+      "authority_owner": "Layout"
+    },
+    {
+      "command": "CreateMemoryEntry",
+      "capability": "memory.write",
+      "authority_owner": "Memory"
+    },
+    {
+      "command": "DeleteMemoryEntry",
+      "capability": "memory.write",
+      "authority_owner": "Memory"
+    },
+    {
+      "command": "ClearMemoryEntries",
+      "capability": "memory.write",
+      "authority_owner": "Memory"
+    },
+    {
+      "command": "CreateUserPreference",
+      "capability": "personalization.write",
+      "authority_owner": "Personalization"
+    },
+    {
+      "command": "UpdateUserPreference",
+      "capability": "personalization.write",
+      "authority_owner": "Personalization"
+    },
+    {
+      "command": "DeleteUserPreference",
+      "capability": "personalization.write",
+      "authority_owner": "Personalization"
+    },
+    {
+      "command": "SetPersonalizationEnabled",
+      "capability": "personalization.write",
+      "authority_owner": "Personalization"
+    },
+    {
+      "command": "RejectSuggestion",
+      "capability": "audit.write",
+      "authority_owner": "Audit"
+    },
+    {
+      "command": "RequestExecutionCancellation",
+      "capability": "audit.write",
+      "authority_owner": "Audit"
+    },
+    {
+      "command": "GateTaskGraphWrite",
+      "capability": "work_context.write",
+      "authority_owner": "WorkContext"
+    },
+    {
+      "command": "UpdateSettings",
+      "capability": "settings.write",
+      "authority_owner": "Settings"
+    },
+    {
+      "command": "CreateWidget",
+      "capability": "widget.write",
+      "authority_owner": "Widget"
+    },
+    {
+      "command": "DeleteWidget",
+      "capability": "widget.write",
+      "authority_owner": "Widget"
+    },
+    {
+      "command": "GateAdaptationWrite",
+      "capability": "work_context.write",
+      "authority_owner": "WorkContext"
+    },
+    {
+      "command": "CreateProject",
+      "capability": "work_context.write",
+      "authority_owner": "WorkContext"
+    },
+    {
+      "command": "UpdateProject",
+      "capability": "work_context.write",
+      "authority_owner": "WorkContext"
+    },
+    {
+      "command": "CreateTask",
+      "capability": "work_context.write",
+      "authority_owner": "WorkContext"
+    },
+    {
+      "command": "UpdateTask",
+      "capability": "work_context.write",
+      "authority_owner": "WorkContext"
+    },
+    {
+      "command": "CreateWorkGoal",
+      "capability": "work_context.write",
+      "authority_owner": "WorkContext"
+    },
+    {
+      "command": "SetActiveWork",
+      "capability": "work_context.write",
+      "authority_owner": "WorkContext"
+    },
+    {
+      "command": "GateWorkspaceInteractionWrite",
+      "capability": "work_context.write",
+      "authority_owner": "WorkContext"
+    },
+    {
+      "command": "GateWorkspaceProfileWrite",
+      "capability": "work_context.write",
+      "authority_owner": "WorkContext"
+    },
+    {
+      "command": "GateRecommendationEngineWrite",
+      "capability": "work_context.write",
+      "authority_owner": "WorkContext"
+    },
+    {
+      "command": "CreateZone",
+      "capability": "zone.write",
+      "authority_owner": "Zone"
+    },
+    {
+      "command": "DeleteZone",
+      "capability": "zone.write",
+      "authority_owner": "Zone"
+    }
+  ],
+  "permission_gateway_call_sites": [
+    {
+      "file": "packages/kernel/src/commands/handler.rs",
+      "line": 4131
+    },
+    {
+      "file": "packages/kernel/src/commands/pipeline.rs",
+      "line": 73
+    },
+    {
+      "file": "packages/kernel/src/commands/pipeline.rs",
+      "line": 161
+    }
+  ],
+  "stats": {
+    "mutation_commands": 51,
+    "capability_catalog": 24,
+    "gateway_require_sites": 3,
+    "violation_count": 0
+  },
+  "verified_clean": true,
+  "violations": []
+}

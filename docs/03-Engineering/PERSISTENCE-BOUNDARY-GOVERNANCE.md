@@ -81,6 +81,7 @@ the database layer. Cross-domain repository access remains read-only.
 
 ## Related
 
+- [Architecture Governance](./ARCHITECTURE-GOVERNANCE.md)
 - [Lifecycle Governance](./LIFECYCLE-GOVERNANCE.md)
 - [Governed Execution Audit Durability](./GOVERNED-AUDIT-DURABILITY.md)
 - [Kernel Error Taxonomy](./KERNEL-ERROR-TAXONOMY.md)

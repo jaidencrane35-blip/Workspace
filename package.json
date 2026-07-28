@@ -11,7 +11,8 @@
     "typecheck": "pnpm --filter @workspace/app typecheck",
     "verify:explanation-catalog": "node scripts/verify-explanation-catalog.mjs",
     "verify:ui-experience-boundary": "node scripts/verify-ui-experience-boundary.mjs",
-    "verify:ipc-contract": "node scripts/verify-ipc-contract.mjs"
+    "verify:ipc-contract": "node scripts/verify-ipc-contract.mjs",
+    "verify:architecture-governance": "node scripts/verify-architecture-governance.mjs"
   },
   "engines": {
     "node": ">=20"

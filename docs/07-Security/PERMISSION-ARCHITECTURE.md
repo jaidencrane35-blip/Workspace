@@ -192,6 +192,7 @@ Unsafe / out of scope until redesigned:
 
 | Concern | Location |
 |---------|----------|
+| Architecture governance (capability audit + forbidden edges) | [Architecture Governance](../03-Engineering/ARCHITECTURE-GOVERNANCE.md) · `pnpm verify:architecture-governance` |
 | Gateway | `packages/kernel/src/security/gateway.rs` |
 | Gate / policy | `standard_gate.rs`, `policy/capability_bound.rs` |
 | Pipeline | `packages/kernel/src/commands/pipeline.rs` |

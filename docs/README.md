@@ -75,6 +75,8 @@ How the team builds, reviews, and maintains the codebase.
 | [Governed Execution Audit Durability](03-Engineering/GOVERNED-AUDIT-DURABILITY.md) | Fail-closed vs best-effort audit persistence for governed commands |
 | [Lifecycle Governance](03-Engineering/LIFECYCLE-GOVERNANCE.md) | Explicit transition guards and terminal-state rules |
 | [Persistence Boundary Governance](03-Engineering/PERSISTENCE-BOUNDARY-GOVERNANCE.md) | Repository-level lifecycle and immutability enforcement |
+| [Projection Integrity](03-Engineering/PROJECTION-INTEGRITY.md) | Dual-channel projections and immutable evidence consumption |
+| [Architecture Governance](03-Engineering/ARCHITECTURE-GOVERNANCE.md) | Authority map, forbidden edges, capability audit, failure modes |
 | [Foundation Hardening Report](03-Engineering/FOUNDATION-HARDENING-REPORT.md) | Phase 1 foundation audit results |
 | [Audit Reports Index](03-Engineering/AUDIT-REPORTS-INDEX.md) | Index of point-in-time architecture/engineering audits |
 

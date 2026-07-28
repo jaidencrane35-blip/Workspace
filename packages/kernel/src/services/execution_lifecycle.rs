@@ -13,7 +13,8 @@ use crate::error::{KernelError, Result};
 pub struct ExecutionLifecycleService;
 
 impl ExecutionLifecycleService {
-    pub fn claim(
+    /// Claim an execution identity. Crate-private — callers must enter via CommandPipeline.
+    pub(crate) fn claim(
         db: &Arc<Mutex<Database>>,
         execution_request_id: &str,
         suggestion_id: &str,
@@ -94,7 +95,7 @@ impl ExecutionLifecycleService {
         }
     }
 
-    pub fn complete(
+    pub(crate) fn complete(
         db: &Arc<Mutex<Database>>,
         execution_request_id: &str,
         intent_id: Option<&str>,
@@ -130,7 +131,7 @@ impl ExecutionLifecycleService {
             })
     }
 
-    pub fn mark_failed(
+    pub(crate) fn mark_failed(
         db: &Arc<Mutex<Database>>,
         execution_request_id: &str,
         retry_allowed: bool,
@@ -165,7 +166,7 @@ impl ExecutionLifecycleService {
             })
     }
 
-    pub fn record_cancelled(
+    pub(crate) fn record_cancelled(
         db: &Arc<Mutex<Database>>,
         execution_request_id: &str,
     ) -> Result<ExecutionLifecycleRecord> {
