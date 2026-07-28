@@ -25,6 +25,9 @@ pub enum TaskGraphError {
     #[error("invalid task status: {0}")]
     InvalidStatus(String),
 
+    #[error("invalid task status transition: {from} -> {to}")]
+    InvalidStatusTransition { from: String, to: String },
+
     #[error("invalid task priority: {0}")]
     InvalidPriority(String),
 
@@ -89,6 +92,10 @@ impl WorkspaceTaskStatus {
 
     pub fn is_terminal(self) -> bool {
         matches!(self, Self::Completed | Self::Cancelled)
+    }
+
+    pub fn allows_transition(self, next: Self) -> bool {
+        self != next && self.is_open()
     }
 }
 
@@ -238,14 +245,24 @@ impl WorkspaceTask {
         self.updated_at = Utc::now().to_rfc3339();
     }
 
-    pub fn with_status(mut self, status: WorkspaceTaskStatus, explanation: impl Into<String>) -> Self {
+    pub fn transition_status(
+        mut self,
+        status: WorkspaceTaskStatus,
+        explanation: impl Into<String>,
+    ) -> Result<Self, TaskGraphError> {
+        if !self.status.allows_transition(status) {
+            return Err(TaskGraphError::InvalidStatusTransition {
+                from: self.status.as_str().into(),
+                to: status.as_str().into(),
+            });
+        }
         self.status = status;
         self.explanation = explanation.into();
         if status == WorkspaceTaskStatus::Completed {
             self.progress_percent = 100;
         }
         self.touch();
-        self
+        Ok(self)
     }
 }
 

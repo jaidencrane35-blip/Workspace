@@ -183,7 +183,8 @@ pub use suggestion::{
 };
 pub use suggestion_lifecycle::{
     classify_suggestion_lifecycle_event, extract_suggestion_id, parse_canonical_resource_ref,
-    SuggestionLifecycleError, SuggestionLifecycleRecord, SuggestionLifecycleState,
+    validate_suggestion_lifecycle_sequence, SuggestionLifecycleError, SuggestionLifecycleRecord,
+    SuggestionLifecycleState,
 };
 pub use suggestion_intent::{
     map_suggestion_type_to_intent, SuggestionIntentError, SuggestionIntentRequest,

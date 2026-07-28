@@ -69,10 +69,13 @@ impl TaskGraphService {
         project_id: Option<String>,
         priority: WorkspaceTaskPriority,
     ) -> Result<WorkspaceTask> {
-        let mut task = WorkspaceTask::new(workspace_id, title, project_id, priority)
+        let task = WorkspaceTask::new(workspace_id, title, project_id, priority)
+            .map_err(KernelError::from)?
+            .transition_status(
+                WorkspaceTaskStatus::Planned,
+                "Created in Task Graph (planned).",
+            )
             .map_err(KernelError::from)?;
-        task.status = WorkspaceTaskStatus::Planned;
-        task.explanation = "Created in Task Graph (planned).".into();
         Self::persist_task(db, &task)?;
         Self::audit(
             db,
@@ -115,7 +118,9 @@ impl TaskGraphService {
             WorkspaceTaskStatus::InProgress => "Marked in progress via Task Graph.".into(),
             other => format!("Status set to {}.", other.as_str()),
         });
-        task = task.with_status(status, explanation);
+        task = task
+            .transition_status(status, explanation)
+            .map_err(KernelError::from)?;
         Self::persist_task(db, &task)?;
         let event = if status == WorkspaceTaskStatus::Completed {
             "task_node.completed"
@@ -175,7 +180,7 @@ impl TaskGraphService {
             && to.status.is_open()
             && from.status != WorkspaceTaskStatus::Completed
         {
-            let _ = Self::update_task_status(
+            Self::update_task_status(
                 db,
                 actor,
                 from.id.as_str(),
@@ -184,19 +189,19 @@ impl TaskGraphService {
                     "This task is waiting because Task {} must complete first.",
                     to.title
                 )),
-            );
+            )?;
         }
         if kind == TaskRelationshipKind::Blocks
             && to.status.is_open()
             && from.status.is_open()
         {
-            let _ = Self::update_task_status(
+            Self::update_task_status(
                 db,
                 actor,
                 to.id.as_str(),
                 WorkspaceTaskStatus::Blocked,
                 Some(format!("This task is blocked by Task {}.", from.title)),
-            );
+            )?;
         }
 
         Self::audit(

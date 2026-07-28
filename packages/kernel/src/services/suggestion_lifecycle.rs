@@ -10,7 +10,7 @@ use std::sync::{Arc, Mutex};
 use workspace_database::Database;
 use workspace_domain::{
     classify_suggestion_lifecycle_event, extract_suggestion_id, parse_canonical_resource_ref,
-    SuggestionLifecycleRecord,
+    validate_suggestion_lifecycle_sequence, SuggestionLifecycleRecord,
 };
 
 use super::AuditService;
@@ -69,6 +69,11 @@ impl SuggestionLifecycleService {
             }
         }
 
+        validate_suggestion_lifecycle_sequence(&records).map_err(|error| {
+            KernelError::SuggestionLifecycleValidation {
+                message: error.to_string(),
+            }
+        })?;
         Ok(records)
     }
 }

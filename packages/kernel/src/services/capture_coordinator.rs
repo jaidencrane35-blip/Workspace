@@ -60,6 +60,20 @@ impl CaptureLifecycleState {
             Self::RejectedConcurrent => "workspace.observation.capture.rejected_concurrent",
         }
     }
+
+    fn allows_transition(self, next: Self) -> bool {
+        matches!(
+            (self, next),
+            (Self::Requested, Self::Started)
+                | (Self::Requested, Self::RejectedConcurrent)
+                | (Self::Started, Self::Completed)
+                | (Self::Started, Self::Failed)
+        )
+    }
+
+    fn is_terminal(self) -> bool {
+        matches!(self, Self::Completed | Self::Failed | Self::RejectedConcurrent)
+    }
 }
 
 /// Process-wide single-flight guard: at most one capture executes at a time.
@@ -69,6 +83,24 @@ static LAST_LIFECYCLE: AtomicU8 = AtomicU8::new(0);
 
 fn record_lifecycle(state: CaptureLifecycleState) {
     LAST_LIFECYCLE.store(state as u8, Ordering::Release);
+}
+
+fn transition_lifecycle(
+    current: &mut CaptureLifecycleState,
+    next: CaptureLifecycleState,
+) -> Result<()> {
+    if !current.allows_transition(next) {
+        return Err(KernelError::IntegrityViolation {
+            message: format!(
+                "invalid observation capture lifecycle transition: {} -> {}",
+                current.as_str(),
+                next.as_str()
+            ),
+        });
+    }
+    *current = next;
+    record_lifecycle(next);
+    Ok(())
 }
 
 struct CaptureFlightGuard;
@@ -133,7 +165,8 @@ impl CaptureCoordinator {
         request: CaptureRequest,
         capture_fn: impl FnOnce() -> Result<WorkspaceObservationCaptureResult>,
     ) -> Result<CaptureCoordinatorResult> {
-        record_lifecycle(CaptureLifecycleState::Requested);
+        let mut lifecycle = CaptureLifecycleState::Requested;
+        record_lifecycle(lifecycle);
         Self::audit_lifecycle(
             db,
             actor,
@@ -146,7 +179,7 @@ impl CaptureCoordinator {
         )?;
 
         let Some(_guard) = CaptureFlightGuard::try_acquire() else {
-            record_lifecycle(CaptureLifecycleState::RejectedConcurrent);
+            transition_lifecycle(&mut lifecycle, CaptureLifecycleState::RejectedConcurrent)?;
             Self::audit_lifecycle(
                 db,
                 actor,
@@ -160,7 +193,7 @@ impl CaptureCoordinator {
             return Ok(CaptureCoordinatorResult::RejectedConcurrent);
         };
 
-        record_lifecycle(CaptureLifecycleState::Started);
+        transition_lifecycle(&mut lifecycle, CaptureLifecycleState::Started)?;
         Self::audit_lifecycle(
             db,
             actor,
@@ -174,7 +207,7 @@ impl CaptureCoordinator {
 
         match capture_fn() {
             Ok(capture) => {
-                record_lifecycle(CaptureLifecycleState::Completed);
+                transition_lifecycle(&mut lifecycle, CaptureLifecycleState::Completed)?;
                 Self::audit_lifecycle(
                     db,
                     actor,
@@ -188,7 +221,7 @@ impl CaptureCoordinator {
                 Ok(CaptureCoordinatorResult::Completed(capture))
             }
             Err(error) => {
-                record_lifecycle(CaptureLifecycleState::Failed);
+                transition_lifecycle(&mut lifecycle, CaptureLifecycleState::Failed)?;
                 let _ = Self::audit_lifecycle(
                     db,
                     actor,
@@ -528,5 +561,22 @@ mod tests {
         )
         .unwrap_err();
         assert!(matches!(err, KernelError::ObservationCaptureInProgress));
+    }
+
+    #[test]
+    fn capture_lifecycle_rejects_skips_and_terminal_reentry() {
+        let mut lifecycle = CaptureLifecycleState::Requested;
+        assert!(matches!(
+            transition_lifecycle(&mut lifecycle, CaptureLifecycleState::Completed),
+            Err(KernelError::IntegrityViolation { .. })
+        ));
+        assert_eq!(lifecycle, CaptureLifecycleState::Requested);
+        transition_lifecycle(&mut lifecycle, CaptureLifecycleState::Started).unwrap();
+        transition_lifecycle(&mut lifecycle, CaptureLifecycleState::Completed).unwrap();
+        assert!(lifecycle.is_terminal());
+        assert!(matches!(
+            transition_lifecycle(&mut lifecycle, CaptureLifecycleState::Started),
+            Err(KernelError::IntegrityViolation { .. })
+        ));
     }
 }

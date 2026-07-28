@@ -4130,7 +4130,10 @@ impl CommandHandler {
         }
 
         log::info!("COMMAND: ShutdownWorkspace (actor=system, intent=SystemShutdown)");
-        kernel.transition_lifecycle(LifecycleState::ShuttingDown);
+        if let Err(error) = kernel.transition_lifecycle(LifecycleState::ShuttingDown) {
+            log::error!("ShutdownWorkspace lifecycle transition rejected: {error}");
+            return;
+        }
         kernel.event_bus().publish(DomainEvent::WorkspaceShutdown(WorkspaceShutdown {
             actor: Some(ActorContext::system()),
             intent: Some(IntentContext::system_shutdown()),

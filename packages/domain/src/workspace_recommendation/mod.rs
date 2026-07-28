@@ -2809,7 +2809,7 @@ impl RecommendationItem {
             | Some("rejected")
             | Some("expired")
             | Some("superseded") => false,
-            Some(_) => true,
+            Some(_) => false,
         }
     }
 

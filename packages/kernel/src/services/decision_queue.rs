@@ -451,10 +451,7 @@ impl DecisionQueueService {
             &workspace_id,
             decision_item_id,
         )?;
-        if matches!(
-            item.decision_state,
-            DecisionState::Accepted | DecisionState::Rejected | DecisionState::Expired
-        ) {
+        if !item.decision_state.allows_overlay_transition(state) {
             return Err(KernelError::DecisionQueueValidation {
                 message: DecisionQueueError::InvalidTransition {
                     from: item.decision_state.as_str().into(),

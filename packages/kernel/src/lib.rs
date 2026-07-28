@@ -214,8 +214,11 @@ impl WorkspaceKernel {
         AuditEventSubscriber::register(&self.event_bus, self.database.shared());
     }
 
-    pub(crate) fn transition_lifecycle(&mut self, lifecycle: crate::lifecycle::LifecycleState) {
-        self.state.transition(lifecycle);
+    pub(crate) fn transition_lifecycle(
+        &mut self,
+        lifecycle: crate::lifecycle::LifecycleState,
+    ) -> Result<()> {
+        self.state.transition(lifecycle)
     }
 
     pub(crate) fn command_context(

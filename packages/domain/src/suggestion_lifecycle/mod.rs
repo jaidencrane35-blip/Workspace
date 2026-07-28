@@ -6,6 +6,8 @@
 //! and non-authoritative: the audit trail remains the source of truth. Pure
 //! domain types only — no database, kernel, or UI dependencies.
 
+use std::collections::HashMap;
+
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -45,6 +47,24 @@ impl SuggestionLifecycleState {
             _ => Err(SuggestionLifecycleError::InvalidState(value.to_string())),
         }
     }
+
+    pub fn is_terminal(self) -> bool {
+        matches!(self, Self::Accepted | Self::Rejected | Self::Expired)
+    }
+
+    pub fn allows_transition(self, next: Self) -> bool {
+        matches!(
+            (self, next),
+            (Self::Created, Self::Presented)
+                | (Self::Created, Self::Accepted)
+                | (Self::Created, Self::Rejected)
+                | (Self::Created, Self::Expired)
+                | (Self::Presented, Self::Presented)
+                | (Self::Presented, Self::Accepted)
+                | (Self::Presented, Self::Rejected)
+                | (Self::Presented, Self::Expired)
+        )
+    }
 }
 
 /// Lifecycle-specific validation errors.
@@ -58,6 +78,13 @@ pub enum SuggestionLifecycleError {
 
     #[error("Invalid suggestion lifecycle state: {0}")]
     InvalidState(String),
+
+    #[error("Invalid suggestion lifecycle transition for {suggestion_id}: {from} -> {to}")]
+    InvalidTransition {
+        suggestion_id: String,
+        from: String,
+        to: String,
+    },
 }
 
 /// A derived lifecycle record for one suggestion at one point in time.
@@ -82,6 +109,25 @@ impl SuggestionLifecycleRecord {
         }
         Ok(())
     }
+}
+
+pub fn validate_suggestion_lifecycle_sequence(
+    records: &[SuggestionLifecycleRecord],
+) -> Result<(), SuggestionLifecycleError> {
+    let mut current_by_suggestion: HashMap<&str, SuggestionLifecycleState> = HashMap::new();
+    for record in records.iter().rev() {
+        if let Some(current) = current_by_suggestion.get(record.suggestion_id.as_str()) {
+            if !current.allows_transition(record.state) {
+                return Err(SuggestionLifecycleError::InvalidTransition {
+                    suggestion_id: record.suggestion_id.clone(),
+                    from: current.as_str().into(),
+                    to: record.state.as_str().into(),
+                });
+            }
+        }
+        current_by_suggestion.insert(record.suggestion_id.as_str(), record.state);
+    }
+    Ok(())
 }
 
 /// Classifies an audit event into a suggestion lifecycle state when applicable.
@@ -231,5 +277,30 @@ mod tests {
     fn extracts_suggestion_id_from_metadata() {
         let id = extract_suggestion_id(Some(r#"{"suggestion_id":"s-1"}"#));
         assert_eq!(id.as_deref(), Some("s-1"));
+    }
+
+    #[test]
+    fn sequence_validation_keeps_terminal_states_terminal() {
+        let presented = SuggestionLifecycleRecord {
+            suggestion_id: "s-1".into(),
+            state: SuggestionLifecycleState::Presented,
+            occurred_at: "2026-07-24T00:00:00Z".into(),
+            actor_type: ActorType::LocalUser,
+            actor_id: Some("local-user".into()),
+            related_resource_ref: None,
+            metadata: None,
+        };
+        let mut accepted = presented.clone();
+        accepted.state = SuggestionLifecycleState::Accepted;
+        accepted.occurred_at = "2026-07-24T00:01:00Z".into();
+        assert!(validate_suggestion_lifecycle_sequence(&[
+            accepted.clone(),
+            presented.clone(),
+        ])
+        .is_ok());
+        assert!(matches!(
+            validate_suggestion_lifecycle_sequence(&[presented, accepted]),
+            Err(SuggestionLifecycleError::InvalidTransition { .. })
+        ));
     }
 }

@@ -569,6 +569,14 @@ impl DecisionEngineService {
         let candidate = repo
             .get_intake_candidate(&workspace_id, &intake_candidate_id)?
             .ok_or_else(|| KernelError::from(DecisionEngineError::NotFound))?;
+        if let Some(existing) =
+            repo.get_intake_evaluation_for_candidate(&workspace_id, &intake_candidate_id)?
+        {
+            return Err(KernelError::from(DecisionEngineError::InvalidTransition {
+                from: existing.evaluation_state,
+                to: evaluation_state,
+            }));
+        }
         let evaluation = DecisionEngineIntakeEvaluation::try_evaluate(
             &candidate,
             evaluation_state,

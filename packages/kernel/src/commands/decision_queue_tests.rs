@@ -600,6 +600,46 @@ fn dismiss_does_not_mutate_source_proposal() {
 }
 
 #[test]
+fn dismissed_decision_item_is_terminal() {
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let (workspace_id, project_id, _) = seed_project(&kernel);
+    let proposal = seed_pending_proposal(&kernel, workspace_id.clone(), project_id);
+    let actor = ActorContext::local_user();
+    let intent = IntentContext::user_request();
+    let queue = CommandHandler::generate_decision_queue(
+        &kernel,
+        actor.clone(),
+        intent.clone(),
+        workspace_id.clone(),
+    )
+    .unwrap();
+    let item_id = queue
+        .items
+        .iter()
+        .find(|item| item.source_id == proposal.id.as_str())
+        .unwrap()
+        .id
+        .to_string();
+    CommandHandler::dismiss_decision_item(
+        &kernel,
+        actor.clone(),
+        intent.clone(),
+        workspace_id.clone(),
+        item_id.clone(),
+    )
+    .unwrap();
+    let error = CommandHandler::mark_decision_item_viewed(
+        &kernel,
+        actor,
+        intent,
+        workspace_id,
+        item_id,
+    )
+    .unwrap_err();
+    assert!(matches!(error, KernelError::DecisionQueueValidation { .. }));
+}
+
+#[test]
 fn ai_actor_cannot_write_decision_queue() {
     let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
     let (ws, project_id, _) = seed_project(&kernel);

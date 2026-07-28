@@ -155,6 +155,26 @@ impl DecisionState {
             Self::Pending | Self::Viewed | Self::Deferred | Self::Dismissed
         )
     }
+
+    pub fn is_terminal(self) -> bool {
+        matches!(
+            self,
+            Self::Dismissed | Self::Accepted | Self::Rejected | Self::Expired
+        )
+    }
+
+    pub fn allows_overlay_transition(self, next: Self) -> bool {
+        matches!(
+            (self, next),
+            (Self::Pending, Self::Viewed)
+                | (Self::Pending, Self::Deferred)
+                | (Self::Pending, Self::Dismissed)
+                | (Self::Viewed, Self::Deferred)
+                | (Self::Viewed, Self::Dismissed)
+                | (Self::Deferred, Self::Viewed)
+                | (Self::Deferred, Self::Dismissed)
+        )
+    }
 }
 
 /// Display / ordering priority.

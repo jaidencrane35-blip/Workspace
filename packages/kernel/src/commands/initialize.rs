@@ -55,7 +55,7 @@ impl InitializeWorkspace {
 
         let mut state = WorkspaceState::new(KERNEL_VERSION);
         let mut services = ServiceRegistry::new();
-        state.transition(LifecycleState::Initializing);
+        state.transition(LifecycleState::Initializing)?;
 
         let database = if self.db_path.to_string_lossy() == ":memory:" {
             Self::initialize_in_memory_database(&mut services)?
@@ -67,8 +67,10 @@ impl InitializeWorkspace {
             .map_err(|error| {
                 log::error!("InitializeWorkspace database failure: {error}");
                 services.register(SERVICE_DATABASE, ServiceStatus::Failed);
-                state.transition(LifecycleState::Error);
-                error
+                match state.transition(LifecycleState::Error) {
+                    Ok(()) => KernelError::from(error),
+                    Err(transition_error) => transition_error,
+                }
             })?;
             services.register(SERVICE_DATABASE, ServiceStatus::Healthy);
             service.into_database()
@@ -76,8 +78,10 @@ impl InitializeWorkspace {
             let service = DatabaseService::initialize(&self.db_path).map_err(|error| {
                 log::error!("InitializeWorkspace database failure: {error}");
                 services.register(SERVICE_DATABASE, ServiceStatus::Failed);
-                state.transition(LifecycleState::Error);
-                error
+                match state.transition(LifecycleState::Error) {
+                    Ok(()) => KernelError::from(error),
+                    Err(transition_error) => transition_error,
+                }
             })?;
             services.register(SERVICE_DATABASE, ServiceStatus::Healthy);
             service.into_database()
@@ -86,13 +90,15 @@ impl InitializeWorkspace {
         ConfigurationService::initialize(&database).map_err(|error| {
             log::error!("InitializeWorkspace configuration failure: {error}");
             services.register(SERVICE_CONFIGURATION, ServiceStatus::Failed);
-            state.transition(LifecycleState::Error);
-            KernelError::ServiceStartup(SERVICE_CONFIGURATION)
+            match state.transition(LifecycleState::Error) {
+                Ok(()) => KernelError::ServiceStartup(SERVICE_CONFIGURATION),
+                Err(transition_error) => transition_error,
+            }
         })?;
         services.register(SERVICE_CONFIGURATION, ServiceStatus::Healthy);
         services.register(SERVICE_WORKSPACE, ServiceStatus::Healthy);
 
-        state.transition(LifecycleState::Ready);
+        state.transition(LifecycleState::Ready)?;
 
         event_bus.publish(DomainEvent::WorkspaceReady(WorkspaceReady {
             version: KERNEL_VERSION.to_string(),

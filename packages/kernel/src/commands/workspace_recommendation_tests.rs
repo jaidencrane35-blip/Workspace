@@ -1319,3 +1319,26 @@ fn case18_terminal_excluded_from_active_summary() {
     assert_eq!(summary.authority_effect, "none");
     assert_cannot_execute(CommandHandler::workspace_recommendation_engine_attempt_execute());
 }
+
+/// CASE 19 — Unknown persisted lifecycle values fail closed on actionable surfaces.
+#[test]
+fn case19_unknown_lifecycle_is_not_actionable() {
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let (workspace_id, _) = seed(&kernel);
+    let mut state = CommandHandler::generate_workspace_recommendation_engine(
+        &kernel,
+        ActorContext::local_user(),
+        IntentContext::user_request(),
+        workspace_id,
+    )
+    .unwrap();
+    let candidate = state.candidates.first_mut().expect("recommendation");
+    candidate.lifecycle_state = Some("corrupt_state".into());
+    let candidate_id = candidate.id.clone();
+    assert!(!candidate.is_active_lifecycle());
+    let summary = state.summary_projection(12);
+    assert!(summary
+        .top_candidates
+        .iter()
+        .all(|item| item.id != candidate_id));
+}

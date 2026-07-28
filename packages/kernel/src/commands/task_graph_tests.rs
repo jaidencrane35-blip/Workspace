@@ -224,6 +224,43 @@ fn case4_completed_not_recommended() {
     }));
 }
 
+#[test]
+fn completed_task_cannot_reenter_open_lifecycle() {
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let (workspace_id, _) = seed_workspace(&kernel);
+    let actor = ActorContext::local_user();
+    let intent = IntentContext::user_request();
+    let task = CommandHandler::create_workspace_task(
+        &kernel,
+        actor.clone(),
+        intent.clone(),
+        workspace_id,
+        "Terminal task".into(),
+        None,
+        WorkspaceTaskPriority::Medium,
+    )
+    .unwrap();
+    CommandHandler::update_workspace_task_status(
+        &kernel,
+        actor.clone(),
+        intent.clone(),
+        task.id.to_string(),
+        WorkspaceTaskStatus::Completed,
+        None,
+    )
+    .unwrap();
+    let error = CommandHandler::update_workspace_task_status(
+        &kernel,
+        actor,
+        intent,
+        task.id.to_string(),
+        WorkspaceTaskStatus::InProgress,
+        None,
+    )
+    .unwrap_err();
+    assert!(matches!(error, KernelError::TaskGraphValidation { .. }));
+}
+
 /// CASE 5 — Planner consumes graph nodes without duplicating task state.
 #[test]
 fn case5_planner_consumes_graph_nodes() {
