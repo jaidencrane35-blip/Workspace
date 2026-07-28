@@ -89,6 +89,7 @@ export const PUBLIC_ERROR_CODES = [
   "workspace_profile_validation_error",
   "workspace_purpose_validation_error",
   "workspace_readiness_validation_error",
+  "workspace_reasoning_memory_validation_error",
   "workspace_recommendation_engine_validation_error",
   "workspace_session_validation_error",
   "workspace_transition_validation_error",

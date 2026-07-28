@@ -151,6 +151,20 @@ Rules:
   assumptions. No planning mutation ownership in the UI.
 - Restart reconstructs durable snapshots — no planning replay, no fabricated evidence.
 
+### Reasoning Memory (Programme II Batch 3)
+
+- **Current:** `ReasoningSnapshot.current` — at most one `current` reasoning record.
+  Evidence only; never execute / approve / dispatch / convert to commands.
+- **History:** superseded / archived via append-only `reasoning_history` →
+  `ReasoningHistoryEntry` (`terminal: true`, `actionable: false`, `authority_effect: none`).
+- **`history_count`** is authoritative; summary windows may truncate `history`.
+- Records reference planning / intent / task / RE / DE / memory by identity only.
+- Confidence and uncertainty evolution trails are retained on the durable record.
+- React may display current reasoning, history, confidence, uncertainty, reflection,
+  and lessons — no action buttons or mutation controls.
+- Restart reconstructs durable current + history; missing reasoning remains missing
+  (never fabricate).
+
 ## Serde defaults vs TypeScript required fields
 
 Rust history fields often use `#[serde(default)]` so older persisted / in-flight JSON

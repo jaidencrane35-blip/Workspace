@@ -99,6 +99,9 @@ use crate::commands::workspace_cognitive_model::{
 use crate::commands::workspace_planning::{
     GeneratePlanningSnapshot, GetPlanningSnapshot, GetPlanningSummary,
 };
+use crate::commands::workspace_reasoning_memory::{
+    GenerateReasoningRecord, GetReasoningRecord, GetReasoningSummary,
+};
 use crate::commands::zone::{CreateZone, DeleteZone, GetZone};
 use crate::config::{SettingsUpdate, WorkspaceSettings};
 use crate::error::{KernelError, Result};
@@ -155,6 +158,7 @@ use workspace_domain::{
     AiProposalAuthorityOutcome, AiProposalEvaluation, AiProposalSubmission, ApplicationId,
     ApplicationReference, AuditEvent, Capability, CapabilitySet, CognitiveModelState, CognitiveNode,
     CognitiveRelation, IntentContext, Layout, PlanningSnapshot, PlanningSummary,
+    ReasoningSnapshot, ReasoningSummary,
     LayoutId, LayoutMetadata, LayoutNode, LayoutSnapshot, MemoryEntry, MemoryType,
     ModelProviderDescriptor, ModelResponse, Observation, PersonalizedPlanComparison,
     PreferenceCategory, PreferenceSource, Suggestion, SuggestionIntentRequest,
@@ -2341,6 +2345,42 @@ impl CommandHandler {
     /// Architecture guard — Planning Engine must never execute.
     pub fn workspace_planning_attempt_execute() -> Result<()> {
         crate::services::WorkspacePlanningService::attempt_execute()
+    }
+
+    pub fn generate_reasoning_record(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<ReasoningSnapshot> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_mutation(GenerateReasoningRecord::new(workspace_id))
+    }
+
+    pub fn get_reasoning_record(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<ReasoningSnapshot> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetReasoningRecord::new(workspace_id))
+    }
+
+    pub fn get_reasoning_summary(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        history_limit: usize,
+    ) -> Result<ReasoningSummary> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetReasoningSummary::new(workspace_id, history_limit))
+    }
+
+    /// Architecture guard — Reasoning Memory must never execute.
+    pub fn workspace_reasoning_memory_attempt_execute() -> Result<()> {
+        crate::services::WorkspaceReasoningMemoryService::attempt_execute()
     }
 
     #[allow(clippy::too_many_arguments)]

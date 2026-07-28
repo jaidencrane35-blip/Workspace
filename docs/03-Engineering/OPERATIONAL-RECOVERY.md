@@ -22,14 +22,15 @@
 
 | Question | Contract |
 |----------|----------|
-| What survives restart? | Durable rows: execution lifecycle, recommendation/DE/DQ/task overlays, audit events, schema/migrations ledger |
-| What is reconstructed? | Projections re-derived from services on generate; execution stale claims reconciled via existing service rules |
-| What is missing? | In-memory AI plan/workflow stores (diagnostic only); audit windows beyond scan limits; in-progress claims beyond the startup sweep cap until lazy reconcile |
-| What must fail closed? | Incomplete terminal evidence; empty capability grants; poisoned DB locks; interrupted migrations; non-retryable stale claims |
+| What survives restart? | Durable rows: execution lifecycle, recommendation/DE/DQ/task overlays, planning artefacts, reasoning records + append-only reasoning history, audit events, schema/migrations ledger |
+| What is reconstructed? | Projections re-derived from services on generate/load; execution stale claims reconciled via existing service rules; planning/reasoning snapshots loaded from durable tables |
+| What is missing? | In-memory AI plan/workflow stores (diagnostic only); audit windows beyond scan limits; in-progress claims beyond the startup sweep cap until lazy reconcile; **absent reasoning remains absent** |
+| What must fail closed? | Incomplete terminal evidence; empty capability grants; poisoned DB locks; interrupted migrations; non-retryable stale claims; fabricated reasoning |
 
 Recovery must **never**:
 
 - invent terminal evidence (including fabricating `Completed`)
+- fabricate reasoning records or actionable reasoning history
 - recreate desktop actions
 - bypass PermissionGateway / CommandPipeline for user mutations
 - silently “heal” lifecycle into an open actionable state
@@ -95,7 +96,10 @@ scan floor so small `limit` queries still observe ExecuteIntentRequest evidence.
 
 ## Transactional continuity
 
-Recommendation supersede+fresh and Decision Engine creation+overlay dual-writes use `Database::run_in_transaction`. On second-write failure the first write rolls back. Repositories remain transition/immutability **guards** inside the transaction — the transaction is not a hidden lifecycle owner.
+Recommendation supersede+fresh, Decision Engine creation+overlay dual-writes, and
+Reasoning Memory supersede+insert use `Database::run_in_transaction`. On second-write
+failure the first write rolls back. Repositories remain transition/immutability
+**guards** inside the transaction — the transaction is not a hidden lifecycle owner.
 
 ## WAL durability (file databases)
 

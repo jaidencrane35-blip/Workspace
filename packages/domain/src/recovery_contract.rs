@@ -7,6 +7,7 @@
 use crate::audit::AuditEvent;
 use crate::execution_reconciliation::{ExecutionLifecycleRecord, ExecutionState};
 use crate::workspace_recommendation::RecommendationHistoryEntry;
+use crate::workspace_reasoning_memory::{ReasoningHistoryEntry, ReasoningSnapshot};
 
 /// Documented startup in-progress sweep cap (must match
 /// `ExecutionLifecycleService::STARTUP_IN_PROGRESS_SWEEP_LIMIT`).
@@ -47,10 +48,28 @@ pub fn recovery_must_not_fabricate_actionable_history(entry: &RecommendationHist
     !entry.actionable
 }
 
-/// Recovery must never invent a Completed terminal from a stale claim.
+/// Recovery must never invent Completed terminal from a stale claim.
 pub fn recovery_must_not_invent_completed(record: &ExecutionLifecycleRecord) -> bool {
     record.state != ExecutionState::Completed
         || record.completed_at.as_ref().is_some_and(|t| !t.trim().is_empty())
+}
+
+/// Missing reasoning remains missing — never fabricate a current record on restart.
+pub fn recovery_must_not_fabricate_reasoning(snapshot: &ReasoningSnapshot) -> bool {
+    snapshot.is_non_commandable()
+        && snapshot.history.iter().all(|h| h.is_non_actionable())
+        && snapshot
+            .current
+            .as_ref()
+            .map(|c| c.is_non_executing())
+            .unwrap_or(true)
+}
+
+/// Fabricated actionable reasoning history must fail the recovery contract.
+pub fn recovery_must_not_fabricate_actionable_reasoning_history(
+    entry: &ReasoningHistoryEntry,
+) -> bool {
+    entry.is_non_actionable()
 }
 
 /// Recovery diagnostics are observational audit evidence only.
@@ -148,5 +167,31 @@ mod tests {
             .with_command_name("ExecuteIntentRequest")
             .with_metadata(r#"{"authority_effect":"none"}"#);
         assert!(!recovery_diagnostic_is_evidence_only(&event));
+    }
+
+    #[test]
+    fn recovery_never_fabricates_reasoning_on_empty_snapshot() {
+        let empty = ReasoningSnapshot::assemble("ws", None, vec![], 0, "t0");
+        assert!(recovery_must_not_fabricate_reasoning(&empty));
+        assert!(empty.current.is_none());
+        assert_eq!(empty.history_count, 0);
+    }
+
+    #[test]
+    fn recovery_rejects_actionable_reasoning_history() {
+        let bad = ReasoningHistoryEntry {
+            record_id: "reasoning:1".into(),
+            title: "x".into(),
+            status: "superseded".into(),
+            confidence: 50,
+            uncertainty: 50,
+            created_at: "t0".into(),
+            superseded_at: Some("t1".into()),
+            reflection_excerpt: "".into(),
+            terminal: true,
+            actionable: true,
+            authority_effect: "none".into(),
+        };
+        assert!(!recovery_must_not_fabricate_actionable_reasoning_history(&bad));
     }
 }

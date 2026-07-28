@@ -15,6 +15,8 @@ Canonical product language. Prefer these terms in UI, docs, and Assistant copy.
 | **Planning Snapshot** | Durable Cognitive Planning Engine projection (current + history) | AiPlan, Assistant plan |
 | **Planning Proposal** | Active non-executing sequenced plan artefact | Executable workflow, Task Graph mutation |
 | **Planning History** | Terminal superseded/abandoned plan evidence only | Actionable plan queue |
+| **Reasoning Record** | Durable evidence of hypothesis/assumptions/reflection (never executes) | Conversational memory, AiPlan |
+| **Reasoning History** | Append-only superseded/archived reasoning evidence | Actionable reasoning queue |
 | **Task** | Durable work item | Action |
 | **Action** | Executable catalog/command candidate | Task |
 | **Automation Contract** | Stored future-intent definition (approval ≠ execution) | Automation, Policy |

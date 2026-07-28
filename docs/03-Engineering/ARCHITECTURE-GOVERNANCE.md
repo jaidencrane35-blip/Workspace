@@ -169,6 +169,26 @@ See [Persistence Boundary Governance](./PERSISTENCE-BOUNDARY-GOVERNANCE.md). Sum
 
 See [Planning Architecture](../05-AI/PLANNING-ARCHITECTURE.md).
 
+## Reasoning Memory (Programme II Batch 3)
+
+`WorkspaceReasoningMemoryService` is the sole **reasoning evidence** owner — not a
+lifecycle, planning, or execution authority. Governance verifies:
+
+| Property | Value |
+|----------|-------|
+| Lifecycle owner | No |
+| Execution authority | No |
+| Planning authority | No |
+| Evidence owner | Yes |
+
+- `ReasoningHistoryEntry` / `ReasoningSummary` contain no authority/command fields.
+- Mutation inventory includes `GenerateReasoningRecord`.
+- Reasoning service cannot launch execution or call `PermissionGateway::require`.
+- Repository persists only; it does not own reasoning composition logic.
+- React cannot mutate reasoning (projection helpers only).
+
+See [Reasoning Memory Architecture](../05-AI/REASONING-MEMORY-ARCHITECTURE.md).
+
 ## Capability boundary audit
 
 Enforced by `scripts/architecture-governance-lib.mjs`:

@@ -47,6 +47,7 @@ pub mod workspace_activity;
 pub mod workspace_attention;
 pub mod workspace_cognitive_model;
 pub mod workspace_planning;
+pub mod workspace_reasoning_memory;
 pub mod workspace_composition;
 pub mod workspace_purpose;
 pub mod workspace_evolution;
@@ -442,6 +443,10 @@ pub use workspace_planning::{
     PlanningHistoryEntry, PlanningPlan, PlanningPlanStatus, PlanningProposal, PlanningRisk,
     PlanningSection, PlanningSnapshot, PlanningStep, PlanningSummary, WorkspacePlanningError,
 };
+pub use workspace_reasoning_memory::{
+    ReasoningEvidenceReference, ReasoningHistoryEntry, ReasoningLink, ReasoningRecord,
+    ReasoningRecordStatus, ReasoningSnapshot, ReasoningSummary, WorkspaceReasoningMemoryError,
+};
 pub use workspace_task_graph::{
     would_create_cycle, TaskDependency, TaskGraph, TaskGraphError, TaskGraphSummary, TaskHistoryEntry,
     TaskMetadata, TaskNode, TaskRelationship, TaskRelationshipKind, WorkspaceTask,
@@ -505,7 +510,9 @@ pub use recovery_contract::{
     history_evidence_is_complete, in_progress_claim_is_not_terminal_evidence,
     recovered_stale_claim_is_non_retryable, recovery_diagnostic_event_type_is_non_commandable,
     recovery_diagnostic_is_evidence_only, recovery_must_not_fabricate_actionable_history,
-    recovery_must_not_invent_completed, RECOVERY_DIAGNOSTIC_ATTEMPTED,
-    RECOVERY_DIAGNOSTIC_COMPLETED, RECOVERY_DIAGNOSTIC_EVENT_TYPES, RECOVERY_DIAGNOSTIC_FAILED,
-    RECOVERY_SUBSYSTEM_EXECUTION_LIFECYCLE, STARTUP_IN_PROGRESS_SWEEP_LIMIT,
+    recovery_must_not_fabricate_actionable_reasoning_history,
+    recovery_must_not_fabricate_reasoning, recovery_must_not_invent_completed,
+    RECOVERY_DIAGNOSTIC_ATTEMPTED, RECOVERY_DIAGNOSTIC_COMPLETED, RECOVERY_DIAGNOSTIC_EVENT_TYPES,
+    RECOVERY_DIAGNOSTIC_FAILED, RECOVERY_SUBSYSTEM_EXECUTION_LIFECYCLE,
+    STARTUP_IN_PROGRESS_SWEEP_LIMIT,
 };

@@ -15,7 +15,7 @@ const read = (file) => fs.readFileSync(file, "utf8");
 const sorted = (values) => [...new Set(values)].sort();
 
 /** Minimum MutationCommand inventory — dropping below this fails closed. */
-export const MUTATION_COMMAND_BASELINE = 55;
+export const MUTATION_COMMAND_BASELINE = 56;
 
 /** Capability id → authority owner (permission-token scope, not lifecycle owner). */
 export const CAPABILITY_AUTHORITY_OWNERS = {
@@ -96,6 +96,7 @@ export const HISTORY_STRUCTS = [
   "TaskHistoryEntry",
   "ExecutionLifecycleHistoryEntry",
   "PlanningHistoryEntry",
+  "ReasoningHistoryEntry",
 ];
 
 export const PROJECTION_SUMMARY_STRUCTS = [
@@ -105,6 +106,7 @@ export const PROJECTION_SUMMARY_STRUCTS = [
   "TaskGraphSummary",
   "ExecutionLifecycleProjection",
   "PlanningSummary",
+  "ReasoningSummary",
 ];
 
 /** Append-only recovery diagnostic event types — evidence only, never commands. */
@@ -140,6 +142,7 @@ const LIFECYCLE_SERVICE_FILES = new Set([
   "suggestion.rs",
   "suggestion_lifecycle.rs",
   "workspace_planning.rs",
+  "workspace_reasoning_memory.rs",
 ]);
 
 /**

@@ -2196,6 +2196,80 @@ export interface PlanningSummary {
   authority_effect: string;
 }
 
+/** Programme II Reasoning Memory — terminal evidence only (never actionable). */
+export interface ReasoningHistoryEntry {
+  record_id: string;
+  title: string;
+  status: string;
+  confidence: number;
+  uncertainty: number;
+  created_at: string;
+  superseded_at: string | null;
+  reflection_excerpt: string;
+  terminal: boolean;
+  actionable: boolean;
+  authority_effect: string;
+}
+
+export interface ReasoningEvidenceReference {
+  external_ref: string;
+  kind: string;
+}
+
+export interface ReasoningLink {
+  external_ref: string;
+  kind: string;
+  note: string;
+}
+
+export interface ReasoningRecord {
+  id: string;
+  workspace_id: string;
+  title: string;
+  status: string;
+  hypothesis: string;
+  assumptions: string[];
+  alternatives: string[];
+  rejected_alternatives: string[];
+  evidence_refs: ReasoningEvidenceReference[];
+  links: ReasoningLink[];
+  confidence: number;
+  uncertainty: number;
+  confidence_evolution: number[];
+  uncertainty_evolution: number[];
+  reflection: string;
+  lessons: string[];
+  rationale: string;
+  created_at: string;
+  updated_at: string;
+  superseded_at: string | null;
+  authority_effect: string;
+}
+
+export interface ReasoningSnapshot {
+  workspace_id: string;
+  generated_at: string;
+  current: ReasoningRecord | null;
+  history: ReasoningHistoryEntry[];
+  history_count: number;
+  authority_effect: string;
+}
+
+export interface ReasoningSummary {
+  workspace_id: string;
+  generated_at: string;
+  has_current: boolean;
+  current_id: string | null;
+  current_title: string | null;
+  confidence: number | null;
+  uncertainty: number | null;
+  reflection_excerpt: string;
+  lesson_count: number;
+  history: ReasoningHistoryEntry[];
+  history_count: number;
+  authority_effect: string;
+}
+
 export type WindowIdentityConfidence = "high" | "medium" | "low" | "ephemeral";
 
 export interface WorkspaceObservationPass {

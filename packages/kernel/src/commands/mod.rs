@@ -12,6 +12,7 @@ mod workspace_environment;
 mod workspace_composition;
 mod workspace_cognitive_model;
 mod workspace_planning;
+mod workspace_reasoning_memory;
 mod workspace_purpose;
 mod workspace_evolution;
 mod workspace_recommendation;
@@ -119,6 +120,8 @@ mod workspace_continuity_tests;
 mod workspace_cognitive_model_tests;
 #[cfg(test)]
 mod workspace_planning_tests;
+#[cfg(test)]
+mod workspace_reasoning_memory_tests;
 #[cfg(test)]
 mod workspace_attention_tests;
 #[cfg(test)]
@@ -394,5 +397,8 @@ pub use workspace_cognitive_model::{
 };
 pub use workspace_planning::{
     GeneratePlanningSnapshot, GetPlanningSnapshot, GetPlanningSummary,
+};
+pub use workspace_reasoning_memory::{
+    GenerateReasoningRecord, GetReasoningRecord, GetReasoningSummary,
 };
 pub use zone::{CreateZone, DeleteZone, GetZone};

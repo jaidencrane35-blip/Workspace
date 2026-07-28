@@ -11,8 +11,9 @@ use workspace_domain::{
     WorkspaceIntelligenceError, WorkspaceIntentError, WorkspaceInteractionError,
     WorkspaceMilestoneError, WorkspaceNavigationError, WorkspaceOperatingStateError,
     WorkspacePatternError, WorkspacePlanningError, WorkspaceProfileError, WorkspacePurposeError,
-    WorkspaceReadinessError, WorkspaceRecommendationEngineError, WorkspaceSessionError,
-    WorkspaceTransitionError, WorkspaceWorkContextError, WorkspaceWorkingStyleError,
+    WorkspaceReadinessError, WorkspaceRecommendationEngineError, WorkspaceReasoningMemoryError,
+    WorkspaceSessionError, WorkspaceTransitionError, WorkspaceWorkContextError,
+    WorkspaceWorkingStyleError,
 };
 
 #[derive(Debug, Error)]
@@ -231,6 +232,9 @@ pub enum KernelError {
 
     #[error("Workspace planning validation failed: {message}")]
     WorkspacePlanningValidation { message: String },
+
+    #[error("Workspace reasoning memory validation failed: {message}")]
+    WorkspaceReasoningMemoryValidation { message: String },
 
     #[error("Workspace intelligence validation failed: {message}")]
     WorkspaceIntelligenceValidation { message: String },
@@ -468,6 +472,17 @@ impl From<WorkspacePlanningError> for KernelError {
         match error {
             WorkspacePlanningError::Domain(domain) => KernelError::from(domain),
             other => KernelError::WorkspacePlanningValidation {
+                message: other.to_string(),
+            },
+        }
+    }
+}
+
+impl From<WorkspaceReasoningMemoryError> for KernelError {
+    fn from(error: WorkspaceReasoningMemoryError) -> Self {
+        match error {
+            WorkspaceReasoningMemoryError::Domain(domain) => KernelError::from(domain),
+            other => KernelError::WorkspaceReasoningMemoryValidation {
                 message: other.to_string(),
             },
         }
@@ -1126,6 +1141,10 @@ impl KernelError {
             },
             KernelError::WorkspacePlanningValidation { message } => PublicError {
                 code: "workspace_planning_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::WorkspaceReasoningMemoryValidation { message } => PublicError {
+                code: "workspace_reasoning_memory_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::WorkspaceIntelligenceValidation { message } => PublicError {

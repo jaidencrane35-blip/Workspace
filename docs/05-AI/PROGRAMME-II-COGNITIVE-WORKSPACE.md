@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | **Purpose** | Evolve Workspace from object/lifecycle/evidence awareness into a governed cognitive system |
-| **Status** | Active — Batch 2 in progress |
+| **Status** | Active — Batch 3 in progress |
 | **Depends on** | Programme I governance, operational recovery, Intent/Task Graph, RE/DE/DQ, Planning foundations |
 | **Non-goals** | Embeddings/vector RAG as architectural memory; silent autonomous mutation; duplicate lifecycle systems |
 
@@ -22,33 +22,32 @@
 
 | Batch | Theme | Role | Status |
 |-------|-------|------|--------|
-| **1** | Workspace Cognitive Model | Durable semantic layer: Goal/Objective/Initiative/Milestone/Context/Working Set/Dependency/Constraint/Risk/Opportunity + importance/confidence/uncertainty/focus | Done |
-| **2** | Planning Architecture | Governed `WorkspacePlanningService`: sequencing, assumptions, risks, gaps — never executes | Active |
-| **3** | Reasoning Memory | Architectural memory (rationale, rejected alternatives, failures, patterns) — not embeddings | Planned |
+| **1** | Workspace Cognitive Model | Durable semantic layer | Done |
+| **2** | Planning Architecture | Governed non-executing sequencing / assumptions / risks / gaps | Done |
+| **3** | Reasoning Memory | Architectural memory of rationale, alternatives, reflection — evidence only | Active |
 | **4** | Cognitive Graph | Traversable relationships across cognitive + existing durable entities | Planned |
-| **5** | Orchestration Engine | Governed multi-stage workflows (Goal→Plan→Permission→Execute→Observe→Evaluate→Learn) | Planned |
+| **5** | Orchestration Engine | Governed multi-stage workflows | Planned |
 | **6** | Adaptive Learning | Evidence-producing learning; proposes only | Planned |
-| **7** | Multi-Agent Architecture | Planner/Researcher/Reviewer/Auditor/Operator/Recovery/Safety as governed actors | Planned |
-| **8** | Autonomous Workspace | Observe→Understand→Plan→Ask→Execute→Learn loop — only after 1–7 | Planned |
+| **7** | Multi-Agent Architecture | Governed actors with empty-by-default capabilities | Planned |
+| **8** | Autonomous Workspace | Observe→Understand→Plan→Ask→Execute→Learn — gated on 1–7 | Planned |
 
 ## Existing foundations (reuse, do not replace)
 
 | Capability | Owner today | Programme II use |
 |------------|-------------|------------------|
-| WorkGoal / Project / Task | WorkspaceIntentService | Goal references WorkGoal; Intent remains work SoT |
-| Task Graph deps | TaskGraphService | Planning steps may *reference* task ids; do not own them |
-| AiPlan / Orchestration | AiPlanning / AiOrchestration | Distinct from durable Cognitive Planning Engine |
-| Memory entries | AiMemoryService | Planning cites memory summaries by reference |
-| Activity / Attention / Purpose / Milestone Engines | Aggregators | Planning consumes; remain `authority_effect: none` aggregators |
-| RE / DE / DQ | Domain services | Planning cites candidates/overlays by reference; keep lifecycle ownership |
-| Actors / Capabilities | Domain + Gateway | Batch 7 agents = actors with empty-by-default capabilities |
+| WorkGoal / Project / Task | WorkspaceIntentService | Referenced by cognitive goals and reasoning links |
+| Task Graph | TaskGraphService | Referenced by planning steps and reasoning evidence |
+| Planning snapshots | WorkspacePlanningService | Reasoning cites active plans by reference |
+| AiPlan / Orchestration | AiPlanning / AiOrchestration | Distinct from durable Cognitive Planning + Reasoning Memory |
+| Memory entries | AiMemoryService | Reasoning may cite memory summaries by reference |
+| RE / DE / DQ | Domain services | Reasoning cites candidates by reference; keep lifecycle ownership |
 
-## Batch 2 summary
+## Batch 3 summary
 
-`WorkspacePlanningService` owns only sequencing / decomposition / rationale /
-assumptions / uncertainty. It produces `PlanningSnapshot` dual-channel projections
-(`current` + `history` + `history_count`). History is terminal evidence only.
-React is projection-only. See [Planning Architecture](./PLANNING-ARCHITECTURE.md).
+`WorkspaceReasoningMemoryService` owns reasoning history and reflection only.
+It produces `ReasoningSnapshot` dual-channel projections. History is append-only
+terminal evidence. React is projection-only. See
+[Reasoning Memory Architecture](./REASONING-MEMORY-ARCHITECTURE.md).
 
 ## Sequencing rule
 
@@ -58,7 +57,7 @@ Ship Batch *N* only when Batch *N−1* has durable contracts, tests, and governa
 
 - [Workspace Cognitive Model](./WORKSPACE-COGNITIVE-MODEL.md) (Batch 1)
 - [Planning Architecture](./PLANNING-ARCHITECTURE.md) (Batch 2)
+- [Reasoning Memory Architecture](./REASONING-MEMORY-ARCHITECTURE.md) (Batch 3)
 - [Workspace Vocabulary](./WORKSPACE-VOCABULARY.md)
-- [Intelligence Roadmap](./INTELLIGENCE-ROADMAP.md)
 - [Projection Integrity](../03-Engineering/PROJECTION-INTEGRITY.md)
 - [Architecture Governance](../03-Engineering/ARCHITECTURE-GOVERNANCE.md)

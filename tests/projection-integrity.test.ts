@@ -18,6 +18,11 @@ import {
   isPlanningSnapshotNonCommandable,
   planningHistoryCountIsAuthoritative,
 } from "../app/src/components/planningProjection";
+import {
+  isReasoningHistoryNonActionable,
+  isReasoningSnapshotNonCommandable,
+  reasoningHistoryCountIsAuthoritative,
+} from "../app/src/components/reasoningProjection";
 import type {
   DecisionArtifactHistoryEntry,
   DecisionEngineSummary,
@@ -28,6 +33,9 @@ import type {
   PlanningHistoryEntry,
   PlanningSnapshot,
   PlanningSummary,
+  ReasoningHistoryEntry,
+  ReasoningSnapshot,
+  ReasoningSummary,
   RecommendationHistoryEntry,
   RecommendationItem,
   TaskGraphSummary,
@@ -607,6 +615,12 @@ describe("projection contract — shared cross-domain invariants", () => {
       terminal: true,
       authority_effect: "none",
     });
+    assertNoCommandKeys({
+      record_id: "reasoning:1",
+      actionable: false,
+      terminal: true,
+      authority_effect: "none",
+    });
   });
 });
 
@@ -661,6 +675,65 @@ describe("projection integrity — planning engine", () => {
       authority_effect: "none",
     };
     expect(planningHistoryCountIsAuthoritative(summary)).toBe(true);
+    expect(summary.history_count).toBeGreaterThanOrEqual(summary.history.length);
+  });
+});
+
+describe("projection integrity — reasoning memory", () => {
+  const historyEntry = (
+    overrides: Partial<ReasoningHistoryEntry> = {}
+  ): ReasoningHistoryEntry => ({
+    record_id: "reasoning:1",
+    title: "Prior reasoning",
+    status: "superseded",
+    confidence: 70,
+    uncertainty: 30,
+    created_at: "t0",
+    superseded_at: "t1",
+    reflection_excerpt: "learned something",
+    terminal: true,
+    actionable: false,
+    authority_effect: "none",
+    ...overrides,
+  });
+
+  it("marks reasoning history as non-actionable", () => {
+    expect(isReasoningHistoryNonActionable(historyEntry())).toBe(true);
+    expect(
+      isReasoningHistoryNonActionable(
+        historyEntry({ actionable: true, status: "superseded" })
+      )
+    ).toBe(false);
+    expect(
+      isReasoningHistoryNonActionable(historyEntry({ status: "current" }))
+    ).toBe(false);
+  });
+
+  it("keeps reasoning snapshots non-commandable with authoritative history_count", () => {
+    const snapshot: ReasoningSnapshot = {
+      workspace_id: "ws",
+      generated_at: "t2",
+      current: null,
+      history: [historyEntry()],
+      history_count: 3,
+      authority_effect: "none",
+    };
+    expect(isReasoningSnapshotNonCommandable(snapshot)).toBe(true);
+    const summary: ReasoningSummary = {
+      workspace_id: "ws",
+      generated_at: "t2",
+      has_current: false,
+      current_id: null,
+      current_title: null,
+      confidence: null,
+      uncertainty: null,
+      reflection_excerpt: "",
+      lesson_count: 0,
+      history: [historyEntry()],
+      history_count: 3,
+      authority_effect: "none",
+    };
+    expect(reasoningHistoryCountIsAuthoritative(summary)).toBe(true);
     expect(summary.history_count).toBeGreaterThanOrEqual(summary.history.length);
   });
 });

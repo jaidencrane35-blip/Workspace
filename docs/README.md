@@ -100,6 +100,7 @@ AI behaviour, permissions, and boundaries.
 | [Programme II — Cognitive Workspace](05-AI/PROGRAMME-II-COGNITIVE-WORKSPACE.md) | Multi-batch cognitive programme charter and principles |
 | [Workspace Cognitive Model](05-AI/WORKSPACE-COGNITIVE-MODEL.md) | Batch 1 durable semantic layer (objectives, focus, uncertainty) |
 | [Planning Architecture](05-AI/PLANNING-ARCHITECTURE.md) | Batch 2 non-executing Cognitive Planning Engine |
+| [Reasoning Memory Architecture](05-AI/REASONING-MEMORY-ARCHITECTURE.md) | Batch 3 reasoning evidence / reflection layer |
 | [Memory Policy](05-AI/MEMORY-POLICY.md) | What may be stored, retention, user control, deletion |
 | [Confidence Policy](05-AI/CONFIDENCE-POLICY.md) | Confidence levels, suggestion thresholds, uncertainty |
 | [AI Architecture Index](05-AI/README.md) | Navigation hub for Recommendation/Decision/Governance contracts |
