@@ -182,7 +182,7 @@ impl WorkspaceLearningAdaptationService {
                 RecommendationLifecycleRepository::new(&guard).list_overlays(workspace_id)?;
             let decision_overlays =
                 DecisionEngineRepository::new(&guard).list_overlays(workspace_id)?;
-            // Repository read only — do not import ExecutionLifecycleService.
+            // Repository read only — do not call execution lifecycle service APIs.
             let executions = ExecutionLifecycleRepository::new(&guard).list_recent(50)?;
             (tasks, rec_overlays, decision_overlays, executions)
         };

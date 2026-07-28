@@ -724,8 +724,8 @@ function learningAdaptationGuards(rootDir) {
     const source = read(file);
     const rel = path.relative(rootDir, file).replace(/\\/g, "/");
     if (
-      /ApplicationLaunchService/.test(source) ||
-      /ExecutionLifecycleService/.test(source) ||
+      /\bApplicationLaunchService\b/.test(source) ||
+      /\bExecutionLifecycleService\b/.test(source) ||
       /std::process::Command/.test(source) ||
       /workspace_windows_integration::/.test(source)
     ) {
