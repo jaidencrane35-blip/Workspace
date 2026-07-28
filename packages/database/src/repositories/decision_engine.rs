@@ -63,7 +63,7 @@ impl<'a> DecisionEngineRepository<'a> {
     }
 
     pub fn delete_overlay(&self, workspace_id: &str, candidate_key: &str) -> Result<()> {
-        let changed = self.db.connection().execute(
+        self.db.connection().execute(
             "DELETE FROM decision_engine_lifecycle
              WHERE workspace_id = ?1 AND candidate_key = ?2",
             (workspace_id, candidate_key),
@@ -73,7 +73,7 @@ impl<'a> DecisionEngineRepository<'a> {
 
     /// Insert or update a DE-owned intake candidate. Preserves created_at on conflict.
     pub fn upsert_intake_candidate(&self, candidate: &DecisionEngineIntakeCandidate) -> Result<()> {
-        self.db.connection().execute(
+        let changed = self.db.connection().execute(
             "INSERT INTO decision_engine_intake_candidate (
                 workspace_id, intake_candidate_id, intake_receipt_reference,
                 recommendation_reference, package_seal_digest, acceptance_reference,
