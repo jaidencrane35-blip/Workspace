@@ -78,6 +78,7 @@ export const PUBLIC_ERROR_CODES = [
   "workspace_cognitive_agent_cast_validation_error",
   "workspace_cognitive_autonomy_validation_error",
   "workspace_state_envelope_validation_error",
+  "policy_governance_validation_error",
   "workspace_composition_validation_error",
   "workspace_continuity_validation_error",
   "workspace_environment_validation_error",

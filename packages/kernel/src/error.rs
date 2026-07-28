@@ -14,7 +14,8 @@ use workspace_domain::{
     WorkspaceReadinessError, WorkspaceRecommendationEngineError, WorkspaceReasoningMemoryError,
     WorkspaceCognitiveGraphError, WorkspaceCognitiveOrchestrationError,
     WorkspaceLearningAdaptationError, WorkspaceCognitiveAgentCastError,
-    WorkspaceCognitiveAutonomyError, WorkspaceStateEnvelopeError, WorkspaceSessionError,
+    WorkspaceCognitiveAutonomyError, WorkspaceStateEnvelopeError, PolicyGovernanceError,
+    WorkspaceSessionError,
     WorkspaceTransitionError,
     WorkspaceWorkContextError, WorkspaceWorkingStyleError,
 };
@@ -256,6 +257,9 @@ pub enum KernelError {
 
     #[error("Workspace state envelope validation failed: {message}")]
     WorkspaceStateEnvelopeValidation { message: String },
+
+    #[error("Policy governance validation failed: {message}")]
+    PolicyGovernanceValidation { message: String },
 
     #[error("Workspace intelligence validation failed: {message}")]
     WorkspaceIntelligenceValidation { message: String },
@@ -570,6 +574,17 @@ impl From<WorkspaceStateEnvelopeError> for KernelError {
         match error {
             WorkspaceStateEnvelopeError::Domain(domain) => KernelError::from(domain),
             other => KernelError::WorkspaceStateEnvelopeValidation {
+                message: other.to_string(),
+            },
+        }
+    }
+}
+
+impl From<PolicyGovernanceError> for KernelError {
+    fn from(error: PolicyGovernanceError) -> Self {
+        match error {
+            PolicyGovernanceError::Domain(domain) => KernelError::from(domain),
+            other => KernelError::PolicyGovernanceValidation {
                 message: other.to_string(),
             },
         }
@@ -1256,6 +1271,10 @@ impl KernelError {
             },
             KernelError::WorkspaceStateEnvelopeValidation { message } => PublicError {
                 code: "workspace_state_envelope_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::PolicyGovernanceValidation { message } => PublicError {
+                code: "policy_governance_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::WorkspaceIntelligenceValidation { message } => PublicError {

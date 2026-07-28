@@ -23,6 +23,7 @@ Canonical product language. Prefer these terms in UI, docs, and Assistant copy.
 | **Cognitive Agent Cast** | Specialised cognitive role perspectives (evidence only) | Actor, executor, permission owner, swarm autonomy |
 | **Cognitive Autonomy** | Governed suggestion / opportunity layer (approval always required) | Autonomous agent, self-approving executor, hidden workflow |
 | **Unified Workspace State** | Read-only composition envelope over authoritative sources | New source of truth, lifecycle owner, silent refresh |
+| **Policy & Governance Engine** | Explainable policy evaluation evidence (Gateway remains final) | Second permission system, capability grantor, executor |
 | **Graph History** | Terminal superseded graph snapshot evidence | Actionable graph mutations |
 | **Task** | Durable work item | Action |
 | **Action** | Executable catalog/command candidate | Task |

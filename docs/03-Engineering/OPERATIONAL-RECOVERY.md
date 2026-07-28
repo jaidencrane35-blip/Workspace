@@ -22,10 +22,10 @@
 
 | Question | Contract |
 |----------|----------|
-| What survives restart? | Durable rows: execution lifecycle, recommendation/DE/DQ/task overlays, planning artefacts, reasoning records + history, cognitive graph snapshots + history, orchestration snapshots + history, learning snapshots + history, cognitive agent cast snapshots + history, cognitive autonomy snapshots + history, workspace state envelope snapshots + history, audit events, schema/migrations ledger |
-| What is reconstructed? | Projections re-derived from services on generate/load; execution stale claims reconciled via existing service rules; planning/reasoning/graph/orchestration/learning/agent-cast/autonomy/state-envelope snapshots loaded from durable tables |
-| What is missing? | In-memory AI plan/workflow stores (diagnostic only); audit windows beyond scan limits; in-progress claims beyond the startup sweep cap until lazy reconcile; **absent reasoning/graph/orchestration/learning/agent-cast/autonomy/state-envelope remains absent** |
-| What must fail closed? | Incomplete terminal evidence; empty capability grants; poisoned DB locks; interrupted migrations; non-retryable stale claims; fabricated reasoning, graph, orchestration, learning, agent-cast, autonomy, or unified-state structure |
+| What survives restart? | Durable rows: execution lifecycle, recommendation/DE/DQ/task overlays, planning artefacts, reasoning records + history, cognitive graph snapshots + history, orchestration snapshots + history, learning snapshots + history, cognitive agent cast snapshots + history, cognitive autonomy snapshots + history, workspace state envelope snapshots + history, policy governance evaluations + history, audit events, schema/migrations ledger |
+| What is reconstructed? | Projections re-derived from services on generate/load; execution stale claims reconciled via existing service rules; planning/reasoning/graph/orchestration/learning/agent-cast/autonomy/state-envelope/policy-governance snapshots loaded from durable tables |
+| What is missing? | In-memory AI plan/workflow stores (diagnostic only); audit windows beyond scan limits; in-progress claims beyond the startup sweep cap until lazy reconcile; **absent reasoning/graph/orchestration/learning/agent-cast/autonomy/state-envelope/policy-governance remains absent** |
+| What must fail closed? | Incomplete terminal evidence; empty capability grants; poisoned DB locks; interrupted migrations; non-retryable stale claims; fabricated reasoning, graph, orchestration, learning, agent-cast, autonomy, unified-state, or policy-compliance structure |
 
 Recovery must **never**:
 
@@ -37,6 +37,7 @@ Recovery must **never**:
 - fabricate agents, perspectives, agreement, disagreement, or confidence
 - fabricate autonomy opportunities, approvals, confidence, safety guarantees, or automation history
 - fabricate unified-state revisions, freshness, source availability, completeness, or conflicts
+- fabricate policy compliance, approvals, or capability grants from missing evidence
 - recreate desktop actions
 - bypass PermissionGateway / CommandPipeline for user mutations
 - silently “heal” lifecycle into an open actionable state

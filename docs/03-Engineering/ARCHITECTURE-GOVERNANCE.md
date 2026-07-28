@@ -307,6 +307,26 @@ See [Cognitive Autonomy Architecture](../05-AI/COGNITIVE-AUTONOMY-ARCHITECTURE.m
 
 See [Unified Workspace State Architecture](../05-AI/UNIFIED-WORKSPACE-STATE-ARCHITECTURE.md).
 
+## Policy & Governance Engine (Programme III Batch 2)
+
+`PolicyGovernanceService` owns **policy evaluation evidence only**.
+
+| Property | Value |
+|----------|-------|
+| Lifecycle owner | No |
+| Execution authority | No |
+| Permission owner | No — Gateway remains final |
+| Policy reasoning / evidence owner | Yes |
+
+- `PolicyGovernanceHistoryEntry` / `PolicyGovernanceSummary` contain no authority/command fields.
+- Mutation inventory includes `GenerateGovernanceEvaluation` (baseline floor raised).
+- Policy cannot import lifecycle/execution services or call `PermissionGateway`.
+- Policy outputs never contain capability grants.
+- Unknown / missing context fails closed — never assumed Compliant.
+- Repository cannot call the policy service.
+
+See [Policy & Governance Architecture](../05-AI/POLICY-GOVERNANCE-ARCHITECTURE.md).
+
 ## Capability boundary audit
 
 Enforced by `scripts/architecture-governance-lib.mjs`:

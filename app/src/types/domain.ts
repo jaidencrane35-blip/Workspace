@@ -2907,6 +2907,117 @@ export interface WorkspaceStateSummary {
   authority_effect: string;
 }
 
+export interface PolicyDefinition {
+  policy_id: string;
+  name: string;
+  description: string;
+  scope: string;
+  version: string;
+  severity: string;
+  status: string;
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface PolicyEvaluation {
+  evaluation_id: string;
+  policy_id: string;
+  policy_version: string;
+  context_revision: string;
+  result: string;
+  severity: string;
+  reason: string;
+  evidence_refs: string[];
+  created_at: string;
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface GovernanceRecommendation {
+  recommendation_id: string;
+  evaluation_refs: string[];
+  suggested_action: string;
+  confidence: number;
+  explanation: string;
+  aggregate_result: string;
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface GovernanceExplanation {
+  explanation_id: string;
+  workspace_id: string;
+  context_revision: string | null;
+  policies_involved: string[];
+  evidence: string[];
+  reasoning: string[];
+  uncertainty: string[];
+  aggregate_result: string | null;
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface PolicyGovernanceHistoryEntry {
+  evaluation_set_id: string;
+  status: string;
+  created_at: string;
+  superseded_at: string | null;
+  context_revision: string | null;
+  policy_catalog_revision: string;
+  evaluation_count: number;
+  aggregate_result: string;
+  terminal: boolean;
+  actionable: boolean;
+  authority_effect: string;
+}
+
+export interface PolicyGovernanceMeta {
+  evaluation_set_id: string;
+  workspace_id: string;
+  status: string;
+  created_at: string;
+  superseded_at: string | null;
+  context_revision: string | null;
+  policy_catalog_revision: string;
+  evaluation_count: number;
+  aggregate_result: string;
+  authority_effect: string;
+  terminal: boolean;
+  actionable: boolean;
+}
+
+export interface PolicyGovernanceView {
+  meta: PolicyGovernanceMeta;
+  policies: PolicyDefinition[];
+  evaluations: PolicyEvaluation[];
+  recommendation: GovernanceRecommendation | null;
+  unknowns: string[];
+  context_revision: string | null;
+  authority_effect: string;
+}
+
+export interface PolicyGovernanceSnapshot {
+  workspace_id: string;
+  generated_at: string;
+  current: PolicyGovernanceView | null;
+  history: PolicyGovernanceHistoryEntry[];
+  history_count: number;
+  authority_effect: string;
+}
+
+export interface PolicyGovernanceSummary {
+  workspace_id: string;
+  generated_at: string;
+  has_current: boolean;
+  evaluation_set_id: string | null;
+  context_revision: string | null;
+  aggregate_result: string | null;
+  evaluation_count: number;
+  history: PolicyGovernanceHistoryEntry[];
+  history_count: number;
+  authority_effect: string;
+}
+
 export type WindowIdentityConfidence = "high" | "medium" | "low" | "ephemeral";
 
 export interface WorkspaceObservationPass {

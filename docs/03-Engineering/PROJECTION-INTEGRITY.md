@@ -233,6 +233,19 @@ Rules:
 - Restart reconstructs durable current + history; missing envelope remains missing.
 - Missing sources remain Unavailable — never assumed Fresh.
 
+### Policy & Governance (Programme III Batch 2)
+
+- **Current:** `PolicyGovernanceSnapshot.current` — policy definitions used, evaluations,
+  recommendation. Advisory evidence only; never grants or executes.
+- **History:** superseded evaluations via append-only `workspace_policy_governance_history` →
+  `PolicyGovernanceHistoryEntry` (`terminal: true`, `actionable: false`, `authority_effect: none`).
+- **`history_count`** is authoritative; summary windows may truncate `history`.
+- Results: Compliant / Violation / RequiresReview / Unknown / NotApplicable.
+- Unknown context fails closed. Policy ≠ permission. Evaluation ≠ authority.
+- `ExplainGovernanceDecision` is explanation-only.
+- React may inspect — no mutation or command conversion.
+- Restart reconstructs durable current + history; missing evaluation remains missing.
+
 ## Serde defaults vs TypeScript required fields
 
 Rust history fields often use `#[serde(default)]` so older persisted / in-flight JSON

@@ -28,6 +28,7 @@ mod workspace_learning_adaptation;
 mod workspace_cognitive_agent_cast;
 mod workspace_cognitive_autonomy;
 mod workspace_state_composition;
+mod policy_governance;
 mod workspace_continuity;
 mod workspace_environment;
 mod workspace_composition;
@@ -206,4 +207,5 @@ pub(crate) use workspace_learning_adaptation::WorkspaceLearningAdaptationService
 pub(crate) use workspace_cognitive_agent_cast::WorkspaceCognitiveAgentCastService;
 pub(crate) use workspace_cognitive_autonomy::WorkspaceCognitiveAutonomyService;
 pub(crate) use workspace_state_composition::WorkspaceStateCompositionService;
+pub(crate) use policy_governance::PolicyGovernanceService;
 pub use zone::ZoneService;

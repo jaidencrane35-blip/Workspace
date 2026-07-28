@@ -21,6 +21,9 @@ use crate::workspace_cognitive_autonomy::{
 use crate::workspace_state_envelope::{
     WorkspaceStateHistoryEntry, WorkspaceStateSnapshot,
 };
+use crate::policy_governance::{
+    PolicyGovernanceHistoryEntry, PolicyGovernanceSnapshot,
+};
 use crate::workspace_reasoning_memory::{ReasoningHistoryEntry, ReasoningSnapshot};
 
 /// Documented startup in-progress sweep cap (must match
@@ -198,6 +201,26 @@ pub fn recovery_must_not_fabricate_workspace_state_envelope(
 /// Fabricated actionable unified-state history must fail the recovery contract.
 pub fn recovery_must_not_fabricate_actionable_workspace_state_history(
     entry: &WorkspaceStateHistoryEntry,
+) -> bool {
+    entry.is_non_actionable()
+}
+
+/// Missing policy evaluation remains missing — never invent Compliant on restart.
+pub fn recovery_must_not_fabricate_policy_governance(
+    snapshot: &PolicyGovernanceSnapshot,
+) -> bool {
+    snapshot.is_non_commandable()
+        && snapshot.history.iter().all(|h| h.is_non_actionable())
+        && snapshot
+            .current
+            .as_ref()
+            .map(|c| c.is_non_executing())
+            .unwrap_or(true)
+}
+
+/// Fabricated actionable policy-governance history must fail the recovery contract.
+pub fn recovery_must_not_fabricate_actionable_policy_governance_history(
+    entry: &PolicyGovernanceHistoryEntry,
 ) -> bool {
     entry.is_non_actionable()
 }
@@ -481,5 +504,30 @@ mod tests {
             authority_effect: "none".into(),
         };
         assert!(!recovery_must_not_fabricate_actionable_workspace_state_history(&bad));
+    }
+
+    #[test]
+    fn recovery_never_fabricates_policy_governance_on_empty_snapshot() {
+        let empty = PolicyGovernanceSnapshot::assemble("ws", None, vec![], 0, "t0");
+        assert!(recovery_must_not_fabricate_policy_governance(&empty));
+        assert!(empty.current.is_none());
+    }
+
+    #[test]
+    fn recovery_rejects_actionable_policy_governance_history() {
+        let bad = PolicyGovernanceHistoryEntry {
+            evaluation_set_id: "policy_governance:1".into(),
+            status: "superseded".into(),
+            created_at: "t0".into(),
+            superseded_at: Some("t1".into()),
+            context_revision: None,
+            policy_catalog_revision: "policies:1".into(),
+            evaluation_count: 0,
+            aggregate_result: "unknown".into(),
+            terminal: true,
+            actionable: true,
+            authority_effect: "none".into(),
+        };
+        assert!(!recovery_must_not_fabricate_actionable_policy_governance_history(&bad));
     }
 }

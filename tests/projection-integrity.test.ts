@@ -53,6 +53,11 @@ import {
   isWorkspaceStateSnapshotNonCommandable,
   workspaceStateHistoryCountIsAuthoritative,
 } from "../app/src/components/workspaceStateEnvelopeProjection";
+import {
+  isPolicyGovernanceHistoryNonActionable,
+  isPolicyGovernanceSnapshotNonCommandable,
+  policyGovernanceHistoryCountIsAuthoritative,
+} from "../app/src/components/policyGovernanceProjection";
 import type {
   DecisionArtifactHistoryEntry,
   DecisionEngineSummary,
@@ -84,6 +89,9 @@ import type {
   WorkspaceStateHistoryEntry,
   WorkspaceStateSnapshot,
   WorkspaceStateSummary,
+  PolicyGovernanceHistoryEntry,
+  PolicyGovernanceSnapshot,
+  PolicyGovernanceSummary,
   RecommendationHistoryEntry,
   RecommendationItem,
   TaskGraphSummary,
@@ -1177,6 +1185,63 @@ describe("projection integrity — cognitive agent cast", () => {
     expect(Object.keys(nonCommand)).not.toContain("command");
     expect(Object.keys(nonCommand)).not.toContain("permission");
     expect(Object.keys(nonCommand)).toContain("revision");
+  });
+
+  it("keeps policy governance snapshots non-commandable with authoritative history_count", () => {
+    const historyEntry = (
+      overrides: Partial<PolicyGovernanceHistoryEntry> = {}
+    ): PolicyGovernanceHistoryEntry => ({
+      evaluation_set_id: "policy_governance:1",
+      status: "superseded",
+      created_at: "t0",
+      superseded_at: "t1",
+      context_revision: "rev:1",
+      policy_catalog_revision: "policies:1",
+      evaluation_count: 2,
+      aggregate_result: "unknown",
+      terminal: true,
+      actionable: false,
+      authority_effect: "none",
+      ...overrides,
+    });
+    const snapshot: PolicyGovernanceSnapshot = {
+      workspace_id: "ws",
+      generated_at: "t2",
+      current: null,
+      history: [historyEntry()],
+      history_count: 3,
+      authority_effect: "none",
+    };
+    expect(isPolicyGovernanceSnapshotNonCommandable(snapshot)).toBe(true);
+    expect(isPolicyGovernanceHistoryNonActionable(historyEntry())).toBe(true);
+    expect(
+      isPolicyGovernanceHistoryNonActionable(historyEntry({ actionable: true }))
+    ).toBe(false);
+
+    const summary: PolicyGovernanceSummary = {
+      workspace_id: "ws",
+      generated_at: "t2",
+      has_current: false,
+      evaluation_set_id: null,
+      context_revision: null,
+      aggregate_result: null,
+      evaluation_count: 0,
+      history: [historyEntry()],
+      history_count: 3,
+      authority_effect: "none",
+    };
+    expect(policyGovernanceHistoryCountIsAuthoritative(summary)).toBe(true);
+    expect(summary.history_count).toBeGreaterThanOrEqual(summary.history.length);
+
+    const nonCommand = {
+      evaluation_set_id: "policy_governance:1",
+      actionable: false,
+      terminal: true,
+      authority_effect: "none",
+    };
+    expect(Object.keys(nonCommand)).not.toContain("execute");
+    expect(Object.keys(nonCommand)).not.toContain("grant");
+    expect(Object.keys(nonCommand)).not.toContain("approve");
   });
 });
 

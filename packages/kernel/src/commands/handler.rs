@@ -120,6 +120,10 @@ use crate::commands::workspace_cognitive_autonomy::{
 use crate::commands::workspace_state_envelope::{
     GenerateWorkspaceStateEnvelope, GetWorkspaceStateEnvelope, GetWorkspaceStateEnvelopeSummary,
 };
+use crate::commands::policy_governance::{
+    ExplainGovernanceDecision, GenerateGovernanceEvaluation, GetGovernanceEvaluation,
+    GetGovernanceSummary,
+};
 use crate::commands::zone::{CreateZone, DeleteZone, GetZone};
 use crate::config::{SettingsUpdate, WorkspaceSettings};
 use crate::error::{KernelError, Result};
@@ -182,6 +186,7 @@ use workspace_domain::{
     CognitiveAgentCastSnapshot, CognitiveAgentCastSummary,
     CognitiveAutonomySnapshot, CognitiveAutonomySummary,
     WorkspaceStateSnapshot, WorkspaceStateSummary,
+    PolicyGovernanceSnapshot, PolicyGovernanceSummary, GovernanceExplanation,
     LayoutId, LayoutMetadata, LayoutNode, LayoutSnapshot, MemoryEntry, MemoryType,
     ModelProviderDescriptor, ModelResponse, Observation, PersonalizedPlanComparison,
     PreferenceCategory, PreferenceSource, Suggestion, SuggestionIntentRequest,
@@ -2622,6 +2627,52 @@ impl CommandHandler {
     /// Architecture guard — Unified Workspace State cannot execute.
     pub fn workspace_state_envelope_attempt_execute() -> Result<()> {
         crate::services::WorkspaceStateCompositionService::attempt_execute()
+    }
+
+    pub fn generate_governance_evaluation(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<PolicyGovernanceSnapshot> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_mutation(GenerateGovernanceEvaluation::new(workspace_id))
+    }
+
+    pub fn get_governance_evaluation(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<PolicyGovernanceSnapshot> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetGovernanceEvaluation::new(workspace_id))
+    }
+
+    pub fn get_governance_summary(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        history_limit: usize,
+    ) -> Result<PolicyGovernanceSummary> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetGovernanceSummary::new(workspace_id, history_limit))
+    }
+
+    pub fn explain_governance_decision(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<GovernanceExplanation> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(ExplainGovernanceDecision::new(workspace_id))
+    }
+
+    /// Architecture guard — Policy engine cannot execute.
+    pub fn policy_governance_attempt_execute() -> Result<()> {
+        crate::services::PolicyGovernanceService::attempt_execute()
     }
 
     #[allow(clippy::too_many_arguments)]
