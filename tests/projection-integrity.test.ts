@@ -661,7 +661,7 @@ describe("projection integrity — planning engine", () => {
       authority_effect: "none",
     };
     expect(planningHistoryCountIsAuthoritative(summary)).toBe(true);
-    assertCountAuthority(summary.history.length, summary.history_count);
+    expect(summary.history_count).toBeGreaterThanOrEqual(summary.history.length);
   });
 });
 
