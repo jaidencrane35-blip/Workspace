@@ -34,6 +34,7 @@ mod workspace_temporal_intelligence;
 mod workspace_explanation;
 mod workspace_contextual_understanding;
 mod workspace_knowledge_synthesis;
+mod workspace_knowledge_integration;
 mod workspace_continuity;
 mod workspace_environment;
 mod workspace_composition;
@@ -218,4 +219,5 @@ pub(crate) use workspace_temporal_intelligence::WorkspaceTemporalIntelligenceSer
 pub(crate) use workspace_explanation::WorkspaceExplanationService;
 pub(crate) use workspace_contextual_understanding::WorkspaceContextualUnderstandingService;
 pub(crate) use workspace_knowledge_synthesis::WorkspaceKnowledgeSynthesisService;
+pub(crate) use workspace_knowledge_integration::WorkspaceKnowledgeIntegrationService;
 pub use zone::ZoneService;

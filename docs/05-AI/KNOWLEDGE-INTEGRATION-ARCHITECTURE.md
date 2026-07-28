@@ -4,7 +4,7 @@
 |-------|-------|
 | **Purpose** | Integrate and retrieve across accumulated Programme III evidence layers into provenance-bound retrieval views — without becoming a new source of truth, Memory system, Cognitive Model, decision authority, planner, or executor |
 | **Owner** | `WorkspaceKnowledgeIntegrationService` (DurableStore — **integration / retrieval artefacts only**) |
-| **Status** | Charter draft — pending review before implementation |
+| **Status** | Active — Programme III Batch 8 accepted (architecture audit grade A; charter ACCEPT) |
 | **Lifecycle owner** | No |
 | **Execution / replay authority** | No |
 | **Simulation / forecast / correction authority** | No |
@@ -47,7 +47,7 @@ new SoT / Memory / decide / execute / auto-act
 
 ## Architectural position
 
-Programme III stack after Batch 8 (proposed — final Programme III capability batch):
+Programme III stack after Batch 8 (final Programme III capability batch):
 
 ```
 Unified Workspace State Model
@@ -106,9 +106,10 @@ It does **not** answer:
 
 ## Why this batch
 
-Batch 7 acceptance opened the Batch 8 gate. Direction from architecture audit:
+Batch 7 acceptance opened the Batch 8 gate. Direction from architecture audit
+(charter ACCEPT, grade A):
 
-> Draft Programme III Batch 8 charter only before implementation.
+> Proceed with Programme III Batch 8 implementation.
 > Focus on integration/retrieval intelligence over the accumulated evidence layers,
 > while preserving: no new source of truth, no autonomous authority, no execution,
 > no replacement of existing cognitive systems.
@@ -203,9 +204,16 @@ Do **not** introduce:
 5. **Meaning-only structure** — no causation / action edges invented at retrieval time.
 6. **Knowledge Synthesis remains descriptive** — Integration must not promote concepts into editable ontology.
 
-## Core model (charter)
+## Core model (implemented)
 
-### `WorkspaceKnowledgeIntegration` (artefact)
+### Invariants (must remain visible in docs and tests)
+
+- **integration ≠ authority**
+- **retrieval ≠ truth**
+- **relevance ≠ correctness**
+- **confidence ≠ permission**
+
+### `KnowledgeIntegrationResult` (artefact)
 
 Primary composed artefact for an integration / retrieval request — **read-only analytical artefact**.
 
@@ -217,9 +225,9 @@ Primary composed artefact for an integration / retrieval request — **read-only
 | `status` / `superseded_at` | Active vs superseded lifecycle of the artefact |
 | `frame` | `KnowledgeRetrievalFrame` describing the query / scope |
 | `source_revisions` | Revision-bound upstream refs used for this compose |
-| `hits` | Ordered `KnowledgeRetrievalHit` list |
-| `integrations` | Optional `KnowledgeIntegrationLink` cross-layer joins |
-| `gaps` | Explicit `KnowledgeRetrievalGap` records |
+| `query_context` | Optional descriptive query / focus context |
+| `links` | `KnowledgeEvidenceLink` hits + meaning-only joins |
+| `gaps` | Explicit `IntegrationGap` records |
 | `confidence` | Diagnostic `KnowledgeRetrievalConfidence` |
 | `completeness` | Explicit completeness state |
 | `provenance_links` | Links to upstream durable artefacts |
@@ -230,7 +238,7 @@ Primary composed artefact for an integration / retrieval request — **read-only
 | `terminal` | Terminal when superseded into history |
 
 Not a Memory write. Not a Cognitive Model mutation. Not a decision package. Not a plan.
-Not a ranked “do this next” list.
+Not a ranked “do this next” list. Retrieval relevance ≠ factual authority.
 
 ### `KnowledgeRetrievalFrame`
 
@@ -241,51 +249,53 @@ What is being retrieved / integrated.
 | `focus` | Optional focus text / theme (descriptive filter, not a command) |
 | `include_state` / `include_policy` / `include_reconstruction` / `include_temporal` / `include_explanation` / `include_contextual` / `include_knowledge_synthesis` | Upstream surface selection |
 | `max_hits` | Hard bound — never unbounded scrape |
-| `as_of_refs` | Optional explicit upstream revision / artefact refs |
 
 Frames constrain reading. They do not invent coverage.
 
-### `KnowledgeRetrievalHit`
+### `KnowledgeEvidenceLink`
 
-One provenance-bound retrieval result.
+Provenance-bound retrieval hit **or** meaning-only cross-layer join
+(integration result → source artefact → revision).
 
 | Field | Role |
 |-------|------|
-| `hit_id` | Identity |
-| `kind` | Surface / artefact kind (e.g. concept, theme, explanation_section, state_envelope) |
-| `label` | Short descriptive label |
-| `body` | Evidence-backed excerpt / framing |
+| `link_id` | Identity |
+| `kind` | Hit surface kind (`hit_*`) or allowed join kind |
+| `label` / `body` | Evidence-backed framing |
+| `source_artefact_ref` / `related_ref` | Source (+ optional related) artefact |
+| `source_revision` | Revision awareness |
+| `origin_domain` | Owning upstream domain |
 | `evidence_refs` | Upstream durable refs (**required** — empty ⇒ invalid) |
-| `provenance` | Lineage: hit → evidence → revision → origin domain |
+| `provenance` | Lineage strings |
 | `uncertainty` | Explicit unknowns |
-| `confidence` | Diagnostic coverage for this hit |
+| `confidence` | Diagnostic coverage for this link |
 | `authority_effect` | `"none"` |
 | `actionable` | `false` |
 
-A hit without lineage must not exist as a trusted artefact.
+A link without lineage must not exist as a trusted artefact.
 
-### `KnowledgeIntegrationLink`
+Allowed join kinds: `references`, `relates_to`, `derived_from`, `supported_by`.
 
-Cross-layer join — meaning-only.
-
-| Allowed | Forbidden |
-|---------|-----------|
-| `relates_to` | `causes` |
-| `overlaps` | `requires_action` |
-| `associated_with` | `should_execute` |
-| `observed_with` | `triggers` |
-| `shares_evidence` | `leads_to_action` |
+| Forbidden |
+|-----------|
+| `causes` |
+| `requires` / `requires_action` |
+| `should_execute` |
+| `authorises` |
+| `triggers` / `leads_to_action` / `approve` |
 
 Links explain co-occurrence / shared evidence across layers. They do not create operational dependency.
+Retrieval ordering may use relevance / matching confidence / availability / recency metadata —
+never “most correct”, “recommended”, “best action”, or “preferred outcome”.
 
-### `KnowledgeRetrievalGap`
+### `IntegrationGap`
 
 Explicit absence — Unknown remains unknown.
 
 | Examples | Never become |
 |----------|--------------|
-| insufficient evidence for frame | invented hit |
-| unavailable upstream surface | assumed current |
+| missing / unavailable upstream surface | invented hit |
+| insufficient evidence for frame | assumed current |
 | conflicting upstream signals | silently resolved winner |
 
 ### `KnowledgeRetrievalConfidence`
@@ -298,6 +308,7 @@ It **cannot** authorize:
 - policy outcome
 - automation
 - priority
+- permission
 - “best answer” as truth
 
 Maintain:
@@ -330,7 +341,7 @@ load_snapshot(state)
 + load_snapshot(explanation)
 + load_snapshot(contextual)
 + load_snapshot(knowledge_synthesis)
-= integration artefact with hits/links/gaps/provenance
+= integration artefact with links/gaps/provenance
 ```
 
 Same durable upstream revisions + same frame ⇒ deterministic integration content
@@ -387,7 +398,7 @@ foreign authorities as a side effect of retrieval.
 - generating upstream state / synthesis
 - mutating Memory / Cognitive Model / Reasoning Memory / Knowledge Synthesis
 
-## Service contract (charter)
+## Service contract (implemented)
 
 ### `WorkspaceKnowledgeIntegrationService`
 
@@ -395,15 +406,19 @@ Responsibilities:
 
 - accept a `KnowledgeRetrievalFrame`
 - load requested upstream snapshots via `load_snapshot` only
-- assemble hits / integration links / gaps
-- attach provenance lineage to every hit
+- compose `KnowledgeIntegrationResult` evidence packages
+- attach provenance lineage to every `KnowledgeEvidenceLink`
 - compute diagnostic retrieval confidence
-- persist integration artefacts (read-model)
+- expose integrated views (`current` / `history` / `history_count`)
+- preserve uncertainty / gaps / conflicts
+- persist derived integration artefacts (read-model)
 
 Must **not** (forbidden behaviours):
 
 - execute / replay / dispatch / restore
 - simulate / forecast / auto-correct
+- generate or modify upstream layers
+- create concepts / policy decisions
 - mutate sources, Memory, Cognitive Model, Reasoning Memory, or Knowledge Synthesis
 - create tasks / plans / approvals / recommendations
 - call foreign `generate` paths to fill gaps
@@ -414,6 +429,7 @@ Must **not** (forbidden behaviours):
 - treat correlation as causation
 - treat prior integration cache as current truth without revision binding
 - become a second editable ontology
+- silently rank “correct answers” / preferred outcomes
 
 Negative guards (required tests):
 
@@ -431,7 +447,7 @@ Negative guards (required tests):
 - `attempt_silent_refresh`
 - `attempt_emit_command`
 
-## Commands (charter)
+## Commands (implemented)
 
 | Command | Kind | Capability | Purpose |
 |---------|------|------------|---------|
@@ -467,7 +483,7 @@ PermissionGateway
 WorkspaceKnowledgeIntegrationService
 ```
 
-## Persistence (charter)
+## Persistence (implemented)
 
 | Artefact | Role |
 |----------|------|
@@ -577,13 +593,14 @@ Docs on implementation:
 - import restrictions + baseline / inventory updates
 - missing evidence does not become inferred retrieval truth
 
-## Documentation deliverables (this charter turn)
+## Documentation deliverables (implementation)
 
-- This architecture — status **Charter draft**
-- `PROGRAMME-III-COHERENT-WORKSPACE-RUNTIME.md` — Batch 8 charter drafted
+- This architecture — status **Active — Programme III Batch 8 implemented**
+- `PROGRAMME-III-COHERENT-WORKSPACE-RUNTIME.md` — Batch 8 Done; Programme III capability stack closed
 - Pointers in governance / projection / recovery / vocabulary / README
+- Explicit invariants: integration ≠ authority; retrieval ≠ truth; relevance ≠ correctness; confidence ≠ permission
 
-## Batch 8 acceptance criteria (implementation later)
+## Batch 8 acceptance criteria
 
 Accepted when:
 
@@ -591,7 +608,7 @@ Accepted when:
 2. No new authority boundary / duplicate source of truth
 3. No mutation ownership (Memory / Cognitive Model / Knowledge Synthesis / Intent / Task / State untouched)
 4. Deterministic integration from same revisions + same frame
-5. Provenance trace exists for every hit
+5. Provenance trace exists for every returned link / hit
 6. Unknown / conflict / gap states preserved
 7. Confidence remains diagnostic only
 8. Integration links remain meaning-only
@@ -600,14 +617,15 @@ Accepted when:
 11. Governance detects knowledge-integration boundary violations
 12. Recovery never fabricates hits / links / confidence / historical claims
 
-## Review gate
+## Programme close
 
-**Charter only — do not implement until this contract is reviewed and approved.**
-
-Programme III closes when Batch 8 is implemented, audited, and accepted.
-No Batch 9 is implied by this charter.
+Programme III Batch 8 closes the coherent evidence stack.
+No Batch 9 is implied by this architecture.
 
 Governing rule (Programme III close):
+
+> The workspace may understand more.
+> It must never silently gain the power to decide more.
 
 > Knowledge may organise and retrieve evidence.
 > It may never become the authority that decides what is true or what happens next.

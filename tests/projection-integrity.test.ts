@@ -83,6 +83,11 @@ import {
   isKnowledgeSynthesisProjectionNonCommandable,
   knowledgeSynthesisHistoryCountIsAuthoritative,
 } from "../app/src/components/knowledgeSynthesisProjection";
+import {
+  isKnowledgeIntegrationHistoryNonActionable,
+  isKnowledgeIntegrationProjectionNonCommandable,
+  knowledgeIntegrationHistoryCountIsAuthoritative,
+} from "../app/src/components/knowledgeIntegrationProjection";
 import type {
   DecisionArtifactHistoryEntry,
   DecisionEngineSummary,
@@ -132,6 +137,9 @@ import type {
   KnowledgeSynthesisHistoryEntry,
   KnowledgeSynthesisProjection,
   KnowledgeSynthesisSummary,
+  KnowledgeIntegrationHistoryEntry,
+  KnowledgeIntegrationProjection,
+  KnowledgeIntegrationSummary,
   RecommendationHistoryEntry,
   RecommendationItem,
   TaskGraphSummary,
@@ -1591,6 +1599,67 @@ describe("projection integrity — cognitive agent cast", () => {
     expect(Object.keys(nonCommand)).not.toContain("execute");
     expect(Object.keys(nonCommand)).not.toContain("approve");
     expect(Object.keys(nonCommand)).not.toContain("causes");
+    expect(Object.keys(nonCommand)).not.toContain("dispatch");
+  });
+
+  it("keeps knowledge integration projections non-commandable with authoritative history_count", () => {
+    const historyEntry = (
+      overrides: Partial<KnowledgeIntegrationHistoryEntry> = {}
+    ): KnowledgeIntegrationHistoryEntry => ({
+      integration_id: "knowledge_integration:1",
+      status: "superseded",
+      created_at: "t0",
+      superseded_at: "t1",
+      completeness: "partial",
+      link_count: 2,
+      hit_count: 1,
+      gap_count: 1,
+      source_revision_count: 3,
+      terminal: true,
+      actionable: false,
+      authority_effect: "none",
+      ...overrides,
+    });
+    const projection: KnowledgeIntegrationProjection = {
+      workspace_id: "ws",
+      generated_at: "t2",
+      current: null,
+      history: [historyEntry()],
+      history_count: 3,
+      authority_effect: "none",
+    };
+    expect(isKnowledgeIntegrationProjectionNonCommandable(projection)).toBe(true);
+    expect(isKnowledgeIntegrationHistoryNonActionable(historyEntry())).toBe(true);
+    expect(
+      isKnowledgeIntegrationHistoryNonActionable(historyEntry({ actionable: true }))
+    ).toBe(false);
+
+    const summary: KnowledgeIntegrationSummary = {
+      workspace_id: "ws",
+      generated_at: "t2",
+      has_current: false,
+      integration_id: null,
+      completeness: null,
+      link_count: 0,
+      hit_count: 0,
+      gap_count: 0,
+      source_revision_count: 0,
+      history: [historyEntry()],
+      history_count: 3,
+      authority_effect: "none",
+    };
+    expect(knowledgeIntegrationHistoryCountIsAuthoritative(summary)).toBe(true);
+    expect(summary.history_count).toBeGreaterThanOrEqual(summary.history.length);
+
+    const nonCommand = {
+      integration_id: "knowledge_integration:1",
+      actionable: false,
+      terminal: true,
+      authority_effect: "none",
+    };
+    expect(Object.keys(nonCommand)).not.toContain("execute");
+    expect(Object.keys(nonCommand)).not.toContain("approve");
+    expect(Object.keys(nonCommand)).not.toContain("should_execute");
     expect(Object.keys(nonCommand)).not.toContain("dispatch");
   });
 });

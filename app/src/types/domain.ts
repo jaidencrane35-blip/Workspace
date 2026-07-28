@@ -3690,6 +3690,144 @@ export interface KnowledgeSynthesisExplanation {
   actionable: boolean;
 }
 
+/** Programme III Batch 8 — Knowledge Integration (retrieval ≠ truth). */
+export interface KnowledgeRetrievalFrame {
+  focus: string | null;
+  include_state: boolean;
+  include_policy: boolean;
+  include_reconstruction: boolean;
+  include_temporal: boolean;
+  include_explanation: boolean;
+  include_contextual: boolean;
+  include_knowledge_synthesis: boolean;
+  max_hits: number;
+}
+
+export interface KnowledgeIntegrationEvidenceRef {
+  external_ref: string;
+  origin_domain: string;
+  source_revision: string | null;
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface IntegrationGap {
+  gap_id: string;
+  surface: string;
+  description: string;
+  severity: string;
+  evidence_refs: KnowledgeIntegrationEvidenceRef[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface KnowledgeEvidenceLink {
+  link_id: string;
+  kind: string;
+  label: string;
+  body: string;
+  source_artefact_ref: string;
+  related_ref: string | null;
+  source_revision: string | null;
+  origin_domain: string;
+  evidence_refs: KnowledgeIntegrationEvidenceRef[];
+  provenance: string[];
+  uncertainty: string[];
+  confidence: number;
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface KnowledgeRetrievalConfidence {
+  assessment_id: string;
+  coverage: number;
+  available_surfaces: number;
+  requested_surfaces: number;
+  gap_count: number;
+  conflict_count: number;
+  hit_count: number;
+  uncertainty: string[];
+  limitations: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface KnowledgeIntegrationResult {
+  integration_id: string;
+  workspace_id: string;
+  generated_at: string;
+  status: string;
+  superseded_at: string | null;
+  frame: KnowledgeRetrievalFrame;
+  source_revisions: string[];
+  query_context: string | null;
+  links: KnowledgeEvidenceLink[];
+  gaps: IntegrationGap[];
+  confidence: KnowledgeRetrievalConfidence;
+  completeness: string;
+  provenance_links: KnowledgeIntegrationEvidenceRef[];
+  summary: string;
+  narrative: string;
+  limitations: string[];
+  authority_effect: string;
+  actionable: boolean;
+  terminal: boolean;
+}
+
+export interface KnowledgeIntegrationHistoryEntry {
+  integration_id: string;
+  status: string;
+  created_at: string;
+  superseded_at: string | null;
+  completeness: string;
+  link_count: number;
+  hit_count: number;
+  gap_count: number;
+  source_revision_count: number;
+  terminal: boolean;
+  actionable: boolean;
+  authority_effect: string;
+}
+
+export interface KnowledgeIntegrationProjection {
+  workspace_id: string;
+  generated_at: string;
+  current: KnowledgeIntegrationResult | null;
+  history: KnowledgeIntegrationHistoryEntry[];
+  history_count: number;
+  authority_effect: string;
+}
+
+export interface KnowledgeIntegrationSummary {
+  workspace_id: string;
+  generated_at: string;
+  has_current: boolean;
+  integration_id: string | null;
+  completeness: string | null;
+  link_count: number;
+  hit_count: number;
+  gap_count: number;
+  source_revision_count: number;
+  history: KnowledgeIntegrationHistoryEntry[];
+  history_count: number;
+  authority_effect: string;
+}
+
+export interface KnowledgeIntegrationExplanation {
+  explanation_id: string;
+  workspace_id: string;
+  completeness: string | null;
+  summary: string | null;
+  link_summaries: string[];
+  gaps: string[];
+  evidence_refs: string[];
+  uncertainty: string[];
+  narrative: string;
+  limitations: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
 export type WindowIdentityConfidence = "high" | "medium" | "low" | "ephemeral";
 
 export interface WorkspaceObservationPass {

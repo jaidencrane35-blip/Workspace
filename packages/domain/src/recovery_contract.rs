@@ -39,6 +39,9 @@ use crate::workspace_contextual_understanding::{
 use crate::workspace_knowledge_synthesis::{
     KnowledgeSynthesisHistoryEntry, KnowledgeSynthesisProjection,
 };
+use crate::workspace_knowledge_integration::{
+    KnowledgeIntegrationHistoryEntry, KnowledgeIntegrationProjection,
+};
 use crate::workspace_reasoning_memory::{ReasoningHistoryEntry, ReasoningSnapshot};
 
 /// Documented startup in-progress sweep cap (must match
@@ -336,6 +339,26 @@ pub fn recovery_must_not_fabricate_knowledge_synthesis(
 /// Fabricated actionable knowledge-synthesis history must fail the recovery contract.
 pub fn recovery_must_not_fabricate_actionable_knowledge_synthesis_history(
     entry: &KnowledgeSynthesisHistoryEntry,
+) -> bool {
+    entry.is_non_actionable()
+}
+
+/// Missing knowledge integration remains missing — never invent hits on restart.
+pub fn recovery_must_not_fabricate_knowledge_integration(
+    projection: &KnowledgeIntegrationProjection,
+) -> bool {
+    projection.is_non_commandable()
+        && projection.history.iter().all(|h| h.is_non_actionable())
+        && projection
+            .current
+            .as_ref()
+            .map(|c| c.is_non_executing())
+            .unwrap_or(true)
+}
+
+/// Fabricated actionable knowledge-integration history must fail the recovery contract.
+pub fn recovery_must_not_fabricate_actionable_knowledge_integration_history(
+    entry: &KnowledgeIntegrationHistoryEntry,
 ) -> bool {
     entry.is_non_actionable()
 }
@@ -777,6 +800,34 @@ mod tests {
             authority_effect: "none".into(),
         };
         assert!(!recovery_must_not_fabricate_actionable_knowledge_synthesis_history(
+            &bad
+        ));
+    }
+
+    #[test]
+    fn recovery_never_fabricates_knowledge_integration_on_empty_projection() {
+        let empty = KnowledgeIntegrationProjection::assemble("ws", None, vec![], 0, "t0");
+        assert!(recovery_must_not_fabricate_knowledge_integration(&empty));
+        assert!(empty.current.is_none());
+    }
+
+    #[test]
+    fn recovery_rejects_actionable_knowledge_integration_history() {
+        let bad = KnowledgeIntegrationHistoryEntry {
+            integration_id: "knowledge_integration:1".into(),
+            status: "superseded".into(),
+            created_at: "t0".into(),
+            superseded_at: Some("t1".into()),
+            completeness: "unavailable".into(),
+            link_count: 0,
+            hit_count: 0,
+            gap_count: 0,
+            source_revision_count: 0,
+            terminal: true,
+            actionable: true,
+            authority_effect: "none".into(),
+        };
+        assert!(!recovery_must_not_fabricate_actionable_knowledge_integration_history(
             &bad
         ));
     }

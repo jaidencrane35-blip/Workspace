@@ -321,16 +321,18 @@ Rules:
 - Restart reconstructs durable current + history; missing synthesis remains missing
   (never inferred concepts / relationships / confidence).
 
-### Workspace Knowledge Integration (Programme III Batch 8 — charter)
+### Workspace Knowledge Integration (Programme III Batch 8)
 
-- **Current (proposed):** dual-channel integration projection with `KnowledgeRetrievalHit` /
-  `KnowledgeIntegrationLink` / `KnowledgeRetrievalGap`, diagnostic retrieval confidence.
+- **Current:** `KnowledgeIntegrationProjection.current` — `KnowledgeIntegrationResult` with
+  `KnowledgeEvidenceLink` / `IntegrationGap`, diagnostic `KnowledgeRetrievalConfidence`.
   Retrieval / join views only; never Memory truth, second ontology, execute, approve, or decide.
-- **History (proposed):** superseded integrations via append-only history
-  (`terminal: true`, `actionable: false`, `authority_effect: none`).
+  Integration ≠ authority; retrieval ≠ truth; relevance ≠ correctness; confidence ≠ permission.
+- **History:** superseded integrations via append-only history →
+  `KnowledgeIntegrationHistoryEntry` (`terminal: true`, `actionable: false`,
+  `authority_effect: none`).
 - **`history_count`** authoritative; summary windows may truncate `history`.
 - Completeness: Complete / Partial / Unknown / Contradictory / Unavailable.
-- `ExplainKnowledgeIntegration` / optional `RetrieveWorkspaceKnowledge` are non-authoritative.
+- `ExplainKnowledgeIntegration` / `RetrieveWorkspaceKnowledge` are non-authoritative.
 - React may inspect — no mutation or command conversion.
 - Restart reconstructs durable current + history; missing integration remains missing
   (never inferred hits / links / confidence).

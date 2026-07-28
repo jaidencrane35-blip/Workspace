@@ -143,6 +143,11 @@ use crate::commands::workspace_knowledge_synthesis::{
     ExplainKnowledgeSynthesis, GenerateWorkspaceKnowledgeSynthesis, GetWorkspaceKnowledgeSummary,
     GetWorkspaceKnowledgeSynthesis,
 };
+use crate::commands::workspace_knowledge_integration::{
+    ExplainKnowledgeIntegration, GenerateWorkspaceKnowledgeIntegration,
+    GetWorkspaceKnowledgeIntegration, GetWorkspaceKnowledgeIntegrationSummary,
+    RetrieveWorkspaceKnowledge,
+};
 use crate::commands::zone::{CreateZone, DeleteZone, GetZone};
 use crate::config::{SettingsUpdate, WorkspaceSettings};
 use crate::error::{KernelError, Result};
@@ -212,6 +217,8 @@ use workspace_domain::{
     WorkspaceExplanationSnapshot, WorkspaceExplanationSummary, WorkspaceSituationExplanation,
     ContextualUnderstandingProjection, ContextualUnderstandingSummary, WorkspaceContextExplanation,
     KnowledgeSynthesisProjection, KnowledgeSynthesisSummary, KnowledgeSynthesisExplanation,
+    KnowledgeIntegrationProjection, KnowledgeIntegrationSummary, KnowledgeIntegrationExplanation,
+    KnowledgeIntegrationResult,
     LayoutId, LayoutMetadata, LayoutNode, LayoutSnapshot, MemoryEntry, MemoryType,
     ModelProviderDescriptor, ModelResponse, Observation, PersonalizedPlanComparison,
     PreferenceCategory, PreferenceSource, Suggestion, SuggestionIntentRequest,
@@ -2943,6 +2950,63 @@ impl CommandHandler {
     /// Architecture guard — Knowledge synthesis cannot execute / approve / mutate.
     pub fn knowledge_synthesis_attempt_execute() -> Result<()> {
         crate::services::WorkspaceKnowledgeSynthesisService::attempt_execute()
+    }
+
+    pub fn generate_workspace_knowledge_integration(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<KnowledgeIntegrationProjection> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_mutation(GenerateWorkspaceKnowledgeIntegration::new(workspace_id))
+    }
+
+    pub fn get_workspace_knowledge_integration(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<KnowledgeIntegrationProjection> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetWorkspaceKnowledgeIntegration::new(workspace_id))
+    }
+
+    pub fn get_workspace_knowledge_integration_summary(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        history_limit: usize,
+    ) -> Result<KnowledgeIntegrationSummary> {
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_query(
+            GetWorkspaceKnowledgeIntegrationSummary::new(workspace_id, history_limit),
+        )
+    }
+
+    pub fn explain_knowledge_integration(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<KnowledgeIntegrationExplanation> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(ExplainKnowledgeIntegration::new(workspace_id))
+    }
+
+    pub fn retrieve_workspace_knowledge(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<KnowledgeIntegrationResult> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(RetrieveWorkspaceKnowledge::new(workspace_id))
+    }
+
+    /// Architecture guard — Knowledge integration cannot execute / approve / mutate.
+    pub fn knowledge_integration_attempt_execute() -> Result<()> {
+        crate::services::WorkspaceKnowledgeIntegrationService::attempt_execute()
     }
 
     #[allow(clippy::too_many_arguments)]

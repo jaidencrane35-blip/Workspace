@@ -435,10 +435,11 @@ See [Contextual Workspace Understanding Architecture](../05-AI/CONTEXTUAL-WORKSP
 
 See [Knowledge Synthesis Architecture](../05-AI/KNOWLEDGE-SYNTHESIS-ARCHITECTURE.md).
 
-## Workspace Knowledge Integration (Programme III Batch 8 — charter)
+## Workspace Knowledge Integration (Programme III Batch 8)
 
-`WorkspaceKnowledgeIntegrationService` will own **integration / retrieval artefacts only**
-(hits / cross-layer links / gaps). Charter pending review — not yet implemented.
+`WorkspaceKnowledgeIntegrationService` owns **integration / retrieval artefacts only**
+(`KnowledgeIntegrationResult` / `KnowledgeEvidenceLink` / `IntegrationGap`).
+Integration ≠ authority; retrieval ≠ truth; relevance ≠ correctness; confidence ≠ permission.
 
 | Property | Value |
 |----------|-------|
@@ -446,15 +447,16 @@ See [Knowledge Synthesis Architecture](../05-AI/KNOWLEDGE-SYNTHESIS-ARCHITECTURE
 | Execution / approve / policy / task / plan / autonomous authority | No |
 | Memory / Cognitive Model / Knowledge Synthesis replacement | No |
 | Source of truth | No |
-| Knowledge integration / retrieval projection owner (proposed) | Yes |
+| Knowledge integration / retrieval projection owner | Yes |
 
-Expected on implementation:
+Enforced:
 
 - `KnowledgeIntegrationHistoryEntry` / `KnowledgeIntegrationSummary` contain no authority/command fields
-- Mutation inventory includes `GenerateWorkspaceKnowledgeIntegration` (baseline +1)
+- Mutation inventory includes `GenerateWorkspaceKnowledgeIntegration` (baseline 69)
 - Knowledge integration cannot import lifecycle/execution services or call `PermissionGateway`
 - Knowledge integration cannot silently refresh foreign sources via `generate`
-- Hits require evidence refs; integration links meaning-only; confidence diagnostic only
+  (state / policy / reconstruction / temporal / explanation / contextual / knowledge synthesis are `load_snapshot` only)
+- Links require evidence refs; join kinds meaning-only; confidence diagnostic only
 - Repository cannot call the knowledge integration service
 
 See [Knowledge Integration Architecture](../05-AI/KNOWLEDGE-INTEGRATION-ARCHITECTURE.md).

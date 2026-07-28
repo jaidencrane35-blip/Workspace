@@ -29,6 +29,7 @@ pub use repositories::{
     TemporalIntelligenceRepository, WorkspaceExplanationRepository,
     WorkspaceContextualUnderstandingRepository,
     WorkspaceKnowledgeSynthesisRepository,
+    WorkspaceKnowledgeIntegrationRepository,
     WorkspaceRepository, WorkspaceIntentRepository, ZoneRepository,
 };
 pub use settings::SettingsRepository;

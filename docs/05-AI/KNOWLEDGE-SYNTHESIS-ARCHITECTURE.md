@@ -122,8 +122,8 @@ Constraints remain absolute:
 - no silent evidence refresh
 - no correlation-as-causation
 
-Batch 8 (Knowledge Integration / Retrieval Intelligence) remains gated on
-Batch 7 audit ACCEPT.
+Batch 8 (Knowledge Integration / Retrieval Intelligence) is implemented —
+see [Knowledge Integration Architecture](./KNOWLEDGE-INTEGRATION-ARCHITECTURE.md).
 
 ## Locked constraints (non-negotiable)
 
@@ -487,7 +487,7 @@ WorkspaceKnowledgeSynthesisService
 ```
 
 No repair / apply / replay / remember-as-truth / decide / retrieve-as-SoT commands.
-(Retrieval intelligence is Batch 8 — only after this boundary is accepted.)
+(Retrieval intelligence is Batch 8 — Active / accepted.)
 
 ## Persistence
 
@@ -644,7 +644,7 @@ Docs:
 ## Documentation deliverables
 
 - This architecture — status **Active — Programme III Batch 7 implemented**
-- `PROGRAMME-III-COHERENT-WORKSPACE-RUNTIME.md` — Batch 7 implemented; Batch 8 gated on Batch 7 audit ACCEPT
+- `PROGRAMME-III-COHERENT-WORKSPACE-RUNTIME.md` — Batch 7 implemented; Batch 8 Active / accepted
 - Pointers in `ARCHITECTURE-GOVERNANCE.md`, `PROJECTION-INTEGRITY.md`, `OPERATIONAL-RECOVERY.md`
 - Vocabulary: Knowledge Synthesis ≠ Memory / Cognitive Model / SoT / decision authority
 - `docs/README.md` index entry
@@ -679,7 +679,7 @@ proceeds only against this contract — no Memory / Cognitive Model replacement,
 no autonomous correction, no decision ownership.
 
 Batch 7 accepted. Next: [Knowledge Integration / Retrieval Intelligence](./KNOWLEDGE-INTEGRATION-ARCHITECTURE.md)
-(Batch 8 — charter draft; pending review before implementation).
+(Batch 8 — Active / accepted; Programme III coherent evidence stack closed).
 
 Later work remains under the same rule: synthesize / integrate understanding from evidence;
 do not create reality.
@@ -687,7 +687,7 @@ do not create reality.
 ## Related
 
 - [Programme III — Coherent Workspace Runtime](./PROGRAMME-III-COHERENT-WORKSPACE-RUNTIME.md)
-- [Knowledge Integration Architecture](./KNOWLEDGE-INTEGRATION-ARCHITECTURE.md) (Batch 8 charter)
+- [Knowledge Integration Architecture](./KNOWLEDGE-INTEGRATION-ARCHITECTURE.md) (Batch 8)
 - [Contextual Workspace Understanding Architecture](./CONTEXTUAL-WORKSPACE-UNDERSTANDING-ARCHITECTURE.md) (Batch 6)
 - [Workspace Explanation Layer Architecture](./WORKSPACE-EXPLANATION-LAYER-ARCHITECTURE.md) (Batch 5)
 - [Temporal Intelligence Architecture](./TEMPORAL-INTELLIGENCE-ARCHITECTURE.md) (Batch 4)

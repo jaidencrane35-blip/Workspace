@@ -114,7 +114,7 @@ AI behaviour, permissions, and boundaries.
 | [Workspace Explanation Layer Architecture](05-AI/WORKSPACE-EXPLANATION-LAYER-ARCHITECTURE.md) | Programme III Batch 5 cross-surface evidence-backed explanation |
 | [Contextual Workspace Understanding Architecture](05-AI/CONTEXTUAL-WORKSPACE-UNDERSTANDING-ARCHITECTURE.md) | Programme III Batch 6 — situational understanding (Active / accepted) |
 | [Knowledge Synthesis Architecture](05-AI/KNOWLEDGE-SYNTHESIS-ARCHITECTURE.md) | Programme III Batch 7 — structured knowledge artefacts (Active / accepted) |
-| [Knowledge Integration Architecture](05-AI/KNOWLEDGE-INTEGRATION-ARCHITECTURE.md) | Programme III Batch 8 — retrieval / integration over evidence layers (charter draft) |
+| [Knowledge Integration Architecture](05-AI/KNOWLEDGE-INTEGRATION-ARCHITECTURE.md) | Programme III Batch 8 — retrieval / integration over evidence layers (Active / accepted) |
 | [Memory Policy](05-AI/MEMORY-POLICY.md) | What may be stored, retention, user control, deletion |
 | [Confidence Policy](05-AI/CONFIDENCE-POLICY.md) | Confidence levels, suggestion thresholds, uncertainty |
 | [AI Architecture Index](05-AI/README.md) | Navigation hub for Recommendation/Decision/Governance contracts |

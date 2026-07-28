@@ -16,7 +16,7 @@ use workspace_domain::{
     WorkspaceLearningAdaptationError, WorkspaceCognitiveAgentCastError,
     WorkspaceCognitiveAutonomyError, WorkspaceStateEnvelopeError, PolicyGovernanceError,
     HistoricalReconstructionError, TemporalIntelligenceError, WorkspaceExplanationError,
-    ContextualUnderstandingError, KnowledgeSynthesisError,
+    ContextualUnderstandingError, KnowledgeSynthesisError, KnowledgeIntegrationError,
     WorkspaceSessionError,
     WorkspaceTransitionError,
     WorkspaceWorkContextError, WorkspaceWorkingStyleError,
@@ -277,6 +277,9 @@ pub enum KernelError {
 
     #[error("Knowledge synthesis validation failed: {message}")]
     KnowledgeSynthesisValidation { message: String },
+
+    #[error("Knowledge integration validation failed: {message}")]
+    KnowledgeIntegrationValidation { message: String },
 
     #[error("Workspace intelligence validation failed: {message}")]
     WorkspaceIntelligenceValidation { message: String },
@@ -657,6 +660,17 @@ impl From<KnowledgeSynthesisError> for KernelError {
         match error {
             KnowledgeSynthesisError::Domain(domain) => KernelError::from(domain),
             other => KernelError::KnowledgeSynthesisValidation {
+                message: other.to_string(),
+            },
+        }
+    }
+}
+
+impl From<KnowledgeIntegrationError> for KernelError {
+    fn from(error: KnowledgeIntegrationError) -> Self {
+        match error {
+            KnowledgeIntegrationError::Domain(domain) => KernelError::from(domain),
+            other => KernelError::KnowledgeIntegrationValidation {
                 message: other.to_string(),
             },
         }
@@ -1367,6 +1381,10 @@ impl KernelError {
             },
             KernelError::KnowledgeSynthesisValidation { message } => PublicError {
                 code: "knowledge_synthesis_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::KnowledgeIntegrationValidation { message } => PublicError {
+                code: "knowledge_integration_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::WorkspaceIntelligenceValidation { message } => PublicError {
