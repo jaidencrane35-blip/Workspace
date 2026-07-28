@@ -150,11 +150,24 @@ See [Persistence Boundary Governance](./PERSISTENCE-BOUNDARY-GOVERNANCE.md). Sum
 | Repositories → Services / Kernel | Persistence must not call lifecycle owners |
 | Domain → windows-integration / process spawn | Models are not executors |
 | Recommendation Engine → Process Spawn | RE records decisions; launch is a separate gated command |
+| Planning Engine → Execution / launch / Gateway.require | Planning is permanently non-executing; mutations via CommandPipeline only |
 | Services → `PermissionGateway::require` | Self-authorize bypass; `evaluate` discovery probes remain allowed |
 | History/projection DTO gaining authority fields | Evidence must never become executable |
 | Projection inventing terminal evidence | No fabricated outcomes on stale/partial recovery |
 | Production `AllowAll` / `AlwaysAllow` wiring | Test-only stubs; never on `WorkspaceKernel` |
 | Unsafe retry after non-retryable failure | Execution reconciliation owns retry_allowed |
+
+## Planning Engine (Programme II Batch 2)
+
+`WorkspacePlanningService` is the sole planning lifecycle owner. Governance verifies:
+
+- Planning history (`PlanningHistoryEntry`) and summary (`PlanningSummary`) contain no
+  authority/command fields.
+- Mutation inventory includes `GeneratePlanningSnapshot` (baseline floor raised).
+- Services never call `PermissionGateway::require`.
+- Planning cannot become an execution or process-launch path.
+
+See [Planning Architecture](../05-AI/PLANNING-ARCHITECTURE.md).
 
 ## Capability boundary audit
 

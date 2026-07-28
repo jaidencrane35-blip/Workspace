@@ -85,6 +85,7 @@ export const PUBLIC_ERROR_CODES = [
   "workspace_not_found",
   "workspace_operating_state_validation_error",
   "workspace_pattern_validation_error",
+  "workspace_planning_validation_error",
   "workspace_profile_validation_error",
   "workspace_purpose_validation_error",
   "workspace_readiness_validation_error",

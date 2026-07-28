@@ -12,6 +12,9 @@ Canonical product language. Prefer these terms in UI, docs, and Assistant copy.
 | **Working Set** | Current material set under cognitive focus | Composition members alone |
 | **Cognitive Constraint / Risk / Opportunity** | Semantic understanding nodes (never execute) | GovernanceRisk, SessionRisk, ExploreOpportunity kind |
 | **Assistant Goal** | Ephemeral planning statement for one Assistant/plan session | Work Goal |
+| **Planning Snapshot** | Durable Cognitive Planning Engine projection (current + history) | AiPlan, Assistant plan |
+| **Planning Proposal** | Active non-executing sequenced plan artefact | Executable workflow, Task Graph mutation |
+| **Planning History** | Terminal superseded/abandoned plan evidence only | Actionable plan queue |
 | **Task** | Durable work item | Action |
 | **Action** | Executable catalog/command candidate | Task |
 | **Automation Contract** | Stored future-intent definition (approval ≠ execution) | Automation, Policy |

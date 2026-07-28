@@ -10,9 +10,9 @@ use workspace_domain::{
     WorkspaceEnvironmentError, WorkspaceEvolutionError, WorkspaceExperienceError,
     WorkspaceIntelligenceError, WorkspaceIntentError, WorkspaceInteractionError,
     WorkspaceMilestoneError, WorkspaceNavigationError, WorkspaceOperatingStateError,
-    WorkspacePatternError, WorkspaceProfileError, WorkspacePurposeError, WorkspaceReadinessError,
-    WorkspaceRecommendationEngineError, WorkspaceSessionError, WorkspaceTransitionError,
-    WorkspaceWorkContextError, WorkspaceWorkingStyleError,
+    WorkspacePatternError, WorkspacePlanningError, WorkspaceProfileError, WorkspacePurposeError,
+    WorkspaceReadinessError, WorkspaceRecommendationEngineError, WorkspaceSessionError,
+    WorkspaceTransitionError, WorkspaceWorkContextError, WorkspaceWorkingStyleError,
 };
 
 #[derive(Debug, Error)]
@@ -228,6 +228,9 @@ pub enum KernelError {
 
     #[error("Cognitive model validation failed: {message}")]
     CognitiveModelValidation { message: String },
+
+    #[error("Workspace planning validation failed: {message}")]
+    WorkspacePlanningValidation { message: String },
 
     #[error("Workspace intelligence validation failed: {message}")]
     WorkspaceIntelligenceValidation { message: String },
@@ -454,6 +457,17 @@ impl From<CognitiveModelError> for KernelError {
         match error {
             CognitiveModelError::Domain(domain) => KernelError::from(domain),
             other => KernelError::CognitiveModelValidation {
+                message: other.to_string(),
+            },
+        }
+    }
+}
+
+impl From<WorkspacePlanningError> for KernelError {
+    fn from(error: WorkspacePlanningError) -> Self {
+        match error {
+            WorkspacePlanningError::Domain(domain) => KernelError::from(domain),
+            other => KernelError::WorkspacePlanningValidation {
                 message: other.to_string(),
             },
         }
@@ -1108,6 +1122,10 @@ impl KernelError {
             },
             KernelError::CognitiveModelValidation { message } => PublicError {
                 code: "cognitive_model_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::WorkspacePlanningValidation { message } => PublicError {
+                code: "workspace_planning_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::WorkspaceIntelligenceValidation { message } => PublicError {

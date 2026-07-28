@@ -46,6 +46,7 @@ pub mod workspace;
 pub mod workspace_activity;
 pub mod workspace_attention;
 pub mod workspace_cognitive_model;
+pub mod workspace_planning;
 pub mod workspace_composition;
 pub mod workspace_purpose;
 pub mod workspace_evolution;
@@ -434,6 +435,12 @@ pub use workspace_intent::{
 pub use workspace_cognitive_model::{
     CognitiveModelError, CognitiveModelState, CognitiveNode, CognitiveNodeKind,
     CognitiveNodeStatus, CognitiveRelation, CognitiveRelationKind,
+};
+pub use workspace_planning::{
+    PlanningAlternative, PlanningAssumption, PlanningConfidence, PlanningConstraintReference,
+    PlanningDependency, PlanningEvidenceReference, PlanningExplanation, PlanningGap,
+    PlanningHistoryEntry, PlanningPlan, PlanningPlanStatus, PlanningProposal, PlanningRisk,
+    PlanningSection, PlanningSnapshot, PlanningStep, PlanningSummary, WorkspacePlanningError,
 };
 pub use workspace_task_graph::{
     would_create_cycle, TaskDependency, TaskGraph, TaskGraphError, TaskGraphSummary, TaskHistoryEntry,

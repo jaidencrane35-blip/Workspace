@@ -2074,6 +2074,128 @@ export interface TaskGraphSummary {
   authority_effect: string;
 }
 
+/** Programme II Planning Engine — terminal evidence only (never actionable). */
+export interface PlanningHistoryEntry {
+  plan_id: string;
+  title: string;
+  status: string;
+  confidence: number;
+  uncertainty: number;
+  generated_at: string;
+  superseded_at: string | null;
+  terminal: boolean;
+  actionable: boolean;
+  authority_effect: string;
+}
+
+export interface PlanningExplanation {
+  summary: string;
+  why: string;
+  next: string;
+}
+
+export interface PlanningPlan {
+  id: string;
+  workspace_id: string;
+  title: string;
+  summary: string;
+  status: string;
+  confidence: number;
+  uncertainty: number;
+  generated_at: string;
+  superseded_at: string | null;
+  authority_effect: string;
+}
+
+export interface PlanningStep {
+  id: string;
+  plan_id: string;
+  workspace_id: string;
+  ordinal: number;
+  title: string;
+  rationale: string;
+  evidence_refs: string[];
+  confidence: number;
+  uncertainty: number;
+  authority_effect: string;
+}
+
+export interface PlanningAssumption {
+  id: string;
+  plan_id: string;
+  workspace_id: string;
+  statement: string;
+  confidence: number;
+  evidence_refs: string[];
+  authority_effect: string;
+}
+
+export interface PlanningRisk {
+  id: string;
+  plan_id: string;
+  workspace_id: string;
+  statement: string;
+  uncertainty: number;
+  evidence_refs: string[];
+  authority_effect: string;
+}
+
+export interface PlanningGap {
+  id: string;
+  plan_id: string;
+  workspace_id: string;
+  statement: string;
+  evidence_refs: string[];
+  authority_effect: string;
+}
+
+export interface PlanningDependency {
+  id: string;
+  plan_id: string;
+  workspace_id: string;
+  from_step_id: string;
+  to_step_id: string;
+  kind: string;
+  authority_effect: string;
+}
+
+export interface PlanningProposal {
+  plan: PlanningPlan;
+  steps: PlanningStep[];
+  sections: unknown[];
+  assumptions: PlanningAssumption[];
+  risks: PlanningRisk[];
+  gaps: PlanningGap[];
+  dependencies: PlanningDependency[];
+  alternatives: unknown[];
+  constraint_refs: unknown[];
+  evidence_refs: { external_ref: string; kind: string }[];
+  explanation: PlanningExplanation;
+  authority_effect: string;
+}
+
+/** Dual-channel Planning Engine projection. */
+export interface PlanningSnapshot {
+  workspace_id: string;
+  generated_at: string;
+  current: PlanningProposal | null;
+  history: PlanningHistoryEntry[];
+  history_count: number;
+  authority_effect: string;
+}
+
+export interface PlanningSummary {
+  workspace_id: string;
+  generated_at: string;
+  has_active_plan: boolean;
+  active_plan_id: string | null;
+  active_title: string | null;
+  step_count: number;
+  history: PlanningHistoryEntry[];
+  history_count: number;
+  authority_effect: string;
+}
+
 export type WindowIdentityConfidence = "high" | "medium" | "low" | "ephemeral";
 
 export interface WorkspaceObservationPass {

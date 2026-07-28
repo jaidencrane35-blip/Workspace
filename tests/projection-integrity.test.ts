@@ -13,6 +13,11 @@ import {
 import { isDecisionArtifactHistoryNonActionable } from "../app/src/components/decisionEngineProjection";
 import { isTaskHistoryNonActionable } from "../app/src/components/taskGraphProjection";
 import { isExecutionHistoryNonActionable } from "../app/src/components/executionLifecycleProjection";
+import {
+  isPlanningHistoryNonActionable,
+  isPlanningSnapshotNonCommandable,
+  planningHistoryCountIsAuthoritative,
+} from "../app/src/components/planningProjection";
 import type {
   DecisionArtifactHistoryEntry,
   DecisionEngineSummary,
@@ -20,6 +25,9 @@ import type {
   DecisionQueueSummary,
   ExecutionLifecycleHistoryEntry,
   ExecutionLifecycleProjection,
+  PlanningHistoryEntry,
+  PlanningSnapshot,
+  PlanningSummary,
   RecommendationHistoryEntry,
   RecommendationItem,
   TaskGraphSummary,
@@ -593,8 +601,71 @@ describe("projection contract — shared cross-domain invariants", () => {
       terminal: true,
       retry_allowed: true,
     });
+    assertNoCommandKeys({
+      plan_id: "p",
+      actionable: false,
+      terminal: true,
+      authority_effect: "none",
+    });
+  });
+});
+
+describe("projection integrity — planning engine", () => {
+  const historyEntry = (
+    overrides: Partial<PlanningHistoryEntry> = {}
+  ): PlanningHistoryEntry => ({
+    plan_id: "planning_plan:1",
+    title: "Prior plan",
+    status: "superseded",
+    confidence: 70,
+    uncertainty: 30,
+    generated_at: "t0",
+    superseded_at: "t1",
+    terminal: true,
+    actionable: false,
+    authority_effect: "none",
+    ...overrides,
   });
 
+  it("marks planning history as non-actionable", () => {
+    expect(isPlanningHistoryNonActionable(historyEntry())).toBe(true);
+    expect(
+      isPlanningHistoryNonActionable(
+        historyEntry({ actionable: true, status: "superseded" })
+      )
+    ).toBe(false);
+    expect(
+      isPlanningHistoryNonActionable(historyEntry({ status: "active" }))
+    ).toBe(false);
+  });
+
+  it("keeps planning snapshots non-commandable with authoritative history_count", () => {
+    const snapshot: PlanningSnapshot = {
+      workspace_id: "ws",
+      generated_at: "t2",
+      current: null,
+      history: [historyEntry()],
+      history_count: 3,
+      authority_effect: "none",
+    };
+    expect(isPlanningSnapshotNonCommandable(snapshot)).toBe(true);
+    const summary: PlanningSummary = {
+      workspace_id: "ws",
+      generated_at: "t2",
+      has_active_plan: false,
+      active_plan_id: null,
+      active_title: null,
+      step_count: 0,
+      history: [historyEntry()],
+      history_count: 3,
+      authority_effect: "none",
+    };
+    expect(planningHistoryCountIsAuthoritative(summary)).toBe(true);
+    assertCountAuthority(summary.history.length, summary.history_count);
+  });
+});
+
+describe("projection integrity — unknown provenance", () => {
   it("keeps unknown provenance as unknown (never invent native)", () => {
     const orphan = {
       origin: "unknown",

@@ -96,6 +96,9 @@ use crate::commands::workspace_intent::{
 use crate::commands::workspace_cognitive_model::{
     CreateCognitiveNode, CreateCognitiveRelation, GenerateCognitiveModel, SetCognitiveFocus,
 };
+use crate::commands::workspace_planning::{
+    GeneratePlanningSnapshot, GetPlanningSnapshot, GetPlanningSummary,
+};
 use crate::commands::zone::{CreateZone, DeleteZone, GetZone};
 use crate::config::{SettingsUpdate, WorkspaceSettings};
 use crate::error::{KernelError, Result};
@@ -151,7 +154,7 @@ use workspace_domain::{
     AiPlanSubmissionResult,
     AiProposalAuthorityOutcome, AiProposalEvaluation, AiProposalSubmission, ApplicationId,
     ApplicationReference, AuditEvent, Capability, CapabilitySet, CognitiveModelState, CognitiveNode,
-    CognitiveRelation, IntentContext, Layout,
+    CognitiveRelation, IntentContext, Layout, PlanningSnapshot, PlanningSummary,
     LayoutId, LayoutMetadata, LayoutNode, LayoutSnapshot, MemoryEntry, MemoryType,
     ModelProviderDescriptor, ModelResponse, Observation, PersonalizedPlanComparison,
     PreferenceCategory, PreferenceSource, Suggestion, SuggestionIntentRequest,
@@ -2302,6 +2305,42 @@ impl CommandHandler {
     ) -> Result<CognitiveModelState> {
         CommandPipeline::new(kernel.command_context(actor, intent))
             .execute_query(GenerateCognitiveModel::new(workspace_id))
+    }
+
+    pub fn generate_planning_snapshot(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<PlanningSnapshot> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_mutation(GeneratePlanningSnapshot::new(workspace_id))
+    }
+
+    pub fn get_planning_snapshot(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<PlanningSnapshot> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetPlanningSnapshot::new(workspace_id))
+    }
+
+    pub fn get_planning_summary(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        history_limit: usize,
+    ) -> Result<PlanningSummary> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetPlanningSummary::new(workspace_id, history_limit))
+    }
+
+    /// Architecture guard — Planning Engine must never execute.
+    pub fn workspace_planning_attempt_execute() -> Result<()> {
+        crate::services::WorkspacePlanningService::attempt_execute()
     }
 
     #[allow(clippy::too_many_arguments)]

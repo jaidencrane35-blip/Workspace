@@ -138,6 +138,19 @@ Rules:
   events remain the source of truth.
 - Observation execute attempts fail by contract.
 
+### Planning Engine (Programme II Batch 2)
+
+- **Current:** `PlanningSnapshot.current` — at most one active `PlanningProposal`.
+  View/inspect only; never execute / approve / dispatch from the projection.
+- **History:** superseded / abandoned plans via `PlanningHistoryEntry` only
+  (`terminal: true`, `actionable: false`, `authority_effect: none`).
+- **`history_count`** is authoritative; summary windows may truncate `history`.
+- Planning references Goal / Task / RE / DE / Memory / Attention / Purpose by identity —
+  no payload duplication, no foreign lifecycle mutation.
+- React may expand / collapse / compare plans and inspect rationale, risks, and
+  assumptions. No planning mutation ownership in the UI.
+- Restart reconstructs durable snapshots — no planning replay, no fabricated evidence.
+
 ## Serde defaults vs TypeScript required fields
 
 Rust history fields often use `#[serde(default)]` so older persisted / in-flight JSON

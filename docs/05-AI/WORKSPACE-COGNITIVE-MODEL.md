@@ -70,7 +70,7 @@ Capability token: `work_context.write` (shared write token — not a lifecycle o
 
 ## Programme II forward links
 
-- Batch 2 Planner reads Cognitive Model for decomposition targets
+- Batch 2 Planner reads Cognitive Model for decomposition targets — see [Planning Architecture](./PLANNING-ARCHITECTURE.md)
 - Batch 3 Reasoning Memory cites cognitive node ids as subjects
 - Batch 4 Cognitive Graph generalizes relations across Intent/Task/RE/DE identities
 - Batches 5–8 consume this layer; they do not redefine it
