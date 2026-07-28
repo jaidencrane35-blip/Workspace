@@ -17,12 +17,11 @@ pub use init::{bundled_migrations_dir, DatabaseService};
 pub use migration::MigrationRunner;
 pub use repositories::{
     AiMemoryRepository, ApplicationRepository, AuditRepository, AutomationContractRepository,
-    AutomationTriggerRepository, DecisionEngineRepository, DecisionQueueRepository, GraphRepository,
-    ExecutionLifecycleRepository, LayoutRepository, PermissionApprovalRepository,
-    RecommendationLifecycleRepository,
-    TaskGraphRepository, UserPreferenceRepository,
-    WidgetRepository, WorkspaceProfileRepository, ObservationMonitorRepository,
-    ObservationPassRepository, ObservationWindowIdentityRepository, ObservationWindowRepository,
-    WorkspaceRepository, WorkspaceIntentRepository, ZoneRepository,
+    AutomationTriggerRepository, CognitiveModelRepository, DecisionEngineRepository,
+    DecisionQueueRepository, GraphRepository, ExecutionLifecycleRepository, LayoutRepository,
+    PermissionApprovalRepository, RecommendationLifecycleRepository, TaskGraphRepository,
+    UserPreferenceRepository, WidgetRepository, WorkspaceProfileRepository,
+    ObservationMonitorRepository, ObservationPassRepository, ObservationWindowIdentityRepository,
+    ObservationWindowRepository, WorkspaceRepository, WorkspaceIntentRepository, ZoneRepository,
 };
 pub use settings::SettingsRepository;

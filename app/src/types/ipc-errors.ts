@@ -21,6 +21,7 @@ export const PUBLIC_ERROR_CODES = [
   "automation_trigger_validation_error",
   "cannot_cancel_completed_execution",
   "capability_discovery_validation_error",
+  "cognitive_model_validation_error",
   "config_error",
   "context_validation_error",
   "database_error",

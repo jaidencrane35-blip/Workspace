@@ -4,13 +4,13 @@ use workspace_database::DatabaseError;
 use workspace_domain::{
     AiAssistantError, AiEvaluationError, AiMemoryError, AiModelError, AiOrchestrationError,
     AiPersonalizationError, AiPlanningError, AiRequestError, AutomationContractError,
-    AutomationTriggerError, DecisionEngineError, DecisionQueueError, DomainError, ResourceKind,
-    TaskGraphError, WorkspaceActivityError, WorkspaceAdaptationError, WorkspaceAttentionError,
-    WorkspaceCompositionError, WorkspaceContinuityError, WorkspaceEnvironmentError,
-    WorkspaceEvolutionError, WorkspaceExperienceError, WorkspaceIntelligenceError,
-    WorkspaceIntentError, WorkspaceInteractionError, WorkspaceMilestoneError,
-    WorkspaceNavigationError, WorkspaceOperatingStateError, WorkspacePatternError,
-    WorkspaceProfileError, WorkspacePurposeError, WorkspaceReadinessError,
+    AutomationTriggerError, CognitiveModelError, DecisionEngineError, DecisionQueueError,
+    DomainError, ResourceKind, TaskGraphError, WorkspaceActivityError, WorkspaceAdaptationError,
+    WorkspaceAttentionError, WorkspaceCompositionError, WorkspaceContinuityError,
+    WorkspaceEnvironmentError, WorkspaceEvolutionError, WorkspaceExperienceError,
+    WorkspaceIntelligenceError, WorkspaceIntentError, WorkspaceInteractionError,
+    WorkspaceMilestoneError, WorkspaceNavigationError, WorkspaceOperatingStateError,
+    WorkspacePatternError, WorkspaceProfileError, WorkspacePurposeError, WorkspaceReadinessError,
     WorkspaceRecommendationEngineError, WorkspaceSessionError, WorkspaceTransitionError,
     WorkspaceWorkContextError, WorkspaceWorkingStyleError,
 };
@@ -226,6 +226,9 @@ pub enum KernelError {
     #[error("Workspace intent validation failed: {message}")]
     WorkspaceIntentValidation { message: String },
 
+    #[error("Cognitive model validation failed: {message}")]
+    CognitiveModelValidation { message: String },
+
     #[error("Workspace intelligence validation failed: {message}")]
     WorkspaceIntelligenceValidation { message: String },
 
@@ -440,6 +443,17 @@ impl From<WorkspaceIntentError> for KernelError {
         match error {
             WorkspaceIntentError::Domain(domain) => KernelError::from(domain),
             other => KernelError::WorkspaceIntentValidation {
+                message: other.to_string(),
+            },
+        }
+    }
+}
+
+impl From<CognitiveModelError> for KernelError {
+    fn from(error: CognitiveModelError) -> Self {
+        match error {
+            CognitiveModelError::Domain(domain) => KernelError::from(domain),
+            other => KernelError::CognitiveModelValidation {
                 message: other.to_string(),
             },
         }
@@ -1090,6 +1104,10 @@ impl KernelError {
             },
             KernelError::WorkspaceIntentValidation { message } => PublicError {
                 code: "workspace_intent_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::CognitiveModelValidation { message } => PublicError {
+                code: "cognitive_model_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::WorkspaceIntelligenceValidation { message } => PublicError {

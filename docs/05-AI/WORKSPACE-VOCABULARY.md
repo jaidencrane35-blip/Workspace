@@ -5,6 +5,12 @@ Canonical product language. Prefer these terms in UI, docs, and Assistant copy.
 | Term | Meaning | Do not call it |
 |------|---------|----------------|
 | **Work Goal** | Durable desired outcome on a Project/Task | Goal (bare), Assistant goal |
+| **Cognitive Goal** | Semantic Goal node in Cognitive Model; references a Work Goal | Work Goal payload, Assistant Goal |
+| **Objective** | Measurable outcome under a Goal/Initiative (Cognitive Model) | Work Goal, Milestone Engine row |
+| **Initiative** | Coordinated effort spanning objectives/milestones (Cognitive Model) | Project |
+| **Cognitive Milestone** | Semantic outcome checkpoint (Cognitive Model DurableStore) | Milestone Engine projection |
+| **Working Set** | Current material set under cognitive focus | Composition members alone |
+| **Cognitive Constraint / Risk / Opportunity** | Semantic understanding nodes (never execute) | GovernanceRisk, SessionRisk, ExploreOpportunity kind |
 | **Assistant Goal** | Ephemeral planning statement for one Assistant/plan session | Work Goal |
 | **Task** | Durable work item | Action |
 | **Action** | Executable catalog/command candidate | Task |

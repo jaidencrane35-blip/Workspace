@@ -10,6 +10,7 @@ mod workspace_attention;
 mod workspace_continuity;
 mod workspace_environment;
 mod workspace_composition;
+mod workspace_cognitive_model;
 mod workspace_purpose;
 mod workspace_evolution;
 mod workspace_recommendation;
@@ -113,6 +114,8 @@ mod workspace_activity_tests;
 mod platform_coherence_tests;
 #[cfg(test)]
 mod workspace_continuity_tests;
+#[cfg(test)]
+mod workspace_cognitive_model_tests;
 #[cfg(test)]
 mod workspace_attention_tests;
 #[cfg(test)]
@@ -382,5 +385,8 @@ pub use widget::{CreateWidget, DeleteWidget, GetWidget};
 pub use workspace_intent::{
     CreateProject, CreateTask, CreateWorkGoal, GetProject, GetTask, GetWorkflowContext,
     ListProjects, ListTasks, SetActiveWork, UpdateProject, UpdateTask,
+};
+pub use workspace_cognitive_model::{
+    CreateCognitiveNode, CreateCognitiveRelation, GenerateCognitiveModel, SetCognitiveFocus,
 };
 pub use zone::{CreateZone, DeleteZone, GetZone};

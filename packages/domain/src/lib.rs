@@ -45,6 +45,7 @@ pub mod suggestion_lifecycle;
 pub mod workspace;
 pub mod workspace_activity;
 pub mod workspace_attention;
+pub mod workspace_cognitive_model;
 pub mod workspace_composition;
 pub mod workspace_purpose;
 pub mod workspace_evolution;
@@ -429,6 +430,10 @@ pub use workspace_environment::{
 pub use workspace_intent::{
     Project, ProjectStatus, Task, TaskPriority, TaskStatus, WorkGoal, WorkGoalStatus,
     WorkflowContext, WorkspaceIntentError,
+};
+pub use workspace_cognitive_model::{
+    CognitiveModelError, CognitiveModelState, CognitiveNode, CognitiveNodeKind,
+    CognitiveNodeStatus, CognitiveRelation, CognitiveRelationKind,
 };
 pub use workspace_task_graph::{
     would_create_cycle, TaskDependency, TaskGraph, TaskGraphError, TaskGraphSummary, TaskHistoryEntry,

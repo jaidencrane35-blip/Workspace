@@ -93,6 +93,9 @@ use crate::commands::workspace_intent::{
     CreateProject, CreateTask, CreateWorkGoal, GetProject, GetTask, GetWorkflowContext,
     ListProjects, ListTasks, SetActiveWork, UpdateProject, UpdateTask,
 };
+use crate::commands::workspace_cognitive_model::{
+    CreateCognitiveNode, CreateCognitiveRelation, GenerateCognitiveModel, SetCognitiveFocus,
+};
 use crate::commands::zone::{CreateZone, DeleteZone, GetZone};
 use crate::config::{SettingsUpdate, WorkspaceSettings};
 use crate::error::{KernelError, Result};
@@ -147,7 +150,8 @@ use workspace_domain::{
     WorkspaceIntelligenceComparison, WorkspaceIntelligenceState, AiPlan, AiPlanEvaluationReport,
     AiPlanSubmissionResult,
     AiProposalAuthorityOutcome, AiProposalEvaluation, AiProposalSubmission, ApplicationId,
-    ApplicationReference, AuditEvent, Capability, CapabilitySet, IntentContext, Layout,
+    ApplicationReference, AuditEvent, Capability, CapabilitySet, CognitiveModelState, CognitiveNode,
+    CognitiveRelation, IntentContext, Layout,
     LayoutId, LayoutMetadata, LayoutNode, LayoutSnapshot, MemoryEntry, MemoryType,
     ModelProviderDescriptor, ModelResponse, Observation, PersonalizedPlanComparison,
     PreferenceCategory, PreferenceSource, Suggestion, SuggestionIntentRequest,
@@ -2225,6 +2229,79 @@ impl CommandHandler {
         CommandPipeline::new(kernel.command_context(actor, intent)).execute_mutation(
             SetActiveWork::new(workspace_id, project_id, task_id),
         )
+    }
+
+    pub fn create_cognitive_node(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        kind: String,
+        title: String,
+        description: Option<String>,
+        importance: u8,
+        confidence: u8,
+        uncertainty: u8,
+        external_ref: Option<String>,
+        parent_id: Option<String>,
+    ) -> Result<CognitiveNode> {
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_mutation(
+            CreateCognitiveNode::new(
+                workspace_id,
+                kind,
+                title,
+                description,
+                importance,
+                confidence,
+                uncertainty,
+                external_ref,
+                parent_id,
+            ),
+        )
+    }
+
+    pub fn set_cognitive_focus(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        node_id: String,
+    ) -> Result<CognitiveNode> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_mutation(SetCognitiveFocus::new(workspace_id, node_id))
+    }
+
+    pub fn create_cognitive_relation(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        from_id: String,
+        to_id: String,
+        kind: String,
+        confidence: u8,
+        explanation: Option<String>,
+    ) -> Result<CognitiveRelation> {
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_mutation(
+            CreateCognitiveRelation::new(
+                workspace_id,
+                from_id,
+                to_id,
+                kind,
+                confidence,
+                explanation,
+            ),
+        )
+    }
+
+    pub fn generate_cognitive_model(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<CognitiveModelState> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GenerateCognitiveModel::new(workspace_id))
     }
 
     #[allow(clippy::too_many_arguments)]
