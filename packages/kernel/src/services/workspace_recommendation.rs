@@ -2435,7 +2435,9 @@ impl WorkspaceRecommendationEngineService {
         let guard = db
             .lock()
             .map_err(|_| KernelError::lock_poisoned("database"))?;
-        RecommendationLifecycleRepository::new(&guard).upsert_overlay(overlay)?;
+        RecommendationLifecycleRepository::new(&guard)
+            .upsert_overlay(overlay)
+            .map_err(KernelError::from_recommendation_persistence)?;
         Ok(())
     }
 

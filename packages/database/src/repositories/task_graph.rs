@@ -35,7 +35,26 @@ impl<'a> TaskGraphRepository<'a> {
                 explanation = excluded.explanation,
                 updated_at = excluded.updated_at
              WHERE workspace_task_nodes.status NOT IN ('completed','cancelled')
-                OR excluded.status IN ('completed','cancelled')",
+                OR (
+                    excluded.status IN ('completed','cancelled')
+                    AND (
+                        workspace_task_nodes.status NOT IN ('completed','cancelled')
+                        OR (
+                            -- Terminal sync may update metadata but cannot lose completion evidence.
+                            excluded.progress_percent >= workspace_task_nodes.progress_percent
+                            AND (
+                                workspace_task_nodes.status != 'completed'
+                                OR excluded.status = 'completed'
+                                OR excluded.progress_percent >= 100
+                            )
+                            AND (
+                                length(workspace_task_nodes.explanation) = 0
+                                OR length(excluded.explanation) > 0
+                                OR workspace_task_nodes.explanation = excluded.explanation
+                            )
+                        )
+                    )
+                )",
             (
                 task.id.as_str(),
                 task.workspace_id.as_str(),
@@ -53,6 +72,20 @@ impl<'a> TaskGraphRepository<'a> {
             ),
         )?;
         if changed == 0 {
+            if let Some(existing) = self.get_task(task.id.as_str())? {
+                if existing.status == WorkspaceTaskStatus::Completed
+                    && (task.progress_percent < existing.progress_percent
+                        || (task.status == WorkspaceTaskStatus::Completed
+                            && task.progress_percent < 100
+                            && existing.progress_percent >= 100)
+                        || (!existing.explanation.is_empty() && task.explanation.is_empty()))
+                {
+                    return Err(crate::error::DatabaseError::ImmutableArtifact(format!(
+                        "task {} completed evidence cannot be erased or weakened",
+                        task.id.as_str()
+                    )));
+                }
+            }
             return Err(crate::error::DatabaseError::InvalidTransition(format!(
                 "task {} cannot transition from terminal state to {}",
                 task.id.as_str(),

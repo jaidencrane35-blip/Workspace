@@ -376,7 +376,9 @@ impl TaskGraphService {
         let guard = db
             .lock()
             .map_err(|_| KernelError::lock_poisoned("database"))?;
-        TaskGraphRepository::new(&guard).upsert_task(task)?;
+        TaskGraphRepository::new(&guard)
+            .upsert_task(task)
+            .map_err(KernelError::from_task_graph_persistence)?;
         Ok(())
     }
 

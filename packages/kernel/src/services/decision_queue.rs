@@ -531,7 +531,7 @@ impl DecisionQueueService {
             .map_err(|_| KernelError::lock_poisoned("database"))?;
         DecisionQueueRepository::new(&guard)
             .upsert_overlay(&overlay)
-            .map_err(Into::into)
+            .map_err(KernelError::from_decision_queue_persistence)
     }
 
     fn adapt_permission_approvals(

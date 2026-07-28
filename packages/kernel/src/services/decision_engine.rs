@@ -501,7 +501,7 @@ impl DecisionEngineService {
                 }
             }
             crate::services::validate_intake_candidate_phase(&candidate)?;
-            repo.upsert_intake_candidate(&candidate)?;
+            repo.upsert_intake_candidate(&candidate).map_err(Self::map_persistence)?;
         }
 
         // Reevaluate previously stored intake candidates against current eligibility/acceptance.
@@ -524,7 +524,7 @@ impl DecisionEngineService {
                 .get(&stored.recommendation_reference)
                 .map(String::as_str);
             stored.apply_source_reevaluation(eligibility, acceptance_state, &now);
-            repo.upsert_intake_candidate(&stored)?;
+            repo.upsert_intake_candidate(&stored).map_err(Self::map_persistence)?;
         }
 
         let mut out = repo.list_intake_candidates(workspace_id)?;
@@ -584,7 +584,7 @@ impl DecisionEngineService {
         )
         .map_err(KernelError::from)?;
         crate::services::validate_intake_evaluation_phase(&evaluation)?;
-        repo.upsert_intake_evaluation(&evaluation)?;
+        repo.upsert_intake_evaluation(&evaluation).map_err(Self::map_persistence)?;
         drop(guard);
         Ok(evaluation)
     }
@@ -896,7 +896,7 @@ impl DecisionEngineService {
         let guard = db
             .lock()
             .map_err(|_| KernelError::lock_poisoned("database"))?;
-        DecisionEngineRepository::new(&guard).upsert_evaluation_resolution(&resolved)?;
+        DecisionEngineRepository::new(&guard).upsert_evaluation_resolution(&resolved).map_err(Self::map_persistence)?;
         drop(guard);
         Ok((resolved, unchanged))
     }
@@ -970,7 +970,7 @@ impl DecisionEngineService {
         let guard = db
             .lock()
             .map_err(|_| KernelError::lock_poisoned("database"))?;
-        DecisionEngineRepository::new(&guard).upsert_candidate_score(&score)?;
+        DecisionEngineRepository::new(&guard).upsert_candidate_score(&score).map_err(Self::map_persistence)?;
         drop(guard);
         Ok((score, unchanged))
     }
@@ -1058,7 +1058,7 @@ impl DecisionEngineService {
         let guard = db
             .lock()
             .map_err(|_| KernelError::lock_poisoned("database"))?;
-        DecisionEngineRepository::new(&guard).upsert_candidate_selection(&selection)?;
+        DecisionEngineRepository::new(&guard).upsert_candidate_selection(&selection).map_err(Self::map_persistence)?;
         drop(guard);
         Ok((selection, unchanged))
     }
@@ -1136,7 +1136,7 @@ impl DecisionEngineService {
         let guard = db
             .lock()
             .map_err(|_| KernelError::lock_poisoned("database"))?;
-        DecisionEngineRepository::new(&guard).upsert_progression_request(&request)?;
+        DecisionEngineRepository::new(&guard).upsert_progression_request(&request).map_err(Self::map_persistence)?;
         drop(guard);
         Ok((request, unchanged))
     }
@@ -1220,7 +1220,8 @@ impl DecisionEngineService {
             .lock()
             .map_err(|_| KernelError::lock_poisoned("database"))?;
         DecisionEngineRepository::new(&guard)
-            .upsert_progression_acknowledgement(&acknowledgement)?;
+            .upsert_progression_acknowledgement(&acknowledgement)
+            .map_err(Self::map_persistence)?;
         drop(guard);
         Ok((acknowledgement, unchanged))
     }
@@ -1531,7 +1532,7 @@ impl DecisionEngineService {
         let guard = db
             .lock()
             .map_err(|_| KernelError::lock_poisoned("database"))?;
-        DecisionEngineRepository::new(&guard).upsert_evaluation_origin_contract(&contract)?;
+        DecisionEngineRepository::new(&guard).upsert_evaluation_origin_contract(&contract).map_err(Self::map_persistence)?;
         drop(guard);
         Ok((contract, unchanged))
     }
@@ -1615,14 +1616,15 @@ impl DecisionEngineService {
             .lock()
             .map_err(|_| KernelError::lock_poisoned("database"))?;
         let repo = DecisionEngineRepository::new(&guard);
-        repo.upsert_candidate_creation(&creation)?;
+        repo.upsert_candidate_creation(&creation).map_err(Self::map_persistence)?;
         repo.upsert_overlay(&DecisionEngineOverlay {
             workspace_id: workspace_id.clone(),
             candidate_key: Self::candidate_key(&candidate),
             outcome: candidate.outcome,
             updated_at: creation.created_at.clone().unwrap_or_else(|| Utc::now().to_rfc3339()),
             actor_id: "decision_engine".into(),
-        })?;
+        })
+        .map_err(Self::map_persistence)?;
         drop(guard);
         Ok((creation, candidate))
     }
@@ -1666,7 +1668,7 @@ impl DecisionEngineService {
         )
         .map_err(KernelError::from)?;
         crate::services::validate_intake_disposition_only(&disposition)?;
-        repo.upsert_intake_disposition(&disposition)?;
+        repo.upsert_intake_disposition(&disposition).map_err(Self::map_persistence)?;
         drop(guard);
         Ok(disposition)
     }
@@ -2278,11 +2280,18 @@ impl DecisionEngineService {
             .collect())
     }
 
+
+    fn map_persistence(error: workspace_database::DatabaseError) -> KernelError {
+        KernelError::from_decision_engine_persistence(error)
+    }
+
     fn upsert_overlay(db: &Arc<Mutex<Database>>, overlay: &DecisionEngineOverlay) -> Result<()> {
         let guard = db
             .lock()
             .map_err(|_| KernelError::lock_poisoned("database"))?;
-        DecisionEngineRepository::new(&guard).upsert_overlay(overlay)?;
+        DecisionEngineRepository::new(&guard)
+            .upsert_overlay(overlay)
+            .map_err(KernelError::from_decision_engine_persistence)?;
         Ok(())
     }
 

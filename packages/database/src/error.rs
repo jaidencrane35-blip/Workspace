@@ -17,6 +17,10 @@ pub enum DatabaseError {
     #[error("Invalid persistence transition: {0}")]
     InvalidTransition(String),
 
+    /// Authoritative / evaluate-once artifacts cannot be erased or replaced.
+    #[error("Immutable artifact violation: {0}")]
+    ImmutableArtifact(String),
+
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
 

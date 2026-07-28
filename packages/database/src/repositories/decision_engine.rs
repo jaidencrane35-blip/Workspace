@@ -91,11 +91,30 @@ impl<'a> DecisionEngineRepository<'a> {
                 lifecycle_state = excluded.lifecycle_state,
                 lifecycle_reason = excluded.lifecycle_reason,
                 lifecycle_updated_at = excluded.lifecycle_updated_at
-             WHERE decision_engine_intake_candidate.lifecycle_state = excluded.lifecycle_state
-                OR (decision_engine_intake_candidate.lifecycle_state = 'active'
-                    AND excluded.lifecycle_state IN ('withdrawn','invalidated'))
-                OR (decision_engine_intake_candidate.lifecycle_state = 'withdrawn'
-                    AND excluded.lifecycle_state = 'invalidated')",
+             WHERE (
+                    decision_engine_intake_candidate.lifecycle_state = excluded.lifecycle_state
+                    OR (decision_engine_intake_candidate.lifecycle_state = 'active'
+                        AND excluded.lifecycle_state IN ('withdrawn','invalidated'))
+                    OR (decision_engine_intake_candidate.lifecycle_state = 'withdrawn'
+                        AND excluded.lifecycle_state = 'invalidated')
+                )
+                AND (
+                    decision_engine_intake_candidate.lifecycle_state != 'invalidated'
+                    OR (
+                        decision_engine_intake_candidate.intake_receipt_reference
+                            = excluded.intake_receipt_reference
+                        AND decision_engine_intake_candidate.recommendation_reference
+                            = excluded.recommendation_reference
+                        AND decision_engine_intake_candidate.package_seal_digest
+                            = excluded.package_seal_digest
+                        AND decision_engine_intake_candidate.acceptance_reference
+                            = excluded.acceptance_reference
+                        AND decision_engine_intake_candidate.compatibility_version
+                            = excluded.compatibility_version
+                        AND decision_engine_intake_candidate.state = excluded.state
+                        AND decision_engine_intake_candidate.created_at = excluded.created_at
+                    )
+                )",
             (
                 &candidate.workspace_id,
                 &candidate.intake_candidate_id,
@@ -113,6 +132,25 @@ impl<'a> DecisionEngineRepository<'a> {
             ),
         )?;
         if changed == 0 {
+            if let Some(existing) =
+                self.get_intake_candidate(&candidate.workspace_id, &candidate.intake_candidate_id)?
+            {
+                if existing.lifecycle.lifecycle_state
+                    == DecisionEngineIntakeCandidateLifecycle::STATE_INVALIDATED
+                    && (existing.intake_receipt_reference != candidate.intake_receipt_reference
+                        || existing.recommendation_reference != candidate.recommendation_reference
+                        || existing.package_seal_digest != candidate.package_seal_digest
+                        || existing.acceptance_reference != candidate.acceptance_reference
+                        || existing.compatibility_version != candidate.compatibility_version
+                        || existing.state != candidate.state
+                        || existing.created_at != candidate.created_at)
+                {
+                    return Err(crate::error::DatabaseError::ImmutableArtifact(format!(
+                        "intake candidate {} invalidated provenance cannot be rewritten",
+                        candidate.intake_candidate_id
+                    )));
+                }
+            }
             return Err(crate::error::DatabaseError::InvalidTransition(format!(
                 "intake candidate {} cannot transition to {}",
                 candidate.intake_candidate_id,
@@ -186,17 +224,19 @@ impl<'a> DecisionEngineRepository<'a> {
         &self,
         evaluation: &DecisionEngineIntakeEvaluation,
     ) -> Result<()> {
-        self.db.connection().execute(
+        let changed = self.db.connection().execute(
             "INSERT INTO decision_engine_intake_evaluation (
                 workspace_id, evaluation_id, intake_candidate_id, evaluated_at,
                 evaluation_state, evaluation_reason, updated_at
              ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?4)
              ON CONFLICT(workspace_id, evaluation_id) DO UPDATE SET
-                intake_candidate_id = excluded.intake_candidate_id,
-                evaluated_at = excluded.evaluated_at,
-                evaluation_state = excluded.evaluation_state,
-                evaluation_reason = excluded.evaluation_reason,
-                updated_at = excluded.updated_at",
+                updated_at = decision_engine_intake_evaluation.updated_at
+             WHERE decision_engine_intake_evaluation.intake_candidate_id
+                    = excluded.intake_candidate_id
+                AND decision_engine_intake_evaluation.evaluated_at = excluded.evaluated_at
+                AND decision_engine_intake_evaluation.evaluation_state = excluded.evaluation_state
+                AND decision_engine_intake_evaluation.evaluation_reason
+                    = excluded.evaluation_reason",
             (
                 &evaluation.workspace_id,
                 &evaluation.evaluation_id,
@@ -206,6 +246,12 @@ impl<'a> DecisionEngineRepository<'a> {
                 &evaluation.evaluation_reason,
             ),
         )?;
+        if changed == 0 {
+            return Err(crate::error::DatabaseError::ImmutableArtifact(format!(
+                "intake evaluation {} is immutable and cannot be replaced",
+                evaluation.evaluation_id
+            )));
+        }
         Ok(())
     }
 
@@ -249,18 +295,21 @@ impl<'a> DecisionEngineRepository<'a> {
         &self,
         disposition: &DecisionEngineIntakeDisposition,
     ) -> Result<()> {
-        self.db.connection().execute(
+        let changed = self.db.connection().execute(
             "INSERT INTO decision_engine_intake_disposition (
                 workspace_id, disposition_id, intake_candidate_id, evaluation_id,
                 disposed_at, disposition_state, disposition_reason, updated_at
              ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?5)
              ON CONFLICT(workspace_id, disposition_id) DO UPDATE SET
-                intake_candidate_id = excluded.intake_candidate_id,
-                evaluation_id = excluded.evaluation_id,
-                disposed_at = excluded.disposed_at,
-                disposition_state = excluded.disposition_state,
-                disposition_reason = excluded.disposition_reason,
-                updated_at = excluded.updated_at",
+                updated_at = decision_engine_intake_disposition.updated_at
+             WHERE decision_engine_intake_disposition.intake_candidate_id
+                    = excluded.intake_candidate_id
+                AND decision_engine_intake_disposition.evaluation_id = excluded.evaluation_id
+                AND decision_engine_intake_disposition.disposed_at = excluded.disposed_at
+                AND decision_engine_intake_disposition.disposition_state
+                    = excluded.disposition_state
+                AND decision_engine_intake_disposition.disposition_reason
+                    = excluded.disposition_reason",
             (
                 &disposition.workspace_id,
                 &disposition.disposition_id,
@@ -271,6 +320,12 @@ impl<'a> DecisionEngineRepository<'a> {
                 &disposition.disposition_reason,
             ),
         )?;
+        if changed == 0 {
+            return Err(crate::error::DatabaseError::ImmutableArtifact(format!(
+                "intake disposition {} is immutable and cannot be replaced",
+                disposition.disposition_id
+            )));
+        }
         Ok(())
     }
 
@@ -305,23 +360,28 @@ impl<'a> DecisionEngineRepository<'a> {
         let title = creation.title.as_deref().unwrap_or_default();
         let goal_statement = creation.goal_statement.as_deref().unwrap_or_default();
         let created_at = creation.created_at.as_deref().unwrap_or_default();
-        self.db.connection().execute(
+        let changed = self.db.connection().execute(
             "INSERT INTO decision_engine_candidate_creation (
                 workspace_id, creation_id, intake_candidate_id, creation_request_id,
                 recommendation_reference, package_seal_digest, decision_candidate_id,
                 title, goal_statement, created_at, creation_state, updated_at
              ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?10)
              ON CONFLICT(workspace_id, creation_id) DO UPDATE SET
-                intake_candidate_id = excluded.intake_candidate_id,
-                creation_request_id = excluded.creation_request_id,
-                recommendation_reference = excluded.recommendation_reference,
-                package_seal_digest = excluded.package_seal_digest,
-                decision_candidate_id = excluded.decision_candidate_id,
-                title = excluded.title,
-                goal_statement = excluded.goal_statement,
-                created_at = excluded.created_at,
-                creation_state = excluded.creation_state,
-                updated_at = excluded.updated_at",
+                updated_at = decision_engine_candidate_creation.updated_at
+             WHERE decision_engine_candidate_creation.intake_candidate_id
+                    = excluded.intake_candidate_id
+                AND decision_engine_candidate_creation.creation_request_id
+                    = excluded.creation_request_id
+                AND decision_engine_candidate_creation.recommendation_reference
+                    = excluded.recommendation_reference
+                AND decision_engine_candidate_creation.package_seal_digest
+                    = excluded.package_seal_digest
+                AND decision_engine_candidate_creation.decision_candidate_id
+                    = excluded.decision_candidate_id
+                AND decision_engine_candidate_creation.title = excluded.title
+                AND decision_engine_candidate_creation.goal_statement = excluded.goal_statement
+                AND decision_engine_candidate_creation.created_at = excluded.created_at
+                AND decision_engine_candidate_creation.creation_state = excluded.creation_state",
             (
                 &creation.workspace_id,
                 &creation.creation_id,
@@ -336,6 +396,12 @@ impl<'a> DecisionEngineRepository<'a> {
                 &creation.creation_state,
             ),
         )?;
+        if changed == 0 {
+            return Err(crate::error::DatabaseError::ImmutableArtifact(format!(
+                "candidate creation {} is immutable and cannot be replaced",
+                creation.creation_id
+            )));
+        }
         Ok(())
     }
 
@@ -386,22 +452,29 @@ impl<'a> DecisionEngineRepository<'a> {
             return Ok(());
         }
         let evaluated_at = contract.evaluated_at.as_deref().unwrap_or_default();
-        self.db.connection().execute(
+        let changed = self.db.connection().execute(
             "INSERT INTO decision_candidate_evaluation_origin (
                 workspace_id, evaluation_id, decision_candidate_id, origin, evaluation_state,
                 recommendation_reference, package_seal_digest, intake_candidate_id,
                 creation_request_id, evaluated_at, updated_at
              ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?10)
              ON CONFLICT(workspace_id, evaluation_id) DO UPDATE SET
-                decision_candidate_id = excluded.decision_candidate_id,
-                origin = excluded.origin,
-                evaluation_state = excluded.evaluation_state,
-                recommendation_reference = excluded.recommendation_reference,
-                package_seal_digest = excluded.package_seal_digest,
-                intake_candidate_id = excluded.intake_candidate_id,
-                creation_request_id = excluded.creation_request_id,
-                evaluated_at = excluded.evaluated_at,
-                updated_at = excluded.updated_at",
+                updated_at = decision_candidate_evaluation_origin.updated_at
+             WHERE decision_candidate_evaluation_origin.decision_candidate_id
+                    = excluded.decision_candidate_id
+                AND decision_candidate_evaluation_origin.origin = excluded.origin
+                AND decision_candidate_evaluation_origin.evaluation_state
+                    = excluded.evaluation_state
+                AND COALESCE(decision_candidate_evaluation_origin.recommendation_reference, '')
+                    = COALESCE(excluded.recommendation_reference, '')
+                AND COALESCE(decision_candidate_evaluation_origin.package_seal_digest, '')
+                    = COALESCE(excluded.package_seal_digest, '')
+                AND COALESCE(decision_candidate_evaluation_origin.intake_candidate_id, '')
+                    = COALESCE(excluded.intake_candidate_id, '')
+                AND COALESCE(decision_candidate_evaluation_origin.creation_request_id, '')
+                    = COALESCE(excluded.creation_request_id, '')
+                AND COALESCE(decision_candidate_evaluation_origin.evaluated_at, '')
+                    = COALESCE(excluded.evaluated_at, '')",
             (
                 &contract.workspace_id,
                 &contract.evaluation_id,
@@ -415,6 +488,12 @@ impl<'a> DecisionEngineRepository<'a> {
                 evaluated_at,
             ),
         )?;
+        if changed == 0 {
+            return Err(crate::error::DatabaseError::ImmutableArtifact(format!(
+                "evaluation origin {} is immutable and cannot be replaced",
+                contract.evaluation_id
+            )));
+        }
         Ok(())
     }
 
@@ -444,23 +523,31 @@ impl<'a> DecisionEngineRepository<'a> {
             return Ok(());
         }
         let resolved_at = resolution.resolved_at.as_deref().unwrap_or_default();
-        self.db.connection().execute(
+        let changed = self.db.connection().execute(
             "INSERT INTO decision_candidate_evaluation_resolution (
                 workspace_id, resolution_id, decision_candidate_id, origin, resolution_state,
                 recommendation_reference, package_seal_digest, intake_candidate_id,
                 creation_request_id, resolution_reason, resolved_at, updated_at
              ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?11)
              ON CONFLICT(workspace_id, resolution_id) DO UPDATE SET
-                decision_candidate_id = excluded.decision_candidate_id,
-                origin = excluded.origin,
-                resolution_state = excluded.resolution_state,
-                recommendation_reference = excluded.recommendation_reference,
-                package_seal_digest = excluded.package_seal_digest,
-                intake_candidate_id = excluded.intake_candidate_id,
-                creation_request_id = excluded.creation_request_id,
-                resolution_reason = excluded.resolution_reason,
-                resolved_at = excluded.resolved_at,
-                updated_at = excluded.updated_at",
+                updated_at = decision_candidate_evaluation_resolution.updated_at
+             WHERE decision_candidate_evaluation_resolution.decision_candidate_id
+                    = excluded.decision_candidate_id
+                AND decision_candidate_evaluation_resolution.origin = excluded.origin
+                AND decision_candidate_evaluation_resolution.resolution_state
+                    = excluded.resolution_state
+                AND COALESCE(decision_candidate_evaluation_resolution.recommendation_reference, '')
+                    = COALESCE(excluded.recommendation_reference, '')
+                AND COALESCE(decision_candidate_evaluation_resolution.package_seal_digest, '')
+                    = COALESCE(excluded.package_seal_digest, '')
+                AND COALESCE(decision_candidate_evaluation_resolution.intake_candidate_id, '')
+                    = COALESCE(excluded.intake_candidate_id, '')
+                AND COALESCE(decision_candidate_evaluation_resolution.creation_request_id, '')
+                    = COALESCE(excluded.creation_request_id, '')
+                AND COALESCE(decision_candidate_evaluation_resolution.resolution_reason, '')
+                    = COALESCE(excluded.resolution_reason, '')
+                AND COALESCE(decision_candidate_evaluation_resolution.resolved_at, '')
+                    = COALESCE(excluded.resolved_at, '')",
             (
                 &resolution.workspace_id,
                 &resolution.resolution_id,
@@ -475,6 +562,12 @@ impl<'a> DecisionEngineRepository<'a> {
                 resolved_at,
             ),
         )?;
+        if changed == 0 {
+            return Err(crate::error::DatabaseError::ImmutableArtifact(format!(
+                "evaluation resolution {} is immutable and cannot be replaced",
+                resolution.resolution_id
+            )));
+        }
         Ok(())
     }
 
@@ -498,7 +591,7 @@ impl<'a> DecisionEngineRepository<'a> {
     /// Persist a DE-owned DecisionScore result (historical identity).
     pub fn upsert_candidate_score(&self, score: &DecisionCandidateScore) -> Result<()> {
         let factors_json = serde_json::to_string(&score.scoring_factors).unwrap_or_else(|_| "[]".into());
-        self.db.connection().execute(
+        let changed = self.db.connection().execute(
             "INSERT INTO decision_candidate_score (
                 workspace_id, score_id, decision_candidate_id, origin, resolution_id,
                 score_total, attention_contribution, memory_contribution,
@@ -507,21 +600,27 @@ impl<'a> DecisionEngineRepository<'a> {
                 intake_candidate_id, creation_request_id, updated_at
              ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?12)
              ON CONFLICT(workspace_id, score_id) DO UPDATE SET
-                decision_candidate_id = excluded.decision_candidate_id,
-                origin = excluded.origin,
-                resolution_id = excluded.resolution_id,
-                score_total = excluded.score_total,
-                attention_contribution = excluded.attention_contribution,
-                memory_contribution = excluded.memory_contribution,
-                personalization_contribution = excluded.personalization_contribution,
-                goal_contribution = excluded.goal_contribution,
-                scoring_factors_json = excluded.scoring_factors_json,
-                scored_at = excluded.scored_at,
-                recommendation_reference = excluded.recommendation_reference,
-                package_seal_digest = excluded.package_seal_digest,
-                intake_candidate_id = excluded.intake_candidate_id,
-                creation_request_id = excluded.creation_request_id,
-                updated_at = excluded.updated_at",
+                updated_at = decision_candidate_score.updated_at
+             WHERE decision_candidate_score.decision_candidate_id = excluded.decision_candidate_id
+                AND decision_candidate_score.origin = excluded.origin
+                AND decision_candidate_score.resolution_id = excluded.resolution_id
+                AND decision_candidate_score.score_total = excluded.score_total
+                AND decision_candidate_score.attention_contribution
+                    = excluded.attention_contribution
+                AND decision_candidate_score.memory_contribution = excluded.memory_contribution
+                AND decision_candidate_score.personalization_contribution
+                    = excluded.personalization_contribution
+                AND decision_candidate_score.goal_contribution = excluded.goal_contribution
+                AND decision_candidate_score.scoring_factors_json = excluded.scoring_factors_json
+                AND decision_candidate_score.scored_at = excluded.scored_at
+                AND COALESCE(decision_candidate_score.recommendation_reference, '')
+                    = COALESCE(excluded.recommendation_reference, '')
+                AND COALESCE(decision_candidate_score.package_seal_digest, '')
+                    = COALESCE(excluded.package_seal_digest, '')
+                AND COALESCE(decision_candidate_score.intake_candidate_id, '')
+                    = COALESCE(excluded.intake_candidate_id, '')
+                AND COALESCE(decision_candidate_score.creation_request_id, '')
+                    = COALESCE(excluded.creation_request_id, '')",
             (
                 &score.workspace_id,
                 &score.score_id,
@@ -541,6 +640,12 @@ impl<'a> DecisionEngineRepository<'a> {
                 &score.creation_request_id,
             ),
         )?;
+        if changed == 0 {
+            return Err(crate::error::DatabaseError::ImmutableArtifact(format!(
+                "candidate score {} is immutable and cannot be replaced",
+                score.score_id
+            )));
+        }
         Ok(())
     }
 
@@ -572,7 +677,7 @@ impl<'a> DecisionEngineRepository<'a> {
             return Ok(());
         }
         let selected_at = selection.selected_at.as_deref().unwrap_or_default();
-        self.db.connection().execute(
+        let changed = self.db.connection().execute(
             "INSERT INTO decision_candidate_selection (
                 workspace_id, selection_id, decision_candidate_id, origin, selection_state,
                 ranking_id, ranking_position, score_id, recommendation_reference,
@@ -580,19 +685,28 @@ impl<'a> DecisionEngineRepository<'a> {
                 selection_reason, selected_at, updated_at
              ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?14)
              ON CONFLICT(workspace_id, selection_id) DO UPDATE SET
-                decision_candidate_id = excluded.decision_candidate_id,
-                origin = excluded.origin,
-                selection_state = excluded.selection_state,
-                ranking_id = excluded.ranking_id,
-                ranking_position = excluded.ranking_position,
-                score_id = excluded.score_id,
-                recommendation_reference = excluded.recommendation_reference,
-                package_seal_digest = excluded.package_seal_digest,
-                intake_candidate_id = excluded.intake_candidate_id,
-                creation_request_id = excluded.creation_request_id,
-                selection_reason = excluded.selection_reason,
-                selected_at = excluded.selected_at,
-                updated_at = excluded.updated_at",
+                updated_at = decision_candidate_selection.updated_at
+             WHERE decision_candidate_selection.decision_candidate_id
+                    = excluded.decision_candidate_id
+                AND decision_candidate_selection.origin = excluded.origin
+                AND decision_candidate_selection.selection_state = excluded.selection_state
+                AND COALESCE(decision_candidate_selection.ranking_id, '')
+                    = COALESCE(excluded.ranking_id, '')
+                AND decision_candidate_selection.ranking_position = excluded.ranking_position
+                AND COALESCE(decision_candidate_selection.score_id, '')
+                    = COALESCE(excluded.score_id, '')
+                AND COALESCE(decision_candidate_selection.recommendation_reference, '')
+                    = COALESCE(excluded.recommendation_reference, '')
+                AND COALESCE(decision_candidate_selection.package_seal_digest, '')
+                    = COALESCE(excluded.package_seal_digest, '')
+                AND COALESCE(decision_candidate_selection.intake_candidate_id, '')
+                    = COALESCE(excluded.intake_candidate_id, '')
+                AND COALESCE(decision_candidate_selection.creation_request_id, '')
+                    = COALESCE(excluded.creation_request_id, '')
+                AND COALESCE(decision_candidate_selection.selection_reason, '')
+                    = COALESCE(excluded.selection_reason, '')
+                AND COALESCE(decision_candidate_selection.selected_at, '')
+                    = COALESCE(excluded.selected_at, '')",
             (
                 &selection.workspace_id,
                 &selection.selection_id,
@@ -610,6 +724,12 @@ impl<'a> DecisionEngineRepository<'a> {
                 selected_at,
             ),
         )?;
+        if changed == 0 {
+            return Err(crate::error::DatabaseError::ImmutableArtifact(format!(
+                "candidate selection {} is immutable and cannot be replaced",
+                selection.selection_id
+            )));
+        }
         Ok(())
     }
 
@@ -640,7 +760,7 @@ impl<'a> DecisionEngineRepository<'a> {
             return Ok(());
         }
         let requested_at = request.requested_at.as_deref().unwrap_or_default();
-        self.db.connection().execute(
+        let changed = self.db.connection().execute(
             "INSERT INTO decision_candidate_progression_request (
                 workspace_id, request_id, decision_candidate_id, origin, request_state,
                 selection_id, selection_state, ranking_id, ranking_position, score_id,
@@ -648,21 +768,32 @@ impl<'a> DecisionEngineRepository<'a> {
                 creation_request_id, request_reason, requested_at, updated_at
              ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?16)
              ON CONFLICT(workspace_id, request_id) DO UPDATE SET
-                decision_candidate_id = excluded.decision_candidate_id,
-                origin = excluded.origin,
-                request_state = excluded.request_state,
-                selection_id = excluded.selection_id,
-                selection_state = excluded.selection_state,
-                ranking_id = excluded.ranking_id,
-                ranking_position = excluded.ranking_position,
-                score_id = excluded.score_id,
-                recommendation_reference = excluded.recommendation_reference,
-                package_seal_digest = excluded.package_seal_digest,
-                intake_candidate_id = excluded.intake_candidate_id,
-                creation_request_id = excluded.creation_request_id,
-                request_reason = excluded.request_reason,
-                requested_at = excluded.requested_at,
-                updated_at = excluded.updated_at",
+                updated_at = decision_candidate_progression_request.updated_at
+             WHERE decision_candidate_progression_request.decision_candidate_id
+                    = excluded.decision_candidate_id
+                AND decision_candidate_progression_request.origin = excluded.origin
+                AND decision_candidate_progression_request.request_state = excluded.request_state
+                AND decision_candidate_progression_request.selection_id = excluded.selection_id
+                AND decision_candidate_progression_request.selection_state
+                    = excluded.selection_state
+                AND COALESCE(decision_candidate_progression_request.ranking_id, '')
+                    = COALESCE(excluded.ranking_id, '')
+                AND decision_candidate_progression_request.ranking_position
+                    = excluded.ranking_position
+                AND COALESCE(decision_candidate_progression_request.score_id, '')
+                    = COALESCE(excluded.score_id, '')
+                AND COALESCE(decision_candidate_progression_request.recommendation_reference, '')
+                    = COALESCE(excluded.recommendation_reference, '')
+                AND COALESCE(decision_candidate_progression_request.package_seal_digest, '')
+                    = COALESCE(excluded.package_seal_digest, '')
+                AND COALESCE(decision_candidate_progression_request.intake_candidate_id, '')
+                    = COALESCE(excluded.intake_candidate_id, '')
+                AND COALESCE(decision_candidate_progression_request.creation_request_id, '')
+                    = COALESCE(excluded.creation_request_id, '')
+                AND COALESCE(decision_candidate_progression_request.request_reason, '')
+                    = COALESCE(excluded.request_reason, '')
+                AND COALESCE(decision_candidate_progression_request.requested_at, '')
+                    = COALESCE(excluded.requested_at, '')",
             (
                 &request.workspace_id,
                 &request.request_id,
@@ -682,6 +813,12 @@ impl<'a> DecisionEngineRepository<'a> {
                 requested_at,
             ),
         )?;
+        if changed == 0 {
+            return Err(crate::error::DatabaseError::ImmutableArtifact(format!(
+                "progression request {} is immutable and cannot be replaced",
+                request.request_id
+            )));
+        }
         Ok(())
     }
 
@@ -715,7 +852,7 @@ impl<'a> DecisionEngineRepository<'a> {
             .acknowledged_at
             .as_deref()
             .unwrap_or_default();
-        self.db.connection().execute(
+        let changed = self.db.connection().execute(
             "INSERT INTO decision_candidate_progression_acknowledgement (
                 workspace_id, acknowledgement_id, decision_candidate_id, origin,
                 acknowledgement_state, request_id, request_state, selection_id,
@@ -724,21 +861,34 @@ impl<'a> DecisionEngineRepository<'a> {
                 acknowledged_at, updated_at
              ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?16)
              ON CONFLICT(workspace_id, acknowledgement_id) DO UPDATE SET
-                decision_candidate_id = excluded.decision_candidate_id,
-                origin = excluded.origin,
-                acknowledgement_state = excluded.acknowledgement_state,
-                request_id = excluded.request_id,
-                request_state = excluded.request_state,
-                selection_id = excluded.selection_id,
-                ranking_id = excluded.ranking_id,
-                score_id = excluded.score_id,
-                recommendation_reference = excluded.recommendation_reference,
-                package_seal_digest = excluded.package_seal_digest,
-                intake_candidate_id = excluded.intake_candidate_id,
-                creation_request_id = excluded.creation_request_id,
-                acknowledgement_reason = excluded.acknowledgement_reason,
-                acknowledged_at = excluded.acknowledged_at,
-                updated_at = excluded.updated_at",
+                updated_at = decision_candidate_progression_acknowledgement.updated_at
+             WHERE decision_candidate_progression_acknowledgement.decision_candidate_id
+                    = excluded.decision_candidate_id
+                AND decision_candidate_progression_acknowledgement.origin = excluded.origin
+                AND decision_candidate_progression_acknowledgement.acknowledgement_state
+                    = excluded.acknowledgement_state
+                AND decision_candidate_progression_acknowledgement.request_id
+                    = excluded.request_id
+                AND decision_candidate_progression_acknowledgement.request_state
+                    = excluded.request_state
+                AND decision_candidate_progression_acknowledgement.selection_id
+                    = excluded.selection_id
+                AND COALESCE(decision_candidate_progression_acknowledgement.ranking_id, '')
+                    = COALESCE(excluded.ranking_id, '')
+                AND COALESCE(decision_candidate_progression_acknowledgement.score_id, '')
+                    = COALESCE(excluded.score_id, '')
+                AND COALESCE(decision_candidate_progression_acknowledgement.recommendation_reference, '')
+                    = COALESCE(excluded.recommendation_reference, '')
+                AND COALESCE(decision_candidate_progression_acknowledgement.package_seal_digest, '')
+                    = COALESCE(excluded.package_seal_digest, '')
+                AND COALESCE(decision_candidate_progression_acknowledgement.intake_candidate_id, '')
+                    = COALESCE(excluded.intake_candidate_id, '')
+                AND COALESCE(decision_candidate_progression_acknowledgement.creation_request_id, '')
+                    = COALESCE(excluded.creation_request_id, '')
+                AND COALESCE(decision_candidate_progression_acknowledgement.acknowledgement_reason, '')
+                    = COALESCE(excluded.acknowledgement_reason, '')
+                AND COALESCE(decision_candidate_progression_acknowledgement.acknowledged_at, '')
+                    = COALESCE(excluded.acknowledged_at, '')",
             (
                 &acknowledgement.workspace_id,
                 &acknowledgement.acknowledgement_id,
@@ -758,6 +908,12 @@ impl<'a> DecisionEngineRepository<'a> {
                 acknowledged_at,
             ),
         )?;
+        if changed == 0 {
+            return Err(crate::error::DatabaseError::ImmutableArtifact(format!(
+                "progression acknowledgement {} is immutable and cannot be replaced",
+                acknowledgement.acknowledgement_id
+            )));
+        }
         Ok(())
     }
 

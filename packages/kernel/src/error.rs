@@ -767,6 +767,48 @@ impl KernelError {
         }
     }
 
+    /// Map repository lifecycle / immutable-artifact rejections to owning subsystem
+    /// validation errors instead of opaque `database_error`.
+    pub fn from_recommendation_persistence(error: DatabaseError) -> Self {
+        match error {
+            DatabaseError::InvalidTransition(message)
+            | DatabaseError::ImmutableArtifact(message) => {
+                KernelError::WorkspaceRecommendationEngineValidation { message }
+            }
+            other => KernelError::Database(other),
+        }
+    }
+
+    pub fn from_decision_engine_persistence(error: DatabaseError) -> Self {
+        match error {
+            DatabaseError::InvalidTransition(message)
+            | DatabaseError::ImmutableArtifact(message) => {
+                KernelError::DecisionEngineValidation { message }
+            }
+            other => KernelError::Database(other),
+        }
+    }
+
+    pub fn from_decision_queue_persistence(error: DatabaseError) -> Self {
+        match error {
+            DatabaseError::InvalidTransition(message)
+            | DatabaseError::ImmutableArtifact(message) => {
+                KernelError::DecisionQueueValidation { message }
+            }
+            other => KernelError::Database(other),
+        }
+    }
+
+    pub fn from_task_graph_persistence(error: DatabaseError) -> Self {
+        match error {
+            DatabaseError::InvalidTransition(message)
+            | DatabaseError::ImmutableArtifact(message) => {
+                KernelError::TaskGraphValidation { message }
+            }
+            other => KernelError::Database(other),
+        }
+    }
+
     pub fn to_public(&self) -> PublicError {
         match self {
             KernelError::Database(_) => PublicError {
@@ -1274,5 +1316,31 @@ mod tests {
         .to_public();
         assert_eq!(public.code, "internal_error");
         assert!(!public.message.contains("sensitive"));
+    }
+
+    #[test]
+    fn persistence_boundary_rejections_map_to_subsystem_validation() {
+        let recommendation = KernelError::from_recommendation_persistence(
+            DatabaseError::ImmutableArtifact("outcome locked".into()),
+        );
+        assert_eq!(
+            recommendation.to_public().code,
+            "workspace_recommendation_engine_validation_error"
+        );
+
+        let decision = KernelError::from_decision_engine_persistence(
+            DatabaseError::InvalidTransition("cannot reopen".into()),
+        );
+        assert_eq!(decision.to_public().code, "decision_engine_validation_error");
+
+        let queue = KernelError::from_decision_queue_persistence(
+            DatabaseError::InvalidTransition("dismissed".into()),
+        );
+        assert_eq!(queue.to_public().code, "decision_queue_validation_error");
+
+        let tasks = KernelError::from_task_graph_persistence(DatabaseError::ImmutableArtifact(
+            "completed evidence".into(),
+        ));
+        assert_eq!(tasks.to_public().code, "task_graph_validation_error");
     }
 }

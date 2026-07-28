@@ -18,6 +18,16 @@ impl<'a> RecommendationLifecycleRepository<'a> {
     }
 
     pub fn upsert_overlay(&self, overlay: &RecommendationLifecycleOverlay) -> Result<()> {
+        if let Some(existing) =
+            self.get_overlay(&overlay.workspace_id, &overlay.native_id)?
+        {
+            if existing.lifecycle_state.is_terminal()
+                && existing.lifecycle_state == overlay.lifecycle_state
+            {
+                reject_weakened_terminal_evidence(&existing, overlay)?;
+            }
+        }
+
         let outcome_json = match &overlay.outcome {
             Some(outcome) => Some(serde_json::to_string(outcome).map_err(|e| {
                 crate::error::DatabaseError::Migration(format!(
@@ -307,4 +317,143 @@ fn map_overlay(row: &rusqlite::Row<'_>) -> rusqlite::Result<RecommendationLifecy
         updated_at: row.get(16)?,
         authority_effect: row.get(17)?,
     })
+}
+
+/// Same-state terminal writes may update metadata and accumulate evidence, but must not
+/// erase or replace authoritative terminal artifacts.
+fn reject_weakened_terminal_evidence(
+    existing: &RecommendationLifecycleOverlay,
+    incoming: &RecommendationLifecycleOverlay,
+) -> Result<()> {
+    use crate::error::DatabaseError::ImmutableArtifact;
+
+    if let Some(existing_outcome) = &existing.outcome {
+        match &incoming.outcome {
+            None => {
+                return Err(ImmutableArtifact(format!(
+                    "recommendation {} cannot erase terminal outcome evidence",
+                    existing.native_id
+                )));
+            }
+            Some(next) if next != existing_outcome => {
+                return Err(ImmutableArtifact(format!(
+                    "recommendation {} cannot replace terminal outcome evidence",
+                    existing.native_id
+                )));
+            }
+            _ => {}
+        }
+    }
+
+    if !existing.prior_outcomes.is_empty()
+        && incoming.prior_outcomes != existing.prior_outcomes
+    {
+        return Err(ImmutableArtifact(format!(
+            "recommendation {} cannot rewrite prior outcome history",
+            existing.native_id
+        )));
+    }
+
+    if let Some(existing_confirmation) = &existing.decision_confirmation {
+        match &incoming.decision_confirmation {
+            None => {
+                return Err(ImmutableArtifact(format!(
+                    "recommendation {} cannot erase confirmation evidence",
+                    existing.native_id
+                )));
+            }
+            Some(next) => {
+                let terminal = matches!(
+                    existing_confirmation.confirmation_state.as_str(),
+                    RecommendationDecisionConfirmation::STATE_CONFIRMED
+                        | RecommendationDecisionConfirmation::STATE_DECLINED
+                );
+                if terminal && next != existing_confirmation {
+                    return Err(ImmutableArtifact(format!(
+                        "recommendation {} cannot replace terminal confirmation evidence",
+                        existing.native_id
+                    )));
+                }
+            }
+        }
+    }
+
+    if let Some(existing_seal) = &existing.decision_intake_package_seal {
+        if existing_seal.sealed {
+            match &incoming.decision_intake_package_seal {
+                None => {
+                    return Err(ImmutableArtifact(format!(
+                        "recommendation {} cannot erase sealed intake evidence",
+                        existing.native_id
+                    )));
+                }
+                Some(next) if next != existing_seal => {
+                    return Err(ImmutableArtifact(format!(
+                        "recommendation {} cannot replace sealed intake evidence",
+                        existing.native_id
+                    )));
+                }
+                _ => {}
+            }
+        }
+    }
+
+    if existing.decision_intake_adapter_preparation.is_some()
+        && incoming.decision_intake_adapter_preparation.is_none()
+    {
+        return Err(ImmutableArtifact(format!(
+            "recommendation {} cannot erase adapter preparation evidence",
+            existing.native_id
+        )));
+    }
+
+    if existing.decision_handoff_request.is_some() && incoming.decision_handoff_request.is_none()
+    {
+        return Err(ImmutableArtifact(format!(
+            "recommendation {} cannot erase handoff evidence",
+            existing.native_id
+        )));
+    }
+
+    if existing.decision_engine_acceptance.is_some()
+        && incoming.decision_engine_acceptance.is_none()
+    {
+        return Err(ImmutableArtifact(format!(
+            "recommendation {} cannot erase decision engine acceptance evidence",
+            existing.native_id
+        )));
+    }
+
+    if let Some(existing_fp) = &existing.content_fingerprint {
+        match &incoming.content_fingerprint {
+            None => {
+                return Err(ImmutableArtifact(format!(
+                    "recommendation {} cannot erase content fingerprint evidence",
+                    existing.native_id
+                )));
+            }
+            Some(next) if next != existing_fp => {
+                return Err(ImmutableArtifact(format!(
+                    "recommendation {} cannot replace content fingerprint without generation reopen",
+                    existing.native_id
+                )));
+            }
+            _ => {}
+        }
+    }
+
+    if existing.resolved_at.is_some() && incoming.resolved_at.is_none() {
+        return Err(ImmutableArtifact(format!(
+            "recommendation {} cannot erase resolved_at evidence",
+            existing.native_id
+        )));
+    }
+    if existing.resolution_type.is_some() && incoming.resolution_type.is_none() {
+        return Err(ImmutableArtifact(format!(
+            "recommendation {} cannot erase resolution_type evidence",
+            existing.native_id
+        )));
+    }
+
+    Ok(())
 }
