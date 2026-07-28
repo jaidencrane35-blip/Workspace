@@ -4,7 +4,7 @@
 |-------|-------|
 | **Purpose** | Create a provenance-bound synthesis layer that turns accumulated workspace evidence into structured knowledge representations — without becoming memory truth, decision authority, planner, or executor |
 | **Owner** | `WorkspaceKnowledgeSynthesisService` (DurableStore — **synthesized knowledge artefacts only**) |
-| **Status** | Active — Programme III Batch 7 implemented |
+| **Status** | Active — Programme III Batch 7 accepted (architecture audit grade A) |
 | **Lifecycle owner** | No |
 | **Execution / replay authority** | No |
 | **Simulation / forecast / correction authority** | No |

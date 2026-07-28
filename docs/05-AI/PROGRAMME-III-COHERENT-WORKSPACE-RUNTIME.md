@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | **Purpose** | Establish one provenance-rich, read-only runtime view of operational, cognitive, governance, and evidence state while preserving all existing lifecycle and persistence authorities |
-| **Status** | Active — Batch 7 implemented |
+| **Status** | Active — Batch 7 accepted; Batch 8 charter pending |
 | **Depends on** | Programme I governance / recovery; Programme II cognitive stack |
 | **Non-goals** | Event sourcing; authoritative replay logs; simulation; model hosting; autonomous execution; replacement permission system; replacement for domain-owned projections |
 
@@ -36,8 +36,8 @@
 | **4** | Temporal Intelligence | Historical understanding extensions | Done (accepted) |
 | **5** | Workspace Explanation Layer | Cross-surface evidence-backed explanation | Done (accepted) |
 | **6** | Contextual Workspace Understanding | Richer situational understanding | Done (accepted) |
-| **7** | Workspace Knowledge Synthesis | Provenance-bound structured knowledge artefacts | Done (implemented) |
-| **8** | Knowledge Integration / Retrieval Intelligence | Only after Batch 7 audit ACCEPT | Planned |
+| **7** | Workspace Knowledge Synthesis | Provenance-bound structured knowledge artefacts | Done (accepted) |
+| **8** | Knowledge Integration / Retrieval Intelligence | Integrate/retrieve over accumulated evidence layers | Gate open — charter next |
 
 ## Batch 6 summary
 
@@ -72,12 +72,15 @@ autonomous correction, or decision ownership.**
 ## Sequencing rule
 
 Ship Batch *N* only when Batch *N−1* has durable contracts, tests, and governance ownership entries.
-Batch 7 is implemented. Batch 8 remains gated on Batch 7 audit ACCEPT.
-
-Preserve P2 constraints from Batch 6:
+Batch 7 is accepted (architecture audit grade A). Batch 8 gate is open — start only with an
+explicit Batch 8 charter. Preserve P2 constraints from Batches 6–7:
 
 - descriptive themes / concepts only (no advice / prioritisation / recommendations)
 - diagnostic-only confidence
+- meaning-only relationships (no causation / action)
+- no interpretive layer that merely duplicates Contextual Understanding or Knowledge Synthesis
+- Knowledge Synthesis must not become a second editable workspace ontology
+- every concept retains evidence → revision → origin domain lineage
 - no interpretive layer that merely duplicates Contextual Understanding
   (Batch 7 answers structured knowledge derivation — not “what is happening now”)
 
