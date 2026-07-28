@@ -47,6 +47,13 @@ impl ZoneService {
                 &zone.resource_ref(),
             )?;
             Ok(())
+        })
+        .map_err(|error| match error {
+            workspace_database::DatabaseError::TransactionCommit(message)
+            | workspace_database::DatabaseError::TransactionRollback(message) => {
+                KernelError::ExecutionAtomicity { message }
+            }
+            other => KernelError::Database(other),
         })?;
 
         Ok(zone)

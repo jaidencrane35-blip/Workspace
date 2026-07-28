@@ -33,6 +33,7 @@ export const PUBLIC_ERROR_CODES = [
   "duplicate_layout",
   "duplicate_resource",
   "execution_cancellation_validation_error",
+  "execution_atomicity_error",
   "execution_context_validation_error",
   "execution_guard_validation_error",
   "execution_in_progress",

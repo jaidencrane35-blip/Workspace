@@ -88,12 +88,18 @@ impl Database {
 
         match operation(&tx) {
             Ok(value) => {
-                self.connection().execute_batch("COMMIT")?;
+                self.connection()
+                    .execute_batch("COMMIT")
+                    .map_err(|error| crate::error::DatabaseError::TransactionCommit(error.to_string()))?;
                 Ok(value)
             }
             Err(error) => {
-                let _ = self.connection().execute_batch("ROLLBACK");
-                Err(error)
+                match self.connection().execute_batch("ROLLBACK") {
+                    Ok(()) => Err(error),
+                    Err(rollback) => Err(crate::error::DatabaseError::TransactionRollback(
+                        format!("operation failed: {error}; rollback failed: {rollback}"),
+                    )),
+                }
             }
         }
     }

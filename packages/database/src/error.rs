@@ -16,6 +16,12 @@ pub enum DatabaseError {
 
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
+
+    #[error("Transaction commit failed: {0}")]
+    TransactionCommit(String),
+
+    #[error("Transaction rollback failed: {0}")]
+    TransactionRollback(String),
 }
 
 pub type Result<T> = std::result::Result<T, DatabaseError>;

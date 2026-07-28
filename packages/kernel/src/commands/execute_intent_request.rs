@@ -112,10 +112,12 @@ impl MutationCommand for ExecuteIntentRequest {
         if let Err(dispatch_error) =
             dispatch_mapped_command(ctx, prepared.command_name, &prepared.action_intent)
         {
+            let retry_allowed =
+                !matches!(&dispatch_error, KernelError::ExecutionAtomicity { .. });
             if let Err(lifecycle_error) = ExecutionLifecycleService::mark_failed(
                 &ctx.database,
                 &execution_request_id,
-                true,
+                retry_allowed,
                 &dispatch_error.to_string(),
             ) {
                 log::error!(

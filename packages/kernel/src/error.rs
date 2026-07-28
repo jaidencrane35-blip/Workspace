@@ -150,6 +150,9 @@ pub enum KernelError {
     #[error("Execution reconciliation required: {execution_request_id}")]
     ExecutionReconciliationRequired { execution_request_id: String },
 
+    #[error("Execution atomicity could not be confirmed: {message}")]
+    ExecutionAtomicity { message: String },
+
     #[error("Execution lifecycle persistence failed at {stage}")]
     ExecutionLifecyclePersistence {
         stage: &'static str,
@@ -940,6 +943,10 @@ impl KernelError {
                     "Execution request '{execution_request_id}' requires reconciliation."
                 ),
             },
+            KernelError::ExecutionAtomicity { .. } => PublicError {
+                code: "execution_atomicity_error".into(),
+                message: "Execution atomicity could not be confirmed.".into(),
+            },
             KernelError::ExecutionLifecyclePersistence { .. } => PublicError {
                 code: "execution_lifecycle_persistence_error".into(),
                 message: "Execution lifecycle state could not be persisted.".into(),
@@ -1182,6 +1189,12 @@ mod tests {
     #[test]
     fn public_error_codes_preserve_failure_boundaries() {
         let cases = [
+            (
+                KernelError::ExecutionAtomicity {
+                    message: "rollback uncertain".into(),
+                },
+                "execution_atomicity_error",
+            ),
             (
                 KernelError::ExecutionLifecyclePersistence {
                     stage: "claim",
