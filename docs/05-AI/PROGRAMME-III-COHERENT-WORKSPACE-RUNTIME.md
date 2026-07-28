@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | **Purpose** | Establish one provenance-rich, read-only runtime view of operational, cognitive, governance, and evidence state while preserving all existing lifecycle and persistence authorities |
-| **Status** | Active — Batch 7 accepted; Batch 8 charter pending |
+| **Status** | Active — Batch 7 accepted; Batch 8 charter drafted (pending review) |
 | **Depends on** | Programme I governance / recovery; Programme II cognitive stack |
 | **Non-goals** | Event sourcing; authoritative replay logs; simulation; model hosting; autonomous execution; replacement permission system; replacement for domain-owned projections |
 
@@ -25,6 +25,7 @@
 14. **Explanation Layer explains evidence** — it does not become the authority that changes reality.
 15. **Contextual understanding organises situational meaning from durable evidence** — it does not decide, predict, simulate, or change reality.
 16. **Knowledge synthesis derives structured concepts from evidence** — it does not become memory truth, Cognitive Model, or decision authority.
+17. **Knowledge integration retrieves and joins evidence layers** — it does not invent truth, act autonomously, or replace Memory / Cognitive Model.
 
 ## Batch map
 
@@ -37,19 +38,7 @@
 | **5** | Workspace Explanation Layer | Cross-surface evidence-backed explanation | Done (accepted) |
 | **6** | Contextual Workspace Understanding | Richer situational understanding | Done (accepted) |
 | **7** | Workspace Knowledge Synthesis | Provenance-bound structured knowledge artefacts | Done (accepted) |
-| **8** | Knowledge Integration / Retrieval Intelligence | Integrate/retrieve over accumulated evidence layers | Gate open — charter next |
-
-## Batch 6 summary
-
-`WorkspaceContextualUnderstandingService` composes `ContextualWorkspaceSnapshot` themes
-(`SituationalTheme`, `ContextualInsight`, `ContextualGap`) from durable state / policy /
-reconstruction / temporal / explanation snapshots via `load_snapshot` only.
-Diagnostic understanding confidence never becomes decision authority. Dual-channel
-projection: `current` + `history` + authoritative `history_count`.
-Commands: `GenerateContextualWorkspaceUnderstanding`, `GetContextualWorkspaceUnderstanding`,
-`GetContextualWorkspaceUnderstandingSummary`, `ExplainWorkspaceContext`
-(`work_context.write` / `work_context.read`). Migration `057`.
-See [Contextual Workspace Understanding Architecture](./CONTEXTUAL-WORKSPACE-UNDERSTANDING-ARCHITECTURE.md).
+| **8** | Knowledge Integration / Retrieval Intelligence | Integrate/retrieve over accumulated evidence layers | Charter drafted — pending review |
 
 ## Batch 7 summary
 
@@ -66,23 +55,39 @@ Commands: `GenerateWorkspaceKnowledgeSynthesis`, `GetWorkspaceKnowledgeSynthesis
 (`work_context.write` / `work_context.read`). Migration `058`.
 See [Knowledge Synthesis Architecture](./KNOWLEDGE-SYNTHESIS-ARCHITECTURE.md).
 
-**Do not expand into Memory replacement, Cognitive Model mutation, prediction, simulation,
-autonomous correction, or decision ownership.**
+## Batch 8 charter (draft)
+
+`WorkspaceKnowledgeIntegrationService` will assemble provenance-bound retrieval /
+integration views (`KnowledgeRetrievalHit`, `KnowledgeIntegrationLink`,
+`KnowledgeRetrievalGap`) over durable Programme III projections via `load_snapshot` only
+— including Knowledge Synthesis. Diagnostic retrieval confidence never becomes truth,
+Memory write, Cognitive Model mutation, policy outcome, automation, or priority.
+Integration links remain meaning-only. Hits without lineage are invalid.
+Commands (proposed): `GenerateWorkspaceKnowledgeIntegration`,
+`GetWorkspaceKnowledgeIntegration`, `GetWorkspaceKnowledgeIntegrationSummary`,
+`ExplainKnowledgeIntegration` (+ optional `RetrieveWorkspaceKnowledge` query).
+Migration `059`.
+See [Knowledge Integration Architecture](./KNOWLEDGE-INTEGRATION-ARCHITECTURE.md).
+
+**Do not begin Batch 8 implementation until the charter is reviewed and approved.**
+
+**Preserve:** no new source of truth, no autonomous authority, no execution,
+no replacement of Memory / Cognitive Model / Knowledge Synthesis.
 
 ## Sequencing rule
 
 Ship Batch *N* only when Batch *N−1* has durable contracts, tests, and governance ownership entries.
-Batch 7 is accepted (architecture audit grade A). Batch 8 gate is open — start only with an
-explicit Batch 8 charter. Preserve P2 constraints from Batches 6–7:
+Batch 7 is accepted (architecture audit grade A). Batch 8 implementation is gated on charter
+review approval. Programme III is expected to close when Batch 8 is audited ACCEPT.
 
-- descriptive themes / concepts only (no advice / prioritisation / recommendations)
+Preserve P2 constraints from Batches 6–7:
+
+- descriptive themes / concepts / hits only (no advice / prioritisation / recommendations)
 - diagnostic-only confidence
 - meaning-only relationships (no causation / action)
 - no interpretive layer that merely duplicates Contextual Understanding or Knowledge Synthesis
 - Knowledge Synthesis must not become a second editable workspace ontology
-- every concept retains evidence → revision → origin domain lineage
-- no interpretive layer that merely duplicates Contextual Understanding
-  (Batch 7 answers structured knowledge derivation — not “what is happening now”)
+- every concept / hit retains evidence → revision → origin domain lineage
 
 ## Related
 
@@ -93,6 +98,7 @@ explicit Batch 8 charter. Preserve P2 constraints from Batches 6–7:
 - [Workspace Explanation Layer Architecture](./WORKSPACE-EXPLANATION-LAYER-ARCHITECTURE.md) (Batch 5)
 - [Contextual Workspace Understanding Architecture](./CONTEXTUAL-WORKSPACE-UNDERSTANDING-ARCHITECTURE.md) (Batch 6)
 - [Knowledge Synthesis Architecture](./KNOWLEDGE-SYNTHESIS-ARCHITECTURE.md) (Batch 7)
+- [Knowledge Integration Architecture](./KNOWLEDGE-INTEGRATION-ARCHITECTURE.md) (Batch 8 charter)
 - [Programme II — Cognitive Workspace](./PROGRAMME-II-COGNITIVE-WORKSPACE.md)
 - [Projection Integrity](../03-Engineering/PROJECTION-INTEGRITY.md)
 - [Architecture Governance](../03-Engineering/ARCHITECTURE-GOVERNANCE.md)
