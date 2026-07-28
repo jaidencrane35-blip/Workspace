@@ -15,7 +15,7 @@ const read = (file) => fs.readFileSync(file, "utf8");
 const sorted = (values) => [...new Set(values)].sort();
 
 /** Minimum MutationCommand inventory — dropping below this fails closed. */
-export const MUTATION_COMMAND_BASELINE = 57;
+export const MUTATION_COMMAND_BASELINE = 58;
 
 /** Capability id → authority owner (permission-token scope, not lifecycle owner). */
 export const CAPABILITY_AUTHORITY_OWNERS = {
@@ -98,6 +98,7 @@ export const HISTORY_STRUCTS = [
   "PlanningHistoryEntry",
   "ReasoningHistoryEntry",
   "CognitiveGraphHistoryEntry",
+  "OrchestrationHistoryEntry",
 ];
 
 export const PROJECTION_SUMMARY_STRUCTS = [
@@ -109,6 +110,7 @@ export const PROJECTION_SUMMARY_STRUCTS = [
   "PlanningSummary",
   "ReasoningSummary",
   "CognitiveGraphSummary",
+  "WorkspaceOrchestrationSummary",
 ];
 
 /** Append-only recovery diagnostic event types — evidence only, never commands. */
@@ -146,6 +148,7 @@ const LIFECYCLE_SERVICE_FILES = new Set([
   "workspace_planning.rs",
   "workspace_reasoning_memory.rs",
   "workspace_cognitive_graph.rs",
+  "workspace_cognitive_orchestration.rs",
 ]);
 
 /**
@@ -624,6 +627,74 @@ function recommendationEngineProcessSpawn(rootDir) {
   return violations;
 }
 
+/**
+ * Programme II Batch 5 — Cognitive Orchestration governance guards.
+ * Orchestration coordinates; it must never execute or import launch/execution services.
+ */
+function cognitiveOrchestrationGuards(rootDir) {
+  const violations = [];
+  const servicePath = path.join(
+    rootDir,
+    "packages/kernel/src/services/workspace_cognitive_orchestration.rs",
+  );
+  const domainPath = path.join(
+    rootDir,
+    "packages/domain/src/workspace_cognitive_orchestration",
+  );
+  const repoPath = path.join(
+    rootDir,
+    "packages/database/src/repositories/cognitive_orchestration.rs",
+  );
+
+  const serviceFiles = fs.existsSync(servicePath) ? [servicePath] : [];
+  const domainFiles = fs.existsSync(domainPath) ? rustSources(domainPath) : [];
+  for (const file of [...serviceFiles, ...domainFiles]) {
+    const source = read(file);
+    const rel = path.relative(rootDir, file).replace(/\\/g, "/");
+    if (
+      /ApplicationLaunchService/.test(source) ||
+      /ExecutionLifecycleService/.test(source) ||
+      /std::process::Command/.test(source) ||
+      /workspace_windows_integration::/.test(source)
+    ) {
+      violations.push(
+        `${rel}: Cognitive Orchestration must not import or invoke execution/launch services`,
+      );
+    }
+    // Orchestration must not call generate on foreign engines as plan execution.
+    if (
+      /WorkspacePlanningService::generate\b/.test(source) ||
+      /WorkspaceReasoningMemoryService::generate\b/.test(source) ||
+      /WorkspaceCognitiveGraphService::generate\b/.test(source)
+    ) {
+      violations.push(
+        `${rel}: Cognitive Orchestration must not execute foreign artefact regeneration`,
+      );
+    }
+  }
+
+  if (fs.existsSync(repoPath)) {
+    const source = read(repoPath);
+    if (
+      /WorkspaceCognitiveOrchestrationService/.test(source) ||
+      /use\s+workspace_kernel::/.test(source)
+    ) {
+      violations.push(
+        `packages/database/src/repositories/cognitive_orchestration.rs: repository must not call orchestration service`,
+      );
+    }
+  }
+
+  // Orchestration DTOs must exist for authority-field scanning (covered by HISTORY/PROJECTION lists).
+  if (!fs.existsSync(domainPath) && !fs.existsSync(`${domainPath}.rs`)) {
+    violations.push(
+      "packages/domain/src/workspace_cognitive_orchestration missing; governance cannot verify orchestration DTOs",
+    );
+  }
+
+  return violations;
+}
+
 function checkDtoAuthorityFields(domainSources, structNames, label) {
   const violations = [];
   const found = [];
@@ -900,6 +971,7 @@ export function auditArchitectureGovernance(rootDir, options = {}) {
   }
 
   violations.push(...recommendationEngineProcessSpawn(rootDir));
+  violations.push(...cognitiveOrchestrationGuards(rootDir));
 
   const domainSrc = path.join(rootDir, "packages/domain/src");
   const domainSources = fs.existsSync(domainSrc) ? rustSources(domainSrc) : [];

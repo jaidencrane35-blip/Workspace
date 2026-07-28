@@ -12,7 +12,8 @@ use workspace_domain::{
     WorkspaceMilestoneError, WorkspaceNavigationError, WorkspaceOperatingStateError,
     WorkspacePatternError, WorkspacePlanningError, WorkspaceProfileError, WorkspacePurposeError,
     WorkspaceReadinessError, WorkspaceRecommendationEngineError, WorkspaceReasoningMemoryError,
-    WorkspaceCognitiveGraphError, WorkspaceSessionError, WorkspaceTransitionError,
+    WorkspaceCognitiveGraphError, WorkspaceCognitiveOrchestrationError, WorkspaceSessionError,
+    WorkspaceTransitionError,
     WorkspaceWorkContextError, WorkspaceWorkingStyleError,
 };
 
@@ -238,6 +239,9 @@ pub enum KernelError {
 
     #[error("Workspace cognitive graph validation failed: {message}")]
     WorkspaceCognitiveGraphValidation { message: String },
+
+    #[error("Workspace cognitive orchestration validation failed: {message}")]
+    WorkspaceCognitiveOrchestrationValidation { message: String },
 
     #[error("Workspace intelligence validation failed: {message}")]
     WorkspaceIntelligenceValidation { message: String },
@@ -497,6 +501,17 @@ impl From<WorkspaceCognitiveGraphError> for KernelError {
         match error {
             WorkspaceCognitiveGraphError::Domain(domain) => KernelError::from(domain),
             other => KernelError::WorkspaceCognitiveGraphValidation {
+                message: other.to_string(),
+            },
+        }
+    }
+}
+
+impl From<WorkspaceCognitiveOrchestrationError> for KernelError {
+    fn from(error: WorkspaceCognitiveOrchestrationError) -> Self {
+        match error {
+            WorkspaceCognitiveOrchestrationError::Domain(domain) => KernelError::from(domain),
+            other => KernelError::WorkspaceCognitiveOrchestrationValidation {
                 message: other.to_string(),
             },
         }
@@ -1163,6 +1178,10 @@ impl KernelError {
             },
             KernelError::WorkspaceCognitiveGraphValidation { message } => PublicError {
                 code: "workspace_cognitive_graph_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::WorkspaceCognitiveOrchestrationValidation { message } => PublicError {
+                code: "workspace_cognitive_orchestration_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::WorkspaceIntelligenceValidation { message } => PublicError {

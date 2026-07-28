@@ -8,6 +8,9 @@ use crate::audit::AuditEvent;
 use crate::execution_reconciliation::{ExecutionLifecycleRecord, ExecutionState};
 use crate::workspace_recommendation::RecommendationHistoryEntry;
 use crate::workspace_cognitive_graph::{CognitiveGraphHistoryEntry, CognitiveGraphSnapshot};
+use crate::workspace_cognitive_orchestration::{
+    OrchestrationHistoryEntry, WorkspaceOrchestrationSnapshot,
+};
 use crate::workspace_reasoning_memory::{ReasoningHistoryEntry, ReasoningSnapshot};
 
 /// Documented startup in-progress sweep cap (must match
@@ -87,6 +90,26 @@ pub fn recovery_must_not_fabricate_cognitive_graph(snapshot: &CognitiveGraphSnap
 /// Fabricated actionable graph history must fail the recovery contract.
 pub fn recovery_must_not_fabricate_actionable_graph_history(
     entry: &CognitiveGraphHistoryEntry,
+) -> bool {
+    entry.is_non_actionable()
+}
+
+/// Missing orchestration remains missing — never invent refresh plans on restart.
+pub fn recovery_must_not_fabricate_orchestration(
+    snapshot: &WorkspaceOrchestrationSnapshot,
+) -> bool {
+    snapshot.is_non_commandable()
+        && snapshot.history.iter().all(|h| h.is_non_actionable())
+        && snapshot
+            .current
+            .as_ref()
+            .map(|c| c.is_non_executing())
+            .unwrap_or(true)
+}
+
+/// Fabricated actionable orchestration history must fail the recovery contract.
+pub fn recovery_must_not_fabricate_actionable_orchestration_history(
+    entry: &OrchestrationHistoryEntry,
 ) -> bool {
     entry.is_non_actionable()
 }
@@ -237,5 +260,31 @@ mod tests {
             authority_effect: "none".into(),
         };
         assert!(!recovery_must_not_fabricate_actionable_graph_history(&bad));
+    }
+
+    #[test]
+    fn recovery_never_fabricates_orchestration_on_empty_snapshot() {
+        let empty = WorkspaceOrchestrationSnapshot::assemble("ws", None, vec![], 0, "t0");
+        assert!(recovery_must_not_fabricate_orchestration(&empty));
+        assert!(empty.current.is_none());
+    }
+
+    #[test]
+    fn recovery_rejects_actionable_orchestration_history() {
+        let bad = OrchestrationHistoryEntry {
+            orchestration_id: "orchestration:1".into(),
+            status: "superseded".into(),
+            created_at: "t0".into(),
+            superseded_at: Some("t1".into()),
+            current_generation: 1,
+            uncertainty: 40,
+            rationale_excerpt: "".into(),
+            stage_count: 0,
+            cycle_count: 0,
+            terminal: true,
+            actionable: true,
+            authority_effect: "none".into(),
+        };
+        assert!(!recovery_must_not_fabricate_actionable_orchestration_history(&bad));
     }
 }

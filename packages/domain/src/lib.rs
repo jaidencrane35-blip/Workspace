@@ -49,6 +49,7 @@ pub mod workspace_cognitive_model;
 pub mod workspace_planning;
 pub mod workspace_reasoning_memory;
 pub mod workspace_cognitive_graph;
+pub mod workspace_cognitive_orchestration;
 pub mod workspace_composition;
 pub mod workspace_purpose;
 pub mod workspace_evolution;
@@ -454,6 +455,14 @@ pub use workspace_cognitive_graph::{
     CognitiveGraphSnapshot, CognitiveGraphStatus, CognitiveGraphSummary, CognitiveGraphView,
     WorkspaceCognitiveGraphError,
 };
+pub use workspace_cognitive_orchestration::{
+    order_dependencies, refresh_stages_from_order, OrchestrationArtefactKind,
+    OrchestrationCycleDetected, OrchestrationDependency, OrchestrationEvidenceLink,
+    OrchestrationHistoryEntry, OrchestrationObservation, OrchestrationOrderResult,
+    OrchestrationRefreshStage, OrchestrationStatus, WorkspaceCognitiveOrchestrationError,
+    WorkspaceOrchestrationMeta, WorkspaceOrchestrationSnapshot, WorkspaceOrchestrationSummary,
+    WorkspaceOrchestrationView,
+};
 pub use workspace_task_graph::{
     would_create_cycle, TaskDependency, TaskGraph, TaskGraphError, TaskGraphSummary, TaskHistoryEntry,
     TaskMetadata, TaskNode, TaskRelationship, TaskRelationshipKind, WorkspaceTask,
@@ -516,10 +525,12 @@ pub use projection_contract::{history_count_is_authoritative, history_json_is_no
 pub use recovery_contract::{
     history_evidence_is_complete, in_progress_claim_is_not_terminal_evidence,
     recovered_stale_claim_is_non_retryable, recovery_diagnostic_event_type_is_non_commandable,
-    recovery_diagnostic_is_evidence_only, recovery_must_not_fabricate_actionable_graph_history,
+    recovery_diagnostic_is_evidence_only,     recovery_must_not_fabricate_actionable_graph_history,
     recovery_must_not_fabricate_actionable_history,
+    recovery_must_not_fabricate_actionable_orchestration_history,
     recovery_must_not_fabricate_actionable_reasoning_history,
-    recovery_must_not_fabricate_cognitive_graph, recovery_must_not_fabricate_reasoning,
+    recovery_must_not_fabricate_cognitive_graph,
+    recovery_must_not_fabricate_orchestration, recovery_must_not_fabricate_reasoning,
     recovery_must_not_invent_completed, RECOVERY_DIAGNOSTIC_ATTEMPTED,
     RECOVERY_DIAGNOSTIC_COMPLETED, RECOVERY_DIAGNOSTIC_EVENT_TYPES, RECOVERY_DIAGNOSTIC_FAILED,
     RECOVERY_SUBSYSTEM_EXECUTION_LIFECYCLE, STARTUP_IN_PROGRESS_SWEEP_LIMIT,

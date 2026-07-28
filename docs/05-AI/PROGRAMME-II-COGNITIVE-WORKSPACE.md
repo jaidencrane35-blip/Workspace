@@ -3,8 +3,8 @@
 | Field | Value |
 |-------|-------|
 | **Purpose** | Evolve Workspace from object/lifecycle/evidence awareness into a governed cognitive system |
-| **Status** | Active — Batch 4 in progress |
-| **Depends on** | Programme I governance, operational recovery, Intent/Task Graph, RE/DE/DQ, Planning, Reasoning Memory |
+| **Status** | Active — Batch 5 in progress |
+| **Depends on** | Programme I governance, operational recovery, Intent/Task Graph, RE/DE/DQ, Planning, Reasoning Memory, Cognitive Graph |
 | **Non-goals** | Embeddings/vector RAG as architectural memory; silent autonomous mutation; duplicate lifecycle systems |
 
 ## Programme principles (non-negotiable)
@@ -18,6 +18,7 @@
 7. **Planning is advisory until authorised.** Planning artefacts are permanently non-executing.
 8. **Every autonomous action must be attributable, auditable, and replayable.**
 9. **The Cognitive Graph is topology only** — never a second source of truth or authority boundary.
+10. **Orchestration is coordination only** — never a planner, lifecycle owner, autonomy layer, or executor.
 
 ## Batch map
 
@@ -26,22 +27,24 @@
 | **1** | Workspace Cognitive Model | Durable semantic layer | Done |
 | **2** | Planning Architecture | Non-executing sequencing / assumptions / risks / gaps | Done |
 | **3** | Reasoning Memory | Rationale / alternatives / reflection — evidence only | Done |
-| **4** | Cognitive Graph | Cross-domain reference-only integration topology | Active |
-| **5** | Orchestration Engine | Governed multi-stage workflows | Planned |
+| **4** | Cognitive Graph | Cross-domain reference-only integration topology | Done |
+| **5** | Orchestration Engine | Governed refresh ordering / staleness coordination | Active |
 | **6** | Adaptive Learning | Evidence-producing learning; proposes only | Planned |
 | **7** | Multi-Agent Architecture | Governed actors with empty-by-default capabilities | Planned |
 | **8** | Autonomous Workspace | Observe→Understand→Plan→Ask→Execute→Learn — gated on 1–7 | Planned |
 
-## Batch 4 summary
+## Batch 5 summary
 
-`WorkspaceCognitiveGraphService` projects nodes/edges over existing identities from
-Cognitive Model, Planning, Reasoning Memory, Intent, and Task Graph. Dual-channel
-`CognitiveGraphSnapshot`. History is append-only terminal evidence. React is
-projection-only. See [Cognitive Graph Architecture](./COGNITIVE-GRAPH-ARCHITECTURE.md).
+`WorkspaceCognitiveOrchestrationService` coordinates Cognitive Model, Planning,
+Reasoning Memory, and Cognitive Graph. It builds dependency DAGs, describes ordered
+refresh stages, and records staleness / blocked / skipped observations. Dual-channel
+`WorkspaceOrchestrationSnapshot`. History is append-only terminal evidence. React is
+projection-only. Orchestration never executes refreshes or owns foreign lifecycles.
+See [Cognitive Orchestration Architecture](./COGNITIVE-ORCHESTRATION-ARCHITECTURE.md).
 
 ## Sequencing rule
 
-Ship Batch *N* only when Batch *N−1* has durable contracts, tests, and governance ownership entries. Batch 8 is gated on 1–7. **Do not begin Batch 5 until Batch 4 is accepted.**
+Ship Batch *N* only when Batch *N−1* has durable contracts, tests, and governance ownership entries. Batch 8 is gated on 1–7. **Do not begin Batch 6 until Batch 5 is accepted.**
 
 ## Related
 
@@ -49,5 +52,6 @@ Ship Batch *N* only when Batch *N−1* has durable contracts, tests, and governa
 - [Planning Architecture](./PLANNING-ARCHITECTURE.md) (Batch 2)
 - [Reasoning Memory Architecture](./REASONING-MEMORY-ARCHITECTURE.md) (Batch 3)
 - [Cognitive Graph Architecture](./COGNITIVE-GRAPH-ARCHITECTURE.md) (Batch 4)
+- [Cognitive Orchestration Architecture](./COGNITIVE-ORCHESTRATION-ARCHITECTURE.md) (Batch 5)
 - [Projection Integrity](../03-Engineering/PROJECTION-INTEGRITY.md)
 - [Architecture Governance](../03-Engineering/ARCHITECTURE-GOVERNANCE.md)

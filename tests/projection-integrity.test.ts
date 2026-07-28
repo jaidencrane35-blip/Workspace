@@ -28,6 +28,11 @@ import {
   isCognitiveGraphSnapshotNonCommandable,
   cognitiveGraphHistoryCountIsAuthoritative,
 } from "../app/src/components/cognitiveGraphProjection";
+import {
+  isOrchestrationHistoryNonActionable,
+  isOrchestrationSnapshotNonCommandable,
+  orchestrationHistoryCountIsAuthoritative,
+} from "../app/src/components/orchestrationProjection";
 import type {
   DecisionArtifactHistoryEntry,
   DecisionEngineSummary,
@@ -44,6 +49,9 @@ import type {
   CognitiveGraphHistoryEntry,
   CognitiveGraphSnapshot,
   CognitiveGraphSummary,
+  OrchestrationHistoryEntry,
+  WorkspaceOrchestrationSnapshot,
+  WorkspaceOrchestrationSummary,
   RecommendationHistoryEntry,
   RecommendationItem,
   TaskGraphSummary,
@@ -803,6 +811,74 @@ describe("projection integrity — cognitive graph", () => {
     };
     expect(cognitiveGraphHistoryCountIsAuthoritative(summary)).toBe(true);
     expect(summary.history_count).toBeGreaterThanOrEqual(summary.history.length);
+  });
+});
+
+describe("projection integrity — cognitive orchestration", () => {
+  const historyEntry = (
+    overrides: Partial<OrchestrationHistoryEntry> = {}
+  ): OrchestrationHistoryEntry => ({
+    orchestration_id: "orchestration:1",
+    status: "superseded",
+    created_at: "t0",
+    superseded_at: "t1",
+    current_generation: 1,
+    uncertainty: 40,
+    rationale_excerpt: "coordinate",
+    stage_count: 4,
+    cycle_count: 0,
+    terminal: true,
+    actionable: false,
+    authority_effect: "none",
+    ...overrides,
+  });
+
+  it("marks orchestration history as non-actionable", () => {
+    expect(isOrchestrationHistoryNonActionable(historyEntry())).toBe(true);
+    expect(
+      isOrchestrationHistoryNonActionable(
+        historyEntry({ actionable: true, status: "superseded" })
+      )
+    ).toBe(false);
+  });
+
+  it("keeps orchestration snapshots non-commandable with authoritative history_count", () => {
+    const snapshot: WorkspaceOrchestrationSnapshot = {
+      workspace_id: "ws",
+      generated_at: "t2",
+      current: null,
+      history: [historyEntry()],
+      history_count: 3,
+      authority_effect: "none",
+    };
+    expect(isOrchestrationSnapshotNonCommandable(snapshot)).toBe(true);
+    const summary: WorkspaceOrchestrationSummary = {
+      workspace_id: "ws",
+      generated_at: "t2",
+      has_current: false,
+      orchestration_id: null,
+      current_generation: null,
+      stage_count: 0,
+      stale_count: 0,
+      blocked_count: 0,
+      cycle_count: 0,
+      uncertainty: null,
+      history: [historyEntry()],
+      history_count: 3,
+      authority_effect: "none",
+    };
+    expect(orchestrationHistoryCountIsAuthoritative(summary)).toBe(true);
+    expect(summary.history_count).toBeGreaterThanOrEqual(summary.history.length);
+
+    const nonCommand = {
+      orchestration_id: "orchestration:1",
+      actionable: false,
+      terminal: true,
+      authority_effect: "none",
+    };
+    expect(Object.keys(nonCommand)).not.toContain("execute");
+    expect(Object.keys(nonCommand)).not.toContain("command");
+    expect(Object.keys(nonCommand)).not.toContain("accept");
   });
 });
 

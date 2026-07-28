@@ -18,6 +18,7 @@ Canonical product language. Prefer these terms in UI, docs, and Assistant copy.
 | **Reasoning Record** | Durable evidence of hypothesis/assumptions/reflection (never executes) | Conversational memory, AiPlan |
 | **Reasoning History** | Append-only superseded/archived reasoning evidence | Actionable reasoning queue |
 | **Cognitive Graph** | Reference-only cross-domain topology (never SoT) | Second ownership model, planner |
+| **Cognitive Orchestration** | Coordination of refresh ordering / staleness (never executes) | Planner, lifecycle owner, autonomy layer |
 | **Graph History** | Terminal superseded graph snapshot evidence | Actionable graph mutations |
 | **Task** | Durable work item | Action |
 | **Action** | Executable catalog/command candidate | Task |

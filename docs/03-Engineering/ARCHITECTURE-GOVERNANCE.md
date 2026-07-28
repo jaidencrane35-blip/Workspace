@@ -208,6 +208,25 @@ See [Reasoning Memory Architecture](../05-AI/REASONING-MEMORY-ARCHITECTURE.md).
 
 See [Cognitive Graph Architecture](../05-AI/COGNITIVE-GRAPH-ARCHITECTURE.md).
 
+## Cognitive Orchestration (Programme II Batch 5)
+
+`WorkspaceCognitiveOrchestrationService` owns **coordination projections only**.
+
+| Property | Value |
+|----------|-------|
+| Lifecycle owner | No |
+| Execution authority | No |
+| Planning authority | No |
+| Evidence / coordination owner | Yes |
+
+- `OrchestrationHistoryEntry` / `WorkspaceOrchestrationSummary` contain no authority/command fields.
+- Mutation inventory includes `GenerateWorkspaceOrchestration` (baseline floor raised).
+- Orchestration cannot execute, mutate Intent/Task, accept recommendations, select decisions, or run refresh plans.
+- Orchestration never imports execution/launch services; repository cannot call the service.
+- Composition reads existing artefact identities only — never fabricates dependencies.
+
+See [Cognitive Orchestration Architecture](../05-AI/COGNITIVE-ORCHESTRATION-ARCHITECTURE.md).
+
 ## Capability boundary audit
 
 Enforced by `scripts/architecture-governance-lib.mjs`:

@@ -2349,6 +2349,107 @@ export interface CognitiveGraphSummary {
   authority_effect: string;
 }
 
+export interface OrchestrationHistoryEntry {
+  orchestration_id: string;
+  status: string;
+  created_at: string;
+  superseded_at: string | null;
+  current_generation: number;
+  uncertainty: number;
+  rationale_excerpt: string;
+  stage_count: number;
+  cycle_count: number;
+  terminal: boolean;
+  actionable: boolean;
+  authority_effect: string;
+}
+
+export interface OrchestrationRefreshStage {
+  stage: number;
+  artefact: string;
+  action: string;
+  rationale: string;
+}
+
+export interface OrchestrationDependency {
+  from: string;
+  to: string;
+  reason: string;
+}
+
+export interface OrchestrationObservation {
+  kind: string;
+  artefact: string | null;
+  statement: string;
+  evidence_refs: string[];
+}
+
+export interface OrchestrationCycleDetected {
+  cycle: string[];
+  evidence_refs: string[];
+}
+
+export interface OrchestrationEvidenceLink {
+  external_ref: string;
+  kind: string;
+}
+
+export interface WorkspaceOrchestrationMeta {
+  orchestration_id: string;
+  workspace_id: string;
+  status: string;
+  created_at: string;
+  superseded_at: string | null;
+  current_generation: number;
+  uncertainty: number;
+  rationale: string;
+  authority_effect: string;
+  terminal: boolean;
+  actionable: boolean;
+}
+
+export interface WorkspaceOrchestrationView {
+  meta: WorkspaceOrchestrationMeta;
+  refresh_plan: OrchestrationRefreshStage[];
+  dependency_order: string[];
+  dependencies: OrchestrationDependency[];
+  blocked_items: OrchestrationObservation[];
+  stale_items: OrchestrationObservation[];
+  skipped_items: OrchestrationObservation[];
+  cycles: OrchestrationCycleDetected[];
+  evidence_links: OrchestrationEvidenceLink[];
+  graph_links: OrchestrationEvidenceLink[];
+  planning_links: OrchestrationEvidenceLink[];
+  reasoning_links: OrchestrationEvidenceLink[];
+  execution_links: OrchestrationEvidenceLink[];
+  authority_effect: string;
+}
+
+export interface WorkspaceOrchestrationSnapshot {
+  workspace_id: string;
+  generated_at: string;
+  current: WorkspaceOrchestrationView | null;
+  history: OrchestrationHistoryEntry[];
+  history_count: number;
+  authority_effect: string;
+}
+
+export interface WorkspaceOrchestrationSummary {
+  workspace_id: string;
+  generated_at: string;
+  has_current: boolean;
+  orchestration_id: string | null;
+  current_generation: number | null;
+  stage_count: number;
+  stale_count: number;
+  blocked_count: number;
+  cycle_count: number;
+  uncertainty: number | null;
+  history: OrchestrationHistoryEntry[];
+  history_count: number;
+  authority_effect: string;
+}
+
 export type WindowIdentityConfidence = "high" | "medium" | "low" | "ephemeral";
 
 export interface WorkspaceObservationPass {

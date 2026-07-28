@@ -105,6 +105,9 @@ use crate::commands::workspace_reasoning_memory::{
 use crate::commands::workspace_cognitive_graph::{
     GenerateCognitiveGraph, GetCognitiveGraph, GetCognitiveGraphSummary,
 };
+use crate::commands::workspace_cognitive_orchestration::{
+    GenerateWorkspaceOrchestration, GetWorkspaceOrchestration, GetWorkspaceOrchestrationSummary,
+};
 use crate::commands::zone::{CreateZone, DeleteZone, GetZone};
 use crate::config::{SettingsUpdate, WorkspaceSettings};
 use crate::error::{KernelError, Result};
@@ -162,6 +165,7 @@ use workspace_domain::{
     ApplicationReference, AuditEvent, Capability, CapabilitySet, CognitiveModelState, CognitiveNode,
     CognitiveRelation, IntentContext, Layout, PlanningSnapshot, PlanningSummary,
     ReasoningSnapshot, ReasoningSummary, CognitiveGraphSnapshot, CognitiveGraphSummary,
+    WorkspaceOrchestrationSnapshot, WorkspaceOrchestrationSummary,
     LayoutId, LayoutMetadata, LayoutNode, LayoutSnapshot, MemoryEntry, MemoryType,
     ModelProviderDescriptor, ModelResponse, Observation, PersonalizedPlanComparison,
     PreferenceCategory, PreferenceSource, Suggestion, SuggestionIntentRequest,
@@ -2420,6 +2424,43 @@ impl CommandHandler {
     /// Architecture guard — Cognitive Graph must never execute.
     pub fn workspace_cognitive_graph_attempt_execute() -> Result<()> {
         crate::services::WorkspaceCognitiveGraphService::attempt_execute()
+    }
+
+    pub fn generate_workspace_orchestration(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceOrchestrationSnapshot> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_mutation(GenerateWorkspaceOrchestration::new(workspace_id))
+    }
+
+    pub fn get_workspace_orchestration(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceOrchestrationSnapshot> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetWorkspaceOrchestration::new(workspace_id))
+    }
+
+    pub fn get_workspace_orchestration_summary(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        history_limit: usize,
+    ) -> Result<WorkspaceOrchestrationSummary> {
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_query(
+            GetWorkspaceOrchestrationSummary::new(workspace_id, history_limit),
+        )
+    }
+
+    /// Architecture guard — Orchestration must never execute.
+    pub fn workspace_cognitive_orchestration_attempt_execute() -> Result<()> {
+        crate::services::WorkspaceCognitiveOrchestrationService::attempt_execute()
     }
 
     #[allow(clippy::too_many_arguments)]

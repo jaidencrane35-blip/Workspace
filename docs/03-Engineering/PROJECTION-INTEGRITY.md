@@ -176,6 +176,17 @@ Rules:
 - React may inspect topology / broken references — no mutation or command conversion.
 - Restart reconstructs durable current + history; missing graph remains missing.
 
+### Cognitive Orchestration (Programme II Batch 5)
+
+- **Current:** `WorkspaceOrchestrationSnapshot.current` — refresh plan / dependency order /
+  staleness observations. Coordination only; never execute refreshes or foreign lifecycles.
+- **History:** superseded snapshots via append-only `workspace_orchestration_history` →
+  `OrchestrationHistoryEntry` (`terminal: true`, `actionable: false`, `authority_effect: none`).
+- **`history_count`** is authoritative; summary windows may truncate `history`.
+- Execution links are references only. Cycles emit evidence — never invent resolutions.
+- React may inspect orchestration observations — no mutation or command conversion.
+- Restart reconstructs durable current + history; missing orchestration remains missing.
+
 ## Serde defaults vs TypeScript required fields
 
 Rust history fields often use `#[serde(default)]` so older persisted / in-flight JSON
