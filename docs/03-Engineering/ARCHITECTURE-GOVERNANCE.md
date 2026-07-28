@@ -286,6 +286,27 @@ See [Cognitive Agent Cast Architecture](../05-AI/COGNITIVE-AGENT-CAST-ARCHITECTU
 
 See [Cognitive Autonomy Architecture](../05-AI/COGNITIVE-AUTONOMY-ARCHITECTURE.md).
 
+## Unified Workspace State (Programme III Batch 1)
+
+`WorkspaceStateCompositionService` owns **composition envelope evidence only**.
+
+| Property | Value |
+|----------|-------|
+| Lifecycle owner | No |
+| Execution authority | No |
+| Permission / policy owner | No |
+| Source of truth | No |
+| Composition owner | Yes |
+
+- `WorkspaceStateHistoryEntry` / `WorkspaceStateSummary` contain no authority/command fields.
+- Mutation inventory includes `GenerateWorkspaceStateEnvelope` (baseline floor raised).
+- Envelope cannot import execution/launch services or call foreign `generate` mutation paths.
+- Envelope cannot own permissions or call `PermissionGateway`.
+- Missing sources remain Unavailable — never assumed current.
+- Repository cannot call the composition service.
+
+See [Unified Workspace State Architecture](../05-AI/UNIFIED-WORKSPACE-STATE-ARCHITECTURE.md).
+
 ## Capability boundary audit
 
 Enforced by `scripts/architecture-governance-lib.mjs`:

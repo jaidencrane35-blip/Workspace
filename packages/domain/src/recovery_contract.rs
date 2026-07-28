@@ -18,6 +18,9 @@ use crate::workspace_cognitive_agent_cast::{
 use crate::workspace_cognitive_autonomy::{
     CognitiveAutonomyHistoryEntry, CognitiveAutonomySnapshot,
 };
+use crate::workspace_state_envelope::{
+    WorkspaceStateHistoryEntry, WorkspaceStateSnapshot,
+};
 use crate::workspace_reasoning_memory::{ReasoningHistoryEntry, ReasoningSnapshot};
 
 /// Documented startup in-progress sweep cap (must match
@@ -175,6 +178,26 @@ pub fn recovery_must_not_fabricate_cognitive_autonomy(
 /// Fabricated actionable autonomy history must fail the recovery contract.
 pub fn recovery_must_not_fabricate_actionable_autonomy_history(
     entry: &CognitiveAutonomyHistoryEntry,
+) -> bool {
+    entry.is_non_actionable()
+}
+
+/// Missing unified state remains missing — never invent revisions/freshness on restart.
+pub fn recovery_must_not_fabricate_workspace_state_envelope(
+    snapshot: &WorkspaceStateSnapshot,
+) -> bool {
+    snapshot.is_non_commandable()
+        && snapshot.history.iter().all(|h| h.is_non_actionable())
+        && snapshot
+            .current
+            .as_ref()
+            .map(|c| c.is_non_executing())
+            .unwrap_or(true)
+}
+
+/// Fabricated actionable unified-state history must fail the recovery contract.
+pub fn recovery_must_not_fabricate_actionable_workspace_state_history(
+    entry: &WorkspaceStateHistoryEntry,
 ) -> bool {
     entry.is_non_actionable()
 }
@@ -429,5 +452,34 @@ mod tests {
             authority_effect: "none".into(),
         };
         assert!(!recovery_must_not_fabricate_actionable_autonomy_history(&bad));
+    }
+
+    #[test]
+    fn recovery_never_fabricates_workspace_state_on_empty_snapshot() {
+        let empty = WorkspaceStateSnapshot::assemble("ws", None, vec![], 0, "t0");
+        assert!(recovery_must_not_fabricate_workspace_state_envelope(&empty));
+        assert!(empty.current.is_none());
+    }
+
+    #[test]
+    fn recovery_rejects_actionable_workspace_state_history() {
+        let bad = WorkspaceStateHistoryEntry {
+            state_id: "workspace_state_envelope:1".into(),
+            revision: "rev:1".into(),
+            status: "superseded".into(),
+            created_at: "t0".into(),
+            superseded_at: Some("t1".into()),
+            freshness: "fresh".into(),
+            completeness: "complete".into(),
+            consistency: "consistent".into(),
+            source_count: 0,
+            conflict_count: 0,
+            unknown_count: 0,
+            composition_status: "composed".into(),
+            terminal: true,
+            actionable: true,
+            authority_effect: "none".into(),
+        };
+        assert!(!recovery_must_not_fabricate_actionable_workspace_state_history(&bad));
     }
 }

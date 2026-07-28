@@ -2809,6 +2809,104 @@ export interface CognitiveAutonomySummary {
   authority_effect: string;
 }
 
+export type FreshnessStatus = "fresh" | "stale" | "unavailable" | "unknown";
+export type AvailabilityStatus = "available" | "unavailable" | "unknown";
+export type CompletenessStatus =
+  | "complete"
+  | "partial"
+  | "unknown"
+  | "contradictory";
+export type ConsistencyStatus = "consistent" | "contradictory" | "unknown";
+
+export interface WorkspaceStateSource {
+  source_id: string;
+  source_type: string;
+  source_revision: string;
+  observed_at: string;
+  freshness_status: FreshnessStatus;
+  availability_status: AvailabilityStatus;
+  completeness_status: CompletenessStatus;
+  note: string | null;
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface WorkspaceStateConflict {
+  conflict_id: string;
+  source_a: string;
+  source_b: string;
+  description: string;
+  severity: string;
+  evidence: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface WorkspaceStateHistoryEntry {
+  state_id: string;
+  revision: string;
+  status: string;
+  created_at: string;
+  superseded_at: string | null;
+  freshness: string;
+  completeness: string;
+  consistency: string;
+  source_count: number;
+  conflict_count: number;
+  unknown_count: number;
+  composition_status: string;
+  terminal: boolean;
+  actionable: boolean;
+  authority_effect: string;
+}
+
+/** Programme III composition envelope — not the desktop observation WorkspaceState. */
+export interface WorkspaceStateEnvelope {
+  state_id: string;
+  workspace_id: string;
+  revision: string;
+  generated_at: string;
+  status: string;
+  superseded_at: string | null;
+  sources: WorkspaceStateSource[];
+  freshness: FreshnessStatus;
+  completeness: CompletenessStatus;
+  consistency: ConsistencyStatus;
+  unknowns: string[];
+  contradictions: WorkspaceStateConflict[];
+  composition_status: string;
+  authority_effect: string;
+  actionable: boolean;
+  terminal: boolean;
+}
+
+export interface WorkspaceStateSnapshot {
+  workspace_id: string;
+  generated_at: string;
+  current: WorkspaceStateEnvelope | null;
+  history: WorkspaceStateHistoryEntry[];
+  history_count: number;
+  authority_effect: string;
+}
+
+export interface WorkspaceStateSummary {
+  workspace_id: string;
+  generated_at: string;
+  has_current: boolean;
+  state_id: string | null;
+  revision: string | null;
+  freshness: string | null;
+  completeness: string | null;
+  consistency: string | null;
+  source_count: number;
+  conflict_count: number;
+  unknown_count: number;
+  composition_status: string | null;
+  history: WorkspaceStateHistoryEntry[];
+  history_count: number;
+  authority_effect: string;
+}
+
 export type WindowIdentityConfidence = "high" | "medium" | "low" | "ephemeral";
 
 export interface WorkspaceObservationPass {

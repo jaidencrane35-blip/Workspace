@@ -15,7 +15,7 @@ const read = (file) => fs.readFileSync(file, "utf8");
 const sorted = (values) => [...new Set(values)].sort();
 
 /** Minimum MutationCommand inventory — dropping below this fails closed. */
-export const MUTATION_COMMAND_BASELINE = 61;
+export const MUTATION_COMMAND_BASELINE = 62;
 
 /** Capability id → authority owner (permission-token scope, not lifecycle owner). */
 export const CAPABILITY_AUTHORITY_OWNERS = {
@@ -102,6 +102,7 @@ export const HISTORY_STRUCTS = [
   "LearningHistoryEntry",
   "CognitiveAgentCastHistoryEntry",
   "CognitiveAutonomyHistoryEntry",
+  "WorkspaceStateHistoryEntry",
 ];
 
 export const PROJECTION_SUMMARY_STRUCTS = [
@@ -117,6 +118,7 @@ export const PROJECTION_SUMMARY_STRUCTS = [
   "LearningSummary",
   "CognitiveAgentCastSummary",
   "CognitiveAutonomySummary",
+  "WorkspaceStateSummary",
 ];
 
 /** Append-only recovery diagnostic event types — evidence only, never commands. */
@@ -158,6 +160,7 @@ const LIFECYCLE_SERVICE_FILES = new Set([
   "workspace_learning_adaptation.rs",
   "workspace_cognitive_agent_cast.rs",
   "workspace_cognitive_autonomy.rs",
+  "workspace_state_composition.rs",
 ]);
 
 /**
@@ -919,6 +922,79 @@ function cognitiveAutonomyGuards(rootDir) {
   return violations;
 }
 
+/**
+ * Programme III Batch 1 — Unified Workspace State Envelope governance guards.
+ * Envelope composes; never owns, mutates, repairs, or silently refreshes sources.
+ */
+function workspaceStateEnvelopeGuards(rootDir) {
+  const violations = [];
+  const servicePath = path.join(
+    rootDir,
+    "packages/kernel/src/services/workspace_state_composition.rs",
+  );
+  const domainPath = path.join(
+    rootDir,
+    "packages/domain/src/workspace_state_envelope",
+  );
+  const repoPath = path.join(
+    rootDir,
+    "packages/database/src/repositories/workspace_state_envelope.rs",
+  );
+
+  const serviceFiles = fs.existsSync(servicePath) ? [servicePath] : [];
+  const domainFiles = fs.existsSync(domainPath) ? rustSources(domainPath) : [];
+  for (const file of [...serviceFiles, ...domainFiles]) {
+    const source = read(file);
+    const rel = path.relative(rootDir, file).replace(/\\/g, "/");
+    if (
+      /\bApplicationLaunchService\b/.test(source) ||
+      /\bExecutionLifecycleService\b/.test(source) ||
+      /std::process::Command/.test(source) ||
+      /workspace_windows_integration::/.test(source)
+    ) {
+      violations.push(
+        `${rel}: Unified Workspace State must not import or invoke execution/launch services`,
+      );
+    }
+    if (
+      /WorkspacePlanningService::generate\b/.test(source) ||
+      /WorkspaceReasoningMemoryService::generate\b/.test(source) ||
+      /WorkspaceCognitiveGraphService::generate\b/.test(source) ||
+      /WorkspaceCognitiveOrchestrationService::generate\b/.test(source) ||
+      /WorkspaceLearningAdaptationService::generate\b/.test(source) ||
+      /WorkspaceCognitiveAgentCastService::generate\b/.test(source) ||
+      /WorkspaceCognitiveAutonomyService::generate\b/.test(source) ||
+      /TaskGraphService::generate\b/.test(source) ||
+      /DecisionEngineService::generate\b/.test(source) ||
+      /PermissionGateway::/.test(source)
+    ) {
+      violations.push(
+        `${rel}: Unified Workspace State must not mutate lifecycle domains, own permissions, or silently refresh via generate`,
+      );
+    }
+  }
+
+  if (fs.existsSync(repoPath)) {
+    const source = read(repoPath);
+    if (
+      /WorkspaceStateCompositionService/.test(source) ||
+      /use\s+workspace_kernel::/.test(source)
+    ) {
+      violations.push(
+        `packages/database/src/repositories/workspace_state_envelope.rs: repository must not call composition service`,
+      );
+    }
+  }
+
+  if (!fs.existsSync(domainPath) && !fs.existsSync(`${domainPath}.rs`)) {
+    violations.push(
+      "packages/domain/src/workspace_state_envelope missing; governance cannot verify state envelope DTOs",
+    );
+  }
+
+  return violations;
+}
+
 function checkDtoAuthorityFields(domainSources, structNames, label) {
   const violations = [];
   const found = [];
@@ -1199,6 +1275,7 @@ export function auditArchitectureGovernance(rootDir, options = {}) {
   violations.push(...learningAdaptationGuards(rootDir));
   violations.push(...cognitiveAgentCastGuards(rootDir));
   violations.push(...cognitiveAutonomyGuards(rootDir));
+  violations.push(...workspaceStateEnvelopeGuards(rootDir));
 
   const domainSrc = path.join(rootDir, "packages/domain/src");
   const domainSources = fs.existsSync(domainSrc) ? rustSources(domainSrc) : [];

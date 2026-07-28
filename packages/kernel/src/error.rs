@@ -14,7 +14,7 @@ use workspace_domain::{
     WorkspaceReadinessError, WorkspaceRecommendationEngineError, WorkspaceReasoningMemoryError,
     WorkspaceCognitiveGraphError, WorkspaceCognitiveOrchestrationError,
     WorkspaceLearningAdaptationError, WorkspaceCognitiveAgentCastError,
-    WorkspaceCognitiveAutonomyError, WorkspaceSessionError,
+    WorkspaceCognitiveAutonomyError, WorkspaceStateEnvelopeError, WorkspaceSessionError,
     WorkspaceTransitionError,
     WorkspaceWorkContextError, WorkspaceWorkingStyleError,
 };
@@ -253,6 +253,9 @@ pub enum KernelError {
 
     #[error("Workspace cognitive autonomy validation failed: {message}")]
     WorkspaceCognitiveAutonomyValidation { message: String },
+
+    #[error("Workspace state envelope validation failed: {message}")]
+    WorkspaceStateEnvelopeValidation { message: String },
 
     #[error("Workspace intelligence validation failed: {message}")]
     WorkspaceIntelligenceValidation { message: String },
@@ -556,6 +559,17 @@ impl From<WorkspaceCognitiveAutonomyError> for KernelError {
         match error {
             WorkspaceCognitiveAutonomyError::Domain(domain) => KernelError::from(domain),
             other => KernelError::WorkspaceCognitiveAutonomyValidation {
+                message: other.to_string(),
+            },
+        }
+    }
+}
+
+impl From<WorkspaceStateEnvelopeError> for KernelError {
+    fn from(error: WorkspaceStateEnvelopeError) -> Self {
+        match error {
+            WorkspaceStateEnvelopeError::Domain(domain) => KernelError::from(domain),
+            other => KernelError::WorkspaceStateEnvelopeValidation {
                 message: other.to_string(),
             },
         }
@@ -1238,6 +1252,10 @@ impl KernelError {
             },
             KernelError::WorkspaceCognitiveAutonomyValidation { message } => PublicError {
                 code: "workspace_cognitive_autonomy_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::WorkspaceStateEnvelopeValidation { message } => PublicError {
+                code: "workspace_state_envelope_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::WorkspaceIntelligenceValidation { message } => PublicError {

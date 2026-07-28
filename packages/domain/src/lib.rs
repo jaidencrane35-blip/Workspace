@@ -53,6 +53,7 @@ pub mod workspace_cognitive_orchestration;
 pub mod workspace_learning_adaptation;
 pub mod workspace_cognitive_agent_cast;
 pub mod workspace_cognitive_autonomy;
+pub mod workspace_state_envelope;
 pub mod workspace_composition;
 pub mod workspace_purpose;
 pub mod workspace_evolution;
@@ -483,6 +484,12 @@ pub use workspace_cognitive_autonomy::{
     CognitiveAutonomySnapshot, CognitiveAutonomySummary, CognitiveAutonomyView,
     WorkspaceCognitiveAutonomyError,
 };
+pub use workspace_state_envelope::{
+    AvailabilityStatus, CompletenessStatus, ConsistencyStatus, EnvelopeStatus, FreshnessStatus,
+    WorkspaceStateConflict, WorkspaceStateEnvelope, WorkspaceStateEnvelopeError,
+    WorkspaceStateHistoryEntry, WorkspaceStateSnapshot, WorkspaceStateSource,
+    WorkspaceStateSummary,
+};
 pub use workspace_task_graph::{
     would_create_cycle, TaskDependency, TaskGraph, TaskGraphError, TaskGraphSummary, TaskHistoryEntry,
     TaskMetadata, TaskNode, TaskRelationship, TaskRelationshipKind, WorkspaceTask,
@@ -555,6 +562,8 @@ pub use recovery_contract::{
     recovery_must_not_fabricate_cognitive_agent_cast,
     recovery_must_not_fabricate_actionable_autonomy_history,
     recovery_must_not_fabricate_cognitive_autonomy,
+    recovery_must_not_fabricate_actionable_workspace_state_history,
+    recovery_must_not_fabricate_workspace_state_envelope,
     recovery_must_not_fabricate_learning, recovery_must_not_fabricate_orchestration, recovery_must_not_fabricate_reasoning,
     recovery_must_not_invent_completed, RECOVERY_DIAGNOSTIC_ATTEMPTED,
     RECOVERY_DIAGNOSTIC_COMPLETED, RECOVERY_DIAGNOSTIC_EVENT_TYPES, RECOVERY_DIAGNOSTIC_FAILED,

@@ -48,6 +48,11 @@ import {
   isCognitiveAutonomySnapshotNonCommandable,
   cognitiveAutonomyHistoryCountIsAuthoritative,
 } from "../app/src/components/cognitiveAutonomyProjection";
+import {
+  isWorkspaceStateHistoryNonActionable,
+  isWorkspaceStateSnapshotNonCommandable,
+  workspaceStateHistoryCountIsAuthoritative,
+} from "../app/src/components/workspaceStateEnvelopeProjection";
 import type {
   DecisionArtifactHistoryEntry,
   DecisionEngineSummary,
@@ -76,6 +81,9 @@ import type {
   CognitiveAutonomyHistoryEntry,
   CognitiveAutonomySnapshot,
   CognitiveAutonomySummary,
+  WorkspaceStateHistoryEntry,
+  WorkspaceStateSnapshot,
+  WorkspaceStateSummary,
   RecommendationHistoryEntry,
   RecommendationItem,
   TaskGraphSummary,
@@ -1101,6 +1109,74 @@ describe("projection integrity — cognitive agent cast", () => {
     expect(Object.keys(nonCommand)).not.toContain("command");
     expect(Object.keys(nonCommand)).not.toContain("permission");
     expect(nonCommand.executable_payload).toBeNull();
+  });
+
+  it("keeps unified state envelopes non-commandable with authoritative history_count", () => {
+    const historyEntry = (
+      overrides: Partial<WorkspaceStateHistoryEntry> = {}
+    ): WorkspaceStateHistoryEntry => ({
+      state_id: "workspace_state_envelope:1",
+      revision: "rev:abc",
+      status: "superseded",
+      created_at: "t0",
+      superseded_at: "t1",
+      freshness: "fresh",
+      completeness: "partial",
+      consistency: "consistent",
+      source_count: 3,
+      conflict_count: 0,
+      unknown_count: 1,
+      composition_status: "partial",
+      terminal: true,
+      actionable: false,
+      authority_effect: "none",
+      ...overrides,
+    });
+    const snapshot: WorkspaceStateSnapshot = {
+      workspace_id: "ws",
+      generated_at: "t2",
+      current: null,
+      history: [historyEntry()],
+      history_count: 3,
+      authority_effect: "none",
+    };
+    expect(isWorkspaceStateSnapshotNonCommandable(snapshot)).toBe(true);
+    expect(isWorkspaceStateHistoryNonActionable(historyEntry())).toBe(true);
+    expect(
+      isWorkspaceStateHistoryNonActionable(historyEntry({ actionable: true }))
+    ).toBe(false);
+
+    const summary: WorkspaceStateSummary = {
+      workspace_id: "ws",
+      generated_at: "t2",
+      has_current: false,
+      state_id: null,
+      revision: null,
+      freshness: null,
+      completeness: null,
+      consistency: null,
+      source_count: 0,
+      conflict_count: 0,
+      unknown_count: 0,
+      composition_status: null,
+      history: [historyEntry()],
+      history_count: 3,
+      authority_effect: "none",
+    };
+    expect(workspaceStateHistoryCountIsAuthoritative(summary)).toBe(true);
+    expect(summary.history_count).toBeGreaterThanOrEqual(summary.history.length);
+
+    const nonCommand = {
+      state_id: "workspace_state_envelope:1",
+      revision: "rev:abc",
+      actionable: false,
+      terminal: true,
+      authority_effect: "none",
+    };
+    expect(Object.keys(nonCommand)).not.toContain("execute");
+    expect(Object.keys(nonCommand)).not.toContain("command");
+    expect(Object.keys(nonCommand)).not.toContain("permission");
+    expect(Object.keys(nonCommand)).toContain("revision");
   });
 });
 

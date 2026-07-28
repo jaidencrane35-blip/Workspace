@@ -18,6 +18,7 @@ mod workspace_cognitive_orchestration;
 mod workspace_learning_adaptation;
 mod workspace_cognitive_agent_cast;
 mod workspace_cognitive_autonomy;
+mod workspace_state_envelope;
 mod workspace_purpose;
 mod workspace_evolution;
 mod workspace_recommendation;
@@ -137,6 +138,8 @@ mod workspace_learning_adaptation_tests;
 mod workspace_cognitive_agent_cast_tests;
 #[cfg(test)]
 mod workspace_cognitive_autonomy_tests;
+#[cfg(test)]
+mod workspace_state_envelope_tests;
 #[cfg(test)]
 mod workspace_attention_tests;
 #[cfg(test)]
@@ -430,5 +433,8 @@ pub use workspace_cognitive_agent_cast::{
 };
 pub use workspace_cognitive_autonomy::{
     GenerateCognitiveAutonomy, GetCognitiveAutonomy, GetCognitiveAutonomySummary,
+};
+pub use workspace_state_envelope::{
+    GenerateWorkspaceStateEnvelope, GetWorkspaceStateEnvelope, GetWorkspaceStateEnvelopeSummary,
 };
 pub use zone::{CreateZone, DeleteZone, GetZone};

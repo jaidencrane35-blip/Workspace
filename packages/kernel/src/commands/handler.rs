@@ -117,6 +117,9 @@ use crate::commands::workspace_cognitive_agent_cast::{
 use crate::commands::workspace_cognitive_autonomy::{
     GenerateCognitiveAutonomy, GetCognitiveAutonomy, GetCognitiveAutonomySummary,
 };
+use crate::commands::workspace_state_envelope::{
+    GenerateWorkspaceStateEnvelope, GetWorkspaceStateEnvelope, GetWorkspaceStateEnvelopeSummary,
+};
 use crate::commands::zone::{CreateZone, DeleteZone, GetZone};
 use crate::config::{SettingsUpdate, WorkspaceSettings};
 use crate::error::{KernelError, Result};
@@ -178,6 +181,7 @@ use workspace_domain::{
     LearningSnapshot, LearningSummary,
     CognitiveAgentCastSnapshot, CognitiveAgentCastSummary,
     CognitiveAutonomySnapshot, CognitiveAutonomySummary,
+    WorkspaceStateSnapshot, WorkspaceStateSummary,
     LayoutId, LayoutMetadata, LayoutNode, LayoutSnapshot, MemoryEntry, MemoryType,
     ModelProviderDescriptor, ModelResponse, Observation, PersonalizedPlanComparison,
     PreferenceCategory, PreferenceSource, Suggestion, SuggestionIntentRequest,
@@ -2581,6 +2585,43 @@ impl CommandHandler {
     /// Architecture guard — Cognitive Autonomy must never execute.
     pub fn workspace_cognitive_autonomy_attempt_execute() -> Result<()> {
         crate::services::WorkspaceCognitiveAutonomyService::attempt_execute()
+    }
+
+    pub fn generate_workspace_state_envelope(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceStateSnapshot> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_mutation(GenerateWorkspaceStateEnvelope::new(workspace_id))
+    }
+
+    pub fn get_workspace_state_envelope(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceStateSnapshot> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetWorkspaceStateEnvelope::new(workspace_id))
+    }
+
+    pub fn get_workspace_state_envelope_summary(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        history_limit: usize,
+    ) -> Result<WorkspaceStateSummary> {
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_query(
+            GetWorkspaceStateEnvelopeSummary::new(workspace_id, history_limit),
+        )
+    }
+
+    /// Architecture guard — Unified Workspace State cannot execute.
+    pub fn workspace_state_envelope_attempt_execute() -> Result<()> {
+        crate::services::WorkspaceStateCompositionService::attempt_execute()
     }
 
     #[allow(clippy::too_many_arguments)]

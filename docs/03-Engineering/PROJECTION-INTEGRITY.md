@@ -221,6 +221,18 @@ Rules:
 - React may inspect autonomy evidence — no mutation or command conversion.
 - Restart reconstructs durable current + history; missing autonomy remains missing.
 
+### Unified Workspace State Envelope (Programme III Batch 1)
+
+- **Current:** `WorkspaceStateSnapshot.current` — `WorkspaceStateEnvelope` with source
+  references, revision, freshness, completeness, consistency, unknowns, contradictions.
+- **History:** superseded envelopes via append-only `workspace_state_envelope_history` →
+  `WorkspaceStateHistoryEntry` (`terminal: true`, `actionable: false`, `authority_effect: none`).
+- **`history_count`** is authoritative; summary windows may truncate `history`.
+- Fresh / Stale / Unavailable / Unknown remain distinct. Conflicts are evidence, not repair.
+- Envelope ≠ source of truth. React may inspect — no mutation or command conversion.
+- Restart reconstructs durable current + history; missing envelope remains missing.
+- Missing sources remain Unavailable — never assumed Fresh.
+
 ## Serde defaults vs TypeScript required fields
 
 Rust history fields often use `#[serde(default)]` so older persisted / in-flight JSON
