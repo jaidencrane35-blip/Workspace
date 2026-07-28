@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | **Purpose** | Establish one provenance-rich, read-only runtime view of operational, cognitive, governance, and evidence state while preserving all existing lifecycle and persistence authorities |
-| **Status** | Active — Batch 4 accepted; Batch 5 charter drafted (pending review) |
+| **Status** | Active — Batch 5 Workspace Explanation Layer implemented |
 | **Depends on** | Programme I governance / recovery; Programme II cognitive stack |
 | **Non-goals** | Event sourcing; authoritative replay logs; simulation; model hosting; autonomous execution; replacement permission system; replacement for domain-owned projections |
 
@@ -32,29 +32,8 @@
 | **2** | Policy & Governance Engine | Context-aware policy reasoning / evidence | Done (accepted) |
 | **3** | Historical Workspace Reconstruction | Temporal comparison / change explanation | Done (accepted) |
 | **4** | Temporal Intelligence | Historical understanding extensions | Done (accepted) |
-| **5** | Workspace Explanation Layer | Cross-surface evidence-backed explanation | Charter drafted — pending review |
-| **6+** | Collaborative Understanding / Simulation / Local Intelligence | Only after explanation layer accepted + reconstruction exercised | Planned |
-
-## Batch 2 summary
-
-`PolicyGovernanceService` evaluates the Workspace State Envelope against versioned
-`PolicyDefinition` rules and produces `PolicyEvaluation` evidence plus
-`GovernanceRecommendation` / `GovernanceExplanation` surfaces.
-Dual-channel `PolicyGovernanceSnapshot`. History is append-only terminal evidence.
-Policy never grants permissions, executes commands, or bypasses Gateway.
-See [Policy & Governance Architecture](./POLICY-GOVERNANCE-ARCHITECTURE.md).
-
-## Batch 3 summary
-
-`WorkspaceHistoricalReconstructionService` composes temporal views, revision
-comparisons, evidence timelines, and change explanations from durable workspace
-state envelopes (via `list_durable_envelopes` — never `generate`).
-Reconstruction completeness remains explicit (`Complete` / `Partial` / `Unknown` /
-`Contradictory` / `Unavailable`). Missing evidence never becomes invented history.
-Dual-channel `HistoricalReconstructionSnapshot`. Commands:
-`GenerateHistoricalWorkspaceView`, `GetHistoricalWorkspaceView`,
-`GetHistoricalWorkspaceSummary`, `CompareWorkspaceRevisions`, `ExplainHistoricalChange`.
-See [Historical Workspace Reconstruction Architecture](./HISTORICAL-WORKSPACE-RECONSTRUCTION-ARCHITECTURE.md).
+| **5** | Workspace Explanation Layer | Cross-surface evidence-backed explanation | Done (implemented) |
+| **6+** | Collaborative Understanding / Simulation / Local Intelligence | Only after Batch 5 audited + reconstruction exercised | Planned |
 
 ## Batch 4 summary
 
@@ -67,21 +46,19 @@ Commands: `GenerateTemporalAnalysis`, `GetTemporalAnalysis`, `GetTemporalSummary
 `ExplainTemporalChange`.
 See [Temporal Intelligence Architecture](./TEMPORAL-INTELLIGENCE-ARCHITECTURE.md).
 
-## Batch 5 charter (draft)
+## Batch 5 summary
 
-`WorkspaceExplanationService` will compose evidence-backed explanation packages across
-state, policy, reconstruction, and temporal intelligence surfaces.
-Requested scope selects which upstreams to include; missing upstreams become gaps —
-never invented sections, causes, winners, or futures.
+`WorkspaceExplanationService` composes `ExplanationPackage` sections from durable
+state / policy / reconstruction / temporal snapshots via `load_snapshot` only.
+Surfaces gaps and conflicts; diagnostic `ExplanationConfidence` never becomes decision
+authority. Commands: `GenerateWorkspaceExplanation`, `GetWorkspaceExplanation`,
+`GetWorkspaceExplanationSummary`, `ExplainWorkspaceSituation`.
 See [Workspace Explanation Layer Architecture](./WORKSPACE-EXPLANATION-LAYER-ARCHITECTURE.md).
-
-**Do not begin Batch 5 implementation until the charter is reviewed and approved.**
-**Do not expand into simulation, forecasting, autonomous correction, or collaborative decision authority.**
 
 ## Sequencing rule
 
 Ship Batch *N* only when Batch *N−1* has durable contracts, tests, and governance ownership entries.
-Batch 5 implementation is gated on charter review approval.
+Do not start Batch 6 until Batch 5 is audited and accepted.
 Later batches that touch collaboration / simulation / forecasting remain gated on the
 explanation layer being accepted and reconstruction being exercised against real complexity.
 
@@ -91,7 +68,7 @@ explanation layer being accepted and reconstruction being exercised against real
 - [Policy & Governance Architecture](./POLICY-GOVERNANCE-ARCHITECTURE.md) (Batch 2)
 - [Historical Workspace Reconstruction Architecture](./HISTORICAL-WORKSPACE-RECONSTRUCTION-ARCHITECTURE.md) (Batch 3)
 - [Temporal Intelligence Architecture](./TEMPORAL-INTELLIGENCE-ARCHITECTURE.md) (Batch 4)
-- [Workspace Explanation Layer Architecture](./WORKSPACE-EXPLANATION-LAYER-ARCHITECTURE.md) (Batch 5 charter)
+- [Workspace Explanation Layer Architecture](./WORKSPACE-EXPLANATION-LAYER-ARCHITECTURE.md) (Batch 5)
 - [Programme II — Cognitive Workspace](./PROGRAMME-II-COGNITIVE-WORKSPACE.md)
 - [Projection Integrity](../03-Engineering/PROJECTION-INTEGRITY.md)
 - [Architecture Governance](../03-Engineering/ARCHITECTURE-GOVERNANCE.md)

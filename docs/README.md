@@ -111,7 +111,7 @@ AI behaviour, permissions, and boundaries.
 | [Policy & Governance Architecture](05-AI/POLICY-GOVERNANCE-ARCHITECTURE.md) | Programme III Batch 2 policy reasoning / evaluation evidence |
 | [Historical Workspace Reconstruction Architecture](05-AI/HISTORICAL-WORKSPACE-RECONSTRUCTION-ARCHITECTURE.md) | Programme III Batch 3 temporal reconstruction / change explanation |
 | [Temporal Intelligence Architecture](05-AI/TEMPORAL-INTELLIGENCE-ARCHITECTURE.md) | Programme III Batch 4 temporal analysis / historical understanding extensions |
-| [Workspace Explanation Layer Architecture](05-AI/WORKSPACE-EXPLANATION-LAYER-ARCHITECTURE.md) | Programme III Batch 5 charter — cross-surface evidence explanation (pending review) |
+| [Workspace Explanation Layer Architecture](05-AI/WORKSPACE-EXPLANATION-LAYER-ARCHITECTURE.md) | Programme III Batch 5 cross-surface evidence-backed explanation |
 | [Memory Policy](05-AI/MEMORY-POLICY.md) | What may be stored, retention, user control, deletion |
 | [Confidence Policy](05-AI/CONFIDENCE-POLICY.md) | Confidence levels, suggestion thresholds, uncertainty |
 | [AI Architecture Index](05-AI/README.md) | Navigation hub for Recommendation/Decision/Governance contracts |

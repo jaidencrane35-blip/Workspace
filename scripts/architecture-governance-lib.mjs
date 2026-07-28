@@ -15,7 +15,7 @@ const read = (file) => fs.readFileSync(file, "utf8");
 const sorted = (values) => [...new Set(values)].sort();
 
 /** Minimum MutationCommand inventory — dropping below this fails closed. */
-export const MUTATION_COMMAND_BASELINE = 65;
+export const MUTATION_COMMAND_BASELINE = 66;
 
 /** Capability id → authority owner (permission-token scope, not lifecycle owner). */
 export const CAPABILITY_AUTHORITY_OWNERS = {
@@ -106,6 +106,7 @@ export const HISTORY_STRUCTS = [
   "PolicyGovernanceHistoryEntry",
   "HistoricalReconstructionHistoryEntry",
   "TemporalIntelligenceHistoryEntry",
+  "WorkspaceExplanationHistoryEntry",
 ];
 
 export const PROJECTION_SUMMARY_STRUCTS = [
@@ -125,6 +126,7 @@ export const PROJECTION_SUMMARY_STRUCTS = [
   "PolicyGovernanceSummary",
   "HistoricalReconstructionSummary",
   "TemporalIntelligenceSummary",
+  "WorkspaceExplanationSummary",
 ];
 
 /** Append-only recovery diagnostic event types — evidence only, never commands. */
@@ -170,6 +172,7 @@ const LIFECYCLE_SERVICE_FILES = new Set([
   "policy_governance.rs",
   "workspace_historical_reconstruction.rs",
   "workspace_temporal_intelligence.rs",
+  "workspace_explanation.rs",
 ]);
 
 /**
@@ -1234,6 +1237,82 @@ function temporalIntelligenceGuards(rootDir) {
   return violations;
 }
 
+/**
+ * Programme III Batch 5 — Workspace Explanation Layer guards.
+ * Explain evidence; never become authority that changes reality.
+ */
+function workspaceExplanationGuards(rootDir) {
+  const violations = [];
+  const servicePath = path.join(
+    rootDir,
+    "packages/kernel/src/services/workspace_explanation.rs",
+  );
+  const domainPath = path.join(rootDir, "packages/domain/src/workspace_explanation");
+  const repoPath = path.join(
+    rootDir,
+    "packages/database/src/repositories/workspace_explanation.rs",
+  );
+
+  const serviceFiles = fs.existsSync(servicePath) ? [servicePath] : [];
+  const domainFiles = fs.existsSync(domainPath) ? rustSources(domainPath) : [];
+  for (const file of [...serviceFiles, ...domainFiles]) {
+    const source = read(file);
+    const rel = path.relative(rootDir, file).replace(/\\/g, "/");
+    if (
+      /\bApplicationLaunchService\b/.test(source) ||
+      /\bExecutionLifecycleService\b/.test(source) ||
+      /\bTaskGraphService\b/.test(source) ||
+      /\bDecisionEngineService\b/.test(source) ||
+      /std::process::Command/.test(source) ||
+      /workspace_windows_integration::/.test(source)
+    ) {
+      violations.push(
+        `${rel}: Explanation layer must not import or invoke lifecycle/execution services`,
+      );
+    }
+    if (
+      /PermissionGateway::/.test(source) ||
+      /\bCapabilityGrant\b/.test(source) ||
+      /CommandPipeline::/.test(source)
+    ) {
+      violations.push(
+        `${rel}: Explanation layer must not own permissions, grant capabilities, or execute via Pipeline`,
+      );
+    }
+    if (
+      /WorkspaceStateCompositionService::generate\b/.test(source) ||
+      /WorkspaceHistoricalReconstructionService::generate\b/.test(source) ||
+      /WorkspaceTemporalIntelligenceService::generate\b/.test(source) ||
+      /PolicyGovernanceService::generate\b/.test(source) ||
+      /WorkspacePlanningService::generate\b/.test(source)
+    ) {
+      violations.push(
+        `${rel}: Explanation layer must not silently refresh foreign sources via generate`,
+      );
+    }
+  }
+
+  if (fs.existsSync(repoPath)) {
+    const source = read(repoPath);
+    if (
+      /WorkspaceExplanationService/.test(source) ||
+      /use\s+workspace_kernel::/.test(source)
+    ) {
+      violations.push(
+        `packages/database/src/repositories/workspace_explanation.rs: repository must not call explanation service`,
+      );
+    }
+  }
+
+  if (!fs.existsSync(domainPath) && !fs.existsSync(`${domainPath}.rs`)) {
+    violations.push(
+      "packages/domain/src/workspace_explanation missing; governance cannot verify explanation DTOs",
+    );
+  }
+
+  return violations;
+}
+
 function checkDtoAuthorityFields(domainSources, structNames, label) {
   const violations = [];
   const found = [];
@@ -1518,6 +1597,7 @@ export function auditArchitectureGovernance(rootDir, options = {}) {
   violations.push(...policyGovernanceGuards(rootDir));
   violations.push(...historicalReconstructionGuards(rootDir));
   violations.push(...temporalIntelligenceGuards(rootDir));
+  violations.push(...workspaceExplanationGuards(rootDir));
 
   const domainSrc = path.join(rootDir, "packages/domain/src");
   const domainSources = fs.existsSync(domainSrc) ? rustSources(domainSrc) : [];

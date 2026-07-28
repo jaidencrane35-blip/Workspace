@@ -367,6 +367,26 @@ See [Historical Workspace Reconstruction Architecture](../05-AI/HISTORICAL-WORKS
 
 See [Temporal Intelligence Architecture](../05-AI/TEMPORAL-INTELLIGENCE-ARCHITECTURE.md).
 
+## Workspace Explanation Layer (Programme III Batch 5)
+
+`WorkspaceExplanationService` owns **cross-surface explanation evidence only**.
+
+| Property | Value |
+|----------|-------|
+| Lifecycle owner | No |
+| Execution / approve / policy / task authority | No |
+| Source of truth | No |
+| Evidence synthesis / projection owner | Yes |
+
+- `WorkspaceExplanationHistoryEntry` / `WorkspaceExplanationSummary` contain no authority/command fields.
+- Mutation inventory includes `GenerateWorkspaceExplanation` (baseline floor raised).
+- Explanation layer cannot import lifecycle/execution services or call `PermissionGateway`.
+- Explanation layer cannot silently refresh foreign sources via `generate`.
+- Conflicts explained, not resolved. Confidence is diagnostic only.
+- Repository cannot call the explanation service.
+
+See [Workspace Explanation Layer Architecture](../05-AI/WORKSPACE-EXPLANATION-LAYER-ARCHITECTURE.md).
+
 ## Capability boundary audit
 
 Enforced by `scripts/architecture-governance-lib.mjs`:

@@ -4,7 +4,7 @@
 |-------|-------|
 | **Purpose** | Compose evidence-backed explanations across Programme III surfaces — present what is known, unknown, conflicting, and limited without becoming the authority that changes reality |
 | **Owner** | `WorkspaceExplanationService` (DurableStore — **explanation evidence only**) |
-| **Status** | Charter draft — pending review before implementation |
+| **Status** | Active — Programme III Batch 5 implemented |
 | **Lifecycle owner** | No |
 | **Execution / replay authority** | No |
 | **Simulation / forecast / correction authority** | No |
@@ -268,7 +268,7 @@ Explanation Layer **reads** durable upstream artefacts; it never generates/refre
 
 **No hidden source scraping. No lifecycle inspection shortcuts. No silent regeneration.**
 
-## Service contract (planned)
+## Service contract
 
 ### `WorkspaceExplanationService`
 
@@ -291,18 +291,18 @@ Must **not**:
 - resolve contradictions by dropping a side
 - convert explanation packages into commands
 
-Negative guards (tests): `attempt_execute`, `attempt_replay`, `attempt_simulate`,
-`attempt_forecast`, `attempt_mutate_lifecycle`, `attempt_fabricate_cause`,
-`attempt_resolve_conflict`, `attempt_silent_refresh`, `attempt_emit_command`.
+Negative guards (tests): `attempt_execute`, `attempt_approve`, `attempt_mutate_policy`,
+`attempt_mutate_lifecycle`, `attempt_create_task`, `attempt_resolve_conflict`,
+`attempt_fabricate_evidence`, `attempt_silent_refresh`, `attempt_emit_command`.
 
-## Commands (planned)
+## Commands
 
 | Command | Kind | Capability | Purpose |
 |---------|------|------------|---------|
 | `GenerateWorkspaceExplanation` | Mutation | `work_context.write` | Persist an explanation package for a scope |
 | `GetWorkspaceExplanation` | Query | `work_context.read` | Load current explanation snapshot |
 | `GetWorkspaceExplanationSummary` | Query | `work_context.read` | Summary + authoritative `history_count` |
-| `ExplainWorkspaceEvidence` | Query | `work_context.read` | Explanation surface over current/last package |
+| `ExplainWorkspaceSituation` | Query | `work_context.read` | Explanation surface over current/last package |
 
 All commands:
 
@@ -312,7 +312,7 @@ IPC → CommandPipeline → PermissionGateway → WorkspaceExplanationService
 
 No repair / apply / replay / predict commands.
 
-## Persistence (planned)
+## Persistence
 
 | Artefact | Role |
 |----------|------|
@@ -360,11 +360,11 @@ Recovery helpers (domain predicates):
 - `recovery_must_not_fabricate_workspace_explanation`
 - `recovery_must_not_fabricate_actionable_explanation_history`
 
-## Governance additions (planned)
+## Governance additions
 
-Increase mutation baseline when `GenerateWorkspaceExplanation` lands.
+Mutation baseline includes `GenerateWorkspaceExplanation`.
 
-Add guards detecting:
+Guards detect:
 
 - explanation service importing lifecycle / execution / launch services
 - simulate / forecast / replay / repair command paths
@@ -373,12 +373,12 @@ Add guards detecting:
 - repository → service ownership leaks
 - explanation DTO fields that imply execute / approve / dispatch
 
-Add ownership registry entries:
+Ownership registry entries:
 
 - `workspace_explanation`
 - `workspace_explanation_snapshot`
 
-History / projection DTO inventories gain:
+History / projection DTO inventories include:
 
 - `WorkspaceExplanationHistoryEntry`
 - `WorkspaceExplanationSummary`
@@ -443,14 +443,13 @@ Accept implementation only when:
 
 ## Review gate
 
-**This document is a charter/contract draft.**
+**Implementation contract accepted.** Implementation proceeds only against this contract —
+no simulator, no forecaster, no SoT elevation, no autonomous correction, no collaborative
+decision authority.
 
-Do **not** begin Batch 5 implementation until this charter is reviewed and explicitly approved.
-After approval, implement only the contract herein — no simulator, no forecaster, no SoT elevation,
-no autonomous correction, no collaborative decision authority.
+Explain evidence. Do not become the authority that changes reality.
 
-Later candidate (not this batch): Collaborative Workspace Understanding — still under the same rule:
-explain evidence; do not become the authority that changes reality.
+Do not start Batch 6 until Batch 5 is audited and accepted.
 
 ## Related
 

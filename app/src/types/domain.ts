@@ -3263,6 +3263,137 @@ export interface TemporalChangeExplanation {
   actionable: boolean;
 }
 
+export interface ExplanationScope {
+  include_state: boolean;
+  include_policy: boolean;
+  include_reconstruction: boolean;
+  include_temporal: boolean;
+  theme: string | null;
+  max_sections: number;
+}
+
+export interface EvidenceReference {
+  external_ref: string;
+  kind: string;
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface ExplanationGap {
+  gap_id: string;
+  surface: string;
+  description: string;
+  severity: string;
+  evidence_refs: EvidenceReference[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface ExplanationConflict {
+  conflict_id: string;
+  surface: string;
+  description: string;
+  evidence_refs: EvidenceReference[];
+  uncertainty: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface ExplanationConfidence {
+  assessment_id: string;
+  coverage: number;
+  available_surfaces: number;
+  requested_surfaces: number;
+  gap_count: number;
+  conflict_count: number;
+  limitations: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface ExplanationSection {
+  section_id: string;
+  surface: string;
+  title: string;
+  body: string;
+  evidence_refs: EvidenceReference[];
+  completeness: string;
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface ExplanationPackage {
+  explanation_id: string;
+  workspace_id: string;
+  generated_at: string;
+  status: string;
+  superseded_at: string | null;
+  scope: ExplanationScope;
+  sections: ExplanationSection[];
+  gaps: ExplanationGap[];
+  conflicts: ExplanationConflict[];
+  confidence: ExplanationConfidence;
+  completeness: string;
+  provenance_links: EvidenceReference[];
+  narrative: string;
+  limitations: string[];
+  authority_effect: string;
+  actionable: boolean;
+  terminal: boolean;
+}
+
+export interface WorkspaceExplanationHistoryEntry {
+  explanation_id: string;
+  status: string;
+  created_at: string;
+  superseded_at: string | null;
+  completeness: string;
+  section_count: number;
+  gap_count: number;
+  conflict_count: number;
+  terminal: boolean;
+  actionable: boolean;
+  authority_effect: string;
+}
+
+export interface WorkspaceExplanationSnapshot {
+  workspace_id: string;
+  generated_at: string;
+  current: ExplanationPackage | null;
+  history: WorkspaceExplanationHistoryEntry[];
+  history_count: number;
+  authority_effect: string;
+}
+
+export interface WorkspaceExplanationSummary {
+  workspace_id: string;
+  generated_at: string;
+  has_current: boolean;
+  explanation_id: string | null;
+  completeness: string | null;
+  section_count: number;
+  gap_count: number;
+  conflict_count: number;
+  history: WorkspaceExplanationHistoryEntry[];
+  history_count: number;
+  authority_effect: string;
+}
+
+export interface WorkspaceSituationExplanation {
+  explanation_id: string;
+  workspace_id: string;
+  completeness: string | null;
+  section_summaries: string[];
+  gaps: string[];
+  conflicts: string[];
+  evidence_refs: string[];
+  uncertainty: string[];
+  narrative: string;
+  limitations: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
 export type WindowIdentityConfidence = "high" | "medium" | "low" | "ephemeral";
 
 export interface WorkspaceObservationPass {

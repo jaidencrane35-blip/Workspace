@@ -276,6 +276,20 @@ Rules:
 - React may inspect — no mutation, forecast, or command conversion.
 - Restart reconstructs durable current + history; missing analysis remains missing.
 
+### Workspace Explanation Layer (Programme III Batch 5)
+
+- **Current:** `WorkspaceExplanationSnapshot.current` — `ExplanationPackage` with sections,
+  gaps, conflicts, diagnostic confidence. Evidence synthesis only; never execute, approve,
+  or resolve.
+- **History:** superseded packages via append-only `workspace_explanation_history` →
+  `WorkspaceExplanationHistoryEntry` (`terminal: true`, `actionable: false`,
+  `authority_effect: none`).
+- **`history_count`** is authoritative; summary windows may truncate `history`.
+- Completeness: Complete / Partial / Unknown / Contradictory / Unavailable.
+- `ExplainWorkspaceSituation` is explanation-only.
+- React may inspect — no mutation or command conversion.
+- Restart reconstructs durable current + history; missing explanation remains missing.
+
 ## Serde defaults vs TypeScript required fields
 
 Rust history fields often use `#[serde(default)]` so older persisted / in-flight JSON

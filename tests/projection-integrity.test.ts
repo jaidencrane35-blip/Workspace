@@ -68,6 +68,11 @@ import {
   isTemporalIntelligenceSnapshotNonCommandable,
   temporalIntelligenceHistoryCountIsAuthoritative,
 } from "../app/src/components/temporalIntelligenceProjection";
+import {
+  isWorkspaceExplanationHistoryNonActionable,
+  isWorkspaceExplanationSnapshotNonCommandable,
+  workspaceExplanationHistoryCountIsAuthoritative,
+} from "../app/src/components/workspaceExplanationProjection";
 import type {
   DecisionArtifactHistoryEntry,
   DecisionEngineSummary,
@@ -108,6 +113,9 @@ import type {
   TemporalIntelligenceHistoryEntry,
   TemporalIntelligenceSnapshot,
   TemporalIntelligenceSummary,
+  WorkspaceExplanationHistoryEntry,
+  WorkspaceExplanationSnapshot,
+  WorkspaceExplanationSummary,
   RecommendationHistoryEntry,
   RecommendationItem,
   TaskGraphSummary,
@@ -1387,6 +1395,65 @@ describe("projection integrity — cognitive agent cast", () => {
     expect(Object.keys(nonCommand)).not.toContain("simulate");
     expect(Object.keys(nonCommand)).not.toContain("forecast");
     expect(Object.keys(nonCommand)).not.toContain("repair");
+  });
+
+  it("keeps workspace explanation snapshots non-commandable with authoritative history_count", () => {
+    const historyEntry = (
+      overrides: Partial<WorkspaceExplanationHistoryEntry> = {}
+    ): WorkspaceExplanationHistoryEntry => ({
+      explanation_id: "workspace_explanation:1",
+      status: "superseded",
+      created_at: "t0",
+      superseded_at: "t1",
+      completeness: "partial",
+      section_count: 2,
+      gap_count: 1,
+      conflict_count: 0,
+      terminal: true,
+      actionable: false,
+      authority_effect: "none",
+      ...overrides,
+    });
+    const snapshot: WorkspaceExplanationSnapshot = {
+      workspace_id: "ws",
+      generated_at: "t2",
+      current: null,
+      history: [historyEntry()],
+      history_count: 3,
+      authority_effect: "none",
+    };
+    expect(isWorkspaceExplanationSnapshotNonCommandable(snapshot)).toBe(true);
+    expect(isWorkspaceExplanationHistoryNonActionable(historyEntry())).toBe(true);
+    expect(
+      isWorkspaceExplanationHistoryNonActionable(historyEntry({ actionable: true }))
+    ).toBe(false);
+
+    const summary: WorkspaceExplanationSummary = {
+      workspace_id: "ws",
+      generated_at: "t2",
+      has_current: false,
+      explanation_id: null,
+      completeness: null,
+      section_count: 0,
+      gap_count: 0,
+      conflict_count: 0,
+      history: [historyEntry()],
+      history_count: 3,
+      authority_effect: "none",
+    };
+    expect(workspaceExplanationHistoryCountIsAuthoritative(summary)).toBe(true);
+    expect(summary.history_count).toBeGreaterThanOrEqual(summary.history.length);
+
+    const nonCommand = {
+      explanation_id: "workspace_explanation:1",
+      actionable: false,
+      terminal: true,
+      authority_effect: "none",
+    };
+    expect(Object.keys(nonCommand)).not.toContain("execute");
+    expect(Object.keys(nonCommand)).not.toContain("approve");
+    expect(Object.keys(nonCommand)).not.toContain("resolve");
+    expect(Object.keys(nonCommand)).not.toContain("dispatch");
   });
 });
 
