@@ -16,6 +16,17 @@ function commandDefinitions(commandsDir) {
   return sorted(commands);
 }
 
+function commandEdgeErrorCodes(commandsDir) {
+  const codes = [];
+  for (const entry of fs.readdirSync(commandsDir, { withFileTypes: true })) {
+    if (!entry.isFile() || !entry.name.endsWith(".rs")) continue;
+    const source = read(path.join(commandsDir, entry.name));
+    const pattern = /CommandError::new\(\s*"([a-z0-9_]+)"/g;
+    codes.push(...[...source.matchAll(pattern)].map((match) => match[1]));
+  }
+  return sorted(codes);
+}
+
 function registeredCommands(libFile) {
   const source = read(libFile);
   const block = source.match(
@@ -103,6 +114,9 @@ export function auditIpcContracts(rootDir) {
   const defined = commandDefinitions(
     path.join(rootDir, "app/src-tauri/src/commands"),
   );
+  const commandErrorCodes = commandEdgeErrorCodes(
+    path.join(rootDir, "app/src-tauri/src/commands"),
+  );
   const invoked = frontendInvocations(path.join(rootDir, "app/src"));
   const rustCodes = rustErrorCodes(
     path.join(rootDir, "packages/kernel/src/error.rs"),
@@ -135,6 +149,9 @@ export function auditIpcContracts(rootDir) {
     ...difference(typescriptCodes, rustCodes).map(
       (code) => `TypeScript public error code missing from kernel: ${code}`,
     ),
+    ...difference(commandErrorCodes, rustCodes).map(
+      (code) => `Command-edge error code missing from kernel catalog: ${code}`,
+    ),
     ...difference(rustOutcomeFields, typescriptOutcomeFields).map(
       (field) => `RecommendationOutcome field missing from TypeScript: ${field}`,
     ),
@@ -150,5 +167,6 @@ export function auditIpcContracts(rootDir) {
     invoked,
     unused: difference(registered, invoked),
     publicErrorCodes: rustCodes,
+    commandErrorCodes,
   };
 }
