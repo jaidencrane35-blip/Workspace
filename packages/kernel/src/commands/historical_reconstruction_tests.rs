@@ -252,8 +252,8 @@ fn compare_workspace_revisions_uses_durable_evidence_only() {
         actor,
         intent,
         ws,
-        "rev:missing-left",
-        "rev:missing-right",
+        "rev:missing-left".into(),
+        "rev:missing-right".into(),
     )
     .unwrap();
     assert_eq!(
