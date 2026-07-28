@@ -23,6 +23,11 @@ import {
   isReasoningSnapshotNonCommandable,
   reasoningHistoryCountIsAuthoritative,
 } from "../app/src/components/reasoningProjection";
+import {
+  isCognitiveGraphHistoryNonActionable,
+  isCognitiveGraphSnapshotNonCommandable,
+  cognitiveGraphHistoryCountIsAuthoritative,
+} from "../app/src/components/cognitiveGraphProjection";
 import type {
   DecisionArtifactHistoryEntry,
   DecisionEngineSummary,
@@ -36,6 +41,9 @@ import type {
   ReasoningHistoryEntry,
   ReasoningSnapshot,
   ReasoningSummary,
+  CognitiveGraphHistoryEntry,
+  CognitiveGraphSnapshot,
+  CognitiveGraphSummary,
   RecommendationHistoryEntry,
   RecommendationItem,
   TaskGraphSummary,
@@ -621,6 +629,12 @@ describe("projection contract — shared cross-domain invariants", () => {
       terminal: true,
       authority_effect: "none",
     });
+    assertNoCommandKeys({
+      snapshot_id: "cognitive_graph:1",
+      actionable: false,
+      terminal: true,
+      authority_effect: "none",
+    });
   });
 });
 
@@ -734,6 +748,60 @@ describe("projection integrity — reasoning memory", () => {
       authority_effect: "none",
     };
     expect(reasoningHistoryCountIsAuthoritative(summary)).toBe(true);
+    expect(summary.history_count).toBeGreaterThanOrEqual(summary.history.length);
+  });
+});
+
+describe("projection integrity — cognitive graph", () => {
+  const historyEntry = (
+    overrides: Partial<CognitiveGraphHistoryEntry> = {}
+  ): CognitiveGraphHistoryEntry => ({
+    snapshot_id: "cognitive_graph:1",
+    status: "superseded",
+    generated_at: "t0",
+    superseded_at: "t1",
+    node_count: 2,
+    edge_count: 1,
+    broken_node_count: 0,
+    broken_edge_count: 0,
+    terminal: true,
+    actionable: false,
+    authority_effect: "none",
+    ...overrides,
+  });
+
+  it("marks graph history as non-actionable", () => {
+    expect(isCognitiveGraphHistoryNonActionable(historyEntry())).toBe(true);
+    expect(
+      isCognitiveGraphHistoryNonActionable(
+        historyEntry({ actionable: true, status: "superseded" })
+      )
+    ).toBe(false);
+  });
+
+  it("keeps graph snapshots non-commandable with authoritative history_count", () => {
+    const snapshot: CognitiveGraphSnapshot = {
+      workspace_id: "ws",
+      generated_at: "t2",
+      current: null,
+      history: [historyEntry()],
+      history_count: 3,
+      authority_effect: "none",
+    };
+    expect(isCognitiveGraphSnapshotNonCommandable(snapshot)).toBe(true);
+    const summary: CognitiveGraphSummary = {
+      workspace_id: "ws",
+      generated_at: "t2",
+      has_current: false,
+      current_id: null,
+      node_count: 0,
+      edge_count: 0,
+      broken_reference_count: 0,
+      history: [historyEntry()],
+      history_count: 3,
+      authority_effect: "none",
+    };
+    expect(cognitiveGraphHistoryCountIsAuthoritative(summary)).toBe(true);
     expect(summary.history_count).toBeGreaterThanOrEqual(summary.history.length);
   });
 });

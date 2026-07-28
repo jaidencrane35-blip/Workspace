@@ -2270,6 +2270,85 @@ export interface ReasoningSummary {
   authority_effect: string;
 }
 
+/** Programme II Cognitive Graph — terminal evidence only (never actionable). */
+export interface CognitiveGraphHistoryEntry {
+  snapshot_id: string;
+  status: string;
+  generated_at: string;
+  superseded_at: string | null;
+  node_count: number;
+  edge_count: number;
+  broken_node_count: number;
+  broken_edge_count: number;
+  terminal: boolean;
+  actionable: boolean;
+  authority_effect: string;
+}
+
+export interface CognitiveGraphNode {
+  external_ref: string;
+  workspace_id: string;
+  kind: string;
+  title: string;
+  broken: boolean;
+  authority_effect: string;
+}
+
+export interface CognitiveGraphEdge {
+  id: string;
+  workspace_id: string;
+  from_ref: string;
+  to_ref: string;
+  kind: string;
+  explanation: string;
+  confidence: number;
+  evidence_refs: string[];
+  broken: boolean;
+  authority_effect: string;
+}
+
+export interface CognitiveGraphMeta {
+  id: string;
+  workspace_id: string;
+  status: string;
+  generated_at: string;
+  superseded_at: string | null;
+  node_count: number;
+  edge_count: number;
+  broken_node_count: number;
+  broken_edge_count: number;
+  authority_effect: string;
+}
+
+export interface CognitiveGraphView {
+  meta: CognitiveGraphMeta;
+  nodes: CognitiveGraphNode[];
+  edges: CognitiveGraphEdge[];
+  authority_effect: string;
+}
+
+export interface CognitiveGraphSnapshot {
+  workspace_id: string;
+  generated_at: string;
+  current: CognitiveGraphView | null;
+  history: CognitiveGraphHistoryEntry[];
+  history_count: number;
+  authority_effect: string;
+}
+
+export interface CognitiveGraphSummary {
+  workspace_id: string;
+  generated_at: string;
+  has_current: boolean;
+  current_id: string | null;
+  node_count: number;
+  edge_count: number;
+  broken_reference_count: number;
+  history: CognitiveGraphHistoryEntry[];
+  history_count: number;
+  authority_effect: string;
+}
+
 export type WindowIdentityConfidence = "high" | "medium" | "low" | "ephemeral";
 
 export interface WorkspaceObservationPass {

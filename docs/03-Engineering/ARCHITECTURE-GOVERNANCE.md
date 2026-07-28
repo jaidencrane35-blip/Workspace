@@ -189,6 +189,25 @@ lifecycle, planning, or execution authority. Governance verifies:
 
 See [Reasoning Memory Architecture](../05-AI/REASONING-MEMORY-ARCHITECTURE.md).
 
+## Cognitive Graph (Programme II Batch 4)
+
+`WorkspaceCognitiveGraphService` owns **topology projections only**.
+
+| Property | Value |
+|----------|-------|
+| Lifecycle owner | No |
+| Execution authority | No |
+| Planning authority | No |
+| Evidence / topology owner | Yes |
+
+- `CognitiveGraphHistoryEntry` / `CognitiveGraphSummary` contain no authority/command fields.
+- Mutation inventory includes `GenerateCognitiveGraph`.
+- Graph cannot execute, create tasks/recommendations/decisions, or invent relationships.
+- Graph introduces no repository authority over foreign domains.
+- Node `external_ref` remains the domain identity — never replaced.
+
+See [Cognitive Graph Architecture](../05-AI/COGNITIVE-GRAPH-ARCHITECTURE.md).
+
 ## Capability boundary audit
 
 Enforced by `scripts/architecture-governance-lib.mjs`:

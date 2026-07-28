@@ -12,8 +12,8 @@ use workspace_domain::{
     WorkspaceMilestoneError, WorkspaceNavigationError, WorkspaceOperatingStateError,
     WorkspacePatternError, WorkspacePlanningError, WorkspaceProfileError, WorkspacePurposeError,
     WorkspaceReadinessError, WorkspaceRecommendationEngineError, WorkspaceReasoningMemoryError,
-    WorkspaceSessionError, WorkspaceTransitionError, WorkspaceWorkContextError,
-    WorkspaceWorkingStyleError,
+    WorkspaceCognitiveGraphError, WorkspaceSessionError, WorkspaceTransitionError,
+    WorkspaceWorkContextError, WorkspaceWorkingStyleError,
 };
 
 #[derive(Debug, Error)]
@@ -235,6 +235,9 @@ pub enum KernelError {
 
     #[error("Workspace reasoning memory validation failed: {message}")]
     WorkspaceReasoningMemoryValidation { message: String },
+
+    #[error("Workspace cognitive graph validation failed: {message}")]
+    WorkspaceCognitiveGraphValidation { message: String },
 
     #[error("Workspace intelligence validation failed: {message}")]
     WorkspaceIntelligenceValidation { message: String },
@@ -483,6 +486,17 @@ impl From<WorkspaceReasoningMemoryError> for KernelError {
         match error {
             WorkspaceReasoningMemoryError::Domain(domain) => KernelError::from(domain),
             other => KernelError::WorkspaceReasoningMemoryValidation {
+                message: other.to_string(),
+            },
+        }
+    }
+}
+
+impl From<WorkspaceCognitiveGraphError> for KernelError {
+    fn from(error: WorkspaceCognitiveGraphError) -> Self {
+        match error {
+            WorkspaceCognitiveGraphError::Domain(domain) => KernelError::from(domain),
+            other => KernelError::WorkspaceCognitiveGraphValidation {
                 message: other.to_string(),
             },
         }
@@ -1145,6 +1159,10 @@ impl KernelError {
             },
             KernelError::WorkspaceReasoningMemoryValidation { message } => PublicError {
                 code: "workspace_reasoning_memory_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::WorkspaceCognitiveGraphValidation { message } => PublicError {
+                code: "workspace_cognitive_graph_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::WorkspaceIntelligenceValidation { message } => PublicError {

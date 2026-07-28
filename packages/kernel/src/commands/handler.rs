@@ -102,6 +102,9 @@ use crate::commands::workspace_planning::{
 use crate::commands::workspace_reasoning_memory::{
     GenerateReasoningRecord, GetReasoningRecord, GetReasoningSummary,
 };
+use crate::commands::workspace_cognitive_graph::{
+    GenerateCognitiveGraph, GetCognitiveGraph, GetCognitiveGraphSummary,
+};
 use crate::commands::zone::{CreateZone, DeleteZone, GetZone};
 use crate::config::{SettingsUpdate, WorkspaceSettings};
 use crate::error::{KernelError, Result};
@@ -158,7 +161,7 @@ use workspace_domain::{
     AiProposalAuthorityOutcome, AiProposalEvaluation, AiProposalSubmission, ApplicationId,
     ApplicationReference, AuditEvent, Capability, CapabilitySet, CognitiveModelState, CognitiveNode,
     CognitiveRelation, IntentContext, Layout, PlanningSnapshot, PlanningSummary,
-    ReasoningSnapshot, ReasoningSummary,
+    ReasoningSnapshot, ReasoningSummary, CognitiveGraphSnapshot, CognitiveGraphSummary,
     LayoutId, LayoutMetadata, LayoutNode, LayoutSnapshot, MemoryEntry, MemoryType,
     ModelProviderDescriptor, ModelResponse, Observation, PersonalizedPlanComparison,
     PreferenceCategory, PreferenceSource, Suggestion, SuggestionIntentRequest,
@@ -2381,6 +2384,42 @@ impl CommandHandler {
     /// Architecture guard — Reasoning Memory must never execute.
     pub fn workspace_reasoning_memory_attempt_execute() -> Result<()> {
         crate::services::WorkspaceReasoningMemoryService::attempt_execute()
+    }
+
+    pub fn generate_cognitive_graph(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<CognitiveGraphSnapshot> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_mutation(GenerateCognitiveGraph::new(workspace_id))
+    }
+
+    pub fn get_cognitive_graph(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<CognitiveGraphSnapshot> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetCognitiveGraph::new(workspace_id))
+    }
+
+    pub fn get_cognitive_graph_summary(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        history_limit: usize,
+    ) -> Result<CognitiveGraphSummary> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetCognitiveGraphSummary::new(workspace_id, history_limit))
+    }
+
+    /// Architecture guard — Cognitive Graph must never execute.
+    pub fn workspace_cognitive_graph_attempt_execute() -> Result<()> {
+        crate::services::WorkspaceCognitiveGraphService::attempt_execute()
     }
 
     #[allow(clippy::too_many_arguments)]

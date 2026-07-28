@@ -7,6 +7,7 @@
 use crate::audit::AuditEvent;
 use crate::execution_reconciliation::{ExecutionLifecycleRecord, ExecutionState};
 use crate::workspace_recommendation::RecommendationHistoryEntry;
+use crate::workspace_cognitive_graph::{CognitiveGraphHistoryEntry, CognitiveGraphSnapshot};
 use crate::workspace_reasoning_memory::{ReasoningHistoryEntry, ReasoningSnapshot};
 
 /// Documented startup in-progress sweep cap (must match
@@ -68,6 +69,24 @@ pub fn recovery_must_not_fabricate_reasoning(snapshot: &ReasoningSnapshot) -> bo
 /// Fabricated actionable reasoning history must fail the recovery contract.
 pub fn recovery_must_not_fabricate_actionable_reasoning_history(
     entry: &ReasoningHistoryEntry,
+) -> bool {
+    entry.is_non_actionable()
+}
+
+/// Missing graph remains missing — never invent nodes/edges on restart.
+pub fn recovery_must_not_fabricate_cognitive_graph(snapshot: &CognitiveGraphSnapshot) -> bool {
+    snapshot.is_non_commandable()
+        && snapshot.history.iter().all(|h| h.is_non_actionable())
+        && snapshot
+            .current
+            .as_ref()
+            .map(|c| c.is_non_executing())
+            .unwrap_or(true)
+}
+
+/// Fabricated actionable graph history must fail the recovery contract.
+pub fn recovery_must_not_fabricate_actionable_graph_history(
+    entry: &CognitiveGraphHistoryEntry,
 ) -> bool {
     entry.is_non_actionable()
 }
@@ -193,5 +212,30 @@ mod tests {
             authority_effect: "none".into(),
         };
         assert!(!recovery_must_not_fabricate_actionable_reasoning_history(&bad));
+    }
+
+    #[test]
+    fn recovery_never_fabricates_cognitive_graph_on_empty_snapshot() {
+        let empty = CognitiveGraphSnapshot::assemble("ws", None, vec![], 0, "t0");
+        assert!(recovery_must_not_fabricate_cognitive_graph(&empty));
+        assert!(empty.current.is_none());
+    }
+
+    #[test]
+    fn recovery_rejects_actionable_graph_history() {
+        let bad = CognitiveGraphHistoryEntry {
+            snapshot_id: "cognitive_graph:1".into(),
+            status: "superseded".into(),
+            generated_at: "t0".into(),
+            superseded_at: Some("t1".into()),
+            node_count: 1,
+            edge_count: 0,
+            broken_node_count: 0,
+            broken_edge_count: 0,
+            terminal: true,
+            actionable: true,
+            authority_effect: "none".into(),
+        };
+        assert!(!recovery_must_not_fabricate_actionable_graph_history(&bad));
     }
 }

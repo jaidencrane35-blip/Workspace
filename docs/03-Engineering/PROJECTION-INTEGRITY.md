@@ -165,6 +165,17 @@ Rules:
 - Restart reconstructs durable current + history; missing reasoning remains missing
   (never fabricate).
 
+### Cognitive Graph (Programme II Batch 4)
+
+- **Current:** `CognitiveGraphSnapshot.current` — reference-only nodes/edges.
+  Observational topology; never execute / create tasks / invent relationships.
+- **History:** superseded snapshots via append-only `cognitive_graph_history` →
+  `CognitiveGraphHistoryEntry` (`terminal: true`, `actionable: false`, `authority_effect: none`).
+- **`history_count`** is authoritative; summary windows may truncate `history`.
+- Nodes use existing `external_ref` identities; broken refs are observable evidence only.
+- React may inspect topology / broken references — no mutation or command conversion.
+- Restart reconstructs durable current + history; missing graph remains missing.
+
 ## Serde defaults vs TypeScript required fields
 
 Rust history fields often use `#[serde(default)]` so older persisted / in-flight JSON

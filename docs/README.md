@@ -101,6 +101,7 @@ AI behaviour, permissions, and boundaries.
 | [Workspace Cognitive Model](05-AI/WORKSPACE-COGNITIVE-MODEL.md) | Batch 1 durable semantic layer (objectives, focus, uncertainty) |
 | [Planning Architecture](05-AI/PLANNING-ARCHITECTURE.md) | Batch 2 non-executing Cognitive Planning Engine |
 | [Reasoning Memory Architecture](05-AI/REASONING-MEMORY-ARCHITECTURE.md) | Batch 3 reasoning evidence / reflection layer |
+| [Cognitive Graph Architecture](05-AI/COGNITIVE-GRAPH-ARCHITECTURE.md) | Batch 4 cross-domain reference-only topology |
 | [Memory Policy](05-AI/MEMORY-POLICY.md) | What may be stored, retention, user control, deletion |
 | [Confidence Policy](05-AI/CONFIDENCE-POLICY.md) | Confidence levels, suggestion thresholds, uncertainty |
 | [AI Architecture Index](05-AI/README.md) | Navigation hub for Recommendation/Decision/Governance contracts |
