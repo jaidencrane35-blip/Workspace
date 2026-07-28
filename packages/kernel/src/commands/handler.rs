@@ -160,6 +160,10 @@ use crate::commands::workspace_intelligence_hub::{
     ExplainWorkspaceIntelligence, GenerateWorkspaceIntelligenceHub, GetWorkspaceIntelligenceHub,
     GetWorkspaceIntelligenceHubSummary,
 };
+use crate::commands::workspace_semantic_query::{
+    ExplainWorkspaceSemanticQuery, GenerateWorkspaceSemanticQuery, GetWorkspaceSemanticQuery,
+    GetWorkspaceSemanticQuerySummary,
+};
 use crate::commands::workspace_cross_intelligence::{
     ExplainCrossWorkspacePattern, GenerateCrossWorkspaceIntelligence, GetCrossWorkspaceIntelligence,
     GetCrossWorkspaceSummary,
@@ -242,6 +246,8 @@ use workspace_domain::{
     WorkspaceDecisionSupportExplanation,
     WorkspaceIntelligenceHubProjection, WorkspaceIntelligenceHubSummary,
     WorkspaceIntelligenceHubExplanation,
+    WorkspaceSemanticQueryProjection, WorkspaceSemanticQuerySummary,
+    WorkspaceSemanticQueryExplanation,
     LayoutId, LayoutMetadata, LayoutNode, LayoutSnapshot, MemoryEntry, MemoryType,
     ModelProviderDescriptor, ModelResponse, Observation, PersonalizedPlanComparison,
     PreferenceCategory, PreferenceSource, Suggestion, SuggestionIntentRequest,
@@ -3213,6 +3219,54 @@ impl CommandHandler {
     /// Architecture guard — Intelligence hub cannot execute / decide / recommend / resolve.
     pub fn intelligence_hub_attempt_execute() -> Result<()> {
         crate::services::WorkspaceIntelligenceHubService::attempt_execute()
+    }
+
+    pub fn generate_workspace_semantic_query(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        query_text: String,
+    ) -> Result<WorkspaceSemanticQueryProjection> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_mutation(GenerateWorkspaceSemanticQuery::new(workspace_id, query_text))
+    }
+
+    pub fn get_workspace_semantic_query(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceSemanticQueryProjection> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetWorkspaceSemanticQuery::new(workspace_id))
+    }
+
+    pub fn get_workspace_semantic_query_summary(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        history_limit: usize,
+    ) -> Result<WorkspaceSemanticQuerySummary> {
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_query(
+            GetWorkspaceSemanticQuerySummary::new(workspace_id, history_limit),
+        )
+    }
+
+    pub fn explain_workspace_semantic_query(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceSemanticQueryExplanation> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(ExplainWorkspaceSemanticQuery::new(workspace_id))
+    }
+
+    /// Architecture guard — Semantic query cannot execute / reason / recommend / invent.
+    pub fn semantic_query_attempt_execute() -> Result<()> {
+        crate::services::WorkspaceSemanticQueryService::attempt_execute()
     }
 
     #[allow(clippy::too_many_arguments)]

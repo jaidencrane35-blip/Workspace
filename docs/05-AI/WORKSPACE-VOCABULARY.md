@@ -34,6 +34,7 @@ Canonical product language. Prefer these terms in UI, docs, and Assistant copy.
 | **Cross-Workspace Intelligence** | Derived aggregate observations across independent workspaces (patterns / themes / repeated risks; aggregation ≠ authority) | Global brain, central SoT, execution engine, per-workspace truth replacement |
 | **Workspace Decision Support** | Decision-ready evidence packages (contexts / bundles / trade-offs; support ≠ decision) | Decision-maker, recommendation engine, execution authority, policy grant |
 | **Workspace Intelligence Hub** | Read-only aggregation of Programme III intelligence packages (aggregation ≠ reinterpretation) | New SoT, conflict resolver, recommendation engine, decision-maker, upstream authority replacement |
+| **Workspace Semantic Query Engine** | Canonical read-only semantic retrieval over Programmes II/III (retrieve ≠ synthesise) | Reasoning engine, planner, recommender, decision-maker, knowledge creator, upstream authority |
 | **Graph History** | Terminal superseded graph snapshot evidence | Actionable graph mutations |
 | **Task** | Durable work item | Action |
 | **Action** | Executable catalog/command candidate | Task |

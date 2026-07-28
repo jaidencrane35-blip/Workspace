@@ -150,6 +150,7 @@ Preserve P2 constraints from Batches 6–9:
 - [Workspace Decision Support Architecture](./WORKSPACE-DECISION-SUPPORT-ARCHITECTURE.md) (Batch 11)
 - [Workspace Intelligence Hub Architecture](./WORKSPACE-INTELLIGENCE-HUB-ARCHITECTURE.md) (Batch 12)
 - [Programme II — Cognitive Workspace](./PROGRAMME-II-COGNITIVE-WORKSPACE.md)
+- [Programme IV — Interaction Runtime](./PROGRAMME-IV-INTERACTION-RUNTIME.md)
 - [Projection Integrity](../03-Engineering/PROJECTION-INTEGRITY.md)
 - [Architecture Governance](../03-Engineering/ARCHITECTURE-GOVERNANCE.md)
 - [Operational Recovery](../03-Engineering/OPERATIONAL-RECOVERY.md)

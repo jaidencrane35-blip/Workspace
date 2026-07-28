@@ -39,6 +39,7 @@ mod workspace_insight_coordination;
 mod workspace_cross_intelligence;
 mod workspace_decision_support;
 mod workspace_intelligence_hub;
+mod workspace_semantic_query;
 mod workspace_continuity;
 mod workspace_environment;
 mod workspace_composition;
@@ -228,4 +229,5 @@ pub(crate) use workspace_insight_coordination::WorkspaceInsightCoordinationServi
 pub(crate) use workspace_cross_intelligence::WorkspaceCrossIntelligenceService;
 pub(crate) use workspace_decision_support::WorkspaceDecisionSupportService;
 pub(crate) use workspace_intelligence_hub::WorkspaceIntelligenceHubService;
+pub(crate) use workspace_semantic_query::WorkspaceSemanticQueryService;
 pub use zone::ZoneService;

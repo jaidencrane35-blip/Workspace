@@ -379,6 +379,16 @@ Rules:
 - Conflict records preserved — aggregation ≠ reinterpretation; conflict record ≠ resolution.
 - React may inspect — no decide / approve / recommend / execute / resolve affordances.
 
+
+### Workspace Semantic Query Engine (Programme IV Batch 1)
+
+- Dual-channel: `current` + `history` + authoritative `history_count`
+- History is evidence-only; never actionable
+- Projection helpers expose search results, provenance, lineage, evidence refs, completeness, diagnostics
+- Forbidden: execute, recommend, approve, mutate, automate
+- Relevance is diagnostic only — never ranking-as-authority
+
+
 ## Serde defaults vs TypeScript required fields
 
 Rust history fields often use `#[serde(default)]` so older persisted / in-flight JSON

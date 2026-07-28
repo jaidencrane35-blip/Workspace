@@ -4506,6 +4506,166 @@ export interface WorkspaceIntelligenceHubExplanation {
   actionable: boolean;
 }
 
+/** Programme IV Batch 1 — Workspace Semantic Query Engine (retrieve ≠ synthesise). */
+export interface SemanticQueryScope {
+  include_state: boolean;
+  include_policy: boolean;
+  include_reconstruction: boolean;
+  include_temporal: boolean;
+  include_explanation: boolean;
+  include_contextual: boolean;
+  include_knowledge_synthesis: boolean;
+  include_knowledge_integration: boolean;
+  include_insight: boolean;
+  include_cross_workspace: boolean;
+  include_decision_support: boolean;
+  include_intelligence_hub: boolean;
+}
+
+export interface SemanticQuery {
+  query: string;
+  scope: SemanticQueryScope;
+  filters: string[];
+  provenance_requirements: string[];
+  authority_effect: string;
+  actionable: boolean;
+  executable: boolean;
+}
+
+export interface SemanticQueryEvidenceRef {
+  external_ref: string;
+  origin_domain: string;
+  source_revision: string | null;
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface SemanticMatch {
+  match_id: string;
+  matched_source: string;
+  relevance: string;
+  evidence_ref: SemanticQueryEvidenceRef;
+  originating_revision: string | null;
+  matched_tokens: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface SemanticQueryResult {
+  result_id: string;
+  matches: SemanticMatch[];
+  match_count: number;
+  notes: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface RetrievalGap {
+  gap_id: string;
+  unavailable_source: string;
+  gap_kind: string;
+  uncertainty_explanation: string;
+  evidence_refs: SemanticQueryEvidenceRef[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface RetrievalLineage {
+  lineage_id: string;
+  contributing_snapshots: string[];
+  revisions: string[];
+  evidence_refs: SemanticQueryEvidenceRef[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface RetrievalDiagnostics {
+  diagnostics_id: string;
+  sources_requested: number;
+  sources_available: number;
+  sources_unavailable: number;
+  match_count: number;
+  gap_count: number;
+  uncertainty: string[];
+  limitations: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface WorkspaceSemanticQuerySnapshot {
+  query_id: string;
+  workspace_id: string;
+  generated_at: string;
+  status: string;
+  superseded_at: string | null;
+  query: SemanticQuery;
+  result: SemanticQueryResult;
+  gaps: RetrievalGap[];
+  lineage: RetrievalLineage;
+  diagnostics: RetrievalDiagnostics;
+  completeness: string;
+  provenance_links: SemanticQueryEvidenceRef[];
+  source_revisions: string[];
+  narrative_summary: string;
+  narrative: string;
+  limitations: string[];
+  authority_effect: string;
+  actionable: boolean;
+  terminal: boolean;
+}
+
+export interface SemanticQueryHistoryEntry {
+  query_id: string;
+  status: string;
+  created_at: string;
+  superseded_at: string | null;
+  completeness: string;
+  match_count: number;
+  gap_count: number;
+  source_revision_count: number;
+  terminal: boolean;
+  actionable: boolean;
+  authority_effect: string;
+}
+
+export interface WorkspaceSemanticQueryProjection {
+  workspace_id: string;
+  current: WorkspaceSemanticQuerySnapshot | null;
+  history: SemanticQueryHistoryEntry[];
+  history_count: number;
+  projected_at: string;
+  authority_effect: string;
+}
+
+export interface WorkspaceSemanticQuerySummary {
+  workspace_id: string;
+  has_current: boolean;
+  completeness: string | null;
+  match_count: number;
+  gap_count: number;
+  narrative_summary: string | null;
+  history: SemanticQueryHistoryEntry[];
+  history_count: number;
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface WorkspaceSemanticQueryExplanation {
+  explanation_id: string;
+  workspace_id: string;
+  completeness: string | null;
+  narrative_summary: string | null;
+  match_summaries: string[];
+  gap_summaries: string[];
+  lineage_summaries: string[];
+  evidence_refs: string[];
+  uncertainty: string[];
+  narrative: string;
+  limitations: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
 export type WindowIdentityConfidence = "high" | "medium" | "low" | "ephemeral";
 
 export interface WorkspaceObservationPass {

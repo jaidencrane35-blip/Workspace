@@ -18,7 +18,7 @@ use workspace_domain::{
     HistoricalReconstructionError, TemporalIntelligenceError, WorkspaceExplanationError,
     ContextualUnderstandingError, KnowledgeSynthesisError, KnowledgeIntegrationError,
     InsightCoordinationError, CrossWorkspaceIntelligenceError, DecisionSupportError,
-    IntelligenceHubError,
+    IntelligenceHubError, SemanticQueryError,
     WorkspaceSessionError,
     WorkspaceTransitionError,
     WorkspaceWorkContextError, WorkspaceWorkingStyleError,
@@ -294,6 +294,9 @@ pub enum KernelError {
 
     #[error("Intelligence hub validation failed: {message}")]
     IntelligenceHubValidation { message: String },
+
+    #[error("Semantic query validation failed: {message}")]
+    SemanticQueryValidation { message: String },
 
     #[error("Workspace intelligence validation failed: {message}")]
     WorkspaceIntelligenceValidation { message: String },
@@ -729,6 +732,17 @@ impl From<IntelligenceHubError> for KernelError {
         match error {
             IntelligenceHubError::Domain(domain) => KernelError::from(domain),
             other => KernelError::IntelligenceHubValidation {
+                message: other.to_string(),
+            },
+        }
+    }
+}
+
+impl From<SemanticQueryError> for KernelError {
+    fn from(error: SemanticQueryError) -> Self {
+        match error {
+            SemanticQueryError::Domain(domain) => KernelError::from(domain),
+            other => KernelError::SemanticQueryValidation {
                 message: other.to_string(),
             },
         }
@@ -1459,6 +1473,10 @@ impl KernelError {
             },
             KernelError::IntelligenceHubValidation { message } => PublicError {
                 code: "intelligence_hub_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::SemanticQueryValidation { message } => PublicError {
+                code: "semantic_query_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::WorkspaceIntelligenceValidation { message } => PublicError {

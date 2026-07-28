@@ -108,6 +108,11 @@ import {
   isIntelligenceHubProjectionNonCommandable,
   intelligenceHubHistoryCountIsAuthoritative,
 } from "../app/src/components/intelligenceHubProjection";
+import {
+  isSemanticQueryHistoryNonActionable,
+  isSemanticQueryProjectionNonCommandable,
+  semanticQueryHistoryCountIsAuthoritative,
+} from "../app/src/components/semanticQueryProjection";
 import type {
   DecisionArtifactHistoryEntry,
   DecisionEngineSummary,
@@ -172,6 +177,9 @@ import type {
   IntelligenceHubHistoryEntry,
   WorkspaceIntelligenceHubProjection,
   WorkspaceIntelligenceHubSummary,
+  SemanticQueryHistoryEntry,
+  WorkspaceSemanticQueryProjection,
+  WorkspaceSemanticQuerySummary,
   RecommendationHistoryEntry,
   RecommendationItem,
   TaskGraphSummary,
@@ -1947,6 +1955,64 @@ describe("projection integrity — cognitive agent cast", () => {
     expect(Object.keys(nonCommand)).not.toContain("approve");
     expect(Object.keys(nonCommand)).not.toContain("recommend");
     expect(Object.keys(nonCommand)).not.toContain("resolve");
+  });
+
+  it("keeps semantic query projections non-commandable with authoritative history_count", () => {
+    const historyEntry = (
+      overrides: Partial<SemanticQueryHistoryEntry> = {}
+    ): SemanticQueryHistoryEntry => ({
+      query_id: "semantic_query:1",
+      status: "superseded",
+      created_at: "t0",
+      superseded_at: "t1",
+      completeness: "partial",
+      match_count: 2,
+      gap_count: 1,
+      source_revision_count: 3,
+      terminal: true,
+      actionable: false,
+      authority_effect: "none",
+      ...overrides,
+    });
+    const projection: WorkspaceSemanticQueryProjection = {
+      workspace_id: "ws",
+      projected_at: "t2",
+      current: null,
+      history: [historyEntry()],
+      history_count: 3,
+      authority_effect: "none",
+    };
+    expect(isSemanticQueryProjectionNonCommandable(projection)).toBe(true);
+    expect(isSemanticQueryHistoryNonActionable(historyEntry())).toBe(true);
+    expect(
+      isSemanticQueryHistoryNonActionable(historyEntry({ actionable: true }))
+    ).toBe(false);
+
+    const summary: WorkspaceSemanticQuerySummary = {
+      workspace_id: "ws",
+      has_current: false,
+      completeness: null,
+      match_count: 0,
+      gap_count: 0,
+      narrative_summary: null,
+      history: [historyEntry()],
+      history_count: 3,
+      authority_effect: "none",
+      actionable: false,
+    };
+    expect(semanticQueryHistoryCountIsAuthoritative(summary)).toBe(true);
+    expect(summary.history_count).toBeGreaterThanOrEqual(summary.history.length);
+
+    const nonCommand = {
+      query_id: "semantic_query:1",
+      actionable: false,
+      terminal: true,
+      authority_effect: "none",
+    };
+    expect(Object.keys(nonCommand)).not.toContain("execute");
+    expect(Object.keys(nonCommand)).not.toContain("approve");
+    expect(Object.keys(nonCommand)).not.toContain("recommend");
+    expect(Object.keys(nonCommand)).not.toContain("automate");
   });
 });
 

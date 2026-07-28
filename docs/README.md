@@ -107,6 +107,7 @@ AI behaviour, permissions, and boundaries.
 | [Cognitive Agent Cast Architecture](05-AI/COGNITIVE-AGENT-CAST-ARCHITECTURE.md) | Batch 7 cognitive roles / perspectives / critiques / syntheses |
 | [Cognitive Autonomy Architecture](05-AI/COGNITIVE-AUTONOMY-ARCHITECTURE.md) | Batch 8 governed suggestion / opportunity layer (Programme II final) |
 | [Programme III — Coherent Workspace Runtime](05-AI/PROGRAMME-III-COHERENT-WORKSPACE-RUNTIME.md) | Multi-batch coherent runtime programme charter |
+| [Programme IV — Interaction Runtime](05-AI/PROGRAMME-IV-INTERACTION-RUNTIME.md) | Multi-batch coherent runtime programme charter |
 | [Unified Workspace State Architecture](05-AI/UNIFIED-WORKSPACE-STATE-ARCHITECTURE.md) | Programme III Batch 1 composition envelope |
 | [Policy & Governance Architecture](05-AI/POLICY-GOVERNANCE-ARCHITECTURE.md) | Programme III Batch 2 policy reasoning / evaluation evidence |
 | [Historical Workspace Reconstruction Architecture](05-AI/HISTORICAL-WORKSPACE-RECONSTRUCTION-ARCHITECTURE.md) | Programme III Batch 3 temporal reconstruction / change explanation |
@@ -189,3 +190,6 @@ See [Documentation Standards](03-Engineering/DOCUMENTATION-STANDARDS.md) for ful
 **Current execution:** Ongoing multi-sprint implementation through Sprint 102
 
 See [Roadmap](08-Roadmap/ROADMAP.md) and [Decision Log](09-Decisions/DECISION-LOG.md) for current decisions and phase status.
+
+- [Programme IV — Interaction Runtime](./05-AI/PROGRAMME-IV-INTERACTION-RUNTIME.md)
+- [Workspace Semantic Query Architecture](./05-AI/WORKSPACE-SEMANTIC-QUERY-ARCHITECTURE.md)

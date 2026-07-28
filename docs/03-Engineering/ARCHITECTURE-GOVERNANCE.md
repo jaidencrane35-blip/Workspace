@@ -545,13 +545,29 @@ Aggregation ≠ reinterpretation; conflict record ≠ resolution.
 Enforced:
 
 - `IntelligenceHubHistoryEntry` / `WorkspaceIntelligenceHubSummary` contain no authority/command fields
-- Mutation inventory includes `GenerateWorkspaceIntelligenceHub` (baseline **73**)
+- Mutation inventory includes `GenerateWorkspaceIntelligenceHub` (baseline **73**; superseded by Programme IV Batch 1 → **74**)
 - Cannot import lifecycle/execution/recommendation/decision-engine services or call `PermissionGateway`
 - Cannot silently refresh foreign sources via `generate` (including Decision Support / Insight / Cross-Workspace)
 - Conflict records preserved — never resolved by hub
 - Repository cannot call the intelligence hub service
 
 See [Workspace Intelligence Hub Architecture](../05-AI/WORKSPACE-INTELLIGENCE-HUB-ARCHITECTURE.md).
+
+## Workspace Semantic Query Engine (Programme IV Batch 1)
+
+Canonical read-only semantic retrieval over Programmes II and III.
+
+**Retrieve meaning. Never create meaning.**
+
+- Owns retrieval / provenance / completeness / diagnostics only
+- Never owns reasoning, planning, recommendation, execution, lifecycle, or policy
+- Upstream access via `load_snapshot` only — never foreign `::generate`
+- History is evidence-only (`actionable: false`, `authority_effect: "none"`)
+- Mutation inventory includes `GenerateWorkspaceSemanticQuery` (baseline **74**)
+- History / projection DTO inventory length **25**
+
+See [Workspace Semantic Query Architecture](../05-AI/WORKSPACE-SEMANTIC-QUERY-ARCHITECTURE.md).
+
 
 ## Capability boundary audit
 

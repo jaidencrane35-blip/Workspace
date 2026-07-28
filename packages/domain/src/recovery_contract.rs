@@ -54,6 +54,9 @@ use crate::workspace_decision_support::{
 use crate::workspace_intelligence_hub::{
     IntelligenceHubHistoryEntry, WorkspaceIntelligenceHubProjection,
 };
+use crate::workspace_semantic_query::{
+    SemanticQueryHistoryEntry, WorkspaceSemanticQueryProjection,
+};
 use crate::workspace_reasoning_memory::{ReasoningHistoryEntry, ReasoningSnapshot};
 
 /// Documented startup in-progress sweep cap (must match
@@ -451,6 +454,26 @@ pub fn recovery_must_not_fabricate_intelligence_hub(
 /// Fabricated actionable intelligence-hub history must fail the recovery contract.
 pub fn recovery_must_not_fabricate_actionable_intelligence_hub_history(
     entry: &IntelligenceHubHistoryEntry,
+) -> bool {
+    entry.is_non_actionable()
+}
+
+/// Missing semantic query remains missing — never invent matches, relevance, or lineage on restart.
+pub fn recovery_must_not_fabricate_semantic_query(
+    projection: &WorkspaceSemanticQueryProjection,
+) -> bool {
+    projection.is_non_commandable()
+        && projection.history.iter().all(|h| h.is_non_actionable())
+        && projection
+            .current
+            .as_ref()
+            .map(|c| c.is_non_executing())
+            .unwrap_or(true)
+}
+
+/// Fabricated actionable semantic-query history must fail the recovery contract.
+pub fn recovery_must_not_fabricate_actionable_semantic_query_history(
+    entry: &SemanticQueryHistoryEntry,
 ) -> bool {
     entry.is_non_actionable()
 }
