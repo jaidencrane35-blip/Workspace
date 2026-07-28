@@ -4,7 +4,7 @@
 |-------|-------|
 | **Purpose** | Create a provenance-bound synthesis layer that turns accumulated workspace evidence into structured knowledge representations — without becoming memory truth, decision authority, planner, or executor |
 | **Owner** | `WorkspaceKnowledgeSynthesisService` (DurableStore — **synthesized knowledge artefacts only**) |
-| **Status** | Charter draft — pending review before implementation |
+| **Status** | Active — Programme III Batch 7 implemented |
 | **Lifecycle owner** | No |
 | **Execution / replay authority** | No |
 | **Simulation / forecast / correction authority** | No |
@@ -45,7 +45,7 @@ memory truth / decide / plan / mutate / invent facts
 
 ## Architectural position
 
-Programme III stack after Batch 7 (proposed):
+Programme III stack after Batch 7:
 
 ```
 Unified Workspace State Model
@@ -206,7 +206,7 @@ Do **not** introduce:
 4. **Conflicts and gaps are preserved, not resolved.** Correlation ≠ causation.
 5. **Theme / concept taxonomies stay descriptive** — no advice, prioritisation, or hidden recommendations.
 
-## Core model (charter)
+## Core model
 
 ### `WorkspaceKnowledgeSynthesis` (artefact)
 
@@ -421,7 +421,7 @@ foreign authorities as a side effect of synthesis.
 
 **No hidden source scraping. No lifecycle inspection shortcuts. No silent regeneration.**
 
-## Service contract (charter)
+## Service contract
 
 ### `WorkspaceKnowledgeSynthesisService`
 
@@ -463,7 +463,7 @@ Negative guards (required tests):
 - `attempt_silent_refresh`
 - `attempt_emit_command`
 
-## Commands (charter)
+## Commands
 
 | Command | Kind | Capability | Purpose |
 |---------|------|------------|---------|
@@ -489,7 +489,7 @@ WorkspaceKnowledgeSynthesisService
 No repair / apply / replay / remember-as-truth / decide / retrieve-as-SoT commands.
 (Retrieval intelligence is Batch 8 — only after this boundary is accepted.)
 
-## Persistence (charter)
+## Persistence
 
 | Artefact | Role |
 |----------|------|
@@ -548,7 +548,7 @@ History remains:
 - no lifecycle controls
 - `authority_effect = "none"`
 
-Expected DTO names (implementation may refine without changing contract):
+DTO names:
 
 - `KnowledgeSynthesisHistoryEntry`
 - `KnowledgeSynthesisProjection` / snapshot dual-channel
@@ -579,10 +579,10 @@ Recovery helper (expected):
 - `recovery_must_not_fabricate_knowledge_synthesis`
 - `recovery_must_not_fabricate_actionable_knowledge_synthesis_history`
 
-## Governance (expected on implementation)
+## Governance
 
-| Knob | Expected delta |
-|------|----------------|
+| Knob | Delta |
+|------|-------|
 | Mutation command baseline | +1 (`GenerateWorkspaceKnowledgeSynthesis`) → **68** |
 | History / projection DTO inventory | +1 each → **19** |
 | Lifecycle service files | `workspace_knowledge_synthesis.rs` |
@@ -591,7 +591,7 @@ Recovery helper (expected):
 | Guards | import boundary + no foreign `::generate` + repo≠service |
 | IPC public error | `knowledge_synthesis_validation_error` |
 
-Docs on implementation:
+Docs:
 
 - this architecture → Active
 - Programme III roadmap
@@ -600,7 +600,7 @@ Docs on implementation:
 - Operational recovery
 - Vocabulary
 
-## Required tests (acceptance — on implementation)
+## Required tests (acceptance)
 
 ### Domain
 
@@ -641,17 +641,17 @@ Docs on implementation:
 - missing evidence does not become inferred knowledge
 - restart preserves evidence without fabricating synthesis
 
-## Documentation deliverables (this charter turn)
+## Documentation deliverables
 
-- This architecture — status **Charter draft**
-- `PROGRAMME-III-COHERENT-WORKSPACE-RUNTIME.md` — Batch 7 charter drafted; Batch 8 gated
+- This architecture — status **Active — Programme III Batch 7 implemented**
+- `PROGRAMME-III-COHERENT-WORKSPACE-RUNTIME.md` — Batch 7 implemented; Batch 8 gated on Batch 7 audit ACCEPT
 - Pointers in `ARCHITECTURE-GOVERNANCE.md`, `PROJECTION-INTEGRITY.md`, `OPERATIONAL-RECOVERY.md`
 - Vocabulary: Knowledge Synthesis ≠ Memory / Cognitive Model / SoT / decision authority
 - `docs/README.md` index entry
 
-## Batch 7 acceptance criteria (implementation later)
+## Batch 7 acceptance criteria
 
-Accepted when:
+Shipped when:
 
 1. Knowledge Synthesis exists as evidence-derived artefacts only
 2. No new authority boundary / duplicate source of truth
@@ -666,12 +666,19 @@ Accepted when:
 11. Governance detects knowledge-synthesis boundary violations
 12. Recovery never fabricates concepts / relationships / confidence / historical claims
 
+Explicit invariants (unchanged):
+
+- **Derived knowledge ≠ truth** — synthesized artefacts are never source of truth or Memory
+- **Relationships ≠ causation** — meaning-only links; never `causes` / action kinds
+- **Confidence ≠ authority** — diagnostic only; never approval / execution / policy / priority
+
 ## Review gate
 
-**Charter only — do not implement until this contract is reviewed and approved.**
+**Charter accepted; Batch 7 implementation shipped.** Further work proceeds only against this contract —
+no Memory / Cognitive Model replacement, no SoT elevation, no autonomous correction, no decision ownership.
 
 Do not start Batch 8 (Workspace Knowledge Integration / Retrieval Intelligence)
-until Batch 7 is implemented, audited, and accepted.
+until Batch 7 is audited and accepted (Batch 8 gated on Batch 7 audit ACCEPT).
 
 Later candidates remain under the same rule: synthesize understanding from evidence;
 do not create reality.

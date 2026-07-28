@@ -541,12 +541,12 @@ Accepted when:
 no simulator, no forecaster, no SoT elevation, no autonomous correction, no decision ownership.
 
 Batch 6 accepted (architecture audit grade A). Next: [Knowledge Synthesis](./KNOWLEDGE-SYNTHESIS-ARCHITECTURE.md)
-(Batch 7 — charter draft; pending review before implementation).
+(Batch 7 — Active / implemented; Batch 8 gated on Batch 7 audit ACCEPT).
 
 ## Related
 
 - [Programme III — Coherent Workspace Runtime](./PROGRAMME-III-COHERENT-WORKSPACE-RUNTIME.md)
-- [Knowledge Synthesis Architecture](./KNOWLEDGE-SYNTHESIS-ARCHITECTURE.md) (Batch 7 charter)
+- [Knowledge Synthesis Architecture](./KNOWLEDGE-SYNTHESIS-ARCHITECTURE.md) (Batch 7)
 - [Workspace Explanation Layer Architecture](./WORKSPACE-EXPLANATION-LAYER-ARCHITECTURE.md) (Batch 5)
 - [Temporal Intelligence Architecture](./TEMPORAL-INTELLIGENCE-ARCHITECTURE.md) (Batch 4)
 - [Historical Workspace Reconstruction Architecture](./HISTORICAL-WORKSPACE-RECONSTRUCTION-ARCHITECTURE.md) (Batch 3)

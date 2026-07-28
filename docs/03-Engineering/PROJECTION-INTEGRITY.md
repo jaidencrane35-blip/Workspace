@@ -304,15 +304,17 @@ Rules:
 - React may inspect — no mutation or command conversion.
 - Restart reconstructs durable current + history; missing understanding remains missing.
 
-### Workspace Knowledge Synthesis (Programme III Batch 7 — charter)
+### Workspace Knowledge Synthesis (Programme III Batch 7)
 
-- **Current (proposed):** dual-channel synthesis projection with `KnowledgeConcept` /
-  `KnowledgeCluster` / `KnowledgeRelationship` / `KnowledgeGap`, diagnostic confidence.
-  Evidence-derived knowledge only; never Memory truth, Cognitive Model mutation, execute,
-  approve, or decide.
-- **History (proposed):** superseded synthesis via append-only history
-  (`terminal: true`, `actionable: false`, `authority_effect: none`).
-- **`history_count`** authoritative; summary windows may truncate `history`.
+- **Current:** `KnowledgeSynthesisProjection.current` — `WorkspaceKnowledgeSynthesis` with
+  `KnowledgeConcept` / `KnowledgeCluster` / `KnowledgeRelationship` / `KnowledgeGap`,
+  diagnostic confidence. Evidence-derived knowledge only; never Memory truth, Cognitive
+  Model mutation, execute, approve, or decide. Derived knowledge ≠ truth; relationships ≠
+  causation; confidence ≠ authority.
+- **History:** superseded synthesis via append-only history →
+  `KnowledgeSynthesisHistoryEntry` (`terminal: true`, `actionable: false`,
+  `authority_effect: none`).
+- **`history_count`** is authoritative; summary windows may truncate `history`.
 - Completeness: Complete / Partial / Unknown / Contradictory / Unavailable.
 - `ExplainKnowledgeSynthesis` is explanation-only over synthesis artefacts.
 - React may inspect — no mutation or command conversion.

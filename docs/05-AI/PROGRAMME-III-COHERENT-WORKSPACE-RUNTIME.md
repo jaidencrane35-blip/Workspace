@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | **Purpose** | Establish one provenance-rich, read-only runtime view of operational, cognitive, governance, and evidence state while preserving all existing lifecycle and persistence authorities |
-| **Status** | Active — Batch 6 accepted; Batch 7 charter drafted (pending review) |
+| **Status** | Active — Batch 7 implemented |
 | **Depends on** | Programme I governance / recovery; Programme II cognitive stack |
 | **Non-goals** | Event sourcing; authoritative replay logs; simulation; model hosting; autonomous execution; replacement permission system; replacement for domain-owned projections |
 
@@ -36,7 +36,7 @@
 | **4** | Temporal Intelligence | Historical understanding extensions | Done (accepted) |
 | **5** | Workspace Explanation Layer | Cross-surface evidence-backed explanation | Done (accepted) |
 | **6** | Contextual Workspace Understanding | Richer situational understanding | Done (accepted) |
-| **7** | Workspace Knowledge Synthesis | Provenance-bound structured knowledge artefacts | Charter drafted — pending review |
+| **7** | Workspace Knowledge Synthesis | Provenance-bound structured knowledge artefacts | Done (implemented) |
 | **8** | Knowledge Integration / Retrieval Intelligence | Only after Batch 7 audit ACCEPT | Planned |
 
 ## Batch 6 summary
@@ -51,19 +51,20 @@ Commands: `GenerateContextualWorkspaceUnderstanding`, `GetContextualWorkspaceUnd
 (`work_context.write` / `work_context.read`). Migration `057`.
 See [Contextual Workspace Understanding Architecture](./CONTEXTUAL-WORKSPACE-UNDERSTANDING-ARCHITECTURE.md).
 
-## Batch 7 charter (draft)
+## Batch 7 summary
 
-`WorkspaceKnowledgeSynthesisService` will derive provenance-bound
+`WorkspaceKnowledgeSynthesisService` derives provenance-bound
 `KnowledgeConcept` / `KnowledgeCluster` / `KnowledgeRelationship` / `KnowledgeGap`
-artefacts from durable Programme III projections via `load_snapshot` only.
+artefacts from durable Programme III projections via `load_snapshot` only
+(state, policy, reconstruction, temporal, explanation, **and contextual**).
 Diagnostic `KnowledgeConfidence` never becomes Memory truth, Cognitive Model mutation,
 policy outcome, automation, or priority authority. Relationships are meaning-only
 (`relates_to` / `overlaps` / …) — never causation or action.
-Commands (proposed): `GenerateWorkspaceKnowledgeSynthesis`, `GetWorkspaceKnowledgeSynthesis`,
-`GetWorkspaceKnowledgeSummary`, `ExplainKnowledgeSynthesis`. Migration `058`.
+Derived knowledge ≠ truth; relationships ≠ causation; confidence ≠ authority.
+Commands: `GenerateWorkspaceKnowledgeSynthesis`, `GetWorkspaceKnowledgeSynthesis`,
+`GetWorkspaceKnowledgeSummary`, `ExplainKnowledgeSynthesis`
+(`work_context.write` / `work_context.read`). Migration `058`.
 See [Knowledge Synthesis Architecture](./KNOWLEDGE-SYNTHESIS-ARCHITECTURE.md).
-
-**Do not begin Batch 7 implementation until the charter is reviewed and approved.**
 
 **Do not expand into Memory replacement, Cognitive Model mutation, prediction, simulation,
 autonomous correction, or decision ownership.**
@@ -71,8 +72,7 @@ autonomous correction, or decision ownership.**
 ## Sequencing rule
 
 Ship Batch *N* only when Batch *N−1* has durable contracts, tests, and governance ownership entries.
-Batch 6 is accepted (architecture audit grade A). Batch 7 implementation is gated on charter
-review approval. Batch 8 remains gated on Batch 7 audit ACCEPT.
+Batch 7 is implemented. Batch 8 remains gated on Batch 7 audit ACCEPT.
 
 Preserve P2 constraints from Batch 6:
 
@@ -89,7 +89,7 @@ Preserve P2 constraints from Batch 6:
 - [Temporal Intelligence Architecture](./TEMPORAL-INTELLIGENCE-ARCHITECTURE.md) (Batch 4)
 - [Workspace Explanation Layer Architecture](./WORKSPACE-EXPLANATION-LAYER-ARCHITECTURE.md) (Batch 5)
 - [Contextual Workspace Understanding Architecture](./CONTEXTUAL-WORKSPACE-UNDERSTANDING-ARCHITECTURE.md) (Batch 6)
-- [Knowledge Synthesis Architecture](./KNOWLEDGE-SYNTHESIS-ARCHITECTURE.md) (Batch 7 charter)
+- [Knowledge Synthesis Architecture](./KNOWLEDGE-SYNTHESIS-ARCHITECTURE.md) (Batch 7)
 - [Programme II — Cognitive Workspace](./PROGRAMME-II-COGNITIVE-WORKSPACE.md)
 - [Projection Integrity](../03-Engineering/PROJECTION-INTEGRITY.md)
 - [Architecture Governance](../03-Engineering/ARCHITECTURE-GOVERNANCE.md)
