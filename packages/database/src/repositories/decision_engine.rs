@@ -98,23 +98,17 @@ impl<'a> DecisionEngineRepository<'a> {
                     OR (decision_engine_intake_candidate.lifecycle_state = 'withdrawn'
                         AND excluded.lifecycle_state = 'invalidated')
                 )
-                AND (
-                    decision_engine_intake_candidate.lifecycle_state != 'invalidated'
-                    OR (
-                        decision_engine_intake_candidate.intake_receipt_reference
-                            = excluded.intake_receipt_reference
-                        AND decision_engine_intake_candidate.recommendation_reference
-                            = excluded.recommendation_reference
-                        AND decision_engine_intake_candidate.package_seal_digest
-                            = excluded.package_seal_digest
-                        AND decision_engine_intake_candidate.acceptance_reference
-                            = excluded.acceptance_reference
-                        AND decision_engine_intake_candidate.compatibility_version
-                            = excluded.compatibility_version
-                        AND decision_engine_intake_candidate.state = excluded.state
-                        AND decision_engine_intake_candidate.created_at = excluded.created_at
-                    )
-                )",
+                AND decision_engine_intake_candidate.intake_receipt_reference
+                    = excluded.intake_receipt_reference
+                AND decision_engine_intake_candidate.recommendation_reference
+                    = excluded.recommendation_reference
+                AND decision_engine_intake_candidate.package_seal_digest
+                    = excluded.package_seal_digest
+                AND decision_engine_intake_candidate.acceptance_reference
+                    = excluded.acceptance_reference
+                AND decision_engine_intake_candidate.compatibility_version
+                    = excluded.compatibility_version
+                AND decision_engine_intake_candidate.created_at = excluded.created_at",
             (
                 &candidate.workspace_id,
                 &candidate.intake_candidate_id,
@@ -135,18 +129,16 @@ impl<'a> DecisionEngineRepository<'a> {
             if let Some(existing) =
                 self.get_intake_candidate(&candidate.workspace_id, &candidate.intake_candidate_id)?
             {
-                if existing.lifecycle.lifecycle_state
-                    == DecisionEngineIntakeCandidateLifecycle::STATE_INVALIDATED
-                    && (existing.intake_receipt_reference != candidate.intake_receipt_reference
-                        || existing.recommendation_reference != candidate.recommendation_reference
-                        || existing.package_seal_digest != candidate.package_seal_digest
-                        || existing.acceptance_reference != candidate.acceptance_reference
-                        || existing.compatibility_version != candidate.compatibility_version
-                        || existing.state != candidate.state
-                        || existing.created_at != candidate.created_at)
-                {
+                let provenance_rewritten = existing.intake_receipt_reference
+                    != candidate.intake_receipt_reference
+                    || existing.recommendation_reference != candidate.recommendation_reference
+                    || existing.package_seal_digest != candidate.package_seal_digest
+                    || existing.acceptance_reference != candidate.acceptance_reference
+                    || existing.compatibility_version != candidate.compatibility_version
+                    || existing.created_at != candidate.created_at;
+                if provenance_rewritten {
                     return Err(crate::error::DatabaseError::ImmutableArtifact(format!(
-                        "intake candidate {} invalidated provenance cannot be rewritten",
+                        "intake candidate {} provenance cannot be rewritten (including during invalidation)",
                         candidate.intake_candidate_id
                     )));
                 }

@@ -36,23 +36,13 @@ impl<'a> TaskGraphRepository<'a> {
                 updated_at = excluded.updated_at
              WHERE workspace_task_nodes.status NOT IN ('completed','cancelled')
                 OR (
-                    excluded.status IN ('completed','cancelled')
+                    -- Same-terminal sync only: domain forbids completed↔cancelled transitions.
+                    workspace_task_nodes.status = excluded.status
+                    AND excluded.progress_percent >= workspace_task_nodes.progress_percent
                     AND (
-                        workspace_task_nodes.status NOT IN ('completed','cancelled')
-                        OR (
-                            -- Terminal sync may update metadata but cannot lose completion evidence.
-                            excluded.progress_percent >= workspace_task_nodes.progress_percent
-                            AND (
-                                workspace_task_nodes.status != 'completed'
-                                OR excluded.status = 'completed'
-                                OR excluded.progress_percent >= 100
-                            )
-                            AND (
-                                length(workspace_task_nodes.explanation) = 0
-                                OR length(excluded.explanation) > 0
-                                OR workspace_task_nodes.explanation = excluded.explanation
-                            )
-                        )
+                        length(workspace_task_nodes.explanation) = 0
+                        OR length(excluded.explanation) > 0
+                        OR workspace_task_nodes.explanation = excluded.explanation
                     )
                 )",
             (
@@ -73,15 +63,13 @@ impl<'a> TaskGraphRepository<'a> {
         )?;
         if changed == 0 {
             if let Some(existing) = self.get_task(task.id.as_str())? {
-                if existing.status == WorkspaceTaskStatus::Completed
-                    && (task.progress_percent < existing.progress_percent
-                        || (task.status == WorkspaceTaskStatus::Completed
-                            && task.progress_percent < 100
-                            && existing.progress_percent >= 100)
+                if existing.status.is_terminal()
+                    && (existing.status != task.status
+                        || task.progress_percent < existing.progress_percent
                         || (!existing.explanation.is_empty() && task.explanation.is_empty()))
                 {
                     return Err(crate::error::DatabaseError::ImmutableArtifact(format!(
-                        "task {} completed evidence cannot be erased or weakened",
+                        "task {} terminal completion evidence cannot be erased or weakened",
                         task.id.as_str()
                     )));
                 }

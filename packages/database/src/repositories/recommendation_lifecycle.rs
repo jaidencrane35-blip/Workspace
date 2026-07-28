@@ -319,13 +319,49 @@ fn map_overlay(row: &rusqlite::Row<'_>) -> rusqlite::Result<RecommendationLifecy
     })
 }
 
-/// Same-state terminal writes may update metadata and accumulate evidence, but must not
-/// erase or replace authoritative terminal artifacts.
+/// Same-state terminal writes may update explicitly allowed lifecycle metadata, but must not
+/// rewrite identity-bearing evidence (digests, resolution commitment, request identity).
 fn reject_weakened_terminal_evidence(
     existing: &RecommendationLifecycleOverlay,
     incoming: &RecommendationLifecycleOverlay,
 ) -> Result<()> {
     use crate::error::DatabaseError::ImmutableArtifact;
+
+    // Resolution commitment — once set, identity is frozen (not merely non-null).
+    if let Some(existing_resolution) = existing.resolution_type {
+        match incoming.resolution_type {
+            None => {
+                return Err(ImmutableArtifact(format!(
+                    "recommendation {} cannot erase resolution_type evidence",
+                    existing.native_id
+                )));
+            }
+            Some(next) if next != existing_resolution => {
+                return Err(ImmutableArtifact(format!(
+                    "recommendation {} cannot rewrite terminal resolution_type",
+                    existing.native_id
+                )));
+            }
+            _ => {}
+        }
+    }
+    if let Some(existing_resolved_at) = &existing.resolved_at {
+        match &incoming.resolved_at {
+            None => {
+                return Err(ImmutableArtifact(format!(
+                    "recommendation {} cannot erase resolved_at evidence",
+                    existing.native_id
+                )));
+            }
+            Some(next) if next != existing_resolved_at => {
+                return Err(ImmutableArtifact(format!(
+                    "recommendation {} cannot rewrite terminal resolved_at",
+                    existing.native_id
+                )));
+            }
+            _ => {}
+        }
+    }
 
     if let Some(existing_outcome) = &existing.outcome {
         match &incoming.outcome {
@@ -363,17 +399,11 @@ fn reject_weakened_terminal_evidence(
                 )));
             }
             Some(next) => {
-                let terminal = matches!(
-                    existing_confirmation.confirmation_state.as_str(),
-                    RecommendationDecisionConfirmation::STATE_CONFIRMED
-                        | RecommendationDecisionConfirmation::STATE_DECLINED
-                );
-                if terminal && next != existing_confirmation {
-                    return Err(ImmutableArtifact(format!(
-                        "recommendation {} cannot replace terminal confirmation evidence",
-                        existing.native_id
-                    )));
-                }
+                reject_confirmation_identity_rewrite(
+                    &existing.native_id,
+                    existing_confirmation,
+                    next,
+                )?;
             }
         }
     }
@@ -398,30 +428,52 @@ fn reject_weakened_terminal_evidence(
         }
     }
 
-    if existing.decision_intake_adapter_preparation.is_some()
-        && incoming.decision_intake_adapter_preparation.is_none()
-    {
-        return Err(ImmutableArtifact(format!(
-            "recommendation {} cannot erase adapter preparation evidence",
-            existing.native_id
-        )));
+    match (
+        &existing.decision_intake_adapter_preparation,
+        &incoming.decision_intake_adapter_preparation,
+    ) {
+        (Some(_), None) => {
+            return Err(ImmutableArtifact(format!(
+                "recommendation {} cannot erase adapter preparation evidence",
+                existing.native_id
+            )));
+        }
+        (Some(existing_prep), Some(next)) => {
+            reject_adapter_preparation_identity_rewrite(&existing.native_id, existing_prep, next)?;
+        }
+        _ => {}
     }
 
-    if existing.decision_handoff_request.is_some() && incoming.decision_handoff_request.is_none()
-    {
-        return Err(ImmutableArtifact(format!(
-            "recommendation {} cannot erase handoff evidence",
-            existing.native_id
-        )));
+    match (
+        &existing.decision_handoff_request,
+        &incoming.decision_handoff_request,
+    ) {
+        (Some(_), None) => {
+            return Err(ImmutableArtifact(format!(
+                "recommendation {} cannot erase handoff evidence",
+                existing.native_id
+            )));
+        }
+        (Some(existing_handoff), Some(next)) => {
+            reject_handoff_identity_rewrite(&existing.native_id, existing_handoff, next)?;
+        }
+        _ => {}
     }
 
-    if existing.decision_engine_acceptance.is_some()
-        && incoming.decision_engine_acceptance.is_none()
-    {
-        return Err(ImmutableArtifact(format!(
-            "recommendation {} cannot erase decision engine acceptance evidence",
-            existing.native_id
-        )));
+    match (
+        &existing.decision_engine_acceptance,
+        &incoming.decision_engine_acceptance,
+    ) {
+        (Some(_), None) => {
+            return Err(ImmutableArtifact(format!(
+                "recommendation {} cannot erase decision engine acceptance evidence",
+                existing.native_id
+            )));
+        }
+        (Some(existing_acceptance), Some(next)) => {
+            reject_acceptance_identity_rewrite(&existing.native_id, existing_acceptance, next)?;
+        }
+        _ => {}
     }
 
     if let Some(existing_fp) = &existing.content_fingerprint {
@@ -442,18 +494,126 @@ fn reject_weakened_terminal_evidence(
         }
     }
 
-    if existing.resolved_at.is_some() && incoming.resolved_at.is_none() {
+    Ok(())
+}
+
+fn reject_confirmation_identity_rewrite(
+    native_id: &str,
+    existing: &RecommendationDecisionConfirmation,
+    incoming: &RecommendationDecisionConfirmation,
+) -> Result<()> {
+    use crate::error::DatabaseError::ImmutableArtifact;
+
+    let terminal = matches!(
+        existing.confirmation_state.as_str(),
+        RecommendationDecisionConfirmation::STATE_CONFIRMED
+            | RecommendationDecisionConfirmation::STATE_DECLINED
+    );
+    if terminal && incoming != existing {
         return Err(ImmutableArtifact(format!(
-            "recommendation {} cannot erase resolved_at evidence",
-            existing.native_id
-        )));
-    }
-    if existing.resolution_type.is_some() && incoming.resolution_type.is_none() {
-        return Err(ImmutableArtifact(format!(
-            "recommendation {} cannot erase resolution_type evidence",
-            existing.native_id
+            "recommendation {native_id} cannot replace terminal confirmation evidence"
         )));
     }
 
+    // Identity-bearing confirmation fields remain frozen even during required→confirmed/declined.
+    if incoming.recommendation_id != existing.recommendation_id
+        || incoming.recommendation_owner != existing.recommendation_owner
+        || incoming.confirmation_owner != existing.confirmation_owner
+        || incoming.decision_owner != existing.decision_owner
+        || incoming.execution_owner != existing.execution_owner
+        || incoming.creates_decision_engine_object != existing.creates_decision_engine_object
+        || incoming.creates_intent != existing.creates_intent
+        || incoming.grants_execution_authority != existing.grants_execution_authority
+        || incoming.handoff_performed != existing.handoff_performed
+        || incoming.authority_effect != existing.authority_effect
+    {
+        return Err(ImmutableArtifact(format!(
+            "recommendation {native_id} cannot rewrite confirmation identity evidence"
+        )));
+    }
+    Ok(())
+}
+
+fn reject_adapter_preparation_identity_rewrite(
+    native_id: &str,
+    existing: &RecommendationDecisionIntakeAdapterPreparation,
+    incoming: &RecommendationDecisionIntakeAdapterPreparation,
+) -> Result<()> {
+    use crate::error::DatabaseError::ImmutableArtifact;
+
+    // Identity / digest fields immutable. Mutable allow-list for revoke/rebind:
+    // preparation_state, revoked_at, seal_aligned, note, proceed_authorized,
+    // adapter_invoked, mapping_performed, decision_engine_object_id, handoff_performed,
+    // permission_effect, authority_effect, current_owner.
+    if incoming.recommendation_id != existing.recommendation_id
+        || incoming.workspace_id != existing.workspace_id
+        || incoming.sealed_intake_package_digest != existing.sealed_intake_package_digest
+        || incoming.contract_version != existing.contract_version
+        || incoming.continuity_fingerprint_at_prep != existing.continuity_fingerprint_at_prep
+        || incoming.confirmation_intent != existing.confirmation_intent
+        || incoming.prepared_at != existing.prepared_at
+        || incoming.declared_consumer_role != existing.declared_consumer_role
+        || incoming.suggested_mapping_notes != existing.suggested_mapping_notes
+    {
+        return Err(ImmutableArtifact(format!(
+            "recommendation {native_id} cannot rewrite adapter preparation identity evidence"
+        )));
+    }
+    Ok(())
+}
+
+fn reject_handoff_identity_rewrite(
+    native_id: &str,
+    existing: &RecommendationDecisionHandoffRequest,
+    incoming: &RecommendationDecisionHandoffRequest,
+) -> Result<()> {
+    use crate::error::DatabaseError::ImmutableArtifact;
+
+    // Identity / digest fields immutable. Mutable allow-list for revoke/rebind:
+    // request_state, handoff_requested, revoked_at, preparation_active, seal_aligned,
+    // note, handoff_performed, adapter_invoked, decision_engine_object_id,
+    // permission_effect, authority_effect, current_owner.
+    if incoming.recommendation_id != existing.recommendation_id
+        || incoming.workspace_id != existing.workspace_id
+        || incoming.sealed_intake_package_digest != existing.sealed_intake_package_digest
+        || incoming.contract_version != existing.contract_version
+        || incoming.contract_family != existing.contract_family
+        || incoming.confirmation_intent != existing.confirmation_intent
+        || incoming.confirmed_at != existing.confirmed_at
+        || incoming.continuity_fingerprint != existing.continuity_fingerprint
+        || incoming.preparation_state_at_request != existing.preparation_state_at_request
+        || incoming.preparation_prepared_at != existing.preparation_prepared_at
+        || incoming.requested_at != existing.requested_at
+    {
+        return Err(ImmutableArtifact(format!(
+            "recommendation {native_id} cannot rewrite handoff identity evidence"
+        )));
+    }
+    Ok(())
+}
+
+fn reject_acceptance_identity_rewrite(
+    native_id: &str,
+    existing: &RecommendationDecisionEngineAcceptance,
+    incoming: &RecommendationDecisionEngineAcceptance,
+) -> Result<()> {
+    use crate::error::DatabaseError::ImmutableArtifact;
+
+    // Identity / digest fields immutable. Mutable allow-list for accept/decline/revoke/rebind:
+    // acceptance_state, ownership_state, ownership_transferred, current_owner,
+    // declared_future_owner, handoff_request_state, handoff_requested, accepted_at,
+    // declined_at, revoked_at, decision_engine_object_id, adapter_invoked,
+    // handoff_performed, permission_effect, note, authority_effect.
+    if incoming.recommendation_id != existing.recommendation_id
+        || incoming.workspace_id != existing.workspace_id
+        || incoming.sealed_intake_package_digest != existing.sealed_intake_package_digest
+        || incoming.contract_version != existing.contract_version
+        || incoming.contract_family != existing.contract_family
+        || incoming.confirmation_intent != existing.confirmation_intent
+    {
+        return Err(ImmutableArtifact(format!(
+            "recommendation {native_id} cannot rewrite decision engine acceptance identity evidence"
+        )));
+    }
     Ok(())
 }
