@@ -321,6 +321,20 @@ Rules:
 - Restart reconstructs durable current + history; missing synthesis remains missing
   (never inferred concepts / relationships / confidence).
 
+### Workspace Knowledge Integration (Programme III Batch 8 — charter)
+
+- **Current (proposed):** dual-channel integration projection with `KnowledgeRetrievalHit` /
+  `KnowledgeIntegrationLink` / `KnowledgeRetrievalGap`, diagnostic retrieval confidence.
+  Retrieval / join views only; never Memory truth, second ontology, execute, approve, or decide.
+- **History (proposed):** superseded integrations via append-only history
+  (`terminal: true`, `actionable: false`, `authority_effect: none`).
+- **`history_count`** authoritative; summary windows may truncate `history`.
+- Completeness: Complete / Partial / Unknown / Contradictory / Unavailable.
+- `ExplainKnowledgeIntegration` / optional `RetrieveWorkspaceKnowledge` are non-authoritative.
+- React may inspect — no mutation or command conversion.
+- Restart reconstructs durable current + history; missing integration remains missing
+  (never inferred hits / links / confidence).
+
 ## Serde defaults vs TypeScript required fields
 
 Rust history fields often use `#[serde(default)]` so older persisted / in-flight JSON

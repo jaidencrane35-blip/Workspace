@@ -674,18 +674,20 @@ Explicit invariants (unchanged):
 
 ## Review gate
 
-**Charter accepted; Batch 7 implementation shipped.** Further work proceeds only against this contract —
-no Memory / Cognitive Model replacement, no SoT elevation, no autonomous correction, no decision ownership.
+**Implementation contract accepted and shipped (architecture audit grade A).** Further work
+proceeds only against this contract — no Memory / Cognitive Model replacement, no SoT elevation,
+no autonomous correction, no decision ownership.
 
-Do not start Batch 8 (Workspace Knowledge Integration / Retrieval Intelligence)
-until Batch 7 is audited and accepted (Batch 8 gated on Batch 7 audit ACCEPT).
+Batch 7 accepted. Next: [Knowledge Integration / Retrieval Intelligence](./KNOWLEDGE-INTEGRATION-ARCHITECTURE.md)
+(Batch 8 — charter draft; pending review before implementation).
 
-Later candidates remain under the same rule: synthesize understanding from evidence;
+Later work remains under the same rule: synthesize / integrate understanding from evidence;
 do not create reality.
 
 ## Related
 
 - [Programme III — Coherent Workspace Runtime](./PROGRAMME-III-COHERENT-WORKSPACE-RUNTIME.md)
+- [Knowledge Integration Architecture](./KNOWLEDGE-INTEGRATION-ARCHITECTURE.md) (Batch 8 charter)
 - [Contextual Workspace Understanding Architecture](./CONTEXTUAL-WORKSPACE-UNDERSTANDING-ARCHITECTURE.md) (Batch 6)
 - [Workspace Explanation Layer Architecture](./WORKSPACE-EXPLANATION-LAYER-ARCHITECTURE.md) (Batch 5)
 - [Temporal Intelligence Architecture](./TEMPORAL-INTELLIGENCE-ARCHITECTURE.md) (Batch 4)

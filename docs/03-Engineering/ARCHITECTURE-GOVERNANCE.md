@@ -435,6 +435,30 @@ See [Contextual Workspace Understanding Architecture](../05-AI/CONTEXTUAL-WORKSP
 
 See [Knowledge Synthesis Architecture](../05-AI/KNOWLEDGE-SYNTHESIS-ARCHITECTURE.md).
 
+## Workspace Knowledge Integration (Programme III Batch 8 — charter)
+
+`WorkspaceKnowledgeIntegrationService` will own **integration / retrieval artefacts only**
+(hits / cross-layer links / gaps). Charter pending review — not yet implemented.
+
+| Property | Value |
+|----------|-------|
+| Lifecycle owner | No |
+| Execution / approve / policy / task / plan / autonomous authority | No |
+| Memory / Cognitive Model / Knowledge Synthesis replacement | No |
+| Source of truth | No |
+| Knowledge integration / retrieval projection owner (proposed) | Yes |
+
+Expected on implementation:
+
+- `KnowledgeIntegrationHistoryEntry` / `KnowledgeIntegrationSummary` contain no authority/command fields
+- Mutation inventory includes `GenerateWorkspaceKnowledgeIntegration` (baseline +1)
+- Knowledge integration cannot import lifecycle/execution services or call `PermissionGateway`
+- Knowledge integration cannot silently refresh foreign sources via `generate`
+- Hits require evidence refs; integration links meaning-only; confidence diagnostic only
+- Repository cannot call the knowledge integration service
+
+See [Knowledge Integration Architecture](../05-AI/KNOWLEDGE-INTEGRATION-ARCHITECTURE.md).
+
 ## Capability boundary audit
 
 Enforced by `scripts/architecture-governance-lib.mjs`:
