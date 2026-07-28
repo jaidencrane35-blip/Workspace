@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | **Purpose** | Establish one provenance-rich, read-only runtime view of operational, cognitive, governance, and evidence state while preserving all existing lifecycle and persistence authorities |
-| **Status** | Active — Batch 6 implemented |
+| **Status** | Active — Batch 6 accepted; Batch 7 gate open |
 | **Depends on** | Programme I governance / recovery; Programme II cognitive stack |
 | **Non-goals** | Event sourcing; authoritative replay logs; simulation; model hosting; autonomous execution; replacement permission system; replacement for domain-owned projections |
 
@@ -34,7 +34,7 @@
 | **3** | Historical Workspace Reconstruction | Temporal comparison / change explanation | Done (accepted) |
 | **4** | Temporal Intelligence | Historical understanding extensions | Done (accepted) |
 | **5** | Workspace Explanation Layer | Cross-surface evidence-backed explanation | Done (accepted) |
-| **6** | Contextual Workspace Understanding | Richer situational understanding | Done (implemented) |
+| **6** | Contextual Workspace Understanding | Richer situational understanding | Done (accepted) |
 | **7+** | Collaborative Understanding / Simulation / Local Intelligence | Only after Batch 6 audit ACCEPT + prior layers exercised | Planned |
 
 ## Batch 5 summary
@@ -63,8 +63,9 @@ See [Contextual Workspace Understanding Architecture](./CONTEXTUAL-WORKSPACE-UND
 ## Sequencing rule
 
 Ship Batch *N* only when Batch *N−1* has durable contracts, tests, and governance ownership entries.
-Batch 7+ (collaboration / simulation / forecasting) remains gated on Batch 6 audit ACCEPT
-and prior layers being exercised against real complexity.
+Batch 6 is accepted (architecture audit grade A). Batch 7 gate is open — start only with an
+explicit Batch 7 charter. Preserve P2 constraints: no prescriptive themes, diagnostic-only
+confidence, and no additional interpretive layers that duplicate Contextual Understanding.
 
 ## Related
 

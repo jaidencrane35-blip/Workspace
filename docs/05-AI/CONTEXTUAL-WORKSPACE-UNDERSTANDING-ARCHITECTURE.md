@@ -4,7 +4,7 @@
 |-------|-------|
 | **Purpose** | Turn state + policy + history + temporal + explanation evidence into richer situational understanding — without prediction, simulation, autonomous correction, or decision ownership |
 | **Owner** | `WorkspaceContextualUnderstandingService` (DurableStore — **understanding evidence only**) |
-| **Status** | Active — Programme III Batch 6 implemented |
+| **Status** | Active — Programme III Batch 6 accepted (architecture audit grade A) |
 | **Lifecycle owner** | No |
 | **Execution / replay authority** | No |
 | **Simulation / forecast / correction authority** | No |
