@@ -39,7 +39,10 @@ impl From<KernelError> for CommandError {
 
 impl<T> From<std::sync::PoisonError<T>> for CommandError {
     fn from(_: std::sync::PoisonError<T>) -> Self {
-        Self::new("internal_error", "Workspace core is temporarily unavailable.")
+        Self::new(
+            "internal_error",
+            "Workspace core is temporarily unavailable.",
+        )
     }
 }
 
@@ -53,5 +56,47 @@ mod tests {
         let cmd_err = CommandError::from(KernelError::NotReady);
         assert_eq!(cmd_err.code, "not_ready");
         assert!(!cmd_err.message.contains("KernelError"));
+    }
+
+    #[test]
+    fn preserves_hardened_kernel_failure_classes() {
+        let cases = [
+            (
+                KernelError::Internal {
+                    message: "database lock poisoned".into(),
+                },
+                "internal_error",
+            ),
+            (
+                KernelError::IntegrityViolation {
+                    message: "boundary failed".into(),
+                },
+                "integrity_violation",
+            ),
+            (
+                KernelError::DecisionEngineCannotExecute,
+                "decision_engine_cannot_execute",
+            ),
+            (
+                KernelError::RecommendationCannotExecute,
+                "recommendation_cannot_execute",
+            ),
+            (
+                KernelError::PermissionDenied("denied".into()),
+                "permission_denied",
+            ),
+        ];
+
+        for (kernel_error, expected_code) in cases {
+            assert_eq!(CommandError::from(kernel_error).code, expected_code);
+        }
+    }
+
+    #[test]
+    fn poison_errors_share_the_internal_error_contract() {
+        let poison = std::sync::PoisonError::new(());
+        let error = CommandError::from(poison);
+        assert_eq!(error.code, "internal_error");
+        assert_eq!(error.message, "Workspace core is temporarily unavailable.");
     }
 }

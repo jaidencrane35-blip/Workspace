@@ -9,7 +9,11 @@
 
 ---
 
-## Product-used (Canvas + Diagnostic)
+## Registered Product and Diagnostic Contracts
+
+This table records the intended consumer and contract purpose. Actual React
+usage is verified independently by `pnpm verify:ipc-contract`; registration
+does not imply that the current UI invokes a command.
 
 | Command | Consumer |
 |---------|----------|
@@ -88,6 +92,8 @@
 | `present_recommendation` | Product: mark recommendation Presented (lifecycle overlay only) |
 | `accept_recommendation` | Product: record human accept decision + outcome (never executes) |
 | `reject_recommendation` | Product: record human reject decision + outcome (never executes) |
+| `confirm_recommendation_decision` / `decline_recommendation_decision` | Product: explicit decision confirmation lifecycle (never executes) |
+| `revoke_recommendation_adapter_preparation` | Registered reversible adapter-preparation boundary; not currently invoked by React |
 | `generate_workspace_operating_state` | Product: aggregate what-is-happening-now snapshot (never executes or persists) |
 | `generate_workspace_pattern` | Product: aggregate recurring structures (never predicts, profiles, or executes) |
 | `generate_workspace_adaptation` | Product: aggregate possible improvement proposals (never applies) |
@@ -142,9 +148,12 @@
 
 ---
 
-## Registered, unused by React (quarantined)
+## Registered, Not Currently Invoked by React
 
-Kept for kernel CommandHandler parity and future UI. Not removed during foundation hardening to avoid breaking external/test callers of the Tauri surface.
+The verifier currently reports 182 registered commands, 142 commands invoked
+by React, and 40 registered commands without a React caller. These remain
+available for kernel parity, external consumers, or future UI wiring; they are
+not evidence of an active UI flow.
 
 - `delete_zone`, `get_zone`
 - `delete_application`, `get_application`
@@ -153,6 +162,42 @@ Kept for kernel CommandHandler parity and future UI. Not removed during foundati
 - `get_workspace_snapshot`
 - `get_actor_capabilities`, `get_audit_history`, `get_observations`, `get_workspace_metrics`
 - `get_execution_state` (singular; UI uses list)
+- `add_task_relationship`, `update_workspace_task_status`
+- `capture_workspace_observation`, `get_latest_workspace_observation`, `get_workspace_observation_by_id`, `get_latest_observation_delta`
+- `compare_workspace_intelligence_states`
+- `delete_memory_entry`, `list_memory_entries`
+- `evaluate_triggers`, `record_trigger_event`, `list_trigger_events`
+- `get_assistant_workflow`, `get_orchestrated_ai_plan`
+- `get_automation_contract`, `update_automation_contract`, `prepare_automation_contract_intent`
+- `get_workspace_activity_timeline`
+- `get_workspace_profile`, `list_workspace_profiles`, `update_workspace_profile`
+- `list_tasks`, `update_task_status`
+- `revoke_recommendation_adapter_preparation`
+
+---
+
+## Contract Ownership and Compatibility
+
+- Rust domain models are canonical for serialized response fields.
+- `app/src/types/domain.ts` mirrors public response models only; the IPC
+  contract verifier checks high-risk mirrored structures and public error codes.
+- `Task` (intent ownership) and `WorkspaceTask` (task-graph ownership) are
+  distinct models and must not be merged.
+- Top-level Tauri arguments use frontend camelCase mapped to Rust snake_case.
+  Nested DTO field names follow their Rust `serde` representation.
+- The response envelope is a discriminated contract:
+  - success: `{ success: true, data: T }`
+  - failure: `{ success: false, error: { code, message } }`
+- Unit-returning commands serialize successful `data` as `null`.
+- Additive optional fields are preferred for compatible evolution. Required
+  field removal/rename or enum-value changes require an explicit contract phase.
+
+## Error Contract
+
+Every `KernelError::to_public()` code must exist in
+`app/src/types/ipc-errors.ts`. `pnpm verify:ipc-contract` fails when the catalogs
+drift. Infrastructure, integrity, permission, recommendation, and decision
+engine failures remain distinct through `CommandError` and `IpcErrorBody`.
 
 ---
 
@@ -165,4 +210,6 @@ Kept for kernel CommandHandler parity and future UI. Not removed during foundati
 
 ## Rule
 
-React must call IPC only via `app/src/lib/ipc.ts` (`invokeIpc`). Never import `workspace-database` from the app crate.
+React must call IPC only via `app/src/lib/ipc.ts` (`invokeIpc`). Never import
+`workspace-database` from the app crate. Run `pnpm verify:ipc-contract` whenever
+commands, public errors, or mirrored domain contracts change.

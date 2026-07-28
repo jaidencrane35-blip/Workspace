@@ -5,15 +5,14 @@ use workspace_domain::{
     AiAssistantError, AiEvaluationError, AiMemoryError, AiModelError, AiOrchestrationError,
     AiPersonalizationError, AiPlanningError, AiRequestError, AutomationContractError,
     AutomationTriggerError, DecisionEngineError, DecisionQueueError, DomainError, ResourceKind,
-    TaskGraphError, WorkspaceActivityError, WorkspaceAttentionError, WorkspaceContinuityError,
-    WorkspaceEnvironmentError, WorkspaceCompositionError, WorkspacePurposeError,
-    WorkspaceEvolutionError, WorkspaceRecommendationEngineError, WorkspaceOperatingStateError,
-    WorkspacePatternError, WorkspaceAdaptationError, WorkspaceReadinessError,
-    WorkspaceSessionError, WorkspaceExperienceError, WorkspaceWorkContextError,
-    WorkspaceNavigationError, WorkspaceMilestoneError, WorkspaceWorkingStyleError,
-    WorkspaceTransitionError, WorkspaceInteractionError, WorkspaceProfileError,
-    WorkspaceIntelligenceError,
-    WorkspaceIntentError,
+    TaskGraphError, WorkspaceActivityError, WorkspaceAdaptationError, WorkspaceAttentionError,
+    WorkspaceCompositionError, WorkspaceContinuityError, WorkspaceEnvironmentError,
+    WorkspaceEvolutionError, WorkspaceExperienceError, WorkspaceIntelligenceError,
+    WorkspaceIntentError, WorkspaceInteractionError, WorkspaceMilestoneError,
+    WorkspaceNavigationError, WorkspaceOperatingStateError, WorkspacePatternError,
+    WorkspaceProfileError, WorkspacePurposeError, WorkspaceReadinessError,
+    WorkspaceRecommendationEngineError, WorkspaceSessionError, WorkspaceTransitionError,
+    WorkspaceWorkContextError, WorkspaceWorkingStyleError,
 };
 
 #[derive(Debug, Error)]
@@ -82,7 +81,9 @@ pub enum KernelError {
     #[error("Action intent validation failed: {message}")]
     ActionIntentValidation { message: String },
 
-    #[error("Action intent capability mismatch for {intent_id}: expected {expected}, got {actual}")]
+    #[error(
+        "Action intent capability mismatch for {intent_id}: expected {expected}, got {actual}"
+    )]
     ActionIntentCapabilityMismatch {
         intent_id: String,
         expected: String,
@@ -316,9 +317,7 @@ impl From<DomainError> for KernelError {
             DomainError::WidgetNotFound => KernelError::WidgetNotFound,
             DomainError::DuplicateResource { kind } => KernelError::DuplicateResource { kind },
             DomainError::InvalidParentReference { expected_kind } => {
-                KernelError::InvalidParentReference {
-                    expected_kind,
-                }
+                KernelError::InvalidParentReference { expected_kind }
             }
             DomainError::ResourceNotFound { kind } => KernelError::ResourceNotFound { kind },
             other => KernelError::Domain(other),
@@ -1130,5 +1129,68 @@ impl KernelError {
                 message: "Workspace failed to initialize.".into(),
             },
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn public_error_codes_preserve_failure_boundaries() {
+        let cases = [
+            (
+                KernelError::Internal {
+                    message: "database lock poisoned".into(),
+                },
+                "internal_error",
+            ),
+            (
+                KernelError::IntegrityViolation {
+                    message: "recommendation boundary failed".into(),
+                },
+                "integrity_violation",
+            ),
+            (
+                KernelError::PermissionDenied("denied".into()),
+                "permission_denied",
+            ),
+            (
+                KernelError::DecisionEngineNotFound,
+                "decision_engine_not_found",
+            ),
+            (
+                KernelError::DecisionEngineCannotExecute,
+                "decision_engine_cannot_execute",
+            ),
+            (
+                KernelError::RecommendationNotFound,
+                "recommendation_not_found",
+            ),
+            (
+                KernelError::RecommendationCannotExecute,
+                "recommendation_cannot_execute",
+            ),
+            (
+                KernelError::ProjectionValidation {
+                    message: "projection failed".into(),
+                },
+                "projection_validation_error",
+            ),
+        ];
+
+        for (error, expected_code) in cases {
+            assert_eq!(error.to_public().code, expected_code);
+        }
+    }
+
+    #[test]
+    fn infrastructure_errors_do_not_expose_internal_context() {
+        let public = KernelError::Internal {
+            message: "sensitive lock detail".into(),
+        }
+        .to_public();
+        assert_eq!(public.code, "internal_error");
+        assert!(!public.message.contains("sensitive"));
     }
 }

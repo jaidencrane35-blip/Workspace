@@ -16,6 +16,7 @@ import type {
   WorkspaceIntelligenceState,
   DecisionEngineState,
   TaskGraph,
+  WorkspaceTask,
   WorkspaceEnvironmentState,
   WorkspaceCompositionState,
   WorkspacePurposeState,
@@ -1496,7 +1497,7 @@ export function OperatorConsole({
             onClick={() =>
               void run("Planning inputs inspected", async () => {
                 if (!workspace) return;
-                const inputs = await invokeIpc<{ id: string; title: string; status: string }[]>(
+                const inputs = await invokeIpc<WorkspaceTask[]>(
                   "get_task_graph_planning_inputs",
                   { workspaceId: workspace.id },
                 );

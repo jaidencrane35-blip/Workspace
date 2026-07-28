@@ -1,13 +1,21 @@
+import type { PublicErrorCode } from "./ipc-errors";
+
 export interface IpcErrorBody {
-  code: string;
+  code: PublicErrorCode;
   message: string;
 }
 
-export interface IpcResponse<T> {
-  success: boolean;
-  data?: T;
-  error?: IpcErrorBody;
-}
+export type IpcResponse<T> =
+  | {
+      success: true;
+      data: T;
+      error?: never;
+    }
+  | {
+      success: false;
+      data?: never;
+      error: IpcErrorBody;
+    };
 
 export interface WorkspaceStatus {
   status: string;

@@ -22,6 +22,7 @@ import type {
   WorkspaceActivityGraph,
   WorkspaceAttentionState,
   WorkspaceContinuityState,
+  DecisionEngineActionResult,
   DecisionEngineState,
   TaskGraph,
   WorkspaceEnvironmentState,
@@ -2599,16 +2600,13 @@ export function WorkspaceIntelligencePanel({
                         onClick={() =>
                           void run("Recommendation accepted → planner", async () => {
                             if (!workspace) return;
-                            const result = await invokeIpc<{
-                              handoff: {
-                                next_command: string;
-                                goal_statement: string;
-                                workspace_id: string;
-                              } | null;
-                            }>("select_decision_candidate", {
+                            const result = await invokeIpc<DecisionEngineActionResult>(
+                              "select_decision_candidate",
+                              {
                               workspaceId: workspace.id,
                               candidateId: candidate.id,
-                            });
+                              },
+                            );
                             if (result.handoff?.next_command === "submit_assistant_goal") {
                               try {
                                 await invokeIpc("submit_assistant_goal", {

@@ -76,4 +76,44 @@ mod tests {
             })
         );
     }
+
+    #[test]
+    fn serialized_envelope_has_stable_success_and_failure_shapes() {
+        let success = serde_json::to_value(IpcResponse::success("ok")).unwrap();
+        assert_eq!(
+            success,
+            serde_json::json!({
+                "success": true,
+                "data": "ok"
+            })
+        );
+
+        let failure = serde_json::to_value(IpcResponse::<String>::failure(CommandError::new(
+            "not_ready",
+            "Workspace is still initializing.",
+        )))
+        .unwrap();
+        assert_eq!(
+            failure,
+            serde_json::json!({
+                "success": false,
+                "error": {
+                    "code": "not_ready",
+                    "message": "Workspace is still initializing."
+                }
+            })
+        );
+    }
+
+    #[test]
+    fn unit_success_serializes_data_as_null() {
+        let response = serde_json::to_value(IpcResponse::success(())).unwrap();
+        assert_eq!(
+            response,
+            serde_json::json!({
+                "success": true,
+                "data": null
+            })
+        );
+    }
 }

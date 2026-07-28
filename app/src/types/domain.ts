@@ -3032,12 +3032,72 @@ export interface RecommendationDecisionReadiness {
 }
 
 /** Compact IPC outcome on review actions. */
+export type RecommendationFamily =
+  | "recommendation_engine"
+  | "decision_engine"
+  | "intelligence"
+  | "adaptation"
+  | "decision_queue";
+
+export interface RecommendationIdentity {
+  native_id: string;
+  family: RecommendationFamily;
+  source_domain: string;
+  originating_reasoning_ref: string | null;
+  decision_ref: string | null;
+  action_proposal_ref: string | null;
+}
+
+export interface RecommendationProvenance {
+  recommendation_id: string;
+  family: RecommendationFamily;
+  source_evidence: RecommendationEvidence[];
+  reasoning_origins: AttentionReason[];
+  explanation_keys: string[];
+  experience_trace_match_keys: string[];
+  confidence: string | null;
+  priority_or_impact: string | null;
+  related_attention_id: string | null;
+  future_capability_target: string | null;
+}
+
+export type RecommendationResolutionType =
+  | "accepted"
+  | "rejected"
+  | "expired"
+  | "superseded";
+
+export type RecommendationUserDecision =
+  | "accepted"
+  | "rejected"
+  | "deferred"
+  | "expired"
+  | "superseded";
+
+export type RecommendationResultKind =
+  | "accepted_follow_through"
+  | "rejected_by_user"
+  | "expired_without_action"
+  | "superseded"
+  | "downstream_execution_linked";
+
+export interface RecommendationOutcomeQuality {
+  confidence_at_outcome: string | null;
+  useful_to_user: boolean | null;
+  notes: string | null;
+}
+
+/** Full serialized recommendation outcome owned by the domain crate. */
 export interface RecommendationOutcome {
   id: string;
-  lifecycle_resolution: string | null;
-  user_decision: string;
-  result_kind: string;
+  identity: RecommendationIdentity;
+  provenance: RecommendationProvenance;
+  lifecycle_resolution: RecommendationResolutionType | null;
+  user_decision: RecommendationUserDecision;
+  result_kind: RecommendationResultKind;
   recorded_at: string;
+  quality: RecommendationOutcomeQuality;
+  experience_trace_match_keys: string[];
   authority_effect: string;
 }
 

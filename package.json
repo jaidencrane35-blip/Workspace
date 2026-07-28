@@ -10,7 +10,8 @@
     "test": "pnpm --filter @workspace/tests test",
     "typecheck": "pnpm --filter @workspace/app typecheck",
     "verify:explanation-catalog": "node scripts/verify-explanation-catalog.mjs",
-    "verify:ui-experience-boundary": "node scripts/verify-ui-experience-boundary.mjs"
+    "verify:ui-experience-boundary": "node scripts/verify-ui-experience-boundary.mjs",
+    "verify:ipc-contract": "node scripts/verify-ipc-contract.mjs"
   },
   "engines": {
     "node": ">=20"
