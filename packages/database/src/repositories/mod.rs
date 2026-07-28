@@ -18,6 +18,8 @@ mod workspace_intent;
 mod workspace_profile;
 mod observation;
 mod zone;
+#[cfg(test)]
+mod boundary_tests;
 
 pub use ai_memory::AiMemoryRepository;
 pub use application::ApplicationRepository;

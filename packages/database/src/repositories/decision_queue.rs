@@ -13,14 +13,21 @@ impl<'a> DecisionQueueRepository<'a> {
     }
 
     pub fn upsert_overlay(&self, overlay: &DecisionLifecycleOverlay) -> Result<()> {
-        self.db.connection().execute(
+        let changed = self.db.connection().execute(
             "INSERT INTO decision_item_lifecycle (
                 workspace_id, source_type, source_id, decision_state, updated_at, actor_id
              ) VALUES (?1, ?2, ?3, ?4, ?5, ?6)
              ON CONFLICT(workspace_id, source_type, source_id) DO UPDATE SET
                 decision_state = excluded.decision_state,
                 updated_at = excluded.updated_at,
-                actor_id = excluded.actor_id",
+                actor_id = excluded.actor_id
+             WHERE decision_item_lifecycle.decision_state = excluded.decision_state
+                OR (decision_item_lifecycle.decision_state = 'pending'
+                    AND excluded.decision_state IN ('viewed','deferred','dismissed'))
+                OR (decision_item_lifecycle.decision_state = 'viewed'
+                    AND excluded.decision_state IN ('deferred','dismissed'))
+                OR (decision_item_lifecycle.decision_state = 'deferred'
+                    AND excluded.decision_state IN ('viewed','dismissed'))",
             (
                 &overlay.workspace_id,
                 overlay.source_type.as_str(),
@@ -30,6 +37,13 @@ impl<'a> DecisionQueueRepository<'a> {
                 &overlay.actor_id,
             ),
         )?;
+        if changed == 0 {
+            return Err(crate::error::DatabaseError::InvalidTransition(format!(
+                "decision item {} cannot transition to {}",
+                overlay.source_id,
+                overlay.decision_state.as_str()
+            )));
+        }
         Ok(())
     }
 

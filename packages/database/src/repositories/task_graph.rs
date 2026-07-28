@@ -17,7 +17,7 @@ impl<'a> TaskGraphRepository<'a> {
 
     pub fn upsert_task(&self, task: &WorkspaceTask) -> Result<()> {
         let metadata_json = serde_json::to_string(&task.metadata).unwrap_or_else(|_| "{}".into());
-        self.db.connection().execute(
+        let changed = self.db.connection().execute(
             "INSERT INTO workspace_task_nodes (
                 id, workspace_id, project_id, title, status, priority, metadata_json,
                 source_intent_task_id, work_goal_id, progress_percent, explanation,
@@ -33,7 +33,9 @@ impl<'a> TaskGraphRepository<'a> {
                 work_goal_id = excluded.work_goal_id,
                 progress_percent = excluded.progress_percent,
                 explanation = excluded.explanation,
-                updated_at = excluded.updated_at",
+                updated_at = excluded.updated_at
+             WHERE workspace_task_nodes.status NOT IN ('completed','cancelled')
+                OR excluded.status IN ('completed','cancelled')",
             (
                 task.id.as_str(),
                 task.workspace_id.as_str(),
@@ -50,6 +52,13 @@ impl<'a> TaskGraphRepository<'a> {
                 &task.updated_at,
             ),
         )?;
+        if changed == 0 {
+            return Err(crate::error::DatabaseError::InvalidTransition(format!(
+                "task {} cannot transition from terminal state to {}",
+                task.id.as_str(),
+                task.status.as_str()
+            )));
+        }
         Ok(())
     }
 

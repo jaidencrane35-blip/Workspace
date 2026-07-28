@@ -154,4 +154,26 @@ mod tests {
         assert_eq!(records[0].intent_type, Some(IntentType::UserRequest));
         assert_eq!(records[0].capability.as_deref(), Some("workspace.write"));
     }
+
+    #[test]
+    fn persisted_audit_evidence_is_immutable() {
+        let dir = tempfile::tempdir().unwrap();
+        let db = DatabaseService::initialize(dir.path().join("workspace.db"))
+            .unwrap()
+            .into_database();
+        let repo = AuditRepository::new(&db);
+        let event = AuditEvent::from_actor("command.executed", &Actor::local_user(), true);
+        let id = event.id.to_string();
+        repo.append(&event).unwrap();
+
+        assert!(db
+            .connection()
+            .execute("UPDATE audit_events SET success = 0 WHERE id = ?1", [&id])
+            .is_err());
+        assert!(db
+            .connection()
+            .execute("DELETE FROM audit_events WHERE id = ?1", [&id])
+            .is_err());
+        assert_eq!(repo.list_recent(10).unwrap().len(), 1);
+    }
 }

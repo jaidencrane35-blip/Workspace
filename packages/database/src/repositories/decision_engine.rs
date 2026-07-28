@@ -20,14 +20,19 @@ impl<'a> DecisionEngineRepository<'a> {
     }
 
     pub fn upsert_overlay(&self, overlay: &DecisionEngineOverlay) -> Result<()> {
-        self.db.connection().execute(
+        let changed = self.db.connection().execute(
             "INSERT INTO decision_engine_lifecycle (
                 workspace_id, candidate_key, outcome, updated_at, actor_id
              ) VALUES (?1, ?2, ?3, ?4, ?5)
              ON CONFLICT(workspace_id, candidate_key) DO UPDATE SET
                 outcome = excluded.outcome,
                 updated_at = excluded.updated_at,
-                actor_id = excluded.actor_id",
+                actor_id = excluded.actor_id
+             WHERE decision_engine_lifecycle.outcome = excluded.outcome
+                OR (decision_engine_lifecycle.outcome = 'open'
+                    AND excluded.outcome IN ('selected','dismissed','postponed','expired'))
+                OR (decision_engine_lifecycle.outcome = 'postponed'
+                    AND excluded.outcome IN ('open','selected','dismissed','expired'))",
             (
                 &overlay.workspace_id,
                 &overlay.candidate_key,
@@ -36,6 +41,13 @@ impl<'a> DecisionEngineRepository<'a> {
                 &overlay.actor_id,
             ),
         )?;
+        if changed == 0 {
+            return Err(crate::error::DatabaseError::InvalidTransition(format!(
+                "decision candidate {} cannot transition to {}",
+                overlay.candidate_key,
+                overlay.outcome.as_str()
+            )));
+        }
         Ok(())
     }
 
@@ -51,7 +63,7 @@ impl<'a> DecisionEngineRepository<'a> {
     }
 
     pub fn delete_overlay(&self, workspace_id: &str, candidate_key: &str) -> Result<()> {
-        self.db.connection().execute(
+        let changed = self.db.connection().execute(
             "DELETE FROM decision_engine_lifecycle
              WHERE workspace_id = ?1 AND candidate_key = ?2",
             (workspace_id, candidate_key),
@@ -78,7 +90,12 @@ impl<'a> DecisionEngineRepository<'a> {
                 updated_at = excluded.updated_at,
                 lifecycle_state = excluded.lifecycle_state,
                 lifecycle_reason = excluded.lifecycle_reason,
-                lifecycle_updated_at = excluded.lifecycle_updated_at",
+                lifecycle_updated_at = excluded.lifecycle_updated_at
+             WHERE decision_engine_intake_candidate.lifecycle_state = excluded.lifecycle_state
+                OR (decision_engine_intake_candidate.lifecycle_state = 'active'
+                    AND excluded.lifecycle_state IN ('withdrawn','invalidated'))
+                OR (decision_engine_intake_candidate.lifecycle_state = 'withdrawn'
+                    AND excluded.lifecycle_state = 'invalidated')",
             (
                 &candidate.workspace_id,
                 &candidate.intake_candidate_id,
@@ -95,6 +112,13 @@ impl<'a> DecisionEngineRepository<'a> {
                 &candidate.lifecycle.updated_at,
             ),
         )?;
+        if changed == 0 {
+            return Err(crate::error::DatabaseError::InvalidTransition(format!(
+                "intake candidate {} cannot transition to {}",
+                candidate.intake_candidate_id,
+                candidate.lifecycle.lifecycle_state
+            )));
+        }
         Ok(())
     }
 

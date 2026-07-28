@@ -14,6 +14,9 @@ pub enum DatabaseError {
     #[error("Duplicate resource: {0}")]
     DuplicateResource(String),
 
+    #[error("Invalid persistence transition: {0}")]
+    InvalidTransition(String),
+
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
 

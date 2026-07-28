@@ -75,7 +75,7 @@ impl<'a> RecommendationLifecycleRepository<'a> {
             })?),
             None => None,
         };
-        self.db.connection().execute(
+        let changed = self.db.connection().execute(
             "INSERT INTO recommendation_lifecycle (
                 workspace_id, native_id, lifecycle_state, created_at, presented_at,
                 resolved_at, resolution_type, actor_id, outcome_json, prior_outcomes_json,
@@ -99,7 +99,21 @@ impl<'a> RecommendationLifecycleRepository<'a> {
                 handoff_request_json = excluded.handoff_request_json,
                 decision_engine_acceptance_json = excluded.decision_engine_acceptance_json,
                 updated_at = excluded.updated_at,
-                authority_effect = excluded.authority_effect",
+                authority_effect = excluded.authority_effect
+             WHERE recommendation_lifecycle.lifecycle_state = excluded.lifecycle_state
+                OR (recommendation_lifecycle.lifecycle_state = 'created'
+                    AND excluded.lifecycle_state IN ('available','expired','superseded'))
+                OR (recommendation_lifecycle.lifecycle_state = 'available'
+                    AND excluded.lifecycle_state IN ('presented','expired','superseded','rejected'))
+                OR (recommendation_lifecycle.lifecycle_state = 'presented'
+                    AND excluded.lifecycle_state IN ('available','accepted','rejected','expired','superseded'))
+                OR (
+                    recommendation_lifecycle.lifecycle_state IN ('accepted','rejected','expired','superseded')
+                    AND excluded.lifecycle_state = 'available'
+                    AND excluded.content_fingerprint IS NOT NULL
+                    AND excluded.content_fingerprint != COALESCE(recommendation_lifecycle.content_fingerprint, '')
+                    AND excluded.prior_outcomes_json IS NOT NULL
+                )",
             rusqlite::params![
                 &overlay.workspace_id,
                 &overlay.native_id,
@@ -121,6 +135,13 @@ impl<'a> RecommendationLifecycleRepository<'a> {
                 &overlay.authority_effect,
             ],
         )?;
+        if changed == 0 {
+            return Err(crate::error::DatabaseError::InvalidTransition(format!(
+                "recommendation {} cannot transition to {}",
+                overlay.native_id,
+                overlay.lifecycle_state.as_str()
+            )));
+        }
         Ok(())
     }
 
