@@ -307,7 +307,7 @@ impl DecisionEngineService {
             }
             let outcome = overlays
                 .get(&key)
-                .copied()
+                .map(|o| o.outcome)
                 .unwrap_or(DecisionOutcome::Open);
             candidates.push(
                 creation
@@ -382,6 +382,13 @@ impl DecisionEngineService {
             .with_candidate_selections(candidate_selections)
             .with_progression_requests(progression_requests)
             .with_progression_acknowledgements(progression_acknowledgements);
+
+        let overlay_rows: Vec<DecisionEngineOverlay> = overlays.into_values().collect();
+        let history = DecisionEngineState::project_history_from_candidates(
+            &state.candidates,
+            &overlay_rows,
+        );
+        let state = state.with_terminal_history(history);
 
         // Enforce resilience invariants at runtime (not just debug builds).
         // These invariants are critical to prevent RE/DE boundary violations.
@@ -1847,10 +1854,13 @@ impl DecisionEngineService {
         prefs: &[IntelligenceHighlight],
         pending_approvals: &[&workspace_domain::DecisionItem],
         pending_plans: &[&workspace_domain::DecisionItem],
-        overlays: &HashMap<String, DecisionOutcome>,
+        overlays: &HashMap<String, DecisionEngineOverlay>,
     ) -> Result<DecisionCandidate> {
         let key = format!("attention:{}", item.id);
-        let outcome = overlays.get(&key).copied().unwrap_or(DecisionOutcome::Open);
+        let outcome = overlays
+            .get(&key)
+            .map(|o| o.outcome)
+            .unwrap_or(DecisionOutcome::Open);
         let attention_contribution = item.score.min(100);
         let memory_contribution = if memory.is_empty() { 0 } else { 8 };
         let personalization_contribution = if prefs.is_empty() { 0 } else { 10 };
@@ -2008,10 +2018,13 @@ impl DecisionEngineService {
         goals: &[WorkGoal],
         memory: &[IntelligenceHighlight],
         prefs: &[IntelligenceHighlight],
-        overlays: &HashMap<String, DecisionOutcome>,
+        overlays: &HashMap<String, DecisionEngineOverlay>,
     ) -> Result<DecisionCandidate> {
         let key = format!("graph:{}", node.task.id);
-        let outcome = overlays.get(&key).copied().unwrap_or(DecisionOutcome::Open);
+        let outcome = overlays
+            .get(&key)
+            .map(|o| o.outcome)
+            .unwrap_or(DecisionOutcome::Open);
         let attention_contribution = match node.task.status {
             workspace_domain::WorkspaceTaskStatus::Blocked => 70,
             workspace_domain::WorkspaceTaskStatus::Waiting => 50,
@@ -2111,10 +2124,13 @@ impl DecisionEngineService {
         memory: &[IntelligenceHighlight],
         prefs: &[IntelligenceHighlight],
         pending_approvals: &[&workspace_domain::DecisionItem],
-        overlays: &HashMap<String, DecisionOutcome>,
+        overlays: &HashMap<String, DecisionEngineOverlay>,
     ) -> Result<DecisionCandidate> {
         let key = format!("goal:{}", goal.id);
-        let outcome = overlays.get(&key).copied().unwrap_or(DecisionOutcome::Open);
+        let outcome = overlays
+            .get(&key)
+            .map(|o| o.outcome)
+            .unwrap_or(DecisionOutcome::Open);
         let attention_contribution = attention
             .top_items
             .first()
@@ -2209,10 +2225,13 @@ impl DecisionEngineService {
         goals: &[WorkGoal],
         memory: &[IntelligenceHighlight],
         prefs: &[IntelligenceHighlight],
-        overlays: &HashMap<String, DecisionOutcome>,
+        overlays: &HashMap<String, DecisionEngineOverlay>,
     ) -> Result<DecisionCandidate> {
         let key = "bootstrap:define_work";
-        let outcome = overlays.get(key).copied().unwrap_or(DecisionOutcome::Open);
+        let outcome = overlays
+            .get(key)
+            .map(|o| o.outcome)
+            .unwrap_or(DecisionOutcome::Open);
         let memory_contribution = if memory.is_empty() { 0 } else { 5 };
         let personalization_contribution = if prefs.is_empty() { 0 } else { 5 };
         let total = 20 + memory_contribution + personalization_contribution;
@@ -2269,14 +2288,14 @@ impl DecisionEngineService {
     fn load_overlays(
         db: &Arc<Mutex<Database>>,
         workspace_id: &str,
-    ) -> Result<HashMap<String, DecisionOutcome>> {
+    ) -> Result<HashMap<String, DecisionEngineOverlay>> {
         let guard = db
             .lock()
             .map_err(|_| KernelError::lock_poisoned("database"))?;
         let overlays = DecisionEngineRepository::new(&guard).list_overlays(workspace_id)?;
         Ok(overlays
             .into_iter()
-            .map(|o| (o.candidate_key, o.outcome))
+            .map(|o| (o.candidate_key.clone(), o))
             .collect())
     }
 

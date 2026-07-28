@@ -233,7 +233,7 @@ pub use automation_trigger::{
     TriggerRejection, TriggerRejectionSummary,
 };
 pub use decision_engine::{
-    DecisionCandidate, DecisionCandidateEvaluationOriginContract,
+    DecisionArtifactHistoryEntry, DecisionCandidate, DecisionCandidateEvaluationOriginContract,
     DecisionCandidateEvaluationOriginInput, DecisionCandidateEvaluationResolution,
     DecisionCandidateEvaluationResolutionInput, DecisionCandidateLifecycleIntegration,
     DecisionCandidateProgressionAcknowledgement, DecisionCandidateProgressionAcknowledgementInput,

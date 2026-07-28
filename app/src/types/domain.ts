@@ -1768,7 +1768,15 @@ export interface DecisionEngineState {
   generated_at: string;
   context: DecisionContext;
   candidates: DecisionCandidate[];
+  /** Actionable outcomes only (`open` / `postponed`). */
   top_candidates: DecisionCandidate[];
+  /**
+   * Terminal decision evidence window — never actionable.
+   * Length is a projection window, not the full evidence count.
+   */
+  history: DecisionArtifactHistoryEntry[];
+  /** Authoritative terminal evidence count (may exceed `history.length`). */
+  history_count: number;
   /** Observational RE intake receipts — never DecisionCandidates. */
   intake_receipts?: DecisionEngineIntakeReceipt[];
   /** Observational intake assessments — never DecisionCandidates. */
@@ -1807,12 +1815,39 @@ export interface DecisionEngineState {
   authority_effect: string;
 }
 
+export interface DecisionArtifactHistoryEntry {
+  artifact_id: string;
+  candidate_id: string;
+  candidate_key: string;
+  /** Terminal outcome (`selected` / `dismissed` / `expired`). */
+  decision_state: string;
+  created_at: string;
+  updated_at: string;
+  resolution_type: string;
+  origin: string;
+  recommendation_id: string | null;
+  intake_candidate_id: string | null;
+  package_seal_digest: string | null;
+  terminal: boolean;
+  /** Always false — history never joins actionable candidates. */
+  actionable: boolean;
+  authority_effect: string;
+}
+
 export interface DecisionEngineSummary {
   workspace_id: string;
   generated_at: string;
   candidate_count: number;
   open_count: number;
+  /** Actionable outcomes only (`open` / `postponed`). */
   top_candidates: DecisionCandidate[];
+  /**
+   * Truncated terminal decision evidence (never actionable).
+   * Length is a projection window, not the full evidence count.
+   */
+  history: DecisionArtifactHistoryEntry[];
+  /** Authoritative terminal evidence count (may exceed `history.length`). */
+  history_count: number;
   summary: string;
   authority_effect: string;
 }

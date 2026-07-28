@@ -110,6 +110,116 @@ impl DecisionOutcome {
                 | (Self::Postponed, Self::Expired)
         )
     }
+
+    /// Actionable outcomes for Intelligence / compact summary candidates.
+    pub fn is_actionable(self) -> bool {
+        matches!(self, Self::Open | Self::Postponed)
+    }
+
+    /// Terminal decision evidence — projects into history, never into actionable candidates.
+    pub fn is_terminal(self) -> bool {
+        matches!(self, Self::Selected | Self::Dismissed | Self::Expired)
+    }
+}
+
+/// Compact non-actionable terminal Decision Engine evidence for projection consumers.
+///
+/// History is read-only continuity — never executable, never merged into
+/// `top_candidates`, and never a second lifecycle authority.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DecisionArtifactHistoryEntry {
+    /// Artifact identity (DecisionCandidate id / synthetic engine id).
+    pub artifact_id: String,
+    pub candidate_id: String,
+    /// Source key used by the lifecycle overlay (`attention:…`, `intake:…`, …).
+    pub candidate_key: String,
+    /// Terminal outcome (`selected` / `dismissed` / `expired`).
+    pub decision_state: String,
+    pub created_at: String,
+    pub updated_at: String,
+    /// Resolution identity — same vocabulary as `decision_state` for DE outcomes.
+    pub resolution_type: String,
+    pub origin: String,
+    pub recommendation_id: Option<String>,
+    pub intake_candidate_id: Option<String>,
+    pub package_seal_digest: Option<String>,
+    /// Always `true` for projected history entries.
+    pub terminal: bool,
+    /// Always `false` — terminal history never joins actionable candidates.
+    pub actionable: bool,
+    pub authority_effect: String,
+}
+
+impl DecisionArtifactHistoryEntry {
+    pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+
+    pub fn from_candidate(
+        candidate: &DecisionCandidate,
+        updated_at: Option<&str>,
+    ) -> Option<Self> {
+        if !candidate.outcome.is_terminal() {
+            return None;
+        }
+        let artifact_id = candidate.id.to_string();
+        let candidate_key = artifact_id
+            .strip_prefix("engine_decision:")
+            .unwrap_or(artifact_id.as_str())
+            .to_string();
+        let updated = updated_at
+            .filter(|s| !s.is_empty())
+            .unwrap_or(candidate.created_at.as_str())
+            .to_string();
+        Some(Self {
+            artifact_id: artifact_id.clone(),
+            candidate_id: artifact_id,
+            candidate_key,
+            decision_state: candidate.outcome.as_str().into(),
+            created_at: candidate.created_at.clone(),
+            updated_at: updated,
+            resolution_type: candidate.outcome.as_str().into(),
+            origin: candidate.origin.clone(),
+            recommendation_id: candidate.recommendation_id.clone(),
+            intake_candidate_id: candidate.intake_candidate_id.clone(),
+            package_seal_digest: candidate.package_seal_digest.clone(),
+            terminal: true,
+            actionable: false,
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        })
+    }
+
+    /// Project retained terminal overlay evidence when no live candidate payload remains.
+    pub fn from_overlay(overlay: &DecisionEngineOverlay) -> Option<Self> {
+        if !overlay.outcome.is_terminal() {
+            return None;
+        }
+        let artifact_id = DecisionCandidate::synthetic_id(&overlay.candidate_key).to_string();
+        Some(Self {
+            artifact_id: artifact_id.clone(),
+            candidate_id: artifact_id,
+            candidate_key: overlay.candidate_key.clone(),
+            decision_state: overlay.outcome.as_str().into(),
+            created_at: overlay.updated_at.clone(),
+            updated_at: overlay.updated_at.clone(),
+            resolution_type: overlay.outcome.as_str().into(),
+            origin: DecisionCandidate::ORIGIN_NATIVE.into(),
+            recommendation_id: None,
+            intake_candidate_id: None,
+            package_seal_digest: None,
+            terminal: true,
+            actionable: false,
+            authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
+        })
+    }
+
+    pub fn is_non_actionable(&self) -> bool {
+        self.terminal
+            && !self.actionable
+            && self.authority_effect == Self::AUTHORITY_EFFECT_NONE
+            && matches!(
+                self.decision_state.as_str(),
+                "selected" | "dismissed" | "expired"
+            )
+    }
 }
 
 /// Context aggregated for synthesis (informational snapshot).
@@ -234,6 +344,11 @@ pub struct DecisionEngineState {
     pub context: DecisionContext,
     pub candidates: Vec<DecisionCandidate>,
     pub top_candidates: Vec<DecisionCandidate>,
+    /// Terminal decision evidence (selected/dismissed/expired) — never actionable.
+    #[serde(default)]
+    pub history: Vec<DecisionArtifactHistoryEntry>,
+    #[serde(default)]
+    pub history_count: usize,
     /// Observational receipts of accepted RE sealed packages — never candidates.
     #[serde(default)]
     pub intake_receipts: Vec<DecisionEngineIntakeReceipt>,
@@ -305,10 +420,12 @@ impl DecisionEngineState {
         });
         let open: Vec<_> = candidates
             .iter()
-            .filter(|c| matches!(c.outcome, DecisionOutcome::Open | DecisionOutcome::Postponed))
+            .filter(|c| c.outcome.is_actionable())
             .cloned()
             .collect();
         let top_candidates: Vec<_> = open.iter().take(5).cloned().collect();
+        let history = Self::project_history_from_candidates(&candidates, &[]);
+        let history_count = history.len();
         let summary = format!(
             "Decision Engine — {} candidate(s), {} open. Recommendations only; planner plans; gateway authorizes.",
             candidates.len(),
@@ -320,6 +437,8 @@ impl DecisionEngineState {
             context,
             candidates,
             top_candidates,
+            history,
+            history_count,
             intake_receipts: Vec::new(),
             intake_assessments: Vec::new(),
             intake_eligibilities: Vec::new(),
@@ -340,6 +459,56 @@ impl DecisionEngineState {
             summary,
             authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
         }
+    }
+
+    /// Project terminal evidence from live candidates plus retained orphan overlays.
+    pub fn project_history_from_candidates(
+        candidates: &[DecisionCandidate],
+        overlays: &[DecisionEngineOverlay],
+    ) -> Vec<DecisionArtifactHistoryEntry> {
+        let overlay_by_key: std::collections::HashMap<&str, &DecisionEngineOverlay> = overlays
+            .iter()
+            .map(|o| (o.candidate_key.as_str(), o))
+            .collect();
+        let mut seen_keys = std::collections::HashSet::new();
+        let mut history = Vec::new();
+
+        for candidate in candidates {
+            let key = candidate
+                .id
+                .as_str()
+                .strip_prefix("engine_decision:")
+                .unwrap_or(candidate.id.as_str());
+            let updated = overlay_by_key.get(key).map(|o| o.updated_at.as_str());
+            if let Some(entry) = DecisionArtifactHistoryEntry::from_candidate(candidate, updated) {
+                seen_keys.insert(entry.candidate_key.clone());
+                history.push(entry);
+            }
+        }
+
+        for overlay in overlays {
+            if seen_keys.contains(&overlay.candidate_key) {
+                continue;
+            }
+            if let Some(entry) = DecisionArtifactHistoryEntry::from_overlay(overlay) {
+                seen_keys.insert(entry.candidate_key.clone());
+                history.push(entry);
+            }
+        }
+
+        history.sort_by(|a, b| {
+            b.updated_at
+                .cmp(&a.updated_at)
+                .then(a.candidate_key.cmp(&b.candidate_key))
+        });
+        history
+    }
+
+    /// Attach terminal history without altering actionable `top_candidates`.
+    pub fn with_terminal_history(mut self, history: Vec<DecisionArtifactHistoryEntry>) -> Self {
+        self.history_count = history.len();
+        self.history = history;
+        self
     }
 
     /// Attach DE-owned observational RE intake receipts without changing scoring or candidates.
@@ -594,16 +763,25 @@ impl DecisionEngineState {
     }
 
     pub fn summary_projection(&self, limit: usize) -> DecisionEngineSummary {
+        let actionable: Vec<DecisionCandidate> = self
+            .candidates
+            .iter()
+            .filter(|c| c.outcome.is_actionable())
+            .cloned()
+            .collect();
+        // Actionable surface excludes terminals; history remains visible so Intelligence
+        // cannot treat "no top_candidates" as "no decision evidence".
+        let history: Vec<DecisionArtifactHistoryEntry> =
+            self.history.iter().take(limit).cloned().collect();
         DecisionEngineSummary {
             workspace_id: self.workspace_id.clone(),
             generated_at: self.generated_at.clone(),
-            candidate_count: self.candidates.len(),
-            open_count: self
-                .candidates
-                .iter()
-                .filter(|c| matches!(c.outcome, DecisionOutcome::Open | DecisionOutcome::Postponed))
-                .count(),
-            top_candidates: self.top_candidates.iter().take(limit).cloned().collect(),
+            // Surface count reflects still-actionable recommendations.
+            candidate_count: actionable.len(),
+            open_count: actionable.len(),
+            top_candidates: actionable.into_iter().take(limit).collect(),
+            history,
+            history_count: self.history_count,
             summary: self.summary.clone(),
             authority_effect: self.authority_effect.clone(),
         }
@@ -617,7 +795,14 @@ pub struct DecisionEngineSummary {
     pub generated_at: String,
     pub candidate_count: usize,
     pub open_count: usize,
+    /// Actionable outcomes only (`open` / `postponed`).
     pub top_candidates: Vec<DecisionCandidate>,
+    /// Truncated terminal decision evidence (never actionable).
+    #[serde(default)]
+    pub history: Vec<DecisionArtifactHistoryEntry>,
+    /// Authoritative terminal evidence count (may exceed `history.length`).
+    #[serde(default)]
+    pub history_count: usize,
     pub summary: String,
     pub authority_effect: String,
 }
@@ -630,6 +815,8 @@ impl Default for DecisionEngineSummary {
             candidate_count: 0,
             open_count: 0,
             top_candidates: Vec::new(),
+            history: Vec::new(),
+            history_count: 0,
             summary: String::new(),
             authority_effect: DecisionCandidate::AUTHORITY_EFFECT_NONE.into(),
         }
@@ -5167,5 +5354,151 @@ impl DecisionCandidateProgressionAcknowledgement {
             return Err(DecisionEngineError::CannotExecute);
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod terminal_evidence_projection_tests {
+    use super::*;
+
+    fn context() -> DecisionContext {
+        DecisionContext {
+            workspace_id: "ws-1".into(),
+            active_project_id: None,
+            active_task_id: None,
+            attention_item_count: 0,
+            memory_highlight_count: 0,
+            preference_highlight_count: 0,
+            pending_approval_count: 0,
+            pending_plan_count: 0,
+            task_graph_open_count: 0,
+            task_graph_blocked_count: 0,
+        }
+    }
+
+    fn candidate(key: &str, outcome: DecisionOutcome) -> DecisionCandidate {
+        DecisionCandidate {
+            id: DecisionCandidate::synthetic_id(key),
+            workspace_id: WorkspaceId::new("ws-1").unwrap(),
+            title: key.into(),
+            goal_statement: "goal".into(),
+            originating_goal: None,
+            attention_item_id: None,
+            recommendation_id: Some("rec-1".into()),
+            intake_candidate_id: None,
+            creation_request_id: None,
+            package_seal_digest: None,
+            origin: DecisionCandidate::ORIGIN_NATIVE.into(),
+            score: DecisionCandidate::unscored(),
+            explanation: DecisionExplanation {
+                headline: "h".into(),
+                reasons: vec![],
+                confidence: "low".into(),
+            },
+            related_goal_ids: vec![],
+            pending_approval_ids: vec![],
+            outcome,
+            created_at: "t0".into(),
+            handoff_command: DecisionCandidate::HANDOFF_NONE.into(),
+            authority_effect: DecisionCandidate::AUTHORITY_EFFECT_NONE.into(),
+        }
+    }
+
+    #[test]
+    fn terminal_artifacts_excluded_from_actionable_and_appear_in_history() {
+        let state = DecisionEngineState::from_candidates(
+            "ws-1",
+            context(),
+            vec![
+                candidate("open-1", DecisionOutcome::Open),
+                candidate("dismissed-1", DecisionOutcome::Dismissed),
+                candidate("selected-1", DecisionOutcome::Selected),
+                candidate("expired-1", DecisionOutcome::Expired),
+                candidate("postponed-1", DecisionOutcome::Postponed),
+            ],
+        );
+        assert!(state
+            .top_candidates
+            .iter()
+            .all(|c| c.outcome.is_actionable()));
+        assert!(!state
+            .top_candidates
+            .iter()
+            .any(|c| c.outcome.is_terminal()));
+        assert_eq!(state.history_count, 3);
+        assert!(state.history.iter().all(|h| h.is_non_actionable()));
+        assert!(state
+            .history
+            .iter()
+            .any(|h| h.candidate_key == "dismissed-1" && h.decision_state == "dismissed"));
+        assert!(state
+            .history
+            .iter()
+            .any(|h| h.candidate_key == "selected-1" && h.resolution_type == "selected"));
+        assert!(state
+            .history
+            .iter()
+            .any(|h| h.candidate_key == "expired-1" && h.terminal));
+    }
+
+    #[test]
+    fn empty_actionable_summary_still_carries_history_count() {
+        let state = DecisionEngineState::from_candidates(
+            "ws-1",
+            context(),
+            vec![
+                candidate("d1", DecisionOutcome::Dismissed),
+                candidate("e1", DecisionOutcome::Expired),
+                candidate("s1", DecisionOutcome::Selected),
+            ],
+        );
+        let summary = state.summary_projection(2);
+        assert!(summary.top_candidates.is_empty());
+        assert_eq!(summary.candidate_count, 0);
+        assert_eq!(summary.open_count, 0);
+        assert_eq!(summary.history.len(), 2, "window truncated");
+        assert_eq!(summary.history_count, 3, "full evidence count retained");
+        assert!(summary.history.iter().all(|h| !h.actionable && h.terminal));
+    }
+
+    #[test]
+    fn orphan_overlay_projects_into_history_without_live_candidate() {
+        let overlay = DecisionEngineOverlay {
+            workspace_id: "ws-1".into(),
+            candidate_key: "attention:gone".into(),
+            outcome: DecisionOutcome::Dismissed,
+            updated_at: "t9".into(),
+            actor_id: "local-user".into(),
+        };
+        let history = DecisionEngineState::project_history_from_candidates(&[], &[overlay]);
+        assert_eq!(history.len(), 1);
+        assert_eq!(history[0].candidate_key, "attention:gone");
+        assert!(history[0].is_non_actionable());
+        assert!(DecisionArtifactHistoryEntry::from_overlay(
+            &DecisionEngineOverlay {
+                workspace_id: "ws-1".into(),
+                candidate_key: "open-key".into(),
+                outcome: DecisionOutcome::Open,
+                updated_at: "t0".into(),
+                actor_id: "local-user".into(),
+            }
+        )
+        .is_none());
+    }
+
+    #[test]
+    fn history_entry_cannot_become_executable_candidate() {
+        let entry = DecisionArtifactHistoryEntry::from_candidate(
+            &candidate("dismissed-1", DecisionOutcome::Dismissed),
+            Some("t1"),
+        )
+        .unwrap();
+        assert!(!entry.actionable);
+        assert_eq!(entry.authority_effect, "none");
+        assert!(entry.terminal);
+        // History DTO is distinct from DecisionCandidate — no handoff/execution fields.
+        let encoded = serde_json::to_value(&entry).unwrap();
+        assert!(encoded.get("handoff_command").is_none());
+        assert!(encoded.get("goal_statement").is_none());
     }
 }

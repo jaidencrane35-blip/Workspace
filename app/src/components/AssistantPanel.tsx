@@ -365,8 +365,9 @@ export function AssistantPanel({
                     .slice(0, 2)
                     .map((c) => c.title)
                     .join("; ")}{" "}
-              Explain-only here — accept/dismiss/postpone live on the Work tab.
-              Never executes.
+              History evidence: {workspaceIntel.decision_engine.history_count}{" "}
+              terminal artifact(s) projected (not actionable). Explain-only here
+              — accept/dismiss/postpone live on the Work tab. Never executes.
               {workspaceIntel.decision_engine.top_candidates[0] ? (
                 <DecisionReasonList
                   reasons={

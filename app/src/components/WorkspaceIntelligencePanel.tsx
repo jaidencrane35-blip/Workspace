@@ -2565,10 +2565,32 @@ export function WorkspaceIntelligencePanel({
             <p className="muted">
               Why this matters now · {decisionEngine.context.attention_item_count}{" "}
               attention · {decisionEngine.context.pending_approval_count} pending
-              approvals · authority: {decisionEngine.authority_effect}
+              approvals · history {decisionEngine.history_count} terminal
+              artifact(s) · authority: {decisionEngine.authority_effect}
             </p>
+            {decisionEngine.history_count > 0 && (
+              <div className="muted">
+                Terminal decision evidence (projection-only — not actionable;
+                showing {decisionEngine.history.length} of{" "}
+                {decisionEngine.history_count}):
+                <ul className="intelligence-list">
+                  {decisionEngine.history.map((entry) => (
+                    <li key={entry.artifact_id}>
+                      [{entry.decision_state}] {entry.candidate_key} · origin{" "}
+                      {entry.origin} · actionable: {String(entry.actionable)} ·
+                      authority: {entry.authority_effect}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
             {decisionEngine.top_candidates.length === 0 ? (
-              <p className="muted">No open recommendations.</p>
+              <p className="muted">
+                No open recommendations
+                {decisionEngine.history_count > 0
+                  ? ` — ${decisionEngine.history_count} terminal artifact(s) retained in history.`
+                  : "."}
+              </p>
             ) : (
               <ul className="intelligence-list">
                 {decisionEngine.top_candidates.map((candidate, index) => (

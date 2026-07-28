@@ -457,3 +457,169 @@ fn multiple_candidates_supported() {
         state.candidates.len()
     );
 }
+
+/// Terminal DE evidence projects into history; actionable summaries stay separated.
+#[test]
+fn terminal_evidence_projects_into_history_and_summary() {
+    use workspace_database::DecisionEngineRepository;
+    use workspace_domain::{DecisionEngineOverlay, DecisionOutcome};
+
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let (ws, project_id, _) = seed_project(&kernel);
+    seed_pending_contract(&kernel, ws.clone(), project_id);
+    let local = ActorContext::local_user();
+    let intent = IntentContext::user_request();
+
+    let state = CommandHandler::generate_decision_engine(
+        &kernel,
+        local.clone(),
+        intent.clone(),
+        ws.clone(),
+    )
+    .unwrap();
+    let candidate = state
+        .top_candidates
+        .first()
+        .expect("expected actionable recommendation")
+        .clone();
+
+    CommandHandler::dismiss_decision_candidate(
+        &kernel,
+        local.clone(),
+        intent.clone(),
+        ws.clone(),
+        candidate.id.to_string(),
+    )
+    .unwrap();
+
+    // Orphan terminal overlay with no live synthesis key.
+    {
+        let db = kernel.shared_database();
+        let guard = db.lock().unwrap();
+        DecisionEngineRepository::new(&guard)
+            .upsert_overlay(&DecisionEngineOverlay {
+                workspace_id: ws.clone(),
+                candidate_key: "attention:orphan-gone".into(),
+                outcome: DecisionOutcome::Expired,
+                updated_at: "t-orphan".into(),
+                actor_id: "local-user".into(),
+            })
+            .unwrap();
+    }
+
+    let after = CommandHandler::generate_decision_engine(&kernel, local, intent, ws).unwrap();
+    let summary = after.summary_projection(10);
+
+    assert!(
+        after
+            .top_candidates
+            .iter()
+            .all(|c| c.outcome == DecisionOutcome::Open
+                || c.outcome == DecisionOutcome::Postponed),
+        "actionable candidates only"
+    );
+    assert!(
+        !after
+            .top_candidates
+            .iter()
+            .any(|c| c.id == candidate.id),
+        "dismissed candidate leaves actionable surface"
+    );
+    assert!(
+        after
+            .history
+            .iter()
+            .any(|h| h.candidate_id == candidate.id.to_string()
+                && h.decision_state == "dismissed"
+                && h.is_non_actionable()),
+        "dismissed artifact remains visible in history"
+    );
+    assert!(
+        after
+            .history
+            .iter()
+            .any(|h| h.candidate_key == "attention:orphan-gone"
+                && h.decision_state == "expired"
+                && h.is_non_actionable()),
+        "orphan terminal overlay projects into history"
+    );
+    assert!(summary.history_count >= 1);
+    assert!(summary.history.iter().all(|h| !h.actionable && h.terminal));
+    for entry in &after.history {
+        assert!(
+            !after
+                .top_candidates
+                .iter()
+                .any(|c| c.id.as_str() == entry.candidate_id),
+            "same artifact must not appear in both actionable and history"
+        );
+    }
+}
+
+#[test]
+fn history_identity_cannot_mutate_or_execute() {
+    use workspace_database::DecisionEngineRepository;
+    use workspace_domain::{DecisionEngineOverlay, DecisionOutcome};
+
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let (ws, _, _) = seed_project(&kernel);
+    let local = ActorContext::local_user();
+    let intent = IntentContext::user_request();
+
+    {
+        let db = kernel.shared_database();
+        let guard = db.lock().unwrap();
+        DecisionEngineRepository::new(&guard)
+            .upsert_overlay(&DecisionEngineOverlay {
+                workspace_id: ws.clone(),
+                candidate_key: "attention:history-only".into(),
+                outcome: DecisionOutcome::Dismissed,
+                updated_at: "t0".into(),
+                actor_id: "local-user".into(),
+            })
+            .unwrap();
+    }
+
+    let state =
+        CommandHandler::generate_decision_engine(&kernel, local.clone(), intent.clone(), ws.clone())
+            .unwrap();
+    let history_id = state
+        .history
+        .iter()
+        .find(|h| h.candidate_key == "attention:history-only")
+        .expect("history entry")
+        .candidate_id
+        .clone();
+
+    assert!(
+        !state.top_candidates.iter().any(|c| c.id.as_str() == history_id),
+        "history DTO identity is not an actionable DecisionCandidate"
+    );
+    let dismiss_err = CommandHandler::dismiss_decision_candidate(
+        &kernel,
+        local.clone(),
+        intent.clone(),
+        ws.clone(),
+        history_id.clone(),
+    )
+    .unwrap_err();
+    assert!(
+        matches!(dismiss_err, KernelError::DecisionEngineNotFound),
+        "history identity must not mutate lifecycle, got {dismiss_err:?}"
+    );
+
+    let select_err = CommandHandler::select_decision_candidate(
+        &kernel,
+        local,
+        intent,
+        ws,
+        history_id,
+    )
+    .unwrap_err();
+    assert!(
+        matches!(select_err, KernelError::DecisionEngineNotFound),
+        "history identity must not select/execute via DE, got {select_err:?}"
+    );
+
+    assert!(CommandHandler::decision_engine_attempt_execute().is_err());
+}

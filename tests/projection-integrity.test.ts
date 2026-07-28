@@ -10,7 +10,10 @@ import {
   decisionOverlayHistoryRetentionLabel,
   isDecisionOverlayHistoryNonActionable,
 } from "../app/src/components/decisionQueueProjection";
+import { isDecisionArtifactHistoryNonActionable } from "../app/src/components/decisionEngineProjection";
 import type {
+  DecisionArtifactHistoryEntry,
+  DecisionEngineSummary,
   DecisionOverlayHistoryEntry,
   DecisionQueueSummary,
   RecommendationHistoryEntry,
@@ -266,6 +269,76 @@ describe("projection integrity — decision queue terminal overlay history", () 
     expect(isDecisionOverlayHistoryNonActionable(entry)).toBe(true);
     expect(entry).not.toHaveProperty("recommended_action");
     expect(entry).not.toHaveProperty("handoff_command");
+    expect(entry.actionable).toBe(false);
+  });
+});
+
+describe("projection integrity — decision engine terminal artifact history", () => {
+  function deHistory(
+    overrides: Partial<DecisionArtifactHistoryEntry> = {}
+  ): DecisionArtifactHistoryEntry {
+    return {
+      artifact_id: "engine_decision:attention:x",
+      candidate_id: "engine_decision:attention:x",
+      candidate_key: "attention:x",
+      decision_state: "dismissed",
+      created_at: "t0",
+      updated_at: "t1",
+      resolution_type: "dismissed",
+      origin: "native",
+      recommendation_id: null,
+      intake_candidate_id: null,
+      package_seal_digest: null,
+      terminal: true,
+      actionable: false,
+      authority_effect: "none",
+      ...overrides,
+    };
+  }
+
+  it("treats projected DE history as non-actionable", () => {
+    expect(isDecisionArtifactHistoryNonActionable(deHistory())).toBe(true);
+    expect(
+      isDecisionArtifactHistoryNonActionable(
+        deHistory({ decision_state: "expired", resolution_type: "expired" })
+      )
+    ).toBe(true);
+    expect(
+      isDecisionArtifactHistoryNonActionable(deHistory({ actionable: true }))
+    ).toBe(false);
+    expect(
+      isDecisionArtifactHistoryNonActionable(
+        deHistory({ decision_state: "open", terminal: false })
+      )
+    ).toBe(false);
+  });
+
+  it("uses history_count as authoritative evidence count", () => {
+    const summary: DecisionEngineSummary = {
+      workspace_id: "ws",
+      generated_at: "t",
+      candidate_count: 0,
+      open_count: 0,
+      top_candidates: [],
+      history: [deHistory()],
+      history_count: 4,
+      summary: "none open",
+      authority_effect: "none",
+    };
+    expect(summary.top_candidates.length).toBe(0);
+    expect(summary.history.length).toBe(1);
+    expect(summary.history_count).toBe(4);
+    expect(summary.history.every(isDecisionArtifactHistoryNonActionable)).toBe(
+      true
+    );
+  });
+
+  it("does not convert DE history into DecisionCandidates", () => {
+    const entry = deHistory({ decision_state: "selected" });
+    expect(isDecisionArtifactHistoryNonActionable(entry)).toBe(true);
+    expect(entry).not.toHaveProperty("goal_statement");
+    expect(entry).not.toHaveProperty("handoff_command");
+    expect(entry).not.toHaveProperty("score");
     expect(entry.actionable).toBe(false);
   });
 });
