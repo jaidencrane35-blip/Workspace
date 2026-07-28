@@ -290,6 +290,20 @@ Rules:
 - React may inspect — no mutation or command conversion.
 - Restart reconstructs durable current + history; missing explanation remains missing.
 
+### Contextual Workspace Understanding (Programme III Batch 6)
+
+- **Current:** `ContextualUnderstandingProjection.current` — `ContextualWorkspaceSnapshot`
+  with `SituationalTheme` / `ContextualInsight` / `ContextualGap`, diagnostic confidence.
+  Situational understanding only; never execute, approve, predict, simulate, or decide.
+- **History:** superseded understandings via append-only history →
+  `ContextualUnderstandingHistoryEntry` (`terminal: true`, `actionable: false`,
+  `authority_effect: none`).
+- **`history_count`** is authoritative; summary windows may truncate `history`.
+- Completeness: Complete / Partial / Unknown / Contradictory / Unavailable.
+- `ExplainWorkspaceContext` is understanding-only.
+- React may inspect — no mutation or command conversion.
+- Restart reconstructs durable current + history; missing understanding remains missing.
+
 ## Serde defaults vs TypeScript required fields
 
 Rust history fields often use `#[serde(default)]` so older persisted / in-flight JSON

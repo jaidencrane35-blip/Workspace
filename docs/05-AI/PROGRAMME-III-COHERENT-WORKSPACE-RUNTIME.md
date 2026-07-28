@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | **Purpose** | Establish one provenance-rich, read-only runtime view of operational, cognitive, governance, and evidence state while preserving all existing lifecycle and persistence authorities |
-| **Status** | Active — Batch 5 accepted; Batch 6 charter drafted (pending review) |
+| **Status** | Active — Batch 6 implemented |
 | **Depends on** | Programme I governance / recovery; Programme II cognitive stack |
 | **Non-goals** | Event sourcing; authoritative replay logs; simulation; model hosting; autonomous execution; replacement permission system; replacement for domain-owned projections |
 
@@ -34,8 +34,8 @@
 | **3** | Historical Workspace Reconstruction | Temporal comparison / change explanation | Done (accepted) |
 | **4** | Temporal Intelligence | Historical understanding extensions | Done (accepted) |
 | **5** | Workspace Explanation Layer | Cross-surface evidence-backed explanation | Done (accepted) |
-| **6** | Contextual Workspace Understanding | Richer situational understanding | Charter drafted — pending review |
-| **7+** | Collaborative Understanding / Simulation / Local Intelligence | Only after Batch 6 contract + prior layers exercised | Planned |
+| **6** | Contextual Workspace Understanding | Richer situational understanding | Done (implemented) |
+| **7+** | Collaborative Understanding / Simulation / Local Intelligence | Only after Batch 6 audit ACCEPT + prior layers exercised | Planned |
 
 ## Batch 5 summary
 
@@ -46,23 +46,25 @@ authority. Commands: `GenerateWorkspaceExplanation`, `GetWorkspaceExplanation`,
 `GetWorkspaceExplanationSummary`, `ExplainWorkspaceSituation`.
 See [Workspace Explanation Layer Architecture](./WORKSPACE-EXPLANATION-LAYER-ARCHITECTURE.md).
 
-## Batch 6 charter (draft)
+## Batch 6 summary
 
-`WorkspaceContextualUnderstandingService` will turn state + policy + history + temporal +
-explanation evidence into richer situational understanding packages.
-Understanding confidence remains diagnostic (≠ truth). Provenance lineage is required on
-every claim. Persisted artefacts stay revision-bound — never previous-cache-as-truth.
+`WorkspaceContextualUnderstandingService` composes `ContextualWorkspaceSnapshot` themes
+(`SituationalTheme`, `ContextualInsight`, `ContextualGap`) from durable state / policy /
+reconstruction / temporal / explanation snapshots via `load_snapshot` only.
+Diagnostic understanding confidence never becomes decision authority. Dual-channel
+projection: `current` + `history` + authoritative `history_count`.
+Commands: `GenerateContextualWorkspaceUnderstanding`, `GetContextualWorkspaceUnderstanding`,
+`GetContextualWorkspaceUnderstandingSummary`, `ExplainWorkspaceContext`
+(`work_context.write` / `work_context.read`). Migration `057`.
 See [Contextual Workspace Understanding Architecture](./CONTEXTUAL-WORKSPACE-UNDERSTANDING-ARCHITECTURE.md).
 
-**Do not begin Batch 6 implementation until the charter is reviewed and approved.**
 **Do not expand into prediction, simulation, autonomous correction, or decision ownership.**
 
 ## Sequencing rule
 
 Ship Batch *N* only when Batch *N−1* has durable contracts, tests, and governance ownership entries.
-Batch 6 implementation is gated on charter review approval.
-Later batches that touch collaboration / simulation / forecasting remain gated on contextual
-understanding being accepted and prior layers being exercised against real complexity.
+Batch 7+ (collaboration / simulation / forecasting) remains gated on Batch 6 audit ACCEPT
+and prior layers being exercised against real complexity.
 
 ## Related
 
@@ -71,7 +73,7 @@ understanding being accepted and prior layers being exercised against real compl
 - [Historical Workspace Reconstruction Architecture](./HISTORICAL-WORKSPACE-RECONSTRUCTION-ARCHITECTURE.md) (Batch 3)
 - [Temporal Intelligence Architecture](./TEMPORAL-INTELLIGENCE-ARCHITECTURE.md) (Batch 4)
 - [Workspace Explanation Layer Architecture](./WORKSPACE-EXPLANATION-LAYER-ARCHITECTURE.md) (Batch 5)
-- [Contextual Workspace Understanding Architecture](./CONTEXTUAL-WORKSPACE-UNDERSTANDING-ARCHITECTURE.md) (Batch 6 charter)
+- [Contextual Workspace Understanding Architecture](./CONTEXTUAL-WORKSPACE-UNDERSTANDING-ARCHITECTURE.md) (Batch 6)
 - [Programme II — Cognitive Workspace](./PROGRAMME-II-COGNITIVE-WORKSPACE.md)
 - [Projection Integrity](../03-Engineering/PROJECTION-INTEGRITY.md)
 - [Architecture Governance](../03-Engineering/ARCHITECTURE-GOVERNANCE.md)

@@ -387,6 +387,29 @@ See [Temporal Intelligence Architecture](../05-AI/TEMPORAL-INTELLIGENCE-ARCHITEC
 
 See [Workspace Explanation Layer Architecture](../05-AI/WORKSPACE-EXPLANATION-LAYER-ARCHITECTURE.md).
 
+## Contextual Workspace Understanding (Programme III Batch 6)
+
+`WorkspaceContextualUnderstandingService` owns **situational understanding evidence only**.
+
+| Property | Value |
+|----------|-------|
+| Lifecycle owner | No |
+| Execution / approve / policy / task / plan authority | No |
+| Simulation / forecast / correction authority | No |
+| Source of truth | No |
+| Situational understanding / projection owner | Yes |
+
+- `ContextualUnderstandingHistoryEntry` / `ContextualUnderstandingSummary` /
+  `ContextualUnderstandingProjection` contain no authority/command fields.
+- Mutation inventory includes `GenerateContextualWorkspaceUnderstanding` (baseline floor raised).
+- Contextual understanding cannot import lifecycle/execution/planning services or call `PermissionGateway`.
+- Contextual understanding cannot silently refresh foreign sources via `generate`
+  (state / policy / reconstruction / temporal / explanation are `load_snapshot` only).
+- Gaps and conflicts framed, not resolved. Confidence is diagnostic only.
+- Repository cannot call the contextual understanding service.
+
+See [Contextual Workspace Understanding Architecture](../05-AI/CONTEXTUAL-WORKSPACE-UNDERSTANDING-ARCHITECTURE.md).
+
 ## Capability boundary audit
 
 Enforced by `scripts/architecture-governance-lib.mjs`:

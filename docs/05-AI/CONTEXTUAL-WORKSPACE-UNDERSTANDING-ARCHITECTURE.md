@@ -4,7 +4,7 @@
 |-------|-------|
 | **Purpose** | Turn state + policy + history + temporal + explanation evidence into richer situational understanding — without prediction, simulation, autonomous correction, or decision ownership |
 | **Owner** | `WorkspaceContextualUnderstandingService` (DurableStore — **understanding evidence only**) |
-| **Status** | Charter draft — pending review before implementation |
+| **Status** | Active — Programme III Batch 6 implemented |
 | **Lifecycle owner** | No |
 | **Execution / replay authority** | No |
 | **Simulation / forecast / correction authority** | No |
@@ -159,29 +159,31 @@ Do **not** introduce:
 3. **Persisted understanding artefacts are revision-bound caches** — never “previous understanding = current truth”.
 4. **Conflicts are framed, not resolved.** Observed sequence ≠ cause.
 
-## Core model (contract)
+## Core model (shipped)
 
-### `ContextualUnderstandingView`
+### `ContextualWorkspaceSnapshot`
 
 Primary composed artefact for a situational understanding request.
 
-| Field (conceptual) | Role |
-|--------------------|------|
+| Field | Role |
+|-------|------|
 | `understanding_id` | Identity of this understanding artefact |
 | `workspace_id` | Workspace scope |
 | `generated_at` | Wall-clock composition time |
-| `context_frame` | `ContextFrame` describing the situation being understood |
+| `status` / `superseded_at` | Active vs superseded lifecycle of the artefact |
+| `frame` | `ContextFrame` describing the situation being understood |
+| `source_revisions` | Revision-bound upstream refs used for this compose |
 | `situation_summary` | Evidence-backed situational framing |
-| `themes` | Ordered `UnderstandingTheme` sections |
-| `completeness` | `UnderstandingCompleteness` |
-| `gaps` | Explicit unknowns / missing upstream evidence |
-| `conflicts` | Preserved disagreement frames |
+| `themes` | Ordered `SituationalTheme` sections |
+| `completeness` | `ContextualCompleteness` |
+| `gaps` | Explicit `ContextualGap` unknowns / missing upstream evidence |
 | `confidence` | Diagnostic coverage signal — not truth score |
 | `provenance_links` | Links to upstream durable artefacts (revision-bound) |
 | `narrative` | Evidence-backed situational narrative |
 | `limitations` | Explicit limitation statements |
 | `authority_effect` | Always `"none"` |
 | `actionable` | Always `false` |
+| `terminal` | Terminal when superseded into history |
 
 Not a decision package. Not a plan. Not a replacement workspace state.
 
@@ -189,8 +191,8 @@ Not a decision package. Not a plan. Not a replacement workspace state.
 
 What situation is being understood.
 
-| Field (conceptual) | Role |
-|--------------------|------|
+| Field | Role |
+|-------|------|
 | `focus` | Optional focus theme (e.g. readiness, conflict-pressure, continuity) |
 | `include_state` / `include_policy` / `include_reconstruction` / `include_temporal` / `include_explanation` | Upstream surface selection |
 | `max_themes` | Hard bound — never unbounded scrape |
@@ -198,30 +200,62 @@ What situation is being understood.
 
 Frames constrain reading. They do not invent coverage.
 
-### `UnderstandingTheme`
+### `SituationalTheme`
 
 One situational theme synthesised from evidence.
 
-| Field (conceptual) | Role |
-|--------------------|------|
+| Field | Role |
+|-------|------|
 | `theme_id` | Identity |
 | `kind` | e.g. `current_state`, `governance_posture`, `historical_continuity`, `temporal_pressure`, `explanation_synthesis` |
 | `title` | Human-readable theme title |
 | `body` | Evidence-backed framing |
+| `insights` | Ordered `ContextualInsight` observations under this theme |
 | `evidence_refs` | Upstream durable refs with origin domain |
 | `completeness` | Theme-local completeness |
 | `authority_effect` | `"none"` |
 | `actionable` | `false` |
 
-### `UnderstandingConfidence`
+### `ContextualInsight`
+
+Evidence-backed observation nested under a theme — descriptive only; never “do X / execute Y / approve Z”.
+
+| Field | Role |
+|-------|------|
+| `insight_id` | Identity |
+| `kind` | Observation category |
+| `body` | Evidence-backed claim |
+| `evidence_refs` | Upstream durable refs |
+| `explanation_lineage` | Optional lineage into explanation artefacts |
+| `confidence` | Diagnostic coverage signal (0–100) — not truth |
+| `uncertainty` / `limitations` | Explicit unknowns / bounds |
+| `authority_effect` | `"none"` |
+| `actionable` | `false` |
+
+### `ContextualGap`
+
+Explicit missing / unavailable / conflicting coverage — never filled by invention.
+
+| Field | Role |
+|-------|------|
+| `gap_id` | Identity |
+| `surface` | Which upstream surface is incomplete |
+| `description` | Why coverage is missing / partial / conflicting |
+| `severity` | Gap pressure signal |
+| `evidence_refs` | Upstream durable refs (when any) |
+| `authority_effect` | `"none"` |
+| `actionable` | `false` |
+
+### `ContextualUnderstandingConfidence`
 
 Diagnostic coverage about the understanding package — **never truth confidence**.
 
-| Field (conceptual) | Role |
-|--------------------|------|
+| Field | Role |
+|-------|------|
 | `coverage` | How many requested surfaces were available |
+| `available_surfaces` / `requested_surfaces` | Coverage denominator |
 | `gap_count` / `conflict_count` | Uncertainty pressure |
-| `limitations` | Explicit “not a truth / decision score” statements |
+| `uncertainty` / `limitations` | Explicit “not a truth / decision score” statements |
 | `authority_effect` | `"none"` |
 
 Maintain:
@@ -232,7 +266,7 @@ Confidence of understanding
 Confidence of truth
 ```
 
-### `UnderstandingCompleteness`
+### `ContextualCompleteness`
 
 Explicit uncertainty model — **never collapse**:
 
@@ -251,16 +285,16 @@ Explicit uncertainty model — **never collapse**:
 ### Allowed
 
 ```
-State snapshot (load)
-+ Policy evaluation (load)
-+ Reconstruction (load)
-+ Temporal analysis (load)
-+ Explanation package (load)
-= situational understanding artefact with gaps/conflicts/provenance preserved
+State snapshot (load_snapshot)
++ Policy evaluation (load_snapshot)
++ Reconstruction (load_snapshot)
++ Temporal analysis (load_snapshot)
++ Explanation package (load_snapshot)
+= situational understanding artefact with themes/insights/gaps/provenance preserved
 ```
 
 Same durable upstream revisions + same frame ⇒ deterministic understanding content
-(`themes`, `gaps`, `conflicts`, `completeness`). Identity / `generated_at` may differ.
+(`themes`, `insights`, `gaps`, `completeness`). Identity / `generated_at` may differ.
 
 ### Forbidden
 
@@ -300,28 +334,28 @@ Contextual Understanding **reads** durable upstream artefacts; it never generate
 
 | Input | Access pattern |
 |-------|----------------|
-| Workspace state envelope snapshot | `load_snapshot` only |
-| Policy governance snapshot | load / explain only — never `generate` |
-| Historical reconstruction snapshot | load only — never `generate` |
-| Temporal intelligence snapshot | load only — never `generate` |
-| Workspace explanation snapshot | load / situation explain only — never `generate` |
+| Workspace state envelope snapshot | `load_snapshot` only — never `generate` |
+| Policy governance snapshot | `load_snapshot` / explain only — never `generate` |
+| Historical reconstruction snapshot | `load_snapshot` only — never `generate` |
+| Temporal intelligence snapshot | `load_snapshot` only — never `generate` |
+| Workspace explanation snapshot | `load_snapshot` / situation explain only — never `generate` |
 
 **No hidden source scraping. No lifecycle inspection shortcuts. No silent regeneration.**
 
-## Service contract (planned)
+## Service contract (shipped)
 
 ### `WorkspaceContextualUnderstandingService`
 
 Responsibilities:
 
 - accept a `ContextFrame`
-- load requested upstream snapshots (read-only)
-- assemble themes, gaps, conflicts, limitations
+- load requested upstream snapshots via `load_snapshot` only (state / policy / reconstruction / temporal / explanation)
+- assemble themes, insights, gaps, limitations
 - attach provenance lineage to every theme / claim
 - compose evidence-backed situational narrative
 - persist understanding artefacts (read-model)
 
-Must **not**:
+Must **not** (forbidden behaviours):
 
 - execute / replay / dispatch / restore
 - simulate / forecast / auto-correct
@@ -335,16 +369,17 @@ Must **not**:
 - treat prior understanding cache as current truth without re-binding to revisions
 
 Negative guards (tests): `attempt_execute`, `attempt_approve`, `attempt_mutate_lifecycle`,
-`attempt_create_task`, `attempt_simulate`, `attempt_forecast`, `attempt_resolve_conflict`,
-`attempt_fabricate_certainty`, `attempt_silent_refresh`, `attempt_emit_command`.
+`attempt_create_task`, `attempt_mutate_intent`, `attempt_mutate_task_graph`,
+`attempt_alter_workspace_state_envelope`, `attempt_convert_insight_to_recommendation`,
+`attempt_invent_causal_explanations`, `attempt_silent_refresh`, `attempt_emit_command`.
 
-## Commands (planned)
+## Commands (shipped)
 
 | Command | Kind | Capability | Purpose |
 |---------|------|------------|---------|
-| `GenerateContextualUnderstanding` | Mutation | `work_context.write` | Persist an understanding artefact for a frame |
-| `GetContextualUnderstanding` | Query | `work_context.read` | Load current understanding snapshot |
-| `GetContextualUnderstandingSummary` | Query | `work_context.read` | Summary + authoritative `history_count` |
+| `GenerateContextualWorkspaceUnderstanding` | Mutation | `work_context.write` | Persist an understanding artefact for a frame |
+| `GetContextualWorkspaceUnderstanding` | Query | `work_context.read` | Load current understanding snapshot |
+| `GetContextualWorkspaceUnderstandingSummary` | Query | `work_context.read` | Summary + authoritative `history_count` |
 | `ExplainWorkspaceContext` | Query | `work_context.read` | Situational understanding surface over current/last package |
 
 All commands:
@@ -355,12 +390,12 @@ IPC → CommandPipeline → PermissionGateway → WorkspaceContextualUnderstandi
 
 No repair / apply / replay / predict / decide commands.
 
-## Persistence (planned)
+## Persistence (shipped)
 
 | Artefact | Role |
 |----------|------|
 | Migration `057_workspace_contextual_understanding.sql` | Read-model tables only |
-| Repository `contextual_understanding.rs` | Persist / retrieve / supersede / history append |
+| Repository `workspace_contextual_understanding.rs` | Persist / retrieve / supersede / history append |
 
 Repository does **not** evaluate, repair, replay, simulate, forecast, decide, resolve conflicts, or mutate sources.
 
@@ -380,12 +415,12 @@ Repository remains an **understanding evidence cache**, not a truth or control d
 
 ## Projection contract
 
-Follow established dual-channel pattern:
+Dual-channel pattern (shipped as `ContextualUnderstandingProjection`):
 
 | Channel | Contents | Actionable? |
 |---------|----------|-------------|
-| `current` | Active `ContextualUnderstandingView` | View / inspect only |
-| `history` | Superseded understandings (append-only) | Never |
+| `current` | Active `ContextualWorkspaceSnapshot` | View / inspect only |
+| `history` | Superseded understandings via `ContextualUnderstandingHistoryEntry` (append-only) | Never |
 | `history_count` | Full terminal count | Scalar authority |
 
 History remains:
@@ -401,7 +436,7 @@ History remains:
 
 | Scenario | Result |
 |----------|--------|
-| Missing upstream surface | Theme / section `Unavailable` + gap — not invented |
+| Missing upstream surface | Theme / section `Unavailable` + `ContextualGap` — not invented |
 | Partial upstream coverage | `Partial` understanding — gaps explicit |
 | Contradictory upstreams | `Contradictory` + conflict preserved |
 | Stale source | Uncertainty preserved — not silently refreshed |
@@ -413,13 +448,12 @@ History remains:
 Recovery helpers (domain predicates):
 
 - `recovery_must_not_fabricate_contextual_understanding`
-- `recovery_must_not_fabricate_actionable_understanding_history`
 
-## Governance additions (planned)
+## Governance (shipped)
 
-Increase mutation baseline when `GenerateContextualUnderstanding` lands.
+Mutation baseline includes `GenerateContextualWorkspaceUnderstanding`.
 
-Add guards detecting:
+Guards detect:
 
 - contextual understanding importing lifecycle / execution / launch / planning services
 - simulate / forecast / replay / repair / decide command paths
@@ -428,15 +462,16 @@ Add guards detecting:
 - repository → service ownership leaks
 - understanding DTO fields that imply execute / approve / dispatch / plan
 
-Add ownership registry entries:
+Ownership registry entries:
 
 - `contextual_understanding`
 - `contextual_understanding_snapshot`
 
-History / projection DTO inventories gain:
+History / projection DTO inventories:
 
 - `ContextualUnderstandingHistoryEntry`
 - `ContextualUnderstandingSummary`
+- `ContextualUnderstandingProjection`
 
 ## Required tests (acceptance)
 
@@ -477,16 +512,16 @@ History / projection DTO inventories gain:
 - missing evidence does not become Complete
 - restart preserves evidence without fabricating understanding
 
-## Documentation deliverables (on implementation)
+## Documentation deliverables
 
-- This charter → status `Active` after review approval
-- Update `PROGRAMME-III-COHERENT-WORKSPACE-RUNTIME.md`
-- Update `ARCHITECTURE-GOVERNANCE.md`, `PROJECTION-INTEGRITY.md`, `OPERATIONAL-RECOVERY.md`
+- This architecture — status **Active** (Batch 6 implemented)
+- `PROGRAMME-III-COHERENT-WORKSPACE-RUNTIME.md` — Batch 6 accepted / implemented
+- `ARCHITECTURE-GOVERNANCE.md`, `PROJECTION-INTEGRITY.md`, `OPERATIONAL-RECOVERY.md`
 - Vocabulary: Contextual Understanding ≠ decision authority / planner / simulator / certainty engine
 
 ## Batch 6 acceptance criteria
 
-Accept implementation only when:
+Accepted when:
 
 1. Contextual Understanding exists as situational understanding evidence only
 2. Batches 1–5 remain authoritative in their domains
@@ -494,7 +529,7 @@ Accept implementation only when:
 4. No lifecycle replacement or mutation through understanding history
 5. Missing / conflicting / stale upstream evidence stays explicit — never synthetic certainty
 6. Provenance lineage remains attached to every understanding claim
-7. Upstream read boundaries (`load` only) remain absolute
+7. Upstream read boundaries (`load_snapshot` only) remain absolute
 8. Projection integrity and Gateway/Pipeline boundaries remain absolute
 9. Governance detects contextual-understanding boundary violations
 10. Recovery never fabricates Complete understandings from gaps
@@ -502,11 +537,10 @@ Accept implementation only when:
 
 ## Review gate
 
-**This document is a charter/contract draft.**
+**Implementation contract accepted and shipped.** Further work proceeds only against this contract —
+no simulator, no forecaster, no SoT elevation, no autonomous correction, no decision ownership.
 
-Do **not** begin Batch 6 implementation until this charter is reviewed and explicitly approved.
-After approval, implement only the contract herein — no simulator, no forecaster, no SoT elevation,
-no autonomous correction, no decision ownership.
+Do not start Batch 7 until Batch 6 is audited and accepted.
 
 Later candidates (not this batch): Collaborative Workspace Understanding / Simulation —
 still under the same rule: organise evidence into understanding; do not become the authority

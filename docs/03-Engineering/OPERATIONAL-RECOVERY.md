@@ -22,10 +22,10 @@
 
 | Question | Contract |
 |----------|----------|
-| What survives restart? | Durable rows: execution lifecycle, recommendation/DE/DQ/task overlays, planning artefacts, reasoning records + history, cognitive graph snapshots + history, orchestration snapshots + history, learning snapshots + history, cognitive agent cast snapshots + history, cognitive autonomy snapshots + history, workspace state envelope snapshots + history, policy governance evaluations + history, historical reconstruction artefacts + history, temporal intelligence analyses + history, workspace explanation packages + history, audit events, schema/migrations ledger |
-| What is reconstructed? | Projections re-derived from services on generate/load; execution stale claims reconciled via existing service rules; planning/reasoning/graph/orchestration/learning/agent-cast/autonomy/state-envelope/policy-governance/historical-reconstruction/temporal-intelligence/workspace-explanation snapshots loaded from durable tables |
-| What is missing? | In-memory AI plan/workflow stores (diagnostic only); audit windows beyond scan limits; in-progress claims beyond the startup sweep cap until lazy reconcile; **absent reasoning/graph/orchestration/learning/agent-cast/autonomy/state-envelope/policy-governance/historical-reconstruction/temporal-intelligence/workspace-explanation remains absent** |
-| What must fail closed? | Incomplete terminal evidence; empty capability grants; poisoned DB locks; interrupted migrations; non-retryable stale claims; fabricated reasoning, graph, orchestration, learning, agent-cast, autonomy, unified-state, policy-compliance, historical-transition, temporal-cause, or explanation-authority structure |
+| What survives restart? | Durable rows: execution lifecycle, recommendation/DE/DQ/task overlays, planning artefacts, reasoning records + history, cognitive graph snapshots + history, orchestration snapshots + history, learning snapshots + history, cognitive agent cast snapshots + history, cognitive autonomy snapshots + history, workspace state envelope snapshots + history, policy governance evaluations + history, historical reconstruction artefacts + history, temporal intelligence analyses + history, workspace explanation packages + history, contextual understanding snapshots + history, audit events, schema/migrations ledger |
+| What is reconstructed? | Projections re-derived from services on generate/load; execution stale claims reconciled via existing service rules; planning/reasoning/graph/orchestration/learning/agent-cast/autonomy/state-envelope/policy-governance/historical-reconstruction/temporal-intelligence/workspace-explanation/contextual-understanding snapshots loaded from durable tables |
+| What is missing? | In-memory AI plan/workflow stores (diagnostic only); audit windows beyond scan limits; in-progress claims beyond the startup sweep cap until lazy reconcile; **absent reasoning/graph/orchestration/learning/agent-cast/autonomy/state-envelope/policy-governance/historical-reconstruction/temporal-intelligence/workspace-explanation/contextual-understanding remains absent** |
+| What must fail closed? | Incomplete terminal evidence; empty capability grants; poisoned DB locks; interrupted migrations; non-retryable stale claims; fabricated reasoning, graph, orchestration, learning, agent-cast, autonomy, unified-state, policy-compliance, historical-transition, temporal-cause, explanation-authority, or contextual-understanding structure |
 
 Recovery must **never**:
 
@@ -41,6 +41,7 @@ Recovery must **never**:
 - fabricate historical transitions, completeness, or repair missing reconstruction evidence
 - fabricate temporal causes, forecasts, simulations, or Complete understandings from gaps
 - fabricate explanation authority, approvals, conflict resolutions, or Complete packages from missing upstreams
+- fabricate contextual understanding, situational certainty, conflict winners, or Complete understandings from gaps (`recovery_must_not_fabricate_contextual_understanding`)
 - recreate desktop actions
 - bypass PermissionGateway / CommandPipeline for user mutations
 - silently “heal” lifecycle into an open actionable state
