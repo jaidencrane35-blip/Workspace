@@ -13,11 +13,11 @@ Workspace is a single product: a **Windows-targeted Tauri 2 desktop app** (React
 
 ### Known-good checks on Linux
 - `pnpm typecheck`, `pnpm build`, and `pnpm test` (Vitest + catalog/boundary verify scripts) all pass.
-- Rust crates that pass here: `cargo test -p workspace-domain` and `cargo test -p workspace-windows-integration`.
+- Rust crates that pass here: `cargo test -p workspace-domain`, `cargo test -p workspace-windows-integration`, and on Programme IV consolidation tip also `cargo check -p workspace-kernel` plus `case5_timeline_deterministic` / `case11_evaluation_does_not_contaminate_its_own_inputs`.
 
-### Pre-existing failures unrelated to environment (verify before assuming fixed)
-- `main` may not compile: `packages/kernel/src/services/resilience_validation.rs` references `workspace_domain::DecisionCandidateProgression` (only `...Request`/`...Acknowledgement` exist) and a `creation.score` field that does not exist on `DecisionEngineCandidateCreation`. This blocks `cargo build/test --workspace`, `cargo check -p workspace-kernel`, and `tauri dev` on some base revisions. Programme IV tip branches may compile `workspace-kernel`; still treat the resilience defect as platform debt until fixed on `main`. GitHub Actions CI (`windows-latest`) has been red for this reason historically.
-- Two kernel lib tests fail independently of Programme IV (see `docs/03-Engineering/PROGRAMME-IV-MAINTAINABILITY-AUDIT.md`):
-  - `case5_timeline_deterministic` — Activity Graph audit gap-fill uses `list_recent(40)`; generate writes audits that slide older signals out of the window, so consecutive timelines differ.
-  - `case11_evaluation_does_not_contaminate_its_own_inputs` — Intelligence/Recommendation attention top-N still changes across consecutive generates (Sprint 128 incomplete for recommendation-derived attention).
+### Pre-existing / environment notes (verify before assuming fixed)
+- Older `main` revisions may not compile: `packages/kernel/src/services/resilience_validation.rs` historically referenced missing `DecisionCandidateProgression` / `creation.score`. Programme IV consolidation tip compiles `workspace-kernel`; treat residual resilience debt as platform debt if it reappears on `main`.
+- **Resolved on consolidation tip (`cursor/programme-iv-consolidation-34a5`):**
+  - `case5_timeline_deterministic` — Activity Graph audit gap-fill now filters generation telemetry **before** the operational window (`d511006`).
+  - `case11_evaluation_does_not_contaminate_its_own_inputs` — Recommendation Expired overlays reopen on same fingerprint when source returns (`c4a5fe2`).
 - `cargo test -p workspace-database` has tests that fail on Linux with SQLite `READONLY_DBMOVED` because they drop the `tempdir()` `TempDir` before using the DB (passes on Windows CI due to different filesystem semantics). Platform-specific test issue, not an environment problem.

@@ -17,59 +17,27 @@ Programme IV Batches 1–9 are **architecturally sound on ownership** (observati
 
 ## A. Technical debt findings
 
-### A1. `case5_timeline_deterministic` (Activity Graph)
+### A1. `case5_timeline_deterministic` (Activity Graph) — **RESOLVED**
 
 | Field | Finding |
 |---|---|
 | Location | `packages/kernel/src/commands/workspace_activity_tests.rs` |
 | Service | `WorkspaceActivityService` (`packages/kernel/src/services/workspace_activity.rs`) |
-| Classification | **Unstable / outdated determinism expectation** (self-affecting inputs) |
-| Programme IV related? | **No** |
-| Architectural drift? | Local to Activity Graph audit gap-fill — not Programme IV |
+| Status | **Fixed** on consolidation tip (`d511006`) |
 
-**Root cause**
-
-1. Timeline construction calls `adapt_audit_gap_fill`, which reads `AuditService::list_recent(db, 40)`.
-2. `generate` then writes four audit events (`workspace.timeline.generated`, `workspace.relationship.generated`, etc.).
-3. Those writes are filtered from gap-fill by `covered_event_types`, but they still **consume slots in the fixed 40-event window**.
-4. On a second `generate`, an older seed audit that appeared in the first timeline can fall out of `list_recent(40)`, so timeline IDs differ (extra `activity:audit_signal:*` on first run).
-
-**Evidence:** failure shows first timeline with two audit signals vs second with one; durable work IDs (project/task/contract/proposal) are identical.
-
-**Recommended remediation** (do not change Programme IV)
-
-1. Prefer: assert determinism on non-audit activities only, **or**
-2. Snapshot audit input set before generate and reuse it for the test, **or**
-3. Raise/fix the audit window contract and document that gap-fill is “recent operational signals,” not a closed deterministic set.
-
-**Action:** Accept as documented debt · Schedule later (Activity Graph hardening sprint)
+**Fix:** Filter generation/pipeline/system telemetry **before** applying the operational `list_recent` window so generate’s own audits no longer slide durable signals out of gap-fill.
 
 ---
 
-### A2. `case11_evaluation_does_not_contaminate_its_own_inputs` (Intelligence / Recommendation)
+### A2. `case11_evaluation_does_not_contaminate_its_own_inputs` (Intelligence / Recommendation) — **RESOLVED**
 
 | Field | Finding |
 |---|---|
 | Location | `packages/kernel/src/commands/workspace_evolution_tests.rs` |
 | Surfaces | Workspace Intelligence → Attention + Recommendation Engine |
-| Classification | **Incomplete historical fix / residual feedback non-determinism** |
-| Programme IV related? | **No** |
-| Architectural drift? | Cognition stack (Recommendation/Attention), not evidence engines |
+| Status | **Fixed** on consolidation tip (`c4a5fe2`) |
 
-**Root cause**
-
-- Sprint 128 (`a4a098a`) aimed to stop evaluation from feeding itself by filtering telemetry before windowing.
-- Test still fails on **attention `top_items`**, not evolution insights: consecutive `generate_workspace_intelligence` calls with unchanged work produce different recommendation-derived attention IDs.
-- Observed delta: first cycle surfaces `recommendation:from_readiness:*` items; second surfaces `recommendation:restore_context:*` / `complete_task:*` (and different lower-score set).
-- Recommendation generation (`workspace_recommendation.rs`) merges Continuity restore-context candidates and Readiness gap enrichment (`enrich_with_readiness`). Ordering/top-N selection remains sensitive to intermediate state written by the previous intelligence cycle (audit volume, recommendation overlays, or readiness-derived IDs), despite Sprint 128 filters.
-
-**Recommended remediation**
-
-1. Trace which inputs differ between cycle 1 and 2 (audit, persisted recommendation lifecycle, readiness gap IDs).
-2. Extend Sprint 128 filtering so Attention/Recommendation top-N is closed over durable work evidence only.
-3. Keep the test — it is a valuable anti-contamination contract; fix the product path, not the assertion.
-
-**Action:** Accept as documented debt · Schedule later (cognition integrity sprint). **Do not** weaken Programme IV contracts to compensate.
+**Fix:** When recommendation sources return the same fingerprint as an Expired overlay, reopen `Expired → Available` (retain prior outcomes). Accepted/Rejected same-fingerprint reopen remains blocked. Prevents self-contamination of Attention top-N across consecutive intelligence generates.
 
 ---
 
