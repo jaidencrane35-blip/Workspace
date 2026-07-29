@@ -23,4 +23,10 @@ cd app && pnpm exec vite
 # http://localhost:1420
 ```
 
+### Screenshots
+
+- `/opt/cursor/artifacts/screenshots/milestone-b-flow-layouts.png`
+- `/opt/cursor/artifacts/screenshots/milestone-b-focus-layouts.png`
+- `/opt/cursor/artifacts/screenshots/milestone-b-mode-switch-chrome.png`
+
 **Decision:** ☐ Accept  ☐ Changes requested  ☐ Defer
