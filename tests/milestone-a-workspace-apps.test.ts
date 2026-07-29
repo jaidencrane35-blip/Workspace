@@ -140,3 +140,19 @@ describe("work mode helpers", () => {
     expect(partitionFocusApplications(apps, "missing").primary?.id).toBe("a");
   });
 });
+
+describe("assistant companion rail helpers", () => {
+  it("parses open/collapsed preference with a safe default", async () => {
+    const {
+      parseAssistantRailOpen,
+      assistantRailToggleLabel,
+      DEFAULT_ASSISTANT_RAIL_OPEN,
+    } = await import("../app/src/lib/assistantRail");
+    expect(DEFAULT_ASSISTANT_RAIL_OPEN).toBe(true);
+    expect(parseAssistantRailOpen("0")).toBe(false);
+    expect(parseAssistantRailOpen("1")).toBe(true);
+    expect(parseAssistantRailOpen("nope")).toBe(true);
+    expect(assistantRailToggleLabel(true)).toMatch(/Hide/i);
+    expect(assistantRailToggleLabel(false)).toMatch(/Show/i);
+  });
+});

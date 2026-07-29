@@ -1,18 +1,17 @@
 /**
  * Purpose: Product shell root — Workspace-first chrome, view routing,
- *   workspace activation, and Flow/Focus chrome-density preference.
+ *   Flow/Focus density, and persistent Assistant companion rail.
  * Owner: Frontend product shell
- * Inputs: Tauri IPC (settings, workspace, zones, applications); local work mode
- * Outputs: Active workspace state, navigation, banners, work-mode presentation
- * Dependencies: Product panels, DesktopArrangementPanel, workMode helpers
+ * Inputs: Tauri IPC (settings, workspace, zones, applications); local UI prefs
+ * Outputs: Active workspace state, navigation, banners, chrome presentation
+ * Dependencies: Product panels, DesktopArrangementPanel, companion rail, prefs
  * Non-responsibilities: OS window moves, permissions enforcement, Assistant
  *   reasoning, new intelligence engines, arrangement geometry apply on mode switch
  */
 
 import { useCallback, useEffect, useState } from "react";
 import { ApplicationsPanel } from "./components/ApplicationsPanel";
-import { AssistantIntelligencePanel } from "./components/AssistantIntelligencePanel";
-import { AssistantPanel } from "./components/AssistantPanel";
+import { AssistantCompanionRail } from "./components/AssistantCompanionRail";
 import { CanvasShell } from "./components/CanvasShell";
 import { DesktopArrangementPanel } from "./components/DesktopArrangementPanel";
 import { OperatorConsole } from "./components/OperatorConsole";
@@ -24,6 +23,11 @@ import {
 import { WorkspaceIntelligencePanel } from "./components/WorkspaceIntelligencePanel";
 import { WorkspaceSwitcher } from "./components/WorkspaceSwitcher";
 import { WorkModeSwitch } from "./components/WorkModeSwitch";
+import {
+  assistantRailToggleLabel,
+  loadStoredAssistantRailOpen,
+  storeAssistantRailOpen,
+} from "./lib/assistantRail";
 import {
   invokeIpc,
   IpcRuntimeUnavailableError,
@@ -49,8 +53,17 @@ import type { WorkspaceSettings } from "./types/workspace";
 
 const LEGACY_WORKSPACE_ID_KEY = "workspace.active_id";
 
-type ToolView = "assistant" | "diagnostics" | "developer";
+type ToolView = "diagnostics" | "developer";
 type AppView = ProductPrimaryView | ToolView;
+
+function isPrimaryView(view: AppView): view is ProductPrimaryView {
+  return (
+    view === "home" ||
+    view === "workspaces" ||
+    view === "applications" ||
+    view === "layouts"
+  );
+}
 
 function zonesFromContext(
   workspaceId: string,
@@ -99,6 +112,11 @@ export default function App() {
   const [bootstrapped, setBootstrapped] = useState(false);
   const [busy, setBusy] = useState(false);
   const [workMode, setWorkMode] = useState<WorkMode>(() => loadStoredWorkMode());
+  const [assistantRailOpen, setAssistantRailOpen] = useState(() =>
+    loadStoredAssistantRailOpen(),
+  );
+  const [lastPrimaryView, setLastPrimaryView] =
+    useState<ProductPrimaryView>("home");
 
   const onWorkModeChange = useCallback((mode: WorkMode) => {
     setWorkMode(mode);
@@ -108,6 +126,21 @@ export default function App() {
         ? "Flow presentation — denser workspace overview"
         : "Focus presentation — quieter chrome (OS windows unchanged)",
     );
+  }, []);
+
+  const onAssistantRailOpenChange = useCallback((open: boolean) => {
+    setAssistantRailOpen(open);
+    storeAssistantRailOpen(open);
+    setMessage(
+      open
+        ? "Assistant companion shown"
+        : "Assistant companion hidden — product stage stays primary",
+    );
+  }, []);
+
+  const navigatePrimary = useCallback((next: ProductPrimaryView) => {
+    setLastPrimaryView(next);
+    setView(next);
   }, []);
 
   const onWorkspaceChange = useCallback((next: Workspace | null) => {
@@ -268,7 +301,7 @@ export default function App() {
       className={view === id ? "tab active" : "tab"}
       aria-current={view === id ? "page" : undefined}
       aria-selected={view === id}
-      onClick={() => setView(id)}
+      onClick={() => navigatePrimary(id)}
     >
       {label}
     </button>
@@ -287,61 +320,11 @@ export default function App() {
     </button>
   );
 
-  return (
-    <main className="app-shell" data-work-mode={workMode}>
-      <header className="app-chrome">
-        <div className="chrome-brand">
-          <h1>Workspace</h1>
-          <p className="chrome-tagline">Desktop workspace environment</p>
-        </div>
-        <div className="chrome-nav-groups">
-          <nav
-            className="tabs primary-tabs"
-            aria-label="Primary workspace views"
-            role="tablist"
-          >
-            {primaryTab("home", "Home")}
-            {primaryTab("workspaces", "Workspaces")}
-            {primaryTab("applications", "Applications")}
-            {primaryTab("layouts", "Layouts")}
-          </nav>
-          <WorkModeSwitch mode={workMode} onChange={onWorkModeChange} />
-          <nav
-            className="tabs tool-tabs"
-            aria-label="Supporting tools"
-            role="tablist"
-          >
-            {toolTab("assistant", "Assistant")}
-            {toolTab("diagnostics", "Diagnostics")}
-            {toolTab("developer", "Developer")}
-          </nav>
-        </div>
-      </header>
+  const showAssistantRail = isPrimaryView(view) && assistantRailOpen;
 
-      {error && (
-        <p
-          className={
-            errorKind === "runtime" ? "runtime banner" : "error banner"
-          }
-          role="status"
-          aria-live={errorKind === "runtime" ? "polite" : "assertive"}
-          aria-atomic="true"
-        >
-          {errorKind === "runtime" ? error : `Error: ${error}`}
-        </p>
-      )}
-      {message && (
-        <p
-          className="ok banner"
-          role="status"
-          aria-live="polite"
-          aria-atomic="true"
-        >
-          {message}
-        </p>
-      )}
-
-      {view === "home" ? (
+  const primaryStage = (() => {
+    if (view === "home") {
+      return (
         <div className="container product-container">
           <WorkspaceHome
             workspace={workspace}
@@ -351,11 +334,14 @@ export default function App() {
             bootstrapped={bootstrapped}
             busy={busy}
             workMode={workMode}
-            onNavigate={setView}
+            onNavigate={navigatePrimary}
             onCreateWorkspace={createWorkspaceFromHome}
           />
         </div>
-      ) : view === "workspaces" ? (
+      );
+    }
+    if (view === "workspaces") {
+      return (
         <div className="workspace-stage">
           <div className="workspace-stage-main">
             <WorkspaceSwitcher
@@ -376,7 +362,10 @@ export default function App() {
             onMessage={onMessage}
           />
         </div>
-      ) : view === "applications" ? (
+      );
+    }
+    if (view === "applications") {
+      return (
         <div className="container product-container applications-wide">
           <ApplicationsPanel
             workspace={workspace}
@@ -387,7 +376,10 @@ export default function App() {
             onMessage={onMessage}
           />
         </div>
-      ) : view === "layouts" ? (
+      );
+    }
+    if (view === "layouts") {
+      return (
         <div className="workspace-stage">
           <div className="workspace-stage-main">
             {!bootstrapped ? (
@@ -403,7 +395,7 @@ export default function App() {
                   zoneCount={zones.length}
                   workMode={workMode}
                   onWorkModeChange={onWorkModeChange}
-                  onManageApplications={() => setView("applications")}
+                  onManageApplications={() => navigatePrimary("applications")}
                 />
                 {workMode === "flow" ? (
                   <CanvasShell
@@ -443,7 +435,7 @@ export default function App() {
                 <button
                   type="button"
                   disabled={busy}
-                  onClick={() => setView("workspaces")}
+                  onClick={() => navigatePrimary("workspaces")}
                 >
                   Go to Workspaces
                 </button>
@@ -458,52 +450,10 @@ export default function App() {
             onMessage={onMessage}
           />
         </div>
-      ) : view === "assistant" ? (
-        <div className="assistant-companion-stage">
-          <aside className="assistant-stage-quiet" aria-hidden="true">
-            <p className="arrangement-eyebrow">Workspace</p>
-            <h2>Your desktop stays primary</h2>
-            <p className="muted">
-              Assistant is a supporting companion. Use Home, Workspaces,
-              Applications, and Layouts for the product workflow.
-            </p>
-          </aside>
-          <div className="assistant-companion-rail">
-            <header className="assistant-companion-header">
-              <p className="arrangement-eyebrow">Assistant</p>
-              <h2>Supporting companion</h2>
-              <p className="lede">
-                Ask for help and explanations. Assistant does not replace
-                workspace management.
-              </p>
-            </header>
-            <AssistantIntelligencePanel
-              workspace={workspace}
-              busy={busy}
-              onBusy={setBusy}
-              onError={onError}
-              onMessage={onMessage}
-            />
-            <section
-              className="assistant-legacy-section"
-              aria-label="Governed workflow"
-            >
-              <h2>Advanced workflow</h2>
-              <p className="lede">
-                Optional plan → permission path. Prefer product tabs for daily
-                workspace use.
-              </p>
-              <AssistantPanel
-                workspace={workspace}
-                busy={busy}
-                onBusy={setBusy}
-                onError={onError}
-                onMessage={onMessage}
-              />
-            </section>
-          </div>
-        </div>
-      ) : view === "developer" ? (
+      );
+    }
+    if (view === "developer") {
+      return (
         <div className="container assistant-container">
           <p className="lede">
             <span className="badge">Developer</span> Engineering presentation of
@@ -518,24 +468,129 @@ export default function App() {
             onMessage={onMessage}
           />
         </div>
-      ) : (
-        <div className="container">
-          <p className="lede">
-            <span className="badge">Diagnostics</span> Operator console for
-            engineering validation. Prefer <strong>Home</strong>,{" "}
-            <strong>Applications</strong>, and <strong>Layouts</strong> for
-            product workflows.
-          </p>
-          <OperatorConsole
+      );
+    }
+    return (
+      <div className="container">
+        <p className="lede">
+          <span className="badge">Diagnostics</span> Operator console for
+          engineering validation. Prefer <strong>Home</strong>,{" "}
+          <strong>Applications</strong>, and <strong>Layouts</strong> for
+          product workflows.
+        </p>
+        <OperatorConsole
+          workspace={workspace}
+          zones={zones}
+          onWorkspaceChange={onWorkspaceChange}
+          onZonesChange={onZonesChange}
+          onError={onError}
+          onMessage={onMessage}
+        />
+      </div>
+    );
+  })();
+
+  return (
+    <main className="app-shell" data-work-mode={workMode}>
+      <header className="app-chrome">
+        <div className="chrome-brand">
+          <h1>Workspace</h1>
+          <p className="chrome-tagline">Desktop workspace environment</p>
+        </div>
+        <div className="chrome-nav-groups">
+          <nav
+            className="tabs primary-tabs"
+            aria-label="Primary workspace views"
+            role="tablist"
+          >
+            {primaryTab("home", "Home")}
+            {primaryTab("workspaces", "Workspaces")}
+            {primaryTab("applications", "Applications")}
+            {primaryTab("layouts", "Layouts")}
+          </nav>
+          <WorkModeSwitch mode={workMode} onChange={onWorkModeChange} />
+          <nav
+            className="tabs tool-tabs"
+            aria-label="Supporting tools"
+          >
+            <button
+              type="button"
+              className={
+                showAssistantRail ? "tab tool active" : "tab tool"
+              }
+              aria-pressed={showAssistantRail}
+              title={assistantRailToggleLabel(assistantRailOpen)}
+              onClick={() => {
+                if (!isPrimaryView(view)) {
+                  navigatePrimary(lastPrimaryView);
+                  onAssistantRailOpenChange(true);
+                  return;
+                }
+                onAssistantRailOpenChange(!assistantRailOpen);
+              }}
+            >
+              Assistant
+            </button>
+            {toolTab("diagnostics", "Diagnostics")}
+            {toolTab("developer", "Developer")}
+          </nav>
+        </div>
+      </header>
+
+      {error && (
+        <p
+          className={
+            errorKind === "runtime" ? "runtime banner" : "error banner"
+          }
+          role="status"
+          aria-live={errorKind === "runtime" ? "polite" : "assertive"}
+          aria-atomic="true"
+        >
+          {errorKind === "runtime" ? error : `Error: ${error}`}
+        </p>
+      )}
+      {message && (
+        <p
+          className="ok banner"
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          {message}
+        </p>
+      )}
+
+      <div
+        className={
+          showAssistantRail ? "app-body with-companion-rail" : "app-body"
+        }
+      >
+        <div className="app-body-main">
+          {isPrimaryView(view) && !assistantRailOpen ? (
+            <div className="assistant-rail-reopen-bar">
+              <button
+                type="button"
+                className="ghost"
+                onClick={() => onAssistantRailOpenChange(true)}
+              >
+                Show Assistant companion
+              </button>
+            </div>
+          ) : null}
+          {primaryStage}
+        </div>
+        {showAssistantRail ? (
+          <AssistantCompanionRail
             workspace={workspace}
-            zones={zones}
-            onWorkspaceChange={onWorkspaceChange}
-            onZonesChange={onZonesChange}
+            workMode={workMode}
+            busy={busy}
+            onBusy={setBusy}
             onError={onError}
             onMessage={onMessage}
+            onCollapse={() => onAssistantRailOpenChange(false)}
           />
-        </div>
-      )}
+        ) : null}
+      </div>
     </main>
   );
 }

@@ -41,6 +41,23 @@ Human concept → Optimised representation → Decoder / inspector → Human und
 
 ## Cycles
 
+### Cycle: opt-c1-persistent-assistant-rail
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-29 |
+| **Problem** | Assistant was a peer full-page tool tab, not a concept-aligned companion rail |
+| **Reason** | Approved Milestone C: persistent right rail on primary product views |
+| **Files changed** | `App.tsx`, `App.css`, `AssistantCompanionRail.tsx`, `assistantRail.ts`, tests, this log |
+| **Validation** | typecheck / test / architecture / ipc / ui-boundary / build |
+| **Maintainability score** | 8.6/10 |
+| **Reference alignment** | 8.4/10 (+0.7 companion placement) |
+| **Commercial readiness** | 5.8/10 |
+| **Human readability** | 8.5/10 |
+| **Why this is safe** | Chrome placement only; reuses existing assistant panels/IPC; no AI/ownership/PG/DA behaviour change |
+
+---
+
 ### Cycle: opt-o3-focus-partition-helper
 
 | Field | Value |
