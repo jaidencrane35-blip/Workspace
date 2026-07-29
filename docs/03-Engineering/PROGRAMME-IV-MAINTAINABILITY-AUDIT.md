@@ -312,16 +312,29 @@ Batch 13 packages retrieval requests and presents existing Semantic Query / Evid
 
 ---
 
-## K. Batch 14 charter opened (not implemented)
+## K. Batch 14 implemented — Assistant Explanation Intelligence
 
 **Date:** 2026-07-29  
 **Document:** [Assistant Explanation Intelligence Architecture](../05-AI/ASSISTANT-EXPLANATION-INTELLIGENCE-ARCHITECTURE.md)  
-**Status:** Charter only — implementation blocked until architecture acceptance.
+**Status:** Active — implemented
 
-Batch 14 will define how the assistant packages explanation clarity over recorded Programme III Explanation Layer and Programme IV evidence. It must not become a reasoning authority, truth determiner, causal engine, recommendation system, policy interpreter, or clone of the Explanation Layer. Prefer composing Programme III Explanation, Evidence Trace/Navigation, Batch 10 scaffolding, and Batches 11–13 assistant contracts first.
+Batch 14 packages explanation clarity over recorded Programme III Explanation Layer and Programme IV evidence without becoming a reasoning authority, truth determiner, causal engine, recommendation system, policy interpreter, or clone of the Explanation Layer.
+
+### Extraction decisions
+
+| Decision | Rationale |
+|---|---|
+| New clear folder `workspace_assistant_explanation/` | Ownership clarification beside surface/context/retrieval — **not** a second Programme III Explanation Layer / reasoning engine |
+| Reuse `AssistantSurfaceScope` + `explanation_default()` | Pathway selection flags already owned by Batch 11; additive default only |
+| Compose via `load_snapshot` only | Same Batches 12–13 pattern; never foreign `::generate` |
+| Dual-channel migration `076` with explanation-specific columns | `request_json` / `sections_json` / `citations_json` / `lineage_json` / `diagnostics_json` / `scope_json` — not a Programme III explanation-table clone as “assistant conclusions” |
+| Thin React `assistantExplanationProjection.ts` | Wraps Batch 10 `evidenceProjectionContract` — no fifth parallel contract family |
+| One `EVIDENCE_ENGINE_GUARD_SPECS` entry | Baselines **85→86**, DTO **36→37** |
+
+| New mutation / DTO inventory | **Added intentionally** — baseline 86 / DTO 37 for `PackageWorkspaceAssistantExplanation` |
 
 ---
 
 ## Explicit confirmation
 
-This audit concludes that Workspace Evidence engines through Batch 9 observe recorded evidence characteristics only within their stated ownership. The two kernel failures are pre-existing Activity Graph / Intelligence issues, not Programme IV architectural drift. Batch 10 improves human maintainability by extracting shared scaffolding without adding a new evidence authority or clone engine. Batch 11 implements a conversational presentation layer over recorded evidence without becoming authority. Batch 12 implements context packaging and continuity presentation without becoming memory, inventing continuity, or cloning the assistant surface. Batch 13 implements retrieval packaging and evidence presentation without ranking truth, recommending action, or creating a second search substrate. Batch 14 is opened as a charter only.
+This audit concludes that Workspace Evidence engines through Batch 9 observe recorded evidence characteristics only within their stated ownership. The two kernel failures are pre-existing Activity Graph / Intelligence issues, not Programme IV architectural drift. Batch 10 improves human maintainability by extracting shared scaffolding without adding a new evidence authority or clone engine. Batch 11 implements a conversational presentation layer over recorded evidence without becoming authority. Batch 12 implements context packaging and continuity presentation without becoming memory, inventing continuity, or cloning the assistant surface. Batch 13 implements retrieval packaging and evidence presentation without ranking truth, recommending action, or creating a second search substrate. Batch 14 implements explanation packaging clarity without concluding truth, inventing causality, or replacing the Programme III Explanation Layer.

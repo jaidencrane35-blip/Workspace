@@ -169,7 +169,7 @@
     "work_context.write": "Shared write token for RE / DQ / DE / TaskGraph / adaptation gated mutations — lifecycle owners remain the domain services",
     "audit.write": "Used for suggestion accept/reject and some execution bookkeeping commands — audit capability, not lifecycle ownership"
   },
-  "mutation_command_baseline": 85,
+  "mutation_command_baseline": 86,
   "mutation_capability_inventory": [
     {
       "command": "AcceptSuggestion",
@@ -392,6 +392,11 @@
       "authority_owner": "WorkContext"
     },
     {
+      "command": "PackageWorkspaceAssistantExplanation",
+      "capability": "work_context.write",
+      "authority_owner": "WorkContext"
+    },
+    {
       "command": "PackageWorkspaceAssistantRetrieval",
       "capability": "work_context.write",
       "authority_owner": "WorkContext"
@@ -604,7 +609,7 @@
   "permission_gateway_require_sites": [
     {
       "file": "packages/kernel/src/commands/handler.rs",
-      "line": 5673,
+      "line": 5727,
       "kind": "require"
     },
     {
@@ -620,13 +625,13 @@
   ],
   "evidence": {
     "source_trees": [
-      "react:55",
+      "react:56",
       "ipc:64",
-      "kernel_commands:265",
+      "kernel_commands:267",
       "permission_gateway:5",
-      "services:113",
-      "domain:118",
-      "repositories:63",
+      "services:114",
+      "domain:119",
+      "repositories:64",
       "execution:7"
     ],
     "history_dtos_found": [
@@ -665,7 +670,8 @@
       "EvidenceReliabilityHistoryEntry",
       "AssistantSurfaceHistoryEntry",
       "AssistantContextHistoryEntry",
-      "AssistantRetrievalHistoryEntry"
+      "AssistantRetrievalHistoryEntry",
+      "AssistantExplanationHistoryEntry"
     ],
     "projection_dtos_found": [
       "WorkspaceRecommendationEngineSummary",
@@ -703,25 +709,26 @@
       "WorkspaceEvidenceReliabilitySummary",
       "WorkspaceAssistantSurfaceSummary",
       "WorkspaceAssistantContextSummary",
-      "WorkspaceAssistantRetrievalSummary"
+      "WorkspaceAssistantRetrievalSummary",
+      "WorkspaceAssistantExplanationSummary"
     ],
-    "mutation_commands": 85,
-    "query_commands": 158,
+    "mutation_commands": 86,
+    "query_commands": 161,
     "assertions": [
-      "Found 36 history DTOs and verified command-field restrictions.",
-      "Found 36 projection summary DTOs and verified authority-field restrictions.",
+      "Found 37 history DTOs and verified command-field restrictions.",
+      "Found 37 projection summary DTOs and verified authority-field restrictions.",
       "Verified 3 recovery diagnostic event types remain evidence-only.",
-      "Found 85 mutation commands (≥ baseline 85) with capability paths."
+      "Found 86 mutation commands (≥ baseline 86) with capability paths."
     ]
   },
   "stats": {
-    "mutation_commands": 85,
-    "query_commands": 158,
+    "mutation_commands": 86,
+    "query_commands": 161,
     "capability_catalog": 24,
     "unused_capabilities": 2,
     "gateway_require_sites": 3,
-    "history_dtos_found": 36,
-    "projection_dtos_found": 36,
+    "history_dtos_found": 37,
+    "projection_dtos_found": 37,
     "violation_count": 0
   }
 }

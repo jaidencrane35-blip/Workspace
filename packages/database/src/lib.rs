@@ -25,7 +25,7 @@ pub use repositories::{
     PermissionApprovalRepository, PolicyGovernanceRepository, ReasoningMemoryRepository,
     RecommendationLifecycleRepository, TaskGraphRepository, TemporalIntelligenceRepository,
     UserPreferenceRepository, WidgetRepository, WorkspaceAssistantContextRepository,
-    WorkspaceAssistantRetrievalRepository,
+    WorkspaceAssistantExplanationRepository, WorkspaceAssistantRetrievalRepository,
     WorkspaceAssistantSurfaceRepository,
     WorkspaceContextualUnderstandingRepository, WorkspaceCrossIntelligenceRepository,
     WorkspaceDecisionSupportRepository, WorkspaceEvidenceCompletenessRepository,

@@ -168,6 +168,11 @@ import {
   isAssistantRetrievalHistoryNonActionable,
   isAssistantRetrievalProjectionNonCommandable,
 } from "../app/src/components/assistantRetrievalProjection";
+import {
+  assistantExplanationHistoryCountIsAuthoritative,
+  isAssistantExplanationHistoryNonActionable,
+  isAssistantExplanationProjectionNonCommandable,
+} from "../app/src/components/assistantExplanationProjection";
 import type {
   DecisionArtifactHistoryEntry,
   DecisionEngineSummary,
@@ -254,6 +259,8 @@ import type {
   WorkspaceEvidenceReliabilityProjection,
   WorkspaceAssistantSurfaceProjection,
   WorkspaceAssistantContextProjection,
+  WorkspaceAssistantExplanationProjection,
+  WorkspaceAssistantExplanationSummary,
   WorkspaceAssistantRetrievalProjection,
   WorkspaceEvidenceTraceSummary,
   WorkspaceEvidenceCoverageSummary,
@@ -265,6 +272,7 @@ import type {
   WorkspaceAssistantSurfaceSummary,
   WorkspaceAssistantContextSummary,
   WorkspaceAssistantRetrievalSummary,
+  AssistantExplanationHistoryEntry,
   AssistantSurfaceHistoryEntry,
   AssistantContextHistoryEntry,
   AssistantRetrievalHistoryEntry,
@@ -2704,6 +2712,52 @@ describe("projection integrity — assistant retrieval (Programme IV Batch 13)",
       actionable: false,
     };
     expect(assistantRetrievalHistoryCountIsAuthoritative(summary)).toBe(true);
+    expect(summary.history_count).toBeGreaterThanOrEqual(summary.history.length);
+  });
+});
+
+describe("projection integrity — assistant explanation (Programme IV Batch 14)", () => {
+  it("keeps explanation history non-actionable and history_count authoritative", () => {
+    const historyEntry = (
+      overrides: Partial<AssistantExplanationHistoryEntry> = {}
+    ): AssistantExplanationHistoryEntry => ({
+      explanation_id: "assistant_explanation:1",
+      status: "superseded",
+      created_at: "t0",
+      superseded_at: "t1",
+      section_count: 1,
+      gap_count: 0,
+      terminal: true,
+      actionable: false,
+      authority_effect: "none",
+      ...overrides,
+    });
+    const projection: WorkspaceAssistantExplanationProjection = {
+      workspace_id: "ws",
+      projected_at: "t2",
+      current: null,
+      history: [historyEntry()],
+      history_count: 2,
+      authority_effect: "none",
+    };
+    expect(isAssistantExplanationProjectionNonCommandable(projection)).toBe(true);
+    expect(isAssistantExplanationHistoryNonActionable(historyEntry())).toBe(true);
+    expect(
+      isAssistantExplanationHistoryNonActionable(historyEntry({ actionable: true }))
+    ).toBe(false);
+
+    const summary: WorkspaceAssistantExplanationSummary = {
+      workspace_id: "ws",
+      has_current: false,
+      section_count: 0,
+      gap_count: 0,
+      narrative_summary: null,
+      history: [historyEntry()],
+      history_count: 2,
+      authority_effect: "none",
+      actionable: false,
+    };
+    expect(assistantExplanationHistoryCountIsAuthoritative(summary)).toBe(true);
     expect(summary.history_count).toBeGreaterThanOrEqual(summary.history.length);
   });
 });

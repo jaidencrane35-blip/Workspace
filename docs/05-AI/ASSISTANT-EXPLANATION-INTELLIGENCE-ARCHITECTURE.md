@@ -1,6 +1,6 @@
 # Assistant Explanation Intelligence Architecture (Programme IV — Batch 14)
 
-**Status:** Charter only — not accepted for implementation  
+**Status:** Active — implemented  
 **Audience:** Architecture, Kernel, Frontend, Product, Governance  
 **Depends on:**  
 - [Assistant Retrieval Intelligence Architecture](./ASSISTANT-RETRIEVAL-INTELLIGENCE-ARCHITECTURE.md) (Batch 13 — accepted / implemented)  
@@ -17,13 +17,11 @@
 
 Batches 11–13 made the assistant a **presentation, context, and retrieval packaging** layer over recorded Programme II–IV intelligence.
 
-Batch 14 asks the next architectural question:
+Batch 14 answers:
 
 > **"How does the assistant explain retrieved evidence and workspace situations without becoming a reasoning authority, decision engine, or interpretation authority?"**
 
-This charter defines the **Assistant Explanation Intelligence Contract** — human-facing explanation packaging that composes the existing Workspace Explanation Layer and evidence lineage **without** drawing conclusions, determining truth, inventing causality, or recommending action.
-
-**Implementation is blocked until this charter is reviewed and accepted.**
+This document defines the **Assistant Explanation Intelligence Contract** — human-facing explanation packaging that composes the existing Workspace Explanation Layer and evidence lineage **without** drawing conclusions, determining truth, inventing causality, or recommending action.
 
 ---
 
@@ -38,26 +36,15 @@ Assistant explanation intelligence:
 - **preserves** provenance, uncertainty, and incompleteness
 - **never** becomes a reasoning SoT, causal authority, Recommendation system, Decision authority, or policy interpreter
 
-Capability growth must not equal code duplication (Batch 10 direction lock; Batches 11–13 Grade A acceptance). Batch 14 must evaluate reuse of:
-
-1. Programme III Workspace Explanation Layer (`WorkspaceExplanationService` / explanation packages)
-2. Batch 13 Assistant Retrieval packages (retrieved evidence presentation inputs)
-3. Batch 12 Assistant Context (scope / continuity inputs)
-4. Batch 11 Assistant Surface (citation / turn presentation patterns)
-5. Evidence Trace / Evidence Navigation (`load_snapshot` only)
-6. Batch 10 observational scaffolding (`workspace_evidence_contract`, `evidenceProjectionContract`)
-
-before introducing any new module, migration, or guard family.
-
 ---
 
 ## Status of this document
 
 | State | Meaning |
 |---|---|
-| **Charter only** | Architecture proposed; no domain/kernel/database/React implementation in this batch until acceptance |
+| **Active — implemented** | `WorkspaceAssistantExplanationService`, migration `076`, kernel commands, projection helpers, and governance guard are implemented |
 | **Depends on Batches 11–13 + Programme III Explanation** | Composes existing explanation/evidence/assistant contracts — does not replace them |
-| **No baseline change yet** | Mutation baseline remains **85**; history/projection DTO inventory remains **36** until an accepted implementation design exists |
+| **Governed baseline** | Mutation baseline **86**; history/projection DTO inventory **37** |
 
 ---
 
@@ -77,7 +64,7 @@ Human-facing clarity (non-actionable)
 Existing authorities                 ← remain sole owners of truth / cause / decide / recommend
 ```
 
-| Concern | Prior owner | Batch 14 (this charter) |
+| Concern | Prior owner | Batch 14 |
 |---|---|---|
 | Cross-surface explanation packages | Programme III Explanation Layer | Consumes — does not reimplement |
 | Evidence lineage / navigation | Programme IV Trace / Navigation | Consumes via existing contracts |
@@ -93,9 +80,9 @@ Batch 14 must **not** fork a second Explanation Layer, reasoning engine, or inte
 
 ## Ownership
 
-### Proposed owner (post-acceptance)
+### Owner
 
-`WorkspaceAssistantExplanationService` *(name provisional — prefer composition beside/near assistant surface/context/retrieval modules if a separate full stack would clone rather than clarify)*
+`WorkspaceAssistantExplanationService` — clear folder `packages/domain/src/workspace_assistant_explanation/` for ownership clarification beside Batches 11–13, **not** a second Programme III Explanation Layer / reasoning engine.
 
 ### May own
 
@@ -138,16 +125,6 @@ Batch 14 must **not** fork a second Explanation Layer, reasoning engine, or inte
 | Evidence Navigation | Path navigation of recorded evidence |
 | Batch 10 scaffold | Digest / authority / projection helpers |
 
-### Must not create
-
-| Forbidden creation | Why |
-|---|---|
-| New reasoning engine | Reasoning authority lives elsewhere |
-| New explanation authority / SoT | Programme III Explanation Layer remains owner |
-| New knowledge model | Would duplicate ontology / intelligence substrate |
-| Duplicate intelligence layer | Clone-wave anti-pattern |
-| Autonomous analysis loop | No self-directed reinterpretation authority |
-
 ### Access rules
 
 1. Upstream reads: `load_snapshot` and existing read/query commands only.
@@ -179,15 +156,6 @@ Batch 14 must **not** fork a second Explanation Layer, reasoning engine, or inte
 | Which side of a conflict is correct | No conflict resolution authority |
 | Policy meaning as binding interpretation | Policy owners interpret |
 
-### Clarity vs conclusion
-
-| Clarity (allowed) | Conclusion (forbidden) |
-|---|---|
-| “Recorded explanation package states…” | “Therefore the workspace is healthy / broken” |
-| “Evidence Trace links A → B as recorded” | “A caused B” without upstream causal claim |
-| “Coverage reports partial for subject X” | “X is incomplete and must be fixed” as directive |
-| “Consistency reports disagreement” | “Trust source Y” |
-
 ---
 
 ## Authority boundaries
@@ -209,81 +177,23 @@ Assistant explanation intelligence **must never**:
 
 ---
 
-## Memory and context boundary
+## Implementation
 
-| Layer | Batch 14 role |
+| Layer | Location |
 |---|---|
-| Temporary explanation package | May package for presentation; dual-channel evidence only if accepted later |
-| Batch 13 retrieval packages | Input — cited, not rewritten as conclusions |
-| Batch 12 conversation context | Input scope |
-| Programme III explanation snapshots | Read-only via `load_snapshot` |
-| Durable memory / cognitive / Intent / Decision | Never written; never concluded here |
+| Domain | `packages/domain/src/workspace_assistant_explanation/` |
+| Kernel service | `packages/kernel/src/services/workspace_assistant_explanation.rs` |
+| Commands | `PackageWorkspaceAssistantExplanation`, `GetWorkspaceAssistantExplanation`, `GetWorkspaceAssistantExplanationSummary`, `ExplainAssistantExplanation` |
+| Migration | `packages/database/migrations/076_workspace_assistant_explanation.sql` |
+| Repository | `packages/database/src/repositories/workspace_assistant_explanation.rs` |
+| React | `app/src/components/assistantExplanationProjection.ts` |
 
-Displayed explanation ≠ durable memory ≠ truth conclusion.
+### Maintainability decisions
 
----
-
-## UI boundary
-
-### Projection-only
-
-- React renders explanation packages via Batch 10–13 projection helpers (extend; do not invent another parallel contract family without audit justification).
-- No mutation from render paths.
-- Explanation panels are informational — not command affordances.
-
-### Information vs action
-
-| Information (explanation-owned) | Action (other owners) |
-|---|---|
-| “Here is what recorded explanation/evidence says…” | “Approve contract” |
-| “Conflict remains unresolved in evidence…” | “Accept recommendation” |
-| “Gap: upstream explanation unavailable…” | “Open Decision Queue item” |
-
-UI must not imply the assistant has resolved meaning or chosen a side.
-
----
-
-## Governance
-
-### Permissions (proposed — post-acceptance)
-
-- Explanation package read / compose inspection: `work_context.read` (or existing assistant read paths)
-- Any durable dual-channel package mutation (if accepted later): existing write capabilities — **not** `assistant.explanation.superuser`
-- No capability grants issued by assistant explanation
-
-### Audit expectations
-
-- Observational events for explanation packaging (e.g. `workspace.assistant.explanation.packaged`) with workspace id, upstream refs, `authority_effect: none`
-- Never audit explanation packages as conclusions, approvals, or recommendations
-- Append-only evidence only
-
-### Provenance requirements
-
-- Every explanatory claim must attach to a cited upstream package or an explicit gap
-- Missing upstreams produce diagnostics — never silent omission
-- Conflicts and incompleteness remain visible
-
----
-
-## Maintainability requirements (before implementation)
-
-Implementation (when unblocked) must document in the maintainability audit:
-
-1. **Reusable contracts first**
-   - Compose Programme III Explanation + Trace/Navigation + Batches 11–13
-   - Reuse `workspace_evidence_contract` and thin React wrappers
-   - Prefer extending assistant modules when a separate full stack would clone
-2. **Avoid subsystem clone**
-   - No second Explanation Layer / reasoner / knowledge model
-   - One governance guard entry via `EVIDENCE_ENGINE_GUARD_SPECS` if a new service file appears
-   - No migration that duplicates Programme III explanation tables as “assistant conclusions”
-3. **Folder ownership**
-   - Clear naming (`assistant_explanation` vs surface / context / retrieval)
-   - Docs linked from Programme IV indexes
-   - Minimal abstractions; composition over expansion
-4. **LOC honesty**
-   - Justify any new files against “capability ≠ duplication”
-   - Prefer thin packaging over re-implementing explanation synthesis
+1. **Ownership clarification folder** — `workspace_assistant_explanation/` clarifies ownership beside surface/context/retrieval; it is not a second Explanation Layer.
+2. **Reuse** — `AssistantSurfaceScope::explanation_default()`, `workspace_evidence_contract`, thin React wrappers; one `EVIDENCE_ENGINE_GUARD_SPECS` entry.
+3. **Compose via `load_snapshot` only** — Programme III Explanation + Trace/Navigation (+ Consistency) + Batches 11–13.
+4. **Dual-channel migration `076`** with explanation-specific columns — not a clone of Programme III explanation tables as “assistant conclusions”.
 
 ---
 
@@ -299,28 +209,15 @@ Implementation (when unblocked) must document in the maintainability audit:
 
 ---
 
-## Out of scope for Batch 14 charter
+## Acceptance criteria
 
-- Model provider / prompt engineering details
-- Product UX layouts beyond information vs action
-- Implementing explanation services, migrations, or commands
-- Resolving case5 / case11 (non–Programme IV debt)
-- Replacing Programme III Explanation Layer
-- Replacing Batches 11–13
-
----
-
-## Acceptance criteria for this charter
-
-Before implementation may begin, reviewers must confirm:
-
-- [ ] Ownership / non-ownership tables are unambiguous
-- [ ] Reuse of Programme III Explanation + Trace/Navigation + Batches 11–13 is explicit
-- [ ] Clarity vs conclusion rules forbid truth/causal/recommendation authority
-- [ ] Explainability boundary (exists / origin / change / missing / conflicts) is enforceable
-- [ ] Maintainability reuse path vs Batches 10–13 is explicit
-- [ ] No mutation baseline / DTO inventory change is implied by charter acceptance alone
-- [ ] Status remains **Charter only** until a separate implementation ACCEPT
+- [x] Ownership / non-ownership tables are unambiguous
+- [x] Reuse of Programme III Explanation + Trace/Navigation + Batches 11–13 is explicit
+- [x] Clarity vs conclusion rules forbid truth/causal/recommendation authority
+- [x] Explainability boundary (exists / origin / change / missing / conflicts) is enforceable
+- [x] Maintainability reuse path vs Batches 10–13 is explicit
+- [x] Mutation baseline **86** / DTO inventory **37** for `PackageWorkspaceAssistantExplanation`
+- [x] Status is **Active — implemented**
 
 ---
 
@@ -347,4 +244,3 @@ Before implementation may begin, reviewers must confirm:
 > It never concludes truth, never invents causality, never recommends, never decides or approves,
 > never interprets policy as authority, never executes, never bypasses PermissionGateway,
 > never replaces the Workspace Explanation Layer, and never silently mutates workspace state.
-> Implementation remains blocked until this charter is accepted.

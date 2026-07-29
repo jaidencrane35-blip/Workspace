@@ -4,7 +4,7 @@ use workspace_database::DatabaseError;
 use workspace_domain::{
     AiAssistantError, AiEvaluationError, AiMemoryError, AiModelError, AiOrchestrationError,
     AiPersonalizationError, AiPlanningError, AiRequestError, AssistantContextError,
-    AssistantRetrievalError, AssistantSurfaceError,
+    AssistantExplanationError, AssistantRetrievalError, AssistantSurfaceError,
     AutomationContractError, AutomationTriggerError, CognitiveModelError,
     ContextualUnderstandingError, CrossWorkspaceIntelligenceError, DecisionEngineError,
     DecisionQueueError, DecisionSupportError, DomainError, EvidenceCompletenessError,
@@ -332,6 +332,9 @@ pub enum KernelError {
 
     #[error("Assistant retrieval validation failed: {message}")]
     AssistantRetrievalValidation { message: String },
+
+    #[error("Assistant explanation validation failed: {message}")]
+    AssistantExplanationValidation { message: String },
 
     #[error("Workspace intelligence validation failed: {message}")]
     WorkspaceIntelligenceValidation { message: String },
@@ -899,6 +902,17 @@ impl From<AssistantRetrievalError> for KernelError {
         match error {
             AssistantRetrievalError::Domain(domain) => KernelError::from(domain),
             other => KernelError::AssistantRetrievalValidation {
+                message: other.to_string(),
+            },
+        }
+    }
+}
+
+impl From<AssistantExplanationError> for KernelError {
+    fn from(error: AssistantExplanationError) -> Self {
+        match error {
+            AssistantExplanationError::Domain(domain) => KernelError::from(domain),
+            other => KernelError::AssistantExplanationValidation {
                 message: other.to_string(),
             },
         }
@@ -1677,6 +1691,10 @@ impl KernelError {
             },
             KernelError::AssistantRetrievalValidation { message } => PublicError {
                 code: "assistant_retrieval_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::AssistantExplanationValidation { message } => PublicError {
+                code: "assistant_explanation_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::WorkspaceIntelligenceValidation { message } => PublicError {

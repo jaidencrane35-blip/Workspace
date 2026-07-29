@@ -757,17 +757,16 @@ See [Assistant Retrieval Intelligence Architecture](../05-AI/ASSISTANT-RETRIEVAL
 
 ## Assistant Explanation Intelligence (Programme IV Batch 14)
 
-**Charter only — not accepted for implementation.**
-
 Explanation packaging and citation clarity without conclusion, causal, or recommendation authority.
 
 **Clarify recorded evidence. Never conclude what it means.**
 
-- Will own explanation packaging, evidence citation formatting, explanation structure, visible gaps/conflicts, user-facing clarity only
-- Will never own conclusions, truth determination, causal reasoning, recommendations, decisions, policy interpretation, or autonomous analysis
-- Must compose Programme III Explanation Layer, Evidence Trace/Navigation, and Batches 11–13 — no second reasoning engine or explanation SoT
+- Owns explanation packaging, evidence citation formatting, explanation structure, visible gaps/conflicts, user-facing clarity only
+- Never owns conclusions, truth determination, causal reasoning, recommendations, decisions, policy interpretation, or autonomous analysis
+- Composes Programme III Explanation Layer, Evidence Trace/Navigation, and Batches 11–13 — no second reasoning engine or explanation SoT
 - Upstream reads via `load_snapshot` / existing queries only — never foreign `::generate` for refresh
-- No mutation baseline or DTO inventory change until an accepted implementation design exists
+- Mutation inventory includes `PackageWorkspaceAssistantExplanation` (baseline **86**)
+- History / projection DTO inventory length **37**
 
 See [Assistant Explanation Intelligence Architecture](../05-AI/ASSISTANT-EXPLANATION-INTELLIGENCE-ARCHITECTURE.md).
 

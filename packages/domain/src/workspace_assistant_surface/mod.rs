@@ -149,6 +149,28 @@ impl AssistantSurfaceScope {
             include_state: false,
         }
     }
+
+    /// Explanation-focused default for Batch 14 — enables Explanation Layer,
+    /// Evidence Trace / Navigation, Consistency (conflict visibility), and
+    /// Semantic Query as a retrieval-related input pathway.
+    pub fn explanation_default() -> Self {
+        Self {
+            include_semantic_query: true,
+            include_evidence_navigation: true,
+            include_evidence_trace: true,
+            include_evidence_coverage: false,
+            include_evidence_consistency: true,
+            include_evidence_dependency: false,
+            include_evidence_freshness: false,
+            include_evidence_completeness: false,
+            include_evidence_reliability: false,
+            include_explanation: true,
+            include_contextual: false,
+            include_knowledge_integration: false,
+            include_intelligence_hub: false,
+            include_state: false,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

@@ -302,7 +302,7 @@ UI must not imply the assistant chose the “right” evidence for action.
 
 ## Next
 
-Batch 14 — [Assistant Explanation Intelligence Architecture](./ASSISTANT-EXPLANATION-INTELLIGENCE-ARCHITECTURE.md) (**charter only** — do not implement until accepted).
+Batch 14 — [Assistant Explanation Intelligence Architecture](./ASSISTANT-EXPLANATION-INTELLIGENCE-ARCHITECTURE.md) (**implemented** — composes Programme III Explanation Layer, Trace/Navigation, and Batches 10–13; clarifies without concluding).
 
 ---
 

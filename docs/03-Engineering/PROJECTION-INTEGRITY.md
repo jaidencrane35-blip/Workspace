@@ -487,12 +487,12 @@ Rules:
 - Retrieval packages preserve provenance, lineage, completeness, and uncertainty/gaps
 - Composes Semantic Query / Evidence projections and Batch 10–12 helpers — no parallel contract family
 
-### Assistant Explanation Intelligence (Programme IV Batch 14 — charter only)
+### Assistant Explanation Intelligence (Programme IV Batch 14)
 
-- Charter defines projection-only explanation packaging and forbids conclusive / causal / recommendation affordances
-- Implementation must not begin until charter acceptance
-- Future explanation packages must cite Programme III Explanation Layer and evidence lineage; gaps and conflicts remain visible
-- Prefer composing Batches 10–13 projection helpers over a new parallel contract family
+- Projection-only explanation packaging via `assistantExplanationProjection.ts` (thin wrappers over `evidenceProjectionContract`)
+- Forbids conclusive / causal / recommendation affordances — clarity packaging only
+- Explanation packages cite Programme III Explanation Layer and evidence lineage; gaps and conflicts remain visible
+- Composes Batches 10–13 projection helpers — no parallel contract family
 
 
 ## Serde defaults vs TypeScript required fields

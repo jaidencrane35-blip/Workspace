@@ -165,9 +165,13 @@ mod workspace_adaptation_review_contract_tests;
 #[cfg(test)]
 mod workspace_adaptation_tests;
 mod workspace_assistant_context;
+mod workspace_assistant_explanation;
 mod workspace_assistant_retrieval;
 #[cfg(test)]
 mod workspace_assistant_context_tests;
+#[cfg(test)]
+mod workspace_assistant_explanation_tests;
+#[cfg(test)]
 mod workspace_assistant_retrieval_tests;
 mod workspace_assistant_surface;
 #[cfg(test)]

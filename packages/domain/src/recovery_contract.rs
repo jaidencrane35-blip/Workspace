@@ -10,6 +10,9 @@ use crate::policy_governance::{PolicyGovernanceHistoryEntry, PolicyGovernanceSna
 use crate::workspace_assistant_context::{
     AssistantContextHistoryEntry, WorkspaceAssistantContextProjection,
 };
+use crate::workspace_assistant_explanation::{
+    AssistantExplanationHistoryEntry, WorkspaceAssistantExplanationProjection,
+};
 use crate::workspace_assistant_retrieval::{
     AssistantRetrievalHistoryEntry, WorkspaceAssistantRetrievalProjection,
 };
@@ -723,6 +726,25 @@ pub fn recovery_must_not_fabricate_assistant_retrieval(
 /// Fabricated actionable assistant-retrieval history must fail the recovery contract.
 pub fn recovery_must_not_fabricate_actionable_assistant_retrieval_history(
     entry: &AssistantRetrievalHistoryEntry,
+) -> bool {
+    entry.is_non_actionable()
+}
+
+pub fn recovery_must_not_fabricate_assistant_explanation(
+    projection: &WorkspaceAssistantExplanationProjection,
+) -> bool {
+    projection.is_non_commandable()
+        && projection.history.iter().all(|h| h.is_non_actionable())
+        && projection
+            .current
+            .as_ref()
+            .map(|c| c.is_non_executing())
+            .unwrap_or(true)
+}
+
+/// Fabricated actionable assistant-explanation history must fail the recovery contract.
+pub fn recovery_must_not_fabricate_actionable_assistant_explanation_history(
+    entry: &AssistantExplanationHistoryEntry,
 ) -> bool {
     entry.is_non_actionable()
 }
