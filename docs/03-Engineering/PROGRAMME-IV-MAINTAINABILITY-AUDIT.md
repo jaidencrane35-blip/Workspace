@@ -196,6 +196,53 @@ Safe to extract without changing behaviour:
 
 ---
 
+## G. Batch 10 decision record (implemented)
+
+**Date:** 2026-07-29  
+**Branch:** `cursor/programme-iv-evidence-scaffold-34a5`  
+**Choice:** Implement Batch 10 as **Evidence Observational Scaffold**, not a tenth assessment engine.
+
+### Rationale
+
+1. Programme IV roadmap states Batches 1–9 complete the retrieval/evidence observation stack; next product surfaces are conversational/assistant layers **on top of** that stack.
+2. No Batch 10 product mission (new observational question) was specified; inventing another `WorkspaceEvidence*Engine` would violate clone-prevention.
+3. Highest-ROI maintainability wins were governance guard consolidation and React projection contract sharing — real LOC reduction without ownership collapse.
+4. Domain contract helpers provide a safe adoption path (pilot: Reliability) without forcing a big-bang rewrite of nine engines.
+
+### Clone prevention strategy
+
+| Pattern | Batch 10 action |
+|---|---|
+| Governance `evidence*Guards` | **Extracted now** — `EVIDENCE_ENGINE_GUARD_SPECS` + `evidenceFamilyGuards` |
+| React projection helpers | **Extracted now** — `evidenceProjectionContract.ts`; engines thin-wrap |
+| Domain digest / forbidden phrases | **Extracted now** — `workspace_evidence_contract`; Reliability pilot |
+| Repository supersede/history | **Deferred** — table/JSON column variance; extraction risk > benefit until a conversational batch needs a third write |
+| Kernel generate/load/explain scaffold | **Deferred** — same; keep typed services until fan-out forces it |
+| New migration / Generate command | **Not added** — no new observational SoT; baseline stays 82 / DTO 33 |
+
+### Why deferred items stay deferred
+
+Extracting generic repository/service macros now would:
+
+- touch eight working persistence paths for marginal clarity,
+- risk subtle SQL/serde regressions,
+- add abstraction layers seniors must learn before editing a single engine.
+
+Cost currently exceeds benefit. Revisit when the first conversational surface would otherwise copy `generate`/`supersede` a third time.
+
+### Known deferred cleanup (unchanged)
+
+- case5 / case11 (non–Programme IV)
+- `main` resilience compile defect
+- Incremental adoption of domain contract helpers by Batches 1–8
+- Optional deletion of thin React wrappers once callers import the shared contract directly
+
+### Architecture doc
+
+See [Workspace Evidence Observational Scaffold Architecture](../05-AI/WORKSPACE-EVIDENCE-OBSERVATIONAL-SCAFFOLD-ARCHITECTURE.md).
+
+---
+
 ## Explicit confirmation
 
-This audit concludes that Workspace Evidence engines through Batch 9 observe recorded evidence characteristics only within their stated ownership. The two kernel failures are pre-existing Activity Graph / Intelligence issues, not Programme IV architectural drift. Commercial maintainability is adequate for continuation if Batch 10 proceeds with inflation controls rather than another unchecked clone wave.
+This audit concludes that Workspace Evidence engines through Batch 9 observe recorded evidence characteristics only within their stated ownership. The two kernel failures are pre-existing Activity Graph / Intelligence issues, not Programme IV architectural drift. Batch 10 improves human maintainability by extracting shared scaffolding without adding a new evidence authority or clone engine.

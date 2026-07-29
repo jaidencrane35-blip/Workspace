@@ -456,6 +456,13 @@ Rules:
 - Forbidden: execute, recommend, approve, mutate, automate, repair, resolve, determine truth
 - Reliability is observational only — reliable/limited/unknown/unavailable never imply truth, trust, or rejection
 
+### Workspace Evidence Observational Scaffold (Programme IV Batch 10)
+
+- Shared `evidenceProjectionContract.ts` for history/projection non-commandable checks
+- Engine-specific helpers remain thin named wrappers for navigation stability
+- Forbidden: treating the scaffold as an evidence authority or action surface
+- No new dual-channel snapshot DTOs in Batch 10
+
 
 ## Serde defaults vs TypeScript required fields
 

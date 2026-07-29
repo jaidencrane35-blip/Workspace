@@ -29,8 +29,9 @@ Entry point: `PROGRAMME-IV-INTERACTION-RUNTIME.md`
 | 7 Evidence Freshness | `WORKSPACE-EVIDENCE-FRESHNESS-ARCHITECTURE.md` | `packages/*/workspace_evidence_freshness*` |
 | 8 Evidence Completeness | `WORKSPACE-EVIDENCE-COMPLETENESS-ARCHITECTURE.md` | `packages/*/workspace_evidence_completeness*` |
 | 9 Evidence Reliability | `WORKSPACE-EVIDENCE-RELIABILITY-ARCHITECTURE.md` | `packages/*/workspace_evidence_reliability*` |
+| 10 Observational Scaffold | `WORKSPACE-EVIDENCE-OBSERVATIONAL-SCAFFOLD-ARCHITECTURE.md` | `workspace_evidence_contract`, `evidenceProjectionContract.ts`, governance `EVIDENCE_ENGINE_GUARD_SPECS` |
 
-Maintainability audit (gate before Batch 10): `../03-Engineering/PROGRAMME-IV-MAINTAINABILITY-AUDIT.md`
+Maintainability audit: `../03-Engineering/PROGRAMME-IV-MAINTAINABILITY-AUDIT.md`
 
 ## Recommendation and Decision Contract Families
 

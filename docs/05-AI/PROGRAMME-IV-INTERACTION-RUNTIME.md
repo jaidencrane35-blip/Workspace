@@ -52,8 +52,9 @@ The Query Engine:
 | 7 | Workspace Evidence Freshness Engine | Observable freshness of available evidence |
 | 8 | Workspace Evidence Completeness Engine | Observable completeness and recorded omissions |
 | 9 | Workspace Evidence Reliability Engine | Observable reliability characteristics across recorded evidence |
+| 10 | Evidence Observational Scaffold | Shared Programme IV helpers — not a new evidence question |
 
-Future Programme IV batches build conversational and assistant surfaces **on top of** this retrieval layer — never beside it, never replacing it.
+Future Programme IV batches build conversational and assistant surfaces **on top of** this retrieval layer — never beside it, never replacing it. Batch 10 exists so those surfaces can reuse contracts without cloning Batches 1–9.
 
 ---
 
@@ -194,6 +195,22 @@ It never owns semantic retrieval, navigation, provenance, coverage, consistency,
 
 It never owns semantic retrieval, navigation, provenance, coverage, consistency, dependency, freshness, completeness, explanations, contextual understanding, knowledge, planning, reasoning, policy, decisions, execution, permissions, or lifecycle.
 
+---
+
+## Ownership boundary (Batch 10)
+
+Programme IV Batch 10 is **scaffolding**, not an evidence assessment engine.
+
+It owns only:
+
+- shared observational helpers (`workspace_evidence_contract`)
+- data-driven evidence-family governance specs
+- shared React projection contract (+ thin engine wrappers)
+
+It never owns evidence snapshots, migrations, mutations, classification semantics, or authority over Batches 1–9.
+
+See [Workspace Evidence Observational Scaffold Architecture](./WORKSPACE-EVIDENCE-OBSERVATIONAL-SCAFFOLD-ARCHITECTURE.md).
+
 ## Upstream access rule
 
 All upstream access uses **`load_snapshot` only**.
@@ -256,6 +273,7 @@ Unknown remains unknown. Unavailable remains unavailable. Contradictions remain 
 - [Workspace Evidence Freshness Architecture](./WORKSPACE-EVIDENCE-FRESHNESS-ARCHITECTURE.md)
 - [Workspace Evidence Completeness Architecture](./WORKSPACE-EVIDENCE-COMPLETENESS-ARCHITECTURE.md)
 - [Workspace Evidence Reliability Architecture](./WORKSPACE-EVIDENCE-RELIABILITY-ARCHITECTURE.md)
+- [Workspace Evidence Observational Scaffold Architecture](./WORKSPACE-EVIDENCE-OBSERVATIONAL-SCAFFOLD-ARCHITECTURE.md)
 - [Programme III — Coherent Workspace Runtime](./PROGRAMME-III-COHERENT-WORKSPACE-RUNTIME.md)
 - [Programme II — Cognitive Workspace](./PROGRAMME-II-COGNITIVE-WORKSPACE.md)
 - [Projection Integrity](../03-Engineering/PROJECTION-INTEGRITY.md)

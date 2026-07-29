@@ -1357,45 +1357,25 @@ fn derive_reliability(
 }
 
 fn reject_forbidden_phrases(text: &str) -> Result<(), EvidenceReliabilityError> {
-    let lower = text.to_ascii_lowercase();
-    const FORBIDDEN: &[&str] = &[
-        "recommend",
-        "should do",
-        "best choice",
-        "optimal",
-        "execute now",
-        "approve",
-        "dispatch",
-        "automate",
-        "is correct",
-        "is true",
-        "confident that",
-        "therefore decide",
-        "determine truth",
-        "resolve conflict",
-        "trust this",
-        "must trust",
-        "please repair",
-        "must repair",
-        "fill the gap",
-        "invent missing",
-        "fabricate reliability",
-    ];
-    for phrase in FORBIDDEN {
-        if lower.contains(phrase) {
-            return Err(EvidenceReliabilityError::MustNotBeActionable);
-        }
-    }
-    Ok(())
+    crate::workspace_evidence_contract::reject_forbidden_phrases_with(
+        text,
+        &[
+            "determine truth",
+            "resolve conflict",
+            "trust this",
+            "must trust",
+            "please repair",
+            "must repair",
+            "fill the gap",
+            "invent missing",
+            "fabricate reliability",
+        ],
+    )
+    .map_err(|_| EvidenceReliabilityError::MustNotBeActionable)
 }
 
 fn stable_digest(input: &str) -> String {
-    let mut h: u64 = 0xcbf29ce484222325;
-    for b in input.as_bytes() {
-        h ^= u64::from(*b);
-        h = h.wrapping_mul(0x100000001b3);
-    }
-    format!("{h:016x}")
+    crate::workspace_evidence_contract::stable_digest(input)
 }
 
 #[cfg(test)]

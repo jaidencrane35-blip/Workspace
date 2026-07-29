@@ -43,6 +43,7 @@ Canonical product language. Prefer these terms in UI, docs, and Assistant copy.
 | **Workspace Evidence Freshness Engine** | Observable freshness of available evidence (freshness ≠ validity) | Refresher, regenerator, freshness estimator, scheduler, recommender, upstream authority |
 | **Workspace Evidence Completeness Engine** | Observable completeness and recorded omissions (completeness ≠ truth) | Gap filler, evidence repairer, completeness estimator, recommender, upstream authority |
 | **Workspace Evidence Reliability Engine** | Observable reliability characteristics from recorded evidence (reliability ≠ truth) | Truth arbiter, trust authority, conflict resolver, evidence repairer, ranker, upstream authority |
+| **Programme IV Observational Scaffold** | Shared helpers for evidence engines (scaffold ≠ engine) | Mega evidence SoT, classification authority, mutation owner |
 | **Graph History** | Terminal superseded graph snapshot evidence | Actionable graph mutations |
 | **Task** | Durable work item | Action |
 | **Action** | Executable catalog/command candidate | Task |

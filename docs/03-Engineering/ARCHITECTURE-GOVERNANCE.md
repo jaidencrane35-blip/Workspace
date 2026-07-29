@@ -696,6 +696,19 @@ Observable reliability characteristics across recorded evidence.
 
 See [Workspace Evidence Reliability Architecture](../05-AI/WORKSPACE-EVIDENCE-RELIABILITY-ARCHITECTURE.md).
 
+## Workspace Evidence Observational Scaffold (Programme IV Batch 10)
+
+Shared Programme IV helpers — not a new evidence assessment engine.
+
+**Share contracts. Do not collapse ownership.**
+
+- Owns shared domain helpers, data-driven evidence-family governance specs, shared React projection contract
+- Never owns evidence snapshots, migrations, mutations, or classification semantics
+- No new Generate command; mutation baseline remains **82**; DTO inventory remains **33**
+- Engines remain authoritative for their DTOs
+
+See [Workspace Evidence Observational Scaffold Architecture](../05-AI/WORKSPACE-EVIDENCE-OBSERVATIONAL-SCAFFOLD-ARCHITECTURE.md).
+
 ## Capability boundary audit
 
 Enforced by `scripts/architecture-governance-lib.mjs`:

@@ -60,6 +60,7 @@ pub mod workspace_decision_support;
 pub mod workspace_environment;
 pub mod workspace_evidence_completeness;
 pub mod workspace_evidence_consistency;
+pub mod workspace_evidence_contract;
 pub mod workspace_evidence_coverage;
 pub mod workspace_evidence_dependency;
 pub mod workspace_evidence_freshness;
@@ -426,6 +427,10 @@ pub use workspace_evidence_reliability::{
     ReliabilityObservationState, ReliabilityScope, WorkspaceEvidenceReliabilityExplanation,
     WorkspaceEvidenceReliabilityProjection, WorkspaceEvidenceReliabilitySnapshot,
     WorkspaceEvidenceReliabilitySummary,
+};
+pub use workspace_evidence_contract::{
+    is_non_actionable_authority, is_terminal_history_status, reject_forbidden_phrases_with,
+    stable_digest as evidence_stable_digest, AUTHORITY_EFFECT_NONE, BASELINE_FORBIDDEN_PHRASES,
 };
 pub use workspace_evidence_trace::{
     EvidenceTraceCompleteness, EvidenceTraceError, EvidenceTraceEvidenceRef,
