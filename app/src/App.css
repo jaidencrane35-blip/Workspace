@@ -204,6 +204,211 @@ button:not(:disabled):hover {
   padding: 0;
 }
 
+.workspace-stage {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(18rem, 22rem);
+  min-height: calc(100vh - 3.5rem);
+  align-items: stretch;
+}
+
+.workspace-stage-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.workspace-stage-main .canvas-shell {
+  min-height: 0;
+}
+
+.desktop-arrangement-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem 1.1rem 1.5rem;
+  border-left: 1px solid #243040;
+  background: #111820;
+  overflow: auto;
+}
+
+.arrangement-panel-hero h2 {
+  margin: 0.2rem 0 0.45rem;
+  font-size: 1.15rem;
+  text-transform: none;
+  letter-spacing: 0;
+  color: #e7ecf1;
+}
+
+.arrangement-eyebrow {
+  margin: 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #7f8f9d;
+}
+
+.arrangement-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-bottom: 0.65rem;
+  font-size: 0.85rem;
+  color: #9aa8b4;
+}
+
+.arrangement-field input {
+  background: #0c1015;
+  border: 1px solid #2a3642;
+  color: #e7ecf1;
+  border-radius: 4px;
+  padding: 0.45rem 0.55rem;
+}
+
+button.ghost {
+  background: transparent;
+  border: 1px solid #2a3642;
+  color: #9aa8b4;
+}
+
+.arrangement-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.arrangement-list-item {
+  width: 100%;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  background: #0c1015;
+  border: 1px solid #2a3642;
+  color: #e7ecf1;
+  border-radius: 4px;
+  padding: 0.55rem 0.65rem;
+  cursor: pointer;
+}
+
+.arrangement-list-item.selected {
+  border-color: #5b7c99;
+  background: #182230;
+}
+
+.arrangement-list-name {
+  font-weight: 600;
+}
+
+.arrangement-list-meta {
+  font-size: 0.8rem;
+}
+
+.arrangement-details-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.arrangement-details-header h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.arrangement-details-desc {
+  margin: 0.4rem 0;
+}
+
+.arrangement-details-id {
+  font-size: 0.75rem;
+  margin: 0 0 0.6rem;
+}
+
+.arrangement-entry-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.arrangement-entry-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.45rem 0;
+  border-bottom: 1px solid #1e2832;
+  font-size: 0.85rem;
+}
+
+.arrangement-restore-row {
+  margin-top: 0.75rem;
+}
+
+.arrangement-permission-note,
+.arrangement-hint {
+  margin: 0.55rem 0 0;
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
+
+.arrangement-empty h3,
+.arrangement-empty h4 {
+  margin: 0 0 0.35rem;
+  font-size: 0.95rem;
+  color: #e7ecf1;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.restore-diagnostics {
+  margin-top: 0.25rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #1e2832;
+}
+
+.restore-diagnostics h3,
+.restore-diagnostics h4 {
+  margin: 0 0 0.4rem;
+  text-transform: none;
+  letter-spacing: 0;
+  color: #e7ecf1;
+  font-size: 0.95rem;
+}
+
+.restore-diagnostics-summary {
+  margin: 0 0 0.75rem;
+  font-weight: 600;
+}
+
+.restore-diagnostics-block {
+  margin-bottom: 0.75rem;
+}
+
+.restore-diagnostics-block .list li {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2rem;
+}
+
+@media (max-width: 900px) {
+  .workspace-stage {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(16rem, 45vh) auto;
+  }
+
+  .desktop-arrangement-panel {
+    border-left: none;
+    border-top: 1px solid #243040;
+  }
+}
+
 .canvas-chrome {
   display: flex;
   justify-content: space-between;

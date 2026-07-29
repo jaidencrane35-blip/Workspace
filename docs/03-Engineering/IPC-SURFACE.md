@@ -38,9 +38,9 @@ does not imply that the current UI invokes a command.
 | `ensure_observation_freshness` | Diagnostic: Manual TriggerAuthority ensure for consumer freshness need (never Event/Plugin; never silent) |
 | `get_workspace_state` | Diagnostic: canonical WorkspaceState projection from latest observation + delta (`desktop.read`) |
 | `create_application` / `launch_application` | Diagnostic (governed launch) |
-| `capture_desktop_arrangement` | Capture observed windows into a named DesktopArrangement (`desktop.write`) |
-| `restore_desktop_arrangement` | Governed restore via PermissionGateway → WindowController (`desktop.restore`) |
-| `get_desktop_arrangement` / `list_desktop_arrangements` | Read saved arrangements (`desktop.read`) |
+| `capture_desktop_arrangement` | Capture observed windows into a named DesktopArrangement (`desktop.write`) — Workspace arrangements rail |
+| `restore_desktop_arrangement` | Governed restore via PermissionGateway → WindowController (`desktop.restore`) — explicit Restore button |
+| `get_desktop_arrangement` / `list_desktop_arrangements` | Read saved arrangements (`desktop.read`) — arrangements rail |
 | `request_ai_application_launch` | Diagnostic AI simulation (`AiActionRequest` → pipeline → ApprovalRequired) |
 | `diagnose_ai_workspace_plan` | Diagnostic AI planning (workspace context → proposals → governed submissions) |
 | `diagnose_ai_plan_evaluation` | Diagnostic AI evaluation (plan quality/outcomes; no authority) |

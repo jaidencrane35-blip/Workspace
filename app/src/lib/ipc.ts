@@ -12,10 +12,36 @@ export class IpcCommandError extends Error {
   }
 }
 
+/** True when Tauri IPC invoke is available (false in standalone browser Vite). */
+export function isIpcRuntimeAvailable(): boolean {
+  if (typeof window === "undefined") {
+    return false;
+  }
+  const internals = (
+    window as Window & {
+      __TAURI_INTERNALS__?: { invoke?: unknown };
+    }
+  ).__TAURI_INTERNALS__;
+  return typeof internals?.invoke === "function";
+}
+
+export class IpcRuntimeUnavailableError extends Error {
+  constructor() {
+    super(
+      "Workspace desktop runtime is unavailable. Open the native app to use data actions.",
+    );
+    this.name = "IpcRuntimeUnavailableError";
+  }
+}
+
 export async function invokeIpc<T>(
   command: string,
   args?: Record<string, unknown>,
 ): Promise<T> {
+  if (!isIpcRuntimeAvailable()) {
+    throw new IpcRuntimeUnavailableError();
+  }
+
   const response = await invoke<IpcResponse<T>>(command, args);
 
   if (response.success === true) {

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { AssistantIntelligencePanel } from "./components/AssistantIntelligencePanel";
 import { AssistantPanel } from "./components/AssistantPanel";
 import { CanvasShell } from "./components/CanvasShell";
+import { DesktopArrangementPanel } from "./components/DesktopArrangementPanel";
 import { OperatorConsole } from "./components/OperatorConsole";
 import { WorkspaceIntelligencePanel } from "./components/WorkspaceIntelligencePanel";
 import { invokeIpc } from "./lib/ipc";
@@ -182,7 +183,7 @@ export default function App() {
             aria-selected={view === "canvas"}
             onClick={() => setView("canvas")}
           >
-            Canvas
+            Workspace
           </button>
           <button
             type="button"
@@ -239,35 +240,47 @@ export default function App() {
       )}
 
       {view === "canvas" ? (
-        !bootstrapped ? (
-          <div className="canvas-shell">
-            <p className="muted">Loading…</p>
+        <div className="workspace-stage">
+          <div className="workspace-stage-main">
+            {!bootstrapped ? (
+              <div className="canvas-shell">
+                <p className="muted">Loading…</p>
+              </div>
+            ) : workspace ? (
+              <CanvasShell
+                workspaceId={workspace.id}
+                workspaceName={workspace.name}
+                zones={zones}
+                busy={busy}
+                onError={(msg) => setError(msg)}
+                onSaved={onLayoutSaved}
+                onCreateWorkspace={createWorkspaceFromCanvas}
+                onAddZone={addZoneFromCanvas}
+              />
+            ) : (
+              <div className="canvas-shell canvas-bootstrap">
+                <p className="lede">
+                  No active workspace. Create one here to start arranging zones
+                  and saving desktop arrangements.
+                </p>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={createWorkspaceFromCanvas}
+                >
+                  Create workspace
+                </button>
+              </div>
+            )}
           </div>
-        ) : workspace ? (
-          <CanvasShell
-            workspaceId={workspace.id}
-            workspaceName={workspace.name}
-            zones={zones}
+          <DesktopArrangementPanel
+            workspace={workspace}
             busy={busy}
-            onError={(msg) => setError(msg)}
-            onSaved={onLayoutSaved}
-            onCreateWorkspace={createWorkspaceFromCanvas}
-            onAddZone={addZoneFromCanvas}
+            onBusy={setBusy}
+            onError={onError}
+            onMessage={onMessage}
           />
-        ) : (
-          <div className="canvas-shell canvas-bootstrap">
-            <p className="lede">
-              No active workspace. Create one here to start arranging zones.
-            </p>
-            <button
-              type="button"
-              disabled={busy}
-              onClick={createWorkspaceFromCanvas}
-            >
-              Create workspace
-            </button>
-          </div>
-        )
+        </div>
       ) : view === "work" ? (
         <div className="container assistant-container">
           <WorkspaceIntelligencePanel
