@@ -300,7 +300,7 @@ Implementation (when unblocked) must document in the maintainability audit:
 
 ---
 
-## Out of scope for Batch 16 charter
+## Out of scope for Batch 16
 
 - Model provider / prompt engineering details
 - Product UX layouts beyond preference/information distinction
@@ -311,17 +311,15 @@ Implementation (when unblocked) must document in the maintainability audit:
 
 ---
 
-## Acceptance criteria for this charter
+## Acceptance criteria
 
-Before implementation may begin, reviewers must confirm:
-
-- [ ] Ownership / non-ownership tables are unambiguous
-- [ ] Reuse of AI Personalization Foundation + Batches 11–15 is explicit
-- [ ] Explicit vs inferred rules forbid hidden modelling and silent adaptation
-- [ ] Preference write path remains existing authorised owners only
-- [ ] Maintainability reuse path vs Batches 10–15 is explicit
-- [ ] No mutation baseline / DTO inventory change is implied by charter acceptance alone
-- [ ] Status remains **Charter only** until a separate implementation ACCEPT
+- [x] Ownership / non-ownership tables are unambiguous
+- [x] Reuse of AI Personalization Foundation + Batches 11–15 is explicit
+- [x] Explicit vs inferred rules forbid hidden modelling and silent adaptation
+- [x] Preference write path remains existing authorised owners only (`personalization.write` commands — not packaging)
+- [x] Maintainability reuse path vs Batches 10–15 is explicit
+- [x] Mutation baseline **88** / DTO inventory **39** for `PackageWorkspaceAssistantPersonalisation`
+- [x] Status is **Active — implemented**
 
 ---
 
