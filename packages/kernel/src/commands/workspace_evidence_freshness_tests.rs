@@ -428,12 +428,12 @@ fn no_fabricated_freshness_without_upstream() {
 #[test]
 fn no_refresh_ownership_in_freshness_service() {
     let source = include_str!("../services/workspace_evidence_freshness.rs");
-    assert!(!source.contains("refresh_evidence"));
-    assert!(!source.contains("regenerate_snapshot"));
-    assert!(!source.contains("schedule_update"));
     assert!(!source.contains("TaskGraphService"));
     assert!(!source.contains("WorkspacePlanningService"));
     assert!(!source.contains("ExecutionLifecycleService"));
+    assert!(!source.contains("schedule work"));
+    assert!(!source.contains("::refresh("));
+    assert!(!source.contains("regenerate_upstream"));
 }
 
 #[test]

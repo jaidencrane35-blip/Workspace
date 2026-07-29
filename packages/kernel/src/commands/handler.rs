@@ -183,6 +183,8 @@ use crate::commands::workspace_evidence_consistency::{
 use crate::commands::workspace_evidence_dependency::{
     ExplainEvidenceDependency, GenerateWorkspaceEvidenceDependency, GetWorkspaceEvidenceDependency,
     GetWorkspaceEvidenceDependencySummary,
+};
+use crate::commands::workspace_evidence_freshness::{
     ExplainEvidenceFreshness, GenerateWorkspaceEvidenceFreshness, GetWorkspaceEvidenceFreshness,
     GetWorkspaceEvidenceFreshnessSummary,
 };
