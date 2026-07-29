@@ -13,7 +13,24 @@ This directory contains the AI subsystem contract documents.
 - `WORKSPACE-GOVERNANCE.md`
 - `INTELLIGENCE-ROADMAP.md`
 - `PROGRAMME-IV-INTERACTION-RUNTIME.md`
-- `WORKSPACE-EVIDENCE-RELIABILITY-ARCHITECTURE.md`
+
+## Programme IV — Interaction Runtime (Evidence family)
+
+Entry point: `PROGRAMME-IV-INTERACTION-RUNTIME.md`
+
+| Batch | Architecture document | Implementation roots |
+|---|---|---|
+| 1 Semantic Query | `WORKSPACE-SEMANTIC-QUERY-ARCHITECTURE.md` | `packages/*/workspace_semantic_query*` |
+| 2 Evidence Navigation | `WORKSPACE-EVIDENCE-NAVIGATION-ARCHITECTURE.md` | `packages/*/workspace_evidence_navigation*` |
+| 3 Evidence Trace | `WORKSPACE-EVIDENCE-TRACE-ARCHITECTURE.md` | `packages/*/workspace_evidence_trace*` |
+| 4 Evidence Coverage | `WORKSPACE-EVIDENCE-COVERAGE-ARCHITECTURE.md` | `packages/*/workspace_evidence_coverage*` |
+| 5 Evidence Consistency | `WORKSPACE-EVIDENCE-CONSISTENCY-ARCHITECTURE.md` | `packages/*/workspace_evidence_consistency*` |
+| 6 Evidence Dependency | `WORKSPACE-EVIDENCE-DEPENDENCY-ARCHITECTURE.md` | `packages/*/workspace_evidence_dependency*` |
+| 7 Evidence Freshness | `WORKSPACE-EVIDENCE-FRESHNESS-ARCHITECTURE.md` | `packages/*/workspace_evidence_freshness*` |
+| 8 Evidence Completeness | `WORKSPACE-EVIDENCE-COMPLETENESS-ARCHITECTURE.md` | `packages/*/workspace_evidence_completeness*` |
+| 9 Evidence Reliability | `WORKSPACE-EVIDENCE-RELIABILITY-ARCHITECTURE.md` | `packages/*/workspace_evidence_reliability*` |
+
+Maintainability audit (gate before Batch 10): `../03-Engineering/PROGRAMME-IV-MAINTAINABILITY-AUDIT.md`
 
 ## Recommendation and Decision Contract Families
 
@@ -35,5 +52,6 @@ Files named `WORKSPACE-GOVERNANCE-*.md` intentionally forward to
 Cross-reference with:
 
 - `../03-Engineering/IPC-SURFACE.md`
+- `../03-Engineering/PROGRAMME-IV-MAINTAINABILITY-AUDIT.md`
 - `../08-Roadmap/ROADMAP.md`
 - `../10-Sprints/sprints/`

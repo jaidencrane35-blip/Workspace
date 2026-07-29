@@ -77,6 +77,7 @@ How the team builds, reviews, and maintains the codebase.
 | [Persistence Boundary Governance](03-Engineering/PERSISTENCE-BOUNDARY-GOVERNANCE.md) | Repository-level lifecycle and immutability enforcement |
 | [Projection Integrity](03-Engineering/PROJECTION-INTEGRITY.md) | Dual-channel projections and immutable evidence consumption |
 | [Architecture Governance](03-Engineering/ARCHITECTURE-GOVERNANCE.md) | Authority map, forbidden edges, capability audit, failure modes |
+| [Programme IV Maintainability Audit](03-Engineering/PROGRAMME-IV-MAINTAINABILITY-AUDIT.md) | Pre–Batch 10 human maintainability & integrity gate |
 | [Operational Recovery](03-Engineering/OPERATIONAL-RECOVERY.md) | Restart/recovery contracts without new lifecycle authorities |
 | [Foundation Hardening Report](03-Engineering/FOUNDATION-HARDENING-REPORT.md) | Phase 1 foundation audit results |
 | [Audit Reports Index](03-Engineering/AUDIT-REPORTS-INDEX.md) | Index of point-in-time architecture/engineering audits |
