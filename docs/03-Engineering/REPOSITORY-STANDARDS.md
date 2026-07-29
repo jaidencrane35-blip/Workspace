@@ -74,6 +74,9 @@ Branch names use `kebab-case`. Include ticket/issue number when available.
 - Reference issues: `Closes #123` or `Refs #123`
 - One logical change per commit
 - Group related changes; do not mix unrelated changes
+- Prefer intent-revealing scopes (`window-management`, `desktop-arrangement`) over vague ones
+
+Major batches also require completion reports and architecture docs — see [Engineering Governance](ENGINEERING-GOVERNANCE.md).
 
 ### 2.4 Examples
 

@@ -2,18 +2,28 @@
 
 ## Cursor Cloud specific instructions
 
-Workspace is a single product: a **Windows-targeted Tauri 2 desktop app** (React 18 + Vite frontend in `app/`, Rust backend in `app/src-tauri` + `packages/*`, embedded SQLite). There are no microservices, Docker, or external databases. Standard commands live in `README.md` and the `package.json` scripts; prefer those. Notes below are the non-obvious gotchas.
+Workspace is a **Windows-targeted Tauri 2 desktop app** (React 18 + Vite in `app/`, Rust in `app/src-tauri` + `packages/*`, embedded SQLite).
+
+### Product direction (source of truth = repo docs)
+
+- **Primary product:** desktop workspace management (apps, layouts, real windows, save/restore, work modes).
+- **Secondary:** AI Assistant as a supporting capability — never the product itself.
+- **Next programme:** Desktop Arrangement Foundation (DAF). Read `docs/03-Engineering/DAF-ARCHITECTURE-AUDIT.md` and `docs/03-Engineering/ENGINEERING-GOVERNANCE.md` before coding.
+- **Frozen:** new AI intelligence/evidence/assistant engines unless a written product requirement says otherwise.
+- **Visual north star:** `docs/01-Product/WORKSPACE-VISUAL-DIRECTION.md` + `docs/01-Product/references/`.
+- Do **not** treat prior chat transcripts as architecture memory; update `docs/` instead.
+- Before major batches: fill `docs/03-Engineering/BATCH-ALIGNMENT-CHECK.md`.
 
 ### Rust toolchain (important)
 - The committed `Cargo.lock` pins dependencies requiring `edition2024` (e.g. `getrandom 0.4.3`), so cargo needs **Rust ≥ 1.85**. The base image historically pinned the rustup default to `1.83.0`, which fails with `feature 'edition2024' is required`. The default is now set to `stable` (`rustup default stable`); if cargo errors on `edition2024`, run `rustup default stable`.
 
 ### Building/running the desktop app
 - `pnpm dev` runs `tauri dev`, which needs Linux GUI system libs (webkit2gtk/gtk) plus a display, and this app targets **Windows** (`packages/windows-integration` is stubbed on non-Windows). Running the full native shell on this Linux VM is not the supported dev path.
-- Frontend-only run: `cd app && pnpm exec vite` serves the React UI on **http://localhost:1420** (`strictPort`). Standalone in a browser, all Tauri IPC calls fail, so a red "Cannot read properties of undefined (reading 'invoke')" banner appears and data actions (create workspace, zones, etc.) error out. UI rendering and tab navigation still work. Full data flows require the Tauri backend.
+- Frontend-only run: `cd app && pnpm exec vite` serves the React UI on **http://localhost:1420** (`strictPort`). Without Tauri, IPC is unavailable — layout/navigation may still work; live data requires the desktop runtime. Prefer fixing runtime detection in `app/src/lib/ipc.ts` over throwing TypeError on `invoke`.
 
 ### Known-good checks on Linux
 - `pnpm typecheck`, `pnpm build`, and `pnpm test` (Vitest + catalog/boundary verify scripts) all pass.
-- Rust crates that pass here: `cargo test -p workspace-domain`, `cargo test -p workspace-windows-integration`, and on Programme IV consolidation tip also `cargo check -p workspace-kernel` plus `case5_timeline_deterministic` / `case11_evaluation_does_not_contaminate_its_own_inputs`.
+- Rust crates that pass here: `cargo test -p workspace-domain` and `cargo test -p workspace-windows-integration`.
 
 ### Pre-existing / environment notes (verify before assuming fixed)
 - Older `main` revisions may not compile: `packages/kernel/src/services/resilience_validation.rs` historically referenced missing `DecisionCandidateProgression` / `creation.score`. Programme IV consolidation tip compiles `workspace-kernel`; treat residual resilience debt as platform debt if it reappears on `main`.

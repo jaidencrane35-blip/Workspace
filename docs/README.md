@@ -6,14 +6,14 @@
 
 ## Quick Start
 
-| If you are... | Start here |
-|---------------|------------|
-| A new contributor | [Project Constitution](00-Constitution/PROJECT-CONSTITUTION.md) → [Engineering Principles](03-Engineering/ENGINEERING-PRINCIPLES.md) |
-| Making a product decision | [Product Vision](01-Product/PRODUCT-VISION.md) → [Realignment Audit](01-Product/PRODUCT-VISION-REALIGNMENT-AUDIT.md) → [MVP Definition](01-Product/MVP-DEFINITION.md) |
+| A new contributor | [Project Constitution](00-Constitution/PROJECT-CONSTITUTION.md) → [Engineering Governance](03-Engineering/ENGINEERING-GOVERNANCE.md) → [Visual Direction](01-Product/WORKSPACE-VISUAL-DIRECTION.md) |
+| Making a product decision | [Product Vision](01-Product/PRODUCT-VISION.md) → [Visual Direction](01-Product/WORKSPACE-VISUAL-DIRECTION.md) → [Realignment Audit](01-Product/PRODUCT-VISION-REALIGNMENT-AUDIT.md) |
+| Starting a major batch | [Batch Alignment Check](03-Engineering/BATCH-ALIGNMENT-CHECK.md) → [Engineering Governance](03-Engineering/ENGINEERING-GOVERNANCE.md) |
 | Designing architecture | [Architecture Principles](02-Architecture/ARCHITECTURE-PRINCIPLES.md) → [System Overview](02-Architecture/SYSTEM-OVERVIEW.md) |
+| Desktop arrangement (DAF) | [DAF Architecture Audit](03-Engineering/DAF-ARCHITECTURE-AUDIT.md) → [Visual Direction](01-Product/WORKSPACE-VISUAL-DIRECTION.md) |
 | Selecting technology | [Stack Evaluation Criteria](02-Architecture/STACK-EVALUATION-CRITERIA.md) |
-| Writing code (future) | [Coding Standards](03-Engineering/CODING-STANDARDS.md) → [Definition of Done](03-Engineering/DEFINITION-OF-DONE.md) |
-| Working on AI features | [AI Principles](05-AI/AI-PRINCIPLES.md) → confirm need against [Realignment Audit](01-Product/PRODUCT-VISION-REALIGNMENT-AUDIT.md) (AI expansion frozen unless product-required) |
+| Writing code | [Coding Standards](03-Engineering/CODING-STANDARDS.md) → [Definition of Done](03-Engineering/DEFINITION-OF-DONE.md) |
+| Working on AI features | Confirm need against [Engineering Governance](03-Engineering/ENGINEERING-GOVERNANCE.md) (AI expansion frozen unless product-required) → [AI Principles](05-AI/AI-PRINCIPLES.md) |
 | Reviewing security | [Threat Model](07-Security/THREAT-MODEL.md) → [Security Principles](07-Security/SECURITY-PRINCIPLES.md) |
 | Building plugins (future) | [Plugin Architecture Vision](06-Plugins/PLUGIN-ARCHITECTURE-VISION.md) |
 | Unsure about something | [Open Questions](09-Decisions/OPEN-QUESTIONS.md) — identify, don't guess |
@@ -38,7 +38,8 @@ What Workspace is, who it serves, and how scope is managed.
 | Document | Description |
 |----------|-------------|
 | [Product Vision](01-Product/PRODUCT-VISION.md) | Product goals, domains, and target experience |
-| [Product Vision Realignment Audit](01-Product/PRODUCT-VISION-REALIGNMENT-AUDIT.md) | Gap analysis vs concept art; DAF-1 milestone; freeze AI expansion |
+| [Workspace Visual Direction](01-Product/WORKSPACE-VISUAL-DIRECTION.md) | Concept-art north star; literal vs non-literal interpretation |
+| [Product Vision Realignment Audit](01-Product/PRODUCT-VISION-REALIGNMENT-AUDIT.md) | Gap analysis vs concept art; DAF milestone; freeze AI expansion |
 | [Scope Management](01-Product/SCOPE-MANAGEMENT.md) | How scope is proposed, approved, and controlled |
 | [MVP Definition](01-Product/MVP-DEFINITION.md) | First useful product slice and acceptance criteria |
 
@@ -63,6 +64,10 @@ How the team builds, reviews, and maintains the codebase.
 | Document | Description |
 |----------|-------------|
 | [Engineering Principles](03-Engineering/ENGINEERING-PRINCIPLES.md) | Core engineering values and quality gates |
+| [Engineering Governance](03-Engineering/ENGINEERING-GOVERNANCE.md) | Product alignment, freeze rules, batch docs, drift prevention |
+| [Batch Alignment Check](03-Engineering/BATCH-ALIGNMENT-CHECK.md) | Pre-implementation checklist template |
+| [DAF Architecture Audit](03-Engineering/DAF-ARCHITECTURE-AUDIT.md) | DAF-0 archaeology + proposed desktop arrangement architecture |
+| [DAF-0 Completion Report](03-Engineering/DAF-0-COMPLETION-REPORT.md) | Governance reset batch report |
 | [Coding Standards](03-Engineering/CODING-STANDARDS.md) | Naming, formatting, and code conventions |
 | [Repository Standards](03-Engineering/REPOSITORY-STANDARDS.md) | Git workflow, branches, commits, PRs |
 | [Documentation Standards](03-Engineering/DOCUMENTATION-STANDARDS.md) | How to write and maintain documentation |

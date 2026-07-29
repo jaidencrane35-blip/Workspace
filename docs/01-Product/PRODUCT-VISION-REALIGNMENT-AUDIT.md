@@ -258,4 +258,5 @@ Even against committed `MVP-DEFINITION.md` and `PRODUCT-VISION.md`, core desktop
 > Workspace’s visual and product north star is **desktop workspace management**.  
 > The AI assistant is a **secondary sidecar**.  
 > Programme IV remains valuable **future infrastructure** and is **frozen for expansion**.  
-> The next engineering milestone is **Desktop Arrangement Foundation (DAF-1)**, not another AI batch.
+> The next engineering milestone is **Desktop Arrangement Foundation (DAF)**.  
+> Foundation docs: [ENGINEERING-GOVERNANCE.md](../03-Engineering/ENGINEERING-GOVERNANCE.md), [DAF-ARCHITECTURE-AUDIT.md](../03-Engineering/DAF-ARCHITECTURE-AUDIT.md), [WORKSPACE-VISUAL-DIRECTION.md](WORKSPACE-VISUAL-DIRECTION.md).
