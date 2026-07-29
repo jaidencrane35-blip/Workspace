@@ -1,13 +1,13 @@
 /**
  * Purpose: Product Applications surface — registry cards, identity, launch,
- *   observed actives, and clear Layouts relationship.
- * Owner: Frontend product shell (Milestone A.1)
- * Inputs: Active workspace + shared busy/banner callbacks
+ *   observed actives, Layouts relationship, Flow/Focus density presentation.
+ * Owner: Frontend product shell (Milestone A.1 + optimisation)
+ * Inputs: Active workspace, work mode, shared busy/banner callbacks
  * Outputs: create_application / launch_application / list_applications /
  *   get_workspace_state invocations; user-facing status copy
- * Dependencies: Existing application IPC + WorkspaceState projection
+ * Dependencies: Existing application IPC + WorkspaceState + workMode
  * Non-responsibilities: Permission policy, WindowController, Assistant,
- *   OS app discovery, auto-layout, AI recommendations
+ *   OS app discovery, auto-layout, AI recommendations, OS geometry apply
  */
 
 import { useCallback, useEffect, useState } from "react";
@@ -17,6 +17,7 @@ import {
   applicationsLayoutsRelationCopy,
   canLaunchApplication,
 } from "../lib/applicationsUi";
+import type { WorkMode } from "../lib/workMode";
 import type {
   ApplicationLaunchResult,
   ApplicationReference,
@@ -29,6 +30,7 @@ import { ApplicationList } from "./ApplicationList";
 
 interface ApplicationsPanelProps {
   workspace: Workspace | null;
+  workMode: WorkMode;
   busy: boolean;
   onBusy: (busy: boolean) => void;
   onError: (message: string | null) => void;
@@ -37,6 +39,7 @@ interface ApplicationsPanelProps {
 
 export function ApplicationsPanel({
   workspace,
+  workMode,
   busy,
   onBusy,
   onError,
@@ -195,7 +198,15 @@ export function ApplicationsPanel({
   };
 
   return (
-    <section className="product-panel" aria-label="Applications">
+    <section
+      className={
+        workMode === "focus"
+          ? "product-panel applications-panel mode-focus"
+          : "product-panel applications-panel mode-flow"
+      }
+      aria-label="Applications"
+      data-work-mode={workMode}
+    >
       <header className="product-panel-hero">
         <p className="arrangement-eyebrow">Applications</p>
         <h2>Apps in your workspace</h2>
@@ -269,6 +280,7 @@ export function ApplicationsPanel({
               <ApplicationList
                 applications={applications}
                 selectedId={selectedId}
+                workMode={workMode}
                 busy={busy || !runtime}
                 onSelect={setSelectedId}
                 onLaunch={launchApplication}
@@ -325,7 +337,10 @@ export function ApplicationsPanel({
             </section>
           ) : null}
 
-          <section aria-label="Active desktop applications">
+          <section
+            aria-label="Active desktop applications"
+            className={workMode === "focus" ? "applications-active quiet" : undefined}
+          >
             <div className="row section-heading-row">
               <h3>Running on the desktop</h3>
               <button
@@ -339,10 +354,18 @@ export function ApplicationsPanel({
                 Refresh
               </button>
             </div>
-            <ActiveApplicationsView
-              applications={activeApps}
-              loading={activeLoading}
-            />
+            {workMode === "focus" ? (
+              <p className="muted">
+                Focus keeps this quieter — refresh if you need the full observed
+                list.
+              </p>
+            ) : null}
+            {workMode === "flow" || activeApps.length > 0 ? (
+              <ActiveApplicationsView
+                applications={activeApps}
+                loading={activeLoading}
+              />
+            ) : null}
           </section>
         </>
       )}

@@ -41,6 +41,23 @@ Human concept → Optimised representation → Decoder / inspector → Human und
 
 ## Cycles
 
+### Cycle: opt-o2-applications-work-mode-density
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-29 |
+| **Problem** | Applications tab ignored Flow/Focus, so density felt inconsistent with Layouts |
+| **Reason** | Align product hierarchy presentation across primary surfaces without new features |
+| **Files changed** | `ApplicationList.tsx`, `ApplicationsPanel.tsx`, `App.tsx`, `App.css`, this log |
+| **Validation** | typecheck / test / architecture / ipc / ui-boundary |
+| **Maintainability score** | 8.5/10 |
+| **Reference alignment** | 7.7/10 (+0.2 density consistency) |
+| **Commercial readiness** | 5.4/10 |
+| **Human readability** | 8.3/10 |
+| **Why this is safe** | Reuses existing workMode preference; presentation only; no OS/AI/IPC ownership change |
+
+---
+
 ### Cycle: opt-o1-work-mode-keyboard-a11y
 
 | Field | Value |

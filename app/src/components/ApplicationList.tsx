@@ -1,10 +1,13 @@
 /**
  * Purpose: Presentational card grid of registered workspace applications.
- * Owner: Frontend product shell (Milestone A.1)
- * Inputs: ApplicationReference rows + selection/launch callbacks
+ * Owner: Frontend product shell (Milestone A.1 + optimisation)
+ * Inputs: ApplicationReference rows, work-mode density, selection/launch callbacks
  * Outputs: Selection and launch intent events
- * Dependencies: applicationsUi + productShellUi helpers
+ * Dependencies: applicationsUi + productShellUi + workMode type
  * Non-responsibilities: IPC, PermissionGateway, process creation, OS discovery
+ *
+ * Problem: Applications surface ignored Flow/Focus density.
+ * Why here: same chrome-density preference as Layouts stage.
  */
 
 import {
@@ -13,11 +16,13 @@ import {
   canLaunchApplication,
 } from "../lib/applicationsUi";
 import { monogramFromName } from "../lib/productShellUi";
+import type { WorkMode } from "../lib/workMode";
 import type { ApplicationReference } from "../types/domain";
 
 interface ApplicationListProps {
   applications: ApplicationReference[];
   selectedId: string | null;
+  workMode: WorkMode;
   busy: boolean;
   onSelect: (id: string) => void;
   onLaunch: (app: ApplicationReference) => void;
@@ -26,12 +31,87 @@ interface ApplicationListProps {
 export function ApplicationList({
   applications,
   selectedId,
+  workMode,
   busy,
   onSelect,
   onLaunch,
 }: ApplicationListProps) {
+  if (workMode === "focus") {
+    const primary =
+      applications.find((app) => app.id === selectedId) ??
+      applications[0] ??
+      null;
+    const supporting = applications.filter((app) => app.id !== primary?.id);
+    return (
+      <div className="focus-stage-layout" aria-label="Registered applications">
+        {primary ? (
+          <article className="application-card selected stage-tile-primary">
+            <p className="home-current-label">Primary</p>
+            <button
+              type="button"
+              className="application-card-main"
+              disabled={busy}
+              aria-current="true"
+              onClick={() => onSelect(primary.id)}
+            >
+              <span className="application-monogram large" aria-hidden="true">
+                {monogramFromName(primary.name)}
+              </span>
+              <span className="application-card-copy">
+                <span className="product-list-title">{primary.name}</span>
+                <span className="product-list-meta muted">
+                  {applicationIdentityLine(primary)}
+                </span>
+                <span className="application-status">
+                  {applicationStatusLabel(primary)}
+                </span>
+              </span>
+            </button>
+            <button
+              type="button"
+              className="ghost application-launch"
+              disabled={busy || !canLaunchApplication(primary)}
+              onClick={() => onLaunch(primary)}
+            >
+              Launch
+            </button>
+          </article>
+        ) : null}
+        {supporting.length > 0 ? (
+          <div className="focus-supporting">
+            <p className="home-current-label">Supporting (available)</p>
+            <ul className="home-app-chip-row">
+              {supporting.map((app) => (
+                <li key={app.id}>
+                  <button
+                    type="button"
+                    className="home-app-chip"
+                    disabled={busy}
+                    title="Emphasise in Focus"
+                    onClick={() => onSelect(app.id)}
+                  >
+                    <span
+                      className="application-monogram compact"
+                      aria-hidden="true"
+                    >
+                      {monogramFromName(app.name)}
+                    </span>
+                    <span>{app.name}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+      </div>
+    );
+  }
+
   return (
-    <ul className="application-card-grid" aria-label="Registered applications">
+    <ul
+      className="application-card-grid density-flow"
+      aria-label="Registered applications"
+    >
       {applications.map((app) => {
         const selected = app.id === selectedId;
         const launchable = canLaunchApplication(app);

@@ -380,6 +380,7 @@ export default function App() {
         <div className="container product-container applications-wide">
           <ApplicationsPanel
             workspace={workspace}
+            workMode={workMode}
             busy={busy}
             onBusy={setBusy}
             onError={onError}
