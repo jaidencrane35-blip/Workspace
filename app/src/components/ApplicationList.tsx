@@ -1,16 +1,18 @@
 /**
- * Purpose: Presentational list of registered workspace applications.
- * Owner: Frontend product shell (Milestone A)
+ * Purpose: Presentational card grid of registered workspace applications.
+ * Owner: Frontend product shell (Milestone A.1)
  * Inputs: ApplicationReference rows + selection/launch callbacks
  * Outputs: Selection and launch intent events
- * Dependencies: applicationsUi helpers
- * Non-responsibilities: IPC, PermissionGateway, process creation
+ * Dependencies: applicationsUi + productShellUi helpers
+ * Non-responsibilities: IPC, PermissionGateway, process creation, OS discovery
  */
 
 import {
   applicationIdentityLine,
+  applicationStatusLabel,
   canLaunchApplication,
 } from "../lib/applicationsUi";
+import { monogramFromName } from "../lib/productShellUi";
 import type { ApplicationReference } from "../types/domain";
 
 interface ApplicationListProps {
@@ -29,39 +31,51 @@ export function ApplicationList({
   onLaunch,
 }: ApplicationListProps) {
   return (
-    <ul className="product-list" aria-label="Registered applications">
+    <ul className="application-card-grid" aria-label="Registered applications">
       {applications.map((app) => {
         const selected = app.id === selectedId;
         const launchable = canLaunchApplication(app);
         return (
-          <li key={app.id} className="application-list-row">
-            <button
-              type="button"
+          <li key={app.id}>
+            <article
               className={
-                selected ? "product-list-item active" : "product-list-item"
+                selected ? "application-card selected" : "application-card"
               }
-              disabled={busy}
-              aria-current={selected ? "true" : undefined}
-              onClick={() => onSelect(app.id)}
             >
-              <span className="product-list-title">{app.name}</span>
-              <span className="product-list-meta muted">
-                {applicationIdentityLine(app)}
-              </span>
-            </button>
-            <button
-              type="button"
-              className="ghost application-launch"
-              disabled={busy || !launchable}
-              title={
-                launchable
-                  ? "Launch through governed application path"
-                  : "Add an executable path before launching"
-              }
-              onClick={() => onLaunch(app)}
-            >
-              Launch
-            </button>
+              <button
+                type="button"
+                className="application-card-main"
+                disabled={busy}
+                aria-current={selected ? "true" : undefined}
+                onClick={() => onSelect(app.id)}
+              >
+                <span className="application-monogram" aria-hidden="true">
+                  {monogramFromName(app.name)}
+                </span>
+                <span className="application-card-copy">
+                  <span className="product-list-title">{app.name}</span>
+                  <span className="product-list-meta muted">
+                    {applicationIdentityLine(app)}
+                  </span>
+                  <span className="application-status">
+                    {applicationStatusLabel(app)}
+                  </span>
+                </span>
+              </button>
+              <button
+                type="button"
+                className="ghost application-launch"
+                disabled={busy || !launchable}
+                title={
+                  launchable
+                    ? "Launch this application"
+                    : "Add an executable path before launching"
+                }
+                onClick={() => onLaunch(app)}
+              >
+                Launch
+              </button>
+            </article>
           </li>
         );
       })}

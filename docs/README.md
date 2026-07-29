@@ -12,7 +12,7 @@
 | Human visual review | [Human Review Policy](03-Engineering/HUMAN-REVIEW-POLICY.md) → [Visual Review Checklist](03-Engineering/VISUAL-REVIEW-CHECKLIST.md) |
 | Designing architecture | [Architecture Principles](02-Architecture/ARCHITECTURE-PRINCIPLES.md) → [System Overview](02-Architecture/SYSTEM-OVERVIEW.md) |
 | Desktop arrangement (DAF) | [DAF Architecture Audit](03-Engineering/DAF-ARCHITECTURE-AUDIT.md) → [DAF-1a](03-Engineering/DAF-1A-WINDOW-CONTROLLER.md) → [DAF-1b](03-Engineering/DAF-1B-WINDOW-OBSERVATION.md) → [DAF-1c](03-Engineering/DAF-1C-DESKTOP-ARRANGEMENT.md) → [DAF-1d](03-Engineering/DAF-1D-DESKTOP-ARRANGEMENT-RESTORE.md) → [DAF-1e](03-Engineering/DAF-1E-DESKTOP-ARRANGEMENT-UI.md) |
-| Milestone A (Apps + switcher) | [Completion report](03-Engineering/MILESTONE-A-WORKSPACE-APPS-COMPLETION-REPORT.md) → [Visual review](03-Engineering/MILESTONE-A-VISUAL-REVIEW-CHECKLIST.md) |
+| Milestone A (Apps + switcher) | [Completion report](03-Engineering/MILESTONE-A-WORKSPACE-APPS-COMPLETION-REPORT.md) → [Visual review](03-Engineering/MILESTONE-A-VISUAL-REVIEW-CHECKLIST.md) → [A.1 UX hardening](03-Engineering/MILESTONE-A1-UX-HARDENING-REPORT.md) |
 | Selecting technology | [Stack Evaluation Criteria](02-Architecture/STACK-EVALUATION-CRITERIA.md) |
 | Writing code | [Coding Standards](03-Engineering/CODING-STANDARDS.md) → [Definition of Done](03-Engineering/DEFINITION-OF-DONE.md) → [AI Engineering Governance](00-Governance/AI_ENGINEERING_GOVERNANCE.md) |
 | Working on AI features | Confirm need against [Engineering Governance](03-Engineering/ENGINEERING-GOVERNANCE.md) and [AI Engineering Governance](00-Governance/AI_ENGINEERING_GOVERNANCE.md) (AI expansion frozen unless product-required) → [AI Principles](05-AI/AI-PRINCIPLES.md) |
@@ -100,6 +100,8 @@ How the team builds, reviews, and maintains the codebase.
 | [Milestone A Visual Review](03-Engineering/MILESTONE-A-VISUAL-REVIEW-CHECKLIST.md) | Human review checklist for Milestone A chrome |
 | [Milestone A Human Review](03-Engineering/MILESTONE-A-HUMAN-REVIEW.md) | Usability / maintainability checkpoint (post A) |
 | [Milestone A Vision Gap](03-Engineering/MILESTONE-A-VISION-GAP-REPORT.md) | Vision vs Milestone A gap table |
+| [Milestone A.1 UX Hardening](03-Engineering/MILESTONE-A1-UX-HARDENING-REPORT.md) | Identity / hierarchy refinement |
+| [Milestone A.1 Visual Review](03-Engineering/MILESTONE-A1-VISUAL-REVIEW-CHECKLIST.md) | Human review checklist for A.1 |
 | [DAF-1e Visual Review](03-Engineering/DAF-1E-VISUAL-REVIEW-CHECKLIST.md) | Human visual checkpoint |
 | [Coding Standards](03-Engineering/CODING-STANDARDS.md) | Naming, formatting, and code conventions |
 | [Repository Standards](03-Engineering/REPOSITORY-STANDARDS.md) | Git workflow, branches, commits, PRs |

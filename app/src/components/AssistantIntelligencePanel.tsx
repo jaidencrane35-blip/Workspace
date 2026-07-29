@@ -335,7 +335,7 @@ export function AssistantIntelligencePanel({
         <div className="assistant-intel-empty-block">
           <p className="assistant-intel-empty">No workspace selected.</p>
           <p className="assistant-intel-empty-hint">
-            Open the Workspace tab, create or select a workspace, then return here
+            Open Workspaces, create or select a workspace, then return here
             to compose the six-layer intelligence stack.
           </p>
         </div>

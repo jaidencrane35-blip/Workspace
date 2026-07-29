@@ -3,8 +3,14 @@ import {
   activeApplicationLabel,
   applicationIdentityLine,
   applicationsEmptyCopy,
+  applicationsLayoutsRelationCopy,
   canLaunchApplication,
 } from "../app/src/lib/applicationsUi";
+import {
+  classifyBanner,
+  monogramFromName,
+} from "../app/src/lib/productShellUi";
+import { IpcRuntimeUnavailableError } from "../app/src/lib/ipc";
 import {
   formatWorkspaceMeta,
   workspaceRowLabel,
@@ -63,8 +69,22 @@ describe("applications UI helpers", () => {
     expect(activeApplicationLabel(active)).toContain("2 windows");
   });
 
-  it("explains empty registry states", () => {
+  it("explains empty registry states and layout relationship", () => {
     expect(applicationsEmptyCopy(false).title).toMatch(/workspace/i);
-    expect(applicationsEmptyCopy(true).body).toMatch(/Register/i);
+    expect(applicationsEmptyCopy(true).body).toMatch(/Layouts/i);
+    expect(applicationsLayoutsRelationCopy()).toMatch(/Layouts/i);
+  });
+});
+
+describe("product shell UI helpers", () => {
+  it("softens desktop-runtime unavailable into a runtime banner", () => {
+    const banner = classifyBanner(new IpcRuntimeUnavailableError());
+    expect(banner.kind).toBe("runtime");
+    expect(banner.text).toMatch(/preview/i);
+  });
+
+  it("builds monograms for cards", () => {
+    expect(monogramFromName("Deep work")).toBe("DW");
+    expect(monogramFromName("Code")).toBe("CO");
   });
 });

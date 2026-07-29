@@ -1,3 +1,14 @@
+/**
+ * Purpose: Product shell root — Workspace-first chrome, view routing, and
+ *   shared workspace activation. Milestone A.1 hardens hierarchy and banners.
+ * Owner: Frontend product shell
+ * Inputs: Tauri IPC (settings, workspace, zones, applications)
+ * Outputs: Active workspace state, primary/tool navigation, banners
+ * Dependencies: Product panels, DesktopArrangementPanel, existing IPC
+ * Non-responsibilities: Window control, permissions enforcement, Assistant
+ *   reasoning, new intelligence engines
+ */
+
 import { useCallback, useEffect, useState } from "react";
 import { ApplicationsPanel } from "./components/ApplicationsPanel";
 import { AssistantIntelligencePanel } from "./components/AssistantIntelligencePanel";
@@ -11,29 +22,28 @@ import {
 } from "./components/WorkspaceHome";
 import { WorkspaceIntelligencePanel } from "./components/WorkspaceIntelligencePanel";
 import { WorkspaceSwitcher } from "./components/WorkspaceSwitcher";
-import { invokeIpc } from "./lib/ipc";
-import type { Workspace, WorkspaceContext, Zone } from "./types/domain";
-import type { Layout } from "./types/layout";
+import {
+  invokeIpc,
+  IpcRuntimeUnavailableError,
+  isIpcRuntimeAvailable,
+} from "./lib/ipc";
+import {
+  classifyBanner,
+  ZONE_CONTEXT_LIMIT,
+} from "./lib/productShellUi";
 import type {
-  WorkspaceHealth,
-  WorkspaceSettings,
-  WorkspaceStatus,
-} from "./types/workspace";
+  ApplicationReference,
+  Workspace,
+  WorkspaceContext,
+  Zone,
+} from "./types/domain";
+import type { Layout } from "./types/layout";
+import type { WorkspaceSettings } from "./types/workspace";
 
 const LEGACY_WORKSPACE_ID_KEY = "workspace.active_id";
 
-type AppView =
-  | ProductPrimaryView
-  | "assistant"
-  | "operator"
-  | "work";
-
-function formatError(err: unknown): string {
-  if (err instanceof Error) {
-    return err.message;
-  }
-  return String(err);
-}
+type ToolView = "assistant" | "diagnostics" | "developer";
+type AppView = ProductPrimaryView | ToolView;
 
 function zonesFromContext(
   workspaceId: string,
@@ -65,7 +75,7 @@ async function persistActiveWorkspaceId(id: string | null): Promise<void> {
 async function loadZones(workspaceId: string): Promise<Zone[]> {
   const context = await invokeIpc<WorkspaceContext>("get_workspace_context", {
     workspaceId,
-    limit: 200,
+    limit: ZONE_CONTEXT_LIMIT,
   });
   return zonesFromContext(workspaceId, context);
 }
@@ -74,7 +84,10 @@ export default function App() {
   const [view, setView] = useState<AppView>("home");
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [zones, setZones] = useState<Zone[]>([]);
+  const [homeApps, setHomeApps] = useState<ApplicationReference[]>([]);
+  const [homeAppsLoading, setHomeAppsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errorKind, setErrorKind] = useState<"error" | "runtime">("error");
   const [message, setMessage] = useState<string | null>(null);
   const [bootstrapped, setBootstrapped] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -88,7 +101,13 @@ export default function App() {
   }, []);
 
   const onError = useCallback((next: string | null) => {
-    setError(next);
+    if (!next) {
+      setError(null);
+      return;
+    }
+    const classified = classifyBanner(new Error(next));
+    setErrorKind(classified.kind === "runtime" ? "runtime" : "error");
+    setError(classified.text);
   }, []);
 
   const onMessage = useCallback((next: string | null) => {
@@ -100,20 +119,49 @@ export default function App() {
     setError(null);
   }, []);
 
-  const activateWorkspace = useCallback(async (next: Workspace) => {
-    setWorkspace(next);
-    await persistActiveWorkspaceId(next.id);
-    const nextZones = await loadZones(next.id);
-    setZones(nextZones);
+  const refreshHomeApps = useCallback(async (workspaceId: string | null) => {
+    if (!workspaceId || !isIpcRuntimeAvailable()) {
+      setHomeApps([]);
+      setHomeAppsLoading(false);
+      return;
+    }
+    setHomeAppsLoading(true);
+    try {
+      const listed = await invokeIpc<ApplicationReference[]>(
+        "list_applications",
+        { workspaceId },
+      );
+      setHomeApps(listed);
+    } catch {
+      setHomeApps([]);
+    } finally {
+      setHomeAppsLoading(false);
+    }
   }, []);
 
+  const activateWorkspace = useCallback(
+    async (next: Workspace) => {
+      setWorkspace(next);
+      await persistActiveWorkspaceId(next.id);
+      const nextZones = await loadZones(next.id);
+      setZones(nextZones);
+      await refreshHomeApps(next.id);
+    },
+    [refreshHomeApps],
+  );
+
   useEffect(() => {
-    Promise.all([
-      invokeIpc<WorkspaceStatus>("get_workspace_status"),
-      invokeIpc<WorkspaceHealth>("get_workspace_health"),
-      invokeIpc<WorkspaceSettings>("get_settings"),
-    ])
-      .then(async ([, , settings]) => {
+    if (!isIpcRuntimeAvailable()) {
+      setErrorKind("runtime");
+      setError(
+        classifyBanner(new IpcRuntimeUnavailableError()).text,
+      );
+      setBootstrapped(true);
+      return;
+    }
+
+    invokeIpc<WorkspaceSettings>("get_settings")
+      .then(async (settings) => {
         let storedId =
           settings.active_workspace_id?.trim() ||
           localStorage.getItem(LEGACY_WORKSPACE_ID_KEY);
@@ -130,26 +178,32 @@ export default function App() {
         }
         setWorkspace(loaded);
         setZones(await loadZones(loaded.id));
+        await refreshHomeApps(loaded.id);
       })
       .catch((err: unknown) => {
         localStorage.removeItem(LEGACY_WORKSPACE_ID_KEY);
-        setError(formatError(err));
+        const classified = classifyBanner(err);
+        setErrorKind(classified.kind === "runtime" ? "runtime" : "error");
+        setError(classified.text);
       })
       .finally(() => setBootstrapped(true));
-  }, []);
+  }, [refreshHomeApps]);
 
-  const createWorkspaceFromCanvas = () => {
+  const createWorkspaceFromHome = () => {
     setBusy(true);
     setError(null);
     void (async () => {
       try {
         const created = await invokeIpc<Workspace>("create_workspace", {
-          name: "Canvas Workspace",
+          name: "My workspace",
         });
         await activateWorkspace(created);
         setMessage("Workspace created");
+        setView("workspaces");
       } catch (err: unknown) {
-        setError(formatError(err));
+        const classified = classifyBanner(err);
+        setErrorKind(classified.kind === "runtime" ? "runtime" : "error");
+        setError(classified.text);
       } finally {
         setBusy(false);
       }
@@ -158,7 +212,7 @@ export default function App() {
 
   const addZoneFromCanvas = () => {
     if (!workspace) {
-      setError("Create a workspace first.");
+      onError("Create a workspace first.");
       return;
     }
     setBusy(true);
@@ -173,17 +227,16 @@ export default function App() {
         setZones((prev) => [...prev, zone]);
         setMessage(`Zone created: ${zone.name}`);
       } catch (err: unknown) {
-        setError(formatError(err));
+        const classified = classifyBanner(err);
+        setErrorKind(classified.kind === "runtime" ? "runtime" : "error");
+        setError(classified.text);
       } finally {
         setBusy(false);
       }
     })();
   };
 
-  const primaryTab = (
-    id: ProductPrimaryView,
-    label: string,
-  ) => (
+  const primaryTab = (id: ProductPrimaryView, label: string) => (
     <button
       type="button"
       role="tab"
@@ -196,58 +249,59 @@ export default function App() {
     </button>
   );
 
+  const toolTab = (id: ToolView, label: string) => (
+    <button
+      type="button"
+      role="tab"
+      className={view === id ? "tab tool active" : "tab tool"}
+      aria-current={view === id ? "page" : undefined}
+      aria-selected={view === id}
+      onClick={() => setView(id)}
+    >
+      {label}
+    </button>
+  );
+
   return (
     <main className="app-shell">
       <header className="app-chrome">
-        <h1>Workspace</h1>
-        <nav className="tabs" aria-label="Primary workspace views" role="tablist">
-          {primaryTab("home", "Home")}
-          {primaryTab("workspaces", "Workspaces")}
-          {primaryTab("applications", "Applications")}
-          {primaryTab("layouts", "Layouts")}
-          <button
-            type="button"
-            role="tab"
-            className={
-              view === "assistant" ? "tab secondary active" : "tab secondary"
-            }
-            aria-current={view === "assistant" ? "page" : undefined}
-            aria-selected={view === "assistant"}
-            onClick={() => setView("assistant")}
+        <div className="chrome-brand">
+          <h1>Workspace</h1>
+          <p className="chrome-tagline">Desktop workspace environment</p>
+        </div>
+        <div className="chrome-nav-groups">
+          <nav
+            className="tabs primary-tabs"
+            aria-label="Primary workspace views"
+            role="tablist"
           >
-            Assistant
-          </button>
-          <button
-            type="button"
-            role="tab"
-            className={view === "work" ? "tab quiet active" : "tab quiet"}
-            aria-current={view === "work" ? "page" : undefined}
-            aria-selected={view === "work"}
-            onClick={() => setView("work")}
+            {primaryTab("home", "Home")}
+            {primaryTab("workspaces", "Workspaces")}
+            {primaryTab("applications", "Applications")}
+            {primaryTab("layouts", "Layouts")}
+          </nav>
+          <nav
+            className="tabs tool-tabs"
+            aria-label="Supporting tools"
+            role="tablist"
           >
-            Work
-          </button>
-          <button
-            type="button"
-            role="tab"
-            className={view === "operator" ? "tab quiet active" : "tab quiet"}
-            aria-current={view === "operator" ? "page" : undefined}
-            aria-selected={view === "operator"}
-            onClick={() => setView("operator")}
-          >
-            Diagnostic
-          </button>
-        </nav>
+            {toolTab("assistant", "Assistant")}
+            {toolTab("diagnostics", "Diagnostics")}
+            {toolTab("developer", "Developer")}
+          </nav>
+        </div>
       </header>
 
       {error && (
         <p
-          className="error banner"
+          className={
+            errorKind === "runtime" ? "runtime banner" : "error banner"
+          }
           role="status"
-          aria-live="assertive"
+          aria-live={errorKind === "runtime" ? "polite" : "assertive"}
           aria-atomic="true"
         >
-          Error: {error}
+          {errorKind === "runtime" ? error : `Error: ${error}`}
         </p>
       )}
       {message && (
@@ -266,10 +320,12 @@ export default function App() {
           <WorkspaceHome
             workspace={workspace}
             zoneCount={zones.length}
+            applications={homeApps}
+            appsLoading={homeAppsLoading}
             bootstrapped={bootstrapped}
             busy={busy}
             onNavigate={setView}
-            onCreateWorkspace={createWorkspaceFromCanvas}
+            onCreateWorkspace={createWorkspaceFromHome}
           />
         </div>
       ) : view === "workspaces" ? (
@@ -294,7 +350,7 @@ export default function App() {
           />
         </div>
       ) : view === "applications" ? (
-        <div className="container product-container">
+        <div className="container product-container applications-wide">
           <ApplicationsPanel
             workspace={workspace}
             busy={busy}
@@ -316,23 +372,23 @@ export default function App() {
                 workspaceName={workspace.name}
                 zones={zones}
                 busy={busy}
-                onError={(msg) => setError(msg)}
+                onError={(msg) => onError(msg)}
                 onSaved={onLayoutSaved}
-                onCreateWorkspace={createWorkspaceFromCanvas}
+                onCreateWorkspace={createWorkspaceFromHome}
                 onAddZone={addZoneFromCanvas}
               />
             ) : (
               <div className="canvas-shell canvas-bootstrap">
                 <p className="lede">
-                  No active workspace. Create one here or use Workspaces to
-                  switch to a saved environment.
+                  No active workspace. Create one under Workspaces, then return
+                  here for canvas zones and desktop arrangements.
                 </p>
                 <button
                   type="button"
                   disabled={busy}
-                  onClick={createWorkspaceFromCanvas}
+                  onClick={() => setView("workspaces")}
                 >
-                  Create workspace
+                  Go to Workspaces
                 </button>
               </div>
             )}
@@ -345,8 +401,58 @@ export default function App() {
             onMessage={onMessage}
           />
         </div>
-      ) : view === "work" ? (
+      ) : view === "assistant" ? (
+        <div className="assistant-companion-stage">
+          <aside className="assistant-stage-quiet" aria-hidden="true">
+            <p className="arrangement-eyebrow">Workspace</p>
+            <h2>Your desktop stays primary</h2>
+            <p className="muted">
+              Assistant is a supporting companion. Use Home, Workspaces,
+              Applications, and Layouts for the product workflow.
+            </p>
+          </aside>
+          <div className="assistant-companion-rail">
+            <header className="assistant-companion-header">
+              <p className="arrangement-eyebrow">Assistant</p>
+              <h2>Supporting companion</h2>
+              <p className="lede">
+                Ask for help and explanations. Assistant does not replace
+                workspace management.
+              </p>
+            </header>
+            <AssistantIntelligencePanel
+              workspace={workspace}
+              busy={busy}
+              onBusy={setBusy}
+              onError={onError}
+              onMessage={onMessage}
+            />
+            <section
+              className="assistant-legacy-section"
+              aria-label="Governed workflow"
+            >
+              <h2>Advanced workflow</h2>
+              <p className="lede">
+                Optional plan → permission path. Prefer product tabs for daily
+                workspace use.
+              </p>
+              <AssistantPanel
+                workspace={workspace}
+                busy={busy}
+                onBusy={setBusy}
+                onError={onError}
+                onMessage={onMessage}
+              />
+            </section>
+          </div>
+        </div>
+      ) : view === "developer" ? (
         <div className="container assistant-container">
+          <p className="lede">
+            <span className="badge">Developer</span> Engineering presentation of
+            work intelligence. Prefer <strong>Home</strong> and{" "}
+            <strong>Applications</strong> for product use.
+          </p>
           <WorkspaceIntelligencePanel
             workspace={workspace}
             busy={busy}
@@ -355,44 +461,13 @@ export default function App() {
             onMessage={onMessage}
           />
         </div>
-      ) : view === "assistant" ? (
-        <div className="container assistant-container assistant-intel-container">
-          <p className="lede assistant-tool-note">
-            Assistant is a supporting tool inside Workspace — not the primary
-            product surface.
-          </p>
-          <AssistantIntelligencePanel
-            workspace={workspace}
-            busy={busy}
-            onBusy={setBusy}
-            onError={onError}
-            onMessage={onMessage}
-          />
-          <section
-            className="assistant-legacy-section"
-            aria-label="Governed workflow legacy"
-          >
-            <h2>Governed workflow (legacy)</h2>
-            <p className="lede">
-              Goal → plan → permission path for mutations. Prefer the
-              intelligence panel above for read-only composition.
-            </p>
-            <AssistantPanel
-              workspace={workspace}
-              busy={busy}
-              onBusy={setBusy}
-              onError={onError}
-              onMessage={onMessage}
-            />
-          </section>
-        </div>
       ) : (
         <div className="container">
           <p className="lede">
-            <span className="badge">Diagnostic</span> Operator console —
-            validates Work intelligence and the governed Assistant pipeline.
-            Prefer <strong>Home</strong>, <strong>Applications</strong>, and{" "}
-            <strong>Layouts</strong> for product workflows.
+            <span className="badge">Diagnostics</span> Operator console for
+            engineering validation. Prefer <strong>Home</strong>,{" "}
+            <strong>Applications</strong>, and <strong>Layouts</strong> for
+            product workflows.
           </p>
           <OperatorConsole
             workspace={workspace}

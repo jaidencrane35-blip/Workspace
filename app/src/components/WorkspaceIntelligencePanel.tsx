@@ -3405,7 +3405,7 @@ export function WorkspaceIntelligencePanel({
       </section>
       {!workspace && (
         <p className="muted">
-          Create or activate a workspace from the Workspace tab before generating
+          Create or activate a workspace from Workspaces before generating
           intelligence.
         </p>
       )}

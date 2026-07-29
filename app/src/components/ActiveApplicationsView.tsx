@@ -1,6 +1,6 @@
 /**
  * Purpose: Show currently observed desktop applications from WorkspaceState.
- * Owner: Frontend product shell (Milestone A)
+ * Owner: Frontend product shell (Milestone A.1)
  * Inputs: WorkspaceActiveApplication rows from get_workspace_state
  * Outputs: Read-only presentation
  * Dependencies: applicationsUi helpers
@@ -25,8 +25,8 @@ export function ActiveApplicationsView({
   if (applications.length === 0) {
     return (
       <p className="muted">
-        No active desktop applications in the latest observation. Refresh after
-        capturing workspace observation (Diagnostic or restore path).
+        No running desktop applications in the latest observation. Refresh after
+        the desktop app has captured windows, or after you launch apps.
       </p>
     );
   }

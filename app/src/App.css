@@ -1103,3 +1103,247 @@ button.linkish:not(:disabled):hover {
     grid-template-columns: 1fr;
   }
 }
+
+/* Milestone A.1 — identity / hierarchy hardening */
+
+.chrome-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.chrome-tagline {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #7f8f9d;
+}
+
+.chrome-nav-groups {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.25rem;
+}
+
+.primary-tabs {
+  padding-right: 0.85rem;
+  border-right: 1px solid #2a3642;
+}
+
+.tool-tabs {
+  opacity: 0.9;
+}
+
+.tab.tool {
+  border-style: dashed;
+  color: #8a9aaa;
+  font-size: 0.9em;
+  background: transparent;
+}
+
+.tab.tool.active {
+  color: #c5d0da;
+  background: #1a222c;
+  border-color: #3a4a5a;
+}
+
+.runtime.banner {
+  border-color: #60a5fa;
+  color: #bfdbfe;
+  background: rgba(96, 165, 250, 0.08);
+}
+
+.applications-wide {
+  max-width: 58rem;
+}
+
+.application-card-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  gap: 0.75rem;
+}
+
+.application-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 0.85rem;
+  background: #121820;
+  border: 1px solid #2a3642;
+  border-radius: 6px;
+  min-height: 8.5rem;
+}
+
+.application-card.selected {
+  border-color: #4a6a8a;
+  background: #1a2430;
+}
+
+.application-card.preview {
+  opacity: 0.55;
+  min-height: 5.5rem;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.application-card-main {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  padding: 0;
+  cursor: pointer;
+}
+
+.application-card-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.application-monogram {
+  flex: 0 0 auto;
+  width: 2.4rem;
+  height: 2.4rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: linear-gradient(160deg, #243447 0%, #1a2430 100%);
+  border: 1px solid #334455;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #d7e2ec;
+}
+
+.application-monogram.compact {
+  width: 1.7rem;
+  height: 1.7rem;
+  font-size: 0.68rem;
+  border-radius: 6px;
+}
+
+.application-status {
+  margin-top: 0.2rem;
+  font-size: 0.75rem;
+  color: #86efac;
+}
+
+.ghost-preview {
+  margin: 0.75rem 0;
+}
+
+.home-current-identity {
+  display: flex;
+  gap: 0.85rem;
+  align-items: center;
+  margin-top: 0.35rem;
+}
+
+.workspace-monogram {
+  width: 3rem;
+  height: 3rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: linear-gradient(160deg, #2a3d52 0%, #1a2430 100%);
+  border: 1px solid #3a4a5a;
+  font-weight: 700;
+  color: #e7ecf1;
+}
+
+.home-app-chip-row {
+  list-style: none;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.home-app-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.55rem;
+  background: #121820;
+  border: 1px solid #2a3642;
+  color: #e7ecf1;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.home-future {
+  padding-top: 0.5rem;
+  border-top: 1px solid #243040;
+}
+
+.home-future-list {
+  margin: 0.35rem 0 0.65rem;
+  padding-left: 1.1rem;
+  line-height: 1.5;
+}
+
+.assistant-companion-stage {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(20rem, 28rem);
+  min-height: calc(100vh - 3.5rem);
+}
+
+.assistant-stage-quiet {
+  padding: 2rem 1.75rem;
+  border-right: 1px solid #243040;
+  background:
+    radial-gradient(ellipse at top left, rgba(36, 52, 71, 0.45), transparent 55%),
+    #0f1419;
+}
+
+.assistant-stage-quiet h2 {
+  margin: 0.35rem 0 0.55rem;
+  font-size: 1.45rem;
+  text-transform: none;
+  letter-spacing: 0;
+  color: #e7ecf1;
+}
+
+.assistant-companion-rail {
+  padding: 1rem 1.1rem 2rem;
+  background: #111820;
+  overflow: auto;
+}
+
+.assistant-companion-header h2 {
+  margin: 0.2rem 0 0.45rem;
+  font-size: 1.15rem;
+  text-transform: none;
+  letter-spacing: 0;
+  color: #e7ecf1;
+}
+
+@media (max-width: 900px) {
+  .primary-tabs {
+    border-right: 0;
+    padding-right: 0;
+  }
+
+  .assistant-companion-stage {
+    grid-template-columns: 1fr;
+  }
+
+  .assistant-stage-quiet {
+    border-right: 0;
+    border-bottom: 1px solid #243040;
+    padding: 1.1rem 1.25rem;
+  }
+}

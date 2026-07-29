@@ -857,7 +857,7 @@ export function AssistantPanel({
 
       {!workspace && (
         <p className="muted">
-          Create or activate a workspace from the Workspace tab before asking the assistant
+          Create or activate a workspace from Workspaces before asking the assistant
           for work.
         </p>
       )}

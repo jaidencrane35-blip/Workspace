@@ -1,6 +1,6 @@
 /**
  * Purpose: Product switcher for saved workspaces (list / create / activate).
- * Owner: Frontend product shell (Milestone A)
+ * Owner: Frontend product shell (Milestone A / A.1)
  * Inputs: active workspace, busy flags, activate/create callbacks from App
  * Outputs: User selection of workspace; create-with-name requests
  * Dependencies: list_workspaces IPC, existing create/activate paths in App
