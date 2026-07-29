@@ -243,6 +243,16 @@ See [Workspace Evidence Observational Scaffold Architecture](../05-AI/WORKSPACE-
 
 ---
 
+## H. Batch 11 charter opened (not implemented)
+
+**Date:** 2026-07-29  
+**Document:** [Conversational / Assistant Surface Architecture](../05-AI/CONVERSATIONAL-ASSISTANT-SURFACE-ARCHITECTURE.md)  
+**Status:** Charter only — implementation blocked until architecture acceptance.
+
+Batch 11 will define the human conversational interface to the intelligence substrate. It must not create hidden authority, clone another evidence engine, or silence unrelated kernel debt (case5 / case11).
+
+---
+
 ## Explicit confirmation
 
-This audit concludes that Workspace Evidence engines through Batch 9 observe recorded evidence characteristics only within their stated ownership. The two kernel failures are pre-existing Activity Graph / Intelligence issues, not Programme IV architectural drift. Batch 10 improves human maintainability by extracting shared scaffolding without adding a new evidence authority or clone engine.
+This audit concludes that Workspace Evidence engines through Batch 9 observe recorded evidence characteristics only within their stated ownership. The two kernel failures are pre-existing Activity Graph / Intelligence issues, not Programme IV architectural drift. Batch 10 improves human maintainability by extracting shared scaffolding without adding a new evidence authority or clone engine. Batch 11 is opened as a charter only.

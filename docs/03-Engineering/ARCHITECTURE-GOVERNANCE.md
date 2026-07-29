@@ -709,6 +709,21 @@ Shared Programme IV helpers — not a new evidence assessment engine.
 
 See [Workspace Evidence Observational Scaffold Architecture](../05-AI/WORKSPACE-EVIDENCE-OBSERVATIONAL-SCAFFOLD-ARCHITECTURE.md).
 
+## Conversational / Assistant Surface (Programme IV Batch 11)
+
+**Charter only — not accepted for implementation.**
+
+Human interface to Programmes II–IV without hidden authority.
+
+**Present intelligence. Never become authority.**
+
+- Will own conversation/turn projections, presentation lineage, surface diagnostics only
+- Will never own decisions, approvals, execution, Intent, Decision Engine, Recommendation systems, or hidden memory
+- Upstream reads via `load_snapshot` / existing queries only — never foreign `::generate` for refresh
+- No mutation baseline or DTO inventory change until an accepted implementation design exists
+
+See [Conversational / Assistant Surface Architecture](../05-AI/CONVERSATIONAL-ASSISTANT-SURFACE-ARCHITECTURE.md).
+
 ## Capability boundary audit
 
 Enforced by `scripts/architecture-governance-lib.mjs`:

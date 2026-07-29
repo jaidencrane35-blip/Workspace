@@ -463,6 +463,12 @@ Rules:
 - Forbidden: treating the scaffold as an evidence authority or action surface
 - No new dual-channel snapshot DTOs in Batch 10
 
+### Conversational / Assistant Surface (Programme IV Batch 11 — charter only)
+
+- Charter defines projection-only UI requirements and forbids hidden command affordances
+- Implementation must not begin until charter acceptance
+- Future projections must distinguish information (assistant) from action (other owners)
+
 
 ## Serde defaults vs TypeScript required fields
 
