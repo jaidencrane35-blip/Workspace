@@ -168,6 +168,10 @@ use crate::commands::workspace_evidence_navigation::{
     ExplainEvidenceNavigation, GenerateWorkspaceEvidenceNavigation, GetWorkspaceEvidenceNavigation,
     GetWorkspaceEvidenceNavigationSummary,
 };
+use crate::commands::workspace_evidence_trace::{
+    ExplainEvidenceTrace, GenerateWorkspaceEvidenceTrace, GetWorkspaceEvidenceTrace,
+    GetWorkspaceEvidenceTraceSummary,
+};
 use crate::commands::workspace_cross_intelligence::{
     ExplainCrossWorkspacePattern, GenerateCrossWorkspaceIntelligence, GetCrossWorkspaceIntelligence,
     GetCrossWorkspaceSummary,
@@ -254,6 +258,8 @@ use workspace_domain::{
     WorkspaceSemanticQueryExplanation,
     WorkspaceEvidenceNavigationProjection, WorkspaceEvidenceNavigationSummary,
     WorkspaceEvidenceNavigationExplanation,
+    WorkspaceEvidenceTraceProjection, WorkspaceEvidenceTraceSummary,
+    WorkspaceEvidenceTraceExplanation,
     LayoutId, LayoutMetadata, LayoutNode, LayoutSnapshot, MemoryEntry, MemoryType,
     ModelProviderDescriptor, ModelResponse, Observation, PersonalizedPlanComparison,
     PreferenceCategory, PreferenceSource, Suggestion, SuggestionIntentRequest,
@@ -3320,6 +3326,55 @@ impl CommandHandler {
     /// Architecture guard — Evidence navigation cannot execute / interpret / invent paths.
     pub fn evidence_navigation_attempt_execute() -> Result<()> {
         crate::services::WorkspaceEvidenceNavigationService::attempt_execute()
+    }
+
+    pub fn generate_workspace_evidence_trace(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        target_reference: String,
+    ) -> Result<WorkspaceEvidenceTraceProjection> {
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_mutation(
+            GenerateWorkspaceEvidenceTrace::new(workspace_id, target_reference),
+        )
+    }
+
+    pub fn get_workspace_evidence_trace(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceEvidenceTraceProjection> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetWorkspaceEvidenceTrace::new(workspace_id))
+    }
+
+    pub fn get_workspace_evidence_trace_summary(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        history_limit: usize,
+    ) -> Result<WorkspaceEvidenceTraceSummary> {
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_query(
+            GetWorkspaceEvidenceTraceSummary::new(workspace_id, history_limit),
+        )
+    }
+
+    pub fn explain_evidence_trace(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceEvidenceTraceExplanation> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(ExplainEvidenceTrace::new(workspace_id))
+    }
+
+    /// Architecture guard — Evidence trace cannot execute / infer / invent hops.
+    pub fn evidence_trace_attempt_execute() -> Result<()> {
+        crate::services::WorkspaceEvidenceTraceService::attempt_execute()
     }
 
     #[allow(clippy::too_many_arguments)]

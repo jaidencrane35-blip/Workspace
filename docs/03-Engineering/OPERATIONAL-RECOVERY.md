@@ -50,6 +50,7 @@ Recovery must **never**:
 - fabricate intelligence packages, lineage rollups, or conflict resolutions from missing evidence (`recovery_must_not_fabricate_intelligence_hub`)
 - `recovery_must_not_fabricate_semantic_query` — never invent matches, fabricate relevance, or invent lineage on restart
 - `recovery_must_not_fabricate_evidence_navigation` — never invent paths, bridge missing lineage, or fabricate traversal on restart
+- `recovery_must_not_fabricate_evidence_trace` — never invent lineage, fabricate hops, or bridge missing history on restart
 - recreate desktop actions
 - bypass PermissionGateway / CommandPipeline for user mutations
 - silently “heal” lifecycle into an open actionable state

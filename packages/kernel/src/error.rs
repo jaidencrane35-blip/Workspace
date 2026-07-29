@@ -18,7 +18,7 @@ use workspace_domain::{
     HistoricalReconstructionError, TemporalIntelligenceError, WorkspaceExplanationError,
     ContextualUnderstandingError, KnowledgeSynthesisError, KnowledgeIntegrationError,
     InsightCoordinationError, CrossWorkspaceIntelligenceError, DecisionSupportError,
-    IntelligenceHubError, SemanticQueryError, EvidenceNavigationError,
+    IntelligenceHubError, SemanticQueryError, EvidenceNavigationError, EvidenceTraceError,
     WorkspaceSessionError,
     WorkspaceTransitionError,
     WorkspaceWorkContextError, WorkspaceWorkingStyleError,
@@ -300,6 +300,9 @@ pub enum KernelError {
 
     #[error("Evidence navigation validation failed: {message}")]
     EvidenceNavigationValidation { message: String },
+
+    #[error("Evidence trace validation failed: {message}")]
+    EvidenceTraceValidation { message: String },
 
     #[error("Workspace intelligence validation failed: {message}")]
     WorkspaceIntelligenceValidation { message: String },
@@ -757,6 +760,17 @@ impl From<EvidenceNavigationError> for KernelError {
         match error {
             EvidenceNavigationError::Domain(domain) => KernelError::from(domain),
             other => KernelError::EvidenceNavigationValidation {
+                message: other.to_string(),
+            },
+        }
+    }
+}
+
+impl From<EvidenceTraceError> for KernelError {
+    fn from(error: EvidenceTraceError) -> Self {
+        match error {
+            EvidenceTraceError::Domain(domain) => KernelError::from(domain),
+            other => KernelError::EvidenceTraceValidation {
                 message: other.to_string(),
             },
         }
@@ -1495,6 +1509,10 @@ impl KernelError {
             },
             KernelError::EvidenceNavigationValidation { message } => PublicError {
                 code: "evidence_navigation_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::EvidenceTraceValidation { message } => PublicError {
+                code: "evidence_trace_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::WorkspaceIntelligenceValidation { message } => PublicError {

@@ -584,6 +584,23 @@ Deterministic navigation of existing evidence paths.
 
 See [Workspace Evidence Navigation Architecture](../05-AI/WORKSPACE-EVIDENCE-NAVIGATION-ARCHITECTURE.md).
 
+## Workspace Evidence Trace Engine (Programme IV Batch 3)
+
+Deterministic provenance tracing for a single artefact.
+
+**Trace provenance. Never infer provenance.**
+
+- Owns traces / chains / segments / diagnostics / gaps only
+- Never owns navigation, semantic retrieval, reasoning, recommendation, execution, or lifecycle
+- Upstream access via `load_snapshot` only — never foreign `::generate`
+- Never invents hops or bridges missing history
+- History is evidence-only (`actionable: false`, `authority_effect: "none"`)
+- Mutation inventory includes `GenerateWorkspaceEvidenceTrace` (baseline **76**)
+- History / projection DTO inventory length **27**
+
+See [Workspace Evidence Trace Architecture](../05-AI/WORKSPACE-EVIDENCE-TRACE-ARCHITECTURE.md).
+
+
 
 
 ## Capability boundary audit

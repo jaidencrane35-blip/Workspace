@@ -45,6 +45,7 @@ The Query Engine:
 |---|---|---|
 | 1 | Workspace Semantic Query Engine | Canonical read-only semantic retrieval |
 | 2 | Workspace Evidence Navigation Engine | Deterministic navigation of existing evidence paths |
+| 3 | Workspace Evidence Trace Engine | Deterministic provenance tracing for a single artefact |
 
 Future Programme IV batches build conversational and assistant surfaces **on top of** this retrieval layer — never beside it, never replacing it.
 
@@ -80,6 +81,22 @@ It never owns cognitive model, planning, reasoning, graph, orchestration, learni
 - navigation gaps
 
 It never owns semantic retrieval, knowledge, contextual understanding, explanation, planning, reasoning, cognitive model, workspace state, policy, recommendations, decisions, execution, permissions, or lifecycle.
+
+
+---
+
+## Ownership boundary (Batch 3)
+
+`WorkspaceEvidenceTraceService` owns only:
+
+- evidence traces
+- provenance chains
+- lineage packages
+- trace diagnostics
+- trace completeness
+- trace gaps
+
+It never owns semantic retrieval, evidence navigation, explanations, contextual understanding, knowledge, planning, reasoning, policy, execution, permissions, or lifecycle.
 
 ## Upstream access rule
 
@@ -136,6 +153,7 @@ Unknown remains unknown. Unavailable remains unavailable. Contradictions remain 
 
 - [Workspace Semantic Query Architecture](./WORKSPACE-SEMANTIC-QUERY-ARCHITECTURE.md)
 - [Workspace Evidence Navigation Architecture](./WORKSPACE-EVIDENCE-NAVIGATION-ARCHITECTURE.md)
+- [Workspace Evidence Trace Architecture](./WORKSPACE-EVIDENCE-TRACE-ARCHITECTURE.md)
 - [Programme III — Coherent Workspace Runtime](./PROGRAMME-III-COHERENT-WORKSPACE-RUNTIME.md)
 - [Programme II — Cognitive Workspace](./PROGRAMME-II-COGNITIVE-WORKSPACE.md)
 - [Projection Integrity](../03-Engineering/PROJECTION-INTEGRITY.md)

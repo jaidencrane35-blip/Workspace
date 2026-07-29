@@ -36,6 +36,7 @@ Canonical product language. Prefer these terms in UI, docs, and Assistant copy.
 | **Workspace Intelligence Hub** | Read-only aggregation of Programme III intelligence packages (aggregation ≠ reinterpretation) | New SoT, conflict resolver, recommendation engine, decision-maker, upstream authority replacement |
 | **Workspace Semantic Query Engine** | Canonical read-only semantic retrieval over Programmes II/III (retrieve ≠ synthesise) | Reasoning engine, planner, recommender, decision-maker, knowledge creator, upstream authority |
 | **Workspace Evidence Navigation Engine** | Deterministic navigation of existing evidence paths (navigate ≠ interpret) | Interpreter, reasoner, recommender, relationship inventor, decision-maker, upstream authority |
+| **Workspace Evidence Trace Engine** | Deterministic provenance tracing for a single artefact (trace ≠ infer) | Explainer, reasoner, lineage inventor, history repairer, recommender, upstream authority |
 | **Graph History** | Terminal superseded graph snapshot evidence | Actionable graph mutations |
 | **Task** | Durable work item | Action |
 | **Action** | Executable catalog/command candidate | Task |

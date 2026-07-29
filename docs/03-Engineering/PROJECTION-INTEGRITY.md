@@ -399,6 +399,16 @@ Rules:
 - Paths are existing provenance only — never inferred edges
 
 
+
+### Workspace Evidence Trace Engine (Programme IV Batch 3)
+
+- Dual-channel: `current` + `history` + authoritative `history_count`
+- History is evidence-only; never actionable
+- Projection helpers expose provenance chains, segments, lineage, diagnostics, completeness
+- Forbidden: execute, recommend, approve, mutate, automate
+- Segments are recorded hops only — never inferred
+
+
 ## Serde defaults vs TypeScript required fields
 
 Rust history fields often use `#[serde(default)]` so older persisted / in-flight JSON

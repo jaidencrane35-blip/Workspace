@@ -4813,6 +4813,168 @@ export interface WorkspaceEvidenceNavigationExplanation {
   actionable: boolean;
 }
 
+/** Programme IV Batch 3 — Workspace Evidence Trace Engine (trace ≠ infer). */
+export interface EvidenceTraceScope {
+  include_evidence_navigation: boolean;
+  include_semantic_query: boolean;
+  include_intelligence_hub: boolean;
+  include_knowledge_integration: boolean;
+  include_knowledge_synthesis: boolean;
+  include_contextual: boolean;
+  include_explanation: boolean;
+  include_temporal: boolean;
+  include_reconstruction: boolean;
+  include_state: boolean;
+}
+
+export interface EvidenceTraceRequest {
+  request_id: string;
+  target_reference: string;
+  trace_scope: EvidenceTraceScope;
+  maximum_depth: number;
+  provenance_constraints: string[];
+  authority_effect: string;
+  actionable: boolean;
+  executable: boolean;
+}
+
+export interface EvidenceTraceEvidenceRef {
+  external_ref: string;
+  origin_domain: string;
+  source_revision: string | null;
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface TraceSegment {
+  segment_id: string;
+  source_reference: string;
+  destination_reference: string;
+  originating_revision: string | null;
+  originating_snapshot_id: string | null;
+  evidence_ref: EvidenceTraceEvidenceRef;
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface ProvenanceChain {
+  chain_id: string;
+  source_reference: string;
+  destination_reference: string;
+  intermediate_references: string[];
+  originating_revisions: string[];
+  originating_snapshot_ids: string[];
+  segments: TraceSegment[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface TraceGap {
+  gap_id: string;
+  gap_kind: string;
+  description: string;
+  affected_references: string[];
+  evidence_refs: EvidenceTraceEvidenceRef[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface TraceDiagnostics {
+  diagnostics_id: string;
+  completeness: string;
+  reachable_revisions: string[];
+  missing_revisions: string[];
+  unavailable_artefacts: string[];
+  segment_count: number;
+  gap_count: number;
+  notes: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface TraceLineagePackage {
+  lineage_id: string;
+  participating_snapshots: string[];
+  revisions: string[];
+  evidence_refs: EvidenceTraceEvidenceRef[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface WorkspaceEvidenceTraceSnapshot {
+  trace_id: string;
+  workspace_id: string;
+  generated_at: string;
+  status: string;
+  superseded_at: string | null;
+  request: EvidenceTraceRequest;
+  chain: ProvenanceChain | null;
+  gaps: TraceGap[];
+  diagnostics: TraceDiagnostics;
+  lineage: TraceLineagePackage;
+  completeness: string;
+  provenance_links: EvidenceTraceEvidenceRef[];
+  source_revisions: string[];
+  narrative_summary: string;
+  narrative: string;
+  limitations: string[];
+  authority_effect: string;
+  actionable: boolean;
+  terminal: boolean;
+}
+
+export interface EvidenceTraceHistoryEntry {
+  trace_id: string;
+  status: string;
+  created_at: string;
+  superseded_at: string | null;
+  completeness: string;
+  segment_count: number;
+  gap_count: number;
+  source_revision_count: number;
+  terminal: boolean;
+  actionable: boolean;
+  authority_effect: string;
+}
+
+export interface WorkspaceEvidenceTraceProjection {
+  workspace_id: string;
+  current: WorkspaceEvidenceTraceSnapshot | null;
+  history: EvidenceTraceHistoryEntry[];
+  history_count: number;
+  projected_at: string;
+  authority_effect: string;
+}
+
+export interface WorkspaceEvidenceTraceSummary {
+  workspace_id: string;
+  has_current: boolean;
+  completeness: string | null;
+  segment_count: number;
+  gap_count: number;
+  narrative_summary: string | null;
+  history: EvidenceTraceHistoryEntry[];
+  history_count: number;
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface WorkspaceEvidenceTraceExplanation {
+  explanation_id: string;
+  workspace_id: string;
+  completeness: string | null;
+  narrative_summary: string | null;
+  segment_summaries: string[];
+  gap_summaries: string[];
+  lineage_summaries: string[];
+  evidence_refs: string[];
+  uncertainty: string[];
+  narrative: string;
+  limitations: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
 export type WindowIdentityConfidence = "high" | "medium" | "low" | "ephemeral";
 
 export interface WorkspaceObservationPass {

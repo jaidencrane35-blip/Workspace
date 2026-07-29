@@ -60,6 +60,9 @@ use crate::workspace_semantic_query::{
 use crate::workspace_evidence_navigation::{
     EvidenceNavigationHistoryEntry, WorkspaceEvidenceNavigationProjection,
 };
+use crate::workspace_evidence_trace::{
+    EvidenceTraceHistoryEntry, WorkspaceEvidenceTraceProjection,
+};
 use crate::workspace_reasoning_memory::{ReasoningHistoryEntry, ReasoningSnapshot};
 
 /// Documented startup in-progress sweep cap (must match
@@ -498,6 +501,27 @@ pub fn recovery_must_not_fabricate_evidence_navigation(
 /// Fabricated actionable evidence-navigation history must fail the recovery contract.
 pub fn recovery_must_not_fabricate_actionable_evidence_navigation_history(
     entry: &EvidenceNavigationHistoryEntry,
+) -> bool {
+    entry.is_non_actionable()
+}
+
+
+/// Missing evidence trace remains missing — never invent lineage or bridge history on restart.
+pub fn recovery_must_not_fabricate_evidence_trace(
+    projection: &WorkspaceEvidenceTraceProjection,
+) -> bool {
+    projection.is_non_commandable()
+        && projection.history.iter().all(|h| h.is_non_actionable())
+        && projection
+            .current
+            .as_ref()
+            .map(|c| c.is_non_executing())
+            .unwrap_or(true)
+}
+
+/// Fabricated actionable evidence-trace history must fail the recovery contract.
+pub fn recovery_must_not_fabricate_actionable_evidence_trace_history(
+    entry: &EvidenceTraceHistoryEntry,
 ) -> bool {
     entry.is_non_actionable()
 }
