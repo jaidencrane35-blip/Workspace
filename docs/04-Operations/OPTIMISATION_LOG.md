@@ -41,6 +41,23 @@ Human concept → Optimised representation → Decoder / inspector → Human und
 
 ## Cycles
 
+### Cycle: opt-c5-preference-hooks-milestone-c-docs
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-29 |
+| **Problem** | App.tsx owned two preference state machines inline; Milestone C lacked an engineering report |
+| **Reason** | Maintainability + human-readable milestone record without ownership change |
+| **Files changed** | `useWorkMode.ts`, `useAssistantRail.ts`, `App.tsx`, `MILESTONE-C-COMPANION-RAIL-REPORT.md`, this log |
+| **Validation** | typecheck / test / architecture / ipc / ui-boundary / build |
+| **Maintainability score** | 8.9/10 (+0.2 hooks) |
+| **Reference alignment** | 8.8/10 |
+| **Commercial readiness** | 6.3/10 |
+| **Human readability** | 8.8/10 |
+| **Why this is safe** | Presentation preference extraction + docs only |
+
+---
+
 ### Cycle: opt-c4-companion-rail-a11y
 
 | Field | Value |

@@ -28,8 +28,6 @@ import { WorkspaceSwitcher } from "./components/WorkspaceSwitcher";
 import { WorkModeSwitch } from "./components/WorkModeSwitch";
 import {
   assistantRailToggleLabel,
-  loadStoredAssistantRailOpen,
-  storeAssistantRailOpen,
 } from "./lib/assistantRail";
 import {
   invokeIpc,
@@ -40,11 +38,8 @@ import {
   classifyBanner,
   ZONE_CONTEXT_LIMIT,
 } from "./lib/productShellUi";
-import {
-  loadStoredWorkMode,
-  storeWorkMode,
-  type WorkMode,
-} from "./lib/workMode";
+import { useAssistantRail } from "./lib/useAssistantRail";
+import { useWorkMode } from "./lib/useWorkMode";
 import type {
   ApplicationReference,
   Workspace,
@@ -114,32 +109,14 @@ export default function App() {
   const [message, setMessage] = useState<string | null>(null);
   const [bootstrapped, setBootstrapped] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [workMode, setWorkMode] = useState<WorkMode>(() => loadStoredWorkMode());
-  const [assistantRailOpen, setAssistantRailOpen] = useState(() =>
-    loadStoredAssistantRailOpen(),
-  );
+  const onStatus = useCallback((text: string) => {
+    setMessage(text);
+  }, []);
+  const { workMode, onWorkModeChange } = useWorkMode(onStatus);
+  const { assistantRailOpen, onAssistantRailOpenChange } =
+    useAssistantRail(onStatus);
   const [lastPrimaryView, setLastPrimaryView] =
     useState<ProductPrimaryView>("home");
-
-  const onWorkModeChange = useCallback((mode: WorkMode) => {
-    setWorkMode(mode);
-    storeWorkMode(mode);
-    setMessage(
-      mode === "flow"
-        ? "Flow presentation — denser workspace overview"
-        : "Focus presentation — quieter chrome (OS windows unchanged)",
-    );
-  }, []);
-
-  const onAssistantRailOpenChange = useCallback((open: boolean) => {
-    setAssistantRailOpen(open);
-    storeAssistantRailOpen(open);
-    setMessage(
-      open
-        ? "Assistant companion shown"
-        : "Assistant companion hidden — product stage stays primary",
-    );
-  }, []);
 
   const navigatePrimary = useCallback((next: ProductPrimaryView) => {
     setLastPrimaryView(next);
