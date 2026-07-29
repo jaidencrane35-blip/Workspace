@@ -1,6 +1,6 @@
 # Assistant Retrieval Intelligence Architecture (Programme IV — Batch 13)
 
-**Status:** Charter only — not accepted for implementation  
+**Status:** Active — implemented  
 **Audience:** Architecture, Kernel, Frontend, Product, Governance  
 **Depends on:**  
 - [Assistant Context Intelligence Architecture](./ASSISTANT-CONTEXT-INTELLIGENCE-ARCHITECTURE.md) (Batch 12 — accepted / implemented)  
@@ -19,9 +19,7 @@ Batch 13 asks the next architectural question:
 
 > **"How does the assistant select, package, and present existing workspace evidence without becoming a reasoning engine, ranking authority, or recommendation system?"**
 
-This charter defines the **Assistant Retrieval Intelligence Contract** — human-facing retrieval request packaging and evidence presentation composition over existing Semantic Query and Evidence engines **without** inventing relevance authority, truth ranking, recommendations, or a second search substrate.
-
-**Implementation is blocked until this charter is reviewed and accepted.**
+This document defines the **Assistant Retrieval Intelligence Contract** — human-facing retrieval request packaging and evidence presentation composition over existing Semantic Query and Evidence engines **without** inventing relevance authority, truth ranking, recommendations, or a second search substrate.
 
 ---
 
@@ -36,14 +34,12 @@ Assistant retrieval intelligence:
 - **preserves** provenance, completeness, and uncertainty
 - **never** becomes a ranking SoT, reasoning engine, Recommendation system, Decision authority, or Memory owner
 
-Capability growth must not equal code duplication (Batch 10 direction lock; Batches 11–12 Grade A acceptance). Batch 13 must evaluate reuse of:
+Capability growth must not equal code duplication (Batch 10 direction lock; Batches 11–12 Grade A acceptance). Batch 13 reuses:
 
 1. Batch 1 Semantic Query + Batches 2–9 evidence engines (`load_snapshot` / existing query paths)
 2. Batch 10 observational scaffolding (`workspace_evidence_contract`, `evidenceProjectionContract`)
-3. Batch 11 assistant surface packages (citation / utterance presentation patterns)
+3. Batch 11 assistant surface packages (`AssistantSurfaceScope`, citation / utterance presentation patterns)
 4. Batch 12 assistant context packages (scope / continuity / displayed selection)
-
-before introducing any new module, migration, or guard family.
 
 ---
 
@@ -51,9 +47,9 @@ before introducing any new module, migration, or guard family.
 
 | State | Meaning |
 |---|---|
-| **Charter only** | Architecture proposed; no domain/kernel/database/React implementation in this batch until acceptance |
+| **Active — implemented** | `WorkspaceAssistantRetrievalService`, migration `075`, kernel commands, projection helpers, and governance guard are implemented |
 | **Depends on Batches 1–12** | Composes existing retrieval/evidence/assistant contracts — does not replace them |
-| **No baseline change yet** | Mutation baseline remains **84**; history/projection DTO inventory remains **35** until an accepted implementation design exists |
+| **Governed baseline** | Mutation baseline **85**; history/projection DTO inventory **36** |
 
 ---
 
@@ -73,7 +69,7 @@ Assistant Surface (Batch 11)     ← may present packaged retrieval in turns
 Existing authorities             ← remain sole owners of truth / rank / recommend / decide
 ```
 
-| Concern | Prior owner | Batch 13 (this charter) |
+| Concern | Prior owner | Batch 13 |
 |---|---|---|
 | Semantic retrieval execution | Batch 1 Semantic Query | Consumes — does not reimplement |
 | Evidence path navigation / trace / coverage / consistency | Batches 2–5 (+ later evidence engines as scoped) | Consumes via existing contracts |
@@ -88,9 +84,9 @@ Batch 13 must **not** fork a second Semantic Query engine, hidden ranker, or ind
 
 ## Ownership
 
-### Proposed owner (post-acceptance)
+### Owner
 
-`WorkspaceAssistantRetrievalService` *(name provisional — prefer composition beside/near assistant surface/context modules if a separate full stack would clone rather than clarify)*
+`WorkspaceAssistantRetrievalService` — clear folder `packages/domain/src/workspace_assistant_retrieval/` for ownership clarification beside Batches 11–12, **not** a second Semantic Query / search engine.
 
 ### May own
 
@@ -164,7 +160,7 @@ Batch 13 must **not** fork a second Semantic Query engine, hidden ranker, or ind
 | Stating “N matches recorded; M unavailable” | Filling empty results with plausible hits |
 | Preserving contradictions from Evidence Consistency | Resolving conflicts into a single truth |
 
-If an upstream does not provide an ordering signal, the assistant may use stable deterministic ordering (e.g. artefact id) for display — never a learned or inferred relevance model owned here.
+If an upstream does not provide an ordering signal, the assistant uses stable deterministic ordering by `artefact_ref` for display — never a learned or inferred relevance model owned here.
 
 ---
 
@@ -208,7 +204,7 @@ Assistant retrieval intelligence **must never**:
 
 | Layer | Batch 13 role |
 |---|---|
-| Temporary retrieval request / result package | May package for presentation; dual-channel evidence only if accepted later |
+| Temporary retrieval request / result package | Dual-channel evidence (`075_workspace_assistant_retrieval.sql`) with retrieval-specific columns |
 | Batch 12 conversation context | Input scope — not redefined |
 | Retrieved evidence | Cite upstream only |
 | Durable memory | Never written here; only display if already authorised elsewhere |
@@ -222,7 +218,7 @@ Displayed retrieval ≠ durable memory ≠ ranked truth.
 
 ### Projection-only
 
-- React renders retrieval packages via Batch 10/11/12 projection helpers (extend; do not invent a fourth parallel contract family without audit justification).
+- React renders retrieval packages via thin `assistantRetrievalProjection.ts` wrapping Batch 10 `evidenceProjectionContract`.
 - No mutation from render paths.
 - Result lists are informational — not command affordances.
 
@@ -240,15 +236,15 @@ UI must not imply the assistant chose the “right” evidence for action.
 
 ## Governance
 
-### Permissions (proposed — post-acceptance)
+### Permissions
 
-- Retrieval package read / compose inspection: `work_context.read` (or existing assistant read paths)
-- Any durable dual-channel package mutation (if accepted later): existing write capabilities — **not** `assistant.retrieval.superuser`
+- Retrieval package read / compose inspection: `work_context.read`
+- Durable dual-channel package mutation: `work_context.write` — **not** `assistant.retrieval.superuser`
 - No capability grants issued by assistant retrieval
 
 ### Audit expectations
 
-- Observational events for retrieval packaging (e.g. `workspace.assistant.retrieval.packaged`) with workspace id, upstream refs, `authority_effect: none`
+- Observational events for retrieval packaging (`workspace.assistant.retrieval.packaged`) with workspace id, upstream refs, `authority_effect: none`
 - Never audit retrieval packages as executions, approvals, or recommendations
 - Append-only evidence only
 
@@ -258,27 +254,26 @@ UI must not imply the assistant chose the “right” evidence for action.
 - Missing upstreams produce diagnostics — never silent omission
 - Completeness and uncertainty remain visible
 
+### Implementation roots
+
+| Layer | Path |
+|---|---|
+| Domain | `packages/domain/src/workspace_assistant_retrieval/` |
+| Kernel service | `packages/kernel/src/services/workspace_assistant_retrieval.rs` |
+| Commands | `PackageWorkspaceAssistantRetrieval`, `GetWorkspaceAssistantRetrieval`, `GetWorkspaceAssistantRetrievalSummary`, `ExplainAssistantRetrieval` |
+| Migration | `packages/database/migrations/075_workspace_assistant_retrieval.sql` |
+| Repository | `packages/database/src/repositories/workspace_assistant_retrieval.rs` |
+| React | `app/src/components/assistantRetrievalProjection.ts` |
+| Scope default | `AssistantSurfaceScope::retrieval_default()` (Batch 11 additive) |
+
 ---
 
-## Maintainability requirements (before implementation)
+## Maintainability (extraction decisions)
 
-Implementation (when unblocked) must document in the maintainability audit:
-
-1. **Reusable contracts first**
-   - Compose Semantic Query + Evidence engines + Batch 12 scope
-   - Reuse `workspace_evidence_contract` and thin React wrappers
-   - Prefer extending assistant surface/context modules when a separate full stack would clone
-2. **Avoid subsystem clone**
-   - No second search index / graph / ranker / guard family
-   - One governance guard entry via `EVIDENCE_ENGINE_GUARD_SPECS` if a new service file appears
-   - No migration that duplicates Semantic Query tables as “assistant search memory”
-3. **Folder ownership**
-   - Clear naming (`assistant_retrieval` vs `assistant_surface` / `assistant_context`)
-   - Docs linked from Programme IV indexes
-   - Minimal abstractions; composition over expansion
-4. **LOC honesty**
-   - Justify any new files against “capability ≠ duplication”
-   - Prefer thin packaging over re-implementing retrieval
+1. **Ownership clarification folder** — `workspace_assistant_retrieval/` clarifies ownership beside surface/context; it is not a second search engine.
+2. **Reuse** — `AssistantSurfaceScope`, `workspace_evidence_contract`, thin React wrappers; one `EVIDENCE_ENGINE_GUARD_SPECS` entry.
+3. **Dual-channel columns** — `request_json` / `items_json` / `lineage_json` / `diagnostics_json` / `scope_json` — not a search-index / utterance / memory clone.
+4. **Composition** — required engines via `load_snapshot` only; optional evidence engines only when scope flags set (Batch 12 pattern).
 
 ---
 
@@ -294,28 +289,25 @@ Implementation (when unblocked) must document in the maintainability audit:
 
 ---
 
-## Out of scope for Batch 13 charter
+## Out of scope for Batch 13
 
 - Model provider / prompt engineering details
 - Product UX layouts beyond information vs action
-- Implementing retrieval services, migrations, or commands
 - Resolving case5 / case11 (non–Programme IV debt)
 - Replacing Semantic Query or Evidence engines
 - Replacing Batches 11–12
 
 ---
 
-## Acceptance criteria for this charter
+## Acceptance criteria
 
-Before implementation may begin, reviewers must confirm:
-
-- [ ] Ownership / non-ownership tables are unambiguous
-- [ ] Retrieval boundary reuses Batches 1–5 (+ scoped evidence) and Batch 12 without a second engine
-- [ ] Presentation vs ranking rules forbid relevance/truth authority
-- [ ] Explainability requirements (provenance, lineage, completeness, uncertainty) are enforceable
-- [ ] Maintainability reuse path vs Batches 10–12 is explicit
-- [ ] No mutation baseline / DTO inventory change is implied by charter acceptance alone
-- [ ] Status remains **Charter only** until a separate implementation ACCEPT
+- [x] Ownership / non-ownership tables are unambiguous
+- [x] Retrieval boundary reuses Batches 1–5 (+ scoped evidence) and Batch 12 without a second engine
+- [x] Presentation vs ranking rules forbid relevance/truth authority
+- [x] Explainability requirements (provenance, lineage, completeness, uncertainty) are enforceable
+- [x] Maintainability reuse path vs Batches 10–12 is explicit
+- [x] Mutation baseline **85** / DTO inventory **36** for `PackageWorkspaceAssistantRetrieval`
+- [x] Status is **Active — implemented**
 
 ---
 
@@ -344,4 +336,3 @@ Before implementation may begin, reviewers must confirm:
 > never decides or approves, never executes, never bypasses PermissionGateway,
 > never creates a second search substrate or hidden knowledge graph,
 > and never silently mutates workspace state.
-> Implementation remains blocked until this charter is accepted.

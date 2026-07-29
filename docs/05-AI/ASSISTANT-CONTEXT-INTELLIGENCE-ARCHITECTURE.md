@@ -287,13 +287,13 @@ UI must not imply the assistant autonomously keeps or advances goals.
 - Product UX layouts beyond information vs action
 - Resolving case5 / case11 (non–Programme IV debt)
 - Replacing or rewriting Batch 11
-- Retrieval request packaging / evidence presentation composition (see Batch 13 charter)
+- Retrieval request packaging / evidence presentation composition (see Batch 13 — implemented)
 
 ---
 
 ## Next
 
-Batch 13 — [Assistant Retrieval Intelligence Architecture](./ASSISTANT-RETRIEVAL-INTELLIGENCE-ARCHITECTURE.md) (**charter only** — do not implement until accepted).
+Batch 13 — [Assistant Retrieval Intelligence Architecture](./ASSISTANT-RETRIEVAL-INTELLIGENCE-ARCHITECTURE.md) (**implemented**).
 
 ---
 

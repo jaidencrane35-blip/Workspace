@@ -6128,6 +6128,122 @@ export interface WorkspaceAssistantContextExplanation {
   actionable: boolean;
 }
 
+export interface AssistantRetrievalRequest {
+  request_id: string;
+  human_ask: string;
+  scope: AssistantSurfaceScope;
+  pathway_notes: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface AssistantRetrievalItem {
+  item_id: string;
+  kind: string;
+  origin_domain: string;
+  artefact_ref: string;
+  source_revision: string | null;
+  excerpt: string;
+  completeness_note: string | null;
+  uncertainty_note: string | null;
+  display_order: number;
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface AssistantRetrievalLineage {
+  lineage_id: string;
+  contributing_artefacts: string[];
+  revisions: string[];
+  source_refs: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface AssistantRetrievalGap {
+  gap_id: string;
+  gap_kind: string;
+  description: string;
+  affected_pathways: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface AssistantRetrievalDiagnostics {
+  consulted_pathways: string[];
+  unavailable_pathways: string[];
+  scoped_out_pathways: string[];
+  notes: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface WorkspaceAssistantRetrievalSnapshot {
+  retrieval_id: string;
+  workspace_id: string;
+  generated_at: string;
+  status: string;
+  superseded_at: string | null;
+  request: AssistantRetrievalRequest;
+  items: AssistantRetrievalItem[];
+  lineage: AssistantRetrievalLineage;
+  gaps: AssistantRetrievalGap[];
+  diagnostics: AssistantRetrievalDiagnostics;
+  narrative_summary: string;
+  narrative: string;
+  limitations: string[];
+  authority_effect: string;
+  actionable: boolean;
+  terminal: boolean;
+}
+
+export interface AssistantRetrievalHistoryEntry {
+  retrieval_id: string;
+  status: string;
+  created_at: string;
+  superseded_at: string | null;
+  item_count: number;
+  gap_count: number;
+  terminal: boolean;
+  actionable: boolean;
+  authority_effect: string;
+}
+
+export interface WorkspaceAssistantRetrievalProjection {
+  workspace_id: string;
+  current: WorkspaceAssistantRetrievalSnapshot | null;
+  history: AssistantRetrievalHistoryEntry[];
+  history_count: number;
+  projected_at: string;
+  authority_effect: string;
+}
+
+export interface WorkspaceAssistantRetrievalSummary {
+  workspace_id: string;
+  has_current: boolean;
+  item_count: number;
+  gap_count: number;
+  narrative_summary: string | null;
+  history: AssistantRetrievalHistoryEntry[];
+  history_count: number;
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface WorkspaceAssistantRetrievalExplanation {
+  explanation_id: string;
+  workspace_id: string;
+  narrative_summary: string | null;
+  item_summaries: string[];
+  gap_summaries: string[];
+  lineage_summaries: string[];
+  uncertainty: string[];
+  narrative: string;
+  limitations: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
 export type WindowIdentityConfidence = "high" | "medium" | "low" | "ephemeral";
 
 export interface WorkspaceObservationPass {

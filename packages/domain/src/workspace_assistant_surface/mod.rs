@@ -128,6 +128,27 @@ impl AssistantSurfaceScope {
             include_state: true,
         }
     }
+
+    /// Retrieval-focused default for Batch 13 — enables Semantic Query plus
+    /// Evidence Navigation / Trace / Coverage / Consistency only.
+    pub fn retrieval_default() -> Self {
+        Self {
+            include_semantic_query: true,
+            include_evidence_navigation: true,
+            include_evidence_trace: true,
+            include_evidence_coverage: true,
+            include_evidence_consistency: true,
+            include_evidence_dependency: false,
+            include_evidence_freshness: false,
+            include_evidence_completeness: false,
+            include_evidence_reliability: false,
+            include_explanation: false,
+            include_contextual: false,
+            include_knowledge_integration: false,
+            include_intelligence_hub: false,
+            include_state: false,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

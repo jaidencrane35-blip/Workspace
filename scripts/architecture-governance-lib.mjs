@@ -15,7 +15,7 @@ const read = (file) => fs.readFileSync(file, "utf8");
 const sorted = (values) => [...new Set(values)].sort();
 
 /** Minimum MutationCommand inventory — dropping below this fails closed. */
-export const MUTATION_COMMAND_BASELINE = 84;
+export const MUTATION_COMMAND_BASELINE = 85;
 
 /** Capability id → authority owner (permission-token scope, not lifecycle owner). */
 export const CAPABILITY_AUTHORITY_OWNERS = {
@@ -125,6 +125,7 @@ export const HISTORY_STRUCTS = [
   "EvidenceReliabilityHistoryEntry",
   "AssistantSurfaceHistoryEntry",
   "AssistantContextHistoryEntry",
+  "AssistantRetrievalHistoryEntry",
 ];
 
 export const PROJECTION_SUMMARY_STRUCTS = [
@@ -163,6 +164,7 @@ export const PROJECTION_SUMMARY_STRUCTS = [
   "WorkspaceEvidenceReliabilitySummary",
   "WorkspaceAssistantSurfaceSummary",
   "WorkspaceAssistantContextSummary",
+  "WorkspaceAssistantRetrievalSummary",
 ];
 
 /** Append-only recovery diagnostic event types — evidence only, never commands. */
@@ -227,6 +229,7 @@ const LIFECYCLE_SERVICE_FILES = new Set([
   "workspace_evidence_reliability.rs",
   "workspace_assistant_surface.rs",
   "workspace_assistant_context.rs",
+  "workspace_assistant_retrieval.rs",
 ]);
 
 /**
@@ -2269,6 +2272,34 @@ const EVIDENCE_ENGINE_GUARD_SPECS = [
       /WorkspaceContextualUnderstandingService::generate\b/.source,
       /WorkspaceExplanationService::generate\b/.source,
       /WorkspaceStateCompositionService::generate\b/.source,
+      /DecisionEngineService::generate\b/.source,
+      /WorkspaceRecommendationEngineService::generate\b/.source,
+      /ExecutionLifecycleService::generate\b/.source,
+    ],
+  },
+  {
+    label: "Assistant retrieval",
+    serviceRel: "packages/kernel/src/services/workspace_assistant_retrieval.rs",
+    domainRel: "packages/domain/src/workspace_assistant_retrieval",
+    repoRel: "packages/database/src/repositories/workspace_assistant_retrieval.rs",
+    forbiddenGeneratePatterns: [
+      /WorkspaceEvidenceReliabilityService::generate\b/.source,
+      /WorkspaceEvidenceCompletenessService::generate\b/.source,
+      /WorkspaceEvidenceFreshnessService::generate\b/.source,
+      /WorkspaceEvidenceDependencyService::generate\b/.source,
+      /WorkspaceEvidenceConsistencyService::generate\b/.source,
+      /WorkspaceEvidenceCoverageService::generate\b/.source,
+      /WorkspaceEvidenceTraceService::generate\b/.source,
+      /WorkspaceEvidenceNavigationService::generate\b/.source,
+      /WorkspaceSemanticQueryService::generate\b/.source,
+      /WorkspaceIntelligenceHubService::generate\b/.source,
+      /WorkspaceKnowledgeIntegrationService::generate\b/.source,
+      /WorkspaceKnowledgeSynthesisService::generate\b/.source,
+      /WorkspaceContextualUnderstandingService::generate\b/.source,
+      /WorkspaceExplanationService::generate\b/.source,
+      /WorkspaceStateCompositionService::generate\b/.source,
+      /WorkspaceAssistantContextService::generate\b/.source,
+      /WorkspaceAssistantSurfaceService::compose\b/.source,
       /DecisionEngineService::generate\b/.source,
       /WorkspaceRecommendationEngineService::generate\b/.source,
       /ExecutionLifecycleService::generate\b/.source,

@@ -124,7 +124,7 @@ AI behaviour, permissions, and boundaries.
 | [Workspace Evidence Observational Scaffold Architecture](05-AI/WORKSPACE-EVIDENCE-OBSERVATIONAL-SCAFFOLD-ARCHITECTURE.md) | Programme IV Batch 10 — shared helpers without a new evidence engine |
 | [Conversational / Assistant Surface Architecture](05-AI/CONVERSATIONAL-ASSISTANT-SURFACE-ARCHITECTURE.md) | Programme IV Batch 11 — conversational presentation over recorded evidence (Active / implemented) |
 | [Assistant Context Intelligence Architecture](05-AI/ASSISTANT-CONTEXT-INTELLIGENCE-ARCHITECTURE.md) | Programme IV Batch 12 — context selection / continuity packaging (Active / implemented) |
-| [Assistant Retrieval Intelligence Architecture](05-AI/ASSISTANT-RETRIEVAL-INTELLIGENCE-ARCHITECTURE.md) | Programme IV Batch 13 — retrieval packaging / evidence presentation (charter only) |
+| [Assistant Retrieval Intelligence Architecture](05-AI/ASSISTANT-RETRIEVAL-INTELLIGENCE-ARCHITECTURE.md) | Programme IV Batch 13 — retrieval packaging / evidence presentation (implemented) |
 | [Memory Policy](05-AI/MEMORY-POLICY.md) | What may be stored, retention, user control, deletion |
 | [Confidence Policy](05-AI/CONFIDENCE-POLICY.md) | Confidence levels, suggestion thresholds, uncertainty |
 | [AI Architecture Index](05-AI/README.md) | Navigation hub for Recommendation/Decision/Governance contracts |

@@ -480,12 +480,12 @@ Rules:
 - Continuity references recorded assistant surface ids only — never fabricated turns
 - Context packages never expose execute / approve / decide / memory-write controls
 
-### Assistant Retrieval Intelligence (Programme IV Batch 13 — charter only)
+### Assistant Retrieval Intelligence (Programme IV Batch 13)
 
-- Charter defines projection-only retrieval packaging and forbids ranking-as-truth affordances
-- Implementation must not begin until charter acceptance
-- Future retrieval packages must preserve provenance, lineage, completeness, and uncertainty/gaps
-- Prefer composing Semantic Query / Evidence projections and Batch 10–12 helpers over a new parallel contract family
+- Projection-only retrieval packaging via `assistantRetrievalProjection.ts` (thin wrappers over `evidenceProjectionContract`)
+- Forbids ranking-as-truth affordances — display order is packaging, not relevance
+- Retrieval packages preserve provenance, lineage, completeness, and uncertainty/gaps
+- Composes Semantic Query / Evidence projections and Batch 10–12 helpers — no parallel contract family
 
 
 ## Serde defaults vs TypeScript required fields

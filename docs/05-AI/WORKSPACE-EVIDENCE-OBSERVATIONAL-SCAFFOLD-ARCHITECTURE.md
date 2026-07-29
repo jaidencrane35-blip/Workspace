@@ -90,7 +90,7 @@ Batch 11 — [Conversational / Assistant Surface Architecture](./CONVERSATIONAL-
 
 Batch 12 — [Assistant Context Intelligence Architecture](./ASSISTANT-CONTEXT-INTELLIGENCE-ARCHITECTURE.md) (**implemented** — reuses this scaffold and Batch 11 contracts; packages context without becoming memory).
 
-Batch 13 — [Assistant Retrieval Intelligence Architecture](./ASSISTANT-RETRIEVAL-INTELLIGENCE-ARCHITECTURE.md) (**charter only** — do not implement until accepted; must compose Semantic Query / Evidence engines and Batches 10–12 contracts).
+Batch 13 — [Assistant Retrieval Intelligence Architecture](./ASSISTANT-RETRIEVAL-INTELLIGENCE-ARCHITECTURE.md) (**implemented** — composes Semantic Query / Evidence engines and Batches 10–12 contracts; presents without ranking).
 
 ---
 

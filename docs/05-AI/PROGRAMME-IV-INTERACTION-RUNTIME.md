@@ -55,9 +55,9 @@ The Query Engine:
 | 10 | Evidence Observational Scaffold | Shared Programme IV helpers — not a new evidence question |
 | 11 | Conversational / Assistant Surface | Human-facing presentation of recorded evidence — **implemented** |
 | 12 | Assistant Context Intelligence | Context selection / continuity packaging — **implemented** |
-| 13 | Assistant Retrieval Intelligence | Retrieval request packaging / evidence presentation — **charter only** |
+| 13 | Assistant Retrieval Intelligence | Retrieval request packaging / evidence presentation — **implemented** |
 
-Future Programme IV batches build conversational and assistant surfaces **on top of** this retrieval layer — never beside it, never replacing it. Batch 10 exists so those surfaces can reuse contracts without cloning Batches 1–9. Batch 11 implements that conversational surface as presentation, not authority. Batch 12 implements how session context is selected and packaged without becoming memory or planning authority. Batch 13 charters how assistant retrieval packages and presents existing Semantic Query / Evidence results without ranking truth or recommending.
+Future Programme IV batches build conversational and assistant surfaces **on top of** this retrieval layer — never beside it, never replacing it. Batch 10 exists so those surfaces can reuse contracts without cloning Batches 1–9. Batch 11 implements that conversational surface as presentation, not authority. Batch 12 implements how session context is selected and packaged without becoming memory or planning authority. Batch 13 implements how assistant retrieval packages and presents existing Semantic Query / Evidence results without ranking truth or recommending.
 
 ---
 
@@ -245,16 +245,17 @@ It reuses Batch 10/11 contracts rather than cloning a second assistant subsystem
 
 ---
 
-## Ownership boundary (Batch 13 — charter only)
+## Ownership boundary (Batch 13 — implemented)
 
-The **Assistant Retrieval Intelligence Contract** is chartered in
+The **Assistant Retrieval Intelligence Contract** is owned by
+`WorkspaceAssistantRetrievalService` — see
 [Assistant Retrieval Intelligence Architecture](./ASSISTANT-RETRIEVAL-INTELLIGENCE-ARCHITECTURE.md).
 
-**Status: charter only — implementation blocked until acceptance.**
+**Status: Active — implemented.**
 
-It will own retrieval request packaging, query/context translation for presentation, evidence selection presentation, retrieval diagnostics, and provenance display.
+It owns retrieval request packaging, query/context translation for presentation, evidence selection presentation, retrieval diagnostics, and provenance display.
 
-It will never own truth ranking, relevance authority, reasoning, recommendations, decisions, memory, policy, or execution. It must compose Semantic Query, Evidence engines, and Batch 12 context rather than create a second search substrate.
+It never owns truth ranking, relevance authority, reasoning, recommendations, decisions, memory, policy, or execution. It composes Semantic Query, Evidence engines, and Batch 12 context rather than create a second search substrate.
 
 ## Upstream access rule
 
@@ -321,7 +322,7 @@ Unknown remains unknown. Unavailable remains unavailable. Contradictions remain 
 - [Workspace Evidence Observational Scaffold Architecture](./WORKSPACE-EVIDENCE-OBSERVATIONAL-SCAFFOLD-ARCHITECTURE.md)
 - [Conversational / Assistant Surface Architecture](./CONVERSATIONAL-ASSISTANT-SURFACE-ARCHITECTURE.md) *(Batch 11 — implemented)*
 - [Assistant Context Intelligence Architecture](./ASSISTANT-CONTEXT-INTELLIGENCE-ARCHITECTURE.md) *(Batch 12 — implemented)*
-- [Assistant Retrieval Intelligence Architecture](./ASSISTANT-RETRIEVAL-INTELLIGENCE-ARCHITECTURE.md) *(Batch 13 — charter only)*
+- [Assistant Retrieval Intelligence Architecture](./ASSISTANT-RETRIEVAL-INTELLIGENCE-ARCHITECTURE.md) *(Batch 13 — implemented)*
 - [Programme III — Coherent Workspace Runtime](./PROGRAMME-III-COHERENT-WORKSPACE-RUNTIME.md)
 - [Programme II — Cognitive Workspace](./PROGRAMME-II-COGNITIVE-WORKSPACE.md)
 - [Projection Integrity](../03-Engineering/PROJECTION-INTEGRITY.md)

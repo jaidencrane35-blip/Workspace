@@ -163,6 +163,11 @@ import {
   isAssistantContextHistoryNonActionable,
   isAssistantContextProjectionNonCommandable,
 } from "../app/src/components/assistantContextProjection";
+import {
+  assistantRetrievalHistoryCountIsAuthoritative,
+  isAssistantRetrievalHistoryNonActionable,
+  isAssistantRetrievalProjectionNonCommandable,
+} from "../app/src/components/assistantRetrievalProjection";
 import type {
   DecisionArtifactHistoryEntry,
   DecisionEngineSummary,
@@ -249,6 +254,7 @@ import type {
   WorkspaceEvidenceReliabilityProjection,
   WorkspaceAssistantSurfaceProjection,
   WorkspaceAssistantContextProjection,
+  WorkspaceAssistantRetrievalProjection,
   WorkspaceEvidenceTraceSummary,
   WorkspaceEvidenceCoverageSummary,
   WorkspaceEvidenceConsistencySummary,
@@ -258,8 +264,10 @@ import type {
   WorkspaceEvidenceReliabilitySummary,
   WorkspaceAssistantSurfaceSummary,
   WorkspaceAssistantContextSummary,
+  WorkspaceAssistantRetrievalSummary,
   AssistantSurfaceHistoryEntry,
   AssistantContextHistoryEntry,
+  AssistantRetrievalHistoryEntry,
   RecommendationHistoryEntry,
   RecommendationItem,
   TaskGraphSummary,
@@ -2650,6 +2658,52 @@ describe("projection integrity — cognitive agent cast", () => {
       actionable: false,
     };
     expect(assistantContextHistoryCountIsAuthoritative(summary)).toBe(true);
+    expect(summary.history_count).toBeGreaterThanOrEqual(summary.history.length);
+  });
+});
+
+describe("projection integrity — assistant retrieval (Programme IV Batch 13)", () => {
+  it("keeps retrieval history non-actionable and history_count authoritative", () => {
+    const historyEntry = (
+      overrides: Partial<AssistantRetrievalHistoryEntry> = {}
+    ): AssistantRetrievalHistoryEntry => ({
+      retrieval_id: "assistant_retrieval:1",
+      status: "superseded",
+      created_at: "t0",
+      superseded_at: "t1",
+      item_count: 1,
+      gap_count: 0,
+      terminal: true,
+      actionable: false,
+      authority_effect: "none",
+      ...overrides,
+    });
+    const projection: WorkspaceAssistantRetrievalProjection = {
+      workspace_id: "ws",
+      projected_at: "t2",
+      current: null,
+      history: [historyEntry()],
+      history_count: 2,
+      authority_effect: "none",
+    };
+    expect(isAssistantRetrievalProjectionNonCommandable(projection)).toBe(true);
+    expect(isAssistantRetrievalHistoryNonActionable(historyEntry())).toBe(true);
+    expect(
+      isAssistantRetrievalHistoryNonActionable(historyEntry({ actionable: true }))
+    ).toBe(false);
+
+    const summary: WorkspaceAssistantRetrievalSummary = {
+      workspace_id: "ws",
+      has_current: false,
+      item_count: 0,
+      gap_count: 0,
+      narrative_summary: null,
+      history: [historyEntry()],
+      history_count: 2,
+      authority_effect: "none",
+      actionable: false,
+    };
+    expect(assistantRetrievalHistoryCountIsAuthoritative(summary)).toBe(true);
     expect(summary.history_count).toBeGreaterThanOrEqual(summary.history.length);
   });
 });

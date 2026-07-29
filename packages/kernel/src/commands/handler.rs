@@ -73,6 +73,10 @@ use crate::commands::workspace_assistant_context::{
     ExplainAssistantContext, GetWorkspaceAssistantContext, GetWorkspaceAssistantContextSummary,
     PackageWorkspaceAssistantContext,
 };
+use crate::commands::workspace_assistant_retrieval::{
+    ExplainAssistantRetrieval, GetWorkspaceAssistantRetrieval,
+    GetWorkspaceAssistantRetrievalSummary, PackageWorkspaceAssistantRetrieval,
+};
 use crate::commands::workspace_assistant_surface::{
     ComposeWorkspaceAssistantTurn, ExplainAssistantSurface, GetWorkspaceAssistantSurface,
     GetWorkspaceAssistantSurfaceSummary,
@@ -262,8 +266,9 @@ use workspace_domain::{
     WidgetId, WidgetReference, WorkGoal, WorkflowContext, Workspace, WorkspaceActivity,
     WorkspaceActivityGraph, WorkspaceAdaptationState, WorkspaceAssistantContextExplanation,
     WorkspaceAssistantContextProjection, WorkspaceAssistantContextSummary,
-    WorkspaceAssistantSurfaceExplanation, WorkspaceAssistantSurfaceProjection,
-    WorkspaceAssistantSurfaceSummary, WorkspaceAttentionState,
+    WorkspaceAssistantRetrievalExplanation, WorkspaceAssistantRetrievalProjection,
+    WorkspaceAssistantRetrievalSummary, WorkspaceAssistantSurfaceExplanation,
+    WorkspaceAssistantSurfaceProjection, WorkspaceAssistantSurfaceSummary, WorkspaceAttentionState,
     WorkspaceCompositionState, WorkspaceContext, WorkspaceContextExplanation,
     WorkspaceContinuityState, WorkspaceDecisionSupportExplanation,
     WorkspaceDecisionSupportProjection, WorkspaceDecisionSupportSummary, WorkspaceEnvironmentState,
@@ -3761,6 +3766,54 @@ impl CommandHandler {
 
     pub fn assistant_context_attempt_execute() -> Result<()> {
         crate::services::WorkspaceAssistantContextService::attempt_execute()
+    }
+
+    pub fn package_workspace_assistant_retrieval(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        human_ask: String,
+    ) -> Result<WorkspaceAssistantRetrievalProjection> {
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_mutation(
+            PackageWorkspaceAssistantRetrieval::new(workspace_id, human_ask),
+        )
+    }
+
+    pub fn get_workspace_assistant_retrieval(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceAssistantRetrievalProjection> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetWorkspaceAssistantRetrieval::new(workspace_id))
+    }
+
+    pub fn get_workspace_assistant_retrieval_summary(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        history_limit: usize,
+    ) -> Result<WorkspaceAssistantRetrievalSummary> {
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_query(
+            GetWorkspaceAssistantRetrievalSummary::new(workspace_id, history_limit),
+        )
+    }
+
+    pub fn explain_assistant_retrieval(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceAssistantRetrievalExplanation> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(ExplainAssistantRetrieval::new(workspace_id))
+    }
+
+    pub fn assistant_retrieval_attempt_execute() -> Result<()> {
+        crate::services::WorkspaceAssistantRetrievalService::attempt_execute()
     }
 
     #[allow(clippy::too_many_arguments)]
