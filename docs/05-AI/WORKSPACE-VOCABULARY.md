@@ -47,6 +47,7 @@ Canonical product language. Prefer these terms in UI, docs, and Assistant copy.
 | **Conversational / Assistant Surface** | Citation-bound human presentation of recorded Programmes II–IV intelligence (present ≠ decide) | Decision-maker, approver, executor, Intent/DE/Recommendation replacement, hidden memory SoT |
 | **Assistant Context Intelligence** | Packaging/selection of temporary conversation context and retrieval scope (context ≠ memory) | Durable memory SoT, Intent, Decision, Plan, autonomous goal holder, fabricated continuity |
 | **Assistant Retrieval Intelligence** | Packaging/presentation of existing Programme IV retrieval and evidence results (present ≠ rank) | Truth ranker, relevance SoT, second search engine, recommender, reasoner, independent knowledge graph |
+| **Assistant Explanation Intelligence** | Packaging/clarity over recorded explanation and evidence (clarify ≠ conclude) | Truth determiner, causal reasoner, recommender, decision-maker, policy interpreter, autonomous analyst |
 | **Graph History** | Terminal superseded graph snapshot evidence | Actionable graph mutations |
 | **Task** | Durable work item | Action |
 | **Action** | Executable catalog/command candidate | Task |

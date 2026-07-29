@@ -56,8 +56,9 @@ The Query Engine:
 | 11 | Conversational / Assistant Surface | Human-facing presentation of recorded evidence — **implemented** |
 | 12 | Assistant Context Intelligence | Context selection / continuity packaging — **implemented** |
 | 13 | Assistant Retrieval Intelligence | Retrieval request packaging / evidence presentation — **implemented** |
+| 14 | Assistant Explanation Intelligence | Explanation packaging / citation clarity — **charter only** |
 
-Future Programme IV batches build conversational and assistant surfaces **on top of** this retrieval layer — never beside it, never replacing it. Batch 10 exists so those surfaces can reuse contracts without cloning Batches 1–9. Batch 11 implements that conversational surface as presentation, not authority. Batch 12 implements how session context is selected and packaged without becoming memory or planning authority. Batch 13 implements how assistant retrieval packages and presents existing Semantic Query / Evidence results without ranking truth or recommending.
+Future Programme IV batches build conversational and assistant surfaces **on top of** this retrieval layer — never beside it, never replacing it. Batch 10 exists so those surfaces can reuse contracts without cloning Batches 1–9. Batch 11 implements that conversational surface as presentation, not authority. Batch 12 implements how session context is selected and packaged without becoming memory or planning authority. Batch 13 implements how assistant retrieval packages and presents existing Semantic Query / Evidence results without ranking truth or recommending. Batch 14 charters how the assistant packages explanation clarity over recorded Explanation Layer and evidence without concluding truth or inventing causality.
 
 ---
 
@@ -257,6 +258,19 @@ It owns retrieval request packaging, query/context translation for presentation,
 
 It never owns truth ranking, relevance authority, reasoning, recommendations, decisions, memory, policy, or execution. It composes Semantic Query, Evidence engines, and Batch 12 context rather than create a second search substrate.
 
+---
+
+## Ownership boundary (Batch 14 — charter only)
+
+The **Assistant Explanation Intelligence Contract** is chartered in
+[Assistant Explanation Intelligence Architecture](./ASSISTANT-EXPLANATION-INTELLIGENCE-ARCHITECTURE.md).
+
+**Status: charter only — implementation blocked until acceptance.**
+
+It will own explanation packaging, evidence citation formatting, explanation structure, visible gaps/conflicts, and user-facing clarity.
+
+It will never own conclusions, truth determination, causal reasoning, recommendations, decisions, policy interpretation, or autonomous analysis. It must compose the Programme III Explanation Layer, Evidence Trace/Navigation, and Batches 11–13 rather than create a second reasoning or explanation authority.
+
 ## Upstream access rule
 
 All upstream access uses **`load_snapshot` only**.
@@ -323,6 +337,7 @@ Unknown remains unknown. Unavailable remains unavailable. Contradictions remain 
 - [Conversational / Assistant Surface Architecture](./CONVERSATIONAL-ASSISTANT-SURFACE-ARCHITECTURE.md) *(Batch 11 — implemented)*
 - [Assistant Context Intelligence Architecture](./ASSISTANT-CONTEXT-INTELLIGENCE-ARCHITECTURE.md) *(Batch 12 — implemented)*
 - [Assistant Retrieval Intelligence Architecture](./ASSISTANT-RETRIEVAL-INTELLIGENCE-ARCHITECTURE.md) *(Batch 13 — implemented)*
+- [Assistant Explanation Intelligence Architecture](./ASSISTANT-EXPLANATION-INTELLIGENCE-ARCHITECTURE.md) *(Batch 14 — charter only)*
 - [Programme III — Coherent Workspace Runtime](./PROGRAMME-III-COHERENT-WORKSPACE-RUNTIME.md)
 - [Programme II — Cognitive Workspace](./PROGRAMME-II-COGNITIVE-WORKSPACE.md)
 - [Projection Integrity](../03-Engineering/PROJECTION-INTEGRITY.md)

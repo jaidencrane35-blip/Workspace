@@ -296,6 +296,13 @@ UI must not imply the assistant chose the “right” evidence for action.
 - Resolving case5 / case11 (non–Programme IV debt)
 - Replacing Semantic Query or Evidence engines
 - Replacing Batches 11–12
+- Explanation packaging / conclusion-free clarity (see Batch 14 charter)
+
+---
+
+## Next
+
+Batch 14 — [Assistant Explanation Intelligence Architecture](./ASSISTANT-EXPLANATION-INTELLIGENCE-ARCHITECTURE.md) (**charter only** — do not implement until accepted).
 
 ---
 
@@ -314,6 +321,7 @@ UI must not imply the assistant chose the “right” evidence for action.
 ## Related documents
 
 - [Assistant Context Intelligence Architecture](./ASSISTANT-CONTEXT-INTELLIGENCE-ARCHITECTURE.md)
+- [Assistant Explanation Intelligence Architecture](./ASSISTANT-EXPLANATION-INTELLIGENCE-ARCHITECTURE.md)
 - [Conversational / Assistant Surface Architecture](./CONVERSATIONAL-ASSISTANT-SURFACE-ARCHITECTURE.md)
 - [Workspace Semantic Query Architecture](./WORKSPACE-SEMANTIC-QUERY-ARCHITECTURE.md)
 - [Workspace Evidence Navigation Architecture](./WORKSPACE-EVIDENCE-NAVIGATION-ARCHITECTURE.md)

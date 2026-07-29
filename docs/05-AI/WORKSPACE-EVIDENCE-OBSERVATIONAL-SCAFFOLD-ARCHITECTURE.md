@@ -92,6 +92,8 @@ Batch 12 — [Assistant Context Intelligence Architecture](./ASSISTANT-CONTEXT-I
 
 Batch 13 — [Assistant Retrieval Intelligence Architecture](./ASSISTANT-RETRIEVAL-INTELLIGENCE-ARCHITECTURE.md) (**implemented** — composes Semantic Query / Evidence engines and Batches 10–12 contracts; presents without ranking).
 
+Batch 14 — [Assistant Explanation Intelligence Architecture](./ASSISTANT-EXPLANATION-INTELLIGENCE-ARCHITECTURE.md) (**charter only** — do not implement until accepted; must compose Programme III Explanation Layer, Trace/Navigation, and Batches 10–13 contracts).
+
 ---
 
 ## Explicit confirmation
