@@ -1,10 +1,16 @@
 import { useCallback, useEffect, useState } from "react";
+import { ApplicationsPanel } from "./components/ApplicationsPanel";
 import { AssistantIntelligencePanel } from "./components/AssistantIntelligencePanel";
 import { AssistantPanel } from "./components/AssistantPanel";
 import { CanvasShell } from "./components/CanvasShell";
 import { DesktopArrangementPanel } from "./components/DesktopArrangementPanel";
 import { OperatorConsole } from "./components/OperatorConsole";
+import {
+  WorkspaceHome,
+  type ProductPrimaryView,
+} from "./components/WorkspaceHome";
 import { WorkspaceIntelligencePanel } from "./components/WorkspaceIntelligencePanel";
+import { WorkspaceSwitcher } from "./components/WorkspaceSwitcher";
 import { invokeIpc } from "./lib/ipc";
 import type { Workspace, WorkspaceContext, Zone } from "./types/domain";
 import type { Layout } from "./types/layout";
@@ -16,7 +22,11 @@ import type {
 
 const LEGACY_WORKSPACE_ID_KEY = "workspace.active_id";
 
-type AppView = "canvas" | "work" | "assistant" | "operator";
+type AppView =
+  | ProductPrimaryView
+  | "assistant"
+  | "operator"
+  | "work";
 
 function formatError(err: unknown): string {
   if (err instanceof Error) {
@@ -61,7 +71,7 @@ async function loadZones(workspaceId: string): Promise<Zone[]> {
 }
 
 export default function App() {
-  const [view, setView] = useState<AppView>("canvas");
+  const [view, setView] = useState<AppView>("home");
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [zones, setZones] = useState<Zone[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -170,35 +180,37 @@ export default function App() {
     })();
   };
 
+  const primaryTab = (
+    id: ProductPrimaryView,
+    label: string,
+  ) => (
+    <button
+      type="button"
+      role="tab"
+      className={view === id ? "tab active" : "tab"}
+      aria-current={view === id ? "page" : undefined}
+      aria-selected={view === id}
+      onClick={() => setView(id)}
+    >
+      {label}
+    </button>
+  );
+
   return (
     <main className="app-shell">
       <header className="app-chrome">
         <h1>Workspace</h1>
         <nav className="tabs" aria-label="Primary workspace views" role="tablist">
+          {primaryTab("home", "Home")}
+          {primaryTab("workspaces", "Workspaces")}
+          {primaryTab("applications", "Applications")}
+          {primaryTab("layouts", "Layouts")}
           <button
             type="button"
             role="tab"
-            className={view === "canvas" ? "tab active" : "tab"}
-            aria-current={view === "canvas" ? "page" : undefined}
-            aria-selected={view === "canvas"}
-            onClick={() => setView("canvas")}
-          >
-            Workspace
-          </button>
-          <button
-            type="button"
-            role="tab"
-            className={view === "work" ? "tab active" : "tab"}
-            aria-current={view === "work" ? "page" : undefined}
-            aria-selected={view === "work"}
-            onClick={() => setView("work")}
-          >
-            Work
-          </button>
-          <button
-            type="button"
-            role="tab"
-            className={view === "assistant" ? "tab active" : "tab"}
+            className={
+              view === "assistant" ? "tab secondary active" : "tab secondary"
+            }
             aria-current={view === "assistant" ? "page" : undefined}
             aria-selected={view === "assistant"}
             onClick={() => setView("assistant")}
@@ -208,7 +220,17 @@ export default function App() {
           <button
             type="button"
             role="tab"
-            className={view === "operator" ? "tab active" : "tab"}
+            className={view === "work" ? "tab quiet active" : "tab quiet"}
+            aria-current={view === "work" ? "page" : undefined}
+            aria-selected={view === "work"}
+            onClick={() => setView("work")}
+          >
+            Work
+          </button>
+          <button
+            type="button"
+            role="tab"
+            className={view === "operator" ? "tab quiet active" : "tab quiet"}
             aria-current={view === "operator" ? "page" : undefined}
             aria-selected={view === "operator"}
             onClick={() => setView("operator")}
@@ -239,7 +261,49 @@ export default function App() {
         </p>
       )}
 
-      {view === "canvas" ? (
+      {view === "home" ? (
+        <div className="container product-container">
+          <WorkspaceHome
+            workspace={workspace}
+            zoneCount={zones.length}
+            bootstrapped={bootstrapped}
+            busy={busy}
+            onNavigate={setView}
+            onCreateWorkspace={createWorkspaceFromCanvas}
+          />
+        </div>
+      ) : view === "workspaces" ? (
+        <div className="workspace-stage">
+          <div className="workspace-stage-main">
+            <WorkspaceSwitcher
+              activeWorkspace={workspace}
+              busy={busy}
+              onBusy={setBusy}
+              onError={onError}
+              onMessage={onMessage}
+              onActivate={activateWorkspace}
+              onCreated={activateWorkspace}
+            />
+          </div>
+          <DesktopArrangementPanel
+            workspace={workspace}
+            busy={busy}
+            onBusy={setBusy}
+            onError={onError}
+            onMessage={onMessage}
+          />
+        </div>
+      ) : view === "applications" ? (
+        <div className="container product-container">
+          <ApplicationsPanel
+            workspace={workspace}
+            busy={busy}
+            onBusy={setBusy}
+            onError={onError}
+            onMessage={onMessage}
+          />
+        </div>
+      ) : view === "layouts" ? (
         <div className="workspace-stage">
           <div className="workspace-stage-main">
             {!bootstrapped ? (
@@ -260,8 +324,8 @@ export default function App() {
             ) : (
               <div className="canvas-shell canvas-bootstrap">
                 <p className="lede">
-                  No active workspace. Create one here to start arranging zones
-                  and saving desktop arrangements.
+                  No active workspace. Create one here or use Workspaces to
+                  switch to a saved environment.
                 </p>
                 <button
                   type="button"
@@ -293,6 +357,10 @@ export default function App() {
         </div>
       ) : view === "assistant" ? (
         <div className="container assistant-container assistant-intel-container">
+          <p className="lede assistant-tool-note">
+            Assistant is a supporting tool inside Workspace — not the primary
+            product surface.
+          </p>
           <AssistantIntelligencePanel
             workspace={workspace}
             busy={busy}
@@ -300,7 +368,10 @@ export default function App() {
             onError={onError}
             onMessage={onMessage}
           />
-          <section className="assistant-legacy-section" aria-label="Governed workflow legacy">
+          <section
+            className="assistant-legacy-section"
+            aria-label="Governed workflow legacy"
+          >
             <h2>Governed workflow (legacy)</h2>
             <p className="lede">
               Goal → plan → permission path for mutations. Prefer the
@@ -318,9 +389,10 @@ export default function App() {
       ) : (
         <div className="container">
           <p className="lede">
-            <span className="badge">Diagnostic</span> Operator console — validates
-            Work intelligence and the governed Assistant pipeline. Prefer{" "}
-            <strong>Work</strong> for workspace understanding.
+            <span className="badge">Diagnostic</span> Operator console —
+            validates Work intelligence and the governed Assistant pipeline.
+            Prefer <strong>Home</strong>, <strong>Applications</strong>, and{" "}
+            <strong>Layouts</strong> for product workflows.
           </p>
           <OperatorConsole
             workspace={workspace}

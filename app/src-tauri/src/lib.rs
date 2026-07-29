@@ -132,14 +132,14 @@ use commands::execution::{
 use commands::suggestion::{accept_suggestion, get_suggestions, reject_suggestion};
 use commands::suggestion_lifecycle::get_suggestion_lifecycle;
 use commands::resources::{
-    create_application, create_widget, create_zone, delete_application, delete_widget,
-    delete_zone, get_application, get_widget, get_zone, launch_application,
+    create_application, create_widget, create_zone, delete_application, delete_widget, delete_zone,
+    get_application, get_widget, get_zone, launch_application, list_applications,
 };
 use commands::desktop_arrangement::{
     capture_desktop_arrangement, get_desktop_arrangement, list_desktop_arrangements,
     restore_desktop_arrangement,
 };
-use commands::workspace::{create_workspace, get_workspace};
+use commands::workspace::{create_workspace, get_workspace, list_workspaces};
 use commands::workspace_intelligence::{
     compare_workspace_intelligence_states, create_project, create_task,
     generate_workspace_intelligence, get_project, get_task, get_workflow_context, list_projects,
@@ -172,6 +172,7 @@ pub fn run() {
             // Product shell (Canvas + Diagnostic)
             create_workspace,
             get_workspace,
+            list_workspaces,
             create_zone,
             create_layout,
             update_layout,
@@ -191,6 +192,7 @@ pub fn run() {
             get_workspace_state,
             create_application,
             launch_application,
+            list_applications,
             capture_desktop_arrangement,
             restore_desktop_arrangement,
             get_desktop_arrangement,

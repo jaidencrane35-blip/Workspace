@@ -48,6 +48,39 @@ impl GetWorkspace {
     }
 }
 
+/// Lists all workspaces for product switcher surfaces.
+pub struct ListWorkspaces;
+
+impl crate::commands::Command for ListWorkspaces {
+    fn name(&self) -> &'static str {
+        "ListWorkspaces"
+    }
+}
+
+impl QueryCommand for ListWorkspaces {
+    type Output = Vec<Workspace>;
+
+    fn permission_subject(&self) -> PermissionSubject {
+        PermissionSubject::Resource(ResourceKind::Workspace)
+    }
+
+    fn required_capability(&self) -> Capability {
+        Capability::workspace_read()
+    }
+
+    fn governance_class(&self) -> GovernanceClass {
+        GovernanceClass::Ungoverned
+    }
+
+    fn execute(self, ctx: &CommandContext<'_>) -> Result<Vec<Workspace>> {
+        if ctx.state.lifecycle != LifecycleState::Ready {
+            return Err(KernelError::NotReady);
+        }
+
+        ctx.with_database(WorkspaceService::list)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -90,5 +123,21 @@ mod tests {
             .unwrap();
 
         assert_eq!(loaded, created);
+    }
+
+    #[test]
+    fn lists_created_workspaces() {
+        let bus = EventBus::new();
+        let init = InitializeWorkspace::in_memory().execute(&bus).unwrap();
+
+        let created = CommandPipeline::new(test_context(&init, &bus))
+            .execute_mutation(CreateWorkspace::new("Listed".into()))
+            .unwrap();
+
+        let listed = CommandPipeline::new(test_context(&init, &bus))
+            .execute_query(ListWorkspaces)
+            .unwrap();
+
+        assert!(listed.iter().any(|workspace| workspace.id == created.id));
     }
 }

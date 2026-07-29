@@ -419,7 +419,7 @@ mod workspace_working_style_tests;
 mod zone;
 
 pub use accept_suggestion::AcceptSuggestion;
-pub use application::{CreateApplication, DeleteApplication, GetApplication};
+pub use application::{CreateApplication, DeleteApplication, GetApplication, ListApplications};
 pub use automation_contract::{
     ApproveAutomationContract, CreateAutomationContract, GetAutomationContract,
     ListAutomationContracts, PauseAutomationContract, PrepareAutomationContractIntent,
@@ -452,7 +452,7 @@ pub use get_observations::GetObservations;
 pub use get_permission_approvals::GetPermissionApprovals;
 pub use get_suggestion_lifecycle::GetSuggestionLifecycle;
 pub use get_suggestions::GetSuggestions;
-pub use get_workspace::GetWorkspace;
+pub use get_workspace::{GetWorkspace, ListWorkspaces};
 pub use get_workspace_context::GetWorkspaceContext;
 pub use get_workspace_metrics::GetWorkspaceMetrics;
 pub use get_workspace_snapshot::GetWorkspaceSnapshot;

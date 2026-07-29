@@ -1,7 +1,9 @@
 use std::path::Path;
 
 use crate::commands::accept_suggestion::AcceptSuggestion;
-use crate::commands::application::{CreateApplication, DeleteApplication, GetApplication};
+use crate::commands::application::{
+    CreateApplication, DeleteApplication, GetApplication, ListApplications,
+};
 use crate::commands::automation_contract::{
     ApproveAutomationContract, CreateAutomationContract, GetAutomationContract,
     ListAutomationContracts, PauseAutomationContract, PrepareAutomationContractIntent,
@@ -34,7 +36,7 @@ use crate::commands::get_observations::GetObservations;
 use crate::commands::get_permission_approvals::GetPermissionApprovals;
 use crate::commands::get_suggestion_lifecycle::GetSuggestionLifecycle;
 use crate::commands::get_suggestions::GetSuggestions;
-use crate::commands::get_workspace::GetWorkspace;
+use crate::commands::get_workspace::{GetWorkspace, ListWorkspaces};
 use crate::commands::get_workspace_context::GetWorkspaceContext;
 use crate::commands::get_workspace_metrics::GetWorkspaceMetrics;
 use crate::commands::get_workspace_snapshot::GetWorkspaceSnapshot;
@@ -482,6 +484,15 @@ impl CommandHandler {
         let workspace_id = WorkspaceId::new(id).map_err(KernelError::Domain)?;
         CommandPipeline::new(kernel.command_context(actor, intent))
             .execute_query(GetWorkspace::new(workspace_id))
+    }
+
+    pub fn list_workspaces(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+    ) -> Result<Vec<Workspace>> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(ListWorkspaces)
     }
 
     pub fn create_zone(
@@ -1627,6 +1638,17 @@ impl CommandHandler {
         let application_id = ApplicationId::new(id).map_err(KernelError::Domain)?;
         CommandPipeline::new(kernel.command_context(actor, intent))
             .execute_query(GetApplication::new(application_id))
+    }
+
+    pub fn list_applications(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<Vec<ApplicationReference>> {
+        let workspace_id = WorkspaceId::new(workspace_id).map_err(KernelError::Domain)?;
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(ListApplications::new(workspace_id))
     }
 
     pub fn create_widget(

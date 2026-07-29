@@ -56,6 +56,27 @@ pub fn get_workspace(
     }
 }
 
+/// Lists workspaces for product switcher surfaces.
+#[tauri::command]
+pub fn list_workspaces(
+    kernel: State<'_, Arc<Mutex<WorkspaceKernel>>>,
+) -> IpcResponse<Vec<Workspace>> {
+    match kernel.lock() {
+        Ok(kernel) => match CommandHandler::list_workspaces(
+            &kernel,
+            ipc_actor_context(),
+            ipc_intent_context(),
+        ) {
+            Ok(workspaces) => IpcResponse::success(workspaces),
+            Err(error) => IpcResponse::failure(CommandError::from(error)),
+        },
+        Err(_) => IpcResponse::failure(CommandError::new(
+            "internal_error",
+            "Workspace core is temporarily unavailable.",
+        )),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -86,5 +107,22 @@ mod tests {
         )
         .unwrap();
         assert_eq!(loaded.name, "IPC Workspace");
+    }
+
+    #[test]
+    fn ipc_list_workspaces_returns_created_workspace() {
+        let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+        let actor = ipc_actor_context();
+        let intent = ipc_intent_context();
+        let created = CommandHandler::create_workspace(
+            &kernel,
+            actor.clone(),
+            intent.clone(),
+            "Listed".into(),
+        )
+        .unwrap();
+        let listed =
+            CommandHandler::list_workspaces(&kernel, actor, intent).unwrap();
+        assert!(listed.iter().any(|workspace| workspace.id == created.id));
     }
 }

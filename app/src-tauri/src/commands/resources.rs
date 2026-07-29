@@ -167,6 +167,28 @@ pub fn get_application(
 }
 
 #[tauri::command]
+pub fn list_applications(
+    workspace_id: String,
+    kernel: State<'_, Arc<Mutex<WorkspaceKernel>>>,
+) -> IpcResponse<Vec<ApplicationReference>> {
+    match kernel.lock() {
+        Ok(kernel) => match CommandHandler::list_applications(
+            &kernel,
+            ipc_actor_context(),
+            ipc_intent_context(),
+            workspace_id,
+        ) {
+            Ok(applications) => IpcResponse::success(applications),
+            Err(error) => IpcResponse::failure(CommandError::from(error)),
+        },
+        Err(_) => IpcResponse::failure(CommandError::new(
+            "internal_error",
+            "Workspace core is temporarily unavailable.",
+        )),
+    }
+}
+
+#[tauri::command]
 pub fn create_widget(
     workspace_id: String,
     name: String,
