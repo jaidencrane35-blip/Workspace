@@ -97,6 +97,7 @@ define_id!(AttentionItemId);
 define_id!(DecisionCandidateId);
 define_id!(WorkspaceTaskId);
 define_id!(WorkspaceProfileId);
+define_id!(DesktopArrangementId);
 
 #[cfg(test)]
 mod tests {

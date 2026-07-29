@@ -19,6 +19,7 @@ pub mod capability;
 pub mod context;
 pub mod decision_engine;
 pub mod decision_queue;
+pub mod desktop_arrangement;
 pub mod discovery;
 pub mod entities;
 pub mod errors;
@@ -227,6 +228,12 @@ pub use decision_queue::{
     DecisionLifecycleOverlay, DecisionOverlayHistoryEntry, DecisionPriority, DecisionQueue,
     DecisionQueueError, DecisionQueueSummary, DecisionSourceType, DecisionState,
 };
+pub use desktop_arrangement::{
+    arrangement_now_rfc3339, diagnose_arrangement_entries, entries_from_inputs,
+    validate_desktop_arrangement, DesktopArrangement, DesktopArrangementEntry,
+    DesktopArrangementEntryDiagnostic, DesktopArrangementEntryInput, DesktopArrangementError,
+    DesktopArrangementStatus,
+};
 pub use discovery::{AvailableIntentSummary, CapabilityDiscovery, CapabilityDiscoveryError};
 pub use entities::{
     ApplicationLaunchResult, ApplicationReference, WidgetReference, Workspace, Zone,
@@ -257,7 +264,8 @@ pub use ids::{
     AutomationIntentProposalId, CapabilityGrantId, ContinuityFacetId, DecisionCandidateId,
     DecisionItemId, IntentId, LayoutId, MemoryEntryId, ModelId, ModelProviderId,
     PermissionApprovalRequestId, ProjectId, TaskId, TriggerEventId, UserPreferenceId, WidgetId,
-    WorkGoalId, WorkspaceActivityId, WorkspaceId, WorkspaceProfileId, WorkspaceTaskId, ZoneId,
+    WorkGoalId, WorkspaceActivityId, WorkspaceId, WorkspaceProfileId, DesktopArrangementId,
+    WorkspaceTaskId, ZoneId,
 };
 pub use intent::{
     ActionIntentCategory, ActionIntentDefinition, ActionIntentError, ActionIntentId,

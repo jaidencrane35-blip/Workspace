@@ -171,6 +171,9 @@ update stuff
 | [DAF-1B-WINDOW-OBSERVATION.md](DAF-1B-WINDOW-OBSERVATION.md) | Observation & identity architecture |
 | [DAF-1B-ALIGNMENT-CHECK.md](DAF-1B-ALIGNMENT-CHECK.md) | DAF-1b gate record |
 | [DAF-1B-COMPLETION-REPORT.md](DAF-1B-COMPLETION-REPORT.md) | DAF-1b batch report |
+| [DAF-1C-DESKTOP-ARRANGEMENT.md](DAF-1C-DESKTOP-ARRANGEMENT.md) | DesktopArrangement persistence architecture |
+| [DAF-1C-ALIGNMENT-CHECK.md](DAF-1C-ALIGNMENT-CHECK.md) | DAF-1c gate record |
+| [DAF-1C-COMPLETION-REPORT.md](DAF-1C-COMPLETION-REPORT.md) | DAF-1c batch report |
 
 ---
 

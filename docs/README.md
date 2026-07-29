@@ -75,6 +75,8 @@ How the team builds, reviews, and maintains the codebase.
 | [DAF-1a Completion Report](03-Engineering/DAF-1A-COMPLETION-REPORT.md) | WindowController foundation batch report |
 | [DAF-1b Window Observation](03-Engineering/DAF-1B-WINDOW-OBSERVATION.md) | Observation & identity foundation |
 | [DAF-1b Completion Report](03-Engineering/DAF-1B-COMPLETION-REPORT.md) | Observation foundation batch report |
+| [DAF-1c Desktop Arrangement](03-Engineering/DAF-1C-DESKTOP-ARRANGEMENT.md) | Named OS-window membership persistence |
+| [DAF-1c Completion Report](03-Engineering/DAF-1C-COMPLETION-REPORT.md) | Arrangement persistence batch report |
 | [Coding Standards](03-Engineering/CODING-STANDARDS.md) | Naming, formatting, and code conventions |
 | [Repository Standards](03-Engineering/REPOSITORY-STANDARDS.md) | Git workflow, branches, commits, PRs |
 | [Documentation Standards](03-Engineering/DOCUMENTATION-STANDARDS.md) | How to write and maintain documentation |
