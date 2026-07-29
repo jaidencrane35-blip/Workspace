@@ -41,6 +41,27 @@ Human concept → Optimised representation → Decoder / inspector → Human und
 
 ## Cycles
 
+### Cycle: cycle-2-assistant-copy-clarity
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-29 |
+| **Cycle number** | 2 |
+| **Goal** | Reduce Assistant engineering jargon so the companion feels user-facing, not Programme IV documentation |
+| **Problem** | Assistant rail still led with batch numbers and intelligence-stack language |
+| **Analysis** | Small UX / cognitive-noise fix under autonomy rules; no AI behaviour change |
+| **Changes** | Softened `AssistantIntelligencePanel` + `AssistantPanel` user copy; layers labeled 1–6 instead of Batch 11–16 in UI |
+| **Files affected** | `AssistantIntelligencePanel.tsx`, `AssistantPanel.tsx`, this log |
+| **Validation** | typecheck / test (run at commit) |
+| **Maintainability score** | 8/10 — copy-only; ownership unchanged |
+| **Reference alignment score** | ~6.7/10 — companion feels calmer; still not persistent sidecar |
+| **Human review required** | No |
+| **Remaining risks** | Deep panel internals still engineering-dense when expanded |
+| **Next recommended cycle** | **Stop for human review before Milestone B (Flow ↔ Focus)** — workflow/visual direction change |
+| **Inspector / decoder path** | Open Assistant tool tab → companion rail headers |
+
+---
+
 ### Cycle: cycle-1-layouts-app-stage
 
 | Field | Value |

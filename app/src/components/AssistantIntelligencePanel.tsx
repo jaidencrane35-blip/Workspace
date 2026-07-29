@@ -232,7 +232,7 @@ export function AssistantIntelligencePanel({
       onError("Enter a human ask before composing packages.");
       return;
     }
-    await run("Assistant intelligence packages composed (Batches 11–16).", async () => {
+    await run("Assistant answer prepared.", async () => {
       const nextSurface =
         await invokeIpc<WorkspaceAssistantSurfaceProjection>(
           "compose_workspace_assistant_turn",
@@ -326,17 +326,18 @@ export function AssistantIntelligencePanel({
     return (
       <div className="assistant-intel-panel">
         <header className="assistant-intel-hero">
-          <p className="assistant-kicker">Programme IV · Batches 11–16</p>
-          <h2>Assistant Intelligence</h2>
+          <p className="assistant-kicker">Supporting companion</p>
+          <h2>Ask about this workspace</h2>
           <p className="lede">
-            Presentation-only stack over recorded workspace evidence.
+            Read-only help over what Workspace already knows — it does not run
+            your desktop for you.
           </p>
         </header>
         <div className="assistant-intel-empty-block">
           <p className="assistant-intel-empty">No workspace selected.</p>
           <p className="assistant-intel-empty-hint">
-            Open Workspaces, create or select a workspace, then return here
-            to compose the six-layer intelligence stack.
+            Open Workspaces, create or select a workspace, then return here for
+            help and explanations.
           </p>
         </div>
       </div>
@@ -346,17 +347,16 @@ export function AssistantIntelligencePanel({
   return (
     <div className="assistant-intel-panel">
       <header className="assistant-intel-hero">
-        <p className="assistant-kicker">Programme IV · Batches 11–16</p>
-        <h2>Assistant Intelligence</h2>
+        <p className="assistant-kicker">Supporting companion</p>
+        <h2>Ask about this workspace</h2>
         <p className="lede">
-          Surface → context → retrieval → explanation → interaction →
-          personalisation. Composes existing engines via IPC — never approves,
-          executes, or decides.
+          Compose explanations from existing workspace information. The
+          Assistant never approves, executes, or decides for you.
         </p>
       </header>
 
       <div className="assistant-intel-ask">
-        <label htmlFor="assistant-intel-ask">Human ask</label>
+        <label htmlFor="assistant-intel-ask">What do you want to know?</label>
         <textarea
           id="assistant-intel-ask"
           rows={3}
@@ -371,7 +371,7 @@ export function AssistantIntelligencePanel({
             disabled={busy || !humanAsk.trim()}
             onClick={() => void composePackages()}
           >
-            Compose intelligence packages
+            Prepare answer
           </button>
           <button
             type="button"
@@ -379,21 +379,21 @@ export function AssistantIntelligencePanel({
             disabled={busy}
             onClick={() => void refreshProjections()}
           >
-            Refresh projections
+            Refresh
           </button>
         </div>
       </div>
 
       {!hasAnyPackage ? (
         <p className="assistant-intel-empty">
-          No packages yet. Compose intelligence packages to project Batches
-          11–16, or refresh if packages already exist for this workspace.
+          Nothing prepared yet. Ask a question to compose an answer from
+          existing workspace information, or refresh if answers already exist.
         </p>
       ) : (
         <div className="assistant-intel-layers">
           <LayerProjection
-            title="Assistant Surface"
-            batchLabel="Batch 11"
+            title="Surface"
+            batchLabel="Layer 1"
             projection={surface}
             nonCommandable={
               surface == null ||
@@ -407,8 +407,8 @@ export function AssistantIntelligencePanel({
             }
           />
           <LayerProjection
-            title="Assistant Context"
-            batchLabel="Batch 12"
+            title="Context"
+            batchLabel="Layer 2"
             projection={context}
             nonCommandable={
               context == null ||
@@ -422,8 +422,8 @@ export function AssistantIntelligencePanel({
             }
           />
           <LayerProjection
-            title="Assistant Retrieval"
-            batchLabel="Batch 13"
+            title="Retrieval"
+            batchLabel="Layer 3"
             projection={retrieval}
             nonCommandable={
               retrieval == null ||
@@ -437,8 +437,8 @@ export function AssistantIntelligencePanel({
             }
           />
           <LayerProjection
-            title="Assistant Explanation"
-            batchLabel="Batch 14"
+            title="Explanation"
+            batchLabel="Layer 4"
             projection={explanation}
             nonCommandable={
               explanation == null ||
@@ -452,8 +452,8 @@ export function AssistantIntelligencePanel({
             }
           />
           <LayerProjection
-            title="Assistant Interaction"
-            batchLabel="Batch 15"
+            title="Interaction"
+            batchLabel="Layer 5"
             projection={interaction}
             nonCommandable={
               interaction == null ||
@@ -467,8 +467,8 @@ export function AssistantIntelligencePanel({
             }
           />
           <LayerProjection
-            title="Assistant Personalisation"
-            batchLabel="Batch 16"
+            title="Personalisation"
+            batchLabel="Layer 6"
             projection={personalisation}
             nonCommandable={
               personalisation == null ||

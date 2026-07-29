@@ -128,19 +128,18 @@ export function AssistantPanel({
   return (
     <div className="assistant-panel">
       <header className="assistant-hero">
-        <p className="assistant-kicker">Governed assistant</p>
+        <p className="assistant-kicker">Optional advanced workflow</p>
         <h2>Ask for work. Review the plan. Approve what runs.</h2>
         <p className="lede">
-          A governed interface into Workspace Intelligence. Understanding comes
-          from the Workspace; every action still passes the Permission Gateway.
+          Understanding comes from Workspace. Actions still require your
+          approval before anything runs.
         </p>
       </header>
 
       <section>
         <h3>Shared workspace understanding</h3>
         <p className="muted">
-          Same Experience + Intelligence paths as the Work tab — explain only;
-          never edit or own state.
+          Explains workspace state only — does not edit or own your layouts.
         </p>
         <div className="row">
           <button
