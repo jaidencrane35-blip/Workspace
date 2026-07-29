@@ -770,6 +770,22 @@ Explanation packaging and citation clarity without conclusion, causal, or recomm
 
 See [Assistant Explanation Intelligence Architecture](../05-AI/ASSISTANT-EXPLANATION-INTELLIGENCE-ARCHITECTURE.md).
 
+## Assistant Interaction Intelligence (Programme IV Batch 15)
+
+**Charter only — not accepted for implementation.**
+
+Conversation flow packaging and response routing without memory, Intent, decision, or autonomous agency.
+
+**Coordinate interaction flow. Never act for the user.**
+
+- Will own conversation state packaging, interaction session structure, user-visible flow coordination, response composition routing, interaction diagnostics only
+- Will never own memory, identity, Intent authority, decisions, planning, recommendations, execution, or autonomous behaviour
+- Must compose Batches 11–14 — no cognitive engine, hidden memory, agent loop, or decision layer
+- Upstream reads via `load_snapshot` / existing queries only — never foreign `::generate` for refresh
+- No mutation baseline or DTO inventory change until an accepted implementation design exists
+
+See [Assistant Interaction Intelligence Architecture](../05-AI/ASSISTANT-INTERACTION-INTELLIGENCE-ARCHITECTURE.md).
+
 ## Capability boundary audit
 
 Enforced by `scripts/architecture-governance-lib.mjs`:

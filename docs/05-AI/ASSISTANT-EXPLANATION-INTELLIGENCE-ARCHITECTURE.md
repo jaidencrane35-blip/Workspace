@@ -209,6 +209,18 @@ Assistant explanation intelligence **must never**:
 
 ---
 
+## Out of scope for Batch 14
+
+- Interaction flow packaging / response composition routing (see Batch 15 charter)
+
+---
+
+## Next
+
+Batch 15 — [Assistant Interaction Intelligence Architecture](./ASSISTANT-INTERACTION-INTELLIGENCE-ARCHITECTURE.md) (**charter only** — do not implement until accepted).
+
+---
+
 ## Acceptance criteria
 
 - [x] Ownership / non-ownership tables are unambiguous
@@ -224,6 +236,7 @@ Assistant explanation intelligence **must never**:
 ## Related documents
 
 - [Assistant Retrieval Intelligence Architecture](./ASSISTANT-RETRIEVAL-INTELLIGENCE-ARCHITECTURE.md)
+- [Assistant Interaction Intelligence Architecture](./ASSISTANT-INTERACTION-INTELLIGENCE-ARCHITECTURE.md)
 - [Assistant Context Intelligence Architecture](./ASSISTANT-CONTEXT-INTELLIGENCE-ARCHITECTURE.md)
 - [Conversational / Assistant Surface Architecture](./CONVERSATIONAL-ASSISTANT-SURFACE-ARCHITECTURE.md)
 - [Workspace Explanation Layer Architecture](./WORKSPACE-EXPLANATION-LAYER-ARCHITECTURE.md)

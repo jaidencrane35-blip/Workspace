@@ -94,6 +94,8 @@ Batch 13 — [Assistant Retrieval Intelligence Architecture](./ASSISTANT-RETRIEV
 
 Batch 14 — [Assistant Explanation Intelligence Architecture](./ASSISTANT-EXPLANATION-INTELLIGENCE-ARCHITECTURE.md) (**implemented** — composes Programme III Explanation Layer, Trace/Navigation, and Batches 10–13 contracts; clarifies without concluding).
 
+Batch 15 — [Assistant Interaction Intelligence Architecture](./ASSISTANT-INTERACTION-INTELLIGENCE-ARCHITECTURE.md) (**charter only** — do not implement until accepted; must compose Batches 11–14 and this scaffold without becoming an agent or memory authority).
+
 ---
 
 ## Explicit confirmation
