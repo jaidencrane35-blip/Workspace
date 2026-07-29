@@ -36,6 +36,7 @@ mod workspace_evidence_trace;
 mod workspace_evidence_coverage;
 mod workspace_evidence_consistency;
 mod workspace_evidence_dependency;
+mod workspace_evidence_freshness;
 mod workspace_purpose;
 mod workspace_evolution;
 mod workspace_recommendation;
@@ -185,6 +186,8 @@ mod workspace_evidence_trace_tests;
 mod workspace_evidence_coverage_tests;
 mod workspace_evidence_consistency_tests;
 mod workspace_evidence_dependency_tests;
+#[cfg(test)]
+mod workspace_evidence_freshness_tests;
 #[cfg(test)]
 mod workspace_attention_tests;
 #[cfg(test)]
@@ -549,5 +552,9 @@ pub use workspace_evidence_consistency::{
 pub use workspace_evidence_dependency::{
     ExplainEvidenceDependency, GenerateWorkspaceEvidenceDependency, GetWorkspaceEvidenceDependency,
     GetWorkspaceEvidenceDependencySummary,
+};
+pub use workspace_evidence_freshness::{
+    ExplainEvidenceFreshness, GenerateWorkspaceEvidenceFreshness, GetWorkspaceEvidenceFreshness,
+    GetWorkspaceEvidenceFreshnessSummary,
 };
 pub use zone::{CreateZone, DeleteZone, GetZone};

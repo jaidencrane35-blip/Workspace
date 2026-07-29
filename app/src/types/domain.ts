@@ -5446,6 +5446,156 @@ export interface WorkspaceEvidenceDependencyExplanation {
   actionable: boolean;
 }
 
+export interface FreshnessScope {
+  include_evidence_dependency: boolean;
+  include_evidence_consistency: boolean;
+  include_evidence_coverage: boolean;
+  include_evidence_trace: boolean;
+  include_evidence_navigation: boolean;
+  include_semantic_query: boolean;
+  include_intelligence_hub: boolean;
+  include_knowledge_integration: boolean;
+  include_contextual: boolean;
+  include_explanation: boolean;
+  include_temporal: boolean;
+  include_reconstruction: boolean;
+  include_state: boolean;
+}
+
+export interface EvidenceFreshnessEvidenceRef {
+  external_ref: string;
+  origin_domain: string;
+  source_revision: string | null;
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface FreshnessAssessment {
+  assessment_id: string;
+  observed_scope: string[];
+  participating_artefacts: string[];
+  observable_freshness_state: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface FreshnessObservation {
+  observation_id: string;
+  artefact_ref: string;
+  origin_domain: string;
+  state: string;
+  recorded_timestamp: string | null;
+  recorded_revision: string | null;
+  description: string;
+  evidence_refs: EvidenceFreshnessEvidenceRef[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface FreshnessGap {
+  gap_id: string;
+  gap_kind: string;
+  description: string;
+  affected_references: string[];
+  evidence_refs: EvidenceFreshnessEvidenceRef[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface FreshnessLineage {
+  lineage_id: string;
+  contributing_artefacts: string[];
+  revisions: string[];
+  evidence_refs: EvidenceFreshnessEvidenceRef[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface FreshnessDiagnostics {
+  diagnostics_id: string;
+  observed_freshness_coverage: string;
+  unavailable_observations: string[];
+  missing_timestamps: string[];
+  notes: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface WorkspaceEvidenceFreshnessSnapshot {
+  freshness_id: string;
+  workspace_id: string;
+  generated_at: string;
+  status: string;
+  superseded_at: string | null;
+  scope: FreshnessScope;
+  assessment: FreshnessAssessment;
+  observations: FreshnessObservation[];
+  gaps: FreshnessGap[];
+  lineage: FreshnessLineage;
+  diagnostics: FreshnessDiagnostics;
+  completeness: string;
+  provenance_links: EvidenceFreshnessEvidenceRef[];
+  source_revisions: string[];
+  narrative_summary: string;
+  narrative: string;
+  limitations: string[];
+  authority_effect: string;
+  actionable: boolean;
+  terminal: boolean;
+}
+
+export interface EvidenceFreshnessHistoryEntry {
+  freshness_id: string;
+  status: string;
+  created_at: string;
+  superseded_at: string | null;
+  completeness: string;
+  observation_count: number;
+  gap_count: number;
+  source_revision_count: number;
+  terminal: boolean;
+  actionable: boolean;
+  authority_effect: string;
+}
+
+export interface WorkspaceEvidenceFreshnessProjection {
+  workspace_id: string;
+  current: WorkspaceEvidenceFreshnessSnapshot | null;
+  history: EvidenceFreshnessHistoryEntry[];
+  history_count: number;
+  projected_at: string;
+  authority_effect: string;
+}
+
+export interface WorkspaceEvidenceFreshnessSummary {
+  workspace_id: string;
+  has_current: boolean;
+  completeness: string | null;
+  observation_count: number;
+  gap_count: number;
+  narrative_summary: string | null;
+  history: EvidenceFreshnessHistoryEntry[];
+  history_count: number;
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface WorkspaceEvidenceFreshnessExplanation {
+  explanation_id: string;
+  workspace_id: string;
+  completeness: string | null;
+  narrative_summary: string | null;
+  observation_summaries: string[];
+  gap_summaries: string[];
+  lineage_summaries: string[];
+  evidence_refs: string[];
+  uncertainty: string[];
+  narrative: string;
+  limitations: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
 export type WindowIdentityConfidence = "high" | "medium" | "low" | "ephemeral";
 
 export interface WorkspaceObservationPass {

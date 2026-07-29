@@ -198,3 +198,4 @@ See [Roadmap](08-Roadmap/ROADMAP.md) and [Decision Log](09-Decisions/DECISION-LO
 - [Workspace Evidence Coverage Architecture](./05-AI/WORKSPACE-EVIDENCE-COVERAGE-ARCHITECTURE.md)
 - [Workspace Evidence Consistency Architecture](./05-AI/WORKSPACE-EVIDENCE-CONSISTENCY-ARCHITECTURE.md)
 - [Workspace Evidence Dependency Architecture](./05-AI/WORKSPACE-EVIDENCE-DEPENDENCY-ARCHITECTURE.md)
+- [Workspace Evidence Freshness Architecture](./05-AI/WORKSPACE-EVIDENCE-FRESHNESS-ARCHITECTURE.md)

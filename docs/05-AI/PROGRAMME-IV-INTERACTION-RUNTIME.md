@@ -49,6 +49,7 @@ The Query Engine:
 | 4 | Workspace Evidence Coverage Engine | Observable evidence completeness for a subject |
 | 5 | Workspace Evidence Consistency Engine | Observable agreement/disagreement across evidence |
 | 6 | Workspace Evidence Dependency Engine | Recorded dependency structure across evidence |
+| 7 | Workspace Evidence Freshness Engine | Observable freshness of available evidence |
 
 Future Programme IV batches build conversational and assistant surfaces **on top of** this retrieval layer — never beside it, never replacing it.
 
@@ -146,6 +147,21 @@ It never owns semantic retrieval, navigation, provenance, coverage, explanations
 
 It never owns semantic retrieval, navigation, provenance, coverage, consistency, explanations, contextual understanding, knowledge, planning, reasoning, policy, decisions, execution, permissions, or lifecycle.
 
+---
+
+## Ownership boundary (Batch 7)
+
+`WorkspaceEvidenceFreshnessService` owns only:
+
+- freshness snapshots
+- freshness observations
+- freshness diagnostics
+- freshness gaps
+- freshness summaries
+- freshness metadata
+
+It never owns semantic retrieval, navigation, provenance, coverage, consistency, dependency, explanations, contextual understanding, knowledge, planning, reasoning, policy, decisions, execution, permissions, or lifecycle.
+
 ## Upstream access rule
 
 All upstream access uses **`load_snapshot` only**.
@@ -205,6 +221,7 @@ Unknown remains unknown. Unavailable remains unavailable. Contradictions remain 
 - [Workspace Evidence Coverage Architecture](./WORKSPACE-EVIDENCE-COVERAGE-ARCHITECTURE.md)
 - [Workspace Evidence Consistency Architecture](./WORKSPACE-EVIDENCE-CONSISTENCY-ARCHITECTURE.md)
 - [Workspace Evidence Dependency Architecture](./WORKSPACE-EVIDENCE-DEPENDENCY-ARCHITECTURE.md)
+- [Workspace Evidence Freshness Architecture](./WORKSPACE-EVIDENCE-FRESHNESS-ARCHITECTURE.md)
 - [Programme III — Coherent Workspace Runtime](./PROGRAMME-III-COHERENT-WORKSPACE-RUNTIME.md)
 - [Programme II — Cognitive Workspace](./PROGRAMME-II-COGNITIVE-WORKSPACE.md)
 - [Projection Integrity](../03-Engineering/PROJECTION-INTEGRITY.md)

@@ -648,6 +648,22 @@ Recorded dependency structure across evidence artefacts.
 
 See [Workspace Evidence Dependency Architecture](../05-AI/WORKSPACE-EVIDENCE-DEPENDENCY-ARCHITECTURE.md).
 
+## Workspace Evidence Freshness Engine (Programme IV Batch 7)
+
+Observable freshness of available evidence.
+
+**Observe freshness. Never refresh evidence.**
+
+- Owns freshness snapshots / observations / gaps / diagnostics / summaries only
+- Never owns retrieval, navigation, provenance, coverage, consistency, dependency, reasoning, recommendation, execution, or lifecycle
+- Upstream access via `load_snapshot` only — never foreign `::generate`
+- Never refreshes evidence, regenerates snapshots, estimates freshness, fabricates timestamps, or schedules updates
+- History is evidence-only (`actionable: false`, `authority_effect: "none"`)
+- Mutation inventory includes `GenerateWorkspaceEvidenceFreshness` (baseline **80**)
+- History / projection DTO inventory length **31**
+
+See [Workspace Evidence Freshness Architecture](../05-AI/WORKSPACE-EVIDENCE-FRESHNESS-ARCHITECTURE.md).
+
 ## Capability boundary audit
 
 Enforced by `scripts/architecture-governance-lib.mjs`:

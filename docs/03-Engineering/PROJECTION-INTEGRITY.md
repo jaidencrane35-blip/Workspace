@@ -432,6 +432,14 @@ Rules:
 - Forbidden: execute, recommend, schedule, approve, mutate, automate
 - Dependency is recorded structure only — never invented, never causal, never executable
 
+### Workspace Evidence Freshness Engine (Programme IV Batch 7)
+
+- Dual-channel: `current` + `history` + authoritative `history_count`
+- History is evidence-only; never actionable
+- Projection helpers expose freshness summaries, freshness states, timestamps, diagnostics, gaps, lineage
+- Forbidden: execute, recommend, approve, mutate, automate, refresh, regenerate
+- Freshness is observational only — stale/unknown/unavailable never imply refresh
+
 
 ## Serde defaults vs TypeScript required fields
 

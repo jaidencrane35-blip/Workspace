@@ -183,6 +183,8 @@ use crate::commands::workspace_evidence_consistency::{
 use crate::commands::workspace_evidence_dependency::{
     ExplainEvidenceDependency, GenerateWorkspaceEvidenceDependency, GetWorkspaceEvidenceDependency,
     GetWorkspaceEvidenceDependencySummary,
+    ExplainEvidenceFreshness, GenerateWorkspaceEvidenceFreshness, GetWorkspaceEvidenceFreshness,
+    GetWorkspaceEvidenceFreshnessSummary,
 };
 use crate::commands::workspace_cross_intelligence::{
     ExplainCrossWorkspacePattern, GenerateCrossWorkspaceIntelligence, GetCrossWorkspaceIntelligence,
@@ -275,6 +277,7 @@ use workspace_domain::{
     WorkspaceEvidenceCoverageProjection, WorkspaceEvidenceCoverageSummary, WorkspaceEvidenceCoverageExplanation,
     WorkspaceEvidenceConsistencyProjection, WorkspaceEvidenceConsistencySummary, WorkspaceEvidenceConsistencyExplanation,
     WorkspaceEvidenceDependencyProjection, WorkspaceEvidenceDependencySummary, WorkspaceEvidenceDependencyExplanation,
+    WorkspaceEvidenceFreshnessProjection, WorkspaceEvidenceFreshnessSummary, WorkspaceEvidenceFreshnessExplanation,
     LayoutId, LayoutMetadata, LayoutNode, LayoutSnapshot, MemoryEntry, MemoryType,
     ModelProviderDescriptor, ModelResponse, Observation, PersonalizedPlanComparison,
     PreferenceCategory, PreferenceSource, Suggestion, SuggestionIntentRequest,
@@ -3531,6 +3534,53 @@ impl CommandHandler {
     /// Architecture guard — Evidence dependency cannot execute / invent / repair links.
     pub fn evidence_dependency_attempt_execute() -> Result<()> {
         crate::services::WorkspaceEvidenceDependencyService::attempt_execute()
+    }
+
+    pub fn generate_workspace_evidence_freshness(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceEvidenceFreshnessProjection> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_mutation(GenerateWorkspaceEvidenceFreshness::new(workspace_id))
+    }
+
+    pub fn get_workspace_evidence_freshness(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceEvidenceFreshnessProjection> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetWorkspaceEvidenceFreshness::new(workspace_id))
+    }
+
+    pub fn get_workspace_evidence_freshness_summary(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        history_limit: usize,
+    ) -> Result<WorkspaceEvidenceFreshnessSummary> {
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_query(
+            GetWorkspaceEvidenceFreshnessSummary::new(workspace_id, history_limit),
+        )
+    }
+
+    pub fn explain_evidence_freshness(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceEvidenceFreshnessExplanation> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(ExplainEvidenceFreshness::new(workspace_id))
+    }
+
+    /// Architecture guard — Evidence freshness cannot execute / refresh / estimate.
+    pub fn evidence_freshness_attempt_execute() -> Result<()> {
+        crate::services::WorkspaceEvidenceFreshnessService::attempt_execute()
     }
 
     #[allow(clippy::too_many_arguments)]

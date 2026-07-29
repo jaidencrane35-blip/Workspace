@@ -118,6 +118,12 @@ Governance rejects: inferred dependency, execution ownership, workflow ownership
 
 ---
 
+## Next
+
+Batch 7 — [Workspace Evidence Freshness Architecture](./WORKSPACE-EVIDENCE-FRESHNESS-ARCHITECTURE.md) (*How current is the available evidence?*).
+
+---
+
 ## Explicit confirmation
 
 > Workspace Evidence Dependency Engine observes recorded evidence dependencies only.

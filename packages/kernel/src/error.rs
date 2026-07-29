@@ -19,7 +19,7 @@ use workspace_domain::{
     ContextualUnderstandingError, KnowledgeSynthesisError, KnowledgeIntegrationError,
     InsightCoordinationError, CrossWorkspaceIntelligenceError, DecisionSupportError,
     IntelligenceHubError, SemanticQueryError, EvidenceNavigationError, EvidenceTraceError,
-    EvidenceCoverageError, EvidenceConsistencyError, EvidenceDependencyError,
+    EvidenceCoverageError, EvidenceConsistencyError, EvidenceDependencyError, EvidenceFreshnessError,
     WorkspaceSessionError,
     WorkspaceTransitionError,
     WorkspaceWorkContextError, WorkspaceWorkingStyleError,
@@ -313,6 +313,9 @@ pub enum KernelError {
 
     #[error("Evidence dependency validation failed: {message}")]
     EvidenceDependencyValidation { message: String },
+
+    #[error("Evidence freshness validation failed: {message}")]
+    EvidenceFreshnessValidation { message: String },
 
     #[error("Workspace intelligence validation failed: {message}")]
     WorkspaceIntelligenceValidation { message: String },
@@ -814,6 +817,17 @@ impl From<EvidenceDependencyError> for KernelError {
         match error {
             EvidenceDependencyError::Domain(domain) => KernelError::from(domain),
             other => KernelError::EvidenceDependencyValidation {
+                message: other.to_string(),
+            },
+        }
+    }
+}
+
+impl From<EvidenceFreshnessError> for KernelError {
+    fn from(error: EvidenceFreshnessError) -> Self {
+        match error {
+            EvidenceFreshnessError::Domain(domain) => KernelError::from(domain),
+            other => KernelError::EvidenceFreshnessValidation {
                 message: other.to_string(),
             },
         }
@@ -1568,6 +1582,10 @@ impl KernelError {
             },
             KernelError::EvidenceDependencyValidation { message } => PublicError {
                 code: "evidence_dependency_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::EvidenceFreshnessValidation { message } => PublicError {
+                code: "evidence_freshness_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::WorkspaceIntelligenceValidation { message } => PublicError {

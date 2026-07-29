@@ -72,6 +72,9 @@ use crate::workspace_evidence_consistency::{
 use crate::workspace_evidence_dependency::{
     EvidenceDependencyHistoryEntry, WorkspaceEvidenceDependencyProjection,
 };
+use crate::workspace_evidence_freshness::{
+    EvidenceFreshnessHistoryEntry, WorkspaceEvidenceFreshnessProjection,
+};
 use crate::workspace_reasoning_memory::{ReasoningHistoryEntry, ReasoningSnapshot};
 
 /// Documented startup in-progress sweep cap (must match
@@ -591,6 +594,26 @@ pub fn recovery_must_not_fabricate_evidence_dependency(
 /// Fabricated actionable evidence-dependency history must fail the recovery contract.
 pub fn recovery_must_not_fabricate_actionable_evidence_dependency_history(
     entry: &EvidenceDependencyHistoryEntry,
+) -> bool {
+    entry.is_non_actionable()
+}
+
+/// Recovery must not invent freshness, refresh stale evidence, fabricate timestamps, invent revisions, or estimate freshness.
+pub fn recovery_must_not_fabricate_evidence_freshness(
+    projection: &WorkspaceEvidenceFreshnessProjection,
+) -> bool {
+    projection.is_non_commandable()
+        && projection.history.iter().all(|h| h.is_non_actionable())
+        && projection
+            .current
+            .as_ref()
+            .map(|c| c.is_non_executing())
+            .unwrap_or(true)
+}
+
+/// Fabricated actionable evidence-freshness history must fail the recovery contract.
+pub fn recovery_must_not_fabricate_actionable_evidence_freshness_history(
+    entry: &EvidenceFreshnessHistoryEntry,
 ) -> bool {
     entry.is_non_actionable()
 }
