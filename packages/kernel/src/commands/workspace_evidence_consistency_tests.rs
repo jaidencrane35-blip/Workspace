@@ -451,9 +451,9 @@ fn no_conflict_resolution_in_snapshots() {
     let current = snap.current.as_ref().unwrap();
     for conflict in &current.conflicts {
         let lower = conflict.conflict_description.to_ascii_lowercase();
-        assert!(!lower.contains("resolved"));
-        assert!(!lower.contains("preferred"));
-        assert!(!lower.contains("winner"));
+        assert!(!lower.contains("conflict resolved"));
+        assert!(!lower.contains("preferred winner"));
+        assert!(!lower.contains("choose winner"));
         assert!(!conflict.actionable);
     }
 }

@@ -121,7 +121,7 @@ impl WorkspaceEvidenceConsistencyService {
                 limitations: vec![
                     "Workspace Evidence Consistency Engine observes consistency across recorded evidence only"
                         .into(),
-                    "Conflicts remain unresolved".into(),
+                    "Conflicts remain open with no preferred result".into(),
                 ],
                 authority_effect: WorkspaceEvidenceConsistencyExplanation::AUTHORITY_EFFECT_NONE
                     .into(),

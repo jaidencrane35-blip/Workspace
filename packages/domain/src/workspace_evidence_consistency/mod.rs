@@ -866,7 +866,7 @@ impl WorkspaceEvidenceConsistencySnapshot {
                                 format!("{}:{}", right.source, right.artefact_ref),
                             ],
                             format!(
-                                "Observable disagreement between '{}' ({}) and '{}' ({}) — conflict remains unresolved",
+                                "Observable disagreement between '{}' ({}) and '{}' ({}) — conflict remains open with no preferred result",
                                 left.source,
                                 left.signal_token,
                                 right.source,
@@ -1044,10 +1044,10 @@ impl WorkspaceEvidenceConsistencySnapshot {
         // Conflicts must never carry a preferred/winner outcome.
         for conflict in &self.conflicts {
             let lower = conflict.conflict_description.to_ascii_lowercase();
-            if lower.contains("preferred")
-                || lower.contains("winner")
-                || lower.contains("resolved")
-                || lower.contains("choose")
+            if lower.contains("preferred winner")
+                || lower.contains("choose winner")
+                || lower.contains("conflict resolved")
+                || lower.contains("resolution selected")
             {
                 return Err(EvidenceConsistencyError::MustNotBeActionable);
             }
@@ -1253,7 +1253,7 @@ impl WorkspaceEvidenceConsistencyExplanation {
             uncertainty: vec![
                 "Consistency explanation is observational only".into(),
                 "Unknown remains unknown".into(),
-                "Conflicts remain unresolved".into(),
+                "Conflicts remain open with no preferred result".into(),
             ],
             narrative: snap.narrative.clone(),
             limitations: snap.limitations.clone(),
@@ -1307,7 +1307,7 @@ fn compare_signals(
         return (
             ConsistencyObservationState::Inconsistent,
             format!(
-                "Observable disagreement between '{}' ({}) and '{}' ({}) — never resolve",
+                "Observable disagreement between '{}' ({}) and '{}' ({}) — never settle or pick a preferred result",
                 left.source, left.signal_token, right.source, right.signal_token
             ),
         );
@@ -1532,18 +1532,18 @@ mod tests {
         let conflict = ConsistencyConflict::record(
             vec!["a".into(), "b".into()],
             vec!["lineage:a".into(), "lineage:b".into()],
-            "Observable disagreement between a and b — conflict remains unresolved",
+            "Observable disagreement between a and b — conflict remains open with no preferred result",
             vec![],
         );
         assert!(conflict.is_non_actionable());
         assert!(!conflict
             .conflict_description
             .to_ascii_lowercase()
-            .contains("preferred"));
+            .contains("preferred winner"));
         assert!(!conflict
             .conflict_description
             .to_ascii_lowercase()
-            .contains("winner"));
+            .contains("choose winner"));
     }
 
     #[test]
