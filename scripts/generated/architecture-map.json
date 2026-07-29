@@ -163,7 +163,9 @@
     "personalization.write": "Personalization",
     "work_context.read": "WorkContext",
     "work_context.write": "WorkContext",
-    "desktop.read": "System"
+    "desktop.read": "System",
+    "desktop.write": "System",
+    "desktop.restore": "System"
   },
   "intentional_broad_capabilities": {
     "work_context.write": "Shared write token for RE / DQ / DE / TaskGraph / adaptation gated mutations — lifecycle owners remain the domain services",
@@ -270,6 +272,16 @@
       "command": "GateDecisionQueueWrite",
       "capability": "work_context.write",
       "authority_owner": "WorkContext"
+    },
+    {
+      "command": "CaptureDesktopArrangement",
+      "capability": "desktop.write",
+      "authority_owner": "System"
+    },
+    {
+      "command": "RestoreDesktopArrangement",
+      "capability": "desktop.restore",
+      "authority_owner": "System"
     },
     {
       "command": "ExecuteIntentRequest",
@@ -619,7 +631,7 @@
   "permission_gateway_require_sites": [
     {
       "file": "packages/kernel/src/commands/handler.rs",
-      "line": 5835,
+      "line": 5904,
       "kind": "require"
     },
     {
@@ -636,10 +648,10 @@
   "evidence": {
     "source_trees": [
       "react:59",
-      "ipc:65",
-      "kernel_commands:271",
+      "ipc:66",
+      "kernel_commands:273",
       "permission_gateway:5",
-      "services:116",
+      "services:117",
       "domain:122",
       "repositories:67",
       "execution:8"
@@ -726,19 +738,19 @@
       "WorkspaceAssistantInteractionSummary",
       "WorkspaceAssistantPersonalisationSummary"
     ],
-    "mutation_commands": 88,
-    "query_commands": 167,
+    "mutation_commands": 90,
+    "query_commands": 169,
     "assertions": [
       "Found 39 history DTOs and verified command-field restrictions.",
       "Found 39 projection summary DTOs and verified authority-field restrictions.",
       "Verified 3 recovery diagnostic event types remain evidence-only.",
-      "Found 88 mutation commands (≥ baseline 88) with capability paths."
+      "Found 90 mutation commands (≥ baseline 88) with capability paths."
     ]
   },
   "stats": {
-    "mutation_commands": 88,
-    "query_commands": 167,
-    "capability_catalog": 24,
+    "mutation_commands": 90,
+    "query_commands": 169,
+    "capability_catalog": 26,
     "unused_capabilities": 2,
     "gateway_require_sites": 3,
     "history_dtos_found": 39,

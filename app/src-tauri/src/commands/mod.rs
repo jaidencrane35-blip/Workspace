@@ -4,6 +4,7 @@ pub mod automation_contract;
 pub mod automation_trigger;
 pub mod decision_engine;
 pub mod decision_queue;
+pub mod desktop_arrangement;
 pub mod task_graph;
 pub mod workspace_activity;
 pub mod workspace_attention;

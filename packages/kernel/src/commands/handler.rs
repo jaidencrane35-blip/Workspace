@@ -18,6 +18,10 @@ use crate::commands::create_workspace::CreateWorkspace;
 use crate::commands::decide_approval::DecideApproval;
 use crate::commands::decision_engine::{GateDecisionEngineRead, GateDecisionEngineWrite};
 use crate::commands::decision_queue::{GateDecisionQueueRead, GateDecisionQueueWrite};
+use crate::commands::desktop_arrangement::{
+    CaptureDesktopArrangement, GetDesktopArrangement, ListDesktopArrangements,
+    RestoreDesktopArrangement,
+};
 use crate::commands::execute_intent_request::ExecuteIntentRequest;
 use crate::commands::get_action_catalog::GetActionCatalog;
 use crate::commands::get_actor_capabilities::GetActorCapabilities;
@@ -259,6 +263,7 @@ use workspace_domain::{
     ContextualUnderstandingSummary, CrossWorkspaceIntelligenceProjection,
     CrossWorkspaceIntelligenceSummary, CrossWorkspacePatternExplanation, DecisionActionResult,
     DecisionEngineActionResult, DecisionEngineState, DecisionItem, DecisionQueue,
+    DesktopArrangement, DesktopArrangementId, DesktopArrangementRestoreResult,
     ExecutionLifecycleProjection, ExecutionOutcome, ExecutionReconciliation, GovernanceExplanation,
     HistoricalChangeExplanation, HistoricalReconstructionSnapshot, HistoricalReconstructionSummary,
     InsightCoordinationExplanation, InsightCoordinationProjection, InsightCoordinationSummary,
@@ -538,6 +543,70 @@ impl CommandHandler {
         let application_id = ApplicationId::new(id).map_err(KernelError::Domain)?;
         CommandPipeline::new(kernel.command_context(actor, intent))
             .execute_mutation(LaunchApplication::new(application_id))
+    }
+
+    pub fn capture_desktop_arrangement(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        name: String,
+        description: Option<String>,
+        arrangement_id: Option<String>,
+        refresh_observation: Option<bool>,
+    ) -> Result<DesktopArrangement> {
+        let workspace_id = WorkspaceId::new(workspace_id).map_err(KernelError::Domain)?;
+        let arrangement_id = arrangement_id
+            .map(DesktopArrangementId::new)
+            .transpose()
+            .map_err(KernelError::Domain)?;
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_mutation(
+            CaptureDesktopArrangement::new(
+                workspace_id,
+                name,
+                description.unwrap_or_default(),
+                arrangement_id,
+                refresh_observation.unwrap_or(false),
+            ),
+        )
+    }
+
+    pub fn restore_desktop_arrangement(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        arrangement_id: String,
+        focus_first: Option<bool>,
+    ) -> Result<DesktopArrangementRestoreResult> {
+        let arrangement_id =
+            DesktopArrangementId::new(arrangement_id).map_err(KernelError::Domain)?;
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_mutation(
+            RestoreDesktopArrangement::new(arrangement_id, focus_first.unwrap_or(true)),
+        )
+    }
+
+    pub fn get_desktop_arrangement(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        arrangement_id: String,
+    ) -> Result<Option<DesktopArrangement>> {
+        let arrangement_id =
+            DesktopArrangementId::new(arrangement_id).map_err(KernelError::Domain)?;
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetDesktopArrangement::new(arrangement_id))
+    }
+
+    pub fn list_desktop_arrangements(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        limit: Option<usize>,
+    ) -> Result<Vec<DesktopArrangement>> {
+        let workspace_id = WorkspaceId::new(workspace_id).map_err(KernelError::Domain)?;
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(ListDesktopArrangements::new(workspace_id, limit))
     }
 
     /// AI participation entry: propose launch → CommandPipeline → Permission Gateway.

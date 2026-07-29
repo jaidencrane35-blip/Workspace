@@ -209,7 +209,7 @@ Assistant must not: call WindowController, bypass Gateway, invent geometries
 | **DAF-1a** (complete) | `WindowController` + stub/Win32 + tests | windows-integration |
 | **DAF-1b** (complete) | Window observation & identity foundation | capture + observation |
 | **DAF-1c** (complete) | `DesktopArrangement` model + SQLite | domain + database |
-| **DAF-1d** | Save from capture / restore via controller | kernel + IPC |
+| **DAF-1d** (complete) | Save from capture / restore via controller | kernel + IPC |
 | **DAF-1e** | Two work modes + explicit user switch | UI + arrangements |
 | **DAF-1f** | Chrome realignment (Assistant sidecar) | frontend; **human visual checkpoint** |
 

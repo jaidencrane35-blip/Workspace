@@ -229,10 +229,13 @@ pub use decision_queue::{
     DecisionQueueError, DecisionQueueSummary, DecisionSourceType, DecisionState,
 };
 pub use desktop_arrangement::{
-    arrangement_now_rfc3339, diagnose_arrangement_entries, entries_from_inputs,
-    validate_desktop_arrangement, DesktopArrangement, DesktopArrangementEntry,
+    arrangement_now_rfc3339, capture_entry_inputs_from_snapshot, diagnose_arrangement_entries,
+    entries_from_inputs, match_observed_window, plan_desktop_arrangement_restore,
+    validate_desktop_arrangement, DesktopArrangement, DesktopArrangementApplyOutcome,
+    DesktopArrangementApplyStatus, DesktopArrangementBounds, DesktopArrangementEntry,
     DesktopArrangementEntryDiagnostic, DesktopArrangementEntryInput, DesktopArrangementError,
-    DesktopArrangementStatus,
+    DesktopArrangementRestoreAction, DesktopArrangementRestorePlan,
+    DesktopArrangementRestoreResult, DesktopArrangementStatus,
 };
 pub use discovery::{AvailableIntentSummary, CapabilityDiscovery, CapabilityDiscoveryError};
 pub use entities::{

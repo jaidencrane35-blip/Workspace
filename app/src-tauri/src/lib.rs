@@ -135,6 +135,10 @@ use commands::resources::{
     create_application, create_widget, create_zone, delete_application, delete_widget,
     delete_zone, get_application, get_widget, get_zone, launch_application,
 };
+use commands::desktop_arrangement::{
+    capture_desktop_arrangement, get_desktop_arrangement, list_desktop_arrangements,
+    restore_desktop_arrangement,
+};
 use commands::workspace::{create_workspace, get_workspace};
 use commands::workspace_intelligence::{
     compare_workspace_intelligence_states, create_project, create_task,
@@ -187,6 +191,10 @@ pub fn run() {
             get_workspace_state,
             create_application,
             launch_application,
+            capture_desktop_arrangement,
+            restore_desktop_arrangement,
+            get_desktop_arrangement,
+            list_desktop_arrangements,
             get_permission_approvals,
             decide_approval,
             request_ai_application_launch,

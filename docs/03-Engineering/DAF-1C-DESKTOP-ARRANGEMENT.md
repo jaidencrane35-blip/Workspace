@@ -76,7 +76,7 @@ ObservedWindow / ObservationWindowIdentity
 DesktopArrangement Domain  ← DAF-1c
         │
         ▼
-Future Apply/Restore (kernel + WindowController)  ← later
+Future Apply/Restore (kernel + WindowController)  ← **DAF-1d**
         │
         ▼
 Workspace UI

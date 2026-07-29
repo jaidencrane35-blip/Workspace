@@ -43,6 +43,8 @@ export const CAPABILITY_AUTHORITY_OWNERS = {
   "work_context.read": "WorkContext",
   "work_context.write": "WorkContext",
   "desktop.read": "System",
+  "desktop.write": "System",
+  "desktop.restore": "System",
 };
 
 /**
@@ -451,6 +453,8 @@ function capabilityMethodToCatalogId(method) {
     work_context_read: "work_context.read",
     work_context_write: "work_context.write",
     desktop_read: "desktop.read",
+    desktop_write: "desktop.write",
+    desktop_restore: "desktop.restore",
   };
   return overrides[method] ?? null;
 }

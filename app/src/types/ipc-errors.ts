@@ -35,6 +35,8 @@ export const PUBLIC_ERROR_CODES = [
   "decision_engine_not_found",
   "decision_engine_validation_error",
   "decision_queue_validation_error",
+  "desktop_arrangement_not_found",
+  "desktop_arrangement_validation_error",
   "domain_error",
   "duplicate_execution",
   "duplicate_layout",

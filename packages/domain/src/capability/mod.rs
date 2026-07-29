@@ -248,6 +248,20 @@ impl Capability {
             scope: CapabilityScope::System,
         }
     }
+
+    pub fn desktop_write() -> Self {
+        Self {
+            id: CapabilityId::new("desktop.write").expect("desktop.write is valid"),
+            scope: CapabilityScope::System,
+        }
+    }
+
+    pub fn desktop_restore() -> Self {
+        Self {
+            id: CapabilityId::new("desktop.restore").expect("desktop.restore is valid"),
+            scope: CapabilityScope::System,
+        }
+    }
 }
 
 impl CapabilitySet {
@@ -309,6 +323,8 @@ impl CapabilitySet {
             .with_capability(&Capability::work_context_read())
             .with_capability(&Capability::work_context_write())
             .with_capability(&Capability::desktop_read())
+            .with_capability(&Capability::desktop_write())
+            .with_capability(&Capability::desktop_restore())
     }
 
     /// Capabilities attributed to system lifecycle operations.

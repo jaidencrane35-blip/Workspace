@@ -92,6 +92,12 @@ pub enum KernelError {
     #[error("Layout validation failed: {message}")]
     LayoutValidation { message: String },
 
+    #[error("Desktop arrangement not found")]
+    DesktopArrangementNotFound,
+
+    #[error("Desktop arrangement validation failed: {message}")]
+    DesktopArrangementValidation { message: String },
+
     #[error("Projection validation failed: {message}")]
     ProjectionValidation { message: String },
 
@@ -1383,6 +1389,14 @@ impl KernelError {
             },
             KernelError::LayoutValidation { message } => PublicError {
                 code: "layout_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::DesktopArrangementNotFound => PublicError {
+                code: "desktop_arrangement_not_found".into(),
+                message: "The requested desktop arrangement was not found.".into(),
+            },
+            KernelError::DesktopArrangementValidation { message } => PublicError {
+                code: "desktop_arrangement_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::ProjectionValidation { message } => PublicError {

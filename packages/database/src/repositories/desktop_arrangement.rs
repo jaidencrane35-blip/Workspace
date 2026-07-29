@@ -1,6 +1,6 @@
-//! Desktop arrangement persistence (DAF-1c).
+//! Desktop arrangement persistence (DAF-1c/1d).
 //!
-//! Why: durable named window-membership records for future restore.
+//! Why: durable named window-membership records + optional restore geometry.
 //! Owner: database repository; domain owns validation.
 //! Does not: move windows, apply arrangements, or call WindowController.
 
@@ -60,8 +60,8 @@ impl<'a> DesktopArrangementRepository<'a> {
             self.db.connection().execute(
                 "INSERT INTO desktop_arrangement_entries (
                     id, arrangement_id, stable_window_id, hwnd, process_id, process_name,
-                    title_fingerprint, label, sort_order, created_at
-                 ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
+                    title_fingerprint, label, sort_order, created_at, x, y, width, height
+                 ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)",
                 (
                     &entry.id,
                     arrangement_id.as_str(),
@@ -73,6 +73,10 @@ impl<'a> DesktopArrangementRepository<'a> {
                     &entry.label,
                     entry.sort_order,
                     created_at,
+                    entry.x,
+                    entry.y,
+                    entry.width,
+                    entry.height,
                 ),
             )?;
         }
@@ -139,7 +143,7 @@ impl<'a> DesktopArrangementRepository<'a> {
     ) -> Result<Vec<DesktopArrangementEntry>> {
         let mut stmt = self.db.connection().prepare(
             "SELECT id, arrangement_id, stable_window_id, hwnd, process_id, process_name,
-                    title_fingerprint, label, sort_order
+                    title_fingerprint, label, sort_order, x, y, width, height
              FROM desktop_arrangement_entries
              WHERE arrangement_id = ?1
              ORDER BY sort_order ASC, id ASC",
@@ -180,6 +184,10 @@ fn map_entry_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<DesktopArrangement
         title_fingerprint: row.get(6)?,
         label: row.get(7)?,
         sort_order: row.get(8)?,
+        x: row.get(9)?,
+        y: row.get(10)?,
+        width: row.get(11)?,
+        height: row.get(12)?,
         authority_effect: DesktopArrangementEntry::AUTHORITY_EFFECT_NONE.into(),
     })
 }
@@ -233,6 +241,10 @@ mod tests {
                 title_fingerprint: Some("code".into()),
                 label: "Editor".into(),
                 sort_order: 0,
+                x: Some(10),
+                y: Some(20),
+                width: Some(800),
+                height: Some(600),
             }],
             |index| format!("entry-{index}"),
         )
@@ -263,6 +275,8 @@ mod tests {
         );
         assert_eq!(loaded.entries[0].hwnd.as_deref(), Some("0xAA"));
         assert_eq!(loaded.entries[0].process_id, Some(42));
+        assert_eq!(loaded.entries[0].x, Some(10));
+        assert_eq!(loaded.entries[0].width, Some(800));
 
         let listed = repo.list_by_workspace(&workspace_id, 10).unwrap();
         assert_eq!(listed.len(), 1);
@@ -286,6 +300,10 @@ mod tests {
                 title_fingerprint: None,
                 label: "Temp".into(),
                 sort_order: 0,
+                x: None,
+                y: None,
+                width: None,
+                height: None,
             }],
             |_| "entry-x".into(),
         )

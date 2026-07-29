@@ -76,6 +76,9 @@ mod decision_engine_tests;
 mod decision_queue;
 #[cfg(test)]
 mod decision_queue_tests;
+mod desktop_arrangement;
+#[cfg(test)]
+mod desktop_arrangement_tests;
 #[cfg(test)]
 mod discovery_tests;
 mod execute_intent_request;
@@ -433,6 +436,10 @@ pub use create_suggestion_intent_request::CreateSuggestionIntentRequest;
 pub use create_workspace::CreateWorkspace;
 pub use decide_approval::DecideApproval;
 pub use decision_queue::{GateDecisionQueueRead, GateDecisionQueueWrite};
+pub use desktop_arrangement::{
+    CaptureDesktopArrangement, GetDesktopArrangement, ListDesktopArrangements,
+    RestoreDesktopArrangement,
+};
 pub use execute_intent_request::ExecuteIntentRequest;
 pub use get_action_catalog::GetActionCatalog;
 pub use get_actor_capabilities::GetActorCapabilities;

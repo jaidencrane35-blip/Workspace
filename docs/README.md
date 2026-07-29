@@ -11,7 +11,7 @@
 | Starting a major batch | [Batch Alignment Check](03-Engineering/BATCH-ALIGNMENT-CHECK.md) → [Engineering Governance](03-Engineering/ENGINEERING-GOVERNANCE.md) |
 | Human visual review | [Human Review Policy](03-Engineering/HUMAN-REVIEW-POLICY.md) → [Visual Review Checklist](03-Engineering/VISUAL-REVIEW-CHECKLIST.md) |
 | Designing architecture | [Architecture Principles](02-Architecture/ARCHITECTURE-PRINCIPLES.md) → [System Overview](02-Architecture/SYSTEM-OVERVIEW.md) |
-| Desktop arrangement (DAF) | [DAF Architecture Audit](03-Engineering/DAF-ARCHITECTURE-AUDIT.md) → [DAF-1a](03-Engineering/DAF-1A-WINDOW-CONTROLLER.md) → [DAF-1b](03-Engineering/DAF-1B-WINDOW-OBSERVATION.md) |
+| Desktop arrangement (DAF) | [DAF Architecture Audit](03-Engineering/DAF-ARCHITECTURE-AUDIT.md) → [DAF-1a](03-Engineering/DAF-1A-WINDOW-CONTROLLER.md) → [DAF-1b](03-Engineering/DAF-1B-WINDOW-OBSERVATION.md) → [DAF-1c](03-Engineering/DAF-1C-DESKTOP-ARRANGEMENT.md) → [DAF-1d](03-Engineering/DAF-1D-DESKTOP-ARRANGEMENT-RESTORE.md) |
 | Selecting technology | [Stack Evaluation Criteria](02-Architecture/STACK-EVALUATION-CRITERIA.md) |
 | Writing code | [Coding Standards](03-Engineering/CODING-STANDARDS.md) → [Definition of Done](03-Engineering/DEFINITION-OF-DONE.md) |
 | Working on AI features | Confirm need against [Engineering Governance](03-Engineering/ENGINEERING-GOVERNANCE.md) (AI expansion frozen unless product-required) → [AI Principles](05-AI/AI-PRINCIPLES.md) |
@@ -77,6 +77,9 @@ How the team builds, reviews, and maintains the codebase.
 | [DAF-1b Completion Report](03-Engineering/DAF-1B-COMPLETION-REPORT.md) | Observation foundation batch report |
 | [DAF-1c Desktop Arrangement](03-Engineering/DAF-1C-DESKTOP-ARRANGEMENT.md) | Named OS-window membership persistence |
 | [DAF-1c Completion Report](03-Engineering/DAF-1C-COMPLETION-REPORT.md) | Arrangement persistence batch report |
+| [DAF-1d Arrangement Restore](03-Engineering/DAF-1D-DESKTOP-ARRANGEMENT-RESTORE.md) | Capture + governed restore pathway |
+| [DAF-1d Alignment Check](03-Engineering/DAF-1D-ALIGNMENT-CHECK.md) | DAF-1d gate record |
+| [DAF-1d Completion Report](03-Engineering/DAF-1D-COMPLETION-REPORT.md) | Capture/restore batch report |
 | [Coding Standards](03-Engineering/CODING-STANDARDS.md) | Naming, formatting, and code conventions |
 | [Repository Standards](03-Engineering/REPOSITORY-STANDARDS.md) | Git workflow, branches, commits, PRs |
 | [Documentation Standards](03-Engineering/DOCUMENTATION-STANDARDS.md) | How to write and maintain documentation |
