@@ -734,24 +734,30 @@ impl WorkspaceActivityGraphService {
         workspace_id: &str,
         existing: &HashMap<String, WorkspaceActivity>,
     ) -> Result<Vec<WorkspaceActivity>> {
-        let events = AuditService::list_recent(db, 40)?;
-        let covered_event_types: HashSet<&str> = [
-            "workspace.timeline.generated",
-            "workspace.relationship.generated",
-            "workspace.activity.summary.generated",
-            "workspace.activity.related",
-            "decision.queue.generated",
-            "workspace.intelligence.generated",
-        ]
-        .into_iter()
-        .collect();
+        // Gap-fill is “recent operational signals,” not a raw audit tail.
+        // Filter evaluation / pipeline telemetry *before* applying the operational
+        // window (Sprint 128 pattern). Otherwise generate's own audits consume
+        // fixed list_recent slots and slide durable work signals out of consecutive
+        // timelines — even when those writes are type-excluded from becoming activities.
+        const OPERATIONAL_GAP_FILL_LIMIT: usize = 40;
+        const AUDIT_SCAN_LIMIT: usize = 200;
+        let events = AuditService::list_recent(db, AUDIT_SCAN_LIMIT)?;
         let mut out = Vec::new();
         for event in events {
+            if out.len() >= OPERATIONAL_GAP_FILL_LIMIT {
+                break;
+            }
+            if Self::is_audit_gap_fill_telemetry(&event.event_type) {
+                continue;
+            }
             let meta = event.metadata.as_deref().unwrap_or("");
             if !meta.contains(workspace_id) {
                 continue;
             }
-            if covered_event_types.contains(event.event_type.as_str()) {
+            // Prefer not duplicating automation/decision audits already represented by adapters.
+            if event.event_type.starts_with("automation.")
+                || event.event_type.starts_with("decision.")
+            {
                 continue;
             }
             // Skip if an activity already covers this audit id-ish source.
@@ -759,12 +765,6 @@ impl WorkspaceActivityGraphService {
             let activity_id =
                 WorkspaceActivity::synthetic_id(ActivityType::AuditSignal, &source_id).to_string();
             if existing.contains_key(&activity_id) {
-                continue;
-            }
-            // Prefer not duplicating automation/decision audits already represented by adapters.
-            if event.event_type.starts_with("automation.")
-                || event.event_type.starts_with("decision.")
-            {
                 continue;
             }
             out.push(WorkspaceActivity::aggregate(
@@ -794,6 +794,24 @@ impl WorkspaceActivityGraphService {
             )?);
         }
         Ok(out)
+    }
+
+    /// Audits that must not occupy the operational gap-fill window.
+    ///
+    /// Includes Activity Graph / Intelligence generation telemetry, command-pipeline
+    /// bookkeeping, and system lifecycle noise. Real work signals (`resource.created`,
+    /// `workspace.entity.created`, intent creation, etc.) remain eligible.
+    fn is_audit_gap_fill_telemetry(event_type: &str) -> bool {
+        if event_type.ends_with(".generated") || event_type.ends_with(".related") {
+            return true;
+        }
+        if event_type.starts_with("command.")
+            || event_type.starts_with("permission.")
+            || event_type.starts_with("system.")
+        {
+            return true;
+        }
+        false
     }
 
     fn link_bidirectional(activities: &mut [WorkspaceActivity]) {
