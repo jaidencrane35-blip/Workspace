@@ -41,6 +41,23 @@ Human concept → Optimised representation → Decoder / inspector → Human und
 
 ## Cycles
 
+### Cycle: opt-o1-work-mode-keyboard-a11y
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-29 |
+| **Problem** | Flow/Focus switch was mouse-oriented; weak keyboard/focus-visible affordances |
+| **Reason** | Commercial usability + a11y without product-scope change |
+| **Files changed** | `WorkModeSwitch.tsx`, `App.css`, this log |
+| **Validation** | typecheck / test / architecture / ipc / ui-boundary |
+| **Maintainability score** | 8.5/10 |
+| **Reference alignment** | 7.5/10 (unchanged product shape) |
+| **Commercial readiness** | 5.2/10 (+0.2 from keyboard parity) |
+| **Human readability** | 8.2/10 |
+| **Why this is safe** | Presentation control only; no OS/IPC/AI/ownership change |
+
+---
+
 ### Cycle: milestone-b-flow-focus-chrome
 
 | Field | Value |

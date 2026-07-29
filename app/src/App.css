@@ -1458,6 +1458,23 @@ button.linkish:not(:disabled):hover {
   border-color: #4a6a8a;
 }
 
+.work-mode-option:focus-visible {
+  outline: 2px solid #93c5fd;
+  outline-offset: 2px;
+}
+
+.tab:focus-visible {
+  outline: 2px solid #93c5fd;
+  outline-offset: 2px;
+}
+
+.home-action:focus-visible,
+.home-app-chip:focus-visible,
+.application-card-main:focus-visible {
+  outline: 2px solid #93c5fd;
+  outline-offset: 2px;
+}
+
 .work-mode-hint {
   margin: 0;
   font-size: 0.78rem;
@@ -1528,10 +1545,6 @@ button.linkish:not(:disabled):hover {
 
 .app-shell[data-work-mode="focus"] .tool-tabs {
   opacity: 0.7;
-}
-
-.app-shell[data-work-mode="flow"] .workspace-application-stage.mode-flow {
-  /* Flow keeps dense stage + canvas; default styles apply */
 }
 
 @media (max-width: 900px) {
