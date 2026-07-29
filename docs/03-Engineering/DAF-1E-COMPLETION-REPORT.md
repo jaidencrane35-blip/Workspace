@@ -5,7 +5,7 @@
 | **Batch** | DAF-1e — Desktop Arrangement User Interface Foundation |
 | **Date** | 2026-07-29 |
 | **Branch** | `cursor/daf-1e-arrangement-ui-34a5` |
-| **Commit** | `e5bc920` (+ follow-ups) |
+| **Commit** | `595f059` (feature `e5bc920`) |
 | **Status** | Complete (pending human visual accept) |
 
 ---
