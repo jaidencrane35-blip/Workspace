@@ -286,6 +286,13 @@ Batch 11 implementation confirms:
 - Model provider selection / prompt engineering details
 - Product UX layouts beyond projection/action distinction
 - Resolving case5 / case11 (non–Programme IV debt)
+- Context selection / continuity packaging (see Batch 12 charter)
+
+---
+
+## Next
+
+Batch 12 — [Assistant Context Intelligence Architecture](./ASSISTANT-CONTEXT-INTELLIGENCE-ARCHITECTURE.md) (**charter only** — do not implement until accepted).
 
 ---
 
@@ -293,6 +300,7 @@ Batch 11 implementation confirms:
 
 - [Programme IV Interaction Runtime](./PROGRAMME-IV-INTERACTION-RUNTIME.md)
 - [Workspace Evidence Observational Scaffold](./WORKSPACE-EVIDENCE-OBSERVATIONAL-SCAFFOLD-ARCHITECTURE.md)
+- [Assistant Context Intelligence Architecture](./ASSISTANT-CONTEXT-INTELLIGENCE-ARCHITECTURE.md)
 - [Workspace Semantic Query Architecture](./WORKSPACE-SEMANTIC-QUERY-ARCHITECTURE.md)
 - [Workspace Explanation Layer Architecture](./WORKSPACE-EXPLANATION-LAYER-ARCHITECTURE.md)
 - [Workspace Vocabulary](./WORKSPACE-VOCABULARY.md)

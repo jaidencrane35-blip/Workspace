@@ -54,8 +54,9 @@ The Query Engine:
 | 9 | Workspace Evidence Reliability Engine | Observable reliability characteristics across recorded evidence |
 | 10 | Evidence Observational Scaffold | Shared Programme IV helpers — not a new evidence question |
 | 11 | Conversational / Assistant Surface | Human-facing presentation of recorded evidence — **implemented** |
+| 12 | Assistant Context Intelligence | Context selection / continuity packaging — **charter only** |
 
-Future Programme IV batches build conversational and assistant surfaces **on top of** this retrieval layer — never beside it, never replacing it. Batch 10 exists so those surfaces can reuse contracts without cloning Batches 1–9. Batch 11 implements that conversational surface as presentation, not authority.
+Future Programme IV batches build conversational and assistant surfaces **on top of** this retrieval layer — never beside it, never replacing it. Batch 10 exists so those surfaces can reuse contracts without cloning Batches 1–9. Batch 11 implements that conversational surface as presentation, not authority. Batch 12 charters how session context is selected and packaged without becoming memory or planning authority.
 
 ---
 
@@ -225,6 +226,19 @@ It owns human-facing presentation of retrieval, explanation, navigation, context
 
 It will never own decisions, approvals, execution, Intent, Decision Engine, Recommendation authority, hidden memory, or silent workspace mutation.
 
+---
+
+## Ownership boundary (Batch 12 — charter only)
+
+The **Assistant Context Intelligence Contract** is chartered in
+[Assistant Context Intelligence Architecture](./ASSISTANT-CONTEXT-INTELLIGENCE-ARCHITECTURE.md).
+
+**Status: charter only — implementation blocked until acceptance.**
+
+It will own conversation context packaging, active session context, retrieval scope, and displayed context selection.
+
+It will never own durable memory authority, workspace truth, Intent, decisions, plans, or autonomous goals. It must reuse Batch 10/11 contracts rather than clone a second assistant subsystem.
+
 ## Upstream access rule
 
 All upstream access uses **`load_snapshot` only**.
@@ -289,6 +303,7 @@ Unknown remains unknown. Unavailable remains unavailable. Contradictions remain 
 - [Workspace Evidence Reliability Architecture](./WORKSPACE-EVIDENCE-RELIABILITY-ARCHITECTURE.md)
 - [Workspace Evidence Observational Scaffold Architecture](./WORKSPACE-EVIDENCE-OBSERVATIONAL-SCAFFOLD-ARCHITECTURE.md)
 - [Conversational / Assistant Surface Architecture](./CONVERSATIONAL-ASSISTANT-SURFACE-ARCHITECTURE.md) *(Batch 11 — implemented)*
+- [Assistant Context Intelligence Architecture](./ASSISTANT-CONTEXT-INTELLIGENCE-ARCHITECTURE.md) *(Batch 12 — charter only)*
 - [Programme III — Coherent Workspace Runtime](./PROGRAMME-III-COHERENT-WORKSPACE-RUNTIME.md)
 - [Programme II — Cognitive Workspace](./PROGRAMME-II-COGNITIVE-WORKSPACE.md)
 - [Projection Integrity](../03-Engineering/PROJECTION-INTEGRITY.md)

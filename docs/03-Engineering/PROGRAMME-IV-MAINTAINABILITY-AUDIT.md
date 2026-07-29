@@ -264,6 +264,16 @@ Batch 11 defines the human conversational interface to the intelligence substrat
 
 ---
 
+## I. Batch 12 charter opened (not implemented)
+
+**Date:** 2026-07-29  
+**Document:** [Assistant Context Intelligence Architecture](../05-AI/ASSISTANT-CONTEXT-INTELLIGENCE-ARCHITECTURE.md)  
+**Status:** Charter only — implementation blocked until architecture acceptance.
+
+Batch 12 will define context selection, conversation continuity packaging, and workspace awareness display for the assistant surface. It must not become durable memory, reasoning authority, autonomous planning, or a cloned second assistant subsystem. Prefer extending Batch 10/11 contracts first.
+
+---
+
 ## Explicit confirmation
 
-This audit concludes that Workspace Evidence engines through Batch 9 observe recorded evidence characteristics only within their stated ownership. The two kernel failures are pre-existing Activity Graph / Intelligence issues, not Programme IV architectural drift. Batch 10 improves human maintainability by extracting shared scaffolding without adding a new evidence authority or clone engine. Batch 11 implements a conversational presentation layer over recorded evidence without becoming authority.
+This audit concludes that Workspace Evidence engines through Batch 9 observe recorded evidence characteristics only within their stated ownership. The two kernel failures are pre-existing Activity Graph / Intelligence issues, not Programme IV architectural drift. Batch 10 improves human maintainability by extracting shared scaffolding without adding a new evidence authority or clone engine. Batch 11 implements a conversational presentation layer over recorded evidence without becoming authority. Batch 12 is opened as a charter only.

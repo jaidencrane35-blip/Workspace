@@ -723,6 +723,22 @@ Human-facing conversation surface over recorded Programme II–IV evidence.
 
 See [Conversational / Assistant Surface Architecture](../05-AI/CONVERSATIONAL-ASSISTANT-SURFACE-ARCHITECTURE.md).
 
+## Assistant Context Intelligence (Programme IV Batch 12)
+
+**Charter only — not accepted for implementation.**
+
+Context selection and conversation continuity packaging without memory or planning authority.
+
+**Select and package context. Never invent or own it.**
+
+- Will own conversation context packaging, active session context, retrieval scope, displayed context selection only
+- Will never own durable memory, workspace truth, Intent, decisions, plans, or autonomous goals
+- Must reuse Batch 10/11 contracts — no second assistant subsystem clone
+- Upstream reads via `load_snapshot` / existing queries only — never foreign `::generate` for refresh
+- No mutation baseline or DTO inventory change until an accepted implementation design exists
+
+See [Assistant Context Intelligence Architecture](../05-AI/ASSISTANT-CONTEXT-INTELLIGENCE-ARCHITECTURE.md).
+
 ## Capability boundary audit
 
 Enforced by `scripts/architecture-governance-lib.mjs`:

@@ -471,6 +471,13 @@ Rules:
 - Assistant utterances, citations, lineage, diagnostics, and gaps carry `authority_effect: none`
 - Assistant responses cite upstream projections and never expose execute / approve / decide controls
 
+### Assistant Context Intelligence (Programme IV Batch 12 — charter only)
+
+- Charter defines projection-only context packaging and forbids fabricated continuity
+- Implementation must not begin until charter acceptance
+- Future context packages must remain non-actionable and must not imply durable memory or autonomous goals
+- Prefer extending Batch 10/11 projection helpers over a new parallel contract family
+
 
 ## Serde defaults vs TypeScript required fields
 
