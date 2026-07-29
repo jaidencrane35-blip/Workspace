@@ -3,6 +3,7 @@
 **Status:** Active  
 **Audience:** Architecture, Kernel, Frontend, Governance  
 **Depends on:** [Programme IV Interaction Runtime](./PROGRAMME-IV-INTERACTION-RUNTIME.md), [Workspace Evidence Freshness Architecture](./WORKSPACE-EVIDENCE-FRESHNESS-ARCHITECTURE.md)
+**Next:** [Workspace Evidence Reliability Architecture](./WORKSPACE-EVIDENCE-RELIABILITY-ARCHITECTURE.md)
 
 ---
 

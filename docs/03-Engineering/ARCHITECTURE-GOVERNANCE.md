@@ -680,6 +680,22 @@ Observable completeness of available evidence and recorded omissions.
 
 See [Workspace Evidence Completeness Architecture](../05-AI/WORKSPACE-EVIDENCE-COMPLETENESS-ARCHITECTURE.md).
 
+## Workspace Evidence Reliability Engine (Programme IV Batch 9)
+
+Observable reliability characteristics across recorded evidence.
+
+**Observe reliability. Never establish truth.**
+
+- Owns reliability snapshots / observations / gaps / diagnostics / summaries only
+- Never owns retrieval, navigation, provenance, coverage, consistency, dependency, freshness, completeness, reasoning, execution, or lifecycle
+- Upstream access via `load_snapshot` only — never foreign `::generate`
+- Never settles conflicts, ranks by opinion, repairs evidence, fabricates reliability, or grants trust authority
+- History is evidence-only (`actionable: false`, `authority_effect: "none"`)
+- Mutation inventory includes `GenerateWorkspaceEvidenceReliability` (baseline **82**)
+- History / projection DTO inventory length **33**
+
+See [Workspace Evidence Reliability Architecture](../05-AI/WORKSPACE-EVIDENCE-RELIABILITY-ARCHITECTURE.md).
+
 ## Capability boundary audit
 
 Enforced by `scripts/architecture-governance-lib.mjs`:

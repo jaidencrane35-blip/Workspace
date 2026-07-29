@@ -97,6 +97,7 @@ export const PUBLIC_ERROR_CODES = [
   "evidence_dependency_validation_error",
   "evidence_freshness_validation_error",
   "evidence_completeness_validation_error",
+  "evidence_reliability_validation_error",
   "workspace_composition_validation_error",
   "workspace_continuity_validation_error",
   "workspace_environment_validation_error",

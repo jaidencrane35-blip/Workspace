@@ -13,61 +13,31 @@ use crate::commands::automation_trigger::{
     ListTriggerEvents, RecordAndEvaluateTriggers, RecordTriggerEvent,
     RejectAutomationIntentProposal,
 };
-use crate::commands::decision_engine::{GateDecisionEngineRead, GateDecisionEngineWrite};
-use crate::commands::decision_queue::{GateDecisionQueueRead, GateDecisionQueueWrite};
-use crate::commands::task_graph::{GateTaskGraphRead, GateTaskGraphWrite};
-use crate::commands::workspace_environment::GateEnvironmentRead;
-use crate::commands::workspace_composition::GateCompositionRead;
-use crate::commands::workspace_purpose::GatePurposeRead;
-use crate::commands::workspace_evolution::GateEvolutionRead;
-use crate::commands::workspace_recommendation::{
-    GateRecommendationEngineRead, GateRecommendationEngineWrite,
-};
-use crate::commands::workspace_operating_state::GateOperatingStateRead;
-use crate::commands::workspace_pattern::GatePatternRead;
-use crate::commands::workspace_adaptation::{GateAdaptationRead, GateAdaptationWrite};
-use crate::commands::workspace_readiness::GateReadinessRead;
-use crate::commands::workspace_runtime::GateRuntimeRead;
-use crate::commands::workspace_intelligence::GateIntelligenceRead;
-use crate::commands::workspace_session::GateSessionRead;
-use crate::commands::workspace_experience::GateExperienceRead;
-use crate::commands::workspace_work_context::GateWorkContextEngineRead;
-use crate::commands::workspace_navigation::GateNavigationRead;
-use crate::commands::workspace_milestone::GateMilestoneRead;
-use crate::commands::workspace_working_style::GateWorkingStyleRead;
-use crate::commands::workspace_transition::GateTransitionRead;
-use crate::commands::workspace_interaction::{
-    GateWorkspaceInteractionRead, GateWorkspaceInteractionWrite,
-};
-use crate::commands::workspace_profile::{GateWorkspaceProfileRead, GateWorkspaceProfileWrite};
-use crate::commands::workspace_activity::GateActivityGraphRead;
-use crate::commands::workspace_attention::GateAttentionRead;
-use crate::commands::workspace_continuity::GateContinuityRead;
-use crate::commands::execute_intent_request::ExecuteIntentRequest;
 use crate::commands::create_suggestion_intent_request::CreateSuggestionIntentRequest;
 use crate::commands::create_workspace::CreateWorkspace;
 use crate::commands::decide_approval::DecideApproval;
+use crate::commands::decision_engine::{GateDecisionEngineRead, GateDecisionEngineWrite};
+use crate::commands::decision_queue::{GateDecisionQueueRead, GateDecisionQueueWrite};
+use crate::commands::execute_intent_request::ExecuteIntentRequest;
 use crate::commands::get_action_catalog::GetActionCatalog;
-use crate::commands::get_ai_evaluation_history::GetAiEvaluationHistory;
 use crate::commands::get_actor_capabilities::GetActorCapabilities;
+use crate::commands::get_ai_evaluation_history::GetAiEvaluationHistory;
 use crate::commands::get_audit_history::GetAuditHistory;
-use crate::commands::get_permission_approvals::GetPermissionApprovals;
-use crate::commands::workspace_observation::{
-    CaptureWorkspaceObservation, GateObservationRead, GetLatestObservationDelta,
-    GetLatestWorkspaceObservation, GetObservationSchedulerStatus, GetWorkspaceObservationById,
-    GetWorkspaceObservationStatus,
-};
-use crate::commands::workspace_state::GetWorkspaceState;
 use crate::commands::get_execution_outcomes::GetExecutionOutcomes;
 use crate::commands::get_execution_state::GetExecutionState;
 use crate::commands::get_execution_states::GetExecutionStates;
 use crate::commands::get_observations::GetObservations;
+use crate::commands::get_permission_approvals::GetPermissionApprovals;
 use crate::commands::get_suggestion_lifecycle::GetSuggestionLifecycle;
 use crate::commands::get_suggestions::GetSuggestions;
 use crate::commands::get_workspace::GetWorkspace;
 use crate::commands::get_workspace_context::GetWorkspaceContext;
 use crate::commands::get_workspace_metrics::GetWorkspaceMetrics;
 use crate::commands::get_workspace_snapshot::GetWorkspaceSnapshot;
+use crate::commands::historical_reconstruction::{
+    CompareWorkspaceRevisions, ExplainHistoricalChange, GenerateHistoricalWorkspaceView,
+    GetHistoricalWorkspaceSummary, GetHistoricalWorkspaceView,
+};
 use crate::commands::initialize::InitializeWorkspace;
 use crate::commands::launch_application::LaunchApplication;
 use crate::commands::layout::{
@@ -84,101 +54,63 @@ use crate::commands::personalization::{
     UpdateUserPreference,
 };
 use crate::commands::pipeline::CommandPipeline;
+use crate::commands::policy_governance::{
+    ExplainGovernanceDecision, GenerateGovernanceEvaluation, GetGovernanceEvaluation,
+    GetGovernanceSummary,
+};
+use crate::commands::r#trait::permission_request;
 use crate::commands::reject_suggestion::RejectSuggestion;
 use crate::commands::request_execution_cancellation::RequestExecutionCancellation;
-use crate::commands::r#trait::permission_request;
+use crate::commands::task_graph::{GateTaskGraphRead, GateTaskGraphWrite};
+use crate::commands::temporal_intelligence::{
+    ExplainTemporalChange, GenerateTemporalAnalysis, GetTemporalAnalysis, GetTemporalSummary,
+};
 use crate::commands::update_settings::UpdateSettings;
 use crate::commands::widget::{CreateWidget, DeleteWidget, GetWidget};
-use crate::commands::workspace_intent::{
-    CreateProject, CreateTask, CreateWorkGoal, GetProject, GetTask, GetWorkflowContext,
-    ListProjects, ListTasks, SetActiveWork, UpdateProject, UpdateTask,
-};
-use crate::commands::workspace_cognitive_model::{
-    CreateCognitiveNode, CreateCognitiveRelation, GenerateCognitiveModel, SetCognitiveFocus,
-};
-use crate::commands::workspace_planning::{
-    GeneratePlanningSnapshot, GetPlanningSnapshot, GetPlanningSummary,
-};
-use crate::commands::workspace_reasoning_memory::{
-    GenerateReasoningRecord, GetReasoningRecord, GetReasoningSummary,
-};
-use crate::commands::workspace_cognitive_graph::{
-    GenerateCognitiveGraph, GetCognitiveGraph, GetCognitiveGraphSummary,
-};
-use crate::commands::workspace_cognitive_orchestration::{
-    GenerateWorkspaceOrchestration, GetWorkspaceOrchestration, GetWorkspaceOrchestrationSummary,
-};
-use crate::commands::workspace_learning_adaptation::{
-    GenerateLearningSnapshot, GetLearningSnapshot, GetLearningSummary,
-};
+use crate::commands::workspace_activity::GateActivityGraphRead;
+use crate::commands::workspace_adaptation::{GateAdaptationRead, GateAdaptationWrite};
+use crate::commands::workspace_attention::GateAttentionRead;
 use crate::commands::workspace_cognitive_agent_cast::{
     GenerateCognitiveAgentCast, GetCognitiveAgentCast, GetCognitiveAgentCastSummary,
 };
 use crate::commands::workspace_cognitive_autonomy::{
     GenerateCognitiveAutonomy, GetCognitiveAutonomy, GetCognitiveAutonomySummary,
 };
-use crate::commands::workspace_state_envelope::{
-    GenerateWorkspaceStateEnvelope, GetWorkspaceStateEnvelope, GetWorkspaceStateEnvelopeSummary,
+use crate::commands::workspace_cognitive_graph::{
+    GenerateCognitiveGraph, GetCognitiveGraph, GetCognitiveGraphSummary,
 };
-use crate::commands::policy_governance::{
-    ExplainGovernanceDecision, GenerateGovernanceEvaluation, GetGovernanceEvaluation,
-    GetGovernanceSummary,
+use crate::commands::workspace_cognitive_model::{
+    CreateCognitiveNode, CreateCognitiveRelation, GenerateCognitiveModel, SetCognitiveFocus,
 };
-use crate::commands::historical_reconstruction::{
-    CompareWorkspaceRevisions, ExplainHistoricalChange, GenerateHistoricalWorkspaceView,
-    GetHistoricalWorkspaceSummary, GetHistoricalWorkspaceView,
+use crate::commands::workspace_cognitive_orchestration::{
+    GenerateWorkspaceOrchestration, GetWorkspaceOrchestration, GetWorkspaceOrchestrationSummary,
 };
-use crate::commands::temporal_intelligence::{
-    ExplainTemporalChange, GenerateTemporalAnalysis, GetTemporalAnalysis, GetTemporalSummary,
-};
-use crate::commands::workspace_explanation::{
-    ExplainWorkspaceSituation, GenerateWorkspaceExplanation, GetWorkspaceExplanation,
-    GetWorkspaceExplanationSummary,
-};
+use crate::commands::workspace_composition::GateCompositionRead;
 use crate::commands::workspace_contextual_understanding::{
     ExplainWorkspaceContext, GenerateContextualWorkspaceUnderstanding,
     GetContextualWorkspaceUnderstanding, GetContextualWorkspaceUnderstandingSummary,
 };
-use crate::commands::workspace_knowledge_synthesis::{
-    ExplainKnowledgeSynthesis, GenerateWorkspaceKnowledgeSynthesis, GetWorkspaceKnowledgeSummary,
-    GetWorkspaceKnowledgeSynthesis,
-};
-use crate::commands::workspace_knowledge_integration::{
-    ExplainKnowledgeIntegration, GenerateWorkspaceKnowledgeIntegration,
-    GetWorkspaceKnowledgeIntegration, GetWorkspaceKnowledgeIntegrationSummary,
-    RetrieveWorkspaceKnowledge,
-};
-use crate::commands::workspace_insight_coordination::{
-    ExplainInsightCoordination, GenerateInsightCoordination, GetInsightCoordination,
-    GetInsightCoordinationSummary,
+use crate::commands::workspace_continuity::GateContinuityRead;
+use crate::commands::workspace_cross_intelligence::{
+    ExplainCrossWorkspacePattern, GenerateCrossWorkspaceIntelligence,
+    GetCrossWorkspaceIntelligence, GetCrossWorkspaceSummary,
 };
 use crate::commands::workspace_decision_support::{
     ExplainWorkspaceDecisionSupport, GenerateWorkspaceDecisionSupport, GetWorkspaceDecisionSupport,
     GetWorkspaceDecisionSupportSummary,
 };
-use crate::commands::workspace_intelligence_hub::{
-    ExplainWorkspaceIntelligence, GenerateWorkspaceIntelligenceHub, GetWorkspaceIntelligenceHub,
-    GetWorkspaceIntelligenceHubSummary,
+use crate::commands::workspace_environment::GateEnvironmentRead;
+use crate::commands::workspace_evidence_completeness::{
+    ExplainEvidenceCompleteness, GenerateWorkspaceEvidenceCompleteness,
+    GetWorkspaceEvidenceCompleteness, GetWorkspaceEvidenceCompletenessSummary,
 };
-use crate::commands::workspace_semantic_query::{
-    ExplainWorkspaceSemanticQuery, GenerateWorkspaceSemanticQuery, GetWorkspaceSemanticQuery,
-    GetWorkspaceSemanticQuerySummary,
-};
-use crate::commands::workspace_evidence_navigation::{
-    ExplainEvidenceNavigation, GenerateWorkspaceEvidenceNavigation, GetWorkspaceEvidenceNavigation,
-    GetWorkspaceEvidenceNavigationSummary,
-};
-use crate::commands::workspace_evidence_trace::{
-    ExplainEvidenceTrace, GenerateWorkspaceEvidenceTrace, GetWorkspaceEvidenceTrace,
-    GetWorkspaceEvidenceTraceSummary,
+use crate::commands::workspace_evidence_consistency::{
+    ExplainEvidenceConsistency, GenerateWorkspaceEvidenceConsistency,
+    GetWorkspaceEvidenceConsistency, GetWorkspaceEvidenceConsistencySummary,
 };
 use crate::commands::workspace_evidence_coverage::{
     ExplainEvidenceCoverage, GenerateWorkspaceEvidenceCoverage, GetWorkspaceEvidenceCoverage,
     GetWorkspaceEvidenceCoverageSummary,
-};
-use crate::commands::workspace_evidence_consistency::{
-    ExplainEvidenceConsistency, GenerateWorkspaceEvidenceConsistency, GetWorkspaceEvidenceConsistency,
-    GetWorkspaceEvidenceConsistencySummary,
 };
 use crate::commands::workspace_evidence_dependency::{
     ExplainEvidenceDependency, GenerateWorkspaceEvidenceDependency, GetWorkspaceEvidenceDependency,
@@ -188,14 +120,86 @@ use crate::commands::workspace_evidence_freshness::{
     ExplainEvidenceFreshness, GenerateWorkspaceEvidenceFreshness, GetWorkspaceEvidenceFreshness,
     GetWorkspaceEvidenceFreshnessSummary,
 };
-use crate::commands::workspace_evidence_completeness::{
-    ExplainEvidenceCompleteness, GenerateWorkspaceEvidenceCompleteness,
-    GetWorkspaceEvidenceCompleteness, GetWorkspaceEvidenceCompletenessSummary,
+use crate::commands::workspace_evidence_navigation::{
+    ExplainEvidenceNavigation, GenerateWorkspaceEvidenceNavigation, GetWorkspaceEvidenceNavigation,
+    GetWorkspaceEvidenceNavigationSummary,
 };
-use crate::commands::workspace_cross_intelligence::{
-    ExplainCrossWorkspacePattern, GenerateCrossWorkspaceIntelligence, GetCrossWorkspaceIntelligence,
-    GetCrossWorkspaceSummary,
+use crate::commands::workspace_evidence_reliability::{
+    ExplainEvidenceReliability, GenerateWorkspaceEvidenceReliability,
+    GetWorkspaceEvidenceReliability, GetWorkspaceEvidenceReliabilitySummary,
 };
+use crate::commands::workspace_evidence_trace::{
+    ExplainEvidenceTrace, GenerateWorkspaceEvidenceTrace, GetWorkspaceEvidenceTrace,
+    GetWorkspaceEvidenceTraceSummary,
+};
+use crate::commands::workspace_evolution::GateEvolutionRead;
+use crate::commands::workspace_experience::GateExperienceRead;
+use crate::commands::workspace_explanation::{
+    ExplainWorkspaceSituation, GenerateWorkspaceExplanation, GetWorkspaceExplanation,
+    GetWorkspaceExplanationSummary,
+};
+use crate::commands::workspace_insight_coordination::{
+    ExplainInsightCoordination, GenerateInsightCoordination, GetInsightCoordination,
+    GetInsightCoordinationSummary,
+};
+use crate::commands::workspace_intelligence::GateIntelligenceRead;
+use crate::commands::workspace_intelligence_hub::{
+    ExplainWorkspaceIntelligence, GenerateWorkspaceIntelligenceHub, GetWorkspaceIntelligenceHub,
+    GetWorkspaceIntelligenceHubSummary,
+};
+use crate::commands::workspace_intent::{
+    CreateProject, CreateTask, CreateWorkGoal, GetProject, GetTask, GetWorkflowContext,
+    ListProjects, ListTasks, SetActiveWork, UpdateProject, UpdateTask,
+};
+use crate::commands::workspace_interaction::{
+    GateWorkspaceInteractionRead, GateWorkspaceInteractionWrite,
+};
+use crate::commands::workspace_knowledge_integration::{
+    ExplainKnowledgeIntegration, GenerateWorkspaceKnowledgeIntegration,
+    GetWorkspaceKnowledgeIntegration, GetWorkspaceKnowledgeIntegrationSummary,
+    RetrieveWorkspaceKnowledge,
+};
+use crate::commands::workspace_knowledge_synthesis::{
+    ExplainKnowledgeSynthesis, GenerateWorkspaceKnowledgeSynthesis, GetWorkspaceKnowledgeSummary,
+    GetWorkspaceKnowledgeSynthesis,
+};
+use crate::commands::workspace_learning_adaptation::{
+    GenerateLearningSnapshot, GetLearningSnapshot, GetLearningSummary,
+};
+use crate::commands::workspace_milestone::GateMilestoneRead;
+use crate::commands::workspace_navigation::GateNavigationRead;
+use crate::commands::workspace_observation::{
+    CaptureWorkspaceObservation, GateObservationRead, GetLatestObservationDelta,
+    GetLatestWorkspaceObservation, GetObservationSchedulerStatus, GetWorkspaceObservationById,
+    GetWorkspaceObservationStatus,
+};
+use crate::commands::workspace_operating_state::GateOperatingStateRead;
+use crate::commands::workspace_pattern::GatePatternRead;
+use crate::commands::workspace_planning::{
+    GeneratePlanningSnapshot, GetPlanningSnapshot, GetPlanningSummary,
+};
+use crate::commands::workspace_profile::{GateWorkspaceProfileRead, GateWorkspaceProfileWrite};
+use crate::commands::workspace_purpose::GatePurposeRead;
+use crate::commands::workspace_readiness::GateReadinessRead;
+use crate::commands::workspace_reasoning_memory::{
+    GenerateReasoningRecord, GetReasoningRecord, GetReasoningSummary,
+};
+use crate::commands::workspace_recommendation::{
+    GateRecommendationEngineRead, GateRecommendationEngineWrite,
+};
+use crate::commands::workspace_runtime::GateRuntimeRead;
+use crate::commands::workspace_semantic_query::{
+    ExplainWorkspaceSemanticQuery, GenerateWorkspaceSemanticQuery, GetWorkspaceSemanticQuery,
+    GetWorkspaceSemanticQuerySummary,
+};
+use crate::commands::workspace_session::GateSessionRead;
+use crate::commands::workspace_state::GetWorkspaceState;
+use crate::commands::workspace_state_envelope::{
+    GenerateWorkspaceStateEnvelope, GetWorkspaceStateEnvelope, GetWorkspaceStateEnvelopeSummary,
+};
+use crate::commands::workspace_transition::GateTransitionRead;
+use crate::commands::workspace_work_context::GateWorkContextEngineRead;
+use crate::commands::workspace_working_style::GateWorkingStyleRead;
 use crate::commands::zone::{CreateZone, DeleteZone, GetZone};
 use crate::config::{SettingsUpdate, WorkspaceSettings};
 use crate::error::{KernelError, Result};
@@ -204,96 +208,87 @@ use crate::lifecycle::LifecycleState;
 use crate::security::{PermissionGateway, PermissionSubject};
 use crate::services::{
     AiAssistantService, AiEvaluationService, AiOrchestrationService, AiParticipationService,
-    AiPlanningService, AuditService, ConfigurationService, DecisionEngineService, DecisionQueueService,
-    ExecutionLifecycleService, TaskGraphService, WorkspaceEnvironmentService, WorkspaceStateEngine,
-    WorkspaceCompositionService, WorkspacePurposeService, WorkspaceEvolutionService,
-    WorkspaceRecommendationEngineService, WorkspaceOperatingStateService,
-    WorkspacePatternService, WorkspaceAdaptationService, WorkspaceReadinessService,
-    WorkspaceRuntimeService, WorkspaceSessionService, WorkspaceExperienceService,
-    WorkspaceWorkContextService,
-    WorkspaceNavigationService, WorkspaceMilestoneService, WorkspaceWorkingStyleService,
-    WorkspaceTransitionService, WorkspaceInteractionService, WorkspaceProfileService,
-    WorkspaceObservationCaptureResult, WorkspaceObservationService, ObservationTriggerAuthority,
-    ObservationSchedulerDiagnostics, WorkspaceActivityGraphService,
-    WorkspaceAttentionService, WorkspaceContextService, WorkspaceContinuityService,
-    WorkspaceIntelligenceService,
+    AiPlanningService, AuditService, ConfigurationService, DecisionEngineService,
+    DecisionQueueService, ExecutionLifecycleService, ObservationSchedulerDiagnostics,
+    ObservationTriggerAuthority, TaskGraphService, WorkspaceActivityGraphService,
+    WorkspaceAdaptationService, WorkspaceAttentionService, WorkspaceCompositionService,
+    WorkspaceContextService, WorkspaceContinuityService, WorkspaceEnvironmentService,
+    WorkspaceEvolutionService, WorkspaceExperienceService, WorkspaceIntelligenceService,
+    WorkspaceInteractionService, WorkspaceMilestoneService, WorkspaceNavigationService,
+    WorkspaceObservationCaptureResult, WorkspaceObservationService, WorkspaceOperatingStateService,
+    WorkspacePatternService, WorkspaceProfileService, WorkspacePurposeService,
+    WorkspaceReadinessService, WorkspaceRecommendationEngineService, WorkspaceRuntimeService,
+    WorkspaceSessionService, WorkspaceStateEngine, WorkspaceTransitionService,
+    WorkspaceWorkContextService, WorkspaceWorkingStyleService,
 };
 use crate::WorkspaceKernel;
 use workspace_domain::{
-    ActionCatalog, Actor, ActorContext, AiAssistantPlanComparison, AiAssistantWorkflow,
-    AiMemoryAwareness, AiOrchestratedPlan, AutomationContract, AutomationContractIntentRequest,
-    AutomationIntentProposal, AutomationIntentProposalStatus, AutomationTriggerKind,
-    DecisionActionResult, DecisionEngineActionResult, DecisionEngineState, DecisionItem,
-    DecisionQueue, Project, ProjectStatus, Task, TaskGraph, TaskPriority, TaskRelationship,
-    TaskRelationshipKind, TaskStatus, TriggerEvaluationResult, TriggerEvent, TriggerEventType,
-    WorkGoal, WorkflowContext, WorkspaceActivity, WorkspaceActivityGraph, WorkspaceAttentionState,
-    WorkspaceContinuityState, WorkspaceEnvironmentState, WorkspaceCompositionState,
-    WorkspacePurposeState, WorkspaceEvolutionState, RecommendationReviewActionResult,
-    WorkspaceRecommendationEngineState,
-    WorkspaceOperatingState, WorkspacePatternState, AdaptationActionResult, WorkspaceAdaptationState,
-    WorkspaceReadinessState, WorkspaceRuntimeOperatorView, WorkspaceSessionComparison,
-    WorkspaceSessionState, WorkspaceExperienceComparison, WorkspaceExperienceState,
-    WorkspaceWorkContextComparison, WorkspaceWorkContextState, WorkspaceWorkContextValidation,
-    WorkspaceNavigationComparison, WorkspaceNavigationState, WorkspaceNavigationValidation,
-    WorkspaceMilestoneComparison, WorkspaceMilestoneState, WorkspaceMilestoneValidation,
-    WorkspaceWorkingStyleComparison, WorkspaceWorkingStyleState, WorkspaceWorkingStyleValidation,
-    WorkspaceTransitionComparison, WorkspaceTransitionState, WorkspaceTransitionValidation,
-    InteractionSelectResult, WorkspaceInteractionComparison, WorkspaceInteractionState,
-    WorkspaceInteractionValidation,
-    WorkspaceProfile, WorkspaceProfileComparison, WorkspaceProfileMemberInput,
-    WorkspaceProfileState, WorkspaceProfileStateComparison, WorkspaceProfileStatus,
-    WorkspaceProfileValidation, WorkspaceObservationSnapshot, WorkspaceObservationStatus,
-    ObservationConsumerFreshnessNeed, ObservationFreshnessEnsureResult, ObservationSchedulerStatus,
-    WorkspaceObservationDelta,
-    WorkspaceState as ProjectedWorkspaceState, WorkspaceTask, WorkspaceTaskPriority,
-    WorkspaceTaskStatus,
-    WorkspaceIntelligenceComparison, WorkspaceIntelligenceState, AiPlan, AiPlanEvaluationReport,
-    AiPlanSubmissionResult,
-    AiProposalAuthorityOutcome, AiProposalEvaluation, AiProposalSubmission, ApplicationId,
-    ApplicationReference, AuditEvent, Capability, CapabilitySet, CognitiveModelState, CognitiveNode,
-    CognitiveRelation, IntentContext, Layout, PlanningSnapshot, PlanningSummary,
-    ReasoningSnapshot, ReasoningSummary, CognitiveGraphSnapshot, CognitiveGraphSummary,
-    WorkspaceOrchestrationSnapshot, WorkspaceOrchestrationSummary,
-    LearningSnapshot, LearningSummary,
-    CognitiveAgentCastSnapshot, CognitiveAgentCastSummary,
-    CognitiveAutonomySnapshot, CognitiveAutonomySummary,
-    WorkspaceStateSnapshot, WorkspaceStateSummary,
-    PolicyGovernanceSnapshot, PolicyGovernanceSummary, GovernanceExplanation,
+    ActionCatalog, Actor, ActorContext, AdaptationActionResult, AiAssistantPlanComparison,
+    AiAssistantWorkflow, AiMemoryAwareness, AiOrchestratedPlan, AiPlan, AiPlanEvaluationReport,
+    AiPlanSubmissionResult, AiProposalAuthorityOutcome, AiProposalEvaluation, AiProposalSubmission,
+    ApplicationId, ApplicationReference, AuditEvent, AutomationContract,
+    AutomationContractIntentRequest, AutomationIntentProposal, AutomationIntentProposalStatus,
+    AutomationTriggerKind, CancellationRequest, Capability, CapabilityDiscovery, CapabilitySet,
+    CognitiveAgentCastSnapshot, CognitiveAgentCastSummary, CognitiveAutonomySnapshot,
+    CognitiveAutonomySummary, CognitiveGraphSnapshot, CognitiveGraphSummary, CognitiveModelState,
+    CognitiveNode, CognitiveRelation, ContextualUnderstandingProjection,
+    ContextualUnderstandingSummary, CrossWorkspaceIntelligenceProjection,
+    CrossWorkspaceIntelligenceSummary, CrossWorkspacePatternExplanation, DecisionActionResult,
+    DecisionEngineActionResult, DecisionEngineState, DecisionItem, DecisionQueue,
+    ExecutionLifecycleProjection, ExecutionOutcome, ExecutionReconciliation, GovernanceExplanation,
     HistoricalChangeExplanation, HistoricalReconstructionSnapshot, HistoricalReconstructionSummary,
-    RevisionComparison,
+    InsightCoordinationExplanation, InsightCoordinationProjection, InsightCoordinationSummary,
+    IntentContext, IntentExecutionRequest, InteractionSelectResult,
+    KnowledgeIntegrationExplanation, KnowledgeIntegrationProjection, KnowledgeIntegrationResult,
+    KnowledgeIntegrationSummary, KnowledgeSynthesisExplanation, KnowledgeSynthesisProjection,
+    KnowledgeSynthesisSummary, Layout, LayoutId, LayoutMetadata, LayoutNode, LayoutSnapshot,
+    LearningSnapshot, LearningSummary, MemoryEntry, MemoryType, ModelProviderDescriptor,
+    ModelResponse, Observation, ObservationConsumerFreshnessNeed, ObservationFreshnessEnsureResult,
+    ObservationSchedulerStatus, PersonalizedPlanComparison, PlanningSnapshot, PlanningSummary,
+    PolicyGovernanceSnapshot, PolicyGovernanceSummary, PreferenceCategory, PreferenceSource,
+    Project, ProjectStatus, ReasoningSnapshot, ReasoningSummary, RecommendationReviewActionResult,
+    RevisionComparison, Suggestion, SuggestionIntentRequest, SuggestionLifecycleRecord, Task,
+    TaskGraph, TaskPriority, TaskRelationship, TaskRelationshipKind, TaskStatus,
     TemporalChangeExplanation, TemporalIntelligenceSnapshot, TemporalIntelligenceSummary,
-    WorkspaceExplanationSnapshot, WorkspaceExplanationSummary, WorkspaceSituationExplanation,
-    ContextualUnderstandingProjection, ContextualUnderstandingSummary, WorkspaceContextExplanation,
-    KnowledgeSynthesisProjection, KnowledgeSynthesisSummary, KnowledgeSynthesisExplanation,
-    KnowledgeIntegrationProjection, KnowledgeIntegrationSummary, KnowledgeIntegrationExplanation,
-    KnowledgeIntegrationResult,
-    InsightCoordinationProjection, InsightCoordinationSummary, InsightCoordinationExplanation,
-    CrossWorkspaceIntelligenceProjection, CrossWorkspaceIntelligenceSummary,
-    CrossWorkspacePatternExplanation,
-    WorkspaceDecisionSupportProjection, WorkspaceDecisionSupportSummary,
-    WorkspaceDecisionSupportExplanation,
-    WorkspaceIntelligenceHubProjection, WorkspaceIntelligenceHubSummary,
-    WorkspaceIntelligenceHubExplanation,
-    WorkspaceSemanticQueryProjection, WorkspaceSemanticQuerySummary,
-    WorkspaceSemanticQueryExplanation,
+    TriggerEvaluationResult, TriggerEvent, TriggerEventType, UserPreference, UserPreferenceProfile,
+    WidgetId, WidgetReference, WorkGoal, WorkflowContext, Workspace, WorkspaceActivity,
+    WorkspaceActivityGraph, WorkspaceAdaptationState, WorkspaceAttentionState,
+    WorkspaceCompositionState, WorkspaceContext, WorkspaceContextExplanation,
+    WorkspaceContinuityState, WorkspaceDecisionSupportExplanation,
+    WorkspaceDecisionSupportProjection, WorkspaceDecisionSupportSummary, WorkspaceEnvironmentState,
+    WorkspaceEvidenceCompletenessExplanation, WorkspaceEvidenceCompletenessProjection,
+    WorkspaceEvidenceCompletenessSummary, WorkspaceEvidenceConsistencyExplanation,
+    WorkspaceEvidenceConsistencyProjection, WorkspaceEvidenceConsistencySummary,
+    WorkspaceEvidenceCoverageExplanation, WorkspaceEvidenceCoverageProjection,
+    WorkspaceEvidenceCoverageSummary, WorkspaceEvidenceDependencyExplanation,
+    WorkspaceEvidenceDependencyProjection, WorkspaceEvidenceDependencySummary,
+    WorkspaceEvidenceFreshnessExplanation, WorkspaceEvidenceFreshnessProjection,
+    WorkspaceEvidenceFreshnessSummary, WorkspaceEvidenceNavigationExplanation,
     WorkspaceEvidenceNavigationProjection, WorkspaceEvidenceNavigationSummary,
-    WorkspaceEvidenceNavigationExplanation,
-    WorkspaceEvidenceTraceProjection, WorkspaceEvidenceTraceSummary,
-    WorkspaceEvidenceTraceExplanation,
-    WorkspaceEvidenceCoverageProjection, WorkspaceEvidenceCoverageSummary, WorkspaceEvidenceCoverageExplanation,
-    WorkspaceEvidenceConsistencyProjection, WorkspaceEvidenceConsistencySummary, WorkspaceEvidenceConsistencyExplanation,
-    WorkspaceEvidenceDependencyProjection, WorkspaceEvidenceDependencySummary, WorkspaceEvidenceDependencyExplanation,
-    WorkspaceEvidenceFreshnessProjection, WorkspaceEvidenceFreshnessSummary, WorkspaceEvidenceFreshnessExplanation,
-    WorkspaceEvidenceCompletenessProjection, WorkspaceEvidenceCompletenessSummary,
-    WorkspaceEvidenceCompletenessExplanation,
-    LayoutId, LayoutMetadata, LayoutNode, LayoutSnapshot, MemoryEntry, MemoryType,
-    ModelProviderDescriptor, ModelResponse, Observation, PersonalizedPlanComparison,
-    PreferenceCategory, PreferenceSource, Suggestion, SuggestionIntentRequest,
-    SuggestionLifecycleRecord, IntentExecutionRequest, ExecutionOutcome, ExecutionReconciliation,
-    ExecutionLifecycleProjection,
-    CancellationRequest, UserPreference, UserPreferenceProfile, WidgetId, WidgetReference,
-    Workspace, WorkspaceContext, WorkspaceId, WorkspaceMetrics, WorkspaceSnapshot,
-    CapabilityDiscovery, Zone, ZoneId,
+    WorkspaceEvidenceReliabilityExplanation, WorkspaceEvidenceReliabilityProjection,
+    WorkspaceEvidenceReliabilitySummary, WorkspaceEvidenceTraceExplanation,
+    WorkspaceEvidenceTraceProjection, WorkspaceEvidenceTraceSummary, WorkspaceEvolutionState,
+    WorkspaceExperienceComparison, WorkspaceExperienceState, WorkspaceExplanationSnapshot,
+    WorkspaceExplanationSummary, WorkspaceId, WorkspaceIntelligenceComparison,
+    WorkspaceIntelligenceHubExplanation, WorkspaceIntelligenceHubProjection,
+    WorkspaceIntelligenceHubSummary, WorkspaceIntelligenceState, WorkspaceInteractionComparison,
+    WorkspaceInteractionState, WorkspaceInteractionValidation, WorkspaceMetrics,
+    WorkspaceMilestoneComparison, WorkspaceMilestoneState, WorkspaceMilestoneValidation,
+    WorkspaceNavigationComparison, WorkspaceNavigationState, WorkspaceNavigationValidation,
+    WorkspaceObservationDelta, WorkspaceObservationSnapshot, WorkspaceObservationStatus,
+    WorkspaceOperatingState, WorkspaceOrchestrationSnapshot, WorkspaceOrchestrationSummary,
+    WorkspacePatternState, WorkspaceProfile, WorkspaceProfileComparison,
+    WorkspaceProfileMemberInput, WorkspaceProfileState, WorkspaceProfileStateComparison,
+    WorkspaceProfileStatus, WorkspaceProfileValidation, WorkspacePurposeState,
+    WorkspaceReadinessState, WorkspaceRecommendationEngineState, WorkspaceRuntimeOperatorView,
+    WorkspaceSemanticQueryExplanation, WorkspaceSemanticQueryProjection,
+    WorkspaceSemanticQuerySummary, WorkspaceSessionComparison, WorkspaceSessionState,
+    WorkspaceSituationExplanation, WorkspaceSnapshot, WorkspaceState as ProjectedWorkspaceState,
+    WorkspaceStateSnapshot, WorkspaceStateSummary, WorkspaceTask, WorkspaceTaskPriority,
+    WorkspaceTaskStatus, WorkspaceTransitionComparison, WorkspaceTransitionState,
+    WorkspaceTransitionValidation, WorkspaceWorkContextComparison, WorkspaceWorkContextState,
+    WorkspaceWorkContextValidation, WorkspaceWorkingStyleComparison, WorkspaceWorkingStyleState,
+    WorkspaceWorkingStyleValidation, Zone, ZoneId,
 };
 
 /// Executes kernel commands and coordinates services + events.
@@ -321,17 +316,21 @@ impl CommandHandler {
 
     /// Publish Started/Ready only after audit subscriber registration in apply_runtime.
     fn publish_startup_events(kernel: &WorkspaceKernel) {
-        kernel.event_bus().publish(DomainEvent::WorkspaceStarted(WorkspaceStarted {
-            version: crate::KERNEL_VERSION.to_string(),
-            intent: Some(workspace_domain::IntentContext::system_startup()),
-            capability: Some(workspace_domain::Capability::system_startup()),
-        }));
-        kernel.event_bus().publish(DomainEvent::WorkspaceReady(WorkspaceReady {
-            version: crate::KERNEL_VERSION.to_string(),
-            lifecycle: LifecycleState::Ready,
-            intent: Some(workspace_domain::IntentContext::system_startup()),
-            capability: Some(workspace_domain::Capability::system_startup()),
-        }));
+        kernel
+            .event_bus()
+            .publish(DomainEvent::WorkspaceStarted(WorkspaceStarted {
+                version: crate::KERNEL_VERSION.to_string(),
+                intent: Some(workspace_domain::IntentContext::system_startup()),
+                capability: Some(workspace_domain::Capability::system_startup()),
+            }));
+        kernel
+            .event_bus()
+            .publish(DomainEvent::WorkspaceReady(WorkspaceReady {
+                version: crate::KERNEL_VERSION.to_string(),
+                lifecycle: LifecycleState::Ready,
+                intent: Some(workspace_domain::IntentContext::system_startup()),
+                capability: Some(workspace_domain::Capability::system_startup()),
+            }));
     }
 
     /// Invoke existing ExecutionLifecycleService stale rules — no new authority.
@@ -361,9 +360,7 @@ impl CommandHandler {
         match ExecutionLifecycleService::reconcile_stale_claims_at_startup(&db) {
             Ok(count) => {
                 if count > 0 {
-                    log::info!(
-                        "startup recovery inspected {count} in-progress execution claim(s)"
-                    );
+                    log::info!("startup recovery inspected {count} in-progress execution claim(s)");
                 }
                 if let Err(error) = AuditService::record_recovery_diagnostic(
                     &db,
@@ -457,9 +454,8 @@ impl CommandHandler {
         position_metadata: Option<String>,
     ) -> Result<Zone> {
         let workspace_id = WorkspaceId::new(workspace_id).map_err(KernelError::Domain)?;
-        CommandPipeline::new(kernel.command_context(actor, intent)).execute_mutation(
-            CreateZone::new(workspace_id, name, position_metadata),
-        )
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_mutation(CreateZone::new(workspace_id, name, position_metadata))
     }
 
     pub fn delete_zone(
@@ -519,13 +515,7 @@ impl CommandHandler {
         application_id: String,
         reason: Option<String>,
     ) -> Result<workspace_domain::ApplicationLaunchResult> {
-        Self::submit_ai_application_launch_inner(
-            kernel,
-            actor_id,
-            application_id,
-            reason,
-            false,
-        )
+        Self::submit_ai_application_launch_inner(kernel, actor_id, application_id, reason, false)
     }
 
     /// Test helper — same path as production, stub launcher (no OS spawn).
@@ -536,13 +526,7 @@ impl CommandHandler {
         application_id: String,
         reason: Option<String>,
     ) -> Result<workspace_domain::ApplicationLaunchResult> {
-        Self::submit_ai_application_launch_inner(
-            kernel,
-            actor_id,
-            application_id,
-            reason,
-            true,
-        )
+        Self::submit_ai_application_launch_inner(kernel, actor_id, application_id, reason, true)
     }
 
     fn submit_ai_application_launch_inner(
@@ -559,8 +543,7 @@ impl CommandHandler {
             &application_id,
             reason,
         )?;
-        let actor =
-            ActorContext::new(Actor::ai_assistant(actor_id).map_err(KernelError::Domain)?);
+        let actor = ActorContext::new(Actor::ai_assistant(actor_id).map_err(KernelError::Domain)?);
         let intent = match request.reason.as_ref() {
             Some(label) => IntentContext::ai_suggestion_with_label(label.clone()),
             None => IntentContext::ai_suggestion(),
@@ -664,13 +647,8 @@ impl CommandHandler {
                 .collect(),
             };
 
-            let awareness =
-                AiPlanningService::awareness_from_context(&workspace_context, titles);
-            AiPlanningService::audit_awareness_used(
-                &kernel.shared_database(),
-                &actor,
-                &awareness,
-            )?;
+            let awareness = AiPlanningService::awareness_from_context(&workspace_context, titles);
+            AiPlanningService::audit_awareness_used(&kernel.shared_database(), &actor, &awareness)?;
             let memory_awareness = crate::services::AiMemoryService::assemble_awareness(
                 &kernel.shared_database(),
                 Some(workspace_id.as_str()),
@@ -727,11 +705,7 @@ impl CommandHandler {
 
         AiPlanningService::audit_plan_created(&kernel.shared_database(), &actor, &plan)?;
         for proposal in &plan.proposals {
-            AiPlanningService::audit_proposal_created(
-                &kernel.shared_database(),
-                &actor,
-                proposal,
-            )?;
+            AiPlanningService::audit_proposal_created(&kernel.shared_database(), &actor, proposal)?;
         }
         Ok(plan)
     }
@@ -1123,9 +1097,8 @@ impl CommandHandler {
 
         // If the human denied the paused approval, fail the step without re-submit / retry.
         if let Some(approval_id) = plan.steps[index].approval_request_id.clone() {
-            let request_id =
-                workspace_domain::PermissionApprovalRequestId::new(approval_id)
-                    .map_err(KernelError::Domain)?;
+            let request_id = workspace_domain::PermissionApprovalRequestId::new(approval_id)
+                .map_err(KernelError::Domain)?;
             let db = kernel.shared_database();
             let guard = db
                 .lock()
@@ -1382,17 +1355,18 @@ impl CommandHandler {
         revision: Option<u32>,
     ) -> Result<workspace_domain::AiAssistantPlanRevision> {
         match revision {
-            Some(number) => workflow
-                .revision_by_number(number)
-                .cloned()
-                .ok_or_else(|| KernelError::AiAssistantValidation {
+            Some(number) => workflow.revision_by_number(number).cloned().ok_or_else(|| {
+                KernelError::AiAssistantValidation {
                     message: format!("assistant plan revision not found: {number}"),
-                }),
-            None => workflow
-                .current_as_revision()
-                .ok_or_else(|| KernelError::AiAssistantValidation {
-                    message: "assistant workflow has no current plan preview to compare".into(),
-                }),
+                }
+            }),
+            None => {
+                workflow
+                    .current_as_revision()
+                    .ok_or_else(|| KernelError::AiAssistantValidation {
+                        message: "assistant workflow has no current plan preview to compare".into(),
+                    })
+            }
         }
     }
 
@@ -1428,10 +1402,8 @@ impl CommandHandler {
                 AiOrchestrationService::get_plan(&kernel.orchestrated_plans(), plan_id.as_str())
             {
                 workflow.sync_from_plan(&plan);
-                workflow = AiAssistantService::save_workflow(
-                    &kernel.assistant_workflows(),
-                    workflow,
-                )?;
+                workflow =
+                    AiAssistantService::save_workflow(&kernel.assistant_workflows(), workflow)?;
             }
         }
         Ok(workflow)
@@ -1563,9 +1535,8 @@ impl CommandHandler {
         widget_type: Option<String>,
     ) -> Result<WidgetReference> {
         let workspace_id = WorkspaceId::new(workspace_id).map_err(KernelError::Domain)?;
-        CommandPipeline::new(kernel.command_context(actor, intent)).execute_mutation(
-            CreateWidget::new(workspace_id, name, widget_type),
-        )
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_mutation(CreateWidget::new(workspace_id, name, widget_type))
     }
 
     pub fn delete_widget(
@@ -1611,9 +1582,8 @@ impl CommandHandler {
         metadata: Option<LayoutMetadata>,
     ) -> Result<Layout> {
         let layout_id = LayoutId::new(layout_id).map_err(KernelError::Domain)?;
-        CommandPipeline::new(kernel.command_context(actor, intent)).execute_mutation(
-            UpdateLayout::new(layout_id, viewport, nodes, metadata),
-        )
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_mutation(UpdateLayout::new(layout_id, viewport, nodes, metadata))
     }
 
     pub fn delete_layout(
@@ -1976,11 +1946,12 @@ impl CommandHandler {
     ) -> Result<workspace_domain::ApprovalDecisionResult> {
         let request_id = workspace_domain::PermissionApprovalRequestId::new(request_id)
             .map_err(KernelError::Domain)?;
-        let decision = workspace_domain::ApprovalDecisionKind::parse(&decision).map_err(|error| {
-            KernelError::PermissionApprovalValidation {
-                message: error.to_string(),
-            }
-        })?;
+        let decision =
+            workspace_domain::ApprovalDecisionKind::parse(&decision).map_err(|error| {
+                KernelError::PermissionApprovalValidation {
+                    message: error.to_string(),
+                }
+            })?;
         CommandPipeline::new(kernel.command_context(actor, intent))
             .execute_mutation(DecideApproval::new(request_id, decision))
     }
@@ -2151,8 +2122,7 @@ impl CommandHandler {
         actor: ActorContext,
         intent: IntentContext,
     ) -> Result<ProjectedWorkspaceState> {
-        CommandPipeline::new(kernel.command_context(actor, intent))
-            .execute_query(GetWorkspaceState)
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_query(GetWorkspaceState)
     }
 
     /// Architecture guard — Observation Layer must never execute.
@@ -2181,9 +2151,8 @@ impl CommandHandler {
         suggestion_id: String,
     ) -> Result<IntentExecutionRequest> {
         let workspace_id = WorkspaceId::new(workspace_id).map_err(KernelError::Domain)?;
-        CommandPipeline::new(kernel.command_context(actor, intent)).execute_mutation(
-            ExecuteIntentRequest::new(workspace_id, suggestion_id),
-        )
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_mutation(ExecuteIntentRequest::new(workspace_id, suggestion_id))
     }
 
     pub fn get_execution_outcomes(
@@ -2253,9 +2222,8 @@ impl CommandHandler {
         description: Option<Option<String>>,
         status: Option<ProjectStatus>,
     ) -> Result<Project> {
-        CommandPipeline::new(kernel.command_context(actor, intent)).execute_mutation(
-            UpdateProject::new(project_id, name, description, status),
-        )
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_mutation(UpdateProject::new(project_id, name, description, status))
     }
 
     pub fn get_project(
@@ -2288,9 +2256,8 @@ impl CommandHandler {
         title: String,
         priority: TaskPriority,
     ) -> Result<Task> {
-        CommandPipeline::new(kernel.command_context(actor, intent)).execute_mutation(
-            CreateTask::new(project_id, workspace_id, title, priority),
-        )
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_mutation(CreateTask::new(project_id, workspace_id, title, priority))
     }
 
     pub fn update_task(
@@ -2324,8 +2291,11 @@ impl CommandHandler {
         project_id: Option<String>,
         limit: Option<usize>,
     ) -> Result<Vec<Task>> {
-        CommandPipeline::new(kernel.command_context(actor, intent))
-            .execute_query(ListTasks::new(workspace_id, project_id, limit))
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_query(ListTasks::new(
+            workspace_id,
+            project_id,
+            limit,
+        ))
     }
 
     pub fn create_work_goal(
@@ -2360,9 +2330,8 @@ impl CommandHandler {
         project_id: Option<String>,
         task_id: Option<String>,
     ) -> Result<WorkflowContext> {
-        CommandPipeline::new(kernel.command_context(actor, intent)).execute_mutation(
-            SetActiveWork::new(workspace_id, project_id, task_id),
-        )
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_mutation(SetActiveWork::new(workspace_id, project_id, task_id))
     }
 
     pub fn create_cognitive_node(
@@ -2646,8 +2615,9 @@ impl CommandHandler {
         workspace_id: String,
         history_limit: usize,
     ) -> Result<CognitiveAgentCastSummary> {
-        CommandPipeline::new(kernel.command_context(actor, intent))
-            .execute_query(GetCognitiveAgentCastSummary::new(workspace_id, history_limit))
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_query(
+            GetCognitiveAgentCastSummary::new(workspace_id, history_limit),
+        )
     }
 
     /// Architecture guard — Agent Cast must never execute.
@@ -2682,8 +2652,9 @@ impl CommandHandler {
         workspace_id: String,
         history_limit: usize,
     ) -> Result<CognitiveAutonomySummary> {
-        CommandPipeline::new(kernel.command_context(actor, intent))
-            .execute_query(GetCognitiveAutonomySummary::new(workspace_id, history_limit))
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_query(
+            GetCognitiveAutonomySummary::new(workspace_id, history_limit),
+        )
     }
 
     /// Architecture guard — Cognitive Autonomy must never execute.
@@ -2907,8 +2878,9 @@ impl CommandHandler {
         workspace_id: String,
         history_limit: usize,
     ) -> Result<WorkspaceExplanationSummary> {
-        CommandPipeline::new(kernel.command_context(actor, intent))
-            .execute_query(GetWorkspaceExplanationSummary::new(workspace_id, history_limit))
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_query(
+            GetWorkspaceExplanationSummary::new(workspace_id, history_limit),
+        )
     }
 
     pub fn explain_workspace_situation(
@@ -3000,8 +2972,9 @@ impl CommandHandler {
         workspace_id: String,
         history_limit: usize,
     ) -> Result<KnowledgeSynthesisSummary> {
-        CommandPipeline::new(kernel.command_context(actor, intent))
-            .execute_query(GetWorkspaceKnowledgeSummary::new(workspace_id, history_limit))
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_query(
+            GetWorkspaceKnowledgeSummary::new(workspace_id, history_limit),
+        )
     }
 
     pub fn explain_knowledge_synthesis(
@@ -3266,8 +3239,9 @@ impl CommandHandler {
         workspace_id: String,
         query_text: String,
     ) -> Result<WorkspaceSemanticQueryProjection> {
-        CommandPipeline::new(kernel.command_context(actor, intent))
-            .execute_mutation(GenerateWorkspaceSemanticQuery::new(workspace_id, query_text))
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_mutation(
+            GenerateWorkspaceSemanticQuery::new(workspace_id, query_text),
+        )
     }
 
     pub fn get_workspace_semantic_query(
@@ -3638,6 +3612,53 @@ impl CommandHandler {
         crate::services::WorkspaceEvidenceCompletenessService::attempt_execute()
     }
 
+    pub fn generate_workspace_evidence_reliability(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceEvidenceReliabilityProjection> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_mutation(GenerateWorkspaceEvidenceReliability::new(workspace_id))
+    }
+
+    pub fn get_workspace_evidence_reliability(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceEvidenceReliabilityProjection> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetWorkspaceEvidenceReliability::new(workspace_id))
+    }
+
+    pub fn get_workspace_evidence_reliability_summary(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        history_limit: usize,
+    ) -> Result<WorkspaceEvidenceReliabilitySummary> {
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_query(
+            GetWorkspaceEvidenceReliabilitySummary::new(workspace_id, history_limit),
+        )
+    }
+
+    pub fn explain_evidence_reliability(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceEvidenceReliabilityExplanation> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(ExplainEvidenceReliability::new(workspace_id))
+    }
+
+    /// Architecture guard — Evidence reliability cannot execute / settle conflicts / establish truth.
+    pub fn evidence_reliability_attempt_execute() -> Result<()> {
+        crate::services::WorkspaceEvidenceReliabilityService::attempt_execute()
+    }
+
     #[allow(clippy::too_many_arguments)]
     pub fn create_automation_contract(
         kernel: &WorkspaceKernel,
@@ -3888,12 +3909,7 @@ impl CommandHandler {
     ) -> Result<DecisionQueue> {
         CommandPipeline::new(kernel.command_context(actor.clone(), intent.clone()))
             .execute_query(GateDecisionQueueRead)?;
-        let _ = Self::get_workflow_context(
-            kernel,
-            actor.clone(),
-            intent,
-            workspace_id.clone(),
-        )?;
+        let _ = Self::get_workflow_context(kernel, actor.clone(), intent, workspace_id.clone())?;
         DecisionQueueService::generate(
             &kernel.shared_database(),
             &actor,
@@ -4008,12 +4024,7 @@ impl CommandHandler {
     ) -> Result<WorkspaceActivityGraph> {
         CommandPipeline::new(kernel.command_context(actor.clone(), intent.clone()))
             .execute_query(GateActivityGraphRead)?;
-        let _ = Self::get_workflow_context(
-            kernel,
-            actor.clone(),
-            intent,
-            workspace_id.clone(),
-        )?;
+        let _ = Self::get_workflow_context(kernel, actor.clone(), intent, workspace_id.clone())?;
         WorkspaceActivityGraphService::generate(
             &kernel.shared_database(),
             &actor,
@@ -4031,12 +4042,7 @@ impl CommandHandler {
         workspace_id: String,
         limit: Option<usize>,
     ) -> Result<Vec<WorkspaceActivity>> {
-        let graph = Self::generate_workspace_activity_graph(
-            kernel,
-            actor,
-            intent,
-            workspace_id,
-        )?;
+        let graph = Self::generate_workspace_activity_graph(kernel, actor, intent, workspace_id)?;
         let limit = limit.unwrap_or(50).min(graph.timeline.len());
         Ok(graph
             .timeline
@@ -4058,12 +4064,7 @@ impl CommandHandler {
     ) -> Result<WorkspaceContinuityState> {
         CommandPipeline::new(kernel.command_context(actor.clone(), intent.clone()))
             .execute_query(GateContinuityRead)?;
-        let _ = Self::get_workflow_context(
-            kernel,
-            actor.clone(),
-            intent,
-            workspace_id.clone(),
-        )?;
+        let _ = Self::get_workflow_context(kernel, actor.clone(), intent, workspace_id.clone())?;
         WorkspaceContinuityService::generate(
             &kernel.shared_database(),
             &actor,
@@ -4082,12 +4083,7 @@ impl CommandHandler {
     ) -> Result<WorkspaceAttentionState> {
         CommandPipeline::new(kernel.command_context(actor.clone(), intent.clone()))
             .execute_query(GateAttentionRead)?;
-        let _ = Self::get_workflow_context(
-            kernel,
-            actor.clone(),
-            intent,
-            workspace_id.clone(),
-        )?;
+        let _ = Self::get_workflow_context(kernel, actor.clone(), intent, workspace_id.clone())?;
         WorkspaceAttentionService::generate(
             &kernel.shared_database(),
             &actor,
@@ -4106,12 +4102,7 @@ impl CommandHandler {
     ) -> Result<DecisionEngineState> {
         CommandPipeline::new(kernel.command_context(actor.clone(), intent.clone()))
             .execute_query(GateDecisionEngineRead)?;
-        let _ = Self::get_workflow_context(
-            kernel,
-            actor.clone(),
-            intent,
-            workspace_id.clone(),
-        )?;
+        let _ = Self::get_workflow_context(kernel, actor.clone(), intent, workspace_id.clone())?;
         DecisionEngineService::generate(
             &kernel.shared_database(),
             &actor,
@@ -4311,12 +4302,7 @@ impl CommandHandler {
     ) -> Result<TaskGraph> {
         CommandPipeline::new(kernel.command_context(actor.clone(), intent.clone()))
             .execute_query(GateTaskGraphRead)?;
-        let _ = Self::get_workflow_context(
-            kernel,
-            actor.clone(),
-            intent,
-            workspace_id.clone(),
-        )?;
+        let _ = Self::get_workflow_context(kernel, actor.clone(), intent, workspace_id.clone())?;
         TaskGraphService::generate(&kernel.shared_database(), &actor, workspace_id)
     }
 
@@ -4389,11 +4375,7 @@ impl CommandHandler {
     ) -> Result<()> {
         CommandPipeline::new(kernel.command_context(actor.clone(), intent))
             .execute_mutation(GateTaskGraphWrite)?;
-        TaskGraphService::remove_relationship(
-            &kernel.shared_database(),
-            &actor,
-            relationship_id,
-        )
+        TaskGraphService::remove_relationship(&kernel.shared_database(), &actor, relationship_id)
     }
 
     pub fn validate_task_graph(
@@ -4432,12 +4414,7 @@ impl CommandHandler {
     ) -> Result<WorkspaceEnvironmentState> {
         CommandPipeline::new(kernel.command_context(actor.clone(), intent.clone()))
             .execute_query(GateEnvironmentRead)?;
-        let _ = Self::get_workflow_context(
-            kernel,
-            actor.clone(),
-            intent,
-            workspace_id.clone(),
-        )?;
+        let _ = Self::get_workflow_context(kernel, actor.clone(), intent, workspace_id.clone())?;
         WorkspaceEnvironmentService::generate(&kernel.shared_database(), &actor, workspace_id)
     }
 
@@ -4455,12 +4432,7 @@ impl CommandHandler {
     ) -> Result<WorkspaceCompositionState> {
         CommandPipeline::new(kernel.command_context(actor.clone(), intent.clone()))
             .execute_query(GateCompositionRead)?;
-        let _ = Self::get_workflow_context(
-            kernel,
-            actor.clone(),
-            intent,
-            workspace_id.clone(),
-        )?;
+        let _ = Self::get_workflow_context(kernel, actor.clone(), intent, workspace_id.clone())?;
         WorkspaceCompositionService::generate(
             &kernel.shared_database(),
             &actor,
@@ -4484,12 +4456,7 @@ impl CommandHandler {
     ) -> Result<WorkspacePurposeState> {
         CommandPipeline::new(kernel.command_context(actor.clone(), intent.clone()))
             .execute_query(GatePurposeRead)?;
-        let _ = Self::get_workflow_context(
-            kernel,
-            actor.clone(),
-            intent,
-            workspace_id.clone(),
-        )?;
+        let _ = Self::get_workflow_context(kernel, actor.clone(), intent, workspace_id.clone())?;
         WorkspacePurposeService::generate(
             &kernel.shared_database(),
             &actor,
@@ -4513,12 +4480,7 @@ impl CommandHandler {
     ) -> Result<WorkspaceEvolutionState> {
         CommandPipeline::new(kernel.command_context(actor.clone(), intent.clone()))
             .execute_query(GateEvolutionRead)?;
-        let _ = Self::get_workflow_context(
-            kernel,
-            actor.clone(),
-            intent,
-            workspace_id.clone(),
-        )?;
+        let _ = Self::get_workflow_context(kernel, actor.clone(), intent, workspace_id.clone())?;
         WorkspaceEvolutionService::generate(
             &kernel.shared_database(),
             &actor,
@@ -4542,12 +4504,7 @@ impl CommandHandler {
     ) -> Result<WorkspaceRecommendationEngineState> {
         CommandPipeline::new(kernel.command_context(actor.clone(), intent.clone()))
             .execute_query(GateRecommendationEngineRead)?;
-        let _ = Self::get_workflow_context(
-            kernel,
-            actor.clone(),
-            intent,
-            workspace_id.clone(),
-        )?;
+        let _ = Self::get_workflow_context(kernel, actor.clone(), intent, workspace_id.clone())?;
         WorkspaceRecommendationEngineService::generate(
             &kernel.shared_database(),
             &actor,
@@ -4733,12 +4690,7 @@ impl CommandHandler {
     ) -> Result<WorkspaceOperatingState> {
         CommandPipeline::new(kernel.command_context(actor.clone(), intent.clone()))
             .execute_query(GateOperatingStateRead)?;
-        let _ = Self::get_workflow_context(
-            kernel,
-            actor.clone(),
-            intent,
-            workspace_id.clone(),
-        )?;
+        let _ = Self::get_workflow_context(kernel, actor.clone(), intent, workspace_id.clone())?;
         WorkspaceOperatingStateService::generate(
             &kernel.shared_database(),
             &actor,
@@ -4762,12 +4714,7 @@ impl CommandHandler {
     ) -> Result<WorkspacePatternState> {
         CommandPipeline::new(kernel.command_context(actor.clone(), intent.clone()))
             .execute_query(GatePatternRead)?;
-        let _ = Self::get_workflow_context(
-            kernel,
-            actor.clone(),
-            intent,
-            workspace_id.clone(),
-        )?;
+        let _ = Self::get_workflow_context(kernel, actor.clone(), intent, workspace_id.clone())?;
         WorkspacePatternService::generate(
             &kernel.shared_database(),
             &actor,
@@ -4791,12 +4738,7 @@ impl CommandHandler {
     ) -> Result<WorkspaceAdaptationState> {
         CommandPipeline::new(kernel.command_context(actor.clone(), intent.clone()))
             .execute_query(GateAdaptationRead)?;
-        let _ = Self::get_workflow_context(
-            kernel,
-            actor.clone(),
-            intent,
-            workspace_id.clone(),
-        )?;
+        let _ = Self::get_workflow_context(kernel, actor.clone(), intent, workspace_id.clone())?;
         WorkspaceAdaptationService::generate(
             &kernel.shared_database(),
             &actor,
@@ -4880,12 +4822,7 @@ impl CommandHandler {
     ) -> Result<WorkspaceReadinessState> {
         CommandPipeline::new(kernel.command_context(actor.clone(), intent.clone()))
             .execute_query(GateReadinessRead)?;
-        let _ = Self::get_workflow_context(
-            kernel,
-            actor.clone(),
-            intent,
-            workspace_id.clone(),
-        )?;
+        let _ = Self::get_workflow_context(kernel, actor.clone(), intent, workspace_id.clone())?;
         WorkspaceReadinessService::generate(
             &kernel.shared_database(),
             &actor,
@@ -4975,8 +4912,7 @@ impl CommandHandler {
             intent.clone(),
             workspace_id.clone(),
         )?;
-        let workspace =
-            Self::get_workspace(kernel, actor.clone(), intent, workspace_id.clone())?;
+        let workspace = Self::get_workspace(kernel, actor.clone(), intent, workspace_id.clone())?;
         let health = kernel.health();
         WorkspaceSessionService::generate(
             &kernel.shared_database(),
@@ -5017,8 +4953,7 @@ impl CommandHandler {
             intent.clone(),
             workspace_id.clone(),
         )?;
-        let workspace =
-            Self::get_workspace(kernel, actor.clone(), intent, workspace_id.clone())?;
+        let workspace = Self::get_workspace(kernel, actor.clone(), intent, workspace_id.clone())?;
         let health = kernel.health();
         WorkspaceExperienceService::generate(
             &kernel.shared_database(),
@@ -5059,8 +4994,7 @@ impl CommandHandler {
             intent.clone(),
             workspace_id.clone(),
         )?;
-        let workspace =
-            Self::get_workspace(kernel, actor.clone(), intent, workspace_id.clone())?;
+        let workspace = Self::get_workspace(kernel, actor.clone(), intent, workspace_id.clone())?;
         let health = kernel.health();
         WorkspaceWorkContextService::generate(
             &kernel.shared_database(),
@@ -5090,11 +5024,7 @@ impl CommandHandler {
     ) -> Result<WorkspaceWorkContextValidation> {
         CommandPipeline::new(kernel.command_context(actor.clone(), intent))
             .execute_query(GateWorkContextEngineRead)?;
-        WorkspaceWorkContextService::validate_and_audit(
-            &kernel.shared_database(),
-            &actor,
-            state,
-        )
+        WorkspaceWorkContextService::validate_and_audit(&kernel.shared_database(), &actor, state)
     }
 
     /// Architecture guard — Work Context must never execute or authorize.
@@ -5117,8 +5047,7 @@ impl CommandHandler {
             intent.clone(),
             workspace_id.clone(),
         )?;
-        let workspace =
-            Self::get_workspace(kernel, actor.clone(), intent, workspace_id.clone())?;
+        let workspace = Self::get_workspace(kernel, actor.clone(), intent, workspace_id.clone())?;
         let health = kernel.health();
         WorkspaceNavigationService::generate(
             &kernel.shared_database(),
@@ -5148,11 +5077,7 @@ impl CommandHandler {
     ) -> Result<WorkspaceNavigationValidation> {
         CommandPipeline::new(kernel.command_context(actor.clone(), intent))
             .execute_query(GateNavigationRead)?;
-        WorkspaceNavigationService::validate_and_audit(
-            &kernel.shared_database(),
-            &actor,
-            state,
-        )
+        WorkspaceNavigationService::validate_and_audit(&kernel.shared_database(), &actor, state)
     }
 
     /// Architecture guard — Navigation must never execute or authorize.
@@ -5175,8 +5100,7 @@ impl CommandHandler {
             intent.clone(),
             workspace_id.clone(),
         )?;
-        let workspace =
-            Self::get_workspace(kernel, actor.clone(), intent, workspace_id.clone())?;
+        let workspace = Self::get_workspace(kernel, actor.clone(), intent, workspace_id.clone())?;
         let health = kernel.health();
         WorkspaceMilestoneService::generate(
             &kernel.shared_database(),
@@ -5206,11 +5130,7 @@ impl CommandHandler {
     ) -> Result<WorkspaceMilestoneValidation> {
         CommandPipeline::new(kernel.command_context(actor.clone(), intent))
             .execute_query(GateMilestoneRead)?;
-        WorkspaceMilestoneService::validate_and_audit(
-            &kernel.shared_database(),
-            &actor,
-            state,
-        )
+        WorkspaceMilestoneService::validate_and_audit(&kernel.shared_database(), &actor, state)
     }
 
     /// Architecture guard — Milestones must never execute or authorize.
@@ -5233,8 +5153,7 @@ impl CommandHandler {
             intent.clone(),
             workspace_id.clone(),
         )?;
-        let workspace =
-            Self::get_workspace(kernel, actor.clone(), intent, workspace_id.clone())?;
+        let workspace = Self::get_workspace(kernel, actor.clone(), intent, workspace_id.clone())?;
         let health = kernel.health();
         WorkspaceWorkingStyleService::generate(
             &kernel.shared_database(),
@@ -5264,11 +5183,7 @@ impl CommandHandler {
     ) -> Result<WorkspaceWorkingStyleValidation> {
         CommandPipeline::new(kernel.command_context(actor.clone(), intent))
             .execute_query(GateWorkingStyleRead)?;
-        WorkspaceWorkingStyleService::validate_and_audit(
-            &kernel.shared_database(),
-            &actor,
-            state,
-        )
+        WorkspaceWorkingStyleService::validate_and_audit(&kernel.shared_database(), &actor, state)
     }
 
     /// Architecture guard — Working Style must never execute or authorize.
@@ -5291,8 +5206,7 @@ impl CommandHandler {
             intent.clone(),
             workspace_id.clone(),
         )?;
-        let workspace =
-            Self::get_workspace(kernel, actor.clone(), intent, workspace_id.clone())?;
+        let workspace = Self::get_workspace(kernel, actor.clone(), intent, workspace_id.clone())?;
         let health = kernel.health();
         WorkspaceTransitionService::generate(
             &kernel.shared_database(),
@@ -5322,11 +5236,7 @@ impl CommandHandler {
     ) -> Result<WorkspaceTransitionValidation> {
         CommandPipeline::new(kernel.command_context(actor.clone(), intent))
             .execute_query(GateTransitionRead)?;
-        WorkspaceTransitionService::validate_and_audit(
-            &kernel.shared_database(),
-            &actor,
-            state,
-        )
+        WorkspaceTransitionService::validate_and_audit(&kernel.shared_database(), &actor, state)
     }
 
     /// Architecture guard — Transitions must never execute or authorize.
@@ -5349,8 +5259,7 @@ impl CommandHandler {
             intent.clone(),
             workspace_id.clone(),
         )?;
-        let workspace =
-            Self::get_workspace(kernel, actor.clone(), intent, workspace_id.clone())?;
+        let workspace = Self::get_workspace(kernel, actor.clone(), intent, workspace_id.clone())?;
         let health = kernel.health();
         WorkspaceInteractionService::generate(
             &kernel.shared_database(),
@@ -5380,11 +5289,7 @@ impl CommandHandler {
     ) -> Result<WorkspaceInteractionValidation> {
         CommandPipeline::new(kernel.command_context(actor.clone(), intent))
             .execute_query(GateWorkspaceInteractionRead)?;
-        WorkspaceInteractionService::validate_and_audit(
-            &kernel.shared_database(),
-            &actor,
-            state,
-        )
+        WorkspaceInteractionService::validate_and_audit(&kernel.shared_database(), &actor, state)
     }
 
     /// Select an interaction — returns Intent handoff only. Never executes.
@@ -5397,8 +5302,7 @@ impl CommandHandler {
     ) -> Result<InteractionSelectResult> {
         CommandPipeline::new(kernel.command_context(actor.clone(), intent.clone()))
             .execute_mutation(GateWorkspaceInteractionWrite)?;
-        let workspace =
-            Self::get_workspace(kernel, actor.clone(), intent, workspace_id.clone())?;
+        let workspace = Self::get_workspace(kernel, actor.clone(), intent, workspace_id.clone())?;
         let health = kernel.health();
         WorkspaceInteractionService::select(
             &kernel.shared_database(),
@@ -5429,12 +5333,7 @@ impl CommandHandler {
     ) -> Result<WorkspaceProfile> {
         CommandPipeline::new(kernel.command_context(actor.clone(), intent.clone()))
             .execute_mutation(GateWorkspaceProfileWrite)?;
-        let _ = Self::get_workflow_context(
-            kernel,
-            actor.clone(),
-            intent,
-            workspace_id.clone(),
-        )?;
+        let _ = Self::get_workflow_context(kernel, actor.clone(), intent, workspace_id.clone())?;
         WorkspaceProfileService::create(
             &kernel.shared_database(),
             &actor,
@@ -5480,11 +5379,7 @@ impl CommandHandler {
         CommandPipeline::new(kernel.command_context(actor.clone(), intent.clone()))
             .execute_query(GateWorkspaceProfileRead)?;
         let _ = Self::get_workflow_context(kernel, actor, intent, workspace_id.clone())?;
-        WorkspaceProfileService::list(
-            &kernel.shared_database(),
-            workspace_id,
-            limit.unwrap_or(50),
-        )
+        WorkspaceProfileService::list(&kernel.shared_database(), workspace_id, limit.unwrap_or(50))
     }
 
     /// Get one profile by id.
@@ -5508,17 +5403,9 @@ impl CommandHandler {
     ) -> Result<WorkspaceProfileState> {
         CommandPipeline::new(kernel.command_context(actor.clone(), intent.clone()))
             .execute_query(GateWorkspaceProfileRead)?;
-        let intelligence = Self::generate_workspace_intelligence(
-            kernel,
-            actor.clone(),
-            intent,
-            workspace_id,
-        )?;
-        WorkspaceProfileService::generate_state(
-            &kernel.shared_database(),
-            &actor,
-            &intelligence,
-        )
+        let intelligence =
+            Self::generate_workspace_intelligence(kernel, actor.clone(), intent, workspace_id)?;
+        WorkspaceProfileService::generate_state(&kernel.shared_database(), &actor, &intelligence)
     }
 
     /// Compare one profile against current workspace (informational).
@@ -5531,12 +5418,8 @@ impl CommandHandler {
     ) -> Result<WorkspaceProfileComparison> {
         CommandPipeline::new(kernel.command_context(actor.clone(), intent.clone()))
             .execute_query(GateWorkspaceProfileRead)?;
-        let intelligence = Self::generate_workspace_intelligence(
-            kernel,
-            actor.clone(),
-            intent,
-            workspace_id,
-        )?;
+        let intelligence =
+            Self::generate_workspace_intelligence(kernel, actor.clone(), intent, workspace_id)?;
         WorkspaceProfileService::compare_one(
             &kernel.shared_database(),
             &actor,
@@ -5562,11 +5445,7 @@ impl CommandHandler {
     ) -> Result<WorkspaceProfileValidation> {
         CommandPipeline::new(kernel.command_context(actor.clone(), intent))
             .execute_query(GateWorkspaceProfileRead)?;
-        WorkspaceProfileService::validate_and_audit(
-            &kernel.shared_database(),
-            &actor,
-            state,
-        )
+        WorkspaceProfileService::validate_and_audit(&kernel.shared_database(), &actor, state)
     }
 
     /// Architecture guard — Profiles must never execute or authorize.
@@ -5584,9 +5463,14 @@ impl CommandHandler {
         CommandPipeline::new(kernel.command_context(actor.clone(), intent.clone()))
             .execute_query(GateIntelligenceRead)?;
         // Also require workflow-context read (same capability class) before aggregating.
-        let _ =
-            Self::get_workflow_context(kernel, actor.clone(), intent.clone(), workspace_id.clone())?;
-        let workspace = Self::get_workspace(kernel, actor.clone(), intent.clone(), workspace_id.clone())?;
+        let _ = Self::get_workflow_context(
+            kernel,
+            actor.clone(),
+            intent.clone(),
+            workspace_id.clone(),
+        )?;
+        let workspace =
+            Self::get_workspace(kernel, actor.clone(), intent.clone(), workspace_id.clone())?;
         let health = kernel.health();
         WorkspaceIntelligenceService::generate(
             &kernel.shared_database(),
@@ -5650,11 +5534,13 @@ impl CommandHandler {
             return;
         }
         kernel.observation_scheduler_mut().stop();
-        kernel.event_bus().publish(DomainEvent::WorkspaceShutdown(WorkspaceShutdown {
-            actor: Some(actor_context),
-            intent: Some(intent_context),
-            capability: Some(Capability::system_shutdown()),
-        }));
+        kernel
+            .event_bus()
+            .publish(DomainEvent::WorkspaceShutdown(WorkspaceShutdown {
+                actor: Some(actor_context),
+                intent: Some(intent_context),
+                capability: Some(Capability::system_shutdown()),
+            }));
     }
 }
 
@@ -5690,9 +5576,13 @@ mod tests {
         let actor = ActorContext::local_user();
         let intent = IntentContext::user_request();
 
-        let workspace =
-            CommandHandler::create_workspace(&kernel, actor.clone(), intent.clone(), "Boundary".into())
-                .unwrap();
+        let workspace = CommandHandler::create_workspace(
+            &kernel,
+            actor.clone(),
+            intent.clone(),
+            "Boundary".into(),
+        )
+        .unwrap();
         assert_eq!(workspace.name, "Boundary");
 
         let zone = CommandHandler::create_zone(

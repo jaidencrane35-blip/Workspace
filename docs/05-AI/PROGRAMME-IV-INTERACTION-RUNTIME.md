@@ -51,6 +51,7 @@ The Query Engine:
 | 6 | Workspace Evidence Dependency Engine | Recorded dependency structure across evidence |
 | 7 | Workspace Evidence Freshness Engine | Observable freshness of available evidence |
 | 8 | Workspace Evidence Completeness Engine | Observable completeness and recorded omissions |
+| 9 | Workspace Evidence Reliability Engine | Observable reliability characteristics across recorded evidence |
 
 Future Programme IV batches build conversational and assistant surfaces **on top of** this retrieval layer — never beside it, never replacing it.
 
@@ -178,6 +179,21 @@ It never owns semantic retrieval, navigation, provenance, coverage, consistency,
 
 It never owns semantic retrieval, navigation, provenance, coverage, consistency, dependency, freshness, explanations, contextual understanding, knowledge, planning, reasoning, policy, decisions, execution, permissions, or lifecycle.
 
+---
+
+## Ownership boundary (Batch 9)
+
+`WorkspaceEvidenceReliabilityService` owns only:
+
+- reliability snapshots
+- reliability observations
+- reliability diagnostics
+- reliability gaps
+- reliability summaries
+- reliability metadata
+
+It never owns semantic retrieval, navigation, provenance, coverage, consistency, dependency, freshness, completeness, explanations, contextual understanding, knowledge, planning, reasoning, policy, decisions, execution, permissions, or lifecycle.
+
 ## Upstream access rule
 
 All upstream access uses **`load_snapshot` only**.
@@ -239,6 +255,7 @@ Unknown remains unknown. Unavailable remains unavailable. Contradictions remain 
 - [Workspace Evidence Dependency Architecture](./WORKSPACE-EVIDENCE-DEPENDENCY-ARCHITECTURE.md)
 - [Workspace Evidence Freshness Architecture](./WORKSPACE-EVIDENCE-FRESHNESS-ARCHITECTURE.md)
 - [Workspace Evidence Completeness Architecture](./WORKSPACE-EVIDENCE-COMPLETENESS-ARCHITECTURE.md)
+- [Workspace Evidence Reliability Architecture](./WORKSPACE-EVIDENCE-RELIABILITY-ARCHITECTURE.md)
 - [Programme III — Coherent Workspace Runtime](./PROGRAMME-III-COHERENT-WORKSPACE-RUNTIME.md)
 - [Programme II — Cognitive Workspace](./PROGRAMME-II-COGNITIVE-WORKSPACE.md)
 - [Projection Integrity](../03-Engineering/PROJECTION-INTEGRITY.md)

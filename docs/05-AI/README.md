@@ -12,6 +12,8 @@ This directory contains the AI subsystem contract documents.
 - `WORKSPACE-RECOMMENDATION-DECISION-BOUNDARY.md`
 - `WORKSPACE-GOVERNANCE.md`
 - `INTELLIGENCE-ROADMAP.md`
+- `PROGRAMME-IV-INTERACTION-RUNTIME.md`
+- `WORKSPACE-EVIDENCE-RELIABILITY-ARCHITECTURE.md`
 
 ## Recommendation and Decision Contract Families
 

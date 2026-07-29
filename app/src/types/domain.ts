@@ -5745,6 +5745,156 @@ export interface WorkspaceEvidenceCompletenessExplanation {
   actionable: boolean;
 }
 
+export interface ReliabilityScope {
+  include_evidence_completeness: boolean;
+  include_evidence_freshness: boolean;
+  include_evidence_dependency: boolean;
+  include_evidence_consistency: boolean;
+  include_evidence_coverage: boolean;
+  include_evidence_trace: boolean;
+  include_evidence_navigation: boolean;
+  include_semantic_query: boolean;
+  include_intelligence_hub: boolean;
+  include_knowledge_integration: boolean;
+  include_contextual: boolean;
+  include_explanation: boolean;
+  include_temporal: boolean;
+  include_reconstruction: boolean;
+  include_state: boolean;
+}
+
+export interface EvidenceReliabilityEvidenceRef {
+  external_ref: string;
+  origin_domain: string;
+  source_revision: string | null;
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface ReliabilityAssessment {
+  assessment_id: string;
+  observed_scope: string[];
+  participating_artefacts: string[];
+  observable_reliability_state: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface ReliabilityObservation {
+  observation_id: string;
+  artefact_ref: string;
+  origin_domain: string;
+  state: string;
+  description: string;
+  evidence_refs: EvidenceReliabilityEvidenceRef[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface ReliabilityGap {
+  gap_id: string;
+  gap_kind: string;
+  description: string;
+  affected_references: string[];
+  evidence_refs: EvidenceReliabilityEvidenceRef[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface ReliabilityLineage {
+  lineage_id: string;
+  contributing_artefacts: string[];
+  revisions: string[];
+  evidence_refs: EvidenceReliabilityEvidenceRef[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface ReliabilityDiagnostics {
+  diagnostics_id: string;
+  observable_reliability_coverage: string;
+  unavailable_observations: string[];
+  insufficient_evidence_characteristics: string[];
+  notes: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface WorkspaceEvidenceReliabilitySnapshot {
+  reliability_id: string;
+  workspace_id: string;
+  generated_at: string;
+  status: string;
+  superseded_at: string | null;
+  scope: ReliabilityScope;
+  assessment: ReliabilityAssessment;
+  observations: ReliabilityObservation[];
+  gaps: ReliabilityGap[];
+  lineage: ReliabilityLineage;
+  diagnostics: ReliabilityDiagnostics;
+  reliability: string;
+  provenance_links: EvidenceReliabilityEvidenceRef[];
+  source_revisions: string[];
+  narrative_summary: string;
+  narrative: string;
+  limitations: string[];
+  authority_effect: string;
+  actionable: boolean;
+  terminal: boolean;
+}
+
+export interface EvidenceReliabilityHistoryEntry {
+  reliability_id: string;
+  status: string;
+  created_at: string;
+  superseded_at: string | null;
+  reliability: string;
+  observation_count: number;
+  gap_count: number;
+  source_revision_count: number;
+  terminal: boolean;
+  actionable: boolean;
+  authority_effect: string;
+}
+
+export interface WorkspaceEvidenceReliabilityProjection {
+  workspace_id: string;
+  current: WorkspaceEvidenceReliabilitySnapshot | null;
+  history: EvidenceReliabilityHistoryEntry[];
+  history_count: number;
+  projected_at: string;
+  authority_effect: string;
+}
+
+export interface WorkspaceEvidenceReliabilitySummary {
+  workspace_id: string;
+  has_current: boolean;
+  reliability: string | null;
+  observation_count: number;
+  gap_count: number;
+  narrative_summary: string | null;
+  history: EvidenceReliabilityHistoryEntry[];
+  history_count: number;
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface WorkspaceEvidenceReliabilityExplanation {
+  explanation_id: string;
+  workspace_id: string;
+  reliability: string | null;
+  narrative_summary: string | null;
+  observation_summaries: string[];
+  gap_summaries: string[];
+  lineage_summaries: string[];
+  evidence_refs: string[];
+  uncertainty: string[];
+  narrative: string;
+  limitations: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
 export type WindowIdentityConfidence = "high" | "medium" | "low" | "ephemeral";
 
 export interface WorkspaceObservationPass {

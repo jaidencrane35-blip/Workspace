@@ -41,6 +41,7 @@ Recovery must **never**:
 - fabricate historical transitions, completeness, or repair missing reconstruction evidence
 - fabricate temporal causes, forecasts, simulations, or Complete understandings from gaps
 - fabricate explanation authority, approvals, conflict resolutions, or Complete packages from missing upstreams
+- fabricate evidence reliability, trust authority, conflict settlement, or repair missing reliability characteristics
 - fabricate contextual understanding, situational certainty, conflict winners, or Complete understandings from gaps (`recovery_must_not_fabricate_contextual_understanding`)
 - fabricate knowledge concepts, relationships, synthesis confidence, or historical knowledge claims from missing evidence (`recovery_must_not_fabricate_knowledge_synthesis`)
 - fabricate knowledge integration hits, links, retrieval confidence, or historical integration claims from missing evidence (`recovery_must_not_fabricate_knowledge_integration`)
@@ -56,6 +57,7 @@ Recovery must **never**:
 - `recovery_must_not_fabricate_evidence_dependency` — never invent dependency, repair links, bridge broken structure, or estimate missing structure on restart
 - `recovery_must_not_fabricate_evidence_freshness` — never refresh stale evidence, fabricate timestamps, invent revisions, or estimate freshness on restart
 - `recovery_must_not_fabricate_evidence_completeness` — never fabricate evidence, fill gaps, estimate completeness, or repair missing artefacts on restart
+- `recovery_must_not_fabricate_evidence_reliability` — never fabricate reliability, trust authority, conflict settlement, or repair missing characteristics on restart
 - recreate desktop actions
 - bypass PermissionGateway / CommandPipeline for user mutations
 - silently “heal” lifecycle into an open actionable state

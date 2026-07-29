@@ -448,6 +448,14 @@ Rules:
 - Forbidden: execute, recommend, approve, mutate, automate, repair, regenerate
 - Completeness is observational only — partial/unknown/unavailable/missing never imply repair
 
+### Workspace Evidence Reliability Engine (Programme IV Batch 9)
+
+- Dual-channel: `current` + `history` + authoritative `history_count`
+- History is evidence-only; never actionable
+- Projection helpers expose reliability observations, diagnostics, gaps, lineage, and recorded evidence refs
+- Forbidden: execute, recommend, approve, mutate, automate, repair, resolve, determine truth
+- Reliability is observational only — reliable/limited/unknown/unavailable never imply truth, trust, or rejection
+
 
 ## Serde defaults vs TypeScript required fields
 

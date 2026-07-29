@@ -119,6 +119,7 @@ AI behaviour, permissions, and boundaries.
 | [Insight Coordination Architecture](05-AI/INSIGHT-COORDINATION-ARCHITECTURE.md) | Programme III Batch 9 — cross-layer insight coordination (Active / accepted) |
 | [Cross-Workspace Intelligence Architecture](05-AI/CROSS-WORKSPACE-INTELLIGENCE-ARCHITECTURE.md) | Programme III Batch 10 — cross-workspace aggregate observations (Active / accepted) |
 | [Workspace Decision Support Architecture](05-AI/WORKSPACE-DECISION-SUPPORT-ARCHITECTURE.md) | Programme III Batch 11 — decision-ready evidence packages without deciding (Active / accepted) |
+| [Workspace Evidence Reliability Architecture](05-AI/WORKSPACE-EVIDENCE-RELIABILITY-ARCHITECTURE.md) | Programme IV Batch 9 — reliability observations without truth or trust authority (Active / accepted) |
 | [Memory Policy](05-AI/MEMORY-POLICY.md) | What may be stored, retention, user control, deletion |
 | [Confidence Policy](05-AI/CONFIDENCE-POLICY.md) | Confidence levels, suggestion thresholds, uncertainty |
 | [AI Architecture Index](05-AI/README.md) | Navigation hub for Recommendation/Decision/Governance contracts |

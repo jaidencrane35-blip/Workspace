@@ -10,38 +10,30 @@ pub mod settings;
 pub mod transaction;
 
 pub use connection::Database;
-pub use transaction::Transaction;
 pub use encryption::{EncryptionProvider, EncryptionTier, NoOpEncryptionProvider};
 pub use error::DatabaseError;
 pub use init::{bundled_migrations_dir, DatabaseService};
 pub use migration::MigrationRunner;
 pub use repositories::{
     AiMemoryRepository, ApplicationRepository, AuditRepository, AutomationContractRepository,
-    AutomationTriggerRepository, CognitiveModelRepository, DecisionEngineRepository,
-    DecisionQueueRepository, GraphRepository, ExecutionLifecycleRepository, LayoutRepository,
-    PermissionApprovalRepository, RecommendationLifecycleRepository, TaskGraphRepository,
-    UserPreferenceRepository, WidgetRepository, WorkspaceProfileRepository,
-    ObservationMonitorRepository, ObservationPassRepository, ObservationWindowIdentityRepository,
-    ObservationWindowRepository, WorkspacePlanningRepository, ReasoningMemoryRepository,
-    CognitiveGraphRepository, CognitiveOrchestrationRepository, LearningAdaptationRepository,
-    CognitiveAgentCastRepository, CognitiveAutonomyRepository, WorkspaceStateEnvelopeRepository,
-    PolicyGovernanceRepository, HistoricalReconstructionRepository,
-    TemporalIntelligenceRepository, WorkspaceExplanationRepository,
-    WorkspaceContextualUnderstandingRepository,
-    WorkspaceKnowledgeSynthesisRepository,
-    WorkspaceKnowledgeIntegrationRepository,
-    InsightCoordinationRepository,
-    WorkspaceCrossIntelligenceRepository,
-    WorkspaceDecisionSupportRepository,
-    WorkspaceIntelligenceHubRepository,
-    WorkspaceSemanticQueryRepository,
-    WorkspaceEvidenceNavigationRepository,
-    WorkspaceEvidenceTraceRepository,
-    WorkspaceEvidenceCoverageRepository,
-    WorkspaceEvidenceConsistencyRepository,
-    WorkspaceEvidenceDependencyRepository,
-    WorkspaceEvidenceFreshnessRepository,
-    WorkspaceEvidenceCompletenessRepository,
-    WorkspaceRepository, WorkspaceIntentRepository, ZoneRepository,
+    AutomationTriggerRepository, CognitiveAgentCastRepository, CognitiveAutonomyRepository,
+    CognitiveGraphRepository, CognitiveModelRepository, CognitiveOrchestrationRepository,
+    DecisionEngineRepository, DecisionQueueRepository, ExecutionLifecycleRepository,
+    GraphRepository, HistoricalReconstructionRepository, InsightCoordinationRepository,
+    LayoutRepository, LearningAdaptationRepository, ObservationMonitorRepository,
+    ObservationPassRepository, ObservationWindowIdentityRepository, ObservationWindowRepository,
+    PermissionApprovalRepository, PolicyGovernanceRepository, ReasoningMemoryRepository,
+    RecommendationLifecycleRepository, TaskGraphRepository, TemporalIntelligenceRepository,
+    UserPreferenceRepository, WidgetRepository, WorkspaceContextualUnderstandingRepository,
+    WorkspaceCrossIntelligenceRepository, WorkspaceDecisionSupportRepository,
+    WorkspaceEvidenceCompletenessRepository, WorkspaceEvidenceConsistencyRepository,
+    WorkspaceEvidenceCoverageRepository, WorkspaceEvidenceDependencyRepository,
+    WorkspaceEvidenceFreshnessRepository, WorkspaceEvidenceNavigationRepository,
+    WorkspaceEvidenceReliabilityRepository, WorkspaceEvidenceTraceRepository,
+    WorkspaceExplanationRepository, WorkspaceIntelligenceHubRepository, WorkspaceIntentRepository,
+    WorkspaceKnowledgeIntegrationRepository, WorkspaceKnowledgeSynthesisRepository,
+    WorkspacePlanningRepository, WorkspaceProfileRepository, WorkspaceRepository,
+    WorkspaceSemanticQueryRepository, WorkspaceStateEnvelopeRepository, ZoneRepository,
 };
 pub use settings::SettingsRepository;
+pub use transaction::Transaction;

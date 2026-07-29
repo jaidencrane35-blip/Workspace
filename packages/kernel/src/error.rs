@@ -4,25 +4,23 @@ use workspace_database::DatabaseError;
 use workspace_domain::{
     AiAssistantError, AiEvaluationError, AiMemoryError, AiModelError, AiOrchestrationError,
     AiPersonalizationError, AiPlanningError, AiRequestError, AutomationContractError,
-    AutomationTriggerError, CognitiveModelError, DecisionEngineError, DecisionQueueError,
-    DomainError, ResourceKind, TaskGraphError, WorkspaceActivityError, WorkspaceAdaptationError,
-    WorkspaceAttentionError, WorkspaceCompositionError, WorkspaceContinuityError,
-    WorkspaceEnvironmentError, WorkspaceEvolutionError, WorkspaceExperienceError,
-    WorkspaceIntelligenceError, WorkspaceIntentError, WorkspaceInteractionError,
+    AutomationTriggerError, CognitiveModelError, ContextualUnderstandingError,
+    CrossWorkspaceIntelligenceError, DecisionEngineError, DecisionQueueError, DecisionSupportError,
+    DomainError, EvidenceCompletenessError, EvidenceConsistencyError, EvidenceCoverageError,
+    EvidenceDependencyError, EvidenceFreshnessError, EvidenceNavigationError,
+    EvidenceReliabilityError, EvidenceTraceError, HistoricalReconstructionError,
+    InsightCoordinationError, IntelligenceHubError, KnowledgeIntegrationError,
+    KnowledgeSynthesisError, PolicyGovernanceError, ResourceKind, SemanticQueryError,
+    TaskGraphError, TemporalIntelligenceError, WorkspaceActivityError, WorkspaceAdaptationError,
+    WorkspaceAttentionError, WorkspaceCognitiveAgentCastError, WorkspaceCognitiveAutonomyError,
+    WorkspaceCognitiveGraphError, WorkspaceCognitiveOrchestrationError, WorkspaceCompositionError,
+    WorkspaceContinuityError, WorkspaceEnvironmentError, WorkspaceEvolutionError,
+    WorkspaceExperienceError, WorkspaceExplanationError, WorkspaceIntelligenceError,
+    WorkspaceIntentError, WorkspaceInteractionError, WorkspaceLearningAdaptationError,
     WorkspaceMilestoneError, WorkspaceNavigationError, WorkspaceOperatingStateError,
     WorkspacePatternError, WorkspacePlanningError, WorkspaceProfileError, WorkspacePurposeError,
-    WorkspaceReadinessError, WorkspaceRecommendationEngineError, WorkspaceReasoningMemoryError,
-    WorkspaceCognitiveGraphError, WorkspaceCognitiveOrchestrationError,
-    WorkspaceLearningAdaptationError, WorkspaceCognitiveAgentCastError,
-    WorkspaceCognitiveAutonomyError, WorkspaceStateEnvelopeError, PolicyGovernanceError,
-    HistoricalReconstructionError, TemporalIntelligenceError, WorkspaceExplanationError,
-    ContextualUnderstandingError, KnowledgeSynthesisError, KnowledgeIntegrationError,
-    InsightCoordinationError, CrossWorkspaceIntelligenceError, DecisionSupportError,
-    IntelligenceHubError, SemanticQueryError, EvidenceNavigationError, EvidenceTraceError,
-    EvidenceCoverageError, EvidenceConsistencyError, EvidenceDependencyError, EvidenceFreshnessError,
-    EvidenceCompletenessError,
-    WorkspaceSessionError,
-    WorkspaceTransitionError,
+    WorkspaceReadinessError, WorkspaceReasoningMemoryError, WorkspaceRecommendationEngineError,
+    WorkspaceSessionError, WorkspaceStateEnvelopeError, WorkspaceTransitionError,
     WorkspaceWorkContextError, WorkspaceWorkingStyleError,
 };
 
@@ -320,6 +318,9 @@ pub enum KernelError {
 
     #[error("Evidence completeness validation failed: {message}")]
     EvidenceCompletenessValidation { message: String },
+
+    #[error("Evidence reliability validation failed: {message}")]
+    EvidenceReliabilityValidation { message: String },
 
     #[error("Workspace intelligence validation failed: {message}")]
     WorkspaceIntelligenceValidation { message: String },
@@ -843,6 +844,17 @@ impl From<EvidenceCompletenessError> for KernelError {
         match error {
             EvidenceCompletenessError::Domain(domain) => KernelError::from(domain),
             other => KernelError::EvidenceCompletenessValidation {
+                message: other.to_string(),
+            },
+        }
+    }
+}
+
+impl From<EvidenceReliabilityError> for KernelError {
+    fn from(error: EvidenceReliabilityError) -> Self {
+        match error {
+            EvidenceReliabilityError::Domain(domain) => KernelError::from(domain),
+            other => KernelError::EvidenceReliabilityValidation {
                 message: other.to_string(),
             },
         }
@@ -1607,6 +1619,10 @@ impl KernelError {
                 code: "evidence_completeness_validation_error".into(),
                 message: message.clone(),
             },
+            KernelError::EvidenceReliabilityValidation { message } => PublicError {
+                code: "evidence_reliability_validation_error".into(),
+                message: message.clone(),
+            },
             KernelError::WorkspaceIntelligenceValidation { message } => PublicError {
                 code: "workspace_intelligence_validation_error".into(),
                 message: message.clone(),
@@ -1846,11 +1862,14 @@ mod tests {
         let decision = KernelError::from_decision_engine_persistence(
             DatabaseError::InvalidTransition("cannot reopen".into()),
         );
-        assert_eq!(decision.to_public().code, "decision_engine_validation_error");
-
-        let queue = KernelError::from_decision_queue_persistence(
-            DatabaseError::InvalidTransition("dismissed".into()),
+        assert_eq!(
+            decision.to_public().code,
+            "decision_engine_validation_error"
         );
+
+        let queue = KernelError::from_decision_queue_persistence(DatabaseError::InvalidTransition(
+            "dismissed".into(),
+        ));
         assert_eq!(queue.to_public().code, "decision_queue_validation_error");
 
         let tasks = KernelError::from_task_graph_persistence(DatabaseError::ImmutableArtifact(

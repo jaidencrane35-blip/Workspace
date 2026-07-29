@@ -148,6 +148,11 @@ import {
   isEvidenceCompletenessProjectionNonCommandable,
   evidenceCompletenessHistoryCountIsAuthoritative,
 } from "../app/src/components/evidenceCompletenessProjection";
+import {
+  isEvidenceReliabilityHistoryNonActionable,
+  isEvidenceReliabilityProjectionNonCommandable,
+  evidenceReliabilityHistoryCountIsAuthoritative,
+} from "../app/src/components/evidenceReliabilityProjection";
 import type {
   DecisionArtifactHistoryEntry,
   DecisionEngineSummary,
@@ -224,18 +229,21 @@ import type {
   EvidenceDependencyHistoryEntry,
   EvidenceFreshnessHistoryEntry,
   EvidenceCompletenessHistoryEntry,
+  EvidenceReliabilityHistoryEntry,
   WorkspaceEvidenceTraceProjection,
   WorkspaceEvidenceCoverageProjection,
   WorkspaceEvidenceConsistencyProjection,
   WorkspaceEvidenceDependencyProjection,
   WorkspaceEvidenceFreshnessProjection,
   WorkspaceEvidenceCompletenessProjection,
+  WorkspaceEvidenceReliabilityProjection,
   WorkspaceEvidenceTraceSummary,
   WorkspaceEvidenceCoverageSummary,
   WorkspaceEvidenceConsistencySummary,
   WorkspaceEvidenceDependencySummary,
   WorkspaceEvidenceFreshnessSummary,
   WorkspaceEvidenceCompletenessSummary,
+  WorkspaceEvidenceReliabilitySummary,
   RecommendationHistoryEntry,
   RecommendationItem,
   TaskGraphSummary,
@@ -2471,6 +2479,65 @@ describe("projection integrity — cognitive agent cast", () => {
 
     const nonCommand = {
       completeness_id: "evidence_completeness:1",
+      actionable: false,
+      terminal: true,
+      authority_effect: "none",
+    };
+    expect(Object.keys(nonCommand)).not.toContain("execute");
+    expect(Object.keys(nonCommand)).not.toContain("approve");
+    expect(Object.keys(nonCommand)).not.toContain("recommend");
+    expect(Object.keys(nonCommand)).not.toContain("repair");
+    expect(Object.keys(nonCommand)).not.toContain("automate");
+  });
+
+  it("keeps evidence reliability projections non-commandable with authoritative history_count", () => {
+    const historyEntry = (
+      overrides: Partial<EvidenceReliabilityHistoryEntry> = {}
+    ): EvidenceReliabilityHistoryEntry => ({
+      reliability_id: "evidence_reliability:1",
+      status: "superseded",
+      created_at: "t0",
+      superseded_at: "t1",
+      reliability: "partial",
+      observation_count: 2,
+      gap_count: 1,
+      source_revision_count: 3,
+      terminal: true,
+      actionable: false,
+      authority_effect: "none",
+      ...overrides,
+    });
+    const projection: WorkspaceEvidenceReliabilityProjection = {
+      workspace_id: "ws",
+      projected_at: "t2",
+      current: null,
+      history: [historyEntry()],
+      history_count: 3,
+      authority_effect: "none",
+    };
+    expect(isEvidenceReliabilityProjectionNonCommandable(projection)).toBe(true);
+    expect(isEvidenceReliabilityHistoryNonActionable(historyEntry())).toBe(true);
+    expect(
+      isEvidenceReliabilityHistoryNonActionable(historyEntry({ actionable: true }))
+    ).toBe(false);
+
+    const summary: WorkspaceEvidenceReliabilitySummary = {
+      workspace_id: "ws",
+      has_current: false,
+      reliability: null,
+      observation_count: 0,
+      gap_count: 0,
+      narrative_summary: null,
+      history: [historyEntry()],
+      history_count: 3,
+      authority_effect: "none",
+      actionable: false,
+    };
+    expect(evidenceReliabilityHistoryCountIsAuthoritative(summary)).toBe(true);
+    expect(summary.history_count).toBeGreaterThanOrEqual(summary.history.length);
+
+    const nonCommand = {
+      reliability_id: "evidence_reliability:1",
       actionable: false,
       terminal: true,
       authority_effect: "none",

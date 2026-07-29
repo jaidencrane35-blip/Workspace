@@ -1,0 +1,488 @@
+//! Programme IV Batch 9 — Workspace Evidence Reliability Engine contract tests.
+
+use workspace_domain::{
+    recovery_must_not_fabricate_evidence_reliability, ActorContext,
+    EvidenceReliabilityCompleteness, IntentContext, ReliabilityScope,
+};
+
+use crate::commands::handler::CommandHandler;
+use crate::services::WorkspaceEvidenceReliabilityService;
+use crate::WorkspaceKernel;
+
+fn seed_workspace(kernel: &WorkspaceKernel) -> String {
+    CommandHandler::create_workspace(
+        kernel,
+        ActorContext::local_user(),
+        IntentContext::user_request(),
+        "Evidence Reliability WS".into(),
+    )
+    .unwrap()
+    .id
+    .to_string()
+}
+
+fn seed_upstream_evidence(kernel: &WorkspaceKernel, ws: &str) {
+    let actor = ActorContext::local_user();
+    let intent = IntentContext::user_request();
+    for _ in 0..2 {
+        CommandHandler::generate_workspace_state_envelope(
+            kernel,
+            actor.clone(),
+            intent.clone(),
+            ws.to_string(),
+        )
+        .unwrap();
+    }
+    CommandHandler::generate_governance_evaluation(
+        kernel,
+        actor.clone(),
+        intent.clone(),
+        ws.to_string(),
+    )
+    .unwrap();
+    CommandHandler::generate_historical_workspace_view(
+        kernel,
+        actor.clone(),
+        intent.clone(),
+        ws.to_string(),
+    )
+    .unwrap();
+    CommandHandler::generate_temporal_analysis(
+        kernel,
+        actor.clone(),
+        intent.clone(),
+        ws.to_string(),
+    )
+    .unwrap();
+    CommandHandler::generate_workspace_explanation(
+        kernel,
+        actor.clone(),
+        intent.clone(),
+        ws.to_string(),
+    )
+    .unwrap();
+    CommandHandler::generate_contextual_workspace_understanding(
+        kernel,
+        actor.clone(),
+        intent.clone(),
+        ws.to_string(),
+    )
+    .unwrap();
+    CommandHandler::generate_workspace_knowledge_synthesis(
+        kernel,
+        actor.clone(),
+        intent.clone(),
+        ws.to_string(),
+    )
+    .unwrap();
+    CommandHandler::generate_workspace_knowledge_integration(
+        kernel,
+        actor.clone(),
+        intent.clone(),
+        ws.to_string(),
+    )
+    .unwrap();
+    CommandHandler::generate_insight_coordination(
+        kernel,
+        actor.clone(),
+        intent.clone(),
+        ws.to_string(),
+    )
+    .unwrap();
+    CommandHandler::generate_workspace_decision_support(
+        kernel,
+        actor.clone(),
+        intent.clone(),
+        ws.to_string(),
+    )
+    .unwrap();
+    CommandHandler::generate_workspace_intelligence_hub(
+        kernel,
+        actor.clone(),
+        intent.clone(),
+        ws.to_string(),
+    )
+    .unwrap();
+    CommandHandler::generate_workspace_semantic_query(
+        kernel,
+        actor.clone(),
+        intent.clone(),
+        ws.to_string(),
+        "knowledge state".into(),
+    )
+    .unwrap();
+    CommandHandler::generate_workspace_evidence_navigation(
+        kernel,
+        actor.clone(),
+        intent.clone(),
+        ws.to_string(),
+    )
+    .unwrap();
+    CommandHandler::generate_workspace_evidence_trace(
+        kernel,
+        actor.clone(),
+        intent.clone(),
+        ws.to_string(),
+        "knowledge".into(),
+    )
+    .unwrap();
+    CommandHandler::generate_workspace_evidence_coverage(
+        kernel,
+        actor.clone(),
+        intent.clone(),
+        ws.to_string(),
+    )
+    .unwrap();
+    CommandHandler::generate_workspace_evidence_consistency(
+        kernel,
+        actor.clone(),
+        intent.clone(),
+        ws.to_string(),
+    )
+    .unwrap();
+    CommandHandler::generate_workspace_evidence_dependency(
+        kernel,
+        actor.clone(),
+        intent.clone(),
+        ws.to_string(),
+    )
+    .unwrap();
+    CommandHandler::generate_workspace_evidence_freshness(
+        kernel,
+        actor.clone(),
+        intent.clone(),
+        ws.to_string(),
+    )
+    .unwrap();
+    CommandHandler::generate_workspace_evidence_completeness(kernel, actor, intent, ws.to_string())
+        .unwrap();
+}
+
+#[test]
+fn evidence_reliability_is_non_executing() {
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let ws = seed_workspace(&kernel);
+    seed_upstream_evidence(&kernel, &ws);
+    let snap = CommandHandler::generate_workspace_evidence_reliability(
+        &kernel,
+        ActorContext::local_user(),
+        IntentContext::user_request(),
+        ws,
+    )
+    .unwrap();
+    assert!(snap.is_non_commandable());
+    assert!(recovery_must_not_fabricate_evidence_reliability(&snap));
+    let current = snap.current.as_ref().expect("current evidence reliability");
+    assert!(current.is_non_executing());
+    assert_eq!(current.authority_effect, "none");
+    assert!(!current.actionable);
+}
+
+#[test]
+fn unavailable_upstreams_preserved_as_gaps() {
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let ws = seed_workspace(&kernel);
+    let snap = CommandHandler::generate_workspace_evidence_reliability(
+        &kernel,
+        ActorContext::local_user(),
+        IntentContext::user_request(),
+        ws,
+    )
+    .unwrap();
+    let current = snap.current.as_ref().unwrap();
+    assert!(
+        current.reliability == EvidenceReliabilityCompleteness::Unavailable
+            || current.reliability == EvidenceReliabilityCompleteness::Partial
+            || current.reliability == EvidenceReliabilityCompleteness::Unknown
+            || current.reliability == EvidenceReliabilityCompleteness::Contradictory
+    );
+    assert!(!current.gaps.is_empty());
+    assert!(current.gaps.iter().all(|g| !g.actionable));
+    assert!(current.observations.iter().all(|o| !o.actionable));
+}
+
+#[test]
+fn evidence_reliability_recomputation_supersedes_history() {
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let ws = seed_workspace(&kernel);
+    seed_upstream_evidence(&kernel, &ws);
+    let actor = ActorContext::local_user();
+    let intent = IntentContext::user_request();
+    let first = CommandHandler::generate_workspace_evidence_reliability(
+        &kernel,
+        actor.clone(),
+        intent.clone(),
+        ws.clone(),
+    )
+    .unwrap();
+    let first_id = first.current.as_ref().unwrap().reliability_id.clone();
+    let second =
+        CommandHandler::generate_workspace_evidence_reliability(&kernel, actor, intent, ws)
+            .unwrap();
+    assert_ne!(second.current.as_ref().unwrap().reliability_id, first_id);
+    assert!(second.history_count >= 1);
+    assert!(second.history.iter().all(|h| h.is_non_actionable()));
+}
+
+#[test]
+fn evidence_reliability_restart_continuity_without_fabricating() {
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let ws = seed_workspace(&kernel);
+    seed_upstream_evidence(&kernel, &ws);
+    let generated = CommandHandler::generate_workspace_evidence_reliability(
+        &kernel,
+        ActorContext::local_user(),
+        IntentContext::user_request(),
+        ws.clone(),
+    )
+    .unwrap();
+    let loaded = CommandHandler::get_workspace_evidence_reliability(
+        &kernel,
+        ActorContext::local_user(),
+        IntentContext::user_request(),
+        ws,
+    )
+    .unwrap();
+    assert_eq!(
+        loaded.current.as_ref().map(|c| &c.reliability_id),
+        generated.current.as_ref().map(|c| &c.reliability_id)
+    );
+    assert!(recovery_must_not_fabricate_evidence_reliability(&loaded));
+}
+
+#[test]
+fn empty_evidence_reliability_remains_missing_until_generated() {
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let ws = seed_workspace(&kernel);
+    let snap = CommandHandler::get_workspace_evidence_reliability(
+        &kernel,
+        ActorContext::local_user(),
+        IntentContext::user_request(),
+        ws,
+    )
+    .unwrap();
+    assert!(snap.current.is_none());
+    assert_eq!(snap.history_count, 0);
+    assert!(recovery_must_not_fabricate_evidence_reliability(&snap));
+}
+
+#[test]
+fn evidence_reliability_transaction_rollback_leaves_no_partial_write() {
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let ws = seed_workspace(&kernel);
+    seed_upstream_evidence(&kernel, &ws);
+    let actor = ActorContext::local_user();
+    let intent = IntentContext::user_request();
+    let before = CommandHandler::generate_workspace_evidence_reliability(
+        &kernel,
+        actor.clone(),
+        intent.clone(),
+        ws.clone(),
+    )
+    .unwrap();
+    WorkspaceEvidenceReliabilityService::generate_with_forced_rollback(
+        &kernel.shared_database(),
+        &actor,
+        ws.clone(),
+        ReliabilityScope::all_surfaces(),
+    )
+    .unwrap();
+    let after =
+        CommandHandler::get_workspace_evidence_reliability(&kernel, actor, intent, ws).unwrap();
+    assert_eq!(
+        before.current.as_ref().unwrap().reliability_id,
+        after.current.as_ref().unwrap().reliability_id
+    );
+    assert_eq!(before.history_count, after.history_count);
+}
+
+#[test]
+fn evidence_reliability_negative_authority_guards() {
+    assert!(WorkspaceEvidenceReliabilityService::attempt_execute().is_err());
+    assert!(WorkspaceEvidenceReliabilityService::attempt_create_recommendation().is_err());
+    assert!(WorkspaceEvidenceReliabilityService::attempt_determine_truth().is_err());
+    assert!(WorkspaceEvidenceReliabilityService::attempt_resolve_conflict().is_err());
+    assert!(WorkspaceEvidenceReliabilityService::attempt_repair_evidence().is_err());
+    assert!(WorkspaceEvidenceReliabilityService::attempt_fabricate_reliability().is_err());
+    assert!(WorkspaceEvidenceReliabilityService::attempt_rank_by_opinion().is_err());
+    assert!(WorkspaceEvidenceReliabilityService::attempt_emit_command().is_err());
+    assert!(CommandHandler::evidence_reliability_attempt_execute().is_err());
+}
+
+#[test]
+fn evidence_reliability_capability_deny_without_write() {
+    use workspace_domain::CapabilitySet;
+
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let ws = seed_workspace(&kernel);
+    let mut ctx = kernel.command_context(ActorContext::local_user(), IntentContext::user_request());
+    ctx.capability_set = CapabilitySet::new();
+    let err = crate::commands::pipeline::CommandPipeline::new(ctx)
+        .execute_mutation(
+            crate::commands::workspace_evidence_reliability::GenerateWorkspaceEvidenceReliability::new(
+                ws,
+            ),
+        )
+        .expect_err("empty capabilities must deny");
+    let message = err.to_string().to_lowercase();
+    assert!(
+        message.contains("denied")
+            || message.contains("permission")
+            || message.contains("capability")
+            || message.contains("not granted"),
+        "got {err}"
+    );
+}
+
+#[test]
+fn explain_evidence_reliability_is_non_actionable() {
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let ws = seed_workspace(&kernel);
+    seed_upstream_evidence(&kernel, &ws);
+    CommandHandler::generate_workspace_evidence_reliability(
+        &kernel,
+        ActorContext::local_user(),
+        IntentContext::user_request(),
+        ws.clone(),
+    )
+    .unwrap();
+    let explanation = CommandHandler::explain_evidence_reliability(
+        &kernel,
+        ActorContext::local_user(),
+        IntentContext::user_request(),
+        ws,
+    )
+    .unwrap();
+    assert!(!explanation.actionable);
+    assert_eq!(explanation.authority_effect, "none");
+}
+
+#[test]
+fn evidence_reliability_history_is_non_actionable_evidence() {
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let ws = seed_workspace(&kernel);
+    seed_upstream_evidence(&kernel, &ws);
+    let actor = ActorContext::local_user();
+    let intent = IntentContext::user_request();
+    CommandHandler::generate_workspace_evidence_reliability(
+        &kernel,
+        actor.clone(),
+        intent.clone(),
+        ws.clone(),
+    )
+    .unwrap();
+    let snap = CommandHandler::generate_workspace_evidence_reliability(&kernel, actor, intent, ws)
+        .unwrap();
+    assert!(snap
+        .history
+        .iter()
+        .all(|h| { h.terminal && !h.actionable && h.authority_effect == "none" }));
+    let summary = CommandHandler::get_workspace_evidence_reliability_summary(
+        &kernel,
+        ActorContext::local_user(),
+        IntentContext::user_request(),
+        snap.workspace_id.clone(),
+        10,
+    )
+    .unwrap();
+    assert!(summary.history_count >= summary.history.len());
+}
+
+#[test]
+fn evidence_reliability_service_never_calls_foreign_generate() {
+    let source = include_str!("../services/workspace_evidence_reliability.rs");
+    assert!(!source.contains("WorkspaceEvidenceCompletenessService::generate"));
+    assert!(!source.contains("WorkspaceEvidenceFreshnessService::generate"));
+    assert!(!source.contains("WorkspaceEvidenceDependencyService::generate"));
+    assert!(!source.contains("WorkspaceEvidenceConsistencyService::generate"));
+    assert!(!source.contains("WorkspaceEvidenceCoverageService::generate"));
+    assert!(!source.contains("WorkspaceEvidenceTraceService::generate"));
+    assert!(!source.contains("WorkspaceEvidenceNavigationService::generate"));
+    assert!(!source.contains("WorkspaceSemanticQueryService::generate"));
+    assert!(!source.contains("WorkspaceStateCompositionService::generate"));
+    assert!(!source.contains("DecisionEngineService::"));
+    assert!(!source.contains("WorkspaceRecommendationEngineService::"));
+    assert!(!source.contains("ExecutionLifecycleService::"));
+}
+
+#[test]
+fn no_execution_paths_in_evidence_reliability_service() {
+    let source = include_str!("../services/workspace_evidence_reliability.rs");
+    assert!(!source.contains("ExecutionLifecycle"));
+    assert!(!source.contains("PermissionGateway"));
+    assert!(!source.contains("CommandPipeline"));
+}
+
+#[test]
+fn no_fabricated_reliability_without_upstream() {
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let ws = seed_workspace(&kernel);
+    let snap = CommandHandler::generate_workspace_evidence_reliability(
+        &kernel,
+        ActorContext::local_user(),
+        IntentContext::user_request(),
+        ws,
+    )
+    .unwrap();
+    let current = snap.current.as_ref().unwrap();
+    assert!(current.lineage.contributing_artefacts.is_empty());
+    assert!(current.assessment.participating_artefacts.is_empty());
+    assert!(current.observations.is_empty());
+}
+
+#[test]
+fn no_repair_ownership_in_reliability_service() {
+    let source = include_str!("../services/workspace_evidence_reliability.rs");
+    assert!(!source.contains("TaskGraphService"));
+    assert!(!source.contains("WorkspacePlanningService"));
+    assert!(!source.contains("ExecutionLifecycleService"));
+    assert!(!source.contains("schedule work"));
+    assert!(!source.contains("::refresh("));
+    assert!(!source.contains("::fill_gaps("));
+    assert!(!source.contains(".fill_gaps("));
+    assert!(!source.contains(" fill_gaps("));
+    assert!(!source.contains("repair_upstream"));
+    assert!(!source.contains("complete_upstream"));
+}
+
+#[test]
+fn no_evidence_synthesis_paths_in_reliability_service() {
+    let source = include_str!("../services/workspace_evidence_reliability.rs");
+    assert!(!source.contains("TaskGraphService"));
+    assert!(!source.contains("WorkspacePlanningService"));
+    assert!(!source.contains("ExecutionLifecycleService"));
+    assert!(!source.contains("::refresh("));
+    assert!(!source.contains("::fill_gaps("));
+    assert!(!source.contains(".fill_gaps("));
+    assert!(!source.contains(" fill_gaps("));
+    assert!(!source.contains("synthesize_evidence"));
+    assert!(!source.contains("fabricate_evidence"));
+    assert!(!source.contains("invent_missing"));
+}
+
+#[test]
+fn partial_unknown_unavailable_never_imply_repair() {
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let ws = seed_workspace(&kernel);
+    seed_upstream_evidence(&kernel, &ws);
+    let snap = CommandHandler::generate_workspace_evidence_reliability(
+        &kernel,
+        ActorContext::local_user(),
+        IntentContext::user_request(),
+        ws,
+    )
+    .unwrap();
+    let current = snap.current.as_ref().unwrap();
+    for obs in &current.observations {
+        let lower = obs.description.to_ascii_lowercase();
+        assert!(!lower.contains("must repair"));
+        assert!(!lower.contains("please repair"));
+        assert!(!lower.contains("complete now"));
+        assert!(!obs.actionable);
+    }
+    for gap in &current.gaps {
+        assert!(!gap.actionable);
+        let lower = gap.description.to_ascii_lowercase();
+        assert!(!lower.contains("must repair"));
+    }
+}

@@ -6,44 +6,19 @@
 
 use crate::audit::AuditEvent;
 use crate::execution_reconciliation::{ExecutionLifecycleRecord, ExecutionState};
-use crate::workspace_recommendation::RecommendationHistoryEntry;
-use crate::workspace_cognitive_graph::{CognitiveGraphHistoryEntry, CognitiveGraphSnapshot};
-use crate::workspace_cognitive_orchestration::{
-    OrchestrationHistoryEntry, WorkspaceOrchestrationSnapshot,
-};
-use crate::workspace_learning_adaptation::{LearningHistoryEntry, LearningSnapshot};
+use crate::policy_governance::{PolicyGovernanceHistoryEntry, PolicyGovernanceSnapshot};
 use crate::workspace_cognitive_agent_cast::{
     CognitiveAgentCastHistoryEntry, CognitiveAgentCastSnapshot,
 };
 use crate::workspace_cognitive_autonomy::{
     CognitiveAutonomyHistoryEntry, CognitiveAutonomySnapshot,
 };
-use crate::workspace_state_envelope::{
-    WorkspaceStateHistoryEntry, WorkspaceStateSnapshot,
-};
-use crate::policy_governance::{
-    PolicyGovernanceHistoryEntry, PolicyGovernanceSnapshot,
-};
-use crate::workspace_historical_reconstruction::{
-    HistoricalReconstructionHistoryEntry, HistoricalReconstructionSnapshot,
-};
-use crate::workspace_temporal_intelligence::{
-    TemporalIntelligenceHistoryEntry, TemporalIntelligenceSnapshot,
-};
-use crate::workspace_explanation::{
-    WorkspaceExplanationHistoryEntry, WorkspaceExplanationSnapshot,
+use crate::workspace_cognitive_graph::{CognitiveGraphHistoryEntry, CognitiveGraphSnapshot};
+use crate::workspace_cognitive_orchestration::{
+    OrchestrationHistoryEntry, WorkspaceOrchestrationSnapshot,
 };
 use crate::workspace_contextual_understanding::{
     ContextualUnderstandingHistoryEntry, ContextualUnderstandingProjection,
-};
-use crate::workspace_knowledge_synthesis::{
-    KnowledgeSynthesisHistoryEntry, KnowledgeSynthesisProjection,
-};
-use crate::workspace_knowledge_integration::{
-    KnowledgeIntegrationHistoryEntry, KnowledgeIntegrationProjection,
-};
-use crate::workspace_insight_coordination::{
-    InsightCoordinationHistoryEntry, InsightCoordinationProjection,
 };
 use crate::workspace_cross_intelligence::{
     CrossWorkspaceIntelligenceHistoryEntry, CrossWorkspaceIntelligenceProjection,
@@ -51,23 +26,14 @@ use crate::workspace_cross_intelligence::{
 use crate::workspace_decision_support::{
     DecisionSupportHistoryEntry, WorkspaceDecisionSupportProjection,
 };
-use crate::workspace_intelligence_hub::{
-    IntelligenceHubHistoryEntry, WorkspaceIntelligenceHubProjection,
-};
-use crate::workspace_semantic_query::{
-    SemanticQueryHistoryEntry, WorkspaceSemanticQueryProjection,
-};
-use crate::workspace_evidence_navigation::{
-    EvidenceNavigationHistoryEntry, WorkspaceEvidenceNavigationProjection,
-};
-use crate::workspace_evidence_trace::{
-    EvidenceTraceHistoryEntry, WorkspaceEvidenceTraceProjection,
-};
-use crate::workspace_evidence_coverage::{
-    EvidenceCoverageHistoryEntry, WorkspaceEvidenceCoverageProjection,
+use crate::workspace_evidence_completeness::{
+    EvidenceCompletenessHistoryEntry, WorkspaceEvidenceCompletenessProjection,
 };
 use crate::workspace_evidence_consistency::{
     EvidenceConsistencyHistoryEntry, WorkspaceEvidenceConsistencyProjection,
+};
+use crate::workspace_evidence_coverage::{
+    EvidenceCoverageHistoryEntry, WorkspaceEvidenceCoverageProjection,
 };
 use crate::workspace_evidence_dependency::{
     EvidenceDependencyHistoryEntry, WorkspaceEvidenceDependencyProjection,
@@ -75,10 +41,43 @@ use crate::workspace_evidence_dependency::{
 use crate::workspace_evidence_freshness::{
     EvidenceFreshnessHistoryEntry, WorkspaceEvidenceFreshnessProjection,
 };
-use crate::workspace_evidence_completeness::{
-    EvidenceCompletenessHistoryEntry, WorkspaceEvidenceCompletenessProjection,
+use crate::workspace_evidence_navigation::{
+    EvidenceNavigationHistoryEntry, WorkspaceEvidenceNavigationProjection,
 };
+use crate::workspace_evidence_reliability::{
+    EvidenceReliabilityHistoryEntry, WorkspaceEvidenceReliabilityProjection,
+};
+use crate::workspace_evidence_trace::{
+    EvidenceTraceHistoryEntry, WorkspaceEvidenceTraceProjection,
+};
+use crate::workspace_explanation::{
+    WorkspaceExplanationHistoryEntry, WorkspaceExplanationSnapshot,
+};
+use crate::workspace_historical_reconstruction::{
+    HistoricalReconstructionHistoryEntry, HistoricalReconstructionSnapshot,
+};
+use crate::workspace_insight_coordination::{
+    InsightCoordinationHistoryEntry, InsightCoordinationProjection,
+};
+use crate::workspace_intelligence_hub::{
+    IntelligenceHubHistoryEntry, WorkspaceIntelligenceHubProjection,
+};
+use crate::workspace_knowledge_integration::{
+    KnowledgeIntegrationHistoryEntry, KnowledgeIntegrationProjection,
+};
+use crate::workspace_knowledge_synthesis::{
+    KnowledgeSynthesisHistoryEntry, KnowledgeSynthesisProjection,
+};
+use crate::workspace_learning_adaptation::{LearningHistoryEntry, LearningSnapshot};
 use crate::workspace_reasoning_memory::{ReasoningHistoryEntry, ReasoningSnapshot};
+use crate::workspace_recommendation::RecommendationHistoryEntry;
+use crate::workspace_semantic_query::{
+    SemanticQueryHistoryEntry, WorkspaceSemanticQueryProjection,
+};
+use crate::workspace_state_envelope::{WorkspaceStateHistoryEntry, WorkspaceStateSnapshot};
+use crate::workspace_temporal_intelligence::{
+    TemporalIntelligenceHistoryEntry, TemporalIntelligenceSnapshot,
+};
 
 /// Documented startup in-progress sweep cap (must match
 /// `ExecutionLifecycleService::STARTUP_IN_PROGRESS_SWEEP_LIMIT`).
@@ -122,7 +121,10 @@ pub fn recovery_must_not_fabricate_actionable_history(entry: &RecommendationHist
 /// Recovery must never invent Completed terminal from a stale claim.
 pub fn recovery_must_not_invent_completed(record: &ExecutionLifecycleRecord) -> bool {
     record.state != ExecutionState::Completed
-        || record.completed_at.as_ref().is_some_and(|t| !t.trim().is_empty())
+        || record
+            .completed_at
+            .as_ref()
+            .is_some_and(|t| !t.trim().is_empty())
 }
 
 /// Missing reasoning remains missing — never fabricate a current record on restart.
@@ -260,9 +262,7 @@ pub fn recovery_must_not_fabricate_actionable_workspace_state_history(
 }
 
 /// Missing policy evaluation remains missing — never invent Compliant on restart.
-pub fn recovery_must_not_fabricate_policy_governance(
-    snapshot: &PolicyGovernanceSnapshot,
-) -> bool {
+pub fn recovery_must_not_fabricate_policy_governance(snapshot: &PolicyGovernanceSnapshot) -> bool {
     snapshot.is_non_commandable()
         && snapshot.history.iter().all(|h| h.is_non_actionable())
         && snapshot
@@ -499,7 +499,6 @@ pub fn recovery_must_not_fabricate_actionable_semantic_query_history(
     entry.is_non_actionable()
 }
 
-
 /// Missing evidence navigation remains missing — never invent paths or continuity on restart.
 pub fn recovery_must_not_fabricate_evidence_navigation(
     projection: &WorkspaceEvidenceNavigationProjection,
@@ -519,7 +518,6 @@ pub fn recovery_must_not_fabricate_actionable_evidence_navigation_history(
 ) -> bool {
     entry.is_non_actionable()
 }
-
 
 /// Missing evidence trace remains missing — never invent lineage or bridge history on restart.
 pub fn recovery_must_not_fabricate_evidence_trace(
@@ -641,6 +639,26 @@ pub fn recovery_must_not_fabricate_actionable_evidence_completeness_history(
     entry.is_non_actionable()
 }
 
+/// Recovery must not invent reliability, trust, conflict settlement, or missing evidence.
+pub fn recovery_must_not_fabricate_evidence_reliability(
+    projection: &WorkspaceEvidenceReliabilityProjection,
+) -> bool {
+    projection.is_non_commandable()
+        && projection.history.iter().all(|h| h.is_non_actionable())
+        && projection
+            .current
+            .as_ref()
+            .map(|c| c.is_non_executing())
+            .unwrap_or(true)
+}
+
+/// Fabricated actionable evidence-reliability history must fail the recovery contract.
+pub fn recovery_must_not_fabricate_actionable_evidence_reliability_history(
+    entry: &EvidenceReliabilityHistoryEntry,
+) -> bool {
+    entry.is_non_actionable()
+}
+
 /// Recovery diagnostics are observational audit evidence only.
 pub fn recovery_diagnostic_is_evidence_only(event: &AuditEvent) -> bool {
     RECOVERY_DIAGNOSTIC_EVENT_TYPES.contains(&event.event_type.as_str())
@@ -664,10 +682,7 @@ fn metadata_authority_effect_is_none(metadata: Option<&str>) -> bool {
     let Ok(value) = serde_json::from_str::<serde_json::Value>(raw) else {
         return false;
     };
-    value
-        .get("authority_effect")
-        .and_then(|v| v.as_str())
-        == Some("none")
+    value.get("authority_effect").and_then(|v| v.as_str()) == Some("none")
 }
 
 #[cfg(test)]
@@ -723,7 +738,9 @@ mod tests {
     #[test]
     fn recovery_diagnostic_events_are_evidence_only() {
         for event_type in RECOVERY_DIAGNOSTIC_EVENT_TYPES {
-            assert!(recovery_diagnostic_event_type_is_non_commandable(event_type));
+            assert!(recovery_diagnostic_event_type_is_non_commandable(
+                event_type
+            ));
             let event = AuditEvent::from_actor(*event_type, &Actor::system(), false)
                 .with_metadata(r#"{"authority_effect":"none","subsystem":"execution_lifecycle"}"#);
             assert!(recovery_diagnostic_is_evidence_only(&event));
@@ -761,7 +778,9 @@ mod tests {
             actionable: true,
             authority_effect: "none".into(),
         };
-        assert!(!recovery_must_not_fabricate_actionable_reasoning_history(&bad));
+        assert!(!recovery_must_not_fabricate_actionable_reasoning_history(
+            &bad
+        ));
     }
 
     #[test]
@@ -837,7 +856,9 @@ mod tests {
             actionable: true,
             authority_effect: "none".into(),
         };
-        assert!(!recovery_must_not_fabricate_actionable_learning_history(&bad));
+        assert!(!recovery_must_not_fabricate_actionable_learning_history(
+            &bad
+        ));
     }
 
     #[test]
@@ -864,7 +885,9 @@ mod tests {
             actionable: true,
             authority_effect: "none".into(),
         };
-        assert!(!recovery_must_not_fabricate_actionable_agent_cast_history(&bad));
+        assert!(!recovery_must_not_fabricate_actionable_agent_cast_history(
+            &bad
+        ));
     }
 
     #[test]
@@ -890,7 +913,9 @@ mod tests {
             actionable: true,
             authority_effect: "none".into(),
         };
-        assert!(!recovery_must_not_fabricate_actionable_autonomy_history(&bad));
+        assert!(!recovery_must_not_fabricate_actionable_autonomy_history(
+            &bad
+        ));
     }
 
     #[test]
@@ -950,7 +975,9 @@ mod tests {
     #[test]
     fn recovery_never_fabricates_historical_reconstruction_on_empty_snapshot() {
         let empty = HistoricalReconstructionSnapshot::assemble("ws", None, vec![], 0, "t0");
-        assert!(recovery_must_not_fabricate_historical_reconstruction(&empty));
+        assert!(recovery_must_not_fabricate_historical_reconstruction(
+            &empty
+        ));
         assert!(empty.current.is_none());
     }
 
@@ -971,7 +998,9 @@ mod tests {
             actionable: true,
             authority_effect: "none".into(),
         };
-        assert!(!recovery_must_not_fabricate_actionable_historical_history(&bad));
+        assert!(!recovery_must_not_fabricate_actionable_historical_history(
+            &bad
+        ));
     }
 
     #[test]
@@ -998,7 +1027,9 @@ mod tests {
             actionable: true,
             authority_effect: "none".into(),
         };
-        assert!(!recovery_must_not_fabricate_actionable_temporal_history(&bad));
+        assert!(!recovery_must_not_fabricate_actionable_temporal_history(
+            &bad
+        ));
     }
 
     #[test]
@@ -1023,7 +1054,9 @@ mod tests {
             actionable: true,
             authority_effect: "none".into(),
         };
-        assert!(!recovery_must_not_fabricate_actionable_explanation_history(&bad));
+        assert!(!recovery_must_not_fabricate_actionable_explanation_history(
+            &bad
+        ));
     }
 
     #[test]
@@ -1048,9 +1081,7 @@ mod tests {
             actionable: true,
             authority_effect: "none".into(),
         };
-        assert!(!recovery_must_not_fabricate_actionable_contextual_understanding_history(
-            &bad
-        ));
+        assert!(!recovery_must_not_fabricate_actionable_contextual_understanding_history(&bad));
     }
 
     #[test]
@@ -1077,9 +1108,7 @@ mod tests {
             actionable: true,
             authority_effect: "none".into(),
         };
-        assert!(!recovery_must_not_fabricate_actionable_knowledge_synthesis_history(
-            &bad
-        ));
+        assert!(!recovery_must_not_fabricate_actionable_knowledge_synthesis_history(&bad));
     }
 
     #[test]
@@ -1105,9 +1134,7 @@ mod tests {
             actionable: true,
             authority_effect: "none".into(),
         };
-        assert!(!recovery_must_not_fabricate_actionable_knowledge_integration_history(
-            &bad
-        ));
+        assert!(!recovery_must_not_fabricate_actionable_knowledge_integration_history(&bad));
     }
 
     #[test]
@@ -1134,15 +1161,15 @@ mod tests {
             actionable: true,
             authority_effect: "none".into(),
         };
-        assert!(!recovery_must_not_fabricate_actionable_insight_coordination_history(
-            &bad
-        ));
+        assert!(!recovery_must_not_fabricate_actionable_insight_coordination_history(&bad));
     }
 
     #[test]
     fn recovery_never_fabricates_cross_workspace_on_empty_projection() {
         let empty = CrossWorkspaceIntelligenceProjection::assemble(None, vec![], 0, "t0");
-        assert!(recovery_must_not_fabricate_cross_workspace_intelligence(&empty));
+        assert!(recovery_must_not_fabricate_cross_workspace_intelligence(
+            &empty
+        ));
         assert!(empty.current.is_none());
     }
 
@@ -1164,9 +1191,7 @@ mod tests {
             actionable: true,
             authority_effect: "none".into(),
         };
-        assert!(!recovery_must_not_fabricate_actionable_cross_workspace_intelligence_history(
-            &bad
-        ));
+        assert!(!recovery_must_not_fabricate_actionable_cross_workspace_intelligence_history(&bad));
     }
 
     #[test]
