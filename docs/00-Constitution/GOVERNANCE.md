@@ -115,11 +115,13 @@ There is no escalation above the Project Owner. The Owner may consult advisors b
 AI tools (including Cursor agents) are advisory contributors. They must:
 
 - Read constitution and relevant principles before acting
+- Follow [`AGENTS.md`](../../AGENTS.md) and [AI Engineering Governance](../00-Governance/AI_ENGINEERING_GOVERNANCE.md) for engineering process
 - Never silently change product direction
 - Flag ambiguous requirements in Open Questions
 - Follow Documentation Standards for all written output
 - Not write production code unless explicitly authorised by Project Owner for the current sprint scope
 - Present recommendations for Owner review — not implement decisions autonomously
+- Prefer extending existing Workspace systems over creating AI-centric parallel products
 
 AI agents may perform any advisory role (§3.1) but **never hold decision authority**.
 
@@ -140,6 +142,7 @@ AI agents may perform any advisory role (§3.1) but **never hold decision author
 ## Related Documents
 
 - [Project Constitution](PROJECT-CONSTITUTION.md)
+- [AI Engineering Governance](../00-Governance/AI_ENGINEERING_GOVERNANCE.md)
 - [Decision Log](../09-Decisions/DECISION-LOG.md)
 - [Open Questions](../09-Decisions/OPEN-QUESTIONS.md)
 - [Scope Management](../01-Product/SCOPE-MANAGEMENT.md)

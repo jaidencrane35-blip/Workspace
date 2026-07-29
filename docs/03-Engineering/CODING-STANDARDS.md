@@ -101,6 +101,12 @@ Names must be descriptive. Avoid abbreviations except widely understood ones (`i
 - No formatting debates in code review — formatter is authority
 - Line length: 100 characters (soft limit; break for readability)
 
+### 2.11 Magic numbers
+
+- Unexplained numeric literals in control flow, thresholds, timing, and limits are prohibited
+- Name the constant and document why the value exists when it encodes product or platform policy
+- Full rules: [AI Engineering Governance §4](../00-Governance/AI_ENGINEERING_GOVERNANCE.md)
+
 ---
 
 ## 3. Prohibited Patterns
@@ -168,3 +174,4 @@ Reviewers verify:
 - [Engineering Principles](ENGINEERING-PRINCIPLES.md)
 - [Repository Standards](REPOSITORY-STANDARDS.md)
 - [Definition of Done](DEFINITION-OF-DONE.md)
+- [AI Engineering Governance](../00-Governance/AI_ENGINEERING_GOVERNANCE.md)

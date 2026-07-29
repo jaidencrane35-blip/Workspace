@@ -6,15 +6,15 @@
 
 ## Quick Start
 
-| A new contributor | [Project Constitution](00-Constitution/PROJECT-CONSTITUTION.md) → [Engineering Governance](03-Engineering/ENGINEERING-GOVERNANCE.md) → [Visual Direction](01-Product/WORKSPACE-VISUAL-DIRECTION.md) |
+| A new contributor | [Project Constitution](00-Constitution/PROJECT-CONSTITUTION.md) → [AI Engineering Governance](00-Governance/AI_ENGINEERING_GOVERNANCE.md) → [Engineering Governance](03-Engineering/ENGINEERING-GOVERNANCE.md) → [Visual Direction](01-Product/WORKSPACE-VISUAL-DIRECTION.md) |
 | Making a product decision | [Product Vision](01-Product/PRODUCT-VISION.md) → [Visual Direction](01-Product/WORKSPACE-VISUAL-DIRECTION.md) → [Realignment Audit](01-Product/PRODUCT-VISION-REALIGNMENT-AUDIT.md) |
-| Starting a major batch | [Batch Alignment Check](03-Engineering/BATCH-ALIGNMENT-CHECK.md) → [Engineering Governance](03-Engineering/ENGINEERING-GOVERNANCE.md) |
+| Starting a major batch | [Batch Alignment Check](03-Engineering/BATCH-ALIGNMENT-CHECK.md) → [Engineering Governance](03-Engineering/ENGINEERING-GOVERNANCE.md) → [AI Engineering Governance](00-Governance/AI_ENGINEERING_GOVERNANCE.md) |
 | Human visual review | [Human Review Policy](03-Engineering/HUMAN-REVIEW-POLICY.md) → [Visual Review Checklist](03-Engineering/VISUAL-REVIEW-CHECKLIST.md) |
 | Designing architecture | [Architecture Principles](02-Architecture/ARCHITECTURE-PRINCIPLES.md) → [System Overview](02-Architecture/SYSTEM-OVERVIEW.md) |
 | Desktop arrangement (DAF) | [DAF Architecture Audit](03-Engineering/DAF-ARCHITECTURE-AUDIT.md) → [DAF-1a](03-Engineering/DAF-1A-WINDOW-CONTROLLER.md) → [DAF-1b](03-Engineering/DAF-1B-WINDOW-OBSERVATION.md) → [DAF-1c](03-Engineering/DAF-1C-DESKTOP-ARRANGEMENT.md) → [DAF-1d](03-Engineering/DAF-1D-DESKTOP-ARRANGEMENT-RESTORE.md) → [DAF-1e](03-Engineering/DAF-1E-DESKTOP-ARRANGEMENT-UI.md) |
 | Selecting technology | [Stack Evaluation Criteria](02-Architecture/STACK-EVALUATION-CRITERIA.md) |
-| Writing code | [Coding Standards](03-Engineering/CODING-STANDARDS.md) → [Definition of Done](03-Engineering/DEFINITION-OF-DONE.md) |
-| Working on AI features | Confirm need against [Engineering Governance](03-Engineering/ENGINEERING-GOVERNANCE.md) (AI expansion frozen unless product-required) → [AI Principles](05-AI/AI-PRINCIPLES.md) |
+| Writing code | [Coding Standards](03-Engineering/CODING-STANDARDS.md) → [Definition of Done](03-Engineering/DEFINITION-OF-DONE.md) → [AI Engineering Governance](00-Governance/AI_ENGINEERING_GOVERNANCE.md) |
+| Working on AI features | Confirm need against [Engineering Governance](03-Engineering/ENGINEERING-GOVERNANCE.md) and [AI Engineering Governance](00-Governance/AI_ENGINEERING_GOVERNANCE.md) (AI expansion frozen unless product-required) → [AI Principles](05-AI/AI-PRINCIPLES.md) |
 | Reviewing security | [Threat Model](07-Security/THREAT-MODEL.md) → [Security Principles](07-Security/SECURITY-PRINCIPLES.md) |
 | Building plugins (future) | [Plugin Architecture Vision](06-Plugins/PLUGIN-ARCHITECTURE-VISION.md) |
 | Unsure about something | [Open Questions](09-Decisions/OPEN-QUESTIONS.md) — identify, don't guess |
@@ -31,6 +31,15 @@ Foundational rules and governance that cannot be overridden.
 |----------|-------------|
 | [Project Constitution](00-Constitution/PROJECT-CONSTITUTION.md) | Non-negotiable project rules and values |
 | [Governance Model](00-Constitution/GOVERNANCE.md) | Founder-led decision authority and AI advisory roles |
+
+### 00 — Governance (engineering process)
+
+Operational controls for AI-assisted engineering. Complements Constitution; does not replace it.
+
+| Document | Description |
+|----------|-------------|
+| [AI Engineering Governance](00-Governance/AI_ENGINEERING_GOVERNANCE.md) | Maintainability 0–10 score, anti-black-box rules, magic-number prevention, AI feature gate |
+| [Governance folder README](00-Governance/README.md) | How this folder relates to Constitution and Engineering Governance |
 
 ### 01 — Product
 
@@ -66,6 +75,7 @@ How the team builds, reviews, and maintains the codebase.
 |----------|-------------|
 | [Engineering Principles](03-Engineering/ENGINEERING-PRINCIPLES.md) | Core engineering values and quality gates |
 | [Engineering Governance](03-Engineering/ENGINEERING-GOVERNANCE.md) | Product alignment, freeze rules, batch docs, drift prevention |
+| [AI Engineering Governance](00-Governance/AI_ENGINEERING_GOVERNANCE.md) | AI-assisted engineering controls and maintainability standard |
 | [Human Review Policy](03-Engineering/HUMAN-REVIEW-POLICY.md) | When human visual review is required; batching; media restraint |
 | [Visual Review Checklist](03-Engineering/VISUAL-REVIEW-CHECKLIST.md) | Checkpoint template for batched UI audits |
 | [Batch Alignment Check](03-Engineering/BATCH-ALIGNMENT-CHECK.md) | Pre-implementation checklist template |

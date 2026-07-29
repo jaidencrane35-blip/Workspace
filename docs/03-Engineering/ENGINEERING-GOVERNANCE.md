@@ -5,9 +5,11 @@
 | **Purpose** | Keep Workspace human-maintainable and commercially readable |
 | **Owner** | Engineering |
 | **Status** | Binding for DAF and subsequent work |
-| **Related** | [CODING-STANDARDS.md](CODING-STANDARDS.md), [DEFINITION-OF-DONE.md](DEFINITION-OF-DONE.md), [PRODUCT-VISION-REALIGNMENT-AUDIT.md](../01-Product/PRODUCT-VISION-REALIGNMENT-AUDIT.md) |
+| **Related** | [CODING-STANDARDS.md](CODING-STANDARDS.md), [DEFINITION-OF-DONE.md](DEFINITION-OF-DONE.md), [PRODUCT-VISION-REALIGNMENT-AUDIT.md](../01-Product/PRODUCT-VISION-REALIGNMENT-AUDIT.md), [AI Engineering Governance](../00-Governance/AI_ENGINEERING_GOVERNANCE.md), [AGENTS.md](../../AGENTS.md) |
 
 The **repository** is the source of truth. Do not rely on previous AI conversations as architecture memory. Important decisions must exist in documentation under `docs/`.
+
+**AI-assisted engineering controls** (maintainability scoring, anti-black-box rules, magic-number prevention, AI feature gate) live in [`AI_ENGINEERING_GOVERNANCE.md`](../00-Governance/AI_ENGINEERING_GOVERNANCE.md). This document owns product alignment, freezes, and batch documentation — do not duplicate those controls into a second competing system.
 
 ---
 
@@ -181,6 +183,8 @@ update stuff
 | [DAF-1E-DESKTOP-ARRANGEMENT-UI.md](DAF-1E-DESKTOP-ARRANGEMENT-UI.md) | Arrangement UI foundation |
 | [DAF-1E-COMPLETION-REPORT.md](DAF-1E-COMPLETION-REPORT.md) | DAF-1e batch report |
 | [DAF-1E-VISUAL-REVIEW-CHECKLIST.md](DAF-1E-VISUAL-REVIEW-CHECKLIST.md) | DAF-1e visual checkpoint |
+| [AI Engineering Governance](../00-Governance/AI_ENGINEERING_GOVERNANCE.md) | AI-assisted engineering control (maintainability, anti-drift) |
+| [AGENTS.md](../../AGENTS.md) | Short agent operational contract |
 
 ---
 

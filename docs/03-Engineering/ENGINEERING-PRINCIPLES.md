@@ -36,6 +36,8 @@ Every sprint item has a clear scope, owner, and acceptance criteria before work 
 
 Readable, well-structured code beats fast delivery of brittle code. Deadlines do not override Definition of Done.
 
+Score major new systems with the **Human Maintainability Standard (0–10)** in [AI Engineering Governance](../00-Governance/AI_ENGINEERING_GOVERNANCE.md). Target ≥ 8.
+
 ### 2.4 Scalability Before Convenience
 
 Choose patterns that work at 100,000 lines, not patterns that are easy today and painful tomorrow.

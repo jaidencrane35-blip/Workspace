@@ -25,6 +25,8 @@ Copy this file’s checklist into the batch completion report (or fill and link 
 | 8 | Assistant (if touched) only requests/explains — does not execute desktop control | | |
 | 9 | Feature quality questions answered (why / problem / owner / non-goals) | | |
 | 10 | Completion report + architecture doc planned for this batch | | |
+| 11 | Maintainability target understood (≥ 8 for new systems per [AI Engineering Governance](../00-Governance/AI_ENGINEERING_GOVERNANCE.md)) | | |
+| 12 | Assistant remains sidecar; Workspace remains primary product surface | | |
 
 **Gate decision:** ☐ Proceed  ☐ Rework scope  ☐ Stop
 
@@ -34,3 +36,5 @@ Copy this file’s checklist into the batch completion report (or fill and link 
 
 Primary: manage apps, layouts, real windows, save/restore, work modes, desktop control.  
 Secondary: AI Assistant as supporting capability.
+
+See also: [`AGENTS.md`](../../AGENTS.md), [AI Engineering Governance](../00-Governance/AI_ENGINEERING_GOVERNANCE.md).
