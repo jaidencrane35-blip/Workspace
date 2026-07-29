@@ -1356,6 +1356,15 @@ button.linkish:not(:disabled):hover {
 
 .app-body.with-companion-rail .workspace-stage {
   min-height: calc(100vh - 3.5rem);
+  /* Keep arrangements under the stage so Assistant owns the only right rail. */
+  grid-template-columns: 1fr;
+}
+
+.app-body.with-companion-rail .desktop-arrangement-panel {
+  border-left: 0;
+  border-top: 1px solid #243040;
+  max-height: none;
+  position: static;
 }
 
 .assistant-rail-reopen-bar {

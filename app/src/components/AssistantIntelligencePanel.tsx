@@ -279,6 +279,9 @@ export function AssistantIntelligencePanel({
           { workspaceId: workspace.id, humanAsk: ask },
         );
       setPersonalisation(nextPersonalisation);
+      if (rail) {
+        setPackagesOpen(true);
+      }
     });
   }
 

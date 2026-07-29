@@ -182,11 +182,10 @@ export function WorkspaceHome({
         <ul className="home-future-list muted">
           <li>OS window move/resize when switching Flow ↔ Focus</li>
           <li>Automatic OS app discovery</li>
-          <li>Assistant as a persistent side companion on every tab</li>
         </ul>
         <p className="muted">
-          Flow/Focus chrome density is available now. Geometry apply and true
-          sidecar Assistant remain planned.
+          Flow/Focus chrome density and the Assistant companion rail are
+          available now. Geometry apply on mode switch remains planned.
         </p>
       </section>
     </section>

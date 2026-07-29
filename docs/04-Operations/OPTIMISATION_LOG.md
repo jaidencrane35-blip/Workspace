@@ -41,6 +41,23 @@ Human concept → Optimised representation → Decoder / inspector → Human und
 
 ## Cycles
 
+### Cycle: opt-c3-layout-hierarchy-home-honesty
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-29 |
+| **Problem** | With companion rail open, Layouts/Workspaces showed three competing columns; Home still claimed sidecar was missing |
+| **Reason** | Concept: one right companion; arrangements stay under stage; product copy must match shipped chrome |
+| **Files changed** | `App.css`, `WorkspaceHome.tsx`, `AssistantIntelligencePanel.tsx`, `OperatorConsole.tsx`, this log |
+| **Validation** | typecheck / test / architecture / ipc / ui-boundary / build |
+| **Maintainability score** | 8.7/10 |
+| **Reference alignment** | 8.8/10 (+0.2 hierarchy) |
+| **Commercial readiness** | 6.1/10 |
+| **Human readability** | 8.7/10 |
+| **Why this is safe** | CSS hierarchy + copy only; no DA/AI/ownership behaviour change |
+
+---
+
 ### Cycle: opt-c2-companion-rail-density
 
 | Field | Value |

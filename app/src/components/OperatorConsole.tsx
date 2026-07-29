@@ -3253,7 +3253,8 @@ export function OperatorConsole({
       <section>
         <h2>Governed AI assistant (diagnostics)</h2>
         <p className="muted">
-          Same CommandHandler pipeline as the product Assistant tab — regenerate,
+          Same CommandHandler pipeline as the product Assistant companion —
+          regenerate,
           compare, explanation rendering, and recovery checks.
         </p>
         <div className="row">
