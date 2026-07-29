@@ -61,6 +61,11 @@ body {
   border-color: #f87171;
 }
 
+.notice.banner {
+  border-color: #7dd3fc;
+  color: #bae6fd;
+}
+
 .ok.banner {
   border-color: #86efac;
 }
@@ -699,6 +704,16 @@ button.linkish:not(:disabled):hover {
   font-size: 0.88rem;
   line-height: 1.45;
   max-width: 36rem;
+}
+
+.assistant-intel-runtime-required {
+  margin: 0.75rem 0 0;
+  padding: 0.75rem 0.85rem;
+  border-left: 3px solid #7dd3fc;
+  color: #bae6fd;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  max-width: 40rem;
 }
 
 .assistant-intel-note {

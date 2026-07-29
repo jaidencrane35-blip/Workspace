@@ -4,7 +4,11 @@ import { AssistantPanel } from "./components/AssistantPanel";
 import { CanvasShell } from "./components/CanvasShell";
 import { OperatorConsole } from "./components/OperatorConsole";
 import { WorkspaceIntelligencePanel } from "./components/WorkspaceIntelligencePanel";
-import { invokeIpc } from "./lib/ipc";
+import {
+  IPC_RUNTIME_UNAVAILABLE_MESSAGE,
+  invokeIpc,
+  isIpcRuntimeAvailable,
+} from "./lib/ipc";
 import type { Workspace, WorkspaceContext, Zone } from "./types/domain";
 import type { Layout } from "./types/layout";
 import type {
@@ -67,6 +71,7 @@ export default function App() {
   const [message, setMessage] = useState<string | null>(null);
   const [bootstrapped, setBootstrapped] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [ipcRuntimeAvailable] = useState(() => isIpcRuntimeAvailable());
 
   const onWorkspaceChange = useCallback((next: Workspace | null) => {
     setWorkspace(next);
@@ -97,6 +102,11 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    if (!ipcRuntimeAvailable) {
+      setBootstrapped(true);
+      return;
+    }
+
     Promise.all([
       invokeIpc<WorkspaceStatus>("get_workspace_status"),
       invokeIpc<WorkspaceHealth>("get_workspace_health"),
@@ -125,9 +135,12 @@ export default function App() {
         setError(formatError(err));
       })
       .finally(() => setBootstrapped(true));
-  }, []);
+  }, [ipcRuntimeAvailable]);
 
   const createWorkspaceFromCanvas = () => {
+    if (!ipcRuntimeAvailable) {
+      return;
+    }
     setBusy(true);
     setError(null);
     void (async () => {
@@ -146,6 +159,9 @@ export default function App() {
   };
 
   const addZoneFromCanvas = () => {
+    if (!ipcRuntimeAvailable) {
+      return;
+    }
     if (!workspace) {
       setError("Create a workspace first.");
       return;
@@ -217,6 +233,18 @@ export default function App() {
         </nav>
       </header>
 
+      {!ipcRuntimeAvailable && (
+        <p
+          className="notice banner"
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          {IPC_RUNTIME_UNAVAILABLE_MESSAGE} UI layout and navigation remain
+          available for review; open the Tauri desktop app for live data and
+          Assistant Intelligence.
+        </p>
+      )}
       {error && (
         <p
           className="error banner"
@@ -261,7 +289,7 @@ export default function App() {
             </p>
             <button
               type="button"
-              disabled={busy}
+              disabled={busy || !ipcRuntimeAvailable}
               onClick={createWorkspaceFromCanvas}
             >
               Create workspace

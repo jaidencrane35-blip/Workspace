@@ -9,7 +9,7 @@ Workspace is a single product: a **Windows-targeted Tauri 2 desktop app** (React
 
 ### Building/running the desktop app
 - `pnpm dev` runs `tauri dev`, which needs Linux GUI system libs (webkit2gtk/gtk) plus a display, and this app targets **Windows** (`packages/windows-integration` is stubbed on non-Windows). Running the full native shell on this Linux VM is not the supported dev path.
-- Frontend-only run: `cd app && pnpm exec vite` serves the React UI on **http://localhost:1420** (`strictPort`). Standalone in a browser, all Tauri IPC calls fail, so a red "Cannot read properties of undefined (reading 'invoke')" banner appears and data actions (create workspace, zones, etc.) error out. UI rendering and tab navigation still work. Full data flows require the Tauri backend.
+- Frontend-only run: `cd app && pnpm exec vite` serves the React UI on **http://localhost:1420** (`strictPort`). **Browser mode is intentionally unsupported for IPC.** `invokeIpc` checks `isTauri()` + `window.__TAURI_INTERNALS__` before calling `@tauri-apps/api` `invoke`, so a plain browser does **not** throw `Cannot read properties of undefined (reading 'invoke')`. Instead the shell shows a notice banner and Assistant Intelligence explains that the Tauri desktop runtime is required. Layout and tab navigation still work; live data requires the Tauri backend.
 
 ### Known-good checks on Linux
 - `pnpm typecheck`, `pnpm build`, and `pnpm test` (Vitest + catalog/boundary verify scripts) all pass.

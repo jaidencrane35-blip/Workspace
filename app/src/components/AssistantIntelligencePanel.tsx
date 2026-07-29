@@ -1,5 +1,9 @@
 import { useState } from "react";
-import { invokeIpc } from "../lib/ipc";
+import {
+  IPC_RUNTIME_UNAVAILABLE_MESSAGE,
+  invokeIpc,
+  isIpcRuntimeAvailable,
+} from "../lib/ipc";
 import type {
   Workspace,
   WorkspaceAssistantContextProjection,
@@ -200,6 +204,7 @@ export function AssistantIntelligencePanel({
     useState<WorkspaceAssistantInteractionProjection | null>(null);
   const [personalisation, setPersonalisation] =
     useState<WorkspaceAssistantPersonalisationProjection | null>(null);
+  const ipcRuntimeAvailable = isIpcRuntimeAvailable();
 
   const hasAnyPackage =
     surface != null ||
@@ -208,6 +213,29 @@ export function AssistantIntelligencePanel({
     explanation != null ||
     interaction != null ||
     personalisation != null;
+
+  if (!ipcRuntimeAvailable) {
+    return (
+      <div className="assistant-intel-panel">
+        <header className="assistant-intel-hero">
+          <p className="assistant-kicker">Programme IV · Batches 11–16</p>
+          <h2>Assistant Intelligence</h2>
+          <p className="lede">
+            Presentation-only stack over recorded workspace evidence.
+          </p>
+        </header>
+        <p
+          className="assistant-intel-runtime-required"
+          role="status"
+          aria-live="polite"
+        >
+          {IPC_RUNTIME_UNAVAILABLE_MESSAGE} This panel does not invent data or
+          fake IPC responses — open Workspace in the Tauri desktop app to
+          compose and refresh Batches 11–16.
+        </p>
+      </div>
+    );
+  }
 
   async function run(
     okMessage: string,
