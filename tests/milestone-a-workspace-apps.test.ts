@@ -102,3 +102,20 @@ describe("layouts stage UI helpers", () => {
     expect(layoutsStageCanvasNote(2)).toMatch(/2 companion/i);
   });
 });
+
+describe("work mode helpers", () => {
+  it("parses and labels Flow/Focus chrome modes", async () => {
+    const {
+      parseWorkMode,
+      workModeLabel,
+      workModeDescription,
+      FOCUS_PRIMARY_APP_COUNT,
+      DEFAULT_WORK_MODE,
+    } = await import("../app/src/lib/workMode");
+    expect(parseWorkMode("focus")).toBe("focus");
+    expect(parseWorkMode("nope")).toBe(DEFAULT_WORK_MODE);
+    expect(workModeLabel("flow")).toBe("Flow");
+    expect(workModeDescription("focus")).toMatch(/OS windows/i);
+    expect(FOCUS_PRIMARY_APP_COUNT).toBe(1);
+  });
+});

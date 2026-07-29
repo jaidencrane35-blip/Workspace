@@ -1,14 +1,19 @@
 /**
- * Purpose: Spatial “application stage” strip on Layouts — presents registered
- *   workspace apps as stage assets beside the arrangements rail.
- * Owner: Frontend product shell (Cycle 1)
- * Inputs: workspace identity, application list, zone count, navigation callback
- * Outputs: Presentation + navigate-to-Applications intent
- * Dependencies: applicationsUi / layoutsStageUi / productShellUi helpers
- * Non-responsibilities: Window control, Flow/Focus modes, OS discovery,
- *   arrangement restore, Assistant, inventing live HWND tiles
+ * Purpose: Spatial “application stage” on Layouts — Flow (dense) vs Focus
+ *   (primary emphasis) chrome presentation of registered workspace apps.
+ * Owner: Frontend product shell (Milestone B chrome density)
+ * Inputs: workspace, apps, zone count, work mode, navigation callback
+ * Outputs: Presentation + navigate-to-Applications; primary selection in Focus
+ * Dependencies: applicationsUi / layoutsStageUi / productShellUi / workMode
+ * Non-responsibilities: OS window moves, arrangement restore apply, AI,
+ *   WindowController, inventing live HWND tiles
+ *
+ * Problem: reference Flow/Focus density without geometry apply yet.
+ * Why here: Layouts is the workspace stage host.
+ * Why not in DesktopArrangement: this is chrome density, not OS restore.
  */
 
+import { useEffect, useState } from "react";
 import {
   applicationIdentityLine,
   canLaunchApplication,
@@ -17,17 +22,24 @@ import {
   layoutsStageCanvasNote,
   layoutsStageEmptyAppsCopy,
   layoutsStageEyebrow,
-  layoutsStageLede,
   layoutsStageTitle,
 } from "../lib/layoutsStageUi";
 import { monogramFromName } from "../lib/productShellUi";
+import {
+  FOCUS_PRIMARY_APP_COUNT,
+  workModeStageLede,
+  type WorkMode,
+} from "../lib/workMode";
 import type { ApplicationReference, Workspace } from "../types/domain";
+import { WorkModeSwitch } from "./WorkModeSwitch";
 
 interface WorkspaceApplicationStageProps {
   workspace: Workspace;
   applications: ApplicationReference[];
   appsLoading: boolean;
   zoneCount: number;
+  workMode: WorkMode;
+  onWorkModeChange: (mode: WorkMode) => void;
   onManageApplications: () => void;
 }
 
@@ -36,22 +48,64 @@ export function WorkspaceApplicationStage({
   applications,
   appsLoading,
   zoneCount,
+  workMode,
+  onWorkModeChange,
   onManageApplications,
 }: WorkspaceApplicationStageProps) {
   const empty = layoutsStageEmptyAppsCopy();
+  const [primaryId, setPrimaryId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (applications.length === 0) {
+      setPrimaryId(null);
+      return;
+    }
+    setPrimaryId((prev) => {
+      if (prev && applications.some((app) => app.id === prev)) {
+        return prev;
+      }
+      return applications[0]?.id ?? null;
+    });
+  }, [applications]);
+
+  const primary =
+    applications.find((app) => app.id === primaryId) ??
+    applications.slice(0, FOCUS_PRIMARY_APP_COUNT)[0] ??
+    null;
+  const supporting = applications.filter((app) => app.id !== primary?.id);
 
   return (
     <section
-      className="workspace-application-stage"
+      className={
+        workMode === "focus"
+          ? "workspace-application-stage mode-focus"
+          : "workspace-application-stage mode-flow"
+      }
       aria-label="Workspace application stage"
+      data-work-mode={workMode}
     >
-      <header className="stage-hero">
-        <p className="arrangement-eyebrow">{layoutsStageEyebrow()}</p>
-        <h2>{layoutsStageTitle(workspace.name)}</h2>
-        <p className="lede">{layoutsStageLede()}</p>
+      <header className="stage-hero stage-hero-with-mode">
+        <div>
+          <p className="arrangement-eyebrow">{layoutsStageEyebrow()}</p>
+          <h2>{layoutsStageTitle(workspace.name)}</h2>
+          <p className="lede">{workModeStageLede(workMode)}</p>
+        </div>
+        <WorkModeSwitch
+          mode={workMode}
+          onChange={onWorkModeChange}
+          density="stage"
+        />
       </header>
 
-      <div className="stage-meta muted">{layoutsStageCanvasNote(zoneCount)}</div>
+      {workMode === "flow" ? (
+        <div className="stage-meta muted">{layoutsStageCanvasNote(zoneCount)}</div>
+      ) : (
+        <div className="stage-meta muted">
+          Focus chrome hides the companion canvas to reduce noise. Switch to Flow
+          to edit zones. Desktop arrangements remain in the rail — OS apply is
+          not part of this milestone.
+        </div>
+      )}
 
       {appsLoading ? (
         <p className="muted">Loading applications…</p>
@@ -74,7 +128,7 @@ export function WorkspaceApplicationStage({
             Add applications
           </button>
         </div>
-      ) : (
+      ) : workMode === "flow" ? (
         <ul className="stage-tile-grid" aria-label="Applications on stage">
           {applications.map((app) => (
             <li key={app.id}>
@@ -95,6 +149,49 @@ export function WorkspaceApplicationStage({
             </li>
           ))}
         </ul>
+      ) : (
+        <div className="focus-stage-layout" aria-label="Focus application stage">
+          {primary ? (
+            <article className="stage-tile stage-tile-primary">
+              <p className="home-current-label">Primary</p>
+              <span className="application-monogram large" aria-hidden="true">
+                {monogramFromName(primary.name)}
+              </span>
+              <span className="stage-tile-name">{primary.name}</span>
+              <span className="product-list-meta muted">
+                {applicationIdentityLine(primary)}
+              </span>
+              <span className="stage-tile-status">
+                Emphasised in Focus — still a registry asset, not an OS move
+              </span>
+            </article>
+          ) : null}
+          {supporting.length > 0 ? (
+            <div className="focus-supporting">
+              <p className="home-current-label">Supporting (available)</p>
+              <ul className="home-app-chip-row">
+                {supporting.map((app) => (
+                  <li key={app.id}>
+                    <button
+                      type="button"
+                      className="home-app-chip"
+                      title="Make primary in Focus"
+                      onClick={() => setPrimaryId(app.id)}
+                    >
+                      <span
+                        className="application-monogram compact"
+                        aria-hidden="true"
+                      >
+                        {monogramFromName(app.name)}
+                      </span>
+                      <span>{app.name}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+        </div>
       )}
 
       {applications.length > 0 ? (
@@ -107,7 +204,9 @@ export function WorkspaceApplicationStage({
             Manage applications
           </button>
           <p className="muted stage-hint">
-            Desktop window save/restore stays in the arrangements rail →
+            {workMode === "flow"
+              ? "Desktop window save/restore stays in the arrangements rail →"
+              : "Supporting apps stay available — Focus does not quit them."}
           </p>
         </div>
       ) : null}

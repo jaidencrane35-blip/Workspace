@@ -16,7 +16,7 @@ export function layoutsStageTitle(workspaceName: string): string {
 }
 
 export function layoutsStageLede(): string {
-  return "Applications belonging to this workspace appear on the stage. Use the arrangements rail to save and restore real desktop window layouts. Flow ↔ Focus density modes are not available yet.";
+  return "Applications belonging to this workspace appear on the stage. Use Flow/Focus for presentation density. Use the arrangements rail to save and restore real desktop window layouts — OS apply on mode switch is not enabled yet.";
 }
 
 export function layoutsStageEmptyAppsCopy(): {

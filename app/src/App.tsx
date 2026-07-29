@@ -1,12 +1,12 @@
 /**
- * Purpose: Product shell root — Workspace-first chrome, view routing, and
- *   shared workspace activation. Milestone A.1 hardens hierarchy and banners.
+ * Purpose: Product shell root — Workspace-first chrome, view routing,
+ *   workspace activation, and Flow/Focus chrome-density preference.
  * Owner: Frontend product shell
- * Inputs: Tauri IPC (settings, workspace, zones, applications)
- * Outputs: Active workspace state, primary/tool navigation, banners
- * Dependencies: Product panels, DesktopArrangementPanel, existing IPC
- * Non-responsibilities: Window control, permissions enforcement, Assistant
- *   reasoning, new intelligence engines
+ * Inputs: Tauri IPC (settings, workspace, zones, applications); local work mode
+ * Outputs: Active workspace state, navigation, banners, work-mode presentation
+ * Dependencies: Product panels, DesktopArrangementPanel, workMode helpers
+ * Non-responsibilities: OS window moves, permissions enforcement, Assistant
+ *   reasoning, new intelligence engines, arrangement geometry apply on mode switch
  */
 
 import { useCallback, useEffect, useState } from "react";
@@ -23,6 +23,7 @@ import {
 } from "./components/WorkspaceHome";
 import { WorkspaceIntelligencePanel } from "./components/WorkspaceIntelligencePanel";
 import { WorkspaceSwitcher } from "./components/WorkspaceSwitcher";
+import { WorkModeSwitch } from "./components/WorkModeSwitch";
 import {
   invokeIpc,
   IpcRuntimeUnavailableError,
@@ -32,6 +33,11 @@ import {
   classifyBanner,
   ZONE_CONTEXT_LIMIT,
 } from "./lib/productShellUi";
+import {
+  loadStoredWorkMode,
+  storeWorkMode,
+  type WorkMode,
+} from "./lib/workMode";
 import type {
   ApplicationReference,
   Workspace,
@@ -92,6 +98,17 @@ export default function App() {
   const [message, setMessage] = useState<string | null>(null);
   const [bootstrapped, setBootstrapped] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [workMode, setWorkMode] = useState<WorkMode>(() => loadStoredWorkMode());
+
+  const onWorkModeChange = useCallback((mode: WorkMode) => {
+    setWorkMode(mode);
+    storeWorkMode(mode);
+    setMessage(
+      mode === "flow"
+        ? "Flow presentation — denser workspace overview"
+        : "Focus presentation — quieter chrome (OS windows unchanged)",
+    );
+  }, []);
 
   const onWorkspaceChange = useCallback((next: Workspace | null) => {
     setWorkspace(next);
@@ -271,7 +288,7 @@ export default function App() {
   );
 
   return (
-    <main className="app-shell">
+    <main className="app-shell" data-work-mode={workMode}>
       <header className="app-chrome">
         <div className="chrome-brand">
           <h1>Workspace</h1>
@@ -288,6 +305,7 @@ export default function App() {
             {primaryTab("applications", "Applications")}
             {primaryTab("layouts", "Layouts")}
           </nav>
+          <WorkModeSwitch mode={workMode} onChange={onWorkModeChange} />
           <nav
             className="tabs tool-tabs"
             aria-label="Supporting tools"
@@ -332,6 +350,7 @@ export default function App() {
             appsLoading={homeAppsLoading}
             bootstrapped={bootstrapped}
             busy={busy}
+            workMode={workMode}
             onNavigate={setView}
             onCreateWorkspace={createWorkspaceFromHome}
           />
@@ -381,18 +400,37 @@ export default function App() {
                   applications={homeApps}
                   appsLoading={homeAppsLoading}
                   zoneCount={zones.length}
+                  workMode={workMode}
+                  onWorkModeChange={onWorkModeChange}
                   onManageApplications={() => setView("applications")}
                 />
-                <CanvasShell
-                  workspaceId={workspace.id}
-                  workspaceName={workspace.name}
-                  zones={zones}
-                  busy={busy}
-                  onError={(msg) => onError(msg)}
-                  onSaved={onLayoutSaved}
-                  onCreateWorkspace={createWorkspaceFromHome}
-                  onAddZone={addZoneFromCanvas}
-                />
+                {workMode === "flow" ? (
+                  <CanvasShell
+                    workspaceId={workspace.id}
+                    workspaceName={workspace.name}
+                    zones={zones}
+                    busy={busy}
+                    onError={(msg) => onError(msg)}
+                    onSaved={onLayoutSaved}
+                    onCreateWorkspace={createWorkspaceFromHome}
+                    onAddZone={addZoneFromCanvas}
+                  />
+                ) : (
+                  <div className="focus-canvas-suppressed" aria-live="polite">
+                    <p className="muted">
+                      Companion canvas is hidden in Focus. Switch to Flow to
+                      edit zones. Application registry and arrangements are
+                      unchanged.
+                    </p>
+                    <button
+                      type="button"
+                      className="ghost"
+                      onClick={() => onWorkModeChange("flow")}
+                    >
+                      Return to Flow
+                    </button>
+                  </div>
+                )}
               </>
             ) : (
               <div className="canvas-shell canvas-bootstrap">

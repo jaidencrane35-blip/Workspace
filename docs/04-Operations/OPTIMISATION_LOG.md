@@ -41,6 +41,27 @@ Human concept → Optimised representation → Decoder / inspector → Human und
 
 ## Cycles
 
+### Cycle: milestone-b-flow-focus-chrome
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-29 |
+| **Cycle number** | Milestone B |
+| **Goal** | User-facing Flow ↔ Focus chrome density without OS window apply |
+| **Problem** | Reference density modes missing; geometry apply not approved yet |
+| **Analysis** | Approved scope: presentation only; reuse Layouts stage + registry |
+| **Changes** | `workMode` module, `WorkModeSwitch`, stage Flow/Focus layouts, Focus hides canvas |
+| **Files affected** | See FLOW-FOCUS-IMPLEMENTATION-REPORT.md |
+| **Validation** | typecheck / build / test / architecture / ipc / ui-boundary |
+| **Maintainability score** | 8.5/10 |
+| **Reference alignment score** | 7.5/10 |
+| **Human review required** | Yes — visual |
+| **Remaining risks** | Users may expect OS windows to move; mitigated by explicit copy |
+| **Next recommended cycle** | After Accept: OS arrangement apply on mode switch **or** persistent Assistant rail (C) |
+| **Inspector / decoder path** | Layouts → Flow/Focus control; `workMode.ts` |
+
+---
+
 ### Cycle: cycle-2-assistant-copy-clarity
 
 | Field | Value |

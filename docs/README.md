@@ -105,6 +105,8 @@ How the team builds, reviews, and maintains the codebase.
 | [Milestone A.1 UX Hardening](03-Engineering/MILESTONE-A1-UX-HARDENING-REPORT.md) | Identity / hierarchy refinement |
 | [Milestone A.1 Visual Review](03-Engineering/MILESTONE-A1-VISUAL-REVIEW-CHECKLIST.md) | Human review checklist for A.1 |
 | [Flow / Focus Alignment Audit](03-Engineering/FLOW-FOCUS-ALIGNMENT-AUDIT.md) | Scores and approval gate before Milestone B |
+| [Flow / Focus Implementation Report](03-Engineering/FLOW-FOCUS-IMPLEMENTATION-REPORT.md) | Milestone B chrome-density implementation |
+| [Flow / Focus Visual Review](03-Engineering/FLOW-FOCUS-VISUAL-REVIEW-CHECKLIST.md) | Human review checklist for Flow/Focus chrome |
 | [DAF-1e Visual Review](03-Engineering/DAF-1E-VISUAL-REVIEW-CHECKLIST.md) | Human visual checkpoint |
 | [Coding Standards](03-Engineering/CODING-STANDARDS.md) | Naming, formatting, and code conventions |
 | [Repository Standards](03-Engineering/REPOSITORY-STANDARDS.md) | Git workflow, branches, commits, PRs |

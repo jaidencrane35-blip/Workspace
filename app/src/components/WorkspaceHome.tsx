@@ -1,15 +1,20 @@
 /**
  * Purpose: Workspace Home — first viewport: identity, belonging apps, actions,
- *   and honest future-capability notes.
- * Owner: Frontend product shell (Milestone A.1)
- * Inputs: Active workspace, zone/app summaries, navigation callbacks
+ *   work-mode awareness, and honest future-capability notes.
+ * Owner: Frontend product shell (Milestone B chrome density)
+ * Inputs: Active workspace, zone/app summaries, work mode, navigation callbacks
  * Outputs: Navigation intents to Workspaces / Applications / Layouts
- * Dependencies: None beyond props (no IPC in this component)
- * Non-responsibilities: IPC mutations, Assistant, window control, fake features
+ * Dependencies: workMode labels (presentation only)
+ * Non-responsibilities: IPC mutations, Assistant, OS window control, fake features
  */
 
 import type { ApplicationReference, Workspace } from "../types/domain";
 import { monogramFromName } from "../lib/productShellUi";
+import {
+  workModeDescription,
+  workModeLabel,
+  type WorkMode,
+} from "../lib/workMode";
 
 export type ProductPrimaryView =
   | "home"
@@ -24,6 +29,7 @@ interface WorkspaceHomeProps {
   appsLoading: boolean;
   bootstrapped: boolean;
   busy: boolean;
+  workMode: WorkMode;
   onNavigate: (view: ProductPrimaryView) => void;
   onCreateWorkspace: () => void;
 }
@@ -35,6 +41,7 @@ export function WorkspaceHome({
   appsLoading,
   bootstrapped,
   busy,
+  workMode,
   onNavigate,
   onCreateWorkspace,
 }: WorkspaceHomeProps) {
@@ -77,7 +84,10 @@ export function WorkspaceHome({
                   : applications.length === 1
                     ? "1 registered application"
                     : `${applications.length} registered applications`}
+                {" · "}
+                {workModeLabel(workMode)} presentation
               </p>
+              <p className="muted">{workModeDescription(workMode)}</p>
             </div>
           </div>
         </div>
@@ -113,7 +123,10 @@ export function WorkspaceHome({
                     className="home-app-chip"
                     onClick={() => onNavigate("applications")}
                   >
-                    <span className="application-monogram compact" aria-hidden="true">
+                    <span
+                      className="application-monogram compact"
+                      aria-hidden="true"
+                    >
                       {monogramFromName(app.name)}
                     </span>
                     <span>{app.name}</span>
@@ -157,7 +170,9 @@ export function WorkspaceHome({
             onClick={() => onNavigate("layouts")}
           >
             <span className="home-action-title">Layouts</span>
-            <span className="muted">Canvas zones and desktop arrangements</span>
+            <span className="muted">
+              Stage, Flow/Focus presentation, arrangements
+            </span>
           </button>
         </nav>
       </section>
@@ -165,13 +180,13 @@ export function WorkspaceHome({
       <section className="home-future" aria-label="Coming later">
         <h3>Not available yet</h3>
         <ul className="home-future-list muted">
-          <li>Flow ↔ Focus work modes (density switching)</li>
+          <li>OS window move/resize when switching Flow ↔ Focus</li>
           <li>Automatic OS app discovery</li>
-          <li>Assistant as a persistent side companion</li>
+          <li>Assistant as a persistent side companion on every tab</li>
         </ul>
         <p className="muted">
-          These are planned product capabilities — they are not hidden behind
-          this screen.
+          Flow/Focus chrome density is available now. Geometry apply and true
+          sidecar Assistant remain planned.
         </p>
       </section>
     </section>
