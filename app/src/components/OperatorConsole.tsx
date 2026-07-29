@@ -3888,7 +3888,7 @@ export function OperatorConsole({
         <h2>Seed zones</h2>
         <p className="muted">
           ResourceGrowth suggestions require at least 3 resource creations.
-          Zones appear on the Canvas tab.
+          Zones appear on the Workspace tab.
         </p>
         <div className="row">
           <input

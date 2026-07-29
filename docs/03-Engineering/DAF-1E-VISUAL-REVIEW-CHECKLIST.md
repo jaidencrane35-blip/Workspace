@@ -65,5 +65,10 @@ Make existing capture/restore capability usable without expanding ownership into
 
 ### Agent pre-check notes
 
-- Screenshots captured of Workspace stage + arrangements rail (empty / runtime-hint states).
+- Screenshots captured of Workspace stage + arrangements rail (empty / runtime-hint states):
+  - `/opt/cursor/artifacts/screenshots/daf-1e-workspace-stage-arrangements-rail.png`
+  - `/opt/cursor/artifacts/screenshots/daf-1e-arrangements-panel-detail.png`
+  - `/opt/cursor/artifacts/screenshots/daf-1e-assistant-tab-separation.png`
+- Rail copy and placement match charter; Assistant remains a separate tab.
+- Browser Vite shows expected runtime-unavailable banner; no fabricated success.
 - No automatic review videos generated.
