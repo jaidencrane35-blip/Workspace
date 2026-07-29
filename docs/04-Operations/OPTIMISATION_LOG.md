@@ -41,6 +41,41 @@ Human concept → Optimised representation → Decoder / inspector → Human und
 
 ## Cycles
 
+### Cycle: opt-c10-plateau-detection-2
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-29 |
+| **Problem** | Second consecutive review of remaining candidates |
+| **Reason** | **PLATEAU DETECTION 2** — no new meaningful safe improvement without human product-direction choice (e.g. bottom nav vs top chrome) or blocked scope (OS geometry apply on mode switch) |
+| **Files changed** | this log only |
+| **Validation** | prior cycle green; no code change |
+| **Maintainability score** | 9.0/10 |
+| **Reference alignment** | 9.0/10 |
+| **Commercial readiness** | 6.4/10 |
+| **Human readability** | 8.9/10 |
+| **Why this is safe** | Documentation-only stop record |
+| **Stop** | Two consecutive plateau detections → end controlled optimisation session |
+
+---
+
+### Cycle: opt-c9-plateau-detection-1
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-29 |
+| **Problem** | After C1–C8, remaining candidates are cosmetic or require direction |
+| **Reason** | **PLATEAU DETECTION 1** — scored candidates: (a) bottom nav IA swap — equally valid vs current top chrome, needs human; (b) OS geometry on Flow/Focus — not approved; (c) further CSS micro-polish — not meaningful |
+| **Files changed** | this log only |
+| **Validation** | reaffirm: typecheck/test/arch/ipc/ui/build from tip `79ce102` |
+| **Maintainability score** | 9.0/10 |
+| **Reference alignment** | 9.0/10 |
+| **Commercial readiness** | 6.4/10 |
+| **Human readability** | 8.9/10 |
+| **Why this is safe** | Analysis only; no speculative edits |
+
+---
+
 ### Cycle: opt-c8-applications-rail-width
 
 | Field | Value |
