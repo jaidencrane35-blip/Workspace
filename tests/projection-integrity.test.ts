@@ -173,6 +173,11 @@ import {
   isAssistantExplanationHistoryNonActionable,
   isAssistantExplanationProjectionNonCommandable,
 } from "../app/src/components/assistantExplanationProjection";
+import {
+  assistantInteractionHistoryCountIsAuthoritative,
+  isAssistantInteractionHistoryNonActionable,
+  isAssistantInteractionProjectionNonCommandable,
+} from "../app/src/components/assistantInteractionProjection";
 import type {
   DecisionArtifactHistoryEntry,
   DecisionEngineSummary,
@@ -261,6 +266,8 @@ import type {
   WorkspaceAssistantContextProjection,
   WorkspaceAssistantExplanationProjection,
   WorkspaceAssistantExplanationSummary,
+  WorkspaceAssistantInteractionProjection,
+  WorkspaceAssistantInteractionSummary,
   WorkspaceAssistantRetrievalProjection,
   WorkspaceEvidenceTraceSummary,
   WorkspaceEvidenceCoverageSummary,
@@ -273,6 +280,7 @@ import type {
   WorkspaceAssistantContextSummary,
   WorkspaceAssistantRetrievalSummary,
   AssistantExplanationHistoryEntry,
+  AssistantInteractionHistoryEntry,
   AssistantSurfaceHistoryEntry,
   AssistantContextHistoryEntry,
   AssistantRetrievalHistoryEntry,
@@ -2758,6 +2766,52 @@ describe("projection integrity — assistant explanation (Programme IV Batch 14)
       actionable: false,
     };
     expect(assistantExplanationHistoryCountIsAuthoritative(summary)).toBe(true);
+    expect(summary.history_count).toBeGreaterThanOrEqual(summary.history.length);
+  });
+});
+
+describe("projection integrity — assistant interaction (Programme IV Batch 15)", () => {
+  it("keeps interaction history non-actionable and history_count authoritative", () => {
+    const historyEntry = (
+      overrides: Partial<AssistantInteractionHistoryEntry> = {}
+    ): AssistantInteractionHistoryEntry => ({
+      interaction_id: "assistant_interaction:1",
+      status: "superseded",
+      created_at: "t0",
+      superseded_at: "t1",
+      step_count: 1,
+      gap_count: 0,
+      terminal: true,
+      actionable: false,
+      authority_effect: "none",
+      ...overrides,
+    });
+    const projection: WorkspaceAssistantInteractionProjection = {
+      workspace_id: "ws",
+      projected_at: "t2",
+      current: null,
+      history: [historyEntry()],
+      history_count: 2,
+      authority_effect: "none",
+    };
+    expect(isAssistantInteractionProjectionNonCommandable(projection)).toBe(true);
+    expect(isAssistantInteractionHistoryNonActionable(historyEntry())).toBe(true);
+    expect(
+      isAssistantInteractionHistoryNonActionable(historyEntry({ actionable: true }))
+    ).toBe(false);
+
+    const summary: WorkspaceAssistantInteractionSummary = {
+      workspace_id: "ws",
+      has_current: false,
+      step_count: 0,
+      gap_count: 0,
+      narrative_summary: null,
+      history: [historyEntry()],
+      history_count: 2,
+      authority_effect: "none",
+      actionable: false,
+    };
+    expect(assistantInteractionHistoryCountIsAuthoritative(summary)).toBe(true);
     expect(summary.history_count).toBeGreaterThanOrEqual(summary.history.length);
   });
 });

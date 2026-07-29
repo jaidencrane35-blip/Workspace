@@ -217,7 +217,7 @@ Assistant explanation intelligence **must never**:
 
 ## Next
 
-Batch 15 — [Assistant Interaction Intelligence Architecture](./ASSISTANT-INTERACTION-INTELLIGENCE-ARCHITECTURE.md) (**charter only** — do not implement until accepted).
+Batch 15 — [Assistant Interaction Intelligence Architecture](./ASSISTANT-INTERACTION-INTELLIGENCE-ARCHITECTURE.md) (**implemented** — coordinates Batches 11–14 flow packaging without acting for the user).
 
 ---
 

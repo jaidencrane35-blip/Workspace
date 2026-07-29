@@ -6367,6 +6367,118 @@ export interface WorkspaceAssistantExplanationExplanation {
   actionable: boolean;
 }
 
+export interface AssistantInteractionRequest {
+  request_id: string;
+  human_ask: string;
+  scope: AssistantSurfaceScope;
+  pathway_notes: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface AssistantInteractionStep {
+  step_id: string;
+  kind: string;
+  sequence: number;
+  package_ref: string | null;
+  origin_domain: string;
+  excerpt: string;
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface AssistantInteractionRoute {
+  route_id: string;
+  routed_packages: string[];
+  missing_packages: string[];
+  notes: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface AssistantInteractionGap {
+  gap_id: string;
+  gap_kind: string;
+  description: string;
+  affected_packages: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface AssistantInteractionDiagnostics {
+  consulted_packages: string[];
+  unavailable_packages: string[];
+  notes: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface WorkspaceAssistantInteractionSnapshot {
+  interaction_id: string;
+  workspace_id: string;
+  generated_at: string;
+  status: string;
+  superseded_at: string | null;
+  request: AssistantInteractionRequest;
+  steps: AssistantInteractionStep[];
+  route: AssistantInteractionRoute;
+  gaps: AssistantInteractionGap[];
+  diagnostics: AssistantInteractionDiagnostics;
+  narrative_summary: string;
+  narrative: string;
+  limitations: string[];
+  authority_effect: string;
+  actionable: boolean;
+  terminal: boolean;
+}
+
+export interface AssistantInteractionHistoryEntry {
+  interaction_id: string;
+  status: string;
+  created_at: string;
+  superseded_at: string | null;
+  step_count: number;
+  gap_count: number;
+  terminal: boolean;
+  actionable: boolean;
+  authority_effect: string;
+}
+
+export interface WorkspaceAssistantInteractionProjection {
+  workspace_id: string;
+  current: WorkspaceAssistantInteractionSnapshot | null;
+  history: AssistantInteractionHistoryEntry[];
+  history_count: number;
+  projected_at: string;
+  authority_effect: string;
+}
+
+export interface WorkspaceAssistantInteractionSummary {
+  workspace_id: string;
+  has_current: boolean;
+  step_count: number;
+  gap_count: number;
+  narrative_summary: string | null;
+  history: AssistantInteractionHistoryEntry[];
+  history_count: number;
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface WorkspaceAssistantInteractionExplanation {
+  explanation_id: string;
+  workspace_id: string;
+  narrative_summary: string | null;
+  step_summaries: string[];
+  route_summaries: string[];
+  gap_summaries: string[];
+  uncertainty: string[];
+  narrative: string;
+  limitations: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
 export type WindowIdentityConfidence = "high" | "medium" | "low" | "ephemeral";
 
 export interface WorkspaceObservationPass {

@@ -335,16 +335,29 @@ Batch 14 packages explanation clarity over recorded Programme III Explanation La
 
 ---
 
-## L. Batch 15 charter opened (not implemented)
+## L. Batch 15 implemented — Assistant Interaction Intelligence
 
 **Date:** 2026-07-29  
 **Document:** [Assistant Interaction Intelligence Architecture](../05-AI/ASSISTANT-INTERACTION-INTELLIGENCE-ARCHITECTURE.md)  
-**Status:** Charter only — implementation blocked until architecture acceptance.
+**Status:** Active — implemented
 
-Batch 15 will define how the assistant coordinates user-visible conversation flow across Batches 11–14. It must not become memory, identity, Intent authority, decision/planning/recommendation/execution authority, or an autonomous agent loop. Prefer composing Batches 11–14 and Batch 10 scaffolding first.
+Batch 15 coordinates user-visible conversation flow across Batches 11–14 without becoming memory, identity, Intent authority, decision/planning/recommendation/execution authority, or an autonomous agent loop.
+
+### Extraction decisions
+
+| Decision | Rationale |
+|---|---|
+| New clear folder `workspace_assistant_interaction/` | Ownership clarification beside surface/context/retrieval/explanation — **not** a cognitive engine / agent / memory system |
+| Reuse `AssistantSurfaceScope` + `interaction_default()` | Pathway selection flags already owned by Batch 11; additive default only |
+| Compose via `load_snapshot` only | Same Batches 11–14 pattern; never foreign `::generate`; prefer four assistant packages over re-loading evidence engines |
+| Dual-channel migration `077` with interaction-specific columns | `request_json` / `ask_json` / `flow_json` / `steps_json` / `routed_packages_json` / `diagnostics_json` / `scope_json` — not a turn/context-table clone as “assistant memory” |
+| Thin React `assistantInteractionProjection.ts` | Wraps Batch 10 `evidenceProjectionContract` — no parallel contract family |
+| One `EVIDENCE_ENGINE_GUARD_SPECS` entry | Baselines **86→87**, DTO **37→38** |
+
+| New mutation / DTO inventory | **Added intentionally** — baseline 87 / DTO 38 for `PackageWorkspaceAssistantInteraction` |
 
 ---
 
 ## Explicit confirmation
 
-This audit concludes that Workspace Evidence engines through Batch 9 observe recorded evidence characteristics only within their stated ownership. The two kernel failures are pre-existing Activity Graph / Intelligence issues, not Programme IV architectural drift. Batch 10 improves human maintainability by extracting shared scaffolding without adding a new evidence authority or clone engine. Batch 11 implements a conversational presentation layer over recorded evidence without becoming authority. Batch 12 implements context packaging and continuity presentation without becoming memory, inventing continuity, or cloning the assistant surface. Batch 13 implements retrieval packaging and evidence presentation without ranking truth, recommending action, or creating a second search substrate. Batch 14 implements explanation packaging clarity without concluding truth, inventing causality, or replacing the Programme III Explanation Layer. Batch 15 is opened as a charter only.
+This audit concludes that Workspace Evidence engines through Batch 9 observe recorded evidence characteristics only within their stated ownership. The two kernel failures are pre-existing Activity Graph / Intelligence issues, not Programme IV architectural drift. Batch 10 improves human maintainability by extracting shared scaffolding without adding a new evidence authority or clone engine. Batch 11 implements a conversational presentation layer over recorded evidence without becoming authority. Batch 12 implements context packaging and continuity presentation without becoming memory, inventing continuity, or cloning the assistant surface. Batch 13 implements retrieval packaging and evidence presentation without ranking truth, recommending action, or creating a second search substrate. Batch 14 implements explanation packaging clarity without concluding truth, inventing causality, or replacing the Programme III Explanation Layer. Batch 15 implements interaction flow packaging without acting for the user, inventing memory/Intent, or creating an agent loop.

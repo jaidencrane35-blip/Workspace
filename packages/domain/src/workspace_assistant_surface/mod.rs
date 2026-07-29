@@ -171,6 +171,29 @@ impl AssistantSurfaceScope {
             include_state: false,
         }
     }
+
+    /// Interaction-focused default for Batch 15 — enables surface-relevant
+    /// pathways used when coordinating Batches 11–14 (explanation, semantic
+    /// query, evidence trace/navigation/consistency, contextual, state).
+    /// Additive like `retrieval_default()` / `explanation_default()`.
+    pub fn interaction_default() -> Self {
+        Self {
+            include_semantic_query: true,
+            include_evidence_navigation: true,
+            include_evidence_trace: true,
+            include_evidence_coverage: false,
+            include_evidence_consistency: true,
+            include_evidence_dependency: false,
+            include_evidence_freshness: false,
+            include_evidence_completeness: false,
+            include_evidence_reliability: false,
+            include_explanation: true,
+            include_contextual: true,
+            include_knowledge_integration: false,
+            include_intelligence_hub: false,
+            include_state: true,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

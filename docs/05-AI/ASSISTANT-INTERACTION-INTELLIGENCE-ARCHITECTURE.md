@@ -1,6 +1,6 @@
 # Assistant Interaction Intelligence Architecture (Programme IV — Batch 15)
 
-**Status:** Charter only — not accepted for implementation  
+**Status:** Active — implemented  
 **Audience:** Architecture, Kernel, Frontend, Product, Governance  
 **Depends on:**  
 - [Assistant Explanation Intelligence Architecture](./ASSISTANT-EXPLANATION-INTELLIGENCE-ARCHITECTURE.md) (Batch 14 — accepted / implemented)  
@@ -21,13 +21,11 @@ Surface → Context → Retrieval → Explanation
 
 each remaining a presentation/composition layer over existing Programme II–IV intelligence.
 
-Batch 15 asks the next architectural question:
+Batch 15 answers:
 
 > **"How does the assistant manage user interaction flow while remaining a presentation and coordination surface only?"**
 
-This charter defines the **Assistant Interaction Intelligence Contract** — conversation-flow packaging and response-composition routing across Batches 11–14 **without** becoming memory, identity, Intent, Decision, planning, recommendation, execution, or autonomous-agent authority.
-
-**Implementation is blocked until this charter is reviewed and accepted.**
+This document defines the **Assistant Interaction Intelligence Contract** — conversation-flow packaging and response-composition routing across Batches 11–14 **without** becoming memory, identity, Intent, Decision, planning, recommendation, execution, or autonomous-agent authority.
 
 ---
 
@@ -42,7 +40,7 @@ Assistant interaction intelligence:
 - **exposes** interaction diagnostics and provenance of what was consulted
 - **never** becomes memory, identity, Intent authority, Decision Engine, planner, recommender, executor, or autonomous agent loop
 
-Capability growth must not equal code duplication (Batch 10 direction lock; Batches 11–14 Grade A acceptance). Batch 15 must evaluate reuse of:
+Capability growth must not equal code duplication (Batch 10 direction lock; Batches 11–14 Grade A acceptance). Batch 15 reuses:
 
 1. Batch 11 Assistant Surface (turn/utterance presentation)
 2. Batch 12 Assistant Context (scope / continuity packaging)
@@ -51,17 +49,15 @@ Capability growth must not equal code duplication (Batch 10 direction lock; Batc
 5. Batch 10 observational scaffolding (`workspace_evidence_contract`, `evidenceProjectionContract`)
 6. Existing workspace intelligence contracts via `load_snapshot` only
 
-before introducing any new module, migration, or guard family.
-
 ---
 
 ## Status of this document
 
 | State | Meaning |
 |---|---|
-| **Charter only** | Architecture proposed; no domain/kernel/database/React implementation in this batch until acceptance |
+| **Active — implemented** | Domain/kernel/database/React implementation accepted |
 | **Depends on Batches 11–14** | Coordinates existing assistant packages — does not replace them |
-| **No baseline change yet** | Mutation baseline remains **86**; history/projection DTO inventory remains **37** until an accepted implementation design exists |
+| **Governed baseline** | Mutation baseline **87**; history/projection DTO inventory **38** |
 
 ---
 
@@ -83,10 +79,10 @@ Existing Workspace intelligence contracts
 Existing CommandPipeline + PermissionGateway   ← only path for actions
 ```
 
-| Concern | Prior owner | Batch 15 (this charter) |
+| Concern | Prior owner | Batch 15 |
 |---|---|---|
 | Turn / utterance composition | Batch 11 Surface | Routes/presents — does not redefine composition ownership |
-| Context packaging / continuity | Batch 12 | Inputs / coordinates — does not redefine context ownership |
+| Context packaging / continuity | Batch 12 | Inputs / directories — does not redefine context ownership |
 | Retrieval packaging | Batch 13 | Routes presentation — does not redefine retrieval |
 | Explanation packaging | Batch 14 | Routes presentation — does not redefine explanation |
 | Memory / identity / Intent | Existing owners | Forbidden for assistant interaction |
@@ -99,9 +95,9 @@ Batch 15 must **not** fork a cognitive engine, hidden memory, or autonomous agen
 
 ## Ownership
 
-### Proposed owner (post-acceptance)
+### Owner
 
-`WorkspaceAssistantInteractionService` *(name provisional — prefer composition beside/near Batches 11–14 if a separate full stack would clone rather than clarify)*
+`WorkspaceAssistantInteractionService` — clear folder `packages/domain/src/workspace_assistant_interaction/` for ownership clarification beside Batches 11–14, **not** a cognitive engine / agent / memory system.
 
 ### May own
 
@@ -213,11 +209,31 @@ Assistant interaction intelligence **must never**:
 
 ---
 
+## Implementation
+
+| Layer | Location |
+|---|---|
+| Domain | `packages/domain/src/workspace_assistant_interaction/` |
+| Kernel service | `packages/kernel/src/services/workspace_assistant_interaction.rs` |
+| Commands | `PackageWorkspaceAssistantInteraction`, `GetWorkspaceAssistantInteraction`, `GetWorkspaceAssistantInteractionSummary`, `ExplainAssistantInteraction` |
+| Migration | `packages/database/migrations/077_workspace_assistant_interaction.sql` |
+| Repository | `packages/database/src/repositories/workspace_assistant_interaction.rs` |
+| React | `app/src/components/assistantInteractionProjection.ts` |
+
+### Maintainability decisions
+
+1. **Ownership clarification folder** — `workspace_assistant_interaction/` clarifies ownership beside surface/context/retrieval/explanation; it is not a cognitive engine, agent, or memory system.
+2. **Reuse** — `AssistantSurfaceScope::interaction_default()`, `workspace_evidence_contract`, thin React wrappers; one `EVIDENCE_ENGINE_GUARD_SPECS` entry.
+3. **Compose via `load_snapshot` only** — Batches 11–14 assistant packages (Surface / Context / Retrieval / Explanation).
+4. **Dual-channel migration `077`** with interaction-specific columns — not a clone of turn/context tables as “assistant memory”.
+
+---
+
 ## Memory and state boundary
 
 | Layer | Batch 15 role |
 |---|---|
-| Temporary conversation / interaction package | May package for presentation; dual-channel evidence only if accepted later |
+| Temporary conversation / interaction package | Packages for presentation; dual-channel evidence only |
 | Batch 12 context | Input — not redefined |
 | Batches 11/13/14 packages | Routed for presentation — not rewritten as agency |
 | Durable memory / identity / Intent / Decision | Never written; never inferred as commitments |
@@ -249,15 +265,15 @@ UI must not imply the assistant will act, commit, or remember beyond recorded pa
 
 ## Governance
 
-### Permissions (proposed — post-acceptance)
+### Permissions
 
 - Interaction package read / compose inspection: `work_context.read` (or existing assistant read paths)
-- Any durable dual-channel package mutation (if accepted later): existing write capabilities — **not** `assistant.interaction.superuser`
+- Durable dual-channel package mutation: `work_context.write` — **not** `assistant.interaction.superuser`
 - No capability grants issued by assistant interaction
 
 ### Audit expectations
 
-- Observational events for interaction packaging/routing (e.g. `workspace.assistant.interaction.packaged`) with workspace id, routed package refs, `authority_effect: none`
+- Observational events for interaction packaging/routing (`workspace.assistant.interaction.packaged`) with workspace id, routed package refs, `authority_effect: none`
 - Never audit interaction packages as executions, approvals, commitments, or memory writes
 - Append-only evidence only
 
@@ -266,28 +282,6 @@ UI must not imply the assistant will act, commit, or remember beyond recorded pa
 - Every routed contribution must cite a Batch 11–14 package id or an explicit gap
 - Missing capability packages produce diagnostics — never silent omission
 - Flow order is packaging metadata — not a plan of action
-
----
-
-## Maintainability requirements (before implementation)
-
-Implementation (when unblocked) must document in the maintainability audit:
-
-1. **Reusable contracts first**
-   - Coordinate Batches 11–14 via `load_snapshot` / existing package types
-   - Reuse `workspace_evidence_contract` and thin React wrappers
-   - Prefer extending assistant modules when a separate full stack would clone
-2. **Avoid subsystem clone**
-   - No cognitive engine / hidden memory / agent loop / decision layer
-   - One governance guard entry via `EVIDENCE_ENGINE_GUARD_SPECS` if a new service file appears
-   - No migration that duplicates turn/context tables as “assistant memory”
-3. **Folder ownership**
-   - Clear naming (`assistant_interaction` vs surface / context / retrieval / explanation)
-   - Docs linked from Programme IV indexes
-   - Minimal abstractions; composition over expansion
-4. **LOC honesty**
-   - Justify any new files against “capability ≠ duplication”
-   - Prefer thin routing/packaging over re-implementing Batches 11–14
 
 ---
 
@@ -303,28 +297,25 @@ Implementation (when unblocked) must document in the maintainability audit:
 
 ---
 
-## Out of scope for Batch 15 charter
+## Out of scope for Batch 15
 
 - Model provider / prompt engineering details
 - Product UX layouts beyond information vs action
-- Implementing interaction services, migrations, or commands
 - Resolving case5 / case11 (non–Programme IV debt)
 - Replacing Batches 11–14
 - Building an autonomous agent framework
 
 ---
 
-## Acceptance criteria for this charter
+## Acceptance criteria
 
-Before implementation may begin, reviewers must confirm:
-
-- [ ] Ownership / non-ownership tables are unambiguous
-- [ ] Reuse of Batches 11–14 (+ Batch 10 scaffold) is explicit
-- [ ] Flow vs agency rules forbid silent goals, hidden state, commitments, and execution
-- [ ] Interaction diagnostics / provenance requirements are enforceable
-- [ ] Maintainability reuse path vs Batches 10–14 is explicit
-- [ ] No mutation baseline / DTO inventory change is implied by charter acceptance alone
-- [ ] Status remains **Charter only** until a separate implementation ACCEPT
+- [x] Ownership / non-ownership tables are unambiguous
+- [x] Reuse of Batches 11–14 (+ Batch 10 scaffold) is explicit
+- [x] Flow vs agency rules forbid silent goals, hidden state, commitments, and execution
+- [x] Interaction diagnostics / provenance requirements are enforceable
+- [x] Maintainability reuse path vs Batches 10–14 is explicit
+- [x] Mutation baseline **87** / DTO inventory **38** for `PackageWorkspaceAssistantInteraction`
+- [x] Status is **Active — implemented**
 
 ---
 
@@ -347,6 +338,6 @@ Before implementation may begin, reviewers must confirm:
 
 > Assistant Interaction Intelligence coordinates user-visible conversation flow across Batches 11–14.
 > It never owns memory or identity, never infers Intent, never decides or recommends,
-> never plans or executes, never makes commitments, never runs autonomous agent loops,
+> never plans or executes, never makes commitments, never runs self-directed agent loops,
 > never bypasses PermissionGateway, and never silently mutates workspace state.
-> Implementation remains blocked until this charter is accepted.
+> Status: **Active — implemented**.

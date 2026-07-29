@@ -4,7 +4,8 @@ use workspace_database::DatabaseError;
 use workspace_domain::{
     AiAssistantError, AiEvaluationError, AiMemoryError, AiModelError, AiOrchestrationError,
     AiPersonalizationError, AiPlanningError, AiRequestError, AssistantContextError,
-    AssistantExplanationError, AssistantRetrievalError, AssistantSurfaceError,
+    AssistantExplanationError, AssistantInteractionError, AssistantRetrievalError,
+    AssistantSurfaceError,
     AutomationContractError, AutomationTriggerError, CognitiveModelError,
     ContextualUnderstandingError, CrossWorkspaceIntelligenceError, DecisionEngineError,
     DecisionQueueError, DecisionSupportError, DomainError, EvidenceCompletenessError,
@@ -335,6 +336,9 @@ pub enum KernelError {
 
     #[error("Assistant explanation validation failed: {message}")]
     AssistantExplanationValidation { message: String },
+
+    #[error("Assistant interaction validation failed: {message}")]
+    AssistantInteractionValidation { message: String },
 
     #[error("Workspace intelligence validation failed: {message}")]
     WorkspaceIntelligenceValidation { message: String },
@@ -913,6 +917,17 @@ impl From<AssistantExplanationError> for KernelError {
         match error {
             AssistantExplanationError::Domain(domain) => KernelError::from(domain),
             other => KernelError::AssistantExplanationValidation {
+                message: other.to_string(),
+            },
+        }
+    }
+}
+
+impl From<AssistantInteractionError> for KernelError {
+    fn from(error: AssistantInteractionError) -> Self {
+        match error {
+            AssistantInteractionError::Domain(domain) => KernelError::from(domain),
+            other => KernelError::AssistantInteractionValidation {
                 message: other.to_string(),
             },
         }
@@ -1695,6 +1710,10 @@ impl KernelError {
             },
             KernelError::AssistantExplanationValidation { message } => PublicError {
                 code: "assistant_explanation_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::AssistantInteractionValidation { message } => PublicError {
+                code: "assistant_interaction_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::WorkspaceIntelligenceValidation { message } => PublicError {

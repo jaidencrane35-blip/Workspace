@@ -765,24 +765,23 @@ Explanation packaging and citation clarity without conclusion, causal, or recomm
 - Never owns conclusions, truth determination, causal reasoning, recommendations, decisions, policy interpretation, or autonomous analysis
 - Composes Programme III Explanation Layer, Evidence Trace/Navigation, and Batches 11–13 — no second reasoning engine or explanation SoT
 - Upstream reads via `load_snapshot` / existing queries only — never foreign `::generate` for refresh
-- Mutation inventory includes `PackageWorkspaceAssistantExplanation` (baseline **86**)
-- History / projection DTO inventory length **37**
+- Mutation inventory includes `PackageWorkspaceAssistantExplanation` (baseline **86** at Batch 14; superseded by Batch 15 baseline **87**)
+- History / projection DTO inventory length **37** at Batch 14 (Batch 15 → **38**)
 
 See [Assistant Explanation Intelligence Architecture](../05-AI/ASSISTANT-EXPLANATION-INTELLIGENCE-ARCHITECTURE.md).
 
 ## Assistant Interaction Intelligence (Programme IV Batch 15)
 
-**Charter only — not accepted for implementation.**
-
 Conversation flow packaging and response routing without memory, Intent, decision, or autonomous agency.
 
 **Coordinate interaction flow. Never act for the user.**
 
-- Will own conversation state packaging, interaction session structure, user-visible flow coordination, response composition routing, interaction diagnostics only
-- Will never own memory, identity, Intent authority, decisions, planning, recommendations, execution, or autonomous behaviour
-- Must compose Batches 11–14 — no cognitive engine, hidden memory, agent loop, or decision layer
+- Owns conversation state packaging, interaction session structure, user-visible flow coordination, response composition routing, interaction diagnostics only
+- Never owns memory, identity, Intent authority, decisions, planning, recommendations, execution, or autonomous behaviour
+- Composes Batches 11–14 — no cognitive engine, hidden memory, agent loop, or decision layer
 - Upstream reads via `load_snapshot` / existing queries only — never foreign `::generate` for refresh
-- No mutation baseline or DTO inventory change until an accepted implementation design exists
+- Mutation inventory includes `PackageWorkspaceAssistantInteraction` (baseline **87**)
+- History / projection DTO inventory length **38**
 
 See [Assistant Interaction Intelligence Architecture](../05-AI/ASSISTANT-INTERACTION-INTELLIGENCE-ARCHITECTURE.md).
 

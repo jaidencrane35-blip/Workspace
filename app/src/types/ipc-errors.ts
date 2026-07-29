@@ -18,6 +18,7 @@ export const PUBLIC_ERROR_CODES = [
   "approval_required",
   "assistant_context_validation_error",
   "assistant_explanation_validation_error",
+  "assistant_interaction_validation_error",
   "assistant_retrieval_validation_error",
   "assistant_surface_validation_error",
   "audit_persistence_error",

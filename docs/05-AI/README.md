@@ -34,7 +34,7 @@ Entry point: `PROGRAMME-IV-INTERACTION-RUNTIME.md`
 | 12 Assistant Context Intelligence | `ASSISTANT-CONTEXT-INTELLIGENCE-ARCHITECTURE.md` | `packages/*/workspace_assistant_context*`, `assistantContextProjection.ts` |
 | 13 Assistant Retrieval Intelligence | `ASSISTANT-RETRIEVAL-INTELLIGENCE-ARCHITECTURE.md` | `packages/domain/src/workspace_assistant_retrieval/`, `packages/kernel/src/services/workspace_assistant_retrieval.rs` |
 | 14 Assistant Explanation Intelligence | `ASSISTANT-EXPLANATION-INTELLIGENCE-ARCHITECTURE.md` | `packages/domain/src/workspace_assistant_explanation/`, `packages/kernel/src/services/workspace_assistant_explanation.rs`, `assistantExplanationProjection.ts` |
-| 15 Assistant Interaction Intelligence | `ASSISTANT-INTERACTION-INTELLIGENCE-ARCHITECTURE.md` | *(charter only — no implementation roots yet)* |
+| 15 Assistant Interaction Intelligence | `ASSISTANT-INTERACTION-INTELLIGENCE-ARCHITECTURE.md` | `packages/domain/src/workspace_assistant_interaction/`, `packages/kernel/src/services/workspace_assistant_interaction.rs`, `assistantInteractionProjection.ts` |
 
 Maintainability audit: `../03-Engineering/PROGRAMME-IV-MAINTAINABILITY-AUDIT.md`
 

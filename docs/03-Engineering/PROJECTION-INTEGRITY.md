@@ -494,12 +494,12 @@ Rules:
 - Explanation packages cite Programme III Explanation Layer and evidence lineage; gaps and conflicts remain visible
 - Composes Batches 10–13 projection helpers — no parallel contract family
 
-### Assistant Interaction Intelligence (Programme IV Batch 15 — charter only)
+### Assistant Interaction Intelligence (Programme IV Batch 15)
 
-- Charter defines projection-only interaction flow packaging and forbids agency / commitment / execution affordances
-- Implementation must not begin until charter acceptance
-- Future interaction packages must route Batches 11–14 packages with provenance; gaps remain visible
-- Prefer composing Batches 10–14 projection helpers over a new parallel contract family
+- Projection-only interaction flow packaging via `assistantInteractionProjection.ts` (thin wrappers over `evidenceProjectionContract`)
+- Forbids agency / commitment / execution affordances — flow coordination only
+- Interaction packages route Batches 11–14 packages with provenance; gaps remain visible
+- Composes Batches 10–14 projection helpers — no parallel contract family
 
 
 ## Serde defaults vs TypeScript required fields

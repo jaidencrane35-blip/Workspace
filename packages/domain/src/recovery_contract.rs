@@ -13,6 +13,9 @@ use crate::workspace_assistant_context::{
 use crate::workspace_assistant_explanation::{
     AssistantExplanationHistoryEntry, WorkspaceAssistantExplanationProjection,
 };
+use crate::workspace_assistant_interaction::{
+    AssistantInteractionHistoryEntry, WorkspaceAssistantInteractionProjection,
+};
 use crate::workspace_assistant_retrieval::{
     AssistantRetrievalHistoryEntry, WorkspaceAssistantRetrievalProjection,
 };
@@ -745,6 +748,25 @@ pub fn recovery_must_not_fabricate_assistant_explanation(
 /// Fabricated actionable assistant-explanation history must fail the recovery contract.
 pub fn recovery_must_not_fabricate_actionable_assistant_explanation_history(
     entry: &AssistantExplanationHistoryEntry,
+) -> bool {
+    entry.is_non_actionable()
+}
+
+pub fn recovery_must_not_fabricate_assistant_interaction(
+    projection: &WorkspaceAssistantInteractionProjection,
+) -> bool {
+    projection.is_non_commandable()
+        && projection.history.iter().all(|h| h.is_non_actionable())
+        && projection
+            .current
+            .as_ref()
+            .map(|c| c.is_non_executing())
+            .unwrap_or(true)
+}
+
+/// Fabricated actionable assistant-interaction history must fail the recovery contract.
+pub fn recovery_must_not_fabricate_actionable_assistant_interaction_history(
+    entry: &AssistantInteractionHistoryEntry,
 ) -> bool {
     entry.is_non_actionable()
 }

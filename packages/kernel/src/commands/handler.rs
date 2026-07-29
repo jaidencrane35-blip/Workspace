@@ -77,6 +77,10 @@ use crate::commands::workspace_assistant_explanation::{
     ExplainAssistantExplanation, GetWorkspaceAssistantExplanation,
     GetWorkspaceAssistantExplanationSummary, PackageWorkspaceAssistantExplanation,
 };
+use crate::commands::workspace_assistant_interaction::{
+    ExplainAssistantInteraction, GetWorkspaceAssistantInteraction,
+    GetWorkspaceAssistantInteractionSummary, PackageWorkspaceAssistantInteraction,
+};
 use crate::commands::workspace_assistant_retrieval::{
     ExplainAssistantRetrieval, GetWorkspaceAssistantRetrieval,
     GetWorkspaceAssistantRetrievalSummary, PackageWorkspaceAssistantRetrieval,
@@ -271,7 +275,9 @@ use workspace_domain::{
     WorkspaceActivityGraph, WorkspaceAdaptationState, WorkspaceAssistantContextExplanation,
     WorkspaceAssistantContextProjection, WorkspaceAssistantContextSummary,
     WorkspaceAssistantExplanationExplanation, WorkspaceAssistantExplanationProjection,
-    WorkspaceAssistantExplanationSummary, WorkspaceAssistantRetrievalExplanation,
+    WorkspaceAssistantExplanationSummary, WorkspaceAssistantInteractionExplanation,
+    WorkspaceAssistantInteractionProjection, WorkspaceAssistantInteractionSummary,
+    WorkspaceAssistantRetrievalExplanation,
     WorkspaceAssistantRetrievalProjection, WorkspaceAssistantRetrievalSummary,
     WorkspaceAssistantSurfaceExplanation,
     WorkspaceAssistantSurfaceProjection, WorkspaceAssistantSurfaceSummary, WorkspaceAttentionState,
@@ -3868,6 +3874,54 @@ impl CommandHandler {
 
     pub fn assistant_explanation_attempt_execute() -> Result<()> {
         crate::services::WorkspaceAssistantExplanationService::attempt_execute()
+    }
+
+    pub fn package_workspace_assistant_interaction(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        human_ask: String,
+    ) -> Result<WorkspaceAssistantInteractionProjection> {
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_mutation(
+            PackageWorkspaceAssistantInteraction::new(workspace_id, human_ask),
+        )
+    }
+
+    pub fn get_workspace_assistant_interaction(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceAssistantInteractionProjection> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetWorkspaceAssistantInteraction::new(workspace_id))
+    }
+
+    pub fn get_workspace_assistant_interaction_summary(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        history_limit: usize,
+    ) -> Result<WorkspaceAssistantInteractionSummary> {
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_query(
+            GetWorkspaceAssistantInteractionSummary::new(workspace_id, history_limit),
+        )
+    }
+
+    pub fn explain_assistant_interaction(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceAssistantInteractionExplanation> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(ExplainAssistantInteraction::new(workspace_id))
+    }
+
+    pub fn assistant_interaction_attempt_execute() -> Result<()> {
+        crate::services::WorkspaceAssistantInteractionService::attempt_execute()
     }
 
     #[allow(clippy::too_many_arguments)]
