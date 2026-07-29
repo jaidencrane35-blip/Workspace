@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { AssistantIntelligencePanel } from "./components/AssistantIntelligencePanel";
 import { AssistantPanel } from "./components/AssistantPanel";
 import { CanvasShell } from "./components/CanvasShell";
 import { OperatorConsole } from "./components/OperatorConsole";
@@ -278,14 +279,28 @@ export default function App() {
           />
         </div>
       ) : view === "assistant" ? (
-        <div className="container assistant-container">
-          <AssistantPanel
+        <div className="container assistant-container assistant-intel-container">
+          <AssistantIntelligencePanel
             workspace={workspace}
             busy={busy}
             onBusy={setBusy}
             onError={onError}
             onMessage={onMessage}
           />
+          <section className="assistant-legacy-section" aria-label="Governed workflow legacy">
+            <h2>Governed workflow (legacy)</h2>
+            <p className="lede">
+              Goal → plan → permission path. Separate from Programme IV
+              presentation packages above.
+            </p>
+            <AssistantPanel
+              workspace={workspace}
+              busy={busy}
+              onBusy={setBusy}
+              onError={onError}
+              onMessage={onMessage}
+            />
+          </section>
         </div>
       ) : (
         <div className="container">

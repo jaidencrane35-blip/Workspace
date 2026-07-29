@@ -522,3 +522,192 @@ button.linkish:not(:disabled):hover {
 .intelligence-list li {
   line-height: 1.35;
 }
+
+/* Programme IV Assistant Intelligence — Batches 11–16 */
+
+.assistant-intel-container {
+  max-width: 52rem;
+}
+
+.assistant-intel-panel {
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #243040;
+  margin-bottom: 0.5rem;
+}
+
+.assistant-intel-hero h2 {
+  margin: 0.35rem 0 0.5rem;
+  font-size: 1.45rem;
+  font-weight: 600;
+  color: #e7ecf1;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.assistant-intel-ask {
+  margin: 1.25rem 0 1.5rem;
+}
+
+.assistant-intel-ask label {
+  display: block;
+  margin-bottom: 0.4rem;
+  color: #9aa8b4;
+  font-size: 0.9rem;
+}
+
+.assistant-intel-ask textarea {
+  width: 100%;
+  box-sizing: border-box;
+  background: #1a222c;
+  border: 1px solid #2a3642;
+  color: #e7ecf1;
+  padding: 0.65rem 0.75rem;
+  border-radius: 4px;
+  resize: vertical;
+  font: inherit;
+  line-height: 1.4;
+}
+
+.assistant-intel-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.assistant-intel-actions button.secondary {
+  background: transparent;
+  border: 1px solid #2a3642;
+  color: #c5d0da;
+}
+
+.assistant-intel-actions button.secondary:not(:disabled):hover {
+  background: #1a222c;
+  border-color: #3a4a5a;
+}
+
+.assistant-intel-layers {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.assistant-intel-layer {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid #1e2832;
+}
+
+.assistant-intel-layer h3 {
+  margin: 0 0 0.65rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.assistant-intel-batch {
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #6b8aab;
+  font-weight: 500;
+}
+
+.assistant-intel-meta {
+  margin: 0 0 0.75rem;
+  font-size: 0.9rem;
+}
+
+.assistant-intel-meta dd code {
+  font-size: 0.85rem;
+  color: #c5d0da;
+}
+
+.assistant-intel-snapshot {
+  margin-top: 0.5rem;
+}
+
+.assistant-intel-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.65rem;
+}
+
+.assistant-intel-badge-warn {
+  border-color: #f87171;
+  color: #fca5a5;
+}
+
+.assistant-intel-summary {
+  margin: 0 0 0.5rem;
+  color: #dbe3eb;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.assistant-intel-narrative {
+  margin: 0 0 0.75rem;
+  color: #c5d0da;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
+.assistant-intel-gaps,
+.assistant-intel-diagnostics {
+  margin-top: 0.75rem;
+}
+
+.assistant-intel-gaps h4,
+.assistant-intel-diagnostics h4 {
+  margin: 0 0 0.35rem;
+  font-size: 0.8rem;
+  color: #9aa8b4;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+}
+
+.assistant-intel-gaps ul,
+.assistant-intel-diagnostics ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: #c5d0da;
+  line-height: 1.45;
+}
+
+.assistant-intel-empty {
+  margin: 0.75rem 0 0;
+  color: #6a7886;
+  font-size: 0.9rem;
+}
+
+.assistant-intel-note {
+  color: #6b8aab;
+  font-size: 0.85rem;
+}
+
+.assistant-intel-warn {
+  margin: 0 0 0.75rem;
+  padding: 0.5rem 0.65rem;
+  border-left: 2px solid #f87171;
+  color: #fca5a5;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.assistant-intel-warn-inline {
+  color: #fca5a5;
+  font-size: 0.85rem;
+}
+
+.assistant-legacy-section {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #243040;
+}
+
+.assistant-legacy-section > h2 {
+  margin-bottom: 0.35rem;
+}

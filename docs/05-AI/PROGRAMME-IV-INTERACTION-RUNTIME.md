@@ -353,6 +353,23 @@ Unknown remains unknown. Unavailable remains unavailable. Contradictions remain 
 
 ---
 
+## Consolidation — Assistant Intelligence UI
+
+The product **Assistant** tab mounts a Programme IV presentation surface that composes Batches 11–16 via Tauri IPC only:
+
+| Layer | Compose / package | Get |
+|---|---|---|
+| Batch 11 Surface | `compose_workspace_assistant_turn` | `get_workspace_assistant_surface` |
+| Batch 12 Context | `package_workspace_assistant_context` | `get_workspace_assistant_context` |
+| Batch 13 Retrieval | `package_workspace_assistant_retrieval` | `get_workspace_assistant_retrieval` |
+| Batch 14 Explanation | `package_workspace_assistant_explanation` | `get_workspace_assistant_explanation` |
+| Batch 15 Interaction | `package_workspace_assistant_interaction` | `get_workspace_assistant_interaction` |
+| Batch 16 Personalisation | `package_workspace_assistant_personalisation` | `get_workspace_assistant_personalisation` |
+
+Optional explain commands (`explain_assistant_*`) are registered for parity. The React panel is projection-only: no approve / execute / decide controls on Programme IV packages. The legacy goal→plan Assistant panel remains below as **Governed workflow (legacy)**.
+
+---
+
 ## Related documents
 
 - [Workspace Semantic Query Architecture](./WORKSPACE-SEMANTIC-QUERY-ARCHITECTURE.md)

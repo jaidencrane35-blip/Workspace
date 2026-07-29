@@ -79,6 +79,16 @@ use commands::workspace_profile::{
     update_workspace_profile, validate_workspace_profile_state,
 };
 use commands::workspace_attention::generate_workspace_attention;
+use commands::workspace_assistant_intelligence::{
+    compose_workspace_assistant_turn, explain_assistant_context, explain_assistant_explanation,
+    explain_assistant_interaction, explain_assistant_personalisation, explain_assistant_retrieval,
+    explain_assistant_surface, get_workspace_assistant_context, get_workspace_assistant_explanation,
+    get_workspace_assistant_interaction, get_workspace_assistant_personalisation,
+    get_workspace_assistant_retrieval, get_workspace_assistant_surface,
+    package_workspace_assistant_context, package_workspace_assistant_explanation,
+    package_workspace_assistant_interaction, package_workspace_assistant_personalisation,
+    package_workspace_assistant_retrieval,
+};
 use commands::layout::{
     create_layout, delete_layout, get_layout, get_layout_snapshot, reset_layout, update_layout,
 };
@@ -214,6 +224,24 @@ pub fn run() {
             regenerate_assistant_plan,
             compare_assistant_plan_revisions,
             record_assistant_explanation_viewed,
+            compose_workspace_assistant_turn,
+            get_workspace_assistant_surface,
+            explain_assistant_surface,
+            package_workspace_assistant_context,
+            get_workspace_assistant_context,
+            explain_assistant_context,
+            package_workspace_assistant_retrieval,
+            get_workspace_assistant_retrieval,
+            explain_assistant_retrieval,
+            package_workspace_assistant_explanation,
+            get_workspace_assistant_explanation,
+            explain_assistant_explanation,
+            package_workspace_assistant_interaction,
+            get_workspace_assistant_interaction,
+            explain_assistant_interaction,
+            package_workspace_assistant_personalisation,
+            get_workspace_assistant_personalisation,
+            explain_assistant_personalisation,
             create_project,
             list_projects,
             get_project,
