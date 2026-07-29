@@ -310,7 +310,7 @@ UI must not imply the assistant will act, commit, or remember beyond recorded pa
 
 ## Next
 
-Batch 16 — [Assistant Personalisation Boundary Architecture](./ASSISTANT-PERSONALISATION-BOUNDARY-ARCHITECTURE.md) (**charter only** — do not implement until accepted).
+Batch 16 — [Assistant Personalisation Boundary Architecture](./ASSISTANT-PERSONALISATION-BOUNDARY-ARCHITECTURE.md) (**implemented**).
 
 ---
 
@@ -323,7 +323,7 @@ Batch 16 — [Assistant Personalisation Boundary Architecture](./ASSISTANT-PERSO
 - [x] Maintainability reuse path vs Batches 10–14 is explicit
 - [x] Mutation baseline **87** / DTO inventory **38** for `PackageWorkspaceAssistantInteraction`
 - [x] Status is **Active — implemented**
-
+- [x] Batch 16 personalisation boundary is implemented
 ---
 
 ## Related documents

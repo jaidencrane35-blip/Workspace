@@ -194,6 +194,34 @@ impl AssistantSurfaceScope {
             include_state: true,
         }
     }
+
+    /// Personalisation-focused default for Batch 16 — enables presentation-
+    /// relevant flags similar to `interaction_default()` / `presentation_default()`
+    /// (explanation, semantic query, evidence navigation/trace/consistency,
+    /// contextual, state). Additive; does not invent identity pathways.
+    pub fn personalisation_default() -> Self {
+        Self {
+            include_semantic_query: true,
+            include_evidence_navigation: true,
+            include_evidence_trace: true,
+            include_evidence_coverage: false,
+            include_evidence_consistency: true,
+            include_evidence_dependency: false,
+            include_evidence_freshness: false,
+            include_evidence_completeness: false,
+            include_evidence_reliability: false,
+            include_explanation: true,
+            include_contextual: true,
+            include_knowledge_integration: false,
+            include_intelligence_hub: false,
+            include_state: true,
+        }
+    }
+
+    /// American spelling alias for [`Self::personalisation_default`].
+    pub fn personalization_default() -> Self {
+        Self::personalisation_default()
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

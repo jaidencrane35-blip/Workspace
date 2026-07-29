@@ -81,6 +81,10 @@ use crate::commands::workspace_assistant_interaction::{
     ExplainAssistantInteraction, GetWorkspaceAssistantInteraction,
     GetWorkspaceAssistantInteractionSummary, PackageWorkspaceAssistantInteraction,
 };
+use crate::commands::workspace_assistant_personalisation::{
+    ExplainAssistantPersonalisation, GetWorkspaceAssistantPersonalisation,
+    GetWorkspaceAssistantPersonalisationSummary, PackageWorkspaceAssistantPersonalisation,
+};
 use crate::commands::workspace_assistant_retrieval::{
     ExplainAssistantRetrieval, GetWorkspaceAssistantRetrieval,
     GetWorkspaceAssistantRetrievalSummary, PackageWorkspaceAssistantRetrieval,
@@ -277,6 +281,8 @@ use workspace_domain::{
     WorkspaceAssistantExplanationExplanation, WorkspaceAssistantExplanationProjection,
     WorkspaceAssistantExplanationSummary, WorkspaceAssistantInteractionExplanation,
     WorkspaceAssistantInteractionProjection, WorkspaceAssistantInteractionSummary,
+    WorkspaceAssistantPersonalisationExplanation, WorkspaceAssistantPersonalisationProjection,
+    WorkspaceAssistantPersonalisationSummary,
     WorkspaceAssistantRetrievalExplanation,
     WorkspaceAssistantRetrievalProjection, WorkspaceAssistantRetrievalSummary,
     WorkspaceAssistantSurfaceExplanation,
@@ -3922,6 +3928,54 @@ impl CommandHandler {
 
     pub fn assistant_interaction_attempt_execute() -> Result<()> {
         crate::services::WorkspaceAssistantInteractionService::attempt_execute()
+    }
+
+    pub fn package_workspace_assistant_personalisation(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        human_ask: String,
+    ) -> Result<WorkspaceAssistantPersonalisationProjection> {
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_mutation(
+            PackageWorkspaceAssistantPersonalisation::new(workspace_id, human_ask),
+        )
+    }
+
+    pub fn get_workspace_assistant_personalisation(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceAssistantPersonalisationProjection> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetWorkspaceAssistantPersonalisation::new(workspace_id))
+    }
+
+    pub fn get_workspace_assistant_personalisation_summary(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        history_limit: usize,
+    ) -> Result<WorkspaceAssistantPersonalisationSummary> {
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_query(
+            GetWorkspaceAssistantPersonalisationSummary::new(workspace_id, history_limit),
+        )
+    }
+
+    pub fn explain_assistant_personalisation(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceAssistantPersonalisationExplanation> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(ExplainAssistantPersonalisation::new(workspace_id))
+    }
+
+    pub fn assistant_personalisation_attempt_execute() -> Result<()> {
+        crate::services::WorkspaceAssistantPersonalisationService::attempt_execute()
     }
 
     #[allow(clippy::too_many_arguments)]

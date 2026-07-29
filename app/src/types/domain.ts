@@ -6479,6 +6479,131 @@ export interface WorkspaceAssistantInteractionExplanation {
   actionable: boolean;
 }
 
+export interface AssistantPersonalisationRequest {
+  request_id: string;
+  human_ask: string;
+  scope: AssistantSurfaceScope;
+  pathway_notes: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface AssistantPersonalisationItem {
+  item_id: string;
+  kind: string;
+  preference_ref: string | null;
+  origin_domain: string;
+  source: string | null;
+  excerpt: string;
+  adaptation_note: string | null;
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface AssistantPersonalisationAdaptation {
+  adaptation_id: string;
+  personalization_enabled: boolean;
+  applied_preference_refs: string[];
+  notes: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface AssistantPersonalisationLineage {
+  lineage_id: string;
+  contributing_artefacts: string[];
+  revisions: string[];
+  source_refs: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface AssistantPersonalisationGap {
+  gap_id: string;
+  gap_kind: string;
+  description: string;
+  affected_packages: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface AssistantPersonalisationDiagnostics {
+  consulted_packages: string[];
+  unavailable_packages: string[];
+  personalization_enabled: boolean;
+  notes: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface WorkspaceAssistantPersonalisationSnapshot {
+  personalisation_id: string;
+  workspace_id: string;
+  generated_at: string;
+  status: string;
+  superseded_at: string | null;
+  request: AssistantPersonalisationRequest;
+  items: AssistantPersonalisationItem[];
+  adaptation: AssistantPersonalisationAdaptation;
+  lineage: AssistantPersonalisationLineage;
+  gaps: AssistantPersonalisationGap[];
+  diagnostics: AssistantPersonalisationDiagnostics;
+  narrative_summary: string;
+  narrative: string;
+  limitations: string[];
+  authority_effect: string;
+  actionable: boolean;
+  terminal: boolean;
+}
+
+export interface AssistantPersonalisationHistoryEntry {
+  personalisation_id: string;
+  status: string;
+  created_at: string;
+  superseded_at: string | null;
+  item_count: number;
+  gap_count: number;
+  terminal: boolean;
+  actionable: boolean;
+  authority_effect: string;
+}
+
+export interface WorkspaceAssistantPersonalisationProjection {
+  workspace_id: string;
+  current: WorkspaceAssistantPersonalisationSnapshot | null;
+  history: AssistantPersonalisationHistoryEntry[];
+  history_count: number;
+  projected_at: string;
+  authority_effect: string;
+}
+
+export interface WorkspaceAssistantPersonalisationSummary {
+  workspace_id: string;
+  has_current: boolean;
+  item_count: number;
+  gap_count: number;
+  personalization_enabled: boolean | null;
+  narrative_summary: string | null;
+  history: AssistantPersonalisationHistoryEntry[];
+  history_count: number;
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface WorkspaceAssistantPersonalisationExplanation {
+  explanation_id: string;
+  workspace_id: string;
+  narrative_summary: string | null;
+  item_summaries: string[];
+  adaptation_summaries: string[];
+  gap_summaries: string[];
+  uncertainty: string[];
+  narrative: string;
+  limitations: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
 export type WindowIdentityConfidence = "high" | "medium" | "low" | "ephemeral";
 
 export interface WorkspaceObservationPass {

@@ -358,16 +358,29 @@ Batch 15 coordinates user-visible conversation flow across Batches 11–14 witho
 
 ---
 
-## M. Batch 16 charter opened (not implemented)
+## M. Batch 16 Assistant Personalisation Boundary (implemented)
 
 **Date:** 2026-07-29  
 **Document:** [Assistant Personalisation Boundary Architecture](../05-AI/ASSISTANT-PERSONALISATION-BOUNDARY-ARCHITECTURE.md)  
-**Status:** Charter only — implementation blocked until architecture acceptance.
+**Status:** Active — implemented
 
-Batch 16 will define how the assistant packages explicit presentation preferences for Batches 11–15. It must not become a hidden user model, personality inference engine, identity authority, memory replacement, behavioural predictor, or autonomous adapter. Prefer composing the AI Personalization Foundation and Batches 11–15 first.
+Batch 16 packages explicit presentation preferences for Batches 11–15 without becoming a hidden user model, personality inference engine, identity authority, memory replacement, behavioural predictor, or autonomous adapter.
+
+### Extraction decisions
+
+| Decision | Rationale |
+|---|---|
+| New clear folder `workspace_assistant_personalisation/` | Ownership clarification beside Batches 11–15; British spelling documents composition with American `ai_personalization` |
+| Reuse `AssistantSurfaceScope` + `personalisation_default()` | Pathway selection flags already owned by Batch 11; additive default only (`personalization_default` alias) |
+| Compose via `AiPersonalizationService` reads + Batches 11–15 `load_snapshot` | Never preference writes; never foreign `::generate`; never `WorkspaceWorkingStyleService::generate` |
+| Dual-channel migration `078` with personalisation-specific columns | `request_json` / `preferences_json` / `items_json` / `adaptation_json` / `lineage_json` / `diagnostics_json` / `scope_json` — not a `user_preferences` / hidden profile clone |
+| Thin React `assistantPersonalisationProjection.ts` | Wraps Batch 10 `evidenceProjectionContract` — no parallel contract family |
+| One `EVIDENCE_ENGINE_GUARD_SPECS` entry | Baselines **87→88**, DTO **38→39** |
+
+| New mutation / DTO inventory | **Added intentionally** — baseline 88 / DTO 39 for `PackageWorkspaceAssistantPersonalisation` |
 
 ---
 
 ## Explicit confirmation
 
-This audit concludes that Workspace Evidence engines through Batch 9 observe recorded evidence characteristics only within their stated ownership. The two kernel failures are pre-existing Activity Graph / Intelligence issues, not Programme IV architectural drift. Batch 10 improves human maintainability by extracting shared scaffolding without adding a new evidence authority or clone engine. Batch 11 implements a conversational presentation layer over recorded evidence without becoming authority. Batch 12 implements context packaging and continuity presentation without becoming memory, inventing continuity, or cloning the assistant surface. Batch 13 implements retrieval packaging and evidence presentation without ranking truth, recommending action, or creating a second search substrate. Batch 14 implements explanation packaging clarity without concluding truth, inventing causality, or replacing the Programme III Explanation Layer. Batch 15 implements interaction flow packaging without acting for the user, inventing memory/Intent, or creating an agent loop. Batch 16 is opened as a charter only.
+This audit concludes that Workspace Evidence engines through Batch 9 observe recorded evidence characteristics only within their stated ownership. The two kernel failures are pre-existing Activity Graph / Intelligence issues, not Programme IV architectural drift. Batch 10 improves human maintainability by extracting shared scaffolding without adding a new evidence authority or clone engine. Batch 11 implements a conversational presentation layer over recorded evidence without becoming authority. Batch 12 implements context packaging and continuity presentation without becoming memory, inventing continuity, or cloning the assistant surface. Batch 13 implements retrieval packaging and evidence presentation without ranking truth, recommending action, or creating a second search substrate. Batch 14 implements explanation packaging clarity without concluding truth, inventing causality, or replacing the Programme III Explanation Layer. Batch 15 implements interaction flow packaging without acting for the user, inventing memory/Intent, or creating an agent loop. Batch 16 implements personalisation packaging of explicit preferences without inventing identity, hidden profiles, or autonomous adaptation.

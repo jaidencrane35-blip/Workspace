@@ -96,7 +96,7 @@ Batch 14 — [Assistant Explanation Intelligence Architecture](./ASSISTANT-EXPLA
 
 Batch 15 — [Assistant Interaction Intelligence Architecture](./ASSISTANT-INTERACTION-INTELLIGENCE-ARCHITECTURE.md) (**implemented** — composes Batches 11–14 and this scaffold without becoming an agent or memory authority).
 
-Batch 16 — [Assistant Personalisation Boundary Architecture](./ASSISTANT-PERSONALISATION-BOUNDARY-ARCHITECTURE.md) (**charter only** — do not implement until accepted; must compose AI Personalization Foundation and Batches 11–15 without becoming a user-model or hidden profile authority).
+Batch 16 — [Assistant Personalisation Boundary Architecture](./ASSISTANT-PERSONALISATION-BOUNDARY-ARCHITECTURE.md) (**implemented** — composes AI Personalization Foundation and Batches 11–15 without becoming a user-model or hidden profile authority).
 
 ---
 

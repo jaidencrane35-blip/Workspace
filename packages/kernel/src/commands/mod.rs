@@ -167,6 +167,7 @@ mod workspace_adaptation_tests;
 mod workspace_assistant_context;
 mod workspace_assistant_explanation;
 mod workspace_assistant_interaction;
+mod workspace_assistant_personalisation;
 mod workspace_assistant_retrieval;
 #[cfg(test)]
 mod workspace_assistant_context_tests;
@@ -174,6 +175,8 @@ mod workspace_assistant_context_tests;
 mod workspace_assistant_explanation_tests;
 #[cfg(test)]
 mod workspace_assistant_interaction_tests;
+#[cfg(test)]
+mod workspace_assistant_personalisation_tests;
 #[cfg(test)]
 mod workspace_assistant_retrieval_tests;
 mod workspace_assistant_surface;

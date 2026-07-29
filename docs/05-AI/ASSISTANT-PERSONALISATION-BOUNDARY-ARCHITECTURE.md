@@ -1,6 +1,6 @@
 # Assistant Personalisation Boundary Architecture (Programme IV — Batch 16)
 
-**Status:** Charter only — not accepted for implementation  
+**Status:** Active — implemented  
 **Audience:** Architecture, Kernel, Frontend, Product, Governance, Security  
 **Depends on:**  
 - [Assistant Interaction Intelligence Architecture](./ASSISTANT-INTERACTION-INTELLIGENCE-ARCHITECTURE.md) (Batch 15 — accepted / implemented)  
@@ -29,7 +29,6 @@ Batch 16 asks the next architectural question:
 
 This charter defines the **Assistant Personalisation Boundary Contract** — packaging and displaying **explicit, user-controlled** presentation preferences for assistant surfaces **without** hidden profiling, personality inference, behavioural prediction, identity conclusions, or autonomous adaptation.
 
-**Implementation is blocked until this charter is reviewed and accepted.**
 
 ---
 
@@ -58,9 +57,9 @@ before introducing any new module, migration, or guard family.
 
 | State | Meaning |
 |---|---|
-| **Charter only** | Architecture proposed; no domain/kernel/database/React implementation in this batch until acceptance |
+| **Active — implemented** | Domain/kernel/database/React implementation accepted |
 | **Depends on Batches 11–15 + existing personalization owners** | Composes explicit preference contracts — does not replace them |
-| **No baseline change yet** | Mutation baseline remains **87**; history/projection DTO inventory remains **38** until an accepted implementation design exists |
+| **Governed baseline** | Mutation baseline **88**; history/projection DTO inventory **39** |
 
 ---
 
@@ -94,9 +93,9 @@ Batch 16 must **not** fork a user-model engine, preference-inference system, or 
 
 ## Ownership
 
-### Proposed owner (post-acceptance)
+### Owner
 
-`WorkspaceAssistantPersonalisationService` *(name provisional — prefer composition beside/near Batches 11–15 if a separate full stack would clone rather than clarify; spelling in code may use `personalization` only if matching existing Rust module conventions — document the alias)*
+`WorkspaceAssistantPersonalisationService` — clear folder `packages/domain/src/workspace_assistant_personalisation/` for ownership clarification beside Batches 11–15. Rust spelling uses British `personalisation` for this Programme IV boundary while composing American `ai_personalization` foundation types.
 
 ### May own
 
@@ -245,9 +244,10 @@ UI must not imply the assistant has profiled the user.
 
 ## Governance
 
-### Permissions (proposed — post-acceptance)
+### Permissions
 
-- Personalisation package read / compose inspection: `work_context.read` and/or existing `personalization.read` as applicable
+- Personalisation package mutation: `work_context.write` (dual-channel assistant evidence only — does **not** write `user_preferences`)
+- Personalisation package read / explain: `work_context.read`
 - Preference mutations: existing `personalization.write` / settings owners only — **not** `assistant.personalisation.superuser`
 - No capability grants issued by assistant personalisation
 - Must never influence PermissionGateway decisions
@@ -304,7 +304,6 @@ Implementation (when unblocked) must document in the maintainability audit:
 
 - Model provider / prompt engineering details
 - Product UX layouts beyond preference/information distinction
-- Implementing personalisation services, migrations, or commands
 - Resolving case5 / case11 (non–Programme IV debt)
 - Replacing AI Personalization Foundation
 - Replacing Batches 11–15
@@ -350,4 +349,4 @@ Before implementation may begin, reviewers must confirm:
 > It never infers personality or identity, never creates hidden user models, never predicts behaviour,
 > never autonomously adapts, never replaces memory or preference SoT owners,
 > never influences permissions, never decides or executes, and never silently mutates preferences.
-> Implementation remains blocked until this charter is accepted.
+> Status is Active — implemented.

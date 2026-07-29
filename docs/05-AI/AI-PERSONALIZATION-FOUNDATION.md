@@ -86,3 +86,4 @@ Operator Console: list / create / edit / delete preferences, toggle personalizat
 
 - [Intelligence Roadmap](INTELLIGENCE-ROADMAP.md)
 - [IPC Surface](../03-Engineering/IPC-SURFACE.md)
+- [Assistant Personalisation Boundary Architecture](ASSISTANT-PERSONALISATION-BOUNDARY-ARCHITECTURE.md) *(Programme IV Batch 16 — packages explicit prefs for assistant presentation; never invents identity)*

@@ -49,6 +49,7 @@ pub mod workspace_adaptation;
 pub mod workspace_assistant_context;
 pub mod workspace_assistant_explanation;
 pub mod workspace_assistant_interaction;
+pub mod workspace_assistant_personalisation;
 pub mod workspace_assistant_retrieval;
 pub mod workspace_assistant_surface;
 pub mod workspace_attention;
@@ -327,6 +328,15 @@ pub use workspace_assistant_interaction::{
     AssistantInteractionStatus, AssistantInteractionStep,
     WorkspaceAssistantInteractionExplanation, WorkspaceAssistantInteractionProjection,
     WorkspaceAssistantInteractionSnapshot, WorkspaceAssistantInteractionSummary,
+};
+pub use workspace_assistant_personalisation::{
+    AssistantPersonalisationAdaptation, AssistantPersonalisationDiagnostics,
+    AssistantPersonalisationError, AssistantPersonalisationGap,
+    AssistantPersonalisationHistoryEntry, AssistantPersonalisationItem,
+    AssistantPersonalisationLineage, AssistantPersonalisationRequest,
+    AssistantPersonalisationStatus, ExplicitPreferenceSummary,
+    WorkspaceAssistantPersonalisationExplanation, WorkspaceAssistantPersonalisationProjection,
+    WorkspaceAssistantPersonalisationSnapshot, WorkspaceAssistantPersonalisationSummary,
 };
 pub use workspace_assistant_retrieval::{
     AssistantRetrievalDiagnostics, AssistantRetrievalError, AssistantRetrievalGap,
@@ -708,6 +718,7 @@ pub use recovery_contract::{
     recovery_must_not_fabricate_actionable_assistant_context_history,
     recovery_must_not_fabricate_actionable_assistant_explanation_history,
     recovery_must_not_fabricate_actionable_assistant_interaction_history,
+    recovery_must_not_fabricate_actionable_assistant_personalisation_history,
     recovery_must_not_fabricate_actionable_assistant_retrieval_history,
     recovery_must_not_fabricate_actionable_assistant_surface_history,
     recovery_must_not_fabricate_actionable_autonomy_history,
@@ -740,6 +751,7 @@ pub use recovery_contract::{
     recovery_must_not_fabricate_assistant_context,
     recovery_must_not_fabricate_assistant_explanation,
     recovery_must_not_fabricate_assistant_interaction,
+    recovery_must_not_fabricate_assistant_personalisation,
     recovery_must_not_fabricate_assistant_retrieval,
     recovery_must_not_fabricate_assistant_surface,
     recovery_must_not_fabricate_cognitive_agent_cast,

@@ -178,6 +178,11 @@ import {
   isAssistantInteractionHistoryNonActionable,
   isAssistantInteractionProjectionNonCommandable,
 } from "../app/src/components/assistantInteractionProjection";
+import {
+  assistantPersonalisationHistoryCountIsAuthoritative,
+  isAssistantPersonalisationHistoryNonActionable,
+  isAssistantPersonalisationProjectionNonCommandable,
+} from "../app/src/components/assistantPersonalisationProjection";
 import type {
   DecisionArtifactHistoryEntry,
   DecisionEngineSummary,
@@ -268,6 +273,8 @@ import type {
   WorkspaceAssistantExplanationSummary,
   WorkspaceAssistantInteractionProjection,
   WorkspaceAssistantInteractionSummary,
+  WorkspaceAssistantPersonalisationProjection,
+  WorkspaceAssistantPersonalisationSummary,
   WorkspaceAssistantRetrievalProjection,
   WorkspaceEvidenceTraceSummary,
   WorkspaceEvidenceCoverageSummary,
@@ -281,6 +288,7 @@ import type {
   WorkspaceAssistantRetrievalSummary,
   AssistantExplanationHistoryEntry,
   AssistantInteractionHistoryEntry,
+  AssistantPersonalisationHistoryEntry,
   AssistantSurfaceHistoryEntry,
   AssistantContextHistoryEntry,
   AssistantRetrievalHistoryEntry,
@@ -2812,6 +2820,53 @@ describe("projection integrity — assistant interaction (Programme IV Batch 15)
       actionable: false,
     };
     expect(assistantInteractionHistoryCountIsAuthoritative(summary)).toBe(true);
+    expect(summary.history_count).toBeGreaterThanOrEqual(summary.history.length);
+  });
+});
+
+describe("projection integrity — assistant personalisation (Programme IV Batch 16)", () => {
+  it("keeps personalisation history non-actionable and history_count authoritative", () => {
+    const historyEntry = (
+      overrides: Partial<AssistantPersonalisationHistoryEntry> = {}
+    ): AssistantPersonalisationHistoryEntry => ({
+      personalisation_id: "assistant_personalisation:1",
+      status: "superseded",
+      created_at: "t0",
+      superseded_at: "t1",
+      item_count: 1,
+      gap_count: 0,
+      terminal: true,
+      actionable: false,
+      authority_effect: "none",
+      ...overrides,
+    });
+    const projection: WorkspaceAssistantPersonalisationProjection = {
+      workspace_id: "ws",
+      projected_at: "t2",
+      current: null,
+      history: [historyEntry()],
+      history_count: 2,
+      authority_effect: "none",
+    };
+    expect(isAssistantPersonalisationProjectionNonCommandable(projection)).toBe(true);
+    expect(isAssistantPersonalisationHistoryNonActionable(historyEntry())).toBe(true);
+    expect(
+      isAssistantPersonalisationHistoryNonActionable(historyEntry({ actionable: true }))
+    ).toBe(false);
+
+    const summary: WorkspaceAssistantPersonalisationSummary = {
+      workspace_id: "ws",
+      has_current: false,
+      item_count: 0,
+      gap_count: 0,
+      personalization_enabled: null,
+      narrative_summary: null,
+      history: [historyEntry()],
+      history_count: 2,
+      authority_effect: "none",
+      actionable: false,
+    };
+    expect(assistantPersonalisationHistoryCountIsAuthoritative(summary)).toBe(true);
     expect(summary.history_count).toBeGreaterThanOrEqual(summary.history.length);
   });
 });

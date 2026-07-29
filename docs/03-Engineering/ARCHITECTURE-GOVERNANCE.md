@@ -780,25 +780,25 @@ Conversation flow packaging and response routing without memory, Intent, decisio
 - Never owns memory, identity, Intent authority, decisions, planning, recommendations, execution, or autonomous behaviour
 - Composes Batches 11–14 — no cognitive engine, hidden memory, agent loop, or decision layer
 - Upstream reads via `load_snapshot` / existing queries only — never foreign `::generate` for refresh
-- Mutation inventory includes `PackageWorkspaceAssistantInteraction` (baseline **87**)
-- History / projection DTO inventory length **38**
+- Mutation inventory includes `PackageWorkspaceAssistantInteraction` (baseline **87** at Batch 15; superseded by Batch 16 baseline **88**)
+- History / projection DTO inventory length **38** at Batch 15 (Batch 16 → **39**)
 
 See [Assistant Interaction Intelligence Architecture](../05-AI/ASSISTANT-INTERACTION-INTELLIGENCE-ARCHITECTURE.md).
 
 ## Assistant Personalisation Boundary (Programme IV Batch 16)
 
-**Charter only — not accepted for implementation.**
-
 Explicit presentation preference packaging without hidden user modelling or autonomous adaptation.
 
 **Adapt presentation from explicit preferences. Never invent who the user is.**
 
-- Will own presentation preference packaging, explicit preference display, interface adaptation metadata, interaction style configuration, personalisation diagnostics only
-- Will never own hidden user modelling, personality inference, identity, memory, behavioural prediction, psychological profiling, autonomous adaptation, or decision-making
-- Must compose AI Personalization Foundation and Batches 11–15 — no user-model engine, preference inference system, or hidden profile database
-- Preference writes remain existing authorised preference owners only
-- Upstream reads via existing preference/`load_snapshot` paths only — never foreign `::generate` for refresh
-- No mutation baseline or DTO inventory change until an accepted implementation design exists
+- Owns presentation preference packaging, explicit preference display, interface adaptation metadata, interaction style configuration, personalisation diagnostics only
+- Never owns hidden user modelling, personality inference, identity, memory, behavioural prediction, psychological profiling, autonomous adaptation, or decision-making
+- Composes AI Personalization Foundation and Batches 11–15 — no user-model engine, preference inference system, or hidden profile database
+- Preference writes remain existing authorised preference owners only (`personalization.write`)
+- Packaging mutation uses `work_context.write` for dual-channel assistant evidence — does **not** write `user_preferences`
+- Upstream reads via `AiPersonalizationService` read paths + Batches 11–15 `load_snapshot` only — never foreign `::generate` for refresh
+- Mutation inventory includes `PackageWorkspaceAssistantPersonalisation` (baseline **88**)
+- History / projection DTO inventory length **39**
 
 See [Assistant Personalisation Boundary Architecture](../05-AI/ASSISTANT-PERSONALISATION-BOUNDARY-ARCHITECTURE.md).
 
