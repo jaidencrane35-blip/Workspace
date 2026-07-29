@@ -785,6 +785,23 @@ Conversation flow packaging and response routing without memory, Intent, decisio
 
 See [Assistant Interaction Intelligence Architecture](../05-AI/ASSISTANT-INTERACTION-INTELLIGENCE-ARCHITECTURE.md).
 
+## Assistant Personalisation Boundary (Programme IV Batch 16)
+
+**Charter only — not accepted for implementation.**
+
+Explicit presentation preference packaging without hidden user modelling or autonomous adaptation.
+
+**Adapt presentation from explicit preferences. Never invent who the user is.**
+
+- Will own presentation preference packaging, explicit preference display, interface adaptation metadata, interaction style configuration, personalisation diagnostics only
+- Will never own hidden user modelling, personality inference, identity, memory, behavioural prediction, psychological profiling, autonomous adaptation, or decision-making
+- Must compose AI Personalization Foundation and Batches 11–15 — no user-model engine, preference inference system, or hidden profile database
+- Preference writes remain existing authorised preference owners only
+- Upstream reads via existing preference/`load_snapshot` paths only — never foreign `::generate` for refresh
+- No mutation baseline or DTO inventory change until an accepted implementation design exists
+
+See [Assistant Personalisation Boundary Architecture](../05-AI/ASSISTANT-PERSONALISATION-BOUNDARY-ARCHITECTURE.md).
+
 ## Capability boundary audit
 
 Enforced by `scripts/architecture-governance-lib.mjs`:

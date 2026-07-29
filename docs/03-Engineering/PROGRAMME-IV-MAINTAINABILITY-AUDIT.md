@@ -358,6 +358,16 @@ Batch 15 coordinates user-visible conversation flow across Batches 11–14 witho
 
 ---
 
+## M. Batch 16 charter opened (not implemented)
+
+**Date:** 2026-07-29  
+**Document:** [Assistant Personalisation Boundary Architecture](../05-AI/ASSISTANT-PERSONALISATION-BOUNDARY-ARCHITECTURE.md)  
+**Status:** Charter only — implementation blocked until architecture acceptance.
+
+Batch 16 will define how the assistant packages explicit presentation preferences for Batches 11–15. It must not become a hidden user model, personality inference engine, identity authority, memory replacement, behavioural predictor, or autonomous adapter. Prefer composing the AI Personalization Foundation and Batches 11–15 first.
+
+---
+
 ## Explicit confirmation
 
-This audit concludes that Workspace Evidence engines through Batch 9 observe recorded evidence characteristics only within their stated ownership. The two kernel failures are pre-existing Activity Graph / Intelligence issues, not Programme IV architectural drift. Batch 10 improves human maintainability by extracting shared scaffolding without adding a new evidence authority or clone engine. Batch 11 implements a conversational presentation layer over recorded evidence without becoming authority. Batch 12 implements context packaging and continuity presentation without becoming memory, inventing continuity, or cloning the assistant surface. Batch 13 implements retrieval packaging and evidence presentation without ranking truth, recommending action, or creating a second search substrate. Batch 14 implements explanation packaging clarity without concluding truth, inventing causality, or replacing the Programme III Explanation Layer. Batch 15 implements interaction flow packaging without acting for the user, inventing memory/Intent, or creating an agent loop.
+This audit concludes that Workspace Evidence engines through Batch 9 observe recorded evidence characteristics only within their stated ownership. The two kernel failures are pre-existing Activity Graph / Intelligence issues, not Programme IV architectural drift. Batch 10 improves human maintainability by extracting shared scaffolding without adding a new evidence authority or clone engine. Batch 11 implements a conversational presentation layer over recorded evidence without becoming authority. Batch 12 implements context packaging and continuity presentation without becoming memory, inventing continuity, or cloning the assistant surface. Batch 13 implements retrieval packaging and evidence presentation without ranking truth, recommending action, or creating a second search substrate. Batch 14 implements explanation packaging clarity without concluding truth, inventing causality, or replacing the Programme III Explanation Layer. Batch 15 implements interaction flow packaging without acting for the user, inventing memory/Intent, or creating an agent loop. Batch 16 is opened as a charter only.

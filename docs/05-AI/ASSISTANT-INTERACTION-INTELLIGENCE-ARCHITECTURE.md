@@ -304,6 +304,13 @@ UI must not imply the assistant will act, commit, or remember beyond recorded pa
 - Resolving case5 / case11 (non–Programme IV debt)
 - Replacing Batches 11–14
 - Building an autonomous agent framework
+- Presentation preference packaging / personalisation boundary (see Batch 16 charter)
+
+---
+
+## Next
+
+Batch 16 — [Assistant Personalisation Boundary Architecture](./ASSISTANT-PERSONALISATION-BOUNDARY-ARCHITECTURE.md) (**charter only** — do not implement until accepted).
 
 ---
 
@@ -322,6 +329,7 @@ UI must not imply the assistant will act, commit, or remember beyond recorded pa
 ## Related documents
 
 - [Assistant Explanation Intelligence Architecture](./ASSISTANT-EXPLANATION-INTELLIGENCE-ARCHITECTURE.md)
+- [Assistant Personalisation Boundary Architecture](./ASSISTANT-PERSONALISATION-BOUNDARY-ARCHITECTURE.md)
 - [Assistant Retrieval Intelligence Architecture](./ASSISTANT-RETRIEVAL-INTELLIGENCE-ARCHITECTURE.md)
 - [Assistant Context Intelligence Architecture](./ASSISTANT-CONTEXT-INTELLIGENCE-ARCHITECTURE.md)
 - [Conversational / Assistant Surface Architecture](./CONVERSATIONAL-ASSISTANT-SURFACE-ARCHITECTURE.md)

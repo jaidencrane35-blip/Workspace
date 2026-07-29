@@ -35,6 +35,7 @@ Entry point: `PROGRAMME-IV-INTERACTION-RUNTIME.md`
 | 13 Assistant Retrieval Intelligence | `ASSISTANT-RETRIEVAL-INTELLIGENCE-ARCHITECTURE.md` | `packages/domain/src/workspace_assistant_retrieval/`, `packages/kernel/src/services/workspace_assistant_retrieval.rs` |
 | 14 Assistant Explanation Intelligence | `ASSISTANT-EXPLANATION-INTELLIGENCE-ARCHITECTURE.md` | `packages/domain/src/workspace_assistant_explanation/`, `packages/kernel/src/services/workspace_assistant_explanation.rs`, `assistantExplanationProjection.ts` |
 | 15 Assistant Interaction Intelligence | `ASSISTANT-INTERACTION-INTELLIGENCE-ARCHITECTURE.md` | `packages/domain/src/workspace_assistant_interaction/`, `packages/kernel/src/services/workspace_assistant_interaction.rs`, `assistantInteractionProjection.ts` |
+| 16 Assistant Personalisation Boundary | `ASSISTANT-PERSONALISATION-BOUNDARY-ARCHITECTURE.md` | *(charter only — no implementation roots yet)* |
 
 Maintainability audit: `../03-Engineering/PROGRAMME-IV-MAINTAINABILITY-AUDIT.md`
 

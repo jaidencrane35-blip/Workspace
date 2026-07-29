@@ -49,6 +49,7 @@ Canonical product language. Prefer these terms in UI, docs, and Assistant copy.
 | **Assistant Retrieval Intelligence** | Packaging/presentation of existing Programme IV retrieval and evidence results (present ≠ rank) | Truth ranker, relevance SoT, second search engine, recommender, reasoner, independent knowledge graph |
 | **Assistant Explanation Intelligence** | Packaging/clarity over recorded explanation and evidence (clarify ≠ conclude) | Truth determiner, causal reasoner, recommender, decision-maker, policy interpreter, autonomous analyst |
 | **Assistant Interaction Intelligence** | Conversation flow packaging and response routing across assistant packages (coordinate ≠ act) | Memory SoT, identity owner, Intent authority, decision-maker, planner, recommender, executor, autonomous agent |
+| **Assistant Personalisation Boundary** | Packaging/display of explicit presentation preferences (adapt ≠ profile) | Hidden user model, personality inference, identity conclusion, behavioural predictor, autonomous adapter, preference SoT replacement |
 | **Graph History** | Terminal superseded graph snapshot evidence | Actionable graph mutations |
 | **Task** | Durable work item | Action |
 | **Action** | Executable catalog/command candidate | Task |

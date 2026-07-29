@@ -127,6 +127,7 @@ AI behaviour, permissions, and boundaries.
 | [Assistant Retrieval Intelligence Architecture](05-AI/ASSISTANT-RETRIEVAL-INTELLIGENCE-ARCHITECTURE.md) | Programme IV Batch 13 — retrieval packaging / evidence presentation (implemented) |
 | [Assistant Explanation Intelligence Architecture](05-AI/ASSISTANT-EXPLANATION-INTELLIGENCE-ARCHITECTURE.md) | Programme IV Batch 14 — explanation packaging / citation clarity (Active / implemented) |
 | [Assistant Interaction Intelligence Architecture](05-AI/ASSISTANT-INTERACTION-INTELLIGENCE-ARCHITECTURE.md) | Programme IV Batch 15 — conversation flow packaging / response routing (Active / implemented) |
+| [Assistant Personalisation Boundary Architecture](05-AI/ASSISTANT-PERSONALISATION-BOUNDARY-ARCHITECTURE.md) | Programme IV Batch 16 — explicit presentation preference packaging (charter only) |
 | [Memory Policy](05-AI/MEMORY-POLICY.md) | What may be stored, retention, user control, deletion |
 | [Confidence Policy](05-AI/CONFIDENCE-POLICY.md) | Confidence levels, suggestion thresholds, uncertainty |
 | [AI Architecture Index](05-AI/README.md) | Navigation hub for Recommendation/Decision/Governance contracts |

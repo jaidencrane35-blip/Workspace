@@ -501,6 +501,14 @@ Rules:
 - Interaction packages route Batches 11–14 packages with provenance; gaps remain visible
 - Composes Batches 10–14 projection helpers — no parallel contract family
 
+### Assistant Personalisation Boundary (Programme IV Batch 16 — charter only)
+
+- Charter defines projection-only packaging of explicit presentation preferences
+- Implementation must not begin until charter acceptance
+- Future packages must cite preference provenance; forbid inferred identity/personality affordances
+- Preference edits must route through existing preference command owners — not assistant agency
+- Prefer composing Batches 10–15 projection helpers over a new parallel contract family
+
 
 ## Serde defaults vs TypeScript required fields
 

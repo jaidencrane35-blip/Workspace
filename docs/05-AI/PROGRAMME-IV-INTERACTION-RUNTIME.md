@@ -58,8 +58,9 @@ The Query Engine:
 | 13 | Assistant Retrieval Intelligence | Retrieval request packaging / evidence presentation — **implemented** |
 | 14 | Assistant Explanation Intelligence | Explanation packaging / citation clarity — **implemented** |
 | 15 | Assistant Interaction Intelligence | Conversation flow packaging / response routing — **implemented** |
+| 16 | Assistant Personalisation Boundary | Explicit presentation preference packaging — **charter only** |
 
-Future Programme IV batches build conversational and assistant surfaces **on top of** this retrieval layer — never beside it, never replacing it. Batch 10 exists so those surfaces can reuse contracts without cloning Batches 1–9. Batch 11 implements that conversational surface as presentation, not authority. Batch 12 implements how session context is selected and packaged without becoming memory or planning authority. Batch 13 implements how assistant retrieval packages and presents existing Semantic Query / Evidence results without ranking truth or recommending. Batch 14 implements how the assistant packages explanation clarity over recorded Explanation Layer and evidence without concluding truth or inventing causality. Batch 15 implements how interaction flow is coordinated across Batches 11–14 without becoming memory, Intent, or autonomous agency.
+Future Programme IV batches build conversational and assistant surfaces **on top of** this retrieval layer — never beside it, never replacing it. Batch 10 exists so those surfaces can reuse contracts without cloning Batches 1–9. Batch 11 implements that conversational surface as presentation, not authority. Batch 12 implements how session context is selected and packaged without becoming memory or planning authority. Batch 13 implements how assistant retrieval packages and presents existing Semantic Query / Evidence results without ranking truth or recommending. Batch 14 implements how the assistant packages explanation clarity over recorded Explanation Layer and evidence without concluding truth or inventing causality. Batch 15 implements how interaction flow is coordinated across Batches 11–14 without becoming memory, Intent, or autonomous agency. Batch 16 charters how explicit presentation preferences are packaged without hidden user modelling or autonomous adaptation.
 
 ---
 
@@ -287,6 +288,19 @@ It owns conversation state packaging, interaction session structure, user-visibl
 
 It never owns memory, identity, Intent authority, decisions, planning, recommendations, execution, or autonomous behaviour. It composes Batches 11–14 rather than create a cognitive engine, hidden memory, or agent loop.
 
+---
+
+## Ownership boundary (Batch 16 — charter only)
+
+The **Assistant Personalisation Boundary Contract** is chartered in
+[Assistant Personalisation Boundary Architecture](./ASSISTANT-PERSONALISATION-BOUNDARY-ARCHITECTURE.md).
+
+**Status: charter only — implementation blocked until acceptance.**
+
+It will own presentation preference packaging, explicit user preference display, interface adaptation metadata, interaction style configuration, and personalisation diagnostics.
+
+It will never own hidden user modelling, personality inference, identity, memory, behavioural prediction, psychological profiling, autonomous adaptation, or decision-making. It must compose the AI Personalization Foundation and Batches 11–15 rather than create a user-model engine or hidden profile database.
+
 ## Upstream access rule
 
 All upstream access uses **`load_snapshot` only**.
@@ -355,6 +369,7 @@ Unknown remains unknown. Unavailable remains unavailable. Contradictions remain 
 - [Assistant Retrieval Intelligence Architecture](./ASSISTANT-RETRIEVAL-INTELLIGENCE-ARCHITECTURE.md) *(Batch 13 — implemented)*
 - [Assistant Explanation Intelligence Architecture](./ASSISTANT-EXPLANATION-INTELLIGENCE-ARCHITECTURE.md) *(Batch 14 — implemented)*
 - [Assistant Interaction Intelligence Architecture](./ASSISTANT-INTERACTION-INTELLIGENCE-ARCHITECTURE.md) *(Batch 15 — implemented)*
+- [Assistant Personalisation Boundary Architecture](./ASSISTANT-PERSONALISATION-BOUNDARY-ARCHITECTURE.md) *(Batch 16 — charter only)*
 - [Programme III — Coherent Workspace Runtime](./PROGRAMME-III-COHERENT-WORKSPACE-RUNTIME.md)
 - [Programme II — Cognitive Workspace](./PROGRAMME-II-COGNITIVE-WORKSPACE.md)
 - [Projection Integrity](../03-Engineering/PROJECTION-INTEGRITY.md)
