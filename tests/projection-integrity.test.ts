@@ -143,6 +143,11 @@ import {
   isEvidenceFreshnessProjectionNonCommandable,
   evidenceFreshnessHistoryCountIsAuthoritative,
 } from "../app/src/components/evidenceFreshnessProjection";
+import {
+  isEvidenceCompletenessHistoryNonActionable,
+  isEvidenceCompletenessProjectionNonCommandable,
+  evidenceCompletenessHistoryCountIsAuthoritative,
+} from "../app/src/components/evidenceCompletenessProjection";
 import type {
   DecisionArtifactHistoryEntry,
   DecisionEngineSummary,
@@ -218,16 +223,19 @@ import type {
   EvidenceConsistencyHistoryEntry,
   EvidenceDependencyHistoryEntry,
   EvidenceFreshnessHistoryEntry,
+  EvidenceCompletenessHistoryEntry,
   WorkspaceEvidenceTraceProjection,
   WorkspaceEvidenceCoverageProjection,
   WorkspaceEvidenceConsistencyProjection,
   WorkspaceEvidenceDependencyProjection,
   WorkspaceEvidenceFreshnessProjection,
+  WorkspaceEvidenceCompletenessProjection,
   WorkspaceEvidenceTraceSummary,
   WorkspaceEvidenceCoverageSummary,
   WorkspaceEvidenceConsistencySummary,
   WorkspaceEvidenceDependencySummary,
   WorkspaceEvidenceFreshnessSummary,
+  WorkspaceEvidenceCompletenessSummary,
   RecommendationHistoryEntry,
   RecommendationItem,
   TaskGraphSummary,
@@ -2412,6 +2420,65 @@ describe("projection integrity — cognitive agent cast", () => {
     expect(Object.keys(nonCommand)).not.toContain("approve");
     expect(Object.keys(nonCommand)).not.toContain("recommend");
     expect(Object.keys(nonCommand)).not.toContain("refresh");
+    expect(Object.keys(nonCommand)).not.toContain("automate");
+  });
+
+  it("keeps evidence completeness projections non-commandable with authoritative history_count", () => {
+    const historyEntry = (
+      overrides: Partial<EvidenceCompletenessHistoryEntry> = {}
+    ): EvidenceCompletenessHistoryEntry => ({
+      completeness_id: "evidence_completeness:1",
+      status: "superseded",
+      created_at: "t0",
+      superseded_at: "t1",
+      completeness: "partial",
+      observation_count: 2,
+      gap_count: 1,
+      source_revision_count: 3,
+      terminal: true,
+      actionable: false,
+      authority_effect: "none",
+      ...overrides,
+    });
+    const projection: WorkspaceEvidenceCompletenessProjection = {
+      workspace_id: "ws",
+      projected_at: "t2",
+      current: null,
+      history: [historyEntry()],
+      history_count: 3,
+      authority_effect: "none",
+    };
+    expect(isEvidenceCompletenessProjectionNonCommandable(projection)).toBe(true);
+    expect(isEvidenceCompletenessHistoryNonActionable(historyEntry())).toBe(true);
+    expect(
+      isEvidenceCompletenessHistoryNonActionable(historyEntry({ actionable: true }))
+    ).toBe(false);
+
+    const summary: WorkspaceEvidenceCompletenessSummary = {
+      workspace_id: "ws",
+      has_current: false,
+      completeness: null,
+      observation_count: 0,
+      gap_count: 0,
+      narrative_summary: null,
+      history: [historyEntry()],
+      history_count: 3,
+      authority_effect: "none",
+      actionable: false,
+    };
+    expect(evidenceCompletenessHistoryCountIsAuthoritative(summary)).toBe(true);
+    expect(summary.history_count).toBeGreaterThanOrEqual(summary.history.length);
+
+    const nonCommand = {
+      completeness_id: "evidence_completeness:1",
+      actionable: false,
+      terminal: true,
+      authority_effect: "none",
+    };
+    expect(Object.keys(nonCommand)).not.toContain("execute");
+    expect(Object.keys(nonCommand)).not.toContain("approve");
+    expect(Object.keys(nonCommand)).not.toContain("recommend");
+    expect(Object.keys(nonCommand)).not.toContain("repair");
     expect(Object.keys(nonCommand)).not.toContain("automate");
   });
 });

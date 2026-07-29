@@ -440,6 +440,14 @@ Rules:
 - Forbidden: execute, recommend, approve, mutate, automate, refresh, regenerate
 - Freshness is observational only — stale/unknown/unavailable never imply refresh
 
+### Workspace Evidence Completeness Engine (Programme IV Batch 8)
+
+- Dual-channel: `current` + `history` + authoritative `history_count`
+- History is evidence-only; never actionable
+- Projection helpers expose completeness summaries, completeness states, diagnostics, gaps, lineage
+- Forbidden: execute, recommend, approve, mutate, automate, repair, regenerate
+- Completeness is observational only — partial/unknown/unavailable/missing never imply repair
+
 
 ## Serde defaults vs TypeScript required fields
 

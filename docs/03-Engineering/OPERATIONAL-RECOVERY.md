@@ -55,6 +55,7 @@ Recovery must **never**:
 - `recovery_must_not_fabricate_evidence_consistency` — never repair conflicts, invent consistency/inconsistency, or assume agreement on restart
 - `recovery_must_not_fabricate_evidence_dependency` — never invent dependency, repair links, bridge broken structure, or estimate missing structure on restart
 - `recovery_must_not_fabricate_evidence_freshness` — never refresh stale evidence, fabricate timestamps, invent revisions, or estimate freshness on restart
+- `recovery_must_not_fabricate_evidence_completeness` — never fabricate evidence, fill gaps, estimate completeness, or repair missing artefacts on restart
 - recreate desktop actions
 - bypass PermissionGateway / CommandPipeline for user mutations
 - silently “heal” lifecycle into an open actionable state

@@ -41,6 +41,7 @@ Canonical product language. Prefer these terms in UI, docs, and Assistant copy.
 | **Workspace Evidence Consistency Engine** | Observable agreement/disagreement across evidence (consistency ≠ resolution) | Conflict resolver, truth arbiter, consensus builder, recommender, upstream authority |
 | **Workspace Evidence Dependency Engine** | Recorded dependency structure across evidence (dependency ≠ causation) | Dependency inventor, workflow planner, scheduler, causal reasoner, recommender, upstream authority |
 | **Workspace Evidence Freshness Engine** | Observable freshness of available evidence (freshness ≠ validity) | Refresher, regenerator, freshness estimator, scheduler, recommender, upstream authority |
+| **Workspace Evidence Completeness Engine** | Observable completeness and recorded omissions (completeness ≠ truth) | Gap filler, evidence repairer, completeness estimator, recommender, upstream authority |
 | **Graph History** | Terminal superseded graph snapshot evidence | Actionable graph mutations |
 | **Task** | Durable work item | Action |
 | **Action** | Executable catalog/command candidate | Task |

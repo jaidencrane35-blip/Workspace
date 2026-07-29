@@ -664,6 +664,22 @@ Observable freshness of available evidence.
 
 See [Workspace Evidence Freshness Architecture](../05-AI/WORKSPACE-EVIDENCE-FRESHNESS-ARCHITECTURE.md).
 
+## Workspace Evidence Completeness Engine (Programme IV Batch 8)
+
+Observable completeness of available evidence and recorded omissions.
+
+**Observe completeness. Never complete evidence.**
+
+- Owns completeness snapshots / observations / gaps / diagnostics / summaries only
+- Never owns retrieval, navigation, provenance, coverage, consistency, dependency, freshness, reasoning, recommendation, execution, or lifecycle
+- Upstream access via `load_snapshot` only — never foreign `::generate`
+- Never fills gaps, repairs incomplete evidence, fabricates completeness, or estimates missing information
+- History is evidence-only (`actionable: false`, `authority_effect: "none"`)
+- Mutation inventory includes `GenerateWorkspaceEvidenceCompleteness` (baseline **81**)
+- History / projection DTO inventory length **32**
+
+See [Workspace Evidence Completeness Architecture](../05-AI/WORKSPACE-EVIDENCE-COMPLETENESS-ARCHITECTURE.md).
+
 ## Capability boundary audit
 
 Enforced by `scripts/architecture-governance-lib.mjs`:

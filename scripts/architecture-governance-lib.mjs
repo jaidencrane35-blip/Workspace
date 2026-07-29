@@ -15,7 +15,7 @@ const read = (file) => fs.readFileSync(file, "utf8");
 const sorted = (values) => [...new Set(values)].sort();
 
 /** Minimum MutationCommand inventory — dropping below this fails closed. */
-export const MUTATION_COMMAND_BASELINE = 80;
+export const MUTATION_COMMAND_BASELINE = 81;
 
 /** Capability id → authority owner (permission-token scope, not lifecycle owner). */
 export const CAPABILITY_AUTHORITY_OWNERS = {
@@ -121,6 +121,7 @@ export const HISTORY_STRUCTS = [
   "EvidenceConsistencyHistoryEntry",
   "EvidenceDependencyHistoryEntry",
   "EvidenceFreshnessHistoryEntry",
+  "EvidenceCompletenessHistoryEntry",
 ];
 
 export const PROJECTION_SUMMARY_STRUCTS = [
@@ -155,6 +156,7 @@ export const PROJECTION_SUMMARY_STRUCTS = [
   "WorkspaceEvidenceConsistencySummary",
   "WorkspaceEvidenceDependencySummary",
   "WorkspaceEvidenceFreshnessSummary",
+  "WorkspaceEvidenceCompletenessSummary",
 ];
 
 /** Append-only recovery diagnostic event types — evidence only, never commands. */
@@ -215,6 +217,7 @@ const LIFECYCLE_SERVICE_FILES = new Set([
   "workspace_evidence_consistency.rs",
   "workspace_evidence_dependency.rs",
   "workspace_evidence_freshness.rs",
+  "workspace_evidence_completeness.rs",
 ]);
 
 /**
@@ -2561,6 +2564,97 @@ function evidenceFreshnessGuards(rootDir) {
   return violations;
 }
 
+/**
+ * Programme IV Batch 8 — Workspace Evidence Completeness Engine guards.
+ * Observe completeness. Never complete evidence.
+ */
+function evidenceCompletenessGuards(rootDir) {
+  const violations = [];
+  const servicePath = path.join(
+    rootDir,
+    "packages/kernel/src/services/workspace_evidence_completeness.rs",
+  );
+  const domainPath = path.join(
+    rootDir,
+    "packages/domain/src/workspace_evidence_completeness",
+  );
+  const repoPath = path.join(
+    rootDir,
+    "packages/database/src/repositories/workspace_evidence_completeness.rs",
+  );
+
+  const serviceFiles = fs.existsSync(servicePath) ? [servicePath] : [];
+  const domainFiles = fs.existsSync(domainPath) ? rustSources(domainPath) : [];
+  for (const file of [...serviceFiles, ...domainFiles]) {
+    const source = read(file);
+    const rel = path.relative(rootDir, file).replace(/\\/g, "/");
+    if (
+      /\bApplicationLaunchService\b/.test(source) ||
+      /\bExecutionLifecycleService\b/.test(source) ||
+      /\bTaskGraphService\b/.test(source) ||
+      /\bDecisionEngineService\b/.test(source) ||
+      /\bWorkspaceRecommendationEngineService\b/.test(source) ||
+      /std::process::Command/.test(source) ||
+      /workspace_windows_integration::/.test(source)
+    ) {
+      violations.push(
+        `${rel}: Evidence completeness must not import lifecycle/execution/recommendation/decision-engine services`,
+      );
+    }
+    if (
+      /PermissionGateway::/.test(source) ||
+      /\bCapabilityGrant\b/.test(source) ||
+      /CommandPipeline::/.test(source)
+    ) {
+      violations.push(
+        `${rel}: Evidence completeness must not own permissions, grant capabilities, or execute via Pipeline`,
+      );
+    }
+    if (
+      /WorkspaceEvidenceFreshnessService::generate\b/.test(source) ||
+      /WorkspaceEvidenceDependencyService::generate\b/.test(source) ||
+      /WorkspaceEvidenceConsistencyService::generate\b/.test(source) ||
+      /WorkspaceEvidenceCoverageService::generate\b/.test(source) ||
+      /WorkspaceEvidenceTraceService::generate\b/.test(source) ||
+      /WorkspaceEvidenceNavigationService::generate\b/.test(source) ||
+      /WorkspaceSemanticQueryService::generate\b/.test(source) ||
+      /WorkspaceIntelligenceHubService::generate\b/.test(source) ||
+      /WorkspaceKnowledgeIntegrationService::generate\b/.test(source) ||
+      /WorkspaceKnowledgeSynthesisService::generate\b/.test(source) ||
+      /WorkspaceContextualUnderstandingService::generate\b/.test(source) ||
+      /WorkspaceExplanationService::generate\b/.test(source) ||
+      /WorkspaceTemporalIntelligenceService::generate\b/.test(source) ||
+      /WorkspaceHistoricalReconstructionService::generate\b/.test(source) ||
+      /WorkspaceStateCompositionService::generate\b/.test(source) ||
+      /WorkspacePlanningService::generate\b/.test(source)
+    ) {
+      violations.push(
+        `${rel}: Evidence completeness must not silently refresh foreign sources via generate`,
+      );
+    }
+  }
+
+  if (fs.existsSync(repoPath)) {
+    const source = read(repoPath);
+    if (
+      /WorkspaceEvidenceCompletenessService/.test(source) ||
+      /use\s+workspace_kernel::/.test(source)
+    ) {
+      violations.push(
+        `packages/database/src/repositories/workspace_evidence_completeness.rs: repository must not call evidence completeness service`,
+      );
+    }
+  }
+
+  if (!fs.existsSync(domainPath) && !fs.existsSync(`${domainPath}.rs`)) {
+    violations.push(
+      "packages/domain/src/workspace_evidence_completeness missing; governance cannot verify evidence completeness DTOs",
+    );
+  }
+
+  return violations;
+}
+
 function checkDtoAuthorityFields(domainSources, structNames, label) {
 
   const violations = [];
@@ -2861,6 +2955,7 @@ export function auditArchitectureGovernance(rootDir, options = {}) {
   violations.push(...evidenceConsistencyGuards(rootDir));
   violations.push(...evidenceDependencyGuards(rootDir));
   violations.push(...evidenceFreshnessGuards(rootDir));
+  violations.push(...evidenceCompletenessGuards(rootDir));
 
   const domainSrc = path.join(rootDir, "packages/domain/src");
   const domainSources = fs.existsSync(domainSrc) ? rustSources(domainSrc) : [];

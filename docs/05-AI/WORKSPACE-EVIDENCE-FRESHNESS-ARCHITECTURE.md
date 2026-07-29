@@ -117,6 +117,12 @@ Governance rejects: refresh ownership, regeneration ownership, inferred freshnes
 
 ---
 
+## Next
+
+Batch 8 — [Workspace Evidence Completeness Architecture](./WORKSPACE-EVIDENCE-COMPLETENESS-ARCHITECTURE.md) (*How complete is the available evidence, and where are the observable omissions?*).
+
+---
+
 ## Explicit confirmation
 
 > Workspace Evidence Freshness Engine observes recorded evidence freshness only.

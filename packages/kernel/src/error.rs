@@ -20,6 +20,7 @@ use workspace_domain::{
     InsightCoordinationError, CrossWorkspaceIntelligenceError, DecisionSupportError,
     IntelligenceHubError, SemanticQueryError, EvidenceNavigationError, EvidenceTraceError,
     EvidenceCoverageError, EvidenceConsistencyError, EvidenceDependencyError, EvidenceFreshnessError,
+    EvidenceCompletenessError,
     WorkspaceSessionError,
     WorkspaceTransitionError,
     WorkspaceWorkContextError, WorkspaceWorkingStyleError,
@@ -316,6 +317,9 @@ pub enum KernelError {
 
     #[error("Evidence freshness validation failed: {message}")]
     EvidenceFreshnessValidation { message: String },
+
+    #[error("Evidence completeness validation failed: {message}")]
+    EvidenceCompletenessValidation { message: String },
 
     #[error("Workspace intelligence validation failed: {message}")]
     WorkspaceIntelligenceValidation { message: String },
@@ -828,6 +832,17 @@ impl From<EvidenceFreshnessError> for KernelError {
         match error {
             EvidenceFreshnessError::Domain(domain) => KernelError::from(domain),
             other => KernelError::EvidenceFreshnessValidation {
+                message: other.to_string(),
+            },
+        }
+    }
+}
+
+impl From<EvidenceCompletenessError> for KernelError {
+    fn from(error: EvidenceCompletenessError) -> Self {
+        match error {
+            EvidenceCompletenessError::Domain(domain) => KernelError::from(domain),
+            other => KernelError::EvidenceCompletenessValidation {
                 message: other.to_string(),
             },
         }
@@ -1586,6 +1601,10 @@ impl KernelError {
             },
             KernelError::EvidenceFreshnessValidation { message } => PublicError {
                 code: "evidence_freshness_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::EvidenceCompletenessValidation { message } => PublicError {
+                code: "evidence_completeness_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::WorkspaceIntelligenceValidation { message } => PublicError {

@@ -41,6 +41,7 @@ pub use repositories::{
     WorkspaceEvidenceConsistencyRepository,
     WorkspaceEvidenceDependencyRepository,
     WorkspaceEvidenceFreshnessRepository,
+    WorkspaceEvidenceCompletenessRepository,
     WorkspaceRepository, WorkspaceIntentRepository, ZoneRepository,
 };
 pub use settings::SettingsRepository;

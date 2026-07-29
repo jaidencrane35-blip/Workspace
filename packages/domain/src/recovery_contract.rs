@@ -75,6 +75,9 @@ use crate::workspace_evidence_dependency::{
 use crate::workspace_evidence_freshness::{
     EvidenceFreshnessHistoryEntry, WorkspaceEvidenceFreshnessProjection,
 };
+use crate::workspace_evidence_completeness::{
+    EvidenceCompletenessHistoryEntry, WorkspaceEvidenceCompletenessProjection,
+};
 use crate::workspace_reasoning_memory::{ReasoningHistoryEntry, ReasoningSnapshot};
 
 /// Documented startup in-progress sweep cap (must match
@@ -614,6 +617,26 @@ pub fn recovery_must_not_fabricate_evidence_freshness(
 /// Fabricated actionable evidence-freshness history must fail the recovery contract.
 pub fn recovery_must_not_fabricate_actionable_evidence_freshness_history(
     entry: &EvidenceFreshnessHistoryEntry,
+) -> bool {
+    entry.is_non_actionable()
+}
+
+/// Recovery must not invent completeness, fill gaps, repair missing artefacts, or estimate completeness.
+pub fn recovery_must_not_fabricate_evidence_completeness(
+    projection: &WorkspaceEvidenceCompletenessProjection,
+) -> bool {
+    projection.is_non_commandable()
+        && projection.history.iter().all(|h| h.is_non_actionable())
+        && projection
+            .current
+            .as_ref()
+            .map(|c| c.is_non_executing())
+            .unwrap_or(true)
+}
+
+/// Fabricated actionable evidence-completeness history must fail the recovery contract.
+pub fn recovery_must_not_fabricate_actionable_evidence_completeness_history(
+    entry: &EvidenceCompletenessHistoryEntry,
 ) -> bool {
     entry.is_non_actionable()
 }
