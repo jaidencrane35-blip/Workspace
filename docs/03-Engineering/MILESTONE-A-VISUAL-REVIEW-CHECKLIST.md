@@ -46,10 +46,25 @@ Make core Workspace product loops visible without expanding AI or replacing DAF 
 | Method | Used? | Notes |
 |--------|-------|-------|
 | Live app (browser Vite) | Yes | `cd app && pnpm exec vite` → http://localhost:1420 |
-| Screenshot(s) | Optional | Capture Home, Workspaces, Applications if reviewing remotely |
+| Screenshot(s) | Yes | See artifacts below |
 | Screen recording | No | Not required |
 
 **Launch:** `cd app && pnpm exec vite` → open **Home**, then **Workspaces**, **Applications**, **Layouts**.
+
+### Agent-captured screenshots (browser Vite; IPC unavailable expected)
+
+- `/opt/cursor/artifacts/screenshots/milestone-a-home.png`
+- `/opt/cursor/artifacts/screenshots/milestone-a-workspaces.png`
+- `/opt/cursor/artifacts/screenshots/milestone-a-applications.png`
+- `/opt/cursor/artifacts/screenshots/milestone-a-layouts.png`
+- `/opt/cursor/artifacts/screenshots/milestone-a-assistant-secondary.png`
+
+### Agent pre-check notes
+
+- Primary tabs read Home → Workspaces → Applications → Layouts before Assistant.
+- Workspaces pairs switcher with arrangements rail; Applications is a dedicated product panel.
+- Empty/runtime states are honest (no fabricated registry data).
+- Assistant remains a supporting tab, not Home.
 
 ## 7. Reviewer outcome
 
