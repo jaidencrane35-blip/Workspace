@@ -7,6 +7,9 @@
 | **Branch** | `cursor/product-vision-realignment-audit-34a5` |
 | **Visual north star** | Original Workspace concept art (switchable layouts + AI as sidecar) |
 | **Audience** | Engineering leads, product, commercial review |
+| **Current reality** | Partially superseded — prefer [WORKSPACE-PRODUCT-ALIGNMENT-AUDIT.md](WORKSPACE-PRODUCT-ALIGNMENT-AUDIT.md) after DAF-1a–1e |
+
+> **Supersession note:** Sections claiming no HWND control / no desktop arrangement restore are **stale**. DAF-1a–1e closed those gaps. Product priority and freeze-AI conclusions remain valid; use the post-governance alignment audit for current capability and roadmap.
 
 **This is not Programme IV Batch 17.**  
 **Do not expand AI layers from this document.**

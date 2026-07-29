@@ -7,7 +7,7 @@
 ## Quick Start
 
 | A new contributor | [Project Constitution](00-Constitution/PROJECT-CONSTITUTION.md) → [AI Engineering Governance](00-Governance/AI_ENGINEERING_GOVERNANCE.md) → [Engineering Governance](03-Engineering/ENGINEERING-GOVERNANCE.md) → [Visual Direction](01-Product/WORKSPACE-VISUAL-DIRECTION.md) |
-| Making a product decision | [Product Vision](01-Product/PRODUCT-VISION.md) → [Visual Direction](01-Product/WORKSPACE-VISUAL-DIRECTION.md) → [Realignment Audit](01-Product/PRODUCT-VISION-REALIGNMENT-AUDIT.md) |
+| Making a product decision | [Product Vision](01-Product/PRODUCT-VISION.md) → [Visual Direction](01-Product/WORKSPACE-VISUAL-DIRECTION.md) → [Product Alignment Audit](01-Product/WORKSPACE-PRODUCT-ALIGNMENT-AUDIT.md) |
 | Starting a major batch | [Batch Alignment Check](03-Engineering/BATCH-ALIGNMENT-CHECK.md) → [Engineering Governance](03-Engineering/ENGINEERING-GOVERNANCE.md) → [AI Engineering Governance](00-Governance/AI_ENGINEERING_GOVERNANCE.md) |
 | Human visual review | [Human Review Policy](03-Engineering/HUMAN-REVIEW-POLICY.md) → [Visual Review Checklist](03-Engineering/VISUAL-REVIEW-CHECKLIST.md) |
 | Designing architecture | [Architecture Principles](02-Architecture/ARCHITECTURE-PRINCIPLES.md) → [System Overview](02-Architecture/SYSTEM-OVERVIEW.md) |
@@ -50,7 +50,8 @@ What Workspace is, who it serves, and how scope is managed.
 | [Product Vision](01-Product/PRODUCT-VISION.md) | Product goals, domains, and target experience |
 | [Workspace Visual Direction](01-Product/WORKSPACE-VISUAL-DIRECTION.md) | Concept-art north star; literal vs non-literal interpretation |
 | [Visual references](01-Product/references/README.md) | Original concept images (direction, not pixel specs) |
-| [Product Vision Realignment Audit](01-Product/PRODUCT-VISION-REALIGNMENT-AUDIT.md) | Gap analysis vs concept art; DAF milestone; freeze AI expansion |
+| [Workspace Product Alignment Audit](01-Product/WORKSPACE-PRODUCT-ALIGNMENT-AUDIT.md) | Post-governance product reality, priority, debt, and roadmap (current) |
+| [Product Vision Realignment Audit](01-Product/PRODUCT-VISION-REALIGNMENT-AUDIT.md) | Earlier gap analysis vs concept art; partially superseded by DAF-1a–1e + alignment audit |
 | [Scope Management](01-Product/SCOPE-MANAGEMENT.md) | How scope is proposed, approved, and controlled |
 | [MVP Definition](01-Product/MVP-DEFINITION.md) | First useful product slice and acceptance criteria |
 
