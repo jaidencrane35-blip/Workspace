@@ -69,6 +69,10 @@ use crate::commands::update_settings::UpdateSettings;
 use crate::commands::widget::{CreateWidget, DeleteWidget, GetWidget};
 use crate::commands::workspace_activity::GateActivityGraphRead;
 use crate::commands::workspace_adaptation::{GateAdaptationRead, GateAdaptationWrite};
+use crate::commands::workspace_assistant_surface::{
+    ComposeWorkspaceAssistantTurn, ExplainAssistantSurface, GetWorkspaceAssistantSurface,
+    GetWorkspaceAssistantSurfaceSummary,
+};
 use crate::commands::workspace_attention::GateAttentionRead;
 use crate::commands::workspace_cognitive_agent_cast::{
     GenerateCognitiveAgentCast, GetCognitiveAgentCast, GetCognitiveAgentCastSummary,
@@ -252,7 +256,8 @@ use workspace_domain::{
     TemporalChangeExplanation, TemporalIntelligenceSnapshot, TemporalIntelligenceSummary,
     TriggerEvaluationResult, TriggerEvent, TriggerEventType, UserPreference, UserPreferenceProfile,
     WidgetId, WidgetReference, WorkGoal, WorkflowContext, Workspace, WorkspaceActivity,
-    WorkspaceActivityGraph, WorkspaceAdaptationState, WorkspaceAttentionState,
+    WorkspaceActivityGraph, WorkspaceAdaptationState, WorkspaceAssistantSurfaceExplanation,
+    WorkspaceAssistantSurfaceProjection, WorkspaceAssistantSurfaceSummary, WorkspaceAttentionState,
     WorkspaceCompositionState, WorkspaceContext, WorkspaceContextExplanation,
     WorkspaceContinuityState, WorkspaceDecisionSupportExplanation,
     WorkspaceDecisionSupportProjection, WorkspaceDecisionSupportSummary, WorkspaceEnvironmentState,
@@ -3657,6 +3662,53 @@ impl CommandHandler {
     /// Architecture guard — Evidence reliability cannot execute / settle conflicts / establish truth.
     pub fn evidence_reliability_attempt_execute() -> Result<()> {
         crate::services::WorkspaceEvidenceReliabilityService::attempt_execute()
+    }
+
+    pub fn compose_workspace_assistant_turn(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        human_ask: String,
+    ) -> Result<WorkspaceAssistantSurfaceProjection> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_mutation(ComposeWorkspaceAssistantTurn::new(workspace_id, human_ask))
+    }
+
+    pub fn get_workspace_assistant_surface(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceAssistantSurfaceProjection> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetWorkspaceAssistantSurface::new(workspace_id))
+    }
+
+    pub fn get_workspace_assistant_surface_summary(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        history_limit: usize,
+    ) -> Result<WorkspaceAssistantSurfaceSummary> {
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_query(
+            GetWorkspaceAssistantSurfaceSummary::new(workspace_id, history_limit),
+        )
+    }
+
+    pub fn explain_assistant_surface(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceAssistantSurfaceExplanation> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(ExplainAssistantSurface::new(workspace_id))
+    }
+
+    pub fn assistant_surface_attempt_execute() -> Result<()> {
+        crate::services::WorkspaceAssistantSurfaceService::attempt_execute()
     }
 
     #[allow(clippy::too_many_arguments)]

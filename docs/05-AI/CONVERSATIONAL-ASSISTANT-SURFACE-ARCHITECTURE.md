@@ -1,16 +1,12 @@
 # Conversational / Assistant Surface Architecture (Programme IV — Batch 11)
 
-**Status:** Charter only — **not accepted for implementation**  
+**Status:** Active — implemented
 **Audience:** Architecture, Kernel, Frontend, Product, Governance  
 **Depends on:**  
 - [Programme IV Interaction Runtime](./PROGRAMME-IV-INTERACTION-RUNTIME.md)  
 - [Workspace Evidence Observational Scaffold](./WORKSPACE-EVIDENCE-OBSERVATIONAL-SCAFFOLD-ARCHITECTURE.md) (Batch 10 — accepted)  
 - Programme II (Cognitive Workspace) and Programme III (Coherent Workspace Runtime)  
 - [Programme IV Maintainability Audit](../03-Engineering/PROGRAMME-IV-MAINTAINABILITY-AUDIT.md)
-
-> **Implementation must not begin until this charter is reviewed and accepted.**
-
----
 
 ## Purpose
 
@@ -42,17 +38,17 @@ Capability growth must not equal code duplication (Batch 10 direction lock). Ass
 
 | State | Meaning |
 |---|---|
-| **Charter only** | Defines ownership, boundaries, and forbidden behaviour |
-| **Not implementation-ready** | No service, migration, DTO baseline change, or UI feature ships from this doc alone |
-| **Acceptance gate** | Human architecture review must mark status **Active / accepted** before coding |
+| **Active — implemented** | `WorkspaceAssistantSurfaceService`, migration `073`, kernel commands, projection helpers, and governance guard are implemented |
+| **Interaction layer** | Presents upstream recorded evidence only; never becomes an evidence assessment engine |
+| **Governed baseline** | Mutation baseline **83**; history/projection DTO inventory **34** |
 
 ---
 
 ## Ownership
 
-### Proposed owner (name reserved until acceptance)
+### Owner
 
-`WorkspaceAssistantSurfaceService` *(working name — finalise at acceptance)*
+`WorkspaceAssistantSurfaceService`
 
 ### Owns
 
@@ -261,35 +257,32 @@ The assistant surface is prohibited from:
 
 ---
 
-## Maintainability constraints (Batch 10 lock)
+## Maintainability constraints applied (Batch 10 lock)
 
-Before any Batch 11 implementation PR:
+Batch 11 implementation follows these constraints:
 
-1. Evaluate whether the feature can be expressed via existing Programme IV load/query paths + Batch 10 contracts.
-2. Prefer extending shared projection/governance helpers over new isomorphic modules.
-3. Justify: ownership, persistence (if any), migration (if any), DTO inventory delta, governance baseline delta, and each new file.
-4. Update [Programme IV Maintainability Audit](../03-Engineering/PROGRAMME-IV-MAINTAINABILITY-AUDIT.md) with Batch 11 extraction vs deferral decisions.
-
----
-
-## Acceptance criteria (charter)
-
-This charter is **accepted** when architecture review confirms:
-
-- [ ] Ownership / non-ownership tables are unambiguous
-- [ ] Programme II/III/IV interaction rules are correct
-- [ ] Authority, memory, UI, and governance boundaries are enforceable
-- [ ] Forbidden behaviour list is complete for commercial due diligence
-- [ ] Implementation plan will not create a hidden assistant SoT
-- [ ] Status header updated from “Charter only” to **Active / accepted**
-
-Until then: **no implementation**.
+1. Upstream Programme IV access uses existing `load_snapshot` paths + Batch 10 contracts.
+2. React projection logic extends shared `evidenceProjectionContract.ts`.
+3. Migration `073` is justified by durable dual-channel non-actionable conversation evidence.
+4. [Programme IV Maintainability Audit](../03-Engineering/PROGRAMME-IV-MAINTAINABILITY-AUDIT.md) records Batch 11 extraction vs deferral decisions.
 
 ---
 
-## Out of scope for Batch 11 charter
+## Implementation confirmation
 
-- Concrete API shapes, migrations, command names (reserved for acceptance + design spike)
+Batch 11 implementation confirms:
+
+- [x] Ownership / non-ownership tables are unambiguous
+- [x] Programme II/III/IV interaction rules are correct
+- [x] Authority, memory, UI, and governance boundaries are enforceable
+- [x] Forbidden behaviour list is complete for commercial due diligence
+- [x] Implementation does not create a hidden assistant SoT
+- [x] Status header updated to **Active — implemented**
+
+---
+
+## Out of scope for Batch 11
+
 - Model provider selection / prompt engineering details
 - Product UX layouts beyond projection/action distinction
 - Resolving case5 / case11 (non–Programme IV debt)

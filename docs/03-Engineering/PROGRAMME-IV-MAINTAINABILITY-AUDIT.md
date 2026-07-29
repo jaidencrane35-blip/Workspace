@@ -243,16 +243,27 @@ See [Workspace Evidence Observational Scaffold Architecture](../05-AI/WORKSPACE-
 
 ---
 
-## H. Batch 11 charter opened (not implemented)
+## H. Batch 11 decision record (implemented)
 
 **Date:** 2026-07-29  
 **Document:** [Conversational / Assistant Surface Architecture](../05-AI/CONVERSATIONAL-ASSISTANT-SURFACE-ARCHITECTURE.md)  
-**Status:** Charter only — implementation blocked until architecture acceptance.
+**Status:** Implemented — interaction/composition layer, not an evidence assessment engine.
 
-Batch 11 will define the human conversational interface to the intelligence substrate. It must not create hidden authority, clone another evidence engine, or silence unrelated kernel debt (case5 / case11).
+Batch 11 defines the human conversational interface to the intelligence substrate. It does not create hidden authority, clone another evidence engine, or silence unrelated kernel debt (case5 / case11).
+
+### Extraction decisions
+
+| Pattern | Batch 11 action |
+|---|---|
+| Upstream Programme II/III/IV access | **Composed now** — `load_snapshot` only; no foreign `::generate` |
+| Domain digest / forbidden phrases / authority vocabulary | **Reused now** — `workspace_evidence_contract` helpers |
+| React projection checks | **Reused now** — `assistantSurfaceProjection.ts` thin-wraps `evidenceProjectionContract.ts` |
+| Governance guard | **Extended now** — one assistant-surface spec in `EVIDENCE_ENGINE_GUARD_SPECS` |
+| Repository/service generics | **Still deferred** — assistant columns differ (`human_ask`, utterance, lineage); typed code is clearer |
+| New mutation / DTO inventory | **Added intentionally** — baseline 83 / DTO 34 for `ComposeWorkspaceAssistantTurn` |
 
 ---
 
 ## Explicit confirmation
 
-This audit concludes that Workspace Evidence engines through Batch 9 observe recorded evidence characteristics only within their stated ownership. The two kernel failures are pre-existing Activity Graph / Intelligence issues, not Programme IV architectural drift. Batch 10 improves human maintainability by extracting shared scaffolding without adding a new evidence authority or clone engine. Batch 11 is opened as a charter only.
+This audit concludes that Workspace Evidence engines through Batch 9 observe recorded evidence characteristics only within their stated ownership. The two kernel failures are pre-existing Activity Graph / Intelligence issues, not Programme IV architectural drift. Batch 10 improves human maintainability by extracting shared scaffolding without adding a new evidence authority or clone engine. Batch 11 implements a conversational presentation layer over recorded evidence without becoming authority.

@@ -46,6 +46,7 @@ pub mod suggestion_lifecycle;
 pub mod workspace;
 pub mod workspace_activity;
 pub mod workspace_adaptation;
+pub mod workspace_assistant_surface;
 pub mod workspace_attention;
 pub mod workspace_cognitive_agent_cast;
 pub mod workspace_cognitive_autonomy;
@@ -302,6 +303,13 @@ pub use workspace_adaptation::{
     AdaptationTargetKind, WorkspaceAdaptationError, WorkspaceAdaptationState,
     WorkspaceAdaptationSummary,
 };
+pub use workspace_assistant_surface::{
+    AssistantCitation, AssistantSurfaceDiagnostics, AssistantSurfaceError, AssistantSurfaceGap,
+    AssistantSurfaceHistoryEntry, AssistantSurfaceScope, AssistantSurfaceStatus,
+    AssistantUtterance, PresentationLineage, WorkspaceAssistantSurfaceExplanation,
+    WorkspaceAssistantSurfaceProjection, WorkspaceAssistantSurfaceSnapshot,
+    WorkspaceAssistantSurfaceSummary,
+};
 pub use workspace_attention::{
     normalize_attention_reasons, AttentionCategory, AttentionConfidence, AttentionItem,
     AttentionPriority, AttentionReason, AttentionSignal, AttentionSourceType, AttentionState,
@@ -390,6 +398,10 @@ pub use workspace_evidence_consistency::{
     WorkspaceEvidenceConsistencyExplanation, WorkspaceEvidenceConsistencyProjection,
     WorkspaceEvidenceConsistencySnapshot, WorkspaceEvidenceConsistencySummary,
 };
+pub use workspace_evidence_contract::{
+    is_non_actionable_authority, is_terminal_history_status, reject_forbidden_phrases_with,
+    stable_digest as evidence_stable_digest, AUTHORITY_EFFECT_NONE, BASELINE_FORBIDDEN_PHRASES,
+};
 pub use workspace_evidence_coverage::{
     CoverageAssessment, CoverageDiagnostics, CoverageGap, CoverageLineage, CoverageMetric,
     CoverageScope, EvidenceCoverageCompleteness, EvidenceCoverageError,
@@ -427,10 +439,6 @@ pub use workspace_evidence_reliability::{
     ReliabilityObservationState, ReliabilityScope, WorkspaceEvidenceReliabilityExplanation,
     WorkspaceEvidenceReliabilityProjection, WorkspaceEvidenceReliabilitySnapshot,
     WorkspaceEvidenceReliabilitySummary,
-};
-pub use workspace_evidence_contract::{
-    is_non_actionable_authority, is_terminal_history_status, reject_forbidden_phrases_with,
-    stable_digest as evidence_stable_digest, AUTHORITY_EFFECT_NONE, BASELINE_FORBIDDEN_PHRASES,
 };
 pub use workspace_evidence_trace::{
     EvidenceTraceCompleteness, EvidenceTraceError, EvidenceTraceEvidenceRef,
@@ -665,6 +673,7 @@ pub use recovery_contract::{
     recovered_stale_claim_is_non_retryable, recovery_diagnostic_event_type_is_non_commandable,
     recovery_diagnostic_is_evidence_only,
     recovery_must_not_fabricate_actionable_agent_cast_history,
+    recovery_must_not_fabricate_actionable_assistant_surface_history,
     recovery_must_not_fabricate_actionable_autonomy_history,
     recovery_must_not_fabricate_actionable_contextual_understanding_history,
     recovery_must_not_fabricate_actionable_cross_workspace_intelligence_history,
@@ -692,6 +701,7 @@ pub use recovery_contract::{
     recovery_must_not_fabricate_actionable_semantic_query_history,
     recovery_must_not_fabricate_actionable_temporal_history,
     recovery_must_not_fabricate_actionable_workspace_state_history,
+    recovery_must_not_fabricate_assistant_surface,
     recovery_must_not_fabricate_cognitive_agent_cast,
     recovery_must_not_fabricate_cognitive_autonomy, recovery_must_not_fabricate_cognitive_graph,
     recovery_must_not_fabricate_contextual_understanding,

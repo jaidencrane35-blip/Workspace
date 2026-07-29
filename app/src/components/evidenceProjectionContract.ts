@@ -26,7 +26,11 @@ export type EvidenceProjectionLike = {
     assessment?: EvidenceAuthorityLike;
     diagnostics?: EvidenceAuthorityLike;
     lineage?: EvidenceAuthorityLike;
+    utterance?: EvidenceAuthorityLike & {
+      citations?: EvidenceAuthorityLike[];
+    };
     observations?: EvidenceAuthorityLike[];
+    citations?: EvidenceAuthorityLike[];
     gaps?: EvidenceAuthorityLike[];
     nodes?: EvidenceAuthorityLike[];
     relationships?: EvidenceAuthorityLike[];
@@ -72,7 +76,10 @@ export function isEvidenceProjectionNonCommandable(
         authorityIsAbsentOrNone(projection.current.assessment) &&
         authorityIsAbsentOrNone(projection.current.diagnostics) &&
         authorityIsAbsentOrNone(projection.current.lineage) &&
+        authorityIsAbsentOrNone(projection.current.utterance) &&
+        (projection.current.utterance?.citations ?? []).every(authorityIsNone) &&
         (projection.current.observations ?? []).every(authorityIsNone) &&
+        (projection.current.citations ?? []).every(authorityIsNone) &&
         (projection.current.gaps ?? []).every(authorityIsNone) &&
         (projection.current.nodes ?? []).every(authorityIsNone) &&
         (projection.current.relationships ?? []).every(authorityIsNone)))

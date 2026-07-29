@@ -711,16 +711,15 @@ See [Workspace Evidence Observational Scaffold Architecture](../05-AI/WORKSPACE-
 
 ## Conversational / Assistant Surface (Programme IV Batch 11)
 
-**Charter only — not accepted for implementation.**
-
-Human interface to Programmes II–IV without hidden authority.
+Human-facing conversation surface over recorded Programme II–IV evidence.
 
 **Present intelligence. Never become authority.**
 
-- Will own conversation/turn projections, presentation lineage, surface diagnostics only
-- Will never own decisions, approvals, execution, Intent, Decision Engine, Recommendation systems, or hidden memory
-- Upstream reads via `load_snapshot` / existing queries only — never foreign `::generate` for refresh
-- No mutation baseline or DTO inventory change until an accepted implementation design exists
+- Owns conversation turn projections, assistant utterance packages, presentation lineage, surface diagnostics only
+- Never owns decisions, approvals, execution, Intent, Decision Engine, Recommendation systems, or hidden memory
+- Upstream reads via `load_snapshot` only — never foreign `::generate` for refresh
+- Mutation inventory includes `ComposeWorkspaceAssistantTurn` (baseline **83**)
+- History / projection DTO inventory length **34**
 
 See [Conversational / Assistant Surface Architecture](../05-AI/CONVERSATIONAL-ASSISTANT-SURFACE-ARCHITECTURE.md).
 

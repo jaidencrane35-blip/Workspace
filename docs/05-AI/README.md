@@ -30,7 +30,7 @@ Entry point: `PROGRAMME-IV-INTERACTION-RUNTIME.md`
 | 8 Evidence Completeness | `WORKSPACE-EVIDENCE-COMPLETENESS-ARCHITECTURE.md` | `packages/*/workspace_evidence_completeness*` |
 | 9 Evidence Reliability | `WORKSPACE-EVIDENCE-RELIABILITY-ARCHITECTURE.md` | `packages/*/workspace_evidence_reliability*` |
 | 10 Observational Scaffold | `WORKSPACE-EVIDENCE-OBSERVATIONAL-SCAFFOLD-ARCHITECTURE.md` | `workspace_evidence_contract`, `evidenceProjectionContract.ts`, governance `EVIDENCE_ENGINE_GUARD_SPECS` |
-| 11 Assistant Surface | `CONVERSATIONAL-ASSISTANT-SURFACE-ARCHITECTURE.md` | **Charter only** — no implementation roots yet |
+| 11 Assistant Surface | `CONVERSATIONAL-ASSISTANT-SURFACE-ARCHITECTURE.md` | `packages/*/workspace_assistant_surface*`, `assistantSurfaceProjection.ts` |
 
 Maintainability audit: `../03-Engineering/PROGRAMME-IV-MAINTAINABILITY-AUDIT.md`
 

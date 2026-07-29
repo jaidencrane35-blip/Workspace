@@ -3,25 +3,26 @@ use thiserror::Error;
 use workspace_database::DatabaseError;
 use workspace_domain::{
     AiAssistantError, AiEvaluationError, AiMemoryError, AiModelError, AiOrchestrationError,
-    AiPersonalizationError, AiPlanningError, AiRequestError, AutomationContractError,
-    AutomationTriggerError, CognitiveModelError, ContextualUnderstandingError,
-    CrossWorkspaceIntelligenceError, DecisionEngineError, DecisionQueueError, DecisionSupportError,
-    DomainError, EvidenceCompletenessError, EvidenceConsistencyError, EvidenceCoverageError,
-    EvidenceDependencyError, EvidenceFreshnessError, EvidenceNavigationError,
-    EvidenceReliabilityError, EvidenceTraceError, HistoricalReconstructionError,
-    InsightCoordinationError, IntelligenceHubError, KnowledgeIntegrationError,
-    KnowledgeSynthesisError, PolicyGovernanceError, ResourceKind, SemanticQueryError,
-    TaskGraphError, TemporalIntelligenceError, WorkspaceActivityError, WorkspaceAdaptationError,
-    WorkspaceAttentionError, WorkspaceCognitiveAgentCastError, WorkspaceCognitiveAutonomyError,
-    WorkspaceCognitiveGraphError, WorkspaceCognitiveOrchestrationError, WorkspaceCompositionError,
-    WorkspaceContinuityError, WorkspaceEnvironmentError, WorkspaceEvolutionError,
-    WorkspaceExperienceError, WorkspaceExplanationError, WorkspaceIntelligenceError,
-    WorkspaceIntentError, WorkspaceInteractionError, WorkspaceLearningAdaptationError,
-    WorkspaceMilestoneError, WorkspaceNavigationError, WorkspaceOperatingStateError,
-    WorkspacePatternError, WorkspacePlanningError, WorkspaceProfileError, WorkspacePurposeError,
-    WorkspaceReadinessError, WorkspaceReasoningMemoryError, WorkspaceRecommendationEngineError,
-    WorkspaceSessionError, WorkspaceStateEnvelopeError, WorkspaceTransitionError,
-    WorkspaceWorkContextError, WorkspaceWorkingStyleError,
+    AiPersonalizationError, AiPlanningError, AiRequestError, AssistantSurfaceError,
+    AutomationContractError, AutomationTriggerError, CognitiveModelError,
+    ContextualUnderstandingError, CrossWorkspaceIntelligenceError, DecisionEngineError,
+    DecisionQueueError, DecisionSupportError, DomainError, EvidenceCompletenessError,
+    EvidenceConsistencyError, EvidenceCoverageError, EvidenceDependencyError,
+    EvidenceFreshnessError, EvidenceNavigationError, EvidenceReliabilityError, EvidenceTraceError,
+    HistoricalReconstructionError, InsightCoordinationError, IntelligenceHubError,
+    KnowledgeIntegrationError, KnowledgeSynthesisError, PolicyGovernanceError, ResourceKind,
+    SemanticQueryError, TaskGraphError, TemporalIntelligenceError, WorkspaceActivityError,
+    WorkspaceAdaptationError, WorkspaceAttentionError, WorkspaceCognitiveAgentCastError,
+    WorkspaceCognitiveAutonomyError, WorkspaceCognitiveGraphError,
+    WorkspaceCognitiveOrchestrationError, WorkspaceCompositionError, WorkspaceContinuityError,
+    WorkspaceEnvironmentError, WorkspaceEvolutionError, WorkspaceExperienceError,
+    WorkspaceExplanationError, WorkspaceIntelligenceError, WorkspaceIntentError,
+    WorkspaceInteractionError, WorkspaceLearningAdaptationError, WorkspaceMilestoneError,
+    WorkspaceNavigationError, WorkspaceOperatingStateError, WorkspacePatternError,
+    WorkspacePlanningError, WorkspaceProfileError, WorkspacePurposeError, WorkspaceReadinessError,
+    WorkspaceReasoningMemoryError, WorkspaceRecommendationEngineError, WorkspaceSessionError,
+    WorkspaceStateEnvelopeError, WorkspaceTransitionError, WorkspaceWorkContextError,
+    WorkspaceWorkingStyleError,
 };
 
 #[derive(Debug, Error)]
@@ -321,6 +322,9 @@ pub enum KernelError {
 
     #[error("Evidence reliability validation failed: {message}")]
     EvidenceReliabilityValidation { message: String },
+
+    #[error("Assistant surface validation failed: {message}")]
+    AssistantSurfaceValidation { message: String },
 
     #[error("Workspace intelligence validation failed: {message}")]
     WorkspaceIntelligenceValidation { message: String },
@@ -855,6 +859,17 @@ impl From<EvidenceReliabilityError> for KernelError {
         match error {
             EvidenceReliabilityError::Domain(domain) => KernelError::from(domain),
             other => KernelError::EvidenceReliabilityValidation {
+                message: other.to_string(),
+            },
+        }
+    }
+}
+
+impl From<AssistantSurfaceError> for KernelError {
+    fn from(error: AssistantSurfaceError) -> Self {
+        match error {
+            AssistantSurfaceError::Domain(domain) => KernelError::from(domain),
+            other => KernelError::AssistantSurfaceValidation {
                 message: other.to_string(),
             },
         }
@@ -1621,6 +1636,10 @@ impl KernelError {
             },
             KernelError::EvidenceReliabilityValidation { message } => PublicError {
                 code: "evidence_reliability_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::AssistantSurfaceValidation { message } => PublicError {
+                code: "assistant_surface_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::WorkspaceIntelligenceValidation { message } => PublicError {

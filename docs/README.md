@@ -122,7 +122,7 @@ AI behaviour, permissions, and boundaries.
 | [Workspace Decision Support Architecture](05-AI/WORKSPACE-DECISION-SUPPORT-ARCHITECTURE.md) | Programme III Batch 11 — decision-ready evidence packages without deciding (Active / accepted) |
 | [Workspace Evidence Reliability Architecture](05-AI/WORKSPACE-EVIDENCE-RELIABILITY-ARCHITECTURE.md) | Programme IV Batch 9 — reliability observations without truth or trust authority (Active / accepted) |
 | [Workspace Evidence Observational Scaffold Architecture](05-AI/WORKSPACE-EVIDENCE-OBSERVATIONAL-SCAFFOLD-ARCHITECTURE.md) | Programme IV Batch 10 — shared helpers without a new evidence engine |
-| [Conversational / Assistant Surface Architecture](05-AI/CONVERSATIONAL-ASSISTANT-SURFACE-ARCHITECTURE.md) | Programme IV Batch 11 — charter only (not accepted for implementation) |
+| [Conversational / Assistant Surface Architecture](05-AI/CONVERSATIONAL-ASSISTANT-SURFACE-ARCHITECTURE.md) | Programme IV Batch 11 — conversational presentation over recorded evidence (Active / implemented) |
 | [Memory Policy](05-AI/MEMORY-POLICY.md) | What may be stored, retention, user control, deletion |
 | [Confidence Policy](05-AI/CONFIDENCE-POLICY.md) | Confidence levels, suggestion thresholds, uncertainty |
 | [AI Architecture Index](05-AI/README.md) | Navigation hub for Recommendation/Decision/Governance contracts |

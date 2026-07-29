@@ -153,6 +153,11 @@ import {
   isEvidenceReliabilityProjectionNonCommandable,
   evidenceReliabilityHistoryCountIsAuthoritative,
 } from "../app/src/components/evidenceReliabilityProjection";
+import {
+  assistantSurfaceHistoryCountIsAuthoritative,
+  isAssistantSurfaceHistoryNonActionable,
+  isAssistantSurfaceProjectionNonCommandable,
+} from "../app/src/components/assistantSurfaceProjection";
 import type {
   DecisionArtifactHistoryEntry,
   DecisionEngineSummary,
@@ -237,6 +242,7 @@ import type {
   WorkspaceEvidenceFreshnessProjection,
   WorkspaceEvidenceCompletenessProjection,
   WorkspaceEvidenceReliabilityProjection,
+  WorkspaceAssistantSurfaceProjection,
   WorkspaceEvidenceTraceSummary,
   WorkspaceEvidenceCoverageSummary,
   WorkspaceEvidenceConsistencySummary,
@@ -244,6 +250,8 @@ import type {
   WorkspaceEvidenceFreshnessSummary,
   WorkspaceEvidenceCompletenessSummary,
   WorkspaceEvidenceReliabilitySummary,
+  WorkspaceAssistantSurfaceSummary,
+  AssistantSurfaceHistoryEntry,
   RecommendationHistoryEntry,
   RecommendationItem,
   TaskGraphSummary,
@@ -2547,6 +2555,50 @@ describe("projection integrity — cognitive agent cast", () => {
     expect(Object.keys(nonCommand)).not.toContain("recommend");
     expect(Object.keys(nonCommand)).not.toContain("repair");
     expect(Object.keys(nonCommand)).not.toContain("automate");
+  });
+
+  it("keeps assistant surface projections non-commandable with authoritative history_count", () => {
+    const historyEntry = (
+      overrides: Partial<AssistantSurfaceHistoryEntry> = {}
+    ): AssistantSurfaceHistoryEntry => ({
+      surface_id: "assistant_surface:1",
+      status: "superseded",
+      created_at: "t0",
+      superseded_at: "t1",
+      citation_count: 1,
+      gap_count: 0,
+      terminal: true,
+      actionable: false,
+      authority_effect: "none",
+      ...overrides,
+    });
+    const projection: WorkspaceAssistantSurfaceProjection = {
+      workspace_id: "ws",
+      projected_at: "t2",
+      current: null,
+      history: [historyEntry()],
+      history_count: 2,
+      authority_effect: "none",
+    };
+    expect(isAssistantSurfaceProjectionNonCommandable(projection)).toBe(true);
+    expect(isAssistantSurfaceHistoryNonActionable(historyEntry())).toBe(true);
+    expect(
+      isAssistantSurfaceHistoryNonActionable(historyEntry({ actionable: true }))
+    ).toBe(false);
+
+    const summary: WorkspaceAssistantSurfaceSummary = {
+      workspace_id: "ws",
+      has_current: false,
+      citation_count: 0,
+      gap_count: 0,
+      narrative_summary: null,
+      history: [historyEntry()],
+      history_count: 2,
+      authority_effect: "none",
+      actionable: false,
+    };
+    expect(assistantSurfaceHistoryCountIsAuthoritative(summary)).toBe(true);
+    expect(summary.history_count).toBeGreaterThanOrEqual(summary.history.length);
   });
 });
 

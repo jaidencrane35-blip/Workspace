@@ -5895,6 +5895,134 @@ export interface WorkspaceEvidenceReliabilityExplanation {
   actionable: boolean;
 }
 
+export interface AssistantSurfaceScope {
+  include_semantic_query: boolean;
+  include_evidence_navigation: boolean;
+  include_evidence_trace: boolean;
+  include_evidence_coverage: boolean;
+  include_evidence_consistency: boolean;
+  include_evidence_dependency: boolean;
+  include_evidence_freshness: boolean;
+  include_evidence_completeness: boolean;
+  include_evidence_reliability: boolean;
+  include_explanation: boolean;
+  include_contextual: boolean;
+  include_knowledge_integration: boolean;
+  include_intelligence_hub: boolean;
+  include_state: boolean;
+}
+
+export interface AssistantCitation {
+  origin_domain: string;
+  artefact_ref: string;
+  source_revision: string | null;
+  excerpt: string;
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface AssistantUtterance {
+  utterance_id: string;
+  role: string;
+  body: string;
+  citations: AssistantCitation[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface PresentationLineage {
+  lineage_id: string;
+  contributing_artefacts: string[];
+  revisions: string[];
+  citations: AssistantCitation[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface AssistantSurfaceGap {
+  gap_id: string;
+  gap_kind: string;
+  description: string;
+  affected_surfaces: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface AssistantSurfaceDiagnostics {
+  consulted_surfaces: string[];
+  unavailable_surfaces: string[];
+  notes: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface WorkspaceAssistantSurfaceSnapshot {
+  surface_id: string;
+  workspace_id: string;
+  generated_at: string;
+  status: string;
+  superseded_at: string | null;
+  human_ask: string;
+  scope: AssistantSurfaceScope;
+  utterance: AssistantUtterance;
+  lineage: PresentationLineage;
+  gaps: AssistantSurfaceGap[];
+  diagnostics: AssistantSurfaceDiagnostics;
+  narrative_summary: string;
+  narrative: string;
+  limitations: string[];
+  authority_effect: string;
+  actionable: boolean;
+  terminal: boolean;
+}
+
+export interface AssistantSurfaceHistoryEntry {
+  surface_id: string;
+  status: string;
+  created_at: string;
+  superseded_at: string | null;
+  citation_count: number;
+  gap_count: number;
+  terminal: boolean;
+  actionable: boolean;
+  authority_effect: string;
+}
+
+export interface WorkspaceAssistantSurfaceProjection {
+  workspace_id: string;
+  current: WorkspaceAssistantSurfaceSnapshot | null;
+  history: AssistantSurfaceHistoryEntry[];
+  history_count: number;
+  projected_at: string;
+  authority_effect: string;
+}
+
+export interface WorkspaceAssistantSurfaceSummary {
+  workspace_id: string;
+  has_current: boolean;
+  citation_count: number;
+  gap_count: number;
+  narrative_summary: string | null;
+  history: AssistantSurfaceHistoryEntry[];
+  history_count: number;
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface WorkspaceAssistantSurfaceExplanation {
+  explanation_id: string;
+  workspace_id: string;
+  narrative_summary: string | null;
+  citation_summaries: string[];
+  gap_summaries: string[];
+  lineage_summaries: string[];
+  uncertainty: string[];
+  narrative: string;
+  limitations: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
 export type WindowIdentityConfidence = "high" | "medium" | "low" | "ephemeral";
 
 export interface WorkspaceObservationPass {

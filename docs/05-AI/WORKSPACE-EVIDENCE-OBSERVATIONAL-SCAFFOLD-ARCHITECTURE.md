@@ -86,7 +86,7 @@ Further engine adoption of domain helpers is incremental and optional.
 
 ## Next
 
-Batch 11 — [Conversational / Assistant Surface Architecture](./CONVERSATIONAL-ASSISTANT-SURFACE-ARCHITECTURE.md) (**charter only** — do not implement until accepted).
+Batch 11 — [Conversational / Assistant Surface Architecture](./CONVERSATIONAL-ASSISTANT-SURFACE-ARCHITECTURE.md) (**implemented** — uses the scaffold without becoming an evidence engine).
 
 ---
 

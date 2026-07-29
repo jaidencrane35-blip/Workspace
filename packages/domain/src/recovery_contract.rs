@@ -7,6 +7,9 @@
 use crate::audit::AuditEvent;
 use crate::execution_reconciliation::{ExecutionLifecycleRecord, ExecutionState};
 use crate::policy_governance::{PolicyGovernanceHistoryEntry, PolicyGovernanceSnapshot};
+use crate::workspace_assistant_surface::{
+    AssistantSurfaceHistoryEntry, WorkspaceAssistantSurfaceProjection,
+};
 use crate::workspace_cognitive_agent_cast::{
     CognitiveAgentCastHistoryEntry, CognitiveAgentCastSnapshot,
 };
@@ -655,6 +658,26 @@ pub fn recovery_must_not_fabricate_evidence_reliability(
 /// Fabricated actionable evidence-reliability history must fail the recovery contract.
 pub fn recovery_must_not_fabricate_actionable_evidence_reliability_history(
     entry: &EvidenceReliabilityHistoryEntry,
+) -> bool {
+    entry.is_non_actionable()
+}
+
+/// Recovery must not invent assistant turns, hidden memory, authority, or commandable conversation.
+pub fn recovery_must_not_fabricate_assistant_surface(
+    projection: &WorkspaceAssistantSurfaceProjection,
+) -> bool {
+    projection.is_non_commandable()
+        && projection.history.iter().all(|h| h.is_non_actionable())
+        && projection
+            .current
+            .as_ref()
+            .map(|c| c.is_non_executing())
+            .unwrap_or(true)
+}
+
+/// Fabricated actionable assistant-surface history must fail the recovery contract.
+pub fn recovery_must_not_fabricate_actionable_assistant_surface_history(
+    entry: &AssistantSurfaceHistoryEntry,
 ) -> bool {
     entry.is_non_actionable()
 }

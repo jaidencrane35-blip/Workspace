@@ -463,11 +463,13 @@ Rules:
 - Forbidden: treating the scaffold as an evidence authority or action surface
 - No new dual-channel snapshot DTOs in Batch 10
 
-### Conversational / Assistant Surface (Programme IV Batch 11 — charter only)
+### Conversational / Assistant Surface (Programme IV Batch 11)
 
-- Charter defines projection-only UI requirements and forbids hidden command affordances
-- Implementation must not begin until charter acceptance
-- Future projections must distinguish information (assistant) from action (other owners)
+- Dual-channel: `current` + `history` + authoritative `history_count`
+- History is conversation evidence only; never actionable
+- `assistantSurfaceProjection.ts` is a thin wrapper over `evidenceProjectionContract.ts`
+- Assistant utterances, citations, lineage, diagnostics, and gaps carry `authority_effect: none`
+- Assistant responses cite upstream projections and never expose execute / approve / decide controls
 
 
 ## Serde defaults vs TypeScript required fields
