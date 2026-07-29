@@ -16,6 +16,7 @@ import { AssistantPanel } from "./components/AssistantPanel";
 import { CanvasShell } from "./components/CanvasShell";
 import { DesktopArrangementPanel } from "./components/DesktopArrangementPanel";
 import { OperatorConsole } from "./components/OperatorConsole";
+import { WorkspaceApplicationStage } from "./components/WorkspaceApplicationStage";
 import {
   WorkspaceHome,
   type ProductPrimaryView,
@@ -188,6 +189,13 @@ export default function App() {
       })
       .finally(() => setBootstrapped(true));
   }, [refreshHomeApps]);
+
+  useEffect(() => {
+    if (view !== "layouts" && view !== "home") {
+      return;
+    }
+    void refreshHomeApps(workspace?.id ?? null);
+  }, [view, workspace?.id, refreshHomeApps]);
 
   const createWorkspaceFromHome = () => {
     setBusy(true);
@@ -367,21 +375,31 @@ export default function App() {
                 <p className="muted">Loading…</p>
               </div>
             ) : workspace ? (
-              <CanvasShell
-                workspaceId={workspace.id}
-                workspaceName={workspace.name}
-                zones={zones}
-                busy={busy}
-                onError={(msg) => onError(msg)}
-                onSaved={onLayoutSaved}
-                onCreateWorkspace={createWorkspaceFromHome}
-                onAddZone={addZoneFromCanvas}
-              />
+              <>
+                <WorkspaceApplicationStage
+                  workspace={workspace}
+                  applications={homeApps}
+                  appsLoading={homeAppsLoading}
+                  zoneCount={zones.length}
+                  onManageApplications={() => setView("applications")}
+                />
+                <CanvasShell
+                  workspaceId={workspace.id}
+                  workspaceName={workspace.name}
+                  zones={zones}
+                  busy={busy}
+                  onError={(msg) => onError(msg)}
+                  onSaved={onLayoutSaved}
+                  onCreateWorkspace={createWorkspaceFromHome}
+                  onAddZone={addZoneFromCanvas}
+                />
+              </>
             ) : (
               <div className="canvas-shell canvas-bootstrap">
                 <p className="lede">
                   No active workspace. Create one under Workspaces, then return
-                  here for canvas zones and desktop arrangements.
+                  here for the application stage, canvas zones, and desktop
+                  arrangements.
                 </p>
                 <button
                   type="button"

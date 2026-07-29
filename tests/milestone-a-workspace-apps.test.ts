@@ -88,3 +88,17 @@ describe("product shell UI helpers", () => {
     expect(monogramFromName("Code")).toBe("CO");
   });
 });
+
+describe("layouts stage UI helpers", () => {
+  it("keeps stage copy honest about modes and OS windows", async () => {
+    const {
+      layoutsStageLede,
+      layoutsStageEmptyAppsCopy,
+      layoutsStageCanvasNote,
+    } = await import("../app/src/lib/layoutsStageUi");
+    expect(layoutsStageLede()).toMatch(/Flow/i);
+    expect(layoutsStageEmptyAppsCopy().body).toMatch(/OS windows/i);
+    expect(layoutsStageCanvasNote(0)).toMatch(/Companion canvas/i);
+    expect(layoutsStageCanvasNote(2)).toMatch(/2 companion/i);
+  });
+});
