@@ -5,6 +5,7 @@
 | **Batch** | DAF-1d — Desktop Arrangement Capture & Governed Restore |
 | **Date** | 2026-07-29 |
 | **Branch** | `cursor/daf-1d-arrangement-restore-34a5` |
+| **Commit** | `9836082` |
 | **Status** | Complete |
 
 ---
