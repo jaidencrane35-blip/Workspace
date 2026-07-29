@@ -739,6 +739,22 @@ Context selection and conversation continuity packaging without memory or planni
 
 See [Assistant Context Intelligence Architecture](../05-AI/ASSISTANT-CONTEXT-INTELLIGENCE-ARCHITECTURE.md).
 
+## Assistant Retrieval Intelligence (Programme IV Batch 13)
+
+**Charter only — not accepted for implementation.**
+
+Retrieval request packaging and evidence presentation without ranking, reasoning, or recommendation authority.
+
+**Present retrieved evidence. Never rank truth or recommend action.**
+
+- Will own retrieval request packaging, query/context translation for presentation, evidence selection presentation, retrieval diagnostics, provenance display only
+- Will never own truth ranking, relevance authority, reasoning, recommendations, decisions, memory, policy, or execution
+- Must compose Semantic Query, Evidence engines, and Batch 12 context — no second search engine, hidden ranker, or independent knowledge graph
+- Upstream reads via `load_snapshot` / existing queries only — never foreign `::generate` for refresh
+- No mutation baseline or DTO inventory change until an accepted implementation design exists
+
+See [Assistant Retrieval Intelligence Architecture](../05-AI/ASSISTANT-RETRIEVAL-INTELLIGENCE-ARCHITECTURE.md).
+
 ## Capability boundary audit
 
 Enforced by `scripts/architecture-governance-lib.mjs`:

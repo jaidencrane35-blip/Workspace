@@ -289,6 +289,16 @@ Batch 12 packages selected conversation context and continuity from recorded Pro
 
 ---
 
+## J. Batch 13 charter opened (not implemented)
+
+**Date:** 2026-07-29  
+**Document:** [Assistant Retrieval Intelligence Architecture](../05-AI/ASSISTANT-RETRIEVAL-INTELLIGENCE-ARCHITECTURE.md)  
+**Status:** Charter only — implementation blocked until architecture acceptance.
+
+Batch 13 will define how the assistant packages retrieval requests and presents existing Semantic Query / Evidence results. It must not become a ranking authority, reasoning engine, recommendation system, second search substrate, or clone of Batches 1–9. Prefer composing Batches 1–5 (+ scoped evidence), Batch 10 scaffolding, and Batches 11–12 assistant contracts first.
+
+---
+
 ## Explicit confirmation
 
-This audit concludes that Workspace Evidence engines through Batch 9 observe recorded evidence characteristics only within their stated ownership. The two kernel failures are pre-existing Activity Graph / Intelligence issues, not Programme IV architectural drift. Batch 10 improves human maintainability by extracting shared scaffolding without adding a new evidence authority or clone engine. Batch 11 implements a conversational presentation layer over recorded evidence without becoming authority. Batch 12 implements context packaging and continuity presentation without becoming memory, inventing continuity, or cloning the assistant surface.
+This audit concludes that Workspace Evidence engines through Batch 9 observe recorded evidence characteristics only within their stated ownership. The two kernel failures are pre-existing Activity Graph / Intelligence issues, not Programme IV architectural drift. Batch 10 improves human maintainability by extracting shared scaffolding without adding a new evidence authority or clone engine. Batch 11 implements a conversational presentation layer over recorded evidence without becoming authority. Batch 12 implements context packaging and continuity presentation without becoming memory, inventing continuity, or cloning the assistant surface. Batch 13 is opened as a charter only.

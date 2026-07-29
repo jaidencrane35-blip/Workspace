@@ -287,6 +287,13 @@ UI must not imply the assistant autonomously keeps or advances goals.
 - Product UX layouts beyond information vs action
 - Resolving case5 / case11 (non–Programme IV debt)
 - Replacing or rewriting Batch 11
+- Retrieval request packaging / evidence presentation composition (see Batch 13 charter)
+
+---
+
+## Next
+
+Batch 13 — [Assistant Retrieval Intelligence Architecture](./ASSISTANT-RETRIEVAL-INTELLIGENCE-ARCHITECTURE.md) (**charter only** — do not implement until accepted).
 
 ---
 
@@ -304,6 +311,7 @@ UI must not imply the assistant autonomously keeps or advances goals.
 ## Related documents
 
 - [Conversational / Assistant Surface Architecture](./CONVERSATIONAL-ASSISTANT-SURFACE-ARCHITECTURE.md)
+- [Assistant Retrieval Intelligence Architecture](./ASSISTANT-RETRIEVAL-INTELLIGENCE-ARCHITECTURE.md)
 - [Workspace Evidence Observational Scaffold](./WORKSPACE-EVIDENCE-OBSERVATIONAL-SCAFFOLD-ARCHITECTURE.md)
 - [Programme IV Interaction Runtime](./PROGRAMME-IV-INTERACTION-RUNTIME.md)
 - [Workspace Vocabulary](./WORKSPACE-VOCABULARY.md)
