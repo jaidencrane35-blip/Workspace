@@ -5,7 +5,7 @@
 | **Purpose** | Define when human visual review is required vs when engineering validation is enough |
 | **Owner** | Engineering / Product |
 | **Status** | Binding for DAF and subsequent work |
-| **Related** | [ENGINEERING-GOVERNANCE.md](ENGINEERING-GOVERNANCE.md), [BATCH-ALIGNMENT-CHECK.md](BATCH-ALIGNMENT-CHECK.md), [VISUAL-REVIEW-CHECKLIST.md](VISUAL-REVIEW-CHECKLIST.md) |
+| **Related** | [ENGINEERING-GOVERNANCE.md](ENGINEERING-GOVERNANCE.md), [BATCH-ALIGNMENT-CHECK.md](BATCH-ALIGNMENT-CHECK.md), [VISUAL-REVIEW-CHECKLIST.md](VISUAL-REVIEW-CHECKLIST.md), [AI Engineering Governance](../00-Governance/AI_ENGINEERING_GOVERNANCE.md) |
 
 Human review is valuable, but it must be **intentional and grouped**.  
 Do **not** require manual review after every code change.

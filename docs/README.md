@@ -38,7 +38,7 @@ Operational controls for AI-assisted engineering. Complements Constitution; does
 
 | Document | Description |
 |----------|-------------|
-| [AI Engineering Governance](00-Governance/AI_ENGINEERING_GOVERNANCE.md) | Maintainability 0–10 score, anti-black-box rules, magic-number prevention, AI feature gate |
+| [AI Engineering Governance](00-Governance/AI_ENGINEERING_GOVERNANCE.md) | Complete AI engineering governance package (maintainability, anti-drift, batches, optimisation) |
 | [Governance folder README](00-Governance/README.md) | How this folder relates to Constitution and Engineering Governance |
 
 ### 01 — Product
@@ -49,6 +49,7 @@ What Workspace is, who it serves, and how scope is managed.
 |----------|-------------|
 | [Product Vision](01-Product/PRODUCT-VISION.md) | Product goals, domains, and target experience |
 | [Workspace Visual Direction](01-Product/WORKSPACE-VISUAL-DIRECTION.md) | Concept-art north star; literal vs non-literal interpretation |
+| [Visual references](01-Product/references/README.md) | Original concept images (direction, not pixel specs) |
 | [Product Vision Realignment Audit](01-Product/PRODUCT-VISION-REALIGNMENT-AUDIT.md) | Gap analysis vs concept art; DAF milestone; freeze AI expansion |
 | [Scope Management](01-Product/SCOPE-MANAGEMENT.md) | How scope is proposed, approved, and controlled |
 | [MVP Definition](01-Product/MVP-DEFINITION.md) | First useful product slice and acceptance criteria |
@@ -121,6 +122,15 @@ Interaction design principles and constraints.
 | Document | Description |
 |----------|-------------|
 | [UX Principles](04-UX/UX-PRINCIPLES.md) | User experience values and interaction rules |
+
+### 04 — Operations
+
+Operational engineering logs (not product UX).
+
+| Document | Description |
+|----------|-------------|
+| [Optimisation Log](04-Operations/OPTIMISATION_LOG.md) | Material performance / storage / indexing cycles |
+| [Operations README](04-Operations/README.md) | Folder purpose |
 
 ### 05 — AI
 

@@ -4,12 +4,17 @@ Operational governance for **how** Workspace is engineered under AI assistance.
 
 | Document | Description |
 |----------|-------------|
-| [AI Engineering Governance](AI_ENGINEERING_GOVERNANCE.md) | Maintainability scoring, anti-black-box rules, magic-number prevention, AI feature gate |
+| [AI Engineering Governance](AI_ENGINEERING_GOVERNANCE.md) | Complete package: maintainability 0–10, anti-black-box, magic numbers, abstractions, batches, drift prevention, optimisation framework |
 
-## Relationship to Constitution
+## Relationship to other docs
 
-- [`../00-Constitution/`](../00-Constitution/) — founder authority and non-negotiable project rules
-- **This folder** — binding engineering-process controls for agents and contributors
-- [`../03-Engineering/ENGINEERING-GOVERNANCE.md`](../03-Engineering/ENGINEERING-GOVERNANCE.md) — product alignment, freezes, batch documentation
+| Location | Role |
+|----------|------|
+| [`../00-Constitution/`](../00-Constitution/) | Founder authority and non-negotiable project rules |
+| **This folder** | Binding AI-assisted engineering process controls |
+| [`../03-Engineering/ENGINEERING-GOVERNANCE.md`](../03-Engineering/ENGINEERING-GOVERNANCE.md) | Product alignment, freezes, batch documentation |
+| [`../03-Engineering/HUMAN-REVIEW-POLICY.md`](../03-Engineering/HUMAN-REVIEW-POLICY.md) | When humans review visuals/workflows |
+| [`../04-Operations/OPTIMISATION_LOG.md`](../04-Operations/OPTIMISATION_LOG.md) | Optimisation cycle log |
+| [`../../AGENTS.md`](../../AGENTS.md) | Short agent operational contract |
 
 Do not create parallel constitutions here.

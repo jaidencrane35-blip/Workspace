@@ -183,8 +183,9 @@ update stuff
 | [DAF-1E-DESKTOP-ARRANGEMENT-UI.md](DAF-1E-DESKTOP-ARRANGEMENT-UI.md) | Arrangement UI foundation |
 | [DAF-1E-COMPLETION-REPORT.md](DAF-1E-COMPLETION-REPORT.md) | DAF-1e batch report |
 | [DAF-1E-VISUAL-REVIEW-CHECKLIST.md](DAF-1E-VISUAL-REVIEW-CHECKLIST.md) | DAF-1e visual checkpoint |
-| [AI Engineering Governance](../00-Governance/AI_ENGINEERING_GOVERNANCE.md) | AI-assisted engineering control (maintainability, anti-drift) |
+| [AI Engineering Governance](../00-Governance/AI_ENGINEERING_GOVERNANCE.md) | AI-assisted engineering control (maintainability, anti-drift, complete package) |
 | [AGENTS.md](../../AGENTS.md) | Short agent operational contract |
+| [Optimisation Log](../04-Operations/OPTIMISATION_LOG.md) | Material optimisation cycles |
 
 ---
 

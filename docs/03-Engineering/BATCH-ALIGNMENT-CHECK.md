@@ -11,6 +11,18 @@ Copy this file’s checklist into the batch completion report (or fill and link 
 
 ---
 
+## Product drift record (required for major batches)
+
+| Field | Content |
+|-------|---------|
+| **Current mission** | |
+| **Product goal** | |
+| **Allowed changes** | |
+| **Forbidden changes** | |
+| **Validation method** | |
+
+---
+
 ## Alignment checklist
 
 | # | Confirm | Pass? (Y/N) | Notes |
@@ -27,6 +39,8 @@ Copy this file’s checklist into the batch completion report (or fill and link 
 | 10 | Completion report + architecture doc planned for this batch | | |
 | 11 | Maintainability target understood (≥ 8 for new systems per [AI Engineering Governance](../00-Governance/AI_ENGINEERING_GOVERNANCE.md)) | | |
 | 12 | Assistant remains sidecar; Workspace remains primary product surface | | |
+| 13 | Product priority respected (Workspace → desktop control → workflows → usability → performance → Assistant) | | |
+| 14 | Batch groups related work (not fragmented micro-approvals) | | |
 
 **Gate decision:** ☐ Proceed  ☐ Rework scope  ☐ Stop
 
@@ -36,5 +50,7 @@ Copy this file’s checklist into the batch completion report (or fill and link 
 
 Primary: manage apps, layouts, real windows, save/restore, work modes, desktop control.  
 Secondary: AI Assistant as supporting capability.
+
+Priority order: Workspace functionality → Desktop control → User workflows → Usability → Performance → Assistant expansion.
 
 See also: [`AGENTS.md`](../../AGENTS.md), [AI Engineering Governance](../00-Governance/AI_ENGINEERING_GOVERNANCE.md).

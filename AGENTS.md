@@ -1,26 +1,37 @@
 # Workspace Engineering Rules
 
-Short operational contract for AI-assisted development in this repository.
-Detailed rules live in [`docs/00-Governance/AI_ENGINEERING_GOVERNANCE.md`](docs/00-Governance/AI_ENGINEERING_GOVERNANCE.md).
-Product and batch drift controls live in [`docs/03-Engineering/ENGINEERING-GOVERNANCE.md`](docs/03-Engineering/ENGINEERING-GOVERNANCE.md).
+Concise operational contract for AI coding agents.
+Detailed specification: [`docs/00-Governance/AI_ENGINEERING_GOVERNANCE.md`](docs/00-Governance/AI_ENGINEERING_GOVERNANCE.md).
+Product alignment & freezes: [`docs/03-Engineering/ENGINEERING-GOVERNANCE.md`](docs/03-Engineering/ENGINEERING-GOVERNANCE.md).
 
 ---
 
-## Mission
+## Workspace Mission
 
 Workspace is a **desktop workspace operating environment**.
 
-Its purpose is:
+Primary product:
 
-- managing applications
-- arranging applications
-- saving workspace states
-- improving user productivity
-- providing controllable desktop workflows
+- application management
+- desktop arrangements
+- window organisation
+- workspace persistence
+- user workflow improvement
+- controllable layouts
 
-**AI assists the workspace. AI does not replace the workspace.**
+The **Assistant** is a supporting capability.  
+The **Assistant is not the product**.
 
-Product hierarchy:
+### Product priority
+
+1. Workspace functionality
+2. Desktop control
+3. User workflows
+4. Usability
+5. Performance
+6. Assistant expansion
+
+AI assists the workspace. AI does not replace the workspace.
 
 ```text
 Workspace Desktop Environment
@@ -34,90 +45,63 @@ Workspace Desktop Environment
 ├── User Experience
 |
 └── Assistant Sidecar
-    ├── Questions
-    ├── Explanations
-    ├── Retrieval
-    ├── Helpful Interaction
-    └── Future capabilities
 ```
-
-The Assistant must never become the product itself. Do not allow AI features to consume the majority of engineering focus while core workspace functionality remains incomplete.
 
 ---
 
-## Repository Discipline
+## AI Development Rules
 
-The agent must:
+AI agents **must**:
 
+- inspect before changing
+- reuse existing ownership boundaries
+- avoid duplicate systems
+- document reasons for major changes
+- preserve human readability
+- treat `docs/` as source of truth (not prior chat transcripts)
 - remain inside the Workspace repository
-- not reference unrelated previous projects as architecture authority
-- not import assumptions from other codebases
-- inspect existing ownership before creating new systems
-- prefer extending existing systems over creating duplicates
-- treat `docs/` as source of truth — not prior chat transcripts
+
+AI agents **must not**:
+
+- create unnecessary engines
+- create abstraction without purpose
+- introduce hidden automation
+- change product direction
+- expand AI features without product need
+- optimise blindly
+- import assumptions from unrelated projects
+- bypass Permission Gateway / CommandPipeline for window or OS control
+
+Prefer: **Simple. Explicit. Documented. Maintainable.**
+
+---
+
+## Human Maintainability Rule
+
+All code must be understandable by engineers **without access to AI conversations**.
+
+A future engineer must be able to answer:
+
+- What does this do?
+- Why does this exist?
+- Who owns it?
+- What does it not own?
+- Where do I modify it?
+- How do I test it?
+
+If the answer requires asking the AI that created it, the implementation has failed.
+
+Score major systems with the **0–10 Human Maintainability Standard** in AI Engineering Governance. Target **≥ 8** for new work.
 
 ---
 
 ## Change Discipline
 
-Before implementing any significant change, document:
-
-| Field | Question |
-|-------|----------|
-| **Purpose** | Why does this exist? |
-| **Owner** | Which subsystem owns this? |
-| **Inputs** | What does it consume? |
-| **Outputs** | What does it produce? |
-| **Dependencies** | What does it rely on? |
-| **Non-responsibilities** | What does it explicitly NOT do? |
-
-If those answers are missing, the change is incomplete. Prefer recording them in the module header and/or the batch architecture doc.
+Before significant changes, document Purpose, Owner, Responsibilities, Non-responsibilities, Inputs, Outputs, Dependencies, Testing, Known limitations, and Future considerations (see AI Engineering Governance).
 
 Before major batches: fill [`docs/03-Engineering/BATCH-ALIGNMENT-CHECK.md`](docs/03-Engineering/BATCH-ALIGNMENT-CHECK.md).
 
----
-
-## Human Maintainability Requirement
-
-All code must be understandable by engineers **without AI assistance**.
-
-A future engineer must be able to:
-
-- locate functionality
-- understand ownership
-- understand intent
-- safely modify code
-- debug failures
-- extend features
-
-The repository must not require access to AI conversations to understand the architecture.
-
-Evaluate major features against the **0–10 Human Maintainability Standard** in [`docs/00-Governance/AI_ENGINEERING_GOVERNANCE.md`](docs/00-Governance/AI_ENGINEERING_GOVERNANCE.md). Target **≥ 8** for new work; do not merge Score 0–3 material.
-
----
-
-## AI Development Restrictions
-
-The agent must **not**:
-
-- create unnecessary engines
-- create duplicate systems
-- create abstractions without justification
-- rename systems without documentation
-- create hidden automation
-- add complexity for theoretical future use
-- create AI features because they sound impressive
-- bypass Permission Gateway / CommandPipeline for window or OS control
-- treat Assistant as the primary interaction model for desktop control
-
-Prefer:
-
-- Simple
-- Explicit
-- Documented
-- Maintainable
-
-**Frozen unless a written product requirement says otherwise:** new AI intelligence / evidence / assistant expansion engines. See Engineering Governance.
+Work in **meaningful batches** of related improvements — do not fragment every tiny change into a separate approval cycle when the work forms one coherent unit.
 
 ---
 
@@ -139,7 +123,7 @@ Workspace is a **Windows-targeted Tauri 2 desktop app** (React 18 + Vite in `app
 
 ### Building/running the desktop app
 
-- `pnpm dev` runs `tauri dev`, which needs Linux GUI system libs (webkit2gtk/gtk) plus a display, and this app targets **Windows** (`packages/windows-integration` is stubbed on non-Windows). Running the full native shell on this Linux VM is not the supported dev path.
+- `pnpm dev` runs `tauri dev`, which needs Linux GUI system libs (webkit2gtk/gtk) plus a display, and this app targets **Windows** (`packages/windows-integration` is stubbed on non-Windows). Running the full native shell on this Linux VM is not the supported path.
 - Frontend-only run: `cd app && pnpm exec vite` serves the React UI on **http://localhost:1420** (`strictPort`). Without Tauri, IPC is unavailable — layout/navigation may still work; live data requires the desktop runtime. Prefer fixing runtime detection in `app/src/lib/ipc.ts` over throwing TypeError on `invoke`.
 
 ### Known-good checks on Linux

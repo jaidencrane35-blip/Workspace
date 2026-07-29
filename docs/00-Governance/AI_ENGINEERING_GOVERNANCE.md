@@ -2,15 +2,18 @@
 
 | Field | Value |
 |-------|-------|
-| **Purpose** | Control AI-assisted engineering so acceleration does not sacrifice human understanding, quality, maintainability, or product direction |
+| **Purpose** | Permanent control of AI-assisted engineering so acceleration does not sacrifice human understanding, quality, maintainability, or product direction |
 | **Owner** | Engineering (binding for agents and human contributors) |
-| **Status** | Binding |
-| **Related** | [AGENTS.md](../../AGENTS.md), [Engineering Governance](../03-Engineering/ENGINEERING-GOVERNANCE.md), [Coding Standards](../03-Engineering/CODING-STANDARDS.md), [Engineering Principles](../03-Engineering/ENGINEERING-PRINCIPLES.md), [Governance Model](../00-Constitution/GOVERNANCE.md), [AI Principles](../05-AI/AI-PRINCIPLES.md) |
+| **Status** | Binding — complete package |
+| **Related** | [AGENTS.md](../../AGENTS.md), [Engineering Governance](../03-Engineering/ENGINEERING-GOVERNANCE.md), [Human Review Policy](../03-Engineering/HUMAN-REVIEW-POLICY.md), [Coding Standards](../03-Engineering/CODING-STANDARDS.md), [Engineering Principles](../03-Engineering/ENGINEERING-PRINCIPLES.md), [Visual Direction](../01-Product/WORKSPACE-VISUAL-DIRECTION.md), [Optimisation Log](../04-Operations/OPTIMISATION_LOG.md), [Governance Model](../00-Constitution/GOVERNANCE.md), [AI Principles](../05-AI/AI-PRINCIPLES.md) |
 
-This document is the **detailed** AI-assisted engineering control specification.
-[`AGENTS.md`](../../AGENTS.md) is the short operational contract.
-[`ENGINEERING-GOVERNANCE.md`](../03-Engineering/ENGINEERING-GOVERNANCE.md) owns product alignment, freeze rules, and batch documentation.
-Do **not** treat this file as a second product constitution — founder authority remains in `00-Constitution/`.
+This is the **detailed permanent governance specification** for AI-assisted development.
+
+- [`AGENTS.md`](../../AGENTS.md) — short operational contract for agents  
+- [`ENGINEERING-GOVERNANCE.md`](../03-Engineering/ENGINEERING-GOVERNANCE.md) — product alignment, freezes, batch docs  
+- [`HUMAN-REVIEW-POLICY.md`](../03-Engineering/HUMAN-REVIEW-POLICY.md) — when humans review visuals/workflows  
+
+Do **not** treat this file as a second constitution. Founder authority remains in `00-Constitution/`.
 
 ---
 
@@ -18,74 +21,73 @@ Do **not** treat this file as a second product constitution — founder authorit
 
 AI tools accelerate implementation. They must not become the source of architecture memory, product direction, or unexplained complexity.
 
+The repository must remain suitable for **professional acquisition, handover, and long-term development**.
+
 Goals:
 
-- AI acceleration **without** sacrificing human understanding
-- Software quality that survives the original author
-- Maintainability by engineers who never saw the generating chat
-- Product direction: **Workspace first; Assistant sidecar**
-
-Non-goals of this document:
-
-- Replacing the Project Constitution or founder decision authority
-- Replacing AI product behaviour rules ([AI Principles](../05-AI/AI-PRINCIPLES.md))
-- Inventing a parallel architecture review process
+- human engineers can maintain the project without AI
+- architecture remains understandable
+- product direction does not drift
+- AI does not create unnecessary complexity
+- future engineers understand why every system exists
 
 ---
 
-## 2. Human Maintainability Standard
+## 2. Human Maintainability Scoring
 
 Every major feature, subsystem, or significant refactor should be scored **0–10**.
 
-### Score 0 — Unmaintainable without AI
+### 0/10 — Unmaintainable
 
-Characteristics:
+A system is unmaintainable if:
 
-- Impossible to understand without AI explanation
-- Hidden assumptions
-- Unclear ownership
-- Undocumented behaviour
-- Excessive abstraction
-- Magic numbers everywhere
-- Meaningless naming
-- Circular dependencies
+- ownership is unclear
+- naming is meaningless
+- logic exists only in AI-generated abstractions
+- behaviour requires hidden context
+- magic numbers exist without explanation
+- dependencies are unclear
+- documentation is missing
+- code cannot be safely modified without the original creator
 
 **Disposition:** Do not merge. Rewrite or delete.
 
-### Score 5 — Recoverable with investigation
+### 5/10 — Partially maintainable
 
-Characteristics:
+A system is partially maintainable if:
 
-- Understandable but requires significant investigation
-- Some missing documentation
-- Some unclear boundaries
-- Moderate technical debt
+- engineers can understand it with investigation
+- documentation exists but has gaps
+- some abstractions are unclear
+- ownership boundaries need explanation
 
 **Disposition:** Acceptable only with an explicit debt entry and a path to ≥ 8.
 
-### Score 10 — Independently maintainable
+### 10/10 — Highly maintainable
 
-Characteristics:
+A system is highly maintainable if:
 
-- Engineers can discover features easily
-- Architecture matches documentation
-- Ownership is obvious
-- Tests explain behaviour
-- Naming explains purpose
-- No hidden dependencies
-- Safe modification path exists
+- folders clearly communicate purpose
+- naming explains intent
+- architecture matches documentation
+- tests explain behaviour
+- ownership boundaries are obvious
+- future engineers can safely extend it
 
 **Target for new work:** **≥ 8**. Score below 4 is a release blocker for new systems.
 
-### How to score
+### Engineer self-check
 
-Ask:
+A future engineer must answer without chat history:
 
-1. Can a new engineer find the entry point in under 10 minutes using only the repo?
-2. Is ownership stated in docs or module headers?
-3. Do tests demonstrate intended behaviour without reading the generating chat?
-4. Can the feature be modified without touching unrelated subsystems?
-5. Are non-responsibilities explicit (what it must **not** do)?
+1. What does this do?
+2. Why does this exist?
+3. Who owns it?
+4. What does it not own?
+5. Where do I modify it?
+6. How do I test it?
+
+If any answer requires asking the AI that created it, the implementation has failed.
 
 Record the score in the batch completion report when introducing a major subsystem.
 
@@ -93,37 +95,43 @@ Record the score in the batch completion report when introducing a major subsyst
 
 ## 3. No Black Box Engineering
 
-Optimisation is allowed. Compression is allowed. Performance techniques are allowed.
+Optimisation is allowed.
 
-**A human-readable explanation must exist.**
+### Allowed (examples)
 
-### Allowed (with documentation)
+- vector databases / indexes
+- embeddings
+- compression
+- caching
+- indexing
+- lookup tables
 
-- Vector indexes
-- Caches
-- Embeddings
-- Compressed storage
-- Lookup tables
-- Binary or packed formats
-- Heuristic scorers
+### Required for every optimisation
 
-### Required documentation for each
+Human explanation of:
 
-Human documentation must explain:
+- what it stores
+- why it exists
+- how it works
+- how it can be inspected
+- how it can be modified
 
-- **Why** it exists
-- **How** it works at a conceptual level
-- **How to inspect** it (tools, queries, dumps)
-- **How to decode** it (schemas, versioning)
-- **How to modify** it safely
+### Required understanding path
 
-### Prohibited
+```text
+Human concept
+      ↓
+Optimised representation
+      ↓
+Decoder / inspector
+      ↓
+Human understanding
+```
 
-- Systems that only the original AI session can explain
-- Opaque blobs with no schema or recovery path
-- Behaviour that cannot be tested without reproducing private chat context
-
+The repository must never depend on undocumented AI knowledge.  
 No system should require the original AI creator to explain it.
+
+Log material optimisation cycles in [`OPTIMISATION_LOG.md`](../04-Operations/OPTIMISATION_LOG.md).
 
 ---
 
@@ -133,167 +141,247 @@ Unexplained constants are prohibited.
 
 ### Bad
 
-```rust
-if score > 0.73 && retries < 4 {
-    sleep(Duration::from_millis(350));
-}
+```text
+timeout = 347
 ```
-
-```ts
-const COLS = 13;
-if (windows.length > 7) collapse();
-```
-
-A reader cannot tell whether `0.73`, `4`, `350`, `13`, or `7` are product rules, tuned guesses, or accidents.
 
 ### Good
 
-```rust
-/// Minimum confidence before a match is offered to the user (product rule).
-const MIN_MATCH_CONFIDENCE: f64 = 0.73;
-/// Cap transient capture retries to avoid blocking the UI thread.
-const MAX_CAPTURE_RETRIES: u32 = 4;
-/// Backoff between capture retries (milliseconds).
-const CAPTURE_RETRY_BACKOFF_MS: u64 = 350;
-```
-
-```ts
-/** Max columns in the diagnostic arrangement preview grid. */
-const ARRANGEMENT_PREVIEW_COLUMNS = 13;
-/** Collapse preview when more windows than this are present. */
-const PREVIEW_COLLAPSE_WINDOW_THRESHOLD = 7;
-```
-
-### Rules
-
-1. Named constants for any non-obvious literal used in control flow, layout, timing, thresholds, or limits.
-2. Comment **why** the value exists when it encodes product or platform policy.
-3. Prefer deriving values from config/settings when operators need to change them.
-4. Test-only literals may remain inline when clearly scoped to the test and self-explanatory.
-
----
-
-## 5. Product hierarchy (anti-drift)
-
-Workspace is the product. The Assistant is a supporting capability.
-
 ```text
-Workspace Desktop Environment
-|
-├── Desktop Arrangement
-├── Application Management
-├── Layout Systems
-├── User Workflow
-├── Window Control
-├── Workspace Persistence
-├── User Experience
-|
-└── Assistant Sidecar
-    ├── Questions
-    ├── Explanations
-    ├── Retrieval
-    ├── Helpful Interaction
-    └── Future capabilities
+ASSISTANT_REQUEST_TIMEOUT_MS
+Purpose:
+Maximum wait time before displaying timeout state.
 ```
 
-### Drift signals (stop and realign)
+Every non-obvious constant requires:
 
-- New work is mostly AI/evidence/assistant engines while DAF / window / arrangement gaps remain
-- UI leads with “AI can organise your workspace” instead of user-authored save/restore
-- Assistant gains execution paths that bypass CommandPipeline / PermissionGateway
-- Canvas Layout and Desktop Arrangement are merged without an explicit product decision
+- meaningful name
+- explanation
+- reason for existence
 
-### Required response
-
-Fill [`BATCH-ALIGNMENT-CHECK.md`](../03-Engineering/BATCH-ALIGNMENT-CHECK.md). Fail the check → do not start coding.
+Also see [Coding Standards §2.11](../03-Engineering/CODING-STANDARDS.md).
 
 ---
 
-## 6. Change documentation template
+## 5. Abstraction Rules
 
-Significant changes document:
+Before creating an abstraction, verify it:
 
-| Field | Question |
-|-------|----------|
-| **Purpose** | Why does this exist? |
-| **Owner** | Which subsystem owns this? |
-| **Inputs** | What does it consume? |
-| **Outputs** | What does it produce? |
-| **Dependencies** | What does it rely on? |
-| **Non-responsibilities** | What does it explicitly NOT do? |
+- removes **real** duplication?
+- improves ownership?
+- improves testing?
+- simplifies understanding?
 
-Place this in:
+If **no** → do not create it.
 
-- Module / crate rustdoc or file header for code-owned units
-- Architecture doc for major batches
-- Completion report for ownership verification
+### Avoid
 
-This mirrors §2 of [Engineering Governance](../03-Engineering/ENGINEERING-GOVERNANCE.md) — do not invent a second checklist.
+- empty frameworks
+- speculative future systems
+- unnecessary interfaces
+- one-use generic layers
+- wrapper layers that exist only to avoid editing the correct module
+
+Prefer extending existing ownership boundaries.
 
 ---
 
-## 7. Prefer extend; forbid unjustified novelty
+## 6. Documentation Requirements
+
+Every **major feature** requires:
+
+| Field | Content |
+|-------|---------|
+| **Purpose** | Why it exists |
+| **Owner** | Subsystem / package that owns it |
+| **Responsibilities** | What it does |
+| **Non-responsibilities** | What it explicitly does **not** do |
+| **Inputs** | What it consumes |
+| **Outputs** | What it produces |
+| **Dependencies** | What it relies on |
+| **Testing** | How behaviour is verified |
+| **Known limitations** | Current gaps |
+| **Future considerations** | Deferred work (not speculative engines) |
+
+Place this in the architecture doc and/or module headers; verify in the completion report.
+
+---
+
+## 7. Batch Development Rules
+
+AI should work in **meaningful batches**.
+
+### Do not
+
+- change one tiny thing
+- stop
+- request approval for every trivial fragment when the work is one coherent unit
+
+### Do
+
+- group related improvements
+- complete a coherent slice with docs and tests
+
+### Example
+
+A UI improvement batch may include:
+
+- layout improvements
+- accessibility
+- documentation
+- validation
+
+Still obey [Human Review Policy](../03-Engineering/HUMAN-REVIEW-POLICY.md): batch visual checkpoints; do not invent review theatre.
+
+---
+
+## 8. Human Review Policy
+
+Full policy: [`HUMAN-REVIEW-POLICY.md`](../03-Engineering/HUMAN-REVIEW-POLICY.md).
+
+### Human review **is** required for
+
+- visual product changes
+- major workflow changes
+- architecture boundaries
+- irreversible decisions
+
+### Human review is **not** required for
+
+- documentation
+- internal refactoring
+- safe cleanup
+- tests
 
 ### Prefer
 
-- Extending existing owners (`windows-integration`, kernel commands, domain modules, existing UI panels)
-- Clear human names
-- Small focused modules
-- In-repo documentation
-- Editing the correct existing file
+- live application review
+- screenshots
 
-### Forbid without written justification
-
-- Parallel control layers
-- Duplicate repositories / services for the same responsibility
-- Abstraction frameworks “for later”
-- Renames that break mental models without a migration note
-- Hidden automation (especially window moves)
-- AI features added because they sound impressive
+Avoid unnecessary videos unless they provide real audit/regression value.
 
 ---
 
-## 8. AI feature gate
+## 9. Visual Reference Governance
 
-Before adding AI-facing product work, confirm **all** of:
+Canonical store: [`docs/01-Product/references/`](../01-Product/references/).
 
-1. A written product requirement exists (not “it would be cool”).
-2. Core workspace capability is not blocked by unfinished DAF / window / arrangement / UX foundations for the same user journey.
-3. The change does **not** introduce a new intelligence/evidence/assistant **engine** unless [Engineering Governance](../03-Engineering/ENGINEERING-GOVERNANCE.md) freeze is explicitly lifted.
-4. Execution remains: user authority → CommandPipeline → PermissionGateway → approved integration boundary.
-5. [AI Principles](../05-AI/AI-PRINCIPLES.md) sequence is respected: Observe → Learn → Suggest → Receive Permission → Automate.
+Interpretation rules: [`WORKSPACE-VISUAL-DIRECTION.md`](../01-Product/WORKSPACE-VISUAL-DIRECTION.md).
+
+Images represent:
+
+- product direction
+- hierarchy
+- user experience goals
+
+They are **not** pixel-perfect requirements.
+
+Ask: **“What problem does this design solve?”**  
+Not: **“How do we copy this image?”**
+
+---
+
+## 10. Product Drift Prevention
+
+Before major implementation batches, record (in the batch alignment check / completion report):
+
+| Field | Content |
+|-------|---------|
+| **Current mission** | What Workspace is right now |
+| **Product goal** | What this batch advances |
+| **Allowed changes** | In-scope work |
+| **Forbidden changes** | Explicit non-goals |
+| **Validation method** | How success is proven |
+
+Template: [`BATCH-ALIGNMENT-CHECK.md`](../03-Engineering/BATCH-ALIGNMENT-CHECK.md).
+
+### Product priority (binding)
+
+1. Workspace functionality  
+2. Desktop control  
+3. User workflows  
+4. Usability  
+5. Performance  
+6. Assistant expansion  
+
+### Drift signals (stop and realign)
+
+- AI/evidence/assistant engines dominate while core desktop gaps remain
+- UI leads with AI organisation instead of user-authored control
+- Assistant gains execution that bypasses CommandPipeline / PermissionGateway
+- Canvas Layout and Desktop Arrangement merged without a product decision
+
+---
+
+## 11. Optimisation Framework
+
+Material performance / storage / indexing optimisations must be logged:
+
+→ [`docs/04-Operations/OPTIMISATION_LOG.md`](../04-Operations/OPTIMISATION_LOG.md)
+
+Each cycle records goal, problem, analysis, changes, validation, maintainability score, product alignment, and whether human review is required.
+
+Optimisation without a human understanding path (§3) is prohibited.
+
+---
+
+## 12. Repository Discipline
+
+The AI must:
+
+- remain inside Workspace
+- not reference unrelated projects as architecture authority
+- not import old assumptions from other codebases
+- inspect current architecture first
+- preserve existing ownership
+- prefer extending over duplicating
+
+---
+
+## 13. AI Feature Gate
+
+Before AI-facing product work, confirm **all** of:
+
+1. Written product requirement exists  
+2. Core workspace capability for the same journey is not unfinished without justification  
+3. No new intelligence/evidence/assistant **engine** unless Engineering Governance freeze is lifted  
+4. Execution path: user → CommandPipeline → PermissionGateway → approved boundary  
+5. [AI Principles](../05-AI/AI-PRINCIPLES.md): Observe → Learn → Suggest → Receive Permission → Automate  
 
 Assistant may ask, explain, and retrieve. Assistant must not become the workspace manager.
 
 ---
 
-## 9. Relationship to existing documents
+## 14. Relationship to existing documents
 
-| Document | Role | This file |
-|----------|------|-----------|
-| `00-Constitution/*` | Founder authority, non-negotiables | Does not override |
-| `03-Engineering/ENGINEERING-GOVERNANCE.md` | Product alignment, freeze, batch docs | Complements; do not duplicate freeze lists here beyond pointers |
-| `03-Engineering/CODING-STANDARDS.md` | Naming, file size, comments | Magic-number and naming rules align here |
-| `03-Engineering/ENGINEERING-PRINCIPLES.md` | Maintainability before speed | Scoring system operationalises this |
-| `05-AI/AI-PRINCIPLES.md` | Product AI behaviour / permissions | Separate: product AI vs engineering AI process |
-| `AGENTS.md` | Short agent contract + cloud ops notes | Must stay consistent with this file |
+| Document | Role |
+|----------|------|
+| `00-Constitution/*` | Founder authority — this file does not override |
+| `03-Engineering/ENGINEERING-GOVERNANCE.md` | Product alignment, freezes, batch docs |
+| `03-Engineering/HUMAN-REVIEW-POLICY.md` | Visual / workflow human review |
+| `03-Engineering/CODING-STANDARDS.md` | Naming, magic numbers, file rules |
+| `01-Product/WORKSPACE-VISUAL-DIRECTION.md` | Visual north star |
+| `01-Product/references/` | Concept references |
+| `04-Operations/OPTIMISATION_LOG.md` | Optimisation cycle log |
+| `05-AI/AI-PRINCIPLES.md` | Product AI behaviour |
+| `AGENTS.md` | Short agent contract |
 
-If documents conflict on **product authority**, Constitution wins.
-If documents conflict on **engineering process for agents**, this file + Engineering Governance win; update the lagging doc.
+**Conflict resolution:** Constitution wins on product authority. This file + Engineering Governance win on agent engineering process — update the lagging doc.
 
 ---
 
-## 10. Enforcement checklist (agents and reviewers)
+## 15. Enforcement checklist
 
 Before merging significant AI-assisted work:
 
-- [ ] Purpose / Owner / Inputs / Outputs / Dependencies / Non-responsibilities recorded
-- [ ] Batch alignment check passed (major batches)
-- [ ] No new unjustified engine or duplicate subsystem
-- [ ] No unexplained magic numbers in control paths
-- [ ] Any optimisation/black-box technique has human inspection docs
-- [ ] Maintainability score estimated (≥ 8 for new systems)
-- [ ] Assistant remains sidecar; Workspace remains primary
+- [ ] Full documentation fields recorded (§6)
+- [ ] Batch alignment / drift fields recorded (§10)
+- [ ] No unjustified abstraction or duplicate system (§5)
+- [ ] No unexplained magic numbers (§4)
+- [ ] Optimisations have human inspection path + log entry if material (§3, §11)
+- [ ] Maintainability score ≥ 8 for new systems (§2)
+- [ ] Human review policy followed (§8)
+- [ ] Assistant remains sidecar; Workspace remains primary (§10, §13)
 - [ ] Docs updated in-repo (not left in chat)
 
 ---
@@ -302,4 +390,5 @@ Before merging significant AI-assisted work:
 
 > Build Workspace first. AI enhances Workspace. AI does not replace Workspace.  
 > Optimise freely — but leave a human trail.  
-> A future engineer must maintain this repository without the original AI conversation.
+> A future engineer must maintain this repository without the original AI conversation.  
+> The repository must remain suitable for professional acquisition, handover, and long-term development.
