@@ -582,11 +582,12 @@ pub use workspace_observation::{
     ObservationRefreshBlockedReason, ObservationRefreshContext, ObservationRefreshDecision,
     ObservationScheduleConfig, ObservationSchedulerStatus, ObservationTriggerAdmissionDecision,
     ObservationTriggerOutcome, ObservationTriggerRequest, ObservationTriggerSource,
-    ObservationWindowIdentity, ObservedMonitor, ObservedWindow, WindowIdentityConfidence,
-    WorkspaceObservationError, WorkspaceObservationPass, WorkspaceObservationPassMetadata,
-    WorkspaceObservationSnapshot, WorkspaceObservationStatus, OBSERVATION_FRESH_THRESHOLD_SECS,
-    OBSERVATION_STALE_THRESHOLD_SECS, OBSERVATION_TRIGGER_ADMIT_WINDOW_SECS,
-    OBSERVATION_TRIGGER_MAX_ADMITS_PER_WINDOW, OBSERVATION_TRIGGER_MIN_ADMIT_INTERVAL_SECS,
+    ObservationWindowIdentity, ObservedMonitor, ObservedWindow, ObservedWindowAvailability,
+    WindowIdentityConfidence, WorkspaceObservationError, WorkspaceObservationPass,
+    WorkspaceObservationPassMetadata, WorkspaceObservationSnapshot, WorkspaceObservationStatus,
+    OBSERVATION_FRESH_THRESHOLD_SECS, OBSERVATION_STALE_THRESHOLD_SECS,
+    OBSERVATION_TRIGGER_ADMIT_WINDOW_SECS, OBSERVATION_TRIGGER_MAX_ADMITS_PER_WINDOW,
+    OBSERVATION_TRIGGER_MIN_ADMIT_INTERVAL_SECS,
 };
 pub use workspace_observation_delta::{
     compare_observation_snapshots, ObservationFocusedWindowChange, ObservationMinimizedChange,

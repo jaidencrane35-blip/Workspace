@@ -1,4 +1,8 @@
-//! Workspace Observation Layer — durable desktop perception (Phase 6 / Sprint 103).
+//! Workspace Observation Layer — durable desktop perception (Phase 6 / Sprint 103 / DAF-1b).
+//!
+//! Why: factual current-state desktop window observation and identity for DAF.
+//! Owner: domain contracts here; capture in `windows-integration`; orchestration in kernel.
+//! Deliberately does not: move/resize windows, match ApplicationId, suggest layouts, or assist.
 //!
 //! System-scoped, versioned observation passes. Read-only. Never executes,
 //! moves windows, or grants authority. Environment Model aggregates from here.
@@ -172,6 +176,32 @@ impl ObservationWindowIdentity {
     pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
 }
 
+/// Whether a referenced window is present in a factual snapshot (DAF-1b diagnostics).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ObservedWindowAvailability {
+    /// HWND (or stable id) maps to a window row in this pass.
+    Available,
+    /// Identity registry knows the window, but it is absent from current pass windows.
+    IdentityKnownWindowMissing,
+    /// Neither a matching window row nor identity entry exists.
+    Unavailable,
+}
+
+impl ObservedWindowAvailability {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Available => "available",
+            Self::IdentityKnownWindowMissing => "identity_known_window_missing",
+            Self::Unavailable => "unavailable",
+        }
+    }
+
+    pub fn is_available(self) -> bool {
+        matches!(self, Self::Available)
+    }
+}
+
 /// Full observation snapshot: pass header plus child rows.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct WorkspaceObservationSnapshot {
@@ -188,6 +218,48 @@ impl WorkspaceObservationSnapshot {
     /// Architecture guard — observation never executes.
     pub fn attempt_execute() -> Result<()> {
         Err(WorkspaceObservationError::CannotExecute)
+    }
+
+    /// Architecture guard — observation never moves or resizes windows.
+    pub fn attempt_control_window() -> Result<()> {
+        Err(WorkspaceObservationError::CannotExecute)
+    }
+
+    /// Availability of a capture-format HWND in this snapshot.
+    pub fn availability_for_hwnd(&self, hwnd: &str) -> ObservedWindowAvailability {
+        let hwnd = hwnd.trim();
+        if self.windows.iter().any(|window| window.hwnd == hwnd) {
+            return ObservedWindowAvailability::Available;
+        }
+        if self
+            .identities
+            .iter()
+            .any(|identity| identity.last_hwnd == hwnd)
+        {
+            return ObservedWindowAvailability::IdentityKnownWindowMissing;
+        }
+        ObservedWindowAvailability::Unavailable
+    }
+
+    /// Availability of a stable window identity in this snapshot.
+    pub fn availability_for_stable_id(&self, stable_window_id: &str) -> ObservedWindowAvailability {
+        let stable_window_id = stable_window_id.trim();
+        if self.windows.iter().any(|window| {
+            window
+                .stable_window_id
+                .as_deref()
+                .is_some_and(|id| id == stable_window_id)
+        }) {
+            return ObservedWindowAvailability::Available;
+        }
+        if self
+            .identities
+            .iter()
+            .any(|identity| identity.id == stable_window_id)
+        {
+            return ObservedWindowAvailability::IdentityKnownWindowMissing;
+        }
+        ObservedWindowAvailability::Unavailable
     }
 
     /// Validates snapshot invariants before persistence or downstream use.
@@ -1477,5 +1549,83 @@ mod tests {
         .with_context("generate");
         assert_eq!(need.consumer_id, "environment");
         assert_eq!(need.context.as_deref(), Some("generate"));
+    }
+
+    #[test]
+    fn empty_snapshot_marks_windows_unavailable() {
+        let snapshot = empty_stub_snapshot("pass-empty", "2026-07-29T12:00:00Z");
+        assert!(snapshot.windows.is_empty());
+        assert_eq!(
+            snapshot.availability_for_hwnd("0x1"),
+            ObservedWindowAvailability::Unavailable
+        );
+        assert_eq!(
+            snapshot.availability_for_stable_id("missing"),
+            ObservedWindowAvailability::Unavailable
+        );
+    }
+
+    #[test]
+    fn availability_distinguishes_missing_present_and_identity_only() {
+        let mut snapshot = empty_stub_snapshot("pass-a", "2026-07-29T12:00:00Z");
+        snapshot.windows.push(ObservedWindow {
+            id: "w1".into(),
+            pass_id: snapshot.pass.id.clone(),
+            hwnd: "0xAA".into(),
+            stable_window_id: Some("stable-1".into()),
+            title: "Present".into(),
+            process_id: 10,
+            process_name: Some("app.exe".into()),
+            x: 0,
+            y: 0,
+            width: 100,
+            height: 100,
+            monitor_id: None,
+            visible: true,
+            minimized: false,
+            focused: false,
+            z_order: Some(0),
+            authority_effect: ObservedWindow::AUTHORITY_EFFECT_NONE.into(),
+        });
+        snapshot.pass.window_count = 1;
+        snapshot.identities.push(ObservationWindowIdentity {
+            id: "stable-gone".into(),
+            process_id: 11,
+            title_fingerprint: "gone".into(),
+            first_seen_at: "2026-07-29T11:00:00Z".into(),
+            last_seen_at: "2026-07-29T11:00:00Z".into(),
+            last_hwnd: "0xBB".into(),
+            confidence: WindowIdentityConfidence::High,
+            authority_effect: ObservationWindowIdentity::AUTHORITY_EFFECT_NONE.into(),
+        });
+
+        assert_eq!(
+            snapshot.availability_for_hwnd("0xAA"),
+            ObservedWindowAvailability::Available
+        );
+        assert_eq!(
+            snapshot.availability_for_stable_id("stable-1"),
+            ObservedWindowAvailability::Available
+        );
+        assert_eq!(
+            snapshot.availability_for_hwnd("0xBB"),
+            ObservedWindowAvailability::IdentityKnownWindowMissing
+        );
+        assert_eq!(
+            snapshot.availability_for_stable_id("stable-gone"),
+            ObservedWindowAvailability::IdentityKnownWindowMissing
+        );
+    }
+
+    #[test]
+    fn observation_refuses_control_and_execution() {
+        assert!(matches!(
+            WorkspaceObservationSnapshot::attempt_execute(),
+            Err(WorkspaceObservationError::CannotExecute)
+        ));
+        assert!(matches!(
+            WorkspaceObservationSnapshot::attempt_control_window(),
+            Err(WorkspaceObservationError::CannotExecute)
+        ));
     }
 }

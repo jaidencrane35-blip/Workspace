@@ -18,6 +18,7 @@ mod stub;
 pub use capture::{
     monitor_index_for_point, monitor_index_for_window_bounds, CaptureMetadata,
     CapturedDesktopMonitor, CapturedDesktopWindow, DesktopCapturer, DesktopObservationCapture,
+    ObservationPlatformCapabilities,
 };
 pub use controller::{
     parse_hwnd_value, FocusWindowRequest, RecordedWindowControl, SetWindowBoundsRequest,

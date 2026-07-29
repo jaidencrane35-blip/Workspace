@@ -1,4 +1,8 @@
-//! Rich desktop observation capture (Sprint 104).
+//! Rich desktop observation capture (Sprint 104 / DAF-1b).
+//!
+//! Why: factual OS-neutral window/monitor capture for Workspace observation.
+//! Owner: `workspace-windows-integration` only — kernel maps into domain snapshots.
+//! Separate from: WindowController (mutation), Environment (app matching), Assistant.
 //!
 //! OS-neutral capture DTOs. No SQLite, workspace, or cognition concepts.
 
@@ -11,6 +15,61 @@ use crate::error::Result;
 pub struct CaptureMetadata {
     pub source: String,
     pub duration_ms: Option<u64>,
+    /// True only when capture came from a real OS enumerator (Win32), not the stub.
+    #[serde(default)]
+    pub real_os_observation: bool,
+    /// True when process image names were populated for windows in this pass.
+    #[serde(default)]
+    pub process_names_available: bool,
+}
+
+impl CaptureMetadata {
+    pub fn stub(duration_ms: Option<u64>) -> Self {
+        Self {
+            source: "stub".into(),
+            duration_ms,
+            real_os_observation: false,
+            process_names_available: true,
+        }
+    }
+
+    pub fn win32(duration_ms: Option<u64>, process_names_available: bool) -> Self {
+        Self {
+            source: "win32".into(),
+            duration_ms,
+            real_os_observation: true,
+            process_names_available,
+        }
+    }
+}
+
+/// Platform observation capabilities — makes limitations visible to callers.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ObservationPlatformCapabilities {
+    pub source: String,
+    pub real_os_observation: bool,
+    pub process_names_supported: bool,
+    pub limitations: Vec<String>,
+}
+
+impl ObservationPlatformCapabilities {
+    pub fn for_metadata(metadata: &CaptureMetadata) -> Self {
+        let mut limitations = Vec::new();
+        if !metadata.real_os_observation {
+            limitations.push(
+                "Deterministic stub capture — not a live desktop (Linux/CI)".into(),
+            );
+        }
+        if !metadata.process_names_available {
+            limitations.push("Process image names unavailable for one or more windows".into());
+        }
+        Self {
+            source: metadata.source.clone(),
+            real_os_observation: metadata.real_os_observation,
+            process_names_supported: metadata.process_names_available,
+            limitations,
+        }
+    }
 }
 
 /// One monitor observed during capture.
@@ -35,6 +94,8 @@ pub struct CapturedDesktopWindow {
     pub hwnd: String,
     pub title: String,
     pub process_id: u32,
+    /// Factual process image base name when the platform can resolve it.
+    pub process_name: Option<String>,
     pub visible: bool,
     pub minimized: bool,
     pub focused: bool,
@@ -81,11 +142,18 @@ impl DesktopObservationCapture {
             foreground_hwnd: None,
             windows: Vec::new(),
             monitors: Vec::new(),
-            metadata: CaptureMetadata {
-                source: "stub".into(),
-                duration_ms: Some(0),
-            },
+            metadata: CaptureMetadata::stub(Some(0)),
         }
+    }
+
+    pub fn platform_capabilities(&self) -> ObservationPlatformCapabilities {
+        ObservationPlatformCapabilities::for_metadata(&self.metadata)
+    }
+
+    /// Whether a capture-format hwnd is present in this pass.
+    pub fn contains_hwnd(&self, hwnd: &str) -> bool {
+        let target = hwnd.trim();
+        self.windows.iter().any(|window| window.hwnd == target)
     }
 
     /// Legacy window list — visible, non-minimized windows only (Phase 1 behaviour).
@@ -180,7 +248,8 @@ mod tests {
                     hwnd: "0x00000000000000AA".into(),
                     title: "Focused".into(),
                     process_id: 1,
-                    visible: true,
+                                        process_name: None,
+                                        visible: true,
                     minimized: false,
                     focused: true,
                     x: 10,
@@ -194,7 +263,8 @@ mod tests {
                     hwnd: "0x00000000000000BB".into(),
                     title: "Background".into(),
                     process_id: 2,
-                    visible: true,
+                                        process_name: None,
+                                        visible: true,
                     minimized: false,
                     focused: false,
                     x: 20,
@@ -209,6 +279,8 @@ mod tests {
             metadata: CaptureMetadata {
                 source: "test".into(),
                 duration_ms: Some(1),
+                real_os_observation: false,
+                process_names_available: false,
             },
         };
 
@@ -226,7 +298,8 @@ mod tests {
             hwnd: "0x1".into(),
             title: "Bounds".into(),
             process_id: 9,
-            visible: true,
+                        process_name: None,
+                        visible: true,
             minimized: false,
             focused: false,
             x: 100,
@@ -245,7 +318,8 @@ mod tests {
             hwnd: "0x2".into(),
             title: "Min".into(),
             process_id: 3,
-            visible: false,
+                        process_name: None,
+                        visible: false,
             minimized: true,
             focused: false,
             x: -32000,
@@ -297,7 +371,8 @@ mod tests {
                     hwnd: "0x1".into(),
                     title: "Open".into(),
                     process_id: 1,
-                    visible: true,
+                                        process_name: None,
+                                        visible: true,
                     minimized: false,
                     focused: false,
                     x: 0,
@@ -311,7 +386,8 @@ mod tests {
                     hwnd: "0x2".into(),
                     title: "Min".into(),
                     process_id: 2,
-                    visible: false,
+                                        process_name: None,
+                                        visible: false,
                     minimized: true,
                     focused: false,
                     x: 0,
@@ -326,11 +402,50 @@ mod tests {
             metadata: CaptureMetadata {
                 source: "test".into(),
                 duration_ms: None,
+                real_os_observation: false,
+                process_names_available: false,
             },
         };
 
         let legacy = capture.legacy_window_snapshots();
         assert_eq!(legacy.len(), 1);
         assert_eq!(legacy[0].title, "Open");
+    }
+
+    #[test]
+    fn empty_stub_capture_exposes_platform_limitations() {
+        let capture = DesktopObservationCapture::empty_stub();
+        assert!(capture.windows.is_empty());
+        assert!(!capture.contains_hwnd("0x1"));
+        let caps = capture.platform_capabilities();
+        assert!(!caps.real_os_observation);
+        assert_eq!(caps.source, "stub");
+        assert!(!caps.limitations.is_empty());
+    }
+
+    #[test]
+    fn contains_hwnd_is_factual() {
+        let capture = DesktopObservationCapture {
+            foreground_hwnd: None,
+            windows: vec![CapturedDesktopWindow {
+                hwnd: "0xAA".into(),
+                title: "A".into(),
+                process_id: 1,
+                process_name: Some("a.exe".into()),
+                visible: true,
+                minimized: false,
+                focused: false,
+                x: 0,
+                y: 0,
+                width: 10,
+                height: 10,
+                monitor_index: None,
+                z_order: None,
+            }],
+            monitors: Vec::new(),
+            metadata: CaptureMetadata::stub(Some(0)),
+        };
+        assert!(capture.contains_hwnd("0xAA"));
+        assert!(!capture.contains_hwnd("0xBB"));
     }
 }

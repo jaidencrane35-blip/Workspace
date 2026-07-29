@@ -168,6 +168,9 @@ update stuff
 | [DAF-1A-WINDOW-CONTROLLER.md](DAF-1A-WINDOW-CONTROLLER.md) | WindowController architecture |
 | [DAF-1A-ALIGNMENT-CHECK.md](DAF-1A-ALIGNMENT-CHECK.md) | DAF-1a gate record |
 | [DAF-1A-COMPLETION-REPORT.md](DAF-1A-COMPLETION-REPORT.md) | DAF-1a batch report |
+| [DAF-1B-WINDOW-OBSERVATION.md](DAF-1B-WINDOW-OBSERVATION.md) | Observation & identity architecture |
+| [DAF-1B-ALIGNMENT-CHECK.md](DAF-1B-ALIGNMENT-CHECK.md) | DAF-1b gate record |
+| [DAF-1B-COMPLETION-REPORT.md](DAF-1B-COMPLETION-REPORT.md) | DAF-1b batch report |
 
 ---
 

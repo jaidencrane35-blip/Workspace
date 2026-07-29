@@ -525,7 +525,7 @@ fn map_window(
         stable_window_id,
         title: window.title.clone(),
         process_id: observation_u32_to_i32(window.process_id, "process_id")?,
-        process_name: None,
+        process_name: window.process_name.clone(),
         x: window.x,
         y: window.y,
         width: window.width,
@@ -643,6 +643,7 @@ mod tests {
             hwnd: hwnd.into(),
             title: title.into(),
             process_id,
+            process_name: Some(format!("proc-{process_id}.exe")),
             visible: true,
             minimized: false,
             focused,
@@ -800,6 +801,14 @@ mod tests {
         assert_eq!(latest.windows.len(), 4);
         assert_eq!(latest.monitors.len(), 2);
         assert!(latest.identities.is_empty());
+        assert!(latest
+            .windows
+            .iter()
+            .all(|window| window.process_name.is_some()));
+        assert!(latest
+            .windows
+            .iter()
+            .all(|window| window.stable_window_id.is_some()));
     }
 
     #[test]

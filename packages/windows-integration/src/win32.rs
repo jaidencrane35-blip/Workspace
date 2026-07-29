@@ -2,6 +2,7 @@
 
 use std::ffi::OsString;
 use std::os::windows::ffi::OsStringExt;
+use std::path::Path;
 use std::process::Command;
 use std::time::Instant;
 
@@ -67,14 +68,19 @@ impl DesktopCapturer for Win32WindowEnumerator {
             ));
         }
 
+        let process_names_available = ctx
+            .windows
+            .iter()
+            .any(|window| window.process_name.is_some());
+        let windows = ctx.windows;
         Ok(DesktopObservationCapture {
             foreground_hwnd,
-            windows: ctx.windows,
+            windows,
             monitors,
-            metadata: CaptureMetadata {
-                source: "win32".into(),
-                duration_ms: Some(started.elapsed().as_millis() as u64),
-            },
+            metadata: CaptureMetadata::win32(
+                Some(started.elapsed().as_millis() as u64),
+                process_names_available,
+            ),
         })
     }
 }
@@ -125,6 +131,7 @@ unsafe extern "system" fn capture_enum_proc(hwnd: HWND, lparam: LPARAM) -> BOOL 
         hwnd: hwnd_to_string(hwnd),
         title,
         process_id,
+        process_name: process_image_base_name(process_id),
         visible,
         minimized,
         focused: hwnd == ctx.foreground,
@@ -228,6 +235,39 @@ unsafe extern "system" fn monitor_enum_proc(
 
 fn hwnd_to_string(hwnd: HWND) -> String {
     format!("0x{:016X}", hwnd.0 as usize)
+}
+
+/// Best-effort process image base name for observation (factual; may be None).
+fn process_image_base_name(process_id: u32) -> Option<String> {
+    use windows::Win32::Foundation::CloseHandle;
+    use windows::Win32::System::Threading::{
+        OpenProcess, QueryFullProcessImageNameW, PROCESS_NAME_WIN32,
+        PROCESS_QUERY_LIMITED_INFORMATION,
+    };
+
+    if process_id == 0 {
+        return None;
+    }
+    unsafe {
+        let handle = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, process_id).ok()?;
+        let mut buffer = vec![0u16; 260];
+        let mut size = buffer.len() as u32;
+        let result = QueryFullProcessImageNameW(
+            handle,
+            PROCESS_NAME_WIN32,
+            windows::core::PWSTR(buffer.as_mut_ptr()),
+            &mut size,
+        );
+        let _ = CloseHandle(handle);
+        if result.is_err() || size == 0 {
+            return None;
+        }
+        buffer.truncate(size as usize);
+        let path = OsString::from_wide(&buffer).to_string_lossy().into_owned();
+        Path::new(&path)
+            .file_name()
+            .map(|name| name.to_string_lossy().into_owned())
+    }
 }
 
 fn hwnd_from_string(hwnd: &str) -> Result<HWND> {

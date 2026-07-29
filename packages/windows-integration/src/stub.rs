@@ -112,7 +112,8 @@ pub fn dual_monitor_fixture() -> DesktopObservationCapture {
                 hwnd: foreground,
                 title: "Fixture Focus".into(),
                 process_id: 100,
-                visible: true,
+                process_name: Some("fixture-focus.exe".into()),
+                                visible: true,
                 minimized: false,
                 focused: true,
                 x: 100,
@@ -126,7 +127,8 @@ pub fn dual_monitor_fixture() -> DesktopObservationCapture {
                 hwnd: "0x00000000000000BB".into(),
                 title: "Fixture Secondary".into(),
                 process_id: 101,
-                visible: true,
+                process_name: Some("fixture-secondary.exe".into()),
+                                visible: true,
                 minimized: false,
                 focused: false,
                 x: 2000,
@@ -140,7 +142,8 @@ pub fn dual_monitor_fixture() -> DesktopObservationCapture {
                 hwnd: "0x00000000000000CC".into(),
                 title: "Fixture Minimized".into(),
                 process_id: 102,
-                visible: false,
+                process_name: Some("fixture-minimized.exe".into()),
+                                visible: false,
                 minimized: true,
                 focused: false,
                 x: -32000,
@@ -154,7 +157,8 @@ pub fn dual_monitor_fixture() -> DesktopObservationCapture {
                 hwnd: "0x00000000000000DD".into(),
                 title: "Fixture Unknown Monitor".into(),
                 process_id: 103,
-                visible: true,
+                process_name: Some("fixture-unknown.exe".into()),
+                                visible: true,
                 minimized: false,
                 focused: false,
                 x: 5000,
@@ -166,15 +170,43 @@ pub fn dual_monitor_fixture() -> DesktopObservationCapture {
             },
         ],
         metadata: CaptureMetadata {
-            source: "stub".into(),
-            duration_ms: Some(0),
-        },
+                source: "stub".into(),
+                duration_ms: Some(0),
+                real_os_observation: false,
+                process_names_available: true,
+            },
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::controller::StubWindowController;
+
+    #[test]
+    fn stub_fixture_preserves_process_identity_metadata() {
+        let capture = StubDesktopCapturer::fixture_dual_monitor()
+            .capture_desktop()
+            .unwrap();
+        assert!(capture.metadata.process_names_available);
+        assert!(!capture.metadata.real_os_observation);
+        for window in &capture.windows {
+            assert!(window.process_name.is_some());
+            assert!(window.hwnd.starts_with("0x"));
+        }
+        assert!(capture.contains_hwnd("0x00000000000000AA"));
+        assert!(!capture.contains_hwnd("0xDEAD"));
+    }
+
+    #[test]
+    fn stub_observation_does_not_imply_control_surface() {
+        // Capture is observation-only; control lives on WindowController.
+        let _capture = StubDesktopCapturer::fixture_dual_monitor()
+            .capture_desktop()
+            .unwrap();
+        let controller = StubWindowController::new();
+        assert!(controller.recorded().is_empty());
+    }
 
     #[test]
     fn stub_returns_empty_legacy_enumeration() {
