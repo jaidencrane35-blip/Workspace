@@ -290,8 +290,8 @@ export default function App() {
           <section className="assistant-legacy-section" aria-label="Governed workflow legacy">
             <h2>Governed workflow (legacy)</h2>
             <p className="lede">
-              Goal → plan → permission path. Separate from Programme IV
-              presentation packages above.
+              Goal → plan → permission path for mutations. Prefer the
+              intelligence panel above for read-only composition.
             </p>
             <AssistantPanel
               workspace={workspace}

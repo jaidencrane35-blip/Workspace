@@ -101,8 +101,40 @@ Tests kept; assertions not weakened.
 
 ## 7. Human usability findings
 
-*(Filled after Phase 7 visual review)*
+Reviewed with frontend-only Vite preview at `http://localhost:1420` (Tauri IPC unavailable in browser — expected red invoke banner). Assistant tab inspected for navigation, layout, hierarchy, and empty-state clarity.
 
+### What works
+- Dark theme and tab chrome are consistent with the rest of the app
+- Assistant Intelligence sits above legacy governed workflow with a clear visual delimiter
+- Six-layer stack labeling (Batches 11–16) is discoverable once packages exist
+- Empty / idle states avoid fake data; presentation-only framing is readable
+- Primary compose vs secondary refresh button hierarchy is clear
+
+### Issues found (severity)
+
+| Severity | Finding | Status |
+|---|---|---|
+| High | Weak next-step when no workspace selected | **Polished** — empty-state hint routes users to **Canvas** tab (initial draft said “Workspaces”; corrected after visual review) |
+| High | Dense / overlapping purpose between Programme IV panel and legacy | **Polished** — delimiter + de-emphasized legacy heading + clearer copy |
+| Med | Human-ask textarea lacked example prompt | **Polished** — placeholder added |
+| Med | Lede text was dense | **Polished** — shortened to stack path + non-authority clause |
+| Med | Legacy mutation controls compete visually with intelligence panel | Deferred — product may later hide legacy behind an explicit toggle |
+| Low | Diagnostic tab naming / undismissable invoke error banner in browser | Expected for frontend-only; full data needs Tauri/Windows |
+| Low | Action buttons wrap on narrow widths | Acceptable; flex-wrap already applied |
+
+### Manual review checklist (Phase 7)
+
+| Criterion | Result |
+|---|---|
+| Navigation | Pass — Assistant tab reachable; stack order clear |
+| Layout / spacing | Pass after polish — delimiter + empty-state spacing |
+| Responsiveness | Pass for primary actions (wrap); layers remain single-column |
+| Clarity / discoverability | Pass with residual product debt on legacy vs intelligence |
+| Interaction flow | Compose gated on ask text; refresh always available |
+| Typography / hierarchy | Pass — intelligence hero primary; legacy secondary |
+| Obvious bugs | Browser IPC banner only (environment); no layout breakage |
+
+**Usability verdict:** Suitable for engineer/product review of Programme IV composition. Not yet end-user shippable without Windows Tauri E2E and real workspace data.
 ---
 
 ## 8. Recommended next architectural milestone (after consolidation)

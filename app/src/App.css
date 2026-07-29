@@ -677,10 +677,28 @@ button.linkish:not(:disabled):hover {
   line-height: 1.45;
 }
 
+.assistant-intel-empty-block {
+  display: grid;
+  gap: 0.35rem;
+  margin-top: 0.75rem;
+}
+
 .assistant-intel-empty {
   margin: 0.75rem 0 0;
   color: #6a7886;
   font-size: 0.9rem;
+}
+
+.assistant-intel-empty-block .assistant-intel-empty {
+  margin: 0;
+}
+
+.assistant-intel-empty-hint {
+  margin: 0;
+  color: #8a9aaa;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  max-width: 36rem;
 }
 
 .assistant-intel-note {
@@ -706,8 +724,14 @@ button.linkish:not(:disabled):hover {
   margin-top: 2rem;
   padding-top: 1.5rem;
   border-top: 1px solid #243040;
+  opacity: 0.94;
 }
 
 .assistant-legacy-section > h2 {
   margin-bottom: 0.35rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #b8c4d0;
+  text-transform: none;
+  letter-spacing: 0;
 }

@@ -329,11 +329,16 @@ export function AssistantIntelligencePanel({
           <p className="assistant-kicker">Programme IV · Batches 11–16</p>
           <h2>Assistant Intelligence</h2>
           <p className="lede">
-            Presentation-only stack over recorded workspace evidence. Create or
-            select a workspace to compose intelligence packages.
+            Presentation-only stack over recorded workspace evidence.
           </p>
         </header>
-        <p className="assistant-intel-empty">No workspace selected.</p>
+        <div className="assistant-intel-empty-block">
+          <p className="assistant-intel-empty">No workspace selected.</p>
+          <p className="assistant-intel-empty-hint">
+            Open the Canvas tab, create or select a workspace, then return here
+            to compose the six-layer intelligence stack.
+          </p>
+        </div>
       </div>
     );
   }
@@ -344,10 +349,9 @@ export function AssistantIntelligencePanel({
         <p className="assistant-kicker">Programme IV · Batches 11–16</p>
         <h2>Assistant Intelligence</h2>
         <p className="lede">
-          Projection-only surface for assistant turn, context, retrieval,
-          explanation, interaction, and personalisation packages. This UI
-          composes existing engines via IPC — it does not approve, execute, or
-          decide.
+          Surface → context → retrieval → explanation → interaction →
+          personalisation. Composes existing engines via IPC — never approves,
+          executes, or decides.
         </p>
       </header>
 
@@ -358,6 +362,7 @@ export function AssistantIntelligencePanel({
           rows={3}
           value={humanAsk}
           disabled={busy}
+          placeholder="What do we already know about this workspace?"
           onChange={(event) => setHumanAsk(event.target.value)}
         />
         <div className="assistant-intel-actions">
