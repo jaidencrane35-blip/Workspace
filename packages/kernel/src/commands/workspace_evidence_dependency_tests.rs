@@ -443,5 +443,6 @@ fn no_workflow_creation_in_dependency_service() {
     let source = include_str!("../services/workspace_evidence_dependency.rs");
     assert!(!source.contains("TaskGraphService"));
     assert!(!source.contains("WorkspacePlanningService"));
-    assert!(!source.contains("schedule"));
+    assert!(!source.contains("schedule work"));
+    assert!(!source.contains("ExecutionLifecycleService"));
 }

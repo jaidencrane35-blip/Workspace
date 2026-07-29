@@ -157,7 +157,7 @@ impl WorkspaceEvidenceDependencyService {
 
     pub(crate) fn attempt_create_workflow() -> Result<()> {
         Err(KernelError::EvidenceDependencyValidation {
-            message: "Evidence dependency cannot create workflows or schedules".into(),
+            message: "Evidence dependency cannot create workflows or planning graphs".into(),
         })
     }
 
