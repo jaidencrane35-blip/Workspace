@@ -1990,6 +1990,34 @@ impl WorkspaceRecommendationEngineService {
                         .map(|fp| fp == fingerprint.as_str())
                         .unwrap_or(false);
                     if fingerprint_matches {
+                        if existing.lifecycle_state.is_open() {
+                            continue;
+                        }
+                        // Expired + source returned with identical content: reopen.
+                        // Intelligence assemble base→pattern→readiness projects overlays
+                        // between stages; enrich-only candidates are orphaned/Expired on
+                        // the next base generate, then reappear with the same fingerprint.
+                        // Leaving them Expired sealed them out of Attention top-N (case11).
+                        // Accepted/Rejected stay terminal — user decisions are not residue.
+                        if existing.lifecycle_state == RecommendationLifecycleState::Expired {
+                            Self::audit_lifecycle(
+                                db,
+                                actor,
+                                "workspace.recommendation_engine.generation_reopened",
+                                item,
+                                &existing,
+                            )?;
+                            let fresh = Self::new_available_overlay(
+                                &state.workspace_id,
+                                item,
+                                &fingerprint,
+                                &now,
+                                &actor_id,
+                            )?
+                            .with_prior_outcomes(existing.carried_outcomes());
+                            Self::upsert_overlay_pair(db, &existing, &fresh)?;
+                            by_id.insert(item.id.clone(), fresh);
+                        }
                         continue;
                     }
                     if existing.content_fingerprint.is_none() {

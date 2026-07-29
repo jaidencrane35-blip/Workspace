@@ -216,6 +216,82 @@ fn recommendation_repository_allows_generation_reopen_with_prior_outcomes() {
 }
 
 #[test]
+fn recommendation_repository_allows_expired_reopen_with_same_fingerprint() {
+    let (_dir, db) = database();
+    let repo = RecommendationLifecycleRepository::new(&db);
+    let mut expired = accepted_overlay("rec-expired-return");
+    expired.lifecycle_state = RecommendationLifecycleState::Expired;
+    expired.resolution_type = Some(RecommendationResolutionType::Expired);
+    let mut outcome = sample_outcome("rec-expired-return");
+    outcome.lifecycle_resolution = Some(RecommendationResolutionType::Expired);
+    outcome.user_decision = RecommendationUserDecision::Expired;
+    outcome.result_kind = RecommendationResultKind::ExpiredWithoutAction;
+    expired.outcome = Some(outcome.clone());
+    expired.decision_confirmation = None;
+    expired.content_fingerprint = Some("fp-stable".into());
+    repo.upsert_overlay(&expired).unwrap();
+
+    // Source returned with identical content — must reopen (Intelligence enrich residue).
+    let reopened = RecommendationLifecycleOverlay {
+        workspace_id: "ws-1".into(),
+        native_id: "rec-expired-return".into(),
+        lifecycle_state: RecommendationLifecycleState::Available,
+        created_at: "t3".into(),
+        presented_at: None,
+        resolved_at: None,
+        resolution_type: None,
+        actor_id: Some("local-user".into()),
+        outcome: None,
+        prior_outcomes: vec![outcome],
+        content_fingerprint: Some("fp-stable".into()),
+        decision_confirmation: None,
+        decision_intake_package_seal: None,
+        decision_intake_adapter_preparation: None,
+        decision_handoff_request: None,
+        decision_engine_acceptance: None,
+        updated_at: "t3".into(),
+        authority_effect: "none".into(),
+    };
+    repo.upsert_overlay(&reopened).unwrap();
+    let stored = repo
+        .get_overlay("ws-1", "rec-expired-return")
+        .unwrap()
+        .unwrap();
+    assert_eq!(
+        stored.lifecycle_state,
+        RecommendationLifecycleState::Available
+    );
+    assert_eq!(stored.prior_outcomes.len(), 1);
+    assert_eq!(stored.content_fingerprint.as_deref(), Some("fp-stable"));
+}
+
+#[test]
+fn recommendation_repository_rejects_accepted_reopen_with_same_fingerprint() {
+    let (_dir, db) = database();
+    let repo = RecommendationLifecycleRepository::new(&db);
+    let accepted = accepted_overlay("rec-accepted-same-fp");
+    repo.upsert_overlay(&accepted).unwrap();
+
+    let mut reopen = accepted.clone();
+    reopen.lifecycle_state = RecommendationLifecycleState::Available;
+    reopen.resolved_at = None;
+    reopen.resolution_type = None;
+    reopen.outcome = None;
+    reopen.prior_outcomes = vec![sample_outcome("rec-accepted-same-fp")];
+    // Same fingerprint as terminal Accepted — must not resurrect user decision.
+    reopen.content_fingerprint = Some("fp-1".into());
+    reopen.updated_at = "t3".into();
+    assert!(repo.upsert_overlay(&reopen).is_err());
+    assert_eq!(
+        repo.get_overlay("ws-1", "rec-accepted-same-fp")
+            .unwrap()
+            .unwrap()
+            .lifecycle_state,
+        RecommendationLifecycleState::Accepted
+    );
+}
+
+#[test]
 fn decision_engine_repository_rejects_terminal_reopen() {
     let (_dir, db) = database();
     let repo = DecisionEngineRepository::new(&db);

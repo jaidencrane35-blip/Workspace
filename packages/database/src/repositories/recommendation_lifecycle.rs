@@ -122,7 +122,16 @@ impl<'a> RecommendationLifecycleRepository<'a> {
                 OR (recommendation_lifecycle.lifecycle_state = 'presented'
                     AND excluded.lifecycle_state IN ('available','accepted','rejected','expired','superseded'))
                 OR (
-                    recommendation_lifecycle.lifecycle_state IN ('accepted','rejected','expired','superseded')
+                    -- Source returned after Expired (e.g. enrich-only candidates
+                    -- orphaned mid Intelligence assemble). Same fingerprint is valid.
+                    recommendation_lifecycle.lifecycle_state = 'expired'
+                    AND excluded.lifecycle_state = 'available'
+                    AND excluded.content_fingerprint IS NOT NULL
+                    AND excluded.prior_outcomes_json IS NOT NULL
+                )
+                OR (
+                    -- Accepted/Rejected/Superseded reopen only on material content change.
+                    recommendation_lifecycle.lifecycle_state IN ('accepted','rejected','superseded')
                     AND excluded.lifecycle_state = 'available'
                     AND excluded.content_fingerprint IS NOT NULL
                     AND excluded.content_fingerprint != COALESCE(recommendation_lifecycle.content_fingerprint, '')
