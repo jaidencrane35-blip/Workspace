@@ -46,6 +46,8 @@ interface AssistantIntelligencePanelProps {
   onBusy: (busy: boolean) => void;
   onError: (message: string | null) => void;
   onMessage: (message: string | null) => void;
+  /** Rail omits duplicate hero chrome; ask + packages stay primary. */
+  presentation?: "standalone" | "rail";
 }
 
 type GapLike = {
@@ -184,10 +186,13 @@ export function AssistantIntelligencePanel({
   onBusy,
   onError,
   onMessage,
+  presentation = "standalone",
 }: AssistantIntelligencePanelProps) {
+  const rail = presentation === "rail";
   const [humanAsk, setHumanAsk] = useState(
     "What do we already know about this workspace?",
   );
+  const [packagesOpen, setPackagesOpen] = useState(!rail);
   const [surface, setSurface] =
     useState<WorkspaceAssistantSurfaceProjection | null>(null);
   const [context, setContext] =
@@ -324,42 +329,153 @@ export function AssistantIntelligencePanel({
 
   if (!workspace) {
     return (
-      <div className="assistant-intel-panel">
-        <header className="assistant-intel-hero">
-          <p className="assistant-kicker">Supporting companion</p>
-          <h2>Ask about this workspace</h2>
-          <p className="lede">
-            Read-only help over what Workspace already knows — it does not run
-            your desktop for you.
-          </p>
-        </header>
+      <div
+        className={
+          rail
+            ? "assistant-intel-panel presentation-rail"
+            : "assistant-intel-panel"
+        }
+      >
+        {rail ? null : (
+          <header className="assistant-intel-hero">
+            <p className="assistant-kicker">Supporting companion</p>
+            <h2>Ask about this workspace</h2>
+            <p className="lede">
+              Read-only help over what Workspace already knows — it does not run
+              your desktop for you.
+            </p>
+          </header>
+        )}
         <div className="assistant-intel-empty-block">
           <p className="assistant-intel-empty">No workspace selected.</p>
           <p className="assistant-intel-empty-hint">
-            Open Workspaces, create or select a workspace, then return here for
-            help and explanations.
+            Open Workspaces, create or select a workspace, then ask for help
+            here.
           </p>
         </div>
       </div>
     );
   }
 
+  const layers = (
+    <div className="assistant-intel-layers">
+      <LayerProjection
+        title="Surface"
+        batchLabel="Layer 1"
+        projection={surface}
+        nonCommandable={
+          surface == null ||
+          isAssistantSurfaceProjectionNonCommandable(surface)
+        }
+        historyAuthoritative={
+          surface == null ||
+          assistantSurfaceHistoryCountIsAuthoritative(
+            surface as unknown as WorkspaceAssistantSurfaceSummary,
+          )
+        }
+      />
+      <LayerProjection
+        title="Context"
+        batchLabel="Layer 2"
+        projection={context}
+        nonCommandable={
+          context == null ||
+          isAssistantContextProjectionNonCommandable(context)
+        }
+        historyAuthoritative={
+          context == null ||
+          assistantContextHistoryCountIsAuthoritative(
+            context as unknown as WorkspaceAssistantContextSummary,
+          )
+        }
+      />
+      <LayerProjection
+        title="Retrieval"
+        batchLabel="Layer 3"
+        projection={retrieval}
+        nonCommandable={
+          retrieval == null ||
+          isAssistantRetrievalProjectionNonCommandable(retrieval)
+        }
+        historyAuthoritative={
+          retrieval == null ||
+          assistantRetrievalHistoryCountIsAuthoritative(
+            retrieval as unknown as WorkspaceAssistantRetrievalSummary,
+          )
+        }
+      />
+      <LayerProjection
+        title="Explanation"
+        batchLabel="Layer 4"
+        projection={explanation}
+        nonCommandable={
+          explanation == null ||
+          isAssistantExplanationProjectionNonCommandable(explanation)
+        }
+        historyAuthoritative={
+          explanation == null ||
+          assistantExplanationHistoryCountIsAuthoritative(
+            explanation as unknown as WorkspaceAssistantExplanationSummary,
+          )
+        }
+      />
+      <LayerProjection
+        title="Interaction"
+        batchLabel="Layer 5"
+        projection={interaction}
+        nonCommandable={
+          interaction == null ||
+          isAssistantInteractionProjectionNonCommandable(interaction)
+        }
+        historyAuthoritative={
+          interaction == null ||
+          assistantInteractionHistoryCountIsAuthoritative(
+            interaction as unknown as WorkspaceAssistantInteractionSummary,
+          )
+        }
+      />
+      <LayerProjection
+        title="Personalisation"
+        batchLabel="Layer 6"
+        projection={personalisation}
+        nonCommandable={
+          personalisation == null ||
+          isAssistantPersonalisationProjectionNonCommandable(personalisation)
+        }
+        historyAuthoritative={
+          personalisation == null ||
+          assistantPersonalisationHistoryCountIsAuthoritative(
+            personalisation as unknown as WorkspaceAssistantPersonalisationSummary,
+          )
+        }
+      />
+    </div>
+  );
+
   return (
-    <div className="assistant-intel-panel">
-      <header className="assistant-intel-hero">
-        <p className="assistant-kicker">Supporting companion</p>
-        <h2>Ask about this workspace</h2>
-        <p className="lede">
-          Compose explanations from existing workspace information. The
-          Assistant never approves, executes, or decides for you.
-        </p>
-      </header>
+    <div
+      className={
+        rail
+          ? "assistant-intel-panel presentation-rail"
+          : "assistant-intel-panel"
+      }
+    >
+      {rail ? null : (
+        <header className="assistant-intel-hero">
+          <p className="assistant-kicker">Supporting companion</p>
+          <h2>Ask about this workspace</h2>
+          <p className="lede">
+            Compose explanations from existing workspace information. The
+            Assistant never approves, executes, or decides for you.
+          </p>
+        </header>
+      )}
 
       <div className="assistant-intel-ask">
         <label htmlFor="assistant-intel-ask">What do you want to know?</label>
         <textarea
           id="assistant-intel-ask"
-          rows={3}
+          rows={rail ? 2 : 3}
           value={humanAsk}
           disabled={busy}
           placeholder="What do we already know about this workspace?"
@@ -389,101 +505,20 @@ export function AssistantIntelligencePanel({
           Nothing prepared yet. Ask a question to compose an answer from
           existing workspace information, or refresh if answers already exist.
         </p>
-      ) : (
-        <div className="assistant-intel-layers">
-          <LayerProjection
-            title="Surface"
-            batchLabel="Layer 1"
-            projection={surface}
-            nonCommandable={
-              surface == null ||
-              isAssistantSurfaceProjectionNonCommandable(surface)
-            }
-            historyAuthoritative={
-              surface == null ||
-              assistantSurfaceHistoryCountIsAuthoritative(
-                surface as unknown as WorkspaceAssistantSurfaceSummary,
-              )
-            }
-          />
-          <LayerProjection
-            title="Context"
-            batchLabel="Layer 2"
-            projection={context}
-            nonCommandable={
-              context == null ||
-              isAssistantContextProjectionNonCommandable(context)
-            }
-            historyAuthoritative={
-              context == null ||
-              assistantContextHistoryCountIsAuthoritative(
-                context as unknown as WorkspaceAssistantContextSummary,
-              )
-            }
-          />
-          <LayerProjection
-            title="Retrieval"
-            batchLabel="Layer 3"
-            projection={retrieval}
-            nonCommandable={
-              retrieval == null ||
-              isAssistantRetrievalProjectionNonCommandable(retrieval)
-            }
-            historyAuthoritative={
-              retrieval == null ||
-              assistantRetrievalHistoryCountIsAuthoritative(
-                retrieval as unknown as WorkspaceAssistantRetrievalSummary,
-              )
-            }
-          />
-          <LayerProjection
-            title="Explanation"
-            batchLabel="Layer 4"
-            projection={explanation}
-            nonCommandable={
-              explanation == null ||
-              isAssistantExplanationProjectionNonCommandable(explanation)
-            }
-            historyAuthoritative={
-              explanation == null ||
-              assistantExplanationHistoryCountIsAuthoritative(
-                explanation as unknown as WorkspaceAssistantExplanationSummary,
-              )
-            }
-          />
-          <LayerProjection
-            title="Interaction"
-            batchLabel="Layer 5"
-            projection={interaction}
-            nonCommandable={
-              interaction == null ||
-              isAssistantInteractionProjectionNonCommandable(interaction)
-            }
-            historyAuthoritative={
-              interaction == null ||
-              assistantInteractionHistoryCountIsAuthoritative(
-                interaction as unknown as WorkspaceAssistantInteractionSummary,
-              )
-            }
-          />
-          <LayerProjection
-            title="Personalisation"
-            batchLabel="Layer 6"
-            projection={personalisation}
-            nonCommandable={
-              personalisation == null ||
-              isAssistantPersonalisationProjectionNonCommandable(
-                personalisation,
-              )
-            }
-            historyAuthoritative={
-              personalisation == null ||
-              assistantPersonalisationHistoryCountIsAuthoritative(
-                personalisation as unknown as WorkspaceAssistantPersonalisationSummary,
-              )
-            }
-          />
+      ) : rail ? (
+        <div className="assistant-intel-packages">
+          <button
+            type="button"
+            className="ghost assistant-packages-toggle"
+            aria-expanded={packagesOpen}
+            onClick={() => setPackagesOpen((open) => !open)}
+          >
+            {packagesOpen ? "Hide evidence packages" : "Show evidence packages"}
+          </button>
+          {packagesOpen ? layers : null}
         </div>
+      ) : (
+        layers
       )}
     </div>
   );

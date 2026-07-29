@@ -77,6 +77,7 @@ export function AssistantCompanionRail({
           onBusy={onBusy}
           onError={onError}
           onMessage={onMessage}
+          presentation="rail"
         />
 
         <section

@@ -41,6 +41,23 @@ Human concept → Optimised representation → Decoder / inspector → Human und
 
 ## Cycles
 
+### Cycle: opt-c2-companion-rail-density
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-29 |
+| **Problem** | Persistent rail duplicated companion hero and flooded the stage with six evidence layers |
+| **Reason** | Companion must stay secondary; ask-first, packages on demand |
+| **Files changed** | `AssistantIntelligencePanel.tsx`, `AssistantCompanionRail.tsx`, `App.css`, this log |
+| **Validation** | typecheck / test / architecture / ipc / ui-boundary / build |
+| **Maintainability score** | 8.7/10 |
+| **Reference alignment** | 8.6/10 (+0.2 quieter companion) |
+| **Commercial readiness** | 6.0/10 |
+| **Human readability** | 8.6/10 |
+| **Why this is safe** | Presentation-only `presentation="rail"`; no IPC/AI/ownership change |
+
+---
+
 ### Cycle: opt-c1-persistent-assistant-rail
 
 | Field | Value |
