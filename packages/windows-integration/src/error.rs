@@ -12,4 +12,13 @@ pub enum WindowsIntegrationError {
 
     #[error("Invalid launch target: {0}")]
     InvalidLaunchTarget(String),
+
+    #[error("Invalid window handle: {0}")]
+    InvalidWindowHandle(String),
+
+    #[error("Invalid window bounds: {0}")]
+    InvalidWindowBounds(String),
+
+    #[error("Window control failed: {0}")]
+    ControlFailed(String),
 }

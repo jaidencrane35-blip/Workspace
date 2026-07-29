@@ -9,6 +9,7 @@ Workspace is a **Windows-targeted Tauri 2 desktop app** (React 18 + Vite in `app
 - **Primary product:** desktop workspace management (apps, layouts, real windows, save/restore, work modes).
 - **Secondary:** AI Assistant as a supporting capability — never the product itself.
 - **Next programme:** Desktop Arrangement Foundation (DAF). Read `docs/03-Engineering/DAF-ARCHITECTURE-AUDIT.md` and `docs/03-Engineering/ENGINEERING-GOVERNANCE.md` before coding.
+- **Human review:** See `docs/03-Engineering/HUMAN-REVIEW-POLICY.md`. Do not require visual review for every change; batch UI checkpoints. Prefer live app / screenshots over automatic videos unless audit/regression/explicit request.
 - **Frozen:** new AI intelligence/evidence/assistant engines unless a written product requirement says otherwise.
 - **Visual north star:** `docs/01-Product/WORKSPACE-VISUAL-DIRECTION.md` + `docs/01-Product/references/`.
 - Do **not** treat prior chat transcripts as architecture memory; update `docs/` instead.

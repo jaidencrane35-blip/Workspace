@@ -161,8 +161,13 @@ update stuff
 | [WORKSPACE-VISUAL-DIRECTION.md](../01-Product/WORKSPACE-VISUAL-DIRECTION.md) | Visual north star |
 | [PRODUCT-VISION-REALIGNMENT-AUDIT.md](../01-Product/PRODUCT-VISION-REALIGNMENT-AUDIT.md) | Product gap analysis |
 | [DAF-ARCHITECTURE-AUDIT.md](DAF-ARCHITECTURE-AUDIT.md) | DAF-0 archaeology + proposed architecture |
-| [DAF-0-COMPLETION-REPORT.md](DAF-0-COMPLETION-REPORT.md) | This foundation batch report |
+| [DAF-0-COMPLETION-REPORT.md](DAF-0-COMPLETION-REPORT.md) | Foundation batch report |
+| [HUMAN-REVIEW-POLICY.md](HUMAN-REVIEW-POLICY.md) | When humans review vs engineering-only |
+| [VISUAL-REVIEW-CHECKLIST.md](VISUAL-REVIEW-CHECKLIST.md) | Batched visual checkpoint template |
 | [BATCH-ALIGNMENT-CHECK.md](BATCH-ALIGNMENT-CHECK.md) | Pre-batch checklist template |
+| [DAF-1A-WINDOW-CONTROLLER.md](DAF-1A-WINDOW-CONTROLLER.md) | WindowController architecture |
+| [DAF-1A-ALIGNMENT-CHECK.md](DAF-1A-ALIGNMENT-CHECK.md) | DAF-1a gate record |
+| [DAF-1A-COMPLETION-REPORT.md](DAF-1A-COMPLETION-REPORT.md) | DAF-1a batch report |
 
 ---
 

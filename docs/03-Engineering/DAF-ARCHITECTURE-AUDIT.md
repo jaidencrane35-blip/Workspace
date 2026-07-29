@@ -205,12 +205,12 @@ Assistant must not: call WindowController, bypass Gateway, invent geometries
 
 | Phase | Deliverable | Depends on |
 |-------|-------------|------------|
-| **DAF-0** (this batch) | Docs, visual refs, governance, audit | — |
-| **DAF-1a** | `WindowController` + tests/stubs | windows-integration |
+| **DAF-0** (complete) | Docs, visual refs, governance, audit | — |
+| **DAF-1a** (complete) | `WindowController` + stub/Win32 + tests | windows-integration |
 | **DAF-1b** | `DesktopArrangement` model + SQLite | domain + database |
 | **DAF-1c** | Save from capture / restore via controller | kernel + IPC |
 | **DAF-1d** | Two work modes + explicit user switch | UI + arrangements |
-| **DAF-1e** | Chrome realignment (Assistant sidecar) | frontend only / light IPC |
+| **DAF-1e** | Chrome realignment (Assistant sidecar) | frontend; **human visual checkpoint** |
 
 Exact batch splits may adjust; do not skip Gateway or merge canvas layout with desktop arrangement.
 

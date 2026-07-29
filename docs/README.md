@@ -9,8 +9,9 @@
 | A new contributor | [Project Constitution](00-Constitution/PROJECT-CONSTITUTION.md) → [Engineering Governance](03-Engineering/ENGINEERING-GOVERNANCE.md) → [Visual Direction](01-Product/WORKSPACE-VISUAL-DIRECTION.md) |
 | Making a product decision | [Product Vision](01-Product/PRODUCT-VISION.md) → [Visual Direction](01-Product/WORKSPACE-VISUAL-DIRECTION.md) → [Realignment Audit](01-Product/PRODUCT-VISION-REALIGNMENT-AUDIT.md) |
 | Starting a major batch | [Batch Alignment Check](03-Engineering/BATCH-ALIGNMENT-CHECK.md) → [Engineering Governance](03-Engineering/ENGINEERING-GOVERNANCE.md) |
+| Human visual review | [Human Review Policy](03-Engineering/HUMAN-REVIEW-POLICY.md) → [Visual Review Checklist](03-Engineering/VISUAL-REVIEW-CHECKLIST.md) |
 | Designing architecture | [Architecture Principles](02-Architecture/ARCHITECTURE-PRINCIPLES.md) → [System Overview](02-Architecture/SYSTEM-OVERVIEW.md) |
-| Desktop arrangement (DAF) | [DAF Architecture Audit](03-Engineering/DAF-ARCHITECTURE-AUDIT.md) → [Visual Direction](01-Product/WORKSPACE-VISUAL-DIRECTION.md) |
+| Desktop arrangement (DAF) | [DAF Architecture Audit](03-Engineering/DAF-ARCHITECTURE-AUDIT.md) → [DAF-1a WindowController](03-Engineering/DAF-1A-WINDOW-CONTROLLER.md) |
 | Selecting technology | [Stack Evaluation Criteria](02-Architecture/STACK-EVALUATION-CRITERIA.md) |
 | Writing code | [Coding Standards](03-Engineering/CODING-STANDARDS.md) → [Definition of Done](03-Engineering/DEFINITION-OF-DONE.md) |
 | Working on AI features | Confirm need against [Engineering Governance](03-Engineering/ENGINEERING-GOVERNANCE.md) (AI expansion frozen unless product-required) → [AI Principles](05-AI/AI-PRINCIPLES.md) |
@@ -65,9 +66,13 @@ How the team builds, reviews, and maintains the codebase.
 |----------|-------------|
 | [Engineering Principles](03-Engineering/ENGINEERING-PRINCIPLES.md) | Core engineering values and quality gates |
 | [Engineering Governance](03-Engineering/ENGINEERING-GOVERNANCE.md) | Product alignment, freeze rules, batch docs, drift prevention |
+| [Human Review Policy](03-Engineering/HUMAN-REVIEW-POLICY.md) | When human visual review is required; batching; media restraint |
+| [Visual Review Checklist](03-Engineering/VISUAL-REVIEW-CHECKLIST.md) | Checkpoint template for batched UI audits |
 | [Batch Alignment Check](03-Engineering/BATCH-ALIGNMENT-CHECK.md) | Pre-implementation checklist template |
 | [DAF Architecture Audit](03-Engineering/DAF-ARCHITECTURE-AUDIT.md) | DAF-0 archaeology + proposed desktop arrangement architecture |
 | [DAF-0 Completion Report](03-Engineering/DAF-0-COMPLETION-REPORT.md) | Governance reset batch report |
+| [DAF-1a WindowController](03-Engineering/DAF-1A-WINDOW-CONTROLLER.md) | OS window mutation boundary |
+| [DAF-1a Completion Report](03-Engineering/DAF-1A-COMPLETION-REPORT.md) | WindowController foundation batch report |
 | [Coding Standards](03-Engineering/CODING-STANDARDS.md) | Naming, formatting, and code conventions |
 | [Repository Standards](03-Engineering/REPOSITORY-STANDARDS.md) | Git workflow, branches, commits, PRs |
 | [Documentation Standards](03-Engineering/DOCUMENTATION-STANDARDS.md) | How to write and maintain documentation |

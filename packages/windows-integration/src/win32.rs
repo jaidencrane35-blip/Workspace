@@ -11,12 +11,17 @@ use windows::Win32::Graphics::Gdi::{
 };
 use windows::Win32::UI::WindowsAndMessaging::{
     EnumWindows, GetForegroundWindow, GetWindowRect, GetWindowTextLengthW, GetWindowTextW,
-    GetWindowThreadProcessId, IsIconic, IsWindowVisible, MONITORINFOF_PRIMARY,
+    GetWindowThreadProcessId, IsIconic, IsWindow, IsWindowVisible, SetForegroundWindow,
+    SetWindowPos, MONITORINFOF_PRIMARY, SWP_NOACTIVATE, SWP_NOZORDER,
 };
 
 use super::capture::{
     monitor_index_for_window_bounds, CaptureMetadata, CapturedDesktopMonitor,
     CapturedDesktopWindow, DesktopCapturer, DesktopObservationCapture,
+};
+use super::controller::{
+    parse_hwnd_value, FocusWindowRequest, SetWindowBoundsRequest, WindowControlOutcome,
+    WindowController,
 };
 use super::enumerator::{DesktopWindowSnapshot, WindowEnumerator};
 use super::launcher::{ProcessLaunchOutcome, ProcessLaunchRequest, ProcessLauncher};
@@ -223,6 +228,67 @@ unsafe extern "system" fn monitor_enum_proc(
 
 fn hwnd_to_string(hwnd: HWND) -> String {
     format!("0x{:016X}", hwnd.0 as usize)
+}
+
+fn hwnd_from_string(hwnd: &str) -> Result<HWND> {
+    let value = parse_hwnd_value(hwnd)?;
+    let handle = HWND(value as *mut core::ffi::c_void);
+    if unsafe { IsWindow(handle) }.as_bool() {
+        Ok(handle)
+    } else {
+        Err(WindowsIntegrationError::InvalidWindowHandle(format!(
+            "hwnd '{hwnd}' is not a valid top-level window"
+        )))
+    }
+}
+
+/// Win32 window controller — move/resize/focus real desktop windows (DAF-1a).
+#[derive(Debug, Default, Clone, Copy)]
+pub struct Win32WindowController;
+
+impl WindowController for Win32WindowController {
+    fn set_bounds(&self, request: &SetWindowBoundsRequest) -> Result<WindowControlOutcome> {
+        request.bounds.validate()?;
+        let hwnd = hwnd_from_string(&request.hwnd)?;
+        let bounds = request.bounds;
+        unsafe {
+            SetWindowPos(
+                hwnd,
+                HWND::default(),
+                bounds.x,
+                bounds.y,
+                bounds.width,
+                bounds.height,
+                SWP_NOZORDER | SWP_NOACTIVATE,
+            )
+        }
+        .map_err(|error| {
+            WindowsIntegrationError::ControlFailed(format!(
+                "SetWindowPos failed for '{}': {error}",
+                request.hwnd
+            ))
+        })?;
+
+        Ok(WindowControlOutcome {
+            hwnd: request.hwnd.clone(),
+            simulated: false,
+        })
+    }
+
+    fn focus(&self, request: &FocusWindowRequest) -> Result<WindowControlOutcome> {
+        let hwnd = hwnd_from_string(&request.hwnd)?;
+        let ok = unsafe { SetForegroundWindow(hwnd) };
+        if !ok.as_bool() {
+            return Err(WindowsIntegrationError::ControlFailed(format!(
+                "SetForegroundWindow failed for '{}'",
+                request.hwnd
+            )));
+        }
+        Ok(WindowControlOutcome {
+            hwnd: request.hwnd.clone(),
+            simulated: false,
+        })
+    }
 }
 
 unsafe fn read_window_title(hwnd: HWND) -> String {
