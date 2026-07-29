@@ -48,6 +48,7 @@ The Query Engine:
 | 3 | Workspace Evidence Trace Engine | Deterministic provenance tracing for a single artefact |
 | 4 | Workspace Evidence Coverage Engine | Observable evidence completeness for a subject |
 | 5 | Workspace Evidence Consistency Engine | Observable agreement/disagreement across evidence |
+| 6 | Workspace Evidence Dependency Engine | Recorded dependency structure across evidence |
 
 Future Programme IV batches build conversational and assistant surfaces **on top of** this retrieval layer — never beside it, never replacing it.
 
@@ -130,6 +131,21 @@ It never owns semantic retrieval, navigation, provenance, explanations, contextu
 
 It never owns semantic retrieval, navigation, provenance, coverage, explanations, contextual understanding, knowledge, planning, reasoning, policy, decisions, execution, permissions, or lifecycle.
 
+---
+
+## Ownership boundary (Batch 6)
+
+`WorkspaceEvidenceDependencyService` owns only:
+
+- dependency snapshots
+- dependency graphs
+- dependency observations
+- dependency diagnostics
+- dependency gaps
+- dependency summaries
+
+It never owns semantic retrieval, navigation, provenance, coverage, consistency, explanations, contextual understanding, knowledge, planning, reasoning, policy, decisions, execution, permissions, or lifecycle.
+
 ## Upstream access rule
 
 All upstream access uses **`load_snapshot` only**.
@@ -188,6 +204,7 @@ Unknown remains unknown. Unavailable remains unavailable. Contradictions remain 
 - [Workspace Evidence Trace Architecture](./WORKSPACE-EVIDENCE-TRACE-ARCHITECTURE.md)
 - [Workspace Evidence Coverage Architecture](./WORKSPACE-EVIDENCE-COVERAGE-ARCHITECTURE.md)
 - [Workspace Evidence Consistency Architecture](./WORKSPACE-EVIDENCE-CONSISTENCY-ARCHITECTURE.md)
+- [Workspace Evidence Dependency Architecture](./WORKSPACE-EVIDENCE-DEPENDENCY-ARCHITECTURE.md)
 - [Programme III — Coherent Workspace Runtime](./PROGRAMME-III-COHERENT-WORKSPACE-RUNTIME.md)
 - [Programme II — Cognitive Workspace](./PROGRAMME-II-COGNITIVE-WORKSPACE.md)
 - [Projection Integrity](../03-Engineering/PROJECTION-INTEGRITY.md)

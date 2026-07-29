@@ -424,6 +424,14 @@ Rules:
 - Forbidden: execute, recommend, resolve, approve, mutate, automate
 - Consistency is observational only — conflicts remain unresolved
 
+### Workspace Evidence Dependency Engine (Programme IV Batch 6)
+
+- Dual-channel: `current` + `history` + authoritative `history_count`
+- History is evidence-only; never actionable
+- Projection helpers expose dependency graphs, lists, diagnostics, completeness, gaps, lineage
+- Forbidden: execute, recommend, schedule, approve, mutate, automate
+- Dependency is recorded structure only — never invented, never causal, never executable
+
 
 ## Serde defaults vs TypeScript required fields
 

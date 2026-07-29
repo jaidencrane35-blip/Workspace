@@ -134,3 +134,9 @@ Governance rejects: conflict resolution, inferred agreement/disagreement, recomm
 > Workspace Evidence Consistency Engine observes consistency across recorded evidence only.
 > It never resolves conflicts, determines truth, performs reasoning, makes recommendations,
 > or becomes the authority for any upstream intelligence layer.
+
+---
+
+## Successor
+
+- [Workspace Evidence Dependency Architecture](./WORKSPACE-EVIDENCE-DEPENDENCY-ARCHITECTURE.md) (Batch 6 — observe recorded dependency)

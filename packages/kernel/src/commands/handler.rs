@@ -180,6 +180,10 @@ use crate::commands::workspace_evidence_consistency::{
     ExplainEvidenceConsistency, GenerateWorkspaceEvidenceConsistency, GetWorkspaceEvidenceConsistency,
     GetWorkspaceEvidenceConsistencySummary,
 };
+use crate::commands::workspace_evidence_dependency::{
+    ExplainEvidenceDependency, GenerateWorkspaceEvidenceDependency, GetWorkspaceEvidenceDependency,
+    GetWorkspaceEvidenceDependencySummary,
+};
 use crate::commands::workspace_cross_intelligence::{
     ExplainCrossWorkspacePattern, GenerateCrossWorkspaceIntelligence, GetCrossWorkspaceIntelligence,
     GetCrossWorkspaceSummary,
@@ -270,6 +274,7 @@ use workspace_domain::{
     WorkspaceEvidenceTraceExplanation,
     WorkspaceEvidenceCoverageProjection, WorkspaceEvidenceCoverageSummary, WorkspaceEvidenceCoverageExplanation,
     WorkspaceEvidenceConsistencyProjection, WorkspaceEvidenceConsistencySummary, WorkspaceEvidenceConsistencyExplanation,
+    WorkspaceEvidenceDependencyProjection, WorkspaceEvidenceDependencySummary, WorkspaceEvidenceDependencyExplanation,
     LayoutId, LayoutMetadata, LayoutNode, LayoutSnapshot, MemoryEntry, MemoryType,
     ModelProviderDescriptor, ModelResponse, Observation, PersonalizedPlanComparison,
     PreferenceCategory, PreferenceSource, Suggestion, SuggestionIntentRequest,
@@ -3479,6 +3484,53 @@ impl CommandHandler {
     /// Architecture guard — Evidence consistency cannot execute / resolve / invent agreement.
     pub fn evidence_consistency_attempt_execute() -> Result<()> {
         crate::services::WorkspaceEvidenceConsistencyService::attempt_execute()
+    }
+
+    pub fn generate_workspace_evidence_dependency(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceEvidenceDependencyProjection> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_mutation(GenerateWorkspaceEvidenceDependency::new(workspace_id))
+    }
+
+    pub fn get_workspace_evidence_dependency(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceEvidenceDependencyProjection> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetWorkspaceEvidenceDependency::new(workspace_id))
+    }
+
+    pub fn get_workspace_evidence_dependency_summary(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        history_limit: usize,
+    ) -> Result<WorkspaceEvidenceDependencySummary> {
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_query(
+            GetWorkspaceEvidenceDependencySummary::new(workspace_id, history_limit),
+        )
+    }
+
+    pub fn explain_evidence_dependency(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceEvidenceDependencyExplanation> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(ExplainEvidenceDependency::new(workspace_id))
+    }
+
+    /// Architecture guard — Evidence dependency cannot execute / invent / repair links.
+    pub fn evidence_dependency_attempt_execute() -> Result<()> {
+        crate::services::WorkspaceEvidenceDependencyService::attempt_execute()
     }
 
     #[allow(clippy::too_many_arguments)]

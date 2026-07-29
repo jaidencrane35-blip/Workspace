@@ -632,6 +632,22 @@ Observable agreement and disagreement across recorded evidence.
 
 See [Workspace Evidence Consistency Architecture](../05-AI/WORKSPACE-EVIDENCE-CONSISTENCY-ARCHITECTURE.md).
 
+## Workspace Evidence Dependency Engine (Programme IV Batch 6)
+
+Recorded dependency structure across evidence artefacts.
+
+**Observe dependency. Never create dependency.**
+
+- Owns dependency snapshots / graphs / relationships / gaps / diagnostics only
+- Never owns retrieval, navigation, provenance, coverage, consistency, reasoning, recommendation, execution, or lifecycle
+- Upstream access via `load_snapshot` only — never foreign `::generate`
+- Never infers dependencies, repairs links, creates workflows, or establishes causation
+- History is evidence-only (`actionable: false`, `authority_effect: "none"`)
+- Mutation inventory includes `GenerateWorkspaceEvidenceDependency` (baseline **79**)
+- History / projection DTO inventory length **30**
+
+See [Workspace Evidence Dependency Architecture](../05-AI/WORKSPACE-EVIDENCE-DEPENDENCY-ARCHITECTURE.md).
+
 ## Capability boundary audit
 
 Enforced by `scripts/architecture-governance-lib.mjs`:

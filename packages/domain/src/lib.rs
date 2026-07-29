@@ -70,6 +70,7 @@ pub mod workspace_evidence_navigation;
 pub mod workspace_evidence_trace;
 pub mod workspace_evidence_coverage;
 pub mod workspace_evidence_consistency;
+pub mod workspace_evidence_dependency;
 pub mod workspace_composition;
 pub mod workspace_purpose;
 pub mod workspace_evolution;
@@ -619,6 +620,13 @@ pub use workspace_evidence_consistency::{
     WorkspaceEvidenceConsistencyExplanation, WorkspaceEvidenceConsistencyProjection,
     WorkspaceEvidenceConsistencySnapshot, WorkspaceEvidenceConsistencySummary,
 };
+pub use workspace_evidence_dependency::{
+    DependencyAssessment, DependencyDiagnostics, DependencyGap, DependencyLineage, DependencyNode,
+    DependencyRelationship, DependencyScope, EvidenceDependencyCompleteness, EvidenceDependencyError,
+    EvidenceDependencyEvidenceRef, EvidenceDependencyHistoryEntry, EvidenceDependencyStatus,
+    WorkspaceEvidenceDependencyExplanation, WorkspaceEvidenceDependencyProjection,
+    WorkspaceEvidenceDependencySnapshot, WorkspaceEvidenceDependencySummary,
+};
 
 pub use workspace_task_graph::{
     would_create_cycle, TaskDependency, TaskGraph, TaskGraphError, TaskGraphSummary, TaskHistoryEntry,
@@ -720,12 +728,14 @@ pub use recovery_contract::{
     recovery_must_not_fabricate_actionable_evidence_trace_history,
     recovery_must_not_fabricate_actionable_evidence_coverage_history,
     recovery_must_not_fabricate_actionable_evidence_consistency_history,
+    recovery_must_not_fabricate_actionable_evidence_dependency_history,
     recovery_must_not_fabricate_intelligence_hub,
     recovery_must_not_fabricate_semantic_query,
     recovery_must_not_fabricate_evidence_navigation,
     recovery_must_not_fabricate_evidence_trace,
     recovery_must_not_fabricate_evidence_coverage,
     recovery_must_not_fabricate_evidence_consistency,
+    recovery_must_not_fabricate_evidence_dependency,
     recovery_must_not_fabricate_learning, recovery_must_not_fabricate_orchestration, recovery_must_not_fabricate_reasoning,
     recovery_must_not_invent_completed, RECOVERY_DIAGNOSTIC_ATTEMPTED,
     RECOVERY_DIAGNOSTIC_COMPLETED, RECOVERY_DIAGNOSTIC_EVENT_TYPES, RECOVERY_DIAGNOSTIC_FAILED,

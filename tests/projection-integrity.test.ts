@@ -133,6 +133,11 @@ import {
   isEvidenceConsistencyProjectionNonCommandable,
   evidenceConsistencyHistoryCountIsAuthoritative,
 } from "../app/src/components/evidenceConsistencyProjection";
+import {
+  isEvidenceDependencyHistoryNonActionable,
+  isEvidenceDependencyProjectionNonCommandable,
+  evidenceDependencyHistoryCountIsAuthoritative,
+} from "../app/src/components/evidenceDependencyProjection";
 import type {
   DecisionArtifactHistoryEntry,
   DecisionEngineSummary,
@@ -206,12 +211,15 @@ import type {
   EvidenceTraceHistoryEntry,
   EvidenceCoverageHistoryEntry,
   EvidenceConsistencyHistoryEntry,
+  EvidenceDependencyHistoryEntry,
   WorkspaceEvidenceTraceProjection,
   WorkspaceEvidenceCoverageProjection,
   WorkspaceEvidenceConsistencyProjection,
+  WorkspaceEvidenceDependencyProjection,
   WorkspaceEvidenceTraceSummary,
   WorkspaceEvidenceCoverageSummary,
   WorkspaceEvidenceConsistencySummary,
+  WorkspaceEvidenceDependencySummary,
   RecommendationHistoryEntry,
   RecommendationItem,
   TaskGraphSummary,
@@ -2277,6 +2285,66 @@ describe("projection integrity — cognitive agent cast", () => {
     expect(Object.keys(nonCommand)).not.toContain("approve");
     expect(Object.keys(nonCommand)).not.toContain("recommend");
     expect(Object.keys(nonCommand)).not.toContain("resolve");
+    expect(Object.keys(nonCommand)).not.toContain("automate");
+  });
+  it("keeps evidence dependency projections non-commandable with authoritative history_count", () => {
+    const historyEntry = (
+      overrides: Partial<EvidenceDependencyHistoryEntry> = {}
+    ): EvidenceDependencyHistoryEntry => ({
+      dependency_id: "evidence_dependency:1",
+      status: "superseded",
+      created_at: "t0",
+      superseded_at: "t1",
+      completeness: "partial",
+      node_count: 2,
+      relationship_count: 1,
+      gap_count: 1,
+      source_revision_count: 3,
+      terminal: true,
+      actionable: false,
+      authority_effect: "none",
+      ...overrides,
+    });
+    const projection: WorkspaceEvidenceDependencyProjection = {
+      workspace_id: "ws",
+      projected_at: "t2",
+      current: null,
+      history: [historyEntry()],
+      history_count: 3,
+      authority_effect: "none",
+    };
+    expect(isEvidenceDependencyProjectionNonCommandable(projection)).toBe(true);
+    expect(isEvidenceDependencyHistoryNonActionable(historyEntry())).toBe(true);
+    expect(
+      isEvidenceDependencyHistoryNonActionable(historyEntry({ actionable: true }))
+    ).toBe(false);
+
+    const summary: WorkspaceEvidenceDependencySummary = {
+      workspace_id: "ws",
+      has_current: false,
+      completeness: null,
+      node_count: 0,
+      relationship_count: 0,
+      gap_count: 0,
+      narrative_summary: null,
+      history: [historyEntry()],
+      history_count: 3,
+      authority_effect: "none",
+      actionable: false,
+    };
+    expect(evidenceDependencyHistoryCountIsAuthoritative(summary)).toBe(true);
+    expect(summary.history_count).toBeGreaterThanOrEqual(summary.history.length);
+
+    const nonCommand = {
+      dependency_id: "evidence_dependency:1",
+      actionable: false,
+      terminal: true,
+      authority_effect: "none",
+    };
+    expect(Object.keys(nonCommand)).not.toContain("execute");
+    expect(Object.keys(nonCommand)).not.toContain("approve");
+    expect(Object.keys(nonCommand)).not.toContain("recommend");
+    expect(Object.keys(nonCommand)).not.toContain("schedule");
     expect(Object.keys(nonCommand)).not.toContain("automate");
   });
 });

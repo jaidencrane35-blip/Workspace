@@ -44,6 +44,7 @@ mod workspace_evidence_navigation;
 mod workspace_evidence_trace;
 mod workspace_evidence_coverage;
 mod workspace_evidence_consistency;
+mod workspace_evidence_dependency;
 mod workspace_continuity;
 mod workspace_environment;
 mod workspace_composition;
@@ -238,4 +239,5 @@ pub(crate) use workspace_evidence_navigation::WorkspaceEvidenceNavigationService
 pub(crate) use workspace_evidence_trace::WorkspaceEvidenceTraceService;
 pub(crate) use workspace_evidence_coverage::WorkspaceEvidenceCoverageService;
 pub(crate) use workspace_evidence_consistency::WorkspaceEvidenceConsistencyService;
+pub(crate) use workspace_evidence_dependency::WorkspaceEvidenceDependencyService;
 pub use zone::ZoneService;

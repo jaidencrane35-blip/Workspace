@@ -69,6 +69,9 @@ use crate::workspace_evidence_coverage::{
 use crate::workspace_evidence_consistency::{
     EvidenceConsistencyHistoryEntry, WorkspaceEvidenceConsistencyProjection,
 };
+use crate::workspace_evidence_dependency::{
+    EvidenceDependencyHistoryEntry, WorkspaceEvidenceDependencyProjection,
+};
 use crate::workspace_reasoning_memory::{ReasoningHistoryEntry, ReasoningSnapshot};
 
 /// Documented startup in-progress sweep cap (must match
@@ -568,6 +571,26 @@ pub fn recovery_must_not_fabricate_evidence_consistency(
 /// Fabricated actionable evidence-consistency history must fail the recovery contract.
 pub fn recovery_must_not_fabricate_actionable_evidence_consistency_history(
     entry: &EvidenceConsistencyHistoryEntry,
+) -> bool {
+    entry.is_non_actionable()
+}
+
+/// Recovery must not invent dependency, repair links, bridge broken structure, or estimate missing structure.
+pub fn recovery_must_not_fabricate_evidence_dependency(
+    projection: &WorkspaceEvidenceDependencyProjection,
+) -> bool {
+    projection.is_non_commandable()
+        && projection.history.iter().all(|h| h.is_non_actionable())
+        && projection
+            .current
+            .as_ref()
+            .map(|c| c.is_non_executing())
+            .unwrap_or(true)
+}
+
+/// Fabricated actionable evidence-dependency history must fail the recovery contract.
+pub fn recovery_must_not_fabricate_actionable_evidence_dependency_history(
+    entry: &EvidenceDependencyHistoryEntry,
 ) -> bool {
     entry.is_non_actionable()
 }

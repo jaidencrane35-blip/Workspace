@@ -53,6 +53,7 @@ Recovery must **never**:
 - `recovery_must_not_fabricate_evidence_trace` — never invent lineage, fabricate hops, or bridge missing history on restart
 - `recovery_must_not_fabricate_evidence_coverage` — never invent missing evidence, fill unavailable sources, repair lineage, or estimate coverage on restart
 - `recovery_must_not_fabricate_evidence_consistency` — never repair conflicts, invent consistency/inconsistency, or assume agreement on restart
+- `recovery_must_not_fabricate_evidence_dependency` — never invent dependency, repair links, bridge broken structure, or estimate missing structure on restart
 - recreate desktop actions
 - bypass PermissionGateway / CommandPipeline for user mutations
 - silently “heal” lifecycle into an open actionable state

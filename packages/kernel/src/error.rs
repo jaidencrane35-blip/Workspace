@@ -19,7 +19,7 @@ use workspace_domain::{
     ContextualUnderstandingError, KnowledgeSynthesisError, KnowledgeIntegrationError,
     InsightCoordinationError, CrossWorkspaceIntelligenceError, DecisionSupportError,
     IntelligenceHubError, SemanticQueryError, EvidenceNavigationError, EvidenceTraceError,
-    EvidenceCoverageError, EvidenceConsistencyError,
+    EvidenceCoverageError, EvidenceConsistencyError, EvidenceDependencyError,
     WorkspaceSessionError,
     WorkspaceTransitionError,
     WorkspaceWorkContextError, WorkspaceWorkingStyleError,
@@ -310,6 +310,9 @@ pub enum KernelError {
 
     #[error("Evidence consistency validation failed: {message}")]
     EvidenceConsistencyValidation { message: String },
+
+    #[error("Evidence dependency validation failed: {message}")]
+    EvidenceDependencyValidation { message: String },
 
     #[error("Workspace intelligence validation failed: {message}")]
     WorkspaceIntelligenceValidation { message: String },
@@ -800,6 +803,17 @@ impl From<EvidenceConsistencyError> for KernelError {
         match error {
             EvidenceConsistencyError::Domain(domain) => KernelError::from(domain),
             other => KernelError::EvidenceConsistencyValidation {
+                message: other.to_string(),
+            },
+        }
+    }
+}
+
+impl From<EvidenceDependencyError> for KernelError {
+    fn from(error: EvidenceDependencyError) -> Self {
+        match error {
+            EvidenceDependencyError::Domain(domain) => KernelError::from(domain),
+            other => KernelError::EvidenceDependencyValidation {
                 message: other.to_string(),
             },
         }
@@ -1550,6 +1564,10 @@ impl KernelError {
             },
             KernelError::EvidenceConsistencyValidation { message } => PublicError {
                 code: "evidence_consistency_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::EvidenceDependencyValidation { message } => PublicError {
+                code: "evidence_dependency_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::WorkspaceIntelligenceValidation { message } => PublicError {

@@ -5285,6 +5285,167 @@ export interface WorkspaceEvidenceConsistencyExplanation {
   actionable: boolean;
 }
 
+/** Programme IV Batch 6 — Workspace Evidence Dependency Engine (dependency ≠ causation). */
+export interface DependencyScope {
+  include_evidence_consistency: boolean;
+  include_evidence_coverage: boolean;
+  include_evidence_trace: boolean;
+  include_evidence_navigation: boolean;
+  include_semantic_query: boolean;
+  include_intelligence_hub: boolean;
+  include_knowledge_integration: boolean;
+  include_contextual: boolean;
+  include_explanation: boolean;
+  include_temporal: boolean;
+  include_reconstruction: boolean;
+  include_state: boolean;
+}
+
+export interface EvidenceDependencyEvidenceRef {
+  external_ref: string;
+  origin_domain: string;
+  source_revision: string | null;
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface DependencyAssessment {
+  assessment_id: string;
+  requested_scope: string[];
+  participating_artefacts: string[];
+  observed_dependency_set: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface DependencyNode {
+  node_id: string;
+  artefact_ref: string;
+  origin_domain: string;
+  source_revision: string | null;
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface DependencyRelationship {
+  relationship_id: string;
+  source_reference: string;
+  target_reference: string;
+  relationship_type: string;
+  recorded_lineage: string;
+  evidence_refs: EvidenceDependencyEvidenceRef[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface DependencyGap {
+  gap_id: string;
+  gap_kind: string;
+  description: string;
+  affected_references: string[];
+  evidence_refs: EvidenceDependencyEvidenceRef[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface DependencyLineage {
+  lineage_id: string;
+  contributing_artefacts: string[];
+  revisions: string[];
+  evidence_refs: EvidenceDependencyEvidenceRef[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface DependencyDiagnostics {
+  diagnostics_id: string;
+  completeness: string;
+  reachable_dependency_count: number;
+  unavailable_references: string[];
+  notes: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface WorkspaceEvidenceDependencySnapshot {
+  dependency_id: string;
+  workspace_id: string;
+  generated_at: string;
+  status: string;
+  superseded_at: string | null;
+  scope: DependencyScope;
+  assessment: DependencyAssessment;
+  nodes: DependencyNode[];
+  relationships: DependencyRelationship[];
+  gaps: DependencyGap[];
+  lineage: DependencyLineage;
+  diagnostics: DependencyDiagnostics;
+  completeness: string;
+  provenance_links: EvidenceDependencyEvidenceRef[];
+  source_revisions: string[];
+  narrative_summary: string;
+  narrative: string;
+  limitations: string[];
+  authority_effect: string;
+  actionable: boolean;
+  terminal: boolean;
+}
+
+export interface EvidenceDependencyHistoryEntry {
+  dependency_id: string;
+  status: string;
+  created_at: string;
+  superseded_at: string | null;
+  completeness: string;
+  node_count: number;
+  relationship_count: number;
+  gap_count: number;
+  source_revision_count: number;
+  terminal: boolean;
+  actionable: boolean;
+  authority_effect: string;
+}
+
+export interface WorkspaceEvidenceDependencyProjection {
+  workspace_id: string;
+  current: WorkspaceEvidenceDependencySnapshot | null;
+  history: EvidenceDependencyHistoryEntry[];
+  history_count: number;
+  projected_at: string;
+  authority_effect: string;
+}
+
+export interface WorkspaceEvidenceDependencySummary {
+  workspace_id: string;
+  has_current: boolean;
+  completeness: string | null;
+  node_count: number;
+  relationship_count: number;
+  gap_count: number;
+  narrative_summary: string | null;
+  history: EvidenceDependencyHistoryEntry[];
+  history_count: number;
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface WorkspaceEvidenceDependencyExplanation {
+  explanation_id: string;
+  workspace_id: string;
+  completeness: string | null;
+  narrative_summary: string | null;
+  node_summaries: string[];
+  relationship_summaries: string[];
+  gap_summaries: string[];
+  lineage_summaries: string[];
+  evidence_refs: string[];
+  uncertainty: string[];
+  narrative: string;
+  limitations: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
 export type WindowIdentityConfidence = "high" | "medium" | "low" | "ephemeral";
 
 export interface WorkspaceObservationPass {
