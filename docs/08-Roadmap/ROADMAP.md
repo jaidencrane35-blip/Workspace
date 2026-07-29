@@ -21,6 +21,13 @@ Foundation     Decisions       Core Platform     Feature Expansion   Maturity
                             Sprints 01–39 done      Phase 2 entry
 ```
 
+### Product realignment (2026-07-29)
+
+Engineering emphasis inverted toward AI programmes while concept art requires **desktop workspace management** first.  
+**Next funded milestone:** [Desktop Arrangement Foundation (DAF-1)](../01-Product/PRODUCT-VISION-REALIGNMENT-AUDIT.md) — window control, save/restore arrangements, chrome realignment, Flow↔Focus prototype.  
+**Frozen:** Programme IV Batch 17+, new intelligence/evidence engines without a direct core-product requirement.  
+Programme III/IV code is retained as **future assistant infrastructure**, not deleted.
+
 ---
 
 ## 2. Phase 0 — Foundation

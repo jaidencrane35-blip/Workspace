@@ -9,11 +9,11 @@
 | If you are... | Start here |
 |---------------|------------|
 | A new contributor | [Project Constitution](00-Constitution/PROJECT-CONSTITUTION.md) → [Engineering Principles](03-Engineering/ENGINEERING-PRINCIPLES.md) |
-| Making a product decision | [Product Vision](01-Product/PRODUCT-VISION.md) → [MVP Definition](01-Product/MVP-DEFINITION.md) |
+| Making a product decision | [Product Vision](01-Product/PRODUCT-VISION.md) → [Realignment Audit](01-Product/PRODUCT-VISION-REALIGNMENT-AUDIT.md) → [MVP Definition](01-Product/MVP-DEFINITION.md) |
 | Designing architecture | [Architecture Principles](02-Architecture/ARCHITECTURE-PRINCIPLES.md) → [System Overview](02-Architecture/SYSTEM-OVERVIEW.md) |
 | Selecting technology | [Stack Evaluation Criteria](02-Architecture/STACK-EVALUATION-CRITERIA.md) |
 | Writing code (future) | [Coding Standards](03-Engineering/CODING-STANDARDS.md) → [Definition of Done](03-Engineering/DEFINITION-OF-DONE.md) |
-| Working on AI features | [AI Principles](05-AI/AI-PRINCIPLES.md) → [AI Operating Model](05-AI/AI-OPERATING-MODEL.md) |
+| Working on AI features | [AI Principles](05-AI/AI-PRINCIPLES.md) → confirm need against [Realignment Audit](01-Product/PRODUCT-VISION-REALIGNMENT-AUDIT.md) (AI expansion frozen unless product-required) |
 | Reviewing security | [Threat Model](07-Security/THREAT-MODEL.md) → [Security Principles](07-Security/SECURITY-PRINCIPLES.md) |
 | Building plugins (future) | [Plugin Architecture Vision](06-Plugins/PLUGIN-ARCHITECTURE-VISION.md) |
 | Unsure about something | [Open Questions](09-Decisions/OPEN-QUESTIONS.md) — identify, don't guess |
@@ -38,6 +38,7 @@ What Workspace is, who it serves, and how scope is managed.
 | Document | Description |
 |----------|-------------|
 | [Product Vision](01-Product/PRODUCT-VISION.md) | Product goals, domains, and target experience |
+| [Product Vision Realignment Audit](01-Product/PRODUCT-VISION-REALIGNMENT-AUDIT.md) | Gap analysis vs concept art; DAF-1 milestone; freeze AI expansion |
 | [Scope Management](01-Product/SCOPE-MANAGEMENT.md) | How scope is proposed, approved, and controlled |
 | [MVP Definition](01-Product/MVP-DEFINITION.md) | First useful product slice and acceptance criteria |
 

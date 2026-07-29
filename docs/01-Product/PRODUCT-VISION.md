@@ -73,10 +73,15 @@ The integration model — how these domains interact in the shell — is an open
 ## 6. What Workspace Is
 
 - An adaptive desktop workspace layer for Windows
+- A manager for real applications, switchable layouts, and saved desktop arrangements
 - A memory for user workflows and layouts
-- A suggestion engine for reducing repetitive work
+- A suggestion engine for reducing repetitive work (secondary to layout/app management)
 - A unified navigation and panel system
 - An extensible platform via plugins
+
+**Primary product surface:** desktop workspace management (apps, layouts, groups, restore, per-app controls).  
+**Secondary capability:** AI assistant as a supportive sidecar — never the product itself.  
+See [Product Vision Realignment Audit](PRODUCT-VISION-REALIGNMENT-AUDIT.md) (2026-07-29) for gap analysis vs original concept art and the next engineering milestone (**DAF-1**).
 
 ---
 
@@ -84,6 +89,7 @@ The integration model — how these domains interact in the shell — is an open
 
 - A replacement for Windows
 - An autonomous agent that acts without permission
+- An AI-assistant-first platform (assistant is a feature inside Workspace, not Workspace itself)
 - A locked-down environment with fixed layouts
 - A single-purpose tool (e.g., only a launcher or only a window manager)
 - A cloud-dependent service (local-first is a guiding preference — see Open Questions for final decision)
