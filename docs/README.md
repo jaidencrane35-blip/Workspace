@@ -98,6 +98,8 @@ How the team builds, reviews, and maintains the codebase.
 | [DAF-1e Completion Report](03-Engineering/DAF-1E-COMPLETION-REPORT.md) | Arrangement UI batch report |
 | [Milestone A Completion Report](03-Engineering/MILESTONE-A-WORKSPACE-APPS-COMPLETION-REPORT.md) | Apps + workspace switcher foundation |
 | [Milestone A Visual Review](03-Engineering/MILESTONE-A-VISUAL-REVIEW-CHECKLIST.md) | Human review checklist for Milestone A chrome |
+| [Milestone A Human Review](03-Engineering/MILESTONE-A-HUMAN-REVIEW.md) | Usability / maintainability checkpoint (post A) |
+| [Milestone A Vision Gap](03-Engineering/MILESTONE-A-VISION-GAP-REPORT.md) | Vision vs Milestone A gap table |
 | [DAF-1e Visual Review](03-Engineering/DAF-1E-VISUAL-REVIEW-CHECKLIST.md) | Human visual checkpoint |
 | [Coding Standards](03-Engineering/CODING-STANDARDS.md) | Naming, formatting, and code conventions |
 | [Repository Standards](03-Engineering/REPOSITORY-STANDARDS.md) | Git workflow, branches, commits, PRs |
