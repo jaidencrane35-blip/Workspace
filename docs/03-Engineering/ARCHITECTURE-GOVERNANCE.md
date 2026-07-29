@@ -600,8 +600,21 @@ Deterministic provenance tracing for a single artefact.
 
 See [Workspace Evidence Trace Architecture](../05-AI/WORKSPACE-EVIDENCE-TRACE-ARCHITECTURE.md).
 
+## Workspace Evidence Coverage Engine (Programme IV Batch 4)
 
+Observable evidence completeness for a subject.
 
+**Measure evidence coverage. Never measure truth.**
+
+- Owns coverage snapshots / metrics / gaps / diagnostics / completeness only
+- Never owns semantic retrieval, navigation, provenance, reasoning, recommendation, execution, or lifecycle
+- Upstream access via `load_snapshot` only — never foreign `::generate`
+- Never infers missing evidence, fabricates completeness, or evaluates truth
+- History is evidence-only (`actionable: false`, `authority_effect: "none"`)
+- Mutation inventory includes `GenerateWorkspaceEvidenceCoverage` (baseline **77**)
+- History / projection DTO inventory length **28**
+
+See [Workspace Evidence Coverage Architecture](../05-AI/WORKSPACE-EVIDENCE-COVERAGE-ARCHITECTURE.md).
 
 ## Capability boundary audit
 

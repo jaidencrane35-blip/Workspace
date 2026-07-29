@@ -46,6 +46,7 @@ The Query Engine:
 | 1 | Workspace Semantic Query Engine | Canonical read-only semantic retrieval |
 | 2 | Workspace Evidence Navigation Engine | Deterministic navigation of existing evidence paths |
 | 3 | Workspace Evidence Trace Engine | Deterministic provenance tracing for a single artefact |
+| 4 | Workspace Evidence Coverage Engine | Observable evidence completeness for a subject |
 
 Future Programme IV batches build conversational and assistant surfaces **on top of** this retrieval layer — never beside it, never replacing it.
 
@@ -97,6 +98,21 @@ It never owns semantic retrieval, knowledge, contextual understanding, explanati
 - trace gaps
 
 It never owns semantic retrieval, evidence navigation, explanations, contextual understanding, knowledge, planning, reasoning, policy, execution, permissions, or lifecycle.
+
+---
+
+## Ownership boundary (Batch 4)
+
+`WorkspaceEvidenceCoverageService` owns only:
+
+- coverage snapshots
+- coverage metrics
+- evidence completeness
+- evidence availability
+- coverage gaps
+- coverage diagnostics
+
+It never owns semantic retrieval, navigation, provenance, explanations, contextual understanding, knowledge, planning, reasoning, policy, decisions, execution, permissions, or lifecycle.
 
 ## Upstream access rule
 
@@ -154,6 +170,7 @@ Unknown remains unknown. Unavailable remains unavailable. Contradictions remain 
 - [Workspace Semantic Query Architecture](./WORKSPACE-SEMANTIC-QUERY-ARCHITECTURE.md)
 - [Workspace Evidence Navigation Architecture](./WORKSPACE-EVIDENCE-NAVIGATION-ARCHITECTURE.md)
 - [Workspace Evidence Trace Architecture](./WORKSPACE-EVIDENCE-TRACE-ARCHITECTURE.md)
+- [Workspace Evidence Coverage Architecture](./WORKSPACE-EVIDENCE-COVERAGE-ARCHITECTURE.md)
 - [Programme III — Coherent Workspace Runtime](./PROGRAMME-III-COHERENT-WORKSPACE-RUNTIME.md)
 - [Programme II — Cognitive Workspace](./PROGRAMME-II-COGNITIVE-WORKSPACE.md)
 - [Projection Integrity](../03-Engineering/PROJECTION-INTEGRITY.md)

@@ -4975,6 +4975,154 @@ export interface WorkspaceEvidenceTraceExplanation {
   actionable: boolean;
 }
 
+/** Programme IV Batch 4 — Workspace Evidence Coverage Engine (coverage ≠ truth). */
+export interface CoverageScope {
+  include_evidence_trace: boolean;
+  include_evidence_navigation: boolean;
+  include_semantic_query: boolean;
+  include_intelligence_hub: boolean;
+  include_knowledge_integration: boolean;
+  include_contextual: boolean;
+  include_explanation: boolean;
+  include_temporal: boolean;
+  include_reconstruction: boolean;
+  include_state: boolean;
+}
+
+export interface EvidenceCoverageEvidenceRef {
+  external_ref: string;
+  origin_domain: string;
+  source_revision: string | null;
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface CoverageAssessment {
+  assessment_id: string;
+  requested_scope: string[];
+  observed_sources: string[];
+  available_evidence: string[];
+  unavailable_evidence: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface CoverageMetric {
+  metric_id: string;
+  observed_sources: number;
+  reachable_artefacts: number;
+  missing_references: number;
+  unavailable_snapshots: number;
+  lineage_completeness_numerator: number;
+  lineage_completeness_denominator: number;
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface CoverageGap {
+  gap_id: string;
+  gap_kind: string;
+  description: string;
+  affected_references: string[];
+  evidence_refs: EvidenceCoverageEvidenceRef[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface CoverageLineage {
+  lineage_id: string;
+  contributing_artefacts: string[];
+  revisions: string[];
+  evidence_refs: EvidenceCoverageEvidenceRef[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface CoverageDiagnostics {
+  diagnostics_id: string;
+  completeness_state: string;
+  observed_limitations: string[];
+  unavailable_sources: string[];
+  notes: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface WorkspaceEvidenceCoverageSnapshot {
+  coverage_id: string;
+  workspace_id: string;
+  generated_at: string;
+  status: string;
+  superseded_at: string | null;
+  scope: CoverageScope;
+  assessment: CoverageAssessment;
+  metrics: CoverageMetric;
+  gaps: CoverageGap[];
+  lineage: CoverageLineage;
+  diagnostics: CoverageDiagnostics;
+  completeness: string;
+  provenance_links: EvidenceCoverageEvidenceRef[];
+  source_revisions: string[];
+  narrative_summary: string;
+  narrative: string;
+  limitations: string[];
+  authority_effect: string;
+  actionable: boolean;
+  terminal: boolean;
+}
+
+export interface EvidenceCoverageHistoryEntry {
+  coverage_id: string;
+  status: string;
+  created_at: string;
+  superseded_at: string | null;
+  completeness: string;
+  observed_sources: number;
+  gap_count: number;
+  source_revision_count: number;
+  terminal: boolean;
+  actionable: boolean;
+  authority_effect: string;
+}
+
+export interface WorkspaceEvidenceCoverageProjection {
+  workspace_id: string;
+  current: WorkspaceEvidenceCoverageSnapshot | null;
+  history: EvidenceCoverageHistoryEntry[];
+  history_count: number;
+  projected_at: string;
+  authority_effect: string;
+}
+
+export interface WorkspaceEvidenceCoverageSummary {
+  workspace_id: string;
+  has_current: boolean;
+  completeness: string | null;
+  observed_sources: number;
+  gap_count: number;
+  narrative_summary: string | null;
+  history: EvidenceCoverageHistoryEntry[];
+  history_count: number;
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface WorkspaceEvidenceCoverageExplanation {
+  explanation_id: string;
+  workspace_id: string;
+  completeness: string | null;
+  narrative_summary: string | null;
+  metric_summaries: string[];
+  gap_summaries: string[];
+  lineage_summaries: string[];
+  evidence_refs: string[];
+  uncertainty: string[];
+  narrative: string;
+  limitations: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
 export type WindowIdentityConfidence = "high" | "medium" | "low" | "ephemeral";
 
 export interface WorkspaceObservationPass {

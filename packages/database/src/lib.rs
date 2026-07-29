@@ -37,6 +37,7 @@ pub use repositories::{
     WorkspaceSemanticQueryRepository,
     WorkspaceEvidenceNavigationRepository,
     WorkspaceEvidenceTraceRepository,
+    WorkspaceEvidenceCoverageRepository,
     WorkspaceRepository, WorkspaceIntentRepository, ZoneRepository,
 };
 pub use settings::SettingsRepository;

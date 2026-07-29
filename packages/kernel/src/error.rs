@@ -19,6 +19,7 @@ use workspace_domain::{
     ContextualUnderstandingError, KnowledgeSynthesisError, KnowledgeIntegrationError,
     InsightCoordinationError, CrossWorkspaceIntelligenceError, DecisionSupportError,
     IntelligenceHubError, SemanticQueryError, EvidenceNavigationError, EvidenceTraceError,
+    EvidenceCoverageError,
     WorkspaceSessionError,
     WorkspaceTransitionError,
     WorkspaceWorkContextError, WorkspaceWorkingStyleError,
@@ -303,6 +304,9 @@ pub enum KernelError {
 
     #[error("Evidence trace validation failed: {message}")]
     EvidenceTraceValidation { message: String },
+
+    #[error("Evidence coverage validation failed: {message}")]
+    EvidenceCoverageValidation { message: String },
 
     #[error("Workspace intelligence validation failed: {message}")]
     WorkspaceIntelligenceValidation { message: String },
@@ -771,6 +775,17 @@ impl From<EvidenceTraceError> for KernelError {
         match error {
             EvidenceTraceError::Domain(domain) => KernelError::from(domain),
             other => KernelError::EvidenceTraceValidation {
+                message: other.to_string(),
+            },
+        }
+    }
+}
+
+impl From<EvidenceCoverageError> for KernelError {
+    fn from(error: EvidenceCoverageError) -> Self {
+        match error {
+            EvidenceCoverageError::Domain(domain) => KernelError::from(domain),
+            other => KernelError::EvidenceCoverageValidation {
                 message: other.to_string(),
             },
         }
@@ -1513,6 +1528,10 @@ impl KernelError {
             },
             KernelError::EvidenceTraceValidation { message } => PublicError {
                 code: "evidence_trace_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::EvidenceCoverageValidation { message } => PublicError {
+                code: "evidence_coverage_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::WorkspaceIntelligenceValidation { message } => PublicError {

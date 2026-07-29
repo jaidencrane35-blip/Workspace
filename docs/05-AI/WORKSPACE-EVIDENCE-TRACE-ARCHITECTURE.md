@@ -100,3 +100,9 @@ Mutation baseline **76** · DTO inventory **27**.
 > Workspace Evidence Trace Engine reconstructs recorded provenance only.
 > It never invents lineage, bridges missing history, performs reasoning, makes recommendations,
 > or becomes the authority for any upstream intelligence layer.
+
+---
+
+## Successor
+
+- [Workspace Evidence Coverage Architecture](./WORKSPACE-EVIDENCE-COVERAGE-ARCHITECTURE.md) (Batch 4 — observable completeness)

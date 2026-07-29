@@ -92,6 +92,7 @@ export const PUBLIC_ERROR_CODES = [
   "semantic_query_validation_error",
   "evidence_navigation_validation_error",
   "evidence_trace_validation_error",
+  "evidence_coverage_validation_error",
   "workspace_composition_validation_error",
   "workspace_continuity_validation_error",
   "workspace_environment_validation_error",

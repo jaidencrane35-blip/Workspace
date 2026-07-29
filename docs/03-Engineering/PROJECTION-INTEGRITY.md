@@ -408,6 +408,14 @@ Rules:
 - Forbidden: execute, recommend, approve, mutate, automate
 - Segments are recorded hops only — never inferred
 
+### Workspace Evidence Coverage Engine (Programme IV Batch 4)
+
+- Dual-channel: `current` + `history` + authoritative `history_count`
+- History is evidence-only; never actionable
+- Projection helpers expose coverage summaries, completeness indicators, evidence counts, gap lists, diagnostics, lineage
+- Forbidden: execute, recommend, approve, mutate, automate
+- Coverage is observable completeness only — never truth, confidence, or inferred evidence
+
 
 ## Serde defaults vs TypeScript required fields
 

@@ -172,6 +172,10 @@ use crate::commands::workspace_evidence_trace::{
     ExplainEvidenceTrace, GenerateWorkspaceEvidenceTrace, GetWorkspaceEvidenceTrace,
     GetWorkspaceEvidenceTraceSummary,
 };
+use crate::commands::workspace_evidence_coverage::{
+    ExplainEvidenceCoverage, GenerateWorkspaceEvidenceCoverage, GetWorkspaceEvidenceCoverage,
+    GetWorkspaceEvidenceCoverageSummary,
+};
 use crate::commands::workspace_cross_intelligence::{
     ExplainCrossWorkspacePattern, GenerateCrossWorkspaceIntelligence, GetCrossWorkspaceIntelligence,
     GetCrossWorkspaceSummary,
@@ -260,6 +264,7 @@ use workspace_domain::{
     WorkspaceEvidenceNavigationExplanation,
     WorkspaceEvidenceTraceProjection, WorkspaceEvidenceTraceSummary,
     WorkspaceEvidenceTraceExplanation,
+    WorkspaceEvidenceCoverageProjection, WorkspaceEvidenceCoverageSummary, WorkspaceEvidenceCoverageExplanation,
     LayoutId, LayoutMetadata, LayoutNode, LayoutSnapshot, MemoryEntry, MemoryType,
     ModelProviderDescriptor, ModelResponse, Observation, PersonalizedPlanComparison,
     PreferenceCategory, PreferenceSource, Suggestion, SuggestionIntentRequest,
@@ -3375,6 +3380,53 @@ impl CommandHandler {
     /// Architecture guard — Evidence trace cannot execute / infer / invent hops.
     pub fn evidence_trace_attempt_execute() -> Result<()> {
         crate::services::WorkspaceEvidenceTraceService::attempt_execute()
+    }
+
+    pub fn generate_workspace_evidence_coverage(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceEvidenceCoverageProjection> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_mutation(GenerateWorkspaceEvidenceCoverage::new(workspace_id))
+    }
+
+    pub fn get_workspace_evidence_coverage(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceEvidenceCoverageProjection> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetWorkspaceEvidenceCoverage::new(workspace_id))
+    }
+
+    pub fn get_workspace_evidence_coverage_summary(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        history_limit: usize,
+    ) -> Result<WorkspaceEvidenceCoverageSummary> {
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_query(
+            GetWorkspaceEvidenceCoverageSummary::new(workspace_id, history_limit),
+        )
+    }
+
+    pub fn explain_evidence_coverage(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceEvidenceCoverageExplanation> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(ExplainEvidenceCoverage::new(workspace_id))
+    }
+
+    /// Architecture guard — Evidence coverage cannot execute / infer / invent completeness.
+    pub fn evidence_coverage_attempt_execute() -> Result<()> {
+        crate::services::WorkspaceEvidenceCoverageService::attempt_execute()
     }
 
     #[allow(clippy::too_many_arguments)]

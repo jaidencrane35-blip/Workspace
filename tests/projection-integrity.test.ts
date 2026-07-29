@@ -123,6 +123,11 @@ import {
   isEvidenceTraceProjectionNonCommandable,
   evidenceTraceHistoryCountIsAuthoritative,
 } from "../app/src/components/evidenceTraceProjection";
+import {
+  isEvidenceCoverageHistoryNonActionable,
+  isEvidenceCoverageProjectionNonCommandable,
+  evidenceCoverageHistoryCountIsAuthoritative,
+} from "../app/src/components/evidenceCoverageProjection";
 import type {
   DecisionArtifactHistoryEntry,
   DecisionEngineSummary,
@@ -194,8 +199,11 @@ import type {
   WorkspaceEvidenceNavigationProjection,
   WorkspaceEvidenceNavigationSummary,
   EvidenceTraceHistoryEntry,
+  EvidenceCoverageHistoryEntry,
   WorkspaceEvidenceTraceProjection,
+  WorkspaceEvidenceCoverageProjection,
   WorkspaceEvidenceTraceSummary,
+  WorkspaceEvidenceCoverageSummary,
   RecommendationHistoryEntry,
   RecommendationItem,
   TaskGraphSummary,
@@ -2137,6 +2145,63 @@ describe("projection integrity — cognitive agent cast", () => {
 
     const nonCommand = {
       trace_id: "evidence_trace:1",
+      actionable: false,
+      terminal: true,
+      authority_effect: "none",
+    };
+    expect(Object.keys(nonCommand)).not.toContain("execute");
+    expect(Object.keys(nonCommand)).not.toContain("approve");
+    expect(Object.keys(nonCommand)).not.toContain("recommend");
+    expect(Object.keys(nonCommand)).not.toContain("automate");
+  });
+  it("keeps evidence coverage projections non-commandable with authoritative history_count", () => {
+    const historyEntry = (
+      overrides: Partial<EvidenceCoverageHistoryEntry> = {}
+    ): EvidenceCoverageHistoryEntry => ({
+      coverage_id: "evidence_coverage:1",
+      status: "superseded",
+      created_at: "t0",
+      superseded_at: "t1",
+      completeness: "partial",
+      observed_sources: 2,
+      gap_count: 1,
+      source_revision_count: 3,
+      terminal: true,
+      actionable: false,
+      authority_effect: "none",
+      ...overrides,
+    });
+    const projection: WorkspaceEvidenceCoverageProjection = {
+      workspace_id: "ws",
+      projected_at: "t2",
+      current: null,
+      history: [historyEntry()],
+      history_count: 3,
+      authority_effect: "none",
+    };
+    expect(isEvidenceCoverageProjectionNonCommandable(projection)).toBe(true);
+    expect(isEvidenceCoverageHistoryNonActionable(historyEntry())).toBe(true);
+    expect(
+      isEvidenceCoverageHistoryNonActionable(historyEntry({ actionable: true }))
+    ).toBe(false);
+
+    const summary: WorkspaceEvidenceCoverageSummary = {
+      workspace_id: "ws",
+      has_current: false,
+      completeness: null,
+      observed_sources: 0,
+      gap_count: 0,
+      narrative_summary: null,
+      history: [historyEntry()],
+      history_count: 3,
+      authority_effect: "none",
+      actionable: false,
+    };
+    expect(evidenceCoverageHistoryCountIsAuthoritative(summary)).toBe(true);
+    expect(summary.history_count).toBeGreaterThanOrEqual(summary.history.length);
+
+    const nonCommand = {
+      coverage_id: "evidence_coverage:1",
       actionable: false,
       terminal: true,
       authority_effect: "none",
