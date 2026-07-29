@@ -41,6 +41,23 @@ Human concept → Optimised representation → Decoder / inspector → Human und
 
 ## Cycles
 
+### Cycle: opt-c8-applications-rail-width
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-29 |
+| **Problem** | Applications panel kept a narrow max-width beside the companion rail, wasting stage space |
+| **Reason** | Desktop-first: product stage should use remaining width when companion is present |
+| **Files changed** | `App.css`, this log |
+| **Validation** | typecheck / test / architecture / ipc / ui-boundary / build |
+| **Maintainability score** | 9.0/10 |
+| **Reference alignment** | 9.0/10 (+0.1 stage uses available width) |
+| **Commercial readiness** | 6.4/10 |
+| **Human readability** | 8.9/10 |
+| **Why this is safe** | CSS layout only |
+
+---
+
 ### Cycle: opt-c7-dead-assistant-page-css
 
 | Field | Value |

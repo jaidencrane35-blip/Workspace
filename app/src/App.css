@@ -1172,6 +1172,11 @@ button.linkish:not(:disabled):hover {
   max-width: 58rem;
 }
 
+.app-body.with-companion-rail .applications-wide {
+  max-width: none;
+  width: 100%;
+}
+
 .application-card-grid {
   list-style: none;
   margin: 0;
