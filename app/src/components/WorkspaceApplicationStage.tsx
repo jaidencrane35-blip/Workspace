@@ -26,7 +26,7 @@ import {
 } from "../lib/layoutsStageUi";
 import { monogramFromName } from "../lib/productShellUi";
 import {
-  FOCUS_PRIMARY_APP_COUNT,
+  partitionFocusApplications,
   workModeStageLede,
   type WorkMode,
 } from "../lib/workMode";
@@ -68,11 +68,10 @@ export function WorkspaceApplicationStage({
     });
   }, [applications]);
 
-  const primary =
-    applications.find((app) => app.id === primaryId) ??
-    applications.slice(0, FOCUS_PRIMARY_APP_COUNT)[0] ??
-    null;
-  const supporting = applications.filter((app) => app.id !== primary?.id);
+  const { primary, supporting } = partitionFocusApplications(
+    applications,
+    primaryId,
+  );
 
   return (
     <section

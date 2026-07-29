@@ -118,4 +118,25 @@ describe("work mode helpers", () => {
     expect(workModeDescription("focus")).toMatch(/OS windows/i);
     expect(FOCUS_PRIMARY_APP_COUNT).toBe(1);
   });
+
+  it("partitions Focus primary vs supporting with a shared rule", async () => {
+    const { partitionFocusApplications } = await import(
+      "../app/src/lib/workMode"
+    );
+    const apps = [
+      { id: "a", name: "Alpha" },
+      { id: "b", name: "Beta" },
+      { id: "c", name: "Gamma" },
+    ];
+    expect(partitionFocusApplications([], null)).toEqual({
+      primary: null,
+      supporting: [],
+    });
+    expect(partitionFocusApplications(apps, null).primary?.id).toBe("a");
+    expect(partitionFocusApplications(apps, "b").primary?.id).toBe("b");
+    expect(
+      partitionFocusApplications(apps, "b").supporting.map((app) => app.id),
+    ).toEqual(["a", "c"]);
+    expect(partitionFocusApplications(apps, "missing").primary?.id).toBe("a");
+  });
 });

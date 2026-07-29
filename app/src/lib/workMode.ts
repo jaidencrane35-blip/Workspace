@@ -2,7 +2,7 @@
  * Purpose: Chrome-density work mode model (Flow ↔ Focus) for product UI only.
  * Owner: Frontend product shell (Milestone B — chrome density)
  * Inputs: stored preference string / user selection
- * Outputs: WorkMode value, labels, copy, persistence helpers
+ * Outputs: WorkMode value, labels, copy, persistence helpers, Focus partition
  * Dependencies: localStorage (UI preference only)
  * Non-responsibilities: OS window moves, DesktopArrangement apply, AI,
  *   WindowController, PermissionGateway, new layout engines
@@ -75,4 +75,32 @@ export function workModeStageLede(mode: WorkMode): string {
     return "Flow keeps your workspace overview dense: applications, layouts, and arrangements stay easy to scan.";
   }
   return "Focus reduces chrome noise and emphasises one primary application. Supporting apps remain available — nothing is closed.";
+}
+
+/** Focus chrome partition: one primary app + remaining supporting apps. */
+export interface FocusApplicationPartition<T extends { id: string }> {
+  primary: T | null;
+  supporting: T[];
+}
+
+/**
+ * Split a registry list into Focus primary vs supporting.
+ * Preferred id wins when still present; otherwise first N apps (N = FOCUS_PRIMARY_APP_COUNT).
+ */
+export function partitionFocusApplications<T extends { id: string }>(
+  applications: readonly T[],
+  preferredPrimaryId: string | null | undefined,
+): FocusApplicationPartition<T> {
+  if (applications.length === 0) {
+    return { primary: null, supporting: [] };
+  }
+
+  const preferred =
+    preferredPrimaryId != null && preferredPrimaryId !== ""
+      ? applications.find((app) => app.id === preferredPrimaryId)
+      : undefined;
+  const primary =
+    preferred ?? applications.slice(0, FOCUS_PRIMARY_APP_COUNT)[0] ?? null;
+  const supporting = applications.filter((app) => app.id !== primary?.id);
+  return { primary, supporting };
 }

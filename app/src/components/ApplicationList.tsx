@@ -16,7 +16,7 @@ import {
   canLaunchApplication,
 } from "../lib/applicationsUi";
 import { monogramFromName } from "../lib/productShellUi";
-import type { WorkMode } from "../lib/workMode";
+import { partitionFocusApplications, type WorkMode } from "../lib/workMode";
 import type { ApplicationReference } from "../types/domain";
 
 interface ApplicationListProps {
@@ -37,11 +37,10 @@ export function ApplicationList({
   onLaunch,
 }: ApplicationListProps) {
   if (workMode === "focus") {
-    const primary =
-      applications.find((app) => app.id === selectedId) ??
-      applications[0] ??
-      null;
-    const supporting = applications.filter((app) => app.id !== primary?.id);
+    const { primary, supporting } = partitionFocusApplications(
+      applications,
+      selectedId,
+    );
     return (
       <div className="focus-stage-layout" aria-label="Registered applications">
         {primary ? (

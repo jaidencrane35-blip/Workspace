@@ -41,6 +41,23 @@ Human concept → Optimised representation → Decoder / inspector → Human und
 
 ## Cycles
 
+### Cycle: opt-o3-focus-partition-helper
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-29 |
+| **Problem** | Apps and Layouts each inlined Focus primary/supporting split — drift risk after O2 |
+| **Reason** | One named rule (`partitionFocusApplications`) keeps Focus density consistent and testable |
+| **Files changed** | `workMode.ts`, `ApplicationList.tsx`, `WorkspaceApplicationStage.tsx`, `tests/milestone-a-workspace-apps.test.ts`, this log |
+| **Validation** | typecheck / test / architecture / ipc / ui-boundary |
+| **Maintainability score** | 8.7/10 (+0.2 shared Focus partition) |
+| **Reference alignment** | 7.7/10 (unchanged presentation) |
+| **Commercial readiness** | 5.4/10 |
+| **Human readability** | 8.4/10 |
+| **Why this is safe** | Pure presentation helper; no OS/AI/IPC/ownership change |
+
+---
+
 ### Cycle: opt-o2-applications-work-mode-density
 
 | Field | Value |
