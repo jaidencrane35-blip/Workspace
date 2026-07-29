@@ -13,6 +13,7 @@
 | Designing architecture | [Architecture Principles](02-Architecture/ARCHITECTURE-PRINCIPLES.md) → [System Overview](02-Architecture/SYSTEM-OVERVIEW.md) |
 | Desktop arrangement (DAF) | [DAF Architecture Audit](03-Engineering/DAF-ARCHITECTURE-AUDIT.md) → [DAF-1a](03-Engineering/DAF-1A-WINDOW-CONTROLLER.md) → [DAF-1b](03-Engineering/DAF-1B-WINDOW-OBSERVATION.md) → [DAF-1c](03-Engineering/DAF-1C-DESKTOP-ARRANGEMENT.md) → [DAF-1d](03-Engineering/DAF-1D-DESKTOP-ARRANGEMENT-RESTORE.md) → [DAF-1e](03-Engineering/DAF-1E-DESKTOP-ARRANGEMENT-UI.md) |
 | Milestone A (Apps + switcher) | [Completion report](03-Engineering/MILESTONE-A-WORKSPACE-APPS-COMPLETION-REPORT.md) → [Visual review](03-Engineering/MILESTONE-A-VISUAL-REVIEW-CHECKLIST.md) → [A.1 UX hardening](03-Engineering/MILESTONE-A1-UX-HARDENING-REPORT.md) |
+| Flow / Focus (design only) | [Design charter](01-Product/FLOW-FOCUS-MODE-DESIGN-CHARTER.md) → [Alignment audit](03-Engineering/FLOW-FOCUS-ALIGNMENT-AUDIT.md) |
 | Selecting technology | [Stack Evaluation Criteria](02-Architecture/STACK-EVALUATION-CRITERIA.md) |
 | Writing code | [Coding Standards](03-Engineering/CODING-STANDARDS.md) → [Definition of Done](03-Engineering/DEFINITION-OF-DONE.md) → [AI Engineering Governance](00-Governance/AI_ENGINEERING_GOVERNANCE.md) |
 | Working on AI features | Confirm need against [Engineering Governance](03-Engineering/ENGINEERING-GOVERNANCE.md) and [AI Engineering Governance](00-Governance/AI_ENGINEERING_GOVERNANCE.md) (AI expansion frozen unless product-required) → [AI Principles](05-AI/AI-PRINCIPLES.md) |
@@ -52,6 +53,7 @@ What Workspace is, who it serves, and how scope is managed.
 | [Workspace Visual Direction](01-Product/WORKSPACE-VISUAL-DIRECTION.md) | Concept-art north star; literal vs non-literal interpretation |
 | [Visual references](01-Product/references/README.md) | Original concept images (direction, not pixel specs) |
 | [Workspace Product Alignment Audit](01-Product/WORKSPACE-PRODUCT-ALIGNMENT-AUDIT.md) | Post-governance product reality, priority, debt, and roadmap (current) |
+| [Flow / Focus Design Charter](01-Product/FLOW-FOCUS-MODE-DESIGN-CHARTER.md) | Design-only Flow ↔ Focus mode definitions (not implemented) |
 | [Product Vision Realignment Audit](01-Product/PRODUCT-VISION-REALIGNMENT-AUDIT.md) | Earlier gap analysis vs concept art; partially superseded by DAF-1a–1e + alignment audit |
 | [Scope Management](01-Product/SCOPE-MANAGEMENT.md) | How scope is proposed, approved, and controlled |
 | [MVP Definition](01-Product/MVP-DEFINITION.md) | First useful product slice and acceptance criteria |
@@ -102,6 +104,7 @@ How the team builds, reviews, and maintains the codebase.
 | [Milestone A Vision Gap](03-Engineering/MILESTONE-A-VISION-GAP-REPORT.md) | Vision vs Milestone A gap table |
 | [Milestone A.1 UX Hardening](03-Engineering/MILESTONE-A1-UX-HARDENING-REPORT.md) | Identity / hierarchy refinement |
 | [Milestone A.1 Visual Review](03-Engineering/MILESTONE-A1-VISUAL-REVIEW-CHECKLIST.md) | Human review checklist for A.1 |
+| [Flow / Focus Alignment Audit](03-Engineering/FLOW-FOCUS-ALIGNMENT-AUDIT.md) | Scores and approval gate before Milestone B |
 | [DAF-1e Visual Review](03-Engineering/DAF-1E-VISUAL-REVIEW-CHECKLIST.md) | Human visual checkpoint |
 | [Coding Standards](03-Engineering/CODING-STANDARDS.md) | Naming, formatting, and code conventions |
 | [Repository Standards](03-Engineering/REPOSITORY-STANDARDS.md) | Git workflow, branches, commits, PRs |
