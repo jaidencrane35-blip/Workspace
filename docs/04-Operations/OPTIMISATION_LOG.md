@@ -41,6 +41,23 @@ Human concept → Optimised representation → Decoder / inspector → Human und
 
 ## Cycles
 
+### Cycle: opt-c7-dead-assistant-page-css
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-29 |
+| **Problem** | Full-page Assistant stage CSS remained after Milestone C rail replaced it |
+| **Reason** | Dead CSS confuses future engineers about current chrome model |
+| **Files changed** | `App.css`, this log |
+| **Validation** | typecheck / test / architecture / ipc / ui-boundary / build |
+| **Maintainability score** | 9.0/10 |
+| **Reference alignment** | 8.9/10 |
+| **Commercial readiness** | 6.4/10 |
+| **Human readability** | 8.9/10 |
+| **Why this is safe** | CSS cleanup only; behaviour already on companion rail |
+
+---
+
 ### Cycle: opt-c6-chrome-noise-arrangement-hierarchy
 
 | Field | Value |

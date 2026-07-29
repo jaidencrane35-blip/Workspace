@@ -941,8 +941,8 @@ button.linkish:not(:disabled):hover {
 }
 
 .assistant-legacy-section {
-  margin-top: 2rem;
-  padding-top: 1.5rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
   border-top: 1px solid #243040;
   opacity: 0.94;
 }
@@ -1309,29 +1309,6 @@ button.linkish:not(:disabled):hover {
   line-height: 1.5;
 }
 
-.assistant-companion-stage {
-  flex: 1;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(20rem, 28rem);
-  min-height: calc(100vh - 3.5rem);
-}
-
-.assistant-stage-quiet {
-  padding: 2rem 1.75rem;
-  border-right: 1px solid #243040;
-  background:
-    radial-gradient(ellipse at top left, rgba(36, 52, 71, 0.45), transparent 55%),
-    #0f1419;
-}
-
-.assistant-stage-quiet h2 {
-  margin: 0.35rem 0 0.55rem;
-  font-size: 1.45rem;
-  text-transform: none;
-  letter-spacing: 0;
-  color: #e7ecf1;
-}
-
 /* Milestone C — persistent Assistant companion rail */
 
 .app-body {
@@ -1449,16 +1426,6 @@ button.linkish:not(:disabled):hover {
   .primary-tabs {
     border-right: 0;
     padding-right: 0;
-  }
-
-  .assistant-companion-stage {
-    grid-template-columns: 1fr;
-  }
-
-  .assistant-stage-quiet {
-    border-right: 0;
-    border-bottom: 1px solid #243040;
-    padding: 1.1rem 1.25rem;
   }
 }
 
