@@ -10,11 +10,14 @@
  * Why here: chrome placement only — reuses existing assistant panels.
  */
 
-import { useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import type { WorkMode } from "../lib/workMode";
 import type { Workspace } from "../types/domain";
 import { AssistantIntelligencePanel } from "./AssistantIntelligencePanel";
 import { AssistantPanel } from "./AssistantPanel";
+
+/** Stable DOM id for chrome aria-controls → companion rail. */
+export const ASSISTANT_COMPANION_RAIL_ID = "workspace-assistant-companion-rail";
 
 interface AssistantCompanionRailProps {
   workspace: Workspace | null;
@@ -37,9 +40,27 @@ export function AssistantCompanionRail({
 }: AssistantCompanionRailProps) {
   const titleId = useId();
   const [advancedOpen, setAdvancedOpen] = useState(false);
+  const railRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    const node = railRef.current;
+    if (!node) {
+      return;
+    }
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onCollapse();
+      }
+    };
+    node.addEventListener("keydown", onKeyDown);
+    return () => node.removeEventListener("keydown", onKeyDown);
+  }, [onCollapse]);
 
   return (
     <aside
+      ref={railRef}
+      id={ASSISTANT_COMPANION_RAIL_ID}
       className={
         workMode === "focus"
           ? "assistant-companion-rail density-focus"
@@ -47,6 +68,7 @@ export function AssistantCompanionRail({
       }
       aria-labelledby={titleId}
       data-work-mode={workMode}
+      tabIndex={-1}
     >
       <header className="assistant-companion-header">
         <div className="assistant-companion-header-row">
@@ -59,7 +81,7 @@ export function AssistantCompanionRail({
             className="ghost assistant-rail-collapse"
             onClick={onCollapse}
             aria-label="Hide Assistant companion"
-            title="Hide Assistant companion"
+            title="Hide Assistant companion (Esc)"
           >
             Hide
           </button>

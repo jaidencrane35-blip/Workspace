@@ -11,7 +11,10 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { ApplicationsPanel } from "./components/ApplicationsPanel";
-import { AssistantCompanionRail } from "./components/AssistantCompanionRail";
+import {
+  AssistantCompanionRail,
+  ASSISTANT_COMPANION_RAIL_ID,
+} from "./components/AssistantCompanionRail";
 import { CanvasShell } from "./components/CanvasShell";
 import { DesktopArrangementPanel } from "./components/DesktopArrangementPanel";
 import { OperatorConsole } from "./components/OperatorConsole";
@@ -519,6 +522,7 @@ export default function App() {
                 showAssistantRail ? "tab tool active" : "tab tool"
               }
               aria-pressed={showAssistantRail}
+              aria-controls={ASSISTANT_COMPANION_RAIL_ID}
               title={assistantRailToggleLabel(assistantRailOpen)}
               onClick={() => {
                 if (!isPrimaryView(view)) {

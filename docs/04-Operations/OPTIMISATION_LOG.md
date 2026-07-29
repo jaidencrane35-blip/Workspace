@@ -41,6 +41,23 @@ Human concept → Optimised representation → Decoder / inspector → Human und
 
 ## Cycles
 
+### Cycle: opt-c4-companion-rail-a11y
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-29 |
+| **Problem** | Companion rail toggle lacked aria-controls; no Escape hide path |
+| **Reason** | Commercial a11y for the newly persistent companion chrome |
+| **Files changed** | `AssistantCompanionRail.tsx`, `App.tsx`, this log |
+| **Validation** | typecheck / test / architecture / ipc / ui-boundary / build |
+| **Maintainability score** | 8.7/10 |
+| **Reference alignment** | 8.8/10 (unchanged layout) |
+| **Commercial readiness** | 6.3/10 (+0.2 a11y) |
+| **Human readability** | 8.7/10 |
+| **Why this is safe** | Chrome a11y only; no ownership/IPC/AI/DA change |
+
+---
+
 ### Cycle: opt-c3-layout-hierarchy-home-honesty
 
 | Field | Value |
