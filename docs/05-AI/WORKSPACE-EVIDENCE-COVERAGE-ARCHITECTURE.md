@@ -148,3 +148,9 @@ Governance rejects: inferred completeness, fabricated coverage, recommendation o
 > Workspace Evidence Coverage Engine measures observable evidence completeness only.
 > It never infers missing evidence, evaluates truth, performs reasoning, makes recommendations,
 > or becomes the authority for any upstream intelligence layer.
+
+---
+
+## Successor
+
+- [Workspace Evidence Consistency Architecture](./WORKSPACE-EVIDENCE-CONSISTENCY-ARCHITECTURE.md) (Batch 5 — observe consistency)

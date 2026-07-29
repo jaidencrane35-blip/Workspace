@@ -5123,6 +5123,168 @@ export interface WorkspaceEvidenceCoverageExplanation {
   actionable: boolean;
 }
 
+/** Programme IV Batch 5 — Workspace Evidence Consistency Engine (consistency ≠ truth). */
+export interface ConsistencyScope {
+  include_evidence_coverage: boolean;
+  include_evidence_trace: boolean;
+  include_evidence_navigation: boolean;
+  include_semantic_query: boolean;
+  include_intelligence_hub: boolean;
+  include_knowledge_integration: boolean;
+  include_contextual: boolean;
+  include_explanation: boolean;
+  include_temporal: boolean;
+  include_reconstruction: boolean;
+  include_state: boolean;
+}
+
+export interface EvidenceConsistencyEvidenceRef {
+  external_ref: string;
+  origin_domain: string;
+  source_revision: string | null;
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface ConsistencyAssessment {
+  assessment_id: string;
+  observed_scope: string[];
+  participating_sources: string[];
+  compared_evidence: string[];
+  observable_outcomes: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface ConsistencyObservation {
+  observation_id: string;
+  left_source: string;
+  right_source: string;
+  state: string;
+  description: string;
+  evidence_refs: EvidenceConsistencyEvidenceRef[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface ConsistencyConflict {
+  conflict_id: string;
+  participating_evidence: string[];
+  lineage_references: string[];
+  conflict_description: string;
+  evidence_refs: EvidenceConsistencyEvidenceRef[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface ConsistencyGap {
+  gap_id: string;
+  gap_kind: string;
+  description: string;
+  affected_references: string[];
+  evidence_refs: EvidenceConsistencyEvidenceRef[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface ConsistencyLineage {
+  lineage_id: string;
+  contributing_artefacts: string[];
+  revisions: string[];
+  evidence_refs: EvidenceConsistencyEvidenceRef[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface ConsistencyDiagnostics {
+  diagnostics_id: string;
+  comparison_completeness: string;
+  observed_limitations: string[];
+  unavailable_sources: string[];
+  notes: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface WorkspaceEvidenceConsistencySnapshot {
+  consistency_id: string;
+  workspace_id: string;
+  generated_at: string;
+  status: string;
+  superseded_at: string | null;
+  scope: ConsistencyScope;
+  assessment: ConsistencyAssessment;
+  observations: ConsistencyObservation[];
+  conflicts: ConsistencyConflict[];
+  gaps: ConsistencyGap[];
+  lineage: ConsistencyLineage;
+  diagnostics: ConsistencyDiagnostics;
+  completeness: string;
+  provenance_links: EvidenceConsistencyEvidenceRef[];
+  source_revisions: string[];
+  narrative_summary: string;
+  narrative: string;
+  limitations: string[];
+  authority_effect: string;
+  actionable: boolean;
+  terminal: boolean;
+}
+
+export interface EvidenceConsistencyHistoryEntry {
+  consistency_id: string;
+  status: string;
+  created_at: string;
+  superseded_at: string | null;
+  completeness: string;
+  observation_count: number;
+  conflict_count: number;
+  gap_count: number;
+  source_revision_count: number;
+  terminal: boolean;
+  actionable: boolean;
+  authority_effect: string;
+}
+
+export interface WorkspaceEvidenceConsistencyProjection {
+  workspace_id: string;
+  current: WorkspaceEvidenceConsistencySnapshot | null;
+  history: EvidenceConsistencyHistoryEntry[];
+  history_count: number;
+  projected_at: string;
+  authority_effect: string;
+}
+
+export interface WorkspaceEvidenceConsistencySummary {
+  workspace_id: string;
+  has_current: boolean;
+  completeness: string | null;
+  observation_count: number;
+  conflict_count: number;
+  gap_count: number;
+  narrative_summary: string | null;
+  history: EvidenceConsistencyHistoryEntry[];
+  history_count: number;
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface WorkspaceEvidenceConsistencyExplanation {
+  explanation_id: string;
+  workspace_id: string;
+  completeness: string | null;
+  narrative_summary: string | null;
+  observation_summaries: string[];
+  conflict_summaries: string[];
+  gap_summaries: string[];
+  lineage_summaries: string[];
+  evidence_refs: string[];
+  uncertainty: string[];
+  narrative: string;
+  limitations: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
 export type WindowIdentityConfidence = "high" | "medium" | "low" | "ephemeral";
 
 export interface WorkspaceObservationPass {

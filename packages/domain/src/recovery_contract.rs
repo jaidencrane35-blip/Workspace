@@ -66,6 +66,9 @@ use crate::workspace_evidence_trace::{
 use crate::workspace_evidence_coverage::{
     EvidenceCoverageHistoryEntry, WorkspaceEvidenceCoverageProjection,
 };
+use crate::workspace_evidence_consistency::{
+    EvidenceConsistencyHistoryEntry, WorkspaceEvidenceConsistencyProjection,
+};
 use crate::workspace_reasoning_memory::{ReasoningHistoryEntry, ReasoningSnapshot};
 
 /// Documented startup in-progress sweep cap (must match
@@ -545,6 +548,26 @@ pub fn recovery_must_not_fabricate_evidence_coverage(
 /// Fabricated actionable evidence-coverage history must fail the recovery contract.
 pub fn recovery_must_not_fabricate_actionable_evidence_coverage_history(
     entry: &EvidenceCoverageHistoryEntry,
+) -> bool {
+    entry.is_non_actionable()
+}
+
+/// Recovery must not repair conflicts, invent consistency/inconsistency, or assume agreement.
+pub fn recovery_must_not_fabricate_evidence_consistency(
+    projection: &WorkspaceEvidenceConsistencyProjection,
+) -> bool {
+    projection.is_non_commandable()
+        && projection.history.iter().all(|h| h.is_non_actionable())
+        && projection
+            .current
+            .as_ref()
+            .map(|c| c.is_non_executing())
+            .unwrap_or(true)
+}
+
+/// Fabricated actionable evidence-consistency history must fail the recovery contract.
+pub fn recovery_must_not_fabricate_actionable_evidence_consistency_history(
+    entry: &EvidenceConsistencyHistoryEntry,
 ) -> bool {
     entry.is_non_actionable()
 }

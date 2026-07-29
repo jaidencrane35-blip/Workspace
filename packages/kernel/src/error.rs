@@ -19,7 +19,7 @@ use workspace_domain::{
     ContextualUnderstandingError, KnowledgeSynthesisError, KnowledgeIntegrationError,
     InsightCoordinationError, CrossWorkspaceIntelligenceError, DecisionSupportError,
     IntelligenceHubError, SemanticQueryError, EvidenceNavigationError, EvidenceTraceError,
-    EvidenceCoverageError,
+    EvidenceCoverageError, EvidenceConsistencyError,
     WorkspaceSessionError,
     WorkspaceTransitionError,
     WorkspaceWorkContextError, WorkspaceWorkingStyleError,
@@ -307,6 +307,9 @@ pub enum KernelError {
 
     #[error("Evidence coverage validation failed: {message}")]
     EvidenceCoverageValidation { message: String },
+
+    #[error("Evidence consistency validation failed: {message}")]
+    EvidenceConsistencyValidation { message: String },
 
     #[error("Workspace intelligence validation failed: {message}")]
     WorkspaceIntelligenceValidation { message: String },
@@ -786,6 +789,17 @@ impl From<EvidenceCoverageError> for KernelError {
         match error {
             EvidenceCoverageError::Domain(domain) => KernelError::from(domain),
             other => KernelError::EvidenceCoverageValidation {
+                message: other.to_string(),
+            },
+        }
+    }
+}
+
+impl From<EvidenceConsistencyError> for KernelError {
+    fn from(error: EvidenceConsistencyError) -> Self {
+        match error {
+            EvidenceConsistencyError::Domain(domain) => KernelError::from(domain),
+            other => KernelError::EvidenceConsistencyValidation {
                 message: other.to_string(),
             },
         }
@@ -1532,6 +1546,10 @@ impl KernelError {
             },
             KernelError::EvidenceCoverageValidation { message } => PublicError {
                 code: "evidence_coverage_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::EvidenceConsistencyValidation { message } => PublicError {
+                code: "evidence_consistency_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::WorkspaceIntelligenceValidation { message } => PublicError {

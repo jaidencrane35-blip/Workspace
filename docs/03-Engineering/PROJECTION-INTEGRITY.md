@@ -416,6 +416,14 @@ Rules:
 - Forbidden: execute, recommend, approve, mutate, automate
 - Coverage is observable completeness only — never truth, confidence, or inferred evidence
 
+### Workspace Evidence Consistency Engine (Programme IV Batch 5)
+
+- Dual-channel: `current` + `history` + authoritative `history_count`
+- History is evidence-only; never actionable
+- Projection helpers expose consistency summaries, comparison tables, conflict lists, diagnostics, lineage, completeness
+- Forbidden: execute, recommend, resolve, approve, mutate, automate
+- Consistency is observational only — conflicts remain unresolved
+
 
 ## Serde defaults vs TypeScript required fields
 

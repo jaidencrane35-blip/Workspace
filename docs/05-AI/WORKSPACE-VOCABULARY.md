@@ -38,6 +38,7 @@ Canonical product language. Prefer these terms in UI, docs, and Assistant copy.
 | **Workspace Evidence Navigation Engine** | Deterministic navigation of existing evidence paths (navigate ≠ interpret) | Interpreter, reasoner, recommender, relationship inventor, decision-maker, upstream authority |
 | **Workspace Evidence Trace Engine** | Deterministic provenance tracing for a single artefact (trace ≠ infer) | Explainer, reasoner, lineage inventor, history repairer, recommender, upstream authority |
 | **Workspace Evidence Coverage Engine** | Observable evidence completeness for a subject (coverage ≠ truth) | Truth evaluator, confidence reasoner, recommender, evidence inventor, upstream authority |
+| **Workspace Evidence Consistency Engine** | Observable agreement/disagreement across evidence (consistency ≠ resolution) | Conflict resolver, truth arbiter, consensus builder, recommender, upstream authority |
 | **Graph History** | Terminal superseded graph snapshot evidence | Actionable graph mutations |
 | **Task** | Durable work item | Action |
 | **Action** | Executable catalog/command candidate | Task |

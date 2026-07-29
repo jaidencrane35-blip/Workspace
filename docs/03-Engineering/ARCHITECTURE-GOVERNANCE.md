@@ -616,6 +616,22 @@ Observable evidence completeness for a subject.
 
 See [Workspace Evidence Coverage Architecture](../05-AI/WORKSPACE-EVIDENCE-COVERAGE-ARCHITECTURE.md).
 
+## Workspace Evidence Consistency Engine (Programme IV Batch 5)
+
+Observable agreement and disagreement across recorded evidence.
+
+**Observe consistency. Never resolve consistency.**
+
+- Owns consistency snapshots / observations / conflicts / gaps / diagnostics only
+- Never owns retrieval, navigation, provenance, coverage, reasoning, recommendation, execution, or lifecycle
+- Upstream access via `load_snapshot` only — never foreign `::generate`
+- Never resolves conflicts, fabricates agreement/disagreement, or determines truth
+- History is evidence-only (`actionable: false`, `authority_effect: "none"`)
+- Mutation inventory includes `GenerateWorkspaceEvidenceConsistency` (baseline **78**)
+- History / projection DTO inventory length **29**
+
+See [Workspace Evidence Consistency Architecture](../05-AI/WORKSPACE-EVIDENCE-CONSISTENCY-ARCHITECTURE.md).
+
 ## Capability boundary audit
 
 Enforced by `scripts/architecture-governance-lib.mjs`:

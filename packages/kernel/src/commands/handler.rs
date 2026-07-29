@@ -176,6 +176,10 @@ use crate::commands::workspace_evidence_coverage::{
     ExplainEvidenceCoverage, GenerateWorkspaceEvidenceCoverage, GetWorkspaceEvidenceCoverage,
     GetWorkspaceEvidenceCoverageSummary,
 };
+use crate::commands::workspace_evidence_consistency::{
+    ExplainEvidenceConsistency, GenerateWorkspaceEvidenceConsistency, GetWorkspaceEvidenceConsistency,
+    GetWorkspaceEvidenceConsistencySummary,
+};
 use crate::commands::workspace_cross_intelligence::{
     ExplainCrossWorkspacePattern, GenerateCrossWorkspaceIntelligence, GetCrossWorkspaceIntelligence,
     GetCrossWorkspaceSummary,
@@ -265,6 +269,7 @@ use workspace_domain::{
     WorkspaceEvidenceTraceProjection, WorkspaceEvidenceTraceSummary,
     WorkspaceEvidenceTraceExplanation,
     WorkspaceEvidenceCoverageProjection, WorkspaceEvidenceCoverageSummary, WorkspaceEvidenceCoverageExplanation,
+    WorkspaceEvidenceConsistencyProjection, WorkspaceEvidenceConsistencySummary, WorkspaceEvidenceConsistencyExplanation,
     LayoutId, LayoutMetadata, LayoutNode, LayoutSnapshot, MemoryEntry, MemoryType,
     ModelProviderDescriptor, ModelResponse, Observation, PersonalizedPlanComparison,
     PreferenceCategory, PreferenceSource, Suggestion, SuggestionIntentRequest,
@@ -3427,6 +3432,53 @@ impl CommandHandler {
     /// Architecture guard — Evidence coverage cannot execute / infer / invent completeness.
     pub fn evidence_coverage_attempt_execute() -> Result<()> {
         crate::services::WorkspaceEvidenceCoverageService::attempt_execute()
+    }
+
+    pub fn generate_workspace_evidence_consistency(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceEvidenceConsistencyProjection> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_mutation(GenerateWorkspaceEvidenceConsistency::new(workspace_id))
+    }
+
+    pub fn get_workspace_evidence_consistency(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceEvidenceConsistencyProjection> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetWorkspaceEvidenceConsistency::new(workspace_id))
+    }
+
+    pub fn get_workspace_evidence_consistency_summary(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        history_limit: usize,
+    ) -> Result<WorkspaceEvidenceConsistencySummary> {
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_query(
+            GetWorkspaceEvidenceConsistencySummary::new(workspace_id, history_limit),
+        )
+    }
+
+    pub fn explain_evidence_consistency(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceEvidenceConsistencyExplanation> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(ExplainEvidenceConsistency::new(workspace_id))
+    }
+
+    /// Architecture guard — Evidence consistency cannot execute / resolve / invent agreement.
+    pub fn evidence_consistency_attempt_execute() -> Result<()> {
+        crate::services::WorkspaceEvidenceConsistencyService::attempt_execute()
     }
 
     #[allow(clippy::too_many_arguments)]

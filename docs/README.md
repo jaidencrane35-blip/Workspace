@@ -196,3 +196,4 @@ See [Roadmap](08-Roadmap/ROADMAP.md) and [Decision Log](09-Decisions/DECISION-LO
 - [Workspace Evidence Navigation Architecture](./05-AI/WORKSPACE-EVIDENCE-NAVIGATION-ARCHITECTURE.md)
 - [Workspace Evidence Trace Architecture](./05-AI/WORKSPACE-EVIDENCE-TRACE-ARCHITECTURE.md)
 - [Workspace Evidence Coverage Architecture](./05-AI/WORKSPACE-EVIDENCE-COVERAGE-ARCHITECTURE.md)
+- [Workspace Evidence Consistency Architecture](./05-AI/WORKSPACE-EVIDENCE-CONSISTENCY-ARCHITECTURE.md)
