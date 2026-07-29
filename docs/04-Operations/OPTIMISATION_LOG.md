@@ -41,6 +41,23 @@ Human concept → Optimised representation → Decoder / inspector → Human und
 
 ## Cycles
 
+### Cycle: opt-c6-chrome-noise-arrangement-hierarchy
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-29 |
+| **Problem** | Rail toggles spammed status banners; arrangements hero still competed when stacked under stage |
+| **Reason** | Quieter desktop-first chrome; arrangements read as secondary under the stage |
+| **Files changed** | `App.tsx`, `App.css`, this log |
+| **Validation** | typecheck / test / architecture / ipc / ui-boundary / build |
+| **Maintainability score** | 8.9/10 |
+| **Reference alignment** | 8.9/10 (+0.1 quieter hierarchy) |
+| **Commercial readiness** | 6.4/10 |
+| **Human readability** | 8.8/10 |
+| **Why this is safe** | Status/copy density + CSS hierarchy only |
+
+---
+
 ### Cycle: opt-c5-preference-hooks-milestone-c-docs
 
 | Field | Value |

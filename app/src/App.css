@@ -1367,6 +1367,14 @@ button.linkish:not(:disabled):hover {
   position: static;
 }
 
+.app-body.with-companion-rail .arrangement-panel-hero h2 {
+  font-size: 1.05rem;
+}
+
+.app-body.with-companion-rail .arrangement-panel-hero .arrangement-eyebrow {
+  letter-spacing: 0.04em;
+}
+
 .assistant-rail-reopen-bar {
   display: flex;
   justify-content: flex-end;

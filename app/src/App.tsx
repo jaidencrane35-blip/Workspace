@@ -113,8 +113,8 @@ export default function App() {
     setMessage(text);
   }, []);
   const { workMode, onWorkModeChange } = useWorkMode(onStatus);
-  const { assistantRailOpen, onAssistantRailOpenChange } =
-    useAssistantRail(onStatus);
+  // Rail toggle is visual (aria-pressed); avoid banner noise on every click.
+  const { assistantRailOpen, onAssistantRailOpenChange } = useAssistantRail();
   const [lastPrimaryView, setLastPrimaryView] =
     useState<ProductPrimaryView>("home");
 
