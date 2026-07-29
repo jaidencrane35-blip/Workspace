@@ -2038,23 +2038,200 @@ function semanticQueryGuards(rootDir) {
 }
 
 
+
 /**
- * Programme IV Batch 2 — Workspace Evidence Navigation Engine guards.
- * Navigate evidence; never interpret, invent edges, recommend, or execute.
+ * Programme IV Batch 2-9 — Workspace Evidence Engine guards.
+ * Evidence engines observe only; they never refresh, recommend, or execute.
  */
-function evidenceNavigationGuards(rootDir) {
+const EVIDENCE_ENGINE_GUARD_SPECS = [
+  {
+    label: "Evidence navigation",
+    serviceRel: "packages/kernel/src/services/workspace_evidence_navigation.rs",
+    domainRel: "packages/domain/src/workspace_evidence_navigation",
+    repoRel: "packages/database/src/repositories/workspace_evidence_navigation.rs",
+    forbiddenGeneratePatterns: [
+      /WorkspaceSemanticQueryService::generate\b/.source,
+      /WorkspaceIntelligenceHubService::generate\b/.source,
+      /WorkspaceKnowledgeIntegrationService::generate\b/.source,
+      /WorkspaceKnowledgeSynthesisService::generate\b/.source,
+      /WorkspaceContextualUnderstandingService::generate\b/.source,
+      /WorkspaceExplanationService::generate\b/.source,
+      /WorkspaceTemporalIntelligenceService::generate\b/.source,
+      /WorkspaceHistoricalReconstructionService::generate\b/.source,
+      /WorkspaceStateCompositionService::generate\b/.source,
+      /WorkspacePlanningService::generate\b/.source,
+    ],
+  },
+  {
+    label: "Evidence trace",
+    serviceRel: "packages/kernel/src/services/workspace_evidence_trace.rs",
+    domainRel: "packages/domain/src/workspace_evidence_trace",
+    repoRel: "packages/database/src/repositories/workspace_evidence_trace.rs",
+    forbiddenGeneratePatterns: [
+      /WorkspaceEvidenceNavigationService::generate\b/.source,
+      /WorkspaceSemanticQueryService::generate\b/.source,
+      /WorkspaceIntelligenceHubService::generate\b/.source,
+      /WorkspaceKnowledgeIntegrationService::generate\b/.source,
+      /WorkspaceKnowledgeSynthesisService::generate\b/.source,
+      /WorkspaceContextualUnderstandingService::generate\b/.source,
+      /WorkspaceExplanationService::generate\b/.source,
+      /WorkspaceTemporalIntelligenceService::generate\b/.source,
+      /WorkspaceHistoricalReconstructionService::generate\b/.source,
+      /WorkspaceStateCompositionService::generate\b/.source,
+      /WorkspacePlanningService::generate\b/.source,
+    ],
+  },
+  {
+    label: "Evidence coverage",
+    serviceRel: "packages/kernel/src/services/workspace_evidence_coverage.rs",
+    domainRel: "packages/domain/src/workspace_evidence_coverage",
+    repoRel: "packages/database/src/repositories/workspace_evidence_coverage.rs",
+    forbiddenGeneratePatterns: [
+      /WorkspaceEvidenceTraceService::generate\b/.source,
+      /WorkspaceEvidenceNavigationService::generate\b/.source,
+      /WorkspaceSemanticQueryService::generate\b/.source,
+      /WorkspaceIntelligenceHubService::generate\b/.source,
+      /WorkspaceKnowledgeIntegrationService::generate\b/.source,
+      /WorkspaceKnowledgeSynthesisService::generate\b/.source,
+      /WorkspaceContextualUnderstandingService::generate\b/.source,
+      /WorkspaceExplanationService::generate\b/.source,
+      /WorkspaceTemporalIntelligenceService::generate\b/.source,
+      /WorkspaceHistoricalReconstructionService::generate\b/.source,
+      /WorkspaceStateCompositionService::generate\b/.source,
+      /WorkspacePlanningService::generate\b/.source,
+    ],
+  },
+  {
+    label: "Evidence consistency",
+    serviceRel: "packages/kernel/src/services/workspace_evidence_consistency.rs",
+    domainRel: "packages/domain/src/workspace_evidence_consistency",
+    repoRel: "packages/database/src/repositories/workspace_evidence_consistency.rs",
+    forbiddenGeneratePatterns: [
+      /WorkspaceEvidenceCoverageService::generate\b/.source,
+      /WorkspaceEvidenceTraceService::generate\b/.source,
+      /WorkspaceEvidenceNavigationService::generate\b/.source,
+      /WorkspaceSemanticQueryService::generate\b/.source,
+      /WorkspaceIntelligenceHubService::generate\b/.source,
+      /WorkspaceKnowledgeIntegrationService::generate\b/.source,
+      /WorkspaceKnowledgeSynthesisService::generate\b/.source,
+      /WorkspaceContextualUnderstandingService::generate\b/.source,
+      /WorkspaceExplanationService::generate\b/.source,
+      /WorkspaceTemporalIntelligenceService::generate\b/.source,
+      /WorkspaceHistoricalReconstructionService::generate\b/.source,
+      /WorkspaceStateCompositionService::generate\b/.source,
+      /WorkspacePlanningService::generate\b/.source,
+    ],
+  },
+  {
+    label: "Evidence dependency",
+    serviceRel: "packages/kernel/src/services/workspace_evidence_dependency.rs",
+    domainRel: "packages/domain/src/workspace_evidence_dependency",
+    repoRel: "packages/database/src/repositories/workspace_evidence_dependency.rs",
+    forbiddenGeneratePatterns: [
+      /WorkspaceEvidenceConsistencyService::generate\b/.source,
+      /WorkspaceEvidenceCoverageService::generate\b/.source,
+      /WorkspaceEvidenceTraceService::generate\b/.source,
+      /WorkspaceEvidenceNavigationService::generate\b/.source,
+      /WorkspaceSemanticQueryService::generate\b/.source,
+      /WorkspaceIntelligenceHubService::generate\b/.source,
+      /WorkspaceKnowledgeIntegrationService::generate\b/.source,
+      /WorkspaceKnowledgeSynthesisService::generate\b/.source,
+      /WorkspaceContextualUnderstandingService::generate\b/.source,
+      /WorkspaceExplanationService::generate\b/.source,
+      /WorkspaceTemporalIntelligenceService::generate\b/.source,
+      /WorkspaceHistoricalReconstructionService::generate\b/.source,
+      /WorkspaceStateCompositionService::generate\b/.source,
+      /WorkspacePlanningService::generate\b/.source,
+    ],
+  },
+  {
+    label: "Evidence freshness",
+    serviceRel: "packages/kernel/src/services/workspace_evidence_freshness.rs",
+    domainRel: "packages/domain/src/workspace_evidence_freshness",
+    repoRel: "packages/database/src/repositories/workspace_evidence_freshness.rs",
+    forbiddenGeneratePatterns: [
+      /WorkspaceEvidenceDependencyService::generate\b/.source,
+      /WorkspaceEvidenceConsistencyService::generate\b/.source,
+      /WorkspaceEvidenceCoverageService::generate\b/.source,
+      /WorkspaceEvidenceTraceService::generate\b/.source,
+      /WorkspaceEvidenceNavigationService::generate\b/.source,
+      /WorkspaceSemanticQueryService::generate\b/.source,
+      /WorkspaceIntelligenceHubService::generate\b/.source,
+      /WorkspaceKnowledgeIntegrationService::generate\b/.source,
+      /WorkspaceKnowledgeSynthesisService::generate\b/.source,
+      /WorkspaceContextualUnderstandingService::generate\b/.source,
+      /WorkspaceExplanationService::generate\b/.source,
+      /WorkspaceTemporalIntelligenceService::generate\b/.source,
+      /WorkspaceHistoricalReconstructionService::generate\b/.source,
+      /WorkspaceStateCompositionService::generate\b/.source,
+      /WorkspacePlanningService::generate\b/.source,
+    ],
+  },
+  {
+    label: "Evidence completeness",
+    serviceRel: "packages/kernel/src/services/workspace_evidence_completeness.rs",
+    domainRel: "packages/domain/src/workspace_evidence_completeness",
+    repoRel: "packages/database/src/repositories/workspace_evidence_completeness.rs",
+    forbiddenGeneratePatterns: [
+      /WorkspaceEvidenceFreshnessService::generate\b/.source,
+      /WorkspaceEvidenceDependencyService::generate\b/.source,
+      /WorkspaceEvidenceConsistencyService::generate\b/.source,
+      /WorkspaceEvidenceCoverageService::generate\b/.source,
+      /WorkspaceEvidenceTraceService::generate\b/.source,
+      /WorkspaceEvidenceNavigationService::generate\b/.source,
+      /WorkspaceSemanticQueryService::generate\b/.source,
+      /WorkspaceIntelligenceHubService::generate\b/.source,
+      /WorkspaceKnowledgeIntegrationService::generate\b/.source,
+      /WorkspaceKnowledgeSynthesisService::generate\b/.source,
+      /WorkspaceContextualUnderstandingService::generate\b/.source,
+      /WorkspaceExplanationService::generate\b/.source,
+      /WorkspaceTemporalIntelligenceService::generate\b/.source,
+      /WorkspaceHistoricalReconstructionService::generate\b/.source,
+      /WorkspaceStateCompositionService::generate\b/.source,
+      /WorkspacePlanningService::generate\b/.source,
+    ],
+  },
+  {
+    label: "Evidence reliability",
+    serviceRel: "packages/kernel/src/services/workspace_evidence_reliability.rs",
+    domainRel: "packages/domain/src/workspace_evidence_reliability",
+    repoRel: "packages/database/src/repositories/workspace_evidence_reliability.rs",
+    forbiddenGeneratePatterns: [
+      /WorkspaceEvidenceCompletenessService::generate\b/.source,
+      /WorkspaceEvidenceFreshnessService::generate\b/.source,
+      /WorkspaceEvidenceDependencyService::generate\b/.source,
+      /WorkspaceEvidenceConsistencyService::generate\b/.source,
+      /WorkspaceEvidenceCoverageService::generate\b/.source,
+      /WorkspaceEvidenceTraceService::generate\b/.source,
+      /WorkspaceEvidenceNavigationService::generate\b/.source,
+      /WorkspaceSemanticQueryService::generate\b/.source,
+      /WorkspaceIntelligenceHubService::generate\b/.source,
+      /WorkspaceKnowledgeIntegrationService::generate\b/.source,
+      /WorkspaceKnowledgeSynthesisService::generate\b/.source,
+      /WorkspaceContextualUnderstandingService::generate\b/.source,
+      /WorkspaceExplanationService::generate\b/.source,
+      /WorkspaceTemporalIntelligenceService::generate\b/.source,
+      /WorkspaceHistoricalReconstructionService::generate\b/.source,
+      /WorkspaceStateCompositionService::generate\b/.source,
+      /WorkspacePlanningService::generate\b/.source,
+    ],
+  },
+];
+
+function pascalCaseSnakeIdentifier(identifier) {
+  return identifier
+    .split("_")
+    .map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`)
+    .join("");
+}
+
+function runEvidenceEngineGuards(rootDir, spec) {
   const violations = [];
-  const servicePath = path.join(
-    rootDir,
-    "packages/kernel/src/services/workspace_evidence_navigation.rs",
-  );
-  const domainPath = path.join(
-    rootDir,
-    "packages/domain/src/workspace_evidence_navigation",
-  );
-  const repoPath = path.join(
-    rootDir,
-    "packages/database/src/repositories/workspace_evidence_navigation.rs",
+  const servicePath = path.join(rootDir, spec.serviceRel);
+  const domainPath = path.join(rootDir, spec.domainRel);
+  const repoPath = path.join(rootDir, spec.repoRel);
+  const forbiddenGeneratePatterns = spec.forbiddenGeneratePatterns.map(
+    (pattern) => new RegExp(pattern),
   );
 
   const serviceFiles = fs.existsSync(servicePath) ? [servicePath] : [];
@@ -2072,7 +2249,7 @@ function evidenceNavigationGuards(rootDir) {
       /workspace_windows_integration::/.test(source)
     ) {
       violations.push(
-        `${rel}: Evidence navigation must not import lifecycle/execution/recommendation/decision-engine services`,
+        `${rel}: ${spec.label} must not import lifecycle/execution/recommendation/decision-engine services`,
       );
     }
     if (
@@ -2081,673 +2258,44 @@ function evidenceNavigationGuards(rootDir) {
       /CommandPipeline::/.test(source)
     ) {
       violations.push(
-        `${rel}: Evidence navigation must not own permissions, grant capabilities, or execute via Pipeline`,
+        `${rel}: ${spec.label} must not own permissions, grant capabilities, or execute via Pipeline`,
       );
     }
-    if (
-      /WorkspaceSemanticQueryService::generate\b/.test(source) ||
-      /WorkspaceIntelligenceHubService::generate\b/.test(source) ||
-      /WorkspaceKnowledgeIntegrationService::generate\b/.test(source) ||
-      /WorkspaceKnowledgeSynthesisService::generate\b/.test(source) ||
-      /WorkspaceContextualUnderstandingService::generate\b/.test(source) ||
-      /WorkspaceExplanationService::generate\b/.test(source) ||
-      /WorkspaceTemporalIntelligenceService::generate\b/.test(source) ||
-      /WorkspaceHistoricalReconstructionService::generate\b/.test(source) ||
-      /WorkspaceStateCompositionService::generate\b/.test(source) ||
-      /WorkspacePlanningService::generate\b/.test(source)
-    ) {
+    if (forbiddenGeneratePatterns.some((pattern) => pattern.test(source))) {
       violations.push(
-        `${rel}: Evidence navigation must not silently refresh foreign sources via generate`,
+        `${rel}: ${spec.label} must not silently refresh foreign sources via generate`,
       );
     }
   }
 
   if (fs.existsSync(repoPath)) {
     const source = read(repoPath);
+    const serviceName = `${pascalCaseSnakeIdentifier(
+      path.basename(spec.serviceRel, ".rs"),
+    )}Service`;
     if (
-      /WorkspaceEvidenceNavigationService/.test(source) ||
+      new RegExp(serviceName).test(source) ||
       /use\s+workspace_kernel::/.test(source)
     ) {
       violations.push(
-        `packages/database/src/repositories/workspace_evidence_navigation.rs: repository must not call evidence navigation service`,
+        `${spec.repoRel}: repository must not call ${spec.label.toLowerCase()} service`,
       );
     }
   }
 
   if (!fs.existsSync(domainPath) && !fs.existsSync(`${domainPath}.rs`)) {
     violations.push(
-      "packages/domain/src/workspace_evidence_navigation missing; governance cannot verify evidence navigation DTOs",
+      `${spec.domainRel} missing; governance cannot verify ${spec.label.toLowerCase()} DTOs`,
     );
   }
 
   return violations;
 }
 
-
-/**
- * Programme IV Batch 3 — Workspace Evidence Trace Engine guards.
- * Trace provenance; never infer, invent hops, recommend, or execute.
- */
-function evidenceTraceGuards(rootDir) {
-  const violations = [];
-  const servicePath = path.join(
-    rootDir,
-    "packages/kernel/src/services/workspace_evidence_trace.rs",
+function evidenceFamilyGuards(rootDir) {
+  return EVIDENCE_ENGINE_GUARD_SPECS.flatMap((spec) =>
+    runEvidenceEngineGuards(rootDir, spec),
   );
-  const domainPath = path.join(
-    rootDir,
-    "packages/domain/src/workspace_evidence_trace",
-  );
-  const repoPath = path.join(
-    rootDir,
-    "packages/database/src/repositories/workspace_evidence_trace.rs",
-  );
-
-  const serviceFiles = fs.existsSync(servicePath) ? [servicePath] : [];
-  const domainFiles = fs.existsSync(domainPath) ? rustSources(domainPath) : [];
-  for (const file of [...serviceFiles, ...domainFiles]) {
-    const source = read(file);
-    const rel = path.relative(rootDir, file).replace(/\\/g, "/");
-    if (
-      /\bApplicationLaunchService\b/.test(source) ||
-      /\bExecutionLifecycleService\b/.test(source) ||
-      /\bTaskGraphService\b/.test(source) ||
-      /\bDecisionEngineService\b/.test(source) ||
-      /\bWorkspaceRecommendationEngineService\b/.test(source) ||
-      /std::process::Command/.test(source) ||
-      /workspace_windows_integration::/.test(source)
-    ) {
-      violations.push(
-        `${rel}: Evidence trace must not import lifecycle/execution/recommendation/decision-engine services`,
-      );
-    }
-    if (
-      /PermissionGateway::/.test(source) ||
-      /\bCapabilityGrant\b/.test(source) ||
-      /CommandPipeline::/.test(source)
-    ) {
-      violations.push(
-        `${rel}: Evidence trace must not own permissions, grant capabilities, or execute via Pipeline`,
-      );
-    }
-    if (
-      /WorkspaceEvidenceNavigationService::generate\b/.test(source) ||
-      /WorkspaceSemanticQueryService::generate\b/.test(source) ||
-      /WorkspaceIntelligenceHubService::generate\b/.test(source) ||
-      /WorkspaceKnowledgeIntegrationService::generate\b/.test(source) ||
-      /WorkspaceKnowledgeSynthesisService::generate\b/.test(source) ||
-      /WorkspaceContextualUnderstandingService::generate\b/.test(source) ||
-      /WorkspaceExplanationService::generate\b/.test(source) ||
-      /WorkspaceTemporalIntelligenceService::generate\b/.test(source) ||
-      /WorkspaceHistoricalReconstructionService::generate\b/.test(source) ||
-      /WorkspaceStateCompositionService::generate\b/.test(source) ||
-      /WorkspacePlanningService::generate\b/.test(source)
-    ) {
-      violations.push(
-        `${rel}: Evidence trace must not silently refresh foreign sources via generate`,
-      );
-    }
-  }
-
-  if (fs.existsSync(repoPath)) {
-    const source = read(repoPath);
-    if (
-      /WorkspaceEvidenceTraceService/.test(source) ||
-      /use\s+workspace_kernel::/.test(source)
-    ) {
-      violations.push(
-        `packages/database/src/repositories/workspace_evidence_trace.rs: repository must not call evidence trace service`,
-      );
-    }
-  }
-
-  if (!fs.existsSync(domainPath) && !fs.existsSync(`${domainPath}.rs`)) {
-    violations.push(
-      "packages/domain/src/workspace_evidence_trace missing; governance cannot verify evidence trace DTOs",
-    );
-  }
-
-  return violations;
-}
-
-
-/**
- * Programme IV Batch 4 — Workspace Evidence Coverage Engine guards.
- * Measure evidence coverage. Never measure truth.
- */
-function evidenceCoverageGuards(rootDir) {
-  const violations = [];
-  const servicePath = path.join(
-    rootDir,
-    "packages/kernel/src/services/workspace_evidence_coverage.rs",
-  );
-  const domainPath = path.join(
-    rootDir,
-    "packages/domain/src/workspace_evidence_coverage",
-  );
-  const repoPath = path.join(
-    rootDir,
-    "packages/database/src/repositories/workspace_evidence_coverage.rs",
-  );
-
-  const serviceFiles = fs.existsSync(servicePath) ? [servicePath] : [];
-  const domainFiles = fs.existsSync(domainPath) ? rustSources(domainPath) : [];
-  for (const file of [...serviceFiles, ...domainFiles]) {
-    const source = read(file);
-    const rel = path.relative(rootDir, file).replace(/\\/g, "/");
-    if (
-      /\bApplicationLaunchService\b/.test(source) ||
-      /\bExecutionLifecycleService\b/.test(source) ||
-      /\bTaskGraphService\b/.test(source) ||
-      /\bDecisionEngineService\b/.test(source) ||
-      /\bWorkspaceRecommendationEngineService\b/.test(source) ||
-      /std::process::Command/.test(source) ||
-      /workspace_windows_integration::/.test(source)
-    ) {
-      violations.push(
-        `${rel}: Evidence coverage must not import lifecycle/execution/recommendation/decision-engine services`,
-      );
-    }
-    if (
-      /PermissionGateway::/.test(source) ||
-      /\bCapabilityGrant\b/.test(source) ||
-      /CommandPipeline::/.test(source)
-    ) {
-      violations.push(
-        `${rel}: Evidence coverage must not own permissions, grant capabilities, or execute via Pipeline`,
-      );
-    }
-    if (
-      /WorkspaceEvidenceTraceService::generate\b/.test(source) ||
-      /WorkspaceEvidenceNavigationService::generate\b/.test(source) ||
-      /WorkspaceSemanticQueryService::generate\b/.test(source) ||
-      /WorkspaceIntelligenceHubService::generate\b/.test(source) ||
-      /WorkspaceKnowledgeIntegrationService::generate\b/.test(source) ||
-      /WorkspaceKnowledgeSynthesisService::generate\b/.test(source) ||
-      /WorkspaceContextualUnderstandingService::generate\b/.test(source) ||
-      /WorkspaceExplanationService::generate\b/.test(source) ||
-      /WorkspaceTemporalIntelligenceService::generate\b/.test(source) ||
-      /WorkspaceHistoricalReconstructionService::generate\b/.test(source) ||
-      /WorkspaceStateCompositionService::generate\b/.test(source) ||
-      /WorkspacePlanningService::generate\b/.test(source)
-    ) {
-      violations.push(
-        `${rel}: Evidence coverage must not silently refresh foreign sources via generate`,
-      );
-    }
-  }
-
-  if (fs.existsSync(repoPath)) {
-    const source = read(repoPath);
-    if (
-      /WorkspaceEvidenceCoverageService/.test(source) ||
-      /use\s+workspace_kernel::/.test(source)
-    ) {
-      violations.push(
-        `packages/database/src/repositories/workspace_evidence_coverage.rs: repository must not call evidence coverage service`,
-      );
-    }
-  }
-
-  if (!fs.existsSync(domainPath) && !fs.existsSync(`${domainPath}.rs`)) {
-    violations.push(
-      "packages/domain/src/workspace_evidence_coverage missing; governance cannot verify evidence coverage DTOs",
-    );
-  }
-
-  return violations;
-}
-
-
-/**
- * Programme IV Batch 5 — Workspace Evidence Consistency Engine guards.
- * Observe consistency. Never resolve consistency.
- */
-function evidenceConsistencyGuards(rootDir) {
-  const violations = [];
-  const servicePath = path.join(
-    rootDir,
-    "packages/kernel/src/services/workspace_evidence_consistency.rs",
-  );
-  const domainPath = path.join(
-    rootDir,
-    "packages/domain/src/workspace_evidence_consistency",
-  );
-  const repoPath = path.join(
-    rootDir,
-    "packages/database/src/repositories/workspace_evidence_consistency.rs",
-  );
-
-  const serviceFiles = fs.existsSync(servicePath) ? [servicePath] : [];
-  const domainFiles = fs.existsSync(domainPath) ? rustSources(domainPath) : [];
-  for (const file of [...serviceFiles, ...domainFiles]) {
-    const source = read(file);
-    const rel = path.relative(rootDir, file).replace(/\\/g, "/");
-    if (
-      /\bApplicationLaunchService\b/.test(source) ||
-      /\bExecutionLifecycleService\b/.test(source) ||
-      /\bTaskGraphService\b/.test(source) ||
-      /\bDecisionEngineService\b/.test(source) ||
-      /\bWorkspaceRecommendationEngineService\b/.test(source) ||
-      /std::process::Command/.test(source) ||
-      /workspace_windows_integration::/.test(source)
-    ) {
-      violations.push(
-        `${rel}: Evidence consistency must not import lifecycle/execution/recommendation/decision-engine services`,
-      );
-    }
-    if (
-      /PermissionGateway::/.test(source) ||
-      /\bCapabilityGrant\b/.test(source) ||
-      /CommandPipeline::/.test(source)
-    ) {
-      violations.push(
-        `${rel}: Evidence consistency must not own permissions, grant capabilities, or execute via Pipeline`,
-      );
-    }
-    if (
-      /WorkspaceEvidenceCoverageService::generate\b/.test(source) ||
-      /WorkspaceEvidenceTraceService::generate\b/.test(source) ||
-      /WorkspaceEvidenceNavigationService::generate\b/.test(source) ||
-      /WorkspaceSemanticQueryService::generate\b/.test(source) ||
-      /WorkspaceIntelligenceHubService::generate\b/.test(source) ||
-      /WorkspaceKnowledgeIntegrationService::generate\b/.test(source) ||
-      /WorkspaceKnowledgeSynthesisService::generate\b/.test(source) ||
-      /WorkspaceContextualUnderstandingService::generate\b/.test(source) ||
-      /WorkspaceExplanationService::generate\b/.test(source) ||
-      /WorkspaceTemporalIntelligenceService::generate\b/.test(source) ||
-      /WorkspaceHistoricalReconstructionService::generate\b/.test(source) ||
-      /WorkspaceStateCompositionService::generate\b/.test(source) ||
-      /WorkspacePlanningService::generate\b/.test(source)
-    ) {
-      violations.push(
-        `${rel}: Evidence consistency must not silently refresh foreign sources via generate`,
-      );
-    }
-  }
-
-  if (fs.existsSync(repoPath)) {
-    const source = read(repoPath);
-    if (
-      /WorkspaceEvidenceConsistencyService/.test(source) ||
-      /use\s+workspace_kernel::/.test(source)
-    ) {
-      violations.push(
-        `packages/database/src/repositories/workspace_evidence_consistency.rs: repository must not call evidence consistency service`,
-      );
-    }
-  }
-
-  if (!fs.existsSync(domainPath) && !fs.existsSync(`${domainPath}.rs`)) {
-    violations.push(
-      "packages/domain/src/workspace_evidence_consistency missing; governance cannot verify evidence consistency DTOs",
-    );
-  }
-
-  return violations;
-}
-
-
-/**
- * Programme IV Batch 6 — Workspace Evidence Dependency Engine guards.
- * Observe dependency. Never create dependency.
- */
-function evidenceDependencyGuards(rootDir) {
-  const violations = [];
-  const servicePath = path.join(
-    rootDir,
-    "packages/kernel/src/services/workspace_evidence_dependency.rs",
-  );
-  const domainPath = path.join(
-    rootDir,
-    "packages/domain/src/workspace_evidence_dependency",
-  );
-  const repoPath = path.join(
-    rootDir,
-    "packages/database/src/repositories/workspace_evidence_dependency.rs",
-  );
-
-  const serviceFiles = fs.existsSync(servicePath) ? [servicePath] : [];
-  const domainFiles = fs.existsSync(domainPath) ? rustSources(domainPath) : [];
-  for (const file of [...serviceFiles, ...domainFiles]) {
-    const source = read(file);
-    const rel = path.relative(rootDir, file).replace(/\\/g, "/");
-    if (
-      /\bApplicationLaunchService\b/.test(source) ||
-      /\bExecutionLifecycleService\b/.test(source) ||
-      /\bTaskGraphService\b/.test(source) ||
-      /\bDecisionEngineService\b/.test(source) ||
-      /\bWorkspaceRecommendationEngineService\b/.test(source) ||
-      /std::process::Command/.test(source) ||
-      /workspace_windows_integration::/.test(source)
-    ) {
-      violations.push(
-        `${rel}: Evidence dependency must not import lifecycle/execution/recommendation/decision-engine services`,
-      );
-    }
-    if (
-      /PermissionGateway::/.test(source) ||
-      /\bCapabilityGrant\b/.test(source) ||
-      /CommandPipeline::/.test(source)
-    ) {
-      violations.push(
-        `${rel}: Evidence dependency must not own permissions, grant capabilities, or execute via Pipeline`,
-      );
-    }
-    if (
-      /WorkspaceEvidenceConsistencyService::generate\b/.test(source) ||
-      /WorkspaceEvidenceCoverageService::generate\b/.test(source) ||
-      /WorkspaceEvidenceTraceService::generate\b/.test(source) ||
-      /WorkspaceEvidenceNavigationService::generate\b/.test(source) ||
-      /WorkspaceSemanticQueryService::generate\b/.test(source) ||
-      /WorkspaceIntelligenceHubService::generate\b/.test(source) ||
-      /WorkspaceKnowledgeIntegrationService::generate\b/.test(source) ||
-      /WorkspaceKnowledgeSynthesisService::generate\b/.test(source) ||
-      /WorkspaceContextualUnderstandingService::generate\b/.test(source) ||
-      /WorkspaceExplanationService::generate\b/.test(source) ||
-      /WorkspaceTemporalIntelligenceService::generate\b/.test(source) ||
-      /WorkspaceHistoricalReconstructionService::generate\b/.test(source) ||
-      /WorkspaceStateCompositionService::generate\b/.test(source) ||
-      /WorkspacePlanningService::generate\b/.test(source)
-    ) {
-      violations.push(
-        `${rel}: Evidence dependency must not silently refresh foreign sources via generate`,
-      );
-    }
-  }
-
-  if (fs.existsSync(repoPath)) {
-    const source = read(repoPath);
-    if (
-      /WorkspaceEvidenceDependencyService/.test(source) ||
-      /use\s+workspace_kernel::/.test(source)
-    ) {
-      violations.push(
-        `packages/database/src/repositories/workspace_evidence_dependency.rs: repository must not call evidence dependency service`,
-      );
-    }
-  }
-
-  if (!fs.existsSync(domainPath) && !fs.existsSync(`${domainPath}.rs`)) {
-    violations.push(
-      "packages/domain/src/workspace_evidence_dependency missing; governance cannot verify evidence dependency DTOs",
-    );
-  }
-
-  return violations;
-}
-
-/**
- * Programme IV Batch 7 — Workspace Evidence Freshness Engine guards.
- * Observe freshness. Never refresh evidence.
- */
-function evidenceFreshnessGuards(rootDir) {
-  const violations = [];
-  const servicePath = path.join(
-    rootDir,
-    "packages/kernel/src/services/workspace_evidence_freshness.rs",
-  );
-  const domainPath = path.join(
-    rootDir,
-    "packages/domain/src/workspace_evidence_freshness",
-  );
-  const repoPath = path.join(
-    rootDir,
-    "packages/database/src/repositories/workspace_evidence_freshness.rs",
-  );
-
-  const serviceFiles = fs.existsSync(servicePath) ? [servicePath] : [];
-  const domainFiles = fs.existsSync(domainPath) ? rustSources(domainPath) : [];
-  for (const file of [...serviceFiles, ...domainFiles]) {
-    const source = read(file);
-    const rel = path.relative(rootDir, file).replace(/\\/g, "/");
-    if (
-      /\bApplicationLaunchService\b/.test(source) ||
-      /\bExecutionLifecycleService\b/.test(source) ||
-      /\bTaskGraphService\b/.test(source) ||
-      /\bDecisionEngineService\b/.test(source) ||
-      /\bWorkspaceRecommendationEngineService\b/.test(source) ||
-      /std::process::Command/.test(source) ||
-      /workspace_windows_integration::/.test(source)
-    ) {
-      violations.push(
-        `${rel}: Evidence freshness must not import lifecycle/execution/recommendation/decision-engine services`,
-      );
-    }
-    if (
-      /PermissionGateway::/.test(source) ||
-      /\bCapabilityGrant\b/.test(source) ||
-      /CommandPipeline::/.test(source)
-    ) {
-      violations.push(
-        `${rel}: Evidence freshness must not own permissions, grant capabilities, or execute via Pipeline`,
-      );
-    }
-    if (
-      /WorkspaceEvidenceDependencyService::generate\b/.test(source) ||
-      /WorkspaceEvidenceConsistencyService::generate\b/.test(source) ||
-      /WorkspaceEvidenceCoverageService::generate\b/.test(source) ||
-      /WorkspaceEvidenceTraceService::generate\b/.test(source) ||
-      /WorkspaceEvidenceNavigationService::generate\b/.test(source) ||
-      /WorkspaceSemanticQueryService::generate\b/.test(source) ||
-      /WorkspaceIntelligenceHubService::generate\b/.test(source) ||
-      /WorkspaceKnowledgeIntegrationService::generate\b/.test(source) ||
-      /WorkspaceKnowledgeSynthesisService::generate\b/.test(source) ||
-      /WorkspaceContextualUnderstandingService::generate\b/.test(source) ||
-      /WorkspaceExplanationService::generate\b/.test(source) ||
-      /WorkspaceTemporalIntelligenceService::generate\b/.test(source) ||
-      /WorkspaceHistoricalReconstructionService::generate\b/.test(source) ||
-      /WorkspaceStateCompositionService::generate\b/.test(source) ||
-      /WorkspacePlanningService::generate\b/.test(source)
-    ) {
-      violations.push(
-        `${rel}: Evidence freshness must not silently refresh foreign sources via generate`,
-      );
-    }
-  }
-
-  if (fs.existsSync(repoPath)) {
-    const source = read(repoPath);
-    if (
-      /WorkspaceEvidenceFreshnessService/.test(source) ||
-      /use\s+workspace_kernel::/.test(source)
-    ) {
-      violations.push(
-        `packages/database/src/repositories/workspace_evidence_freshness.rs: repository must not call evidence freshness service`,
-      );
-    }
-  }
-
-  if (!fs.existsSync(domainPath) && !fs.existsSync(`${domainPath}.rs`)) {
-    violations.push(
-      "packages/domain/src/workspace_evidence_freshness missing; governance cannot verify evidence freshness DTOs",
-    );
-  }
-
-  return violations;
-}
-
-/**
- * Programme IV Batch 8 — Workspace Evidence Completeness Engine guards.
- * Observe completeness. Never complete evidence.
- */
-function evidenceCompletenessGuards(rootDir) {
-  const violations = [];
-  const servicePath = path.join(
-    rootDir,
-    "packages/kernel/src/services/workspace_evidence_completeness.rs",
-  );
-  const domainPath = path.join(
-    rootDir,
-    "packages/domain/src/workspace_evidence_completeness",
-  );
-  const repoPath = path.join(
-    rootDir,
-    "packages/database/src/repositories/workspace_evidence_completeness.rs",
-  );
-
-  const serviceFiles = fs.existsSync(servicePath) ? [servicePath] : [];
-  const domainFiles = fs.existsSync(domainPath) ? rustSources(domainPath) : [];
-  for (const file of [...serviceFiles, ...domainFiles]) {
-    const source = read(file);
-    const rel = path.relative(rootDir, file).replace(/\\/g, "/");
-    if (
-      /\bApplicationLaunchService\b/.test(source) ||
-      /\bExecutionLifecycleService\b/.test(source) ||
-      /\bTaskGraphService\b/.test(source) ||
-      /\bDecisionEngineService\b/.test(source) ||
-      /\bWorkspaceRecommendationEngineService\b/.test(source) ||
-      /std::process::Command/.test(source) ||
-      /workspace_windows_integration::/.test(source)
-    ) {
-      violations.push(
-        `${rel}: Evidence completeness must not import lifecycle/execution/recommendation/decision-engine services`,
-      );
-    }
-    if (
-      /PermissionGateway::/.test(source) ||
-      /\bCapabilityGrant\b/.test(source) ||
-      /CommandPipeline::/.test(source)
-    ) {
-      violations.push(
-        `${rel}: Evidence completeness must not own permissions, grant capabilities, or execute via Pipeline`,
-      );
-    }
-    if (
-      /WorkspaceEvidenceFreshnessService::generate\b/.test(source) ||
-      /WorkspaceEvidenceDependencyService::generate\b/.test(source) ||
-      /WorkspaceEvidenceConsistencyService::generate\b/.test(source) ||
-      /WorkspaceEvidenceCoverageService::generate\b/.test(source) ||
-      /WorkspaceEvidenceTraceService::generate\b/.test(source) ||
-      /WorkspaceEvidenceNavigationService::generate\b/.test(source) ||
-      /WorkspaceSemanticQueryService::generate\b/.test(source) ||
-      /WorkspaceIntelligenceHubService::generate\b/.test(source) ||
-      /WorkspaceKnowledgeIntegrationService::generate\b/.test(source) ||
-      /WorkspaceKnowledgeSynthesisService::generate\b/.test(source) ||
-      /WorkspaceContextualUnderstandingService::generate\b/.test(source) ||
-      /WorkspaceExplanationService::generate\b/.test(source) ||
-      /WorkspaceTemporalIntelligenceService::generate\b/.test(source) ||
-      /WorkspaceHistoricalReconstructionService::generate\b/.test(source) ||
-      /WorkspaceStateCompositionService::generate\b/.test(source) ||
-      /WorkspacePlanningService::generate\b/.test(source)
-    ) {
-      violations.push(
-        `${rel}: Evidence completeness must not silently refresh foreign sources via generate`,
-      );
-    }
-  }
-
-  if (fs.existsSync(repoPath)) {
-    const source = read(repoPath);
-    if (
-      /WorkspaceEvidenceCompletenessService/.test(source) ||
-      /use\s+workspace_kernel::/.test(source)
-    ) {
-      violations.push(
-        `packages/database/src/repositories/workspace_evidence_completeness.rs: repository must not call evidence completeness service`,
-      );
-    }
-  }
-
-  if (!fs.existsSync(domainPath) && !fs.existsSync(`${domainPath}.rs`)) {
-    violations.push(
-      "packages/domain/src/workspace_evidence_completeness missing; governance cannot verify evidence completeness DTOs",
-    );
-  }
-
-  return violations;
-}
-
-/**
- * Programme IV Batch 9 — Workspace Evidence Reliability Engine guards.
- * Observe reliability. Never establish truth.
- */
-function evidenceReliabilityGuards(rootDir) {
-  const violations = [];
-  const servicePath = path.join(
-    rootDir,
-    "packages/kernel/src/services/workspace_evidence_reliability.rs",
-  );
-  const domainPath = path.join(
-    rootDir,
-    "packages/domain/src/workspace_evidence_reliability",
-  );
-  const repoPath = path.join(
-    rootDir,
-    "packages/database/src/repositories/workspace_evidence_reliability.rs",
-  );
-
-  const serviceFiles = fs.existsSync(servicePath) ? [servicePath] : [];
-  const domainFiles = fs.existsSync(domainPath) ? rustSources(domainPath) : [];
-  for (const file of [...serviceFiles, ...domainFiles]) {
-    const source = read(file);
-    const rel = path.relative(rootDir, file).replace(/\\/g, "/");
-    if (
-      /\bApplicationLaunchService\b/.test(source) ||
-      /\bExecutionLifecycleService\b/.test(source) ||
-      /\bTaskGraphService\b/.test(source) ||
-      /\bDecisionEngineService\b/.test(source) ||
-      /\bWorkspaceRecommendationEngineService\b/.test(source) ||
-      /std::process::Command/.test(source) ||
-      /workspace_windows_integration::/.test(source)
-    ) {
-      violations.push(
-        `${rel}: Evidence reliability must not import lifecycle/execution/recommendation/decision-engine services`,
-      );
-    }
-    if (
-      /PermissionGateway::/.test(source) ||
-      /\bCapabilityGrant\b/.test(source) ||
-      /CommandPipeline::/.test(source)
-    ) {
-      violations.push(
-        `${rel}: Evidence reliability must not own permissions, grant capabilities, or execute via Pipeline`,
-      );
-    }
-    if (
-      /WorkspaceEvidenceCompletenessService::generate\b/.test(source) ||
-      /WorkspaceEvidenceFreshnessService::generate\b/.test(source) ||
-      /WorkspaceEvidenceDependencyService::generate\b/.test(source) ||
-      /WorkspaceEvidenceConsistencyService::generate\b/.test(source) ||
-      /WorkspaceEvidenceCoverageService::generate\b/.test(source) ||
-      /WorkspaceEvidenceTraceService::generate\b/.test(source) ||
-      /WorkspaceEvidenceNavigationService::generate\b/.test(source) ||
-      /WorkspaceSemanticQueryService::generate\b/.test(source) ||
-      /WorkspaceIntelligenceHubService::generate\b/.test(source) ||
-      /WorkspaceKnowledgeIntegrationService::generate\b/.test(source) ||
-      /WorkspaceKnowledgeSynthesisService::generate\b/.test(source) ||
-      /WorkspaceContextualUnderstandingService::generate\b/.test(source) ||
-      /WorkspaceExplanationService::generate\b/.test(source) ||
-      /WorkspaceTemporalIntelligenceService::generate\b/.test(source) ||
-      /WorkspaceHistoricalReconstructionService::generate\b/.test(source) ||
-      /WorkspaceStateCompositionService::generate\b/.test(source) ||
-      /WorkspacePlanningService::generate\b/.test(source)
-    ) {
-      violations.push(
-        `${rel}: Evidence reliability must not silently refresh foreign sources via generate`,
-      );
-    }
-  }
-
-  if (fs.existsSync(repoPath)) {
-    const source = read(repoPath);
-    if (
-      /WorkspaceEvidenceReliabilityService/.test(source) ||
-      /use\s+workspace_kernel::/.test(source)
-    ) {
-      violations.push(
-        `packages/database/src/repositories/workspace_evidence_reliability.rs: repository must not call evidence reliability service`,
-      );
-    }
-  }
-
-  if (!fs.existsSync(domainPath) && !fs.existsSync(`${domainPath}.rs`)) {
-    violations.push(
-      "packages/domain/src/workspace_evidence_reliability missing; governance cannot verify evidence reliability DTOs",
-    );
-  }
-
-  return violations;
 }
 
 function checkDtoAuthorityFields(domainSources, structNames, label) {
@@ -3044,14 +2592,7 @@ export function auditArchitectureGovernance(rootDir, options = {}) {
   violations.push(...decisionSupportGuards(rootDir));
   violations.push(...intelligenceHubGuards(rootDir));
   violations.push(...semanticQueryGuards(rootDir));
-  violations.push(...evidenceNavigationGuards(rootDir));
-  violations.push(...evidenceTraceGuards(rootDir));
-  violations.push(...evidenceCoverageGuards(rootDir));
-  violations.push(...evidenceConsistencyGuards(rootDir));
-  violations.push(...evidenceDependencyGuards(rootDir));
-  violations.push(...evidenceFreshnessGuards(rootDir));
-  violations.push(...evidenceCompletenessGuards(rootDir));
-  violations.push(...evidenceReliabilityGuards(rootDir));
+  violations.push(...evidenceFamilyGuards(rootDir));
 
   const domainSrc = path.join(rootDir, "packages/domain/src");
   const domainSources = fs.existsSync(domainSrc) ? rustSources(domainSrc) : [];
