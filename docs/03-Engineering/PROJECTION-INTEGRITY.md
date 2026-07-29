@@ -471,12 +471,14 @@ Rules:
 - Assistant utterances, citations, lineage, diagnostics, and gaps carry `authority_effect: none`
 - Assistant responses cite upstream projections and never expose execute / approve / decide controls
 
-### Assistant Context Intelligence (Programme IV Batch 12 — charter only)
+### Assistant Context Intelligence (Programme IV Batch 12)
 
-- Charter defines projection-only context packaging and forbids fabricated continuity
-- Implementation must not begin until charter acceptance
-- Future context packages must remain non-actionable and must not imply durable memory or autonomous goals
-- Prefer extending Batch 10/11 projection helpers over a new parallel contract family
+- Dual-channel: `current` + `history` + authoritative `history_count`
+- History is context packaging evidence only; never actionable
+- `assistantContextProjection.ts` is a thin wrapper over `evidenceProjectionContract.ts`
+- Context items, continuity, diagnostics, and gaps carry `authority_effect: none`
+- Continuity references recorded assistant surface ids only — never fabricated turns
+- Context packages never expose execute / approve / decide / memory-write controls
 
 
 ## Serde defaults vs TypeScript required fields

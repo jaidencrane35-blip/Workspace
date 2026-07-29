@@ -264,16 +264,31 @@ Batch 11 defines the human conversational interface to the intelligence substrat
 
 ---
 
-## I. Batch 12 charter opened (not implemented)
+## I. Batch 12 decision record (implemented)
 
 **Date:** 2026-07-29  
 **Document:** [Assistant Context Intelligence Architecture](../05-AI/ASSISTANT-CONTEXT-INTELLIGENCE-ARCHITECTURE.md)  
-**Status:** Charter only — implementation blocked until architecture acceptance.
+**Status:** Implemented — context packaging / continuity presentation, not memory or turn composition.
 
-Batch 12 will define context selection, conversation continuity packaging, and workspace awareness display for the assistant surface. It must not become durable memory, reasoning authority, autonomous planning, or a cloned second assistant subsystem. Prefer extending Batch 10/11 contracts first.
+Batch 12 packages selected conversation context and continuity from recorded Programme II–IV projections. It does not invent continuity, own durable memory, clone Batch 11 utterance composition, or silence unrelated kernel debt (case5 / case11).
+
+### Extraction decisions
+
+| Pattern | Batch 12 action |
+|---|---|
+| Folder ownership | **New clear folder** `workspace_assistant_context/` — ownership clarification, not a Batch 11 clone |
+| Scope flags | **Reused** — `AssistantSurfaceScope` from Batch 11; not redefined |
+| Upstream Programme II/III/IV access | **Composed now** — `load_snapshot` only; no foreign `::generate` |
+| Batch 11 continuity | **load_snapshot only** — `WorkspaceAssistantSurfaceService::load_snapshot`; never `::compose` / `::generate` |
+| Domain digest / forbidden phrases / authority vocabulary | **Reused now** — `workspace_evidence_contract` helpers |
+| React projection checks | **Reused now** — `assistantContextProjection.ts` thin-wraps `evidenceProjectionContract.ts` |
+| Governance guard | **Extended now** — one assistant-context spec in `EVIDENCE_ENGINE_GUARD_SPECS` |
+| Persistence | **Context-specific dual-channel** — `074` with `items_json` / `continuity_json` / `scope_json` / `diagnostics_json` (not utterance/turn table clone) |
+| Repository/service generics | **Still deferred** — context columns differ from evidence engines; typed code is clearer |
+| New mutation / DTO inventory | **Added intentionally** — baseline 84 / DTO 35 for `PackageWorkspaceAssistantContext` |
 
 ---
 
 ## Explicit confirmation
 
-This audit concludes that Workspace Evidence engines through Batch 9 observe recorded evidence characteristics only within their stated ownership. The two kernel failures are pre-existing Activity Graph / Intelligence issues, not Programme IV architectural drift. Batch 10 improves human maintainability by extracting shared scaffolding without adding a new evidence authority or clone engine. Batch 11 implements a conversational presentation layer over recorded evidence without becoming authority. Batch 12 is opened as a charter only.
+This audit concludes that Workspace Evidence engines through Batch 9 observe recorded evidence characteristics only within their stated ownership. The two kernel failures are pre-existing Activity Graph / Intelligence issues, not Programme IV architectural drift. Batch 10 improves human maintainability by extracting shared scaffolding without adding a new evidence authority or clone engine. Batch 11 implements a conversational presentation layer over recorded evidence without becoming authority. Batch 12 implements context packaging and continuity presentation without becoming memory, inventing continuity, or cloning the assistant surface.

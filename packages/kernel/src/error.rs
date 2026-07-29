@@ -3,7 +3,8 @@ use thiserror::Error;
 use workspace_database::DatabaseError;
 use workspace_domain::{
     AiAssistantError, AiEvaluationError, AiMemoryError, AiModelError, AiOrchestrationError,
-    AiPersonalizationError, AiPlanningError, AiRequestError, AssistantSurfaceError,
+    AiPersonalizationError, AiPlanningError, AiRequestError, AssistantContextError,
+    AssistantSurfaceError,
     AutomationContractError, AutomationTriggerError, CognitiveModelError,
     ContextualUnderstandingError, CrossWorkspaceIntelligenceError, DecisionEngineError,
     DecisionQueueError, DecisionSupportError, DomainError, EvidenceCompletenessError,
@@ -325,6 +326,9 @@ pub enum KernelError {
 
     #[error("Assistant surface validation failed: {message}")]
     AssistantSurfaceValidation { message: String },
+
+    #[error("Assistant context validation failed: {message}")]
+    AssistantContextValidation { message: String },
 
     #[error("Workspace intelligence validation failed: {message}")]
     WorkspaceIntelligenceValidation { message: String },
@@ -870,6 +874,17 @@ impl From<AssistantSurfaceError> for KernelError {
         match error {
             AssistantSurfaceError::Domain(domain) => KernelError::from(domain),
             other => KernelError::AssistantSurfaceValidation {
+                message: other.to_string(),
+            },
+        }
+    }
+}
+
+impl From<AssistantContextError> for KernelError {
+    fn from(error: AssistantContextError) -> Self {
+        match error {
+            AssistantContextError::Domain(domain) => KernelError::from(domain),
+            other => KernelError::AssistantContextValidation {
                 message: other.to_string(),
             },
         }
@@ -1640,6 +1655,10 @@ impl KernelError {
             },
             KernelError::AssistantSurfaceValidation { message } => PublicError {
                 code: "assistant_surface_validation_error".into(),
+                message: message.clone(),
+            },
+            KernelError::AssistantContextValidation { message } => PublicError {
+                code: "assistant_context_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::WorkspaceIntelligenceValidation { message } => PublicError {

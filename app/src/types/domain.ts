@@ -6023,6 +6023,111 @@ export interface WorkspaceAssistantSurfaceExplanation {
   actionable: boolean;
 }
 
+export interface AssistantContextItem {
+  item_id: string;
+  kind: string;
+  origin_domain: string;
+  artefact_ref: string;
+  source_revision: string | null;
+  excerpt: string;
+  layer: string;
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface AssistantContextContinuity {
+  continuity_id: string;
+  prior_context_ids: string[];
+  prior_surface_ids: string[];
+  prior_turn_refs: string[];
+  notes: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface AssistantContextGap {
+  gap_id: string;
+  gap_kind: string;
+  description: string;
+  affected_surfaces: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface AssistantContextDiagnostics {
+  selected_surfaces: string[];
+  unavailable_surfaces: string[];
+  notes: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface WorkspaceAssistantContextSnapshot {
+  context_id: string;
+  workspace_id: string;
+  generated_at: string;
+  status: string;
+  superseded_at: string | null;
+  scope: AssistantSurfaceScope;
+  items: AssistantContextItem[];
+  continuity: AssistantContextContinuity;
+  gaps: AssistantContextGap[];
+  diagnostics: AssistantContextDiagnostics;
+  narrative_summary: string;
+  narrative: string;
+  limitations: string[];
+  authority_effect: string;
+  actionable: boolean;
+  terminal: boolean;
+}
+
+export interface AssistantContextHistoryEntry {
+  context_id: string;
+  status: string;
+  created_at: string;
+  superseded_at: string | null;
+  item_count: number;
+  gap_count: number;
+  terminal: boolean;
+  actionable: boolean;
+  authority_effect: string;
+}
+
+export interface WorkspaceAssistantContextProjection {
+  workspace_id: string;
+  current: WorkspaceAssistantContextSnapshot | null;
+  history: AssistantContextHistoryEntry[];
+  history_count: number;
+  projected_at: string;
+  authority_effect: string;
+}
+
+export interface WorkspaceAssistantContextSummary {
+  workspace_id: string;
+  has_current: boolean;
+  item_count: number;
+  gap_count: number;
+  narrative_summary: string | null;
+  history: AssistantContextHistoryEntry[];
+  history_count: number;
+  authority_effect: string;
+  actionable: boolean;
+}
+
+export interface WorkspaceAssistantContextExplanation {
+  explanation_id: string;
+  workspace_id: string;
+  narrative_summary: string | null;
+  item_summaries: string[];
+  gap_summaries: string[];
+  continuity_summaries: string[];
+  uncertainty: string[];
+  narrative: string;
+  limitations: string[];
+  authority_effect: string;
+  actionable: boolean;
+}
+
 export type WindowIdentityConfidence = "high" | "medium" | "low" | "ephemeral";
 
 export interface WorkspaceObservationPass {

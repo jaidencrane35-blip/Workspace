@@ -69,6 +69,10 @@ use crate::commands::update_settings::UpdateSettings;
 use crate::commands::widget::{CreateWidget, DeleteWidget, GetWidget};
 use crate::commands::workspace_activity::GateActivityGraphRead;
 use crate::commands::workspace_adaptation::{GateAdaptationRead, GateAdaptationWrite};
+use crate::commands::workspace_assistant_context::{
+    ExplainAssistantContext, GetWorkspaceAssistantContext, GetWorkspaceAssistantContextSummary,
+    PackageWorkspaceAssistantContext,
+};
 use crate::commands::workspace_assistant_surface::{
     ComposeWorkspaceAssistantTurn, ExplainAssistantSurface, GetWorkspaceAssistantSurface,
     GetWorkspaceAssistantSurfaceSummary,
@@ -256,8 +260,10 @@ use workspace_domain::{
     TemporalChangeExplanation, TemporalIntelligenceSnapshot, TemporalIntelligenceSummary,
     TriggerEvaluationResult, TriggerEvent, TriggerEventType, UserPreference, UserPreferenceProfile,
     WidgetId, WidgetReference, WorkGoal, WorkflowContext, Workspace, WorkspaceActivity,
-    WorkspaceActivityGraph, WorkspaceAdaptationState, WorkspaceAssistantSurfaceExplanation,
-    WorkspaceAssistantSurfaceProjection, WorkspaceAssistantSurfaceSummary, WorkspaceAttentionState,
+    WorkspaceActivityGraph, WorkspaceAdaptationState, WorkspaceAssistantContextExplanation,
+    WorkspaceAssistantContextProjection, WorkspaceAssistantContextSummary,
+    WorkspaceAssistantSurfaceExplanation, WorkspaceAssistantSurfaceProjection,
+    WorkspaceAssistantSurfaceSummary, WorkspaceAttentionState,
     WorkspaceCompositionState, WorkspaceContext, WorkspaceContextExplanation,
     WorkspaceContinuityState, WorkspaceDecisionSupportExplanation,
     WorkspaceDecisionSupportProjection, WorkspaceDecisionSupportSummary, WorkspaceEnvironmentState,
@@ -3709,6 +3715,52 @@ impl CommandHandler {
 
     pub fn assistant_surface_attempt_execute() -> Result<()> {
         crate::services::WorkspaceAssistantSurfaceService::attempt_execute()
+    }
+
+    pub fn package_workspace_assistant_context(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceAssistantContextProjection> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_mutation(PackageWorkspaceAssistantContext::new(workspace_id))
+    }
+
+    pub fn get_workspace_assistant_context(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceAssistantContextProjection> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetWorkspaceAssistantContext::new(workspace_id))
+    }
+
+    pub fn get_workspace_assistant_context_summary(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        history_limit: usize,
+    ) -> Result<WorkspaceAssistantContextSummary> {
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_query(
+            GetWorkspaceAssistantContextSummary::new(workspace_id, history_limit),
+        )
+    }
+
+    pub fn explain_assistant_context(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<WorkspaceAssistantContextExplanation> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(ExplainAssistantContext::new(workspace_id))
+    }
+
+    pub fn assistant_context_attempt_execute() -> Result<()> {
+        crate::services::WorkspaceAssistantContextService::attempt_execute()
     }
 
     #[allow(clippy::too_many_arguments)]

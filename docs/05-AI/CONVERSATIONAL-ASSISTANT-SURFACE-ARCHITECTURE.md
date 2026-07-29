@@ -286,13 +286,13 @@ Batch 11 implementation confirms:
 - Model provider selection / prompt engineering details
 - Product UX layouts beyond projection/action distinction
 - Resolving case5 / case11 (non–Programme IV debt)
-- Context selection / continuity packaging (see Batch 12 charter)
+- Context selection / continuity packaging (see Batch 12 — implemented)
 
 ---
 
 ## Next
 
-Batch 12 — [Assistant Context Intelligence Architecture](./ASSISTANT-CONTEXT-INTELLIGENCE-ARCHITECTURE.md) (**charter only** — do not implement until accepted).
+Batch 12 — [Assistant Context Intelligence Architecture](./ASSISTANT-CONTEXT-INTELLIGENCE-ARCHITECTURE.md) (**implemented** — context packaging / continuity; does not replace this surface).
 
 ---
 

@@ -31,7 +31,7 @@ Entry point: `PROGRAMME-IV-INTERACTION-RUNTIME.md`
 | 9 Evidence Reliability | `WORKSPACE-EVIDENCE-RELIABILITY-ARCHITECTURE.md` | `packages/*/workspace_evidence_reliability*` |
 | 10 Observational Scaffold | `WORKSPACE-EVIDENCE-OBSERVATIONAL-SCAFFOLD-ARCHITECTURE.md` | `workspace_evidence_contract`, `evidenceProjectionContract.ts`, governance `EVIDENCE_ENGINE_GUARD_SPECS` |
 | 11 Assistant Surface | `CONVERSATIONAL-ASSISTANT-SURFACE-ARCHITECTURE.md` | `packages/*/workspace_assistant_surface*`, `assistantSurfaceProjection.ts` |
-| 12 Assistant Context Intelligence | `ASSISTANT-CONTEXT-INTELLIGENCE-ARCHITECTURE.md` | *(charter only — no implementation roots yet)* |
+| 12 Assistant Context Intelligence | `ASSISTANT-CONTEXT-INTELLIGENCE-ARCHITECTURE.md` | `packages/*/workspace_assistant_context*`, `assistantContextProjection.ts` |
 
 Maintainability audit: `../03-Engineering/PROGRAMME-IV-MAINTAINABILITY-AUDIT.md`
 

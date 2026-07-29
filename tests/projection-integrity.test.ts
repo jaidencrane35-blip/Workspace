@@ -158,6 +158,11 @@ import {
   isAssistantSurfaceHistoryNonActionable,
   isAssistantSurfaceProjectionNonCommandable,
 } from "../app/src/components/assistantSurfaceProjection";
+import {
+  assistantContextHistoryCountIsAuthoritative,
+  isAssistantContextHistoryNonActionable,
+  isAssistantContextProjectionNonCommandable,
+} from "../app/src/components/assistantContextProjection";
 import type {
   DecisionArtifactHistoryEntry,
   DecisionEngineSummary,
@@ -243,6 +248,7 @@ import type {
   WorkspaceEvidenceCompletenessProjection,
   WorkspaceEvidenceReliabilityProjection,
   WorkspaceAssistantSurfaceProjection,
+  WorkspaceAssistantContextProjection,
   WorkspaceEvidenceTraceSummary,
   WorkspaceEvidenceCoverageSummary,
   WorkspaceEvidenceConsistencySummary,
@@ -251,7 +257,9 @@ import type {
   WorkspaceEvidenceCompletenessSummary,
   WorkspaceEvidenceReliabilitySummary,
   WorkspaceAssistantSurfaceSummary,
+  WorkspaceAssistantContextSummary,
   AssistantSurfaceHistoryEntry,
+  AssistantContextHistoryEntry,
   RecommendationHistoryEntry,
   RecommendationItem,
   TaskGraphSummary,
@@ -2598,6 +2606,50 @@ describe("projection integrity — cognitive agent cast", () => {
       actionable: false,
     };
     expect(assistantSurfaceHistoryCountIsAuthoritative(summary)).toBe(true);
+    expect(summary.history_count).toBeGreaterThanOrEqual(summary.history.length);
+  });
+
+  it("keeps assistant context projections non-commandable with authoritative history_count", () => {
+    const historyEntry = (
+      overrides: Partial<AssistantContextHistoryEntry> = {}
+    ): AssistantContextHistoryEntry => ({
+      context_id: "assistant_context:1",
+      status: "superseded",
+      created_at: "t0",
+      superseded_at: "t1",
+      item_count: 1,
+      gap_count: 0,
+      terminal: true,
+      actionable: false,
+      authority_effect: "none",
+      ...overrides,
+    });
+    const projection: WorkspaceAssistantContextProjection = {
+      workspace_id: "ws",
+      projected_at: "t2",
+      current: null,
+      history: [historyEntry()],
+      history_count: 2,
+      authority_effect: "none",
+    };
+    expect(isAssistantContextProjectionNonCommandable(projection)).toBe(true);
+    expect(isAssistantContextHistoryNonActionable(historyEntry())).toBe(true);
+    expect(
+      isAssistantContextHistoryNonActionable(historyEntry({ actionable: true }))
+    ).toBe(false);
+
+    const summary: WorkspaceAssistantContextSummary = {
+      workspace_id: "ws",
+      has_current: false,
+      item_count: 0,
+      gap_count: 0,
+      narrative_summary: null,
+      history: [historyEntry()],
+      history_count: 2,
+      authority_effect: "none",
+      actionable: false,
+    };
+    expect(assistantContextHistoryCountIsAuthoritative(summary)).toBe(true);
     expect(summary.history_count).toBeGreaterThanOrEqual(summary.history.length);
   });
 });

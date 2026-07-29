@@ -164,6 +164,9 @@ mod workspace_adaptation_governance_contract_tests;
 mod workspace_adaptation_review_contract_tests;
 #[cfg(test)]
 mod workspace_adaptation_tests;
+mod workspace_assistant_context;
+#[cfg(test)]
+mod workspace_assistant_context_tests;
 mod workspace_assistant_surface;
 #[cfg(test)]
 mod workspace_assistant_surface_tests;

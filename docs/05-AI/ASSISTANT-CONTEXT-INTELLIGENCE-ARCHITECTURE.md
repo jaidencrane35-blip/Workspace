@@ -1,6 +1,6 @@
 # Assistant Context Intelligence Architecture (Programme IV — Batch 12)
 
-**Status:** Charter only — not accepted for implementation  
+**Status:** Active — implemented  
 **Audience:** Architecture, Kernel, Frontend, Product, Governance  
 **Depends on:**  
 - [Conversational / Assistant Surface Architecture](./CONVERSATIONAL-ASSISTANT-SURFACE-ARCHITECTURE.md) (Batch 11 — accepted / implemented)  
@@ -19,8 +19,6 @@ Batch 12 asks the next architectural question:
 
 This charter defines the **Assistant Context Intelligence Contract** — the rules for packaging temporary conversation context, selecting retrieval scope, and presenting workspace awareness **without** creating durable memory authority, fabricating continuity, or silently enriching missing information.
 
-**Implementation is blocked until this charter is reviewed and accepted.**
-
 ---
 
 ## Primary principle
@@ -34,13 +32,11 @@ Assistant context intelligence:
 - **preserves** gaps, uncertainty, and provenance
 - **never** becomes Memory, Cognitive Model, Intent, Decision, Plan, or autonomous goal ownership
 
-Capability growth must not equal code duplication (Batch 10 direction lock; Batch 11 Grade A acceptance). Batch 12 must evaluate reuse of:
+Capability growth must not equal code duplication (Batch 10 direction lock; Batch 11 Grade A acceptance). Batch 12 reuses:
 
 1. Batch 11 assistant surface contracts (`workspace_assistant_surface`, `AssistantSurfaceScope`, turn/citation packages)
 2. Batch 10 observational scaffolding (`workspace_evidence_contract`, `evidenceProjectionContract`)
 3. Existing Programme II/III/IV `load_snapshot` paths
-
-before introducing any new module, migration, or guard family.
 
 ---
 
@@ -48,9 +44,9 @@ before introducing any new module, migration, or guard family.
 
 | State | Meaning |
 |---|---|
-| **Charter only** | Architecture proposed; no domain/kernel/database/React implementation in this batch until acceptance |
+| **Active — implemented** | `WorkspaceAssistantContextService`, migration `074`, kernel commands, projection helpers, and governance guard are implemented |
 | **Depends on Batch 11** | Builds on accepted Assistant Surface — does not replace it |
-| **No baseline change yet** | Mutation baseline remains **83**; history/projection DTO inventory remains **34** until an accepted implementation design exists |
+| **Governed baseline** | Mutation baseline **84**; history/projection DTO inventory **35** |
 
 ---
 
@@ -68,11 +64,11 @@ Batch 12 Context Intelligence  ← owns context packaging / scope / continuity d
 Programme II–IV authorities    ← remain sole owners of truth, memory, intent, decisions
 ```
 
-| Concern | Batch 11 | Batch 12 (this charter) |
+| Concern | Batch 11 | Batch 12 (this architecture) |
 |---|---|---|
 | Turn / utterance composition | Owns | Consumes / constrains inputs |
 | Citation & lineage presentation | Owns | Ensures context packages carry provenance |
-| Retrieval scope selection | Partial (`AssistantSurfaceScope` flags) | Owns explicit context-scope contract |
+| Retrieval scope selection | Partial (`AssistantSurfaceScope` flags) | Owns explicit context-scope packaging |
 | Conversation continuity packaging | Turn history as evidence | Owns session/context packaging rules |
 | Durable memory | Forbidden | Still forbidden — may only *request* existing memory owners |
 | Workspace awareness display | Present via snapshots | Owns which awareness slices are selected for a session |
@@ -83,17 +79,17 @@ Batch 12 must **not** fork a second assistant surface, second turn model, or sec
 
 ## Ownership
 
-### Proposed owner (post-acceptance)
+### Owner
 
-`WorkspaceAssistantContextService` *(name provisional — prefer extending Batch 11 module ownership if maintainability audit shows a separate service would clone rather than clarify)*
+`WorkspaceAssistantContextService` in `packages/domain/src/workspace_assistant_context/` (clear folder for ownership clarification — not a clone of Batch 11 turn composition).
 
 ### May own
 
 | Owns | Meaning |
 |---|---|
 | Conversation context packaging | Structured package of what the current session is “looking at” — evidence-shaped, non-actionable |
-| Active session context | Ephemeral or dual-channel session projection: selected scope, referenced artefacts, continuity markers |
-| Retrieval scope | Explicit include/exclude of upstream packages for a turn or session (evolution of `AssistantSurfaceScope`) |
+| Active session context | Dual-channel session projection: selected scope, referenced artefacts, continuity markers |
+| Retrieval scope | Explicit include/exclude of upstream packages via reused `AssistantSurfaceScope` |
 | Displayed context selection | Which recorded projections are shown as “in context” vs available-but-not-selected |
 | Context diagnostics | Missing / unavailable / partial / stale selection reasons — diagnostic only |
 | Continuity presentation | How prior turns and prior context packages are ordered for humans without inventing narrative glue |
@@ -120,7 +116,7 @@ Four distinct layers — never collapsed:
 
 | Layer | Lifetime | Persist? | Authority |
 |---|---|---|---|
-| **Temporary conversation context** | Session / turn | Ephemeral by default; optional dual-channel evidence only if accepted later | Presentation packaging only |
+| **Temporary conversation context** | Session / turn | Dual-channel evidence only (`074_workspace_assistant_context.sql`) | Presentation packaging only |
 | **Referenced workspace evidence** | As recorded by upstream owners | Already persisted by owners | Evidence only — cited with provenance |
 | **Explicit durable memory requests** | Durable only via existing memory owners | Only through existing authorised persistence commands | Never written silently by assistant context |
 | **Cognitive model / Intent / Decision state** | Owned elsewhere | Owned elsewhere | Read via `load_snapshot` only; never mutated here |
@@ -159,7 +155,7 @@ Assistant context **must not**:
 
 | Kind | Display in context UI | Reference in context package | Persist via assistant context | Classification |
 |---|---|---|---|---|
-| Temporary conversation context | Yes | Yes | No silent durable write | Ephemeral presentation |
+| Temporary conversation context | Yes | Yes | Dual-channel evidence only | Ephemeral packaging |
 | Retrieved evidence | Yes | Yes, with provenance | Already owned upstream | Evidence only |
 | Batch 11 turn history | Yes | Yes, as prior evidence | Owned by Batch 11 dual-channel rules | Non-actionable evidence |
 | Durable memory artefacts | Yes if selected with provenance | Yes | Only via existing memory owners’ commands | Never invent |
@@ -168,10 +164,10 @@ Assistant context **must not**:
 
 ### Explicit separation checklist (implementation must prove)
 
-- [ ] Conversation context struct ≠ memory write path
-- [ ] Retrieved evidence refs ≠ assistant-owned facts
-- [ ] Durable memory mutations only through existing authorised owners
-- [ ] Cognitive model state never written or “completed” by context packaging
+- [x] Conversation context struct ≠ memory write path
+- [x] Retrieved evidence refs ≠ assistant-owned facts
+- [x] Durable memory mutations only through existing authorised owners
+- [x] Cognitive model state never written or “completed” by context packaging
 
 ---
 
@@ -214,7 +210,7 @@ Assistant context intelligence **must never**:
 
 ### Projection-only
 
-- React may render context packages via Batch 10/11 projection helpers (extend; do not invent a third parallel contract family without audit justification).
+- React may render context packages via Batch 10/11 projection helpers (`assistantContextProjection.ts` thin-wraps `evidenceProjectionContract.ts`).
 - No mutation from render paths.
 - Context chips / panels are informational — not command affordances.
 
@@ -232,16 +228,16 @@ UI must not imply the assistant autonomously keeps or advances goals.
 
 ## Governance
 
-### Permissions (proposed — post-acceptance)
+### Permissions
 
-- Context read / package inspection: `work_context.read` (or existing assistant read paths)
-- Context selection mutation (if durable dual-channel is accepted later): existing write capabilities — **not** a new `assistant.context.superuser`
+- Context read / package inspection: `work_context.read`
+- Context package mutation: `work_context.write` via `PackageWorkspaceAssistantContext`
 - Durable memory writes: **existing** memory-owner commands only
 - No capability grants issued by assistant context
 
 ### Audit expectations
 
-- Observational events for context package compose/select (e.g. `workspace.assistant.context.packaged`) with workspace id, scope, upstream refs, `authority_effect: none`
+- Observational events for context package compose/select (`workspace.assistant.context.packaged`) with workspace id, scope, upstream refs, `authority_effect: none`
 - Never audit context packaging as execution, approval, or memory commit
 - Append-only evidence only
 
@@ -259,25 +255,17 @@ UI must not imply the assistant autonomously keeps or advances goals.
 
 ---
 
-## Maintainability requirements (before implementation)
+## Implementation roots
 
-Implementation (when unblocked) must document in the maintainability audit:
-
-1. **Reusable contracts first**
-   - Extend `AssistantSurfaceScope` / Batch 11 packages where sufficient
-   - Reuse `workspace_evidence_contract` digest / authority / forbidden-phrase helpers
-   - Reuse `evidenceProjectionContract` / thin wrappers — no new React engine
-2. **Avoid assistant subsystem clone**
-   - Prefer ownership clarification inside/near `workspace_assistant_surface` unless a separate module strictly improves human navigation
-   - No second migration pattern that duplicates turn tables as “context memory”
-   - No new guard family when `EVIDENCE_ENGINE_GUARD_SPECS` can host one contextual entry
-3. **Folder ownership**
-   - Clear naming (`assistant_context` vs `assistant_surface`)
-   - Docs linked from Programme IV indexes
-   - Minimal abstractions; no parallel repository/governance/projection stack
-4. **LOC honesty**
-   - Justify any new files against “capability ≠ duplication”
-   - Prefer composition over new engines
+| Layer | Path |
+|---|---|
+| Domain | `packages/domain/src/workspace_assistant_context/` |
+| Kernel service | `packages/kernel/src/services/workspace_assistant_context.rs` |
+| Commands | `PackageWorkspaceAssistantContext`, `GetWorkspaceAssistantContext`, `GetWorkspaceAssistantContextSummary`, `ExplainAssistantContext` |
+| Migration | `packages/database/migrations/074_workspace_assistant_context.sql` |
+| Repository | `packages/database/src/repositories/workspace_assistant_context.rs` |
+| React | `app/src/components/assistantContextProjection.ts` |
+| Governance | one `EVIDENCE_ENGINE_GUARD_SPECS` entry (Assistant context) |
 
 ---
 
@@ -293,26 +281,23 @@ Implementation (when unblocked) must document in the maintainability audit:
 
 ---
 
-## Out of scope for Batch 12 charter
+## Out of scope for Batch 12
 
 - Model provider / prompt engineering details
 - Product UX layouts beyond information vs action
-- Implementing context services, migrations, or commands
 - Resolving case5 / case11 (non–Programme IV debt)
 - Replacing or rewriting Batch 11
 
 ---
 
-## Acceptance criteria for this charter
+## Acceptance criteria
 
-Before implementation may begin, reviewers must confirm:
-
-- [ ] Ownership / non-ownership tables are unambiguous
-- [ ] Context vs memory vs evidence vs cognitive state separation is enforceable
-- [ ] Retrieval and continuity rules forbid inference and fabrication
-- [ ] Maintainability reuse path vs Batch 10/11 is explicit
-- [ ] No mutation baseline / DTO inventory change is implied by charter acceptance alone
-- [ ] Status remains **Charter only** until a separate implementation ACCEPT
+- [x] Ownership / non-ownership tables are unambiguous
+- [x] Context vs memory vs evidence vs cognitive state separation is enforceable
+- [x] Retrieval and continuity rules forbid inference and fabrication
+- [x] Maintainability reuse path vs Batch 10/11 is explicit
+- [x] Mutation baseline / DTO inventory updated for intentional implementation (84 / 35)
+- [x] Status is **Active — implemented**
 
 ---
 
@@ -334,4 +319,3 @@ Before implementation may begin, reviewers must confirm:
 > It never owns durable memory, never fabricates continuity, never infers missing context,
 > never holds autonomous goals or plans, never decides or approves, never executes,
 > never bypasses PermissionGateway, and never silently mutates workspace state.
-> Implementation remains blocked until this charter is accepted.

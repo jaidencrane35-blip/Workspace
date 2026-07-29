@@ -7,6 +7,9 @@
 use crate::audit::AuditEvent;
 use crate::execution_reconciliation::{ExecutionLifecycleRecord, ExecutionState};
 use crate::policy_governance::{PolicyGovernanceHistoryEntry, PolicyGovernanceSnapshot};
+use crate::workspace_assistant_context::{
+    AssistantContextHistoryEntry, WorkspaceAssistantContextProjection,
+};
 use crate::workspace_assistant_surface::{
     AssistantSurfaceHistoryEntry, WorkspaceAssistantSurfaceProjection,
 };
@@ -678,6 +681,26 @@ pub fn recovery_must_not_fabricate_assistant_surface(
 /// Fabricated actionable assistant-surface history must fail the recovery contract.
 pub fn recovery_must_not_fabricate_actionable_assistant_surface_history(
     entry: &AssistantSurfaceHistoryEntry,
+) -> bool {
+    entry.is_non_actionable()
+}
+
+/// Recovery must not invent context packages, durable memory, continuity, or commandable context.
+pub fn recovery_must_not_fabricate_assistant_context(
+    projection: &WorkspaceAssistantContextProjection,
+) -> bool {
+    projection.is_non_commandable()
+        && projection.history.iter().all(|h| h.is_non_actionable())
+        && projection
+            .current
+            .as_ref()
+            .map(|c| c.is_non_executing())
+            .unwrap_or(true)
+}
+
+/// Fabricated actionable assistant-context history must fail the recovery contract.
+pub fn recovery_must_not_fabricate_actionable_assistant_context_history(
+    entry: &AssistantContextHistoryEntry,
 ) -> bool {
     entry.is_non_actionable()
 }

@@ -46,6 +46,7 @@ pub mod suggestion_lifecycle;
 pub mod workspace;
 pub mod workspace_activity;
 pub mod workspace_adaptation;
+pub mod workspace_assistant_context;
 pub mod workspace_assistant_surface;
 pub mod workspace_attention;
 pub mod workspace_cognitive_agent_cast;
@@ -302,6 +303,13 @@ pub use workspace_adaptation::{
     AdaptationKind, AdaptationProposal, AdaptationStatus, AdaptationSummary, AdaptationTarget,
     AdaptationTargetKind, WorkspaceAdaptationError, WorkspaceAdaptationState,
     WorkspaceAdaptationSummary,
+};
+pub use workspace_assistant_context::{
+    AssistantContextContinuity, AssistantContextDiagnostics, AssistantContextError,
+    AssistantContextGap, AssistantContextHistoryEntry, AssistantContextItem,
+    AssistantContextStatus, WorkspaceAssistantContextExplanation,
+    WorkspaceAssistantContextProjection, WorkspaceAssistantContextSnapshot,
+    WorkspaceAssistantContextSummary,
 };
 pub use workspace_assistant_surface::{
     AssistantCitation, AssistantSurfaceDiagnostics, AssistantSurfaceError, AssistantSurfaceGap,
@@ -673,6 +681,7 @@ pub use recovery_contract::{
     recovered_stale_claim_is_non_retryable, recovery_diagnostic_event_type_is_non_commandable,
     recovery_diagnostic_is_evidence_only,
     recovery_must_not_fabricate_actionable_agent_cast_history,
+    recovery_must_not_fabricate_actionable_assistant_context_history,
     recovery_must_not_fabricate_actionable_assistant_surface_history,
     recovery_must_not_fabricate_actionable_autonomy_history,
     recovery_must_not_fabricate_actionable_contextual_understanding_history,
@@ -701,6 +710,7 @@ pub use recovery_contract::{
     recovery_must_not_fabricate_actionable_semantic_query_history,
     recovery_must_not_fabricate_actionable_temporal_history,
     recovery_must_not_fabricate_actionable_workspace_state_history,
+    recovery_must_not_fabricate_assistant_context,
     recovery_must_not_fabricate_assistant_surface,
     recovery_must_not_fabricate_cognitive_agent_cast,
     recovery_must_not_fabricate_cognitive_autonomy, recovery_must_not_fabricate_cognitive_graph,

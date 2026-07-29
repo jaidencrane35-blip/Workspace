@@ -725,17 +725,17 @@ See [Conversational / Assistant Surface Architecture](../05-AI/CONVERSATIONAL-AS
 
 ## Assistant Context Intelligence (Programme IV Batch 12)
 
-**Charter only — not accepted for implementation.**
-
 Context selection and conversation continuity packaging without memory or planning authority.
 
 **Select and package context. Never invent or own it.**
 
-- Will own conversation context packaging, active session context, retrieval scope, displayed context selection only
-- Will never own durable memory, workspace truth, Intent, decisions, plans, or autonomous goals
-- Must reuse Batch 10/11 contracts — no second assistant subsystem clone
+- Owns conversation context packaging, active session context, retrieval scope, displayed context selection only
+- Never owns durable memory, workspace truth, Intent, decisions, plans, or autonomous goals
+- Reuses Batch 10/11 contracts (`AssistantSurfaceScope`, evidence contract helpers, thin React wrappers) — no second assistant subsystem clone
 - Upstream reads via `load_snapshot` / existing queries only — never foreign `::generate` for refresh
-- No mutation baseline or DTO inventory change until an accepted implementation design exists
+- Continuity from `WorkspaceAssistantSurfaceService::load_snapshot` only — never invents turns
+- Mutation inventory includes `PackageWorkspaceAssistantContext` (baseline **84**)
+- History / projection DTO inventory length **35**
 
 See [Assistant Context Intelligence Architecture](../05-AI/ASSISTANT-CONTEXT-INTELLIGENCE-ARCHITECTURE.md).
 
