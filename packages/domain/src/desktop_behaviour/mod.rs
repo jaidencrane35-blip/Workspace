@@ -39,6 +39,8 @@ pub struct DesktopFocusFollow {
     pub last_at: String,
     /// Relationship confidence from transition evidence: `structural` | `emerging` | `recurring` | `strong`
     pub confidence: String,
+    /// Observation sessions in which this follow was observed.
+    pub session_count: i32,
 }
 
 /// Windows observed open together across samples.
@@ -50,6 +52,8 @@ pub struct DesktopCoPresence {
     pub last_seen_at: String,
     /// Relationship confidence from co-presence evidence: `structural` | `emerging` | `recurring` | `strong`
     pub confidence: String,
+    /// Observation sessions in which both windows co-appeared.
+    pub session_count: i32,
 }
 
 /// Observation session inferred from coverage continuity (not OS login sessions).
@@ -338,6 +342,7 @@ pub fn project_desktop_behaviour(
             transition_count,
             last_at,
             confidence: DesktopWindowGroup::confidence_for_evidence(transition_count).into(),
+            session_count: 0,
         })
         .collect();
     focus_follows.sort_by(|a, b| {
@@ -359,6 +364,7 @@ pub fn project_desktop_behaviour(
             sample_count,
             last_seen_at,
             confidence: DesktopWindowGroup::confidence_for_evidence(sample_count).into(),
+            session_count: 0,
         })
         .collect();
     co_presence.sort_by(|a, b| {
@@ -412,6 +418,15 @@ pub fn project_desktop_behaviour(
         recent_focus_spans = recent_focus_spans.split_off(skip);
     }
 
+    let sessions = project_observation_sessions(snapshots, &focus_transitions, &coverage_gaps);
+    annotate_relationship_session_continuity(
+        snapshots,
+        &sessions,
+        &focus_transitions,
+        &mut focus_follows,
+        &mut co_presence,
+    );
+
     DesktopBehaviourTimeline {
         sample_count: snapshots.len() as i32,
         coverage_started_at,
@@ -421,13 +436,97 @@ pub fn project_desktop_behaviour(
         recent_focus_spans,
         focus_follows,
         co_presence,
-        sessions: project_observation_sessions(snapshots, &focus_transitions, &coverage_gaps),
+        sessions,
         window_lifecycles,
         current_focus,
         current_focus_started_at,
         current_focus_sample_span_seconds,
         coverage_gaps,
         authority_effect: DesktopBehaviourTimeline::AUTHORITY_EFFECT_NONE.into(),
+    }
+}
+
+/// Count observation sessions supporting each relationship and raise confidence.
+fn annotate_relationship_session_continuity(
+    snapshots: &[WorkspaceObservationSnapshot],
+    sessions: &[DesktopObservationSession],
+    focus_transitions: &[DesktopFocusTransition],
+    focus_follows: &mut [DesktopFocusFollow],
+    co_presence: &mut [DesktopCoPresence],
+) {
+    if sessions.is_empty() {
+        return;
+    }
+
+    for follow in focus_follows.iter_mut() {
+        let from_key = window_key(&follow.from);
+        let to_key = window_key(&follow.to);
+        let mut session_count = 0_i32;
+        for session in sessions {
+            let seen = focus_transitions.iter().any(|transition| {
+                transition.at.as_str() >= session.started_at.as_str()
+                    && transition.at.as_str() <= session.ended_at.as_str()
+                    && transition
+                        .previous
+                        .as_ref()
+                        .is_some_and(|window| window_key(window) == from_key)
+                    && transition
+                        .current
+                        .as_ref()
+                        .is_some_and(|window| window_key(window) == to_key)
+            });
+            if seen {
+                session_count += 1;
+            }
+        }
+        follow.session_count = session_count;
+        let evidence = follow
+            .transition_count
+            .saturating_add(session_count.saturating_sub(1));
+        follow.confidence = DesktopWindowGroup::confidence_for_evidence(evidence).into();
+    }
+
+    for pair in co_presence.iter_mut() {
+        let left_key = window_key(&pair.left);
+        let right_key = window_key(&pair.right);
+        let mut session_count = 0_i32;
+        for session in sessions {
+            let mut left_seen = false;
+            let mut right_seen = false;
+            let mut in_range = false;
+            for snapshot in snapshots {
+                if snapshot.pass.id == session.start_pass_id {
+                    in_range = true;
+                }
+                if in_range {
+                    for window in &snapshot.windows {
+                        let key = window
+                            .stable_window_id
+                            .as_ref()
+                            .map(|value| value.trim().to_string())
+                            .filter(|value| !value.is_empty())
+                            .unwrap_or_else(|| window.hwnd.clone());
+                        if key == left_key {
+                            left_seen = true;
+                        }
+                        if key == right_key {
+                            right_seen = true;
+                        }
+                    }
+                }
+                if snapshot.pass.id == session.end_pass_id {
+                    break;
+                }
+            }
+            if left_seen && right_seen {
+                session_count += 1;
+            }
+        }
+        pair.session_count = session_count;
+        let evidence = pair
+            .sample_count
+            .saturating_add(session_count.saturating_sub(1));
+        pair.confidence = DesktopWindowGroup::confidence_for_evidence(evidence).into();
     }
 }
 
@@ -748,14 +847,10 @@ mod tests {
             .iter()
             .any(|pair| pair.sample_count >= 2));
         assert!(behaviour.focus_follows.iter().all(|follow| {
-            !follow.confidence.is_empty()
-                && follow.confidence
-                    == DesktopWindowGroup::confidence_for_evidence(follow.transition_count)
+            !follow.confidence.is_empty() && follow.session_count >= 1
         }));
         assert!(behaviour.co_presence.iter().all(|pair| {
-            !pair.confidence.is_empty()
-                && pair.confidence
-                    == DesktopWindowGroup::confidence_for_evidence(pair.sample_count)
+            !pair.confidence.is_empty() && pair.session_count >= 1
         }));
         assert!(behaviour
             .sessions

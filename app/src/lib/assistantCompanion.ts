@@ -505,7 +505,7 @@ function summariseAffinities(state: WorkspaceState): string {
         .slice(0, 5)
         .map(
           (pair) =>
-            `${pair.left.title || pair.left.hwnd} + ${pair.right.title || pair.right.hwnd} (${pair.sample_count}, ${pair.confidence})`,
+            `${pair.left.title || pair.left.hwnd} + ${pair.right.title || pair.right.hwnd} (${pair.sample_count}x, ${pair.session_count} sessions, ${pair.confidence})`,
         )
         .join("; ")}`,
     );
@@ -516,7 +516,7 @@ function summariseAffinities(state: WorkspaceState): string {
         .slice(0, 5)
         .map(
           (follow) =>
-            `${follow.from.title || follow.from.hwnd} → ${follow.to.title || follow.to.hwnd} (${follow.transition_count}, ${follow.confidence})`,
+            `${follow.from.title || follow.from.hwnd} → ${follow.to.title || follow.to.hwnd} (${follow.transition_count}x, ${follow.session_count} sessions, ${follow.confidence})`,
         )
         .join("; ")}`,
     );

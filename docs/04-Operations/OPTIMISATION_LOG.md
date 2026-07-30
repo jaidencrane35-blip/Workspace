@@ -90,6 +90,23 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 
 ## Cycles
 
+### Cycle: v10-5-relationship-session-continuity
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Cycle number** | V10-5 |
+| **Goal** | Measure relationship continuity across observation sessions |
+| **Problem** | Focus-follow and co-presence confidence ignored whether affinities survived session boundaries |
+| **Analysis** | Annotate relationships with `session_count` after session projection; fold into confidence evidence |
+| **Changes** | `session_count` on focus_follows / co_presence; confidence boost for multi-session relationships |
+| **Files affected** | desktop_behaviour, domain.ts, assistantCompanion, this log |
+| **Validation** | typecheck / test / build / architecture / ipc / ui-boundary (+ domain behaviour tests) |
+| **Deleted / reduced** | none |
+| **Next recommended cycle** | Two empty continuity evaluation passes |
+
+---
+
 ### Cycle: v10-4-group-continuity-from-runtime-memory
 
 | Field | Value |

@@ -6913,6 +6913,8 @@ export interface DesktopFocusFollow {
   last_at: string;
   /** structural | emerging | recurring | strong */
   confidence: string;
+  /** Observation sessions in which this follow was observed. */
+  session_count: number;
 }
 
 /** Windows observed open together across samples. */
@@ -6923,6 +6925,8 @@ export interface DesktopCoPresence {
   last_seen_at: string;
   /** structural | emerging | recurring | strong */
   confidence: string;
+  /** Observation sessions in which both windows co-appeared. */
+  session_count: number;
 }
 
 /** Observation session inferred from coverage continuity (not OS login). */
