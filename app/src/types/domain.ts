@@ -7042,7 +7042,7 @@ export interface DesktopSemanticObject {
 export interface DesktopSemanticRelationship {
   from_stable_window_id: string;
   to_stable_window_id: string;
-  /** works_with | commonly_accompanies | precedes | follows | frequently_alternates | belongs_inside */
+  /** works_with | commonly_accompanies | precedes | follows | frequently_alternates | belongs_inside | supports */
   kind: string;
   evidence_count: number;
   session_count: number;

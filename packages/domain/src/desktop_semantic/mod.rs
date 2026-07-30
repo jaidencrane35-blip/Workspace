@@ -58,7 +58,7 @@ pub struct DesktopSemanticRelationship {
     pub from_stable_window_id: String,
     pub to_stable_window_id: String,
     /// `works_with` | `commonly_accompanies` | `precedes` | `follows` |
-    /// `frequently_alternates` | `belongs_inside`
+    /// `frequently_alternates` | `belongs_inside` | `supports`
     pub kind: String,
     pub evidence_count: i32,
     pub session_count: i32,
@@ -75,6 +75,7 @@ impl DesktopSemanticRelationship {
     pub const KIND_FOLLOWS: &'static str = "follows";
     pub const KIND_FREQUENTLY_ALTERNATES: &'static str = "frequently_alternates";
     pub const KIND_BELONGS_INSIDE: &'static str = "belongs_inside";
+    pub const KIND_SUPPORTS: &'static str = "supports";
 }
 
 /// Session-scoped activity inferred from aggregate behaviour (not user labels).
@@ -179,12 +180,170 @@ pub fn project_desktop_semantics(
     let activities = project_semantic_activities(behaviour, memory, &objects, &relationships);
     let graph = project_semantic_graph(&objects, &relationships, &activities, groups, behaviour);
 
-    DesktopSemanticProjection {
+    let mut projection = DesktopSemanticProjection {
         objects,
         relationships,
         activities,
         graph,
         authority_effect: DesktopSemanticProjection::AUTHORITY_EFFECT_NONE.into(),
+    };
+    refine_semantic_confidence(&mut projection, behaviour, memory);
+    // Rebuild graph after confidence/relationship refinement so edges stay consistent.
+    projection.graph = project_semantic_graph(
+        &projection.objects,
+        &projection.relationships,
+        &projection.activities,
+        groups,
+        behaviour,
+    );
+    projection
+}
+
+/// Strengthen or weaken semantic confidence from multi-signal agreement.
+fn refine_semantic_confidence(
+    projection: &mut DesktopSemanticProjection,
+    behaviour: &DesktopBehaviourTimeline,
+    memory: &DesktopRuntimeMemory,
+) {
+    let memory_by_id: HashMap<&str, &DesktopObjectMemory> = memory
+        .entities
+        .iter()
+        .map(|entity| (entity.stable_window_id.as_str(), entity))
+        .collect();
+    let dominant_ids: BTreeSet<String> = behaviour
+        .sessions
+        .iter()
+        .filter(|session| session.kind == "active" || session.kind == "returning")
+        .filter_map(|session| {
+            session
+                .dominant_focus
+                .as_ref()
+                .and_then(|window| window.stable_window_id.clone())
+        })
+        .collect();
+
+    for object in &mut projection.objects {
+        let mut score = object.evidence_score;
+        if let Some(entity) = memory_by_id.get(object.stable_window_id.as_str()) {
+            let agrees_working = object.role == DesktopSemanticObject::ROLE_WORKING
+                && (entity.knowledge == DesktopObjectMemory::KNOWLEDGE_RISING
+                    || entity.knowledge == DesktopObjectMemory::KNOWLEDGE_ESTABLISHED
+                    || entity.knowledge == DesktopObjectMemory::KNOWLEDGE_PERSISTENT
+                    || dominant_ids.contains(&object.stable_window_id));
+            let agrees_returning = object.role == DesktopSemanticObject::ROLE_RETURNING
+                && (entity.presence == DesktopObjectMemory::PRESENCE_RETURNING
+                    || entity.knowledge == DesktopObjectMemory::KNOWLEDGE_RETURNING);
+            let conflict_working = object.role == DesktopSemanticObject::ROLE_WORKING
+                && (entity.knowledge == DesktopObjectMemory::KNOWLEDGE_TEMPORARY
+                    || entity.focus_count == 0);
+            let conflict_background = object.role == DesktopSemanticObject::ROLE_BACKGROUND
+                && entity.focus_count >= 3;
+
+            if agrees_working || agrees_returning {
+                score = score.saturating_add(2);
+            }
+            if conflict_working || conflict_background {
+                score = score.saturating_sub(2).max(1);
+                if conflict_working && entity.knowledge == DesktopObjectMemory::KNOWLEDGE_TEMPORARY
+                {
+                    object.role = DesktopSemanticObject::ROLE_UTILITY.into();
+                }
+                if conflict_background {
+                    object.role = DesktopSemanticObject::ROLE_WORKING.into();
+                }
+            }
+        }
+        object.evidence_score = score;
+        object.confidence = DesktopWindowGroup::confidence_for_evidence(score).into();
+    }
+
+    let role_by_id: HashMap<&str, &str> = projection
+        .objects
+        .iter()
+        .map(|object| (object.stable_window_id.as_str(), object.role.as_str()))
+        .collect();
+
+    // Drop directional follow edges already covered by alternation.
+    let alternate_pairs: BTreeSet<(String, String)> = projection
+        .relationships
+        .iter()
+        .filter(|rel| rel.kind == DesktopSemanticRelationship::KIND_FREQUENTLY_ALTERNATES)
+        .map(|rel| ordered_pair(&rel.from_stable_window_id, &rel.to_stable_window_id))
+        .collect();
+    projection.relationships.retain(|rel| {
+        if rel.kind == DesktopSemanticRelationship::KIND_PRECEDES
+            || rel.kind == DesktopSemanticRelationship::KIND_FOLLOWS
+        {
+            !alternate_pairs
+                .contains(&ordered_pair(&rel.from_stable_window_id, &rel.to_stable_window_id))
+        } else {
+            true
+        }
+    });
+
+    for rel in &mut projection.relationships {
+        let mut evidence = rel.evidence_count;
+        let from_role = role_by_id.get(rel.from_stable_window_id.as_str()).copied();
+        let to_role = role_by_id.get(rel.to_stable_window_id.as_str()).copied();
+        let both_meaningful = matches!(
+            from_role,
+            Some(
+                DesktopSemanticObject::ROLE_WORKING
+                    | DesktopSemanticObject::ROLE_COMPANION
+                    | DesktopSemanticObject::ROLE_ALTERNATING
+                    | DesktopSemanticObject::ROLE_EMERGING
+                    | DesktopSemanticObject::ROLE_RETURNING
+            )
+        ) && matches!(
+            to_role,
+            Some(
+                DesktopSemanticObject::ROLE_WORKING
+                    | DesktopSemanticObject::ROLE_COMPANION
+                    | DesktopSemanticObject::ROLE_ALTERNATING
+                    | DesktopSemanticObject::ROLE_EMERGING
+                    | DesktopSemanticObject::ROLE_RETURNING
+                    | DesktopSemanticObject::ROLE_CLUSTER
+            )
+        );
+        if both_meaningful && rel.session_count >= 2 {
+            evidence = evidence.saturating_add(2);
+        }
+        if rel.kind == DesktopSemanticRelationship::KIND_WORKS_WITH && both_meaningful {
+            evidence = evidence.saturating_add(1);
+        }
+        if matches!(
+            from_role,
+            Some(DesktopSemanticObject::ROLE_UTILITY)
+        ) && matches!(to_role, Some(DesktopSemanticObject::ROLE_UTILITY))
+            && rel.kind != DesktopSemanticRelationship::KIND_BELONGS_INSIDE
+        {
+            evidence = evidence.saturating_sub(1).max(1);
+        }
+        rel.evidence_count = evidence;
+        rel.confidence = DesktopWindowGroup::confidence_for_evidence(
+            evidence.saturating_add(rel.session_count.saturating_sub(1)),
+        )
+        .into();
+    }
+
+    for activity in &mut projection.activities {
+        let members_agree = activity.member_ids.iter().any(|id| {
+            role_by_id.get(id.as_str()) == Some(&DesktopSemanticObject::ROLE_WORKING)
+                || role_by_id.get(id.as_str()) == Some(&DesktopSemanticObject::ROLE_ALTERNATING)
+        });
+        let mut score = activity.evidence_score;
+        if members_agree {
+            score = score.saturating_add(1);
+        }
+        if activity.kind == DesktopSemanticActivity::KIND_COMPARING
+            && projection.relationships.iter().any(|rel| {
+                rel.kind == DesktopSemanticRelationship::KIND_FREQUENTLY_ALTERNATES
+            })
+        {
+            score = score.saturating_add(2);
+        }
+        activity.evidence_score = score;
+        activity.confidence = DesktopWindowGroup::confidence_for_evidence(score).into();
     }
 }
 
@@ -445,14 +604,41 @@ fn project_semantic_relationships(
             DesktopSemanticRelationship::KIND_COMMONLY_ACCOMPANIES
         };
         relationships.push(DesktopSemanticRelationship {
-            from_stable_window_id: left,
-            to_stable_window_id: right,
+            from_stable_window_id: left.clone(),
+            to_stable_window_id: right.clone(),
             kind: kind.into(),
             evidence_count: pair.sample_count,
             session_count: pair.session_count,
             confidence: pair.confidence.clone(),
             authority_effect: DesktopSemanticRelationship::AUTHORITY_EFFECT_NONE.into(),
         });
+        let left_role = role_by_id.get(left.as_str()).copied();
+        let right_role = role_by_id.get(right.as_str()).copied();
+        if left_role == Some(DesktopSemanticObject::ROLE_COMPANION)
+            && right_role == Some(DesktopSemanticObject::ROLE_WORKING)
+        {
+            relationships.push(DesktopSemanticRelationship {
+                from_stable_window_id: left,
+                to_stable_window_id: right,
+                kind: DesktopSemanticRelationship::KIND_SUPPORTS.into(),
+                evidence_count: pair.sample_count,
+                session_count: pair.session_count,
+                confidence: pair.confidence.clone(),
+                authority_effect: DesktopSemanticRelationship::AUTHORITY_EFFECT_NONE.into(),
+            });
+        } else if right_role == Some(DesktopSemanticObject::ROLE_COMPANION)
+            && left_role == Some(DesktopSemanticObject::ROLE_WORKING)
+        {
+            relationships.push(DesktopSemanticRelationship {
+                from_stable_window_id: right,
+                to_stable_window_id: left,
+                kind: DesktopSemanticRelationship::KIND_SUPPORTS.into(),
+                evidence_count: pair.sample_count,
+                session_count: pair.session_count,
+                confidence: pair.confidence.clone(),
+                authority_effect: DesktopSemanticRelationship::AUTHORITY_EFFECT_NONE.into(),
+            });
+        }
     }
 
     for group in groups {
@@ -1113,5 +1299,60 @@ mod tests {
         assert!(semantics.relationships.iter().any(|rel| {
             rel.kind == DesktopSemanticRelationship::KIND_FREQUENTLY_ALTERNATES
         }));
+    }
+
+    #[test]
+    fn demotes_working_role_when_temporary_and_unfocused() {
+        let mut memory = DesktopRuntimeMemory::empty();
+        memory.entities.push(DesktopObjectMemory {
+            stable_window_id: "stable-t".into(),
+            hwnd: "0xt".into(),
+            title: "Temp".into(),
+            process_id: 9,
+            process_name: None,
+            first_observed_at: "2026-07-30T10:00:00Z".into(),
+            last_observed_at: "2026-07-30T10:00:00Z".into(),
+            identity_confidence: "low".into(),
+            presence: DesktopObjectMemory::PRESENCE_PRESENT.into(),
+            sample_presence_count: 1,
+            session_presence_count: 1,
+            focus_count: 0,
+            opened_count: 1,
+            closed_count: 1,
+            recurrence_count: 0,
+            stability: DesktopObjectMemory::STABILITY_EPHEMERAL.into(),
+            continuity_confidence: DesktopWindowGroup::CONFIDENCE_STRUCTURAL.into(),
+            knowledge: DesktopObjectMemory::KNOWLEDGE_TEMPORARY.into(),
+            authority_effect: DesktopObjectMemory::AUTHORITY_EFFECT_NONE.into(),
+        });
+        let mut behaviour = DesktopBehaviourTimeline::empty();
+        behaviour.sample_count = 1;
+        behaviour.sessions = vec![crate::desktop_behaviour::DesktopObservationSession {
+            id: "session:p1:p1".into(),
+            started_at: "2026-07-30T10:00:00Z".into(),
+            ended_at: "2026-07-30T10:00:00Z".into(),
+            start_pass_id: "p1".into(),
+            end_pass_id: "p1".into(),
+            sample_count: 1,
+            focus_transition_count: 0,
+            dominant_focus: Some(ObservationWindowRef {
+                stable_window_id: Some("stable-t".into()),
+                hwnd: "0xt".into(),
+                title: "Temp".into(),
+                process_id: 9,
+            }),
+            kind: "active".into(),
+            confidence: DesktopWindowGroup::CONFIDENCE_STRUCTURAL.into(),
+        }];
+        let semantics = project_desktop_semantics(&behaviour, &memory, &[]);
+        let object = &semantics.objects[0];
+        assert_ne!(object.role, DesktopSemanticObject::ROLE_WORKING);
+        assert!(
+            object.role == DesktopSemanticObject::ROLE_UTILITY
+                || object.role == DesktopSemanticObject::ROLE_INTERRUPTED
+                || object.role == DesktopSemanticObject::ROLE_EMERGING
+                || object.role == DesktopSemanticObject::ROLE_COMPANION
+                || object.role == DesktopSemanticObject::ROLE_BACKGROUND
+        );
     }
 }

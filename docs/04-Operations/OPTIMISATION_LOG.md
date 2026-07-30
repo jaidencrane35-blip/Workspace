@@ -90,6 +90,23 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 
 ## Cycles
 
+### Cycle: v11-2-semantic-confidence-refinement
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Cycle number** | V11-2 |
+| **Goal** | Strengthen/weaken semantic confidence from multi-signal agreement; prune conflicting edges |
+| **Problem** | Roles/relationships could conflict with memory knowledge or duplicate alternation edges |
+| **Analysis** | Refine after projection: boost agreement, demote conflicts, drop precedes/follows covered by alternates, emit supports |
+| **Changes** | `refine_semantic_confidence`; `supports` relationship; rebuild graph after refine |
+| **Files affected** | desktop_semantic, domain.ts, this log |
+| **Validation** | typecheck / test / build / architecture / ipc / ui-boundary (+ domain semantic tests) |
+| **Deleted / reduced** | Duplicate directional follow edges when alternation exists |
+| **Next recommended cycle** | Two empty semantic evaluation passes |
+
+---
+
 ### Cycle: v11-1-semantic-desktop-projection
 
 | Field | Value |
