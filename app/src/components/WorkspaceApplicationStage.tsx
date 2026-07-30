@@ -1,15 +1,14 @@
 /**
- * Purpose: Desktop Interaction Layer Stage — runtime objects, relationships, interaction.
- * Owner: Frontend product shell (Product Contract V6 / Product Foundation V15)
+ * Purpose: Desktop surface — runtime objects, relationships, Arrangement Restore.
+ * Owner: Frontend product shell (Product Contract V6 / Programme I IC2)
  * Inputs: optional profile, registry apps, work mode, launch + navigate;
- *   WorkspaceState via refreshObservedWorkspaceState (windows, groups, attention,
- *   semantics); focus_desktop_window; list_desktop_arrangements (working-set CRUD)
- * Outputs: Spatial desktop objects with select≠activate, multi-select, keyboard;
- *   Flow relationships; Focus dock; arrangement working-set overlay;
+ *   WorkspaceState via refreshObservedWorkspaceState; focus_desktop_window;
+ *   list/capture/restore_desktop_arrangement
+ * Outputs: Spatial desktop objects; Flow/Focus; Arrangement select + Restore;
  *   subtle runtime awareness (attention primary, semantic roles)
  * Dependencies: stageDesktopUi, layoutsStageUi, ipc, applicationLaunch helpers
  * Non-goals: Fake windows, Assistant-owned control, minimize APIs, OS geometry apply,
- *   parallel sliced desktop models, diagnostic runtime dumps on Stage
+ *   new persistence models, parallel desktop authorities
  */
 
 import { useCallback, useEffect, useMemo, useState, type KeyboardEvent } from "react";
