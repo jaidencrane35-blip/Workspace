@@ -47,38 +47,28 @@ Charter: [Programme I — Workspace Product Capability](PROGRAMME-I-WORKSPACE-PR
 
 ---
 
-## Next programme (charter direction — not commenced)
+## Next programme — chartered
 
-**Do not** treat further work as “Programme I continued.”
+**[Programme V — Operator Workflows](PROGRAMME-V-OPERATOR-WORKFLOWS.md)** is approved to commence as a charter (2026-07-30).
 
-**Do** charter a **new programme** with its own objectives, implementation contracts, and completion criteria — distinct from:
+It is **not** Programme I continued. It has independent objectives, contracts, and completion conditions while consuming AI Programmes II–IV and Workspace Programme I as foundations.
 
-- completed **Programme I** (Workspace product maturation), and  
-- planned AI **Programmes II–IV**.
+First contract (docs only until approved to implement):
 
-### Suggested themes (for Principal Architect charter)
-
-1. **Compose** existing capabilities into higher-level operator workflows  
-2. **Generate recommendations** derived from existing Workspace state  
-3. **Improve recoverability** and operator confidence during complex operations  
-4. **Preserve deterministic ownership**
+- [Programme V IC1 — Operator Workflow Composition](PROGRAMME-V-IC1-OPERATOR-WORKFLOW-COMPOSITION.md)
 
 ### Opening architectural principle (carry forward)
 
 > Before introducing a new authority, determine whether the desired capability can be expressed as a **deterministic projection of existing Workspace state**. Only introduce new ownership when no projection can faithfully satisfy the requirement.
-
-### Naming note
-
-Programmes II–IV already exist under `docs/05-AI/` (cognitive / runtime / interaction). The next **product** programme should receive a distinct identifier chosen by the Principal Architect so it does not collide with those AI-programme numbers.
 
 ---
 
 ## Cursor stop condition
 
 - Programme I is **closed** and **formally accepted**.  
-- Cursor must **not** commence the next programme until the Principal Architect authors and approves that programme’s charter (and first implementation contract).  
+- Programme V charter exists; **IC1 implementation must wait** for Principal Architect approval of that contract.  
 - Merge of the Programme I branch (IC1–IC6) as the programme-boundary milestone remains a release/integration decision for the Principal Architect / maintainers.
 
 ---
 
-*Programme I formally accepted — awaiting Principal Architect charter for the next programme.*
+*Programme I formally accepted — Programme V chartered; IC1 awaiting approval to implement.*
