@@ -18,18 +18,18 @@ export function applicationsEmptyCopy(hasWorkspace: boolean): {
 } {
   if (!hasWorkspace) {
     return {
-      title: "Optional library needs a named profile",
-      body: "Observed desktop windows appear on the Stage without registration. Create or select a profile under Workspaces only if you want a saved library or arrangements tied to a name.",
+      title: "Optional library needs a profile",
+      body: "Stage already shows running apps. Add a profile only to save a library.",
     };
   }
   return {
-    title: "No library apps in this profile yet",
-    body: "Registration is optional. Add apps here to launch them later. The Stage shows your observed desktop separately — arrangements remember real window layouts.",
+    title: "No library apps yet",
+    body: "Optional — Stage shows what is running without registration.",
   };
 }
 
 export function applicationsLayoutsRelationCopy(): string {
-  return "What is running on your desktop.";
+  return "Running";
 }
 
 export function applicationIdentityLine(app: ApplicationReference): string {
@@ -41,18 +41,27 @@ export function applicationIdentityLine(app: ApplicationReference): string {
     parts.push(app.executable_path.trim());
   }
   if (parts.length === 0) {
-    return "Identity only — add an executable path to launch";
+    return "Add an executable path to launch";
   }
   return parts.join(" · ");
+}
+
+export function activeApplicationName(app: WorkspaceActiveApplication): string {
+  return app.process_name?.trim() || `Process ${app.process_id}`;
+}
+
+export function activeApplicationWindowLine(
+  app: WorkspaceActiveApplication,
+): string {
+  return app.window_count === 1
+    ? "1 window"
+    : `${app.window_count} windows`;
 }
 
 export function activeApplicationLabel(
   app: WorkspaceActiveApplication,
 ): string {
-  const name = app.process_name?.trim() || `Process ${app.process_id}`;
-  const windows =
-    app.window_count === 1 ? "1 window open" : `${app.window_count} windows open`;
-  return `${name} · ${windows}`;
+  return `${activeApplicationName(app)} · ${activeApplicationWindowLine(app)}`;
 }
 
 export function canLaunchApplication(app: ApplicationReference): boolean {

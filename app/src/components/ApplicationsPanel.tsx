@@ -1,11 +1,10 @@
 /**
  * Purpose: Applications as observed desktop objects first; library optional.
- * Owner: Frontend product shell
- * Inputs: Active workspace, work mode, shared busy/banner callbacks
+ * Owner: Frontend product shell (Product Contract V4)
+ * Inputs: Active workspace, shared busy/banner callbacks
  * Outputs: get_workspace_state / list_applications / create / launch
- * Dependencies: Existing application IPC + WorkspaceState + workMode
- * Non-responsibilities: Permission policy, WindowController, Assistant,
- *   OS app discovery, auto-layout, AI recommendations, OS geometry apply
+ * Dependencies: Existing application IPC
+ * Non-responsibilities: WindowController, Assistant, OS discovery, geometry apply
  */
 
 import { useCallback, useEffect, useState } from "react";
@@ -14,11 +13,7 @@ import {
   launchRegisteredApplication,
   launchSuccessMessage,
 } from "../lib/applicationLaunch";
-import {
-  applicationsEmptyCopy,
-  applicationsLayoutsRelationCopy,
-} from "../lib/applicationsUi";
-import type { WorkMode } from "../lib/workMode";
+import { applicationsEmptyCopy } from "../lib/applicationsUi";
 import type {
   ApplicationReference,
   Workspace,
@@ -30,7 +25,6 @@ import { ApplicationList } from "./ApplicationList";
 
 interface ApplicationsPanelProps {
   workspace: Workspace | null;
-  workMode: WorkMode;
   busy: boolean;
   onBusy: (busy: boolean) => void;
   onError: (message: string | null) => void;
@@ -39,7 +33,6 @@ interface ApplicationsPanelProps {
 
 export function ApplicationsPanel({
   workspace,
-  workMode,
   busy,
   onBusy,
   onError,
@@ -88,9 +81,7 @@ export function ApplicationsPanel({
     }
     if (!runtime) {
       setApplications([]);
-      setLocalHint(
-        "Preview mode: library cards appear here once registered in the desktop app.",
-      );
+      setLocalHint("Library needs the desktop app.");
       return;
     }
     setLoading(true);
@@ -140,9 +131,7 @@ export function ApplicationsPanel({
 
   const registerApplication = () => {
     if (!workspace) {
-      onError(
-        "Select or create a named profile under Profiles to save library apps.",
-      );
+      onError("Create a profile under Profiles to save library apps.");
       return;
     }
     const trimmed = name.trim();
@@ -150,7 +139,7 @@ export function ApplicationsPanel({
       onError("Give the application a name.");
       return;
     }
-    void run("Application added to this workspace", async () => {
+    void run("Application added", async () => {
       const created = await invokeIpc<ApplicationReference>(
         "create_application",
         {
@@ -189,26 +178,13 @@ export function ApplicationsPanel({
   };
 
   return (
-    <section
-      className={
-        workMode === "focus"
-          ? "product-panel applications-panel mode-focus"
-          : "product-panel applications-panel mode-flow"
-      }
-      aria-label="Applications"
-      data-work-mode={workMode}
-    >
+    <section className="product-panel applications-panel" aria-label="Applications">
       <header className="product-panel-hero">
-        <p className="arrangement-eyebrow">Apps</p>
-        <h2>{applicationsLayoutsRelationCopy()}</h2>
+        <h2>Running</h2>
       </header>
 
-      <section
-        aria-label="Running on the desktop"
-        className={workMode === "focus" ? "applications-active quiet" : undefined}
-      >
+      <section aria-label="Running on the desktop">
         <div className="row section-heading-row">
-          <h3>Running now</h3>
           <button
             type="button"
             className="ghost"
@@ -228,19 +204,11 @@ export function ApplicationsPanel({
 
       <details className="applications-library-details">
         <summary>Optional library</summary>
-        <p className="muted">
-          Register apps only when you want launch shortcuts tied to a named
-          profile. Observed windows do not need this.
-        </p>
         {!workspace ? (
-          <div className="arrangement-empty" aria-live="polite">
-            <h3>{empty.title}</h3>
-            <p className="muted">{empty.body}</p>
-          </div>
+          <p className="muted">{empty.body}</p>
         ) : (
           <>
             <div className="row section-heading-row">
-              <h3>Library</h3>
               <div className="row">
                 <button
                   type="button"
@@ -254,10 +222,11 @@ export function ApplicationsPanel({
                 </button>
                 <button
                   type="button"
+                  className="ghost"
                   disabled={busy || !runtime}
                   onClick={() => setShowRegister((open) => !open)}
                 >
-                  {showRegister ? "Hide add form" : "Add application"}
+                  {showRegister ? "Hide form" : "Add"}
                 </button>
               </div>
             </div>
@@ -265,10 +234,7 @@ export function ApplicationsPanel({
             {loading && applications.length === 0 ? (
               <p className="muted">Loading…</p>
             ) : applications.length === 0 ? (
-              <div className="arrangement-empty" aria-live="polite">
-                <h4>{empty.title}</h4>
-                <p className="muted">{empty.body}</p>
-              </div>
+              <p className="muted">{empty.body}</p>
             ) : (
               <ApplicationList
                 applications={applications}
@@ -280,13 +246,11 @@ export function ApplicationsPanel({
             )}
             {selected ? (
               <p className="muted arrangement-permission-note">
-                Launch asks Workspace for permission before starting the app.
                 Selected: <strong>{selected.name}</strong>
               </p>
             ) : null}
             {showRegister ? (
               <section aria-label="Add application">
-                <h3>Add application</h3>
                 <label className="arrangement-field">
                   <span>Name</span>
                   <input
@@ -298,7 +262,7 @@ export function ApplicationsPanel({
                   />
                 </label>
                 <label className="arrangement-field">
-                  <span>Short identity (optional)</span>
+                  <span>Identity (optional)</span>
                   <input
                     type="text"
                     value={identifier}
@@ -308,7 +272,7 @@ export function ApplicationsPanel({
                   />
                 </label>
                 <label className="arrangement-field">
-                  <span>Executable path (needed to launch)</span>
+                  <span>Executable path</span>
                   <input
                     type="text"
                     value={executablePath}
@@ -322,7 +286,7 @@ export function ApplicationsPanel({
                   disabled={busy || !runtime}
                   onClick={registerApplication}
                 >
-                  Save to workspace
+                  Save
                 </button>
               </section>
             ) : null}

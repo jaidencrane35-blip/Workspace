@@ -90,6 +90,23 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 
 ## Cycles
 
+## Cycles
+
+### Cycle: v4-2-running-apps-as-objects
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Cycle number** | V4-2 |
+| **Approved category** | 1 Visual hierarchy (+ Application prominence) |
+| **Goal** | Apps tab presents running processes as objects; Stage plane larger |
+| **Changes** | `ActiveApplicationsView` object grid; quieter Apps panel; larger Stage map; drop unused workMode on Apps |
+| **Drift scores** | Desktop-first 9 · App prominence 8 · Object-first 7 · Dashboard-first 2 · AI-first 1 · Reference 7 · Maintainability 8 |
+| **Validation** | typecheck / test / build / architecture / ipc / ui-boundary |
+| **Next** | Full evaluation pass — remaining gains need OS geometry / grouping / audio / live thumbnails |
+
+---
+
 ### Cycle: v4-1-plane-first-objects-relationships
 
 | Field | Value |

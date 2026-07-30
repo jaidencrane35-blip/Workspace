@@ -946,6 +946,36 @@ button.linkish:not(:disabled):hover {
   margin: 0;
 }
 
+.app-object-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+  gap: 0.75rem;
+}
+
+.app-object-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-height: 7.5rem;
+  padding: 0.85rem;
+  background: linear-gradient(165deg, #1a2430 0%, #121820 70%);
+  border: 1px solid #2a3642;
+  border-radius: 10px;
+}
+
+.app-object-name {
+  font-weight: 650;
+  color: #e7ecf1;
+  font-size: 0.95rem;
+}
+
+.app-object-meta {
+  font-size: 0.78rem;
+}
+
 .applications-library-details {
   margin-top: 1.25rem;
   padding-top: 0.85rem;
@@ -1314,7 +1344,8 @@ button.linkish:not(:disabled):hover {
 .stage-desktop-map {
   position: relative;
   width: 100%;
-  min-height: 22rem;
+  min-height: min(70vh, 36rem);
+  flex: 1 1 auto;
   margin: 0 0 0.85rem;
   border: 1px solid #2a3642;
   border-radius: 12px;
