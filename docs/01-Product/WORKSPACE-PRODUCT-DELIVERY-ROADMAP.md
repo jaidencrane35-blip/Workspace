@@ -22,7 +22,7 @@ Human visual review of Milestone D found a **fundamental product mismatch**: the
 |------|--------|
 | Milestone D | Shell hierarchy useful; **product identity not accepted** |
 | Milestone F | **Do not start** |
-| **Next milestone (pending approval)** | **R — Desktop Reality Stage** (observe → represent → organise/control existing apps) |
+| **Next milestone (pending implementation approval)** | **R — Desktop Reality Stage** — [charter](MILESTONE-R-DESKTOP-REALITY-STAGE-CHARTER.md) (**planning only; do not code until charter approved**) |
 | Revised ship order | **R → F → G → E → H → I** |
 
 Sections below retain historical D–I detail. Where they conflict with the Reality Alignment Audit, **the audit wins** until this roadmap is fully rewritten.

@@ -33,8 +33,8 @@ Workspace is a **spatial representation of the active desktop** (observe / repre
 
 **Authoritative next sequence:** [Workspace Product Delivery Roadmap](../01-Product/WORKSPACE-PRODUCT-DELIVERY-ROADMAP.md) (updated by the audit).  
 **Milestone D:** shell hierarchy retained; **product identity not accepted**.  
-**Next implementation (pending approval):** Milestone **R — Desktop Reality Stage**.  
-Recommended order: **R → F → G → E → H → I**. **Do not start F** until R is approved.  
+**Next implementation (pending charter approval):** Milestone **R — Desktop Reality Stage** — [charter](../01-Product/MILESTONE-R-DESKTOP-REALITY-STAGE-CHARTER.md).  
+Recommended order: **R → F → G → E → H → I**. **Do not start F** until R is complete. **Do not write R application code** until the charter is approved.  
 **Frozen:** new intelligence/evidence engines without a direct core-product requirement.  
 Programme III/IV code is retained as **future assistant infrastructure**, not deleted.
 

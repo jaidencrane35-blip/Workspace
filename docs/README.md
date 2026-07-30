@@ -12,7 +12,7 @@
 | Human visual review | [Human Review Policy](03-Engineering/HUMAN-REVIEW-POLICY.md) → [Visual Review Checklist](03-Engineering/VISUAL-REVIEW-CHECKLIST.md) |
 | Designing architecture | [Architecture Principles](02-Architecture/ARCHITECTURE-PRINCIPLES.md) → [System Overview](02-Architecture/SYSTEM-OVERVIEW.md) |
 | Desktop arrangement (DAF) | [DAF Architecture Audit](03-Engineering/DAF-ARCHITECTURE-AUDIT.md) → [DAF-1a](03-Engineering/DAF-1A-WINDOW-CONTROLLER.md) → [DAF-1b](03-Engineering/DAF-1B-WINDOW-OBSERVATION.md) → [DAF-1c](03-Engineering/DAF-1C-DESKTOP-ARRANGEMENT.md) → [DAF-1d](03-Engineering/DAF-1D-DESKTOP-ARRANGEMENT-RESTORE.md) → [DAF-1e](03-Engineering/DAF-1E-DESKTOP-ARRANGEMENT-UI.md) |
-| Product delivery (next) | [Product Reality Alignment Audit](01-Product/WORKSPACE-PRODUCT-REALITY-ALIGNMENT-AUDIT.md) (D identity not accepted; next = Milestone R) · [Product Delivery Roadmap](01-Product/WORKSPACE-PRODUCT-DELIVERY-ROADMAP.md) · [Milestone D review package](03-Engineering/MILESTONE-D-HUMAN-REVIEW-PACKAGE.md) |
+| Product delivery (next) | [Milestone R charter](01-Product/MILESTONE-R-DESKTOP-REALITY-STAGE-CHARTER.md) (await approval before code) · [Reality Alignment Audit](01-Product/WORKSPACE-PRODUCT-REALITY-ALIGNMENT-AUDIT.md) · [Reference Interpretation](01-Product/WORKSPACE-REFERENCE-INTERPRETATION.md) |
 | Milestone A (Apps + switcher) | [Completion report](03-Engineering/MILESTONE-A-WORKSPACE-APPS-COMPLETION-REPORT.md) → [Visual review](03-Engineering/MILESTONE-A-VISUAL-REVIEW-CHECKLIST.md) → [A.1 UX hardening](03-Engineering/MILESTONE-A1-UX-HARDENING-REPORT.md) |
 | Flow / Focus | [Design charter](01-Product/FLOW-FOCUS-MODE-DESIGN-CHARTER.md) → [Chrome implementation](03-Engineering/FLOW-FOCUS-IMPLEMENTATION-REPORT.md) → behaviour in [Product Delivery Roadmap](01-Product/WORKSPACE-PRODUCT-DELIVERY-ROADMAP.md) Milestone G |
 | Selecting technology | [Stack Evaluation Criteria](02-Architecture/STACK-EVALUATION-CRITERIA.md) |
@@ -53,6 +53,7 @@ What Workspace is, who it serves, and how scope is managed.
 | [Product Vision](01-Product/PRODUCT-VISION.md) | Product goals, domains, and target experience |
 | [Workspace Visual Direction](01-Product/WORKSPACE-VISUAL-DIRECTION.md) | Concept-art north star; hierarchy binding, pixels not |
 | [Workspace Reference Interpretation](01-Product/WORKSPACE-REFERENCE-INTERPRETATION.md) | **Binding** — problem solved, hierarchy, drift examples, guardrails |
+| [Milestone R Desktop Reality Stage Charter](01-Product/MILESTONE-R-DESKTOP-REALITY-STAGE-CHARTER.md) | **Next** — planning charter; implementation not authorised until approved |
 | [Visual references](01-Product/references/README.md) | Original concept images (hierarchy/intent, not pixel specs) |
 | [Workspace Product Reality Alignment Audit](01-Product/WORKSPACE-PRODUCT-REALITY-ALIGNMENT-AUDIT.md) | **Current** — desktop reality model; UI mismatch; Milestone R next |
 | [Workspace Product Delivery Roadmap](01-Product/WORKSPACE-PRODUCT-DELIVERY-ROADMAP.md) | Milestones R→F→G→E→H→I (D identity not accepted; F blocked) |
