@@ -30,6 +30,7 @@ import {
   primaryStageSelectionKey,
   relatedStageObjectKeys,
   replaceStageSelection,
+  sortStageTilesByZOrder,
   stageArrangementMemberKeys,
   stageDesktopMetaLine,
   stageDesktopPlaneMessage,
@@ -230,10 +231,11 @@ export function WorkspaceApplicationStage({
   );
 
   const mapTiles = useMemo(() => {
-    if (workMode === "focus") {
-      return layoutStageDesktopWindows(organisation.mapWindows, monitors);
-    }
-    return tiles;
+    const base =
+      workMode === "focus"
+        ? layoutStageDesktopWindows(organisation.mapWindows, monitors)
+        : tiles;
+    return sortStageTilesByZOrder(base);
   }, [workMode, organisation.mapWindows, tiles, monitors]);
 
   const showDesktopMap = loadState === "ready" && tiles.length > 0;

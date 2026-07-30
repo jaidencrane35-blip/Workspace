@@ -8,6 +8,7 @@ import {
   stageDesktopPlaneMessage,
   stageDesktopWindowKey,
   stageDesktopWindowTitle,
+  sortStageTilesByZOrder,
   toggleStageSelection,
 } from "../app/src/lib/stageDesktopUi";
 import type {
@@ -149,6 +150,27 @@ describe("stage desktop UI helpers", () => {
     expect(tiles[0]?.leftPct).toBe(10);
     expect(tiles[0]?.topPct).toBe(10);
     expect(tiles[0]?.widthPct).toBe(20);
+  });
+
+  it("paints lower z_order tiles later (foreground on top)", () => {
+    const tiles = layoutStageDesktopWindows([
+      sampleWindow({
+        stable_window_id: "back",
+        hwnd: "0x2",
+        z_order: 2,
+        x: 0,
+        y: 0,
+      }),
+      sampleWindow({
+        stable_window_id: "front",
+        hwnd: "0x1",
+        z_order: 0,
+        x: 10,
+        y: 10,
+      }),
+    ]);
+    const ordered = sortStageTilesByZOrder(tiles);
+    expect(ordered.map((tile) => tile.key)).toEqual(["back", "front"]);
   });
 
   it("organises Focus mode as primary process + process dock", async () => {

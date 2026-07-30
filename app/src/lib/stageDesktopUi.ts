@@ -370,6 +370,23 @@ export interface StageWorkModeOrganisation {
  * When `windowGroups` is provided, Focus primary process membership comes from
  * authoritative process_id groups (no invented PID buckets).
  */
+/**
+ * Paint order for Stage tiles from observed stacking.
+ * Lower z_order is closer to foreground (EnumWindows top-first); paint later.
+ */
+export function sortStageTilesByZOrder(
+  tiles: StageDesktopWindowTile[],
+): StageDesktopWindowTile[] {
+  return [...tiles].sort((a, b) => {
+    const aOrder = a.zOrder ?? Number.MAX_SAFE_INTEGER;
+    const bOrder = b.zOrder ?? Number.MAX_SAFE_INTEGER;
+    if (aOrder !== bOrder) {
+      return bOrder - aOrder;
+    }
+    return a.key.localeCompare(b.key);
+  });
+}
+
 export function organiseStageForWorkMode(
   windows: WorkspaceStateWindow[],
   workMode: "flow" | "focus",

@@ -90,6 +90,23 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 
 ## Cycles
 
+### Cycle: v8-8-stage-z-order-paint
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Cycle number** | V8-8 |
+| **Goal** | Stage overlapping tiles paint in observed z-order |
+| **Problem** | Capture order left background windows visually on top of foreground ones |
+| **Analysis** | z_order already on tiles; sort before paint (lower = foreground = later DOM) |
+| **Changes** | `sortStageTilesByZOrder`; Stage mapTiles sorted |
+| **Files affected** | stageDesktopUi.ts, WorkspaceApplicationStage.tsx, tests, this log |
+| **Validation** | typecheck / test / build / architecture / ipc / ui-boundary |
+| **Deleted / reduced** | Unordered Stage paint that ignored observed stacking |
+| **Next recommended cycle** | Two empty capability evaluation passes |
+
+---
+
 ### Cycle: v8-7-workspace-state-monitors
 
 | Field | Value |
