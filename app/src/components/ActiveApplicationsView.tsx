@@ -1,10 +1,10 @@
 /**
- * Purpose: Observed running desktop applications as visual objects.
- * Owner: Frontend product shell (Product Contract V4)
- * Inputs: WorkspaceActiveApplication rows from get_workspace_state
- * Outputs: Object grid presentation
- * Dependencies: applicationsUi + productShellUi
- * Non-responsibilities: Observation capture, window control, registry mutation
+ * Purpose: Observed running desktop applications as interactive objects.
+ * Owner: Frontend product shell (Product Contract V5)
+ * Inputs: WorkspaceActiveApplication + windows from get_workspace_state
+ * Outputs: Object grid; click focuses a matching observed window
+ * Dependencies: applicationsUi + productShellUi + focus_desktop_window IPC
+ * Non-responsibilities: Observation capture, registry mutation, Assistant
  */
 
 import {
@@ -12,16 +12,46 @@ import {
   activeApplicationWindowLine,
 } from "../lib/applicationsUi";
 import { monogramFromName } from "../lib/productShellUi";
-import type { WorkspaceActiveApplication } from "../types/domain";
+import type {
+  WorkspaceActiveApplication,
+  WorkspaceStateWindow,
+} from "../types/domain";
 
 interface ActiveApplicationsViewProps {
   applications: WorkspaceActiveApplication[];
+  windows: WorkspaceStateWindow[];
   loading: boolean;
+  busy: boolean;
+  onFocusApplication: (app: WorkspaceActiveApplication) => void;
+}
+
+export function resolveActiveApplicationHwnd(
+  app: WorkspaceActiveApplication,
+  windows: WorkspaceStateWindow[],
+): string | null {
+  const matches = windows.filter(
+    (window) => window.process_id === app.process_id,
+  );
+  if (matches.length === 0) {
+    return null;
+  }
+  const focused = matches.find((window) => window.focused);
+  if (focused) {
+    return focused.hwnd;
+  }
+  const visible = matches.find((window) => window.visible && !window.minimized);
+  if (visible) {
+    return visible.hwnd;
+  }
+  return matches[0]?.hwnd ?? null;
 }
 
 export function ActiveApplicationsView({
   applications,
+  windows,
   loading,
+  busy,
+  onFocusApplication,
 }: ActiveApplicationsViewProps) {
   if (loading && applications.length === 0) {
     return <p className="muted">Loading…</p>;
@@ -33,9 +63,18 @@ export function ActiveApplicationsView({
     <ul className="app-object-grid" aria-label="Running applications">
       {applications.map((app) => {
         const name = activeApplicationName(app);
+        const focusable = resolveActiveApplicationHwnd(app, windows) != null;
         return (
           <li key={`${app.process_id}-${app.process_name ?? "unknown"}`}>
-            <article className="app-object-card">
+            <button
+              type="button"
+              className="app-object-card"
+              disabled={busy || !focusable}
+              title={focusable ? `Focus ${name}` : `${name} — no window handle`}
+              onClick={() => {
+                onFocusApplication(app);
+              }}
+            >
               <span className="application-monogram large" aria-hidden="true">
                 {monogramFromName(name)}
               </span>
@@ -43,7 +82,7 @@ export function ActiveApplicationsView({
               <span className="muted app-object-meta">
                 {activeApplicationWindowLine(app)}
               </span>
-            </article>
+            </button>
           </li>
         );
       })}

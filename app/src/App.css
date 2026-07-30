@@ -260,22 +260,6 @@ button:not(:disabled):hover {
   border-top: 1px solid #1e2832;
 }
 
-.arrangement-panel-hero h2 {
-  margin: 0.2rem 0 0.45rem;
-  font-size: 1.15rem;
-  text-transform: none;
-  letter-spacing: 0;
-  color: #e7ecf1;
-}
-
-.arrangement-eyebrow {
-  margin: 0;
-  font-size: 0.72rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: #7f8f9d;
-}
-
 .arrangement-field {
   display: flex;
   flex-direction: column;
@@ -383,15 +367,6 @@ button.ghost {
   margin: 0.55rem 0 0;
   font-size: 0.8rem;
   line-height: 1.35;
-}
-
-.arrangement-empty h3,
-.arrangement-empty h4 {
-  margin: 0 0 0.35rem;
-  font-size: 0.95rem;
-  color: #e7ecf1;
-  text-transform: none;
-  letter-spacing: 0;
 }
 
 .restore-diagnostics {
@@ -678,42 +653,6 @@ button.linkish:not(:disabled):hover {
     animation: none;
     opacity: 0.7;
   }
-}
-
-.assistant-companion-recent {
-  font-size: 0.85rem;
-  color: #9aa8b4;
-}
-
-.assistant-companion-recent summary {
-  cursor: pointer;
-  user-select: none;
-}
-
-.assistant-companion-recent ul {
-  list-style: none;
-  margin: 0.45rem 0 0;
-  padding: 0;
-  display: grid;
-  gap: 0.35rem;
-}
-
-.assistant-companion-recent-item {
-  display: grid;
-  gap: 0.2rem;
-  width: 100%;
-  text-align: left;
-  padding: 0.4rem 0.5rem;
-}
-
-.assistant-companion-recent-ask {
-  color: #c5d0da;
-  font-size: 0.88rem;
-}
-
-.assistant-companion-recent-preview {
-  font-size: 0.8rem;
-  line-height: 1.35;
 }
 
 .assistant-packages-toggle {
@@ -1006,11 +945,25 @@ button.linkish:not(:disabled):hover {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
+  width: 100%;
   min-height: 7.5rem;
   padding: 0.85rem;
   background: linear-gradient(165deg, #1a2430 0%, #121820 70%);
   border: 1px solid #2a3642;
   border-radius: 10px;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.app-object-card:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.app-object-card:hover:not(:disabled) {
+  border-color: #3a4d63;
 }
 
 .app-object-name {
@@ -1262,14 +1215,6 @@ button.linkish:not(:disabled):hover {
   position: static;
 }
 
-.app-body.with-companion-rail .arrangement-panel-hero h2 {
-  font-size: 1.05rem;
-}
-
-.app-body.with-companion-rail .arrangement-panel-hero .arrangement-eyebrow {
-  letter-spacing: 0.04em;
-}
-
 .assistant-companion-rail {
   padding: var(--rail-pad-y) var(--rail-pad-x) 1.5rem;
   background: #111820;
@@ -1357,7 +1302,6 @@ button.linkish:not(:disabled):hover {
     linear-gradient(180deg, #121a24 0%, #10161e 100%);
 }
 
-.stage-hero-compact,
 .stage-hero-minimal {
   display: flex;
   align-items: center;
@@ -1366,7 +1310,6 @@ button.linkish:not(:disabled):hover {
   margin-bottom: 0.55rem;
 }
 
-.stage-hero-compact h2,
 .stage-hero-minimal h2 {
   margin: 0;
   font-size: 1.15rem;
@@ -1374,13 +1317,6 @@ button.linkish:not(:disabled):hover {
   letter-spacing: -0.02em;
   text-transform: none;
   color: #e7ecf1;
-}
-
-.stage-hero-controls {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
 }
 
 .stage-meta-live {
@@ -1775,14 +1711,4 @@ button.linkish:not(:disabled):hover {
 
 .app-shell[data-work-mode="focus"] .tool-tabs {
   opacity: 0.7;
-}
-
-.application-card-grid.density-flow {
-  grid-template-columns: repeat(auto-fill, minmax(12.5rem, 1fr));
-}
-
-.applications-panel.mode-focus .applications-active.quiet {
-  opacity: 0.9;
-  padding-top: 0.35rem;
-  border-top: 1px solid #243040;
 }

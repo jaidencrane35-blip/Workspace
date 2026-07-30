@@ -28,6 +28,8 @@ interface DesktopArrangementPanelProps {
   onBusy: (busy: boolean) => void;
   onError: (message: string | null) => void;
   onMessage: (message: string | null) => void;
+  /** Notify Stage (or other observers) after restore mutates the desktop. */
+  onDesktopChanged?: () => void;
 }
 
 export function DesktopArrangementPanel({
@@ -36,6 +38,7 @@ export function DesktopArrangementPanel({
   onBusy,
   onError,
   onMessage,
+  onDesktopChanged,
 }: DesktopArrangementPanelProps) {
   const [arrangements, setArrangements] = useState<DesktopArrangement[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -158,6 +161,7 @@ export function DesktopArrangementPanel({
         },
       );
       setRestoreResult(result);
+      onDesktopChanged?.();
     });
   };
 

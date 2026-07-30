@@ -49,6 +49,8 @@ interface WorkspaceApplicationStageProps {
   onMessage: (message: string | null) => void;
   onManageApplications: () => void;
   onLaunchApplication: (app: ApplicationReference) => void;
+  /** Bump after restore/launch so Stage re-reads desktop reality. */
+  observationEpoch?: number;
 }
 
 function matchLibraryApp(
@@ -85,6 +87,7 @@ export function WorkspaceApplicationStage({
   onMessage,
   onManageApplications,
   onLaunchApplication,
+  observationEpoch = 0,
 }: WorkspaceApplicationStageProps) {
   const runtime = isIpcRuntimeAvailable();
   const registryEmpty = layoutsStageEmptyAppsCopy();
@@ -93,9 +96,6 @@ export function WorkspaceApplicationStage({
   );
   const [windows, setWindows] = useState<WorkspaceStateWindow[]>([]);
   const [monitorCount, setMonitorCount] = useState(0);
-  const [observationPassId, setObservationPassId] = useState<string | null>(
-    null,
-  );
   const [focusedTitle, setFocusedTitle] = useState<string | null>(null);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
 
@@ -104,7 +104,6 @@ export function WorkspaceApplicationStage({
       setLoadState("runtime_unavailable");
       setWindows([]);
       setMonitorCount(0);
-      setObservationPassId(null);
       setFocusedTitle(null);
       return;
     }
@@ -120,7 +119,6 @@ export function WorkspaceApplicationStage({
       const state = await invokeIpc<WorkspaceState>("get_workspace_state");
       setWindows(state.windows);
       setMonitorCount(state.metadata.monitor_count);
-      setObservationPassId(state.metadata.observation_pass_id);
       {
         const focused = state.focused_window;
         const title = focused?.title.trim();
@@ -132,7 +130,6 @@ export function WorkspaceApplicationStage({
     } catch {
       setWindows([]);
       setMonitorCount(0);
-      setObservationPassId(null);
       setFocusedTitle(null);
       setLoadState("error");
     }
@@ -140,7 +137,7 @@ export function WorkspaceApplicationStage({
 
   useEffect(() => {
     void refreshDesktop();
-  }, [refreshDesktop]);
+  }, [refreshDesktop, observationEpoch]);
 
   const tiles = useMemo(
     () => layoutStageDesktopWindows(windows),
@@ -296,7 +293,6 @@ export function WorkspaceApplicationStage({
           {stageDesktopMetaLine({
             windowCount: windows.length,
             monitorCount,
-            observationPassId,
             focusedTitle,
           })}
         </p>
@@ -385,7 +381,7 @@ export function WorkspaceApplicationStage({
                 void focusSelectedWindow(selectedTile);
               }}
             >
-              {selectedTile.minimized ? "Restore" : "Focus"}
+              Focus
             </button>
             {matchedLibrary && canLaunchApplication(matchedLibrary) ? (
               <button

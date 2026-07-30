@@ -1,10 +1,10 @@
 /**
  * Purpose: Applications as observed desktop objects first; library optional.
- * Owner: Frontend product shell (Product Contract V4)
+ * Owner: Frontend product shell (Product Contract V5)
  * Inputs: Active workspace, shared busy/banner callbacks
- * Outputs: get_workspace_state / list_applications / create / launch
- * Dependencies: Existing application IPC
- * Non-responsibilities: WindowController, Assistant, OS discovery, geometry apply
+ * Outputs: get_workspace_state / focus_desktop_window / list_applications / create / launch
+ * Dependencies: Existing application + desktop focus IPC
+ * Non-responsibilities: Assistant, OS discovery, geometry apply, minimize APIs
  */
 
 import { useCallback, useEffect, useState } from "react";
@@ -13,15 +13,23 @@ import {
   launchRegisteredApplication,
   launchSuccessMessage,
 } from "../lib/applicationLaunch";
-import { applicationsEmptyCopy } from "../lib/applicationsUi";
+import {
+  activeApplicationName,
+  applicationsEmptyCopy,
+} from "../lib/applicationsUi";
 import type {
   ApplicationReference,
   Workspace,
   WorkspaceActiveApplication,
   WorkspaceState,
+  WorkspaceStateWindow,
 } from "../types/domain";
-import { ActiveApplicationsView } from "./ActiveApplicationsView";
+import {
+  ActiveApplicationsView,
+  resolveActiveApplicationHwnd,
+} from "./ActiveApplicationsView";
 import { ApplicationList } from "./ApplicationList";
+import type { DesktopWindowFocusResult } from "../types/desktopArrangement";
 
 interface ApplicationsPanelProps {
   workspace: Workspace | null;
@@ -40,6 +48,9 @@ export function ApplicationsPanel({
 }: ApplicationsPanelProps) {
   const [applications, setApplications] = useState<ApplicationReference[]>([]);
   const [activeApps, setActiveApps] = useState<WorkspaceActiveApplication[]>(
+    [],
+  );
+  const [activeWindows, setActiveWindows] = useState<WorkspaceStateWindow[]>(
     [],
   );
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -106,12 +117,21 @@ export function ApplicationsPanel({
   const refreshActive = useCallback(async () => {
     if (!runtime) {
       setActiveApps([]);
+      setActiveWindows([]);
       return;
     }
     setActiveLoading(true);
     try {
+      try {
+        await invokeIpc("ensure_observation_freshness", {
+          consumerId: "workspace_applications",
+        });
+      } catch {
+        // Best-effort freshness before reading projected state.
+      }
       const state = await invokeIpc<WorkspaceState>("get_workspace_state");
       setActiveApps(state.active_applications);
+      setActiveWindows(state.windows);
     } finally {
       setActiveLoading(false);
     }
@@ -177,6 +197,35 @@ export function ApplicationsPanel({
     })();
   };
 
+  const focusActiveApplication = (app: WorkspaceActiveApplication) => {
+    const hwnd = resolveActiveApplicationHwnd(app, activeWindows);
+    if (!hwnd) {
+      onError("No observed window handle for that application.");
+      return;
+    }
+    const label = activeApplicationName(app);
+    onBusy(true);
+    onError(null);
+    void (async () => {
+      try {
+        const result = await invokeIpc<DesktopWindowFocusResult>(
+          "focus_desktop_window",
+          { hwnd },
+        );
+        await refreshActive();
+        onMessage(
+          result.simulated
+            ? `Focused ${label} (simulated)`
+            : `Focused ${label}`,
+        );
+      } catch (err: unknown) {
+        onError(err instanceof Error ? err.message : String(err));
+      } finally {
+        onBusy(false);
+      }
+    })();
+  };
+
   return (
     <section className="product-panel applications-panel" aria-label="Applications">
       <header className="product-panel-hero">
@@ -198,7 +247,10 @@ export function ApplicationsPanel({
         </div>
         <ActiveApplicationsView
           applications={activeApps}
+          windows={activeWindows}
           loading={activeLoading}
+          busy={busy}
+          onFocusApplication={focusActiveApplication}
         />
       </section>
 

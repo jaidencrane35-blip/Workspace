@@ -105,6 +105,7 @@ export default function App() {
   const [bootstrapped, setBootstrapped] = useState(false);
   const [busy, setBusy] = useState(false);
   const [toolsOpen, setToolsOpen] = useState(false);
+  const [desktopEpoch, setDesktopEpoch] = useState(0);
   const onStatus = useCallback((text: string) => {
     setMessage(text);
   }, []);
@@ -127,6 +128,7 @@ export default function App() {
         try {
           const result = await launchRegisteredApplication(app);
           setMessage(launchSuccessMessage(result));
+          setDesktopEpoch((epoch) => epoch + 1);
         } catch (err: unknown) {
           const classified = classifyBanner(err);
           setErrorKind(classified.kind === "runtime" ? "runtime" : "error");
@@ -138,6 +140,10 @@ export default function App() {
     },
     [],
   );
+
+  const bumpDesktopObservation = useCallback(() => {
+    setDesktopEpoch((epoch) => epoch + 1);
+  }, []);
 
   const setAssistantRailOpen = useCallback(
     (open: boolean) => {
@@ -315,13 +321,6 @@ export default function App() {
             onActivate={activateWorkspace}
             onCreated={activateWorkspace}
           />
-          <DesktopArrangementPanel
-            workspace={workspace}
-            busy={busy}
-            onBusy={setBusy}
-            onError={onError}
-            onMessage={onMessage}
-          />
         </div>
       );
     }
@@ -357,6 +356,7 @@ export default function App() {
                   onMessage={onMessage}
                   onManageApplications={() => navigatePrimary("applications")}
                   onLaunchApplication={launchFromStage}
+                  observationEpoch={desktopEpoch}
                 />
                 <DesktopArrangementPanel
                   workspace={workspace}
@@ -364,6 +364,7 @@ export default function App() {
                   onBusy={setBusy}
                   onError={onError}
                   onMessage={onMessage}
+                  onDesktopChanged={bumpDesktopObservation}
                 />
               </>
             )}

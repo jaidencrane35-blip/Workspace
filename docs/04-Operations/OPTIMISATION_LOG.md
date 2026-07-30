@@ -94,6 +94,19 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 
 ## Cycles
 
+### Cycle: v5-2-restore-refresh-apps-focus-cleanup
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Cycle number** | V5-2 |
+| **Goal** | Close Organisation→Reality loop; Apps objects focus; delete dead chrome |
+| **Changes** | Stage refreshes after restore/launch (`observationEpoch`); Focus prefers selection; Apps click→`focus_desktop_window`; arrangements Stage-only; dead CSS/helpers removed |
+| **Validation** | typecheck / test / build / architecture / ipc / ui-boundary |
+| **Human review required** | No for this slice |
+
+---
+
 ### Cycle: v5-1-desktop-interaction-focus-ipc
 
 | Field | Value |

@@ -26,7 +26,6 @@ export interface StageDesktopWindowTile {
   widthPct: number;
   heightPct: number;
   monitorLabel: string | null;
-  boundsLabel: string;
 }
 
 export type StageDesktopLoadState =
@@ -141,7 +140,6 @@ export function layoutStageDesktopWindows(
       widthPct: Math.min(widthPct, 100 - leftPct),
       heightPct: Math.min(heightPct, 100 - topPct),
       monitorLabel,
-      boundsLabel: `${window.width}×${window.height} @ ${window.x},${window.y}`,
     };
   });
 }
@@ -170,7 +168,6 @@ export function stageDesktopEmptyCopy(state: StageDesktopLoadState): {
 export function stageDesktopMetaLine(args: {
   windowCount: number;
   monitorCount: number;
-  observationPassId: string | null;
   focusedTitle: string | null;
 }): string {
   const parts: string[] = [];
@@ -223,8 +220,8 @@ export function organiseStageForWorkMode(
 
   const tiles = layoutStageDesktopWindows(windows);
   const anchor =
-    tiles.find((tile) => tile.focused) ??
     tiles.find((tile) => tile.key === selectedKey) ??
+    tiles.find((tile) => tile.focused) ??
     tiles[0] ??
     null;
   if (!anchor) {

@@ -157,11 +157,35 @@ describe("stage desktop UI helpers", () => {
     const line = stageDesktopMetaLine({
       windowCount: 2,
       monitorCount: 1,
-      observationPassId: "pass-1",
       focusedTitle: "Editor",
     });
     expect(line).toMatch(/2 windows/);
     expect(line).toMatch(/Editor/);
     expect(line).not.toMatch(/AI/i);
+  });
+
+  it("prefers selected process for Focus organisation", async () => {
+    const { organiseStageForWorkMode } = await import(
+      "../app/src/lib/stageDesktopUi"
+    );
+    const windows = [
+      sampleWindow({
+        stable_window_id: "a",
+        hwnd: "0x1",
+        focused: true,
+        process_name: "code.exe",
+      }),
+      sampleWindow({
+        stable_window_id: "b",
+        hwnd: "0x2",
+        title: "Browser",
+        process_name: "chrome.exe",
+        focused: false,
+      }),
+    ];
+    const focus = organiseStageForWorkMode(windows, "focus", "b");
+    expect(focus.mapWindows).toHaveLength(1);
+    expect(focus.mapWindows[0]?.process_name).toBe("chrome.exe");
+    expect(focus.dockEntries[0]?.processKey).toBe("code.exe");
   });
 });
