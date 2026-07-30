@@ -2,14 +2,14 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | **Approved to commence** (charter only — no implementation until IC contracts are approved) |
+| **Status** | Active — IC1 complete pending Principal Architect review |
 | **Authority** | Principal Architect |
 | **Audience** | Principal Architect, Engineering, Cursor agents |
 | **Nature** | Formal product architecture programme charter |
 | **Not** | A continuation of Workspace Programme I; not an AI programme; not a feature backlog |
 | **Depends on** | AI Programmes II–IV (foundations); [Workspace Programme I](PROGRAMME-I-WORKSPACE-PRODUCT-CAPABILITY.md) (complete — product capability) |
 | **Related** | [Programme I conclusion & handoff](PROGRAMME-I-CONCLUSION-AND-NEXT-PROGRAMME-HANDOFF.md), [Architectural Evidence Report](../02-Architecture/ARCHITECTURAL-EVIDENCE-REPORT.md) |
-| **Implementation contracts** | [IC1 — Operator Workflow Composition](PROGRAMME-V-IC1-OPERATOR-WORKFLOW-COMPOSITION.md) (draft — awaiting approval to implement) |
+| **Implementation contracts** | [IC1 — Operator Workflow Composition](PROGRAMME-V-IC1-OPERATOR-WORKFLOW-COMPOSITION.md) (complete — pending review) |
 
 ---
 

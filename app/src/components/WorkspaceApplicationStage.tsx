@@ -1,18 +1,19 @@
 /**
- * Purpose: Desktop surface — Arrangement ops, editing, operational explanations.
- * Owner: Frontend product shell (Programme I IC6)
+ * Purpose: Desktop surface — Arrangement ops + Programme V operator workflow composition.
+ * Owner: Frontend product shell (Programme V IC1)
  * Inputs: optional profile, registry apps, work mode, launch + navigate;
  *   WorkspaceState via refreshObservedWorkspaceState; focus_desktop_window;
  *   list/capture/restore_desktop_arrangement
  * Outputs: Spatial desktop objects; Arrangement select + Restore; edit session;
- *   activity / currency / pre-Restore / change explanations (derived only)
+ *   operational explanations; composed Desktop→Arrangement→Preview→Restore workflow
  * Dependencies: stageDesktopUi, layoutsStageUi, desktopLayoutEditing,
- *   arrangementProductUi, operationalConfidenceUi, ipc
- * Non-goals: Fake windows, activity engines, explanation caches, operation logs,
- *   new set_bounds product IPC, onboarding persistence, parallel authorities
+ *   arrangementProductUi, operationalConfidenceUi, operatorWorkflowUi, ipc
+ * Non-goals: Workflow controller/persistence, activity engines, operation logs,
+ *   new set_bounds product IPC, implicit execution, parallel authorities
  *
  * Product State: Profile · Desktop · Arrangement · Restore
  * Interaction State (never persist): Editing · Preview · Selection · In-flight · Guidance
+ * Workflow progress: derived projection only — graceful interruption via re-projection
  */
 
 import { useCallback, useEffect, useMemo, useState, type KeyboardEvent } from "react";
@@ -56,6 +57,10 @@ import {
   explainPreRestore,
   type OperationalInFlight,
 } from "../lib/operationalConfidenceUi";
+import {
+  operatorWorkflowProgressLine,
+  projectOperatorWorkflow,
+} from "../lib/operatorWorkflowUi";
 import { monogramFromName } from "../lib/productShellUi";
 import {
   layoutStageDesktopWindows,
@@ -393,12 +398,15 @@ export function WorkspaceApplicationStage({
     return explainArrangementCurrency(workingSet, windows);
   }, [workingSet, windows]);
 
-  const preRestoreExplanation = useMemo(() => {
-    if (!workingSet || layoutEditing) {
+  const preRestoreFacts = useMemo(() => {
+    if (!workingSet) {
       return null;
     }
     return explainPreRestore(workingSet, windows);
-  }, [workingSet, windows, layoutEditing]);
+  }, [workingSet, windows]);
+
+  /** Detail panel hides during edit; Restore availability still projects. */
+  const preRestoreExplanation = layoutEditing ? null : preRestoreFacts;
 
   const activityExplanation = explainOperationalActivity({
     loadState,
@@ -411,6 +419,33 @@ export function WorkspaceApplicationStage({
     inFlight: inFlight ?? (loadState === "loading" ? "observe" : null),
     hasLastRestoreResult: Boolean(lastRestoreResult),
   });
+
+  const operatorWorkflow = useMemo(
+    () =>
+      projectOperatorWorkflow({
+        loadState,
+        hasProfile: Boolean(workspace),
+        arrangementCount: arrangements.length,
+        arrangementSelected: Boolean(workingSet),
+        arrangementName: workingSet?.name,
+        previewActive: layoutEditing && layoutPreview,
+        layoutEditing,
+        restoreAvailable: Boolean(preRestoreFacts?.available),
+        inFlight: inFlight ?? (loadState === "loading" ? "observe" : null),
+        hasLastRestoreResult: Boolean(lastRestoreResult),
+      }),
+    [
+      loadState,
+      workspace,
+      arrangements.length,
+      workingSet,
+      layoutEditing,
+      layoutPreview,
+      preRestoreFacts?.available,
+      inFlight,
+      lastRestoreResult,
+    ],
+  );
 
   const saveSelectionAsWorkingSet = () => {
     if (!workspace) {
@@ -804,6 +839,44 @@ export function WorkspaceApplicationStage({
         {activityExplanation.line}
       </p>
 
+      <div
+        className="stage-operator-workflow"
+        role="navigation"
+        aria-label="Operator workflow"
+        data-workflow-current={operatorWorkflow.currentStepId}
+      >
+        <p className="stage-operator-workflow-path muted">
+          {operatorWorkflow.pathLabel}
+        </p>
+        <ol className="stage-operator-workflow-steps">
+          {operatorWorkflow.steps.map((step) => (
+            <li
+              key={step.id}
+              className={
+                step.id === operatorWorkflow.currentStepId
+                  ? `workflow-step ${step.status} current`
+                  : `workflow-step ${step.status}`
+              }
+              data-workflow-step={step.id}
+              data-workflow-owner={step.owner}
+              title={`${step.detail} · ${step.owner}`}
+            >
+              <span className="workflow-step-label">{step.label}</span>
+              <span className="workflow-step-detail muted">{step.detail}</span>
+            </li>
+          ))}
+        </ol>
+        <p className="stage-operator-workflow-progress muted">
+          {operatorWorkflowProgressLine(operatorWorkflow)}
+        </p>
+        <p className="stage-operator-workflow-line">
+          {operatorWorkflow.line}
+        </p>
+        <p className="stage-operator-workflow-next muted">
+          Next · {operatorWorkflow.nextAction}
+        </p>
+      </div>
+
       {layoutEditing && workingSet && editingChangeDiff ? (
         <div
           className={
@@ -881,9 +954,9 @@ export function WorkspaceApplicationStage({
                   busy ||
                   !runtime ||
                   !workingSetId ||
-                  !(preRestoreExplanation?.available ?? false)
+                  !(preRestoreFacts?.available ?? false)
                 }
-                title={preRestoreExplanation?.summaryLine}
+                title={preRestoreFacts?.summaryLine}
                 onClick={restoreSelectedArrangement}
               >
                 {WORKSPACE_RESTORE_VERB}
