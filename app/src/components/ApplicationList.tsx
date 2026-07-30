@@ -18,6 +18,7 @@ import {
 import { monogramFromName } from "../lib/productShellUi";
 import { partitionFocusApplications, type WorkMode } from "../lib/workMode";
 import type { ApplicationReference } from "../types/domain";
+import { FocusSupportingAppChips } from "./FocusSupportingAppChips";
 
 interface ApplicationListProps {
   applications: ApplicationReference[];
@@ -77,30 +78,12 @@ export function ApplicationList({
           </article>
         ) : null}
         {supporting.length > 0 ? (
-          <div className="focus-supporting">
-            <p className="home-current-label">Supporting (available)</p>
-            <ul className="home-app-chip-row">
-              {supporting.map((app) => (
-                <li key={app.id}>
-                  <button
-                    type="button"
-                    className="home-app-chip"
-                    disabled={busy}
-                    title="Emphasise in Focus"
-                    onClick={() => onSelect(app.id)}
-                  >
-                    <span
-                      className="application-monogram compact"
-                      aria-hidden="true"
-                    >
-                      {monogramFromName(app.name)}
-                    </span>
-                    <span>{app.name}</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
+          <FocusSupportingAppChips
+            apps={supporting}
+            busy={busy}
+            onSelect={onSelect}
+            selectTitle="Emphasise in Focus"
+          />
         ) : null}
       </div>
     );

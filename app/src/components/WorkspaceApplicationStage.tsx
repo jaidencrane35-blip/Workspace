@@ -32,6 +32,7 @@ import {
 } from "../lib/workMode";
 import type { ApplicationReference, Workspace } from "../types/domain";
 import { WorkModeSwitch } from "./WorkModeSwitch";
+import { FocusSupportingAppChips } from "./FocusSupportingAppChips";
 
 interface WorkspaceApplicationStageProps {
   workspace: Workspace;
@@ -166,29 +167,11 @@ export function WorkspaceApplicationStage({
             </article>
           ) : null}
           {supporting.length > 0 ? (
-            <div className="focus-supporting">
-              <p className="home-current-label">Supporting (available)</p>
-              <ul className="home-app-chip-row">
-                {supporting.map((app) => (
-                  <li key={app.id}>
-                    <button
-                      type="button"
-                      className="home-app-chip"
-                      title="Make primary in Focus"
-                      onClick={() => setPrimaryId(app.id)}
-                    >
-                      <span
-                        className="application-monogram compact"
-                        aria-hidden="true"
-                      >
-                        {monogramFromName(app.name)}
-                      </span>
-                      <span>{app.name}</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            <FocusSupportingAppChips
+              apps={supporting}
+              onSelect={setPrimaryId}
+              selectTitle="Make primary in Focus"
+            />
           ) : null}
         </div>
       )}
