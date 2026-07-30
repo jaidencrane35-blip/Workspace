@@ -1,31 +1,37 @@
 /**
- * Purpose: Pure view-model helpers for Desktop Interaction Layer Stage.
- * Owner: Frontend product shell (Product Contract V5)
+ * Purpose: Pure desktop-object model for the Desktop Interaction Layer Stage.
+ * Owner: Frontend product shell (Product Contract V6)
  * Inputs: WorkspaceStateWindow rows from get_workspace_state
- * Outputs: Spatial tiles, process relationships, Flow/Focus organisation
+ * Outputs: Runtime object tiles, relationship keys, Flow/Focus organisation,
+ *   selection helpers, arrangement membership overlays
  * Dependencies: None (pure)
- * Non-goals: Fake windows, WindowController ownership, OS geometry apply engines
+ * Non-goals: Fake windows, WindowController ownership, OS geometry apply, grouping engines
  */
 
+import type { DesktopArrangementEntry } from "../types/desktopArrangement";
 import type { WorkspaceStateWindow } from "../types/domain";
 
-/** Stage tile bound to a real observed window identity (not a registry invent). */
+/** First-class Stage desktop object projected from observation — not a card. */
 export interface StageDesktopWindowTile {
   key: string;
   hwnd: string;
+  stableWindowId: string | null;
   title: string;
   processLabel: string;
-  /** Stable process key for relationship accents (empty when unknown). */
+  processId: number;
+  /** Display/process relationship key (name when known, else pid). */
   processKey: string;
   /** 0–5 hue bucket shared by windows of the same process. */
   relationIndex: number;
+  visible: boolean;
   focused: boolean;
   minimized: boolean;
+  monitorIndex: number | null;
+  monitorLabel: string | null;
   leftPct: number;
   topPct: number;
   widthPct: number;
   heightPct: number;
-  monitorLabel: string | null;
 }
 
 export type StageDesktopLoadState =
@@ -65,12 +71,19 @@ export function stageDesktopAppObjectLabel(
   return stageDesktopWindowTitle(window);
 }
 
+/** Prefer PID for true process siblings; name only as display fallback key. */
 export function stageDesktopProcessKey(window: WorkspaceStateWindow): string {
+  return `pid:${window.process_id}`;
+}
+
+export function stageDesktopProcessDisplayKey(
+  window: WorkspaceStateWindow,
+): string {
   const process = window.process_name?.trim().toLowerCase();
   if (process) {
     return process;
   }
-  return `pid:${window.process_id}`;
+  return stageDesktopProcessKey(window);
 }
 
 /** Deterministic 0–5 bucket so same process shares an accent without a grouping engine. */
@@ -84,7 +97,7 @@ export function stageDesktopRelationIndex(processKey: string): number {
 
 /**
  * Map observed windows into a spatial stage using relative bounds.
- * No fake pixels — rectangles encode identity + geometry only.
+ * Rectangles encode identity + geometry only — lightweight representations.
  */
 export function layoutStageDesktopWindows(
   windows: WorkspaceStateWindow[],
@@ -126,20 +139,25 @@ export function layoutStageDesktopWindows(
     const appLabel = stageDesktopAppObjectLabel(window);
     const windowTitle = stageDesktopWindowTitle(window);
     const processKey = stageDesktopProcessKey(window);
+    const displayKey = stageDesktopProcessDisplayKey(window);
     return {
       key: stageDesktopWindowKey(window),
       hwnd: window.hwnd,
+      stableWindowId: window.stable_window_id?.trim() || null,
       title: appLabel,
       processLabel: windowTitle !== appLabel ? windowTitle : "",
+      processId: window.process_id,
       processKey,
-      relationIndex: stageDesktopRelationIndex(processKey),
+      relationIndex: stageDesktopRelationIndex(displayKey),
+      visible: window.visible,
       focused: window.focused,
       minimized: window.minimized,
+      monitorIndex: window.monitor_index,
+      monitorLabel,
       leftPct,
       topPct,
       widthPct: Math.min(widthPct, 100 - leftPct),
       heightPct: Math.min(heightPct, 100 - topPct),
-      monitorLabel,
     };
   });
 }
@@ -161,6 +179,7 @@ export function stageDesktopMetaLine(args: {
   windowCount: number;
   monitorCount: number;
   focusedTitle: string | null;
+  selectedCount?: number;
 }): string {
   const parts: string[] = [];
   parts.push(
@@ -175,15 +194,141 @@ export function stageDesktopMetaLine(args: {
         : `${args.monitorCount} monitors`,
     );
   }
+  if (args.selectedCount && args.selectedCount > 1) {
+    parts.push(`${args.selectedCount} selected`);
+  }
   if (args.focusedTitle) {
     parts.push(args.focusedTitle);
   }
   return parts.join(" · ");
 }
 
+/**
+ * Observable relationships from desktop facts only.
+ * Flow: same process OR same monitor. Focus: same process (tight).
+ */
+export function relatedStageObjectKeys(
+  tiles: StageDesktopWindowTile[],
+  anchorKey: string | null,
+  workMode: "flow" | "focus",
+): Set<string> {
+  const related = new Set<string>();
+  if (!anchorKey) {
+    return related;
+  }
+  const anchor = tiles.find((tile) => tile.key === anchorKey);
+  if (!anchor) {
+    return related;
+  }
+  for (const tile of tiles) {
+    if (tile.key === anchor.key) {
+      related.add(tile.key);
+      continue;
+    }
+    if (tile.processId === anchor.processId) {
+      related.add(tile.key);
+      continue;
+    }
+    if (
+      workMode === "flow" &&
+      anchor.monitorIndex != null &&
+      tile.monitorIndex === anchor.monitorIndex
+    ) {
+      related.add(tile.key);
+    }
+  }
+  return related;
+}
+
+/** Match arrangement entries to Stage object keys via stable id / hwnd. */
+export function stageArrangementMemberKeys(
+  tiles: StageDesktopWindowTile[],
+  entries: DesktopArrangementEntry[] | null | undefined,
+): Set<string> {
+  const members = new Set<string>();
+  if (!entries || entries.length === 0) {
+    return members;
+  }
+  for (const entry of entries) {
+    const stable = entry.stable_window_id?.trim();
+    const hwnd = entry.hwnd?.trim();
+    for (const tile of tiles) {
+      if (stable && tile.stableWindowId === stable) {
+        members.add(tile.key);
+        continue;
+      }
+      if (hwnd && tile.hwnd === hwnd) {
+        members.add(tile.key);
+      }
+    }
+  }
+  return members;
+}
+
+export function primaryStageSelectionKey(
+  selectedKeys: readonly string[],
+): string | null {
+  if (selectedKeys.length === 0) {
+    return null;
+  }
+  return selectedKeys[selectedKeys.length - 1] ?? null;
+}
+
+export function replaceStageSelection(key: string): string[] {
+  return [key];
+}
+
+export function toggleStageSelection(
+  selectedKeys: readonly string[],
+  key: string,
+): string[] {
+  if (selectedKeys.includes(key)) {
+    const next = selectedKeys.filter((item) => item !== key);
+    return next;
+  }
+  return [...selectedKeys, key];
+}
+
+/** Spatial neighbour for keyboard selection among laid-out tiles. */
+export function nextStageSelectionKey(
+  tiles: StageDesktopWindowTile[],
+  currentKey: string | null,
+  direction: "next" | "previous" | "home" | "end",
+): string | null {
+  if (tiles.length === 0) {
+    return null;
+  }
+  const ordered = [...tiles].sort((a, b) => {
+    if (a.topPct !== b.topPct) {
+      return a.topPct - b.topPct;
+    }
+    return a.leftPct - b.leftPct;
+  });
+  if (direction === "home") {
+    return ordered[0]?.key ?? null;
+  }
+  if (direction === "end") {
+    return ordered[ordered.length - 1]?.key ?? null;
+  }
+  const index = currentKey
+    ? ordered.findIndex((tile) => tile.key === currentKey)
+    : -1;
+  if (direction === "next") {
+    if (index < 0) {
+      return ordered[0]?.key ?? null;
+    }
+    return ordered[Math.min(index + 1, ordered.length - 1)]?.key ?? null;
+  }
+  if (index < 0) {
+    return ordered[ordered.length - 1]?.key ?? null;
+  }
+  return ordered[Math.max(index - 1, 0)]?.key ?? null;
+}
+
 /** One dock entry per other process while Focus mode keeps a primary app on the map. */
 export interface StageProcessDockEntry {
   processKey: string;
+  processId: number;
   label: string;
   hwnd: string;
   tileKey: string;
@@ -198,7 +343,7 @@ export interface StageWorkModeOrganisation {
 }
 
 /**
- * Flow keeps every observed window on the map.
+ * Flow keeps every observed window on the map (relationships exposed via accents).
  * Focus keeps one process on the map and docks the rest as process objects.
  */
 export function organiseStageForWorkMode(
@@ -220,22 +365,23 @@ export function organiseStageForWorkMode(
     return { mapWindows: windows, dockEntries: [] };
   }
 
-  const mapWindows = windows.filter((window) => {
-    return stageDesktopProcessKey(window) === anchor.processKey;
-  });
+  const mapWindows = windows.filter(
+    (window) => window.process_id === anchor.processId,
+  );
 
-  const dockByProcess = new Map<string, StageProcessDockEntry>();
+  const dockByProcess = new Map<number, StageProcessDockEntry>();
   for (const tile of tiles) {
-    if (tile.processKey === anchor.processKey) {
+    if (tile.processId === anchor.processId) {
       continue;
     }
-    const existing = dockByProcess.get(tile.processKey);
+    const existing = dockByProcess.get(tile.processId);
     if (existing) {
       existing.windowCount += 1;
       continue;
     }
-    dockByProcess.set(tile.processKey, {
+    dockByProcess.set(tile.processId, {
       processKey: tile.processKey,
+      processId: tile.processId,
       label: tile.title,
       hwnd: tile.hwnd,
       tileKey: tile.key,

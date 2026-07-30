@@ -9,14 +9,17 @@
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import {
+  answerDesktopQuestionLocally,
   appendCompanionRecentTurn,
   companionAnswerFromSurface,
   companionThreadTurns,
   enrichAskWithDesktopObservation,
   loadCompanionRecentTurns,
   type AssistantCompanionTurn,
+  type AssistantDesktopFacts,
 } from "../lib/assistantCompanion";
 import { invokeIpc, isIpcRuntimeAvailable } from "../lib/ipc";
+import type { DesktopArrangement } from "../types/desktopArrangement";
 import type {
   Workspace,
   WorkspaceAssistantContextProjection,
@@ -31,6 +34,7 @@ import type {
   WorkspaceAssistantRetrievalSummary,
   WorkspaceAssistantSurfaceProjection,
   WorkspaceAssistantSurfaceSummary,
+  WorkspaceObservationDelta,
   WorkspaceState,
 } from "../types/domain";
 import {
@@ -285,9 +289,11 @@ export function AssistantIntelligencePanel({
     return onEnsureWorkspace();
   }
 
-  async function readDesktopObservation(): Promise<WorkspaceState | null> {
+  async function readDesktopFacts(
+    activeWorkspaceId: string | null,
+  ): Promise<AssistantDesktopFacts> {
     if (!isIpcRuntimeAvailable()) {
-      return null;
+      return { state: null, delta: null, arrangements: [] };
     }
     try {
       try {
@@ -297,9 +303,25 @@ export function AssistantIntelligencePanel({
       } catch {
         // Freshness is best-effort before reading projected desktop state.
       }
-      return await invokeIpc<WorkspaceState>("get_workspace_state");
+      const [state, delta, arrangements] = await Promise.all([
+        invokeIpc<WorkspaceState>("get_workspace_state").catch(() => null),
+        invokeIpc<WorkspaceObservationDelta>(
+          "get_latest_observation_delta",
+        ).catch(() => null),
+        activeWorkspaceId
+          ? invokeIpc<DesktopArrangement[]>("list_desktop_arrangements", {
+              workspaceId: activeWorkspaceId,
+              limit: 20,
+            }).catch(() => [] as DesktopArrangement[])
+          : Promise.resolve([] as DesktopArrangement[]),
+      ]);
+      return {
+        state,
+        delta,
+        arrangements: arrangements ?? [],
+      };
     } catch {
-      return null;
+      return { state: null, delta: null, arrangements: [] };
     }
   }
 
@@ -315,13 +337,25 @@ export function AssistantIntelligencePanel({
     try {
       await run(null, async () => {
         const active = await resolveWorkspace();
+        const facts = await readDesktopFacts(active?.id ?? null);
+        const local = answerDesktopQuestionLocally(ask, facts);
+        if (local) {
+          setRecent(
+            appendCompanionRecentTurn({
+              id: `local-${Date.now()}`,
+              ask,
+              answer: local,
+              at: new Date().toISOString(),
+            }),
+          );
+          return;
+        }
         if (!active) {
           throw new Error(
             "Assistant needs a quiet Desktop profile once to store answers. Create one under Profiles, or open the desktop app.",
           );
         }
-        const desktop = await readDesktopObservation();
-        const composedAsk = enrichAskWithDesktopObservation(ask, desktop);
+        const composedAsk = enrichAskWithDesktopObservation(ask, facts);
         const nextSurface =
           await invokeIpc<WorkspaceAssistantSurfaceProjection>(
             "compose_workspace_assistant_turn",

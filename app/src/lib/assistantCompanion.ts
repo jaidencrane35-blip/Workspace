@@ -1,14 +1,17 @@
 /**
- * Purpose: Lightweight Assistant companion chat helpers (history + answer text).
- * Owner: Frontend product shell (Product Contract V5)
- * Inputs: Compose surface projection + sessionStorage + optional WorkspaceState
- * Outputs: Chat history turns, answer extraction, desktop-aware ask enrichment
- * Dependencies: domain projection types only
+ * Purpose: Lightweight Assistant companion — history + desktop-fact enrichment.
+ * Owner: Frontend product shell (Product Contract V6)
+ * Inputs: Compose surface + sessionStorage + WorkspaceState / delta / arrangements
+ * Outputs: Chat history, answer extraction, desktop-aware ask enrichment,
+ *   deterministic local answers for common desktop questions
+ * Dependencies: domain projection + arrangement types only
  * Non-responsibilities: AI engines, durable history IPC, PermissionGateway, restore/focus
  */
 
+import type { DesktopArrangement } from "../types/desktopArrangement";
 import type {
   WorkspaceAssistantSurfaceProjection,
+  WorkspaceObservationDelta,
   WorkspaceState,
 } from "../types/domain";
 
@@ -23,6 +26,12 @@ export interface AssistantCompanionTurn {
   ask: string;
   answer: string;
   at: string;
+}
+
+export interface AssistantDesktopFacts {
+  state: WorkspaceState | null;
+  delta: WorkspaceObservationDelta | null;
+  arrangements: DesktopArrangement[];
 }
 
 export function companionAnswerFromSurface(
@@ -90,16 +99,198 @@ export function companionThreadTurns(
   return [...recent].reverse();
 }
 
+function summariseOpen(state: WorkspaceState): string {
+  const apps = state.active_applications
+    .map((app) => {
+      const name = app.process_name?.trim() || `pid ${app.process_id}`;
+      return `${name} (${app.window_count})`;
+    })
+    .slice(0, 12);
+  const focused = state.focused_window?.title?.trim();
+  const parts = [
+    `${state.windows.length} window${state.windows.length === 1 ? "" : "s"} open`,
+  ];
+  if (focused) {
+    parts.push(`focused on ${focused}`);
+  }
+  if (apps.length > 0) {
+    parts.push(`apps: ${apps.join(", ")}`);
+  }
+  return parts.join(". ") + ".";
+}
+
+function summariseWorkingOn(state: WorkspaceState): string {
+  const focused = state.focused_window;
+  if (!focused) {
+    return "No focused window is recorded in the latest observation.";
+  }
+  const siblings = state.windows.filter(
+    (window) => window.process_id === focused.process_id,
+  );
+  const name =
+    siblings.find((window) => window.focused)?.process_name?.trim() ||
+    state.windows.find((window) => window.hwnd === focused.hwnd)?.process_name?.trim() ||
+    focused.title.trim() ||
+    `hwnd ${focused.hwnd}`;
+  return `You appear to be working in ${name} (${focused.title || "untitled"}${
+    siblings.length > 1 ? `; ${siblings.length} windows in that process` : ""
+  }).`;
+}
+
+function summariseBelongsTogether(
+  state: WorkspaceState,
+  arrangements: DesktopArrangement[],
+): string {
+  if (arrangements.length === 0) {
+    const byProcess = new Map<number, number>();
+    for (const window of state.windows) {
+      byProcess.set(
+        window.process_id,
+        (byProcess.get(window.process_id) ?? 0) + 1,
+      );
+    }
+    const multi = [...byProcess.entries()].filter(([, count]) => count > 1);
+    if (multi.length === 0) {
+      return "No saved arrangements yet. Related windows today are only same-process siblings.";
+    }
+    return `No saved arrangements. Processes with multiple windows: ${multi
+      .map(([pid, count]) => {
+        const name =
+          state.windows.find((window) => window.process_id === pid)?.process_name ||
+          `pid ${pid}`;
+        return `${name} (${count})`;
+      })
+      .join(", ")}.`;
+  }
+  return arrangements
+    .slice(0, 5)
+    .map(
+      (item) =>
+        `${item.name}: ${item.entries.length} window${item.entries.length === 1 ? "" : "s"}`,
+    )
+    .join(". ")
+    .concat(".");
+}
+
+function summariseChanged(delta: WorkspaceObservationDelta | null): string {
+  if (!delta || !delta.has_changes) {
+    return "No desktop changes between the latest observation passes.";
+  }
+  const parts: string[] = [];
+  if (delta.opened_windows.length > 0) {
+    parts.push(
+      `opened ${delta.opened_windows
+        .map((window) => window.title || window.hwnd)
+        .slice(0, 5)
+        .join(", ")}`,
+    );
+  }
+  if (delta.closed_windows.length > 0) {
+    parts.push(
+      `closed ${delta.closed_windows
+        .map((window) => window.title || window.hwnd)
+        .slice(0, 5)
+        .join(", ")}`,
+    );
+  }
+  if (delta.focused_window_changed?.current) {
+    parts.push(
+      `focus → ${delta.focused_window_changed.current.title || delta.focused_window_changed.current.hwnd}`,
+    );
+  }
+  if (delta.minimized_changes.length > 0) {
+    parts.push(`${delta.minimized_changes.length} minimize changes`);
+  }
+  return parts.length > 0
+    ? `Since last observation: ${parts.join("; ")}.`
+    : "Observation reports changes, but no window open/close/focus details.";
+}
+
+function summariseReopen(
+  delta: WorkspaceObservationDelta | null,
+  arrangements: DesktopArrangement[],
+): string {
+  const closed = delta?.closed_windows ?? [];
+  if (closed.length > 0) {
+    return `Recently closed: ${closed
+      .map((window) => window.title || window.hwnd)
+      .slice(0, 6)
+      .join(", ")}. Restore a saved arrangement under Stage if you want those layouts back — Assistant cannot move windows.`;
+  }
+  if (arrangements.length > 0) {
+    return `Nothing closed in the latest delta. Saved arrangements you can restore from Stage: ${arrangements
+      .map((item) => item.name)
+      .slice(0, 5)
+      .join(", ")}.`;
+  }
+  return "Nothing closed in the latest delta, and there are no saved arrangements to reopen yet.";
+}
+
+/**
+ * Answer common desktop questions from observed facts without calling compose.
+ * Returns null when the ask needs the broader assistant surface.
+ */
+export function answerDesktopQuestionLocally(
+  ask: string,
+  facts: AssistantDesktopFacts,
+): string | null {
+  const trimmed = ask.trim().toLowerCase();
+  if (!trimmed) {
+    return null;
+  }
+  const state = facts.state;
+  if (!state) {
+    return null;
+  }
+
+  if (
+    /what('s| is) open|what windows|what apps|what applications/.test(trimmed)
+  ) {
+    return summariseOpen(state);
+  }
+  if (
+    /what am i working on|what('s| is) focused|current (focus|work)/.test(
+      trimmed,
+    )
+  ) {
+    return summariseWorkingOn(state);
+  }
+  if (/belong|related|together|group/.test(trimmed)) {
+    return summariseBelongsTogether(state, facts.arrangements);
+  }
+  if (/what changed|what('s| is) new|delta|recent change/.test(trimmed)) {
+    return summariseChanged(facts.delta);
+  }
+  if (/reopen|restore|bring back|closed/.test(trimmed)) {
+    return summariseReopen(facts.delta, facts.arrangements);
+  }
+  return null;
+}
+
 /**
  * Prefix the compose ask with observed desktop facts when available.
  * Displayed user ask stays unprefixed; enrichment is compose-only.
  */
 export function enrichAskWithDesktopObservation(
   ask: string,
-  state: WorkspaceState | null | undefined,
+  facts: AssistantDesktopFacts | WorkspaceState | null | undefined,
 ): string {
   const trimmed = ask.trim();
-  if (!trimmed || !state || state.windows.length === 0) {
+  if (!trimmed) {
+    return trimmed;
+  }
+
+  const normalized: AssistantDesktopFacts =
+    facts && "state" in (facts as AssistantDesktopFacts)
+      ? (facts as AssistantDesktopFacts)
+      : {
+          state: (facts as WorkspaceState | null | undefined) ?? null,
+          delta: null,
+          arrangements: [],
+        };
+
+  const state = normalized.state;
+  if (!state || state.windows.length === 0) {
     return trimmed;
   }
 
@@ -109,7 +300,7 @@ export function enrichAskWithDesktopObservation(
   for (const window of state.windows) {
     const label =
       window.process_name?.trim() || window.title.trim() || `hwnd ${window.hwnd}`;
-    const key = label.toLowerCase();
+    const key = `${window.process_id}:${label.toLowerCase()}`;
     if (seen.has(key)) {
       continue;
     }
@@ -128,6 +319,19 @@ export function enrichAskWithDesktopObservation(
   }
   if (processes.length > 0) {
     parts.push(`apps: ${processes.join(", ")}`);
+  }
+  if (normalized.delta?.has_changes) {
+    parts.push(
+      `changed: +${normalized.delta.opened_windows.length}/-${normalized.delta.closed_windows.length}`,
+    );
+  }
+  if (normalized.arrangements.length > 0) {
+    parts.push(
+      `arrangements: ${normalized.arrangements
+        .map((item) => `${item.name}(${item.entries.length})`)
+        .slice(0, 4)
+        .join(", ")}`,
+    );
   }
 
   return `Observed desktop (${parts.join("; ")}).\n\n${trimmed}`;

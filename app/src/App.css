@@ -1420,6 +1420,49 @@ button.linkish:not(:disabled):hover {
   box-shadow: inset 0 0 0 1px rgba(147, 197, 253, 0.22);
 }
 
+.stage-desktop-window.working-set-member {
+  outline: 1px solid rgba(125, 186, 142, 0.55);
+}
+
+.stage-desktop-window.working-set-outside {
+  opacity: 0.28;
+}
+
+.stage-desktop-window.hidden-object {
+  opacity: 0.4;
+  border-style: dashed;
+}
+
+.workspace-application-stage.mode-flow .stage-desktop-window.related:not(.selected) {
+  opacity: 1;
+}
+
+.workspace-application-stage.mode-flow .stage-desktop-window:not(.related):not(.selected):not(.focused) {
+  opacity: 0.55;
+}
+
+.stage-working-set-row {
+  margin: 0 0 0.55rem;
+}
+
+.stage-working-set-row label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.82rem;
+  color: #9aa8b4;
+}
+
+.stage-working-set-row select {
+  min-width: 12rem;
+  background: #0c1015;
+  border: 1px solid #2a3642;
+  color: #e7ecf1;
+  border-radius: 4px;
+  padding: 0.3rem 0.45rem;
+}
+
 .stage-desktop-map.stage-focus-primary {
   min-height: min(58vh, 30rem);
 }

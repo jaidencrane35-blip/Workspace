@@ -260,6 +260,7 @@ describe("assistant companion chat helpers", () => {
     const {
       ASSISTANT_COMPANION_RECENT_KEY,
       ASSISTANT_COMPANION_RECENT_LIMIT,
+      answerDesktopQuestionLocally,
       appendCompanionRecentTurn,
       companionThreadTurns,
       enrichAskWithDesktopObservation,
@@ -279,46 +280,84 @@ describe("assistant companion chat helpers", () => {
     expect(recent[0]?.id).toBe(`t-${ASSISTANT_COMPANION_RECENT_LIMIT + 2}`);
     const thread = companionThreadTurns(recent);
     expect(thread[0]?.id).toBe(recent[recent.length - 1]?.id);
-    expect(
-      enrichAskWithDesktopObservation("What is open?", {
-        metadata: {
-          state_id: "s1",
-          created_at: "2026-07-30T00:00:00Z",
-          observation_pass_id: "pass-1",
-          latest_delta_reference: null,
-          window_count: 1,
-          monitor_count: 1,
-          has_changes: false,
-          authority_effect: "none",
-        },
-        focused_window: {
+    const state = {
+      metadata: {
+        state_id: "s1",
+        created_at: "2026-07-30T00:00:00Z",
+        observation_pass_id: "pass-1",
+        latest_delta_reference: null,
+        window_count: 1,
+        monitor_count: 1,
+        has_changes: false,
+        authority_effect: "none",
+      },
+      focused_window: {
+        stable_window_id: "a",
+        hwnd: "0x1",
+        title: "Editor",
+        process_id: 1,
+      },
+      active_applications: [
+        { process_id: 1, process_name: "code.exe", window_count: 1 },
+      ],
+      windows: [
+        {
           stable_window_id: "a",
           hwnd: "0x1",
           title: "Editor",
           process_id: 1,
+          process_name: "code.exe",
+          visible: true,
+          focused: true,
+          minimized: false,
+          x: 0,
+          y: 0,
+          width: 100,
+          height: 100,
+          monitor_index: 0,
+          monitor_name: "Display 1",
         },
-        active_applications: [],
-        windows: [
-          {
-            stable_window_id: "a",
-            hwnd: "0x1",
-            title: "Editor",
-            process_id: 1,
-            process_name: "code.exe",
-            visible: true,
-            focused: true,
-            minimized: false,
-            x: 0,
-            y: 0,
-            width: 100,
-            height: 100,
-            monitor_index: 0,
-            monitor_name: "Display 1",
-          },
-        ],
-        authority_effect: "none",
+      ],
+      authority_effect: "none",
+    };
+    expect(enrichAskWithDesktopObservation("What is open?", state)).toMatch(
+      /Observed desktop[\s\S]*What is open\?/,
+    );
+    expect(
+      answerDesktopQuestionLocally("What is open?", {
+        state,
+        delta: null,
+        arrangements: [],
       }),
-    ).toMatch(/Observed desktop[\s\S]*What is open\?/);
+    ).toMatch(/code\.exe/i);
+    expect(
+      answerDesktopQuestionLocally("What changed?", {
+        state,
+        delta: {
+          previous_pass_id: "p0",
+          current_pass_id: "p1",
+          previous_captured_at: null,
+          current_captured_at: null,
+          opened_windows: [],
+          closed_windows: [
+            {
+              stable_window_id: "z",
+              hwnd: "0x9",
+              title: "Notes",
+              process_id: 9,
+            },
+          ],
+          focused_window_changed: null,
+          moved_windows: [],
+          resized_windows: [],
+          minimized_changes: [],
+          monitor_changes: [],
+          has_changes: true,
+          authority_effect: "none",
+        },
+        arrangements: [],
+      }),
+    ).toMatch(/closed Notes/i);
     memoryStorage.removeItem(ASSISTANT_COMPANION_RECENT_KEY);
   });
 });

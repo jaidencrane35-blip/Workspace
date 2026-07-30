@@ -94,6 +94,19 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 
 ## Cycles
 
+### Cycle: v6-1-runtime-objects-relationships-interaction
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Cycle number** | V6-1 |
+| **Capability groups** | Objects · Relationships · Interaction · Organisation · Assistant |
+| **Changes** | Stage tiles as runtime objects (pid/stable/visible/monitor); Flow process+monitor relationships; select≠activate + multi-select + keyboard; arrangement working-set overlay; Assistant local answers from state/delta/arrangements |
+| **Validation** | typecheck / test / build / architecture / ipc / ui-boundary |
+| **Deleted** | name-only process sibling grouping (replaced by pid) |
+
+---
+
 ### Cycle: v5-eval-pass-2-interaction-plateau
 
 | Field | Value |

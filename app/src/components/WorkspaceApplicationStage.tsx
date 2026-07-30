@@ -1,14 +1,16 @@
 /**
- * Purpose: Desktop Interaction Layer Stage — observe, select, focus, organise.
- * Owner: Frontend product shell (Product Contract V5)
+ * Purpose: Desktop Interaction Layer Stage — runtime objects, relationships, interaction.
+ * Owner: Frontend product shell (Product Contract V6)
  * Inputs: optional profile, registry apps, work mode, launch + navigate;
- *   get_workspace_state / ensure_observation_freshness / focus_desktop_window
- * Outputs: Spatial desktop objects with interaction; optional library
+ *   get_workspace_state / ensure_observation_freshness / focus_desktop_window /
+ *   list_desktop_arrangements
+ * Outputs: Spatial desktop objects with select≠activate, multi-select, keyboard;
+ *   Flow relationships; Focus dock; arrangement working-set overlay
  * Dependencies: stageDesktopUi, layoutsStageUi, ipc, applicationLaunch helpers
- * Non-goals: Fake windows, Assistant-owned control, minimize APIs (deferred)
+ * Non-goals: Fake windows, Assistant-owned control, minimize APIs, OS geometry apply
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type KeyboardEvent } from "react";
 import {
   applicationIdentityLine,
   applicationStatusLabel,
@@ -23,14 +25,23 @@ import {
 import { monogramFromName } from "../lib/productShellUi";
 import {
   layoutStageDesktopWindows,
+  nextStageSelectionKey,
   organiseStageForWorkMode,
+  primaryStageSelectionKey,
+  relatedStageObjectKeys,
+  replaceStageSelection,
+  stageArrangementMemberKeys,
   stageDesktopMetaLine,
   stageDesktopPlaneMessage,
+  toggleStageSelection,
   type StageDesktopLoadState,
   type StageDesktopWindowTile,
 } from "../lib/stageDesktopUi";
 import type { WorkMode } from "../lib/workMode";
-import type { DesktopWindowFocusResult } from "../types/desktopArrangement";
+import type {
+  DesktopArrangement,
+  DesktopWindowFocusResult,
+} from "../types/desktopArrangement";
 import type {
   ApplicationReference,
   Workspace,
@@ -57,7 +68,7 @@ function matchLibraryApp(
   tile: StageDesktopWindowTile,
   applications: ApplicationReference[],
 ): ApplicationReference | null {
-  const process = tile.processKey.replace(/\.exe$/i, "").toLowerCase();
+  const process = tile.title.replace(/\.exe$/i, "").toLowerCase();
   if (!process) {
     return null;
   }
@@ -97,7 +108,11 @@ export function WorkspaceApplicationStage({
   const [windows, setWindows] = useState<WorkspaceStateWindow[]>([]);
   const [monitorCount, setMonitorCount] = useState(0);
   const [focusedTitle, setFocusedTitle] = useState<string | null>(null);
-  const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
+  const [arrangements, setArrangements] = useState<DesktopArrangement[]>([]);
+  const [workingSetId, setWorkingSetId] = useState<string>("");
+
+  const selectedKey = primaryStageSelectionKey(selectedKeys);
 
   const refreshDesktop = useCallback(async () => {
     if (!isIpcRuntimeAvailable()) {
@@ -135,9 +150,36 @@ export function WorkspaceApplicationStage({
     }
   }, []);
 
+  const refreshArrangements = useCallback(async () => {
+    if (!workspace || !isIpcRuntimeAvailable()) {
+      setArrangements([]);
+      setWorkingSetId("");
+      return;
+    }
+    try {
+      const listed = await invokeIpc<DesktopArrangement[]>(
+        "list_desktop_arrangements",
+        { workspaceId: workspace.id, limit: 50 },
+      );
+      setArrangements(listed);
+      setWorkingSetId((prev) => {
+        if (prev && listed.some((item) => item.id === prev)) {
+          return prev;
+        }
+        return "";
+      });
+    } catch {
+      setArrangements([]);
+    }
+  }, [workspace]);
+
   useEffect(() => {
     void refreshDesktop();
   }, [refreshDesktop, observationEpoch]);
+
+  useEffect(() => {
+    void refreshArrangements();
+  }, [refreshArrangements, observationEpoch]);
 
   const tiles = useMemo(
     () => layoutStageDesktopWindows(windows),
@@ -145,26 +187,30 @@ export function WorkspaceApplicationStage({
   );
 
   useEffect(() => {
-    if (selectedKey && !tiles.some((tile) => tile.key === selectedKey)) {
-      setSelectedKey(null);
-    }
-  }, [tiles, selectedKey]);
+    setSelectedKeys((prev) => {
+      const next = prev.filter((key) => tiles.some((tile) => tile.key === key));
+      if (next.length === prev.length && next.every((key, i) => key === prev[i])) {
+        return prev;
+      }
+      return next;
+    });
+  }, [tiles]);
 
   const selectedTile =
     tiles.find((tile) => tile.key === selectedKey) ??
     tiles.find((tile) => tile.focused) ??
     null;
 
-  const relatedKeys = useMemo(() => {
-    if (!selectedTile?.processKey) {
-      return new Set<string>();
-    }
-    return new Set(
-      tiles
-        .filter((tile) => tile.processKey === selectedTile.processKey)
-        .map((tile) => tile.key),
-    );
-  }, [tiles, selectedTile]);
+  const relatedKeys = useMemo(
+    () => relatedStageObjectKeys(tiles, selectedKey, workMode),
+    [tiles, selectedKey, workMode],
+  );
+
+  const workingSet = arrangements.find((item) => item.id === workingSetId) ?? null;
+  const workingSetKeys = useMemo(
+    () => stageArrangementMemberKeys(tiles, workingSet?.entries),
+    [tiles, workingSet],
+  );
 
   const organisation = useMemo(
     () => organiseStageForWorkMode(windows, workMode, selectedKey),
@@ -210,21 +256,80 @@ export function WorkspaceApplicationStage({
     }
   };
 
-  const onTileActivate = (tile: StageDesktopWindowTile) => {
-    setSelectedKey(tile.key);
+  const selectTile = (
+    tile: StageDesktopWindowTile,
+    mode: "replace" | "toggle",
+  ) => {
+    setSelectedKeys((prev) =>
+      mode === "toggle"
+        ? toggleStageSelection(prev, tile.key)
+        : replaceStageSelection(tile.key),
+    );
+  };
+
+  const activateTile = (tile: StageDesktopWindowTile) => {
+    setSelectedKeys(replaceStageSelection(tile.key));
     void focusSelectedWindow(tile);
+  };
+
+  const onMapKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (planeCalm || mapTiles.length === 0) {
+      return;
+    }
+    if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+      event.preventDefault();
+      const next = nextStageSelectionKey(mapTiles, selectedKey, "next");
+      if (next) {
+        setSelectedKeys(replaceStageSelection(next));
+      }
+      return;
+    }
+    if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+      event.preventDefault();
+      const next = nextStageSelectionKey(mapTiles, selectedKey, "previous");
+      if (next) {
+        setSelectedKeys(replaceStageSelection(next));
+      }
+      return;
+    }
+    if (event.key === "Home") {
+      event.preventDefault();
+      const next = nextStageSelectionKey(mapTiles, selectedKey, "home");
+      if (next) {
+        setSelectedKeys(replaceStageSelection(next));
+      }
+      return;
+    }
+    if (event.key === "End") {
+      event.preventDefault();
+      const next = nextStageSelectionKey(mapTiles, selectedKey, "end");
+      if (next) {
+        setSelectedKeys(replaceStageSelection(next));
+      }
+      return;
+    }
+    if (event.key === "Enter" && selectedTile) {
+      event.preventDefault();
+      void focusSelectedWindow(selectedTile);
+    }
   };
 
   const renderTile = (tile: StageDesktopWindowTile) => {
     const related = relatedKeys.has(tile.key);
-    const selected = tile.key === selectedKey;
+    const selected = selectedKeys.includes(tile.key);
+    const inWorkingSet = workingSetKeys.size > 0 && workingSetKeys.has(tile.key);
+    const outsideWorkingSet =
+      workingSetKeys.size > 0 && !workingSetKeys.has(tile.key);
     const className = [
       "stage-desktop-window",
       `relation-${tile.relationIndex}`,
       tile.focused ? "focused" : null,
       tile.minimized ? "minimized" : null,
+      !tile.visible ? "hidden-object" : null,
       selected ? "selected" : null,
       related && !selected ? "related" : null,
+      inWorkingSet ? "working-set-member" : null,
+      outsideWorkingSet ? "working-set-outside" : null,
     ]
       .filter(Boolean)
       .join(" ");
@@ -239,11 +344,17 @@ export function WorkspaceApplicationStage({
           width: `${tile.widthPct}%`,
           height: `${tile.heightPct}%`,
         }}
-        title={`${tile.title} — click to focus`}
+        title={`${tile.title} — click to select · double-click or Enter to focus`}
         aria-pressed={selected}
         disabled={busy}
-        onClick={() => {
-          onTileActivate(tile);
+        onClick={(event) => {
+          selectTile(
+            tile,
+            event.metaKey || event.ctrlKey ? "toggle" : "replace",
+          );
+        }}
+        onDoubleClick={() => {
+          activateTile(tile);
         }}
       >
         <span className="stage-desktop-window-title">{tile.title}</span>
@@ -253,6 +364,7 @@ export function WorkspaceApplicationStage({
             tile.monitorLabel,
             tile.focused ? "Focused" : null,
             tile.minimized ? "Minimized" : null,
+            !tile.visible ? "Hidden" : null,
           ]
             .filter(Boolean)
             .join(" · ")}
@@ -282,6 +394,7 @@ export function WorkspaceApplicationStage({
           disabled={busy || loadState === "loading" || !runtime}
           onClick={() => {
             void refreshDesktop();
+            void refreshArrangements();
           }}
         >
           Refresh
@@ -294,8 +407,32 @@ export function WorkspaceApplicationStage({
             windowCount: windows.length,
             monitorCount,
             focusedTitle,
+            selectedCount: selectedKeys.length,
           })}
         </p>
+      ) : null}
+
+      {showDesktopMap && arrangements.length > 0 ? (
+        <div className="stage-working-set-row">
+          <label htmlFor="stage-working-set">
+            Working set
+            <select
+              id="stage-working-set"
+              value={workingSetId}
+              disabled={busy}
+              onChange={(event) => {
+                setWorkingSetId(event.target.value);
+              }}
+            >
+              <option value="">All observed windows</option>
+              {arrangements.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
       ) : null}
 
       <div
@@ -309,6 +446,8 @@ export function WorkspaceApplicationStage({
         aria-label={
           planeCalm ? "Desktop surface" : "Observed desktop windows"
         }
+        tabIndex={planeCalm ? undefined : 0}
+        onKeyDown={onMapKeyDown}
       >
         {planeCalm ? (
           <div className="stage-desktop-plane-message">
@@ -347,7 +486,13 @@ export function WorkspaceApplicationStage({
                 onClick={() => {
                   const tile = tiles.find((item) => item.key === entry.tileKey);
                   if (tile) {
-                    onTileActivate(tile);
+                    selectTile(tile, "replace");
+                  }
+                }}
+                onDoubleClick={() => {
+                  const tile = tiles.find((item) => item.key === entry.tileKey);
+                  if (tile) {
+                    activateTile(tile);
                   }
                 }}
               >
@@ -369,9 +514,11 @@ export function WorkspaceApplicationStage({
       {selectedTile ? (
         <div className="stage-interaction-bar" aria-live="polite">
           <p className="stage-selection muted">
-            {relatedKeys.size > 1
-              ? `${selectedTile.title} · ${relatedKeys.size} windows`
-              : selectedTile.title}
+            {selectedKeys.length > 1
+              ? `${selectedKeys.length} selected · ${selectedTile.title}`
+              : relatedKeys.size > 1
+                ? `${selectedTile.title} · ${relatedKeys.size} related`
+                : selectedTile.title}
           </p>
           <div className="row">
             <button
