@@ -65,7 +65,10 @@ Application registry + `launch_application`, `WorkspaceApplicationStage`, `Appli
 
 ## Screenshots
 
-Captured for human review (browser preview; IPC unavailable expected):
+Fresh review package (2026-07-30). Browser Vite preview; desktop-preview banner expected.
+
+**Launch:** `cd app && pnpm exec vite` → http://localhost:1420  
+**Package doc:** [MILESTONE-D-HUMAN-REVIEW-PACKAGE.md](MILESTONE-D-HUMAN-REVIEW-PACKAGE.md)
 
 | File | Contents |
 |------|----------|
@@ -73,7 +76,8 @@ Captured for human review (browser preview; IPC unavailable expected):
 | `/opt/cursor/artifacts/screenshots/milestone-d-home.png` | Home apps-first + stage CTA |
 | `/opt/cursor/artifacts/screenshots/milestone-d-applications.png` | Applications panel |
 | `/opt/cursor/artifacts/screenshots/milestone-d-stage-focus.png` | Stage + Focus chrome |
+| `/opt/cursor/artifacts/screenshots/milestone-d-review-*.png` | Review twins of the four views above |
 
 ## Stop
 
-Milestone D complete. **Do not start Milestone F** until human review and approval.
+Milestone D implementation complete; **human review package ready**. **Do not start Milestone F** until human review and approval.
