@@ -7,7 +7,7 @@
 ## Quick Start
 
 | A new contributor | [Project Constitution](00-Constitution/PROJECT-CONSTITUTION.md) → [AI Engineering Governance](00-Governance/AI_ENGINEERING_GOVERNANCE.md) → [Reference Interpretation](01-Product/WORKSPACE-REFERENCE-INTERPRETATION.md) → [Visual Direction](01-Product/WORKSPACE-VISUAL-DIRECTION.md) |
-| Making a product decision | [Product Vision](01-Product/PRODUCT-VISION.md) → [Reference Interpretation](01-Product/WORKSPACE-REFERENCE-INTERPRETATION.md) → [Visual Direction](01-Product/WORKSPACE-VISUAL-DIRECTION.md) → [Product Reality Alignment Audit](01-Product/WORKSPACE-PRODUCT-REALITY-ALIGNMENT-AUDIT.md) → [Product Delivery Roadmap](01-Product/WORKSPACE-PRODUCT-DELIVERY-ROADMAP.md) |
+| Making a product decision | [Desktop Interaction Model](01-Product/WORKSPACE-DESKTOP-INTERACTION-MODEL.md) → [Reference Interpretation](01-Product/WORKSPACE-REFERENCE-INTERPRETATION.md) → [Visual Direction](01-Product/WORKSPACE-VISUAL-DIRECTION.md) → [Product Vision](01-Product/PRODUCT-VISION.md) → [Product Delivery Roadmap](01-Product/WORKSPACE-PRODUCT-DELIVERY-ROADMAP.md) |
 | Starting a major batch | [Batch Alignment Check](03-Engineering/BATCH-ALIGNMENT-CHECK.md) → [Engineering Governance](03-Engineering/ENGINEERING-GOVERNANCE.md) → [AI Engineering Governance](00-Governance/AI_ENGINEERING_GOVERNANCE.md) |
 | Human visual review | [Human Review Policy](03-Engineering/HUMAN-REVIEW-POLICY.md) → [Visual Review Checklist](03-Engineering/VISUAL-REVIEW-CHECKLIST.md) |
 | Designing architecture | [Architecture Principles](02-Architecture/ARCHITECTURE-PRINCIPLES.md) → [System Overview](02-Architecture/SYSTEM-OVERVIEW.md) |

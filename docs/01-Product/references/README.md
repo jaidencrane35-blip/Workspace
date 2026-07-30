@@ -9,8 +9,9 @@ Original Workspace concept references for engineering.
 
 **Authoritative interpretation:**
 
-1. [`../WORKSPACE-REFERENCE-INTERPRETATION.md`](../WORKSPACE-REFERENCE-INTERPRETATION.md) — hierarchy, drift, guardrails  
-2. [`../WORKSPACE-VISUAL-DIRECTION.md`](../WORKSPACE-VISUAL-DIRECTION.md) — visual north star summary  
+1. [`../WORKSPACE-DESKTOP-INTERACTION-MODEL.md`](../WORKSPACE-DESKTOP-INTERACTION-MODEL.md) — **product contract** (user experience)  
+2. [`../WORKSPACE-REFERENCE-INTERPRETATION.md`](../WORKSPACE-REFERENCE-INTERPRETATION.md) — hierarchy, drift, guardrails  
+3. [`../WORKSPACE-VISUAL-DIRECTION.md`](../WORKSPACE-VISUAL-DIRECTION.md) — visual north star summary  
 
 ### Binding vs not binding
 

@@ -6,7 +6,7 @@
 | **Owner** | Product / Engineering |
 | **Status** | Binding interpretation after human visual review (2026-07-30) |
 | **References** | [`references/workspace-concept-01.png`](references/workspace-concept-01.png), [`references/workspace-concept-02.png`](references/workspace-concept-02.png) |
-| **Related** | [WORKSPACE-VISUAL-DIRECTION.md](WORKSPACE-VISUAL-DIRECTION.md), [WORKSPACE-PRODUCT-REALITY-ALIGNMENT-AUDIT.md](WORKSPACE-PRODUCT-REALITY-ALIGNMENT-AUDIT.md), [PRODUCT-VISION.md](PRODUCT-VISION.md) |
+| **Related** | [WORKSPACE-DESKTOP-INTERACTION-MODEL.md](WORKSPACE-DESKTOP-INTERACTION-MODEL.md) (**product contract**), [WORKSPACE-VISUAL-DIRECTION.md](WORKSPACE-VISUAL-DIRECTION.md), [WORKSPACE-PRODUCT-REALITY-ALIGNMENT-AUDIT.md](WORKSPACE-PRODUCT-REALITY-ALIGNMENT-AUDIT.md), [PRODUCT-VISION.md](PRODUCT-VISION.md) |
 | **Audience** | Anyone designing, implementing, or reviewing Workspace UI |
 
 **This document does not authorise implementation.**  

@@ -6,7 +6,8 @@
 | **Owner** | Product / Engineering |
 | **Status** | Authoritative visual north star — hierarchy binding; pixels not binding |
 | **References** | [`references/workspace-concept-01.png`](references/workspace-concept-01.png), [`references/workspace-concept-02.png`](references/workspace-concept-02.png) |
-| **Interpretation rules** | [WORKSPACE-REFERENCE-INTERPRETATION.md](WORKSPACE-REFERENCE-INTERPRETATION.md) (**read first**) |
+| **Product contract** | [WORKSPACE-DESKTOP-INTERACTION-MODEL.md](WORKSPACE-DESKTOP-INTERACTION-MODEL.md) (**read first**) |
+| **Interpretation rules** | [WORKSPACE-REFERENCE-INTERPRETATION.md](WORKSPACE-REFERENCE-INTERPRETATION.md) |
 | **Related** | [PRODUCT-VISION.md](PRODUCT-VISION.md), [WORKSPACE-PRODUCT-REALITY-ALIGNMENT-AUDIT.md](WORKSPACE-PRODUCT-REALITY-ALIGNMENT-AUDIT.md), [PRODUCT-VISION-REALIGNMENT-AUDIT.md](PRODUCT-VISION-REALIGNMENT-AUDIT.md) |
 
 ---
