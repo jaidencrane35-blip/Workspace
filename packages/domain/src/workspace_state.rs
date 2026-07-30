@@ -13,7 +13,8 @@ use crate::desktop_grouping::{
     group_desktop_members, DesktopGroupCriterion, DesktopGroupMemberFact, DesktopWindowGroup,
 };
 use crate::workspace_observation::{
-    observation_now_rfc3339, ObservedMonitor, ObservedWindow, WorkspaceObservationSnapshot,
+    observation_now_rfc3339, ObservedMonitor, ObservedWindow, ObservationWindowIdentity,
+    WorkspaceObservationSnapshot,
 };
 use crate::workspace_observation_delta::{ObservationWindowRef, WorkspaceObservationDelta};
 
@@ -67,6 +68,10 @@ pub struct WorkspaceStateWindow {
     pub height: i32,
     pub monitor_index: Option<i32>,
     pub monitor_name: Option<String>,
+    /// Live identity-registry continuity (not historical snapshot state).
+    pub first_seen_at: Option<String>,
+    pub last_seen_at: Option<String>,
+    pub identity_confidence: Option<String>,
 }
 
 impl WorkspaceStateWindow {
@@ -91,6 +96,9 @@ impl WorkspaceStateWindow {
             height: window.height,
             monitor_index: monitor.map(|monitor| monitor.monitor_index),
             monitor_name: monitor.map(|monitor| monitor.name.clone()),
+            first_seen_at: None,
+            last_seen_at: None,
+            identity_confidence: None,
         }
     }
 
@@ -260,6 +268,37 @@ impl WorkspaceState {
         self
     }
 
+    /// Attach live identity-registry continuity facts onto matching windows.
+    ///
+    /// Matches on `stable_window_id` == identity `id`. Does not invent history.
+    pub fn with_identity_continuity(
+        mut self,
+        identities: &[ObservationWindowIdentity],
+    ) -> Self {
+        use std::collections::HashMap;
+        let by_id: HashMap<&str, &ObservationWindowIdentity> = identities
+            .iter()
+            .map(|identity| (identity.id.as_str(), identity))
+            .collect();
+        for window in &mut self.windows {
+            let Some(stable) = window
+                .stable_window_id
+                .as_ref()
+                .map(|value| value.trim())
+                .filter(|value| !value.is_empty())
+            else {
+                continue;
+            };
+            let Some(identity) = by_id.get(stable) else {
+                continue;
+            };
+            window.first_seen_at = Some(identity.first_seen_at.clone());
+            window.last_seen_at = Some(identity.last_seen_at.clone());
+            window.identity_confidence = Some(identity.confidence.as_str().into());
+        }
+        self
+    }
+
     /// Fixture window builder for Environment / Composition tests.
     pub fn fixture_window(
         hwnd: impl Into<String>,
@@ -283,6 +322,9 @@ impl WorkspaceState {
             height: 600,
             monitor_index: Some(0),
             monitor_name: Some("Primary".into()),
+            first_seen_at: None,
+            last_seen_at: None,
+            identity_confidence: None,
         }
     }
 }
@@ -535,6 +577,39 @@ mod tests {
         assert_eq!(arrangement.fact_key, "arr-1");
         assert_eq!(arrangement.label, "Focus set");
         assert_eq!(arrangement.member_ids, vec!["stable-a", "stable-b"]);
+    }
+
+    #[test]
+    fn identity_continuity_attaches_live_registry_facts() {
+        use crate::workspace_observation::WindowIdentityConfidence;
+        let snapshot = snapshot_with_focus();
+        let delta = WorkspaceObservationDelta::empty_with_current(&snapshot);
+        let identities = vec![ObservationWindowIdentity {
+            id: "stable-a".into(),
+            process_id: 10,
+            title_fingerprint: "alpha".into(),
+            first_seen_at: "2026-07-26T11:00:00Z".into(),
+            last_seen_at: "2026-07-26T12:00:00Z".into(),
+            last_hwnd: "0x1".into(),
+            confidence: WindowIdentityConfidence::High,
+            authority_effect: ObservationWindowIdentity::AUTHORITY_EFFECT_NONE.into(),
+        }];
+        let state = WorkspaceState::from_observation_and_delta(Some(&snapshot), &delta)
+            .with_identity_continuity(&identities);
+        let alpha = state
+            .windows
+            .iter()
+            .find(|window| window.stable_window_id.as_deref() == Some("stable-a"))
+            .expect("alpha");
+        assert_eq!(alpha.first_seen_at.as_deref(), Some("2026-07-26T11:00:00Z"));
+        assert_eq!(alpha.last_seen_at.as_deref(), Some("2026-07-26T12:00:00Z"));
+        assert_eq!(alpha.identity_confidence.as_deref(), Some("high"));
+        let beta = state
+            .windows
+            .iter()
+            .find(|window| window.stable_window_id.as_deref() == Some("stable-b"))
+            .expect("beta");
+        assert!(beta.first_seen_at.is_none());
     }
 
     #[test]

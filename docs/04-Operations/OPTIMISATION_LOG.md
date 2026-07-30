@@ -90,6 +90,23 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 
 ## Cycles
 
+### Cycle: v8-3-identity-continuity-on-workspace-state
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Cycle number** | V8-3 |
+| **Goal** | Surface live identity-registry continuity on WorkspaceState windows |
+| **Problem** | first_seen/last_seen/confidence existed in the registry but never reached the authoritative runtime model or Assistant |
+| **Analysis** | Enrich windows from `ObservationWindowIdentity` by stable id without treating registry rows as historical snapshot state |
+| **Changes** | `first_seen_at` / `last_seen_at` / `identity_confidence` on `WorkspaceStateWindow`; engine `list_by_ids`; Assistant continuity answers |
+| **Files affected** | domain workspace_state, state engine, domain.ts, assistantCompanion, stage tests, this log |
+| **Validation** | typecheck / test / build / architecture / ipc / ui-boundary (+ domain state tests) |
+| **Deleted / reduced** | none (pure enrichment of existing identity facts) |
+| **Next recommended cycle** | Environment consume WorkspaceState.window_groups, or two empty eval passes if only architecture-gated work remains |
+
+---
+
 ### Cycle: v8-2-atomic-latest-delta-on-workspace-state
 
 | Field | Value |

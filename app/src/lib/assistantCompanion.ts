@@ -252,6 +252,46 @@ function summariseReopen(
   return "Nothing closed in the latest delta, and there are no saved arrangements to reopen yet.";
 }
 
+function summariseContinuity(state: WorkspaceState): string {
+  const withIdentity = state.windows.filter((window) => window.first_seen_at);
+  if (withIdentity.length === 0) {
+    return "No identity continuity facts are available for the current windows yet.";
+  }
+  const focused =
+    state.windows.find((window) => window.focused) ??
+    state.windows.find((window) => window.hwnd === state.focused_window?.hwnd);
+  const parts: string[] = [];
+  if (focused?.first_seen_at) {
+    parts.push(
+      `focused ${focused.title || focused.hwnd} first seen ${focused.first_seen_at}${
+        focused.identity_confidence
+          ? ` (confidence ${focused.identity_confidence})`
+          : ""
+      }`,
+    );
+  }
+  const oldest = [...withIdentity].sort((a, b) =>
+    (a.first_seen_at ?? "").localeCompare(b.first_seen_at ?? ""),
+  )[0];
+  const newest = [...withIdentity].sort((a, b) =>
+    (b.first_seen_at ?? "").localeCompare(a.first_seen_at ?? ""),
+  )[0];
+  if (oldest?.first_seen_at) {
+    parts.push(
+      `longest-running: ${oldest.title || oldest.hwnd} since ${oldest.first_seen_at}`,
+    );
+  }
+  if (
+    newest?.first_seen_at &&
+    newest.stable_window_id !== oldest?.stable_window_id
+  ) {
+    parts.push(
+      `most recently identified: ${newest.title || newest.hwnd} since ${newest.first_seen_at}`,
+    );
+  }
+  return `${parts.join(". ")}.`;
+}
+
 /**
  * Answer common desktop questions from observed facts without calling compose.
  * Returns null when the ask needs the broader assistant surface.
@@ -284,6 +324,11 @@ export function answerDesktopQuestionLocally(
   }
   if (/belong|related|together|group/.test(trimmed)) {
     return summariseBelongsTogether(state, facts.arrangements);
+  }
+  if (
+    /how long|been open|first seen|continuity|longest.?running/.test(trimmed)
+  ) {
+    return summariseContinuity(state);
   }
   if (/what changed|what('s| is) new|delta|recent change/.test(trimmed)) {
     return summariseChanged(delta);

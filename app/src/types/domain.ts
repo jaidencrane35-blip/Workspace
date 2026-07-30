@@ -6835,6 +6835,10 @@ export interface WorkspaceStateWindow {
   height: number;
   monitor_index: number | null;
   monitor_name: string | null;
+  /** Live identity-registry continuity (not historical snapshot state). */
+  first_seen_at: string | null;
+  last_seen_at: string | null;
+  identity_confidence: string | null;
 }
 
 /** Fact-driven group from the generic desktop grouping engine. */

@@ -34,6 +34,9 @@ function sampleWindow(
     height: 600,
     monitor_index: 0,
     monitor_name: "Display 1",
+    first_seen_at: null,
+    last_seen_at: null,
+    identity_confidence: null,
     ...overrides,
   };
 }

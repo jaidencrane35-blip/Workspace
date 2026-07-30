@@ -14,7 +14,10 @@
 
 use std::sync::{Arc, Mutex};
 
-use workspace_database::{Database, DesktopArrangementRepository, ObservationPassRepository};
+use workspace_database::{
+    Database, DesktopArrangementRepository, ObservationPassRepository,
+    ObservationWindowIdentityRepository,
+};
 use workspace_domain::{
     ActorContext, IntentContext, WorkspaceObservationDelta, WorkspaceState,
 };
@@ -41,14 +44,34 @@ impl WorkspaceStateEngine {
         intent: &IntentContext,
     ) -> Result<WorkspaceState> {
         let delta = ObservationDeltaService::get_latest(db, actor, intent)?;
-        let (observation, membership) = {
+        let (observation, membership, identities) = {
             let guard = db.lock().expect("database lock poisoned");
             let observation = ObservationPassRepository::new(&guard).load_latest_snapshot()?;
             let membership =
                 DesktopArrangementRepository::new(&guard).list_active_membership_facts(2_000)?;
-            (observation, membership)
+            let identity_ids: Vec<String> = observation
+                .as_ref()
+                .map(|snapshot| {
+                    snapshot
+                        .windows
+                        .iter()
+                        .filter_map(|window| {
+                            window
+                                .stable_window_id
+                                .as_ref()
+                                .map(|value| value.trim().to_string())
+                                .filter(|value| !value.is_empty())
+                        })
+                        .collect()
+                })
+                .unwrap_or_default();
+            let identities = ObservationWindowIdentityRepository::new(&guard)
+                .list_by_ids(&identity_ids)?;
+            (observation, membership, identities)
         };
-        Ok(Self::build(observation.as_ref(), &delta).with_arrangement_membership(&membership))
+        Ok(Self::build(observation.as_ref(), &delta)
+            .with_arrangement_membership(&membership)
+            .with_identity_continuity(&identities))
     }
 }
 
