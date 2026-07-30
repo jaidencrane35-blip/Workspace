@@ -7,9 +7,10 @@
 | **Implementation agent** | Cursor |
 | **Programme** | [Programme V — Operator Workflows](PROGRAMME-V-OPERATOR-WORKFLOWS.md) |
 | **Contract** | Implementation Contract 1 |
-| **Status** | Complete |
+| **Status** | Complete — **Approved** by Principal Architect |
 | **Date** | 2026-07-30 |
 | **Approved to commence** | 2026-07-30 |
+| **Review** | 2026-07-30 — workflow composition without workflow ownership; proceed to IC2 planning |
 | **Depends on** | Programme V charter; Workspace Programme I (complete); AI Programmes II–IV foundations |
 
 ---
@@ -122,4 +123,8 @@ Architectural test: WorkspaceState ✓ · Compose existing ✓ · Deterministic 
 
 ## Stop condition
 
-IC1 complete. **Await Principal Architect review** before Programme V IC2.
+IC1 complete and **approved** by the Principal Architect (2026-07-30).
+
+Review confirmed: coherent operator workflow via deterministic composition; derived projection (not a workflow engine); graceful interruption by re-projection; capability boundaries preserved; runtime ownership unchanged.
+
+**Next:** [IC2 — Workflow Decision Support](PROGRAMME-V-IC2-WORKFLOW-DECISION-SUPPORT.md) (planning). Implementation awaits Principal Architect approval to commence.
