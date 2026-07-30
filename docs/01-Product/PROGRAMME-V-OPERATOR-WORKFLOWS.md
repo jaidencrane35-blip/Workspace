@@ -2,14 +2,15 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | Active — IC1–IC5 approved; IC6 implemented (awaiting Principal Architect review) — Phase 1 concluding contract |
+| **Status** | **Phase 1 complete** — IC1–IC6 approved; next phase awaiting Principal Architect charter |
+| **Phase 1 conclusion** | [Phase 1 conclusion & next-phase handoff](PROGRAMME-V-PHASE-1-CONCLUSION-AND-NEXT-PHASE-HANDOFF.md) |
 | **Authority** | Principal Architect |
 | **Audience** | Principal Architect, Engineering, Cursor agents |
 | **Nature** | Formal product architecture programme charter |
 | **Not** | A continuation of Workspace Programme I; not an AI programme; not a feature backlog |
 | **Depends on** | AI Programmes II–IV (foundations); [Workspace Programme I](PROGRAMME-I-WORKSPACE-PRODUCT-CAPABILITY.md) (complete — product capability) |
 | **Related** | [Programme I conclusion & handoff](PROGRAMME-I-CONCLUSION-AND-NEXT-PROGRAMME-HANDOFF.md), [Architectural Evidence Report](../02-Architecture/ARCHITECTURAL-EVIDENCE-REPORT.md) |
-| **Implementation contracts** | [IC1 — Operator Workflow Composition](PROGRAMME-V-IC1-OPERATOR-WORKFLOW-COMPOSITION.md) (complete — approved); [IC2 — Workflow Decision Support](PROGRAMME-V-IC2-WORKFLOW-DECISION-SUPPORT.md) (complete — approved); [IC3 — Workflow Recoverability](PROGRAMME-V-IC3-WORKFLOW-RECOVERABILITY.md) (complete — approved); [IC4 — Workflow Predictability](PROGRAMME-V-IC4-WORKFLOW-PREDICTABILITY.md) (complete — approved); [IC5 — Workflow Explainability](PROGRAMME-V-IC5-WORKFLOW-EXPLAINABILITY.md) (complete — approved); [IC6 — Workflow Observability](PROGRAMME-V-IC6-WORKFLOW-OBSERVABILITY.md) (complete — awaiting Principal Architect review; Phase 1 concluding contract) |
+| **Implementation contracts** | [IC1 — Operator Workflow Composition](PROGRAMME-V-IC1-OPERATOR-WORKFLOW-COMPOSITION.md) (complete — approved); [IC2 — Workflow Decision Support](PROGRAMME-V-IC2-WORKFLOW-DECISION-SUPPORT.md) (complete — approved); [IC3 — Workflow Recoverability](PROGRAMME-V-IC3-WORKFLOW-RECOVERABILITY.md) (complete — approved); [IC4 — Workflow Predictability](PROGRAMME-V-IC4-WORKFLOW-PREDICTABILITY.md) (complete — approved); [IC5 — Workflow Explainability](PROGRAMME-V-IC5-WORKFLOW-EXPLAINABILITY.md) (complete — approved); [IC6 — Workflow Observability](PROGRAMME-V-IC6-WORKFLOW-OBSERVABILITY.md) (complete — approved; Phase 1 concluding contract) |
 
 ---
 
@@ -216,18 +217,26 @@ Success is measured by improved **operator comprehension**, not additional archi
 
 ## Programme completion
 
-Programme V completes when Workspace demonstrates that complex operator tasks emerge naturally from **composed existing capabilities** while preserving the architectural discipline established across AI Programmes II–IV and Workspace Programme I.
+### Phase 1 (complete)
+
+**Programme V Phase 1 is architecturally complete** as of Principal Architect approval of IC6 (2026-07-30).
+
+Phase 1 demonstrated that a sophisticated operator experience—composition, guidance, recoverability, predictability, explainability, and observability—can be built entirely through deterministic projections and compositions of existing Workspace state.
+
+See [Phase 1 conclusion & next-phase handoff](PROGRAMME-V-PHASE-1-CONCLUSION-AND-NEXT-PHASE-HANDOFF.md).
+
+### Programme V overall
+
+Programme V as a whole completes when Workspace demonstrates that complex operator tasks emerge naturally from **composed existing capabilities** while preserving the architectural discipline established across AI Programmes II–IV and Workspace Programme I. Further phases require new Principal Architect charters.
 
 ---
 
 ## Stop condition (this charter)
 
-This document establishes Programme V and authorises planning of implementation contracts.
+This document established Programme V and authorised planning of implementation contracts.
 
-**It does not authorise code changes.**
-
-Cursor must produce implementation contracts for Principal Architect approval and **wait for approval before any code changes**.
+**Phase 1 implementation is closed.** Cursor must not commence a next phase (including operator intent composition) until the Principal Architect charters that phase and approves its first implementation contract.
 
 ---
 
-*End of Programme V charter.*
+*End of Programme V charter — Phase 1 complete.*

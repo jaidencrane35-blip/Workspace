@@ -7,9 +7,10 @@
 | **Implementation agent** | Cursor |
 | **Programme** | [Programme V — Operator Workflows](PROGRAMME-V-OPERATOR-WORKFLOWS.md) |
 | **Contract** | Implementation Contract 6 |
-| **Status** | Complete — implemented; awaiting Principal Architect review |
+| **Status** | Complete — **Approved** by Principal Architect |
 | **Date** | 2026-07-30 |
 | **Approved to commence** | 2026-07-30 |
+| **Review** | 2026-07-30 — observability without history ownership; Programme V Phase 1 complete |
 | **Depends on** | [IC1](PROGRAMME-V-IC1-OPERATOR-WORKFLOW-COMPOSITION.md)–[IC5](PROGRAMME-V-IC5-WORKFLOW-EXPLAINABILITY.md) (approved) |
 | **Nature** | Concluding implementation contract for Programme V Phase 1 |
 
@@ -126,6 +127,8 @@ IC6 succeeds when an operator can answer:
 
 ## Stop condition
 
-IC6 implementation complete for Principal Architect review as the concluding contract of **Programme V Phase 1**.
+IC6 complete and **approved** by the Principal Architect (2026-07-30).
 
-**Do not commence Programme V Phase 2 (or programme conclusion formalities) until the Principal Architect approves IC6 and authorises the next step.**
+Review confirmed: observability as pure projection of current vs one immediately preceding IC1–IC5 snapshot; meaningful semantic transitions only; observation minimality (identical fingerprints → no transitions) as a long-term invariant; session-only predecessor; What → Why → Owner + source traceability; no event history, timeline, activity log, analytics, or replay.
+
+**Programme V Phase 1 is architecturally complete.** See [Phase 1 conclusion & next-phase handoff](PROGRAMME-V-PHASE-1-CONCLUSION-AND-NEXT-PHASE-HANDOFF.md).
