@@ -541,6 +541,49 @@ function summariseAffinities(state: WorkspaceState): string {
   return `${parts.join(". ")}.`;
 }
 
+
+function summariseSemantics(state: WorkspaceState): string | null {
+  const semantics = state.semantics;
+  if (!semantics || semantics.objects.length === 0) {
+    return null;
+  }
+  const parts: string[] = [];
+  const byRole = new Map<string, string[]>();
+  for (const object of semantics.objects.slice(0, 24)) {
+    const list = byRole.get(object.role) ?? [];
+    list.push(object.title || object.hwnd);
+    byRole.set(object.role, list);
+  }
+  for (const [role, titles] of byRole) {
+    parts.push(`${role}: ${titles.slice(0, 4).join(", ")}`);
+  }
+  if (semantics.relationships.length > 0) {
+    parts.push(
+      `relationships: ${semantics.relationships
+        .slice(0, 5)
+        .map(
+          (rel) =>
+            `${rel.kind} ${rel.from_stable_window_id}→${rel.to_stable_window_id} (${rel.confidence})`,
+        )
+        .join("; ")}`,
+    );
+  }
+  if (semantics.activities.length > 0) {
+    parts.push(
+      `activities: ${semantics.activities
+        .slice(0, 4)
+        .map((activity) => `${activity.kind} (${activity.confidence})`)
+        .join("; ")}`,
+    );
+  }
+  if (semantics.graph?.nodes?.length) {
+    parts.push(
+      `graph: ${semantics.graph.nodes.length} nodes / ${semantics.graph.edges.length} edges`,
+    );
+  }
+  return `Desktop semantics — ${parts.join(". ")}.`;
+}
+
 function summariseLifecycle(state: WorkspaceState): string | null {
   const lifecycles = state.behaviour?.window_lifecycles ?? [];
   if (lifecycles.length === 0) {
@@ -602,7 +645,21 @@ export function answerDesktopQuestionLocally(
   ) {
     return summariseAffinities(state);
   }
+  if (
+    /semantic|what (is|are) (this|these|my)|working object|companion|background object|role|activity|researching|coding|comparing|monitoring|knowledge graph/.test(
+      trimmed,
+    )
+  ) {
+    const semantics = summariseSemantics(state);
+    if (semantics) {
+      return semantics;
+    }
+  }
   if (/belong|related|together|group/.test(trimmed)) {
+    const semantics = summariseSemantics(state);
+    if (semantics && /belong|related/.test(trimmed)) {
+      return semantics;
+    }
     return summariseBelongsTogether(state, facts.arrangements);
   }
   if (
@@ -729,6 +786,19 @@ export function enrichAskWithDesktopObservation(
     parts.push(
       `memory: ${memory.present_count} present / ${memory.returning_count} returning / ${memory.absent_count} absent`,
     );
+  }
+  const semantics = state.semantics;
+  if (semantics && semantics.objects.length > 0) {
+    const working = semantics.objects
+      .filter((object) => object.role === "working")
+      .slice(0, 3)
+      .map((object) => object.title || object.hwnd);
+    parts.push(
+      `semantics: ${semantics.objects.length} roles / ${semantics.relationships.length} relations / ${semantics.activities.length} activities`,
+    );
+    if (working.length > 0) {
+      parts.push(`working: ${working.join(", ")}`);
+    }
   }
 
   return `Observed desktop (${parts.join("; ")}).\n\n${trimmed}`;

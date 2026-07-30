@@ -7022,6 +7022,72 @@ export interface WorkspaceState {
   behaviour: DesktopBehaviourTimeline;
   /** Identity-keyed continuity memory (present / absent / returning). */
   runtime_memory: DesktopRuntimeMemory;
+  /** Deterministic semantic projection (roles, relationships, activities, graph). */
+  semantics: DesktopSemanticProjection;
+  authority_effect: string;
+}
+
+/** Evidence-driven semantic role for a desktop object. */
+export interface DesktopSemanticObject {
+  stable_window_id: string;
+  hwnd: string;
+  title: string;
+  /** working | companion | alternating | background | utility | returning | interrupted | emerging | cluster */
+  role: string;
+  confidence: string;
+  evidence_score: number;
+  authority_effect: string;
+}
+
+export interface DesktopSemanticRelationship {
+  from_stable_window_id: string;
+  to_stable_window_id: string;
+  /** works_with | commonly_accompanies | precedes | follows | frequently_alternates | belongs_inside */
+  kind: string;
+  evidence_count: number;
+  session_count: number;
+  confidence: string;
+  authority_effect: string;
+}
+
+export interface DesktopSemanticActivity {
+  id: string;
+  session_id: string | null;
+  /** focused_work | task_switching | comparing | monitoring | returning_work | interrupted_work | ambient */
+  kind: string;
+  confidence: string;
+  evidence_score: number;
+  member_ids: string[];
+  authority_effect: string;
+}
+
+export interface DesktopSemanticGraphNode {
+  id: string;
+  kind: string;
+  label: string;
+  authority_effect: string;
+}
+
+export interface DesktopSemanticGraphEdge {
+  id: string;
+  from_id: string;
+  to_id: string;
+  kind: string;
+  confidence: string;
+  authority_effect: string;
+}
+
+export interface DesktopSemanticGraph {
+  nodes: DesktopSemanticGraphNode[];
+  edges: DesktopSemanticGraphEdge[];
+  authority_effect: string;
+}
+
+export interface DesktopSemanticProjection {
+  objects: DesktopSemanticObject[];
+  relationships: DesktopSemanticRelationship[];
+  activities: DesktopSemanticActivity[];
+  graph: DesktopSemanticGraph;
   authority_effect: string;
 }
 

@@ -23,6 +23,7 @@ pub mod desktop_arrangement;
 pub mod desktop_behaviour;
 pub mod desktop_grouping;
 pub mod desktop_runtime_memory;
+pub mod desktop_semantic;
 pub mod discovery;
 pub mod entities;
 pub mod errors;
@@ -253,6 +254,13 @@ pub use desktop_grouping::{
 pub use desktop_runtime_memory::{
     project_desktop_runtime_memory, strengthen_groups_from_runtime_memory, DesktopObjectMemory,
     DesktopRuntimeMemory, DESKTOP_RUNTIME_MEMORY_ENTITY_LIMIT,
+};
+pub use desktop_semantic::{
+    project_desktop_semantics, DesktopSemanticActivity, DesktopSemanticGraph,
+    DesktopSemanticGraphEdge, DesktopSemanticGraphNode, DesktopSemanticObject,
+    DesktopSemanticProjection, DesktopSemanticRelationship, DESKTOP_SEMANTIC_ACTIVITY_LIMIT,
+    DESKTOP_SEMANTIC_GRAPH_EDGE_LIMIT, DESKTOP_SEMANTIC_OBJECT_LIMIT,
+    DESKTOP_SEMANTIC_RELATIONSHIP_LIMIT,
 };
 pub use discovery::{AvailableIntentSummary, CapabilityDiscovery, CapabilityDiscoveryError};
 pub use entities::{

@@ -18,6 +18,7 @@ use crate::desktop_grouping::{
 use crate::desktop_runtime_memory::{
     project_desktop_runtime_memory, strengthen_groups_from_runtime_memory, DesktopRuntimeMemory,
 };
+use crate::desktop_semantic::{project_desktop_semantics, DesktopSemanticProjection};
 use crate::workspace_observation::{
     observation_now_rfc3339, ObservedMonitor, ObservedWindow, ObservationWindowIdentity,
     WorkspaceObservationSnapshot,
@@ -195,6 +196,8 @@ pub struct WorkspaceState {
     pub behaviour: DesktopBehaviourTimeline,
     /// Identity-keyed continuity memory (present / absent / returning).
     pub runtime_memory: DesktopRuntimeMemory,
+    /// Deterministic semantic projection (roles, relationships, activities, graph).
+    pub semantics: DesktopSemanticProjection,
     pub authority_effect: String,
 }
 
@@ -221,6 +224,7 @@ impl WorkspaceState {
             latest_delta: WorkspaceObservationDelta::empty(),
             behaviour: DesktopBehaviourTimeline::empty(),
             runtime_memory: DesktopRuntimeMemory::empty(),
+            semantics: DesktopSemanticProjection::empty(),
             authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
         }
     }
@@ -304,6 +308,7 @@ impl WorkspaceState {
             latest_delta: delta.clone(),
             behaviour,
             runtime_memory: DesktopRuntimeMemory::empty(),
+            semantics: DesktopSemanticProjection::empty(),
             authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
         }
     }
@@ -336,6 +341,7 @@ impl WorkspaceState {
             latest_delta: WorkspaceObservationDelta::empty(),
             behaviour: DesktopBehaviourTimeline::empty(),
             runtime_memory: DesktopRuntimeMemory::empty(),
+            semantics: DesktopSemanticProjection::empty(),
             authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
         }
     }
@@ -395,6 +401,11 @@ impl WorkspaceState {
         self.runtime_memory =
             project_desktop_runtime_memory(history, identities, &self.behaviour);
         strengthen_groups_from_runtime_memory(&mut self.window_groups, &self.runtime_memory);
+        self.semantics = project_desktop_semantics(
+            &self.behaviour,
+            &self.runtime_memory,
+            &self.window_groups,
+        );
         self
     }
 

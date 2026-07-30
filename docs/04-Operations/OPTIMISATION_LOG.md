@@ -90,6 +90,23 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 
 ## Cycles
 
+### Cycle: v11-1-semantic-desktop-projection
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Cycle number** | V11-1 |
+| **Goal** | Project deterministic desktop semantics (roles, relationships, activities, graph) onto WorkspaceState |
+| **Problem** | Runtime knew existence/behaviour/continuity but not evidence-driven meaning of objects and relations |
+| **Analysis** | Derive roles/relationships/activities/graph solely from behaviour + runtime_memory + groups; no app-name tables |
+| **Changes** | `desktop_semantic`; `WorkspaceState.semantics`; Assistant semantic answers |
+| **Files affected** | desktop_semantic, workspace_state, domain exports/types, assistantCompanion, this log |
+| **Validation** | typecheck / test / build / architecture / ipc / ui-boundary (+ domain semantic tests) |
+| **Deleted / reduced** | none (extends WorkspaceState projection path) |
+| **Next recommended cycle** | Strengthen semantic confidence from multi-signal agreement / weaken conflicts |
+
+---
+
 ### Cycle: v10-empty-continuity-evaluation-2
 
 | Field | Value |
