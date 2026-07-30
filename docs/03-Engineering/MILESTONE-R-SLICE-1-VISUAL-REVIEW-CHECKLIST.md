@@ -20,7 +20,12 @@
 
 ## Screenshots
 
-`/opt/cursor/artifacts/screenshots/milestone-r-slice1-*.png`
+`/opt/cursor/artifacts/screenshots/`
+
+- `milestone-r-slice1-stage-landing.png` — Stage default (honest runtime-unavailable empty)
+- `milestone-r-slice1-home.png` — Home reality-first framing
+- `milestone-r-slice1-applications.png` — Library + running desktop section
+- `milestone-r-slice1-stage-focus.png` — Stage Focus chrome
 
 ## Outcome
 
