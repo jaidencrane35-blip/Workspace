@@ -90,6 +90,23 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 
 ## Cycles
 
+### Cycle: v9-4-gap-aware-spans-and-lifecycle
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Cycle number** | V9-4 |
+| **Goal** | Stop focus spans bridging coverage gaps; aggregate open/close lifecycle evidence |
+| **Problem** | Sample focus durations could cross unobserved gaps; open/close deltas were discarded by behaviour projection |
+| **Analysis** | Reset spans at ≥30m gaps; fold opened/closed window counts into `window_lifecycles` |
+| **Changes** | gap-aware span reset; `DesktopWindowLifecycle`; Assistant lifecycle answers |
+| **Files affected** | desktop_behaviour, domain exports/types, assistantCompanion, this log |
+| **Validation** | typecheck / test / build / architecture / ipc / ui-boundary (+ domain behaviour tests) |
+| **Deleted / reduced** | Gap-bridging focus duration bug |
+| **Next recommended cycle** | Two empty behavioural evaluation passes |
+
+---
+
 ### Cycle: v9-3-observation-session-segmentation
 
 | Field | Value |

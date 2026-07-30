@@ -6933,6 +6933,15 @@ export interface DesktopObservationSession {
   kind: string;
 }
 
+/** Open/close lifecycle evidence across retained samples. */
+export interface DesktopWindowLifecycle {
+  window: ObservationWindowRef;
+  opened_count: number;
+  closed_count: number;
+  last_opened_at: string | null;
+  last_closed_at: string | null;
+}
+
 /** Deterministic behaviour timeline projected onto WorkspaceState. */
 export interface DesktopBehaviourTimeline {
   sample_count: number;
@@ -6944,6 +6953,7 @@ export interface DesktopBehaviourTimeline {
   focus_follows: DesktopFocusFollow[];
   co_presence: DesktopCoPresence[];
   sessions: DesktopObservationSession[];
+  window_lifecycles: DesktopWindowLifecycle[];
   current_focus: ObservationWindowRef | null;
   current_focus_started_at: string | null;
   current_focus_sample_span_seconds: number | null;

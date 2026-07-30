@@ -443,6 +443,20 @@ function summariseAffinities(state: WorkspaceState): string {
   return `${parts.join(". ")}.`;
 }
 
+function summariseLifecycle(state: WorkspaceState): string | null {
+  const lifecycles = state.behaviour?.window_lifecycles ?? [];
+  if (lifecycles.length === 0) {
+    return null;
+  }
+  return `Window lifecycle across samples: ${lifecycles
+    .slice(0, 6)
+    .map((item) => {
+      const title = item.window.title || item.window.hwnd;
+      return `${title} (opened ${item.opened_count}, closed ${item.closed_count})`;
+    })
+    .join("; ")}.`;
+}
+
 /**
  * Answer common desktop questions from observed facts without calling compose.
  * Returns null when the ask needs the broader assistant surface.
@@ -510,7 +524,11 @@ export function answerDesktopQuestionLocally(
   if (/what changed|what('s| is) new|delta|recent change/.test(trimmed)) {
     return summariseChanged(delta);
   }
-  if (/reopen|restore|bring back|closed/.test(trimmed)) {
+  if (/reopen|restore|bring back|closed|keep(s)? (re)?opening|lifecycle/.test(trimmed)) {
+    const lifecycle = summariseLifecycle(state);
+    if (lifecycle) {
+      return lifecycle;
+    }
     return summariseReopen(delta, facts.arrangements);
   }
   return null;

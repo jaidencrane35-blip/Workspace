@@ -91,6 +91,16 @@ pub struct DesktopObservationSession {
     pub kind: String,
 }
 
+/// Open/close lifecycle evidence for a window across retained samples.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DesktopWindowLifecycle {
+    pub window: ObservationWindowRef,
+    pub opened_count: i32,
+    pub closed_count: i32,
+    pub last_opened_at: Option<String>,
+    pub last_closed_at: Option<String>,
+}
+
 /// Bounded behavioural timeline projected onto WorkspaceState.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DesktopBehaviourTimeline {
@@ -103,6 +113,7 @@ pub struct DesktopBehaviourTimeline {
     pub focus_follows: Vec<DesktopFocusFollow>,
     pub co_presence: Vec<DesktopCoPresence>,
     pub sessions: Vec<DesktopObservationSession>,
+    pub window_lifecycles: Vec<DesktopWindowLifecycle>,
     pub current_focus: Option<ObservationWindowRef>,
     pub current_focus_started_at: Option<String>,
     pub current_focus_sample_span_seconds: Option<i64>,
@@ -124,6 +135,7 @@ impl DesktopBehaviourTimeline {
             focus_follows: Vec::new(),
             co_presence: Vec::new(),
             sessions: Vec::new(),
+            window_lifecycles: Vec::new(),
             current_focus: None,
             current_focus_started_at: None,
             current_focus_sample_span_seconds: None,
@@ -168,15 +180,20 @@ pub fn project_desktop_behaviour(
         .map(|snapshot| snapshot.pass.captured_at.clone())
         .unwrap_or_default();
     let mut span_sample_count = 1_i32;
+    let mut open_counts: BTreeMap<String, (ObservationWindowRef, i32, String)> = BTreeMap::new();
+    let mut close_counts: BTreeMap<String, (ObservationWindowRef, i32, String)> = BTreeMap::new();
 
     for window in snapshots.windows(2) {
         let previous = &window[0];
         let current = &window[1];
         record_co_presence(current, &mut co_presence_counts);
+
+        let mut crossed_gap = false;
         if let Some(gap_seconds) =
             sample_gap_seconds(&previous.pass.captured_at, &current.pass.captured_at)
         {
             if gap_seconds >= DESKTOP_BEHAVIOUR_GAP_SECONDS {
+                crossed_gap = true;
                 coverage_gaps.push(DesktopCoverageGap {
                     after_pass_id: previous.pass.id.clone(),
                     before_pass_id: current.pass.id.clone(),
@@ -184,10 +201,44 @@ pub fn project_desktop_behaviour(
                     next_captured_at: current.pass.captured_at.clone(),
                     gap_seconds,
                 });
+                if let Some(previous_span) = span_window.take() {
+                    recent_focus_spans.push(DesktopObservedFocusSpan {
+                        window: previous_span,
+                        started_at: span_started_at.clone(),
+                        ended_at: previous.pass.captured_at.clone(),
+                        sample_span_seconds: sample_gap_seconds(
+                            &span_started_at,
+                            &previous.pass.captured_at,
+                        ),
+                        sample_count: span_sample_count,
+                    });
+                }
+                span_window = focused_ref(Some(current));
+                span_started_at = current.pass.captured_at.clone();
+                span_sample_count = 1;
             }
         }
 
         let delta = compare_observation_snapshots(previous, current);
+        for opened in &delta.opened_windows {
+            let key = window_key(opened);
+            let entry = open_counts.entry(key).or_insert_with(|| {
+                (opened.clone(), 0, current.pass.captured_at.clone())
+            });
+            entry.0 = opened.clone();
+            entry.1 += 1;
+            entry.2 = current.pass.captured_at.clone();
+        }
+        for closed in &delta.closed_windows {
+            let key = window_key(closed);
+            let entry = close_counts.entry(key).or_insert_with(|| {
+                (closed.clone(), 0, current.pass.captured_at.clone())
+            });
+            entry.0 = closed.clone();
+            entry.1 += 1;
+            entry.2 = current.pass.captured_at.clone();
+        }
+
         if let Some(change) = delta.focused_window_changed {
             focus_transitions.push(DesktopFocusTransition {
                 at: current.pass.captured_at.clone(),
@@ -216,22 +267,28 @@ pub fn project_desktop_behaviour(
                 entry.2 = current.pass.captured_at.clone();
             }
 
-            if let Some(previous_span) = span_window.take() {
-                recent_focus_spans.push(DesktopObservedFocusSpan {
-                    window: previous_span,
-                    started_at: span_started_at.clone(),
-                    ended_at: previous.pass.captured_at.clone(),
-                    sample_span_seconds: sample_gap_seconds(
-                        &span_started_at,
-                        &previous.pass.captured_at,
-                    ),
-                    sample_count: span_sample_count,
-                });
+            if !crossed_gap {
+                if let Some(previous_span) = span_window.take() {
+                    recent_focus_spans.push(DesktopObservedFocusSpan {
+                        window: previous_span,
+                        started_at: span_started_at.clone(),
+                        ended_at: previous.pass.captured_at.clone(),
+                        sample_span_seconds: sample_gap_seconds(
+                            &span_started_at,
+                            &previous.pass.captured_at,
+                        ),
+                        sample_count: span_sample_count,
+                    });
+                }
+                span_window = change.current;
+                span_started_at = current.pass.captured_at.clone();
+                span_sample_count = 1;
+            } else {
+                span_window = change.current.or(span_window);
+                span_started_at = current.pass.captured_at.clone();
+                span_sample_count = 1;
             }
-            span_window = change.current;
-            span_started_at = current.pass.captured_at.clone();
-            span_sample_count = 1;
-        } else {
+        } else if !crossed_gap {
             span_sample_count += 1;
         }
     }
@@ -303,6 +360,41 @@ pub fn project_desktop_behaviour(
         co_presence.truncate(32);
     }
 
+    let mut lifecycle_keys = BTreeMap::<String, DesktopWindowLifecycle>::new();
+    for (key, (window, count, at)) in open_counts {
+        let entry = lifecycle_keys.entry(key).or_insert_with(|| DesktopWindowLifecycle {
+            window: window.clone(),
+            opened_count: 0,
+            closed_count: 0,
+            last_opened_at: None,
+            last_closed_at: None,
+        });
+        entry.window = window;
+        entry.opened_count = count;
+        entry.last_opened_at = Some(at);
+    }
+    for (key, (window, count, at)) in close_counts {
+        let entry = lifecycle_keys.entry(key).or_insert_with(|| DesktopWindowLifecycle {
+            window: window.clone(),
+            opened_count: 0,
+            closed_count: 0,
+            last_opened_at: None,
+            last_closed_at: None,
+        });
+        entry.window = window;
+        entry.closed_count = count;
+        entry.last_closed_at = Some(at);
+    }
+    let mut window_lifecycles: Vec<DesktopWindowLifecycle> = lifecycle_keys.into_values().collect();
+    window_lifecycles.sort_by(|a, b| {
+        (b.opened_count + b.closed_count)
+            .cmp(&(a.opened_count + a.closed_count))
+            .then_with(|| a.window.hwnd.cmp(&b.window.hwnd))
+    });
+    if window_lifecycles.len() > 32 {
+        window_lifecycles.truncate(32);
+    }
+
     // Keep a bounded recent span history (completed spans only).
     if recent_focus_spans.len() > 24 {
         let skip = recent_focus_spans.len() - 24;
@@ -319,6 +411,7 @@ pub fn project_desktop_behaviour(
         focus_follows,
         co_presence,
         sessions: project_observation_sessions(snapshots, &focus_transitions, &coverage_gaps),
+        window_lifecycles,
         current_focus,
         current_focus_started_at,
         current_focus_sample_span_seconds,
@@ -682,5 +775,12 @@ mod tests {
         assert_eq!(behaviour.sessions.len(), 2);
         assert_eq!(behaviour.sessions[0].kind, "completed");
         assert_eq!(behaviour.sessions[1].kind, "returning");
+        assert!(
+            behaviour
+                .current_focus_sample_span_seconds
+                .map(|seconds| seconds < 3600)
+                .unwrap_or(true),
+            "current focus span must not bridge the coverage gap"
+        );
     }
 }
