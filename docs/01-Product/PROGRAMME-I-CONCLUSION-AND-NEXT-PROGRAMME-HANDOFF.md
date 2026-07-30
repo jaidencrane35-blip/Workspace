@@ -4,7 +4,8 @@
 |-------|-------|
 | **Authority** | Principal Architect |
 | **Date** | 2026-07-30 |
-| **Programme I status** | **Complete** (IC6 approved) |
+| **Programme I status** | **Complete — formally accepted** |
+| **Branch tip (conclusion)** | `314794d` |
 | **Nature** | Conclusion record + handoff for the next programme charter |
 | **Not** | An approved implementation contract; not authority to commence the next programme |
 
@@ -12,7 +13,9 @@
 
 ## Programme I concluded
 
-The Principal Architect approved [IC6 — Operational Confidence](PROGRAMME-I-IC6-OPERATIONAL-CONFIDENCE.md) and declared **Programme I successfully completed**.
+The Principal Architect approved [IC6 — Operational Confidence](PROGRAMME-I-IC6-OPERATIONAL-CONFIDENCE.md), declared Programme I successfully completed, and on 2026-07-30 **formally accepted** this conclusion record.
+
+Treat the Programme I merge as a **programme boundary**, not an ordinary feature merge: architecture established → coherent, explainable product experience demonstrated on that architecture.
 
 Workspace has evolved from a technically sound architecture into a product that:
 
@@ -44,35 +47,38 @@ Charter: [Programme I — Workspace Product Capability](PROGRAMME-I-WORKSPACE-PR
 
 ---
 
-## Recommendation for the next programme
+## Next programme (charter direction — not commenced)
 
-**Do not** continue refining individual desktop interactions under Programme I.
+**Do not** treat further work as “Programme I continued.”
 
-**Do** charter a **new programme** focused on **operator workflows**.
+**Do** charter a **new programme** with its own objectives, implementation contracts, and completion criteria — distinct from:
+
+- completed **Programme I** (Workspace product maturation), and  
+- planned AI **Programmes II–IV**.
 
 ### Suggested themes (for Principal Architect charter)
 
-1. **Compose** multiple existing capabilities into higher-level operator workflows  
-2. **Surface recommendations** derived from current WorkspaceState / Arrangement / restore facts  
+1. **Compose** existing capabilities into higher-level operator workflows  
+2. **Generate recommendations** derived from existing Workspace state  
 3. **Improve recoverability** and operator confidence during complex operations  
-4. Maintain the same discipline: derive behaviour from existing truth before any new authority  
+4. **Preserve deterministic ownership**
 
-### Governing principle (unchanged)
+### Opening architectural principle (carry forward)
 
-> Every new capability should first ask whether it can be expressed as a **projection of existing state** before introducing any new authority.
+> Before introducing a new authority, determine whether the desired capability can be expressed as a **deterministic projection of existing Workspace state**. Only introduce new ownership when no projection can faithfully satisfy the requirement.
 
 ### Naming note
 
-Programmes II–IV already exist under `docs/05-AI/` (cognitive / runtime / interaction). The next **product** programme should receive a distinct identifier chosen by the Principal Architect (e.g. Programme V — Operator Workflows) so it does not collide with those AI-programme numbers.
+Programmes II–IV already exist under `docs/05-AI/` (cognitive / runtime / interaction). The next **product** programme should receive a distinct identifier chosen by the Principal Architect so it does not collide with those AI-programme numbers.
 
 ---
 
 ## Cursor stop condition
 
-- Programme I implementation work is **finished**.  
-- Cursor must **not** commence a next programme until the Principal Architect authors and approves that programme’s charter (and first implementation contract).  
-- Merge of the Programme I branch (IC1–IC6) remains a release/integration decision for the Principal Architect / maintainers.
+- Programme I is **closed** and **formally accepted**.  
+- Cursor must **not** commence the next programme until the Principal Architect authors and approves that programme’s charter (and first implementation contract).  
+- Merge of the Programme I branch (IC1–IC6) as the programme-boundary milestone remains a release/integration decision for the Principal Architect / maintainers.
 
 ---
 
-*Handoff complete — awaiting Principal Architect charter for the next programme.*
+*Programme I formally accepted — awaiting Principal Architect charter for the next programme.*

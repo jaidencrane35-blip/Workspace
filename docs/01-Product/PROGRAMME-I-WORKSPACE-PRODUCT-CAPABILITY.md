@@ -2,7 +2,7 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | **Complete** — Principal Architect approved IC6; Programme I concluded 2026-07-30 |
+| **Status** | **Complete — formally accepted** by Principal Architect (2026-07-30); programme boundary for merge |
 | **Audience** | Principal Architect, Engineering, Cursor agents |
 | **Nature** | Formal product architecture programme contract |
 | **Not** | An implementation contract; not a feature backlog; not a roadmap of tasks |
