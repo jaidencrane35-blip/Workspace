@@ -475,6 +475,14 @@ pub fn plan_desktop_arrangement_restore(
 pub fn capture_entry_inputs_from_snapshot(
     snapshot: &WorkspaceObservationSnapshot,
 ) -> Vec<DesktopArrangementEntryInput> {
+    capture_entry_inputs_from_snapshot_filtered(snapshot, None)
+}
+
+/// Build entry inputs, optionally restricted to observed hwnds (working-set capture).
+pub fn capture_entry_inputs_from_snapshot_filtered(
+    snapshot: &WorkspaceObservationSnapshot,
+    member_hwnds: Option<&[String]>,
+) -> Vec<DesktopArrangementEntryInput> {
     let mut windows = snapshot.windows.clone();
     windows.sort_by(|a, b| {
         a.z_order
@@ -482,6 +490,17 @@ pub fn capture_entry_inputs_from_snapshot(
             .then_with(|| a.hwnd.cmp(&b.hwnd))
             .then_with(|| a.id.cmp(&b.id))
     });
+
+    if let Some(hwnds) = member_hwnds {
+        let allowed: std::collections::HashSet<String> = hwnds
+            .iter()
+            .map(|hwnd| hwnd.trim().to_ascii_lowercase())
+            .filter(|hwnd| !hwnd.is_empty())
+            .collect();
+        if !allowed.is_empty() {
+            windows.retain(|window| allowed.contains(&window.hwnd.to_ascii_lowercase()));
+        }
+    }
 
     windows
         .into_iter()
@@ -879,6 +898,14 @@ mod tests {
         assert_eq!(first[0].hwnd.as_deref(), Some("0xAA"));
         assert_eq!(first[0].x, Some(1));
         assert_eq!(first[1].hwnd.as_deref(), Some("0xBB"));
+
+        let filtered = capture_entry_inputs_from_snapshot_filtered(
+            &snapshot,
+            Some(&["0xBB".into()]),
+        );
+        assert_eq!(filtered.len(), 1);
+        assert_eq!(filtered[0].hwnd.as_deref(), Some("0xBB"));
+        assert_eq!(filtered[0].sort_order, 0);
     }
 
     #[test]

@@ -23,6 +23,8 @@ pub struct CaptureDesktopArrangement {
     pub description: String,
     /// When true, runs a fresh observation capture before saving membership.
     pub refresh_observation: bool,
+    /// When set, only these observed hwnds become arrangement members (working set).
+    pub member_hwnds: Option<Vec<String>>,
 }
 
 impl CaptureDesktopArrangement {
@@ -39,7 +41,13 @@ impl CaptureDesktopArrangement {
             name,
             description,
             refresh_observation,
+            member_hwnds: None,
         }
+    }
+
+    pub fn with_member_hwnds(mut self, member_hwnds: Vec<String>) -> Self {
+        self.member_hwnds = Some(member_hwnds);
+        self
     }
 }
 
@@ -90,6 +98,7 @@ impl MutationCommand for CaptureDesktopArrangement {
             self.name.clone(),
             self.description.clone(),
             self.refresh_observation,
+            self.member_hwnds.clone(),
         )
     }
 }

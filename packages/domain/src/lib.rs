@@ -229,7 +229,8 @@ pub use decision_queue::{
     DecisionQueueError, DecisionQueueSummary, DecisionSourceType, DecisionState,
 };
 pub use desktop_arrangement::{
-    arrangement_now_rfc3339, capture_entry_inputs_from_snapshot, diagnose_arrangement_entries,
+    arrangement_now_rfc3339, capture_entry_inputs_from_snapshot,
+    capture_entry_inputs_from_snapshot_filtered, diagnose_arrangement_entries,
     entries_from_inputs, match_observed_window, plan_desktop_arrangement_restore,
     validate_desktop_arrangement, DesktopArrangement, DesktopArrangementApplyOutcome,
     DesktopArrangementApplyStatus, DesktopArrangementBounds, DesktopArrangementEntry,

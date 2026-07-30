@@ -565,21 +565,24 @@ impl CommandHandler {
         description: Option<String>,
         arrangement_id: Option<String>,
         refresh_observation: Option<bool>,
+        member_hwnds: Option<Vec<String>>,
     ) -> Result<DesktopArrangement> {
         let workspace_id = WorkspaceId::new(workspace_id).map_err(KernelError::Domain)?;
         let arrangement_id = arrangement_id
             .map(DesktopArrangementId::new)
             .transpose()
             .map_err(KernelError::Domain)?;
-        CommandPipeline::new(kernel.command_context(actor, intent)).execute_mutation(
-            CaptureDesktopArrangement::new(
-                workspace_id,
-                name,
-                description.unwrap_or_default(),
-                arrangement_id,
-                refresh_observation.unwrap_or(false),
-            ),
-        )
+        let mut command = CaptureDesktopArrangement::new(
+            workspace_id,
+            name,
+            description.unwrap_or_default(),
+            arrangement_id,
+            refresh_observation.unwrap_or(false),
+        );
+        if let Some(hwnds) = member_hwnds {
+            command = command.with_member_hwnds(hwnds);
+        }
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_mutation(command)
     }
 
     pub fn restore_desktop_arrangement(

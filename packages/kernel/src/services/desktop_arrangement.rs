@@ -9,7 +9,7 @@ use std::sync::{Arc, Mutex};
 use uuid::Uuid;
 use workspace_database::{Database, DesktopArrangementRepository};
 use workspace_domain::{
-    arrangement_now_rfc3339, capture_entry_inputs_from_snapshot, entries_from_inputs,
+    arrangement_now_rfc3339, capture_entry_inputs_from_snapshot_filtered, entries_from_inputs,
     plan_desktop_arrangement_restore, validate_desktop_arrangement, DesktopArrangement,
     DesktopArrangementApplyOutcome, DesktopArrangementApplyStatus, DesktopArrangementError,
     DesktopArrangementId, DesktopArrangementRestoreResult, DesktopArrangementStatus,
@@ -34,6 +34,7 @@ impl DesktopArrangementService {
         name: String,
         description: String,
         refresh_observation: bool,
+        member_hwnds: Option<Vec<String>>,
     ) -> Result<DesktopArrangement> {
         if refresh_observation {
             let actor = workspace_domain::ActorContext::local_user();
@@ -47,7 +48,14 @@ impl DesktopArrangementService {
             },
         )?;
 
-        let inputs = capture_entry_inputs_from_snapshot(&snapshot);
+        let hwnd_filter = member_hwnds.as_deref();
+        let inputs = capture_entry_inputs_from_snapshot_filtered(&snapshot, hwnd_filter);
+        if member_hwnds.as_ref().is_some_and(|hwnds| !hwnds.is_empty()) && inputs.is_empty()
+        {
+            return Err(KernelError::DesktopArrangementValidation {
+                message: "selected windows were not found in the latest observation".into(),
+            });
+        }
         let now = arrangement_now_rfc3339();
         let id = match arrangement_id {
             Some(id) => id,

@@ -231,6 +231,55 @@ export function WorkspaceApplicationStage({
     ? matchLibraryApp(selectedTile, applications)
     : null;
 
+  const saveSelectionAsWorkingSet = () => {
+    if (!workspace) {
+      onError("Create a profile under Profiles to save a working set.");
+      return;
+    }
+    const hwnds = selectedKeys
+      .map((key) => tiles.find((tile) => tile.key === key)?.hwnd)
+      .filter((hwnd): hwnd is string => Boolean(hwnd));
+    if (hwnds.length === 0) {
+      onError("Select one or more windows first.");
+      return;
+    }
+    const label =
+      selectedKeys.length === 1
+        ? selectedTile?.title || "Selection"
+        : `Selection (${selectedKeys.length})`;
+    onBusy(true);
+    onError(null);
+    void (async () => {
+      try {
+        const saved = await invokeIpc<DesktopArrangement>(
+          "capture_desktop_arrangement",
+          {
+            workspaceId: workspace.id,
+            name: label,
+            description: "Working set from Stage selection",
+            arrangementId: null,
+            refreshObservation: false,
+            memberHwnds: hwnds,
+          },
+        );
+        setArrangements((prev) => {
+          const without = prev.filter((item) => item.id !== saved.id);
+          return [saved, ...without];
+        });
+        setWorkingSetId(saved.id);
+        onMessage(
+          `Saved working set “${saved.name}” · ${saved.entries.length} window${
+            saved.entries.length === 1 ? "" : "s"
+          }`,
+        );
+      } catch (err: unknown) {
+        onError(err instanceof Error ? err.message : String(err));
+      } finally {
+        onBusy(false);
+      }
+    })();
+  };
+
   const focusSelectedWindow = async (tile: StageDesktopWindowTile) => {
     if (!runtime) {
       onError("Open the desktop app to focus windows.");
@@ -529,6 +578,14 @@ export function WorkspaceApplicationStage({
               }}
             >
               Focus
+            </button>
+            <button
+              type="button"
+              className="ghost"
+              disabled={busy || !runtime || !workspace}
+              onClick={saveSelectionAsWorkingSet}
+            >
+              Save selection
             </button>
             {matchedLibrary && canLaunchApplication(matchedLibrary) ? (
               <button

@@ -636,7 +636,7 @@
   "permission_gateway_require_sites": [
     {
       "file": "packages/kernel/src/commands/handler.rs",
-      "line": 5936,
+      "line": 5939,
       "kind": "require"
     },
     {

@@ -15,6 +15,7 @@ pub fn capture_desktop_arrangement(
     description: Option<String>,
     arrangement_id: Option<String>,
     refresh_observation: Option<bool>,
+    member_hwnds: Option<Vec<String>>,
     kernel: State<'_, Arc<Mutex<WorkspaceKernel>>>,
 ) -> IpcResponse<DesktopArrangement> {
     match kernel.lock() {
@@ -27,6 +28,7 @@ pub fn capture_desktop_arrangement(
             description,
             arrangement_id,
             refresh_observation,
+            member_hwnds,
         ) {
             Ok(arrangement) => IpcResponse::success(arrangement),
             Err(error) => IpcResponse::failure(CommandError::from(error)),
