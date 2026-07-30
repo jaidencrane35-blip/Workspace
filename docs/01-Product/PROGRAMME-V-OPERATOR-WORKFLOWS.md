@@ -9,7 +9,7 @@
 | **Not** | A continuation of Workspace Programme I; not an AI programme; not a feature backlog |
 | **Depends on** | AI Programmes II–IV (foundations); [Workspace Programme I](PROGRAMME-I-WORKSPACE-PRODUCT-CAPABILITY.md) (complete — product capability) |
 | **Related** | [Programme I conclusion & handoff](PROGRAMME-I-CONCLUSION-AND-NEXT-PROGRAMME-HANDOFF.md), [Architectural Evidence Report](../02-Architecture/ARCHITECTURAL-EVIDENCE-REPORT.md) |
-| **Implementation contracts** | [IC1 — Operator Workflow Composition](PROGRAMME-V-IC1-OPERATOR-WORKFLOW-COMPOSITION.md) (complete — approved); [IC2 — Workflow Decision Support](PROGRAMME-V-IC2-WORKFLOW-DECISION-SUPPORT.md) (complete — pending review) |
+| **Implementation contracts** | [IC1 — Operator Workflow Composition](PROGRAMME-V-IC1-OPERATOR-WORKFLOW-COMPOSITION.md) (complete — approved); [IC2 — Workflow Decision Support](PROGRAMME-V-IC2-WORKFLOW-DECISION-SUPPORT.md) (complete — approved); [IC3 — Workflow Recoverability](PROGRAMME-V-IC3-WORKFLOW-RECOVERABILITY.md) (planned — awaiting approval to commence) |
 
 ---
 
