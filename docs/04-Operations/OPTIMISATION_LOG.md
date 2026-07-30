@@ -92,6 +92,37 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 
 ## Cycles
 
+## Cycles
+
+### Cycle: v4-eval-pass-2-presentation-plateau
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Cycle number** | V4-eval-2 |
+| **Analysis** | Re-scored all V4 categories after V4-1/V4-2. No safe presentation-only change raises the lowest scores without inventing windows, OS geometry apply, grouping engines, audio, or live thumbnails. |
+| **Category board (1–10)** | Desktop visibility 9 · Desktop prominence 9 · App prominence 8 · Spatial 8 · Relationships 7 · Nav 8 · Assistant 9 · Config friction 9 · Object-first 7 · Density 8 · Calmness 8 · Commercial 7 |
+| **Lowest remaining** | Object-first / Relationships / Commercial — blocked on Interaction (click→OS focus), true grouping, richer capture |
+| **Changes** | none |
+| **Stop** | **PRESENTATION PLATEAU** — two consecutive full evaluation passes with no measurable safe improvement |
+| **Human review required** | **Yes** — next product move needs architecture/workflow approval |
+
+---
+
+### Cycle: v4-eval-pass-1-category-rescore
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Cycle number** | V4-eval-1 |
+| **Analysis** | After V4-1/V4-2, candidate presentation edits (further text deletion, Profiles demotion, more CSS) do not measurably change the five-second “understands my computer” answer beyond current Stage-first state. |
+| **Candidates considered** | Drop Profiles from primary nav; invent thumbnail placeholders; Stage click→OS focus; remove empty-plane message |
+| **Rejected because** | Workflow change / fake reality / OS permission boundary / honesty required for empty observation |
+| **Changes** | none |
+| **Category status** | open for Interaction/Relationships systems; presentation PLATEAU pending pass 2 |
+
+---
+
 ### Cycle: v4-2-running-apps-as-objects
 
 | Field | Value |
