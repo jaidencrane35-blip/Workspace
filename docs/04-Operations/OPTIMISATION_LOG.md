@@ -90,6 +90,40 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 
 ## Cycles
 
+### Cycle: v11-empty-semantic-evaluation-2
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Cycle number** | V11-empty-2 |
+| **Goal** | Second consecutive empty semantic capability evaluation |
+| **Problem** | Confirm whether any further measurable semantic capability remains without new architecture/platform APIs or forbidden app-name tables |
+| **Analysis** | Same blockers as empty-1: content-class labels (communication/development/media), continuous OS streams, durable semantic persistence beyond sample retention |
+| **Changes** | none — second empty evaluation |
+| **Files affected** | this log |
+| **Validation** | Architecture review against WorkspaceState.semantics |
+| **Deleted / reduced** | none |
+| **Next recommended cycle** | Stop autonomous V11 (condition 3: two empty evaluations) |
+
+---
+
+### Cycle: v11-empty-semantic-evaluation-1
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Cycle number** | V11-empty-1 |
+| **Goal** | First empty semantic capability evaluation after V11-3 |
+| **Problem** | Identify highest-value missing deterministic semantic capability |
+| **Analysis** | Behavioural roles/relationships/activities/graph/importance are projected. Further product-class semantics need app/content signals (forbidden lookup tables) or OS APIs; durable semantic memory needs architecture beyond the 50-pass ring |
+| **Changes** | none — empty evaluation |
+| **Files affected** | this log |
+| **Validation** | Architecture review against WorkspaceState.semantics |
+| **Deleted / reduced** | none |
+| **Next recommended cycle** | Second empty semantic evaluation |
+
+---
+
 ### Cycle: v11-3-semantic-importance
 
 | Field | Value |
