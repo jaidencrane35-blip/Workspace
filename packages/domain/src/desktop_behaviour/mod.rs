@@ -12,6 +12,7 @@ use crate::workspace_observation::WorkspaceObservationSnapshot;
 use crate::workspace_observation_delta::{
     compare_observation_snapshots, ObservationWindowRef,
 };
+use crate::desktop_grouping::DesktopWindowGroup;
 
 /// Maximum observation samples consumed by the behaviour timeline.
 pub const DESKTOP_BEHAVIOUR_SAMPLE_LIMIT: usize = 50;
@@ -57,6 +58,24 @@ pub struct DesktopObservedFocusSpan {
     pub sample_count: i32,
 }
 
+/// Focus A→B transitions aggregated across the sample window.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DesktopFocusFollow {
+    pub from: ObservationWindowRef,
+    pub to: ObservationWindowRef,
+    pub transition_count: i32,
+    pub last_at: String,
+}
+
+/// Windows observed open together across samples.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DesktopCoPresence {
+    pub left: ObservationWindowRef,
+    pub right: ObservationWindowRef,
+    pub sample_count: i32,
+    pub last_seen_at: String,
+}
+
 /// Bounded behavioural timeline projected onto WorkspaceState.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DesktopBehaviourTimeline {
@@ -66,6 +85,8 @@ pub struct DesktopBehaviourTimeline {
     pub focus_transitions: Vec<DesktopFocusTransition>,
     pub window_revisits: Vec<DesktopWindowRevisit>,
     pub recent_focus_spans: Vec<DesktopObservedFocusSpan>,
+    pub focus_follows: Vec<DesktopFocusFollow>,
+    pub co_presence: Vec<DesktopCoPresence>,
     pub current_focus: Option<ObservationWindowRef>,
     pub current_focus_started_at: Option<String>,
     pub current_focus_sample_span_seconds: Option<i64>,
@@ -84,6 +105,8 @@ impl DesktopBehaviourTimeline {
             focus_transitions: Vec::new(),
             window_revisits: Vec::new(),
             recent_focus_spans: Vec::new(),
+            focus_follows: Vec::new(),
+            co_presence: Vec::new(),
             current_focus: None,
             current_focus_started_at: None,
             current_focus_sample_span_seconds: None,
@@ -111,7 +134,16 @@ pub fn project_desktop_behaviour(
     let mut focus_transitions = Vec::new();
     let mut coverage_gaps = Vec::new();
     let mut revisit_counts: BTreeMap<String, (ObservationWindowRef, i32, String)> = BTreeMap::new();
+    let mut follow_counts: BTreeMap<(String, String), (ObservationWindowRef, ObservationWindowRef, i32, String)> =
+        BTreeMap::new();
+    let mut co_presence_counts: BTreeMap<(String, String), (ObservationWindowRef, ObservationWindowRef, i32, String)> =
+        BTreeMap::new();
     let mut recent_focus_spans = Vec::new();
+
+    // Seed co-presence from the first sample.
+    if let Some(first) = snapshots.first() {
+        record_co_presence(first, &mut co_presence_counts);
+    }
 
     let mut span_window: Option<ObservationWindowRef> = focused_ref(snapshots.first());
     let mut span_started_at = snapshots
@@ -123,6 +155,7 @@ pub fn project_desktop_behaviour(
     for window in snapshots.windows(2) {
         let previous = &window[0];
         let current = &window[1];
+        record_co_presence(current, &mut co_presence_counts);
         if let Some(gap_seconds) =
             sample_gap_seconds(&previous.pass.captured_at, &current.pass.captured_at)
         {
@@ -146,6 +179,16 @@ pub fn project_desktop_behaviour(
                 previous: change.previous.clone(),
                 current: change.current.clone(),
             });
+            if let (Some(from), Some(to)) = (change.previous.clone(), change.current.clone()) {
+                let key = (window_key(&from), window_key(&to));
+                let entry = follow_counts.entry(key).or_insert_with(|| {
+                    (from.clone(), to.clone(), 0, current.pass.captured_at.clone())
+                });
+                entry.0 = from;
+                entry.1 = to;
+                entry.2 += 1;
+                entry.3 = current.pass.captured_at.clone();
+            }
             if let Some(focused) = change.current.clone() {
                 let key = window_key(&focused);
                 let entry = revisit_counts.entry(key).or_insert_with(|| {
@@ -204,6 +247,45 @@ pub fn project_desktop_behaviour(
             .then_with(|| a.window.hwnd.cmp(&b.window.hwnd))
     });
 
+    let mut focus_follows: Vec<DesktopFocusFollow> = follow_counts
+        .into_values()
+        .map(|(from, to, transition_count, last_at)| DesktopFocusFollow {
+            from,
+            to,
+            transition_count,
+            last_at,
+        })
+        .collect();
+    focus_follows.sort_by(|a, b| {
+        b.transition_count
+            .cmp(&a.transition_count)
+            .then_with(|| a.from.hwnd.cmp(&b.from.hwnd))
+            .then_with(|| a.to.hwnd.cmp(&b.to.hwnd))
+    });
+    if focus_follows.len() > 24 {
+        focus_follows.truncate(24);
+    }
+
+    let mut co_presence: Vec<DesktopCoPresence> = co_presence_counts
+        .into_values()
+        .filter(|(_, _, count, _)| *count >= 2)
+        .map(|(left, right, sample_count, last_seen_at)| DesktopCoPresence {
+            left,
+            right,
+            sample_count,
+            last_seen_at,
+        })
+        .collect();
+    co_presence.sort_by(|a, b| {
+        b.sample_count
+            .cmp(&a.sample_count)
+            .then_with(|| a.left.hwnd.cmp(&b.left.hwnd))
+            .then_with(|| a.right.hwnd.cmp(&b.right.hwnd))
+    });
+    if co_presence.len() > 32 {
+        co_presence.truncate(32);
+    }
+
     // Keep a bounded recent span history (completed spans only).
     if recent_focus_spans.len() > 24 {
         let skip = recent_focus_spans.len() - 24;
@@ -217,11 +299,37 @@ pub fn project_desktop_behaviour(
         focus_transitions,
         window_revisits,
         recent_focus_spans,
+        focus_follows,
+        co_presence,
         current_focus,
         current_focus_started_at,
         current_focus_sample_span_seconds,
         coverage_gaps,
         authority_effect: DesktopBehaviourTimeline::AUTHORITY_EFFECT_NONE.into(),
+    }
+}
+
+/// Raise grouping confidence from co-presence evidence without replacing structural groups.
+pub fn strengthen_groups_from_behaviour(
+    groups: &mut [DesktopWindowGroup],
+    behaviour: &DesktopBehaviourTimeline,
+) {
+    for group in groups.iter_mut() {
+        if group.member_ids.len() < 2 {
+            continue;
+        }
+        let mut best = group.evidence_count;
+        for presence in &behaviour.co_presence {
+            let left = window_key(&presence.left);
+            let right = window_key(&presence.right);
+            if group.member_ids.iter().any(|id| id == &left)
+                && group.member_ids.iter().any(|id| id == &right)
+            {
+                best = best.max(presence.sample_count);
+            }
+        }
+        group.evidence_count = best;
+        group.confidence = DesktopWindowGroup::confidence_for_evidence(best).into();
     }
 }
 
@@ -241,6 +349,50 @@ fn window_key(window: &ObservationWindowRef) -> String {
         .map(|value| value.trim().to_string())
         .filter(|value| !value.is_empty())
         .unwrap_or_else(|| window.hwnd.clone())
+}
+
+fn observed_ref(window: &crate::workspace_observation::ObservedWindow) -> ObservationWindowRef {
+    ObservationWindowRef::from_window(window)
+}
+
+fn record_co_presence(
+    snapshot: &WorkspaceObservationSnapshot,
+    counts: &mut BTreeMap<
+        (String, String),
+        (ObservationWindowRef, ObservationWindowRef, i32, String),
+    >,
+) {
+    let visible: Vec<_> = snapshot
+        .windows
+        .iter()
+        .filter(|window| window.visible)
+        .collect();
+    for i in 0..visible.len() {
+        for j in (i + 1)..visible.len() {
+            let left = observed_ref(visible[i]);
+            let right = observed_ref(visible[j]);
+            let mut a = window_key(&left);
+            let mut b = window_key(&right);
+            let (left_ref, right_ref) = if a <= b {
+                (left, right)
+            } else {
+                std::mem::swap(&mut a, &mut b);
+                (right, left)
+            };
+            let entry = counts.entry((a, b)).or_insert_with(|| {
+                (
+                    left_ref.clone(),
+                    right_ref.clone(),
+                    0,
+                    snapshot.pass.captured_at.clone(),
+                )
+            });
+            entry.0 = left_ref;
+            entry.1 = right_ref;
+            entry.2 += 1;
+            entry.3 = snapshot.pass.captured_at.clone();
+        }
+    }
 }
 
 fn sample_gap_seconds(previous: &str, next: &str) -> Option<i64> {
@@ -367,6 +519,43 @@ mod tests {
             .any(|revisit| revisit.window.hwnd == "0x1" && revisit.focus_count == 1));
         assert_eq!(behaviour.recent_focus_spans.len(), 2);
         assert!(behaviour.coverage_gaps.is_empty());
+        assert!(behaviour
+            .focus_follows
+            .iter()
+            .any(|follow| follow.from.hwnd == "0x1"
+                && follow.to.hwnd == "0x2"
+                && follow.transition_count == 1));
+        assert!(behaviour
+            .co_presence
+            .iter()
+            .any(|pair| pair.sample_count >= 2));
+    }
+
+    #[test]
+    fn strengthens_group_confidence_from_co_presence() {
+        let snapshots = vec![
+            snap("p1", "2026-07-30T10:00:00Z", "0x1", "stable-b"),
+            snap("p2", "2026-07-30T10:01:00Z", "0x2", "stable-b"),
+            snap("p3", "2026-07-30T10:02:00Z", "0x1", "stable-b"),
+            snap("p4", "2026-07-30T10:03:00Z", "0x1", "stable-b"),
+        ];
+        let behaviour = project_desktop_behaviour(&snapshots);
+        let mut groups = vec![DesktopWindowGroup {
+            id: "group:process_id:x".into(),
+            criterion: "process_id".into(),
+            fact_key: "x".into(),
+            label: "pair".into(),
+            member_ids: vec!["stable-a".into(), "stable-b".into()],
+            evidence_count: 1,
+            confidence: DesktopWindowGroup::CONFIDENCE_STRUCTURAL.into(),
+            authority_effect: DesktopWindowGroup::AUTHORITY_EFFECT_NONE.into(),
+        }];
+        strengthen_groups_from_behaviour(&mut groups, &behaviour);
+        assert!(groups[0].evidence_count >= 2);
+        assert_ne!(
+            groups[0].confidence,
+            DesktopWindowGroup::CONFIDENCE_STRUCTURAL
+        );
     }
 
     #[test]

@@ -241,9 +241,10 @@ pub use desktop_arrangement::{
     DesktopArrangementRestoreResult, DesktopArrangementStatus, DesktopWindowFocusResult,
 };
 pub use desktop_behaviour::{
-    project_desktop_behaviour, DesktopBehaviourTimeline, DesktopCoverageGap,
-    DesktopFocusTransition, DesktopObservedFocusSpan, DesktopWindowRevisit,
-    DESKTOP_BEHAVIOUR_GAP_SECONDS, DESKTOP_BEHAVIOUR_SAMPLE_LIMIT,
+    project_desktop_behaviour, strengthen_groups_from_behaviour, DesktopBehaviourTimeline,
+    DesktopCoPresence, DesktopCoverageGap, DesktopFocusFollow, DesktopFocusTransition,
+    DesktopObservedFocusSpan, DesktopWindowRevisit, DESKTOP_BEHAVIOUR_GAP_SECONDS,
+    DESKTOP_BEHAVIOUR_SAMPLE_LIMIT,
 };
 pub use desktop_grouping::{
     group_desktop_members, DesktopGroupCriterion, DesktopGroupMemberFact, DesktopWindowGroup,

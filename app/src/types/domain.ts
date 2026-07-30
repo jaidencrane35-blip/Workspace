@@ -6863,6 +6863,9 @@ export interface DesktopWindowGroup {
   fact_key: string;
   label: string;
   member_ids: string[];
+  evidence_count: number;
+  /** structural | emerging | recurring | strong */
+  confidence: string;
   authority_effect: string;
 }
 
@@ -6900,6 +6903,22 @@ export interface DesktopObservedFocusSpan {
   sample_count: number;
 }
 
+/** Aggregated focus A→B transitions. */
+export interface DesktopFocusFollow {
+  from: ObservationWindowRef;
+  to: ObservationWindowRef;
+  transition_count: number;
+  last_at: string;
+}
+
+/** Windows observed open together across samples. */
+export interface DesktopCoPresence {
+  left: ObservationWindowRef;
+  right: ObservationWindowRef;
+  sample_count: number;
+  last_seen_at: string;
+}
+
 /** Deterministic behaviour timeline projected onto WorkspaceState. */
 export interface DesktopBehaviourTimeline {
   sample_count: number;
@@ -6908,6 +6927,8 @@ export interface DesktopBehaviourTimeline {
   focus_transitions: DesktopFocusTransition[];
   window_revisits: DesktopWindowRevisit[];
   recent_focus_spans: DesktopObservedFocusSpan[];
+  focus_follows: DesktopFocusFollow[];
+  co_presence: DesktopCoPresence[];
   current_focus: ObservationWindowRef | null;
   current_focus_started_at: string | null;
   current_focus_sample_span_seconds: number | null;

@@ -50,6 +50,8 @@ function sampleGroup(
     id: `group:${overrides.criterion}:${overrides.member_ids.join("-")}`,
     fact_key: overrides.fact_key ?? overrides.member_ids.join(","),
     label: overrides.label ?? overrides.criterion,
+    evidence_count: 1,
+    confidence: "structural",
     authority_effect: "none",
     ...overrides,
   };

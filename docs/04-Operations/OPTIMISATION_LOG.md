@@ -90,6 +90,23 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 
 ## Cycles
 
+### Cycle: v9-2-focus-follow-and-group-confidence
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Cycle number** | V9-2 |
+| **Goal** | Infer focus-follow + co-presence affinities; strengthen grouping confidence from usage |
+| **Problem** | Groups were structural-only; Assistant could not answer “opens together / comes next” |
+| **Analysis** | Aggregate A→B focus transitions and visible co-presence from the same sample history; raise group evidence without replacing criteria |
+| **Changes** | `focus_follows` / `co_presence`; `DesktopWindowGroup.evidence_count`+`confidence`; `strengthen_groups_from_behaviour`; Assistant affinity answers |
+| **Files affected** | desktop_behaviour, desktop_grouping, workspace_state, domain.ts, assistantCompanion, stage tests, this log |
+| **Validation** | typecheck / test / build / architecture / ipc / ui-boundary (+ domain behaviour tests) |
+| **Deleted / reduced** | none (extends existing behaviour + grouping) |
+| **Next recommended cycle** | Gap-based observation session segmentation on the behaviour timeline |
+
+---
+
 ### Cycle: v9-1-desktop-behaviour-timeline
 
 | Field | Value |

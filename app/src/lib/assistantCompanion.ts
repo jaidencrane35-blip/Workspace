@@ -174,7 +174,14 @@ function summariseBelongsTogether(
     parts.push(
       `process groups: ${processGroups
         .slice(0, 5)
-        .map((group) => `${group.label} (${group.member_ids.length})`)
+        .map(
+          (group) =>
+            `${group.label} (${group.member_ids.length}${
+              group.confidence && group.confidence !== "structural"
+                ? `, ${group.confidence}`
+                : ""
+            })`,
+        )
         .join(", ")}`,
     );
   }
@@ -371,6 +378,54 @@ function summariseStopped(state: WorkspaceState): string {
     .join("; ")}.`;
 }
 
+function summariseAffinities(state: WorkspaceState): string {
+  const behaviour = state.behaviour;
+  if (!behaviour || behaviour.sample_count <= 0) {
+    return "No behavioural affinity samples are available yet.";
+  }
+  const parts: string[] = [];
+  if (behaviour.co_presence.length > 0) {
+    parts.push(
+      `open together: ${behaviour.co_presence
+        .slice(0, 5)
+        .map(
+          (pair) =>
+            `${pair.left.title || pair.left.hwnd} + ${pair.right.title || pair.right.hwnd} (${pair.sample_count})`,
+        )
+        .join("; ")}`,
+    );
+  }
+  if (behaviour.focus_follows.length > 0) {
+    parts.push(
+      `usually next: ${behaviour.focus_follows
+        .slice(0, 5)
+        .map(
+          (follow) =>
+            `${follow.from.title || follow.from.hwnd} → ${follow.to.title || follow.to.hwnd} (${follow.transition_count})`,
+        )
+        .join("; ")}`,
+    );
+  }
+  const strengthened = (state.window_groups ?? []).filter(
+    (group) => group.confidence && group.confidence !== "structural",
+  );
+  if (strengthened.length > 0) {
+    parts.push(
+      `strengthened groups: ${strengthened
+        .slice(0, 5)
+        .map(
+          (group) =>
+            `${group.label} (${group.confidence}, evidence ${group.evidence_count})`,
+        )
+        .join(", ")}`,
+    );
+  }
+  if (parts.length === 0) {
+    return "No recurring co-presence or focus-follow patterns in the retained samples yet.";
+  }
+  return `${parts.join(". ")}.`;
+}
+
 /**
  * Answer common desktop questions from observed facts without calling compose.
  * Returns null when the ask needs the broader assistant surface.
@@ -410,6 +465,13 @@ export function answerDesktopQuestionLocally(
   }
   if (/what did i stop|stopped doing|left focus|interrupted/.test(trimmed)) {
     return summariseStopped(state);
+  }
+  if (
+    /keep(s)? opening together|open(ed)? together|co-?presence|usually come(s)? next|what follows|follow/.test(
+      trimmed,
+    )
+  ) {
+    return summariseAffinities(state);
   }
   if (/belong|related|together|group/.test(trimmed)) {
     return summariseBelongsTogether(state, facts.arrangements);

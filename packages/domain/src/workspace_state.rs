@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::desktop_behaviour::{
-    project_desktop_behaviour, DesktopBehaviourTimeline,
+    project_desktop_behaviour, strengthen_groups_from_behaviour, DesktopBehaviourTimeline,
 };
 use crate::desktop_grouping::{
     group_desktop_members, DesktopGroupCriterion, DesktopGroupMemberFact, DesktopWindowGroup,
@@ -275,7 +275,8 @@ impl WorkspaceState {
             .map(WorkspaceStateWindow::to_window_ref);
 
         let active_applications = active_applications_from_state_windows(&windows);
-        let window_groups = project_window_groups(&windows, &[]);
+        let mut window_groups = project_window_groups(&windows, &[]);
+        strengthen_groups_from_behaviour(&mut window_groups, &behaviour);
         let state_id = format!("workspace-state:{}:{}", snapshot.pass.id, Uuid::new_v4());
 
         Self {
@@ -340,6 +341,7 @@ impl WorkspaceState {
         membership: &[(String, String, String)],
     ) -> Self {
         self.window_groups = project_window_groups(&self.windows, membership);
+        strengthen_groups_from_behaviour(&mut self.window_groups, &self.behaviour);
         self
     }
 

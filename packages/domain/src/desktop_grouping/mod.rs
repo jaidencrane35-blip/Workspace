@@ -48,11 +48,28 @@ pub struct DesktopWindowGroup {
     pub fact_key: String,
     pub label: String,
     pub member_ids: Vec<String>,
+    /// Structural observation count supporting this group (behaviour may raise it).
+    pub evidence_count: i32,
+    /// `structural` | `emerging` | `recurring` | `strong`
+    pub confidence: String,
     pub authority_effect: String,
 }
 
 impl DesktopWindowGroup {
     pub const AUTHORITY_EFFECT_NONE: &'static str = "none";
+    pub const CONFIDENCE_STRUCTURAL: &'static str = "structural";
+    pub const CONFIDENCE_EMERGING: &'static str = "emerging";
+    pub const CONFIDENCE_RECURRING: &'static str = "recurring";
+    pub const CONFIDENCE_STRONG: &'static str = "strong";
+
+    pub fn confidence_for_evidence(evidence_count: i32) -> &'static str {
+        match evidence_count {
+            0..=1 => Self::CONFIDENCE_STRUCTURAL,
+            2..=3 => Self::CONFIDENCE_EMERGING,
+            4..=6 => Self::CONFIDENCE_RECURRING,
+            _ => Self::CONFIDENCE_STRONG,
+        }
+    }
 }
 
 /// Group members by the given criteria. Deterministic id/order. Empty criteria → empty.
@@ -104,6 +121,8 @@ fn group_by_process(members: &[DesktopGroupMemberFact]) -> Vec<DesktopWindowGrou
                 fact_key: pid.to_string(),
                 label,
                 member_ids: rows.iter().map(|row| row.member_id.clone()).collect(),
+                evidence_count: 1,
+                confidence: DesktopWindowGroup::CONFIDENCE_STRUCTURAL.into(),
                 authority_effect: DesktopWindowGroup::AUTHORITY_EFFECT_NONE.into(),
             }
         })
@@ -126,6 +145,8 @@ fn group_by_monitor(members: &[DesktopGroupMemberFact]) -> Vec<DesktopWindowGrou
             fact_key: index.to_string(),
             label: format!("monitor:{index}"),
             member_ids: rows.iter().map(|row| row.member_id.clone()).collect(),
+            evidence_count: 1,
+            confidence: DesktopWindowGroup::CONFIDENCE_STRUCTURAL.into(),
             authority_effect: DesktopWindowGroup::AUTHORITY_EFFECT_NONE.into(),
         })
         .collect()
@@ -151,6 +172,8 @@ fn group_by_arrangement(members: &[DesktopGroupMemberFact]) -> Vec<DesktopWindow
             fact_key: arrangement_id.clone(),
             label: arrangement_id,
             member_ids: rows.iter().map(|row| row.member_id.clone()).collect(),
+            evidence_count: 1,
+            confidence: DesktopWindowGroup::CONFIDENCE_STRUCTURAL.into(),
             authority_effect: DesktopWindowGroup::AUTHORITY_EFFECT_NONE.into(),
         })
         .collect()
@@ -183,6 +206,8 @@ fn group_by_matched_application(members: &[DesktopGroupMemberFact]) -> Vec<Deskt
                 fact_key: app_id,
                 label,
                 member_ids: rows.iter().map(|row| row.member_id.clone()).collect(),
+                evidence_count: 1,
+                confidence: DesktopWindowGroup::CONFIDENCE_STRUCTURAL.into(),
                 authority_effect: DesktopWindowGroup::AUTHORITY_EFFECT_NONE.into(),
             }
         })
