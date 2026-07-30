@@ -101,26 +101,9 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 | **Files affected** | this log |
 | **Validation** | Architecture review against V15 Stage SoT / Apps library / no Environment on primary / no behaviour dump on Stage |
 | **Deleted / reduced** | none |
-| **Next recommended cycle** | Stop autonomous V15 if Pass 1 also empty; else only Pass-1-named integration |
+| **Next recommended cycle** | Stop autonomous V15 (condition 3: two empty coherence audits) |
 | **Human review required** | No |
 | **Why this is safe** | No code change; leftovers noted are dead CSS/helpers outside product UX |
-
----
-
-### Cycle: v15-empty-coherence-evaluation-2
-
-| Field | Value |
-|-------|-------|
-| **Date** | 2026-07-30 |
-| **Cycle number** | V15-empty-2 |
-| **Goal** | Second consecutive empty product coherence audit |
-| **Problem** | Confirm no further measurable coherence without new APIs/architecture |
-| **Analysis** | Independent angles: dock vs Apps leftovers, Profiles isolation, Environment leakage, dead helpers, behaviour-on-Stage temptation, tab-as-apps feel. No integration remains; hygiene-only dead CSS/helpers rejected as non-measurable. |
-| **Changes** | none — second empty evaluation |
-| **Files affected** | this log |
-| **Validation** | Architecture review against product emergence contract |
-| **Deleted / reduced** | none |
-| **Next recommended cycle** | Stop autonomous V15 (condition 3: two empty coherence audits) |
 
 ---
 
