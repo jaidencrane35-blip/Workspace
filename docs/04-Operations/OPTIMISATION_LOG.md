@@ -26,8 +26,8 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 
 | # | Category | Status | Notes |
 |---|----------|--------|-------|
-| 1 | Visual hierarchy | open | Product h3 sentence-case (v2-07) |
-| 2 | Layout consistency | open | |
+| 1 | Visual hierarchy | open | stronger chrome brand (v2-15) |
+| 2 | Layout consistency | open | banner/container pad tokens (v2-16) |
 | 3 | Spacing consistency | open | shell CSS tokens (v2-11) |
 | 4 | Typography consistency | open | Product h3 (v2-07) |
 | 5 | Navigation clarity | open | Assistant aria-label (v2-10) |
@@ -87,6 +87,37 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 ---
 
 ## Cycles
+
+### Cycle: opt-v2-16-layout-pad-tokens
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Category** | 2 — Layout consistency |
+| **Problem** | Banner/container horizontal padding drifted from chrome shell pad |
+| **Reason** | Use `--shell-pad-x` for banners and containers |
+| **Files changed** | `App.css`, this log |
+| **Validation** | typecheck / test / architecture / ipc / ui-boundary / build |
+| **Category status** | open |
+| **Why this is safe** | CSS token alignment only |
+
+---
+
+### Cycle: opt-v2-15-chrome-brand-hierarchy
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Category** | 1 — Visual hierarchy |
+| **Problem** | Chrome “Workspace” brand under-weighted vs tabs |
+| **Reason** | Slightly stronger brand type weight/size (concept: brand is hero signal in chrome) |
+| **Files changed** | `App.css`, this log |
+| **Validation** | typecheck / test / architecture / ipc / ui-boundary / build |
+| **Reference alignment** | 9.2/10 |
+| **Category status** | open |
+| **Why this is safe** | Typography weight only; no IA change |
+
+---
 
 ### Cycle: opt-v2-14-plateau-perf-memory-build-ipc
 

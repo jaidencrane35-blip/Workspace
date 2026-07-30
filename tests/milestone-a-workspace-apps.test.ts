@@ -170,6 +170,14 @@ describe("assistant companion rail helpers", () => {
     expect(assistantRailToggleLabel(true)).toMatch(/Hide/i);
     expect(assistantRailToggleLabel(false)).toMatch(/Show/i);
   });
+  it("exports a stable companion rail DOM id for aria-controls", async () => {
+    const { ASSISTANT_COMPANION_RAIL_ID } = await import(
+      "../app/src/lib/assistantRail"
+    );
+    expect(ASSISTANT_COMPANION_RAIL_ID).toBe(
+      "workspace-assistant-companion-rail",
+    );
+  });
 });
 
 describe("chrome preference hooks", () => {
