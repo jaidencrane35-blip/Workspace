@@ -38,7 +38,7 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 | 10 | Component consistency | open | |
 | 11 | CSS simplification | open | focus merge (v2-06); 900px merge (v2-12) |
 | 12 | Duplicate removal | open | FocusSupportingAppChips (v2-17) |
-| 13 | Dead code removal | open | unused selectors (v2-04) |
+| 13 | Dead code removal | open | unused selectors (v2-04, v2-18) |
 | 14 | Documentation quality | open | Protocol v2 + board |
 | 15 | Naming clarity | open | DESKTOP_PREVIEW_BANNER (v2-05) |
 | 16 | Maintainability | open | |
@@ -87,6 +87,21 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 ---
 
 ## Cycles
+
+### Cycle: opt-v2-18-dead-assistant-tool-note
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Category** | 13 — Dead code removal |
+| **Problem** | `.assistant-tool-note` CSS had no TSX consumers after companion-rail migration |
+| **Reason** | Delete dead selector |
+| **Files changed** | `App.css`, this log |
+| **Validation** | typecheck / test / architecture / ipc / ui-boundary / build |
+| **Category status** | open |
+| **Why this is safe** | Dead CSS only |
+
+---
 
 ### Cycle: opt-v2-17-focus-supporting-chips
 

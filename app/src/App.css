@@ -1139,10 +1139,6 @@ button.linkish:not(:disabled):hover {
   font-weight: 650;
 }
 
-.assistant-tool-note {
-  margin-top: 1rem;
-}
-
 /* Milestone A.1 — identity / hierarchy hardening */
 
 .chrome-brand {
