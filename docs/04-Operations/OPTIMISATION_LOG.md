@@ -31,11 +31,11 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 | 3 | Spacing consistency | open | shell CSS tokens (v2-11) |
 | 4 | Typography consistency | open | Product h3 (v2-07) |
 | 5 | Navigation clarity | open | Assistant aria-label (v2-10) |
-| 6 | Accessibility | open | focus-visible (v2-02) |
+| 6 | Accessibility | open | focus-visible (v2-02, v2-19) |
 | 7 | Keyboard UX | open | rail focus (v2-03) |
 | 8 | Responsiveness | open | chrome stack + merged 900px (v2-12) |
-| 9 | Animation polish | open | rail enter + reduced-motion (v2-08) |
-| 10 | Component consistency | open | |
+| 9 | Animation polish | PLATEAUED | Rail enter + reduced-motion; further motion would be noise (v2-20) |
+| 10 | Component consistency | open | Focus chips shared (v2-17); ghost focus (v2-19) |
 | 11 | CSS simplification | open | focus merge (v2-06); 900px merge (v2-12) |
 | 12 | Duplicate removal | open | FocusSupportingAppChips (v2-17) |
 | 13 | Dead code removal | open | unused selectors (v2-04, v2-18) |
@@ -87,6 +87,36 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 ---
 
 ## Cycles
+
+### Cycle: opt-v2-20-plateau-animation
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Category** | 9 — Animation polish |
+| **Analysis** | Companion rail enter + `prefers-reduced-motion` already shipped (v2-08). Additional chrome animation would be decorative without hierarchy gain (anti-slop). |
+| **Changes** | Mark category 9 **PLATEAUED** |
+| **Files changed** | this log |
+| **Category status** | PLATEAUED |
+| **Why this is safe** | Evaluation only |
+
+---
+
+### Cycle: opt-v2-19-ghost-focus-visible
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Category** | 6 — Accessibility (+ 10 component consistency) |
+| **Problem** | Ghost / rail control buttons relied only on generic `button:focus-visible` without explicit companion selectors for review clarity |
+| **Reason** | Name companion controls in the shared focus-visible group |
+| **Files changed** | `App.css`, this log |
+| **Validation** | typecheck / test / architecture / ipc / ui-boundary / build |
+| **Accessibility** | 8.7/10 |
+| **Category status** | open |
+| **Why this is safe** | Focus ring selectors only |
+
+---
 
 ### Cycle: opt-v2-18-dead-assistant-tool-note
 

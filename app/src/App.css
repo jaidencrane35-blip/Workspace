@@ -1579,7 +1579,11 @@ button.linkish:not(:disabled):hover {
 .tab:focus-visible,
 .home-action:focus-visible,
 .home-app-chip:focus-visible,
-.application-card-main:focus-visible {
+.application-card-main:focus-visible,
+.ghost:focus-visible,
+.assistant-rail-collapse:focus-visible,
+.assistant-advanced-toggle:focus-visible,
+.assistant-packages-toggle:focus-visible {
   outline: 2px solid #93c5fd;
   outline-offset: 2px;
 }
