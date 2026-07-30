@@ -220,54 +220,58 @@ pub fn project_desktop_behaviour(
         }
 
         let delta = compare_observation_snapshots(previous, current);
-        for opened in &delta.opened_windows {
-            let key = window_key(opened);
-            let entry = open_counts.entry(key).or_insert_with(|| {
-                (opened.clone(), 0, current.pass.captured_at.clone())
-            });
-            entry.0 = opened.clone();
-            entry.1 += 1;
-            entry.2 = current.pass.captured_at.clone();
-        }
-        for closed in &delta.closed_windows {
-            let key = window_key(closed);
-            let entry = close_counts.entry(key).or_insert_with(|| {
-                (closed.clone(), 0, current.pass.captured_at.clone())
-            });
-            entry.0 = closed.clone();
-            entry.1 += 1;
-            entry.2 = current.pass.captured_at.clone();
-        }
-
-        if let Some(change) = delta.focused_window_changed {
-            focus_transitions.push(DesktopFocusTransition {
-                at: current.pass.captured_at.clone(),
-                from_pass_id: previous.pass.id.clone(),
-                to_pass_id: current.pass.id.clone(),
-                previous: change.previous.clone(),
-                current: change.current.clone(),
-            });
-            if let (Some(from), Some(to)) = (change.previous.clone(), change.current.clone()) {
-                let key = (window_key(&from), window_key(&to));
-                let entry = follow_counts.entry(key).or_insert_with(|| {
-                    (from.clone(), to.clone(), 0, current.pass.captured_at.clone())
+        if !crossed_gap {
+            for opened in &delta.opened_windows {
+                let key = window_key(opened);
+                let entry = open_counts.entry(key).or_insert_with(|| {
+                    (opened.clone(), 0, current.pass.captured_at.clone())
                 });
-                entry.0 = from;
-                entry.1 = to;
-                entry.2 += 1;
-                entry.3 = current.pass.captured_at.clone();
-            }
-            if let Some(focused) = change.current.clone() {
-                let key = window_key(&focused);
-                let entry = revisit_counts.entry(key).or_insert_with(|| {
-                    (focused.clone(), 0, current.pass.captured_at.clone())
-                });
-                entry.0 = focused;
+                entry.0 = opened.clone();
                 entry.1 += 1;
                 entry.2 = current.pass.captured_at.clone();
             }
+            for closed in &delta.closed_windows {
+                let key = window_key(closed);
+                let entry = close_counts.entry(key).or_insert_with(|| {
+                    (closed.clone(), 0, current.pass.captured_at.clone())
+                });
+                entry.0 = closed.clone();
+                entry.1 += 1;
+                entry.2 = current.pass.captured_at.clone();
+            }
+        }
 
+        if let Some(change) = delta.focused_window_changed {
+            // Focus transitions across coverage gaps are unobserved; keep session
+            // boundaries via gaps/spans only.
             if !crossed_gap {
+                focus_transitions.push(DesktopFocusTransition {
+                    at: current.pass.captured_at.clone(),
+                    from_pass_id: previous.pass.id.clone(),
+                    to_pass_id: current.pass.id.clone(),
+                    previous: change.previous.clone(),
+                    current: change.current.clone(),
+                });
+                if let (Some(from), Some(to)) = (change.previous.clone(), change.current.clone()) {
+                    let key = (window_key(&from), window_key(&to));
+                    let entry = follow_counts.entry(key).or_insert_with(|| {
+                        (from.clone(), to.clone(), 0, current.pass.captured_at.clone())
+                    });
+                    entry.0 = from;
+                    entry.1 = to;
+                    entry.2 += 1;
+                    entry.3 = current.pass.captured_at.clone();
+                }
+                if let Some(focused) = change.current.clone() {
+                    let key = window_key(&focused);
+                    let entry = revisit_counts.entry(key).or_insert_with(|| {
+                        (focused.clone(), 0, current.pass.captured_at.clone())
+                    });
+                    entry.0 = focused;
+                    entry.1 += 1;
+                    entry.2 = current.pass.captured_at.clone();
+                }
+
                 if let Some(previous_span) = span_window.take() {
                     recent_focus_spans.push(DesktopObservedFocusSpan {
                         window: previous_span,
@@ -281,10 +285,6 @@ pub fn project_desktop_behaviour(
                     });
                 }
                 span_window = change.current;
-                span_started_at = current.pass.captured_at.clone();
-                span_sample_count = 1;
-            } else {
-                span_window = change.current.or(span_window);
                 span_started_at = current.pass.captured_at.clone();
                 span_sample_count = 1;
             }

@@ -90,6 +90,23 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 
 ## Cycles
 
+### Cycle: v9-5-suppress-behaviour-across-coverage-gaps
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Cycle number** | V9-5 |
+| **Goal** | Do not attribute focus/lifecycle/affinity events across unobserved coverage gaps |
+| **Problem** | Adjacent-snapshot comparisons still emitted transitions/opens/closes across ≥30m gaps |
+| **Analysis** | Guard aggregations with `!crossed_gap`; sessions/spans already bound continuity |
+| **Changes** | Suppress cross-gap transitions, follows, revisits, and lifecycle counts |
+| **Files affected** | desktop_behaviour, this log |
+| **Validation** | typecheck / test / build / architecture / ipc / ui-boundary (+ domain behaviour tests) |
+| **Deleted / reduced** | Unobserved cross-gap behavioural attributions |
+| **Next recommended cycle** | Two empty behavioural evaluation passes |
+
+---
+
 ### Cycle: v9-4-gap-aware-spans-and-lifecycle
 
 | Field | Value |
