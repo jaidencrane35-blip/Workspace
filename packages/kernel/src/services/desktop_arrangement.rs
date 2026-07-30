@@ -237,8 +237,8 @@ impl DesktopArrangementService {
                 message: "hwnd is required to focus a desktop window".into(),
             });
         }
-        let controller: Arc<dyn WindowController> = if simulate {
-            Arc::new(StubWindowController::new())
+        let controller: Box<dyn WindowController> = if simulate {
+            Box::new(StubWindowController::new())
         } else {
             platform_window_controller()
         };

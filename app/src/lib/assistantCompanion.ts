@@ -103,10 +103,7 @@ export function enrichAskWithDesktopObservation(
     return trimmed;
   }
 
-  const focused =
-    state.focused_window?.title?.trim() ||
-    state.focused_window?.process_name?.trim() ||
-    null;
+  const focused = state.focused_window?.title?.trim() || null;
   const processes: string[] = [];
   const seen = new Set<string>();
   for (const window of state.windows) {

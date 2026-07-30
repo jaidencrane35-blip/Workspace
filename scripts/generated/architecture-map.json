@@ -284,6 +284,11 @@
       "authority_owner": "System"
     },
     {
+      "command": "FocusDesktopWindow",
+      "capability": "desktop.restore",
+      "authority_owner": "System"
+    },
+    {
       "command": "ExecuteIntentRequest",
       "capability": "audit.write",
       "authority_owner": "Audit"
@@ -631,7 +636,7 @@
   "permission_gateway_require_sites": [
     {
       "file": "packages/kernel/src/commands/handler.rs",
-      "line": 5926,
+      "line": 5936,
       "kind": "require"
     },
     {
@@ -738,17 +743,17 @@
       "WorkspaceAssistantInteractionSummary",
       "WorkspaceAssistantPersonalisationSummary"
     ],
-    "mutation_commands": 90,
+    "mutation_commands": 91,
     "query_commands": 171,
     "assertions": [
       "Found 39 history DTOs and verified command-field restrictions.",
       "Found 39 projection summary DTOs and verified authority-field restrictions.",
       "Verified 3 recovery diagnostic event types remain evidence-only.",
-      "Found 90 mutation commands (≥ baseline 88) with capability paths."
+      "Found 91 mutation commands (≥ baseline 88) with capability paths."
     ]
   },
   "stats": {
-    "mutation_commands": 90,
+    "mutation_commands": 91,
     "query_commands": 171,
     "capability_catalog": 26,
     "unused_capabilities": 2,
