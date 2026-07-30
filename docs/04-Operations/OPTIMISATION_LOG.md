@@ -90,6 +90,40 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 
 ## Cycles
 
+### Cycle: v10-empty-continuity-evaluation-2
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Cycle number** | V10-empty-2 |
+| **Goal** | Second consecutive empty continuity capability evaluation |
+| **Problem** | Confirm whether any further measurable continuity capability remains without new architecture/platform APIs |
+| **Analysis** | Same blockers as empty-1: continuous OS sampling, durable history beyond retention, workspace-scoped state, geometry/thumbnail/audio ownership |
+| **Changes** | none — second empty evaluation |
+| **Files affected** | this log |
+| **Validation** | Architecture review against WorkspaceState continuity / runtime memory / behaviour confidence |
+| **Deleted / reduced** | none |
+| **Next recommended cycle** | Stop autonomous V10 (condition 3: two empty evaluations) |
+
+---
+
+### Cycle: v10-empty-continuity-evaluation-1
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Cycle number** | V10-empty-1 |
+| **Goal** | First empty continuity capability evaluation after V10-5 |
+| **Problem** | Identify highest-value missing deterministic continuity capability |
+| **Analysis** | Remaining deltas need continuous OS event streams / idle, durable history beyond the 50-pass ring, workspace-scoped WorkspaceState, or geometry/thumbnail/audio ownership — platform APIs or new architecture |
+| **Changes** | none — empty evaluation |
+| **Files affected** | this log |
+| **Validation** | Architecture review against WorkspaceState continuity / runtime memory / behaviour confidence |
+| **Deleted / reduced** | none |
+| **Next recommended cycle** | Second empty continuity evaluation |
+
+---
+
 ### Cycle: v10-5-relationship-session-continuity
 
 | Field | Value |
