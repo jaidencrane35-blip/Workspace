@@ -7,9 +7,10 @@
 | **Implementation agent** | Cursor |
 | **Programme** | [Programme I](PROGRAMME-I-WORKSPACE-PRODUCT-CAPABILITY.md) |
 | **Depends on** | [IC4](PROGRAMME-I-IC4-DESKTOP-LAYOUT-EDITING-REFINEMENT.md) (approved) |
-| **Status** | Complete |
+| **Status** | Complete — **Approved** by Principal Architect |
 | **Date** | 2026-07-30 |
 | **Approved to commence** | 2026-07-30 |
+| **Review** | 2026-07-30 — product coherence without new sources of truth; proceed to IC6 planning |
 
 ---
 
@@ -122,4 +123,8 @@ Every IC5 capability **interprets** existing Arrangement / restore result / Work
 
 ## Stop condition
 
-IC5 complete. **Await Principal Architect review** before further Programme I contracts.
+IC5 complete and **approved** by the Principal Architect (2026-07-30).
+
+Review confirmed: derived metadata, unified feedback, session-only guidance, shared product language, and Product vs Interaction State all preserve Programme I invariants. No new sources of truth.
+
+**Next:** [IC6 planning — Operational Confidence](PROGRAMME-I-IC6-OPERATIONAL-CONFIDENCE.md). Implementation of IC6 awaits Principal Architect approval to commence.
