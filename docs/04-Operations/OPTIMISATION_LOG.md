@@ -90,6 +90,23 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 
 ## Cycles
 
+### Cycle: v13-2-attention-oscillation-damping
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Cycle number** | V13-2 |
+| **Goal** | Damp oscillating / noisy attention; refine decay without durable history |
+| **Problem** | Emerging vs fading, uncertain vs interrupted, and background kinds could chatter |
+| **Analysis** | Prefer fading over emerging; drop uncertain when interrupted/returning; soften switching under stable working; cap background kinds; demote decaying immediacy |
+| **Changes** | `damp_attention_oscillation` |
+| **Files affected** | desktop_attention, this log |
+| **Validation** | typecheck / test / build / architecture / ipc / ui-boundary (+ domain attention tests) |
+| **Deleted / reduced** | Oscillating emerging attention; excess background/weak items; floor-strength decaying noise |
+| **Next recommended cycle** | Two empty attention evaluation passes |
+
+---
+
 ### Cycle: v13-1-desktop-attention-projection
 
 | Field | Value |

@@ -417,6 +417,8 @@ fn refine_attention(projection: &mut DesktopAttentionProjection) {
         }
     }
 
+    damp_attention_oscillation(&mut merged);
+
     merged.sort_by(|a, b| {
         time_rank(&a.time_sensitivity)
             .cmp(&time_rank(&b.time_sensitivity))
@@ -426,6 +428,99 @@ fn refine_attention(projection: &mut DesktopAttentionProjection) {
     });
     merged.truncate(DESKTOP_ATTENTION_LIMIT);
     projection.items = merged;
+}
+
+/// Reduce noisy / contradictory attention without a durable history store.
+fn damp_attention_oscillation(items: &mut Vec<DesktopAttentionItem>) {
+    let has_interrupted = items
+        .iter()
+        .any(|item| item.kind == DesktopAttentionItem::KIND_INTERRUPTED_WORK);
+    let has_returning = items
+        .iter()
+        .any(|item| item.kind == DesktopAttentionItem::KIND_RETURNING_WORK);
+    let stable_working = items.iter().any(|item| {
+        item.kind == DesktopAttentionItem::KIND_WORKING_FOCUS
+            && (item.lifecycle == DesktopAttentionItem::LIFECYCLE_STABLE
+                || item.lifecycle == DesktopAttentionItem::LIFECYCLE_STRENGTHENING)
+    });
+
+    // Prefer fading over emerging on the same entity (decay wins over oscillation).
+    let fading_entities: BTreeSet<String> = items
+        .iter()
+        .filter(|item| item.kind == DesktopAttentionItem::KIND_FADING_CONTEXT)
+        .flat_map(|item| item.entity_ids.iter().cloned())
+        .collect();
+    items.retain(|item| {
+        if item.kind == DesktopAttentionItem::KIND_EMERGING_CONTEXT {
+            !item
+                .entity_ids
+                .iter()
+                .any(|id| fading_entities.contains(id))
+        } else {
+            true
+        }
+    });
+
+    // Uncertain attention is noisy when interrupted/returning already demand notice.
+    if has_interrupted || has_returning {
+        items.retain(|item| item.kind != DesktopAttentionItem::KIND_UNCERTAIN_CONTEXT);
+    }
+
+    // Soften task-switching when working focus is already stable.
+    if stable_working {
+        for item in items.iter_mut() {
+            if item.kind == DesktopAttentionItem::KIND_TASK_SWITCHING {
+                item.strength = item.strength.saturating_sub(2).max(1);
+                item.time_sensitivity = DesktopAttentionItem::TIME_BACKGROUND.into();
+                item.lifecycle = DesktopAttentionItem::LIFECYCLE_DECAYING.into();
+                item.explanation = format!(
+                    "{} Damped: stable working focus reduces switching attention.",
+                    item.explanation
+                );
+                item.confidence =
+                    DesktopWindowGroup::confidence_for_evidence(item.strength).into();
+            }
+        }
+    }
+
+    // Cap noisy background kinds to one each (prevent accumulation).
+    for kind in [
+        DesktopAttentionItem::KIND_COMPANION_CONTEXT,
+        DesktopAttentionItem::KIND_CLUSTER_CONTEXT,
+        DesktopAttentionItem::KIND_BACKGROUND_MONITOR,
+        DesktopAttentionItem::KIND_WEAK_EVIDENCE,
+    ] {
+        let mut kept = false;
+        items.retain(|item| {
+            if item.kind != kind {
+                return true;
+            }
+            if kept {
+                return false;
+            }
+            kept = true;
+            true
+        });
+    }
+
+    // Decaying items should not stay immediate.
+    for item in items.iter_mut() {
+        if item.lifecycle == DesktopAttentionItem::LIFECYCLE_DECAYING
+            && item.time_sensitivity == DesktopAttentionItem::TIME_IMMEDIATE
+        {
+            item.time_sensitivity = DesktopAttentionItem::TIME_NEAR_TERM.into();
+            item.strength = item.strength.saturating_sub(1).max(1);
+            item.confidence =
+                DesktopWindowGroup::confidence_for_evidence(item.strength).into();
+        }
+    }
+
+    // Drop items that decayed to floor strength with single plane — unstable.
+    items.retain(|item| {
+        !(item.lifecycle == DesktopAttentionItem::LIFECYCLE_DECAYING
+            && item.strength <= 1
+            && item.supporting_planes.len() <= 1)
+    });
 }
 
 fn lifecycle_for(strength: i32, planes: &[String], kind: &str) -> &'static str {
@@ -728,6 +823,59 @@ mod tests {
         let attention = project_desktop_attention(&decisions, &semantics, &memory, &behaviour);
         assert!(attention.items.iter().any(|item| {
             item.kind == DesktopAttentionItem::KIND_INCOMPLETE_DESKTOP
+        }));
+    }
+
+    #[test]
+    fn damps_emerging_when_fading_covers_same_entity() {
+        let mut decisions = DesktopDecisionProjection::empty();
+        decisions.decisions = vec![
+            DesktopDecision {
+                id: "decision:acknowledge_emerging:x".into(),
+                kind: DesktopDecision::KIND_ACKNOWLEDGE_EMERGING.into(),
+                summary: "Emerging".into(),
+                explanation: "emerging".into(),
+                confidence: DesktopWindowGroup::CONFIDENCE_EMERGING.into(),
+                evidence_score: 3,
+                entity_ids: vec!["stable-x".into()],
+                evidence: vec![DesktopDecisionEvidence {
+                    plane: "semantics".into(),
+                    reference: "stable-x".into(),
+                    detail: "emerging".into(),
+                }],
+                supporting_planes: vec!["semantics".into()],
+                authority_effect: DesktopDecision::AUTHORITY_EFFECT_NONE.into(),
+            },
+            DesktopDecision {
+                id: "decision:note_fading:x".into(),
+                kind: DesktopDecision::KIND_NOTE_FADING.into(),
+                summary: "Fading".into(),
+                explanation: "fading".into(),
+                confidence: DesktopWindowGroup::CONFIDENCE_EMERGING.into(),
+                evidence_score: 3,
+                entity_ids: vec!["stable-x".into()],
+                evidence: vec![DesktopDecisionEvidence {
+                    plane: "semantics".into(),
+                    reference: "stable-x".into(),
+                    detail: "fading".into(),
+                }],
+                supporting_planes: vec!["semantics".into()],
+                authority_effect: DesktopDecision::AUTHORITY_EFFECT_NONE.into(),
+            },
+        ];
+        let attention = project_desktop_attention(
+            &decisions,
+            &DesktopSemanticProjection::empty(),
+            &DesktopRuntimeMemory::empty(),
+            &DesktopBehaviourTimeline::empty(),
+        );
+        assert!(attention
+            .items
+            .iter()
+            .any(|item| item.kind == DesktopAttentionItem::KIND_FADING_CONTEXT));
+        assert!(!attention.items.iter().any(|item| {
+            item.kind == DesktopAttentionItem::KIND_EMERGING_CONTEXT
+                && item.entity_ids.iter().any(|id| id == "stable-x")
         }));
     }
 }
