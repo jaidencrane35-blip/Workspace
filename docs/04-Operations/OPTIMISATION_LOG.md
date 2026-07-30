@@ -88,6 +88,22 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 
 ## Cycles
 
+### Cycle: v3-2-library-simplify-dead-css
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Cycle number** | V3-2 |
+| **Approved category** | 12 Duplicate removal (+ 13 Dead code) |
+| **Goal** | One library grid; remove FocusSupporting chips parallel UI + orphan CSS |
+| **Problem** | Optional library still had Focus primary/chip layout; AssistantPanel/canvas CSS remained |
+| **Changes** | `ApplicationList` single grid; delete `FocusSupportingAppChips`; strip dead assistant/canvas/home-chip CSS |
+| **Validation** | typecheck / test / build / architecture / ipc / ui-boundary |
+| **Human review required** | No — continue until presentation plateau |
+| **Next** | Presentation plateau unless OS geometry / grouping / audio / durable chat approved |
+
+---
+
 ### Cycle: v3-1-desktop-first-spatial-control
 
 | Field | Value |

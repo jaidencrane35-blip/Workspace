@@ -179,15 +179,6 @@ describe("work mode helpers", () => {
   });
 });
 
-describe("Focus supporting chips module", () => {
-  it("exports the shared Focus chip presenter", async () => {
-    const mod = await import(
-      "../app/src/components/FocusSupportingAppChips"
-    );
-    expect(typeof mod.FocusSupportingAppChips).toBe("function");
-  });
-});
-
 describe("product shell banner helpers", () => {
   it("classifies string and runtime errors without wrapping", async () => {
     const { classifyBanner, DESKTOP_PREVIEW_BANNER } = await import(

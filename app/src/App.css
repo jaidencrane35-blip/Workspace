@@ -444,109 +444,12 @@ button.ghost {
   max-width: 48rem;
 }
 
-.assistant-panel {
-  padding-bottom: 2.5rem;
-}
-
-.assistant-hero h2 {
-  margin: 0.35rem 0 0.5rem;
-  font-size: 1.45rem;
-  font-weight: 600;
-  color: #e7ecf1;
-  text-transform: none;
-  letter-spacing: 0;
-}
-
 .assistant-kicker {
   margin: 0;
   font-size: 0.75rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: #6b8aab;
-}
-
-.assistant-states {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-  margin: 1.25rem 0 1.5rem;
-}
-
-.assistant-state {
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  color: #6a7886;
-  border: 1px solid #1e2832;
-  padding: 0.2rem 0.45rem;
-  border-radius: 3px;
-}
-
-.assistant-state.active {
-  color: #e7ecf1;
-  border-color: #6b8aab;
-  background: #1a2836;
-}
-
-.assistant-state.active.state-failed {
-  border-color: #f87171;
-  color: #fca5a5;
-}
-
-.assistant-state.active.state-completed {
-  border-color: #86efac;
-  color: #bbf7d0;
-}
-
-.assistant-goal-block label {
-  display: block;
-  margin-bottom: 0.4rem;
-  color: #9aa8b4;
-  font-size: 0.9rem;
-}
-
-.assistant-goal-block textarea {
-  width: 100%;
-  box-sizing: border-box;
-  background: #1a222c;
-  border: 1px solid #2a3642;
-  color: #e7ecf1;
-  padding: 0.65rem 0.75rem;
-  border-radius: 4px;
-  resize: vertical;
-  font: inherit;
-  line-height: 1.4;
-}
-
-
-.assistant-influence {
-  margin: 0.5rem 0 0;
-  padding: 0.5rem 0.65rem;
-  border-left: 2px solid #6b8aab;
-  color: #c5d0da;
-  font-size: 0.9rem;
-}
-
-.assistant-permission-note {
-  margin: 0;
-  color: #9aa8b4;
-  font-size: 0.85rem;
-  line-height: 1.4;
-}
-
-.assistant-panel dl {
-  margin: 1rem 0 0;
-}
-
-.assistant-panel dt {
-  margin-top: 1rem;
-  font-weight: 600;
-  color: #dbe3eb;
-}
-
-.assistant-panel dd {
-  margin: 0.35rem 0 0 0;
-  line-height: 1.6;
 }
 
 /* Small presentation utilities used by explanation blocks */
@@ -956,22 +859,6 @@ button.linkish:not(:disabled):hover {
   font-size: 0.85rem;
 }
 
-.assistant-legacy-section {
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid #243040;
-  opacity: 0.94;
-}
-
-.assistant-legacy-section > h2 {
-  margin-bottom: 0.35rem;
-  font-size: 1.05rem;
-  font-weight: 600;
-  color: #b8c4d0;
-  text-transform: none;
-  letter-spacing: 0;
-}
-
 /* Milestone A — product shell (Home / Workspaces / Applications) */
 
 .product-container {
@@ -1262,27 +1149,6 @@ button.linkish:not(:disabled):hover {
   border: 1px solid #3a4a5a;
   font-weight: 700;
   color: #e7ecf1;
-}
-
-.home-app-chip-row {
-  list-style: none;
-  margin: 0 0 0.75rem;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.45rem;
-}
-
-.home-app-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.35rem 0.55rem;
-  background: #121820;
-  border: 1px solid #2a3642;
-  color: #e7ecf1;
-  border-radius: 999px;
-  cursor: pointer;
 }
 
 /* Milestone C — persistent Assistant companion rail */
@@ -1601,10 +1467,6 @@ button.linkish:not(:disabled):hover {
 
 .stage-tile.compact {
   min-height: 7.5rem;
-}
-
-.focus-supporting-chip.static {
-  cursor: default;
 }
 
 

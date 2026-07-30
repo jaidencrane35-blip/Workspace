@@ -273,7 +273,6 @@ export function ApplicationsPanel({
               <ApplicationList
                 applications={applications}
                 selectedId={selectedId}
-                workMode={workMode}
                 busy={busy || !runtime}
                 onSelect={setSelectedId}
                 onLaunch={launchApplication}
