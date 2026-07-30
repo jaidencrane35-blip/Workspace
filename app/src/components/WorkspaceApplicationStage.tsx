@@ -1,20 +1,22 @@
 /**
- * Purpose: Desktop surface — operator workflow composition + decision support.
- * Owner: Frontend product shell (Programme V IC2)
+ * Purpose: Desktop surface — operator workflow composition, decision support,
+ *   and recoverability explanations.
+ * Owner: Frontend product shell (Programme V IC3)
  * Inputs: optional profile, registry apps, work mode, launch + navigate;
  *   WorkspaceState via refreshObservedWorkspaceState; focus_desktop_window;
  *   list/capture/restore_desktop_arrangement
  * Outputs: Spatial desktop objects; Arrangement select + Restore; edit session;
- *   workflow projection; state-derived recommendations (explain only, never execute)
+ *   workflow / recommendation / recoverability projections (explain only, never execute)
  * Dependencies: stageDesktopUi, layoutsStageUi, desktopLayoutEditing,
  *   arrangementProductUi, operationalConfidenceUi, operatorWorkflowUi,
- *   workflowDecisionSupportUi, ipc
- * Non-goals: Workflow/recommendation engines, scoring, automation, persistence,
- *   new set_bounds product IPC, parallel authorities
+ *   workflowDecisionSupportUi, workflowRecoverabilityUi, ipc
+ * Non-goals: Workflow/recommendation/recovery engines, scoring, automation,
+ *   resumable workflow state, persistence, new set_bounds product IPC
  *
  * Product State: Profile · Desktop · Arrangement · Restore
  * Interaction State (never persist): Editing · Preview · Selection · In-flight · Guidance
- * Workflow + recommendations: derived projections only — stable when facts are stable
+ * Workflow + recommendations + recoverability: derived projections only —
+ *   stable when facts are stable
  */
 
 import { useCallback, useEffect, useMemo, useState, type KeyboardEvent } from "react";
@@ -64,6 +66,10 @@ import {
 } from "../lib/operatorWorkflowUi";
 import { monogramFromName } from "../lib/productShellUi";
 import { projectWorkflowRecommendations } from "../lib/workflowDecisionSupportUi";
+import {
+  projectWorkflowRecoverability,
+  recoverabilityClassificationLabel,
+} from "../lib/workflowRecoverabilityUi";
 import {
   layoutStageDesktopWindows,
   nextStageSelectionKey,
@@ -475,6 +481,36 @@ export function WorkspaceApplicationStage({
     currencyExplanation?.changeDiff,
     layoutEditing,
     layoutPreview,
+    preRestoreFacts?.available,
+    inFlight,
+  ]);
+
+  const workflowRecoverability = useMemo(() => {
+    const changeDiff = currencyExplanation?.changeDiff;
+    const missingCount = selectedArrangementMeta?.missingCount ?? 0;
+    return projectWorkflowRecoverability({
+      loadState,
+      hasProfile: Boolean(workspace),
+      observedWindowCount: windows.length,
+      arrangementCount: arrangements.length,
+      arrangementSelected: Boolean(workingSet),
+      staleArrangementSelection: Boolean(workingSetId) && !workingSet,
+      restoreAvailable: Boolean(preRestoreFacts?.available),
+      desktopDiffersFromArrangement: Boolean(changeDiff?.hasChanges),
+      hasRestoreGaps: missingCount > 0,
+      operationInFlight: Boolean(
+        inFlight ?? (loadState === "loading" ? "observe" : null),
+      ),
+    });
+  }, [
+    loadState,
+    workspace,
+    windows.length,
+    arrangements.length,
+    workingSet,
+    workingSetId,
+    currencyExplanation?.changeDiff,
+    selectedArrangementMeta?.missingCount,
     preRestoreFacts?.available,
     inFlight,
   ]);
@@ -936,6 +972,49 @@ export function WorkspaceApplicationStage({
         <p className="stage-workflow-recommendation-note muted">
           Recommendations explain current state — they do not execute. Use Save,
           Update, Preview, or Restore when you choose.
+        </p>
+        {workflowRecoverability.length > 0 ? (
+          <ul
+            className="stage-workflow-recoverability"
+            aria-label="Workflow recoverability"
+          >
+            {workflowRecoverability.map((item) => (
+              <li
+                key={item.id}
+                className={`stage-workflow-recoverability-item ${item.classification}`}
+                data-recoverability-id={item.id}
+                data-recoverability-class={item.classification}
+                data-recoverability-owner={item.owner}
+                data-workflow-step={item.workflowStep}
+              >
+                <span className="stage-workflow-recoverability-what">
+                  {item.what}
+                </span>
+                <span className="stage-workflow-recoverability-class muted">
+                  {recoverabilityClassificationLabel(item.classification)}
+                </span>
+                <span className="stage-workflow-recoverability-because muted">
+                  Because {item.because}.
+                </span>
+                {item.missingPrerequisite ? (
+                  <span className="stage-workflow-recoverability-missing muted">
+                    Missing · {item.missingPrerequisite}
+                  </span>
+                ) : null}
+                <span className="stage-workflow-recoverability-owner muted">
+                  Owner: {item.owner}
+                </span>
+                <span className="stage-workflow-recoverability-next muted">
+                  Next action · {item.nextStep.label}
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        <p className="stage-workflow-recoverability-note muted">
+          Recoverability explains blocked progress from current state — it does
+          not recover, resume, or retry. Use existing Capture, Update, Preview,
+          Restore, or Arrangement selection when you choose.
         </p>
       </div>
 

@@ -522,6 +522,53 @@ button.ghost {
   margin: 0.45rem 0 0;
 }
 
+.stage-workflow-recoverability {
+  list-style: none;
+  margin: 0.55rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.stage-workflow-recoverability-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.35rem 0.45rem;
+  border: 1px solid #2a3642;
+  border-radius: 4px;
+  background: rgba(12, 16, 21, 0.45);
+}
+
+.stage-workflow-recoverability-item.recoverable {
+  border-color: rgba(147, 197, 253, 0.35);
+}
+
+.stage-workflow-recoverability-item.non_recoverable {
+  border-color: rgba(196, 140, 120, 0.45);
+}
+
+.stage-workflow-recoverability-what {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #d7e0e8;
+}
+
+.stage-workflow-recoverability-class,
+.stage-workflow-recoverability-because,
+.stage-workflow-recoverability-missing,
+.stage-workflow-recoverability-owner,
+.stage-workflow-recoverability-next,
+.stage-workflow-recoverability-note {
+  font-size: 0.74rem;
+  line-height: 1.35;
+}
+
+.stage-workflow-recoverability-note {
+  margin: 0.45rem 0 0;
+}
+
 .stage-operational-explain,
 .arrangement-operational-explain {
   margin: 0 0 0.65rem;

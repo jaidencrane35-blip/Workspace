@@ -1,50 +1,30 @@
-# Programme V — Implementation Contract 3 (Planning)  
+# Programme V — Implementation Contract 3  
 # Workflow Recoverability
 
 | Field | Value |
 |-------|-------|
 | **Authority** | Principal Architect |
-| **Implementation agent** | Cursor (after approval to commence) |
+| **Implementation agent** | Cursor |
 | **Programme** | [Programme V — Operator Workflows](PROGRAMME-V-OPERATOR-WORKFLOWS.md) |
 | **Contract** | Implementation Contract 3 |
-| **Status** | **Planned** — awaiting Principal Architect approval to commence |
+| **Status** | Complete — implemented; awaiting Principal Architect review |
 | **Date** | 2026-07-30 |
-| **Nature** | Planning contract — scopes IC3; does not authorise implementation until approved |
+| **Approved to commence** | 2026-07-30 |
 | **Depends on** | [IC1](PROGRAMME-V-IC1-OPERATOR-WORKFLOW-COMPOSITION.md) (approved); [IC2](PROGRAMME-V-IC2-WORKFLOW-DECISION-SUPPORT.md) (approved) |
 
 ---
 
-## STOP
-
-**Do not begin implementation.**
-
-This document defines IC3 for Principal Architect review.  
-**No code changes** may proceed until this contract is explicitly approved to commence.
-
----
-
-## Context
-
-Programme V has established:
-
-- **IC1** — Compose Desktop → Arrangement → Preview → Restore as a derived workflow projection  
-- **IC2** — Surface deterministic recommendations (what / why / owner) without automation  
-
-IC3 should improve **operator resilience** by explaining how to recover from interruptions or incomplete workflows using **existing capabilities only**.
-
----
-
-## Objective
+## Objective (satisfied)
 
 Help operators understand how to recover from interruptions or incomplete workflows by projecting:
 
 1. **Why** a workflow cannot currently continue  
-2. **Recoverable next steps** derived from current state  
-3. When an Arrangement **can or cannot** be restored  
-4. **Missing prerequisites**  
-5. **Recoverable versus non-recoverable** conditions  
+2. **Missing prerequisites**  
+3. **Recoverable versus non-recoverable** classification (descriptive only)  
+4. **Next available operator action** using existing Workspace verbs only  
+5. **Ownership** of the justifying facts  
 
-Goal: improve **operator understanding**, not automate recovery.
+Every explanation is a **deterministic projection** of existing runtime state. Workspace explains reality; it does not create or manage recovery.
 
 ---
 
@@ -54,7 +34,7 @@ Goal: improve **operator understanding**, not automate recovery.
 |-----------|-------------|---------|
 | WorkspaceState | Live desktop / observation readiness | **Unchanged** |
 | Arrangement / Capture / Restore IPC | Existing recovery actions operators may choose | **Unchanged** |
-| Programme I IC5/IC6 | Currency, pre-Restore, post-Restore, activity | **Consumed** |
+| Programme I IC5/IC6 | Currency, pre-Restore, activity | **Consumed** |
 | Programme V IC1 workflow projection | Current step / blocked steps | **Consumed** |
 | Programme V IC2 recommendations | Related guidance (compose, do not replace) | **Consumed** |
 
@@ -66,42 +46,58 @@ Goal: improve **operator understanding**, not automate recovery.
 |-------|-----|
 | Observation load / runtime availability | Why Desktop step is blocked |
 | Profile presence | Prerequisite for Arrangement save |
-| Arrangement selection / emptiness | Why Preview / Restore cannot proceed |
+| Arrangement selection / emptiness / stale id | Why Preview / Restore cannot proceed; Arrangement deleted |
 | Pre-Restore availability + gaps | Can / cannot Restore; missing windows |
-| Currency (Current / Out of date / Partial / Unavailable) | Recoverable Update vs non-restorable |
-| Change-since-capture diff | What must be reconciled |
-| In-flight / last Restore result (session) | Transient interruption vs completed Restore |
-| Preview / edit Interaction State | Interrupted Preview — re-project only |
+| Currency change diff | Update unavailable when desktop matches |
+| In-flight op (session) | Suppress flicker while ops run |
 
 **No recovery engine. No resumable workflow state. No diagnostic persistence.**
 
 ---
 
-## Projection / composition performed
+## Projection performed
 
-### Recoverability projection (derived only)
+`projectWorkflowRecoverability` emits independent conditions in **fixed declaration order** (not ranked severity):
 
-Examples of explanatory projections:
+| Id | Classification | When (facts) | Next step |
+|----|----------------|--------------|-----------|
+| `runtime_unavailable` | Non-recoverable | Load state runtime unavailable | No action required |
+| `observation_failed` | Non-recoverable | Load state error | No action required |
+| `no_desktop_windows` | Non-recoverable | Ready; zero observed windows | No action required |
+| `no_profile` | Non-recoverable | No Profile selected | No action required |
+| `arrangement_deleted` | Non-recoverable | Selection id with Arrangement gone | No action required |
+| `restore_data_unavailable` | Non-recoverable | Selected; Restore not ready | No action required |
+| `no_arrangement_capture` | Recoverable | Profile; no saved Arrangement; windows present | Capture Desktop |
+| `restore_unavailable_no_arrangement` | Recoverable | Arrangements exist; none selected | Select an Arrangement |
+| `preview_unavailable_no_arrangement` | Recoverable | No Arrangement selected | Select an Arrangement / Capture Desktop |
+| `update_unavailable_matches` | Recoverable | Selected; desktop matches Arrangement | No action required |
+| `restore_partial_gaps` | Recoverable | Restore ready; missing tracked windows | Restore |
 
-| Condition | Explanation pattern |
-|-----------|---------------------|
-| Runtime unavailable | Workflow cannot continue because Desktop observation requires the app runtime · Owner: Observation |
-| No Profile | Arrangement save unavailable because no Profile is selected · Owner: Arrangement |
-| No Arrangement selected | Preview / Restore blocked because no Arrangement is selected · Owner: Arrangement |
-| Arrangement unavailable / none open | Restore cannot apply because no tracked windows are on the desktop · Owner: Desktop |
-| Restore partial / gaps | Restore may proceed with gaps because some windows are missing · Owner: Restore Projection |
-| Out of date | Recoverable by Update or Restore because desktop differs from Arrangement · Owner: Arrangement Comparison |
-| Preview closed / Arrangement deselected | No resume required — workflow re-projects from current facts · Owner: Interaction |
+Each includes: what · classification · because · missing prerequisite · owner · next step · workflow step · Explain Ownership line.
 
-Each recoverability item should answer:
+### Recoverable vs non-recoverable
 
-- **What is blocked or incomplete?**  
-- **Why?**  
-- **Is it recoverable?** (yes / partial / no)  
-- **What can the operator do next?** (existing verbs only)  
-- **Owner** of the justifying facts  
+These are **descriptive classifications**, not runtime stores:
 
-Compose with IC1 step status and IC2 recommendations where helpful; do not invent a separate recovery controller.
+- **Recoverable** — the operator can continue by performing an existing action  
+- **Non-recoverable** — Workspace cannot proceed because required facts do not exist  
+
+### Next steps (existing verbs only)
+
+Capture · Update · Preview · Restore · Select Arrangement · No action required  
+
+No new actions are introduced. Capabilities continue to own their own execution.
+
+### Explanation consistency
+
+For identical underlying facts, Workspace always produces the same:
+
+- recoverability classification  
+- explanation wording  
+- next step  
+- ownership attribution  
+
+Suppressed while an operation is in flight (avoids flicker; not “thinking”).
 
 ### Graceful interruption (carry forward from IC1)
 
@@ -116,17 +112,19 @@ IC3 explains the resulting condition; it does not checkpoint or roll back a work
 
 ---
 
-## Explicit non-goals
+## Explicit non-goals (honoured)
 
-IC3 must **not** introduce:
+IC3 does **not** introduce:
 
 - Recovery engine  
 - Resumable / transactional workflow state  
+- Workflow checkpoints  
+- Automatic retry  
 - Diagnostic persistence or recovery history  
-- Automatic recovery execution  
-- Background healing / reconciliation jobs  
-- New persistence for “incomplete workflows”  
+- Recovery automation / background healing  
 - Scoring of recoverability  
+
+If recovery requires operator action, Workspace **explains** that action — it does not perform it.
 
 ---
 
@@ -140,7 +138,9 @@ IC3 must **not** introduce:
 | Recommendations (IC2) | Remain explanatory |
 | Recoverability (IC3) | Projection only — never executes recovery |
 
-**Architectural test (expected for IC3 as scoped):**
+Capture owns Capture · Preview owns Preview · Restore owns Restore · Arrangement owns Arrangement.
+
+**Architectural test:**
 
 1. Existing WorkspaceState? **Yes**  
 2. Compose existing capabilities? **Yes**  
@@ -149,57 +149,40 @@ IC3 must **not** introduce:
 
 ---
 
-## Proposed deliverables (when approved to implement)
+## Validation
 
-1. Pure helpers for recoverability / blocked-prerequisite projections.  
-2. Desktop workflow surface for recoverable vs non-recoverable explanations.  
-3. Composition with IC1 steps and IC2 recommendations (no duplication of comparison logic).  
-4. Tests for stable recoverability wording.  
-5. This contract updated to **Complete** with validation evidence.
+- `pnpm typecheck` · `pnpm test` · `pnpm build`
+- Working tree clean
+- Documentation complete
 
 ---
 
-## Validation (implementation phase)
+## Files touched
 
-- `git status` — working tree clean  
-- `pnpm typecheck` · `pnpm test` · `pnpm build`  
-- No recovery engine / resumable state / diagnostic persistence  
-- Ownership boundaries unchanged  
-
----
-
-## Architectural risks
-
-| Risk | Mitigation |
-|------|------------|
-| Soft recovery engine | Declarative rules from existing readiness/currency/diff only |
-| Resume/checkpoint creep | Explicitly forbid stored workflow position; re-project only |
-| Duplicating IC2 recommendations | Recoverability explains blockage; recommendations suggest actions — compose both |
-| Auto-healing perception | Copy must require operator to use existing Save / Update / Restore |
+- `app/src/lib/workflowRecoverabilityUi.ts`
+- `app/src/components/WorkspaceApplicationStage.tsx`
+- `app/src/App.css`
+- `tests/workflow-recoverability-ui.test.ts`
+- This document; Programme V charter link
 
 ---
 
 ## Success criteria
 
-IC3 succeeds when an operator can answer:
+IC3 succeeds when an operator can answer, without external documentation:
 
 - Why can’t this workflow continue?  
-- What is recoverable vs not?  
-- What existing action can I take next?  
-- Which subsystem owns that truth?  
+- Is this recoverable?  
+- What is missing?  
+- What should I do next?  
+- Which subsystem owns this condition?  
 
-…without Workspace introducing recovery authority beyond projecting existing state.
-
----
-
-## Stop condition (this planning document)
-
-IC3 planning is complete when objective, constraints, non-goals, consumed authorities/state, and success criteria are recorded.
-
-**Cursor must not commence IC3 implementation until the Principal Architect approves this contract for execution.**
+…while every answer remains a deterministic projection of existing Workspace state.
 
 ---
 
-## Recommendation to Principal Architect
+## Stop condition
 
-Approve IC3 to commence as **workflow recoverability**: explanatory projections of blocked prerequisites and recoverable next steps — composed from WorkspaceState and Programme I/V projections, with no recovery engine or resumable workflow state.
+IC3 implementation complete for Principal Architect review.
+
+**Do not commence IC4 until the Principal Architect approves IC3 and authorises the next contract.**
