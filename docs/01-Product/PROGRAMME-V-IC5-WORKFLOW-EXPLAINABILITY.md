@@ -7,9 +7,10 @@
 | **Implementation agent** | Cursor |
 | **Programme** | [Programme V — Operator Workflows](PROGRAMME-V-OPERATOR-WORKFLOWS.md) |
 | **Contract** | Implementation Contract 5 |
-| **Status** | Complete — implemented; awaiting Principal Architect review |
+| **Status** | Complete — **Approved** by Principal Architect |
 | **Date** | 2026-07-30 |
 | **Approved to commence** | 2026-07-30 |
+| **Review** | 2026-07-30 — explainability as composition without narrative ownership; proceed to IC6 planning |
 | **Depends on** | [IC1](PROGRAMME-V-IC1-OPERATOR-WORKFLOW-COMPOSITION.md)–[IC4](PROGRAMME-V-IC4-WORKFLOW-PREDICTABILITY.md) (approved) |
 
 ---
@@ -115,6 +116,8 @@ IC5 succeeds when an operator can understand the complete state of a workflow fr
 
 ## Stop condition
 
-IC5 implementation complete for Principal Architect review.
+IC5 complete and **approved** by the Principal Architect (2026-07-30).
 
-**Do not commence further Programme V work until the Principal Architect approves IC5 and authorises the next step (including any programme conclusion).**
+Review confirmed: pure composition of IC1–IC4; fixed What → Why → Owner → Next action → Recoverability → Expected outcome sequence; explanation traceability (`sourceProjection` / `sourceId`) as a permanent architectural invariant; narrative fidelity; IC1–IC4 detail surfaces retained; no narrative engine, summary cache, or new ownership.
+
+**Next:** [IC6 — Workflow Observability](PROGRAMME-V-IC6-WORKFLOW-OBSERVABILITY.md) (planning). Implementation awaits Principal Architect approval to commence.
