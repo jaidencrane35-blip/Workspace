@@ -68,10 +68,7 @@ export function AssistantCompanionRail({
     >
       <header className="assistant-companion-header">
         <div className="assistant-companion-header-row">
-          <div>
-            <p className="arrangement-eyebrow">Assistant</p>
-            <h2 id={titleId}>Companion</h2>
-          </div>
+          <h2 id={titleId}>Ask</h2>
           <button
             type="button"
             className="ghost assistant-rail-collapse"

@@ -1,14 +1,10 @@
 /**
  * Purpose: Pure view-model helpers for Desktop Reality Stage.
- * Owner: Frontend product shell (IM-1 — Stage empty spatial calm)
+ * Owner: Frontend product shell (Product Contract V4)
  * Inputs: WorkspaceStateWindow rows from get_workspace_state
- * Outputs: Spatial tile layout percentages, short status lines
+ * Outputs: Spatial tiles with app-object identity + process relationship accents
  * Dependencies: None (pure)
- * Non-goals: Observation capture, WindowController, fake thumbnails, AI,
- *   duplicate window models, arrangement editing, IM-2+ slices
- *
- * Why here: Stage presentation mapping — not domain ownership.
- * Why not elsewhere: Must not invent a parallel observation store or engine.
+ * Non-goals: Fake windows, WindowController, grouping engines, OS geometry apply
  */
 
 import type { WorkspaceStateWindow } from "../types/domain";
@@ -18,6 +14,10 @@ export interface StageDesktopWindowTile {
   key: string;
   title: string;
   processLabel: string;
+  /** Stable process key for relationship accents (empty when unknown). */
+  processKey: string;
+  /** 0–5 hue bucket shared by windows of the same process. */
+  relationIndex: number;
   focused: boolean;
   minimized: boolean;
   leftPct: number;
@@ -65,6 +65,23 @@ export function stageDesktopAppObjectLabel(
   return stageDesktopWindowTitle(window);
 }
 
+export function stageDesktopProcessKey(window: WorkspaceStateWindow): string {
+  const process = window.process_name?.trim().toLowerCase();
+  if (process) {
+    return process;
+  }
+  return `pid:${window.process_id}`;
+}
+
+/** Deterministic 0–5 bucket so same process shares an accent without a grouping engine. */
+export function stageDesktopRelationIndex(processKey: string): number {
+  let hash = 0;
+  for (let i = 0; i < processKey.length; i += 1) {
+    hash = (hash * 31 + processKey.charCodeAt(i)) >>> 0;
+  }
+  return hash % 6;
+}
+
 /**
  * Map observed windows into a spatial stage using relative bounds.
  * No fake pixels — rectangles encode identity + geometry only.
@@ -108,11 +125,13 @@ export function layoutStageDesktopWindows(
 
     const appLabel = stageDesktopAppObjectLabel(window);
     const windowTitle = stageDesktopWindowTitle(window);
+    const processKey = stageDesktopProcessKey(window);
     return {
       key: stageDesktopWindowKey(window),
-      /** Primary spatial identity = application object (process), not chrome title. */
       title: appLabel,
       processLabel: windowTitle !== appLabel ? windowTitle : "",
+      processKey,
+      relationIndex: stageDesktopRelationIndex(processKey),
       focused: window.focused,
       minimized: window.minimized,
       leftPct,
@@ -125,10 +144,6 @@ export function layoutStageDesktopWindows(
   });
 }
 
-/**
- * One short line for the empty desktop plane (layout carries meaning; text supports).
- * IM-1: no paragraphs, no setup language.
- */
 export function stageDesktopPlaneMessage(state: StageDesktopLoadState): string {
   if (state === "runtime_unavailable") {
     return "Open the desktop app to see your windows.";
@@ -142,7 +157,6 @@ export function stageDesktopPlaneMessage(state: StageDesktopLoadState): string {
   return "No windows open.";
 }
 
-/** @deprecated Prefer stageDesktopPlaneMessage — kept for tests/callers expecting title/body. */
 export function stageDesktopEmptyCopy(state: StageDesktopLoadState): {
   title: string;
   body: string;

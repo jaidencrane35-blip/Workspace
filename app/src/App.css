@@ -946,26 +946,6 @@ button.linkish:not(:disabled):hover {
   margin: 0;
 }
 
-.home-current {
-  padding: 1rem 1.1rem;
-  border: 1px solid #2a3642;
-  background: linear-gradient(160deg, #15202b 0%, #111820 70%);
-}
-
-.home-current-label {
-  margin: 0;
-  font-size: 0.75rem;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: #7f8f9d;
-}
-
-.home-current-name {
-  margin: 0.35rem 0 0.4rem;
-  font-size: 1.5rem;
-  font-weight: 650;
-}
-
 .applications-library-details {
   margin-top: 1.25rem;
   padding-top: 0.85rem;
@@ -992,12 +972,6 @@ button.linkish:not(:disabled):hover {
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
-}
-
-.chrome-tagline {
-  margin: 0;
-  font-size: 0.75rem;
-  color: #7f8f9d;
 }
 
 .chrome-nav-groups {
@@ -1027,6 +1001,38 @@ button.linkish:not(:disabled):hover {
 
 .tool-tabs {
   opacity: 0.9;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.chrome-tools-details {
+  position: relative;
+}
+
+.chrome-tools-details > summary {
+  list-style: none;
+  cursor: pointer;
+}
+
+.chrome-tools-details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.chrome-tools-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.35rem);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 9rem;
+  padding: 0.4rem;
+  background: #121820;
+  border: 1px solid #2a3642;
+  border-radius: 6px;
+  z-index: 20;
 }
 
 .tab.tool {
@@ -1129,13 +1135,6 @@ button.linkish:not(:disabled):hover {
   margin-top: 0.2rem;
   font-size: 0.75rem;
   color: #86efac;
-}
-
-.home-current-identity {
-  display: flex;
-  gap: 0.85rem;
-  align-items: center;
-  margin-top: 0.35rem;
 }
 
 .workspace-monogram {
@@ -1281,12 +1280,23 @@ button.linkish:not(:disabled):hover {
     linear-gradient(180deg, #121a24 0%, #10161e 100%);
 }
 
-.stage-hero-compact {
-  margin-bottom: 0.75rem;
+.stage-hero-compact,
+.stage-hero-minimal {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.55rem;
 }
 
-.stage-hero-compact h2 {
-  margin-bottom: 0 !important;
+.stage-hero-compact h2,
+.stage-hero-minimal h2 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  text-transform: none;
+  color: #e7ecf1;
 }
 
 .stage-hero-controls {
@@ -1361,6 +1371,44 @@ button.linkish:not(:disabled):hover {
   background: rgba(26, 36, 48, 0.92);
   box-sizing: border-box;
   overflow: hidden;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.stage-desktop-window.relation-0 {
+  border-left: 3px solid #6ea8d8;
+}
+.stage-desktop-window.relation-1 {
+  border-left: 3px solid #7dba8e;
+}
+.stage-desktop-window.relation-2 {
+  border-left: 3px solid #c49a6c;
+}
+.stage-desktop-window.relation-3 {
+  border-left: 3px solid #d4a574;
+}
+.stage-desktop-window.relation-4 {
+  border-left: 3px solid #a78bdb;
+}
+.stage-desktop-window.relation-5 {
+  border-left: 3px solid #5eb7b0;
+}
+
+.stage-desktop-window.selected {
+  border-color: #93c5fd;
+  box-shadow: inset 0 0 0 1px rgba(147, 197, 253, 0.45);
+  z-index: 3;
+}
+
+.stage-desktop-window.related:not(.selected) {
+  box-shadow: inset 0 0 0 1px rgba(147, 197, 253, 0.22);
+}
+
+.stage-selection {
+  margin: 0.45rem 0 0;
+  font-size: 0.82rem;
 }
 
 .stage-desktop-window.focused {

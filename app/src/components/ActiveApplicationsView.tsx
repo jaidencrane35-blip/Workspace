@@ -1,8 +1,8 @@
 /**
- * Purpose: Show currently observed desktop applications from WorkspaceState.
- * Owner: Frontend product shell (Milestone A.1)
+ * Purpose: Observed running desktop applications as objects (process-first).
+ * Owner: Frontend product shell (Product Contract V4)
  * Inputs: WorkspaceActiveApplication rows from get_workspace_state
- * Outputs: Read-only presentation
+ * Outputs: Read-only presentation grouped by process when multiple windows
  * Dependencies: applicationsUi helpers
  * Non-responsibilities: Observation capture, window control, registry mutation
  */
@@ -20,28 +20,22 @@ export function ActiveApplicationsView({
   loading,
 }: ActiveApplicationsViewProps) {
   if (loading && applications.length === 0) {
-    return <p className="muted">Loading observed applications…</p>;
+    return <p className="muted">Loading…</p>;
   }
   if (applications.length === 0) {
     return (
       <p className="muted">
-        Nothing observed yet. Open Stage, or refresh once the desktop app is
-        running.
+        Nothing observed yet. Open Stage once the desktop app is running.
       </p>
     );
   }
   return (
-    <ul className="product-list" aria-label="Active desktop applications">
+    <ul className="product-list app-object-list" aria-label="Running applications">
       {applications.map((app) => (
         <li key={`${app.process_id}-${app.process_name ?? "unknown"}`}>
-          <div className="product-list-item static">
+          <div className="product-list-item static app-object-row">
             <span className="product-list-title">
               {activeApplicationLabel(app)}
-            </span>
-            <span className="product-list-meta muted">
-              {app.window_count === 1
-                ? "1 window"
-                : `${app.window_count} windows`}
             </span>
           </div>
         </li>

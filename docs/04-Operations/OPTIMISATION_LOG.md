@@ -88,6 +88,25 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 
 ## Cycles
 
+## Cycles
+
+### Cycle: v4-1-plane-first-objects-relationships
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Cycle number** | V4-1 |
+| **Approved category** | 1 Visual hierarchy (+ 5 Navigation, 12 Duplicate removal) |
+| **Goal** | First five seconds = “this understands my computer”; raise Relationships + Object-first |
+| **Scores before** | Relationships 4 · Object-first 5 · Commercial 6 · Nav 7 |
+| **Changes** | Delete Home; Stage plane-only (Remember on Profiles); process relation accents; selectable related tiles; Tools disclosure; quieter Assistant Ask header; dead Home CSS |
+| **Drift scores after (est.)** | Desktop-first 9 · Dashboard-first 2 · AI-first 1 · Spatial 8 · Config friction 9 · Desktop realism 8 · Reference 7 · Commercial 7 · Maintainability 8 |
+| **Validation** | typecheck / test / build / architecture / ipc / ui-boundary |
+| **Human review required** | No for presentation; Yes before OS geometry / grouping engines / audio |
+| **Inspector path** | Open app → Stage fills view, no Home, no Remember under Stage; click tile → related process windows highlight |
+
+---
+
 ### Cycle: v3-2-library-simplify-dead-css
 
 | Field | Value |

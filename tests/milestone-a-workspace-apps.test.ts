@@ -91,16 +91,14 @@ describe("product shell UI helpers", () => {
 });
 
 describe("layouts stage UI helpers", () => {
-  it("keeps stage copy desktop-reality-first and minimal", async () => {
+  it("keeps stage copy desktop-first and minimal", async () => {
     const {
       layoutsStageEmptyAppsCopy,
-      layoutsStageEyebrow,
       layoutsStageTitle,
       layoutsStageRegistryHeading,
     } = await import("../app/src/lib/layoutsStageUi");
-    expect(layoutsStageEyebrow()).toMatch(/Desktop reality/i);
-    expect(layoutsStageTitle("Deep work")).toMatch(/desktop/i);
-    expect(layoutsStageTitle(null)).toMatch(/Your desktop/i);
+    expect(layoutsStageTitle("Deep work")).toBe("Deep work");
+    expect(layoutsStageTitle(null)).toBe("Desktop");
     expect(layoutsStageEmptyAppsCopy().title).toMatch(/library/i);
     expect(layoutsStageRegistryHeading()).toMatch(/Library/i);
   });

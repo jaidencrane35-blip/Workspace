@@ -1,11 +1,11 @@
 /**
  * Purpose: Product shell — Desktop Reality Stage first; companion Assistant optional.
- * Owner: Frontend product shell (Product Contract V3)
+ * Owner: Frontend product shell (Product Contract V4)
  * Inputs: Tauri IPC (settings, workspace, zones, applications, workspace state);
  *   local UI prefs
  * Outputs: Stage-centred navigation; observed desktop without profile gate
- * Dependencies: Stage, Apps, Profiles, arrangements control, companion rail
- * Non-goals: OS geometry apply, grouping, audio, new AI/engines, setup wizard
+ * Dependencies: Stage, Apps, Profiles, arrangements on Profiles, companion rail
+ * Non-goals: OS geometry apply, grouping engines, audio, new AI, setup wizard
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -14,10 +14,6 @@ import { AssistantCompanionRail } from "./components/AssistantCompanionRail";
 import { DesktopArrangementPanel } from "./components/DesktopArrangementPanel";
 import { OperatorConsole } from "./components/OperatorConsole";
 import { WorkspaceApplicationStage } from "./components/WorkspaceApplicationStage";
-import {
-  WorkspaceHome,
-  type ProductPrimaryView,
-} from "./components/WorkspaceHome";
 import { WorkspaceIntelligencePanel } from "./components/WorkspaceIntelligencePanel";
 import { WorkspaceSwitcher } from "./components/WorkspaceSwitcher";
 import { WorkModeSwitch } from "./components/WorkModeSwitch";
@@ -38,6 +34,7 @@ import {
   classifyBanner,
   ZONE_CONTEXT_LIMIT,
 } from "./lib/productShellUi";
+import type { ProductPrimaryView } from "./lib/productViews";
 import { useAssistantRail } from "./lib/useAssistantRail";
 import { useWorkMode } from "./lib/useWorkMode";
 import type {
@@ -55,7 +52,6 @@ type AppView = ProductPrimaryView | ToolView;
 
 function isPrimaryView(view: AppView): view is ProductPrimaryView {
   return (
-    view === "home" ||
     view === "workspaces" ||
     view === "applications" ||
     view === "layouts"
@@ -98,7 +94,6 @@ async function loadZones(workspaceId: string): Promise<Zone[]> {
 }
 
 export default function App() {
-  // Product Contract: land on Desktop Reality Stage immediately.
   const [view, setView] = useState<AppView>("layouts");
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [zones, setZones] = useState<Zone[]>([]);
@@ -109,11 +104,11 @@ export default function App() {
   const [message, setMessage] = useState<string | null>(null);
   const [bootstrapped, setBootstrapped] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [toolsOpen, setToolsOpen] = useState(false);
   const onStatus = useCallback((text: string) => {
     setMessage(text);
   }, []);
   const { workMode, onWorkModeChange } = useWorkMode(onStatus);
-  // Rail toggle is visual (aria-pressed); avoid banner noise on every click.
   const { assistantRailOpen, onAssistantRailOpenChange } = useAssistantRail();
   const [lastPrimaryView, setLastPrimaryView] =
     useState<ProductPrimaryView>("layouts");
@@ -148,7 +143,6 @@ export default function App() {
     (open: boolean) => {
       onAssistantRailOpenChange(open);
       if (!open) {
-        // Return keyboard focus to the chrome control after Escape / Hide.
         queueMicrotask(() => assistantToggleRef.current?.focus());
       }
     },
@@ -254,7 +248,6 @@ export default function App() {
     void refreshHomeApps(workspace?.id ?? null);
   }, [view, workspace?.id, refreshHomeApps]);
 
-  /** Quiet Desktop profile so companion compose can persist without a setup gate. */
   const ensureWorkspaceForAssistant = useCallback(async () => {
     if (workspace) {
       return workspace;
@@ -271,7 +264,7 @@ export default function App() {
     if (id === "layouts") {
       classes.push("tab-stage");
     }
-    if (id === "home" || id === "workspaces") {
+    if (id === "workspaces") {
       classes.push("tab-quiet");
     }
     if (view === id) {
@@ -298,7 +291,10 @@ export default function App() {
       className={view === id ? "tab tool active" : "tab tool"}
       aria-current={view === id ? "page" : undefined}
       aria-selected={view === id}
-      onClick={() => setView(id)}
+      onClick={() => {
+        setToolsOpen(true);
+        setView(id);
+      }}
     >
       {label}
     </button>
@@ -307,16 +303,6 @@ export default function App() {
   const showAssistantRail = isPrimaryView(view) && assistantRailOpen;
 
   const primaryStage = (() => {
-    if (view === "home") {
-      return (
-        <div className="container product-container">
-          <WorkspaceHome
-            bootstrapped={bootstrapped}
-            onNavigate={navigatePrimary}
-          />
-        </div>
-      );
-    }
     if (view === "workspaces") {
       return (
         <div className="container product-container">
@@ -360,24 +346,15 @@ export default function App() {
             {!bootstrapped ? (
               <p className="muted stage-boot-loading">Loading…</p>
             ) : (
-              <>
-                <WorkspaceApplicationStage
-                  workspace={workspace}
-                  applications={homeApps}
-                  appsLoading={homeAppsLoading}
-                  workMode={workMode}
-                  busy={busy}
-                  onManageApplications={() => navigatePrimary("applications")}
-                  onLaunchApplication={launchFromStage}
-                />
-                <DesktopArrangementPanel
-                  workspace={workspace}
-                  busy={busy}
-                  onBusy={setBusy}
-                  onError={onError}
-                  onMessage={onMessage}
-                />
-              </>
+              <WorkspaceApplicationStage
+                workspace={workspace}
+                applications={homeApps}
+                appsLoading={homeAppsLoading}
+                workMode={workMode}
+                busy={busy}
+                onManageApplications={() => navigatePrimary("applications")}
+                onLaunchApplication={launchFromStage}
+              />
             )}
           </div>
         </div>
@@ -386,10 +363,6 @@ export default function App() {
     if (view === "developer") {
       return (
         <div className="container assistant-container">
-          <p className="lede">
-            <span className="badge">Developer</span> Engineering presentation.
-            Prefer <strong>Stage</strong> for product use.
-          </p>
           <WorkspaceIntelligencePanel
             workspace={workspace}
             busy={busy}
@@ -402,11 +375,6 @@ export default function App() {
     }
     return (
       <div className="container">
-        <p className="lede">
-          <span className="badge">Diagnostics</span> Operator console for
-          engineering validation. Prefer <strong>Stage</strong> for product
-          use.
-        </p>
         <OperatorConsole
           workspace={workspace}
           zones={zones}
@@ -424,7 +392,6 @@ export default function App() {
       <header className="app-chrome">
         <div className="chrome-brand">
           <h1>Workspace</h1>
-          <p className="chrome-tagline">Your desktop</p>
         </div>
         <div className="chrome-nav-groups">
           <nav
@@ -435,13 +402,9 @@ export default function App() {
             {primaryTab("layouts", "Stage")}
             {primaryTab("applications", "Apps")}
             {primaryTab("workspaces", "Profiles")}
-            {primaryTab("home", "Home")}
           </nav>
           <WorkModeSwitch mode={workMode} onChange={onWorkModeChange} />
-          <nav
-            className="tabs tool-tabs"
-            aria-label="Supporting tools"
-          >
+          <nav className="tabs tool-tabs" aria-label="Supporting tools">
             <button
               ref={assistantToggleRef}
               type="button"
@@ -463,8 +426,19 @@ export default function App() {
             >
               Assistant
             </button>
-            {toolTab("diagnostics", "Diagnostics")}
-            {toolTab("developer", "Developer")}
+            <details
+              className="chrome-tools-details"
+              open={toolsOpen || view === "diagnostics" || view === "developer"}
+              onToggle={(event) => {
+                setToolsOpen(event.currentTarget.open);
+              }}
+            >
+              <summary className="tab tool">Tools</summary>
+              <div className="chrome-tools-menu" role="group" aria-label="Engineering tools">
+                {toolTab("diagnostics", "Diagnostics")}
+                {toolTab("developer", "Developer")}
+              </div>
+            </details>
           </nav>
         </div>
       </header>

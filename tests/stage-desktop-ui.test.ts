@@ -70,8 +70,18 @@ describe("stage desktop UI helpers", () => {
         width: 500,
         height: 500,
       }),
+      sampleWindow({
+        stable_window_id: "c",
+        hwnd: "0x3",
+        title: "Docs",
+        process_name: "chrome.exe",
+        x: 0,
+        y: 500,
+        width: 500,
+        height: 500,
+      }),
     ]);
-    expect(tiles).toHaveLength(2);
+    expect(tiles).toHaveLength(3);
     expect(tiles[0]?.leftPct).toBe(0);
     expect(tiles[1]?.leftPct).toBe(50);
     expect(tiles[0]?.focused).toBe(true);
@@ -79,6 +89,8 @@ describe("stage desktop UI helpers", () => {
     expect(tiles[0]?.processLabel).toBe("Editor");
     expect(tiles[1]?.title).toBe("chrome.exe");
     expect(tiles[1]?.processLabel).toBe("Browser");
+    expect(tiles[1]?.relationIndex).toBe(tiles[2]?.relationIndex);
+    expect(tiles[1]?.processKey).toBe(tiles[2]?.processKey);
     expect(tiles.every((tile) => tile.widthPct > 0 && tile.heightPct > 0)).toBe(
       true,
     );

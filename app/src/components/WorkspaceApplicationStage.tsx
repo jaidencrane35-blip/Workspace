@@ -1,13 +1,11 @@
 /**
- * Purpose: Desktop Reality Stage — spatial representation of the observed desktop.
- * Owner: Frontend product shell (Product Contract V3)
- * Inputs: optional profile, registry apps, work mode, launch + navigate callbacks;
+ * Purpose: Desktop Reality Stage — plane-first spatial desktop representation.
+ * Owner: Frontend product shell (Product Contract V4)
+ * Inputs: optional profile, registry apps, work mode, launch + navigate;
  *   get_workspace_state IPC
- * Outputs: Desktop plane (empty or observed windows); optional library details
- * Dependencies: stageDesktopUi, layoutsStageUi, workMode, ipc
- * Non-goals: OS geometry apply, fake windows, companion canvas, new engines/AI
- *
- * Contract: Desktop Reality → Representation. Flow/Focus = density of same map.
+ * Outputs: Desktop plane with observed app objects; optional library details
+ * Dependencies: stageDesktopUi, layoutsStageUi, ipc
+ * Non-goals: OS geometry apply, fake windows, arrangements forms on Stage
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -19,7 +17,6 @@ import {
 import { invokeIpc, isIpcRuntimeAvailable } from "../lib/ipc";
 import {
   layoutsStageEmptyAppsCopy,
-  layoutsStageEyebrow,
   layoutsStageRegistryHeading,
   layoutsStageTitle,
 } from "../lib/layoutsStageUi";
@@ -68,6 +65,7 @@ export function WorkspaceApplicationStage({
     null,
   );
   const [focusedTitle, setFocusedTitle] = useState<string | null>(null);
+  const [selectedKey, setSelectedKey] = useState<string | null>(null);
 
   const refreshDesktop = useCallback(async () => {
     if (!isIpcRuntimeAvailable()) {
@@ -110,6 +108,25 @@ export function WorkspaceApplicationStage({
     [windows],
   );
 
+  useEffect(() => {
+    if (selectedKey && !tiles.some((tile) => tile.key === selectedKey)) {
+      setSelectedKey(null);
+    }
+  }, [tiles, selectedKey]);
+
+  const selectedTile =
+    tiles.find((tile) => tile.key === selectedKey) ?? null;
+  const relatedKeys = useMemo(() => {
+    if (!selectedTile?.processKey) {
+      return new Set<string>();
+    }
+    return new Set(
+      tiles
+        .filter((tile) => tile.processKey === selectedTile.processKey)
+        .map((tile) => tile.key),
+    );
+  }, [tiles, selectedTile]);
+
   const showDesktopMap = loadState === "ready" && tiles.length > 0;
   const planeCalm = !showDesktopMap;
   const planeMessage = stageDesktopPlaneMessage(loadState);
@@ -127,23 +144,18 @@ export function WorkspaceApplicationStage({
       data-work-mode={workMode}
       data-stage-plane={planeCalm ? "calm" : "live"}
     >
-      <header className="stage-hero stage-hero-compact">
-        <div>
-          <p className="arrangement-eyebrow">{layoutsStageEyebrow()}</p>
-          <h2>{layoutsStageTitle(workspace?.name)}</h2>
-        </div>
-        <div className="stage-hero-controls">
-          <button
-            type="button"
-            className="ghost stage-refresh"
-            disabled={busy || loadState === "loading" || !runtime}
-            onClick={() => {
-              void refreshDesktop();
-            }}
-          >
-            Refresh
-          </button>
-        </div>
+      <header className="stage-hero stage-hero-minimal">
+        <h2>{layoutsStageTitle(workspace?.name)}</h2>
+        <button
+          type="button"
+          className="ghost stage-refresh"
+          disabled={busy || loadState === "loading" || !runtime}
+          onClick={() => {
+            void refreshDesktop();
+          }}
+        >
+          Refresh
+        </button>
       </header>
 
       {showDesktopMap ? (
@@ -184,39 +196,62 @@ export function WorkspaceApplicationStage({
             ) : null}
           </div>
         ) : (
-          tiles.map((tile) => (
-            <article
-              key={tile.key}
-              className={
-                tile.focused
-                  ? "stage-desktop-window focused"
-                  : tile.minimized
-                    ? "stage-desktop-window minimized"
-                    : "stage-desktop-window"
-              }
-              style={{
-                left: `${tile.leftPct}%`,
-                top: `${tile.topPct}%`,
-                width: `${tile.widthPct}%`,
-                height: `${tile.heightPct}%`,
-              }}
-              title={`${tile.title} — ${tile.boundsLabel}`}
-            >
-              <span className="stage-desktop-window-title">{tile.title}</span>
-              <span className="stage-desktop-window-meta muted">
-                {[
-                  tile.processLabel || null,
-                  tile.monitorLabel,
-                  tile.focused ? "Focused" : null,
-                  tile.minimized ? "Minimized" : null,
-                ]
-                  .filter(Boolean)
-                  .join(" · ")}
-              </span>
-            </article>
-          ))
+          tiles.map((tile) => {
+            const related = relatedKeys.has(tile.key);
+            const selected = tile.key === selectedKey;
+            const className = [
+              "stage-desktop-window",
+              `relation-${tile.relationIndex}`,
+              tile.focused ? "focused" : null,
+              tile.minimized ? "minimized" : null,
+              selected ? "selected" : null,
+              related && !selected ? "related" : null,
+            ]
+              .filter(Boolean)
+              .join(" ");
+            return (
+              <button
+                key={tile.key}
+                type="button"
+                className={className}
+                style={{
+                  left: `${tile.leftPct}%`,
+                  top: `${tile.topPct}%`,
+                  width: `${tile.widthPct}%`,
+                  height: `${tile.heightPct}%`,
+                }}
+                title={`${tile.title} — ${tile.boundsLabel}`}
+                aria-pressed={selected}
+                onClick={() => {
+                  setSelectedKey((prev) =>
+                    prev === tile.key ? null : tile.key,
+                  );
+                }}
+              >
+                <span className="stage-desktop-window-title">{tile.title}</span>
+                <span className="stage-desktop-window-meta muted">
+                  {[
+                    tile.processLabel || null,
+                    tile.monitorLabel,
+                    tile.focused ? "Focused" : null,
+                    tile.minimized ? "Minimized" : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </span>
+              </button>
+            );
+          })
         )}
       </div>
+
+      {selectedTile ? (
+        <p className="stage-selection muted" aria-live="polite">
+          {relatedKeys.size > 1
+            ? `${selectedTile.title} · ${relatedKeys.size} windows`
+            : selectedTile.title}
+        </p>
+      ) : null}
 
       <details className="stage-registry-secondary quiet">
         <summary>
@@ -229,7 +264,7 @@ export function WorkspaceApplicationStage({
               onManageApplications();
             }}
           >
-            Applications
+            Apps
           </button>
         </summary>
         {!workspace ? (
@@ -265,7 +300,7 @@ export function WorkspaceApplicationStage({
                       title={
                         launchable
                           ? "Launch this application"
-                          : "Add an executable path under Applications first"
+                          : "Add an executable path under Apps first"
                       }
                       onClick={() => onLaunchApplication(app)}
                     >
