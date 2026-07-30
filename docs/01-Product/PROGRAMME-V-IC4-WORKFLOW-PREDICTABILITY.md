@@ -7,9 +7,10 @@
 | **Implementation agent** | Cursor |
 | **Programme** | [Programme V — Operator Workflows](PROGRAMME-V-OPERATOR-WORKFLOWS.md) |
 | **Contract** | Implementation Contract 4 |
-| **Status** | Complete — implemented; awaiting Principal Architect review |
+| **Status** | Complete — **Approved** by Principal Architect |
 | **Date** | 2026-07-30 |
 | **Approved to commence** | 2026-07-30 |
+| **Review** | 2026-07-30 — predictability without planning ownership; proceed to IC5 planning |
 | **Depends on** | [IC1](PROGRAMME-V-IC1-OPERATOR-WORKFLOW-COMPOSITION.md) (approved); [IC2](PROGRAMME-V-IC2-WORKFLOW-DECISION-SUPPORT.md) (approved); [IC3](PROGRAMME-V-IC3-WORKFLOW-RECOVERABILITY.md) (approved) |
 
 ---
@@ -145,6 +146,8 @@ IC4 succeeds when an operator can answer, before initiating an action:
 
 ## Stop condition
 
-IC4 implementation complete for Principal Architect review.
+IC4 complete and **approved** by the Principal Architect (2026-07-30).
 
-**Do not commence a further Programme V contract until the Principal Architect approves IC4 and authorises the next step.**
+Review confirmed: predictability as interpretation of Programme I comparison / pre-Restore facts; prediction fidelity; stable wording; no simulation, planner, forecasting, prediction cache, or speculative execution.
+
+**Next:** [IC5 — Workflow Explainability](PROGRAMME-V-IC5-WORKFLOW-EXPLAINABILITY.md) (planning). Implementation awaits Principal Architect approval to commence.

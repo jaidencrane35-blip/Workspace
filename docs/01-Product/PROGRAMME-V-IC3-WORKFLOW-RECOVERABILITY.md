@@ -188,4 +188,4 @@ IC3 complete and **approved** by the Principal Architect (2026-07-30).
 
 Review confirmed: recoverability as pure projection; recoverable vs non-recoverable classifications; existing verbs only; explanation consistency; no recovery engine, resumable state, checkpoints, auto-retry, or diagnostic persistence.
 
-**Next:** [IC4 — Workflow Predictability](PROGRAMME-V-IC4-WORKFLOW-PREDICTABILITY.md) (complete — awaiting Principal Architect review).
+**Next:** [IC4 — Workflow Predictability](PROGRAMME-V-IC4-WORKFLOW-PREDICTABILITY.md) (complete — approved).
