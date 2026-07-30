@@ -47,6 +47,7 @@ export function AssistantCompanionRail({
     if (!node) {
       return;
     }
+    node.focus();
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault();

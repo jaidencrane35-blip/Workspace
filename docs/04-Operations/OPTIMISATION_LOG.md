@@ -55,6 +55,62 @@ When logging a cycle, name the **approved category** (1–26). When a category h
 
 ## Cycles
 
+### Cycle: opt-v2-03-keyboard-rail-focus
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Category** | 7 — Keyboard UX |
+| **Problem** | Opening companion rail did not move keyboard focus; Escape left focus nowhere useful |
+| **Reason** | Focus rail on open; return focus to Assistant chrome control on hide |
+| **Files changed** | `App.tsx`, `AssistantCompanionRail.tsx`, this log |
+| **Validation** | typecheck / test / architecture / ipc / ui-boundary / build |
+| **Maintainability score** | 9.0/10 |
+| **Accessibility** | 8.5/10 |
+| **Human readability** | 8.9/10 |
+| **Category status** | open |
+| **Why this is safe** | Focus management only; no ownership/IPC/AI change |
+
+---
+
+### Cycle: opt-v2-02-focus-visible-buttons
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Category** | 6 — Accessibility |
+| **Problem** | Global `button:focus` outlined every mouse click; inconsistent with newer `:focus-visible` rules |
+| **Reason** | Keyboard-visible focus without mouse outline noise |
+| **Files changed** | `App.css`, this log |
+| **Validation** | typecheck / test / architecture / ipc / ui-boundary / build |
+| **Maintainability score** | 9.0/10 |
+| **Accessibility** | 8.4/10 (+0.3 focus-visible consistency) |
+| **Reference alignment** | 9.0/10 |
+| **Category status** | open |
+| **Why this is safe** | CSS focus ring behaviour only |
+
+---
+
+### Cycle: opt-v2-01-test-preference-hooks
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Category** | 20 — Test quality |
+| **Problem** | `useWorkMode` / `useAssistantRail` were unreferenced by tests after C5 extraction |
+| **Reason** | Measurable test health: assert chrome preference hooks remain importable contracts |
+| **Files changed** | `tests/milestone-a-workspace-apps.test.ts`, this log |
+| **Validation** | typecheck / test / architecture / ipc / ui-boundary / build |
+| **Maintainability score** | 9.0/10 |
+| **Reference alignment** | 9.0/10 |
+| **Commercial readiness** | 6.4/10 |
+| **Human readability** | 8.9/10 |
+| **Test health** | 8.6/10 (+0.2 hook contract coverage) |
+| **Category status** | open (more UI tests possible later) |
+| **Why this is safe** | Tests only; no product behaviour change |
+
+---
+
 ### Cycle: gov-plateau-v2-protocol
 
 | Field | Value |

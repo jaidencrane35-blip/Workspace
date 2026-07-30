@@ -156,3 +156,12 @@ describe("assistant companion rail helpers", () => {
     expect(assistantRailToggleLabel(false)).toMatch(/Show/i);
   });
 });
+
+describe("chrome preference hooks", () => {
+  it("exposes work-mode and assistant-rail helpers used by App", async () => {
+    const workMode = await import("../app/src/lib/useWorkMode");
+    const rail = await import("../app/src/lib/useAssistantRail");
+    expect(typeof workMode.useWorkMode).toBe("function");
+    expect(typeof rail.useAssistantRail).toBe("function");
+  });
+});

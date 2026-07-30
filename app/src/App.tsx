@@ -9,7 +9,7 @@
  *   reasoning, new intelligence engines, arrangement geometry apply on mode switch
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ApplicationsPanel } from "./components/ApplicationsPanel";
 import {
   AssistantCompanionRail,
@@ -117,11 +117,23 @@ export default function App() {
   const { assistantRailOpen, onAssistantRailOpenChange } = useAssistantRail();
   const [lastPrimaryView, setLastPrimaryView] =
     useState<ProductPrimaryView>("home");
+  const assistantToggleRef = useRef<HTMLButtonElement>(null);
 
   const navigatePrimary = useCallback((next: ProductPrimaryView) => {
     setLastPrimaryView(next);
     setView(next);
   }, []);
+
+  const setAssistantRailOpen = useCallback(
+    (open: boolean) => {
+      onAssistantRailOpenChange(open);
+      if (!open) {
+        // Return keyboard focus to the chrome control after Escape / Hide.
+        queueMicrotask(() => assistantToggleRef.current?.focus());
+      }
+    },
+    [onAssistantRailOpenChange],
+  );
 
   const onWorkspaceChange = useCallback((next: Workspace | null) => {
     setWorkspace(next);
@@ -494,6 +506,7 @@ export default function App() {
             aria-label="Supporting tools"
           >
             <button
+              ref={assistantToggleRef}
               type="button"
               className={
                 showAssistantRail ? "tab tool active" : "tab tool"
@@ -504,10 +517,10 @@ export default function App() {
               onClick={() => {
                 if (!isPrimaryView(view)) {
                   navigatePrimary(lastPrimaryView);
-                  onAssistantRailOpenChange(true);
+                  setAssistantRailOpen(true);
                   return;
                 }
-                onAssistantRailOpenChange(!assistantRailOpen);
+                setAssistantRailOpen(!assistantRailOpen);
               }}
             >
               Assistant
@@ -552,7 +565,7 @@ export default function App() {
               <button
                 type="button"
                 className="ghost"
-                onClick={() => onAssistantRailOpenChange(true)}
+                onClick={() => setAssistantRailOpen(true)}
               >
                 Show Assistant companion
               </button>
@@ -568,7 +581,7 @@ export default function App() {
             onBusy={setBusy}
             onError={onError}
             onMessage={onMessage}
-            onCollapse={() => onAssistantRailOpenChange(false)}
+            onCollapse={() => setAssistantRailOpen(false)}
           />
         ) : null}
       </div>
