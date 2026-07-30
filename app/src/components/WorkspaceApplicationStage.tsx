@@ -1,19 +1,20 @@
 /**
- * Purpose: Desktop surface — Arrangement ops + Programme V operator workflow composition.
- * Owner: Frontend product shell (Programme V IC1)
+ * Purpose: Desktop surface — operator workflow composition + decision support.
+ * Owner: Frontend product shell (Programme V IC2)
  * Inputs: optional profile, registry apps, work mode, launch + navigate;
  *   WorkspaceState via refreshObservedWorkspaceState; focus_desktop_window;
  *   list/capture/restore_desktop_arrangement
  * Outputs: Spatial desktop objects; Arrangement select + Restore; edit session;
- *   operational explanations; composed Desktop→Arrangement→Preview→Restore workflow
+ *   workflow projection; state-derived recommendations (explain only, never execute)
  * Dependencies: stageDesktopUi, layoutsStageUi, desktopLayoutEditing,
- *   arrangementProductUi, operationalConfidenceUi, operatorWorkflowUi, ipc
- * Non-goals: Workflow controller/persistence, activity engines, operation logs,
- *   new set_bounds product IPC, implicit execution, parallel authorities
+ *   arrangementProductUi, operationalConfidenceUi, operatorWorkflowUi,
+ *   workflowDecisionSupportUi, ipc
+ * Non-goals: Workflow/recommendation engines, scoring, automation, persistence,
+ *   new set_bounds product IPC, parallel authorities
  *
  * Product State: Profile · Desktop · Arrangement · Restore
  * Interaction State (never persist): Editing · Preview · Selection · In-flight · Guidance
- * Workflow progress: derived projection only — graceful interruption via re-projection
+ * Workflow + recommendations: derived projections only — stable when facts are stable
  */
 
 import { useCallback, useEffect, useMemo, useState, type KeyboardEvent } from "react";
@@ -62,6 +63,7 @@ import {
   projectOperatorWorkflow,
 } from "../lib/operatorWorkflowUi";
 import { monogramFromName } from "../lib/productShellUi";
+import { projectWorkflowRecommendations } from "../lib/workflowDecisionSupportUi";
 import {
   layoutStageDesktopWindows,
   nextStageSelectionKey,
@@ -446,6 +448,36 @@ export function WorkspaceApplicationStage({
       lastRestoreResult,
     ],
   );
+
+  const workflowRecommendations = useMemo(() => {
+    const changeDiff = currencyExplanation?.changeDiff;
+    return projectWorkflowRecommendations({
+      hasProfile: Boolean(workspace),
+      desktopReady: loadState === "ready",
+      observedWindowCount: windows.length,
+      arrangementCount: arrangements.length,
+      arrangementSelected: Boolean(workingSet),
+      desktopDiffersFromArrangement: Boolean(changeDiff?.hasChanges),
+      newWindowsDetected: Boolean(changeDiff && changeDiff.added > 0),
+      previewActive: layoutEditing && layoutPreview,
+      layoutEditing,
+      restoreAvailable: Boolean(preRestoreFacts?.available),
+      operationInFlight: Boolean(
+        inFlight ?? (loadState === "loading" ? "observe" : null),
+      ),
+    });
+  }, [
+    workspace,
+    loadState,
+    windows.length,
+    arrangements.length,
+    workingSet,
+    currencyExplanation?.changeDiff,
+    layoutEditing,
+    layoutPreview,
+    preRestoreFacts?.available,
+    inFlight,
+  ]);
 
   const saveSelectionAsWorkingSet = () => {
     if (!workspace) {
@@ -874,6 +906,36 @@ export function WorkspaceApplicationStage({
         </p>
         <p className="stage-operator-workflow-next muted">
           Next · {operatorWorkflow.nextAction}
+        </p>
+        {workflowRecommendations.length > 0 ? (
+          <ul
+            className="stage-workflow-recommendations"
+            aria-label="Workflow recommendations"
+          >
+            {workflowRecommendations.map((item) => (
+              <li
+                key={item.id}
+                className="stage-workflow-recommendation"
+                data-recommendation-id={item.id}
+                data-recommendation-owner={item.owner}
+                data-workflow-step={item.workflowStep}
+              >
+                <span className="stage-workflow-recommendation-action">
+                  {item.action}
+                </span>
+                <span className="stage-workflow-recommendation-because muted">
+                  Because {item.because}.
+                </span>
+                <span className="stage-workflow-recommendation-owner muted">
+                  Owner: {item.owner}
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        <p className="stage-workflow-recommendation-note muted">
+          Recommendations explain current state — they do not execute. Use Save,
+          Update, Preview, or Restore when you choose.
         </p>
       </div>
 

@@ -1,189 +1,90 @@
-# Programme V — Implementation Contract 2 (Planning)  
+# Programme V — Implementation Contract 2  
 # Workflow Decision Support
 
 | Field | Value |
 |-------|-------|
 | **Authority** | Principal Architect |
-| **Implementation agent** | Cursor (after approval to commence) |
+| **Implementation agent** | Cursor |
 | **Programme** | [Programme V — Operator Workflows](PROGRAMME-V-OPERATOR-WORKFLOWS.md) |
 | **Contract** | Implementation Contract 2 |
-| **Status** | **Planned** — awaiting Principal Architect approval to commence |
+| **Status** | Complete |
 | **Date** | 2026-07-30 |
-| **Nature** | Planning contract — scopes IC2; does not authorise implementation until approved |
+| **Approved to commence** | 2026-07-30 |
 | **Depends on** | [IC1 — Operator Workflow Composition](PROGRAMME-V-IC1-OPERATOR-WORKFLOW-COMPOSITION.md) (approved) |
 
 ---
 
-## STOP
+## Objective (satisfied)
 
-**Do not begin implementation.**
-
-This document defines IC2 for Principal Architect review.  
-**No code changes** may proceed until this contract is explicitly approved to commence.
-
----
-
-## Context
-
-Programme V IC1 established operator workflow composition as a **derived projection** over Desktop → Arrangement → Preview → Restore — without a workflow controller, persistence, or execution authority.
-
-IC2 should add **workflow decision support**: help operators understand the **best next action** within that composed workflow — still as explanatory projections, never as autonomous decisions.
-
----
-
-## Objective
-
-Help operators understand the best next action within a composed workflow by surfacing **state-derived recommendations** that:
-
-1. Derive entirely from existing WorkspaceState and Programme I / V projections  
-2. Explain **why** they are shown (Explain Ownership)  
-3. Disappear naturally when underlying state changes  
-4. Never execute automatically  
-
-Focus: **decision support, not workflow automation.**
+Help operators understand the next appropriate action within the composed workflow by surfacing **state-derived recommendations** that explain **what** and **why**, without transferring decision-making or execution authority.
 
 ---
 
 ## Existing authorities consumed
 
-| Authority | Role in IC2 | Change? |
-|-----------|-------------|---------|
-| WorkspaceState | Live desktop facts | **Unchanged** |
-| Arrangement / capture / Restore IPC | Existing product actions | **Unchanged** |
-| Programme I IC4–IC6 projections | Change diff, currency, pre-Restore, activity | **Consumed** |
-| Programme V IC1 workflow projection | Current step / next-action context | **Consumed / enriched** |
-| Assistant / Intelligence | Not expanded | **Unchanged** |
+| Authority | Role | Change? |
+|-----------|------|---------|
+| WorkspaceState | Observed window counts / readiness | Unchanged |
+| Programme I IC4/IC6 projections | Change diff, currency, pre-Restore | Consumed |
+| Programme V IC1 workflow projection | Workflow surface context | Consumed |
+| Capture / Update / Restore / Preview | Referenced capabilities only | Unchanged ownership |
 
 ---
 
-## Existing runtime state consumed
+## Projection performed
 
-| State | Use |
-|-------|-----|
-| Observation / window set | “New windows detected”, desktop differs |
-| Arrangement selection + entries | Completeness, Restore readiness |
-| IC4/IC6 change & currency diffs | Update / out-of-date recommendations |
-| IC6 pre-Restore | Restore available because… |
-| IC1 workflow projection | Align recommendation with current workflow step |
-| Interaction State (preview, edit, in-flight) | Suppress or retarget recommendations while ops run |
+`projectWorkflowRecommendations` emits independent recommendations in **fixed declaration order** (not ranked priority):
 
-**No recommendation persistence. No background decision state.**
+| Id | When (facts) |
+|----|----------------|
+| `preview_unavailable` | No Arrangement selected |
+| `capture_recommended` | Profile + observed windows + no Arrangement, or new windows vs selection |
+| `update_recommended` | Selected Arrangement differs from desktop (change diff) |
+| `preview_recommended` | Arrangement selected; Preview not active |
+| `restore_available` | Pre-Restore availability projects ready |
 
----
+Each includes: action · because · owner · workflow step · Explain Ownership line.
 
-## Projection / composition performed
+### Recommendation stability
 
-### Recommendation projection (derived only)
+Same fact inputs ⇒ identical recommendation set and wording. No time-based or random variation. Suppressed while an operation is in flight (avoids flicker; not “thinking”).
 
-Examples (deterministic, explanatory):
+### Operator authority
 
-| Recommendation | Because (examples) |
-|----------------|-------------------|
-| Capture recommended | New windows detected on Desktop vs selected Arrangement / none saved |
-| Restore available | Arrangement is complete and Restore readiness projects ready |
-| Update recommended | Current desktop differs from saved Arrangement (IC4/IC6 diff) |
-| Preview unavailable | No Arrangement is selected |
-| Preview recommended | Arrangement selected; Preview not active; Restore not yet chosen |
-
-Each recommendation must include:
-
-- **Statement** (what)  
-- **Because** (why — facts)  
-- **Owner** (which subsystem’s facts justify it)  
-- **Related workflow step** (Desktop / Arrangement / Preview / Restore)
-
-Compose with IC1 next-action where helpful; do not replace the workflow projection with a scored ranker.
-
-### Surface
-
-Present recommendations on the Desktop workflow surface (and Arrangements if natural) as dismissible **Interaction State** only if needed for noise — never persisted onboarding/recommendation history.
+Recommendations **explain**. Existing Save / Update / Preview / Restore controls **execute** only when the operator acts. Copy states recommendations do not execute.
 
 ---
 
-## Explicit non-goals
+## Explicit non-goals (honoured)
 
-IC2 must **not** introduce:
-
-- Recommendation engines  
-- Scoring / prioritisation algorithms  
-- Automation or auto-execution of Capture / Restore / Update  
-- Background decision making  
-- Recommendation persistence or history  
-- Speculative planning  
-- Hidden orchestration  
-- New workflow or desktop ownership  
-
-Recommendations remain **explanatory projections**, never autonomous decisions.
+No recommendation engine, workflow AI, scoring, urgency, weighting, automation, execution, persistence, history, or learning.
 
 ---
 
 ## Ownership unchanged
 
-| Boundary | Affirmation |
-|----------|-------------|
-| WorkspaceState | Sole runtime desktop truth |
-| Restore | Sole product OS positioning path |
-| Workflow (IC1) | Remains a projection, not a controller |
-| Recommendations | Projection only — no authority to act |
-
-**Architectural test (expected answers for IC2 as scoped):**
-
-1. Existing WorkspaceState? **Yes**  
-2. Compose existing capabilities? **Yes**  
-3. Deterministic? **Yes** (rule-based projection from known facts)  
-4. Ownership unchanged? **Yes**  
+Capture owns capture · Restore owns restore · Preview owns preview · Arrangement comparison facts remain Programme I projections · Recommendations own nothing.
 
 ---
 
-## Proposed deliverables (when approved to implement)
+## Validation
 
-1. Pure helpers for workflow recommendations (consume IC1 + Programme I projections).  
-2. Desktop (primary) surface for recommendation lines with because / owner.  
-3. Natural disappearance when state changes; optional session dismiss only.  
-4. Tests for recommendation derivation.  
-5. This contract updated to **Complete** with validation evidence.
+- `pnpm typecheck` · `pnpm test` · `pnpm build`
+- Working tree clean
+- Documentation complete
 
 ---
 
-## Validation (implementation phase)
+## Files touched
 
-- `git status` — working tree clean  
-- `pnpm typecheck` · `pnpm test` · `pnpm build`  
-- No recommendation engine/persistence/automation  
-- Ownership boundaries unchanged  
-
----
-
-## Architectural risks
-
-| Risk | Mitigation |
-|------|------------|
-| Soft recommendation engine | Fixed deterministic rules from existing diffs/readiness only |
-| Implicit prioritisation as scoring | At most a stable rule order documented in code; no weights/ML |
-| Auto-acting on recommendations | UI copy + disabled auto-invoke; operator must press existing verbs |
-| Duplicating IC1 next-action | Recommendations enrich/explain; workflow projection remains source of step progress |
+- `app/src/lib/workflowDecisionSupportUi.ts`
+- `app/src/components/WorkspaceApplicationStage.tsx`
+- `app/src/App.css`
+- `tests/workflow-decision-support-ui.test.ts`
+- This document; Programme V charter link
 
 ---
 
-## Success criteria
+## Stop condition
 
-IC2 succeeds when an operator can see **why** a next action is suggested within the composed workflow, and those suggestions:
-
-- remain fully reconstructible from existing state,  
-- never execute themselves,  
-- vanish when the justifying facts vanish,  
-- leave ownership and architecture unchanged.
-
----
-
-## Stop condition (this planning document)
-
-IC2 planning is complete when objective, constraints, non-goals, consumed authorities/state, and success criteria are recorded.
-
-**Cursor must not commence IC2 implementation until the Principal Architect approves this contract for execution.**
-
----
-
-## Recommendation to Principal Architect
-
-Approve IC2 to commence as **workflow decision support**: deterministic, explainable recommendations composed from WorkspaceState and Programme I/V projections — without engines, scoring, automation, or persistence.
+IC2 complete. **Await Principal Architect review** before Programme V IC3.

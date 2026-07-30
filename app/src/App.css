@@ -486,6 +486,42 @@ button.ghost {
   color: #d5dde6;
 }
 
+.stage-workflow-recommendations {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.stage-workflow-recommendation {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.35rem 0.45rem;
+  border: 1px solid #2a3642;
+  border-radius: 4px;
+  background: rgba(12, 16, 21, 0.45);
+}
+
+.stage-workflow-recommendation-action {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #d7e0e8;
+}
+
+.stage-workflow-recommendation-because,
+.stage-workflow-recommendation-owner,
+.stage-workflow-recommendation-note {
+  font-size: 0.74rem;
+  line-height: 1.35;
+}
+
+.stage-workflow-recommendation-note {
+  margin: 0.45rem 0 0;
+}
+
 .stage-operational-explain,
 .arrangement-operational-explain {
   margin: 0 0 0.65rem;
