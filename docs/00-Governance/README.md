@@ -5,6 +5,7 @@ Operational governance for **how** Workspace is engineered under AI assistance.
 | Document | Description |
 |----------|-------------|
 | [AI Engineering Governance](AI_ENGINEERING_GOVERNANCE.md) | Complete package: maintainability 0–10, anti-black-box, magic numbers, abstractions, batches, drift prevention, optimisation framework |
+| [Programme I — Workspace Product Capability](../01-Product/PROGRAMME-I-WORKSPACE-PRODUCT-CAPABILITY.md) | Formal product architecture programme charter (not an implementation contract) |
 
 ## Relationship to other docs
 
