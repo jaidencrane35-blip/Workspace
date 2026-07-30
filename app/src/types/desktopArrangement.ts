@@ -59,6 +59,11 @@ export interface DesktopArrangementApplyOutcome {
   simulated: boolean;
 }
 
+export interface DesktopWindowFocusResult {
+  hwnd: string;
+  simulated: boolean;
+}
+
 export interface DesktopArrangementRestoreResult {
   arrangement_id: string;
   diagnostics: DesktopArrangementEntryDiagnostic[];

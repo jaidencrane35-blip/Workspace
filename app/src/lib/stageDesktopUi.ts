@@ -1,10 +1,10 @@
 /**
- * Purpose: Pure view-model helpers for Desktop Reality Stage.
- * Owner: Frontend product shell (Product Contract V4)
+ * Purpose: Pure view-model helpers for Desktop Interaction Layer Stage.
+ * Owner: Frontend product shell (Product Contract V5)
  * Inputs: WorkspaceStateWindow rows from get_workspace_state
- * Outputs: Spatial tiles with app-object identity + process relationship accents
+ * Outputs: Spatial tiles, process relationships, Flow/Focus organisation
  * Dependencies: None (pure)
- * Non-goals: Fake windows, WindowController, grouping engines, OS geometry apply
+ * Non-goals: Fake windows, WindowController ownership, OS geometry apply engines
  */
 
 import type { WorkspaceStateWindow } from "../types/domain";
@@ -12,6 +12,7 @@ import type { WorkspaceStateWindow } from "../types/domain";
 /** Stage tile bound to a real observed window identity (not a registry invent). */
 export interface StageDesktopWindowTile {
   key: string;
+  hwnd: string;
   title: string;
   processLabel: string;
   /** Stable process key for relationship accents (empty when unknown). */
@@ -128,6 +129,7 @@ export function layoutStageDesktopWindows(
     const processKey = stageDesktopProcessKey(window);
     return {
       key: stageDesktopWindowKey(window),
+      hwnd: window.hwnd,
       title: appLabel,
       processLabel: windowTitle !== appLabel ? windowTitle : "",
       processKey,
@@ -188,4 +190,72 @@ export function stageDesktopMetaLine(args: {
     parts.push(args.focusedTitle);
   }
   return parts.join(" · ");
+}
+
+/** One dock entry per other process while Focus mode keeps a primary app on the map. */
+export interface StageProcessDockEntry {
+  processKey: string;
+  label: string;
+  hwnd: string;
+  tileKey: string;
+  windowCount: number;
+}
+
+export interface StageWorkModeOrganisation {
+  /** Windows drawn on the spatial map (Focus: primary process only). */
+  mapWindows: WorkspaceStateWindow[];
+  /** Other processes collapsed to dock objects (Focus only). */
+  dockEntries: StageProcessDockEntry[];
+}
+
+/**
+ * Flow keeps every observed window on the map.
+ * Focus keeps one process on the map and docks the rest as process objects.
+ */
+export function organiseStageForWorkMode(
+  windows: WorkspaceStateWindow[],
+  workMode: "flow" | "focus",
+  selectedKey: string | null,
+): StageWorkModeOrganisation {
+  if (workMode !== "focus" || windows.length === 0) {
+    return { mapWindows: windows, dockEntries: [] };
+  }
+
+  const tiles = layoutStageDesktopWindows(windows);
+  const anchor =
+    tiles.find((tile) => tile.focused) ??
+    tiles.find((tile) => tile.key === selectedKey) ??
+    tiles[0] ??
+    null;
+  if (!anchor) {
+    return { mapWindows: windows, dockEntries: [] };
+  }
+
+  const mapWindows = windows.filter((window) => {
+    return stageDesktopProcessKey(window) === anchor.processKey;
+  });
+
+  const dockByProcess = new Map<string, StageProcessDockEntry>();
+  for (const tile of tiles) {
+    if (tile.processKey === anchor.processKey) {
+      continue;
+    }
+    const existing = dockByProcess.get(tile.processKey);
+    if (existing) {
+      existing.windowCount += 1;
+      continue;
+    }
+    dockByProcess.set(tile.processKey, {
+      processKey: tile.processKey,
+      label: tile.title,
+      hwnd: tile.hwnd,
+      tileKey: tile.key,
+      windowCount: 1,
+    });
+  }
+
+  return {
+    mapWindows,
+    dockEntries: [...dockByProcess.values()],
+  };
 }

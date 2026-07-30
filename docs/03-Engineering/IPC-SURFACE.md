@@ -40,6 +40,7 @@ does not imply that the current UI invokes a command.
 | `create_application` / `launch_application` | Diagnostic (governed launch) |
 | `capture_desktop_arrangement` | Capture observed windows into a named DesktopArrangement (`desktop.write`) — Workspace arrangements rail |
 | `restore_desktop_arrangement` | Governed restore via PermissionGateway → WindowController (`desktop.restore`) — explicit Restore button |
+| `focus_desktop_window` | Governed single-window focus via PermissionGateway → WindowController (`desktop.restore`) — Stage click / Focus / Restore |
 | `get_desktop_arrangement` / `list_desktop_arrangements` | Read saved arrangements (`desktop.read`) — arrangements rail |
 | `request_ai_application_launch` | Diagnostic AI simulation (`AiActionRequest` → pipeline → ApprovalRequired) |
 | `diagnose_ai_workspace_plan` | Diagnostic AI planning (workspace context → proposals → governed submissions) |

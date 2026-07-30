@@ -21,8 +21,8 @@ use crate::commands::decide_approval::DecideApproval;
 use crate::commands::decision_engine::{GateDecisionEngineRead, GateDecisionEngineWrite};
 use crate::commands::decision_queue::{GateDecisionQueueRead, GateDecisionQueueWrite};
 use crate::commands::desktop_arrangement::{
-    CaptureDesktopArrangement, GetDesktopArrangement, ListDesktopArrangements,
-    RestoreDesktopArrangement,
+    CaptureDesktopArrangement, FocusDesktopWindow, GetDesktopArrangement,
+    ListDesktopArrangements, RestoreDesktopArrangement,
 };
 use crate::commands::execute_intent_request::ExecuteIntentRequest;
 use crate::commands::get_action_catalog::GetActionCatalog;
@@ -594,6 +594,16 @@ impl CommandHandler {
         CommandPipeline::new(kernel.command_context(actor, intent)).execute_mutation(
             RestoreDesktopArrangement::new(arrangement_id, focus_first.unwrap_or(true)),
         )
+    }
+
+    pub fn focus_desktop_window(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        hwnd: String,
+    ) -> Result<workspace_domain::DesktopWindowFocusResult> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_mutation(FocusDesktopWindow::new(hwnd))
     }
 
     pub fn get_desktop_arrangement(

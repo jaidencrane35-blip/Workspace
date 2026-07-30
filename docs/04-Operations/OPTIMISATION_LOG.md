@@ -94,6 +94,20 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 
 ## Cycles
 
+### Cycle: v5-1-desktop-interaction-focus-ipc
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Cycle number** | V5-1 |
+| **Goal** | Stop presentation-only work; implement Desktop Interaction Layer behaviour |
+| **Changes** | `focus_desktop_window` IPC (domain → kernel → Tauri); Stage click/Focus/Restore via WindowController; observation freshness before Stage read; Focus organises primary process on map + process dock; Assistant chat history thread + typing + desktop-observed ask enrichment; arrangements remounted under Stage |
+| **Architecture decisions remaining** | Minimize/maximize OS APIs; Assistant-owned restore/focus (sealed); true streaming IPC; Flow/Focus OS geometry apply |
+| **Validation** | typecheck / test / build / architecture / ipc / ui-boundary (+ kernel desktop arrangement tests) |
+| **Human review required** | No for this slice; Yes for minimize APIs / geometry apply |
+
+---
+
 ### Cycle: v4-eval-pass-2-presentation-plateau
 
 | Field | Value |

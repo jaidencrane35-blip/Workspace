@@ -63,6 +63,28 @@ pub fn restore_desktop_arrangement(
 }
 
 #[tauri::command]
+pub fn focus_desktop_window(
+    hwnd: String,
+    kernel: State<'_, Arc<Mutex<WorkspaceKernel>>>,
+) -> IpcResponse<workspace_domain::DesktopWindowFocusResult> {
+    match kernel.lock() {
+        Ok(kernel) => match CommandHandler::focus_desktop_window(
+            &kernel,
+            ipc_actor_context(),
+            ipc_intent_context(),
+            hwnd,
+        ) {
+            Ok(result) => IpcResponse::success(result),
+            Err(error) => IpcResponse::failure(CommandError::from(error)),
+        },
+        Err(_) => IpcResponse::failure(CommandError::new(
+            "internal_error",
+            "Workspace core is temporarily unavailable.",
+        )),
+    }
+}
+
+#[tauri::command]
 pub fn get_desktop_arrangement(
     arrangement_id: String,
     kernel: State<'_, Arc<Mutex<WorkspaceKernel>>>,

@@ -12,7 +12,7 @@ use crate::security::PermissionSubject;
 use crate::services::DesktopArrangementService;
 use workspace_domain::{
     Capability, DesktopArrangement, DesktopArrangementId, DesktopArrangementRestoreResult,
-    ResourceId, ResourceKind, ResourceRef, WorkspaceId,
+    DesktopWindowFocusResult, ResourceId, ResourceKind, ResourceRef, WorkspaceId,
 };
 
 /// Capture currently observed windows into a named desktop arrangement.
@@ -255,5 +255,67 @@ impl QueryCommand for ListDesktopArrangements {
             &self.workspace_id,
             self.limit,
         )
+    }
+}
+
+/// Focus one observed desktop window through WindowController.
+pub struct FocusDesktopWindow {
+    pub hwnd: String,
+    pub(crate) simulate: bool,
+}
+
+impl FocusDesktopWindow {
+    pub fn new(hwnd: String) -> Self {
+        Self {
+            hwnd,
+            simulate: false,
+        }
+    }
+
+    pub fn simulated(hwnd: String) -> Self {
+        Self {
+            hwnd,
+            simulate: true,
+        }
+    }
+}
+
+impl crate::commands::Command for FocusDesktopWindow {
+    fn name(&self) -> &'static str {
+        "FocusDesktopWindow"
+    }
+}
+
+impl MutationCommand for FocusDesktopWindow {
+    type Output = DesktopWindowFocusResult;
+
+    fn permission_subject(&self) -> PermissionSubject {
+        PermissionSubject::System
+    }
+
+    fn required_capability(&self) -> Capability {
+        Capability::desktop_restore()
+    }
+
+    fn audit_resource_ref(&self, _output: &Self::Output) -> Option<ResourceRef> {
+        None
+    }
+
+    fn audit_metadata(&self, output: &Self::Output) -> Option<String> {
+        Some(
+            json!({
+                "hwnd": output.hwnd,
+                "simulated": output.simulated,
+            })
+            .to_string(),
+        )
+    }
+
+    fn execute(&self, ctx: &CommandContext<'_>) -> Result<DesktopWindowFocusResult> {
+        ensure_ready(ctx)?;
+        if ctx.state.lifecycle != LifecycleState::Ready {
+            return Err(KernelError::NotReady);
+        }
+        DesktopArrangementService::focus_window(&self.hwnd, self.simulate)
     }
 }

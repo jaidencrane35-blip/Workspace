@@ -1,18 +1,22 @@
 /**
- * Purpose: Lightweight Assistant companion chat helpers (session recent + answer text).
- * Owner: Frontend product shell
- * Inputs: Compose surface projection + sessionStorage
- * Outputs: Recent turn list + utterance body extraction
- * Dependencies: WorkspaceAssistantSurfaceProjection types only
- * Non-responsibilities: AI engines, durable history IPC, PermissionGateway
+ * Purpose: Lightweight Assistant companion chat helpers (history + answer text).
+ * Owner: Frontend product shell (Product Contract V5)
+ * Inputs: Compose surface projection + sessionStorage + optional WorkspaceState
+ * Outputs: Chat history turns, answer extraction, desktop-aware ask enrichment
+ * Dependencies: domain projection types only
+ * Non-responsibilities: AI engines, durable history IPC, PermissionGateway, restore/focus
  */
 
-import type { WorkspaceAssistantSurfaceProjection } from "../types/domain";
+import type {
+  WorkspaceAssistantSurfaceProjection,
+  WorkspaceState,
+} from "../types/domain";
 
 export const ASSISTANT_COMPANION_RECENT_KEY =
   "workspace.assistant.companion.recent.v1";
 
-export const ASSISTANT_COMPANION_RECENT_LIMIT = 8;
+/** Chat-style history bound for the companion rail session. */
+export const ASSISTANT_COMPANION_RECENT_LIMIT = 24;
 
 export interface AssistantCompanionTurn {
   id: string;
@@ -77,4 +81,57 @@ export function appendCompanionRecentTurn(
     // sessionStorage may be unavailable; keep in-memory return value only
   }
   return next;
+}
+
+/** Newest-first storage → oldest-first thread for ChatGPT-like reading. */
+export function companionThreadTurns(
+  recent: AssistantCompanionTurn[],
+): AssistantCompanionTurn[] {
+  return [...recent].reverse();
+}
+
+/**
+ * Prefix the compose ask with observed desktop facts when available.
+ * Displayed user ask stays unprefixed; enrichment is compose-only.
+ */
+export function enrichAskWithDesktopObservation(
+  ask: string,
+  state: WorkspaceState | null | undefined,
+): string {
+  const trimmed = ask.trim();
+  if (!trimmed || !state || state.windows.length === 0) {
+    return trimmed;
+  }
+
+  const focused =
+    state.focused_window?.title?.trim() ||
+    state.focused_window?.process_name?.trim() ||
+    null;
+  const processes: string[] = [];
+  const seen = new Set<string>();
+  for (const window of state.windows) {
+    const label =
+      window.process_name?.trim() || window.title.trim() || `hwnd ${window.hwnd}`;
+    const key = label.toLowerCase();
+    if (seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    processes.push(label);
+    if (processes.length >= 8) {
+      break;
+    }
+  }
+
+  const parts = [
+    `${state.windows.length} window${state.windows.length === 1 ? "" : "s"}`,
+  ];
+  if (focused) {
+    parts.push(`focused: ${focused}`);
+  }
+  if (processes.length > 0) {
+    parts.push(`apps: ${processes.join(", ")}`);
+  }
+
+  return `Observed desktop (${parts.join("; ")}).\n\n${trimmed}`;
 }

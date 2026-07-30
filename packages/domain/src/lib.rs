@@ -235,7 +235,7 @@ pub use desktop_arrangement::{
     DesktopArrangementApplyStatus, DesktopArrangementBounds, DesktopArrangementEntry,
     DesktopArrangementEntryDiagnostic, DesktopArrangementEntryInput, DesktopArrangementError,
     DesktopArrangementRestoreAction, DesktopArrangementRestorePlan,
-    DesktopArrangementRestoreResult, DesktopArrangementStatus,
+    DesktopArrangementRestoreResult, DesktopArrangementStatus, DesktopWindowFocusResult,
 };
 pub use discovery::{AvailableIntentSummary, CapabilityDiscovery, CapabilityDiscoveryError};
 pub use entities::{

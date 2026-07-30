@@ -345,15 +345,27 @@ export default function App() {
             {!bootstrapped ? (
               <p className="muted stage-boot-loading">Loading…</p>
             ) : (
-              <WorkspaceApplicationStage
-                workspace={workspace}
-                applications={homeApps}
-                appsLoading={homeAppsLoading}
-                workMode={workMode}
-                busy={busy}
-                onManageApplications={() => navigatePrimary("applications")}
-                onLaunchApplication={launchFromStage}
-              />
+              <>
+                <WorkspaceApplicationStage
+                  workspace={workspace}
+                  applications={homeApps}
+                  appsLoading={homeAppsLoading}
+                  workMode={workMode}
+                  busy={busy}
+                  onBusy={setBusy}
+                  onError={onError}
+                  onMessage={onMessage}
+                  onManageApplications={() => navigatePrimary("applications")}
+                  onLaunchApplication={launchFromStage}
+                />
+                <DesktopArrangementPanel
+                  workspace={workspace}
+                  busy={busy}
+                  onBusy={setBusy}
+                  onError={onError}
+                  onMessage={onMessage}
+                />
+              </>
             )}
           </div>
         </div>

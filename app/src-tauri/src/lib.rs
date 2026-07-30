@@ -136,8 +136,8 @@ use commands::resources::{
     get_application, get_widget, get_zone, launch_application, list_applications,
 };
 use commands::desktop_arrangement::{
-    capture_desktop_arrangement, get_desktop_arrangement, list_desktop_arrangements,
-    restore_desktop_arrangement,
+    capture_desktop_arrangement, focus_desktop_window, get_desktop_arrangement,
+    list_desktop_arrangements, restore_desktop_arrangement,
 };
 use commands::workspace::{create_workspace, get_workspace, list_workspaces};
 use commands::workspace_intelligence::{
@@ -195,6 +195,7 @@ pub fn run() {
             list_applications,
             capture_desktop_arrangement,
             restore_desktop_arrangement,
+            focus_desktop_window,
             get_desktop_arrangement,
             list_desktop_arrangements,
             get_permission_approvals,

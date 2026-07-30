@@ -12,7 +12,8 @@ use workspace_domain::{
     arrangement_now_rfc3339, capture_entry_inputs_from_snapshot, entries_from_inputs,
     plan_desktop_arrangement_restore, validate_desktop_arrangement, DesktopArrangement,
     DesktopArrangementApplyOutcome, DesktopArrangementApplyStatus, DesktopArrangementError,
-    DesktopArrangementId, DesktopArrangementRestoreResult, DesktopArrangementStatus, WorkspaceId,
+    DesktopArrangementId, DesktopArrangementRestoreResult, DesktopArrangementStatus,
+    DesktopWindowFocusResult, WorkspaceId,
 };
 use workspace_windows_integration::{
     platform_window_controller, FocusWindowRequest, SetWindowBoundsRequest, StubWindowController,
@@ -226,6 +227,32 @@ impl DesktopArrangementService {
             gap_count,
             failed_count,
         })
+    }
+
+    /// Focus one observed window through WindowController (local user / restore capability).
+    pub(crate) fn focus_window(hwnd: &str, simulate: bool) -> Result<DesktopWindowFocusResult> {
+        let hwnd = hwnd.trim();
+        if hwnd.is_empty() {
+            return Err(KernelError::DesktopArrangementValidation {
+                message: "hwnd is required to focus a desktop window".into(),
+            });
+        }
+        let controller: Arc<dyn WindowController> = if simulate {
+            Arc::new(StubWindowController::new())
+        } else {
+            platform_window_controller()
+        };
+        match controller.focus(&FocusWindowRequest {
+            hwnd: hwnd.to_string(),
+        }) {
+            Ok(outcome) => Ok(DesktopWindowFocusResult {
+                hwnd: outcome.hwnd,
+                simulated: outcome.simulated,
+            }),
+            Err(error) => Err(KernelError::DesktopArrangementValidation {
+                message: format!("focus failed: {error}"),
+            }),
+        }
     }
 
     /// Architecture seal — Assistant must not own restore execution.

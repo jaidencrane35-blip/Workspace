@@ -437,8 +437,8 @@ pub use create_workspace::CreateWorkspace;
 pub use decide_approval::DecideApproval;
 pub use decision_queue::{GateDecisionQueueRead, GateDecisionQueueWrite};
 pub use desktop_arrangement::{
-    CaptureDesktopArrangement, GetDesktopArrangement, ListDesktopArrangements,
-    RestoreDesktopArrangement,
+    CaptureDesktopArrangement, FocusDesktopWindow, GetDesktopArrangement,
+    ListDesktopArrangements, RestoreDesktopArrangement,
 };
 pub use execute_intent_request::ExecuteIntentRequest;
 pub use get_action_catalog::GetActionCatalog;

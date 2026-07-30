@@ -4,7 +4,7 @@ use std::sync::Mutex;
 
 use crate::commands::create_workspace::CreateWorkspace;
 use crate::commands::desktop_arrangement::{
-    CaptureDesktopArrangement, GetDesktopArrangement, ListDesktopArrangements,
+    CaptureDesktopArrangement, FocusDesktopWindow, GetDesktopArrangement, ListDesktopArrangements,
     RestoreDesktopArrangement,
 };
 use crate::commands::pipeline::CommandPipeline;
@@ -389,6 +389,50 @@ fn capture_requires_desktop_write() {
             String::new(),
             None,
             false,
+        ))
+        .unwrap_err();
+
+    assert!(matches!(error, KernelError::PermissionDenied(_)));
+}
+
+#[test]
+fn simulated_focus_desktop_window_through_pipeline() {
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    seed_observation(&kernel);
+
+    let result = CommandPipeline::new(kernel.command_context(
+        ActorContext::local_user(),
+        IntentContext::user_request(),
+    ))
+    .execute_mutation(FocusDesktopWindow::simulated(
+        "0x00000000000000AA".into(),
+    ))
+    .unwrap();
+
+    assert_eq!(result.hwnd, "0x00000000000000AA");
+    assert!(result.simulated);
+
+    let records = AuditService::list_recent(&kernel.shared_database(), 40).unwrap();
+    assert!(records.iter().any(|r| {
+        r.event_type == "command.executed"
+            && r.command_name.as_deref() == Some("FocusDesktopWindow")
+            && r.success
+    }));
+}
+
+#[test]
+fn focus_desktop_window_requires_desktop_restore() {
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    seed_observation(&kernel);
+
+    let mut ctx = kernel.command_context(
+        ActorContext::local_user(),
+        IntentContext::user_request(),
+    );
+    ctx.capability_set = CapabilitySet::new().with_capability(&Capability::desktop_read());
+    let error = CommandPipeline::new(ctx)
+        .execute_mutation(FocusDesktopWindow::simulated(
+            "0x00000000000000AA".into(),
         ))
         .unwrap_err();
 

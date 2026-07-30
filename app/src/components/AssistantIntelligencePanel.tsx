@@ -1,20 +1,22 @@
 /**
- * Purpose: Usable Assistant companion — ask, answer, recent; evidence optional.
- * Owner: Frontend product shell
+ * Purpose: ChatGPT-like Assistant companion — history, input, send, typing.
+ * Owner: Frontend product shell (Product Contract V5)
  * Inputs: Active workspace (optional), busy/error/message, ensure-workspace
- * Outputs: compose_workspace_assistant_turn presentation; optional package peek
- * Dependencies: Existing assistant surface IPC only for the primary path
- * Non-responsibilities: New AI engines, autonomous agents, OS control
+ * Outputs: compose_workspace_assistant_turn using observed desktop when available
+ * Dependencies: Existing assistant surface IPC + get_workspace_state for context
+ * Non-responsibilities: New AI engines, streaming IPC (none yet), OS control
  */
 
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import {
   appendCompanionRecentTurn,
   companionAnswerFromSurface,
+  companionThreadTurns,
+  enrichAskWithDesktopObservation,
   loadCompanionRecentTurns,
   type AssistantCompanionTurn,
 } from "../lib/assistantCompanion";
-import { invokeIpc } from "../lib/ipc";
+import { invokeIpc, isIpcRuntimeAvailable } from "../lib/ipc";
 import type {
   Workspace,
   WorkspaceAssistantContextProjection,
@@ -29,6 +31,7 @@ import type {
   WorkspaceAssistantRetrievalSummary,
   WorkspaceAssistantSurfaceProjection,
   WorkspaceAssistantSurfaceSummary,
+  WorkspaceState,
 } from "../types/domain";
 import {
   assistantContextHistoryCountIsAuthoritative,
@@ -208,13 +211,14 @@ export function AssistantIntelligencePanel({
 }: AssistantIntelligencePanelProps) {
   const rail = presentation === "rail";
   const askId = useId();
+  const threadRef = useRef<HTMLDivElement | null>(null);
   const [humanAsk, setHumanAsk] = useState("");
+  const [sending, setSending] = useState(false);
   const [packagesOpen, setPackagesOpen] = useState(false);
   const [recent, setRecent] = useState<AssistantCompanionTurn[]>(() =>
     loadCompanionRecentTurns(),
   );
-  const [activeAsk, setActiveAsk] = useState<string | null>(null);
-  const [activeAnswer, setActiveAnswer] = useState<string | null>(null);
+  const [pendingAsk, setPendingAsk] = useState<string | null>(null);
   const [surface, setSurface] =
     useState<WorkspaceAssistantSurfaceProjection | null>(null);
   const [context, setContext] =
@@ -236,9 +240,20 @@ export function AssistantIntelligencePanel({
     interaction != null ||
     personalisation != null;
 
+  const thread = useMemo(() => companionThreadTurns(recent), [recent]);
+  const inputBusy = busy || sending;
+
   useEffect(() => {
     setRecent(loadCompanionRecentTurns());
   }, []);
+
+  useEffect(() => {
+    const node = threadRef.current;
+    if (!node) {
+      return;
+    }
+    node.scrollTop = node.scrollHeight;
+  }, [thread, pendingAsk, sending]);
 
   async function run(
     okMessage: string | null,
@@ -270,41 +285,59 @@ export function AssistantIntelligencePanel({
     return onEnsureWorkspace();
   }
 
+  async function readDesktopObservation(): Promise<WorkspaceState | null> {
+    if (!isIpcRuntimeAvailable()) {
+      return null;
+    }
+    try {
+      return await invokeIpc<WorkspaceState>("get_workspace_state");
+    } catch {
+      return null;
+    }
+  }
+
   async function sendAsk(): Promise<void> {
     const ask = humanAsk.trim();
     if (!ask) {
       onError("Type a question first.");
       return;
     }
-    await run(null, async () => {
-      const active = await resolveWorkspace();
-      if (!active) {
-        throw new Error(
-          "Assistant needs a quiet Desktop profile once to store answers. Create one under Profiles, or open the desktop app.",
+    setSending(true);
+    setPendingAsk(ask);
+    setHumanAsk("");
+    try {
+      await run(null, async () => {
+        const active = await resolveWorkspace();
+        if (!active) {
+          throw new Error(
+            "Assistant needs a quiet Desktop profile once to store answers. Create one under Profiles, or open the desktop app.",
+          );
+        }
+        const desktop = await readDesktopObservation();
+        const composedAsk = enrichAskWithDesktopObservation(ask, desktop);
+        const nextSurface =
+          await invokeIpc<WorkspaceAssistantSurfaceProjection>(
+            "compose_workspace_assistant_turn",
+            { workspaceId: active.id, humanAsk: composedAsk },
+          );
+        setSurface(nextSurface);
+        const answer = companionAnswerFromSurface(nextSurface);
+        setRecent(
+          appendCompanionRecentTurn({
+            id:
+              nextSurface.current?.utterance?.utterance_id ??
+              nextSurface.current?.surface_id ??
+              `${Date.now()}`,
+            ask,
+            answer,
+            at: nextSurface.current?.generated_at ?? new Date().toISOString(),
+          }),
         );
-      }
-      const nextSurface =
-        await invokeIpc<WorkspaceAssistantSurfaceProjection>(
-          "compose_workspace_assistant_turn",
-          { workspaceId: active.id, humanAsk: ask },
-        );
-      setSurface(nextSurface);
-      const answer = companionAnswerFromSurface(nextSurface);
-      setActiveAsk(ask);
-      setActiveAnswer(answer);
-      setRecent(
-        appendCompanionRecentTurn({
-          id:
-            nextSurface.current?.utterance?.utterance_id ??
-            nextSurface.current?.surface_id ??
-            `${Date.now()}`,
-          ask,
-          answer,
-          at: nextSurface.current?.generated_at ?? new Date().toISOString(),
-        }),
-      );
-      setHumanAsk("");
-    });
+      });
+    } finally {
+      setPendingAsk(null);
+      setSending(false);
+    }
   }
 
   async function refreshEvidencePackages(): Promise<void> {
@@ -356,8 +389,19 @@ export function AssistantIntelligencePanel({
       if (nextSurface?.current) {
         const ask = nextSurface.current.human_ask?.trim() || null;
         const answer = companionAnswerFromSurface(nextSurface);
-        setActiveAsk(ask);
-        setActiveAnswer(answer);
+        if (ask && answer) {
+          setRecent(
+            appendCompanionRecentTurn({
+              id:
+                nextSurface.current.utterance?.utterance_id ??
+                nextSurface.current.surface_id ??
+                `${Date.now()}`,
+              ask,
+              answer,
+              at: nextSurface.current.generated_at ?? new Date().toISOString(),
+            }),
+          );
+        }
       }
       setPackagesOpen(true);
     });
@@ -478,50 +522,41 @@ export function AssistantIntelligencePanel({
       )}
 
       <div className="assistant-companion-chat" aria-label="Assistant conversation">
-        <div className="assistant-companion-thread" aria-live="polite">
-          {activeAsk && activeAnswer ? (
-            <article className="assistant-companion-turn">
-              <p className="assistant-companion-ask">{activeAsk}</p>
-              <p className="assistant-companion-answer">{activeAnswer}</p>
-            </article>
-          ) : (
+        <div
+          ref={threadRef}
+          className="assistant-companion-thread"
+          aria-live="polite"
+        >
+          {thread.length === 0 && !pendingAsk ? (
             <p className="assistant-companion-quiet muted">
               Ask about what is already on your desktop. Answers stay beside
               Stage — they never replace it.
             </p>
+          ) : (
+            thread.map((turn) => (
+              <article key={turn.id} className="assistant-companion-turn">
+                <p className="assistant-companion-ask">{turn.ask}</p>
+                <p className="assistant-companion-answer">{turn.answer}</p>
+              </article>
+            ))
           )}
+          {pendingAsk ? (
+            <article
+              className="assistant-companion-turn assistant-companion-pending"
+              aria-busy="true"
+            >
+              <p className="assistant-companion-ask">{pendingAsk}</p>
+              <p
+                className="assistant-companion-typing muted"
+                aria-label="Assistant is responding"
+              >
+                <span className="assistant-typing-dot" />
+                <span className="assistant-typing-dot" />
+                <span className="assistant-typing-dot" />
+              </p>
+            </article>
+          ) : null}
         </div>
-
-        {recent.length > 0 ? (
-          <details className="assistant-companion-recent">
-            <summary>Recent ({recent.length})</summary>
-            <ul>
-              {recent.map((turn) => (
-                <li key={turn.id}>
-                  <button
-                    type="button"
-                    className="ghost assistant-companion-recent-item"
-                    disabled={busy}
-                    onClick={() => {
-                      setActiveAsk(turn.ask);
-                      setActiveAnswer(turn.answer);
-                      setHumanAsk(turn.ask);
-                    }}
-                  >
-                    <span className="assistant-companion-recent-ask">
-                      {turn.ask}
-                    </span>
-                    <span className="muted assistant-companion-recent-preview">
-                      {turn.answer.length > 120
-                        ? `${turn.answer.slice(0, 117)}…`
-                        : turn.answer}
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </details>
-        ) : null}
 
         <div className="assistant-intel-ask">
           <label htmlFor={askId}>Message</label>
@@ -529,13 +564,13 @@ export function AssistantIntelligencePanel({
             id={askId}
             rows={rail ? 2 : 3}
             value={humanAsk}
-            disabled={busy}
+            disabled={inputBusy}
             placeholder="What is open on my desktop?"
             onChange={(event) => setHumanAsk(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === "Enter" && !event.shiftKey) {
                 event.preventDefault();
-                if (!busy && humanAsk.trim()) {
+                if (!inputBusy && humanAsk.trim()) {
                   void sendAsk();
                 }
               }
@@ -544,7 +579,7 @@ export function AssistantIntelligencePanel({
           <div className="assistant-intel-actions">
             <button
               type="button"
-              disabled={busy || !humanAsk.trim()}
+              disabled={inputBusy || !humanAsk.trim()}
               onClick={() => void sendAsk()}
             >
               Send

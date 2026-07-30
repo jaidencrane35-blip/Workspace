@@ -285,6 +285,8 @@ describe("assistant companion chat helpers", () => {
       ASSISTANT_COMPANION_RECENT_KEY,
       ASSISTANT_COMPANION_RECENT_LIMIT,
       appendCompanionRecentTurn,
+      companionThreadTurns,
+      enrichAskWithDesktopObservation,
       loadCompanionRecentTurns,
     } = await import("../app/src/lib/assistantCompanion");
     memoryStorage.removeItem(ASSISTANT_COMPANION_RECENT_KEY);
@@ -299,6 +301,48 @@ describe("assistant companion chat helpers", () => {
     const recent = loadCompanionRecentTurns();
     expect(recent).toHaveLength(ASSISTANT_COMPANION_RECENT_LIMIT);
     expect(recent[0]?.id).toBe(`t-${ASSISTANT_COMPANION_RECENT_LIMIT + 2}`);
+    const thread = companionThreadTurns(recent);
+    expect(thread[0]?.id).toBe(recent[recent.length - 1]?.id);
+    expect(
+      enrichAskWithDesktopObservation("What is open?", {
+        metadata: {
+          state_id: "s1",
+          created_at: "2026-07-30T00:00:00Z",
+          observation_pass_id: "pass-1",
+          latest_delta_reference: null,
+          window_count: 1,
+          monitor_count: 1,
+          has_changes: false,
+          authority_effect: "none",
+        },
+        focused_window: {
+          stable_window_id: "a",
+          hwnd: "0x1",
+          title: "Editor",
+          process_id: 1,
+        },
+        active_applications: [],
+        windows: [
+          {
+            stable_window_id: "a",
+            hwnd: "0x1",
+            title: "Editor",
+            process_id: 1,
+            process_name: "code.exe",
+            visible: true,
+            focused: true,
+            minimized: false,
+            x: 0,
+            y: 0,
+            width: 100,
+            height: 100,
+            monitor_index: 0,
+            monitor_name: "Display 1",
+          },
+        ],
+        authority_effect: "none",
+      }),
+    ).toMatch(/Observed desktop[\s\S]*What is open\?/);
     memoryStorage.removeItem(ASSISTANT_COMPANION_RECENT_KEY);
   });
 });

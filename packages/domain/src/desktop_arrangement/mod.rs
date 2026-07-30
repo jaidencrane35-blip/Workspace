@@ -248,6 +248,13 @@ pub struct DesktopArrangementRestoreResult {
     pub failed_count: usize,
 }
 
+/// Result of focusing one observed desktop window through WindowController.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DesktopWindowFocusResult {
+    pub hwnd: String,
+    pub simulated: bool,
+}
+
 pub fn arrangement_now_rfc3339() -> String {
     Utc::now().to_rfc3339()
 }
