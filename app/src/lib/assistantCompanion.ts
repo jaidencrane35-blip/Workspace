@@ -135,6 +135,14 @@ function summariseWorkingOn(state: WorkspaceState): string {
   }
   const focusedMemberId =
     focused.stable_window_id?.trim() || focused.hwnd;
+  const semantic =
+    state.semantics?.objects.find(
+      (object) =>
+        object.stable_window_id === focused.stable_window_id ||
+        object.hwnd === focused.hwnd,
+    ) ??
+    state.semantics?.objects.find((object) => object.role === "working");
+  const activity = state.semantics?.activities?.[0];
   const processGroup = (state.window_groups ?? []).find(
     (group) =>
       group.criterion === "process_id" &&
@@ -148,9 +156,13 @@ function summariseWorkingOn(state: WorkspaceState): string {
     state.windows.find((window) => window.hwnd === focused.hwnd)?.process_name?.trim() ||
     focused.title.trim() ||
     `hwnd ${focused.hwnd}`;
+  const semanticBit = semantic
+    ? `; semantic role ${semantic.role} (${semantic.importance}, ${semantic.confidence})`
+    : "";
+  const activityBit = activity ? `; activity ${activity.kind}` : "";
   return `You appear to be working in ${name} (${focused.title || "untitled"}${
     siblingCount > 1 ? `; ${siblingCount} windows in that process` : ""
-  }).`;
+  }${semanticBit}${activityBit}).`;
 }
 
 function summariseBelongsTogether(
@@ -554,8 +566,15 @@ function summariseSemantics(state: WorkspaceState): string | null {
     list.push(object.title || object.hwnd);
     byRole.set(object.role, list);
   }
+  const important = semantics.objects
+    .filter((object) => object.importance === "important" || object.importance === "emerging")
+    .slice(0, 4)
+    .map((object) => `${object.title || object.hwnd} (${object.importance})`);
   for (const [role, titles] of byRole) {
     parts.push(`${role}: ${titles.slice(0, 4).join(", ")}`);
+  }
+  if (important.length > 0) {
+    parts.push(`importance: ${important.join(", ")}`);
   }
   if (semantics.relationships.length > 0) {
     parts.push(

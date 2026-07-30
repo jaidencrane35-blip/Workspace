@@ -90,6 +90,23 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 
 ## Cycles
 
+### Cycle: v11-3-semantic-importance
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Cycle number** | V11-3 |
+| **Goal** | Project importance (ephemeral/routine/emerging/important/fading) on semantic objects |
+| **Problem** | Roles described meaning but not relative importance for Assistant/runtime consumers |
+| **Analysis** | Derive importance from memory knowledge + assigned role; surface in working-on answers |
+| **Changes** | `DesktopSemanticObject.importance`; Assistant working-on + semantic summaries |
+| **Files affected** | desktop_semantic, domain.ts, assistantCompanion, this log |
+| **Validation** | typecheck / test / build / architecture / ipc / ui-boundary (+ domain semantic tests) |
+| **Deleted / reduced** | none |
+| **Next recommended cycle** | Two empty semantic evaluation passes |
+
+---
+
 ### Cycle: v11-2-semantic-confidence-refinement
 
 | Field | Value |

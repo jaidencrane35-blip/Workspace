@@ -33,6 +33,8 @@ pub struct DesktopSemanticObject {
     /// Primary role: `working` | `companion` | `alternating` | `background` |
     /// `utility` | `returning` | `interrupted` | `emerging` | `cluster`
     pub role: String,
+    /// `ephemeral` | `routine` | `emerging` | `important` | `fading`
+    pub importance: String,
     /// `structural` | `emerging` | `recurring` | `strong`
     pub confidence: String,
     pub evidence_score: i32,
@@ -50,6 +52,11 @@ impl DesktopSemanticObject {
     pub const ROLE_INTERRUPTED: &'static str = "interrupted";
     pub const ROLE_EMERGING: &'static str = "emerging";
     pub const ROLE_CLUSTER: &'static str = "cluster";
+    pub const IMPORTANCE_EPHEMERAL: &'static str = "ephemeral";
+    pub const IMPORTANCE_ROUTINE: &'static str = "routine";
+    pub const IMPORTANCE_EMERGING: &'static str = "emerging";
+    pub const IMPORTANCE_IMPORTANT: &'static str = "important";
+    pub const IMPORTANCE_FADING: &'static str = "fading";
 }
 
 /// Typed semantic relationship inferred from observation edges.
@@ -251,6 +258,7 @@ fn refine_semantic_confidence(
                 if conflict_background {
                     object.role = DesktopSemanticObject::ROLE_WORKING.into();
                 }
+                object.importance = importance_for(entity, object.role.as_str()).into();
             }
         }
         object.evidence_score = score;
@@ -392,6 +400,7 @@ fn project_semantic_objects(
             hwnd: entity.hwnd.clone(),
             title: entity.title.clone(),
             role: role.into(),
+            importance: importance_for(entity, role).into(),
             confidence: DesktopWindowGroup::confidence_for_evidence(score).into(),
             evidence_score: score,
             authority_effect: DesktopSemanticObject::AUTHORITY_EFFECT_NONE.into(),
@@ -405,6 +414,31 @@ fn project_semantic_objects(
     });
     objects.truncate(DESKTOP_SEMANTIC_OBJECT_LIMIT);
     objects
+}
+
+fn importance_for(entity: &DesktopObjectMemory, role: &str) -> &'static str {
+    if entity.knowledge == DesktopObjectMemory::KNOWLEDGE_FADING
+        || role == DesktopSemanticObject::ROLE_INTERRUPTED
+    {
+        return DesktopSemanticObject::IMPORTANCE_FADING;
+    }
+    if entity.knowledge == DesktopObjectMemory::KNOWLEDGE_RISING
+        || role == DesktopSemanticObject::ROLE_EMERGING
+    {
+        return DesktopSemanticObject::IMPORTANCE_EMERGING;
+    }
+    if role == DesktopSemanticObject::ROLE_WORKING
+        || (entity.knowledge == DesktopObjectMemory::KNOWLEDGE_PERSISTENT && entity.focus_count >= 2)
+    {
+        return DesktopSemanticObject::IMPORTANCE_IMPORTANT;
+    }
+    if entity.knowledge == DesktopObjectMemory::KNOWLEDGE_TEMPORARY
+        || entity.stability == DesktopObjectMemory::STABILITY_EPHEMERAL
+        || role == DesktopSemanticObject::ROLE_UTILITY
+    {
+        return DesktopSemanticObject::IMPORTANCE_EPHEMERAL;
+    }
+    DesktopSemanticObject::IMPORTANCE_ROUTINE
 }
 
 fn assign_role(

@@ -7034,6 +7034,8 @@ export interface DesktopSemanticObject {
   title: string;
   /** working | companion | alternating | background | utility | returning | interrupted | emerging | cluster */
   role: string;
+  /** ephemeral | routine | emerging | important | fading */
+  importance: string;
   confidence: string;
   evidence_score: number;
   authority_effect: string;
