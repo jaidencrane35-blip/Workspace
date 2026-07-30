@@ -151,8 +151,54 @@ pub fn project_desktop_decisions(
         authority_effect: DesktopDecisionProjection::AUTHORITY_EFFECT_NONE.into(),
     };
     refine_decision_support(&mut projection);
+    cross_link_consistency_explanations(&mut projection);
     projection.recommendations = project_recommendations(&projection.decisions);
+    dedupe_recommendations(&mut projection.recommendations);
     projection
+}
+
+/// Attach related consistency findings into decision explanations (inspectability).
+fn cross_link_consistency_explanations(projection: &mut DesktopDecisionProjection) {
+    if projection.consistency_issues.is_empty() {
+        return;
+    }
+    for decision in &mut projection.decisions {
+        let related: Vec<&DesktopConsistencyIssue> = projection
+            .consistency_issues
+            .iter()
+            .filter(|issue| {
+                issue
+                    .entity_ids
+                    .iter()
+                    .any(|id| decision.entity_ids.iter().any(|other| other == id))
+            })
+            .take(2)
+            .collect();
+        if related.is_empty() {
+            continue;
+        }
+        let notes = related
+            .iter()
+            .map(|issue| format!("{} ({})", issue.summary, issue.kind))
+            .collect::<Vec<_>>()
+            .join("; ");
+        decision.explanation =
+            format!("{} Related uncertainty: {}.", decision.explanation, notes);
+        for issue in related {
+            decision.evidence.push(DesktopDecisionEvidence {
+                plane: "consistency".into(),
+                reference: issue.id.clone(),
+                detail: issue.kind.clone(),
+            });
+        }
+        decision.supporting_planes = planes_from_evidence(&decision.evidence);
+    }
+}
+
+fn dedupe_recommendations(recommendations: &mut Vec<DesktopRecommendation>) {
+    let mut seen_kinds = BTreeSet::new();
+    recommendations.retain(|item| seen_kinds.insert(item.kind.clone()));
+    recommendations.truncate(DESKTOP_RECOMMENDATION_LIMIT);
 }
 
 /// Rank, merge overlapping decisions, and demote conclusions contradicted by consistency issues.

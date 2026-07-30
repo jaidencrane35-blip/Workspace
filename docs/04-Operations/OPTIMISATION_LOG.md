@@ -90,6 +90,23 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 
 ## Cycles
 
+### Cycle: v12-3-consistency-crosslink-and-recommendation-dedupe
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Cycle number** | V12-3 |
+| **Goal** | Cross-link consistency uncertainty into decision explanations; dedupe recommendations |
+| **Problem** | Consistency issues were parallel lists; recommendations repeated kinds |
+| **Analysis** | Attach related consistency notes/evidence onto decisions; keep one recommendation per kind |
+| **Changes** | `cross_link_consistency_explanations`; `dedupe_recommendations` |
+| **Files affected** | desktop_decision, this log |
+| **Validation** | typecheck / test / build / architecture / ipc / ui-boundary (+ domain decision tests) |
+| **Deleted / reduced** | Duplicate recommendation kinds |
+| **Next recommended cycle** | Two empty decision evaluation passes |
+
+---
+
 ### Cycle: v12-2-decision-rank-dedupe-explainability
 
 | Field | Value |
