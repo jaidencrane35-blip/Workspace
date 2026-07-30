@@ -610,6 +610,66 @@ button.ghost {
   margin: 0.45rem 0 0;
 }
 
+.stage-workflow-explainability {
+  margin: 0.5rem 0 0.55rem;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid rgba(142, 180, 201, 0.35);
+  border-radius: 4px;
+  background: rgba(12, 16, 21, 0.4);
+}
+
+.stage-workflow-explainability-title {
+  margin: 0 0 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #d7e0e8;
+}
+
+.stage-workflow-explainability-sections {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.stage-workflow-explainability-section {
+  display: grid;
+  grid-template-columns: 7.5rem 1fr;
+  gap: 0.35rem 0.55rem;
+  align-items: start;
+}
+
+.stage-workflow-explainability-label {
+  margin: 0;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: #b7c5d1;
+}
+
+.stage-workflow-explainability-text {
+  margin: 0;
+  font-size: 0.74rem;
+  line-height: 1.35;
+  color: #d5dde6;
+}
+
+.stage-workflow-explainability-owner {
+  font-weight: 400;
+}
+
+.stage-workflow-explainability-note {
+  margin: 0.4rem 0 0;
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
+
+@media (max-width: 640px) {
+  .stage-workflow-explainability-section {
+    grid-template-columns: 1fr;
+    gap: 0.1rem;
+  }
+}
+
 .stage-operational-explain,
 .arrangement-operational-explain {
   margin: 0 0 0.65rem;

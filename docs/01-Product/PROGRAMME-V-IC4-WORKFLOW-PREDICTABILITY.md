@@ -150,4 +150,4 @@ IC4 complete and **approved** by the Principal Architect (2026-07-30).
 
 Review confirmed: predictability as interpretation of Programme I comparison / pre-Restore facts; prediction fidelity; stable wording; no simulation, planner, forecasting, prediction cache, or speculative execution.
 
-**Next:** [IC5 — Workflow Explainability](PROGRAMME-V-IC5-WORKFLOW-EXPLAINABILITY.md) (planning). Implementation awaits Principal Architect approval to commence.
+**Next:** [IC5 — Workflow Explainability](PROGRAMME-V-IC5-WORKFLOW-EXPLAINABILITY.md) (complete — awaiting Principal Architect review).

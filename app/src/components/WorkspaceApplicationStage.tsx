@@ -1,19 +1,18 @@
 /**
- * Purpose: Desktop surface — operator workflow composition, decision support,
- *   recoverability, and predictability explanations.
- * Owner: Frontend product shell (Programme V IC4)
+ * Purpose: Desktop surface — operator workflow composition through unified
+ *   explainability (Programme V IC1–IC5).
+ * Owner: Frontend product shell (Programme V IC5)
  * Inputs: optional profile, registry apps, work mode, launch + navigate;
  *   WorkspaceState via refreshObservedWorkspaceState; focus_desktop_window;
  *   list/capture/restore_desktop_arrangement
  * Outputs: Spatial desktop objects; Arrangement select + Restore; edit session;
- *   workflow / recommendation / recoverability / predictability projections
- *   (explain only, never execute)
+ *   IC1–IC4 projections + IC5 compositional summary (explain only, never execute)
  * Dependencies: stageDesktopUi, layoutsStageUi, desktopLayoutEditing,
  *   arrangementProductUi, operationalConfidenceUi, operatorWorkflowUi,
  *   workflowDecisionSupportUi, workflowRecoverabilityUi,
- *   workflowPredictabilityUi, ipc
- * Non-goals: Workflow/recommendation/recovery/simulation engines, scoring,
- *   automation, resumable workflow state, persistence, new set_bounds product IPC
+ *   workflowPredictabilityUi, workflowExplainabilityUi, ipc
+ * Non-goals: Workflow/recommendation/recovery/simulation/narrative engines,
+ *   scoring, automation, summary cache, persistence, new set_bounds product IPC
  *
  * Product State: Profile · Desktop · Arrangement · Restore
  * Interaction State (never persist): Editing · Preview · Selection · In-flight · Guidance
@@ -72,6 +71,7 @@ import {
   recoverabilityClassificationLabel,
 } from "../lib/workflowRecoverabilityUi";
 import { projectWorkflowPredictability } from "../lib/workflowPredictabilityUi";
+import { composeWorkflowExplainability } from "../lib/workflowExplainabilityUi";
 import {
   layoutStageDesktopWindows,
   nextStageSelectionKey,
@@ -560,6 +560,22 @@ export function WorkspaceApplicationStage({
     inFlight,
   ]);
 
+  const workflowExplainability = useMemo(
+    () =>
+      composeWorkflowExplainability({
+        workflow: operatorWorkflow,
+        recommendations: workflowRecommendations,
+        recoverability: workflowRecoverability,
+        predictability: workflowPredictability,
+      }),
+    [
+      operatorWorkflow,
+      workflowRecommendations,
+      workflowRecoverability,
+      workflowPredictability,
+    ],
+  );
+
   const saveSelectionAsWorkingSet = () => {
     if (!workspace) {
       onError("Choose a Profile to save an Arrangement.");
@@ -961,6 +977,43 @@ export function WorkspaceApplicationStage({
         <p className="stage-operator-workflow-path muted">
           {operatorWorkflow.pathLabel}
         </p>
+        <section
+          className="stage-workflow-explainability"
+          aria-label="Workflow explanation"
+          data-explainability-sections={workflowExplainability.sections.length}
+        >
+          <p className="stage-workflow-explainability-title">
+            Workflow explanation
+          </p>
+          <dl className="stage-workflow-explainability-sections">
+            {workflowExplainability.sections.map((section) => (
+              <div
+                key={section.id}
+                className="stage-workflow-explainability-section"
+                data-explainability-section={section.id}
+                data-source-projection={section.sourceProjection}
+                data-source-id={section.sourceId}
+              >
+                <dt className="stage-workflow-explainability-label">
+                  {section.label}
+                </dt>
+                <dd className="stage-workflow-explainability-text">
+                  {section.text}
+                  {section.owner ? (
+                    <span className="stage-workflow-explainability-owner muted">
+                      {" "}
+                      · Owner: {section.owner}
+                    </span>
+                  ) : null}
+                </dd>
+              </div>
+            ))}
+          </dl>
+          <p className="stage-workflow-explainability-note muted">
+            Unified explanation composes existing workflow projections — it does
+            not invent facts, cache a narrative, or execute actions.
+          </p>
+        </section>
         <ol className="stage-operator-workflow-steps">
           {operatorWorkflow.steps.map((step) => (
             <li

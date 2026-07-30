@@ -51,6 +51,8 @@ export interface OperatorWorkflowProjection {
   currentStepId: OperatorWorkflowStepId;
   /** Deterministic next valid action — never auto-executed. */
   nextAction: string;
+  /** Why the current step is current — facts only; consumed by IC5 composition. */
+  why: string;
   /** Explain Ownership line for the workflow as a whole. */
   line: string;
   /** Path label for chrome. */
@@ -349,6 +351,7 @@ export function projectOperatorWorkflow(
     steps,
     currentStepId,
     nextAction,
+    why,
     pathLabel: "Desktop · Arrangement · Preview · Restore",
     line: `Operator workflow · ${current.label} because ${why} · ${current.owner}`,
   };

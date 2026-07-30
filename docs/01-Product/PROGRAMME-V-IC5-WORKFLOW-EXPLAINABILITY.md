@@ -1,137 +1,78 @@
-# Programme V — Implementation Contract 5 (Planning)  
+# Programme V — Implementation Contract 5  
 # Workflow Explainability
 
 | Field | Value |
 |-------|-------|
 | **Authority** | Principal Architect |
-| **Implementation agent** | Cursor (after approval to commence) |
+| **Implementation agent** | Cursor |
 | **Programme** | [Programme V — Operator Workflows](PROGRAMME-V-OPERATOR-WORKFLOWS.md) |
 | **Contract** | Implementation Contract 5 |
-| **Status** | **Planned** — awaiting Principal Architect approval to commence |
+| **Status** | Complete — implemented; awaiting Principal Architect review |
 | **Date** | 2026-07-30 |
-| **Nature** | Planning contract — scopes IC5; does not authorise implementation until approved |
-| **Depends on** | [IC1](PROGRAMME-V-IC1-OPERATOR-WORKFLOW-COMPOSITION.md) (approved); [IC2](PROGRAMME-V-IC2-WORKFLOW-DECISION-SUPPORT.md) (approved); [IC3](PROGRAMME-V-IC3-WORKFLOW-RECOVERABILITY.md) (approved); [IC4](PROGRAMME-V-IC4-WORKFLOW-PREDICTABILITY.md) (approved) |
+| **Approved to commence** | 2026-07-30 |
+| **Depends on** | [IC1](PROGRAMME-V-IC1-OPERATOR-WORKFLOW-COMPOSITION.md)–[IC4](PROGRAMME-V-IC4-WORKFLOW-PREDICTABILITY.md) (approved) |
 
 ---
 
-## STOP
+## Objective (satisfied)
 
-**Do not begin implementation.**
+Enable an operator to understand an **entire workflow** from one unified explanation by composing Programme V IC1–IC4 projections — without a narrative engine or new ownership.
 
-This document defines IC5 for Principal Architect review.  
-**No code changes** may proceed until this contract is explicitly approved to commence.
-
----
-
-## Context
-
-Programme V has established four complementary projections:
-
-| Contract | Operator question |
-|----------|-------------------|
-| **IC1** | Where am I in the workflow? |
-| **IC2** | What should I do next? |
-| **IC3** | Why can’t I continue? |
-| **IC4** | What will happen if I continue? |
-
-Each is surfaced independently on Desktop workflow chrome. IC5 should improve **operator explainability** by composing those projections into a **single coherent narrative** of the current workflow — without introducing a narrative engine or new ownership.
-
----
-
-## Objective
-
-Enable an operator to understand an **entire workflow** from one explanatory view rather than piecing together multiple UI surfaces.
-
-Project a unified workflow summary that identifies:
-
-1. **Current phase** (from IC1)  
-2. **Recommendation** (from IC2)  
-3. **Recoverability** (from IC3)  
-4. **Predicted outcome** (from IC4)  
-
-…using **consistent What → Why → Owner** terminology across the composed explanation.
-
-Goal: improve **narrative coherence**, not invent new facts or a storytelling subsystem.
+Answers: *Can Workspace explain my current workflow as one coherent story?*
 
 ---
 
 ## Existing authorities consumed
 
-| Authority | Role in IC5 | Change? |
-|-----------|-------------|---------|
-| Programme V IC1 workflow projection | Current phase / progress / next action | **Consumed** |
-| Programme V IC2 recommendations | Recommended next action + ownership | **Consumed** |
-| Programme V IC3 recoverability | Blockage classification + next step | **Consumed** |
-| Programme V IC4 predictability | Before-action outcome projection | **Consumed** |
-| Programme I IC5/IC6 explanations | Activity / currency / pre-Restore (if composed) | **Consumed** |
-| WorkspaceState / Capture / Restore | Unchanged execution authorities | **Unchanged** |
+| Authority | Role | Change? |
+|-----------|------|---------|
+| IC1 `projectOperatorWorkflow` | What / Why / Owner / fallback Next action | **Consumed** |
+| IC2 `projectWorkflowRecommendations` | Recommended next action | **Consumed** |
+| IC3 `projectWorkflowRecoverability` | Recoverability (when present) | **Consumed** |
+| IC4 `projectWorkflowPredictability` | Expected outcome (when present) | **Consumed** |
+| WorkspaceState / Capture / Restore | Unchanged | **Unchanged** |
 
----
-
-## Existing runtime state consumed
-
-| State | Use |
-|-------|-----|
-| Outputs of `projectOperatorWorkflow` | Phase, path, next action |
-| Outputs of `projectWorkflowRecommendations` | Recommendation lines |
-| Outputs of `projectWorkflowRecoverability` | Recoverability conditions |
-| Outputs of `projectWorkflowPredictability` | Predicted outcomes |
-| In-flight op (session) | Suppress or note transient state |
-
-**No narrative engine. No summary cache. No new ownership.**
-
-IC5 composes projection **outputs** already produced by IC1–IC4. It must not re-derive comparison, restore planning, or recommendation logic.
+IC5 **composes outputs**. It does not call Programme I comparison helpers or re-derive IC1–IC4 facts.
 
 ---
 
 ## Projection / composition performed
 
-### Explainability summary (derived only)
+`composeWorkflowExplainability` emits a fixed section sequence:
 
-Illustrative structure (not a mandated layout):
+| Section | Source | Selection rule |
+|---------|--------|----------------|
+| What | IC1 current step `label · detail` | Always |
+| Why | IC1 `workflow.why` | Always |
+| Owner | IC1 current step `owner` | Always |
+| Next action | IC2 first recommendation, else IC1 `nextAction` | Declaration order |
+| Recoverability | IC3 first condition | If any (declaration order) |
+| Expected outcome | IC4 first outcome | If any (declaration order) |
 
-```text
-Workflow · Desktop → Arrangement → Preview → Restore
-Phase · Arrangement (active)
-Recommendation · Update recommended because … · Owner: Arrangement Comparison
-Recoverability · Update unavailable / Restore available · Owner: …
-Predictability · Restore will move N · leave M unchanged · Owner: Restore Projection
-```
+### Narrative fidelity
 
-Each section must preserve:
+Section text is built from source fields only. Information gaps from IC4 are preserved (`Unavailable information · …`). No smoothing of uncertainty.
 
-- **What**  
-- **Why**  
-- **Owner**  
+### Explanation traceability
 
-Terminology must align with IC1–IC4 wording (no paraphrasing that invents new claims).
+Every section carries:
 
-### Determinism and consistency
+- `sourceProjection` — `ic1_workflow` | `ic2_recommendation` | `ic3_recoverability` | `ic4_predictability`  
+- `sourceId` — originating step / recommendation / condition / outcome id  
 
-For identical IC1–IC4 projection inputs/outputs, the summary must always produce the same:
+Exposed as `data-source-projection` / `data-source-id` on Desktop chrome for engineering attribution (not operator-facing implementation detail copy).
 
-- section ordering  
-- selected primary recommendation / recoverability / predictability items (fixed selection rules, not ranking scores)  
-- wording (prefer verbatim reuse of projection lines)  
-- ownership attribution  
+### Stability
 
-Selection of “primary” items, if needed for brevity, must use **fixed declaration-order rules** (e.g. first recommendation, first recoverable condition, first predictability outcome) — never scoring.
+Identical IC1–IC4 outputs ⇒ identical sections, wording, ownership, and ordering. No scoring.
 
 ---
 
-## Explicit non-goals
+## Explicit non-goals (honoured)
 
-IC5 must **not** introduce:
+No narrative engine, summary cache, explanation persistence, AI-generated summaries, natural-language inference, workflow memory, or additional ownership.
 
-- Narrative / storytelling engine  
-- Summary cache or persisted workflow narrative  
-- LLM or generative explanation  
-- New comparison, recommendation, recovery, or prediction logic  
-- Re-ranking / priority scoring of projections  
-- Automatic execution based on the summary  
-- Replacement of IC1–IC4 surfaces (compose; may still keep detail lists)
-
-The summary **composes** existing explanations — it does not author new truth.
+IC1–IC4 detail surfaces remain available alongside the unified summary.
 
 ---
 
@@ -139,73 +80,41 @@ The summary **composes** existing explanations — it does not author new truth.
 
 | Boundary | Affirmation |
 |----------|-------------|
-| WorkspaceState | Sole runtime desktop truth |
-| Restore | Sole product OS positioning path |
-| IC1–IC4 projections | Remain the authorities for their dimensions |
-| Explainability (IC5) | Composition only — owns no execution and no new facts |
+| IC1–IC4 projections | Remain authorities for their dimensions |
+| Explainability (IC5) | Composition only — owns no facts and no execution |
+| WorkspaceState / Restore | Unchanged |
 
-**Architectural test (expected for IC5 as scoped):**
-
-1. Existing WorkspaceState / IC1–IC4 projections? **Yes**  
-2. Compose existing capabilities? **Yes**  
-3. Deterministic? **Yes**  
-4. Ownership unchanged? **Yes**  
+**Architectural test:** existing projections? **Yes** · compose? **Yes** · deterministic? **Yes** · ownership unchanged? **Yes**
 
 ---
 
-## Proposed deliverables (when approved to implement)
+## Validation
 
-1. Pure helper that composes IC1–IC4 projection outputs into a unified workflow summary.  
-2. Desktop workflow surface for the end-to-end explanation (alongside or above detail lists).  
-3. Consistent What → Why → Owner terminology across the summary.  
-4. Tests for stable composition / selection rules / wording reuse.  
-5. This contract updated to **Complete** with validation evidence.
+- `pnpm typecheck` · `pnpm test` · `pnpm build`
+- Working tree clean
+- Documentation complete
 
 ---
 
-## Validation (implementation phase)
+## Files touched
 
-- `git status` — working tree clean  
-- `pnpm typecheck` · `pnpm test` · `pnpm build`  
-- No narrative engine / summary cache / new ownership  
-- No duplicate comparison logic  
-
----
-
-## Architectural risks
-
-| Risk | Mitigation |
-|------|------------|
-| Soft narrative engine | Verbatim reuse of IC1–IC4 lines; fixed section templates |
-| Summary cache | Derive only; never persist |
-| Paraphrase drift | Prefer projection `line` / fields unchanged |
-| Hidden ranking | Declaration-order selection rules only |
-| Replacing detail surfaces | Compose; keep IC1–IC4 detail chrome available |
+- `app/src/lib/workflowExplainabilityUi.ts`
+- `app/src/lib/operatorWorkflowUi.ts` (exposes structured `why` for composition)
+- `app/src/components/WorkspaceApplicationStage.tsx`
+- `app/src/App.css`
+- `tests/workflow-explainability-ui.test.ts`
+- This document; Programme V charter link
 
 ---
 
 ## Success criteria
 
-IC5 succeeds when an operator can answer from a **single coherent explanation**:
-
-- Where am I in the workflow?  
-- What is recommended next?  
-- Why can’t I continue (if blocked)?  
-- What will happen if I continue?  
-- Who owns each of those truths?  
-
-…without Workspace introducing narrative authority beyond composing existing Programme I/V projections.
+IC5 succeeds when an operator can understand the complete state of a workflow from one unified explanation while every statement remains attributable to existing Workspace state and Programme I/V projections.
 
 ---
 
-## Stop condition (this planning document)
+## Stop condition
 
-IC5 planning is complete when objective, constraints, non-goals, consumed authorities/state, and success criteria are recorded.
+IC5 implementation complete for Principal Architect review.
 
-**Cursor must not commence IC5 implementation until the Principal Architect approves this contract for execution.**
-
----
-
-## Recommendation to Principal Architect
-
-Approve IC5 to commence as **workflow explainability**: a unified compositional summary of IC1–IC4 projections with consistent What → Why → Owner terminology — no narrative engine, summary cache, or new ownership.
+**Do not commence further Programme V work until the Principal Architect approves IC5 and authorises the next step (including any programme conclusion).**
