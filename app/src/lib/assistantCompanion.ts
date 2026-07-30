@@ -301,6 +301,76 @@ function summariseContinuity(state: WorkspaceState): string {
   return `${parts.join(". ")}.`;
 }
 
+function summariseBehaviour(state: WorkspaceState): string {
+  const behaviour = state.behaviour;
+  if (!behaviour || behaviour.sample_count <= 0) {
+    return "No retained observation samples are available for desktop behaviour yet.";
+  }
+  const parts: string[] = [
+    `${behaviour.sample_count} observation sample${
+      behaviour.sample_count === 1 ? "" : "s"
+    }`,
+  ];
+  if (behaviour.coverage_started_at && behaviour.coverage_ended_at) {
+    parts.push(
+      `coverage ${behaviour.coverage_started_at} → ${behaviour.coverage_ended_at}`,
+    );
+  }
+  if (behaviour.focus_transitions.length > 0) {
+    const recent = behaviour.focus_transitions.slice(-5).map((transition) => {
+      const from = transition.previous?.title || transition.previous?.hwnd || "none";
+      const to = transition.current?.title || transition.current?.hwnd || "none";
+      return `${from} → ${to}`;
+    });
+    parts.push(`focus switches: ${recent.join("; ")}`);
+  } else {
+    parts.push("no focus switches in the sample window");
+  }
+  if (behaviour.window_revisits.length > 0) {
+    parts.push(
+      `revisits: ${behaviour.window_revisits
+        .slice(0, 5)
+        .map(
+          (revisit) =>
+            `${revisit.window.title || revisit.window.hwnd} (${revisit.focus_count})`,
+        )
+        .join(", ")}`,
+    );
+  }
+  if (behaviour.current_focus) {
+    const span =
+      behaviour.current_focus_sample_span_seconds != null
+        ? ` for ~${behaviour.current_focus_sample_span_seconds}s of samples`
+        : "";
+    parts.push(
+      `current focus ${behaviour.current_focus.title || behaviour.current_focus.hwnd}${span}`,
+    );
+  }
+  if (behaviour.coverage_gaps.length > 0) {
+    parts.push(
+      `${behaviour.coverage_gaps.length} coverage gap${
+        behaviour.coverage_gaps.length === 1 ? "" : "s"
+      } (≥30m between samples)`,
+    );
+  }
+  return `${parts.join(". ")}.`;
+}
+
+function summariseStopped(state: WorkspaceState): string {
+  const behaviour = state.behaviour;
+  if (!behaviour || behaviour.recent_focus_spans.length === 0) {
+    return "No completed focus spans are recorded in the retained samples yet.";
+  }
+  const recent = behaviour.recent_focus_spans.slice(-5).reverse();
+  return `Recently left focus (sample-based): ${recent
+    .map((span) => {
+      const seconds =
+        span.sample_span_seconds != null ? ` ~${span.sample_span_seconds}s` : "";
+      return `${span.window.title || span.window.hwnd}${seconds}`;
+    })
+    .join("; ")}.`;
+}
+
 /**
  * Answer common desktop questions from observed facts without calling compose.
  * Returns null when the ask needs the broader assistant surface.
@@ -331,12 +401,31 @@ export function answerDesktopQuestionLocally(
   ) {
     return summariseWorkingOn(state);
   }
+  if (
+    /what have i been working|been working on|focus history|behaviour|behavior|task switch|revisit/.test(
+      trimmed,
+    )
+  ) {
+    return summariseBehaviour(state);
+  }
+  if (/what did i stop|stopped doing|left focus|interrupted/.test(trimmed)) {
+    return summariseStopped(state);
+  }
   if (/belong|related|together|group/.test(trimmed)) {
     return summariseBelongsTogether(state, facts.arrangements);
   }
   if (
-    /how long|been open|first seen|continuity|longest.?running/.test(trimmed)
+    /how long|been open|first seen|continuity|longest.?running|focus duration/.test(
+      trimmed,
+    )
   ) {
+    if (state.behaviour?.current_focus_sample_span_seconds != null) {
+      const title =
+        state.behaviour.current_focus?.title ||
+        state.focused_window?.title ||
+        "current focus";
+      return `Current focus ${title} has an observed sample span of ~${state.behaviour.current_focus_sample_span_seconds}s (not OS active time). ${summariseContinuity(state)}`;
+    }
     return summariseContinuity(state);
   }
   if (/what changed|what('s| is) new|delta|recent change/.test(trimmed)) {
@@ -422,6 +511,12 @@ export function enrichAskWithDesktopObservation(
         .slice(0, 6)
         .map((group) => `${group.criterion}:${group.label}(${group.member_ids.length})`)
         .join(", ")}`,
+    );
+  }
+  const behaviour = state.behaviour;
+  if (behaviour && behaviour.sample_count > 0) {
+    parts.push(
+      `behaviour: ${behaviour.sample_count} samples, ${behaviour.focus_transitions.length} focus switches`,
     );
   }
 

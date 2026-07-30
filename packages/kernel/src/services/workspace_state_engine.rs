@@ -20,6 +20,7 @@ use workspace_database::{
 };
 use workspace_domain::{
     ActorContext, IntentContext, WorkspaceObservationDelta, WorkspaceState,
+    DESKTOP_BEHAVIOUR_SAMPLE_LIMIT,
 };
 
 use crate::error::Result;
@@ -37,25 +38,23 @@ impl WorkspaceStateEngine {
         WorkspaceState::from_observation_and_delta(observation, delta)
     }
 
-    /// Load latest observation + delta and project WorkspaceState.
+    /// Load latest observation history + delta and project WorkspaceState.
     ///
-    /// Observation, previous pass, arrangement membership, and identity facts are
-    /// read under one database lock so windows and `latest_delta` share one pass.
+    /// Recent snapshots, arrangement membership, and identity facts are read under
+    /// one database lock so windows, latest_delta, and behaviour share one pass set.
     pub(crate) fn get_current(
         db: &Arc<Mutex<Database>>,
         _actor: &ActorContext,
         _intent: &IntentContext,
     ) -> Result<WorkspaceState> {
-        let (observation, delta, membership, identities) = {
+        let (history, membership, identities) = {
             let guard = db.lock().expect("database lock poisoned");
             let repo = ObservationPassRepository::new(&guard);
-            let observation = repo.load_latest_snapshot()?;
-            let previous = repo.load_previous_snapshot()?;
-            let delta = ObservationDeltaService::from_loaded(previous.as_ref(), observation.as_ref());
+            let history = repo.load_recent_snapshots(DESKTOP_BEHAVIOUR_SAMPLE_LIMIT)?;
             let membership =
                 DesktopArrangementRepository::new(&guard).list_active_membership_facts(2_000)?;
-            let identity_ids: Vec<String> = observation
-                .as_ref()
+            let identity_ids: Vec<String> = history
+                .last()
                 .map(|snapshot| {
                     snapshot
                         .windows
@@ -72,11 +71,20 @@ impl WorkspaceStateEngine {
                 .unwrap_or_default();
             let identities =
                 ObservationWindowIdentityRepository::new(&guard).list_by_ids(&identity_ids)?;
-            (observation, delta, membership, identities)
+            (history, membership, identities)
         };
-        Ok(Self::build(observation.as_ref(), &delta)
-            .with_arrangement_membership(&membership)
-            .with_identity_continuity(&identities))
+        let observation = history.last();
+        let previous = if history.len() >= 2 {
+            history.get(history.len() - 2)
+        } else {
+            None
+        };
+        let delta = ObservationDeltaService::from_loaded(previous, observation);
+        Ok(
+            WorkspaceState::from_observation_delta_and_history(observation, &delta, &history)
+                .with_arrangement_membership(&membership)
+                .with_identity_continuity(&identities),
+        )
     }
 }
 
@@ -201,6 +209,11 @@ mod tests {
             Some("alpha.exe")
         );
         assert!(!state.metadata.has_changes);
+        assert_eq!(state.behaviour.sample_count, 1);
+        assert_eq!(
+            state.behaviour.current_focus.as_ref().and_then(|w| w.stable_window_id.as_deref()),
+            Some("stable-a")
+        );
         assert_eq!(
             state.metadata.latest_delta_reference.as_deref(),
             Some("->pass-1")
@@ -232,6 +245,11 @@ mod tests {
         assert_eq!(
             state.metadata.observation_pass_id.as_deref(),
             state.latest_delta.current_pass_id.as_deref()
+        );
+        assert_eq!(state.behaviour.sample_count, 2);
+        assert!(
+            state.behaviour.focus_transitions.is_empty()
+                || state.behaviour.focus_transitions.len() <= 1
         );
         assert_eq!(
             state.focused_window.as_ref().and_then(|w| w.stable_window_id.as_deref()),

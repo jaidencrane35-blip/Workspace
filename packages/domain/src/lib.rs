@@ -20,6 +20,7 @@ pub mod context;
 pub mod decision_engine;
 pub mod decision_queue;
 pub mod desktop_arrangement;
+pub mod desktop_behaviour;
 pub mod desktop_grouping;
 pub mod discovery;
 pub mod entities;
@@ -238,6 +239,11 @@ pub use desktop_arrangement::{
     DesktopArrangementEntryDiagnostic, DesktopArrangementEntryInput, DesktopArrangementError,
     DesktopArrangementRestoreAction, DesktopArrangementRestorePlan,
     DesktopArrangementRestoreResult, DesktopArrangementStatus, DesktopWindowFocusResult,
+};
+pub use desktop_behaviour::{
+    project_desktop_behaviour, DesktopBehaviourTimeline, DesktopCoverageGap,
+    DesktopFocusTransition, DesktopObservedFocusSpan, DesktopWindowRevisit,
+    DESKTOP_BEHAVIOUR_GAP_SECONDS, DESKTOP_BEHAVIOUR_SAMPLE_LIMIT,
 };
 pub use desktop_grouping::{
     group_desktop_members, DesktopGroupCriterion, DesktopGroupMemberFact, DesktopWindowGroup,

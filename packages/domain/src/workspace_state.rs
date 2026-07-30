@@ -9,6 +9,9 @@
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+use crate::desktop_behaviour::{
+    project_desktop_behaviour, DesktopBehaviourTimeline,
+};
 use crate::desktop_grouping::{
     group_desktop_members, DesktopGroupCriterion, DesktopGroupMemberFact, DesktopWindowGroup,
 };
@@ -185,6 +188,8 @@ pub struct WorkspaceState {
     pub window_groups: Vec<DesktopWindowGroup>,
     /// Latest observation delta captured with this projection (atomic with windows).
     pub latest_delta: WorkspaceObservationDelta,
+    /// Deterministic behaviour timeline from retained observation samples.
+    pub behaviour: DesktopBehaviourTimeline,
     pub authority_effect: String,
 }
 
@@ -209,6 +214,7 @@ impl WorkspaceState {
             monitors: Vec::new(),
             window_groups: Vec::new(),
             latest_delta: WorkspaceObservationDelta::empty(),
+            behaviour: DesktopBehaviourTimeline::empty(),
             authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
         }
     }
@@ -218,13 +224,35 @@ impl WorkspaceState {
         observation: Option<&WorkspaceObservationSnapshot>,
         delta: &WorkspaceObservationDelta,
     ) -> Self {
+        Self::from_observation_delta_and_history(observation, delta, &[])
+    }
+
+    /// Build projected state including a bounded behaviour timeline from history.
+    ///
+    /// `history` must be oldest → newest. When empty, behaviour uses the current
+    /// observation alone (one-sample timeline) when present.
+    pub fn from_observation_delta_and_history(
+        observation: Option<&WorkspaceObservationSnapshot>,
+        delta: &WorkspaceObservationDelta,
+        history: &[WorkspaceObservationSnapshot],
+    ) -> Self {
         let created_at = observation_now_rfc3339();
+        let behaviour = if history.is_empty() {
+            match observation {
+                Some(snapshot) => project_desktop_behaviour(std::slice::from_ref(snapshot)),
+                None => DesktopBehaviourTimeline::empty(),
+            }
+        } else {
+            project_desktop_behaviour(history)
+        };
+
         let Some(snapshot) = observation else {
             let mut empty = Self::empty();
             empty.metadata.created_at = created_at;
             empty.metadata.has_changes = delta.has_changes;
             empty.metadata.latest_delta_reference = delta_reference(delta);
             empty.latest_delta = delta.clone();
+            empty.behaviour = behaviour;
             return empty;
         };
 
@@ -267,6 +295,7 @@ impl WorkspaceState {
             monitors,
             window_groups,
             latest_delta: delta.clone(),
+            behaviour,
             authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
         }
     }
@@ -297,6 +326,7 @@ impl WorkspaceState {
             monitors: Vec::new(),
             window_groups,
             latest_delta: WorkspaceObservationDelta::empty(),
+            behaviour: DesktopBehaviourTimeline::empty(),
             authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
         }
     }

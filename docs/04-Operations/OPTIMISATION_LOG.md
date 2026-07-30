@@ -90,6 +90,23 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 
 ## Cycles
 
+### Cycle: v9-1-desktop-behaviour-timeline
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Cycle number** | V9-1 |
+| **Goal** | Deterministic focus-behaviour timeline on WorkspaceState from retained observation samples |
+| **Problem** | Runtime understood current desktop state but not behaviour over the retained pass history |
+| **Analysis** | Reuse adjacent snapshot comparison + load_recent_snapshots; publish sample-based transitions/revisits/gaps/spans |
+| **Changes** | `desktop_behaviour` module; `WorkspaceState.behaviour`; single-lock history load; Assistant behaviour answers |
+| **Files affected** | domain desktop_behaviour + workspace_state + lib, observation repo, state engine, domain.ts, assistantCompanion, this log |
+| **Validation** | typecheck / test / build / architecture / ipc / ui-boundary (+ domain behaviour tests) |
+| **Deleted / reduced** | Separate latest/previous loads in state engine (history supplies both) |
+| **Next recommended cycle** | Focus-follow / co-occurrence affinities feeding grouping confidence |
+
+---
+
 ### Cycle: v8-eval-pass-2-capability-plateau
 
 | Field | Value |

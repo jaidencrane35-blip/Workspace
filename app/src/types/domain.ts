@@ -6866,6 +6866,55 @@ export interface DesktopWindowGroup {
   authority_effect: string;
 }
 
+/** Observed focus change between adjacent observation samples. */
+export interface DesktopFocusTransition {
+  at: string;
+  from_pass_id: string;
+  to_pass_id: string;
+  previous: ObservationWindowRef | null;
+  current: ObservationWindowRef | null;
+}
+
+/** How often a window became focused across retained samples. */
+export interface DesktopWindowRevisit {
+  window: ObservationWindowRef;
+  focus_count: number;
+  last_focused_at: string;
+}
+
+/** Interrupted observation coverage between retained samples. */
+export interface DesktopCoverageGap {
+  after_pass_id: string;
+  before_pass_id: string;
+  previous_captured_at: string;
+  next_captured_at: string;
+  gap_seconds: number;
+}
+
+/** Completed observed focus span (sample-based, not OS active time). */
+export interface DesktopObservedFocusSpan {
+  window: ObservationWindowRef;
+  started_at: string;
+  ended_at: string;
+  sample_span_seconds: number | null;
+  sample_count: number;
+}
+
+/** Deterministic behaviour timeline projected onto WorkspaceState. */
+export interface DesktopBehaviourTimeline {
+  sample_count: number;
+  coverage_started_at: string | null;
+  coverage_ended_at: string | null;
+  focus_transitions: DesktopFocusTransition[];
+  window_revisits: DesktopWindowRevisit[];
+  recent_focus_spans: DesktopObservedFocusSpan[];
+  current_focus: ObservationWindowRef | null;
+  current_focus_started_at: string | null;
+  current_focus_sample_span_seconds: number | null;
+  coverage_gaps: DesktopCoverageGap[];
+  authority_effect: string;
+}
+
 export interface WorkspaceState {
   metadata: WorkspaceStateMetadata;
   focused_window: ObservationWindowRef | null;
@@ -6875,6 +6924,8 @@ export interface WorkspaceState {
   window_groups: DesktopWindowGroup[];
   /** Latest observation delta projected with this state (atomic with windows). */
   latest_delta: WorkspaceObservationDelta;
+  /** Deterministic behaviour timeline from retained observation samples. */
+  behaviour: DesktopBehaviourTimeline;
   authority_effect: string;
 }
 

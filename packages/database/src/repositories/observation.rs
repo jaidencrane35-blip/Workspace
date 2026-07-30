@@ -197,6 +197,34 @@ impl<'a> ObservationPassRepository<'a> {
         Ok(Some(snapshot))
     }
 
+    /// Loads recent full snapshots (oldest → newest), bounded by `limit` (max 50).
+    ///
+    /// Identities are omitted: the shared identity registry is live and must not be
+    /// presented as historical pass state.
+    pub fn load_recent_snapshots(
+        &self,
+        limit: usize,
+    ) -> Result<Vec<WorkspaceObservationSnapshot>> {
+        let limit = limit.clamp(1, 50) as i64;
+        let mut stmt = self.db.connection().prepare(
+            "SELECT id
+             FROM observation_passes
+             ORDER BY captured_at DESC, id DESC
+             LIMIT ?1",
+        )?;
+        let ids: Vec<String> = stmt
+            .query_map([limit], |row| row.get(0))?
+            .collect::<std::result::Result<Vec<_>, _>>()
+            .map_err(crate::error::DatabaseError::from)?;
+        let mut snapshots = Vec::with_capacity(ids.len());
+        for pass_id in ids.into_iter().rev() {
+            if let Some(snapshot) = self.load_snapshot(&pass_id)? {
+                snapshots.push(snapshot);
+            }
+        }
+        Ok(snapshots)
+    }
+
     /// Loads the most recent full snapshot.
     pub fn load_latest_snapshot(&self) -> Result<Option<WorkspaceObservationSnapshot>> {
         let Some(pass) = self.get_latest()? else {
