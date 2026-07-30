@@ -171,7 +171,7 @@ impl WorkspaceEnvironmentService {
             });
         }
 
-        let window_groups = build_groups(&env_windows);
+        let window_groups = project_groups_from_workspace_state(workspace_state, &env_windows);
         let layout_associations = layout
             .map(|l| {
                 vec![EnvironmentLayoutAssociation {
@@ -427,12 +427,57 @@ fn app_matches_titles(name: &str, identifier: Option<&str>, titles_lower: &[Stri
     false
 }
 
-fn build_groups(windows: &[EnvironmentWindow]) -> Vec<EnvironmentWindowGroup> {
+fn project_groups_from_workspace_state(
+    workspace_state: &WorkspaceState,
+    env_windows: &[EnvironmentWindow],
+) -> Vec<EnvironmentWindowGroup> {
     use workspace_domain::{
         group_desktop_members, DesktopGroupCriterion, DesktopGroupMemberFact,
     };
 
-    let members: Vec<DesktopGroupMemberFact> = windows
+    let mut groups = Vec::new();
+    for group in &workspace_state.window_groups {
+        let window_ids: Vec<String> = group
+            .member_ids
+            .iter()
+            .filter_map(|member_id| {
+                let hwnd = workspace_state.windows.iter().find_map(|window| {
+                    if window.member_id() == *member_id || window.hwnd == *member_id {
+                        Some(window.hwnd.as_str())
+                    } else {
+                        None
+                    }
+                })?;
+                env_windows
+                    .iter()
+                    .find(|window| window.hwnd == hwnd)
+                    .map(|window| window.id.clone())
+            })
+            .collect();
+        if window_ids.is_empty() {
+            continue;
+        }
+        let process_id = if group.criterion == "process_id" {
+            group.fact_key.parse::<u32>().ok()
+        } else {
+            None
+        };
+        groups.push(EnvironmentWindowGroup {
+            id: group.id.clone(),
+            label: group.label.clone(),
+            application_id: None,
+            process_id,
+            window_ids,
+            project_id: None,
+            explanation: format!(
+                "Projected from WorkspaceState {} group \"{}\".",
+                group.criterion, group.fact_key
+            ),
+        });
+    }
+
+    // Matched-application groups stay Environment-local (registry match facts).
+    let members: Vec<DesktopGroupMemberFact> = env_windows
         .iter()
         .map(|window| DesktopGroupMemberFact {
             member_id: window.id.clone(),
@@ -444,46 +489,36 @@ fn build_groups(windows: &[EnvironmentWindow]) -> Vec<EnvironmentWindowGroup> {
             matched_application_name: window.matched_application_name.clone(),
         })
         .collect();
-
-    let mut groups: Vec<EnvironmentWindowGroup> = group_desktop_members(
-        &members,
-        &[
-            DesktopGroupCriterion::ProcessId,
-            DesktopGroupCriterion::MatchedApplication,
-        ],
-    )
-    .into_iter()
-    .map(|group| {
-        let process_id = if group.criterion == "process_id" {
-            group.fact_key.parse::<u32>().ok()
-        } else {
-            None
-        };
-        let application_id = if group.criterion == "matched_application" {
-            Some(group.fact_key.clone())
-        } else {
-            None
-        };
-        let project_id = application_id.as_ref().and_then(|app_id| {
-            windows
-                .iter()
-                .find(|window| window.matched_application_id.as_deref() == Some(app_id.as_str()))
-                .and_then(|window| window.project_id.clone())
-        });
-        EnvironmentWindowGroup {
-            id: group.id,
-            label: group.label.clone(),
-            application_id,
-            process_id,
-            window_ids: group.member_ids,
-            project_id,
-            explanation: format!(
-                "Grouped by {} fact \"{}\" via desktop grouping engine.",
-                group.criterion, group.fact_key
-            ),
-        }
-    })
-    .collect();
+    groups.extend(
+        group_desktop_members(
+            &members,
+            &[DesktopGroupCriterion::MatchedApplication],
+        )
+        .into_iter()
+        .map(|group| {
+            let application_id = Some(group.fact_key.clone());
+            let project_id = application_id.as_ref().and_then(|app_id| {
+                env_windows
+                    .iter()
+                    .find(|window| {
+                        window.matched_application_id.as_deref() == Some(app_id.as_str())
+                    })
+                    .and_then(|window| window.project_id.clone())
+            });
+            EnvironmentWindowGroup {
+                id: group.id,
+                label: group.label.clone(),
+                application_id,
+                process_id: None,
+                window_ids: group.member_ids,
+                project_id,
+                explanation: format!(
+                    "Grouped by matched_application fact \"{}\" via desktop grouping engine.",
+                    group.fact_key
+                ),
+            }
+        }),
+    );
 
     groups.sort_by(|a, b| a.id.cmp(&b.id));
     groups

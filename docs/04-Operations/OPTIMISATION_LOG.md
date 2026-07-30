@@ -90,6 +90,23 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 
 ## Cycles
 
+### Cycle: v8-4-environment-projects-workspace-state-groups
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Cycle number** | V8-4 |
+| **Goal** | Environment window groups consume WorkspaceState groups instead of rebuilding process buckets |
+| **Problem** | Environment still ran a parallel process grouping path after V8-1 domain engine adoption |
+| **Analysis** | Remap authoritative member ids → env_window ids; keep only matched_application as Environment-local (registry facts) |
+| **Changes** | `project_groups_from_workspace_state`; deleted Environment process re-bucketing |
+| **Files affected** | workspace_environment.rs, this log |
+| **Validation** | typecheck / test / build / architecture / ipc / ui-boundary (+ environment grouping tests) |
+| **Deleted / reduced** | Environment ProcessId re-group path |
+| **Next recommended cycle** | Capability rescore; stop after two empty evals or platform/architecture gates |
+
+---
+
 ### Cycle: v8-3-identity-continuity-on-workspace-state
 
 | Field | Value |
