@@ -7,7 +7,9 @@
 | **Trigger** | Human visual review of Milestone D |
 | **Branch** | `cursor/product-reality-alignment-audit-34a5` |
 | **Concept references** | [`references/workspace-concept-01.png`](references/workspace-concept-01.png), [`references/workspace-concept-02.png`](references/workspace-concept-02.png) |
+| **Interpretation** | [WORKSPACE-REFERENCE-INTERPRETATION.md](WORKSPACE-REFERENCE-INTERPRETATION.md) |
 | **Supersedes (product model)** | Parts of [WORKSPACE-PRODUCT-ALIGNMENT-AUDIT.md](WORKSPACE-PRODUCT-ALIGNMENT-AUDIT.md) and [WORKSPACE-PRODUCT-DELIVERY-ROADMAP.md](WORKSPACE-PRODUCT-DELIVERY-ROADMAP.md) that frame Workspace as a user-built management dashboard |
+| **Related** | [WORKSPACE-VISUAL-DIRECTION.md](WORKSPACE-VISUAL-DIRECTION.md), [PRODUCT-VISION.md](PRODUCT-VISION.md) |
 | **Audience** | Product, engineering, commercial review |
 
 **Do not implement from this document until human approval.**  

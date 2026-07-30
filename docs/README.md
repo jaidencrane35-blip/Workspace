@@ -6,8 +6,8 @@
 
 ## Quick Start
 
-| A new contributor | [Project Constitution](00-Constitution/PROJECT-CONSTITUTION.md) → [AI Engineering Governance](00-Governance/AI_ENGINEERING_GOVERNANCE.md) → [Engineering Governance](03-Engineering/ENGINEERING-GOVERNANCE.md) → [Visual Direction](01-Product/WORKSPACE-VISUAL-DIRECTION.md) |
-| Making a product decision | [Product Vision](01-Product/PRODUCT-VISION.md) → [Visual Direction](01-Product/WORKSPACE-VISUAL-DIRECTION.md) → [Product Reality Alignment Audit](01-Product/WORKSPACE-PRODUCT-REALITY-ALIGNMENT-AUDIT.md) → [Product Delivery Roadmap](01-Product/WORKSPACE-PRODUCT-DELIVERY-ROADMAP.md) |
+| A new contributor | [Project Constitution](00-Constitution/PROJECT-CONSTITUTION.md) → [AI Engineering Governance](00-Governance/AI_ENGINEERING_GOVERNANCE.md) → [Reference Interpretation](01-Product/WORKSPACE-REFERENCE-INTERPRETATION.md) → [Visual Direction](01-Product/WORKSPACE-VISUAL-DIRECTION.md) |
+| Making a product decision | [Product Vision](01-Product/PRODUCT-VISION.md) → [Reference Interpretation](01-Product/WORKSPACE-REFERENCE-INTERPRETATION.md) → [Visual Direction](01-Product/WORKSPACE-VISUAL-DIRECTION.md) → [Product Reality Alignment Audit](01-Product/WORKSPACE-PRODUCT-REALITY-ALIGNMENT-AUDIT.md) → [Product Delivery Roadmap](01-Product/WORKSPACE-PRODUCT-DELIVERY-ROADMAP.md) |
 | Starting a major batch | [Batch Alignment Check](03-Engineering/BATCH-ALIGNMENT-CHECK.md) → [Engineering Governance](03-Engineering/ENGINEERING-GOVERNANCE.md) → [AI Engineering Governance](00-Governance/AI_ENGINEERING_GOVERNANCE.md) |
 | Human visual review | [Human Review Policy](03-Engineering/HUMAN-REVIEW-POLICY.md) → [Visual Review Checklist](03-Engineering/VISUAL-REVIEW-CHECKLIST.md) |
 | Designing architecture | [Architecture Principles](02-Architecture/ARCHITECTURE-PRINCIPLES.md) → [System Overview](02-Architecture/SYSTEM-OVERVIEW.md) |
@@ -51,8 +51,9 @@ What Workspace is, who it serves, and how scope is managed.
 | Document | Description |
 |----------|-------------|
 | [Product Vision](01-Product/PRODUCT-VISION.md) | Product goals, domains, and target experience |
-| [Workspace Visual Direction](01-Product/WORKSPACE-VISUAL-DIRECTION.md) | Concept-art north star; literal vs non-literal interpretation |
-| [Visual references](01-Product/references/README.md) | Original concept images (direction, not pixel specs) |
+| [Workspace Visual Direction](01-Product/WORKSPACE-VISUAL-DIRECTION.md) | Concept-art north star; hierarchy binding, pixels not |
+| [Workspace Reference Interpretation](01-Product/WORKSPACE-REFERENCE-INTERPRETATION.md) | **Binding** — problem solved, hierarchy, drift examples, guardrails |
+| [Visual references](01-Product/references/README.md) | Original concept images (hierarchy/intent, not pixel specs) |
 | [Workspace Product Reality Alignment Audit](01-Product/WORKSPACE-PRODUCT-REALITY-ALIGNMENT-AUDIT.md) | **Current** — desktop reality model; UI mismatch; Milestone R next |
 | [Workspace Product Delivery Roadmap](01-Product/WORKSPACE-PRODUCT-DELIVERY-ROADMAP.md) | Milestones R→F→G→E→H→I (D identity not accepted; F blocked) |
 | [Workspace Product Alignment Audit](01-Product/WORKSPACE-PRODUCT-ALIGNMENT-AUDIT.md) | Earlier post-governance audit — partially superseded by Reality Alignment |

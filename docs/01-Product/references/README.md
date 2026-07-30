@@ -4,13 +4,22 @@ Original Workspace concept references for engineering.
 
 | File | Role |
 |------|------|
-| [`workspace-concept-01.png`](workspace-concept-01.png) | Switchable layout / work-mode direction; Assistant as side rail |
-| [`workspace-concept-02.png`](workspace-concept-02.png) | Layout chrome explorations; apps remain the stage |
+| [`workspace-concept-01.png`](workspace-concept-01.png) | Switchable layout / work-mode direction; Assistant as **side rail**, not the stage |
+| [`workspace-concept-02.png`](workspace-concept-02.png) | Layout chrome explorations; **apps remain the stage** |
 
-**Authoritative interpretation:** [`../WORKSPACE-VISUAL-DIRECTION.md`](../WORKSPACE-VISUAL-DIRECTION.md)
+**Authoritative interpretation:**
 
-These images represent **product direction, hierarchy, and UX goals**.  
-They are **not** pixel-perfect requirements.
+1. [`../WORKSPACE-REFERENCE-INTERPRETATION.md`](../WORKSPACE-REFERENCE-INTERPRETATION.md) — hierarchy, drift, guardrails  
+2. [`../WORKSPACE-VISUAL-DIRECTION.md`](../WORKSPACE-VISUAL-DIRECTION.md) — visual north star summary  
 
-Ask: *What problem does this design solve?*  
+### Binding vs not binding
+
+| Binding (hierarchy / intent) | Not binding (inspiration) |
+|------------------------------|---------------------------|
+| Real desktop → representation/control → Assistant companion | Exact pixels, colours, wallpaper |
+| Apps fill the stage | Brand logos in mockups |
+| Assistant is optional/secondary | “SLIDE TO TRANSFORM” widget shape |
+| User’s environment is represented, not invented in-app | Nine layout variants as separate products |
+
+Ask: *What problem does this design solve, and what is primary?*  
 Not: *How do we copy this image?*
