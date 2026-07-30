@@ -19,6 +19,7 @@ import {
   type AssistantDesktopFacts,
 } from "../lib/assistantCompanion";
 import { invokeIpc, isIpcRuntimeAvailable } from "../lib/ipc";
+import { refreshObservedWorkspaceState } from "../lib/workspaceStateClient";
 import type { DesktopArrangement } from "../types/desktopArrangement";
 import type {
   Workspace,
@@ -35,7 +36,6 @@ import type {
   WorkspaceAssistantSurfaceProjection,
   WorkspaceAssistantSurfaceSummary,
   WorkspaceObservationDelta,
-  WorkspaceState,
 } from "../types/domain";
 import {
   assistantContextHistoryCountIsAuthoritative,
@@ -296,15 +296,8 @@ export function AssistantIntelligencePanel({
       return { state: null, delta: null, arrangements: [] };
     }
     try {
-      try {
-        await invokeIpc("ensure_observation_freshness", {
-          consumerId: "workspace_assistant",
-        });
-      } catch {
-        // Freshness is best-effort before reading projected desktop state.
-      }
       const [state, delta, arrangements] = await Promise.all([
-        invokeIpc<WorkspaceState>("get_workspace_state").catch(() => null),
+        refreshObservedWorkspaceState("workspace_assistant").catch(() => null),
         invokeIpc<WorkspaceObservationDelta>(
           "get_latest_observation_delta",
         ).catch(() => null),

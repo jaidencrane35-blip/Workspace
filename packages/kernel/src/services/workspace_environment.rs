@@ -4,7 +4,6 @@
 //! Primary runtime input is WorkspaceState (not raw observation or DesktopWindowSnapshot).
 //! Never enumerates Win32. Never executes or moves windows.
 
-use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 use serde_json::json;
@@ -429,68 +428,62 @@ fn app_matches_titles(name: &str, identifier: Option<&str>, titles_lower: &[Stri
 }
 
 fn build_groups(windows: &[EnvironmentWindow]) -> Vec<EnvironmentWindowGroup> {
-    let mut by_app: HashMap<String, Vec<String>> = HashMap::new();
-    let mut by_process: HashMap<u32, Vec<String>> = HashMap::new();
-    let mut app_labels: HashMap<String, String> = HashMap::new();
-    let mut app_projects: HashMap<String, Option<String>> = HashMap::new();
+    use workspace_domain::{
+        group_desktop_members, DesktopGroupCriterion, DesktopGroupMemberFact,
+    };
 
-    for window in windows {
-        if let Some(app_id) = &window.matched_application_id {
-            by_app
-                .entry(app_id.clone())
-                .or_default()
-                .push(window.id.clone());
-            app_labels.insert(
-                app_id.clone(),
-                window
-                    .matched_application_name
-                    .clone()
-                    .unwrap_or_else(|| app_id.clone()),
-            );
-            app_projects.insert(app_id.clone(), window.project_id.clone());
+    let members: Vec<DesktopGroupMemberFact> = windows
+        .iter()
+        .map(|window| DesktopGroupMemberFact {
+            member_id: window.id.clone(),
+            process_id: window.process_id as i32,
+            process_name: None,
+            monitor_index: None,
+            arrangement_ids: Vec::new(),
+            matched_application_id: window.matched_application_id.clone(),
+            matched_application_name: window.matched_application_name.clone(),
+        })
+        .collect();
+
+    let mut groups: Vec<EnvironmentWindowGroup> = group_desktop_members(
+        &members,
+        &[
+            DesktopGroupCriterion::ProcessId,
+            DesktopGroupCriterion::MatchedApplication,
+        ],
+    )
+    .into_iter()
+    .map(|group| {
+        let process_id = if group.criterion == "process_id" {
+            group.fact_key.parse::<u32>().ok()
         } else {
-            by_process
-                .entry(window.process_id)
-                .or_default()
-                .push(window.id.clone());
-        }
-    }
-
-    let mut groups = Vec::new();
-    for (app_id, window_ids) in by_app {
-        if window_ids.is_empty() {
-            continue;
-        }
-        let label = app_labels
-            .get(&app_id)
-            .cloned()
-            .unwrap_or_else(|| app_id.clone());
-        let project_id = app_projects.get(&app_id).cloned().flatten();
-        groups.push(EnvironmentWindowGroup {
-            id: format!("group:app:{app_id}"),
-            label: label.clone(),
-            application_id: Some(app_id),
-            process_id: None,
-            window_ids,
+            None
+        };
+        let application_id = if group.criterion == "matched_application" {
+            Some(group.fact_key.clone())
+        } else {
+            None
+        };
+        let project_id = application_id.as_ref().and_then(|app_id| {
+            windows
+                .iter()
+                .find(|window| window.matched_application_id.as_deref() == Some(app_id.as_str()))
+                .and_then(|window| window.project_id.clone())
+        });
+        EnvironmentWindowGroup {
+            id: group.id,
+            label: group.label.clone(),
+            application_id,
+            process_id,
+            window_ids: group.member_ids,
             project_id,
-            explanation: format!("Windows grouped by registered application \"{label}\"."),
-        });
-    }
-
-    for (pid, window_ids) in by_process {
-        if window_ids.len() < 2 {
-            continue;
+            explanation: format!(
+                "Grouped by {} fact \"{}\" via desktop grouping engine.",
+                group.criterion, group.fact_key
+            ),
         }
-        groups.push(EnvironmentWindowGroup {
-            id: format!("group:pid:{pid}"),
-            label: format!("Process {pid}"),
-            application_id: None,
-            process_id: Some(pid),
-            window_ids,
-            project_id: None,
-            explanation: format!("Unmatched windows sharing process id {pid}."),
-        });
-    }
+    })
+    .collect();
 
     groups.sort_by(|a, b| a.id.cmp(&b.id));
     groups

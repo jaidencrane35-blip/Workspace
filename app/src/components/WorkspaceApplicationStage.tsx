@@ -37,6 +37,7 @@ import {
   type StageDesktopLoadState,
   type StageDesktopWindowTile,
 } from "../lib/stageDesktopUi";
+import { refreshObservedWorkspaceState } from "../lib/workspaceStateClient";
 import type { WorkMode } from "../lib/workMode";
 import type {
   DesktopArrangement,
@@ -44,8 +45,8 @@ import type {
 } from "../types/desktopArrangement";
 import type {
   ApplicationReference,
+  DesktopWindowGroup,
   Workspace,
-  WorkspaceState,
   WorkspaceStateWindow,
 } from "../types/domain";
 
@@ -106,6 +107,7 @@ export function WorkspaceApplicationStage({
     runtime ? "loading" : "runtime_unavailable",
   );
   const [windows, setWindows] = useState<WorkspaceStateWindow[]>([]);
+  const [windowGroups, setWindowGroups] = useState<DesktopWindowGroup[]>([]);
   const [monitorCount, setMonitorCount] = useState(0);
   const [focusedTitle, setFocusedTitle] = useState<string | null>(null);
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
@@ -118,21 +120,16 @@ export function WorkspaceApplicationStage({
     if (!isIpcRuntimeAvailable()) {
       setLoadState("runtime_unavailable");
       setWindows([]);
+      setWindowGroups([]);
       setMonitorCount(0);
       setFocusedTitle(null);
       return;
     }
     setLoadState("loading");
     try {
-      try {
-        await invokeIpc("ensure_observation_freshness", {
-          consumerId: "workspace_stage",
-        });
-      } catch {
-        // Freshness is best-effort; still read projected state.
-      }
-      const state = await invokeIpc<WorkspaceState>("get_workspace_state");
+      const state = await refreshObservedWorkspaceState("workspace_stage");
       setWindows(state.windows);
+      setWindowGroups(state.window_groups ?? []);
       setMonitorCount(state.metadata.monitor_count);
       {
         const focused = state.focused_window;
@@ -144,6 +141,7 @@ export function WorkspaceApplicationStage({
       setLoadState("ready");
     } catch {
       setWindows([]);
+      setWindowGroups([]);
       setMonitorCount(0);
       setFocusedTitle(null);
       setLoadState("error");
@@ -202,8 +200,8 @@ export function WorkspaceApplicationStage({
     null;
 
   const relatedKeys = useMemo(
-    () => relatedStageObjectKeys(tiles, selectedKey, workMode),
-    [tiles, selectedKey, workMode],
+    () => relatedStageObjectKeys(tiles, selectedKey, workMode, windowGroups),
+    [tiles, selectedKey, workMode, windowGroups],
   );
 
   const workingSet = arrangements.find((item) => item.id === workingSetId) ?? null;

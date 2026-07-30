@@ -17,11 +17,11 @@ import {
   activeApplicationName,
   applicationsEmptyCopy,
 } from "../lib/applicationsUi";
+import { refreshObservedWorkspaceState } from "../lib/workspaceStateClient";
 import type {
   ApplicationReference,
   Workspace,
   WorkspaceActiveApplication,
-  WorkspaceState,
   WorkspaceStateWindow,
 } from "../types/domain";
 import {
@@ -122,14 +122,9 @@ export function ApplicationsPanel({
     }
     setActiveLoading(true);
     try {
-      try {
-        await invokeIpc("ensure_observation_freshness", {
-          consumerId: "workspace_applications",
-        });
-      } catch {
-        // Best-effort freshness before reading projected state.
-      }
-      const state = await invokeIpc<WorkspaceState>("get_workspace_state");
+      const state = await refreshObservedWorkspaceState(
+        "workspace_applications",
+      );
       setActiveApps(state.active_applications);
       setActiveWindows(state.windows);
     } finally {

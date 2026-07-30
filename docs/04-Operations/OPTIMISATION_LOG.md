@@ -90,9 +90,22 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 
 ## Cycles
 
-## Cycles
+### Cycle: v8-1-authoritative-groups-and-arrangement-membership
 
-## Cycles
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Cycle number** | V8-1 |
+| **Goal** | Consume V7 `window_groups` as sole relationship source; fold arrangement membership into WorkspaceState grouping |
+| **Problem** | Stage invented process/monitor relationships; Assistant reinvented process buckets; arrangement facts never reached the grouping engine; duplicate observation refresh paths |
+| **Analysis** | Highest capability gain: one observation client + authoritative groups + arrangement membership on WorkspaceState without new engines |
+| **Changes** | `workspaceStateClient`; Stage/Apps/Assistant refresh via client; Stage relationships from `window_groups`; Environment uses domain `group_desktop_members`; engine loads arrangement membership facts into `window_groups`; Assistant local answers/enrichment read groups |
+| **Files affected** | domain `workspace_state`, database arrangement repo, kernel state engine/environment, Stage/Apps/Assistant TS, tests, this log |
+| **Validation** | typecheck / test / build / architecture / ipc / ui-boundary (+ domain/database/kernel grouping tests) |
+| **Deleted / reduced** | Local Stage relationship invention; Environment HashMap bucketing; per-panel ensure+get duplication; Assistant ad-hoc process counting for “belongs together” |
+| **Next recommended cycle** | Deterministic desktop delta→history identity on WorkspaceState, or geometry/thumbnail ownership hooks if platform APIs remain blocked |
+
+---
 
 ### Cycle: v6-eval-pass-2-capability-plateau
 

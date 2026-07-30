@@ -192,7 +192,7 @@ impl WorkspaceState {
             .map(WorkspaceStateWindow::to_window_ref);
 
         let active_applications = active_applications_from_state_windows(&windows);
-        let window_groups = project_window_groups(&windows);
+        let window_groups = project_window_groups(&windows, &[]);
         let state_id = format!("workspace-state:{}:{}", snapshot.pass.id, Uuid::new_v4());
 
         Self {
@@ -221,7 +221,7 @@ impl WorkspaceState {
             .find(|window| window.focused)
             .map(WorkspaceStateWindow::to_window_ref);
         let active_applications = active_applications_from_state_windows(&windows);
-        let window_groups = project_window_groups(&windows);
+        let window_groups = project_window_groups(&windows, &[]);
         let window_count = windows.len() as i32;
         Self {
             metadata: WorkspaceStateMetadata {
@@ -240,6 +240,18 @@ impl WorkspaceState {
             window_groups,
             authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
         }
+    }
+
+    /// Re-project `window_groups` including arrangement-membership facts.
+    ///
+    /// `membership` rows are `(member_id, arrangement_id, arrangement_name)`.
+    /// Member ids match [`WorkspaceStateWindow::member_id`] (stable id or hwnd).
+    pub fn with_arrangement_membership(
+        mut self,
+        membership: &[(String, String, String)],
+    ) -> Self {
+        self.window_groups = project_window_groups(&self.windows, membership);
+        self
     }
 
     /// Fixture window builder for Environment / Composition tests.
@@ -269,18 +281,71 @@ impl WorkspaceState {
     }
 }
 
-fn project_window_groups(windows: &[WorkspaceStateWindow]) -> Vec<DesktopWindowGroup> {
+/// Project fact-driven groups. Membership rows: `(member_id, arrangement_id, name)`.
+fn project_window_groups(
+    windows: &[WorkspaceStateWindow],
+    membership: &[(String, String, String)],
+) -> Vec<DesktopWindowGroup> {
+    use std::collections::{BTreeMap, BTreeSet};
+
+    let mut ids_by_member: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
+    let mut names_by_arrangement: BTreeMap<String, String> = BTreeMap::new();
+    for (member_id, arrangement_id, arrangement_name) in membership {
+        let member_key = member_id.trim();
+        let arrangement_key = arrangement_id.trim();
+        if member_key.is_empty() || arrangement_key.is_empty() {
+            continue;
+        }
+        ids_by_member
+            .entry(member_key.to_string())
+            .or_default()
+            .insert(arrangement_key.to_string());
+        names_by_arrangement
+            .entry(arrangement_key.to_string())
+            .or_insert_with(|| {
+                let name = arrangement_name.trim();
+                if name.is_empty() {
+                    arrangement_key.to_string()
+                } else {
+                    name.to_string()
+                }
+            });
+    }
+
     let members: Vec<DesktopGroupMemberFact> = windows
         .iter()
-        .map(WorkspaceStateWindow::to_group_member_fact)
+        .map(|window| {
+            let mut fact = window.to_group_member_fact();
+            let mut arrangement_ids = BTreeSet::new();
+            if let Some(ids) = ids_by_member.get(&fact.member_id) {
+                arrangement_ids.extend(ids.iter().cloned());
+            }
+            if fact.member_id != window.hwnd {
+                if let Some(ids) = ids_by_member.get(&window.hwnd) {
+                    arrangement_ids.extend(ids.iter().cloned());
+                }
+            }
+            fact.arrangement_ids = arrangement_ids.into_iter().collect();
+            fact
+        })
         .collect();
-    group_desktop_members(
+
+    let mut groups = group_desktop_members(
         &members,
         &[
             DesktopGroupCriterion::ProcessId,
             DesktopGroupCriterion::MonitorIndex,
+            DesktopGroupCriterion::ArrangementMembership,
         ],
-    )
+    );
+    for group in &mut groups {
+        if group.criterion == DesktopGroupCriterion::ArrangementMembership.as_str() {
+            if let Some(name) = names_by_arrangement.get(&group.fact_key) {
+                group.label = name.clone();
+            }
+        }
+    }
+    groups
 }
 
 fn delta_reference(delta: &WorkspaceObservationDelta) -> Option<String> {
@@ -432,6 +497,33 @@ mod tests {
         );
         assert_eq!(state.active_applications.len(), 1);
         assert_eq!(state.active_applications[0].window_count, 2);
+        assert!(state
+            .window_groups
+            .iter()
+            .any(|group| group.criterion == "process_id" && group.member_ids.len() == 2));
+        assert!(state
+            .window_groups
+            .iter()
+            .any(|group| group.criterion == "monitor_index"));
+    }
+
+    #[test]
+    fn arrangement_membership_enriches_window_groups() {
+        let snapshot = snapshot_with_focus();
+        let delta = WorkspaceObservationDelta::empty_with_current(&snapshot);
+        let state = WorkspaceState::from_observation_and_delta(Some(&snapshot), &delta)
+            .with_arrangement_membership(&[
+                ("stable-a".into(), "arr-1".into(), "Focus set".into()),
+                ("stable-b".into(), "arr-1".into(), "Focus set".into()),
+            ]);
+        let arrangement = state
+            .window_groups
+            .iter()
+            .find(|group| group.criterion == "arrangement_membership")
+            .expect("arrangement group");
+        assert_eq!(arrangement.fact_key, "arr-1");
+        assert_eq!(arrangement.label, "Focus set");
+        assert_eq!(arrangement.member_ids, vec!["stable-a", "stable-b"]);
     }
 
     #[test]

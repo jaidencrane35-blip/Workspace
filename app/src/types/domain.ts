@@ -6828,6 +6828,7 @@ export interface WorkspaceStateWindow {
   visible: boolean;
   focused: boolean;
   minimized: boolean;
+  z_order: number | null;
   x: number;
   y: number;
   width: number;
@@ -6836,11 +6837,22 @@ export interface WorkspaceStateWindow {
   monitor_name: string | null;
 }
 
+/** Fact-driven group from the generic desktop grouping engine. */
+export interface DesktopWindowGroup {
+  id: string;
+  criterion: string;
+  fact_key: string;
+  label: string;
+  member_ids: string[];
+  authority_effect: string;
+}
+
 export interface WorkspaceState {
   metadata: WorkspaceStateMetadata;
   focused_window: ObservationWindowRef | null;
   active_applications: WorkspaceActiveApplication[];
   windows: WorkspaceStateWindow[];
+  window_groups: DesktopWindowGroup[];
   authority_effect: string;
 }
 

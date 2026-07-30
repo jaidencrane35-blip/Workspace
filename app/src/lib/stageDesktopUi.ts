@@ -1,15 +1,19 @@
 /**
  * Purpose: Pure desktop-object model for the Desktop Interaction Layer Stage.
- * Owner: Frontend product shell (Product Contract V6)
- * Inputs: WorkspaceStateWindow rows from get_workspace_state
- * Outputs: Runtime object tiles, relationship keys, Flow/Focus organisation,
- *   selection helpers, arrangement membership overlays
+ * Owner: Frontend product shell (Product Contract V8)
+ * Inputs: WorkspaceState windows + window_groups from get_workspace_state
+ * Outputs: Runtime object tiles, relationship keys from authoritative groups,
+ *   Flow/Focus organisation, selection helpers, arrangement overlays
  * Dependencies: None (pure)
- * Non-goals: Fake windows, WindowController ownership, OS geometry apply, grouping engines
+ * Non-goals: Fake windows, WindowController ownership, OS geometry apply,
+ *   inventing groups (consume WorkspaceState.window_groups)
  */
 
 import type { DesktopArrangementEntry } from "../types/desktopArrangement";
-import type { WorkspaceStateWindow } from "../types/domain";
+import type {
+  DesktopWindowGroup,
+  WorkspaceStateWindow,
+} from "../types/domain";
 
 /** First-class Stage desktop object projected from observation — not a card. */
 export interface StageDesktopWindowTile {
@@ -26,6 +30,7 @@ export interface StageDesktopWindowTile {
   visible: boolean;
   focused: boolean;
   minimized: boolean;
+  zOrder: number | null;
   monitorIndex: number | null;
   monitorLabel: string | null;
   leftPct: number;
@@ -152,6 +157,7 @@ export function layoutStageDesktopWindows(
       visible: window.visible,
       focused: window.focused,
       minimized: window.minimized,
+      zOrder: window.z_order,
       monitorIndex: window.monitor_index,
       monitorLabel,
       leftPct,
@@ -204,37 +210,39 @@ export function stageDesktopMetaLine(args: {
 }
 
 /**
- * Observable relationships from desktop facts only.
- * Flow: same process OR same monitor. Focus: same process (tight).
+ * Relationships from authoritative WorkspaceState.window_groups.
+ * Focus: process_id groups only. Flow: process_id + monitor_index groups.
+ * Falls back to empty when groups are absent (no inventing).
  */
 export function relatedStageObjectKeys(
   tiles: StageDesktopWindowTile[],
   anchorKey: string | null,
   workMode: "flow" | "focus",
+  windowGroups: DesktopWindowGroup[] = [],
 ): Set<string> {
   const related = new Set<string>();
   if (!anchorKey) {
     return related;
   }
-  const anchor = tiles.find((tile) => tile.key === anchorKey);
-  if (!anchor) {
+  if (!tiles.some((tile) => tile.key === anchorKey)) {
     return related;
   }
-  for (const tile of tiles) {
-    if (tile.key === anchor.key) {
-      related.add(tile.key);
+  related.add(anchorKey);
+  const criteria =
+    workMode === "focus"
+      ? new Set(["process_id"])
+      : new Set(["process_id", "monitor_index", "arrangement_membership"]);
+  for (const group of windowGroups) {
+    if (!criteria.has(group.criterion)) {
       continue;
     }
-    if (tile.processId === anchor.processId) {
-      related.add(tile.key);
+    if (!group.member_ids.includes(anchorKey)) {
       continue;
     }
-    if (
-      workMode === "flow" &&
-      anchor.monitorIndex != null &&
-      tile.monitorIndex === anchor.monitorIndex
-    ) {
-      related.add(tile.key);
+    for (const memberId of group.member_ids) {
+      if (tiles.some((tile) => tile.key === memberId)) {
+        related.add(memberId);
+      }
     }
   }
   return related;

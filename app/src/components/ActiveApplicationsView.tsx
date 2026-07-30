@@ -39,11 +39,18 @@ export function resolveActiveApplicationHwnd(
   if (focused) {
     return focused.hwnd;
   }
-  const visible = matches.find((window) => window.visible && !window.minimized);
-  if (visible) {
-    return visible.hwnd;
+  const visible = matches
+    .filter((window) => window.visible && !window.minimized)
+    .sort((a, b) => (a.z_order ?? Number.MAX_SAFE_INTEGER) - (b.z_order ?? Number.MAX_SAFE_INTEGER));
+  if (visible[0]) {
+    return visible[0].hwnd;
   }
-  return matches[0]?.hwnd ?? null;
+  const ordered = [...matches].sort(
+    (a, b) =>
+      (a.z_order ?? Number.MAX_SAFE_INTEGER) -
+      (b.z_order ?? Number.MAX_SAFE_INTEGER),
+  );
+  return ordered[0]?.hwnd ?? null;
 }
 
 export function ActiveApplicationsView({

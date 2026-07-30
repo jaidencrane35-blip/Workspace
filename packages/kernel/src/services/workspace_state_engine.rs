@@ -14,7 +14,7 @@
 
 use std::sync::{Arc, Mutex};
 
-use workspace_database::{Database, ObservationPassRepository};
+use workspace_database::{Database, DesktopArrangementRepository, ObservationPassRepository};
 use workspace_domain::{
     ActorContext, IntentContext, WorkspaceObservationDelta, WorkspaceState,
 };
@@ -41,11 +41,14 @@ impl WorkspaceStateEngine {
         intent: &IntentContext,
     ) -> Result<WorkspaceState> {
         let delta = ObservationDeltaService::get_latest(db, actor, intent)?;
-        let observation = {
+        let (observation, membership) = {
             let guard = db.lock().expect("database lock poisoned");
-            ObservationPassRepository::new(&guard).load_latest_snapshot()?
+            let observation = ObservationPassRepository::new(&guard).load_latest_snapshot()?;
+            let membership =
+                DesktopArrangementRepository::new(&guard).list_active_membership_facts(2_000)?;
+            (observation, membership)
         };
-        Ok(Self::build(observation.as_ref(), &delta))
+        Ok(Self::build(observation.as_ref(), &delta).with_arrangement_membership(&membership))
     }
 }
 
@@ -200,5 +203,116 @@ mod tests {
             state.focused_window.as_ref().and_then(|w| w.stable_window_id.as_deref()),
             Some("stable-a")
         );
+    }
+
+    #[test]
+    fn state_includes_arrangement_membership_groups() {
+        use workspace_database::{DesktopArrangementRepository, WorkspaceRepository};
+        use workspace_domain::{
+            arrangement_now_rfc3339, entries_from_inputs, DesktopArrangement,
+            DesktopArrangementEntryInput, DesktopArrangementId, DesktopArrangementStatus,
+            Workspace, WorkspaceId,
+        };
+
+        let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+        let mut snap = snapshot("pass-arr", "2026-07-26T10:02:00Z", true);
+        snap.windows.push(ObservedWindow {
+            id: "pass-arr-win-2".into(),
+            pass_id: "pass-arr".into(),
+            hwnd: "0x2".into(),
+            stable_window_id: Some("stable-b".into()),
+            title: "Beta".into(),
+            process_id: 99,
+            process_name: Some("beta.exe".into()),
+            x: 20,
+            y: 20,
+            width: 100,
+            height: 100,
+            monitor_id: Some("pass-arr-mon".into()),
+            visible: true,
+            minimized: false,
+            focused: false,
+            z_order: Some(1),
+            authority_effect: ObservedWindow::AUTHORITY_EFFECT_NONE.into(),
+        });
+        snap.pass.window_count = 2;
+        persist(&kernel, &snap);
+
+        let db = kernel.shared_database();
+        let guard = db.lock().unwrap();
+        let workspace_id = WorkspaceId::new("ws-state-arr").unwrap();
+        WorkspaceRepository::new(&guard)
+            .create(&Workspace {
+                id: workspace_id.clone(),
+                name: "State Arr".into(),
+                created_at: arrangement_now_rfc3339(),
+                updated_at: arrangement_now_rfc3339(),
+            })
+            .unwrap();
+        let arrangement_id = DesktopArrangementId::new("arr-state-1").unwrap();
+        let now = arrangement_now_rfc3339();
+        let entries = entries_from_inputs(
+            &arrangement_id,
+            &[
+                DesktopArrangementEntryInput {
+                    stable_window_id: Some("stable-a".into()),
+                    hwnd: Some("0x1".into()),
+                    process_id: Some(42),
+                    process_name: Some("alpha.exe".into()),
+                    title_fingerprint: None,
+                    label: "Alpha".into(),
+                    sort_order: 0,
+                    x: None,
+                    y: None,
+                    width: None,
+                    height: None,
+                },
+                DesktopArrangementEntryInput {
+                    stable_window_id: Some("stable-b".into()),
+                    hwnd: Some("0x2".into()),
+                    process_id: Some(99),
+                    process_name: Some("beta.exe".into()),
+                    title_fingerprint: None,
+                    label: "Beta".into(),
+                    sort_order: 1,
+                    x: None,
+                    y: None,
+                    width: None,
+                    height: None,
+                },
+            ],
+            |index| format!("entry-{index}"),
+        )
+        .unwrap();
+        let arrangement = DesktopArrangement {
+            id: arrangement_id.clone(),
+            workspace_id,
+            name: "Pair".into(),
+            description: String::new(),
+            status: DesktopArrangementStatus::Active,
+            entries: entries.clone(),
+            created_at: now.clone(),
+            updated_at: now.clone(),
+            authority_effect: DesktopArrangement::AUTHORITY_EFFECT_NONE.into(),
+        };
+        let repo = DesktopArrangementRepository::new(&guard);
+        repo.upsert_arrangement(&arrangement).unwrap();
+        repo.replace_entries(&arrangement_id, &entries, &now).unwrap();
+        drop(guard);
+
+        let state = WorkspaceStateEngine::get_current(
+            &kernel.shared_database(),
+            &ActorContext::local_user(),
+            &IntentContext::user_request(),
+        )
+        .unwrap();
+        let group = state
+            .window_groups
+            .iter()
+            .find(|group| group.criterion == "arrangement_membership")
+            .expect("arrangement membership group");
+        assert_eq!(group.label, "Pair");
+        assert!(group.member_ids.contains(&"stable-a".into()));
+        assert!(group.member_ids.contains(&"stable-b".into()));
     }
 }

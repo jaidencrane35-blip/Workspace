@@ -141,35 +141,54 @@ function summariseBelongsTogether(
   state: WorkspaceState,
   arrangements: DesktopArrangement[],
 ): string {
-  if (arrangements.length === 0) {
-    const byProcess = new Map<number, number>();
-    for (const window of state.windows) {
-      byProcess.set(
-        window.process_id,
-        (byProcess.get(window.process_id) ?? 0) + 1,
-      );
-    }
-    const multi = [...byProcess.entries()].filter(([, count]) => count > 1);
-    if (multi.length === 0) {
-      return "No saved arrangements yet. Related windows today are only same-process siblings.";
-    }
-    return `No saved arrangements. Processes with multiple windows: ${multi
-      .map(([pid, count]) => {
-        const name =
-          state.windows.find((window) => window.process_id === pid)?.process_name ||
-          `pid ${pid}`;
-        return `${name} (${count})`;
-      })
-      .join(", ")}.`;
+  const processGroups = (state.window_groups ?? []).filter(
+    (group) => group.criterion === "process_id" && group.member_ids.length > 1,
+  );
+  const monitorGroups = (state.window_groups ?? []).filter(
+    (group) =>
+      group.criterion === "monitor_index" && group.member_ids.length > 1,
+  );
+  const arrangementGroups = (state.window_groups ?? []).filter(
+    (group) =>
+      group.criterion === "arrangement_membership" &&
+      group.member_ids.length > 0,
+  );
+  const parts: string[] = [];
+  if (processGroups.length > 0) {
+    parts.push(
+      `process groups: ${processGroups
+        .slice(0, 5)
+        .map((group) => `${group.label} (${group.member_ids.length})`)
+        .join(", ")}`,
+    );
   }
-  return arrangements
-    .slice(0, 5)
-    .map(
-      (item) =>
-        `${item.name}: ${item.entries.length} window${item.entries.length === 1 ? "" : "s"}`,
-    )
-    .join(". ")
-    .concat(".");
+  if (monitorGroups.length > 0) {
+    parts.push(
+      `monitor co-location: ${monitorGroups
+        .slice(0, 3)
+        .map((group) => `${group.label} (${group.member_ids.length})`)
+        .join(", ")}`,
+    );
+  }
+  if (arrangementGroups.length > 0) {
+    parts.push(
+      `arrangement membership: ${arrangementGroups
+        .slice(0, 5)
+        .map((group) => `${group.label} (${group.member_ids.length})`)
+        .join(", ")}`,
+    );
+  } else if (arrangements.length > 0) {
+    parts.push(
+      `saved arrangements: ${arrangements
+        .slice(0, 5)
+        .map((item) => `${item.name} (${item.entries.length})`)
+        .join(", ")}`,
+    );
+  }
+  if (parts.length === 0) {
+    return "No multi-window process or monitor groups, and no saved arrangements yet.";
+  }
+  return `${parts.join(". ")}.`;
 }
 
 function summariseChanged(delta: WorkspaceObservationDelta | null): string {
@@ -330,6 +349,15 @@ export function enrichAskWithDesktopObservation(
       `arrangements: ${normalized.arrangements
         .map((item) => `${item.name}(${item.entries.length})`)
         .slice(0, 4)
+        .join(", ")}`,
+    );
+  }
+  const groups = state.window_groups ?? [];
+  if (groups.length > 0) {
+    parts.push(
+      `groups: ${groups
+        .slice(0, 6)
+        .map((group) => `${group.criterion}:${group.label}(${group.member_ids.length})`)
         .join(", ")}`,
     );
   }

@@ -121,6 +121,52 @@ impl<'a> DesktopArrangementRepository<'a> {
         Ok(arrangements)
     }
 
+    /// Flat membership facts for WorkspaceState grouping: `(member_id, arrangement_id, name)`.
+    ///
+    /// Emits both stable_window_id and hwnd keys when present so runtime windows can match
+    /// either identity. Soft-deleted arrangements are excluded. Bounded for projection cost.
+    pub fn list_active_membership_facts(
+        &self,
+        limit: usize,
+    ) -> Result<Vec<(String, String, String)>> {
+        let limit = limit.clamp(1, 4_000) as i64;
+        let mut stmt = self.db.connection().prepare(
+            "SELECT e.stable_window_id, e.hwnd, a.id, a.name
+             FROM desktop_arrangement_entries e
+             INNER JOIN desktop_arrangements a ON a.id = e.arrangement_id
+             WHERE a.deleted = 0
+             ORDER BY a.updated_at DESC, e.sort_order ASC, e.id ASC
+             LIMIT ?1",
+        )?;
+        let rows = stmt.query_map([limit], |row| {
+            Ok((
+                row.get::<_, Option<String>>(0)?,
+                row.get::<_, Option<String>>(1)?,
+                row.get::<_, String>(2)?,
+                row.get::<_, String>(3)?,
+            ))
+        })?;
+        let mut facts = Vec::new();
+        for row in rows {
+            let (stable, hwnd, arrangement_id, name) = row.map_err(crate::error::DatabaseError::from)?;
+            if let Some(stable_id) = stable
+                .as_ref()
+                .map(|value| value.trim())
+                .filter(|value| !value.is_empty())
+            {
+                facts.push((stable_id.to_string(), arrangement_id.clone(), name.clone()));
+            }
+            if let Some(hwnd_id) = hwnd
+                .as_ref()
+                .map(|value| value.trim())
+                .filter(|value| !value.is_empty())
+            {
+                facts.push((hwnd_id.to_string(), arrangement_id.clone(), name.clone()));
+            }
+        }
+        Ok(facts)
+    }
+
     pub fn soft_delete(&self, id: &DesktopArrangementId, updated_at: &str) -> Result<bool> {
         let changed = self.db.connection().execute(
             "UPDATE desktop_arrangements
@@ -281,6 +327,14 @@ mod tests {
         let listed = repo.list_by_workspace(&workspace_id, 10).unwrap();
         assert_eq!(listed.len(), 1);
         assert_eq!(listed[0].id, id);
+
+        let facts = repo.list_active_membership_facts(100).unwrap();
+        assert!(facts.iter().any(|(member, arr, name)| {
+            member == "stable-1" && arr == id.as_str() && name == "Focus"
+        }));
+        assert!(facts.iter().any(|(member, arr, _)| {
+            member == "0xAA" && arr == id.as_str()
+        }));
     }
 
     #[test]

@@ -10,7 +10,10 @@ import {
   stageDesktopWindowTitle,
   toggleStageSelection,
 } from "../app/src/lib/stageDesktopUi";
-import type { WorkspaceStateWindow } from "../app/src/types/domain";
+import type {
+  DesktopWindowGroup,
+  WorkspaceStateWindow,
+} from "../app/src/types/domain";
 
 function sampleWindow(
   overrides: Partial<WorkspaceStateWindow> = {},
@@ -24,12 +27,26 @@ function sampleWindow(
     visible: true,
     focused: false,
     minimized: false,
+    z_order: null,
     x: 0,
     y: 0,
     width: 800,
     height: 600,
     monitor_index: 0,
     monitor_name: "Display 1",
+    ...overrides,
+  };
+}
+
+function sampleGroup(
+  overrides: Partial<DesktopWindowGroup> &
+    Pick<DesktopWindowGroup, "criterion" | "member_ids">,
+): DesktopWindowGroup {
+  return {
+    id: `group:${overrides.criterion}:${overrides.member_ids.join("-")}`,
+    fact_key: overrides.fact_key ?? overrides.member_ids.join(","),
+    label: overrides.label ?? overrides.criterion,
+    authority_effect: "none",
     ...overrides,
   };
 }
@@ -169,13 +186,66 @@ describe("stage desktop UI helpers", () => {
         monitor_index: 0,
       }),
     ]);
-    const focusRelated = relatedStageObjectKeys(tiles, "a", "focus");
+    const groups = [
+      sampleGroup({
+        criterion: "process_id",
+        fact_key: "10",
+        label: "code.exe",
+        member_ids: ["a", "b"],
+      }),
+      sampleGroup({
+        criterion: "monitor_index",
+        fact_key: "0",
+        label: "monitor:0",
+        member_ids: ["a", "c"],
+      }),
+    ];
+    const focusRelated = relatedStageObjectKeys(tiles, "a", "focus", groups);
     expect(focusRelated.has("a")).toBe(true);
     expect(focusRelated.has("b")).toBe(true);
     expect(focusRelated.has("c")).toBe(false);
 
-    const flowRelated = relatedStageObjectKeys(tiles, "a", "flow");
+    const flowRelated = relatedStageObjectKeys(tiles, "a", "flow", groups);
     expect(flowRelated.has("c")).toBe(true);
+  });
+
+  it("does not invent relationships without authoritative groups", () => {
+    const tiles = layoutStageDesktopWindows([
+      sampleWindow({ stable_window_id: "a", process_id: 10 }),
+      sampleWindow({
+        stable_window_id: "b",
+        hwnd: "0x2",
+        process_id: 10,
+      }),
+    ]);
+    const related = relatedStageObjectKeys(tiles, "a", "flow", []);
+    expect([...related]).toEqual(["a"]);
+  });
+
+  it("Flow includes arrangement-membership groups", () => {
+    const tiles = layoutStageDesktopWindows([
+      sampleWindow({ stable_window_id: "a", process_id: 10 }),
+      sampleWindow({
+        stable_window_id: "b",
+        hwnd: "0x2",
+        process_id: 99,
+        process_name: "notes.exe",
+      }),
+    ]);
+    const groups = [
+      sampleGroup({
+        criterion: "arrangement_membership",
+        fact_key: "arr-1",
+        label: "Working set",
+        member_ids: ["a", "b"],
+      }),
+    ];
+    expect(relatedStageObjectKeys(tiles, "a", "focus", groups).has("b")).toBe(
+      false,
+    );
+    expect(relatedStageObjectKeys(tiles, "a", "flow", groups).has("b")).toBe(
+      true,
+    );
   });
 
   it("matches arrangement working-set membership by identity", () => {
