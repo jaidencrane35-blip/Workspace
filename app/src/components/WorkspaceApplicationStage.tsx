@@ -36,6 +36,9 @@ import {
   stageArrangementMemberKeys,
   stageAttentionAwarenessLine,
   stageAttentionPrimaryKeys,
+  stageContinuityAwarenessLine,
+  stageContinuityByKey,
+  stageDeltaOpenedKeys,
   stageDesktopMetaLine,
   stageDesktopPlaneMessage,
   stageFocusPreferredKeys,
@@ -145,8 +148,26 @@ export function WorkspaceApplicationStage({
       ),
     [workspaceState?.attention, workspaceState?.semantics],
   );
-  const awarenessLine = stageAttentionAwarenessLine(
-    workspaceState?.attention,
+  const awarenessLine = (() => {
+    const attentionLine = stageAttentionAwarenessLine(
+      workspaceState?.attention,
+    );
+    const continuityLine = stageContinuityAwarenessLine(
+      workspaceState?.runtime_memory,
+      workspaceState?.latest_delta,
+    );
+    if (attentionLine && continuityLine) {
+      return `${attentionLine} · ${continuityLine}`;
+    }
+    return attentionLine || continuityLine;
+  })();
+  const continuityByKey = useMemo(
+    () => stageContinuityByKey(workspaceState?.runtime_memory),
+    [workspaceState?.runtime_memory],
+  );
+  const deltaOpenedKeys = useMemo(
+    () => stageDeltaOpenedKeys(workspaceState?.latest_delta),
+    [workspaceState?.latest_delta],
   );
 
   const selectedKey = primaryStageSelectionKey(selectedKeys);
@@ -400,6 +421,8 @@ export function WorkspaceApplicationStage({
       workingSetKeys.size > 0 && !workingSetKeys.has(tile.key);
     const attentionPrimary = attentionPrimaryKeys.has(tile.key);
     const semanticRole = semanticRoles.get(tile.key) ?? null;
+    const continuity = continuityByKey.get(tile.key);
+    const justOpened = deltaOpenedKeys.has(tile.key);
     const className = [
       "stage-desktop-window",
       `relation-${tile.relationIndex}`,
@@ -412,6 +435,12 @@ export function WorkspaceApplicationStage({
       outsideWorkingSet ? "working-set-outside" : null,
       attentionPrimary ? "attention-primary" : null,
       semanticRole ? `role-${semanticRole}` : null,
+      continuity?.presence === "returning" ? "presence-returning" : null,
+      continuity?.knowledge === "interrupted" ||
+      continuity?.knowledge === "fading"
+        ? `knowledge-${continuity.knowledge}`
+        : null,
+      justOpened ? "just-opened" : null,
     ]
       .filter(Boolean)
       .join(" ");
@@ -425,6 +454,14 @@ export function WorkspaceApplicationStage({
             : semanticRole === "companion"
               ? "Companion"
               : null;
+    const continuityHint =
+      continuity?.presence === "returning"
+        ? "Returning"
+        : continuity?.knowledge === "interrupted"
+          ? "Interrupted"
+          : continuity?.knowledge === "fading"
+            ? "Fading"
+            : null;
     return (
       <button
         key={tile.key}
@@ -455,6 +492,10 @@ export function WorkspaceApplicationStage({
             tile.processLabel || null,
             tile.monitorLabel,
             roleHint,
+            continuityHint && continuityHint !== roleHint
+              ? continuityHint
+              : null,
+            justOpened ? "Just opened" : null,
             attentionPrimary ? "Noticed" : null,
             tile.focused ? "Focused" : null,
             tile.minimized ? "Minimized" : null,

@@ -333,6 +333,7 @@ export default function App() {
             onBusy={setBusy}
             onError={onError}
             onMessage={onMessage}
+            onOpenStage={() => navigatePrimary("layouts")}
           />
         </div>
       );

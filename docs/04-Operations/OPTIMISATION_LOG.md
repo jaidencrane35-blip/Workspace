@@ -90,6 +90,26 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 
 ## Cycles
 
+### Cycle: v15-2-continuity-assistant-apps-coherence
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Cycle number** | V15-2 |
+| **Category** | #12 / #1 — Duplicate removal / Visual hierarchy (product coherence) |
+| **Goal** | Continuity on Stage; Assistant explains Stage conclusions; Apps = library only |
+| **Problem** | runtime_memory/latest_delta only in Assistant; enrichAsk dumped telemetry; Apps duplicated Stage focus grid |
+| **Analysis** | Integrate disconnected continuity + collapse parallel running-apps interaction |
+| **Changes** | Stage continuity cues; enrichAsk narrates attention/working/returning; Apps library-first + Open Stage; deleted ActiveApplicationsView |
+| **Files affected** | stageDesktopUi, Stage, assistantCompanion, ApplicationsPanel, App, App.css, tests, this log |
+| **Validation** | typecheck / test / build / architecture / ipc / ui-boundary |
+| **Deleted / reduced** | ActiveApplicationsView; Apps running focus grid; enrichAsk plane-count dumps |
+| **Next recommended cycle** | Coherence audit / empty eval if plateau |
+| **Human review required** | No |
+| **Why this is safe** | Consumes existing WorkspaceState; Stage remains desktop SoT for running work |
+
+---
+
 ### Cycle: v15-1-stage-attention-semantics-awareness
 
 | Field | Value |

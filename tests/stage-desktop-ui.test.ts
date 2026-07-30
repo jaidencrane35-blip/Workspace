@@ -573,4 +573,67 @@ describe("stage desktop UI helpers", () => {
     expect(line).toMatch(/Resume the editor/);
     expect(line).not.toMatch(/attention_item|entity_ids|AI/i);
   });
+
+  it("exposes continuity cues from runtime_memory and latest_delta", async () => {
+    const {
+      stageContinuityAwarenessLine,
+      stageContinuityByKey,
+      stageDeltaOpenedKeys,
+    } = await import("../app/src/lib/stageDesktopUi");
+    const memory = {
+      entities: [
+        {
+          stable_window_id: "a",
+          hwnd: "0x1",
+          title: "Editor",
+          process_id: 10,
+          process_name: "code.exe",
+          first_observed_at: "t0",
+          last_observed_at: "t1",
+          identity_confidence: "high",
+          presence: "returning",
+          sample_presence_count: 2,
+          session_presence_count: 1,
+          focus_count: 1,
+          opened_count: 2,
+          closed_count: 1,
+          recurrence_count: 1,
+          stability: "stable",
+          continuity_confidence: "recurring",
+          knowledge: "interrupted",
+          authority_effect: "none",
+        },
+      ],
+      present_count: 1,
+      absent_count: 0,
+      returning_count: 1,
+      authority_effect: "none",
+    };
+    const delta = {
+      previous_pass_id: "p0",
+      current_pass_id: "p1",
+      previous_captured_at: null,
+      current_captured_at: null,
+      opened_windows: [
+        {
+          stable_window_id: "b",
+          hwnd: "0x2",
+          title: "Notes",
+          process_id: 20,
+        },
+      ],
+      closed_windows: [],
+      focused_window_changed: null,
+      moved_windows: [],
+      resized_windows: [],
+      minimized_changes: [],
+      monitor_changes: [],
+      has_changes: true,
+      authority_effect: "none",
+    };
+    expect(stageContinuityByKey(memory).get("a")?.presence).toBe("returning");
+    expect([...stageDeltaOpenedKeys(delta)]).toEqual(["b"]);
+    expect(stageContinuityAwarenessLine(memory, delta)).toMatch(/1 opened/);
+    expect(stageContinuityAwarenessLine(memory, delta)).toMatch(/1 returning/);
+  });
 });

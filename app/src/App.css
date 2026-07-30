@@ -1448,6 +1448,22 @@ button.linkish:not(:disabled):hover {
   opacity: 0.82;
 }
 
+.stage-desktop-window.presence-returning:not(.selected) {
+  border-style: dashed;
+}
+
+.stage-desktop-window.knowledge-interrupted {
+  opacity: 0.7;
+}
+
+.stage-desktop-window.knowledge-fading {
+  opacity: 0.58;
+}
+
+.stage-desktop-window.just-opened:not(.selected) {
+  box-shadow: inset 0 0 0 1px rgba(125, 186, 142, 0.45);
+}
+
 .stage-desktop-window.hidden-object {
   opacity: 0.4;
   border-style: dashed;
@@ -1461,9 +1477,14 @@ button.linkish:not(:disabled):hover {
   opacity: 0.55;
 }
 
-.stage-working-set-row {
-  margin: 0 0 0.55rem;
+.applications-stage-link {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem;
+  margin: 0 0 1rem;
 }
+
 
 .stage-working-set-row label {
   display: flex;

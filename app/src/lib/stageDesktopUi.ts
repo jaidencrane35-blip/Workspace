@@ -13,8 +13,11 @@
 import type { DesktopArrangementEntry } from "../types/desktopArrangement";
 import type {
   DesktopAttentionProjection,
+  DesktopObjectMemory,
+  DesktopRuntimeMemory,
   DesktopSemanticProjection,
   DesktopWindowGroup,
+  WorkspaceObservationDelta,
   WorkspaceStateMonitor,
   WorkspaceStateWindow,
 } from "../types/domain";
@@ -313,6 +316,73 @@ export function stageFocusPreferredKeys(
     }
   }
   return keys;
+}
+
+/** Continuity cues by Stage key from runtime_memory (presence + knowledge). */
+export function stageContinuityByKey(
+  memory: DesktopRuntimeMemory | null | undefined,
+): Map<string, Pick<DesktopObjectMemory, "presence" | "knowledge">> {
+  const map = new Map<
+    string,
+    Pick<DesktopObjectMemory, "presence" | "knowledge">
+  >();
+  for (const entity of memory?.entities ?? []) {
+    const id = entity.stable_window_id?.trim();
+    if (!id) {
+      continue;
+    }
+    map.set(id, {
+      presence: entity.presence,
+      knowledge: entity.knowledge,
+    });
+  }
+  return map;
+}
+
+/** Keys that opened in the latest observation delta. */
+export function stageDeltaOpenedKeys(
+  delta: WorkspaceObservationDelta | null | undefined,
+): Set<string> {
+  const keys = new Set<string>();
+  for (const window of delta?.opened_windows ?? []) {
+    const stable = window.stable_window_id?.trim();
+    if (stable) {
+      keys.add(stable);
+      continue;
+    }
+    const hwnd = window.hwnd?.trim();
+    if (hwnd) {
+      keys.add(hwnd);
+    }
+  }
+  return keys;
+}
+
+/** Quiet continuity line for Stage meta (not an Operator delta dump). */
+export function stageContinuityAwarenessLine(
+  memory: DesktopRuntimeMemory | null | undefined,
+  delta: WorkspaceObservationDelta | null | undefined,
+): string | null {
+  const parts: string[] = [];
+  if (delta?.has_changes) {
+    const opened = delta.opened_windows.length;
+    const closed = delta.closed_windows.length;
+    if (opened > 0 || closed > 0) {
+      const bits: string[] = [];
+      if (opened > 0) {
+        bits.push(opened === 1 ? "1 opened" : `${opened} opened`);
+      }
+      if (closed > 0) {
+        bits.push(closed === 1 ? "1 closed" : `${closed} closed`);
+      }
+      parts.push(bits.join(", "));
+    }
+  }
+  const returning = memory?.returning_count ?? 0;
+  if (returning > 0) {
+    parts.push(returning === 1 ? "1 returning" : `${returning} returning`);
+  }
+  return parts.length > 0 ? parts.join(" · ") : null;
 }
 
 const FLOW_SEMANTIC_RELATION_KINDS = new Set([

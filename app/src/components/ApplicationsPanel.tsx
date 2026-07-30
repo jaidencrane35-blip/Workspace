@@ -1,11 +1,11 @@
 /**
- * Purpose: Applications as observed desktop objects first; library optional.
- * Owner: Frontend product shell (Product Contract V5 / Product Foundation V14)
- * Inputs: Active workspace, shared busy/banner callbacks
- * Outputs: WorkspaceState for running apps; focus_desktop_window; list/create/launch registry
- * Dependencies: Existing application + desktop focus IPC; workspaceStateClient
- * Non-responsibilities: Assistant, OS discovery, geometry apply, minimize APIs,
- *   parallel activeApps/activeWindows slices (hold WorkspaceState)
+ * Purpose: Optional application library — running desktop lives on Stage.
+ * Owner: Frontend product shell (Product Contract V5 / Product Foundation V15)
+ * Inputs: Active workspace, shared busy/banner callbacks, optional open-Stage
+ * Outputs: list/create/launch registry; refreshes shared WorkspaceState after launch
+ * Dependencies: application IPC; workspaceStateClient
+ * Non-responsibilities: Parallel running-app focus grid (Stage owns that),
+ *   Assistant, OS discovery, geometry apply, minimize APIs
  */
 
 import { useCallback, useEffect, useState } from "react";
@@ -14,22 +14,10 @@ import {
   launchRegisteredApplication,
   launchSuccessMessage,
 } from "../lib/applicationLaunch";
-import {
-  activeApplicationName,
-  applicationsEmptyCopy,
-} from "../lib/applicationsUi";
+import { applicationsEmptyCopy } from "../lib/applicationsUi";
 import { useObservedWorkspaceState } from "../lib/useObservedWorkspaceState";
-import type {
-  ApplicationReference,
-  Workspace,
-  WorkspaceActiveApplication,
-} from "../types/domain";
-import {
-  ActiveApplicationsView,
-  resolveActiveApplicationHwnd,
-} from "./ActiveApplicationsView";
+import type { ApplicationReference, Workspace } from "../types/domain";
 import { ApplicationList } from "./ApplicationList";
-import type { DesktopWindowFocusResult } from "../types/desktopArrangement";
 
 interface ApplicationsPanelProps {
   workspace: Workspace | null;
@@ -37,6 +25,8 @@ interface ApplicationsPanelProps {
   onBusy: (busy: boolean) => void;
   onError: (message: string | null) => void;
   onMessage: (message: string | null) => void;
+  /** Navigate to Stage — the continuous desktop for running apps. */
+  onOpenStage?: () => void;
 }
 
 export function ApplicationsPanel({
@@ -45,12 +35,12 @@ export function ApplicationsPanel({
   onBusy,
   onError,
   onMessage,
+  onOpenStage,
 }: ApplicationsPanelProps) {
   const [applications, setApplications] = useState<ApplicationReference[]>([]);
-  const { workspaceState, refreshWorkspaceState } = useObservedWorkspaceState();
+  const { refreshWorkspaceState } = useObservedWorkspaceState();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [activeLoading, setActiveLoading] = useState(false);
   const [name, setName] = useState("");
   const [identifier, setIdentifier] = useState("");
   const [executablePath, setExecutablePath] = useState("");
@@ -58,8 +48,6 @@ export function ApplicationsPanel({
   const [showRegister, setShowRegister] = useState(false);
   const runtime = isIpcRuntimeAvailable();
   const empty = applicationsEmptyCopy(Boolean(workspace));
-  const activeApps = workspaceState?.active_applications ?? [];
-  const activeWindows = workspaceState?.windows ?? [];
 
   const selected =
     applications.find((item) => item.id === selectedId) ?? null;
@@ -111,29 +99,12 @@ export function ApplicationsPanel({
     }
   }, [runtime, workspace]);
 
-  const refreshActive = useCallback(async () => {
-    if (!runtime) {
-      return;
-    }
-    setActiveLoading(true);
-    try {
-      await refreshWorkspaceState("workspace_applications");
-    } finally {
-      setActiveLoading(false);
-    }
-  }, [runtime, refreshWorkspaceState]);
-
   useEffect(() => {
     void refreshRegistry().catch((err: unknown) => {
       onError(err instanceof Error ? err.message : String(err));
     });
   }, [refreshRegistry, onError]);
 
-  useEffect(() => {
-    void refreshActive().catch(() => {
-      // Shared cache retains last good WorkspaceState.
-    });
-  }, [refreshActive, workspace?.id]);
   const registerApplication = () => {
     if (!workspace) {
       onError("Create a profile under Profiles to save library apps.");
@@ -172,7 +143,13 @@ export function ApplicationsPanel({
     void (async () => {
       try {
         const result = await launchRegisteredApplication(app);
-        await refreshActive();
+        if (runtime) {
+          try {
+            await refreshWorkspaceState("workspace_applications");
+          } catch {
+            // Stage will refresh on next observation epoch / open.
+          }
+        }
         onMessage(launchSuccessMessage(result));
       } catch (err: unknown) {
         onError(err instanceof Error ? err.message : String(err));
@@ -182,159 +159,117 @@ export function ApplicationsPanel({
     })();
   };
 
-  const focusActiveApplication = (app: WorkspaceActiveApplication) => {
-    const hwnd = resolveActiveApplicationHwnd(
-      app,
-      activeWindows,
-      workspaceState?.focused_window ?? null,
-    );
-    if (!hwnd) {
-      onError("No observed window handle for that application.");
-      return;
-    }
-    const label = activeApplicationName(app);
-    onBusy(true);
-    onError(null);
-    void (async () => {
-      try {
-        const result = await invokeIpc<DesktopWindowFocusResult>(
-          "focus_desktop_window",
-          { hwnd },
-        );
-        await refreshActive();
-        onMessage(
-          result.simulated
-            ? `Focused ${label} (simulated)`
-            : `Focused ${label}`,
-        );
-      } catch (err: unknown) {
-        onError(err instanceof Error ? err.message : String(err));
-      } finally {
-        onBusy(false);
-      }
-    })();
-  };
-
   return (
-    <section className="product-panel applications-panel" aria-label="Applications">
+    <section className="product-panel applications-panel" aria-label="Library">
       <header className="product-panel-hero">
-        <h2>Running</h2>
+        <h2>Library</h2>
+        <p className="muted">
+          Optional saved apps. Running windows live on Stage.
+        </p>
       </header>
 
-      <section aria-label="Running on the desktop">
-        <div className="row section-heading-row">
+      {onOpenStage ? (
+        <p className="applications-stage-link">
           <button
             type="button"
             className="ghost"
-            disabled={busy || activeLoading || !runtime}
-            onClick={() => {
-              void run("Desktop apps refreshed", refreshActive);
-            }}
+            disabled={busy}
+            onClick={onOpenStage}
           >
-            Refresh
+            Open Stage
           </button>
-        </div>
-        <ActiveApplicationsView
-          applications={activeApps}
-          windows={activeWindows}
-          focusedWindow={workspaceState?.focused_window ?? null}
-          loading={activeLoading}
-          busy={busy}
-          onFocusApplication={focusActiveApplication}
-        />
-      </section>
+          <span className="muted"> — see and focus what is running</span>
+        </p>
+      ) : null}
 
-      <details className="applications-library-details">
-        <summary>Optional library</summary>
-        {!workspace ? (
-          <p className="muted">{empty.body}</p>
-        ) : (
-          <>
-            <div className="row section-heading-row">
-              <div className="row">
-                <button
-                  type="button"
-                  className="ghost"
-                  disabled={busy || loading || !runtime}
-                  onClick={() => {
-                    void run("Applications refreshed", refreshRegistry);
-                  }}
-                >
-                  Refresh
-                </button>
-                <button
-                  type="button"
-                  className="ghost"
-                  disabled={busy || !runtime}
-                  onClick={() => setShowRegister((open) => !open)}
-                >
-                  {showRegister ? "Hide form" : "Add"}
-                </button>
-              </div>
+      {!workspace ? (
+        <p className="muted">{empty.body}</p>
+      ) : (
+        <>
+          <div className="row section-heading-row">
+            <div className="row">
+              <button
+                type="button"
+                className="ghost"
+                disabled={busy || loading || !runtime}
+                onClick={() => {
+                  void run("Applications refreshed", refreshRegistry);
+                }}
+              >
+                Refresh
+              </button>
+              <button
+                type="button"
+                className="ghost"
+                disabled={busy || !runtime}
+                onClick={() => setShowRegister((open) => !open)}
+              >
+                {showRegister ? "Hide form" : "Add"}
+              </button>
             </div>
-            {localHint ? <p className="muted">{localHint}</p> : null}
-            {loading && applications.length === 0 ? (
-              <p className="muted">Loading…</p>
-            ) : applications.length === 0 ? (
-              <p className="muted">{empty.body}</p>
-            ) : (
-              <ApplicationList
-                applications={applications}
-                selectedId={selectedId}
-                busy={busy || !runtime}
-                onSelect={setSelectedId}
-                onLaunch={launchApplication}
-              />
-            )}
-            {selected ? (
-              <p className="muted arrangement-permission-note">
-                Selected: <strong>{selected.name}</strong>
-              </p>
-            ) : null}
-            {showRegister ? (
-              <section aria-label="Add application">
-                <label className="arrangement-field">
-                  <span>Name</span>
-                  <input
-                    type="text"
-                    value={name}
-                    disabled={busy || !runtime}
-                    placeholder="Code"
-                    onChange={(event) => setName(event.target.value)}
-                  />
-                </label>
-                <label className="arrangement-field">
-                  <span>Identity (optional)</span>
-                  <input
-                    type="text"
-                    value={identifier}
-                    disabled={busy || !runtime}
-                    placeholder="editor"
-                    onChange={(event) => setIdentifier(event.target.value)}
-                  />
-                </label>
-                <label className="arrangement-field">
-                  <span>Executable path</span>
-                  <input
-                    type="text"
-                    value={executablePath}
-                    disabled={busy || !runtime}
-                    placeholder="C:\\Program Files\\App\\app.exe"
-                    onChange={(event) => setExecutablePath(event.target.value)}
-                  />
-                </label>
-                <button
-                  type="button"
+          </div>
+          {localHint ? <p className="muted">{localHint}</p> : null}
+          {loading && applications.length === 0 ? (
+            <p className="muted">Loading…</p>
+          ) : applications.length === 0 ? (
+            <p className="muted">{empty.body}</p>
+          ) : (
+            <ApplicationList
+              applications={applications}
+              selectedId={selectedId}
+              busy={busy || !runtime}
+              onSelect={setSelectedId}
+              onLaunch={launchApplication}
+            />
+          )}
+          {selected ? (
+            <p className="muted arrangement-permission-note">
+              Selected: <strong>{selected.name}</strong>
+            </p>
+          ) : null}
+          {showRegister ? (
+            <section aria-label="Add application">
+              <label className="arrangement-field">
+                <span>Name</span>
+                <input
+                  type="text"
+                  value={name}
                   disabled={busy || !runtime}
-                  onClick={registerApplication}
-                >
-                  Save
-                </button>
-              </section>
-            ) : null}
-          </>
-        )}
-      </details>
+                  placeholder="Code"
+                  onChange={(event) => setName(event.target.value)}
+                />
+              </label>
+              <label className="arrangement-field">
+                <span>Identity (optional)</span>
+                <input
+                  type="text"
+                  value={identifier}
+                  disabled={busy || !runtime}
+                  placeholder="editor"
+                  onChange={(event) => setIdentifier(event.target.value)}
+                />
+              </label>
+              <label className="arrangement-field">
+                <span>Executable path</span>
+                <input
+                  type="text"
+                  value={executablePath}
+                  disabled={busy || !runtime}
+                  placeholder="C:\\Program Files\\App\\app.exe"
+                  onChange={(event) => setExecutablePath(event.target.value)}
+                />
+              </label>
+              <button
+                type="button"
+                disabled={busy || !runtime}
+                onClick={registerApplication}
+              >
+                Save to library
+              </button>
+            </section>
+          ) : null}
+        </>
+      )}
     </section>
   );
 }

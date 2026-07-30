@@ -781,7 +781,8 @@ export function answerDesktopQuestionLocally(
 }
 
 /**
- * Prefix the compose ask with observed desktop facts when available.
+ * Prefix the compose ask with the same runtime conclusions Stage surfaces —
+ * attention, working objects, continuity — not telemetry plane dumps.
  * Displayed user ask stays unprefixed; enrichment is compose-only.
  */
 export function enrichAskWithDesktopObservation(
@@ -799,83 +800,43 @@ export function enrichAskWithDesktopObservation(
   const delta = state.latest_delta ?? null;
 
   const focused = state.focused_window?.title?.trim() || null;
-  const processes: string[] = [];
-  const seen = new Set<string>();
-  for (const window of state.windows) {
-    const label =
-      window.process_name?.trim() || window.title.trim() || `hwnd ${window.hwnd}`;
-    const key = `${window.process_id}:${label.toLowerCase()}`;
-    if (seen.has(key)) {
-      continue;
-    }
-    seen.add(key);
-    processes.push(label);
-    if (processes.length >= 8) {
-      break;
-    }
-  }
-
-  const parts = [
+  const parts: string[] = [
     `${state.windows.length} window${state.windows.length === 1 ? "" : "s"}`,
   ];
   if (focused) {
     parts.push(`focused: ${focused}`);
   }
-  if (processes.length > 0) {
-    parts.push(`apps: ${processes.join(", ")}`);
+
+  const primaryAttention = state.attention?.primary_item_id
+    ? state.attention.items.find(
+        (item) => item.id === state.attention.primary_item_id,
+      )
+    : null;
+  if (primaryAttention?.summary?.trim()) {
+    parts.push(`noticed: ${primaryAttention.summary.trim()}`);
   }
+
+  const working = (state.semantics?.objects ?? [])
+    .filter((object) => object.role === "working")
+    .slice(0, 3)
+    .map((object) => object.title?.trim() || object.hwnd)
+    .filter(Boolean);
+  if (working.length > 0) {
+    parts.push(`working: ${working.join(", ")}`);
+  }
+
+  const returning = (state.runtime_memory?.entities ?? [])
+    .filter((entity) => entity.presence === "returning")
+    .slice(0, 3)
+    .map((entity) => entity.title?.trim() || entity.hwnd)
+    .filter(Boolean);
+  if (returning.length > 0) {
+    parts.push(`returning: ${returning.join(", ")}`);
+  }
+
   if (delta?.has_changes) {
     parts.push(
       `changed: +${delta.opened_windows.length}/-${delta.closed_windows.length}`,
-    );
-  }
-  const groups = state.window_groups ?? [];
-  if (groups.length > 0) {
-    parts.push(
-      `groups: ${groups
-        .slice(0, 6)
-        .map((group) => `${group.criterion}:${group.label}(${group.member_ids.length})`)
-        .join(", ")}`,
-    );
-  }
-  const behaviour = state.behaviour;
-  if (behaviour && behaviour.sample_count > 0) {
-    parts.push(
-      `behaviour: ${behaviour.sample_count} samples, ${behaviour.focus_transitions.length} focus switches`,
-    );
-  }
-  const memory = state.runtime_memory;
-  if (memory && memory.entities.length > 0) {
-    parts.push(
-      `memory: ${memory.present_count} present / ${memory.returning_count} returning / ${memory.absent_count} absent`,
-    );
-  }
-  const semantics = state.semantics;
-  if (semantics && semantics.objects.length > 0) {
-    const working = semantics.objects
-      .filter((object) => object.role === "working")
-      .slice(0, 3)
-      .map((object) => object.title || object.hwnd);
-    parts.push(
-      `semantics: ${semantics.objects.length} roles / ${semantics.relationships.length} relations / ${semantics.activities.length} activities`,
-    );
-    if (working.length > 0) {
-      parts.push(`working: ${working.join(", ")}`);
-    }
-  }
-  const decisions = state.decisions;
-  if (decisions && decisions.decisions.length > 0) {
-    parts.push(
-      `decisions: ${decisions.decisions.length} / recommendations: ${decisions.recommendations.length} / issues: ${decisions.consistency_issues.length}`,
-    );
-  }
-  const attention = state.attention;
-  if (attention && attention.items.length > 0) {
-    parts.push(
-      `attention: ${attention.items
-        .slice(0, 3)
-        .map((item) => `${item.kind}(${item.time_sensitivity})`)
-        .join(", ")}`,
     );
   }
 
