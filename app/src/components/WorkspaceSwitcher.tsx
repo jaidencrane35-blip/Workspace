@@ -112,24 +112,24 @@ export function WorkspaceSwitcher({
   return (
     <section className="product-panel" aria-label="Workspace switcher">
       <header className="product-panel-hero">
-        <p className="arrangement-eyebrow">Workspaces</p>
-        <h2>Saved work environments</h2>
+        <p className="arrangement-eyebrow">Profiles</p>
+        <h2>Named profiles (optional)</h2>
         <p className="lede">
-          Switch between named workspaces. Arrangements and registered apps stay
-          with each workspace.
+          Optional labels for saved arrangements and library apps. Your desktop
+          on Stage does not require one.
         </p>
       </header>
 
       {activeWorkspace ? (
         <p className="product-current" aria-live="polite">
-          Current: <strong>{activeWorkspace.name}</strong>
+          Current profile: <strong>{activeWorkspace.name}</strong>
         </p>
       ) : (
-        <p className="muted">No workspace is active yet.</p>
+        <p className="muted">No profile selected — Stage still shows your desktop.</p>
       )}
 
-      <section aria-label="Create workspace">
-        <h3>Create workspace</h3>
+      <section aria-label="Create profile">
+        <h3>Add profile</h3>
         <label className="arrangement-field">
           <span>Name</span>
           <input
@@ -146,7 +146,7 @@ export function WorkspaceSwitcher({
             disabled={busy || !runtime}
             onClick={createWorkspace}
           >
-            Create workspace
+            Add profile
           </button>
           <button
             type="button"

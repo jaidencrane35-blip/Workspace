@@ -86,8 +86,8 @@ export function AssistantCompanionRail({
           </button>
         </div>
         <p className="lede assistant-companion-lede">
-          Supporting help for your desktop workspace. Workspace, apps, and
-          layouts stay primary.
+          Optional help beside your desktop. Stage and applications stay
+          primary.
         </p>
       </header>
 
@@ -116,8 +116,8 @@ export function AssistantCompanionRail({
           {advancedOpen ? (
             <>
               <p className="muted">
-                Optional plan → permission path. Prefer Home, Applications, and
-                Layouts for daily use.
+                Optional plan → permission path. Prefer Stage for daily desktop
+                use.
               </p>
               <AssistantPanel
                 workspace={workspace}

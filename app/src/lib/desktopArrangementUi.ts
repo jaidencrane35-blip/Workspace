@@ -99,13 +99,13 @@ export function emptyArrangementsCopy(hasWorkspace: boolean): {
 } {
   if (!hasWorkspace) {
     return {
-      title: "Create a workspace first",
-      body: "Desktop arrangements belong to a workspace. Create or open one to save your setup.",
+      title: "Saving needs a named profile",
+      body: "Your desktop is already on Stage. Create a profile only when you want to remember a layout for restore.",
     };
   }
   return {
     title: "No saved arrangements yet",
-    body: "Your workspace can remember your setup. Capture the windows you have open to create one.",
+    body: "Capture the windows you have open to remember this desktop. Nothing moves until you restore.",
   };
 }
 

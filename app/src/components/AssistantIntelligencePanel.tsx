@@ -342,18 +342,18 @@ export function AssistantIntelligencePanel({
         {rail ? null : (
           <header className="assistant-intel-hero">
             <p className="assistant-kicker">Supporting companion</p>
-            <h2>Ask about this workspace</h2>
+            <h2>Ask about your desktop</h2>
             <p className="lede">
-              Read-only help over what Workspace already knows — it does not run
-              your desktop for you.
+              Optional help over what Workspace already observes — it does not
+              run your desktop for you.
             </p>
           </header>
         )}
         <div className="assistant-intel-empty-block">
-          <p className="assistant-intel-empty">No workspace selected.</p>
+          <p className="assistant-intel-empty">Ready when you are.</p>
           <p className="assistant-intel-empty-hint">
-            Open Workspaces, create or select a workspace, then ask for help
-            here.
+            Your desktop is on Stage. Ask here anytime — a named profile is
+            optional for deeper saved context.
           </p>
         </div>
       </div>

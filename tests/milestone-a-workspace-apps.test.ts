@@ -46,7 +46,8 @@ describe("workspace switcher UI helpers", () => {
 
   it("provides empty-state copy for runtime and empty lists", () => {
     expect(workspaceSwitcherEmptyCopy(false).title).toMatch(/runtime/i);
-    expect(workspaceSwitcherEmptyCopy(true).body).toMatch(/named workspace/i);
+    expect(workspaceSwitcherEmptyCopy(true).body).toMatch(/Optional/i);
+    expect(workspaceSwitcherEmptyCopy(true).title).toMatch(/profile/i);
   });
 });
 
@@ -215,10 +216,10 @@ describe("assistant companion rail helpers", () => {
       assistantRailToggleLabel,
       DEFAULT_ASSISTANT_RAIL_OPEN,
     } = await import("../app/src/lib/assistantRail");
-    expect(DEFAULT_ASSISTANT_RAIL_OPEN).toBe(true);
+    expect(DEFAULT_ASSISTANT_RAIL_OPEN).toBe(false);
     expect(parseAssistantRailOpen("0")).toBe(false);
     expect(parseAssistantRailOpen("1")).toBe(true);
-    expect(parseAssistantRailOpen("nope")).toBe(true);
+    expect(parseAssistantRailOpen("nope")).toBe(false);
     expect(assistantRailToggleLabel(true)).toMatch(/Hide/i);
     expect(assistantRailToggleLabel(false)).toMatch(/Show/i);
   });

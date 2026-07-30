@@ -159,10 +159,10 @@ export function DesktopArrangementPanel({
     >
       <header className="arrangement-panel-hero">
         <p className="arrangement-eyebrow">Desktop arrangements</p>
-        <h2>Your workspace can remember your setup</h2>
+        <h2>Remember this desktop</h2>
         <p className="lede">
-          Save open windows into a named arrangement, then restore when you are
-          ready. Nothing moves until you ask.
+          Save open windows into a named arrangement, then restore when you
+          want. Observation on Stage does not require this.
         </p>
       </header>
 

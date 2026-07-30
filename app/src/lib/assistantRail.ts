@@ -1,21 +1,21 @@
 /**
  * Purpose: Assistant companion-rail chrome preference (open / collapsed).
- * Owner: Frontend product shell (Milestone C — companion rail)
+ * Owner: Frontend product shell (IM-2 — Desktop Reality First)
  * Inputs: stored preference string / user toggle
  * Outputs: rail open state + persistence helpers
  * Dependencies: localStorage (UI preference only)
  * Non-responsibilities: Assistant reasoning, IPC, PermissionGateway, AI engines,
  *   DesktopArrangement, WindowController
  *
- * Problem solved: concept references show Assistant as a persistent side rail.
- * Why here: presentation preference — not domain ownership.
+ * Contract: Observe → Represent → Organise → Ask. Assistant starts optional so
+ * Stage desktop reality is not co-owned by a setup/help column.
  */
 
 /** localStorage key for companion-rail visibility (not a domain setting). */
 export const ASSISTANT_RAIL_STORAGE_KEY = "workspace.ui.assistant_rail_open";
 
-/** Default: rail visible on primary product views (concept alignment). */
-export const DEFAULT_ASSISTANT_RAIL_OPEN = true;
+/** Default closed: desktop Stage first; user opens companion when they want help. */
+export const DEFAULT_ASSISTANT_RAIL_OPEN = false;
 
 export function parseAssistantRailOpen(
   value: string | null | undefined,

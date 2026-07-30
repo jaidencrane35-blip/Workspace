@@ -286,7 +286,7 @@ export default function App() {
 
   const addZoneFromCanvas = () => {
     if (!workspace) {
-      onError("Create a workspace first.");
+      onError("Add a named profile under Profiles to use the companion canvas.");
       return;
     }
     setBusy(true);
@@ -514,7 +514,7 @@ export default function App() {
           >
             {primaryTab("layouts", "Stage")}
             {primaryTab("applications", "Applications")}
-            {primaryTab("workspaces", "Workspaces")}
+            {primaryTab("workspaces", "Profiles")}
             {primaryTab("home", "Home")}
           </nav>
           <WorkModeSwitch mode={workMode} onChange={onWorkModeChange} />
@@ -585,7 +585,7 @@ export default function App() {
                 className="ghost"
                 onClick={() => setAssistantRailOpen(true)}
               >
-                Show Assistant companion
+                Ask Assistant
               </button>
             </div>
           ) : null}

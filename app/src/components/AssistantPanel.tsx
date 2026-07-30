@@ -856,8 +856,8 @@ export function AssistantPanel({
 
       {!workspace && (
         <p className="muted">
-          Create or activate a workspace from Workspaces before asking the assistant
-          for work.
+          Advanced workflow can use a named profile for saved context. Stage
+          already shows your desktop without one.
         </p>
       )}
     </div>

@@ -186,8 +186,8 @@ export function WorkspaceHome({
             className="home-action"
             onClick={() => onNavigate("workspaces")}
           >
-            <span className="home-action-title">Workspaces</span>
-            <span className="muted">Switch saved environments</span>
+            <span className="home-action-title">Profiles</span>
+            <span className="muted">Optional names for saved layouts</span>
           </button>
         </nav>
       </section>

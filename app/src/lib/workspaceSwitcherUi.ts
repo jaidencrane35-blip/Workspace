@@ -1,10 +1,11 @@
 /**
- * Purpose: Copy and presentation helpers for the product workspace switcher.
- * Owner: Frontend product shell (Milestone A)
+ * Purpose: Copy and presentation helpers for named desktop profiles.
+ * Owner: Frontend product shell (IM-2 — Desktop Reality First)
  * Inputs: Workspace metadata + active id
  * Outputs: Labels and empty-state copy
  * Dependencies: None (pure helpers)
- * Non-responsibilities: IPC, permissions, arrangement restore, Assistant
+ * Non-responsibilities: IPC, permissions, arrangement restore, Assistant,
+ *   inventing observed desktop data
  */
 
 import type { Workspace } from "../types/domain";
@@ -16,12 +17,12 @@ export function workspaceSwitcherEmptyCopy(hasRuntime: boolean): {
   if (!hasRuntime) {
     return {
       title: "Desktop runtime required",
-      body: "Workspace switching needs the Workspace desktop app. The switcher UI still renders here.",
+      body: "Profile switching needs the Workspace desktop app. Stage still shows your desktop without a profile.",
     };
   }
   return {
-    title: "No workspaces yet",
-    body: "Create a named workspace to organise applications and desktop arrangements.",
+    title: "No named profiles yet",
+    body: "Optional. Open Stage to see your desktop — add a profile only to save arrangements or a library.",
   };
 }
 

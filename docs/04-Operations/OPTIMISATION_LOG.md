@@ -88,6 +88,26 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 
 ## Cycles
 
+### Cycle: im-2-desktop-reality-first
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Cycle number** | IM-2 |
+| **Approved category** | 5 Navigation clarity (+ 1 Visual hierarchy) |
+| **Goal** | Observe → Represent before Ask/Configure; less setup before value |
+| **Problem** | Assistant default-open + create-workspace empty copy competed with Stage |
+| **Analysis** | Interaction Model IM-2; preference default + copy; no engines |
+| **Changes** | `DEFAULT_ASSISTANT_RAIL_OPEN = false`; desktop-first Assistant/arrangements/profiles copy; Profiles nav label |
+| **Files affected** | `assistantRail.ts`, Assistant panels, `desktopArrangementUi`, `WorkspaceSwitcher`, `App.tsx`, tests, IM-2 reports, this log |
+| **Validation** | typecheck / test (125) / build / architecture / ipc / ui-boundary |
+| **Maintainability score** | 8/10 — defaults + pure copy helpers |
+| **Human review required** | **Yes** — stop before IM-3 |
+| **Next recommended cycle** | Await IM-2 approval → IM-3 arrangements remember-control (if still needed after copy) |
+| **Inspector / decoder path** | Fresh load / clear rail preference → Stage without Assistant column |
+
+---
+
 ### Cycle: im-1-stage-empty-spatial-calm
 
 | Field | Value |
