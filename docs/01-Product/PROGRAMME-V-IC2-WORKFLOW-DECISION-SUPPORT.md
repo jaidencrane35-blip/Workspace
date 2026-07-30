@@ -92,4 +92,4 @@ IC2 complete and **approved** by the Principal Architect (2026-07-30).
 
 Review confirmed: deterministic recommendations with what / why / owner; stable wording; operator authority preserved; no recommendation engine, scoring, automation, or persistence.
 
-**Next:** [IC3 — Workflow Recoverability](PROGRAMME-V-IC3-WORKFLOW-RECOVERABILITY.md) (planning). Implementation awaits Principal Architect approval to commence.
+**Next:** [IC3 — Workflow Recoverability](PROGRAMME-V-IC3-WORKFLOW-RECOVERABILITY.md) (complete — approved).

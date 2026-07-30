@@ -7,9 +7,10 @@
 | **Implementation agent** | Cursor |
 | **Programme** | [Programme V — Operator Workflows](PROGRAMME-V-OPERATOR-WORKFLOWS.md) |
 | **Contract** | Implementation Contract 3 |
-| **Status** | Complete — implemented; awaiting Principal Architect review |
+| **Status** | Complete — **Approved** by Principal Architect |
 | **Date** | 2026-07-30 |
 | **Approved to commence** | 2026-07-30 |
+| **Review** | 2026-07-30 — recoverability without recovery ownership; proceed to IC4 planning |
 | **Depends on** | [IC1](PROGRAMME-V-IC1-OPERATOR-WORKFLOW-COMPOSITION.md) (approved); [IC2](PROGRAMME-V-IC2-WORKFLOW-DECISION-SUPPORT.md) (approved) |
 
 ---
@@ -183,6 +184,8 @@ IC3 succeeds when an operator can answer, without external documentation:
 
 ## Stop condition
 
-IC3 implementation complete for Principal Architect review.
+IC3 complete and **approved** by the Principal Architect (2026-07-30).
 
-**Do not commence IC4 until the Principal Architect approves IC3 and authorises the next contract.**
+Review confirmed: recoverability as pure projection; recoverable vs non-recoverable classifications; existing verbs only; explanation consistency; no recovery engine, resumable state, checkpoints, auto-retry, or diagnostic persistence.
+
+**Next:** [IC4 — Workflow Predictability](PROGRAMME-V-IC4-WORKFLOW-PREDICTABILITY.md) (planning). Implementation awaits Principal Architect approval to commence.
