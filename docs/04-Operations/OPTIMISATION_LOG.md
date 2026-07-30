@@ -90,6 +90,40 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 
 ## Cycles
 
+### Cycle: v9-empty-behavioural-evaluation-2
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Cycle number** | V9-empty-2 |
+| **Goal** | Second consecutive empty behavioural capability evaluation |
+| **Problem** | Confirm whether any further measurable behaviour capability remains without new architecture/platform APIs |
+| **Analysis** | Same blockers as empty-1: continuous OS focus/idle, durable workspace-scoped history, geometry/thumbnail/audio ownership |
+| **Changes** | none — second empty evaluation |
+| **Files affected** | this log |
+| **Validation** | Architecture review against WorkspaceState behaviour projection |
+| **Deleted / reduced** | none |
+| **Next recommended cycle** | Stop autonomous V9 (condition 3: two empty evaluations) |
+
+---
+
+### Cycle: v9-empty-behavioural-evaluation-1
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Cycle number** | V9-empty-1 |
+| **Goal** | First empty behavioural capability evaluation after V9-5 |
+| **Problem** | Identify highest-value missing behavioural runtime capability |
+| **Analysis** | Remaining deltas need continuous OS focus/idle sampling, workspace-scoped durable history, or geometry/thumbnail/audio ownership — platform APIs or new architecture |
+| **Changes** | none — empty evaluation |
+| **Files affected** | this log |
+| **Validation** | Architecture review against WorkspaceState behaviour projection |
+| **Deleted / reduced** | none |
+| **Next recommended cycle** | Second empty behavioural evaluation |
+
+---
+
 ### Cycle: v9-5-suppress-behaviour-across-coverage-gaps
 
 | Field | Value |
