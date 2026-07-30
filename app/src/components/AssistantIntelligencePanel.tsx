@@ -35,7 +35,6 @@ import type {
   WorkspaceAssistantRetrievalSummary,
   WorkspaceAssistantSurfaceProjection,
   WorkspaceAssistantSurfaceSummary,
-  WorkspaceObservationDelta,
 } from "../types/domain";
 import {
   assistantContextHistoryCountIsAuthoritative,
@@ -296,11 +295,8 @@ export function AssistantIntelligencePanel({
       return { state: null, delta: null, arrangements: [] };
     }
     try {
-      const [state, delta, arrangements] = await Promise.all([
+      const [state, arrangements] = await Promise.all([
         refreshObservedWorkspaceState("workspace_assistant").catch(() => null),
-        invokeIpc<WorkspaceObservationDelta>(
-          "get_latest_observation_delta",
-        ).catch(() => null),
         activeWorkspaceId
           ? invokeIpc<DesktopArrangement[]>("list_desktop_arrangements", {
               workspaceId: activeWorkspaceId,
@@ -310,7 +306,7 @@ export function AssistantIntelligencePanel({
       ]);
       return {
         state,
-        delta,
+        delta: state?.latest_delta ?? null,
         arrangements: arrangements ?? [],
       };
     } catch {

@@ -90,6 +90,23 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 
 ## Cycles
 
+### Cycle: v8-2-atomic-latest-delta-on-workspace-state
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Cycle number** | V8-2 |
+| **Goal** | Make observation delta atomic with WorkspaceState; stop Assistant dual-read race |
+| **Problem** | Assistant refreshed WorkspaceState and `get_latest_observation_delta` separately — windows and change facts could disagree across passes |
+| **Analysis** | Delta already computed when projecting state; embedding it removes an IPC round-trip and restores one runtime truth |
+| **Changes** | `WorkspaceState.latest_delta`; Assistant reads `state.latest_delta`; working-on answers prefer process groups |
+| **Files affected** | domain workspace_state, domain.ts, AssistantIntelligencePanel, assistantCompanion, kernel state engine tests, this log |
+| **Validation** | typecheck / test / build / architecture / ipc / ui-boundary (+ domain/kernel state tests) |
+| **Deleted / reduced** | Assistant `get_latest_observation_delta` parallel fetch |
+| **Next recommended cycle** | Identity continuity facts on windows, or Environment consume WorkspaceState.window_groups |
+
+---
+
 ### Cycle: v8-1-authoritative-groups-and-arrangement-membership
 
 | Field | Value |

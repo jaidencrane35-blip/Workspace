@@ -6853,6 +6853,8 @@ export interface WorkspaceState {
   active_applications: WorkspaceActiveApplication[];
   windows: WorkspaceStateWindow[];
   window_groups: DesktopWindowGroup[];
+  /** Latest observation delta projected with this state (atomic with windows). */
+  latest_delta: WorkspaceObservationDelta;
   authority_effect: string;
 }
 

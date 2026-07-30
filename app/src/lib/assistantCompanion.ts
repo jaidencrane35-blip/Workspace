@@ -124,16 +124,23 @@ function summariseWorkingOn(state: WorkspaceState): string {
   if (!focused) {
     return "No focused window is recorded in the latest observation.";
   }
-  const siblings = state.windows.filter(
-    (window) => window.process_id === focused.process_id,
+  const focusedMemberId =
+    focused.stable_window_id?.trim() || focused.hwnd;
+  const processGroup = (state.window_groups ?? []).find(
+    (group) =>
+      group.criterion === "process_id" &&
+      group.member_ids.includes(focusedMemberId),
   );
+  const siblingCount = processGroup?.member_ids.length
+    ?? state.windows.filter((window) => window.process_id === focused.process_id)
+        .length;
   const name =
-    siblings.find((window) => window.focused)?.process_name?.trim() ||
+    processGroup?.label?.trim() ||
     state.windows.find((window) => window.hwnd === focused.hwnd)?.process_name?.trim() ||
     focused.title.trim() ||
     `hwnd ${focused.hwnd}`;
   return `You appear to be working in ${name} (${focused.title || "untitled"}${
-    siblings.length > 1 ? `; ${siblings.length} windows in that process` : ""
+    siblingCount > 1 ? `; ${siblingCount} windows in that process` : ""
   }).`;
 }
 
@@ -261,6 +268,7 @@ export function answerDesktopQuestionLocally(
   if (!state) {
     return null;
   }
+  const delta = facts.delta ?? state.latest_delta ?? null;
 
   if (
     /what('s| is) open|what windows|what apps|what applications/.test(trimmed)
@@ -278,10 +286,10 @@ export function answerDesktopQuestionLocally(
     return summariseBelongsTogether(state, facts.arrangements);
   }
   if (/what changed|what('s| is) new|delta|recent change/.test(trimmed)) {
-    return summariseChanged(facts.delta);
+    return summariseChanged(delta);
   }
   if (/reopen|restore|bring back|closed/.test(trimmed)) {
-    return summariseReopen(facts.delta, facts.arrangements);
+    return summariseReopen(delta, facts.arrangements);
   }
   return null;
 }
@@ -312,6 +320,7 @@ export function enrichAskWithDesktopObservation(
   if (!state || state.windows.length === 0) {
     return trimmed;
   }
+  const delta = normalized.delta ?? state.latest_delta ?? null;
 
   const focused = state.focused_window?.title?.trim() || null;
   const processes: string[] = [];
@@ -339,9 +348,9 @@ export function enrichAskWithDesktopObservation(
   if (processes.length > 0) {
     parts.push(`apps: ${processes.join(", ")}`);
   }
-  if (normalized.delta?.has_changes) {
+  if (delta?.has_changes) {
     parts.push(
-      `changed: +${normalized.delta.opened_windows.length}/-${normalized.delta.closed_windows.length}`,
+      `changed: +${delta.opened_windows.length}/-${delta.closed_windows.length}`,
     );
   }
   if (normalized.arrangements.length > 0) {

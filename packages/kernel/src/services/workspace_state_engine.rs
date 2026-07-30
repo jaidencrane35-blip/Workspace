@@ -161,6 +161,8 @@ mod tests {
         assert_eq!(state.metadata.observation_pass_id.as_deref(), Some("pass-1"));
         assert_eq!(state.metadata.window_count, 1);
         assert_eq!(state.metadata.monitor_count, 1);
+        assert!(state.latest_delta.current_pass_id.is_some());
+        assert!(!state.latest_delta.has_changes);
         assert_eq!(
             state.focused_window.as_ref().and_then(|w| w.stable_window_id.as_deref()),
             Some("stable-a")

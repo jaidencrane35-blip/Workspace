@@ -139,6 +139,8 @@ pub struct WorkspaceState {
     pub windows: Vec<WorkspaceStateWindow>,
     /// Fact-driven groups from the generic desktop grouping engine.
     pub window_groups: Vec<DesktopWindowGroup>,
+    /// Latest observation delta captured with this projection (atomic with windows).
+    pub latest_delta: WorkspaceObservationDelta,
     pub authority_effect: String,
 }
 
@@ -161,6 +163,7 @@ impl WorkspaceState {
             active_applications: Vec::new(),
             windows: Vec::new(),
             window_groups: Vec::new(),
+            latest_delta: WorkspaceObservationDelta::empty(),
             authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
         }
     }
@@ -176,6 +179,7 @@ impl WorkspaceState {
             empty.metadata.created_at = created_at;
             empty.metadata.has_changes = delta.has_changes;
             empty.metadata.latest_delta_reference = delta_reference(delta);
+            empty.latest_delta = delta.clone();
             return empty;
         };
 
@@ -210,6 +214,7 @@ impl WorkspaceState {
             active_applications,
             windows,
             window_groups,
+            latest_delta: delta.clone(),
             authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
         }
     }
@@ -238,6 +243,7 @@ impl WorkspaceState {
             active_applications,
             windows,
             window_groups,
+            latest_delta: WorkspaceObservationDelta::empty(),
             authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
         }
     }
@@ -505,6 +511,11 @@ mod tests {
             .window_groups
             .iter()
             .any(|group| group.criterion == "monitor_index"));
+        assert_eq!(
+            state.latest_delta.current_pass_id.as_deref(),
+            Some("pass-1")
+        );
+        assert!(!state.latest_delta.has_changes);
     }
 
     #[test]
