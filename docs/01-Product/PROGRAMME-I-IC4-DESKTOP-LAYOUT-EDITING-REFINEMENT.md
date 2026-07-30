@@ -7,8 +7,9 @@
 | **Implementation agent** | Cursor |
 | **Programme** | [Programme I](PROGRAMME-I-WORKSPACE-PRODUCT-CAPABILITY.md) |
 | **Depends on** | [IC3 Desktop Layout Editing Foundation](PROGRAMME-I-IC3-DESKTOP-LAYOUT-EDITING-FOUNDATION.md) |
-| **Status** | Complete |
+| **Status** | Complete — **Approved** by Principal Architect |
 | **Date** | 2026-07-30 |
+| **Review** | 2026-07-30 — architecture preserved; merge as Programme I milestone; proceed to IC5 planning |
 
 ---
 
@@ -138,4 +139,8 @@ IC3 already composed editing from Arrangement capture/restore and Stage observat
 
 ## Stop condition
 
-IC4 complete. **Await Principal Architect review before further Programme I contracts.**
+IC4 complete and **approved** by the Principal Architect (2026-07-30).
+
+Architectural review confirmed: WorkspaceState ownership preserved; Restore sole OS positioning authority; no duplicate models; editing lifecycle improved; validation green.
+
+**Next:** [IC5 planning — User Confidence & Discoverability](PROGRAMME-I-IC5-USER-CONFIDENCE-AND-DISCOVERABILITY.md). Implementation of IC5 awaits Principal Architect approval to commence.

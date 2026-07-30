@@ -2,13 +2,13 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | Established — charter only |
+| **Status** | Active — product experience maturing on approved architecture (IC1–IC4 complete; IC4 approved) |
 | **Audience** | Principal Architect, Engineering, Cursor agents |
 | **Nature** | Formal product architecture programme contract |
 | **Not** | An implementation contract; not a feature backlog; not a roadmap of tasks |
 | **Depends on** | Repository architectural evidence; existing WorkspaceState / observation / DAF foundations |
 | **Related** | [Architectural Evidence Report](../02-Architecture/ARCHITECTURAL-EVIDENCE-REPORT.md), [Product Vision](PRODUCT-VISION.md), [Desktop Interaction Model](WORKSPACE-DESKTOP-INTERACTION-MODEL.md), Programmes II–IV (`../05-AI/`) |
-| **Implementation contracts** | [IC1 — Product Shell Capability Inventory](PROGRAMME-I-IC1-PRODUCT-SHELL-CAPABILITY-INVENTORY.md) (complete); [IC2 — Product Workspace Composition](PROGRAMME-I-IC2-PRODUCT-WORKSPACE-COMPOSITION.md) (complete); [IC3 — Desktop Layout Editing Foundation](PROGRAMME-I-IC3-DESKTOP-LAYOUT-EDITING-FOUNDATION.md) (complete); [IC4 — Desktop Layout Editing Experience Refinement](PROGRAMME-I-IC4-DESKTOP-LAYOUT-EDITING-REFINEMENT.md) (complete) |
+| **Implementation contracts** | [IC1](PROGRAMME-I-IC1-PRODUCT-SHELL-CAPABILITY-INVENTORY.md) (complete); [IC2](PROGRAMME-I-IC2-PRODUCT-WORKSPACE-COMPOSITION.md) (complete); [IC3](PROGRAMME-I-IC3-DESKTOP-LAYOUT-EDITING-FOUNDATION.md) (complete); [IC4](PROGRAMME-I-IC4-DESKTOP-LAYOUT-EDITING-REFINEMENT.md) (complete — approved); [IC5](PROGRAMME-I-IC5-USER-CONFIDENCE-AND-DISCOVERABILITY.md) (planned — awaiting approval to commence) |
 
 ---
 
@@ -159,6 +159,20 @@ At the completion of Programme I:
 | **Programme IV** | Interaction Runtime / evidence / assistant packages (existing) — Assistant remains sidecar |
 
 Programme I does not subsume, replace, or reopen Programmes II–IV as expansion targets.
+
+---
+
+## Programme status (milestones)
+
+| Milestone | Outcome |
+|-----------|---------|
+| **IC1** | Capability inventory — architecture richer than shell |
+| **IC2** | Unified workflow: Profile → Desktop → Arrangement → Restore |
+| **IC3** | Desktop layout editing foundation (composition) |
+| **IC4** | Editing experience refinement — **Principal Architect approved** |
+| **IC5** | Planned: user confidence & discoverability (awaiting approval to commence) |
+
+IC4 review confirmed a healthy trajectory: richer product experience while continuing to consume WorkspaceState, Arrangement, Stage, and Restore — without duplicate engines.
 
 ---
 
