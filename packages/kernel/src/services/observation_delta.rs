@@ -36,11 +36,19 @@ impl ObservationDeltaService {
         let repo = ObservationPassRepository::new(&guard);
         let latest = repo.load_latest_snapshot()?;
         let previous = repo.load_previous_snapshot()?;
-        Ok(match (previous, latest) {
-            (Some(previous), Some(current)) => compare_observation_snapshots(&previous, &current),
-            (None, Some(current)) => WorkspaceObservationDelta::empty_with_current(&current),
+        Ok(Self::from_loaded(previous.as_ref(), latest.as_ref()))
+    }
+
+    /// Pure delta construction from already-loaded snapshots (single-lock callers).
+    pub(crate) fn from_loaded(
+        previous: Option<&workspace_domain::WorkspaceObservationSnapshot>,
+        latest: Option<&workspace_domain::WorkspaceObservationSnapshot>,
+    ) -> WorkspaceObservationDelta {
+        match (previous, latest) {
+            (Some(previous), Some(current)) => compare_observation_snapshots(previous, current),
+            (None, Some(current)) => WorkspaceObservationDelta::empty_with_current(current),
             _ => WorkspaceObservationDelta::empty(),
-        })
+        }
     }
 }
 

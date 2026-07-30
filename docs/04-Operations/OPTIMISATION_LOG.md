@@ -90,6 +90,23 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 
 ## Cycles
 
+### Cycle: v8-6-single-lock-workspace-state-projection
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Cycle number** | V8-6 |
+| **Goal** | Make observation + delta projection atomic under one DB lock |
+| **Problem** | Engine acquired the lock twice — windows and latest_delta could disagree across passes |
+| **Analysis** | Load latest/previous snapshots once; build delta via `from_loaded`; assert pass id identity in tests |
+| **Changes** | ObservationDeltaService::from_loaded; WorkspaceStateEngine single-lock get_current |
+| **Files affected** | observation_delta.rs, workspace_state_engine.rs, this log |
+| **Validation** | typecheck / test / build / architecture / ipc / ui-boundary (+ state engine tests) |
+| **Deleted / reduced** | Dual-lock observation/delta load race |
+| **Next recommended cycle** | Capability evaluation passes toward plateau |
+
+---
+
 ### Cycle: v8-5-focus-organisation-from-window-groups
 
 | Field | Value |

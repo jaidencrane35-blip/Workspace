@@ -38,15 +38,20 @@ impl WorkspaceStateEngine {
     }
 
     /// Load latest observation + delta and project WorkspaceState.
+    ///
+    /// Observation, previous pass, arrangement membership, and identity facts are
+    /// read under one database lock so windows and `latest_delta` share one pass.
     pub(crate) fn get_current(
         db: &Arc<Mutex<Database>>,
-        actor: &ActorContext,
-        intent: &IntentContext,
+        _actor: &ActorContext,
+        _intent: &IntentContext,
     ) -> Result<WorkspaceState> {
-        let delta = ObservationDeltaService::get_latest(db, actor, intent)?;
-        let (observation, membership, identities) = {
+        let (observation, delta, membership, identities) = {
             let guard = db.lock().expect("database lock poisoned");
-            let observation = ObservationPassRepository::new(&guard).load_latest_snapshot()?;
+            let repo = ObservationPassRepository::new(&guard);
+            let observation = repo.load_latest_snapshot()?;
+            let previous = repo.load_previous_snapshot()?;
+            let delta = ObservationDeltaService::from_loaded(previous.as_ref(), observation.as_ref());
             let membership =
                 DesktopArrangementRepository::new(&guard).list_active_membership_facts(2_000)?;
             let identity_ids: Vec<String> = observation
@@ -65,9 +70,9 @@ impl WorkspaceStateEngine {
                         .collect()
                 })
                 .unwrap_or_default();
-            let identities = ObservationWindowIdentityRepository::new(&guard)
-                .list_by_ids(&identity_ids)?;
-            (observation, membership, identities)
+            let identities =
+                ObservationWindowIdentityRepository::new(&guard).list_by_ids(&identity_ids)?;
+            (observation, delta, membership, identities)
         };
         Ok(Self::build(observation.as_ref(), &delta)
             .with_arrangement_membership(&membership)
@@ -223,6 +228,10 @@ mod tests {
         assert_eq!(
             state.metadata.latest_delta_reference.as_deref(),
             Some("pass-1->pass-2")
+        );
+        assert_eq!(
+            state.metadata.observation_pass_id.as_deref(),
+            state.latest_delta.current_pass_id.as_deref()
         );
         assert_eq!(
             state.focused_window.as_ref().and_then(|w| w.stable_window_id.as_deref()),
