@@ -1,25 +1,36 @@
 /**
- * Purpose: Desktop surface — operator workflow composition through unified
- *   explainability (Programme V IC1–IC5).
- * Owner: Frontend product shell (Programme V IC5)
+ * Purpose: Desktop surface — operator workflow composition through observability
+ *   (Programme V IC1–IC6 / Phase 1).
+ * Owner: Frontend product shell (Programme V IC6)
  * Inputs: optional profile, registry apps, work mode, launch + navigate;
  *   WorkspaceState via refreshObservedWorkspaceState; focus_desktop_window;
  *   list/capture/restore_desktop_arrangement
  * Outputs: Spatial desktop objects; Arrangement select + Restore; edit session;
- *   IC1–IC4 projections + IC5 compositional summary (explain only, never execute)
+ *   IC1–IC5 projections + IC6 observability of meaningful transitions
+ *   (explain only, never execute)
  * Dependencies: stageDesktopUi, layoutsStageUi, desktopLayoutEditing,
  *   arrangementProductUi, operationalConfidenceUi, operatorWorkflowUi,
  *   workflowDecisionSupportUi, workflowRecoverabilityUi,
- *   workflowPredictabilityUi, workflowExplainabilityUi, ipc
- * Non-goals: Workflow/recommendation/recovery/simulation/narrative engines,
- *   scoring, automation, summary cache, persistence, new set_bounds product IPC
+ *   workflowPredictabilityUi, workflowExplainabilityUi,
+ *   workflowObservabilityUi, ipc
+ * Non-goals: Workflow/recommendation/recovery/simulation/narrative/timeline
+ *   engines, event history, activity logs, analytics, scoring, automation,
+ *   summary cache, persistence, new set_bounds product IPC
  *
  * Product State: Profile · Desktop · Arrangement · Restore
- * Interaction State (never persist): Editing · Preview · Selection · In-flight · Guidance
+ * Interaction State (never persist): Editing · Preview · Selection · In-flight ·
+ *   Guidance · Immediately preceding observability snapshot
  * Workflow projections: derived only — stable when facts are stable
  */
 
-import { useCallback, useEffect, useMemo, useState, type KeyboardEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent,
+} from "react";
 import {
   applicationIdentityLine,
   applicationStatusLabel,
@@ -72,6 +83,14 @@ import {
 } from "../lib/workflowRecoverabilityUi";
 import { projectWorkflowPredictability } from "../lib/workflowPredictabilityUi";
 import { composeWorkflowExplainability } from "../lib/workflowExplainabilityUi";
+import {
+  captureWorkflowObservabilitySnapshot,
+  observabilityStabilityLabel,
+  projectWorkflowObservability,
+  workflowObservabilityFingerprint,
+  type WorkflowObservabilitySnapshot,
+  type WorkflowObservabilityTransition,
+} from "../lib/workflowObservabilityUi";
 import {
   layoutStageDesktopWindows,
   nextStageSelectionKey,
@@ -576,6 +595,58 @@ export function WorkspaceApplicationStage({
     ],
   );
 
+  const effectiveInFlight =
+    inFlight ?? (loadState === "loading" ? "observe" : null);
+
+  const workflowObservabilitySnapshot = useMemo(
+    () =>
+      captureWorkflowObservabilitySnapshot({
+        workflow: operatorWorkflow,
+        recommendations: workflowRecommendations,
+        recoverability: workflowRecoverability,
+        predictability: workflowPredictability,
+        explainability: workflowExplainability,
+        inFlight: effectiveInFlight,
+      }),
+    [
+      operatorWorkflow,
+      workflowRecommendations,
+      workflowRecoverability,
+      workflowPredictability,
+      workflowExplainability,
+      effectiveInFlight,
+    ],
+  );
+
+  /** Immediately preceding snapshot only — Interaction State, never persisted. */
+  const previousObservabilityRef = useRef<WorkflowObservabilitySnapshot | null>(
+    null,
+  );
+  const [workflowObservability, setWorkflowObservability] = useState<
+    WorkflowObservabilityTransition[]
+  >([]);
+
+  useEffect(() => {
+    const previous = previousObservabilityRef.current;
+    if (!previous) {
+      previousObservabilityRef.current = workflowObservabilitySnapshot;
+      return;
+    }
+    if (
+      workflowObservabilityFingerprint(previous) ===
+      workflowObservabilityFingerprint(workflowObservabilitySnapshot)
+    ) {
+      return;
+    }
+    setWorkflowObservability(
+      projectWorkflowObservability({
+        previous,
+        current: workflowObservabilitySnapshot,
+      }),
+    );
+    previousObservabilityRef.current = workflowObservabilitySnapshot;
+  }, [workflowObservabilitySnapshot]);
+
   const saveSelectionAsWorkingSet = () => {
     if (!workspace) {
       onError("Choose a Profile to save an Arrangement.");
@@ -1014,6 +1085,41 @@ export function WorkspaceApplicationStage({
             not invent facts, cache a narrative, or execute actions.
           </p>
         </section>
+        {workflowObservability.length > 0 ? (
+          <ul
+            className="stage-workflow-observability"
+            aria-label="Workflow observability"
+          >
+            {workflowObservability.map((item) => (
+              <li
+                key={`${item.id}-${item.sourceId}-${item.line}`}
+                className={`stage-workflow-observability-item ${item.stability}`}
+                data-observability-id={item.id}
+                data-observability-stability={item.stability}
+                data-source-projection={item.sourceProjection}
+                data-source-id={item.sourceId}
+              >
+                <span className="stage-workflow-observability-what">
+                  {item.what}
+                </span>
+                <span className="stage-workflow-observability-stability muted">
+                  {observabilityStabilityLabel(item.stability)}
+                </span>
+                <span className="stage-workflow-observability-because muted">
+                  Because {item.because}.
+                </span>
+                <span className="stage-workflow-observability-owner muted">
+                  Owner: {item.owner}
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        <p className="stage-workflow-observability-note muted">
+          Observability explains meaningful changes between the current and
+          immediately preceding projections — it does not record history,
+          timelines, or analytics.
+        </p>
         <ol className="stage-operator-workflow-steps">
           {operatorWorkflow.steps.map((step) => (
             <li

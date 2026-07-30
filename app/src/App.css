@@ -670,6 +670,51 @@ button.ghost {
   }
 }
 
+.stage-workflow-observability {
+  list-style: none;
+  margin: 0.55rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.stage-workflow-observability-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.35rem 0.45rem;
+  border: 1px solid #2a3642;
+  border-radius: 4px;
+  background: rgba(12, 16, 21, 0.45);
+}
+
+.stage-workflow-observability-item.stable {
+  border-color: rgba(147, 197, 253, 0.35);
+}
+
+.stage-workflow-observability-item.transient {
+  border-color: rgba(212, 165, 116, 0.45);
+}
+
+.stage-workflow-observability-what {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #d7e0e8;
+}
+
+.stage-workflow-observability-stability,
+.stage-workflow-observability-because,
+.stage-workflow-observability-owner,
+.stage-workflow-observability-note {
+  font-size: 0.74rem;
+  line-height: 1.35;
+}
+
+.stage-workflow-observability-note {
+  margin: 0.45rem 0 0;
+}
+
 .stage-operational-explain,
 .arrangement-operational-explain {
   margin: 0 0 0.65rem;

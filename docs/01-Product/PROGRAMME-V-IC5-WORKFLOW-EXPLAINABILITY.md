@@ -120,4 +120,4 @@ IC5 complete and **approved** by the Principal Architect (2026-07-30).
 
 Review confirmed: pure composition of IC1–IC4; fixed What → Why → Owner → Next action → Recoverability → Expected outcome sequence; explanation traceability (`sourceProjection` / `sourceId`) as a permanent architectural invariant; narrative fidelity; IC1–IC4 detail surfaces retained; no narrative engine, summary cache, or new ownership.
 
-**Next:** [IC6 — Workflow Observability](PROGRAMME-V-IC6-WORKFLOW-OBSERVABILITY.md) (planning). Implementation awaits Principal Architect approval to commence.
+**Next:** [IC6 — Workflow Observability](PROGRAMME-V-IC6-WORKFLOW-OBSERVABILITY.md) (complete — awaiting Principal Architect review).
