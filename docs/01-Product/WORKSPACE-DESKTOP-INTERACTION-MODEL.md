@@ -7,7 +7,7 @@
 | **Status** | Binding product definition (2026-07-30) |
 | **Audience** | Every engineer, designer, and reviewer working on Workspace — including teams years from now |
 | **References** | [`references/workspace-concept-01.png`](references/workspace-concept-01.png), [`references/workspace-concept-02.png`](references/workspace-concept-02.png) |
-| **Related** | [WORKSPACE-REFERENCE-INTERPRETATION.md](WORKSPACE-REFERENCE-INTERPRETATION.md), [WORKSPACE-VISUAL-DIRECTION.md](WORKSPACE-VISUAL-DIRECTION.md), [PRODUCT-VISION.md](PRODUCT-VISION.md) |
+| **Related** | [WORKSPACE-INTERACTION-MODEL-AUDIT.md](WORKSPACE-INTERACTION-MODEL-AUDIT.md) (current UI gap analysis), [WORKSPACE-REFERENCE-INTERPRETATION.md](WORKSPACE-REFERENCE-INTERPRETATION.md), [WORKSPACE-VISUAL-DIRECTION.md](WORKSPACE-VISUAL-DIRECTION.md), [PRODUCT-VISION.md](PRODUCT-VISION.md) |
 
 **This document defines interaction goals and product meaning.**  
 **It does not authorise implementation, UI redesign, or architecture change by itself.**  
