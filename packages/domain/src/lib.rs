@@ -251,8 +251,8 @@ pub use desktop_grouping::{
     group_desktop_members, DesktopGroupCriterion, DesktopGroupMemberFact, DesktopWindowGroup,
 };
 pub use desktop_runtime_memory::{
-    project_desktop_runtime_memory, DesktopObjectMemory, DesktopRuntimeMemory,
-    DESKTOP_RUNTIME_MEMORY_ENTITY_LIMIT,
+    project_desktop_runtime_memory, strengthen_groups_from_runtime_memory, DesktopObjectMemory,
+    DesktopRuntimeMemory, DESKTOP_RUNTIME_MEMORY_ENTITY_LIMIT,
 };
 pub use discovery::{AvailableIntentSummary, CapabilityDiscovery, CapabilityDiscoveryError};
 pub use entities::{

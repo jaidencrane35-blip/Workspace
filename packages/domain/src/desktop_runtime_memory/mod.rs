@@ -264,6 +264,66 @@ pub fn project_desktop_runtime_memory(
     }
 }
 
+/// Raise or ease grouping confidence from multi-session member persistence.
+///
+/// Does not replace structural groups. Uses runtime memory only.
+pub fn strengthen_groups_from_runtime_memory(
+    groups: &mut [DesktopWindowGroup],
+    memory: &DesktopRuntimeMemory,
+) {
+    let by_id: HashMap<&str, &DesktopObjectMemory> = memory
+        .entities
+        .iter()
+        .map(|entity| (entity.stable_window_id.as_str(), entity))
+        .collect();
+
+    for group in groups.iter_mut() {
+        if group.member_ids.len() < 2 {
+            continue;
+        }
+        let members: Vec<&DesktopObjectMemory> = group
+            .member_ids
+            .iter()
+            .filter_map(|id| by_id.get(id.as_str()).copied())
+            .collect();
+        if members.len() < 2 {
+            continue;
+        }
+
+        let shared_sessions = members
+            .iter()
+            .map(|entity| entity.session_presence_count)
+            .min()
+            .unwrap_or(0);
+        let established = members.iter().all(|entity| {
+            matches!(
+                entity.knowledge.as_str(),
+                DesktopObjectMemory::KNOWLEDGE_PERSISTENT
+                    | DesktopObjectMemory::KNOWLEDGE_RISING
+                    | DesktopObjectMemory::KNOWLEDGE_ESTABLISHED
+                    | DesktopObjectMemory::KNOWLEDGE_RETURNING
+            )
+        });
+        let temporary = members
+            .iter()
+            .filter(|entity| entity.knowledge == DesktopObjectMemory::KNOWLEDGE_TEMPORARY)
+            .count();
+
+        let mut evidence = group.evidence_count;
+        if shared_sessions >= 2 {
+            evidence = evidence.saturating_add(shared_sessions.min(3));
+        }
+        if established {
+            evidence = evidence.saturating_add(1);
+        }
+        if temporary * 2 >= members.len() && evidence > 1 {
+            evidence -= 1;
+        }
+        group.evidence_count = evidence;
+        group.confidence = DesktopWindowGroup::confidence_for_evidence(evidence).into();
+    }
+}
+
 fn stable_id(value: Option<&str>) -> Option<String> {
     value
         .map(str::trim)
@@ -580,6 +640,76 @@ mod tests {
             a.knowledge == DesktopObjectMemory::KNOWLEDGE_TEMPORARY
                 || a.knowledge == DesktopObjectMemory::KNOWLEDGE_INTERRUPTED
                 || a.knowledge == DesktopObjectMemory::KNOWLEDGE_FADING
+        );
+    }
+
+    #[test]
+    fn strengthens_groups_from_multi_session_memory() {
+        let mut groups = vec![DesktopWindowGroup {
+            id: "group:process_id:1".into(),
+            criterion: "process_id".into(),
+            fact_key: "1".into(),
+            label: "pair".into(),
+            member_ids: vec!["stable-a".into(), "stable-b".into()],
+            evidence_count: 1,
+            confidence: DesktopWindowGroup::CONFIDENCE_STRUCTURAL.into(),
+            authority_effect: DesktopWindowGroup::AUTHORITY_EFFECT_NONE.into(),
+        }];
+        let memory = DesktopRuntimeMemory {
+            entities: vec![
+                DesktopObjectMemory {
+                    stable_window_id: "stable-a".into(),
+                    hwnd: "0x1".into(),
+                    title: "A".into(),
+                    process_id: 1,
+                    process_name: Some("a.exe".into()),
+                    first_observed_at: "2026-07-30T10:00:00Z".into(),
+                    last_observed_at: "2026-07-30T12:00:00Z".into(),
+                    identity_confidence: "high".into(),
+                    presence: DesktopObjectMemory::PRESENCE_PRESENT.into(),
+                    sample_presence_count: 4,
+                    session_presence_count: 2,
+                    focus_count: 2,
+                    opened_count: 1,
+                    closed_count: 0,
+                    recurrence_count: 0,
+                    stability: DesktopObjectMemory::STABILITY_STABLE.into(),
+                    continuity_confidence: DesktopWindowGroup::CONFIDENCE_RECURRING.into(),
+                    knowledge: DesktopObjectMemory::KNOWLEDGE_ESTABLISHED.into(),
+                    authority_effect: DesktopObjectMemory::AUTHORITY_EFFECT_NONE.into(),
+                },
+                DesktopObjectMemory {
+                    stable_window_id: "stable-b".into(),
+                    hwnd: "0x2".into(),
+                    title: "B".into(),
+                    process_id: 1,
+                    process_name: Some("a.exe".into()),
+                    first_observed_at: "2026-07-30T10:00:00Z".into(),
+                    last_observed_at: "2026-07-30T12:00:00Z".into(),
+                    identity_confidence: "high".into(),
+                    presence: DesktopObjectMemory::PRESENCE_PRESENT.into(),
+                    sample_presence_count: 4,
+                    session_presence_count: 2,
+                    focus_count: 1,
+                    opened_count: 1,
+                    closed_count: 0,
+                    recurrence_count: 0,
+                    stability: DesktopObjectMemory::STABILITY_STABLE.into(),
+                    continuity_confidence: DesktopWindowGroup::CONFIDENCE_EMERGING.into(),
+                    knowledge: DesktopObjectMemory::KNOWLEDGE_ESTABLISHED.into(),
+                    authority_effect: DesktopObjectMemory::AUTHORITY_EFFECT_NONE.into(),
+                },
+            ],
+            present_count: 2,
+            absent_count: 0,
+            returning_count: 0,
+            authority_effect: DesktopRuntimeMemory::AUTHORITY_EFFECT_NONE.into(),
+        };
+        strengthen_groups_from_runtime_memory(&mut groups, &memory);
+        assert!(groups[0].evidence_count > 1);
+        assert_ne!(
+            groups[0].confidence,
+            DesktopWindowGroup::CONFIDENCE_STRUCTURAL
         );
     }
 }

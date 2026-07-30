@@ -16,7 +16,7 @@ use crate::desktop_grouping::{
     group_desktop_members, DesktopGroupCriterion, DesktopGroupMemberFact, DesktopWindowGroup,
 };
 use crate::desktop_runtime_memory::{
-    project_desktop_runtime_memory, DesktopRuntimeMemory,
+    project_desktop_runtime_memory, strengthen_groups_from_runtime_memory, DesktopRuntimeMemory,
 };
 use crate::workspace_observation::{
     observation_now_rfc3339, ObservedMonitor, ObservedWindow, ObservationWindowIdentity,
@@ -394,6 +394,7 @@ impl WorkspaceState {
     ) -> Self {
         self.runtime_memory =
             project_desktop_runtime_memory(history, identities, &self.behaviour);
+        strengthen_groups_from_runtime_memory(&mut self.window_groups, &self.runtime_memory);
         self
     }
 

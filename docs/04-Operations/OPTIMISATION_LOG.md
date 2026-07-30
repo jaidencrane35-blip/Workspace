@@ -90,6 +90,23 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 
 ## Cycles
 
+### Cycle: v10-4-group-continuity-from-runtime-memory
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Cycle number** | V10-4 |
+| **Goal** | Let grouping confidence strengthen or weaken from multi-session member persistence |
+| **Problem** | Groups only rose from co-presence sample counts, not session continuity in runtime memory |
+| **Analysis** | After projecting runtime memory, raise evidence from shared session presence; ease when majority members are temporary |
+| **Changes** | `strengthen_groups_from_runtime_memory`; wired in `WorkspaceState::with_runtime_memory` |
+| **Files affected** | desktop_runtime_memory, workspace_state, domain exports, this log |
+| **Validation** | typecheck / test / build / architecture / ipc / ui-boundary (+ domain runtime_memory tests) |
+| **Deleted / reduced** | none (extends existing grouping) |
+| **Next recommended cycle** | Relationship continuity across observation sessions |
+
+---
+
 ### Cycle: v10-3-runtime-memory-knowledge-classes
 
 | Field | Value |
