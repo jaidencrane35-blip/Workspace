@@ -413,6 +413,29 @@ button.ghost {
     border-left: none;
     border-top: 1px solid #243040;
   }
+
+  .application-list-row {
+    grid-template-columns: 1fr;
+  }
+
+  .app-chrome {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--shell-gap);
+  }
+
+  .primary-tabs {
+    border-right: 0;
+    padding-right: 0;
+  }
+
+  .focus-stage-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .stage-hero-with-mode {
+    flex-direction: column;
+  }
 }
 
 .canvas-chrome {
@@ -1118,12 +1141,6 @@ button.linkish:not(:disabled):hover {
   margin-top: 1rem;
 }
 
-@media (max-width: 900px) {
-  .application-list-row {
-    grid-template-columns: 1fr;
-  }
-}
-
 /* Milestone A.1 — identity / hierarchy hardening */
 
 .chrome-brand {
@@ -1450,13 +1467,6 @@ button.linkish:not(:disabled):hover {
   }
 }
 
-@media (max-width: 900px) {
-  .primary-tabs {
-    border-right: 0;
-    padding-right: 0;
-  }
-}
-
 /* Cycle 1 — Layouts application stage presence */
 
 .workspace-application-stage {
@@ -1646,16 +1656,6 @@ button.linkish:not(:disabled):hover {
 
 .app-shell[data-work-mode="focus"] .tool-tabs {
   opacity: 0.7;
-}
-
-@media (max-width: 900px) {
-  .focus-stage-layout {
-    grid-template-columns: 1fr;
-  }
-
-  .stage-hero-with-mode {
-    flex-direction: column;
-  }
 }
 
 .application-card-grid.density-flow {

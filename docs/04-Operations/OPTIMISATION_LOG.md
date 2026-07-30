@@ -33,10 +33,10 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 | 5 | Navigation clarity | open | Assistant aria-label (v2-10) |
 | 6 | Accessibility | open | focus-visible (v2-02) |
 | 7 | Keyboard UX | open | rail focus (v2-03) |
-| 8 | Responsiveness | open | |
+| 8 | Responsiveness | open | chrome stack + merged 900px (v2-12) |
 | 9 | Animation polish | open | rail enter + reduced-motion (v2-08) |
 | 10 | Component consistency | open | |
-| 11 | CSS simplification | open | focus merge (v2-06) |
+| 11 | CSS simplification | open | focus merge (v2-06); 900px merge (v2-12) |
 | 12 | Duplicate removal | open | |
 | 13 | Dead code removal | open | unused selectors (v2-04) |
 | 14 | Documentation quality | open | Protocol v2 + board |
@@ -87,6 +87,23 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 ---
 
 ## Cycles
+
+### Cycle: opt-v2-12-responsive-media-merge
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Category** | 8 — Responsiveness (+ 11 CSS simplification) |
+| **Problem** | Three separate `max-width: 900px` blocks; chrome cramped on narrow widths |
+| **Reason** | Single responsive block; stack chrome brand above nav on narrow viewports |
+| **Files changed** | `App.css`, this log |
+| **Validation** | typecheck / test / architecture / ipc / ui-boundary / build |
+| **Reference alignment** | 9.1/10 |
+| **Commercial readiness** | 6.5/10 |
+| **Category status** | open |
+| **Why this is safe** | CSS layout only |
+
+---
 
 ### Cycle: opt-v2-11-shell-spacing-tokens
 
