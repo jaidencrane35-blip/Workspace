@@ -90,6 +90,40 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 
 ## Cycles
 
+### Cycle: v13-empty-attention-evaluation-2
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Cycle number** | V13-empty-2 |
+| **Goal** | Second consecutive empty attention capability evaluation |
+| **Problem** | Confirm whether any further measurable attention capability remains without new architecture/platform APIs |
+| **Analysis** | Same blockers as empty-1: durable attention lifecycle across restarts, continuous OS sampling, acting on attention, Programme IV attention bridge |
+| **Changes** | none — second empty evaluation |
+| **Files affected** | this log |
+| **Validation** | Architecture review against WorkspaceState.attention |
+| **Deleted / reduced** | none |
+| **Next recommended cycle** | Stop autonomous V13 (condition 3: two empty evaluations) |
+
+---
+
+### Cycle: v13-empty-attention-evaluation-1
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Cycle number** | V13-empty-1 |
+| **Goal** | First empty attention capability evaluation after V13-3 |
+| **Problem** | Identify highest-value missing deterministic attention capability |
+| **Analysis** | Attention projects with lifecycle/time sensitivity/merge/damping/primary/replacement from existing planes. Further gains need durable cross-pass attention state, continuous OS sampling, or architecture to bridge Programme IV attention |
+| **Changes** | none — empty evaluation |
+| **Files affected** | this log |
+| **Validation** | Architecture review against WorkspaceState.attention |
+| **Deleted / reduced** | none |
+| **Next recommended cycle** | Second empty attention evaluation |
+
+---
+
 ### Cycle: v13-3-attention-primary-and-replacement
 
 | Field | Value |
