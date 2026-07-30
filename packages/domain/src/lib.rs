@@ -20,6 +20,7 @@ pub mod context;
 pub mod decision_engine;
 pub mod decision_queue;
 pub mod desktop_arrangement;
+pub mod desktop_grouping;
 pub mod discovery;
 pub mod entities;
 pub mod errors;
@@ -237,6 +238,9 @@ pub use desktop_arrangement::{
     DesktopArrangementEntryDiagnostic, DesktopArrangementEntryInput, DesktopArrangementError,
     DesktopArrangementRestoreAction, DesktopArrangementRestorePlan,
     DesktopArrangementRestoreResult, DesktopArrangementStatus, DesktopWindowFocusResult,
+};
+pub use desktop_grouping::{
+    group_desktop_members, DesktopGroupCriterion, DesktopGroupMemberFact, DesktopWindowGroup,
 };
 pub use discovery::{AvailableIntentSummary, CapabilityDiscovery, CapabilityDiscoveryError};
 pub use entities::{

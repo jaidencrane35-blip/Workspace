@@ -9,6 +9,9 @@
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+use crate::desktop_grouping::{
+    group_desktop_members, DesktopGroupCriterion, DesktopGroupMemberFact, DesktopWindowGroup,
+};
 use crate::workspace_observation::{
     observation_now_rfc3339, ObservedMonitor, ObservedWindow, WorkspaceObservationSnapshot,
 };
@@ -44,7 +47,8 @@ pub struct WorkspaceActiveApplication {
     pub window_count: i32,
 }
 
-/// Window row on WorkspaceState — enough for Environment projection without reloading snapshots.
+/// Window row on WorkspaceState — authoritative runtime desktop object.
+/// Owns observed geometry (x/y/width/height) for future OS apply consumers.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct WorkspaceStateWindow {
     pub stable_window_id: Option<String>,
@@ -55,6 +59,8 @@ pub struct WorkspaceStateWindow {
     pub visible: bool,
     pub focused: bool,
     pub minimized: bool,
+    /// Observed stacking order when the capturer provides it.
+    pub z_order: Option<i32>,
     pub x: i32,
     pub y: i32,
     pub width: i32,
@@ -78,6 +84,7 @@ impl WorkspaceStateWindow {
             visible: window.visible,
             focused: window.focused,
             minimized: window.minimized,
+            z_order: window.z_order,
             x: window.x,
             y: window.y,
             width: window.width,
@@ -87,12 +94,37 @@ impl WorkspaceStateWindow {
         }
     }
 
+    /// Observed rectangle owned by this runtime object (not Stage %-layout).
+    pub fn observed_geometry(&self) -> (i32, i32, i32, i32) {
+        (self.x, self.y, self.width, self.height)
+    }
+
+    pub fn member_id(&self) -> String {
+        self.stable_window_id
+            .as_ref()
+            .map(|id| id.trim().to_string())
+            .filter(|id| !id.is_empty())
+            .unwrap_or_else(|| self.hwnd.clone())
+    }
+
     pub fn to_window_ref(&self) -> ObservationWindowRef {
         ObservationWindowRef {
             stable_window_id: self.stable_window_id.clone(),
             hwnd: self.hwnd.clone(),
             title: self.title.clone(),
             process_id: self.process_id,
+        }
+    }
+
+    pub fn to_group_member_fact(&self) -> DesktopGroupMemberFact {
+        DesktopGroupMemberFact {
+            member_id: self.member_id(),
+            process_id: self.process_id,
+            process_name: self.process_name.clone(),
+            monitor_index: self.monitor_index,
+            arrangement_ids: Vec::new(),
+            matched_application_id: None,
+            matched_application_name: None,
         }
     }
 }
@@ -105,6 +137,8 @@ pub struct WorkspaceState {
     pub active_applications: Vec<WorkspaceActiveApplication>,
     /// Bounded desktop window rows for Environment and other consumers.
     pub windows: Vec<WorkspaceStateWindow>,
+    /// Fact-driven groups from the generic desktop grouping engine.
+    pub window_groups: Vec<DesktopWindowGroup>,
     pub authority_effect: String,
 }
 
@@ -126,6 +160,7 @@ impl WorkspaceState {
             focused_window: None,
             active_applications: Vec::new(),
             windows: Vec::new(),
+            window_groups: Vec::new(),
             authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
         }
     }
@@ -157,6 +192,7 @@ impl WorkspaceState {
             .map(WorkspaceStateWindow::to_window_ref);
 
         let active_applications = active_applications_from_state_windows(&windows);
+        let window_groups = project_window_groups(&windows);
         let state_id = format!("workspace-state:{}:{}", snapshot.pass.id, Uuid::new_v4());
 
         Self {
@@ -173,6 +209,7 @@ impl WorkspaceState {
             focused_window,
             active_applications,
             windows,
+            window_groups,
             authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
         }
     }
@@ -184,6 +221,7 @@ impl WorkspaceState {
             .find(|window| window.focused)
             .map(WorkspaceStateWindow::to_window_ref);
         let active_applications = active_applications_from_state_windows(&windows);
+        let window_groups = project_window_groups(&windows);
         let window_count = windows.len() as i32;
         Self {
             metadata: WorkspaceStateMetadata {
@@ -199,6 +237,7 @@ impl WorkspaceState {
             focused_window,
             active_applications,
             windows,
+            window_groups,
             authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
         }
     }
@@ -219,6 +258,7 @@ impl WorkspaceState {
             visible: true,
             focused,
             minimized: false,
+            z_order: None,
             x: 0,
             y: 0,
             width: 800,
@@ -227,6 +267,20 @@ impl WorkspaceState {
             monitor_name: Some("Primary".into()),
         }
     }
+}
+
+fn project_window_groups(windows: &[WorkspaceStateWindow]) -> Vec<DesktopWindowGroup> {
+    let members: Vec<DesktopGroupMemberFact> = windows
+        .iter()
+        .map(WorkspaceStateWindow::to_group_member_fact)
+        .collect();
+    group_desktop_members(
+        &members,
+        &[
+            DesktopGroupCriterion::ProcessId,
+            DesktopGroupCriterion::MonitorIndex,
+        ],
+    )
 }
 
 fn delta_reference(delta: &WorkspaceObservationDelta) -> Option<String> {
