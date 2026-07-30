@@ -153,14 +153,27 @@ describe("stage desktop UI helpers", () => {
         process_name: "notepad.exe",
       }),
     ];
-    const focus = organiseStageForWorkMode(windows, "focus", null);
+    const focus = organiseStageForWorkMode(windows, "focus", null, [
+      sampleGroup({
+        criterion: "process_id",
+        fact_key: "10",
+        label: "code.exe",
+        member_ids: ["a"],
+      }),
+      sampleGroup({
+        criterion: "process_id",
+        fact_key: "20",
+        label: "chrome.exe",
+        member_ids: ["b", "c"],
+      }),
+    ]);
     expect(focus.mapWindows).toHaveLength(1);
     expect(focus.mapWindows[0]?.process_name).toBe("code.exe");
     expect(focus.dockEntries).toHaveLength(2);
     const chrome = focus.dockEntries.find((entry) => entry.processId === 20);
     expect(chrome?.windowCount).toBe(2);
 
-    const flow = organiseStageForWorkMode(windows, "flow", null);
+    const flow = organiseStageForWorkMode(windows, "flow", null, []);
     expect(flow.mapWindows).toHaveLength(4);
     expect(flow.dockEntries).toHaveLength(0);
   });
@@ -346,7 +359,20 @@ describe("stage desktop UI helpers", () => {
         focused: false,
       }),
     ];
-    const focus = organiseStageForWorkMode(windows, "focus", "b");
+    const focus = organiseStageForWorkMode(windows, "focus", "b", [
+      sampleGroup({
+        criterion: "process_id",
+        fact_key: "20",
+        label: "chrome.exe",
+        member_ids: ["b"],
+      }),
+      sampleGroup({
+        criterion: "process_id",
+        fact_key: "10",
+        label: "code.exe",
+        member_ids: ["a"],
+      }),
+    ]);
     expect(focus.mapWindows).toHaveLength(1);
     expect(focus.mapWindows[0]?.process_name).toBe("chrome.exe");
     expect(focus.dockEntries[0]?.processId).toBe(10);

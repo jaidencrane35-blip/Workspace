@@ -353,11 +353,14 @@ export interface StageWorkModeOrganisation {
 /**
  * Flow keeps every observed window on the map (relationships exposed via accents).
  * Focus keeps one process on the map and docks the rest as process objects.
+ * When `windowGroups` is provided, Focus primary process membership comes from
+ * authoritative process_id groups (no invented PID buckets).
  */
 export function organiseStageForWorkMode(
   windows: WorkspaceStateWindow[],
   workMode: "flow" | "focus",
   selectedKey: string | null,
+  windowGroups: DesktopWindowGroup[] = [],
 ): StageWorkModeOrganisation {
   if (workMode !== "focus" || windows.length === 0) {
     return { mapWindows: windows, dockEntries: [] };
@@ -373,13 +376,26 @@ export function organiseStageForWorkMode(
     return { mapWindows: windows, dockEntries: [] };
   }
 
-  const mapWindows = windows.filter(
-    (window) => window.process_id === anchor.processId,
+  const processGroup = windowGroups.find(
+    (group) =>
+      group.criterion === "process_id" &&
+      group.member_ids.includes(anchor.key),
+  );
+  const primaryKeys = new Set(
+    processGroup?.member_ids?.length
+      ? processGroup.member_ids
+      : tiles
+          .filter((tile) => tile.processId === anchor.processId)
+          .map((tile) => tile.key),
+  );
+
+  const mapWindows = windows.filter((window) =>
+    primaryKeys.has(stageDesktopWindowKey(window)),
   );
 
   const dockByProcess = new Map<number, StageProcessDockEntry>();
   for (const tile of tiles) {
-    if (tile.processId === anchor.processId) {
+    if (primaryKeys.has(tile.key)) {
       continue;
     }
     const existing = dockByProcess.get(tile.processId);

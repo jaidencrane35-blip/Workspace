@@ -211,8 +211,8 @@ export function WorkspaceApplicationStage({
   );
 
   const organisation = useMemo(
-    () => organiseStageForWorkMode(windows, workMode, selectedKey),
-    [windows, workMode, selectedKey],
+    () => organiseStageForWorkMode(windows, workMode, selectedKey, windowGroups),
+    [windows, workMode, selectedKey, windowGroups],
   );
 
   const mapTiles = useMemo(() => {

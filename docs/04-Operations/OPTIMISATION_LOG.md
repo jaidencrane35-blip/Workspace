@@ -90,6 +90,23 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 
 ## Cycles
 
+### Cycle: v8-5-focus-organisation-from-window-groups
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Cycle number** | V8-5 |
+| **Goal** | Focus Stage organisation consumes process_id window_groups |
+| **Problem** | Focus still rebuilt primary-process membership with local PID filtering |
+| **Analysis** | Pass authoritative groups into organiseStageForWorkMode; PID filter remains fallback only |
+| **Changes** | organiseStageForWorkMode(windowGroups); Stage wires groups |
+| **Files affected** | stageDesktopUi.ts, WorkspaceApplicationStage.tsx, stage-desktop-ui.test.ts, this log |
+| **Validation** | typecheck / test / build / architecture / ipc / ui-boundary |
+| **Deleted / reduced** | Invented Focus process bucketing when groups are present |
+| **Next recommended cycle** | Two empty capability evaluation passes |
+
+---
+
 ### Cycle: v8-4-environment-projects-workspace-state-groups
 
 | Field | Value |
