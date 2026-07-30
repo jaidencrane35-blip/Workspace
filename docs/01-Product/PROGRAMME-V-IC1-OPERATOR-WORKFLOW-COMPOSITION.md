@@ -127,4 +127,4 @@ IC1 complete and **approved** by the Principal Architect (2026-07-30).
 
 Review confirmed: coherent operator workflow via deterministic composition; derived projection (not a workflow engine); graceful interruption by re-projection; capability boundaries preserved; runtime ownership unchanged.
 
-**Next:** [IC2 — Workflow Decision Support](PROGRAMME-V-IC2-WORKFLOW-DECISION-SUPPORT.md) (planning). Implementation awaits Principal Architect approval to commence.
+**Next:** [IC2 — Workflow Decision Support](PROGRAMME-V-IC2-WORKFLOW-DECISION-SUPPORT.md) (complete — approved).
