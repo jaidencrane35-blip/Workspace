@@ -42,6 +42,8 @@ pub struct DesktopDecision {
     pub evidence_score: i32,
     pub entity_ids: Vec<String>,
     pub evidence: Vec<DesktopDecisionEvidence>,
+    /// Distinct evidence planes contributing to this conclusion.
+    pub supporting_planes: Vec<String>,
     pub authority_effect: String,
 }
 
@@ -142,12 +144,154 @@ pub fn project_desktop_decisions(
     let recommendations = project_recommendations(&decisions);
     let consistency_issues = project_consistency_issues(behaviour, memory, semantics);
 
-    DesktopDecisionProjection {
+    let mut projection = DesktopDecisionProjection {
         decisions,
         recommendations,
         consistency_issues,
         authority_effect: DesktopDecisionProjection::AUTHORITY_EFFECT_NONE.into(),
+    };
+    refine_decision_support(&mut projection);
+    projection.recommendations = project_recommendations(&projection.decisions);
+    projection
+}
+
+/// Rank, merge overlapping decisions, and demote conclusions contradicted by consistency issues.
+fn refine_decision_support(projection: &mut DesktopDecisionProjection) {
+    let conflicted_entities: BTreeSet<String> = projection
+        .consistency_issues
+        .iter()
+        .filter(|issue| {
+            issue.kind == DesktopConsistencyIssue::KIND_ROLE_MEMORY_CONFLICT
+                || issue.kind == DesktopConsistencyIssue::KIND_CONTRADICTORY_CONFIDENCE
+        })
+        .flat_map(|issue| issue.entity_ids.iter().cloned())
+        .collect();
+
+    // Merge same-kind decisions whose entity sets overlap.
+    let mut merged: Vec<DesktopDecision> = Vec::new();
+    for decision in projection.decisions.drain(..) {
+        if let Some(existing) = merged.iter_mut().find(|other| {
+            other.kind == decision.kind
+                && other
+                    .entity_ids
+                    .iter()
+                    .any(|id| decision.entity_ids.iter().any(|other_id| other_id == id))
+        }) {
+            existing.evidence_score = existing
+                .evidence_score
+                .saturating_add(decision.evidence_score.min(3));
+            for id in decision.entity_ids {
+                if !existing.entity_ids.contains(&id) {
+                    existing.entity_ids.push(id);
+                }
+            }
+            for row in decision.evidence {
+                if !existing
+                    .evidence
+                    .iter()
+                    .any(|e| e.plane == row.plane && e.reference == row.reference && e.detail == row.detail)
+                {
+                    existing.evidence.push(row);
+                }
+            }
+            existing.explanation = format!(
+                "{} Additionally: {}",
+                existing.explanation, decision.explanation
+            );
+            existing.supporting_planes = planes_from_evidence(&existing.evidence);
+            existing.confidence =
+                DesktopWindowGroup::confidence_for_evidence(existing.evidence_score).into();
+        } else {
+            merged.push(decision);
+        }
     }
+
+    for decision in &mut merged {
+        let touches_conflict = decision
+            .entity_ids
+            .iter()
+            .any(|id| conflicted_entities.contains(id));
+        if touches_conflict
+            && (decision.kind == DesktopDecision::KIND_STABILIZE_WORKING_FOCUS
+                || decision.kind == DesktopDecision::KIND_ACKNOWLEDGE_EMERGING)
+        {
+            decision.evidence_score = decision.evidence_score.saturating_sub(2).max(1);
+            decision.explanation = format!(
+                "{} Consistency conflict on related entities reduces confidence.",
+                decision.explanation
+            );
+        }
+        // Multi-plane agreement boost.
+        if decision.supporting_planes.len() >= 2 {
+            decision.evidence_score = decision.evidence_score.saturating_add(1);
+            decision.explanation = format!(
+                "{} Supported by planes: {}.",
+                decision.explanation,
+                decision.supporting_planes.join(", ")
+            );
+        }
+        decision.confidence =
+            DesktopWindowGroup::confidence_for_evidence(decision.evidence_score).into();
+    }
+
+    // Drop low-confidence knowledge when a stronger attention decision covers the entity.
+    let strong_entities: BTreeSet<String> = merged
+        .iter()
+        .filter(|decision| {
+            matches!(
+                decision.kind.as_str(),
+                DesktopDecision::KIND_RESUME_RETURNING_WORK
+                    | DesktopDecision::KIND_RESUME_INTERRUPTED_WORK
+                    | DesktopDecision::KIND_STABILIZE_WORKING_FOCUS
+            ) && decision.evidence_score >= 3
+        })
+        .flat_map(|decision| decision.entity_ids.iter().cloned())
+        .collect();
+    merged.retain(|decision| {
+        if decision.kind == DesktopDecision::KIND_LOW_CONFIDENCE_KNOWLEDGE {
+            !decision
+                .entity_ids
+                .iter()
+                .any(|id| strong_entities.contains(id))
+        } else {
+            true
+        }
+    });
+
+    merged.sort_by(|a, b| {
+        kind_priority(&a.kind)
+            .cmp(&kind_priority(&b.kind))
+            .then_with(|| b.evidence_score.cmp(&a.evidence_score))
+            .then_with(|| a.id.cmp(&b.id))
+    });
+    merged.truncate(DESKTOP_DECISION_LIMIT);
+    projection.decisions = merged;
+}
+
+fn kind_priority(kind: &str) -> i32 {
+    match kind {
+        DesktopDecision::KIND_RESUME_INTERRUPTED_WORK => 0,
+        DesktopDecision::KIND_RESUME_RETURNING_WORK => 1,
+        DesktopDecision::KIND_INCOMPLETE_DESKTOP => 2,
+        DesktopDecision::KIND_STABILIZE_WORKING_FOCUS => 3,
+        DesktopDecision::KIND_SURFACE_ALTERNATING_PAIR => 4,
+        DesktopDecision::KIND_REDUCE_TASK_SWITCHING => 5,
+        DesktopDecision::KIND_ACKNOWLEDGE_EMERGING => 6,
+        DesktopDecision::KIND_KEEP_COMPANION_NEAR => 7,
+        DesktopDecision::KIND_NOTE_FADING => 8,
+        DesktopDecision::KIND_ATTEND_CLUSTER => 9,
+        DesktopDecision::KIND_MONITOR_BACKGROUND => 10,
+        DesktopDecision::KIND_LOW_CONFIDENCE_KNOWLEDGE => 11,
+        _ => 12,
+    }
+}
+
+fn planes_from_evidence(evidence: &[DesktopDecisionEvidence]) -> Vec<String> {
+    let mut planes = BTreeSet::new();
+    for row in evidence {
+        planes.insert(row.plane.clone());
+    }
+    planes.into_iter().collect()
 }
 
 fn project_decisions(
@@ -773,6 +917,7 @@ fn push_decision(
             .map(String::as_str)
             .unwrap_or("desktop")
     );
+    let supporting_planes = planes_from_evidence(&evidence_rows);
     decisions.push(DesktopDecision {
         id,
         kind: kind.into(),
@@ -782,6 +927,7 @@ fn push_decision(
         evidence_score: score,
         entity_ids,
         evidence: evidence_rows,
+        supporting_planes,
         authority_effect: DesktopDecision::AUTHORITY_EFFECT_NONE.into(),
     });
 }
@@ -931,6 +1077,10 @@ mod tests {
             .recommendations
             .iter()
             .all(|r| decisions.decisions.iter().any(|d| d.id == r.decision_id)));
+        assert!(decisions
+            .decisions
+            .iter()
+            .all(|d| !d.supporting_planes.is_empty()));
     }
 
     #[test]

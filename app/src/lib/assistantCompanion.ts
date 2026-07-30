@@ -567,7 +567,7 @@ function summariseDecisions(state: WorkspaceState): string | null {
         .slice(0, 5)
         .map(
           (decision) =>
-            `${decision.summary} [${decision.kind}, ${decision.confidence}] — ${decision.explanation}`,
+            `${decision.summary} [${decision.kind}, ${decision.confidence}; planes: ${(decision.supporting_planes ?? []).join(",")}] — ${decision.explanation}`,
         )
         .join(" | ")}`,
     );

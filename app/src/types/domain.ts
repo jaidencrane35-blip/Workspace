@@ -7045,6 +7045,7 @@ export interface DesktopDecision {
   evidence_score: number;
   entity_ids: string[];
   evidence: DesktopDecisionEvidence[];
+  supporting_planes: string[];
   authority_effect: string;
 }
 

@@ -90,6 +90,23 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 
 ## Cycles
 
+### Cycle: v12-2-decision-rank-dedupe-explainability
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Cycle number** | V12-2 |
+| **Goal** | Rank/merge overlapping decisions; strengthen explainability via supporting planes |
+| **Problem** | Multiple same-kind decisions and weak knowledge noise competed without multi-signal ranking |
+| **Analysis** | Merge overlapping kinds, boost multi-plane agreement, demote on consistency conflicts, drop low-confidence when stronger attention exists |
+| **Changes** | `refine_decision_support`; `supporting_planes`; priority ordering; Assistant surfaces planes |
+| **Files affected** | desktop_decision, domain.ts, assistantCompanion, this log |
+| **Validation** | typecheck / test / build / architecture / ipc / ui-boundary (+ domain decision tests) |
+| **Deleted / reduced** | Duplicate same-kind overlapping decisions; redundant low-confidence noise |
+| **Next recommended cycle** | Two empty decision evaluation passes |
+
+---
+
 ### Cycle: v12-1-desktop-decision-support-projection
 
 | Field | Value |
