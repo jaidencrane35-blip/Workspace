@@ -90,6 +90,40 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 
 ## Cycles
 
+### Cycle: v12-empty-decision-evaluation-2
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Cycle number** | V12-empty-2 |
+| **Goal** | Second consecutive empty decision capability evaluation |
+| **Problem** | Confirm whether any further measurable decision capability remains without new architecture/platform APIs |
+| **Analysis** | Same blockers as empty-1: executing recommendations, durable decision history, continuous OS sampling, Programme IV queue integration |
+| **Changes** | none — second empty evaluation |
+| **Files affected** | this log |
+| **Validation** | Architecture review against WorkspaceState.decisions |
+| **Deleted / reduced** | none |
+| **Next recommended cycle** | Stop autonomous V12 (condition 3: two empty evaluations) |
+
+---
+
+### Cycle: v12-empty-decision-evaluation-1
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Cycle number** | V12-empty-1 |
+| **Goal** | First empty decision capability evaluation after V12-3 |
+| **Problem** | Identify highest-value missing deterministic decision capability |
+| **Analysis** | Decisions/recommendations/consistency/explainability project from existing planes. Further gains need OS APIs (act on resume/reopen), durable decision history beyond sample retention, or architecture to bridge Programme IV decision queue |
+| **Changes** | none — empty evaluation |
+| **Files affected** | this log |
+| **Validation** | Architecture review against WorkspaceState.decisions |
+| **Deleted / reduced** | none |
+| **Next recommended cycle** | Second empty decision evaluation |
+
+---
+
 ### Cycle: v12-3-consistency-crosslink-and-recommendation-dedupe
 
 | Field | Value |
