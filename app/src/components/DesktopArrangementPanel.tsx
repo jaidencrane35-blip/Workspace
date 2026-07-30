@@ -1,20 +1,32 @@
 /**
- * Purpose: Arrangements control — save, update, and Restore desktop layouts for a Profile.
- * Owner: Frontend product shell (Product Contract V3 / Programme I IC3)
- * Inputs: Active profile, busy/banner callbacks
+ * Purpose: Arrangements control — Save, Update, and Restore for a Profile.
+ * Owner: Frontend product shell (Programme I IC5)
+ * Inputs: Active profile, busy/banner callbacks; WorkspaceState for derived meta
  * Outputs: capture_desktop_arrangement / restore / list IPC
- * Dependencies: desktopArrangementUi helpers, list/details/diagnostics views
- * Non-goals: Competing with Desktop as primary surface; setup-first forms;
- *   duplicate Restore ownership (Desktop Arrangement row also Restores);
- *   parallel arrangement models
+ * Dependencies: arrangementProductUi, desktopArrangementUi, list/details/diagnostics
+ * Non-goals: Competing with Desktop as primary surface; onboarding persistence;
+ *   parallel arrangement models; notification/event engines
  */
 
 import { useCallback, useEffect, useState } from "react";
-import { invokeIpc, isIpcRuntimeAvailable } from "../lib/ipc";
+import {
+  arrangementProductWorkflowHint,
+  arrangementRestoredFeedback,
+  arrangementSavedFeedback,
+  arrangementUpdatedFeedback,
+  desktopFirstUseGuidance,
+} from "../lib/arrangementProductUi";
 import {
   emptyArrangementsCopy,
   permissionHintForError,
 } from "../lib/desktopArrangementUi";
+import { invokeIpc, isIpcRuntimeAvailable } from "../lib/ipc";
+import {
+  WORKSPACE_RESTORE_VERB,
+  WORKSPACE_SAVE_VERB,
+  WORKSPACE_UPDATE_VERB,
+} from "../lib/layoutsStageUi";
+import { useObservedWorkspaceState } from "../lib/useObservedWorkspaceState";
 import type {
   DesktopArrangement,
   DesktopArrangementRestoreResult,
@@ -42,6 +54,8 @@ export function DesktopArrangementPanel({
   onMessage,
   onDesktopChanged,
 }: DesktopArrangementPanelProps) {
+  const { workspaceState } = useObservedWorkspaceState();
+  const observedWindows = workspaceState?.windows ?? [];
   const [arrangements, setArrangements] = useState<DesktopArrangement[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [name, setName] = useState("");
@@ -50,6 +64,8 @@ export function DesktopArrangementPanel({
   const [restoreResult, setRestoreResult] =
     useState<DesktopArrangementRestoreResult | null>(null);
   const [localHint, setLocalHint] = useState<string | null>(null);
+  /** Interaction State only — never persisted (IC5). */
+  const [guidanceDismissed, setGuidanceDismissed] = useState(false);
 
   const selected =
     arrangements.find((item) => item.id === selectedId) ?? null;
@@ -81,9 +97,7 @@ export function DesktopArrangementPanel({
     }
     if (!isIpcRuntimeAvailable()) {
       setArrangements([]);
-      setLocalHint(
-        "Save and restore need the desktop app runtime.",
-      );
+      setLocalHint("Save and Restore need the desktop app runtime.");
       return;
     }
     setLoading(true);
@@ -115,67 +129,104 @@ export function DesktopArrangementPanel({
     });
   }, [refreshList, onError]);
 
+  useEffect(() => {
+    if (arrangements.length > 0) {
+      setGuidanceDismissed(false);
+    }
+  }, [arrangements.length]);
+
   const empty = emptyArrangementsCopy(Boolean(workspace));
+  const guidance =
+    !guidanceDismissed &&
+    desktopFirstUseGuidance({
+      hasProfile: Boolean(workspace),
+      arrangementCount: arrangements.length,
+      desktopReady: Boolean(workspaceState?.windows?.length),
+    });
 
   const captureArrangement = () => {
     if (!workspace) {
-      onError("Choose a Profile to save an Arrangement.");
+      onError("Choose a Profile to Save an Arrangement.");
       return;
     }
     const trimmed = name.trim();
     if (!trimmed) {
-      onError("Give this Arrangement a name before saving.");
+      onError("Give this Arrangement a name before Save.");
       return;
     }
-    void run("Arrangement saved from current windows", async () => {
-      const saved = await invokeIpc<DesktopArrangement>(
-        "capture_desktop_arrangement",
-        {
-          workspaceId: workspace.id,
-          name: trimmed,
-          description: description.trim() || null,
-          arrangementId: null,
-          refreshObservation: true,
-        },
-      );
-      setArrangements((prev) => {
-        const without = prev.filter((item) => item.id !== saved.id);
-        return [saved, ...without];
-      });
-      setSelectedId(saved.id);
-      setRestoreResult(null);
-      setName("");
-      setDescription("");
-    });
+    onBusy(true);
+    onError(null);
+    setLocalHint(null);
+    void (async () => {
+      try {
+        const saved = await invokeIpc<DesktopArrangement>(
+          "capture_desktop_arrangement",
+          {
+            workspaceId: workspace.id,
+            name: trimmed,
+            description: description.trim() || null,
+            arrangementId: null,
+            refreshObservation: true,
+          },
+        );
+        setArrangements((prev) => {
+          const without = prev.filter((item) => item.id !== saved.id);
+          return [saved, ...without];
+        });
+        setSelectedId(saved.id);
+        setRestoreResult(null);
+        setName("");
+        setDescription("");
+        onMessage(arrangementSavedFeedback(saved));
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        onError(message);
+        setLocalHint(permissionHintForError(message));
+      } finally {
+        onBusy(false);
+      }
+    })();
   };
 
   const updateSelectedArrangement = () => {
     if (!workspace) {
-      onError("Choose a Profile to update an Arrangement.");
+      onError("Choose a Profile to Update an Arrangement.");
       return;
     }
     if (!selected) {
-      onError("Select an Arrangement to update.");
+      onError("Select an Arrangement to Update.");
       return;
     }
-    void run(`Updated “${selected.name}” from current windows`, async () => {
-      const saved = await invokeIpc<DesktopArrangement>(
-        "capture_desktop_arrangement",
-        {
-          workspaceId: workspace.id,
-          name: selected.name,
-          description: selected.description || null,
-          arrangementId: selected.id,
-          refreshObservation: true,
-        },
-      );
-      setArrangements((prev) => {
-        const without = prev.filter((item) => item.id !== saved.id);
-        return [saved, ...without];
-      });
-      setSelectedId(saved.id);
-      setRestoreResult(null);
-    });
+    onBusy(true);
+    onError(null);
+    setLocalHint(null);
+    void (async () => {
+      try {
+        const saved = await invokeIpc<DesktopArrangement>(
+          "capture_desktop_arrangement",
+          {
+            workspaceId: workspace.id,
+            name: selected.name,
+            description: selected.description || null,
+            arrangementId: selected.id,
+            refreshObservation: true,
+          },
+        );
+        setArrangements((prev) => {
+          const without = prev.filter((item) => item.id !== saved.id);
+          return [saved, ...without];
+        });
+        setSelectedId(saved.id);
+        setRestoreResult(null);
+        onMessage(arrangementUpdatedFeedback(saved));
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        onError(message);
+        setLocalHint(permissionHintForError(message));
+      } finally {
+        onBusy(false);
+      }
+    })();
   };
 
   const restoreArrangement = () => {
@@ -197,11 +248,7 @@ export function DesktopArrangementPanel({
         );
         setRestoreResult(result);
         onDesktopChanged?.();
-        onMessage(
-          result.outcomes.some((outcome) => outcome.simulated)
-            ? "Restore finished (simulated)"
-            : "Restore finished",
-        );
+        onMessage(arrangementRestoredFeedback(selected.name, result));
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : String(err);
         onError(message);
@@ -229,9 +276,26 @@ export function DesktopArrangementPanel({
       ) : (
         <>
           <p className="muted arrangement-workflow-hint">
-            Save, update, and Restore layouts for this Profile. Desktop Edit
-            layout shows change awareness and preview for the same Arrangements.
+            {arrangementProductWorkflowHint()}
           </p>
+
+          {guidance && arrangements.length === 0 ? (
+            <div className="arrangement-first-use" role="note">
+              <p className="arrangement-first-use-title">{guidance.title}</p>
+              <p className="muted arrangement-first-use-body">{guidance.body}</p>
+              <button
+                type="button"
+                className="ghost"
+                disabled={busy}
+                onClick={() => {
+                  setGuidanceDismissed(true);
+                }}
+              >
+                Dismiss
+              </button>
+            </div>
+          ) : null}
+
           <section aria-label="Saved Arrangements">
             <div className="row section-heading-row">
               <h3>Saved</h3>
@@ -255,6 +319,7 @@ export function DesktopArrangementPanel({
                 arrangements={arrangements}
                 selectedId={selectedId}
                 busy={busy}
+                observedWindows={observedWindows}
                 onSelect={(id) => {
                   setSelectedId(id);
                   setRestoreResult(null);
@@ -265,14 +330,17 @@ export function DesktopArrangementPanel({
 
           {selected ? (
             <section aria-label="Selected Arrangement">
-              <DesktopArrangementDetails arrangement={selected} />
+              <DesktopArrangementDetails
+                arrangement={selected}
+                observedWindows={observedWindows}
+              />
               <div className="row arrangement-restore-row">
                 <button
                   type="button"
                   disabled={busy || !isIpcRuntimeAvailable()}
                   onClick={restoreArrangement}
                 >
-                  Restore
+                  {WORKSPACE_RESTORE_VERB}
                 </button>
                 <button
                   type="button"
@@ -280,7 +348,7 @@ export function DesktopArrangementPanel({
                   disabled={busy || !isIpcRuntimeAvailable()}
                   onClick={updateSelectedArrangement}
                 >
-                  Update from desktop
+                  {WORKSPACE_UPDATE_VERB}
                 </button>
               </div>
             </section>
@@ -313,7 +381,7 @@ export function DesktopArrangementPanel({
               disabled={busy || !isIpcRuntimeAvailable()}
               onClick={captureArrangement}
             >
-              Save
+              {WORKSPACE_SAVE_VERB}
             </button>
           </details>
 

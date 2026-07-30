@@ -1,155 +1,125 @@
-# Programme I — Implementation Contract 5 (Planning)  
+# Programme I — Implementation Contract 5  
 # User Confidence & Discoverability
 
 | Field | Value |
 |-------|-------|
 | **Authority** | Principal Architect |
-| **Implementation agent** | Cursor (after approval to commence) |
+| **Implementation agent** | Cursor |
 | **Programme** | [Programme I](PROGRAMME-I-WORKSPACE-PRODUCT-CAPABILITY.md) |
 | **Depends on** | [IC4](PROGRAMME-I-IC4-DESKTOP-LAYOUT-EDITING-REFINEMENT.md) (approved) |
-| **Status** | **Planned** — awaiting Principal Architect approval to commence |
+| **Status** | Complete |
 | **Date** | 2026-07-30 |
-| **Nature** | Planning contract — scopes IC5; does not authorise implementation until approved |
+| **Approved to commence** | 2026-07-30 |
 
 ---
 
-## Context
+## Objective (satisfied)
 
-Programme I has completed IC1–IC4. IC4 was **approved** by the Principal Architect: editing matured without architectural drift.
+Improve how users understand, trust, and find **Desktop → Arrangement → Restore** without introducing new sources of truth.
 
-The programme has moved from proving architecture to **maturing product experience** on that architecture.
-
-IC5 shifts focus from editing mechanics to **user confidence and discoverability**.
+After IC5, an engineer reading the code should conclude: *the product became easier to understand without becoming architecturally more complicated.*
 
 ---
 
-## Objective (planned)
+## Product State vs Interaction State
 
-Improve how users understand, trust, and find Desktop → Arrangement → Edit → Restore capability — without introducing new sources of truth.
+IC5 makes this distinction explicit in product-shell ownership comments and UI data:
 
-Success means a first-time or returning user can:
-
-1. Discover that Arrangements exist and what they are for.
-2. Understand what just happened after Save / Update / Restore.
-3. See enough Arrangement context (derived metadata) to choose confidently.
-4. Experience consistent language and feedback across Desktop, Arrangements panel, Stage, and Restore.
+| Kind | Examples | Rule |
+|------|----------|------|
+| **Product State** | Profile, Desktop (WorkspaceState), Arrangement, Restore | User-owned / authoritative; durable or runtime-true |
+| **Interaction State** | Editing, Preview, Selection, Pending changes, Guidance dismissed | Session-only UI; **never persistence**; disappears when interaction ends |
 
 ---
 
-## Architectural constraints (mandatory)
+## Deliverables implemented
 
-Unchanged from Programme I:
+### 1. Derived Arrangement metadata
 
-| Constraint | Rule |
-|------------|------|
-| WorkspaceState | Sole runtime desktop model |
-| Arrangement persistence | Existing `DesktopArrangement` only — no second store |
-| Restore | Sole product path that issues OS `set_bounds` |
-| IPC ownership | Unchanged |
-| Observation / Intelligence | Untouched |
-| Canvas Layout | Not an HWND / editing authority |
-| Sources of truth | **No new ones** — metadata and guidance derive from existing state |
-
-IC5 is a **product confidence sprint**, not an architecture sprint.
-
----
-
-## Exploration areas (in scope for planning)
-
-### 1. Richer Arrangement metadata (derived)
-
-Surface facts already on Arrangement / observation / restore results, for example:
+`deriveArrangementProductMeta` computes from Arrangement entries + live WorkspaceState windows:
 
 - Window count
 - Last updated (`updated_at`)
-- Membership overlap with current desktop (from existing identity match helpers)
-- Last restore outcome summary (when a restore result is already in session UI — ephemeral, not new persistence)
+- Overlap with current desktop (present / missing)
+- Completeness (bounds)
+- Restore readiness (`ready` / `partial` / `not_ready`)
 
-**Out of scope unless later approved:** new durable metadata fields, tags store, lock model (IC1 G6).
+Surfaced on Arrangements list/details and Desktop Arrangement chrome.  
+**No metadata cache, persistence additions, or background sync.**
 
-### 2. Clearer capture / restore success feedback
+### 2. Save / Update / Restore feedback
 
-Unify and enrich transient product messages so Save, Update, and Restore communicate:
+Unified interpretation of existing DTOs:
 
-- Arrangement name
-- Window counts / applied vs gap counts (from existing restore result DTOs)
-- Simulated vs real apply (already on restore outcomes)
-- Edit-session confirmation already introduced in IC4 — align panel messages with Desktop tone
+- `Arrangement saved · “{name}” · N windows · completed successfully`
+- `Arrangement updated · “{name}” · … · completed successfully`
+- `Arrangement restored · “{name}” · {applied/gaps/failed} · completed…`
 
-No new event bus or audit UI unless composed from existing diagnostics views.
+No notification engine, event history, or operation log.
 
-### 3. First-time user guidance
+### 3. First-time guidance
 
-Lightweight empty / first-use copy when:
+State-derived via `desktopFirstUseGuidance`:
 
-- No Profile selected
-- No Arrangements saved
-- Desktop map ready but user has never Restored / Edited
+- Appears when Profile has **zero** Arrangements (or no Profile)
+- Disappears when Arrangements exist
+- **Dismiss** is Interaction State only (session `useState`) — no onboarding persistence
 
-Guidance must point to existing actions (Save Arrangement, Edit layout, Restore) — not a tutorial engine or new onboarding persistence.
+Shown on Desktop and Arrangements panel with the same helper.
 
 ### 4. Cross-surface consistency
 
-Audit and align naming, button hierarchy, and success/error tone across:
+Shared verbs in `layoutsStageUi`:
 
-| Surface | Today |
-|---------|--------|
-| Desktop Stage | Arrangement select, Edit layout, Update, Restore, Done |
-| Arrangements panel | Save, Update from desktop, Restore, diagnostics |
-| Profiles / Apps | Open Desktop links (IC2) |
+- Save · Update · Restore · Edit layout
 
-Prefer shared copy helpers over duplicated strings. No redesign; refinement only.
+Workflow language: `Profile · Desktop · Arrangement · Restore`  
+Arrangements panel and Desktop use the same feedback helpers and workflow hint.
 
 ---
 
-## Explicit non-goals
+## Architectural reasoning
 
-- New desktop or Arrangement persistence models
-- New IPC for positioning or capture
-- Interactive drag/`set_bounds` organise UI (separate from Restore authority)
-- OS application discovery (IC1 G1)
-- Arrangement lock (IC1 G6)
-- Assistant-owned layout control
-- Visual redesign or experimental chrome
+Every IC5 capability **interprets** existing Arrangement / restore result / WorkspaceState facts. Nothing new owns desktop reality. Restore remains the sole product OS positioning path. Editing remains Interaction State composed in IC3/IC4.
 
 ---
 
-## Proposed deliverables (when approved to implement)
+## Preserved boundaries
 
-1. Derived Arrangement metadata presentation on Desktop and/or Arrangements list.
-2. Harmonised success/failure feedback for capture and Restore.
-3. First-use / empty-state guidance tied to the IC2 workflow language.
-4. Consistency pass across Desktop ↔ Arrangements ↔ Restore wording.
-5. Documentation: this contract updated to **Complete** with validation evidence.
-6. Validation: `pnpm typecheck`, `pnpm test`, `pnpm build`; working tree clean.
-
----
-
-## Validation requirements (implementation phase)
-
-Same Programme I bar:
-
-- No new runtime model
-- No duplicate persistence
-- Restore remains sole OS positioning authority
-- WorkspaceState remains runtime truth
-- Green typecheck / test / build
-- Clean working tree
+| Constraint | Status |
+|------------|--------|
+| WorkspaceState sole runtime truth | Preserved |
+| No second desktop / arrangement / persistence / editing model | Preserved |
+| Restore sole `set_bounds` authority | Preserved |
+| Existing IPC ownership | Preserved |
+| Observation / Intelligence untouched | Preserved |
+| Interaction state never persisted | Preserved |
 
 ---
 
-## Stop condition (this planning document)
+## Validation
 
-IC5 planning is complete when:
-
-- Objectives and constraints are recorded
-- In-scope exploration areas are clear
-- Non-goals and sources-of-truth rule are explicit
-
-**Cursor must not commence IC5 implementation until the Principal Architect approves this contract for execution.**
+- `pnpm typecheck`
+- `pnpm test`
+- `pnpm build`
+- Architecture / IPC / UI experience verifies
+- Working tree clean after commit
 
 ---
 
-## Recommendation to Principal Architect
+## Files touched
 
-Approve IC5 to commence as a **confidence & discoverability** refinement over IC2–IC4 composition — metadata and feedback derived from existing Arrangement / restore / WorkspaceState facts only.
+- `app/src/lib/arrangementProductUi.ts` — metadata, feedback, guidance
+- `app/src/lib/layoutsStageUi.ts` — shared verbs + workflow line
+- `app/src/lib/desktopArrangementUi.ts` — list meta composition
+- `app/src/components/WorkspaceApplicationStage.tsx`
+- `app/src/components/DesktopArrangementPanel.tsx` / `List` / `Details`
+- `app/src/App.css`
+- `tests/arrangement-product-ui.test.ts`
+- This document; Programme I charter link
+
+---
+
+## Stop condition
+
+IC5 complete. **Await Principal Architect review** before further Programme I contracts.

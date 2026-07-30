@@ -2,13 +2,13 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | Active — product experience maturing on approved architecture (IC1–IC4 complete; IC4 approved) |
+| **Status** | Active — product experience maturing on approved architecture (IC1–IC5; IC4 approved; IC5 complete pending review) |
 | **Audience** | Principal Architect, Engineering, Cursor agents |
 | **Nature** | Formal product architecture programme contract |
 | **Not** | An implementation contract; not a feature backlog; not a roadmap of tasks |
 | **Depends on** | Repository architectural evidence; existing WorkspaceState / observation / DAF foundations |
 | **Related** | [Architectural Evidence Report](../02-Architecture/ARCHITECTURAL-EVIDENCE-REPORT.md), [Product Vision](PRODUCT-VISION.md), [Desktop Interaction Model](WORKSPACE-DESKTOP-INTERACTION-MODEL.md), Programmes II–IV (`../05-AI/`) |
-| **Implementation contracts** | [IC1](PROGRAMME-I-IC1-PRODUCT-SHELL-CAPABILITY-INVENTORY.md) (complete); [IC2](PROGRAMME-I-IC2-PRODUCT-WORKSPACE-COMPOSITION.md) (complete); [IC3](PROGRAMME-I-IC3-DESKTOP-LAYOUT-EDITING-FOUNDATION.md) (complete); [IC4](PROGRAMME-I-IC4-DESKTOP-LAYOUT-EDITING-REFINEMENT.md) (complete — approved); [IC5](PROGRAMME-I-IC5-USER-CONFIDENCE-AND-DISCOVERABILITY.md) (planned — awaiting approval to commence) |
+| **Implementation contracts** | [IC1](PROGRAMME-I-IC1-PRODUCT-SHELL-CAPABILITY-INVENTORY.md) (complete); [IC2](PROGRAMME-I-IC2-PRODUCT-WORKSPACE-COMPOSITION.md) (complete); [IC3](PROGRAMME-I-IC3-DESKTOP-LAYOUT-EDITING-FOUNDATION.md) (complete); [IC4](PROGRAMME-I-IC4-DESKTOP-LAYOUT-EDITING-REFINEMENT.md) (complete — approved); [IC5](PROGRAMME-I-IC5-USER-CONFIDENCE-AND-DISCOVERABILITY.md) (complete — pending review) |
 
 ---
 
@@ -170,7 +170,7 @@ Programme I does not subsume, replace, or reopen Programmes II–IV as expansion
 | **IC2** | Unified workflow: Profile → Desktop → Arrangement → Restore |
 | **IC3** | Desktop layout editing foundation (composition) |
 | **IC4** | Editing experience refinement — **Principal Architect approved** |
-| **IC5** | Planned: user confidence & discoverability (awaiting approval to commence) |
+| **IC5** | User confidence & discoverability — complete, pending Principal Architect review |
 
 IC4 review confirmed a healthy trajectory: richer product experience while continuing to consume WorkspaceState, Arrangement, Stage, and Restore — without duplicate engines.
 

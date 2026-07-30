@@ -1,16 +1,22 @@
 import type { DesktopArrangement } from "../types/desktopArrangement";
+import type { WorkspaceStateWindow } from "../types/domain";
 import {
   arrangementStatusLabel,
   entryIdentitySummary,
 } from "../lib/desktopArrangementUi";
+import { deriveArrangementProductMeta } from "../lib/arrangementProductUi";
 
 interface DesktopArrangementDetailsProps {
   arrangement: DesktopArrangement;
+  observedWindows?: readonly WorkspaceStateWindow[];
 }
 
 export function DesktopArrangementDetails({
   arrangement,
+  observedWindows = [],
 }: DesktopArrangementDetailsProps) {
+  const meta = deriveArrangementProductMeta(arrangement, observedWindows);
+
   return (
     <div className="arrangement-details" aria-label="Arrangement details">
       <header className="arrangement-details-header">
@@ -20,9 +26,10 @@ export function DesktopArrangementDetails({
       {arrangement.description.trim() ? (
         <p className="muted arrangement-details-desc">{arrangement.description}</p>
       ) : null}
-      <p className="muted mono arrangement-details-id">{arrangement.id}</p>
+      <p className="muted arrangement-details-meta">{meta.summaryLine}</p>
+      <p className="muted arrangement-details-meta">{meta.readinessLine}</p>
       {arrangement.entries.length === 0 ? (
-        <p className="muted">This arrangement has no window membership yet.</p>
+        <p className="muted">This Arrangement has no windows yet.</p>
       ) : (
         <ul className="arrangement-entry-list">
           {arrangement.entries.map((entry) => (

@@ -369,6 +369,41 @@ button.ghost {
   line-height: 1.35;
 }
 
+.arrangement-details-meta {
+  margin: 0.2rem 0 0;
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
+
+.arrangement-first-use,
+.stage-first-use {
+  margin: 0 0 0.65rem;
+  padding: 0.55rem 0.7rem;
+  border-left: 2px solid #8aa4b8;
+  background: rgba(138, 164, 184, 0.08);
+}
+
+.arrangement-first-use-title,
+.stage-first-use-title {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #d5dde6;
+}
+
+.arrangement-first-use-body,
+.stage-first-use-body {
+  margin: 0.25rem 0 0.45rem;
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
+
+.stage-arrangement-meta {
+  margin: -0.25rem 0 0.55rem;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
 .arrangement-workflow-hint {
   margin: 0 0 0.65rem;
   font-size: 0.85rem;

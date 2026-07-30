@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   applyStatusLabel,
+  arrangementListMetaLine,
   arrangementStatusLabel,
   arrangementSummaryLine,
   availabilityLabel,
@@ -67,6 +68,9 @@ describe("desktop arrangement UI helpers", () => {
   it("summarizes arrangements and entries for list/details", () => {
     const arrangement = sampleArrangement([sampleEntry()]);
     expect(arrangementSummaryLine(arrangement)).toBe("Active · 1 window");
+    expect(
+      arrangementListMetaLine(arrangement, "1 window · all open · Updated just now"),
+    ).toContain("all open");
     expect(entryHasBounds(sampleEntry())).toBe(true);
     expect(entryHasBounds(sampleEntry({ width: null }))).toBe(false);
     expect(entryIdentitySummary(sampleEntry())).toContain("code.exe");

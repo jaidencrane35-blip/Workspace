@@ -93,6 +93,19 @@ export function arrangementSummaryLine(
   return `${arrangementStatusLabel(arrangement.status)} · ${windows}`;
 }
 
+/** Prefer derived product meta when live windows are available (IC5). */
+export function arrangementListMetaLine(
+  arrangement: DesktopArrangement,
+  productSummaryLine?: string | null,
+): string {
+  const base = arrangementSummaryLine(arrangement);
+  const derived = productSummaryLine?.trim();
+  if (!derived) {
+    return base;
+  }
+  return `${arrangementStatusLabel(arrangement.status)} · ${derived}`;
+}
+
 export function emptyArrangementsCopy(hasWorkspace: boolean): {
   title: string;
   body: string;

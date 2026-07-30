@@ -1,15 +1,18 @@
 /**
- * Purpose: Desktop surface — runtime objects, Arrangement Restore + layout editing.
- * Owner: Frontend product shell (Product Contract V6 / Programme I IC4)
+ * Purpose: Desktop surface — Arrangement Save/Update/Restore + layout editing.
+ * Owner: Frontend product shell (Programme I IC5)
  * Inputs: optional profile, registry apps, work mode, launch + navigate;
  *   WorkspaceState via refreshObservedWorkspaceState; focus_desktop_window;
  *   list/capture/restore_desktop_arrangement
- * Outputs: Spatial desktop objects; Flow/Focus; Arrangement select + Restore;
- *   layout edit session (lifecycle, change awareness, preview ghosts, update);
- *   subtle runtime awareness (attention primary, semantic roles)
- * Dependencies: stageDesktopUi, layoutsStageUi, desktopLayoutEditing, ipc
- * Non-goals: Fake windows, Assistant-owned control, minimize APIs, new set_bounds
- *   product IPC, canvas Layout HWND store, new persistence, parallel authorities
+ * Outputs: Spatial desktop objects; Arrangement select + Restore; edit session;
+ *   derived Arrangement metadata; first-use guidance; consistent product verbs
+ * Dependencies: stageDesktopUi, layoutsStageUi, desktopLayoutEditing,
+ *   arrangementProductUi, ipc
+ * Non-goals: Fake windows, Assistant-owned control, new set_bounds product IPC,
+ *   canvas Layout HWND store, onboarding persistence, parallel authorities
+ *
+ * Product State: Profile · Desktop · Arrangement · Restore
+ * Interaction State (never persist): Editing · Preview · Selection · Guidance dismissed
  */
 
 import { useCallback, useEffect, useMemo, useState, type KeyboardEvent } from "react";
@@ -18,6 +21,13 @@ import {
   applicationStatusLabel,
   canLaunchApplication,
 } from "../lib/applicationsUi";
+import {
+  arrangementRestoredFeedback,
+  arrangementSavedFeedback,
+  arrangementUpdatedFeedback,
+  deriveArrangementProductMeta,
+  desktopFirstUseGuidance,
+} from "../lib/arrangementProductUi";
 import {
   diffLayoutEditingChanges,
   layoutArrangementPreviewGhosts,
@@ -34,6 +44,10 @@ import {
   layoutsStageEmptyAppsCopy,
   layoutsStageRegistryHeading,
   layoutsStageTitle,
+  WORKSPACE_EDIT_LAYOUT_VERB,
+  WORKSPACE_RESTORE_VERB,
+  WORKSPACE_SAVE_VERB,
+  WORKSPACE_UPDATE_VERB,
   workspaceDesktopWorkflowLine,
 } from "../lib/layoutsStageUi";
 import { monogramFromName } from "../lib/productShellUi";
@@ -137,10 +151,12 @@ export function WorkspaceApplicationStage({
   const [workingSetId, setWorkingSetId] = useState<string>("");
   const [layoutEditing, setLayoutEditing] = useState(false);
   const [layoutPreview, setLayoutPreview] = useState(false);
-  /** Ephemeral confirmation after Update — cleared on exit; not persistence. */
+  /** Interaction State — cleared on exit; never persistence. */
   const [updateConfirmation, setUpdateConfirmation] = useState<string | null>(
     null,
   );
+  /** Interaction State — session dismiss only; never onboarding persistence. */
+  const [guidanceDismissed, setGuidanceDismissed] = useState(false);
 
   const windows = workspaceState?.windows ?? [];
   const windowGroups = workspaceState?.window_groups ?? [];
@@ -314,6 +330,13 @@ export function WorkspaceApplicationStage({
     );
   }, [layoutEditing, layoutPreview, workingSet, monitors, windows]);
 
+  const selectedArrangementMeta = useMemo(() => {
+    if (!workingSet) {
+      return null;
+    }
+    return deriveArrangementProductMeta(workingSet, windows);
+  }, [workingSet, windows]);
+
   const organisation = useMemo(
     () =>
       organiseStageForWorkMode(
@@ -341,6 +364,15 @@ export function WorkspaceApplicationStage({
   const matchedLibrary = selectedTile
     ? matchLibraryApp(selectedTile, applications)
     : null;
+
+  const firstUseGuidance =
+    !guidanceDismissed &&
+    !layoutEditing &&
+    desktopFirstUseGuidance({
+      hasProfile: Boolean(workspace),
+      arrangementCount: arrangements.length,
+      desktopReady: showDesktopMap || windows.length > 0,
+    });
 
   const saveSelectionAsWorkingSet = () => {
     if (!workspace) {
@@ -378,11 +410,7 @@ export function WorkspaceApplicationStage({
           return [saved, ...without];
         });
         setWorkingSetId(saved.id);
-        onMessage(
-          `Arrangement saved “${saved.name}” · ${saved.entries.length} window${
-            saved.entries.length === 1 ? "" : "s"
-          }`,
-        );
+        onMessage(arrangementSavedFeedback(saved));
       } catch (err: unknown) {
         onError(err instanceof Error ? err.message : String(err));
       } finally {
@@ -409,11 +437,7 @@ export function WorkspaceApplicationStage({
         );
         onDesktopChanged?.();
         await refreshDesktop();
-        onMessage(
-          result.outcomes.some((outcome) => outcome.simulated)
-            ? `Restored ${workingSet.name} (simulated)`
-            : `Restored ${workingSet.name}`,
-        );
+        onMessage(arrangementRestoredFeedback(workingSet.name, result));
       } catch (err: unknown) {
         onError(err instanceof Error ? err.message : String(err));
       } finally {
@@ -479,7 +503,7 @@ export function WorkspaceApplicationStage({
         setWorkingSetId(saved.id);
         setUpdateConfirmation(confirmation);
         await refreshDesktop();
-        onMessage(`Updated “${saved.name}” · ${confirmation}`);
+        onMessage(arrangementUpdatedFeedback(saved, confirmation));
       } catch (err: unknown) {
         onError(err instanceof Error ? err.message : String(err));
       } finally {
@@ -685,6 +709,7 @@ export function WorkspaceApplicationStage({
       data-stage-plane={planeCalm ? "calm" : "live"}
       data-layout-editing={layoutEditing ? "true" : "false"}
       data-layout-editing-phase={editingPhase}
+      data-product-surface="desktop"
     >
       <header className="stage-hero stage-hero-minimal">
         <h2>{layoutsStageTitle(workspace?.name)}</h2>
@@ -705,6 +730,23 @@ export function WorkspaceApplicationStage({
           Refresh
         </button>
       </header>
+
+      {firstUseGuidance ? (
+        <div className="stage-first-use" role="note">
+          <p className="stage-first-use-title">{firstUseGuidance.title}</p>
+          <p className="stage-first-use-body muted">{firstUseGuidance.body}</p>
+          <button
+            type="button"
+            className="ghost"
+            disabled={busy}
+            onClick={() => {
+              setGuidanceDismissed(true);
+            }}
+          >
+            Dismiss
+          </button>
+        </div>
+      ) : null}
 
       {layoutEditing && workingSet && editingChangeDiff ? (
         <div
@@ -782,7 +824,7 @@ export function WorkspaceApplicationStage({
                 disabled={busy || !runtime || !workingSetId}
                 onClick={restoreSelectedArrangement}
               >
-                Restore
+                {WORKSPACE_RESTORE_VERB}
               </button>
               <button
                 type="button"
@@ -790,7 +832,7 @@ export function WorkspaceApplicationStage({
                 disabled={busy || !runtime || !workingSetId}
                 onClick={enterLayoutEditing}
               >
-                Edit layout
+                {WORKSPACE_EDIT_LAYOUT_VERB}
               </button>
             </>
           ) : (
@@ -802,8 +844,8 @@ export function WorkspaceApplicationStage({
                 aria-pressed={layoutPreview}
                 title={
                   layoutPreview
-                    ? "Hide saved-layout preview"
-                    : "Show saved-layout preview"
+                    ? "Hide saved Arrangement preview"
+                    : "Show saved Arrangement preview"
                 }
                 onClick={() => {
                   setLayoutPreview((prev) => !prev);
@@ -821,11 +863,11 @@ export function WorkspaceApplicationStage({
                 title={
                   editingChangeDiff?.hasChanges
                     ? layoutEditingUpdateConfirmation(editingChangeDiff)
-                    : "No effective changes to update"
+                    : "No effective changes to Update"
                 }
                 onClick={updateEditingArrangement}
               >
-                Update
+                {WORKSPACE_UPDATE_VERB}
               </button>
               <button
                 type="button"
@@ -834,7 +876,7 @@ export function WorkspaceApplicationStage({
                 title="Restore saved Arrangement to the desktop"
                 onClick={restoreSelectedArrangement}
               >
-                Restore
+                {WORKSPACE_RESTORE_VERB}
               </button>
               <button
                 type="button"
@@ -847,6 +889,14 @@ export function WorkspaceApplicationStage({
             </>
           )}
         </div>
+      ) : null}
+
+      {showDesktopMap && selectedArrangementMeta && !layoutEditing ? (
+        <p className="stage-arrangement-meta muted" aria-live="polite">
+          {selectedArrangementMeta.summaryLine}
+          {" · "}
+          {selectedArrangementMeta.readinessLine}
+        </p>
       ) : null}
 
       <div
@@ -970,7 +1020,7 @@ export function WorkspaceApplicationStage({
               disabled={busy || !runtime || !workspace || layoutEditing}
               onClick={saveSelectionAsWorkingSet}
             >
-              Save Arrangement
+              {WORKSPACE_SAVE_VERB} Arrangement
             </button>
             {layoutEditing ? (
               <button
@@ -982,11 +1032,11 @@ export function WorkspaceApplicationStage({
                 title={
                   editingChangeDiff?.hasChanges
                     ? layoutEditingUpdateConfirmation(editingChangeDiff)
-                    : "No effective changes to update"
+                    : "No effective changes to Update"
                 }
                 onClick={updateEditingArrangement}
               >
-                Update
+                {WORKSPACE_UPDATE_VERB}
               </button>
             ) : null}
             {matchedLibrary && canLaunchApplication(matchedLibrary) ? (
