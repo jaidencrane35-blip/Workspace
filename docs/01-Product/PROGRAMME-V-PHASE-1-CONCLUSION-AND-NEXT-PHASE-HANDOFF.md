@@ -4,18 +4,18 @@
 |-------|-------|
 | **Authority** | Principal Architect |
 | **Date** | 2026-07-30 |
-| **Programme V Phase 1 status** | **Complete — architecturally approved** |
-| **Branch tip (Phase 1)** | `ec34e71` |
+| **Programme V Phase 1 status** | **Complete — formally accepted and closed** |
+| **Branch tip (Phase 1)** | `9509fde` |
 | **Nature** | Phase 1 conclusion record + handoff for the next phase / programme charter |
 | **Not** | An approved implementation contract; not authority to commence the next phase |
 
 ---
 
-## Programme V Phase 1 concluded
+## Programme V Phase 1 formally accepted
 
-The Principal Architect approved [IC6 — Workflow Observability](PROGRAMME-V-IC6-WORKFLOW-OBSERVABILITY.md) and declared **Programme V Phase 1 architecturally complete** (2026-07-30).
+The Principal Architect approved [IC6 — Workflow Observability](PROGRAMME-V-IC6-WORKFLOW-OBSERVABILITY.md), declared Programme V Phase 1 architecturally complete, and on 2026-07-30 **formally accepted and closed** this Phase 1 record.
 
-Treat the Programme V Phase 1 merge as a **programme-phase boundary**, not an ordinary feature merge: operator guidance established entirely through deterministic projections and compositions of existing Workspace state.
+Treat the Programme V Phase 1 merge as a **programme-phase boundary / milestone**, not an ordinary feature merge and not merely a collection of completed implementation contracts: operator guidance established entirely through deterministic projections and compositions of existing Workspace state.
 
 An operator can now answer, from Workspace itself:
 
@@ -27,6 +27,8 @@ An operator can now answer, from Workspace itself:
 | What will happen? | [IC4 — Predictability](PROGRAMME-V-IC4-WORKFLOW-PREDICTABILITY.md) |
 | How does it all fit together? | [IC5 — Unified Explainability](PROGRAMME-V-IC5-WORKFLOW-EXPLAINABILITY.md) |
 | What changed? | [IC6 — Observability](PROGRAMME-V-IC6-WORKFLOW-OBSERVABILITY.md) |
+
+Every answer remains derived, deterministic, attributable, traceable, and ownership-preserving.
 
 Charter: [Programme V — Operator Workflows](PROGRAMME-V-OPERATOR-WORKFLOWS.md).
 
@@ -41,10 +43,21 @@ Charter: [Programme V — Operator Workflows](PROGRAMME-V-OPERATOR-WORKFLOWS.md)
 | IC5 | Unified Explainability | Compose projections into one narrative |
 | IC6 | Observability | Explain meaningful projection transitions |
 
+### Architectural achievement (carry forward)
+
+| Programme | Demonstrated |
+|-----------|--------------|
+| **Programme I** | Product capability can mature without competing runtime models |
+| **Programme V Phase 1** | Sophisticated operator guidance can mature without competing behavioural models |
+
+Together: richer operator experiences emerge through **composition and projection**, not expansion of authority.
+
 ### Invariants preserved (carry forward)
 
 - WorkspaceState remains the sole runtime desktop truth  
 - Restore remains the sole product OS positioning (`set_bounds`) path  
+- Programme I projections remain the exclusive source of desktop semantics  
+- Programme V projections **compose** rather than recompute  
 - No workflow runtime, recommendation engine, recovery engine, prediction engine, narrative engine, or observability engine  
 - Product State vs Interaction State — interaction never persists (including IC6 predecessor snapshot)  
 - Explanation / observability are projections of existing truth — not logs, caches, or histories  
@@ -61,39 +74,50 @@ No competing ownership, duplicate persistence, orchestration layer, event histor
 
 ## Next phase — recommended direction (not yet chartered)
 
-The Principal Architect recommends that the **next phase** shift toward **operator intent composition**:
+The Principal Architect supports **Operator Intent Composition** as a **new phase**, not an extension of Phase 1.
 
-> Help operators express higher-level goals while Workspace composes existing capabilities into guided workflows — without creating new capabilities as a first resort.
+Mission direction (not a charter):
 
-That work must begin under a **new implementation contract and architectural review**, preserving:
+> Help operators express higher-level intentions while Workspace composes existing capabilities into guided experiences — without adding more projections as a first resort.
 
-> Compose existing truth before introducing new authority.
+Governing design test (carry forward):
 
-**Cursor must not commence next-phase implementation** until the Principal Architect charters that phase and approves its first implementation contract.
+> Before introducing a new authority, determine whether the desired capability can be expressed through deterministic composition of existing Workspace state and established projections.
+
+**Cursor must not commence any next-phase implementation** until that phase receives its own charter, first implementation contract, and Principal Architect approval.
 
 ---
 
 ## Draft PR / merge guidance
 
-Draft PR: **Programme V — Operator Workflows Phase 1 (IC1–IC6)** → `main` (draft until final integration review).
+Draft PR: **Programme V — Operator Workflows Phase 1 (IC1–IC6)** → `main`.
 
-Recommended integration checklist before promote-to-merge:
+**Approved to proceed to final integration review** prior to merge. Focus on architectural integrity rather than feature completeness.
+
+Integration checklist before promote-to-merge:
 
 1. Projection dependency graph remains acyclic  
-2. IC5 explainability composes projections without bypassing them  
-3. IC6 observability compares projections without mutating them  
-4. What → Why → Owner terminology is consistent across all surfaces  
-5. No duplicate comparison, recommendation, recoverability, or predictability logic  
-6. Session-only Interaction State remains clearly separated from persistent Product State  
+2. WorkspaceState remains the sole runtime desktop authority  
+3. Programme I projections remain the exclusive source of desktop semantics  
+4. Programme V projections compose rather than recompute  
+5. Explainability consumes projections without reinterpretation  
+6. Observability compares projections without persisting them  
+7. Product State and Interaction State remain clearly separated  
+8. What → Why → Owner remains consistent across all operator surfaces  
+9. No duplicate ownership has emerged through incremental evolution  
+
+If the checklist passes, merge as the official **Programme V Phase 1 milestone**.
 
 ---
 
 ## Cursor stop condition
 
-- Programme V **Phase 1** is **closed** and **architecturally approved**.  
-- Next phase (operator intent composition) is a **recommendation only** — not a charter and not an approved IC.  
-- Merge of the Programme V Phase 1 branch (IC1–IC6) as the phase-boundary milestone remains a release/integration decision for the Principal Architect / maintainers.
+- Programme V **Phase 1** is **formally accepted**, **closed**, and **approved for final integration review** prior to merge.  
+- No further implementation work should commence until the next phase receives its own charter, implementation contract, and Principal Architect approval.  
+- Merge of the Programme V Phase 1 branch (IC1–IC6) as the phase-boundary milestone remains a release/integration decision for the Principal Architect / maintainers after integration review.
+
+Governance cadence preserved: Charter → Implementation Contract → Principal Architect Review → Approval → Programme Boundary.
 
 ---
 
-*Programme V Phase 1 complete — next phase awaiting Principal Architect charter.*
+*Programme V Phase 1 formally accepted and closed — next phase awaiting distinct charter.*

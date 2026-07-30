@@ -131,4 +131,4 @@ IC6 complete and **approved** by the Principal Architect (2026-07-30).
 
 Review confirmed: observability as pure projection of current vs one immediately preceding IC1–IC5 snapshot; meaningful semantic transitions only; observation minimality (identical fingerprints → no transitions) as a long-term invariant; session-only predecessor; What → Why → Owner + source traceability; no event history, timeline, activity log, analytics, or replay.
 
-**Programme V Phase 1 is architecturally complete.** See [Phase 1 conclusion & next-phase handoff](PROGRAMME-V-PHASE-1-CONCLUSION-AND-NEXT-PHASE-HANDOFF.md).
+**Programme V Phase 1 is formally accepted and closed.** See [Phase 1 conclusion & next-phase handoff](PROGRAMME-V-PHASE-1-CONCLUSION-AND-NEXT-PHASE-HANDOFF.md).

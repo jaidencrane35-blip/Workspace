@@ -2,8 +2,8 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | **Phase 1 complete** — IC1–IC6 approved; next phase awaiting Principal Architect charter |
-| **Phase 1 conclusion** | [Phase 1 conclusion & next-phase handoff](PROGRAMME-V-PHASE-1-CONCLUSION-AND-NEXT-PHASE-HANDOFF.md) |
+| **Status** | **Phase 1 formally accepted and closed** — IC1–IC6 approved; awaiting final integration review / merge; next phase awaiting distinct charter |
+| **Phase 1 conclusion** | [Phase 1 conclusion & next-phase handoff](PROGRAMME-V-PHASE-1-CONCLUSION-AND-NEXT-PHASE-HANDOFF.md) (formally accepted 2026-07-30) |
 | **Authority** | Principal Architect |
 | **Audience** | Principal Architect, Engineering, Cursor agents |
 | **Nature** | Formal product architecture programme charter |
@@ -217,9 +217,9 @@ Success is measured by improved **operator comprehension**, not additional archi
 
 ## Programme completion
 
-### Phase 1 (complete)
+### Phase 1 (formally accepted and closed)
 
-**Programme V Phase 1 is architecturally complete** as of Principal Architect approval of IC6 (2026-07-30).
+**Programme V Phase 1 is formally accepted and closed** as of Principal Architect acknowledgement (2026-07-30), following approval of IC6.
 
 Phase 1 demonstrated that a sophisticated operator experience—composition, guidance, recoverability, predictability, explainability, and observability—can be built entirely through deterministic projections and compositions of existing Workspace state.
 
@@ -235,8 +235,8 @@ Programme V as a whole completes when Workspace demonstrates that complex operat
 
 This document established Programme V and authorised planning of implementation contracts.
 
-**Phase 1 implementation is closed.** Cursor must not commence a next phase (including operator intent composition) until the Principal Architect charters that phase and approves its first implementation contract.
+**Phase 1 is formally accepted and closed.** No further implementation work should commence until the next phase receives its own charter, implementation contract, and Principal Architect approval. Final integration review / merge of the Phase 1 branch remains a Principal Architect / maintainer decision.
 
 ---
 
-*End of Programme V charter — Phase 1 complete.*
+*End of Programme V charter — Phase 1 formally accepted and closed.*
