@@ -2,7 +2,7 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | Active — IC1 approved; IC2 complete pending Principal Architect review |
+| **Status** | Active — IC1–IC2 approved; IC3 planned (awaiting approval to commence) |
 | **Authority** | Principal Architect |
 | **Audience** | Principal Architect, Engineering, Cursor agents |
 | **Nature** | Formal product architecture programme charter |
