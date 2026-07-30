@@ -1,18 +1,18 @@
 /**
- * Purpose: Desktop surface — Arrangement Save/Update/Restore + layout editing.
- * Owner: Frontend product shell (Programme I IC5)
+ * Purpose: Desktop surface — Arrangement ops, editing, operational explanations.
+ * Owner: Frontend product shell (Programme I IC6)
  * Inputs: optional profile, registry apps, work mode, launch + navigate;
  *   WorkspaceState via refreshObservedWorkspaceState; focus_desktop_window;
  *   list/capture/restore_desktop_arrangement
  * Outputs: Spatial desktop objects; Arrangement select + Restore; edit session;
- *   derived Arrangement metadata; first-use guidance; consistent product verbs
+ *   activity / currency / pre-Restore / change explanations (derived only)
  * Dependencies: stageDesktopUi, layoutsStageUi, desktopLayoutEditing,
- *   arrangementProductUi, ipc
- * Non-goals: Fake windows, Assistant-owned control, new set_bounds product IPC,
- *   canvas Layout HWND store, onboarding persistence, parallel authorities
+ *   arrangementProductUi, operationalConfidenceUi, ipc
+ * Non-goals: Fake windows, activity engines, explanation caches, operation logs,
+ *   new set_bounds product IPC, onboarding persistence, parallel authorities
  *
  * Product State: Profile · Desktop · Arrangement · Restore
- * Interaction State (never persist): Editing · Preview · Selection · Guidance dismissed
+ * Interaction State (never persist): Editing · Preview · Selection · In-flight · Guidance
  */
 
 import { useCallback, useEffect, useMemo, useState, type KeyboardEvent } from "react";
@@ -22,7 +22,6 @@ import {
   canLaunchApplication,
 } from "../lib/applicationsUi";
 import {
-  arrangementRestoredFeedback,
   arrangementSavedFeedback,
   arrangementUpdatedFeedback,
   deriveArrangementProductMeta,
@@ -50,6 +49,13 @@ import {
   WORKSPACE_UPDATE_VERB,
   workspaceDesktopWorkflowLine,
 } from "../lib/layoutsStageUi";
+import {
+  arrangementRestoredExplanationMessage,
+  explainArrangementCurrency,
+  explainOperationalActivity,
+  explainPreRestore,
+  type OperationalInFlight,
+} from "../lib/operationalConfidenceUi";
 import { monogramFromName } from "../lib/productShellUi";
 import {
   layoutStageDesktopWindows,
@@ -157,6 +163,11 @@ export function WorkspaceApplicationStage({
   );
   /** Interaction State — session dismiss only; never onboarding persistence. */
   const [guidanceDismissed, setGuidanceDismissed] = useState(false);
+  /** Interaction State — in-flight op label for activity surface. */
+  const [inFlight, setInFlight] = useState<OperationalInFlight>(null);
+  /** Interaction State — last Restore result for post-op explanation. */
+  const [lastRestoreResult, setLastRestoreResult] =
+    useState<DesktopArrangementRestoreResult | null>(null);
 
   const windows = workspaceState?.windows ?? [];
   const windowGroups = workspaceState?.window_groups ?? [];
@@ -299,6 +310,7 @@ export function WorkspaceApplicationStage({
       setLayoutEditing(false);
       setLayoutPreview(false);
       setUpdateConfirmation(null);
+      setLastRestoreResult(null);
     }
   }, [workingSetId]);
 
@@ -374,6 +386,32 @@ export function WorkspaceApplicationStage({
       desktopReady: showDesktopMap || windows.length > 0,
     });
 
+  const currencyExplanation = useMemo(() => {
+    if (!workingSet) {
+      return null;
+    }
+    return explainArrangementCurrency(workingSet, windows);
+  }, [workingSet, windows]);
+
+  const preRestoreExplanation = useMemo(() => {
+    if (!workingSet || layoutEditing) {
+      return null;
+    }
+    return explainPreRestore(workingSet, windows);
+  }, [workingSet, windows, layoutEditing]);
+
+  const activityExplanation = explainOperationalActivity({
+    loadState,
+    hasProfile: Boolean(workspace),
+    arrangementSelected: Boolean(workingSet),
+    arrangementName: workingSet?.name,
+    layoutEditing,
+    layoutPreview,
+    editingPhase,
+    inFlight: inFlight ?? (loadState === "loading" ? "observe" : null),
+    hasLastRestoreResult: Boolean(lastRestoreResult),
+  });
+
   const saveSelectionAsWorkingSet = () => {
     if (!workspace) {
       onError("Choose a Profile to save an Arrangement.");
@@ -391,6 +429,7 @@ export function WorkspaceApplicationStage({
         ? selectedTile?.title || "Selection"
         : `Selection (${selectedKeys.length})`;
     onBusy(true);
+    setInFlight("save");
     onError(null);
     void (async () => {
       try {
@@ -414,6 +453,7 @@ export function WorkspaceApplicationStage({
       } catch (err: unknown) {
         onError(err instanceof Error ? err.message : String(err));
       } finally {
+        setInFlight(null);
         onBusy(false);
       }
     })();
@@ -425,6 +465,7 @@ export function WorkspaceApplicationStage({
       return;
     }
     onBusy(true);
+    setInFlight("restore");
     onError(null);
     void (async () => {
       try {
@@ -435,12 +476,16 @@ export function WorkspaceApplicationStage({
             focusFirst: true,
           },
         );
+        setLastRestoreResult(result);
         onDesktopChanged?.();
         await refreshDesktop();
-        onMessage(arrangementRestoredFeedback(workingSet.name, result));
+        onMessage(
+          arrangementRestoredExplanationMessage(workingSet.name, result),
+        );
       } catch (err: unknown) {
         onError(err instanceof Error ? err.message : String(err));
       } finally {
+        setInFlight(null);
         onBusy(false);
       }
     })();
@@ -482,6 +527,7 @@ export function WorkspaceApplicationStage({
       .filter((hwnd): hwnd is string => Boolean(hwnd));
     const confirmation = layoutEditingUpdateConfirmation(editingChangeDiff);
     onBusy(true);
+    setInFlight("update");
     onError(null);
     void (async () => {
       try {
@@ -507,6 +553,7 @@ export function WorkspaceApplicationStage({
       } catch (err: unknown) {
         onError(err instanceof Error ? err.message : String(err));
       } finally {
+        setInFlight(null);
         onBusy(false);
       }
     })();
@@ -748,6 +795,15 @@ export function WorkspaceApplicationStage({
         </div>
       ) : null}
 
+      <p
+        className="stage-operational-activity muted"
+        role="status"
+        aria-live="polite"
+        data-operational-owner={activityExplanation.owner}
+      >
+        {activityExplanation.line}
+      </p>
+
       {layoutEditing && workingSet && editingChangeDiff ? (
         <div
           className={
@@ -821,7 +877,13 @@ export function WorkspaceApplicationStage({
             <>
               <button
                 type="button"
-                disabled={busy || !runtime || !workingSetId}
+                disabled={
+                  busy ||
+                  !runtime ||
+                  !workingSetId ||
+                  !(preRestoreExplanation?.available ?? false)
+                }
+                title={preRestoreExplanation?.summaryLine}
                 onClick={restoreSelectedArrangement}
               >
                 {WORKSPACE_RESTORE_VERB}
@@ -891,12 +953,36 @@ export function WorkspaceApplicationStage({
         </div>
       ) : null}
 
-      {showDesktopMap && selectedArrangementMeta && !layoutEditing ? (
-        <p className="stage-arrangement-meta muted" aria-live="polite">
-          {selectedArrangementMeta.summaryLine}
-          {" · "}
-          {selectedArrangementMeta.readinessLine}
-        </p>
+      {workingSet && currencyExplanation && !layoutEditing ? (
+        <div
+          className="stage-operational-explain"
+          aria-live="polite"
+          data-arrangement-currency={currencyExplanation.currency}
+        >
+          <p className="stage-arrangement-meta">
+            {currencyExplanation.line}
+          </p>
+          <p className="stage-arrangement-meta muted">
+            Since capture · {currencyExplanation.changeLine}
+          </p>
+          {selectedArrangementMeta ? (
+            <p className="stage-arrangement-meta muted">
+              {selectedArrangementMeta.summaryLine}
+            </p>
+          ) : null}
+          {preRestoreExplanation ? (
+            <>
+              <p className="stage-arrangement-meta">
+                {preRestoreExplanation.line}
+              </p>
+              <ul className="stage-prerestore-list muted">
+                {preRestoreExplanation.bullets.map((bullet) => (
+                  <li key={bullet}>{bullet}</li>
+                ))}
+              </ul>
+            </>
+          ) : null}
+        </div>
       ) : null}
 
       <div

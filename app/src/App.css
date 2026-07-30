@@ -399,9 +399,31 @@ button.ghost {
 }
 
 .stage-arrangement-meta {
-  margin: -0.25rem 0 0.55rem;
+  margin: 0 0 0.25rem;
   font-size: 0.78rem;
   line-height: 1.35;
+}
+
+.stage-operational-activity {
+  margin: 0 0 0.55rem;
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.stage-operational-explain,
+.arrangement-operational-explain {
+  margin: 0 0 0.65rem;
+  padding: 0.45rem 0.6rem;
+  border-left: 2px solid #6b8799;
+  background: rgba(107, 135, 153, 0.08);
+}
+
+.stage-prerestore-list,
+.arrangement-prerestore-list {
+  margin: 0.2rem 0 0;
+  padding-left: 1.1rem;
+  font-size: 0.78rem;
+  line-height: 1.4;
 }
 
 .arrangement-workflow-hint {

@@ -1,17 +1,16 @@
 /**
- * Purpose: Arrangements control — Save, Update, and Restore for a Profile.
- * Owner: Frontend product shell (Programme I IC5)
+ * Purpose: Arrangements control — Save, Update, Restore + operational explanations.
+ * Owner: Frontend product shell (Programme I IC6)
  * Inputs: Active profile, busy/banner callbacks; WorkspaceState for derived meta
  * Outputs: capture_desktop_arrangement / restore / list IPC
- * Dependencies: arrangementProductUi, desktopArrangementUi, list/details/diagnostics
+ * Dependencies: arrangementProductUi, operationalConfidenceUi, list/details/diagnostics
  * Non-goals: Competing with Desktop as primary surface; onboarding persistence;
- *   parallel arrangement models; notification/event engines
+ *   parallel arrangement models; notification/event engines; explanation caches
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   arrangementProductWorkflowHint,
-  arrangementRestoredFeedback,
   arrangementSavedFeedback,
   arrangementUpdatedFeedback,
   desktopFirstUseGuidance,
@@ -26,6 +25,11 @@ import {
   WORKSPACE_SAVE_VERB,
   WORKSPACE_UPDATE_VERB,
 } from "../lib/layoutsStageUi";
+import {
+  arrangementRestoredExplanationMessage,
+  explainArrangementCurrency,
+  explainPreRestore,
+} from "../lib/operationalConfidenceUi";
 import { useObservedWorkspaceState } from "../lib/useObservedWorkspaceState";
 import type {
   DesktopArrangement,
@@ -144,6 +148,20 @@ export function DesktopArrangementPanel({
       desktopReady: Boolean(workspaceState?.windows?.length),
     });
 
+  const currencyExplanation = useMemo(() => {
+    if (!selected) {
+      return null;
+    }
+    return explainArrangementCurrency(selected, observedWindows);
+  }, [selected, observedWindows]);
+
+  const preRestoreExplanation = useMemo(() => {
+    if (!selected) {
+      return null;
+    }
+    return explainPreRestore(selected, observedWindows);
+  }, [selected, observedWindows]);
+
   const captureArrangement = () => {
     if (!workspace) {
       onError("Choose a Profile to Save an Arrangement.");
@@ -248,7 +266,9 @@ export function DesktopArrangementPanel({
         );
         setRestoreResult(result);
         onDesktopChanged?.();
-        onMessage(arrangementRestoredFeedback(selected.name, result));
+        onMessage(
+          arrangementRestoredExplanationMessage(selected.name, result),
+        );
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : String(err);
         onError(message);
@@ -334,10 +354,40 @@ export function DesktopArrangementPanel({
                 arrangement={selected}
                 observedWindows={observedWindows}
               />
+              {currencyExplanation ? (
+                <div
+                  className="arrangement-operational-explain"
+                  data-arrangement-currency={currencyExplanation.currency}
+                >
+                  <p className="arrangement-details-meta">
+                    {currencyExplanation.line}
+                  </p>
+                  <p className="muted arrangement-details-meta">
+                    Since capture · {currencyExplanation.changeLine}
+                  </p>
+                  {preRestoreExplanation ? (
+                    <>
+                      <p className="arrangement-details-meta">
+                        {preRestoreExplanation.line}
+                      </p>
+                      <ul className="arrangement-prerestore-list muted">
+                        {preRestoreExplanation.bullets.map((bullet) => (
+                          <li key={bullet}>{bullet}</li>
+                        ))}
+                      </ul>
+                    </>
+                  ) : null}
+                </div>
+              ) : null}
               <div className="row arrangement-restore-row">
                 <button
                   type="button"
-                  disabled={busy || !isIpcRuntimeAvailable()}
+                  disabled={
+                    busy ||
+                    !isIpcRuntimeAvailable() ||
+                    !(preRestoreExplanation?.available ?? false)
+                  }
+                  title={preRestoreExplanation?.summaryLine}
                   onClick={restoreArrangement}
                 >
                   {WORKSPACE_RESTORE_VERB}
