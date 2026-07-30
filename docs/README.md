@@ -51,6 +51,7 @@ What Workspace is, who it serves, and how scope is managed.
 | Document | Description |
 |----------|-------------|
 | [Product Vision](01-Product/PRODUCT-VISION.md) | Product goals, domains, and target experience |
+| [Workspace Desktop Interaction Model](01-Product/WORKSPACE-DESKTOP-INTERACTION-MODEL.md) | **Binding product contract** — user experience, hierarchy, feel, drift |
 | [Workspace Visual Direction](01-Product/WORKSPACE-VISUAL-DIRECTION.md) | Concept-art north star; hierarchy binding, pixels not |
 | [Workspace Reference Interpretation](01-Product/WORKSPACE-REFERENCE-INTERPRETATION.md) | **Binding** — problem solved, hierarchy, drift examples, guardrails |
 | [Milestone R Desktop Reality Stage Charter](01-Product/MILESTONE-R-DESKTOP-REALITY-STAGE-CHARTER.md) | Approved charter; Slice 1 in review |
