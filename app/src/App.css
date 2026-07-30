@@ -1380,7 +1380,7 @@ button.linkish:not(:disabled):hover {
 .assistant-rail-reopen-bar {
   display: flex;
   justify-content: flex-end;
-  padding: 0.35rem 1rem 0;
+  padding: 0.35rem var(--shell-pad-x) 0;
 }
 
 .assistant-companion-rail {

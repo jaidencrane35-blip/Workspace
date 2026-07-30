@@ -41,7 +41,7 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 | 13 | Dead code removal | open | unused selectors (v2-04, v2-18) |
 | 14 | Documentation quality | open | Protocol v2 + board |
 | 15 | Naming clarity | open | DESKTOP_PREVIEW_BANNER (v2-05) |
-| 16 | Maintainability | open | |
+| 16 | Maintainability | open | shell helper headers (v2-21) |
 | 17 | Human readability | open | |
 | 18 | Developer experience | open | arch map --write note (v2-13) |
 | 19 | Code organisation | open | rail id in assistantRail.ts (v2-09) |
@@ -51,7 +51,7 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 | 23 | Build cleanliness | PLATEAUED | typecheck/build green; no actionable frontend warnings (v2-14) |
 | 24 | IPC cleanliness | PLATEAUED | verify:ipc-contract green; no orphaned shell consumers (v2-14) |
 | 25 | Error messaging | open | string classify (v2-05) |
-| 26 | Commercial readiness | open | |
+| 26 | Commercial readiness | open | reopen bar pad align (v2-21) |
 
 ---
 
@@ -87,6 +87,23 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 ---
 
 ## Cycles
+
+### Cycle: opt-v2-21-maintainability-commercial-pad
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Category** | 16 — Maintainability (+ 26 commercial readiness) |
+| **Problem** | Shell helper header omitted banner constant; reopen bar padding used a one-off rem |
+| **Reason** | Document `DESKTOP_PREVIEW_BANNER` in file purpose; align reopen bar to `--shell-pad-x` |
+| **Files changed** | `productShellUi.ts`, `App.css`, this log |
+| **Validation** | typecheck / test / architecture / ipc / ui-boundary / build |
+| **Maintainability score** | 9.2/10 |
+| **Commercial readiness** | 6.5/10 |
+| **Category status** | open |
+| **Why this is safe** | Header + padding alignment only |
+
+---
 
 ### Cycle: opt-v2-20-plateau-animation
 

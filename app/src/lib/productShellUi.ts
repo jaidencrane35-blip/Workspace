@@ -2,7 +2,7 @@
  * Purpose: Shared product-shell presentation helpers (runtime banners, initials).
  * Owner: Frontend product shell (Milestone A.1)
  * Inputs: Error-like values, application/workspace display names
- * Outputs: Banner classification + monogram initials
+ * Outputs: Banner classification (`DESKTOP_PREVIEW_BANNER`) + monogram initials
  * Dependencies: ipc runtime error types
  * Non-responsibilities: IPC, permissions, Assistant reasoning
  */
