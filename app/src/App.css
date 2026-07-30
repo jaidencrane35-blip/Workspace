@@ -1428,6 +1428,26 @@ button.linkish:not(:disabled):hover {
   opacity: 0.28;
 }
 
+.stage-desktop-window.attention-primary:not(.selected) {
+  box-shadow: inset 0 0 0 1px rgba(212, 165, 116, 0.55);
+}
+
+.stage-desktop-window.role-working .stage-desktop-window-title {
+  font-weight: 600;
+}
+
+.stage-desktop-window.role-returning {
+  border-style: dashed;
+}
+
+.stage-desktop-window.role-interrupted {
+  opacity: 0.72;
+}
+
+.stage-desktop-window.role-companion:not(.selected):not(.attention-primary) {
+  opacity: 0.82;
+}
+
 .stage-desktop-window.hidden-object {
   opacity: 0.4;
   border-style: dashed;

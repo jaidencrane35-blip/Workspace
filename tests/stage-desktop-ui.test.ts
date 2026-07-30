@@ -433,4 +433,144 @@ describe("stage desktop UI helpers", () => {
     expect(focus.mapWindows[0]?.process_name).toBe("chrome.exe");
     expect(focus.dockEntries[0]?.processId).toBe(10);
   });
+
+  it("surfaces attention and semantic awareness for Stage coherence", async () => {
+    const {
+      organiseStageForWorkMode,
+      stageAttentionAwarenessLine,
+      stageAttentionPrimaryKeys,
+      stageFocusPreferredKeys,
+      stageSemanticRoleByKey,
+    } = await import("../app/src/lib/stageDesktopUi");
+    const attention = {
+      primary_item_id: "att-1",
+      authority_effect: "none",
+      items: [
+        {
+          id: "att-1",
+          kind: "resume",
+          summary: "Resume the editor",
+          explanation: "Interrupted working object",
+          lifecycle: "stable",
+          strength: 0.9,
+          confidence: "high",
+          time_sensitivity: "near_term",
+          entity_ids: ["b"],
+          evidence: [],
+          supporting_planes: ["semantics"],
+          source_decision_id: null,
+          authority_effect: "none",
+        },
+      ],
+    };
+    const semantics = {
+      objects: [
+        {
+          stable_window_id: "b",
+          hwnd: "0x2",
+          title: "Browser",
+          role: "working",
+          importance: "important",
+          confidence: "high",
+          evidence_score: 1,
+          authority_effect: "none",
+        },
+        {
+          stable_window_id: "a",
+          hwnd: "0x1",
+          title: "Editor",
+          role: "companion",
+          importance: "routine",
+          confidence: "medium",
+          evidence_score: 0.5,
+          authority_effect: "none",
+        },
+      ],
+      relationships: [
+        {
+          from_stable_window_id: "b",
+          to_stable_window_id: "a",
+          kind: "works_with",
+          evidence_count: 3,
+          session_count: 2,
+          confidence: "high",
+          authority_effect: "none",
+        },
+      ],
+      activities: [],
+      graph: { nodes: [], edges: [] },
+      authority_effect: "none",
+    };
+    expect(stageAttentionAwarenessLine(attention)).toBe("Resume the editor");
+    expect([...stageAttentionPrimaryKeys(attention)]).toEqual(["b"]);
+    expect(stageSemanticRoleByKey(semantics).get("b")).toBe("working");
+    expect(stageFocusPreferredKeys(attention, semantics)[0]).toBe("b");
+
+    const tiles = layoutStageDesktopWindows([
+      sampleWindow({ stable_window_id: "a", process_id: 10, focused: true }),
+      sampleWindow({
+        stable_window_id: "b",
+        hwnd: "0x2",
+        process_id: 20,
+        process_name: "chrome.exe",
+        title: "Browser",
+      }),
+    ]);
+    const flowRelated = relatedStageObjectKeys(
+      tiles,
+      "b",
+      "flow",
+      [],
+      semantics,
+    );
+    expect(flowRelated.has("a")).toBe(true);
+
+    const focus = organiseStageForWorkMode(
+      [
+        sampleWindow({
+          stable_window_id: "a",
+          hwnd: "0x1",
+          focused: true,
+          process_id: 10,
+        }),
+        sampleWindow({
+          stable_window_id: "b",
+          hwnd: "0x2",
+          process_id: 20,
+          process_name: "chrome.exe",
+          title: "Browser",
+        }),
+      ],
+      "focus",
+      null,
+      [
+        sampleGroup({
+          criterion: "process_id",
+          fact_key: "20",
+          label: "chrome.exe",
+          member_ids: ["b"],
+        }),
+        sampleGroup({
+          criterion: "process_id",
+          fact_key: "10",
+          label: "code.exe",
+          member_ids: ["a"],
+        }),
+      ],
+      [],
+      stageFocusPreferredKeys(attention, semantics),
+    );
+    expect(focus.mapWindows[0]?.stable_window_id).toBe("b");
+  });
+
+  it("includes awareness line in Stage meta without diagnostic jargon", () => {
+    const line = stageDesktopMetaLine({
+      windowCount: 2,
+      monitorCount: 1,
+      focusedTitle: "Editor",
+      awarenessLine: "Resume the editor",
+    });
+    expect(line).toMatch(/Resume the editor/);
+    expect(line).not.toMatch(/attention_item|entity_ids|AI/i);
+  });
 });

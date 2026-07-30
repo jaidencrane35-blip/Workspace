@@ -1,14 +1,15 @@
 /**
  * Purpose: Desktop Interaction Layer Stage — runtime objects, relationships, interaction.
- * Owner: Frontend product shell (Product Contract V6 / Product Foundation V14)
+ * Owner: Frontend product shell (Product Contract V6 / Product Foundation V15)
  * Inputs: optional profile, registry apps, work mode, launch + navigate;
- *   WorkspaceState via refreshObservedWorkspaceState; focus_desktop_window;
- *   list_desktop_arrangements (working-set CRUD only)
+ *   WorkspaceState via refreshObservedWorkspaceState (windows, groups, attention,
+ *   semantics); focus_desktop_window; list_desktop_arrangements (working-set CRUD)
  * Outputs: Spatial desktop objects with select≠activate, multi-select, keyboard;
- *   Flow relationships; Focus dock; arrangement working-set overlay
+ *   Flow relationships; Focus dock; arrangement working-set overlay;
+ *   subtle runtime awareness (attention primary, semantic roles)
  * Dependencies: stageDesktopUi, layoutsStageUi, ipc, applicationLaunch helpers
  * Non-goals: Fake windows, Assistant-owned control, minimize APIs, OS geometry apply,
- *   parallel sliced desktop models (hold WorkspaceState directly)
+ *   parallel sliced desktop models, diagnostic runtime dumps on Stage
  */
 
 import { useCallback, useEffect, useMemo, useState, type KeyboardEvent } from "react";
@@ -33,8 +34,12 @@ import {
   replaceStageSelection,
   sortStageTilesByZOrder,
   stageArrangementMemberKeys,
+  stageAttentionAwarenessLine,
+  stageAttentionPrimaryKeys,
   stageDesktopMetaLine,
   stageDesktopPlaneMessage,
+  stageFocusPreferredKeys,
+  stageSemanticRoleByKey,
   toggleStageSelection,
   type StageDesktopLoadState,
   type StageDesktopWindowTile,
@@ -124,6 +129,25 @@ export function WorkspaceApplicationStage({
     const title = focused.title.trim();
     return title || `Window ${focused.hwnd}`;
   })();
+  const attentionPrimaryKeys = useMemo(
+    () => stageAttentionPrimaryKeys(workspaceState?.attention),
+    [workspaceState?.attention],
+  );
+  const semanticRoles = useMemo(
+    () => stageSemanticRoleByKey(workspaceState?.semantics),
+    [workspaceState?.semantics],
+  );
+  const focusPreferredKeys = useMemo(
+    () =>
+      stageFocusPreferredKeys(
+        workspaceState?.attention,
+        workspaceState?.semantics,
+      ),
+    [workspaceState?.attention, workspaceState?.semantics],
+  );
+  const awarenessLine = stageAttentionAwarenessLine(
+    workspaceState?.attention,
+  );
 
   const selectedKey = primaryStageSelectionKey(selectedKeys);
 
@@ -191,8 +215,15 @@ export function WorkspaceApplicationStage({
     null;
 
   const relatedKeys = useMemo(
-    () => relatedStageObjectKeys(tiles, selectedKey, workMode, windowGroups),
-    [tiles, selectedKey, workMode, windowGroups],
+    () =>
+      relatedStageObjectKeys(
+        tiles,
+        selectedKey,
+        workMode,
+        windowGroups,
+        workspaceState?.semantics,
+      ),
+    [tiles, selectedKey, workMode, windowGroups, workspaceState?.semantics],
   );
 
   const workingSet = arrangements.find((item) => item.id === workingSetId) ?? null;
@@ -209,8 +240,9 @@ export function WorkspaceApplicationStage({
         selectedKey,
         windowGroups,
         monitors,
+        focusPreferredKeys,
       ),
-    [windows, workMode, selectedKey, windowGroups, monitors],
+    [windows, workMode, selectedKey, windowGroups, monitors, focusPreferredKeys],
   );
 
   const mapTiles = useMemo(() => {
@@ -366,6 +398,8 @@ export function WorkspaceApplicationStage({
     const inWorkingSet = workingSetKeys.size > 0 && workingSetKeys.has(tile.key);
     const outsideWorkingSet =
       workingSetKeys.size > 0 && !workingSetKeys.has(tile.key);
+    const attentionPrimary = attentionPrimaryKeys.has(tile.key);
+    const semanticRole = semanticRoles.get(tile.key) ?? null;
     const className = [
       "stage-desktop-window",
       `relation-${tile.relationIndex}`,
@@ -376,9 +410,21 @@ export function WorkspaceApplicationStage({
       related && !selected ? "related" : null,
       inWorkingSet ? "working-set-member" : null,
       outsideWorkingSet ? "working-set-outside" : null,
+      attentionPrimary ? "attention-primary" : null,
+      semanticRole ? `role-${semanticRole}` : null,
     ]
       .filter(Boolean)
       .join(" ");
+    const roleHint =
+      semanticRole === "working"
+        ? "Working"
+        : semanticRole === "returning"
+          ? "Returning"
+          : semanticRole === "interrupted"
+            ? "Interrupted"
+            : semanticRole === "companion"
+              ? "Companion"
+              : null;
     return (
       <button
         key={tile.key}
@@ -408,6 +454,8 @@ export function WorkspaceApplicationStage({
           {[
             tile.processLabel || null,
             tile.monitorLabel,
+            roleHint,
+            attentionPrimary ? "Noticed" : null,
             tile.focused ? "Focused" : null,
             tile.minimized ? "Minimized" : null,
             !tile.visible ? "Hidden" : null,
@@ -454,6 +502,7 @@ export function WorkspaceApplicationStage({
             monitorCount,
             focusedTitle,
             selectedCount: selectedKeys.length,
+            awarenessLine,
           })}
         </p>
       ) : null}

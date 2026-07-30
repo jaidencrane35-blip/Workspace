@@ -90,6 +90,26 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 
 ## Cycles
 
+### Cycle: v15-1-stage-attention-semantics-awareness
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Cycle number** | V15-1 |
+| **Category** | #1 / #16 — Visual hierarchy / Maintainability (product coherence) |
+| **Goal** | Surface WorkspaceState attention + semantics on Stage as subtle product awareness |
+| **Problem** | Attention/semantics only spoke through Assistant text; Stage painted a flat hwnd map |
+| **Analysis** | Highest disconnected capability: runtime conclusions already on WorkspaceState unused by the product center |
+| **Changes** | Stage tile roles + attention-primary cue; Flow relatedness walks semantic links; Focus prefers attention/working keys; meta awareness line; pure helpers in stageDesktopUi |
+| **Files affected** | `stageDesktopUi.ts`, `WorkspaceApplicationStage.tsx`, `App.css`, stage tests, this log |
+| **Validation** | typecheck / test / build / architecture / ipc / ui-boundary |
+| **Deleted / reduced** | No new panels; awareness no longer Assistant-only |
+| **Next recommended cycle** | Continuity cues (runtime_memory/latest_delta) or collapse Apps running-focus into Stage |
+| **Human review required** | No |
+| **Why this is safe** | Consumes existing WorkspaceState planes; no new engines |
+
+---
+
 ### Cycle: v14-empty-consolidation-evaluation-2
 
 | Field | Value |

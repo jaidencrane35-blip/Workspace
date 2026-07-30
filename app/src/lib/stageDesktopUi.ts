@@ -1,16 +1,19 @@
 /**
  * Purpose: Pure desktop-object model for the Desktop Interaction Layer Stage.
- * Owner: Frontend product shell (Product Contract V8 / Product Foundation V14)
- * Inputs: WorkspaceState windows + window_groups from get_workspace_state
- * Outputs: Runtime object tiles, relationship keys from authoritative groups,
- *   Flow/Focus organisation, selection helpers, arrangement overlays
+ * Owner: Frontend product shell (Product Contract V8 / Product Foundation V15)
+ * Inputs: WorkspaceState windows, window_groups, attention, semantics
+ * Outputs: Runtime object tiles, relationship keys from groups + semantic links,
+ *   Flow/Focus organisation, selection helpers, arrangement overlays,
+ *   subtle awareness cues (attention primary, semantic roles)
  * Dependencies: None (pure)
  * Non-goals: Fake windows, WindowController ownership, OS geometry apply,
- *   inventing process/relationship groups (consume WorkspaceState.window_groups)
+ *   inventing process/relationship groups, diagnostic runtime dumps
  */
 
 import type { DesktopArrangementEntry } from "../types/desktopArrangement";
 import type {
+  DesktopAttentionProjection,
+  DesktopSemanticProjection,
   DesktopWindowGroup,
   WorkspaceStateMonitor,
   WorkspaceStateWindow,
@@ -200,6 +203,8 @@ export function stageDesktopMetaLine(args: {
   monitorCount: number;
   focusedTitle: string | null;
   selectedCount?: number;
+  /** One short product awareness line from attention (not a diagnostic dump). */
+  awarenessLine?: string | null;
 }): string {
   const parts: string[] = [];
   parts.push(
@@ -220,19 +225,117 @@ export function stageDesktopMetaLine(args: {
   if (args.focusedTitle) {
     parts.push(args.focusedTitle);
   }
+  const awareness = args.awarenessLine?.trim();
+  if (awareness) {
+    parts.push(awareness);
+  }
   return parts.join(" · ");
 }
 
+/** Primary attention entity keys (stable window ids) for Stage highlighting. */
+export function stageAttentionPrimaryKeys(
+  attention: DesktopAttentionProjection | null | undefined,
+): Set<string> {
+  const keys = new Set<string>();
+  if (!attention?.primary_item_id) {
+    return keys;
+  }
+  const primary = attention.items.find(
+    (item) => item.id === attention.primary_item_id,
+  );
+  if (!primary) {
+    return keys;
+  }
+  for (const id of primary.entity_ids) {
+    const trimmed = id.trim();
+    if (trimmed) {
+      keys.add(trimmed);
+    }
+  }
+  return keys;
+}
+
+/** Short product line for Stage meta — primary attention summary only. */
+export function stageAttentionAwarenessLine(
+  attention: DesktopAttentionProjection | null | undefined,
+): string | null {
+  if (!attention?.primary_item_id) {
+    return null;
+  }
+  const primary = attention.items.find(
+    (item) => item.id === attention.primary_item_id,
+  );
+  const summary = primary?.summary?.trim();
+  return summary || null;
+}
+
+/** Semantic role by Stage object key (stable window id). */
+export function stageSemanticRoleByKey(
+  semantics: DesktopSemanticProjection | null | undefined,
+): Map<string, string> {
+  const roles = new Map<string, string>();
+  if (!semantics?.objects?.length) {
+    return roles;
+  }
+  for (const object of semantics.objects) {
+    const id = object.stable_window_id?.trim();
+    if (id && object.role) {
+      roles.set(id, object.role);
+    }
+  }
+  return roles;
+}
+
 /**
- * Relationships from authoritative WorkspaceState.window_groups.
- * Focus: process_id groups only. Flow: process_id + monitor_index groups.
- * Falls back to empty when groups are absent (no inventing).
+ * Focus preference order without selection: attention primary entities, then
+ * semantic working objects. Empty when runtime planes are quiet.
+ */
+export function stageFocusPreferredKeys(
+  attention: DesktopAttentionProjection | null | undefined,
+  semantics: DesktopSemanticProjection | null | undefined,
+): string[] {
+  const keys: string[] = [];
+  const seen = new Set<string>();
+  for (const id of stageAttentionPrimaryKeys(attention)) {
+    if (!seen.has(id)) {
+      seen.add(id);
+      keys.push(id);
+    }
+  }
+  for (const object of semantics?.objects ?? []) {
+    if (object.role !== "working") {
+      continue;
+    }
+    const id = object.stable_window_id?.trim();
+    if (id && !seen.has(id)) {
+      seen.add(id);
+      keys.push(id);
+    }
+  }
+  return keys;
+}
+
+const FLOW_SEMANTIC_RELATION_KINDS = new Set([
+  "works_with",
+  "commonly_accompanies",
+  "frequently_alternates",
+  "belongs_inside",
+  "supports",
+  "precedes",
+  "follows",
+]);
+
+/**
+ * Relationships from authoritative WorkspaceState.window_groups, plus Flow-mode
+ * semantic relationships when provided. Focus: process_id groups only.
+ * Falls back to empty when groups/links are absent (no inventing).
  */
 export function relatedStageObjectKeys(
   tiles: StageDesktopWindowTile[],
   anchorKey: string | null,
   workMode: "flow" | "focus",
   windowGroups: DesktopWindowGroup[] = [],
+  semantics: DesktopSemanticProjection | null | undefined = null,
 ): Set<string> {
   const related = new Set<string>();
   if (!anchorKey) {
@@ -256,6 +359,24 @@ export function relatedStageObjectKeys(
     for (const memberId of group.member_ids) {
       if (tiles.some((tile) => tile.key === memberId)) {
         related.add(memberId);
+      }
+    }
+  }
+  if (workMode === "flow" && semantics?.relationships?.length) {
+    const tileKeys = new Set(tiles.map((tile) => tile.key));
+    for (const link of semantics.relationships) {
+      if (!FLOW_SEMANTIC_RELATION_KINDS.has(link.kind)) {
+        continue;
+      }
+      const from = link.from_stable_window_id?.trim();
+      const to = link.to_stable_window_id?.trim();
+      if (!from || !to) {
+        continue;
+      }
+      if (from === anchorKey && tileKeys.has(to)) {
+        related.add(to);
+      } else if (to === anchorKey && tileKeys.has(from)) {
+        related.add(from);
       }
     }
   }
@@ -386,6 +507,7 @@ export function sortStageTilesByZOrder(
  * Focus keeps one process on the map and docks the rest as process objects.
  * Primary membership and dock process buckets come from WorkspaceState
  * `process_id` window_groups only — never invent multi-window PID groups.
+ * When no selection, prefer attention/semantic working keys before OS focus.
  */
 export function organiseStageForWorkMode(
   windows: WorkspaceStateWindow[],
@@ -393,6 +515,7 @@ export function organiseStageForWorkMode(
   selectedKey: string | null,
   windowGroups: DesktopWindowGroup[] = [],
   monitors: WorkspaceStateMonitor[] = [],
+  preferredKeys: ReadonlySet<string> | string[] = [],
 ): StageWorkModeOrganisation {
   if (workMode !== "focus" || windows.length === 0) {
     return { mapWindows: windows, dockEntries: [] };
@@ -400,8 +523,13 @@ export function organiseStageForWorkMode(
 
   const tiles = layoutStageDesktopWindows(windows, monitors);
   const tileByKey = new Map(tiles.map((tile) => [tile.key, tile]));
+  const preferred =
+    preferredKeys instanceof Set
+      ? preferredKeys
+      : new Set(preferredKeys);
   const anchor =
     tiles.find((tile) => tile.key === selectedKey) ??
+    tiles.find((tile) => preferred.has(tile.key)) ??
     tiles.find((tile) => tile.focused) ??
     tiles[0] ??
     null;
