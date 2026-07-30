@@ -16,7 +16,7 @@ export type BannerKind = "error" | "runtime" | "ok";
 
 /** User-facing copy when Tauri IPC is unavailable (browser preview). */
 export const DESKTOP_PREVIEW_BANNER =
-  "Desktop preview mode — open the Workspace app to create, switch, launch, and restore.";
+  "Desktop preview mode — open the Workspace app to observe your desktop, arrange windows, and restore layouts.";
 
 export function classifyBanner(error: unknown): {
   kind: BannerKind;
