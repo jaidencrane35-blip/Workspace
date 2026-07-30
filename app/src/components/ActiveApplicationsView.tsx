@@ -25,8 +25,8 @@ export function ActiveApplicationsView({
   if (applications.length === 0) {
     return (
       <p className="muted">
-        No running desktop applications in the latest observation. Refresh after
-        the desktop app has captured windows, or after you launch apps.
+        Nothing observed yet. Open Stage, or refresh once the desktop app is
+        running.
       </p>
     );
   }
@@ -39,7 +39,11 @@ export function ActiveApplicationsView({
               {activeApplicationLabel(app)}
             </span>
             <span className="product-list-meta muted">
-              Observed process · PID {app.process_id}
+              {app.window_count === 1
+                ? "1 window"
+                : `${app.window_count} windows`}
+              {" · "}
+              PID {app.process_id}
             </span>
           </div>
         </li>

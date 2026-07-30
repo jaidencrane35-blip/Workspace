@@ -105,7 +105,7 @@ export function DesktopArrangementPanel({
 
   const captureArrangement = () => {
     if (!workspace) {
-      onError("Create a workspace first.");
+      onError("Create a named profile under Profiles to save this layout.");
       return;
     }
     const trimmed = name.trim();

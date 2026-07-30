@@ -284,6 +284,18 @@ export default function App() {
     })();
   };
 
+  /** Quiet Desktop profile so companion compose can persist without a setup gate. */
+  const ensureWorkspaceForAssistant = useCallback(async () => {
+    if (workspace) {
+      return workspace;
+    }
+    const created = await invokeIpc<Workspace>("create_workspace", {
+      name: "Desktop",
+    });
+    await activateWorkspace(created);
+    return created;
+  }, [workspace, activateWorkspace]);
+
   const addZoneFromCanvas = () => {
     if (!workspace) {
       onError("Add a named profile under Profiles to use the companion canvas.");
@@ -344,7 +356,6 @@ export default function App() {
         <div className="container product-container">
           <WorkspaceHome
             workspace={workspace}
-            zoneCount={zones.length}
             applications={homeApps}
             appsLoading={homeAppsLoading}
             bootstrapped={bootstrapped}
@@ -408,10 +419,8 @@ export default function App() {
                   workspace={workspace}
                   applications={homeApps}
                   appsLoading={homeAppsLoading}
-                  zoneCount={zones.length}
                   workMode={workMode}
                   busy={busy}
-                  onWorkModeChange={onWorkModeChange}
                   onManageApplications={() => navigatePrimary("applications")}
                   onLaunchApplication={launchFromStage}
                 />
@@ -599,6 +608,7 @@ export default function App() {
             onBusy={setBusy}
             onError={onError}
             onMessage={onMessage}
+            onEnsureWorkspace={ensureWorkspaceForAssistant}
             onCollapse={() => setAssistantRailOpen(false)}
           />
         ) : null}

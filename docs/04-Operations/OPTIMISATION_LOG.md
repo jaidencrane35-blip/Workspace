@@ -88,6 +88,44 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 
 ## Cycles
 
+### Cycle: dil-1-assistant-companion-chat
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Cycle number** | DIL-1 |
+| **Approved category** | 1 Visual hierarchy (+ 16 Maintainability) |
+| **Goal** | Usable Assistant companion: input, send, answer body, recent — AI stays secondary |
+| **Problem** | Rail exposed six evidence layers; utterance.body never shown; ask felt diagnostic |
+| **Analysis** | Reuse `compose_workspace_assistant_turn` only on send; session recent; quiet Desktop profile ensure |
+| **Changes** | Companion chat UI; evidence packages collapsed; `assistantCompanion.ts`; rail header quieted |
+| **Files affected** | `AssistantIntelligencePanel.tsx`, `AssistantCompanionRail.tsx`, `assistantCompanion.ts`, `App.tsx`, `App.css`, tests, this log |
+| **Validation** | typecheck / test / build / architecture / ipc / ui-boundary |
+| **Maintainability score** | 8/10 — one compose path; helpers pure |
+| **Human review required** | No — continue DIL slices |
+| **Inspector / decoder path** | Open Ask Assistant → type → Send → answer body in thread; Recent expands |
+
+---
+
+### Cycle: dil-2-anti-dashboard-apps-objects
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Cycle number** | DIL-2 |
+| **Approved category** | 5 Navigation clarity (+ 12 Duplicate removal) |
+| **Goal** | Remove Home dashboard chrome; Applications observed-first; Stage app-object labels; drop duplicate Flow/Focus |
+| **Problem** | Home “Go to” cards + roadmap; Apps library-first; Stage duplicated mode switch; window titles over apps |
+| **Analysis** | Hierarchy: Desktop → Running apps; profiles/library optional; shell owns Flow/Focus |
+| **Changes** | Slim Home; Apps Running now + library `<details>`; Stage process-primary tiles; remove stage WorkModeSwitch + unused zoneCount; dead home CSS |
+| **Files affected** | `WorkspaceHome.tsx`, `ApplicationsPanel.tsx`, `WorkspaceApplicationStage.tsx`, `stageDesktopUi.ts`, `applicationsUi.ts`, `App.tsx`, `App.css`, tests, this log |
+| **Validation** | typecheck / test / build / architecture / ipc / ui-boundary |
+| **Maintainability score** | 8/10 — fewer props/controls; clearer Stage identity |
+| **Human review required** | **Yes** — next steps need architecture/workflow: OS Flow/Focus geometry apply, window grouping, audio mixer domain, or durable assistant history IPC |
+| **Inspector / decoder path** | Home → Open Stage only; Applications → Running now first; Stage tiles show process names |
+
+---
+
 ### Cycle: im-2-desktop-reality-first
 
 | Field | Value |

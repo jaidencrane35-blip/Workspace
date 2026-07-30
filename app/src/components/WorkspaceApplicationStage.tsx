@@ -42,17 +42,13 @@ import type {
   WorkspaceStateWindow,
 } from "../types/domain";
 import { FocusSupportingAppChips } from "./FocusSupportingAppChips";
-import { WorkModeSwitch } from "./WorkModeSwitch";
 
 interface WorkspaceApplicationStageProps {
   workspace: Workspace | null;
   applications: ApplicationReference[];
   appsLoading: boolean;
-  /** Retained for App API compatibility; canvas notes removed in IM-1 calm Stage. */
-  zoneCount: number;
   workMode: WorkMode;
   busy: boolean;
-  onWorkModeChange: (mode: WorkMode) => void;
   onManageApplications: () => void;
   onLaunchApplication: (app: ApplicationReference) => void;
 }
@@ -61,14 +57,11 @@ export function WorkspaceApplicationStage({
   workspace,
   applications,
   appsLoading,
-  zoneCount: _unusedZoneCount,
   workMode,
   busy,
-  onWorkModeChange,
   onManageApplications,
   onLaunchApplication,
 }: WorkspaceApplicationStageProps) {
-  void _unusedZoneCount;
   const runtime = isIpcRuntimeAvailable();
   const registryEmpty = layoutsStageEmptyAppsCopy();
   const [loadState, setLoadState] = useState<StageDesktopLoadState>(
@@ -163,17 +156,12 @@ export function WorkspaceApplicationStage({
       data-work-mode={workMode}
       data-stage-plane={planeCalm ? "calm" : "live"}
     >
-      <header className="stage-hero stage-hero-compact stage-hero-with-mode">
+      <header className="stage-hero stage-hero-compact">
         <div>
           <p className="arrangement-eyebrow">{layoutsStageEyebrow()}</p>
           <h2>{layoutsStageTitle(workspace?.name)}</h2>
         </div>
         <div className="stage-hero-controls">
-          <WorkModeSwitch
-            mode={workMode}
-            onChange={onWorkModeChange}
-            density="stage"
-          />
           <button
             type="button"
             className="ghost stage-refresh"
@@ -206,9 +194,11 @@ export function WorkspaceApplicationStage({
           {focusedTile ? (
             <article className="stage-tile stage-tile-primary">
               <span className="stage-tile-name">{focusedTile.title}</span>
-              <span className="product-list-meta muted">
-                {focusedTile.processLabel}
-              </span>
+              {focusedTile.processLabel ? (
+                <span className="product-list-meta muted">
+                  {focusedTile.processLabel}
+                </span>
+              ) : null}
             </article>
           ) : null}
           {supportingTiles.length > 0 ? (
@@ -274,10 +264,14 @@ export function WorkspaceApplicationStage({
               >
                 <span className="stage-desktop-window-title">{tile.title}</span>
                 <span className="stage-desktop-window-meta muted">
-                  {tile.processLabel}
-                  {tile.monitorLabel ? ` · ${tile.monitorLabel}` : ""}
-                  {tile.focused ? " · Focused" : ""}
-                  {tile.minimized ? " · Minimized" : ""}
+                  {[
+                    tile.processLabel || null,
+                    tile.monitorLabel,
+                    tile.focused ? "Focused" : null,
+                    tile.minimized ? "Minimized" : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
                 </span>
               </article>
             ))

@@ -1,10 +1,8 @@
 /**
- * Purpose: Product Applications surface — registry cards, identity, launch,
- *   observed actives, Layouts relationship, Flow/Focus density presentation.
- * Owner: Frontend product shell (Milestone A.1 + optimisation)
+ * Purpose: Applications as observed desktop objects first; library optional.
+ * Owner: Frontend product shell
  * Inputs: Active workspace, work mode, shared busy/banner callbacks
- * Outputs: create_application / launch_application / list_applications /
- *   get_workspace_state invocations; user-facing status copy
+ * Outputs: get_workspace_state / list_applications / create / launch
  * Dependencies: Existing application IPC + WorkspaceState + workMode
  * Non-responsibilities: Permission policy, WindowController, Assistant,
  *   OS app discovery, auto-layout, AI recommendations, OS geometry apply
@@ -91,7 +89,7 @@ export function ApplicationsPanel({
     if (!runtime) {
       setApplications([]);
       setLocalHint(
-        "Preview mode: application cards still show here once registered in the desktop app.",
+        "Preview mode: library cards appear here once registered in the desktop app.",
       );
       return;
     }
@@ -142,7 +140,9 @@ export function ApplicationsPanel({
 
   const registerApplication = () => {
     if (!workspace) {
-      onError("Select or create a named profile under Workspaces to save library apps.");
+      onError(
+        "Select or create a named profile under Profiles to save library apps.",
+      );
       return;
     }
     const trimmed = name.trim();
@@ -200,20 +200,48 @@ export function ApplicationsPanel({
     >
       <header className="product-panel-hero">
         <p className="arrangement-eyebrow">Applications</p>
-        <h2>Application library</h2>
+        <h2>On your desktop</h2>
         <p className="lede">{applicationsLayoutsRelationCopy()}</p>
       </header>
 
-      {!workspace ? (
-        <div className="arrangement-empty" aria-live="polite">
-          <h3>{empty.title}</h3>
-          <p className="muted">{empty.body}</p>
+      <section
+        aria-label="Running on the desktop"
+        className={workMode === "focus" ? "applications-active quiet" : undefined}
+      >
+        <div className="row section-heading-row">
+          <h3>Running now</h3>
+          <button
+            type="button"
+            className="ghost"
+            disabled={busy || activeLoading || !runtime}
+            onClick={() => {
+              void run("Desktop apps refreshed", refreshActive);
+            }}
+          >
+            Refresh
+          </button>
         </div>
-      ) : (
-        <>
-          <section aria-label="Registered applications">
+        <ActiveApplicationsView
+          applications={activeApps}
+          loading={activeLoading}
+        />
+      </section>
+
+      <details className="applications-library-details">
+        <summary>Optional library</summary>
+        <p className="muted">
+          Register apps only when you want launch shortcuts tied to a named
+          profile. Observed windows do not need this.
+        </p>
+        {!workspace ? (
+          <div className="arrangement-empty" aria-live="polite">
+            <h3>{empty.title}</h3>
+            <p className="muted">{empty.body}</p>
+          </div>
+        ) : (
+          <>
             <div className="row section-heading-row">
-              <h3>Library assets</h3>
+              <h3>Library</h3>
               <div className="row">
                 <button
                   type="button"
@@ -241,19 +269,6 @@ export function ApplicationsPanel({
               <div className="arrangement-empty" aria-live="polite">
                 <h4>{empty.title}</h4>
                 <p className="muted">{empty.body}</p>
-                <div
-                  className="application-card-grid ghost-preview"
-                  aria-hidden="true"
-                >
-                  {["App", "Tool", "Utility"].map((label) => (
-                    <div key={label} className="application-card preview">
-                      <span className="application-monogram">
-                        {label.slice(0, 2)}
-                      </span>
-                      <span className="muted">{label} placeholder</span>
-                    </div>
-                  ))}
-                </div>
               </div>
             ) : (
               <ApplicationList
@@ -271,87 +286,51 @@ export function ApplicationsPanel({
                 Selected: <strong>{selected.name}</strong>
               </p>
             ) : null}
-          </section>
-
-          {showRegister ? (
-            <section aria-label="Add application">
-              <h3>Add application</h3>
-              <label className="arrangement-field">
-                <span>Name</span>
-                <input
-                  type="text"
-                  value={name}
+            {showRegister ? (
+              <section aria-label="Add application">
+                <h3>Add application</h3>
+                <label className="arrangement-field">
+                  <span>Name</span>
+                  <input
+                    type="text"
+                    value={name}
+                    disabled={busy || !runtime}
+                    placeholder="Code"
+                    onChange={(event) => setName(event.target.value)}
+                  />
+                </label>
+                <label className="arrangement-field">
+                  <span>Short identity (optional)</span>
+                  <input
+                    type="text"
+                    value={identifier}
+                    disabled={busy || !runtime}
+                    placeholder="editor"
+                    onChange={(event) => setIdentifier(event.target.value)}
+                  />
+                </label>
+                <label className="arrangement-field">
+                  <span>Executable path (needed to launch)</span>
+                  <input
+                    type="text"
+                    value={executablePath}
+                    disabled={busy || !runtime}
+                    placeholder="C:\\Program Files\\App\\app.exe"
+                    onChange={(event) => setExecutablePath(event.target.value)}
+                  />
+                </label>
+                <button
+                  type="button"
                   disabled={busy || !runtime}
-                  placeholder="Code"
-                  onChange={(event) => setName(event.target.value)}
-                />
-              </label>
-              <label className="arrangement-field">
-                <span>Short identity (optional)</span>
-                <input
-                  type="text"
-                  value={identifier}
-                  disabled={busy || !runtime}
-                  placeholder="editor"
-                  onChange={(event) => setIdentifier(event.target.value)}
-                />
-              </label>
-              <label className="arrangement-field">
-                <span>Executable path (needed to launch)</span>
-                <input
-                  type="text"
-                  value={executablePath}
-                  disabled={busy || !runtime}
-                  placeholder="C:\\Program Files\\App\\app.exe"
-                  onChange={(event) => setExecutablePath(event.target.value)}
-                />
-              </label>
-              <button
-                type="button"
-                disabled={busy || !runtime}
-                onClick={registerApplication}
-              >
-                Save to workspace
-              </button>
-            </section>
-          ) : null}
-        </>
-      )}
-
-      <section
-        aria-label="Active desktop applications"
-        className={workMode === "focus" ? "applications-active quiet" : undefined}
-      >
-        <div className="row section-heading-row">
-          <h3>Running on the desktop</h3>
-          <button
-            type="button"
-            className="ghost"
-            disabled={busy || activeLoading || !runtime}
-            onClick={() => {
-              void run("Desktop apps refreshed", refreshActive);
-            }}
-          >
-            Refresh
-          </button>
-        </div>
-        <p className="muted">
-          Observed processes do not require a named profile. The Stage shows
-          them spatially.
-        </p>
-        {workMode === "focus" ? (
-          <p className="muted">
-            Focus keeps this quieter — refresh if you need the full observed
-            list.
-          </p>
-        ) : null}
-        {workMode === "flow" || activeApps.length > 0 ? (
-          <ActiveApplicationsView
-            applications={activeApps}
-            loading={activeLoading}
-          />
-        ) : null}
-      </section>
+                  onClick={registerApplication}
+                >
+                  Save to workspace
+                </button>
+              </section>
+            ) : null}
+          </>
+        )}
+      </details>
     </section>
   );
 }

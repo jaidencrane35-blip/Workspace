@@ -783,7 +783,84 @@ button.linkish:not(:disabled):hover {
 }
 
 .assistant-intel-panel.presentation-rail .assistant-intel-ask {
-  margin: 0 0 0.85rem;
+  margin: 0.65rem 0 0;
+}
+
+.assistant-companion-chat {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.assistant-companion-thread {
+  min-height: 4.5rem;
+  max-height: 14rem;
+  overflow: auto;
+  padding: 0.65rem 0.75rem;
+  background: #151c24;
+  border: 1px solid #243040;
+  border-radius: 4px;
+}
+
+.assistant-companion-quiet {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.assistant-companion-turn {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.assistant-companion-ask {
+  margin: 0;
+  color: #9aa8b4;
+  font-size: 0.88rem;
+  line-height: 1.4;
+}
+
+.assistant-companion-answer {
+  margin: 0;
+  color: #e7ecf1;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.assistant-companion-recent {
+  font-size: 0.85rem;
+  color: #9aa8b4;
+}
+
+.assistant-companion-recent summary {
+  cursor: pointer;
+  user-select: none;
+}
+
+.assistant-companion-recent ul {
+  list-style: none;
+  margin: 0.45rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.assistant-companion-recent-item {
+  display: grid;
+  gap: 0.2rem;
+  width: 100%;
+  text-align: left;
+  padding: 0.4rem 0.5rem;
+}
+
+.assistant-companion-recent-ask {
+  color: #c5d0da;
+  font-size: 0.88rem;
+}
+
+.assistant-companion-recent-preview {
+  font-size: 0.8rem;
+  line-height: 1.35;
 }
 
 .assistant-packages-toggle {
@@ -1099,33 +1176,24 @@ button.linkish:not(:disabled):hover {
   font-weight: 650;
 }
 
-.home-actions {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
-  gap: 0.65rem;
+.applications-library-details {
+  margin-top: 1.25rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid #243040;
+  color: #9aa8b4;
+  font-size: 0.95rem;
 }
 
-.home-action {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  align-items: flex-start;
-  text-align: left;
-  padding: 0.9rem 1rem;
-  background: #121820;
-  border: 1px solid #2a3642;
-  color: #e7ecf1;
-  border-radius: 4px;
+.applications-library-details summary {
   cursor: pointer;
+  user-select: none;
+  color: #c5d0da;
+  font-weight: 600;
+  margin-bottom: 0.65rem;
 }
 
-.home-action:hover {
-  border-color: #3a4a5a;
-  background: #16202a;
-}
-
-.home-action-title {
-  font-weight: 650;
+.applications-library-details[open] summary {
+  margin-bottom: 0.85rem;
 }
 
 /* Milestone A.1 — identity / hierarchy hardening */
@@ -1310,17 +1378,6 @@ button.linkish:not(:disabled):hover {
   color: #e7ecf1;
   border-radius: 999px;
   cursor: pointer;
-}
-
-.home-future {
-  padding-top: 0.5rem;
-  border-top: 1px solid #243040;
-}
-
-.home-future-list {
-  margin: 0.35rem 0 0.65rem;
-  padding-left: 1.1rem;
-  line-height: 1.5;
 }
 
 /* Milestone C — persistent Assistant companion rail */

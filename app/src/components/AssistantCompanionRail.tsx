@@ -3,11 +3,11 @@
  * Owner: Frontend product shell
  * Inputs: active workspace, busy/error/message callbacks, work mode, collapse
  * Outputs: Companion presentation only — explain / help affordances
- * Dependencies: AssistantIntelligencePanel, AssistantPanel (existing IPC surfaces)
+ * Dependencies: AssistantIntelligencePanel (companion chat), AssistantPanel (advanced)
  * Non-responsibilities: Mode switching, OS windows, PermissionGateway, new AI
  *
- * Problem: concept references keep Assistant as a stable side rail, not a peer tab.
- * Why here: chrome placement only — reuses existing assistant panels.
+ * Problem: concept references keep Assistant as a quiet side companion, not a peer tab.
+ * Why here: chrome placement only — reuses existing compose IPC.
  */
 
 import { useEffect, useId, useRef, useState } from "react";
@@ -24,6 +24,7 @@ interface AssistantCompanionRailProps {
   onBusy: (busy: boolean) => void;
   onError: (message: string | null) => void;
   onMessage: (message: string | null) => void;
+  onEnsureWorkspace?: () => Promise<Workspace>;
   onCollapse: () => void;
 }
 
@@ -34,6 +35,7 @@ export function AssistantCompanionRail({
   onBusy,
   onError,
   onMessage,
+  onEnsureWorkspace,
   onCollapse,
 }: AssistantCompanionRailProps) {
   const titleId = useId();
@@ -85,10 +87,6 @@ export function AssistantCompanionRail({
             Hide
           </button>
         </div>
-        <p className="lede assistant-companion-lede">
-          Optional help beside your desktop. Stage and applications stay
-          primary.
-        </p>
       </header>
 
       <div className="assistant-companion-body">
@@ -98,6 +96,7 @@ export function AssistantCompanionRail({
           onBusy={onBusy}
           onError={onError}
           onMessage={onMessage}
+          onEnsureWorkspace={onEnsureWorkspace}
           presentation="rail"
         />
 

@@ -29,7 +29,7 @@ export function applicationsEmptyCopy(hasWorkspace: boolean): {
 }
 
 export function applicationsLayoutsRelationCopy(): string {
-  return "The Stage shows your observed desktop first. This page is an optional library for register and launch. Desktop arrangements remember real window layouts — separate from the companion canvas.";
+  return "Running apps are what matter. The optional library is only for launch shortcuts tied to a named profile.";
 }
 
 export function applicationIdentityLine(app: ApplicationReference): string {

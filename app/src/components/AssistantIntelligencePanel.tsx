@@ -1,4 +1,19 @@
-import { useState } from "react";
+/**
+ * Purpose: Usable Assistant companion — ask, answer, recent; evidence optional.
+ * Owner: Frontend product shell
+ * Inputs: Active workspace (optional), busy/error/message, ensure-workspace
+ * Outputs: compose_workspace_assistant_turn presentation; optional package peek
+ * Dependencies: Existing assistant surface IPC only for the primary path
+ * Non-responsibilities: New AI engines, autonomous agents, OS control
+ */
+
+import { useEffect, useId, useState } from "react";
+import {
+  appendCompanionRecentTurn,
+  companionAnswerFromSurface,
+  loadCompanionRecentTurns,
+  type AssistantCompanionTurn,
+} from "../lib/assistantCompanion";
 import { invokeIpc } from "../lib/ipc";
 import type {
   Workspace,
@@ -46,7 +61,9 @@ interface AssistantIntelligencePanelProps {
   onBusy: (busy: boolean) => void;
   onError: (message: string | null) => void;
   onMessage: (message: string | null) => void;
-  /** Rail omits duplicate hero chrome; ask + packages stay primary. */
+  /** Quietly create/select a profile when compose needs a workspace id. */
+  onEnsureWorkspace?: () => Promise<Workspace>;
+  /** Rail omits duplicate hero chrome; conversation stays primary. */
   presentation?: "standalone" | "rail";
 }
 
@@ -186,13 +203,18 @@ export function AssistantIntelligencePanel({
   onBusy,
   onError,
   onMessage,
+  onEnsureWorkspace,
   presentation = "standalone",
 }: AssistantIntelligencePanelProps) {
   const rail = presentation === "rail";
-  const [humanAsk, setHumanAsk] = useState(
-    "What do we already know about this workspace?",
+  const askId = useId();
+  const [humanAsk, setHumanAsk] = useState("");
+  const [packagesOpen, setPackagesOpen] = useState(false);
+  const [recent, setRecent] = useState<AssistantCompanionTurn[]>(() =>
+    loadCompanionRecentTurns(),
   );
-  const [packagesOpen, setPackagesOpen] = useState(!rail);
+  const [activeAsk, setActiveAsk] = useState<string | null>(null);
+  const [activeAnswer, setActiveAnswer] = useState<string | null>(null);
   const [surface, setSurface] =
     useState<WorkspaceAssistantSurfaceProjection | null>(null);
   const [context, setContext] =
@@ -214,15 +236,23 @@ export function AssistantIntelligencePanel({
     interaction != null ||
     personalisation != null;
 
+  useEffect(() => {
+    setRecent(loadCompanionRecentTurns());
+  }, []);
+
   async function run(
-    okMessage: string,
+    okMessage: string | null,
     action: () => Promise<void>,
   ): Promise<void> {
     onBusy(true);
     onError(null);
     try {
       await action();
-      onMessage(okMessage);
+      if (okMessage) {
+        onMessage(okMessage);
+      } else {
+        onMessage(null);
+      }
     } catch (err: unknown) {
       onError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -230,64 +260,60 @@ export function AssistantIntelligencePanel({
     }
   }
 
-  async function composePackages(): Promise<void> {
-    if (!workspace) return;
+  async function resolveWorkspace(): Promise<Workspace | null> {
+    if (workspace) {
+      return workspace;
+    }
+    if (!onEnsureWorkspace) {
+      return null;
+    }
+    return onEnsureWorkspace();
+  }
+
+  async function sendAsk(): Promise<void> {
     const ask = humanAsk.trim();
     if (!ask) {
-      onError("Enter a human ask before composing packages.");
+      onError("Type a question first.");
       return;
     }
-    await run("Assistant answer prepared.", async () => {
+    await run(null, async () => {
+      const active = await resolveWorkspace();
+      if (!active) {
+        throw new Error(
+          "Assistant needs a quiet Desktop profile once to store answers. Create one under Profiles, or open the desktop app.",
+        );
+      }
       const nextSurface =
         await invokeIpc<WorkspaceAssistantSurfaceProjection>(
           "compose_workspace_assistant_turn",
-          { workspaceId: workspace.id, humanAsk: ask },
+          { workspaceId: active.id, humanAsk: ask },
         );
       setSurface(nextSurface);
-
-      const nextContext =
-        await invokeIpc<WorkspaceAssistantContextProjection>(
-          "package_workspace_assistant_context",
-          { workspaceId: workspace.id },
-        );
-      setContext(nextContext);
-
-      const nextRetrieval =
-        await invokeIpc<WorkspaceAssistantRetrievalProjection>(
-          "package_workspace_assistant_retrieval",
-          { workspaceId: workspace.id, humanAsk: ask },
-        );
-      setRetrieval(nextRetrieval);
-
-      const nextExplanation =
-        await invokeIpc<WorkspaceAssistantExplanationProjection>(
-          "package_workspace_assistant_explanation",
-          { workspaceId: workspace.id, humanAsk: ask },
-        );
-      setExplanation(nextExplanation);
-
-      const nextInteraction =
-        await invokeIpc<WorkspaceAssistantInteractionProjection>(
-          "package_workspace_assistant_interaction",
-          { workspaceId: workspace.id, humanAsk: ask },
-        );
-      setInteraction(nextInteraction);
-
-      const nextPersonalisation =
-        await invokeIpc<WorkspaceAssistantPersonalisationProjection>(
-          "package_workspace_assistant_personalisation",
-          { workspaceId: workspace.id, humanAsk: ask },
-        );
-      setPersonalisation(nextPersonalisation);
-      if (rail) {
-        setPackagesOpen(true);
-      }
+      const answer = companionAnswerFromSurface(nextSurface);
+      setActiveAsk(ask);
+      setActiveAnswer(answer);
+      setRecent(
+        appendCompanionRecentTurn({
+          id:
+            nextSurface.current?.utterance?.utterance_id ??
+            nextSurface.current?.surface_id ??
+            `${Date.now()}`,
+          ask,
+          answer,
+          at: nextSurface.current?.generated_at ?? new Date().toISOString(),
+        }),
+      );
+      setHumanAsk("");
     });
   }
 
-  async function refreshProjections(): Promise<void> {
-    if (!workspace) return;
-    await run("Assistant intelligence projections refreshed.", async () => {
+  async function refreshEvidencePackages(): Promise<void> {
+    const active = workspace;
+    if (!active) {
+      onError("Select a profile to refresh evidence packages.");
+      return;
+    }
+    await run("Evidence packages refreshed.", async () => {
       const [
         nextSurface,
         nextContext,
@@ -298,27 +324,27 @@ export function AssistantIntelligencePanel({
       ] = await Promise.all([
         invokeIpc<WorkspaceAssistantSurfaceProjection>(
           "get_workspace_assistant_surface",
-          { workspaceId: workspace.id },
+          { workspaceId: active.id },
         ),
         invokeIpc<WorkspaceAssistantContextProjection>(
           "get_workspace_assistant_context",
-          { workspaceId: workspace.id },
+          { workspaceId: active.id },
         ),
         invokeIpc<WorkspaceAssistantRetrievalProjection>(
           "get_workspace_assistant_retrieval",
-          { workspaceId: workspace.id },
+          { workspaceId: active.id },
         ),
         invokeIpc<WorkspaceAssistantExplanationProjection>(
           "get_workspace_assistant_explanation",
-          { workspaceId: workspace.id },
+          { workspaceId: active.id },
         ),
         invokeIpc<WorkspaceAssistantInteractionProjection>(
           "get_workspace_assistant_interaction",
-          { workspaceId: workspace.id },
+          { workspaceId: active.id },
         ),
         invokeIpc<WorkspaceAssistantPersonalisationProjection>(
           "get_workspace_assistant_personalisation",
-          { workspaceId: workspace.id },
+          { workspaceId: active.id },
         ),
       ]);
       setSurface(nextSurface);
@@ -327,37 +353,14 @@ export function AssistantIntelligencePanel({
       setExplanation(nextExplanation);
       setInteraction(nextInteraction);
       setPersonalisation(nextPersonalisation);
+      if (nextSurface?.current) {
+        const ask = nextSurface.current.human_ask?.trim() || null;
+        const answer = companionAnswerFromSurface(nextSurface);
+        setActiveAsk(ask);
+        setActiveAnswer(answer);
+      }
+      setPackagesOpen(true);
     });
-  }
-
-  if (!workspace) {
-    return (
-      <div
-        className={
-          rail
-            ? "assistant-intel-panel presentation-rail"
-            : "assistant-intel-panel"
-        }
-      >
-        {rail ? null : (
-          <header className="assistant-intel-hero">
-            <p className="assistant-kicker">Supporting companion</p>
-            <h2>Ask about your desktop</h2>
-            <p className="lede">
-              Optional help over what Workspace already observes — it does not
-              run your desktop for you.
-            </p>
-          </header>
-        )}
-        <div className="assistant-intel-empty-block">
-          <p className="assistant-intel-empty">Ready when you are.</p>
-          <p className="assistant-intel-empty-hint">
-            Your desktop is on Stage. Ask here anytime — a named profile is
-            optional for deeper saved context.
-          </p>
-        </div>
-      </div>
-    );
   }
 
   const layers = (
@@ -466,63 +469,122 @@ export function AssistantIntelligencePanel({
       {rail ? null : (
         <header className="assistant-intel-hero">
           <p className="assistant-kicker">Supporting companion</p>
-          <h2>Ask about this workspace</h2>
+          <h2>Ask about your desktop</h2>
           <p className="lede">
-            Compose explanations from existing workspace information. The
-            Assistant never approves, executes, or decides for you.
+            Lightweight help from what Workspace already observes. Stage stays
+            primary.
           </p>
         </header>
       )}
 
-      <div className="assistant-intel-ask">
-        <label htmlFor="assistant-intel-ask">What do you want to know?</label>
-        <textarea
-          id="assistant-intel-ask"
-          rows={rail ? 2 : 3}
-          value={humanAsk}
-          disabled={busy}
-          placeholder="What do we already know about this workspace?"
-          onChange={(event) => setHumanAsk(event.target.value)}
-        />
-        <div className="assistant-intel-actions">
-          <button
-            type="button"
-            disabled={busy || !humanAsk.trim()}
-            onClick={() => void composePackages()}
-          >
-            Prepare answer
-          </button>
-          <button
-            type="button"
-            className="secondary"
+      <div className="assistant-companion-chat" aria-label="Assistant conversation">
+        <div className="assistant-companion-thread" aria-live="polite">
+          {activeAsk && activeAnswer ? (
+            <article className="assistant-companion-turn">
+              <p className="assistant-companion-ask">{activeAsk}</p>
+              <p className="assistant-companion-answer">{activeAnswer}</p>
+            </article>
+          ) : (
+            <p className="assistant-companion-quiet muted">
+              Ask about what is already on your desktop. Answers stay beside
+              Stage — they never replace it.
+            </p>
+          )}
+        </div>
+
+        {recent.length > 0 ? (
+          <details className="assistant-companion-recent">
+            <summary>Recent ({recent.length})</summary>
+            <ul>
+              {recent.map((turn) => (
+                <li key={turn.id}>
+                  <button
+                    type="button"
+                    className="ghost assistant-companion-recent-item"
+                    disabled={busy}
+                    onClick={() => {
+                      setActiveAsk(turn.ask);
+                      setActiveAnswer(turn.answer);
+                      setHumanAsk(turn.ask);
+                    }}
+                  >
+                    <span className="assistant-companion-recent-ask">
+                      {turn.ask}
+                    </span>
+                    <span className="muted assistant-companion-recent-preview">
+                      {turn.answer.length > 120
+                        ? `${turn.answer.slice(0, 117)}…`
+                        : turn.answer}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </details>
+        ) : null}
+
+        <div className="assistant-intel-ask">
+          <label htmlFor={askId}>Message</label>
+          <textarea
+            id={askId}
+            rows={rail ? 2 : 3}
+            value={humanAsk}
             disabled={busy}
-            onClick={() => void refreshProjections()}
-          >
-            Refresh
-          </button>
+            placeholder="What is open on my desktop?"
+            onChange={(event) => setHumanAsk(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault();
+                if (!busy && humanAsk.trim()) {
+                  void sendAsk();
+                }
+              }
+            }}
+          />
+          <div className="assistant-intel-actions">
+            <button
+              type="button"
+              disabled={busy || !humanAsk.trim()}
+              onClick={() => void sendAsk()}
+            >
+              Send
+            </button>
+          </div>
         </div>
       </div>
 
-      {!hasAnyPackage ? (
-        <p className="assistant-intel-empty">
-          Nothing prepared yet. Ask a question to compose an answer from
-          existing workspace information, or refresh if answers already exist.
-        </p>
-      ) : rail ? (
-        <div className="assistant-intel-packages">
-          <button
-            type="button"
-            className="ghost assistant-packages-toggle"
-            aria-expanded={packagesOpen}
-            onClick={() => setPackagesOpen((open) => !open)}
-          >
-            {packagesOpen ? "Hide evidence packages" : "Show evidence packages"}
-          </button>
-          {packagesOpen ? layers : null}
-        </div>
-      ) : (
-        layers
-      )}
+      <div className="assistant-intel-packages">
+        <button
+          type="button"
+          className="ghost assistant-packages-toggle"
+          aria-expanded={packagesOpen}
+          onClick={() => setPackagesOpen((open) => !open)}
+        >
+          {packagesOpen ? "Hide evidence packages" : "Evidence packages"}
+        </button>
+        {packagesOpen ? (
+          <>
+            <div className="assistant-intel-actions">
+              <button
+                type="button"
+                className="secondary"
+                disabled={busy || !workspace}
+                onClick={() => void refreshEvidencePackages()}
+              >
+                Refresh packages
+              </button>
+            </div>
+            {hasAnyPackage ? (
+              layers
+            ) : (
+              <p className="assistant-intel-empty">
+                No packages loaded. Refresh after sending an ask if you need
+                diagnostic layers.
+              </p>
+            )}
+          </>
+        ) : null}
+      </div>
     </div>
   );
 }

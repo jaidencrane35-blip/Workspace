@@ -54,12 +54,15 @@ export function stageDesktopWindowTitle(window: WorkspaceStateWindow): string {
   return `Window ${window.hwnd}`;
 }
 
-export function stageDesktopProcessLabel(window: WorkspaceStateWindow): string {
+/** Display name for a spatial app object: prefer process, fall back to title. */
+export function stageDesktopAppObjectLabel(
+  window: WorkspaceStateWindow,
+): string {
   const process = window.process_name?.trim();
   if (process) {
-    return `${process} · PID ${window.process_id}`;
+    return process;
   }
-  return `PID ${window.process_id}`;
+  return stageDesktopWindowTitle(window);
 }
 
 /**
@@ -103,10 +106,13 @@ export function layoutStageDesktopWindows(
         ? null
         : `Monitor ${window.monitor_index + 1}`);
 
+    const appLabel = stageDesktopAppObjectLabel(window);
+    const windowTitle = stageDesktopWindowTitle(window);
     return {
       key: stageDesktopWindowKey(window),
-      title: stageDesktopWindowTitle(window),
-      processLabel: stageDesktopProcessLabel(window),
+      /** Primary spatial identity = application object (process), not chrome title. */
+      title: appLabel,
+      processLabel: windowTitle !== appLabel ? windowTitle : "",
       focused: window.focused,
       minimized: window.minimized,
       leftPct,

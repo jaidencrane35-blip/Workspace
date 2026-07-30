@@ -73,7 +73,7 @@ describe("applications UI helpers", () => {
   it("explains empty registry states and layout relationship", () => {
     expect(applicationsEmptyCopy(false).title).toMatch(/profile/i);
     expect(applicationsEmptyCopy(true).body).toMatch(/Stage/i);
-    expect(applicationsLayoutsRelationCopy()).toMatch(/Stage/i);
+    expect(applicationsLayoutsRelationCopy()).toMatch(/Running apps/i);
   });
 });
 
@@ -230,6 +230,91 @@ describe("assistant companion rail helpers", () => {
     expect(ASSISTANT_COMPANION_RAIL_ID).toBe(
       "workspace-assistant-companion-rail",
     );
+  });
+});
+
+describe("assistant companion chat helpers", () => {
+  it("prefers utterance body for the visible answer", async () => {
+    const { companionAnswerFromSurface } = await import(
+      "../app/src/lib/assistantCompanion"
+    );
+    expect(
+      companionAnswerFromSurface({
+        workspace_id: "ws-1",
+        current: {
+          surface_id: "s1",
+          workspace_id: "ws-1",
+          generated_at: "2026-07-30T00:00:00Z",
+          status: "ready",
+          superseded_at: null,
+          human_ask: "What is open?",
+          scope: {} as never,
+          utterance: {
+            utterance_id: "u1",
+            role: "assistant",
+            body: "Editor and browser are open.",
+            citations: [],
+            authority_effect: "none",
+            actionable: false,
+          },
+          lineage: {} as never,
+          gaps: [],
+          diagnostics: {
+            consulted_surfaces: [],
+            unavailable_surfaces: [],
+            notes: [],
+            authority_effect: "none",
+            actionable: false,
+          },
+          narrative_summary: "Summary only",
+          narrative: "Long narrative",
+          limitations: [],
+          authority_effect: "none",
+          actionable: false,
+          terminal: true,
+        },
+        history: [],
+        history_count: 0,
+        projected_at: "2026-07-30T00:00:00Z",
+        authority_effect: "none",
+      }),
+    ).toBe("Editor and browser are open.");
+  });
+
+  it("keeps recent turns bounded in session storage", async () => {
+    const store = new Map<string, string>();
+    const memoryStorage = {
+      getItem: (key: string) => store.get(key) ?? null,
+      setItem: (key: string, value: string) => {
+        store.set(key, value);
+      },
+      removeItem: (key: string) => {
+        store.delete(key);
+      },
+    };
+    Object.defineProperty(globalThis, "sessionStorage", {
+      configurable: true,
+      value: memoryStorage,
+    });
+    const {
+      ASSISTANT_COMPANION_RECENT_KEY,
+      ASSISTANT_COMPANION_RECENT_LIMIT,
+      appendCompanionRecentTurn,
+      loadCompanionRecentTurns,
+    } = await import("../app/src/lib/assistantCompanion");
+    memoryStorage.removeItem(ASSISTANT_COMPANION_RECENT_KEY);
+    for (let i = 0; i < ASSISTANT_COMPANION_RECENT_LIMIT + 3; i += 1) {
+      appendCompanionRecentTurn({
+        id: `t-${i}`,
+        ask: `Ask ${i}`,
+        answer: `Answer ${i}`,
+        at: "2026-07-30T00:00:00Z",
+      });
+    }
+    const recent = loadCompanionRecentTurns();
+    expect(recent).toHaveLength(ASSISTANT_COMPANION_RECENT_LIMIT);
+    expect(recent[0]?.id).toBe(`t-${ASSISTANT_COMPANION_RECENT_LIMIT + 2}`);
+    memoryStorage.removeItem(ASSISTANT_COMPANION_RECENT_KEY);
   });
 });
 
