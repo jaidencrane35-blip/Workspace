@@ -7,6 +7,7 @@
 | **Review package date** | 2026-07-30 |
 | **References** | `docs/01-Product/references/workspace-concept-01.png`, `workspace-concept-02.png` |
 | **Policy** | [HUMAN-REVIEW-POLICY.md](HUMAN-REVIEW-POLICY.md) |
+| **Human outcome** | Hierarchy kept; **product identity not accepted** — [Reality Alignment Audit](../01-Product/WORKSPACE-PRODUCT-REALITY-ALIGNMENT-AUDIT.md) |
 
 ## Review environment (runnable)
 
@@ -26,7 +27,8 @@
 
 ## Review goals
 
-Confirm the UI reads as an **application-centric desktop workspace**, not an AI product.
+Confirm whether the UI reads as a **spatial desktop representation**, not a setup/management dashboard.  
+(Milestone D aimed at “apps-first shell”; human review requires the stronger desktop-reality model.)
 
 ## Checklist
 
@@ -56,10 +58,10 @@ Saved under `/opt/cursor/artifacts/screenshots/` (2026-07-30):
 
 ## Outcome
 
-| Decision | ☐ |
+| Decision | |
 |----------|---|
-| Approve Milestone D | |
-| Changes requested | |
-| Block — product direction unclear | |
+| Approve Milestone D as product identity | ☐ Rejected |
+| Hierarchy / Stage-first shell retained | ☑ |
+| Block — product direction clarified | ☑ — see [Reality Alignment Audit](../01-Product/WORKSPACE-PRODUCT-REALITY-ALIGNMENT-AUDIT.md) |
 
-**Do not start Milestone F until approved.**
+**Do not start Milestone F.** Next: Milestone **R** after audit approval.

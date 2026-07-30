@@ -2,10 +2,11 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | Complete — await human visual review |
+| **Status** | Complete as shell hierarchy — **product identity not accepted** (see Reality Alignment Audit) |
 | **Date** | 2026-07-30 |
 | **Branch** | `cursor/milestone-d-workspace-stage-34a5` |
 | **Roadmap** | [WORKSPACE-PRODUCT-DELIVERY-ROADMAP.md](../01-Product/WORKSPACE-PRODUCT-DELIVERY-ROADMAP.md) |
+| **Reality audit** | [WORKSPACE-PRODUCT-REALITY-ALIGNMENT-AUDIT.md](../01-Product/WORKSPACE-PRODUCT-REALITY-ALIGNMENT-AUDIT.md) |
 | **References** | `docs/01-Product/references/workspace-concept-01.png`, `workspace-concept-02.png` |
 
 ## Purpose delivered
@@ -80,4 +81,6 @@ Fresh review package (2026-07-30). Browser Vite preview; desktop-preview banner 
 
 ## Stop
 
-Milestone D implementation complete; **human review package ready**. **Do not start Milestone F** until human review and approval.
+Milestone D delivered Stage-first shell hierarchy. **Human review rejected the product identity** (setup/management vs desktop reality).  
+
+**Do not start Milestone F.** Next candidate after audit approval: **Milestone R — Desktop Reality Stage** ([Reality Alignment Audit](../01-Product/WORKSPACE-PRODUCT-REALITY-ALIGNMENT-AUDIT.md)).

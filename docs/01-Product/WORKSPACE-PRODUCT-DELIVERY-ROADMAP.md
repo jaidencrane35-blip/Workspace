@@ -8,35 +8,52 @@
 | **Audience** | Product, engineering, commercial review |
 | **References** | [`references/workspace-concept-01.png`](references/workspace-concept-01.png), [`references/workspace-concept-02.png`](references/workspace-concept-02.png) |
 | **Visual north star** | [WORKSPACE-VISUAL-DIRECTION.md](WORKSPACE-VISUAL-DIRECTION.md) |
-| **Related** | [WORKSPACE-PRODUCT-ALIGNMENT-AUDIT.md](WORKSPACE-PRODUCT-ALIGNMENT-AUDIT.md), [FLOW-FOCUS-MODE-DESIGN-CHARTER.md](FLOW-FOCUS-MODE-DESIGN-CHARTER.md), [DAF Architecture Audit](../03-Engineering/DAF-ARCHITECTURE-AUDIT.md), [08-Roadmap/ROADMAP.md](../08-Roadmap/ROADMAP.md) |
+| **Related** | [WORKSPACE-PRODUCT-REALITY-ALIGNMENT-AUDIT.md](WORKSPACE-PRODUCT-REALITY-ALIGNMENT-AUDIT.md), [WORKSPACE-PRODUCT-ALIGNMENT-AUDIT.md](WORKSPACE-PRODUCT-ALIGNMENT-AUDIT.md), [FLOW-FOCUS-MODE-DESIGN-CHARTER.md](FLOW-FOCUS-MODE-DESIGN-CHARTER.md), [DAF Architecture Audit](../03-Engineering/DAF-ARCHITECTURE-AUDIT.md), [08-Roadmap/ROADMAP.md](../08-Roadmap/ROADMAP.md) |
 
-**Await human approval before starting Milestone D.**  
-Do not treat this file as permission to code.
+**Do not treat this file as permission to code.**
 
-**Milestone D status:** Implemented on `cursor/milestone-d-workspace-stage-34a5` — see [MILESTONE-D-WORKSPACE-STAGE-COMPLETION-REPORT.md](../03-Engineering/MILESTONE-D-WORKSPACE-STAGE-COMPLETION-REPORT.md). Await human visual review before Milestone F.
+### Status update (2026-07-30) — product reality alignment
+
+Human visual review of Milestone D found a **fundamental product mismatch**: the UI still behaves as a **workspace setup / management dashboard**, not a **spatial representation of the user’s active desktop**.
+
+**Authoritative correction:** [WORKSPACE-PRODUCT-REALITY-ALIGNMENT-AUDIT.md](WORKSPACE-PRODUCT-REALITY-ALIGNMENT-AUDIT.md)
+
+| Item | Status |
+|------|--------|
+| Milestone D | Shell hierarchy useful; **product identity not accepted** |
+| Milestone F | **Do not start** |
+| **Next milestone (pending approval)** | **R — Desktop Reality Stage** (observe → represent → organise/control existing apps) |
+| Revised ship order | **R → F → G → E → H → I** |
+
+Sections below retain historical D–I detail. Where they conflict with the Reality Alignment Audit, **the audit wins** until this roadmap is fully rewritten.
 
 ---
 
 ## 1. What Workspace is (read this first)
 
-Workspace is a **desktop workspace operating environment** for Windows.
+> Corrected definition (human review 2026-07-30): see [WORKSPACE-PRODUCT-REALITY-ALIGNMENT-AUDIT.md](WORKSPACE-PRODUCT-REALITY-ALIGNMENT-AUDIT.md).
+
+Workspace is a **spatial representation and control layer** over the user’s **active desktop** on Windows.
 
 A person opens Workspace to:
 
-1. See and manage the applications that belong to their work
-2. Arrange those applications on the real desktop
-3. Save and restore named desktop setups
-4. Switch between productive density (Flow) and quieter density (Focus)
+1. **See** their real running applications represented spatially
+2. **Organise and control** those existing applications on the desktop
+3. **Remember / restore** named desktop setups (arrangements)
+4. Switch between productive density (Flow) and quieter density (Focus) for the **same** live set
 5. Optionally ask the Assistant for help — as a companion, never as the product
+
+They do **not** open Workspace to build an empty environment from admin forms.
 
 ```text
 Desktop Workspace experience
- ├── Applications          ← primary stage
- ├── Layouts               ← how the stage is organised
- ├── Desktop Arrangements  ← remember / restore real windows
- ├── Flow / Focus          ← density of the same working set
- ├── Assistant companion   ← supporting side rail
- └── Diagnostics / tools  ← engineering surfaces (not product)
+ ├── Active desktop (observed apps)  ← primary stage
+ ├── Organise / control               ← WindowController + permissions
+ ├── Desktop Arrangements             ← remember / restore real windows
+ ├── Flow / Focus                     ← density of the same working set
+ ├── Profiles / Workspaces (optional) ← labels over reality — not a gate
+ ├── Assistant companion              ← supporting side rail
+ └── Diagnostics / tools             ← engineering surfaces (not product)
 ```
 
 The concept images are **direction**, not pixel specs. Match hierarchy and feel — do not copy brands, wallpaper, or nine layout products at once.
@@ -68,16 +85,22 @@ Engineering maturity is assumed. Product delivery builds **on** these systems �
 
 D Stage → E Grouping → F Arrangement editing → G Flow/Focus behaviour → H Audio → I Polish
 
-### Recommended ship order (this roadmap)
+### Recommended ship order (superseded 2026-07-30)
+
+Historical recommendation was `D → F → G → E → H → I`.
+
+**Current recommendation** (see Reality Alignment Audit):
 
 ```text
-D  Workspace Stage
+R  Desktop Reality Stage          ← NEXT (pending approval)
 F  Desktop Arrangements (real editing)
 G  Flow / Focus Behaviour (real arrangement switching)
 E  Desktop Grouping
 H  Audio Mixer
 I  Workspace Polish
 ```
+
+Milestone D shell work remains in-repo as partial chrome; it does **not** unlock F.
 
 ### Why this order is better
 

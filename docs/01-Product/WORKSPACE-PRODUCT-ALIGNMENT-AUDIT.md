@@ -2,12 +2,14 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | Audit only — no implementation |
+| **Status** | Historical audit — **partially superseded** by [WORKSPACE-PRODUCT-REALITY-ALIGNMENT-AUDIT.md](WORKSPACE-PRODUCT-REALITY-ALIGNMENT-AUDIT.md) (2026-07-30) |
 | **Date** | 2026-07-29 |
 | **Branch** | `cursor/workspace-product-alignment-audit-34a5` |
 | **Governance baseline** | [AI Engineering Governance](../00-Governance/AI_ENGINEERING_GOVERNANCE.md), [AGENTS.md](../../AGENTS.md) |
-| **Related** | [PRODUCT-VISION-REALIGNMENT-AUDIT.md](PRODUCT-VISION-REALIGNMENT-AUDIT.md), [WORKSPACE-VISUAL-DIRECTION.md](WORKSPACE-VISUAL-DIRECTION.md), [DAF-ARCHITECTURE-AUDIT.md](../03-Engineering/DAF-ARCHITECTURE-AUDIT.md) |
+| **Related** | [WORKSPACE-PRODUCT-REALITY-ALIGNMENT-AUDIT.md](WORKSPACE-PRODUCT-REALITY-ALIGNMENT-AUDIT.md), [PRODUCT-VISION-REALIGNMENT-AUDIT.md](PRODUCT-VISION-REALIGNMENT-AUDIT.md), [WORKSPACE-VISUAL-DIRECTION.md](WORKSPACE-VISUAL-DIRECTION.md), [DAF-ARCHITECTURE-AUDIT.md](../03-Engineering/DAF-ARCHITECTURE-AUDIT.md) |
 | **Audience** | Product, engineering, commercial review |
+
+**Supersession note:** This document still frames Workspace as an environment the user **organises into**. Human review corrected the model to **spatial representation of the active desktop**. Prefer the Reality Alignment Audit for product decisions.
 
 **This is not a feature batch.**  
 **Do not expand Assistant architecture or create new AI engines from this document.**

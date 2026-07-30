@@ -28,9 +28,13 @@ Engineering emphasis inverted toward AI programmes while concept art requires **
 
 ### Product delivery (current)
 
-**Authoritative next sequence:** [Workspace Product Delivery Roadmap](../01-Product/WORKSPACE-PRODUCT-DELIVERY-ROADMAP.md)  
-**Next implementation (pending approval):** Milestone D — Workspace Stage.  
-Recommended order: **D → F → G → E → H → I** (grouping after arrangement editing and Flow/Focus behaviour).  
+**Authoritative product-model correction:** [Workspace Product Reality Alignment Audit](../01-Product/WORKSPACE-PRODUCT-REALITY-ALIGNMENT-AUDIT.md) (2026-07-30).  
+Workspace is a **spatial representation of the active desktop** (observe / represent / organise / control) — not a setup dashboard.  
+
+**Authoritative next sequence:** [Workspace Product Delivery Roadmap](../01-Product/WORKSPACE-PRODUCT-DELIVERY-ROADMAP.md) (updated by the audit).  
+**Milestone D:** shell hierarchy retained; **product identity not accepted**.  
+**Next implementation (pending approval):** Milestone **R — Desktop Reality Stage**.  
+Recommended order: **R → F → G → E → H → I**. **Do not start F** until R is approved.  
 **Frozen:** new intelligence/evidence engines without a direct core-product requirement.  
 Programme III/IV code is retained as **future assistant infrastructure**, not deleted.
 
