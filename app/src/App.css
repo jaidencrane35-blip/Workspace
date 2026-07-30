@@ -416,10 +416,6 @@ button.ghost {
     border-top: 1px solid #243040;
   }
 
-  .application-list-row {
-    grid-template-columns: 1fr;
-  }
-
   .app-chrome {
     flex-direction: column;
     align-items: flex-start;
@@ -1066,13 +1062,6 @@ button.linkish:not(:disabled):hover {
 
 .product-list-meta {
   font-size: 0.82rem;
-}
-
-.application-list-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 0.45rem;
-  align-items: stretch;
 }
 
 .application-launch {

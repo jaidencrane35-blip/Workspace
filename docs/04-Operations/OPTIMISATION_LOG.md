@@ -26,32 +26,32 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 
 | # | Category | Status | Notes |
 |---|----------|--------|-------|
-| 1 | Visual hierarchy | open | stronger chrome brand (v2-15) |
-| 2 | Layout consistency | open | banner/container pad tokens (v2-16) |
-| 3 | Spacing consistency | open | shell CSS tokens (v2-11, v2-22) |
-| 4 | Typography consistency | open | Product h3 (v2-07) |
-| 5 | Navigation clarity | PLATEAUED | Assistant aria-label shipped; further IA (bottom nav) needs human (v2-23) |
-| 6 | Accessibility | open | focus-visible (v2-02, v2-19) |
-| 7 | Keyboard UX | PLATEAUED | Mode radiogroup + rail focus/Escape/return; no further keyboard gaps without new chrome (v2-23) |
-| 8 | Responsiveness | open | chrome stack + merged 900px (v2-12) |
-| 9 | Animation polish | PLATEAUED | Rail enter + reduced-motion; further motion would be noise (v2-20) |
-| 10 | Component consistency | open | Focus chips shared (v2-17); ghost focus (v2-19) |
-| 11 | CSS simplification | open | focus merge (v2-06); 900px merge (v2-12) |
-| 12 | Duplicate removal | open | FocusSupportingAppChips (v2-17) |
-| 13 | Dead code removal | open | unused selectors (v2-04, v2-18) |
-| 14 | Documentation quality | open | Protocol v2 + board |
-| 15 | Naming clarity | PLATEAUED | Named banners/ids/tokens in place; no remaining magic chrome labels (v2-23) |
-| 16 | Maintainability | open | shell helper headers (v2-21) |
-| 17 | Human readability | open | |
-| 18 | Developer experience | open | arch map --write note (v2-13) |
-| 19 | Code organisation | open | rail id in assistantRail.ts (v2-09) |
-| 20 | Test quality | open | hook + banner + chips tests (v2-01, v2-05, v2-22) |
-| 21 | Performance | PLATEAUED | No measured shell bottleneck; no speculative memo (v2-14) |
-| 22 | Memory efficiency | PLATEAUED | No measured leak/allocation issue in chrome path (v2-14) |
-| 23 | Build cleanliness | PLATEAUED | typecheck/build green; no actionable frontend warnings (v2-14) |
-| 24 | IPC cleanliness | PLATEAUED | verify:ipc-contract green; no orphaned shell consumers (v2-14) |
-| 25 | Error messaging | PLATEAUED | String classify + preview banner constant; panel string errors already user-facing (v2-23) |
-| 26 | Commercial readiness | open | reopen bar pad align (v2-21) |
+| 1 | Visual hierarchy | PLATEAUED | Brand weight + product h3; further IA needs human (v2-25) |
+| 2 | Layout consistency | PLATEAUED | Shell/banner/container pad tokens aligned (v2-25) |
+| 3 | Spacing consistency | PLATEAUED | `--shell-*` / `--rail-*` applied (v2-25) |
+| 4 | Typography consistency | PLATEAUED | Product sentence-case h3 vs diagnostic uppercase (v2-25) |
+| 5 | Navigation clarity | PLATEAUED | Assistant aria-label; bottom-nav needs human (v2-23) |
+| 6 | Accessibility | PLATEAUED | focus-visible + rail a11y complete for current chrome (v2-25) |
+| 7 | Keyboard UX | PLATEAUED | Mode radiogroup + rail focus/Escape/return (v2-23) |
+| 8 | Responsiveness | PLATEAUED | Merged 900px + stacked chrome (v2-25) |
+| 9 | Animation polish | PLATEAUED | Rail enter + reduced-motion (v2-20) |
+| 10 | Component consistency | PLATEAUED | Shared Focus chips + focus group (v2-25) |
+| 11 | CSS simplification | PLATEAUED | Focus merge + media merge (v2-25) |
+| 12 | Duplicate removal | PLATEAUED | partitionFocus + FocusSupportingAppChips (v2-25) |
+| 13 | Dead code removal | PLATEAUED | Unused selectors removed incl. application-list-row (v2-24) |
+| 14 | Documentation quality | PLATEAUED | Protocol v2 + living board (v2-25) |
+| 15 | Naming clarity | PLATEAUED | Named banners/ids/tokens (v2-23) |
+| 16 | Maintainability | PLATEAUED | Hooks + headers + shared chips (v2-25) |
+| 17 | Human readability | PLATEAUED | Clear ownership comments on chrome modules (v2-25) |
+| 18 | Developer experience | PLATEAUED | Arch map --write documented (v2-25) |
+| 19 | Code organisation | PLATEAUED | Rail id + preference hooks (v2-25) |
+| 20 | Test quality | PLATEAUED | Preference/banner/chips contracts covered (v2-25) |
+| 21 | Performance | PLATEAUED | No measured shell bottleneck (v2-14) |
+| 22 | Memory efficiency | PLATEAUED | No measured chrome leak path (v2-14) |
+| 23 | Build cleanliness | PLATEAUED | Frontend verify/build green (v2-14) |
+| 24 | IPC cleanliness | PLATEAUED | IPC contract verify green (v2-14) |
+| 25 | Error messaging | PLATEAUED | String classify + preview banner (v2-23) |
+| 26 | Commercial readiness | PLATEAUED | Chrome polish landed; OS geometry still boundary-blocked (v2-25) |
 
 ---
 
@@ -87,6 +87,51 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 ---
 
 ## Cycles
+
+### Cycle: opt-v2-26-full-pass-2-global-plateau
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Category** | Full-category evaluation pass 2 |
+| **Analysis** | Re-checked all 26 PLATEAUED categories. No new measurable safe improvement without inventing product direction (bottom nav) or crossing boundaries (OS geometry on mode switch). |
+| **Changes** | none |
+| **Files changed** | this log |
+| **Validation** | reaffirm tip green |
+| **Stop** | **GLOBAL PLATEAU** under Protocol v2 — all categories PLATEAUED + two consecutive full passes with no measurable improvement |
+| **Why this is safe** | Stop record only |
+
+---
+
+### Cycle: opt-v2-25-full-pass-1-all-categories
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Category** | Full-category evaluation pass 1 |
+| **Analysis** | Every approved category evaluated; remaining open items closed as PLATEAUED after confirming no measurable safe chrome/quality work remains without boundary stops. |
+| **Changes** | Category board → all PLATEAUED |
+| **Files changed** | this log |
+| **Validation** | typecheck / test / architecture / ipc / ui-boundary / build |
+| **Category status** | all PLATEAUED |
+| **Why this is safe** | Evaluation pass |
+
+---
+
+### Cycle: opt-v2-24-dead-application-list-row
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Category** | 13 — Dead code removal |
+| **Problem** | `.application-list-row` CSS had no TSX consumers after card-grid migration |
+| **Reason** | Remove dead selector + media rule |
+| **Files changed** | `App.css`, this log |
+| **Validation** | typecheck / test / architecture / ipc / ui-boundary / build |
+| **Category status** | PLATEAUED (with v2-25 board close) |
+| **Why this is safe** | Dead CSS only |
+
+---
 
 ### Cycle: opt-v2-23-plateau-nav-keyboard-naming-errors
 
