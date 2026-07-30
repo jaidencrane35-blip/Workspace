@@ -28,11 +28,11 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 |---|----------|--------|-------|
 | 1 | Visual hierarchy | open | stronger chrome brand (v2-15) |
 | 2 | Layout consistency | open | banner/container pad tokens (v2-16) |
-| 3 | Spacing consistency | open | shell CSS tokens (v2-11) |
+| 3 | Spacing consistency | open | shell CSS tokens (v2-11, v2-22) |
 | 4 | Typography consistency | open | Product h3 (v2-07) |
-| 5 | Navigation clarity | open | Assistant aria-label (v2-10) |
+| 5 | Navigation clarity | PLATEAUED | Assistant aria-label shipped; further IA (bottom nav) needs human (v2-23) |
 | 6 | Accessibility | open | focus-visible (v2-02, v2-19) |
-| 7 | Keyboard UX | open | rail focus (v2-03) |
+| 7 | Keyboard UX | PLATEAUED | Mode radiogroup + rail focus/Escape/return; no further keyboard gaps without new chrome (v2-23) |
 | 8 | Responsiveness | open | chrome stack + merged 900px (v2-12) |
 | 9 | Animation polish | PLATEAUED | Rail enter + reduced-motion; further motion would be noise (v2-20) |
 | 10 | Component consistency | open | Focus chips shared (v2-17); ghost focus (v2-19) |
@@ -40,17 +40,17 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 | 12 | Duplicate removal | open | FocusSupportingAppChips (v2-17) |
 | 13 | Dead code removal | open | unused selectors (v2-04, v2-18) |
 | 14 | Documentation quality | open | Protocol v2 + board |
-| 15 | Naming clarity | open | DESKTOP_PREVIEW_BANNER (v2-05) |
+| 15 | Naming clarity | PLATEAUED | Named banners/ids/tokens in place; no remaining magic chrome labels (v2-23) |
 | 16 | Maintainability | open | shell helper headers (v2-21) |
 | 17 | Human readability | open | |
 | 18 | Developer experience | open | arch map --write note (v2-13) |
 | 19 | Code organisation | open | rail id in assistantRail.ts (v2-09) |
-| 20 | Test quality | open | hook + banner tests (v2-01, v2-05) |
+| 20 | Test quality | open | hook + banner + chips tests (v2-01, v2-05, v2-22) |
 | 21 | Performance | PLATEAUED | No measured shell bottleneck; no speculative memo (v2-14) |
 | 22 | Memory efficiency | PLATEAUED | No measured leak/allocation issue in chrome path (v2-14) |
 | 23 | Build cleanliness | PLATEAUED | typecheck/build green; no actionable frontend warnings (v2-14) |
 | 24 | IPC cleanliness | PLATEAUED | verify:ipc-contract green; no orphaned shell consumers (v2-14) |
-| 25 | Error messaging | open | string classify (v2-05) |
+| 25 | Error messaging | PLATEAUED | String classify + preview banner constant; panel string errors already user-facing (v2-23) |
 | 26 | Commercial readiness | open | reopen bar pad align (v2-21) |
 
 ---
@@ -87,6 +87,35 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 ---
 
 ## Cycles
+
+### Cycle: opt-v2-23-plateau-nav-keyboard-naming-errors
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Category** | 5, 7, 15, 25 |
+| **Analysis** | Navigation: Assistant toggle labelled; bottom-nav IA is a human product decision (boundary). Keyboard: Flow/Focus radiogroup + rail focus/Escape/return complete for current chrome. Naming: preference keys, rail id, preview banner named. Errors: classifyBanner handles strings + runtime preview copy. |
+| **Changes** | Mark 5, 7, 15, 25 **PLATEAUED** |
+| **Files changed** | this log |
+| **Category status** | PLATEAUED |
+| **Why this is safe** | Evaluation only; no speculative chrome |
+
+---
+
+### Cycle: opt-v2-22-arrangement-pad-and-chip-test
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Category** | 3 — Spacing consistency (+ 20 test quality) |
+| **Problem** | Arrangement rail padding still used literal rems; Focus chips module untested as a contract |
+| **Reason** | Use `--rail-pad-*` tokens; assert FocusSupportingAppChips export |
+| **Files changed** | `App.css`, tests, this log |
+| **Validation** | typecheck / test / architecture / ipc / ui-boundary / build |
+| **Category status** | open |
+| **Why this is safe** | Token alignment + import test only |
+
+---
 
 ### Cycle: opt-v2-21-maintainability-commercial-pad
 

@@ -234,7 +234,7 @@ button:not(:disabled):hover {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  padding: 1rem 1.1rem 1.5rem;
+  padding: var(--rail-pad-y) var(--rail-pad-x) 1.5rem;
   border-left: 1px solid #243040;
   background: #111820;
   overflow: auto;
