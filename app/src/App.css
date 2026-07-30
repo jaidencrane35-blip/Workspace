@@ -730,10 +730,6 @@ button.linkish:not(:disabled):hover {
 
 /* Programme IV Assistant Intelligence — Batches 11–16 */
 
-.assistant-intel-container {
-  max-width: 52rem;
-}
-
 .assistant-intel-panel {
   padding-bottom: 1.5rem;
   border-bottom: 1px solid #243040;
@@ -957,16 +953,6 @@ button.linkish:not(:disabled):hover {
 }
 
 /* Milestone A — product shell (Home / Workspaces / Applications) */
-
-.tab.secondary {
-  border-style: dashed;
-  color: #8a9aaa;
-}
-
-.tab.quiet {
-  opacity: 0.72;
-  font-size: 0.9em;
-}
 
 .product-container {
   max-width: 52rem;
@@ -1544,16 +1530,8 @@ button.linkish:not(:disabled):hover {
   border-color: #4a6a8a;
 }
 
-.work-mode-option:focus-visible {
-  outline: 2px solid #93c5fd;
-  outline-offset: 2px;
-}
-
-.tab:focus-visible {
-  outline: 2px solid #93c5fd;
-  outline-offset: 2px;
-}
-
+.work-mode-option:focus-visible,
+.tab:focus-visible,
 .home-action:focus-visible,
 .home-app-chip:focus-visible,
 .application-card-main:focus-visible {

@@ -141,6 +141,21 @@ describe("work mode helpers", () => {
   });
 });
 
+describe("product shell banner helpers", () => {
+  it("classifies string and runtime errors without wrapping", async () => {
+    const { classifyBanner, DESKTOP_PREVIEW_BANNER } = await import(
+      "../app/src/lib/productShellUi"
+    );
+    expect(classifyBanner("plain failure").kind).toBe("error");
+    expect(classifyBanner("Desktop runtime is unavailable").kind).toBe(
+      "runtime",
+    );
+    expect(classifyBanner("Desktop runtime is unavailable").text).toBe(
+      DESKTOP_PREVIEW_BANNER,
+    );
+  });
+});
+
 describe("assistant companion rail helpers", () => {
   it("parses open/collapsed preference with a safe default", async () => {
     const {

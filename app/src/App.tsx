@@ -148,7 +148,7 @@ export default function App() {
       setError(null);
       return;
     }
-    const classified = classifyBanner(new Error(next));
+    const classified = classifyBanner(next);
     setErrorKind(classified.kind === "runtime" ? "runtime" : "error");
     setError(classified.text);
   }, []);

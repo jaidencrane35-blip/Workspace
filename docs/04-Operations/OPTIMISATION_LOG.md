@@ -55,6 +55,56 @@ When logging a cycle, name the **approved category** (1–26). When a category h
 
 ## Cycles
 
+### Cycle: opt-v2-06-css-focus-rule-merge
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Category** | 11 — CSS simplification |
+| **Problem** | Repeated `:focus-visible` blocks duplicated the same outline tokens |
+| **Reason** | One selector group; easier to keep keyboard focus styling consistent |
+| **Files changed** | `App.css`, this log |
+| **Validation** | typecheck / test / architecture / ipc / ui-boundary / build |
+| **Maintainability score** | 9.0/10 |
+| **Category status** | open |
+| **Why this is safe** | CSS consolidation only |
+
+---
+
+### Cycle: opt-v2-05-error-banner-strings
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Category** | 25 — Error messaging |
+| **Problem** | `onError` wrapped strings in `Error`, duplicating preview copy and skipping string classification |
+| **Reason** | Named `DESKTOP_PREVIEW_BANNER`; classify strings directly |
+| **Files changed** | `productShellUi.ts`, `App.tsx`, tests, this log |
+| **Validation** | typecheck / test / architecture / ipc / ui-boundary / build |
+| **Maintainability score** | 9.0/10 |
+| **Commercial readiness** | 6.5/10 |
+| **Human readability** | 9.0/10 |
+| **Category status** | open |
+| **Why this is safe** | Banner classification only; no IPC ownership change |
+
+---
+
+### Cycle: opt-v2-04-dead-css-selectors
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Category** | 13 — Dead code removal |
+| **Problem** | Unused `.assistant-intel-container`, `.tab.secondary`, `.tab.quiet` remained after chrome evolution |
+| **Reason** | Remove selectors with no TSX consumers |
+| **Files changed** | `App.css`, this log |
+| **Validation** | typecheck / test / architecture / ipc / ui-boundary / build |
+| **Maintainability score** | 9.1/10 |
+| **Category status** | open |
+| **Why this is safe** | Dead CSS only |
+
+---
+
 ### Cycle: opt-v2-03-keyboard-rail-focus
 
 | Field | Value |

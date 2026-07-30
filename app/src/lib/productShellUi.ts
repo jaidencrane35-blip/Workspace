@@ -14,14 +14,24 @@ export const ZONE_CONTEXT_LIMIT = 200;
 
 export type BannerKind = "error" | "runtime" | "ok";
 
+/** User-facing copy when Tauri IPC is unavailable (browser preview). */
+export const DESKTOP_PREVIEW_BANNER =
+  "Desktop preview mode — open the Workspace app to create, switch, launch, and restore.";
+
 export function classifyBanner(error: unknown): {
   kind: BannerKind;
   text: string;
 } {
+  if (typeof error === "string") {
+    if (/desktop runtime is unavailable/i.test(error)) {
+      return { kind: "runtime", text: DESKTOP_PREVIEW_BANNER };
+    }
+    return { kind: "error", text: error };
+  }
   if (error instanceof IpcRuntimeUnavailableError) {
     return {
       kind: "runtime",
-      text: "Desktop preview mode — open the Workspace app to create, switch, launch, and restore.",
+      text: DESKTOP_PREVIEW_BANNER,
     };
   }
   if (error instanceof Error) {
@@ -31,7 +41,7 @@ export function classifyBanner(error: unknown): {
     ) {
       return {
         kind: "runtime",
-        text: "Desktop preview mode — open the Workspace app to create, switch, launch, and restore.",
+        text: DESKTOP_PREVIEW_BANNER,
       };
     }
     return { kind: "error", text: error.message };
