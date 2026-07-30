@@ -108,13 +108,10 @@ export function WorkModeSwitch({
       >
         {workModeLabel("focus")}
       </button>
-      {density === "stage" ? (
-        <p className="muted work-mode-hint" id="work-mode-hint">
-          {workModeDescription(mode)}
-        </p>
-      ) : (
-        <span className="visually-hidden">{workModeDescription(mode)}</span>
-      )}
+      {/* IM-1: keep mode meaning for a11y; do not show explanatory hint on Stage */}
+      <span className="visually-hidden" id="work-mode-hint">
+        {workModeDescription(mode)}
+      </span>
     </div>
   );
 }
