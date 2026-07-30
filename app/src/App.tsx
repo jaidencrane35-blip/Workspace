@@ -1,6 +1,7 @@
 /**
  * Purpose: Product shell root — Workspace-first chrome, view routing,
- *   Flow/Focus density, and persistent Assistant companion rail.
+ *   Flow/Focus density, persistent Assistant companion rail, and
+ *   application-centric Workspace stage (Milestone D).
  * Owner: Frontend product shell
  * Inputs: Tauri IPC (settings, workspace, zones, applications); local UI prefs
  * Outputs: Active workspace state, navigation, banners, chrome presentation
@@ -27,6 +28,10 @@ import {
   ASSISTANT_COMPANION_RAIL_ID,
   assistantRailToggleLabel,
 } from "./lib/assistantRail";
+import {
+  launchRegisteredApplication,
+  launchSuccessMessage,
+} from "./lib/applicationLaunch";
 import {
   invokeIpc,
   IpcRuntimeUnavailableError,
@@ -97,7 +102,8 @@ async function loadZones(workspaceId: string): Promise<Zone[]> {
 }
 
 export default function App() {
-  const [view, setView] = useState<AppView>("home");
+  // Milestone D: land on the Workspace stage (Layouts) — apps first.
+  const [view, setView] = useState<AppView>("layouts");
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [zones, setZones] = useState<Zone[]>([]);
   const [homeApps, setHomeApps] = useState<ApplicationReference[]>([]);
@@ -114,13 +120,33 @@ export default function App() {
   // Rail toggle is visual (aria-pressed); avoid banner noise on every click.
   const { assistantRailOpen, onAssistantRailOpenChange } = useAssistantRail();
   const [lastPrimaryView, setLastPrimaryView] =
-    useState<ProductPrimaryView>("home");
+    useState<ProductPrimaryView>("layouts");
   const assistantToggleRef = useRef<HTMLButtonElement>(null);
 
   const navigatePrimary = useCallback((next: ProductPrimaryView) => {
     setLastPrimaryView(next);
     setView(next);
   }, []);
+
+  const launchFromStage = useCallback(
+    (app: ApplicationReference) => {
+      setBusy(true);
+      setError(null);
+      void (async () => {
+        try {
+          const result = await launchRegisteredApplication(app);
+          setMessage(launchSuccessMessage(result));
+        } catch (err: unknown) {
+          const classified = classifyBanner(err);
+          setErrorKind(classified.kind === "runtime" ? "runtime" : "error");
+          setError(classified.text);
+        } finally {
+          setBusy(false);
+        }
+      })();
+    },
+    [],
+  );
 
   const setAssistantRailOpen = useCallback(
     (open: boolean) => {
@@ -370,7 +396,7 @@ export default function App() {
     }
     if (view === "layouts") {
       return (
-        <div className="workspace-stage">
+        <div className="workspace-stage workspace-stage-apps-first">
           <div className="workspace-stage-main">
             {!bootstrapped ? (
               <div className="canvas-shell">
@@ -384,20 +410,27 @@ export default function App() {
                   appsLoading={homeAppsLoading}
                   zoneCount={zones.length}
                   workMode={workMode}
+                  busy={busy}
                   onWorkModeChange={onWorkModeChange}
                   onManageApplications={() => navigatePrimary("applications")}
+                  onLaunchApplication={launchFromStage}
                 />
                 {workMode === "flow" ? (
-                  <CanvasShell
-                    workspaceId={workspace.id}
-                    workspaceName={workspace.name}
-                    zones={zones}
-                    busy={busy}
-                    onError={(msg) => onError(msg)}
-                    onSaved={onLayoutSaved}
-                    onCreateWorkspace={createWorkspaceFromHome}
-                    onAddZone={addZoneFromCanvas}
-                  />
+                  <div className="stage-secondary-canvas">
+                    <p className="stage-secondary-label muted">
+                      Companion canvas (optional board practice)
+                    </p>
+                    <CanvasShell
+                      workspaceId={workspace.id}
+                      workspaceName={workspace.name}
+                      zones={zones}
+                      busy={busy}
+                      onError={(msg) => onError(msg)}
+                      onSaved={onLayoutSaved}
+                      onCreateWorkspace={createWorkspaceFromHome}
+                      onAddZone={addZoneFromCanvas}
+                    />
+                  </div>
                 ) : (
                   <div className="focus-canvas-suppressed" aria-live="polite">
                     <p className="muted">
@@ -419,8 +452,7 @@ export default function App() {
               <div className="canvas-shell canvas-bootstrap">
                 <p className="lede">
                   No active workspace. Create one under Workspaces, then return
-                  here for the application stage, canvas zones, and desktop
-                  arrangements.
+                  here for the application stage and desktop arrangements.
                 </p>
                 <button
                   type="button"
@@ -493,10 +525,10 @@ export default function App() {
             aria-label="Primary workspace views"
             role="tablist"
           >
-            {primaryTab("home", "Home")}
-            {primaryTab("workspaces", "Workspaces")}
+            {primaryTab("layouts", "Stage")}
             {primaryTab("applications", "Applications")}
-            {primaryTab("layouts", "Layouts")}
+            {primaryTab("workspaces", "Workspaces")}
+            {primaryTab("home", "Home")}
           </nav>
           <WorkModeSwitch mode={workMode} onChange={onWorkModeChange} />
           <nav

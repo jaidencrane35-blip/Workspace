@@ -1,22 +1,24 @@
 /**
  * Purpose: Copy helpers for the Layouts application-stage overview.
- * Owner: Frontend product shell (Cycle 1)
- * Inputs: counts of apps / zones / arrangements awareness flags
- * Outputs: Stage labels and empty-state copy
+ * Owner: Frontend product shell (Milestone D — Workspace Stage)
+ * Inputs: workspace name, zone counts
+ * Outputs: Stage labels and empty-state copy (apps-first product identity)
  * Dependencies: None (pure)
- * Non-responsibilities: IPC, window control, Flow/Focus modes, Assistant
+ * Non-responsibilities: IPC, window control, Flow/Focus geometry apply, Assistant
  */
 
 export function layoutsStageEyebrow(): string {
-  return "Layouts stage";
+  return "Workspace stage";
 }
 
 export function layoutsStageTitle(workspaceName: string): string {
-  return workspaceName.trim() || "Workspace stage";
+  const name = workspaceName.trim();
+  return name ? `${name} — applications` : "Applications on stage";
 }
 
+/** Home / marketing lede — apps organise the workspace. */
 export function layoutsStageLede(): string {
-  return "Applications belonging to this workspace appear on the stage. Use Flow/Focus for presentation density. Use the arrangements rail to save and restore real desktop window layouts — OS apply on mode switch is not enabled yet.";
+  return "This is where you organise and work with the applications that belong to this workspace. Desktop arrangements remember window layouts; the companion canvas below is optional board practice — not your OS desktop.";
 }
 
 export function layoutsStageEmptyAppsCopy(): {
@@ -24,16 +26,28 @@ export function layoutsStageEmptyAppsCopy(): {
   body: string;
 } {
   return {
-    title: "No applications on this stage yet",
-    body: "Add apps under Applications. They show here as workspace assets — not a substitute for live OS windows.",
+    title: "Add the apps you work with",
+    body: "Applications are the centre of this workspace. Register them under Applications, then return here to launch and organise. Live OS windows are separate — arrangements save and restore those later.",
   };
 }
 
 export function layoutsStageCanvasNote(zoneCount: number): string {
   if (zoneCount <= 0) {
-    return "Companion canvas zones are empty. Add a zone below for board layout practice — separate from desktop arrangements.";
+    return "Optional: companion canvas below for zone board practice (not OS window tiling).";
   }
   return zoneCount === 1
-    ? "1 companion canvas zone below (board layout — not OS tiling)."
-    : `${zoneCount} companion canvas zones below (board layout — not OS tiling).`;
+    ? "Optional companion canvas: 1 zone below (board practice — not OS tiling)."
+    : `Optional companion canvas: ${zoneCount} zones below (board practice — not OS tiling).`;
+}
+
+export function layoutsStageFocusNote(): string {
+  return "Focus emphasises one application on stage. Supporting apps stay available. Companion canvas is hidden to reduce noise — switch to Flow to edit zones. Desktop arrangements stay in the rail.";
+}
+
+export function layoutsStageFlowHint(): string {
+  return "Save and restore real desktop window layouts from the arrangements area below the stage.";
+}
+
+export function layoutsStageFocusHint(): string {
+  return "Supporting apps stay available — Focus does not quit them.";
 }

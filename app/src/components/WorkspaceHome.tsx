@@ -1,10 +1,10 @@
 /**
- * Purpose: Workspace Home — first viewport: identity, belonging apps, actions,
- *   work-mode awareness, and honest future-capability notes.
- * Owner: Frontend product shell (Milestone B chrome density)
+ * Purpose: Workspace Home — first viewport: apps-first identity and entry to
+ *   the Workspace stage (Layouts).
+ * Owner: Frontend product shell (Milestone D — Workspace Stage)
  * Inputs: Active workspace, zone/app summaries, work mode, navigation callbacks
  * Outputs: Navigation intents to Workspaces / Applications / Layouts
- * Dependencies: workMode labels (presentation only)
+ * Dependencies: workMode labels, productShellUi monogram (presentation only)
  * Non-responsibilities: IPC mutations, Assistant, OS window control, fake features
  */
 
@@ -57,11 +57,11 @@ export function WorkspaceHome({
     <section className="product-panel product-home" aria-label="Home">
       <header className="product-panel-hero">
         <p className="arrangement-eyebrow">Home</p>
-        <h2>Manage your digital workspace</h2>
+        <h2>Your applications, organised</h2>
         <p className="lede">
-          Switch environments, keep applications with each workspace, and
-          arrange your desktop. Assistant stays a supporting tool — not the
-          product itself.
+          Workspace is where you organise and work with the apps that belong to
+          each environment. Open the workspace stage to see them front and
+          centre. Assistant stays a companion — not the product.
         </p>
       </header>
 
@@ -75,20 +75,32 @@ export function WorkspaceHome({
             <div>
               <p className="home-current-name">{workspace.name}</p>
               <p className="muted">
-                {zoneCount === 1
-                  ? "1 canvas zone"
-                  : `${zoneCount} canvas zones`}
-                {" · "}
                 {appsLoading
                   ? "loading apps…"
                   : applications.length === 1
-                    ? "1 registered application"
-                    : `${applications.length} registered applications`}
+                    ? "1 application on stage"
+                    : `${applications.length} applications on stage`}
                 {" · "}
                 {workModeLabel(workMode)} presentation
+                {" · "}
+                {zoneCount === 1
+                  ? "1 companion canvas zone"
+                  : `${zoneCount} companion canvas zones`}
               </p>
               <p className="muted">{workModeDescription(workMode)}</p>
             </div>
+          </div>
+          <div className="home-stage-cta row">
+            <button type="button" onClick={() => onNavigate("layouts")}>
+              Open workspace stage
+            </button>
+            <button
+              type="button"
+              className="ghost"
+              onClick={() => onNavigate("applications")}
+            >
+              Manage applications
+            </button>
           </div>
         </div>
       ) : (
@@ -105,56 +117,55 @@ export function WorkspaceHome({
       )}
 
       {workspace ? (
-        <section aria-label="Applications in this workspace">
-          <h3>Applications in this workspace</h3>
+        <section
+          className="home-stage-preview"
+          aria-label="Applications in this workspace"
+        >
+          <h3>Applications on stage</h3>
           {appsLoading ? (
             <p className="muted">Loading applications…</p>
           ) : applications.length === 0 ? (
             <p className="muted">
-              None registered yet. Add apps under Applications — they stay with
-              this workspace.
+              None registered yet. Add apps under Applications — they become the
+              centre of this workspace.
             </p>
           ) : (
-            <ul className="home-app-chip-row">
-              {applications.slice(0, 8).map((app) => (
+            <ul className="stage-tile-grid home-stage-grid" aria-label="App preview">
+              {applications.slice(0, 6).map((app) => (
                 <li key={app.id}>
                   <button
                     type="button"
-                    className="home-app-chip"
-                    onClick={() => onNavigate("applications")}
+                    className="stage-tile home-stage-tile"
+                    onClick={() => onNavigate("layouts")}
                   >
                     <span
-                      className="application-monogram compact"
+                      className="application-monogram large"
                       aria-hidden="true"
                     >
                       {monogramFromName(app.name)}
                     </span>
-                    <span>{app.name}</span>
+                    <span className="stage-tile-name">{app.name}</span>
+                    <span className="muted">On workspace stage</span>
                   </button>
                 </li>
               ))}
             </ul>
           )}
-          <button
-            type="button"
-            className="ghost"
-            onClick={() => onNavigate("applications")}
-          >
-            Manage applications
-          </button>
         </section>
       ) : null}
 
       <section aria-label="Available actions">
-        <h3>Available now</h3>
+        <h3>Go to</h3>
         <nav className="home-actions" aria-label="Primary workspace actions">
           <button
             type="button"
-            className="home-action"
-            onClick={() => onNavigate("workspaces")}
+            className="home-action home-action-primary"
+            onClick={() => onNavigate("layouts")}
           >
-            <span className="home-action-title">Workspaces</span>
-            <span className="muted">Switch saved environments</span>
+            <span className="home-action-title">Workspace stage</span>
+            <span className="muted">
+              Applications front and centre · Flow/Focus · arrangements
+            </span>
           </button>
           <button
             type="button"
@@ -167,12 +178,10 @@ export function WorkspaceHome({
           <button
             type="button"
             className="home-action"
-            onClick={() => onNavigate("layouts")}
+            onClick={() => onNavigate("workspaces")}
           >
-            <span className="home-action-title">Layouts</span>
-            <span className="muted">
-              Stage, Flow/Focus presentation, arrangements
-            </span>
+            <span className="home-action-title">Workspaces</span>
+            <span className="muted">Switch saved environments</span>
           </button>
         </nav>
       </section>
@@ -182,6 +191,7 @@ export function WorkspaceHome({
         <ul className="home-future-list muted">
           <li>OS window move/resize when switching Flow ↔ Focus</li>
           <li>Automatic OS app discovery</li>
+          <li>Window grouping and lock</li>
         </ul>
         <p className="muted">
           Flow/Focus chrome density and the Assistant companion rail are

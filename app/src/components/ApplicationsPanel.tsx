@@ -13,13 +13,15 @@
 import { useCallback, useEffect, useState } from "react";
 import { invokeIpc, isIpcRuntimeAvailable } from "../lib/ipc";
 import {
+  launchRegisteredApplication,
+  launchSuccessMessage,
+} from "../lib/applicationLaunch";
+import {
   applicationsEmptyCopy,
   applicationsLayoutsRelationCopy,
-  canLaunchApplication,
 } from "../lib/applicationsUi";
 import type { WorkMode } from "../lib/workMode";
 import type {
-  ApplicationLaunchResult,
   ApplicationReference,
   Workspace,
   WorkspaceActiveApplication,
@@ -171,24 +173,13 @@ export function ApplicationsPanel({
   };
 
   const launchApplication = (app: ApplicationReference) => {
-    if (!canLaunchApplication(app)) {
-      onError("Add an executable path before launching this application.");
-      return;
-    }
     onBusy(true);
     onError(null);
     void (async () => {
       try {
-        const result = await invokeIpc<ApplicationLaunchResult>(
-          "launch_application",
-          { id: app.id },
-        );
+        const result = await launchRegisteredApplication(app);
         await refreshActive();
-        onMessage(
-          result.simulated
-            ? `Launch recorded for ${result.name} (simulated on this platform)`
-            : `Launched ${result.name}`,
-        );
+        onMessage(launchSuccessMessage(result));
       } catch (err: unknown) {
         onError(err instanceof Error ? err.message : String(err));
       } finally {

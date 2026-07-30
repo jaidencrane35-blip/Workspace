@@ -29,7 +29,7 @@ export function applicationsEmptyCopy(hasWorkspace: boolean): {
 }
 
 export function applicationsLayoutsRelationCopy(): string {
-  return "Layouts save and restore window arrangements for your desktop. Applications here are the registry of tools that belong to this workspace — launch them, then use Layouts to remember where they sit.";
+  return "The Workspace stage (Layouts) is where these applications appear as the centre of your workspace. Use this page to register and launch them. Desktop arrangements remember real window layouts — separate from the companion canvas.";
 }
 
 export function applicationIdentityLine(app: ApplicationReference): string {

@@ -90,16 +90,58 @@ describe("product shell UI helpers", () => {
 });
 
 describe("layouts stage UI helpers", () => {
-  it("keeps stage copy honest about modes and OS windows", async () => {
+  it("keeps stage copy apps-first and honest about OS windows", async () => {
     const {
       layoutsStageLede,
       layoutsStageEmptyAppsCopy,
       layoutsStageCanvasNote,
+      layoutsStageEyebrow,
+      layoutsStageTitle,
+      layoutsStageFocusNote,
     } = await import("../app/src/lib/layoutsStageUi");
-    expect(layoutsStageLede()).toMatch(/Flow/i);
+    expect(layoutsStageEyebrow()).toMatch(/Workspace stage/i);
+    expect(layoutsStageTitle("Deep work")).toMatch(/applications/i);
+    expect(layoutsStageLede()).toMatch(/applications/i);
+    expect(layoutsStageLede()).not.toMatch(/AI/i);
     expect(layoutsStageEmptyAppsCopy().body).toMatch(/OS windows/i);
-    expect(layoutsStageCanvasNote(0)).toMatch(/Companion canvas/i);
-    expect(layoutsStageCanvasNote(2)).toMatch(/2 companion/i);
+    expect(layoutsStageCanvasNote(0)).toMatch(/Optional/i);
+    expect(layoutsStageCanvasNote(2)).toMatch(/2 zones/i);
+    expect(layoutsStageFocusNote()).toMatch(/Focus/i);
+  });
+});
+
+describe("application launch helpers", () => {
+  it("blocks launch without an executable path", async () => {
+    const { launchBlockedReason, launchSuccessMessage } = await import(
+      "../app/src/lib/applicationLaunch"
+    );
+    expect(
+      launchBlockedReason({
+        id: "a",
+        workspace_id: "w",
+        name: "Notes",
+        identifier: null,
+        executable_path: null,
+      }),
+    ).toMatch(/executable path/i);
+    expect(
+      launchBlockedReason({
+        id: "a",
+        workspace_id: "w",
+        name: "Notes",
+        identifier: null,
+        executable_path: "C:\\\\app.exe",
+      }),
+    ).toBeNull();
+    expect(
+      launchSuccessMessage({
+        application_id: "a",
+        name: "Notes",
+        executable_path: "C:\\\\app.exe",
+        process_id: null,
+        simulated: true,
+      }),
+    ).toMatch(/simulated/i);
   });
 });
 

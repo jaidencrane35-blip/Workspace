@@ -13,6 +13,8 @@
 **Await human approval before starting Milestone D.**  
 Do not treat this file as permission to code.
 
+**Milestone D status:** Implemented on `cursor/milestone-d-workspace-stage-34a5` — see [MILESTONE-D-WORKSPACE-STAGE-COMPLETION-REPORT.md](../03-Engineering/MILESTONE-D-WORKSPACE-STAGE-COMPLETION-REPORT.md). Await human visual review before Milestone F.
+
 ---
 
 ## 1. What Workspace is (read this first)

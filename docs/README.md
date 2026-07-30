@@ -12,7 +12,7 @@
 | Human visual review | [Human Review Policy](03-Engineering/HUMAN-REVIEW-POLICY.md) → [Visual Review Checklist](03-Engineering/VISUAL-REVIEW-CHECKLIST.md) |
 | Designing architecture | [Architecture Principles](02-Architecture/ARCHITECTURE-PRINCIPLES.md) → [System Overview](02-Architecture/SYSTEM-OVERVIEW.md) |
 | Desktop arrangement (DAF) | [DAF Architecture Audit](03-Engineering/DAF-ARCHITECTURE-AUDIT.md) → [DAF-1a](03-Engineering/DAF-1A-WINDOW-CONTROLLER.md) → [DAF-1b](03-Engineering/DAF-1B-WINDOW-OBSERVATION.md) → [DAF-1c](03-Engineering/DAF-1C-DESKTOP-ARRANGEMENT.md) → [DAF-1d](03-Engineering/DAF-1D-DESKTOP-ARRANGEMENT-RESTORE.md) → [DAF-1e](03-Engineering/DAF-1E-DESKTOP-ARRANGEMENT-UI.md) |
-| Product delivery (next) | [Product Delivery Roadmap](01-Product/WORKSPACE-PRODUCT-DELIVERY-ROADMAP.md) — Milestone D onwards (await approval) |
+| Product delivery (next) | [Product Delivery Roadmap](01-Product/WORKSPACE-PRODUCT-DELIVERY-ROADMAP.md) · [Milestone D completion](03-Engineering/MILESTONE-D-WORKSPACE-STAGE-COMPLETION-REPORT.md) (await review before F) |
 | Milestone A (Apps + switcher) | [Completion report](03-Engineering/MILESTONE-A-WORKSPACE-APPS-COMPLETION-REPORT.md) → [Visual review](03-Engineering/MILESTONE-A-VISUAL-REVIEW-CHECKLIST.md) → [A.1 UX hardening](03-Engineering/MILESTONE-A1-UX-HARDENING-REPORT.md) |
 | Flow / Focus | [Design charter](01-Product/FLOW-FOCUS-MODE-DESIGN-CHARTER.md) → [Chrome implementation](03-Engineering/FLOW-FOCUS-IMPLEMENTATION-REPORT.md) → behaviour in [Product Delivery Roadmap](01-Product/WORKSPACE-PRODUCT-DELIVERY-ROADMAP.md) Milestone G |
 | Selecting technology | [Stack Evaluation Criteria](02-Architecture/STACK-EVALUATION-CRITERIA.md) |
@@ -53,7 +53,7 @@ What Workspace is, who it serves, and how scope is managed.
 | [Product Vision](01-Product/PRODUCT-VISION.md) | Product goals, domains, and target experience |
 | [Workspace Visual Direction](01-Product/WORKSPACE-VISUAL-DIRECTION.md) | Concept-art north star; literal vs non-literal interpretation |
 | [Visual references](01-Product/references/README.md) | Original concept images (direction, not pixel specs) |
-| [Workspace Product Delivery Roadmap](01-Product/WORKSPACE-PRODUCT-DELIVERY-ROADMAP.md) | Post-foundation milestones D–I (planning only; await approval before D) |
+| [Workspace Product Delivery Roadmap](01-Product/WORKSPACE-PRODUCT-DELIVERY-ROADMAP.md) | Post-foundation milestones D–I (D implemented — await review before F) |
 | [Workspace Product Alignment Audit](01-Product/WORKSPACE-PRODUCT-ALIGNMENT-AUDIT.md) | Post-governance product reality, priority, debt, and roadmap context |
 | [Flow / Focus Design Charter](01-Product/FLOW-FOCUS-MODE-DESIGN-CHARTER.md) | Flow ↔ Focus definitions; chrome shipped, OS geometry in Milestone G |
 | [Product Vision Realignment Audit](01-Product/PRODUCT-VISION-REALIGNMENT-AUDIT.md) | Earlier gap analysis vs concept art; partially superseded by DAF-1a–1e + alignment audit |
