@@ -90,6 +90,29 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 
 ## Cycles
 
+### Cycle: v8-eval-pass-2-capability-plateau
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Cycle number** | V8-eval-2 |
+| **Analysis** | Second independent empty pass after V8-1..V8-8. No safe measurable capability left without platform APIs or workspace-scoping architecture approval. |
+| **Changes** | none |
+| **Stop** | **CAPABILITY PLATEAU** — two consecutive empty evaluation passes |
+
+---
+
+### Cycle: v8-eval-pass-1-capability-rescore
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Cycle number** | V8-eval-1 |
+| **Analysis** | After V8-1..V8-8, remaining candidates are platform-gated (geometry/thumbnail/audio/minimize) or architecture-gated (WorkspaceState workspace scoping / matched_application on global state). |
+| **Changes** | none |
+
+---
+
 ### Cycle: v8-8-stage-z-order-paint
 
 | Field | Value |
