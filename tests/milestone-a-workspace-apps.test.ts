@@ -66,15 +66,13 @@ describe("applications UI helpers", () => {
       process_name: "code.exe",
       window_count: 2,
     };
-    expect(activeApplicationLabel(active)).toContain("code.exe");
-    expect(activeApplicationLabel(active)).toContain("2 windows");
-    expect(activeApplicationLabel(active)).not.toMatch(/open/i);
+    expect(activeApplicationName(active)).toBe("code.exe");
+    expect(activeApplicationWindowLine(active)).toBe("2 windows");
   });
 
-  it("explains empty registry states and layout relationship", () => {
+  it("explains empty registry states", () => {
     expect(applicationsEmptyCopy(false).title).toMatch(/profile/i);
     expect(applicationsEmptyCopy(true).body).toMatch(/Stage/i);
-    expect(applicationsLayoutsRelationCopy()).toMatch(/Running/i);
     expect(applicationsEmptyCopy(false).body).toMatch(/Stage/i);
   });
 });

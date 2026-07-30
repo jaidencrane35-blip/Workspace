@@ -94,6 +94,30 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 
 ## Cycles
 
+### Cycle: v5-eval-pass-2-interaction-plateau
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Cycle number** | V5-eval-2 |
+| **Analysis** | Second full pass after V5-1…V5-3. No safe measurable interaction/organisation change remains without inventing min/max APIs, Assistant-owned control, streaming IPC, OS geometry apply, or grouping engines. |
+| **Changes** | none |
+| **Stop** | **INTERACTION PLATEAU** — two consecutive empty evaluation passes |
+
+---
+
+### Cycle: v5-eval-pass-1-interaction-rescore
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Cycle number** | V5-eval-1 |
+| **Analysis** | After V5-3 honesty + dead-helper cleanup, candidates are architecture-gated (minimize, geometry apply, streaming, Assistant restore) or cosmetic. |
+| **Changes** | none |
+| **Category status** | open only behind architecture approval |
+
+---
+
 ### Cycle: v5-3-restore-honesty-dead-helpers
 
 | Field | Value |
