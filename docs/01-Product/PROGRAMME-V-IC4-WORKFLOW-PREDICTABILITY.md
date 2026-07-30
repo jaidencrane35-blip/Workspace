@@ -1,50 +1,30 @@
-# Programme V — Implementation Contract 4 (Planning)  
+# Programme V — Implementation Contract 4  
 # Workflow Predictability
 
 | Field | Value |
 |-------|-------|
 | **Authority** | Principal Architect |
-| **Implementation agent** | Cursor (after approval to commence) |
+| **Implementation agent** | Cursor |
 | **Programme** | [Programme V — Operator Workflows](PROGRAMME-V-OPERATOR-WORKFLOWS.md) |
 | **Contract** | Implementation Contract 4 |
-| **Status** | **Planned** — awaiting Principal Architect approval to commence |
+| **Status** | Complete — implemented; awaiting Principal Architect review |
 | **Date** | 2026-07-30 |
-| **Nature** | Planning contract — scopes IC4; does not authorise implementation until approved |
+| **Approved to commence** | 2026-07-30 |
 | **Depends on** | [IC1](PROGRAMME-V-IC1-OPERATOR-WORKFLOW-COMPOSITION.md) (approved); [IC2](PROGRAMME-V-IC2-WORKFLOW-DECISION-SUPPORT.md) (approved); [IC3](PROGRAMME-V-IC3-WORKFLOW-RECOVERABILITY.md) (approved) |
 
 ---
 
-## STOP
+## Objective (satisfied)
 
-**Do not begin implementation.**
+Help operators understand **what will happen before they act** by projecting deterministic consequences already implied by current Workspace state:
 
-This document defines IC4 for Principal Architect review.  
-**No code changes** may proceed until this contract is explicitly approved to commence.
+1. Expected affected entities  
+2. Expected unchanged entities  
+3. Expected skipped / unavailable items  
+4. Information gaps when required facts are missing  
+5. Explicit what / why / owner for each outcome  
 
----
-
-## Context
-
-Programme V has established:
-
-- **IC1** — Compose Desktop → Arrangement → Preview → Restore as a derived workflow projection  
-- **IC2** — Surface deterministic recommendations (what / why / owner) without automation  
-- **IC3** — Explain interruptions and recoverability without a recovery engine  
-
-IC4 should improve **operator predictability** by explaining **what will happen before the operator acts**, using existing comparison data and execution plans only.
-
----
-
-## Objective
-
-Help operators understand **what will happen before they act** by projecting:
-
-1. **Deterministic previews** of workflow outcomes for the next available action  
-2. **Expected state transitions** (what changes if the operator proceeds)  
-3. **Unchanged versus affected** entities  
-4. **Explicit ownership** of each predicted outcome  
-
-Goal: improve **operator foresight**, not simulate alternative futures or plan speculative paths.
+Predictability explains existing comparison and pre-Restore plans — it does **not** predict the future, simulate, or plan.
 
 ---
 
@@ -52,10 +32,12 @@ Goal: improve **operator foresight**, not simulate alternative futures or plan s
 
 | Authority | Role in IC4 | Change? |
 |-----------|-------------|---------|
-| WorkspaceState | Live desktop facts for comparison | **Unchanged** |
+| WorkspaceState | Live desktop readiness / selection counts | **Unchanged** |
 | Arrangement / Capture / Update / Restore IPC | Actions whose outcomes are explained | **Unchanged** |
-| Programme I IC4/IC6 | Change diff, pre-Restore plan, currency | **Consumed** |
-| Programme V IC1–IC3 | Workflow step, recommendations, recoverability context | **Consumed** |
+| Programme I IC4/IC6 | Change diff counts, pre-Restore readiness, Arrangement meta | **Consumed** |
+| Programme V IC1–IC3 | Workflow chrome context | **Consumed** |
+
+IC4 **interprets** existing comparison authority. It does **not** duplicate comparison, restore planning, or arrangement evaluation.
 
 ---
 
@@ -63,65 +45,51 @@ Goal: improve **operator foresight**, not simulate alternative futures or plan s
 
 | State | Use |
 |-------|-----|
-| Arrangement entries vs observed windows | Which entities move, stay, or are missing |
-| Pre-Restore explanation (bullets / availability) | Expected Restore outcomes |
-| Change-since-capture diff | Expected Update / Capture effects |
-| Preview / edit Interaction State | Preview shows saved bounds — not a new simulator |
-| Selected Arrangement completeness | What Restore can and cannot apply |
+| Load / observation readiness | When outcomes cannot be projected |
+| Selection count | Capture outcome fidelity |
+| Change-diff counts (added / removed / bounds / z-order / unchanged) | Update + Restore move/unchanged counts |
+| Arrangement meta (missing / bounds complete) | Unavailable / without-bounds / Preview bound entry counts |
+| Pre-Restore availability | Full vs limited Restore outcome |
+| Preview active flag | Preview outcome when inactive |
 
-**No simulation engine. No planner. No speculative forecasting beyond existing comparison / plan projections.**
-
----
-
-## Projection / composition performed
-
-### Predictability projection (derived only)
-
-Examples of explanatory projections (illustrative):
-
-| Action context | Explanation pattern |
-|----------------|---------------------|
-| Before Restore | Restore will move N windows; leave M unchanged; ignore K unavailable · Owner: Restore Projection |
-| Before Update | Update will replace saved Arrangement bounds with current desktop · Owner: Arrangement Comparison |
-| Before Capture | Capture will create an Arrangement from currently selected / observed windows · Owner: Arrangement |
-| Before Preview | Preview will show saved bounds as overlays without moving windows · Owner: Interaction |
-
-Each predictability item should answer:
-
-- **What action is being considered?** (existing verb only)  
-- **What is expected to change?**  
-- **What is expected to remain unchanged?**  
-- **What cannot be applied / is skipped?**  
-- **Which subsystem owns that prediction?**  
-
-Compose with IC1 current step, IC2 recommendations, and IC3 recoverability where helpful; do not invent a separate prediction controller or outcome cache.
-
-### Determinism and consistency
-
-For identical underlying facts, Workspace must always produce the same:
-
-- predicted outcome set  
-- unchanged vs affected attribution  
-- wording  
-- ownership  
-
-Predictions are reconstructions of existing comparison / pre-action plans — not scored forecasts.
+**No simulation engine. No planner. No prediction cache.**
 
 ---
 
-## Explicit non-goals
+## Projection performed
 
-IC4 must **not** introduce:
+`projectWorkflowPredictability` emits independent outcomes in **fixed declaration order**:
 
-- Simulation engine or alternate-world modeller  
-- Speculative planner / “what-if” branching  
-- Predictive ML or confidence scores  
-- Outcome history / prediction persistence  
-- Automatic execution based on predicted outcomes  
-- New OS apply paths beyond existing Restore  
-- Duplicate comparison logic outside Programme I projections  
+| Id | When (facts) |
+|----|----------------|
+| `outcome_unavailable` | Observation / runtime not ready |
+| `restore_outcome` | Arrangement selected; Restore ready — count-based move / unchanged / skip |
+| `restore_outcome_limited` | Arrangement selected; Restore not ready — information gaps only |
+| `update_outcome` | Selected; desktop differs — add / remove / bounds / z-order vs unchanged |
+| `update_noop` | Selected; desktop matches — no effective changes |
+| `capture_outcome` | Profile + selected windows — save selection; desktop positions unchanged |
+| `preview_outcome` | Arrangement selected; Preview inactive — overlays; no window moves |
 
-If the operator needs foresight, Workspace **projects** the existing plan — it does not invent a new future.
+Each includes: what · effects · unchanged · unavailable · information gaps · because · owner · workflow step · Explain Ownership line.
+
+### Prediction fidelity
+
+Predictions never promise more precision than underlying data supports.
+
+- Acceptable: `Restore will move 12 windows`  
+- Not acceptable: `Restore will perfectly recreate your desktop`  
+
+When required facts are unavailable, uncertainty is projected deterministically (`informationGaps`).
+
+### Stability
+
+Identical inputs ⇒ identical wording, counts, classifications, ownership, and ordering. Suppressed while an operation is in flight.
+
+---
+
+## Explicit non-goals (honoured)
+
+No simulation engine, planner, speculative execution, forecasting, prediction cache, execution scheduling, optimisation engine, or behavioural inference.
 
 ---
 
@@ -131,70 +99,52 @@ If the operator needs foresight, Workspace **projects** the existing plan — it
 |----------|-------------|
 | WorkspaceState | Sole runtime desktop truth |
 | Restore | Sole product OS positioning path |
-| Workflow / recommendations / recoverability | Remain projections |
+| Comparison / pre-Restore | Remain Programme I projections |
 | Predictability (IC4) | Projection only — never executes predicted outcomes |
 
-**Architectural test (expected for IC4 as scoped):**
+**Architectural test:**
 
 1. Existing WorkspaceState? **Yes**  
-2. Compose existing capabilities / comparison plans? **Yes**  
+2. Compose existing comparison / plans? **Yes**  
 3. Deterministic? **Yes**  
 4. Ownership unchanged? **Yes**  
 
 ---
 
-## Proposed deliverables (when approved to implement)
+## Validation
 
-1. Pure helpers for workflow-outcome predictability projections.  
-2. Desktop workflow surface for before-action explanations (unchanged vs affected).  
-3. Composition with Programme I pre-Restore / change-diff and Programme V IC1–IC3 chrome.  
-4. Tests for stable predictability wording.  
-5. This contract updated to **Complete** with validation evidence.
+- `pnpm typecheck` · `pnpm test` · `pnpm build`
+- Working tree clean
+- Documentation complete
 
 ---
 
-## Validation (implementation phase)
+## Files touched
 
-- `git status` — working tree clean  
-- `pnpm typecheck` · `pnpm test` · `pnpm build`  
-- No simulation / planner / prediction persistence  
-- Ownership boundaries unchanged  
-
----
-
-## Architectural risks
-
-| Risk | Mitigation |
-|------|------------|
-| Soft simulation engine | Restrict inputs to existing diffs and pre-Restore plans only |
-| Speculative branching | Forbid alternate futures; one projection per current facts + considered verb |
-| Duplicating Programme I pre-Restore | Compose / re-present; do not fork comparison ownership |
-| Implied auto-apply | Copy must require operator to use existing controls |
+- `app/src/lib/workflowPredictabilityUi.ts`
+- `app/src/components/WorkspaceApplicationStage.tsx`
+- `app/src/App.css`
+- `tests/workflow-predictability-ui.test.ts`
+- This document; Programme V charter link
 
 ---
 
 ## Success criteria
 
-IC4 succeeds when an operator can answer, before acting:
+IC4 succeeds when an operator can answer, before initiating an action:
 
-- What will happen if I proceed?  
-- What stays the same?  
-- What is affected?  
-- What cannot be applied?  
-- Which subsystem owns that prediction?  
+- What will happen?  
+- What will remain unchanged?  
+- Why?  
+- Which subsystem determines this?  
+- What information is unavailable?  
 
-…without Workspace introducing simulation or planning authority beyond projecting existing comparison data and execution plans.
-
----
-
-## Stop condition (this planning document)
-
-IC4 planning is complete when objective, constraints, non-goals, consumed authorities/state, and success criteria are recorded.
-
-**Cursor must not commence IC4 implementation until the Principal Architect approves this contract for execution.**
+…without Workspace introducing planning, simulation, or speculative behaviour.
 
 ---
 
-## Recommendation to Principal Architect
+## Stop condition
 
-Approve IC4 to commence as **workflow predictability**: explanatory projections of expected outcomes before operator action — composed from WorkspaceState and Programme I/V comparison plans, with no simulation engine, planner, or speculative forecasting.
+IC4 implementation complete for Principal Architect review.
+
+**Do not commence a further Programme V contract until the Principal Architect approves IC4 and authorises the next step.**

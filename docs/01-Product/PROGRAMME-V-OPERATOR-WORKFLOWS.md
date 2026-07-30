@@ -2,14 +2,14 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | Active — IC1–IC3 approved; IC4 planned (awaiting approval to commence) |
+| **Status** | Active — IC1–IC3 approved; IC4 implemented (awaiting Principal Architect review) |
 | **Authority** | Principal Architect |
 | **Audience** | Principal Architect, Engineering, Cursor agents |
 | **Nature** | Formal product architecture programme charter |
 | **Not** | A continuation of Workspace Programme I; not an AI programme; not a feature backlog |
 | **Depends on** | AI Programmes II–IV (foundations); [Workspace Programme I](PROGRAMME-I-WORKSPACE-PRODUCT-CAPABILITY.md) (complete — product capability) |
 | **Related** | [Programme I conclusion & handoff](PROGRAMME-I-CONCLUSION-AND-NEXT-PROGRAMME-HANDOFF.md), [Architectural Evidence Report](../02-Architecture/ARCHITECTURAL-EVIDENCE-REPORT.md) |
-| **Implementation contracts** | [IC1 — Operator Workflow Composition](PROGRAMME-V-IC1-OPERATOR-WORKFLOW-COMPOSITION.md) (complete — approved); [IC2 — Workflow Decision Support](PROGRAMME-V-IC2-WORKFLOW-DECISION-SUPPORT.md) (complete — approved); [IC3 — Workflow Recoverability](PROGRAMME-V-IC3-WORKFLOW-RECOVERABILITY.md) (complete — approved); [IC4 — Workflow Predictability](PROGRAMME-V-IC4-WORKFLOW-PREDICTABILITY.md) (planned — awaiting approval to commence) |
+| **Implementation contracts** | [IC1 — Operator Workflow Composition](PROGRAMME-V-IC1-OPERATOR-WORKFLOW-COMPOSITION.md) (complete — approved); [IC2 — Workflow Decision Support](PROGRAMME-V-IC2-WORKFLOW-DECISION-SUPPORT.md) (complete — approved); [IC3 — Workflow Recoverability](PROGRAMME-V-IC3-WORKFLOW-RECOVERABILITY.md) (complete — approved); [IC4 — Workflow Predictability](PROGRAMME-V-IC4-WORKFLOW-PREDICTABILITY.md) (complete — awaiting Principal Architect review) |
 
 ---
 

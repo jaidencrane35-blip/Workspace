@@ -1,22 +1,23 @@
 /**
  * Purpose: Desktop surface — operator workflow composition, decision support,
- *   and recoverability explanations.
- * Owner: Frontend product shell (Programme V IC3)
+ *   recoverability, and predictability explanations.
+ * Owner: Frontend product shell (Programme V IC4)
  * Inputs: optional profile, registry apps, work mode, launch + navigate;
  *   WorkspaceState via refreshObservedWorkspaceState; focus_desktop_window;
  *   list/capture/restore_desktop_arrangement
  * Outputs: Spatial desktop objects; Arrangement select + Restore; edit session;
- *   workflow / recommendation / recoverability projections (explain only, never execute)
+ *   workflow / recommendation / recoverability / predictability projections
+ *   (explain only, never execute)
  * Dependencies: stageDesktopUi, layoutsStageUi, desktopLayoutEditing,
  *   arrangementProductUi, operationalConfidenceUi, operatorWorkflowUi,
- *   workflowDecisionSupportUi, workflowRecoverabilityUi, ipc
- * Non-goals: Workflow/recommendation/recovery engines, scoring, automation,
- *   resumable workflow state, persistence, new set_bounds product IPC
+ *   workflowDecisionSupportUi, workflowRecoverabilityUi,
+ *   workflowPredictabilityUi, ipc
+ * Non-goals: Workflow/recommendation/recovery/simulation engines, scoring,
+ *   automation, resumable workflow state, persistence, new set_bounds product IPC
  *
  * Product State: Profile · Desktop · Arrangement · Restore
  * Interaction State (never persist): Editing · Preview · Selection · In-flight · Guidance
- * Workflow + recommendations + recoverability: derived projections only —
- *   stable when facts are stable
+ * Workflow projections: derived only — stable when facts are stable
  */
 
 import { useCallback, useEffect, useMemo, useState, type KeyboardEvent } from "react";
@@ -70,6 +71,7 @@ import {
   projectWorkflowRecoverability,
   recoverabilityClassificationLabel,
 } from "../lib/workflowRecoverabilityUi";
+import { projectWorkflowPredictability } from "../lib/workflowPredictabilityUi";
 import {
   layoutStageDesktopWindows,
   nextStageSelectionKey,
@@ -512,6 +514,49 @@ export function WorkspaceApplicationStage({
     currencyExplanation?.changeDiff,
     selectedArrangementMeta?.missingCount,
     preRestoreFacts?.available,
+    inFlight,
+  ]);
+
+  const workflowPredictability = useMemo(() => {
+    const changeDiff = currencyExplanation?.changeDiff;
+    const meta = selectedArrangementMeta;
+    const withoutBounds = meta
+      ? Math.max(meta.windowCount - meta.boundsCompleteCount, 0)
+      : 0;
+    return projectWorkflowPredictability({
+      loadState,
+      hasProfile: Boolean(workspace),
+      observedWindowCount: windows.length,
+      selectedWindowCount: selectedKeys.length,
+      arrangementSelected: Boolean(workingSet),
+      restoreAvailable: Boolean(preRestoreFacts?.available),
+      restoreMoveCount: changeDiff?.boundsChanged ?? 0,
+      restoreUnchangedCount: changeDiff?.unchanged ?? 0,
+      restoreUnavailableCount: meta?.missingCount ?? 0,
+      restoreWithoutBoundsCount: withoutBounds,
+      updateAddedCount: changeDiff?.added ?? 0,
+      updateRemovedCount: changeDiff?.removed ?? 0,
+      updateBoundsChangedCount: changeDiff?.boundsChanged ?? 0,
+      updateZOrderChangedCount: changeDiff?.zOrderChanged ?? 0,
+      updateUnchangedCount: changeDiff?.unchanged ?? 0,
+      desktopDiffersFromArrangement: Boolean(changeDiff?.hasChanges),
+      previewBoundsEntryCount: meta?.boundsCompleteCount ?? 0,
+      previewActive: layoutEditing && layoutPreview,
+      operationInFlight: Boolean(
+        inFlight ?? (loadState === "loading" ? "observe" : null),
+      ),
+    });
+  }, [
+    loadState,
+    workspace,
+    windows.length,
+    selectedKeys.length,
+    workingSet,
+    currencyExplanation?.changeDiff,
+    selectedArrangementMeta,
+    preRestoreFacts?.available,
+    layoutEditing,
+    layoutPreview,
     inFlight,
   ]);
 
@@ -1015,6 +1060,70 @@ export function WorkspaceApplicationStage({
           Recoverability explains blocked progress from current state — it does
           not recover, resume, or retry. Use existing Capture, Update, Preview,
           Restore, or Arrangement selection when you choose.
+        </p>
+        {workflowPredictability.length > 0 ? (
+          <ul
+            className="stage-workflow-predictability"
+            aria-label="Workflow predictability"
+          >
+            {workflowPredictability.map((item) => (
+              <li
+                key={item.id}
+                className="stage-workflow-predictability-item"
+                data-predictability-id={item.id}
+                data-predictability-verb={item.verb}
+                data-predictability-owner={item.owner}
+                data-workflow-step={item.workflowStep}
+              >
+                <span className="stage-workflow-predictability-what">
+                  {item.what}
+                </span>
+                {item.effects.map((effect) => (
+                  <span
+                    key={`effect-${effect}`}
+                    className="stage-workflow-predictability-effect muted"
+                  >
+                    · {effect}
+                  </span>
+                ))}
+                {item.unchanged.map((line) => (
+                  <span
+                    key={`unchanged-${line}`}
+                    className="stage-workflow-predictability-unchanged muted"
+                  >
+                    Unchanged · {line}
+                  </span>
+                ))}
+                {item.unavailable.map((line) => (
+                  <span
+                    key={`unavailable-${line}`}
+                    className="stage-workflow-predictability-unavailable muted"
+                  >
+                    Unavailable · {line}
+                  </span>
+                ))}
+                {item.informationGaps.map((gap) => (
+                  <span
+                    key={`gap-${gap}`}
+                    className="stage-workflow-predictability-gap muted"
+                  >
+                    Unavailable information · {gap}
+                  </span>
+                ))}
+                <span className="stage-workflow-predictability-because muted">
+                  Because {item.because}.
+                </span>
+                <span className="stage-workflow-predictability-owner muted">
+                  Owner: {item.owner}
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        <p className="stage-workflow-predictability-note muted">
+          Predictability explains consequences already implied by current
+          comparison and Restore plans — it does not simulate, plan, or execute.
+          Use existing Capture, Update, Preview, or Restore when you choose.
         </p>
       </div>
 
