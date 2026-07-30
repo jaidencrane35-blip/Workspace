@@ -7051,6 +7051,8 @@ export interface DesktopAttentionItem {
 
 export interface DesktopAttentionProjection {
   items: DesktopAttentionItem[];
+  /** Id of the highest-ranked current attention item, if any. */
+  primary_item_id: string | null;
   authority_effect: string;
 }
 

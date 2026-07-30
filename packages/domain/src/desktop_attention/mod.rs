@@ -72,6 +72,8 @@ impl DesktopAttentionItem {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DesktopAttentionProjection {
     pub items: Vec<DesktopAttentionItem>,
+    /// Id of the highest-ranked current attention item, if any.
+    pub primary_item_id: Option<String>,
     pub authority_effect: String,
 }
 
@@ -81,6 +83,7 @@ impl DesktopAttentionProjection {
     pub fn empty() -> Self {
         Self {
             items: Vec::new(),
+            primary_item_id: None,
             authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
         }
     }
@@ -113,9 +116,12 @@ pub fn project_desktop_attention(
 
     let mut projection = DesktopAttentionProjection {
         items,
+        primary_item_id: None,
         authority_effect: DesktopAttentionProjection::AUTHORITY_EFFECT_NONE.into(),
     };
     refine_attention(&mut projection);
+    apply_attention_replacement(&mut projection);
+    projection.primary_item_id = projection.items.first().map(|item| item.id.clone());
     projection
 }
 
@@ -521,6 +527,37 @@ fn damp_attention_oscillation(items: &mut Vec<DesktopAttentionItem>) {
             && item.strength <= 1
             && item.supporting_planes.len() <= 1)
     });
+}
+
+/// Replacement: primary interrupted/returning attention supersedes incomplete/weak noise.
+fn apply_attention_replacement(projection: &mut DesktopAttentionProjection) {
+    let primary_kind = projection.items.first().map(|item| item.kind.clone());
+    let Some(primary_kind) = primary_kind else {
+        return;
+    };
+    if primary_kind != DesktopAttentionItem::KIND_INTERRUPTED_WORK
+        && primary_kind != DesktopAttentionItem::KIND_RETURNING_WORK
+    {
+        return;
+    }
+    let primary_id = projection.items[0].id.clone();
+    projection.items.retain(|item| {
+        if item.id == primary_id {
+            return true;
+        }
+        if item.kind == DesktopAttentionItem::KIND_INCOMPLETE_DESKTOP
+            || item.kind == DesktopAttentionItem::KIND_WEAK_EVIDENCE
+        {
+            return false;
+        }
+        true
+    });
+    if let Some(primary) = projection.items.first_mut() {
+        primary.explanation = format!(
+            "{} Replacement: primary {} attention supersedes incomplete/weak noise.",
+            primary.explanation, primary.kind
+        );
+    }
 }
 
 fn lifecycle_for(strength: i32, planes: &[String], kind: &str) -> &'static str {

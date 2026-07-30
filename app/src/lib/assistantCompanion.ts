@@ -561,13 +561,18 @@ function summariseAttention(state: WorkspaceState): string | null {
   if (!attention || attention.items.length === 0) {
     return "No deterministic desktop attention items are available yet.";
   }
-  return `Desktop attention now — ${attention.items
-    .slice(0, 6)
+  const primary =
+    attention.items.find((item) => item.id === attention.primary_item_id) ??
+    attention.items[0];
+  const rest = attention.items
+    .filter((item) => item.id !== primary.id)
+    .slice(0, 5)
     .map(
       (item) =>
         `${item.summary} [${item.kind}, ${item.lifecycle}, ${item.time_sensitivity}, ${item.confidence}; strength ${item.strength}] — ${item.explanation}`,
-    )
-    .join(" | ")}.`;
+    );
+  const primaryLine = `primary: ${primary.summary} [${primary.kind}, ${primary.lifecycle}, ${primary.time_sensitivity}, ${primary.confidence}; strength ${primary.strength}] — ${primary.explanation}`;
+  return `Desktop attention now — ${[primaryLine, ...rest].join(" | ")}.`;
 }
 
 function summariseDecisions(state: WorkspaceState): string | null {

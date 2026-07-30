@@ -90,6 +90,23 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 
 ## Cycles
 
+### Cycle: v13-3-attention-primary-and-replacement
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Cycle number** | V13-3 |
+| **Goal** | Mark primary attention; replace incomplete/weak noise when interrupted/returning is primary |
+| **Problem** | Attention list lacked a clear “now” focus; incomplete/weak could compete with primary resume attention |
+| **Analysis** | Set `primary_item_id` after ranking; drop incomplete/weak when primary is interrupted/returning |
+| **Changes** | `primary_item_id`; `apply_attention_replacement`; Assistant primary line |
+| **Files affected** | desktop_attention, domain.ts, assistantCompanion, this log |
+| **Validation** | typecheck / test / build / architecture / ipc / ui-boundary (+ domain attention tests) |
+| **Deleted / reduced** | Incomplete/weak attention under primary resume attention |
+| **Next recommended cycle** | Two empty attention evaluation passes |
+
+---
+
 ### Cycle: v13-2-attention-oscillation-damping
 
 | Field | Value |
