@@ -4,6 +4,12 @@ body {
   padding: 0;
   background: #0f1419;
   color: #e7ecf1;
+  /* Shell spacing tokens — keep product chrome gaps consistent */
+  --shell-gap: 0.75rem;
+  --shell-pad-x: 1.25rem;
+  --shell-pad-y: 0.85rem;
+  --rail-pad-x: 1rem;
+  --rail-pad-y: 0.85rem;
 }
 
 .app-shell {
@@ -17,7 +23,7 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: 0.85rem 1.25rem;
+  padding: var(--shell-pad-y) var(--shell-pad-x);
   border-bottom: 1px solid #243040;
   background: #121820;
   position: sticky;
@@ -1363,7 +1369,7 @@ button.linkish:not(:disabled):hover {
 }
 
 .assistant-companion-rail {
-  padding: 0.85rem 1rem 1.5rem;
+  padding: var(--rail-pad-y) var(--rail-pad-x) 1.5rem;
   background: #111820;
   border-left: 1px solid #243040;
   overflow: auto;

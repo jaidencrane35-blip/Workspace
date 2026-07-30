@@ -15,9 +15,7 @@ import type { WorkMode } from "../lib/workMode";
 import type { Workspace } from "../types/domain";
 import { AssistantIntelligencePanel } from "./AssistantIntelligencePanel";
 import { AssistantPanel } from "./AssistantPanel";
-
-/** Stable DOM id for chrome aria-controls → companion rail. */
-export const ASSISTANT_COMPANION_RAIL_ID = "workspace-assistant-companion-rail";
+import { ASSISTANT_COMPANION_RAIL_ID } from "../lib/assistantRail";
 
 interface AssistantCompanionRailProps {
   workspace: Workspace | null;

@@ -28,9 +28,9 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 |---|----------|--------|-------|
 | 1 | Visual hierarchy | open | Product h3 sentence-case (v2-07) |
 | 2 | Layout consistency | open | |
-| 3 | Spacing consistency | open | |
+| 3 | Spacing consistency | open | shell CSS tokens (v2-11) |
 | 4 | Typography consistency | open | Product h3 (v2-07) |
-| 5 | Navigation clarity | open | |
+| 5 | Navigation clarity | open | Assistant aria-label (v2-10) |
 | 6 | Accessibility | open | focus-visible (v2-02) |
 | 7 | Keyboard UX | open | rail focus (v2-03) |
 | 8 | Responsiveness | open | |
@@ -44,7 +44,7 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 | 16 | Maintainability | open | |
 | 17 | Human readability | open | |
 | 18 | Developer experience | open | |
-| 19 | Code organisation | open | |
+| 19 | Code organisation | open | rail id in assistantRail.ts (v2-09) |
 | 20 | Test quality | open | hook + banner tests (v2-01, v2-05) |
 | 21 | Performance | open | |
 | 22 | Memory efficiency | open | |
@@ -87,6 +87,54 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 ---
 
 ## Cycles
+
+### Cycle: opt-v2-11-shell-spacing-tokens
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Category** | 3 — Spacing consistency |
+| **Problem** | Chrome/rail padding used magic rem literals |
+| **Reason** | Named `--shell-*` / `--rail-*` tokens for consistent chrome spacing |
+| **Files changed** | `App.css`, this log |
+| **Validation** | typecheck / test / architecture / ipc / ui-boundary / build |
+| **Maintainability score** | 9.1/10 |
+| **Category status** | open |
+| **Why this is safe** | CSS variables only |
+
+---
+
+### Cycle: opt-v2-10-assistant-nav-label
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Category** | 5 — Navigation clarity |
+| **Problem** | Assistant chrome control lacked aria-label describing toggle intent |
+| **Reason** | Visible label stays “Assistant”; accessible name uses show/hide companion phrasing |
+| **Files changed** | `App.tsx`, this log |
+| **Validation** | typecheck / test / architecture / ipc / ui-boundary / build |
+| **Accessibility** | 8.6/10 |
+| **Category status** | open |
+| **Why this is safe** | aria-label only |
+
+---
+
+### Cycle: opt-v2-09-rail-id-ownership
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Category** | 19 — Code organisation |
+| **Problem** | DOM id constant lived on the React component module instead of preference helpers |
+| **Reason** | Keep rail identity next to `assistantRail` preference API |
+| **Files changed** | `assistantRail.ts`, `AssistantCompanionRail.tsx`, `App.tsx`, this log |
+| **Validation** | typecheck / test / architecture / ipc / ui-boundary / build |
+| **Maintainability score** | 9.1/10 |
+| **Category status** | open |
+| **Why this is safe** | Import move only |
+
+---
 
 ### Cycle: opt-v2-08-companion-rail-motion
 

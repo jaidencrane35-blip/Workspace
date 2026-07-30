@@ -11,10 +11,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ApplicationsPanel } from "./components/ApplicationsPanel";
-import {
-  AssistantCompanionRail,
-  ASSISTANT_COMPANION_RAIL_ID,
-} from "./components/AssistantCompanionRail";
+import { AssistantCompanionRail } from "./components/AssistantCompanionRail";
 import { CanvasShell } from "./components/CanvasShell";
 import { DesktopArrangementPanel } from "./components/DesktopArrangementPanel";
 import { OperatorConsole } from "./components/OperatorConsole";
@@ -27,6 +24,7 @@ import { WorkspaceIntelligencePanel } from "./components/WorkspaceIntelligencePa
 import { WorkspaceSwitcher } from "./components/WorkspaceSwitcher";
 import { WorkModeSwitch } from "./components/WorkModeSwitch";
 import {
+  ASSISTANT_COMPANION_RAIL_ID,
   assistantRailToggleLabel,
 } from "./lib/assistantRail";
 import {
@@ -513,6 +511,7 @@ export default function App() {
               }
               aria-pressed={showAssistantRail}
               aria-controls={ASSISTANT_COMPANION_RAIL_ID}
+              aria-label={assistantRailToggleLabel(assistantRailOpen)}
               title={assistantRailToggleLabel(assistantRailOpen)}
               onClick={() => {
                 if (!isPrimaryView(view)) {

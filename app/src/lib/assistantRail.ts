@@ -56,3 +56,6 @@ export function storeAssistantRailOpen(open: boolean): void {
 export function assistantRailToggleLabel(open: boolean): string {
   return open ? "Hide Assistant companion" : "Show Assistant companion";
 }
+
+/** Stable DOM id for chrome aria-controls → companion rail. */
+export const ASSISTANT_COMPANION_RAIL_ID = "workspace-assistant-companion-rail";
