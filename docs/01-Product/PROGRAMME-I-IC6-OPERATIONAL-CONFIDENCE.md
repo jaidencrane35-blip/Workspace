@@ -7,9 +7,10 @@
 | **Implementation agent** | Cursor |
 | **Programme** | [Programme I](PROGRAMME-I-WORKSPACE-PRODUCT-CAPABILITY.md) |
 | **Depends on** | [IC5](PROGRAMME-I-IC5-USER-CONFIDENCE-AND-DISCOVERABILITY.md) (approved) |
-| **Status** | Complete |
+| **Status** | Complete — **Approved** by Principal Architect |
 | **Date** | 2026-07-30 |
 | **Approved to commence** | 2026-07-30 |
+| **Review** | 2026-07-30 — Programme I concluded; next programme to focus on operator workflows |
 
 ---
 
@@ -114,4 +115,6 @@ No event history, timeline, telemetry, operation log, explanation cache, confide
 
 ## Stop condition
 
-IC6 complete. **Await Principal Architect review** before further Programme I contracts.
+IC6 complete and **approved** by the Principal Architect (2026-07-30).
+
+With this approval, **Programme I is successfully completed.** Further work belongs to a subsequent programme (see [handoff](PROGRAMME-I-CONCLUSION-AND-NEXT-PROGRAMME-HANDOFF.md)), not additional Programme I contracts.

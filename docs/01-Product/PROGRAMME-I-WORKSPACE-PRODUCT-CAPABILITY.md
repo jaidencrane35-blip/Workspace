@@ -2,13 +2,13 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | Active — operational transparency phase (IC1–IC5 approved; IC6 complete pending review) |
+| **Status** | **Complete** — Principal Architect approved IC6; Programme I concluded 2026-07-30 |
 | **Audience** | Principal Architect, Engineering, Cursor agents |
 | **Nature** | Formal product architecture programme contract |
 | **Not** | An implementation contract; not a feature backlog; not a roadmap of tasks |
 | **Depends on** | Repository architectural evidence; existing WorkspaceState / observation / DAF foundations |
-| **Related** | [Architectural Evidence Report](../02-Architecture/ARCHITECTURAL-EVIDENCE-REPORT.md), [Product Vision](PRODUCT-VISION.md), [Desktop Interaction Model](WORKSPACE-DESKTOP-INTERACTION-MODEL.md), Programmes II–IV (`../05-AI/`) |
-| **Implementation contracts** | [IC1](PROGRAMME-I-IC1-PRODUCT-SHELL-CAPABILITY-INVENTORY.md) (complete); [IC2](PROGRAMME-I-IC2-PRODUCT-WORKSPACE-COMPOSITION.md) (complete); [IC3](PROGRAMME-I-IC3-DESKTOP-LAYOUT-EDITING-FOUNDATION.md) (complete); [IC4](PROGRAMME-I-IC4-DESKTOP-LAYOUT-EDITING-REFINEMENT.md) (complete — approved); [IC5](PROGRAMME-I-IC5-USER-CONFIDENCE-AND-DISCOVERABILITY.md) (complete — approved); [IC6](PROGRAMME-I-IC6-OPERATIONAL-CONFIDENCE.md) (complete — pending review) |
+| **Related** | [Architectural Evidence Report](../02-Architecture/ARCHITECTURAL-EVIDENCE-REPORT.md), [Product Vision](PRODUCT-VISION.md), [Desktop Interaction Model](WORKSPACE-DESKTOP-INTERACTION-MODEL.md), Programmes II–IV (`../05-AI/`), [Conclusion & next-programme handoff](PROGRAMME-I-CONCLUSION-AND-NEXT-PROGRAMME-HANDOFF.md) |
+| **Implementation contracts** | [IC1](PROGRAMME-I-IC1-PRODUCT-SHELL-CAPABILITY-INVENTORY.md) (complete); [IC2](PROGRAMME-I-IC2-PRODUCT-WORKSPACE-COMPOSITION.md) (complete); [IC3](PROGRAMME-I-IC3-DESKTOP-LAYOUT-EDITING-FOUNDATION.md) (complete); [IC4](PROGRAMME-I-IC4-DESKTOP-LAYOUT-EDITING-REFINEMENT.md) (complete — approved); [IC5](PROGRAMME-I-IC5-USER-CONFIDENCE-AND-DISCOVERABILITY.md) (complete — approved); [IC6](PROGRAMME-I-IC6-OPERATIONAL-CONFIDENCE.md) (complete — approved) |
 
 ---
 
@@ -169,31 +169,43 @@ Programme I does not subsume, replace, or reopen Programmes II–IV as expansion
 | **IC1** | Capability inventory — architecture richer than shell |
 | **IC2** | Unified workflow: Profile → Desktop → Arrangement → Restore |
 | **IC3** | Desktop layout editing foundation (composition) |
-| **IC4** | Editing experience refinement — **Principal Architect approved** |
-| **IC5** | User confidence & discoverability — **Principal Architect approved** |
-| **IC6** | Operational confidence — complete, pending Principal Architect review |
+| **IC4** | Editing experience refinement — **Approved** |
+| **IC5** | User confidence & discoverability — **Approved** |
+| **IC6** | Operational confidence / transparency — **Approved** |
 
-IC4–IC5 reviews confirmed a healthy trajectory: richer product experience while continuing to consume WorkspaceState, Arrangement, Stage, and Restore — without duplicate engines or new sources of truth.
+### Qualities achieved (Principal Architect assessment)
+
+1. **Architectural correctness** — single runtime truth; clear ownership  
+2. **Interaction maturity** — editing, guidance, feedback without duplicated state  
+3. **Operational transparency** — Workspace explains what it knows and why from existing facts  
+
+No duplicate runtime model, competing ownership, parallel persistence, explanatory cache, or UX event log was introduced across IC1–IC6.
+
+---
+
+## Conclusion
+
+**Programme I is complete** as of Principal Architect approval of IC6 (2026-07-30).
+
+Further product work should proceed under a **new programme** focused on operator workflows — not additional Programme I contracts. See [Conclusion & next-programme handoff](PROGRAMME-I-CONCLUSION-AND-NEXT-PROGRAMME-HANDOFF.md).
+
+Governing principle carried forward:
+
+> Every new capability should first ask whether it can be expressed as a projection of existing state before introducing any new authority.
 
 ---
 
 ## Stop condition (this document)
 
-This document intentionally contains **no implementation tasks**.
-
-It establishes the architectural mission and boundaries for Programme I.
-
-Individual implementation contracts will be authored by the **Principal Architect** and executed by Cursor.
+This charter established Programme I’s mission and boundaries. With IC1–IC6 complete and approved, the charter’s implementation phase is finished.
 
 | Role | Responsibility |
 |------|----------------|
 | **Principal Architect** | Programme direction; author approved implementation contracts |
-| **Cursor** | Implement approved contracts only, within Programme I boundaries |
+| **Cursor** | Implement approved contracts only, within stated programme boundaries |
 
 Cursor is **not** responsible for determining programme direction.
 
-Cursor is responsible **only** for implementing approved contracts within the architectural boundaries defined by Programme I.
-
 ---
 
-*End of Programme I charter.*
+*End of Programme I charter — programme complete.*
