@@ -1,15 +1,14 @@
 /**
- * Purpose: Chrome-density work mode model (Flow ↔ Focus) for product UI only.
- * Owner: Frontend product shell (Milestone B — chrome density)
+ * Purpose: Chrome-density work mode model (Flow ↔ Focus) for product UI.
+ * Owner: Frontend product shell (Product Contract V5)
  * Inputs: stored preference string / user selection
- * Outputs: WorkMode value, labels, copy, persistence helpers, Focus partition
+ * Outputs: WorkMode value, labels, copy, persistence helpers
  * Dependencies: localStorage (UI preference only)
  * Non-responsibilities: OS window moves, DesktopArrangement apply, AI,
  *   WindowController, PermissionGateway, new layout engines
  *
- * Problem solved: user-controlled presentation density toward reference Flow/Focus.
- * Why here: presentation preference — not domain/arrangement ownership.
- * Why not elsewhere: must not live in DesktopArrangement or Assistant packages.
+ * Focus organisation of desktop objects lives in stageDesktopUi
+ * (`organiseStageForWorkMode`) — not registry chip partitions.
  */
 
 export type WorkMode = "flow" | "focus";
@@ -19,12 +18,6 @@ export const WORK_MODE_STORAGE_KEY = "workspace.ui.work_mode";
 
 /** Default productive density. */
 export const DEFAULT_WORK_MODE: WorkMode = "flow";
-
-/**
- * In Focus chrome, how many applications receive primary emphasis.
- * Remaining apps stay available as supporting chips.
- */
-export const FOCUS_PRIMARY_APP_COUNT = 1;
 
 export function isWorkMode(value: unknown): value is WorkMode {
   return value === "flow" || value === "focus";
@@ -65,35 +58,7 @@ export function workModeLabel(mode: WorkMode): string {
 
 export function workModeDescription(mode: WorkMode): string {
   if (mode === "flow") {
-    return "Same desktop, denser spatial view.";
+    return "Same desktop, all windows on the map.";
   }
-  return "Same desktop, focused window emphasised.";
-}
-
-/** Focus chrome partition: one primary app + remaining supporting apps. */
-export interface FocusApplicationPartition<T extends { id: string }> {
-  primary: T | null;
-  supporting: T[];
-}
-
-/**
- * Split a registry list into Focus primary vs supporting.
- * Preferred id wins when still present; otherwise first N apps (N = FOCUS_PRIMARY_APP_COUNT).
- */
-export function partitionFocusApplications<T extends { id: string }>(
-  applications: readonly T[],
-  preferredPrimaryId: string | null | undefined,
-): FocusApplicationPartition<T> {
-  if (applications.length === 0) {
-    return { primary: null, supporting: [] };
-  }
-
-  const preferred =
-    preferredPrimaryId != null && preferredPrimaryId !== ""
-      ? applications.find((app) => app.id === preferredPrimaryId)
-      : undefined;
-  const primary =
-    preferred ?? applications.slice(0, FOCUS_PRIMARY_APP_COUNT)[0] ?? null;
-  const supporting = applications.filter((app) => app.id !== primary?.id);
-  return { primary, supporting };
+  return "Same desktop, one process on the map; others docked.";
 }
