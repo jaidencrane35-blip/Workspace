@@ -24,8 +24,14 @@ Foundation     Decisions       Core Platform     Feature Expansion   Maturity
 ### Product realignment (2026-07-29)
 
 Engineering emphasis inverted toward AI programmes while concept art requires **desktop workspace management** first.  
-**Next funded milestone:** [Desktop Arrangement Foundation (DAF-1)](../01-Product/PRODUCT-VISION-REALIGNMENT-AUDIT.md) — window control, save/restore arrangements, chrome realignment, Flow↔Focus prototype.  
-**Frozen:** Programme IV Batch 17+, new intelligence/evidence engines without a direct core-product requirement.  
+**DAF-1a–1e and Milestones A–C** established window control, arrangements, apps chrome, Flow/Focus chrome density, and the Assistant companion rail.
+
+### Product delivery (current)
+
+**Authoritative next sequence:** [Workspace Product Delivery Roadmap](../01-Product/WORKSPACE-PRODUCT-DELIVERY-ROADMAP.md)  
+**Next implementation (pending approval):** Milestone D — Workspace Stage.  
+Recommended order: **D → F → G → E → H → I** (grouping after arrangement editing and Flow/Focus behaviour).  
+**Frozen:** new intelligence/evidence engines without a direct core-product requirement.  
 Programme III/IV code is retained as **future assistant infrastructure**, not deleted.
 
 ---

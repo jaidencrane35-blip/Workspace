@@ -2,7 +2,7 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | Charter approved — **chrome-density implemented** in Milestone B; OS geometry apply deferred |
+| **Status** | Charter approved — **chrome-density implemented** in Milestone B; **OS geometry apply** planned as Product Delivery **Milestone G** ([roadmap](WORKSPACE-PRODUCT-DELIVERY-ROADMAP.md)) |
 | **Date** | 2026-07-29 |
 | **Branch** | `cursor/flow-focus-design-charter-34a5` |
 | **References** | [`references/workspace-concept-01.png`](references/workspace-concept-01.png), [`references/workspace-concept-02.png`](references/workspace-concept-02.png) |

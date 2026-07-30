@@ -130,6 +130,7 @@ Workspace is a **Windows-targeted Tauri 2 desktop app** (React 18 + Vite in `app
 - **Programme context:** Desktop Arrangement Foundation (DAF). Read `docs/03-Engineering/DAF-ARCHITECTURE-AUDIT.md` and `docs/03-Engineering/ENGINEERING-GOVERNANCE.md` before coding.
 - **Human review:** `docs/03-Engineering/HUMAN-REVIEW-POLICY.md`. Batch UI checkpoints. Prefer live app / screenshots over automatic videos unless audit/regression/explicit request.
 - **Visual north star:** `docs/01-Product/WORKSPACE-VISUAL-DIRECTION.md` + `docs/01-Product/references/`.
+- **Product delivery (next):** `docs/01-Product/WORKSPACE-PRODUCT-DELIVERY-ROADMAP.md` — Milestones D–I; await approval before Milestone D.
 
 ### Rust toolchain (important)
 
