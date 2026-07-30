@@ -29,7 +29,7 @@ export function applicationsEmptyCopy(hasWorkspace: boolean): {
 }
 
 export function applicationsLayoutsRelationCopy(): string {
-  return "Running apps are what matter. The optional library is only for launch shortcuts tied to a named profile.";
+  return "What is running on your desktop.";
 }
 
 export function applicationIdentityLine(app: ApplicationReference): string {

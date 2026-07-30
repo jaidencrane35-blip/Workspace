@@ -1,3 +1,12 @@
+/**
+ * Purpose: Optional remember/restore control for observed desktop layouts.
+ * Owner: Frontend product shell (Product Contract V3)
+ * Inputs: Active profile, busy/banner callbacks
+ * Outputs: capture_desktop_arrangement / restore / list IPC
+ * Dependencies: desktopArrangementUi helpers, list/details/diagnostics views
+ * Non-goals: Competing with Stage as a co-primary column; setup-first forms
+ */
+
 import { useCallback, useEffect, useState } from "react";
 import { invokeIpc, isIpcRuntimeAvailable } from "../lib/ipc";
 import {
@@ -68,7 +77,7 @@ export function DesktopArrangementPanel({
     if (!isIpcRuntimeAvailable()) {
       setArrangements([]);
       setLocalHint(
-        "Desktop arrangements need the Workspace desktop runtime (Tauri). Browse UI still works; save and restore stay disabled until the app backend is available.",
+        "Save and restore need the desktop app runtime.",
       );
       return;
     }
@@ -152,57 +161,25 @@ export function DesktopArrangementPanel({
     });
   };
 
+  const summaryLabel = !workspace
+    ? "Remember layout"
+    : arrangements.length === 0
+      ? "Remember layout"
+      : arrangements.length === 1
+        ? "Remember layout · 1 saved"
+        : `Remember layout · ${arrangements.length} saved`;
+
   return (
-    <aside
-      className="desktop-arrangement-panel"
-      aria-label="Desktop arrangements"
-    >
-      <header className="arrangement-panel-hero">
-        <p className="arrangement-eyebrow">Desktop arrangements</p>
-        <h2>Remember this desktop</h2>
-        <p className="lede">
-          Save open windows into a named arrangement, then restore when you
-          want. Observation on Stage does not require this.
-        </p>
-      </header>
+    <details className="desktop-arrangement-panel compact-control">
+      <summary>{summaryLabel}</summary>
 
       {!workspace ? (
-        <section className="arrangement-empty" aria-live="polite">
-          <h3>{empty.title}</h3>
-          <p className="muted">{empty.body}</p>
-        </section>
+        <p className="muted arrangement-empty-line">{empty.body}</p>
       ) : (
         <>
-          <section aria-label="Save arrangement">
-            <h3>Save current windows</h3>
-            <label className="arrangement-field">
-              <span>Name</span>
-              <input
-                type="text"
-                value={name}
-                disabled={busy || !isIpcRuntimeAvailable()}
-                placeholder="Focus coding"
-                onChange={(event) => setName(event.target.value)}
-              />
-            </label>
-            <label className="arrangement-field">
-              <span>Description (optional)</span>
-              <input
-                type="text"
-                value={description}
-                disabled={busy || !isIpcRuntimeAvailable()}
-                placeholder="Editor and browser"
-                onChange={(event) => setDescription(event.target.value)}
-              />
-            </label>
-            <div className="row">
-              <button
-                type="button"
-                disabled={busy || !isIpcRuntimeAvailable()}
-                onClick={captureArrangement}
-              >
-                Save arrangement
-              </button>
+          <section aria-label="Saved arrangements">
+            <div className="row section-heading-row">
+              <h3>Saved</h3>
               <button
                 type="button"
                 className="ghost"
@@ -211,20 +188,13 @@ export function DesktopArrangementPanel({
                   void run("Arrangements refreshed", refreshList);
                 }}
               >
-                Refresh list
+                Refresh
               </button>
             </div>
-          </section>
-
-          <section aria-label="Saved arrangements">
-            <h3>Saved arrangements</h3>
             {loading && arrangements.length === 0 ? (
               <p className="muted">Loading…</p>
             ) : arrangements.length === 0 ? (
-              <div className="arrangement-empty" aria-live="polite">
-                <h4>{empty.title}</h4>
-                <p className="muted">{empty.body}</p>
-              </div>
+              <p className="muted arrangement-empty-line">{empty.body}</p>
             ) : (
               <DesktopArrangementList
                 arrangements={arrangements}
@@ -247,16 +217,42 @@ export function DesktopArrangementPanel({
                   disabled={busy || !isIpcRuntimeAvailable()}
                   onClick={restoreArrangement}
                 >
-                  Restore arrangement
+                  Restore
                 </button>
               </div>
-              <p className="muted arrangement-permission-note">
-                Restore runs through Permission Gateway (`desktop.restore`).
-                Missing windows are reported — they are not replaced
-                automatically.
-              </p>
             </section>
           ) : null}
+
+          <details className="arrangement-save-details">
+            <summary>Save current windows</summary>
+            <label className="arrangement-field">
+              <span>Name</span>
+              <input
+                type="text"
+                value={name}
+                disabled={busy || !isIpcRuntimeAvailable()}
+                placeholder="Focus coding"
+                onChange={(event) => setName(event.target.value)}
+              />
+            </label>
+            <label className="arrangement-field">
+              <span>Description (optional)</span>
+              <input
+                type="text"
+                value={description}
+                disabled={busy || !isIpcRuntimeAvailable()}
+                placeholder="Editor and browser"
+                onChange={(event) => setDescription(event.target.value)}
+              />
+            </label>
+            <button
+              type="button"
+              disabled={busy || !isIpcRuntimeAvailable()}
+              onClick={captureArrangement}
+            >
+              Save
+            </button>
+          </details>
 
           {restoreResult ? (
             <RestoreDiagnosticsView result={restoreResult} />
@@ -269,6 +265,6 @@ export function DesktopArrangementPanel({
           {localHint}
         </p>
       ) : null}
-    </aside>
+    </details>
   );
 }

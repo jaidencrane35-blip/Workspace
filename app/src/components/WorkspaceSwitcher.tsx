@@ -1,11 +1,10 @@
 /**
- * Purpose: Product switcher for saved workspaces (list / create / activate).
- * Owner: Frontend product shell (Milestone A / A.1)
+ * Purpose: Optional named profiles — list first, create secondary.
+ * Owner: Frontend product shell (Product Contract V3)
  * Inputs: active workspace, busy flags, activate/create callbacks from App
- * Outputs: User selection of workspace; create-with-name requests
- * Dependencies: list_workspaces IPC, existing create/activate paths in App
- * Non-responsibilities: Window control, permissions, arrangement restore engine,
- *   Assistant reasoning, zone layout logic
+ * Outputs: Profile selection; optional create-with-name
+ * Dependencies: list_workspaces IPC
+ * Non-responsibilities: Window control, Stage observation, Assistant
  */
 
 import { useCallback, useEffect, useState } from "react";
@@ -68,7 +67,7 @@ export function WorkspaceSwitcher({
   const createWorkspace = () => {
     const trimmed = name.trim();
     if (!trimmed) {
-      onError("Give the workspace a name before creating it.");
+      onError("Give the profile a name before creating it.");
       return;
     }
     onBusy(true);
@@ -81,7 +80,7 @@ export function WorkspaceSwitcher({
         await onCreated(created);
         setName("");
         await refresh();
-        onMessage(`Workspace ready: ${created.name}`);
+        onMessage(`Profile ready: ${created.name}`);
       } catch (err: unknown) {
         onError(err instanceof Error ? err.message : String(err));
       } finally {
@@ -110,51 +109,30 @@ export function WorkspaceSwitcher({
   };
 
   return (
-    <section className="product-panel" aria-label="Workspace switcher">
+    <section className="product-panel" aria-label="Profiles">
       <header className="product-panel-hero">
         <p className="arrangement-eyebrow">Profiles</p>
-        <h2>Named profiles (optional)</h2>
-        <p className="lede">
-          Optional labels for saved arrangements and library apps. Your desktop
-          on Stage does not require one.
-        </p>
+        <h2>Named profiles</h2>
       </header>
 
       {activeWorkspace ? (
         <p className="product-current" aria-live="polite">
-          Current profile: <strong>{activeWorkspace.name}</strong>
+          Current: <strong>{activeWorkspace.name}</strong>
         </p>
       ) : (
-        <p className="muted">No profile selected — Stage still shows your desktop.</p>
+        <p className="muted">None selected — Stage still shows your desktop.</p>
       )}
 
-      <section aria-label="Create profile">
-        <h3>Add profile</h3>
-        <label className="arrangement-field">
-          <span>Name</span>
-          <input
-            type="text"
-            value={name}
-            disabled={busy || !runtime}
-            placeholder="Deep work"
-            onChange={(event) => setName(event.target.value)}
-          />
-        </label>
-        <div className="row">
-          <button
-            type="button"
-            disabled={busy || !runtime}
-            onClick={createWorkspace}
-          >
-            Add profile
-          </button>
+      <section aria-label="Saved profiles">
+        <div className="row section-heading-row">
+          <h3>Profiles</h3>
           <button
             type="button"
             className="ghost"
             disabled={busy || loading || !runtime}
             onClick={() => {
               void refresh()
-                .then(() => onMessage("Workspaces refreshed"))
+                .then(() => onMessage("Profiles refreshed"))
                 .catch((err: unknown) => {
                   onError(err instanceof Error ? err.message : String(err));
                 });
@@ -163,18 +141,11 @@ export function WorkspaceSwitcher({
             Refresh
           </button>
         </div>
-      </section>
-
-      <section aria-label="Saved workspaces">
-        <h3>Switch workspace</h3>
         {localHint ? <p className="muted">{localHint}</p> : null}
         {loading && workspaces.length === 0 ? (
           <p className="muted">Loading…</p>
         ) : workspaces.length === 0 ? (
-          <div className="arrangement-empty" aria-live="polite">
-            <h4>{empty.title}</h4>
-            <p className="muted">{empty.body}</p>
-          </div>
+          <p className="muted">{empty.body}</p>
         ) : (
           <ul className="product-list">
             {workspaces.map((workspace) => {
@@ -206,6 +177,27 @@ export function WorkspaceSwitcher({
           </ul>
         )}
       </section>
+
+      <details className="profile-create-details">
+        <summary>Add profile</summary>
+        <label className="arrangement-field">
+          <span>Name</span>
+          <input
+            type="text"
+            value={name}
+            disabled={busy || !runtime}
+            placeholder="Deep work"
+            onChange={(event) => setName(event.target.value)}
+          />
+        </label>
+        <button
+          type="button"
+          disabled={busy || !runtime}
+          onClick={createWorkspace}
+        >
+          Add profile
+        </button>
+      </details>
     </section>
   );
 }

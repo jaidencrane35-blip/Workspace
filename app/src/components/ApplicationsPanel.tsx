@@ -199,9 +199,8 @@ export function ApplicationsPanel({
       data-work-mode={workMode}
     >
       <header className="product-panel-hero">
-        <p className="arrangement-eyebrow">Applications</p>
-        <h2>On your desktop</h2>
-        <p className="lede">{applicationsLayoutsRelationCopy()}</p>
+        <p className="arrangement-eyebrow">Apps</p>
+        <h2>{applicationsLayoutsRelationCopy()}</h2>
       </header>
 
       <section

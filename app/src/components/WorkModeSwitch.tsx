@@ -1,13 +1,10 @@
 /**
- * Purpose: User-facing Flow ↔ Focus chrome-density switch with keyboard support.
- * Owner: Frontend product shell (Milestone B + optimisation)
+ * Purpose: Flow ↔ Focus density switch (same desktop, different spatial weight).
+ * Owner: Frontend product shell
  * Inputs: current WorkMode + change callback
  * Outputs: User mode selection events (click / arrow keys / Home / End)
  * Dependencies: workMode helpers only
  * Non-responsibilities: OS geometry, arrangements restore, Assistant control
- *
- * Problem: mode switch was mouse-only; commercial UX needs keyboard parity.
- * Why here: presentation control owned by product shell chrome.
  */
 
 import { useRef, type KeyboardEvent } from "react";
@@ -20,17 +17,11 @@ import {
 interface WorkModeSwitchProps {
   mode: WorkMode;
   onChange: (mode: WorkMode) => void;
-  /** compact = chrome strip; stage = larger Layouts control */
-  density?: "compact" | "stage";
 }
 
 const MODE_ORDER: WorkMode[] = ["flow", "focus"];
 
-export function WorkModeSwitch({
-  mode,
-  onChange,
-  density = "compact",
-}: WorkModeSwitchProps) {
+export function WorkModeSwitch({ mode, onChange }: WorkModeSwitchProps) {
   const flowRef = useRef<HTMLButtonElement>(null);
   const focusRef = useRef<HTMLButtonElement>(null);
 
@@ -75,13 +66,9 @@ export function WorkModeSwitch({
 
   return (
     <div
-      className={
-        density === "stage"
-          ? "work-mode-switch stage-density"
-          : "work-mode-switch"
-      }
+      className="work-mode-switch"
       role="radiogroup"
-      aria-label="Workspace presentation mode"
+      aria-label="Flow or Focus presentation"
       onKeyDown={onKeyDown}
     >
       <button
@@ -90,7 +77,7 @@ export function WorkModeSwitch({
         role="radio"
         className={mode === "flow" ? "work-mode-option active" : "work-mode-option"}
         aria-checked={mode === "flow"}
-        tabIndex={mode === "flow" ? 0 : -1}
+        title={workModeDescription("flow")}
         onClick={() => select("flow")}
       >
         {workModeLabel("flow")}
@@ -103,15 +90,14 @@ export function WorkModeSwitch({
           mode === "focus" ? "work-mode-option active" : "work-mode-option"
         }
         aria-checked={mode === "focus"}
-        tabIndex={mode === "focus" ? 0 : -1}
+        title={workModeDescription("focus")}
         onClick={() => select("focus")}
       >
         {workModeLabel("focus")}
       </button>
-      {/* IM-1: keep mode meaning for a11y; do not show explanatory hint on Stage */}
-      <span className="visually-hidden" id="work-mode-hint">
+      <p className="work-mode-hint visually-hidden" aria-live="polite">
         {workModeDescription(mode)}
-      </span>
+      </p>
     </div>
   );
 }

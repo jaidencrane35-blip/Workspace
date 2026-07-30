@@ -1,19 +1,16 @@
 /**
- * Purpose: Product shell root — Desktop Reality Stage landing, view routing,
- *   Flow/Focus density, persistent Assistant companion rail.
- * Owner: Frontend product shell (Milestone R)
+ * Purpose: Product shell — Desktop Reality Stage first; companion Assistant optional.
+ * Owner: Frontend product shell (Product Contract V3)
  * Inputs: Tauri IPC (settings, workspace, zones, applications, workspace state);
  *   local UI prefs
- * Outputs: Navigation, banners, chrome; Stage shows observed desktop without
- *   requiring a named workspace profile
- * Dependencies: Product panels, DesktopArrangementPanel, companion rail, prefs
- * Non-goals: OS geometry apply, grouping, audio, new AI/engines, setup-first gate
+ * Outputs: Stage-centred navigation; observed desktop without profile gate
+ * Dependencies: Stage, Apps, Profiles, arrangements control, companion rail
+ * Non-goals: OS geometry apply, grouping, audio, new AI/engines, setup wizard
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ApplicationsPanel } from "./components/ApplicationsPanel";
 import { AssistantCompanionRail } from "./components/AssistantCompanionRail";
-import { CanvasShell } from "./components/CanvasShell";
 import { DesktopArrangementPanel } from "./components/DesktopArrangementPanel";
 import { OperatorConsole } from "./components/OperatorConsole";
 import { WorkspaceApplicationStage } from "./components/WorkspaceApplicationStage";
@@ -49,7 +46,6 @@ import type {
   WorkspaceContext,
   Zone,
 } from "./types/domain";
-import type { Layout } from "./types/layout";
 import type { WorkspaceSettings } from "./types/workspace";
 
 const LEGACY_WORKSPACE_ID_KEY = "workspace.active_id";
@@ -102,7 +98,7 @@ async function loadZones(workspaceId: string): Promise<Zone[]> {
 }
 
 export default function App() {
-  // Milestone D: land on the Workspace stage (Layouts) — apps first.
+  // Product Contract: land on Desktop Reality Stage immediately.
   const [view, setView] = useState<AppView>("layouts");
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [zones, setZones] = useState<Zone[]>([]);
@@ -181,11 +177,6 @@ export default function App() {
     setMessage(next);
   }, []);
 
-  const onLayoutSaved = useCallback((layout: Layout) => {
-    setMessage(`Layout saved (${layout.nodes.length} nodes)`);
-    setError(null);
-  }, []);
-
   const refreshHomeApps = useCallback(async (workspaceId: string | null) => {
     if (!workspaceId || !isIpcRuntimeAvailable()) {
       setHomeApps([]);
@@ -257,32 +248,11 @@ export default function App() {
   }, [refreshHomeApps]);
 
   useEffect(() => {
-    if (view !== "layouts" && view !== "home") {
+    if (view !== "layouts") {
       return;
     }
     void refreshHomeApps(workspace?.id ?? null);
   }, [view, workspace?.id, refreshHomeApps]);
-
-  const createWorkspaceFromHome = () => {
-    setBusy(true);
-    setError(null);
-    void (async () => {
-      try {
-        const created = await invokeIpc<Workspace>("create_workspace", {
-          name: "My workspace",
-        });
-        await activateWorkspace(created);
-        setMessage("Workspace created");
-        setView("workspaces");
-      } catch (err: unknown) {
-        const classified = classifyBanner(err);
-        setErrorKind(classified.kind === "runtime" ? "runtime" : "error");
-        setError(classified.text);
-      } finally {
-        setBusy(false);
-      }
-    })();
-  };
 
   /** Quiet Desktop profile so companion compose can persist without a setup gate. */
   const ensureWorkspaceForAssistant = useCallback(async () => {
@@ -296,44 +266,30 @@ export default function App() {
     return created;
   }, [workspace, activateWorkspace]);
 
-  const addZoneFromCanvas = () => {
-    if (!workspace) {
-      onError("Add a named profile under Profiles to use the companion canvas.");
-      return;
+  const primaryTab = (id: ProductPrimaryView, label: string) => {
+    const classes = ["tab"];
+    if (id === "layouts") {
+      classes.push("tab-stage");
     }
-    setBusy(true);
-    setError(null);
-    void (async () => {
-      try {
-        const zone = await invokeIpc<Zone>("create_zone", {
-          workspaceId: workspace.id,
-          name: `Zone ${zones.length + 1}`,
-          positionMetadata: null,
-        });
-        setZones((prev) => [...prev, zone]);
-        setMessage(`Zone created: ${zone.name}`);
-      } catch (err: unknown) {
-        const classified = classifyBanner(err);
-        setErrorKind(classified.kind === "runtime" ? "runtime" : "error");
-        setError(classified.text);
-      } finally {
-        setBusy(false);
-      }
-    })();
+    if (id === "home" || id === "workspaces") {
+      classes.push("tab-quiet");
+    }
+    if (view === id) {
+      classes.push("active");
+    }
+    return (
+      <button
+        type="button"
+        role="tab"
+        className={classes.join(" ")}
+        aria-current={view === id ? "page" : undefined}
+        aria-selected={view === id}
+        onClick={() => navigatePrimary(id)}
+      >
+        {label}
+      </button>
+    );
   };
-
-  const primaryTab = (id: ProductPrimaryView, label: string) => (
-    <button
-      type="button"
-      role="tab"
-      className={view === id ? "tab active" : "tab"}
-      aria-current={view === id ? "page" : undefined}
-      aria-selected={view === id}
-      onClick={() => navigatePrimary(id)}
-    >
-      {label}
-    </button>
-  );
 
   const toolTab = (id: ToolView, label: string) => (
     <button
@@ -355,32 +311,24 @@ export default function App() {
       return (
         <div className="container product-container">
           <WorkspaceHome
-            workspace={workspace}
-            applications={homeApps}
-            appsLoading={homeAppsLoading}
             bootstrapped={bootstrapped}
-            busy={busy}
-            workMode={workMode}
             onNavigate={navigatePrimary}
-            onCreateWorkspace={createWorkspaceFromHome}
           />
         </div>
       );
     }
     if (view === "workspaces") {
       return (
-        <div className="workspace-stage">
-          <div className="workspace-stage-main">
-            <WorkspaceSwitcher
-              activeWorkspace={workspace}
-              busy={busy}
-              onBusy={setBusy}
-              onError={onError}
-              onMessage={onMessage}
-              onActivate={activateWorkspace}
-              onCreated={activateWorkspace}
-            />
-          </div>
+        <div className="container product-container">
+          <WorkspaceSwitcher
+            activeWorkspace={workspace}
+            busy={busy}
+            onBusy={setBusy}
+            onError={onError}
+            onMessage={onMessage}
+            onActivate={activateWorkspace}
+            onCreated={activateWorkspace}
+          />
           <DesktopArrangementPanel
             workspace={workspace}
             busy={busy}
@@ -407,12 +355,10 @@ export default function App() {
     }
     if (view === "layouts") {
       return (
-        <div className="workspace-stage workspace-stage-apps-first">
+        <div className="workspace-stage workspace-stage-desktop-first">
           <div className="workspace-stage-main">
             {!bootstrapped ? (
-              <div className="canvas-shell">
-                <p className="muted">Loading…</p>
-              </div>
+              <p className="muted stage-boot-loading">Loading…</p>
             ) : (
               <>
                 <WorkspaceApplicationStage
@@ -424,49 +370,16 @@ export default function App() {
                   onManageApplications={() => navigatePrimary("applications")}
                   onLaunchApplication={launchFromStage}
                 />
-                {workspace && workMode === "flow" ? (
-                  <div className="stage-secondary-canvas">
-                    <p className="stage-secondary-label muted">
-                      Companion canvas (optional board practice)
-                    </p>
-                    <CanvasShell
-                      workspaceId={workspace.id}
-                      workspaceName={workspace.name}
-                      zones={zones}
-                      busy={busy}
-                      onError={(msg) => onError(msg)}
-                      onSaved={onLayoutSaved}
-                      onCreateWorkspace={createWorkspaceFromHome}
-                      onAddZone={addZoneFromCanvas}
-                    />
-                  </div>
-                ) : null}
-                {workspace && workMode === "focus" ? (
-                  <div className="focus-canvas-suppressed" aria-live="polite">
-                    <p className="muted">
-                      Companion canvas is hidden in Focus. Switch to Flow to
-                      edit zones. Desktop reality and arrangements are
-                      unchanged.
-                    </p>
-                    <button
-                      type="button"
-                      className="ghost"
-                      onClick={() => onWorkModeChange("flow")}
-                    >
-                      Return to Flow
-                    </button>
-                  </div>
-                ) : null}
+                <DesktopArrangementPanel
+                  workspace={workspace}
+                  busy={busy}
+                  onBusy={setBusy}
+                  onError={onError}
+                  onMessage={onMessage}
+                />
               </>
             )}
           </div>
-          <DesktopArrangementPanel
-            workspace={workspace}
-            busy={busy}
-            onBusy={setBusy}
-            onError={onError}
-            onMessage={onMessage}
-          />
         </div>
       );
     }
@@ -474,9 +387,8 @@ export default function App() {
       return (
         <div className="container assistant-container">
           <p className="lede">
-            <span className="badge">Developer</span> Engineering presentation of
-            work intelligence. Prefer <strong>Home</strong> and{" "}
-            <strong>Applications</strong> for product use.
+            <span className="badge">Developer</span> Engineering presentation.
+            Prefer <strong>Stage</strong> for product use.
           </p>
           <WorkspaceIntelligencePanel
             workspace={workspace}
@@ -492,9 +404,8 @@ export default function App() {
       <div className="container">
         <p className="lede">
           <span className="badge">Diagnostics</span> Operator console for
-          engineering validation. Prefer <strong>Home</strong>,{" "}
-          <strong>Applications</strong>, and <strong>Layouts</strong> for
-          product workflows.
+          engineering validation. Prefer <strong>Stage</strong> for product
+          use.
         </p>
         <OperatorConsole
           workspace={workspace}
@@ -513,7 +424,7 @@ export default function App() {
       <header className="app-chrome">
         <div className="chrome-brand">
           <h1>Workspace</h1>
-          <p className="chrome-tagline">Desktop workspace environment</p>
+          <p className="chrome-tagline">Your desktop</p>
         </div>
         <div className="chrome-nav-groups">
           <nav
@@ -522,7 +433,7 @@ export default function App() {
             role="tablist"
           >
             {primaryTab("layouts", "Stage")}
-            {primaryTab("applications", "Applications")}
+            {primaryTab("applications", "Apps")}
             {primaryTab("workspaces", "Profiles")}
             {primaryTab("home", "Home")}
           </nav>
@@ -586,20 +497,7 @@ export default function App() {
           showAssistantRail ? "app-body with-companion-rail" : "app-body"
         }
       >
-        <div className="app-body-main">
-          {isPrimaryView(view) && !assistantRailOpen ? (
-            <div className="assistant-rail-reopen-bar">
-              <button
-                type="button"
-                className="ghost"
-                onClick={() => setAssistantRailOpen(true)}
-              >
-                Ask Assistant
-              </button>
-            </div>
-          ) : null}
-          {primaryStage}
-        </div>
+        <div className="app-body-main">{primaryStage}</div>
         {showAssistantRail ? (
           <AssistantCompanionRail
             workspace={workspace}

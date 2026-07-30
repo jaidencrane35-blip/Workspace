@@ -1,20 +1,16 @@
 /**
- * Purpose: Persistent right-side Assistant companion rail (Milestone C).
- * Owner: Frontend product shell
+ * Purpose: Quiet right-side Assistant companion rail.
+ * Owner: Frontend product shell (Product Contract V3)
  * Inputs: active workspace, busy/error/message callbacks, work mode, collapse
- * Outputs: Companion presentation only — explain / help affordances
- * Dependencies: AssistantIntelligencePanel (companion chat), AssistantPanel (advanced)
- * Non-responsibilities: Mode switching, OS windows, PermissionGateway, new AI
- *
- * Problem: concept references keep Assistant as a quiet side companion, not a peer tab.
- * Why here: chrome placement only — reuses existing compose IPC.
+ * Outputs: Companion ask/answer only
+ * Dependencies: AssistantIntelligencePanel (compose surface)
+ * Non-responsibilities: Mode switching, OS windows, advanced operator workflow
  */
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef } from "react";
 import type { WorkMode } from "../lib/workMode";
 import type { Workspace } from "../types/domain";
 import { AssistantIntelligencePanel } from "./AssistantIntelligencePanel";
-import { AssistantPanel } from "./AssistantPanel";
 import { ASSISTANT_COMPANION_RAIL_ID } from "../lib/assistantRail";
 
 interface AssistantCompanionRailProps {
@@ -39,7 +35,6 @@ export function AssistantCompanionRail({
   onCollapse,
 }: AssistantCompanionRailProps) {
   const titleId = useId();
-  const [advancedOpen, setAdvancedOpen] = useState(false);
   const railRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
@@ -99,35 +94,6 @@ export function AssistantCompanionRail({
           onEnsureWorkspace={onEnsureWorkspace}
           presentation="rail"
         />
-
-        <section
-          className="assistant-legacy-section"
-          aria-label="Advanced governed workflow"
-        >
-          <button
-            type="button"
-            className="ghost assistant-advanced-toggle"
-            aria-expanded={advancedOpen}
-            onClick={() => setAdvancedOpen((open) => !open)}
-          >
-            {advancedOpen ? "Hide advanced workflow" : "Advanced workflow"}
-          </button>
-          {advancedOpen ? (
-            <>
-              <p className="muted">
-                Optional plan → permission path. Prefer Stage for daily desktop
-                use.
-              </p>
-              <AssistantPanel
-                workspace={workspace}
-                busy={busy}
-                onBusy={onBusy}
-                onError={onError}
-                onMessage={onMessage}
-              />
-            </>
-          ) : null}
-        </section>
       </div>
     </aside>
   );

@@ -553,38 +553,40 @@ export function AssistantIntelligencePanel({
         </div>
       </div>
 
-      <div className="assistant-intel-packages">
-        <button
-          type="button"
-          className="ghost assistant-packages-toggle"
-          aria-expanded={packagesOpen}
-          onClick={() => setPackagesOpen((open) => !open)}
-        >
-          {packagesOpen ? "Hide evidence packages" : "Evidence packages"}
-        </button>
-        {packagesOpen ? (
-          <>
-            <div className="assistant-intel-actions">
-              <button
-                type="button"
-                className="secondary"
-                disabled={busy || !workspace}
-                onClick={() => void refreshEvidencePackages()}
-              >
-                Refresh packages
-              </button>
-            </div>
-            {hasAnyPackage ? (
-              layers
-            ) : (
-              <p className="assistant-intel-empty">
-                No packages loaded. Refresh after sending an ask if you need
-                diagnostic layers.
-              </p>
-            )}
-          </>
-        ) : null}
-      </div>
+      {rail ? null : (
+        <div className="assistant-intel-packages">
+          <button
+            type="button"
+            className="ghost assistant-packages-toggle"
+            aria-expanded={packagesOpen}
+            onClick={() => setPackagesOpen((open) => !open)}
+          >
+            {packagesOpen ? "Hide evidence packages" : "Evidence packages"}
+          </button>
+          {packagesOpen ? (
+            <>
+              <div className="assistant-intel-actions">
+                <button
+                  type="button"
+                  className="secondary"
+                  disabled={busy || !workspace}
+                  onClick={() => void refreshEvidencePackages()}
+                >
+                  Refresh packages
+                </button>
+              </div>
+              {hasAnyPackage ? (
+                layers
+              ) : (
+                <p className="assistant-intel-empty">
+                  No packages loaded. Refresh after sending an ask if you need
+                  diagnostic layers.
+                </p>
+              )}
+            </>
+          ) : null}
+        </div>
+      )}
     </div>
   );
 }

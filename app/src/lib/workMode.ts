@@ -65,16 +65,9 @@ export function workModeLabel(mode: WorkMode): string {
 
 export function workModeDescription(mode: WorkMode): string {
   if (mode === "flow") {
-    return "Higher density — multiple applications visible for multitasking. Does not move OS windows yet.";
+    return "Same desktop, denser spatial view.";
   }
-  return "Lower density — primary application emphasised; others stay available. Does not move OS windows yet.";
-}
-
-export function workModeStageLede(mode: WorkMode): string {
-  if (mode === "flow") {
-    return "Flow keeps your desktop overview dense: observed windows stay easy to scan. Does not move OS windows yet.";
-  }
-  return "Focus reduces chrome noise and emphasises the focused observed window. Others stay available — nothing is closed. Does not move OS windows yet.";
+  return "Same desktop, focused window emphasised.";
 }
 
 /** Focus chrome partition: one primary app + remaining supporting apps. */

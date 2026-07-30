@@ -1,14 +1,13 @@
 /**
- * Purpose: Desktop Reality Stage — calm spatial representation of the desktop.
- * Owner: Frontend product shell (IM-1 — Stage empty spatial calm)
- * Inputs: optional workspace profile, registry apps, zone count, work mode,
- *   launch + navigate callbacks; get_workspace_state IPC
- * Outputs: Desktop plane (empty or with observed windows), optional library
- * Dependencies: stageDesktopUi, layoutsStageUi, workMode, ipc, applicationsUi
- * Non-goals: IM-2+ (Assistant defaults, arrangements copy, Home, Workspaces),
- *   OS geometry apply, fake windows, new engines/AI
+ * Purpose: Desktop Reality Stage — spatial representation of the observed desktop.
+ * Owner: Frontend product shell (Product Contract V3)
+ * Inputs: optional profile, registry apps, work mode, launch + navigate callbacks;
+ *   get_workspace_state IPC
+ * Outputs: Desktop plane (empty or observed windows); optional library details
+ * Dependencies: stageDesktopUi, layoutsStageUi, workMode, ipc
+ * Non-goals: OS geometry apply, fake windows, companion canvas, new engines/AI
  *
- * Contract: layout before text; desktop reality first.
+ * Contract: Desktop Reality → Representation. Flow/Focus = density of same map.
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -31,17 +30,13 @@ import {
   stageDesktopPlaneMessage,
   type StageDesktopLoadState,
 } from "../lib/stageDesktopUi";
-import {
-  partitionFocusApplications,
-  type WorkMode,
-} from "../lib/workMode";
+import type { WorkMode } from "../lib/workMode";
 import type {
   ApplicationReference,
   Workspace,
   WorkspaceState,
   WorkspaceStateWindow,
 } from "../types/domain";
-import { FocusSupportingAppChips } from "./FocusSupportingAppChips";
 
 interface WorkspaceApplicationStageProps {
   workspace: Workspace | null;
@@ -73,7 +68,6 @@ export function WorkspaceApplicationStage({
     null,
   );
   const [focusedTitle, setFocusedTitle] = useState<string | null>(null);
-  const [primaryId, setPrimaryId] = useState<string | null>(null);
 
   const refreshDesktop = useCallback(async () => {
     if (!isIpcRuntimeAvailable()) {
@@ -116,32 +110,9 @@ export function WorkspaceApplicationStage({
     [windows],
   );
 
-  useEffect(() => {
-    if (applications.length === 0) {
-      setPrimaryId(null);
-      return;
-    }
-    setPrimaryId((prev) => {
-      if (prev && applications.some((app) => app.id === prev)) {
-        return prev;
-      }
-      return applications[0]?.id ?? null;
-    });
-  }, [applications]);
-
-  const { primary, supporting } = partitionFocusApplications(
-    applications,
-    primaryId,
-  );
-
   const showDesktopMap = loadState === "ready" && tiles.length > 0;
   const planeCalm = !showDesktopMap;
   const planeMessage = stageDesktopPlaneMessage(loadState);
-  const focusedTile =
-    tiles.find((tile) => tile.focused) ?? tiles[0] ?? null;
-  const supportingTiles = focusedTile
-    ? tiles.filter((tile) => tile.key !== focusedTile.key)
-    : tiles;
 
   const stageClass = [
     "workspace-application-stage",
@@ -186,107 +157,68 @@ export function WorkspaceApplicationStage({
         </p>
       ) : null}
 
-      {showDesktopMap && workMode === "focus" ? (
-        <div
-          className="focus-stage-layout"
-          aria-label="Focus desktop reality stage"
-        >
-          {focusedTile ? (
-            <article className="stage-tile stage-tile-primary">
-              <span className="stage-tile-name">{focusedTile.title}</span>
-              {focusedTile.processLabel ? (
-                <span className="product-list-meta muted">
-                  {focusedTile.processLabel}
-                </span>
-              ) : null}
-            </article>
-          ) : null}
-          {supportingTiles.length > 0 ? (
-            <ul
-              className="focus-supporting-apps"
-              aria-label="Other observed windows"
-            >
-              {supportingTiles.slice(0, 8).map((tile) => (
-                <li key={tile.key}>
-                  <span className="focus-supporting-chip static">
-                    {tile.title}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          ) : null}
-        </div>
-      ) : (
-        <div
-          className={
-            planeCalm
-              ? "stage-desktop-map stage-desktop-plane empty"
-              : "stage-desktop-map"
-          }
-          aria-label={
-            planeCalm ? "Desktop surface" : "Observed desktop windows"
-          }
-        >
-          {planeCalm ? (
-            <div className="stage-desktop-plane-message">
-              <p>{planeMessage}</p>
-              {runtime && loadState !== "loading" ? (
-                <button
-                  type="button"
-                  className="ghost"
-                  disabled={busy}
-                  onClick={() => {
-                    void refreshDesktop();
-                  }}
-                >
-                  Retry
-                </button>
-              ) : null}
-            </div>
-          ) : (
-            tiles.map((tile) => (
-              <article
-                key={tile.key}
-                className={
-                  tile.focused
-                    ? "stage-desktop-window focused"
-                    : tile.minimized
-                      ? "stage-desktop-window minimized"
-                      : "stage-desktop-window"
-                }
-                style={{
-                  left: `${tile.leftPct}%`,
-                  top: `${tile.topPct}%`,
-                  width: `${tile.widthPct}%`,
-                  height: `${tile.heightPct}%`,
-                }}
-                title={`${tile.title} — ${tile.boundsLabel}`}
-              >
-                <span className="stage-desktop-window-title">{tile.title}</span>
-                <span className="stage-desktop-window-meta muted">
-                  {[
-                    tile.processLabel || null,
-                    tile.monitorLabel,
-                    tile.focused ? "Focused" : null,
-                    tile.minimized ? "Minimized" : null,
-                  ]
-                    .filter(Boolean)
-                    .join(" · ")}
-                </span>
-              </article>
-            ))
-          )}
-        </div>
-      )}
-
-      <details
+      <div
         className={
           planeCalm
-            ? "stage-registry-secondary quiet"
-            : "stage-registry-secondary"
+            ? "stage-desktop-map stage-desktop-plane empty"
+            : "stage-desktop-map"
         }
-        open={!planeCalm && applications.length > 0}
+        aria-label={
+          planeCalm ? "Desktop surface" : "Observed desktop windows"
+        }
       >
+        {planeCalm ? (
+          <div className="stage-desktop-plane-message">
+            <p>{planeMessage}</p>
+            {runtime && loadState !== "loading" ? (
+              <button
+                type="button"
+                className="ghost"
+                disabled={busy}
+                onClick={() => {
+                  void refreshDesktop();
+                }}
+              >
+                Retry
+              </button>
+            ) : null}
+          </div>
+        ) : (
+          tiles.map((tile) => (
+            <article
+              key={tile.key}
+              className={
+                tile.focused
+                  ? "stage-desktop-window focused"
+                  : tile.minimized
+                    ? "stage-desktop-window minimized"
+                    : "stage-desktop-window"
+              }
+              style={{
+                left: `${tile.leftPct}%`,
+                top: `${tile.topPct}%`,
+                width: `${tile.widthPct}%`,
+                height: `${tile.heightPct}%`,
+              }}
+              title={`${tile.title} — ${tile.boundsLabel}`}
+            >
+              <span className="stage-desktop-window-title">{tile.title}</span>
+              <span className="stage-desktop-window-meta muted">
+                {[
+                  tile.processLabel || null,
+                  tile.monitorLabel,
+                  tile.focused ? "Focused" : null,
+                  tile.minimized ? "Minimized" : null,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </span>
+            </article>
+          ))
+        )}
+      </div>
+
+      <details className="stage-registry-secondary quiet">
         <summary>
           <span>{layoutsStageRegistryHeading()}</span>
           <button
@@ -301,12 +233,12 @@ export function WorkspaceApplicationStage({
           </button>
         </summary>
         {!workspace ? (
-          <p className="muted">Optional — not required for the desktop above.</p>
+          <p className="muted">Optional.</p>
         ) : appsLoading ? (
           <p className="muted">Loading…</p>
         ) : applications.length === 0 ? (
           <p className="muted">{registryEmpty.title}</p>
-        ) : workMode === "flow" ? (
+        ) : (
           <ul className="stage-tile-grid compact" aria-label="Library apps">
             {applications.map((app) => {
               const launchable = canLaunchApplication(app);
@@ -344,35 +276,6 @@ export function WorkspaceApplicationStage({
               );
             })}
           </ul>
-        ) : (
-          <div className="focus-stage-layout" aria-label="Focus library apps">
-            {primary ? (
-              <article className="stage-tile stage-tile-primary compact">
-                <span
-                  className="application-monogram large"
-                  aria-hidden="true"
-                >
-                  {monogramFromName(primary.name)}
-                </span>
-                <span className="stage-tile-name">{primary.name}</span>
-                <button
-                  type="button"
-                  className="stage-tile-launch"
-                  disabled={busy || !canLaunchApplication(primary)}
-                  onClick={() => onLaunchApplication(primary)}
-                >
-                  Launch
-                </button>
-              </article>
-            ) : null}
-            {supporting.length > 0 ? (
-              <FocusSupportingAppChips
-                apps={supporting}
-                onSelect={setPrimaryId}
-                selectTitle="Make library primary in Focus"
-              />
-            ) : null}
-          </div>
         )}
       </details>
     </section>

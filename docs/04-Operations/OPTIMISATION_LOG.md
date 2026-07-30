@@ -88,6 +88,26 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 
 ## Cycles
 
+### Cycle: v3-1-desktop-first-spatial-control
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Cycle number** | V3-1 |
+| **Approved category** | 1 Visual hierarchy (+ 12 Duplicate removal, 13 Dead code) |
+| **Goal** | Product Contract V3: Stage owns first glance; Focus stays spatial; Control/Assistant demoted |
+| **Problem** | Arrangements co-primary rail, companion canvas second desktop, Focus list UI, Ask Assistant strip, evidence/advanced in rail, Home/Profiles form-first |
+| **Analysis** | Audit vs references: objects + space before forms; delete competing surfaces |
+| **Changes** | Spatial Focus CSS density; arrangements collapsed strip; remove Stage canvas; strip rail to chat; quiet Home/Profiles/nav; delete `CanvasShell` + `AssistantPanel`; dead CSS/helpers |
+| **Files affected** | Stage, App, arrangements, Home, Profiles, Apps, Assistant rail/panel, workMode, layoutsStageUi, App.css, tests, this log |
+| **Validation** | typecheck / test / build / architecture / ipc / ui-boundary |
+| **Maintainability score** | 8/10 — fewer parallel surfaces; Stage file smaller |
+| **Reference alignment** | Closer: desktop plane primary; companion optional; control secondary |
+| **Human review required** | No for presentation; **Yes** before OS geometry apply / grouping / audio / durable chat |
+| **Inspector / decoder path** | Open app → Stage fills view; Focus dims non-focused tiles; Remember layout collapsed; Assistant only via chrome |
+
+---
+
 ### Cycle: dil-1-assistant-companion-chat
 
 | Field | Value |

@@ -100,12 +100,12 @@ export function emptyArrangementsCopy(hasWorkspace: boolean): {
   if (!hasWorkspace) {
     return {
       title: "Saving needs a named profile",
-      body: "Your desktop is already on Stage. Create a profile only when you want to remember a layout for restore.",
+      body: "Name a profile under Profiles to save a layout.",
     };
   }
   return {
     title: "No saved arrangements yet",
-    body: "Capture the windows you have open to remember this desktop. Nothing moves until you restore.",
+    body: "Save open windows when you want to restore this layout later.",
   };
 }
 

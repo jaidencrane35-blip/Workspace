@@ -42,8 +42,6 @@ export function ActiveApplicationsView({
               {app.window_count === 1
                 ? "1 window"
                 : `${app.window_count} windows`}
-              {" · "}
-              PID {app.process_id}
             </span>
           </div>
         </li>

@@ -77,8 +77,8 @@ describe("desktop arrangement UI helpers", () => {
 
   it("provides empty states for missing workspace and empty lists", () => {
     expect(emptyArrangementsCopy(false).title).toMatch(/profile/i);
-    expect(emptyArrangementsCopy(false).body).toMatch(/Stage/i);
-    expect(emptyArrangementsCopy(true).body).toMatch(/remember this desktop|Capture the windows/i);
+    expect(emptyArrangementsCopy(false).body).toMatch(/Profiles/i);
+    expect(emptyArrangementsCopy(true).body).toMatch(/Save open windows/i);
   });
 
   it("surfaces unavailable diagnostics without fabricating success", () => {

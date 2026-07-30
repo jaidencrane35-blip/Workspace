@@ -202,22 +202,11 @@ button:not(:disabled):hover {
   border-radius: 3px;
 }
 
-/* Canvas — Sprint 33/34 */
-
-.canvas-shell {
+.workspace-stage {
   flex: 1;
   display: flex;
   flex-direction: column;
   min-height: calc(100vh - 3.5rem);
-  padding: 0;
-}
-
-.workspace-stage {
-  flex: 1;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(18rem, 22rem);
-  min-height: calc(100vh - 3.5rem);
-  align-items: stretch;
 }
 
 .workspace-stage-main {
@@ -226,18 +215,49 @@ button:not(:disabled):hover {
   flex-direction: column;
 }
 
-.workspace-stage-main .canvas-shell {
-  min-height: 0;
-}
-
 .desktop-arrangement-panel {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  padding: var(--rail-pad-y) var(--rail-pad-x) 1.5rem;
-  border-left: 1px solid #243040;
-  background: #111820;
+  gap: 0.75rem;
+  padding: 0.65rem var(--shell-pad-x) 1.25rem;
+  border-left: 0;
+  border-top: 1px solid #243040;
+  background: transparent;
   overflow: auto;
+}
+
+.desktop-arrangement-panel.compact-control > summary,
+.profile-create-details > summary,
+.arrangement-save-details > summary {
+  cursor: pointer;
+  user-select: none;
+  color: #9aabbc;
+  font-size: 0.88rem;
+  font-weight: 600;
+  list-style: none;
+}
+
+.desktop-arrangement-panel.compact-control > summary::-webkit-details-marker,
+.profile-create-details > summary::-webkit-details-marker,
+.arrangement-save-details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.desktop-arrangement-panel.compact-control[open] > summary {
+  margin-bottom: 0.65rem;
+  color: #c5d0da;
+}
+
+.arrangement-empty-line {
+  margin: 0.35rem 0 0;
+  font-size: 0.85rem;
+}
+
+.arrangement-save-details,
+.profile-create-details {
+  margin-top: 0.75rem;
+  padding-top: 0.55rem;
+  border-top: 1px solid #1e2832;
 }
 
 .arrangement-panel-hero h2 {
@@ -406,16 +426,6 @@ button.ghost {
 }
 
 @media (max-width: 900px) {
-  .workspace-stage {
-    grid-template-columns: 1fr;
-    grid-template-rows: minmax(16rem, 45vh) auto;
-  }
-
-  .desktop-arrangement-panel {
-    border-left: none;
-    border-top: 1px solid #243040;
-  }
-
   .app-chrome {
     flex-direction: column;
     align-items: flex-start;
@@ -426,116 +436,9 @@ button.ghost {
     border-right: 0;
     padding-right: 0;
   }
-
-  .focus-stage-layout {
-    grid-template-columns: 1fr;
-  }
-
-  .stage-hero-with-mode {
-    flex-direction: column;
-  }
 }
 
-.canvas-chrome {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.65rem 1.25rem;
-  border-bottom: 1px solid #1e2832;
-  background: #10161c;
-  font-size: 0.9rem;
-}
-
-.canvas-viewport {
-  flex: 1;
-  position: relative;
-  overflow: hidden;
-  background:
-    linear-gradient(rgba(36, 48, 64, 0.35) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(36, 48, 64, 0.35) 1px, transparent 1px),
-    #0c1015;
-  background-size: 32px 32px;
-  cursor: grab;
-  touch-action: none;
-}
-
-.canvas-viewport:active {
-  cursor: grabbing;
-}
-
-.canvas-world {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 1px;
-  height: 1px;
-  transform-origin: 0 0;
-}
-
-.zone-node {
-  position: absolute;
-  box-sizing: border-box;
-  background: #18222d;
-  border: 1px solid #3a4a5a;
-  border-radius: 6px;
-  padding: 0.75rem;
-  cursor: grab;
-  user-select: none;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
-}
-
-.zone-node:active {
-  cursor: grabbing;
-  border-color: #6b8aab;
-}
-
-.zone-node-title {
-  font-weight: 600;
-  margin-bottom: 0.35rem;
-}
-
-.zone-node-meta {
-  color: #9aa8b4;
-}
-
-.zone-resize {
-  position: absolute;
-  right: 2px;
-  bottom: 2px;
-  width: 14px;
-  height: 14px;
-  padding: 0;
-  border: none;
-  border-radius: 2px;
-  background: linear-gradient(
-    135deg,
-    transparent 0 45%,
-    #6b8aab 45% 55%,
-    transparent 55% 70%,
-    #6b8aab 70% 80%,
-    transparent 80%
-  );
-  cursor: nwse-resize;
-}
-
-.canvas-actions {
-  margin: 0;
-  justify-content: flex-end;
-}
-
-.canvas-bootstrap {
-  padding: 2rem 1.5rem;
-  gap: 1rem;
-}
-
-.canvas-empty {
-  position: absolute;
-  left: 48px;
-  top: 48px;
-  max-width: 22rem;
-}
-
-/* Product assistant — Sprints 66–67 */
+/* Product assistant — companion + developer surfaces */
 
 .assistant-container {
   max-width: 48rem;
@@ -1222,6 +1125,19 @@ button.linkish:not(:disabled):hover {
   border-right: 1px solid #2a3642;
 }
 
+.primary-tabs .tab-stage {
+  font-weight: 650;
+}
+
+.primary-tabs .tab-quiet {
+  opacity: 0.72;
+  font-weight: 500;
+}
+
+.primary-tabs .tab-quiet.active {
+  opacity: 1;
+}
+
 .tool-tabs {
   opacity: 0.9;
 }
@@ -1279,13 +1195,6 @@ button.linkish:not(:disabled):hover {
   background: #1a2430;
 }
 
-.application-card.preview {
-  opacity: 0.55;
-  min-height: 5.5rem;
-  justify-content: center;
-  align-items: flex-start;
-}
-
 .application-card-main {
   display: flex;
   gap: 0.75rem;
@@ -1333,10 +1242,6 @@ button.linkish:not(:disabled):hover {
   margin-top: 0.2rem;
   font-size: 0.75rem;
   color: #86efac;
-}
-
-.ghost-preview {
-  margin: 0.75rem 0;
 }
 
 .home-current-identity {
@@ -1423,12 +1328,6 @@ button.linkish:not(:disabled):hover {
   letter-spacing: 0.04em;
 }
 
-.assistant-rail-reopen-bar {
-  display: flex;
-  justify-content: flex-end;
-  padding: 0.35rem var(--shell-pad-x) 0;
-}
-
 .assistant-companion-rail {
   padding: var(--rail-pad-y) var(--rail-pad-x) 1.5rem;
   background: #111820;
@@ -1478,19 +1377,13 @@ button.linkish:not(:disabled):hover {
   color: #e7ecf1;
 }
 
-.assistant-companion-lede {
-  margin: 0 0 0.75rem;
-  font-size: 0.88rem;
-}
-
 .assistant-companion-body {
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
 }
 
-.assistant-rail-collapse,
-.assistant-advanced-toggle {
+.assistant-rail-collapse {
   font-size: 0.8rem;
 }
 
@@ -1607,6 +1500,25 @@ button.linkish:not(:disabled):hover {
 .stage-desktop-window.focused {
   border-color: #6ea8d8;
   box-shadow: inset 0 0 0 1px rgba(110, 168, 216, 0.35);
+  z-index: 2;
+}
+
+.workspace-application-stage.mode-focus .stage-desktop-window:not(.focused) {
+  opacity: 0.42;
+  filter: saturate(0.75);
+}
+
+.workspace-application-stage.mode-focus .stage-desktop-window.focused {
+  opacity: 1;
+  filter: none;
+  border-color: #8ec0e8;
+  box-shadow:
+    inset 0 0 0 1px rgba(142, 192, 232, 0.45),
+    0 0 0 1px rgba(142, 192, 232, 0.2);
+}
+
+.workspace-application-stage.mode-focus .stage-desktop-window-meta {
+  opacity: 0.85;
 }
 
 .stage-desktop-window.minimized {
@@ -1669,13 +1581,18 @@ button.linkish:not(:disabled):hover {
   font-size: 0.8rem;
 }
 
-/* IM-1: quiet arrangements rail while Stage shows empty desktop plane */
 .workspace-stage:has(.stage-plane-calm) .desktop-arrangement-panel {
-  opacity: 0.72;
+  opacity: 0.7;
 }
 
-.workspace-stage:has(.stage-plane-calm) .desktop-arrangement-panel .lede {
-  display: none;
+.workspace-stage-desktop-first .workspace-stage-main {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 3.5rem);
+}
+
+.stage-boot-loading {
+  padding: 1.25rem var(--shell-pad-x);
 }
 
 .stage-tile-grid.compact {
@@ -1690,11 +1607,6 @@ button.linkish:not(:disabled):hover {
   cursor: default;
 }
 
-.workspace-stage-apps-first .workspace-stage-main {
-  display: flex;
-  flex-direction: column;
-  min-height: calc(100vh - 3.5rem);
-}
 
 .workspace-application-stage .stage-hero h2 {
   margin: 0.2rem 0 0.45rem;
@@ -1733,22 +1645,6 @@ button.linkish:not(:disabled):hover {
   text-align: left;
 }
 
-.stage-tile.preview {
-  opacity: 0.55;
-  min-height: 6.5rem;
-}
-
-button.stage-tile.home-stage-tile {
-  width: 100%;
-  cursor: pointer;
-  font: inherit;
-}
-
-button.stage-tile.home-stage-tile:hover {
-  border-color: #4a6a8a;
-  background: #1a2430;
-}
-
 .stage-tile-name {
   font-weight: 700;
   font-size: 1.05rem;
@@ -1773,59 +1669,6 @@ button.stage-tile.home-stage-tile:hover {
   border-radius: 10px;
 }
 
-.stage-empty {
-  margin-bottom: 0.5rem;
-}
-
-.stage-actions {
-  margin-top: 1rem;
-  align-items: center;
-  gap: 0.85rem;
-}
-
-.stage-hint {
-  margin: 0;
-  font-size: 0.82rem;
-}
-
-.stage-secondary-canvas {
-  flex: 0 0 auto;
-  opacity: 0.88;
-  border-top: 1px dashed #2a3642;
-  background: #0d1218;
-}
-
-.stage-secondary-label {
-  margin: 0;
-  padding: 0.45rem var(--shell-pad-x) 0.15rem;
-  font-size: 0.75rem;
-  letter-spacing: 0.02em;
-}
-
-.stage-secondary-canvas .canvas-shell {
-  min-height: 12rem;
-  max-height: 28vh;
-}
-
-.home-stage-cta {
-  margin-top: 0.85rem;
-  gap: 0.65rem;
-  flex-wrap: wrap;
-}
-
-.home-stage-preview {
-  margin-top: 1.25rem;
-}
-
-.home-stage-grid {
-  margin-top: 0.65rem;
-}
-
-.home-action-primary {
-  border-color: #4a6a8a;
-  background: #1a2430;
-}
-
 .workspace-stage-main {
   overflow: auto;
 }
@@ -1837,13 +1680,6 @@ button.stage-tile.home-stage-tile:hover {
   flex-wrap: wrap;
   align-items: center;
   gap: 0.35rem;
-}
-
-.work-mode-switch.stage-density {
-  flex-direction: column;
-  align-items: stretch;
-  min-width: 12rem;
-  gap: 0.45rem;
 }
 
 .work-mode-option {
@@ -1864,12 +1700,9 @@ button.stage-tile.home-stage-tile:hover {
 
 .work-mode-option:focus-visible,
 .tab:focus-visible,
-.home-action:focus-visible,
-.home-app-chip:focus-visible,
 .application-card-main:focus-visible,
 .ghost:focus-visible,
 .assistant-rail-collapse:focus-visible,
-.assistant-advanced-toggle:focus-visible,
 .assistant-packages-toggle:focus-visible {
   outline: 2px solid #93c5fd;
   outline-offset: 2px;
@@ -1894,53 +1727,8 @@ button.stage-tile.home-stage-tile:hover {
   border: 0;
 }
 
-.stage-hero-with-mode {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 1rem;
-  align-items: flex-start;
-}
-
-.focus-stage-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
-  gap: 1rem;
-  align-items: start;
-}
-
-.stage-tile-primary {
-  min-height: 11rem;
-  padding: 1.1rem;
-  border-color: #4a6a8a;
-  background: linear-gradient(160deg, #1a2838 0%, #121820 70%);
-}
-
-.application-monogram.large {
-  width: 3.2rem;
-  height: 3.2rem;
-  font-size: 1rem;
-  border-radius: 10px;
-}
-
-.focus-supporting {
-  display: flex;
-  flex-direction: column;
-  gap: 0.45rem;
-}
-
-.focus-canvas-suppressed {
-  padding: 1.25rem 1.35rem 1.75rem;
-  border-top: 1px solid #243040;
-  background: #0f1419;
-}
-
 .app-shell[data-work-mode="focus"] .desktop-arrangement-panel {
-  opacity: 0.92;
-}
-
-.app-shell[data-work-mode="focus"] .desktop-arrangement-panel .arrangement-panel-hero h2 {
-  font-size: 1.05rem;
+  opacity: 0.88;
 }
 
 .app-shell[data-work-mode="focus"] .tool-tabs {
