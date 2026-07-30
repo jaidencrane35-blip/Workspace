@@ -1,14 +1,15 @@
 /**
- * Purpose: Desktop surface — runtime objects, relationships, Arrangement Restore.
- * Owner: Frontend product shell (Product Contract V6 / Programme I IC2)
+ * Purpose: Desktop surface — runtime objects, Arrangement Restore + layout editing.
+ * Owner: Frontend product shell (Product Contract V6 / Programme I IC3)
  * Inputs: optional profile, registry apps, work mode, launch + navigate;
  *   WorkspaceState via refreshObservedWorkspaceState; focus_desktop_window;
  *   list/capture/restore_desktop_arrangement
  * Outputs: Spatial desktop objects; Flow/Focus; Arrangement select + Restore;
+ *   layout edit mode (preview ghosts, update via capture arrangementId);
  *   subtle runtime awareness (attention primary, semantic roles)
- * Dependencies: stageDesktopUi, layoutsStageUi, ipc, applicationLaunch helpers
- * Non-goals: Fake windows, Assistant-owned control, minimize APIs, OS geometry apply,
- *   new persistence models, parallel desktop authorities
+ * Dependencies: stageDesktopUi, layoutsStageUi, desktopLayoutEditing, ipc
+ * Non-goals: Fake windows, Assistant-owned control, minimize APIs, new set_bounds
+ *   product IPC, canvas Layout HWND store, new persistence, parallel authorities
  */
 
 import { useCallback, useEffect, useMemo, useState, type KeyboardEvent } from "react";
@@ -17,6 +18,12 @@ import {
   applicationStatusLabel,
   canLaunchApplication,
 } from "../lib/applicationsUi";
+import {
+  layoutArrangementPreviewGhosts,
+  layoutEditingBanner,
+  layoutEditingHint,
+  layoutEditingWorkflowLine,
+} from "../lib/desktopLayoutEditing";
 import { invokeIpc, isIpcRuntimeAvailable } from "../lib/ipc";
 import {
   layoutsStageEmptyAppsCopy,
@@ -122,6 +129,8 @@ export function WorkspaceApplicationStage({
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const [arrangements, setArrangements] = useState<DesktopArrangement[]>([]);
   const [workingSetId, setWorkingSetId] = useState<string>("");
+  const [layoutEditing, setLayoutEditing] = useState(false);
+  const [layoutPreview, setLayoutPreview] = useState(false);
 
   const windows = workspaceState?.windows ?? [];
   const windowGroups = workspaceState?.window_groups ?? [];
@@ -188,7 +197,9 @@ export function WorkspaceApplicationStage({
     } catch {
       setLoadState("error");
     }
-  }, [refreshWorkspaceState]);  const refreshArrangements = useCallback(async () => {
+  }, [refreshWorkspaceState]);
+
+  const refreshArrangements = useCallback(async () => {
     if (!workspace || !isIpcRuntimeAvailable()) {
       setArrangements([]);
       setWorkingSetId("");
@@ -256,6 +267,24 @@ export function WorkspaceApplicationStage({
     () => stageArrangementMemberKeys(tiles, workingSet?.entries),
     [tiles, workingSet],
   );
+
+  useEffect(() => {
+    if (!workingSetId) {
+      setLayoutEditing(false);
+      setLayoutPreview(false);
+    }
+  }, [workingSetId]);
+
+  const previewGhosts = useMemo(() => {
+    if (!layoutEditing || !layoutPreview || !workingSet) {
+      return [];
+    }
+    return layoutArrangementPreviewGhosts(
+      workingSet.entries,
+      monitors,
+      windows,
+    );
+  }, [layoutEditing, layoutPreview, workingSet, monitors, windows]);
 
   const organisation = useMemo(
     () =>
@@ -356,6 +385,69 @@ export function WorkspaceApplicationStage({
           result.outcomes.some((outcome) => outcome.simulated)
             ? `Restored ${workingSet.name} (simulated)`
             : `Restored ${workingSet.name}`,
+        );
+      } catch (err: unknown) {
+        onError(err instanceof Error ? err.message : String(err));
+      } finally {
+        onBusy(false);
+      }
+    })();
+  };
+
+  const enterLayoutEditing = () => {
+    if (!workingSet) {
+      onError("Choose an Arrangement to edit.");
+      return;
+    }
+    const memberKeys = [...workingSetKeys];
+    if (memberKeys.length > 0) {
+      setSelectedKeys(memberKeys);
+    }
+    setLayoutEditing(true);
+    setLayoutPreview(true);
+    onMessage(null);
+    onError(null);
+  };
+
+  const exitLayoutEditing = () => {
+    setLayoutEditing(false);
+    setLayoutPreview(false);
+  };
+
+  const updateEditingArrangement = () => {
+    if (!workspace || !workingSet) {
+      onError("Choose an Arrangement to update.");
+      return;
+    }
+    const hwnds = selectedKeys
+      .map((key) => tiles.find((tile) => tile.key === key)?.hwnd)
+      .filter((hwnd): hwnd is string => Boolean(hwnd));
+    onBusy(true);
+    onError(null);
+    void (async () => {
+      try {
+        const saved = await invokeIpc<DesktopArrangement>(
+          "capture_desktop_arrangement",
+          {
+            workspaceId: workspace.id,
+            name: workingSet.name,
+            description: workingSet.description || null,
+            arrangementId: workingSet.id,
+            refreshObservation: true,
+            ...(hwnds.length > 0 ? { memberHwnds: hwnds } : {}),
+          },
+        );
+        setArrangements((prev) => {
+          const without = prev.filter((item) => item.id !== saved.id);
+          return [saved, ...without];
+        });
+        setWorkingSetId(saved.id);
+        onMessage(
+          hwnds.length > 0
+            ? `Updated “${saved.name}” from ${hwnds.length} selected window${
+                hwnds.length === 1 ? "" : "s"
+              }`
+            : `Updated “${saved.name}” from current desktop`,
         );
       } catch (err: unknown) {
         onError(err instanceof Error ? err.message : String(err));
@@ -547,7 +639,10 @@ export function WorkspaceApplicationStage({
     "workspace-application-stage",
     workMode === "focus" ? "mode-focus" : "mode-flow",
     planeCalm ? "stage-plane-calm" : "stage-plane-live",
-  ].join(" ");
+    layoutEditing ? "layout-editing" : null,
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <section
@@ -555,11 +650,14 @@ export function WorkspaceApplicationStage({
       aria-label="Desktop"
       data-work-mode={workMode}
       data-stage-plane={planeCalm ? "calm" : "live"}
+      data-layout-editing={layoutEditing ? "true" : "false"}
     >
       <header className="stage-hero stage-hero-minimal">
         <h2>{layoutsStageTitle(workspace?.name)}</h2>
         <p className="stage-workflow-line muted">
-          {workspaceDesktopWorkflowLine(workspace?.name)}
+          {layoutEditing
+            ? layoutEditingWorkflowLine()
+            : workspaceDesktopWorkflowLine(workspace?.name)}
         </p>
         <button
           type="button"
@@ -573,6 +671,19 @@ export function WorkspaceApplicationStage({
           Refresh
         </button>
       </header>
+
+      {layoutEditing && workingSet ? (
+        <div
+          className="stage-layout-edit-banner"
+          role="status"
+          aria-live="polite"
+        >
+          <p className="stage-layout-edit-title">
+            {layoutEditingBanner(workingSet.name)}
+          </p>
+          <p className="stage-layout-edit-hint muted">{layoutEditingHint()}</p>
+        </div>
+      ) : null}
 
       {showDesktopMap ? (
         <p className="stage-meta stage-meta-live muted">
@@ -593,7 +704,7 @@ export function WorkspaceApplicationStage({
             <select
               id="stage-working-set"
               value={workingSetId}
-              disabled={busy}
+              disabled={busy || layoutEditing}
               onChange={(event) => {
                 setWorkingSetId(event.target.value);
               }}
@@ -606,13 +717,61 @@ export function WorkspaceApplicationStage({
               ))}
             </select>
           </label>
-          <button
-            type="button"
-            disabled={busy || !runtime || !workingSetId}
-            onClick={restoreSelectedArrangement}
-          >
-            Restore
-          </button>
+          {!layoutEditing ? (
+            <>
+              <button
+                type="button"
+                disabled={busy || !runtime || !workingSetId}
+                onClick={restoreSelectedArrangement}
+              >
+                Restore
+              </button>
+              <button
+                type="button"
+                className="ghost"
+                disabled={busy || !runtime || !workingSetId}
+                onClick={enterLayoutEditing}
+              >
+                Edit layout
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                className={layoutPreview ? undefined : "ghost"}
+                disabled={busy}
+                aria-pressed={layoutPreview}
+                onClick={() => {
+                  setLayoutPreview((prev) => !prev);
+                }}
+              >
+                {layoutPreview ? "Preview on" : "Preview"}
+              </button>
+              <button
+                type="button"
+                disabled={busy || !runtime}
+                onClick={updateEditingArrangement}
+              >
+                Update Arrangement
+              </button>
+              <button
+                type="button"
+                disabled={busy || !runtime}
+                onClick={restoreSelectedArrangement}
+              >
+                Apply
+              </button>
+              <button
+                type="button"
+                className="ghost"
+                disabled={busy}
+                onClick={exitLayoutEditing}
+              >
+                Done
+              </button>
+            </>
+          )}
         </div>
       ) : null}
 
@@ -647,7 +806,25 @@ export function WorkspaceApplicationStage({
             ) : null}
           </div>
         ) : (
-          mapTiles.map(renderTile)
+          <>
+            {previewGhosts.map((ghost) => (
+              <div
+                key={`preview-${ghost.key}`}
+                className="stage-layout-preview-ghost"
+                style={{
+                  left: `${ghost.leftPct}%`,
+                  top: `${ghost.topPct}%`,
+                  width: `${ghost.widthPct}%`,
+                  height: `${ghost.heightPct}%`,
+                }}
+                title={`Preview · ${ghost.label}`}
+                aria-hidden="true"
+              >
+                <span className="stage-layout-preview-label">{ghost.label}</span>
+              </div>
+            ))}
+            {mapTiles.map(renderTile)}
+          </>
         )}
       </div>
 
@@ -714,11 +891,21 @@ export function WorkspaceApplicationStage({
             <button
               type="button"
               className="ghost"
-              disabled={busy || !runtime || !workspace}
+              disabled={busy || !runtime || !workspace || layoutEditing}
               onClick={saveSelectionAsWorkingSet}
             >
               Save Arrangement
             </button>
+            {layoutEditing ? (
+              <button
+                type="button"
+                className="ghost"
+                disabled={busy || !runtime}
+                onClick={updateEditingArrangement}
+              >
+                Update Arrangement
+              </button>
+            ) : null}
             {matchedLibrary && canLaunchApplication(matchedLibrary) ? (
               <button
                 type="button"

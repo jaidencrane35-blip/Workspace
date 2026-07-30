@@ -1,11 +1,12 @@
 /**
- * Purpose: Arrangements control — save and Restore desktop layouts for a Profile.
- * Owner: Frontend product shell (Product Contract V3 / Programme I IC2)
+ * Purpose: Arrangements control — save, update, and Restore desktop layouts for a Profile.
+ * Owner: Frontend product shell (Product Contract V3 / Programme I IC3)
  * Inputs: Active profile, busy/banner callbacks
  * Outputs: capture_desktop_arrangement / restore / list IPC
  * Dependencies: desktopArrangementUi helpers, list/details/diagnostics views
  * Non-goals: Competing with Desktop as primary surface; setup-first forms;
- *   duplicate Restore ownership (Desktop Arrangement row also Restores)
+ *   duplicate Restore ownership (Desktop Arrangement row also Restores);
+ *   parallel arrangement models
  */
 
 import { useCallback, useEffect, useState } from "react";
@@ -148,6 +149,35 @@ export function DesktopArrangementPanel({
     });
   };
 
+  const updateSelectedArrangement = () => {
+    if (!workspace) {
+      onError("Choose a Profile to update an Arrangement.");
+      return;
+    }
+    if (!selected) {
+      onError("Select an Arrangement to update.");
+      return;
+    }
+    void run(`Updated “${selected.name}” from current windows`, async () => {
+      const saved = await invokeIpc<DesktopArrangement>(
+        "capture_desktop_arrangement",
+        {
+          workspaceId: workspace.id,
+          name: selected.name,
+          description: selected.description || null,
+          arrangementId: selected.id,
+          refreshObservation: true,
+        },
+      );
+      setArrangements((prev) => {
+        const without = prev.filter((item) => item.id !== saved.id);
+        return [saved, ...without];
+      });
+      setSelectedId(saved.id);
+      setRestoreResult(null);
+    });
+  };
+
   const restoreArrangement = () => {
     if (!selected) {
       onError("Select an Arrangement to Restore.");
@@ -199,8 +229,8 @@ export function DesktopArrangementPanel({
       ) : (
         <>
           <p className="muted arrangement-workflow-hint">
-            Save and Restore layouts for this Profile. Desktop can also Restore
-            the Arrangement selected on the map.
+            Save, update, and Restore layouts for this Profile. Desktop Edit
+            layout can preview and update the same Arrangements.
           </p>
           <section aria-label="Saved Arrangements">
             <div className="row section-heading-row">
@@ -243,6 +273,14 @@ export function DesktopArrangementPanel({
                   onClick={restoreArrangement}
                 >
                   Restore
+                </button>
+                <button
+                  type="button"
+                  className="ghost"
+                  disabled={busy || !isIpcRuntimeAvailable()}
+                  onClick={updateSelectedArrangement}
+                >
+                  Update from desktop
                 </button>
               </div>
             </section>
