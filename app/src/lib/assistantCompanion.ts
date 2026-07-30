@@ -555,6 +555,21 @@ function summariseAffinities(state: WorkspaceState): string {
 
 
 
+
+function summariseAttention(state: WorkspaceState): string | null {
+  const attention = state.attention;
+  if (!attention || attention.items.length === 0) {
+    return "No deterministic desktop attention items are available yet.";
+  }
+  return `Desktop attention now — ${attention.items
+    .slice(0, 6)
+    .map(
+      (item) =>
+        `${item.summary} [${item.kind}, ${item.lifecycle}, ${item.time_sensitivity}, ${item.confidence}; strength ${item.strength}] — ${item.explanation}`,
+    )
+    .join(" | ")}.`;
+}
+
 function summariseDecisions(state: WorkspaceState): string | null {
   const projection = state.decisions;
   if (!projection) {
@@ -703,6 +718,16 @@ export function answerDesktopQuestionLocally(
     )
   ) {
     return summariseAffinities(state);
+  }
+  if (
+    /what deserves|attention|focus on|what matters|right now|notice|priority/.test(
+      trimmed,
+    )
+  ) {
+    const attention = summariseAttention(state);
+    if (attention) {
+      return attention;
+    }
   }
   if (
     /what should|recommend|decision|next|resume|interrupted|uncertain|consistency|why (do|does|is)|explain/.test(
@@ -873,6 +898,15 @@ export function enrichAskWithDesktopObservation(
   if (decisions && decisions.decisions.length > 0) {
     parts.push(
       `decisions: ${decisions.decisions.length} / recommendations: ${decisions.recommendations.length} / issues: ${decisions.consistency_issues.length}`,
+    );
+  }
+  const attention = state.attention;
+  if (attention && attention.items.length > 0) {
+    parts.push(
+      `attention: ${attention.items
+        .slice(0, 3)
+        .map((item) => `${item.kind}(${item.time_sensitivity})`)
+        .join(", ")}`,
     );
   }
 

@@ -90,6 +90,23 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 
 ## Cycles
 
+### Cycle: v13-1-desktop-attention-projection
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Cycle number** | V13-1 |
+| **Goal** | Project deterministic attention onto WorkspaceState from decisions + evidence planes |
+| **Problem** | Runtime had decisions but not a ranked “what deserves notice now” attention surface |
+| **Analysis** | Seed from ranked decisions/consistency; gap-fill from session/memory; lifecycle + time_sensitivity from evidence; merge/suppress conflicts |
+| **Changes** | `desktop_attention`; `WorkspaceState.attention`; Assistant attention answers |
+| **Files affected** | desktop_attention, workspace_state, domain exports/types, assistantCompanion, this log |
+| **Validation** | typecheck / test / build / architecture / ipc / ui-boundary (+ domain attention tests) |
+| **Deleted / reduced** | Weak/background attention when stronger kinds cover same entities; working_focus vs interrupted conflicts |
+| **Next recommended cycle** | Decay/oscillation damping; stronger multi-signal lifecycle |
+
+---
+
 ### Cycle: v12-empty-decision-evaluation-2
 
 | Field | Value |

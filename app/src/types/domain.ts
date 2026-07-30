@@ -7026,6 +7026,31 @@ export interface WorkspaceState {
   semantics: DesktopSemanticProjection;
   /** Deterministic decision support (decisions, recommendations, consistency). */
   decisions: DesktopDecisionProjection;
+  /** Deterministic attention (what deserves notice now). */
+  attention: DesktopAttentionProjection;
+  authority_effect: string;
+}
+
+export interface DesktopAttentionItem {
+  id: string;
+  kind: string;
+  summary: string;
+  explanation: string;
+  /** emerged | strengthening | stable | decaying | resolved */
+  lifecycle: string;
+  strength: number;
+  confidence: string;
+  /** immediate | near_term | background */
+  time_sensitivity: string;
+  entity_ids: string[];
+  evidence: DesktopDecisionEvidence[];
+  supporting_planes: string[];
+  source_decision_id: string | null;
+  authority_effect: string;
+}
+
+export interface DesktopAttentionProjection {
+  items: DesktopAttentionItem[];
   authority_effect: string;
 }
 

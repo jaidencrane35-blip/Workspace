@@ -20,6 +20,7 @@ pub mod context;
 pub mod decision_engine;
 pub mod decision_queue;
 pub mod desktop_arrangement;
+pub mod desktop_attention;
 pub mod desktop_behaviour;
 pub mod desktop_decision;
 pub mod desktop_grouping;
@@ -242,6 +243,10 @@ pub use desktop_arrangement::{
     DesktopArrangementEntryDiagnostic, DesktopArrangementEntryInput, DesktopArrangementError,
     DesktopArrangementRestoreAction, DesktopArrangementRestorePlan,
     DesktopArrangementRestoreResult, DesktopArrangementStatus, DesktopWindowFocusResult,
+};
+pub use desktop_attention::{
+    project_desktop_attention, DesktopAttentionItem, DesktopAttentionProjection,
+    DESKTOP_ATTENTION_LIMIT,
 };
 pub use desktop_behaviour::{
     project_desktop_behaviour, strengthen_groups_from_behaviour, DesktopBehaviourTimeline,

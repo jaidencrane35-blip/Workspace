@@ -15,6 +15,7 @@ use crate::desktop_behaviour::{
 use crate::desktop_grouping::{
     group_desktop_members, DesktopGroupCriterion, DesktopGroupMemberFact, DesktopWindowGroup,
 };
+use crate::desktop_attention::{project_desktop_attention, DesktopAttentionProjection};
 use crate::desktop_decision::{project_desktop_decisions, DesktopDecisionProjection};
 use crate::desktop_runtime_memory::{
     project_desktop_runtime_memory, strengthen_groups_from_runtime_memory, DesktopRuntimeMemory,
@@ -201,6 +202,8 @@ pub struct WorkspaceState {
     pub semantics: DesktopSemanticProjection,
     /// Deterministic decision support (decisions, recommendations, consistency).
     pub decisions: DesktopDecisionProjection,
+    /// Deterministic attention (what deserves notice now).
+    pub attention: DesktopAttentionProjection,
     pub authority_effect: String,
 }
 
@@ -229,6 +232,7 @@ impl WorkspaceState {
             runtime_memory: DesktopRuntimeMemory::empty(),
             semantics: DesktopSemanticProjection::empty(),
             decisions: DesktopDecisionProjection::empty(),
+            attention: DesktopAttentionProjection::empty(),
             authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
         }
     }
@@ -314,6 +318,7 @@ impl WorkspaceState {
             runtime_memory: DesktopRuntimeMemory::empty(),
             semantics: DesktopSemanticProjection::empty(),
             decisions: DesktopDecisionProjection::empty(),
+            attention: DesktopAttentionProjection::empty(),
             authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
         }
     }
@@ -348,6 +353,7 @@ impl WorkspaceState {
             runtime_memory: DesktopRuntimeMemory::empty(),
             semantics: DesktopSemanticProjection::empty(),
             decisions: DesktopDecisionProjection::empty(),
+            attention: DesktopAttentionProjection::empty(),
             authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
         }
     }
@@ -416,6 +422,12 @@ impl WorkspaceState {
             &self.behaviour,
             &self.runtime_memory,
             &self.semantics,
+        );
+        self.attention = project_desktop_attention(
+            &self.decisions,
+            &self.semantics,
+            &self.runtime_memory,
+            &self.behaviour,
         );
         self
     }
