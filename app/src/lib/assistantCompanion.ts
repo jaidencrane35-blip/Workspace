@@ -360,6 +360,23 @@ function summariseBehaviour(state: WorkspaceState): string {
       } (≥30m between samples)`,
     );
   }
+  if (behaviour.sessions && behaviour.sessions.length > 0) {
+    const current =
+      behaviour.sessions.find((session) => session.kind === "active") ??
+      behaviour.sessions.find((session) => session.kind === "returning") ??
+      behaviour.sessions[behaviour.sessions.length - 1];
+    if (current) {
+      const dominant =
+        current.dominant_focus?.title ||
+        current.dominant_focus?.hwnd ||
+        "unknown focus";
+      parts.push(
+        `${behaviour.sessions.length} observation session${
+          behaviour.sessions.length === 1 ? "" : "s"
+        }; current ${current.kind} around ${dominant} (${current.sample_count} samples)`,
+      );
+    }
+  }
   return `${parts.join(". ")}.`;
 }
 
@@ -457,7 +474,7 @@ export function answerDesktopQuestionLocally(
     return summariseWorkingOn(state);
   }
   if (
-    /what have i been working|been working on|focus history|behaviour|behavior|task switch|revisit/.test(
+    /what have i been working|been working on|focus history|behaviour|behavior|task switch|revisit|session/.test(
       trimmed,
     )
   ) {

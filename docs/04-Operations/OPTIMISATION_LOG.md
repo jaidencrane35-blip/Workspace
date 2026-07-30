@@ -90,6 +90,23 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 
 ## Cycles
 
+### Cycle: v9-3-observation-session-segmentation
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Cycle number** | V9-3 |
+| **Goal** | Infer observation sessions from coverage gaps on the behaviour timeline |
+| **Problem** | Behaviour facts existed as a flat sample stream without session epochs |
+| **Analysis** | Split retained history at ≥30m gaps; label active/completed/returning with dominant focus |
+| **Changes** | `DesktopObservationSession` + `behaviour.sessions`; Assistant session summary |
+| **Files affected** | desktop_behaviour, domain exports/types, assistantCompanion, this log |
+| **Validation** | typecheck / test / build / architecture / ipc / ui-boundary (+ domain behaviour tests) |
+| **Deleted / reduced** | none |
+| **Next recommended cycle** | Two empty behavioural evaluation passes |
+
+---
+
 ### Cycle: v9-2-focus-follow-and-group-confidence
 
 | Field | Value |

@@ -6919,6 +6919,20 @@ export interface DesktopCoPresence {
   last_seen_at: string;
 }
 
+/** Observation session inferred from coverage continuity (not OS login). */
+export interface DesktopObservationSession {
+  id: string;
+  started_at: string;
+  ended_at: string;
+  start_pass_id: string;
+  end_pass_id: string;
+  sample_count: number;
+  focus_transition_count: number;
+  dominant_focus: ObservationWindowRef | null;
+  /** active | completed | returning */
+  kind: string;
+}
+
 /** Deterministic behaviour timeline projected onto WorkspaceState. */
 export interface DesktopBehaviourTimeline {
   sample_count: number;
@@ -6929,6 +6943,7 @@ export interface DesktopBehaviourTimeline {
   recent_focus_spans: DesktopObservedFocusSpan[];
   focus_follows: DesktopFocusFollow[];
   co_presence: DesktopCoPresence[];
+  sessions: DesktopObservationSession[];
   current_focus: ObservationWindowRef | null;
   current_focus_started_at: string | null;
   current_focus_sample_span_seconds: number | null;

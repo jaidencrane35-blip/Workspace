@@ -76,6 +76,21 @@ pub struct DesktopCoPresence {
     pub last_seen_at: String,
 }
 
+/// Observation session inferred from coverage continuity (not OS login sessions).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DesktopObservationSession {
+    pub id: String,
+    pub started_at: String,
+    pub ended_at: String,
+    pub start_pass_id: String,
+    pub end_pass_id: String,
+    pub sample_count: i32,
+    pub focus_transition_count: i32,
+    pub dominant_focus: Option<ObservationWindowRef>,
+    /// `active` | `completed` | `returning`
+    pub kind: String,
+}
+
 /// Bounded behavioural timeline projected onto WorkspaceState.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DesktopBehaviourTimeline {
@@ -87,6 +102,7 @@ pub struct DesktopBehaviourTimeline {
     pub recent_focus_spans: Vec<DesktopObservedFocusSpan>,
     pub focus_follows: Vec<DesktopFocusFollow>,
     pub co_presence: Vec<DesktopCoPresence>,
+    pub sessions: Vec<DesktopObservationSession>,
     pub current_focus: Option<ObservationWindowRef>,
     pub current_focus_started_at: Option<String>,
     pub current_focus_sample_span_seconds: Option<i64>,
@@ -107,6 +123,7 @@ impl DesktopBehaviourTimeline {
             recent_focus_spans: Vec::new(),
             focus_follows: Vec::new(),
             co_presence: Vec::new(),
+            sessions: Vec::new(),
             current_focus: None,
             current_focus_started_at: None,
             current_focus_sample_span_seconds: None,
@@ -296,11 +313,12 @@ pub fn project_desktop_behaviour(
         sample_count: snapshots.len() as i32,
         coverage_started_at,
         coverage_ended_at,
-        focus_transitions,
+        focus_transitions: focus_transitions.clone(),
         window_revisits,
         recent_focus_spans,
         focus_follows,
         co_presence,
+        sessions: project_observation_sessions(snapshots, &focus_transitions, &coverage_gaps),
         current_focus,
         current_focus_started_at,
         current_focus_sample_span_seconds,
@@ -399,6 +417,100 @@ fn sample_gap_seconds(previous: &str, next: &str) -> Option<i64> {
     let previous = DateTime::parse_from_rfc3339(previous).ok()?.with_timezone(&Utc);
     let next = DateTime::parse_from_rfc3339(next).ok()?.with_timezone(&Utc);
     Some((next - previous).num_seconds())
+}
+
+fn project_observation_sessions(
+    snapshots: &[WorkspaceObservationSnapshot],
+    focus_transitions: &[DesktopFocusTransition],
+    coverage_gaps: &[DesktopCoverageGap],
+) -> Vec<DesktopObservationSession> {
+    if snapshots.is_empty() {
+        return Vec::new();
+    }
+    let gap_before_pass: std::collections::BTreeSet<&str> = coverage_gaps
+        .iter()
+        .map(|gap| gap.before_pass_id.as_str())
+        .collect();
+
+    let mut sessions = Vec::new();
+    let mut start_index = 0usize;
+    for index in 1..snapshots.len() {
+        if gap_before_pass.contains(snapshots[index].pass.id.as_str()) {
+            sessions.push(build_session(
+                &snapshots[start_index..=index - 1],
+                focus_transitions,
+                !sessions.is_empty(),
+                false,
+            ));
+            start_index = index;
+        }
+    }
+    sessions.push(build_session(
+        &snapshots[start_index..],
+        focus_transitions,
+        !sessions.is_empty(),
+        true,
+    ));
+    sessions
+}
+
+fn build_session(
+    snapshots: &[WorkspaceObservationSnapshot],
+    focus_transitions: &[DesktopFocusTransition],
+    after_gap: bool,
+    is_current: bool,
+) -> DesktopObservationSession {
+    let first = &snapshots[0];
+    let last = &snapshots[snapshots.len() - 1];
+    let start_at = first.pass.captured_at.as_str();
+    let end_at = last.pass.captured_at.as_str();
+    let transition_count = focus_transitions
+        .iter()
+        .filter(|transition| {
+            transition.at.as_str() >= start_at && transition.at.as_str() <= end_at
+        })
+        .count() as i32;
+
+    let mut focus_tallies: BTreeMap<String, (ObservationWindowRef, i32)> = BTreeMap::new();
+    for snapshot in snapshots {
+        if let Some(focused) = snapshot
+            .windows
+            .iter()
+            .find(|window| window.focused)
+            .map(ObservationWindowRef::from_window)
+        {
+            let key = window_key(&focused);
+            let entry = focus_tallies
+                .entry(key)
+                .or_insert_with(|| (focused.clone(), 0));
+            entry.0 = focused;
+            entry.1 += 1;
+        }
+    }
+    let dominant_focus = focus_tallies
+        .into_values()
+        .max_by(|a, b| a.1.cmp(&b.1).then_with(|| a.0.hwnd.cmp(&b.0.hwnd)))
+        .map(|(window, _)| window);
+
+    let kind = if is_current && after_gap {
+        "returning"
+    } else if is_current {
+        "active"
+    } else {
+        "completed"
+    };
+
+    DesktopObservationSession {
+        id: format!("session:{}:{}", first.pass.id, last.pass.id),
+        started_at: first.pass.captured_at.clone(),
+        ended_at: last.pass.captured_at.clone(),
+        start_pass_id: first.pass.id.clone(),
+        end_pass_id: last.pass.id.clone(),
+        sample_count: snapshots.len() as i32,
+        focus_transition_count: transition_count,
+        dominant_focus,
+        kind: kind.into(),
+    }
 }
 
 #[cfg(test)]
@@ -567,5 +679,8 @@ mod tests {
         let behaviour = project_desktop_behaviour(&snapshots);
         assert_eq!(behaviour.coverage_gaps.len(), 1);
         assert_eq!(behaviour.coverage_gaps[0].gap_seconds, 3600);
+        assert_eq!(behaviour.sessions.len(), 2);
+        assert_eq!(behaviour.sessions[0].kind, "completed");
+        assert_eq!(behaviour.sessions[1].kind, "returning");
     }
 }
