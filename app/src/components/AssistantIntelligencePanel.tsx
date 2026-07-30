@@ -290,6 +290,13 @@ export function AssistantIntelligencePanel({
       return null;
     }
     try {
+      try {
+        await invokeIpc("ensure_observation_freshness", {
+          consumerId: "workspace_assistant",
+        });
+      } catch {
+        // Freshness is best-effort before reading projected desktop state.
+      }
       return await invokeIpc<WorkspaceState>("get_workspace_state");
     } catch {
       return null;
