@@ -1,33 +1,35 @@
 /**
- * Purpose: Copy helpers for the Layouts application-stage overview.
- * Owner: Frontend product shell (Milestone D — Workspace Stage)
- * Inputs: workspace name, zone counts
- * Outputs: Stage labels and empty-state copy (apps-first product identity)
+ * Purpose: Copy helpers for the Desktop Reality Stage (Layouts).
+ * Owner: Frontend product shell (Milestone R — Desktop Reality Stage)
+ * Inputs: workspace name (optional profile), zone counts
+ * Outputs: Stage labels and secondary copy
  * Dependencies: None (pure)
- * Non-responsibilities: IPC, window control, Flow/Focus geometry apply, Assistant
+ * Non-responsibilities: IPC, window control, Flow/Focus geometry apply, Assistant,
+ *   inventing observed windows
  */
 
 export function layoutsStageEyebrow(): string {
-  return "Workspace stage";
+  return "Desktop reality";
 }
 
-export function layoutsStageTitle(workspaceName: string): string {
-  const name = workspaceName.trim();
-  return name ? `${name} — applications` : "Applications on stage";
+export function layoutsStageTitle(workspaceName: string | null | undefined): string {
+  const name = workspaceName?.trim() ?? "";
+  return name ? `${name} — desktop stage` : "Your desktop";
 }
 
-/** Home / marketing lede — apps organise the workspace. */
+/** Home / marketing lede — reality first. */
 export function layoutsStageLede(): string {
-  return "This is where you organise and work with the applications that belong to this workspace. Desktop arrangements remember window layouts; the companion canvas below is optional board practice — not your OS desktop.";
+  return "Workspace represents your existing computing environment. Observed windows appear on the stage; arrangements remember real layouts. The companion canvas below is optional board practice — not your OS desktop.";
 }
 
+/** @deprecated Prefer stageDesktopEmptyCopy — kept for any remaining registry-only empty paths. */
 export function layoutsStageEmptyAppsCopy(): {
   title: string;
   body: string;
 } {
   return {
-    title: "Add the apps you work with",
-    body: "Applications are the centre of this workspace. Register them under Applications, then return here to launch and organise. Live OS windows are separate — arrangements save and restore those later.",
+    title: "No registered library apps",
+    body: "Registration is optional. Your observed desktop windows appear above when the desktop app is running. Use Applications only to pin or launch library entries.",
   };
 }
 
@@ -41,13 +43,21 @@ export function layoutsStageCanvasNote(zoneCount: number): string {
 }
 
 export function layoutsStageFocusNote(): string {
-  return "Focus emphasises one application on stage. Supporting apps stay available. Companion canvas is hidden to reduce noise — switch to Flow to edit zones. Desktop arrangements stay in the rail.";
+  return "Focus emphasises the focused observed window. Supporting windows stay on stage. Companion canvas is hidden — switch to Flow to edit zones. Arrangements stay in the rail.";
 }
 
 export function layoutsStageFlowHint(): string {
-  return "Save and restore real desktop window layouts from the arrangements area below the stage.";
+  return "Save and restore real desktop window layouts from the arrangements area when a profile is selected.";
 }
 
 export function layoutsStageFocusHint(): string {
-  return "Supporting apps stay available — Focus does not quit them.";
+  return "Supporting windows stay available — Focus does not quit applications.";
+}
+
+export function layoutsStageRegistryHeading(): string {
+  return "Library apps (optional)";
+}
+
+export function layoutsStageRegistryNote(): string {
+  return "Registered apps are a library for launch — not a substitute for your observed desktop.";
 }

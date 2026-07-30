@@ -53,7 +53,8 @@ What Workspace is, who it serves, and how scope is managed.
 | [Product Vision](01-Product/PRODUCT-VISION.md) | Product goals, domains, and target experience |
 | [Workspace Visual Direction](01-Product/WORKSPACE-VISUAL-DIRECTION.md) | Concept-art north star; hierarchy binding, pixels not |
 | [Workspace Reference Interpretation](01-Product/WORKSPACE-REFERENCE-INTERPRETATION.md) | **Binding** — problem solved, hierarchy, drift examples, guardrails |
-| [Milestone R Desktop Reality Stage Charter](01-Product/MILESTONE-R-DESKTOP-REALITY-STAGE-CHARTER.md) | **Next** — planning charter; implementation not authorised until approved |
+| [Milestone R Desktop Reality Stage Charter](01-Product/MILESTONE-R-DESKTOP-REALITY-STAGE-CHARTER.md) | Approved charter; Slice 1 in review |
+| [Milestone R Slice 1](03-Engineering/MILESTONE-R-SLICE-1-DESKTOP-REALITY-STAGE.md) | First Desktop Reality Stage implementation — await visual review |
 | [Visual references](01-Product/references/README.md) | Original concept images (hierarchy/intent, not pixel specs) |
 | [Workspace Product Reality Alignment Audit](01-Product/WORKSPACE-PRODUCT-REALITY-ALIGNMENT-AUDIT.md) | **Current** — desktop reality model; UI mismatch; Milestone R next |
 | [Workspace Product Delivery Roadmap](01-Product/WORKSPACE-PRODUCT-DELIVERY-ROADMAP.md) | Milestones R→F→G→E→H→I (D identity not accepted; F blocked) |

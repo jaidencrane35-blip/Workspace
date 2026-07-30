@@ -2,7 +2,7 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | **Charter only** — planning authorised; **implementation not authorised** until human approval of this charter |
+| **Status** | **Charter approved** — Slice 1 implemented on `cursor/milestone-r-desktop-reality-stage-34a5`; **stop for human visual review** before further slices |
 | **Date** | 2026-07-30 |
 | **Branch (docs)** | `cursor/product-reality-alignment-audit-34a5` |
 | **Milestone** | R — Desktop Reality Stage |

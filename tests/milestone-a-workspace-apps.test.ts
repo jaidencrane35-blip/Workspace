@@ -70,9 +70,9 @@ describe("applications UI helpers", () => {
   });
 
   it("explains empty registry states and layout relationship", () => {
-    expect(applicationsEmptyCopy(false).title).toMatch(/workspace/i);
-    expect(applicationsEmptyCopy(true).body).toMatch(/Layouts/i);
-    expect(applicationsLayoutsRelationCopy()).toMatch(/Layouts/i);
+    expect(applicationsEmptyCopy(false).title).toMatch(/profile/i);
+    expect(applicationsEmptyCopy(true).body).toMatch(/Stage/i);
+    expect(applicationsLayoutsRelationCopy()).toMatch(/Stage/i);
   });
 });
 
@@ -90,7 +90,7 @@ describe("product shell UI helpers", () => {
 });
 
 describe("layouts stage UI helpers", () => {
-  it("keeps stage copy apps-first and honest about OS windows", async () => {
+  it("keeps stage copy desktop-reality-first and honest about observation", async () => {
     const {
       layoutsStageLede,
       layoutsStageEmptyAppsCopy,
@@ -99,11 +99,12 @@ describe("layouts stage UI helpers", () => {
       layoutsStageTitle,
       layoutsStageFocusNote,
     } = await import("../app/src/lib/layoutsStageUi");
-    expect(layoutsStageEyebrow()).toMatch(/Workspace stage/i);
-    expect(layoutsStageTitle("Deep work")).toMatch(/applications/i);
-    expect(layoutsStageLede()).toMatch(/applications/i);
+    expect(layoutsStageEyebrow()).toMatch(/Desktop reality/i);
+    expect(layoutsStageTitle("Deep work")).toMatch(/desktop stage/i);
+    expect(layoutsStageTitle(null)).toMatch(/Your desktop/i);
+    expect(layoutsStageLede()).toMatch(/existing computing environment/i);
     expect(layoutsStageLede()).not.toMatch(/AI/i);
-    expect(layoutsStageEmptyAppsCopy().body).toMatch(/OS windows/i);
+    expect(layoutsStageEmptyAppsCopy().body).toMatch(/optional/i);
     expect(layoutsStageCanvasNote(0)).toMatch(/Optional/i);
     expect(layoutsStageCanvasNote(2)).toMatch(/2 zones/i);
     expect(layoutsStageFocusNote()).toMatch(/Focus/i);

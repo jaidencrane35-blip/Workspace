@@ -142,7 +142,7 @@ export function ApplicationsPanel({
 
   const registerApplication = () => {
     if (!workspace) {
-      onError("Create or select a workspace first.");
+      onError("Select or create a named profile under Workspaces to save library apps.");
       return;
     }
     const trimmed = name.trim();
@@ -200,7 +200,7 @@ export function ApplicationsPanel({
     >
       <header className="product-panel-hero">
         <p className="arrangement-eyebrow">Applications</p>
-        <h2>Apps in your workspace</h2>
+        <h2>Application library</h2>
         <p className="lede">{applicationsLayoutsRelationCopy()}</p>
       </header>
 
@@ -208,24 +208,12 @@ export function ApplicationsPanel({
         <div className="arrangement-empty" aria-live="polite">
           <h3>{empty.title}</h3>
           <p className="muted">{empty.body}</p>
-          <div className="application-card-grid ghost-preview" aria-hidden="true">
-            {["Editor", "Browser", "Chat"].map((label) => (
-              <div key={label} className="application-card preview">
-                <span className="application-monogram">{label.slice(0, 2)}</span>
-                <span className="muted">{label} (example)</span>
-              </div>
-            ))}
-          </div>
-          <p className="muted">
-            Example cards only — not live applications. Open Workspaces to
-            continue.
-          </p>
         </div>
       ) : (
         <>
           <section aria-label="Registered applications">
             <div className="row section-heading-row">
-              <h3>Workspace assets</h3>
+              <h3>Library assets</h3>
               <div className="row">
                 <button
                   type="button"
@@ -327,39 +315,43 @@ export function ApplicationsPanel({
               </button>
             </section>
           ) : null}
-
-          <section
-            aria-label="Active desktop applications"
-            className={workMode === "focus" ? "applications-active quiet" : undefined}
-          >
-            <div className="row section-heading-row">
-              <h3>Running on the desktop</h3>
-              <button
-                type="button"
-                className="ghost"
-                disabled={busy || activeLoading || !runtime}
-                onClick={() => {
-                  void run("Desktop apps refreshed", refreshActive);
-                }}
-              >
-                Refresh
-              </button>
-            </div>
-            {workMode === "focus" ? (
-              <p className="muted">
-                Focus keeps this quieter — refresh if you need the full observed
-                list.
-              </p>
-            ) : null}
-            {workMode === "flow" || activeApps.length > 0 ? (
-              <ActiveApplicationsView
-                applications={activeApps}
-                loading={activeLoading}
-              />
-            ) : null}
-          </section>
         </>
       )}
+
+      <section
+        aria-label="Active desktop applications"
+        className={workMode === "focus" ? "applications-active quiet" : undefined}
+      >
+        <div className="row section-heading-row">
+          <h3>Running on the desktop</h3>
+          <button
+            type="button"
+            className="ghost"
+            disabled={busy || activeLoading || !runtime}
+            onClick={() => {
+              void run("Desktop apps refreshed", refreshActive);
+            }}
+          >
+            Refresh
+          </button>
+        </div>
+        <p className="muted">
+          Observed processes do not require a named profile. The Stage shows
+          them spatially.
+        </p>
+        {workMode === "focus" ? (
+          <p className="muted">
+            Focus keeps this quieter — refresh if you need the full observed
+            list.
+          </p>
+        ) : null}
+        {workMode === "flow" || activeApps.length > 0 ? (
+          <ActiveApplicationsView
+            applications={activeApps}
+            loading={activeLoading}
+          />
+        ) : null}
+      </section>
     </section>
   );
 }

@@ -1,11 +1,10 @@
 /**
- * Purpose: Workspace Home — first viewport: apps-first identity and entry to
- *   the Workspace stage (Layouts).
- * Owner: Frontend product shell (Milestone D — Workspace Stage)
- * Inputs: Active workspace, zone/app summaries, work mode, navigation callbacks
- * Outputs: Navigation intents to Workspaces / Applications / Layouts
+ * Purpose: Workspace Home — orientation; Stage remains the product landing.
+ * Owner: Frontend product shell (Milestone R — Desktop Reality Stage)
+ * Inputs: Active workspace profile, zone/app summaries, work mode, navigation
+ * Outputs: Navigation intents to Stage / Applications / Workspaces
  * Dependencies: workMode labels, productShellUi monogram (presentation only)
- * Non-responsibilities: IPC mutations, Assistant, OS window control, fake features
+ * Non-goals: Requiring create-workspace before value; AI dashboard; fake apps
  */
 
 import type { ApplicationReference, Workspace } from "../types/domain";
@@ -57,17 +56,30 @@ export function WorkspaceHome({
     <section className="product-panel product-home" aria-label="Home">
       <header className="product-panel-hero">
         <p className="arrangement-eyebrow">Home</p>
-        <h2>Your applications, organised</h2>
+        <h2>Your desktop, represented</h2>
         <p className="lede">
-          Workspace is where you organise and work with the apps that belong to
-          each environment. Open the workspace stage to see them front and
-          centre. Assistant stays a companion — not the product.
+          Workspace shows your existing computing environment. Open the Stage to
+          see observed applications — no setup required first. Named profiles and
+          library registration are optional. Assistant stays a companion.
         </p>
       </header>
 
+      <div className="home-stage-cta row">
+        <button type="button" onClick={() => onNavigate("layouts")}>
+          Open desktop stage
+        </button>
+        <button
+          type="button"
+          className="ghost"
+          onClick={() => onNavigate("applications")}
+        >
+          Applications library
+        </button>
+      </div>
+
       {workspace ? (
         <div className="home-current" aria-live="polite">
-          <p className="home-current-label">Current workspace</p>
+          <p className="home-current-label">Named profile (optional)</p>
           <div className="home-current-identity">
             <span className="workspace-monogram" aria-hidden="true">
               {monogramFromName(workspace.name)}
@@ -76,10 +88,10 @@ export function WorkspaceHome({
               <p className="home-current-name">{workspace.name}</p>
               <p className="muted">
                 {appsLoading
-                  ? "loading apps…"
+                  ? "loading library…"
                   : applications.length === 1
-                    ? "1 application on stage"
-                    : `${applications.length} applications on stage`}
+                    ? "1 library app"
+                    : `${applications.length} library apps`}
                 {" · "}
                 {workModeLabel(workMode)} presentation
                 {" · "}
@@ -90,28 +102,22 @@ export function WorkspaceHome({
               <p className="muted">{workModeDescription(workMode)}</p>
             </div>
           </div>
-          <div className="home-stage-cta row">
-            <button type="button" onClick={() => onNavigate("layouts")}>
-              Open workspace stage
-            </button>
-            <button
-              type="button"
-              className="ghost"
-              onClick={() => onNavigate("applications")}
-            >
-              Manage applications
-            </button>
-          </div>
         </div>
       ) : (
         <div className="arrangement-empty">
-          <h3>No active workspace</h3>
+          <h3>No named profile selected</h3>
           <p className="muted">
-            Create a workspace to start organising applications and desktop
-            arrangements.
+            You can still open the Stage to see your desktop when the desktop
+            app is running. Create a profile only if you want saved arrangements
+            or a library tied to a name.
           </p>
-          <button type="button" disabled={busy} onClick={onCreateWorkspace}>
-            Create workspace
+          <button
+            type="button"
+            className="ghost"
+            disabled={busy}
+            onClick={onCreateWorkspace}
+          >
+            Create optional profile
           </button>
         </div>
       )}
@@ -119,15 +125,15 @@ export function WorkspaceHome({
       {workspace ? (
         <section
           className="home-stage-preview"
-          aria-label="Applications in this workspace"
+          aria-label="Optional library preview"
         >
-          <h3>Applications on stage</h3>
+          <h3>Library preview</h3>
           {appsLoading ? (
-            <p className="muted">Loading applications…</p>
+            <p className="muted">Loading library…</p>
           ) : applications.length === 0 ? (
             <p className="muted">
-              None registered yet. Add apps under Applications — they become the
-              centre of this workspace.
+              No library apps yet. Your observed desktop still appears on the
+              Stage without registration.
             </p>
           ) : (
             <ul className="stage-tile-grid home-stage-grid" aria-label="App preview">
@@ -145,7 +151,7 @@ export function WorkspaceHome({
                       {monogramFromName(app.name)}
                     </span>
                     <span className="stage-tile-name">{app.name}</span>
-                    <span className="muted">On workspace stage</span>
+                    <span className="muted">Library app</span>
                   </button>
                 </li>
               ))}
@@ -162,9 +168,9 @@ export function WorkspaceHome({
             className="home-action home-action-primary"
             onClick={() => onNavigate("layouts")}
           >
-            <span className="home-action-title">Workspace stage</span>
+            <span className="home-action-title">Desktop stage</span>
             <span className="muted">
-              Applications front and centre · Flow/Focus · arrangements
+              Observed windows · Flow/Focus · arrangements
             </span>
           </button>
           <button
@@ -173,7 +179,7 @@ export function WorkspaceHome({
             onClick={() => onNavigate("applications")}
           >
             <span className="home-action-title">Applications</span>
-            <span className="muted">Register, inspect, and launch</span>
+            <span className="muted">Optional library · inspect and launch</span>
           </button>
           <button
             type="button"

@@ -18,18 +18,18 @@ export function applicationsEmptyCopy(hasWorkspace: boolean): {
 } {
   if (!hasWorkspace) {
     return {
-      title: "Choose a workspace first",
-      body: "Applications belong to a workspace. Switch or create one under Workspaces, then add apps here as workspace assets.",
+      title: "Optional library needs a named profile",
+      body: "Observed desktop windows appear on the Stage without registration. Create or select a profile under Workspaces only if you want a saved library or arrangements tied to a name.",
     };
   }
   return {
-    title: "No applications in this workspace yet",
-    body: "Add the apps you use here. They stay with this workspace and can be launched when an executable path is set. Pair them with Layouts to save and restore window arrangements.",
+    title: "No library apps in this profile yet",
+    body: "Registration is optional. Add apps here to launch them later. The Stage shows your observed desktop separately — arrangements remember real window layouts.",
   };
 }
 
 export function applicationsLayoutsRelationCopy(): string {
-  return "The Workspace stage (Layouts) is where these applications appear as the centre of your workspace. Use this page to register and launch them. Desktop arrangements remember real window layouts — separate from the companion canvas.";
+  return "The Stage shows your observed desktop first. This page is an optional library for register and launch. Desktop arrangements remember real window layouts — separate from the companion canvas.";
 }
 
 export function applicationIdentityLine(app: ApplicationReference): string {

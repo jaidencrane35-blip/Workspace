@@ -72,9 +72,9 @@ export function workModeDescription(mode: WorkMode): string {
 
 export function workModeStageLede(mode: WorkMode): string {
   if (mode === "flow") {
-    return "Flow keeps your workspace overview dense: applications, layouts, and arrangements stay easy to scan.";
+    return "Flow keeps your desktop overview dense: observed windows stay easy to scan. Does not move OS windows yet.";
   }
-  return "Focus reduces chrome noise and emphasises one primary application. Supporting apps remain available — nothing is closed.";
+  return "Focus reduces chrome noise and emphasises the focused observed window. Others stay available — nothing is closed. Does not move OS windows yet.";
 }
 
 /** Focus chrome partition: one primary app + remaining supporting apps. */

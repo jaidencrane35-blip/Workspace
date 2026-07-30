@@ -130,7 +130,7 @@ Workspace is a **Windows-targeted Tauri 2 desktop app** (React 18 + Vite in `app
 - **Programme context:** Desktop Arrangement Foundation (DAF). Read `docs/03-Engineering/DAF-ARCHITECTURE-AUDIT.md` and `docs/03-Engineering/ENGINEERING-GOVERNANCE.md` before coding.
 - **Human review:** `docs/03-Engineering/HUMAN-REVIEW-POLICY.md`. Batch UI checkpoints. Prefer live app / screenshots over automatic videos unless audit/regression/explicit request.
 - **Visual north star:** `docs/01-Product/WORKSPACE-REFERENCE-INTERPRETATION.md` (hierarchy binding) + `docs/01-Product/WORKSPACE-VISUAL-DIRECTION.md` + `docs/01-Product/references/`.
-- **Product delivery (next):** `docs/01-Product/MILESTONE-R-DESKTOP-REALITY-STAGE-CHARTER.md` — Milestone **R** charter (planning only; await approval before code). Interpretation: `docs/01-Product/WORKSPACE-REFERENCE-INTERPRETATION.md`. Do **not** start Milestone F.
+- **Product delivery (next):** Milestone **R** Slice 1 — `docs/03-Engineering/MILESTONE-R-SLICE-1-DESKTOP-REALITY-STAGE.md` (await human visual review). Charter: `docs/01-Product/MILESTONE-R-DESKTOP-REALITY-STAGE-CHARTER.md`. Do **not** start Milestone F or later R slices until Slice 1 review.
 
 ### Rust toolchain (important)
 

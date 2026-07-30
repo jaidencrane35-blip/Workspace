@@ -1,13 +1,13 @@
 /**
- * Purpose: Product shell root — Workspace-first chrome, view routing,
- *   Flow/Focus density, persistent Assistant companion rail, and
- *   application-centric Workspace stage (Milestone D).
- * Owner: Frontend product shell
- * Inputs: Tauri IPC (settings, workspace, zones, applications); local UI prefs
- * Outputs: Active workspace state, navigation, banners, chrome presentation
+ * Purpose: Product shell root — Desktop Reality Stage landing, view routing,
+ *   Flow/Focus density, persistent Assistant companion rail.
+ * Owner: Frontend product shell (Milestone R)
+ * Inputs: Tauri IPC (settings, workspace, zones, applications, workspace state);
+ *   local UI prefs
+ * Outputs: Navigation, banners, chrome; Stage shows observed desktop without
+ *   requiring a named workspace profile
  * Dependencies: Product panels, DesktopArrangementPanel, companion rail, prefs
- * Non-responsibilities: OS window moves, permissions enforcement, Assistant
- *   reasoning, new intelligence engines, arrangement geometry apply on mode switch
+ * Non-goals: OS geometry apply, grouping, audio, new AI/engines, setup-first gate
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -402,7 +402,7 @@ export default function App() {
               <div className="canvas-shell">
                 <p className="muted">Loading…</p>
               </div>
-            ) : workspace ? (
+            ) : (
               <>
                 <WorkspaceApplicationStage
                   workspace={workspace}
@@ -415,7 +415,7 @@ export default function App() {
                   onManageApplications={() => navigatePrimary("applications")}
                   onLaunchApplication={launchFromStage}
                 />
-                {workMode === "flow" ? (
+                {workspace && workMode === "flow" ? (
                   <div className="stage-secondary-canvas">
                     <p className="stage-secondary-label muted">
                       Companion canvas (optional board practice)
@@ -431,11 +431,12 @@ export default function App() {
                       onAddZone={addZoneFromCanvas}
                     />
                   </div>
-                ) : (
+                ) : null}
+                {workspace && workMode === "focus" ? (
                   <div className="focus-canvas-suppressed" aria-live="polite">
                     <p className="muted">
                       Companion canvas is hidden in Focus. Switch to Flow to
-                      edit zones. Application registry and arrangements are
+                      edit zones. Desktop reality and arrangements are
                       unchanged.
                     </p>
                     <button
@@ -446,22 +447,8 @@ export default function App() {
                       Return to Flow
                     </button>
                   </div>
-                )}
+                ) : null}
               </>
-            ) : (
-              <div className="canvas-shell canvas-bootstrap">
-                <p className="lede">
-                  No active workspace. Create one under Workspaces, then return
-                  here for the application stage and desktop arrangements.
-                </p>
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => navigatePrimary("workspaces")}
-                >
-                  Go to Workspaces
-                </button>
-              </div>
             )}
           </div>
           <DesktopArrangementPanel

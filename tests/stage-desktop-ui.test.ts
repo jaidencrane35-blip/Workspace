@@ -1,0 +1,103 @@
+import { describe, expect, it } from "vitest";
+import {
+  layoutStageDesktopWindows,
+  stageDesktopEmptyCopy,
+  stageDesktopMetaLine,
+  stageDesktopWindowKey,
+  stageDesktopWindowTitle,
+} from "../app/src/lib/stageDesktopUi";
+import type { WorkspaceStateWindow } from "../app/src/types/domain";
+
+function sampleWindow(
+  overrides: Partial<WorkspaceStateWindow> = {},
+): WorkspaceStateWindow {
+  return {
+    stable_window_id: "stable-1",
+    hwnd: "0x1",
+    title: "Editor",
+    process_id: 10,
+    process_name: "code.exe",
+    visible: true,
+    focused: false,
+    minimized: false,
+    x: 0,
+    y: 0,
+    width: 800,
+    height: 600,
+    monitor_index: 0,
+    monitor_name: "Display 1",
+    ...overrides,
+  };
+}
+
+describe("stage desktop UI helpers", () => {
+  it("prefers stable window identity for keys", () => {
+    expect(stageDesktopWindowKey(sampleWindow())).toBe("stable-1");
+    expect(
+      stageDesktopWindowKey(
+        sampleWindow({ stable_window_id: null, hwnd: "0xABC" }),
+      ),
+    ).toBe("0xABC");
+  });
+
+  it("does not invent titles when metadata exists", () => {
+    expect(stageDesktopWindowTitle(sampleWindow())).toBe("Editor");
+    expect(
+      stageDesktopWindowTitle(
+        sampleWindow({ title: "  ", process_name: "chrome.exe" }),
+      ),
+    ).toBe("chrome.exe");
+  });
+
+  it("lays out windows spatially from real bounds", () => {
+    const tiles = layoutStageDesktopWindows([
+      sampleWindow({
+        stable_window_id: "a",
+        x: 0,
+        y: 0,
+        width: 500,
+        height: 500,
+        focused: true,
+      }),
+      sampleWindow({
+        stable_window_id: "b",
+        hwnd: "0x2",
+        title: "Browser",
+        x: 500,
+        y: 0,
+        width: 500,
+        height: 500,
+      }),
+    ]);
+    expect(tiles).toHaveLength(2);
+    expect(tiles[0]?.leftPct).toBe(0);
+    expect(tiles[1]?.leftPct).toBe(50);
+    expect(tiles[0]?.focused).toBe(true);
+    expect(tiles.every((tile) => tile.widthPct > 0 && tile.heightPct > 0)).toBe(
+      true,
+    );
+  });
+
+  it("uses honest empty copy without create-workspace language", () => {
+    const ready = stageDesktopEmptyCopy("ready");
+    expect(ready.title).toMatch(/No windows observed/i);
+    expect(ready.body).not.toMatch(/Go to Workspaces/i);
+    expect(ready.body).toMatch(/No named profile/i);
+
+    const preview = stageDesktopEmptyCopy("runtime_unavailable");
+    expect(preview.body).toMatch(/Browser preview/i);
+    expect(preview.body).toMatch(/invented/i);
+  });
+
+  it("summarises observation metadata without AI framing", () => {
+    const line = stageDesktopMetaLine({
+      windowCount: 2,
+      monitorCount: 1,
+      observationPassId: "pass-1",
+      focusedTitle: "Editor",
+    });
+    expect(line).toMatch(/2 observed windows/);
+    expect(line).toMatch(/Focused: Editor/);
+    expect(line).not.toMatch(/AI/i);
+  });
+});
