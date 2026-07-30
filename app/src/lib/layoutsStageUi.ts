@@ -28,8 +28,8 @@ export function layoutsStageEmptyAppsCopy(): {
   body: string;
 } {
   return {
-    title: "No registered library apps",
-    body: "Registration is optional. Your observed desktop windows appear above when the desktop app is running. Use Applications only to pin or launch library entries.",
+    title: "No library apps",
+    body: "",
   };
 }
 
@@ -55,9 +55,9 @@ export function layoutsStageFocusHint(): string {
 }
 
 export function layoutsStageRegistryHeading(): string {
-  return "Library apps (optional)";
+  return "Library";
 }
 
 export function layoutsStageRegistryNote(): string {
-  return "Registered apps are a library for launch — not a substitute for your observed desktop.";
+  return "";
 }

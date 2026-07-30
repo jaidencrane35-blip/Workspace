@@ -88,6 +88,28 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 
 ## Cycles
 
+### Cycle: im-1-stage-empty-spatial-calm
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Cycle number** | IM-1 |
+| **Approved category** | 1 Visual hierarchy (+ 2 Layout consistency) |
+| **Goal** | Stage empty state reads as a calm desktop plane (layout before text) |
+| **Problem** | Observation-backed Stage still used paragraph empty states → dashboard/help feel |
+| **Analysis** | Interaction Model Audit IM-1; presentation-only; reuse existing load states |
+| **Changes** | Empty desktop plane UI; one-line `stageDesktopPlaneMessage`; compact hero; library `<details>`; quiet arrangements via `:has(.stage-plane-calm)` |
+| **Files affected** | `WorkspaceApplicationStage.tsx`, `stageDesktopUi.ts`, `layoutsStageUi.ts`, `App.css`, tests, IM-1 reports, this log |
+| **Validation** | typecheck / test (125) / build / architecture / ipc / ui-boundary |
+| **Maintainability score** | 8/10 — extended Stage; single copy owner; no new engines |
+| **Reference / contract alignment** | Improved first-glance spatial calm; Assistant default still open (IM-2) |
+| **Human review required** | **Yes** — stop before IM-2 |
+| **Remaining risks** | Preview has no windows so plane message always shows; live Windows map path unchanged |
+| **Next recommended cycle** | Await IM-1 approval → IM-2 Assistant optional start |
+| **Inspector / decoder path** | Open Stage → large empty plane + one line; expand Library details |
+
+---
+
 ### Cycle: opt-v2-26-full-pass-2-global-plateau
 
 | Field | Value |

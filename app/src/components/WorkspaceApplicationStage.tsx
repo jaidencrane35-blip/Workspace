@@ -1,14 +1,14 @@
 /**
- * Purpose: Desktop Reality Stage — spatial representation of observed windows.
- * Owner: Frontend product shell (Milestone R — first slice)
+ * Purpose: Desktop Reality Stage — calm spatial representation of the desktop.
+ * Owner: Frontend product shell (IM-1 — Stage empty spatial calm)
  * Inputs: optional workspace profile, registry apps, zone count, work mode,
  *   launch + navigate callbacks; get_workspace_state IPC
- * Outputs: Observed desktop map, Focus emphasis, optional library section
+ * Outputs: Desktop plane (empty or with observed windows), optional library
  * Dependencies: stageDesktopUi, layoutsStageUi, workMode, ipc, applicationsUi
- * Non-goals: OS geometry apply (G), arrangement editing (F), grouping (E),
- *   audio (H), new AI/engines, fake window thumbnails, create-workspace gate
+ * Non-goals: IM-2+ (Assistant defaults, arrangements copy, Home, Workspaces),
+ *   OS geometry apply, fake windows, new engines/AI
  *
- * Hierarchy: Desktop reality → controls → Assistant (elsewhere).
+ * Contract: layout before text; desktop reality first.
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -19,26 +19,20 @@ import {
 } from "../lib/applicationsUi";
 import { invokeIpc, isIpcRuntimeAvailable } from "../lib/ipc";
 import {
-  layoutsStageCanvasNote,
   layoutsStageEmptyAppsCopy,
   layoutsStageEyebrow,
-  layoutsStageFocusHint,
-  layoutsStageFocusNote,
-  layoutsStageFlowHint,
   layoutsStageRegistryHeading,
-  layoutsStageRegistryNote,
   layoutsStageTitle,
 } from "../lib/layoutsStageUi";
 import { monogramFromName } from "../lib/productShellUi";
 import {
   layoutStageDesktopWindows,
-  stageDesktopEmptyCopy,
   stageDesktopMetaLine,
+  stageDesktopPlaneMessage,
   type StageDesktopLoadState,
 } from "../lib/stageDesktopUi";
 import {
   partitionFocusApplications,
-  workModeStageLede,
   type WorkMode,
 } from "../lib/workMode";
 import type {
@@ -54,6 +48,7 @@ interface WorkspaceApplicationStageProps {
   workspace: Workspace | null;
   applications: ApplicationReference[];
   appsLoading: boolean;
+  /** Retained for App API compatibility; canvas notes removed in IM-1 calm Stage. */
   zoneCount: number;
   workMode: WorkMode;
   busy: boolean;
@@ -66,13 +61,14 @@ export function WorkspaceApplicationStage({
   workspace,
   applications,
   appsLoading,
-  zoneCount,
+  zoneCount: _unusedZoneCount,
   workMode,
   busy,
   onWorkModeChange,
   onManageApplications,
   onLaunchApplication,
 }: WorkspaceApplicationStageProps) {
+  void _unusedZoneCount;
   const runtime = isIpcRuntimeAvailable();
   const registryEmpty = layoutsStageEmptyAppsCopy();
   const [loadState, setLoadState] = useState<StageDesktopLoadState>(
@@ -105,10 +101,7 @@ export function WorkspaceApplicationStage({
         const focused = state.focused_window;
         const title = focused?.title.trim();
         setFocusedTitle(
-          title ||
-            (focused
-              ? `Window ${focused.hwnd}`
-              : null),
+          title || (focused ? `Window ${focused.hwnd}` : null),
         );
       }
       setLoadState("ready");
@@ -148,73 +141,120 @@ export function WorkspaceApplicationStage({
     primaryId,
   );
 
-  const emptyDesktop = stageDesktopEmptyCopy(loadState);
   const showDesktopMap = loadState === "ready" && tiles.length > 0;
+  const planeCalm = !showDesktopMap;
+  const planeMessage = stageDesktopPlaneMessage(loadState);
   const focusedTile =
     tiles.find((tile) => tile.focused) ?? tiles[0] ?? null;
   const supportingTiles = focusedTile
     ? tiles.filter((tile) => tile.key !== focusedTile.key)
     : tiles;
 
+  const stageClass = [
+    "workspace-application-stage",
+    workMode === "focus" ? "mode-focus" : "mode-flow",
+    planeCalm ? "stage-plane-calm" : "stage-plane-live",
+  ].join(" ");
+
   return (
     <section
-      className={
-        workMode === "focus"
-          ? "workspace-application-stage mode-focus"
-          : "workspace-application-stage mode-flow"
-      }
+      className={stageClass}
       aria-label="Desktop reality stage"
       data-work-mode={workMode}
+      data-stage-plane={planeCalm ? "calm" : "live"}
     >
-      <header className="stage-hero stage-hero-with-mode">
+      <header className="stage-hero stage-hero-compact stage-hero-with-mode">
         <div>
           <p className="arrangement-eyebrow">{layoutsStageEyebrow()}</p>
           <h2>{layoutsStageTitle(workspace?.name)}</h2>
-          <p className="lede">{workModeStageLede(workMode)}</p>
         </div>
-        <WorkModeSwitch
-          mode={workMode}
-          onChange={onWorkModeChange}
-          density="stage"
-        />
+        <div className="stage-hero-controls">
+          <WorkModeSwitch
+            mode={workMode}
+            onChange={onWorkModeChange}
+            density="stage"
+          />
+          <button
+            type="button"
+            className="ghost stage-refresh"
+            disabled={busy || loadState === "loading" || !runtime}
+            onClick={() => {
+              void refreshDesktop();
+            }}
+          >
+            Refresh
+          </button>
+        </div>
       </header>
 
-      <div className="row stage-desktop-toolbar">
-        <p className="stage-meta muted">
-          {loadState === "ready"
-            ? stageDesktopMetaLine({
-                windowCount: windows.length,
-                monitorCount,
-                observationPassId,
-                focusedTitle,
-              })
-            : emptyDesktop.title}
-        </p>
-        <button
-          type="button"
-          className="ghost"
-          disabled={busy || loadState === "loading" || !runtime}
-          onClick={() => {
-            void refreshDesktop();
-          }}
-        >
-          Refresh desktop
-        </button>
-      </div>
-
-      {workMode === "flow" ? (
-        <p className="stage-meta muted">{layoutsStageCanvasNote(zoneCount)}</p>
-      ) : (
-        <p className="stage-meta muted">{layoutsStageFocusNote()}</p>
-      )}
-
       {showDesktopMap ? (
-        workMode === "flow" ? (
-          <div
-            className="stage-desktop-map"
-            aria-label="Observed desktop windows"
-          >
-            {tiles.map((tile) => (
+        <p className="stage-meta stage-meta-live muted">
+          {stageDesktopMetaLine({
+            windowCount: windows.length,
+            monitorCount,
+            observationPassId,
+            focusedTitle,
+          })}
+        </p>
+      ) : null}
+
+      {showDesktopMap && workMode === "focus" ? (
+        <div
+          className="focus-stage-layout"
+          aria-label="Focus desktop reality stage"
+        >
+          {focusedTile ? (
+            <article className="stage-tile stage-tile-primary">
+              <span className="stage-tile-name">{focusedTile.title}</span>
+              <span className="product-list-meta muted">
+                {focusedTile.processLabel}
+              </span>
+            </article>
+          ) : null}
+          {supportingTiles.length > 0 ? (
+            <ul
+              className="focus-supporting-apps"
+              aria-label="Other observed windows"
+            >
+              {supportingTiles.slice(0, 8).map((tile) => (
+                <li key={tile.key}>
+                  <span className="focus-supporting-chip static">
+                    {tile.title}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
+      ) : (
+        <div
+          className={
+            planeCalm
+              ? "stage-desktop-map stage-desktop-plane empty"
+              : "stage-desktop-map"
+          }
+          aria-label={
+            planeCalm ? "Desktop surface" : "Observed desktop windows"
+          }
+        >
+          {planeCalm ? (
+            <div className="stage-desktop-plane-message">
+              <p>{planeMessage}</p>
+              {runtime && loadState !== "loading" ? (
+                <button
+                  type="button"
+                  className="ghost"
+                  disabled={busy}
+                  onClick={() => {
+                    void refreshDesktop();
+                  }}
+                >
+                  Retry
+                </button>
+              ) : null}
+            </div>
+          ) : (
+            tiles.map((tile) => (
               <article
                 key={tile.key}
                 className={
@@ -240,94 +280,38 @@ export function WorkspaceApplicationStage({
                   {tile.minimized ? " · Minimized" : ""}
                 </span>
               </article>
-            ))}
-          </div>
-        ) : (
-          <div
-            className="focus-stage-layout"
-            aria-label="Focus desktop reality stage"
-          >
-            {focusedTile ? (
-              <article className="stage-tile stage-tile-primary">
-                <p className="home-current-label">Focused on desktop</p>
-                <span className="stage-tile-name">{focusedTile.title}</span>
-                <span className="product-list-meta muted">
-                  {focusedTile.processLabel}
-                </span>
-                <span className="stage-tile-status">
-                  Observed window · {focusedTile.boundsLabel}
-                </span>
-              </article>
-            ) : null}
-            {supportingTiles.length > 0 ? (
-              <ul
-                className="focus-supporting-apps"
-                aria-label="Other observed windows"
-              >
-                {supportingTiles.slice(0, 8).map((tile) => (
-                  <li key={tile.key}>
-                    <span className="focus-supporting-chip static">
-                      {tile.title}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-          </div>
-        )
-      ) : (
-        <div className="arrangement-empty stage-empty">
-          <h3>{emptyDesktop.title}</h3>
-          <p className="muted">{emptyDesktop.body}</p>
-          {runtime ? (
-            <button
-              type="button"
-              className="ghost"
-              disabled={busy || loadState === "loading"}
-              onClick={() => {
-                void refreshDesktop();
-              }}
-            >
-              Retry observation
-            </button>
-          ) : null}
+            ))
+          )}
         </div>
       )}
 
-      <div className="row stage-actions">
-        <p className="muted stage-hint">
-          {workMode === "flow"
-            ? layoutsStageFlowHint()
-            : layoutsStageFocusHint()}
-        </p>
-      </div>
-
-      <section
-        className="stage-registry-secondary"
-        aria-label="Optional application library"
+      <details
+        className={
+          planeCalm
+            ? "stage-registry-secondary quiet"
+            : "stage-registry-secondary"
+        }
+        open={!planeCalm && applications.length > 0}
       >
-        <div className="row section-heading-row">
-          <h3>{layoutsStageRegistryHeading()}</h3>
+        <summary>
+          <span>{layoutsStageRegistryHeading()}</span>
           <button
             type="button"
             className="ghost"
-            onClick={onManageApplications}
+            onClick={(event) => {
+              event.preventDefault();
+              onManageApplications();
+            }}
           >
             Applications
           </button>
-        </div>
-        <p className="muted">{layoutsStageRegistryNote()}</p>
+        </summary>
         {!workspace ? (
-          <p className="muted">
-            A named profile is optional for library apps and saved arrangements.
-            Desktop reality above does not require one.
-          </p>
+          <p className="muted">Optional — not required for the desktop above.</p>
         ) : appsLoading ? (
-          <p className="muted">Loading library…</p>
+          <p className="muted">Loading…</p>
         ) : applications.length === 0 ? (
-          <p className="muted">
-            {registryEmpty.title}. {registryEmpty.body}
-          </p>
+          <p className="muted">{registryEmpty.title}</p>
         ) : workMode === "flow" ? (
           <ul className="stage-tile-grid compact" aria-label="Library apps">
             {applications.map((app) => {
@@ -370,7 +354,6 @@ export function WorkspaceApplicationStage({
           <div className="focus-stage-layout" aria-label="Focus library apps">
             {primary ? (
               <article className="stage-tile stage-tile-primary compact">
-                <p className="home-current-label">Library primary</p>
                 <span
                   className="application-monogram large"
                   aria-hidden="true"
@@ -397,7 +380,7 @@ export function WorkspaceApplicationStage({
             ) : null}
           </div>
         )}
-      </section>
+      </details>
     </section>
   );
 }

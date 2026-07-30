@@ -104,7 +104,7 @@ describe("layouts stage UI helpers", () => {
     expect(layoutsStageTitle(null)).toMatch(/Your desktop/i);
     expect(layoutsStageLede()).toMatch(/existing computing environment/i);
     expect(layoutsStageLede()).not.toMatch(/AI/i);
-    expect(layoutsStageEmptyAppsCopy().body).toMatch(/optional/i);
+    expect(layoutsStageEmptyAppsCopy().title).toMatch(/library/i);
     expect(layoutsStageCanvasNote(0)).toMatch(/Optional/i);
     expect(layoutsStageCanvasNote(2)).toMatch(/2 zones/i);
     expect(layoutsStageFocusNote()).toMatch(/Focus/i);

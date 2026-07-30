@@ -1,11 +1,11 @@
 /**
- * Purpose: Pure view-model helpers for Desktop Reality Stage (Milestone R).
- * Owner: Frontend product shell
+ * Purpose: Pure view-model helpers for Desktop Reality Stage.
+ * Owner: Frontend product shell (IM-1 — Stage empty spatial calm)
  * Inputs: WorkspaceStateWindow rows from get_workspace_state
- * Outputs: Spatial tile layout percentages, labels, empty/runtime copy
+ * Outputs: Spatial tile layout percentages, short status lines
  * Dependencies: None (pure)
  * Non-goals: Observation capture, WindowController, fake thumbnails, AI,
- *   duplicate window models, arrangement editing
+ *   duplicate window models, arrangement editing, IM-2+ slices
  *
  * Why here: Stage presentation mapping — not domain ownership.
  * Why not elsewhere: Must not invent a parallel observation store or engine.
@@ -119,32 +119,30 @@ export function layoutStageDesktopWindows(
   });
 }
 
+/**
+ * One short line for the empty desktop plane (layout carries meaning; text supports).
+ * IM-1: no paragraphs, no setup language.
+ */
+export function stageDesktopPlaneMessage(state: StageDesktopLoadState): string {
+  if (state === "runtime_unavailable") {
+    return "Open the desktop app to see your windows.";
+  }
+  if (state === "error") {
+    return "Could not read the desktop.";
+  }
+  if (state === "loading") {
+    return "Reading desktop…";
+  }
+  return "No windows open.";
+}
+
+/** @deprecated Prefer stageDesktopPlaneMessage — kept for tests/callers expecting title/body. */
 export function stageDesktopEmptyCopy(state: StageDesktopLoadState): {
   title: string;
   body: string;
 } {
-  if (state === "runtime_unavailable") {
-    return {
-      title: "Desktop runtime required",
-      body: "Open the Workspace desktop app to observe your current environment. Browser preview cannot read live windows — nothing here is invented.",
-    };
-  }
-  if (state === "error") {
-    return {
-      title: "Desktop observation unavailable",
-      body: "Workspace could not read the latest desktop state. Retry from the Stage, or confirm observation is running in the desktop app.",
-    };
-  }
-  if (state === "loading") {
-    return {
-      title: "Reading your desktop…",
-      body: "Loading the latest observed windows.",
-    };
-  }
-  return {
-    title: "No windows observed yet",
-    body: "Your desktop is the product — when observation captures open windows, they appear here spatially. No named profile or app registration is required first.",
-  };
+  const line = stageDesktopPlaneMessage(state);
+  return { title: line, body: "" };
 }
 
 export function stageDesktopMetaLine(args: {
@@ -156,8 +154,8 @@ export function stageDesktopMetaLine(args: {
   const parts: string[] = [];
   parts.push(
     args.windowCount === 1
-      ? "1 observed window"
-      : `${args.windowCount} observed windows`,
+      ? "1 window"
+      : `${args.windowCount} windows`,
   );
   if (args.monitorCount > 0) {
     parts.push(
@@ -167,10 +165,7 @@ export function stageDesktopMetaLine(args: {
     );
   }
   if (args.focusedTitle) {
-    parts.push(`Focused: ${args.focusedTitle}`);
-  }
-  if (!args.observationPassId) {
-    parts.push("No observation pass yet");
+    parts.push(args.focusedTitle);
   }
   return parts.join(" · ");
 }

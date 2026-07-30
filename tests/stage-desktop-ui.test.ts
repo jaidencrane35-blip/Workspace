@@ -3,6 +3,7 @@ import {
   layoutStageDesktopWindows,
   stageDesktopEmptyCopy,
   stageDesktopMetaLine,
+  stageDesktopPlaneMessage,
   stageDesktopWindowKey,
   stageDesktopWindowTitle,
 } from "../app/src/lib/stageDesktopUi";
@@ -78,15 +79,16 @@ describe("stage desktop UI helpers", () => {
     );
   });
 
-  it("uses honest empty copy without create-workspace language", () => {
-    const ready = stageDesktopEmptyCopy("ready");
-    expect(ready.title).toMatch(/No windows observed/i);
-    expect(ready.body).not.toMatch(/Go to Workspaces/i);
-    expect(ready.body).toMatch(/No named profile/i);
-
-    const preview = stageDesktopEmptyCopy("runtime_unavailable");
-    expect(preview.body).toMatch(/Browser preview/i);
-    expect(preview.body).toMatch(/invented/i);
+  it("uses one short plane message without setup language", () => {
+    expect(stageDesktopPlaneMessage("ready")).toBe("No windows open.");
+    expect(stageDesktopPlaneMessage("runtime_unavailable")).toMatch(
+      /desktop app/i,
+    );
+    expect(stageDesktopPlaneMessage("runtime_unavailable")).not.toMatch(
+      /create/i,
+    );
+    expect(stageDesktopPlaneMessage("error")).toMatch(/Could not read/i);
+    expect(stageDesktopEmptyCopy("ready").body).toBe("");
   });
 
   it("summarises observation metadata without AI framing", () => {
@@ -96,8 +98,8 @@ describe("stage desktop UI helpers", () => {
       observationPassId: "pass-1",
       focusedTitle: "Editor",
     });
-    expect(line).toMatch(/2 observed windows/);
-    expect(line).toMatch(/Focused: Editor/);
+    expect(line).toMatch(/2 windows/);
+    expect(line).toMatch(/Editor/);
     expect(line).not.toMatch(/AI/i);
   });
 });

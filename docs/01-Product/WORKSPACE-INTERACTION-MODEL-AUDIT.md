@@ -463,7 +463,7 @@ Each slice independently reviewable. No large rewrites. No new engines. No dupli
 
 | Slice | Name | Goal | Primary files | Done when (human) |
 |-------|------|------|---------------|-------------------|
-| **IM-1** | Stage empty spatial calm | Empty/runtime Stage looks like a quiet desktop plane; minimal text; library/arrangements quieter | `WorkspaceApplicationStage`, `stageDesktopUi`, `App.css` | First five seconds feel like a desktop surface, not a help article |
+| **IM-1** | Stage empty spatial calm | Empty/runtime Stage looks like a quiet desktop plane; minimal text; library/arrangements quieter | `WorkspaceApplicationStage`, `stageDesktopUi`, `App.css` | **Implemented** — [completion report](../03-Engineering/IM-1-STAGE-EMPTY-SPATIAL-CALM-COMPLETION-REPORT.md); await visual review |
 | **IM-2** | Assistant optional start | Default rail closed (or auto-collapse when no windows); remove create-workspace empty CTA | `assistantRail.ts`, Assistant panels copy | Stage readable without AI column competing |
 | **IM-3** | Arrangements as remember-control | Replace “Create a workspace first” hero; profile needed only to **save** | `desktopArrangementUi`, panel layout | Controls serve desktop; no setup story |
 | **IM-4** | Profiles, not Workspaces-as-product | Workspaces tab = optional profiles; create demoted | `WorkspaceSwitcher`, `workspaceSwitcherUi` | Tab no longer teaches setup wizard |
