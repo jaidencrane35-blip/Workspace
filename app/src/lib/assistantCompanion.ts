@@ -269,6 +269,43 @@ function summariseReopen(
 }
 
 function summariseContinuity(state: WorkspaceState): string {
+  const memory = state.runtime_memory;
+  if (memory && memory.entities.length > 0) {
+    const parts: string[] = [
+      `runtime memory: ${memory.present_count} present, ${memory.returning_count} returning, ${memory.absent_count} absent`,
+    ];
+    const focusedId = state.windows.find((window) => window.focused)?.stable_window_id;
+    const focusedMemory = focusedId
+      ? memory.entities.find((entity) => entity.stable_window_id === focusedId)
+      : undefined;
+    if (focusedMemory) {
+      parts.push(
+        `focused ${focusedMemory.title || focusedMemory.hwnd} first observed ${focusedMemory.first_observed_at} (${focusedMemory.stability}, continuity ${focusedMemory.continuity_confidence})`,
+      );
+    }
+    const persistent = memory.entities
+      .filter((entity) => entity.stability === "persistent")
+      .slice(0, 4);
+    if (persistent.length > 0) {
+      parts.push(
+        `persistent: ${persistent
+          .map((entity) => entity.title || entity.hwnd)
+          .join(", ")}`,
+      );
+    }
+    const returning = memory.entities
+      .filter((entity) => entity.presence === "returning")
+      .slice(0, 4);
+    if (returning.length > 0) {
+      parts.push(
+        `returning: ${returning
+          .map((entity) => entity.title || entity.hwnd)
+          .join(", ")}`,
+      );
+    }
+    return `${parts.join(". ")}.`;
+  }
+
   const withIdentity = state.windows.filter((window) => window.first_seen_at);
   if (withIdentity.length === 0) {
     return "No identity continuity facts are available for the current windows yet.";
@@ -303,6 +340,47 @@ function summariseContinuity(state: WorkspaceState): string {
   ) {
     parts.push(
       `most recently identified: ${newest.title || newest.hwnd} since ${newest.first_seen_at}`,
+    );
+  }
+  return `${parts.join(". ")}.`;
+}
+
+function summariseRuntimeMemory(state: WorkspaceState): string | null {
+  const memory = state.runtime_memory;
+  if (!memory || memory.entities.length === 0) {
+    return null;
+  }
+  const absent = memory.entities
+    .filter((entity) => entity.presence === "absent")
+    .slice(0, 6);
+  const returning = memory.entities
+    .filter((entity) => entity.presence === "returning")
+    .slice(0, 6);
+  const persistent = memory.entities
+    .filter((entity) => entity.stability === "persistent")
+    .slice(0, 6);
+  const parts: string[] = [
+    `${memory.entities.length} remembered desktop object${
+      memory.entities.length === 1 ? "" : "s"
+    }`,
+  ];
+  if (returning.length > 0) {
+    parts.push(
+      `returned: ${returning.map((entity) => entity.title || entity.hwnd).join(", ")}`,
+    );
+  }
+  if (absent.length > 0) {
+    parts.push(
+      `absent but known: ${absent
+        .map((entity) => entity.title || entity.hwnd)
+        .join(", ")}`,
+    );
+  }
+  if (persistent.length > 0) {
+    parts.push(
+      `persistent: ${persistent
+        .map((entity) => entity.title || entity.hwnd)
+        .join(", ")}`,
     );
   }
   return `${parts.join(". ")}.`;
@@ -521,6 +599,16 @@ export function answerDesktopQuestionLocally(
     }
     return summariseContinuity(state);
   }
+  if (
+    /came back|returned|returning|missing|disappeared|absent|gone|persistent|temporary|remember/.test(
+      trimmed,
+    )
+  ) {
+    const memory = summariseRuntimeMemory(state);
+    if (memory) {
+      return memory;
+    }
+  }
   if (/what changed|what('s| is) new|delta|recent change/.test(trimmed)) {
     return summariseChanged(delta);
   }
@@ -614,6 +702,12 @@ export function enrichAskWithDesktopObservation(
   if (behaviour && behaviour.sample_count > 0) {
     parts.push(
       `behaviour: ${behaviour.sample_count} samples, ${behaviour.focus_transitions.length} focus switches`,
+    );
+  }
+  const memory = state.runtime_memory;
+  if (memory && memory.entities.length > 0) {
+    parts.push(
+      `memory: ${memory.present_count} present / ${memory.returning_count} returning / ${memory.absent_count} absent`,
     );
   }
 

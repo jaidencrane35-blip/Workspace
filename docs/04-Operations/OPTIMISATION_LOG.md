@@ -90,6 +90,23 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 
 ## Cycles
 
+### Cycle: v10-1-desktop-runtime-memory
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Cycle number** | V10-1 |
+| **Goal** | Project identity-keyed desktop continuity memory onto WorkspaceState |
+| **Problem** | Behaviour timeline understood sample-window activity but not present/absent/returning entity continuity across retained history |
+| **Analysis** | Identity registry + observation history already encode continuity; project present/absent/returning, stability, recurrence, and continuity confidence without a parallel store |
+| **Changes** | `desktop_runtime_memory`; `WorkspaceState.runtime_memory`; engine loads identities for all history stable ids; Assistant memory answers |
+| **Files affected** | desktop_runtime_memory, workspace_state, workspace_state_engine, domain exports/types, assistantCompanion, this log |
+| **Validation** | typecheck / test / build / architecture / ipc / ui-boundary (+ domain runtime_memory tests) |
+| **Deleted / reduced** | Duplicate “open-windows-only” continuity answers when memory is present |
+| **Next recommended cycle** | Independent confidence ladders on relationship / session / behaviour facts |
+
+---
+
 ### Cycle: v9-empty-behavioural-evaluation-2
 
 | Field | Value |

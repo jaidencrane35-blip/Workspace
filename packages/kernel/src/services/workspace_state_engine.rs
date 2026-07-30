@@ -53,22 +53,22 @@ impl WorkspaceStateEngine {
             let history = repo.load_recent_snapshots(DESKTOP_BEHAVIOUR_SAMPLE_LIMIT)?;
             let membership =
                 DesktopArrangementRepository::new(&guard).list_active_membership_facts(2_000)?;
-            let identity_ids: Vec<String> = history
-                .last()
-                .map(|snapshot| {
-                    snapshot
-                        .windows
-                        .iter()
-                        .filter_map(|window| {
-                            window
-                                .stable_window_id
-                                .as_ref()
-                                .map(|value| value.trim().to_string())
-                                .filter(|value| !value.is_empty())
-                        })
-                        .collect()
-                })
-                .unwrap_or_default();
+            let identity_ids: Vec<String> = {
+                let mut ids = std::collections::BTreeSet::new();
+                for snapshot in &history {
+                    for window in &snapshot.windows {
+                        if let Some(value) = window
+                            .stable_window_id
+                            .as_ref()
+                            .map(|value| value.trim().to_string())
+                            .filter(|value| !value.is_empty())
+                        {
+                            ids.insert(value);
+                        }
+                    }
+                }
+                ids.into_iter().collect()
+            };
             let identities =
                 ObservationWindowIdentityRepository::new(&guard).list_by_ids(&identity_ids)?;
             (history, membership, identities)
@@ -83,7 +83,8 @@ impl WorkspaceStateEngine {
         Ok(
             WorkspaceState::from_observation_delta_and_history(observation, &delta, &history)
                 .with_arrangement_membership(&membership)
-                .with_identity_continuity(&identities),
+                .with_identity_continuity(&identities)
+                .with_runtime_memory(&identities, &history),
         )
     }
 }

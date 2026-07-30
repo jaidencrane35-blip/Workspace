@@ -15,6 +15,9 @@ use crate::desktop_behaviour::{
 use crate::desktop_grouping::{
     group_desktop_members, DesktopGroupCriterion, DesktopGroupMemberFact, DesktopWindowGroup,
 };
+use crate::desktop_runtime_memory::{
+    project_desktop_runtime_memory, DesktopRuntimeMemory,
+};
 use crate::workspace_observation::{
     observation_now_rfc3339, ObservedMonitor, ObservedWindow, ObservationWindowIdentity,
     WorkspaceObservationSnapshot,
@@ -190,6 +193,8 @@ pub struct WorkspaceState {
     pub latest_delta: WorkspaceObservationDelta,
     /// Deterministic behaviour timeline from retained observation samples.
     pub behaviour: DesktopBehaviourTimeline,
+    /// Identity-keyed continuity memory (present / absent / returning).
+    pub runtime_memory: DesktopRuntimeMemory,
     pub authority_effect: String,
 }
 
@@ -215,6 +220,7 @@ impl WorkspaceState {
             window_groups: Vec::new(),
             latest_delta: WorkspaceObservationDelta::empty(),
             behaviour: DesktopBehaviourTimeline::empty(),
+            runtime_memory: DesktopRuntimeMemory::empty(),
             authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
         }
     }
@@ -297,6 +303,7 @@ impl WorkspaceState {
             window_groups,
             latest_delta: delta.clone(),
             behaviour,
+            runtime_memory: DesktopRuntimeMemory::empty(),
             authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
         }
     }
@@ -328,6 +335,7 @@ impl WorkspaceState {
             window_groups,
             latest_delta: WorkspaceObservationDelta::empty(),
             behaviour: DesktopBehaviourTimeline::empty(),
+            runtime_memory: DesktopRuntimeMemory::empty(),
             authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
         }
     }
@@ -373,6 +381,19 @@ impl WorkspaceState {
             window.last_seen_at = Some(identity.last_seen_at.clone());
             window.identity_confidence = Some(identity.confidence.as_str().into());
         }
+        self
+    }
+
+    /// Project identity-keyed runtime memory (present / absent / returning).
+    ///
+    /// Uses live identity rows + the same retained history that feeds behaviour.
+    pub fn with_runtime_memory(
+        mut self,
+        identities: &[ObservationWindowIdentity],
+        history: &[WorkspaceObservationSnapshot],
+    ) -> Self {
+        self.runtime_memory =
+            project_desktop_runtime_memory(history, identities, &self.behaviour);
         self
     }
 

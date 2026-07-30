@@ -22,6 +22,7 @@ pub mod decision_queue;
 pub mod desktop_arrangement;
 pub mod desktop_behaviour;
 pub mod desktop_grouping;
+pub mod desktop_runtime_memory;
 pub mod discovery;
 pub mod entities;
 pub mod errors;
@@ -248,6 +249,10 @@ pub use desktop_behaviour::{
 };
 pub use desktop_grouping::{
     group_desktop_members, DesktopGroupCriterion, DesktopGroupMemberFact, DesktopWindowGroup,
+};
+pub use desktop_runtime_memory::{
+    project_desktop_runtime_memory, DesktopObjectMemory, DesktopRuntimeMemory,
+    DESKTOP_RUNTIME_MEMORY_ENTITY_LIMIT,
 };
 pub use discovery::{AvailableIntentSummary, CapabilityDiscovery, CapabilityDiscoveryError};
 pub use entities::{

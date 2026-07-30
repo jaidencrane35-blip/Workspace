@@ -6961,6 +6961,40 @@ export interface DesktopBehaviourTimeline {
   authority_effect: string;
 }
 
+/** Identity-keyed continuity memory row on WorkspaceState. */
+export interface DesktopObjectMemory {
+  stable_window_id: string;
+  hwnd: string;
+  title: string;
+  process_id: number;
+  process_name: string | null;
+  first_observed_at: string;
+  last_observed_at: string;
+  identity_confidence: string;
+  /** present | absent | returning */
+  presence: string;
+  sample_presence_count: number;
+  session_presence_count: number;
+  focus_count: number;
+  opened_count: number;
+  closed_count: number;
+  recurrence_count: number;
+  /** ephemeral | intermittent | stable | persistent */
+  stability: string;
+  /** structural | emerging | recurring | strong */
+  continuity_confidence: string;
+  authority_effect: string;
+}
+
+/** Bounded runtime memory projected onto WorkspaceState. */
+export interface DesktopRuntimeMemory {
+  entities: DesktopObjectMemory[];
+  present_count: number;
+  absent_count: number;
+  returning_count: number;
+  authority_effect: string;
+}
+
 export interface WorkspaceState {
   metadata: WorkspaceStateMetadata;
   focused_window: ObservationWindowRef | null;
@@ -6972,6 +7006,8 @@ export interface WorkspaceState {
   latest_delta: WorkspaceObservationDelta;
   /** Deterministic behaviour timeline from retained observation samples. */
   behaviour: DesktopBehaviourTimeline;
+  /** Identity-keyed continuity memory (present / absent / returning). */
+  runtime_memory: DesktopRuntimeMemory;
   authority_effect: string;
 }
 
