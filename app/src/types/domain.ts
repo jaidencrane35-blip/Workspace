@@ -6883,6 +6883,8 @@ export interface DesktopWindowRevisit {
   window: ObservationWindowRef;
   focus_count: number;
   last_focused_at: string;
+  /** structural | emerging | recurring | strong */
+  confidence: string;
 }
 
 /** Interrupted observation coverage between retained samples. */
@@ -6909,6 +6911,8 @@ export interface DesktopFocusFollow {
   to: ObservationWindowRef;
   transition_count: number;
   last_at: string;
+  /** structural | emerging | recurring | strong */
+  confidence: string;
 }
 
 /** Windows observed open together across samples. */
@@ -6917,6 +6921,8 @@ export interface DesktopCoPresence {
   right: ObservationWindowRef;
   sample_count: number;
   last_seen_at: string;
+  /** structural | emerging | recurring | strong */
+  confidence: string;
 }
 
 /** Observation session inferred from coverage continuity (not OS login). */
@@ -6931,6 +6937,8 @@ export interface DesktopObservationSession {
   dominant_focus: ObservationWindowRef | null;
   /** active | completed | returning */
   kind: string;
+  /** structural | emerging | recurring | strong */
+  confidence: string;
 }
 
 /** Open/close lifecycle evidence across retained samples. */

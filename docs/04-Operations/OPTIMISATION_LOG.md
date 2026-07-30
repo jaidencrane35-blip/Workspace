@@ -90,6 +90,23 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 
 ## Cycles
 
+### Cycle: v10-2-independent-behaviour-confidence
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Cycle number** | V10-2 |
+| **Goal** | Evolve confidence independently for relationships, sessions, and revisits |
+| **Problem** | Only groups had evidence ladders; follows/co-presence/sessions/revisits were raw counts |
+| **Analysis** | Reuse the structural→strong ladder per fact family without overwriting identity or group confidence |
+| **Changes** | `confidence` on focus_follows, co_presence, sessions, window_revisits; Assistant surfaces it |
+| **Files affected** | desktop_behaviour, domain.ts, assistantCompanion, this log |
+| **Validation** | typecheck / test / build / architecture / ipc / ui-boundary (+ domain behaviour tests) |
+| **Deleted / reduced** | none (extends existing behaviour facts) |
+| **Next recommended cycle** | Knowledge classes on runtime memory (temporary / fading / becoming important) |
+
+---
+
 ### Cycle: v10-1-desktop-runtime-memory
 
 | Field | Value |

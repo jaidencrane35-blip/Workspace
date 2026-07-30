@@ -30,12 +30,53 @@ pub struct DesktopFocusTransition {
     pub current: Option<ObservationWindowRef>,
 }
 
+/// Focus A→B transitions aggregated across the sample window.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DesktopFocusFollow {
+    pub from: ObservationWindowRef,
+    pub to: ObservationWindowRef,
+    pub transition_count: i32,
+    pub last_at: String,
+    /// Relationship confidence from transition evidence: `structural` | `emerging` | `recurring` | `strong`
+    pub confidence: String,
+}
+
+/// Windows observed open together across samples.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DesktopCoPresence {
+    pub left: ObservationWindowRef,
+    pub right: ObservationWindowRef,
+    pub sample_count: i32,
+    pub last_seen_at: String,
+    /// Relationship confidence from co-presence evidence: `structural` | `emerging` | `recurring` | `strong`
+    pub confidence: String,
+}
+
+/// Observation session inferred from coverage continuity (not OS login sessions).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DesktopObservationSession {
+    pub id: String,
+    pub started_at: String,
+    pub ended_at: String,
+    pub start_pass_id: String,
+    pub end_pass_id: String,
+    pub sample_count: i32,
+    pub focus_transition_count: i32,
+    pub dominant_focus: Option<ObservationWindowRef>,
+    /// `active` | `completed` | `returning`
+    pub kind: String,
+    /// Session inference confidence from sample + transition evidence.
+    pub confidence: String,
+}
+
 /// How often a window became focused across the sample window.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DesktopWindowRevisit {
     pub window: ObservationWindowRef,
     pub focus_count: i32,
     pub last_focused_at: String,
+    /// Behaviour confidence from revisit evidence.
+    pub confidence: String,
 }
 
 /// Interrupted observation coverage between retained samples.
@@ -56,39 +97,6 @@ pub struct DesktopObservedFocusSpan {
     pub ended_at: String,
     pub sample_span_seconds: Option<i64>,
     pub sample_count: i32,
-}
-
-/// Focus A→B transitions aggregated across the sample window.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct DesktopFocusFollow {
-    pub from: ObservationWindowRef,
-    pub to: ObservationWindowRef,
-    pub transition_count: i32,
-    pub last_at: String,
-}
-
-/// Windows observed open together across samples.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct DesktopCoPresence {
-    pub left: ObservationWindowRef,
-    pub right: ObservationWindowRef,
-    pub sample_count: i32,
-    pub last_seen_at: String,
-}
-
-/// Observation session inferred from coverage continuity (not OS login sessions).
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct DesktopObservationSession {
-    pub id: String,
-    pub started_at: String,
-    pub ended_at: String,
-    pub start_pass_id: String,
-    pub end_pass_id: String,
-    pub sample_count: i32,
-    pub focus_transition_count: i32,
-    pub dominant_focus: Option<ObservationWindowRef>,
-    /// `active` | `completed` | `returning`
-    pub kind: String,
 }
 
 /// Open/close lifecycle evidence for a window across retained samples.
@@ -313,6 +321,7 @@ pub fn project_desktop_behaviour(
             window,
             focus_count,
             last_focused_at,
+            confidence: DesktopWindowGroup::confidence_for_evidence(focus_count).into(),
         })
         .collect();
     window_revisits.sort_by(|a, b| {
@@ -328,6 +337,7 @@ pub fn project_desktop_behaviour(
             to,
             transition_count,
             last_at,
+            confidence: DesktopWindowGroup::confidence_for_evidence(transition_count).into(),
         })
         .collect();
     focus_follows.sort_by(|a, b| {
@@ -348,6 +358,7 @@ pub fn project_desktop_behaviour(
             right,
             sample_count,
             last_seen_at,
+            confidence: DesktopWindowGroup::confidence_for_evidence(sample_count).into(),
         })
         .collect();
     co_presence.sort_by(|a, b| {
@@ -593,6 +604,7 @@ fn build_session(
         "completed"
     };
 
+    let evidence = snapshots.len() as i32 + transition_count;
     DesktopObservationSession {
         id: format!("session:{}:{}", first.pass.id, last.pass.id),
         started_at: first.pass.captured_at.clone(),
@@ -603,6 +615,7 @@ fn build_session(
         focus_transition_count: transition_count,
         dominant_focus,
         kind: kind.into(),
+        confidence: DesktopWindowGroup::confidence_for_evidence(evidence).into(),
     }
 }
 
@@ -734,6 +747,24 @@ mod tests {
             .co_presence
             .iter()
             .any(|pair| pair.sample_count >= 2));
+        assert!(behaviour.focus_follows.iter().all(|follow| {
+            !follow.confidence.is_empty()
+                && follow.confidence
+                    == DesktopWindowGroup::confidence_for_evidence(follow.transition_count)
+        }));
+        assert!(behaviour.co_presence.iter().all(|pair| {
+            !pair.confidence.is_empty()
+                && pair.confidence
+                    == DesktopWindowGroup::confidence_for_evidence(pair.sample_count)
+        }));
+        assert!(behaviour
+            .sessions
+            .iter()
+            .all(|session| !session.confidence.is_empty()));
+        assert!(behaviour
+            .window_revisits
+            .iter()
+            .all(|revisit| !revisit.confidence.is_empty()));
     }
 
     #[test]

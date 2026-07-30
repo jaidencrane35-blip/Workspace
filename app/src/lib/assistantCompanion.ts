@@ -451,7 +451,7 @@ function summariseBehaviour(state: WorkspaceState): string {
       parts.push(
         `${behaviour.sessions.length} observation session${
           behaviour.sessions.length === 1 ? "" : "s"
-        }; current ${current.kind} around ${dominant} (${current.sample_count} samples)`,
+        }; current ${current.kind} around ${dominant} (${current.sample_count} samples, ${current.confidence})`,
       );
     }
   }
@@ -485,7 +485,7 @@ function summariseAffinities(state: WorkspaceState): string {
         .slice(0, 5)
         .map(
           (pair) =>
-            `${pair.left.title || pair.left.hwnd} + ${pair.right.title || pair.right.hwnd} (${pair.sample_count})`,
+            `${pair.left.title || pair.left.hwnd} + ${pair.right.title || pair.right.hwnd} (${pair.sample_count}, ${pair.confidence})`,
         )
         .join("; ")}`,
     );
@@ -496,7 +496,7 @@ function summariseAffinities(state: WorkspaceState): string {
         .slice(0, 5)
         .map(
           (follow) =>
-            `${follow.from.title || follow.from.hwnd} → ${follow.to.title || follow.to.hwnd} (${follow.transition_count})`,
+            `${follow.from.title || follow.from.hwnd} → ${follow.to.title || follow.to.hwnd} (${follow.transition_count}, ${follow.confidence})`,
         )
         .join("; ")}`,
     );
