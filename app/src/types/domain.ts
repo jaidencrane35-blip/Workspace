@@ -6991,6 +6991,8 @@ export interface DesktopObjectMemory {
   stability: string;
   /** structural | emerging | recurring | strong */
   continuity_confidence: string;
+  /** temporary | established | persistent | returning | interrupted | fading | rising */
+  knowledge: string;
   authority_effect: string;
 }
 

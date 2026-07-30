@@ -40,6 +40,9 @@ pub struct DesktopObjectMemory {
     /// Continuity confidence from observation evidence (independent of identity match quality).
     /// `structural` | `emerging` | `recurring` | `strong`
     pub continuity_confidence: String,
+    /// Deterministic knowledge class from evidence.
+    /// `temporary` | `established` | `persistent` | `returning` | `interrupted` | `fading` | `rising`
+    pub knowledge: String,
     pub authority_effect: String,
 }
 
@@ -52,6 +55,13 @@ impl DesktopObjectMemory {
     pub const STABILITY_INTERMITTENT: &'static str = "intermittent";
     pub const STABILITY_STABLE: &'static str = "stable";
     pub const STABILITY_PERSISTENT: &'static str = "persistent";
+    pub const KNOWLEDGE_TEMPORARY: &'static str = "temporary";
+    pub const KNOWLEDGE_ESTABLISHED: &'static str = "established";
+    pub const KNOWLEDGE_PERSISTENT: &'static str = "persistent";
+    pub const KNOWLEDGE_RETURNING: &'static str = "returning";
+    pub const KNOWLEDGE_INTERRUPTED: &'static str = "interrupted";
+    pub const KNOWLEDGE_FADING: &'static str = "fading";
+    pub const KNOWLEDGE_RISING: &'static str = "rising";
 }
 
 /// Bounded runtime memory projected onto WorkspaceState.
@@ -179,6 +189,16 @@ pub fn project_desktop_runtime_memory(
             .saturating_add(recurrence_count);
         let continuity_confidence = DesktopWindowGroup::confidence_for_evidence(evidence);
         let stability = stability_for(sample_presence_count, sample_count, recurrence_count);
+        let knowledge = knowledge_for(
+            presence,
+            stability,
+            continuity_confidence,
+            sample_presence_count,
+            focus_count,
+            opened_count,
+            closed_count,
+            recurrence_count,
+        );
 
         entities.push(DesktopObjectMemory {
             stable_window_id: id.clone(),
@@ -209,6 +229,7 @@ pub fn project_desktop_runtime_memory(
             recurrence_count,
             stability: stability.into(),
             continuity_confidence: continuity_confidence.into(),
+            knowledge: knowledge.into(),
             authority_effect: DesktopObjectMemory::AUTHORITY_EFFECT_NONE.into(),
         });
     }
@@ -286,6 +307,44 @@ fn stability_for(
         DesktopObjectMemory::STABILITY_STABLE
     } else {
         DesktopObjectMemory::STABILITY_INTERMITTENT
+    }
+}
+
+fn knowledge_for(
+    presence: &str,
+    stability: &str,
+    continuity_confidence: &str,
+    sample_presence_count: i32,
+    focus_count: i32,
+    opened_count: i32,
+    closed_count: i32,
+    recurrence_count: i32,
+) -> &'static str {
+    match presence {
+        DesktopObjectMemory::PRESENCE_RETURNING => DesktopObjectMemory::KNOWLEDGE_RETURNING,
+        DesktopObjectMemory::PRESENCE_ABSENT => {
+            if closed_count > opened_count && sample_presence_count >= 2 {
+                DesktopObjectMemory::KNOWLEDGE_FADING
+            } else if sample_presence_count <= 1 {
+                DesktopObjectMemory::KNOWLEDGE_TEMPORARY
+            } else {
+                DesktopObjectMemory::KNOWLEDGE_INTERRUPTED
+            }
+        }
+        _ => {
+            if focus_count >= 3
+                || continuity_confidence == DesktopWindowGroup::CONFIDENCE_STRONG
+                || (recurrence_count >= 2 && focus_count >= 2)
+            {
+                DesktopObjectMemory::KNOWLEDGE_RISING
+            } else if stability == DesktopObjectMemory::STABILITY_PERSISTENT {
+                DesktopObjectMemory::KNOWLEDGE_PERSISTENT
+            } else if sample_presence_count <= 2 {
+                DesktopObjectMemory::KNOWLEDGE_TEMPORARY
+            } else {
+                DesktopObjectMemory::KNOWLEDGE_ESTABLISHED
+            }
+        }
     }
 }
 
@@ -480,6 +539,7 @@ mod tests {
         assert_eq!(a.presence, DesktopObjectMemory::PRESENCE_RETURNING);
         assert!(a.recurrence_count >= 1);
         assert_eq!(a.first_observed_at, "2026-07-30T09:00:00Z");
+        assert_eq!(a.knowledge, DesktopObjectMemory::KNOWLEDGE_RETURNING);
 
         let b = memory
             .entities
@@ -488,6 +548,7 @@ mod tests {
             .expect("stable-b");
         assert_eq!(b.presence, DesktopObjectMemory::PRESENCE_PRESENT);
         assert_eq!(b.sample_presence_count, 2);
+        assert!(!b.knowledge.is_empty());
     }
 
     #[test]
@@ -515,5 +576,10 @@ mod tests {
             .expect("stable-a");
         assert_eq!(a.presence, DesktopObjectMemory::PRESENCE_ABSENT);
         assert!(memory.absent_count >= 1);
+        assert!(
+            a.knowledge == DesktopObjectMemory::KNOWLEDGE_TEMPORARY
+                || a.knowledge == DesktopObjectMemory::KNOWLEDGE_INTERRUPTED
+                || a.knowledge == DesktopObjectMemory::KNOWLEDGE_FADING
+        );
     }
 }

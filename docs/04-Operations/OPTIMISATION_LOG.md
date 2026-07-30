@@ -90,6 +90,23 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 
 ## Cycles
 
+### Cycle: v10-3-runtime-memory-knowledge-classes
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Cycle number** | V10-3 |
+| **Goal** | Classify desktop objects as temporary / established / persistent / returning / interrupted / fading / rising |
+| **Problem** | Runtime memory had presence + stability but not knowledge about importance or disappearance |
+| **Analysis** | Derive knowledge solely from presence, stability, focus, lifecycle, and recurrence evidence |
+| **Changes** | `DesktopObjectMemory.knowledge`; Assistant rising/fading/interrupted answers |
+| **Files affected** | desktop_runtime_memory, domain.ts, assistantCompanion, this log |
+| **Validation** | typecheck / test / build / architecture / ipc / ui-boundary (+ domain runtime_memory tests) |
+| **Deleted / reduced** | none |
+| **Next recommended cycle** | Strengthen groups from multi-session member persistence |
+
+---
+
 ### Cycle: v10-2-independent-behaviour-confidence
 
 | Field | Value |

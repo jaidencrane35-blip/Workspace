@@ -357,7 +357,13 @@ function summariseRuntimeMemory(state: WorkspaceState): string | null {
     .filter((entity) => entity.presence === "returning")
     .slice(0, 6);
   const persistent = memory.entities
-    .filter((entity) => entity.stability === "persistent")
+    .filter((entity) => entity.knowledge === "persistent" || entity.stability === "persistent")
+    .slice(0, 6);
+  const rising = memory.entities
+    .filter((entity) => entity.knowledge === "rising")
+    .slice(0, 6);
+  const fading = memory.entities
+    .filter((entity) => entity.knowledge === "fading" || entity.knowledge === "interrupted")
     .slice(0, 6);
   const parts: string[] = [
     `${memory.entities.length} remembered desktop object${
@@ -369,9 +375,23 @@ function summariseRuntimeMemory(state: WorkspaceState): string | null {
       `returned: ${returning.map((entity) => entity.title || entity.hwnd).join(", ")}`,
     );
   }
+  if (rising.length > 0) {
+    parts.push(
+      `becoming important: ${rising
+        .map((entity) => entity.title || entity.hwnd)
+        .join(", ")}`,
+    );
+  }
   if (absent.length > 0) {
     parts.push(
       `absent but known: ${absent
+        .map((entity) => `${entity.title || entity.hwnd} (${entity.knowledge})`)
+        .join(", ")}`,
+    );
+  }
+  if (fading.length > 0) {
+    parts.push(
+      `interrupted/fading: ${fading
         .map((entity) => entity.title || entity.hwnd)
         .join(", ")}`,
     );
@@ -600,7 +620,7 @@ export function answerDesktopQuestionLocally(
     return summariseContinuity(state);
   }
   if (
-    /came back|returned|returning|missing|disappeared|absent|gone|persistent|temporary|remember/.test(
+    /came back|returned|returning|missing|disappeared|absent|gone|persistent|temporary|remember|important|fading|interrupted/.test(
       trimmed,
     )
   ) {
