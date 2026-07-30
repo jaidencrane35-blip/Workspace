@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
-  activeApplicationLabel,
+  activeApplicationName,
+  activeApplicationWindowLine,
   applicationIdentityLine,
   applicationsEmptyCopy,
-  applicationsLayoutsRelationCopy,
   canLaunchApplication,
 } from "../app/src/lib/applicationsUi";
 import {

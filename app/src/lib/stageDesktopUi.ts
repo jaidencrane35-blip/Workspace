@@ -157,14 +157,6 @@ export function stageDesktopPlaneMessage(state: StageDesktopLoadState): string {
   return "No windows open.";
 }
 
-export function stageDesktopEmptyCopy(state: StageDesktopLoadState): {
-  title: string;
-  body: string;
-} {
-  const line = stageDesktopPlaneMessage(state);
-  return { title: line, body: "" };
-}
-
 export function stageDesktopMetaLine(args: {
   windowCount: number;
   monitorCount: number;

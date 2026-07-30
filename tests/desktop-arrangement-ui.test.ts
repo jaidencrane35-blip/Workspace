@@ -121,7 +121,7 @@ describe("desktop arrangement UI helpers", () => {
       failed_count: 0,
     };
 
-    expect(restoreSummaryCopy(result)).toBe("1 applied · 1 gap");
+    expect(restoreSummaryCopy(result)).toBe("1 applied · 1 gap · simulated");
     expect(gapDiagnostics(result.diagnostics)).toHaveLength(1);
     expect(gapDiagnostics(result.diagnostics)[0]?.label).toBe("Chat");
   });

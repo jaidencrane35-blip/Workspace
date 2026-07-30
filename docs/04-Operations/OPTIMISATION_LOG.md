@@ -94,6 +94,19 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 
 ## Cycles
 
+### Cycle: v5-3-restore-honesty-dead-helpers
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Cycle number** | V5-3 |
+| **Goal** | Honest simulated restore messaging; delete unused presentation helpers |
+| **Changes** | restore summary/banner disclose simulated; drop `stageDesktopEmptyCopy` / `activeApplicationLabel` / `applicationsLayoutsRelationCopy` / Focus partition |
+| **Validation** | typecheck / test / build / architecture / ipc / ui-boundary |
+| **Stop** | Two empty evaluation passes pending after this commit |
+
+---
+
 ### Cycle: v5-2-restore-refresh-apps-focus-cleanup
 
 | Field | Value |

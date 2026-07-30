@@ -46,6 +46,9 @@ export function RestoreDiagnosticsView({ result }: RestoreDiagnosticsViewProps) 
               <li key={`${outcome.entry_id}-${outcome.status}`}>
                 <strong>{outcome.label || outcome.entry_id}</strong>
                 <span className="badge">{applyStatusLabel(outcome.status)}</span>
+                {outcome.simulated ? (
+                  <span className="badge">Simulated</span>
+                ) : null}
                 <span className="muted">{outcome.detail}</span>
               </li>
             ))}

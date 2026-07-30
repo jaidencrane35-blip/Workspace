@@ -152,17 +152,33 @@ export function DesktopArrangementPanel({
       onError("Select an arrangement to restore.");
       return;
     }
-    void run("Restore finished", async () => {
-      const result = await invokeIpc<DesktopArrangementRestoreResult>(
-        "restore_desktop_arrangement",
-        {
-          arrangementId: selected.id,
-          focusFirst: true,
-        },
-      );
-      setRestoreResult(result);
-      onDesktopChanged?.();
-    });
+    onBusy(true);
+    onError(null);
+    setLocalHint(null);
+    void (async () => {
+      try {
+        const result = await invokeIpc<DesktopArrangementRestoreResult>(
+          "restore_desktop_arrangement",
+          {
+            arrangementId: selected.id,
+            focusFirst: true,
+          },
+        );
+        setRestoreResult(result);
+        onDesktopChanged?.();
+        onMessage(
+          result.outcomes.some((outcome) => outcome.simulated)
+            ? "Restore finished (simulated)"
+            : "Restore finished",
+        );
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        onError(message);
+        setLocalHint(permissionHintForError(message));
+      } finally {
+        onBusy(false);
+      }
+    })();
   };
 
   const summaryLabel = !workspace

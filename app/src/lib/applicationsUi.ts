@@ -28,10 +28,6 @@ export function applicationsEmptyCopy(hasWorkspace: boolean): {
   };
 }
 
-export function applicationsLayoutsRelationCopy(): string {
-  return "Running";
-}
-
 export function applicationIdentityLine(app: ApplicationReference): string {
   const parts: string[] = [];
   if (app.identifier?.trim()) {
@@ -56,12 +52,6 @@ export function activeApplicationWindowLine(
   return app.window_count === 1
     ? "1 window"
     : `${app.window_count} windows`;
-}
-
-export function activeApplicationLabel(
-  app: WorkspaceActiveApplication,
-): string {
-  return `${activeApplicationName(app)} · ${activeApplicationWindowLine(app)}`;
 }
 
 export function canLaunchApplication(app: ApplicationReference): boolean {

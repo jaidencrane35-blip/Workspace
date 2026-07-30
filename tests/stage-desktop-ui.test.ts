@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
   layoutStageDesktopWindows,
-  stageDesktopEmptyCopy,
   stageDesktopMetaLine,
   stageDesktopPlaneMessage,
   stageDesktopWindowKey,
@@ -150,7 +149,6 @@ describe("stage desktop UI helpers", () => {
       /create/i,
     );
     expect(stageDesktopPlaneMessage("error")).toMatch(/Could not read/i);
-    expect(stageDesktopEmptyCopy("ready").body).toBe("");
   });
 
   it("summarises observation metadata without AI framing", () => {

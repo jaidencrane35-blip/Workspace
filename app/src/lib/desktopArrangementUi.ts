@@ -119,6 +119,9 @@ export function restoreSummaryCopy(
   if (result.failed_count > 0) {
     parts.push(`${result.failed_count} failed`);
   }
+  if (result.outcomes.some((outcome) => outcome.simulated)) {
+    parts.push("simulated");
+  }
   return parts.join(" · ");
 }
 
