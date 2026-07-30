@@ -230,7 +230,7 @@ export function DesktopArrangementPanel({
         <>
           <p className="muted arrangement-workflow-hint">
             Save, update, and Restore layouts for this Profile. Desktop Edit
-            layout can preview and update the same Arrangements.
+            layout shows change awareness and preview for the same Arrangements.
           </p>
           <section aria-label="Saved Arrangements">
             <div className="row section-heading-row">

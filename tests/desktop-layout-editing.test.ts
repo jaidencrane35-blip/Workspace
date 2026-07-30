@@ -1,15 +1,23 @@
 /**
- * Purpose: Programme I IC3 layout editing helpers — preview ghosts and copy.
+ * Purpose: Programme I IC3/IC4 layout editing helpers — lifecycle, diff, preview.
  */
 
 import { describe, expect, it } from "vitest";
 import {
+  diffLayoutEditingChanges,
   layoutArrangementPreviewGhosts,
   layoutEditingBanner,
   layoutEditingHint,
+  layoutEditingPhase,
+  layoutEditingPhaseLabel,
+  layoutEditingProposedWindows,
+  layoutEditingStatusMeta,
+  layoutEditingUpdateConfirmation,
+  layoutEditingUpdatedLabel,
   layoutEditingWorkflowLine,
   stagePlaneBoundsFromRects,
 } from "../app/src/lib/desktopLayoutEditing";
+import { stageDesktopWindowKey } from "../app/src/lib/stageDesktopUi";
 import type { DesktopArrangementEntry } from "../app/src/types/desktopArrangement";
 import type {
   WorkspaceStateMonitor,
@@ -68,8 +76,8 @@ function sampleWindow(
     process_name: "code.exe",
     x: 0,
     y: 0,
-    width: 1000,
-    height: 800,
+    width: 500,
+    height: 400,
     visible: true,
     focused: false,
     minimized: false,
@@ -84,11 +92,23 @@ function sampleWindow(
 }
 
 describe("desktopLayoutEditing", () => {
-  it("builds editing banner and workflow copy", () => {
+  it("builds editing banner and phase-aware workflow copy", () => {
     expect(layoutEditingBanner("Focus coding")).toBe("Editing · Focus coding");
     expect(layoutEditingBanner("  ")).toBe("Editing · Arrangement");
-    expect(layoutEditingWorkflowLine()).toContain("Preview");
-    expect(layoutEditingHint()).toContain("Update");
+    expect(layoutEditingWorkflowLine("editing")).toContain("No changes");
+    expect(layoutEditingWorkflowLine("changes_pending")).toContain(
+      "Changes pending",
+    );
+    expect(layoutEditingHint("changes_pending")).toContain("Update");
+  });
+
+  it("derives explicit editing lifecycle phases", () => {
+    expect(layoutEditingPhase(false, false)).toBe("idle");
+    expect(layoutEditingPhase(false, true)).toBe("idle");
+    expect(layoutEditingPhase(true, false)).toBe("editing");
+    expect(layoutEditingPhase(true, true)).toBe("changes_pending");
+    expect(layoutEditingPhaseLabel("editing")).toBe("No changes");
+    expect(layoutEditingPhaseLabel("changes_pending")).toBe("Changes pending");
   });
 
   it("computes plane bounds from monitors", () => {
@@ -158,5 +178,78 @@ describe("desktopLayoutEditing", () => {
         sampleEntry({ x: null, y: null, width: null, height: null }),
       ]),
     ).toEqual([]);
+  });
+
+  it("proposes selected windows or all when selection is empty", () => {
+    const windows = [
+      sampleWindow({ stable_window_id: "a" }),
+      sampleWindow({
+        stable_window_id: "b",
+        hwnd: "0x2",
+        process_id: 20,
+      }),
+    ];
+    expect(
+      layoutEditingProposedWindows(windows, [], stageDesktopWindowKey),
+    ).toHaveLength(2);
+    expect(
+      layoutEditingProposedWindows(windows, ["a"], stageDesktopWindowKey),
+    ).toHaveLength(1);
+  });
+
+  it("detects added, removed, moved, and no-change diffs", () => {
+    const unchanged = diffLayoutEditingChanges(
+      [sampleEntry()],
+      [sampleWindow()],
+    );
+    expect(unchanged.hasChanges).toBe(false);
+    expect(unchanged.unchanged).toBe(1);
+    expect(layoutEditingUpdateConfirmation(unchanged)).toContain(
+      "no effective changes",
+    );
+
+    const moved = diffLayoutEditingChanges(
+      [sampleEntry()],
+      [sampleWindow({ x: 40, y: 20 })],
+    );
+    expect(moved.hasChanges).toBe(true);
+    expect(moved.boundsChanged).toBe(1);
+
+    const membership = diffLayoutEditingChanges(
+      [
+        sampleEntry(),
+        sampleEntry({
+          id: "e2",
+          stable_window_id: "b",
+          hwnd: "0x2",
+          label: "Browser",
+        }),
+      ],
+      [
+        sampleWindow(),
+        sampleWindow({
+          stable_window_id: "c",
+          hwnd: "0x3",
+          process_id: 30,
+        }),
+      ],
+    );
+    expect(membership.added).toBe(1);
+    expect(membership.removed).toBe(1);
+    expect(layoutEditingUpdateConfirmation(membership)).toContain("affected");
+  });
+
+  it("formats status meta from existing arrangement fields", () => {
+    const diff = diffLayoutEditingChanges([sampleEntry()], [sampleWindow()]);
+    const meta = layoutEditingStatusMeta({
+      phase: "editing",
+      previewEnabled: true,
+      updatedAt: "2026-07-30T12:00:00.000Z",
+      diff,
+    });
+    expect(meta).toContain("No changes");
+    expect(meta).toContain("Preview on");
+    expect(meta).toContain("Updated ·");
+    expect(layoutEditingUpdatedLabel("")).toBe("Updated · unknown");
   });
 });

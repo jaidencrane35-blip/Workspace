@@ -8,7 +8,7 @@
 | **Not** | An implementation contract; not a feature backlog; not a roadmap of tasks |
 | **Depends on** | Repository architectural evidence; existing WorkspaceState / observation / DAF foundations |
 | **Related** | [Architectural Evidence Report](../02-Architecture/ARCHITECTURAL-EVIDENCE-REPORT.md), [Product Vision](PRODUCT-VISION.md), [Desktop Interaction Model](WORKSPACE-DESKTOP-INTERACTION-MODEL.md), Programmes II–IV (`../05-AI/`) |
-| **Implementation contracts** | [IC1 — Product Shell Capability Inventory](PROGRAMME-I-IC1-PRODUCT-SHELL-CAPABILITY-INVENTORY.md) (complete); [IC2 — Product Workspace Composition](PROGRAMME-I-IC2-PRODUCT-WORKSPACE-COMPOSITION.md) (complete); [IC3 — Desktop Layout Editing Foundation](PROGRAMME-I-IC3-DESKTOP-LAYOUT-EDITING-FOUNDATION.md) (complete) |
+| **Implementation contracts** | [IC1 — Product Shell Capability Inventory](PROGRAMME-I-IC1-PRODUCT-SHELL-CAPABILITY-INVENTORY.md) (complete); [IC2 — Product Workspace Composition](PROGRAMME-I-IC2-PRODUCT-WORKSPACE-COMPOSITION.md) (complete); [IC3 — Desktop Layout Editing Foundation](PROGRAMME-I-IC3-DESKTOP-LAYOUT-EDITING-FOUNDATION.md) (complete); [IC4 — Desktop Layout Editing Experience Refinement](PROGRAMME-I-IC4-DESKTOP-LAYOUT-EDITING-REFINEMENT.md) (complete) |
 
 ---
 

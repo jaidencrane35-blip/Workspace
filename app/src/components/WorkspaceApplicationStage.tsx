@@ -1,11 +1,11 @@
 /**
  * Purpose: Desktop surface — runtime objects, Arrangement Restore + layout editing.
- * Owner: Frontend product shell (Product Contract V6 / Programme I IC3)
+ * Owner: Frontend product shell (Product Contract V6 / Programme I IC4)
  * Inputs: optional profile, registry apps, work mode, launch + navigate;
  *   WorkspaceState via refreshObservedWorkspaceState; focus_desktop_window;
  *   list/capture/restore_desktop_arrangement
  * Outputs: Spatial desktop objects; Flow/Focus; Arrangement select + Restore;
- *   layout edit mode (preview ghosts, update via capture arrangementId);
+ *   layout edit session (lifecycle, change awareness, preview ghosts, update);
  *   subtle runtime awareness (attention primary, semantic roles)
  * Dependencies: stageDesktopUi, layoutsStageUi, desktopLayoutEditing, ipc
  * Non-goals: Fake windows, Assistant-owned control, minimize APIs, new set_bounds
@@ -19,9 +19,14 @@ import {
   canLaunchApplication,
 } from "../lib/applicationsUi";
 import {
+  diffLayoutEditingChanges,
   layoutArrangementPreviewGhosts,
   layoutEditingBanner,
   layoutEditingHint,
+  layoutEditingPhase,
+  layoutEditingProposedWindows,
+  layoutEditingStatusMeta,
+  layoutEditingUpdateConfirmation,
   layoutEditingWorkflowLine,
 } from "../lib/desktopLayoutEditing";
 import { invokeIpc, isIpcRuntimeAvailable } from "../lib/ipc";
@@ -48,6 +53,7 @@ import {
   stageDeltaOpenedKeys,
   stageDesktopMetaLine,
   stageDesktopPlaneMessage,
+  stageDesktopWindowKey,
   stageFocusPreferredKeys,
   stageSemanticRoleByKey,
   toggleStageSelection,
@@ -131,6 +137,10 @@ export function WorkspaceApplicationStage({
   const [workingSetId, setWorkingSetId] = useState<string>("");
   const [layoutEditing, setLayoutEditing] = useState(false);
   const [layoutPreview, setLayoutPreview] = useState(false);
+  /** Ephemeral confirmation after Update — cleared on exit; not persistence. */
+  const [updateConfirmation, setUpdateConfirmation] = useState<string | null>(
+    null,
+  );
 
   const windows = workspaceState?.windows ?? [];
   const windowGroups = workspaceState?.window_groups ?? [];
@@ -272,8 +282,26 @@ export function WorkspaceApplicationStage({
     if (!workingSetId) {
       setLayoutEditing(false);
       setLayoutPreview(false);
+      setUpdateConfirmation(null);
     }
   }, [workingSetId]);
+
+  const editingChangeDiff = useMemo(() => {
+    if (!layoutEditing || !workingSet) {
+      return null;
+    }
+    const proposed = layoutEditingProposedWindows(
+      windows,
+      selectedKeys,
+      stageDesktopWindowKey,
+    );
+    return diffLayoutEditingChanges(workingSet.entries, proposed);
+  }, [layoutEditing, workingSet, windows, selectedKeys]);
+
+  const editingPhase = layoutEditingPhase(
+    layoutEditing,
+    Boolean(editingChangeDiff?.hasChanges),
+  );
 
   const previewGhosts = useMemo(() => {
     if (!layoutEditing || !layoutPreview || !workingSet) {
@@ -405,6 +433,7 @@ export function WorkspaceApplicationStage({
     }
     setLayoutEditing(true);
     setLayoutPreview(true);
+    setUpdateConfirmation(null);
     onMessage(null);
     onError(null);
   };
@@ -412,6 +441,7 @@ export function WorkspaceApplicationStage({
   const exitLayoutEditing = () => {
     setLayoutEditing(false);
     setLayoutPreview(false);
+    setUpdateConfirmation(null);
   };
 
   const updateEditingArrangement = () => {
@@ -419,9 +449,14 @@ export function WorkspaceApplicationStage({
       onError("Choose an Arrangement to update.");
       return;
     }
+    if (!editingChangeDiff?.hasChanges) {
+      onMessage("No effective changes to update.");
+      return;
+    }
     const hwnds = selectedKeys
       .map((key) => tiles.find((tile) => tile.key === key)?.hwnd)
       .filter((hwnd): hwnd is string => Boolean(hwnd));
+    const confirmation = layoutEditingUpdateConfirmation(editingChangeDiff);
     onBusy(true);
     onError(null);
     void (async () => {
@@ -442,13 +477,9 @@ export function WorkspaceApplicationStage({
           return [saved, ...without];
         });
         setWorkingSetId(saved.id);
-        onMessage(
-          hwnds.length > 0
-            ? `Updated “${saved.name}” from ${hwnds.length} selected window${
-                hwnds.length === 1 ? "" : "s"
-              }`
-            : `Updated “${saved.name}” from current desktop`,
-        );
+        setUpdateConfirmation(confirmation);
+        await refreshDesktop();
+        onMessage(`Updated “${saved.name}” · ${confirmation}`);
       } catch (err: unknown) {
         onError(err instanceof Error ? err.message : String(err));
       } finally {
@@ -568,6 +599,7 @@ export function WorkspaceApplicationStage({
         ? `knowledge-${continuity.knowledge}`
         : null,
       justOpened ? "just-opened" : null,
+      layoutEditing && layoutPreview ? "live-over-preview" : null,
     ]
       .filter(Boolean)
       .join(" ");
@@ -640,6 +672,7 @@ export function WorkspaceApplicationStage({
     workMode === "focus" ? "mode-focus" : "mode-flow",
     planeCalm ? "stage-plane-calm" : "stage-plane-live",
     layoutEditing ? "layout-editing" : null,
+    editingPhase === "changes_pending" ? "layout-changes-pending" : null,
   ]
     .filter(Boolean)
     .join(" ");
@@ -651,12 +684,13 @@ export function WorkspaceApplicationStage({
       data-work-mode={workMode}
       data-stage-plane={planeCalm ? "calm" : "live"}
       data-layout-editing={layoutEditing ? "true" : "false"}
+      data-layout-editing-phase={editingPhase}
     >
       <header className="stage-hero stage-hero-minimal">
         <h2>{layoutsStageTitle(workspace?.name)}</h2>
         <p className="stage-workflow-line muted">
           {layoutEditing
-            ? layoutEditingWorkflowLine()
+            ? layoutEditingWorkflowLine(editingPhase)
             : workspaceDesktopWorkflowLine(workspace?.name)}
         </p>
         <button
@@ -672,16 +706,40 @@ export function WorkspaceApplicationStage({
         </button>
       </header>
 
-      {layoutEditing && workingSet ? (
+      {layoutEditing && workingSet && editingChangeDiff ? (
         <div
-          className="stage-layout-edit-banner"
+          className={
+            editingPhase === "changes_pending"
+              ? "stage-layout-edit-banner pending"
+              : "stage-layout-edit-banner"
+          }
           role="status"
           aria-live="polite"
         >
           <p className="stage-layout-edit-title">
             {layoutEditingBanner(workingSet.name)}
           </p>
-          <p className="stage-layout-edit-hint muted">{layoutEditingHint()}</p>
+          <p className="stage-layout-edit-status muted">
+            {layoutEditingStatusMeta({
+              phase: editingPhase,
+              previewEnabled: layoutPreview,
+              updatedAt: workingSet.updated_at,
+              diff: editingChangeDiff,
+            })}
+          </p>
+          {updateConfirmation ? (
+            <p className="stage-layout-edit-confirmation muted">
+              Last update · {updateConfirmation}
+            </p>
+          ) : null}
+          {editingPhase === "changes_pending" ? (
+            <p className="stage-layout-edit-confirmation">
+              {layoutEditingUpdateConfirmation(editingChangeDiff)}
+            </p>
+          ) : null}
+          <p className="stage-layout-edit-hint muted">
+            {layoutEditingHint(editingPhase)}
+          </p>
         </div>
       ) : null}
 
@@ -742,6 +800,11 @@ export function WorkspaceApplicationStage({
                 className={layoutPreview ? undefined : "ghost"}
                 disabled={busy}
                 aria-pressed={layoutPreview}
+                title={
+                  layoutPreview
+                    ? "Hide saved-layout preview"
+                    : "Show saved-layout preview"
+                }
                 onClick={() => {
                   setLayoutPreview((prev) => !prev);
                 }}
@@ -750,17 +813,28 @@ export function WorkspaceApplicationStage({
               </button>
               <button
                 type="button"
-                disabled={busy || !runtime}
+                disabled={
+                  busy ||
+                  !runtime ||
+                  !editingChangeDiff?.hasChanges
+                }
+                title={
+                  editingChangeDiff?.hasChanges
+                    ? layoutEditingUpdateConfirmation(editingChangeDiff)
+                    : "No effective changes to update"
+                }
                 onClick={updateEditingArrangement}
               >
-                Update Arrangement
+                Update
               </button>
               <button
                 type="button"
+                className="ghost"
                 disabled={busy || !runtime}
+                title="Restore saved Arrangement to the desktop"
                 onClick={restoreSelectedArrangement}
               >
-                Apply
+                Restore
               </button>
               <button
                 type="button"
@@ -817,10 +891,12 @@ export function WorkspaceApplicationStage({
                   width: `${ghost.widthPct}%`,
                   height: `${ghost.heightPct}%`,
                 }}
-                title={`Preview · ${ghost.label}`}
+                title={`Saved preview · ${ghost.label}`}
                 aria-hidden="true"
               >
-                <span className="stage-layout-preview-label">{ghost.label}</span>
+                <span className="stage-layout-preview-label">
+                  Saved · {ghost.label}
+                </span>
               </div>
             ))}
             {mapTiles.map(renderTile)}
@@ -900,10 +976,17 @@ export function WorkspaceApplicationStage({
               <button
                 type="button"
                 className="ghost"
-                disabled={busy || !runtime}
+                disabled={
+                  busy || !runtime || !editingChangeDiff?.hasChanges
+                }
+                title={
+                  editingChangeDiff?.hasChanges
+                    ? layoutEditingUpdateConfirmation(editingChangeDiff)
+                    : "No effective changes to update"
+                }
                 onClick={updateEditingArrangement}
               >
-                Update Arrangement
+                Update
               </button>
             ) : null}
             {matchedLibrary && canLaunchApplication(matchedLibrary) ? (
