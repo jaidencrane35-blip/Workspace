@@ -94,6 +94,41 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 
 ## Cycles
 
+### Cycle: v6-eval-pass-2-capability-plateau
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Cycle number** | V6-eval-2 |
+| **Analysis** | Second pass after V6-1/V6-2. No safe measurable capability left without architecture approval. |
+| **Changes** | none |
+| **Stop** | **CAPABILITY PLATEAU** — two consecutive empty evaluation passes |
+
+---
+
+### Cycle: v6-eval-pass-1-capability-rescore
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Cycle number** | V6-eval-1 |
+| **Analysis** | Objects/Relationships/Interaction/Organisation/Assistant loops closed within existing IPC. Remaining candidates are architecture-gated or non-measurable polish. |
+| **Changes** | none |
+
+---
+
+### Cycle: v6-2-selection-working-set-capture
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Cycle number** | V6-2 |
+| **Capability groups** | Organisation |
+| **Changes** | `capture_desktop_arrangement` optional `member_hwnds`; Stage “Save selection” creates arrangement working set from selected objects |
+| **Validation** | typecheck / test / build / architecture / ipc / ui-boundary (+ domain/kernel arrangement tests) |
+
+---
+
 ### Cycle: v6-1-runtime-objects-relationships-interaction
 
 | Field | Value |

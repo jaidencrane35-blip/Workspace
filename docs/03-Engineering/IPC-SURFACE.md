@@ -38,7 +38,7 @@ does not imply that the current UI invokes a command.
 | `ensure_observation_freshness` | Diagnostic: Manual TriggerAuthority ensure for consumer freshness need (never Event/Plugin; never silent) |
 | `get_workspace_state` | Diagnostic: canonical WorkspaceState projection from latest observation + delta (`desktop.read`) |
 | `create_application` / `launch_application` | Diagnostic (governed launch) |
-| `capture_desktop_arrangement` | Capture observed windows into a named DesktopArrangement (`desktop.write`) — Workspace arrangements rail |
+| `capture_desktop_arrangement` | Capture observed windows into a named DesktopArrangement (`desktop.write`) — full desktop or optional Stage selection (`member_hwnds`) |
 | `restore_desktop_arrangement` | Governed restore via PermissionGateway → WindowController (`desktop.restore`) — explicit Restore button |
 | `focus_desktop_window` | Governed single-window focus via PermissionGateway → WindowController (`desktop.restore`) — Stage click / Focus / Restore |
 | `get_desktop_arrangement` / `list_desktop_arrangements` | Read saved arrangements (`desktop.read`) — arrangements rail |
