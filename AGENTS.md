@@ -76,6 +76,20 @@ Prefer: **Simple. Explicit. Documented. Maintainable.**
 
 ---
 
+## Controlled optimisation (Plateau v2)
+
+Binding process for bounded optimisation sessions:
+
+→ [`docs/04-Operations/OPTIMISATION_PROTOCOL_V2.md`](docs/04-Operations/OPTIMISATION_PROTOCOL_V2.md)
+
+**Do not** stop after two weak cycles. Exhaust the **26 approved optimisation categories** (visual hierarchy, a11y, dead code, tests, DX, …) with measurable improvements only.
+
+**Do** stop immediately on product-direction ambiguity, ownership/architecture changes, new engines, Permission Gateway / Desktop Arrangement behaviour beyond approved architecture, or governance boundary crossings.
+
+Anti-slop: never create work for LOC/commit/file metrics. Log cycles in [`docs/04-Operations/OPTIMISATION_LOG.md`](docs/04-Operations/OPTIMISATION_LOG.md).
+
+---
+
 ## Human Maintainability Rule
 
 All code must be understandable by engineers **without access to AI conversations**.

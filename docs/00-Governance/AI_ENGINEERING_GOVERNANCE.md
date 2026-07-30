@@ -315,13 +315,30 @@ Template: [`BATCH-ALIGNMENT-CHECK.md`](../03-Engineering/BATCH-ALIGNMENT-CHECK.m
 
 ## 11. Optimisation Framework
 
-Material performance / storage / indexing optimisations must be logged:
+Material performance / storage / indexing / chrome-quality optimisations must be logged:
 
 → [`docs/04-Operations/OPTIMISATION_LOG.md`](../04-Operations/OPTIMISATION_LOG.md)
 
 Each cycle records goal, problem, analysis, changes, validation, maintainability score, product alignment, and whether human review is required.
 
 Optimisation without a human understanding path (§3) is prohibited.
+
+### Controlled optimisation — Plateau Detection v2
+
+Binding protocol:
+
+→ [`docs/04-Operations/OPTIMISATION_PROTOCOL_V2.md`](../04-Operations/OPTIMISATION_PROTOCOL_V2.md)
+
+| Rule | Requirement |
+|------|-------------|
+| **Category exhaustion** | Evaluate all 26 approved categories independently; mark PLATEAUED only when no measurable improvement remains in that category |
+| **Global plateau** | Only when every category is PLATEAUED **and** two consecutive full-category evaluation passes find nothing measurable |
+| **Anti-slop** | Never create work for LOC, commits, files changed, or speculative architecture |
+| **Boundary stop** | Immediate stop on product philosophy, ownership, engines, Permission Gateway, Desktop Arrangement behaviour beyond approval, reference reinterpretation, or required human product decisions |
+
+Supersedes the premature rule “stop after two consecutive plateau detections” without category exhaustion.
+
+Quality metrics to update when measurable: Reference Alignment, Maintainability, Commercial Readiness, Human Readability, Accessibility, Performance, Developer Experience, Test Health.
 
 ---
 
@@ -363,6 +380,7 @@ Assistant may ask, explain, and retrieve. Assistant must not become the workspac
 | `01-Product/WORKSPACE-VISUAL-DIRECTION.md` | Visual north star |
 | `01-Product/references/` | Concept references |
 | `04-Operations/OPTIMISATION_LOG.md` | Optimisation cycle log |
+| `04-Operations/OPTIMISATION_PROTOCOL_V2.md` | Controlled optimisation + Plateau Detection v2 |
 | `05-AI/AI-PRINCIPLES.md` | Product AI behaviour |
 | `AGENTS.md` | Short agent contract |
 

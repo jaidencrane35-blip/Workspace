@@ -2,18 +2,23 @@
 
 | Field | Value |
 |-------|-------|
-| **Purpose** | Record material performance, storage, indexing, and compression work so optimisations remain human-inspectable |
+| **Purpose** | Record material quality, performance, storage, indexing, and chrome-optimisation work so cycles remain human-inspectable |
 | **Owner** | Engineering |
 | **Status** | Active template |
+| **Protocol** | [Optimisation Protocol v2 — Plateau Detection](OPTIMISATION_PROTOCOL_V2.md) |
 | **Related** | [AI Engineering Governance §3 & §11](../00-Governance/AI_ENGINEERING_GOVERNANCE.md), [Performance Budgets](../02-Architecture/PERFORMANCE-BUDGETS.md) |
 
 Use one cycle entry per meaningful optimisation. Do **not** log trivial micro-edits.
+
+Under **Plateau v2**, a session may only declare **global plateau** after all 26 approved categories are PLATEAUED and two consecutive full-category evaluation passes find no measurable improvement. Premature “two weak cycles” stops are **superseded** (see protocol). Boundary stops (product direction, ownership, engines, PG/DA beyond approval) still end immediately.
 
 Every cycle must preserve the understanding path:
 
 ```text
 Human concept → Optimised representation → Decoder / inspector → Human understanding
 ```
+
+When logging a cycle, name the **approved category** (1–26). When a category has no measurable improvement left, mark it **PLATEAUED**.
 
 ---
 
@@ -25,6 +30,7 @@ Human concept → Optimised representation → Decoder / inspector → Human und
 | Field | Value |
 |-------|-------|
 | **Date** | YYYY-MM-DD |
+| **Category** | #N — name |
 | **Goal** | |
 | **Problem** | |
 | **Analysis** | |
@@ -32,14 +38,42 @@ Human concept → Optimised representation → Decoder / inspector → Human und
 | **Files affected** | |
 | **Validation** | |
 | **Maintainability score** | /10 |
-| **Product alignment score** | /10 |
+| **Reference alignment** | /10 |
+| **Commercial readiness** | /10 |
+| **Human readability** | /10 |
+| **Accessibility** | /10 (when relevant) |
+| **Performance** | /10 (when relevant) |
+| **Developer experience** | /10 (when relevant) |
+| **Test health** | /10 (when relevant) |
+| **Category status** | open / PLATEAUED |
 | **Human review required** | Yes / No |
+| **Why this is safe** | |
 | **Inspector / decoder path** | How a human inspects or decodes the representation |
 ```
 
 ---
 
 ## Cycles
+
+### Cycle: gov-plateau-v2-protocol
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Category** | 14 — Documentation quality (governance) |
+| **Problem** | Premature plateau rule stopped sessions before approved engineering categories were exhausted |
+| **Reason** | Adopt Plateau Detection v2: category exhaustion + anti-slop + unchanged product boundary stops |
+| **Files changed** | `OPTIMISATION_PROTOCOL_V2.md`, `AGENTS.md`, `AI_ENGINEERING_GOVERNANCE.md`, `OPTIMISATION_LOG.md`, `docs/README.md`, `04-Operations/README.md` |
+| **Validation** | docs-only; no application behaviour change; governance scripts as applicable |
+| **Maintainability score** | 9.0/10 |
+| **Reference alignment** | n/a (process) |
+| **Commercial readiness** | +process clarity |
+| **Human readability** | 9.0/10 |
+| **Category status** | open (docs improved; product UI categories not re-evaluated here) |
+| **Human review required** | No |
+| **Why this is safe** | Governance/process documentation only — no product code |
+
+---
 
 ### Cycle: opt-c10-plateau-detection-2
 
@@ -56,6 +90,7 @@ Human concept → Optimised representation → Decoder / inspector → Human und
 | **Human readability** | 8.9/10 |
 | **Why this is safe** | Documentation-only stop record |
 | **Stop** | Two consecutive plateau detections → end controlled optimisation session |
+| **Superseded by** | [Optimisation Protocol v2](OPTIMISATION_PROTOCOL_V2.md) — premature without category exhaustion; session may resume under V2 |
 
 ---
 

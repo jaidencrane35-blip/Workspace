@@ -142,7 +142,8 @@ Operational engineering logs (not product UX).
 
 | Document | Description |
 |----------|-------------|
-| [Optimisation Log](04-Operations/OPTIMISATION_LOG.md) | Material performance / storage / indexing cycles |
+| [Optimisation Log](04-Operations/OPTIMISATION_LOG.md) | Material performance / storage / indexing / quality cycles |
+| [Optimisation Protocol v2](04-Operations/OPTIMISATION_PROTOCOL_V2.md) | Controlled optimisation; Plateau Detection v2 (category exhaustion) |
 | [Operations README](04-Operations/README.md) | Folder purpose |
 
 ### 05 — AI
