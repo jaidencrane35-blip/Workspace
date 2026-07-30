@@ -1,13 +1,14 @@
 /**
  * Purpose: Desktop Interaction Layer Stage — runtime objects, relationships, interaction.
- * Owner: Frontend product shell (Product Contract V6)
+ * Owner: Frontend product shell (Product Contract V6 / Product Foundation V14)
  * Inputs: optional profile, registry apps, work mode, launch + navigate;
- *   get_workspace_state / ensure_observation_freshness / focus_desktop_window /
- *   list_desktop_arrangements
+ *   WorkspaceState via refreshObservedWorkspaceState; focus_desktop_window;
+ *   list_desktop_arrangements (working-set CRUD only)
  * Outputs: Spatial desktop objects with select≠activate, multi-select, keyboard;
  *   Flow relationships; Focus dock; arrangement working-set overlay
  * Dependencies: stageDesktopUi, layoutsStageUi, ipc, applicationLaunch helpers
- * Non-goals: Fake windows, Assistant-owned control, minimize APIs, OS geometry apply
+ * Non-goals: Fake windows, Assistant-owned control, minimize APIs, OS geometry apply,
+ *   parallel sliced desktop models (hold WorkspaceState directly)
  */
 
 import { useCallback, useEffect, useMemo, useState, type KeyboardEvent } from "react";
@@ -46,10 +47,8 @@ import type {
 } from "../types/desktopArrangement";
 import type {
   ApplicationReference,
-  DesktopWindowGroup,
   Workspace,
-  WorkspaceStateMonitor,
-  WorkspaceStateWindow,
+  WorkspaceState,
 } from "../types/domain";
 
 interface WorkspaceApplicationStageProps {
@@ -108,54 +107,45 @@ export function WorkspaceApplicationStage({
   const [loadState, setLoadState] = useState<StageDesktopLoadState>(
     runtime ? "loading" : "runtime_unavailable",
   );
-  const [windows, setWindows] = useState<WorkspaceStateWindow[]>([]);
-  const [windowGroups, setWindowGroups] = useState<DesktopWindowGroup[]>([]);
-  const [monitors, setMonitors] = useState<WorkspaceStateMonitor[]>([]);
-  const [monitorCount, setMonitorCount] = useState(0);
-  const [focusedTitle, setFocusedTitle] = useState<string | null>(null);
+  const [workspaceState, setWorkspaceState] = useState<WorkspaceState | null>(
+    null,
+  );
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const [arrangements, setArrangements] = useState<DesktopArrangement[]>([]);
   const [workingSetId, setWorkingSetId] = useState<string>("");
+
+  const windows = workspaceState?.windows ?? [];
+  const windowGroups = workspaceState?.window_groups ?? [];
+  const monitors = workspaceState?.monitors ?? [];
+  const monitorCount =
+    monitors.length || workspaceState?.metadata.monitor_count || 0;
+  const focusedTitle = (() => {
+    const focused = workspaceState?.focused_window;
+    if (!focused) {
+      return null;
+    }
+    const title = focused.title.trim();
+    return title || `Window ${focused.hwnd}`;
+  })();
 
   const selectedKey = primaryStageSelectionKey(selectedKeys);
 
   const refreshDesktop = useCallback(async () => {
     if (!isIpcRuntimeAvailable()) {
       setLoadState("runtime_unavailable");
-      setWindows([]);
-      setWindowGroups([]);
-      setMonitors([]);
-      setMonitorCount(0);
-      setFocusedTitle(null);
+      setWorkspaceState(null);
       return;
     }
     setLoadState("loading");
     try {
       const state = await refreshObservedWorkspaceState("workspace_stage");
-      setWindows(state.windows);
-      setWindowGroups(state.window_groups ?? []);
-      setMonitors(state.monitors ?? []);
-      setMonitorCount(
-        state.monitors?.length || state.metadata.monitor_count,
-      );
-      {
-        const focused = state.focused_window;
-        const title = focused?.title.trim();
-        setFocusedTitle(
-          title || (focused ? `Window ${focused.hwnd}` : null),
-        );
-      }
+      setWorkspaceState(state);
       setLoadState("ready");
     } catch {
-      setWindows([]);
-      setWindowGroups([]);
-      setMonitors([]);
-      setMonitorCount(0);
-      setFocusedTitle(null);
+      setWorkspaceState(null);
       setLoadState("error");
     }
   }, []);
-
   const refreshArrangements = useCallback(async () => {
     if (!workspace || !isIpcRuntimeAvailable()) {
       setArrangements([]);

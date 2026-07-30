@@ -1,10 +1,11 @@
 /**
  * Purpose: Applications as observed desktop objects first; library optional.
- * Owner: Frontend product shell (Product Contract V5)
+ * Owner: Frontend product shell (Product Contract V5 / Product Foundation V14)
  * Inputs: Active workspace, shared busy/banner callbacks
- * Outputs: get_workspace_state / focus_desktop_window / list_applications / create / launch
- * Dependencies: Existing application + desktop focus IPC
- * Non-responsibilities: Assistant, OS discovery, geometry apply, minimize APIs
+ * Outputs: WorkspaceState for running apps; focus_desktop_window; list/create/launch registry
+ * Dependencies: Existing application + desktop focus IPC; workspaceStateClient
+ * Non-responsibilities: Assistant, OS discovery, geometry apply, minimize APIs,
+ *   parallel activeApps/activeWindows slices (hold WorkspaceState)
  */
 
 import { useCallback, useEffect, useState } from "react";
@@ -22,7 +23,7 @@ import type {
   ApplicationReference,
   Workspace,
   WorkspaceActiveApplication,
-  WorkspaceStateWindow,
+  WorkspaceState,
 } from "../types/domain";
 import {
   ActiveApplicationsView,
@@ -47,11 +48,8 @@ export function ApplicationsPanel({
   onMessage,
 }: ApplicationsPanelProps) {
   const [applications, setApplications] = useState<ApplicationReference[]>([]);
-  const [activeApps, setActiveApps] = useState<WorkspaceActiveApplication[]>(
-    [],
-  );
-  const [activeWindows, setActiveWindows] = useState<WorkspaceStateWindow[]>(
-    [],
+  const [workspaceState, setWorkspaceState] = useState<WorkspaceState | null>(
+    null,
   );
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -63,6 +61,8 @@ export function ApplicationsPanel({
   const [showRegister, setShowRegister] = useState(false);
   const runtime = isIpcRuntimeAvailable();
   const empty = applicationsEmptyCopy(Boolean(workspace));
+  const activeApps = workspaceState?.active_applications ?? [];
+  const activeWindows = workspaceState?.windows ?? [];
 
   const selected =
     applications.find((item) => item.id === selectedId) ?? null;
@@ -116,8 +116,7 @@ export function ApplicationsPanel({
 
   const refreshActive = useCallback(async () => {
     if (!runtime) {
-      setActiveApps([]);
-      setActiveWindows([]);
+      setWorkspaceState(null);
       return;
     }
     setActiveLoading(true);
@@ -125,8 +124,7 @@ export function ApplicationsPanel({
       const state = await refreshObservedWorkspaceState(
         "workspace_applications",
       );
-      setActiveApps(state.active_applications);
-      setActiveWindows(state.windows);
+      setWorkspaceState(state);
     } finally {
       setActiveLoading(false);
     }
@@ -140,10 +138,9 @@ export function ApplicationsPanel({
 
   useEffect(() => {
     void refreshActive().catch(() => {
-      setActiveApps([]);
+      setWorkspaceState(null);
     });
   }, [refreshActive, workspace?.id]);
-
   const registerApplication = () => {
     if (!workspace) {
       onError("Create a profile under Profiles to save library apps.");
@@ -193,7 +190,11 @@ export function ApplicationsPanel({
   };
 
   const focusActiveApplication = (app: WorkspaceActiveApplication) => {
-    const hwnd = resolveActiveApplicationHwnd(app, activeWindows);
+    const hwnd = resolveActiveApplicationHwnd(
+      app,
+      activeWindows,
+      workspaceState?.focused_window ?? null,
+    );
     if (!hwnd) {
       onError("No observed window handle for that application.");
       return;
@@ -243,6 +244,7 @@ export function ApplicationsPanel({
         <ActiveApplicationsView
           applications={activeApps}
           windows={activeWindows}
+          focusedWindow={workspaceState?.focused_window ?? null}
           loading={activeLoading}
           busy={busy}
           onFocusApplication={focusActiveApplication}

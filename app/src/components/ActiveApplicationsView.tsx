@@ -1,7 +1,7 @@
 /**
  * Purpose: Observed running desktop applications as interactive objects.
- * Owner: Frontend product shell (Product Contract V5)
- * Inputs: WorkspaceActiveApplication + windows from get_workspace_state
+ * Owner: Frontend product shell (Product Contract V5 / Product Foundation V14)
+ * Inputs: WorkspaceActiveApplication + windows (+ optional focused_window) from WorkspaceState
  * Outputs: Object grid; click focuses a matching observed window
  * Dependencies: applicationsUi + productShellUi + focus_desktop_window IPC
  * Non-responsibilities: Observation capture, registry mutation, Assistant
@@ -13,6 +13,7 @@ import {
 } from "../lib/applicationsUi";
 import { monogramFromName } from "../lib/productShellUi";
 import type {
+  ObservationWindowRef,
   WorkspaceActiveApplication,
   WorkspaceStateWindow,
 } from "../types/domain";
@@ -20,15 +21,24 @@ import type {
 interface ActiveApplicationsViewProps {
   applications: WorkspaceActiveApplication[];
   windows: WorkspaceStateWindow[];
+  focusedWindow?: ObservationWindowRef | null;
   loading: boolean;
   busy: boolean;
   onFocusApplication: (app: WorkspaceActiveApplication) => void;
 }
 
+/**
+ * Resolve hwnd from WorkspaceState: prefer authoritative focused_window when
+ * it matches the app process; otherwise visible/z-order among that process's windows.
+ */
 export function resolveActiveApplicationHwnd(
   app: WorkspaceActiveApplication,
   windows: WorkspaceStateWindow[],
+  focusedWindow: ObservationWindowRef | null = null,
 ): string | null {
+  if (focusedWindow && focusedWindow.process_id === app.process_id) {
+    return focusedWindow.hwnd;
+  }
   const matches = windows.filter(
     (window) => window.process_id === app.process_id,
   );
@@ -56,6 +66,7 @@ export function resolveActiveApplicationHwnd(
 export function ActiveApplicationsView({
   applications,
   windows,
+  focusedWindow = null,
   loading,
   busy,
   onFocusApplication,
@@ -70,7 +81,8 @@ export function ActiveApplicationsView({
     <ul className="app-object-grid" aria-label="Running applications">
       {applications.map((app) => {
         const name = activeApplicationName(app);
-        const focusable = resolveActiveApplicationHwnd(app, windows) != null;
+        const focusable =
+          resolveActiveApplicationHwnd(app, windows, focusedWindow) != null;
         return (
           <li key={`${app.process_id}-${app.process_name ?? "unknown"}`}>
             <button

@@ -90,6 +90,26 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 
 ## Cycles
 
+### Cycle: v14-2-product-surfaces-hold-workspacestate
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Cycle number** | V14-2 |
+| **Category** | #12 — Duplicate removal / runtime consumption |
+| **Goal** | Product surfaces hold WorkspaceState directly instead of sliced parallel models |
+| **Problem** | Stage/Apps/Operator truncated WorkspaceState into windows/groups/monitors/meta slices; Operator inspected Environment groups as desktop truth |
+| **Analysis** | Under-utilised: full WorkspaceState as held truth. No new engines or shared shell context yet. |
+| **Changes** | Stage + ApplicationsPanel hold `WorkspaceState`; Operator refresh via client + full state; group inspect prefers `window_groups`; focus hwnd prefers `focused_window` |
+| **Files affected** | `WorkspaceApplicationStage`, `ApplicationsPanel`, `ActiveApplicationsView`, `OperatorConsole`, this log |
+| **Validation** | typecheck / test / build / architecture / ipc / ui-boundary |
+| **Deleted / reduced** | Stage 5-slice state; Apps dual active slices; Operator windows-only bag |
+| **Next recommended cycle** | Shared shell WorkspaceState if Stage+Assistant co-open still double-refreshes; Environment panel desktop mirror redirect |
+| **Human review required** | No |
+| **Why this is safe** | Same IPC source; presentation derives fields |
+
+---
+
 ### Cycle: v14-1-assistant-stage-workspacestate-consumption
 
 | Field | Value |

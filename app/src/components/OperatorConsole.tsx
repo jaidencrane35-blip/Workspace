@@ -83,7 +83,6 @@ import type {
   Workspace,
   WorkspaceContext,
   WorkspaceState,
-  WorkspaceStateWindow,
   Zone,
 } from "../types/domain";
 import type {
@@ -91,6 +90,7 @@ import type {
   WorkspaceSettings,
   WorkspaceStatus,
 } from "../types/workspace";
+import { refreshObservedWorkspaceState } from "../lib/workspaceStateClient";
 
 function formatError(err: unknown): string {
   if (err instanceof Error) {
@@ -148,10 +148,7 @@ export function OperatorConsole({
   const [outcomes, setOutcomes] = useState<ExecutionOutcome[]>([]);
   const [executionStates, setExecutionStates] =
     useState<ExecutionLifecycleProjection | null>(null);
-  const [workspaceStateWindows, setWorkspaceStateWindows] = useState<
-    WorkspaceStateWindow[]
-  >([]);
-  const [workspaceStateMeta, setWorkspaceStateMeta] = useState<string | null>(
+  const [workspaceState, setWorkspaceState] = useState<WorkspaceState | null>(
     null,
   );
   const [lastIntent, setLastIntent] = useState<SuggestionIntentRequest | null>(
@@ -485,13 +482,8 @@ export function OperatorConsole({
 
   const refreshWorkspaceState = () =>
     run("WorkspaceState refreshed", async () => {
-      const state = await invokeIpc<WorkspaceState>("get_workspace_state");
-      setWorkspaceStateWindows(state.windows);
-      setWorkspaceStateMeta(
-        `${state.metadata.window_count} windows · pass ${
-          state.metadata.observation_pass_id ?? "none"
-        }`,
-      );
+      const state = await refreshObservedWorkspaceState("workspace_environment");
+      setWorkspaceState(state);
     });
 
   const registerAndLaunch = () => {
@@ -1586,15 +1578,32 @@ export function OperatorConsole({
           </button>
           <button
             type="button"
-            disabled={busy || !environment}
+            disabled={busy || (!workspaceState && !environment)}
             onClick={() =>
               void run("Window groups inspected", async () => {
-                if (!environment) return;
+                const groups = workspaceState?.window_groups;
+                if (groups && groups.length > 0) {
+                  onMessage(
+                    groups
+                      .map(
+                        (g) =>
+                          `${g.label}[${g.criterion}](${g.member_ids.length})`,
+                      )
+                      .join(" · "),
+                  );
+                  return;
+                }
+                if (!environment) {
+                  onMessage(
+                    "Refresh WorkspaceState (or Inspect environment) first.",
+                  );
+                  return;
+                }
                 onMessage(
                   environment.window_groups.length
-                    ? environment.window_groups
+                    ? `Environment-only groups: ${environment.window_groups
                         .map((g) => `${g.label}(${g.window_ids.length})`)
-                        .join(" · ")
+                        .join(" · ")}`
                     : "No groups",
                 );
               })
@@ -3786,8 +3795,9 @@ export function OperatorConsole({
       <section>
         <h2>WorkspaceState</h2>
         <p className="muted">
-          Canonical runtime desktop projection via WorkspaceStateEngine
-          (observation + delta). Not live Win32 enumeration.
+          Canonical runtime desktop projection (observation + delta + behaviour
+          + memory + semantics + decisions + attention). Not live Win32
+          enumeration.
         </p>
         <div className="row">
           <button
@@ -3798,16 +3808,23 @@ export function OperatorConsole({
             Refresh WorkspaceState
           </button>
         </div>
-        {workspaceStateMeta ? (
-          <p className="muted mono">{workspaceStateMeta}</p>
+        {workspaceState ? (
+          <p className="muted mono">
+            {workspaceState.metadata.window_count} windows ·{" "}
+            {workspaceState.window_groups.length} groups · pass{" "}
+            {workspaceState.metadata.observation_pass_id ?? "none"}
+            {workspaceState.attention?.primary_item_id
+              ? ` · attention ${workspaceState.attention.primary_item_id}`
+              : ""}
+          </p>
         ) : null}
-        {workspaceStateWindows.length === 0 ? (
+        {!workspaceState || workspaceState.windows.length === 0 ? (
           <p className="muted">
             No projected windows yet — capture an observation, then refresh.
           </p>
         ) : (
           <ul className="list compact">
-            {workspaceStateWindows.map((w) => (
+            {workspaceState.windows.map((w) => (
               <li key={w.hwnd}>
                 <strong>{w.title}</strong>{" "}
                 <span className="mono">pid {w.process_id}</span>
