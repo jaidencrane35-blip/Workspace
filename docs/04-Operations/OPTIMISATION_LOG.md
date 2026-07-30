@@ -90,6 +90,26 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 
 ## Cycles
 
+### Cycle: v14-3-shared-workspacestate-client-cache
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Cycle number** | V14-3 |
+| **Category** | #12 / #24 — Duplicate removal / IPC cleanliness |
+| **Goal** | One frontend WorkspaceState hold shared by Stage, Apps, Assistant, Operator, Environment UI |
+| **Problem** | Each product surface refreshed and held WorkspaceState independently; Environment UI mirrored desktop windows/groups from Environment model |
+| **Analysis** | Under-utilised: single client publication of last WorkspaceState. Not a new runtime — cache of the existing contract. |
+| **Changes** | `subscribeObservedWorkspaceState` + `useObservedWorkspaceState`; product panels subscribe; Environment section shows groups from WorkspaceState and keeps Environment for gaps only |
+| **Files affected** | `workspaceStateClient.ts`, `useObservedWorkspaceState.ts`, Stage/Apps/Assistant/Operator/IntelligencePanel, this log |
+| **Validation** | typecheck / test / build / architecture / ipc / ui-boundary |
+| **Deleted / reduced** | Per-panel WorkspaceState useState owners; Environment window_groups product display |
+| **Next recommended cycle** | Consolidation audit for remaining duplicates; empty eval if none |
+| **Human review required** | No |
+| **Why this is safe** | Same get_workspace_state IPC; subscribers mirror last publish |
+
+---
+
 ### Cycle: v14-2-product-surfaces-hold-workspacestate
 
 | Field | Value |

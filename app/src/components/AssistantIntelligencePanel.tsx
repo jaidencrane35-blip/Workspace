@@ -19,7 +19,7 @@ import {
   type AssistantCompanionTurn,
 } from "../lib/assistantCompanion";
 import { invokeIpc, isIpcRuntimeAvailable } from "../lib/ipc";
-import { refreshObservedWorkspaceState } from "../lib/workspaceStateClient";
+import { useObservedWorkspaceState } from "../lib/useObservedWorkspaceState";
 import type {
   Workspace,
   WorkspaceAssistantContextProjection,
@@ -34,7 +34,6 @@ import type {
   WorkspaceAssistantRetrievalSummary,
   WorkspaceAssistantSurfaceProjection,
   WorkspaceAssistantSurfaceSummary,
-  WorkspaceState,
 } from "../types/domain";
 import {
   assistantContextHistoryCountIsAuthoritative,
@@ -215,6 +214,7 @@ export function AssistantIntelligencePanel({
   const rail = presentation === "rail";
   const askId = useId();
   const threadRef = useRef<HTMLDivElement | null>(null);
+  const { refreshWorkspaceState } = useObservedWorkspaceState();
   const [humanAsk, setHumanAsk] = useState("");
   const [sending, setSending] = useState(false);
   const [packagesOpen, setPackagesOpen] = useState(false);
@@ -288,12 +288,12 @@ export function AssistantIntelligencePanel({
     return onEnsureWorkspace();
   }
 
-  async function readWorkspaceState(): Promise<WorkspaceState | null> {
+  async function readWorkspaceState() {
     if (!isIpcRuntimeAvailable()) {
       return null;
     }
     try {
-      return await refreshObservedWorkspaceState("workspace_assistant");
+      return await refreshWorkspaceState("workspace_assistant");
     } catch {
       return null;
     }

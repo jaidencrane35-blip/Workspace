@@ -82,7 +82,6 @@ import type {
   SuggestionLifecycleRecord,
   Workspace,
   WorkspaceContext,
-  WorkspaceState,
   Zone,
 } from "../types/domain";
 import type {
@@ -90,7 +89,7 @@ import type {
   WorkspaceSettings,
   WorkspaceStatus,
 } from "../types/workspace";
-import { refreshObservedWorkspaceState } from "../lib/workspaceStateClient";
+import { useObservedWorkspaceState } from "../lib/useObservedWorkspaceState";
 
 function formatError(err: unknown): string {
   if (err instanceof Error) {
@@ -148,9 +147,9 @@ export function OperatorConsole({
   const [outcomes, setOutcomes] = useState<ExecutionOutcome[]>([]);
   const [executionStates, setExecutionStates] =
     useState<ExecutionLifecycleProjection | null>(null);
-  const [workspaceState, setWorkspaceState] = useState<WorkspaceState | null>(
-    null,
-  );
+  const { workspaceState, refreshWorkspaceState: refreshSharedWorkspaceState } =
+    useObservedWorkspaceState();
+
   const [lastIntent, setLastIntent] = useState<SuggestionIntentRequest | null>(
     null,
   );
@@ -482,8 +481,7 @@ export function OperatorConsole({
 
   const refreshWorkspaceState = () =>
     run("WorkspaceState refreshed", async () => {
-      const state = await refreshObservedWorkspaceState("workspace_environment");
-      setWorkspaceState(state);
+      await refreshSharedWorkspaceState("workspace_environment");
     });
 
   const registerAndLaunch = () => {

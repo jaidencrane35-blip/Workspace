@@ -18,12 +18,11 @@ import {
   activeApplicationName,
   applicationsEmptyCopy,
 } from "../lib/applicationsUi";
-import { refreshObservedWorkspaceState } from "../lib/workspaceStateClient";
+import { useObservedWorkspaceState } from "../lib/useObservedWorkspaceState";
 import type {
   ApplicationReference,
   Workspace,
   WorkspaceActiveApplication,
-  WorkspaceState,
 } from "../types/domain";
 import {
   ActiveApplicationsView,
@@ -48,9 +47,7 @@ export function ApplicationsPanel({
   onMessage,
 }: ApplicationsPanelProps) {
   const [applications, setApplications] = useState<ApplicationReference[]>([]);
-  const [workspaceState, setWorkspaceState] = useState<WorkspaceState | null>(
-    null,
-  );
+  const { workspaceState, refreshWorkspaceState } = useObservedWorkspaceState();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [activeLoading, setActiveLoading] = useState(false);
@@ -116,19 +113,15 @@ export function ApplicationsPanel({
 
   const refreshActive = useCallback(async () => {
     if (!runtime) {
-      setWorkspaceState(null);
       return;
     }
     setActiveLoading(true);
     try {
-      const state = await refreshObservedWorkspaceState(
-        "workspace_applications",
-      );
-      setWorkspaceState(state);
+      await refreshWorkspaceState("workspace_applications");
     } finally {
       setActiveLoading(false);
     }
-  }, [runtime]);
+  }, [runtime, refreshWorkspaceState]);
 
   useEffect(() => {
     void refreshRegistry().catch((err: unknown) => {
@@ -138,7 +131,7 @@ export function ApplicationsPanel({
 
   useEffect(() => {
     void refreshActive().catch(() => {
-      setWorkspaceState(null);
+      // Shared cache retains last good WorkspaceState.
     });
   }, [refreshActive, workspace?.id]);
   const registerApplication = () => {

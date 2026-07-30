@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { invokeIpc } from "../lib/ipc";
+import { useObservedWorkspaceState } from "../lib/useObservedWorkspaceState";
 import {
   DecisionReasonList,
   DisplayReasonList,
@@ -74,6 +75,7 @@ export function WorkspaceIntelligencePanel({
   onError,
   onMessage,
 }: WorkspaceIntelligencePanelProps) {
+  const { workspaceState, refreshWorkspaceState } = useObservedWorkspaceState();
   const [state, setState] = useState<WorkspaceIntelligenceState | null>(null);
   const [projectName, setProjectName] = useState("Workspace AI");
   const [taskTitle, setTaskTitle] = useState(
@@ -1753,16 +1755,17 @@ export function WorkspaceIntelligencePanel({
       <section>
         <h3>Desktop environment</h3>
         <p className="muted">
-          Live desktop read model — which windows and apps belong to this
-          Workspace. Observation only; never moves windows.
+          Desktop windows and groups come from WorkspaceState. Environment
+          adds registry gaps and matched-application diagnostics only.
         </p>
         <div className="row">
           <button
             type="button"
             disabled={busy || !workspace}
             onClick={() =>
-              void run("Environment refreshed", async () => {
+              void run("Desktop + environment refreshed", async () => {
                 if (!workspace) return;
+                await refreshWorkspaceState("workspace_environment");
                 const next = await invokeIpc<WorkspaceEnvironmentState>(
                   "generate_workspace_environment",
                   { workspaceId: workspace.id },
@@ -1774,13 +1777,32 @@ export function WorkspaceIntelligencePanel({
             Refresh environment
           </button>
         </div>
+        {workspaceState ? (
+          <p className="muted">
+            WorkspaceState: {workspaceState.windows.length} window(s) ·{" "}
+            {workspaceState.window_groups.length} group(s) · pass{" "}
+            {workspaceState.metadata.observation_pass_id ?? "none"}
+          </p>
+        ) : null}
+        {workspaceState && workspaceState.window_groups.length > 0 ? (
+          <ul className="intelligence-list">
+            {workspaceState.window_groups.slice(0, 5).map((group) => (
+              <li key={group.id}>
+                <strong>{group.label}</strong>
+                <div className="muted">
+                  {group.member_ids.length} window(s) · {group.criterion} ·{" "}
+                  {group.confidence}
+                </div>
+              </li>
+            ))}
+          </ul>
+        ) : null}
         {environment ? (
           <>
             <p>{environment.summary}</p>
             <p className="muted">
               {environment.running_application_count} running ·{" "}
               {environment.missing_application_count} missing ·{" "}
-              {environment.windows.length} window(s) ·{" "}
               {environment.disconnected_work
                 ? "work appears disconnected"
                 : "work linked"}{" "}
@@ -1796,24 +1818,12 @@ export function WorkspaceIntelligencePanel({
                 ))}
               </ul>
             )}
-            {environment.window_groups.length > 0 && (
-              <ul className="intelligence-list">
-                {environment.window_groups.slice(0, 5).map((group) => (
-                  <li key={group.id}>
-                    <strong>{group.label}</strong>
-                    <div className="muted">
-                      {group.window_ids.length} window(s) · {group.explanation}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
           </>
         ) : (
           <p className="muted">
             {state?.environment.summary
-              ? `Intelligence summary: ${state.environment.summary} Refresh for full Environment detail.`
-              : "No environment snapshot yet."}
+              ? `Intelligence summary: ${state.environment.summary} Refresh for Environment gaps.`
+              : "No environment gap snapshot yet."}
           </p>
         )}
       </section>

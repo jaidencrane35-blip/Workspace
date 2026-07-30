@@ -39,7 +39,7 @@ import {
   type StageDesktopLoadState,
   type StageDesktopWindowTile,
 } from "../lib/stageDesktopUi";
-import { refreshObservedWorkspaceState } from "../lib/workspaceStateClient";
+import { useObservedWorkspaceState } from "../lib/useObservedWorkspaceState";
 import type { WorkMode } from "../lib/workMode";
 import type {
   DesktopArrangement,
@@ -48,7 +48,6 @@ import type {
 import type {
   ApplicationReference,
   Workspace,
-  WorkspaceState,
 } from "../types/domain";
 
 interface WorkspaceApplicationStageProps {
@@ -107,9 +106,7 @@ export function WorkspaceApplicationStage({
   const [loadState, setLoadState] = useState<StageDesktopLoadState>(
     runtime ? "loading" : "runtime_unavailable",
   );
-  const [workspaceState, setWorkspaceState] = useState<WorkspaceState | null>(
-    null,
-  );
+  const { workspaceState, refreshWorkspaceState } = useObservedWorkspaceState();
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const [arrangements, setArrangements] = useState<DesktopArrangement[]>([]);
   const [workingSetId, setWorkingSetId] = useState<string>("");
@@ -133,20 +130,16 @@ export function WorkspaceApplicationStage({
   const refreshDesktop = useCallback(async () => {
     if (!isIpcRuntimeAvailable()) {
       setLoadState("runtime_unavailable");
-      setWorkspaceState(null);
       return;
     }
     setLoadState("loading");
     try {
-      const state = await refreshObservedWorkspaceState("workspace_stage");
-      setWorkspaceState(state);
+      await refreshWorkspaceState("workspace_stage");
       setLoadState("ready");
     } catch {
-      setWorkspaceState(null);
       setLoadState("error");
     }
-  }, []);
-  const refreshArrangements = useCallback(async () => {
+  }, [refreshWorkspaceState]);  const refreshArrangements = useCallback(async () => {
     if (!workspace || !isIpcRuntimeAvailable()) {
       setArrangements([]);
       setWorkingSetId("");
