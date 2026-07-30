@@ -20,6 +20,39 @@ Human concept → Optimised representation → Decoder / inspector → Human und
 
 When logging a cycle, name the **approved category** (1–26). When a category has no measurable improvement left, mark it **PLATEAUED**.
 
+### Category board (Plateau v2 — living)
+
+Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-blocked`.
+
+| # | Category | Status | Notes |
+|---|----------|--------|-------|
+| 1 | Visual hierarchy | open | Product h3 sentence-case (v2-07) |
+| 2 | Layout consistency | open | |
+| 3 | Spacing consistency | open | |
+| 4 | Typography consistency | open | Product h3 (v2-07) |
+| 5 | Navigation clarity | open | |
+| 6 | Accessibility | open | focus-visible (v2-02) |
+| 7 | Keyboard UX | open | rail focus (v2-03) |
+| 8 | Responsiveness | open | |
+| 9 | Animation polish | open | rail enter + reduced-motion (v2-08) |
+| 10 | Component consistency | open | |
+| 11 | CSS simplification | open | focus merge (v2-06) |
+| 12 | Duplicate removal | open | |
+| 13 | Dead code removal | open | unused selectors (v2-04) |
+| 14 | Documentation quality | open | Protocol v2 + board |
+| 15 | Naming clarity | open | DESKTOP_PREVIEW_BANNER (v2-05) |
+| 16 | Maintainability | open | |
+| 17 | Human readability | open | |
+| 18 | Developer experience | open | |
+| 19 | Code organisation | open | |
+| 20 | Test quality | open | hook + banner tests (v2-01, v2-05) |
+| 21 | Performance | open | |
+| 22 | Memory efficiency | open | |
+| 23 | Build cleanliness | open | |
+| 24 | IPC cleanliness | open | |
+| 25 | Error messaging | open | string classify (v2-05) |
+| 26 | Commercial readiness | open | |
+
 ---
 
 ## Cycle template (copy below)
@@ -54,6 +87,40 @@ When logging a cycle, name the **approved category** (1–26). When a category h
 ---
 
 ## Cycles
+
+### Cycle: opt-v2-08-companion-rail-motion
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Category** | 9 — Animation polish |
+| **Problem** | Companion rail appeared without presence; no reduced-motion consideration |
+| **Reason** | Short enter motion; disabled when `prefers-reduced-motion` |
+| **Files changed** | `App.css`, this log |
+| **Validation** | typecheck / test / architecture / ipc / ui-boundary / build |
+| **Reference alignment** | 9.0/10 |
+| **Accessibility** | 8.5/10 |
+| **Category status** | open |
+| **Why this is safe** | Presentational motion only |
+
+---
+
+### Cycle: opt-v2-07-product-heading-typography
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Category** | 4 — Typography consistency |
+| **Problem** | Global `section h3` forced uppercase diagnostic labels onto product Home/Apps/Layouts titles |
+| **Reason** | Sentence-case product headings; keep uppercase for engineering containers |
+| **Files changed** | `App.css`, this log (+ category board under docs cycle) |
+| **Validation** | typecheck / test / architecture / ipc / ui-boundary / build |
+| **Reference alignment** | 9.1/10 |
+| **Human readability** | 9.0/10 |
+| **Category status** | open |
+| **Why this is safe** | Typography CSS scope only |
+
+---
 
 ### Cycle: opt-v2-06-css-focus-rule-merge
 

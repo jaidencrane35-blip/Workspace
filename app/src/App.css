@@ -644,6 +644,19 @@ section h3, .container h3 {
   letter-spacing: 0.04em;
 }
 
+/* Product surfaces use sentence-case section titles (not diagnostic labels). */
+.product-panel h3,
+.applications-panel h3,
+.workspace-application-stage h3,
+.assistant-companion-rail h3,
+.desktop-arrangement-panel h3 {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 1.02rem;
+  font-weight: 600;
+  color: #c5d0da;
+}
+
 .assistant-plan-header {
   display: flex;
   flex-direction: column;
@@ -1358,6 +1371,24 @@ button.linkish:not(:disabled):hover {
   position: sticky;
   top: 3.5rem;
   align-self: start;
+  animation: companion-rail-enter 160ms ease-out;
+}
+
+@keyframes companion-rail-enter {
+  from {
+    opacity: 0;
+    transform: translateX(0.4rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .assistant-companion-rail {
+    animation: none;
+  }
 }
 
 .assistant-companion-rail.density-focus {
