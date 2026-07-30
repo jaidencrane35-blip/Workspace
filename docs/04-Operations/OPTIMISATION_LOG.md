@@ -90,6 +90,29 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 
 ## Cycles
 
+### Cycle: v14-1-assistant-stage-workspacestate-consumption
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Cycle number** | V14-1 |
+| **Category** | #12 — Duplicate removal / runtime consumption |
+| **Goal** | Product Foundation: consume WorkspaceState; delete Assistant parallel facts bag and Focus PID invention |
+| **Problem** | Assistant rebuilt desktop facts via `list_desktop_arrangements` + parallel delta bag; Focus invented multi-window PID dock/primary buckets instead of `window_groups` |
+| **Analysis** | Highest-value under-utilised runtime: `WorkspaceState.window_groups` + `latest_delta`. No new engines. |
+| **Changes** | Assistant answers/enrichment take `WorkspaceState` only; panel drops arrangement fetch for Q&A; Focus primary + dock consume `process_id` groups |
+| **Files affected** | `assistantCompanion.ts`, `AssistantIntelligencePanel.tsx`, `stageDesktopUi.ts`, milestone-a test, this log |
+| **Validation** | typecheck / test / build / architecture / ipc / ui-boundary |
+| **Deleted / reduced** | `AssistantDesktopFacts`; Assistant arrangement IPC on ask; Focus `dockByProcess` PID Map invention |
+| **Maintainability score** | 9/10 |
+| **Reference alignment** | 8/10 — product consumes runtime directly |
+| **Human review required** | No |
+| **Why this is safe** | Same answers from same authority; arrangement CRUD panels unchanged |
+| **Next recommended cycle** | Shared shell WorkspaceState holder; Stage stop slicing fields; Operator full-state inspect |
+| **Inspector / decoder path** | Assistant local answers; Stage Focus with process_id groups |
+
+---
+
 ### Cycle: v13-empty-attention-evaluation-2
 
 | Field | Value |

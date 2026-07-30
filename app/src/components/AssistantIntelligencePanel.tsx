@@ -1,10 +1,11 @@
 /**
  * Purpose: ChatGPT-like Assistant companion — history, input, send, typing.
- * Owner: Frontend product shell (Product Contract V5)
+ * Owner: Frontend product shell (Product Contract V5 / Product Foundation V14)
  * Inputs: Active workspace (optional), busy/error/message, ensure-workspace
- * Outputs: compose_workspace_assistant_turn using observed desktop when available
- * Dependencies: Existing assistant surface IPC + get_workspace_state for context
- * Non-responsibilities: New AI engines, streaming IPC (none yet), OS control
+ * Outputs: compose_workspace_assistant_turn using WorkspaceState as desktop truth
+ * Dependencies: Existing assistant surface IPC + refreshObservedWorkspaceState
+ * Non-responsibilities: New AI engines, streaming IPC, OS control, parallel
+ *   arrangement/delta fetches, inventing desktop inference
  */
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
@@ -16,11 +17,9 @@ import {
   enrichAskWithDesktopObservation,
   loadCompanionRecentTurns,
   type AssistantCompanionTurn,
-  type AssistantDesktopFacts,
 } from "../lib/assistantCompanion";
 import { invokeIpc, isIpcRuntimeAvailable } from "../lib/ipc";
 import { refreshObservedWorkspaceState } from "../lib/workspaceStateClient";
-import type { DesktopArrangement } from "../types/desktopArrangement";
 import type {
   Workspace,
   WorkspaceAssistantContextProjection,
@@ -35,6 +34,7 @@ import type {
   WorkspaceAssistantRetrievalSummary,
   WorkspaceAssistantSurfaceProjection,
   WorkspaceAssistantSurfaceSummary,
+  WorkspaceState,
 } from "../types/domain";
 import {
   assistantContextHistoryCountIsAuthoritative,
@@ -288,29 +288,14 @@ export function AssistantIntelligencePanel({
     return onEnsureWorkspace();
   }
 
-  async function readDesktopFacts(
-    activeWorkspaceId: string | null,
-  ): Promise<AssistantDesktopFacts> {
+  async function readWorkspaceState(): Promise<WorkspaceState | null> {
     if (!isIpcRuntimeAvailable()) {
-      return { state: null, delta: null, arrangements: [] };
+      return null;
     }
     try {
-      const [state, arrangements] = await Promise.all([
-        refreshObservedWorkspaceState("workspace_assistant").catch(() => null),
-        activeWorkspaceId
-          ? invokeIpc<DesktopArrangement[]>("list_desktop_arrangements", {
-              workspaceId: activeWorkspaceId,
-              limit: 20,
-            }).catch(() => [] as DesktopArrangement[])
-          : Promise.resolve([] as DesktopArrangement[]),
-      ]);
-      return {
-        state,
-        delta: state?.latest_delta ?? null,
-        arrangements: arrangements ?? [],
-      };
+      return await refreshObservedWorkspaceState("workspace_assistant");
     } catch {
-      return { state: null, delta: null, arrangements: [] };
+      return null;
     }
   }
 
@@ -326,8 +311,8 @@ export function AssistantIntelligencePanel({
     try {
       await run(null, async () => {
         const active = await resolveWorkspace();
-        const facts = await readDesktopFacts(active?.id ?? null);
-        const local = answerDesktopQuestionLocally(ask, facts);
+        const state = await readWorkspaceState();
+        const local = answerDesktopQuestionLocally(ask, state);
         if (local) {
           setRecent(
             appendCompanionRecentTurn({
@@ -344,7 +329,7 @@ export function AssistantIntelligencePanel({
             "Assistant needs a quiet Desktop profile once to store answers. Create one under Profiles, or open the desktop app.",
           );
         }
-        const composedAsk = enrichAskWithDesktopObservation(ask, facts);
+        const composedAsk = enrichAskWithDesktopObservation(ask, state);
         const nextSurface =
           await invokeIpc<WorkspaceAssistantSurfaceProjection>(
             "compose_workspace_assistant_turn",

@@ -318,46 +318,50 @@ describe("assistant companion chat helpers", () => {
           monitor_name: "Display 1",
         },
       ],
+      monitors: [],
+      window_groups: [],
+      latest_delta: null,
+      behaviour: null,
+      runtime_memory: null,
+      semantics: null,
+      decisions: null,
+      attention: null,
       authority_effect: "none",
     };
     expect(enrichAskWithDesktopObservation("What is open?", state)).toMatch(
       /Observed desktop[\s\S]*What is open\?/,
     );
-    expect(
-      answerDesktopQuestionLocally("What is open?", {
-        state,
-        delta: null,
-        arrangements: [],
-      }),
-    ).toMatch(/code\.exe/i);
-    expect(
-      answerDesktopQuestionLocally("What changed?", {
-        state,
-        delta: {
-          previous_pass_id: "p0",
-          current_pass_id: "p1",
-          previous_captured_at: null,
-          current_captured_at: null,
-          opened_windows: [],
-          closed_windows: [
-            {
-              stable_window_id: "z",
-              hwnd: "0x9",
-              title: "Notes",
-              process_id: 9,
-            },
-          ],
-          focused_window_changed: null,
-          moved_windows: [],
-          resized_windows: [],
-          minimized_changes: [],
-          monitor_changes: [],
-          has_changes: true,
-          authority_effect: "none",
-        },
-        arrangements: [],
-      }),
-    ).toMatch(/closed Notes/i);
+    expect(answerDesktopQuestionLocally("What is open?", state)).toMatch(
+      /code\.exe/i,
+    );
+    const changedState = {
+      ...state,
+      latest_delta: {
+        previous_pass_id: "p0",
+        current_pass_id: "p1",
+        previous_captured_at: null,
+        current_captured_at: null,
+        opened_windows: [],
+        closed_windows: [
+          {
+            stable_window_id: "z",
+            hwnd: "0x9",
+            title: "Notes",
+            process_id: 9,
+          },
+        ],
+        focused_window_changed: null,
+        moved_windows: [],
+        resized_windows: [],
+        minimized_changes: [],
+        monitor_changes: [],
+        has_changes: true,
+        authority_effect: "none",
+      },
+    };
+    expect(answerDesktopQuestionLocally("What changed?", changedState)).toMatch(
+      /closed Notes/i,
+    );
     memoryStorage.removeItem(ASSISTANT_COMPANION_RECENT_KEY);
   });
 });

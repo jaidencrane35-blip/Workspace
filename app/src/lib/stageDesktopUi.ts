@@ -1,12 +1,12 @@
 /**
  * Purpose: Pure desktop-object model for the Desktop Interaction Layer Stage.
- * Owner: Frontend product shell (Product Contract V8)
+ * Owner: Frontend product shell (Product Contract V8 / Product Foundation V14)
  * Inputs: WorkspaceState windows + window_groups from get_workspace_state
  * Outputs: Runtime object tiles, relationship keys from authoritative groups,
  *   Flow/Focus organisation, selection helpers, arrangement overlays
  * Dependencies: None (pure)
  * Non-goals: Fake windows, WindowController ownership, OS geometry apply,
- *   inventing groups (consume WorkspaceState.window_groups)
+ *   inventing process/relationship groups (consume WorkspaceState.window_groups)
  */
 
 import type { DesktopArrangementEntry } from "../types/desktopArrangement";
@@ -365,12 +365,6 @@ export interface StageWorkModeOrganisation {
 }
 
 /**
- * Flow keeps every observed window on the map (relationships exposed via accents).
- * Focus keeps one process on the map and docks the rest as process objects.
- * When `windowGroups` is provided, Focus primary process membership comes from
- * authoritative process_id groups (no invented PID buckets).
- */
-/**
  * Paint order for Stage tiles from observed stacking.
  * Lower z_order is closer to foreground (EnumWindows top-first); paint later.
  */
@@ -387,6 +381,12 @@ export function sortStageTilesByZOrder(
   });
 }
 
+/**
+ * Flow keeps every observed window on the map (relationships exposed via accents).
+ * Focus keeps one process on the map and docks the rest as process objects.
+ * Primary membership and dock process buckets come from WorkspaceState
+ * `process_id` window_groups only — never invent multi-window PID groups.
+ */
 export function organiseStageForWorkMode(
   windows: WorkspaceStateWindow[],
   workMode: "flow" | "focus",
@@ -399,6 +399,7 @@ export function organiseStageForWorkMode(
   }
 
   const tiles = layoutStageDesktopWindows(windows, monitors);
+  const tileByKey = new Map(tiles.map((tile) => [tile.key, tile]));
   const anchor =
     tiles.find((tile) => tile.key === selectedKey) ??
     tiles.find((tile) => tile.focused) ??
@@ -408,34 +409,57 @@ export function organiseStageForWorkMode(
     return { mapWindows: windows, dockEntries: [] };
   }
 
-  const processGroup = windowGroups.find(
-    (group) =>
-      group.criterion === "process_id" &&
-      group.member_ids.includes(anchor.key),
+  const processGroups = windowGroups.filter(
+    (group) => group.criterion === "process_id",
+  );
+  const primaryGroup = processGroups.find((group) =>
+    group.member_ids.includes(anchor.key),
   );
   const primaryKeys = new Set(
-    processGroup?.member_ids?.length
-      ? processGroup.member_ids
-      : tiles
-          .filter((tile) => tile.processId === anchor.processId)
-          .map((tile) => tile.key),
+    primaryGroup?.member_ids?.length
+      ? primaryGroup.member_ids
+      : [anchor.key],
   );
 
   const mapWindows = windows.filter((window) =>
     primaryKeys.has(stageDesktopWindowKey(window)),
   );
 
-  const dockByProcess = new Map<number, StageProcessDockEntry>();
+  const dockEntries: StageProcessDockEntry[] = [];
+  const dockedKeys = new Set<string>();
+
+  for (const group of processGroups) {
+    if (primaryGroup && group.id === primaryGroup.id) {
+      continue;
+    }
+    const members = group.member_ids
+      .map((id) => tileByKey.get(id))
+      .filter((tile): tile is StageDesktopWindowTile => Boolean(tile))
+      .filter((tile) => !primaryKeys.has(tile.key));
+    if (members.length === 0) {
+      continue;
+    }
+    const representative = members[0]!;
+    for (const member of members) {
+      dockedKeys.add(member.key);
+    }
+    dockEntries.push({
+      processKey: representative.processKey,
+      processId: representative.processId,
+      label: group.label || representative.title,
+      hwnd: representative.hwnd,
+      tileKey: representative.key,
+      windowCount: members.length,
+    });
+  }
+
+  // Ungrouped non-primary windows stay visible as single dock objects —
+  // do not merge them into invented process buckets.
   for (const tile of tiles) {
-    if (primaryKeys.has(tile.key)) {
+    if (primaryKeys.has(tile.key) || dockedKeys.has(tile.key)) {
       continue;
     }
-    const existing = dockByProcess.get(tile.processId);
-    if (existing) {
-      existing.windowCount += 1;
-      continue;
-    }
-    dockByProcess.set(tile.processId, {
+    dockEntries.push({
       processKey: tile.processKey,
       processId: tile.processId,
       label: tile.title,
@@ -447,6 +471,6 @@ export function organiseStageForWorkMode(
 
   return {
     mapWindows,
-    dockEntries: [...dockByProcess.values()],
+    dockEntries,
   };
 }
