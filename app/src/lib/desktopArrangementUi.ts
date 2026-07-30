@@ -99,13 +99,13 @@ export function emptyArrangementsCopy(hasWorkspace: boolean): {
 } {
   if (!hasWorkspace) {
     return {
-      title: "Saving needs a named profile",
-      body: "Name a profile under Profiles to save a layout.",
+      title: "Saving needs a Profile",
+      body: "Choose a Profile to save Arrangements you can Restore later.",
     };
   }
   return {
-    title: "No saved arrangements yet",
-    body: "Save open windows when you want to restore this layout later.",
+    title: "No Arrangements yet",
+    body: "Save open windows as an Arrangement when you want to Restore this layout later.",
   };
 }
 

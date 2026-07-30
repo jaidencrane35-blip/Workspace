@@ -1,10 +1,11 @@
 /**
- * Purpose: Optional remember/restore control for observed desktop layouts.
- * Owner: Frontend product shell (Product Contract V3)
+ * Purpose: Arrangements control — save and Restore desktop layouts for a Profile.
+ * Owner: Frontend product shell (Product Contract V3 / Programme I IC2)
  * Inputs: Active profile, busy/banner callbacks
  * Outputs: capture_desktop_arrangement / restore / list IPC
  * Dependencies: desktopArrangementUi helpers, list/details/diagnostics views
- * Non-goals: Competing with Stage as a co-primary column; setup-first forms
+ * Non-goals: Competing with Desktop as primary surface; setup-first forms;
+ *   duplicate Restore ownership (Desktop Arrangement row also Restores)
  */
 
 import { useCallback, useEffect, useState } from "react";
@@ -117,12 +118,12 @@ export function DesktopArrangementPanel({
 
   const captureArrangement = () => {
     if (!workspace) {
-      onError("Create a named profile under Profiles to save this layout.");
+      onError("Choose a Profile to save an Arrangement.");
       return;
     }
     const trimmed = name.trim();
     if (!trimmed) {
-      onError("Give this arrangement a name before saving.");
+      onError("Give this Arrangement a name before saving.");
       return;
     }
     void run("Arrangement saved from current windows", async () => {
@@ -149,7 +150,7 @@ export function DesktopArrangementPanel({
 
   const restoreArrangement = () => {
     if (!selected) {
-      onError("Select an arrangement to restore.");
+      onError("Select an Arrangement to Restore.");
       return;
     }
     onBusy(true);
@@ -182,12 +183,12 @@ export function DesktopArrangementPanel({
   };
 
   const summaryLabel = !workspace
-    ? "Remember layout"
+    ? "Arrangements"
     : arrangements.length === 0
-      ? "Remember layout"
+      ? "Arrangements"
       : arrangements.length === 1
-        ? "Remember layout · 1 saved"
-        : `Remember layout · ${arrangements.length} saved`;
+        ? "Arrangements · 1 saved"
+        : `Arrangements · ${arrangements.length} saved`;
 
   return (
     <details className="desktop-arrangement-panel compact-control">
@@ -197,7 +198,11 @@ export function DesktopArrangementPanel({
         <p className="muted arrangement-empty-line">{empty.body}</p>
       ) : (
         <>
-          <section aria-label="Saved arrangements">
+          <p className="muted arrangement-workflow-hint">
+            Save and Restore layouts for this Profile. Desktop can also Restore
+            the Arrangement selected on the map.
+          </p>
+          <section aria-label="Saved Arrangements">
             <div className="row section-heading-row">
               <h3>Saved</h3>
               <button
@@ -229,7 +234,7 @@ export function DesktopArrangementPanel({
           </section>
 
           {selected ? (
-            <section aria-label="Selected arrangement">
+            <section aria-label="Selected Arrangement">
               <DesktopArrangementDetails arrangement={selected} />
               <div className="row arrangement-restore-row">
                 <button
@@ -244,7 +249,7 @@ export function DesktopArrangementPanel({
           ) : null}
 
           <details className="arrangement-save-details">
-            <summary>Save current windows</summary>
+            <summary>Save current windows as Arrangement</summary>
             <label className="arrangement-field">
               <span>Name</span>
               <input

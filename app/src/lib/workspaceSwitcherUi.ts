@@ -17,12 +17,12 @@ export function workspaceSwitcherEmptyCopy(hasRuntime: boolean): {
   if (!hasRuntime) {
     return {
       title: "Desktop runtime required",
-      body: "Profile switching needs the Workspace desktop app. Stage still shows your desktop without a profile.",
+      body: "Profiles need the Workspace desktop app. Desktop still shows your windows without a Profile.",
     };
   }
   return {
-    title: "No named profiles yet",
-    body: "Optional. Open Stage to see your desktop — add a profile only to save arrangements or a library.",
+    title: "No Profiles yet",
+    body: "Optional. Open Desktop to see your windows — add a Profile only to save Arrangements or a library.",
   };
 }
 

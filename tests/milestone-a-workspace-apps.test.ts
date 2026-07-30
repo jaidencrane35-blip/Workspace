@@ -72,8 +72,8 @@ describe("applications UI helpers", () => {
 
   it("explains empty registry states", () => {
     expect(applicationsEmptyCopy(false).title).toMatch(/profile/i);
-    expect(applicationsEmptyCopy(true).body).toMatch(/Stage/i);
-    expect(applicationsEmptyCopy(false).body).toMatch(/Stage/i);
+    expect(applicationsEmptyCopy(true).body).toMatch(/Desktop/i);
+    expect(applicationsEmptyCopy(false).body).toMatch(/Desktop/i);
   });
 });
 
@@ -91,16 +91,22 @@ describe("product shell UI helpers", () => {
 });
 
 describe("layouts stage UI helpers", () => {
-  it("keeps stage copy desktop-first and minimal", async () => {
+  it("keeps Desktop copy profile-aware and composition-ready", async () => {
     const {
       layoutsStageEmptyAppsCopy,
       layoutsStageTitle,
       layoutsStageRegistryHeading,
+      workspaceDesktopWorkflowLine,
+      WORKSPACE_DESKTOP_NAV_LABEL,
     } = await import("../app/src/lib/layoutsStageUi");
     expect(layoutsStageTitle("Deep work")).toBe("Deep work");
     expect(layoutsStageTitle(null)).toBe("Desktop");
     expect(layoutsStageEmptyAppsCopy().title).toMatch(/library/i);
     expect(layoutsStageRegistryHeading()).toMatch(/Library/i);
+    expect(WORKSPACE_DESKTOP_NAV_LABEL).toBe("Desktop");
+    expect(workspaceDesktopWorkflowLine("Deep work")).toMatch(/Profile/);
+    expect(workspaceDesktopWorkflowLine("Deep work")).toMatch(/Arrangement/i);
+    expect(workspaceDesktopWorkflowLine(null)).toMatch(/Profile/);
   });
 });
 

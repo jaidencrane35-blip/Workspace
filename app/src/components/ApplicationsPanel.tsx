@@ -164,7 +164,7 @@ export function ApplicationsPanel({
       <header className="product-panel-hero">
         <h2>Library</h2>
         <p className="muted">
-          Optional saved apps. Running windows live on Stage.
+          Optional saved apps. Running windows live on Desktop.
         </p>
       </header>
 
@@ -176,9 +176,9 @@ export function ApplicationsPanel({
             disabled={busy}
             onClick={onOpenStage}
           >
-            Open Stage
+            Open Desktop
           </button>
-          <span className="muted"> — see and focus what is running</span>
+          <span className="muted"> — see and Restore Arrangements</span>
         </p>
       ) : null}
 

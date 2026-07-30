@@ -249,7 +249,7 @@ function summariseReopen(state: WorkspaceState): string {
     return `Recently closed: ${closed
       .map((window) => window.title || window.hwnd)
       .slice(0, 6)
-      .join(", ")}. Restore a saved arrangement under Stage if you want those layouts back — Assistant cannot move windows.`;
+      .join(", ")}. Restore a saved Arrangement on Desktop if you want those layouts back — Assistant cannot move windows.`;
   }
   const arrangementGroups = (state.window_groups ?? []).filter(
     (group) => group.criterion === "arrangement_membership",

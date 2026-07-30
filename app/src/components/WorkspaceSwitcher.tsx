@@ -1,10 +1,10 @@
 /**
- * Purpose: Optional named profiles — list first, create secondary.
- * Owner: Frontend product shell (Product Contract V3)
+ * Purpose: Optional named Profiles — list first, create secondary.
+ * Owner: Frontend product shell (Product Contract V3 / Programme I IC2)
  * Inputs: active workspace, busy flags, activate/create callbacks from App
- * Outputs: Profile selection; optional create-with-name
+ * Outputs: Profile selection; optional create-with-name; link to Desktop
  * Dependencies: list_workspaces IPC
- * Non-responsibilities: Window control, Stage observation, Assistant
+ * Non-responsibilities: Window control, Desktop observation, Assistant
  */
 
 import { useCallback, useEffect, useState } from "react";
@@ -24,6 +24,8 @@ interface WorkspaceSwitcherProps {
   onMessage: (message: string | null) => void;
   onActivate: (workspace: Workspace) => Promise<void>;
   onCreated: (workspace: Workspace) => Promise<void>;
+  /** Open Desktop — running windows and Arrangements. */
+  onOpenDesktop?: () => void;
 }
 
 export function WorkspaceSwitcher({
@@ -34,6 +36,7 @@ export function WorkspaceSwitcher({
   onMessage,
   onActivate,
   onCreated,
+  onOpenDesktop,
 }: WorkspaceSwitcherProps) {
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [loading, setLoading] = useState(false);
@@ -111,18 +114,37 @@ export function WorkspaceSwitcher({
   return (
     <section className="product-panel" aria-label="Profiles">
       <header className="product-panel-hero">
-        <p className="arrangement-eyebrow">Profiles</p>
-        <h2>Named profiles</h2>
+        <p className="arrangement-eyebrow">Workspace</p>
+        <h2>Profiles</h2>
+        <p className="muted">
+          Name a Profile to save Arrangements and a library. Running windows
+          live on Desktop.
+        </p>
       </header>
+
+      {onOpenDesktop ? (
+        <p className="applications-stage-link">
+          <button
+            type="button"
+            className="ghost"
+            disabled={busy}
+            onClick={onOpenDesktop}
+          >
+            Open Desktop
+          </button>
+          <span className="muted"> — view windows and Restore Arrangements</span>
+        </p>
+      ) : null}
 
       {activeWorkspace ? (
         <p className="product-current" aria-live="polite">
-          Current: <strong>{activeWorkspace.name}</strong>
+          Current Profile: <strong>{activeWorkspace.name}</strong>
         </p>
       ) : (
-        <p className="muted">None selected — Stage still shows your desktop.</p>
+        <p className="muted">
+          None selected — Desktop still shows your windows.
+        </p>
       )}
-
       <section aria-label="Saved profiles">
         <div className="row section-heading-row">
           <h3>Profiles</h3>

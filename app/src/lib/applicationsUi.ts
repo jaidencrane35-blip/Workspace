@@ -18,13 +18,13 @@ export function applicationsEmptyCopy(hasWorkspace: boolean): {
 } {
   if (!hasWorkspace) {
     return {
-      title: "Library needs a profile",
-      body: "Stage already shows running apps. Add a profile only to save a library.",
+      title: "Library needs a Profile",
+      body: "Desktop already shows running apps. Add a Profile only to save a library.",
     };
   }
   return {
     title: "No library apps yet",
-    body: "Optional — Stage shows what is running. Add apps here only to launch later.",
+    body: "Optional — Desktop shows what is running. Add apps here only to launch later.",
   };
 }
 

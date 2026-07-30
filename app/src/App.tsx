@@ -30,6 +30,7 @@ import {
   IpcRuntimeUnavailableError,
   isIpcRuntimeAvailable,
 } from "./lib/ipc";
+import { WORKSPACE_DESKTOP_NAV_LABEL } from "./lib/layoutsStageUi";
 import {
   classifyBanner,
   ZONE_CONTEXT_LIMIT,
@@ -320,6 +321,7 @@ export default function App() {
             onMessage={onMessage}
             onActivate={activateWorkspace}
             onCreated={activateWorkspace}
+            onOpenDesktop={() => navigatePrimary("layouts")}
           />
         </div>
       );
@@ -358,6 +360,7 @@ export default function App() {
                   onManageApplications={() => navigatePrimary("applications")}
                   onLaunchApplication={launchFromStage}
                   observationEpoch={desktopEpoch}
+                  onDesktopChanged={bumpDesktopObservation}
                 />
                 <DesktopArrangementPanel
                   workspace={workspace}
@@ -412,7 +415,7 @@ export default function App() {
             aria-label="Primary workspace views"
             role="tablist"
           >
-            {primaryTab("layouts", "Stage")}
+            {primaryTab("layouts", WORKSPACE_DESKTOP_NAV_LABEL)}
             {primaryTab("applications", "Apps")}
             {primaryTab("workspaces", "Profiles")}
           </nav>

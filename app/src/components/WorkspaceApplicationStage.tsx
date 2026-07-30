@@ -23,6 +23,7 @@ import {
   layoutsStageEmptyAppsCopy,
   layoutsStageRegistryHeading,
   layoutsStageTitle,
+  workspaceDesktopWorkflowLine,
 } from "../lib/layoutsStageUi";
 import { monogramFromName } from "../lib/productShellUi";
 import {
@@ -51,6 +52,7 @@ import { useObservedWorkspaceState } from "../lib/useObservedWorkspaceState";
 import type { WorkMode } from "../lib/workMode";
 import type {
   DesktopArrangement,
+  DesktopArrangementRestoreResult,
   DesktopWindowFocusResult,
 } from "../types/desktopArrangement";
 import type {
@@ -71,6 +73,8 @@ interface WorkspaceApplicationStageProps {
   onLaunchApplication: (app: ApplicationReference) => void;
   /** Bump after restore/launch so Stage re-reads desktop reality. */
   observationEpoch?: number;
+  /** Notify shell after Restore mutates the desktop (same path as arrangements rail). */
+  onDesktopChanged?: () => void;
 }
 
 function matchLibraryApp(
@@ -108,6 +112,7 @@ export function WorkspaceApplicationStage({
   onManageApplications,
   onLaunchApplication,
   observationEpoch = 0,
+  onDesktopChanged,
 }: WorkspaceApplicationStageProps) {
   const runtime = isIpcRuntimeAvailable();
   const registryEmpty = layoutsStageEmptyAppsCopy();
@@ -283,7 +288,7 @@ export function WorkspaceApplicationStage({
 
   const saveSelectionAsWorkingSet = () => {
     if (!workspace) {
-      onError("Create a profile under Profiles to save a working set.");
+      onError("Choose a Profile to save an Arrangement.");
       return;
     }
     const hwnds = selectedKeys
@@ -306,7 +311,7 @@ export function WorkspaceApplicationStage({
           {
             workspaceId: workspace.id,
             name: label,
-            description: "Working set from Stage selection",
+            description: "Arrangement from Desktop selection",
             arrangementId: null,
             refreshObservation: false,
             memberHwnds: hwnds,
@@ -318,9 +323,40 @@ export function WorkspaceApplicationStage({
         });
         setWorkingSetId(saved.id);
         onMessage(
-          `Saved working set “${saved.name}” · ${saved.entries.length} window${
+          `Arrangement saved “${saved.name}” · ${saved.entries.length} window${
             saved.entries.length === 1 ? "" : "s"
           }`,
+        );
+      } catch (err: unknown) {
+        onError(err instanceof Error ? err.message : String(err));
+      } finally {
+        onBusy(false);
+      }
+    })();
+  };
+
+  const restoreSelectedArrangement = () => {
+    if (!workingSet) {
+      onError("Choose an Arrangement to Restore.");
+      return;
+    }
+    onBusy(true);
+    onError(null);
+    void (async () => {
+      try {
+        const result = await invokeIpc<DesktopArrangementRestoreResult>(
+          "restore_desktop_arrangement",
+          {
+            arrangementId: workingSet.id,
+            focusFirst: true,
+          },
+        );
+        onDesktopChanged?.();
+        await refreshDesktop();
+        onMessage(
+          result.outcomes.some((outcome) => outcome.simulated)
+            ? `Restored ${workingSet.name} (simulated)`
+            : `Restored ${workingSet.name}`,
         );
       } catch (err: unknown) {
         onError(err instanceof Error ? err.message : String(err));
@@ -517,12 +553,15 @@ export function WorkspaceApplicationStage({
   return (
     <section
       className={stageClass}
-      aria-label="Desktop reality stage"
+      aria-label="Desktop"
       data-work-mode={workMode}
       data-stage-plane={planeCalm ? "calm" : "live"}
     >
       <header className="stage-hero stage-hero-minimal">
         <h2>{layoutsStageTitle(workspace?.name)}</h2>
+        <p className="stage-workflow-line muted">
+          {workspaceDesktopWorkflowLine(workspace?.name)}
+        </p>
         <button
           type="button"
           className="ghost stage-refresh"
@@ -549,9 +588,9 @@ export function WorkspaceApplicationStage({
       ) : null}
 
       {showDesktopMap && arrangements.length > 0 ? (
-        <div className="stage-working-set-row">
+        <div className="stage-working-set-row stage-arrangement-row">
           <label htmlFor="stage-working-set">
-            Working set
+            Arrangement
             <select
               id="stage-working-set"
               value={workingSetId}
@@ -568,6 +607,13 @@ export function WorkspaceApplicationStage({
               ))}
             </select>
           </label>
+          <button
+            type="button"
+            disabled={busy || !runtime || !workingSetId}
+            onClick={restoreSelectedArrangement}
+          >
+            Restore
+          </button>
         </div>
       ) : null}
 
@@ -672,7 +718,7 @@ export function WorkspaceApplicationStage({
               disabled={busy || !runtime || !workspace}
               onClick={saveSelectionAsWorkingSet}
             >
-              Save selection
+              Save Arrangement
             </button>
             {matchedLibrary && canLaunchApplication(matchedLibrary) ? (
               <button
