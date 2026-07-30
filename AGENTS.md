@@ -143,6 +143,7 @@ Workspace is a **Windows-targeted Tauri 2 desktop app** (React 18 + Vite in `app
 ### Known-good checks on Linux
 
 - `pnpm typecheck`, `pnpm build`, and `pnpm test` (Vitest + catalog/boundary verify scripts) all pass.
+- After intentional architecture inventory changes: `pnpm run verify:architecture-governance -- --write` then commit `scripts/generated/architecture-map.json`.
 - Rust crates that pass here: `cargo test -p workspace-domain` and `cargo test -p workspace-windows-integration`.
 
 ### Pre-existing / environment notes (verify before assuming fixed)

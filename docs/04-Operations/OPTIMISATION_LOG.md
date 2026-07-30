@@ -43,13 +43,13 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 | 15 | Naming clarity | open | DESKTOP_PREVIEW_BANNER (v2-05) |
 | 16 | Maintainability | open | |
 | 17 | Human readability | open | |
-| 18 | Developer experience | open | |
+| 18 | Developer experience | open | arch map --write note (v2-13) |
 | 19 | Code organisation | open | rail id in assistantRail.ts (v2-09) |
 | 20 | Test quality | open | hook + banner tests (v2-01, v2-05) |
-| 21 | Performance | open | |
-| 22 | Memory efficiency | open | |
-| 23 | Build cleanliness | open | |
-| 24 | IPC cleanliness | open | |
+| 21 | Performance | PLATEAUED | No measured shell bottleneck; no speculative memo (v2-14) |
+| 22 | Memory efficiency | PLATEAUED | No measured leak/allocation issue in chrome path (v2-14) |
+| 23 | Build cleanliness | PLATEAUED | typecheck/build green; no actionable frontend warnings (v2-14) |
+| 24 | IPC cleanliness | PLATEAUED | verify:ipc-contract green; no orphaned shell consumers (v2-14) |
 | 25 | Error messaging | open | string classify (v2-05) |
 | 26 | Commercial readiness | open | |
 
@@ -87,6 +87,38 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 ---
 
 ## Cycles
+
+### Cycle: opt-v2-14-plateau-perf-memory-build-ipc
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Category** | 21–24 — Performance, Memory, Build, IPC |
+| **Problem** | Categories not yet formally evaluated under Plateau v2 |
+| **Analysis** | Perf/memory: no measured chrome regression to fix without speculative optimisation (anti-slop). Build: `pnpm typecheck`/`build` clean. IPC: `verify:ipc-contract` 206/159 green; shell uses existing invoke helpers only. |
+| **Changes** | Mark categories 21–24 **PLATEAUED** (analysis only) |
+| **Files changed** | this log |
+| **Validation** | typecheck / test / architecture / ipc / ui-boundary / build (reaffirmed) |
+| **Category status** | PLATEAUED (21–24) |
+| **Why this is safe** | Documentation of evaluation; no speculative code |
+
+---
+
+### Cycle: opt-v2-13-dx-architecture-map-note
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Category** | 18 — Developer experience |
+| **Problem** | Agents often forgot `--write` when architecture inventory drifted |
+| **Reason** | Document refresh command in AGENTS.md known-good checks |
+| **Files changed** | `AGENTS.md`, this log |
+| **Validation** | docs + existing verify scripts |
+| **Developer experience** | 8.5/10 |
+| **Category status** | open |
+| **Why this is safe** | AGENTS documentation only |
+
+---
 
 ### Cycle: opt-v2-12-responsive-media-merge
 
