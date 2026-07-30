@@ -90,6 +90,23 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 
 ## Cycles
 
+### Cycle: v8-7-workspace-state-monitors
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Cycle number** | V8-7 |
+| **Goal** | Project observed monitors onto WorkspaceState; Stage plane uses display bounds |
+| **Problem** | Only monitor_count existed — Stage fitted to window AABB and Assistant could not name displays |
+| **Analysis** | Monitors already captured; project into runtime model and use as authoritative Stage plane |
+| **Changes** | `WorkspaceStateMonitor` / `monitors`; Stage layout union of displays; Assistant open summary includes monitors |
+| **Files affected** | domain workspace_state + lib export, domain.ts, stageDesktopUi, Stage, assistantCompanion, this log |
+| **Validation** | typecheck / test / build / architecture / ipc / ui-boundary (+ domain state tests) |
+| **Deleted / reduced** | Window-only Stage plane when monitors are observed |
+| **Next recommended cycle** | Two empty capability evaluation passes |
+
+---
+
 ### Cycle: v8-6-single-lock-workspace-state-projection
 
 | Field | Value |

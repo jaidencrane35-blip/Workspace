@@ -47,6 +47,7 @@ import type {
   ApplicationReference,
   DesktopWindowGroup,
   Workspace,
+  WorkspaceStateMonitor,
   WorkspaceStateWindow,
 } from "../types/domain";
 
@@ -108,6 +109,7 @@ export function WorkspaceApplicationStage({
   );
   const [windows, setWindows] = useState<WorkspaceStateWindow[]>([]);
   const [windowGroups, setWindowGroups] = useState<DesktopWindowGroup[]>([]);
+  const [monitors, setMonitors] = useState<WorkspaceStateMonitor[]>([]);
   const [monitorCount, setMonitorCount] = useState(0);
   const [focusedTitle, setFocusedTitle] = useState<string | null>(null);
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
@@ -121,6 +123,7 @@ export function WorkspaceApplicationStage({
       setLoadState("runtime_unavailable");
       setWindows([]);
       setWindowGroups([]);
+      setMonitors([]);
       setMonitorCount(0);
       setFocusedTitle(null);
       return;
@@ -130,7 +133,10 @@ export function WorkspaceApplicationStage({
       const state = await refreshObservedWorkspaceState("workspace_stage");
       setWindows(state.windows);
       setWindowGroups(state.window_groups ?? []);
-      setMonitorCount(state.metadata.monitor_count);
+      setMonitors(state.monitors ?? []);
+      setMonitorCount(
+        state.monitors?.length || state.metadata.monitor_count,
+      );
       {
         const focused = state.focused_window;
         const title = focused?.title.trim();
@@ -142,6 +148,7 @@ export function WorkspaceApplicationStage({
     } catch {
       setWindows([]);
       setWindowGroups([]);
+      setMonitors([]);
       setMonitorCount(0);
       setFocusedTitle(null);
       setLoadState("error");
@@ -180,8 +187,8 @@ export function WorkspaceApplicationStage({
   }, [refreshArrangements, observationEpoch]);
 
   const tiles = useMemo(
-    () => layoutStageDesktopWindows(windows),
-    [windows],
+    () => layoutStageDesktopWindows(windows, monitors),
+    [windows, monitors],
   );
 
   useEffect(() => {
@@ -211,16 +218,23 @@ export function WorkspaceApplicationStage({
   );
 
   const organisation = useMemo(
-    () => organiseStageForWorkMode(windows, workMode, selectedKey, windowGroups),
-    [windows, workMode, selectedKey, windowGroups],
+    () =>
+      organiseStageForWorkMode(
+        windows,
+        workMode,
+        selectedKey,
+        windowGroups,
+        monitors,
+      ),
+    [windows, workMode, selectedKey, windowGroups, monitors],
   );
 
   const mapTiles = useMemo(() => {
     if (workMode === "focus") {
-      return layoutStageDesktopWindows(organisation.mapWindows);
+      return layoutStageDesktopWindows(organisation.mapWindows, monitors);
     }
     return tiles;
-  }, [workMode, organisation.mapWindows, tiles]);
+  }, [workMode, organisation.mapWindows, tiles, monitors]);
 
   const showDesktopMap = loadState === "ready" && tiles.length > 0;
   const planeCalm = !showDesktopMap;

@@ -12,6 +12,7 @@
 import type { DesktopArrangementEntry } from "../types/desktopArrangement";
 import type {
   DesktopWindowGroup,
+  WorkspaceStateMonitor,
   WorkspaceStateWindow,
 } from "../types/domain";
 
@@ -102,10 +103,12 @@ export function stageDesktopRelationIndex(processKey: string): number {
 
 /**
  * Map observed windows into a spatial stage using relative bounds.
+ * When monitors are present, the plane is the union of observed displays.
  * Rectangles encode identity + geometry only — lightweight representations.
  */
 export function layoutStageDesktopWindows(
   windows: WorkspaceStateWindow[],
+  monitors: WorkspaceStateMonitor[] = [],
 ): StageDesktopWindowTile[] {
   if (windows.length === 0) {
     return [];
@@ -116,13 +119,24 @@ export function layoutStageDesktopWindows(
   let maxX = -Infinity;
   let maxY = -Infinity;
 
-  for (const window of windows) {
-    const w = Math.max(window.width, 1);
-    const h = Math.max(window.height, 1);
-    minX = Math.min(minX, window.x);
-    minY = Math.min(minY, window.y);
-    maxX = Math.max(maxX, window.x + w);
-    maxY = Math.max(maxY, window.y + h);
+  if (monitors.length > 0) {
+    for (const monitor of monitors) {
+      const w = Math.max(monitor.width, 1);
+      const h = Math.max(monitor.height, 1);
+      minX = Math.min(minX, monitor.x);
+      minY = Math.min(minY, monitor.y);
+      maxX = Math.max(maxX, monitor.x + w);
+      maxY = Math.max(maxY, monitor.y + h);
+    }
+  } else {
+    for (const window of windows) {
+      const w = Math.max(window.width, 1);
+      const h = Math.max(window.height, 1);
+      minX = Math.min(minX, window.x);
+      minY = Math.min(minY, window.y);
+      maxX = Math.max(maxX, window.x + w);
+      maxY = Math.max(maxY, window.y + h);
+    }
   }
 
   const spanX = Math.max(maxX - minX, 1);
@@ -361,12 +375,13 @@ export function organiseStageForWorkMode(
   workMode: "flow" | "focus",
   selectedKey: string | null,
   windowGroups: DesktopWindowGroup[] = [],
+  monitors: WorkspaceStateMonitor[] = [],
 ): StageWorkModeOrganisation {
   if (workMode !== "focus" || windows.length === 0) {
     return { mapWindows: windows, dockEntries: [] };
   }
 
-  const tiles = layoutStageDesktopWindows(windows);
+  const tiles = layoutStageDesktopWindows(windows, monitors);
   const anchor =
     tiles.find((tile) => tile.key === selectedKey) ??
     tiles.find((tile) => tile.focused) ??

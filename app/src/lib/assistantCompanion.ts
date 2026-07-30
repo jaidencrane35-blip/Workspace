@@ -110,6 +110,15 @@ function summariseOpen(state: WorkspaceState): string {
   const parts = [
     `${state.windows.length} window${state.windows.length === 1 ? "" : "s"} open`,
   ];
+  const monitors = state.monitors ?? [];
+  if (monitors.length > 0) {
+    parts.push(
+      `${monitors.length} monitor${monitors.length === 1 ? "" : "s"} (${monitors
+        .map((monitor) => monitor.name || `display ${monitor.monitor_index}`)
+        .slice(0, 4)
+        .join(", ")})`,
+    );
+  }
   if (focused) {
     parts.push(`focused on ${focused}`);
   }

@@ -48,6 +48,40 @@ pub struct WorkspaceActiveApplication {
     pub window_count: i32,
 }
 
+/// Observed monitor row on WorkspaceState — authoritative desktop display geometry.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct WorkspaceStateMonitor {
+    pub monitor_index: i32,
+    pub name: String,
+    pub x: i32,
+    pub y: i32,
+    pub width: i32,
+    pub height: i32,
+    pub work_x: i32,
+    pub work_y: i32,
+    pub work_w: i32,
+    pub work_h: i32,
+    pub is_primary: bool,
+}
+
+impl WorkspaceStateMonitor {
+    pub fn from_observed(monitor: &ObservedMonitor) -> Self {
+        Self {
+            monitor_index: monitor.monitor_index,
+            name: monitor.name.clone(),
+            x: monitor.x,
+            y: monitor.y,
+            width: monitor.width,
+            height: monitor.height,
+            work_x: monitor.work_x,
+            work_y: monitor.work_y,
+            work_w: monitor.work_w,
+            work_h: monitor.work_h,
+            is_primary: monitor.is_primary,
+        }
+    }
+}
+
 /// Window row on WorkspaceState — authoritative runtime desktop object.
 /// Owns observed geometry (x/y/width/height) for future OS apply consumers.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -145,6 +179,8 @@ pub struct WorkspaceState {
     pub active_applications: Vec<WorkspaceActiveApplication>,
     /// Bounded desktop window rows for Environment and other consumers.
     pub windows: Vec<WorkspaceStateWindow>,
+    /// Observed displays — authoritative desktop geometry plane.
+    pub monitors: Vec<WorkspaceStateMonitor>,
     /// Fact-driven groups from the generic desktop grouping engine.
     pub window_groups: Vec<DesktopWindowGroup>,
     /// Latest observation delta captured with this projection (atomic with windows).
@@ -170,6 +206,7 @@ impl WorkspaceState {
             focused_window: None,
             active_applications: Vec::new(),
             windows: Vec::new(),
+            monitors: Vec::new(),
             window_groups: Vec::new(),
             latest_delta: WorkspaceObservationDelta::empty(),
             authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
@@ -198,6 +235,12 @@ impl WorkspaceState {
             .collect();
         windows.truncate(WORKSPACE_STATE_WINDOW_LIMIT);
 
+        let monitors: Vec<WorkspaceStateMonitor> = snapshot
+            .monitors
+            .iter()
+            .map(WorkspaceStateMonitor::from_observed)
+            .collect();
+
         let focused_window = windows
             .iter()
             .find(|window| window.focused)
@@ -221,6 +264,7 @@ impl WorkspaceState {
             focused_window,
             active_applications,
             windows,
+            monitors,
             window_groups,
             latest_delta: delta.clone(),
             authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
@@ -250,6 +294,7 @@ impl WorkspaceState {
             focused_window,
             active_applications,
             windows,
+            monitors: Vec::new(),
             window_groups,
             latest_delta: WorkspaceObservationDelta::empty(),
             authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
@@ -539,6 +584,9 @@ mod tests {
         assert_eq!(state.metadata.window_count, 2);
         assert_eq!(state.windows.len(), 2);
         assert_eq!(state.windows[0].monitor_name.as_deref(), Some("Primary"));
+        assert_eq!(state.monitors.len(), 1);
+        assert_eq!(state.monitors[0].name, "Primary");
+        assert!(state.monitors[0].is_primary);
         assert_eq!(
             state.focused_window.as_ref().and_then(|w| w.stable_window_id.as_deref()),
             Some("stable-a")

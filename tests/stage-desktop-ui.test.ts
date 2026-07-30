@@ -119,6 +119,38 @@ describe("stage desktop UI helpers", () => {
     expect(tiles[1]?.leftPct).toBe(50);
   });
 
+  it("uses observed monitors as the Stage plane when present", () => {
+    const tiles = layoutStageDesktopWindows(
+      [
+        sampleWindow({
+          stable_window_id: "a",
+          x: 100,
+          y: 100,
+          width: 200,
+          height: 200,
+        }),
+      ],
+      [
+        {
+          monitor_index: 0,
+          name: "Primary",
+          x: 0,
+          y: 0,
+          width: 1000,
+          height: 1000,
+          work_x: 0,
+          work_y: 0,
+          work_w: 1000,
+          work_h: 960,
+          is_primary: true,
+        },
+      ],
+    );
+    expect(tiles[0]?.leftPct).toBe(10);
+    expect(tiles[0]?.topPct).toBe(10);
+    expect(tiles[0]?.widthPct).toBe(20);
+  });
+
   it("organises Focus mode as primary process + process dock", async () => {
     const { organiseStageForWorkMode } = await import(
       "../app/src/lib/stageDesktopUi"

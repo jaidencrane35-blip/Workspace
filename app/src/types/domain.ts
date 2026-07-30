@@ -6818,6 +6818,21 @@ export interface WorkspaceActiveApplication {
   window_count: number;
 }
 
+/** Observed display on WorkspaceState — authoritative desktop geometry. */
+export interface WorkspaceStateMonitor {
+  monitor_index: number;
+  name: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  work_x: number;
+  work_y: number;
+  work_w: number;
+  work_h: number;
+  is_primary: boolean;
+}
+
 /** Window row on WorkspaceState for Environment and other consumers. */
 export interface WorkspaceStateWindow {
   stable_window_id: string | null;
@@ -6856,6 +6871,7 @@ export interface WorkspaceState {
   focused_window: ObservationWindowRef | null;
   active_applications: WorkspaceActiveApplication[];
   windows: WorkspaceStateWindow[];
+  monitors: WorkspaceStateMonitor[];
   window_groups: DesktopWindowGroup[];
   /** Latest observation delta projected with this state (atomic with windows). */
   latest_delta: WorkspaceObservationDelta;

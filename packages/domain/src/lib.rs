@@ -681,7 +681,8 @@ pub use workspace_session::{
     WorkspaceSessionSummary,
 };
 pub use workspace_state::{
-    WorkspaceActiveApplication, WorkspaceState, WorkspaceStateMetadata, WorkspaceStateWindow,
+    WorkspaceActiveApplication, WorkspaceState, WorkspaceStateMetadata, WorkspaceStateMonitor,
+    WorkspaceStateWindow,
     WORKSPACE_STATE_WINDOW_LIMIT,
 };
 pub use workspace_state_envelope::{
