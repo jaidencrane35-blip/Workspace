@@ -21,6 +21,7 @@ pub mod decision_engine;
 pub mod decision_queue;
 pub mod desktop_arrangement;
 pub mod desktop_behaviour;
+pub mod desktop_decision;
 pub mod desktop_grouping;
 pub mod desktop_runtime_memory;
 pub mod desktop_semantic;
@@ -247,6 +248,11 @@ pub use desktop_behaviour::{
     DesktopCoPresence, DesktopCoverageGap, DesktopFocusFollow, DesktopFocusTransition,
     DesktopObservationSession, DesktopObservedFocusSpan, DesktopWindowLifecycle,
     DesktopWindowRevisit, DESKTOP_BEHAVIOUR_GAP_SECONDS, DESKTOP_BEHAVIOUR_SAMPLE_LIMIT,
+};
+pub use desktop_decision::{
+    project_desktop_decisions, DesktopConsistencyIssue, DesktopDecision, DesktopDecisionEvidence,
+    DesktopDecisionProjection, DesktopRecommendation, DESKTOP_CONSISTENCY_ISSUE_LIMIT,
+    DESKTOP_DECISION_LIMIT, DESKTOP_RECOMMENDATION_LIMIT,
 };
 pub use desktop_grouping::{
     group_desktop_members, DesktopGroupCriterion, DesktopGroupMemberFact, DesktopWindowGroup,

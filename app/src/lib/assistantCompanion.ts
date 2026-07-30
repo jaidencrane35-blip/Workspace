@@ -554,6 +554,46 @@ function summariseAffinities(state: WorkspaceState): string {
 }
 
 
+
+function summariseDecisions(state: WorkspaceState): string | null {
+  const projection = state.decisions;
+  if (!projection) {
+    return null;
+  }
+  const parts: string[] = [];
+  if (projection.decisions.length > 0) {
+    parts.push(
+      `decisions: ${projection.decisions
+        .slice(0, 5)
+        .map(
+          (decision) =>
+            `${decision.summary} [${decision.kind}, ${decision.confidence}] — ${decision.explanation}`,
+        )
+        .join(" | ")}`,
+    );
+  }
+  if (projection.recommendations.length > 0) {
+    parts.push(
+      `recommendations: ${projection.recommendations
+        .slice(0, 5)
+        .map((item) => `${item.summary} (${item.confidence})`)
+        .join("; ")}`,
+    );
+  }
+  if (projection.consistency_issues.length > 0) {
+    parts.push(
+      `uncertainty: ${projection.consistency_issues
+        .slice(0, 4)
+        .map((issue) => `${issue.summary} — ${issue.explanation}`)
+        .join(" | ")}`,
+    );
+  }
+  if (parts.length === 0) {
+    return "No deterministic desktop decisions are available yet.";
+  }
+  return `Desktop decision support — ${parts.join(". ")}.`;
+}
+
 function summariseSemantics(state: WorkspaceState): string | null {
   const semantics = state.semantics;
   if (!semantics || semantics.objects.length === 0) {
@@ -663,6 +703,16 @@ export function answerDesktopQuestionLocally(
     )
   ) {
     return summariseAffinities(state);
+  }
+  if (
+    /what should|recommend|decision|next|resume|interrupted|uncertain|consistency|why (do|does|is)|explain/.test(
+      trimmed,
+    )
+  ) {
+    const decisions = summariseDecisions(state);
+    if (decisions) {
+      return decisions;
+    }
   }
   if (
     /semantic|what (is|are) (this|these|my)|working object|companion|background object|role|activity|researching|coding|comparing|monitoring|knowledge graph/.test(
@@ -818,6 +868,12 @@ export function enrichAskWithDesktopObservation(
     if (working.length > 0) {
       parts.push(`working: ${working.join(", ")}`);
     }
+  }
+  const decisions = state.decisions;
+  if (decisions && decisions.decisions.length > 0) {
+    parts.push(
+      `decisions: ${decisions.decisions.length} / recommendations: ${decisions.recommendations.length} / issues: ${decisions.consistency_issues.length}`,
+    );
   }
 
   return `Observed desktop (${parts.join("; ")}).\n\n${trimmed}`;

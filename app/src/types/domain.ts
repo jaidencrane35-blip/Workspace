@@ -7024,6 +7024,57 @@ export interface WorkspaceState {
   runtime_memory: DesktopRuntimeMemory;
   /** Deterministic semantic projection (roles, relationships, activities, graph). */
   semantics: DesktopSemanticProjection;
+  /** Deterministic decision support (decisions, recommendations, consistency). */
+  decisions: DesktopDecisionProjection;
+  authority_effect: string;
+}
+
+/** Evidence contributor on a desktop decision. */
+export interface DesktopDecisionEvidence {
+  plane: string;
+  reference: string;
+  detail: string;
+}
+
+export interface DesktopDecision {
+  id: string;
+  kind: string;
+  summary: string;
+  explanation: string;
+  confidence: string;
+  evidence_score: number;
+  entity_ids: string[];
+  evidence: DesktopDecisionEvidence[];
+  authority_effect: string;
+}
+
+export interface DesktopRecommendation {
+  id: string;
+  decision_id: string;
+  kind: string;
+  summary: string;
+  explanation: string;
+  confidence: string;
+  entity_ids: string[];
+  authority_effect: string;
+}
+
+export interface DesktopConsistencyIssue {
+  id: string;
+  kind: string;
+  summary: string;
+  explanation: string;
+  confidence: string;
+  evidence_score: number;
+  entity_ids: string[];
+  evidence: DesktopDecisionEvidence[];
+  authority_effect: string;
+}
+
+export interface DesktopDecisionProjection {
+  decisions: DesktopDecision[];
+  recommendations: DesktopRecommendation[];
+  consistency_issues: DesktopConsistencyIssue[];
   authority_effect: string;
 }
 

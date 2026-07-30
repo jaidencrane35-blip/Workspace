@@ -90,6 +90,23 @@ Update when a category is evaluated. Status: `open` | `PLATEAUED` | `boundary-bl
 
 ## Cycles
 
+### Cycle: v12-1-desktop-decision-support-projection
+
+| Field | Value |
+|-------|-------|
+| **Date** | 2026-07-30 |
+| **Cycle number** | V12-1 |
+| **Goal** | Project deterministic decisions, recommendations, and consistency issues onto WorkspaceState |
+| **Problem** | Runtime understood existence/behaviour/continuity/semantics but not evidence-driven “what requires attention next” |
+| **Analysis** | Derive decisions from semantics+memory+behaviour with evidence chains and explanations; recommendations map from decisions; consistency flags uncertainty |
+| **Changes** | `desktop_decision`; `WorkspaceState.decisions`; Assistant decision answers |
+| **Files affected** | desktop_decision, workspace_state, domain exports/types, assistantCompanion, this log |
+| **Validation** | typecheck / test / build / architecture / ipc / ui-boundary (+ domain decision tests) |
+| **Deleted / reduced** | none (extends WorkspaceState; does not reuse Programme IV decision engines) |
+| **Next recommended cycle** | Rank/dedupe decisions by multi-signal agreement; strengthen explainability |
+
+---
+
 ### Cycle: v11-empty-semantic-evaluation-2
 
 | Field | Value |

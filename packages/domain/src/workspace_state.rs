@@ -15,6 +15,7 @@ use crate::desktop_behaviour::{
 use crate::desktop_grouping::{
     group_desktop_members, DesktopGroupCriterion, DesktopGroupMemberFact, DesktopWindowGroup,
 };
+use crate::desktop_decision::{project_desktop_decisions, DesktopDecisionProjection};
 use crate::desktop_runtime_memory::{
     project_desktop_runtime_memory, strengthen_groups_from_runtime_memory, DesktopRuntimeMemory,
 };
@@ -198,6 +199,8 @@ pub struct WorkspaceState {
     pub runtime_memory: DesktopRuntimeMemory,
     /// Deterministic semantic projection (roles, relationships, activities, graph).
     pub semantics: DesktopSemanticProjection,
+    /// Deterministic decision support (decisions, recommendations, consistency).
+    pub decisions: DesktopDecisionProjection,
     pub authority_effect: String,
 }
 
@@ -225,6 +228,7 @@ impl WorkspaceState {
             behaviour: DesktopBehaviourTimeline::empty(),
             runtime_memory: DesktopRuntimeMemory::empty(),
             semantics: DesktopSemanticProjection::empty(),
+            decisions: DesktopDecisionProjection::empty(),
             authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
         }
     }
@@ -309,6 +313,7 @@ impl WorkspaceState {
             behaviour,
             runtime_memory: DesktopRuntimeMemory::empty(),
             semantics: DesktopSemanticProjection::empty(),
+            decisions: DesktopDecisionProjection::empty(),
             authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
         }
     }
@@ -342,6 +347,7 @@ impl WorkspaceState {
             behaviour: DesktopBehaviourTimeline::empty(),
             runtime_memory: DesktopRuntimeMemory::empty(),
             semantics: DesktopSemanticProjection::empty(),
+            decisions: DesktopDecisionProjection::empty(),
             authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
         }
     }
@@ -405,6 +411,11 @@ impl WorkspaceState {
             &self.behaviour,
             &self.runtime_memory,
             &self.window_groups,
+        );
+        self.decisions = project_desktop_decisions(
+            &self.behaviour,
+            &self.runtime_memory,
+            &self.semantics,
         );
         self
     }
