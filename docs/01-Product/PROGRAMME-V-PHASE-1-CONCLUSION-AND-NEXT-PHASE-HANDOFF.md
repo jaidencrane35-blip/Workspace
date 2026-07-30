@@ -5,7 +5,7 @@
 | **Authority** | Principal Architect |
 | **Date** | 2026-07-30 |
 | **Programme V Phase 1 status** | **Complete — architecturally approved** |
-| **Branch tip (Phase 1)** | `8c7cb03` |
+| **Branch tip (Phase 1)** | `ec34e71` |
 | **Nature** | Phase 1 conclusion record + handoff for the next phase / programme charter |
 | **Not** | An approved implementation contract; not authority to commence the next phase |
 
