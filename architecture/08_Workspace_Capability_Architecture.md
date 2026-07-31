@@ -184,7 +184,7 @@ Ensure meaningful Workspace actions occur only with explicit, revocable, explain
 ### Contracts
 
 - `Permission.authorize(scope, capability, purpose, subject, target, operation) -> proof | deny | challenge`
-- `Permission.validate(proof, execution_context) -> valid | invalid`
+- `Permission.validateForUse(proof, exact_effect_context) -> authorized_use | invalid`
 - `Permission.grant` / `Permission.revoke`
 - `Permission.explain(decision_id)`
 - `Permission.catalogue`
@@ -207,13 +207,13 @@ Ensure meaningful Workspace actions occur only with explicit, revocable, explain
 ### Lifecycle
 
 - Creation: default-deny catalogue seeded at first run
-- Runtime: authorize every meaningful operation; validate proofs at the point of use
+- Runtime: authorize every meaningful operation; order each proof use/consumption against revocation at the point of access or each independently meaningful effect
 - Persistence: grants/policies/audit retained locally
 - Shutdown: flush audit; deny in-flight challenges
 
 ### Failure Behaviour
 
-- Fail closed: if Permission Authority is unavailable, meaningful actions are denied.
+- Fail closed: if Permission Authority is unavailable, new meaningful actions are denied. An owner may still validate a previously Permission Authority-issued, operation-bound control proof for minimized status or safety-reducing pause/stop/cancel; it cannot create effects.
 - Challenges that cannot be presented remain denied.
 - Revocation invalidates unused proofs and prevents subsequent operations; in-flight cancellation follows the owning capability's declared safety policy.
 
@@ -487,7 +487,7 @@ Observe the user’s computing context in a read-only, permissioned way so Works
 
 ### Contracts
 
-- `Sense.start(sensor_class, purpose, authorization_proof)` / `Sense.stop` / `Sense.pause`
+- `Sense.start(sensor_class, purpose, effect_proof, operation_control_proof)` / `Sense.stop(session_id, operation_control_proof)` / `Sense.pause(session_id, operation_control_proof)`
 - `Sense.queryCurrent(purpose, authorization_proof)`
 - `Sense.events(authorization_proof)` (subscribe while authorization remains valid)
 - `Sense.explain(sample_id, authorization_proof)`
@@ -585,14 +585,14 @@ Execute permitted changes in the user’s environment—automation with a hard p
 
 ### Outputs
 
-- Action completed / failed / cancelled events
+- Action completed / partially completed / indeterminate / failed / cancelled events
 - Environment change confirmations
 - Execution explain payloads
 
 ### Contracts
 
-- `Action.execute(request, authorization_proof)`
-- `Action.cancel(execution_id, authorization_proof)`
+- `Action.execute(request, effect_proof, operation_control_proof)`
+- `Action.cancel(operation_id, operation_reference, operation_control_proof)` — reference grants no authority; control proof is Permission Authority-issued and permits only status/safety reduction
 - `Action.describe(action_type, authorization_proof)`
 - `Action.events`
 
@@ -1327,6 +1327,7 @@ No blocking duplicate responsibilities, circular hard dependencies, ownership co
 - Capability decomposition: this document
 - Communication and trust constraints: `architecture/09_Capability_Interaction_Matrix.md`
 - Public capability contracts: `architecture/10_Capability_Contracts.md`
+- Contract schema and acceptance gates: `architecture/11_Contract_Schema_and_Acceptance_Specification.md`
 - Technology choices: future Research Catalogue entries per capability (not made here)
 
 Next engineering milestone (recommended): research candidate technologies per capability category, recording results once in the Research Catalogue before implementation.

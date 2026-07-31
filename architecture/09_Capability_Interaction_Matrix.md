@@ -49,6 +49,7 @@ Rows initiate; columns receive.
 7. Context Sensing never writes Memory directly. It may emit a candidate to Companion, which decides whether to initiate a permissioned Memory proposal.
 8. Runtime Host lifecycle access does not grant access to capability-owned domain data.
 9. Workspace Management, Memory, Context Sensing, Intelligence, Action, and an activated Extension Host validate bound authorization at their own access or commit boundary; an earlier Companion check is insufficient.
+10. For a non-immediate protected operation, Permission Authority issues a separate operation-control proof with effect authority. The owner binds it to the accepted operation and may validate it locally for minimized status or safety-reducing pause/stop/cancel when Authority is unavailable. It grants no continuation, retry, compensation, or new effect.
 
 ---
 
@@ -101,6 +102,7 @@ Rows initiate; columns receive.
 - Automatic-execution configuration is an explicit Permission Authority policy; every operation still passes authorization and point-of-use validation.
 - Point-of-use validation applies to Workspace reads/mutations, Memory reads/writes/forgetting, sensor activation/deep queries, protected local or remote Intelligence, Action execution, and extension management.
 - Revocation prevents new operations immediately. In-flight work follows the owning capability's declared safe cancellation policy and reports the outcome.
+- Revoking/expiring effect authority does not disable the separately governed operation-control proof for minimized status and safety-reducing control. It is Permission Authority-issued, owner-bound, and cannot create effects.
 - Read and write scopes remain distinct for Workspace and Memory.
 - Basic and deep sensing remain distinct.
 - Local and remote Intelligence use remain distinct; remote data sharing is separately declared.

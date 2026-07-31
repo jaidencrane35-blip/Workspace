@@ -36,21 +36,25 @@ Architecture Foundation
 
 ✓ Capability Contracts complete (`10_Capability_Contracts.md`, LEDGER-0004)
 
+✓ Contract Schema complete (`11_Contract_Schema_and_Acceptance_Specification.md`, LEDGER-0005)
+
+✓ Architectural Acceptance Specification complete (42 conceptual acceptance cases, LEDGER-0005)
+
 ---
 
 # Active Task
 
-None (Capability Contracts complete and validated).
+None (Contract Schema and Acceptance Specification complete and validated).
 
 ---
 
 # Next Task
 
-Define versioned contract field schemas, compatibility rules, invariants, and executable architectural acceptance cases.
+Research candidate technologies for each capability.
 
-Recommended next engineering milestone: **Contract Schema and Acceptance Specification**.
+Record each investigation once in the Research Catalogue before implementation or selection.
 
-Following milestone: Capability Technology Research, recorded once in the Research Catalogue before implementation.
+Recommended next engineering milestone: **Capability Technology Research**.
 
 ---
 
@@ -64,11 +68,11 @@ Following milestone: Capability Technology Research, recorded once in the Resear
 - Action safety taxonomy
 - Permission scope granularity
 - Local inference viability classes
-- Cross-capability correlation field representation and detailed contract schemas
-- Detailed tests for offline/degraded core-function acceptance scenarios
-- Contract compatibility/versioning rules
-- Event loss/duplication/order/recovery acceptance cases
-- Action cancellation and partial-effect acceptance cases
+- Concrete contract representation after technology research (conceptual schema is complete)
+- Executable tests for offline/degraded core-function acceptance scenarios
+- Executable event loss/duplication/order/recovery and compatibility evidence
+- Per-action-class commit points, cancellation, compensation, and partial-effect evidence
+- Operation-control lease duration and terminal tombstone retention values
 - Extension Host activation justification (Complexity Budget checkpoint)
 
 ---
@@ -83,6 +87,6 @@ Stable
 
 None for product architecture.
 
-Capability Architecture v1.1 is the authoritative decomposition. The Interaction Matrix is authoritative for communication and trust constraints. Capability Contracts v1.0 is authoritative for public message and interaction semantics. Repeated validation found no remaining ownership conflicts, circular hard dependencies, duplicate authority, permission bypasses, forbidden direct paths, Blueprint violations, or accepted ADR violations.
+Capability Architecture v1.1 is the authoritative decomposition. The Interaction Matrix is authoritative for communication and trust constraints. Capability Contracts v1.0 is authoritative for public message and interaction semantics. Contract Schema and Acceptance Specification v1.0 is authoritative for conceptual fields, evolution, invariants, and pre-implementation acceptance. Repeated validation found no remaining ownership conflicts, circular hard dependencies, duplicate authority, permission bypasses, forbidden direct paths, Blueprint violations, accepted ADR violations, or actionable contract-architecture findings.
 
-Technology choices remain open pending Research Catalogue work. Detailed schemas, compatibility rules, executable contract/offline/cancellation tests, and Extension Host activation justification remain pre-implementation risks.
+Technology choices remain open pending Research Catalogue work. Concrete representations, executable validation artifacts, per-action safety detail, control/tombstone durations, and Extension Host activation justification remain pre-implementation risks.

@@ -182,3 +182,42 @@ Unlocks: Versioned field-schema definition, compatibility rules, and executable 
 Supersedes: None. Refines contract details in `08_Workspace_Capability_Architecture.md` and allowed-purpose wording in `09_Capability_Interaction_Matrix.md`.
 
 Status: Complete
+
+### LEDGER-0005
+
+Entry ID: LEDGER-0005
+
+Capability: Workspace contract schema and architectural acceptance specification (system-wide)
+
+Research: N/A — architecture specification and validation only; no technology research, format selection, programming-language type, or implementation performed.
+
+Decision: Adopt `architecture/11_Contract_Schema_and_Acceptance_Specification.md` as the authoritative conceptual schema, evolution policy, and pre-implementation acceptance gate subordinate to the Blueprint, accepted ADRs, Capability Architecture, Interaction Matrix, and Capability Contracts.
+
+Implementation:
+- Defined message identity, correlation, causation, task/operation/authorization/extension identity, purpose, request/response, command, event, error, state-reference, explainability, versioning, compatibility, cancellation, timeout, retry, idempotency, audit, and trace semantics without selecting an implementation format.
+- Defined required ownership, communication, authority, state, lifecycle, metadata, permission, privacy, Local First, Blueprint, and ADR invariants.
+- Defined 42 conceptual acceptance cases covering duplicates, ordering, event loss, challenge redemption, point-of-use authorization, revocation races, multi-effect operations, cancellation, owner-indeterminate outcomes, audit minimization, offline behavior, compatibility, delayed reconciliation, and control-proof revocation/outage.
+- Refined Capability Contracts with owner-authoritative status recovery, challenge proof redemption, authorization use/consumption ordering, Memory redaction outcomes, shared partial/indeterminate semantics, and content-free historical terminal lookup.
+- Introduced Permission Authority-issued operation-control proofs for non-immediate protected work. They grant only minimized status and safety-reducing control, have an independently revocable bounded offline lease, cannot create effects, and preserve safe control during temporary Authority unavailability.
+- Reconciled Capability Architecture and Interaction Matrix language for point-of-use use/consumption, sensing/action safety controls, partial/indeterminate outcomes, and offline control validation.
+
+Validation:
+- Performed repeated adversarial reviews against Blueprint, ADR-0001–0008, Capability Architecture, Interaction Matrix, and Capability Contracts.
+- Resolved ambiguity between requester-observed outcome-unknown and owner-authoritative indeterminate terminal outcomes.
+- Resolved missing recovery paths for non-immediate domain operations, control-plane operations, lost acceptance responses, expired control proofs, and lost/unknown terminal events.
+- Resolved control-proof authority, revocation, Permission Authority outage, irreversible-effect, audit privacy, error taxonomy, and exhaustive event-path conflicts.
+- Confirmed no blocking or actionable architecture findings remain.
+- No runtime code or behavior changed; no technology selected.
+
+Knowledge Gained:
+- Timeout, requester uncertainty, and owner terminal state must remain distinct.
+- Side-effect authorization and status/safety-control authority require independent lifecycles.
+- Revocation must order against each meaningful effect; multi-effect operations cannot rely on one stale validation.
+- Auditability requires content-free classes and bounded tombstones, not durable copies of user purpose/content.
+- Compatibility is semantic: parsing success is insufficient when authority, privacy, ownership, or outcome meaning differs.
+
+Unlocks: Capability technology research against stable conceptual contracts and acceptance gates; later implementation-specific representations and executable validation artifacts.
+
+Supersedes: None. Refines conditional envelope presence and recovery/control semantics in `08_Workspace_Capability_Architecture.md`, `09_Capability_Interaction_Matrix.md`, and `10_Capability_Contracts.md`.
+
+Status: Complete

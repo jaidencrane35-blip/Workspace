@@ -33,7 +33,7 @@ Runtime Host lifecycle control applies to every active capability as a common co
 
 ### Common envelope
 
-Every cross-capability message carries:
+Every cross-capability message carries the fields that are conceptually applicable. Presence classes and introduction points are authoritative in `11_Contract_Schema_and_Acceptance_Specification.md`:
 
 - `message_id` — unique identity for deduplication and explanation
 - `message_kind` — request, command, event, or response
@@ -41,9 +41,9 @@ Every cross-capability message carries:
 - `timestamp`
 - `requester_capability`
 - `task_id` — required for Companion-mediated work; absent only for explicit direct administration
-- `operation_id` — assigned by the committing capability
-- `authorization_id` — required when authorization applies
-- `causation_id` — immediate predecessor
+- `operation_id` — introduced by the committing capability after it accepts/begins an operation
+- `authorization_id` — introduced by Permission Authority after an authorization decision exists
+- `causation_id` — immediate predecessor; absent for a root message
 - `correlation_id` — groups request/response/event completion
 - `extension_id` — required for extension-originated work
 - `purpose` — human-understandable reason
@@ -66,7 +66,59 @@ An authorization proof is opaque outside Permission Authority and contains or bi
 - issue/expiry conditions
 - replay/single-use constraints
 
-The committing capability must call `Permission.validate` against the exact point-of-use context. A proof must never appear in an event or explanation payload. Events may carry only `authorization_id`.
+The committing capability must call `Permission.validateForUse` against the exact point-of-use/effect context. A proof must never appear in an event or explanation payload. Events may carry only `authorization_id`.
+
+For a protected non-immediate operation, Permission Authority also issues an independently governed `operation_control_proof` with the original authorization. It is bound to subject, requester, task, owner capability, command identity, and proposed operation purpose. The owner binds it to the assigned operation identity/reference at acceptance.
+
+The operation-control proof:
+
+- authorizes only minimized status and supported pause/stop/cancel for that same operation
+- cannot continue, repeat, compensate, or create a domain effect
+- remains valid for safety control after effect authority expires or is revoked
+- has its own user-revocable, bounded offline-control lease
+- is locally verifiable by the owner only within that lease when Permission Authority is unavailable because use can only observe minimized status or reduce risk
+- on control-proof revocation, causes the owner to safely pause/cancel active work where possible before invalidating control; an already irreversible effect may complete, but no subsequent effect begins and too-late/unsafe status is explained
+- if revocation delivery is delayed, stale local use is bounded by the lease and can create no effect
+- on offline-control lease expiry without refreshed authority, causes the owner to safely pause/cancel nonterminal work where possible; otherwise it prevents subsequent effects and reports too-late/unsafe
+- expires for ordinary control when the owner reaches terminal state plus its bounded reconciliation period
+- is prohibited from events, explanations, and audit content
+
+### Operation reference and recovery
+
+When a non-immediate command is accepted, the owner returns:
+
+- owner-assigned `operation_id`
+- opaque `operation_reference` bound to the originating user/task/operation
+
+Operation reference:
+
+- identifies the operation but grants no authority
+- remains stable if effect permission is later revoked
+- cannot authorize status, cancellation, retry, read, or any new effect
+- is prohibited from events, explanations, and audit content
+
+Status and cancellation require the Permission Authority-issued operation-control proof bound by the owner at acceptance. Permission to continue the original effect is not required.
+
+Every owner of a non-immediate domain command exposes:
+
+- `OPR-REQ-001 Owner.getOperationStatus(operation_id, operation_reference, operation_control_proof) -> AuthoritativeOperationStatus`
+- `OPR-REQ-002 Owner.lookupTerminalOutcome(operation_id, authorization_proof) -> ContentFreeTerminalOutcome | HistoricalRecordExpired`
+
+Capability-specific public interfaces below name this inherited request where applicable.
+
+Terminal lookup requires a fresh user-administration proof and exposes only terminal class, time class, responsible capability, correlation, and content-free partial-effect classes. Owners retain a content-free terminal/deduplication tombstone for the declared retry/replay horizon. After tombstone expiry, the original outcome remains unrecoverable and no automatic retry is allowed; a new user-authorized attempt requires an explicit indeterminate-history warning.
+
+Equivalent control-plane recovery:
+
+- Runtime lifecycle recovery uses Host registry/aggregate health.
+- Permission challenge resolution, revoke, and policy update are immediate authoritative state transitions; their events are notifications, not completion evidence.
+- Companion task recovery uses `Companion.getTaskStatus(task_id)`.
+
+A redelivery of the same accepted command identity returns the same operation identity/reference. It does not create a second operation.
+
+Every owner of a non-immediate domain command also emits its capability-specific form of:
+
+- `OPR-EVT-001 OperationIndeterminate` — owner exhausted recovery and cannot establish the effect; delivered only on the existing requesting-task result path
 
 ### Explainability envelope
 
@@ -77,7 +129,7 @@ Every consequential operation and degraded/failure state exposes:
 - `responsible_capability`
 - `permission_scope` and `authorization_id`, when applicable
 - `target_summary` — minimized, non-secret description
-- `status` — requested, waiting, active, completed, denied, cancelled, failed, degraded
+- `status` — requested, waiting, active, completed, partially-completed, indeterminate, outcome-unknown, denied, cancelled, failed, degraded
 - `user_action_available` — cancel, grant, deny, revoke, retry, inspect, or none
 - correlation fields
 
@@ -85,7 +137,9 @@ Experience presents this envelope but cannot alter its domain meaning.
 
 ### Common response outcomes
 
-- `accepted` — command accepted for processing; not terminal success
+- `accepted` — command accepted for processing; non-immediate acceptance returns operation identity/reference and is not terminal success
+- `partially_completed` — owner reached a terminal state with known committed and uncommitted effects
+- `indeterminate` — owner exhausted recovery but cannot establish its own effect outcome; never success or automatically retryable
 - `completed` — request or immediate operation completed
 - `denied` — Permission Authority denied or proof validation failed
 - `challenge_required` — explicit user decision required
@@ -100,7 +154,7 @@ Experience presents this envelope but cannot alter its domain meaning.
 Every error contains:
 
 - `error_code`
-- `category` — validation, authorization, unavailable, conflict, timeout, cancellation, dependency, internal
+- `category` — validation, authorization, scope, unavailable, offline-optional-service, conflict, timeout, cancellation, partial-effect, outcome-unknown, indeterminate, dependency, internal
 - `safe_message`
 - `responsible_capability`
 - `retryable`
@@ -123,6 +177,10 @@ Common architectural error codes:
 - `SCOPE_MISMATCH`
 - `OPERATION_CONFLICT`
 - `OPERATION_CANCELLED`
+- `OPERATION_PARTIALLY_COMPLETED`
+- `OPERATION_OUTCOME_UNKNOWN`
+- `OPERATION_INDETERMINATE`
+- `OPERATION_TIMEOUT`
 - `LOCAL_PREREQUISITE_UNAVAILABLE`
 - `OFFLINE_OPTIONAL_SERVICE_UNAVAILABLE`
 
@@ -232,8 +290,8 @@ Capability-specific errors extend rather than redefine these meanings.
 
 ### Public interface
 
-- `PER-REQ-001 Permission.authorize(context) -> AuthorizationProof | Denial | ChallengeRef`
-- `PER-REQ-002 Permission.validate(proof, execution_context) -> ValidationResult`
+- `PER-REQ-001 Permission.authorize(context, optional_challenge_ref) -> EffectProof plus OperationControlProof when non-immediate | Denial | ChallengeRef`
+- `PER-REQ-002 Permission.validateForUse(proof, exact_effect_context) -> AuthorizedUse | Invalid`
 - `PER-REQ-003 Permission.getCatalogue(requester) -> PermissionCatalogue`
 - `PER-REQ-004 Permission.explain(authorization_id) -> PermissionExplanation`
 - `PER-CMD-001 Permission.resolveChallenge(challenge_id, user_decision)`
@@ -247,6 +305,7 @@ Capability-specific errors extend rather than redefine these meanings.
 
 - Evaluate default-deny policy and explicit automatic-execution exceptions.
 - Bind proofs to context and enforce expiry/replay constraints.
+- Issue independently governed operation-control proofs for non-immediate protected work without granting new effects.
 - Own permission audit and challenge lifecycle.
 
 ### Events consumed
@@ -273,7 +332,7 @@ Capability-specific errors extend rather than redefine these meanings.
 
 ### Responses returned
 
-- Bound proof, denial, challenge reference, validation result, catalogue, or minimized explanation.
+- Bound effect/control proof(s) as applicable, denial, challenge reference, authorized-use/invalid result, catalogue, or minimized explanation.
 
 ### State owned
 
@@ -296,6 +355,7 @@ Capability-specific errors extend rather than redefine these meanings.
 ### Explainability requirements
 
 - Explain requested scope, requester, purpose, target, decision basis, active grant, expiry, and revocation path.
+- While bounded operational explanation context exists, return a minimized human-readable purpose/target summary. After that context expires, historical explanation returns only content-free purpose/target classes, decision basis, scope, time, and revocation facts; detailed durable rationale exists only through separately authorized Memory.
 
 ---
 
@@ -310,9 +370,12 @@ Capability-specific errors extend rather than redefine these meanings.
 - `WSP-REQ-001 Workspace.getActive(authorization_proof) -> WorkspaceScope`
 - `WSP-REQ-002 Workspace.list(filter, authorization_proof) -> WorkspaceSummary[]`
 - `WSP-REQ-003 Workspace.scopeFor(capability_request, authorization_proof) -> WorkspaceScope`
-- `WSP-CMD-001 Workspace.mutate(change, authorization_proof)`
+- `WSP-REQ-004 Workspace.getOperationStatus(operation_id, operation_reference, operation_control_proof) -> AuthoritativeOperationStatus`
+- `WSP-REQ-005 Workspace.lookupTerminalOutcome(operation_id, authorization_proof) -> ContentFreeTerminalOutcome | HistoricalRecordExpired`
+- `WSP-CMD-001 Workspace.mutate(change, effect_proof, operation_control_proof)`
 - `WSP-EVT-001 WorkspaceScopeChanged`
 - `WSP-EVT-002 WorkspaceChanged`
+- `WSP-EVT-003 WorkspaceOperationIndeterminate`
 
 ### Internal responsibilities
 
@@ -328,7 +391,7 @@ Capability-specific errors extend rather than redefine these meanings.
 ### Events emitted
 
 - Scope changes to Companion, Memory, Context Sensing, and Action where scope validation is required.
-- Domain change completion to requesting Companion task.
+- Domain terminal outcome, including indeterminate, to requesting Companion task.
 - Health to Runtime Host.
 
 ### Commands accepted
@@ -341,7 +404,7 @@ Capability-specific errors extend rather than redefine these meanings.
 
 ### Requests accepted
 
-- Active scope, list, and scope validation from Experience (read-only) and authorized capabilities.
+- Active scope, list, scope validation, and accepted-mutation status from permitted callers.
 
 ### Responses returned
 
@@ -379,14 +442,18 @@ Capability-specific errors extend rather than redefine these meanings.
 
 ### Public interface
 
-- `MEM-CMD-001 Memory.proposeWrite(candidate, authorization_proof)`
+- `MEM-CMD-001 Memory.proposeWrite(candidate, effect_proof, operation_control_proof)`
 - `MEM-REQ-001 Memory.retrieve(query, scope, purpose, authorization_proof) -> MemoryResult`
-- `MEM-CMD-002 Memory.forget(item_id, authorization_proof)`
-- `MEM-CMD-003 Memory.redact(item_id, redaction, authorization_proof)`
+- `MEM-CMD-002 Memory.forget(item_id, effect_proof, operation_control_proof)`
+- `MEM-CMD-003 Memory.redact(item_id, redaction, effect_proof, operation_control_proof)`
 - `MEM-REQ-002 Memory.explain(item_id, authorization_proof) -> MemoryExplanation`
+- `MEM-REQ-003 Memory.getOperationStatus(operation_id, operation_reference, operation_control_proof) -> AuthoritativeOperationStatus`
+- `MEM-REQ-004 Memory.lookupTerminalOutcome(operation_id, authorization_proof) -> ContentFreeTerminalOutcome | HistoricalRecordExpired`
 - `MEM-EVT-001 MemoryWriteResolved`
 - `MEM-EVT-002 MemoryForgetResolved`
-- `MEM-EVT-003 MemoryPolicyChanged`
+- `MEM-EVT-003 MemoryRedactionResolved`
+- `MEM-EVT-004 MemoryPolicyChanged`
+- `MEM-EVT-005 MemoryOperationIndeterminate`
 
 ### Internal responsibilities
 
@@ -402,7 +469,7 @@ Capability-specific errors extend rather than redefine these meanings.
 
 ### Events emitted
 
-- Write/forget/policy outcomes to requesting Companion task.
+- Write/forget/redact/policy terminal outcomes, including indeterminate, to requesting Companion task.
 - Health to Runtime Host.
 
 ### Commands accepted
@@ -415,7 +482,7 @@ Capability-specific errors extend rather than redefine these meanings.
 
 ### Requests accepted
 
-- Retrieve and explain from Companion only, with `memory.read`.
+- Retrieve/explain with `memory.read`, and accepted-operation status with an operation reference plus operation-control proof, from Companion only.
 
 ### Responses returned
 
@@ -453,16 +520,19 @@ Capability-specific errors extend rather than redefine these meanings.
 
 ### Public interface
 
-- `SEN-CMD-001 Sense.start(sensor_class, purpose, authorization_proof)`
-- `SEN-CMD-002 Sense.stop(session_id)`
-- `SEN-CMD-003 Sense.pause(session_id)`
-- `SEN-CMD-004 Sense.resume(session_id, authorization_proof)`
+- `SEN-CMD-001 Sense.start(sensor_class, purpose, effect_proof, operation_control_proof)`
+- `SEN-CMD-002 Sense.stop(session_id, operation_control_proof)`
+- `SEN-CMD-003 Sense.pause(session_id, operation_control_proof)`
+- `SEN-CMD-004 Sense.resume(session_id, effect_proof, operation_control_proof)`
 - `SEN-REQ-001 Sense.queryCurrent(purpose, authorization_proof) -> ContextSnapshot`
 - `SEN-REQ-002 Sense.explain(sample_id, authorization_proof) -> SensingExplanation`
 - `SEN-REQ-003 Sense.subscribe(filter, authorization_proof) -> SubscriptionRef`
+- `SEN-REQ-004 Sense.getOperationStatus(operation_id, operation_reference, operation_control_proof) -> AuthoritativeOperationStatus`
+- `SEN-REQ-005 Sense.lookupTerminalOutcome(operation_id, authorization_proof) -> ContentFreeTerminalOutcome | HistoricalRecordExpired`
 - `SEN-EVT-001 ContextObserved`
 - `SEN-EVT-002 MemoryCandidateObserved`
 - `SEN-EVT-003 SensingStateChanged`
+- `SEN-EVT-004 SensingOperationIndeterminate`
 
 ### Internal responsibilities
 
@@ -478,7 +548,7 @@ Capability-specific errors extend rather than redefine these meanings.
 
 ### Events emitted
 
-- Minimized context, optional memory candidate, and sensing state to Companion only.
+- Minimized context, optional memory candidate, sensing state, and indeterminate operation outcome to Companion only.
 - Health to Runtime Host.
 
 ### Commands accepted
@@ -491,7 +561,7 @@ Capability-specific errors extend rather than redefine these meanings.
 
 ### Requests accepted
 
-- Current context, explanation, and subscription from Companion.
+- Current context, explanation, subscription, and accepted-operation status from Companion.
 
 ### Responses returned
 
@@ -513,7 +583,7 @@ Capability-specific errors extend rather than redefine these meanings.
 
 - `sense.observe.basic` and `sense.observe.deep` are distinct.
 - Deep permission never waives minimization.
-- Start/resume require a valid sensing proof. Pause/stop require the owning task/session identity but no fresh sensing grant because they only reduce observation.
+- Start/resume require a valid sensing effect proof. Pause/stop require the session reference and Permission Authority-issued operation-control proof, but no fresh sensing effect grant because they only reduce observation.
 - Explanations capable of revealing observed data require the same sensing scope as the sample.
 
 ### Explainability requirements
@@ -530,15 +600,18 @@ Capability-specific errors extend rather than redefine these meanings.
 
 ### Public interface
 
-- `ACT-CMD-001 Action.execute(action_request, authorization_proof)`
-- `ACT-CMD-002 Action.cancel(execution_id, authorization_proof)`
+- `ACT-CMD-001 Action.execute(action_request, effect_proof, operation_control_proof)`
+- `ACT-CMD-002 Action.cancel(operation_id, operation_reference, operation_control_proof)`
 - `ACT-REQ-001 Action.describe(action_type, authorization_proof) -> ActionDescription`
-- `ACT-REQ-002 Action.getStatus(execution_id, authorization_proof) -> ExecutionStatus`
+- `ACT-REQ-002 Action.getStatus(operation_id, operation_reference, operation_control_proof) -> ExecutionStatus`
+- `ACT-REQ-003 Action.lookupTerminalOutcome(operation_id, authorization_proof) -> ContentFreeTerminalOutcome | HistoricalRecordExpired`
 - `ACT-EVT-001 ActionStarted`
 - `ACT-EVT-002 ActionProgressed`
 - `ACT-EVT-003 ActionCompleted`
 - `ACT-EVT-004 ActionFailed`
 - `ACT-EVT-005 ActionCancelled`
+- `ACT-EVT-006 ActionPartiallyCompleted`
+- `ACT-EVT-007 ActionIndeterminate`
 
 ### Internal responsibilities
 
@@ -554,7 +627,7 @@ Capability-specific errors extend rather than redefine these meanings.
 
 ### Events emitted
 
-- Progress and terminal outcome to requesting Companion task.
+- Progress and terminal outcome, including partial/indeterminate, to requesting Companion task.
 - Health only to Runtime Host.
 
 ### Commands accepted
@@ -589,7 +662,7 @@ Capability-specific errors extend rather than redefine these meanings.
 
 - Per-action-class permission; no omnibus grant.
 - Proof bound to requester, purpose, subject, target, operation, scope, and optional extension.
-- Describe/status/cancel require a proof bound to the task/execution. Revoking execution authority never blocks a safe cancellation request authorized for that same task.
+- Describe requires task authorization. Status/cancel require an operation reference plus the independently governed operation-control proof bound to that task/operation. Revoking effect authority does not revoke safety control.
 - Revocation blocks new effects; in-flight safe cancellation is reported.
 
 ### Explainability requirements
@@ -606,14 +679,17 @@ Capability-specific errors extend rather than redefine these meanings.
 
 ### Public interface
 
-- `INT-CMD-001 Intelligence.reason(request, authorization_proof)`
-- `INT-CMD-002 Intelligence.generate(request, authorization_proof)`
+- `INT-CMD-001 Intelligence.reason(request, effect_proof, operation_control_proof)`
+- `INT-CMD-002 Intelligence.generate(request, effect_proof, operation_control_proof)`
 - `INT-REQ-001 Intelligence.listProviders(authorization_proof) -> ProviderSummary[]`
 - `INT-REQ-002 Intelligence.explain(transaction_id, authorization_proof) -> InferenceExplanation`
+- `INT-REQ-003 Intelligence.getOperationStatus(operation_id, operation_reference, operation_control_proof) -> AuthoritativeOperationStatus`
+- `INT-REQ-004 Intelligence.lookupTerminalOutcome(operation_id, authorization_proof) -> ContentFreeTerminalOutcome | HistoricalRecordExpired`
 - `INT-EVT-001 InferenceCompleted`
 - `INT-EVT-002 InferenceFailed`
 - `INT-EVT-003 ProposalProduced`
 - `INT-EVT-004 ProviderAvailabilityChanged`
+- `INT-EVT-005 InferenceIndeterminate`
 
 ### Internal responsibilities
 
@@ -630,7 +706,7 @@ Capability-specific errors extend rather than redefine these meanings.
 
 ### Events emitted
 
-- Inference outcomes/proposals to requesting Companion task only.
+- Inference outcomes, including indeterminate, and proposals to requesting Companion task only.
 - Provider availability changes to Companion without provider secrets.
 - Health to Runtime Host.
 
@@ -644,7 +720,7 @@ Capability-specific errors extend rather than redefine these meanings.
 
 ### Requests accepted
 
-- List providers and explain transaction from Companion.
+- List providers, explain transaction, and accepted-inference status from Companion.
 
 ### Responses returned
 
@@ -845,14 +921,17 @@ Capability-specific errors extend rather than redefine these meanings.
 
 ### Public interface
 
-- `EXT-CMD-001 Extension.install(manifest, authorization_proof)`
-- `EXT-CMD-002 Extension.unload(extension_id, authorization_proof)`
-- `EXT-CMD-003 Extension.invoke(extension_id, request, authorization_proof)`
+- `EXT-CMD-001 Extension.install(manifest, effect_proof, operation_control_proof)`
+- `EXT-CMD-002 Extension.unload(extension_id, effect_proof, operation_control_proof)`
+- `EXT-CMD-003 Extension.invoke(extension_id, request, effect_proof, operation_control_proof)`
 - `EXT-REQ-001 Extension.list(authorization_proof) -> ExtensionSummary[]`
 - `EXT-REQ-002 Extension.explain(extension_id, authorization_proof) -> ExtensionExplanation`
+- `EXT-REQ-003 Extension.getOperationStatus(operation_id, operation_reference, operation_control_proof) -> AuthoritativeOperationStatus`
+- `EXT-REQ-004 Extension.lookupTerminalOutcome(operation_id, authorization_proof) -> ContentFreeTerminalOutcome | HistoricalRecordExpired`
 - `EXT-EVT-001 ExtensionContributionProduced`
 - `EXT-EVT-002 ExtensionErrorOccurred`
 - `EXT-EVT-003 ExtensionStateChanged`
+- `EXT-EVT-004 ExtensionOperationIndeterminate`
 
 ### Internal responsibilities
 
@@ -867,7 +946,7 @@ Capability-specific errors extend rather than redefine these meanings.
 
 ### Events emitted
 
-- Contributions/intents, errors, and state changes to Companion only.
+- Contributions/intents, errors, state changes, and indeterminate operation outcomes to Companion only.
 - Health to Runtime Host.
 
 ### Commands accepted
@@ -880,7 +959,7 @@ Capability-specific errors extend rather than redefine these meanings.
 
 ### Requests accepted
 
-- List and explain from Companion only, with `extension.manage`.
+- List/explain with `extension.manage`, and accepted-operation status with an operation reference plus operation-control proof, from Companion only.
 
 ### Responses returned
 
@@ -929,10 +1008,10 @@ Each row is exhaustive for allowed domain, lifecycle, authorization, and event i
 
 | ID | Initiator → Receiver | Purpose / trigger | Expected response | Failure behaviour | Permission boundary | Data exchanged | Mode |
 |----|----------------------|-------------------|-------------------|-------------------|---------------------|----------------|------|
-| IC-006 | Companion → Permission Authority | Protected task step is ready, or task authorization needs explanation | Proof, denial, challenge ref, or task-scoped permission explanation | Stop/wait; never bypass | Purpose/task/requester/target/operation bound; explanation limited to task authorization | Authorization context or authorization id; no protected payload beyond target summary | Sync request |
-| IC-007 | Experience → Permission Authority | Authorized Workspace read needed, or user opens permission catalogue/explanation | Proof, denial, challenge ref, catalogue, or explanation | Workspace/permission view remains unavailable | `workspace.read` for Workspace proof; user administration authority for catalogue/explanation | User, purpose, requested view/authorization id; only user's relevant permissions returned | Sync request |
+| IC-006 | Companion → Permission Authority | Protected task step is ready, challenge decision requires proof redemption, or task authorization needs explanation | Effect proof plus operation-control proof for non-immediate work, denial, challenge ref, or task-scoped permission explanation | Stop/wait; never bypass | Purpose/task/requester/target/operation bound; challenge redemption repeats original context; explanation limited to task authorization | Authorization context, optional challenge ref, or authorization id; no protected payload beyond target summary | Sync request |
+| IC-007 | Experience → Permission Authority | Authorized Workspace read needed, challenge decision requires proof redemption, or user opens permission catalogue/explanation | Proof, denial, challenge ref, catalogue, or explanation | Workspace/permission view remains unavailable | `workspace.read` for Workspace proof; challenge redemption repeats original context; user administration authority for catalogue/explanation | User, purpose, requested view/authorization id, optional challenge ref; only user's relevant permissions returned | Sync request |
 | IC-008 | Experience → Permission Authority | User answers challenge, revokes, or explicitly updates automatic policy | Decision acknowledgement; decision/revoke event | Fail closed and show unresolved state | Only explicit user administration changes grant/policy state | Challenge/grant/policy id, decision/change, reason | Command + async event |
-| IC-009 | Workspace/Memory/Context Sensing/Action/Intelligence/activated Extension Host → Permission Authority | Point-of-use validation before access/commit | Valid/invalid with reason code | Reject operation; emit explanation | Exact execution context must match proof; protected capabilities do not issue grants | Opaque proof + execution context; response contains no grant secret | Sync request |
+| IC-009 | Workspace/Memory/Context Sensing/Action/Intelligence/activated Extension Host → Permission Authority | Point-of-use authorized-use/consumption immediately before protected access or each independently meaningful effect | Authorized-use/invalid with reason code | Reject effect; for multi-effect operation stop later effects and explain committed partial effects | Exact effect context must match proof; revocation ordering and replay/use limits apply; protected capabilities do not issue grants | Opaque proof + exact effect context; response contains no grant secret | Sync request |
 | IC-010 | Permission Authority → Experience | Challenge or visible revoke occurred | Presentation acknowledgement/user response later | Deny while unpresented/unresolved | Event is not a grant | Minimized challenge/revoke explanation | Async event |
 | IC-011 | Permission Authority → Companion | Task authorization challenge raised, decided, or revoked | Companion waits, resumes, or stops affected path | Stop/wait path; cancel safely where possible | No new authority in event; only a returned proof authorizes a later protected call | Challenge/authorization id, decision/state, scope, correlation | Async event |
 | IC-012 | Permission Authority → affected capability | Active proof/grant revoked | Capability blocks new protected effects | Safe cancel/invalidate according to owner policy | Revocation overrides unused authority | Authorization id, scope, effective time | Async event |
@@ -942,44 +1021,44 @@ Each row is exhaustive for allowed domain, lifecycle, authorization, and event i
 | ID | Initiator → Receiver | Purpose / trigger | Expected response | Failure behaviour | Permission boundary | Data exchanged | Mode |
 |----|----------------------|-------------------|-------------------|-------------------|---------------------|----------------|------|
 | IC-013 | Experience → Workspace Management | Render read-only navigation view | Authorized summaries/scope | Show unavailable/denied state | `workspace.read` proof validated at access | Filter, proof; minimized summaries | Sync request |
-| IC-014 | Companion → Workspace Management | Read task scope or mutate organization | Scope/summary or accepted mutation | Task degrades unscoped; mutation fails closed | Read/write proof as appropriate | Task purpose, query/change, proof | Sync request or command |
+| IC-014 | Companion → Workspace Management | Read task scope, mutate organization, reconcile accepted mutation, or perform delayed terminal lookup | Scope/summary; accepted mutation with operation identity/reference; authoritative status; or content-free terminal/expired-history result | Task degrades unscoped; mutation fails closed; missing result becomes outcome-unknown until reconciled | Read/write effect proof as appropriate; live status uses operation reference/control proof; delayed lookup uses fresh user-administration proof | Query/change/effect proof, operation reference/control proof, or operation id/admin proof | Sync request or command |
 | IC-015 | Memory → Workspace Management | Validate retrieval/write scope | Scope validation result | Reject scoped memory operation | Caller-bound `workspace.read`/scope proof | Workspace/zone ids and authorization context | Sync request |
 | IC-016 | Context Sensing → Workspace Management | Tag/validate observation scope | Scope snapshot | Emit unscoped/minimized or stop as policy requires | Authorized scope only | Workspace id request; no observation content | Sync request |
 | IC-017 | Action → Workspace Management | Validate target belongs to authorized scope | Scope validation result | Reject execution | Action proof must bind same scope | Target scope identity; no effect payload | Sync request |
-| IC-018 | Workspace Management → Companion/Memory/Context Sensing/Action | Active/relevant scope changed, or an accepted Workspace mutation reached a terminal domain result | Companion updates task/result; scoped subscribers invalidate/update scope | Subscriber treats stale scope as invalid; Companion treats missing terminal result as unknown, never success | Event grants no read/write authority; domain results go only to requesting Companion task | Scope ids/version for subscribers; minimized mutation outcome/correlation for Companion; no unrelated workspace content | Async event |
+| IC-018 | Workspace Management → Companion/Memory/Context Sensing/Action | Active/relevant scope changed, or an accepted Workspace mutation reached a terminal domain result including indeterminate | Companion updates task/result; scoped subscribers invalidate/update scope | Subscriber treats stale scope as invalid; Companion treats missing terminal result as unknown, never success | Event grants no read/write authority; domain results go only to requesting Companion task | Scope ids/version for subscribers; minimized mutation outcome/correlation for Companion; no unrelated workspace content | Async event |
 
 ### Memory interactions
 
 | ID | Initiator → Receiver | Purpose / trigger | Expected response | Failure behaviour | Permission boundary | Data exchanged | Mode |
 |----|----------------------|-------------------|-------------------|-------------------|---------------------|----------------|------|
-| IC-019 | Companion → Memory | Retrieve relevant memory or explain a memory item for task | Provenance-bearing minimized result/explanation | Continue reduced-context and explain | `memory.read` + workspace scope | Query/item id, scope, purpose, proof; result copies | Sync request |
+| IC-019 | Companion → Memory | Retrieve/explain memory, reconcile an accepted write/forget/redact, or perform delayed terminal lookup | Provenance-bearing minimized result/explanation, authoritative status, or content-free terminal/expired-history result | Continue reduced-context; missing terminal result becomes outcome-unknown until reconciled | `memory.read` + workspace scope for content; live status uses operation reference/control proof; delayed lookup uses fresh user-administration proof | Query/item/scope/purpose/effect proof, operation reference/control proof, or operation id/admin proof | Sync request |
 | IC-020 | Companion → Memory | Retain approved candidate/user knowledge | Accepted then write-resolved event | Reject; no silent retry/bypass | `memory.write`; observation permission is insufficient | Candidate, provenance, retention intent, proof | Command + async event |
 | IC-021 | Companion → Memory | Forget/redact on user intent/policy | Accepted then terminal event | Keep item unchanged and explain failure | `memory.forget` | Item id/redaction, purpose, proof | Command + async event |
-| IC-022 | Memory → Companion | Write/forget/policy outcome | Task updates/explanation | Companion marks result unknown if missing | Event contains authorization id, not proof | Item id or minimized summary, outcome, provenance/policy refs | Async event |
+| IC-022 | Memory → Companion | Write/forget/redact/policy terminal outcome, including indeterminate | Task updates/explanation | Companion marks result outcome-unknown if a required terminal event is missing | Event contains authorization id, not proof | Item id or minimized summary, outcome, provenance/policy refs | Async event |
 
 ### Context Sensing interactions
 
 | ID | Initiator → Receiver | Purpose / trigger | Expected response | Failure behaviour | Permission boundary | Data exchanged | Mode |
 |----|----------------------|-------------------|-------------------|-------------------|---------------------|----------------|------|
-| IC-023 | Companion → Context Sensing | Start/resume or safety-reducing pause/stop for a task sensing session | Acceptance/denial; state event | Ask user for context or degrade; stop on invalid session ownership | Start/resume require basic/deep proof with continuous validity; pause/stop require owning task/session identity and cannot expand access | Sensor class/purpose/scope/proof for start/resume; session/task id for pause/stop; no unrelated context | Command + async event |
-| IC-024 | Companion → Context Sensing | Query/subscribe to current context or explain a sample | Minimized snapshot/subscription/explanation | User-provided context fallback | Sensing proof validated at query/subscription/explanation | Purpose, filter/sample id, scope, proof | Sync request |
-| IC-025 | Context Sensing → Companion | Authorized context or memory candidate observed | No command response; Companion may use/propose retention | Drop if task/subscription invalid | Event is minimized and grants no retention/action authority | Derived/minimized context, provenance class, scope, correlation | Async event |
+| IC-023 | Companion → Context Sensing | Start/resume or safety-reducing pause/stop for a task sensing session | Acceptance/denial; state event | Ask user for context or degrade; stop on invalid session ownership/control proof | Start/resume require basic/deep effect proof with continuous validity; pause/stop require session reference/control proof and cannot expand access | Sensor class/purpose/scope/effect+control proof for start/resume; session reference/control proof for pause/stop; no unrelated context | Command + async event |
+| IC-024 | Companion → Context Sensing | Query/subscribe/explain, reconcile an accepted sensing transition, or perform delayed terminal lookup | Minimized snapshot/subscription/explanation, authoritative status, or content-free terminal/expired-history result | User-provided context fallback; missing state result becomes outcome-unknown until reconciled | Sensing effect proof for content; live status uses operation reference/control proof; delayed lookup uses fresh user-administration proof | Content query/effect proof, operation reference/control proof, or operation id/admin proof | Sync request |
+| IC-025 | Context Sensing → Companion | Authorized context/memory candidate observed, sensing state changed, or sensing operation became indeterminate | No command response; Companion may use/propose retention or update state | Drop context if task/subscription invalid; indeterminate remains an honest terminal result | Event is minimized and grants no retention/action authority | Derived/minimized context, provenance class, state/outcome, scope, correlation | Async event |
 
 ### Intelligence interactions
 
 | ID | Initiator → Receiver | Purpose / trigger | Expected response | Failure behaviour | Permission boundary | Data exchanged | Mode |
 |----|----------------------|-------------------|-------------------|-------------------|---------------------|----------------|------|
 | IC-026 | Companion → Intelligence | Reason/generate for task | Acceptance; result/proposal event | Deterministic fallback or ask user | Local proof or remote + data-sharing proof | Purpose, minimized supplied context, constraints, proof | Command + async event |
-| IC-027 | Companion → Intelligence | Query provider availability/explanation | Minimized provider/transaction metadata | Explain unavailable | Requester/task authorization; no prompt-history read | Provider filter or transaction id, proof | Sync request |
-| IC-028 | Intelligence → Companion | Inference completed/failed, proposal produced, or provider availability changed | Companion evaluates; never auto-executes | Reject malformed/uncertain proposal; mark unavailable provider | Event has no Action authority | Result/proposal or provider availability, uncertainty, provider class, correlation | Async event |
+| IC-027 | Companion → Intelligence | Query provider availability/explanation, reconcile accepted inference, or perform delayed terminal lookup | Minimized provider/transaction metadata, authoritative status, or content-free terminal/expired-history result | Explain unavailable; missing result becomes outcome-unknown until reconciled | Requester/task authorization for metadata; live status uses operation reference/control proof; delayed lookup uses fresh user-administration proof; no prompt-history read | Provider/transaction/effect proof, operation reference/control proof, or operation id/admin proof | Sync request |
+| IC-028 | Intelligence → Companion | Inference completed/failed/became indeterminate, proposal produced, or provider availability changed | Companion evaluates; never auto-executes | Reject malformed/uncertain proposal; mark unavailable provider; never treat indeterminate as success | Event has no Action authority | Result/proposal/outcome or provider availability, uncertainty, provider class, correlation | Async event |
 
 ### Action interactions
 
 | ID | Initiator → Receiver | Purpose / trigger | Expected response | Failure behaviour | Permission boundary | Data exchanged | Mode |
 |----|----------------------|-------------------|-------------------|-------------------|---------------------|----------------|------|
 | IC-029 | Companion → Action | Execute approved environment mutation | Acceptance/denial; progress/terminal events | Stop; report partial effects honestly | Exact action proof validated immediately before effects | Declared action, target, constraints, proof | Command + async event |
-| IC-030 | Companion → Action | Cancel/query/describe execution | Acceptance/status/description | Report invalid proof or unsafe/too-late cancellation | Task/execution-bound proof required; cancellation cannot expand authority | Execution/action type id, proof, correlation | Sync request or command |
-| IC-031 | Action → Companion | Execution progress or terminal outcome | Task updates/explanation | Missing terminal event becomes unknown/degraded, never assumed success | Event grants no further action | Effect summary, partial effects, status, authorization id | Async event |
+| IC-030 | Companion → Action | Cancel/reconcile an operation, describe an action, or perform delayed terminal lookup | Acceptance/status/description or content-free terminal/expired-history result | Report invalid reference/control/admin proof or unsafe/too-late cancellation | Describe uses task authorization; live status/cancel use operation reference/control proof; delayed lookup uses fresh user-administration proof; cancellation cannot expand authority | Operation/action type id, operation reference, relevant proof, correlation | Sync request or command |
+| IC-031 | Action → Companion | Operation progress or terminal outcome, including partial/indeterminate | Task updates/explanation | Missing terminal event becomes unknown/degraded, never assumed success | Event grants no further action | Effect summary, partial effects, status, authorization id | Async event |
 
 ### Experience and Companion interactions
 
@@ -993,10 +1072,10 @@ Each row is exhaustive for allowed domain, lifecycle, authorization, and event i
 
 | ID | Initiator → Receiver | Purpose / trigger | Expected response | Failure behaviour | Permission boundary | Data exchanged | Mode |
 |----|----------------------|-------------------|-------------------|-------------------|---------------------|----------------|------|
-| IC-035 | Companion → Extension Host | Install/unload/list/invoke/explain approved extension | Acceptance/summary/explanation; contribution/error event | Core continues; extension remains unloaded/disabled | `extension.manage`, extension identity, declared scopes | Manifest/request summary, proof, extension id | Sync request or command |
+| IC-035 | Companion → Extension Host | Install/unload/list/invoke/explain approved extension, reconcile accepted operation, or perform delayed terminal lookup | Acceptance with operation identity/reference, summary/explanation, authoritative status, content-free terminal/expired-history result, or contribution/error event | Core continues; extension remains unloaded/disabled; missing terminal result becomes outcome-unknown until reconciled | `extension.manage`, extension identity, declared scopes; live status uses operation reference/control proof; delayed lookup uses fresh user-administration proof | Manifest/request/effect+control proof/extension id, operation reference/control proof, or operation id/admin proof | Sync request or command |
 | IC-036 | Extension Host → Permission Authority | Validate an already Companion-obtained extension management/scope proof at point of use | Valid/invalid result | Fail closed/unload affected extension | Extension Host cannot request or grant authorization; proof remains bound to extension identity | Opaque proof, extension id, exact execution context | Sync request |
 | IC-037 | Permission Authority → Extension Host | Extension permission revoked | Invalidate/unload/stop affected invocation | Core remains available | Revocation blocks new mediated effects | Authorization/grant id, extension id, effective time | Async event |
-| IC-038 | Extension Host → Companion | Extension contribution/intent produced, extension failed, or extension lifecycle state changed | Companion evaluates contribution or updates task/extension status; no direct execution | Drop malformed contribution, isolate crash, or mark extension state unknown if event is missing | Event carries extension identity but no domain authority | Minimized contribution, safe error, or enabled/disabled/unloaded/crashed state; declared scope and correlation | Async event |
+| IC-038 | Extension Host → Companion | Extension contribution/intent produced, extension failed, lifecycle state changed, or operation became indeterminate | Companion evaluates contribution or updates task/extension status; no direct execution | Drop malformed contribution, isolate crash, or preserve indeterminate/unknown state; never assume success | Event carries extension identity but no domain authority | Minimized contribution, safe error, lifecycle/operation outcome; declared scope and correlation | Async event |
 
 ### Host health from dormant Extension Host
 
@@ -1074,12 +1153,12 @@ Result: every capability communicates only through defined contracts.
 
 These are architecture risks, not technology questions:
 
-1. Exact field schemas and compatibility/change rules require a later contract-specification milestone.
+1. Concrete implementation representations must conform to `11_Contract_Schema_and_Acceptance_Specification.md`; no format is selected here.
 2. Permission scope taxonomy and proof lifetime/replay policy require refinement without weakening the bindings defined here.
-3. Cancellation/partial-effect semantics need per-action-class acceptance scenarios.
-4. Event loss, duplication, ordering, and recovery need contract tests while preserving the conceptual rules here.
-5. Offline/degraded core scenarios need executable acceptance tests.
+3. Cancellation/partial-effect semantics need per-action-class acceptance evidence.
+4. Event loss, duplication, ordering, recovery, and compatibility need executable validation artifacts.
+5. Offline/degraded core scenarios need executable acceptance evidence.
 6. Extension Host remains dormant until separately justified under ADR-0004.
 
-Recommended next milestone: **Contract Schema and Acceptance Specification** — define versioned field schemas, invariants, and executable architectural acceptance cases before technology research or implementation.
+Recommended next milestone: **Capability Technology Research** — investigate candidate categories once in the Research Catalogue before implementation choices.
 
