@@ -6,7 +6,7 @@ Building the Workspace engineering foundation.
 
 # Current Milestone
 
-Architecture Foundation
+Capability Technology Research
 
 ---
 
@@ -44,19 +44,28 @@ Architecture Foundation
 
 ✓ Repeatable evidence, comparison, decision, rejection, and re-evaluation governance defined for all ten capabilities
 
+✓ Permission Authority capability research complete (`research/PERMISSION_AUTHORITY_RESEARCH.md`, `PA-001`, LEDGER-0007)
+
+✓ Permission Authority patterns, open-source comparators, desktop permission models, trade-offs, unknowns, and mandatory evaluation criteria recorded without technology selection
+
 ---
 
 # Active Task
 
-None (Capability Technology Research Framework complete and validated).
+None (Permission Authority research complete; awaiting architecture review).
 
 ---
 
 # Next Task
 
-Begin bounded Permission Authority research using the canonical framework and record unresolved architecture assumptions.
+Review `PA-001` and resolve the Permission Authority architecture assumptions
+that materially affect proof composition, consent, isolation, grant lifetime,
+rollback, audit assurance, and recovery.
 
-Create or continue exactly one canonical Research Catalogue entry for each bounded research unit before implementation or selection.
+After architecture acceptance, perform bounded reproducible candidate
+validation against the mandatory gates in
+`research/PERMISSION_AUTHORITY_RESEARCH.md`. Do not select a technology from
+documentary comparison alone.
 
 Recommended next engineering milestone: **Capability Technology Research**.
 
@@ -71,6 +80,12 @@ Recommended next engineering milestone: **Capability Technology Research**.
 - Plugin architecture (Extension Host)
 - Action safety taxonomy
 - Permission scope granularity
+- Permission proof representation and the boundary between opacity and designated local control-proof verification
+- Permission Authority process/isolation boundary and same-process bypass resistance
+- Durable revocation/use ordering, storage rollback, clock rollback, restart, and offline-control lease semantics
+- Permission audit attacker model, tamper-evidence assurance, retention, and checkpoint recovery
+- Grant lifetime taxonomy, batch/multi-effect approval boundaries, and independently revocable compound scopes
+- Trusted, neutral, bounded consent presentation and requester-controlled text handling
 - Local inference viability classes
 - Concrete contract representation after technology research (conceptual schema is complete)
 - Executable tests for offline/degraded core-function acceptance scenarios
@@ -95,8 +110,19 @@ Stable
 
 # Drift Assessment
 
-None for product architecture.
+No capability ownership drift. Permission Authority research identified unresolved assumptions without changing architecture ownership.
 
 Capability Architecture v1.1 is the authoritative decomposition. The Interaction Matrix is authoritative for communication and trust constraints. Capability Contracts v1.0 is authoritative for public message and interaction semantics. Contract Schema and Acceptance Specification v1.0 is authoritative for conceptual fields, evolution, invariants, and pre-implementation acceptance. Capability Technology Research Framework v1.0 is authoritative for research planning, comparison evidence, and technology-evaluation governance. Repeated validation found no remaining ownership conflicts, circular hard dependencies, duplicate authority, permission bypasses, forbidden direct paths, Blueprint violations, accepted ADR violations, or actionable contract-architecture findings.
 
-Technology choices remain open pending Research Catalogue work. Permission Authority is the recommended first research capability because its local authorization, revocation, replay, and operation-control semantics constrain every protected integration. Concrete representations, executable validation artifacts, per-action safety detail, control/tombstone durations, and Extension Host activation justification remain pre-implementation risks.
+Technology choices remain open. Permission Authority research unit `PA-001` is
+complete and records six candidate solution categories without adoption,
+conditional adoption, or formal rejection. It confirms that policy evaluation,
+relationship evaluation, proof authenticity, revocation, one-use consumption,
+challenge workflow, audit, and explanation are distinct mechanisms and that no
+examined candidate supplies the full Workspace contract.
+
+Architecture review must resolve the recorded proof, isolation, time/rollback,
+audit, compound-scope, grant-lifetime, recovery, and consent assumptions before
+bounded candidate validation or selection. Concrete representations, executable
+validation artifacts, per-action safety detail, control/tombstone durations,
+and Extension Host activation justification remain pre-implementation risks.

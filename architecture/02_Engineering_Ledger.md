@@ -259,3 +259,76 @@ Unlocks: Evidence-based capability technology research beginning with Permission
 Supersedes: None.
 
 Status: Complete
+
+### LEDGER-0007
+
+Entry ID: LEDGER-0007
+
+Capability: Permission Authority capability research
+
+Research: Completed canonical research unit `PA-001` in
+`architecture/research/PERMISSION_AUTHORITY_RESEARCH.md`. Compared
+authorization architecture patterns, mature open-source policy evaluators,
+relationship authorization services, capability-token primitives, approval
+workflows, Local First permission models, auditability, explainability,
+revocation, temporary and persistent grants, and desktop application permission
+models.
+
+Decision: No technology selected. Retain six candidate solution categories for
+later bounded evaluation. Keep permission/consent lifecycle, grant and challenge
+state, effect/control-proof semantics, point-of-use consumption and revocation
+ordering, content-free audit, and stable explanations Workspace-owned. Treat
+policy evaluation, relationship evaluation, cryptographic proof primitives,
+transactional persistence, and Windows key protection as potential commodity
+integration boundaries only.
+
+Implementation:
+
+- Created the detailed Permission Authority research record using the canonical
+  Capability Technology Research Framework.
+- Created canonical Research Catalogue entry `PA-001`.
+- Recorded current open-source comparator versions, licences, maintenance
+  evidence, platform implications, architectural trade-offs, failure modes,
+  migration risks, unanswered questions, and mandatory acceptance criteria.
+- Updated Current State to mark research complete and await architecture review.
+- Made no runtime, Open Source Registry, ADR, capability ownership, interaction,
+  contract, or technology-selection change.
+
+Validation:
+
+- Mapped research to Permission Authority contracts `PER-REQ-001` through
+  `PER-EVT-003`, interactions `IC-006` through `IC-012`, and applicable
+  acceptance cases.
+- Verified current primary-source evidence for candidate releases, licensing,
+  local/Windows support, permission lifetimes, consistency, audit behavior, and
+  desktop approval models as of 2026-08-01.
+- Corrected unreleased Cedar 4.12.0 evidence and evaluated released Cedar
+  4.11.2 instead.
+- Confirmed all examined candidates require Workspace-owned challenge,
+  proof-consumption, operation-control, audit, and explanation layers.
+- Confirmed no candidate was adopted, conditionally adopted, or rejected as a
+  technology selection.
+
+Knowledge Gained:
+
+- Policy evaluation, relationship evaluation, proof authenticity, revocation,
+  one-use consumption, consent workflow, audit integrity, and explanation are
+  distinct mechanisms that must be composed explicitly.
+- Self-contained proof verification cannot provide immediate effect revocation
+  without authoritative mutable state.
+- The effect/control-proof split gives effect authority strict local consistency
+  while permitting only bounded, non-effecting safety control during Authority
+  outage.
+- Desktop permission systems converge on in-context least authority, explicit
+  lifetime, independent revocation, trusted prompt ownership, and point-of-use
+  enforcement, but their kernel/broker guarantees do not transfer to an
+  ordinary in-app prompt.
+- Content-rich decision traces are diagnostic artifacts, not acceptable
+  default permission audit.
+
+Unlocks: Architecture review of unresolved Permission Authority assumptions,
+followed by bounded candidate validation against the recorded mandatory gates.
+
+Supersedes: None.
+
+Status: Complete
