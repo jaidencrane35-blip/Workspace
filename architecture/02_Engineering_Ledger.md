@@ -579,3 +579,57 @@ capabilities or changing contracts.
 Supersedes: None.
 
 Status: Complete
+
+### LEDGER-0012
+
+Entry ID: LEDGER-0012
+
+Capability: Runtime Host research repository audit
+
+Research: N/A — repository audit only; no technology research, architecture
+change, product evaluation, or implementation performed.
+
+Decision: Classify `RH-001` as missing. No accepted Runtime Host research
+artifact, Research Catalogue entry, introducing commit, supersession record,
+alternate filename, branch copy, or recoverable Git object exists in the
+available repository. No repository reference incorrectly assumes `RH-001` is
+complete; the unsupported completion claim came from a prior engineering
+session rather than a committed project artifact.
+
+Implementation:
+
+- Updated Current State to record the missing artifact and block evaluations
+  that require `RH-001`.
+- Did not recreate Runtime Host research or alter architecture, contracts,
+  acceptance criteria, ADRs, or runtime code.
+
+Validation:
+
+- Read the complete Cursor Protocol startup set: Blueprint, Current State,
+  Engineering Ledger, and Research Catalogue.
+- Fetched all remote refs and scanned 500 commits across all refs and reflogs
+  for the `RH-001` identifier, Runtime Host research completion claims, commit
+  messages, and alternate research filenames.
+- Searched every repository reference to Runtime Host research. All describe it
+  as future, prerequisite, or in progress; none records completion.
+- Checked unreachable Git objects; no unreachable commit or blob containing a
+  possible missing artifact was available.
+- Confirmed no Research Catalogue identifier, introducing commit hash, or
+  superseding record can be reported.
+
+Knowledge Gained:
+
+- The repository consistently records Runtime Host research as the first
+  remaining research unit.
+- A session report is not project authority without a committed canonical
+  artifact, Catalogue entry, and Ledger/Current State record.
+- Repository history can establish that `RH-001` is absent from available Git
+  evidence; it cannot prove whether uncommitted work once existed outside the
+  repository.
+
+Unlocks: Architecture review can resolve the process inconsistency without
+treating the missing research as completed or recreating it during an audit.
+
+Supersedes: None.
+
+Status: Complete

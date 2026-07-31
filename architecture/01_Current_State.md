@@ -60,6 +60,11 @@ Capability Technology Research
 
 ✓ Remaining research sequence ordered by architectural dependency, risk, uncertainty, implementation impact, and later selection influence
 
+✓ RH-001 repository audit complete: no accepted Runtime Host research artifact,
+Catalogue entry, branch, commit, supersession record, or alternate filename
+exists; repository references consistently describe the research as future work
+(LEDGER-0012)
+
 ---
 
 # Active Task
@@ -138,6 +143,14 @@ No capability ownership drift. The engine exists to serve the Companion
 experience; internal capability and operational surfaces are not the primary
 user interface. User-journey validation identified bounded contract and
 guidance gaps within existing capabilities.
+
+Repository audit confirms that `RH-001` is missing. No repository reference
+incorrectly records it as complete: Current State, the Research Catalogue, the
+Engineering Ledger, and the Capability Research Roadmap all describe Runtime
+Host research as future or prerequisite work. Any prior session report that
+called `RH-001` complete is unsupported by the available repository history.
+Do not begin an evaluation that requires `RH-001` until an accepted canonical
+research artifact and Catalogue entry exist.
 
 Blueprint v1.1 remains the highest authority. Capability Architecture v1.1 remains the authoritative decomposition. The Interaction Matrix is authoritative for communication and trust constraints. Capability Contracts v1.0 is authoritative for public message and interaction semantics. Contract Schema and Acceptance Specification v1.0 is authoritative for conceptual fields, evolution, invariants, and pre-implementation acceptance. User Journey Architecture Validation v1.1 identifies current end-to-end gaps and validates engine/companion experience separation without changing ownership. Capability Technology Research Framework v1.0 is authoritative for research planning, comparison evidence, and technology-evaluation governance. Capability Research Roadmap v1.0 is authoritative for the remaining research sequence and dependency gates.
 
