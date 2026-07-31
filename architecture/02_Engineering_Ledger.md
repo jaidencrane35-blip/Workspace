@@ -332,3 +332,79 @@ followed by bounded candidate validation against the recorded mandatory gates.
 Supersedes: None.
 
 Status: Complete
+
+### LEDGER-0008
+
+Entry ID: LEDGER-0008
+
+Capability: Memory capability research
+
+Research: Completed canonical research unit `MEM-001` in
+`architecture/research/MEMORY_RESEARCH.md`. Compared local-first AI-memory
+architecture, short-term working and long-term semantic memory, canonical and
+structured knowledge storage, dense/vector and sparse/full-text indexes,
+graph-based relationships, hybrid retrieval, reranking, compression,
+consolidation, pruning, versioning, privacy, encryption, optional
+synchronization, and retrieval explainability.
+
+Decision: No technology selected or rejected. Retain eight candidate solution
+categories and representative mature open-source comparators for later bounded
+evaluation. Keep canonical identity, propose-write authorization, provenance,
+scope, retention, correction, redaction/forgetting, derivation lineage,
+retrieval orchestration/explanation, and operation recovery Workspace-owned.
+Treat databases, lexical/vector/graph indexes, cryptography, model runtimes,
+retrieval pipelines, and synchronization primitives as potential replaceable
+commodity integrations only.
+
+Implementation:
+
+- Created the detailed Memory research record using the canonical Capability
+  Technology Research Framework.
+- Created canonical Research Catalogue entry `MEM-001`.
+- Recorded current open-source comparator versions, licences, maintenance and
+  platform implications, architectural trade-offs, failure modes, migration
+  risks, unknowns, and mandatory acceptance criteria.
+- Distinguished ephemeral Companion working context from durable Memory.
+- Defined derived indexes, summaries, graphs, caches, and framework stores as
+  rebuildable projections that cannot become alternate Memory authorities.
+- Updated Current State to mark research complete and await architecture review.
+- Made no runtime, Open Source Registry, ADR, capability ownership, interaction,
+  contract, technology-selection, or technology-rejection change.
+
+Validation:
+
+- Mapped research to Memory contracts `MEM-CMD-001` through `MEM-EVT-005`,
+  interactions `IC-015` and `IC-019` through `IC-022`, and applicable
+  acceptance cases.
+- Verified current primary-source evidence for representative storage, search,
+  graph, framework, encryption, and synchronization releases as of 2026-08-01.
+- Covered every requested research scope and every canonical framework section.
+- Confirmed retrieval quality, performance, Windows packaging, exact deletion,
+  encryption, synchronization, and failure behavior remain evidence gates rather
+  than inferred passes.
+- Confirmed no technology was adopted, conditionally adopted, rejected, or added
+  to the Open Source Registry.
+
+Knowledge Gained:
+
+- Bounded working context belongs to Companion's in-flight task state; durable
+  retention remains an explicit, separately authorized Memory operation.
+- Canonical records and rebuildable derived projections provide the clearest
+  boundary for provenance, corruption recovery, migration, and forgetting.
+- Lexical, dense, metadata/time, graph, fusion, reranking, and compression
+  stages solve different retrieval problems and need separate evidence.
+- Dense similarity is not an explanation; trustworthy recall requires source,
+  scope, temporal, rank/fusion, graph-path, and transformation evidence.
+- Search invisibility, logical deletion, cryptographic erasure, replica
+  propagation, backup expiry, and physical-media sanitization are distinct
+  guarantees.
+- CRDT convergence does not provide authorization, semantic conflict resolution,
+  or complete forgetting.
+
+Unlocks: Architecture review of unresolved Memory taxonomy, archived-scope,
+retention, correction, deletion, encryption, synchronization, and operation
+assumptions, followed by bounded reproducible candidate validation.
+
+Supersedes: None.
+
+Status: Complete

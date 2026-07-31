@@ -48,24 +48,29 @@ Capability Technology Research
 
 ✓ Permission Authority patterns, open-source comparators, desktop permission models, trade-offs, unknowns, and mandatory evaluation criteria recorded without technology selection
 
+✓ Memory capability research complete (`research/MEMORY_RESEARCH.md`, `MEM-001`, LEDGER-0008)
+
+✓ Local-first Memory patterns, open-source comparators, retrieval architectures, privacy/encryption/synchronization trade-offs, unknowns, and mandatory evaluation criteria recorded without technology selection or rejection
+
 ---
 
 # Active Task
 
-None (Permission Authority research complete; awaiting architecture review).
+None (Memory research complete; awaiting architecture review).
 
 ---
 
 # Next Task
 
-Review `PA-001` and resolve the Permission Authority architecture assumptions
-that materially affect proof composition, consent, isolation, grant lifetime,
-rollback, audit assurance, and recovery.
+Review `MEM-001` and resolve the Memory architecture assumptions that materially
+affect taxonomy, archived-workspace visibility, correction/contradiction,
+retention/pruning, deletion guarantees, encryption/key recovery,
+synchronization, and destructive-operation lifecycle.
 
-After architecture acceptance, perform bounded reproducible candidate
-validation against the mandatory gates in
-`research/PERMISSION_AUTHORITY_RESEARCH.md`. Do not select a technology from
-documentary comparison alone.
+After architecture acceptance, define representative Windows hardware, data,
+query, and failure workloads, then perform bounded reproducible candidate
+validation against the mandatory gates in `research/MEMORY_RESEARCH.md`. Do not
+select a technology from documentary comparison alone.
 
 Recommended next engineering milestone: **Capability Technology Research**.
 
@@ -74,7 +79,14 @@ Recommended next engineering milestone: **Capability Technology Research**.
 # Known Unknowns
 
 - Voice stack (Experience modality)
-- Memory implementation
+- Memory taxonomy and the boundary between ephemeral working context and durable retained knowledge
+- Memory correction, contradiction, supersession, valid-time, and recorded-time semantics
+- Memory retention defaults, pruning authority, consolidation policy, and user visibility
+- Exact Memory redaction/forget guarantees across canonical records, derived indexes, summaries, graphs, caches, keys, backups, and replicas
+- Memory encryption attacker model, key custody, recovery, rotation, and cryptographic-erasure policy
+- Whether Memory synchronization is required; if so, device trust, E2EE, conflict, tombstone, offline-duration, retired-device, and backup-expiry semantics
+- Representative Memory scale, Windows hardware classes, retrieval-quality thresholds, and local model viability
+- Memory write/redact/forget/reindex/migration commit points, cancellation classes, and crash recovery
 - AI orchestration (Intelligence)
 - Desktop observation stack (Context Sensing)
 - Plugin architecture (Extension Host)
@@ -126,3 +138,17 @@ audit, compound-scope, grant-lifetime, recovery, and consent assumptions before
 bounded candidate validation or selection. Concrete representations, executable
 validation artifacts, per-action safety detail, control/tombstone durations,
 and Extension Host activation justification remain pre-implementation risks.
+
+Memory research unit `MEM-001` is complete and records eight candidate solution
+categories plus representative storage, lexical/vector, graph, framework,
+encryption, and synchronization comparators without adoption, conditional
+adoption, or rejection. It confirms that ephemeral working context, canonical
+durable records, derived retrieval projections, compression, encryption,
+deletion, backup, and synchronization require distinct ownership and guarantees.
+
+Architecture review must resolve the recorded taxonomy, archived-scope,
+correction, retention, deletion, encryption, synchronization, scale, and
+operation-lifecycle assumptions before bounded candidate validation or
+selection. Retrieval quality, Windows/resource performance, exact forgetting,
+offline model completeness, migration, and failure recovery remain mandatory
+reproducible evidence gaps.
