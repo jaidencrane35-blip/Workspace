@@ -145,3 +145,40 @@ Unlocks: Capability contract specification and offline/degraded acceptance scena
 Supersedes: Capability Architecture v1.0 boundary definitions where revised by v1.1 and the Interaction Matrix.
 
 Status: Complete
+
+### LEDGER-0004
+
+Entry ID: LEDGER-0004
+
+Capability: Workspace capability communication contracts (system-wide)
+
+Research: N/A — contract architecture only; no technology research or vendor selection performed.
+
+Decision: Adopt `architecture/10_Capability_Contracts.md` as the authoritative public contract definition subordinate to the Blueprint, accepted ADRs, Capability Architecture, and Interaction Matrix. Standardize request, command, response, event, authorization, correlation, error, state exposure, and explainability semantics. Define every capability's public/internal boundary and every interaction permitted by the matrix.
+
+Implementation:
+- Defined public responsibilities/interfaces, internal responsibilities, consumed/emitted events, accepted/produced commands, accepted requests, returned responses, owned/exposed state, errors, permissions, and explainability for all ten capabilities.
+- Defined 38 exhaustive inter-capability interaction contracts with initiator, receiver, purpose/trigger, expected response, failure behaviour, permission boundary, exchanged data, and conceptual sync/async mode.
+- Required bound point-of-use authorization for protected reads, explanations, mutations, inference, Action status/cancellation, and extension management.
+- Preserved Memory as sole owner of durable user knowledge; restricted Intelligence, Action, Companion, and Extension Host records/partitions to metadata, minimized summaries, configuration, or disposable cache as appropriate.
+- Clarified that sensing start/resume require proof while pause/stop require owning task/session identity and only reduce observation.
+- Reconciled Capability Architecture and Interaction Matrix language for Companion-mediated Workspace mutation, permission catalogue/explanation, event inventories, provider/extension state, and protected explanation paths.
+
+Validation:
+- Performed repeated adversarial reviews against Blueprint, ADRs, Capability Architecture, and Interaction Matrix.
+- Confirmed no circular ownership, duplicate authority, Permission Authority bypass, forbidden direct interaction, alternate Memory owner, or hard dependency cycle remains.
+- Confirmed Intelligence never performs actions and Experience remains presentation-only.
+- Confirmed every allowed interaction and public interface has a defined permitted contract; every unlisted interaction remains forbidden.
+- No runtime code or behaviour changed; no technology research or selection performed.
+
+Knowledge Gained:
+- Public method names are insufficient without explicit caller, event subscriber, authorization, failure, and state-exposure semantics.
+- Cancellation and safety-reducing stop operations need authority tied to the originating task/session without requiring permission to continue the risky operation.
+- Extension isolation must constrain retained data as well as execution authority.
+- Event inventories and interaction matrices must remain mechanically reconcilable to prevent undocumented communication paths.
+
+Unlocks: Versioned field-schema definition, compatibility rules, and executable contract/offline/cancellation acceptance specifications.
+
+Supersedes: None. Refines contract details in `08_Workspace_Capability_Architecture.md` and allowed-purpose wording in `09_Capability_Interaction_Matrix.md`.
+
+Status: Complete

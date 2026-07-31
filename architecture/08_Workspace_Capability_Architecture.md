@@ -170,7 +170,7 @@ Ensure meaningful Workspace actions occur only with explicit, revocable, explain
 
 ### Inputs
 
-- Permission requests from capabilities
+- Authorization requests from Companion Orchestration and Experience; point-of-use validation requests from protected capabilities
 - User grant/deny/revoke decisions
 - Automatic-execution policy updates from the user
 
@@ -271,7 +271,7 @@ Organize the user’s work into durable workspaces and zones so Companion assist
 
 ### Inputs
 
-- User workspace/zone commands via Experience
+- User workspace/zone commands mediated by Companion Orchestration
 - Companion requests for current scope
 - Import/structure hints (non-authoritative)
 
@@ -490,7 +490,7 @@ Observe the user’s computing context in a read-only, permissioned way so Works
 - `Sense.start(sensor_class, purpose, authorization_proof)` / `Sense.stop` / `Sense.pause`
 - `Sense.queryCurrent(purpose, authorization_proof)`
 - `Sense.events(authorization_proof)` (subscribe while authorization remains valid)
-- `Sense.explain(sample_id)`
+- `Sense.explain(sample_id, authorization_proof)`
 
 ### Dependencies
 
@@ -592,8 +592,8 @@ Execute permitted changes in the user’s environment—automation with a hard p
 ### Contracts
 
 - `Action.execute(request, authorization_proof)`
-- `Action.cancel(execution_id)`
-- `Action.describe(action_type)`
+- `Action.cancel(execution_id, authorization_proof)`
+- `Action.describe(action_type, authorization_proof)`
 - `Action.events`
 
 ### Dependencies
@@ -609,7 +609,7 @@ Execute permitted changes in the user’s environment—automation with a hard p
 
 ### Data Ownership
 
-- Execution logs (local)
+- Metadata-only execution audit and minimized effect summaries (local); never copied user content
 - Action type catalogue
 - In-flight execution state
 
@@ -699,8 +699,8 @@ Provide local-first reasoning and generation services so Companion Orchestration
 
 - `Intelligence.reason(request, authorization_proof)`
 - `Intelligence.generate(request, authorization_proof)`
-- `Intelligence.listProviders`
-- `Intelligence.explain(transaction_id)`
+- `Intelligence.listProviders(authorization_proof)`
+- `Intelligence.explain(transaction_id, authorization_proof)`
 
 ### Dependencies
 
@@ -1016,7 +1016,7 @@ Define the optional boundary for controlled extension of Workspace without break
 ### Responsibilities
 
 - Discover and validate extensions
-- Request declared permissions through Permission Authority
+- Declare required extension scopes to Companion Orchestration; Companion requests authorization through Permission Authority
 - Route all extension requests and side effects through Companion Orchestration
 - Unload extensions on revoke/failure
 - Prevent extensions from becoming a second orchestrator with hidden powers
@@ -1038,7 +1038,7 @@ Define the optional boundary for controlled extension of Workspace without break
 - `Extension.install(manifest, authorization_proof)` / `Extension.unload(extension_id, authorization_proof)`
 - `Extension.list(authorization_proof)`
 - `Extension.invoke(request, authorization_proof)` (mediated through Companion)
-- `Extension.explain(extension_id)`
+- `Extension.explain(extension_id, authorization_proof)`
 
 ### Dependencies
 
@@ -1056,7 +1056,7 @@ Define the optional boundary for controlled extension of Workspace without break
 ### Data Ownership
 
 - Extension manifests and enablement state
-- Extension-local data partitions (isolated)
+- Extension-local configuration and disposable cache partitions (isolated); never durable user knowledge, observations, task content, or prompt/response content
 - Extension audit events
 
 ### Lifecycle
@@ -1158,7 +1158,7 @@ Notes:
 | Workspaces, zones, active scope | Workspace Management |
 | Memory items, provenance, retention | Memory |
 | Ephemeral observations, sensing sessions | Context Sensing |
-| Execution logs, action catalogue | Action |
+| Metadata-only execution audit, minimized effect summaries, action catalogue | Action |
 | Provider config, inference transactions (minimized) | Intelligence |
 | Task/plan state, orchestration policy | Companion Orchestration |
 | UI preferences, presentation state | Experience |
@@ -1326,6 +1326,7 @@ No blocking duplicate responsibilities, circular hard dependencies, ownership co
 - Decisions: `architecture/decisions/`
 - Capability decomposition: this document
 - Communication and trust constraints: `architecture/09_Capability_Interaction_Matrix.md`
+- Public capability contracts: `architecture/10_Capability_Contracts.md`
 - Technology choices: future Research Catalogue entries per capability (not made here)
 
 Next engineering milestone (recommended): research candidate technologies per capability category, recording results once in the Research Catalogue before implementation.

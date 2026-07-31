@@ -34,21 +34,23 @@ Architecture Foundation
 
 ✓ Formal Capability Architecture review complete (`08` v1.1, `09_Capability_Interaction_Matrix.md`, LEDGER-0003)
 
+✓ Capability Contracts complete (`10_Capability_Contracts.md`, LEDGER-0004)
+
 ---
 
 # Active Task
 
-None (Capability Architecture review and interaction constraints complete).
+None (Capability Contracts complete and validated).
 
 ---
 
 # Next Task
 
-Research candidate technologies for each capability.
+Define versioned contract field schemas, compatibility rules, invariants, and executable architectural acceptance cases.
 
-Record investigations once in the Research Catalogue before any implementation.
+Recommended next engineering milestone: **Contract Schema and Acceptance Specification**.
 
-Recommended next engineering milestone: **Capability Technology Research**.
+Following milestone: Capability Technology Research, recorded once in the Research Catalogue before implementation.
 
 ---
 
@@ -64,6 +66,9 @@ Recommended next engineering milestone: **Capability Technology Research**.
 - Local inference viability classes
 - Cross-capability correlation field representation and detailed contract schemas
 - Detailed tests for offline/degraded core-function acceptance scenarios
+- Contract compatibility/versioning rules
+- Event loss/duplication/order/recovery acceptance cases
+- Action cancellation and partial-effect acceptance cases
 - Extension Host activation justification (Complexity Budget checkpoint)
 
 ---
@@ -78,6 +83,6 @@ Stable
 
 None for product architecture.
 
-Capability Architecture v1.1 is the authoritative decomposition. The Interaction Matrix is authoritative for communication and trust constraints. The formal re-review found no remaining ownership conflicts, circular hard dependencies, Blueprint violations, or accepted ADR violations.
+Capability Architecture v1.1 is the authoritative decomposition. The Interaction Matrix is authoritative for communication and trust constraints. Capability Contracts v1.0 is authoritative for public message and interaction semantics. Repeated validation found no remaining ownership conflicts, circular hard dependencies, duplicate authority, permission bypasses, forbidden direct paths, Blueprint violations, or accepted ADR violations.
 
-Technology choices remain open pending Research Catalogue work. Detailed contract schemas/tests and Extension Host activation justification remain pre-implementation risks.
+Technology choices remain open pending Research Catalogue work. Detailed schemas, compatibility rules, executable contract/offline/cancellation tests, and Extension Host activation justification remain pre-implementation risks.

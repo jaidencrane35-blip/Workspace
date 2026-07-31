@@ -28,15 +28,15 @@ Rows initiate; columns receive.
 | From \ To | RH | PA | WM | ME | CS | AC | IN | CO | EX | EH |
 |-----------|----|----|----|----|----|----|----|----|----|----|
 | RH | — | Lifecycle | Lifecycle | Lifecycle | Lifecycle | Lifecycle | Lifecycle; Event: mode | Lifecycle | Lifecycle; Event: host status | Lifecycle |
-| PA | Event: health only | — | Event: revoke | Event: revoke | Event: revoke | Event: revoke | Event: revoke | Event: revoke | Event: challenge/revoke | Event: revoke |
-| WM | Event: health | Direct: authorize/validate | — | Event: scope changed | Event: scope changed | Event: scope changed | Forbidden | Event: scope changed | Forbidden | Forbidden |
-| ME | Event: health | Direct: authorize/validate | Direct: validate scope | — | Forbidden | Forbidden | Forbidden | Event: result/policy | Forbidden | Forbidden |
-| CS | Event: health | Direct: authorize/validate | Direct: scope tag | Forbidden | — | Forbidden | Forbidden | Event: context/candidate | Forbidden | Forbidden |
+| PA | Event: health only | — | Event: revoke | Event: revoke | Event: revoke | Event: revoke | Event: revoke | Event: challenge/decision/revoke | Event: challenge/decision/revoke | Event: revoke |
+| WM | Event: health | Direct: validate | — | Event: scope changed | Event: scope changed | Event: scope changed | Forbidden | Event: scope/domain result | Forbidden | Forbidden |
+| ME | Event: health | Direct: validate | Direct: validate scope | — | Forbidden | Forbidden | Forbidden | Event: result/policy | Forbidden | Forbidden |
+| CS | Event: health | Direct: validate | Direct: scope tag | Forbidden | — | Forbidden | Forbidden | Event: context/candidate/state | Forbidden | Forbidden |
 | AC | Event: health | Direct: validate proof | Direct: validate target scope | Forbidden | Forbidden | — | Forbidden | Event: execution result | Forbidden | Forbidden |
-| IN | Event: health | Direct: authorize/validate provider/data sharing | Forbidden | Forbidden | Forbidden | Forbidden | — | Event: inference result/proposal | Forbidden | Forbidden |
-| CO | Event: health | Direct: authorize | Direct | Direct | Direct | Direct with proof | Direct | — | Event: progress/interaction request | Direct: manage, only if activated |
-| EX | Direct: status query; Event: health | Direct: authorize Workspace read; user decision/revoke | Direct: read-only view with proof | Forbidden | Forbidden | Forbidden | Forbidden | Direct: intent/interaction result | — | Forbidden |
-| EH | Event: health | Direct: authorize/validate extension scopes | Forbidden | Forbidden | Forbidden | Forbidden | Forbidden | Event: extension contribution/intent | Forbidden | — |
+| IN | Event: health | Direct: validate provider/data sharing | Forbidden | Forbidden | Forbidden | Forbidden | — | Event: inference result/proposal/availability | Forbidden | Forbidden |
+| CO | Event: health | Direct: authorize; explain task authorization | Direct | Direct | Direct | Direct with proof | Direct | — | Event: progress/interaction request | Direct: manage, only if activated |
+| EX | Direct: status query; Event: health | Direct: authorize Workspace read; catalogue/explain user's permissions; user decision/revoke/automatic-policy update | Direct: read-only view with proof | Forbidden | Forbidden | Forbidden | Forbidden | Direct: intent/interaction result | — | Forbidden |
+| EH | Event: health | Direct: validate extension scopes | Forbidden | Forbidden | Forbidden | Forbidden | Forbidden | Event: extension contribution/intent/error/state | Forbidden | — |
 
 ### Matrix interpretation rules
 
@@ -116,14 +116,14 @@ Rows initiate; columns receive.
 | Capability health | All capabilities | Runtime Host only | Domain payloads, secrets, raw observations |
 | Aggregated host status | Runtime Host | Experience | Domain payloads, secrets, raw observations |
 | Runtime mode | Runtime Host | Intelligence | Domain payloads, connectivity history, network content |
-| Permission challenge/revocation | Permission Authority | Experience; affected capability; Companion | Unrelated grants or audit history |
-| Workspace scope change | Workspace Management | Companion; Memory/Context/Action only where scope validation is required | Workspace content not required by subscriber |
-| Context event | Context Sensing | Companion only | Raw or unminimized capture; deep-sensing permission never waives minimization |
+| Permission challenge/decision/revocation | Permission Authority | Experience; affected capability; Companion | Unrelated grants or audit history |
+| Workspace scope/domain result | Workspace Management | Companion for scope/results; Memory/Context/Action for scope invalidation only | Workspace content not required by subscriber |
+| Context/state event | Context Sensing | Companion only | Raw or unminimized capture; deep-sensing permission never waives minimization |
 | Memory result/policy | Memory | Companion only | Unrequested memory collections |
-| Inference result/proposal | Intelligence | Requesting Companion task only | Execution authority |
+| Inference result/proposal/availability | Intelligence | Companion (result/proposal limited to requesting task) | Execution authority, prompts, unrelated task content |
 | Action progress/result | Action | Requesting Companion task; Runtime Host for health only | New action requests or expanded scope |
 | Companion progress/interaction request | Companion | Experience | Hidden action execution or permission grants |
-| Extension contribution/error | Extension Host | Companion; Runtime Host for health; Experience only through Companion explanation | Direct domain commands |
+| Extension contribution/error/state | Extension Host | Companion; Runtime Host for health; Experience only through Companion explanation | Direct domain commands, extension partition content |
 
 Events are typed, purpose-labelled, correlated to a task or operation where applicable, and carry the minimum data required. Event delivery never grants command authority.
 
