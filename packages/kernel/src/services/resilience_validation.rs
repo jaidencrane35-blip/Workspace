@@ -8,8 +8,9 @@
 
 use workspace_domain::{
     DecisionEngineIntakeReceipt, DecisionEngineIntakeCandidate, DecisionEngineIntakeEvaluation,
-    DecisionEngineCandidateCreation, DecisionCandidateSelection, DecisionCandidateProgression,
-    DecisionCandidateRanking, DecisionEngineState, DecisionCandidate,
+    DecisionEngineCandidateCreation, DecisionCandidateSelection,
+    DecisionCandidateProgressionRequest, DecisionCandidateRanking, DecisionEngineState,
+    DecisionCandidate,
     RecommendationDecisionContext, RecommendationDecisionReadiness, RecommendationDecisionBoundary,
     RecommendationDecisionConfirmation,
 };
@@ -147,14 +148,6 @@ pub fn validate_candidate_creations_bounded(
                 ),
             });
         }
-        // Validate creation invariants
-        if creation.score.total != 0 {
-            return Err(KernelError::ProjectionValidation {
-                message:
-                    "integrity violation: candidate creation must have zero initial score"
-                        .to_string(),
-            });
-        }
     }
     Ok(())
 }
@@ -207,7 +200,7 @@ pub fn validate_candidate_selections_bounded(
 /// Validates that progression requests preserve candidate immutability
 /// and do not invoke planner or mutate the Recommendation Engine.
 pub fn validate_progression_requests_bounded(
-    requests: &[DecisionCandidateProgression],
+    requests: &[DecisionCandidateProgressionRequest],
 ) -> Result<()> {
     for request in requests {
         if request.planner_invoked {
