@@ -1,8 +1,8 @@
-# Workspace Blueprint v1.0
+# Workspace Blueprint v1.1
 
 Status: Active
 Authority: Highest
-Version: 1.0
+Version: 1.1
 
 ---
 
@@ -73,5 +73,8 @@ Workspace is composed of capabilities.
 Capabilities communicate through contracts.
 
 Capabilities never duplicate responsibility.
+
+The engine exists to serve the companion experience. Internal capabilities and
+their operational surfaces must not become the primary user interface.
 
 The Blueprint is the highest authority.

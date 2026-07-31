@@ -1,8 +1,8 @@
-# Workspace User Journey Architecture Validation v1.0
+# Workspace User Journey Architecture Validation v1.1
 
 Status: Complete
 Authority: Architecture validation and gap analysis
-Version: 1.0
+Version: 1.1
 
 This document validates whether the current Workspace capability architecture can support the user experience required by the Blueprint.
 
@@ -36,6 +36,8 @@ Each journey is reviewed for:
 - contract completeness
 - permission-boundary compliance
 - Blueprint and ADR compliance
+- engine/companion experience separation: internal capability and operational
+  surfaces support the journey without becoming its primary user interface
 
 Outcomes:
 
@@ -44,6 +46,12 @@ Outcomes:
 - **Gap** — a required interaction is missing, forbidden, contradictory, or cannot satisfy a Blueprint invariant.
 
 Optional voice and Extension Host paths do not determine core Blueprint readiness, but their activation requirements are recorded.
+
+The engine exists to serve the companion experience. Journey validation
+therefore treats capability consoles, diagnostics, provider administration,
+permission administration, and other internal or operational surfaces as
+supporting or inspectable paths, not substitutes for the primary Companion
+experience.
 
 ---
 
@@ -1239,6 +1247,15 @@ Gaps:
 - Respectful: **Conditional**
 - Never manipulative: **Not enforceable**
 
+### Engine and companion experience separation
+
+Capability ownership already separates the internal engine from Experience and
+Companion Orchestration, and the traced journeys consistently enter through
+Experience. The architecture now makes explicit that internal capability,
+administration, and diagnostic surfaces remain subordinate to the Companion
+experience. A journey is not complete merely because an internal capability can
+be operated directly.
+
 ---
 
 ## Gap Analysis
@@ -1386,3 +1403,6 @@ Ten gap groups are consolidated into nine bounded change packages above. All bel
 Workspace is **capability-complete but not user-journey-complete**.
 
 Bounded Capability Technology Research may begin now. Final selection or implementation in an affected area waits for its relevant change packages to be resolved and revalidated.
+
+The capability engine is not itself the user experience; journey readiness is
+judged by whether those capabilities serve the primary Companion experience.

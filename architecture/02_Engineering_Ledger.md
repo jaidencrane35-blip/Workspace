@@ -522,3 +522,60 @@ dependency waves, explicit prerequisites, parallelism, and architecture gates;
 the framework's research process remains authoritative.
 
 Status: Complete
+
+### LEDGER-0011
+
+Entry ID: LEDGER-0011
+
+Capability: Engine and companion experience architecture principle (system-wide)
+
+Research: N/A — architecture documentation review only; no technology research,
+product redesign, implementation planning, or runtime change performed.
+
+Decision: Make explicit that the engine exists to serve the companion
+experience and that internal capabilities and their operational surfaces must
+not become the primary user interface. Record this in the highest-authority
+Blueprint and apply it as a user-journey validation criterion.
+
+Implementation:
+
+- Revised the Blueprint to v1.1 and added the engine/companion experience
+  separation principle.
+- Revised User Journey Architecture Validation to v1.1, adding the separation
+  criterion and clarifying that capability, administration, and diagnostic
+  surfaces are supporting or inspectable paths rather than substitutes for the
+  primary Companion experience.
+- Updated Current State to record the explicit distinction.
+- Made no ADR, capability ownership, interaction, contract, acceptance-schema,
+  product design, technology, or runtime change.
+
+Validation:
+
+- Reviewed the complete Cursor Protocol reading set and the requested Blueprint,
+  Current State, Capability Architecture, User Journey Architecture Validation,
+  and architecture-guardian concerns.
+- Confirmed the principle was strongly implied by the Blueprint mission and
+  Companion principles, by Companion Orchestration as the sole coordinator, and
+  by Experience as the human-facing presentation owner.
+- Confirmed implication alone did not prevent internal capability and diagnostic
+  surfaces from being mistaken for the product experience.
+- Confirmed the minimum change belongs in the Blueprint as governing authority
+  and in User Journey Architecture Validation as the place where end-to-end
+  experience completeness is tested.
+
+Knowledge Gained:
+
+- Capability completeness and internal operability do not establish a mature
+  user-facing companion experience.
+- The architecture must judge internal surfaces by how they support user
+  journeys, not treat those surfaces as journey completion.
+- This distinction constrains presentation without changing capability
+  ownership or runtime architecture.
+
+Unlocks: Future architecture and journey reviews can reject engine-first
+surfaces as substitutes for the Companion experience without introducing new
+capabilities or changing contracts.
+
+Supersedes: None.
+
+Status: Complete

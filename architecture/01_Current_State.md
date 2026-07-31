@@ -42,6 +42,8 @@ Capability Technology Research
 
 ✓ Blueprint user-journey architecture validation complete (`12_User_Journey_Architecture_Validation.md`, LEDGER-0006)
 
+✓ Engine/companion experience principle made explicit in Blueprint v1.1 and User Journey Architecture Validation v1.1 (LEDGER-0011)
+
 ✓ Capability Technology Research Framework established (`12_Capability_Technology_Research_Framework.md`, LEDGER-0007)
 
 ✓ Repeatable evidence, comparison, decision, rejection, and re-evaluation governance defined for all ten capabilities
@@ -125,15 +127,19 @@ Recommended next engineering milestone: **Capability Technology Research**.
 
 # Architecture Health
 
-Capability decomposition stable; user-journey corrections required
+Capability decomposition stable; engine/companion experience distinction
+explicit; user-journey corrections required
 
 ---
 
 # Drift Assessment
 
-No capability ownership drift. User-journey validation identified bounded contract and guidance gaps within existing capabilities.
+No capability ownership drift. The engine exists to serve the Companion
+experience; internal capability and operational surfaces are not the primary
+user interface. User-journey validation identified bounded contract and
+guidance gaps within existing capabilities.
 
-Capability Architecture v1.1 remains the authoritative decomposition. The Interaction Matrix is authoritative for communication and trust constraints. Capability Contracts v1.0 is authoritative for public message and interaction semantics. Contract Schema and Acceptance Specification v1.0 is authoritative for conceptual fields, evolution, invariants, and pre-implementation acceptance. User Journey Architecture Validation v1.0 identifies current end-to-end gaps without changing ownership. Capability Technology Research Framework v1.0 is authoritative for research planning, comparison evidence, and technology-evaluation governance. Capability Research Roadmap v1.0 is authoritative for the remaining research sequence and dependency gates.
+Blueprint v1.1 remains the highest authority. Capability Architecture v1.1 remains the authoritative decomposition. The Interaction Matrix is authoritative for communication and trust constraints. Capability Contracts v1.0 is authoritative for public message and interaction semantics. Contract Schema and Acceptance Specification v1.0 is authoritative for conceptual fields, evolution, invariants, and pre-implementation acceptance. User Journey Architecture Validation v1.1 identifies current end-to-end gaps and validates engine/companion experience separation without changing ownership. Capability Technology Research Framework v1.0 is authoritative for research planning, comparison evidence, and technology-evaluation governance. Capability Research Roadmap v1.0 is authoritative for the remaining research sequence and dependency gates.
 
 Technology choices remain open. Permission Authority research unit `PA-001` is
 complete and records six candidate solution categories without adoption,
