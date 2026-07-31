@@ -92,29 +92,18 @@ Governing design test (carry forward):
 
 Draft PR: **Programme V — Operator Workflows Phase 1 (IC1–IC6)** → `main`.
 
-**Approved to proceed to final integration review** prior to merge. Focus on architectural integrity rather than feature completeness.
+Final integration review completed **2026-07-31** — **PASS**.  
+Record: [Phase 1 Final Integration Review](PROGRAMME-V-PHASE-1-INTEGRATION-REVIEW.md).
 
-Integration checklist before promote-to-merge:
-
-1. Projection dependency graph remains acyclic  
-2. WorkspaceState remains the sole runtime desktop authority  
-3. Programme I projections remain the exclusive source of desktop semantics  
-4. Programme V projections compose rather than recompute  
-5. Explainability consumes projections without reinterpretation  
-6. Observability compares projections without persisting them  
-7. Product State and Interaction State remain clearly separated  
-8. What → Why → Owner remains consistent across all operator surfaces  
-9. No duplicate ownership has emerged through incremental evolution  
-
-If the checklist passes, merge as the official **Programme V Phase 1 milestone**.
+Checklist passed unchanged. Branch is **approved for promotion to merge** as the official **Programme V Phase 1 milestone** (Principal Architect / maintainer merge action).
 
 ---
 
 ## Cursor stop condition
 
-- Programme V **Phase 1** is **formally accepted**, **closed**, and **approved for final integration review** prior to merge.  
+- Programme V **Phase 1** is **formally accepted**, **closed**, and **integration-review PASS** — awaiting merge into `main`.  
 - No further implementation work should commence until the next phase receives its own charter, implementation contract, and Principal Architect approval.  
-- Merge of the Programme V Phase 1 branch (IC1–IC6) as the phase-boundary milestone remains a release/integration decision for the Principal Architect / maintainers after integration review.
+- Merge of the Programme V Phase 1 branch (IC1–IC6) as the phase-boundary milestone remains a release/integration decision for the Principal Architect / maintainers.
 
 Governance cadence preserved: Charter → Implementation Contract → Principal Architect Review → Approval → Programme Boundary.
 

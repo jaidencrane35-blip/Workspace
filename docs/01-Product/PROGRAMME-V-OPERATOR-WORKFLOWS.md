@@ -2,8 +2,9 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | **Phase 1 formally accepted and closed** — IC1–IC6 approved; awaiting final integration review / merge; next phase awaiting distinct charter |
+| **Status** | **Phase 1 formally accepted and closed** — IC1–IC6 approved; integration review **PASS**; awaiting merge into `main`; next phase awaiting distinct charter |
 | **Phase 1 conclusion** | [Phase 1 conclusion & next-phase handoff](PROGRAMME-V-PHASE-1-CONCLUSION-AND-NEXT-PHASE-HANDOFF.md) (formally accepted 2026-07-30) |
+| **Phase 1 integration review** | [Phase 1 Final Integration Review](PROGRAMME-V-PHASE-1-INTEGRATION-REVIEW.md) (PASS — 2026-07-31) |
 | **Authority** | Principal Architect |
 | **Audience** | Principal Architect, Engineering, Cursor agents |
 | **Nature** | Formal product architecture programme charter |
