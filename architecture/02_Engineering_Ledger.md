@@ -226,6 +226,43 @@ Status: Complete
 
 Entry ID: LEDGER-0006
 
+Capability: Blueprint user-journey architecture validation (system-wide)
+
+Research: N/A — architecture validation only; no technology research, selection, implementation, or runtime change performed.
+
+Decision: Adopt `architecture/12_User_Journey_Architecture_Validation.md` as the current validation of whether Blueprint-implied user journeys are supported end-to-end. Confirm the capability decomposition is complete, but record ten interaction/guidance gap groups consolidated into nine existing-capability change packages.
+
+Implementation:
+- Traced 13 core user journeys plus optional remote Intelligence, voice, and extension paths.
+- Validated participating capabilities, interactions, permission checks, explanations, persistence, recovery/failure behavior, Blueprint principles, and ADR compliance for each journey.
+- Confirmed no new core capability is required.
+- Identified confirmed gaps in Experience task control/inspection, user shutdown, sensing subscription/session control, task cancellation/crash recovery, local provider administration, optional remote multi-scope authorization, startup dependency classification, attention/consent behavior, archived-workspace Memory visibility, and per-operation cancellation declarations.
+- Identified simplification opportunities: stop duplicating detailed contract signatures in Capability Architecture, mechanically reconcile the Interaction Matrix with interaction contracts, and keep voice/extensions within existing optional boundaries.
+
+Validation:
+- Performed independent journey tracing and adversarial Blueprint/UX review.
+- Removed unsupported findings for default-workspace bootstrap authority, mandatory retention-policy editing, deletion/bulk forgetting, and missing historical-explanation architecture.
+- Confirmed permission isolation, Local First structure, data ownership, honest partial/unknown/indeterminate outcomes, and extension isolation are strong.
+- Confirmed current architecture authorities contradict each other for Experience cancellation/status/explanation and user-initiated shutdown lacks a permitted caller.
+- Confirmed bounded Capability Technology Research may begin, while final selection/implementation in affected areas remains gated by relevant architecture corrections and acceptance.
+
+Knowledge Gained:
+- Capability completeness does not imply user-journey completeness.
+- Human control requires permitted invocation paths for cancellation, inspection, degraded administration, and shutdown—not only receiver-side contracts.
+- Calm/non-manipulative behavior needs architecture acceptance invariants while leaving minimal metadata design to later Experience research.
+- Local First requires a user-manageable local provider path, not only an unset/degraded provider state.
+- Architecture validation must distinguish required Blueprint behavior from optional product choices.
+
+Unlocks: Nine bounded architecture change packages and bounded Capability Technology Research that records unresolved assumptions without selecting against incomplete requirements.
+
+Supersedes: None. Challenges prior “no actionable architecture findings” readiness claims only at the user-journey layer; capability ownership remains stable.
+
+Status: Complete
+
+### LEDGER-0007
+
+Entry ID: LEDGER-0007
+
 Capability: Workspace Capability Technology Research Framework (system-wide)
 
 Research: N/A — research planning and governance only; no candidate technology research, library recommendation, vendor selection, or implementation performed.
@@ -260,9 +297,9 @@ Supersedes: None.
 
 Status: Complete
 
-### LEDGER-0007
+### LEDGER-0008
 
-Entry ID: LEDGER-0007
+Entry ID: LEDGER-0008
 
 Capability: Permission Authority capability research
 
@@ -333,9 +370,9 @@ Supersedes: None.
 
 Status: Complete
 
-### LEDGER-0008
+### LEDGER-0009
 
-Entry ID: LEDGER-0008
+Entry ID: LEDGER-0009
 
 Capability: Memory capability research
 

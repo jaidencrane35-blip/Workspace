@@ -40,15 +40,17 @@ Capability Technology Research
 
 ✓ Architectural Acceptance Specification complete (42 conceptual acceptance cases, LEDGER-0005)
 
-✓ Capability Technology Research Framework established (`12_Capability_Technology_Research_Framework.md`, LEDGER-0006)
+✓ Blueprint user-journey architecture validation complete (`12_User_Journey_Architecture_Validation.md`, LEDGER-0006)
+
+✓ Capability Technology Research Framework established (`12_Capability_Technology_Research_Framework.md`, LEDGER-0007)
 
 ✓ Repeatable evidence, comparison, decision, rejection, and re-evaluation governance defined for all ten capabilities
 
-✓ Permission Authority capability research complete (`research/PERMISSION_AUTHORITY_RESEARCH.md`, `PA-001`, LEDGER-0007)
+✓ Permission Authority capability research complete (`research/PERMISSION_AUTHORITY_RESEARCH.md`, `PA-001`, LEDGER-0008)
 
 ✓ Permission Authority patterns, open-source comparators, desktop permission models, trade-offs, unknowns, and mandatory evaluation criteria recorded without technology selection
 
-✓ Memory capability research complete (`research/MEMORY_RESEARCH.md`, `MEM-001`, LEDGER-0008)
+✓ Memory capability research complete (`research/MEMORY_RESEARCH.md`, `MEM-001`, LEDGER-0009)
 
 ✓ Local-first Memory patterns, open-source comparators, retrieval architectures, privacy/encryption/synchronization trade-offs, unknowns, and mandatory evaluation criteria recorded without technology selection or rejection
 
@@ -71,6 +73,8 @@ After architecture acceptance, define representative Windows hardware, data,
 query, and failure workloads, then perform bounded reproducible candidate
 validation against the mandatory gates in `research/MEMORY_RESEARCH.md`. Do not
 select a technology from documentary comparison alone.
+
+Final selection or implementation remains gated by the relevant user-journey architecture corrections and acceptance.
 
 Recommended next engineering milestone: **Capability Technology Research**.
 
@@ -111,20 +115,21 @@ Recommended next engineering milestone: **Capability Technology Research**.
 - Risk that Windows support omits packaging, accessibility, permissions, signing, or lifecycle evidence
 - Risk that aggregate comparison scores hide mandatory privacy, security, contract, or licence failures
 - Risk that technology feasibility research is mistaken for Extension Host activation authority
+- User-journey contract/guidance gaps in task control, shutdown, sensing lifecycle, cancellation recovery, provider administration, compound remote authorization, degraded startup, attention/consent, and archived-workspace Memory visibility
 
 ---
 
 # Architecture Health
 
-Stable
+Capability decomposition stable; user-journey corrections required
 
 ---
 
 # Drift Assessment
 
-No capability ownership drift. Permission Authority research identified unresolved assumptions without changing architecture ownership.
+No capability ownership drift. User-journey validation identified bounded contract and guidance gaps within existing capabilities.
 
-Capability Architecture v1.1 is the authoritative decomposition. The Interaction Matrix is authoritative for communication and trust constraints. Capability Contracts v1.0 is authoritative for public message and interaction semantics. Contract Schema and Acceptance Specification v1.0 is authoritative for conceptual fields, evolution, invariants, and pre-implementation acceptance. Capability Technology Research Framework v1.0 is authoritative for research planning, comparison evidence, and technology-evaluation governance. Repeated validation found no remaining ownership conflicts, circular hard dependencies, duplicate authority, permission bypasses, forbidden direct paths, Blueprint violations, accepted ADR violations, or actionable contract-architecture findings.
+Capability Architecture v1.1 remains the authoritative decomposition. The Interaction Matrix is authoritative for communication and trust constraints. Capability Contracts v1.0 is authoritative for public message and interaction semantics. Contract Schema and Acceptance Specification v1.0 is authoritative for conceptual fields, evolution, invariants, and pre-implementation acceptance. User Journey Architecture Validation v1.0 identifies current end-to-end gaps without changing ownership. Capability Technology Research Framework v1.0 is authoritative for research planning, comparison evidence, and technology-evaluation governance.
 
 Technology choices remain open. Permission Authority research unit `PA-001` is
 complete and records six candidate solution categories without adoption,
@@ -135,9 +140,11 @@ examined candidate supplies the full Workspace contract.
 
 Architecture review must resolve the recorded proof, isolation, time/rollback,
 audit, compound-scope, grant-lifetime, recovery, and consent assumptions before
-bounded candidate validation or selection. Concrete representations, executable
-validation artifacts, per-action safety detail, control/tombstone durations,
-and Extension Host activation justification remain pre-implementation risks.
+bounded candidate validation or selection. Final selection or implementation
+in affected areas still waits for relevant user-journey corrections and
+acceptance. Concrete representations, executable validation artifacts,
+per-action safety detail, control/tombstone durations, and Extension Host
+activation justification remain pre-implementation risks.
 
 Memory research unit `MEM-001` is complete and records eight candidate solution
 categories plus representative storage, lexical/vector, graph, framework,
