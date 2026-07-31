@@ -197,3 +197,71 @@ Review Date: 2027-02-01, or earlier on architecture or policy resolution,
 material candidate release/deprecation/advisory/licence change, Windows
 incompatibility, changed scale/hardware needs, or new reproducible retrieval,
 deletion, encryption, or synchronization evidence.
+
+---
+
+## ROADMAP-001 — Remaining capability research sequence
+
+Record Type: Research planning record; not a technology research unit
+
+Capability: System-wide capability research planning
+
+Status: Roadmap complete; pending architecture review
+
+Candidates: Not applicable. This record orders future research and does not
+discover, compare, select, recommend, or reject technologies.
+
+Decision: Use `architecture/13_Capability_Research_Roadmap.md` as the
+dependency-driven plan for the eight remaining capability research areas:
+Runtime Host, Workspace Management, Context Sensing, Action, Intelligence,
+Companion Orchestration, Experience, and conditionally Extension Host.
+
+Reason: Runtime lifecycle and Workspace scope have the greatest upstream
+fan-out. Context Sensing, Action, and Intelligence can then be researched in a
+bounded parallel wave. Companion depends on those domain findings; Experience
+depends on the states and controls it must present; Extension Host remains last
+and blocked on separate activation justification.
+
+Integration Notes:
+
+- `PA-001` and `MEM-001` remain completed research prerequisites, not selected
+  technologies.
+- Relevant user-journey architecture gaps must be recorded as assumptions
+  during bounded research and resolved before final comparison or selection in
+  affected areas.
+- Each future bounded capability/category question receives its own canonical
+  Catalogue research unit under the existing framework.
+- Runtime Host research is the first remaining unit.
+- Context Sensing, Action, and Intelligence may proceed in parallel only after
+  shared lifecycle, permission, Memory-boundary, and applicable scope
+  assumptions are explicit.
+- Companion Orchestration and Experience follow their dependencies.
+- Extension Host research cannot activate or justify the subsystem by itself.
+
+Licence: Not applicable; no component, dependency, model, or licence was
+evaluated or approved.
+
+Security Review: Planning-level dependency review only. The sequence places
+root lifecycle and scope before high-risk sensing, action, and intelligence
+comparisons, then delays orchestration, presentation, and optional untrusted
+extension research until their security inputs are known. No security approval
+issued.
+
+Maintenance: Re-evaluate the sequence when architecture, contracts, accepted
+research findings, capability activation, or implementation milestones change.
+
+Rejected Options: None. No technology or research area was rejected.
+
+Unresolved Risks: User-journey architecture corrections; Permission Authority
+proof, isolation, consent, and recovery assumptions; Memory taxonomy,
+archived-scope, deletion, encryption, synchronization, and lifecycle
+assumptions; Runtime Host process/lifecycle boundaries; per-action-class scope;
+local Intelligence viability; and Extension Host activation justification.
+
+Evidence: Existing architecture and completed research only, synthesized in
+`architecture/13_Capability_Research_Roadmap.md`. No new external technology
+research was performed.
+
+Review Date: At architecture approval, after any user-journey gap resolution,
+when a completed research unit changes downstream assumptions, and before each
+new research wave.

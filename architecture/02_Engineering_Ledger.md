@@ -445,3 +445,80 @@ assumptions, followed by bounded reproducible candidate validation.
 Supersedes: None.
 
 Status: Complete
+
+### LEDGER-0010
+
+Entry ID: LEDGER-0010
+
+Capability: Remaining capability research roadmap (system-wide)
+
+Research: Planning and architecture synthesis only. Reviewed the completed
+Permission Authority and Memory research, all capability research profiles,
+capability dependencies, interaction and contract boundaries, acceptance
+requirements, user-journey gaps, Blueprint principles, and accepted ADRs. No new
+technology research was performed.
+
+Decision: Establish `architecture/13_Capability_Research_Roadmap.md` as the
+dependency-driven sequence for the eight remaining research areas. Research
+Runtime Host first, then Workspace Management; run Context Sensing, Action, and
+Intelligence as a bounded parallel wave after shared prerequisites; then
+research Companion Orchestration and Experience; research Extension Host only
+after separate activation justification.
+
+Implementation:
+
+- Created the research roadmap with dependency waves, architecture gates,
+  parallelism rules, stop conditions, and validation.
+- Defined for every remaining capability why research is required, prerequisite
+  completed research, expected outputs, unanswered questions, architectural
+  risks, and estimated complexity.
+- Preserved `PA-001` and `MEM-001` as completed prerequisites without treating
+  either as a selection.
+- Recorded user-journey corrections as architecture gates rather than silently
+  resolving them through research.
+- Added Catalogue planning record `ROADMAP-001`.
+- Updated Current State to make Runtime Host the first remaining research area
+  after roadmap review.
+- Made no runtime, technology, Open Source Registry, ADR, ownership,
+  interaction, contract, or acceptance-semantics change.
+
+Validation:
+
+- Confirmed root lifecycle and shared scope research precede dependent
+  candidate comparisons.
+- Confirmed Context Sensing, Action, and Intelligence have no direct dependency
+  requiring arbitrary serialization and may proceed in parallel after shared
+  prerequisites.
+- Confirmed Companion follows the domain owners it coordinates and Experience
+  follows the states it presents.
+- Confirmed Extension Host remains dormant and conditional under the Complexity
+  Budget.
+- Confirmed every remaining capability is covered and no new capability or
+  duplicate research process was introduced.
+- Confirmed ADR-0002 is upheld by requiring explicit build, integrate, and
+  hybrid comparison before implementation while preserving replaceable
+  commodity boundaries.
+
+Knowledge Gained:
+
+- Research sequencing is a dependency graph rather than a fully serial list.
+- Runtime lifecycle and Workspace scope have the largest remaining upstream
+  influence on later integration evidence.
+- Sensing privacy, Action safety, and Intelligence viability can be investigated
+  concurrently, but all three must complete before Companion orchestration is
+  compared.
+- Experience selection depends on authoritative domain and orchestration states,
+  not only UI requirements.
+- Optional extension feasibility cannot substitute for activation
+  justification.
+
+Unlocks: Architecture review of `ROADMAP-001`, resolution or explicit bounding
+of relevant user-journey gaps, and Runtime Host capability research as the first
+remaining research unit.
+
+Supersedes: The non-binding suggested subsequent order in
+`12_Capability_Technology_Research_Framework.md` only where this roadmap adds
+dependency waves, explicit prerequisites, parallelism, and architecture gates;
+the framework's research process remains authoritative.
+
+Status: Complete

@@ -54,27 +54,30 @@ Capability Technology Research
 
 ✓ Local-first Memory patterns, open-source comparators, retrieval architectures, privacy/encryption/synchronization trade-offs, unknowns, and mandatory evaluation criteria recorded without technology selection or rejection
 
+✓ Capability Research Roadmap established (`13_Capability_Research_Roadmap.md`, `ROADMAP-001`, LEDGER-0010)
+
+✓ Remaining research sequence ordered by architectural dependency, risk, uncertainty, implementation impact, and later selection influence
+
 ---
 
 # Active Task
 
-None (Memory research complete; awaiting architecture review).
+None (Capability Research Roadmap complete; awaiting architecture review).
 
 ---
 
 # Next Task
 
-Review `MEM-001` and resolve the Memory architecture assumptions that materially
-affect taxonomy, archived-workspace visibility, correction/contradiction,
-retention/pruning, deletion guarantees, encryption/key recovery,
-synchronization, and destructive-operation lifecycle.
+Review `ROADMAP-001` / `13_Capability_Research_Roadmap.md` and confirm the
+dependency-driven remaining research sequence.
 
-After architecture acceptance, define representative Windows hardware, data,
-query, and failure workloads, then perform bounded reproducible candidate
-validation against the mandatory gates in `research/MEMORY_RESEARCH.md`. Do not
-select a technology from documentary comparison alone.
+After roadmap acceptance, begin Runtime Host capability research as the first
+remaining research unit. Concurrently resolve the user-journey architecture
+corrections that gate final selection or implementation in affected areas.
 
-Final selection or implementation remains gated by the relevant user-journey architecture corrections and acceptance.
+Do not begin Companion Orchestration, Experience, or Extension Host research
+before their roadmap prerequisites. Do not treat Extension Host research as
+activation justification.
 
 Recommended next engineering milestone: **Capability Technology Research**.
 
@@ -116,6 +119,7 @@ Recommended next engineering milestone: **Capability Technology Research**.
 - Risk that aggregate comparison scores hide mandatory privacy, security, contract, or licence failures
 - Risk that technology feasibility research is mistaken for Extension Host activation authority
 - User-journey contract/guidance gaps in task control, shutdown, sensing lifecycle, cancellation recovery, provider administration, compound remote authorization, degraded startup, attention/consent, and archived-workspace Memory visibility
+- Ordered remaining research dependencies: Runtime Host → Workspace Management → parallel Context Sensing / Action / Intelligence → Companion Orchestration → Experience → conditional Extension Host
 
 ---
 
@@ -129,7 +133,7 @@ Capability decomposition stable; user-journey corrections required
 
 No capability ownership drift. User-journey validation identified bounded contract and guidance gaps within existing capabilities.
 
-Capability Architecture v1.1 remains the authoritative decomposition. The Interaction Matrix is authoritative for communication and trust constraints. Capability Contracts v1.0 is authoritative for public message and interaction semantics. Contract Schema and Acceptance Specification v1.0 is authoritative for conceptual fields, evolution, invariants, and pre-implementation acceptance. User Journey Architecture Validation v1.0 identifies current end-to-end gaps without changing ownership. Capability Technology Research Framework v1.0 is authoritative for research planning, comparison evidence, and technology-evaluation governance.
+Capability Architecture v1.1 remains the authoritative decomposition. The Interaction Matrix is authoritative for communication and trust constraints. Capability Contracts v1.0 is authoritative for public message and interaction semantics. Contract Schema and Acceptance Specification v1.0 is authoritative for conceptual fields, evolution, invariants, and pre-implementation acceptance. User Journey Architecture Validation v1.0 identifies current end-to-end gaps without changing ownership. Capability Technology Research Framework v1.0 is authoritative for research planning, comparison evidence, and technology-evaluation governance. Capability Research Roadmap v1.0 is authoritative for the remaining research sequence and dependency gates.
 
 Technology choices remain open. Permission Authority research unit `PA-001` is
 complete and records six candidate solution categories without adoption,
@@ -159,3 +163,14 @@ operation-lifecycle assumptions before bounded candidate validation or
 selection. Retrieval quality, Windows/resource performance, exact forgetting,
 offline model completeness, migration, and failure recovery remain mandatory
 reproducible evidence gaps.
+
+Capability Research Roadmap unit `ROADMAP-001` is complete and records the
+dependency-driven sequence for the eight remaining research areas without
+technology research, recommendation, selection, or rejection. Runtime Host is
+first because lifecycle and packaging assumptions fan out to every later
+integration. Workspace Management follows because authoritative scope constrains
+multiple domain capabilities. Context Sensing, Action, and Intelligence may
+proceed as a bounded parallel wave after shared prerequisites. Companion
+Orchestration then Experience follow their domain and coordination
+dependencies. Extension Host remains last and conditional on separate
+activation justification.
