@@ -6,7 +6,7 @@
 | **Date** | 2026-07-31 |
 | **Branch** | `cursor/programme-v-operator-workflows-34a5` |
 | **Nature** | Governance verification — architectural integrity, not feature review |
-| **Outcome** | **PASS** — approved for promotion to merge as Programme V Phase 1 milestone |
+| **Outcome** | **PASS** — **Approved for Merge** by Principal Architect (2026-07-31) |
 | **Depends on** | [Phase 1 conclusion](PROGRAMME-V-PHASE-1-CONCLUSION-AND-NEXT-PHASE-HANDOFF.md) (formally accepted) |
 
 ---
@@ -15,7 +15,11 @@
 
 All required integration checklist items **pass unchanged**.
 
-Subject to Principal Architect / maintainer merge action, the Phase 1 branch may be promoted into `main` as the official **Programme V – Phase 1 milestone**.
+**Principal Architect Final Integration Decision (2026-07-31): APPROVED FOR MERGE.**
+
+The pull request is authorised for promotion from Draft to Ready for Review / Merge, subject to repository branch protection and maintainer policies. This merge is the formal completion of **Programme V – Phase 1: Operator Workflows**, not an ordinary feature merge.
+
+Upon successful maintainer merge into `main`, Phase 1 should be recorded as **Complete, Accepted, Integrated, and Closed**.
 
 No further implementation is authorised under this programme.
 
@@ -91,12 +95,12 @@ Documented green at IC6 completion: `pnpm typecheck` · `pnpm test` (196) · `pn
 
 ## Stop condition
 
-Integration review **complete — PASS**.
+Integration review **complete — PASS**. Merge **authorised** by Principal Architect.
 
-- Merge into `main` remains a Principal Architect / maintainer action.  
+- Maintainer merge into `main` remains the only remaining Phase 1 activity.  
 - After merge, Workspace remains at a governance boundary until a new programme charter and first implementation contract are approved.  
 - **No further implementation** under Programme V Phase 1.
 
 ---
 
-*Programme V Phase 1 final integration review — PASS.*
+*Programme V Phase 1 final integration review — PASS — Approved for Merge.*

@@ -4,7 +4,7 @@
 |-------|-------|
 | **Authority** | Principal Architect |
 | **Date** | 2026-07-30 |
-| **Programme V Phase 1 status** | **Complete — formally accepted and closed** |
+| **Programme V Phase 1 status** | **Complete — formally accepted, closed, and approved for merge** |
 | **Branch tip (Phase 1)** | `4788e5c` |
 | **Nature** | Phase 1 conclusion record + handoff for the next phase / programme charter |
 | **Not** | An approved implementation contract; not authority to commence the next phase |
@@ -93,17 +93,20 @@ Governing design test (carry forward):
 Draft PR: **Programme V — Operator Workflows Phase 1 (IC1–IC6)** → `main`.
 
 Final integration review completed **2026-07-31** — **PASS**.  
+Principal Architect Final Integration Decision: **APPROVED FOR MERGE** (2026-07-31).  
 Record: [Phase 1 Final Integration Review](PROGRAMME-V-PHASE-1-INTEGRATION-REVIEW.md).
 
-Checklist passed unchanged. Branch is **approved for promotion to merge** as the official **Programme V Phase 1 milestone** (Principal Architect / maintainer merge action).
+Checklist passed unchanged. Pull request authorised for promotion to Ready for Review / Merge as the official **Programme V Phase 1 milestone** (maintainer merge under normal branch protection).
+
+Upon successful merge, record Phase 1 as **Complete, Accepted, Integrated, and Closed**.
 
 ---
 
 ## Cursor stop condition
 
-- Programme V **Phase 1** is **formally accepted**, **closed**, and **integration-review PASS** — awaiting merge into `main`.  
+- Programme V **Phase 1** is **formally accepted**, **closed**, **integration-review PASS**, and **approved for merge** — awaiting maintainer merge into `main`.  
 - No further implementation work should commence until the next phase receives its own charter, implementation contract, and Principal Architect approval.  
-- Merge of the Programme V Phase 1 branch (IC1–IC6) as the phase-boundary milestone remains a release/integration decision for the Principal Architect / maintainers.
+- After merge, the repository remains at a governance pause until a new programme is formally chartered.
 
 Governance cadence preserved: Charter → Implementation Contract → Principal Architect Review → Approval → Programme Boundary.
 

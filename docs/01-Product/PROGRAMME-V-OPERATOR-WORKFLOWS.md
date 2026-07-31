@@ -2,9 +2,9 @@
 
 | Field | Value |
 |-------|-------|
-| **Status** | **Phase 1 formally accepted and closed** — IC1–IC6 approved; integration review **PASS**; awaiting merge into `main`; next phase awaiting distinct charter |
+| **Status** | **Phase 1 formally accepted, closed, and approved for merge** — IC1–IC6 approved; integration review **PASS**; awaiting maintainer merge into `main`; next phase awaiting distinct charter |
 | **Phase 1 conclusion** | [Phase 1 conclusion & next-phase handoff](PROGRAMME-V-PHASE-1-CONCLUSION-AND-NEXT-PHASE-HANDOFF.md) (formally accepted 2026-07-30) |
-| **Phase 1 integration review** | [Phase 1 Final Integration Review](PROGRAMME-V-PHASE-1-INTEGRATION-REVIEW.md) (PASS — 2026-07-31) |
+| **Phase 1 integration review** | [Phase 1 Final Integration Review](PROGRAMME-V-PHASE-1-INTEGRATION-REVIEW.md) (PASS — Approved for Merge 2026-07-31) |
 | **Authority** | Principal Architect |
 | **Audience** | Principal Architect, Engineering, Cursor agents |
 | **Nature** | Formal product architecture programme charter |
@@ -236,8 +236,8 @@ Programme V as a whole completes when Workspace demonstrates that complex operat
 
 This document established Programme V and authorised planning of implementation contracts.
 
-**Phase 1 is formally accepted and closed.** No further implementation work should commence until the next phase receives its own charter, implementation contract, and Principal Architect approval. Final integration review / merge of the Phase 1 branch remains a Principal Architect / maintainer decision.
+**Phase 1 is formally accepted, closed, and approved for merge.** No further implementation work should commence until the next phase receives its own charter, implementation contract, and Principal Architect approval. Maintainer merge into `main` is the only remaining Phase 1 activity; afterward the repository remains at a governance pause.
 
 ---
 
-*End of Programme V charter — Phase 1 formally accepted and closed.*
+*End of Programme V charter — Phase 1 formally accepted, closed, and approved for merge.*
