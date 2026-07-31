@@ -633,3 +633,139 @@ treating the missing research as completed or recreating it during an audit.
 Supersedes: None.
 
 Status: Complete
+
+### LEDGER-0013
+
+Entry ID: LEDGER-0013
+
+Capability: Product strategy — pre-implementation Product Proof gate
+
+Research: Strategic product-evidence review only. Reviewed the complete
+repository and architecture pack, existing product vision and MVP, engineering
+history, prior architecture and product reviews, supplied UI direction, current
+Windows integration, and implemented user surfaces. No technology evaluation,
+architecture redesign, runtime change, or implementation plan was performed.
+
+Decision: Sustained capability expansion and large-scale implementation are not
+justified until Workspace proves one measurable product hypothesis. The
+strongest current hypothesis is trusted interruption recovery:
+
+> Help an interruption-heavy Windows professional return to a recurring work
+> context and intended next action materially faster than existing tools,
+> without privacy surprise.
+
+This is a hypothesis, not an accepted customer fact. Product proof precedes the
+remaining Capability Technology Research milestone. `ROADMAP-001` remains the
+valid dependency order if product evidence later justifies resuming that work.
+
+Product Proof Strategy:
+
+- Primary user: a Windows-based independent consultant managing at least three
+  recurring client contexts, switching at least five times per day, and
+  currently losing at least five minutes reconstructing each context.
+- Primary workflow: explicitly save one bounded resume point containing selected
+  applications, supported resources, window arrangement, and a short
+  user-authored handoff note; later preview the proposed restore, resume
+  supported items, receive honest per-item outcomes, and inspect or delete the
+  retained context.
+- Measurable objective: in a four-week pilot with 15 target users, reduce median
+  return-to-work time by at least 50 percent relative to each user's baseline,
+  with zero unpreviewed capture or action.
+- Success metric: median percentage reduction in return-to-work time; threshold
+  at least 50 percent.
+- Failure metric: fewer than 50 percent of pilot users use Resume on at least
+  three days during week four. Crossing this threshold means the hypothesis did
+  not establish habitual value.
+- Trust invalidation: any unpreviewed capture or action, serious unexpected
+  window disturbance, or misleading claim of successful restoration invalidates
+  the proof regardless of the success metric.
+- Minimum UI: named context list, explicit save checklist, retained-data review,
+  restore preview, one Resume action, per-item progress and partial-result
+  recovery, and inspect/delete controls.
+- Minimum AI behavior: no AI dependency in the critical path. At most one
+  optional, evidence-cited, non-executing summary or context-update suggestion
+  is tested separately after the deterministic resume workflow succeeds.
+- Smallest proof milestone: one installable Windows experience that saves and
+  resumes one supported context end to end and produces the defined pilot
+  evidence. It does not claim arbitrary application-state restoration.
+
+Minimum capability set:
+
+- Runtime Host for reliable local startup and shutdown
+- Workspace Management for one named bounded context
+- Permission Authority limited to capture and restore consent
+- Context Sensing limited to explicit user-initiated capture
+- Memory limited to the user-authored handoff and inspectable retained context
+- Action limited to supported open, launch, reuse, and window placement effects
+- thin Companion Orchestration for the save/preview/resume sequence
+- Experience for the complete primary workflow and trust controls
+
+Intelligence is optional and non-critical for the proof. Extension Host remains
+dormant.
+
+Work stopped by this decision:
+
+- new capability layers and cognition projections
+- further hardening of Decision, Attention, Recommendation, Adaptation,
+  Evolution, Readiness, Working Style, Milestone, Transition, Profile, Session,
+  and similar engines unrelated to the proof
+- Extension Host, plugin marketplace, voice, cloud sync, phone, audio, device,
+  broad automation, multi-provider, and broad local-model work
+- Architecture Guardian activation and additional governance expansion
+- product UI that exposes capability, engine, queue, proof, contract, or
+  diagnostic concepts as the primary experience
+
+Work accelerated by this decision:
+
+- observed customer baseline and substitute comparison
+- privacy containment and explicit-capture trust behavior
+- truthful green build and installable Windows validation
+- supported application/resource discovery, launch/reuse, placement, and honest
+  partial restoration needed by the primary workflow
+- calm first-class save, preview, resume, inspect, and delete experience
+- consented measurement of return-to-work time, correction, repeat use, and
+  proof invalidation
+
+Validation:
+
+- Confirmed the existing MVP already points toward save and restore, but joins
+  that value proposition to passive pattern observation and app-launch
+  automation without customer evidence.
+- Confirmed no repository evidence of customer interviews, baseline task-time
+  studies, comparative usability tests, retained-use cohorts, willingness to
+  pay, or public product metrics.
+- Confirmed credible substitutes include Windows-native behavior, app-native
+  restoration, PowerToys Workspaces, and manual notes.
+- Confirmed the current implementation can enumerate windows and launch
+  processes but does not yet prove installed-application discovery, real window
+  placement, supported resource restoration, or end-to-end interruption
+  recovery.
+- Confirmed the proof uses existing capability ownership and requires no
+  Blueprint, ADR, Capability Architecture, contract, interaction, research
+  record, or technology change.
+- Confirmed product proof can falsify the wedge: if semantic context adds no
+  value beyond geometry, the result is a window-management product; if neither
+  changes return-to-work behavior, capability expansion remains unjustified.
+
+Knowledge Gained:
+
+- Trusted continuity is not yet the product wedge; it is the most credible
+  hypothesis to test.
+- Permission quality is necessary for trust but is not itself a reason to adopt
+  Workspace.
+- Layout restoration proves too little unless it returns the user to a
+  meaningful artifact and intended next action.
+- General AI is unnecessary for the first product proof and may reduce trust
+  before it adds value.
+- Capability completeness, sprint count, contract depth, and internal engine
+  operability are not evidence of product demand.
+
+Unlocks: A bounded Product Proof milestone. Sustained capability research and
+large-scale implementation unlock only if the product objective, success
+metric, habitual-use threshold, and trust conditions pass.
+
+Supersedes: Current State's recommendation to begin Capability Technology
+Research immediately. It does not supersede `ROADMAP-001` dependency ordering,
+the Blueprint, ADRs, capability ownership, contracts, or research records.
+
+Status: Complete; Product Proof required before sustained engineering

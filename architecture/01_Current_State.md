@@ -1,12 +1,14 @@
 # Current Mission
 
-Building the Workspace engineering foundation.
+Proving that Workspace can help an interruption-heavy Windows professional
+return to meaningful work materially faster than existing tools, without
+privacy surprise.
 
 ---
 
 # Current Milestone
 
-Capability Technology Research
+Product Proof — Trusted Interruption Recovery
 
 ---
 
@@ -65,33 +67,53 @@ Catalogue entry, branch, commit, supersession record, or alternate filename
 exists; repository references consistently describe the research as future work
 (LEDGER-0012)
 
+✓ Final Product Proof Strategy review complete: trusted interruption recovery is
+the strongest product-wedge hypothesis, but it remains unproven until measured
+against existing workflows and substitutes (LEDGER-0013)
+
 ---
 
 # Active Task
 
-None (Capability Research Roadmap complete; awaiting architecture review).
+Establish product evidence for the trusted interruption-recovery hypothesis
+before sustained capability research or large-scale feature implementation.
 
 ---
 
 # Next Task
 
-Review `ROADMAP-001` / `13_Capability_Research_Roadmap.md` and confirm the
-dependency-driven remaining research sequence.
+Validate one primary workflow with interruption-heavy Windows professionals:
+explicitly save a bounded work context and intended next action, preview a
+supported restore, return to the intended artifact, and inspect or delete what
+was retained.
 
-After roadmap acceptance, begin Runtime Host capability research as the first
-remaining research unit. Concurrently resolve the user-journey architecture
-corrections that gate final selection or implementation in affected areas.
+Measure return-to-work improvement against each user's baseline and credible
+substitutes, including PowerToys plus manual notes. Treat privacy surprise,
+unpreviewed capture, or unpreviewed action as proof invalidation.
 
-Do not begin Companion Orchestration, Experience, or Extension Host research
-before their roadmap prerequisites. Do not treat Extension Host research as
-activation justification.
+Do not activate new capability layers, cognition projections, Extension Host,
+voice, cloud, phone, audio, broad automation, or additional governance while
+the product hypothesis remains unproven. `ROADMAP-001` remains the valid
+dependency order if the proof later justifies resumed capability research; it
+is not the active milestone.
 
-Recommended next engineering milestone: **Capability Technology Research**.
+Recommended next engineering milestone: **Product Proof**.
 
 ---
 
 # Known Unknowns
 
+- Whether interruption and project switching cost the target user enough time
+  and attention to drive active adoption
+- Whether Workspace can reduce return-to-work time materially beyond Windows,
+  PowerToys Workspaces, app-native restoration, and manual notes
+- Whether users will maintain bounded saved contexts and a short handoff note
+- Whether window and resource metadata are sufficient to recover meaningful
+  work without misleading claims
+- Whether explicit local capture is acceptable to the target user
+- Whether users will repeatedly choose Workspace and pay for the result
+- Whether companion value remains after removing ambient observation and
+  general-purpose AI from the critical path
 - Voice stack (Experience modality)
 - Memory taxonomy and the boundary between ephemeral working context and durable retained knowledge
 - Memory correction, contradiction, supersession, valid-time, and recorded-time semantics
@@ -132,12 +154,17 @@ Recommended next engineering milestone: **Capability Technology Research**.
 
 # Architecture Health
 
-Capability decomposition stable; engine/companion experience distinction
-explicit; user-journey corrections required
+Capability decomposition stable; product proof absent; sustained capability
+expansion and large-scale implementation are not yet justified
 
 ---
 
 # Drift Assessment
+
+The Product Proof Strategy changes readiness and sequencing, not architecture.
+The Blueprint, ADRs, capability ownership, interactions, contracts, research
+records, and `ROADMAP-001` dependency order remain unchanged. Product proof is
+now the active gate before that research roadmap resumes.
 
 No capability ownership drift. The engine exists to serve the Companion
 experience; internal capability and operational surfaces are not the primary
