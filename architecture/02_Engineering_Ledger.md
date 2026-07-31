@@ -221,3 +221,41 @@ Unlocks: Capability technology research against stable conceptual contracts and 
 Supersedes: None. Refines conditional envelope presence and recovery/control semantics in `08_Workspace_Capability_Architecture.md`, `09_Capability_Interaction_Matrix.md`, and `10_Capability_Contracts.md`.
 
 Status: Complete
+
+### LEDGER-0006
+
+Entry ID: LEDGER-0006
+
+Capability: Workspace Capability Technology Research Framework (system-wide)
+
+Research: N/A — research planning and governance only; no candidate technology research, library recommendation, vendor selection, or implementation performed.
+
+Decision: Adopt `architecture/12_Capability_Technology_Research_Framework.md` as the authoritative research-planning and technology-evaluation process subordinate to the Blueprint, accepted ADRs, Capability Architecture, Interaction Matrix, Capability Contracts, and Contract Schema and Acceptance Specification. Require one canonical Research Catalogue record per bounded capability/category question, one shared research template, mandatory evidence gates, explicit build-versus-integrate comparison, preserved rejection history, and triggered re-evaluation.
+
+Implementation:
+- Created the canonical research lifecycle and template covering capability objective, questions, functional/non-functional requirements, Local First, privacy, security, performance, explainability, licensing, maintenance, community maturity, platform compatibility, integration complexity, extensibility, failure modes, migration, build/integrate reasoning, and acceptance.
+- Defined capability-specific research profiles for all ten capabilities without duplicating the shared process.
+- Defined required adoption evidence, comparison criteria, documentation standards, decision recording, rejected-technology records, and future re-evaluation.
+- Kept the Research Catalogue as the single investigation record, the Open Source Registry as approved dependency inventory, ADRs as durable architecture decisions, the Ledger as engineering consequence history, and Current State as present status.
+- Recommended Permission Authority as the first capability to research because its local authorization, revocation, replay, and operation-control semantics constrain all protected capability integrations.
+- Updated Current State with framework completion, research-stage risks, and the next research task.
+
+Validation:
+- Reviewed against ADR-0002: every commodity option requires research, internal construction requires evidence of unique Workspace value, and integration remains replaceable.
+- Reviewed against the Blueprint: Local First, Human First, Privacy First, Permission Before Automation, explainability, unique-value construction, integration, Complexity Budget, documentation isolation, and cognitive-load principles are mandatory evaluation gates.
+- Reviewed against the Contract Schema and Acceptance Specification: candidate evidence must map to contract semantics, invariants, failure behavior, and applicable acceptance cases; syntactic compatibility and happy paths are insufficient.
+- Confirmed no duplicate research process: the framework owns method, while Catalogue, Registry, ADRs, Ledger, and Current State retain distinct record authorities.
+- Confirmed no technology research, recommendation, selection, runtime code, capability ownership, interaction path, authority boundary, or contract meaning changed.
+
+Knowledge Gained:
+- Technology fitness must be evaluated against semantic authority, privacy, failure, recovery, and migration behavior, not only API or feature fit.
+- Mandatory gates must precede weighted comparison so popularity or aggregate scores cannot hide architecture, security, licence, or Local First failures.
+- Logs, telemetry, caches, indexes, provider histories, and prototypes are research risks because they can create alternate data ownership or misleading evidence.
+- Offline and Windows compatibility require reproducible lifecycle evidence, not broad support claims.
+- Extension Host feasibility research cannot activate the dormant capability.
+
+Unlocks: Evidence-based capability technology research beginning with Permission Authority; later adoption decisions recorded once in the Research Catalogue and validated against stable architecture contracts.
+
+Supersedes: None.
+
+Status: Complete

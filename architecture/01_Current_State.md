@@ -40,19 +40,23 @@ Architecture Foundation
 
 ✓ Architectural Acceptance Specification complete (42 conceptual acceptance cases, LEDGER-0005)
 
+✓ Capability Technology Research Framework established (`12_Capability_Technology_Research_Framework.md`, LEDGER-0006)
+
+✓ Repeatable evidence, comparison, decision, rejection, and re-evaluation governance defined for all ten capabilities
+
 ---
 
 # Active Task
 
-None (Contract Schema and Acceptance Specification complete and validated).
+None (Capability Technology Research Framework complete and validated).
 
 ---
 
 # Next Task
 
-Research candidate technologies for each capability.
+Begin bounded Permission Authority research using the canonical framework and record unresolved architecture assumptions.
 
-Record each investigation once in the Research Catalogue before implementation or selection.
+Create or continue exactly one canonical Research Catalogue entry for each bounded research unit before implementation or selection.
 
 Recommended next engineering milestone: **Capability Technology Research**.
 
@@ -74,6 +78,12 @@ Recommended next engineering milestone: **Capability Technology Research**.
 - Per-action-class commit points, cancellation, compensation, and partial-effect evidence
 - Operation-control lease duration and terminal tombstone retention values
 - Extension Host activation justification (Complexity Budget checkpoint)
+- Risk that candidate convenience pressures capability ownership or forbidden communication paths
+- Risk that logs, telemetry, caches, indexes, or provider histories become alternate Memory stores
+- Risk that claimed offline support depends on network installation, activation, authorization, model acquisition, or recovery
+- Risk that Windows support omits packaging, accessibility, permissions, signing, or lifecycle evidence
+- Risk that aggregate comparison scores hide mandatory privacy, security, contract, or licence failures
+- Risk that technology feasibility research is mistaken for Extension Host activation authority
 
 ---
 
@@ -87,6 +97,6 @@ Stable
 
 None for product architecture.
 
-Capability Architecture v1.1 is the authoritative decomposition. The Interaction Matrix is authoritative for communication and trust constraints. Capability Contracts v1.0 is authoritative for public message and interaction semantics. Contract Schema and Acceptance Specification v1.0 is authoritative for conceptual fields, evolution, invariants, and pre-implementation acceptance. Repeated validation found no remaining ownership conflicts, circular hard dependencies, duplicate authority, permission bypasses, forbidden direct paths, Blueprint violations, accepted ADR violations, or actionable contract-architecture findings.
+Capability Architecture v1.1 is the authoritative decomposition. The Interaction Matrix is authoritative for communication and trust constraints. Capability Contracts v1.0 is authoritative for public message and interaction semantics. Contract Schema and Acceptance Specification v1.0 is authoritative for conceptual fields, evolution, invariants, and pre-implementation acceptance. Capability Technology Research Framework v1.0 is authoritative for research planning, comparison evidence, and technology-evaluation governance. Repeated validation found no remaining ownership conflicts, circular hard dependencies, duplicate authority, permission bypasses, forbidden direct paths, Blueprint violations, accepted ADR violations, or actionable contract-architecture findings.
 
-Technology choices remain open pending Research Catalogue work. Concrete representations, executable validation artifacts, per-action safety detail, control/tombstone durations, and Extension Host activation justification remain pre-implementation risks.
+Technology choices remain open pending Research Catalogue work. Permission Authority is the recommended first research capability because its local authorization, revocation, replay, and operation-control semantics constrain every protected integration. Concrete representations, executable validation artifacts, per-action safety detail, control/tombstone durations, and Extension Host activation justification remain pre-implementation risks.
