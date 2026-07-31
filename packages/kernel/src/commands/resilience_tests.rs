@@ -14,7 +14,7 @@ mod resilience_tests {
     use crate::error::KernelError;
     use crate::WorkspaceKernel;
     use workspace_domain::{
-        ActorContext, IntentContext, TaskPriority,
+        ActorContext, DecisionCandidate, DecisionOutcome, IntentContext, TaskPriority,
     };
 
     fn setup_workspace(kernel: &WorkspaceKernel) -> String {
@@ -240,17 +240,72 @@ mod resilience_tests {
                 local.clone(),
                 intent.clone(),
                 ws.clone(),
-                candidate.id.clone(),
+                candidate.id.to_string(),
             );
 
             // Either succeeds with proper immutability, or fails gracefully
             match result {
                 Ok(action_result) => {
-                    // Verify selection doesn't mutate outcome
-                    assert!(
-                        !action_result.created.iter().any(|c| c.contains("outcome_mutated")),
-                        "Selection must not mutate candidate outcome"
+                    assert_eq!(
+                        action_result.authority_effect,
+                        DecisionCandidate::AUTHORITY_EFFECT_NONE,
+                        "Selection must not grant execution authority"
                     );
+
+                    let selected = action_result
+                        .candidate
+                        .as_ref()
+                        .expect("Selection must return the transitioned candidate");
+
+                    // Selection advances the lifecycle outcome and nothing else:
+                    // identity, provenance, and score are immutable across the transition.
+                    assert_eq!(
+                        selected.outcome,
+                        DecisionOutcome::Selected,
+                        "Selection must record the selected outcome"
+                    );
+                    assert_eq!(
+                        selected.id, candidate.id,
+                        "Selection must not mutate candidate identity"
+                    );
+                    assert_eq!(
+                        selected.origin, candidate.origin,
+                        "Selection must not mutate candidate origin"
+                    );
+                    assert_eq!(
+                        selected.intake_candidate_id, candidate.intake_candidate_id,
+                        "Selection must not mutate intake provenance"
+                    );
+                    assert_eq!(
+                        selected.creation_request_id, candidate.creation_request_id,
+                        "Selection must not mutate creation provenance"
+                    );
+                    assert_eq!(
+                        selected.package_seal_digest, candidate.package_seal_digest,
+                        "Selection must not mutate package seal provenance"
+                    );
+                    assert_eq!(
+                        selected.recommendation_id, candidate.recommendation_id,
+                        "Selection must not mutate recommendation provenance"
+                    );
+                    assert_eq!(
+                        selected.score, candidate.score,
+                        "Selection must not rescore the candidate"
+                    );
+
+                    // Selection hands off to the planner; it never executes.
+                    if let Some(handoff) = &action_result.handoff {
+                        assert_eq!(
+                            handoff.next_command,
+                            DecisionCandidate::HANDOFF_SUBMIT_ASSISTANT_GOAL,
+                            "Selection handoff must require explicit planner invocation"
+                        );
+                        assert_eq!(
+                            handoff.authority_effect,
+                            DecisionCandidate::AUTHORITY_EFFECT_NONE,
+                            "Selection handoff must not carry execution authority"
+                        );
+                    }
                 }
                 Err(KernelError::ProjectionValidation { message }) => {
                     // Validation correctly rejected invalid state
