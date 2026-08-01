@@ -433,8 +433,16 @@ mod tests {
         let lock = observation_flight_test_lock()
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner());
-        ObservationTriggerAdmissionPolicy::reset_for_tests();
+        reset_admission_between_ticks();
         lock
+    }
+
+    /// Clear the admit rate limit between ticks. The scheduler is disabled in the
+    /// running product, so ambient capture is re-authorized here to keep the
+    /// retained implementation verifiable.
+    fn reset_admission_between_ticks() {
+        ObservationTriggerAdmissionPolicy::reset_for_tests();
+        ObservationTriggerAdmissionPolicy::authorize_ambient_capture_for_tests();
     }
 
     #[test]
@@ -630,7 +638,7 @@ mod tests {
         assert_eq!(status.consecutive_failures, 1);
         assert!(status.last_tick_at.is_some());
 
-        ObservationTriggerAdmissionPolicy::reset_for_tests();
+        reset_admission_between_ticks();
         let err2 = scheduler.emit_tick_now_for_tests(&db, &FailingCapturer);
         assert!(err2.is_err());
         assert_eq!(scheduler.status().consecutive_failures, 2);
@@ -648,7 +656,7 @@ mod tests {
             scheduler.emit_tick_now_for_tests(&db, &capturer).unwrap(),
             ObservationTriggerDecision::AcceptedCapture(_)
         ));
-        ObservationTriggerAdmissionPolicy::reset_for_tests();
+        reset_admission_between_ticks();
         let second = scheduler.emit_tick_now_for_tests(&db, &capturer).unwrap();
         // Fresh observation → ignored (NotStale requirement).
         assert!(matches!(second, ObservationTriggerDecision::IgnoredFresh));

@@ -3,6 +3,7 @@
 //! Decides whether a trigger may proceed before refresh evaluation.
 //! Does not capture, call Win32, or bypass [`ObservationTriggerAuthority`].
 
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Mutex, OnceLock};
 use std::time::{Duration, Instant};
 
@@ -32,6 +33,14 @@ impl TriggerAdmissionRateState {
     }
 }
 
+/// Product Proof: ambient capture authorization, closed for the process lifetime.
+///
+/// Startup and schedule callers stay implemented and wired, but observe nothing
+/// until capture is explicitly authorized. Nothing in the running product opens
+/// this gate, so a fresh process never inspects the desktop before the user
+/// initiates a Save.
+static AMBIENT_CAPTURE_AUTHORIZED: AtomicBool = AtomicBool::new(false);
+
 fn rate_state() -> &'static Mutex<TriggerAdmissionRateState> {
     static STATE: OnceLock<Mutex<TriggerAdmissionRateState>> = OnceLock::new();
     STATE.get_or_init(|| Mutex::new(TriggerAdmissionRateState::new(Instant::now())))
@@ -50,13 +59,24 @@ impl ObservationTriggerAdmissionPolicy {
     }
 
     /// Sources admitted for execution today (contracts for others remain defined).
+    ///
+    /// Product Proof permits no ambient capture: the desktop may only be observed
+    /// after the user explicitly initiates a Save, which reaches this gate as a
+    /// `Manual` trigger. `System` (startup) and `Scheduled` (background) callers
+    /// remain implemented and wired but are inert while ambient capture is closed.
     pub(crate) fn source_is_admitted(source: CaptureRequestSource) -> bool {
-        matches!(
-            source,
-            CaptureRequestSource::Manual
-                | CaptureRequestSource::System
-                | CaptureRequestSource::Scheduled
-        )
+        match source {
+            CaptureRequestSource::Manual => true,
+            CaptureRequestSource::System | CaptureRequestSource::Scheduled => {
+                Self::ambient_capture_authorized()
+            }
+            CaptureRequestSource::Event | CaptureRequestSource::Plugin => false,
+        }
+    }
+
+    /// Whether non-user-initiated capture is currently authorized.
+    pub(crate) fn ambient_capture_authorized() -> bool {
+        AMBIENT_CAPTURE_AUTHORIZED.load(Ordering::Acquire)
     }
 
     /// Evaluate whether `request` may proceed to refresh/capture.
@@ -73,7 +93,7 @@ impl ObservationTriggerAdmissionPolicy {
         if !Self::source_is_admitted(request.source) {
             return ObservationTriggerAdmissionDecision::RejectedSource {
                 explanation: format!(
-                    "trigger source '{}' is not admitted until its caller is enabled",
+                    "trigger source '{}' is not admitted; observation requires an explicit user-initiated capture",
                     request.source.as_str()
                 ),
             };
@@ -144,10 +164,18 @@ impl ObservationTriggerAdmissionPolicy {
 
     #[cfg(test)]
     pub(crate) fn reset_for_tests() {
+        AMBIENT_CAPTURE_AUTHORIZED.store(false, Ordering::Release);
         let mut state = rate_state()
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner());
         *state = TriggerAdmissionRateState::new(Instant::now());
+    }
+
+    /// Exercise the retained startup/schedule implementation, which is inert in
+    /// the running product. Callers must hold `observation_flight_test_lock`.
+    #[cfg(test)]
+    pub(crate) fn authorize_ambient_capture_for_tests() {
+        AMBIENT_CAPTURE_AUTHORIZED.store(true, Ordering::Release);
     }
 
     #[cfg(test)]
@@ -167,20 +195,23 @@ mod tests {
     use crate::services::capture_coordinator::observation_flight_test_lock;
 
     #[test]
-    fn admits_manual_system_scheduled_rejects_unwired_sources() {
+    fn admits_only_explicit_manual_capture_by_default() {
         let _lock = observation_flight_test_lock()
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner());
         ObservationTriggerAdmissionPolicy::reset_for_tests();
+
+        assert!(!ObservationTriggerAdmissionPolicy::ambient_capture_authorized());
         assert!(ObservationTriggerAdmissionPolicy::source_is_admitted(
             CaptureRequestSource::Manual
         ));
-        assert!(ObservationTriggerAdmissionPolicy::source_is_admitted(
-            CaptureRequestSource::System
-        ));
-        assert!(ObservationTriggerAdmissionPolicy::source_is_admitted(
-            CaptureRequestSource::Scheduled
-        ));
+        for ambient in [CaptureRequestSource::System, CaptureRequestSource::Scheduled] {
+            assert!(
+                !ObservationTriggerAdmissionPolicy::source_is_admitted(ambient),
+                "{} must not observe before an explicit user-initiated capture",
+                ambient.as_str()
+            );
+        }
         assert!(!ObservationTriggerAdmissionPolicy::source_is_admitted(
             CaptureRequestSource::Event
         ));
@@ -188,19 +219,46 @@ mod tests {
             CaptureRequestSource::Plugin
         ));
 
-        let rejected = ObservationTriggerAdmissionPolicy::evaluate(
-            &ObservationTriggerRequest::plugin(ObservationFreshnessRequirement::AnyAvailable),
-        );
+        for request in [
+            ObservationTriggerRequest::plugin(ObservationFreshnessRequirement::AnyAvailable),
+            ObservationTriggerRequest::system(ObservationFreshnessRequirement::AnyAvailable),
+            ObservationTriggerRequest::scheduled(ObservationFreshnessRequirement::NotStale)
+                .with_reason("scheduled_refresh"),
+        ] {
+            assert!(matches!(
+                ObservationTriggerAdmissionPolicy::evaluate(&request),
+                ObservationTriggerAdmissionDecision::RejectedSource { .. }
+            ));
+        }
+
+        assert!(ObservationTriggerAdmissionPolicy::evaluate(
+            &ObservationTriggerRequest::manual(ObservationFreshnessRequirement::AnyAvailable)
+        )
+        .is_admitted());
+    }
+
+    #[test]
+    fn retained_ambient_callers_admit_only_once_authorized() {
+        let _lock = observation_flight_test_lock()
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        ObservationTriggerAdmissionPolicy::reset_for_tests();
+
+        let scheduled =
+            ObservationTriggerRequest::scheduled(ObservationFreshnessRequirement::NotStale);
         assert!(matches!(
-            rejected,
+            ObservationTriggerAdmissionPolicy::evaluate(&scheduled),
             ObservationTriggerAdmissionDecision::RejectedSource { .. }
         ));
 
-        let scheduled = ObservationTriggerAdmissionPolicy::evaluate(
-            &ObservationTriggerRequest::scheduled(ObservationFreshnessRequirement::NotStale)
-                .with_reason("scheduled_refresh"),
+        ObservationTriggerAdmissionPolicy::authorize_ambient_capture_for_tests();
+        assert!(ObservationTriggerAdmissionPolicy::evaluate(&scheduled).is_admitted());
+
+        ObservationTriggerAdmissionPolicy::reset_for_tests();
+        assert!(
+            !ObservationTriggerAdmissionPolicy::ambient_capture_authorized(),
+            "reset must close the ambient gate"
         );
-        assert!(scheduled.is_admitted());
     }
 
     #[test]

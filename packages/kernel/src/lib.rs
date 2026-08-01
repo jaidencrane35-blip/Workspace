@@ -51,9 +51,7 @@ use commands::CommandContext;
 use events::AuditEventSubscriber;
 use policy::CapabilityBoundPolicy as DefaultPermissionPolicy;
 use security::StandardPermissionGate as DefaultPermissionGate;
-use services::{
-    AssistantWorkflowStore, ObservationScheduler, ObservationStartupTrigger, OrchestratedPlanStore,
-};
+use services::{AssistantWorkflowStore, ObservationScheduler, OrchestratedPlanStore};
 use workspace_domain::ObservationScheduleConfig;
 
 /// Kernel crate version aligned with application semver.
@@ -85,10 +83,11 @@ impl WorkspaceKernel {
         log::info!("workspace kernel startup beginning");
         let mut kernel = Self::bootstrap_shell(KERNEL_VERSION);
         CommandHandler::initialize_workspace(&mut kernel, db_path)?;
-        // First real observation trigger: once after Ready. Soft-fail only.
-        ObservationStartupTrigger::fire(&kernel);
-        // Schedule runtime ownership — starts only after Ready.
-        kernel.start_observation_scheduler(ObservationScheduleConfig::enabled_default());
+        // Product Proof requires zero ambient capture. Startup fires no observation
+        // trigger and the schedule stays disabled, so the desktop is never inspected
+        // before the user explicitly initiates a Save. Both paths remain wired and
+        // are reachable only through an explicit user-initiated Manual trigger.
+        kernel.start_observation_scheduler(ObservationScheduleConfig::disabled());
         log::info!("workspace kernel ready");
         Ok(kernel)
     }
@@ -439,6 +438,149 @@ mod tests {
             DatabaseService::initialize_with_migrations(&db_path, &bad_migrations);
 
         assert!(result.is_err());
+    }
+
+    /// Product Proof: a fresh process must not inspect the desktop, capture
+    /// context, or persist anything derived from it before the user acts.
+    #[test]
+    fn fresh_startup_performs_no_observation_and_no_capture_persistence() {
+        use tempfile::tempdir;
+        use workspace_database::ObservationPassRepository;
+
+        let _lock = services::observation_flight_test_lock()
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        services::ObservationTriggerAdmissionPolicy::reset_for_tests();
+
+        let dir = tempdir().unwrap();
+        let kernel = WorkspaceKernel::initialize(dir.path().join("workspace.db")).unwrap();
+        assert!(kernel.state().is_ready());
+
+        // Nothing observed the desktop.
+        let db = kernel.shared_database();
+        {
+            let guard = db.lock().unwrap();
+            let repo = ObservationPassRepository::new(&guard);
+            assert!(
+                repo.get_latest_metadata().unwrap().is_none(),
+                "fresh startup must persist no observation pass"
+            );
+            assert!(
+                repo.get_capture_failure().unwrap().is_none(),
+                "fresh startup must not attempt capture at all"
+            );
+            for table in ["observation_windows", "observation_monitors", "ai_memory_entries"] {
+                let rows: i64 = guard
+                    .connection()
+                    .query_row(&format!("SELECT COUNT(*) FROM {}", table), [], |row| {
+                        row.get(0)
+                    })
+                    .unwrap();
+                assert_eq!(rows, 0, "fresh startup must leave {} empty", table);
+            }
+        }
+
+        // No observation, capture, or scheduler activity reached the audit trail.
+        let events = AuditService::list_recent(&db, 500).unwrap();
+        let sensing: Vec<&str> = events
+            .iter()
+            .map(|event| event.event_type.as_str())
+            .filter(|event_type| event_type.starts_with("workspace.observation"))
+            .collect();
+        assert!(
+            sensing.is_empty(),
+            "fresh startup must record no observation activity, found {:?}",
+            sensing
+        );
+
+        // The schedule is wired but dormant, so nothing senses in the background.
+        let scheduler = kernel.observation_scheduler().status();
+        assert!(!scheduler.enabled, "observation schedule must be disabled");
+        assert!(!scheduler.running, "observation schedule must not run");
+        assert_eq!(scheduler.ticks_emitted, 0);
+        assert_eq!(scheduler.captures_requested, 0);
+
+        // Ambient capture stays closed for the process lifetime.
+        assert!(!services::ObservationTriggerAdmissionPolicy::ambient_capture_authorized());
+    }
+
+    /// Product Proof: explicit user initiation is the one path that may observe.
+    #[test]
+    fn explicit_capture_is_admitted_while_ambient_paths_stay_closed() {
+        use workspace_domain::{ObservationFreshnessRequirement, ObservationTriggerRequest};
+        use workspace_windows_integration::StubDesktopCapturer;
+
+        let _lock = services::observation_flight_test_lock()
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        services::ObservationTriggerAdmissionPolicy::reset_for_tests();
+
+        let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+        let db = kernel.shared_database();
+        let actor = ActorContext::local_user();
+        let intent = IntentContext::user_request();
+
+        // The startup and schedule callers are refused on their own.
+        for ambient in [
+            ObservationTriggerRequest::system(ObservationFreshnessRequirement::AnyAvailable),
+            ObservationTriggerRequest::scheduled(ObservationFreshnessRequirement::NotStale),
+        ] {
+            let decision = services::ObservationTriggerAuthority::handle_with(
+                &db,
+                &actor,
+                &intent,
+                ambient,
+                &StubDesktopCapturer::fixture_dual_monitor(),
+            )
+            .unwrap();
+            assert!(
+                matches!(
+                    decision,
+                    services::ObservationTriggerDecision::RejectedSource { .. }
+                ),
+                "ambient trigger must be refused, got {:?}",
+                decision
+            );
+        }
+
+        {
+            let guard = db.lock().unwrap();
+            let rows: i64 = guard
+                .connection()
+                .query_row("SELECT COUNT(*) FROM observation_passes", [], |row| {
+                    row.get(0)
+                })
+                .unwrap();
+            assert_eq!(rows, 0, "refused triggers must persist no observation");
+        }
+
+        // Explicit user-initiated capture opens the bounded flow.
+        let decision = services::ObservationTriggerAuthority::handle_with(
+            &db,
+            &actor,
+            &intent,
+            ObservationTriggerRequest::manual(ObservationFreshnessRequirement::AnyAvailable)
+                .with_reason("save"),
+            &StubDesktopCapturer::fixture_dual_monitor(),
+        )
+        .unwrap();
+        assert!(
+            matches!(
+                decision,
+                services::ObservationTriggerDecision::AcceptedCapture(_)
+            ),
+            "explicit capture must be admitted, got {:?}",
+            decision
+        );
+
+        let guard = db.lock().unwrap();
+        let rows: i64 = guard
+            .connection()
+            .query_row("SELECT COUNT(*) FROM observation_passes", [], |row| {
+                row.get(0)
+            })
+            .unwrap();
+        assert_eq!(rows, 1, "explicit capture must persist exactly one pass");
     }
 
     #[test]

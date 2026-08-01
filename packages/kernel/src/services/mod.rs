@@ -141,7 +141,6 @@ pub(crate) use observation_trigger_admission::ObservationTriggerAdmissionPolicy;
 pub(crate) use observation_trigger_authority::{
     ObservationTriggerAuthority, ObservationTriggerDecision,
 };
-pub(crate) use observation_startup_trigger::ObservationStartupTrigger;
 pub(crate) use observation_scheduled_trigger::ObservationScheduledTrigger;
 pub(crate) use observation_scheduler::{
     ObservationScheduler, ObservationSchedulerDiagnostics,

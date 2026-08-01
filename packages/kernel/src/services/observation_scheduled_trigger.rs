@@ -98,6 +98,9 @@ mod tests {
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner());
         ObservationTriggerAdmissionPolicy::reset_for_tests();
+        // The schedule caller is inert in the running product; authorize it here
+        // so the retained implementation stays verifiable.
+        ObservationTriggerAdmissionPolicy::authorize_ambient_capture_for_tests();
         lock
     }
 

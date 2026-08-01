@@ -400,6 +400,9 @@ mod tests {
 
     fn begin_trigger_test() {
         ObservationTriggerAdmissionPolicy::reset_for_tests();
+        // Startup/schedule sources are inert in the running product; authorize
+        // them here so the retained implementation stays verifiable.
+        ObservationTriggerAdmissionPolicy::authorize_ambient_capture_for_tests();
     }
 
     struct BlockingCapturer {
@@ -714,7 +717,7 @@ mod tests {
             &db,
             &actor,
             &intent,
-            crate::services::ObservationStartupTrigger::trigger_request(),
+            crate::services::observation_startup_trigger::ObservationStartupTrigger::trigger_request(),
             &StubDesktopCapturer::fixture_dual_monitor(),
         )
         .unwrap();

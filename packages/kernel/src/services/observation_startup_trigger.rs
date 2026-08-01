@@ -1,15 +1,20 @@
 //! Startup observation trigger (Sprint 111).
 //!
-//! First real trigger source: fires once after the kernel reaches Ready during
-//! production initialization. Does not schedule, hook, or run in the background.
+//! Retained but dormant. Product Proof permits no ambient capture, so
+//! `WorkspaceKernel::initialize` no longer fires this trigger, and the `System`
+//! source it carries is refused by [`ObservationTriggerAdmissionPolicy`] unless
+//! ambient capture is explicitly authorized. The implementation is preserved for
+//! the point at which startup capture is justified by evidence and consent.
 //!
 //! ```text
-//! WorkspaceKernel::initialize (Ready)
+//! WorkspaceKernel::initialize (Ready)   [not wired — zero ambient capture]
 //!         ↓
 //! ObservationStartupTrigger
 //!         ↓
 //! ObservationTriggerAuthority
 //! ```
+//!
+//! [`ObservationTriggerAdmissionPolicy`]: crate::services::ObservationTriggerAdmissionPolicy
 
 use workspace_domain::{
     ActorContext, IntentContext, ObservationFreshnessRequirement, ObservationTriggerRequest,
@@ -21,8 +26,10 @@ use crate::services::{ObservationTriggerAuthority, ObservationTriggerDecision};
 use crate::WorkspaceKernel;
 
 /// Canonical startup-only observation trigger.
+#[allow(dead_code)] // retained implementation; no ambient caller under Product Proof
 pub(crate) struct ObservationStartupTrigger;
 
+#[allow(dead_code)] // retained implementation; no ambient caller under Product Proof
 impl ObservationStartupTrigger {
     pub const REASON: &'static str = "startup_initialization";
     pub const CONTEXT: &'static str = "lifecycle:WorkspaceKernel::initialize";
@@ -108,6 +115,9 @@ mod tests {
 
     fn begin_startup_test() {
         ObservationTriggerAdmissionPolicy::reset_for_tests();
+        // The startup caller is inert in the running product; authorize it here
+        // so the retained implementation stays verifiable.
+        ObservationTriggerAdmissionPolicy::authorize_ambient_capture_for_tests();
     }
 
     fn startup_test_lock() -> std::sync::MutexGuard<'static, ()> {
