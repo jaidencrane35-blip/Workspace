@@ -71,12 +71,28 @@ exists; repository references consistently describe the research as future work
 the strongest product-wedge hypothesis, but it remains unproven until measured
 against existing workflows and substitutes (LEDGER-0013)
 
+✓ `PP-B01` complete: truthful green kernel baseline restored; `resilience_validation.rs`
+repaired against the domain API that exists (LEDGER-0014, commit `2d88331`)
+
+✓ `PP-B04` complete: resilience tests rewritten to validate the selection
+immutability invariant against the current public API (LEDGER-0015, commit `da6a85e`)
+
+✓ `PP-B02` complete: zero ambient capture; no observation, enumeration,
+persistence, or scheduled sensing occurs before an explicit user-initiated
+capture (LEDGER-0016, commit `12573da`)
+
+✓ `PP-B03` complete: production Content Security Policy enforced in the WebView
+and pinned by an automated verifier (LEDGER-0017, commit `f77200e`)
+
 ---
 
 # Active Task
 
 Establish product evidence for the trusted interruption-recovery hypothesis
 before sustained capability research or large-scale feature implementation.
+
+The four Product Proof engineering blockers are closed. Product Proof
+Milestone 1 awaits architectural review before implementation begins.
 
 ---
 
@@ -157,9 +173,28 @@ Recommended next engineering milestone: **Product Proof**.
 Capability decomposition stable; product proof absent; sustained capability
 expansion and large-scale implementation are not yet justified
 
+Build integrity restored: `cargo test --workspace` and `pnpm test` are green,
+the workspace packages as an MSI and NSIS installer, no observation occurs
+before explicit user capture, and the WebView runs under an enforced Content
+Security Policy.
+
 ---
 
 # Drift Assessment
+
+The four Product Proof blockers changed behaviour and configuration, not
+architecture. Capability ownership, contracts, interactions, and the Blueprint
+are unchanged. `PP-B02` enforces an existing Blueprint principle rather than
+introducing a new one, and retains the ambient observation implementations in a
+dormant, still-tested state instead of deleting them. `PP-B03` removed the only
+Content Security Policy exception in the repository, the disabled policy itself,
+and required no compensating exception.
+
+The Content Security Policy is verified by the audit in `pnpm test`, by the
+policy string embedded in the packaged `workspace-app.exe`, and by loading the
+production bundle under the identical policy in headless Chromium with zero
+violations. It has not been observed in a running WebView2 window; that check
+belongs to the first pilot build.
 
 The Product Proof Strategy changes readiness and sequencing, not architecture.
 The Blueprint, ADRs, capability ownership, interactions, contracts, research

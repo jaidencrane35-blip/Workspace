@@ -769,3 +769,210 @@ Research immediately. It does not supersede `ROADMAP-001` dependency ordering,
 the Blueprint, ADRs, capability ownership, contracts, or research records.
 
 Status: Complete; Product Proof required before sustained engineering
+
+### LEDGER-0014
+
+Entry ID: LEDGER-0014
+
+Capability: Runtime Host (kernel build integrity) — Product Proof blocker
+`PP-B01`
+
+Research: N/A — repair of an existing compile blocker. No technology research,
+no design change.
+
+Decision: Restore a truthful green kernel baseline by correcting
+`resilience_validation.rs` against the domain API that actually exists, rather
+than adding the missing domain types to satisfy the stale references. Product
+Proof cannot be measured on a tree that does not build, and inventing domain
+types to preserve dead assertions would encode an assumption nobody had
+validated.
+
+Implementation:
+- `packages/kernel/src/services/resilience_validation.rs`: replaced the
+  unresolved import and parameter type `workspace_domain::DecisionCandidateProgression`
+  with the real `DecisionCandidateProgressionRequest`.
+- Removed the guard reading `creation.score`, a field that does not exist on
+  `DecisionEngineCandidateCreation`.
+- No other file touched; the change is 4 insertions and 11 deletions.
+
+Validation:
+- `cargo check -p workspace-kernel` compiles, having previously failed with
+  `E0432` and `E0609`.
+- `cargo build --workspace` succeeds.
+- The repository-wide `cargo fmt --all -- --check` failure is pre-existing and
+  unrelated; only the touched import was rewrapped to the local column limit.
+
+Knowledge Gained:
+- `main` had been red long enough for a safety-critical invariant module to
+  reference domain types that no longer exist, and CI on `windows-latest` was
+  red for the same reason.
+- A library compile failure masks defects in downstream test code; repairing it
+  exposed, rather than caused, the follow-on failure recorded as `PP-B04`.
+
+Unlocks: Every later Product Proof blocker, all of which need a building tree
+to validate against.
+
+Supersedes: None.
+
+Status: Complete (commit `2d88331`)
+
+### LEDGER-0015
+
+Entry ID: LEDGER-0015
+
+Capability: Runtime Host (kernel test integrity) — Product Proof blocker
+`PP-B04`
+
+Research: N/A — repair of pre-existing test code exposed by `PP-B01`.
+
+Decision: Rewrite the stale assertions in `test_candidate_selection_immutability`
+to express the original behavioural intent against the current public API, and
+stop rather than weaken the test if the invariant could not be observed. Do not
+change production code, domain models, or handler signatures to accommodate the
+test.
+
+Implementation:
+- `packages/kernel/src/commands/resilience_tests.rs`: passed
+  `candidate.id.to_string()` where a `String` is required instead of a
+  `DecisionCandidateId`.
+- Replaced the assertion on `DecisionEngineActionResult::created`, a field that
+  does not exist, with assertions that selection moves the `DecisionOutcome` to
+  `Selected`, grants no execution authority, and leaves candidate identity,
+  provenance, and score unchanged.
+
+Validation:
+- `cargo test -p workspace-kernel` and `cargo test --workspace` pass.
+- Negative probes confirmed each new assertion fails when the behaviour it
+  describes is broken, so the test is load-bearing rather than decorative.
+
+Knowledge Gained:
+- The obsolete assertions described a candidate-creation shape the Decision
+  Engine no longer has; the invariant worth keeping is that selection is a
+  non-authorising, non-mutating transition.
+- Tests hidden behind a broken library can drift arbitrarily far from the code
+  they claim to protect without anyone noticing.
+
+Unlocks: A trustworthy kernel test suite as the regression baseline for
+`PP-B02`, `PP-B03`, and Product Proof Milestone 1.
+
+Supersedes: None.
+
+Status: Complete (commit `da6a85e`)
+
+### LEDGER-0016
+
+Entry ID: LEDGER-0016
+
+Capability: Context Sensing / Permission Authority — Product Proof blocker
+`PP-B02`, zero ambient capture
+
+Research: N/A — enforcement of an existing Blueprint principle. No new sensing,
+memory, or permission design.
+
+Decision: Workspace performs no desktop observation, window enumeration,
+context capture, persistence, or background sensing until the user explicitly
+initiates a Save. Retain the ambient implementations rather than delete them,
+and close them at the existing admission choke point so the trust property does
+not depend on remembering not to call them.
+
+Implementation:
+- `packages/kernel/src/lib.rs`: `WorkspaceKernel::initialize` no longer fires
+  `ObservationStartupTrigger` and no longer starts the scheduler with
+  `ObservationScheduleConfig::enabled_default()`; it now starts it explicitly
+  with `ObservationScheduleConfig::disabled()`.
+- `packages/kernel/src/services/observation_trigger_admission.rs`: added an
+  `AMBIENT_CAPTURE_AUTHORIZED` flag defaulting to closed. `source_is_admitted`
+  now admits `Manual` only; `System` and `Scheduled` are refused with an
+  explanation stating that observation requires explicit user-initiated
+  capture.
+- `observation_startup_trigger.rs`, `observation_scheduled_trigger.rs`,
+  `observation_scheduler.rs`, `observation_trigger_authority.rs`,
+  `services/mod.rs`: retained ambient paths marked dormant, their re-export
+  removed, and their test helpers authorised explicitly so the dormant code
+  stays exercised.
+
+Validation:
+- New acceptance test proves a fresh kernel persists no observation pass, no
+  window, monitor, or memory rows, and no observation audit event, and that the
+  scheduler is disabled and not running.
+- New acceptance test proves `System` and `Scheduled` triggers are refused and
+  persist nothing while an explicit `Manual` trigger is admitted and persists
+  exactly one pass.
+- `cargo test -p workspace-kernel` (1127) and `cargo test --workspace` (1443)
+  pass; negative probes confirmed both acceptance tests are load-bearing.
+
+Knowledge Gained:
+- Two independent startup paths performed unconsented capture: a one-shot
+  startup trigger and a scheduler defaulting to a 300-second capture loop.
+- Gating at the admission policy rather than only at the call sites means a
+  future caller cannot reintroduce ambient capture by accident.
+- Keeping the dormant implementations testable requires an explicit test-only
+  authorisation; without it the retained code would rot exactly as the
+  resilience tests did.
+
+Unlocks: An honest privacy claim for the Product Proof pilot, and the explicit
+Save flow that Milestone 1 builds on.
+
+Supersedes: The previous default-on observation behaviour.
+
+Status: Complete (commit `12573da`)
+
+### LEDGER-0017
+
+Entry ID: LEDGER-0017
+
+Capability: Experience / Runtime Host (WebView trust boundary) — Product Proof
+blocker `PP-B03`
+
+Research: N/A — configuration hardening. Read the installed Tauri 2.11.5 and
+`tauri-utils` 2.9.3 sources to establish what the runtime requires rather than
+copying a policy from documentation.
+
+Decision: Replace `"csp": null` with the minimum policy the shipped bundle
+actually needs, and pin it with an automated verifier. The WebView holds full
+IPC reach into the kernel, so an unrestricted document was the widest remaining
+trust gap. Prefer tightening over exceptions: the audit found exactly one
+exception in the repository, the disabled policy itself, and it was an
+unnecessary scaffold default rather than a requirement.
+
+Implementation:
+- `app/src-tauri/tauri.conf.json`: set `app.security.csp` to
+  `default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self' ipc: http://ipc.localhost; frame-src 'none'; worker-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'`.
+- `scripts/content-security-policy-lib.mjs` and
+  `scripts/verify-content-security-policy.mjs`: audit the shipped policy
+  against an allowed source set per directive, reject `'unsafe-inline'`,
+  `'unsafe-eval'`, wildcards and remote origins, reject a `devCsp` override or
+  disabled Tauri nonce injection, and reject HTML the policy would block.
+- `tests/content-security-policy.test.ts` and the root `test` script: wire the
+  audit into `pnpm test`.
+
+Validation:
+- `cargo test --workspace` (1443), `pnpm test` (29), and `pnpm build` pass.
+- `pnpm exec tauri build` produces the MSI and NSIS bundles, and the exact
+  policy string is present in the shipped `workspace-app.exe`.
+- Serving the production bundle under the identical policy in headless
+  Chromium: the module script executed, React mounted, the stylesheet applied,
+  and zero `securitypolicyviolation` events fired. A deliberately broken policy
+  produced a violation, confirming the probe was load-bearing.
+- The only console error is the expected absence of Tauri IPC outside the
+  desktop shell.
+
+Knowledge Gained:
+- No CSP exception was ever required. The frontend loads one same-origin module
+  script and one same-origin stylesheet, has no inline script or style, no
+  remote origin, no image, font, media, worker, frame, or form, and React's
+  `style` props are applied through the CSSOM, which CSP does not govern.
+- `connect-src` must name `ipc:` and `http://ipc.localhost`; without them Tauri
+  silently degrades from custom-protocol IPC to the slower postMessage
+  fallback, which is a functional regression a security-only review would miss.
+- Tauri applies the policy only to assets it serves, so `tauri dev` against the
+  Vite dev server is unaffected and no weaker `devCsp` is needed.
+- `custom-protocol` is a default feature, so `cfg(dev)` is already false in
+  ordinary builds and the production CSP path is what the test suite exercises.
+
+Unlocks: A defensible trust claim for the pilot build, and a regression guard
+that fails `pnpm test` if the policy is disabled or widened.
+
+Supersedes: The disabled `"csp": null` configuration.
+
+Status: Complete (commit `f77200e`)
