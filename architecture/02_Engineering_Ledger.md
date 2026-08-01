@@ -1065,3 +1065,135 @@ both of which read the durable record this task establishes.
 Supersedes: Nothing.
 
 Status: Complete (commit `868ce12`)
+
+---
+
+### LEDGER-0019
+
+Entry ID: LEDGER-0019
+
+Capability: Action — missing declared action type and implementation. Recorded
+while attempting Product Proof milestone task `PP-M1-02` (Resume a bounded
+Workspace Context).
+
+Research: Repository and architecture-pack audit only. No technology
+evaluation, no architecture change, no runtime change, and no implementation
+was performed. `PP-M1-02` was stopped before any code was written.
+
+Decision: Resume requires environment mutation. Environment mutation is owned
+solely by Action. The generic Action contract exists, but the declared action
+type Resume needs does not, and Action has no implementation at all. Under the
+governing ruling for this task — do not create or relocate OS mutation logic
+inside `PP-M1-02`, do not bypass capability ownership, and do not implement the
+capability inside another subsystem — `PP-M1-02` cannot proceed. It is stopped
+and the missing contract is recorded here.
+
+What exists:
+
+- `10_Capability_Contracts.md` defines the Action public interface in full:
+  `ACT-CMD-001 Action.execute`, `ACT-CMD-002 Action.cancel`,
+  `ACT-REQ-001 Action.describe`, `ACT-REQ-002 Action.getStatus`,
+  `ACT-REQ-003 Action.lookupTerminalOutcome`, and `ACT-EVT-001`–`ACT-EVT-007`.
+- `ACT-EVT-006 ActionPartiallyCompleted` and the recorded error condition
+  "unsupported action" already express the honest partial and unsupported
+  reporting `PP-M1-02` requires. That vocabulary does not need inventing.
+- `IC-029`–`IC-031` define Companion → Action execution and Action → Companion
+  outcome reporting, including "report partial effects honestly".
+- `08_Workspace_Capability_Architecture.md` records that Action owns "Action
+  allow-list binding to permission scopes" and must "execute only declared
+  action types".
+- `LEDGER-0013` already scopes Product Proof's Action use to "supported open,
+  launch, reuse, and window placement effects", and Permission Authority to
+  "capture and restore consent". Window placement is therefore already within
+  the accepted Product Proof scope.
+
+What is missing, and blocks `PP-M1-02`:
+
+1. No declared action type for window placement. `ACT-REQ-001` describes an
+   `action_type`, and Action may "execute only declared action types", but no
+   action-type catalogue exists in the architecture pack or in code. The
+   window-placement type, its target grammar, and its preconditions are
+   undefined.
+2. No safety class, commit points, or compensation rules for that type.
+   `11_Contract_Schema_and_Acceptance_Specification.md` records this as an open
+   pre-implementation risk: "Each action class still needs specific
+   irreversible commit points and compensation rules." Current State carries
+   the same gap as the "Action safety taxonomy" known unknown.
+3. No per-action-class permission. The Action contract requires "per-action
+   class permission; no omnibus grant." The 24 capabilities in
+   `packages/domain/src/capability/mod.rs` include `desktop.read` but no
+   counterpart governing desktop mutation.
+4. No Action implementation of any kind. There is no `Action.execute` in the
+   codebase. What the kernel calls "execution" — `ExecuteIntentRequest`,
+   `ExecutionOutcome`, `ExecutionReconciliation`, `ExecutionGuardService` — is
+   an audit-derived state machine over database mutations. Its dispatch bottoms
+   out in `CreateZone`, `GetLayoutSnapshot`, and `GetAuditHistory`. It never
+   reaches an OS effect.
+5. No OS write adapter. `packages/windows-integration`, the only crate
+   permitted to call OS APIs under DEC-008, exposes exactly three traits:
+   `DesktopCapturer` (read), `WindowEnumerator` (read), and `ProcessLauncher`
+   (spawn). A repository-wide search for `SetWindowPos`, `MoveWindow`,
+   `ShowWindow`, `SetForegroundWindow`, `SetWindowPlacement`,
+   `BringWindowToTop`, `ShellExecute`, and `CreateProcess` returns zero
+   matches. The `windows` crate already enables
+   `Win32_UI_WindowsAndMessaging`, so this is an absent implementation rather
+   than an absent dependency.
+
+Existing drift that must not be extended: `LaunchApplication` mutates the
+environment — it spawns a real process through `ApplicationLaunchService` →
+`ProcessLauncher` → `Command::spawn` — as an ordinary kernel `MutationCommand`
+guarded by `application.launch`. It does not go through `ACT-CMD-001`, produces
+no `ACT-EVT-*` events, carries no operation-control proof, and appears in no
+action catalogue. It is therefore environment mutation performed outside the
+capability that "alone mutates the environment". This is the precedent that
+makes putting window placement into a kernel command look reasonable. Following
+it would place a second, larger environment mutation outside Action and
+entrench the drift, which is what the governing ruling forbids.
+
+Second gap, introduced by `PP-M1-01` and owned by Workspace Management rather
+than Action: a saved context cannot be matched back to a live window.
+`saved_context_windows` persists title, `process_id`, geometry, monitor index,
+minimized, focused, and z-order. It does not persist `hwnd` or
+`stable_window_id`, although the observation layer already computes
+`stable_window_id` with a four-level confidence rating
+(`High`/`Medium`/`Low`/`Ephemeral`). `process_id` does not survive a restart,
+and no executable identity is captured at all — `process_name` is hardcoded to
+`None` in `map_window`. A saved context therefore cannot identify which live
+window corresponds to a saved one, nor relaunch anything that has closed. This
+is a schema omission in `PP-M1-01`, correctable within Workspace Management,
+and it is independent of the Action gap above.
+
+Implementation: None. No runtime code, schema, contract, or capability was
+added or changed. This entry is a record only.
+
+Validation: `git diff --check` clean. The repository is unchanged apart from
+this entry and the corresponding Current State record, so the `PP-M1-01`
+baseline of 1466 Rust tests and 33 frontend tests stands unaltered.
+
+Knowledge Gained:
+- The Action contract is more complete than the codebase suggests. Partial
+  completion, indeterminate outcomes, unsupported-action errors, cancellation,
+  and per-action-class permission are all already specified. `PP-M1-02` needs a
+  declared action type and an implementation, not a new contract shape.
+- The absence of an action-type catalogue is the real blocker. Without it,
+  "execute only declared action types" cannot be satisfied by any
+  implementation, so no amount of Win32 code would make a restore compliant.
+- Environment mutation has already escaped Action once, through
+  `LaunchApplication`. Capability ownership erodes through precedent rather
+  than through decision, and the second instance is always easier to justify
+  than the first.
+- Restore is not one gap but two in different capabilities: Action cannot
+  perform the effect, and Workspace Management did not retain the identity
+  needed to aim it. Closing only one leaves Resume impossible.
+
+Unlocks: Nothing yet. `PP-M1-02` remains blocked pending a declared
+window-placement action type, its safety class and permission binding, and an
+Action implementation. `PP-M1-03` (Placement Undo & Recovery) depends on the
+same prerequisites and is therefore blocked behind it.
+
+Supersedes: Nothing. `LEDGER-0018` incorrectly recorded that `PP-M1-01`
+unlocked "the Resume path"; that claim is corrected here. `PP-M1-01` unlocked
+the durable record Resume will read, but not the ability to act on it.
+
+Status: Blocked — reported for architectural decision, no implementation
+performed

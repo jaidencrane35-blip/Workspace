@@ -97,8 +97,14 @@ Establish product evidence for the trusted interruption-recovery hypothesis
 before sustained capability research or large-scale feature implementation.
 
 The four Product Proof engineering blockers are closed. Product Proof
-Milestone 1 is under way: `PP-M1-01` is complete and awaits architectural
-review before `PP-M1-02` begins.
+Milestone 1 is under way: `PP-M1-01` is complete.
+
+`PP-M1-02` (Resume a bounded Workspace Context) is **blocked** and no
+implementation was performed. Resume requires environment mutation, which
+Action alone owns. The generic Action contract exists and already covers
+partial, unsupported, and indeterminate outcomes, but there is no declared
+window-placement action type, no safety class or per-action-class permission
+for it, and no Action implementation of any kind. Recorded in LEDGER-0019.
 
 ---
 
@@ -149,6 +155,11 @@ Recommended next engineering milestone: **Product Proof**.
 - Desktop observation stack (Context Sensing)
 - Plugin architecture (Extension Host)
 - Action safety taxonomy
+- Action action-type catalogue: no declared action type exists, so the contract
+  requirement to "execute only declared action types" cannot yet be satisfied by
+  any implementation (blocks `PP-M1-02`, LEDGER-0019)
+- Whether window identity can be re-established across a restart with enough
+  confidence to aim a placement effect without disturbing the wrong window
 - Permission scope granularity
 - Permission proof representation and the boundary between opacity and designated local control-proof verification
 - Permission Authority process/isolation boundary and same-process bypass resistance
@@ -214,6 +225,16 @@ belongs in the pipeline rather than repeated per command.
 Saving is now the view the application opens on, displacing Canvas. This is a
 product-sequencing decision made to put the Product Proof workflow first, not an
 architectural one, and it is a single line to reverse.
+
+One instance of capability drift predates Product Proof and is now material.
+`LaunchApplication` mutates the environment by spawning a real process, but does
+so as an ordinary kernel mutation command guarded by `application.launch`. It
+does not pass through `ACT-CMD-001`, emits no `ACT-EVT-*` outcome events, and
+belongs to no action catalogue, so environment mutation already occurs outside
+the capability that alone owns it. `PP-M1-02` was stopped rather than adding a
+second, larger instance of the same pattern. Any restore implementation should
+either route through Action or be accompanied by a decision to correct
+`LaunchApplication` as well; the drift should not be extended by precedent.
 
 The Content Security Policy is verified by the audit in `pnpm test`, by the
 policy string embedded in the packaged `workspace-app.exe`, and by loading the
