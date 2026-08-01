@@ -84,6 +84,11 @@ capture (LEDGER-0016, commit `12573da`)
 ✓ `PP-B03` complete: production Content Security Policy enforced in the WebView
 and pinned by an automated verifier (LEDGER-0017, commit `f77200e`)
 
+✓ `PP-M1-01` complete: a user can name a workspace context, read the
+kernel-served scope of what would be captured, confirm or cancel, and receive a
+durable bounded record with a summary of exactly what was kept; a refused save
+observes nothing (LEDGER-0018, commit `868ce12`)
+
 ---
 
 # Active Task
@@ -92,7 +97,8 @@ Establish product evidence for the trusted interruption-recovery hypothesis
 before sustained capability research or large-scale feature implementation.
 
 The four Product Proof engineering blockers are closed. Product Proof
-Milestone 1 awaits architectural review before implementation begins.
+Milestone 1 is under way: `PP-M1-01` is complete and awaits architectural
+review before `PP-M1-02` begins.
 
 ---
 
@@ -178,6 +184,9 @@ the workspace packages as an MSI and NSIS installer, no observation occurs
 before explicit user capture, and the WebView runs under an enforced Content
 Security Policy.
 
+The first Product Proof workflow now exists end to end, so the proof hypothesis
+has a surface to be tested against rather than only a strategy.
+
 ---
 
 # Drift Assessment
@@ -189,6 +198,22 @@ introducing a new one, and retains the ambient observation implementations in a
 dormant, still-tested state instead of deleting them. `PP-B03` removed the only
 Content Security Policy exception in the repository, the disabled policy itself,
 and required no compensating exception.
+
+`PP-M1-01` introduced no capability, contract, or ownership change, but it did
+add a persisted domain concept: a saved context, owned by Workspace Management,
+built from a Context Sensing capture the user explicitly authorised. It is
+deliberately distinct from `WorkspaceContext` and `WorkspaceSnapshot`, which are
+ephemeral compositions, and from `MemoryEntry`, which is Memory's. Two decisions
+warrant review: the saved context duplicates window and monitor rows rather than
+referencing an observation pass, accepted because passes are purged by
+retention; and `SaveWorkspaceContext` enforces `desktop.read` inside the command
+rather than through the pipeline, because the pipeline authorises only a single
+declared capability. If commands with two effects become common, that check
+belongs in the pipeline rather than repeated per command.
+
+Saving is now the view the application opens on, displacing Canvas. This is a
+product-sequencing decision made to put the Product Proof workflow first, not an
+architectural one, and it is a single line to reverse.
 
 The Content Security Policy is verified by the audit in `pnpm test`, by the
 policy string embedded in the packaged `workspace-app.exe`, and by loading the

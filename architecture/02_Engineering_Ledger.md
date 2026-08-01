@@ -976,3 +976,92 @@ that fails `pnpm test` if the policy is disabled or widened.
 Supersedes: The disabled `"csp": null` configuration.
 
 Status: Complete (commit `f77200e`)
+
+---
+
+### LEDGER-0018
+
+Entry ID: LEDGER-0018
+
+Capability: Workspace Management (owner) with Context Sensing (capture) and
+Experience (consent presentation) — Product Proof milestone task `PP-M1-01`
+
+Research: N/A — first user-visible Product Proof feature, built on the existing
+command pipeline, permission gateway, capture coordinator, and observation
+capture path. No new capability, contract, or ownership was introduced.
+
+Decision: Make the capture scope a kernel-served artefact and make the user's
+confirmation of it a validated precondition of capture, rather than treating the
+preview as interface copy and the capture as a separate act.
+
+`SavedContextCaptureScope` is returned by a query command and declares, in the
+user's language, every field the capture will record and the categories it will
+not. `SaveContextRequest` carries back the scope identifier the user actually
+confirmed, and the save is refused if it is absent, blank, or not the scope this
+build would capture. A future widening of the scope therefore invalidates
+previously displayed consent instead of silently inheriting it.
+
+A saved context stores its own copy of the windows and monitors it was built
+from. Referencing `observation_pass_id` alone was rejected: observation passes
+are a rolling perception buffer purged by `purge_older_than_keep`, so a saved
+context would have quietly emptied itself and misrepresented what the user
+agreed to keep. The pass id is retained as provenance only.
+
+`SaveWorkspaceContext` is a mutation requiring `workspace.write`, because its
+lasting effect is a workspace-owned record. Reading the desktop is a separate
+effect, so `desktop.read` is checked explicitly as well; saving must not become
+a route to desktop state that bypasses the capability governing it. Both checks
+complete, along with name validation, consent validation, and workspace
+existence, before anything is observed — a refused save observes nothing.
+
+Implementation:
+- `packages/database/migrations/041_saved_context.sql`: `saved_contexts`,
+  `saved_context_windows`, `saved_context_monitors`, cascading from the owning
+  workspace.
+- `packages/domain/src/saved_context/mod.rs`: `SavedContextCaptureScope`,
+  `SAVED_CONTEXT_SCOPE_ID`, `SavedContext`, `SavedContextWindow`,
+  `SavedContextMonitor`, `SaveContextRequest`, `SavedContextError`.
+- `packages/database/src/repositories/saved_context.rs`: single-transaction
+  write, so a partial context cannot exist.
+- `packages/kernel/src/services/saved_context.rs`: validate, then capture once
+  through `CaptureCoordinator` with `CaptureRequest::manual()`, then persist.
+- `packages/kernel/src/commands/saved_context.rs`:
+  `GetSavedContextCaptureScope` (query, observes nothing) and
+  `SaveWorkspaceContext` (mutation, audited with the scope and counts).
+- `app/src-tauri/src/commands/saved_context.rs`, `app/src/types/domain.ts`,
+  `app/src/components/SaveContextPanel.tsx`: name, review, confirm or cancel,
+  then a summary of exactly what was kept.
+
+Validation:
+- `cargo test --workspace` (1466) and `pnpm test` (33) pass; `pnpm typecheck`
+  and `pnpm build` pass; `git diff --check` clean.
+- 23 new Rust tests. Five prove that an unnamed context, a missing
+  confirmation, a stale confirmation, an unauthorised actor, and an unknown
+  workspace each leave `observation_passes` and `saved_contexts` empty.
+- One test purges the originating observation pass and shows the saved context
+  still returns all four windows and both monitors.
+- `tests/saved-context-consent.test.ts` fails if the interface hardcodes a scope
+  identifier instead of forwarding the one the kernel served. Verified
+  load-bearing by inserting that defect and observing the failure.
+- The capture path itself is exercised through `StubDesktopCapturer`, so no test
+  reads the real machine.
+
+Knowledge Gained:
+- Consent is only meaningful if it names a specific scope version. Recording
+  "the user agreed" without recording what they agreed to would let a later
+  build widen capture under old consent.
+- Durability of a user artefact and retention of a perception buffer are
+  different lifetimes; a user-authored record must not depend on a buffer
+  designed to be discarded.
+- A command with two effects needs both capabilities enforced at the command,
+  because the pipeline authorises only the one the command declares.
+- Windows reports window titles but not program names or paths, and titles
+  routinely name the document or page behind them. The preview states this
+  rather than implying titles are anonymous.
+
+Unlocks: `PP-M1-02` (inspect and delete a saved context) and the Resume path,
+both of which read the durable record this task establishes.
+
+Supersedes: Nothing.
+
+Status: Complete (commit `868ce12`)
