@@ -7,10 +7,11 @@
   "scripts": {
     "dev": "pnpm --filter @workspace/app dev",
     "build": "pnpm --filter @workspace/app build",
-    "test": "pnpm --filter @workspace/tests test && node scripts/verify-explanation-catalog.mjs && node scripts/verify-ui-experience-boundary.mjs",
+    "test": "pnpm --filter @workspace/tests test && node scripts/verify-explanation-catalog.mjs && node scripts/verify-ui-experience-boundary.mjs && node scripts/verify-content-security-policy.mjs",
     "typecheck": "pnpm --filter @workspace/app typecheck",
     "verify:explanation-catalog": "node scripts/verify-explanation-catalog.mjs",
-    "verify:ui-experience-boundary": "node scripts/verify-ui-experience-boundary.mjs"
+    "verify:ui-experience-boundary": "node scripts/verify-ui-experience-boundary.mjs",
+    "verify:content-security-policy": "node scripts/verify-content-security-policy.mjs"
   },
   "engines": {
     "node": ">=20"
