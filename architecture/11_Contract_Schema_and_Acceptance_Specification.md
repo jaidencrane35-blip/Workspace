@@ -1186,7 +1186,7 @@ Rules now cover identity, correlation, causation, commands, events, requests/res
 
 - Permission scope taxonomy still requires capability-by-capability refinement.
 - Concrete waiting limits remain implementation decisions constrained by this specification.
-- Each action class still needs specific irreversible commit points and compensation rules.
+- Each action class still needs specific irreversible commit points and compensation rules. Closed for `window.place` and `window.focus` by `15_Action_Desktop_Mutation_Contract.md`, which binds both to a per-item commit point and declares no compensating type. Open for every reserved action class, which cannot be executed until declared with the same bindings.
 - Event recovery and compatibility cases require executable validation artifacts.
 - Extension Host remains dormant until separately justified under ADR-0004.
 

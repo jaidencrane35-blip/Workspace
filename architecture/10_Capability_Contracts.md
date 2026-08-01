@@ -605,6 +605,7 @@ Capability-specific errors extend rather than redefine these meanings.
 - `ACT-REQ-001 Action.describe(action_type, authorization_proof) -> ActionDescription`
 - `ACT-REQ-002 Action.getStatus(operation_id, operation_reference, operation_control_proof) -> ExecutionStatus`
 - `ACT-REQ-003 Action.lookupTerminalOutcome(operation_id, authorization_proof) -> ContentFreeTerminalOutcome | HistoricalRecordExpired`
+- `ACT-REQ-004 Action.resolvePlan(action_request, plan_authorization_proof) -> ActionPlan`
 - `ACT-EVT-001 ActionStarted`
 - `ACT-EVT-002 ActionProgressed`
 - `ACT-EVT-003 ActionCompleted`
@@ -613,10 +614,28 @@ Capability-specific errors extend rather than redefine these meanings.
 - `ACT-EVT-006 ActionPartiallyCompleted`
 - `ACT-EVT-007 ActionIndeterminate`
 
+`ACT-REQ-004` resolves a proposed request into a per-item plan without mutating
+anything, so that what a user approves is exactly what is attempted. Its
+plan-level proof confers no effect authority.
+
+### Declared action types
+
+Action may execute only declared action types. The catalogue, its per-type
+permission scopes, safety and idempotency bindings, item outcome model, and
+acceptance cases are authoritative in
+`15_Action_Desktop_Mutation_Contract.md`. That document declares
+`window.place` and `window.focus` for Product Proof and reserves the remaining
+environment effects without specifying them.
+
+An undeclared type is refused. No action type is implied by another, and no
+grant covers more than one type.
+
 ### Internal responsibilities
 
 - Validate proof immediately before execution.
 - Enforce declared action type and exact target/scope.
+- Resolve declared targets at point of use as a bounded matching operation only,
+  retaining and exposing no environment state.
 - Track in-flight state, cancellation, partial effects, and local audit.
 
 ### Events consumed

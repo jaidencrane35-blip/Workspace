@@ -99,12 +99,26 @@ before sustained capability research or large-scale feature implementation.
 The four Product Proof engineering blockers are closed. Product Proof
 Milestone 1 is under way: `PP-M1-01` is complete.
 
-`PP-M1-02` (Resume a bounded Workspace Context) is **blocked** and no
-implementation was performed. Resume requires environment mutation, which
-Action alone owns. The generic Action contract exists and already covers
-partial, unsupported, and indeterminate outcomes, but there is no declared
-window-placement action type, no safety class or per-action-class permission
-for it, and no Action implementation of any kind. Recorded in LEDGER-0019.
+`PP-M1-02` (Resume a bounded Workspace Context) is **not yet startable**, and no
+implementation has been performed. The contract gap that stopped it is now
+closed: `15_Action_Desktop_Mutation_Contract.md` declares `window.place` and
+`window.focus`, binds them to the existing safety, cancellation, and idempotency
+classes, and defines plan-bound preview and per-item outcomes (LEDGER-0020).
+
+Two prerequisites remain before implementation may begin:
+
+1. `09_Capability_Interaction_Matrix.md` must extend `IC-030` to authorize
+   `ACT-REQ-004 Action.resolvePlan`. Until then the matrix does not permit the
+   interaction the contract depends on, and the matrix is the higher authority.
+2. `PP-M1-01` did not persist the window identity evidence the contract requires
+   — `saved_context_windows` holds title, process id, and geometry but not
+   `hwnd` or `stable_window_id` (LEDGER-0019). This is Workspace Management's
+   work and is independent of Action.
+
+One decision is deliberately unassigned: who owns the confidence threshold below
+which a target match is refused. Action fails closed regardless, so this is safe
+to leave open briefly, but it must be assigned before implementation or it will
+be settled by whoever writes the first caller.
 
 ---
 
@@ -154,12 +168,17 @@ Recommended next engineering milestone: **Product Proof**.
 - AI orchestration (Intelligence)
 - Desktop observation stack (Context Sensing)
 - Plugin architecture (Extension Host)
-- Action safety taxonomy
-- Action action-type catalogue: no declared action type exists, so the contract
-  requirement to "execute only declared action types" cannot yet be satisfied by
-  any implementation (blocks `PP-M1-02`, LEDGER-0019)
+- Action safety taxonomy beyond the two types declared in
+  `15_Action_Desktop_Mutation_Contract.md`; every reserved action class still
+  needs commit points, compensation rules, and a permission scope before it can
+  be declared
 - Whether window identity can be re-established across a restart with enough
-  confidence to aim a placement effect without disturbing the wrong window
+  confidence to aim a placement effect without disturbing the wrong window. The
+  contract fails closed below a supplied threshold, so this is a product
+  question `PP-M1-02` answers empirically, not an architectural one
+- Who owns the pre-effect state that Placement Undo will require: Workspace
+  Management's saved-context record, or Action. Deferred to `PP-M1-03` and named
+  so no implementation settles it by writing an undo buffer into Action
 - Permission scope granularity
 - Permission proof representation and the boundary between opacity and designated local control-proof verification
 - Permission Authority process/isolation boundary and same-process bypass resistance
@@ -259,6 +278,23 @@ Host research as future or prerequisite work. Any prior session report that
 called `RH-001` complete is unsupported by the available repository history.
 Do not begin an evaluation that requires `RH-001` until an accepted canonical
 research artifact and Catalogue entry exist.
+
+`15_Action_Desktop_Mutation_Contract.md` v1.0 is authoritative for Action's
+declared action types and their permission, safety, cancellation, idempotency,
+item-outcome, and explainability bindings. It introduces no new capability and
+redefines nothing: roughly four fifths of what a desktop mutation contract needs
+was already specified generically in `10` and `11`, and the contract binds to
+those definitions rather than restating them. It adds one request,
+`ACT-REQ-004`, because preview integrity is an execution-side property that a
+caller-assembled preview cannot guarantee.
+
+One contradiction with a higher authority is recorded rather than silently
+reconciled: `09_Capability_Interaction_Matrix.md` `IC-030` does not list plan
+resolution among the permitted Companion → Action requests. The Interaction
+Matrix is the higher authority, so until it is amended the contract's
+`ACT-REQ-004` is not yet permitted. The amendment was not made in this session
+because `09` carries unrelated uncommitted `PP-P00` changes and lay outside the
+authorized edit set.
 
 Blueprint v1.1 remains the highest authority. Capability Architecture v1.1 remains the authoritative decomposition. The Interaction Matrix is authoritative for communication and trust constraints. Capability Contracts v1.0 is authoritative for public message and interaction semantics. Contract Schema and Acceptance Specification v1.0 is authoritative for conceptual fields, evolution, invariants, and pre-implementation acceptance. User Journey Architecture Validation v1.1 identifies current end-to-end gaps and validates engine/companion experience separation without changing ownership. Capability Technology Research Framework v1.0 is authoritative for research planning, comparison evidence, and technology-evaluation governance. Capability Research Roadmap v1.0 is authoritative for the remaining research sequence and dependency gates.
 

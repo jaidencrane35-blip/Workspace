@@ -1197,3 +1197,120 @@ the durable record Resume will read, but not the ability to act on it.
 
 Status: Blocked — reported for architectural decision, no implementation
 performed
+
+---
+
+### LEDGER-0020
+
+Entry ID: LEDGER-0020
+
+Capability: Action — declared action types and desktop mutation semantics.
+Produced to close the contract gap recorded in LEDGER-0019.
+
+Research: Architecture-pack audit only. Reviewed every Action reference across
+the Blueprint, `08_Workspace_Capability_Architecture.md`,
+`09_Capability_Interaction_Matrix.md`, `10_Capability_Contracts.md`,
+`11_Contract_Schema_and_Acceptance_Specification.md`, LEDGER-0013, and the
+existing codebase. No runtime code was written and no technology was selected.
+
+Decision: Add `15_Action_Desktop_Mutation_Contract.md` as the authoritative
+declaration of Action's action types, and amend `10` and `11` minimally to
+reference it. Nothing already defined was redefined.
+
+The audit's central finding is that the Action contract was far more complete
+than the codebase implied. Partial completion, indeterminate outcomes,
+unsupported-action errors, cancellation classes, idempotency classes, retry
+philosophy, the explainability envelope, operation recovery, and per-action
+class permission were all already specified. The gap was never a missing
+contract shape. It was that no action type had ever been declared, which made
+the standing requirement to "execute only declared action types" impossible to
+satisfy. The contract therefore declares types and binds them to existing
+classes rather than introducing new machinery.
+
+Scope declared for Product Proof:
+
+- `window.place` — position, size, monitor assignment, and minimized/restored
+  state for one declared window; scope `action.window.place`
+- `window.focus` — foreground assignment for one declared window; scope
+  `action.window.focus`
+
+Separated because placement rearranges while focus changes where the next
+keystroke lands. A user may permit one and refuse the other. Application launch,
+application reuse, file open, URL open, and workspace activation are named as
+reserved and deliberately left unspecified.
+
+Four decisions carry the design:
+
+1. **Preview is a contract element, not a UI courtesy.** One new request,
+   `ACT-REQ-004 Action.resolvePlan`, resolves a proposed request into a per-item
+   plan without mutating anything. Execution carries the approved plan identity
+   and digest, re-resolves, and refuses per item where resolution changed. Only
+   the resolver that will execute can guarantee the preview matches, which is
+   why this could not be assembled by the caller. It is the same consent binding
+   already proven in `PP-M1-01`.
+2. **Ambiguity fails rather than resolves.** A descriptor matching more than one
+   live window fails the item; Action never chooses. LEDGER-0013 records serious
+   unexpected window disturbance as a trust invalidation that voids the proof
+   regardless of the success metric, so guessing is not a usability trade-off.
+3. **Per-item commit points make honest partial success structural.** An
+   operation carries an ordered item set; each item has its own commit point and
+   terminal disposition, and the operation outcome is derived, never asserted.
+   `completed` requires every approved item to have committed, and any
+   unestablished item forces `indeterminate` regardless of how many succeeded.
+4. **Matching is bounded so it cannot become observation.** Resolution may
+   examine candidate windows, but only match, no-match, ambiguous, and the
+   matched window's minimized summary may leave the operation. No candidate
+   list, no unmatched attributes, no examined count. Plans expire, because an
+   unexpiring plan is a retained picture of the environment.
+
+Self-review found and corrected four defects in the first draft:
+
+- The original resolution rules forbade enumeration while requiring descriptor
+  matching that cannot avoid examining candidates — a contradiction. Replaced
+  with a bounded matching operation defined by what may leave it.
+- Plans had no expiry, which would have given Action a durable environment
+  model through the back door.
+- Nothing prevented passing a saved-context identifier into Action, which is the
+  shortest path to a working restore and would couple Action to Workspace
+  Management permanently. Now explicitly prohibited.
+- The event sequence implied one operation-wide proof validation, which would
+  have made revocation between items unenforceable. Corrected to point-of-use
+  validation per item, consistent with `IC-009`.
+
+Implementation: Documentation only.
+- `architecture/15_Action_Desktop_Mutation_Contract.md` — new; 19 sections, 27
+  acceptance cases, and a contract acceptance record.
+- `architecture/10_Capability_Contracts.md` — added `ACT-REQ-004`, a declared
+  action types subsection pointing to `15`, and bounded target resolution as an
+  internal responsibility.
+- `architecture/11_Contract_Schema_and_Acceptance_Specification.md` — recorded
+  that the action-class commit-point and compensation risk is closed for the two
+  declared types and open for reserved ones.
+
+Validation: `git diff --check` clean. No runtime code changed, so the
+`PP-M1-01` baseline of 1466 Rust and 33 frontend tests is unaffected.
+
+Knowledge Gained:
+- Auditing an existing contract before extending it removed most of the work.
+  Roughly four fifths of what this session was asked to define already existed
+  generically; writing it again would have created a second source of truth that
+  drifts.
+- Preview integrity is an execution-side property. Any design where the caller
+  assembles the preview can only approximate what will happen.
+- Ownership erodes through convenience. The three most tempting shortcuts —
+  passing a context id into Action, caching resolutions, retaining prior
+  placement for undo — each individually reasonable, would together have given
+  Action observation and memory it may not own.
+- Undo cannot be deferred silently. Deferring `PP-M1-03` while leaving the
+  pre-effect state unowned would have led the first implementation to write an
+  undo buffer into Action, so the open question is named rather than left
+  implicit.
+
+Unlocks: `PP-M1-02` has an implementation authority. It is not yet startable;
+two prerequisites remain, recorded in Current State and in §19 of the contract:
+the `IC-030` amendment in `09`, and the `PP-M1-01` identity schema gap.
+
+Supersedes: Nothing. Closes the contract gap recorded in LEDGER-0019; that
+entry's other findings stand.
+
+Status: Accepted
