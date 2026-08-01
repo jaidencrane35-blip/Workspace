@@ -89,6 +89,10 @@ kernel-served scope of what would be captured, confirm or cancel, and receive a
 durable bounded record with a summary of exactly what was kept; a refused save
 observes nothing (LEDGER-0018, commit `868ce12`)
 
+✓ Final `PP-M1-02` architecture dependencies closed: Action plan interaction,
+saved-context restore identity, and Action-owned matching threshold
+(LEDGER-0021)
+
 ---
 
 # Active Task
@@ -99,26 +103,27 @@ before sustained capability research or large-scale feature implementation.
 The four Product Proof engineering blockers are closed. Product Proof
 Milestone 1 is under way: `PP-M1-01` is complete.
 
-`PP-M1-02` (Resume a bounded Workspace Context) is **not yet startable**, and no
-implementation has been performed. The contract gap that stopped it is now
-closed: `15_Action_Desktop_Mutation_Contract.md` declares `window.place` and
-`window.focus`, binds them to the existing safety, cancellation, and idempotency
-classes, and defines plan-bound preview and per-item outcomes (LEDGER-0020).
+`PP-M1-02` (Resume a bounded Workspace Context) is **architecture-ready** and
+has not been implemented. The final dependencies are closed (LEDGER-0021):
 
-Two prerequisites remain before implementation may begin:
+1. `09_Capability_Interaction_Matrix.md` now authorizes the existing
+   Companion → `Action.resolvePlan` request with non-effecting
+   `action.plan.resolve` authorization.
+2. `16_Saved_Context_Restore_Identity_Specification.md` defines the consented
+   identity descriptor, exact same-session matching, lifetime, portability,
+   failure, and explanation semantics.
+3. Action alone owns the minimum matching confidence because exact target
+   validation is execution safety. Permission Authority still alone owns effect
+   authorization; Workspace Management stores but never evaluates identity;
+   Companion copies but never scores it.
 
-1. `09_Capability_Interaction_Matrix.md` must extend `IC-030` to authorize
-   `ACT-REQ-004 Action.resolvePlan`. Until then the matrix does not permit the
-   interaction the contract depends on, and the matrix is the higher authority.
-2. `PP-M1-01` did not persist the window identity evidence the contract requires
-   — `saved_context_windows` holds title, process id, and geometry but not
-   `hwnd` or `stable_window_id` (LEDGER-0019). This is Workspace Management's
-   work and is independent of Action.
-
-One decision is deliberately unassigned: who owns the confidence threshold below
-which a target match is refused. Action fails closed regardless, so this is safe
-to leave open briefly, but it must be assigned before implementation or it will
-be settled by whoever writes the first caller.
+Implementation must add nullable identity storage for legacy contexts, introduce
+a new Save capture-scope version before collecting identity, copy explicit
+capture evidence into new saved contexts, issue `action.plan.resolve` for
+preview plus one exact effect proof per attempted item, implement Action's
+exact-session matcher, and report every unsupported or changed item honestly.
+Existing contexts are never backfilled through observation and remain
+browseable but unsupported for restore.
 
 ---
 
@@ -172,10 +177,9 @@ Recommended next engineering milestone: **Product Proof**.
   `15_Action_Desktop_Mutation_Contract.md`; every reserved action class still
   needs commit points, compensation rules, and a permission scope before it can
   be declared
-- Whether window identity can be re-established across a restart with enough
-  confidence to aim a placement effect without disturbing the wrong window. The
-  contract fails closed below a supplied threshold, so this is a product
-  question `PP-M1-02` answers empirically, not an architectural one
+- Whether exact same-session matching succeeds often enough to make Resume
+  useful. Cross-session and recreated-window restore remain explicitly
+  unsupported; this is a Product Proof question, not an architecture gap
 - Who owns the pre-effect state that Placement Undo will require: Workspace
   Management's saved-context record, or Action. Deferred to `PP-M1-03` and named
   so no implementation settles it by writing an undo buffer into Action
@@ -279,7 +283,7 @@ called `RH-001` complete is unsupported by the available repository history.
 Do not begin an evaluation that requires `RH-001` until an accepted canonical
 research artifact and Catalogue entry exist.
 
-`15_Action_Desktop_Mutation_Contract.md` v1.0 is authoritative for Action's
+`15_Action_Desktop_Mutation_Contract.md` v1.1 is authoritative for Action's
 declared action types and their permission, safety, cancellation, idempotency,
 item-outcome, and explainability bindings. It introduces no new capability and
 redefines nothing: roughly four fifths of what a desktop mutation contract needs
@@ -288,15 +292,18 @@ those definitions rather than restating them. It adds one request,
 `ACT-REQ-004`, because preview integrity is an execution-side property that a
 caller-assembled preview cannot guarantee.
 
-One contradiction with a higher authority is recorded rather than silently
-reconciled: `09_Capability_Interaction_Matrix.md` `IC-030` does not list plan
-resolution among the permitted Companion → Action requests. The Interaction
-Matrix is the higher authority, so until it is amended the contract's
-`ACT-REQ-004` is not yet permitted. The amendment was not made in this session
-because `09` carries unrelated uncommitted `PP-P00` changes and lay outside the
-authorized edit set.
+The former interaction contradiction is resolved. The Interaction Matrix now
+permits Companion to request a non-mutating Action plan with plan-only
+authorization, and `IC-030` defines the same purpose and minimized data.
 
-Blueprint v1.1 remains the highest authority. Capability Architecture v1.1 remains the authoritative decomposition. The Interaction Matrix is authoritative for communication and trust constraints. Capability Contracts v1.0 is authoritative for public message and interaction semantics. Contract Schema and Acceptance Specification v1.0 is authoritative for conceptual fields, evolution, invariants, and pre-implementation acceptance. User Journey Architecture Validation v1.1 identifies current end-to-end gaps and validates engine/companion experience separation without changing ownership. Capability Technology Research Framework v1.0 is authoritative for research planning, comparison evidence, and technology-evaluation governance. Capability Research Roadmap v1.0 is authoritative for the remaining research sequence and dependency gates.
+`16_Saved_Context_Restore_Identity_Specification.md` is authoritative for
+saved-window identity used by Product Proof restore. It makes the current limit
+explicit: `stable_window_id` is local correlation, not a portable OS identity,
+and `PP-M1-02` may act only on an exact same-session handle/process/title match.
+This prevents implementation from turning a descriptive identifier into a
+cross-session restoration promise.
+
+Blueprint v1.1 remains the highest authority. Capability Architecture v1.1 remains the authoritative decomposition. The Interaction Matrix is authoritative for communication and trust constraints. Capability Contracts v1.1 is authoritative for public message and interaction semantics. Contract Schema and Acceptance Specification v1.0 is authoritative for conceptual fields, evolution, invariants, and pre-implementation acceptance. User Journey Architecture Validation v1.1 identifies current end-to-end gaps and validates engine/companion experience separation without changing ownership. Capability Technology Research Framework v1.0 is authoritative for research planning, comparison evidence, and technology-evaluation governance. Capability Research Roadmap v1.0 is authoritative for the remaining research sequence and dependency gates.
 
 Technology choices remain open. Permission Authority research unit `PA-001` is
 complete and records six candidate solution categories without adoption,

@@ -1314,3 +1314,120 @@ Supersedes: Nothing. Closes the contract gap recorded in LEDGER-0019; that
 entry's other findings stand.
 
 Status: Accepted
+
+---
+
+### LEDGER-0021
+
+Entry ID: LEDGER-0021
+
+Capability: Workspace Management saved-context identity with Action target
+matching — final architecture dependencies for Product Proof task `PP-M1-02`.
+
+Research: Architecture and implementation-state audit only. Read the complete
+Cursor Protocol authority set, accepted ADRs, Capability Architecture,
+Interaction Matrix, Capability Contracts, Contract Schema, Product Proof
+Strategy, accepted Action Desktop Mutation Contract, and the existing
+observation/saved-context identity models. No technology research or runtime
+implementation was performed.
+
+Decision: `PP-M1-02` is architecture-ready. Close the three remaining
+dependencies without adding a capability or broadening Product Proof:
+
+1. Permit Companion to call `ACT-REQ-004 Action.resolvePlan` through the
+   existing Companion → Action path. `action.plan.resolve` grants bounded target
+   matching only and no environment effect. The returned plan is an immutable
+   expiring Companion task value; Action retains no hidden plan aggregate.
+2. Adopt `16_Saved_Context_Restore_Identity_Specification.md` as the canonical
+   identity contract for a saved window. Newly saved restorable windows carry a
+   versioned, consented descriptor containing desktop-session identity,
+   captured handle/process id, title fingerprint, and capture time. Legacy and
+   incomplete identities are never backfilled and are reported unsupported per
+   item.
+3. Assign the matching confidence threshold solely to Action. For
+   `window.place` and `window.focus`, Product Proof admits only an exact
+   same-session handle/process/title-fingerprint match. Permission Authority
+   still alone owns effect authorization; Workspace Management stores but never
+   evaluates identity; Companion copies but never scores it.
+
+The threshold is Action-owned because it controls whether the executor can
+safely commit against its exact target. Putting it in Permission Authority would
+mix permission truth with execution safety; putting it in Workspace Management
+would embed action semantics in organization; putting it in Companion would
+create a second safety authority able to lower Action's floor.
+
+`stable_window_id` and observation-time confidence were removed from the
+restore descriptor during adversarial review. Windows does not expose that
+Context Sensing correlation id on a live window, and neither field participates
+in exact-session matching. Retaining them would add unused capture and create a
+second confidence vocabulary. `PP-M1-02` supports a still-existing window in
+the same continuing interactive Windows desktop session. Process/window
+recreation, title change, logoff, reboot, another device, and cross-session
+restore are honest non-successes. Application launch and reuse remain
+undeclared.
+
+Implementation:
+
+- `architecture/09_Capability_Interaction_Matrix.md`: narrowed the existing
+  Companion → Action cell to name plan resolution and its non-effecting proof.
+- `architecture/10_Capability_Contracts.md`: reconciled Action request,
+  response, permission, per-item effect proofs, and `IC-029`/`IC-030` text with
+  `ACT-REQ-004`.
+- `architecture/15_Action_Desktop_Mutation_Contract.md`: revised to v1.1,
+  assigned match confidence to Action, bound the two declared types to the
+  exact-session floor, made the plan stateless and effect-complete, required
+  per-item proofs, added missing identity errors, and closed the two architecture
+  risks.
+- `architecture/16_Saved_Context_Restore_Identity_Specification.md`: added the
+  canonical identity, consent, matching, lifetime, portability, failure,
+  explainability, ownership, and acceptance specification.
+- Updated Current State. No Blueprint, ADR, Capability Architecture, Contract
+  Schema, research, or runtime file changed.
+
+Implementation prerequisites:
+
+- add nullable canonical identity storage for legacy saved contexts
+- introduce and present a new Save capture-scope version before identity capture
+- copy explicit Context Sensing identity evidence into new saved contexts
+- issue `action.plan.resolve` authorization and one exact effect proof per
+  attempted item
+- implement Action's exact-session matcher and fixed safety floor
+- keep handles/candidate details inside Action
+- report legacy, stale, changed, ambiguous, and non-portable items honestly
+- add automated acceptance evidence for the `SCRI-AC-*` and applicable
+  `ADM-AC-*` cases
+
+Validation:
+
+- `git diff --check` clean.
+- Second-pass review found no architecture needed beyond the current
+  `PP-M1-02` implementation.
+- No runtime tests were run because repository mutation was documentation only.
+
+Knowledge Gained:
+
+- A local correlation id named "stable" is not necessarily a portable operating
+  system identity. Because it cannot be compared at Action's live boundary, the
+  minimum design excludes it instead of overstating its value.
+- Consent must version identity metadata as well as visible window metadata;
+  adding handles after the user approved an older scope would be hidden capture.
+- Exact equality is enough to prove a narrow same-session restore. Fuzzy
+  matching, intelligence, and automatic repair are not required to begin
+  Product Proof and would weaken its trust signal.
+- Execution safety and permission truth are independent gates: either may refuse
+  an effect, and neither may override the other.
+- An approval cannot bind only an item list; it must bind each proposed effect.
+  Mixed placement/focus batches require one proof per item because there is no
+  omnibus action grant.
+
+Unlocks: `PP-M1-02` implementation of deterministic same-session preview,
+approval, placement/focus, and honest per-item results. Does not unlock
+`PP-M1-03`, application launch/reuse, resource opening, cross-session restore,
+or broader Action types.
+
+Supersedes: The unresolved `IC-030`, saved identity, and matching-threshold
+prerequisites in Current State and `15` §19. It does not supersede
+LEDGER-0019's runtime implementation findings or LEDGER-0020's accepted Action
+contract.
+
+Status: Accepted; `PP-M1-02` architecture-ready

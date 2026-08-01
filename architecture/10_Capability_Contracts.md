@@ -1,8 +1,8 @@
-# Workspace Capability Contracts v1.0
+# Workspace Capability Contracts v1.1
 
 Status: Active
 Authority: Authoritative public contract definitions for Workspace capabilities
-Version: 1.0
+Version: 1.1
 
 This document defines communication contracts only. It does not select transports, libraries, process boundaries, persistence engines, or vendors.
 
@@ -290,7 +290,7 @@ Capability-specific errors extend rather than redefine these meanings.
 
 ### Public interface
 
-- `PER-REQ-001 Permission.authorize(context, optional_challenge_ref) -> EffectProof plus OperationControlProof when non-immediate | Denial | ChallengeRef`
+- `PER-REQ-001 Permission.authorize(context, optional_challenge_ref) -> AuthorizationProof (an EffectProof for effecting operations) plus OperationControlProof when non-immediate | Denial | ChallengeRef`
 - `PER-REQ-002 Permission.validateForUse(proof, exact_effect_context) -> AuthorizedUse | Invalid`
 - `PER-REQ-003 Permission.getCatalogue(requester) -> PermissionCatalogue`
 - `PER-REQ-004 Permission.explain(authorization_id) -> PermissionExplanation`
@@ -332,7 +332,9 @@ Capability-specific errors extend rather than redefine these meanings.
 
 ### Responses returned
 
-- Bound effect/control proof(s) as applicable, denial, challenge reference, authorized-use/invalid result, catalogue, or minimized explanation.
+- Bound authorization proof, plus operation-control proof where applicable,
+  denial, challenge reference, authorized-use/invalid result, catalogue, or
+  minimized explanation.
 
 ### State owned
 
@@ -600,12 +602,12 @@ Capability-specific errors extend rather than redefine these meanings.
 
 ### Public interface
 
-- `ACT-CMD-001 Action.execute(action_request, effect_proof, operation_control_proof)`
+- `ACT-CMD-001 Action.execute(approved_plan, item_effect_proofs, operation_control_proof)`
 - `ACT-CMD-002 Action.cancel(operation_id, operation_reference, operation_control_proof)`
 - `ACT-REQ-001 Action.describe(action_type, authorization_proof) -> ActionDescription`
 - `ACT-REQ-002 Action.getStatus(operation_id, operation_reference, operation_control_proof) -> ExecutionStatus`
 - `ACT-REQ-003 Action.lookupTerminalOutcome(operation_id, authorization_proof) -> ContentFreeTerminalOutcome | HistoricalRecordExpired`
-- `ACT-REQ-004 Action.resolvePlan(action_request, plan_authorization_proof) -> ActionPlan`
+- `ACT-REQ-004 Action.resolvePlan(action_request, authorization_proof) -> ActionPlan`
 - `ACT-EVT-001 ActionStarted`
 - `ACT-EVT-002 ActionProgressed`
 - `ACT-EVT-003 ActionCompleted`
@@ -616,7 +618,8 @@ Capability-specific errors extend rather than redefine these meanings.
 
 `ACT-REQ-004` resolves a proposed request into a per-item plan without mutating
 anything, so that what a user approves is exactly what is attempted. Its
-plan-level proof confers no effect authority.
+`action.plan.resolve` authorization proof confers no effect authority. The
+returned plan is an immutable expiring value; Action retains no plan state.
 
 ### Declared action types
 
@@ -659,15 +662,19 @@ grant covers more than one type.
 
 ### Requests accepted
 
-- Describe action type and query execution status from Companion.
+- Resolve a specific action plan, describe an action type, and query execution
+  status from Companion.
 
 ### Responses returned
 
-- Acceptance/rejection, action description, and execution status. Completion arrives as terminal event for non-immediate work.
+- Action plan, acceptance/rejection, action description, and execution status.
+  Completion arrives as a terminal event for non-immediate work.
 
 ### State owned
 
-- Action catalogue, in-flight execution state, metadata-only execution audit, and minimized effect summary; never copied user content.
+- Action catalogue, in-flight execution state, metadata-only execution audit,
+  and minimized effect summary; never copied user content or retained
+  environment state.
 
 ### State exposed
 
@@ -680,7 +687,11 @@ grant covers more than one type.
 ### Permission requirements
 
 - Per-action-class permission; no omnibus grant.
-- Proof bound to requester, purpose, subject, target, operation, scope, and optional extension.
+- Each item has its own effect proof bound to requester, purpose, subject,
+  target, operation, item, action type, scope, and optional extension. A batch
+  may contain multiple action types but has no batch-wide effect proof.
+- Plan resolution requires `action.plan.resolve`, which authorizes only the
+  user-initiated bounded target match and grants no environment effect.
 - Describe requires task authorization. Status/cancel require an operation reference plus the independently governed operation-control proof bound to that task/operation. Revoking effect authority does not revoke safety control.
 - Revocation blocks new effects; in-flight safe cancellation is reported.
 
@@ -1075,8 +1086,8 @@ Each row is exhaustive for allowed domain, lifecycle, authorization, and event i
 
 | ID | Initiator → Receiver | Purpose / trigger | Expected response | Failure behaviour | Permission boundary | Data exchanged | Mode |
 |----|----------------------|-------------------|-------------------|-------------------|---------------------|----------------|------|
-| IC-029 | Companion → Action | Execute approved environment mutation | Acceptance/denial; progress/terminal events | Stop; report partial effects honestly | Exact action proof validated immediately before effects | Declared action, target, constraints, proof | Command + async event |
-| IC-030 | Companion → Action | Cancel/reconcile an operation, describe an action, or perform delayed terminal lookup | Acceptance/status/description or content-free terminal/expired-history result | Report invalid reference/control/admin proof or unsafe/too-late cancellation | Describe uses task authorization; live status/cancel use operation reference/control proof; delayed lookup uses fresh user-administration proof; cancellation cannot expand authority | Operation/action type id, operation reference, relevant proof, correlation | Sync request or command |
+| IC-029 | Companion → Action | Execute an explicitly approved action plan | Acceptance/denial; progress/terminal events | Stop; report partial effects honestly | Each item carries its own exact action-type effect proof, validated immediately before that effect; no batch-wide or omnibus effect proof | Approved plan with ordered proposed effects, one item effect proof per attempted item, and operation-control proof | Command + async event |
+| IC-030 | Companion → Action | Resolve an explicit user-initiated action plan without mutation; cancel/reconcile an operation; describe an action; or perform delayed terminal lookup | Action plan, acceptance/status/description, or content-free terminal/expired-history result | Refuse invalid plan authority; otherwise report invalid reference/control/admin proof or unsafe/too-late cancellation | Plan resolution uses `action.plan.resolve`, which grants bounded matching only and no effect authority; describe uses task authorization; live status/cancel use operation reference/control proof; delayed lookup uses fresh user-administration proof; cancellation cannot expand authority | Declared action items/targets/constraints and authorization proof; or operation/action type id, operation reference, relevant proof, and correlation | Sync request or command |
 | IC-031 | Action → Companion | Operation progress or terminal outcome, including partial/indeterminate | Task updates/explanation | Missing terminal event becomes unknown/degraded, never assumed success | Event grants no further action | Effect summary, partial effects, status, authorization id | Async event |
 
 ### Experience and Companion interactions

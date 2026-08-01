@@ -1,8 +1,8 @@
-# Action Desktop Mutation Contract v1.0
+# Action Desktop Mutation Contract v1.1
 
 Status: Active
 Authority: Authoritative declared action types and desktop mutation semantics for the Action capability
-Version: 1.0
+Version: 1.1
 
 This document declares action types and binds each to the semantics the Action
 capability already contracts. It defines no transport, library, process
@@ -25,7 +25,7 @@ If this document conflicts with a higher authority, the higher authority wins.
 ## Why this document exists
 
 `10_Capability_Contracts.md` already defines the Action public interface
-(`ACT-CMD-001`, `ACT-CMD-002`, `ACT-REQ-001`–`ACT-REQ-003`, `ACT-EVT-001`–
+(`ACT-CMD-001`, `ACT-CMD-002`, `ACT-REQ-001`–`ACT-REQ-004`, `ACT-EVT-001`–
 `ACT-EVT-007`), and requires that Action "execute only declared action types".
 `08_Workspace_Capability_Architecture.md` records that Action owns the "action
 allow-list binding to permission scopes".
@@ -133,6 +133,9 @@ descriptor** containing the identity evidence it holds and the placement it
 wants. Action resolves that descriptor to exactly one live window, or fails the
 item.
 
+For a saved Workspace Context, the descriptor and exact-session match class are
+authoritative in `16_Saved_Context_Restore_Identity_Specification.md`.
+
 Resolving a descriptor may require examining candidate windows, because identity
 evidence that survives a restart is descriptive rather than a direct handle.
 This is permitted strictly as a **matching operation**, bounded as follows.
@@ -179,17 +182,21 @@ If a descriptor resolves to no live window, the item fails with
 `ACTION_TARGET_NOT_FOUND`. This is the expected outcome for anything closed
 since the context was saved, and it is reported, never repaired.
 
-### Confidence is supplied, never invented
+### Confidence is Action-owned execution safety
 
-Where the requester's identity evidence carries a confidence classification,
-Action must honour a declared minimum confidence and fail the item with
-`ACTION_TARGET_CONFIDENCE_INSUFFICIENT` below it. Action does not compute
-confidence and does not choose the threshold; both arrive with the request.
+Action owns the point-of-use match classification and the minimum admissible
+confidence for each declared action type. A caller supplies identity evidence,
+never a threshold. Permission Authority decides whether an effect is authorized;
+it does not decide whether a target match is safe.
 
-Deciding what confidence is good enough is a safety judgement about how much
-risk of disturbing the wrong window the user is accepting. This contract
-establishes only that the judgement is not Action's. Where it belongs is
-deliberately not assigned here, so that it is not settled by default (§19).
+For Product Proof, `window.place` and `window.focus` admit only the
+`exact_session` match defined by
+`16_Saved_Context_Restore_Identity_Specification.md`. Action fails every lower,
+unknown, or unsupported class with `ACTION_TARGET_CONFIDENCE_INSUFFICIENT`.
+
+No caller, grant, preference, automatic policy, or user response may lower this
+floor. A future threshold change is an Action contract revision, not runtime
+configuration.
 
 ---
 
@@ -200,45 +207,63 @@ describe what would happen to a *specific set of targets*: `ACT-REQ-001
 Action.describe` describes an action type, not a request.
 
 ```
-ACT-REQ-004 Action.resolvePlan(action_request, plan_authorization_proof) -> ActionPlan
+ACT-REQ-004 Action.resolvePlan(action_request, authorization_proof) -> ActionPlan
 ```
 
 `ActionPlan` contains:
 
 - `plan_id` — identity for this resolution
-- `plan_digest` — a stable digest over the ordered, resolved item set
+- `expires_at` — bounded validity
+- `plan_digest` — a stable digest over the complete ordered plan
 - one `ActionPlanItem` per requested item, in execution order, each carrying:
   - `item_id`
   - `action_type`
   - `target_summary` — minimized and non-secret, per the `10` explainability envelope
+  - `proposed_effect` — exact geometry, monitor, minimized/restored state, or
+    focus assignment that execution would attempt
+  - `permission_scope` — the one declared scope this item requires
   - `projected_disposition` — `will_attempt`, `will_skip_unsupported`, or `will_skip_unresolvable`
   - `reason` — required whenever the disposition is not `will_attempt`
+
+The digest covers, in order, every item id, action type, declared target
+descriptor, proposed effect, permission scope, projected disposition, reason,
+and the expiry. Changing any approved field changes the digest.
 
 `ACT-REQ-004`:
 
 - performs **no** environment mutation
 - is read-only repeatable (`11` Idempotency Expectations)
-- requires a plan-level authorization proof that grants **no** effect authority
+- requires an `action.plan.resolve` authorization proof for the declared target
+  set; that scope grants bounded matching only and **no** effect authority
 - must be user-initiated, never scheduled or ambient, consistent with the zero
   ambient capture principle established by `PP-B02` (LEDGER-0016)
 
-A plan carries a bounded validity and expires. This is a privacy constraint, not
-a convenience one: an unexpiring plan is a retained picture of the environment,
-which Action is not permitted to hold (§3, §15). A plan is discarded at
-expiry, on consumption by an execution reaching a terminal outcome, and on
-capability shutdown. An expired or consumed plan is `ACTION_PLAN_UNKNOWN`, and
-resuming again requires a fresh preview. The duration is an implementation
-decision; that it is bounded is architectural.
+The returned plan is an immutable expiring value held only in Companion's
+in-flight task state. Action retains no plan, target resolution, or environment
+state after the request returns. This preserves `ACT-REQ-004` as a side-effect-
+free request rather than creating a hidden plan aggregate.
+
+Expiry is a privacy constraint, not a convenience one: an unexpiring plan is a
+retained picture of the environment. An expired plan or one whose digest does
+not match its full contents is `ACTION_PLAN_UNKNOWN`, and resuming requires a
+fresh preview. The duration is an implementation decision; bounded validity is
+architectural.
 
 ### Binding the approval
 
-`ACT-CMD-001 Action.execute` carries the approved `plan_id` and `plan_digest`.
-At execution Action re-resolves every item and compares.
+`ACT-CMD-001 Action.execute` carries the complete approved plan and one effect
+proof for every `will_attempt` item. Each proof is bound to the plan digest,
+item id, action type, exact target, proposed effect, purpose, and requester.
+There is no batch-wide effect proof and no grant covers multiple types.
+
+At execution Action verifies the plan digest and expiry, then re-resolves every
+item and compares.
 
 - An item whose resolution is unchanged is attempted.
 - An item whose resolution changed since approval is **not** attempted. It
   terminates as `refused_changed` with `ACTION_PLAN_ITEM_CHANGED`.
-- An operation presenting an unknown or expired `plan_id` is rejected outright
+- An operation presenting an expired, malformed, or digest-mismatched plan is
+  rejected outright
   with `ACTION_PLAN_UNKNOWN`; no item is attempted.
 
 Per-item refusal is deliberate rather than failing the whole operation. A single
@@ -310,6 +335,8 @@ contract. Each carries the standard `error_code`, `category`, `safe_message`,
 | `ACTION_TARGET_NOT_FOUND` | conflict | item | no |
 | `ACTION_TARGET_AMBIGUOUS` | conflict | item | no |
 | `ACTION_TARGET_CONFIDENCE_INSUFFICIENT` | validation | item | no |
+| `ACTION_TARGET_IDENTITY_UNAVAILABLE` | validation | item | no |
+| `ACTION_TARGET_IDENTITY_VERSION_UNSUPPORTED` | validation | item | no |
 | `ACTION_TARGET_REFUSED_BY_ENVIRONMENT` | conflict | item | no |
 | `ACTION_EFFECT_OUTCOME_UNKNOWN` | outcome-unknown | item | no |
 | `ACTION_PLACEMENT_UNSATISFIABLE` | conflict | item | no |
@@ -408,17 +435,14 @@ restore that already moved four windows says exactly that.
 Both declared types are **State-setting** (`11`): applying the same placement or
 the same foreground assignment again produces no additional effect.
 
-Two situations must not be confused at the operation level:
+Two situations must not be confused:
 
-- **Delivery retry.** Redelivery of the *same* accepted command identity returns
-  the same operation identity and reference and creates no second operation,
-  per `10`. This holds even after the plan is consumed, because the answer comes
-  from the operation record, not from re-resolving the plan.
-- **Reuse.** A *new* command citing an already consumed or expired `plan_id` is
-  `ACTION_PLAN_UNKNOWN`. Resuming again requires a fresh preview.
-
-Without this distinction a lost acceptance response would look like an attempt
-to replay a spent approval, and a genuine replay would look like a retry.
+- **Delivery retry.** Redelivery of the same accepted command identity returns
+  the same operation identity/reference and creates no second operation, per
+  `10`.
+- **New execution.** A new command is a new attempt. It requires an unexpired
+  approved plan and fresh item effect proofs. Reusing an effect proof is refused
+  by its replay conditions; no plan value is itself execution authority.
 
 State-setting types are safe to repeat but are still never retried
 automatically, because an unknown outcome may mean the effect committed and the
@@ -566,8 +590,8 @@ Required Acceptance Cases apply in addition and are not restated.
 
 - **ADM-AC-03** Given a resolved plan, when the same environment is unchanged at execution, then the attempted item set is exactly the plan's `will_attempt` set.
 - **ADM-AC-04** Given an approved plan, when one item's resolution changed before execution, then that item is `refused_changed`, no effect occurs for it, and the remaining approved items proceed.
-- **ADM-AC-05** Given an unknown or consumed `plan_id`, when execute is called, then the operation is rejected with `ACTION_PLAN_UNKNOWN` and no item is attempted.
-- **ADM-AC-06** Given `ACT-REQ-004` is called, when it returns, then no environment mutation has occurred and the plan grants no effect authority.
+- **ADM-AC-05** Given an expired, malformed, or digest-mismatched plan, when execute is called, then the operation is rejected with `ACTION_PLAN_UNKNOWN` and no item is attempted.
+- **ADM-AC-06** Given `ACT-REQ-004` is called with `action.plan.resolve`, when it returns, then no environment mutation or retained Action state exists and the plan grants no effect authority.
 
 ### Honest outcomes
 
@@ -580,15 +604,15 @@ Required Acceptance Cases apply in addition and are not restated.
 
 - **ADM-AC-11** Given a descriptor matching more than one live window, when resolved, then the item fails `ACTION_TARGET_AMBIGUOUS` and no window is moved.
 - **ADM-AC-12** Given a descriptor matching no live window, when resolved, then the item is `skipped_unresolvable` with `ACTION_TARGET_NOT_FOUND` and nothing is launched to satisfy it.
-- **ADM-AC-13** Given identity evidence below the requester's declared minimum confidence, when resolved, then the item fails `ACTION_TARGET_CONFIDENCE_INSUFFICIENT` and Action neither computes nor lowers the threshold.
+- **ADM-AC-13** Given identity evidence below Action's declared minimum confidence, when resolved, then the item fails `ACTION_TARGET_CONFIDENCE_INSUFFICIENT`; no caller, grant, preference, or policy can lower the threshold.
 - **ADM-AC-14** Given a saved placement the current monitor arrangement cannot honour, when resolved, then the item is `ACTION_PLACEMENT_UNSATISFIABLE` and Action does not substitute a placement of its own choosing.
 - **ADM-AC-15** Given the window manager refuses an effect, when the item ends, then it is `failed` with `ACTION_TARGET_REFUSED_BY_ENVIRONMENT`, is not retried, and no elevation is attempted.
 
 ### Permission
 
-- **ADM-AC-16** Given a proof scoped to `action.window.place`, when an item requires `action.window.focus`, then that item is denied at point of use; no grant covers both implicitly.
+- **ADM-AC-16** Given a placement item proof is absent or presented for a focus item, when that item reaches point of use, then it is denied; each attempted item has its own exact action-type proof and no grant covers both types.
 - **ADM-AC-17** Given effect authority is revoked between items, when the next item begins, then it does not begin, committed items are explained, and the operation terminates honestly.
-- **ADM-AC-18** Given a plan-level proof, when execute is attempted with it, then execution is denied; plan authority is not effect authority.
+- **ADM-AC-18** Given only an `action.plan.resolve` proof, when execute is attempted, then execution is denied; matching authority is not effect authority.
 
 ### Cancellation and recovery
 
@@ -598,11 +622,11 @@ Required Acceptance Cases apply in addition and are not restated.
 
 ### Boundaries
 
-- **ADM-AC-22** Given a resolved plan, when the operation ends, then no resolved environment state is retained and no environment model is exposed to any capability.
+- **ADM-AC-22** Given a resolved plan, when the request returns, then Action has retained no plan or resolved environment state and has exposed no environment model.
 - **ADM-AC-23** Given a restore completes, when Action's retained state is inspected, then it contains no prior placement, no user content, and nothing supporting an undo Action is not permitted to own.
 - **ADM-AC-24** Given an explanation or error, when presented, then it contains no proof content, no raw environment data, and no unrelated window's detail.
 - **ADM-AC-25** Given descriptor matching examined several candidate windows, when the item is reported, then only match/no-match/ambiguous and the matched window's minimized summary leave the operation; no candidate list, unmatched attributes, or examined count appears anywhere.
-- **ADM-AC-26** Given a plan that is neither executed nor refreshed, when its bounded validity expires, then it is discarded and a later execution against it is `ACTION_PLAN_UNKNOWN`.
+- **ADM-AC-26** Given an approved plan whose bounded validity expires, when execution is attempted, then it is `ACTION_PLAN_UNKNOWN`; Action has no plan state to discard.
 - **ADM-AC-27** Given a request carrying a saved-context identifier, when it reaches Action, then it is rejected as contract-invalid; Action never dereferences a Workspace Management record.
 
 ---
@@ -611,17 +635,19 @@ Required Acceptance Cases apply in addition and are not restated.
 
 Per `11` Contract Acceptance Record:
 
-- **Contract identity and version** — Action Desktop Mutation Contract v1.0
+- **Contract identity and version** — Action Desktop Mutation Contract v1.1
 - **Owner** — Action
 - **Allowed initiators** — Companion Orchestration only (`IC-029`, `IC-030`)
 - **Allowed subscribers** — the requesting Companion task (`IC-031`); Runtime Host for health only
 - **Purpose** — declare the action types required to restore a bounded saved workspace context on explicit user approval
 - **Message kinds** — inherits `ACT-CMD-001`, `ACT-CMD-002`, `ACT-REQ-001`–`ACT-REQ-003`, `ACT-EVT-001`–`ACT-EVT-007`; adds `ACT-REQ-004`
-- **Conceptual field/presence catalogue** — inherited from `10` common envelope; adds `plan_id`, `plan_digest`, `item_id`, item disposition
-- **Permission scopes and validation point** — `action.window.place`, `action.window.focus`; validated at point of use immediately before each item's effect
-- **State owner/references** — Action owns catalogue, in-flight state, plan resolutions for their bounded lifetime, metadata-only audit, minimized effect summary
+- **Conceptual field/presence catalogue** — inherited from `10` common envelope; adds `plan_id`, `expires_at`, `plan_digest`, `item_id`, proposed effect, required permission scope, and item disposition
+- **Permission scopes and validation point** — `action.plan.resolve` for bounded preview matching; one `action.window.place` or `action.window.focus` effect proof per attempted item, validated immediately before that item's effect
+- **State owner/references** — Action owns catalogue, accepted-operation in-flight state, metadata-only audit, and minimized effect summary; the plan is an expiring Companion task value and Action retains no resolved plan state
 - **Failure/cancellation/timeout/retry/idempotency rules** — §2, §6, §9, §10; classes inherited from `11`
-- **Privacy/retention classification** — no user content; minimized non-secret target summaries; no retained environment state
+- **Privacy/retention classification** — no window contents; minimized
+  non-secret target summaries are transient; no retained environment state or
+  user content
 - **Local First behavior** — fully local; no network dependency in any path
 - **Explainability mapping** — §7, per operation and per item
 - **Compatibility/deprecation assessment** — additive. `ACT-REQ-004` is a new request; declaring a reserved type requires a new version of this document
@@ -629,7 +655,7 @@ Per `11` Contract Acceptance Record:
 - **Blueprint/ADR compliance** — §17
 - **Unresolved risks** — §19
 - **Approval status and date** — Accepted 2026-08-02
-- **Engineering Ledger reference** — LEDGER-0020
+- **Engineering Ledger reference** — LEDGER-0020 for v1.0; LEDGER-0021 for v1.1
 
 ---
 
@@ -639,7 +665,7 @@ Per `11` Contract Acceptance Record:
 |---|---|
 | Local First | Every path is local; no network dependency exists in preview, approval, execution, or reporting |
 | Human First | Nothing executes without an explicit preview and an explicit approval bound to that preview |
-| Privacy First | No user content is read or retained; target summaries are minimized; no environment model is retained or exposed |
+| Privacy First | No window contents are read; target summaries are minimized and transient; no environment model or user content is retained |
 | Permission Before Automation | Per-type scopes, no omnibus grant, validated at point of use before each item |
 | Explain Every Action | Per-item explanation is mandatory, and every non-completion must state a reason |
 | Build Only Where We Create Value | Two action types, one new request. Everything else is inherited |
@@ -666,8 +692,8 @@ The contract was checked against the required workflow end to end.
 | Leave | — | No Workspace involvement; nothing runs |
 | Resume | Experience | User opens a saved context; no trigger exists other than the user |
 | Preview | Action | `ACT-REQ-004`, mutating nothing, presented by Experience |
-| Approve | Permission Authority | Per-type scopes; the user's decision produces the proof |
-| Restore | Action | `ACT-CMD-001` bound to the approved `plan_id` and `plan_digest` |
+| Approve | Permission Authority | The user's decision produces one exact per-item effect proof for each `will_attempt` item |
+| Restore | Action | `ACT-CMD-001` carries the complete approved plan and its item effect proofs |
 | Explain | Action supplies, Experience presents | §7, per operation and per item |
 | Complete | Action | Exactly one terminal event carrying the full item set (§12) |
 
@@ -683,8 +709,8 @@ Confirmed absent from every step:
 - **Plugins** — Extension Host is not an initiator; `IC-029` permits Companion only
 - **Voice, adaptation, recommendations** — no step consults or requires them
 
-The workflow is therefore satisfiable by this contract alone, given the
-prerequisite in risk 4 below.
+The workflow is therefore satisfiable by this contract together with
+`16_Saved_Context_Restore_Identity_Specification.md`.
 
 ---
 
@@ -696,29 +722,16 @@ prerequisite in risk 4 below.
    settles it silently.
 2. **`application.launch` drift persists** (§14). Environment mutation exists
    outside Action today. This contract isolates rather than resolves it.
-3. **Window identity across a restart is unproven.** This contract requires the
-   requester to supply identity evidence and a confidence threshold, and fails
-   safely when they are insufficient. Whether identity can be re-established
-   often enough for Resume to feel useful is a product question that `PP-M1-02`
-   will answer empirically, not an architectural one.
-4. **No saved context currently carries the identity evidence this contract
-   requires.** `PP-M1-01` persisted title, process id, and geometry but not
-   `hwnd` or `stable_window_id` (LEDGER-0019). Closing that schema gap is
-   Workspace Management's work and is a prerequisite for `PP-M1-02`.
+3. **Useful restore rate is unproven.** The canonical identity specification
+   intentionally admits only exact same-session matches. Whether enough windows
+   remain unchanged long enough for Resume to feel useful is a Product Proof
+   question that `PP-M1-02` must measure rather than broaden through heuristics.
+4. **Runtime identity support is not implemented.** The architecture is closed
+   by `16_Saved_Context_Restore_Identity_Specification.md`; implementation must
+   add its consented descriptor and exact-session matcher before Resume can
+   function.
 5. **Reserved types remain unspecified** (§1) and cannot be executed until
    declared, which requires a new version of this document.
-6. **`09_Capability_Interaction_Matrix.md` requires one amendment.** `IC-030`
-   enumerates the Companion → Action requests as cancel, reconcile, describe,
-   and delayed terminal lookup. `ACT-REQ-004 Action.resolvePlan` is not among
-   them, so the matrix does not yet authorize the interaction this contract
-   depends on. The amendment is to extend `IC-030` to include plan resolution,
-   with a plan-level authorization proof that confers no effect authority. It
-   was not made in this session because `09` carries unrelated uncommitted
-   `PP-P00` changes and was outside this session's authorized edit set. Until
-   it is made, the matrix and this document disagree, and the matrix is the
-   higher authority.
-7. **The owner of the confidence threshold is unassigned** (§3). This contract
-   establishes only that it is not Action's. Leaving it unowned is safe for now
-   because Action fails closed below whatever threshold arrives, but it must be
-   assigned before `PP-M1-02` implementation, or it will be settled by whoever
-   writes the first caller.
+6. **Cross-session restore remains unsupported.** The canonical identity
+   specification makes this explicit rather than letting implementation infer a
+   broader promise from the name `stable_window_id`.

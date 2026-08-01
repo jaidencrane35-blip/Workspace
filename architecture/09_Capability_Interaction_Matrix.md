@@ -34,7 +34,7 @@ Rows initiate; columns receive.
 | CS | Event: health | Direct: validate | Direct: scope tag | Forbidden | — | Forbidden | Forbidden | Event: context/candidate/state | Forbidden | Forbidden |
 | AC | Event: health | Direct: validate proof | Direct: validate target scope | Forbidden | Forbidden | — | Forbidden | Event: execution result | Forbidden | Forbidden |
 | IN | Event: health | Direct: validate provider/data sharing | Forbidden | Forbidden | Forbidden | Forbidden | — | Event: inference result/proposal/availability | Forbidden | Forbidden |
-| CO | Event: health | Direct: authorize; explain task authorization | Direct | Direct | Direct | Direct with proof | Direct | — | Event: progress/interaction request | Direct: manage, only if activated |
+| CO | Event: health | Direct: authorize; explain task authorization | Direct | Direct | Direct | Direct: resolve plan or execute with the corresponding proof | Direct | — | Event: progress/interaction request | Direct: manage, only if activated |
 | EX | Direct: status query; Event: health | Direct: authorize Workspace read; catalogue/explain user's permissions; user decision/revoke/automatic-policy update | Direct: read-only view with proof | Forbidden | Forbidden | Forbidden | Forbidden | Direct: intent/interaction result | — | Forbidden |
 | EH | Event: health | Direct: validate extension scopes | Forbidden | Forbidden | Forbidden | Forbidden | Forbidden | Event: extension contribution/intent/error/state | Forbidden | — |
 
@@ -42,7 +42,11 @@ Rows initiate; columns receive.
 
 1. A cell permits only the stated purpose; it is not general access.
 2. All meaningful mutations require Permission Authority authorization even when a direct domain call is allowed.
-3. Action accepts execution only from Companion Orchestration with an authorization proof bound to capability, purpose, subject, target, and operation.
+3. Action accepts plan resolution and execution only from Companion
+   Orchestration. Plan resolution requires `action.plan.resolve`, which grants
+   no effect authority; execution requires one effect proof per item bound to
+   capability, purpose, subject, target, operation, item, and action type. No
+   batch-wide or omnibus effect proof is permitted.
 4. Experience may read Workspace views directly, but all mutations are intents through Companion Orchestration.
 5. Extension Host has no direct path to domain capabilities. Companion Orchestration is mandatory for all extension-originated domain effects.
 6. Intelligence never calls Context Sensing, Memory, Action, Experience, or Extension Host. Companion supplies approved context and mediates proposals.
