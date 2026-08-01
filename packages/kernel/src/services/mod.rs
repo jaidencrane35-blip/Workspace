@@ -43,6 +43,7 @@ mod workspace_interaction;
 mod workspace_profile;
 mod workspace_observation;
 mod capture_coordinator;
+mod saved_context;
 mod observation_refresh_policy;
 mod observation_trigger_admission;
 mod observation_trigger_authority;
@@ -134,6 +135,7 @@ pub(crate) use workspace_observation::WorkspaceObservationService;
 pub(crate) use capture_coordinator::{
     CaptureCoordinator, CaptureCoordinatorResult, CaptureLifecycleState,
 };
+pub(crate) use saved_context::SavedContextService;
 #[cfg(test)]
 pub(crate) use capture_coordinator::observation_flight_test_lock;
 pub(crate) use observation_refresh_policy::ObservationRefreshPolicyService;

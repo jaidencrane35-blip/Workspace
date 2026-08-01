@@ -424,6 +424,12 @@ button:not(:disabled):hover {
   min-width: 16rem;
 }
 
+/* Field labels stay quieter than the value beside them */
+.assistant-hero label {
+  color: #9aa8b4;
+  font-size: 0.9rem;
+}
+
 /* Focus styles for accessibility */
 button:focus {
   outline: 2px solid #6b8aab;

@@ -2027,6 +2027,61 @@ export interface WorkspaceObservationCaptureResult {
   snapshot: WorkspaceObservationSnapshot;
 }
 
+/**
+ * Bounded, user-authored workspace contexts (Product Proof PP-M1-01).
+ *
+ * The capture scope is served by the kernel rather than restated here, so the
+ * preview the user reviews cannot drift from what is actually captured.
+ */
+export interface SavedContextScopeItem {
+  key: string;
+  summary: string;
+}
+
+export interface SavedContextCaptureScope {
+  id: string;
+  purpose: string;
+  captured: SavedContextScopeItem[];
+  excluded: SavedContextScopeItem[];
+}
+
+export interface SavedContextWindow {
+  id: string;
+  title: string;
+  process_id: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  monitor_index: number | null;
+  minimized: boolean;
+  focused: boolean;
+  z_order: number | null;
+}
+
+export interface SavedContextMonitor {
+  id: string;
+  monitor_index: number;
+  name: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  is_primary: boolean;
+}
+
+export interface SavedContext {
+  id: string;
+  workspace_id: string;
+  name: string;
+  created_at: string;
+  approved_scope: string;
+  observation_pass_id: string;
+  captured_at: string;
+  windows: SavedContextWindow[];
+  monitors: SavedContextMonitor[];
+}
+
 export type ObservationFreshness =
   | "unavailable"
   | "fresh"

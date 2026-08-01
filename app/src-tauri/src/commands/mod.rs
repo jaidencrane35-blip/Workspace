@@ -29,6 +29,7 @@ pub mod workspace_interaction;
 pub mod workspace_profile;
 pub mod workspace_observation;
 pub mod workspace_state;
+pub mod saved_context;
 pub mod context;
 pub mod error;
 pub mod health;

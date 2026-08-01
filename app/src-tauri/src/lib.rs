@@ -90,6 +90,7 @@ use commands::workspace_observation::{
     get_workspace_observation_by_id, get_workspace_observation_status,
 };
 use commands::workspace_state::get_workspace_state;
+use commands::saved_context::{get_saved_context_capture_scope, save_workspace_context};
 use commands::discovery::{get_action_catalog, get_actor_capabilities};
 use commands::memory::{
     clear_memory_entries, create_memory_entry, delete_memory_entry, diagnose_ai_plan_preview,
@@ -174,6 +175,8 @@ pub fn run() {
             get_observation_scheduler_status,
             get_latest_observation_delta,
             ensure_observation_freshness,
+            get_saved_context_capture_scope,
+            save_workspace_context,
             get_workspace_state,
             create_application,
             launch_application,

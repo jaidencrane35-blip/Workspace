@@ -37,6 +37,7 @@ pub mod permission_approval;
 pub mod platform_coherence;
 pub mod projection;
 pub mod resource;
+pub mod saved_context;
 pub mod suggestion;
 pub mod suggestion_intent;
 pub mod suggestion_lifecycle;
@@ -177,6 +178,10 @@ pub use observation::{
     ObservationImportance,
 };
 pub use resource::{Addressable, ResourceId, ResourceKind, ResourceRef};
+pub use saved_context::{
+    SaveContextRequest, SavedContext, SavedContextCaptureScope, SavedContextError,
+    SavedContextMonitor, SavedContextScopeItem, SavedContextWindow, SAVED_CONTEXT_SCOPE_ID,
+};
 pub use suggestion::{
     derive_suggestions, find_pending_suggestion, Suggestion, SuggestionConfidence, SuggestionError,
     SuggestionStatus, SuggestionType,
@@ -216,7 +221,8 @@ pub use ids::{
     ActorId, AiActionProposalId, AiAssistantWorkflowId, AiGoalId, AiOrchestratedPlanId,
     AiPlanStepId, ApplicationId, AuditEventId, AutomationContractId, AutomationIntentProposalId,
     CapabilityGrantId, IntentId, LayoutId, MemoryEntryId, ModelId, ModelProviderId,
-    DecisionCandidateId, DecisionItemId, PermissionApprovalRequestId, ProjectId, TaskId,
+    DecisionCandidateId, DecisionItemId, PermissionApprovalRequestId, ProjectId, SavedContextId,
+    TaskId,
     TriggerEventId, UserPreferenceId, WidgetId, WorkGoalId, AttentionItemId, ContinuityFacetId,
     WorkspaceActivityId, WorkspaceId, WorkspaceProfileId, WorkspaceTaskId, ZoneId,
 };

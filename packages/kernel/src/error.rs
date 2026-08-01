@@ -5,6 +5,7 @@ use workspace_domain::{
     AiAssistantError, AiEvaluationError, AiMemoryError, AiModelError, AiOrchestrationError,
     AiPersonalizationError, AiPlanningError, AiRequestError, AutomationContractError,
     AutomationTriggerError, DecisionEngineError, DecisionQueueError, DomainError, ResourceKind,
+    SavedContextError,
     TaskGraphError, WorkspaceActivityError, WorkspaceAttentionError, WorkspaceContinuityError,
     WorkspaceEnvironmentError, WorkspaceCompositionError, WorkspacePurposeError,
     WorkspaceEvolutionError, WorkspaceRecommendationEngineError, WorkspaceOperatingStateError,
@@ -271,6 +272,9 @@ pub enum KernelError {
 
     #[error("Workspace profile validation failed: {message}")]
     WorkspaceProfileValidation { message: String },
+
+    #[error("{message}")]
+    SavedContextValidation { message: String },
 
     #[error("Workspace kernel initialization failed")]
     InitializationFailed,
@@ -687,6 +691,17 @@ impl From<WorkspaceInteractionError> for KernelError {
     }
 }
 
+impl From<SavedContextError> for KernelError {
+    fn from(error: SavedContextError) -> Self {
+        match error {
+            SavedContextError::Domain(domain) => KernelError::from(domain),
+            other => KernelError::SavedContextValidation {
+                message: other.to_string(),
+            },
+        }
+    }
+}
+
 impl From<WorkspaceProfileError> for KernelError {
     fn from(error: WorkspaceProfileError) -> Self {
         match error {
@@ -1054,6 +1069,12 @@ impl KernelError {
             },
             KernelError::WorkspaceProfileValidation { message } => PublicError {
                 code: "workspace_profile_validation_error".into(),
+                message: message.clone(),
+            },
+            // Surfaced verbatim: this text tells the user what they still need to
+            // decide, so replacing it with a generic message would hide the answer.
+            KernelError::SavedContextValidation { message } => PublicError {
+                code: "saved_context_validation_error".into(),
                 message: message.clone(),
             },
             KernelError::InitializationFailed => PublicError {

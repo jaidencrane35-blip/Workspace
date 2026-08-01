@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { AssistantPanel } from "./components/AssistantPanel";
 import { CanvasShell } from "./components/CanvasShell";
 import { OperatorConsole } from "./components/OperatorConsole";
+import { SaveContextPanel } from "./components/SaveContextPanel";
 import { WorkspaceIntelligencePanel } from "./components/WorkspaceIntelligencePanel";
 import { invokeIpc } from "./lib/ipc";
 import type { Workspace, WorkspaceContext, Zone } from "./types/domain";
@@ -14,7 +15,7 @@ import type {
 
 const LEGACY_WORKSPACE_ID_KEY = "workspace.active_id";
 
-type AppView = "canvas" | "work" | "assistant" | "operator";
+type AppView = "save" | "canvas" | "work" | "assistant" | "operator";
 
 function formatError(err: unknown): string {
   if (err instanceof Error) {
@@ -59,7 +60,9 @@ async function loadZones(workspaceId: string): Promise<Zone[]> {
 }
 
 export default function App() {
-  const [view, setView] = useState<AppView>("canvas");
+  // Saving a context is the workflow Workspace exists to serve, so it is where
+  // the app opens; the engine surfaces sit behind it.
+  const [view, setView] = useState<AppView>("save");
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [zones, setZones] = useState<Zone[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -176,6 +179,16 @@ export default function App() {
           <button
             type="button"
             role="tab"
+            className={view === "save" ? "tab active" : "tab"}
+            aria-current={view === "save" ? "page" : undefined}
+            aria-selected={view === "save"}
+            onClick={() => setView("save")}
+          >
+            Save
+          </button>
+          <button
+            type="button"
+            role="tab"
             className={view === "canvas" ? "tab active" : "tab"}
             aria-current={view === "canvas" ? "page" : undefined}
             aria-selected={view === "canvas"}
@@ -237,7 +250,22 @@ export default function App() {
         </p>
       )}
 
-      {view === "canvas" ? (
+      {view === "save" ? (
+        <div className="container assistant-container">
+          {bootstrapped ? (
+            <SaveContextPanel
+              workspace={workspace}
+              busy={busy}
+              onBusy={setBusy}
+              onError={onError}
+              onMessage={onMessage}
+              onGoToCanvas={() => setView("canvas")}
+            />
+          ) : (
+            <p className="muted">Loading…</p>
+          )}
+        </div>
+      ) : view === "canvas" ? (
         !bootstrapped ? (
           <div className="canvas-shell">
             <p className="muted">Loading…</p>

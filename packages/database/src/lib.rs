@@ -19,7 +19,7 @@ pub use repositories::{
     AiMemoryRepository, ApplicationRepository, AuditRepository, AutomationContractRepository,
     AutomationTriggerRepository, DecisionEngineRepository, DecisionQueueRepository, GraphRepository,
     LayoutRepository, PermissionApprovalRepository, RecommendationLifecycleRepository,
-    TaskGraphRepository, UserPreferenceRepository,
+    SavedContextRepository, TaskGraphRepository, UserPreferenceRepository,
     WidgetRepository, WorkspaceProfileRepository, ObservationMonitorRepository,
     ObservationPassRepository, ObservationWindowIdentityRepository, ObservationWindowRepository,
     WorkspaceRepository, WorkspaceIntentRepository, ZoneRepository,

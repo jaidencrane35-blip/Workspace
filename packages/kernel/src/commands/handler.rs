@@ -58,6 +58,7 @@ use crate::commands::workspace_observation::{
     GetWorkspaceObservationStatus,
 };
 use crate::commands::workspace_state::GetWorkspaceState;
+use crate::commands::saved_context::{GetSavedContextCaptureScope, SaveWorkspaceContext};
 use crate::commands::get_execution_outcomes::GetExecutionOutcomes;
 use crate::commands::get_execution_state::GetExecutionState;
 use crate::commands::get_execution_states::GetExecutionStates;
@@ -138,6 +139,7 @@ use workspace_domain::{
     WorkspaceInteractionValidation,
     WorkspaceProfile, WorkspaceProfileComparison, WorkspaceProfileMemberInput,
     WorkspaceProfileState, WorkspaceProfileStateComparison, WorkspaceProfileStatus,
+    SaveContextRequest, SavedContext, SavedContextCaptureScope,
     WorkspaceProfileValidation, WorkspaceObservationSnapshot, WorkspaceObservationStatus,
     ObservationConsumerFreshnessNeed, ObservationFreshnessEnsureResult, ObservationSchedulerStatus,
     WorkspaceObservationDelta,
@@ -1840,6 +1842,31 @@ impl CommandHandler {
     ) -> Result<WorkspaceObservationCaptureResult> {
         CommandPipeline::new(kernel.command_context(actor, intent))
             .execute_query(CaptureWorkspaceObservation)
+    }
+
+    /// Describes what saving a context would capture. Observes nothing.
+    pub fn get_saved_context_capture_scope(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+    ) -> Result<SavedContextCaptureScope> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetSavedContextCaptureScope)
+    }
+
+    /// Saves one named bounded context after the user confirmed the capture scope.
+    pub fn save_workspace_context(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+        name: String,
+        approved_scope: String,
+    ) -> Result<SavedContext> {
+        let workspace_id = WorkspaceId::new(workspace_id).map_err(KernelError::Domain)?;
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_mutation(
+            SaveWorkspaceContext::new(SaveContextRequest::new(workspace_id, name, approved_scope)),
+        )
     }
 
     pub fn get_latest_workspace_observation(
