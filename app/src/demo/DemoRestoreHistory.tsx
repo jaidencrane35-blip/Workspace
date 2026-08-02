@@ -27,8 +27,8 @@ export function DemoRestoreHistory({ contextId }: { contextId: string }) {
   }
 
   return (
-    <details className="exp-inspect demo-restore-history">
-      <summary>Restore history</summary>
+    <details className="exp-inspect demo-restore-history is-recessed">
+      <summary>Earlier restores</summary>
       <ul className="list compact">
         {history.map((entry) => (
           <li key={`${entry.restored_at}-${entry.outcome}`}>

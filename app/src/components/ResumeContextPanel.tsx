@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
+import { DemoRestoreHistory } from "../demo/DemoRestoreHistory";
+import { isExperienceDemoActive } from "../demo/demoMode";
 import { invokeIpc } from "../lib/ipc";
 import { RESTORE_LIMITS_SUMMARY } from "../lib/restoreLimits";
 import type {
@@ -11,10 +13,7 @@ import type {
 } from "../types/domain";
 import { EmptyStructure } from "./EmptyStructure";
 import { MomentCard } from "./MomentCard";
-import { DemoRestoreHistory } from "../demo/DemoRestoreHistory";
-import { isExperienceDemoActive } from "../demo/demoMode";
 import { ContinuePreviewBody } from "./objects/ContinuePreviewObject";
-import { IntentionObject } from "./objects/IntentionObject";
 import { RestoreLimitsNotice } from "./RestoreLimitsNotice";
 import { useIntentEngine } from "./IntentEngine";
 import { useWorkspaceComposition } from "./WorkspaceComposition";
@@ -298,18 +297,34 @@ export function ResumeContextPanel({
   const featured = sorted[0] ?? null;
   const others = sorted.slice(1);
 
+  const previewing = step === "preview" && preview != null;
+  const satellitePool = others.slice(0, density === "flow" ? 4 : 3);
+
   return (
     <section
-      className="spatial-frame continue-gallery continue-dash"
+      className={[
+        "spatial-frame",
+        "continue-gallery",
+        "continue-dash",
+        previewing ? "continue-dash--previewing" : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
       data-density={density}
     >
       {(step === "browse" || step === "preview") && (
         <>
-          <header className="spatial-header">
-            <p className="exp-kicker">Continue</p>
-            <h1 className="spatial-title">What were you doing?</h1>
-          </header>
-          <p className="trust-strip muted">{RESTORE_LIMITS_SUMMARY}</p>
+          {!previewing && (
+            <>
+              <header className="spatial-header spatial-header--quiet">
+                <p className="exp-kicker">Continue</p>
+                <h1 className="spatial-title">What were you doing?</h1>
+              </header>
+              <p className="trust-strip trust-strip--quiet muted">
+                {RESTORE_LIMITS_SUMMARY}
+              </p>
+            </>
+          )}
 
           {loadError && <p className="error">{loadError}</p>}
 
@@ -321,15 +336,24 @@ export function ResumeContextPanel({
           ) : (
             <div
               className={
-                selectedId || preview
-                  ? "continue-cinema is-dimmed ws-compose attention-field"
-                  : "continue-cinema ws-compose attention-field"
+                previewing
+                  ? "continue-cinema continue-cinema--focus is-dimmed attention-field"
+                  : selectedId
+                    ? "continue-cinema is-dimmed attention-field"
+                    : "continue-cinema attention-field"
               }
             >
               {featured && (
-                <div className="continue-cinema__stage ws-compose__stage">
+                <div
+                  className={
+                    previewing
+                      ? "continue-cinema__stage continue-cinema__stage--solo"
+                      : "continue-cinema__stage"
+                  }
+                >
                   <MomentCard
                     variant="hero"
+                    sparseMeta
                     state={
                       preview?.saved_context_id === featured.id
                         ? "preview"
@@ -344,7 +368,9 @@ export function ResumeContextPanel({
                       selectMoment(featured.id);
                       openPreview(featured.id);
                     }}
-                    onInspect={() => openInspect(featured.id)}
+                    onInspect={
+                      previewing ? undefined : () => openInspect(featured.id)
+                    }
                     expandContent={
                       preview?.saved_context_id === featured.id ? (
                         <>
@@ -361,28 +387,23 @@ export function ResumeContextPanel({
                       ) : undefined
                     }
                   />
-                  {preview?.saved_context_id !== featured.id && (
-                    <IntentionObject
-                      id={`continue-intention-${featured.id}`}
-                      text={
-                        featured.handoff_note.trim() ||
-                        "Your latest note leads."
-                      }
-                      meta="Saved intention · not live Windows state"
-                      state={
-                        selectedId === featured.id ? "expanded" : "idle"
-                      }
-                    />
-                  )}
                 </div>
               )}
-              {density !== "focus" && others.length > 0 && (
-                <div className="attention-orbit continue-recede ws-compose__orbit dash-grid">
-                  {others.map((context, index) => (
+              {density !== "focus" && satellitePool.length > 0 && (
+                <div
+                  className={
+                    previewing
+                      ? "continue-satellites continue-recede is-recessed"
+                      : "continue-satellites continue-recede"
+                  }
+                >
+                  {satellitePool.map((context, index) => (
                     <MomentCard
                       key={context.id}
                       variant="compact"
-                      className={`orbit-item orbit-item--${index % 5}`}
+                      sparse
+                      attentionWeight={previewing ? 0.42 : 0.68}
+                      className={`home-satellite home-satellite--${index % 4}`}
                       state={
                         preview?.saved_context_id === context.id
                           ? "preview"
@@ -392,12 +413,14 @@ export function ResumeContextPanel({
                       }
                       context={context}
                       busy={busy}
-                      onSelect={() => selectMoment(context.id)}
+                      onSelect={() => {
+                        selectMoment(context.id);
+                        openPreview(context.id);
+                      }}
                       onContinue={() => {
                         selectMoment(context.id);
                         openPreview(context.id);
                       }}
-                      onInspect={() => openInspect(context.id)}
                       expandContent={
                         preview?.saved_context_id === context.id ? (
                           <>

@@ -31,6 +31,12 @@ interface MomentCardProps {
   layoutId?: string;
   /** Progressive restore reveal rendered inside the expanding moment. */
   expandContent?: ReactNode;
+  /** Supporting satellite — title-led, minimal chrome. */
+  sparse?: boolean;
+  /** Hero: show time only, omit window count. */
+  sparseMeta?: boolean;
+  /** Override attention weight (satellites should stay readable). */
+  attentionWeight?: number;
 }
 
 function toObjectState(
@@ -62,6 +68,9 @@ function MomentCardInner({
   className = "",
   layoutId,
   expandContent,
+  sparse = false,
+  sparseMeta = false,
+  attentionWeight,
 }: MomentCardProps) {
   const reduceMotion = useReducedMotion();
   const expandMotion = motionPrimitive("expand", Boolean(reduceMotion));
@@ -92,8 +101,11 @@ function MomentCardInner({
     (objectState === "expanded" ||
       objectState === "selected" ||
       variant === "hero") &&
-    !expandContent;
+    !expandContent &&
+    !sparse;
   const revealing = Boolean(expandContent) && state === "preview";
+  const showHandoff = !sparse;
+  const showWindows = !sparse && !sparseMeta;
 
   return (
     <WorkspaceObject
@@ -102,43 +114,69 @@ function MomentCardInner({
       slot={variant === "hero" || revealing ? "anchor" : "orbit"}
       state={objectState}
       layoutId={layoutId ?? `moment-${context.id}`}
+      attentionWeight={attentionWeight}
       lit={
         state === "selected" || state === "preview" || state === "restoring"
       }
       onActivate={onSelect}
-      className={`moment-card moment-object moment-card--${variant} is-${state} ${className}`.trim()}
+      className={[
+        "moment-card",
+        "moment-object",
+        `moment-card--${variant}`,
+        `is-${state}`,
+        sparse ? "moment-card--sparse" : "",
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")}
     >
       <div className="moment-card__top">
-        <p className="moment-card__kicker">
-          {state === "restoring"
-            ? "Restoring"
-            : state === "preview"
-              ? "Entering saved workspace"
-              : variant === "hero"
-                ? "Pick up here"
-                : "Moment"}
-        </p>
+        {!sparse && (
+          <p className="moment-card__kicker">
+            {state === "restoring"
+              ? "Restoring"
+              : state === "preview"
+                ? "Continue here"
+                : variant === "hero"
+                  ? "Pick up here"
+                  : "Earlier"}
+          </p>
+        )}
         <h3 className="moment-card__title">{context.name}</h3>
       </div>
-      <p
-        className={
-          variant === "compact" && state === "collapsed" && !revealing
-            ? "moment-card__handoff moment-card__handoff--compact"
-            : "moment-card__handoff"
-        }
-      >
-        {handoff}
-      </p>
-      <div className="moment-card__meta">
-        <span>
-          <Clock3 size={ICON.sm} strokeWidth={ICON.stroke} aria-hidden="true" />
-          {formatRelativeTime(context.created_at)}
-        </span>
-        <span>
-          <Layers size={ICON.sm} strokeWidth={ICON.stroke} aria-hidden="true" />
-          {windowLabel}
-        </span>
-      </div>
+      {showHandoff && (
+        <p
+          className={
+            variant === "compact" && state === "collapsed" && !revealing
+              ? "moment-card__handoff moment-card__handoff--compact"
+              : "moment-card__handoff"
+          }
+        >
+          {handoff}
+        </p>
+      )}
+      {!sparse && (
+        <div className="moment-card__meta">
+          <span>
+            <Clock3
+              size={ICON.sm}
+              strokeWidth={ICON.stroke}
+              aria-hidden="true"
+            />
+            {formatRelativeTime(context.created_at)}
+          </span>
+          {showWindows && (
+            <span>
+              <Layers
+                size={ICON.sm}
+                strokeWidth={ICON.stroke}
+                aria-hidden="true"
+              />
+              {windowLabel}
+            </span>
+          )}
+        </div>
+      )}
       {showActions && (
         <div className="moment-card__actions">
           {onContinue && (

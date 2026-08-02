@@ -15,72 +15,80 @@ interface ContinuePreviewBodyProps {
   formatMoment: (iso: string) => string;
 }
 
+function shortTitle(summary: string): string {
+  const trimmed = summary.trim();
+  const cut = trimmed.indexOf(" — ");
+  if (cut > 0) {
+    return trimmed.slice(0, cut);
+  }
+  const dash = trimmed.indexOf(" - ");
+  if (dash > 0) {
+    return trimmed.slice(0, dash);
+  }
+  return trimmed.length > 36 ? `${trimmed.slice(0, 34)}…` : trimmed;
+}
+
 export function ContinuePreviewBody({
   preview,
   busy,
   onApprove,
   onCancel,
   describeDisposition,
-  formatMoment,
 }: ContinuePreviewBodyProps) {
   const reduceMotion = useReducedMotion();
   const willAttempt = preview.plan.items.filter(
     (i) => i.projected_disposition === "will_attempt",
   ).length;
   const total = preview.plan.items.length;
-  const confidence =
-    total === 0 ? 0 : Math.round((willAttempt / total) * 100);
+  const ratio = total === 0 ? 0 : willAttempt / total;
+  const quality =
+    ratio >= 0.85 ? "high" : ratio >= 0.5 ? "steady" : "limited";
 
   return (
     <div className="continue-preview-body">
-      <div className="continue-preview__layers">
-        <section>
-          <p className="exp-kicker">Saved intention</p>
-          <p className="exp-intention">
-            {preview.handoff_note.trim()
-              ? preview.handoff_note
-              : "No handoff was recorded with this context."}
-          </p>
-          <p className="quote-pane__meta">
-            Saved intention · not live Windows state
-          </p>
-        </section>
-        <section>
-          <p className="exp-kicker">Expected restoration</p>
-          <p className="continue-preview__confidence">
-            <motion.span
-              key={confidence}
-              initial={reduceMotion ? false : { opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={spring.soft}
+      <div
+        className="continue-window-field"
+        role="list"
+        aria-label="Windows in this restore"
+      >
+        {preview.plan.items.map((item, index) => {
+          const skip = item.projected_disposition !== "will_attempt";
+          return (
+            <motion.div
+              key={item.item_id}
+              role="listitem"
+              className={[
+                "continue-window-pane",
+                `continue-window-pane--${index % 5}`,
+                skip ? "is-skip" : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+              initial={reduceMotion ? false : { opacity: 0, y: 10, scale: 0.97 }}
+              animate={{ opacity: skip ? 0.45 : 1, y: 0, scale: 1 }}
+              transition={{ ...spring.soft, delay: reduceMotion ? 0 : index * 0.04 }}
             >
-              {confidence}%
-            </motion.span>{" "}
-            <span className="muted">
-              projected · {willAttempt} of {total} windows
-            </span>
-          </p>
-          <p className="muted">
-            Plan expires {formatMoment(preview.plan.expires_at)}.
-          </p>
-        </section>
+              <span className="continue-window-pane__title">
+                {shortTitle(item.target_summary)}
+              </span>
+              <span className="continue-window-pane__hint">
+                {describeDisposition(item)}
+              </span>
+            </motion.div>
+          );
+        })}
       </div>
-      <RestoreLimitsNotice />
-      <details className="exp-inspect" open>
-        <summary>Associated windows</summary>
-        <ul className="resume-plan">
-          {preview.plan.items.map((item) => (
-            <li key={item.item_id}>
-              <strong>{item.target_summary}</strong>
-              <div>
-                {item.action_type} · {describeDisposition(item)}
-              </div>
-              {item.reason && <div className="muted">{item.reason}</div>}
-            </li>
-          ))}
-        </ul>
-      </details>
-      <div className="exp-actions">
+
+      <p className="continue-preview__quality" data-quality={quality}>
+        <span className="continue-preview__quality-dot" aria-hidden="true" />
+        <span>
+          {willAttempt === total
+            ? "Ready to place the open windows"
+            : `Can place ${willAttempt} of ${total} windows still open`}
+        </span>
+      </p>
+
+      <div className="exp-actions continue-preview__actions">
         <button
           type="button"
           className="exp-btn primary"
@@ -95,9 +103,14 @@ export function ContinuePreviewBody({
           disabled={busy}
           onClick={onCancel}
         >
-          Cancel
+          Not now
         </button>
       </div>
+
+      <details className="exp-inspect continue-preview__limits">
+        <summary>What restore does</summary>
+        <RestoreLimitsNotice compact />
+      </details>
     </div>
   );
 }
@@ -143,10 +156,6 @@ function ContinuePreviewObjectInner({
             lit
             className="continue-preview-object"
           >
-            <p className="exp-kicker">Restoration preview</p>
-            <h2 className="focus-card__title">
-              Continue “{preview.saved_context_name}”
-            </h2>
             <ContinuePreviewBody
               preview={preview}
               busy={busy}
