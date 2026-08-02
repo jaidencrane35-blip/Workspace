@@ -20,15 +20,16 @@ impl<'a> SavedContextRepository<'a> {
         self.db.transaction(|tx| {
             tx.connection().execute(
                 "INSERT INTO saved_contexts (
-                     id, workspace_id, name, created_at, approved_scope,
+                     id, workspace_id, name, created_at, approved_scope, handoff_note,
                      observation_pass_id, captured_at, window_count, monitor_count
-                 ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+                 ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
                 (
                     context.id.as_str(),
                     context.workspace_id.as_str(),
                     &context.name,
                     &context.created_at,
                     &context.approved_scope,
+                    &context.handoff_note,
                     &context.observation_pass_id,
                     &context.captured_at,
                     context.windows.len() as i64,
@@ -117,7 +118,7 @@ impl<'a> SavedContextRepository<'a> {
 
     pub fn get_by_id(&self, id: &SavedContextId) -> Result<Option<SavedContext>> {
         let mut stmt = self.db.connection().prepare(
-            "SELECT id, workspace_id, name, created_at, approved_scope,
+            "SELECT id, workspace_id, name, created_at, approved_scope, handoff_note,
                     observation_pass_id, captured_at
              FROM saved_contexts WHERE id = ?1",
         )?;
@@ -272,8 +273,9 @@ fn map_saved_context_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<SavedConte
         name: row.get(2)?,
         created_at: row.get(3)?,
         approved_scope: row.get(4)?,
-        observation_pass_id: row.get(5)?,
-        captured_at: row.get(6)?,
+        handoff_note: row.get(5)?,
+        observation_pass_id: row.get(6)?,
+        captured_at: row.get(7)?,
         windows: Vec::new(),
         monitors: Vec::new(),
     })
@@ -313,6 +315,7 @@ mod tests {
             name: "Tuesday review".into(),
             created_at: "2026-08-01T10:05:00Z".into(),
             approved_scope: SAVED_CONTEXT_SCOPE_ID.into(),
+            handoff_note: "Finish the client proposal outline".into(),
             observation_pass_id: "pass-1".into(),
             captured_at: "2026-08-01T10:05:00Z".into(),
             windows: vec![

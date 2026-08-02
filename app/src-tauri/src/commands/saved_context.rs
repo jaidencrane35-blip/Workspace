@@ -39,6 +39,7 @@ pub fn save_workspace_context(
     workspace_id: String,
     name: String,
     approved_scope: String,
+    handoff_note: String,
     kernel: State<'_, Arc<Mutex<WorkspaceKernel>>>,
 ) -> IpcResponse<SavedContext> {
     match kernel.lock() {
@@ -49,6 +50,7 @@ pub fn save_workspace_context(
             workspace_id,
             name,
             approved_scope,
+            handoff_note,
         ) {
             Ok(saved) => IpcResponse::success(saved),
             Err(error) => IpcResponse::failure(CommandError::from(error)),

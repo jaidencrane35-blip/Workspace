@@ -8,12 +8,11 @@ import type {
 } from "../types/domain";
 
 /**
- * Saving a bounded workspace context (Product Proof PP-M1-01).
+ * Saving a bounded workspace context (Product Proof PP-M1-01 / PP-P01A).
  *
- * The flow is deliberately three steps rather than one button. Naming comes
- * first, the full capture scope is reviewed second, and only a confirmation on
- * that review causes anything to be looked at. The scope shown is served by the
- * kernel, so this surface cannot describe a capture the kernel would not make.
+ * Naming and an explicit handoff note come first. The capture scope is reviewed
+ * next. Only confirmation causes the desktop to be read. Workspace never
+ * invents the intended next action.
  */
 
 type Step = "naming" | "reviewing" | "saved";
@@ -61,6 +60,7 @@ export function SaveContextPanel({
   const [scope, setScope] = useState<SavedContextCaptureScope | null>(null);
   const [scopeError, setScopeError] = useState<string | null>(null);
   const [name, setName] = useState("");
+  const [handoffNote, setHandoffNote] = useState("");
   const [step, setStep] = useState<Step>("naming");
   const [saved, setSaved] = useState<SavedContext | null>(null);
 
@@ -71,10 +71,12 @@ export function SaveContextPanel({
   }, []);
 
   const trimmedName = name.trim();
-  const canReview = scope !== null && trimmedName.length > 0;
+  const trimmedHandoff = handoffNote.trim();
+  const canReview =
+    scope !== null && trimmedName.length > 0 && trimmedHandoff.length > 0;
 
   const save = useCallback(() => {
-    if (!workspace || !scope) {
+    if (!workspace || !scope || !trimmedHandoff) {
       return;
     }
     onBusy(true);
@@ -85,6 +87,7 @@ export function SaveContextPanel({
           workspaceId: workspace.id,
           name: trimmedName,
           approvedScope: scope.id,
+          handoffNote: trimmedHandoff,
         });
         setSaved(context);
         setStep("saved");
@@ -95,10 +98,19 @@ export function SaveContextPanel({
         onBusy(false);
       }
     })();
-  }, [workspace, scope, trimmedName, onBusy, onError, onMessage]);
+  }, [
+    workspace,
+    scope,
+    trimmedName,
+    trimmedHandoff,
+    onBusy,
+    onError,
+    onMessage,
+  ]);
 
   const startAgain = () => {
     setName("");
+    setHandoffNote("");
     setSaved(null);
     setStep("naming");
     onMessage(null);
@@ -146,6 +158,14 @@ export function SaveContextPanel({
           Saved on this computer at {formatMoment(saved.created_at)}. Here is
           everything that was kept — nothing else was recorded.
         </p>
+
+        <section>
+          <h3>What you intend to do next</h3>
+          <p>{saved.handoff_note}</p>
+          <p className="muted">
+            You wrote this. Workspace did not invent or rewrite it.
+          </p>
+        </section>
 
         <section>
           <h3>
@@ -201,12 +221,20 @@ export function SaveContextPanel({
         </p>
 
         <section>
+          <h3>What you intend to do next</h3>
+          <p>{trimmedHandoff}</p>
+          <p className="muted">
+            Kept exactly as you wrote it. Not generated, not inferred.
+          </p>
+        </section>
+
+        <section>
           <h3>Why</h3>
           <p>{scope.purpose}</p>
         </section>
 
         <section>
-          <h3>What will be saved</h3>
+          <h3>What will be saved from the desktop</h3>
           <ul className="list compact">
             {scope.captured.map((item) => (
               <li key={item.key}>{item.summary}</li>
@@ -248,8 +276,8 @@ export function SaveContextPanel({
       <p className="assistant-kicker">Save</p>
       <h2>Save what you are working on</h2>
       <p className="lede">
-        Give this a name you will recognise later. Workspace looks at nothing
-        until you have read what would be captured and confirmed it.
+        Name the context and write what you intend to do next. Workspace looks
+        at nothing until you have read what would be captured and confirmed it.
       </p>
 
       <div className="row">
@@ -263,6 +291,24 @@ export function SaveContextPanel({
           onChange={(event) => setName(event.target.value)}
         />
       </div>
+
+      <div className="row">
+        <label htmlFor="saved-context-handoff">
+          What do you intend to do next?
+        </label>
+        <textarea
+          id="saved-context-handoff"
+          className="input-wide"
+          rows={3}
+          value={handoffNote}
+          placeholder="e.g. Finish the client proposal outline"
+          disabled={busy}
+          onChange={(event) => setHandoffNote(event.target.value)}
+        />
+      </div>
+      <p className="muted">
+        You write this. Workspace will not invent or rewrite it.
+      </p>
 
       <div className="row">
         <button

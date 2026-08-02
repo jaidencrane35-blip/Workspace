@@ -176,6 +176,13 @@ export function ResumeContextPanel({
                       {formatMoment(context.created_at)} · {context.windows.length}{" "}
                       windows · scope {context.approved_scope}
                     </div>
+                    {context.handoff_note.trim() ? (
+                      <div className="resume-handoff">
+                        Next: {context.handoff_note}
+                      </div>
+                    ) : (
+                      <div className="muted">No handoff was recorded.</div>
+                    )}
                   </div>
                   <button
                     type="button"
@@ -198,6 +205,18 @@ export function ResumeContextPanel({
             Expires {formatMoment(preview.plan.expires_at)}. Approve only if this
             matches what you want restored.
           </p>
+          <section className="resume-handoff-block">
+            <h4>What you intended to do next</h4>
+            {preview.handoff_note.trim() ? (
+              <p>{preview.handoff_note}</p>
+            ) : (
+              <p className="muted">No handoff was recorded with this context.</p>
+            )}
+            <p className="muted">
+              Shown exactly as you wrote it. Window restore does not change this
+              text.
+            </p>
+          </section>
           <ul className="resume-plan">
             {preview.plan.items.map((item) => (
               <li key={item.item_id}>
@@ -220,12 +239,20 @@ export function ResumeContextPanel({
         </>
       )}
 
-      {step === "done" && result && (
+      {step === "done" && result && preview && (
         <>
           <h3>Restore result</h3>
           <p>
             Outcome: <strong>{result.outcome.replace(/_/g, " ")}</strong>
           </p>
+          <section className="resume-handoff-block">
+            <h4>What you intended to do next</h4>
+            {preview.handoff_note.trim() ? (
+              <p>{preview.handoff_note}</p>
+            ) : (
+              <p className="muted">No handoff was recorded with this context.</p>
+            )}
+          </section>
           <ul className="resume-plan">
             {result.items.map((item) => (
               <li key={item.item_id}>

@@ -232,6 +232,9 @@ pub struct SavedContextMonitor {
     pub is_primary: bool,
 }
 
+/// Maximum length of a user-authored handoff note (PP-P01A).
+pub const HANDOFF_NOTE_MAX_CHARS: usize = 2000;
+
 /// A named bounded workspace context the user deliberately saved.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SavedContext {
@@ -241,6 +244,8 @@ pub struct SavedContext {
     pub created_at: String,
     /// The capture scope the user confirmed before anything was captured.
     pub approved_scope: String,
+    /// User-authored intended next action. Never AI-generated or inferred.
+    pub handoff_note: String,
     /// Provenance of the capture this context was built from.
     pub observation_pass_id: String,
     pub captured_at: String,
@@ -268,6 +273,8 @@ pub struct SaveContextRequest {
     pub workspace_id: WorkspaceId,
     pub name: String,
     pub approved_scope: String,
+    /// Explicit intended next action written by the user (PP-P01A).
+    pub handoff_note: String,
 }
 
 impl SaveContextRequest {
@@ -275,11 +282,13 @@ impl SaveContextRequest {
         workspace_id: WorkspaceId,
         name: impl Into<String>,
         approved_scope: impl Into<String>,
+        handoff_note: impl Into<String>,
     ) -> Self {
         Self {
             workspace_id,
             name: name.into(),
             approved_scope: approved_scope.into(),
+            handoff_note: handoff_note.into(),
         }
     }
 
@@ -301,6 +310,16 @@ impl SaveContextRequest {
             });
         }
 
+        let handoff = self.handoff_note.trim();
+        if handoff.is_empty() {
+            return Err(SavedContextError::HandoffMissing);
+        }
+        if handoff.chars().count() > HANDOFF_NOTE_MAX_CHARS {
+            return Err(SavedContextError::HandoffTooLong {
+                max: HANDOFF_NOTE_MAX_CHARS,
+            });
+        }
+
         Ok(())
     }
 }
@@ -312,6 +331,12 @@ pub enum SavedContextError {
 
     #[error("give this context a name before saving it")]
     NameMissing,
+
+    #[error("write what you intend to do next before saving — Workspace will not invent it")]
+    HandoffMissing,
+
+    #[error("the intended next action is too long (maximum {max} characters)")]
+    HandoffTooLong { max: usize },
 
     #[error("no capture scope was confirmed, so nothing may be captured")]
     ConsentMissing,
@@ -328,7 +353,12 @@ mod tests {
     use super::*;
 
     fn request(name: &str, scope: &str) -> SaveContextRequest {
-        SaveContextRequest::new(WorkspaceId::new("ws-1").unwrap(), name, scope)
+        SaveContextRequest::new(
+            WorkspaceId::new("ws-1").unwrap(),
+            name,
+            scope,
+            "Finish the client proposal outline",
+        )
     }
 
     #[test]
@@ -336,6 +366,25 @@ mod tests {
         assert!(request("Tuesday review", SAVED_CONTEXT_SCOPE_ID)
             .validate()
             .is_ok());
+    }
+
+    #[test]
+    fn rejects_a_save_without_a_handoff_note() {
+        let mut req = request("Tuesday review", SAVED_CONTEXT_SCOPE_ID);
+        req.handoff_note = "   ".into();
+        assert_eq!(req.validate().unwrap_err(), SavedContextError::HandoffMissing);
+    }
+
+    #[test]
+    fn rejects_an_overlong_handoff_note() {
+        let mut req = request("Tuesday review", SAVED_CONTEXT_SCOPE_ID);
+        req.handoff_note = "x".repeat(HANDOFF_NOTE_MAX_CHARS + 1);
+        assert_eq!(
+            req.validate().unwrap_err(),
+            SavedContextError::HandoffTooLong {
+                max: HANDOFF_NOTE_MAX_CHARS,
+            }
+        );
     }
 
     #[test]

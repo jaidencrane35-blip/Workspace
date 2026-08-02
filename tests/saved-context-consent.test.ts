@@ -43,6 +43,13 @@ describe("Save flow consent", () => {
     expect(panel).not.toContain("saved-context-scope");
   });
 
+  it("requires a user-authored handoff and forwards it unchanged", () => {
+    expect(panel).toContain("handoffNote: trimmedHandoff");
+    expect(panel).toMatch(/trimmedHandoff\.length > 0/);
+    expect(panel).toContain("You write this");
+    expect(panel).not.toMatch(/generate.*handoff|summariz/i);
+  });
+
   it("shows what will not be saved alongside what will", () => {
     expect(panel).toContain("scope.captured.map");
     expect(panel).toContain("scope.excluded.map");
@@ -51,7 +58,10 @@ describe("Save flow consent", () => {
   it("cannot save before the scope has been served", () => {
     // `canReview` gates the step that leads to saving, and `save` returns early
     // without a scope, so an unreviewed capture has no route to the kernel.
-    expect(panel).toContain("const canReview = scope !== null");
-    expect(panel).toMatch(/if \(!workspace \|\| !scope\) \{\s*return;\s*\}/);
+    expect(panel).toContain("const canReview =");
+    expect(panel).toContain("scope !== null");
+    expect(panel).toMatch(
+      /if \(!workspace \|\| !scope \|\| !trimmedHandoff\) \{\s*return;\s*\}/,
+    );
   });
 });

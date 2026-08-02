@@ -95,6 +95,8 @@ impl QueryCommand for GetSavedContext {
 pub struct ResumePlanPreview {
     pub saved_context_id: String,
     pub saved_context_name: String,
+    /// User-authored intended next action (PP-P01A). Not an Action effect.
+    pub handoff_note: String,
     pub plan: ActionPlan,
 }
 
@@ -140,6 +142,7 @@ impl QueryCommand for ResolveResumePlan {
         Ok(ResumePlanPreview {
             saved_context_id: context.id.to_string(),
             saved_context_name: context.name,
+            handoff_note: context.handoff_note,
             plan,
         })
     }

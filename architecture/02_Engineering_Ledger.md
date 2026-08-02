@@ -1688,3 +1688,56 @@ LEDGER-0023's next-task wording. Does not supersede LEDGER-0023's NOT READY
 verdict, blocker set, or pilot gate.
 
 Status: Accepted; active slice **PP-P01A**; milestone **PP-P01** incomplete
+
+### LEDGER-0026
+
+Entry ID: LEDGER-0026
+Timestamp: 2026-08-02
+Capability: Workspace Management + Experience — PP-P01A user-authored handoff
+Related ADRs: ADR-0008
+Related Research: None
+Decision: Implement **PP-P01A** by extending the existing saved-context artifact
+with a required user-authored handoff note. Persist and restore the note
+unchanged through Save review, Resume browse/preview/outcomes. Do not infer,
+generate, or rewrite the note. Do not activate Memory as a new subsystem; do
+not change Action ownership or restore identity contracts. Deterministic
+window restore remains Action-owned and unchanged.
+
+Implementation:
+- Domain: `SaveContextRequest.handoff_note` / `SavedContext.handoff_note`;
+  validation refuses empty/whitespace and notes over `HANDOFF_NOTE_MAX_CHARS`
+  (2000); fail-closed errors `HandoffMissing` / `HandoffTooLong`.
+- Persistence: migration `043_saved_context_handoff_note.sql`; repository
+  read/write of `handoff_note`.
+- Kernel save service: trims and stores the user text as authored; empty
+  handoff refuses before desktop observation.
+- Resume preview: surfaces `handoff_note` on plan preview for Experience.
+- Experience UI: Save panel captures name + handoff, includes handoff in
+  review before capture; Resume list/preview/outcomes display the note.
+- Tauri IPC: `save_workspace_context` accepts `handoff_note`.
+- Tests: domain validation; DB round-trip; kernel persistence and fail-closed
+  empty-handoff; Vitest consent forwarding; resume acceptance coverage.
+
+Validation:
+- `cargo test --workspace` passed.
+- `pnpm test`, `pnpm typecheck`, `pnpm build` passed (prior to docs close).
+- No accepted architecture contract files modified.
+- No capability ownership change; Action restore path unchanged.
+- PP-P01B–PP-P01E not implemented.
+
+Knowledge Gained:
+- Handoff as a typed field on the saved-context artifact satisfies LEDGER-0013
+  "Memory limited to the user-authored handoff" without standing up Memory
+  capability runtime for Product Proof.
+- Refusing empty handoff before observation keeps capture fail-closed and
+  avoids writing partial artifacts.
+
+Unlocks: Active implementation slice advances to **PP-P01B** (restore-limits
+copy). Does not unlock the Product Proof pilot until `PP-P01A`–`PP-P01E` are
+complete.
+
+Supersedes: LEDGER-0025 status wording that named **PP-P01A** as the active
+slice. Does not supersede LEDGER-0023 NOT READY, LEDGER-0025 slice order, or
+the PP-P01 pilot gate.
+
+Status: Complete; active slice **PP-P01B**; milestone **PP-P01** incomplete

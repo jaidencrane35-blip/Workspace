@@ -60,7 +60,12 @@ fn seed_workspace(bus: &EventBus, init: &InitializeWorkspaceResult) -> Workspace
 }
 
 fn request(workspace_id: &WorkspaceId, scope: &str) -> SaveContextRequest {
-    SaveContextRequest::new(workspace_id.clone(), "Tuesday review", scope)
+    SaveContextRequest::new(
+        workspace_id.clone(),
+        "Tuesday review",
+        scope,
+        "Finish the client proposal outline",
+    )
 }
 
 fn saved_context_count(init: &InitializeWorkspaceResult) -> i64 {

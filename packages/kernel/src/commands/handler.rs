@@ -1866,10 +1866,16 @@ impl CommandHandler {
         workspace_id: String,
         name: String,
         approved_scope: String,
+        handoff_note: String,
     ) -> Result<SavedContext> {
         let workspace_id = WorkspaceId::new(workspace_id).map_err(KernelError::Domain)?;
         CommandPipeline::new(kernel.command_context(actor, intent)).execute_mutation(
-            SaveWorkspaceContext::new(SaveContextRequest::new(workspace_id, name, approved_scope)),
+            SaveWorkspaceContext::new(SaveContextRequest::new(
+                workspace_id,
+                name,
+                approved_scope,
+                handoff_note,
+            )),
         )
     }
 

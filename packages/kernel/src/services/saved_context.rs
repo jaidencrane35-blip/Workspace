@@ -147,6 +147,7 @@ impl SavedContextService {
             name: request.name.trim().to_string(),
             created_at: Utc::now().to_rfc3339(),
             approved_scope: request.approved_scope.trim().to_string(),
+            handoff_note: request.handoff_note.trim().to_string(),
             observation_pass_id: snapshot.pass.id.clone(),
             captured_at: snapshot.pass.captured_at.clone(),
             windows: snapshot
@@ -268,7 +269,12 @@ mod tests {
         }
 
         fn request(&self, name: &str, scope: &str) -> SaveContextRequest {
-            SaveContextRequest::new(self.workspace.id.clone(), name, scope)
+            SaveContextRequest::new(
+                self.workspace.id.clone(),
+                name,
+                scope,
+                "Finish the client proposal outline",
+            )
         }
 
         fn save(&self, request: &SaveContextRequest) -> Result<SavedContext> {
@@ -378,6 +384,47 @@ mod tests {
     }
 
     #[test]
+    fn it_persists_the_user_authored_handoff_unchanged() {
+        let _flight = observation_flight_test_lock().lock().unwrap();
+        let fixture = Fixture::new();
+        let request = SaveContextRequest::new(
+            fixture.workspace.id.clone(),
+            "Tuesday review",
+            SAVED_CONTEXT_SCOPE_ID,
+            "  Return to the fee schedule tab and send the draft  ",
+        );
+        let saved = fixture.save(&request).unwrap();
+        assert_eq!(
+            saved.handoff_note,
+            "Return to the fee schedule tab and send the draft"
+        );
+
+        let db = fixture.db();
+        let guard = db.lock().unwrap();
+        let loaded = SavedContextRepository::new(&guard)
+            .get_by_id(&saved.id)
+            .unwrap()
+            .expect("persisted");
+        assert_eq!(loaded.handoff_note, saved.handoff_note);
+    }
+
+    #[test]
+    fn a_save_without_handoff_reads_nothing_and_stores_nothing() {
+        let _flight = observation_flight_test_lock().lock().unwrap();
+        let fixture = Fixture::new();
+        let request = SaveContextRequest::new(
+            fixture.workspace.id.clone(),
+            "Tuesday review",
+            SAVED_CONTEXT_SCOPE_ID,
+            "   ",
+        );
+        let error = fixture.save(&request).unwrap_err();
+        assert!(matches!(error, KernelError::SavedContextValidation { .. }));
+        assert_eq!(fixture.observation_pass_count(), 0);
+        assert_eq!(fixture.saved_context_count(), 0);
+    }
+
+    #[test]
     fn it_records_only_the_fields_the_scope_promised() {
         let _flight = observation_flight_test_lock().lock().unwrap();
         let fixture = Fixture::new();
@@ -454,6 +501,7 @@ mod tests {
             WorkspaceId::new("ws-does-not-exist").unwrap(),
             "Tuesday review",
             SAVED_CONTEXT_SCOPE_ID,
+            "Finish the client proposal outline",
         );
 
         let error = fixture.save(&request).unwrap_err();

@@ -41,6 +41,7 @@ fn sample_context_with_identity() -> SavedContext {
         name: "Tuesday review".into(),
         created_at: "2026-08-01T10:00:00Z".into(),
         approved_scope: SAVED_CONTEXT_SCOPE_ID.into(),
+        handoff_note: "Finish the client proposal outline".into(),
         observation_pass_id: "pass-1".into(),
         captured_at: "2026-08-01T10:00:00Z".into(),
         windows: vec![SavedContextWindow {
@@ -100,7 +101,12 @@ fn scri_ac_01_new_save_requires_v2_scope_consent() {
         &db,
         &actor,
         &intent,
-        &SaveContextRequest::new(workspace.id.clone(), "Old", "saved-context-scope-v1"),
+        &SaveContextRequest::new(
+            workspace.id.clone(),
+            "Old",
+            "saved-context-scope-v1",
+            "Finish the client proposal outline",
+        ),
         &StubDesktopCapturer::fixture_dual_monitor(),
     );
     assert!(matches!(refused, Err(KernelError::SavedContextValidation { .. })));
@@ -109,7 +115,12 @@ fn scri_ac_01_new_save_requires_v2_scope_consent() {
         &db,
         &actor,
         &intent,
-        &SaveContextRequest::new(workspace.id, "New", SAVED_CONTEXT_SCOPE_ID),
+        &SaveContextRequest::new(
+            workspace.id,
+            "New",
+            SAVED_CONTEXT_SCOPE_ID,
+            "Finish the client proposal outline",
+        ),
         &StubDesktopCapturer::fixture_dual_monitor(),
     )
     .unwrap();
@@ -337,7 +348,12 @@ fn scri_ac_14_delete_removes_identities() {
         &db,
         &ActorContext::local_user(),
         &IntentContext::user_request(),
-        &SaveContextRequest::new(workspace.id, "Delete me", SAVED_CONTEXT_SCOPE_ID),
+        &SaveContextRequest::new(
+            workspace.id,
+            "Delete me",
+            SAVED_CONTEXT_SCOPE_ID,
+            "Finish the client proposal outline",
+        ),
         &StubDesktopCapturer::fixture_dual_monitor(),
     )
     .unwrap();

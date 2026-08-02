@@ -192,8 +192,8 @@ pub use desktop_action::{
 pub use saved_context::{
     title_fingerprint, SaveContextRequest, SavedContext, SavedContextCaptureScope,
     SavedContextError, SavedContextMonitor, SavedContextRestoreIdentity, SavedContextScopeItem,
-    SavedContextWindow, RESTORE_IDENTITY_LEGACY_REASON, RESTORE_IDENTITY_SCHEMA_VERSION,
-    SAVED_CONTEXT_SCOPE_ID,
+    SavedContextWindow, HANDOFF_NOTE_MAX_CHARS, RESTORE_IDENTITY_LEGACY_REASON,
+    RESTORE_IDENTITY_SCHEMA_VERSION, SAVED_CONTEXT_SCOPE_ID,
 };
 pub use suggestion::{
     derive_suggestions, find_pending_suggestion, Suggestion, SuggestionConfidence, SuggestionError,

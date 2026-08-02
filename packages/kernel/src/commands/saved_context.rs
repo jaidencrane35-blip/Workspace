@@ -86,6 +86,7 @@ impl MutationCommand for SaveWorkspaceContext {
             serde_json::json!({
                 "saved_context_id": output.id.as_str(),
                 "approved_scope": output.approved_scope,
+                "handoff_note_present": !output.handoff_note.trim().is_empty(),
                 "observation_pass_id": output.observation_pass_id,
                 "window_count": output.window_count(),
                 "monitor_count": output.monitor_count(),

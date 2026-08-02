@@ -2113,6 +2113,7 @@ export interface ActionPlan {
 export interface ResumePlanPreview {
   saved_context_id: string;
   saved_context_name: string;
+  handoff_note: string;
   plan: ActionPlan;
 }
 
@@ -2151,6 +2152,8 @@ export interface SavedContext {
   name: string;
   created_at: string;
   approved_scope: string;
+  /** User-authored intended next action (PP-P01A). Never AI-generated. */
+  handoff_note: string;
   observation_pass_id: string;
   captured_at: string;
   windows: SavedContextWindow[];
