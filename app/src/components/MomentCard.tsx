@@ -1,4 +1,4 @@
-import { ArrowRight, Clock3, Layers } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { memo, type ReactNode } from "react";
 import { ICON } from "../lib/icons";
@@ -9,7 +9,7 @@ import type { SavedContext } from "../types/domain";
 import { WorkspaceObject } from "./WorkspaceObject";
 import { WorkspaceSurface } from "./WorkspaceSurface";
 
-export type MomentCardVariant = "hero" | "standard" | "compact" | "placeholder";
+export type MomentCardVariant = "hero" | "compact" | "placeholder";
 export type MomentObjectState =
   | "collapsed"
   | "expanded"
@@ -56,7 +56,7 @@ function toObjectState(
  * Moment spatial artifact — attention-driven; expands in place for restore.
  */
 function MomentCardInner({
-  variant = "standard",
+  variant = "compact",
   state = "collapsed",
   context,
   busy = false,
@@ -84,7 +84,6 @@ function MomentCardInner({
         className={`moment-card moment-object moment-card--placeholder ${className}`.trim()}
         aria-hidden={variant === "placeholder" ? true : undefined}
       >
-        <p className="moment-card__kicker">Waiting</p>
         <h3>{placeholderLabel}</h3>
         <p className="moment-card__hint">{placeholderHint}</p>
       </WorkspaceSurface>
@@ -104,8 +103,12 @@ function MomentCardInner({
     !expandContent &&
     !sparse;
   const revealing = Boolean(expandContent) && state === "preview";
-  const showHandoff = !sparse;
+  const showHandoff = !sparse || variant === "compact";
   const showWindows = !sparse && !sparseMeta;
+  const showMeta = !sparse;
+  const showKicker =
+    !sparse &&
+    (state === "restoring" || state === "preview" || variant === "hero");
 
   return (
     <WorkspaceObject
@@ -131,15 +134,13 @@ function MomentCardInner({
         .join(" ")}
     >
       <div className="moment-card__top">
-        {!sparse && (
+        {showKicker && (
           <p className="moment-card__kicker">
             {state === "restoring"
               ? "Restoring"
               : state === "preview"
                 ? "Here"
-                : variant === "hero"
-                  ? "Now"
-                  : "Earlier"}
+                : "Now"}
           </p>
         )}
         <h3 className="moment-card__title">{context.name}</h3>
@@ -147,7 +148,7 @@ function MomentCardInner({
       {showHandoff && (
         <p
           className={
-            variant === "compact" && state === "collapsed" && !revealing
+            sparse || (variant === "compact" && state === "collapsed" && !revealing)
               ? "moment-card__handoff moment-card__handoff--compact"
               : "moment-card__handoff"
           }
@@ -155,26 +156,10 @@ function MomentCardInner({
           {handoff}
         </p>
       )}
-      {!sparse && (
+      {showMeta && (
         <div className="moment-card__meta">
-          <span>
-            <Clock3
-              size={ICON.sm}
-              strokeWidth={ICON.stroke}
-              aria-hidden="true"
-            />
-            {formatRelativeTime(context.created_at)}
-          </span>
-          {showWindows && (
-            <span>
-              <Layers
-                size={ICON.sm}
-                strokeWidth={ICON.stroke}
-                aria-hidden="true"
-              />
-              {windowLabel}
-            </span>
-          )}
+          <span>{formatRelativeTime(context.created_at)}</span>
+          {showWindows && <span>{windowLabel}</span>}
         </div>
       )}
       {showActions && (

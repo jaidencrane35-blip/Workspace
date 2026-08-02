@@ -380,7 +380,6 @@ export function ResumeContextPanel({
                             onApprove={approveAndRestore}
                             onCancel={backToBrowse}
                             describeDisposition={describeDisposition}
-                            formatMoment={formatMoment}
                           />
                           <DemoRestoreHistory contextId={featured.id} />
                         </>
@@ -403,7 +402,7 @@ export function ResumeContextPanel({
                       variant="compact"
                       sparse
                       attentionWeight={previewing ? 0.42 : 0.68}
-                      className={`home-satellite home-satellite--${index % 4}`}
+                      className={`home-satellite home-satellite--${index % 3}`}
                       state={
                         preview?.saved_context_id === context.id
                           ? "preview"
@@ -430,7 +429,6 @@ export function ResumeContextPanel({
                               onApprove={approveAndRestore}
                               onCancel={backToBrowse}
                               describeDisposition={describeDisposition}
-                              formatMoment={formatMoment}
                             />
                             <DemoRestoreHistory contextId={context.id} />
                           </>

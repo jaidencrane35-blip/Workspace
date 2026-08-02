@@ -174,7 +174,6 @@ export default function App() {
           busy={busy}
           onCreateWorkspace={createWorkspace}
           onGoToSave={() => setView("save")}
-          onGoToContinue={() => goContinue()}
           onContinueContext={(id) => goContinue(id)}
         />
       );

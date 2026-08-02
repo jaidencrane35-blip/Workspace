@@ -1,10 +1,6 @@
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { memo } from "react";
+import { motion, useReducedMotion } from "motion/react";
 import { spring } from "../../design-system";
 import type { ActionPlanItem, ResumePlanPreview } from "../../types/domain";
-import type { WorkspaceObjectState } from "../../lib/objectState";
-import { RestoreLimitsNotice } from "../RestoreLimitsNotice";
-import { WorkspaceObject } from "../WorkspaceObject";
 
 interface ContinuePreviewBodyProps {
   preview: ResumePlanPreview;
@@ -12,20 +8,23 @@ interface ContinuePreviewBodyProps {
   onApprove: () => void;
   onCancel: () => void;
   describeDisposition: (item: ActionPlanItem) => string;
-  formatMoment: (iso: string) => string;
 }
 
-function shortTitle(summary: string): string {
+function splitWindowLabel(summary: string): { title: string; app: string } {
   const trimmed = summary.trim();
-  const cut = trimmed.indexOf(" — ");
-  if (cut > 0) {
-    return trimmed.slice(0, cut);
+  for (const sep of [" — ", " - ", " · "]) {
+    const cut = trimmed.indexOf(sep);
+    if (cut > 0) {
+      return {
+        title: trimmed.slice(0, cut),
+        app: trimmed.slice(cut + sep.length),
+      };
+    }
   }
-  const dash = trimmed.indexOf(" - ");
-  if (dash > 0) {
-    return trimmed.slice(0, dash);
-  }
-  return trimmed.length > 40 ? `${trimmed.slice(0, 38)}…` : trimmed;
+  return {
+    title: trimmed.length > 40 ? `${trimmed.slice(0, 38)}…` : trimmed,
+    app: "",
+  };
 }
 
 export function ContinuePreviewBody({
@@ -54,6 +53,7 @@ export function ContinuePreviewBody({
         {preview.plan.items.map((item, index) => {
           const skip = item.projected_disposition !== "will_attempt";
           const hint = describeDisposition(item);
+          const { title, app } = splitWindowLabel(item.target_summary);
           return (
             <motion.div
               key={item.item_id}
@@ -65,16 +65,18 @@ export function ContinuePreviewBody({
               ]
                 .filter(Boolean)
                 .join(" ")}
-              initial={reduceMotion ? false : { opacity: 0, y: 12, scale: 0.98 }}
-              animate={{ opacity: skip ? 0.5 : 1, y: 0, scale: 1 }}
+              initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+              animate={{ opacity: skip ? 0.48 : 1, y: 0 }}
               transition={{
                 ...spring.soft,
-                delay: reduceMotion ? 0 : index * 0.05,
+                delay: reduceMotion ? 0 : index * 0.04,
               }}
             >
-              <span className="continue-window-pane__title">
-                {shortTitle(item.target_summary)}
-              </span>
+              <span className="continue-window-pane__chrome" aria-hidden="true" />
+              <span className="continue-window-pane__title">{title}</span>
+              {app ? (
+                <span className="continue-window-pane__app">{app}</span>
+              ) : null}
               {hint ? (
                 <span className="continue-window-pane__hint">{hint}</span>
               ) : null}
@@ -111,69 +113,6 @@ export function ContinuePreviewBody({
           </button>
         </div>
       </div>
-
-      <details className="exp-inspect continue-preview__limits">
-        <summary>What restore does</summary>
-        <RestoreLimitsNotice compact />
-      </details>
     </div>
   );
 }
-
-interface ContinuePreviewObjectProps {
-  preview: ResumePlanPreview | null;
-  busy: boolean;
-  state?: WorkspaceObjectState;
-  onApprove: () => void;
-  onCancel: () => void;
-  describeDisposition: (item: ActionPlanItem) => string;
-  formatMoment: (iso: string) => string;
-}
-
-function ContinuePreviewObjectInner({
-  preview,
-  busy,
-  state = "expanded",
-  onApprove,
-  onCancel,
-  describeDisposition,
-  formatMoment,
-}: ContinuePreviewObjectProps) {
-  const reduceMotion = useReducedMotion();
-
-  return (
-    <AnimatePresence mode="sync">
-      {preview && (
-        <motion.div
-          key={preview.saved_context_id}
-          className="continue-preview-slot"
-          initial={reduceMotion ? false : { opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={reduceMotion ? undefined : { opacity: 0, y: 8 }}
-          transition={spring.soft}
-        >
-          <WorkspaceObject
-            objectId={`preview-${preview.saved_context_id}`}
-            kind="continue-preview"
-            slot="stage"
-            state={state}
-            level="overlay"
-            lit
-            className="continue-preview-object"
-          >
-            <ContinuePreviewBody
-              preview={preview}
-              busy={busy}
-              onApprove={onApprove}
-              onCancel={onCancel}
-              describeDisposition={describeDisposition}
-              formatMoment={formatMoment}
-            />
-          </WorkspaceObject>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
-}
-
-export const ContinuePreviewObject = memo(ContinuePreviewObjectInner);

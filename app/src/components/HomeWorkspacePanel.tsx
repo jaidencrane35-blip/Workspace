@@ -17,7 +17,6 @@ interface HomeWorkspacePanelProps {
   busy: boolean;
   onCreateWorkspace: () => void;
   onGoToSave: () => void;
-  onGoToContinue: () => void;
   onContinueContext: (contextId: string) => void;
 }
 
@@ -26,10 +25,8 @@ export function HomeWorkspacePanel({
   busy,
   onCreateWorkspace,
   onGoToSave,
-  onGoToContinue: _onGoToContinue,
   onContinueContext,
 }: HomeWorkspacePanelProps) {
-  void _onGoToContinue;
   const {
     density,
     setPrimaryObject,
@@ -143,6 +140,19 @@ export function HomeWorkspacePanel({
         <h1 className="place__title place__title--continue">
           Continue your work
         </h1>
+        <button
+          type="button"
+          className="home-quiet-save"
+          disabled={busy}
+          onClick={onGoToSave}
+        >
+          <BookmarkPlus
+            size={ICON.md}
+            strokeWidth={ICON.stroke}
+            aria-hidden="true"
+          />
+          Quick save
+        </button>
       </div>
 
       {loadError && <p className="error">{loadError}</p>}
@@ -162,19 +172,6 @@ export function HomeWorkspacePanel({
                 setAmbient("moment");
               }}
             />
-            <button
-              type="button"
-              className="home-quiet-save"
-              disabled={busy}
-              onClick={onGoToSave}
-            >
-              <BookmarkPlus
-                size={ICON.md}
-                strokeWidth={ICON.stroke}
-                aria-hidden="true"
-              />
-              Quick save
-            </button>
           </div>
 
           {density !== "focus" && satellites.length > 0 && (
@@ -186,7 +183,7 @@ export function HomeWorkspacePanel({
                   state="collapsed"
                   sparse
                   attentionWeight={1}
-                  className={`home-satellite home-satellite--${index % 4}`}
+                  className={`home-satellite home-satellite--${index % 3}`}
                   context={context}
                   busy={busy}
                   onSelect={() => {
