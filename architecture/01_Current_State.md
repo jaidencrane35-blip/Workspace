@@ -165,6 +165,10 @@ writing; in-object restore expand; conversational Check-in; experiential Guide.
 Learn orchestration; composition profiles; motion primitives; command surface;
 premium empty; object relationship influence. Product Proof chrome preserved.
 
+✓ Craftsmanship refinement sprint complete (LEDGER-0045): unified controls,
+typography rhythm, icon metrics, surface/form/focus polish, a11y contrast and
+touch targets; no new architecture.
+
 ---
 
 # Active Task

@@ -2312,3 +2312,19 @@ No Product Proof behaviour change.
 Validation: `pnpm typecheck`, `pnpm test` green.
 
 Status: Complete
+
+### LEDGER-0045
+
+Entry ID: LEDGER-0045
+Timestamp: 2026-08-02
+Capability: Experience — craftsmanship refinement
+Related ADRs: ADR-0008
+Related Research: EXP-001; concept boards
+Decision: Product-wide visual and interaction refinement only — unify spacing
+rhythm, typography, buttons, icons, surfaces, forms, focus rings, and motion
+timing; improve contrast and touch targets; remove inline style drift. No new
+engines, state models, or Product Proof behaviour change.
+
+Validation: `pnpm typecheck`, `pnpm test` green.
+
+Status: Complete

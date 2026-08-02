@@ -23,6 +23,7 @@ import {
   useRef,
 } from "react";
 import { interaction, spring } from "../design-system";
+import { ICON } from "../lib/icons";
 import { INTENT_LABELS } from "../lib/intent";
 import { contentTransition, motionPrimitive } from "../lib/motion";
 import { useWorkspaceDensity } from "../hooks/useWorkspaceDensity";
@@ -147,7 +148,7 @@ function DockItem({
         />
       )}
       <span className="ws-dock__icon">
-        <Icon size={20} strokeWidth={1.75} aria-hidden="true" />
+        <Icon size={ICON.lg} strokeWidth={ICON.stroke} aria-hidden="true" />
       </span>
       <span className="ws-dock__label">{PILOT_VIEW_LABELS[id]}</span>
     </motion.button>

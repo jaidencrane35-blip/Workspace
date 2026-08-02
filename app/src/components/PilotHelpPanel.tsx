@@ -2,6 +2,7 @@ import { BookmarkPlus, ClipboardList, Play, ShieldCheck } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useState } from "react";
 import { spring } from "../design-system";
+import { ICON } from "../lib/icons";
 import { RESTORE_LIMITS_SUMMARY } from "../lib/restoreLimits";
 import { GuideStepObject } from "./objects/GuideStepObject";
 import { useWorkspaceComposition } from "./WorkspaceComposition";
@@ -125,10 +126,14 @@ export function PilotHelpPanel() {
         state="expanded"
         className="quote-pane"
       >
-        <div className="guide-step__icon" style={{ marginBottom: "0.35rem" }}>
-          <ShieldCheck size={20} aria-hidden="true" />
+        <div className="guide-step__icon">
+          <ShieldCheck
+            size={ICON.lg}
+            strokeWidth={ICON.stroke}
+            aria-hidden="true"
+          />
         </div>
-        <p className="quote-pane__text" style={{ fontSize: "1rem" }}>
+        <p className="quote-pane__text">
           You write the handoff. You approve every restore plan. You can inspect
           and permanently delete saved contexts. Nothing is sent off this
           computer for this pilot.

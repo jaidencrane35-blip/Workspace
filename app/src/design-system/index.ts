@@ -1,5 +1,6 @@
 export * from "./tokens";
 export { designSystemCssVars } from "./cssVars";
+export { ICON } from "../lib/icons";
 export {
   ATTENTION_WEIGHT,
   computeAttentionWeights,

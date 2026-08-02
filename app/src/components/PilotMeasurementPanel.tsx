@@ -266,9 +266,7 @@ export function PilotMeasurementPanel({
             <p className="quote-pane__text">
               How does returning to work feel after an interruption?
             </p>
-            <p className="muted" style={{ marginTop: "0.5rem" }}>
-              {scope.purpose}
-            </p>
+            <p className="muted">{scope.purpose}</p>
           </WorkspaceSurface>
           <details className="exp-inspect" open>
             <summary>What’s in this pulse</summary>
@@ -313,8 +311,8 @@ export function PilotMeasurementPanel({
         <p className="exp-kicker">Check-in</p>
         <h1 className="spatial-title">How’s the return feeling?</h1>
         <p className="spatial-summary">
-          These records evaluate the Product Proof hypothesis. They are not saved
-          contexts and are not sent anywhere.
+          Local pilot pulse only — they are not saved contexts and are not sent
+          anywhere.
         </p>
       </header>
 
@@ -393,7 +391,7 @@ export function PilotMeasurementPanel({
               transition={spring.soft}
             >
               <WorkspaceSurface tone="soft" padding="md" className="checkin-bubble">
-                <p className="quote-pane__text" style={{ fontSize: "1rem" }}>
+                <p className="quote-pane__text">
                   Before Workspace — about how many minutes to get back?
                 </p>
               </WorkspaceSurface>
@@ -452,7 +450,7 @@ export function PilotMeasurementPanel({
               transition={spring.soft}
             >
               <WorkspaceSurface tone="soft" padding="md" className="checkin-bubble">
-                <p className="quote-pane__text" style={{ fontSize: "1rem" }}>
+                <p className="quote-pane__text">
                   After a Continue — how many minutes to feel back?
                 </p>
               </WorkspaceSurface>
@@ -521,7 +519,7 @@ export function PilotMeasurementPanel({
               transition={spring.soft}
             >
               <WorkspaceSurface tone="soft" padding="md" className="checkin-bubble">
-                <p className="quote-pane__text" style={{ fontSize: "1rem" }}>
+                <p className="quote-pane__text">
                   A few reflections — whenever you’re ready.
                 </p>
                 <ul className="list compact">
@@ -570,7 +568,7 @@ export function PilotMeasurementPanel({
               transition={spring.soft}
             >
               <WorkspaceSurface tone="soft" padding="md" className="checkin-bubble">
-                <p className="quote-pane__text" style={{ fontSize: "1rem" }}>
+                <p className="quote-pane__text">
                   Week four — still useful?
                 </p>
                 <ul className="list compact">

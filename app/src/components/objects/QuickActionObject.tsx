@@ -1,5 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import { memo } from "react";
+import { ICON } from "../../lib/icons";
 import { WorkspaceObject } from "../WorkspaceObject";
 
 interface QuickActionObjectProps {
@@ -34,7 +35,7 @@ function QuickActionObjectInner({
         disabled={disabled}
         onClick={onClick}
       >
-        <Icon size={16} aria-hidden="true" />
+        <Icon size={ICON.md} strokeWidth={ICON.stroke} aria-hidden="true" />
         {label}
       </button>
     </WorkspaceObject>

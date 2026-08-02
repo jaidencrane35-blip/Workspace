@@ -84,12 +84,19 @@ export const color = {
   ink: "#05070c",
   bg: "#070b12",
   text: "#f2f6fb",
-  muted: "#8fa3b8",
+  muted: "#a3b6c9",
   accent: "#5fd0d8",
   accentStrong: "#8eecf0",
   accentWarm: "#e8b87a",
   ok: "#86efac",
   danger: "#f87171",
+} as const;
+
+export const icon = {
+  sm: 14,
+  md: 16,
+  lg: 20,
+  stroke: 1.75,
 } as const;
 
 export const spatial = {

@@ -1,6 +1,7 @@
 import { ArrowRight, Clock3, Layers } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { memo, type ReactNode } from "react";
+import { ICON } from "../lib/icons";
 import { motionPrimitive } from "../lib/motion";
 import type { WorkspaceObjectState } from "../lib/objectState";
 import { formatRelativeTime } from "../lib/time";
@@ -130,11 +131,11 @@ function MomentCardInner({
       </p>
       <div className="moment-card__meta">
         <span>
-          <Clock3 size={14} aria-hidden="true" />
+          <Clock3 size={ICON.sm} strokeWidth={ICON.stroke} aria-hidden="true" />
           {formatRelativeTime(context.created_at)}
         </span>
         <span>
-          <Layers size={14} aria-hidden="true" />
+          <Layers size={ICON.sm} strokeWidth={ICON.stroke} aria-hidden="true" />
           {windowLabel}
         </span>
       </div>
@@ -151,7 +152,11 @@ function MomentCardInner({
               }}
             >
               Continue
-              <ArrowRight size={16} aria-hidden="true" />
+              <ArrowRight
+                size={ICON.md}
+                strokeWidth={ICON.stroke}
+                aria-hidden="true"
+              />
             </button>
           )}
           {onInspect && (

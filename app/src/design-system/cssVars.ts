@@ -52,6 +52,7 @@ export function designSystemCssVars(): string {
   --ws-color-bg: ${color.bg};
   --ws-color-text: ${color.text};
   --ws-color-muted: ${color.muted};
+  --ws-caret: ${color.accentStrong};
   --ws-color-accent: ${color.accent};
   --ws-color-accent-strong: ${color.accentStrong};
   --ws-color-accent-warm: ${color.accentWarm};

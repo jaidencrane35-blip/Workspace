@@ -415,8 +415,7 @@ export function ResumeContextPanel({
           level="overlay"
           tone="hero"
           padding="xl"
-          className="focus-card"
-          style={{ margin: "0 auto" }}
+          className="focus-card focus-card--center"
         >
           <p className="exp-kicker">Inspect</p>
           <h2 className="focus-card__title">{inspected.name}</h2>
@@ -499,8 +498,7 @@ export function ResumeContextPanel({
         <WorkspaceSurface
           tone="hero"
           padding="lg"
-          className="focus-card"
-          style={{ margin: "0 auto" }}
+          className="focus-card focus-card--center"
         >
           <h2 className="focus-card__title">Delete “{inspected.name}”?</h2>
           <p className="exp-lede">
@@ -536,8 +534,7 @@ export function ResumeContextPanel({
         <WorkspaceSurface
           tone="hero"
           padding="lg"
-          className="focus-card"
-          style={{ margin: "0 auto" }}
+          className="focus-card focus-card--center"
         >
           <p className="exp-kicker">Done</p>
           <h2 className="focus-card__title">You’re back</h2>

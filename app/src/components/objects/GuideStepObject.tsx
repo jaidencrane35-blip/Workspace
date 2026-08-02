@@ -1,5 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import { memo } from "react";
+import { ICON } from "../../lib/icons";
 import type { WorkspaceObjectState } from "../../lib/objectState";
 import { WorkspaceObject } from "../WorkspaceObject";
 
@@ -30,7 +31,7 @@ function GuideStepObjectInner({
     >
       <p className="exp-kicker">Step {step}</p>
       <div className="guide-step__icon">
-        <Icon size={26} aria-hidden="true" />
+        <Icon size={ICON.xl} strokeWidth={ICON.stroke} aria-hidden="true" />
       </div>
       <h3>{title}</h3>
       <p>{line}</p>

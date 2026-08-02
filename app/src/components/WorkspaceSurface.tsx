@@ -43,15 +43,14 @@ export function WorkspaceSurface({
   const reduceMotion = useReducedMotion();
   const classes = [
     "ws-surface",
+    "elevated-card",
     `ws-surface--${level}`,
     `ws-surface--${tone}`,
     `ws-surface--pad-${padding}`,
-    interactive ? "ws-surface--interactive" : "",
-    lit ? "ws-surface--lit" : "",
-    // Compat for prior elevated-card consumers during migration
-    "elevated-card",
     `elevated-card--${tone === "write" ? "hero" : tone}`,
     `elevated-card--pad-${padding}`,
+    interactive ? "ws-surface--interactive elevated-card--interactive" : "",
+    lit ? "ws-surface--lit" : "",
     className,
   ]
     .filter(Boolean)

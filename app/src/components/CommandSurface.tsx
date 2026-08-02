@@ -12,7 +12,7 @@ interface CommandSurfaceProps {
 }
 
 /**
- * Lightweight contextual command surface — adapts to Intent, not a toolbar.
+ * Contextual next actions for the active Intent — quiet, not a toolbar.
  */
 function CommandSurfaceInner({
   onNavigate,
@@ -23,7 +23,11 @@ function CommandSurfaceInner({
   const reduceMotion = useReducedMotion();
   const motionSpec = motionPrimitive("settle", Boolean(reduceMotion));
 
-  if (commands.length === 0) {
+  const actionable = commands.filter(
+    (command) => command.view || command.action === "create",
+  );
+
+  if (actionable.length === 0) {
     return null;
   }
 
@@ -38,11 +42,13 @@ function CommandSurfaceInner({
     >
       <p className="ws-command__intent">{INTENT_LABELS[intent]}</p>
       <div className="ws-command__actions">
-        {commands.map((command) => (
+        {actionable.map((command, index) => (
           <button
             key={command.id}
             type="button"
-            className="ws-command__action"
+            className={
+              index === 0 ? "ws-command__action exp-btn primary" : "ws-command__action exp-btn ghost"
+            }
             disabled={busy}
             onClick={() => {
               if (command.action === "create") {

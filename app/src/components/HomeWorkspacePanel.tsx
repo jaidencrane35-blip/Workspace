@@ -1,5 +1,6 @@
 import { BookmarkPlus, Play } from "lucide-react";
 import { useEffect, useState } from "react";
+import { ICON } from "../lib/icons";
 import { invokeIpc } from "../lib/ipc";
 import { RESTORE_LIMITS_SUMMARY } from "../lib/restoreLimits";
 import { formatRelativeTime } from "../lib/time";
@@ -243,7 +244,11 @@ export function HomeWorkspacePanel({
                   onClick={onGoToSave}
                   disabled={busy}
                 >
-                  <BookmarkPlus size={16} aria-hidden="true" />
+                  <BookmarkPlus
+                    size={ICON.md}
+                    strokeWidth={ICON.stroke}
+                    aria-hidden="true"
+                  />
                   Save your first moment
                 </button>
               </div>

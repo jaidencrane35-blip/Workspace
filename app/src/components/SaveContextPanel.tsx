@@ -289,7 +289,7 @@ export function SaveContextPanel({
           </button>
         </div>
         {scope === null && (
-          <p className="muted skeleton-shimmer" style={{ textAlign: "center" }}>
+          <p className="muted skeleton-shimmer text-center">
             Checking capture scope…
           </p>
         )}
