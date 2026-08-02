@@ -35,8 +35,8 @@ function CheckInSummaryObjectInner({
       <motion.p
         key={`${id}-${value}`}
         className="exp-stat metric-orb__value"
-        initial={reduceMotion ? false : { opacity: 0, y: 12, scale: 0.92 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
+        initial={reduceMotion ? false : { opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
         transition={spring.soft}
       >
         {value}

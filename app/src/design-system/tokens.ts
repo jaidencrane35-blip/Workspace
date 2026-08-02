@@ -74,10 +74,10 @@ export const lighting = {
 } as const;
 
 export const interaction = {
-  hoverLift: -3,
+  hoverLift: -1,
   pressScale: 0.97,
-  magneticMax: 6,
-  magneticFactor: 0.22,
+  magneticMax: 3,
+  magneticFactor: 0.12,
 } as const;
 
 export const color = {

@@ -289,9 +289,7 @@ export function SaveContextPanel({
           </button>
         </div>
         {scope === null && (
-          <p className="muted skeleton-shimmer text-center">
-            Checking capture scope…
-          </p>
+          <p className="muted text-center">Checking capture scope…</p>
         )}
 
         <AnimatePresence>

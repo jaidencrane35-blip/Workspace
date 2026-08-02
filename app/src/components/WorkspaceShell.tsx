@@ -135,9 +135,9 @@ function DockItem({
       onMouseEnter={() => onFocusAmbient("dock")}
       onFocus={() => onFocusAmbient("dock")}
       style={{ x: springX, y: springY }}
-      whileHover={reduceMotion ? undefined : { scale: 1.06 }}
+      whileHover={reduceMotion ? undefined : { scale: 1.03 }}
       whileTap={reduceMotion ? undefined : { scale: interaction.pressScale }}
-      transition={spring.snappy}
+      transition={spring.soft}
     >
       {active && (
         <motion.span
@@ -352,9 +352,8 @@ function ShellBody({
                 scale: profile.dockEmphasis < 0.5 ? 0.95 : 1,
               }
         }
-        transition={spring[profile.motion]}
+        transition={spring.soft}
       >
-        <span className="ws-dock__breath" aria-hidden="true" />
         {PILOT_PRIMARY_VIEWS.map((id) => (
           <DockItem
             key={id}
