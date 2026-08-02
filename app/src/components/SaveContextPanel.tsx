@@ -6,6 +6,7 @@ import type {
   SavedContextWindow,
   Workspace,
 } from "../types/domain";
+import { RestoreLimitsNotice } from "./RestoreLimitsNotice";
 
 /**
  * Saving a bounded workspace context (Product Proof PP-M1-01 / PP-P01A).
@@ -202,6 +203,8 @@ export function SaveContextPanel({
           </ul>
         </section>
 
+        <RestoreLimitsNotice />
+
         <div className="row">
           <button type="button" onClick={startAgain} disabled={busy}>
             Save another context
@@ -250,6 +253,8 @@ export function SaveContextPanel({
             ))}
           </ul>
         </section>
+
+        <RestoreLimitsNotice />
 
         <div className="row">
           <button type="button" onClick={save} disabled={busy}>

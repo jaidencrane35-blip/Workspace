@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { invokeIpc } from "../lib/ipc";
+import { RESTORE_LIMITS_SUMMARY } from "../lib/restoreLimits";
 import type {
   ActionOperationResult,
   ActionPlanItem,
@@ -7,6 +8,7 @@ import type {
   SavedContext,
   Workspace,
 } from "../types/domain";
+import { RestoreLimitsNotice } from "./RestoreLimitsNotice";
 
 type Step = "browse" | "preview" | "done";
 
@@ -159,6 +161,7 @@ export function ResumeContextPanel({
         Choose a saved context, review exactly what Workspace intends to restore,
         then approve. Nothing runs before you approve.
       </p>
+      <p className="muted">{RESTORE_LIMITS_SUMMARY}</p>
 
       {loadError && <p className="error">{loadError}</p>}
 
@@ -217,6 +220,7 @@ export function ResumeContextPanel({
               text.
             </p>
           </section>
+          <RestoreLimitsNotice />
           <ul className="resume-plan">
             {preview.plan.items.map((item) => (
               <li key={item.item_id}>
@@ -253,6 +257,7 @@ export function ResumeContextPanel({
               <p className="muted">No handoff was recorded with this context.</p>
             )}
           </section>
+          <RestoreLimitsNotice compact />
           <ul className="resume-plan">
             {result.items.map((item) => (
               <li key={item.item_id}>

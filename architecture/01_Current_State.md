@@ -148,17 +148,22 @@ Authorised implementation order:
 | Slice | Name | Status |
 |---|---|---|
 | `PP-P01A` | User-authored handoff / intended next action on Save and Resume | **Complete** (LEDGER-0026) |
-| `PP-P01B` | Explicit restore-limits copy (same session; still-open windows; no silent relaunch) | **Active** |
-| `PP-P01C` | Inspect and delete retained saved contexts in the product UI | Pending |
+| `PP-P01B` | Explicit restore-limits copy (same session; still-open windows; no silent relaunch) | **Complete** (LEDGER-0027) |
+| `PP-P01C` | Inspect and delete retained saved contexts in the product UI | **Active** |
 | `PP-P01D` | Pilot-safe primary chrome (Save / Resume + minimal help; engine tabs out of default pilot surface) | Pending |
 | `PP-P01E` | Consented measurement and interview kit (baseline, leave→resume time, correction, week-four habit; no ambient observation) | Pending |
 
-Active implementation slice: **`PP-P01B`**.
+Active implementation slice: **`PP-P01C`**.
 
 `PP-P01A` is complete: Save requires an explicit user-authored handoff note;
 the note is reviewed before capture, persisted with the saved context, and
 shown unchanged on Resume browse, preview, and outcomes. Workspace does not
 infer, generate, or rewrite it. Deterministic window restore is unchanged.
+
+`PP-P01B` is complete: Save review/confirmation and Resume browse/preview/
+outcomes present shared restore-limits copy — same continuing Windows session,
+still-open windows only, no silent relaunch, no file/link opening, no invented
+next action. Presentation only; Action restore behaviour is unchanged.
 
 Only after `PP-P01A` through `PP-P01E` are complete may the defined four-week
 Product Proof pilot run. Completing one slice is not Product Proof success.
@@ -173,7 +178,7 @@ proof later justifies resumed capability research; it is not the active
 milestone.
 
 Recommended next engineering milestone: **PP-P01 Pilot Package**.
-Recommended next implementation slice: **PP-P01B**.
+Recommended next implementation slice: **PP-P01C**.
 
 ---
 

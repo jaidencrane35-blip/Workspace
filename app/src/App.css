@@ -575,6 +575,23 @@ button.linkish:not(:disabled):hover {
   letter-spacing: 0.04em;
 }
 
+.restore-limits {
+  margin: 1rem 0 1.25rem;
+}
+
+.restore-limits h3 {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+}
+
+.restore-limits h4 {
+  margin: 0.75rem 0 0.35rem;
+  font-size: 0.85rem;
+  color: #9aa8b4;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
 textarea.input-wide {
   width: 100%;
   max-width: 36rem;

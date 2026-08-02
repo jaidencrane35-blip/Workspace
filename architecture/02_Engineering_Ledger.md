@@ -1741,3 +1741,46 @@ slice. Does not supersede LEDGER-0023 NOT READY, LEDGER-0025 slice order, or
 the PP-P01 pilot gate.
 
 Status: Complete; active slice **PP-P01B**; milestone **PP-P01** incomplete
+
+### LEDGER-0027
+
+Entry ID: LEDGER-0027
+Timestamp: 2026-08-02
+Capability: Experience — PP-P01B restore-limits copy
+Related ADRs: ADR-0008
+Related Research: None
+Decision: Implement **PP-P01B** as Experience-only explanatory copy stating
+Product Proof restore boundaries in user language: same continuing Windows
+desktop session; still-open windows only; no silent relaunch; no file/link
+opening; handoff shown as authored, never invented. Do not change Action
+restore behaviour, capture scope identity, capability ownership, or contracts.
+
+Implementation:
+- Shared copy module `app/src/lib/restoreLimits.ts` as the single source of
+  restore-limit wording.
+- `RestoreLimitsNotice` component mounted on Save review, Save confirmation,
+  Resume preview, and Resume outcomes; Resume browse shows the shared summary.
+- Vitest audit `tests/restore-limits-copy.test.ts` for presence, consistency,
+  and non-overclaim.
+- Current State advanced; active slice becomes **PP-P01C**.
+
+Validation:
+- `pnpm test` (including new restore-limits tests), `pnpm typecheck`,
+  `pnpm build` passed.
+- Kernel resume/saved-context tests re-run after docs close (no Action change).
+- No accepted architecture contract files modified.
+- PP-P01C–PP-P01E not implemented.
+
+Knowledge Gained:
+- After PP-P01A remembers what the user wrote, explicit “what is not remembered
+  / not restored” copy is the natural trust reinforcement before disposal UI
+  and pilot chrome.
+
+Unlocks: Active implementation slice advances to **PP-P01C** (inspect/delete).
+Does not unlock the Product Proof pilot until `PP-P01A`–`PP-P01E` are complete.
+
+Supersedes: LEDGER-0026 status wording that named **PP-P01B** as the active
+slice. Does not supersede LEDGER-0023 NOT READY, LEDGER-0025 slice order, or
+the PP-P01 pilot gate.
+
+Status: Complete; active slice **PP-P01C**; milestone **PP-P01** incomplete
