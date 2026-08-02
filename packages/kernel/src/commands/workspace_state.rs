@@ -1,4 +1,4 @@
-//! GetWorkspaceState — read-only runtime state projection (Sprint 118).
+//! GetWorkspaceState / GetWorkspaceRuntimeState — read-only runtime projection.
 
 use crate::commands::context::CommandContext;
 use crate::commands::r#trait::QueryCommand;
@@ -6,8 +6,8 @@ use crate::error::{KernelError, Result};
 use crate::lifecycle::LifecycleState;
 use crate::policy::GovernanceClass;
 use crate::security::PermissionSubject;
-use crate::services::WorkspaceStateEngine;
-use workspace_domain::{Capability, WorkspaceState};
+use crate::services::{WorkspaceRuntimeStateService, WorkspaceStateEngine};
+use workspace_domain::{Capability, WorkspaceRuntimeState, WorkspaceState};
 
 /// Returns the canonical WorkspaceState projection (observation + delta).
 pub struct GetWorkspaceState;
@@ -38,6 +38,42 @@ impl QueryCommand for GetWorkspaceState {
             return Err(KernelError::NotReady);
         }
         WorkspaceStateEngine::get_current(
+            &ctx.database,
+            &ctx.actor_context,
+            &ctx.intent_context,
+        )
+    }
+}
+
+/// Returns the full live [`WorkspaceRuntimeState`] bundle (desktop + cache + execution).
+pub struct GetWorkspaceRuntimeState;
+
+impl crate::commands::Command for GetWorkspaceRuntimeState {
+    fn name(&self) -> &'static str {
+        "GetWorkspaceRuntimeState"
+    }
+}
+
+impl QueryCommand for GetWorkspaceRuntimeState {
+    type Output = WorkspaceRuntimeState;
+
+    fn permission_subject(&self) -> PermissionSubject {
+        PermissionSubject::System
+    }
+
+    fn required_capability(&self) -> Capability {
+        Capability::desktop_read()
+    }
+
+    fn governance_class(&self) -> GovernanceClass {
+        GovernanceClass::Governed
+    }
+
+    fn execute(self, ctx: &CommandContext<'_>) -> Result<WorkspaceRuntimeState> {
+        if ctx.state.lifecycle != LifecycleState::Ready {
+            return Err(KernelError::NotReady);
+        }
+        WorkspaceRuntimeStateService::current(
             &ctx.database,
             &ctx.actor_context,
             &ctx.intent_context,

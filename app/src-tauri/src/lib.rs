@@ -89,7 +89,7 @@ use commands::workspace_observation::{
     get_latest_workspace_observation, get_observation_scheduler_status,
     get_workspace_observation_by_id, get_workspace_observation_status,
 };
-use commands::workspace_state::get_workspace_state;
+use commands::workspace_state::{get_workspace_runtime_state, get_workspace_state};
 use commands::saved_context::{get_saved_context_capture_scope, save_workspace_context};
 use commands::pilot_measurement::{
     get_pilot_measurement_scope, get_pilot_measurement_snapshot, grant_pilot_consent,
@@ -199,6 +199,7 @@ pub fn run() {
             record_pilot_leave_resume,
             record_pilot_interview,
             get_workspace_state,
+            get_workspace_runtime_state,
             create_application,
             launch_application,
             get_permission_approvals,

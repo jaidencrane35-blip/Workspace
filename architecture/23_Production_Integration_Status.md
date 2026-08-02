@@ -8,6 +8,7 @@ Demo mode is a **permanent adapter** (`app/src/demo/`) for development, screensh
 
 - Observation model: `architecture/24_Runtime_Observation_Model.md`
 - Restore execution: `architecture/25_Restore_Execution_Model.md`
+- Live runtime state: `architecture/26_Workspace_Runtime_State.md`
 
 ---
 
@@ -92,9 +93,21 @@ Routing: `app/src/lib/ipc.ts` → Tauri `invoke` when not in adapter mode; else 
 
 ---
 
+## Live runtime state status
+
+| Step | Status |
+| --- | --- |
+| `WorkspaceRuntimeState` domain bundle | implemented |
+| Process-local owner + desktop cache by pass id | implemented |
+| Observation cache phases published from CaptureCoordinator | implemented |
+| Execution phases + restore history from RestoreExecutor | implemented |
+| `get_workspace_runtime_state` IPC (operator; not Experience) | implemented |
+
+---
+
 ## Remaining production blockers
 
 1. Full Windows E2E under Tauri on a real multi-monitor session (Save → Continue approve → live place/focus).
 2. Virtual desktop / browser-tab fidelity (out of scope).
-3. Check-in ambient metrics — only when real kernel sources exist.
+3. Check-in ambient metrics — only when real kernel sources exist (can later read `WorkspaceRuntimeState`).
 4. OS may refuse `SetForegroundWindow`; reported per-item, not silently forced.

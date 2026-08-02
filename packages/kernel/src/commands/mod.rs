@@ -298,6 +298,8 @@ mod observation_pipeline_tests;
 #[cfg(test)]
 mod restore_execution_pipeline_tests;
 #[cfg(test)]
+mod workspace_runtime_state_tests;
+#[cfg(test)]
 mod ai_memory_tests;
 #[cfg(test)]
 mod ai_model_provider_tests;
@@ -352,7 +354,7 @@ pub use workspace_observation::{
     GetLatestWorkspaceObservation, GetObservationSchedulerStatus, GetWorkspaceObservationById,
     GetWorkspaceObservationStatus,
 };
-pub use workspace_state::GetWorkspaceState;
+pub use workspace_state::{GetWorkspaceRuntimeState, GetWorkspaceState};
 pub use saved_context::{GetSavedContextCaptureScope, SaveWorkspaceContext};
 pub use pilot_measurement::{
     GetPilotMeasurementScope, GetPilotMeasurementSnapshot, GrantPilotConsent, RecordPilotBaseline,

@@ -16,7 +16,10 @@ use workspace_domain::{ActorContext, CaptureRequest, IntentContext};
 use workspace_windows_integration::DesktopCapturer;
 
 use crate::error::{KernelError, Result};
-use crate::services::{AuditService, WorkspaceObservationCaptureResult, WorkspaceObservationService};
+use crate::services::{
+    AuditService, WorkspaceObservationCaptureResult, WorkspaceObservationService,
+    WorkspaceRuntimeStateService,
+};
 
 /// Internal capture lifecycle phases (not exposed over IPC / UI).
 #[repr(u8)]
@@ -134,6 +137,7 @@ impl CaptureCoordinator {
         capture_fn: impl FnOnce() -> Result<WorkspaceObservationCaptureResult>,
     ) -> Result<CaptureCoordinatorResult> {
         record_lifecycle(CaptureLifecycleState::Requested);
+        WorkspaceRuntimeStateService::note_refresh_requested();
         Self::audit_lifecycle(
             db,
             actor,
@@ -147,6 +151,7 @@ impl CaptureCoordinator {
 
         let Some(_guard) = CaptureFlightGuard::try_acquire() else {
             record_lifecycle(CaptureLifecycleState::RejectedConcurrent);
+            WorkspaceRuntimeStateService::note_refresh_rejected_concurrent();
             Self::audit_lifecycle(
                 db,
                 actor,
@@ -161,6 +166,7 @@ impl CaptureCoordinator {
         };
 
         record_lifecycle(CaptureLifecycleState::Started);
+        WorkspaceRuntimeStateService::note_refresh_in_progress();
         Self::audit_lifecycle(
             db,
             actor,
@@ -175,6 +181,9 @@ impl CaptureCoordinator {
         match capture_fn() {
             Ok(capture) => {
                 record_lifecycle(CaptureLifecycleState::Completed);
+                WorkspaceRuntimeStateService::note_refresh_completed(Some(
+                    capture.snapshot_id.as_str(),
+                ));
                 Self::audit_lifecycle(
                     db,
                     actor,
@@ -189,6 +198,7 @@ impl CaptureCoordinator {
             }
             Err(error) => {
                 record_lifecycle(CaptureLifecycleState::Failed);
+                WorkspaceRuntimeStateService::note_refresh_failed();
                 let _ = Self::audit_lifecycle(
                     db,
                     actor,

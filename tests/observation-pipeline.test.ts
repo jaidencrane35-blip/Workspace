@@ -121,4 +121,15 @@ describe("observation model docs", () => {
     expect(doc).toContain("RestoreExecutionSummary");
     expect(doc).toContain("SWP_NOZORDER");
   });
+
+  it("documents canonical WorkspaceRuntimeState ownership", () => {
+    const doc = fs.readFileSync(
+      path.join(root, "architecture/26_Workspace_Runtime_State.md"),
+      "utf8",
+    );
+    expect(doc).toContain("WorkspaceRuntimeState");
+    expect(doc).toContain("ObservationCachePhase");
+    expect(doc).toContain("RestoreExecutionPhase");
+    expect(doc).toContain("get_workspace_runtime_state");
+  });
 });

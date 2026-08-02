@@ -14,13 +14,13 @@
 
 use std::sync::{Arc, Mutex};
 
-use workspace_database::{Database, ObservationPassRepository};
+use workspace_database::Database;
 use workspace_domain::{
     ActorContext, IntentContext, WorkspaceObservationDelta, WorkspaceState,
 };
 
 use crate::error::Result;
-use crate::services::ObservationDeltaService;
+use crate::services::WorkspaceRuntimeStateService;
 
 /// Read-only projection engine for WorkspaceState.
 pub(crate) struct WorkspaceStateEngine;
@@ -35,28 +35,28 @@ impl WorkspaceStateEngine {
     }
 
     /// Load latest observation + delta and project WorkspaceState.
+    ///
+    /// Routed through [`WorkspaceRuntimeStateService`] so all consumers share
+    /// one cached desktop projection keyed by observation pass id.
     pub(crate) fn get_current(
         db: &Arc<Mutex<Database>>,
         actor: &ActorContext,
         intent: &IntentContext,
     ) -> Result<WorkspaceState> {
-        let delta = ObservationDeltaService::get_latest(db, actor, intent)?;
-        let observation = {
-            let guard = db.lock().expect("database lock poisoned");
-            ObservationPassRepository::new(&guard).load_latest_snapshot()?
-        };
-        Ok(Self::build(observation.as_ref(), &delta))
+        WorkspaceRuntimeStateService::desktop_projection(db, actor, intent)
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use workspace_database::ObservationPassRepository;
     use workspace_domain::{
         ObservedMonitor, ObservedWindow, WorkspaceObservationPass, WorkspaceObservationSnapshot,
     };
 
     use crate::WorkspaceKernel;
+    use crate::services::WorkspaceRuntimeStateService;
 
     fn persist(kernel: &WorkspaceKernel, snap: &WorkspaceObservationSnapshot) {
         let db = kernel.shared_database();
@@ -131,6 +131,7 @@ mod tests {
 
     #[test]
     fn empty_state_with_no_observation() {
+        WorkspaceRuntimeStateService::reset_for_tests();
         let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
         let state = WorkspaceStateEngine::get_current(
             &kernel.shared_database(),

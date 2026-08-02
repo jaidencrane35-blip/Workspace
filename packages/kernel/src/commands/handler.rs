@@ -57,7 +57,7 @@ use crate::commands::workspace_observation::{
     GetLatestWorkspaceObservation, GetObservationSchedulerStatus, GetWorkspaceObservationById,
     GetWorkspaceObservationStatus,
 };
-use crate::commands::workspace_state::GetWorkspaceState;
+use crate::commands::workspace_state::{GetWorkspaceRuntimeState, GetWorkspaceState};
 use crate::commands::pilot_measurement::{
     GetPilotMeasurementScope, GetPilotMeasurementSnapshot, GrantPilotConsent, RecordPilotBaseline,
     RecordPilotInterview, RecordPilotLeaveResume, WithdrawPilotConsent,
@@ -152,8 +152,8 @@ use workspace_domain::{
     WorkspaceProfileValidation, WorkspaceObservationSnapshot, WorkspaceObservationStatus,
     ObservationConsumerFreshnessNeed, ObservationFreshnessEnsureResult, ObservationSchedulerStatus,
     WorkspaceObservationDelta,
-    WorkspaceState as ProjectedWorkspaceState, WorkspaceTask, WorkspaceTaskPriority,
-    WorkspaceTaskStatus,
+    WorkspaceRuntimeState, WorkspaceState as ProjectedWorkspaceState, WorkspaceTask,
+    WorkspaceTaskPriority, WorkspaceTaskStatus,
     WorkspaceIntelligenceComparison, WorkspaceIntelligenceState, AiPlan, AiPlanEvaluationReport,
     AiPlanSubmissionResult,
     AiProposalAuthorityOutcome, AiProposalEvaluation, AiProposalSubmission, ApplicationId,
@@ -2126,6 +2126,15 @@ impl CommandHandler {
     ) -> Result<ProjectedWorkspaceState> {
         CommandPipeline::new(kernel.command_context(actor, intent))
             .execute_query(GetWorkspaceState)
+    }
+
+    pub fn get_workspace_runtime_state(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+    ) -> Result<WorkspaceRuntimeState> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetWorkspaceRuntimeState)
     }
 
     /// Architecture guard — Observation Layer must never execute.
