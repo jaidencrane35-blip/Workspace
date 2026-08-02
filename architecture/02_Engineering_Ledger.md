@@ -2115,3 +2115,64 @@ Unlocks: Authorised Experience Phase 2 as the next presentation milestone when
 an implementation session is opened for it. Does not unlock hypothesis proof.
 
 Status: Accepted
+
+### LEDGER-0036
+
+Entry ID: LEDGER-0036
+Timestamp: 2026-08-02
+Capability: Experience — component library research (EXP-001)
+Related ADRs: ADR-0008
+Related Research: EXP-001
+Decision: Accept the Experience Research Package as the repository authority
+for Experience presentation components, licensing evaluation, interaction
+patterns, design tokens, OSS candidates, and Phase 2 planning:
+
+- `architecture/research/EXPERIENCE_COMPONENT_RESEARCH.md`
+- `architecture/research/experience/` (catalogue, licensing matrix, inventory/
+  gap analysis, patterns, tokens, OSS recommendations, build plan, Phase 2
+  plan)
+- Catalogue entry `EXP-001` in `03_Research_Catalogue.md`
+
+No runtime, capability, contract, or architecture ownership changes. No npm
+dependency approved. Experience Phase 2 implementation may begin from
+`experience/08_Phase_2_Implementation_Plan.md` when separately authorised;
+stack adoption remains decision-pending.
+
+Rationale: Experience evolution needs a curated component layer so Phase 2+ is
+not ad-hoc screen design, and so capability invention is not used to “feel
+better.”
+
+Validation: Documentation-only; no `app/` / `packages/` mutation in this entry.
+
+Unlocks: Repository-ready Phase 2 planning inputs. Does not unlock hypothesis
+proof or dependency installation.
+
+Status: Complete
+
+### LEDGER-0037
+
+Entry ID: LEDGER-0037
+Timestamp: 2026-08-02
+Capability: Experience — Phase 2 dashboard-first Home convergence
+Related ADRs: ADR-0008
+Related Research: EXP-001
+Decision: Implement Experience Roadmap Phase 2 presentation: dashboard-first
+Home as product centre, shared moment cards, honest empty structure, unified
+design tokens, and continuation-first Continue/Save/Guide/Check-in tone —
+without capability, contract, or Product Proof behaviour changes.
+
+Implementation:
+- Design tokens (colour, space, radius, elevation, motion) in `App.css`
+- `MomentCard` (hero/standard/compact/placeholder) + `EmptyStructure`
+- Home dashboard grid (12-col rhythm, hero + rail + recents, trust strip)
+- Continue library uses shared cards; Inspect remains secondary
+- Save as note-first composition; Guide onboarding cards; Check-in feedback tone
+- Adopt `lucide-react` 0.511.0 (ISC) for icon language; relative time via
+  `Intl.RelativeTimeFormat` (no date-fns required)
+- Fidelity audit note: `research/experience/PHASE_2_FIDELITY_AUDIT.md`
+
+Validation: `pnpm typecheck`, `pnpm test` (54), CSP/boundary verifiers green.
+
+Does not unlock ambient activity, AI, or hypothesis proof.
+
+Status: Complete

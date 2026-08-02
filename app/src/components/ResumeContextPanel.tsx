@@ -9,6 +9,8 @@ import type {
   SavedContextWindow,
   Workspace,
 } from "../types/domain";
+import { EmptyStructure } from "./EmptyStructure";
+import { MomentCard } from "./MomentCard";
 import { RestoreLimitsNotice } from "./RestoreLimitsNotice";
 
 type Step = "browse" | "inspect" | "confirm_delete" | "preview" | "done";
@@ -251,65 +253,68 @@ export function ResumeContextPanel({
     );
   }
 
+  const sorted = [...contexts].sort((a, b) =>
+    b.created_at.localeCompare(a.created_at),
+  );
+  const featured = sorted[0] ?? null;
+  const others = sorted.slice(1);
+
   return (
-    <section className="exp-stage">
-      <header className="exp-home-header">
+    <section className="dash continue-dash">
+      <header className="dash-chrome">
         <div>
           <p className="exp-kicker">Continue</p>
-          <h2>Let’s continue your work</h2>
-          <p className="exp-lede">
-            Choose a saved moment. Nothing moves until you approve a restore.
+          <h1 className="dash-title">What were you doing?</h1>
+          <p className="dash-summary">
+            Pick up your note. Nothing moves until you approve a restore.
           </p>
         </div>
       </header>
-      <p className="muted exp-limits-line">{RESTORE_LIMITS_SUMMARY}</p>
+      <p className="trust-strip muted">{RESTORE_LIMITS_SUMMARY}</p>
 
       {loadError && <p className="error">{loadError}</p>}
 
       {step === "browse" && (
         <>
           {contexts.length === 0 ? (
-            <article className="exp-card featured empty-invite">
-              <h3>No saved moments yet</h3>
-              <p className="exp-lede">
-                Save a short note before you step away — then continue from here.
-              </p>
-            </article>
+            <EmptyStructure
+              title="Nothing to continue yet"
+              hint="Save a moment from Home — then it appears here as a place you can return to."
+            />
           ) : (
-            <ul className="exp-card-grid resume-cards">
-              {contexts.map((context) => (
-                <li key={context.id} className="exp-card">
-                  <h3>{context.name}</h3>
-                  <p className="exp-intention compact">
-                    {context.handoff_note.trim()
-                      ? context.handoff_note
-                      : "No handoff was recorded."}
-                  </p>
+            <div className="dash-grid">
+              {featured && (
+                <MomentCard
+                  variant="hero"
+                  className="span-8"
+                  context={featured}
+                  busy={busy}
+                  onContinue={() => openPreview(featured.id)}
+                  onInspect={() => openInspect(featured.id)}
+                />
+              )}
+              <aside className="dash-rail span-4">
+                <article className="action-card">
+                  <p className="exp-kicker">Next</p>
+                  <h3>Can I continue?</h3>
                   <p className="muted">
-                    {formatMoment(context.created_at)} · {context.windows.length}{" "}
-                    {context.windows.length === 1 ? "window" : "windows"}
+                    Continue previews the restore plan. Inspect is only for
+                    details.
                   </p>
-                  <div className="exp-actions">
-                    <button
-                      type="button"
-                      className="exp-btn primary"
-                      disabled={busy}
-                      onClick={() => openPreview(context.id)}
-                    >
-                      Continue
-                    </button>
-                    <button
-                      type="button"
-                      className="exp-btn ghost"
-                      disabled={busy}
-                      onClick={() => openInspect(context.id)}
-                    >
-                      Inspect
-                    </button>
-                  </div>
-                </li>
+                </article>
+              </aside>
+              {others.map((context, index) => (
+                <MomentCard
+                  key={context.id}
+                  variant={index < 2 ? "standard" : "compact"}
+                  className={index < 2 ? "span-6" : "span-4"}
+                  context={context}
+                  busy={busy}
+                  onContinue={() => openPreview(context.id)}
+                  onInspect={() => openInspect(context.id)}
+                />
               ))}
-            </ul>
+            </div>
           )}
         </>
       )}

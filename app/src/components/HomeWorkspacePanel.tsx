@@ -1,6 +1,11 @@
+import { BookmarkPlus, Compass, Play } from "lucide-react";
 import { useEffect, useState } from "react";
 import { invokeIpc } from "../lib/ipc";
+import { RESTORE_LIMITS_SUMMARY } from "../lib/restoreLimits";
+import { formatRelativeTime } from "../lib/time";
 import type { SavedContext, Workspace } from "../types/domain";
+import { EmptyStructure } from "./EmptyStructure";
+import { MomentCard } from "./MomentCard";
 
 interface HomeWorkspacePanelProps {
   workspace: Workspace | null;
@@ -11,14 +16,9 @@ interface HomeWorkspacePanelProps {
   onContinueContext: (contextId: string) => void;
 }
 
-function formatMoment(iso: string): string {
-  const at = new Date(iso);
-  return Number.isNaN(at.getTime()) ? iso : at.toLocaleString();
-}
-
 /**
- * Product home — “this is my workspace.”
- * Presentation only; Save/Resume ownership unchanged.
+ * Dashboard-first Home — Experience Phase 2.
+ * Owned data only; no fabricated activity.
  */
 export function HomeWorkspacePanel({
   workspace,
@@ -43,7 +43,7 @@ export function HomeWorkspacePanel({
         const sorted = [...contexts].sort((a, b) =>
           b.created_at.localeCompare(a.created_at),
         );
-        setRecent(sorted.slice(0, 4));
+        setRecent(sorted.slice(0, 7));
         setLoadError(null);
       })
       .catch((err: unknown) => {
@@ -53,73 +53,78 @@ export function HomeWorkspacePanel({
 
   if (!workspace) {
     return (
-      <section className="exp-stage">
-        <div className="exp-hero-card">
-          <p className="exp-kicker">Welcome</p>
-          <h2>This is your Workspace</h2>
-          <p className="exp-lede">
-            A calm place to leave work and return to it — with your own note of
-            what comes next. Nothing is read from the desktop until you ask.
-          </p>
-          <div className="exp-actions">
-            <button
-              type="button"
-              className="exp-btn primary"
-              onClick={onCreateWorkspace}
-              disabled={busy}
-            >
-              Create a workspace
-            </button>
+      <section className="dash" data-testid="workspace-home">
+        <div className="dash-hero dash-hero--welcome">
+          <div className="dash-hero__atmosphere" aria-hidden="true" />
+          <div className="dash-hero__content">
+            <p className="exp-kicker">Workspace</p>
+            <h2>This is your Workspace</h2>
+            <p className="exp-lede short">
+              Leave a note. Come back. Continue — still-open windows, same
+              session.
+            </p>
+            <div className="exp-actions">
+              <button
+                type="button"
+                className="exp-btn primary"
+                onClick={onCreateWorkspace}
+                disabled={busy}
+              >
+                Create a workspace
+              </button>
+            </div>
           </div>
         </div>
-        <div className="exp-card-grid placeholder-grid">
-          <article className="exp-card placeholder">
-            <h3>Recent work</h3>
-            <p>Saved moments will appear here.</p>
-          </article>
-          <article className="exp-card placeholder">
-            <h3>Your intention</h3>
-            <p>Handoff notes you write stay exactly as you left them.</p>
-          </article>
-          <article className="exp-card placeholder">
-            <h3>Continue</h3>
-            <p>Restore still-open windows in this same Windows session.</p>
-          </article>
-        </div>
+        <EmptyStructure />
+        <p className="trust-strip muted">{RESTORE_LIMITS_SUMMARY}</p>
       </section>
     );
   }
 
   const latest = recent[0] ?? null;
+  const rest = recent.slice(1);
+  const summary =
+    recent.length === 0
+      ? "No saved moments yet"
+      : recent.length === 1
+        ? `1 saved moment · last ${formatRelativeTime(recent[0].created_at)}`
+        : `${recent.length} recent moments · last ${formatRelativeTime(recent[0].created_at)}`;
 
   return (
-    <section className="exp-stage">
-      <header className="exp-home-header">
+    <section className="dash" data-testid="workspace-home">
+      <header className="dash-chrome">
         <div>
           <p className="exp-kicker">Workspace</p>
-          <h2>{workspace.name}</h2>
-          <p className="exp-lede">
-            {latest
-              ? "Pick up where you left off, or mark a new place before you step away."
-              : "Mark where you are before you leave — then continue when you return."}
-          </p>
+          <h1 className="dash-title">{workspace.name}</h1>
+          <p className="dash-summary">{summary}</p>
         </div>
-        <div className="exp-actions">
+        <div className="dash-quick">
           <button
             type="button"
             className="exp-btn primary"
             onClick={onGoToSave}
             disabled={busy}
           >
-            Save this moment
+            <BookmarkPlus size={16} aria-hidden="true" />
+            Quick save
           </button>
           <button
             type="button"
             className="exp-btn"
             onClick={onGoToContinue}
+            disabled={busy || recent.length === 0}
+          >
+            <Play size={16} aria-hidden="true" />
+            Continue
+          </button>
+          <button
+            type="button"
+            className="exp-btn ghost"
+            onClick={onGoToContinue}
             disabled={busy}
           >
-            Continue work
+            <Compass size={16} aria-hidden="true" />
+            All moments
           </button>
         </div>
       </header>
@@ -127,77 +132,96 @@ export function HomeWorkspacePanel({
       {loadError && <p className="error">{loadError}</p>}
 
       {latest ? (
-        <article className="exp-card featured">
-          <p className="exp-kicker">Most recent</p>
-          <h3>{latest.name}</h3>
-          <p className="exp-intention">
-            {latest.handoff_note.trim()
-              ? latest.handoff_note
-              : "No handoff was recorded."}
-          </p>
-          <p className="muted">
-            {formatMoment(latest.created_at)} · {latest.windows.length}{" "}
-            {latest.windows.length === 1 ? "window" : "windows"}
-          </p>
-          <div className="exp-actions">
-            <button
-              type="button"
-              className="exp-btn primary"
-              disabled={busy}
-              onClick={() => onContinueContext(latest.id)}
-            >
-              Continue this
-            </button>
-            <button
-              type="button"
-              className="exp-btn ghost"
-              disabled={busy}
-              onClick={onGoToContinue}
-            >
-              See all
-            </button>
-          </div>
-        </article>
-      ) : (
-        <article className="exp-card featured empty-invite">
-          <p className="exp-kicker">Ready when you are</p>
-          <h3>Nothing saved yet</h3>
-          <p className="exp-lede">
-            When you step away, save a short note about what you intend next.
-            That becomes the way back.
-          </p>
-          <button
-            type="button"
-            className="exp-btn primary"
-            onClick={onGoToSave}
-            disabled={busy}
-          >
-            Save your first moment
-          </button>
-        </article>
-      )}
-
-      {recent.length > 1 && (
-        <div className="exp-card-grid">
-          {recent.slice(1).map((context) => (
-            <article key={context.id} className="exp-card">
-              <h3>{context.name}</h3>
-              <p className="exp-intention compact">
-                {context.handoff_note.trim() || "No handoff recorded."}
+        <div className="dash-grid">
+          <MomentCard
+            variant="hero"
+            className="span-8"
+            context={latest}
+            busy={busy}
+            onContinue={() => onContinueContext(latest.id)}
+            onInspect={onGoToContinue}
+          />
+          <aside className="dash-rail span-4">
+            <article className="action-card">
+              <p className="exp-kicker">Next</p>
+              <h3>Step away cleanly</h3>
+              <p className="muted">
+                Name the moment and write what you intend next. Nothing is read
+                until you confirm.
               </p>
-              <p className="muted">{formatMoment(context.created_at)}</p>
               <button
                 type="button"
-                className="exp-btn ghost"
+                className="exp-btn"
+                onClick={onGoToSave}
                 disabled={busy}
-                onClick={() => onContinueContext(context.id)}
               >
-                Continue
+                Save this moment
               </button>
             </article>
+            <article className="action-card action-card--soft">
+              <p className="exp-kicker">Memory</p>
+              <h3>Owned by you</h3>
+              <p className="muted">
+                Handoffs stay exactly as you wrote them. No invented activity.
+              </p>
+            </article>
+          </aside>
+          {rest.map((context, index) => (
+            <MomentCard
+              key={context.id}
+              variant={index === 0 ? "standard" : "compact"}
+              className={index === 0 ? "span-6" : "span-3"}
+              context={context}
+              busy={busy}
+              onContinue={() => onContinueContext(context.id)}
+            />
           ))}
+          {rest.length < 3 &&
+            Array.from({ length: 3 - rest.length }).map((_, index) => (
+              <MomentCard
+                key={`ph-${index}`}
+                variant="placeholder"
+                className="span-3"
+                placeholderLabel="Open slot"
+                placeholderHint="Fills when you save again"
+              />
+            ))}
         </div>
+      ) : (
+        <>
+          <div className="dash-grid">
+            <article className="moment-card moment-card--hero span-8 empty-invite">
+              <p className="exp-kicker">Ready when you are</p>
+              <h3>Save your first moment</h3>
+              <p className="exp-lede short">
+                Before you leave, leave yourself a note. That becomes the way
+                back.
+              </p>
+              <button
+                type="button"
+                className="exp-btn primary"
+                onClick={onGoToSave}
+                disabled={busy}
+              >
+                <BookmarkPlus size={16} aria-hidden="true" />
+                Save your first moment
+              </button>
+            </article>
+            <aside className="dash-rail span-4">
+              <article className="action-card">
+                <p className="exp-kicker">Continue</p>
+                <h3>After you save</h3>
+                <p className="muted">
+                  Moments you keep will show here for one-click continuation.
+                </p>
+              </article>
+            </aside>
+          </div>
+          <EmptyStructure />
+        </>
       )}
+
+      <p className="trust-strip muted">{RESTORE_LIMITS_SUMMARY}</p>
     </section>
   );
 }

@@ -107,7 +107,7 @@ re-establishing identity from zero.
 
 ### Experience Phase 2 — Dashboard-first Home with meaningful recent activity
 
-**Status: Next Experience milestone (not started)**
+**Status: Complete (LEDGER-0037)**
 
 Intent: Home becomes the centre of the product — a living hub of memory and
 obvious next actions, not a heading-plus-buttons page.

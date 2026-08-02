@@ -121,23 +121,26 @@ export function SaveContextPanel({
 
   if (!workspace) {
     return (
-      <section className="exp-stage">
-        <div className="exp-hero-card">
-          <p className="exp-kicker">Save</p>
-          <h2>Start your workspace</h2>
-          <p className="exp-lede">
-            Create a place to keep moments of work. Nothing from the desktop is
-            read until you review and confirm a save.
-          </p>
-          <div className="exp-actions">
-            <button
-              type="button"
-              className="exp-btn primary"
-              onClick={onCreateWorkspace}
-              disabled={busy}
-            >
-              Create a workspace
-            </button>
+      <section className="dash save-dash">
+        <div className="dash-hero dash-hero--welcome">
+          <div className="dash-hero__atmosphere" aria-hidden="true" />
+          <div className="dash-hero__content">
+            <p className="exp-kicker">Save</p>
+            <h2>Start your workspace</h2>
+            <p className="exp-lede short">
+              Create a place for moments. Nothing from the desktop is read until
+              you review and confirm.
+            </p>
+            <div className="exp-actions">
+              <button
+                type="button"
+                className="exp-btn primary"
+                onClick={onCreateWorkspace}
+                disabled={busy}
+              >
+                Create a workspace
+              </button>
+            </div>
           </div>
         </div>
       </section>
@@ -282,57 +285,68 @@ export function SaveContextPanel({
   }
 
   return (
-    <section className="exp-stage">
-      <article className="exp-card featured">
-        <p className="exp-kicker">Save</p>
-        <h2>Leave a note for yourself</h2>
-        <p className="exp-lede">
-          Bookmark where you are. Name the moment, write what you intend next,
-          then review before anything is read from the desktop.
-        </p>
+    <section className="dash save-dash">
+      <div className="dash-grid">
+        <article className="moment-card moment-card--hero span-8 note-card">
+          <p className="exp-kicker">Save</p>
+          <h2>Leave a note for yourself</h2>
+          <p className="exp-lede short">
+            Before you step away — name the moment and write what comes next.
+          </p>
 
-        <label className="exp-field" htmlFor="saved-context-name">
-          <span>Name</span>
-          <input
-            id="saved-context-name"
-            className="input-wide"
-            value={name}
-            placeholder="Tuesday review"
-            disabled={busy}
-            onChange={(event) => setName(event.target.value)}
-          />
-        </label>
+          <label className="exp-field" htmlFor="saved-context-name">
+            <span>Name this moment</span>
+            <input
+              id="saved-context-name"
+              className="input-wide"
+              value={name}
+              placeholder="Tuesday review"
+              disabled={busy}
+              onChange={(event) => setName(event.target.value)}
+            />
+          </label>
 
-        <label className="exp-field" htmlFor="saved-context-handoff">
-          <span>What do you intend to do next?</span>
-          <textarea
-            id="saved-context-handoff"
-            className="input-wide"
-            rows={3}
-            value={handoffNote}
-            placeholder="e.g. Finish the client proposal outline"
-            disabled={busy}
-            onChange={(event) => setHandoffNote(event.target.value)}
-          />
-        </label>
-        <p className="muted">
-          You write this. Workspace will not invent or rewrite it.
-        </p>
+          <label className="exp-field" htmlFor="saved-context-handoff">
+            <span>What do you intend to do next?</span>
+            <textarea
+              id="saved-context-handoff"
+              className="input-wide note-textarea"
+              rows={4}
+              value={handoffNote}
+              placeholder="Finish the client proposal outline…"
+              disabled={busy}
+              onChange={(event) => setHandoffNote(event.target.value)}
+            />
+          </label>
+          <p className="muted">
+            You write this. Workspace will not invent or rewrite it.
+          </p>
 
-        <div className="exp-actions">
-          <button
-            type="button"
-            className="exp-btn primary"
-            onClick={() => setStep("reviewing")}
-            disabled={busy || !canReview}
-          >
-            Review what will be saved
-          </button>
-        </div>
-        {scope === null && (
-          <p className="muted">Checking what a capture would include…</p>
-        )}
-      </article>
+          <div className="exp-actions">
+            <button
+              type="button"
+              className="exp-btn primary"
+              onClick={() => setStep("reviewing")}
+              disabled={busy || !canReview}
+            >
+              Review what will be saved
+            </button>
+          </div>
+          {scope === null && (
+            <p className="muted">Checking what a capture would include…</p>
+          )}
+        </article>
+        <aside className="dash-rail span-4">
+          <article className="action-card">
+            <p className="exp-kicker">Remember</p>
+            <h3>Nothing read yet</h3>
+            <p className="muted">
+              Desktop capture waits until you review and confirm. Cancel means
+              zero observation.
+            </p>
+          </article>
+        </aside>
+      </div>
     </section>
   );
 }

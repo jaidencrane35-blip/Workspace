@@ -207,11 +207,11 @@ export function PilotMeasurementPanel({
 
   if (!consented) {
     return (
-      <section className="exp-stage" data-testid="pilot-measurement-consent">
-        <article className="exp-card featured">
+      <section className="dash checkin-dash" data-testid="pilot-measurement-consent">
+        <article className="moment-card moment-card--hero">
           <p className="exp-kicker">Check-in</p>
-          <h2>Measure the pilot — only with your consent</h2>
-          <p className="exp-lede">{scope.purpose}</p>
+          <h2>A quick pulse on how return-to-work feels</h2>
+          <p className="exp-lede short">{scope.purpose}</p>
 
           <details className="exp-inspect" open>
             <summary>What will be measured</summary>
@@ -249,20 +249,20 @@ export function PilotMeasurementPanel({
   }
 
   return (
-    <section className="exp-stage" data-testid="pilot-measurement-active">
-      <header className="exp-home-header">
+    <section className="dash checkin-dash" data-testid="pilot-measurement-active">
+      <header className="dash-chrome">
         <div>
           <p className="exp-kicker">Check-in</p>
-          <h2>Your pilot progress</h2>
-          <p className="exp-lede">
+          <h1 className="dash-title">How’s the return feeling?</h1>
+          <p className="dash-summary">
             These records evaluate the Product Proof hypothesis. They are not saved
             contexts and are not sent anywhere.
           </p>
         </div>
       </header>
 
-      <div className="exp-stat-row">
-        <article className="exp-card stat">
+      <div className="dash-grid checkin-stats">
+        <article className="exp-card stat span-4">
           <p className="exp-kicker">Baseline</p>
           <p className="exp-stat">
             {snapshot.baseline
@@ -270,12 +270,12 @@ export function PilotMeasurementPanel({
               : "—"}
           </p>
         </article>
-        <article className="exp-card stat">
+        <article className="exp-card stat span-4">
           <p className="exp-kicker">Leave → resume</p>
           <p className="exp-stat">{snapshot.leave_resume.length}</p>
           <p className="muted">{snapshot.distinct_resume_days} distinct days</p>
         </article>
-        <article className="exp-card stat">
+        <article className="exp-card stat span-4">
           <p className="exp-kicker">Median return</p>
           <p className="exp-stat">
             {snapshot.median_return_minutes != null

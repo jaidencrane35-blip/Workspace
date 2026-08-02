@@ -127,6 +127,15 @@ behaviour.
 Phase 1 companion identity largely achieved; next Experience milestone is
 Phase 2 dashboard-first Home — not open-ended UI tweaks or capability growth.
 
+✓ Experience Component Library research complete (EXP-001, LEDGER-0036):
+catalogue, licensing matrix, gap analysis, patterns, tokens, OSS candidates,
+build plan, and Phase 2 implementation plan under
+`architecture/research/experience/`. No dependency approved; no runtime change.
+
+✓ Experience Phase 2 dashboard-first Home convergence complete (LEDGER-0037):
+shared moment cards, empty structure, design tokens, Lucide icons; Continue/
+Save/Guide/Check-in presentation refined without Product Proof behaviour change.
+
 ---
 
 # Active Task
@@ -228,9 +237,9 @@ install/launch with persisted active workspace (LEDGER-0032/0033). Experience
 Phase 1 recorded in LEDGER-0034; sequencing continues under
 `21_Experience_Roadmap.md` (LEDGER-0035). Next programme objective remains
 LEDGER-0013 pilot execution.
-Recommended next Experience milestone (when authorised): **Experience Phase 2
-— dashboard-first Home** (`21_Experience_Roadmap.md`). Not an open UI tweak
-sprint. Capability expansion: **None**.
+Recommended next Experience milestone (when authorised): **Experience Phase 3
+— rich visual Continue library** per `21_Experience_Roadmap.md`. Phase 2 Home
+dashboard is complete (LEDGER-0037). Capability expansion: **None**.
 
 ---
 
