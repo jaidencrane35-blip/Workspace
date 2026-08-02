@@ -1492,3 +1492,73 @@ Current State after LEDGER-0021. Does not supersede LEDGER-0019's
 `LaunchApplication` drift finding.
 
 Status: Accepted; `PP-M1-02` implemented
+
+---
+
+### LEDGER-0023
+
+Entry ID: LEDGER-0023
+Timestamp: 2026-08-02
+Capability: Product strategy — Product Proof pilot readiness after `PP-M1-02`
+Related ADRs: None new
+Related Research: Strategic product review only; no technology evaluation
+Decision: `PP-M1-02` is engineering-complete and must not be treated as
+Product Proof pilot-ready. Verdict: **NOT READY** for the LEDGER-0013 pilot
+until the smallest pilot package gaps are closed. Sequence **PP-P01 Pilot
+Package** before `PP-M1-03` Undo and before declared application launch/reuse.
+
+Rationale:
+
+- LEDGER-0013 defines success as faster return to a recurring context **and
+  intended next action**, with inspect/delete, consented measurement, and a
+  primary UI that is not an engine/diagnostic console.
+- Current Resume restores placement/focus for still-open same-session windows
+  only. That is a trustworthy geometry loop, not yet the interruption product.
+- Against PowerToys Workspaces plus notes, today's wedge risks proving
+  ceremony without continuity and falsifying the hypothesis for the wrong
+  reason.
+- Trust increases at scope review, plan preview, digest approval, and honest
+  per-item outcomes. Trust is still at risk from capability surprise (reboot /
+  closed apps), architecture leakage in chrome, and missing disposal controls.
+
+Smallest blockers (PP-P01):
+
+1. User-authored handoff / intended next action on Save and Resume
+2. Inspect/delete retained contexts in product UI
+3. Consented measurement + interview kit (baseline, leave→resume time,
+   correction, week-four habit) with zero ambient observation
+4. Pilot-safe primary chrome (Save/Resume; hide engine tabs by default)
+5. Explicit user-language restore limits (same session; still-open windows;
+   no silent relaunch)
+
+Do not build yet: Undo as the next gate, application.launch declaration,
+cross-session heuristics, AI on the critical path, cloud, voice, plugins, or
+fuzzy matching.
+
+Validation:
+
+- Reviewed Blueprint, Current State, Engineering Ledger (esp. LEDGER-0013,
+  0021, 0022), Action/restore-identity contracts, Save/Resume UI, and App
+  chrome.
+- No runtime or architecture redesign. Documentation-only strategy resequence.
+- Self-review: a narrow soft-interrupt dogfood may validate consent UX but
+  must not be labeled Product Proof success under LEDGER-0013.
+
+Knowledge Gained:
+
+- Engineering acceptance of deterministic Resume is not product evidence.
+- Layout without next-action memory remains the failure mode LEDGER-0013
+  already warned about.
+- Honest fail-closed matching must be framed as a product limit or pilots
+  will read it as product failure.
+
+Unlocks: A bounded PP-P01 engineering slice aimed at making the defined
+pilot runnable. Does not unlock sustained capability research, `PP-M1-03` as
+the immediate next gate, or broader Action types.
+
+Supersedes: Current State's implication that validation with professionals
+could begin immediately after `PP-M1-02`, and the sequencing of `PP-M1-03`
+ahead of pilot-package completeness. Does not supersede LEDGER-0013's
+hypothesis, metrics, or trust invalidation rules.
+
+Status: Accepted; Product Proof pilot **NOT READY**; next milestone **PP-P01**

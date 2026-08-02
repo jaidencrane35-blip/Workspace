@@ -108,11 +108,6 @@ before sustained capability research or large-scale feature implementation.
 The four Product Proof engineering blockers are closed. Product Proof
 Milestone 1 is under way: `PP-M1-01` and `PP-M1-02` are complete.
 
-`PP-M1-03` (Undo / compensation for restore placement) remains the next
-milestone task and is not unlocked by this delivery. Compensation ownership is
-still an open architecture question recorded in
-`15_Action_Desktop_Mutation_Contract.md` §8 / §19.
-
 `PP-M1-02` delivered deterministic Resume against the approved contracts
 (LEDGER-0021 / LEDGER-0022):
 
@@ -126,26 +121,45 @@ still an open architecture question recorded in
    Authority still alone owns effect authorization through per-item
    `action.window.place` / `action.window.focus` proofs at point of use.
 
+Product Proof pilot readiness review (LEDGER-0023): **NOT READY**.
+Engineering completeness of Save → Preview → Approve → Restore does not yet
+satisfy the LEDGER-0013 pilot package. Smallest blockers: user-authored
+handoff/intended next action, inspect/delete in the product UI, consented
+measurement kit, pilot chrome that does not expose engine/diagnostic surfaces
+as primary navigation, and explicit framing of same-session / still-open
+restore limits. `PP-M1-03` (Undo) remains valuable but is sequenced after the
+pilot package, not before it.
+
 ---
 
 # Next Task
 
-Validate one primary workflow with interruption-heavy Windows professionals:
-explicitly save a bounded work context and intended next action, preview a
-supported restore, return to the intended artifact, and inspect or delete what
-was retained.
+Close the **PP-P01 Pilot Package** (LEDGER-0023) before recruiting the
+LEDGER-0013 cohort:
 
-Measure return-to-work improvement against each user's baseline and credible
-substitutes, including PowerToys plus manual notes. Treat privacy surprise,
-unpreviewed capture, or unpreviewed action as proof invalidation.
+1. Add a short user-authored handoff / intended next action on Save, and show
+   it on Resume preview and outcomes.
+2. Expose inspect and delete of retained saved contexts in the product UI.
+3. Ship a consented measurement and interview kit for baseline vs Workspace
+   return-to-work time, correction, and week-four Resume habit — without
+   ambient observation.
+4. Present a pilot-safe primary surface (Save / Resume, plus minimal help);
+   keep Canvas, Work, Assistant, and Diagnostic out of the default pilot chrome.
+5. State restore limits in user language (same continuing desktop session;
+   still-open windows only; no silent relaunch).
+
+Only after that package exists may the defined four-week Product Proof pilot
+run. Do not treat dogfood of geometry-only Resume as Product Proof success.
 
 Do not activate new capability layers, cognition projections, Extension Host,
-voice, cloud, phone, audio, broad automation, or additional governance while
-the product hypothesis remains unproven. `ROADMAP-001` remains the valid
-dependency order if the proof later justifies resumed capability research; it
-is not the active milestone.
+voice, cloud, phone, audio, broad automation, fuzzy matching, or additional
+governance while the product hypothesis remains unproven. Defer `PP-M1-03`
+and declared application launch/reuse until the pilot package can falsify or
+confirm the wedge. `ROADMAP-001` remains the valid dependency order if the
+proof later justifies resumed capability research; it is not the active
+milestone.
 
-Recommended next engineering milestone: **Product Proof**.
+Recommended next engineering milestone: **PP-P01 Pilot Package**.
 
 ---
 
