@@ -5,6 +5,7 @@ import { PilotMeasurementPanel } from "./components/PilotMeasurementPanel";
 import { ResumeContextPanel } from "./components/ResumeContextPanel";
 import { SaveContextPanel } from "./components/SaveContextPanel";
 import { WorkspaceShell } from "./components/WorkspaceShell";
+import { isExperienceDemoActive } from "./demo/demoMode";
 import { invokeIpc } from "./lib/ipc";
 import {
   PILOT_DEFAULT_VIEW,
@@ -26,6 +27,14 @@ function formatError(err: unknown): string {
     return err.message;
   }
   return String(err);
+}
+
+function isTransportLeak(message: string): boolean {
+  return (
+    /invoke/i.test(message) ||
+    /Cannot read properties/i.test(message) ||
+    /__TAURI__/i.test(message)
+  );
 }
 
 async function persistActiveWorkspaceId(id: string | null): Promise<void> {
@@ -50,8 +59,13 @@ export default function App() {
   const [bootstrapped, setBootstrapped] = useState(false);
   const [busy, setBusy] = useState(false);
   const [focusContextId, setFocusContextId] = useState<string | null>(null);
+  const demo = isExperienceDemoActive();
 
   const onError = useCallback((next: string | null) => {
+    if (next && isExperienceDemoActive() && isTransportLeak(next)) {
+      setError(null);
+      return;
+    }
     setError(next);
   }, []);
 
@@ -89,7 +103,16 @@ export default function App() {
       })
       .catch((err: unknown) => {
         localStorage.removeItem(LEGACY_WORKSPACE_ID_KEY);
-        setError(formatError(err));
+        if (isExperienceDemoActive()) {
+          setError(null);
+          return;
+        }
+        const text = formatError(err);
+        if (isTransportLeak(text)) {
+          setError(null);
+          return;
+        }
+        setError(text);
       })
       .finally(() => setBootstrapped(true));
   }, []);
@@ -106,7 +129,7 @@ export default function App() {
         setMessage("Your workspace is ready.");
         setView("home");
       } catch (err: unknown) {
-        setError(formatError(err));
+        onError(formatError(err));
       } finally {
         setBusy(false);
       }
@@ -129,6 +152,16 @@ export default function App() {
   useEffect(() => {
     document.title = `Workspace · ${PILOT_VIEW_LABELS[view]}`;
   }, [view]);
+
+  useEffect(() => {
+    if (!demo) {
+      return;
+    }
+    document.documentElement.dataset.experienceDemo = "on";
+    return () => {
+      delete document.documentElement.dataset.experienceDemo;
+    };
+  }, [demo]);
 
   let content = (
     <p className="muted exp-loading">Opening your workspace…</p>

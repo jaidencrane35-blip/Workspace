@@ -64,6 +64,7 @@ export function PilotMeasurementPanel({
   const [interviewWeekFour, setInterviewWeekFour] = useState("");
   const [chapter, setChapter] = useState(0);
   const [completed, setCompleted] = useState<number[]>([]);
+  const [historySeeded, setHistorySeeded] = useState(false);
 
   useEffect(() => {
     setReflecting(true);
@@ -127,6 +128,31 @@ export function PilotMeasurementPanel({
   useEffect(() => {
     reload();
   }, [reload]);
+
+  useEffect(() => {
+    if (!snapshot || historySeeded) {
+      return;
+    }
+    const done: number[] = [];
+    if (snapshot.baseline) {
+      done.push(0);
+    }
+    if (snapshot.leave_resume.length > 0) {
+      done.push(1);
+    }
+    if (snapshot.interview_baseline) {
+      done.push(2);
+    }
+    if (snapshot.interview_week_four) {
+      done.push(3);
+    }
+    if (done.length === 0) {
+      return;
+    }
+    setCompleted(done);
+    setChapter(done.includes(1) ? 1 : done[done.length - 1]!);
+    setHistorySeeded(true);
+  }, [snapshot, historySeeded]);
 
   const consented =
     snapshot?.consent != null &&
@@ -348,6 +374,71 @@ export function PilotMeasurementPanel({
           state="idle"
         />
       </div>
+
+      {snapshot.leave_resume.length > 0 && (
+        <WorkspaceSurface
+          tone="soft"
+          padding="md"
+          className="checkin-trend"
+          data-testid="checkin-trend"
+        >
+          <p className="exp-kicker">Return trend</p>
+          <div
+            className="checkin-trend__bars"
+            role="img"
+            aria-label="Minutes to return across recent leave→resume records"
+          >
+            {[...snapshot.leave_resume]
+              .slice()
+              .reverse()
+              .map((record) => {
+                const max = Math.max(
+                  ...snapshot.leave_resume.map((r) => r.return_minutes),
+                  snapshot.baseline?.return_minutes ?? 0,
+                  1,
+                );
+                const height = Math.max(
+                  12,
+                  Math.round((record.return_minutes / max) * 72),
+                );
+                return (
+                  <div key={record.id} className="checkin-trend__col">
+                    <span
+                      className="checkin-trend__bar"
+                      style={{ height }}
+                      title={`${record.return_minutes} min · ${record.local_day}`}
+                    />
+                    <span className="checkin-trend__day">
+                      {record.local_day.slice(5)}
+                    </span>
+                  </div>
+                );
+              })}
+          </div>
+          <ul className="list compact checkin-trend__history">
+            {snapshot.leave_resume.slice(0, 4).map((record) => (
+              <li key={`hist-${record.id}`}>
+                <strong>{record.return_minutes} min</strong>
+                <span className="muted">
+                  {" "}
+                  · {record.local_day}
+                  {record.correction_needed
+                    ? ` · corrected: ${record.correction_note || "yes"}`
+                    : ""}
+                </span>
+              </li>
+            ))}
+          </ul>
+          {snapshot.interview_baseline && (
+            <div className="checkin-trend__reflection">
+              <p className="exp-kicker">Earlier reflection</p>
+              <p className="quote-pane__text">
+                {snapshot.interview_baseline.responses}
+              </p>
+            </div>
+          )}
+        </WorkspaceSurface>
+      )}
 
       <div className="checkin-narrative pilot-forms attention-field">
         <div

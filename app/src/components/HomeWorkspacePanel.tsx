@@ -123,9 +123,7 @@ export function HomeWorkspacePanel({
               </button>
             </div>
           </WorkspaceObject>
-          <div className="dash-grid attention-orbit attention-orbit--ghost">
-            <EmptyStructure />
-          </div>
+          <EmptyStructure />
         </div>
         <p className="trust-strip muted">{RESTORE_LIMITS_SUMMARY}</p>
       </section>
@@ -271,7 +269,7 @@ export function HomeWorkspacePanel({
             />
           </aside>
           {density !== "focus" && (
-            <div className="dash-grid ws-compose__orbit attention-orbit attention-orbit--ghost">
+            <div className="ws-compose__orbit">
               <EmptyStructure />
             </div>
           )}

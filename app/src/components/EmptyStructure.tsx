@@ -50,31 +50,13 @@ export function EmptyStructure({
           variant="placeholder"
           className="span-8 orbit-item orbit-item--0"
           placeholderLabel="Latest moment"
-          placeholderHint="Name + what you intend next"
+          placeholderHint="Your next note waits here"
         />
         <MomentCard
           variant="placeholder"
           className="span-4 orbit-item orbit-item--1"
           placeholderLabel="Recent"
-          placeholderHint="Continues appear here"
-        />
-        <MomentCard
-          variant="placeholder"
-          className="span-4 orbit-item orbit-item--2"
-          placeholderLabel="Recent"
-          placeholderHint="Your note, unchanged"
-        />
-        <MomentCard
-          variant="placeholder"
-          className="span-4 orbit-item orbit-item--3"
-          placeholderLabel="Recent"
-          placeholderHint="Same Windows session restore"
-        />
-        <MomentCard
-          variant="placeholder"
-          className="span-4 orbit-item orbit-item--4"
-          placeholderLabel="Recent"
-          placeholderHint="Still-open windows only"
+          placeholderHint="Quieter until you save"
         />
       </motion.div>
     </div>

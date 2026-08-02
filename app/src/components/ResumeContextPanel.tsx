@@ -11,6 +11,8 @@ import type {
 } from "../types/domain";
 import { EmptyStructure } from "./EmptyStructure";
 import { MomentCard } from "./MomentCard";
+import { DemoRestoreHistory } from "../demo/DemoRestoreHistory";
+import { isExperienceDemoActive } from "../demo/demoMode";
 import { ContinuePreviewBody } from "./objects/ContinuePreviewObject";
 import { IntentionObject } from "./objects/IntentionObject";
 import { RestoreLimitsNotice } from "./RestoreLimitsNotice";
@@ -150,7 +152,9 @@ export function ResumeContextPanel({
         setPreview(null);
         setResult(null);
         setStep("inspect");
-        onMessage(`Inspecting “${context.name}”`);
+        if (!isExperienceDemoActive()) {
+          onMessage(`Inspecting “${context.name}”`);
+        }
       } catch (err: unknown) {
         onError(formatError(err));
       } finally {
@@ -175,7 +179,9 @@ export function ResumeContextPanel({
           setAttentionScene("restore");
           setRestoring(true);
           setSecondaryObjects([]);
-          onMessage(`Preview ready for “${next.saved_context_name}”`);
+          if (!isExperienceDemoActive()) {
+            onMessage(`Preview ready for “${next.saved_context_name}”`);
+          }
         } catch (err: unknown) {
           onError(formatError(err));
         } finally {
@@ -341,14 +347,17 @@ export function ResumeContextPanel({
                     onInspect={() => openInspect(featured.id)}
                     expandContent={
                       preview?.saved_context_id === featured.id ? (
-                        <ContinuePreviewBody
-                          preview={preview}
-                          busy={busy}
-                          onApprove={approveAndRestore}
-                          onCancel={backToBrowse}
-                          describeDisposition={describeDisposition}
-                          formatMoment={formatMoment}
-                        />
+                        <>
+                          <ContinuePreviewBody
+                            preview={preview}
+                            busy={busy}
+                            onApprove={approveAndRestore}
+                            onCancel={backToBrowse}
+                            describeDisposition={describeDisposition}
+                            formatMoment={formatMoment}
+                          />
+                          <DemoRestoreHistory contextId={featured.id} />
+                        </>
                       ) : undefined
                     }
                   />
@@ -391,14 +400,17 @@ export function ResumeContextPanel({
                       onInspect={() => openInspect(context.id)}
                       expandContent={
                         preview?.saved_context_id === context.id ? (
-                          <ContinuePreviewBody
-                            preview={preview}
-                            busy={busy}
-                            onApprove={approveAndRestore}
-                            onCancel={backToBrowse}
-                            describeDisposition={describeDisposition}
-                            formatMoment={formatMoment}
-                          />
+                          <>
+                            <ContinuePreviewBody
+                              preview={preview}
+                              busy={busy}
+                              onApprove={approveAndRestore}
+                              onCancel={backToBrowse}
+                              describeDisposition={describeDisposition}
+                              formatMoment={formatMoment}
+                            />
+                            <DemoRestoreHistory contextId={context.id} />
+                          </>
                         ) : undefined
                       }
                     />
