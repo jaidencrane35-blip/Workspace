@@ -1562,6 +1562,7 @@ ahead of pilot-package completeness. Does not supersede LEDGER-0013's
 hypothesis, metrics, or trust invalidation rules.
 
 Status: Accepted; Product Proof pilot **NOT READY**; next milestone **PP-P01**
+(implementation slices authorised by LEDGER-0025)
 
 ---
 
@@ -1614,3 +1615,76 @@ runtime feature.
 Supersedes: None. Complements `04_Cursor_Protocol.md` and ADR-0008.
 
 Status: Accepted
+
+---
+
+### LEDGER-0025
+
+Entry ID: LEDGER-0025
+Timestamp: 2026-08-02
+Capability: Product strategy / engineering governance — PP-P01 sequencing
+Related ADRs: ADR-0008
+Related Research: None
+Decision: Keep **PP-P01 Pilot Package** as the milestone identity and pilot
+gate. Formally decompose it into repository-authorised implementation slices
+`PP-P01A`–`PP-P01E` so engineering sessions can proceed from Current State
+without inventing milestone IDs from conversation. Decomposition changes
+implementation sequencing only; it does not alter architecture, capability
+ownership, contracts, or LEDGER-0013 success metrics.
+
+Authorised slices and order:
+
+1. **`PP-P01A`** — User-authored handoff / intended next action on Save and
+   Resume. Active next implementation slice. Extends the existing saved-context
+   artifact (Workspace Management + Experience presentation). Does not activate
+   broader Memory research; LEDGER-0013's "Memory limited to the user-authored
+   handoff" remains a Product Proof scope limit, not a mandate to stand up a
+   new Memory subsystem for this slice.
+2. **`PP-P01B`** — Explicit restore-limits copy in user language (same
+   continuing desktop session; still-open windows only; no silent relaunch).
+3. **`PP-P01C`** — Inspect and delete retained saved contexts in the product
+   UI.
+4. **`PP-P01D`** — Pilot-safe primary chrome (Save / Resume + minimal help;
+   Canvas, Work, Assistant, and Diagnostic out of default pilot surface).
+5. **`PP-P01E`** — Consented measurement and interview kit (baseline,
+   leave→resume time, correction, week-four habit) with zero ambient
+   observation.
+
+Pilot gate unchanged: LEDGER-0013 recruitment requires complete `PP-P01`
+(`PP-P01A` through `PP-P01E`). Completing any single slice is not Product
+Proof success and does not unlock `PP-M1-03` or declared application
+launch/reuse.
+
+Rationale:
+
+- LEDGER-0023's five blockers are separable surfaces with different risk and
+  owners; a single undivided milestone forced prompts to invent slice names
+  (`PP-P01A`) that were not repository-authoritative.
+- Product Proof Milestone 1 already used numbered slices (`PP-M1-01`,
+  `PP-M1-02`); the same pattern keeps session prompts deterministic under the
+  Engineering Session Protocol.
+- Ordering places handoff first (LEDGER-0013 core value), restore-limits copy
+  second (trust framing before more chrome work), then disposal, pilot shell,
+  and measurement.
+
+Validation:
+
+- Confirmed this is sequencing governance, not architecture mutation.
+- Confirmed no capability ownership, contract, or runtime change.
+- Confirmed Current State names `PP-P01A` as the active implementation slice
+  while `PP-P01` remains the recommended milestone and pilot gate.
+
+Knowledge Gained:
+
+- Milestone identity and implementation-slice identity must both live in the
+  repository, or Engineering Session Protocol stop conditions will correctly
+  refuse conversational slice names.
+
+Unlocks: Repository-authorised implementation of `PP-P01A` next. Does not
+unlock the Product Proof pilot until `PP-P01A`–`PP-P01E` are complete.
+
+Supersedes: The undivided "implement all of PP-P01 at once" reading of
+LEDGER-0023's next-task wording. Does not supersede LEDGER-0023's NOT READY
+verdict, blocker set, or pilot gate.
+
+Status: Accepted; active slice **PP-P01A**; milestone **PP-P01** incomplete

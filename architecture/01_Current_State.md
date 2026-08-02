@@ -137,22 +137,27 @@ pilot package, not before it.
 
 # Next Task
 
-Close the **PP-P01 Pilot Package** (LEDGER-0023) before recruiting the
-LEDGER-0013 cohort:
+Close the **PP-P01 Pilot Package** (LEDGER-0023, LEDGER-0025) before recruiting
+the LEDGER-0013 cohort. `PP-P01` remains the milestone identity and the pilot
+gate: the package is complete only when every authorised slice below is done.
+Slices are implementation sequencing only; they do not change architecture,
+ownership, or contracts.
 
-1. Add a short user-authored handoff / intended next action on Save, and show
-   it on Resume preview and outcomes.
-2. Expose inspect and delete of retained saved contexts in the product UI.
-3. Ship a consented measurement and interview kit for baseline vs Workspace
-   return-to-work time, correction, and week-four Resume habit — without
-   ambient observation.
-4. Present a pilot-safe primary surface (Save / Resume, plus minimal help);
-   keep Canvas, Work, Assistant, and Diagnostic out of the default pilot chrome.
-5. State restore limits in user language (same continuing desktop session;
-   still-open windows only; no silent relaunch).
+Authorised implementation order:
 
-Only after that package exists may the defined four-week Product Proof pilot
-run. Do not treat dogfood of geometry-only Resume as Product Proof success.
+| Slice | Name | Status |
+|---|---|---|
+| `PP-P01A` | User-authored handoff / intended next action on Save and Resume | **Active** |
+| `PP-P01B` | Explicit restore-limits copy (same session; still-open windows; no silent relaunch) | Pending |
+| `PP-P01C` | Inspect and delete retained saved contexts in the product UI | Pending |
+| `PP-P01D` | Pilot-safe primary chrome (Save / Resume + minimal help; engine tabs out of default pilot surface) | Pending |
+| `PP-P01E` | Consented measurement and interview kit (baseline, leave→resume time, correction, week-four habit; no ambient observation) | Pending |
+
+Active implementation slice: **`PP-P01A`**.
+
+Only after `PP-P01A` through `PP-P01E` are complete may the defined four-week
+Product Proof pilot run. Completing one slice is not Product Proof success.
+Do not treat dogfood of geometry-only Resume as Product Proof success.
 
 Do not activate new capability layers, cognition projections, Extension Host,
 voice, cloud, phone, audio, broad automation, fuzzy matching, or additional
@@ -163,6 +168,7 @@ proof later justifies resumed capability research; it is not the active
 milestone.
 
 Recommended next engineering milestone: **PP-P01 Pilot Package**.
+Recommended next implementation slice: **PP-P01A**.
 
 ---
 
