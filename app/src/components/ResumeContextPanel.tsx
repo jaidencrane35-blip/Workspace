@@ -9,6 +9,7 @@ import type {
   SavedContextWindow,
   Workspace,
 } from "../types/domain";
+import { ElevatedCard } from "./ElevatedCard";
 import { EmptyStructure } from "./EmptyStructure";
 import { MomentCard } from "./MomentCard";
 import { RestoreLimitsNotice } from "./RestoreLimitsNotice";
@@ -235,10 +236,10 @@ export function ResumeContextPanel({
 
   if (!workspace) {
     return (
-      <section className="note-stage">
-        <div className="note-card">
+      <section className="spatial-frame spatial-frame--center">
+        <ElevatedCard tone="hero" padding="lg" className="focus-card">
           <p className="exp-kicker">Continue</p>
-          <h2>Open your workspace</h2>
+          <h2 className="focus-card__title">Open your workspace</h2>
           <p className="muted">Then pick up where you left off.</p>
           {onGoHome && (
             <div className="exp-actions">
@@ -247,7 +248,7 @@ export function ResumeContextPanel({
               </button>
             </div>
           )}
-        </div>
+        </ElevatedCard>
       </section>
     );
   }
@@ -259,12 +260,12 @@ export function ResumeContextPanel({
   const others = sorted.slice(1);
 
   return (
-    <section className="layer-shell continue-gallery continue-dash">
+    <section className="spatial-frame continue-gallery continue-dash">
       {step === "browse" && (
         <>
-          <header className="continue-gallery__head">
+          <header className="spatial-header">
             <p className="exp-kicker">Continue</p>
-            <h1>What were you doing?</h1>
+            <h1 className="spatial-title">What were you doing?</h1>
           </header>
           <p className="trust-strip muted">{RESTORE_LIMITS_SUMMARY}</p>
 
@@ -288,7 +289,7 @@ export function ResumeContextPanel({
                 />
               )}
               <aside className="place__rail span-4">
-                <div className="glass-pane quote-pane">
+                <ElevatedCard tone="soft" padding="md" className="quote-pane">
                   <div className="quote-pane__mark" aria-hidden="true">
                     “
                   </div>
@@ -299,7 +300,7 @@ export function ResumeContextPanel({
                   <p className="quote-pane__meta">
                     Continue previews. Inspect is secondary.
                   </p>
-                </div>
+                </ElevatedCard>
               </aside>
               {others.map((context, index) => (
                 <MomentCard
@@ -318,9 +319,14 @@ export function ResumeContextPanel({
       )}
 
       {step === "inspect" && inspected && (
-        <article className="note-card" style={{ margin: "0 auto" }}>
+        <ElevatedCard
+          tone="hero"
+          padding="lg"
+          className="focus-card"
+          style={{ margin: "0 auto" }}
+        >
           <p className="exp-kicker">Inspect</p>
-          <h2>{inspected.name}</h2>
+          <h2 className="focus-card__title">{inspected.name}</h2>
           <p className="exp-intention">
             {inspected.handoff_note.trim()
               ? inspected.handoff_note
@@ -393,12 +399,17 @@ export function ResumeContextPanel({
               Delete this context
             </button>
           </div>
-        </article>
+        </ElevatedCard>
       )}
 
       {step === "confirm_delete" && inspected && (
-        <article className="note-card" style={{ margin: "0 auto" }}>
-          <h2>Delete “{inspected.name}”?</h2>
+        <ElevatedCard
+          tone="hero"
+          padding="lg"
+          className="focus-card"
+          style={{ margin: "0 auto" }}
+        >
+          <h2 className="focus-card__title">Delete “{inspected.name}”?</h2>
           <p className="exp-lede">
             This removes the saved context and its restore identities from this
             computer. It cannot be undone. Windows already open on your desktop
@@ -425,13 +436,20 @@ export function ResumeContextPanel({
               Delete permanently
             </button>
           </div>
-        </article>
+        </ElevatedCard>
       )}
 
       {step === "preview" && preview && (
-        <article className="note-card" style={{ margin: "0 auto" }}>
+        <ElevatedCard
+          tone="hero"
+          padding="lg"
+          className="focus-card"
+          style={{ margin: "0 auto" }}
+        >
           <p className="exp-kicker">Preview</p>
-          <h2>Continue “{preview.saved_context_name}”</h2>
+          <h2 className="focus-card__title">
+            Continue “{preview.saved_context_name}”
+          </h2>
           <p className="exp-intention">
             {preview.handoff_note.trim()
               ? preview.handoff_note
@@ -474,13 +492,18 @@ export function ResumeContextPanel({
               Cancel
             </button>
           </div>
-        </article>
+        </ElevatedCard>
       )}
 
       {step === "done" && result && preview && (
-        <article className="note-card" style={{ margin: "0 auto" }}>
+        <ElevatedCard
+          tone="hero"
+          padding="lg"
+          className="focus-card"
+          style={{ margin: "0 auto" }}
+        >
           <p className="exp-kicker">Done</p>
-          <h2>You’re back</h2>
+          <h2 className="focus-card__title">You’re back</h2>
           <p className="exp-intention">
             {preview.handoff_note.trim()
               ? preview.handoff_note
@@ -525,7 +548,7 @@ export function ResumeContextPanel({
               background.
             </p>
           )}
-        </article>
+        </ElevatedCard>
       )}
     </section>
   );

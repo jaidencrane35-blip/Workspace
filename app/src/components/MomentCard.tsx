@@ -1,6 +1,7 @@
 import { ArrowRight, Clock3, Layers } from "lucide-react";
 import { formatRelativeTime } from "../lib/time";
 import type { SavedContext } from "../types/domain";
+import { ElevatedCard } from "./ElevatedCard";
 
 export type MomentCardVariant = "hero" | "standard" | "compact" | "placeholder";
 
@@ -17,6 +18,7 @@ interface MomentCardProps {
 
 /**
  * Floating moment tile — handoff and time first; metadata stays out.
+ * Surfaces through ElevatedCard for one glass language.
  */
 export function MomentCard({
   variant = "standard",
@@ -30,14 +32,16 @@ export function MomentCard({
 }: MomentCardProps) {
   if (variant === "placeholder" || !context) {
     return (
-      <article
+      <ElevatedCard
+        tone="ghost"
+        padding="md"
         className={`moment-card moment-card--placeholder ${className}`.trim()}
-        aria-hidden={variant === "placeholder"}
+        aria-hidden={variant === "placeholder" ? true : undefined}
       >
         <p className="moment-card__kicker">Waiting</p>
         <h3>{placeholderLabel}</h3>
         <p className="moment-card__hint">{placeholderHint}</p>
-      </article>
+      </ElevatedCard>
     );
   }
 
@@ -46,9 +50,14 @@ export function MomentCard({
     context.windows.length === 1
       ? "1 window"
       : `${context.windows.length} windows`;
+  const tone = variant === "hero" ? "hero" : "default";
+  const padding = variant === "compact" ? "sm" : variant === "hero" ? "lg" : "md";
 
   return (
-    <article
+    <ElevatedCard
+      tone={tone}
+      padding={padding}
+      interactive
       className={`moment-card moment-card--${variant} ${className}`.trim()}
     >
       <div className="moment-card__top">
@@ -99,6 +108,6 @@ export function MomentCard({
           </button>
         )}
       </div>
-    </article>
+    </ElevatedCard>
   );
 }

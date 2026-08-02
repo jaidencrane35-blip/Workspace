@@ -2204,3 +2204,25 @@ Validation: `pnpm typecheck`, `pnpm test` (54), CSP/boundary verifiers green.
 Does not unlock ambient activity, AI, telemetry, or hypothesis proof.
 
 Status: Complete
+
+### LEDGER-0039
+
+Entry ID: LEDGER-0039
+Timestamp: 2026-08-02
+Capability: Experience — persistent Workspace Shell + spatial navigation
+Related ADRs: ADR-0008
+Related Research: EXP-001; concept boards as visual authority
+Decision: Replace page-remount navigation with a persistent Workspace Shell so
+destinations are content layers inside one continuous environment.
+
+Implementation:
+- `WorkspaceShell` owns atmosphere, logo, dock, animation layer, focus
+- Content transitions via `motion` (MIT) AnimatePresence — fade + depth + spring
+  (~280–360ms); reduced motion respected; dock/background never remount
+- `ElevatedCard` single glass primitive; MomentCard and surfaces migrate to it
+- Unified spatial frame, type scale, dock selection `layoutId` pill
+- Product Proof behaviour unchanged
+
+Validation: `pnpm typecheck`, `pnpm test` (54), CSP/boundary verifiers green.
+
+Status: Complete

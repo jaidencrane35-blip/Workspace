@@ -141,6 +141,10 @@ page/admin feel accepted as evidence; shell rebuilt as one spatial environment
 (atmosphere + glass dock + place/layer modes) without capability or Product
 Proof behaviour change. Prior Phase 2 self-score treated as invalid.
 
+✓ Persistent Workspace Shell sprint complete (LEDGER-0039): shell stays mounted;
+Home/Save/Continue/Check-in/Guide transition as content with spring motion;
+ElevatedCard primitive + unified spatial system; `motion` (MIT) adopted.
+
 ---
 
 # Active Task

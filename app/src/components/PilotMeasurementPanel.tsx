@@ -4,6 +4,7 @@ import type {
   PilotMeasurementScope,
   PilotMeasurementSnapshot,
 } from "../types/domain";
+import { ElevatedCard } from "./ElevatedCard";
 
 interface PilotMeasurementPanelProps {
   busy: boolean;
@@ -197,12 +198,12 @@ export function PilotMeasurementPanel({
 
   if (!scope || !snapshot) {
     return (
-      <section className="note-stage">
-        <div className="note-card">
+      <section className="spatial-frame spatial-frame--center">
+        <ElevatedCard tone="hero" padding="lg" className="focus-card">
           <p className="exp-kicker">Check-in</p>
-          <h2>One moment…</h2>
+          <h2 className="focus-card__title">One moment…</h2>
           <p className="muted">Loading…</p>
-        </div>
+        </ElevatedCard>
       </section>
     );
   }
@@ -210,11 +211,11 @@ export function PilotMeasurementPanel({
   if (!consented) {
     return (
       <section
-        className="layer-shell checkin-dash"
+        className="spatial-frame checkin-dash"
         data-testid="pilot-measurement-consent"
       >
         <div className="checkin-chat">
-          <div className="checkin-bubble">
+          <ElevatedCard tone="soft" padding="md" className="checkin-bubble">
             <p className="exp-kicker">Check-in</p>
             <p className="quote-pane__text">
               How does returning to work feel after an interruption?
@@ -222,7 +223,7 @@ export function PilotMeasurementPanel({
             <p className="muted" style={{ marginTop: "0.5rem" }}>
               {scope.purpose}
             </p>
-          </div>
+          </ElevatedCard>
           <details className="exp-inspect" open>
             <summary>What’s in this pulse</summary>
             <ul className="list compact">
@@ -258,49 +259,49 @@ export function PilotMeasurementPanel({
 
   return (
     <section
-      className="layer-shell checkin-dash"
+      className="spatial-frame checkin-dash"
       data-testid="pilot-measurement-active"
     >
-      <header className="continue-gallery__head">
+      <header className="spatial-header">
         <p className="exp-kicker">Check-in</p>
-        <h1 className="dash-title">How’s the return feeling?</h1>
-        <p className="dash-summary">
+        <h1 className="spatial-title">How’s the return feeling?</h1>
+        <p className="spatial-summary">
           These records evaluate the Product Proof hypothesis. They are not saved
           contexts and are not sent anywhere.
         </p>
       </header>
 
       <div className="dash-grid checkin-stats">
-        <article className="exp-card stat span-4">
+        <ElevatedCard tone="default" padding="md" className="stat span-4">
           <p className="exp-kicker">Baseline</p>
           <p className="exp-stat">
             {snapshot.baseline
               ? `${snapshot.baseline.return_minutes} min`
               : "—"}
           </p>
-        </article>
-        <article className="exp-card stat span-4">
+        </ElevatedCard>
+        <ElevatedCard tone="default" padding="md" className="stat span-4">
           <p className="exp-kicker">Leave → resume</p>
           <p className="exp-stat">{snapshot.leave_resume.length}</p>
           <p className="muted">{snapshot.distinct_resume_days} days</p>
-        </article>
-        <article className="exp-card stat span-4">
+        </ElevatedCard>
+        <ElevatedCard tone="default" padding="md" className="stat span-4">
           <p className="exp-kicker">Median</p>
           <p className="exp-stat">
             {snapshot.median_return_minutes != null
               ? `${snapshot.median_return_minutes} min`
               : "n/a"}
           </p>
-        </article>
+        </ElevatedCard>
       </div>
 
       <div className="checkin-chat pilot-forms">
-        <div className="checkin-bubble">
+        <ElevatedCard tone="soft" padding="md" className="checkin-bubble">
           <p className="quote-pane__text" style={{ fontSize: "1rem" }}>
             Before Workspace — about how many minutes to get back?
           </p>
-        </div>
-        <article className="exp-card checkin-bubble--you">
+        </ElevatedCard>
+        <ElevatedCard tone="solid" padding="md" className="checkin-bubble--you">
           <label className="exp-field" htmlFor="pilot-baseline-minutes">
             <span>Minutes</span>
             <input
@@ -331,14 +332,14 @@ export function PilotMeasurementPanel({
           >
             Save baseline
           </button>
-        </article>
+        </ElevatedCard>
 
-        <div className="checkin-bubble">
+        <ElevatedCard tone="soft" padding="md" className="checkin-bubble">
           <p className="quote-pane__text" style={{ fontSize: "1rem" }}>
             After a Continue — how many minutes to feel back?
           </p>
-        </div>
-        <article className="exp-card checkin-bubble--you">
+        </ElevatedCard>
+        <ElevatedCard tone="solid" padding="md" className="checkin-bubble--you">
           <label className="exp-field" htmlFor="pilot-return-minutes">
             <span>Minutes to return</span>
             <input
@@ -380,9 +381,9 @@ export function PilotMeasurementPanel({
           >
             Record this leave→resume
           </button>
-        </article>
+        </ElevatedCard>
 
-        <div className="checkin-bubble">
+        <ElevatedCard tone="soft" padding="md" className="checkin-bubble">
           <p className="quote-pane__text" style={{ fontSize: "1rem" }}>
             A few reflections — whenever you’re ready.
           </p>
@@ -391,8 +392,8 @@ export function PilotMeasurementPanel({
               <li key={prompt}>{prompt}</li>
             ))}
           </ul>
-        </div>
-        <article className="exp-card checkin-bubble--you">
+        </ElevatedCard>
+        <ElevatedCard tone="solid" padding="md" className="checkin-bubble--you">
           <textarea
             className="input-wide"
             rows={4}
@@ -409,9 +410,9 @@ export function PilotMeasurementPanel({
           >
             Save baseline interview
           </button>
-        </article>
+        </ElevatedCard>
 
-        <div className="checkin-bubble">
+        <ElevatedCard tone="soft" padding="md" className="checkin-bubble">
           <p className="quote-pane__text" style={{ fontSize: "1rem" }}>
             Week four — still useful?
           </p>
@@ -420,8 +421,8 @@ export function PilotMeasurementPanel({
               <li key={prompt}>{prompt}</li>
             ))}
           </ul>
-        </div>
-        <article className="exp-card checkin-bubble--you">
+        </ElevatedCard>
+        <ElevatedCard tone="solid" padding="md" className="checkin-bubble--you">
           <textarea
             className="input-wide"
             rows={4}
@@ -438,10 +439,10 @@ export function PilotMeasurementPanel({
           >
             Save week-four interview
           </button>
-        </article>
+        </ElevatedCard>
       </div>
 
-      <article className="exp-card">
+      <ElevatedCard tone="default" padding="md">
         <h3>Withdraw consent</h3>
         <div className="exp-actions">
           <button
@@ -461,7 +462,7 @@ export function PilotMeasurementPanel({
             Withdraw and clear pilot records
           </button>
         </div>
-      </article>
+      </ElevatedCard>
     </section>
   );
 }

@@ -4,6 +4,7 @@ import { invokeIpc } from "../lib/ipc";
 import { RESTORE_LIMITS_SUMMARY } from "../lib/restoreLimits";
 import { formatRelativeTime } from "../lib/time";
 import type { SavedContext, Workspace } from "../types/domain";
+import { ElevatedCard } from "./ElevatedCard";
 import { EmptyStructure } from "./EmptyStructure";
 import { MomentCard } from "./MomentCard";
 
@@ -17,8 +18,7 @@ interface HomeWorkspacePanelProps {
 }
 
 /**
- * Workspace as a place — spatial Home, not a page.
- * Owned data only; no fabricated activity.
+ * Home content inside the persistent shell — spatial place, not a page.
  */
 export function HomeWorkspacePanel({
   workspace,
@@ -53,7 +53,7 @@ export function HomeWorkspacePanel({
 
   if (!workspace) {
     return (
-      <section className="dash place" data-testid="workspace-home">
+      <section className="spatial-frame place" data-testid="workspace-home">
         <div className="place__identity">
           <p className="exp-kicker">Workspace</p>
           <h2 className="place__title">This is your Workspace</h2>
@@ -87,7 +87,7 @@ export function HomeWorkspacePanel({
         : `${recent.length} moments · last ${formatRelativeTime(recent[0].created_at)}`;
 
   return (
-    <section className="dash place" data-testid="workspace-home">
+    <section className="spatial-frame place" data-testid="workspace-home">
       <div className="place__identity">
         <p className="exp-kicker">Workspace</p>
         <h1 className="place__title">{workspace.name}</h1>
@@ -107,7 +107,7 @@ export function HomeWorkspacePanel({
               onInspect={onGoToContinue}
             />
             <aside className="place__rail">
-              <div className="glass-pane quote-pane">
+              <ElevatedCard tone="soft" padding="md" className="quote-pane">
                 <div className="quote-pane__mark" aria-hidden="true">
                   “
                 </div>
@@ -117,7 +117,7 @@ export function HomeWorkspacePanel({
                 <p className="quote-pane__meta">
                   Your note · {formatRelativeTime(latest.created_at)}
                 </p>
-              </div>
+              </ElevatedCard>
               <button
                 type="button"
                 className="exp-btn primary"
@@ -158,7 +158,12 @@ export function HomeWorkspacePanel({
       ) : (
         <>
           <div className="place__orbit">
-            <article className="moment-card moment-card--hero empty-invite">
+            <ElevatedCard
+              tone="hero"
+              padding="lg"
+              interactive
+              className="moment-card moment-card--hero empty-invite"
+            >
               <p className="moment-card__kicker">Start here</p>
               <h3>Save your first moment</h3>
               <p className="moment-card__handoff">
@@ -175,9 +180,9 @@ export function HomeWorkspacePanel({
                   Save your first moment
                 </button>
               </div>
-            </article>
+            </ElevatedCard>
             <aside className="place__rail">
-              <div className="glass-pane quote-pane">
+              <ElevatedCard tone="soft" padding="md" className="quote-pane">
                 <div className="quote-pane__mark" aria-hidden="true">
                   “
                 </div>
@@ -185,7 +190,7 @@ export function HomeWorkspacePanel({
                   Your next intention will live here.
                 </p>
                 <p className="quote-pane__meta">Nothing invented</p>
-              </div>
+              </ElevatedCard>
               <button
                 type="button"
                 className="exp-btn"

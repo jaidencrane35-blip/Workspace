@@ -6,12 +6,8 @@ import type {
   SavedContextWindow,
   Workspace,
 } from "../types/domain";
+import { ElevatedCard } from "./ElevatedCard";
 import { RestoreLimitsNotice } from "./RestoreLimitsNotice";
-
-/**
- * Saving a bounded workspace context (Product Proof PP-M1-01 / PP-P01A).
- * Feels like leaving a note — not filling paperwork.
- */
 
 type Step = "naming" | "reviewing" | "saved";
 
@@ -117,10 +113,10 @@ export function SaveContextPanel({
 
   if (!workspace) {
     return (
-      <section className="note-stage">
-        <div className="note-card">
+      <section className="spatial-frame spatial-frame--center">
+        <ElevatedCard tone="hero" padding="lg" className="focus-card">
           <p className="exp-kicker">Save</p>
-          <h2>Start your workspace</h2>
+          <h2 className="focus-card__title">Start your workspace</h2>
           <p className="muted">Then leave yourself a note.</p>
           <div className="exp-actions">
             <button
@@ -132,31 +128,33 @@ export function SaveContextPanel({
               Create a workspace
             </button>
           </div>
-        </div>
+        </ElevatedCard>
       </section>
     );
   }
 
   if (scopeError) {
     return (
-      <section className="note-stage">
-        <div className="note-card">
+      <section className="spatial-frame spatial-frame--center">
+        <ElevatedCard tone="hero" padding="lg" className="focus-card">
           <p className="exp-kicker">Save</p>
-          <h2>Saving is unavailable</h2>
+          <h2 className="focus-card__title">Saving is unavailable</h2>
           <p className="error">{scopeError}</p>
-        </div>
+        </ElevatedCard>
       </section>
     );
   }
 
   if (step === "saved" && saved) {
     return (
-      <section className="note-stage">
-        <article className="note-card">
+      <section className="spatial-frame spatial-frame--center">
+        <ElevatedCard tone="hero" padding="lg" className="focus-card">
           <p className="exp-kicker">Saved</p>
-          <h2>{saved.name}</h2>
+          <h2 className="focus-card__title">{saved.name}</h2>
           <p className="exp-intention">{saved.handoff_note}</p>
-          <p className="muted">Kept on this computer · {formatMoment(saved.created_at)}</p>
+          <p className="muted">
+            Kept on this computer · {formatMoment(saved.created_at)}
+          </p>
           <details className="exp-inspect">
             <summary>Inspect what was kept</summary>
             <h3>
@@ -200,17 +198,17 @@ export function SaveContextPanel({
               Save another moment
             </button>
           </div>
-        </article>
+        </ElevatedCard>
       </section>
     );
   }
 
   if (step === "reviewing" && scope) {
     return (
-      <section className="note-stage">
-        <article className="note-card">
+      <section className="spatial-frame spatial-frame--center">
+        <ElevatedCard tone="hero" padding="lg" className="focus-card">
           <p className="exp-kicker">Review</p>
-          <h2>Bookmark “{trimmedName}”?</h2>
+          <h2 className="focus-card__title">Bookmark “{trimmedName}”?</h2>
           <div className="exp-intention-block">
             <p className="exp-intention">{trimmedHandoff}</p>
             <p className="muted">Exactly as you wrote it</p>
@@ -250,16 +248,16 @@ export function SaveContextPanel({
               Cancel
             </button>
           </div>
-        </article>
+        </ElevatedCard>
       </section>
     );
   }
 
   return (
-    <section className="note-stage">
-      <article className="note-card">
+    <section className="spatial-frame spatial-frame--center">
+      <ElevatedCard tone="hero" padding="lg" className="focus-card">
         <p className="exp-kicker">Save</p>
-        <h2>Leave a note</h2>
+        <h2 className="focus-card__title">Leave a note</h2>
 
         <label className="exp-field" htmlFor="saved-context-name">
           <span>Name</span>
@@ -305,7 +303,7 @@ export function SaveContextPanel({
             Checking capture scope…
           </p>
         )}
-      </article>
+      </ElevatedCard>
     </section>
   );
 }
