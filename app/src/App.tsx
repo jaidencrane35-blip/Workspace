@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { HomeWorkspacePanel } from "./components/HomeWorkspacePanel";
 import { PilotHelpPanel } from "./components/PilotHelpPanel";
 import { PilotMeasurementPanel } from "./components/PilotMeasurementPanel";
 import { ResumeContextPanel } from "./components/ResumeContextPanel";
@@ -6,6 +7,8 @@ import { SaveContextPanel } from "./components/SaveContextPanel";
 import { invokeIpc } from "./lib/ipc";
 import {
   PILOT_DEFAULT_VIEW,
+  PILOT_PRIMARY_VIEWS,
+  PILOT_VIEW_LABELS,
   type PilotPrimaryView,
 } from "./lib/pilotChrome";
 import type { Workspace } from "./types/domain";
@@ -34,10 +37,10 @@ async function persistActiveWorkspaceId(id: string | null): Promise<void> {
 }
 
 /**
- * PP-P01D / PP-P01E — Pilot-safe chrome with consented measurement surface.
+ * Experience shell — companion-first chrome for Product Proof.
  *
- * Primary navigation is Save / Resume / Pilot / Help. Canvas, Work, Assistant,
- * and Diagnostic remain in the codebase but are not default pilot surfaces.
+ * Primary navigation: Home / Save / Continue / Check-in / Guide.
+ * Engine surfaces remain in the codebase but are not default tabs.
  */
 export default function App() {
   const [view, setView] = useState<PilotPrimaryView>(PILOT_DEFAULT_VIEW);
@@ -46,6 +49,7 @@ export default function App() {
   const [message, setMessage] = useState<string | null>(null);
   const [bootstrapped, setBootstrapped] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [focusContextId, setFocusContextId] = useState<string | null>(null);
 
   const onError = useCallback((next: string | null) => {
     setError(next);
@@ -96,11 +100,11 @@ export default function App() {
     void (async () => {
       try {
         const created = await invokeIpc<Workspace>("create_workspace", {
-          name: "Pilot Workspace",
+          name: "My Workspace",
         });
         await activateWorkspace(created);
-        setMessage("Workspace created. You can save a context now.");
-        setView("save");
+        setMessage("Your workspace is ready.");
+        setView("home");
       } catch (err: unknown) {
         setError(formatError(err));
       } finally {
@@ -109,51 +113,35 @@ export default function App() {
     })();
   };
 
+  const goContinue = (contextId?: string) => {
+    setFocusContextId(contextId ?? null);
+    setView("resume");
+  };
+
   return (
-    <main className="app-shell">
-      <header className="app-chrome">
-        <h1>Workspace</h1>
-        <nav className="tabs" aria-label="Pilot workspace views" role="tablist">
-          <button
-            type="button"
-            role="tab"
-            className={view === "save" ? "tab active" : "tab"}
-            aria-current={view === "save" ? "page" : undefined}
-            aria-selected={view === "save"}
-            onClick={() => setView("save")}
-          >
-            Save
-          </button>
-          <button
-            type="button"
-            role="tab"
-            className={view === "resume" ? "tab active" : "tab"}
-            aria-current={view === "resume" ? "page" : undefined}
-            aria-selected={view === "resume"}
-            onClick={() => setView("resume")}
-          >
-            Resume
-          </button>
-          <button
-            type="button"
-            role="tab"
-            className={view === "pilot" ? "tab active" : "tab"}
-            aria-current={view === "pilot" ? "page" : undefined}
-            aria-selected={view === "pilot"}
-            onClick={() => setView("pilot")}
-          >
-            Pilot
-          </button>
-          <button
-            type="button"
-            role="tab"
-            className={view === "help" ? "tab active" : "tab"}
-            aria-current={view === "help" ? "page" : undefined}
-            aria-selected={view === "help"}
-            onClick={() => setView("help")}
-          >
-            Help
-          </button>
+    <main className="app-shell exp-shell">
+      <header className="app-chrome exp-chrome">
+        <div className="exp-brand">
+          <span className="exp-brand-mark" aria-hidden="true" />
+          <h1>Workspace</h1>
+        </div>
+        <nav className="tabs exp-nav" aria-label="Workspace" role="tablist">
+          {PILOT_PRIMARY_VIEWS.map((id) => (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              className={view === id ? "tab active" : "tab"}
+              aria-current={view === id ? "page" : undefined}
+              aria-selected={view === id}
+              onClick={() => {
+                setFocusContextId(null);
+                setView(id);
+              }}
+            >
+              {PILOT_VIEW_LABELS[id]}
+            </button>
+          ))}
         </nav>
       </header>
 
@@ -164,7 +152,7 @@ export default function App() {
           aria-live="assertive"
           aria-atomic="true"
         >
-          Error: {error}
+          {error}
         </p>
       )}
       {message && (
@@ -178,50 +166,49 @@ export default function App() {
         </p>
       )}
 
-      {view === "save" ? (
-        <div className="container assistant-container">
-          {bootstrapped ? (
-            <SaveContextPanel
-              workspace={workspace}
-              busy={busy}
-              onBusy={setBusy}
-              onError={onError}
-              onMessage={onMessage}
-              onCreateWorkspace={createWorkspace}
-            />
-          ) : (
-            <p className="muted">Loading…</p>
-          )}
-        </div>
-      ) : view === "resume" ? (
-        <div className="container assistant-container">
-          {bootstrapped ? (
-            <ResumeContextPanel
-              workspace={workspace}
-              busy={busy}
-              onBusy={setBusy}
-              onError={onError}
-              onMessage={onMessage}
-              onGoToPilot={() => setView("pilot")}
-            />
-          ) : (
-            <p className="muted">Loading…</p>
-          )}
-        </div>
-      ) : view === "pilot" ? (
-        <div className="container assistant-container">
+      <div className="exp-body">
+        {!bootstrapped ? (
+          <p className="muted exp-loading">Opening your workspace…</p>
+        ) : view === "home" ? (
+          <HomeWorkspacePanel
+            workspace={workspace}
+            busy={busy}
+            onCreateWorkspace={createWorkspace}
+            onGoToSave={() => setView("save")}
+            onGoToContinue={() => goContinue()}
+            onContinueContext={(id) => goContinue(id)}
+          />
+        ) : view === "save" ? (
+          <SaveContextPanel
+            workspace={workspace}
+            busy={busy}
+            onBusy={setBusy}
+            onError={onError}
+            onMessage={onMessage}
+            onCreateWorkspace={createWorkspace}
+          />
+        ) : view === "resume" ? (
+          <ResumeContextPanel
+            workspace={workspace}
+            busy={busy}
+            onBusy={setBusy}
+            onError={onError}
+            onMessage={onMessage}
+            onGoToPilot={() => setView("pilot")}
+            onGoHome={() => setView("home")}
+            focusContextId={focusContextId}
+          />
+        ) : view === "pilot" ? (
           <PilotMeasurementPanel
             busy={busy}
             onBusy={setBusy}
             onError={onError}
             onMessage={onMessage}
           />
-        </div>
-      ) : (
-        <div className="container assistant-container">
+        ) : (
           <PilotHelpPanel />
-        </div>
-      )}
+        )}
+      </div>
     </main>
   );
 }

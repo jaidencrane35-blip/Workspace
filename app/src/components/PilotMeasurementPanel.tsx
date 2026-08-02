@@ -31,6 +31,7 @@ const WEEK_FOUR_PROMPTS = [
 /**
  * PP-P01E — Consented local pilot measurement and interview kit.
  * Evaluation data only; never ambient; never uploaded.
+ * Presentation redesigned; measurement behaviour unchanged.
  */
 export function PilotMeasurementPanel({
   busy,
@@ -196,8 +197,8 @@ export function PilotMeasurementPanel({
 
   if (!scope || !snapshot) {
     return (
-      <section className="assistant-hero">
-        <p className="assistant-kicker">Pilot</p>
+      <section className="exp-stage">
+        <p className="exp-kicker">Check-in</p>
         <h2>Pilot measurement</h2>
         <p className="muted">Loading…</p>
       </section>
@@ -206,213 +207,247 @@ export function PilotMeasurementPanel({
 
   if (!consented) {
     return (
-      <section className="assistant-hero" data-testid="pilot-measurement-consent">
-        <p className="assistant-kicker">Pilot</p>
-        <h2>Measure the pilot — only with your consent</h2>
-        <p className="lede">{scope.purpose}</p>
+      <section className="exp-stage" data-testid="pilot-measurement-consent">
+        <article className="exp-card featured">
+          <p className="exp-kicker">Check-in</p>
+          <h2>Measure the pilot — only with your consent</h2>
+          <p className="exp-lede">{scope.purpose}</p>
 
-        <section>
-          <h3>What will be measured</h3>
-          <ul className="list compact">
-            {scope.measured.map((item) => (
-              <li key={item.key}>{item.summary}</li>
-            ))}
-          </ul>
-        </section>
+          <details className="exp-inspect" open>
+            <summary>What will be measured</summary>
+            <ul className="list compact">
+              {scope.measured.map((item) => (
+                <li key={item.key}>{item.summary}</li>
+              ))}
+            </ul>
+            <h3>What will not be measured</h3>
+            <ul className="list compact">
+              {scope.not_measured.map((item) => (
+                <li key={item.key}>{item.summary}</li>
+              ))}
+            </ul>
+          </details>
 
-        <section>
-          <h3>What will not be measured</h3>
-          <ul className="list compact">
-            {scope.not_measured.map((item) => (
-              <li key={item.key}>{item.summary}</li>
-            ))}
-          </ul>
-        </section>
+          <p className="muted">
+            Scope {scope.id}. Nothing is recorded until you consent. You can
+            withdraw later and clear the records.
+          </p>
 
-        <p className="muted">
-          Scope {scope.id}. Nothing is recorded until you consent. You can withdraw
-          later and clear the records.
-        </p>
-
-        <div className="row">
-          <button type="button" disabled={busy} onClick={grantConsent}>
-            I consent to local pilot measurement
-          </button>
-        </div>
+          <div className="exp-actions">
+            <button
+              type="button"
+              className="exp-btn primary"
+              disabled={busy}
+              onClick={grantConsent}
+            >
+              I consent to local pilot measurement
+            </button>
+          </div>
+        </article>
       </section>
     );
   }
 
   return (
-    <section className="assistant-hero" data-testid="pilot-measurement-active">
-      <p className="assistant-kicker">Pilot</p>
-      <h2>Local pilot evidence</h2>
-      <p className="lede">
-        These records evaluate the Product Proof hypothesis. They are not saved
-        contexts and are not sent anywhere.
+    <section className="exp-stage" data-testid="pilot-measurement-active">
+      <header className="exp-home-header">
+        <div>
+          <p className="exp-kicker">Check-in</p>
+          <h2>Your pilot progress</h2>
+          <p className="exp-lede">
+            These records evaluate the Product Proof hypothesis. They are not saved
+            contexts and are not sent anywhere.
+          </p>
+        </div>
+      </header>
+
+      <div className="exp-stat-row">
+        <article className="exp-card stat">
+          <p className="exp-kicker">Baseline</p>
+          <p className="exp-stat">
+            {snapshot.baseline
+              ? `${snapshot.baseline.return_minutes} min`
+              : "—"}
+          </p>
+        </article>
+        <article className="exp-card stat">
+          <p className="exp-kicker">Leave → resume</p>
+          <p className="exp-stat">{snapshot.leave_resume.length}</p>
+          <p className="muted">{snapshot.distinct_resume_days} distinct days</p>
+        </article>
+        <article className="exp-card stat">
+          <p className="exp-kicker">Median return</p>
+          <p className="exp-stat">
+            {snapshot.median_return_minutes != null
+              ? `${snapshot.median_return_minutes} min`
+              : "n/a"}
+          </p>
+        </article>
+      </div>
+      <p className="muted">
+        LEDGER-0013 looks for median return-to-work reduction versus baseline,
+        and week-four habit (Resume on at least three distinct days).
       </p>
 
-      <section>
-        <h3>Summary</h3>
-        <ul className="list compact">
-          <li>
-            Baseline minutes:{" "}
-            {snapshot.baseline
-              ? snapshot.baseline.return_minutes
-              : "not recorded yet"}
-          </li>
-          <li>
-            Leave→resume records: {snapshot.leave_resume.length} · distinct days:{" "}
-            {snapshot.distinct_resume_days}
-          </li>
-          <li>
-            Median leave→resume minutes:{" "}
-            {snapshot.median_return_minutes ?? "n/a"}
-          </li>
-        </ul>
-        <p className="muted">
-          LEDGER-0013 looks for median return-to-work reduction versus baseline,
-          and week-four habit (Resume on at least three distinct days).
-        </p>
-      </section>
+      <div className="exp-card-grid pilot-forms">
+        <article className="exp-card">
+          <h3>Baseline (before Workspace)</h3>
+          <p className="muted">
+            Your estimate of minutes to return to work without Workspace.
+          </p>
+          <label className="exp-field" htmlFor="pilot-baseline-minutes">
+            <span>Minutes</span>
+            <input
+              id="pilot-baseline-minutes"
+              className="input-wide"
+              inputMode="numeric"
+              value={baselineMinutes}
+              disabled={busy}
+              onChange={(event) => setBaselineMinutes(event.target.value)}
+            />
+          </label>
+          <label className="exp-field" htmlFor="pilot-baseline-notes">
+            <span>Notes (optional)</span>
+            <textarea
+              id="pilot-baseline-notes"
+              className="input-wide"
+              rows={2}
+              value={baselineNotes}
+              disabled={busy}
+              onChange={(event) => setBaselineNotes(event.target.value)}
+            />
+          </label>
+          <button
+            type="button"
+            className="exp-btn primary"
+            disabled={busy}
+            onClick={saveBaseline}
+          >
+            Save baseline
+          </button>
+        </article>
 
-      <section>
-        <h3>Baseline (before Workspace)</h3>
-        <p className="muted">
-          Your estimate of minutes to return to work without Workspace.
-        </p>
-        <div className="row">
-          <label htmlFor="pilot-baseline-minutes">Minutes</label>
-          <input
-            id="pilot-baseline-minutes"
-            className="input-wide"
-            inputMode="numeric"
-            value={baselineMinutes}
-            disabled={busy}
-            onChange={(event) => setBaselineMinutes(event.target.value)}
-          />
-        </div>
-        <div className="row">
-          <label htmlFor="pilot-baseline-notes">Notes (optional)</label>
-          <textarea
-            id="pilot-baseline-notes"
-            className="input-wide"
-            rows={2}
-            value={baselineNotes}
-            disabled={busy}
-            onChange={(event) => setBaselineNotes(event.target.value)}
-          />
-        </div>
-        <button type="button" disabled={busy} onClick={saveBaseline}>
-          Save baseline
-        </button>
-      </section>
-
-      <section>
-        <h3>Leave→resume record</h3>
-        <p className="muted">
-          After you use Resume, enter how many minutes it took to get back to
-          work, and whether you needed to correct anything. Nothing is inferred.
-        </p>
-        <div className="row">
-          <label htmlFor="pilot-return-minutes">Minutes to return</label>
-          <input
-            id="pilot-return-minutes"
-            className="input-wide"
-            inputMode="numeric"
-            value={returnMinutes}
-            disabled={busy}
-            onChange={(event) => setReturnMinutes(event.target.value)}
-          />
-        </div>
-        <div className="row">
-          <label>
+        <article className="exp-card">
+          <h3>Leave→resume record</h3>
+          <p className="muted">
+            After you use Resume, enter how many minutes it took to get back to
+            work, and whether you needed to correct anything. Nothing is inferred.
+          </p>
+          <label className="exp-field" htmlFor="pilot-return-minutes">
+            <span>Minutes to return</span>
+            <input
+              id="pilot-return-minutes"
+              className="input-wide"
+              inputMode="numeric"
+              value={returnMinutes}
+              disabled={busy}
+              onChange={(event) => setReturnMinutes(event.target.value)}
+            />
+          </label>
+          <label className="exp-check">
             <input
               type="checkbox"
               checked={correctionNeeded}
               disabled={busy}
               onChange={(event) => setCorrectionNeeded(event.target.checked)}
-            />{" "}
-            I needed to correct something after restore
-          </label>
-        </div>
-        {correctionNeeded && (
-          <div className="row">
-            <label htmlFor="pilot-correction-note">What did you correct?</label>
-            <textarea
-              id="pilot-correction-note"
-              className="input-wide"
-              rows={2}
-              value={correctionNote}
-              disabled={busy}
-              onChange={(event) => setCorrectionNote(event.target.value)}
             />
-          </div>
-        )}
-        <button type="button" disabled={busy} onClick={saveLeaveResume}>
-          Record this leave→resume
-        </button>
-      </section>
+            <span>I needed to correct something after restore</span>
+          </label>
+          {correctionNeeded && (
+            <label className="exp-field" htmlFor="pilot-correction-note">
+              <span>What did you correct?</span>
+              <textarea
+                id="pilot-correction-note"
+                className="input-wide"
+                rows={2}
+                value={correctionNote}
+                disabled={busy}
+                onChange={(event) => setCorrectionNote(event.target.value)}
+              />
+            </label>
+          )}
+          <button
+            type="button"
+            className="exp-btn primary"
+            disabled={busy}
+            onClick={saveLeaveResume}
+          >
+            Record this leave→resume
+          </button>
+        </article>
 
-      <section>
-        <h3>Baseline interview kit</h3>
-        <ul className="list compact">
-          {BASELINE_PROMPTS.map((prompt) => (
-            <li key={prompt}>{prompt}</li>
-          ))}
-        </ul>
-        <textarea
-          className="input-wide"
-          rows={4}
-          value={interviewBaseline}
-          disabled={busy}
-          placeholder="Write your answers here. Stored only on this computer."
-          onChange={(event) => setInterviewBaseline(event.target.value)}
-        />
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => saveInterview("baseline", interviewBaseline)}
-        >
-          Save baseline interview
-        </button>
-      </section>
+        <article className="exp-card">
+          <h3>Baseline interview kit</h3>
+          <ul className="list compact">
+            {BASELINE_PROMPTS.map((prompt) => (
+              <li key={prompt}>{prompt}</li>
+            ))}
+          </ul>
+          <textarea
+            className="input-wide"
+            rows={4}
+            value={interviewBaseline}
+            disabled={busy}
+            placeholder="Write your answers here. Stored only on this computer."
+            onChange={(event) => setInterviewBaseline(event.target.value)}
+          />
+          <button
+            type="button"
+            className="exp-btn"
+            disabled={busy}
+            onClick={() => saveInterview("baseline", interviewBaseline)}
+          >
+            Save baseline interview
+          </button>
+        </article>
 
-      <section>
-        <h3>Week-four interview kit</h3>
-        <ul className="list compact">
-          {WEEK_FOUR_PROMPTS.map((prompt) => (
-            <li key={prompt}>{prompt}</li>
-          ))}
-        </ul>
-        <textarea
-          className="input-wide"
-          rows={4}
-          value={interviewWeekFour}
-          disabled={busy}
-          placeholder="Write your answers here. Stored only on this computer."
-          onChange={(event) => setInterviewWeekFour(event.target.value)}
-        />
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => saveInterview("week_four", interviewWeekFour)}
-        >
-          Save week-four interview
-        </button>
-      </section>
+        <article className="exp-card">
+          <h3>Week-four interview kit</h3>
+          <ul className="list compact">
+            {WEEK_FOUR_PROMPTS.map((prompt) => (
+              <li key={prompt}>{prompt}</li>
+            ))}
+          </ul>
+          <textarea
+            className="input-wide"
+            rows={4}
+            value={interviewWeekFour}
+            disabled={busy}
+            placeholder="Write your answers here. Stored only on this computer."
+            onChange={(event) => setInterviewWeekFour(event.target.value)}
+          />
+          <button
+            type="button"
+            className="exp-btn"
+            disabled={busy}
+            onClick={() => saveInterview("week_four", interviewWeekFour)}
+          >
+            Save week-four interview
+          </button>
+        </article>
+      </div>
 
-      <section>
+      <article className="exp-card">
         <h3>Withdraw consent</h3>
-        <div className="button-row">
-          <button type="button" disabled={busy} onClick={() => withdraw(false)}>
+        <div className="exp-actions">
+          <button
+            type="button"
+            className="exp-btn"
+            disabled={busy}
+            onClick={() => withdraw(false)}
+          >
             Withdraw consent (keep records)
           </button>
-          <button type="button" disabled={busy} onClick={() => withdraw(true)}>
+          <button
+            type="button"
+            className="exp-btn ghost"
+            disabled={busy}
+            onClick={() => withdraw(true)}
+          >
             Withdraw and clear pilot records
           </button>
         </div>
-      </section>
+      </article>
     </section>
   );
 }

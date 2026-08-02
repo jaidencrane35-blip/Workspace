@@ -113,6 +113,16 @@ compile-time embedded so installed binaries no longer depend on a developer
 checkout path (LEDGER-0032). Pilot build notes in
 `19_Pilot_Participant_1_Local_Build.md`.
 
+✓ Participant #1 Windows install completed (NSIS → Local\Workspace; Desktop and
+Start Menu shortcuts launch production UI).
+
+✓ Active-workspace persistence defect fixed (LEDGER-0033).
+
+✓ Experience Fidelity Review and convergence pass completed (LEDGER-0034,
+`20_Experience_Fidelity_Review.md`): companion-first Home hub and product
+navigation; engineering-form chrome reduced without changing Product Proof
+behaviour.
+
 ---
 
 # Active Task
@@ -209,11 +219,14 @@ milestone.
 Recommended next programme objective: **Recruit and execute the LEDGER-0013
 Product Proof pilot** (~15 target users; four weeks; baseline, leave→resume,
 correction, week-four habit, trust invalidation watch; local measurement only).
-See `18_Product_Proof_Review_PP_P01.md` and LEDGER-0031. Participant #1
-(developer) local installable build is ready for daily dogfood per LEDGER-0032
-and `19_Pilot_Participant_1_Local_Build.md`.
-Recommended next implementation slice: **None** — no product implementation
-until pilot evidence or a repository-authorised engineering defect requires it.
+See `18_Product_Proof_Review_PP_P01.md` and LEDGER-0031. Participant #1 can
+install/launch with persisted active workspace (LEDGER-0032/0033). Experience
+convergence pass recorded in LEDGER-0034; further Experience polish may continue
+without capability growth. Next programme objective remains LEDGER-0013 pilot
+execution.
+Recommended next implementation slice: **None** for capability expansion —
+Experience iteration remains allowed when it does not widen Product Proof
+behaviour.
 
 ---
 

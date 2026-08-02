@@ -2027,3 +2027,56 @@ Supersedes: None for product strategy. Corrects the runtime migration loading
 assumption left implicit after MSI/NSIS packaging (LEDGER-0017 era).
 
 Status: Complete; Participant #1 local build ready for daily dogfood
+
+### LEDGER-0033
+
+Entry ID: LEDGER-0033
+Timestamp: 2026-08-02
+Capability: Runtime Host / settings — active workspace persistence
+Related ADRs: ADR-0008
+Related Research: None
+Decision: Fix the Participant #1 blocking defect where creating/activating a
+workspace showed `One or more settings values were invalid` and never persisted
+`active_workspace_id`. `UpdateSettings::validate` required `theme` or
+`first_run`, rejecting the Experience `active_workspace_id`-only update used by
+pilot chrome.
+
+Implementation:
+- Allow updates that set `active_workspace_id` or `personalization_enabled`
+  without theme/first_run.
+- Add regression test `accepts_active_workspace_id_only_update`.
+- No contract or Product Proof behaviour change.
+
+Validation: `cargo test -p workspace-kernel active_workspace_id_only`
+
+Unlocks: Active workspace survives relaunch for Participant #1 dogfood.
+
+Status: Complete (commit `589a8e2`)
+
+### LEDGER-0034
+
+Entry ID: LEDGER-0034
+Timestamp: 2026-08-02
+Capability: Experience — fidelity convergence for Product Proof chrome
+Related ADRs: ADR-0008
+Related Research: None
+Decision: Accept Experience Fidelity Review (`20_Experience_Fidelity_Review.md`)
+and converge presentation toward the original Workspace vision without adding
+capabilities or changing trust/Product Proof behaviour.
+
+Implementation (Experience presentation only):
+- Product-oriented navigation: Home / Save / Continue / Check-in / Guide.
+- Home hub with workspace identity, recent handoffs, empty-state invitation.
+- Save/Resume/Pilot/Help redesigned as card-based spatial UI; technical
+  metadata moved behind inspect disclosures.
+- Empty-state copy no longer uses “Nowhere to keep this yet.”
+- Visual system: calm dark charcoal, soft blue accent, card hierarchy.
+- Pilot measurement and restore-limits content preserved truthfully.
+- Chrome/presentation tests updated for product labels.
+
+Validation: `pnpm test`, `pnpm typecheck` green; trust/consent/restore-limits
+audits unchanged in substance.
+
+Does not unlock hypothesis proof. Does not change Action restore semantics.
+
+Status: Complete for this convergence pass

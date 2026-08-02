@@ -63,9 +63,11 @@ describe("PP-P01E consented pilot measurement", () => {
 
   it("exposes Pilot as a participant surface without restoring engine tabs", () => {
     expect(chrome).toContain('"pilot"');
+    expect(chrome).toContain("Check-in");
     expect(app).toContain("PilotMeasurementPanel");
-    expect(app).toContain(">\n            Pilot\n          </button>");
+    expect(app).toContain("Check-in");
     expect(app).not.toContain("OperatorConsole");
     expect(app).not.toContain("CanvasShell");
   });
 });
+

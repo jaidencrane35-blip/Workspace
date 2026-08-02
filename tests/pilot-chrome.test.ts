@@ -1,8 +1,8 @@
 /**
- * PP-P01D — Pilot-safe primary chrome.
+ * PP-P01D — Pilot-safe primary chrome (Experience presentation).
  *
- * Default navigation must be Save / Resume / Help. Engine tabs (Canvas, Work,
- * Assistant, Diagnostic) must not appear as primary pilot surfaces.
+ * Default navigation must remain Product Proof surfaces without engine tabs.
+ * Labels may be product-oriented (Home / Save / Continue / Check-in / Guide).
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -12,6 +12,7 @@ import {
   PILOT_HIDDEN_ENGINE_TAB_LABELS,
   PILOT_PRIMARY_TAB_LABELS,
   PILOT_PRIMARY_VIEWS,
+  PILOT_VIEW_LABELS,
 } from "../app/src/lib/pilotChrome";
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -29,20 +30,34 @@ const resumeSource = fs.readFileSync(
   path.join(root, "app/src/components/ResumeContextPanel.tsx"),
   "utf8",
 );
+const homeSource = fs.readFileSync(
+  path.join(root, "app/src/components/HomeWorkspacePanel.tsx"),
+  "utf8",
+);
 
 describe("PP-P01D pilot-safe chrome", () => {
-  it("defines Save, Resume, Pilot, and Help as the only primary pilot views", () => {
-    expect([...PILOT_PRIMARY_VIEWS]).toEqual(["save", "resume", "pilot", "help"]);
-    expect([...PILOT_PRIMARY_TAB_LABELS]).toEqual([
-      "Save",
-      "Resume",
-      "Pilot",
-      "Help",
+  it("defines product-oriented primary pilot views without engine tabs", () => {
+    expect([...PILOT_PRIMARY_VIEWS]).toEqual([
+      "home",
+      "save",
+      "resume",
+      "pilot",
+      "help",
     ]);
-    for (const label of PILOT_PRIMARY_TAB_LABELS) {
-      expect(appSource).toContain(`>\n            ${label}\n          </button>`);
+    expect([...PILOT_PRIMARY_TAB_LABELS]).toEqual([
+      "Home",
+      "Save",
+      "Continue",
+      "Check-in",
+      "Guide",
+    ]);
+    expect(appSource).toContain("PILOT_PRIMARY_VIEWS");
+    expect(appSource).toContain("PILOT_VIEW_LABELS");
+    for (const label of Object.values(PILOT_VIEW_LABELS)) {
+      expect(PILOT_PRIMARY_TAB_LABELS).toContain(label);
     }
   });
+
 
   it("keeps engine tabs out of the default pilot chrome", () => {
     for (const label of PILOT_HIDDEN_ENGINE_TAB_LABELS) {
@@ -59,10 +74,12 @@ describe("PP-P01D pilot-safe chrome", () => {
     expect(appSource).toContain("SaveContextPanel");
     expect(appSource).toContain("ResumeContextPanel");
     expect(appSource).toContain("PilotHelpPanel");
+    expect(appSource).toContain("HomeWorkspacePanel");
     expect(saveSource).toContain("RestoreLimitsNotice");
     expect(resumeSource).toContain("RestoreLimitsNotice");
     expect(resumeSource).toContain("delete_saved_context");
     expect(resumeSource).toContain("get_saved_context");
+    expect(homeSource).toContain("This is your Workspace");
   });
 
   it("creates a workspace from Save without routing through Canvas", () => {

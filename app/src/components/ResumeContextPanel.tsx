@@ -21,6 +21,9 @@ interface ResumeContextPanelProps {
   onMessage: (message: string | null) => void;
   /** Optional navigation to the consented pilot measurement surface (PP-P01E). */
   onGoToPilot?: () => void;
+  onGoHome?: () => void;
+  /** When set, open preview for this saved context after browse loads. */
+  focusContextId?: string | null;
 }
 
 function formatError(err: unknown): string {
@@ -87,6 +90,8 @@ export function ResumeContextPanel({
   onError,
   onMessage,
   onGoToPilot,
+  onGoHome,
+  focusContextId = null,
 }: ResumeContextPanelProps) {
   const [step, setStep] = useState<Step>("browse");
   const [contexts, setContexts] = useState<SavedContext[]>([]);
@@ -132,25 +137,38 @@ export function ResumeContextPanel({
     })();
   };
 
-  const openPreview = (contextId: string) => {
-    onBusy(true);
-    onError(null);
-    void (async () => {
-      try {
-        const next = await invokeIpc<ResumePlanPreview>("resolve_resume_plan", {
-          savedContextId: contextId,
-        });
-        setPreview(next);
-        setResult(null);
-        setStep("preview");
-        onMessage(`Preview ready for “${next.saved_context_name}”`);
-      } catch (err: unknown) {
-        onError(formatError(err));
-      } finally {
-        onBusy(false);
-      }
-    })();
-  };
+  const openPreview = useCallback(
+    (contextId: string) => {
+      onBusy(true);
+      onError(null);
+      void (async () => {
+        try {
+          const next = await invokeIpc<ResumePlanPreview>("resolve_resume_plan", {
+            savedContextId: contextId,
+          });
+          setPreview(next);
+          setResult(null);
+          setStep("preview");
+          onMessage(`Preview ready for “${next.saved_context_name}”`);
+        } catch (err: unknown) {
+          onError(formatError(err));
+        } finally {
+          onBusy(false);
+        }
+      })();
+    },
+    [onBusy, onError, onMessage],
+  );
+
+  useEffect(() => {
+    if (!focusContextId || !workspace || contexts.length === 0) {
+      return;
+    }
+    if (!contexts.some((context) => context.id === focusContextId)) {
+      return;
+    }
+    openPreview(focusContextId);
+  }, [focusContextId, workspace, contexts, openPreview]);
 
   const approveAndRestore = () => {
     if (!preview) {
@@ -215,60 +233,78 @@ export function ResumeContextPanel({
 
   if (!workspace) {
     return (
-      <section className="panel">
-        <h2>Resume</h2>
-        <p className="muted">Create or open a workspace before resuming a saved context.</p>
+      <section className="exp-stage">
+        <div className="exp-hero-card">
+          <p className="exp-kicker">Continue</p>
+          <h2>Let’s continue your work</h2>
+          <p className="exp-lede">
+            Create or open a workspace first — then your saved moments will be
+            ready to continue.
+          </p>
+          {onGoHome && (
+            <button type="button" className="exp-btn primary" onClick={onGoHome}>
+              Go to Home
+            </button>
+          )}
+        </div>
       </section>
     );
   }
 
   return (
-    <section className="panel">
-      <h2>Resume</h2>
-      <p className="lede">
-        Choose a saved context to inspect, delete, or restore. Nothing runs before
-        you approve a restore, and nothing is deleted before you confirm.
-      </p>
-      <p className="muted">{RESTORE_LIMITS_SUMMARY}</p>
+    <section className="exp-stage">
+      <header className="exp-home-header">
+        <div>
+          <p className="exp-kicker">Continue</p>
+          <h2>Let’s continue your work</h2>
+          <p className="exp-lede">
+            Choose a saved moment. Nothing moves until you approve a restore.
+          </p>
+        </div>
+      </header>
+      <p className="muted exp-limits-line">{RESTORE_LIMITS_SUMMARY}</p>
 
       {loadError && <p className="error">{loadError}</p>}
 
       {step === "browse" && (
         <>
           {contexts.length === 0 ? (
-            <p className="muted">No saved contexts in this workspace yet.</p>
+            <article className="exp-card featured empty-invite">
+              <h3>No saved moments yet</h3>
+              <p className="exp-lede">
+                Save a short note before you step away — then continue from here.
+              </p>
+            </article>
           ) : (
-            <ul className="resume-list">
+            <ul className="exp-card-grid resume-cards">
               {contexts.map((context) => (
-                <li key={context.id}>
-                  <div>
-                    <strong>{context.name}</strong>
-                    <div className="muted">
-                      {formatMoment(context.created_at)} · {context.windows.length}{" "}
-                      windows · scope {context.approved_scope}
-                    </div>
-                    {context.handoff_note.trim() ? (
-                      <div className="resume-handoff">
-                        Next: {context.handoff_note}
-                      </div>
-                    ) : (
-                      <div className="muted">No handoff was recorded.</div>
-                    )}
-                  </div>
-                  <div className="resume-actions">
+                <li key={context.id} className="exp-card">
+                  <h3>{context.name}</h3>
+                  <p className="exp-intention compact">
+                    {context.handoff_note.trim()
+                      ? context.handoff_note
+                      : "No handoff was recorded."}
+                  </p>
+                  <p className="muted">
+                    {formatMoment(context.created_at)} · {context.windows.length}{" "}
+                    {context.windows.length === 1 ? "window" : "windows"}
+                  </p>
+                  <div className="exp-actions">
                     <button
                       type="button"
+                      className="exp-btn primary"
+                      disabled={busy}
+                      onClick={() => openPreview(context.id)}
+                    >
+                      Continue
+                    </button>
+                    <button
+                      type="button"
+                      className="exp-btn ghost"
                       disabled={busy}
                       onClick={() => openInspect(context.id)}
                     >
                       Inspect
-                    </button>
-                    <button
-                      type="button"
-                      disabled={busy}
-                      onClick={() => openPreview(context.id)}
-                    >
-                      Preview restore
                     </button>
                   </div>
                 </li>
@@ -279,28 +315,22 @@ export function ResumeContextPanel({
       )}
 
       {step === "inspect" && inspected && (
-        <>
-          <h3>Saved context “{inspected.name}”</h3>
+        <article className="exp-card featured">
+          <p className="exp-kicker">Inspect</p>
+          <h3>{inspected.name}</h3>
+          <p className="exp-intention">
+            {inspected.handoff_note.trim()
+              ? inspected.handoff_note
+              : "No handoff was recorded with this context."}
+          </p>
           <p className="muted">
-            Saved on this computer at {formatMoment(inspected.created_at)}. Scope{" "}
-            {inspected.approved_scope}. This is everything Workspace retained —
-            nothing else.
+            Shown exactly as you wrote it. Saved{" "}
+            {formatMoment(inspected.created_at)}.
           </p>
 
-          <section className="resume-handoff-block">
-            <h4>What you intended to do next</h4>
-            {inspected.handoff_note.trim() ? (
-              <p>{inspected.handoff_note}</p>
-            ) : (
-              <p className="muted">No handoff was recorded with this context.</p>
-            )}
-            <p className="muted">
-              Shown exactly as you wrote it. Workspace did not invent or rewrite
-              it.
-            </p>
-          </section>
-
-          <section>
+          <details className="exp-inspect">
+            <summary>Window and monitor details</summary>
+            <p className="muted">Scope {inspected.approved_scope}</p>
             <h4>
               {inspected.windows.length}{" "}
               {inspected.windows.length === 1 ? "window" : "windows"}
@@ -313,9 +343,6 @@ export function ResumeContextPanel({
                 </li>
               ))}
             </ul>
-          </section>
-
-          <section>
             <h4>
               {inspected.monitors.length}{" "}
               {inspected.monitors.length === 1 ? "monitor" : "monitors"}
@@ -333,16 +360,14 @@ export function ResumeContextPanel({
                 </li>
               ))}
             </ul>
-          </section>
+          </details>
 
           <RestoreLimitsNotice />
 
-          <div className="button-row">
-            <button type="button" disabled={busy} onClick={backToBrowse}>
-              Back
-            </button>
+          <div className="exp-actions">
             <button
               type="button"
+              className="exp-btn primary"
               disabled={busy}
               onClick={() => openPreview(inspected.id)}
             >
@@ -350,19 +375,28 @@ export function ResumeContextPanel({
             </button>
             <button
               type="button"
+              className="exp-btn"
+              disabled={busy}
+              onClick={backToBrowse}
+            >
+              Back
+            </button>
+            <button
+              type="button"
+              className="exp-btn ghost"
               disabled={busy}
               onClick={() => setStep("confirm_delete")}
             >
               Delete this context
             </button>
           </div>
-        </>
+        </article>
       )}
 
       {step === "confirm_delete" && inspected && (
-        <>
+        <article className="exp-card featured">
           <h3>Delete “{inspected.name}”?</h3>
-          <p className="lede">
+          <p className="exp-lede">
             This removes the saved context and its restore identities from this
             computer. It cannot be undone. Windows already open on your desktop
             are not closed.
@@ -370,106 +404,125 @@ export function ResumeContextPanel({
           <p className="muted">
             After deletion, this context cannot be inspected or restored.
           </p>
-          <div className="button-row">
+          <div className="exp-actions">
             <button
               type="button"
+              className="exp-btn"
               disabled={busy}
               onClick={() => setStep("inspect")}
             >
               Cancel
             </button>
-            <button type="button" disabled={busy} onClick={confirmDelete}>
+            <button
+              type="button"
+              className="exp-btn primary"
+              disabled={busy}
+              onClick={confirmDelete}
+            >
               Delete permanently
             </button>
           </div>
-        </>
+        </article>
       )}
 
       {step === "preview" && preview && (
-        <>
-          <h3>Restore plan for “{preview.saved_context_name}”</h3>
-          <p className="muted">
-            Expires {formatMoment(preview.plan.expires_at)}. Approve only if this
-            matches what you want restored.
+        <article className="exp-card featured">
+          <p className="exp-kicker">Preview</p>
+          <h3>Continue “{preview.saved_context_name}”</h3>
+          <p className="exp-intention">
+            {preview.handoff_note.trim()
+              ? preview.handoff_note
+              : "No handoff was recorded with this context."}
           </p>
-          <section className="resume-handoff-block">
-            <h4>What you intended to do next</h4>
-            {preview.handoff_note.trim() ? (
-              <p>{preview.handoff_note}</p>
-            ) : (
-              <p className="muted">No handoff was recorded with this context.</p>
-            )}
-            <p className="muted">
-              Shown exactly as you wrote it. Window restore does not change this
-              text.
-            </p>
-          </section>
+          <p className="muted">
+            Shown exactly as you wrote it. Expires{" "}
+            {formatMoment(preview.plan.expires_at)}.
+          </p>
           <RestoreLimitsNotice />
-          <ul className="resume-plan">
-            {preview.plan.items.map((item) => (
-              <li key={item.item_id}>
-                <strong>{item.target_summary}</strong>
-                <div>
-                  {item.action_type} · {describeDisposition(item)}
-                </div>
-                {item.reason && <div className="muted">{item.reason}</div>}
-              </li>
-            ))}
-          </ul>
-          <div className="button-row">
-            <button type="button" disabled={busy} onClick={backToBrowse}>
-              Cancel
-            </button>
-            <button type="button" disabled={busy} onClick={approveAndRestore}>
+          <details className="exp-inspect" open>
+            <summary>Restore plan</summary>
+            <ul className="resume-plan">
+              {preview.plan.items.map((item) => (
+                <li key={item.item_id}>
+                  <strong>{item.target_summary}</strong>
+                  <div>
+                    {item.action_type} · {describeDisposition(item)}
+                  </div>
+                  {item.reason && <div className="muted">{item.reason}</div>}
+                </li>
+              ))}
+            </ul>
+          </details>
+          <div className="exp-actions">
+            <button
+              type="button"
+              className="exp-btn primary"
+              disabled={busy}
+              onClick={approveAndRestore}
+            >
               Approve and restore
             </button>
+            <button
+              type="button"
+              className="exp-btn ghost"
+              disabled={busy}
+              onClick={backToBrowse}
+            >
+              Cancel
+            </button>
           </div>
-        </>
+        </article>
       )}
 
       {step === "done" && result && preview && (
-        <>
-          <h3>Restore result</h3>
+        <article className="exp-card featured">
+          <p className="exp-kicker">Done</p>
+          <h3>You’re back</h3>
+          <p className="exp-intention">
+            {preview.handoff_note.trim()
+              ? preview.handoff_note
+              : "No handoff was recorded with this context."}
+          </p>
           <p>
             Outcome: <strong>{result.outcome.replace(/_/g, " ")}</strong>
           </p>
-          <section className="resume-handoff-block">
-            <h4>What you intended to do next</h4>
-            {preview.handoff_note.trim() ? (
-              <p>{preview.handoff_note}</p>
-            ) : (
-              <p className="muted">No handoff was recorded with this context.</p>
-            )}
-          </section>
           <RestoreLimitsNotice compact />
-          <ul className="resume-plan">
-            {result.items.map((item) => (
-              <li key={item.item_id}>
-                <strong>{item.target_summary}</strong>
-                <div>
-                  {describeOutcome(item.disposition)} · {item.what}
-                </div>
-                {item.reason && <div className="muted">{item.reason}</div>}
-              </li>
-            ))}
-          </ul>
-          <div className="button-row">
-            <button type="button" onClick={backToBrowse}>
-              Back to saved contexts
+          <details className="exp-inspect">
+            <summary>Per-window outcomes</summary>
+            <ul className="resume-plan">
+              {result.items.map((item) => (
+                <li key={item.item_id}>
+                  <strong>{item.target_summary}</strong>
+                  <div>
+                    {describeOutcome(item.disposition)} · {item.what}
+                  </div>
+                  {item.reason && <div className="muted">{item.reason}</div>}
+                </li>
+              ))}
+            </ul>
+          </details>
+          <div className="exp-actions">
+            <button type="button" className="exp-btn" onClick={backToBrowse}>
+              Back to saved moments
             </button>
             {onGoToPilot && (
-              <button type="button" onClick={onGoToPilot}>
+              <button
+                type="button"
+                className="exp-btn ghost"
+                onClick={onGoToPilot}
+              >
                 Record leave→resume for the pilot
               </button>
             )}
           </div>
           {onGoToPilot && (
             <p className="muted">
-              Pilot timing is only recorded if you have consented under Pilot and
-              enter the minutes yourself. Nothing is measured in the background.
+              Pilot timing is only recorded if you have consented under Check-in
+              and enter the minutes yourself. Nothing is measured in the
+              background.
             </p>
           )}
-        </>
+        </article>
       )}
     </section>
   );
