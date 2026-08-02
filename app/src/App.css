@@ -1,67 +1,4 @@
-/* Workspace Experience — Recovery Sprint visual identity
-   One spatial environment. Glass chrome. Atmosphere. No admin chrome. */
-
-:root {
-  --color-ink: #05070c;
-  --color-bg: #070b12;
-  --color-bg-elevated: rgba(14, 20, 30, 0.72);
-  --color-surface: rgba(18, 26, 38, 0.78);
-  --color-surface-solid: #121a26;
-  --color-surface-hero: rgba(22, 34, 50, 0.88);
-  --color-border: rgba(160, 190, 220, 0.14);
-  --color-border-strong: rgba(130, 210, 230, 0.38);
-  --color-text: #f2f6fb;
-  --color-text-muted: #8fa3b8;
-  --color-accent: #5fd0d8;
-  --color-accent-strong: #8eecf0;
-  --color-accent-warm: #e8b87a;
-  --color-ok: #86efac;
-  --color-danger: #f87171;
-  --radius-sm: 10px;
-  --radius-md: 18px;
-  --radius-lg: 26px;
-  --radius-pill: 999px;
-  --shadow-1: 0 10px 36px rgba(0, 0, 0, 0.38);
-  --shadow-2: 0 22px 64px rgba(0, 0, 0, 0.48);
-  --shadow-3: 0 32px 90px rgba(0, 0, 0, 0.55);
-  --shadow-4: 0 40px 120px rgba(0, 0, 0, 0.6);
-  --shadow-glow: 0 0 56px rgba(95, 208, 216, 0.12);
-  --edge-light: inset 0 1px 0 rgba(255, 255, 255, 0.1),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.035);
-  --space-1: 4px;
-  --space-2: 8px;
-  --space-3: 12px;
-  --space-4: 16px;
-  --space-5: 24px;
-  --space-6: 32px;
-  --space-7: 48px;
-  --motion-fast: 140ms;
-  --motion-base: 280ms;
-  --motion-slow: 360ms;
-  --ease: cubic-bezier(0.22, 0.82, 0.2, 1);
-  --dock-h: 5rem;
-  --spatial-max: 76rem;
-  --spatial-gutter: clamp(1.25rem, 3vw, 2rem);
-  --type-display: clamp(2.1rem, 4.2vw, 3.1rem);
-  --type-title: clamp(1.55rem, 2.6vw, 2.1rem);
-  --type-section: 1.2rem;
-  --type-body: 0.98rem;
-  --type-label: 0.7rem;
-  --exp-bg: var(--color-bg);
-  --exp-bg-elevated: var(--color-bg-elevated);
-  --exp-bg-card: var(--color-surface);
-  --exp-border: var(--color-border);
-  --exp-text: var(--color-text);
-  --exp-muted: var(--color-text-muted);
-  --exp-accent: var(--color-accent);
-  --exp-accent-strong: var(--color-accent-strong);
-  --exp-ok: var(--color-ok);
-  --exp-danger: var(--color-danger);
-  --exp-radius: var(--radius-lg);
-  --exp-shadow: var(--shadow-1);
-  --exp-font: "Segoe UI Variable Text", "Segoe UI", Candara, "Gill Sans", sans-serif;
-  --exp-display: "Segoe UI Variable Display", "Segoe UI", Candara, sans-serif;
-}
+/* Workspace Experience — tokens from design-system/tokens.css */
 
 *,
 *::before,
@@ -159,6 +96,55 @@ body {
   filter: blur(110px);
 }
 
+.ws-atmosphere__glow--e {
+  width: 36vw;
+  height: 36vw;
+  right: 18vw;
+  bottom: 8vh;
+  background: rgba(120, 90, 180, 0.07);
+  animation-duration: 110s;
+  animation-delay: -55s;
+  filter: blur(120px);
+}
+
+.ws-ambient {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.ws-ambient__spot {
+  position: absolute;
+  width: 55vw;
+  height: 55vw;
+  transform: translate(-50%, -50%);
+  filter: blur(70px);
+  mix-blend-mode: screen;
+}
+
+.ws-ambient__wash {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    70% 60% at 50% 40%,
+    var(--ws-light-ambient),
+    transparent 70%
+  );
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .ws-atmosphere__grain {
   position: absolute;
   inset: 0;
@@ -181,9 +167,13 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .ws-atmosphere__glow,
+  .ws-ambient__spot,
+  .ws-ambient__wash,
   .ws-dock__breath { animation: none !important; }
+  .ws-surface,
   .elevated-card,
   .moment-card,
+  .moment-object,
   .ws-dock__item,
   .exp-btn,
   .ws-content,
@@ -346,8 +336,9 @@ body {
   text-align: center;
 }
 
-/* —— Elevated card primitive (glass) —— */
+/* —— WorkspaceSurface material —— */
 
+.ws-surface,
 .elevated-card {
   position: relative;
   isolation: isolate;
@@ -357,29 +348,55 @@ body {
   background:
     linear-gradient(
       165deg,
-      rgba(32, 44, 60, 0.72),
-      rgba(12, 18, 28, 0.55)
+      rgba(32, 44, 60, 0.58),
+      rgba(12, 18, 28, 0.42)
     );
   box-shadow: var(--shadow-1), var(--edge-light);
-  backdrop-filter: blur(22px) saturate(1.2);
+  backdrop-filter: blur(var(--ws-blur-surface)) saturate(1.2);
   color: var(--exp-text);
   transition:
     transform var(--motion-base) var(--ease),
     box-shadow var(--motion-base) var(--ease),
-    background var(--motion-base) var(--ease);
+    background var(--motion-base) var(--ease),
+    filter var(--motion-base) var(--ease);
 }
 
+.ws-surface--surface { backdrop-filter: blur(var(--ws-blur-surface)) saturate(1.15); }
+.ws-surface--floating {
+  backdrop-filter: blur(var(--ws-blur-floating)) saturate(1.25);
+  box-shadow: var(--shadow-2), var(--shadow-glow), var(--edge-light);
+}
+.ws-surface--overlay {
+  backdrop-filter: blur(var(--ws-blur-overlay)) saturate(1.3);
+  box-shadow: var(--shadow-3), var(--shadow-glow), var(--edge-light);
+}
+
+.ws-surface--lit {
+  box-shadow:
+    var(--shadow-3),
+    0 0 48px var(--ws-light-focus),
+    var(--edge-light);
+}
+
+.ws-surface--write {
+  background:
+    radial-gradient(700px 280px at 20% 0%, rgba(95, 208, 216, 0.12), transparent 55%),
+    linear-gradient(165deg, rgba(28, 40, 56, 0.55), rgba(10, 14, 22, 0.4));
+}
+
+.ws-surface__edge,
 .elevated-card__edge {
   pointer-events: none;
   position: absolute;
   inset: 0;
   border-radius: inherit;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.12),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.25);
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.28);
   z-index: 2;
 }
 
+.ws-surface__shine,
 .elevated-card__shine {
   pointer-events: none;
   position: absolute;
@@ -394,6 +411,7 @@ body {
   z-index: 0;
 }
 
+.ws-surface__body,
 .elevated-card__body {
   position: relative;
   z-index: 1;
@@ -403,9 +421,13 @@ body {
   height: 100%;
 }
 
+.ws-surface--pad-sm,
 .elevated-card--pad-sm { padding: var(--space-3) var(--space-4); }
+.ws-surface--pad-md,
 .elevated-card--pad-md { padding: var(--space-4) var(--space-5); }
+.ws-surface--pad-lg,
 .elevated-card--pad-lg { padding: var(--space-5) var(--space-6); }
+.ws-surface--pad-xl,
 .elevated-card--pad-xl { padding: var(--space-6) clamp(1.5rem, 3vw, 2.4rem); }
 
 .elevated-card--e1 { box-shadow: var(--shadow-1), var(--edge-light); }
@@ -454,22 +476,149 @@ body {
   opacity: 0.55;
 }
 
+.ws-surface--interactive:hover,
 .elevated-card--interactive:hover {
   transform: translateY(-3px) scale(1.008);
   box-shadow: var(--shadow-3), var(--shadow-glow), var(--edge-light);
 }
 
+.ws-surface--ghost.ws-surface--interactive:hover,
 .elevated-card--ghost.elevated-card--interactive:hover,
 .elevated-card--ghost:hover {
   transform: none;
   box-shadow: none;
 }
 
+.ws-surface:focus-within,
 .elevated-card:focus-within {
   box-shadow:
     var(--shadow-2),
     var(--edge-light),
     0 0 0 3px rgba(95, 208, 216, 0.14);
+}
+
+.ws-canvas__stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(15rem, 0.72fr);
+  gap: var(--space-5);
+  align-items: start;
+}
+
+[data-density="focus"] .ws-canvas__stage {
+  grid-template-columns: 1fr;
+}
+
+.ws-canvas__anchor {
+  min-width: 0;
+}
+
+.ws-canvas__float {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.ws-canvas__orbit {
+  grid-column: 1 / -1;
+}
+
+.continue-cinema {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  transition: filter var(--motion-base) var(--ease);
+}
+
+.continue-cinema__stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(15rem, 0.7fr);
+  gap: var(--space-5);
+}
+
+[data-density="focus"] .continue-cinema__stage {
+  grid-template-columns: 1fr;
+}
+
+.continue-cinema.is-dimmed .continue-recede {
+  filter: saturate(0.7) brightness(0.72);
+  opacity: 0.55;
+}
+
+.moment-object.is-selected,
+.moment-object.is-preview,
+.moment-object.is-restoring {
+  z-index: 2;
+}
+
+.input-ghost {
+  width: 100%;
+  box-sizing: border-box;
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--exp-text);
+  padding: 0.85rem 0.2rem;
+  font: inherit;
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.08);
+  transition: background var(--motion-fast) var(--ease),
+    box-shadow var(--motion-fast) var(--ease);
+}
+
+.input-ghost:focus {
+  outline: none;
+  background: rgba(0, 0, 0, 0.22);
+  box-shadow:
+    inset 0 0 0 1px rgba(95, 208, 216, 0.28),
+    0 0 28px var(--ws-light-focus);
+  padding-left: 0.85rem;
+  padding-right: 0.85rem;
+}
+
+.write-review {
+  margin-top: var(--space-5);
+  padding-top: var(--space-5);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.guide-walk__progress {
+  height: 2px;
+  margin: 0.85rem auto 0;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(90deg, var(--color-accent), var(--color-accent-warm));
+  max-width: 16rem;
+}
+
+.guide-walk__chapters {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.guide-walk__chapter {
+  display: grid;
+  place-items: center;
+  min-height: 42vh;
+}
+
+.metric-orb {
+  position: relative;
+  overflow: hidden;
+}
+
+.metric-ring {
+  position: absolute;
+  inset: 18% 22%;
+  border-radius: 50%;
+  border: 1px solid rgba(95, 208, 216, 0.18);
+  box-shadow: inset 0 0 24px rgba(95, 208, 216, 0.08);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.metric-orb .elevated-card__body,
+.metric-orb .ws-surface__body {
+  z-index: 1;
 }
 
 /* —— Dock —— */
@@ -631,18 +780,21 @@ body {
   opacity: 1;
 }
 
+.save-env--write .write-card,
+.save-env--write .focus-card {
+  width: min(48rem, 100%);
+  max-width: 100%;
+}
+
 .write-card__anchor {
   margin-top: var(--space-4);
 }
 
-.write-textarea {
-  min-height: 12rem !important;
-  font-size: 1.22rem !important;
-  line-height: 1.55 !important;
-  padding: 1rem 1.1rem !important;
-  background: rgba(0, 0, 0, 0.32) !important;
-  border-color: transparent !important;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+.write-textarea.input-ghost {
+  min-height: 12rem;
+  resize: vertical;
+  font-size: 1.22rem;
+  line-height: 1.55;
 }
 
 .write-card__hint {

@@ -20,13 +20,16 @@ import {
   useEffect,
   useId,
   useRef,
+  useState,
 } from "react";
+import { interaction, spring } from "../design-system";
 import { useWorkspaceDensity } from "../hooks/useWorkspaceDensity";
 import {
   PILOT_PRIMARY_VIEWS,
   PILOT_VIEW_LABELS,
   type PilotPrimaryView,
 } from "../lib/pilotChrome";
+import { AmbientLighting, type AmbientFocus } from "./AmbientLighting";
 import { WorkspaceCompositionProvider } from "./WorkspaceComposition";
 
 const DOCK_ICONS: Record<PilotPrimaryView, typeof Home> = {
@@ -50,18 +53,20 @@ function DockItem({
   contentId,
   reduceMotion,
   onNavigate,
+  onFocusAmbient,
 }: {
   id: PilotPrimaryView;
   active: boolean;
   contentId: string;
   reduceMotion: boolean | null;
   onNavigate: (view: PilotPrimaryView) => void;
+  onFocusAmbient: (focus: AmbientFocus) => void;
 }) {
   const Icon = DOCK_ICONS[id];
   const x = useMotionValue(0);
   const y = useMotionValue(0);
-  const springX = useSpring(x, { stiffness: 420, damping: 28, mass: 0.4 });
-  const springY = useSpring(y, { stiffness: 420, damping: 28, mass: 0.4 });
+  const springX = useSpring(x, spring.dock);
+  const springY = useSpring(y, spring.dock);
   const ref = useRef<HTMLButtonElement>(null);
 
   const onMove = useCallback(
@@ -72,16 +77,21 @@ function DockItem({
       const rect = ref.current.getBoundingClientRect();
       const dx = event.clientX - (rect.left + rect.width / 2);
       const dy = event.clientY - (rect.top + rect.height / 2);
-      x.set(Math.max(-6, Math.min(6, dx * 0.22)));
-      y.set(Math.max(-6, Math.min(6, dy * 0.22)));
+      x.set(
+        Math.max(
+          -interaction.magneticMax,
+          Math.min(interaction.magneticMax, dx * interaction.magneticFactor),
+        ),
+      );
+      y.set(
+        Math.max(
+          -interaction.magneticMax,
+          Math.min(interaction.magneticMax, dy * interaction.magneticFactor),
+        ),
+      );
     },
     [reduceMotion, x, y],
   );
-
-  const onLeave = useCallback(() => {
-    x.set(0);
-    y.set(0);
-  }, [x, y]);
 
   return (
     <motion.button
@@ -94,23 +104,26 @@ function DockItem({
       aria-current={active ? "page" : undefined}
       aria-selected={active}
       aria-controls={contentId}
+      aria-label={PILOT_VIEW_LABELS[id]}
       onClick={() => onNavigate(id)}
       onMouseMove={onMove}
-      onMouseLeave={onLeave}
+      onMouseLeave={() => {
+        x.set(0);
+        y.set(0);
+        onFocusAmbient("workspace");
+      }}
+      onMouseEnter={() => onFocusAmbient("dock")}
+      onFocus={() => onFocusAmbient("dock")}
       style={{ x: springX, y: springY }}
       whileHover={reduceMotion ? undefined : { scale: 1.06 }}
-      whileTap={reduceMotion ? undefined : { scale: 0.94 }}
-      transition={{ type: "spring", stiffness: 480, damping: 28 }}
+      whileTap={reduceMotion ? undefined : { scale: interaction.pressScale }}
+      transition={spring.snappy}
     >
       {active && (
         <motion.span
           className="ws-dock__pill"
           layoutId="ws-dock-pill"
-          transition={
-            reduceMotion
-              ? { duration: 0.01 }
-              : { type: "spring", stiffness: 420, damping: 36 }
-          }
+          transition={reduceMotion ? { duration: 0.01 } : spring.layout}
           aria-hidden="true"
         />
       )}
@@ -122,10 +135,6 @@ function DockItem({
   );
 }
 
-/**
- * Persistent Workspace Shell — immersive spatial environment.
- * Density adapts; content destinations never remount the shell.
- */
 export function WorkspaceShell({
   view,
   onNavigate,
@@ -136,21 +145,16 @@ export function WorkspaceShell({
   const density = useWorkspaceDensity();
   const contentRef = useRef<HTMLDivElement>(null);
   const contentId = useId();
+  const liveRef = useRef<HTMLDivElement>(null);
+  const [ambient, setAmbient] = useState<AmbientFocus>("workspace");
 
   useEffect(() => {
-    const node = contentRef.current;
-    if (!node) {
-      return;
-    }
-    if (typeof node.focus === "function") {
-      node.focus({ preventScroll: true });
+    contentRef.current?.focus({ preventScroll: true });
+    setAmbient(view === "save" ? "input" : "workspace");
+    if (liveRef.current) {
+      liveRef.current.textContent = `${PILOT_VIEW_LABELS[view]} selected`;
     }
   }, [view]);
-
-  const duration = reduceMotion ? 0.01 : 0.34;
-  const transition = reduceMotion
-    ? { duration: 0.01 }
-    : { type: "spring" as const, stiffness: 300, damping: 34, mass: 0.9 };
 
   const onDockKeyDown = (event: KeyboardEvent<HTMLElement>) => {
     const index = PILOT_PRIMARY_VIEWS.indexOf(view);
@@ -181,6 +185,7 @@ export function WorkspaceShell({
       <div
         className="app-shell exp-shell ws-env ws-shell"
         data-density={density}
+        data-ambient={ambient}
       >
         <div className="ws-layer ws-layer--bg" aria-hidden="true">
           <div className="ws-atmosphere">
@@ -188,10 +193,14 @@ export function WorkspaceShell({
             <div className="ws-atmosphere__glow ws-atmosphere__glow--b" />
             <div className="ws-atmosphere__glow ws-atmosphere__glow--c" />
             <div className="ws-atmosphere__glow ws-atmosphere__glow--d" />
+            <div className="ws-atmosphere__glow ws-atmosphere__glow--e" />
             <div className="ws-atmosphere__grain" />
             <div className="ws-atmosphere__vignette" />
           </div>
+          <AmbientLighting focus={ambient} />
         </div>
+
+        <div className="sr-only" aria-live="polite" ref={liveRef} />
 
         <header className="app-chrome exp-chrome ws-menubar ws-layer ws-layer--chrome">
           <div className="exp-brand ws-brand">
@@ -220,7 +229,7 @@ export function WorkspaceShell({
                 initial={
                   reduceMotion
                     ? { opacity: 1 }
-                    : { opacity: 0, y: 18, scale: 0.984, filter: "blur(4px)" }
+                    : { opacity: 0, y: 16, scale: 0.986, filter: "blur(3px)" }
                 }
                 animate={
                   reduceMotion
@@ -230,18 +239,22 @@ export function WorkspaceShell({
                 exit={
                   reduceMotion
                     ? { opacity: 0 }
-                    : {
-                        opacity: 0,
-                        y: -12,
-                        scale: 0.99,
-                        filter: "blur(3px)",
-                      }
+                    : { opacity: 0, y: -10, scale: 0.99, filter: "blur(2px)" }
                 }
                 transition={
                   reduceMotion
-                    ? { duration }
-                    : { ...transition, opacity: { duration: 0.28 } }
+                    ? { duration: 0.01 }
+                    : { ...spring.soft, opacity: { duration: 0.26 } }
                 }
+                onFocusCapture={(event) => {
+                  const target = event.target as HTMLElement;
+                  if (
+                    target.tagName === "INPUT" ||
+                    target.tagName === "TEXTAREA"
+                  ) {
+                    setAmbient("input");
+                  }
+                }}
               >
                 {children}
               </motion.div>
@@ -264,6 +277,7 @@ export function WorkspaceShell({
               contentId={contentId}
               reduceMotion={reduceMotion}
               onNavigate={onNavigate}
+              onFocusAmbient={setAmbient}
             />
           ))}
         </nav>

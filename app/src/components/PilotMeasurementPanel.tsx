@@ -1,10 +1,12 @@
+import { motion, useReducedMotion } from "motion/react";
 import { useCallback, useEffect, useState } from "react";
+import { spring } from "../design-system";
 import { invokeIpc } from "../lib/ipc";
 import type {
   PilotMeasurementScope,
   PilotMeasurementSnapshot,
 } from "../types/domain";
-import { ElevatedCard } from "./ElevatedCard";
+import { WorkspaceSurface } from "./WorkspaceSurface";
 import { useWorkspaceComposition } from "./WorkspaceComposition";
 
 interface PilotMeasurementPanelProps {
@@ -42,6 +44,7 @@ export function PilotMeasurementPanel({
   onMessage,
 }: PilotMeasurementPanelProps) {
   const { density } = useWorkspaceComposition();
+  const reduceMotion = useReducedMotion();
   const [scope, setScope] = useState<PilotMeasurementScope | null>(null);
   const [snapshot, setSnapshot] = useState<PilotMeasurementSnapshot | null>(null);
   const [baselineMinutes, setBaselineMinutes] = useState("");
@@ -201,11 +204,11 @@ export function PilotMeasurementPanel({
   if (!scope || !snapshot) {
     return (
       <section className="spatial-frame spatial-frame--center">
-        <ElevatedCard tone="hero" padding="lg" className="focus-card">
+        <WorkspaceSurface tone="hero" padding="lg" className="focus-card">
           <p className="exp-kicker">Check-in</p>
           <h2 className="focus-card__title">One moment…</h2>
           <p className="muted">Loading…</p>
-        </ElevatedCard>
+        </WorkspaceSurface>
       </section>
     );
   }
@@ -217,7 +220,7 @@ export function PilotMeasurementPanel({
         data-testid="pilot-measurement-consent"
       >
         <div className="checkin-chat">
-          <ElevatedCard tone="soft" padding="md" className="checkin-bubble">
+          <WorkspaceSurface tone="soft" padding="md" className="checkin-bubble">
             <p className="exp-kicker">Check-in</p>
             <p className="quote-pane__text">
               How does returning to work feel after an interruption?
@@ -225,7 +228,7 @@ export function PilotMeasurementPanel({
             <p className="muted" style={{ marginTop: "0.5rem" }}>
               {scope.purpose}
             </p>
-          </ElevatedCard>
+          </WorkspaceSurface>
           <details className="exp-inspect" open>
             <summary>What’s in this pulse</summary>
             <ul className="list compact">
@@ -275,46 +278,79 @@ export function PilotMeasurementPanel({
       </header>
 
       <div className="checkin-metrics">
-        <ElevatedCard
+        <WorkspaceSurface
+          level="floating"
           tone="hero"
-          elevation={3}
           padding="lg"
           className="metric-orb"
           layout
         >
           <p className="exp-kicker">Baseline</p>
-          <p className="exp-stat metric-orb__value">
+          <motion.p
+            key={`baseline-${snapshot.baseline?.return_minutes ?? "none"}`}
+            className="exp-stat metric-orb__value"
+            initial={reduceMotion ? false : { opacity: 0, y: 10, scale: 0.94 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={spring.soft}
+          >
             {snapshot.baseline
               ? `${snapshot.baseline.return_minutes}`
               : "—"}
-          </p>
+          </motion.p>
           <p className="muted">min</p>
-        </ElevatedCard>
-        <ElevatedCard tone="soft" elevation={2} padding="lg" className="metric-orb">
+          <span className="metric-ring" aria-hidden="true" />
+        </WorkspaceSurface>
+        <WorkspaceSurface
+          level="floating"
+          tone="soft"
+          padding="lg"
+          className="metric-orb"
+          layout
+        >
           <p className="exp-kicker">Leave → resume</p>
-          <p className="exp-stat metric-orb__value">
+          <motion.p
+            key={`leave-${snapshot.leave_resume.length}`}
+            className="exp-stat metric-orb__value"
+            initial={reduceMotion ? false : { opacity: 0, y: 10, scale: 0.94 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={spring.soft}
+          >
             {snapshot.leave_resume.length}
-          </p>
+          </motion.p>
           <p className="muted">{snapshot.distinct_resume_days} days</p>
-        </ElevatedCard>
-        <ElevatedCard tone="soft" elevation={2} padding="lg" className="metric-orb">
+          <span className="metric-ring" aria-hidden="true" />
+        </WorkspaceSurface>
+        <WorkspaceSurface
+          level="floating"
+          tone="soft"
+          padding="lg"
+          className="metric-orb"
+          layout
+        >
           <p className="exp-kicker">Median</p>
-          <p className="exp-stat metric-orb__value">
+          <motion.p
+            key={`median-${snapshot.median_return_minutes ?? "na"}`}
+            className="exp-stat metric-orb__value"
+            initial={reduceMotion ? false : { opacity: 0, y: 10, scale: 0.94 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={spring.soft}
+          >
             {snapshot.median_return_minutes != null
               ? `${snapshot.median_return_minutes}`
               : "n/a"}
-          </p>
+          </motion.p>
           <p className="muted">min</p>
-        </ElevatedCard>
+          <span className="metric-ring" aria-hidden="true" />
+        </WorkspaceSurface>
       </div>
 
       <div className="checkin-chat pilot-forms">
-        <ElevatedCard tone="soft" padding="md" className="checkin-bubble">
+        <WorkspaceSurface tone="soft" padding="md" className="checkin-bubble">
           <p className="quote-pane__text" style={{ fontSize: "1rem" }}>
             Before Workspace — about how many minutes to get back?
           </p>
-        </ElevatedCard>
-        <ElevatedCard tone="solid" padding="md" className="checkin-bubble--you">
+        </WorkspaceSurface>
+        <WorkspaceSurface tone="solid" padding="md" className="checkin-bubble--you">
           <label className="exp-field" htmlFor="pilot-baseline-minutes">
             <span>Minutes</span>
             <input
@@ -345,14 +381,14 @@ export function PilotMeasurementPanel({
           >
             Save baseline
           </button>
-        </ElevatedCard>
+        </WorkspaceSurface>
 
-        <ElevatedCard tone="soft" padding="md" className="checkin-bubble">
+        <WorkspaceSurface tone="soft" padding="md" className="checkin-bubble">
           <p className="quote-pane__text" style={{ fontSize: "1rem" }}>
             After a Continue — how many minutes to feel back?
           </p>
-        </ElevatedCard>
-        <ElevatedCard tone="solid" padding="md" className="checkin-bubble--you">
+        </WorkspaceSurface>
+        <WorkspaceSurface tone="solid" padding="md" className="checkin-bubble--you">
           <label className="exp-field" htmlFor="pilot-return-minutes">
             <span>Minutes to return</span>
             <input
@@ -394,9 +430,9 @@ export function PilotMeasurementPanel({
           >
             Record this leave→resume
           </button>
-        </ElevatedCard>
+        </WorkspaceSurface>
 
-        <ElevatedCard tone="soft" padding="md" className="checkin-bubble">
+        <WorkspaceSurface tone="soft" padding="md" className="checkin-bubble">
           <p className="quote-pane__text" style={{ fontSize: "1rem" }}>
             A few reflections — whenever you’re ready.
           </p>
@@ -405,8 +441,8 @@ export function PilotMeasurementPanel({
               <li key={prompt}>{prompt}</li>
             ))}
           </ul>
-        </ElevatedCard>
-        <ElevatedCard tone="solid" padding="md" className="checkin-bubble--you">
+        </WorkspaceSurface>
+        <WorkspaceSurface tone="solid" padding="md" className="checkin-bubble--you">
           <textarea
             className="input-wide"
             rows={4}
@@ -423,9 +459,9 @@ export function PilotMeasurementPanel({
           >
             Save baseline interview
           </button>
-        </ElevatedCard>
+        </WorkspaceSurface>
 
-        <ElevatedCard tone="soft" padding="md" className="checkin-bubble">
+        <WorkspaceSurface tone="soft" padding="md" className="checkin-bubble">
           <p className="quote-pane__text" style={{ fontSize: "1rem" }}>
             Week four — still useful?
           </p>
@@ -434,8 +470,8 @@ export function PilotMeasurementPanel({
               <li key={prompt}>{prompt}</li>
             ))}
           </ul>
-        </ElevatedCard>
-        <ElevatedCard tone="solid" padding="md" className="checkin-bubble--you">
+        </WorkspaceSurface>
+        <WorkspaceSurface tone="solid" padding="md" className="checkin-bubble--you">
           <textarea
             className="input-wide"
             rows={4}
@@ -452,10 +488,10 @@ export function PilotMeasurementPanel({
           >
             Save week-four interview
           </button>
-        </ElevatedCard>
+        </WorkspaceSurface>
       </div>
 
-      <ElevatedCard tone="default" padding="md">
+      <WorkspaceSurface tone="default" padding="md">
         <h3>Withdraw consent</h3>
         <div className="exp-actions">
           <button
@@ -475,7 +511,7 @@ export function PilotMeasurementPanel({
             Withdraw and clear pilot records
           </button>
         </div>
-      </ElevatedCard>
+      </WorkspaceSurface>
     </section>
   );
 }

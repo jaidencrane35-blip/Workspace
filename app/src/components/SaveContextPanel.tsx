@@ -1,5 +1,6 @@
-import { motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useCallback, useEffect, useState } from "react";
+import { spring } from "../design-system";
 import { invokeIpc } from "../lib/ipc";
 import type {
   SavedContext,
@@ -7,9 +8,9 @@ import type {
   SavedContextWindow,
   Workspace,
 } from "../types/domain";
-import { ElevatedCard } from "./ElevatedCard";
 import { RestoreLimitsNotice } from "./RestoreLimitsNotice";
 import { useWorkspaceComposition } from "./WorkspaceComposition";
+import { WorkspaceSurface } from "./WorkspaceSurface";
 
 type Step = "naming" | "reviewing" | "saved";
 
@@ -115,17 +116,10 @@ export function SaveContextPanel({
     onError(null);
   };
 
-  const enter = reduceMotion
-    ? undefined
-    : { initial: { opacity: 0, y: 12 }, animate: { opacity: 1, y: 0 } };
-
   if (!workspace) {
     return (
-      <section
-        className="spatial-frame spatial-frame--center save-env"
-        data-density={density}
-      >
-        <ElevatedCard tone="hero" elevation={3} padding="xl" className="focus-card">
+      <section className="spatial-frame spatial-frame--center save-env">
+        <WorkspaceSurface level="floating" tone="hero" padding="xl" className="focus-card">
           <p className="exp-kicker">Save</p>
           <h2 className="focus-card__title">Start your workspace</h2>
           <p className="muted">Then leave yourself a note.</p>
@@ -139,7 +133,7 @@ export function SaveContextPanel({
               Create a workspace
             </button>
           </div>
-        </ElevatedCard>
+        </WorkspaceSurface>
       </section>
     );
   }
@@ -147,11 +141,11 @@ export function SaveContextPanel({
   if (scopeError) {
     return (
       <section className="spatial-frame spatial-frame--center save-env">
-        <ElevatedCard tone="hero" elevation={3} padding="xl" className="focus-card">
+        <WorkspaceSurface level="floating" tone="hero" padding="xl" className="focus-card">
           <p className="exp-kicker">Save</p>
           <h2 className="focus-card__title">Saving is unavailable</h2>
           <p className="error">{scopeError}</p>
-        </ElevatedCard>
+        </WorkspaceSurface>
       </section>
     );
   }
@@ -159,91 +153,47 @@ export function SaveContextPanel({
   if (step === "saved" && saved) {
     return (
       <section className="spatial-frame spatial-frame--center save-env">
-        <motion.div {...enter} transition={{ type: "spring", stiffness: 300, damping: 30 }}>
-          <ElevatedCard
-            tone="hero"
-            elevation={3}
-            padding="xl"
-            className="focus-card save-success"
-          >
-            <p className="exp-kicker">Saved</p>
-            <h2 className="focus-card__title">{saved.name}</h2>
-            <p className="exp-intention">{saved.handoff_note}</p>
-            <p className="muted">
-              Kept on this computer · {formatMoment(saved.created_at)}
-            </p>
-            <details className="exp-inspect">
-              <summary>Inspect what was kept</summary>
-              <h3>
-                {saved.windows.length}{" "}
-                {saved.windows.length === 1 ? "window" : "windows"}
-              </h3>
-              <ul className="list compact">
-                {saved.windows.map((window) => (
-                  <li key={window.id}>
-                    <div>{window.title}</div>
-                    <div className="muted">{describeWindow(window)}</div>
-                  </li>
-                ))}
-              </ul>
-              <h3>
-                {saved.monitors.length}{" "}
-                {saved.monitors.length === 1 ? "monitor" : "monitors"}
-              </h3>
-              <ul className="list compact">
-                {saved.monitors.map((monitor) => (
-                  <li key={monitor.id}>
-                    <div>
-                      {monitor.name || `Monitor ${monitor.monitor_index + 1}`}
-                      {monitor.is_primary ? " · main" : ""}
-                    </div>
-                    <div className="muted">
-                      {monitor.width}×{monitor.height} at {monitor.x},{monitor.y}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </details>
-            <RestoreLimitsNotice />
-            <div className="exp-actions">
-              <button
-                type="button"
-                className="exp-btn"
-                onClick={startAgain}
-                disabled={busy}
-              >
-                Save another moment
-              </button>
-            </div>
-          </ElevatedCard>
-        </motion.div>
-      </section>
-    );
-  }
-
-  if (step === "reviewing" && scope) {
-    return (
-      <section className="spatial-frame spatial-frame--center save-env">
-        <ElevatedCard tone="hero" elevation={3} padding="xl" className="focus-card">
-          <p className="exp-kicker">Review</p>
-          <h2 className="focus-card__title">Bookmark “{trimmedName}”?</h2>
-          <div className="exp-intention-block">
-            <p className="exp-intention">{trimmedHandoff}</p>
-            <p className="muted">Exactly as you wrote it</p>
-          </div>
-          <details className="exp-inspect" open>
-            <summary>What will be saved</summary>
-            <p className="muted">{scope.purpose}</p>
-            <h3>From the desktop</h3>
+        <WorkspaceSurface
+          level="overlay"
+          tone="hero"
+          padding="xl"
+          className="focus-card save-success"
+        >
+          <p className="exp-kicker">Saved</p>
+          <h2 className="focus-card__title">{saved.name}</h2>
+          <p className="exp-intention">{saved.handoff_note}</p>
+          <p className="muted">
+            Kept on this computer · {formatMoment(saved.created_at)}
+          </p>
+          <details className="exp-inspect">
+            <summary>Inspect what was kept</summary>
+            <h3>
+              {saved.windows.length}{" "}
+              {saved.windows.length === 1 ? "window" : "windows"}
+            </h3>
             <ul className="list compact">
-              {scope.captured.map((item) => (
-                <li key={item.key}>{item.summary}</li>
+              {saved.windows.map((window) => (
+                <li key={window.id}>
+                  <div>{window.title}</div>
+                  <div className="muted">{describeWindow(window)}</div>
+                </li>
               ))}
             </ul>
-            <h3>Not saved</h3>
+            <h3>
+              {saved.monitors.length}{" "}
+              {saved.monitors.length === 1 ? "monitor" : "monitors"}
+            </h3>
             <ul className="list compact">
-              {scope.excluded.map((item) => (
-                <li key={item.key}>{item.summary}</li>
+              {saved.monitors.map((monitor) => (
+                <li key={monitor.id}>
+                  <div>
+                    {monitor.name || `Monitor ${monitor.monitor_index + 1}`}
+                    {monitor.is_primary ? " · main" : ""}
+                  </div>
+                  <div className="muted">
+                    {monitor.width}×{monitor.height} at {monitor.x},{monitor.y}
+                  </div>
+                </li>
               ))}
             </ul>
           </details>
@@ -251,22 +201,14 @@ export function SaveContextPanel({
           <div className="exp-actions">
             <button
               type="button"
-              className="exp-btn primary"
-              onClick={save}
+              className="exp-btn"
+              onClick={startAgain}
               disabled={busy}
             >
-              Save this context
-            </button>
-            <button
-              type="button"
-              className="exp-btn ghost"
-              onClick={() => setStep("naming")}
-              disabled={busy}
-            >
-              Cancel
+              Save another moment
             </button>
           </div>
-        </ElevatedCard>
+        </WorkspaceSurface>
       </section>
     );
   }
@@ -276,9 +218,9 @@ export function SaveContextPanel({
       className="spatial-frame spatial-frame--center save-env save-env--write"
       data-density={density}
     >
-      <ElevatedCard
-        tone="hero"
-        elevation={3}
+      <WorkspaceSurface
+        level="floating"
+        tone="write"
         padding="xl"
         className="focus-card write-card"
         layout
@@ -286,11 +228,11 @@ export function SaveContextPanel({
         <p className="exp-kicker">Save</p>
         <h2 className="focus-card__title">Leave a note</h2>
 
-        <label className="exp-field write-card__name" htmlFor="saved-context-name">
+        <label className="exp-field write-field" htmlFor="saved-context-name">
           <span>Name</span>
           <input
             id="saved-context-name"
-            className="input-wide"
+            className="input-ghost"
             value={name}
             placeholder="Tuesday review"
             disabled={busy}
@@ -298,15 +240,12 @@ export function SaveContextPanel({
           />
         </label>
 
-        <label
-          className="exp-field write-card__anchor"
-          htmlFor="saved-context-handoff"
-        >
+        <label className="exp-field write-field write-card__anchor" htmlFor="saved-context-handoff">
           <span>What next?</span>
           <textarea
             id="saved-context-handoff"
-            className="input-wide note-textarea write-textarea"
-            rows={density === "focus" ? 8 : 6}
+            className="input-ghost write-textarea"
+            rows={density === "focus" ? 9 : 7}
             value={handoffNote}
             placeholder="Finish the client proposal outline…"
             disabled={busy}
@@ -333,7 +272,63 @@ export function SaveContextPanel({
             Checking capture scope…
           </p>
         )}
-      </ElevatedCard>
+
+        <AnimatePresence>
+          {step === "reviewing" && scope && (
+            <motion.div
+              className="write-review"
+              initial={reduceMotion ? false : { opacity: 0, height: 0, y: 8 }}
+              animate={{ opacity: 1, height: "auto", y: 0 }}
+              exit={reduceMotion ? undefined : { opacity: 0, height: 0 }}
+              transition={spring.soft}
+            >
+              <p className="exp-kicker">Review</p>
+              <h3 className="focus-card__title">
+                Bookmark “{trimmedName}”?
+              </h3>
+              <div className="exp-intention-block">
+                <p className="exp-intention">{trimmedHandoff}</p>
+                <p className="muted">Exactly as you wrote it</p>
+              </div>
+              <details className="exp-inspect" open>
+                <summary>What will be saved</summary>
+                <p className="muted">{scope.purpose}</p>
+                <h3>From the desktop</h3>
+                <ul className="list compact">
+                  {scope.captured.map((item) => (
+                    <li key={item.key}>{item.summary}</li>
+                  ))}
+                </ul>
+                <h3>Not saved</h3>
+                <ul className="list compact">
+                  {scope.excluded.map((item) => (
+                    <li key={item.key}>{item.summary}</li>
+                  ))}
+                </ul>
+              </details>
+              <RestoreLimitsNotice />
+              <div className="exp-actions">
+                <button
+                  type="button"
+                  className="exp-btn primary"
+                  onClick={save}
+                  disabled={busy}
+                >
+                  Save this context
+                </button>
+                <button
+                  type="button"
+                  className="exp-btn ghost"
+                  onClick={() => setStep("naming")}
+                  disabled={busy}
+                >
+                  Cancel
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </WorkspaceSurface>
     </section>
   );
 }

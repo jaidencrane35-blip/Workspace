@@ -2241,3 +2241,20 @@ dock microinteractions without remounting the shell or changing Product Proof.
 Validation: `pnpm typecheck`, `pnpm test` (54) green.
 
 Status: Complete
+
+### LEDGER-0041
+
+Entry ID: LEDGER-0041
+Timestamp: 2026-08-02
+Capability: Experience — Workspace visual language
+Related ADRs: ADR-0008
+Related Research: EXP-001; concept boards
+Decision: Establish a design-system package as the sole visual token source;
+introduce ambient lighting, WorkspaceSurface (Surface/Floating/Overlay),
+moment spatial objects, canvas Home, writing-first Save, cinematic Continue,
+animated check-in metrics, Guide scroll walkthrough, and premium dock/atmosphere
+polish. No Product Proof behaviour change.
+
+Validation: `pnpm typecheck`, `pnpm test`, lint green.
+
+Status: Complete

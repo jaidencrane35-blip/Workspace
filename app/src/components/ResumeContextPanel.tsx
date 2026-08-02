@@ -9,11 +9,11 @@ import type {
   SavedContextWindow,
   Workspace,
 } from "../types/domain";
-import { ElevatedCard } from "./ElevatedCard";
 import { EmptyStructure } from "./EmptyStructure";
 import { MomentCard } from "./MomentCard";
 import { RestoreLimitsNotice } from "./RestoreLimitsNotice";
 import { useWorkspaceComposition } from "./WorkspaceComposition";
+import { WorkspaceSurface } from "./WorkspaceSurface";
 
 type Step = "browse" | "inspect" | "confirm_delete" | "preview" | "done";
 
@@ -104,6 +104,7 @@ export function ResumeContextPanel({
   const [preview, setPreview] = useState<ResumePlanPreview | null>(null);
   const [result, setResult] = useState<ActionOperationResult | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const reload = useCallback(() => {
     if (!workspace) {
@@ -239,7 +240,7 @@ export function ResumeContextPanel({
   if (!workspace) {
     return (
       <section className="spatial-frame spatial-frame--center">
-        <ElevatedCard tone="hero" padding="lg" className="focus-card">
+        <WorkspaceSurface level="floating" tone="hero" padding="xl" className="focus-card">
           <p className="exp-kicker">Continue</p>
           <h2 className="focus-card__title">Open your workspace</h2>
           <p className="muted">Then pick up where you left off.</p>
@@ -250,7 +251,7 @@ export function ResumeContextPanel({
               </button>
             </div>
           )}
-        </ElevatedCard>
+        </WorkspaceSurface>
       </section>
     );
   }
@@ -282,56 +283,66 @@ export function ResumeContextPanel({
               hint="Save a moment — then it waits here for you."
             />
           ) : (
-            <div className="place__composition continue-place">
+            <div
+              className={
+                selectedId
+                  ? "continue-cinema is-dimmed"
+                  : "continue-cinema"
+              }
+            >
               {featured && (
-                <div className="place__primary">
+                <div className="continue-cinema__stage">
                   <MomentCard
                     variant="hero"
+                    state={
+                      selectedId === featured.id ? "selected" : "expanded"
+                    }
                     context={featured}
                     busy={busy}
-                    onContinue={() => openPreview(featured.id)}
+                    onSelect={() => setSelectedId(featured.id)}
+                    onContinue={() => {
+                      setSelectedId(featured.id);
+                      openPreview(featured.id);
+                    }}
                     onInspect={() => openInspect(featured.id)}
                   />
+                  <WorkspaceSurface
+                    level="floating"
+                    tone="soft"
+                    padding="md"
+                    className="quote-pane continue-cinema__note"
+                    layout
+                  >
+                    <div className="quote-pane__mark" aria-hidden="true">
+                      “
+                    </div>
+                    <p className="quote-pane__text">
+                      {featured.handoff_note.trim() ||
+                        "Your latest note leads."}
+                    </p>
+                    <p className="quote-pane__meta">
+                      Saved intention · not live Windows state
+                    </p>
+                  </WorkspaceSurface>
                 </div>
               )}
-              <aside className="place__context">
-                <ElevatedCard
-                  tone="float"
-                  elevation={3}
-                  padding="md"
-                  className="quote-pane"
-                  layout
-                >
-                  <div className="quote-pane__mark" aria-hidden="true">
-                    “
-                  </div>
-                  <p className="quote-pane__text">
-                    {featured?.handoff_note.trim() ||
-                      "Your latest note leads."}
-                  </p>
-                  <p className="quote-pane__meta">
-                    Continue previews. Inspect is secondary.
-                  </p>
-                </ElevatedCard>
-              </aside>
               {density !== "focus" && others.length > 0 && (
-                <div className="dash-grid place__constellation continue-recede">
+                <div className="dash-grid continue-recede">
                   {others.map((context, index) => (
                     <MomentCard
                       key={context.id}
                       variant={index < 2 ? "standard" : "compact"}
-                      className={
-                        density === "flow"
-                          ? index < 2
-                            ? "span-6"
-                            : "span-4"
-                          : index === 0
-                            ? "span-6"
-                            : "span-3"
+                      state={
+                        selectedId === context.id ? "selected" : "collapsed"
                       }
+                      className={index < 2 ? "span-6" : "span-3"}
                       context={context}
                       busy={busy}
-                      onContinue={() => openPreview(context.id)}
+                      onSelect={() => setSelectedId(context.id)}
+                      onContinue={() => {
+                        setSelectedId(context.id);
+                        openPreview(context.id);
+                      }}
                       onInspect={() => openInspect(context.id)}
                     />
                   ))}
@@ -343,9 +354,10 @@ export function ResumeContextPanel({
       )}
 
       {step === "inspect" && inspected && (
-        <ElevatedCard
+        <WorkspaceSurface
+          level="overlay"
           tone="hero"
-          padding="lg"
+          padding="xl"
           className="focus-card"
           style={{ margin: "0 auto" }}
         >
@@ -423,11 +435,11 @@ export function ResumeContextPanel({
               Delete this context
             </button>
           </div>
-        </ElevatedCard>
+        </WorkspaceSurface>
       )}
 
       {step === "confirm_delete" && inspected && (
-        <ElevatedCard
+        <WorkspaceSurface
           tone="hero"
           padding="lg"
           className="focus-card"
@@ -460,11 +472,11 @@ export function ResumeContextPanel({
               Delete permanently
             </button>
           </div>
-        </ElevatedCard>
+        </WorkspaceSurface>
       )}
 
       {step === "preview" && preview && (
-        <ElevatedCard
+        <WorkspaceSurface
           tone="hero"
           padding="lg"
           className="focus-card"
@@ -516,11 +528,11 @@ export function ResumeContextPanel({
               Cancel
             </button>
           </div>
-        </ElevatedCard>
+        </WorkspaceSurface>
       )}
 
       {step === "done" && result && preview && (
-        <ElevatedCard
+        <WorkspaceSurface
           tone="hero"
           padding="lg"
           className="focus-card"
@@ -572,7 +584,7 @@ export function ResumeContextPanel({
               background.
             </p>
           )}
-        </ElevatedCard>
+        </WorkspaceSurface>
       )}
     </section>
   );

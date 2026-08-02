@@ -149,6 +149,10 @@ ElevatedCard primitive + unified spatial system; `motion` (MIT) adopted.
 Flow density, layered depth, living atmosphere, glass surfaces, destination
 refinements, premium dock interactions.
 
+✓ Workspace visual language sprint complete (LEDGER-0041): design-system tokens,
+ambient lighting, WorkspaceSurface materials, moment objects, canvas Home,
+writing Save, cinematic Continue, metric orbs, Guide walkthrough, dock polish.
+
 ---
 
 # Active Task
