@@ -93,6 +93,11 @@ observes nothing (LEDGER-0018, commit `868ce12`)
 saved-context restore identity, and Action-owned matching threshold
 (LEDGER-0021)
 
+✓ `PP-M1-02` complete: a user can select a previously saved Workspace Context,
+review the exact restore plan, approve it, and receive honest per-item outcomes
+from deterministic same-session `window.place` / `window.focus` execution;
+nothing mutates before approval (LEDGER-0022)
+
 ---
 
 # Active Task
@@ -101,29 +106,25 @@ Establish product evidence for the trusted interruption-recovery hypothesis
 before sustained capability research or large-scale feature implementation.
 
 The four Product Proof engineering blockers are closed. Product Proof
-Milestone 1 is under way: `PP-M1-01` is complete.
+Milestone 1 is under way: `PP-M1-01` and `PP-M1-02` are complete.
 
-`PP-M1-02` (Resume a bounded Workspace Context) is **architecture-ready** and
-has not been implemented. The final dependencies are closed (LEDGER-0021):
+`PP-M1-03` (Undo / compensation for restore placement) remains the next
+milestone task and is not unlocked by this delivery. Compensation ownership is
+still an open architecture question recorded in
+`15_Action_Desktop_Mutation_Contract.md` §8 / §19.
 
-1. `09_Capability_Interaction_Matrix.md` now authorizes the existing
-   Companion → `Action.resolvePlan` request with non-effecting
-   `action.plan.resolve` authorization.
-2. `16_Saved_Context_Restore_Identity_Specification.md` defines the consented
-   identity descriptor, exact same-session matching, lifetime, portability,
-   failure, and explanation semantics.
-3. Action alone owns the minimum matching confidence because exact target
-   validation is execution safety. Permission Authority still alone owns effect
-   authorization; Workspace Management stores but never evaluates identity;
-   Companion copies but never scores it.
+`PP-M1-02` delivered deterministic Resume against the approved contracts
+(LEDGER-0021 / LEDGER-0022):
 
-Implementation must add nullable identity storage for legacy contexts, introduce
-a new Save capture-scope version before collecting identity, copy explicit
-capture evidence into new saved contexts, issue `action.plan.resolve` for
-preview plus one exact effect proof per attempted item, implement Action's
-exact-session matcher, and report every unsupported or changed item honestly.
-Existing contexts are never backfilled through observation and remain
-browseable but unsupported for restore.
+1. Save scope is now `saved-context-scope-v2` and captures restore identity only
+   after that scope is confirmed. Legacy v1 contexts remain browseable and are
+   never backfilled; preview reports them as identity-unavailable.
+2. Companion-side Resume commands load a saved context, copy declared targets
+   into Action without a saved-context identifier, resolve an expiring plan, and
+   execute only after the user approves that plan digest.
+3. Action owns exact-session matching and the fixed confidence floor; Permission
+   Authority still alone owns effect authorization through per-item
+   `action.window.place` / `action.window.focus` proofs at point of use.
 
 ---
 
@@ -254,10 +255,11 @@ One instance of capability drift predates Product Proof and is now material.
 so as an ordinary kernel mutation command guarded by `application.launch`. It
 does not pass through `ACT-CMD-001`, emits no `ACT-EVT-*` outcome events, and
 belongs to no action catalogue, so environment mutation already occurs outside
-the capability that alone owns it. `PP-M1-02` was stopped rather than adding a
-second, larger instance of the same pattern. Any restore implementation should
-either route through Action or be accompanied by a decision to correct
-`LaunchApplication` as well; the drift should not be extended by precedent.
+the capability that alone owns it. `PP-M1-02` restored through Action rather
+than extending that pattern: placement and focus go through declared Action
+types, plan resolution, per-item proofs, and honest outcomes.
+`LaunchApplication` drift remains open and must not be used as precedent for
+further non-Action environment mutation.
 
 The Content Security Policy is verified by the audit in `pnpm test`, by the
 policy string embedded in the packaged `workspace-app.exe`, and by loading the

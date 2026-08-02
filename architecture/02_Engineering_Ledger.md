@@ -1431,3 +1431,64 @@ LEDGER-0019's runtime implementation findings or LEDGER-0020's accepted Action
 contract.
 
 Status: Accepted; `PP-M1-02` architecture-ready
+
+---
+
+### LEDGER-0022
+
+Entry ID: LEDGER-0022
+Timestamp: 2026-08-02
+Capability: Action + Workspace Management + Companion Orchestration + Experience
+  — Product Proof task `PP-M1-02` deterministic Resume
+Related ADRs: DEC-008
+Related Research: None
+Decision: Implement the first deterministic Resume workflow against the approved
+Action Desktop Mutation Contract v1.1 and Saved Context Restore Identity
+Specification v1.0, without redesigning architecture or inventing contracts.
+
+Implementation:
+
+- Capture scope advanced to `saved-context-scope-v2` with restore-identity
+  checklist text; migration `042` adds nullable identity columns and unavailable
+  reason; legacy rows are never backfilled.
+- Save copies desktop-session, hwnd, process id, and title fingerprint evidence
+  from the explicit capture; incomplete windows keep an explicit unavailable
+  reason.
+- Windows integration supplies `desktop_session_id` and a `WindowMutator` for
+  bounded hwnd lookup, place, and focus (DEC-008).
+- Action `resolvePlan` / `execute` implement plan digest, expiry, exact-session
+  matching, re-resolution, per-item effect proofs, and honest dispositions
+  including partial success, refused-changed, and unsupported z-order.
+- Resume UI/IPC: list → preview → approve digest → restore → per-item outcomes.
+- Automated `SCRI-AC-*` and applicable `ADM-AC-*` acceptance tests in
+  `packages/kernel/src/commands/resume_acceptance_tests.rs`.
+
+Validation:
+
+- `cargo test --workspace` passed
+- `pnpm test` passed
+- `pnpm typecheck` passed
+- `pnpm build` passed
+- `git diff --check` clean for implementation content
+
+Knowledge Gained:
+
+- Exact same-session restore is implementable without AI, ambient observation,
+  or silent retry when identity capture is consent-versioned and Action keeps
+  matching inside a bounded hwnd lookup.
+- Holding the approved plan as an expiring Companion/Experience value, with
+  Action retaining no plan aggregate, is enough for preview-equals-execution
+  integrity when digest and re-resolution are enforced at execute time.
+- Per-item proofs are load-bearing: plan-resolve authority alone cannot place or
+  focus a window.
+
+Unlocks: Measured Product Proof use of deterministic Resume on the same
+continuing Windows desktop session. Does not unlock `PP-M1-03`, application
+launch/reuse, resource opening, cross-session restore, or undeclared Action
+types.
+
+Supersedes: The architecture-ready-but-unimplemented status of `PP-M1-02` in
+Current State after LEDGER-0021. Does not supersede LEDGER-0019's
+`LaunchApplication` drift finding.
+
+Status: Accepted; `PP-M1-02` implemented
