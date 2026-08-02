@@ -80,7 +80,12 @@ describe("PP-P01D pilot-safe chrome", () => {
     expect(resumeSource).toContain("delete_saved_context");
     expect(resumeSource).toContain("get_saved_context");
     expect(homeSource).toContain("This is your Workspace");
+    expect(homeSource).toContain("dash-grid");
+    expect(homeSource).toContain("EmptyStructure");
+    expect(homeSource).toContain("MomentCard");
+    expect(homeSource).toContain("Quick save");
   });
+
 
   it("creates a workspace from Save without routing through Canvas", () => {
     expect(saveSource).toContain("onCreateWorkspace");
