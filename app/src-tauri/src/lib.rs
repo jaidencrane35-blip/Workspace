@@ -92,7 +92,8 @@ use commands::workspace_observation::{
 use commands::workspace_state::get_workspace_state;
 use commands::saved_context::{get_saved_context_capture_scope, save_workspace_context};
 use commands::resume::{
-    execute_resume_plan, get_saved_context, list_saved_contexts, resolve_resume_plan,
+    delete_saved_context, execute_resume_plan, get_saved_context, list_saved_contexts,
+    resolve_resume_plan,
 };
 use commands::discovery::{get_action_catalog, get_actor_capabilities};
 use commands::memory::{
@@ -182,6 +183,7 @@ pub fn run() {
             save_workspace_context,
             list_saved_contexts,
             get_saved_context,
+            delete_saved_context,
             resolve_resume_plan,
             execute_resume_plan,
             get_workspace_state,

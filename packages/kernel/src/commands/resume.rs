@@ -90,6 +90,66 @@ impl QueryCommand for GetSavedContext {
     }
 }
 
+/// Deletes one saved context after explicit user confirmation (PP-P01C).
+///
+/// Workspace Management owns the durable record; this mutation removes it and
+/// cascaded restore identities. It does not close windows or mutate the desktop.
+pub struct DeleteSavedContext {
+    pub saved_context_id: SavedContextId,
+}
+
+impl crate::commands::Command for DeleteSavedContext {
+    fn name(&self) -> &'static str {
+        "DeleteSavedContext"
+    }
+}
+
+impl MutationCommand for DeleteSavedContext {
+    type Output = ();
+
+    fn permission_subject(&self) -> PermissionSubject {
+        PermissionSubject::Resource(ResourceKind::Workspace)
+    }
+
+    fn required_capability(&self) -> Capability {
+        Capability::workspace_write()
+    }
+
+    fn audit_metadata(&self, _output: &Self::Output) -> Option<String> {
+        Some(
+            serde_json::json!({
+                "saved_context_id": self.saved_context_id.as_str(),
+                "deleted": true,
+            })
+            .to_string(),
+        )
+    }
+
+    fn audit_failure_metadata(&self) -> Option<String> {
+        Some(
+            serde_json::json!({
+                "saved_context_id": self.saved_context_id.as_str(),
+                "deleted": false,
+            })
+            .to_string(),
+        )
+    }
+
+    fn execute(&self, ctx: &CommandContext<'_>) -> Result<()> {
+        if ctx.state.lifecycle != LifecycleState::Ready {
+            return Err(KernelError::NotReady);
+        }
+        // Fail closed: refuse unknown ids rather than reporting success.
+        let existing = SavedContextService::get_by_id(&ctx.database, &self.saved_context_id)?
+            .ok_or(KernelError::SavedContextNotFound)?;
+        let deleted = SavedContextService::delete_by_id(&ctx.database, &existing.id)?;
+        if !deleted {
+            return Err(KernelError::SavedContextNotFound);
+        }
+        Ok(())
+    }
+}
+
 /// Preview payload returned to Experience. Holds the Action plan value.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ResumePlanPreview {

@@ -60,7 +60,8 @@ use crate::commands::workspace_observation::{
 use crate::commands::workspace_state::GetWorkspaceState;
 use crate::commands::saved_context::{GetSavedContextCaptureScope, SaveWorkspaceContext};
 use crate::commands::resume::{
-    ExecuteResumePlan, GetSavedContext, ListSavedContexts, ResolveResumePlan, ResumePlanPreview,
+    DeleteSavedContext, ExecuteResumePlan, GetSavedContext, ListSavedContexts, ResolveResumePlan,
+    ResumePlanPreview,
 };
 use crate::commands::get_execution_outcomes::GetExecutionOutcomes;
 use crate::commands::get_execution_state::GetExecutionState;
@@ -1900,6 +1901,19 @@ impl CommandHandler {
             SavedContextId::new(saved_context_id).map_err(KernelError::Domain)?;
         CommandPipeline::new(kernel.command_context(actor, intent))
             .execute_query(GetSavedContext { saved_context_id })
+    }
+
+    /// Deletes one saved context after explicit user confirmation (PP-P01C).
+    pub fn delete_saved_context(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        saved_context_id: String,
+    ) -> Result<()> {
+        let saved_context_id =
+            SavedContextId::new(saved_context_id).map_err(KernelError::Domain)?;
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_mutation(DeleteSavedContext { saved_context_id })
     }
 
     pub fn resolve_resume_plan(

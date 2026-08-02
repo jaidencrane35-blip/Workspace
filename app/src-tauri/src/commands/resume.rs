@@ -53,6 +53,28 @@ pub fn get_saved_context(
 }
 
 #[tauri::command]
+pub fn delete_saved_context(
+    saved_context_id: String,
+    kernel: State<'_, Arc<Mutex<WorkspaceKernel>>>,
+) -> IpcResponse<()> {
+    match kernel.lock() {
+        Ok(kernel) => match CommandHandler::delete_saved_context(
+            &kernel,
+            ipc_actor_context(),
+            ipc_intent_context(),
+            saved_context_id,
+        ) {
+            Ok(()) => IpcResponse::success(()),
+            Err(error) => IpcResponse::failure(CommandError::from(error)),
+        },
+        Err(_) => IpcResponse::failure(CommandError::new(
+            "internal_error",
+            "Workspace core is temporarily unavailable.",
+        )),
+    }
+}
+
+#[tauri::command]
 pub fn resolve_resume_plan(
     saved_context_id: String,
     kernel: State<'_, Arc<Mutex<WorkspaceKernel>>>,

@@ -548,6 +548,13 @@ button.linkish:not(:disabled):hover {
   border-bottom: 1px solid rgba(154, 168, 180, 0.2);
 }
 
+.resume-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  align-items: stretch;
+}
+
 .resume-plan li {
   display: block;
 }

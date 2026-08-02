@@ -6,11 +6,12 @@ import type {
   ActionPlanItem,
   ResumePlanPreview,
   SavedContext,
+  SavedContextWindow,
   Workspace,
 } from "../types/domain";
 import { RestoreLimitsNotice } from "./RestoreLimitsNotice";
 
-type Step = "browse" | "preview" | "done";
+type Step = "browse" | "inspect" | "confirm_delete" | "preview" | "done";
 
 interface ResumeContextPanelProps {
   workspace: Workspace | null;
@@ -27,6 +28,20 @@ function formatError(err: unknown): string {
 function formatMoment(iso: string): string {
   const at = new Date(iso);
   return Number.isNaN(at.getTime()) ? iso : at.toLocaleString();
+}
+
+function describeWindow(window: SavedContextWindow): string {
+  const parts = [
+    window.minimized ? "minimised" : `${window.width}×${window.height}`,
+  ];
+  if (window.focused) {
+    parts.push("you were working here");
+  }
+  if (window.monitor_index !== null) {
+    parts.push(`monitor ${window.monitor_index + 1}`);
+  }
+  parts.push(`process ${window.process_id}`);
+  return parts.join(" · ");
 }
 
 function describeDisposition(item: ActionPlanItem): string {
@@ -72,6 +87,7 @@ export function ResumeContextPanel({
 }: ResumeContextPanelProps) {
   const [step, setStep] = useState<Step>("browse");
   const [contexts, setContexts] = useState<SavedContext[]>([]);
+  const [inspected, setInspected] = useState<SavedContext | null>(null);
   const [preview, setPreview] = useState<ResumePlanPreview | null>(null);
   const [result, setResult] = useState<ActionOperationResult | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -91,6 +107,27 @@ export function ResumeContextPanel({
   useEffect(() => {
     reload();
   }, [reload]);
+
+  const openInspect = (contextId: string) => {
+    onBusy(true);
+    onError(null);
+    void (async () => {
+      try {
+        const context = await invokeIpc<SavedContext>("get_saved_context", {
+          savedContextId: contextId,
+        });
+        setInspected(context);
+        setPreview(null);
+        setResult(null);
+        setStep("inspect");
+        onMessage(`Inspecting “${context.name}”`);
+      } catch (err: unknown) {
+        onError(formatError(err));
+      } finally {
+        onBusy(false);
+      }
+    })();
+  };
 
   const openPreview = (contextId: string) => {
     onBusy(true);
@@ -138,8 +175,36 @@ export function ResumeContextPanel({
     })();
   };
 
+  const confirmDelete = () => {
+    if (!inspected) {
+      return;
+    }
+    onBusy(true);
+    onError(null);
+    void (async () => {
+      try {
+        const deletedName = inspected.name;
+        const deletedId = inspected.id;
+        await invokeIpc<null>("delete_saved_context", {
+          savedContextId: deletedId,
+        });
+        setInspected(null);
+        setPreview(null);
+        setResult(null);
+        setStep("browse");
+        reload();
+        onMessage(`Deleted “${deletedName}”. It can no longer be restored.`);
+      } catch (err: unknown) {
+        onError(formatError(err));
+      } finally {
+        onBusy(false);
+      }
+    })();
+  };
+
   const backToBrowse = () => {
     setStep("browse");
+    setInspected(null);
     setPreview(null);
     setResult(null);
     reload();
@@ -158,8 +223,8 @@ export function ResumeContextPanel({
     <section className="panel">
       <h2>Resume</h2>
       <p className="lede">
-        Choose a saved context, review exactly what Workspace intends to restore,
-        then approve. Nothing runs before you approve.
+        Choose a saved context to inspect, delete, or restore. Nothing runs before
+        you approve a restore, and nothing is deleted before you confirm.
       </p>
       <p className="muted">{RESTORE_LIMITS_SUMMARY}</p>
 
@@ -187,17 +252,133 @@ export function ResumeContextPanel({
                       <div className="muted">No handoff was recorded.</div>
                     )}
                   </div>
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => openPreview(context.id)}
-                  >
-                    Preview restore
-                  </button>
+                  <div className="resume-actions">
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => openInspect(context.id)}
+                    >
+                      Inspect
+                    </button>
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => openPreview(context.id)}
+                    >
+                      Preview restore
+                    </button>
+                  </div>
                 </li>
               ))}
             </ul>
           )}
+        </>
+      )}
+
+      {step === "inspect" && inspected && (
+        <>
+          <h3>Saved context “{inspected.name}”</h3>
+          <p className="muted">
+            Saved on this computer at {formatMoment(inspected.created_at)}. Scope{" "}
+            {inspected.approved_scope}. This is everything Workspace retained —
+            nothing else.
+          </p>
+
+          <section className="resume-handoff-block">
+            <h4>What you intended to do next</h4>
+            {inspected.handoff_note.trim() ? (
+              <p>{inspected.handoff_note}</p>
+            ) : (
+              <p className="muted">No handoff was recorded with this context.</p>
+            )}
+            <p className="muted">
+              Shown exactly as you wrote it. Workspace did not invent or rewrite
+              it.
+            </p>
+          </section>
+
+          <section>
+            <h4>
+              {inspected.windows.length}{" "}
+              {inspected.windows.length === 1 ? "window" : "windows"}
+            </h4>
+            <ul className="list compact">
+              {inspected.windows.map((window) => (
+                <li key={window.id}>
+                  <div>{window.title}</div>
+                  <div className="muted">{describeWindow(window)}</div>
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          <section>
+            <h4>
+              {inspected.monitors.length}{" "}
+              {inspected.monitors.length === 1 ? "monitor" : "monitors"}
+            </h4>
+            <ul className="list compact">
+              {inspected.monitors.map((monitor) => (
+                <li key={monitor.id}>
+                  <div>
+                    {monitor.name || `Monitor ${monitor.monitor_index + 1}`}
+                    {monitor.is_primary ? " · main" : ""}
+                  </div>
+                  <div className="muted">
+                    {monitor.width}×{monitor.height} at {monitor.x},{monitor.y}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          <RestoreLimitsNotice />
+
+          <div className="button-row">
+            <button type="button" disabled={busy} onClick={backToBrowse}>
+              Back
+            </button>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => openPreview(inspected.id)}
+            >
+              Preview restore
+            </button>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => setStep("confirm_delete")}
+            >
+              Delete this context
+            </button>
+          </div>
+        </>
+      )}
+
+      {step === "confirm_delete" && inspected && (
+        <>
+          <h3>Delete “{inspected.name}”?</h3>
+          <p className="lede">
+            This removes the saved context and its restore identities from this
+            computer. It cannot be undone. Windows already open on your desktop
+            are not closed.
+          </p>
+          <p className="muted">
+            After deletion, this context cannot be inspected or restored.
+          </p>
+          <div className="button-row">
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => setStep("inspect")}
+            >
+              Cancel
+            </button>
+            <button type="button" disabled={busy} onClick={confirmDelete}>
+              Delete permanently
+            </button>
+          </div>
         </>
       )}
 

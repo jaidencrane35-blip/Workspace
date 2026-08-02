@@ -1784,3 +1784,46 @@ slice. Does not supersede LEDGER-0023 NOT READY, LEDGER-0025 slice order, or
 the PP-P01 pilot gate.
 
 Status: Complete; active slice **PP-P01C**; milestone **PP-P01** incomplete
+
+### LEDGER-0028
+
+Entry ID: LEDGER-0028
+Timestamp: 2026-08-02
+Capability: Workspace Management + Experience — PP-P01C inspect/delete
+Related ADRs: ADR-0008
+Related Research: None
+Decision: Implement **PP-P01C** by exposing inspect and explicit delete of
+retained saved contexts in the existing Resume product surface. Reuse Workspace
+Management persistence (`get` / `delete_by_id`) and Experience presentation.
+Require confirmation before destructive delete. Fail closed on unknown ids.
+Do not add background cleanup, retention policies, or restore-behaviour changes.
+
+Implementation:
+- Kernel mutation `DeleteSavedContext` (`workspace.write`); handler and Tauri
+  IPC `delete_saved_context`.
+- Resume UI: Inspect loads truthful metadata (handoff, windows, monitors,
+  scope, timestamps); Delete → confirm → permanent removal; browse offers
+  Inspect and Preview restore.
+- Tests: SCRI-AC-14 via command path (list/get/resume fail after delete);
+  unknown-id fail-closed; Vitest `saved-context-inspect-delete.test.ts`.
+- Current State advanced; active slice becomes **PP-P01D**.
+
+Validation:
+- `cargo test -p workspace-kernel resume_acceptance` (33) passed.
+- `pnpm test` (44), `pnpm typecheck`, `pnpm build` passed.
+- No accepted architecture contract files modified.
+- PP-P01D–PP-P01E not implemented.
+
+Knowledge Gained:
+- Repository already owned delete at the service/repository layer; the pilot
+  gap was the governed command path and Experience confirmation surface, not
+  a new storage system.
+
+Unlocks: Active implementation slice advances to **PP-P01D** (pilot chrome).
+Does not unlock the Product Proof pilot until `PP-P01A`–`PP-P01E` are complete.
+
+Supersedes: LEDGER-0027 status wording that named **PP-P01C** as the active
+slice. Does not supersede LEDGER-0023 NOT READY, LEDGER-0025 slice order, or
+the PP-P01 pilot gate.
+
+Status: Complete; active slice **PP-P01D**; milestone **PP-P01** incomplete

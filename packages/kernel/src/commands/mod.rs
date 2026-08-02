@@ -350,7 +350,8 @@ pub use workspace_observation::{
 pub use workspace_state::GetWorkspaceState;
 pub use saved_context::{GetSavedContextCaptureScope, SaveWorkspaceContext};
 pub use resume::{
-    ExecuteResumePlan, GetSavedContext, ListSavedContexts, ResolveResumePlan, ResumePlanPreview,
+    DeleteSavedContext, ExecuteResumePlan, GetSavedContext, ListSavedContexts, ResolveResumePlan,
+    ResumePlanPreview,
 };
 pub use get_execution_outcomes::GetExecutionOutcomes;
 pub use get_execution_state::GetExecutionState;

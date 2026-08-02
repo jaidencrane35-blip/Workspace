@@ -334,7 +334,8 @@ fn scri_ac_13_incomplete_identity_reason() {
     }));
 }
 
-/// SCRI-AC-14 — deleting a context deletes restore identities.
+/// SCRI-AC-14 / PP-P01C — deleting a context deletes restore identities and
+/// removes it from inspect/resume surfaces.
 #[test]
 fn scri_ac_14_delete_removes_identities() {
     let _flight = observation_flight_test_lock().lock().unwrap();
@@ -349,7 +350,7 @@ fn scri_ac_14_delete_removes_identities() {
         &ActorContext::local_user(),
         &IntentContext::user_request(),
         &SaveContextRequest::new(
-            workspace.id,
+            workspace.id.clone(),
             "Delete me",
             SAVED_CONTEXT_SCOPE_ID,
             "Finish the client proposal outline",
@@ -357,10 +358,52 @@ fn scri_ac_14_delete_removes_identities() {
         &StubDesktopCapturer::fixture_dual_monitor(),
     )
     .unwrap();
-    assert!(SavedContextService::delete_by_id(&db, &saved.id).unwrap());
+
+    crate::commands::CommandHandler::delete_saved_context(
+        &kernel,
+        ActorContext::local_user(),
+        IntentContext::user_request(),
+        saved.id.to_string(),
+    )
+    .unwrap();
+
     assert!(SavedContextService::get_by_id(&db, &saved.id)
         .unwrap()
         .is_none());
+    let listed = crate::commands::CommandHandler::list_saved_contexts(
+        &kernel,
+        ActorContext::local_user(),
+        IntentContext::user_request(),
+        workspace.id.to_string(),
+    )
+    .unwrap();
+    assert!(listed.iter().all(|context| context.id != saved.id));
+    let missing = crate::commands::CommandHandler::get_saved_context(
+        &kernel,
+        ActorContext::local_user(),
+        IntentContext::user_request(),
+        saved.id.to_string(),
+    );
+    assert!(matches!(missing, Err(KernelError::SavedContextNotFound)));
+    let resume = crate::commands::CommandHandler::resolve_resume_plan(
+        &kernel,
+        ActorContext::local_user(),
+        IntentContext::user_request(),
+        saved.id.to_string(),
+    );
+    assert!(matches!(resume, Err(KernelError::SavedContextNotFound)));
+}
+
+#[test]
+fn delete_saved_context_unknown_id_fails_closed() {
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
+    let err = crate::commands::CommandHandler::delete_saved_context(
+        &kernel,
+        ActorContext::local_user(),
+        IntentContext::user_request(),
+        "sc-does-not-exist".into(),
+    );
+    assert!(matches!(err, Err(KernelError::SavedContextNotFound)));
 }
 
 /// SCRI-AC-15 — matching available without network/AI/plugins.

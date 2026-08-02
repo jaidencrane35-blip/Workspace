@@ -149,11 +149,11 @@ Authorised implementation order:
 |---|---|---|
 | `PP-P01A` | User-authored handoff / intended next action on Save and Resume | **Complete** (LEDGER-0026) |
 | `PP-P01B` | Explicit restore-limits copy (same session; still-open windows; no silent relaunch) | **Complete** (LEDGER-0027) |
-| `PP-P01C` | Inspect and delete retained saved contexts in the product UI | **Active** |
-| `PP-P01D` | Pilot-safe primary chrome (Save / Resume + minimal help; engine tabs out of default pilot surface) | Pending |
+| `PP-P01C` | Inspect and delete retained saved contexts in the product UI | **Complete** (LEDGER-0028) |
+| `PP-P01D` | Pilot-safe primary chrome (Save / Resume + minimal help; engine tabs out of default pilot surface) | **Active** |
 | `PP-P01E` | Consented measurement and interview kit (baseline, leave→resume time, correction, week-four habit; no ambient observation) | Pending |
 
-Active implementation slice: **`PP-P01C`**.
+Active implementation slice: **`PP-P01D`**.
 
 `PP-P01A` is complete: Save requires an explicit user-authored handoff note;
 the note is reviewed before capture, persisted with the saved context, and
@@ -164,6 +164,12 @@ infer, generate, or rewrite it. Deterministic window restore is unchanged.
 outcomes present shared restore-limits copy — same continuing Windows session,
 still-open windows only, no silent relaunch, no file/link opening, no invented
 next action. Presentation only; Action restore behaviour is unchanged.
+
+`PP-P01C` is complete: Resume browse offers Inspect and Preview; Inspect shows
+retained handoff, windows, and monitors truthfully; Delete requires an explicit
+confirmation step and removes the saved context (and restore identities) via
+Workspace Management. Deleted contexts cannot be listed, inspected, or resumed.
+No background cleanup or retention policy.
 
 Only after `PP-P01A` through `PP-P01E` are complete may the defined four-week
 Product Proof pilot run. Completing one slice is not Product Proof success.
@@ -178,7 +184,7 @@ proof later justifies resumed capability research; it is not the active
 milestone.
 
 Recommended next engineering milestone: **PP-P01 Pilot Package**.
-Recommended next implementation slice: **PP-P01C**.
+Recommended next implementation slice: **PP-P01D**.
 
 ---
 
