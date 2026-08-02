@@ -14,6 +14,7 @@ import { MomentCard } from "./MomentCard";
 import { ContinuePreviewBody } from "./objects/ContinuePreviewObject";
 import { IntentionObject } from "./objects/IntentionObject";
 import { RestoreLimitsNotice } from "./RestoreLimitsNotice";
+import { useIntentEngine } from "./IntentEngine";
 import { useWorkspaceComposition } from "./WorkspaceComposition";
 import { WorkspaceSurface } from "./WorkspaceSurface";
 
@@ -106,6 +107,7 @@ export function ResumeContextPanel({
     setAttentionScene,
     setAmbient,
   } = useWorkspaceComposition();
+  const { setRestoring } = useIntentEngine();
   const [step, setStep] = useState<Step>("browse");
   const [contexts, setContexts] = useState<SavedContext[]>([]);
   const [inspected, setInspected] = useState<SavedContext | null>(null);
@@ -171,6 +173,7 @@ export function ResumeContextPanel({
           setStep("preview");
           setPrimaryObject(contextId);
           setAttentionScene("restore");
+          setRestoring(true);
           setSecondaryObjects([]);
           onMessage(`Preview ready for “${next.saved_context_name}”`);
         } catch (err: unknown) {
@@ -186,6 +189,7 @@ export function ResumeContextPanel({
       onMessage,
       setPrimaryObject,
       setAttentionScene,
+      setRestoring,
       setSecondaryObjects,
     ],
   );
@@ -259,6 +263,7 @@ export function ResumeContextPanel({
     setPreview(null);
     setResult(null);
     setAttentionScene("default");
+    setRestoring(false);
     reload();
   };
 

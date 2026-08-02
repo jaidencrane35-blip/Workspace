@@ -2294,3 +2294,21 @@ No Product Proof behaviour change.
 Validation: `pnpm typecheck`, `pnpm test` green.
 
 Status: Complete
+
+### LEDGER-0044
+
+Entry ID: LEDGER-0044
+Timestamp: 2026-08-02
+Capability: Experience — Intent Engine and adaptive orchestration
+Related ADRs: ADR-0008
+Related Research: EXP-001; concept boards
+Decision: Introduce Intent Engine (Landing / Capture / Restore / Reflect / Learn)
+as the highest-level experience orchestrator above Workspace Objects; composition
+profiles reshape attention, dock, lighting, spacing, and motion; shared motion
+primitives; contextual command surface; premium empty; object relationship
+influence. Destination chrome remains for Product Proof; intent is not a route.
+No Product Proof behaviour change.
+
+Validation: `pnpm typecheck`, `pnpm test` green.
+
+Status: Complete

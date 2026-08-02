@@ -9,6 +9,7 @@ import type {
   Workspace,
 } from "../types/domain";
 import { RestoreLimitsNotice } from "./RestoreLimitsNotice";
+import { useIntentEngine } from "./IntentEngine";
 import { useWorkspaceComposition } from "./WorkspaceComposition";
 import { WorkspaceObject } from "./WorkspaceObject";
 import { WorkspaceSurface } from "./WorkspaceSurface";
@@ -56,14 +57,17 @@ export function SaveContextPanel({
   onCreateWorkspace,
 }: SaveContextPanelProps) {
   const { density, setWritingMode, setAmbient } = useWorkspaceComposition();
+  const { setWriting } = useIntentEngine();
   const reduceMotion = useReducedMotion();
 
   const enterWriting = () => {
     setWritingMode(true);
+    setWriting(true);
     setAmbient("input");
   };
   const leaveWriting = () => {
     setWritingMode(false);
+    setWriting(false);
     setAmbient("workspace");
   };
   const [scope, setScope] = useState<SavedContextCaptureScope | null>(null);

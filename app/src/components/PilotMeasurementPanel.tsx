@@ -7,6 +7,7 @@ import type {
   PilotMeasurementSnapshot,
 } from "../types/domain";
 import { CheckInSummaryObject } from "./objects/CheckInSummaryObject";
+import { useIntentEngine } from "./IntentEngine";
 import { WorkspaceSurface } from "./WorkspaceSurface";
 import { useWorkspaceComposition } from "./WorkspaceComposition";
 
@@ -50,6 +51,7 @@ export function PilotMeasurementPanel({
     setPrimaryObject,
     setSecondaryObjects,
   } = useWorkspaceComposition();
+  const { setReflecting } = useIntentEngine();
   const reduceMotion = useReducedMotion();
   const [scope, setScope] = useState<PilotMeasurementScope | null>(null);
   const [snapshot, setSnapshot] = useState<PilotMeasurementSnapshot | null>(null);
@@ -64,6 +66,7 @@ export function PilotMeasurementPanel({
   const [completed, setCompleted] = useState<number[]>([]);
 
   useEffect(() => {
+    setReflecting(true);
     setAttentionScene("checkin");
     const primary =
       chapter === 0
@@ -77,7 +80,14 @@ export function PilotMeasurementPanel({
         (id) => id !== primary,
       ),
     );
-  }, [chapter, setAttentionScene, setPrimaryObject, setSecondaryObjects]);
+    return () => setReflecting(false);
+  }, [
+    chapter,
+    setReflecting,
+    setAttentionScene,
+    setPrimaryObject,
+    setSecondaryObjects,
+  ]);
 
   const advanceChapter = (from: number) => {
     setCompleted((prev) =>

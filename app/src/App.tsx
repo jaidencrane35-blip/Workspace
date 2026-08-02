@@ -199,7 +199,13 @@ export default function App() {
   );
 
   return (
-    <WorkspaceShell view={view} onNavigate={navigate} status={status}>
+    <WorkspaceShell
+      view={view}
+      onNavigate={navigate}
+      onCreateWorkspace={createWorkspace}
+      busy={busy}
+      status={status}
+    >
       {content}
     </WorkspaceShell>
   );

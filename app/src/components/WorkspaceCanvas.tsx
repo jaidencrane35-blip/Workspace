@@ -2,6 +2,7 @@ import { LayoutGroup, motion, useReducedMotion } from "motion/react";
 import { type ReactNode, useEffect } from "react";
 import { spring } from "../design-system";
 import type { PilotPrimaryView } from "../lib/pilotChrome";
+import { useIntentEngine } from "./IntentEngine";
 import { useWorkspaceComposition } from "./WorkspaceComposition";
 
 interface WorkspaceCanvasProps {
@@ -10,8 +11,7 @@ interface WorkspaceCanvasProps {
 }
 
 /**
- * Persistent Workspace Canvas — owns composition, depth, and focus atmosphere.
- * Destinations place objects; they do not become separate pages.
+ * Persistent Workspace Canvas — reshaped continuously by Intent profiles.
  */
 export function WorkspaceCanvas({
   destination,
@@ -25,9 +25,9 @@ export function WorkspaceCanvas({
     setDestination,
     focusedObjectId,
     selectedObjectId,
-    attentionScene,
     primaryObjectId,
   } = useWorkspaceComposition();
+  const { intent, profile } = useIntentEngine();
 
   useEffect(() => {
     setDestination(destination);
@@ -41,7 +41,9 @@ export function WorkspaceCanvas({
         data-density={density}
         data-writing={writingMode ? "on" : "off"}
         data-ambient={ambient}
-        data-scene={attentionScene}
+        data-intent={intent}
+        data-scene={profile.attentionScene}
+        data-light={profile.lightingBias}
         data-focus={focusedObjectId ?? ""}
         data-selected={selectedObjectId ?? primaryObjectId ?? ""}
         layout={!reduceMotion}
@@ -49,14 +51,15 @@ export function WorkspaceCanvas({
           reduceMotion
             ? undefined
             : {
-                filter: writingMode
-                  ? "brightness(0.82) saturate(0.9)"
-                  : attentionScene === "restore"
-                    ? "brightness(0.92) saturate(0.95)"
-                    : "brightness(1) saturate(1)",
+                filter:
+                  intent === "capture"
+                    ? "brightness(0.82) saturate(0.9)"
+                    : intent === "restore"
+                      ? "brightness(0.92) saturate(0.95)"
+                      : `brightness(${0.9 + profile.atmosphereDepth * 0.1}) saturate(1)`,
               }
         }
-        transition={spring.soft}
+        transition={spring[profile.motion]}
       >
         <div className="ws-canvas-root__veil" aria-hidden="true" />
         <div className="ws-canvas-root__field">{children}</div>

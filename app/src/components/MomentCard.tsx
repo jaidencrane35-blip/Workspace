@@ -1,7 +1,7 @@
 import { ArrowRight, Clock3, Layers } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { memo, type ReactNode } from "react";
-import { spring } from "../design-system";
+import { motionPrimitive } from "../lib/motion";
 import type { WorkspaceObjectState } from "../lib/objectState";
 import { formatRelativeTime } from "../lib/time";
 import type { SavedContext } from "../types/domain";
@@ -63,6 +63,7 @@ function MomentCardInner({
   expandContent,
 }: MomentCardProps) {
   const reduceMotion = useReducedMotion();
+  const expandMotion = motionPrimitive("expand", Boolean(reduceMotion));
 
   if (variant === "placeholder" || !context) {
     return (
@@ -172,10 +173,10 @@ function MomentCardInner({
         {revealing && (
           <motion.div
             className="moment-expand"
-            initial={reduceMotion ? false : { opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={reduceMotion ? undefined : { opacity: 0, height: 0 }}
-            transition={spring.lush}
+            initial={expandMotion.initial}
+            animate={expandMotion.animate}
+            exit={expandMotion.exit}
+            transition={expandMotion.transition}
           >
             {expandContent}
           </motion.div>

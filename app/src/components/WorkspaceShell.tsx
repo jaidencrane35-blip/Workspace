@@ -13,6 +13,7 @@ import {
   useSpring,
 } from "motion/react";
 import {
+  type CSSProperties,
   type KeyboardEvent,
   type MouseEvent,
   type ReactNode,
@@ -22,13 +23,17 @@ import {
   useRef,
 } from "react";
 import { interaction, spring } from "../design-system";
+import { INTENT_LABELS } from "../lib/intent";
+import { contentTransition, motionPrimitive } from "../lib/motion";
 import { useWorkspaceDensity } from "../hooks/useWorkspaceDensity";
 import {
   PILOT_PRIMARY_VIEWS,
   PILOT_VIEW_LABELS,
   type PilotPrimaryView,
 } from "../lib/pilotChrome";
-import { AmbientLighting, type AmbientFocus } from "./AmbientLighting";
+import { AmbientLighting } from "./AmbientLighting";
+import { CommandSurface } from "./CommandSurface";
+import { IntentEngineProvider, useIntentEngine } from "./IntentEngine";
 import { WorkspaceCanvas } from "./WorkspaceCanvas";
 import {
   useWorkspaceComposition,
@@ -46,6 +51,8 @@ const DOCK_ICONS: Record<PilotPrimaryView, typeof Home> = {
 interface WorkspaceShellProps {
   view: PilotPrimaryView;
   onNavigate: (view: PilotPrimaryView) => void;
+  onCreateWorkspace?: () => void;
+  busy?: boolean;
   status?: ReactNode;
   children: ReactNode;
 }
@@ -63,7 +70,7 @@ function DockItem({
   contentId: string;
   reduceMotion: boolean | null;
   onNavigate: (view: PilotPrimaryView) => void;
-  onFocusAmbient: (focus: AmbientFocus) => void;
+  onFocusAmbient: (focus: "dock" | "workspace") => void;
 }) {
   const Icon = DOCK_ICONS[id];
   const x = useMotionValue(0);
@@ -150,6 +157,8 @@ function DockItem({
 function ShellBody({
   view,
   onNavigate,
+  onCreateWorkspace,
+  busy = false,
   status,
   children,
 }: WorkspaceShellProps) {
@@ -161,43 +170,40 @@ function ShellBody({
     density,
     writingMode,
     ambient,
-    attentionScene,
     setAmbient,
     setWritingMode,
     setSelectedObjectId,
     setFocusedObjectId,
-    setAttentionScene,
     setPrimaryObject,
   } = useWorkspaceComposition();
+  const { intent, profile, adoptView, setWriting } = useIntentEngine();
+  const reveal = motionPrimitive("reveal", Boolean(reduceMotion));
 
   useEffect(() => {
     contentRef.current?.focus({ preventScroll: true });
     setWritingMode(false);
+    setWriting(false);
     setSelectedObjectId(null);
     setFocusedObjectId(null);
     setPrimaryObject(null);
-    setAttentionScene(
-      view === "save"
-        ? "writing"
-        : view === "help"
-          ? "guide"
-          : view === "pilot"
-            ? "checkin"
-            : "default",
-    );
+    adoptView(view);
     setAmbient(view === "save" ? "input" : "workspace");
-    if (liveRef.current) {
-      liveRef.current.textContent = `${PILOT_VIEW_LABELS[view]} selected`;
-    }
   }, [
     view,
     setAmbient,
     setWritingMode,
+    setWriting,
     setSelectedObjectId,
     setFocusedObjectId,
-    setAttentionScene,
     setPrimaryObject,
+    adoptView,
   ]);
+
+  useEffect(() => {
+    if (liveRef.current) {
+      liveRef.current.textContent = `${INTENT_LABELS[intent]} · ${PILOT_VIEW_LABELS[view]}`;
+    }
+  }, [intent, view]);
 
   const onDockKeyDown = (event: KeyboardEvent<HTMLElement>) => {
     const index = PILOT_PRIMARY_VIEWS.indexOf(view);
@@ -228,9 +234,17 @@ function ShellBody({
       className="app-shell exp-shell ws-env ws-shell"
       data-density={density}
       data-ambient={ambient}
-      data-writing={writingMode ? "on" : "off"}
+      data-writing={writingMode || profile.attentionScene === "writing" ? "on" : "off"}
       data-destination={view}
-      data-scene={attentionScene}
+      data-intent={intent}
+      data-scene={profile.attentionScene}
+      data-light={profile.lightingBias}
+      style={
+        {
+          "--intent-space": String(profile.spacingScale),
+          "--intent-depth": String(profile.atmosphereDepth),
+        } as CSSProperties
+      }
     >
       <div className="ws-layer ws-layer--bg" aria-hidden="true">
         <div className="ws-atmosphere">
@@ -243,7 +257,16 @@ function ShellBody({
           <div className="ws-atmosphere__grain" />
           <div className="ws-atmosphere__vignette" />
         </div>
-        <AmbientLighting focus={ambient} active />
+        <AmbientLighting
+          focus={
+            intent === "capture"
+              ? "input"
+              : intent === "restore"
+                ? "moment"
+                : ambient
+          }
+          active
+        />
       </div>
 
       <div className="sr-only" aria-live="polite" ref={liveRef} />
@@ -266,33 +289,17 @@ function ShellBody({
           <WorkspaceCanvas destination={view}>
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
-                key={view}
+                key={`${intent}-${view}`}
                 ref={contentRef}
                 id={contentId}
                 className="ws-content"
                 role="region"
-                aria-label={PILOT_VIEW_LABELS[view]}
+                aria-label={INTENT_LABELS[intent]}
                 tabIndex={-1}
-                initial={
-                  reduceMotion
-                    ? { opacity: 1 }
-                    : { opacity: 0, y: 14, scale: 0.988, filter: "blur(2px)" }
-                }
-                animate={
-                  reduceMotion
-                    ? { opacity: 1 }
-                    : { opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }
-                }
-                exit={
-                  reduceMotion
-                    ? { opacity: 0 }
-                    : { opacity: 0, y: -8, scale: 0.992, filter: "blur(2px)" }
-                }
-                transition={
-                  reduceMotion
-                    ? { duration: 0.01 }
-                    : { ...spring.soft, opacity: { duration: 0.24 } }
-                }
+                initial={reveal.initial}
+                animate={reveal.animate}
+                exit={reveal.exit}
+                transition={contentTransition(reduceMotion)}
                 onFocusCapture={(event) => {
                   const target = event.target as HTMLElement;
                   if (
@@ -300,10 +307,30 @@ function ShellBody({
                     target.tagName === "TEXTAREA"
                   ) {
                     setAmbient("input");
+                    setWriting(true);
+                    setWritingMode(true);
+                  }
+                }}
+                onBlurCapture={(event) => {
+                  const next = event.relatedTarget as HTMLElement | null;
+                  if (
+                    next &&
+                    (next.tagName === "INPUT" || next.tagName === "TEXTAREA")
+                  ) {
+                    return;
+                  }
+                  if (view !== "save") {
+                    setWriting(false);
+                    setWritingMode(false);
                   }
                 }}
               >
                 {children}
+                <CommandSurface
+                  onNavigate={onNavigate}
+                  onCreateWorkspace={onCreateWorkspace}
+                  busy={busy}
+                />
               </motion.div>
             </AnimatePresence>
           </WorkspaceCanvas>
@@ -319,25 +346,12 @@ function ShellBody({
           reduceMotion
             ? undefined
             : {
-                opacity:
-                  writingMode || attentionScene === "writing"
-                    ? 0.32
-                    : attentionScene === "restore"
-                      ? 0.72
-                      : attentionScene === "empty"
-                        ? 0.85
-                        : 1,
-                y:
-                  writingMode || attentionScene === "writing"
-                    ? 12
-                    : attentionScene === "restore"
-                      ? 4
-                      : 0,
-                scale:
-                  writingMode || attentionScene === "writing" ? 0.95 : 1,
+                opacity: profile.dockEmphasis,
+                y: profile.dockEmphasis < 0.5 ? 12 : profile.dockEmphasis < 0.8 ? 4 : 0,
+                scale: profile.dockEmphasis < 0.5 ? 0.95 : 1,
               }
         }
-        transition={spring.soft}
+        transition={spring[profile.motion]}
       >
         <span className="ws-dock__breath" aria-hidden="true" />
         {PILOT_PRIMARY_VIEWS.map((id) => (
@@ -348,7 +362,9 @@ function ShellBody({
             contentId={contentId}
             reduceMotion={reduceMotion}
             onNavigate={onNavigate}
-            onFocusAmbient={setAmbient}
+            onFocusAmbient={(focus) =>
+              setAmbient(focus === "dock" ? "dock" : "workspace")
+            }
           />
         ))}
       </motion.nav>
@@ -356,11 +372,19 @@ function ShellBody({
   );
 }
 
+function ShellWithIntent(props: WorkspaceShellProps) {
+  return (
+    <IntentEngineProvider view={props.view}>
+      <ShellBody {...props} />
+    </IntentEngineProvider>
+  );
+}
+
 export function WorkspaceShell(props: WorkspaceShellProps) {
   const density = useWorkspaceDensity();
   return (
     <WorkspaceCompositionProvider density={density}>
-      <ShellBody {...props} />
+      <ShellWithIntent {...props} />
     </WorkspaceCompositionProvider>
   );
 }

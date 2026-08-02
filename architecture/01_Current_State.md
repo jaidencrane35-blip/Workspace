@@ -161,6 +161,10 @@ writing mode; restoration preview; narrative Check-in; Guide tour; dock velocity
 drive Primary/Secondary/Context presentation; spatial recomposition; immersive
 writing; in-object restore expand; conversational Check-in; experiential Guide.
 
+✓ Intent Engine sprint complete (LEDGER-0044): Landing/Capture/Restore/Reflect/
+Learn orchestration; composition profiles; motion primitives; command surface;
+premium empty; object relationship influence. Product Proof chrome preserved.
+
 ---
 
 # Active Task

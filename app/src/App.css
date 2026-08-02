@@ -452,6 +452,111 @@ body {
   opacity: 1;
 }
 
+[data-intent="capture"] .ws-atmosphere__vignette {
+  background: radial-gradient(
+    68% 62% at 50% 40%,
+    transparent 30%,
+    rgba(0, 0, 0, 0.74) 100%
+  );
+}
+[data-intent="restore"] .ws-atmosphere__glow--b {
+  opacity: 0.55;
+}
+[data-intent="reflect"] .ws-atmosphere__glow--c {
+  opacity: 0.5;
+}
+[data-intent="learn"] .ws-atmosphere__glow--a {
+  opacity: 0.48;
+}
+[data-intent="landing"][data-scene="empty"] .ws-atmosphere__glow--d {
+  opacity: 0.6;
+}
+
+.ws-command {
+  position: relative;
+  margin-top: clamp(1rem, 2.5vw, 1.75rem);
+  padding: 0.65rem 0.15rem 0.2rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.ws-command__intent {
+  margin: 0;
+  font-size: var(--type-label);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--exp-muted);
+  opacity: 0.75;
+}
+
+.ws-command__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.ws-command__action {
+  appearance: none;
+  border: none;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--exp-text);
+  border-radius: var(--radius-pill);
+  padding: 0.45rem 0.95rem;
+  font: inherit;
+  font-size: 0.86rem;
+  cursor: pointer;
+  transition: background var(--motion-fast) var(--ease),
+    box-shadow var(--motion-fast) var(--ease);
+}
+
+.ws-command__action:hover,
+.ws-command__action:focus-visible {
+  background: rgba(95, 208, 216, 0.14);
+  box-shadow: 0 0 18px var(--ws-light-focus);
+  outline: none;
+}
+
+.ws-command__pulse {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: var(--color-accent);
+  box-shadow: 0 0 12px var(--ws-light-focus);
+}
+
+.empty-possibility {
+  position: relative;
+  min-height: 12rem;
+}
+
+.empty-possibility__halo {
+  pointer-events: none;
+  position: absolute;
+  inset: 10% 18%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at center,
+    rgba(95, 208, 216, 0.14),
+    transparent 68%
+  );
+  filter: blur(18px);
+}
+
+.ws-object.is-influencing {
+  z-index: 40;
+}
+
+.ws-content {
+  gap: calc(var(--space-5) * var(--intent-space, 1));
+}
+
+[data-intent] .spatial-frame {
+  gap: calc(var(--space-5) * var(--intent-space, 1));
+}
+
 .ws-object--quick-action .ws-surface__body,
 .ws-object--quick-action .elevated-card__body {
   padding: 0;

@@ -8,6 +8,7 @@ import { EmptyStructure } from "./EmptyStructure";
 import { MomentCard } from "./MomentCard";
 import { IntentionObject } from "./objects/IntentionObject";
 import { QuickActionObject } from "./objects/QuickActionObject";
+import { useIntentEngine } from "./IntentEngine";
 import { useWorkspaceComposition } from "./WorkspaceComposition";
 import { WorkspaceObject } from "./WorkspaceObject";
 
@@ -35,12 +36,14 @@ export function HomeWorkspacePanel({
     setAttentionScene,
     setAmbient,
   } = useWorkspaceComposition();
+  const { setEmpty } = useIntentEngine();
   const [recent, setRecent] = useState<SavedContext[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!workspace) {
       setRecent([]);
+      setEmpty(true);
       setAttentionScene("empty");
       setPrimaryObject("home-create");
       return;
@@ -55,6 +58,7 @@ export function HomeWorkspacePanel({
         setRecent(sorted.slice(0, 7));
         setLoadError(null);
         if (sorted[0]) {
+          setEmpty(false);
           setAttentionScene("default");
           setPrimaryObject(sorted[0].id);
           setSecondaryObjects([
@@ -64,6 +68,7 @@ export function HomeWorkspacePanel({
           ]);
           setAmbient("moment");
         } else {
+          setEmpty(true);
           setAttentionScene("empty");
           setPrimaryObject("first-moment");
           setSecondaryObjects(["intention-empty", "quick-save"]);
@@ -74,6 +79,7 @@ export function HomeWorkspacePanel({
       });
   }, [
     workspace,
+    setEmpty,
     setAttentionScene,
     setPrimaryObject,
     setSecondaryObjects,

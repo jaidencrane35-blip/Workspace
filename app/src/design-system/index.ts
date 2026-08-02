@@ -11,3 +11,21 @@ export type {
   AttentionTier,
   AttentionVisual,
 } from "../lib/attention";
+export {
+  compositionForIntent,
+  inferIntent,
+  intentFromView,
+  viewFromIntent,
+  INTENT_LABELS,
+} from "../lib/intent";
+export type {
+  IntentCommand,
+  IntentCompositionProfile,
+  WorkspaceIntent,
+} from "../lib/intent";
+export {
+  contentTransition,
+  layoutTransition,
+  motionPrimitive,
+} from "../lib/motion";
+export type { MotionPrimitive } from "../lib/motion";

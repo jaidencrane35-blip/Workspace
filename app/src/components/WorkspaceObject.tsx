@@ -8,13 +8,15 @@ import {
   type MouseEvent,
   type ReactNode,
 } from "react";
-import { spring } from "../design-system";
+import { resolveAttentionVisual } from "../lib/attention";
+import { layoutTransition } from "../lib/motion";
 import type {
   CanvasSlot,
   WorkspaceObjectKind,
   WorkspaceObjectState,
 } from "../lib/objectState";
 import { useAttentionRegistration } from "./AttentionEngine";
+import { useIntentEngine } from "./IntentEngine";
 import { WorkspaceSurface, type WorkspaceSurfaceLevel } from "./WorkspaceSurface";
 
 export interface WorkspaceObjectProps
@@ -27,14 +29,13 @@ export interface WorkspaceObjectProps
   layoutId?: string;
   lit?: boolean;
   interactive?: boolean;
-  /** Optional attention weight override (0–1). Engine used when omitted. */
   attentionWeight?: number;
   onActivate?: () => void;
   children: ReactNode;
 }
 
 /**
- * Spatial Workspace Object — attention-weighted; layout-preserving morphs.
+ * Spatial Workspace Object — attention + intent ecosystem relationships.
  */
 function WorkspaceObjectInner({
   objectId,
@@ -63,26 +64,30 @@ function WorkspaceObjectInner({
   const state = controlled ?? local;
   const hidden = state === "hidden";
   const attention = useAttentionRegistration(objectId);
+  const { influenceObjectId, setInfluenceObjectId, intent, profile } =
+    useIntentEngine();
 
-  const weight = attentionWeight ?? attention.weight;
-  const visual =
-    attentionWeight != null
-      ? {
-          ...attention,
-          weight: attentionWeight,
-          scale: 0.94 + attentionWeight * 0.1,
-          opacity: 0.38 + attentionWeight * 0.62,
-          blur: (1 - attentionWeight) * 3.2,
-          y: (1 - attentionWeight) * 6,
-          elevation: (attentionWeight >= 0.85
-            ? 3
-            : attentionWeight >= 0.48
-              ? 2
-              : 1) as 1 | 2 | 3,
-          lit: attentionWeight >= 0.82,
-          tier: attention.tier,
-        }
-      : attention;
+  const baseWeight = attentionWeight ?? attention.weight;
+  let weight = baseWeight;
+  if (influenceObjectId && influenceObjectId !== objectId) {
+    weight *= slot === "orbit" || slot === "utility" ? 0.82 : 0.9;
+  } else if (influenceObjectId === objectId) {
+    weight = Math.min(1, weight + 0.08);
+  }
+  if (intent === "capture" && objectId !== "write-surface") {
+    weight *= 0.7;
+  }
+  if (intent === "restore" && kind !== "moment" && kind !== "continue-preview") {
+    weight *= 0.75;
+  }
+  if (intent === "learn" && kind !== "guide-step") {
+    weight *= 0.72;
+  }
+  if (intent === "reflect" && kind !== "checkin-summary") {
+    weight *= 0.8;
+  }
+
+  const visual = resolveAttentionVisual(weight);
 
   const resolvedLevel: WorkspaceSurfaceLevel =
     level ??
@@ -97,9 +102,10 @@ function WorkspaceObjectInner({
       if (!controlled && state !== "selected" && state !== "expanded") {
         setLocal("hover");
       }
+      setInfluenceObjectId(objectId);
       onMouseEnter?.(event);
     },
-    [controlled, onMouseEnter, state],
+    [controlled, onMouseEnter, objectId, setInfluenceObjectId, state],
   );
 
   const onLeave = useCallback(
@@ -107,9 +113,10 @@ function WorkspaceObjectInner({
       if (!controlled && state === "hover") {
         setLocal("idle");
       }
+      setInfluenceObjectId(null);
       onMouseLeave?.(event);
     },
-    [controlled, onMouseLeave, state],
+    [controlled, onMouseLeave, setInfluenceObjectId, state],
   );
 
   return (
@@ -122,6 +129,7 @@ function WorkspaceObjectInner({
         `ws-object--${slot}`,
         `ws-object--${visual.tier}`,
         `is-${state}`,
+        influenceObjectId === objectId ? "is-influencing" : "",
         className,
       ]
         .filter(Boolean)
@@ -130,6 +138,7 @@ function WorkspaceObjectInner({
       data-kind={kind}
       data-state={state}
       data-attention={visual.tier}
+      data-intent={intent}
       data-weight={weight.toFixed(2)}
       aria-hidden={ariaHidden}
       title={title}
@@ -148,24 +157,26 @@ function WorkspaceObjectInner({
             }
           : {
               opacity: hidden ? 0 : visual.opacity,
-              scale: visual.scale,
+              scale: visual.scale * (profile.spacingScale > 1.1 ? 1.01 : 1),
               y: visual.y * -0.35,
               filter: `blur(${visual.blur}px)`,
             }
       }
-      transition={reduceMotion ? { duration: 0.01 } : spring.lush}
+      transition={layoutTransition(reduceMotion)}
       onMouseEnter={onEnter}
       onMouseLeave={onLeave}
       onFocus={(event: FocusEvent<HTMLDivElement>) => {
         if (!controlled) {
           setLocal("focused");
         }
+        setInfluenceObjectId(objectId);
         onFocus?.(event);
       }}
       onBlur={(event: FocusEvent<HTMLDivElement>) => {
         if (!controlled && state === "focused") {
           setLocal("idle");
         }
+        setInfluenceObjectId(null);
         onBlur?.(event);
       }}
       onClick={(event) => {
@@ -192,7 +203,7 @@ function WorkspaceObjectInner({
               : "md"
         }
         interactive={interactive && visual.tier !== "context"}
-        lit={lit || visual.lit}
+        lit={lit || visual.lit || influenceObjectId === objectId}
         layout={false}
       >
         {children}
