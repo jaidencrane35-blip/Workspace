@@ -1827,3 +1827,50 @@ slice. Does not supersede LEDGER-0023 NOT READY, LEDGER-0025 slice order, or
 the PP-P01 pilot gate.
 
 Status: Complete; active slice **PP-P01D**; milestone **PP-P01** incomplete
+
+### LEDGER-0029
+
+Entry ID: LEDGER-0029
+Timestamp: 2026-08-02
+Capability: Experience — PP-P01D pilot-safe chrome
+Related ADRs: ADR-0008
+Related Research: None
+Decision: Implement **PP-P01D** by restricting default primary navigation to
+Save, Resume, and minimal Help. Keep Canvas, Work, Assistant, and Diagnostic
+out of the default pilot surface. Do not change restore behaviour, persistence,
+contracts, or capability ownership. Prefer hiding engine affordances over new
+interface concepts.
+
+Implementation:
+- `app/src/lib/pilotChrome.ts` defines primary vs hidden pilot chrome labels.
+- `App.tsx` primary tablist is Save / Resume / Help only; engine panels are not
+  mounted from the pilot shell.
+- `PilotHelpPanel` explains the Save → Resume loop, restore limits, and user
+  control without AI or engine-console claims.
+- Save empty state creates a workspace in-place (`onCreateWorkspace`) instead of
+  routing through Canvas.
+- Vitest `tests/pilot-chrome.test.ts` audits primary labels, hidden engine tabs,
+  and preserved Product Proof surfaces.
+- Current State advanced; active slice becomes **PP-P01E**.
+
+Validation:
+- `pnpm test` (49), `pnpm typecheck`, `pnpm build` passed.
+- `cargo test -p workspace-kernel resume_acceptance` (33) passed; restore
+  unchanged.
+- No accepted architecture contract files modified.
+- PP-P01E not implemented.
+
+Knowledge Gained:
+- Pilot readiness required presentation discipline more than new product
+  surfaces: removing engine tabs reduced cognitive noise while leaving Save /
+  Resume trust messaging intact.
+
+Unlocks: Active implementation slice advances to **PP-P01E** (consented
+measurement). Does not unlock the Product Proof pilot until `PP-P01A`–`PP-P01E`
+are complete.
+
+Supersedes: LEDGER-0028 status wording that named **PP-P01D** as the active
+slice. Does not supersede LEDGER-0023 NOT READY, LEDGER-0025 slice order, or
+the PP-P01 pilot gate.
+
+Status: Complete; active slice **PP-P01E**; milestone **PP-P01** incomplete

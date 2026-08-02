@@ -24,7 +24,8 @@ interface SaveContextPanelProps {
   onBusy: (busy: boolean) => void;
   onError: (message: string | null) => void;
   onMessage: (message: string | null) => void;
-  onGoToCanvas: () => void;
+  /** Pilot chrome creates a workspace without routing through Canvas. */
+  onCreateWorkspace: () => void;
 }
 
 function formatError(err: unknown): string {
@@ -56,7 +57,7 @@ export function SaveContextPanel({
   onBusy,
   onError,
   onMessage,
-  onGoToCanvas,
+  onCreateWorkspace,
 }: SaveContextPanelProps) {
   const [scope, setScope] = useState<SavedContextCaptureScope | null>(null);
   const [scopeError, setScopeError] = useState<string | null>(null);
@@ -125,11 +126,12 @@ export function SaveContextPanel({
         <h2>Nowhere to keep this yet</h2>
         <p className="lede">
           Saved contexts belong to a workspace, and there is no active one. Create
-          a workspace first, then come back here.
+          one here to continue — nothing from the desktop is read until you later
+          review and confirm a save.
         </p>
         <div className="row">
-          <button type="button" onClick={onGoToCanvas}>
-            Go to Canvas
+          <button type="button" onClick={onCreateWorkspace} disabled={busy}>
+            Create a workspace
           </button>
         </div>
       </section>

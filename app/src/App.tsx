@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
-import { AssistantPanel } from "./components/AssistantPanel";
-import { CanvasShell } from "./components/CanvasShell";
-import { OperatorConsole } from "./components/OperatorConsole";
+import { PilotHelpPanel } from "./components/PilotHelpPanel";
 import { ResumeContextPanel } from "./components/ResumeContextPanel";
 import { SaveContextPanel } from "./components/SaveContextPanel";
-import { WorkspaceIntelligencePanel } from "./components/WorkspaceIntelligencePanel";
 import { invokeIpc } from "./lib/ipc";
-import type { Workspace, WorkspaceContext, Zone } from "./types/domain";
-import type { Layout } from "./types/layout";
+import {
+  PILOT_DEFAULT_VIEW,
+  type PilotPrimaryView,
+} from "./lib/pilotChrome";
+import type { Workspace } from "./types/domain";
 import type {
   WorkspaceHealth,
   WorkspaceSettings,
@@ -16,31 +16,11 @@ import type {
 
 const LEGACY_WORKSPACE_ID_KEY = "workspace.active_id";
 
-type AppView = "save" | "resume" | "canvas" | "work" | "assistant" | "operator";
-
 function formatError(err: unknown): string {
   if (err instanceof Error) {
     return err.message;
   }
   return String(err);
-}
-
-function zonesFromContext(
-  workspaceId: string,
-  context: WorkspaceContext,
-): Zone[] {
-  return context.snapshot.zones.map((z) => {
-    const summary = z as {
-      resource_ref?: { id?: string };
-      name?: string;
-    };
-    return {
-      id: String(summary.resource_ref?.id ?? ""),
-      workspace_id: workspaceId,
-      name: String(summary.name ?? ""),
-      position_metadata: null,
-    };
-  });
 }
 
 async function persistActiveWorkspaceId(id: string | null): Promise<void> {
@@ -52,32 +32,19 @@ async function persistActiveWorkspaceId(id: string | null): Promise<void> {
   localStorage.removeItem(LEGACY_WORKSPACE_ID_KEY);
 }
 
-async function loadZones(workspaceId: string): Promise<Zone[]> {
-  const context = await invokeIpc<WorkspaceContext>("get_workspace_context", {
-    workspaceId,
-    limit: 200,
-  });
-  return zonesFromContext(workspaceId, context);
-}
-
+/**
+ * PP-P01D — Pilot-safe chrome.
+ *
+ * Primary navigation is Save / Resume / Help only. Canvas, Work, Assistant, and
+ * Diagnostic remain in the codebase but are not default pilot surfaces.
+ */
 export default function App() {
-  // Saving a context is the workflow Workspace exists to serve, so it is where
-  // the app opens; the engine surfaces sit behind it.
-  const [view, setView] = useState<AppView>("save");
+  const [view, setView] = useState<PilotPrimaryView>(PILOT_DEFAULT_VIEW);
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
-  const [zones, setZones] = useState<Zone[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [bootstrapped, setBootstrapped] = useState(false);
   const [busy, setBusy] = useState(false);
-
-  const onWorkspaceChange = useCallback((next: Workspace | null) => {
-    setWorkspace(next);
-  }, []);
-
-  const onZonesChange = useCallback((next: Zone[]) => {
-    setZones(next);
-  }, []);
 
   const onError = useCallback((next: string | null) => {
     setError(next);
@@ -87,16 +54,9 @@ export default function App() {
     setMessage(next);
   }, []);
 
-  const onLayoutSaved = useCallback((layout: Layout) => {
-    setMessage(`Layout saved (${layout.nodes.length} nodes)`);
-    setError(null);
-  }, []);
-
   const activateWorkspace = useCallback(async (next: Workspace) => {
     setWorkspace(next);
     await persistActiveWorkspaceId(next.id);
-    const nextZones = await loadZones(next.id);
-    setZones(nextZones);
   }, []);
 
   useEffect(() => {
@@ -106,7 +66,7 @@ export default function App() {
       invokeIpc<WorkspaceSettings>("get_settings"),
     ])
       .then(async ([, , settings]) => {
-        let storedId =
+        const storedId =
           settings.active_workspace_id?.trim() ||
           localStorage.getItem(LEGACY_WORKSPACE_ID_KEY);
         if (!storedId) {
@@ -121,7 +81,6 @@ export default function App() {
           localStorage.removeItem(LEGACY_WORKSPACE_ID_KEY);
         }
         setWorkspace(loaded);
-        setZones(await loadZones(loaded.id));
       })
       .catch((err: unknown) => {
         localStorage.removeItem(LEGACY_WORKSPACE_ID_KEY);
@@ -130,40 +89,17 @@ export default function App() {
       .finally(() => setBootstrapped(true));
   }, []);
 
-  const createWorkspaceFromCanvas = () => {
+  const createWorkspace = () => {
     setBusy(true);
     setError(null);
     void (async () => {
       try {
         const created = await invokeIpc<Workspace>("create_workspace", {
-          name: "Canvas Workspace",
+          name: "Pilot Workspace",
         });
         await activateWorkspace(created);
-        setMessage("Workspace created");
-      } catch (err: unknown) {
-        setError(formatError(err));
-      } finally {
-        setBusy(false);
-      }
-    })();
-  };
-
-  const addZoneFromCanvas = () => {
-    if (!workspace) {
-      setError("Create a workspace first.");
-      return;
-    }
-    setBusy(true);
-    setError(null);
-    void (async () => {
-      try {
-        const zone = await invokeIpc<Zone>("create_zone", {
-          workspaceId: workspace.id,
-          name: `Zone ${zones.length + 1}`,
-          positionMetadata: null,
-        });
-        setZones((prev) => [...prev, zone]);
-        setMessage(`Zone created: ${zone.name}`);
+        setMessage("Workspace created. You can save a context now.");
+        setView("save");
       } catch (err: unknown) {
         setError(formatError(err));
       } finally {
@@ -176,7 +112,7 @@ export default function App() {
     <main className="app-shell">
       <header className="app-chrome">
         <h1>Workspace</h1>
-        <nav className="tabs" aria-label="Primary workspace views" role="tablist">
+        <nav className="tabs" aria-label="Pilot workspace views" role="tablist">
           <button
             type="button"
             role="tab"
@@ -200,42 +136,12 @@ export default function App() {
           <button
             type="button"
             role="tab"
-            className={view === "canvas" ? "tab active" : "tab"}
-            aria-current={view === "canvas" ? "page" : undefined}
-            aria-selected={view === "canvas"}
-            onClick={() => setView("canvas")}
+            className={view === "help" ? "tab active" : "tab"}
+            aria-current={view === "help" ? "page" : undefined}
+            aria-selected={view === "help"}
+            onClick={() => setView("help")}
           >
-            Canvas
-          </button>
-          <button
-            type="button"
-            role="tab"
-            className={view === "work" ? "tab active" : "tab"}
-            aria-current={view === "work" ? "page" : undefined}
-            aria-selected={view === "work"}
-            onClick={() => setView("work")}
-          >
-            Work
-          </button>
-          <button
-            type="button"
-            role="tab"
-            className={view === "assistant" ? "tab active" : "tab"}
-            aria-current={view === "assistant" ? "page" : undefined}
-            aria-selected={view === "assistant"}
-            onClick={() => setView("assistant")}
-          >
-            Assistant
-          </button>
-          <button
-            type="button"
-            role="tab"
-            className={view === "operator" ? "tab active" : "tab"}
-            aria-current={view === "operator" ? "page" : undefined}
-            aria-selected={view === "operator"}
-            onClick={() => setView("operator")}
-          >
-            Diagnostic
+            Help
           </button>
         </nav>
       </header>
@@ -270,7 +176,7 @@ export default function App() {
               onBusy={setBusy}
               onError={onError}
               onMessage={onMessage}
-              onGoToCanvas={() => setView("canvas")}
+              onCreateWorkspace={createWorkspace}
             />
           ) : (
             <p className="muted">Loading…</p>
@@ -290,71 +196,9 @@ export default function App() {
             <p className="muted">Loading…</p>
           )}
         </div>
-      ) : view === "canvas" ? (
-        !bootstrapped ? (
-          <div className="canvas-shell">
-            <p className="muted">Loading…</p>
-          </div>
-        ) : workspace ? (
-          <CanvasShell
-            workspaceId={workspace.id}
-            workspaceName={workspace.name}
-            zones={zones}
-            busy={busy}
-            onError={(msg) => setError(msg)}
-            onSaved={onLayoutSaved}
-            onCreateWorkspace={createWorkspaceFromCanvas}
-            onAddZone={addZoneFromCanvas}
-          />
-        ) : (
-          <div className="canvas-shell canvas-bootstrap">
-            <p className="lede">
-              No active workspace. Create one here to start arranging zones.
-            </p>
-            <button
-              type="button"
-              disabled={busy}
-              onClick={createWorkspaceFromCanvas}
-            >
-              Create workspace
-            </button>
-          </div>
-        )
-      ) : view === "work" ? (
-        <div className="container assistant-container">
-          <WorkspaceIntelligencePanel
-            workspace={workspace}
-            busy={busy}
-            onBusy={setBusy}
-            onError={onError}
-            onMessage={onMessage}
-          />
-        </div>
-      ) : view === "assistant" ? (
-        <div className="container assistant-container">
-          <AssistantPanel
-            workspace={workspace}
-            busy={busy}
-            onBusy={setBusy}
-            onError={onError}
-            onMessage={onMessage}
-          />
-        </div>
       ) : (
-        <div className="container">
-          <p className="lede">
-            <span className="badge">Diagnostic</span> Operator console — validates
-            Work intelligence and the governed Assistant pipeline. Prefer{" "}
-            <strong>Work</strong> for workspace understanding.
-          </p>
-          <OperatorConsole
-            workspace={workspace}
-            zones={zones}
-            onWorkspaceChange={onWorkspaceChange}
-            onZonesChange={onZonesChange}
-            onError={onError}
-            onMessage={onMessage}
-          />
+        <div className="container assistant-container">
+          <PilotHelpPanel />
         </div>
       )}
     </main>

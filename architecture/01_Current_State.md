@@ -150,10 +150,10 @@ Authorised implementation order:
 | `PP-P01A` | User-authored handoff / intended next action on Save and Resume | **Complete** (LEDGER-0026) |
 | `PP-P01B` | Explicit restore-limits copy (same session; still-open windows; no silent relaunch) | **Complete** (LEDGER-0027) |
 | `PP-P01C` | Inspect and delete retained saved contexts in the product UI | **Complete** (LEDGER-0028) |
-| `PP-P01D` | Pilot-safe primary chrome (Save / Resume + minimal help; engine tabs out of default pilot surface) | **Active** |
-| `PP-P01E` | Consented measurement and interview kit (baseline, leave→resume time, correction, week-four habit; no ambient observation) | Pending |
+| `PP-P01D` | Pilot-safe primary chrome (Save / Resume + minimal help; engine tabs out of default pilot surface) | **Complete** (LEDGER-0029) |
+| `PP-P01E` | Consented measurement and interview kit (baseline, leave→resume time, correction, week-four habit; no ambient observation) | **Active** |
 
-Active implementation slice: **`PP-P01D`**.
+Active implementation slice: **`PP-P01E`**.
 
 `PP-P01A` is complete: Save requires an explicit user-authored handoff note;
 the note is reviewed before capture, persisted with the saved context, and
@@ -171,6 +171,12 @@ confirmation step and removes the saved context (and restore identities) via
 Workspace Management. Deleted contexts cannot be listed, inspected, or resumed.
 No background cleanup or retention policy.
 
+`PP-P01D` is complete: Default primary chrome is Save / Resume / Help only.
+Canvas, Work, Assistant, and Diagnostic are out of the default pilot surface
+(components retained in the codebase). Workspace creation is available from
+Save without Canvas. Help restates the Product Proof loop and restore limits.
+Presentation only; restore and persistence behaviour unchanged.
+
 Only after `PP-P01A` through `PP-P01E` are complete may the defined four-week
 Product Proof pilot run. Completing one slice is not Product Proof success.
 Do not treat dogfood of geometry-only Resume as Product Proof success.
@@ -184,7 +190,7 @@ proof later justifies resumed capability research; it is not the active
 milestone.
 
 Recommended next engineering milestone: **PP-P01 Pilot Package**.
-Recommended next implementation slice: **PP-P01D**.
+Recommended next implementation slice: **PP-P01E**.
 
 ---
 
@@ -285,9 +291,10 @@ rather than through the pipeline, because the pipeline authorises only a single
 declared capability. If commands with two effects become common, that check
 belongs in the pipeline rather than repeated per command.
 
-Saving is now the view the application opens on, displacing Canvas. This is a
-product-sequencing decision made to put the Product Proof workflow first, not an
-architectural one, and it is a single line to reverse.
+Saving is the view the application opens on. Under `PP-P01D`, Canvas, Work,
+Assistant, and Diagnostic are no longer primary pilot tabs; that is a
+presentation decision for the Product Proof cohort, not an architectural one.
+Engine component modules remain in the repository for later product surfaces.
 
 One instance of capability drift predates Product Proof and is now material.
 `LaunchApplication` mutates the environment by spawning a real process, but does
