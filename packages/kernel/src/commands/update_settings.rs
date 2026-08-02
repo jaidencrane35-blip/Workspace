@@ -68,7 +68,11 @@ impl UpdateSettings {
     }
 
     fn validate(update: &SettingsUpdate) -> Result<()> {
-        if update.theme.is_none() && update.first_run.is_none() {
+        if update.theme.is_none()
+            && update.first_run.is_none()
+            && update.active_workspace_id.is_none()
+            && update.personalization_enabled.is_none()
+        {
             return Err(KernelError::InvalidSettings(
                 "at least one setting must be provided".into(),
             ));
@@ -144,5 +148,33 @@ mod tests {
             .unwrap_err();
 
         assert!(matches!(error, KernelError::InvalidSettings(_)));
+    }
+
+    #[test]
+    fn accepts_active_workspace_id_only_update() {
+        let bus = EventBus::new();
+        let init = InitializeWorkspace::in_memory().execute(&bus).unwrap();
+        let ctx = CommandContext {
+            actor_context: ActorContext::local_user(),
+            intent_context: IntentContext::user_request(),
+            capability_set: CapabilitySet::local_user_standard(),
+            state: &init.state,
+            database: init.database.shared(),
+            event_bus: &bus,
+            permission_gate: &AllowAllPermissionGate,
+            permission_policy: &AlwaysAllowPolicy,
+        };
+
+        let workspace_id = "11111111-1111-1111-1111-111111111111".to_string();
+        let settings = CommandPipeline::new(ctx)
+            .execute_mutation(UpdateSettings::new(SettingsUpdate {
+                theme: None,
+                first_run: None,
+                active_workspace_id: Some(workspace_id.clone()),
+                personalization_enabled: None,
+            }))
+            .unwrap();
+
+        assert_eq!(settings.active_workspace_id.as_deref(), Some(workspace_id.as_str()));
     }
 }
