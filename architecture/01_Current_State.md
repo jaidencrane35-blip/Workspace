@@ -123,6 +123,10 @@ Start Menu shortcuts launch production UI).
 navigation; engineering-form chrome reduced without changing Product Proof
 behaviour.
 
+✓ Experience Roadmap accepted (`21_Experience_Roadmap.md`, LEDGER-0035):
+Phase 1 companion identity largely achieved; next Experience milestone is
+Phase 2 dashboard-first Home — not open-ended UI tweaks or capability growth.
+
 ---
 
 # Active Task
@@ -221,12 +225,12 @@ Product Proof pilot** (~15 target users; four weeks; baseline, leave→resume,
 correction, week-four habit, trust invalidation watch; local measurement only).
 See `18_Product_Proof_Review_PP_P01.md` and LEDGER-0031. Participant #1 can
 install/launch with persisted active workspace (LEDGER-0032/0033). Experience
-convergence pass recorded in LEDGER-0034; further Experience polish may continue
-without capability growth. Next programme objective remains LEDGER-0013 pilot
-execution.
-Recommended next implementation slice: **None** for capability expansion —
-Experience iteration remains allowed when it does not widen Product Proof
-behaviour.
+Phase 1 recorded in LEDGER-0034; sequencing continues under
+`21_Experience_Roadmap.md` (LEDGER-0035). Next programme objective remains
+LEDGER-0013 pilot execution.
+Recommended next Experience milestone (when authorised): **Experience Phase 2
+— dashboard-first Home** (`21_Experience_Roadmap.md`). Not an open UI tweak
+sprint. Capability expansion: **None**.
 
 ---
 

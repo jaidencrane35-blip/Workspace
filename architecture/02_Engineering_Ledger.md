@@ -2080,3 +2080,38 @@ audits unchanged in substance.
 Does not unlock hypothesis proof. Does not change Action restore semantics.
 
 Status: Complete for this convergence pass
+
+### LEDGER-0035
+
+Entry ID: LEDGER-0035
+Timestamp: 2026-08-02
+Capability: Experience — Experience Roadmap after Phase 1 convergence
+Related ADRs: ADR-0008
+Related Research: None
+Decision: Accept `architecture/21_Experience_Roadmap.md` as the sequencing
+authority for Experience presentation after Participant #1 review of
+LEDGER-0034. Standing: ~6.5–7/10 — product visible, personality not yet found.
+Diagnosis: concept boards are dashboard-first; implementation remains
+page-first.
+
+Phases:
+1. Companion identity — largely achieved (LEDGER-0034)
+2. Dashboard-first Home with meaningful recent activity — next Experience
+   milestone when authorised
+3. Rich visual continuation and saved moments
+4. Refined polish, motion, and transitions
+
+Constraints unchanged: no new capabilities, no ambient observation, no contract
+or Product Proof behaviour changes. Prefer existing saved-context/handoff data
+and honest empty structure. Does not supersede LEDGER-0013 pilot execution or
+`ROADMAP-001`.
+
+Rationale: Further gains come from intentional Experience phases, not
+capability growth or ad-hoc UI tweaks.
+
+Validation: Documentation-only acceptance; no runtime change in this entry.
+
+Unlocks: Authorised Experience Phase 2 as the next presentation milestone when
+an implementation session is opened for it. Does not unlock hypothesis proof.
+
+Status: Accepted
