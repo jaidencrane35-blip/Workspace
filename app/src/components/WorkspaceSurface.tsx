@@ -90,6 +90,3 @@ export function WorkspaceSurface({
     </Tag>
   );
 }
-
-/** @deprecated Prefer WorkspaceSurface */
-export const ElevatedCard = WorkspaceSurface;

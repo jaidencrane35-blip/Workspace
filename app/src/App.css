@@ -1295,23 +1295,24 @@ body {
   justify-content: flex-end;
 }
 
+/* F-06: Inspect is a quiet secondary control — never competes with Continue */
 .continue-inspect-entry {
   align-self: flex-start;
-  opacity: 0.38;
-  margin: var(--space-3) 0 calc(var(--ws-space-8) + 4.5rem);
-  max-width: 12rem;
-}
-
-.continue-inspect-entry summary {
-  font-size: var(--type-meta);
-  color: var(--exp-muted);
-  cursor: pointer;
-}
-
-.continue-inspect-entry .exp-btn {
-  margin-top: var(--space-2);
+  opacity: 0.32;
+  margin: var(--space-2) 0 calc(var(--ws-space-8) + 4.5rem);
+  max-width: 8rem;
   min-height: 0;
   padding: var(--space-1) 0;
+  font-size: var(--type-meta);
+  letter-spacing: 0.01em;
+  border: none;
+  box-shadow: none;
+  background: transparent;
+}
+
+.continue-inspect-entry:hover,
+.continue-inspect-entry:focus-visible {
+  opacity: 0.72;
 }
 
 .continue-preview__quality {
@@ -1406,6 +1407,10 @@ body {
   padding-top: var(--space-5);
   border-top: 1px solid rgba(255, 255, 255, 0.06);
   overflow: hidden;
+}
+
+.write-review__lead {
+  margin: 0 0 var(--space-3);
 }
 
 .metric-orb {

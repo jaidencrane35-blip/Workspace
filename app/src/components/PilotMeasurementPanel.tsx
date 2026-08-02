@@ -34,6 +34,13 @@ const WEEK_FOUR_PROMPTS = [
   "Would you keep using Workspace after the pilot? Why or why not?",
 ];
 
+const CHECKIN_CHAPTERS = [
+  "Baseline",
+  "Return",
+  "Reflect",
+  "Week four",
+] as const;
+
 /**
  * PP-P01E — Consented local pilot measurement and interview kit.
  * Evaluation data only; never ambient; never uploaded.
@@ -322,26 +329,56 @@ export function PilotMeasurementPanel({
     );
   }
 
+  const chapterLabel = CHECKIN_CHAPTERS[chapter] ?? CHECKIN_CHAPTERS[0];
+
   return (
     <section
       className="spatial-frame checkin-dash checkin-dash--story"
       data-testid="pilot-measurement-active"
       data-density={density}
+      aria-labelledby="checkin-title"
     >
       <header className="spatial-header spatial-header--quiet">
-        <h1 className="spatial-title">How’s the return feeling?</h1>
+        <h1 id="checkin-title" className="spatial-title">
+          How’s the return feeling?
+        </h1>
         <p className="sr-only">
           Local pilot pulse only — they are not saved contexts and are not sent
-          anywhere.
+          anywhere. Section {chapter + 1} of {CHECKIN_CHAPTERS.length}:{" "}
+          {chapterLabel}.
         </p>
       </header>
+
+      <nav className="sr-only" aria-label="Check-in sections">
+        <ol>
+          {CHECKIN_CHAPTERS.map((label, index) => (
+            <li key={label}>
+              <a
+                href="#checkin-form"
+                aria-current={chapter === index ? "step" : undefined}
+                onClick={(event) => {
+                  event.preventDefault();
+                  setChapter(index);
+                  document.getElementById("checkin-form")?.focus();
+                }}
+              >
+                {label}
+                {chapter === index ? " (current)" : ""}
+              </a>
+            </li>
+          ))}
+        </ol>
+        <a href="#checkin-evidence">Skip to pulse evidence</a>
+      </nav>
 
       {(snapshot.interview_baseline || snapshot.interview_week_four) && (
         <WorkspaceSurface
           tone="soft"
           padding="lg"
           className="checkin-story"
+          aria-label="Your reflection"
         >
+          <h2 className="sr-only">Your reflection</h2>
           <p className="checkin-story__text">
             {(
               snapshot.interview_week_four?.responses ||
@@ -358,7 +395,14 @@ export function PilotMeasurementPanel({
         </WorkspaceSurface>
       )}
 
-      <div className="checkin-narrative pilot-forms attention-field">
+      <div
+        id="checkin-form"
+        className="checkin-narrative pilot-forms attention-field"
+        role="region"
+        aria-label={`${chapterLabel} form`}
+        tabIndex={-1}
+      >
+        <h2 className="sr-only">{chapterLabel}</h2>
 
         <AnimatePresence mode="wait">
           {chapter === 0 && (
@@ -572,7 +616,13 @@ export function PilotMeasurementPanel({
         </AnimatePresence>
       </div>
 
-      <aside className="checkin-evidence" aria-label="Pulse evidence">
+      <aside
+        id="checkin-evidence"
+        className="checkin-evidence"
+        aria-label="Pulse evidence"
+        tabIndex={-1}
+      >
+        <h2 className="sr-only">Pulse evidence</h2>
         <div className="checkin-metrics checkin-metrics--quiet">
           <CheckInSummaryObject
             id="checkin-baseline"

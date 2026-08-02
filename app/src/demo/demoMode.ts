@@ -3,8 +3,6 @@
  * Removable: delete `app/src/demo/` and the invokeIpc branch.
  */
 
-let forcedOff = false;
-
 /** True when running under a Tauri webview that can invoke commands. */
 export function isTauriRuntimeAvailable(): boolean {
   if (typeof window === "undefined") {
@@ -22,9 +20,6 @@ export function isTauriRuntimeAvailable(): boolean {
  * Production builds never activate. Set VITE_DISABLE_EXPERIENCE_DEMO=1 to force off.
  */
 export function shouldUseExperienceDemo(): boolean {
-  if (forcedOff) {
-    return false;
-  }
   if (import.meta.env.PROD) {
     return false;
   }
@@ -35,11 +30,6 @@ export function shouldUseExperienceDemo(): boolean {
     return true;
   }
   return import.meta.env.DEV && !isTauriRuntimeAvailable();
-}
-
-/** Test helper — keep off in unit environments if needed. */
-export function disableExperienceDemoForTests(): void {
-  forcedOff = true;
 }
 
 export function isExperienceDemoActive(): boolean {

@@ -68,12 +68,6 @@ export function resetExperienceDemoState(): void {
   state = createInitialState();
 }
 
-export function getDemoRestoreHistory(
-  contextId: string,
-): DemoRestoreHistoryEntry[] {
-  return state.restoreHistory[contextId] ?? [];
-}
-
 function requireContext(id: string): SavedContext {
   const found = state.contexts.find((context) => context.id === id);
   if (!found) {

@@ -14,7 +14,7 @@ import { useWorkspaceComposition } from "./WorkspaceComposition";
 import { WorkspaceObject } from "./WorkspaceObject";
 import { WorkspaceSurface } from "./WorkspaceSurface";
 
-type Step = "naming" | "reviewing" | "saved";
+type Step = "naming" | "saved";
 
 interface SaveContextPanelProps {
   workspace: Workspace | null;
@@ -127,6 +127,12 @@ export function SaveContextPanel({
     setSaved(null);
     setStep("naming");
     onMessage(null);
+    onError(null);
+  };
+
+  const clearDraft = () => {
+    setName("");
+    setHandoffNote("");
     onError(null);
   };
 
@@ -255,7 +261,10 @@ export function SaveContextPanel({
             disabled={busy}
             onFocus={enterWriting}
             onBlur={leaveWriting}
-            onChange={(event) => setName(event.target.value)}
+            onChange={(event) => {
+              enterWriting();
+              setName(event.target.value);
+            }}
           />
         </label>
 
@@ -271,45 +280,34 @@ export function SaveContextPanel({
             autoFocus
             onFocus={enterWriting}
             onBlur={leaveWriting}
-            onChange={(event) => setHandoffNote(event.target.value)}
+            onChange={(event) => {
+              enterWriting();
+              setHandoffNote(event.target.value);
+            }}
           />
         </label>
         <p className="muted write-card__hint">
           You write this. Workspace will not invent or rewrite it.
         </p>
 
-        <div className="exp-actions write-card__actions">
-          <button
-            type="button"
-            className="exp-btn primary"
-            onClick={() => setStep("reviewing")}
-            disabled={busy || !canReview}
-          >
-            Review what will be saved
-          </button>
-        </div>
         {scope === null && (
           <p className="muted text-center">Checking capture scope…</p>
         )}
 
         <AnimatePresence>
-          {step === "reviewing" && scope && (
+          {canReview && scope && (
             <motion.div
               className="write-review"
-              initial={reduceMotion ? false : { opacity: 0, height: 0, y: 8 }}
-              animate={{ opacity: 1, height: "auto", y: 0 }}
+              initial={reduceMotion ? false : { opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
               exit={reduceMotion ? undefined : { opacity: 0, height: 0 }}
               transition={spring.soft}
             >
-              <p className="exp-kicker">Review</p>
-              <h3 className="focus-card__title">
-                Bookmark “{trimmedName}”?
-              </h3>
-              <div className="exp-intention-block">
-                <p className="exp-intention">{trimmedHandoff}</p>
-                <p className="muted">Exactly as you wrote it</p>
-              </div>
-              <details className="exp-inspect" open>
+              <p className="exp-kicker">Ready to keep</p>
+              <p className="muted write-review__lead">
+                “{trimmedName}” — exactly as you wrote it below.
+              </p>
+              <details className="exp-inspect">
                 <summary>What will be saved</summary>
                 <p className="muted">{scope.purpose}</p>
                 <h3>From the desktop</h3>
@@ -326,22 +324,22 @@ export function SaveContextPanel({
                 </ul>
               </details>
               <RestoreLimitsNotice />
-              <div className="exp-actions">
+              <div className="exp-actions write-card__actions">
                 <button
                   type="button"
                   className="exp-btn primary"
                   onClick={save}
-                  disabled={busy}
+                  disabled={busy || !canReview}
                 >
                   Save this context
                 </button>
                 <button
                   type="button"
                   className="exp-btn ghost"
-                  onClick={() => setStep("naming")}
+                  onClick={clearDraft}
                   disabled={busy}
                 >
-                  Cancel
+                  Clear
                 </button>
               </div>
             </motion.div>

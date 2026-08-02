@@ -79,7 +79,7 @@ Status after this sprint’s fixes is noted on each item.
 | component | `SaveContextPanel` |
 | severity | 2 |
 | fix size | S |
-| status | **Open (accepted)** — intentional consent/review; no redesign this sprint |
+| status | **Fixed (freeze)** — review emerges from writing; single Save CTA; Clear undoes draft |
 
 ---
 
@@ -94,7 +94,7 @@ Status after this sprint’s fixes is noted on each item.
 | component | `ResumeContextPanel` / `.continue-inspect-entry` |
 | severity | 2 |
 | fix size | S |
-| status | **Open** — no redesign; clearance acceptable |
+| status | **Fixed (freeze)** — single quiet Inspect button; subordinate to Continue |
 
 ---
 
@@ -109,7 +109,7 @@ Status after this sprint’s fixes is noted on each item.
 | component | `PilotMeasurementPanel` |
 | severity | 2 |
 | fix size | M |
-| status | **Open (accepted)** — tradeoff from parity delete; not reintroduced |
+| status | **Fixed (freeze)** — semantic landmarks + sr-only chapter nav; visuals unchanged |
 
 ---
 
@@ -121,6 +121,6 @@ Status after this sprint’s fixes is noted on each item.
 | F-02 | 4 | Fixed |
 | F-03 | 2 | Fixed (measured) |
 | F-04 | 3 | Mitigated |
-| F-05 | 2 | Open / accepted |
-| F-06 | 2 | Open |
-| F-07 | 2 | Open / accepted |
+| F-05 | 2 | Fixed (freeze) |
+| F-06 | 2 | Fixed (freeze) |
+| F-07 | 2 | Fixed (freeze) |

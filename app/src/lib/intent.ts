@@ -87,7 +87,6 @@ export function compositionForIntent(
         motion: "lush",
         primaryHint: "write-surface",
         commands: [
-          { id: "review", label: "Review what will be saved", action: "save" },
           { id: "home", label: "Back to Workspace", action: "home", view: "home" },
         ],
       };

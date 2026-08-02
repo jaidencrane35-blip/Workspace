@@ -409,17 +409,14 @@ export function ResumeContextPanel({
             </div>
           )}
           {!previewing && featured && (
-            <details className="exp-inspect continue-inspect-entry">
-              <summary>Inspect</summary>
-              <button
-                type="button"
-                className="exp-btn ghost"
-                disabled={busy}
-                onClick={() => openInspect(featured.id)}
-              >
-                Open details
-              </button>
-            </details>
+            <button
+              type="button"
+              className="exp-btn ghost continue-inspect-entry"
+              disabled={busy}
+              onClick={() => openInspect(featured.id)}
+            >
+              Inspect
+            </button>
           )}
         </>
       )}
