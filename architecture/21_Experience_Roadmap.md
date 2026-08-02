@@ -107,7 +107,8 @@ re-establishing identity from zero.
 
 ### Experience Phase 2 — Dashboard-first Home with meaningful recent activity
 
-**Status: Complete (LEDGER-0037)**
+**Status: Structurally attempted (LEDGER-0037); experientially rejected by
+Participant #1; Recovery Sprint LEDGER-0038 supersedes presentation approach**
 
 Intent: Home becomes the centre of the product — a living hub of memory and
 obvious next actions, not a heading-plus-buttons page.

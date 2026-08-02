@@ -1,9 +1,9 @@
 /**
  * Product Proof pilot chrome — Experience presentation.
  *
- * Primary navigation is product-oriented (Home / Save / Continue / Check-in /
+ * Primary navigation is a spatial dock (Home / Save / Continue / Check-in /
  * Guide). Engine and diagnostic surfaces remain in the codebase but must not
- * appear as default primary tabs. Check-in is the consented pilot measurement
+ * appear as default primary chrome. Check-in is the consented pilot measurement
  * surface (PP-P01E), not an engine tab.
  */
 

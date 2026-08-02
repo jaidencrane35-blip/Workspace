@@ -1,3 +1,10 @@
+import {
+  BookmarkPlus,
+  Compass,
+  Home,
+  MessageCircle,
+  Play,
+} from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { HomeWorkspacePanel } from "./components/HomeWorkspacePanel";
 import { PilotHelpPanel } from "./components/PilotHelpPanel";
@@ -20,6 +27,17 @@ import type {
 
 const LEGACY_WORKSPACE_ID_KEY = "workspace.active_id";
 
+const DOCK_ICONS: Record<
+  PilotPrimaryView,
+  typeof Home
+> = {
+  home: Home,
+  save: BookmarkPlus,
+  resume: Play,
+  pilot: MessageCircle,
+  help: Compass,
+};
+
 function formatError(err: unknown): string {
   if (err instanceof Error) {
     return err.message;
@@ -37,10 +55,10 @@ async function persistActiveWorkspaceId(id: string | null): Promise<void> {
 }
 
 /**
- * Experience shell — companion-first chrome for Product Proof.
+ * Experience shell — one spatial Workspace environment.
  *
- * Primary navigation: Home / Save / Continue / Check-in / Guide.
- * Engine surfaces remain in the codebase but are not default tabs.
+ * Atmosphere + dock stay constant. Modes are layers, not separate pages.
+ * Product navigation: Home / Save / Continue / Check-in / Guide.
  */
 export default function App() {
   const [view, setView] = useState<PilotPrimaryView>(PILOT_DEFAULT_VIEW);
@@ -118,55 +136,42 @@ export default function App() {
     setView("resume");
   };
 
+  const stageClass =
+    view === "home" ? "ws-stage ws-stage--place" : "ws-stage ws-stage--layer";
+
   return (
-    <main className="app-shell exp-shell">
-      <header className="app-chrome exp-chrome">
-        <div className="exp-brand">
-          <span className="exp-brand-mark" aria-hidden="true" />
+    <main className="app-shell exp-shell ws-env">
+      <div className="ws-atmosphere" aria-hidden="true">
+        <div className="ws-atmosphere__glow ws-atmosphere__glow--a" />
+        <div className="ws-atmosphere__glow ws-atmosphere__glow--b" />
+        <div className="ws-atmosphere__glow ws-atmosphere__glow--c" />
+        <div className="ws-atmosphere__grain" />
+        <div className="ws-atmosphere__vignette" />
+      </div>
+
+      <header className="app-chrome exp-chrome ws-menubar">
+        <div className="exp-brand ws-brand">
+          <span className="exp-brand-mark ws-mark" aria-hidden="true">
+            <span className="ws-mark__plane" />
+            <span className="ws-mark__plane ws-mark__plane--b" />
+          </span>
           <h1>Workspace</h1>
         </div>
-        <nav className="tabs exp-nav" aria-label="Workspace" role="tablist">
-          {PILOT_PRIMARY_VIEWS.map((id) => (
-            <button
-              key={id}
-              type="button"
-              role="tab"
-              className={view === id ? "tab active" : "tab"}
-              aria-current={view === id ? "page" : undefined}
-              aria-selected={view === id}
-              onClick={() => {
-                setFocusContextId(null);
-                setView(id);
-              }}
-            >
-              {PILOT_VIEW_LABELS[id]}
-            </button>
-          ))}
-        </nav>
+        <div className="ws-menubar__status" aria-live="polite">
+          {error && (
+            <p className="error banner ws-toast" role="status" aria-atomic="true">
+              {error}
+            </p>
+          )}
+          {message && !error && (
+            <p className="ok banner ws-toast" role="status" aria-atomic="true">
+              {message}
+            </p>
+          )}
+        </div>
       </header>
 
-      {error && (
-        <p
-          className="error banner"
-          role="status"
-          aria-live="assertive"
-          aria-atomic="true"
-        >
-          {error}
-        </p>
-      )}
-      {message && (
-        <p
-          className="ok banner"
-          role="status"
-          aria-live="polite"
-          aria-atomic="true"
-        >
-          {message}
-        </p>
-      )}
-
-      <div className="exp-body">
+      <div className={stageClass} key={view}>
         {!bootstrapped ? (
           <p className="muted exp-loading">Opening your workspace…</p>
         ) : view === "home" ? (
@@ -209,6 +214,30 @@ export default function App() {
           <PilotHelpPanel />
         )}
       </div>
+
+      <nav className="tabs exp-nav ws-dock" aria-label="Workspace" role="tablist">
+        {PILOT_PRIMARY_VIEWS.map((id) => {
+          const Icon = DOCK_ICONS[id];
+          const active = view === id;
+          return (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              className={active ? "tab active ws-dock__item is-active" : "tab ws-dock__item"}
+              aria-current={active ? "page" : undefined}
+              aria-selected={active}
+              onClick={() => {
+                setFocusContextId(null);
+                setView(id);
+              }}
+            >
+              <Icon size={20} strokeWidth={1.75} aria-hidden="true" />
+              <span>{PILOT_VIEW_LABELS[id]}</span>
+            </button>
+          );
+        })}
+      </nav>
     </main>
   );
 }

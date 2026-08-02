@@ -2176,3 +2176,31 @@ Validation: `pnpm typecheck`, `pnpm test` (54), CSP/boundary verifiers green.
 Does not unlock ambient activity, AI, or hypothesis proof.
 
 Status: Complete
+
+### LEDGER-0038
+
+Entry ID: LEDGER-0038
+Timestamp: 2026-08-02
+Capability: Experience — Recovery Sprint (product environment, not pages)
+Related ADRs: ADR-0008
+Related Research: EXP-001; concept boards as sole visual target
+Decision: Treat Participant #1 verdict (“still feels nothing like the intended
+product”) and prior Phase 2 self-score as invalid for Experience fidelity.
+Replace page-oriented chrome with one spatial Workspace environment without
+changing capabilities, contracts, Product Proof behaviour, or trust.
+
+Implementation (Experience presentation only):
+- Atmospheric shell + floating glass dock (Home / Save / Continue / Check-in /
+  Guide); modes as layers, not admin tabs
+- Distinctive visual identity (ink atmosphere, cyan/warm mark, glass tiles)
+- Home as spatial place (orbit hero + quote rail + constellation)
+- Save as centred note card; Continue as continuation gallery; Guide as three
+  visual steps; Check-in as conversational pulse
+- Principles recorded in `research/experience/RECOVERY_SPRINT_PRINCIPLES.md`
+- No new OSS beyond existing `lucide-react` (ISC); Path A Tailwind deferred
+
+Validation: `pnpm typecheck`, `pnpm test` (54), CSP/boundary verifiers green.
+
+Does not unlock ambient activity, AI, telemetry, or hypothesis proof.
+
+Status: Complete

@@ -235,18 +235,17 @@ export function ResumeContextPanel({
 
   if (!workspace) {
     return (
-      <section className="exp-stage">
-        <div className="exp-hero-card">
+      <section className="note-stage">
+        <div className="note-card">
           <p className="exp-kicker">Continue</p>
-          <h2>Let’s continue your work</h2>
-          <p className="exp-lede">
-            Create or open a workspace first — then your saved moments will be
-            ready to continue.
-          </p>
+          <h2>Open your workspace</h2>
+          <p className="muted">Then pick up where you left off.</p>
           {onGoHome && (
-            <button type="button" className="exp-btn primary" onClick={onGoHome}>
-              Go to Home
-            </button>
+            <div className="exp-actions">
+              <button type="button" className="exp-btn primary" onClick={onGoHome}>
+                Go to Home
+              </button>
+            </div>
           )}
         </div>
       </section>
@@ -260,26 +259,21 @@ export function ResumeContextPanel({
   const others = sorted.slice(1);
 
   return (
-    <section className="dash continue-dash">
-      <header className="dash-chrome">
-        <div>
-          <p className="exp-kicker">Continue</p>
-          <h1 className="dash-title">What were you doing?</h1>
-          <p className="dash-summary">
-            Pick up your note. Nothing moves until you approve a restore.
-          </p>
-        </div>
-      </header>
-      <p className="trust-strip muted">{RESTORE_LIMITS_SUMMARY}</p>
-
-      {loadError && <p className="error">{loadError}</p>}
-
+    <section className="layer-shell continue-gallery continue-dash">
       {step === "browse" && (
         <>
+          <header className="continue-gallery__head">
+            <p className="exp-kicker">Continue</p>
+            <h1>What were you doing?</h1>
+          </header>
+          <p className="trust-strip muted">{RESTORE_LIMITS_SUMMARY}</p>
+
+          {loadError && <p className="error">{loadError}</p>}
+
           {contexts.length === 0 ? (
             <EmptyStructure
               title="Nothing to continue yet"
-              hint="Save a moment from Home — then it appears here as a place you can return to."
+              hint="Save a moment — then it waits here for you."
             />
           ) : (
             <div className="dash-grid">
@@ -293,15 +287,19 @@ export function ResumeContextPanel({
                   onInspect={() => openInspect(featured.id)}
                 />
               )}
-              <aside className="dash-rail span-4">
-                <article className="action-card">
-                  <p className="exp-kicker">Next</p>
-                  <h3>Can I continue?</h3>
-                  <p className="muted">
-                    Continue previews the restore plan. Inspect is only for
-                    details.
+              <aside className="place__rail span-4">
+                <div className="glass-pane quote-pane">
+                  <div className="quote-pane__mark" aria-hidden="true">
+                    “
+                  </div>
+                  <p className="quote-pane__text">
+                    {featured?.handoff_note.trim() ||
+                      "Your latest note leads."}
                   </p>
-                </article>
+                  <p className="quote-pane__meta">
+                    Continue previews. Inspect is secondary.
+                  </p>
+                </div>
               </aside>
               {others.map((context, index) => (
                 <MomentCard
@@ -320,9 +318,9 @@ export function ResumeContextPanel({
       )}
 
       {step === "inspect" && inspected && (
-        <article className="exp-card featured">
+        <article className="note-card" style={{ margin: "0 auto" }}>
           <p className="exp-kicker">Inspect</p>
-          <h3>{inspected.name}</h3>
+          <h2>{inspected.name}</h2>
           <p className="exp-intention">
             {inspected.handoff_note.trim()
               ? inspected.handoff_note
@@ -399,8 +397,8 @@ export function ResumeContextPanel({
       )}
 
       {step === "confirm_delete" && inspected && (
-        <article className="exp-card featured">
-          <h3>Delete “{inspected.name}”?</h3>
+        <article className="note-card" style={{ margin: "0 auto" }}>
+          <h2>Delete “{inspected.name}”?</h2>
           <p className="exp-lede">
             This removes the saved context and its restore identities from this
             computer. It cannot be undone. Windows already open on your desktop
@@ -431,9 +429,9 @@ export function ResumeContextPanel({
       )}
 
       {step === "preview" && preview && (
-        <article className="exp-card featured">
+        <article className="note-card" style={{ margin: "0 auto" }}>
           <p className="exp-kicker">Preview</p>
-          <h3>Continue “{preview.saved_context_name}”</h3>
+          <h2>Continue “{preview.saved_context_name}”</h2>
           <p className="exp-intention">
             {preview.handoff_note.trim()
               ? preview.handoff_note
@@ -480,9 +478,9 @@ export function ResumeContextPanel({
       )}
 
       {step === "done" && result && preview && (
-        <article className="exp-card featured">
+        <article className="note-card" style={{ margin: "0 auto" }}>
           <p className="exp-kicker">Done</p>
-          <h3>You’re back</h3>
+          <h2>You’re back</h2>
           <p className="exp-intention">
             {preview.handoff_note.trim()
               ? preview.handoff_note

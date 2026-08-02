@@ -10,10 +10,7 @@ import { RestoreLimitsNotice } from "./RestoreLimitsNotice";
 
 /**
  * Saving a bounded workspace context (Product Proof PP-M1-01 / PP-P01A).
- *
- * Naming and an explicit handoff note come first. The capture scope is reviewed
- * next. Only confirmation causes the desktop to be read. Workspace never
- * invents the intended next action.
+ * Feels like leaving a note — not filling paperwork.
  */
 
 type Step = "naming" | "reviewing" | "saved";
@@ -24,7 +21,6 @@ interface SaveContextPanelProps {
   onBusy: (busy: boolean) => void;
   onError: (message: string | null) => void;
   onMessage: (message: string | null) => void;
-  /** Pilot chrome creates a workspace without routing through Canvas. */
   onCreateWorkspace: () => void;
 }
 
@@ -121,26 +117,20 @@ export function SaveContextPanel({
 
   if (!workspace) {
     return (
-      <section className="dash save-dash">
-        <div className="dash-hero dash-hero--welcome">
-          <div className="dash-hero__atmosphere" aria-hidden="true" />
-          <div className="dash-hero__content">
-            <p className="exp-kicker">Save</p>
-            <h2>Start your workspace</h2>
-            <p className="exp-lede short">
-              Create a place for moments. Nothing from the desktop is read until
-              you review and confirm.
-            </p>
-            <div className="exp-actions">
-              <button
-                type="button"
-                className="exp-btn primary"
-                onClick={onCreateWorkspace}
-                disabled={busy}
-              >
-                Create a workspace
-              </button>
-            </div>
+      <section className="note-stage">
+        <div className="note-card">
+          <p className="exp-kicker">Save</p>
+          <h2>Start your workspace</h2>
+          <p className="muted">Then leave yourself a note.</p>
+          <div className="exp-actions">
+            <button
+              type="button"
+              className="exp-btn primary"
+              onClick={onCreateWorkspace}
+              disabled={busy}
+            >
+              Create a workspace
+            </button>
           </div>
         </div>
       </section>
@@ -149,14 +139,10 @@ export function SaveContextPanel({
 
   if (scopeError) {
     return (
-      <section className="exp-stage">
-        <div className="exp-hero-card">
+      <section className="note-stage">
+        <div className="note-card">
           <p className="exp-kicker">Save</p>
           <h2>Saving is unavailable</h2>
-          <p className="exp-lede">
-            Workspace could not confirm what a capture would include, so it will
-            not capture anything.
-          </p>
           <p className="error">{scopeError}</p>
         </div>
       </section>
@@ -165,15 +151,12 @@ export function SaveContextPanel({
 
   if (step === "saved" && saved) {
     return (
-      <section className="exp-stage">
-        <article className="exp-card featured">
+      <section className="note-stage">
+        <article className="note-card">
           <p className="exp-kicker">Saved</p>
           <h2>{saved.name}</h2>
           <p className="exp-intention">{saved.handoff_note}</p>
-          <p className="muted">
-            Kept on this computer at {formatMoment(saved.created_at)}. You wrote
-            the intention — Workspace did not invent or rewrite it.
-          </p>
+          <p className="muted">Kept on this computer · {formatMoment(saved.created_at)}</p>
           <details className="exp-inspect">
             <summary>Inspect what was kept</summary>
             <h3>
@@ -224,21 +207,14 @@ export function SaveContextPanel({
 
   if (step === "reviewing" && scope) {
     return (
-      <section className="exp-stage">
-        <article className="exp-card featured">
+      <section className="note-stage">
+        <article className="note-card">
           <p className="exp-kicker">Review</p>
-          <h2>Ready to bookmark “{trimmedName}”?</h2>
-          <p className="exp-lede">
-            Nothing has been looked at yet. Confirm only if this matches what you
-            want kept.
-          </p>
-
+          <h2>Bookmark “{trimmedName}”?</h2>
           <div className="exp-intention-block">
-            <h3>What you intend next</h3>
             <p className="exp-intention">{trimmedHandoff}</p>
-            <p className="muted">Kept exactly as you wrote it.</p>
+            <p className="muted">Exactly as you wrote it</p>
           </div>
-
           <details className="exp-inspect" open>
             <summary>What will be saved</summary>
             <p className="muted">{scope.purpose}</p>
@@ -255,9 +231,7 @@ export function SaveContextPanel({
               ))}
             </ul>
           </details>
-
           <RestoreLimitsNotice />
-
           <div className="exp-actions">
             <button
               type="button"
@@ -276,77 +250,62 @@ export function SaveContextPanel({
               Cancel
             </button>
           </div>
-          <p className="muted">
-            Cancelling captures nothing, because nothing has been captured.
-          </p>
         </article>
       </section>
     );
   }
 
   return (
-    <section className="dash save-dash">
-      <div className="dash-grid">
-        <article className="moment-card moment-card--hero span-8 note-card">
-          <p className="exp-kicker">Save</p>
-          <h2>Leave a note for yourself</h2>
-          <p className="exp-lede short">
-            Before you step away — name the moment and write what comes next.
+    <section className="note-stage">
+      <article className="note-card">
+        <p className="exp-kicker">Save</p>
+        <h2>Leave a note</h2>
+
+        <label className="exp-field" htmlFor="saved-context-name">
+          <span>Name</span>
+          <input
+            id="saved-context-name"
+            className="input-wide"
+            value={name}
+            placeholder="Tuesday review"
+            disabled={busy}
+            onChange={(event) => setName(event.target.value)}
+          />
+        </label>
+
+        <label className="exp-field" htmlFor="saved-context-handoff">
+          <span>What next?</span>
+          <textarea
+            id="saved-context-handoff"
+            className="input-wide note-textarea"
+            rows={5}
+            value={handoffNote}
+            placeholder="Finish the client proposal outline…"
+            disabled={busy}
+            autoFocus
+            onChange={(event) => setHandoffNote(event.target.value)}
+          />
+        </label>
+        <p className="muted" style={{ textAlign: "center", marginTop: 0 }}>
+          You write this. Workspace will not invent or rewrite it.
+        </p>
+
+        <div className="exp-actions">
+          <button
+            type="button"
+            className="exp-btn primary"
+            onClick={() => setStep("reviewing")}
+            disabled={busy || !canReview}
+          >
+            Review what will be saved
+          </button>
+        </div>
+        {scope === null && (
+          <p className="muted" style={{ textAlign: "center" }}>
+            Checking capture scope…
           </p>
-
-          <label className="exp-field" htmlFor="saved-context-name">
-            <span>Name this moment</span>
-            <input
-              id="saved-context-name"
-              className="input-wide"
-              value={name}
-              placeholder="Tuesday review"
-              disabled={busy}
-              onChange={(event) => setName(event.target.value)}
-            />
-          </label>
-
-          <label className="exp-field" htmlFor="saved-context-handoff">
-            <span>What do you intend to do next?</span>
-            <textarea
-              id="saved-context-handoff"
-              className="input-wide note-textarea"
-              rows={4}
-              value={handoffNote}
-              placeholder="Finish the client proposal outline…"
-              disabled={busy}
-              onChange={(event) => setHandoffNote(event.target.value)}
-            />
-          </label>
-          <p className="muted">
-            You write this. Workspace will not invent or rewrite it.
-          </p>
-
-          <div className="exp-actions">
-            <button
-              type="button"
-              className="exp-btn primary"
-              onClick={() => setStep("reviewing")}
-              disabled={busy || !canReview}
-            >
-              Review what will be saved
-            </button>
-          </div>
-          {scope === null && (
-            <p className="muted">Checking what a capture would include…</p>
-          )}
-        </article>
-        <aside className="dash-rail span-4">
-          <article className="action-card">
-            <p className="exp-kicker">Remember</p>
-            <h3>Nothing read yet</h3>
-            <p className="muted">
-              Desktop capture waits until you review and confirm. Cancel means
-              zero observation.
-            </p>
-          </article>
-        </aside>
-      </div>
+        )}
+      </article>
     </section>
   );
 }

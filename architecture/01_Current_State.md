@@ -136,6 +136,11 @@ build plan, and Phase 2 implementation plan under
 shared moment cards, empty structure, design tokens, Lucide icons; Continue/
 Save/Guide/Check-in presentation refined without Product Proof behaviour change.
 
+✓ Experience Recovery Sprint complete (LEDGER-0038): Participant #1 rejection of
+page/admin feel accepted as evidence; shell rebuilt as one spatial environment
+(atmosphere + glass dock + place/layer modes) without capability or Product
+Proof behaviour change. Prior Phase 2 self-score treated as invalid.
+
 ---
 
 # Active Task

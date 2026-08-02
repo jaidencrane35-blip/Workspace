@@ -6,14 +6,14 @@ interface EmptyStructureProps {
 }
 
 /**
- * Honest empty scaffold — shows the shape of memory without fabricating saves.
+ * Honest empty scaffold — shape of memory without fabricating saves.
  */
 export function EmptyStructure({
-  title = "Your moments will live here",
-  hint = "Nothing invented. When you save, cards fill these places.",
+  title = "Moments will float here",
+  hint = "Ghost tiles only. Real notes appear when you save.",
 }: EmptyStructureProps) {
   return (
-    <div className="empty-structure" aria-label="Empty workspace structure">
+    <div className="empty-structure span-12" aria-label="Empty workspace structure">
       <div className="empty-structure__copy">
         <h3>{title}</h3>
         <p className="muted">{hint}</p>

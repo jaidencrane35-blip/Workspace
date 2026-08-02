@@ -1,78 +1,53 @@
-import { BookmarkPlus, Play, ShieldCheck, ClipboardList } from "lucide-react";
+import { BookmarkPlus, ClipboardList, Play, ShieldCheck } from "lucide-react";
 import { RESTORE_LIMITS_SUMMARY } from "../lib/restoreLimits";
 
 /**
- * Guide — product onboarding tone; truthful Product Proof content.
+ * Guide — teach by interface, not documentation.
+ * Product Proof trust strings preserved.
  */
 export function PilotHelpPanel() {
   return (
-    <section className="dash guide-dash" data-testid="pilot-help">
-      <header className="dash-chrome">
-        <div>
-          <p className="exp-kicker">Guide</p>
-          <h1 className="dash-title">How this pilot works</h1>
-          <p className="dash-summary">
-            Stay in control at every step — save a note, leave, continue when you
-            return.
-          </p>
-        </div>
+    <section className="layer-shell guide-dash" data-testid="pilot-help">
+      <header className="continue-gallery__head">
+        <p className="exp-kicker">Guide</p>
+        <h1 className="dash-title">How this pilot works</h1>
       </header>
 
-      <div className="dash-grid">
-        <article className="moment-card moment-card--hero span-8 guide-hero">
-          <p className="exp-kicker">In one breath</p>
-          <h3>Save a note. Leave. Continue when you return.</h3>
-          <p className="exp-lede short">
-            Workspace helps you leave work and return to it with less friction.
-            Nothing is captured or restored until you confirm.
-          </p>
-        </article>
-        <aside className="dash-rail span-4">
-          <article className="action-card action-card--soft">
-            <ShieldCheck size={20} aria-hidden="true" />
-            <h3>Your control</h3>
-            <ul className="list compact">
-              <li>You write the handoff; Workspace does not rewrite it.</li>
-              <li>You approve every restore plan before it runs.</li>
-              <li>You can inspect and permanently delete saved contexts.</li>
-              <li>Nothing is sent off this computer for this pilot.</li>
-            </ul>
-          </article>
-        </aside>
-
-        <article className="exp-card span-4">
-          <BookmarkPlus size={18} aria-hidden="true" />
+      <div className="guide-steps">
+        <article className="glass-pane guide-step">
+          <div className="guide-step__icon">
+            <BookmarkPlus size={22} aria-hidden="true" />
+          </div>
           <h3>Save</h3>
-          <p>
-            Name the context you are in and write what you intend to do next.
-            Review what would be recorded, then confirm. Workspace does not invent
-            your next step.
-          </p>
+          <p>Leave a note. Confirm what is kept.</p>
         </article>
-        <article className="exp-card span-4">
-          <Play size={18} aria-hidden="true" />
+        <article className="glass-pane guide-step">
+          <div className="guide-step__icon">
+            <Play size={22} aria-hidden="true" />
+          </div>
           <h3>Continue</h3>
-          <p>
-            Choose a saved context, inspect what was kept, preview the restore
-            plan, and approve before anything moves. You can delete a saved
-            context after an explicit confirmation.
-          </p>
+          <p>Preview. Approve. Return.</p>
         </article>
-        <article className="exp-card span-4">
-          <ClipboardList size={18} aria-hidden="true" />
+        <article className="glass-pane guide-step">
+          <div className="guide-step__icon">
+            <ClipboardList size={22} aria-hidden="true" />
+          </div>
           <h3>Check-in</h3>
-          <p>
-            Under Check-in, you may consent to local evaluation records: baseline
-            minutes, leave→resume times you enter, correction notes, and interview
-            answers. Nothing is uploaded, and nothing is recorded without consent.
-          </p>
-        </article>
-
-        <article className="exp-card span-12">
-          <h3>What restore does not do</h3>
-          <p className="muted">{RESTORE_LIMITS_SUMMARY}</p>
+          <p>Optional local pulse — only if you consent.</p>
         </article>
       </div>
+
+      <article className="glass-pane quote-pane" style={{ marginTop: "0.5rem" }}>
+        <div className="guide-step__icon" style={{ marginBottom: "0.35rem" }}>
+          <ShieldCheck size={20} aria-hidden="true" />
+        </div>
+        <p className="quote-pane__text" style={{ fontSize: "1rem" }}>
+          You write the handoff. You approve every restore plan. You can inspect
+          and permanently delete saved contexts. Nothing is sent off this
+          computer for this pilot.
+        </p>
+        <p className="quote-pane__meta">{RESTORE_LIMITS_SUMMARY}</p>
+      </article>
     </section>
   );
 }

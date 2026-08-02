@@ -1,4 +1,4 @@
-import { BookmarkPlus, Compass, Play } from "lucide-react";
+import { BookmarkPlus, Play } from "lucide-react";
 import { useEffect, useState } from "react";
 import { invokeIpc } from "../lib/ipc";
 import { RESTORE_LIMITS_SUMMARY } from "../lib/restoreLimits";
@@ -17,7 +17,7 @@ interface HomeWorkspacePanelProps {
 }
 
 /**
- * Dashboard-first Home — Experience Phase 2.
+ * Workspace as a place — spatial Home, not a page.
  * Owned data only; no fabricated activity.
  */
 export function HomeWorkspacePanel({
@@ -53,29 +53,25 @@ export function HomeWorkspacePanel({
 
   if (!workspace) {
     return (
-      <section className="dash" data-testid="workspace-home">
-        <div className="dash-hero dash-hero--welcome">
-          <div className="dash-hero__atmosphere" aria-hidden="true" />
-          <div className="dash-hero__content">
-            <p className="exp-kicker">Workspace</p>
-            <h2>This is your Workspace</h2>
-            <p className="exp-lede short">
-              Leave a note. Come back. Continue — still-open windows, same
-              session.
-            </p>
-            <div className="exp-actions">
-              <button
-                type="button"
-                className="exp-btn primary"
-                onClick={onCreateWorkspace}
-                disabled={busy}
-              >
-                Create a workspace
-              </button>
-            </div>
-          </div>
+      <section className="dash place" data-testid="workspace-home">
+        <div className="place__identity">
+          <p className="exp-kicker">Workspace</p>
+          <h2 className="place__title">This is your Workspace</h2>
+          <p className="place__pulse">Leave a note. Come back. Continue.</p>
         </div>
-        <EmptyStructure />
+        <div className="place__fab-row">
+          <button
+            type="button"
+            className="exp-btn primary"
+            onClick={onCreateWorkspace}
+            disabled={busy}
+          >
+            Create a workspace
+          </button>
+        </div>
+        <div className="dash-grid">
+          <EmptyStructure />
+        </div>
         <p className="trust-strip muted">{RESTORE_LIMITS_SUMMARY}</p>
       </section>
     );
@@ -83,31 +79,132 @@ export function HomeWorkspacePanel({
 
   const latest = recent[0] ?? null;
   const rest = recent.slice(1);
-  const summary =
+  const pulse =
     recent.length === 0
-      ? "No saved moments yet"
+      ? "Ready for your first moment"
       : recent.length === 1
-        ? `1 saved moment · last ${formatRelativeTime(recent[0].created_at)}`
-        : `${recent.length} recent moments · last ${formatRelativeTime(recent[0].created_at)}`;
+        ? `Last note · ${formatRelativeTime(recent[0].created_at)}`
+        : `${recent.length} moments · last ${formatRelativeTime(recent[0].created_at)}`;
 
   return (
-    <section className="dash" data-testid="workspace-home">
-      <header className="dash-chrome">
-        <div>
-          <p className="exp-kicker">Workspace</p>
-          <h1 className="dash-title">{workspace.name}</h1>
-          <p className="dash-summary">{summary}</p>
-        </div>
-        <div className="dash-quick">
-          <button
-            type="button"
-            className="exp-btn primary"
-            onClick={onGoToSave}
-            disabled={busy}
-          >
-            <BookmarkPlus size={16} aria-hidden="true" />
-            Quick save
-          </button>
+    <section className="dash place" data-testid="workspace-home">
+      <div className="place__identity">
+        <p className="exp-kicker">Workspace</p>
+        <h1 className="place__title">{workspace.name}</h1>
+        <p className="place__pulse">{pulse}</p>
+      </div>
+
+      {loadError && <p className="error">{loadError}</p>}
+
+      {latest ? (
+        <>
+          <div className="place__orbit">
+            <MomentCard
+              variant="hero"
+              context={latest}
+              busy={busy}
+              onContinue={() => onContinueContext(latest.id)}
+              onInspect={onGoToContinue}
+            />
+            <aside className="place__rail">
+              <div className="glass-pane quote-pane">
+                <div className="quote-pane__mark" aria-hidden="true">
+                  “
+                </div>
+                <p className="quote-pane__text">
+                  {latest.handoff_note.trim() || "No handoff was recorded."}
+                </p>
+                <p className="quote-pane__meta">
+                  Your note · {formatRelativeTime(latest.created_at)}
+                </p>
+              </div>
+              <button
+                type="button"
+                className="exp-btn primary"
+                onClick={onGoToSave}
+                disabled={busy}
+              >
+                <BookmarkPlus size={16} aria-hidden="true" />
+                Quick save
+              </button>
+            </aside>
+          </div>
+
+          <div className="dash-grid place__constellation">
+            {rest.map((context, index) => (
+              <MomentCard
+                key={context.id}
+                variant={index === 0 ? "standard" : "compact"}
+                className={index === 0 ? "span-6" : "span-3"}
+                context={context}
+                busy={busy}
+                onContinue={() => onContinueContext(context.id)}
+              />
+            ))}
+            {rest.length < 4 &&
+              Array.from({ length: Math.max(1, 4 - rest.length) }).map(
+                (_, index) => (
+                  <MomentCard
+                    key={`ph-${index}`}
+                    variant="placeholder"
+                    className="span-3"
+                    placeholderLabel="Open"
+                    placeholderHint="Fills when you save"
+                  />
+                ),
+              )}
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="place__orbit">
+            <article className="moment-card moment-card--hero empty-invite">
+              <p className="moment-card__kicker">Start here</p>
+              <h3>Save your first moment</h3>
+              <p className="moment-card__handoff">
+                One note. That’s the way back.
+              </p>
+              <div className="moment-card__actions">
+                <button
+                  type="button"
+                  className="exp-btn primary"
+                  onClick={onGoToSave}
+                  disabled={busy}
+                >
+                  <BookmarkPlus size={16} aria-hidden="true" />
+                  Save your first moment
+                </button>
+              </div>
+            </article>
+            <aside className="place__rail">
+              <div className="glass-pane quote-pane">
+                <div className="quote-pane__mark" aria-hidden="true">
+                  “
+                </div>
+                <p className="quote-pane__text muted">
+                  Your next intention will live here.
+                </p>
+                <p className="quote-pane__meta">Nothing invented</p>
+              </div>
+              <button
+                type="button"
+                className="exp-btn"
+                onClick={onGoToSave}
+                disabled={busy}
+              >
+                <BookmarkPlus size={16} aria-hidden="true" />
+                Quick save
+              </button>
+            </aside>
+          </div>
+          <div className="dash-grid">
+            <EmptyStructure />
+          </div>
+        </>
+      )}
+
+      {!latest && (
+        <div className="place__fab-row">
           <button
             type="button"
             className="exp-btn"
@@ -117,108 +214,7 @@ export function HomeWorkspacePanel({
             <Play size={16} aria-hidden="true" />
             Continue
           </button>
-          <button
-            type="button"
-            className="exp-btn ghost"
-            onClick={onGoToContinue}
-            disabled={busy}
-          >
-            <Compass size={16} aria-hidden="true" />
-            All moments
-          </button>
         </div>
-      </header>
-
-      {loadError && <p className="error">{loadError}</p>}
-
-      {latest ? (
-        <div className="dash-grid">
-          <MomentCard
-            variant="hero"
-            className="span-8"
-            context={latest}
-            busy={busy}
-            onContinue={() => onContinueContext(latest.id)}
-            onInspect={onGoToContinue}
-          />
-          <aside className="dash-rail span-4">
-            <article className="action-card">
-              <p className="exp-kicker">Next</p>
-              <h3>Step away cleanly</h3>
-              <p className="muted">
-                Name the moment and write what you intend next. Nothing is read
-                until you confirm.
-              </p>
-              <button
-                type="button"
-                className="exp-btn"
-                onClick={onGoToSave}
-                disabled={busy}
-              >
-                Save this moment
-              </button>
-            </article>
-            <article className="action-card action-card--soft">
-              <p className="exp-kicker">Memory</p>
-              <h3>Owned by you</h3>
-              <p className="muted">
-                Handoffs stay exactly as you wrote them. No invented activity.
-              </p>
-            </article>
-          </aside>
-          {rest.map((context, index) => (
-            <MomentCard
-              key={context.id}
-              variant={index === 0 ? "standard" : "compact"}
-              className={index === 0 ? "span-6" : "span-3"}
-              context={context}
-              busy={busy}
-              onContinue={() => onContinueContext(context.id)}
-            />
-          ))}
-          {rest.length < 3 &&
-            Array.from({ length: 3 - rest.length }).map((_, index) => (
-              <MomentCard
-                key={`ph-${index}`}
-                variant="placeholder"
-                className="span-3"
-                placeholderLabel="Open slot"
-                placeholderHint="Fills when you save again"
-              />
-            ))}
-        </div>
-      ) : (
-        <>
-          <div className="dash-grid">
-            <article className="moment-card moment-card--hero span-8 empty-invite">
-              <p className="exp-kicker">Ready when you are</p>
-              <h3>Save your first moment</h3>
-              <p className="exp-lede short">
-                Before you leave, leave yourself a note. That becomes the way
-                back.
-              </p>
-              <button
-                type="button"
-                className="exp-btn primary"
-                onClick={onGoToSave}
-                disabled={busy}
-              >
-                <BookmarkPlus size={16} aria-hidden="true" />
-                Save your first moment
-              </button>
-            </article>
-            <aside className="dash-rail span-4">
-              <article className="action-card">
-                <p className="exp-kicker">Continue</p>
-                <h3>After you save</h3>
-                <p className="muted">
-                  Moments you keep will show here for one-click continuation.
-                </p>
-              </article>
-            </aside>
-          </div>
-          <EmptyStructure />
-        </>
       )}
 
       <p className="trust-strip muted">{RESTORE_LIMITS_SUMMARY}</p>

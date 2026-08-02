@@ -16,7 +16,7 @@ interface MomentCardProps {
 }
 
 /**
- * Shared saved-moment card — handoff and time first; no process metadata.
+ * Floating moment tile — handoff and time first; metadata stays out.
  */
 export function MomentCard({
   variant = "standard",
@@ -53,7 +53,7 @@ export function MomentCard({
     >
       <div className="moment-card__top">
         <p className="moment-card__kicker">
-          {variant === "hero" ? "Continue where you left off" : "Moment"}
+          {variant === "hero" ? "Pick up here" : "Moment"}
         </p>
         <h3 className="moment-card__title">{context.name}</h3>
       </div>

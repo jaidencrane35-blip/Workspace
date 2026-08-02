@@ -197,24 +197,34 @@ export function PilotMeasurementPanel({
 
   if (!scope || !snapshot) {
     return (
-      <section className="exp-stage">
-        <p className="exp-kicker">Check-in</p>
-        <h2>Pilot measurement</h2>
-        <p className="muted">Loading…</p>
+      <section className="note-stage">
+        <div className="note-card">
+          <p className="exp-kicker">Check-in</p>
+          <h2>One moment…</h2>
+          <p className="muted">Loading…</p>
+        </div>
       </section>
     );
   }
 
   if (!consented) {
     return (
-      <section className="dash checkin-dash" data-testid="pilot-measurement-consent">
-        <article className="moment-card moment-card--hero">
-          <p className="exp-kicker">Check-in</p>
-          <h2>A quick pulse on how return-to-work feels</h2>
-          <p className="exp-lede short">{scope.purpose}</p>
-
+      <section
+        className="layer-shell checkin-dash"
+        data-testid="pilot-measurement-consent"
+      >
+        <div className="checkin-chat">
+          <div className="checkin-bubble">
+            <p className="exp-kicker">Check-in</p>
+            <p className="quote-pane__text">
+              How does returning to work feel after an interruption?
+            </p>
+            <p className="muted" style={{ marginTop: "0.5rem" }}>
+              {scope.purpose}
+            </p>
+          </div>
           <details className="exp-inspect" open>
-            <summary>What will be measured</summary>
+            <summary>What’s in this pulse</summary>
             <ul className="list compact">
               {scope.measured.map((item) => (
                 <li key={item.key}>{item.summary}</li>
@@ -227,12 +237,10 @@ export function PilotMeasurementPanel({
               ))}
             </ul>
           </details>
-
           <p className="muted">
             Scope {scope.id}. Nothing is recorded until you consent. You can
             withdraw later and clear the records.
           </p>
-
           <div className="exp-actions">
             <button
               type="button"
@@ -243,22 +251,23 @@ export function PilotMeasurementPanel({
               I consent to local pilot measurement
             </button>
           </div>
-        </article>
+        </div>
       </section>
     );
   }
 
   return (
-    <section className="dash checkin-dash" data-testid="pilot-measurement-active">
-      <header className="dash-chrome">
-        <div>
-          <p className="exp-kicker">Check-in</p>
-          <h1 className="dash-title">How’s the return feeling?</h1>
-          <p className="dash-summary">
-            These records evaluate the Product Proof hypothesis. They are not saved
-            contexts and are not sent anywhere.
-          </p>
-        </div>
+    <section
+      className="layer-shell checkin-dash"
+      data-testid="pilot-measurement-active"
+    >
+      <header className="continue-gallery__head">
+        <p className="exp-kicker">Check-in</p>
+        <h1 className="dash-title">How’s the return feeling?</h1>
+        <p className="dash-summary">
+          These records evaluate the Product Proof hypothesis. They are not saved
+          contexts and are not sent anywhere.
+        </p>
       </header>
 
       <div className="dash-grid checkin-stats">
@@ -273,10 +282,10 @@ export function PilotMeasurementPanel({
         <article className="exp-card stat span-4">
           <p className="exp-kicker">Leave → resume</p>
           <p className="exp-stat">{snapshot.leave_resume.length}</p>
-          <p className="muted">{snapshot.distinct_resume_days} distinct days</p>
+          <p className="muted">{snapshot.distinct_resume_days} days</p>
         </article>
         <article className="exp-card stat span-4">
-          <p className="exp-kicker">Median return</p>
+          <p className="exp-kicker">Median</p>
           <p className="exp-stat">
             {snapshot.median_return_minutes != null
               ? `${snapshot.median_return_minutes} min`
@@ -284,17 +293,14 @@ export function PilotMeasurementPanel({
           </p>
         </article>
       </div>
-      <p className="muted">
-        LEDGER-0013 looks for median return-to-work reduction versus baseline,
-        and week-four habit (Resume on at least three distinct days).
-      </p>
 
-      <div className="exp-card-grid pilot-forms">
-        <article className="exp-card">
-          <h3>Baseline (before Workspace)</h3>
-          <p className="muted">
-            Your estimate of minutes to return to work without Workspace.
+      <div className="checkin-chat pilot-forms">
+        <div className="checkin-bubble">
+          <p className="quote-pane__text" style={{ fontSize: "1rem" }}>
+            Before Workspace — about how many minutes to get back?
           </p>
+        </div>
+        <article className="exp-card checkin-bubble--you">
           <label className="exp-field" htmlFor="pilot-baseline-minutes">
             <span>Minutes</span>
             <input
@@ -327,12 +333,12 @@ export function PilotMeasurementPanel({
           </button>
         </article>
 
-        <article className="exp-card">
-          <h3>Leave→resume record</h3>
-          <p className="muted">
-            After you use Resume, enter how many minutes it took to get back to
-            work, and whether you needed to correct anything. Nothing is inferred.
+        <div className="checkin-bubble">
+          <p className="quote-pane__text" style={{ fontSize: "1rem" }}>
+            After a Continue — how many minutes to feel back?
           </p>
+        </div>
+        <article className="exp-card checkin-bubble--you">
           <label className="exp-field" htmlFor="pilot-return-minutes">
             <span>Minutes to return</span>
             <input
@@ -376,13 +382,17 @@ export function PilotMeasurementPanel({
           </button>
         </article>
 
-        <article className="exp-card">
-          <h3>Baseline interview kit</h3>
+        <div className="checkin-bubble">
+          <p className="quote-pane__text" style={{ fontSize: "1rem" }}>
+            A few reflections — whenever you’re ready.
+          </p>
           <ul className="list compact">
             {BASELINE_PROMPTS.map((prompt) => (
               <li key={prompt}>{prompt}</li>
             ))}
           </ul>
+        </div>
+        <article className="exp-card checkin-bubble--you">
           <textarea
             className="input-wide"
             rows={4}
@@ -401,13 +411,17 @@ export function PilotMeasurementPanel({
           </button>
         </article>
 
-        <article className="exp-card">
-          <h3>Week-four interview kit</h3>
+        <div className="checkin-bubble">
+          <p className="quote-pane__text" style={{ fontSize: "1rem" }}>
+            Week four — still useful?
+          </p>
           <ul className="list compact">
             {WEEK_FOUR_PROMPTS.map((prompt) => (
               <li key={prompt}>{prompt}</li>
             ))}
           </ul>
+        </div>
+        <article className="exp-card checkin-bubble--you">
           <textarea
             className="input-wide"
             rows={4}
