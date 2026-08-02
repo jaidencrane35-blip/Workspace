@@ -124,24 +124,23 @@ Milestone 1 is under way: `PP-M1-01` and `PP-M1-02` are complete.
    Authority still alone owns effect authorization through per-item
    `action.window.place` / `action.window.focus` proofs at point of use.
 
-Product Proof pilot readiness review (LEDGER-0023): **NOT READY**.
-Engineering completeness of Save → Preview → Approve → Restore does not yet
-satisfy the LEDGER-0013 pilot package. Smallest blockers: user-authored
-handoff/intended next action, inspect/delete in the product UI, consented
-measurement kit, pilot chrome that does not expose engine/diagnostic surfaces
-as primary navigation, and explicit framing of same-session / still-open
-restore limits. `PP-M1-03` (Undo) remains valuable but is sequenced after the
-pilot package, not before it.
+Product Proof pilot package engineering (LEDGER-0023 / LEDGER-0025): the five
+PP-P01 blockers are implemented (`PP-P01A`–`PP-P01E`, LEDGER-0030). That closes
+the package gate for cohort-recruitment readiness review. It does **not** mean
+the LEDGER-0013 hypothesis is proven. Next step is a Product Proof review from
+repository authority — not automatic implementation of `PP-M1-03` or capability
+research. `PP-M1-03` (Undo) remains valuable but stays sequenced after the
+pilot package can be evaluated with participants.
 
 ---
 
 # Next Task
 
-Close the **PP-P01 Pilot Package** (LEDGER-0023, LEDGER-0025) before recruiting
-the LEDGER-0013 cohort. `PP-P01` remains the milestone identity and the pilot
-gate: the package is complete only when every authorised slice below is done.
-Slices are implementation sequencing only; they do not change architecture,
-ownership, or contracts.
+The **PP-P01 Pilot Package** implementation slices are complete (LEDGER-0030).
+`PP-P01` remains the milestone identity for the LEDGER-0013 recruitment gate.
+Slices were implementation sequencing only; they did not change architecture,
+ownership, or contracts. Completing the package enables recruitment readiness
+review — it does not prove the Product Proof hypothesis.
 
 Authorised implementation order:
 
@@ -151,9 +150,16 @@ Authorised implementation order:
 | `PP-P01B` | Explicit restore-limits copy (same session; still-open windows; no silent relaunch) | **Complete** (LEDGER-0027) |
 | `PP-P01C` | Inspect and delete retained saved contexts in the product UI | **Complete** (LEDGER-0028) |
 | `PP-P01D` | Pilot-safe primary chrome (Save / Resume + minimal help; engine tabs out of default pilot surface) | **Complete** (LEDGER-0029) |
-| `PP-P01E` | Consented measurement and interview kit (baseline, leave→resume time, correction, week-four habit; no ambient observation) | **Active** |
+| `PP-P01E` | Consented measurement and interview kit (baseline, leave→resume time, correction, week-four habit; no ambient observation) | **Complete** (LEDGER-0030) |
 
-Active implementation slice: **`PP-P01E`**.
+**PP-P01 Pilot Package implementation slices: complete** (LEDGER-0030).
+
+There is no active PP-P01 implementation slice. Per LEDGER-0025, completing
+`PP-P01A`–`PP-P01E` satisfies the engineering package gate for LEDGER-0013
+cohort recruitment. Completing the package is **not** Product Proof success and
+does **not** prove the hypothesis. Do not begin the next implementation
+milestone from habit; perform a Product Proof review from repository authority
+first.
 
 `PP-P01A` is complete: Save requires an explicit user-authored handoff note;
 the note is reviewed before capture, persisted with the saved context, and
@@ -171,15 +177,17 @@ confirmation step and removes the saved context (and restore identities) via
 Workspace Management. Deleted contexts cannot be listed, inspected, or resumed.
 No background cleanup or retention policy.
 
-`PP-P01D` is complete: Default primary chrome is Save / Resume / Help only.
-Canvas, Work, Assistant, and Diagnostic are out of the default pilot surface
-(components retained in the codebase). Workspace creation is available from
-Save without Canvas. Help restates the Product Proof loop and restore limits.
-Presentation only; restore and persistence behaviour unchanged.
+`PP-P01D` is complete: Default primary chrome excludes Canvas, Work, Assistant,
+and Diagnostic (components retained in the codebase). Workspace creation is
+available from Save without Canvas. Help restates the Product Proof loop and
+restore limits. Presentation only; restore and persistence behaviour unchanged.
 
-Only after `PP-P01A` through `PP-P01E` are complete may the defined four-week
-Product Proof pilot run. Completing one slice is not Product Proof success.
-Do not treat dogfood of geometry-only Resume as Product Proof success.
+`PP-P01E` is complete: Pilot tab offers consented local measurement — baseline
+minutes, participant-entered leave→resume times and corrections, distinct-day
+habit summary, and baseline/week-four interview notes. Scope consent is
+required; records refuse without active consent; withdraw can clear evaluation
+data. No ambient observation, no network upload. Pilot records are evaluation
+data, distinct from saved contexts.
 
 Do not activate new capability layers, cognition projections, Extension Host,
 voice, cloud, phone, audio, broad automation, fuzzy matching, or additional
@@ -189,8 +197,11 @@ confirm the wedge. `ROADMAP-001` remains the valid dependency order if the
 proof later justifies resumed capability research; it is not the active
 milestone.
 
-Recommended next engineering milestone: **PP-P01 Pilot Package**.
-Recommended next implementation slice: **PP-P01E**.
+Recommended next engineering milestone: **Product Proof review** (reconstruct
+authority; verify PP-P01 package complete; re-evaluate LEDGER-0013 hypothesis
+readiness; choose the next highest-value milestone from the repository).
+Recommended next implementation slice: **None** — pause for Product Proof
+review before generating the next implementation prompt.
 
 ---
 

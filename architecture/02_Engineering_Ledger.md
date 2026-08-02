@@ -1874,3 +1874,55 @@ slice. Does not supersede LEDGER-0023 NOT READY, LEDGER-0025 slice order, or
 the PP-P01 pilot gate.
 
 Status: Complete; active slice **PP-P01E**; milestone **PP-P01** incomplete
+
+### LEDGER-0030
+
+Entry ID: LEDGER-0030
+Timestamp: 2026-08-02
+Capability: Experience + local persistence — PP-P01E consented measurement kit
+Related ADRs: ADR-0008
+Related Research: None
+Decision: Implement **PP-P01E** as a consented, local-only pilot measurement and
+interview kit supporting LEDGER-0013 evidence collection: baseline return-to-work
+minutes, participant-entered leave→resume times, correction notes, distinct-day
+habit counting, and baseline/week-four interview responses. Require explicit
+scope consent before any pilot record is written. Refuse ambient observation and
+network upload. Keep pilot evaluation data distinct from saved-context product
+data. Completing this slice completes the **PP-P01** implementation slices and
+satisfies the LEDGER-0025 package gate for recruitment readiness review; it does
+**not** declare Product Proof success or prove the hypothesis.
+
+Implementation:
+- Domain `pilot_measurement` scope, consent, baseline, leave→resume, interview
+  types; fail-closed validation; median helper for leave→resume minutes.
+- Migration `044_pilot_measurement.sql`; repository; kernel service and
+  commands (`settings.read` / `settings.write`, System subject); Tauri IPC.
+- Experience: Pilot primary tab with consent gate, measurement forms, interview
+  prompts, summary, and withdraw/clear; Resume outcomes offer an optional link
+  to record leave→resume (no background timing).
+- Tests: domain, kernel service, Vitest `pilot-measurement.test.ts`; pilot
+  chrome updated for the Pilot tab.
+- Current State: PP-P01 slices complete; next milestone is Product Proof review.
+
+Validation:
+- `cargo test -p workspace-domain pilot_measurement`
+- `cargo test -p workspace-kernel pilot_measurement`
+- `cargo test -p workspace-kernel resume_acceptance` (Product Proof unchanged)
+- `pnpm test` (54), `pnpm typecheck`, `pnpm build`
+- No accepted architecture contract files modified.
+- No ambient observation or network reporting introduced.
+
+Knowledge Gained:
+- Evaluation data must remain a separate store and consent surface from product
+  Save/Resume artefacts, or pilot metrics will blur into Memory/Workspace
+  Management ownership claims.
+
+Unlocks: LEDGER-0025 package gate for LEDGER-0013 recruitment readiness review.
+Does not unlock hypothesis success, `PP-M1-03`, or resumed capability research.
+
+Supersedes: LEDGER-0029 status wording that named **PP-P01E** as the active
+slice; LEDGER-0023's reading that the five package blockers remain open. Does
+not supersede LEDGER-0013 success/failure metrics or trust invalidation rules.
+
+Status: Complete; **PP-P01 implementation slices complete**; no active PP-P01
+slice; next recommended milestone is Product Proof review

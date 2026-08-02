@@ -39,6 +39,15 @@ export function PilotHelpPanel() {
       </section>
 
       <section>
+        <h3>Pilot measurement</h3>
+        <p>
+          Under Pilot, you may consent to local evaluation records: baseline
+          minutes, leave→resume times you enter, correction notes, and interview
+          answers. Nothing is uploaded, and nothing is recorded without consent.
+        </p>
+      </section>
+
+      <section>
         <h3>Your control</h3>
         <ul className="list compact">
           <li>You write the handoff; Workspace does not rewrite it.</li>

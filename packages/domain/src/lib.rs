@@ -38,6 +38,7 @@ pub mod platform_coherence;
 pub mod projection;
 pub mod resource;
 pub mod desktop_action;
+pub mod pilot_measurement;
 pub mod saved_context;
 pub mod suggestion;
 pub mod suggestion_intent;
@@ -188,6 +189,12 @@ pub use desktop_action::{
     ACTION_PLAN_TTL_SECS, ACTION_TYPE_APPLICATION_LAUNCH, ACTION_TYPE_WINDOW_FOCUS,
     ACTION_TYPE_WINDOW_PLACE, ACTION_TYPE_WINDOW_Z_ORDER, MATCH_CLASS_EXACT_SESSION,
     SCOPE_PLAN_RESOLVE, SCOPE_WINDOW_FOCUS, SCOPE_WINDOW_PLACE,
+};
+pub use pilot_measurement::{
+    median_return_minutes, GrantPilotConsentRequest, PilotBaseline, PilotConsent,
+    PilotInterviewPhase, PilotInterviewRecord, PilotLeaveResumeRecord, PilotMeasurementError,
+    PilotMeasurementScope, PilotMeasurementSnapshot, PilotScopeItem, RecordPilotBaselineRequest,
+    RecordPilotInterviewRequest, RecordPilotLeaveResumeRequest, PILOT_MEASUREMENT_SCOPE_ID,
 };
 pub use saved_context::{
     title_fingerprint, SaveContextRequest, SavedContext, SavedContextCaptureScope,

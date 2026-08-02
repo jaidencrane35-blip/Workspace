@@ -43,6 +43,7 @@ mod workspace_interaction;
 mod workspace_profile;
 mod workspace_observation;
 mod capture_coordinator;
+mod pilot_measurement;
 mod saved_context;
 mod desktop_action;
 mod observation_refresh_policy;
@@ -136,6 +137,7 @@ pub(crate) use workspace_observation::WorkspaceObservationService;
 pub(crate) use capture_coordinator::{
     CaptureCoordinator, CaptureCoordinatorResult, CaptureLifecycleState,
 };
+pub(crate) use pilot_measurement::PilotMeasurementService;
 pub(crate) use saved_context::SavedContextService;
 pub(crate) use desktop_action::{
     action_request_from_saved_context, ActionExecutionControls, DesktopActionService,

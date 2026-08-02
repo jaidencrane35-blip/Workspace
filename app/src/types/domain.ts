@@ -2117,6 +2117,57 @@ export interface ResumePlanPreview {
   plan: ActionPlan;
 }
 
+/** PP-P01E — local pilot evaluation data (not product saved-context data). */
+export interface PilotScopeItem {
+  key: string;
+  summary: string;
+}
+
+export interface PilotMeasurementScope {
+  id: string;
+  purpose: string;
+  measured: PilotScopeItem[];
+  not_measured: PilotScopeItem[];
+}
+
+export interface PilotConsent {
+  scope_id: string;
+  consented_at: string;
+  withdrawn_at?: string | null;
+}
+
+export interface PilotBaseline {
+  return_minutes: number;
+  recorded_at: string;
+  notes: string;
+}
+
+export interface PilotLeaveResumeRecord {
+  id: string;
+  recorded_at: string;
+  local_day: string;
+  return_minutes: number;
+  correction_needed: boolean;
+  correction_note: string;
+}
+
+export interface PilotInterviewRecord {
+  phase: "baseline" | "week_four";
+  recorded_at: string;
+  responses: string;
+}
+
+export interface PilotMeasurementSnapshot {
+  scope: PilotMeasurementScope;
+  consent: PilotConsent | null;
+  baseline: PilotBaseline | null;
+  leave_resume: PilotLeaveResumeRecord[];
+  interview_baseline: PilotInterviewRecord | null;
+  interview_week_four: PilotInterviewRecord | null;
+  distinct_resume_days: number;
+  median_return_minutes: number | null;
+}
+
 export interface ActionItemOutcome {
   item_id: string;
   action_type: string;

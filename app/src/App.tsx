@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { PilotHelpPanel } from "./components/PilotHelpPanel";
+import { PilotMeasurementPanel } from "./components/PilotMeasurementPanel";
 import { ResumeContextPanel } from "./components/ResumeContextPanel";
 import { SaveContextPanel } from "./components/SaveContextPanel";
 import { invokeIpc } from "./lib/ipc";
@@ -33,10 +34,10 @@ async function persistActiveWorkspaceId(id: string | null): Promise<void> {
 }
 
 /**
- * PP-P01D — Pilot-safe chrome.
+ * PP-P01D / PP-P01E — Pilot-safe chrome with consented measurement surface.
  *
- * Primary navigation is Save / Resume / Help only. Canvas, Work, Assistant, and
- * Diagnostic remain in the codebase but are not default pilot surfaces.
+ * Primary navigation is Save / Resume / Pilot / Help. Canvas, Work, Assistant,
+ * and Diagnostic remain in the codebase but are not default pilot surfaces.
  */
 export default function App() {
   const [view, setView] = useState<PilotPrimaryView>(PILOT_DEFAULT_VIEW);
@@ -136,6 +137,16 @@ export default function App() {
           <button
             type="button"
             role="tab"
+            className={view === "pilot" ? "tab active" : "tab"}
+            aria-current={view === "pilot" ? "page" : undefined}
+            aria-selected={view === "pilot"}
+            onClick={() => setView("pilot")}
+          >
+            Pilot
+          </button>
+          <button
+            type="button"
+            role="tab"
             className={view === "help" ? "tab active" : "tab"}
             aria-current={view === "help" ? "page" : undefined}
             aria-selected={view === "help"}
@@ -191,10 +202,20 @@ export default function App() {
               onBusy={setBusy}
               onError={onError}
               onMessage={onMessage}
+              onGoToPilot={() => setView("pilot")}
             />
           ) : (
             <p className="muted">Loading…</p>
           )}
+        </div>
+      ) : view === "pilot" ? (
+        <div className="container assistant-container">
+          <PilotMeasurementPanel
+            busy={busy}
+            onBusy={setBusy}
+            onError={onError}
+            onMessage={onMessage}
+          />
         </div>
       ) : (
         <div className="container assistant-container">

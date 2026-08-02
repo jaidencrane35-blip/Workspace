@@ -58,6 +58,10 @@ use crate::commands::workspace_observation::{
     GetWorkspaceObservationStatus,
 };
 use crate::commands::workspace_state::GetWorkspaceState;
+use crate::commands::pilot_measurement::{
+    GetPilotMeasurementScope, GetPilotMeasurementSnapshot, GrantPilotConsent, RecordPilotBaseline,
+    RecordPilotInterview, RecordPilotLeaveResume, WithdrawPilotConsent,
+};
 use crate::commands::saved_context::{GetSavedContextCaptureScope, SaveWorkspaceContext};
 use crate::commands::resume::{
     DeleteSavedContext, ExecuteResumePlan, GetSavedContext, ListSavedContexts, ResolveResumePlan,
@@ -1939,6 +1943,104 @@ impl CommandHandler {
             ExecuteResumePlan {
                 plan,
                 approved_plan_digest,
+            },
+        )
+    }
+
+    pub fn get_pilot_measurement_scope(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+    ) -> Result<workspace_domain::PilotMeasurementScope> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetPilotMeasurementScope)
+    }
+
+    pub fn get_pilot_measurement_snapshot(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+    ) -> Result<workspace_domain::PilotMeasurementSnapshot> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetPilotMeasurementSnapshot)
+    }
+
+    pub fn grant_pilot_consent(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        approved_scope: String,
+    ) -> Result<workspace_domain::PilotConsent> {
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_mutation(
+            GrantPilotConsent {
+                request: workspace_domain::GrantPilotConsentRequest { approved_scope },
+            },
+        )
+    }
+
+    pub fn withdraw_pilot_consent(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        clear_records: bool,
+    ) -> Result<workspace_domain::PilotConsent> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_mutation(WithdrawPilotConsent { clear_records })
+    }
+
+    pub fn record_pilot_baseline(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        return_minutes: u32,
+        notes: String,
+    ) -> Result<workspace_domain::PilotBaseline> {
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_mutation(
+            RecordPilotBaseline {
+                request: workspace_domain::RecordPilotBaselineRequest {
+                    return_minutes,
+                    notes,
+                },
+            },
+        )
+    }
+
+    pub fn record_pilot_leave_resume(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        return_minutes: u32,
+        correction_needed: bool,
+        correction_note: String,
+        local_day: String,
+    ) -> Result<workspace_domain::PilotLeaveResumeRecord> {
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_mutation(
+            RecordPilotLeaveResume {
+                request: workspace_domain::RecordPilotLeaveResumeRequest {
+                    return_minutes,
+                    correction_needed,
+                    correction_note,
+                    local_day,
+                },
+            },
+        )
+    }
+
+    pub fn record_pilot_interview(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        phase: String,
+        responses: String,
+    ) -> Result<workspace_domain::PilotInterviewRecord> {
+        let phase = workspace_domain::PilotInterviewPhase::parse(&phase).map_err(|e| {
+            KernelError::PilotMeasurementValidation {
+                message: e.to_string(),
+            }
+        })?;
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_mutation(
+            RecordPilotInterview {
+                request: workspace_domain::RecordPilotInterviewRequest { phase, responses },
             },
         )
     }

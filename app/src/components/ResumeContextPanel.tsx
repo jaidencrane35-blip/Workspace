@@ -19,6 +19,8 @@ interface ResumeContextPanelProps {
   onBusy: (busy: boolean) => void;
   onError: (message: string | null) => void;
   onMessage: (message: string | null) => void;
+  /** Optional navigation to the consented pilot measurement surface (PP-P01E). */
+  onGoToPilot?: () => void;
 }
 
 function formatError(err: unknown): string {
@@ -84,6 +86,7 @@ export function ResumeContextPanel({
   onBusy,
   onError,
   onMessage,
+  onGoToPilot,
 }: ResumeContextPanelProps) {
   const [step, setStep] = useState<Step>("browse");
   const [contexts, setContexts] = useState<SavedContext[]>([]);
@@ -450,9 +453,22 @@ export function ResumeContextPanel({
               </li>
             ))}
           </ul>
-          <button type="button" onClick={backToBrowse}>
-            Back to saved contexts
-          </button>
+          <div className="button-row">
+            <button type="button" onClick={backToBrowse}>
+              Back to saved contexts
+            </button>
+            {onGoToPilot && (
+              <button type="button" onClick={onGoToPilot}>
+                Record leave→resume for the pilot
+              </button>
+            )}
+          </div>
+          {onGoToPilot && (
+            <p className="muted">
+              Pilot timing is only recorded if you have consented under Pilot and
+              enter the minutes yourself. Nothing is measured in the background.
+            </p>
+          )}
         </>
       )}
     </section>

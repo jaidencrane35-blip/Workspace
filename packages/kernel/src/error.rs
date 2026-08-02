@@ -276,6 +276,9 @@ pub enum KernelError {
     #[error("{message}")]
     SavedContextValidation { message: String },
 
+    #[error("{message}")]
+    PilotMeasurementValidation { message: String },
+
     #[error("{0}")]
     DesktopAction(DesktopActionError),
 
@@ -1103,6 +1106,10 @@ impl KernelError {
             KernelError::SavedContextNotFound => PublicError {
                 code: "saved_context_not_found".into(),
                 message: "That saved context was not found.".into(),
+            },
+            KernelError::PilotMeasurementValidation { message } => PublicError {
+                code: "pilot_measurement_validation".into(),
+                message: message.clone(),
             },
             KernelError::InitializationFailed => PublicError {
                 code: "initialization_failed".into(),

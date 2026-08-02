@@ -30,6 +30,7 @@ mod workspace_interaction;
 mod workspace_profile;
 mod workspace_observation;
 mod workspace_state;
+mod pilot_measurement;
 mod saved_context;
 mod resume;
 mod context;
@@ -349,6 +350,10 @@ pub use workspace_observation::{
 };
 pub use workspace_state::GetWorkspaceState;
 pub use saved_context::{GetSavedContextCaptureScope, SaveWorkspaceContext};
+pub use pilot_measurement::{
+    GetPilotMeasurementScope, GetPilotMeasurementSnapshot, GrantPilotConsent, RecordPilotBaseline,
+    RecordPilotInterview, RecordPilotLeaveResume, WithdrawPilotConsent,
+};
 pub use resume::{
     DeleteSavedContext, ExecuteResumePlan, GetSavedContext, ListSavedContexts, ResolveResumePlan,
     ResumePlanPreview,

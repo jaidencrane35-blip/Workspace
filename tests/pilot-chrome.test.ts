@@ -31,9 +31,14 @@ const resumeSource = fs.readFileSync(
 );
 
 describe("PP-P01D pilot-safe chrome", () => {
-  it("defines Save, Resume, and Help as the only primary pilot views", () => {
-    expect([...PILOT_PRIMARY_VIEWS]).toEqual(["save", "resume", "help"]);
-    expect([...PILOT_PRIMARY_TAB_LABELS]).toEqual(["Save", "Resume", "Help"]);
+  it("defines Save, Resume, Pilot, and Help as the only primary pilot views", () => {
+    expect([...PILOT_PRIMARY_VIEWS]).toEqual(["save", "resume", "pilot", "help"]);
+    expect([...PILOT_PRIMARY_TAB_LABELS]).toEqual([
+      "Save",
+      "Resume",
+      "Pilot",
+      "Help",
+    ]);
     for (const label of PILOT_PRIMARY_TAB_LABELS) {
       expect(appSource).toContain(`>\n            ${label}\n          </button>`);
     }

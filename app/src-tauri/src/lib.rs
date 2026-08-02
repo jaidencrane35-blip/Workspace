@@ -91,6 +91,11 @@ use commands::workspace_observation::{
 };
 use commands::workspace_state::get_workspace_state;
 use commands::saved_context::{get_saved_context_capture_scope, save_workspace_context};
+use commands::pilot_measurement::{
+    get_pilot_measurement_scope, get_pilot_measurement_snapshot, grant_pilot_consent,
+    record_pilot_baseline, record_pilot_interview, record_pilot_leave_resume,
+    withdraw_pilot_consent,
+};
 use commands::resume::{
     delete_saved_context, execute_resume_plan, get_saved_context, list_saved_contexts,
     resolve_resume_plan,
@@ -186,6 +191,13 @@ pub fn run() {
             delete_saved_context,
             resolve_resume_plan,
             execute_resume_plan,
+            get_pilot_measurement_scope,
+            get_pilot_measurement_snapshot,
+            grant_pilot_consent,
+            withdraw_pilot_consent,
+            record_pilot_baseline,
+            record_pilot_leave_resume,
+            record_pilot_interview,
             get_workspace_state,
             create_application,
             launch_application,
