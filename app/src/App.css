@@ -240,7 +240,7 @@ body {
 
 .home-field {
   margin-top: var(--space-2);
-  padding: var(--space-4) 0 calc(var(--space-6) + 5.5rem);
+  padding: var(--space-4) 0 var(--space-5);
   max-width: min(72rem, 100%);
   opacity: 0.92;
 }
@@ -1311,7 +1311,19 @@ body {
 
 .continue-inspect-entry {
   align-self: flex-start;
-  opacity: 0.55;
+  opacity: 0.38;
+  margin: var(--space-3) 0 calc(var(--space-8) + 4.5rem);
+  max-width: 12rem;
+}
+
+.continue-inspect-entry summary {
+  font-size: var(--type-meta);
+  color: var(--exp-muted);
+  cursor: pointer;
+}
+
+.continue-inspect-entry .exp-btn {
+  margin-top: var(--space-2);
   min-height: 0;
   padding: var(--space-1) 0;
 }
@@ -2056,11 +2068,15 @@ body {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-3);
-  margin-top: calc(var(--space-1) * -1);
+  margin: 0;
   color: var(--exp-muted);
   font-size: var(--type-meta);
   letter-spacing: 0.01em;
-  opacity: 0.85;
+  opacity: 0.78;
+}
+
+.moment-card--hero .moment-card__meta {
+  display: none;
 }
 
 .moment-card__meta span {

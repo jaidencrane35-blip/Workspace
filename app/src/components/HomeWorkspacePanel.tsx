@@ -127,7 +127,8 @@ export function HomeWorkspacePanel({
   }
 
   const latest = recent[0] ?? null;
-  const satellites = recent.slice(1);
+  // One environmental row only — avoids dock clip (parity H-05).
+  const satellites = recent.slice(1, 4);
 
   return (
     <section

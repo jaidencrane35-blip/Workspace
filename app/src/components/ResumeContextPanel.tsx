@@ -321,16 +321,6 @@ export function ResumeContextPanel({
               <p className="trust-strip trust-strip--quiet muted">
                 {RESTORE_LIMITS_SUMMARY}
               </p>
-              {featured && (
-                <button
-                  type="button"
-                  className="exp-btn ghost continue-inspect-entry"
-                  disabled={busy}
-                  onClick={() => openInspect(featured.id)}
-                >
-                  Inspect
-                </button>
-              )}
             </>
           )}
 
@@ -417,6 +407,19 @@ export function ResumeContextPanel({
                 </div>
               )}
             </div>
+          )}
+          {!previewing && featured && (
+            <details className="exp-inspect continue-inspect-entry">
+              <summary>Inspect</summary>
+              <button
+                type="button"
+                className="exp-btn ghost"
+                disabled={busy}
+                onClick={() => openInspect(featured.id)}
+              >
+                Open details
+              </button>
+            </details>
           )}
         </>
       )}

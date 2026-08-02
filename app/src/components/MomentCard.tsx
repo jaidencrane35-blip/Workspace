@@ -105,7 +105,8 @@ function MomentCardInner({
   const revealing = Boolean(expandContent) && state === "preview";
   const showHandoff = !sparse || variant === "compact";
   const showWindows = !sparse && !sparseMeta;
-  const showMeta = !sparse;
+  // Hero sparseMeta: handoff carries meaning; drop orphan time row (parity H-06).
+  const showMeta = !sparse && !sparseMeta;
   const showKicker = !sparse && state === "restoring";
 
   return (
