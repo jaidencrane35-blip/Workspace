@@ -11,6 +11,16 @@ export class IpcCommandError extends Error {
   }
 }
 
+/**
+ * Single IPC entry for the product UI.
+ *
+ * Production (Tauri available, not forced-demo): native `invoke` → kernel.
+ * Demo adapter (DEV without Tauri, or VITE_FORCE_EXPERIENCE_DEMO): in-memory
+ * fixture handler with the same command names and response shapes.
+ *
+ * Frozen experience panels must only call this — never branch on demo/prod
+ * for layout or interaction.
+ */
 export async function invokeIpc<T>(
   command: string,
   args?: Record<string, unknown>,

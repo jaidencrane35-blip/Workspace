@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from "react";
-import { isExperienceDemoActive } from "../demo/demoMode";
 import { invokeIpc } from "../lib/ipc";
 import { RESTORE_LIMITS_SUMMARY } from "../lib/restoreLimits";
 import type {
@@ -150,9 +149,6 @@ export function ResumeContextPanel({
         setPreview(null);
         setResult(null);
         setStep("inspect");
-        if (!isExperienceDemoActive()) {
-          onMessage(`Inspecting “${context.name}”`);
-        }
       } catch (err: unknown) {
         onError(formatError(err));
       } finally {
@@ -177,9 +173,6 @@ export function ResumeContextPanel({
           setAttentionScene("restore");
           setRestoring(true);
           setSecondaryObjects([]);
-          if (!isExperienceDemoActive()) {
-            onMessage(`Preview ready for “${next.saved_context_name}”`);
-          }
         } catch (err: unknown) {
           onError(formatError(err));
         } finally {
@@ -190,7 +183,6 @@ export function ResumeContextPanel({
     [
       onBusy,
       onError,
-      onMessage,
       setPrimaryObject,
       setAttentionScene,
       setRestoring,

@@ -35,7 +35,7 @@ Further subjective visual polish is out of scope. The experience chrome is froze
 
 ## Post-freeze roadmap (production-only)
 
-1. **Real persistence** — native saved-context / pilot measurement paths under Tauri (not demo IPC).
+1. **Real persistence** — native saved-context / pilot measurement paths under Tauri (not demo IPC). Status: `architecture/23_Production_Integration_Status.md`.
 2. **Telemetry** — consented, local-first pilot metrics aligned with measurement scope.
 3. **User testing** — facilitated sessions with pilot participants on Windows builds.
 4. **Performance** — profile restore/save on real desktops; address measured regressions only.

@@ -1,6 +1,6 @@
 /**
- * Demo IPC provider — answers experience-layer commands from in-memory fixtures.
- * Isolated from production Tauri handlers.
+ * Experience demo IPC adapter — in-memory implementation of
+ * `experienceIpcCatalog`. Production Tauri handlers own the same command names.
  */
 
 import type {
@@ -26,6 +26,8 @@ import {
   DEMO_WORKSPACE,
   type DemoRestoreHistoryEntry,
 } from "./experienceDemoDataset";
+import { isExperienceIpcCommand } from "./experienceIpcCatalog";
+
 class DemoIpcError extends Error {
   readonly code: string;
   constructor(code: string, message: string) {
@@ -95,7 +97,7 @@ function recomputePilotAggregates(): void {
 }
 
 /**
- * Handle an experience IPC command from demo fixtures.
+ * Adapter entry — same command names as Tauri `generate_handler` experience set.
  * Caller must gate with shouldUseExperienceDemo().
  */
 export async function demoInvoke<T>(
@@ -104,6 +106,13 @@ export async function demoInvoke<T>(
 ): Promise<T> {
   // Tiny async tick so callers keep their await shape.
   await Promise.resolve();
+
+  if (!isExperienceIpcCommand(command)) {
+    throw new DemoIpcError(
+      "demo_unsupported",
+      `Demo adapter does not implement “${command}”.`,
+    );
+  }
 
   switch (command) {
     case "get_workspace_status": {
@@ -320,10 +329,12 @@ export async function demoInvoke<T>(
       }
       return null as T;
     }
-    default:
+    default: {
+      const _exhaustive: never = command;
       throw new DemoIpcError(
         "demo_unsupported",
-        `Demo mode does not implement “${command}”.`,
+        `Demo adapter missing case for “${String(_exhaustive)}”.`,
       );
+    }
   }
 }
