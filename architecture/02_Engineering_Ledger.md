@@ -1984,3 +1984,46 @@ metrics, or trust invalidation.
 
 Status: Accepted; next programme objective **LEDGER-0013 pilot recruitment and
 execution**; next implementation slice **None**
+
+### LEDGER-0032
+
+Entry ID: LEDGER-0032
+Timestamp: 2026-08-02
+Capability: Runtime Host / persistence — Participant #1 installable build
+Related ADRs: ADR-0008
+Related Research: None
+Decision: Fix a blocking install defect discovered while preparing the
+Participant #1 (developer) pilot-ready local build. `DatabaseService::initialize`
+previously applied migrations by reading `CARGO_MANIFEST_DIR/migrations` at
+runtime. Release binaries therefore depended on the developer checkout path and
+could start with an empty schema on a clean machine (`load_from_dir` formerly
+returned success with zero migrations when the directory was missing).
+
+Implementation:
+- `packages/database/build.rs` embeds all `.sql` migrations via `include_str!`.
+- `MigrationRunner::bundled()` is the production path; `load_from_dir` fails
+  closed if the directory is missing or empty.
+- Kernel in-memory init uses bundled migrations.
+- App setup creates the app-data directory explicitly and logs the DB path.
+- `19_Pilot_Participant_1_Local_Build.md` operational notes.
+- No new capabilities, contracts, or Product Proof behaviour changes.
+
+Validation:
+- `cargo test -p workspace-database` (50)
+- `cargo test -p workspace-kernel` initialize / resume_acceptance /
+  saved_context / pilot_measurement
+- `pnpm tauri:build` produces MSI + NSIS; release exe embeds
+  `CREATE TABLE IF NOT EXISTS pilot_consent` / `saved_contexts`
+- `pnpm test` / typecheck remain green from prior suite
+
+Knowledge Gained:
+- Installable Product Proof builds must carry schema in-binary; checkout-relative
+  migration loading is a silent pilot blocker.
+
+Unlocks: Participant #1 can install/run a local build without the git tree
+present for schema apply. Does not unlock hypothesis proof or cohort evidence.
+
+Supersedes: None for product strategy. Corrects the runtime migration loading
+assumption left implicit after MSI/NSIS packaging (LEDGER-0017 era).
+
+Status: Complete; Participant #1 local build ready for daily dogfood

@@ -366,11 +366,21 @@ pub fn run() {
                 .path()
                 .app_data_dir()
                 .expect("failed to resolve app data directory");
+            std::fs::create_dir_all(&app_data_dir).unwrap_or_else(|error| {
+                panic!(
+                    "failed to create app data directory {}: {error}",
+                    app_data_dir.display()
+                );
+            });
             let db_path = app_data_dir.join("workspace.db");
+            log::info!(
+                "initializing workspace kernel with database {}",
+                db_path.display()
+            );
 
             let kernel = WorkspaceKernel::initialize(db_path).unwrap_or_else(|error| {
                 log::error!("workspace kernel initialization failed: {error}");
-                panic!("failed to initialize workspace kernel");
+                panic!("failed to initialize workspace kernel: {error}");
             });
 
             app.manage(Arc::new(Mutex::new(kernel)));

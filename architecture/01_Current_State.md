@@ -108,6 +108,11 @@ LEDGER-0026–0030)
 LEDGER-0031): recruitment-readiness gate satisfied; hypothesis unproven but
 testable; next objective is LEDGER-0013 pilot recruitment and execution
 
+✓ Participant #1 local installable build defect fixed: SQL migrations are
+compile-time embedded so installed binaries no longer depend on a developer
+checkout path (LEDGER-0032). Pilot build notes in
+`19_Pilot_Participant_1_Local_Build.md`.
+
 ---
 
 # Active Task
@@ -204,7 +209,9 @@ milestone.
 Recommended next programme objective: **Recruit and execute the LEDGER-0013
 Product Proof pilot** (~15 target users; four weeks; baseline, leave→resume,
 correction, week-four habit, trust invalidation watch; local measurement only).
-See `18_Product_Proof_Review_PP_P01.md` and LEDGER-0031.
+See `18_Product_Proof_Review_PP_P01.md` and LEDGER-0031. Participant #1
+(developer) local installable build is ready for daily dogfood per LEDGER-0032
+and `19_Pilot_Participant_1_Local_Build.md`.
 Recommended next implementation slice: **None** — no product implementation
 until pilot evidence or a repository-authorised engineering defect requires it.
 
@@ -327,8 +334,8 @@ further non-Action environment mutation.
 The Content Security Policy is verified by the audit in `pnpm test`, by the
 policy string embedded in the packaged `workspace-app.exe`, and by loading the
 production bundle under the identical policy in headless Chromium with zero
-violations. It has not been observed in a running WebView2 window; that check
-belongs to the first pilot build.
+violations. Participant #1 should confirm CSP behaviour in the installed
+WebView2 window during daily dogfood (LEDGER-0032 build).
 
 The Product Proof Strategy changes readiness and sequencing, not architecture.
 The Blueprint, ADRs, capability ownership, interactions, contracts, research

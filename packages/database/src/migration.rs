@@ -4,6 +4,8 @@ use std::path::Path;
 use crate::connection::Database;
 use crate::error::{DatabaseError, Result};
 
+include!(concat!(env!("OUT_DIR"), "/bundled_migrations.rs"));
+
 /// A single versioned SQL migration.
 #[derive(Debug, Clone)]
 pub struct Migration {
@@ -13,6 +15,7 @@ pub struct Migration {
 }
 
 /// Applies ordered SQL migrations from the migrations directory.
+#[derive(Debug)]
 pub struct MigrationRunner {
     migrations: Vec<Migration>,
 }
@@ -24,11 +27,27 @@ impl MigrationRunner {
         }
     }
 
+    /// Migrations embedded at compile time for installable builds.
+    ///
+    /// Release binaries must not read SQL from a developer checkout path.
+    pub fn bundled() -> Self {
+        let mut runner = Self::new();
+        for migration in compiled_migrations() {
+            runner.register(migration);
+        }
+        runner
+    }
+
     /// Loads `.sql` files from a directory, sorted by filename.
+    ///
+    /// Fails closed if the directory is missing or contains no `.sql` files.
     pub fn load_from_dir(path: impl AsRef<Path>) -> Result<Self> {
         let path = path.as_ref();
         if !path.exists() {
-            return Ok(Self::new());
+            return Err(DatabaseError::Migration(format!(
+                "migrations directory not found: {}",
+                path.display()
+            )));
         }
 
         let mut migrations = Vec::new();
@@ -51,6 +70,13 @@ impl MigrationRunner {
                 name: file_name,
                 sql,
             });
+        }
+
+        if migrations.is_empty() {
+            return Err(DatabaseError::Migration(format!(
+                "no .sql migrations found in {}",
+                path.display()
+            )));
         }
 
         migrations.sort_by(|a, b| a.version.cmp(&b.version));
@@ -127,6 +153,40 @@ mod tests {
             )
             .unwrap();
         assert_eq!(count, 1);
+    }
+
+    #[test]
+    fn bundled_migrations_include_product_proof_schema() {
+        let runner = MigrationRunner::bundled();
+        assert!(
+            runner.migrations.len() >= 40,
+            "expected full migration set, got {}",
+            runner.migrations.len()
+        );
+        assert!(runner
+            .migrations
+            .iter()
+            .any(|migration| migration.version == "001_settings"));
+        assert!(runner
+            .migrations
+            .iter()
+            .any(|migration| migration.version == "041_saved_context"));
+        assert!(runner
+            .migrations
+            .iter()
+            .any(|migration| migration.version == "044_pilot_measurement"));
+    }
+
+    #[test]
+    fn load_from_dir_fails_closed_when_missing() {
+        let error = MigrationRunner::load_from_dir("definitely-missing-migrations-dir")
+            .unwrap_err();
+        match error {
+            DatabaseError::Migration(message) => {
+                assert!(message.contains("not found"));
+            }
+            other => panic!("expected migration error, got {other:?}"),
+        }
     }
 
     #[test]

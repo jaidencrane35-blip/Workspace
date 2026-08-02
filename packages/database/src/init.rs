@@ -10,9 +10,9 @@ pub struct DatabaseService {
 }
 
 impl DatabaseService {
-    /// Opens the database and applies bundled migrations from this crate.
+    /// Opens the database and applies compile-time embedded migrations.
     pub fn initialize(path: impl AsRef<Path>) -> Result<Self> {
-        Self::initialize_with_migrations(path, bundled_migrations_dir())
+        Self::initialize_with_runner(path, MigrationRunner::bundled())
     }
 
     /// Opens the database and applies migrations from the given directory.
@@ -20,6 +20,10 @@ impl DatabaseService {
         path: impl AsRef<Path>,
         migrations_dir: impl AsRef<Path>,
     ) -> Result<Self> {
+        Self::initialize_with_runner(path, MigrationRunner::load_from_dir(migrations_dir)?)
+    }
+
+    fn initialize_with_runner(path: impl AsRef<Path>, runner: MigrationRunner) -> Result<Self> {
         let path = path.as_ref();
         log::info!("initializing database at {}", path.display());
 
@@ -31,7 +35,6 @@ impl DatabaseService {
             }
         };
 
-        let runner = MigrationRunner::load_from_dir(migrations_dir.as_ref())?;
         if let Err(error) = runner.apply_all(&database) {
             log::error!("database migration failed: {error}");
             return Err(error);

@@ -113,9 +113,7 @@ impl InitializeWorkspace {
             services.register(SERVICE_DATABASE, ServiceStatus::Failed);
             error
         })?;
-        let runner = workspace_database::MigrationRunner::load_from_dir(
-            workspace_database::bundled_migrations_dir(),
-        )?;
+        let runner = workspace_database::MigrationRunner::bundled();
         runner.apply_all(&database).map_err(|error| {
             services.register(SERVICE_DATABASE, ServiceStatus::Failed);
             error
