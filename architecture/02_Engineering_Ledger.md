@@ -1562,3 +1562,55 @@ ahead of pilot-package completeness. Does not supersede LEDGER-0013's
 hypothesis, metrics, or trust invalidation rules.
 
 Status: Accepted; Product Proof pilot **NOT READY**; next milestone **PP-P01**
+
+---
+
+### LEDGER-0024
+
+Entry ID: LEDGER-0024
+Timestamp: 2026-08-02
+Capability: Engineering governance — Engineering Session Protocol
+Related ADRs: ADR-0007, ADR-0008
+Related Research: None
+Decision: Add `architecture/17_Engineering_Session_Protocol.md` as the
+authoritative engineering-session governance document, and insert it into the
+Cursor Protocol reading order immediately before Blueprint/Current State so
+every session begins from repository authority rather than conversation.
+
+Implementation:
+
+- Created `17_Engineering_Session_Protocol.md` v1.0 covering purpose, authority
+  hierarchy, startup procedure, reading order, model responsibilities, prompt
+  standard, stop conditions, validation, git discipline, review cadence, and
+  engineering invariants.
+- Updated `04_Cursor_Protocol.md` to require reading the Engineering Session
+  Protocol as step 1 of the implementation process and to state that
+  conversation history is never authoritative.
+- Updated Current State completed list. No capability, contract, Product Proof,
+  or runtime file changed.
+
+Validation:
+
+- Confirmed no pre-existing Engineering Session Protocol or equivalent
+  session-governance document existed in the architecture pack.
+- Confirmed ADR-0008 already required replaceable sessions and non-authoritative
+  AI conversations; this protocol operationalizes that decision without
+  amending ADR text.
+- Confirmed Architecture Guardian remains proposed and is not elevated to a
+  mandatory gate by this change.
+- Documentation-only; no runtime mutation.
+
+Knowledge Gained:
+
+- Process authority (how sessions start) can be documented without inventing
+  product or capability authority.
+- Explicit stop-on-contradiction rules reduce the risk that models “complete”
+  missing contracts from chat context.
+
+Unlocks: Deterministic session startup for architecture, implementation, and
+review work. Does not unlock Product Proof pilot readiness, PP-P01, or any
+runtime feature.
+
+Supersedes: None. Complements `04_Cursor_Protocol.md` and ADR-0008.
+
+Status: Accepted

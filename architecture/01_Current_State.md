@@ -24,6 +24,9 @@ Product Proof — Trusted Interruption Recovery
 
 ✓ Cursor Protocol created
 
+✓ Engineering Session Protocol created (`17_Engineering_Session_Protocol.md`,
+LEDGER-0024); mandatory after Cursor Protocol and before Current State
+
 ✓ Open Source Registry created
 
 ✓ Prompt Pattern Library created
