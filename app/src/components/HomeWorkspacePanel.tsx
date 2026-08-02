@@ -169,7 +169,7 @@ export function HomeWorkspacePanel({
                   variant="compact"
                   state="collapsed"
                   sparse
-                  attentionWeight={1}
+                  attentionWeight={0.62}
                   className={`home-satellite home-satellite--${index % 3}`}
                   context={context}
                   busy={busy}

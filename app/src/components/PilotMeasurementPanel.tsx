@@ -63,7 +63,6 @@ export function PilotMeasurementPanel({
   const [interviewBaseline, setInterviewBaseline] = useState("");
   const [interviewWeekFour, setInterviewWeekFour] = useState("");
   const [chapter, setChapter] = useState(0);
-  const [completed, setCompleted] = useState<number[]>([]);
   const [historySeeded, setHistorySeeded] = useState(false);
 
   useEffect(() => {
@@ -91,9 +90,6 @@ export function PilotMeasurementPanel({
   ]);
 
   const advanceChapter = (from: number) => {
-    setCompleted((prev) =>
-      prev.includes(from) ? prev : [...prev, from],
-    );
     setChapter(Math.min(3, from + 1));
   };
 
@@ -149,7 +145,6 @@ export function PilotMeasurementPanel({
     if (done.length === 0) {
       return;
     }
-    setCompleted(done);
     setChapter(done.includes(1) ? 1 : done[done.length - 1]!);
     setHistorySeeded(true);
   }, [snapshot, historySeeded]);
@@ -375,11 +370,9 @@ export function PilotMeasurementPanel({
               exit={reduceMotion ? undefined : { opacity: 0, x: -16 }}
               transition={spring.soft}
             >
-              <WorkspaceSurface tone="soft" padding="md" className="checkin-bubble">
-                <p className="quote-pane__text">
-                  Before Workspace — about how many minutes to get back?
-                </p>
-              </WorkspaceSurface>
+              <p className="checkin-prompt">
+                Before Workspace — about how many minutes to get back?
+              </p>
               <WorkspaceSurface tone="solid" padding="md" className="checkin-bubble--you">
                 <label className="exp-field" htmlFor="pilot-baseline-minutes">
                   <span>Minutes</span>
@@ -434,11 +427,9 @@ export function PilotMeasurementPanel({
               exit={reduceMotion ? undefined : { opacity: 0, x: -16 }}
               transition={spring.soft}
             >
-              <WorkspaceSurface tone="soft" padding="md" className="checkin-bubble">
-                <p className="quote-pane__text">
-                  After a Continue — how many minutes to feel back?
-                </p>
-              </WorkspaceSurface>
+              <p className="checkin-prompt">
+                After a Continue — how many minutes to feel back?
+              </p>
               <WorkspaceSurface tone="solid" padding="md" className="checkin-bubble--you">
                 <label className="exp-field" htmlFor="pilot-return-minutes">
                   <span>Minutes to return</span>
@@ -503,16 +494,14 @@ export function PilotMeasurementPanel({
               exit={reduceMotion ? undefined : { opacity: 0, x: -16 }}
               transition={spring.soft}
             >
-              <WorkspaceSurface tone="soft" padding="md" className="checkin-bubble">
-                <p className="quote-pane__text">
-                  A few reflections — whenever you’re ready.
-                </p>
+              <div className="checkin-prompt">
+                <p>A few reflections — whenever you’re ready.</p>
                 <ul className="list compact">
                   {BASELINE_PROMPTS.map((prompt) => (
                     <li key={prompt}>{prompt}</li>
                   ))}
                 </ul>
-              </WorkspaceSurface>
+              </div>
               <WorkspaceSurface tone="solid" padding="md" className="checkin-bubble--you">
                 <textarea
                   className="input-wide"
@@ -552,16 +541,14 @@ export function PilotMeasurementPanel({
               exit={reduceMotion ? undefined : { opacity: 0, x: -16 }}
               transition={spring.soft}
             >
-              <WorkspaceSurface tone="soft" padding="md" className="checkin-bubble">
-                <p className="quote-pane__text">
-                  Week four — still useful?
-                </p>
+              <div className="checkin-prompt">
+                <p>Week four — still useful?</p>
                 <ul className="list compact">
                   {WEEK_FOUR_PROMPTS.map((prompt) => (
                     <li key={prompt}>{prompt}</li>
                   ))}
                 </ul>
-              </WorkspaceSurface>
+              </div>
               <WorkspaceSurface tone="solid" padding="md" className="checkin-bubble--you">
                 <textarea
                   className="input-wide"
@@ -586,34 +573,6 @@ export function PilotMeasurementPanel({
       </div>
 
       <aside className="checkin-evidence" aria-label="Pulse evidence">
-        <div
-          className="checkin-spatial-trail"
-          role="tablist"
-          aria-label="Check-in chapters"
-        >
-          {["Baseline", "Return", "Reflect", "Week four"].map((label, index) => {
-            const done = completed.includes(index);
-            const active = chapter === index;
-            return (
-              <button
-                key={label}
-                type="button"
-                role="tab"
-                aria-selected={active}
-                className={[
-                  "checkin-spatial-chip",
-                  active ? "is-active" : "",
-                  done ? "is-done" : "",
-                ]
-                  .filter(Boolean)
-                  .join(" ")}
-                onClick={() => setChapter(index)}
-              >
-                <span className="checkin-spatial-chip__label">{label}</span>
-              </button>
-            );
-          })}
-        </div>
         <div className="checkin-metrics checkin-metrics--quiet">
           <CheckInSummaryObject
             id="checkin-baseline"
