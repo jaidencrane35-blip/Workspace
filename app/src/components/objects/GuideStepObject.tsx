@@ -29,7 +29,7 @@ function GuideStepObjectInner({
       state={state}
       className="guide-step-object"
     >
-      <p className="exp-kicker">Step {step}</p>
+      <p className="sr-only">Step {step}</p>
       <div className="guide-step__icon">
         <Icon size={ICON.xl} strokeWidth={ICON.stroke} aria-hidden="true" />
       </div>

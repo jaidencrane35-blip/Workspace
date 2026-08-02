@@ -125,10 +125,7 @@ export function compositionForIntent(
         lightingBias: "cool",
         motion: "soft",
         primaryHint: "guide",
-        commands: [
-          { id: "try-save", label: "Try Save", action: "save", view: "save" },
-          { id: "try-continue", label: "Try Continue", action: "continue", view: "resume" },
-        ],
+        commands: [],
       };
     case "landing":
     default:

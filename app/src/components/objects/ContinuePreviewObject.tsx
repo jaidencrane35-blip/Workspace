@@ -65,12 +65,9 @@ export function ContinuePreviewBody({
               ]
                 .filter(Boolean)
                 .join(" ")}
-              initial={reduceMotion ? false : { opacity: 0, y: 6 }}
+              initial={reduceMotion ? false : { opacity: 0, y: 4 }}
               animate={{ opacity: skip ? 0.48 : 1, y: 0 }}
-              transition={{
-                ...spring.soft,
-                delay: reduceMotion ? 0 : index * 0.03,
-              }}
+              transition={spring.soft}
             >
               <span className="continue-window-pane__chrome" aria-hidden="true" />
               <span className="continue-window-pane__title">{title}</span>

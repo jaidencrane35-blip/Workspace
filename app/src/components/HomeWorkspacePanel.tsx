@@ -136,23 +136,9 @@ export function HomeWorkspacePanel({
       data-density={density}
     >
       <div className="place__identity place__identity--quiet">
-        <p className="exp-kicker">{workspace.name}</p>
         <h1 className="place__title place__title--continue">
           Continue your work
         </h1>
-        <button
-          type="button"
-          className="home-quiet-save"
-          disabled={busy}
-          onClick={onGoToSave}
-        >
-          <BookmarkPlus
-            size={ICON.md}
-            strokeWidth={ICON.stroke}
-            aria-hidden="true"
-          />
-          Quick save
-        </button>
       </div>
 
       {loadError && <p className="error">{loadError}</p>}

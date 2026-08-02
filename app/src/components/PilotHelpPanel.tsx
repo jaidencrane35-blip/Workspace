@@ -1,12 +1,10 @@
-import { BookmarkPlus, ClipboardList, Play, ShieldCheck } from "lucide-react";
+import { BookmarkPlus, ClipboardList, Play } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useState } from "react";
 import { spring } from "../design-system";
-import { ICON } from "../lib/icons";
 import { RESTORE_LIMITS_SUMMARY } from "../lib/restoreLimits";
 import { GuideStepObject } from "./objects/GuideStepObject";
 import { useWorkspaceComposition } from "./WorkspaceComposition";
-import { WorkspaceObject } from "./WorkspaceObject";
 
 const STEPS = [
   {
@@ -119,27 +117,15 @@ export function PilotHelpPanel() {
         </div>
       </div>
 
-      <WorkspaceObject
-        objectId="guide-trust"
-        kind="guide-step"
-        slot="stage"
-        state="expanded"
-        className="quote-pane"
-      >
-        <div className="guide-step__icon">
-          <ShieldCheck
-            size={ICON.lg}
-            strokeWidth={ICON.stroke}
-            aria-hidden="true"
-          />
-        </div>
+      <details className="exp-inspect guide-trust-recess">
+        <summary>What this pilot keeps local</summary>
         <p className="quote-pane__text">
           You write the handoff. You approve every restore plan. You can inspect
           and permanently delete saved contexts. Nothing is sent off this
           computer for this pilot.
         </p>
         <p className="quote-pane__meta">{RESTORE_LIMITS_SUMMARY}</p>
-      </WorkspaceObject>
+      </details>
     </section>
   );
 }

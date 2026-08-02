@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from "react";
-import { DemoRestoreHistory } from "../demo/DemoRestoreHistory";
 import { isExperienceDemoActive } from "../demo/demoMode";
 import { invokeIpc } from "../lib/ipc";
 import { RESTORE_LIMITS_SUMMARY } from "../lib/restoreLimits";
@@ -314,15 +313,24 @@ export function ResumeContextPanel({
     >
       {(step === "browse" || step === "preview") && (
         <>
-          {!previewing && (
+              {!previewing && (
             <>
               <header className="spatial-header spatial-header--quiet">
-                <p className="exp-kicker">Continue</p>
                 <h1 className="spatial-title">What were you doing?</h1>
               </header>
               <p className="trust-strip trust-strip--quiet muted">
                 {RESTORE_LIMITS_SUMMARY}
               </p>
+              {featured && (
+                <button
+                  type="button"
+                  className="exp-btn ghost continue-inspect-entry"
+                  disabled={busy}
+                  onClick={() => openInspect(featured.id)}
+                >
+                  Inspect
+                </button>
+              )}
             </>
           )}
 
@@ -368,47 +376,31 @@ export function ResumeContextPanel({
                       selectMoment(featured.id);
                       openPreview(featured.id);
                     }}
-                    onInspect={
-                      previewing ? undefined : () => openInspect(featured.id)
-                    }
                     expandContent={
                       preview?.saved_context_id === featured.id ? (
-                        <>
-                          <ContinuePreviewBody
-                            preview={preview}
-                            busy={busy}
-                            onApprove={approveAndRestore}
-                            onCancel={backToBrowse}
-                            describeDisposition={describeDisposition}
-                          />
-                          <DemoRestoreHistory contextId={featured.id} />
-                        </>
+                        <ContinuePreviewBody
+                          preview={preview}
+                          busy={busy}
+                          onApprove={approveAndRestore}
+                          onCancel={backToBrowse}
+                          describeDisposition={describeDisposition}
+                        />
                       ) : undefined
                     }
                   />
                 </div>
               )}
-              {density !== "focus" && satellitePool.length > 0 && (
-                <div
-                  className={
-                    previewing
-                      ? "continue-satellites continue-recede is-recessed"
-                      : "continue-satellites continue-recede"
-                  }
-                >
+              {!previewing && density !== "focus" && satellitePool.length > 0 && (
+                <div className="continue-satellites continue-recede">
                   {satellitePool.map((context, index) => (
                     <MomentCard
                       key={context.id}
                       variant="compact"
                       sparse
-                      attentionWeight={previewing ? 0.42 : 0.68}
+                      attentionWeight={0.68}
                       className={`home-satellite home-satellite--${index % 3}`}
                       state={
-                        preview?.saved_context_id === context.id
-                          ? "preview"
-                          : selectedId === context.id
-                            ? "selected"
-                            : "collapsed"
+                        selectedId === context.id ? "selected" : "collapsed"
                       }
                       context={context}
                       busy={busy}
@@ -420,20 +412,6 @@ export function ResumeContextPanel({
                         selectMoment(context.id);
                         openPreview(context.id);
                       }}
-                      expandContent={
-                        preview?.saved_context_id === context.id ? (
-                          <>
-                            <ContinuePreviewBody
-                              preview={preview}
-                              busy={busy}
-                              onApprove={approveAndRestore}
-                              onCancel={backToBrowse}
-                              describeDisposition={describeDisposition}
-                            />
-                            <DemoRestoreHistory contextId={context.id} />
-                          </>
-                        ) : undefined
-                      }
                     />
                   ))}
                 </div>

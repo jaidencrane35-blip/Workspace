@@ -334,9 +334,8 @@ export function PilotMeasurementPanel({
       data-density={density}
     >
       <header className="spatial-header spatial-header--quiet">
-        <p className="exp-kicker">Check-in</p>
         <h1 className="spatial-title">How’s the return feeling?</h1>
-        <p className="spatial-summary">
+        <p className="sr-only">
           Local pilot pulse only — they are not saved contexts and are not sent
           anywhere.
         </p>
@@ -347,9 +346,7 @@ export function PilotMeasurementPanel({
           tone="soft"
           padding="lg"
           className="checkin-story"
-          lit
         >
-          <p className="exp-kicker">Your words</p>
           <p className="checkin-story__text">
             {(
               snapshot.interview_week_four?.responses ||
@@ -367,34 +364,6 @@ export function PilotMeasurementPanel({
       )}
 
       <div className="checkin-narrative pilot-forms attention-field">
-        <div
-          className="checkin-spatial-trail"
-          role="tablist"
-          aria-label="Check-in chapters"
-        >
-          {["Baseline", "Return", "Reflect", "Week four"].map((label, index) => {
-            const done = completed.includes(index);
-            const active = chapter === index;
-            return (
-              <button
-                key={label}
-                type="button"
-                role="tab"
-                aria-selected={active}
-                className={[
-                  "checkin-spatial-chip",
-                  active ? "is-active" : "",
-                  done ? "is-done" : "",
-                ]
-                  .filter(Boolean)
-                  .join(" ")}
-                onClick={() => setChapter(index)}
-              >
-                <span className="checkin-spatial-chip__label">{label}</span>
-              </button>
-            );
-          })}
-        </div>
 
         <AnimatePresence mode="wait">
           {chapter === 0 && (
@@ -617,6 +586,34 @@ export function PilotMeasurementPanel({
       </div>
 
       <aside className="checkin-evidence" aria-label="Pulse evidence">
+        <div
+          className="checkin-spatial-trail"
+          role="tablist"
+          aria-label="Check-in chapters"
+        >
+          {["Baseline", "Return", "Reflect", "Week four"].map((label, index) => {
+            const done = completed.includes(index);
+            const active = chapter === index;
+            return (
+              <button
+                key={label}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                className={[
+                  "checkin-spatial-chip",
+                  active ? "is-active" : "",
+                  done ? "is-done" : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+                onClick={() => setChapter(index)}
+              >
+                <span className="checkin-spatial-chip__label">{label}</span>
+              </button>
+            );
+          })}
+        </div>
         <div className="checkin-metrics checkin-metrics--quiet">
           <CheckInSummaryObject
             id="checkin-baseline"

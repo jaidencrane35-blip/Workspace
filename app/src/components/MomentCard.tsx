@@ -106,9 +106,7 @@ function MomentCardInner({
   const showHandoff = !sparse || variant === "compact";
   const showWindows = !sparse && !sparseMeta;
   const showMeta = !sparse;
-  const showKicker =
-    !sparse &&
-    (state === "restoring" || state === "preview" || variant === "hero");
+  const showKicker = !sparse && state === "restoring";
 
   return (
     <WorkspaceObject
@@ -118,9 +116,7 @@ function MomentCardInner({
       state={objectState}
       layoutId={layoutId ?? `moment-${context.id}`}
       attentionWeight={attentionWeight}
-      lit={
-        state === "selected" || state === "preview" || state === "restoring"
-      }
+      lit={state === "preview" || state === "restoring"}
       onActivate={onSelect}
       className={[
         "moment-card",
@@ -134,15 +130,7 @@ function MomentCardInner({
         .join(" ")}
     >
       <div className="moment-card__top">
-        {showKicker && (
-          <p className="moment-card__kicker">
-            {state === "restoring"
-              ? "Restoring"
-              : state === "preview"
-                ? "Here"
-                : "Now"}
-          </p>
-        )}
+        {showKicker && <p className="moment-card__kicker">Restoring</p>}
         <h3 className="moment-card__title">{context.name}</h3>
       </div>
       {showHandoff && (
