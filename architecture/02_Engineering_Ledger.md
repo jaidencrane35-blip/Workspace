@@ -1926,3 +1926,61 @@ not supersede LEDGER-0013 success/failure metrics or trust invalidation rules.
 
 Status: Complete; **PP-P01 implementation slices complete**; no active PP-P01
 slice; next recommended milestone is Product Proof review
+
+### LEDGER-0031
+
+Entry ID: LEDGER-0031
+Timestamp: 2026-08-02
+Capability: Product strategy — Product Proof Review after PP-P01
+Related ADRs: ADR-0008
+Related Research: None (strategy review; no technology evaluation)
+Decision: Accept `architecture/18_Product_Proof_Review_PP_P01.md` as the
+authoritative post-PP-P01 Product Proof Review. Findings:
+
+1. **PP-P01 is formally complete** as an implementation milestone
+   (`PP-P01A`–`PP-P01E`, LEDGER-0030).
+2. **Recruitment-readiness gate is satisfied** (LEDGER-0025 / LEDGER-0030).
+3. **LEDGER-0013 hypothesis remains the governing objective** and remains
+   **unproven**.
+4. Implementation now **supports testing** the hypothesis (handoff, honest
+   limits, inspect/delete, pilot chrome, consented local measurement) but does
+   **not** establish that users will prefer Workspace.
+5. **Highest-value next programme objective:** recruit and execute the
+   LEDGER-0013 four-week pilot (~15 target users), then analyse evidence against
+   LEDGER-0013 success, failure, and trust-invalidation rules.
+6. **Next implementation slice: None.** Do not start `PP-M1-03`, declared
+   application launch/reuse, ambient sensing, network telemetry, Intelligence on
+   the critical path, or `ROADMAP-001` from completion momentum.
+
+Residual non-blocking risks recorded in the review: live WebView2 CSP
+observation on first pilot build; same-session restore limits as product truth;
+open `LaunchApplication` drift kept out of pilot claims; local-only measurement
+implies operational cohort rollup.
+
+Rationale: LEDGER-0013 defines the measurable objective; LEDGER-0030 closed the
+engineering package gate; Current State required this review before the next
+milestone. Further building before evidence would confuse package completion
+with hypothesis proof.
+
+Validation:
+- Re-read Cursor Protocol, ESP, Blueprint, Current State, Ledger through
+  LEDGER-0030, and LEDGER-0013 Product Proof Strategy.
+- Confirmed no contract, ownership, or architecture mutation required.
+- Confirmed LEDGER-0023 NOT READY is superseded for the five package blockers
+  by LEDGER-0030, without superseding LEDGER-0013 metrics.
+- No runtime code changed in this entry.
+
+Knowledge Gained:
+- Recruitment readiness and hypothesis proof are distinct gates; PP-P01 closes
+  the first and enables the second to be attempted.
+
+Unlocks: Operational LEDGER-0013 pilot recruitment and execution as the active
+programme objective. Does not unlock Product Proof success, `PP-M1-03`, or
+capability research.
+
+Supersedes: Current State / LEDGER-0030 recommendation that the next milestone
+is still “Product Proof review”. Does not supersede LEDGER-0013 hypothesis,
+metrics, or trust invalidation.
+
+Status: Accepted; next programme objective **LEDGER-0013 pilot recruitment and
+execution**; next implementation slice **None**

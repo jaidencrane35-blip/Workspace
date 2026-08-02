@@ -101,6 +101,13 @@ review the exact restore plan, approve it, and receive honest per-item outcomes
 from deterministic same-session `window.place` / `window.focus` execution;
 nothing mutates before approval (LEDGER-0022)
 
+✓ `PP-P01` Pilot Package implementation complete (`PP-P01A`–`PP-P01E`,
+LEDGER-0026–0030)
+
+✓ Post-PP-P01 Product Proof Review complete (`18_Product_Proof_Review_PP_P01.md`,
+LEDGER-0031): recruitment-readiness gate satisfied; hypothesis unproven but
+testable; next objective is LEDGER-0013 pilot recruitment and execution
+
 ---
 
 # Active Task
@@ -125,22 +132,22 @@ Milestone 1 is under way: `PP-M1-01` and `PP-M1-02` are complete.
    `action.window.place` / `action.window.focus` proofs at point of use.
 
 Product Proof pilot package engineering (LEDGER-0023 / LEDGER-0025): the five
-PP-P01 blockers are implemented (`PP-P01A`–`PP-P01E`, LEDGER-0030). That closes
-the package gate for cohort-recruitment readiness review. It does **not** mean
-the LEDGER-0013 hypothesis is proven. Next step is a Product Proof review from
-repository authority — not automatic implementation of `PP-M1-03` or capability
-research. `PP-M1-03` (Undo) remains valuable but stays sequenced after the
-pilot package can be evaluated with participants.
+PP-P01 blockers are implemented (`PP-P01A`–`PP-P01E`, LEDGER-0030). The
+post-PP-P01 Product Proof Review (`18_Product_Proof_Review_PP_P01.md`,
+LEDGER-0031) finds the recruitment-readiness gate **satisfied** and the
+hypothesis **still unproven but now testable**. Next programme objective is
+LEDGER-0013 cohort recruitment and four-week pilot execution — not automatic
+implementation of `PP-M1-03` or capability research. `PP-M1-03` (Undo) remains
+valuable but stays sequenced after pilot evidence (or a repository-authorised
+defect) justifies engineering.
 
 ---
 
 # Next Task
 
 The **PP-P01 Pilot Package** implementation slices are complete (LEDGER-0030).
-`PP-P01` remains the milestone identity for the LEDGER-0013 recruitment gate.
-Slices were implementation sequencing only; they did not change architecture,
-ownership, or contracts. Completing the package enables recruitment readiness
-review — it does not prove the Product Proof hypothesis.
+The Product Proof Review after PP-P01 is complete (LEDGER-0031). Completing the
+package and the review does **not** prove the Product Proof hypothesis.
 
 Authorised implementation order:
 
@@ -153,13 +160,10 @@ Authorised implementation order:
 | `PP-P01E` | Consented measurement and interview kit (baseline, leave→resume time, correction, week-four habit; no ambient observation) | **Complete** (LEDGER-0030) |
 
 **PP-P01 Pilot Package implementation slices: complete** (LEDGER-0030).
+**Product Proof Review after PP-P01: complete** (LEDGER-0031).
 
-There is no active PP-P01 implementation slice. Per LEDGER-0025, completing
-`PP-P01A`–`PP-P01E` satisfies the engineering package gate for LEDGER-0013
-cohort recruitment. Completing the package is **not** Product Proof success and
-does **not** prove the hypothesis. Do not begin the next implementation
-milestone from habit; perform a Product Proof review from repository authority
-first.
+There is no active implementation slice. Recruitment-readiness gate: **satisfied**.
+Product Proof hypothesis: **unproven**. Do not begin implementation from habit.
 
 `PP-P01A` is complete: Save requires an explicit user-authored handoff note;
 the note is reviewed before capture, persisted with the saved context, and
@@ -197,11 +201,12 @@ confirm the wedge. `ROADMAP-001` remains the valid dependency order if the
 proof later justifies resumed capability research; it is not the active
 milestone.
 
-Recommended next engineering milestone: **Product Proof review** (reconstruct
-authority; verify PP-P01 package complete; re-evaluate LEDGER-0013 hypothesis
-readiness; choose the next highest-value milestone from the repository).
-Recommended next implementation slice: **None** — pause for Product Proof
-review before generating the next implementation prompt.
+Recommended next programme objective: **Recruit and execute the LEDGER-0013
+Product Proof pilot** (~15 target users; four weeks; baseline, leave→resume,
+correction, week-four habit, trust invalidation watch; local measurement only).
+See `18_Product_Proof_Review_PP_P01.md` and LEDGER-0031.
+Recommended next implementation slice: **None** — no product implementation
+until pilot evidence or a repository-authorised engineering defect requires it.
 
 ---
 
@@ -267,16 +272,17 @@ review before generating the next implementation prompt.
 
 # Architecture Health
 
-Capability decomposition stable; product proof absent; sustained capability
-expansion and large-scale implementation are not yet justified
+Capability decomposition stable; product proof still absent as *evidence*;
+sustained capability expansion and large-scale implementation are not yet
+justified
 
 Build integrity restored: `cargo test --workspace` and `pnpm test` are green,
 the workspace packages as an MSI and NSIS installer, no observation occurs
 before explicit user capture, and the WebView runs under an enforced Content
 Security Policy.
 
-The first Product Proof workflow now exists end to end, so the proof hypothesis
-has a surface to be tested against rather than only a strategy.
+The Product Proof workflow and consented local measurement kit exist end to
+end. The hypothesis is testable with a LEDGER-0013 cohort; it is not proven.
 
 ---
 
