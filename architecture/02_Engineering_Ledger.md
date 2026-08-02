@@ -2258,3 +2258,21 @@ polish. No Product Proof behaviour change.
 Validation: `pnpm typecheck`, `pnpm test`, lint green.
 
 Status: Complete
+
+### LEDGER-0042
+
+Entry ID: LEDGER-0042
+Timestamp: 2026-08-02
+Capability: Experience — Workspace Canvas and adaptive objects
+Related ADRs: ADR-0008
+Related Research: EXP-001; concept boards
+Decision: Introduce a persistent Workspace Canvas owning composition, focus,
+ambient lighting, and depth; refactor UI into Workspace Objects (Moment,
+Intention, Continue Preview, Check-in Summary, Guide Step, Quick Action) with
+shared-layout state morphing; adaptive Home composition; distraction-free Save
+writing mode; inline Continue restoration preview; narrative Check-in; Guide
+product tour; velocity-aware dock. No Product Proof behaviour change.
+
+Validation: `pnpm typecheck`, `pnpm test` green.
+
+Status: Complete

@@ -1,10 +1,11 @@
 import { BookmarkPlus, ClipboardList, Play, ShieldCheck } from "lucide-react";
 import { motion, useReducedMotion, useScroll, useTransform } from "motion/react";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { spring } from "../design-system";
 import { RESTORE_LIMITS_SUMMARY } from "../lib/restoreLimits";
+import { GuideStepObject } from "./objects/GuideStepObject";
 import { useWorkspaceComposition } from "./WorkspaceComposition";
-import { WorkspaceSurface } from "./WorkspaceSurface";
+import { WorkspaceObject } from "./WorkspaceObject";
 
 const STEPS = [
   {
@@ -28,12 +29,13 @@ const STEPS = [
 ] as const;
 
 /**
- * Guide — interactive walkthrough with scroll reveal.
+ * Guide — interactive product tour on the Workspace Canvas.
  */
 export function PilotHelpPanel() {
-  const { density } = useWorkspaceComposition();
+  const { density, setFocusedObjectId, setAmbient } = useWorkspaceComposition();
   const reduceMotion = useReducedMotion();
   const ref = useRef<HTMLElement>(null);
+  const [active, setActive] = useState(0);
   const { scrollYProgress } = useScroll({
     target: ref,
     offset: ["start start", "end end"],
@@ -50,44 +52,44 @@ export function PilotHelpPanel() {
       <header className="spatial-header">
         <p className="exp-kicker">Guide</p>
         <h1 className="spatial-title">How this pilot works</h1>
-        <motion.div className="guide-walk__progress" style={{ width: progressWidth }} />
+        <motion.div
+          className="guide-walk__progress"
+          style={{ width: progressWidth }}
+        />
       </header>
 
-      <div className="guide-walk__chapters">
-        {STEPS.map((item, index) => {
-          const Icon = item.icon;
-          return (
-            <motion.div
-              key={item.id}
-              className="guide-walk__chapter"
-              initial={reduceMotion ? false : { opacity: 0.25, y: 28 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ amount: 0.45, once: true }}
-              transition={spring.soft}
-            >
-              <WorkspaceSurface
-                level="floating"
-                tone={index === 0 ? "hero" : "default"}
-                padding="xl"
-                className="guide-story__card"
-                layout
-              >
-                <p className="exp-kicker">Step {index + 1}</p>
-                <div className="guide-step__icon">
-                  <Icon size={26} aria-hidden="true" />
-                </div>
-                <h3>{item.title}</h3>
-                <p>{item.line}</p>
-              </WorkspaceSurface>
-            </motion.div>
-          );
-        })}
+      <div className="guide-walk__chapters ws-compose ws-compose--tour">
+        {STEPS.map((item, index) => (
+          <motion.div
+            key={item.id}
+            className="guide-walk__chapter"
+            initial={reduceMotion ? false : { opacity: 0.2, y: 32, scale: 0.98 }}
+            whileInView={{ opacity: 1, y: 0, scale: 1 }}
+            viewport={{ amount: 0.5, once: false }}
+            transition={spring.soft}
+            onViewportEnter={() => {
+              setActive(index);
+              setFocusedObjectId(item.id);
+              setAmbient("card");
+            }}
+          >
+            <GuideStepObject
+              id={item.id}
+              step={index + 1}
+              title={item.title}
+              line={item.line}
+              icon={item.icon}
+              state={active === index ? "expanded" : "idle"}
+            />
+          </motion.div>
+        ))}
       </div>
 
-      <WorkspaceSurface
-        level="floating"
-        tone="soft"
-        padding="md"
+      <WorkspaceObject
+        objectId="guide-trust"
+        kind="guide-step"
+        slot="stage"
+        state="expanded"
         className="quote-pane"
       >
         <div className="guide-step__icon" style={{ marginBottom: "0.35rem" }}>
@@ -99,7 +101,7 @@ export function PilotHelpPanel() {
           computer for this pilot.
         </p>
         <p className="quote-pane__meta">{RESTORE_LIMITS_SUMMARY}</p>
-      </WorkspaceSurface>
+      </WorkspaceObject>
     </section>
   );
 }

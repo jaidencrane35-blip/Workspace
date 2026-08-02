@@ -20,7 +20,6 @@ import {
   useEffect,
   useId,
   useRef,
-  useState,
 } from "react";
 import { interaction, spring } from "../design-system";
 import { useWorkspaceDensity } from "../hooks/useWorkspaceDensity";
@@ -30,7 +29,11 @@ import {
   type PilotPrimaryView,
 } from "../lib/pilotChrome";
 import { AmbientLighting, type AmbientFocus } from "./AmbientLighting";
-import { WorkspaceCompositionProvider } from "./WorkspaceComposition";
+import { WorkspaceCanvas } from "./WorkspaceCanvas";
+import {
+  useWorkspaceComposition,
+  WorkspaceCompositionProvider,
+} from "./WorkspaceComposition";
 
 const DOCK_ICONS: Record<PilotPrimaryView, typeof Home> = {
   home: Home,
@@ -68,25 +71,34 @@ function DockItem({
   const springX = useSpring(x, spring.dock);
   const springY = useSpring(y, spring.dock);
   const ref = useRef<HTMLButtonElement>(null);
+  const last = useRef({ t: 0, cx: 0, cy: 0 });
 
   const onMove = useCallback(
     (event: MouseEvent<HTMLButtonElement>) => {
       if (reduceMotion || !ref.current) {
         return;
       }
+      const now = performance.now();
+      const dt = Math.max(8, now - last.current.t);
+      const vx = (event.clientX - last.current.cx) / dt;
+      const vy = (event.clientY - last.current.cy) / dt;
+      last.current = { t: now, cx: event.clientX, cy: event.clientY };
+
       const rect = ref.current.getBoundingClientRect();
       const dx = event.clientX - (rect.left + rect.width / 2);
       const dy = event.clientY - (rect.top + rect.height / 2);
+      const velocityBoost = 1 + Math.min(0.45, Math.hypot(vx, vy) * 8);
+      const factor = interaction.magneticFactor * velocityBoost;
       x.set(
         Math.max(
           -interaction.magneticMax,
-          Math.min(interaction.magneticMax, dx * interaction.magneticFactor),
+          Math.min(interaction.magneticMax, dx * factor),
         ),
       );
       y.set(
         Math.max(
           -interaction.magneticMax,
-          Math.min(interaction.magneticMax, dy * interaction.magneticFactor),
+          Math.min(interaction.magneticMax, dy * factor),
         ),
       );
     },
@@ -135,26 +147,42 @@ function DockItem({
   );
 }
 
-export function WorkspaceShell({
+function ShellBody({
   view,
   onNavigate,
   status,
   children,
 }: WorkspaceShellProps) {
   const reduceMotion = useReducedMotion();
-  const density = useWorkspaceDensity();
   const contentRef = useRef<HTMLDivElement>(null);
   const contentId = useId();
   const liveRef = useRef<HTMLDivElement>(null);
-  const [ambient, setAmbient] = useState<AmbientFocus>("workspace");
+  const {
+    density,
+    writingMode,
+    ambient,
+    setAmbient,
+    setWritingMode,
+    setSelectedObjectId,
+    setFocusedObjectId,
+  } = useWorkspaceComposition();
 
   useEffect(() => {
     contentRef.current?.focus({ preventScroll: true });
+    setWritingMode(false);
+    setSelectedObjectId(null);
+    setFocusedObjectId(null);
     setAmbient(view === "save" ? "input" : "workspace");
     if (liveRef.current) {
       liveRef.current.textContent = `${PILOT_VIEW_LABELS[view]} selected`;
     }
-  }, [view]);
+  }, [
+    view,
+    setAmbient,
+    setWritingMode,
+    setSelectedObjectId,
+    setFocusedObjectId,
+  ]);
 
   const onDockKeyDown = (event: KeyboardEvent<HTMLElement>) => {
     const index = PILOT_PRIMARY_VIEWS.indexOf(view);
@@ -181,42 +209,45 @@ export function WorkspaceShell({
   };
 
   return (
-    <WorkspaceCompositionProvider density={density}>
-      <div
-        className="app-shell exp-shell ws-env ws-shell"
-        data-density={density}
-        data-ambient={ambient}
-      >
-        <div className="ws-layer ws-layer--bg" aria-hidden="true">
-          <div className="ws-atmosphere">
-            <div className="ws-atmosphere__glow ws-atmosphere__glow--a" />
-            <div className="ws-atmosphere__glow ws-atmosphere__glow--b" />
-            <div className="ws-atmosphere__glow ws-atmosphere__glow--c" />
-            <div className="ws-atmosphere__glow ws-atmosphere__glow--d" />
-            <div className="ws-atmosphere__glow ws-atmosphere__glow--e" />
-            <div className="ws-atmosphere__grain" />
-            <div className="ws-atmosphere__vignette" />
-          </div>
-          <AmbientLighting focus={ambient} />
+    <div
+      className="app-shell exp-shell ws-env ws-shell"
+      data-density={density}
+      data-ambient={ambient}
+      data-writing={writingMode ? "on" : "off"}
+      data-destination={view}
+    >
+      <div className="ws-layer ws-layer--bg" aria-hidden="true">
+        <div className="ws-atmosphere">
+          <div className="ws-atmosphere__glow ws-atmosphere__glow--a" />
+          <div className="ws-atmosphere__glow ws-atmosphere__glow--b" />
+          <div className="ws-atmosphere__glow ws-atmosphere__glow--c" />
+          <div className="ws-atmosphere__glow ws-atmosphere__glow--d" />
+          <div className="ws-atmosphere__glow ws-atmosphere__glow--e" />
+          <div className="ws-atmosphere__glow ws-atmosphere__glow--f" />
+          <div className="ws-atmosphere__grain" />
+          <div className="ws-atmosphere__vignette" />
         </div>
+        <AmbientLighting focus={ambient} active />
+      </div>
 
-        <div className="sr-only" aria-live="polite" ref={liveRef} />
+      <div className="sr-only" aria-live="polite" ref={liveRef} />
 
-        <header className="app-chrome exp-chrome ws-menubar ws-layer ws-layer--chrome">
-          <div className="exp-brand ws-brand">
-            <span className="exp-brand-mark ws-mark" aria-hidden="true">
-              <span className="ws-mark__plane" />
-              <span className="ws-mark__plane ws-mark__plane--b" />
-            </span>
-            <h1>Workspace</h1>
-          </div>
-          <div className="ws-menubar__status" aria-live="polite">
-            {status}
-          </div>
-        </header>
+      <header className="app-chrome exp-chrome ws-menubar ws-layer ws-layer--chrome">
+        <div className="exp-brand ws-brand">
+          <span className="exp-brand-mark ws-mark" aria-hidden="true">
+            <span className="ws-mark__plane" />
+            <span className="ws-mark__plane ws-mark__plane--b" />
+          </span>
+          <h1>Workspace</h1>
+        </div>
+        <div className="ws-menubar__status" aria-live="polite">
+          {status}
+        </div>
+      </header>
 
-        <div className="ws-stage ws-layer ws-layer--plane" role="presentation">
-          <motion.div className="ws-spatial" layout={!reduceMotion}>
+      <div className="ws-stage ws-layer ws-layer--plane" role="presentation">
+        <motion.div className="ws-spatial" layout={!reduceMotion}>
+          <WorkspaceCanvas destination={view}>
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
                 key={view}
@@ -229,7 +260,7 @@ export function WorkspaceShell({
                 initial={
                   reduceMotion
                     ? { opacity: 1 }
-                    : { opacity: 0, y: 16, scale: 0.986, filter: "blur(3px)" }
+                    : { opacity: 0, y: 14, scale: 0.988, filter: "blur(2px)" }
                 }
                 animate={
                   reduceMotion
@@ -239,12 +270,12 @@ export function WorkspaceShell({
                 exit={
                   reduceMotion
                     ? { opacity: 0 }
-                    : { opacity: 0, y: -10, scale: 0.99, filter: "blur(2px)" }
+                    : { opacity: 0, y: -8, scale: 0.992, filter: "blur(2px)" }
                 }
                 transition={
                   reduceMotion
                     ? { duration: 0.01 }
-                    : { ...spring.soft, opacity: { duration: 0.26 } }
+                    : { ...spring.soft, opacity: { duration: 0.24 } }
                 }
                 onFocusCapture={(event) => {
                   const target = event.target as HTMLElement;
@@ -259,29 +290,48 @@ export function WorkspaceShell({
                 {children}
               </motion.div>
             </AnimatePresence>
-          </motion.div>
-        </div>
-
-        <nav
-          className="tabs exp-nav ws-dock ws-layer ws-layer--dock"
-          aria-label="Workspace"
-          role="tablist"
-          onKeyDown={onDockKeyDown}
-        >
-          <span className="ws-dock__breath" aria-hidden="true" />
-          {PILOT_PRIMARY_VIEWS.map((id) => (
-            <DockItem
-              key={id}
-              id={id}
-              active={view === id}
-              contentId={contentId}
-              reduceMotion={reduceMotion}
-              onNavigate={onNavigate}
-              onFocusAmbient={setAmbient}
-            />
-          ))}
-        </nav>
+          </WorkspaceCanvas>
+        </motion.div>
       </div>
+
+      <motion.nav
+        className="tabs exp-nav ws-dock ws-layer ws-layer--dock"
+        aria-label="Workspace"
+        role="tablist"
+        onKeyDown={onDockKeyDown}
+        animate={
+          reduceMotion
+            ? undefined
+            : {
+                opacity: writingMode ? 0.35 : 1,
+                y: writingMode ? 10 : 0,
+                scale: writingMode ? 0.96 : 1,
+              }
+        }
+        transition={spring.soft}
+      >
+        <span className="ws-dock__breath" aria-hidden="true" />
+        {PILOT_PRIMARY_VIEWS.map((id) => (
+          <DockItem
+            key={id}
+            id={id}
+            active={view === id}
+            contentId={contentId}
+            reduceMotion={reduceMotion}
+            onNavigate={onNavigate}
+            onFocusAmbient={setAmbient}
+          />
+        ))}
+      </motion.nav>
+    </div>
+  );
+}
+
+export function WorkspaceShell(props: WorkspaceShellProps) {
+  const density = useWorkspaceDensity();
+  return (
+    <WorkspaceCompositionProvider density={density}>
+      <ShellBody {...props} />
     </WorkspaceCompositionProvider>
   );
 }

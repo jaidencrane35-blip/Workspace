@@ -153,6 +153,10 @@ refinements, premium dock interactions.
 ambient lighting, WorkspaceSurface materials, moment objects, canvas Home,
 writing Save, cinematic Continue, metric orbs, Guide walkthrough, dock polish.
 
+✓ Workspace Canvas sprint complete (LEDGER-0042): persistent canvas under every
+destination; Workspace Objects with shared-layout states; adaptive composition;
+writing mode; restoration preview; narrative Check-in; Guide tour; dock velocity.
+
 ---
 
 # Active Task

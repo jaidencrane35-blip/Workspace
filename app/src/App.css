@@ -107,6 +107,183 @@ body {
   filter: blur(120px);
 }
 
+.ws-atmosphere__glow--f {
+  width: 42vw;
+  height: 28vw;
+  left: 28vw;
+  top: 18vh;
+  background: rgba(95, 208, 216, 0.05);
+  animation-duration: 130s;
+  animation-delay: -70s;
+  filter: blur(130px);
+}
+
+[data-destination="save"] .ws-atmosphere__glow--a {
+  background: rgba(60, 160, 180, 0.2);
+}
+[data-destination="resume"] .ws-atmosphere__glow--b {
+  background: rgba(232, 184, 122, 0.14);
+}
+[data-destination="pilot"] .ws-atmosphere__glow--c {
+  background: rgba(70, 120, 200, 0.18);
+}
+[data-writing="on"] .ws-atmosphere__vignette {
+  background: radial-gradient(
+    70% 65% at 50% 42%,
+    transparent 35%,
+    rgba(0, 0, 0, 0.72) 100%
+  );
+}
+[data-writing="on"] .ws-menubar {
+  opacity: 0.45;
+}
+
+.ws-canvas-root {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.ws-canvas-root__veil {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  background: radial-gradient(
+    80% 70% at 50% 40%,
+    transparent 40%,
+    rgba(0, 0, 0, 0.35) 100%
+  );
+  transition: opacity var(--motion-base) var(--ease);
+  z-index: 0;
+}
+
+[data-writing="on"] .ws-canvas-root__veil {
+  opacity: 1;
+}
+
+.ws-canvas-root__field {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  min-height: 0;
+}
+
+.ws-compose {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(14rem, 0.7fr);
+  grid-template-areas:
+    "anchor float"
+    "orbit orbit";
+  gap: clamp(1rem, 2.4vw, 1.75rem);
+  align-items: start;
+}
+
+.ws-compose__anchor { grid-area: anchor; min-width: 0; }
+.ws-compose__float {
+  grid-area: float;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.ws-compose__orbit { grid-area: orbit; }
+.ws-compose__utilities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+.ws-compose__preview {
+  grid-column: 1 / -1;
+  overflow: hidden;
+}
+.ws-compose--empty,
+.ws-compose--invite,
+.ws-compose--tour {
+  grid-template-columns: 1fr;
+  grid-template-areas:
+    "anchor"
+    "float"
+    "orbit";
+}
+.ws-compose--tour {
+  display: flex;
+  flex-direction: column;
+}
+
+[data-density="focus"] .ws-compose {
+  grid-template-columns: 1fr;
+  grid-template-areas:
+    "anchor"
+    "float"
+    "orbit";
+}
+
+.ws-object {
+  min-width: 0;
+  will-change: transform, opacity;
+}
+
+.ws-object--quick-action .ws-surface__body,
+.ws-object--quick-action .elevated-card__body {
+  padding: 0;
+  gap: 0;
+}
+
+.ws-object--quick-action .exp-btn {
+  width: 100%;
+}
+
+.ws-object.is-hidden {
+  visibility: hidden;
+}
+
+.continue-preview__layers {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: var(--space-4);
+}
+
+.continue-preview__confidence {
+  font-size: 1.55rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.checkin-narrative {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.checkin-narrative__dots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.checkin-narrative__dot {
+  appearance: none;
+  border: 1px solid transparent;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--exp-muted);
+  border-radius: var(--radius-pill);
+  padding: 0.35rem 0.85rem;
+  font: inherit;
+  font-size: var(--type-label);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background var(--motion-fast) var(--ease),
+    color var(--motion-fast) var(--ease);
+}
+
+.checkin-narrative__dot.is-active {
+  background: rgba(95, 208, 216, 0.16);
+  color: var(--exp-text);
+  box-shadow: 0 0 20px var(--ws-light-focus);
+}
+
 .ws-ambient {
   position: absolute;
   inset: 0;

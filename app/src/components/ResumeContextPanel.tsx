@@ -1,4 +1,6 @@
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useCallback, useEffect, useState } from "react";
+import { spring } from "../design-system";
 import { invokeIpc } from "../lib/ipc";
 import { RESTORE_LIMITS_SUMMARY } from "../lib/restoreLimits";
 import type {
@@ -11,6 +13,8 @@ import type {
 } from "../types/domain";
 import { EmptyStructure } from "./EmptyStructure";
 import { MomentCard } from "./MomentCard";
+import { ContinuePreviewObject } from "./objects/ContinuePreviewObject";
+import { IntentionObject } from "./objects/IntentionObject";
 import { RestoreLimitsNotice } from "./RestoreLimitsNotice";
 import { useWorkspaceComposition } from "./WorkspaceComposition";
 import { WorkspaceSurface } from "./WorkspaceSurface";
@@ -97,7 +101,8 @@ export function ResumeContextPanel({
   onGoHome,
   focusContextId = null,
 }: ResumeContextPanelProps) {
-  const { density } = useWorkspaceComposition();
+  const { density, setSelectedObjectId, setAmbient } = useWorkspaceComposition();
+  const reduceMotion = useReducedMotion();
   const [step, setStep] = useState<Step>("browse");
   const [contexts, setContexts] = useState<SavedContext[]>([]);
   const [inspected, setInspected] = useState<SavedContext | null>(null);
@@ -105,6 +110,12 @@ export function ResumeContextPanel({
   const [result, setResult] = useState<ActionOperationResult | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  const selectMoment = (id: string) => {
+    setSelectedId(id);
+    setSelectedObjectId(id);
+    setAmbient("moment");
+  };
 
   const reload = useCallback(() => {
     if (!workspace) {
@@ -267,7 +278,7 @@ export function ResumeContextPanel({
       className="spatial-frame continue-gallery continue-dash"
       data-density={density}
     >
-      {step === "browse" && (
+      {(step === "browse" || step === "preview") && (
         <>
           <header className="spatial-header">
             <p className="exp-kicker">Continue</p>
@@ -285,62 +296,63 @@ export function ResumeContextPanel({
           ) : (
             <div
               className={
-                selectedId
-                  ? "continue-cinema is-dimmed"
-                  : "continue-cinema"
+                selectedId || preview
+                  ? "continue-cinema is-dimmed ws-compose"
+                  : "continue-cinema ws-compose"
               }
             >
               {featured && (
-                <div className="continue-cinema__stage">
+                <div className="continue-cinema__stage ws-compose__stage">
                   <MomentCard
                     variant="hero"
                     state={
-                      selectedId === featured.id ? "selected" : "expanded"
+                      selectedId === featured.id ||
+                      preview?.saved_context_id === featured.id
+                        ? preview
+                          ? "preview"
+                          : "selected"
+                        : "expanded"
                     }
                     context={featured}
                     busy={busy}
-                    onSelect={() => setSelectedId(featured.id)}
+                    onSelect={() => selectMoment(featured.id)}
                     onContinue={() => {
-                      setSelectedId(featured.id);
+                      selectMoment(featured.id);
                       openPreview(featured.id);
                     }}
                     onInspect={() => openInspect(featured.id)}
                   />
-                  <WorkspaceSurface
-                    level="floating"
-                    tone="soft"
-                    padding="md"
-                    className="quote-pane continue-cinema__note"
-                    layout
-                  >
-                    <div className="quote-pane__mark" aria-hidden="true">
-                      “
-                    </div>
-                    <p className="quote-pane__text">
-                      {featured.handoff_note.trim() ||
-                        "Your latest note leads."}
-                    </p>
-                    <p className="quote-pane__meta">
-                      Saved intention · not live Windows state
-                    </p>
-                  </WorkspaceSurface>
+                  <IntentionObject
+                    id={`continue-intention-${featured.id}`}
+                    text={
+                      featured.handoff_note.trim() ||
+                      "Your latest note leads."
+                    }
+                    meta="Saved intention · not live Windows state"
+                    state={
+                      selectedId === featured.id ? "expanded" : "idle"
+                    }
+                  />
                 </div>
               )}
               {density !== "focus" && others.length > 0 && (
-                <div className="dash-grid continue-recede">
-                  {others.map((context, index) => (
+                <div className="dash-grid continue-recede ws-compose__orbit">
+                  {others.map((context) => (
                     <MomentCard
                       key={context.id}
-                      variant={index < 2 ? "standard" : "compact"}
+                      variant="compact"
                       state={
-                        selectedId === context.id ? "selected" : "collapsed"
+                        selectedId === context.id
+                          ? preview
+                            ? "preview"
+                            : "selected"
+                          : "collapsed"
                       }
-                      className={index < 2 ? "span-6" : "span-3"}
                       context={context}
                       busy={busy}
-                      onSelect={() => setSelectedId(context.id)}
+                      onSelect={() => selectMoment(context.id)}
                       onContinue={() => {
-                        setSelectedId(context.id);
+                        selectMoment(context.id);
                         openPreview(context.id);
                       }}
                       onInspect={() => openInspect(context.id)}
@@ -348,6 +360,27 @@ export function ResumeContextPanel({
                   ))}
                 </div>
               )}
+              <AnimatePresence>
+                {step === "preview" && preview && (
+                  <motion.div
+                    className="ws-compose__preview"
+                    initial={reduceMotion ? false : { opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={reduceMotion ? undefined : { opacity: 0, y: 12 }}
+                    transition={spring.lush}
+                  >
+                    <ContinuePreviewObject
+                      preview={preview}
+                      busy={busy}
+                      state="expanded"
+                      onApprove={approveAndRestore}
+                      onCancel={backToBrowse}
+                      describeDisposition={describeDisposition}
+                      formatMoment={formatMoment}
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           )}
         </>
@@ -470,62 +503,6 @@ export function ResumeContextPanel({
               onClick={confirmDelete}
             >
               Delete permanently
-            </button>
-          </div>
-        </WorkspaceSurface>
-      )}
-
-      {step === "preview" && preview && (
-        <WorkspaceSurface
-          tone="hero"
-          padding="lg"
-          className="focus-card"
-          style={{ margin: "0 auto" }}
-        >
-          <p className="exp-kicker">Preview</p>
-          <h2 className="focus-card__title">
-            Continue “{preview.saved_context_name}”
-          </h2>
-          <p className="exp-intention">
-            {preview.handoff_note.trim()
-              ? preview.handoff_note
-              : "No handoff was recorded with this context."}
-          </p>
-          <p className="muted">
-            Shown exactly as you wrote it. Expires{" "}
-            {formatMoment(preview.plan.expires_at)}.
-          </p>
-          <RestoreLimitsNotice />
-          <details className="exp-inspect" open>
-            <summary>Restore plan</summary>
-            <ul className="resume-plan">
-              {preview.plan.items.map((item) => (
-                <li key={item.item_id}>
-                  <strong>{item.target_summary}</strong>
-                  <div>
-                    {item.action_type} · {describeDisposition(item)}
-                  </div>
-                  {item.reason && <div className="muted">{item.reason}</div>}
-                </li>
-              ))}
-            </ul>
-          </details>
-          <div className="exp-actions">
-            <button
-              type="button"
-              className="exp-btn primary"
-              disabled={busy}
-              onClick={approveAndRestore}
-            >
-              Approve and restore
-            </button>
-            <button
-              type="button"
-              className="exp-btn ghost"
-              disabled={busy}
-              onClick={backToBrowse}
-            >
-              Cancel
             </button>
           </div>
         </WorkspaceSurface>

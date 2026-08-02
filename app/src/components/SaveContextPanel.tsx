@@ -54,8 +54,17 @@ export function SaveContextPanel({
   onMessage,
   onCreateWorkspace,
 }: SaveContextPanelProps) {
-  const { density } = useWorkspaceComposition();
+  const { density, setWritingMode, setAmbient } = useWorkspaceComposition();
   const reduceMotion = useReducedMotion();
+
+  const enterWriting = () => {
+    setWritingMode(true);
+    setAmbient("input");
+  };
+  const leaveWriting = () => {
+    setWritingMode(false);
+    setAmbient("workspace");
+  };
   const [scope, setScope] = useState<SavedContextCaptureScope | null>(null);
   const [scopeError, setScopeError] = useState<string | null>(null);
   const [name, setName] = useState("");
@@ -217,6 +226,7 @@ export function SaveContextPanel({
     <section
       className="spatial-frame spatial-frame--center save-env save-env--write"
       data-density={density}
+      data-writing="ready"
     >
       <WorkspaceSurface
         level="floating"
@@ -224,6 +234,7 @@ export function SaveContextPanel({
         padding="xl"
         className="focus-card write-card"
         layout
+        lit
       >
         <p className="exp-kicker">Save</p>
         <h2 className="focus-card__title">Leave a note</h2>
@@ -236,6 +247,8 @@ export function SaveContextPanel({
             value={name}
             placeholder="Tuesday review"
             disabled={busy}
+            onFocus={enterWriting}
+            onBlur={leaveWriting}
             onChange={(event) => setName(event.target.value)}
           />
         </label>
@@ -245,11 +258,13 @@ export function SaveContextPanel({
           <textarea
             id="saved-context-handoff"
             className="input-ghost write-textarea"
-            rows={density === "focus" ? 9 : 7}
+            rows={density === "focus" ? 10 : 8}
             value={handoffNote}
             placeholder="Finish the client proposal outline…"
             disabled={busy}
             autoFocus
+            onFocus={enterWriting}
+            onBlur={leaveWriting}
             onChange={(event) => setHandoffNote(event.target.value)}
           />
         </label>

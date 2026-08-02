@@ -1,4 +1,4 @@
-import { motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useCallback, useEffect, useState } from "react";
 import { spring } from "../design-system";
 import { invokeIpc } from "../lib/ipc";
@@ -6,6 +6,7 @@ import type {
   PilotMeasurementScope,
   PilotMeasurementSnapshot,
 } from "../types/domain";
+import { CheckInSummaryObject } from "./objects/CheckInSummaryObject";
 import { WorkspaceSurface } from "./WorkspaceSurface";
 import { useWorkspaceComposition } from "./WorkspaceComposition";
 
@@ -54,6 +55,7 @@ export function PilotMeasurementPanel({
   const [correctionNote, setCorrectionNote] = useState("");
   const [interviewBaseline, setInterviewBaseline] = useState("");
   const [interviewWeekFour, setInterviewWeekFour] = useState("");
+  const [chapter, setChapter] = useState(0);
 
   const reload = useCallback(() => {
     onBusy(true);
@@ -277,218 +279,276 @@ export function PilotMeasurementPanel({
         </p>
       </header>
 
-      <div className="checkin-metrics">
-        <WorkspaceSurface
-          level="floating"
-          tone="hero"
-          padding="lg"
-          className="metric-orb"
-          layout
-        >
-          <p className="exp-kicker">Baseline</p>
-          <motion.p
-            key={`baseline-${snapshot.baseline?.return_minutes ?? "none"}`}
-            className="exp-stat metric-orb__value"
-            initial={reduceMotion ? false : { opacity: 0, y: 10, scale: 0.94 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={spring.soft}
-          >
-            {snapshot.baseline
+      <div className="checkin-metrics ws-compose__float">
+        <CheckInSummaryObject
+          id="checkin-baseline"
+          label="Baseline"
+          value={
+            snapshot.baseline
               ? `${snapshot.baseline.return_minutes}`
-              : "—"}
-          </motion.p>
-          <p className="muted">min</p>
-          <span className="metric-ring" aria-hidden="true" />
-        </WorkspaceSurface>
-        <WorkspaceSurface
-          level="floating"
-          tone="soft"
-          padding="lg"
-          className="metric-orb"
-          layout
-        >
-          <p className="exp-kicker">Leave → resume</p>
-          <motion.p
-            key={`leave-${snapshot.leave_resume.length}`}
-            className="exp-stat metric-orb__value"
-            initial={reduceMotion ? false : { opacity: 0, y: 10, scale: 0.94 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={spring.soft}
-          >
-            {snapshot.leave_resume.length}
-          </motion.p>
-          <p className="muted">{snapshot.distinct_resume_days} days</p>
-          <span className="metric-ring" aria-hidden="true" />
-        </WorkspaceSurface>
-        <WorkspaceSurface
-          level="floating"
-          tone="soft"
-          padding="lg"
-          className="metric-orb"
-          layout
-        >
-          <p className="exp-kicker">Median</p>
-          <motion.p
-            key={`median-${snapshot.median_return_minutes ?? "na"}`}
-            className="exp-stat metric-orb__value"
-            initial={reduceMotion ? false : { opacity: 0, y: 10, scale: 0.94 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={spring.soft}
-          >
-            {snapshot.median_return_minutes != null
+              : "—"
+          }
+          unit="min"
+          hero
+          state="expanded"
+        />
+        <CheckInSummaryObject
+          id="checkin-leave"
+          label="Leave → resume"
+          value={`${snapshot.leave_resume.length}`}
+          unit={`${snapshot.distinct_resume_days} days`}
+          state="idle"
+        />
+        <CheckInSummaryObject
+          id="checkin-median"
+          label="Median"
+          value={
+            snapshot.median_return_minutes != null
               ? `${snapshot.median_return_minutes}`
-              : "n/a"}
-          </motion.p>
-          <p className="muted">min</p>
-          <span className="metric-ring" aria-hidden="true" />
-        </WorkspaceSurface>
+              : "n/a"
+          }
+          unit="min"
+          state="idle"
+        />
       </div>
 
-      <div className="checkin-chat pilot-forms">
-        <WorkspaceSurface tone="soft" padding="md" className="checkin-bubble">
-          <p className="quote-pane__text" style={{ fontSize: "1rem" }}>
-            Before Workspace — about how many minutes to get back?
-          </p>
-        </WorkspaceSurface>
-        <WorkspaceSurface tone="solid" padding="md" className="checkin-bubble--you">
-          <label className="exp-field" htmlFor="pilot-baseline-minutes">
-            <span>Minutes</span>
-            <input
-              id="pilot-baseline-minutes"
-              className="input-wide"
-              inputMode="numeric"
-              value={baselineMinutes}
-              disabled={busy}
-              onChange={(event) => setBaselineMinutes(event.target.value)}
-            />
-          </label>
-          <label className="exp-field" htmlFor="pilot-baseline-notes">
-            <span>Notes (optional)</span>
-            <textarea
-              id="pilot-baseline-notes"
-              className="input-wide"
-              rows={2}
-              value={baselineNotes}
-              disabled={busy}
-              onChange={(event) => setBaselineNotes(event.target.value)}
-            />
-          </label>
-          <button
-            type="button"
-            className="exp-btn primary"
-            disabled={busy}
-            onClick={saveBaseline}
-          >
-            Save baseline
-          </button>
-        </WorkspaceSurface>
+      <div className="checkin-narrative pilot-forms">
+        <div className="checkin-narrative__dots" role="tablist" aria-label="Check-in chapters">
+          {["Baseline", "Return", "Reflect", "Week four"].map((label, index) => (
+            <button
+              key={label}
+              type="button"
+              role="tab"
+              aria-selected={chapter === index}
+              className={
+                chapter === index
+                  ? "checkin-narrative__dot is-active"
+                  : "checkin-narrative__dot"
+              }
+              onClick={() => setChapter(index)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
 
-        <WorkspaceSurface tone="soft" padding="md" className="checkin-bubble">
-          <p className="quote-pane__text" style={{ fontSize: "1rem" }}>
-            After a Continue — how many minutes to feel back?
-          </p>
-        </WorkspaceSurface>
-        <WorkspaceSurface tone="solid" padding="md" className="checkin-bubble--you">
-          <label className="exp-field" htmlFor="pilot-return-minutes">
-            <span>Minutes to return</span>
-            <input
-              id="pilot-return-minutes"
-              className="input-wide"
-              inputMode="numeric"
-              value={returnMinutes}
-              disabled={busy}
-              onChange={(event) => setReturnMinutes(event.target.value)}
-            />
-          </label>
-          <label className="exp-check">
-            <input
-              type="checkbox"
-              checked={correctionNeeded}
-              disabled={busy}
-              onChange={(event) => setCorrectionNeeded(event.target.checked)}
-            />
-            <span>I needed to correct something after restore</span>
-          </label>
-          {correctionNeeded && (
-            <label className="exp-field" htmlFor="pilot-correction-note">
-              <span>What did you correct?</span>
-              <textarea
-                id="pilot-correction-note"
-                className="input-wide"
-                rows={2}
-                value={correctionNote}
-                disabled={busy}
-                onChange={(event) => setCorrectionNote(event.target.value)}
-              />
-            </label>
+        <AnimatePresence mode="wait">
+          {chapter === 0 && (
+            <motion.div
+              key="ch-0"
+              className="checkin-chat"
+              initial={reduceMotion ? false : { opacity: 0, x: 24 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={reduceMotion ? undefined : { opacity: 0, x: -16 }}
+              transition={spring.soft}
+            >
+              <WorkspaceSurface tone="soft" padding="md" className="checkin-bubble">
+                <p className="quote-pane__text" style={{ fontSize: "1rem" }}>
+                  Before Workspace — about how many minutes to get back?
+                </p>
+              </WorkspaceSurface>
+              <WorkspaceSurface tone="solid" padding="md" className="checkin-bubble--you">
+                <label className="exp-field" htmlFor="pilot-baseline-minutes">
+                  <span>Minutes</span>
+                  <input
+                    id="pilot-baseline-minutes"
+                    className="input-wide"
+                    inputMode="numeric"
+                    value={baselineMinutes}
+                    disabled={busy}
+                    onChange={(event) => setBaselineMinutes(event.target.value)}
+                  />
+                </label>
+                <label className="exp-field" htmlFor="pilot-baseline-notes">
+                  <span>Notes (optional)</span>
+                  <textarea
+                    id="pilot-baseline-notes"
+                    className="input-wide"
+                    rows={2}
+                    value={baselineNotes}
+                    disabled={busy}
+                    onChange={(event) => setBaselineNotes(event.target.value)}
+                  />
+                </label>
+                <div className="exp-actions">
+                  <button
+                    type="button"
+                    className="exp-btn primary"
+                    disabled={busy}
+                    onClick={saveBaseline}
+                  >
+                    Save baseline
+                  </button>
+                  <button
+                    type="button"
+                    className="exp-btn ghost"
+                    onClick={() => setChapter(1)}
+                  >
+                    Next
+                  </button>
+                </div>
+              </WorkspaceSurface>
+            </motion.div>
           )}
-          <button
-            type="button"
-            className="exp-btn primary"
-            disabled={busy}
-            onClick={saveLeaveResume}
-          >
-            Record this leave→resume
-          </button>
-        </WorkspaceSurface>
 
-        <WorkspaceSurface tone="soft" padding="md" className="checkin-bubble">
-          <p className="quote-pane__text" style={{ fontSize: "1rem" }}>
-            A few reflections — whenever you’re ready.
-          </p>
-          <ul className="list compact">
-            {BASELINE_PROMPTS.map((prompt) => (
-              <li key={prompt}>{prompt}</li>
-            ))}
-          </ul>
-        </WorkspaceSurface>
-        <WorkspaceSurface tone="solid" padding="md" className="checkin-bubble--you">
-          <textarea
-            className="input-wide"
-            rows={4}
-            value={interviewBaseline}
-            disabled={busy}
-            placeholder="Write your answers here. Stored only on this computer."
-            onChange={(event) => setInterviewBaseline(event.target.value)}
-          />
-          <button
-            type="button"
-            className="exp-btn"
-            disabled={busy}
-            onClick={() => saveInterview("baseline", interviewBaseline)}
-          >
-            Save baseline interview
-          </button>
-        </WorkspaceSurface>
+          {chapter === 1 && (
+            <motion.div
+              key="ch-1"
+              className="checkin-chat"
+              initial={reduceMotion ? false : { opacity: 0, x: 24 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={reduceMotion ? undefined : { opacity: 0, x: -16 }}
+              transition={spring.soft}
+            >
+              <WorkspaceSurface tone="soft" padding="md" className="checkin-bubble">
+                <p className="quote-pane__text" style={{ fontSize: "1rem" }}>
+                  After a Continue — how many minutes to feel back?
+                </p>
+              </WorkspaceSurface>
+              <WorkspaceSurface tone="solid" padding="md" className="checkin-bubble--you">
+                <label className="exp-field" htmlFor="pilot-return-minutes">
+                  <span>Minutes to return</span>
+                  <input
+                    id="pilot-return-minutes"
+                    className="input-wide"
+                    inputMode="numeric"
+                    value={returnMinutes}
+                    disabled={busy}
+                    onChange={(event) => setReturnMinutes(event.target.value)}
+                  />
+                </label>
+                <label className="exp-check">
+                  <input
+                    type="checkbox"
+                    checked={correctionNeeded}
+                    disabled={busy}
+                    onChange={(event) => setCorrectionNeeded(event.target.checked)}
+                  />
+                  <span>I needed to correct something after restore</span>
+                </label>
+                {correctionNeeded && (
+                  <label className="exp-field" htmlFor="pilot-correction-note">
+                    <span>What did you correct?</span>
+                    <textarea
+                      id="pilot-correction-note"
+                      className="input-wide"
+                      rows={2}
+                      value={correctionNote}
+                      disabled={busy}
+                      onChange={(event) => setCorrectionNote(event.target.value)}
+                    />
+                  </label>
+                )}
+                <div className="exp-actions">
+                  <button
+                    type="button"
+                    className="exp-btn primary"
+                    disabled={busy}
+                    onClick={saveLeaveResume}
+                  >
+                    Record this leave→resume
+                  </button>
+                  <button
+                    type="button"
+                    className="exp-btn ghost"
+                    onClick={() => setChapter(2)}
+                  >
+                    Next
+                  </button>
+                </div>
+              </WorkspaceSurface>
+            </motion.div>
+          )}
 
-        <WorkspaceSurface tone="soft" padding="md" className="checkin-bubble">
-          <p className="quote-pane__text" style={{ fontSize: "1rem" }}>
-            Week four — still useful?
-          </p>
-          <ul className="list compact">
-            {WEEK_FOUR_PROMPTS.map((prompt) => (
-              <li key={prompt}>{prompt}</li>
-            ))}
-          </ul>
-        </WorkspaceSurface>
-        <WorkspaceSurface tone="solid" padding="md" className="checkin-bubble--you">
-          <textarea
-            className="input-wide"
-            rows={4}
-            value={interviewWeekFour}
-            disabled={busy}
-            placeholder="Write your answers here. Stored only on this computer."
-            onChange={(event) => setInterviewWeekFour(event.target.value)}
-          />
-          <button
-            type="button"
-            className="exp-btn"
-            disabled={busy}
-            onClick={() => saveInterview("week_four", interviewWeekFour)}
-          >
-            Save week-four interview
-          </button>
-        </WorkspaceSurface>
+          {chapter === 2 && (
+            <motion.div
+              key="ch-2"
+              className="checkin-chat"
+              initial={reduceMotion ? false : { opacity: 0, x: 24 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={reduceMotion ? undefined : { opacity: 0, x: -16 }}
+              transition={spring.soft}
+            >
+              <WorkspaceSurface tone="soft" padding="md" className="checkin-bubble">
+                <p className="quote-pane__text" style={{ fontSize: "1rem" }}>
+                  A few reflections — whenever you’re ready.
+                </p>
+                <ul className="list compact">
+                  {BASELINE_PROMPTS.map((prompt) => (
+                    <li key={prompt}>{prompt}</li>
+                  ))}
+                </ul>
+              </WorkspaceSurface>
+              <WorkspaceSurface tone="solid" padding="md" className="checkin-bubble--you">
+                <textarea
+                  className="input-wide"
+                  rows={4}
+                  value={interviewBaseline}
+                  disabled={busy}
+                  placeholder="Write your answers here. Stored only on this computer."
+                  onChange={(event) => setInterviewBaseline(event.target.value)}
+                />
+                <div className="exp-actions">
+                  <button
+                    type="button"
+                    className="exp-btn"
+                    disabled={busy}
+                    onClick={() => saveInterview("baseline", interviewBaseline)}
+                  >
+                    Save baseline interview
+                  </button>
+                  <button
+                    type="button"
+                    className="exp-btn ghost"
+                    onClick={() => setChapter(3)}
+                  >
+                    Next
+                  </button>
+                </div>
+              </WorkspaceSurface>
+            </motion.div>
+          )}
+
+          {chapter === 3 && (
+            <motion.div
+              key="ch-3"
+              className="checkin-chat"
+              initial={reduceMotion ? false : { opacity: 0, x: 24 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={reduceMotion ? undefined : { opacity: 0, x: -16 }}
+              transition={spring.soft}
+            >
+              <WorkspaceSurface tone="soft" padding="md" className="checkin-bubble">
+                <p className="quote-pane__text" style={{ fontSize: "1rem" }}>
+                  Week four — still useful?
+                </p>
+                <ul className="list compact">
+                  {WEEK_FOUR_PROMPTS.map((prompt) => (
+                    <li key={prompt}>{prompt}</li>
+                  ))}
+                </ul>
+              </WorkspaceSurface>
+              <WorkspaceSurface tone="solid" padding="md" className="checkin-bubble--you">
+                <textarea
+                  className="input-wide"
+                  rows={4}
+                  value={interviewWeekFour}
+                  disabled={busy}
+                  placeholder="Write your answers here. Stored only on this computer."
+                  onChange={(event) => setInterviewWeekFour(event.target.value)}
+                />
+                <button
+                  type="button"
+                  className="exp-btn"
+                  disabled={busy}
+                  onClick={() => saveInterview("week_four", interviewWeekFour)}
+                >
+                  Save week-four interview
+                </button>
+              </WorkspaceSurface>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       <WorkspaceSurface tone="default" padding="md">

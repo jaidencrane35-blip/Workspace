@@ -1,15 +1,15 @@
 import { BookmarkPlus, Play } from "lucide-react";
-import { LayoutGroup, motion, useReducedMotion } from "motion/react";
 import { useEffect, useState } from "react";
-import { spring } from "../design-system";
 import { invokeIpc } from "../lib/ipc";
 import { RESTORE_LIMITS_SUMMARY } from "../lib/restoreLimits";
 import { formatRelativeTime } from "../lib/time";
 import type { SavedContext, Workspace } from "../types/domain";
 import { EmptyStructure } from "./EmptyStructure";
 import { MomentCard } from "./MomentCard";
+import { IntentionObject } from "./objects/IntentionObject";
+import { QuickActionObject } from "./objects/QuickActionObject";
 import { useWorkspaceComposition } from "./WorkspaceComposition";
-import { WorkspaceSurface } from "./WorkspaceSurface";
+import { WorkspaceObject } from "./WorkspaceObject";
 
 interface HomeWorkspacePanelProps {
   workspace: Workspace | null;
@@ -28,8 +28,7 @@ export function HomeWorkspacePanel({
   onGoToContinue,
   onContinueContext,
 }: HomeWorkspacePanelProps) {
-  const { density } = useWorkspaceComposition();
-  const reduceMotion = useReducedMotion();
+  const { density, setSelectedObjectId, setAmbient } = useWorkspaceComposition();
   const [recent, setRecent] = useState<SavedContext[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -65,18 +64,33 @@ export function HomeWorkspacePanel({
           <h2 className="place__title">This is your Workspace</h2>
           <p className="place__pulse">Where your work lives.</p>
         </div>
-        <div className="place__fab-row">
-          <button
-            type="button"
-            className="exp-btn primary"
-            onClick={onCreateWorkspace}
-            disabled={busy}
+        <div className="ws-compose ws-compose--empty">
+          <WorkspaceObject
+            objectId="home-create"
+            kind="quick-action"
+            slot="anchor"
+            state="expanded"
+            className="empty-invite"
           >
-            Create a workspace
-          </button>
-        </div>
-        <div className="dash-grid">
-          <EmptyStructure />
+            <p className="moment-card__kicker">Begin</p>
+            <h3>Create your Workspace</h3>
+            <p className="moment-card__handoff">
+              One place for moments, notes, and return.
+            </p>
+            <div className="moment-card__actions">
+              <button
+                type="button"
+                className="exp-btn primary"
+                onClick={onCreateWorkspace}
+                disabled={busy}
+              >
+                Create a workspace
+              </button>
+            </div>
+          </WorkspaceObject>
+          <div className="dash-grid">
+            <EmptyStructure />
+          </div>
         </div>
         <p className="trust-strip muted">{RESTORE_LIMITS_SUMMARY}</p>
       </section>
@@ -106,158 +120,123 @@ export function HomeWorkspacePanel({
 
       {loadError && <p className="error">{loadError}</p>}
 
-      <LayoutGroup>
-        {latest ? (
-          <div className="ws-canvas__stage">
-            <motion.div
-              className="ws-canvas__anchor"
-              layout={!reduceMotion}
-              transition={spring.layout}
-            >
-              <MomentCard
-                variant="hero"
-                state="expanded"
-                context={latest}
-                busy={busy}
-                onContinue={() => onContinueContext(latest.id)}
-                onInspect={onGoToContinue}
+      {latest ? (
+        <div className="ws-compose">
+          <div className="ws-compose__anchor">
+            <MomentCard
+              variant="hero"
+              state="expanded"
+              context={latest}
+              busy={busy}
+              onContinue={() => onContinueContext(latest.id)}
+              onInspect={onGoToContinue}
+              onSelect={() => {
+                setSelectedObjectId(latest.id);
+                setAmbient("moment");
+              }}
+            />
+          </div>
+
+          <aside className="ws-compose__float">
+            <IntentionObject
+              id={`intention-${latest.id}`}
+              text={
+                latest.handoff_note.trim() || "No handoff was recorded."
+              }
+              meta={`Your note · ${formatRelativeTime(latest.created_at)}`}
+              state="expanded"
+            />
+            <div className="ws-compose__utilities">
+              <QuickActionObject
+                id="quick-save"
+                label="Quick save"
+                icon={BookmarkPlus}
+                primary
+                disabled={busy}
+                onClick={onGoToSave}
               />
-            </motion.div>
-
-            <aside className="ws-canvas__float">
-              <WorkspaceSurface
-                level="floating"
-                tone="soft"
-                padding="md"
-                className="quote-pane"
-                layout
-              >
-                <div className="quote-pane__mark" aria-hidden="true">
-                  “
-                </div>
-                <p className="quote-pane__text">
-                  {latest.handoff_note.trim() || "No handoff was recorded."}
-                </p>
-                <p className="quote-pane__meta">
-                  Your note · {formatRelativeTime(latest.created_at)}
-                </p>
-              </WorkspaceSurface>
-              <button
-                type="button"
-                className="exp-btn primary"
-                onClick={onGoToSave}
+              <QuickActionObject
+                id="quick-continue"
+                label="Continue"
+                icon={Play}
                 disabled={busy}
-              >
-                <BookmarkPlus size={16} aria-hidden="true" />
-                Quick save
-              </button>
-            </aside>
-
-            {density !== "focus" && (
-              <div className="dash-grid ws-canvas__orbit">
-                {orbit.map((context, index) => (
-                  <MomentCard
-                    key={context.id}
-                    variant={index === 0 ? "standard" : "compact"}
-                    state="collapsed"
-                    className={index === 0 ? "span-6" : "span-3"}
-                    context={context}
-                    busy={busy}
-                    onContinue={() => onContinueContext(context.id)}
-                    onSelect={() => onContinueContext(context.id)}
-                  />
-                ))}
-                {orbit.length < (density === "flow" ? 4 : 2) &&
-                  Array.from({
-                    length: Math.max(
-                      1,
-                      (density === "flow" ? 4 : 2) - orbit.length,
-                    ),
-                  }).map((_, index) => (
-                    <MomentCard
-                      key={`ph-${index}`}
-                      variant="placeholder"
-                      className="span-3"
-                      placeholderLabel="Open"
-                      placeholderHint="Fills when you save"
-                    />
-                  ))}
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="ws-canvas__stage ws-canvas__stage--invite">
-            <div className="ws-canvas__anchor">
-              <WorkspaceSurface
-                level="floating"
-                tone="hero"
-                padding="xl"
-                interactive
-                className="moment-card moment-card--hero empty-invite"
-                layout
-              >
-                <p className="moment-card__kicker">Start here</p>
-                <h3>Save your first moment</h3>
-                <p className="moment-card__handoff">
-                  One note. That’s the way back.
-                </p>
-                <div className="moment-card__actions">
-                  <button
-                    type="button"
-                    className="exp-btn primary"
-                    onClick={onGoToSave}
-                    disabled={busy}
-                  >
-                    <BookmarkPlus size={16} aria-hidden="true" />
-                    Save your first moment
-                  </button>
-                </div>
-              </WorkspaceSurface>
-            </div>
-            <aside className="ws-canvas__float">
-              <WorkspaceSurface
-                level="floating"
-                tone="soft"
-                padding="md"
-                className="quote-pane"
-              >
-                <div className="quote-pane__mark" aria-hidden="true">
-                  “
-                </div>
-                <p className="quote-pane__text muted">
-                  Your next intention will live here.
-                </p>
-                <p className="quote-pane__meta">Nothing invented</p>
-              </WorkspaceSurface>
-              <button
-                type="button"
-                className="exp-btn"
-                onClick={onGoToSave}
-                disabled={busy}
-              >
-                <BookmarkPlus size={16} aria-hidden="true" />
-                Quick save
-              </button>
-            </aside>
-            {density !== "focus" && (
-              <div className="dash-grid">
-                <EmptyStructure />
-              </div>
-            )}
-            <div className="place__fab-row">
-              <button
-                type="button"
-                className="exp-btn"
                 onClick={onGoToContinue}
-                disabled={busy || recent.length === 0}
-              >
-                <Play size={16} aria-hidden="true" />
-                Continue
-              </button>
+              />
             </div>
+          </aside>
+
+          {density !== "focus" && (
+            <div className="ws-compose__orbit dash-grid">
+              {orbit.map((context) => (
+                <MomentCard
+                  key={context.id}
+                  variant="compact"
+                  state="collapsed"
+                  context={context}
+                  busy={busy}
+                  onContinue={() => onContinueContext(context.id)}
+                  onSelect={() => {
+                    setSelectedObjectId(context.id);
+                    setAmbient("moment");
+                    onContinueContext(context.id);
+                  }}
+                />
+              ))}
+              {orbit.length === 0 && <EmptyStructure />}
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="ws-compose ws-compose--invite">
+          <div className="ws-compose__anchor">
+            <WorkspaceObject
+              objectId="first-moment"
+              kind="moment"
+              slot="anchor"
+              state="expanded"
+              className="empty-invite"
+            >
+              <p className="moment-card__kicker">Start here</p>
+              <h3>Save your first moment</h3>
+              <p className="moment-card__handoff">
+                One note. That’s the way back.
+              </p>
+              <div className="moment-card__actions">
+                <button
+                  type="button"
+                  className="exp-btn primary"
+                  onClick={onGoToSave}
+                  disabled={busy}
+                >
+                  <BookmarkPlus size={16} aria-hidden="true" />
+                  Save your first moment
+                </button>
+              </div>
+            </WorkspaceObject>
           </div>
-        )}
-      </LayoutGroup>
+          <aside className="ws-compose__float">
+            <IntentionObject
+              id="intention-empty"
+              text="Your next intention will live here."
+              meta="Nothing invented"
+              state="idle"
+            />
+            <QuickActionObject
+              id="quick-save"
+              label="Quick save"
+              icon={BookmarkPlus}
+              primary
+              disabled={busy}
+              onClick={onGoToSave}
+            />
+          </aside>
+          {density !== "focus" && (
+            <div className="dash-grid ws-compose__orbit">
+              <EmptyStructure />
+            </div>
+          )}
+        </div>
+      )}
 
       <p className="trust-strip muted">{RESTORE_LIMITS_SUMMARY}</p>
     </section>
