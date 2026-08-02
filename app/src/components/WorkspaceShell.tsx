@@ -286,11 +286,11 @@ function ShellBody({
       </header>
 
       <div className="ws-stage ws-layer ws-layer--plane" role="presentation">
-        <motion.div className="ws-spatial" layout={!reduceMotion}>
+        <motion.div className="ws-spatial" layout={false}>
           <WorkspaceCanvas destination={view}>
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
-                key={`${intent}-${view}`}
+                key={view}
                 ref={contentRef}
                 id={contentId}
                 className="ws-content"
@@ -299,7 +299,7 @@ function ShellBody({
                 tabIndex={-1}
                 initial={reveal.initial}
                 animate={reveal.animate}
-                exit={reveal.exit}
+                exit={{ ...reveal.exit, pointerEvents: "none" }}
                 transition={contentTransition(reduceMotion)}
                 onFocusCapture={(event) => {
                   const target = event.target as HTMLElement;

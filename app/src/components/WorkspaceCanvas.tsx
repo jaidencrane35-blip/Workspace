@@ -46,7 +46,7 @@ export function WorkspaceCanvas({
         data-light={profile.lightingBias}
         data-focus={focusedObjectId ?? ""}
         data-selected={selectedObjectId ?? primaryObjectId ?? ""}
-        layout={!reduceMotion}
+        layout={false}
         animate={
           reduceMotion
             ? undefined

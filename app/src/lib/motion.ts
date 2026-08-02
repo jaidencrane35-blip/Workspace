@@ -38,10 +38,11 @@ export function motionPrimitive(
 
   switch (name) {
     case "reveal":
+      // Opacity-only view swaps — y translation was a measurable CLS source.
       return {
-        initial: { opacity: 0, y: 10 },
-        animate: { opacity: 1, y: 0 },
-        exit: { opacity: 0, y: -6 },
+        initial: { opacity: 0 },
+        animate: { opacity: 1 },
+        exit: { opacity: 0 },
         transition: spring.soft,
       };
     case "elevate":

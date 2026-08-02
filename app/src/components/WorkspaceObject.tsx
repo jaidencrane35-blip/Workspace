@@ -119,9 +119,11 @@ function WorkspaceObjectInner({
     [controlled, onMouseLeave, setInfluenceObjectId, state],
   );
 
+  const canKeyboardActivate = Boolean(interactive && onActivate && !hidden);
+
   return (
     <motion.div
-      layout={!reduceMotion}
+      layout={false}
       layoutId={layoutId ?? `ws-obj-${objectId}`}
       className={[
         "ws-object",
@@ -140,6 +142,8 @@ function WorkspaceObjectInner({
       data-attention={visual.tier}
       data-intent={intent}
       data-weight={weight.toFixed(2)}
+      role={canKeyboardActivate ? "button" : undefined}
+      tabIndex={canKeyboardActivate ? 0 : undefined}
       aria-hidden={ariaHidden}
       title={title}
       style={{
@@ -178,6 +182,15 @@ function WorkspaceObjectInner({
         }
         setInfluenceObjectId(null);
         onBlur?.(event);
+      }}
+      onKeyDown={(event) => {
+        if (!canKeyboardActivate) {
+          return;
+        }
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onActivate?.();
+        }
       }}
       onClick={(event) => {
         onClick?.(event);

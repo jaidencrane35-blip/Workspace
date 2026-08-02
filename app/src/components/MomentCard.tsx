@@ -118,6 +118,8 @@ function MomentCardInner({
       layoutId={layoutId ?? `moment-${context.id}`}
       attentionWeight={attentionWeight}
       lit={state === "preview" || state === "restoring"}
+      // Avoid nested button roles when Continue/Inspect actions render.
+      interactive={!showActions}
       onActivate={onSelect}
       className={[
         "moment-card",

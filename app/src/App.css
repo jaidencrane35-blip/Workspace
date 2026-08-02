@@ -296,10 +296,6 @@ body {
   min-height: 11rem;
 }
 
-.home-satellite.ws-object {
-  --home-satellite-clarity: 1;
-}
-
 .ws-object.moment-card--sparse .elevated-card__body,
 .ws-object.moment-card--sparse .ws-surface__body {
   gap: var(--space-2);
@@ -1349,16 +1345,6 @@ body {
   margin: 0;
 }
 
-.demo-restore-history.is-recessed {
-  opacity: 0.38;
-  margin-top: var(--space-3);
-}
-
-.demo-restore-history summary {
-  font-size: 0.78rem;
-  color: var(--exp-muted);
-}
-
 .continue-dash--previewing .spatial-header {
   display: none;
 }
@@ -1756,10 +1742,6 @@ body {
 .checkin-withdraw summary {
   font-size: 0.82rem;
   color: var(--exp-muted);
-}
-
-.demo-restore-history {
-  margin-top: var(--space-3);
 }
 
 .save-success {
