@@ -18,7 +18,7 @@ use workspace_domain::{
 use workspace_windows_integration::DesktopCapturer;
 
 use crate::error::{KernelError, Result};
-use crate::services::{CaptureCoordinator, WorkspaceService};
+use crate::services::{CaptureCoordinator, WorkspaceService, WorkspaceSessionStore};
 
 pub(crate) struct SavedContextService;
 
@@ -87,8 +87,8 @@ impl SavedContextService {
 
     fn save_capturing<C>(
         db: &Arc<Mutex<Database>>,
-        _actor: &ActorContext,
-        _intent: &IntentContext,
+        actor: &ActorContext,
+        intent: &IntentContext,
         request: &SaveContextRequest,
         capture: C,
     ) -> Result<SavedContext>
@@ -111,6 +111,12 @@ impl SavedContextService {
             let guard = db.lock().map_err(|_| KernelError::NotReady)?;
             SavedContextRepository::new(&guard).create(&context)?;
         }
+        let _ = WorkspaceSessionStore::checkpoint_current(
+            db,
+            actor,
+            intent,
+            Some(context.id.to_string()),
+        );
         Ok(context)
     }
 

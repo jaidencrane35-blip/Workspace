@@ -177,12 +177,23 @@ impl CommandHandler {
     ) -> Result<()> {
         let result = InitializeWorkspace::at_path(db_path).execute(kernel.event_bus())?;
         kernel.apply_runtime(result.state, result.database, result.services);
+        // Best-effort session hydration — never fails startup.
+        let _ = crate::services::WorkspaceSessionStore::hydrate_on_startup(
+            &kernel.shared_database(),
+            &workspace_domain::ActorContext::local_user(),
+            &workspace_domain::IntentContext::system_startup(),
+        );
         Ok(())
     }
 
     pub fn initialize_workspace_in_memory(kernel: &mut WorkspaceKernel) -> Result<()> {
         let result = InitializeWorkspace::in_memory().execute(kernel.event_bus())?;
         kernel.apply_runtime(result.state, result.database, result.services);
+        let _ = crate::services::WorkspaceSessionStore::hydrate_on_startup(
+            &kernel.shared_database(),
+            &workspace_domain::ActorContext::local_user(),
+            &workspace_domain::IntentContext::system_startup(),
+        );
         Ok(())
     }
 

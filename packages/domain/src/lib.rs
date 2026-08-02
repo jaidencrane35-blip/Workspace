@@ -68,6 +68,7 @@ pub mod workspace_observation_delta;
 pub mod workspace_observation_event;
 pub mod workspace_state;
 pub mod workspace_runtime_state;
+pub mod persistent_workspace_session;
 pub mod workspace_continuity;
 pub mod workspace_task_graph;
 pub mod workspace_environment;
@@ -446,6 +447,9 @@ pub use workspace_state::{
 };
 pub use workspace_runtime_state::{
     ObservationCachePhase, RestoreExecutionPhase, RestoreHistoryEntry, WorkspaceRuntimeState,
+};
+pub use persistent_workspace_session::{
+    PersistentWorkspaceSession, PersistentWorkspaceSessionError, WORKSPACE_SESSION_SCHEMA_VERSION,
 };
 pub use workspace_environment::{
     build_environment_summary, now_rfc3339, validate_workspace_id, EnvironmentApplication,

@@ -23,6 +23,7 @@ pub use repositories::{
     UserPreferenceRepository,
     WidgetRepository, WorkspaceProfileRepository, ObservationMonitorRepository,
     ObservationPassRepository, ObservationWindowIdentityRepository, ObservationWindowRepository,
-    WorkspaceRepository, WorkspaceIntentRepository, ZoneRepository,
+    PersistentWorkspaceSessionRepository, WorkspaceRepository, WorkspaceIntentRepository,
+    ZoneRepository,
 };
 pub use settings::SettingsRepository;

@@ -18,7 +18,7 @@ use workspace_windows_integration::DesktopCapturer;
 use crate::error::{KernelError, Result};
 use crate::services::{
     AuditService, WorkspaceObservationCaptureResult, WorkspaceObservationService,
-    WorkspaceRuntimeStateService,
+    WorkspaceRuntimeStateService, WorkspaceSessionStore,
 };
 
 /// Internal capture lifecycle phases (not exposed over IPC / UI).
@@ -178,7 +178,7 @@ impl CaptureCoordinator {
             None,
         )?;
 
-        match capture_fn() {
+        let outcome = match capture_fn() {
             Ok(capture) => {
                 record_lifecycle(CaptureLifecycleState::Completed);
                 WorkspaceRuntimeStateService::note_refresh_completed(Some(
@@ -211,7 +211,14 @@ impl CaptureCoordinator {
                 );
                 Err(error)
             }
+        };
+        // Drop the single-flight guard before checkpoint so persistence does not
+        // observe capture-in-progress and skip the durable write.
+        drop(_guard);
+        if matches!(&outcome, Ok(CaptureCoordinatorResult::Completed(_))) {
+            let _ = WorkspaceSessionStore::checkpoint_current(db, actor, intent, None);
         }
+        outcome
     }
 
     fn audit_lifecycle(

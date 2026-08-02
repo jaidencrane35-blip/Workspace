@@ -11,8 +11,9 @@ use std::sync::{Arc, Mutex, OnceLock};
 use workspace_database::{Database, ObservationPassRepository};
 use workspace_domain::{
     observation_now_rfc3339, ActorContext, IntentContext, ObservationCachePhase,
-    OperationOutcome, RestoreCompatibilitySummary, RestoreExecutionPhase, RestoreHistoryEntry,
-    WorkspaceObservationDelta, WorkspaceObservationStatus, WorkspaceRuntimeState, WorkspaceState,
+    OperationOutcome, PersistentWorkspaceSession, RestoreCompatibilitySummary,
+    RestoreExecutionPhase, RestoreHistoryEntry, WorkspaceObservationDelta,
+    WorkspaceObservationStatus, WorkspaceRuntimeState, WorkspaceState,
 };
 
 use crate::error::Result;
@@ -59,6 +60,18 @@ impl WorkspaceRuntimeStateService {
     #[cfg(test)]
     pub(crate) fn reset_for_tests() {
         *owner().lock().expect("runtime owner") = RuntimeOwnerInner::default();
+    }
+
+    /// Seed durable fields from a recovered session (startup hydration).
+    pub(crate) fn hydrate_from_session(session: &PersistentWorkspaceSession) {
+        let mut guard = owner().lock().expect("runtime owner");
+        guard.cached_pass_id = session.last_observation_pass_id.clone();
+        guard.cached_desktop = None;
+        guard.confidence_band = session.last_confidence_band.clone();
+        guard.restore_history = session.restore_history.iter().cloned().collect();
+        guard.cache_phase = ObservationCachePhase::Idle;
+        guard.execution_phase = RestoreExecutionPhase::Idle;
+        guard.generation = guard.generation.saturating_add(1);
     }
 
     pub(crate) fn note_refresh_requested() {

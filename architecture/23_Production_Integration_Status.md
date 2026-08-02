@@ -9,6 +9,7 @@ Demo mode is a **permanent adapter** (`app/src/demo/`) for development, screensh
 - Observation model: `architecture/24_Runtime_Observation_Model.md`
 - Restore execution: `architecture/25_Restore_Execution_Model.md`
 - Live runtime state: `architecture/26_Workspace_Runtime_State.md`
+- Session persistence: `architecture/27_Workspace_Session_Persistence.md`
 
 ---
 
@@ -102,6 +103,8 @@ Routing: `app/src/lib/ipc.ts` → Tauri `invoke` when not in adapter mode; else 
 | Observation cache phases published from CaptureCoordinator | implemented |
 | Execution phases + restore history from RestoreExecutor | implemented |
 | `get_workspace_runtime_state` IPC (operator; not Experience) | implemented |
+| `PersistentWorkspaceSession` + `WorkspaceSessionStore` | implemented |
+| Startup hydration + success-path checkpoints | implemented |
 
 ---
 

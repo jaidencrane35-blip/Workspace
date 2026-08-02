@@ -3,7 +3,7 @@
 **Implementation authority** for the canonical live desktop runtime model.  
 Experience chrome is frozen — this document describes kernel ownership only.
 
-Related: `24_Runtime_Observation_Model.md`, `25_Restore_Execution_Model.md`.
+Related: `24_Runtime_Observation_Model.md`, `25_Restore_Execution_Model.md`, `27_Workspace_Session_Persistence.md`.
 
 ---
 

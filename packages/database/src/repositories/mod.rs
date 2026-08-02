@@ -18,6 +18,7 @@ mod workspace;
 mod workspace_intent;
 mod workspace_profile;
 mod observation;
+mod persistent_session;
 mod zone;
 
 pub use ai_memory::AiMemoryRepository;
@@ -44,3 +45,4 @@ pub use observation::{
     ObservationWindowRepository,
 };
 pub use zone::ZoneRepository;
+pub use persistent_session::PersistentWorkspaceSessionRepository;

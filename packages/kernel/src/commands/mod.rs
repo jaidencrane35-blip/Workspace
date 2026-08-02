@@ -300,6 +300,8 @@ mod restore_execution_pipeline_tests;
 #[cfg(test)]
 mod workspace_runtime_state_tests;
 #[cfg(test)]
+mod workspace_session_store_tests;
+#[cfg(test)]
 mod ai_memory_tests;
 #[cfg(test)]
 mod ai_model_provider_tests;

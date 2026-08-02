@@ -12,7 +12,7 @@ use crate::policy::GovernanceClass;
 use crate::security::PermissionSubject;
 use crate::services::{
     action_request_from_saved_context, ActionExecutionControls, DesktopActionService,
-    RestoreExecutor, SavedContextService, WorkspaceRuntimeStateService,
+    RestoreExecutor, SavedContextService, WorkspaceRuntimeStateService, WorkspaceSessionStore,
 };
 use serde::{Deserialize, Serialize};
 use workspace_domain::{
@@ -205,6 +205,12 @@ impl QueryCommand for ResolveResumePlan {
         let compatibility = RestoreCompatibilitySummary::from_plan(&plan);
         WorkspaceRuntimeStateService::note_compatibility(&compatibility);
         WorkspaceRuntimeStateService::note_execution_phase(RestoreExecutionPhase::Idle);
+        let _ = WorkspaceSessionStore::checkpoint_current(
+            &ctx.database,
+            &ctx.actor_context,
+            &ctx.intent_context,
+            None,
+        );
         Ok(ResumePlanPreview {
             saved_context_id: context.id.to_string(),
             saved_context_name: context.name,
@@ -271,13 +277,20 @@ impl MutationCommand for ExecuteResumePlan {
         // Matching authority alone is insufficient — each item still needs its
         // effect scope at point of use (ADM-AC-18).
         let mutator = platform_window_mutator();
-        RestoreExecutor::execute(
+        let result = RestoreExecutor::execute(
             &self.plan,
             &proofs,
             &ctx.capability_set,
             mutator.as_ref(),
             &ActionExecutionControls::default(),
-        )
+        )?;
+        let _ = WorkspaceSessionStore::checkpoint_current(
+            &ctx.database,
+            &ctx.actor_context,
+            &ctx.intent_context,
+            None,
+        );
+        Ok(result)
     }
 }
 

@@ -132,4 +132,16 @@ describe("observation model docs", () => {
     expect(doc).toContain("RestoreExecutionPhase");
     expect(doc).toContain("get_workspace_runtime_state");
   });
+
+  it("documents persistent session field classification", () => {
+    const doc = fs.readFileSync(
+      path.join(root, "architecture/27_Workspace_Session_Persistence.md"),
+      "utf8",
+    );
+    expect(doc).toContain("PersistentWorkspaceSession");
+    expect(doc).toContain("WorkspaceSessionStore");
+    expect(doc).toContain("Ephemeral");
+    expect(doc).toContain("Derived");
+    expect(doc).toContain("schema_version");
+  });
 });
