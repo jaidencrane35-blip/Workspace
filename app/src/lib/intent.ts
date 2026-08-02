@@ -101,10 +101,7 @@ export function compositionForIntent(
         lightingBias: "warm",
         motion: "lush",
         primaryHint: "moment",
-        commands: [
-          { id: "approve", label: "Approve and restore", action: "continue" },
-          { id: "capture", label: "Save a moment", action: "save", view: "save" },
-        ],
+        commands: [],
       };
     case "reflect":
       return {
@@ -116,10 +113,7 @@ export function compositionForIntent(
         lightingBias: "cool",
         motion: "soft",
         primaryHint: "checkin",
-        commands: [
-          { id: "next", label: "Continue reflection", action: "checkin" },
-          { id: "restore", label: "Continue a moment", action: "continue", view: "resume" },
-        ],
+        commands: [],
       };
     case "learn":
       return {
@@ -152,10 +146,7 @@ export function compositionForIntent(
               { id: "create", label: "Create a workspace", action: "create" },
               { id: "learn", label: "How this works", action: "guide", view: "help" },
             ]
-          : [
-              { id: "capture", label: "Quick save", action: "save", view: "save" },
-              { id: "restore", label: "Continue", action: "continue", view: "resume" },
-            ],
+          : [],
       };
   }
 }

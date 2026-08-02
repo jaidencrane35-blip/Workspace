@@ -25,7 +25,7 @@ function shortTitle(summary: string): string {
   if (dash > 0) {
     return trimmed.slice(0, dash);
   }
-  return trimmed.length > 36 ? `${trimmed.slice(0, 34)}…` : trimmed;
+  return trimmed.length > 40 ? `${trimmed.slice(0, 38)}…` : trimmed;
 }
 
 export function ContinuePreviewBody({
@@ -53,6 +53,7 @@ export function ContinuePreviewBody({
       >
         {preview.plan.items.map((item, index) => {
           const skip = item.projected_disposition !== "will_attempt";
+          const hint = describeDisposition(item);
           return (
             <motion.div
               key={item.item_id}
@@ -64,47 +65,51 @@ export function ContinuePreviewBody({
               ]
                 .filter(Boolean)
                 .join(" ")}
-              initial={reduceMotion ? false : { opacity: 0, y: 10, scale: 0.97 }}
-              animate={{ opacity: skip ? 0.45 : 1, y: 0, scale: 1 }}
-              transition={{ ...spring.soft, delay: reduceMotion ? 0 : index * 0.04 }}
+              initial={reduceMotion ? false : { opacity: 0, y: 12, scale: 0.98 }}
+              animate={{ opacity: skip ? 0.5 : 1, y: 0, scale: 1 }}
+              transition={{
+                ...spring.soft,
+                delay: reduceMotion ? 0 : index * 0.05,
+              }}
             >
               <span className="continue-window-pane__title">
                 {shortTitle(item.target_summary)}
               </span>
-              <span className="continue-window-pane__hint">
-                {describeDisposition(item)}
-              </span>
+              {hint ? (
+                <span className="continue-window-pane__hint">{hint}</span>
+              ) : null}
             </motion.div>
           );
         })}
       </div>
 
-      <p className="continue-preview__quality" data-quality={quality}>
-        <span className="continue-preview__quality-dot" aria-hidden="true" />
-        <span>
-          {willAttempt === total
-            ? "Ready to place the open windows"
-            : `Can place ${willAttempt} of ${total} windows still open`}
-        </span>
-      </p>
-
-      <div className="exp-actions continue-preview__actions">
-        <button
-          type="button"
-          className="exp-btn primary"
-          disabled={busy}
-          onClick={onApprove}
-        >
-          Approve and restore
-        </button>
-        <button
-          type="button"
-          className="exp-btn ghost"
-          disabled={busy}
-          onClick={onCancel}
-        >
-          Not now
-        </button>
+      <div className="continue-preview__footer">
+        <p className="continue-preview__quality" data-quality={quality}>
+          <span className="continue-preview__quality-dot" aria-hidden="true" />
+          <span>
+            {willAttempt === total
+              ? "This place is ready"
+              : `${willAttempt} of ${total} windows still open`}
+          </span>
+        </p>
+        <div className="exp-actions continue-preview__actions">
+          <button
+            type="button"
+            className="exp-btn primary"
+            disabled={busy}
+            onClick={onApprove}
+          >
+            Approve and restore
+          </button>
+          <button
+            type="button"
+            className="exp-btn ghost"
+            disabled={busy}
+            onClick={onCancel}
+          >
+            Not now
+          </button>
+        </div>
       </div>
 
       <details className="exp-inspect continue-preview__limits">
@@ -142,10 +147,10 @@ function ContinuePreviewObjectInner({
         <motion.div
           key={preview.saved_context_id}
           className="continue-preview-slot"
-          initial={reduceMotion ? false : { opacity: 0, y: 24, height: 0 }}
-          animate={{ opacity: 1, y: 0, height: "auto" }}
-          exit={reduceMotion ? undefined : { opacity: 0, y: 12, height: 0 }}
-          transition={spring.lush}
+          initial={reduceMotion ? false : { opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={reduceMotion ? undefined : { opacity: 0, y: 8 }}
+          transition={spring.soft}
         >
           <WorkspaceObject
             objectId={`preview-${preview.saved_context_id}`}

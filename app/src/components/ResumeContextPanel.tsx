@@ -60,13 +60,13 @@ function describeWindow(window: SavedContextWindow): string {
 function describeDisposition(item: ActionPlanItem): string {
   switch (item.projected_disposition) {
     case "will_attempt":
-      return "Will restore";
+      return "";
     case "will_skip_unsupported":
-      return "Unsupported";
+      return "Stays as-is";
     case "will_skip_unresolvable":
-      return "Cannot restore";
+      return "Needs a click";
     default:
-      return item.projected_disposition;
+      return "";
   }
 }
 
@@ -452,7 +452,6 @@ export function ResumeContextPanel({
           padding="xl"
           className="focus-card focus-card--center"
         >
-          <p className="exp-kicker">Inspect</p>
           <h2 className="focus-card__title">{inspected.name}</h2>
           <p className="exp-intention">
             {inspected.handoff_note.trim()

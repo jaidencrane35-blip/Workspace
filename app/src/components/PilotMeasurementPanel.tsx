@@ -329,11 +329,11 @@ export function PilotMeasurementPanel({
 
   return (
     <section
-      className="spatial-frame checkin-dash"
+      className="spatial-frame checkin-dash checkin-dash--story"
       data-testid="pilot-measurement-active"
       data-density={density}
     >
-      <header className="spatial-header">
+      <header className="spatial-header spatial-header--quiet">
         <p className="exp-kicker">Check-in</p>
         <h1 className="spatial-title">How’s the return feeling?</h1>
         <p className="spatial-summary">
@@ -342,100 +342,26 @@ export function PilotMeasurementPanel({
         </p>
       </header>
 
-      <div className="checkin-metrics ws-compose__float">
-        <CheckInSummaryObject
-          id="checkin-baseline"
-          label="Baseline"
-          value={
-            snapshot.baseline
-              ? `${snapshot.baseline.return_minutes}`
-              : "—"
-          }
-          unit="min"
-          hero
-          state="expanded"
-        />
-        <CheckInSummaryObject
-          id="checkin-leave"
-          label="Leave → resume"
-          value={`${snapshot.leave_resume.length}`}
-          unit={`${snapshot.distinct_resume_days} days`}
-          state="idle"
-        />
-        <CheckInSummaryObject
-          id="checkin-median"
-          label="Median"
-          value={
-            snapshot.median_return_minutes != null
-              ? `${snapshot.median_return_minutes}`
-              : "n/a"
-          }
-          unit="min"
-          state="idle"
-        />
-      </div>
-
-      {snapshot.leave_resume.length > 0 && (
+      {(snapshot.interview_baseline || snapshot.interview_week_four) && (
         <WorkspaceSurface
           tone="soft"
-          padding="md"
-          className="checkin-trend"
-          data-testid="checkin-trend"
+          padding="lg"
+          className="checkin-story"
+          lit
         >
-          <p className="exp-kicker">Return trend</p>
-          <div
-            className="checkin-trend__bars"
-            role="img"
-            aria-label="Minutes to return across recent leave→resume records"
-          >
-            {[...snapshot.leave_resume]
-              .slice()
-              .reverse()
-              .map((record) => {
-                const max = Math.max(
-                  ...snapshot.leave_resume.map((r) => r.return_minutes),
-                  snapshot.baseline?.return_minutes ?? 0,
-                  1,
-                );
-                const height = Math.max(
-                  12,
-                  Math.round((record.return_minutes / max) * 72),
-                );
-                return (
-                  <div key={record.id} className="checkin-trend__col">
-                    <span
-                      className="checkin-trend__bar"
-                      style={{ height }}
-                      title={`${record.return_minutes} min · ${record.local_day}`}
-                    />
-                    <span className="checkin-trend__day">
-                      {record.local_day.slice(5)}
-                    </span>
-                  </div>
-                );
-              })}
-          </div>
-          <ul className="list compact checkin-trend__history">
-            {snapshot.leave_resume.slice(0, 4).map((record) => (
-              <li key={`hist-${record.id}`}>
-                <strong>{record.return_minutes} min</strong>
-                <span className="muted">
-                  {" "}
-                  · {record.local_day}
-                  {record.correction_needed
-                    ? ` · corrected: ${record.correction_note || "yes"}`
-                    : ""}
-                </span>
-              </li>
-            ))}
-          </ul>
-          {snapshot.interview_baseline && (
-            <div className="checkin-trend__reflection">
-              <p className="exp-kicker">Earlier reflection</p>
-              <p className="quote-pane__text">
-                {snapshot.interview_baseline.responses}
-              </p>
-            </div>
+          <p className="exp-kicker">Your words</p>
+          <p className="checkin-story__text">
+            {(
+              snapshot.interview_week_four?.responses ||
+              snapshot.interview_baseline?.responses ||
+              ""
+            ).trim()}
+          </p>
+          {snapshot.median_return_minutes != null && (
+            <p className="checkin-story__aside muted">
+              Lately about {snapshot.median_return_minutes} minutes to feel back
+              · {snapshot.distinct_resume_days} days noted
+            </p>
           )}
         </WorkspaceSurface>
       )}
@@ -464,7 +390,6 @@ export function PilotMeasurementPanel({
                   .join(" ")}
                 onClick={() => setChapter(index)}
               >
-                <span className="checkin-spatial-chip__mark" aria-hidden="true" />
                 <span className="checkin-spatial-chip__label">{label}</span>
               </button>
             );
@@ -691,16 +616,87 @@ export function PilotMeasurementPanel({
         </AnimatePresence>
       </div>
 
-      <WorkspaceSurface tone="default" padding="md">
-        <h3>Withdraw consent</h3>
+      <aside className="checkin-evidence" aria-label="Pulse evidence">
+        <div className="checkin-metrics checkin-metrics--quiet">
+          <CheckInSummaryObject
+            id="checkin-baseline"
+            label="Was"
+            value={
+              snapshot.baseline
+                ? `${snapshot.baseline.return_minutes}`
+                : "—"
+            }
+            unit="min"
+            state="idle"
+          />
+          <CheckInSummaryObject
+            id="checkin-leave"
+            label="Notes"
+            value={`${snapshot.leave_resume.length}`}
+            unit="returns"
+            state="idle"
+          />
+          <CheckInSummaryObject
+            id="checkin-median"
+            label="Now"
+            value={
+              snapshot.median_return_minutes != null
+                ? `${snapshot.median_return_minutes}`
+                : "—"
+            }
+            unit="min"
+            hero
+            state="expanded"
+          />
+        </div>
+        {snapshot.leave_resume.length > 0 && (
+          <div
+            className="checkin-trend checkin-trend--quiet"
+            data-testid="checkin-trend"
+          >
+            <div
+              className="checkin-trend__bars"
+              role="img"
+              aria-label="Minutes to return across recent leave→resume records"
+            >
+              {[...snapshot.leave_resume]
+                .slice()
+                .reverse()
+                .map((record) => {
+                  const max = Math.max(
+                    ...snapshot.leave_resume.map((r) => r.return_minutes),
+                    snapshot.baseline?.return_minutes ?? 0,
+                    1,
+                  );
+                  const height = Math.max(
+                    8,
+                    Math.round((record.return_minutes / max) * 40),
+                  );
+                  return (
+                    <div key={record.id} className="checkin-trend__col">
+                      <span
+                        className="checkin-trend__bar"
+                        style={{ height }}
+                        title={`${record.return_minutes} min · ${record.local_day}`}
+                      />
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
+        )}
+      </aside>
+
+      <details className="exp-inspect checkin-withdraw">
+        <summary>Withdraw consent</summary>
         <div className="exp-actions">
           <button
             type="button"
-            className="exp-btn"
+            className="exp-btn ghost"
             disabled={busy}
             onClick={() => withdraw(false)}
           >
-            Withdraw consent (keep records)
+            Keep records
           </button>
           <button
             type="button"
@@ -708,10 +704,10 @@ export function PilotMeasurementPanel({
             disabled={busy}
             onClick={() => withdraw(true)}
           >
-            Withdraw and clear pilot records
+            Clear records
           </button>
         </div>
-      </WorkspaceSurface>
+      </details>
     </section>
   );
 }

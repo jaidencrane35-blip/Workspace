@@ -130,7 +130,7 @@ export function HomeWorkspacePanel({
   }
 
   const latest = recent[0] ?? null;
-  const satellites = recent.slice(1, density === "flow" ? 5 : 4);
+  const satellites = recent.slice(1);
 
   return (
     <section
@@ -148,8 +148,8 @@ export function HomeWorkspacePanel({
       {loadError && <p className="error">{loadError}</p>}
 
       {latest ? (
-        <div className="ws-compose ws-compose--home attention-field">
-          <div className="ws-compose__anchor">
+        <>
+          <div className="home-hero-band attention-field">
             <MomentCard
               variant="hero"
               state="expanded"
@@ -162,41 +162,44 @@ export function HomeWorkspacePanel({
                 setAmbient("moment");
               }}
             />
-          </div>
-
-          <aside className="ws-compose__rail">
-            <QuickActionObject
-              id="quick-save"
-              label="Quick save"
-              icon={BookmarkPlus}
-              primary
+            <button
+              type="button"
+              className="home-quiet-save"
               disabled={busy}
               onClick={onGoToSave}
-            />
-            {density !== "focus" && satellites.length > 0 && (
-              <div className="home-satellites dash-grid">
-                {satellites.map((context, index) => (
-                  <MomentCard
-                    key={context.id}
-                    variant="compact"
-                    state="collapsed"
-                    sparse
-                    attentionWeight={0.88}
-                    className={`home-satellite home-satellite--${index % 4}`}
-                    context={context}
-                    busy={busy}
-                    onSelect={() => {
-                      setPrimaryObject(context.id);
-                      setAmbient("moment");
-                      onContinueContext(context.id);
-                    }}
-                    onContinue={() => onContinueContext(context.id)}
-                  />
-                ))}
-              </div>
-            )}
-          </aside>
-        </div>
+            >
+              <BookmarkPlus
+                size={ICON.md}
+                strokeWidth={ICON.stroke}
+                aria-hidden="true"
+              />
+              Quick save
+            </button>
+          </div>
+
+          {density !== "focus" && satellites.length > 0 && (
+            <div className="home-field dash-grid" aria-label="Earlier moments">
+              {satellites.map((context, index) => (
+                <MomentCard
+                  key={context.id}
+                  variant="compact"
+                  state="collapsed"
+                  sparse
+                  attentionWeight={1}
+                  className={`home-satellite home-satellite--${index % 4}`}
+                  context={context}
+                  busy={busy}
+                  onSelect={() => {
+                    setPrimaryObject(context.id);
+                    setAmbient("moment");
+                    onContinueContext(context.id);
+                  }}
+                  onContinue={() => onContinueContext(context.id)}
+                />
+              ))}
+            </div>
+          )}
+        </>
       ) : (
         <div className="ws-compose ws-compose--invite attention-field">
           <div className="ws-compose__anchor">

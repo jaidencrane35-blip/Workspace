@@ -27,7 +27,8 @@ function CommandSurfaceInner({
     (command) => command.view || command.action === "create",
   );
 
-  if (actionable.length === 0) {
+  // Guide + Save capture keep quiet commands; populated Home/Continue/Check-in stay clean.
+  if (actionable.length === 0 || intent === "landing" || intent === "restore" || intent === "reflect") {
     return null;
   }
 
@@ -40,7 +41,6 @@ function CommandSurfaceInner({
       animate={motionSpec.animate}
       transition={motionSpec.transition}
     >
-      <p className="ws-command__intent">{INTENT_LABELS[intent]}</p>
       <div className="ws-command__actions">
         {actionable.map((command, index) => (
           <button

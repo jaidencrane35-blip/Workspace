@@ -136,9 +136,9 @@ function MomentCardInner({
             {state === "restoring"
               ? "Restoring"
               : state === "preview"
-                ? "Continue here"
+                ? "Here"
                 : variant === "hero"
-                  ? "Pick up here"
+                  ? "Now"
                   : "Earlier"}
           </p>
         )}
