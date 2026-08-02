@@ -157,6 +157,10 @@ writing Save, cinematic Continue, metric orbs, Guide walkthrough, dock polish.
 destination; Workspace Objects with shared-layout states; adaptive composition;
 writing mode; restoration preview; narrative Check-in; Guide tour; dock velocity.
 
+✓ Attention Engine sprint complete (LEDGER-0043): continuous attention weights
+drive Primary/Secondary/Context presentation; spatial recomposition; immersive
+writing; in-object restore expand; conversational Check-in; experiential Guide.
+
 ---
 
 # Active Task

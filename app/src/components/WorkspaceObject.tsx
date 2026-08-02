@@ -8,13 +8,13 @@ import {
   type MouseEvent,
   type ReactNode,
 } from "react";
-import { opacity, spring } from "../design-system";
-import {
-  objectDepth,
-  type CanvasSlot,
-  type WorkspaceObjectKind,
-  type WorkspaceObjectState,
+import { spring } from "../design-system";
+import type {
+  CanvasSlot,
+  WorkspaceObjectKind,
+  WorkspaceObjectState,
 } from "../lib/objectState";
+import { useAttentionRegistration } from "./AttentionEngine";
 import { WorkspaceSurface, type WorkspaceSurfaceLevel } from "./WorkspaceSurface";
 
 export interface WorkspaceObjectProps
@@ -27,12 +27,14 @@ export interface WorkspaceObjectProps
   layoutId?: string;
   lit?: boolean;
   interactive?: boolean;
+  /** Optional attention weight override (0–1). Engine used when omitted. */
+  attentionWeight?: number;
   onActivate?: () => void;
   children: ReactNode;
 }
 
 /**
- * Spatial Workspace Object — state morphs via shared layout; never remounts.
+ * Spatial Workspace Object — attention-weighted; layout-preserving morphs.
  */
 function WorkspaceObjectInner({
   objectId,
@@ -43,6 +45,7 @@ function WorkspaceObjectInner({
   layoutId,
   lit = false,
   interactive = true,
+  attentionWeight,
   onActivate,
   className = "",
   children,
@@ -59,12 +62,35 @@ function WorkspaceObjectInner({
   const [local, setLocal] = useState<WorkspaceObjectState>("idle");
   const state = controlled ?? local;
   const hidden = state === "hidden";
+  const attention = useAttentionRegistration(objectId);
+
+  const weight = attentionWeight ?? attention.weight;
+  const visual =
+    attentionWeight != null
+      ? {
+          ...attention,
+          weight: attentionWeight,
+          scale: 0.94 + attentionWeight * 0.1,
+          opacity: 0.38 + attentionWeight * 0.62,
+          blur: (1 - attentionWeight) * 3.2,
+          y: (1 - attentionWeight) * 6,
+          elevation: (attentionWeight >= 0.85
+            ? 3
+            : attentionWeight >= 0.48
+              ? 2
+              : 1) as 1 | 2 | 3,
+          lit: attentionWeight >= 0.82,
+          tier: attention.tier,
+        }
+      : attention;
 
   const resolvedLevel: WorkspaceSurfaceLevel =
     level ??
-    (state === "selected" || state === "expanded" || state === "focused"
-      ? "floating"
-      : "surface");
+    (visual.elevation === 3
+      ? "overlay"
+      : visual.elevation === 2
+        ? "floating"
+        : "surface");
 
   const onEnter = useCallback(
     (event: MouseEvent<HTMLDivElement>) => {
@@ -94,6 +120,7 @@ function WorkspaceObjectInner({
         "ws-object",
         `ws-object--${kind}`,
         `ws-object--${slot}`,
+        `ws-object--${visual.tier}`,
         `is-${state}`,
         className,
       ]
@@ -102,32 +129,31 @@ function WorkspaceObjectInner({
       data-object-id={objectId}
       data-kind={kind}
       data-state={state}
+      data-attention={visual.tier}
+      data-weight={weight.toFixed(2)}
       aria-hidden={ariaHidden}
       title={title}
       style={{
-        zIndex: objectDepth(state),
-        opacity: hidden ? 0 : state === "idle" ? opacity.strong : opacity.full,
+        zIndex: visual.interactionPriority,
         pointerEvents: hidden ? "none" : undefined,
         ...style,
       }}
       animate={
         reduceMotion
-          ? undefined
+          ? {
+              opacity: hidden ? 0 : visual.opacity,
+              scale: 1,
+              y: 0,
+              filter: "blur(0px)",
+            }
           : {
-              scale:
-                state === "hover"
-                  ? 1.015
-                  : state === "selected" || state === "expanded"
-                    ? 1.02
-                    : 1,
-              y: state === "hover" ? -2 : state === "selected" ? -4 : 0,
-              filter:
-                state === "idle" && slot === "orbit"
-                  ? "saturate(0.85) brightness(0.92)"
-                  : "none",
+              opacity: hidden ? 0 : visual.opacity,
+              scale: visual.scale,
+              y: visual.y * -0.35,
+              filter: `blur(${visual.blur}px)`,
             }
       }
-      transition={spring.layout}
+      transition={reduceMotion ? { duration: 0.01 } : spring.lush}
       onMouseEnter={onEnter}
       onMouseLeave={onLeave}
       onFocus={(event: FocusEvent<HTMLDivElement>) => {
@@ -154,19 +180,19 @@ function WorkspaceObjectInner({
             ? "soft"
             : kind === "quick-action"
               ? "default"
-              : state === "expanded" || state === "selected"
+              : visual.tier === "primary"
                 ? "hero"
                 : "default"
         }
         padding={
           kind === "quick-action"
             ? "sm"
-            : state === "expanded" || state === "selected"
+            : visual.tier === "primary"
               ? "lg"
               : "md"
         }
-        interactive={interactive}
-        lit={lit || state === "selected" || state === "focused"}
+        interactive={interactive && visual.tier !== "context"}
+        lit={lit || visual.lit}
         layout={false}
       >
         {children}

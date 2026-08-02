@@ -1,5 +1,7 @@
 import { ArrowRight, Clock3, Layers } from "lucide-react";
-import { memo } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { memo, type ReactNode } from "react";
+import { spring } from "../design-system";
 import type { WorkspaceObjectState } from "../lib/objectState";
 import { formatRelativeTime } from "../lib/time";
 import type { SavedContext } from "../types/domain";
@@ -26,6 +28,8 @@ interface MomentCardProps {
   placeholderHint?: string;
   className?: string;
   layoutId?: string;
+  /** Progressive restore reveal rendered inside the expanding moment. */
+  expandContent?: ReactNode;
 }
 
 function toObjectState(
@@ -42,7 +46,7 @@ function toObjectState(
 }
 
 /**
- * Moment spatial object — layout-preserving states on the Workspace Canvas.
+ * Moment spatial artifact — attention-driven; expands in place for restore.
  */
 function MomentCardInner({
   variant = "standard",
@@ -56,7 +60,10 @@ function MomentCardInner({
   placeholderHint = "Appears when you save",
   className = "",
   layoutId,
+  expandContent,
 }: MomentCardProps) {
+  const reduceMotion = useReducedMotion();
+
   if (variant === "placeholder" || !context) {
     return (
       <WorkspaceSurface
@@ -80,15 +87,17 @@ function MomentCardInner({
       : `${context.windows.length} windows`;
   const objectState = toObjectState(variant, state);
   const showActions =
-    objectState === "expanded" ||
-    objectState === "selected" ||
-    variant === "hero";
+    (objectState === "expanded" ||
+      objectState === "selected" ||
+      variant === "hero") &&
+    !expandContent;
+  const revealing = Boolean(expandContent) && state === "preview";
 
   return (
     <WorkspaceObject
       objectId={context.id}
       kind="moment"
-      slot={variant === "hero" ? "anchor" : "orbit"}
+      slot={variant === "hero" || revealing ? "anchor" : "orbit"}
       state={objectState}
       layoutId={layoutId ?? `moment-${context.id}`}
       lit={
@@ -102,7 +111,7 @@ function MomentCardInner({
           {state === "restoring"
             ? "Restoring"
             : state === "preview"
-              ? "Preview"
+              ? "Entering saved workspace"
               : variant === "hero"
                 ? "Pick up here"
                 : "Moment"}
@@ -111,7 +120,7 @@ function MomentCardInner({
       </div>
       <p
         className={
-          variant === "compact" && state === "collapsed"
+          variant === "compact" && state === "collapsed" && !revealing
             ? "moment-card__handoff moment-card__handoff--compact"
             : "moment-card__handoff"
         }
@@ -159,6 +168,19 @@ function MomentCardInner({
           )}
         </div>
       )}
+      <AnimatePresence>
+        {revealing && (
+          <motion.div
+            className="moment-expand"
+            initial={reduceMotion ? false : { opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={reduceMotion ? undefined : { opacity: 0, height: 0 }}
+            transition={spring.lush}
+          >
+            {expandContent}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </WorkspaceObject>
   );
 }

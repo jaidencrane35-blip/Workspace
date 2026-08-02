@@ -28,13 +28,21 @@ export function HomeWorkspacePanel({
   onGoToContinue,
   onContinueContext,
 }: HomeWorkspacePanelProps) {
-  const { density, setSelectedObjectId, setAmbient } = useWorkspaceComposition();
+  const {
+    density,
+    setPrimaryObject,
+    setSecondaryObjects,
+    setAttentionScene,
+    setAmbient,
+  } = useWorkspaceComposition();
   const [recent, setRecent] = useState<SavedContext[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!workspace) {
       setRecent([]);
+      setAttentionScene("empty");
+      setPrimaryObject("home-create");
       return;
     }
     void invokeIpc<SavedContext[]>("list_saved_contexts", {
@@ -46,11 +54,31 @@ export function HomeWorkspacePanel({
         );
         setRecent(sorted.slice(0, 7));
         setLoadError(null);
+        if (sorted[0]) {
+          setAttentionScene("default");
+          setPrimaryObject(sorted[0].id);
+          setSecondaryObjects([
+            `intention-${sorted[0].id}`,
+            "quick-save",
+            "quick-continue",
+          ]);
+          setAmbient("moment");
+        } else {
+          setAttentionScene("empty");
+          setPrimaryObject("first-moment");
+          setSecondaryObjects(["intention-empty", "quick-save"]);
+        }
       })
       .catch((err: unknown) => {
         setLoadError(err instanceof Error ? err.message : String(err));
       });
-  }, [workspace]);
+  }, [
+    workspace,
+    setAttentionScene,
+    setPrimaryObject,
+    setSecondaryObjects,
+    setAmbient,
+  ]);
 
   if (!workspace) {
     return (
@@ -64,7 +92,7 @@ export function HomeWorkspacePanel({
           <h2 className="place__title">This is your Workspace</h2>
           <p className="place__pulse">Where your work lives.</p>
         </div>
-        <div className="ws-compose ws-compose--empty">
+        <div className="ws-compose ws-compose--empty attention-field">
           <WorkspaceObject
             objectId="home-create"
             kind="quick-action"
@@ -88,7 +116,7 @@ export function HomeWorkspacePanel({
               </button>
             </div>
           </WorkspaceObject>
-          <div className="dash-grid">
+          <div className="dash-grid attention-orbit attention-orbit--ghost">
             <EmptyStructure />
           </div>
         </div>
@@ -121,7 +149,7 @@ export function HomeWorkspacePanel({
       {loadError && <p className="error">{loadError}</p>}
 
       {latest ? (
-        <div className="ws-compose">
+        <div className="ws-compose attention-field">
           <div className="ws-compose__anchor">
             <MomentCard
               variant="hero"
@@ -131,7 +159,7 @@ export function HomeWorkspacePanel({
               onContinue={() => onContinueContext(latest.id)}
               onInspect={onGoToContinue}
               onSelect={() => {
-                setSelectedObjectId(latest.id);
+                setPrimaryObject(latest.id);
                 setAmbient("moment");
               }}
             />
@@ -166,17 +194,18 @@ export function HomeWorkspacePanel({
           </aside>
 
           {density !== "focus" && (
-            <div className="ws-compose__orbit dash-grid">
-              {orbit.map((context) => (
+            <div className="ws-compose__orbit dash-grid attention-orbit">
+              {orbit.map((context, index) => (
                 <MomentCard
                   key={context.id}
                   variant="compact"
                   state="collapsed"
+                  className={`orbit-item orbit-item--${index % 5}`}
                   context={context}
                   busy={busy}
                   onContinue={() => onContinueContext(context.id)}
                   onSelect={() => {
-                    setSelectedObjectId(context.id);
+                    setPrimaryObject(context.id);
                     setAmbient("moment");
                     onContinueContext(context.id);
                   }}
@@ -187,7 +216,7 @@ export function HomeWorkspacePanel({
           )}
         </div>
       ) : (
-        <div className="ws-compose ws-compose--invite">
+        <div className="ws-compose ws-compose--invite attention-field">
           <div className="ws-compose__anchor">
             <WorkspaceObject
               objectId="first-moment"
@@ -231,7 +260,7 @@ export function HomeWorkspacePanel({
             />
           </aside>
           {density !== "focus" && (
-            <div className="dash-grid ws-compose__orbit">
+            <div className="dash-grid ws-compose__orbit attention-orbit attention-orbit--ghost">
               <EmptyStructure />
             </div>
           )}

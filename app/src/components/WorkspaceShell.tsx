@@ -161,10 +161,13 @@ function ShellBody({
     density,
     writingMode,
     ambient,
+    attentionScene,
     setAmbient,
     setWritingMode,
     setSelectedObjectId,
     setFocusedObjectId,
+    setAttentionScene,
+    setPrimaryObject,
   } = useWorkspaceComposition();
 
   useEffect(() => {
@@ -172,6 +175,16 @@ function ShellBody({
     setWritingMode(false);
     setSelectedObjectId(null);
     setFocusedObjectId(null);
+    setPrimaryObject(null);
+    setAttentionScene(
+      view === "save"
+        ? "writing"
+        : view === "help"
+          ? "guide"
+          : view === "pilot"
+            ? "checkin"
+            : "default",
+    );
     setAmbient(view === "save" ? "input" : "workspace");
     if (liveRef.current) {
       liveRef.current.textContent = `${PILOT_VIEW_LABELS[view]} selected`;
@@ -182,6 +195,8 @@ function ShellBody({
     setWritingMode,
     setSelectedObjectId,
     setFocusedObjectId,
+    setAttentionScene,
+    setPrimaryObject,
   ]);
 
   const onDockKeyDown = (event: KeyboardEvent<HTMLElement>) => {
@@ -215,6 +230,7 @@ function ShellBody({
       data-ambient={ambient}
       data-writing={writingMode ? "on" : "off"}
       data-destination={view}
+      data-scene={attentionScene}
     >
       <div className="ws-layer ws-layer--bg" aria-hidden="true">
         <div className="ws-atmosphere">
@@ -303,9 +319,22 @@ function ShellBody({
           reduceMotion
             ? undefined
             : {
-                opacity: writingMode ? 0.35 : 1,
-                y: writingMode ? 10 : 0,
-                scale: writingMode ? 0.96 : 1,
+                opacity:
+                  writingMode || attentionScene === "writing"
+                    ? 0.32
+                    : attentionScene === "restore"
+                      ? 0.72
+                      : attentionScene === "empty"
+                        ? 0.85
+                        : 1,
+                y:
+                  writingMode || attentionScene === "writing"
+                    ? 12
+                    : attentionScene === "restore"
+                      ? 4
+                      : 0,
+                scale:
+                  writingMode || attentionScene === "writing" ? 0.95 : 1,
               }
         }
         transition={spring.soft}

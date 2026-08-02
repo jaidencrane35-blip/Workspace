@@ -44,7 +44,12 @@ export function PilotMeasurementPanel({
   onError,
   onMessage,
 }: PilotMeasurementPanelProps) {
-  const { density } = useWorkspaceComposition();
+  const {
+    density,
+    setAttentionScene,
+    setPrimaryObject,
+    setSecondaryObjects,
+  } = useWorkspaceComposition();
   const reduceMotion = useReducedMotion();
   const [scope, setScope] = useState<PilotMeasurementScope | null>(null);
   const [snapshot, setSnapshot] = useState<PilotMeasurementSnapshot | null>(null);
@@ -56,6 +61,30 @@ export function PilotMeasurementPanel({
   const [interviewBaseline, setInterviewBaseline] = useState("");
   const [interviewWeekFour, setInterviewWeekFour] = useState("");
   const [chapter, setChapter] = useState(0);
+  const [completed, setCompleted] = useState<number[]>([]);
+
+  useEffect(() => {
+    setAttentionScene("checkin");
+    const primary =
+      chapter === 0
+        ? "checkin-baseline"
+        : chapter === 1
+          ? "checkin-leave"
+          : "checkin-median";
+    setPrimaryObject(primary);
+    setSecondaryObjects(
+      ["checkin-baseline", "checkin-leave", "checkin-median"].filter(
+        (id) => id !== primary,
+      ),
+    );
+  }, [chapter, setAttentionScene, setPrimaryObject, setSecondaryObjects]);
+
+  const advanceChapter = (from: number) => {
+    setCompleted((prev) =>
+      prev.includes(from) ? prev : [...prev, from],
+    );
+    setChapter(Math.min(3, from + 1));
+  };
 
   const reload = useCallback(() => {
     onBusy(true);
@@ -312,24 +341,35 @@ export function PilotMeasurementPanel({
         />
       </div>
 
-      <div className="checkin-narrative pilot-forms">
-        <div className="checkin-narrative__dots" role="tablist" aria-label="Check-in chapters">
-          {["Baseline", "Return", "Reflect", "Week four"].map((label, index) => (
-            <button
-              key={label}
-              type="button"
-              role="tab"
-              aria-selected={chapter === index}
-              className={
-                chapter === index
-                  ? "checkin-narrative__dot is-active"
-                  : "checkin-narrative__dot"
-              }
-              onClick={() => setChapter(index)}
-            >
-              {label}
-            </button>
-          ))}
+      <div className="checkin-narrative pilot-forms attention-field">
+        <div
+          className="checkin-spatial-trail"
+          role="tablist"
+          aria-label="Check-in chapters"
+        >
+          {["Baseline", "Return", "Reflect", "Week four"].map((label, index) => {
+            const done = completed.includes(index);
+            const active = chapter === index;
+            return (
+              <button
+                key={label}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                className={[
+                  "checkin-spatial-chip",
+                  active ? "is-active" : "",
+                  done ? "is-done" : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+                onClick={() => setChapter(index)}
+              >
+                <span className="checkin-spatial-chip__mark" aria-hidden="true" />
+                <span className="checkin-spatial-chip__label">{label}</span>
+              </button>
+            );
+          })}
         </div>
 
         <AnimatePresence mode="wait">
@@ -382,7 +422,7 @@ export function PilotMeasurementPanel({
                   <button
                     type="button"
                     className="exp-btn ghost"
-                    onClick={() => setChapter(1)}
+                    onClick={() => advanceChapter(0)}
                   >
                     Next
                   </button>
@@ -390,6 +430,7 @@ export function PilotMeasurementPanel({
               </WorkspaceSurface>
             </motion.div>
           )}
+
 
           {chapter === 1 && (
             <motion.div
@@ -451,7 +492,7 @@ export function PilotMeasurementPanel({
                   <button
                     type="button"
                     className="exp-btn ghost"
-                    onClick={() => setChapter(2)}
+                    onClick={() => advanceChapter(1)}
                   >
                     Next
                   </button>
@@ -500,7 +541,7 @@ export function PilotMeasurementPanel({
                   <button
                     type="button"
                     className="exp-btn ghost"
-                    onClick={() => setChapter(3)}
+                    onClick={() => advanceChapter(2)}
                   >
                     Next
                   </button>

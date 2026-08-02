@@ -10,6 +10,7 @@ import type {
 } from "../types/domain";
 import { RestoreLimitsNotice } from "./RestoreLimitsNotice";
 import { useWorkspaceComposition } from "./WorkspaceComposition";
+import { WorkspaceObject } from "./WorkspaceObject";
 import { WorkspaceSurface } from "./WorkspaceSurface";
 
 type Step = "naming" | "reviewing" | "saved";
@@ -224,17 +225,18 @@ export function SaveContextPanel({
 
   return (
     <section
-      className="spatial-frame spatial-frame--center save-env save-env--write"
+      className="spatial-frame spatial-frame--center save-env save-env--write attention-field"
       data-density={density}
       data-writing="ready"
     >
-      <WorkspaceSurface
-        level="floating"
-        tone="write"
-        padding="xl"
-        className="focus-card write-card"
-        layout
+      <WorkspaceObject
+        objectId="write-surface"
+        kind="intention"
+        slot="anchor"
+        state="expanded"
+        level="overlay"
         lit
+        className="focus-card write-card write-focus"
       >
         <p className="exp-kicker">Save</p>
         <h2 className="focus-card__title">Leave a note</h2>
@@ -258,7 +260,7 @@ export function SaveContextPanel({
           <textarea
             id="saved-context-handoff"
             className="input-ghost write-textarea"
-            rows={density === "focus" ? 10 : 8}
+            rows={density === "focus" ? 11 : 9}
             value={handoffNote}
             placeholder="Finish the client proposal outline…"
             disabled={busy}
@@ -343,7 +345,7 @@ export function SaveContextPanel({
             </motion.div>
           )}
         </AnimatePresence>
-      </WorkspaceSurface>
+      </WorkspaceObject>
     </section>
   );
 }

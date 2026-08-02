@@ -2276,3 +2276,21 @@ product tour; velocity-aware dock. No Product Proof behaviour change.
 Validation: `pnpm typecheck`, `pnpm test` green.
 
 Status: Complete
+
+### LEDGER-0043
+
+Entry ID: LEDGER-0043
+Timestamp: 2026-08-02
+Capability: Experience — Attention Engine and spatial orchestration
+Related ADRs: ADR-0008
+Related Research: EXP-001; concept boards
+Decision: Introduce an Attention Engine that assigns continuous attention weights
+to Workspace Objects (Primary / Secondary / Context), driving scale, opacity,
+blur, elevation, lighting, and interaction priority with shared-layout
+recomposition; immersive Save focus; in-object Continue restore expand;
+conversational Check-in trail; experiential Guide; contextual dock response.
+No Product Proof behaviour change.
+
+Validation: `pnpm typecheck`, `pnpm test` green.
+
+Status: Complete

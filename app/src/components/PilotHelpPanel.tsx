@@ -1,6 +1,6 @@
 import { BookmarkPlus, ClipboardList, Play, ShieldCheck } from "lucide-react";
-import { motion, useReducedMotion, useScroll, useTransform } from "motion/react";
-import { useRef, useState } from "react";
+import { motion, useReducedMotion } from "motion/react";
+import { useEffect, useState } from "react";
 import { spring } from "../design-system";
 import { RESTORE_LIMITS_SUMMARY } from "../lib/restoreLimits";
 import { GuideStepObject } from "./objects/GuideStepObject";
@@ -12,77 +12,110 @@ const STEPS = [
     id: "save",
     icon: BookmarkPlus,
     title: "Save",
-    line: "Leave a note. Confirm what is kept.",
+    line: "Try it: focus the note field — Workspace quiets around writing.",
+    demo: "write",
   },
   {
     id: "continue",
     icon: Play,
     title: "Continue",
-    line: "Preview. Approve. Return.",
+    line: "Try it: a Moment expands — restore confidence appears inside it.",
+    demo: "expand",
   },
   {
     id: "checkin",
     icon: ClipboardList,
     title: "Check-in",
-    line: "Optional local pulse — only if you consent.",
+    line: "Try it: one question at a time — completed answers gently recede.",
+    demo: "flow",
   },
 ] as const;
 
 /**
- * Guide — interactive product tour on the Workspace Canvas.
+ * Guide — experiential tour driven by attention, not explanation.
  */
 export function PilotHelpPanel() {
-  const { density, setFocusedObjectId, setAmbient } = useWorkspaceComposition();
+  const {
+    density,
+    setPrimaryObject,
+    setSecondaryObjects,
+    setAttentionScene,
+    setAmbient,
+  } = useWorkspaceComposition();
   const reduceMotion = useReducedMotion();
-  const ref = useRef<HTMLElement>(null);
   const [active, setActive] = useState(0);
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ["start start", "end end"],
-  });
-  const progressWidth = useTransform(scrollYProgress, [0, 1], ["8%", "100%"]);
+
+  useEffect(() => {
+    setAttentionScene("guide");
+    setPrimaryObject(STEPS[active]?.id ?? "save");
+    setSecondaryObjects(
+      STEPS.filter((_, index) => index !== active).map((step) => step.id),
+    );
+    setAmbient("card");
+  }, [
+    active,
+    setAttentionScene,
+    setPrimaryObject,
+    setSecondaryObjects,
+    setAmbient,
+  ]);
+
+  const current = STEPS[active];
 
   return (
     <section
-      ref={ref}
-      className="spatial-frame guide-dash guide-walk"
+      className="spatial-frame guide-dash guide-walk attention-field"
       data-testid="pilot-help"
       data-density={density}
     >
       <header className="spatial-header">
         <p className="exp-kicker">Guide</p>
         <h1 className="spatial-title">How this pilot works</h1>
-        <motion.div
-          className="guide-walk__progress"
-          style={{ width: progressWidth }}
-        />
       </header>
 
-      <div className="guide-walk__chapters ws-compose ws-compose--tour">
-        {STEPS.map((item, index) => (
+      <div className="guide-experience">
+        <div className="guide-experience__stage">
+          <GuideStepObject
+            id={current.id}
+            step={active + 1}
+            title={current.title}
+            line={current.line}
+            icon={current.icon}
+            state="expanded"
+          />
           <motion.div
-            key={item.id}
-            className="guide-walk__chapter"
-            initial={reduceMotion ? false : { opacity: 0.2, y: 32, scale: 0.98 }}
-            whileInView={{ opacity: 1, y: 0, scale: 1 }}
-            viewport={{ amount: 0.5, once: false }}
+            key={current.demo}
+            className={`guide-demo guide-demo--${current.demo}`}
+            initial={reduceMotion ? false : { opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
             transition={spring.soft}
-            onViewportEnter={() => {
-              setActive(index);
-              setFocusedObjectId(item.id);
-              setAmbient("card");
-            }}
+            aria-hidden="true"
           >
-            <GuideStepObject
-              id={item.id}
-              step={index + 1}
-              title={item.title}
-              line={item.line}
-              icon={item.icon}
-              state={active === index ? "expanded" : "idle"}
-            />
+            <span className="guide-demo__pulse" />
+            <span className="guide-demo__pulse guide-demo__pulse--b" />
+            <span className="guide-demo__label">{current.title}</span>
           </motion.div>
-        ))}
+        </div>
+
+        <div className="guide-experience__rail" role="list">
+          {STEPS.map((item, index) => (
+            <button
+              key={item.id}
+              type="button"
+              role="listitem"
+              className={
+                index === active
+                  ? "guide-experience__chip is-active"
+                  : index < active
+                    ? "guide-experience__chip is-done"
+                    : "guide-experience__chip"
+              }
+              onClick={() => setActive(index)}
+            >
+              {item.title}
+            </button>
+          ))}
+        </div>
       </div>
 
       <WorkspaceObject

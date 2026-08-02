@@ -1,6 +1,4 @@
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useCallback, useEffect, useState } from "react";
-import { spring } from "../design-system";
 import { invokeIpc } from "../lib/ipc";
 import { RESTORE_LIMITS_SUMMARY } from "../lib/restoreLimits";
 import type {
@@ -13,7 +11,7 @@ import type {
 } from "../types/domain";
 import { EmptyStructure } from "./EmptyStructure";
 import { MomentCard } from "./MomentCard";
-import { ContinuePreviewObject } from "./objects/ContinuePreviewObject";
+import { ContinuePreviewBody } from "./objects/ContinuePreviewObject";
 import { IntentionObject } from "./objects/IntentionObject";
 import { RestoreLimitsNotice } from "./RestoreLimitsNotice";
 import { useWorkspaceComposition } from "./WorkspaceComposition";
@@ -101,8 +99,13 @@ export function ResumeContextPanel({
   onGoHome,
   focusContextId = null,
 }: ResumeContextPanelProps) {
-  const { density, setSelectedObjectId, setAmbient } = useWorkspaceComposition();
-  const reduceMotion = useReducedMotion();
+  const {
+    density,
+    setPrimaryObject,
+    setSecondaryObjects,
+    setAttentionScene,
+    setAmbient,
+  } = useWorkspaceComposition();
   const [step, setStep] = useState<Step>("browse");
   const [contexts, setContexts] = useState<SavedContext[]>([]);
   const [inspected, setInspected] = useState<SavedContext | null>(null);
@@ -113,7 +116,7 @@ export function ResumeContextPanel({
 
   const selectMoment = (id: string) => {
     setSelectedId(id);
-    setSelectedObjectId(id);
+    setPrimaryObject(id);
     setAmbient("moment");
   };
 
@@ -166,6 +169,9 @@ export function ResumeContextPanel({
           setPreview(next);
           setResult(null);
           setStep("preview");
+          setPrimaryObject(contextId);
+          setAttentionScene("restore");
+          setSecondaryObjects([]);
           onMessage(`Preview ready for “${next.saved_context_name}”`);
         } catch (err: unknown) {
           onError(formatError(err));
@@ -174,7 +180,14 @@ export function ResumeContextPanel({
         }
       })();
     },
-    [onBusy, onError, onMessage],
+    [
+      onBusy,
+      onError,
+      onMessage,
+      setPrimaryObject,
+      setAttentionScene,
+      setSecondaryObjects,
+    ],
   );
 
   useEffect(() => {
@@ -245,6 +258,7 @@ export function ResumeContextPanel({
     setInspected(null);
     setPreview(null);
     setResult(null);
+    setAttentionScene("default");
     reload();
   };
 
@@ -297,8 +311,8 @@ export function ResumeContextPanel({
             <div
               className={
                 selectedId || preview
-                  ? "continue-cinema is-dimmed ws-compose"
-                  : "continue-cinema ws-compose"
+                  ? "continue-cinema is-dimmed ws-compose attention-field"
+                  : "continue-cinema ws-compose attention-field"
               }
             >
               {featured && (
@@ -306,12 +320,11 @@ export function ResumeContextPanel({
                   <MomentCard
                     variant="hero"
                     state={
-                      selectedId === featured.id ||
                       preview?.saved_context_id === featured.id
-                        ? preview
-                          ? "preview"
-                          : "selected"
-                        : "expanded"
+                        ? "preview"
+                        : selectedId === featured.id
+                          ? "selected"
+                          : "expanded"
                     }
                     context={featured}
                     busy={busy}
@@ -321,32 +334,47 @@ export function ResumeContextPanel({
                       openPreview(featured.id);
                     }}
                     onInspect={() => openInspect(featured.id)}
-                  />
-                  <IntentionObject
-                    id={`continue-intention-${featured.id}`}
-                    text={
-                      featured.handoff_note.trim() ||
-                      "Your latest note leads."
+                    expandContent={
+                      preview?.saved_context_id === featured.id ? (
+                        <ContinuePreviewBody
+                          preview={preview}
+                          busy={busy}
+                          onApprove={approveAndRestore}
+                          onCancel={backToBrowse}
+                          describeDisposition={describeDisposition}
+                          formatMoment={formatMoment}
+                        />
+                      ) : undefined
                     }
-                    meta="Saved intention · not live Windows state"
-                    state={
-                      selectedId === featured.id ? "expanded" : "idle"
-                    }
                   />
+                  {preview?.saved_context_id !== featured.id && (
+                    <IntentionObject
+                      id={`continue-intention-${featured.id}`}
+                      text={
+                        featured.handoff_note.trim() ||
+                        "Your latest note leads."
+                      }
+                      meta="Saved intention · not live Windows state"
+                      state={
+                        selectedId === featured.id ? "expanded" : "idle"
+                      }
+                    />
+                  )}
                 </div>
               )}
               {density !== "focus" && others.length > 0 && (
-                <div className="dash-grid continue-recede ws-compose__orbit">
-                  {others.map((context) => (
+                <div className="attention-orbit continue-recede ws-compose__orbit dash-grid">
+                  {others.map((context, index) => (
                     <MomentCard
                       key={context.id}
                       variant="compact"
+                      className={`orbit-item orbit-item--${index % 5}`}
                       state={
-                        selectedId === context.id
-                          ? preview
-                            ? "preview"
-                            : "selected"
-                          : "collapsed"
+                        preview?.saved_context_id === context.id
+                          ? "preview"
+                          : selectedId === context.id
+                            ? "selected"
+                            : "collapsed"
                       }
                       context={context}
                       busy={busy}
@@ -356,31 +384,22 @@ export function ResumeContextPanel({
                         openPreview(context.id);
                       }}
                       onInspect={() => openInspect(context.id)}
+                      expandContent={
+                        preview?.saved_context_id === context.id ? (
+                          <ContinuePreviewBody
+                            preview={preview}
+                            busy={busy}
+                            onApprove={approveAndRestore}
+                            onCancel={backToBrowse}
+                            describeDisposition={describeDisposition}
+                            formatMoment={formatMoment}
+                          />
+                        ) : undefined
+                      }
                     />
                   ))}
                 </div>
               )}
-              <AnimatePresence>
-                {step === "preview" && preview && (
-                  <motion.div
-                    className="ws-compose__preview"
-                    initial={reduceMotion ? false : { opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={reduceMotion ? undefined : { opacity: 0, y: 12 }}
-                    transition={spring.lush}
-                  >
-                    <ContinuePreviewObject
-                      preview={preview}
-                      busy={busy}
-                      state="expanded"
-                      onApprove={approveAndRestore}
-                      onCancel={backToBrowse}
-                      describeDisposition={describeDisposition}
-                      formatMoment={formatMoment}
-                    />
-                  </motion.div>
-                )}
-              </AnimatePresence>
             </div>
           )}
         </>

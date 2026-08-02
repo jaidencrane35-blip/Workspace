@@ -25,6 +25,8 @@ export function WorkspaceCanvas({
     setDestination,
     focusedObjectId,
     selectedObjectId,
+    attentionScene,
+    primaryObjectId,
   } = useWorkspaceComposition();
 
   useEffect(() => {
@@ -39,16 +41,19 @@ export function WorkspaceCanvas({
         data-density={density}
         data-writing={writingMode ? "on" : "off"}
         data-ambient={ambient}
+        data-scene={attentionScene}
         data-focus={focusedObjectId ?? ""}
-        data-selected={selectedObjectId ?? ""}
+        data-selected={selectedObjectId ?? primaryObjectId ?? ""}
         layout={!reduceMotion}
         animate={
           reduceMotion
             ? undefined
             : {
                 filter: writingMode
-                  ? "brightness(0.88) saturate(0.92)"
-                  : "brightness(1) saturate(1)",
+                  ? "brightness(0.82) saturate(0.9)"
+                  : attentionScene === "restore"
+                    ? "brightness(0.92) saturate(0.95)"
+                    : "brightness(1) saturate(1)",
               }
         }
         transition={spring.soft}
