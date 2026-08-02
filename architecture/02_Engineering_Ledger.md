@@ -2226,3 +2226,18 @@ Implementation:
 Validation: `pnpm typecheck`, `pnpm test` (54), CSP/boundary verifiers green.
 
 Status: Complete
+
+### LEDGER-0040
+
+Entry ID: LEDGER-0040
+Timestamp: 2026-08-02
+Capability: Experience — adaptive spatial composition
+Related ADRs: ADR-0008
+Related Research: EXP-001; concept boards
+Decision: Add Focus/Balanced/Flow density engine, layered depth, living
+atmosphere, glass ElevatedCard upgrades, destination refinements, and premium
+dock microinteractions without remounting the shell or changing Product Proof.
+
+Validation: `pnpm typecheck`, `pnpm test` (54) green.
+
+Status: Complete

@@ -1,4 +1,5 @@
 import { BookmarkPlus, Play } from "lucide-react";
+import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useState } from "react";
 import { invokeIpc } from "../lib/ipc";
 import { RESTORE_LIMITS_SUMMARY } from "../lib/restoreLimits";
@@ -7,6 +8,7 @@ import type { SavedContext, Workspace } from "../types/domain";
 import { ElevatedCard } from "./ElevatedCard";
 import { EmptyStructure } from "./EmptyStructure";
 import { MomentCard } from "./MomentCard";
+import { useWorkspaceComposition } from "./WorkspaceComposition";
 
 interface HomeWorkspacePanelProps {
   workspace: Workspace | null;
@@ -17,9 +19,6 @@ interface HomeWorkspacePanelProps {
   onContinueContext: (contextId: string) => void;
 }
 
-/**
- * Home content inside the persistent shell — spatial place, not a page.
- */
 export function HomeWorkspacePanel({
   workspace,
   busy,
@@ -28,6 +27,8 @@ export function HomeWorkspacePanel({
   onGoToContinue,
   onContinueContext,
 }: HomeWorkspacePanelProps) {
+  const { density } = useWorkspaceComposition();
+  const reduceMotion = useReducedMotion();
   const [recent, setRecent] = useState<SavedContext[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -51,14 +52,44 @@ export function HomeWorkspacePanel({
       });
   }, [workspace]);
 
+  const stagger = reduceMotion
+    ? undefined
+    : {
+        hidden: { opacity: 0 },
+        show: {
+          opacity: 1,
+          transition: { staggerChildren: 0.06, delayChildren: 0.04 },
+        },
+      };
+  const item = reduceMotion
+    ? undefined
+    : {
+        hidden: { opacity: 0, y: 14, scale: 0.98 },
+        show: {
+          opacity: 1,
+          y: 0,
+          scale: 1,
+          transition: { type: "spring" as const, stiffness: 340, damping: 30 },
+        },
+      };
+
   if (!workspace) {
     return (
-      <section className="spatial-frame place" data-testid="workspace-home">
-        <div className="place__identity">
+      <section
+        className="spatial-frame place place--empty"
+        data-testid="workspace-home"
+        data-density={density}
+      >
+        <motion.div
+          className="place__identity"
+          initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ type: "spring", stiffness: 280, damping: 28 }}
+        >
           <p className="exp-kicker">Workspace</p>
           <h2 className="place__title">This is your Workspace</h2>
-          <p className="place__pulse">Leave a note. Come back. Continue.</p>
-        </div>
+          <p className="place__pulse">Where your work lives.</p>
+        </motion.div>
         <div className="place__fab-row">
           <button
             type="button"
@@ -87,7 +118,11 @@ export function HomeWorkspacePanel({
         : `${recent.length} moments · last ${formatRelativeTime(recent[0].created_at)}`;
 
   return (
-    <section className="spatial-frame place" data-testid="workspace-home">
+    <section
+      className="spatial-frame place"
+      data-testid="workspace-home"
+      data-density={density}
+    >
       <div className="place__identity">
         <p className="exp-kicker">Workspace</p>
         <h1 className="place__title">{workspace.name}</h1>
@@ -97,8 +132,13 @@ export function HomeWorkspacePanel({
       {loadError && <p className="error">{loadError}</p>}
 
       {latest ? (
-        <>
-          <div className="place__orbit">
+        <motion.div
+          className="place__composition"
+          variants={stagger}
+          initial={reduceMotion ? false : "hidden"}
+          animate="show"
+        >
+          <motion.div className="place__primary" variants={item} layout>
             <MomentCard
               variant="hero"
               context={latest}
@@ -106,8 +146,17 @@ export function HomeWorkspacePanel({
               onContinue={() => onContinueContext(latest.id)}
               onInspect={onGoToContinue}
             />
-            <aside className="place__rail">
-              <ElevatedCard tone="soft" padding="md" className="quote-pane">
+          </motion.div>
+
+          <aside className="place__context">
+            <motion.div variants={item} layout>
+              <ElevatedCard
+                tone="float"
+                elevation={3}
+                padding="md"
+                className="quote-pane"
+                layout
+              >
                 <div className="quote-pane__mark" aria-hidden="true">
                   “
                 </div>
@@ -118,6 +167,8 @@ export function HomeWorkspacePanel({
                   Your note · {formatRelativeTime(latest.created_at)}
                 </p>
               </ElevatedCard>
+            </motion.div>
+            <motion.div variants={item}>
               <button
                 type="button"
                 className="exp-btn primary"
@@ -127,42 +178,74 @@ export function HomeWorkspacePanel({
                 <BookmarkPlus size={16} aria-hidden="true" />
                 Quick save
               </button>
-            </aside>
-          </div>
+            </motion.div>
+          </aside>
 
-          <div className="dash-grid place__constellation">
-            {rest.map((context, index) => (
-              <MomentCard
-                key={context.id}
-                variant={index === 0 ? "standard" : "compact"}
-                className={index === 0 ? "span-6" : "span-3"}
-                context={context}
-                busy={busy}
-                onContinue={() => onContinueContext(context.id)}
-              />
-            ))}
-            {rest.length < 4 &&
-              Array.from({ length: Math.max(1, 4 - rest.length) }).map(
-                (_, index) => (
+          {density !== "focus" && (
+            <motion.div
+              className="dash-grid place__constellation"
+              variants={stagger}
+            >
+              {rest.map((context, index) => (
+                <motion.div
+                  key={context.id}
+                  className={index === 0 ? "span-6" : "span-3"}
+                  variants={item}
+                  layout
+                >
                   <MomentCard
-                    key={`ph-${index}`}
-                    variant="placeholder"
-                    className="span-3"
-                    placeholderLabel="Open"
-                    placeholderHint="Fills when you save"
+                    variant={
+                      density === "flow"
+                        ? index < 2
+                          ? "standard"
+                          : "compact"
+                        : index === 0
+                          ? "standard"
+                          : "compact"
+                    }
+                    context={context}
+                    busy={busy}
+                    onContinue={() => onContinueContext(context.id)}
                   />
-                ),
-              )}
-          </div>
-        </>
+                </motion.div>
+              ))}
+              {rest.length < (density === "flow" ? 4 : 2) &&
+                Array.from({
+                  length: Math.max(
+                    1,
+                    (density === "flow" ? 4 : 2) - rest.length,
+                  ),
+                }).map((_, index) => (
+                  <motion.div
+                    key={`ph-${index}`}
+                    className="span-3"
+                    variants={item}
+                  >
+                    <MomentCard
+                      variant="placeholder"
+                      placeholderLabel="Open"
+                      placeholderHint="Fills when you save"
+                    />
+                  </motion.div>
+                ))}
+            </motion.div>
+          )}
+        </motion.div>
       ) : (
-        <>
-          <div className="place__orbit">
+        <motion.div
+          className="place__composition place__composition--invite"
+          variants={stagger}
+          initial={reduceMotion ? false : "hidden"}
+          animate="show"
+        >
+          <motion.div className="place__primary" variants={item} layout>
             <ElevatedCard
               tone="hero"
-              padding="lg"
+              elevation={3}
+              padding="xl"
               interactive
               className="moment-card moment-card--hero empty-invite"
+              layout
             >
               <p className="moment-card__kicker">Start here</p>
               <h3>Save your first moment</h3>
@@ -181,8 +264,15 @@ export function HomeWorkspacePanel({
                 </button>
               </div>
             </ElevatedCard>
-            <aside className="place__rail">
-              <ElevatedCard tone="soft" padding="md" className="quote-pane">
+          </motion.div>
+          <aside className="place__context">
+            <motion.div variants={item}>
+              <ElevatedCard
+                tone="float"
+                elevation={3}
+                padding="md"
+                className="quote-pane"
+              >
                 <div className="quote-pane__mark" aria-hidden="true">
                   “
                 </div>
@@ -191,6 +281,8 @@ export function HomeWorkspacePanel({
                 </p>
                 <p className="quote-pane__meta">Nothing invented</p>
               </ElevatedCard>
+            </motion.div>
+            <motion.div variants={item}>
               <button
                 type="button"
                 className="exp-btn"
@@ -200,26 +292,25 @@ export function HomeWorkspacePanel({
                 <BookmarkPlus size={16} aria-hidden="true" />
                 Quick save
               </button>
-            </aside>
+            </motion.div>
+          </aside>
+          {density !== "focus" && (
+            <div className="dash-grid">
+              <EmptyStructure />
+            </div>
+          )}
+          <div className="place__fab-row">
+            <button
+              type="button"
+              className="exp-btn"
+              onClick={onGoToContinue}
+              disabled={busy || recent.length === 0}
+            >
+              <Play size={16} aria-hidden="true" />
+              Continue
+            </button>
           </div>
-          <div className="dash-grid">
-            <EmptyStructure />
-          </div>
-        </>
-      )}
-
-      {!latest && (
-        <div className="place__fab-row">
-          <button
-            type="button"
-            className="exp-btn"
-            onClick={onGoToContinue}
-            disabled={busy || recent.length === 0}
-          >
-            <Play size={16} aria-hidden="true" />
-            Continue
-          </button>
-        </div>
+        </motion.div>
       )}
 
       <p className="trust-strip muted">{RESTORE_LIMITS_SUMMARY}</p>

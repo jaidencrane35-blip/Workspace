@@ -13,6 +13,7 @@ import { ElevatedCard } from "./ElevatedCard";
 import { EmptyStructure } from "./EmptyStructure";
 import { MomentCard } from "./MomentCard";
 import { RestoreLimitsNotice } from "./RestoreLimitsNotice";
+import { useWorkspaceComposition } from "./WorkspaceComposition";
 
 type Step = "browse" | "inspect" | "confirm_delete" | "preview" | "done";
 
@@ -96,6 +97,7 @@ export function ResumeContextPanel({
   onGoHome,
   focusContextId = null,
 }: ResumeContextPanelProps) {
+  const { density } = useWorkspaceComposition();
   const [step, setStep] = useState<Step>("browse");
   const [contexts, setContexts] = useState<SavedContext[]>([]);
   const [inspected, setInspected] = useState<SavedContext | null>(null);
@@ -260,7 +262,10 @@ export function ResumeContextPanel({
   const others = sorted.slice(1);
 
   return (
-    <section className="spatial-frame continue-gallery continue-dash">
+    <section
+      className="spatial-frame continue-gallery continue-dash"
+      data-density={density}
+    >
       {step === "browse" && (
         <>
           <header className="spatial-header">
@@ -277,19 +282,26 @@ export function ResumeContextPanel({
               hint="Save a moment — then it waits here for you."
             />
           ) : (
-            <div className="dash-grid">
+            <div className="place__composition continue-place">
               {featured && (
-                <MomentCard
-                  variant="hero"
-                  className="span-8"
-                  context={featured}
-                  busy={busy}
-                  onContinue={() => openPreview(featured.id)}
-                  onInspect={() => openInspect(featured.id)}
-                />
+                <div className="place__primary">
+                  <MomentCard
+                    variant="hero"
+                    context={featured}
+                    busy={busy}
+                    onContinue={() => openPreview(featured.id)}
+                    onInspect={() => openInspect(featured.id)}
+                  />
+                </div>
               )}
-              <aside className="place__rail span-4">
-                <ElevatedCard tone="soft" padding="md" className="quote-pane">
+              <aside className="place__context">
+                <ElevatedCard
+                  tone="float"
+                  elevation={3}
+                  padding="md"
+                  className="quote-pane"
+                  layout
+                >
                   <div className="quote-pane__mark" aria-hidden="true">
                     “
                   </div>
@@ -302,17 +314,29 @@ export function ResumeContextPanel({
                   </p>
                 </ElevatedCard>
               </aside>
-              {others.map((context, index) => (
-                <MomentCard
-                  key={context.id}
-                  variant={index < 2 ? "standard" : "compact"}
-                  className={index < 2 ? "span-6" : "span-4"}
-                  context={context}
-                  busy={busy}
-                  onContinue={() => openPreview(context.id)}
-                  onInspect={() => openInspect(context.id)}
-                />
-              ))}
+              {density !== "focus" && others.length > 0 && (
+                <div className="dash-grid place__constellation continue-recede">
+                  {others.map((context, index) => (
+                    <MomentCard
+                      key={context.id}
+                      variant={index < 2 ? "standard" : "compact"}
+                      className={
+                        density === "flow"
+                          ? index < 2
+                            ? "span-6"
+                            : "span-4"
+                          : index === 0
+                            ? "span-6"
+                            : "span-3"
+                      }
+                      context={context}
+                      busy={busy}
+                      onContinue={() => openPreview(context.id)}
+                      onInspect={() => openInspect(context.id)}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </>

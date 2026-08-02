@@ -5,6 +5,7 @@ import type {
   PilotMeasurementSnapshot,
 } from "../types/domain";
 import { ElevatedCard } from "./ElevatedCard";
+import { useWorkspaceComposition } from "./WorkspaceComposition";
 
 interface PilotMeasurementPanelProps {
   busy: boolean;
@@ -40,6 +41,7 @@ export function PilotMeasurementPanel({
   onError,
   onMessage,
 }: PilotMeasurementPanelProps) {
+  const { density } = useWorkspaceComposition();
   const [scope, setScope] = useState<PilotMeasurementScope | null>(null);
   const [snapshot, setSnapshot] = useState<PilotMeasurementSnapshot | null>(null);
   const [baselineMinutes, setBaselineMinutes] = useState("");
@@ -261,6 +263,7 @@ export function PilotMeasurementPanel({
     <section
       className="spatial-frame checkin-dash"
       data-testid="pilot-measurement-active"
+      data-density={density}
     >
       <header className="spatial-header">
         <p className="exp-kicker">Check-in</p>
@@ -271,27 +274,37 @@ export function PilotMeasurementPanel({
         </p>
       </header>
 
-      <div className="dash-grid checkin-stats">
-        <ElevatedCard tone="default" padding="md" className="stat span-4">
+      <div className="checkin-metrics">
+        <ElevatedCard
+          tone="hero"
+          elevation={3}
+          padding="lg"
+          className="metric-orb"
+          layout
+        >
           <p className="exp-kicker">Baseline</p>
-          <p className="exp-stat">
+          <p className="exp-stat metric-orb__value">
             {snapshot.baseline
-              ? `${snapshot.baseline.return_minutes} min`
+              ? `${snapshot.baseline.return_minutes}`
               : "—"}
           </p>
+          <p className="muted">min</p>
         </ElevatedCard>
-        <ElevatedCard tone="default" padding="md" className="stat span-4">
+        <ElevatedCard tone="soft" elevation={2} padding="lg" className="metric-orb">
           <p className="exp-kicker">Leave → resume</p>
-          <p className="exp-stat">{snapshot.leave_resume.length}</p>
+          <p className="exp-stat metric-orb__value">
+            {snapshot.leave_resume.length}
+          </p>
           <p className="muted">{snapshot.distinct_resume_days} days</p>
         </ElevatedCard>
-        <ElevatedCard tone="default" padding="md" className="stat span-4">
+        <ElevatedCard tone="soft" elevation={2} padding="lg" className="metric-orb">
           <p className="exp-kicker">Median</p>
-          <p className="exp-stat">
+          <p className="exp-stat metric-orb__value">
             {snapshot.median_return_minutes != null
-              ? `${snapshot.median_return_minutes} min`
+              ? `${snapshot.median_return_minutes}`
               : "n/a"}
           </p>
+          <p className="muted">min</p>
         </ElevatedCard>
       </div>
 

@@ -1,3 +1,4 @@
+import { motion, useReducedMotion } from "motion/react";
 import { useCallback, useEffect, useState } from "react";
 import { invokeIpc } from "../lib/ipc";
 import type {
@@ -8,6 +9,7 @@ import type {
 } from "../types/domain";
 import { ElevatedCard } from "./ElevatedCard";
 import { RestoreLimitsNotice } from "./RestoreLimitsNotice";
+import { useWorkspaceComposition } from "./WorkspaceComposition";
 
 type Step = "naming" | "reviewing" | "saved";
 
@@ -51,6 +53,8 @@ export function SaveContextPanel({
   onMessage,
   onCreateWorkspace,
 }: SaveContextPanelProps) {
+  const { density } = useWorkspaceComposition();
+  const reduceMotion = useReducedMotion();
   const [scope, setScope] = useState<SavedContextCaptureScope | null>(null);
   const [scopeError, setScopeError] = useState<string | null>(null);
   const [name, setName] = useState("");
@@ -111,10 +115,17 @@ export function SaveContextPanel({
     onError(null);
   };
 
+  const enter = reduceMotion
+    ? undefined
+    : { initial: { opacity: 0, y: 12 }, animate: { opacity: 1, y: 0 } };
+
   if (!workspace) {
     return (
-      <section className="spatial-frame spatial-frame--center">
-        <ElevatedCard tone="hero" padding="lg" className="focus-card">
+      <section
+        className="spatial-frame spatial-frame--center save-env"
+        data-density={density}
+      >
+        <ElevatedCard tone="hero" elevation={3} padding="xl" className="focus-card">
           <p className="exp-kicker">Save</p>
           <h2 className="focus-card__title">Start your workspace</h2>
           <p className="muted">Then leave yourself a note.</p>
@@ -135,8 +146,8 @@ export function SaveContextPanel({
 
   if (scopeError) {
     return (
-      <section className="spatial-frame spatial-frame--center">
-        <ElevatedCard tone="hero" padding="lg" className="focus-card">
+      <section className="spatial-frame spatial-frame--center save-env">
+        <ElevatedCard tone="hero" elevation={3} padding="xl" className="focus-card">
           <p className="exp-kicker">Save</p>
           <h2 className="focus-card__title">Saving is unavailable</h2>
           <p className="error">{scopeError}</p>
@@ -147,66 +158,73 @@ export function SaveContextPanel({
 
   if (step === "saved" && saved) {
     return (
-      <section className="spatial-frame spatial-frame--center">
-        <ElevatedCard tone="hero" padding="lg" className="focus-card">
-          <p className="exp-kicker">Saved</p>
-          <h2 className="focus-card__title">{saved.name}</h2>
-          <p className="exp-intention">{saved.handoff_note}</p>
-          <p className="muted">
-            Kept on this computer · {formatMoment(saved.created_at)}
-          </p>
-          <details className="exp-inspect">
-            <summary>Inspect what was kept</summary>
-            <h3>
-              {saved.windows.length}{" "}
-              {saved.windows.length === 1 ? "window" : "windows"}
-            </h3>
-            <ul className="list compact">
-              {saved.windows.map((window) => (
-                <li key={window.id}>
-                  <div>{window.title}</div>
-                  <div className="muted">{describeWindow(window)}</div>
-                </li>
-              ))}
-            </ul>
-            <h3>
-              {saved.monitors.length}{" "}
-              {saved.monitors.length === 1 ? "monitor" : "monitors"}
-            </h3>
-            <ul className="list compact">
-              {saved.monitors.map((monitor) => (
-                <li key={monitor.id}>
-                  <div>
-                    {monitor.name || `Monitor ${monitor.monitor_index + 1}`}
-                    {monitor.is_primary ? " · main" : ""}
-                  </div>
-                  <div className="muted">
-                    {monitor.width}×{monitor.height} at {monitor.x},{monitor.y}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </details>
-          <RestoreLimitsNotice />
-          <div className="exp-actions">
-            <button
-              type="button"
-              className="exp-btn"
-              onClick={startAgain}
-              disabled={busy}
-            >
-              Save another moment
-            </button>
-          </div>
-        </ElevatedCard>
+      <section className="spatial-frame spatial-frame--center save-env">
+        <motion.div {...enter} transition={{ type: "spring", stiffness: 300, damping: 30 }}>
+          <ElevatedCard
+            tone="hero"
+            elevation={3}
+            padding="xl"
+            className="focus-card save-success"
+          >
+            <p className="exp-kicker">Saved</p>
+            <h2 className="focus-card__title">{saved.name}</h2>
+            <p className="exp-intention">{saved.handoff_note}</p>
+            <p className="muted">
+              Kept on this computer · {formatMoment(saved.created_at)}
+            </p>
+            <details className="exp-inspect">
+              <summary>Inspect what was kept</summary>
+              <h3>
+                {saved.windows.length}{" "}
+                {saved.windows.length === 1 ? "window" : "windows"}
+              </h3>
+              <ul className="list compact">
+                {saved.windows.map((window) => (
+                  <li key={window.id}>
+                    <div>{window.title}</div>
+                    <div className="muted">{describeWindow(window)}</div>
+                  </li>
+                ))}
+              </ul>
+              <h3>
+                {saved.monitors.length}{" "}
+                {saved.monitors.length === 1 ? "monitor" : "monitors"}
+              </h3>
+              <ul className="list compact">
+                {saved.monitors.map((monitor) => (
+                  <li key={monitor.id}>
+                    <div>
+                      {monitor.name || `Monitor ${monitor.monitor_index + 1}`}
+                      {monitor.is_primary ? " · main" : ""}
+                    </div>
+                    <div className="muted">
+                      {monitor.width}×{monitor.height} at {monitor.x},{monitor.y}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </details>
+            <RestoreLimitsNotice />
+            <div className="exp-actions">
+              <button
+                type="button"
+                className="exp-btn"
+                onClick={startAgain}
+                disabled={busy}
+              >
+                Save another moment
+              </button>
+            </div>
+          </ElevatedCard>
+        </motion.div>
       </section>
     );
   }
 
   if (step === "reviewing" && scope) {
     return (
-      <section className="spatial-frame spatial-frame--center">
-        <ElevatedCard tone="hero" padding="lg" className="focus-card">
+      <section className="spatial-frame spatial-frame--center save-env">
+        <ElevatedCard tone="hero" elevation={3} padding="xl" className="focus-card">
           <p className="exp-kicker">Review</p>
           <h2 className="focus-card__title">Bookmark “{trimmedName}”?</h2>
           <div className="exp-intention-block">
@@ -254,12 +272,21 @@ export function SaveContextPanel({
   }
 
   return (
-    <section className="spatial-frame spatial-frame--center">
-      <ElevatedCard tone="hero" padding="lg" className="focus-card">
+    <section
+      className="spatial-frame spatial-frame--center save-env save-env--write"
+      data-density={density}
+    >
+      <ElevatedCard
+        tone="hero"
+        elevation={3}
+        padding="xl"
+        className="focus-card write-card"
+        layout
+      >
         <p className="exp-kicker">Save</p>
         <h2 className="focus-card__title">Leave a note</h2>
 
-        <label className="exp-field" htmlFor="saved-context-name">
+        <label className="exp-field write-card__name" htmlFor="saved-context-name">
           <span>Name</span>
           <input
             id="saved-context-name"
@@ -271,12 +298,15 @@ export function SaveContextPanel({
           />
         </label>
 
-        <label className="exp-field" htmlFor="saved-context-handoff">
+        <label
+          className="exp-field write-card__anchor"
+          htmlFor="saved-context-handoff"
+        >
           <span>What next?</span>
           <textarea
             id="saved-context-handoff"
-            className="input-wide note-textarea"
-            rows={5}
+            className="input-wide note-textarea write-textarea"
+            rows={density === "focus" ? 8 : 6}
             value={handoffNote}
             placeholder="Finish the client proposal outline…"
             disabled={busy}
@@ -284,11 +314,11 @@ export function SaveContextPanel({
             onChange={(event) => setHandoffNote(event.target.value)}
           />
         </label>
-        <p className="muted" style={{ textAlign: "center", marginTop: 0 }}>
+        <p className="muted write-card__hint">
           You write this. Workspace will not invent or rewrite it.
         </p>
 
-        <div className="exp-actions">
+        <div className="exp-actions write-card__actions">
           <button
             type="button"
             className="exp-btn primary"
@@ -299,7 +329,7 @@ export function SaveContextPanel({
           </button>
         </div>
         {scope === null && (
-          <p className="muted" style={{ textAlign: "center" }}>
+          <p className="muted skeleton-shimmer" style={{ textAlign: "center" }}>
             Checking capture scope…
           </p>
         )}

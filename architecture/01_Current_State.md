@@ -145,6 +145,10 @@ Proof behaviour change. Prior Phase 2 self-score treated as invalid.
 Home/Save/Continue/Check-in/Guide transition as content with spring motion;
 ElevatedCard primitive + unified spatial system; `motion` (MIT) adopted.
 
+✓ Adaptive spatial composition sprint complete (LEDGER-0040): Focus/Balanced/
+Flow density, layered depth, living atmosphere, glass surfaces, destination
+refinements, premium dock interactions.
+
 ---
 
 # Active Task
