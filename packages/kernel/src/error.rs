@@ -4,8 +4,8 @@ use workspace_database::DatabaseError;
 use workspace_domain::{
     AiAssistantError, AiEvaluationError, AiMemoryError, AiModelError, AiOrchestrationError,
     AiPersonalizationError, AiPlanningError, AiRequestError, AutomationContractError,
-    AutomationTriggerError, DecisionEngineError, DecisionQueueError, DomainError, ResourceKind,
-    SavedContextError,
+    AutomationTriggerError, DecisionEngineError, DecisionQueueError, DesktopActionError,
+    DomainError, ResourceKind, SavedContextError,
     TaskGraphError, WorkspaceActivityError, WorkspaceAttentionError, WorkspaceContinuityError,
     WorkspaceEnvironmentError, WorkspaceCompositionError, WorkspacePurposeError,
     WorkspaceEvolutionError, WorkspaceRecommendationEngineError, WorkspaceOperatingStateError,
@@ -275,6 +275,12 @@ pub enum KernelError {
 
     #[error("{message}")]
     SavedContextValidation { message: String },
+
+    #[error("{0}")]
+    DesktopAction(DesktopActionError),
+
+    #[error("Saved context not found")]
+    SavedContextNotFound,
 
     #[error("Workspace kernel initialization failed")]
     InitializationFailed,
@@ -702,6 +708,12 @@ impl From<SavedContextError> for KernelError {
     }
 }
 
+impl From<DesktopActionError> for KernelError {
+    fn from(error: DesktopActionError) -> Self {
+        KernelError::DesktopAction(error)
+    }
+}
+
 impl From<WorkspaceProfileError> for KernelError {
     fn from(error: WorkspaceProfileError) -> Self {
         match error {
@@ -1076,6 +1088,21 @@ impl KernelError {
             KernelError::SavedContextValidation { message } => PublicError {
                 code: "saved_context_validation_error".into(),
                 message: message.clone(),
+            },
+            KernelError::DesktopAction(error) => PublicError {
+                code: match error {
+                    DesktopActionError::RequestEmpty => "ACTION_REQUEST_EMPTY",
+                    DesktopActionError::TypeNotDeclared(_) => "ACTION_TYPE_NOT_DECLARED",
+                    DesktopActionError::PlanUnknown => "ACTION_PLAN_UNKNOWN",
+                    DesktopActionError::ContractInvalid(_) => "ACTION_CONTRACT_INVALID",
+                    DesktopActionError::PermissionDenied(_) => "ACTION_PERMISSION_DENIED",
+                }
+                .into(),
+                message: error.to_string(),
+            },
+            KernelError::SavedContextNotFound => PublicError {
+                code: "saved_context_not_found".into(),
+                message: "That saved context was not found.".into(),
             },
             KernelError::InitializationFailed => PublicError {
                 code: "initialization_failed".into(),

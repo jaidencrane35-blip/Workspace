@@ -248,6 +248,27 @@ impl Capability {
             scope: CapabilityScope::System,
         }
     }
+
+    pub fn action_plan_resolve() -> Self {
+        Self {
+            id: CapabilityId::new("action.plan.resolve").expect("action.plan.resolve is valid"),
+            scope: CapabilityScope::System,
+        }
+    }
+
+    pub fn action_window_place() -> Self {
+        Self {
+            id: CapabilityId::new("action.window.place").expect("action.window.place is valid"),
+            scope: CapabilityScope::System,
+        }
+    }
+
+    pub fn action_window_focus() -> Self {
+        Self {
+            id: CapabilityId::new("action.window.focus").expect("action.window.focus is valid"),
+            scope: CapabilityScope::System,
+        }
+    }
 }
 
 impl CapabilitySet {
@@ -309,6 +330,9 @@ impl CapabilitySet {
             .with_capability(&Capability::work_context_read())
             .with_capability(&Capability::work_context_write())
             .with_capability(&Capability::desktop_read())
+            .with_capability(&Capability::action_plan_resolve())
+            .with_capability(&Capability::action_window_place())
+            .with_capability(&Capability::action_window_focus())
     }
 
     /// Capabilities attributed to system lifecycle operations.

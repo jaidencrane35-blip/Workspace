@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { AssistantPanel } from "./components/AssistantPanel";
 import { CanvasShell } from "./components/CanvasShell";
 import { OperatorConsole } from "./components/OperatorConsole";
+import { ResumeContextPanel } from "./components/ResumeContextPanel";
 import { SaveContextPanel } from "./components/SaveContextPanel";
 import { WorkspaceIntelligencePanel } from "./components/WorkspaceIntelligencePanel";
 import { invokeIpc } from "./lib/ipc";
@@ -15,7 +16,7 @@ import type {
 
 const LEGACY_WORKSPACE_ID_KEY = "workspace.active_id";
 
-type AppView = "save" | "canvas" | "work" | "assistant" | "operator";
+type AppView = "save" | "resume" | "canvas" | "work" | "assistant" | "operator";
 
 function formatError(err: unknown): string {
   if (err instanceof Error) {
@@ -189,6 +190,16 @@ export default function App() {
           <button
             type="button"
             role="tab"
+            className={view === "resume" ? "tab active" : "tab"}
+            aria-current={view === "resume" ? "page" : undefined}
+            aria-selected={view === "resume"}
+            onClick={() => setView("resume")}
+          >
+            Resume
+          </button>
+          <button
+            type="button"
+            role="tab"
             className={view === "canvas" ? "tab active" : "tab"}
             aria-current={view === "canvas" ? "page" : undefined}
             aria-selected={view === "canvas"}
@@ -260,6 +271,20 @@ export default function App() {
               onError={onError}
               onMessage={onMessage}
               onGoToCanvas={() => setView("canvas")}
+            />
+          ) : (
+            <p className="muted">Loading…</p>
+          )}
+        </div>
+      ) : view === "resume" ? (
+        <div className="container assistant-container">
+          {bootstrapped ? (
+            <ResumeContextPanel
+              workspace={workspace}
+              busy={busy}
+              onBusy={setBusy}
+              onError={onError}
+              onMessage={onMessage}
             />
           ) : (
             <p className="muted">Loading…</p>

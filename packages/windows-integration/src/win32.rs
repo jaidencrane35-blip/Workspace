@@ -9,9 +9,12 @@ use windows::Win32::Foundation::{BOOL, HWND, LPARAM, RECT};
 use windows::Win32::Graphics::Gdi::{
     EnumDisplayMonitors, GetMonitorInfoW, HDC, HMONITOR, MONITORINFO, MONITORINFOEXW,
 };
+use windows::Win32::System::RemoteDesktop::ProcessIdToSessionId;
 use windows::Win32::UI::WindowsAndMessaging::{
     EnumWindows, GetForegroundWindow, GetWindowRect, GetWindowTextLengthW, GetWindowTextW,
-    GetWindowThreadProcessId, IsIconic, IsWindowVisible, MONITORINFOF_PRIMARY,
+    GetWindowThreadProcessId, IsIconic, IsWindow, IsWindowVisible, MONITORINFOF_PRIMARY,
+    SetForegroundWindow, SetWindowPos, ShowWindow, HWND_TOP, SWP_NOACTIVATE, SWP_SHOWWINDOW,
+    SW_MINIMIZE, SW_RESTORE,
 };
 
 use super::capture::{
@@ -20,6 +23,9 @@ use super::capture::{
 };
 use super::enumerator::{DesktopWindowSnapshot, WindowEnumerator};
 use super::launcher::{ProcessLaunchOutcome, ProcessLaunchRequest, ProcessLauncher};
+use super::mutator::{
+    LiveWindowView, MutatorEffectOutcome, WindowMutator, WindowPlacementRequest,
+};
 use crate::error::{Result, WindowsIntegrationError};
 
 #[derive(Debug, Default, Clone, Copy)]
@@ -63,6 +69,7 @@ impl DesktopCapturer for Win32WindowEnumerator {
         }
 
         Ok(DesktopObservationCapture {
+            desktop_session_id: current_desktop_session_id()?,
             foreground_hwnd,
             windows: ctx.windows,
             monitors,
@@ -71,6 +78,101 @@ impl DesktopCapturer for Win32WindowEnumerator {
                 duration_ms: Some(started.elapsed().as_millis() as u64),
             },
         })
+    }
+}
+
+fn current_desktop_session_id() -> Result<String> {
+    let pid = std::process::id();
+    let mut session_id = 0u32;
+    let ok = unsafe { ProcessIdToSessionId(pid, &mut session_id) };
+    if ok.is_err() {
+        return Err(WindowsIntegrationError::EnumerationFailed(
+            "ProcessIdToSessionId failed".into(),
+        ));
+    }
+    Ok(format!("wts-session-{session_id}"))
+}
+
+fn parse_hwnd(hwnd: &str) -> Result<HWND> {
+    let trimmed = hwnd.trim().trim_start_matches("0x").trim_start_matches("0X");
+    let value = usize::from_str_radix(trimmed, 16).map_err(|_| {
+        WindowsIntegrationError::EnumerationFailed(format!("invalid hwnd '{hwnd}'"))
+    })?;
+    Ok(HWND(value as *mut core::ffi::c_void))
+}
+
+impl WindowMutator for Win32WindowEnumerator {
+    fn current_desktop_session_id(&self) -> Result<String> {
+        current_desktop_session_id()
+    }
+
+    fn window_by_hwnd(&self, hwnd: &str) -> Result<Option<LiveWindowView>> {
+        let handle = parse_hwnd(hwnd)?;
+        let exists = unsafe { IsWindow(handle).as_bool() };
+        if !exists {
+            return Ok(None);
+        }
+        let mut process_id = 0u32;
+        unsafe { GetWindowThreadProcessId(handle, Some(&mut process_id)) };
+        let title = unsafe { read_window_title(handle) };
+        Ok(Some(LiveWindowView {
+            hwnd: hwnd_to_string(handle),
+            process_id,
+            title,
+        }))
+    }
+
+    fn attached_monitor_indices(&self) -> Result<Vec<i32>> {
+        Ok(enumerate_monitors()?
+            .into_iter()
+            .map(|monitor| monitor.index)
+            .collect())
+    }
+
+    fn place_window(
+        &self,
+        hwnd: &str,
+        placement: &WindowPlacementRequest,
+    ) -> Result<MutatorEffectOutcome> {
+        let handle = parse_hwnd(hwnd)?;
+        if !unsafe { IsWindow(handle).as_bool() } {
+            return Ok(MutatorEffectOutcome::RefusedByEnvironment);
+        }
+        if placement.minimized {
+            let ok = unsafe { ShowWindow(handle, SW_MINIMIZE) };
+            if !ok.as_bool() {
+                return Ok(MutatorEffectOutcome::RefusedByEnvironment);
+            }
+            return Ok(MutatorEffectOutcome::Committed);
+        }
+        let _ = unsafe { ShowWindow(handle, SW_RESTORE) };
+        let ok = unsafe {
+            SetWindowPos(
+                handle,
+                HWND_TOP,
+                placement.x,
+                placement.y,
+                placement.width,
+                placement.height,
+                SWP_NOACTIVATE | SWP_SHOWWINDOW,
+            )
+        };
+        if ok.is_err() {
+            return Ok(MutatorEffectOutcome::RefusedByEnvironment);
+        }
+        Ok(MutatorEffectOutcome::Committed)
+    }
+
+    fn focus_window(&self, hwnd: &str) -> Result<MutatorEffectOutcome> {
+        let handle = parse_hwnd(hwnd)?;
+        if !unsafe { IsWindow(handle).as_bool() } {
+            return Ok(MutatorEffectOutcome::RefusedByEnvironment);
+        }
+        let ok = unsafe { SetForegroundWindow(handle) };
+        if !ok.as_bool() {
+            return Ok(MutatorEffectOutcome::RefusedByEnvironment);
+        }
+        Ok(MutatorEffectOutcome::Committed)
     }
 }
 

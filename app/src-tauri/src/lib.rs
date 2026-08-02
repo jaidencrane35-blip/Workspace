@@ -91,6 +91,9 @@ use commands::workspace_observation::{
 };
 use commands::workspace_state::get_workspace_state;
 use commands::saved_context::{get_saved_context_capture_scope, save_workspace_context};
+use commands::resume::{
+    execute_resume_plan, get_saved_context, list_saved_contexts, resolve_resume_plan,
+};
 use commands::discovery::{get_action_catalog, get_actor_capabilities};
 use commands::memory::{
     clear_memory_entries, create_memory_entry, delete_memory_entry, diagnose_ai_plan_preview,
@@ -177,6 +180,10 @@ pub fn run() {
             ensure_observation_freshness,
             get_saved_context_capture_scope,
             save_workspace_context,
+            list_saved_contexts,
+            get_saved_context,
+            resolve_resume_plan,
+            execute_resume_plan,
             get_workspace_state,
             create_application,
             launch_application,

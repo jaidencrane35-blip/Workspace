@@ -293,6 +293,7 @@ fn build_snapshot(
     let metadata_json = json!({
         "capture_source": capture.metadata.source,
         "capture_duration_ms": capture.metadata.duration_ms,
+        "desktop_session_id": capture.desktop_session_id,
     })
     .to_string();
 

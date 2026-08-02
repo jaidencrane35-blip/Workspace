@@ -37,6 +37,7 @@ pub mod permission_approval;
 pub mod platform_coherence;
 pub mod projection;
 pub mod resource;
+pub mod desktop_action;
 pub mod saved_context;
 pub mod suggestion;
 pub mod suggestion_intent;
@@ -178,9 +179,21 @@ pub use observation::{
     ObservationImportance,
 };
 pub use resource::{Addressable, ResourceId, ResourceKind, ResourceRef};
+pub use desktop_action::{
+    compute_plan_digest, is_declared_action_type, is_reserved_action_type, match_exact_session,
+    new_operation_id, new_plan_expiry, new_plan_id, operation_outcome_from_items,
+    permission_scope_for, ActionItemOutcome, ActionOperationResult, ActionPlan, ActionPlanItem,
+    ActionRequest, ActionTargetDescriptor, DesktopActionError, ItemDisposition, ItemEffectProof,
+    LiveWindowIdentity, MatchResult, OperationOutcome, ProjectedDisposition, ProposedEffect,
+    ACTION_PLAN_TTL_SECS, ACTION_TYPE_APPLICATION_LAUNCH, ACTION_TYPE_WINDOW_FOCUS,
+    ACTION_TYPE_WINDOW_PLACE, ACTION_TYPE_WINDOW_Z_ORDER, MATCH_CLASS_EXACT_SESSION,
+    SCOPE_PLAN_RESOLVE, SCOPE_WINDOW_FOCUS, SCOPE_WINDOW_PLACE,
+};
 pub use saved_context::{
-    SaveContextRequest, SavedContext, SavedContextCaptureScope, SavedContextError,
-    SavedContextMonitor, SavedContextScopeItem, SavedContextWindow, SAVED_CONTEXT_SCOPE_ID,
+    title_fingerprint, SaveContextRequest, SavedContext, SavedContextCaptureScope,
+    SavedContextError, SavedContextMonitor, SavedContextRestoreIdentity, SavedContextScopeItem,
+    SavedContextWindow, RESTORE_IDENTITY_LEGACY_REASON, RESTORE_IDENTITY_SCHEMA_VERSION,
+    SAVED_CONTEXT_SCOPE_ID,
 };
 pub use suggestion::{
     derive_suggestions, find_pending_suggestion, Suggestion, SuggestionConfidence, SuggestionError,

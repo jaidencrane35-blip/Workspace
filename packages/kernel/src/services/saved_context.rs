@@ -12,8 +12,8 @@ use uuid::Uuid;
 use workspace_database::{Database, SavedContextRepository};
 use workspace_domain::{
     ActorContext, CaptureRequest, IntentContext, ObservedMonitor, ObservedWindow,
-    SaveContextRequest, SavedContext, SavedContextId, SavedContextMonitor, SavedContextWindow,
-    WorkspaceObservationSnapshot,
+    SaveContextRequest, SavedContext, SavedContextId, SavedContextMonitor,
+    SavedContextRestoreIdentity, SavedContextWindow, WorkspaceObservationSnapshot,
 };
 use workspace_windows_integration::DesktopCapturer;
 
@@ -23,6 +23,27 @@ use crate::services::{CaptureCoordinator, WorkspaceService};
 pub(crate) struct SavedContextService;
 
 impl SavedContextService {
+    pub(crate) fn list_for_workspace(
+        db: &Arc<Mutex<Database>>,
+        workspace_id: &workspace_domain::WorkspaceId,
+    ) -> Result<Vec<SavedContext>> {
+        let guard = db.lock().map_err(|_| KernelError::NotReady)?;
+        Ok(SavedContextRepository::new(&guard).list_for_workspace(workspace_id)?)
+    }
+
+    pub(crate) fn get_by_id(
+        db: &Arc<Mutex<Database>>,
+        id: &SavedContextId,
+    ) -> Result<Option<SavedContext>> {
+        let guard = db.lock().map_err(|_| KernelError::NotReady)?;
+        Ok(SavedContextRepository::new(&guard).get_by_id(id)?)
+    }
+
+    pub(crate) fn delete_by_id(db: &Arc<Mutex<Database>>, id: &SavedContextId) -> Result<bool> {
+        let guard = db.lock().map_err(|_| KernelError::NotReady)?;
+        Ok(SavedContextRepository::new(&guard).delete_by_id(id)?)
+    }
+
     /// Saves one named context, capturing the desktop through the platform capturer.
     pub(crate) fn save(
         db: &Arc<Mutex<Database>>,
@@ -119,6 +140,7 @@ impl SavedContextService {
                 .map(|monitor| monitor.monitor_index)
         };
 
+        let desktop_session_id = desktop_session_id_from_snapshot(snapshot);
         SavedContext {
             id: SavedContextId::generate(),
             workspace_id: request.workspace_id.clone(),
@@ -130,15 +152,39 @@ impl SavedContextService {
             windows: snapshot
                 .windows
                 .iter()
-                .map(|window| saved_window(window, monitor_index_by_id(window.monitor_id.as_ref())))
+                .map(|window| {
+                    saved_window(
+                        window,
+                        monitor_index_by_id(window.monitor_id.as_ref()),
+                        desktop_session_id.as_deref(),
+                        &snapshot.pass.captured_at,
+                    )
+                })
                 .collect(),
             monitors: snapshot.monitors.iter().map(saved_monitor).collect(),
         }
     }
 }
 
-fn saved_window(window: &ObservedWindow, monitor_index: Option<i32>) -> SavedContextWindow {
-    SavedContextWindow {
+fn desktop_session_id_from_snapshot(snapshot: &WorkspaceObservationSnapshot) -> Option<String> {
+    serde_json::from_str::<serde_json::Value>(&snapshot.pass.metadata_json)
+        .ok()
+        .and_then(|value| {
+            value
+                .get("desktop_session_id")
+                .and_then(|entry| entry.as_str())
+                .map(str::to_string)
+        })
+        .filter(|value| !value.trim().is_empty())
+}
+
+fn saved_window(
+    window: &ObservedWindow,
+    monitor_index: Option<i32>,
+    desktop_session_id: Option<&str>,
+    captured_at: &str,
+) -> SavedContextWindow {
+    let base = SavedContextWindow {
         id: Uuid::new_v4().to_string(),
         title: window.title.clone(),
         process_id: window.process_id,
@@ -150,6 +196,23 @@ fn saved_window(window: &ObservedWindow, monitor_index: Option<i32>) -> SavedCon
         minimized: window.minimized,
         focused: window.focused,
         z_order: window.z_order,
+        restore_identity: None,
+        restore_identity_unavailable_reason: None,
+    };
+
+    match desktop_session_id {
+        Some(session) if !window.hwnd.trim().is_empty() => {
+            let identity = SavedContextRestoreIdentity::new(
+                session,
+                window.hwnd.clone(),
+                window.process_id,
+                &window.title,
+                captured_at,
+            );
+            base.with_restore_identity(identity)
+        }
+        Some(_) => base.with_unavailable_reason("window handle missing at capture"),
+        None => base.with_unavailable_reason("desktop session identity missing at capture"),
     }
 }
 
@@ -332,6 +395,13 @@ mod tests {
         assert!(focused.width > 0 && focused.height > 0);
         assert!(focused.monitor_index.is_some());
         assert!(saved.monitors.iter().any(|monitor| monitor.is_primary));
+        let identity = focused
+            .restore_identity
+            .as_ref()
+            .expect("v2 save captures restore identity");
+        assert!(!identity.desktop_session_id.is_empty());
+        assert!(!identity.captured_hwnd.is_empty());
+        assert!(!identity.title_fingerprint.is_empty());
     }
 
     #[test]

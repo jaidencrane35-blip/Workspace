@@ -1,10 +1,11 @@
 use crate::connection::Database;
 use crate::error::Result;
 use workspace_domain::{
-    SavedContext, SavedContextId, SavedContextMonitor, SavedContextWindow, WorkspaceId,
+    SavedContext, SavedContextId, SavedContextMonitor, SavedContextRestoreIdentity,
+    SavedContextWindow, WorkspaceId, RESTORE_IDENTITY_LEGACY_REASON,
 };
 
-/// Persistence for user-authored bounded workspace contexts (PP-M1-01).
+/// Persistence for user-authored bounded workspace contexts (PP-M1-01 / PP-M1-02).
 pub struct SavedContextRepository<'a> {
     db: &'a Database,
 }
@@ -15,9 +16,6 @@ impl<'a> SavedContextRepository<'a> {
     }
 
     /// Writes the context and everything it contains as one unit.
-    ///
-    /// A context that lost some of its windows would misrepresent what the user
-    /// agreed to save, so a partial write is not an acceptable outcome.
     pub fn create(&self, context: &SavedContext) -> Result<()> {
         self.db.transaction(|tx| {
             tx.connection().execute(
@@ -58,12 +56,40 @@ impl<'a> SavedContextRepository<'a> {
             }
 
             for window in &context.windows {
+                let (
+                    identity_schema_version,
+                    desktop_session_id,
+                    captured_hwnd,
+                    title_fingerprint,
+                    restore_identity_unavailable_reason,
+                ) = match &window.restore_identity {
+                    Some(identity) => (
+                        Some(identity.identity_schema_version.as_str()),
+                        Some(identity.desktop_session_id.as_str()),
+                        Some(identity.captured_hwnd.as_str()),
+                        Some(identity.title_fingerprint.as_str()),
+                        None::<&str>,
+                    ),
+                    None => (
+                        None,
+                        None,
+                        None,
+                        None,
+                        window
+                            .restore_identity_unavailable_reason
+                            .as_deref()
+                            .or(Some(RESTORE_IDENTITY_LEGACY_REASON)),
+                    ),
+                };
+
                 tx.connection().execute(
                     "INSERT INTO saved_context_windows (
                          id, saved_context_id, title, process_id, x, y, width, height,
-                         monitor_index, minimized, focused, z_order
-                     ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)",
-                    (
+                         monitor_index, minimized, focused, z_order,
+                         identity_schema_version, desktop_session_id, captured_hwnd,
+                         title_fingerprint, restore_identity_unavailable_reason
+                     ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17)",
+                    rusqlite::params![
                         &window.id,
                         context.id.as_str(),
                         &window.title,
@@ -76,7 +102,12 @@ impl<'a> SavedContextRepository<'a> {
                         window.minimized,
                         window.focused,
                         window.z_order,
-                    ),
+                        identity_schema_version,
+                        desktop_session_id,
+                        captured_hwnd,
+                        title_fingerprint,
+                        restore_identity_unavailable_reason,
+                    ],
                 )?;
             }
 
@@ -97,7 +128,7 @@ impl<'a> SavedContextRepository<'a> {
         };
         let mut context = map_saved_context_row(row)?;
         context.monitors = self.monitors_for(id)?;
-        context.windows = self.windows_for(id)?;
+        context.windows = self.windows_for(id, &context.captured_at)?;
         Ok(Some(context))
     }
 
@@ -121,6 +152,14 @@ impl<'a> SavedContextRepository<'a> {
         Ok(contexts)
     }
 
+    pub fn delete_by_id(&self, id: &SavedContextId) -> Result<bool> {
+        let changed = self.db.connection().execute(
+            "DELETE FROM saved_contexts WHERE id = ?1",
+            [id.as_str()],
+        )?;
+        Ok(changed > 0)
+    }
+
     fn monitors_for(&self, id: &SavedContextId) -> Result<Vec<SavedContextMonitor>> {
         let mut stmt = self.db.connection().prepare(
             "SELECT id, monitor_index, name, x, y, width, height, is_primary
@@ -142,18 +181,66 @@ impl<'a> SavedContextRepository<'a> {
             .map_err(Into::into)
     }
 
-    fn windows_for(&self, id: &SavedContextId) -> Result<Vec<SavedContextWindow>> {
+    fn windows_for(
+        &self,
+        id: &SavedContextId,
+        captured_at: &str,
+    ) -> Result<Vec<SavedContextWindow>> {
         let mut stmt = self.db.connection().prepare(
             "SELECT id, title, process_id, x, y, width, height, monitor_index,
-                    minimized, focused, z_order
+                    minimized, focused, z_order,
+                    identity_schema_version, desktop_session_id, captured_hwnd,
+                    title_fingerprint, restore_identity_unavailable_reason
              FROM saved_context_windows WHERE saved_context_id = ?1
              ORDER BY z_order IS NULL, z_order, title",
         )?;
-        let rows = stmt.query_map([id.as_str()], |row| {
+        let captured_at = captured_at.to_string();
+        let rows = stmt.query_map([id.as_str()], move |row| {
+            let process_id: i32 = row.get(2)?;
+            let identity_schema_version: Option<String> = row.get(11)?;
+            let desktop_session_id: Option<String> = row.get(12)?;
+            let captured_hwnd: Option<String> = row.get(13)?;
+            let title_fingerprint: Option<String> = row.get(14)?;
+            let unavailable: Option<String> = row.get(15)?;
+
+            let (restore_identity, restore_identity_unavailable_reason) = match (
+                identity_schema_version,
+                desktop_session_id,
+                captured_hwnd,
+                title_fingerprint,
+            ) {
+                (Some(version), Some(session), Some(hwnd), Some(fingerprint))
+                    if !version.trim().is_empty()
+                        && !session.trim().is_empty()
+                        && !hwnd.trim().is_empty()
+                        && !fingerprint.trim().is_empty() =>
+                {
+                    (
+                        Some(SavedContextRestoreIdentity {
+                            identity_schema_version: version,
+                            desktop_session_id: session,
+                            captured_hwnd: hwnd,
+                            captured_process_id: process_id,
+                            title_fingerprint: fingerprint,
+                            captured_at: captured_at.clone(),
+                        }),
+                        None,
+                    )
+                }
+                _ => (
+                    None,
+                    Some(
+                        unavailable
+                            .filter(|value| !value.trim().is_empty())
+                            .unwrap_or_else(|| RESTORE_IDENTITY_LEGACY_REASON.into()),
+                    ),
+                ),
+            };
+
             Ok(SavedContextWindow {
                 id: row.get(0)?,
                 title: row.get(1)?,
-                process_id: row.get(2)?,
+                process_id,
                 x: row.get(3)?,
                 y: row.get(4)?,
                 width: row.get(5)?,
@@ -162,6 +249,8 @@ impl<'a> SavedContextRepository<'a> {
                 minimized: row.get(8)?,
                 focused: row.get(9)?,
                 z_order: row.get(10)?,
+                restore_identity,
+                restore_identity_unavailable_reason,
             })
         })?;
         rows.collect::<std::result::Result<Vec<_>, _>>()
@@ -217,8 +306,6 @@ mod tests {
         workspace
     }
 
-    /// Child row ids are unique per context in production (generated ids), so the
-    /// fixture derives them from `id` rather than sharing them.
     fn sample_context_named(id: &str, workspace_id: &WorkspaceId) -> SavedContext {
         SavedContext {
             id: SavedContextId::new(id).unwrap(),
@@ -241,6 +328,14 @@ mod tests {
                     minimized: false,
                     focused: true,
                     z_order: Some(0),
+                    restore_identity: Some(SavedContextRestoreIdentity::new(
+                        "stub-desktop-session-1",
+                        "0xAA",
+                        42,
+                        "Focused window",
+                        "2026-08-01T10:05:00Z",
+                    )),
+                    restore_identity_unavailable_reason: None,
                 },
                 SavedContextWindow {
                     id: format!("{id}-w-2"),
@@ -254,6 +349,10 @@ mod tests {
                     minimized: true,
                     focused: false,
                     z_order: Some(1),
+                    restore_identity: None,
+                    restore_identity_unavailable_reason: Some(
+                        "incomplete restore identity at capture".into(),
+                    ),
                 },
             ],
             monitors: vec![SavedContextMonitor {
@@ -285,6 +384,7 @@ mod tests {
 
         assert_eq!(loaded, context);
         assert_eq!(loaded.approved_scope, SAVED_CONTEXT_SCOPE_ID);
+        assert!(loaded.windows[0].restore_identity.is_some());
     }
 
     #[test]
@@ -310,8 +410,6 @@ mod tests {
     fn a_rejected_write_leaves_nothing_behind() {
         let (_dir, db) = initialized_db();
         let repo = SavedContextRepository::new(&db);
-        // No workspace row exists, so the foreign key refuses the header and the
-        // window rows must not survive on their own.
         let orphan = sample_context(&WorkspaceId::new("ws-missing").unwrap());
 
         assert!(repo.create(&orphan).is_err());
@@ -342,5 +440,22 @@ mod tests {
         let listed = repo.list_for_workspace(&workspace.id).unwrap();
         assert_eq!(listed.len(), 2);
         assert_eq!(listed[0].id, newer.id);
+    }
+
+    #[test]
+    fn delete_removes_restore_identity_rows() {
+        let (_dir, db) = initialized_db();
+        let workspace = seeded_workspace(&db);
+        let repo = SavedContextRepository::new(&db);
+        let context = sample_context(&workspace.id);
+        repo.create(&context).unwrap();
+        assert!(repo.delete_by_id(&context.id).unwrap());
+        let windows: i64 = db
+            .connection()
+            .query_row("SELECT COUNT(*) FROM saved_context_windows", [], |row| {
+                row.get(0)
+            })
+            .unwrap();
+        assert_eq!(windows, 0);
     }
 }

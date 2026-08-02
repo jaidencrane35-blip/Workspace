@@ -31,6 +31,7 @@ mod workspace_profile;
 mod workspace_observation;
 mod workspace_state;
 mod saved_context;
+mod resume;
 mod context;
 mod execute_intent_request;
 mod create_suggestion_intent_request;
@@ -290,6 +291,8 @@ mod workspace_observation_tests;
 #[cfg(test)]
 mod saved_context_tests;
 #[cfg(test)]
+mod resume_acceptance_tests;
+#[cfg(test)]
 mod ai_memory_tests;
 #[cfg(test)]
 mod ai_model_provider_tests;
@@ -346,6 +349,9 @@ pub use workspace_observation::{
 };
 pub use workspace_state::GetWorkspaceState;
 pub use saved_context::{GetSavedContextCaptureScope, SaveWorkspaceContext};
+pub use resume::{
+    ExecuteResumePlan, GetSavedContext, ListSavedContexts, ResolveResumePlan, ResumePlanPreview,
+};
 pub use get_execution_outcomes::GetExecutionOutcomes;
 pub use get_execution_state::GetExecutionState;
 pub use get_execution_states::GetExecutionStates;

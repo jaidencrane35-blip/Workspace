@@ -66,9 +66,14 @@ impl CapturedDesktopWindow {
     }
 }
 
+/// Opaque identifier for one interactive Windows desktop session.
+pub const STUB_DESKTOP_SESSION_ID: &str = "stub-desktop-session-1";
+
 /// Full desktop observation payload from one OS capture pass.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DesktopObservationCapture {
+    /// Stable for one interactive logon desktop; changes after logoff/reboot.
+    pub desktop_session_id: String,
     pub foreground_hwnd: Option<String>,
     pub windows: Vec<CapturedDesktopWindow>,
     pub monitors: Vec<CapturedDesktopMonitor>,
@@ -78,6 +83,7 @@ pub struct DesktopObservationCapture {
 impl DesktopObservationCapture {
     pub fn empty_stub() -> Self {
         Self {
+            desktop_session_id: STUB_DESKTOP_SESSION_ID.into(),
             foreground_hwnd: None,
             windows: Vec::new(),
             monitors: Vec::new(),
@@ -174,6 +180,7 @@ mod tests {
     #[test]
     fn focused_window_marked_correctly() {
         let capture = DesktopObservationCapture {
+            desktop_session_id: STUB_DESKTOP_SESSION_ID.into(),
             foreground_hwnd: Some("0x00000000000000AA".into()),
             windows: vec![
                 CapturedDesktopWindow {
@@ -291,6 +298,7 @@ mod tests {
     #[test]
     fn legacy_snapshots_exclude_minimized_windows() {
         let capture = DesktopObservationCapture {
+            desktop_session_id: STUB_DESKTOP_SESSION_ID.into(),
             foreground_hwnd: None,
             windows: vec![
                 CapturedDesktopWindow {

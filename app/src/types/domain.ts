@@ -2045,6 +2045,15 @@ export interface SavedContextCaptureScope {
   excluded: SavedContextScopeItem[];
 }
 
+export interface SavedContextRestoreIdentity {
+  identity_schema_version: string;
+  desktop_session_id: string;
+  captured_hwnd: string;
+  captured_process_id: number;
+  title_fingerprint: string;
+  captured_at: string;
+}
+
 export interface SavedContextWindow {
   id: string;
   title: string;
@@ -2057,6 +2066,72 @@ export interface SavedContextWindow {
   minimized: boolean;
   focused: boolean;
   z_order: number | null;
+  restore_identity?: SavedContextRestoreIdentity | null;
+  restore_identity_unavailable_reason?: string | null;
+}
+
+export type ProjectedDisposition =
+  | "will_attempt"
+  | "will_skip_unsupported"
+  | "will_skip_unresolvable";
+
+export type ItemDisposition =
+  | "completed"
+  | "failed"
+  | "skipped_unsupported"
+  | "skipped_unresolvable"
+  | "refused_changed"
+  | "not_attempted"
+  | "outcome_unknown";
+
+export type OperationOutcome =
+  | "completed"
+  | "partially_completed"
+  | "failed"
+  | "cancelled"
+  | "indeterminate";
+
+export interface ActionPlanItem {
+  item_id: string;
+  action_type: string;
+  target_summary: string;
+  proposed_effect: Record<string, unknown>;
+  permission_scope: string;
+  projected_disposition: ProjectedDisposition;
+  reason?: string | null;
+  error_code?: string | null;
+}
+
+export interface ActionPlan {
+  plan_id: string;
+  expires_at: string;
+  plan_digest: string;
+  purpose: string;
+  items: ActionPlanItem[];
+}
+
+export interface ResumePlanPreview {
+  saved_context_id: string;
+  saved_context_name: string;
+  plan: ActionPlan;
+}
+
+export interface ActionItemOutcome {
+  item_id: string;
+  action_type: string;
+  target_summary: string;
+  disposition: ItemDisposition;
+  what: string;
+  why: string;
+  reason?: string | null;
+  error_code?: string | null;
+  user_action_available: string;
+}
+
+export interface ActionOperationResult {
+  operation_id: string;
+  outcome: OperationOutcome;
+  items: ActionItemOutcome[];
 }
 
 export interface SavedContextMonitor {

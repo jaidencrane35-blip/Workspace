@@ -15,7 +15,7 @@ pub mod security;
 pub mod services;
 pub mod state;
 
-pub use commands::CommandHandler;
+pub use commands::{CommandHandler, ResumePlanPreview};
 pub use config::{ConfigManager, SettingsUpdate, WorkspaceSettings};
 pub use error::{KernelError, PublicError, Result};
 pub use events::{DomainEvent, EventBus};

@@ -59,6 +59,9 @@ use crate::commands::workspace_observation::{
 };
 use crate::commands::workspace_state::GetWorkspaceState;
 use crate::commands::saved_context::{GetSavedContextCaptureScope, SaveWorkspaceContext};
+use crate::commands::resume::{
+    ExecuteResumePlan, GetSavedContext, ListSavedContexts, ResolveResumePlan, ResumePlanPreview,
+};
 use crate::commands::get_execution_outcomes::GetExecutionOutcomes;
 use crate::commands::get_execution_state::GetExecutionState;
 use crate::commands::get_execution_states::GetExecutionStates;
@@ -139,7 +142,8 @@ use workspace_domain::{
     WorkspaceInteractionValidation,
     WorkspaceProfile, WorkspaceProfileComparison, WorkspaceProfileMemberInput,
     WorkspaceProfileState, WorkspaceProfileStateComparison, WorkspaceProfileStatus,
-    SaveContextRequest, SavedContext, SavedContextCaptureScope,
+    ActionOperationResult, ActionPlan, SaveContextRequest, SavedContext, SavedContextCaptureScope,
+    SavedContextId,
     WorkspaceProfileValidation, WorkspaceObservationSnapshot, WorkspaceObservationStatus,
     ObservationConsumerFreshnessNeed, ObservationFreshnessEnsureResult, ObservationSchedulerStatus,
     WorkspaceObservationDelta,
@@ -1866,6 +1870,56 @@ impl CommandHandler {
         let workspace_id = WorkspaceId::new(workspace_id).map_err(KernelError::Domain)?;
         CommandPipeline::new(kernel.command_context(actor, intent)).execute_mutation(
             SaveWorkspaceContext::new(SaveContextRequest::new(workspace_id, name, approved_scope)),
+        )
+    }
+
+    pub fn list_saved_contexts(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        workspace_id: String,
+    ) -> Result<Vec<SavedContext>> {
+        let workspace_id = WorkspaceId::new(workspace_id).map_err(KernelError::Domain)?;
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(ListSavedContexts { workspace_id })
+    }
+
+    pub fn get_saved_context(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        saved_context_id: String,
+    ) -> Result<SavedContext> {
+        let saved_context_id =
+            SavedContextId::new(saved_context_id).map_err(KernelError::Domain)?;
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(GetSavedContext { saved_context_id })
+    }
+
+    pub fn resolve_resume_plan(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        saved_context_id: String,
+    ) -> Result<ResumePlanPreview> {
+        let saved_context_id =
+            SavedContextId::new(saved_context_id).map_err(KernelError::Domain)?;
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_query(ResolveResumePlan { saved_context_id })
+    }
+
+    pub fn execute_resume_plan(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        plan: ActionPlan,
+        approved_plan_digest: String,
+    ) -> Result<ActionOperationResult> {
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_mutation(
+            ExecuteResumePlan {
+                plan,
+                approved_plan_digest,
+            },
         )
     }
 

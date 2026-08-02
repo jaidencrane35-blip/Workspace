@@ -78,6 +78,7 @@ impl ProcessLauncher for StubProcessLauncher {
 pub fn dual_monitor_fixture() -> DesktopObservationCapture {
     let foreground = "0x00000000000000AA".to_string();
     DesktopObservationCapture {
+        desktop_session_id: super::capture::STUB_DESKTOP_SESSION_ID.into(),
         foreground_hwnd: Some(foreground.clone()),
         monitors: vec![
             CapturedDesktopMonitor {
