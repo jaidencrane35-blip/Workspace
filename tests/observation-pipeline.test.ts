@@ -111,4 +111,14 @@ describe("observation model docs", () => {
     expect(doc).toContain("save_workspace_context");
     expect(doc).toContain("resolve_resume_plan");
   });
+
+  it("documents restore executor authority", () => {
+    const doc = fs.readFileSync(
+      path.join(root, "architecture/25_Restore_Execution_Model.md"),
+      "utf8",
+    );
+    expect(doc).toContain("RestoreExecutor");
+    expect(doc).toContain("RestoreExecutionSummary");
+    expect(doc).toContain("SWP_NOZORDER");
+  });
 });

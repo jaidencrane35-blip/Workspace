@@ -5,6 +5,7 @@
 //! leaves this module.
 
 use std::sync::{Arc, Mutex};
+use std::time::Instant;
 
 use chrono::Utc;
 use workspace_domain::{
@@ -13,8 +14,8 @@ use workspace_domain::{
     permission_scope_for, ActionItemOutcome, ActionOperationResult, ActionPlan, ActionPlanItem,
     ActionRequest, ActionTargetDescriptor, Capability, CapabilitySet, DesktopActionError,
     ItemDisposition, ItemEffectProof, LiveWindowIdentity, MatchResult, OperationOutcome,
-    ProjectedDisposition, ProposedEffect, SCOPE_PLAN_RESOLVE, SCOPE_WINDOW_FOCUS,
-    SCOPE_WINDOW_PLACE, ACTION_TYPE_WINDOW_FOCUS, ACTION_TYPE_WINDOW_PLACE,
+    ProjectedDisposition, ProposedEffect, RestoreExecutionSummary, SCOPE_PLAN_RESOLVE,
+    SCOPE_WINDOW_FOCUS, SCOPE_WINDOW_PLACE, ACTION_TYPE_WINDOW_FOCUS, ACTION_TYPE_WINDOW_PLACE,
 };
 use workspace_windows_integration::{
     MutatorEffectOutcome, WindowMutator, WindowPlacementRequest,
@@ -71,6 +72,9 @@ impl DesktopActionService {
     }
 
     /// ACT-CMD-001 — execute an approved plan with per-item effect proofs.
+    ///
+    /// Prefer [`crate::services::RestoreExecutor::execute`] for the production
+    /// restore entry point (same behaviour; documents the RestorePlan → Result lineage).
     pub(crate) fn execute(
         plan: &ActionPlan,
         proofs: &[ItemEffectProof],
@@ -78,6 +82,7 @@ impl DesktopActionService {
         mutator: &dyn WindowMutator,
         controls: &ActionExecutionControls,
     ) -> Result<ActionOperationResult> {
+        let started = Instant::now();
         Self::validate_plan_for_execution(plan)?;
 
         let expected = compute_plan_digest(
@@ -258,9 +263,11 @@ impl DesktopActionService {
             }
         }
 
+        let duration_ms = started.elapsed().as_millis() as u64;
         Ok(ActionOperationResult {
             operation_id: new_operation_id(),
             outcome,
+            summary: RestoreExecutionSummary::from_items(&outcomes, duration_ms),
             items: outcomes,
         })
     }

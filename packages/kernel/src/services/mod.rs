@@ -142,6 +142,8 @@ pub(crate) use saved_context::SavedContextService;
 pub(crate) use desktop_action::{
     action_request_from_saved_context, ActionExecutionControls, DesktopActionService,
 };
+mod restore_executor;
+pub(crate) use restore_executor::RestoreExecutor;
 #[cfg(test)]
 pub(crate) use capture_coordinator::observation_flight_test_lock;
 pub(crate) use observation_refresh_policy::ObservationRefreshPolicyService;

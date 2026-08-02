@@ -121,6 +121,13 @@ describe("demo adapter ↔ production command parity (behaviour)", () => {
       },
     );
     expect(result.outcome).toMatch(/completed|partial|failed/);
+    expect(result.summary).toBeDefined();
+    expect(
+      result.summary!.restored_windows +
+        result.summary!.skipped_windows +
+        result.summary!.failed_operations,
+    ).toBe(result.items.length);
+    expect(typeof result.summary!.duration_ms).toBe("number");
   });
 
   it("Check-in: scope + snapshot + consent record path", async () => {

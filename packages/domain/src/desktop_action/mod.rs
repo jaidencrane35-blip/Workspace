@@ -243,11 +243,61 @@ pub struct ActionItemOutcome {
     pub user_action_available: String,
 }
 
+/// Aggregated restore execution facts for Continue / operators.
+///
+/// Derived from per-item dispositions so partial success is never discarded.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RestoreExecutionSummary {
+    /// Effect items that completed (place and/or focus).
+    pub restored_windows: u32,
+    /// Skipped unsupported, unresolvable, or not attempted.
+    pub skipped_windows: u32,
+    /// Closed / absent windows (`ACTION_TARGET_NOT_FOUND`).
+    pub missing_applications: u32,
+    /// Failed, refused-changed, or outcome-unknown items.
+    pub failed_operations: u32,
+    /// Wall-clock duration of the execute pass.
+    pub duration_ms: u64,
+}
+
+impl RestoreExecutionSummary {
+    pub fn from_items(items: &[ActionItemOutcome], duration_ms: u64) -> Self {
+        let mut restored_windows = 0u32;
+        let mut skipped_windows = 0u32;
+        let mut missing_applications = 0u32;
+        let mut failed_operations = 0u32;
+        for item in items {
+            match item.disposition {
+                ItemDisposition::Completed => restored_windows += 1,
+                ItemDisposition::SkippedUnsupported
+                | ItemDisposition::SkippedUnresolvable
+                | ItemDisposition::NotAttempted => {
+                    skipped_windows += 1;
+                    if item.error_code.as_deref() == Some("ACTION_TARGET_NOT_FOUND") {
+                        missing_applications += 1;
+                    }
+                }
+                ItemDisposition::Failed
+                | ItemDisposition::RefusedChanged
+                | ItemDisposition::OutcomeUnknown => failed_operations += 1,
+            }
+        }
+        Self {
+            restored_windows,
+            skipped_windows,
+            missing_applications,
+            failed_operations,
+            duration_ms,
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ActionOperationResult {
     pub operation_id: String,
     pub outcome: OperationOutcome,
     pub items: Vec<ActionItemOutcome>,
+    pub summary: RestoreExecutionSummary,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Error)]

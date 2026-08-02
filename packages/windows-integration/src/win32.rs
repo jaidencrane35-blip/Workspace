@@ -17,8 +17,8 @@ use windows::Win32::System::Threading::{
 use windows::Win32::UI::WindowsAndMessaging::{
     EnumWindows, GetForegroundWindow, GetWindowRect, GetWindowTextLengthW, GetWindowTextW,
     GetWindowThreadProcessId, IsIconic, IsWindow, IsWindowVisible, MONITORINFOF_PRIMARY,
-    SetForegroundWindow, SetWindowPos, ShowWindow, HWND_TOP, SWP_NOACTIVATE, SWP_SHOWWINDOW,
-    SW_MINIMIZE, SW_RESTORE,
+    SetForegroundWindow, SetWindowPos, ShowWindow, HWND_TOP, SWP_NOACTIVATE, SWP_NOZORDER,
+    SWP_SHOWWINDOW, SW_MINIMIZE, SW_RESTORE,
 };
 
 use super::capture::{
@@ -149,6 +149,8 @@ impl WindowMutator for Win32WindowEnumerator {
             }
             return Ok(MutatorEffectOutcome::Committed);
         }
+        // Restore from minimized without activating; keep existing z-order so
+        // place-only restore does not steal stacking relative to the user's work.
         let _ = unsafe { ShowWindow(handle, SW_RESTORE) };
         let ok = unsafe {
             SetWindowPos(
@@ -158,7 +160,7 @@ impl WindowMutator for Win32WindowEnumerator {
                 placement.y,
                 placement.width,
                 placement.height,
-                SWP_NOACTIVATE | SWP_SHOWWINDOW,
+                SWP_NOACTIVATE | SWP_NOZORDER | SWP_SHOWWINDOW,
             )
         };
         if ok.is_err() {

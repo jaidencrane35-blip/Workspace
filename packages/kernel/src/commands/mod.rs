@@ -296,6 +296,8 @@ mod resume_acceptance_tests;
 #[cfg(test)]
 mod observation_pipeline_tests;
 #[cfg(test)]
+mod restore_execution_pipeline_tests;
+#[cfg(test)]
 mod ai_memory_tests;
 #[cfg(test)]
 mod ai_model_provider_tests;

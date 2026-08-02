@@ -13,8 +13,9 @@ WorkspaceObservationSnapshot       (ephemeral observation buffer)
 SavedContext / WorkspaceMoment     (user-owned durable Moment)
         ↓ action_request_from_saved_context
 ActionRequest → ActionPlan         (RestorePlan)
-        ↓ DesktopActionService::execute
+        ↓ RestoreExecutor::execute
 ActionOperationResult              (RestoreExecution)
+  (+ RestoreExecutionSummary — see architecture/25_Restore_Execution_Model.md)
 ```
 
 Naming note: domain `WorkspaceSnapshot` (projection zones/apps) is **not** desktop capture. Do not conflate.
@@ -75,7 +76,7 @@ Observation commands (`capture_workspace_observation`, `get_latest_workspace_obs
 3. `DesktopActionService::resolve_plan` against live `WindowMutator` (Win32 or stub fixture).
 4. Exact-session match → `will_attempt`; closed / confidence / session mismatch → `will_skip_unresolvable` (codes such as `ACTION_TARGET_NOT_FOUND`); unsupported effects (e.g. z-order) → `will_skip_unsupported`.
 5. `RestoreCompatibilitySummary::from_plan` attaches confidence band (`high` / `steady` / `limited` / `empty`) and `missing_window_count`. Frozen UI may still derive quality from disposition ratios — bands match.
-6. Execute only after digest approval; no `application.launch` for closed apps (restore-limits).
+6. Execute only after digest approval via `RestoreExecutor` (see doc 25); no `application.launch` for closed apps (restore-limits).
 
 ---
 

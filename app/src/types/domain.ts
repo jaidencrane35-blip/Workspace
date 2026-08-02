@@ -2193,10 +2193,20 @@ export interface ActionItemOutcome {
   user_action_available: string;
 }
 
+/** Aggregated restore execution facts (additive; frozen UI may ignore). */
+export interface RestoreExecutionSummary {
+  restored_windows: number;
+  skipped_windows: number;
+  missing_applications: number;
+  failed_operations: number;
+  duration_ms: number;
+}
+
 export interface ActionOperationResult {
   operation_id: string;
   outcome: OperationOutcome;
   items: ActionItemOutcome[];
+  summary?: RestoreExecutionSummary;
 }
 
 export interface SavedContextMonitor {

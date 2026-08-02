@@ -12,7 +12,7 @@ use crate::policy::GovernanceClass;
 use crate::security::PermissionSubject;
 use crate::services::{
     action_request_from_saved_context, ActionExecutionControls, DesktopActionService,
-    SavedContextService,
+    RestoreExecutor, SavedContextService,
 };
 use serde::{Deserialize, Serialize};
 use workspace_domain::{
@@ -268,7 +268,7 @@ impl MutationCommand for ExecuteResumePlan {
         // Matching authority alone is insufficient — each item still needs its
         // effect scope at point of use (ADM-AC-18).
         let mutator = platform_window_mutator();
-        DesktopActionService::execute(
+        RestoreExecutor::execute(
             &self.plan,
             &proofs,
             &ctx.capability_set,
@@ -289,7 +289,6 @@ pub(crate) fn resolve_and_execute_for_tests(
     let request = action_request_from_saved_context(context);
     let plan = DesktopActionService::resolve_plan(&request, capability_set, mutator)?;
     let proofs = DesktopActionService::proofs_for_plan(&plan, "local-user");
-    let result =
-        DesktopActionService::execute(&plan, &proofs, capability_set, mutator, controls)?;
+    let result = RestoreExecutor::execute(&plan, &proofs, capability_set, mutator, controls)?;
     Ok((plan, result))
 }

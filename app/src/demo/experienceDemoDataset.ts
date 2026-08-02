@@ -575,6 +575,7 @@ export function buildDemoExecuteResult(
     };
   });
   const completed = items.filter((i) => i.disposition === "completed").length;
+  const skipped = items.length - completed;
   return {
     operation_id: `demo-op-${preview.plan.plan_id}`,
     outcome:
@@ -584,5 +585,12 @@ export function buildDemoExecuteResult(
           ? "partially_completed"
           : "failed",
     items,
+    summary: {
+      restored_windows: completed,
+      skipped_windows: skipped,
+      missing_applications: 0,
+      failed_operations: 0,
+      duration_ms: 1,
+    },
   };
 }
