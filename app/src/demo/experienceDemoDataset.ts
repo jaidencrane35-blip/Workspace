@@ -511,6 +511,23 @@ export function buildDemoResumePreview(context: SavedContext): ResumePlanPreview
     };
   });
 
+  const willAttempt = items.filter(
+    (item) => item.projected_disposition === "will_attempt",
+  ).length;
+  const willSkipUnresolvable = items.filter(
+    (item) => item.projected_disposition === "will_skip_unresolvable",
+  ).length;
+  const total = items.length;
+  const ratio = total === 0 ? 0 : willAttempt / total;
+  const confidence_band =
+    total === 0
+      ? "empty"
+      : ratio >= 0.85
+        ? "high"
+        : ratio >= 0.5
+          ? "steady"
+          : "limited";
+
   return {
     saved_context_id: context.id,
     saved_context_name: context.name,
@@ -521,6 +538,15 @@ export function buildDemoResumePreview(context: SavedContext): ResumePlanPreview
       plan_digest: `digest-${context.id}-v1`,
       purpose: `Restore “${context.name}” within this Windows session.`,
       items,
+    },
+    compatibility: {
+      total_items: total,
+      will_attempt: willAttempt,
+      will_skip_unsupported: 0,
+      will_skip_unresolvable: willSkipUnresolvable,
+      missing_window_count: 0,
+      confidence_band,
+      restore_eligible: willAttempt > 0,
     },
   };
 }

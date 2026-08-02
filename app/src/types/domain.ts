@@ -2110,11 +2110,24 @@ export interface ActionPlan {
   items: ActionPlanItem[];
 }
 
+/** Derived from ActionPlan dispositions — matches Continue quality bands. */
+export interface RestoreCompatibilitySummary {
+  total_items: number;
+  will_attempt: number;
+  will_skip_unsupported: number;
+  will_skip_unresolvable: number;
+  missing_window_count: number;
+  confidence_band: "high" | "steady" | "limited" | "empty" | string;
+  restore_eligible: boolean;
+}
+
 export interface ResumePlanPreview {
   saved_context_id: string;
   saved_context_name: string;
   handoff_note: string;
   plan: ActionPlan;
+  /** Additive runtime field; frozen UI may ignore and recompute from plan items. */
+  compatibility?: RestoreCompatibilitySummary;
 }
 
 /** PP-P01E — local pilot evaluation data (not product saved-context data). */

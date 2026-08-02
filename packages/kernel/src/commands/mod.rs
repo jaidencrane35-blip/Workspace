@@ -294,6 +294,8 @@ mod saved_context_tests;
 #[cfg(test)]
 mod resume_acceptance_tests;
 #[cfg(test)]
+mod observation_pipeline_tests;
+#[cfg(test)]
 mod ai_memory_tests;
 #[cfg(test)]
 mod ai_model_provider_tests;

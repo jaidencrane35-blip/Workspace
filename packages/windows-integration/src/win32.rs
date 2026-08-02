@@ -5,11 +5,15 @@ use std::os::windows::ffi::OsStringExt;
 use std::process::Command;
 use std::time::Instant;
 
-use windows::Win32::Foundation::{BOOL, HWND, LPARAM, RECT};
+use windows::Win32::Foundation::{BOOL, CloseHandle, HANDLE, HWND, LPARAM, RECT};
 use windows::Win32::Graphics::Gdi::{
     EnumDisplayMonitors, GetMonitorInfoW, HDC, HMONITOR, MONITORINFO, MONITORINFOEXW,
 };
 use windows::Win32::System::RemoteDesktop::ProcessIdToSessionId;
+use windows::Win32::System::Threading::{
+    OpenProcess, QueryFullProcessImageNameW, PROCESS_NAME_WIN32,
+    PROCESS_QUERY_LIMITED_INFORMATION,
+};
 use windows::Win32::UI::WindowsAndMessaging::{
     EnumWindows, GetForegroundWindow, GetWindowRect, GetWindowTextLengthW, GetWindowTextW,
     GetWindowThreadProcessId, IsIconic, IsWindow, IsWindowVisible, MONITORINFOF_PRIMARY,
@@ -222,6 +226,7 @@ unsafe extern "system" fn capture_enum_proc(hwnd: HWND, lparam: LPARAM) -> BOOL 
         hwnd: hwnd_to_string(hwnd),
         title,
         process_id,
+        process_name: unsafe { process_image_basename(process_id) },
         visible,
         minimized,
         focused: hwnd == ctx.foreground,
@@ -234,6 +239,32 @@ unsafe extern "system" fn capture_enum_proc(hwnd: HWND, lparam: LPARAM) -> BOOL 
     });
 
     BOOL(1)
+}
+
+/// Basename only — observation buffer aid. Never stored on SavedContext.
+unsafe fn process_image_basename(process_id: u32) -> Option<String> {
+    if process_id == 0 {
+        return None;
+    }
+    let handle = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, process_id).ok()?;
+    let name = (|| {
+        let mut buffer = vec![0u16; 512];
+        let mut size = buffer.len() as u32;
+        QueryFullProcessImageNameW(
+            HANDLE(handle.0),
+            PROCESS_NAME_WIN32,
+            windows::core::PWSTR(buffer.as_mut_ptr()),
+            &mut size,
+        )
+        .ok()?;
+        let path = OsString::from_wide(&buffer[..size as usize]);
+        let path = std::path::Path::new(&path);
+        path.file_name()
+            .and_then(|name| name.to_str())
+            .map(|name| name.to_string())
+    })();
+    let _ = CloseHandle(handle);
+    name
 }
 
 struct WindowRect {
@@ -394,7 +425,22 @@ mod tests {
         for window in &capture.windows {
             assert!(!window.title.trim().is_empty());
             assert!(window.hwnd.starts_with("0x"));
-            assert!(window.width != 0 || window.minimized);
+            // Some shell / cloaked HWNDs report 0×0 without IsIconic; accept either
+            // a non-zero edge or an explicit minimized flag.
+            assert!(
+                window.minimized || window.width > 0 || window.height > 0,
+                "window {} had empty bounds without minimized",
+                window.hwnd
+            );
+        }
+        if !capture.windows.is_empty() {
+            assert!(
+                capture
+                    .windows
+                    .iter()
+                    .any(|window| window.process_name.is_some()),
+                "at least one window should resolve a process image basename"
+            );
         }
     }
 

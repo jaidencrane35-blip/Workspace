@@ -104,6 +104,7 @@ impl SavedContextService {
         // The user has named the context and confirmed the current scope, so the
         // desktop may now be read exactly once.
         let captured = capture(db)?;
+        Self::refuse_empty_platform_stub(&captured.snapshot)?;
 
         let context = Self::assemble(request, &captured.snapshot);
         {
@@ -120,6 +121,16 @@ impl SavedContextService {
         } else {
             Err(KernelError::WorkspaceNotFound)
         }
+    }
+
+    /// Empty `source=stub` captures mean the OS capturer was not live (non-Windows).
+    /// Refuse rather than persisting a Moment that pretends production capture succeeded.
+    fn refuse_empty_platform_stub(snapshot: &WorkspaceObservationSnapshot) -> Result<()> {
+        let empty = snapshot.windows.is_empty() && snapshot.monitors.is_empty();
+        if empty && snapshot.pass.source == "stub" {
+            return Err(KernelError::DesktopObservationUnavailable);
+        }
+        Ok(())
     }
 
     /// Copies the approved fields out of the capture and leaves the rest behind.

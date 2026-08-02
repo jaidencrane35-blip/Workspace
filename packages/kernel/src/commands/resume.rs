@@ -16,8 +16,8 @@ use crate::services::{
 };
 use serde::{Deserialize, Serialize};
 use workspace_domain::{
-    ActionOperationResult, ActionPlan, Capability, ItemEffectProof, ResourceKind, SavedContext,
-    SavedContextId, WorkspaceId,
+    ActionOperationResult, ActionPlan, Capability, ItemEffectProof, ResourceKind,
+    RestoreCompatibilitySummary, SavedContext, SavedContextId, WorkspaceId,
 };
 use workspace_windows_integration::{platform_window_mutator, WindowMutator};
 
@@ -158,6 +158,8 @@ pub struct ResumePlanPreview {
     /// User-authored intended next action (PP-P01A). Not an Action effect.
     pub handoff_note: String,
     pub plan: ActionPlan,
+    /// Compatibility / confidence derived from plan dispositions (additive; UI may ignore).
+    pub compatibility: RestoreCompatibilitySummary,
 }
 
 /// Resolves a restore plan for a saved context. Mutates nothing.
@@ -199,11 +201,13 @@ impl QueryCommand for ResolveResumePlan {
         let plan =
             DesktopActionService::resolve_plan(&request, &ctx.capability_set, mutator.as_ref())?;
 
+        let compatibility = RestoreCompatibilitySummary::from_plan(&plan);
         Ok(ResumePlanPreview {
             saved_context_id: context.id.to_string(),
             saved_context_name: context.name,
             handoff_note: context.handoff_note,
             plan,
+            compatibility,
         })
     }
 }

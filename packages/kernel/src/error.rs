@@ -96,6 +96,10 @@ pub enum KernelError {
     #[error("Observation capture already in progress")]
     ObservationCaptureInProgress,
 
+    /// Non-Windows / empty stub capturer produced no desktop geometry.
+    #[error("Desktop observation is unavailable on this platform")]
+    DesktopObservationUnavailable,
+
     #[error("Analytics validation failed: {message}")]
     AnalyticsValidation { message: String },
 
@@ -830,6 +834,10 @@ impl KernelError {
             KernelError::ObservationValidation { message } => PublicError {
                 code: "observation_validation_error".into(),
                 message: message.clone(),
+            },
+            KernelError::DesktopObservationUnavailable => PublicError {
+                code: "desktop_observation_unavailable".into(),
+                message: "Desktop observation is unavailable on this platform. Save requires a live Windows desktop capture.".into(),
             },
             KernelError::ObservationCaptureInProgress => PublicError {
                 code: "observation_capture_in_progress".into(),

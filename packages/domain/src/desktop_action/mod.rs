@@ -153,6 +153,70 @@ impl ActionPlan {
     }
 }
 
+/// Canonical restore compatibility / confidence summary derived from a resolved plan.
+///
+/// Experience synthesizes the same bands from disposition ratios; this is the
+/// runtime authority so Save→Continue pipelines and tests share one score.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RestoreCompatibilitySummary {
+    pub total_items: u32,
+    pub will_attempt: u32,
+    pub will_skip_unsupported: u32,
+    pub will_skip_unresolvable: u32,
+    /// Items skipped because the exact-session window was not found (closed apps).
+    pub missing_window_count: u32,
+    /// `high` | `steady` | `limited` | `empty` — matches frozen Continue quality copy.
+    pub confidence_band: String,
+    /// True when at least one place/focus item will be attempted.
+    pub restore_eligible: bool,
+}
+
+impl RestoreCompatibilitySummary {
+    pub fn from_plan(plan: &ActionPlan) -> Self {
+        let total_items = plan.items.len() as u32;
+        let mut will_attempt = 0u32;
+        let mut will_skip_unsupported = 0u32;
+        let mut will_skip_unresolvable = 0u32;
+        let mut missing_window_count = 0u32;
+        for item in &plan.items {
+            match item.projected_disposition {
+                ProjectedDisposition::WillAttempt => will_attempt += 1,
+                ProjectedDisposition::WillSkipUnsupported => will_skip_unsupported += 1,
+                ProjectedDisposition::WillSkipUnresolvable => {
+                    will_skip_unresolvable += 1;
+                    if item.error_code.as_deref() == Some("ACTION_TARGET_NOT_FOUND") {
+                        missing_window_count += 1;
+                    }
+                }
+            }
+        }
+        let ratio = if total_items == 0 {
+            0.0
+        } else {
+            f64::from(will_attempt) / f64::from(total_items)
+        };
+        let confidence_band = if total_items == 0 {
+            "empty"
+        } else if ratio >= 0.85 {
+            "high"
+        } else if ratio >= 0.5 {
+            "steady"
+        } else {
+            "limited"
+        }
+        .to_string();
+        Self {
+            total_items,
+            will_attempt,
+            will_skip_unsupported,
+            will_skip_unresolvable,
+            missing_window_count,
+            confidence_band,
+            restore_eligible: will_attempt > 0,
+        }
+    }
+}
+
 /// One effect proof bound to a will_attempt item.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ItemEffectProof {

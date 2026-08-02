@@ -111,6 +111,7 @@ describe("demo adapter ↔ production command parity (behaviour)", () => {
       savedContextId: listed[0]!.id,
     });
     expect(preview.plan.plan_digest.length).toBeGreaterThan(0);
+    expect(preview.compatibility?.confidence_band).toBeTruthy();
 
     const result = await demoInvoke<ActionOperationResult>(
       "execute_resume_plan",
