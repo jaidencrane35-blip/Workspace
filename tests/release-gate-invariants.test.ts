@@ -73,6 +73,8 @@ describe("architecture authority numbering", () => {
       "30_Release_Gate.md",
       "31_Version_1_Release_Checklist.md",
       "32_Version_1_Baseline.md",
+      "33_Version_1_Final.md",
+      "VERSION_1_HISTORY.md",
     ]) {
       expect(fs.existsSync(path.join(architectureDir, name))).toBe(true);
     }

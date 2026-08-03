@@ -1,0 +1,59 @@
+{
+  "version": "1.0.0",
+  "release_tag": "v1.0.0",
+  "release_commit": "cbb3b5c5266dab35adc5ae49c0050c6900369db5",
+  "release_commit_short": "cbb3b5c",
+  "release_date": "2026-08-03",
+  "release_commit_subject": "chore(release): establish version 1.0 engineering baseline",
+  "toolchain": {
+    "rustc": "1.97.1 (8bab26f4f 2026-07-14)",
+    "node": "v24.14.0",
+    "pnpm": "9.15.0",
+    "package_semver": "0.1.0"
+  },
+  "migrations": {
+    "first": "001_settings",
+    "last": "046_workspace_session_recovery_fence",
+    "count": 45,
+    "session_schema_version": 2
+  },
+  "supported_platform": {
+    "os": "Windows",
+    "monitors": "single"
+  },
+  "supported_capabilities": [
+    "Observation",
+    "Save",
+    "Runtime State",
+    "Restore Planning",
+    "Restore Execution",
+    "Persistence",
+    "Recovery",
+    "Frozen Experience"
+  ],
+  "unsupported_capabilities": [
+    "Multi-monitor restore",
+    "Monitor hot-plug validation"
+  ],
+  "evidence_sha256": {
+    "windows-product-proof.json": "e784a26f1e5b5b9b509a545039db73d8a83ea7e24c0108d1c6fe2d1b484dd997",
+    "multi-monitor-topology.json": "68e34cea7edf8b5df5874bbfec6860f3863b39383b7763dff0c25b362f2649b2",
+    "experience-e2e-behaviour.json": "be8d0009b6a86b9d4a9925a197bfc587fca7a4c7e390dcaba1d38b8c9a6df3b3",
+    "process-kill-recovery.json": "39c2632662644fa6fd8e91434f197e97eb3373a51dacc07a7d9d0acd1bf63162"
+  },
+  "architecture_authority": {
+    "final": "architecture/33_Version_1_Final.md",
+    "baseline": "architecture/32_Version_1_Baseline.md",
+    "release_gate": "architecture/30_Release_Gate.md",
+    "product_proof": "architecture/29_Product_Proof.md",
+    "history_freeze": "architecture/VERSION_1_HISTORY.md"
+  },
+  "verification_totals": {
+    "workspace_kernel_lib_tests": 1231,
+    "pnpm_vitest_tests": 83,
+    "workspace_database_persistent_session_tests": 5,
+    "version_1_hardening_tests": 8,
+    "clean_worktree": "cbb3b5c",
+    "note": "Clean worktree at tagged commit: pnpm test 83, migrations ok, kernel lib 1231 with --test-threads=1, cargo check -p workspace-app after pnpm build"
+  }
+}

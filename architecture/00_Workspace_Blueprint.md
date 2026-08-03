@@ -1,7 +1,10 @@
 # Workspace Blueprint v1.1
 
-Status: Active
-Authority: Highest
+> **Version 1 history (frozen).** Documents `00`–`33` are immutable Version 1 record.  
+> See `VERSION_1_HISTORY.md`. Future architecture begins at `40_`.
+
+Status: Frozen (Version 1 history)
+Authority: Highest within Version 1 history
 Version: 1.1
 
 ---
