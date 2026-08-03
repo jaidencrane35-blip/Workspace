@@ -210,13 +210,44 @@ body {
   gap: var(--space-3);
 }
 
+/* Home — place-first hub (Sprint 40 / F-S40-01) */
+.home-place {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: min(64rem, 100%);
+  margin: 0 auto;
+  gap: var(--space-3);
+  min-height: min(70vh, 42rem);
+}
+
+.place__identity--place {
+  text-align: center;
+  margin: 0 auto var(--space-2);
+  max-width: min(40rem, 100%);
+  width: 100%;
+}
+
+.place__identity--place .place__title {
+  font-size: clamp(2.4rem, 5.2vw, 3.6rem);
+  font-weight: 680;
+  letter-spacing: -0.05em;
+}
+
+.place__identity--place .place__pulse {
+  margin-top: 0.4rem;
+  font-size: 0.92rem;
+  letter-spacing: 0.01em;
+  color: color-mix(in srgb, var(--exp-muted) 88%, var(--color-accent) 12%);
+}
+
 /* Home — hero band then environmental field */
 .home-hero-band {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: var(--space-4);
   max-width: min(56rem, 100%);
-  margin: 0 0 var(--space-5);
+  margin: 0 auto var(--space-4);
   width: 100%;
 }
 
@@ -256,10 +287,22 @@ body {
 }
 
 .home-field {
-  margin-top: var(--space-2);
-  padding: var(--space-4) 0 calc(var(--ws-space-8) + 4.5rem);
+  margin: var(--space-1) auto 0;
+  padding: var(--space-3) 0 calc(var(--ws-space-8) + 4.5rem);
   max-width: min(56rem, 100%);
-  opacity: 0.92;
+  width: 100%;
+  /* F-S40-02: field recedes behind the place hero */
+  opacity: 0.72;
+  filter: saturate(0.88) blur(0.2px);
+  transform: translateZ(0) scale(0.985);
+  transform-origin: top center;
+  pointer-events: auto;
+}
+
+.home-field:hover,
+.home-field:focus-within {
+  opacity: 0.9;
+  filter: saturate(0.96) blur(0);
 }
 
 .home-field.dash-grid {
@@ -331,8 +374,13 @@ body {
 }
 
 /* X-03: identity, hero, and field share one width cap */
+[data-density="flow"] .home-place {
+  width: min(72rem, 100%);
+}
+
 [data-density="flow"] .home-hero-band,
 [data-density="flow"] .place__identity--quiet,
+[data-density="flow"] .place__identity--place,
 [data-density="flow"] .home-field {
   max-width: min(56rem, 100%);
 }
