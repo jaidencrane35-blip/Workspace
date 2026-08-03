@@ -262,6 +262,121 @@ body {
   margin: 0 auto;
 }
 
+/* ── Sprint 43: object-first composition ── */
+.ws-place-world {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: clamp(0.75rem, 2vh, 1.5rem);
+  width: min(64rem, 100%);
+  margin: 0 auto;
+  min-height: min(72vh, 46rem);
+}
+
+.ws-object-stage {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.85rem, 2vh, 1.35rem);
+  width: 100%;
+  z-index: 2;
+}
+
+.ws-object-stage__anchor {
+  width: 100%;
+  max-width: min(52rem, 100%);
+  margin: 0 auto;
+}
+
+.ws-object-stage__neighbours {
+  max-width: min(48rem, 100%);
+  margin: 0 auto;
+  pointer-events: auto;
+}
+
+.ws-region--attach {
+  min-height: 0 !important;
+  padding-bottom: 2.5rem !important;
+}
+
+.moment-object--anchor .ws-surface,
+.moment-object--anchor .elevated-card {
+  border: 0 !important;
+  background:
+    linear-gradient(
+      165deg,
+      rgba(24, 32, 44, 0.55),
+      rgba(10, 14, 22, 0.38)
+    ) !important;
+  box-shadow:
+    var(--edge-light),
+    0 28px 80px rgba(0, 0, 0, 0.45);
+}
+
+.moment-attach-host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: 100%;
+  margin-top: var(--space-3);
+}
+
+.moment-attach {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: 100%;
+}
+
+.moment-attach__kicker {
+  margin: 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--exp-muted) 88%, transparent);
+}
+
+.moment-write .input-ghost,
+.moment-write .write-textarea {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.moment-guide-hint__line {
+  margin: 0;
+  font-size: 1.05rem;
+  line-height: 1.45;
+  color: color-mix(in srgb, var(--exp-text) 92%, transparent);
+}
+
+.checkin-bubble--object {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.checkin-story--inline {
+  max-width: 36rem;
+  margin: 0 auto var(--space-2);
+  text-align: center;
+  opacity: 0.7;
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.checkin-evidence--quiet {
+  opacity: 0.72;
+  margin-top: var(--space-4);
+}
+
+.home-place--object .place__identity--quiet-region {
+  margin-bottom: 0;
+}
+
 .place__identity--quiet-region {
   text-align: center;
   margin: 0 auto var(--space-3);
@@ -321,22 +436,6 @@ body {
 .home-field--context:focus-within {
   opacity: 0.82;
   filter: saturate(0.92) blur(0);
-}
-
-.home-hero-band--owns {
-  max-width: min(58rem, 100%);
-  margin-left: auto;
-  margin-right: auto;
-  flex: 1 1 auto;
-}
-
-.home-hero-band--owns .moment-card--hero {
-  min-height: clamp(18rem, 48vh, 28rem);
-}
-
-.save-place.save-env--emerge {
-  align-items: center;
-  justify-content: center;
 }
 
 .write-card--place .ws-surface,
@@ -705,8 +804,9 @@ body {
 }
 
 .moment-expand {
-  margin-top: var(--space-4);
-  padding-top: var(--space-4);
+  margin-top: var(--space-3);
+  padding-top: var(--space-2);
+  border-top: 0;
   overflow: hidden;
 }
 

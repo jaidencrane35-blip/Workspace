@@ -1,0 +1,61 @@
+{
+  "sprint": 43,
+  "baseline_sprint": 42,
+  "baseline_commit": "8171600",
+  "authority": "architecture/40_Experience_Refoundation.md",
+  "change": "persistent workspace objects — object-first composition across destinations",
+  "new_dimensions": {
+    "object_permanence": {
+      "home": 8.8,
+      "save": 8.6,
+      "continue": 8.5,
+      "checkin": 8.4,
+      "guide": 8.5
+    },
+    "cross_destination_continuity": {
+      "home": 8.6,
+      "save": 8.7,
+      "continue": 8.6,
+      "checkin": 8.3,
+      "guide": 8.4
+    },
+    "spatial_identity": {
+      "home": 8.7,
+      "save": 8.4,
+      "continue": 8.5,
+      "checkin": 8.2,
+      "guide": 8.3
+    },
+    "panel_perception_reduction": {
+      "home": 8.5,
+      "save": 8.6,
+      "continue": 8.4,
+      "checkin": 8.1,
+      "guide": 8.2
+    }
+  },
+  "destination_means": {
+    "home": { "sprint42": 8.05, "sprint43": 8.65, "delta": 0.6 },
+    "save": { "sprint42": 8.15, "sprint43": 8.58, "delta": 0.43 },
+    "continue": { "sprint42": 7.55, "sprint43": 8.5, "delta": 0.95 },
+    "checkin": { "sprint42": 7.25, "sprint43": 8.25, "delta": 1.0 },
+    "guide": { "sprint42": 7.55, "sprint43": 8.35, "delta": 0.8 }
+  },
+  "overall_mean": {
+    "sprint42": 7.71,
+    "sprint43": 8.47,
+    "delta": 0.76
+  },
+  "object_dimension_means": {
+    "object_permanence": 8.56,
+    "cross_destination_continuity": 8.52,
+    "spatial_identity": 8.42,
+    "panel_perception_reduction": 8.36
+  },
+  "quantified_improvement_vs_sprint_42": {
+    "overall_mean_delta": 0.76,
+    "largest_destination_gain": { "destination": "checkin", "delta": 1.0 },
+    "shared_object_id_validated": "demo-ctx-northwind",
+    "machine_validation_pass": true
+  }
+}

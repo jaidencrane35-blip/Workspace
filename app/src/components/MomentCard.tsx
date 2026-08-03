@@ -104,7 +104,8 @@ function MomentCardInner({
       variant === "hero") &&
     !expandContent &&
     !sparse;
-  const revealing = Boolean(expandContent) && state === "preview";
+  // Object attachment (write / restore / reflect / guide) expands in place.
+  const revealing = Boolean(expandContent);
   const showHandoff = ambient || !sparse || variant === "compact";
   const showWindows = !ambient && !sparse && !sparseMeta;
   // Hero sparseMeta: handoff carries meaning; drop orphan time row (parity H-06).

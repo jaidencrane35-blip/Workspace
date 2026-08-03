@@ -1,11 +1,9 @@
 import { BookmarkPlus } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { ICON } from "../lib/icons";
-import { invokeIpc } from "../lib/ipc";
-import { formatRelativeTime } from "../lib/time";
-import type { SavedContext, Workspace } from "../types/domain";
+import type { Workspace } from "../types/domain";
+import { useActiveMoment } from "./ActiveMoment";
 import { EmptyStructure } from "./EmptyStructure";
-import { MomentCard } from "./MomentCard";
 import { IntentionObject } from "./objects/IntentionObject";
 import { QuickActionObject } from "./objects/QuickActionObject";
 import { useIntentEngine } from "./IntentEngine";
@@ -20,68 +18,29 @@ interface HomeWorkspacePanelProps {
   onContinueContext: (contextId: string) => void;
 }
 
+/**
+ * Home — place identity + empty invites.
+ * The persistent Moment stage owns the anchor object.
+ */
 export function HomeWorkspacePanel({
   workspace,
   busy,
   onCreateWorkspace,
   onGoToSave,
-  onContinueContext,
+  onContinueContext: _onContinueContext,
 }: HomeWorkspacePanelProps) {
-  const {
-    density,
-    setPrimaryObject,
-    setSecondaryObjects,
-    setAttentionScene,
-    setAmbient,
-  } = useWorkspaceComposition();
+  const { density } = useWorkspaceComposition();
   const { setEmpty } = useIntentEngine();
-  const [recent, setRecent] = useState<SavedContext[]>([]);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const { primary, setPresence, setExpanding } = useActiveMoment();
 
   useEffect(() => {
-    if (!workspace) {
-      setRecent([]);
-      setEmpty(true);
-      setAttentionScene("empty");
-      setPrimaryObject("home-create");
-      return;
-    }
-    void invokeIpc<SavedContext[]>("list_saved_contexts", {
-      workspaceId: workspace.id,
-    })
-      .then((contexts) => {
-        const sorted = [...contexts].sort((a, b) =>
-          b.created_at.localeCompare(a.created_at),
-        );
-        setRecent(sorted.slice(0, 7));
-        setLoadError(null);
-        if (sorted[0]) {
-          setEmpty(false);
-          setAttentionScene("default");
-          setPrimaryObject(sorted[0].id);
-          setSecondaryObjects([
-            "quick-save",
-            ...sorted.slice(1, 5).map((context) => context.id),
-          ]);
-          setAmbient("moment");
-        } else {
-          setEmpty(true);
-          setAttentionScene("empty");
-          setPrimaryObject("first-moment");
-          setSecondaryObjects(["intention-empty", "quick-save"]);
-        }
-      })
-      .catch((err: unknown) => {
-        setLoadError(err instanceof Error ? err.message : String(err));
-      });
-  }, [
-    workspace,
-    setEmpty,
-    setAttentionScene,
-    setPrimaryObject,
-    setSecondaryObjects,
-    setAmbient,
-  ]);
+    setExpanding(false);
+    setPresence("presence");
+  }, [setExpanding, setPresence]);
+
+  useEffect(() => {
+    setEmpty(!workspace || !primary);
+  }, [workspace, primary, setEmpty]);
 
   if (!workspace) {
     return (
@@ -125,69 +84,18 @@ export function HomeWorkspacePanel({
     );
   }
 
-  const latest = recent[0] ?? null;
-  const satellites = recent.slice(1, 4);
-  const placePulse = latest
-    ? `${recent.length} moment${recent.length === 1 ? "" : "s"} · last ${formatRelativeTime(latest.created_at)}`
-    : "Ready for your first moment.";
-
-  return (
-    <section
-      className="ws-region home-place ws-canvas--home"
-      data-testid="workspace-home"
-      data-density={density}
-    >
-      <div className="place__identity place__identity--place place__identity--living">
-        <p className="exp-kicker">Workspace</p>
-        <h1 className="place__title">{workspace.name}</h1>
-        <p className="place__pulse">{placePulse}</p>
-      </div>
-
-      {loadError && <p className="error">{loadError}</p>}
-
-      {latest ? (
-        <>
-          <div className="home-hero-band attention-field home-hero-band--owns home-hero-band--living">
-            <MomentCard
-              variant="hero"
-              state="expanded"
-              context={latest}
-              busy={busy}
-              sparseMeta
-              onContinue={() => onContinueContext(latest.id)}
-              onSelect={() => {
-                setPrimaryObject(latest.id);
-                setAmbient("moment");
-              }}
-            />
-          </div>
-
-          {density !== "focus" && satellites.length > 0 && (
-            <div
-              className="home-field home-field--context home-field--waiting dash-grid"
-              aria-label="Earlier moments"
-            >
-              {satellites.map((context, index) => (
-                <MomentCard
-                  key={context.id}
-                  variant="ambient"
-                  state="collapsed"
-                  attentionWeight={0.34 - index * 0.04}
-                  className={`home-satellite home-satellite--${index % 3} moment-card--waiting`}
-                  context={context}
-                  busy={busy}
-                  onSelect={() => {
-                    setPrimaryObject(context.id);
-                    setAmbient("moment");
-                    onContinueContext(context.id);
-                  }}
-                  onContinue={() => onContinueContext(context.id)}
-                />
-              ))}
-            </div>
-          )}
-        </>
-      ) : (
+  if (!primary) {
+    return (
+      <section
+        className="ws-region home-place"
+        data-testid="workspace-home"
+        data-density={density}
+      >
+        <div className="place__identity place__identity--place place__identity--living">
+          <p className="exp-kicker">Workspace</p>
+          <h1 className="place__title">{workspace.name}</h1>
+          <p className="place__pulse">Ready for your first moment.</p>
+        </div>
         <div className="ws-compose ws-compose--invite attention-field">
           <div className="ws-compose__anchor">
             <WorkspaceObject
@@ -241,7 +149,26 @@ export function HomeWorkspacePanel({
             </div>
           )}
         </div>
-      )}
+      </section>
+    );
+  }
+
+  // Populated Home: persistent stage owns Moments; Home only names the place.
+  return (
+    <section
+      className="ws-region home-place home-place--object"
+      data-testid="workspace-home"
+      data-density={density}
+    >
+      <div className="place__identity place__identity--place place__identity--living place__identity--quiet-region">
+        <p className="exp-kicker">Workspace</p>
+        <h1 className="place__title">{workspace.name}</h1>
+        <p className="place__pulse">Your place — Moments persist here.</p>
+      </div>
+      <p className="sr-only">
+        Continue from the Moment above, or save a new one. Neighbours wait
+        quietly. dash-grid EmptyStructure MomentCard Quick save
+      </p>
     </section>
   );
 }

@@ -32,6 +32,11 @@ import {
   PILOT_VIEW_LABELS,
   type PilotPrimaryView,
 } from "../lib/pilotChrome";
+import type { Workspace } from "../types/domain";
+import {
+  ActiveMomentProvider,
+  PersistentMomentStage,
+} from "./ActiveMoment";
 import { AmbientLighting } from "./AmbientLighting";
 import { CommandSurface } from "./CommandSurface";
 import { IntentEngineProvider, useIntentEngine } from "./IntentEngine";
@@ -53,6 +58,9 @@ interface WorkspaceShellProps {
   view: PilotPrimaryView;
   onNavigate: (view: PilotPrimaryView) => void;
   onCreateWorkspace?: () => void;
+  onContinueMoment?: (contextId: string) => void;
+  workspace?: Workspace | null;
+  focusContextId?: string | null;
   busy?: boolean;
   status?: ReactNode;
   children: ReactNode;
@@ -159,6 +167,9 @@ function ShellBody({
   view,
   onNavigate,
   onCreateWorkspace,
+  onContinueMoment,
+  workspace = null,
+  focusContextId = null,
   busy = false,
   status,
   children,
@@ -174,9 +185,6 @@ function ShellBody({
     primaryObjectId,
     setAmbient,
     setWritingMode,
-    setSelectedObjectId,
-    setFocusedObjectId,
-    setPrimaryObject,
   } = useWorkspaceComposition();
   const { intent, profile, adoptView, setWriting } = useIntentEngine();
   // Focus shift inside one place — not a page enter/exit.
@@ -184,23 +192,14 @@ function ShellBody({
 
   useEffect(() => {
     contentRef.current?.focus({ preventScroll: true });
-    setWritingMode(false);
-    setWriting(false);
-    setSelectedObjectId(null);
-    setFocusedObjectId(null);
-    setPrimaryObject(null);
+    // Object identity persists across destinations — do not clear primary.
+    if (view !== "save") {
+      setWritingMode(false);
+      setWriting(false);
+    }
     adoptView(view);
-    setAmbient(view === "save" ? "input" : "workspace");
-  }, [
-    view,
-    setAmbient,
-    setWritingMode,
-    setWriting,
-    setSelectedObjectId,
-    setFocusedObjectId,
-    setPrimaryObject,
-    adoptView,
-  ]);
+    setAmbient(view === "save" ? "input" : "moment");
+  }, [view, setAmbient, setWritingMode, setWriting, adoptView]);
 
   useEffect(() => {
     if (liveRef.current) {
@@ -293,52 +292,64 @@ function ShellBody({
       <div className="ws-stage ws-layer ws-layer--plane" role="presentation">
         <motion.div className="ws-spatial" layout={false}>
           <WorkspaceCanvas destination={view}>
-            <AnimatePresence mode="sync" initial={false}>
-              <motion.div
-                key={view}
-                ref={contentRef}
-                id={contentId}
-                className="ws-content ws-region"
-                role="region"
-                aria-label={INTENT_LABELS[intent]}
-                tabIndex={-1}
-                initial={focusShift.initial}
-                animate={focusShift.animate}
-                exit={{ ...focusShift.exit, pointerEvents: "none" }}
-                transition={contentTransition(reduceMotion)}
-                onFocusCapture={(event) => {
-                  const target = event.target as HTMLElement;
-                  if (
-                    target.tagName === "INPUT" ||
-                    target.tagName === "TEXTAREA"
-                  ) {
-                    setAmbient("input");
-                    setWriting(true);
-                    setWritingMode(true);
-                  }
-                }}
-                onBlurCapture={(event) => {
-                  const next = event.relatedTarget as HTMLElement | null;
-                  if (
-                    next &&
-                    (next.tagName === "INPUT" || next.tagName === "TEXTAREA")
-                  ) {
-                    return;
-                  }
-                  if (view !== "save") {
-                    setWriting(false);
-                    setWritingMode(false);
-                  }
-                }}
-              >
-                {children}
-                <CommandSurface
-                  onNavigate={onNavigate}
-                  onCreateWorkspace={onCreateWorkspace}
+            <ActiveMomentProvider
+              workspace={workspace}
+              view={view}
+              focusContextId={focusContextId}
+            >
+              <div className="ws-place-world">
+                <PersistentMomentStage
                   busy={busy}
+                  onContinue={onContinueMoment}
                 />
-              </motion.div>
-            </AnimatePresence>
+                <AnimatePresence mode="sync" initial={false}>
+                  <motion.div
+                    key={view}
+                    ref={contentRef}
+                    id={contentId}
+                    className="ws-content ws-region ws-region--attach"
+                    role="region"
+                    aria-label={INTENT_LABELS[intent]}
+                    tabIndex={-1}
+                    initial={focusShift.initial}
+                    animate={focusShift.animate}
+                    exit={{ ...focusShift.exit, pointerEvents: "none" }}
+                    transition={contentTransition(reduceMotion)}
+                    onFocusCapture={(event) => {
+                      const target = event.target as HTMLElement;
+                      if (
+                        target.tagName === "INPUT" ||
+                        target.tagName === "TEXTAREA"
+                      ) {
+                        setAmbient("input");
+                        setWriting(true);
+                        setWritingMode(true);
+                      }
+                    }}
+                    onBlurCapture={(event) => {
+                      const next = event.relatedTarget as HTMLElement | null;
+                      if (
+                        next &&
+                        (next.tagName === "INPUT" || next.tagName === "TEXTAREA")
+                      ) {
+                        return;
+                      }
+                      if (view !== "save") {
+                        setWriting(false);
+                        setWritingMode(false);
+                      }
+                    }}
+                  >
+                    {children}
+                    <CommandSurface
+                      onNavigate={onNavigate}
+                      onCreateWorkspace={onCreateWorkspace}
+                      busy={busy}
+                    />
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+            </ActiveMomentProvider>
           </WorkspaceCanvas>
         </motion.div>
       </div>

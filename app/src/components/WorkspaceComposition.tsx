@@ -60,12 +60,12 @@ function CompositionInner({
       if (on) {
         setAmbient("input");
         setScene("writing");
-        setPrimary("write-surface");
+        // Keep the active Moment as primary — writing expands the object.
       } else {
         setScene("default");
       }
     },
-    [setScene, setPrimary],
+    [setScene],
   );
 
   const setPrimaryObject = useCallback(

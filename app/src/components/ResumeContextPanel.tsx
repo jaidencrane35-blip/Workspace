@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { invokeIpc } from "../lib/ipc";
 import { RESTORE_LIMITS_SUMMARY } from "../lib/restoreLimits";
 import type {
@@ -9,12 +10,11 @@ import type {
   SavedContextWindow,
   Workspace,
 } from "../types/domain";
+import { useActiveMoment } from "./ActiveMoment";
 import { EmptyStructure } from "./EmptyStructure";
-import { MomentCard } from "./MomentCard";
 import { ContinuePreviewBody } from "./objects/ContinuePreviewObject";
 import { RestoreLimitsNotice } from "./RestoreLimitsNotice";
 import { useIntentEngine } from "./IntentEngine";
-import { useWorkspaceComposition } from "./WorkspaceComposition";
 import { WorkspaceSurface } from "./WorkspaceSurface";
 
 type Step = "browse" | "inspect" | "confirm_delete" | "preview" | "done";
@@ -25,10 +25,8 @@ interface ResumeContextPanelProps {
   onBusy: (busy: boolean) => void;
   onError: (message: string | null) => void;
   onMessage: (message: string | null) => void;
-  /** Optional navigation to the consented pilot measurement surface (PP-P01E). */
   onGoToPilot?: () => void;
   onGoHome?: () => void;
-  /** When set, open preview for this saved context after browse loads. */
   focusContextId?: string | null;
 }
 
@@ -99,43 +97,19 @@ export function ResumeContextPanel({
   onGoHome,
   focusContextId = null,
 }: ResumeContextPanelProps) {
-  const {
-    density,
-    setPrimaryObject,
-    setSecondaryObjects,
-    setAttentionScene,
-    setAmbient,
-  } = useWorkspaceComposition();
   const { setRestoring } = useIntentEngine();
+  const {
+    primary,
+    expandHost,
+    selectMoment,
+    setPresence,
+    setExpanding,
+    reloadMoments,
+  } = useActiveMoment();
   const [step, setStep] = useState<Step>("browse");
-  const [contexts, setContexts] = useState<SavedContext[]>([]);
   const [inspected, setInspected] = useState<SavedContext | null>(null);
   const [preview, setPreview] = useState<ResumePlanPreview | null>(null);
   const [result, setResult] = useState<ActionOperationResult | null>(null);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-
-  const selectMoment = (id: string) => {
-    setSelectedId(id);
-    setPrimaryObject(id);
-    setAmbient("moment");
-  };
-
-  const reload = useCallback(() => {
-    if (!workspace) {
-      setContexts([]);
-      return;
-    }
-    void invokeIpc<SavedContext[]>("list_saved_contexts", {
-      workspaceId: workspace.id,
-    })
-      .then(setContexts)
-      .catch((err: unknown) => setLoadError(formatError(err)));
-  }, [workspace]);
-
-  useEffect(() => {
-    reload();
-  }, [reload]);
 
   const openInspect = (contextId: string) => {
     onBusy(true);
@@ -149,6 +123,8 @@ export function ResumeContextPanel({
         setPreview(null);
         setResult(null);
         setStep("inspect");
+        setExpanding(false);
+        setPresence("presence");
       } catch (err: unknown) {
         onError(formatError(err));
       } finally {
@@ -161,18 +137,19 @@ export function ResumeContextPanel({
     (contextId: string) => {
       onBusy(true);
       onError(null);
+      selectMoment(contextId);
       void (async () => {
         try {
-          const next = await invokeIpc<ResumePlanPreview>("resolve_resume_plan", {
-            savedContextId: contextId,
-          });
+          const next = await invokeIpc<ResumePlanPreview>(
+            "resolve_resume_plan",
+            { savedContextId: contextId },
+          );
           setPreview(next);
           setResult(null);
           setStep("preview");
-          setPrimaryObject(contextId);
-          setAttentionScene("restore");
           setRestoring(true);
-          setSecondaryObjects([]);
+          setPresence("restoring");
+          setExpanding(true);
         } catch (err: unknown) {
           onError(formatError(err));
         } finally {
@@ -180,25 +157,15 @@ export function ResumeContextPanel({
         }
       })();
     },
-    [
-      onBusy,
-      onError,
-      setPrimaryObject,
-      setAttentionScene,
-      setRestoring,
-      setSecondaryObjects,
-    ],
+    [onBusy, onError, selectMoment, setRestoring, setPresence, setExpanding],
   );
 
   useEffect(() => {
-    if (!focusContextId || !workspace || contexts.length === 0) {
-      return;
-    }
-    if (!contexts.some((context) => context.id === focusContextId)) {
+    if (!focusContextId || !workspace) {
       return;
     }
     openPreview(focusContextId);
-  }, [focusContextId, workspace, contexts, openPreview]);
+  }, [focusContextId, workspace, openPreview]);
 
   const approveAndRestore = () => {
     if (!preview) {
@@ -217,6 +184,8 @@ export function ResumeContextPanel({
         );
         setResult(outcome);
         setStep("done");
+        setExpanding(false);
+        setPresence("presence");
         onMessage(`Resume finished: ${outcome.outcome.replace(/_/g, " ")}`);
       } catch (err: unknown) {
         onError(formatError(err));
@@ -235,15 +204,14 @@ export function ResumeContextPanel({
     void (async () => {
       try {
         const deletedName = inspected.name;
-        const deletedId = inspected.id;
         await invokeIpc<null>("delete_saved_context", {
-          savedContextId: deletedId,
+          savedContextId: inspected.id,
         });
         setInspected(null);
         setPreview(null);
         setResult(null);
         setStep("browse");
-        reload();
+        reloadMoments();
         onMessage(`Deleted “${deletedName}”. It can no longer be restored.`);
       } catch (err: unknown) {
         onError(formatError(err));
@@ -258,10 +226,22 @@ export function ResumeContextPanel({
     setInspected(null);
     setPreview(null);
     setResult(null);
-    setAttentionScene("default");
     setRestoring(false);
-    reload();
+    setPresence("presence");
+    setExpanding(false);
+    reloadMoments();
   };
+
+  useEffect(() => {
+    const open = step === "preview" && Boolean(preview);
+    setExpanding(open);
+    if (open) {
+      setPresence("restoring");
+    } else if (step === "browse") {
+      setPresence("presence");
+    }
+    return () => setExpanding(false);
+  }, [step, preview, setExpanding, setPresence]);
 
   if (!workspace) {
     return (
@@ -282,137 +262,74 @@ export function ResumeContextPanel({
     );
   }
 
-  const sorted = [...contexts].sort((a, b) =>
-    b.created_at.localeCompare(a.created_at),
-  );
-  const featured = sorted[0] ?? null;
-  const others = sorted.slice(1);
-
-  const previewing = step === "preview" && preview != null;
-  const satellitePool = others.slice(0, density === "flow" ? 4 : 3);
+  if (!primary && step === "browse") {
+    return (
+      <section className="ws-region continue-place">
+        <EmptyStructure
+          title="Nothing to continue yet"
+          hint="Save a moment — then it waits here for you."
+        />
+      </section>
+    );
+  }
 
   return (
     <section
       className={[
         "ws-region",
         "continue-place",
-        "continue-gallery",
-        "continue-dash",
-        previewing ? "continue-dash--previewing continue-place--inside" : "",
+        step === "preview" ? "continue-place--inside" : "",
       ]
         .filter(Boolean)
         .join(" ")}
-      data-density={density}
     >
       {(step === "browse" || step === "preview") && (
         <>
-          {!previewing && (
-            <header className="place__identity place__identity--place place__identity--quiet-region">
+          {step === "browse" && (
+            <header className="place__identity place__identity--quiet-region">
               <p className="exp-kicker">Continue</p>
-              <h1 className="place__title place__title--region">
-                Step back in
-              </h1>
-              <p className="place__pulse">Your place is still here.</p>
+              <h1 className="place__title place__title--region">Step back in</h1>
+              <p className="place__pulse">The Moment above is the place.</p>
             </header>
           )}
-
-          {loadError && <p className="error">{loadError}</p>}
-
-          {contexts.length === 0 ? (
-            <EmptyStructure
-              title="Nothing to continue yet"
-              hint="Save a moment — then it waits here for you."
-            />
-          ) : (
-            <div
-              className={
-                previewing
-                  ? "continue-cinema continue-cinema--focus is-dimmed attention-field"
-                  : selectedId
-                    ? "continue-cinema is-dimmed attention-field"
-                    : "continue-cinema attention-field"
-              }
-            >
-              {featured && (
-                <div
-                  className={
-                    previewing
-                      ? "continue-cinema__stage continue-cinema__stage--solo"
-                      : "continue-cinema__stage"
-                  }
-                >
-                  <MomentCard
-                    variant="hero"
-                    sparseMeta
-                    state={
-                      preview?.saved_context_id === featured.id
-                        ? "preview"
-                        : selectedId === featured.id
-                          ? "selected"
-                          : "expanded"
-                    }
-                    context={featured}
-                    busy={busy}
-                    onSelect={() => selectMoment(featured.id)}
-                    onContinue={() => {
-                      selectMoment(featured.id);
-                      openPreview(featured.id);
-                    }}
-                    expandContent={
-                      preview?.saved_context_id === featured.id ? (
-                        <ContinuePreviewBody
-                          preview={preview}
-                          busy={busy}
-                          onApprove={approveAndRestore}
-                          onCancel={backToBrowse}
-                          describeDisposition={describeDisposition}
-                        />
-                      ) : undefined
-                    }
-                  />
-                </div>
-              )}
-              {!previewing && density !== "focus" && satellitePool.length > 0 && (
-                <div className="continue-satellites continue-recede home-field--context">
-                  {satellitePool.map((context, index) => (
-                    <MomentCard
-                      key={context.id}
-                      variant="ambient"
-                      attentionWeight={0.5 - index * 0.04}
-                      className={`home-satellite home-satellite--${index % 3}`}
-                      state={
-                        selectedId === context.id ? "selected" : "collapsed"
-                      }
-                      context={context}
-                      busy={busy}
-                      onSelect={() => {
-                        selectMoment(context.id);
-                        openPreview(context.id);
-                      }}
-                      onContinue={() => {
-                        selectMoment(context.id);
-                        openPreview(context.id);
-                      }}
-                    />
-                  ))}
-                </div>
-              )}
+          {step === "browse" && primary && (
+            <div className="exp-actions">
+              <button
+                type="button"
+                className="exp-btn primary"
+                disabled={busy}
+                onClick={() => openPreview(primary.id)}
+              >
+                Remember this place
+              </button>
             </div>
           )}
-          {!previewing && featured && (
+          {step === "browse" && primary && (
             <details className="exp-inspect continue-inspect-recess">
               <summary>Inspect this place</summary>
               <button
                 type="button"
                 className="exp-btn ghost continue-inspect-entry"
                 disabled={busy}
-                onClick={() => openInspect(featured.id)}
+                onClick={() => openInspect(primary.id)}
               >
                 Open details
               </button>
               <p className="muted">{RESTORE_LIMITS_SUMMARY}</p>
             </details>
           )}
+          {step === "preview" && preview && expandHost
+            ? createPortal(
+                <ContinuePreviewBody
+                  preview={preview}
+                  busy={busy}
+                  onApprove={approveAndRestore}
+                  onCancel={backToBrowse}
+                  describeDisposition={describeDisposition}
+                />,
+                expandHost,
+              )
+            : null}
         </>
       )}
 
@@ -433,14 +350,9 @@ export function ResumeContextPanel({
             Shown exactly as you wrote it. Saved{" "}
             {formatMoment(inspected.created_at)}.
           </p>
-
           <details className="exp-inspect">
             <summary>Window and monitor details</summary>
             <p className="muted">Scope {inspected.approved_scope}</p>
-            <h4>
-              {inspected.windows.length}{" "}
-              {inspected.windows.length === 1 ? "window" : "windows"}
-            </h4>
             <ul className="list compact">
               {inspected.windows.map((window) => (
                 <li key={window.id}>
@@ -467,9 +379,7 @@ export function ResumeContextPanel({
               ))}
             </ul>
           </details>
-
           <RestoreLimitsNotice />
-
           <div className="exp-actions">
             <button
               type="button"
@@ -500,19 +410,11 @@ export function ResumeContextPanel({
       )}
 
       {step === "confirm_delete" && inspected && (
-        <WorkspaceSurface
-          tone="hero"
-          padding="lg"
-          className="focus-card focus-card--center"
-        >
+        <WorkspaceSurface tone="hero" padding="lg" className="focus-card focus-card--center">
           <h2 className="focus-card__title">Delete “{inspected.name}”?</h2>
           <p className="exp-lede">
             This removes the saved context and its restore identities from this
-            computer. It cannot be undone. Windows already open on your desktop
-            are not closed.
-          </p>
-          <p className="muted">
-            After deletion, this context cannot be inspected or restored.
+            computer. It cannot be undone.
           </p>
           <div className="exp-actions">
             <button
@@ -536,18 +438,9 @@ export function ResumeContextPanel({
       )}
 
       {step === "done" && result && preview && (
-        <WorkspaceSurface
-          tone="hero"
-          padding="lg"
-          className="focus-card focus-card--center"
-        >
+        <WorkspaceSurface tone="hero" padding="lg" className="focus-card focus-card--center">
           <p className="exp-kicker">Done</p>
           <h2 className="focus-card__title">You’re back</h2>
-          <p className="exp-intention">
-            {preview.handoff_note.trim()
-              ? preview.handoff_note
-              : "No handoff was recorded with this context."}
-          </p>
           <p>
             Outcome: <strong>{result.outcome.replace(/_/g, " ")}</strong>
           </p>
@@ -561,7 +454,6 @@ export function ResumeContextPanel({
                   <div>
                     {describeOutcome(item.disposition)} · {item.what}
                   </div>
-                  {item.reason && <div className="muted">{item.reason}</div>}
                 </li>
               ))}
             </ul>
@@ -580,13 +472,6 @@ export function ResumeContextPanel({
               </button>
             )}
           </div>
-          {onGoToPilot && (
-            <p className="muted">
-              Pilot timing is only recorded if you have consented under Check-in
-              and enter the minutes yourself. Nothing is measured in the
-              background.
-            </p>
-          )}
         </WorkspaceSurface>
       )}
     </section>

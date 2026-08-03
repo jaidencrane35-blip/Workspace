@@ -1,0 +1,44 @@
+{
+  "persistentStage": true,
+  "objectPermanence": true,
+  "sharedObjectId": "demo-ctx-northwind",
+  "crossDestinationContinuity": {
+    "home": true,
+    "save": true,
+    "continue": true,
+    "checkin": true,
+    "guide": true
+  },
+  "spatialIdentity": true,
+  "panelPerceptionReduced": true,
+  "detail": {
+    "homeAnchor": {
+      "stage": true,
+      "layoutId": "demo-ctx-northwind",
+      "presence": "presence"
+    },
+    "saveAttach": {
+      "host": true,
+      "writeInside": true,
+      "presence": "writing",
+      "objectId": "demo-ctx-northwind"
+    },
+    "continueAttach": {
+      "previewInside": true,
+      "detachedCinema": false,
+      "presence": "restoring",
+      "objectId": "demo-ctx-northwind"
+    },
+    "checkinAttach": {
+      "formInside": true,
+      "presence": "reflecting",
+      "objectId": "demo-ctx-northwind"
+    },
+    "guideAttach": {
+      "hintInside": true,
+      "presence": "guided",
+      "objectId": "demo-ctx-northwind"
+    }
+  },
+  "pass": true
+}

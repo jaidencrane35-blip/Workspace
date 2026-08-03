@@ -1,104 +1,88 @@
-import { BookmarkPlus, ClipboardList, Play } from "lucide-react";
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { RESTORE_LIMITS_SUMMARY } from "../lib/restoreLimits";
-import { GuideStepObject } from "./objects/GuideStepObject";
+import { useActiveMoment } from "./ActiveMoment";
 import { useWorkspaceComposition } from "./WorkspaceComposition";
 
-const STEPS = [
+const HINTS = [
   {
     id: "save",
-    icon: BookmarkPlus,
     title: "Save",
-    line: "Focus the note — the place quiets around writing.",
+    line: "Focus the note — writing expands from this Moment.",
   },
   {
     id: "continue",
-    icon: Play,
     title: "Continue",
-    line: "Step into a Moment — the place remembers itself.",
+    line: "Remember this place — windows grow from the Moment itself.",
   },
   {
     id: "checkin",
-    icon: ClipboardList,
     title: "Check-in",
-    line: "Answer one question — earlier answers settle into history.",
+    line: "Reflect here — answers settle back into the object.",
   },
 ] as const;
 
 /**
- * Guide — quiet resident of the living workspace.
+ * Guide — contextual annotations on the persistent Moment.
  */
 export function PilotHelpPanel() {
-  const {
-    density,
-    setPrimaryObject,
-    setSecondaryObjects,
-    setAttentionScene,
-    setAmbient,
-  } = useWorkspaceComposition();
+  const { density } = useWorkspaceComposition();
+  const { primary, expandHost, setPresence, setExpanding } = useActiveMoment();
   const [active, setActive] = useState(0);
+  const hint = HINTS[active] ?? HINTS[0];
 
   useEffect(() => {
-    setAttentionScene("guide");
-    setPrimaryObject(STEPS[active]?.id ?? "save");
-    setSecondaryObjects(
-      STEPS.filter((_, index) => index !== active).map((step) => step.id),
-    );
-    setAmbient("workspace");
-  }, [
-    active,
-    setAttentionScene,
-    setPrimaryObject,
-    setSecondaryObjects,
-    setAmbient,
-  ]);
+    setPresence("guided");
+    setExpanding(Boolean(primary));
+    return () => setExpanding(false);
+  }, [primary, setPresence, setExpanding]);
 
-  const current = STEPS[active];
+  const hintNode = (
+    <aside className="moment-attach moment-guide-hint" aria-label="Guide hint">
+      <p className="moment-attach__kicker">{hint.title}</p>
+      <p className="moment-guide-hint__line">{hint.line}</p>
+    </aside>
+  );
 
   return (
     <section
-      className="ws-region guide-place guide-dash guide-walk guide-place--resident attention-field"
+      className="ws-region guide-place guide-dash guide-place--resident"
       data-testid="pilot-help"
       data-density={density}
     >
-      <header className="place__identity place__identity--place place__identity--quiet-region">
+      <header className="place__identity place__identity--quiet-region">
         <p className="exp-kicker">Guide</p>
         <h1 className="place__title place__title--region">How this pilot works</h1>
-        <p className="place__pulse">Hints when useful — never an interruption.</p>
+        <p className="place__pulse">Hints on the Moment — never a separate surface.</p>
       </header>
 
-      <div className="guide-experience guide-experience--embedded">
-        <div className="guide-experience__stage">
-          <GuideStepObject
-            id={current.id}
-            step={active + 1}
-            title={current.title}
-            line={current.line}
-            icon={current.icon}
-            state="expanded"
-          />
-        </div>
-
-        <div className="guide-experience__rail" role="list">
-          {STEPS.map((item, index) => (
-            <button
-              key={item.id}
-              type="button"
-              role="listitem"
-              className={
-                index === active
-                  ? "guide-experience__chip is-active"
-                  : index < active
-                    ? "guide-experience__chip is-done is-settled"
-                    : "guide-experience__chip"
-              }
-              onClick={() => setActive(index)}
-            >
-              {item.title}
-            </button>
-          ))}
-        </div>
+      <div className="guide-experience__rail" role="list">
+        {HINTS.map((item, index) => (
+          <button
+            key={item.id}
+            type="button"
+            role="listitem"
+            className={
+              index === active
+                ? "guide-experience__chip is-active"
+                : index < active
+                  ? "guide-experience__chip is-done is-settled"
+                  : "guide-experience__chip"
+            }
+            onClick={() => setActive(index)}
+          >
+            {item.title}
+          </button>
+        ))}
       </div>
+
+      {!primary ? (
+        <aside className="moment-guide-hint moment-guide-hint--fallback">
+          <p className="moment-guide-hint__line">{hint.line}</p>
+        </aside>
+      ) : null}
+
+      {expandHost ? createPortal(hintNode, expandHost) : null}
 
       <details className="exp-inspect guide-trust-recess">
         <summary>What this pilot keeps local</summary>

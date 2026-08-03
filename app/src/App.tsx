@@ -235,6 +235,9 @@ export default function App() {
       view={view}
       onNavigate={navigate}
       onCreateWorkspace={createWorkspace}
+      onContinueMoment={(id) => goContinue(id)}
+      workspace={workspace}
+      focusContextId={focusContextId}
       busy={busy}
       status={status}
     >

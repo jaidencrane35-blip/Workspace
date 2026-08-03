@@ -1,5 +1,6 @@
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useCallback, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { spring } from "../design-system";
 import { invokeIpc } from "../lib/ipc";
 import type {
@@ -8,10 +9,10 @@ import type {
   SavedContextWindow,
   Workspace,
 } from "../types/domain";
+import { useActiveMoment } from "./ActiveMoment";
 import { RestoreLimitsNotice } from "./RestoreLimitsNotice";
 import { useIntentEngine } from "./IntentEngine";
 import { useWorkspaceComposition } from "./WorkspaceComposition";
-import { WorkspaceObject } from "./WorkspaceObject";
 import { WorkspaceSurface } from "./WorkspaceSurface";
 
 type Step = "naming" | "saved";
@@ -48,6 +49,130 @@ function describeWindow(window: SavedContextWindow): string {
   return parts.join(" · ");
 }
 
+function MomentWriteAttach({
+  name,
+  handoffNote,
+  busy,
+  density,
+  scope,
+  canReview,
+  onName,
+  onHandoff,
+  onEnter,
+  onLeave,
+  onSave,
+  onClear,
+}: {
+  name: string;
+  handoffNote: string;
+  busy: boolean;
+  density: string;
+  scope: SavedContextCaptureScope | null;
+  canReview: boolean;
+  onName: (value: string) => void;
+  onHandoff: (value: string) => void;
+  onEnter: () => void;
+  onLeave: () => void;
+  onSave: () => void;
+  onClear: () => void;
+}) {
+  const reduceMotion = useReducedMotion();
+  return (
+    <div className="moment-write moment-attach">
+      <p className="moment-attach__kicker">Leave a note</p>
+      <label className="exp-field write-field" htmlFor="saved-context-name">
+        <span className="sr-only">Name</span>
+        <input
+          id="saved-context-name"
+          className="input-ghost write-name"
+          value={name}
+          placeholder="Name this moment"
+          disabled={busy}
+          onFocus={onEnter}
+          onBlur={onLeave}
+          onChange={(event) => {
+            onEnter();
+            onName(event.target.value);
+          }}
+        />
+      </label>
+      <label
+        className="exp-field write-field write-card__anchor"
+        htmlFor="saved-context-handoff"
+      >
+        <span className="sr-only">What next?</span>
+        <textarea
+          id="saved-context-handoff"
+          className="input-ghost write-textarea"
+          rows={density === "focus" ? 8 : 6}
+          value={handoffNote}
+          placeholder="What should future-you know?"
+          disabled={busy}
+          autoFocus
+          onFocus={onEnter}
+          onBlur={onLeave}
+          onChange={(event) => {
+            onEnter();
+            onHandoff(event.target.value);
+          }}
+        />
+      </label>
+      <p className="muted write-card__hint">
+        You write this. Workspace will not invent or rewrite it.
+      </p>
+      {scope === null && (
+        <p className="muted text-center">Checking capture scope…</p>
+      )}
+      <AnimatePresence>
+        {canReview && scope && (
+          <motion.div
+            className="write-review"
+            initial={reduceMotion ? false : { opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={reduceMotion ? undefined : { opacity: 0, height: 0 }}
+            transition={spring.soft}
+          >
+            <details className="exp-inspect">
+              <summary>What will be saved</summary>
+              <p className="muted">{scope.purpose}</p>
+              <ul className="list compact">
+                {scope.captured.map((item) => (
+                  <li key={item.key}>{item.summary}</li>
+                ))}
+              </ul>
+              <h3>Not saved</h3>
+              <ul className="list compact">
+                {scope.excluded.map((item) => (
+                  <li key={item.key}>{item.summary}</li>
+                ))}
+              </ul>
+            </details>
+            <RestoreLimitsNotice />
+            <div className="exp-actions write-card__actions">
+              <button
+                type="button"
+                className="exp-btn primary"
+                onClick={onSave}
+                disabled={busy || !canReview}
+              >
+                Save this context
+              </button>
+              <button
+                type="button"
+                className="exp-btn ghost"
+                onClick={onClear}
+                disabled={busy}
+              >
+                Clear
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 export function SaveContextPanel({
   workspace,
   busy,
@@ -58,18 +183,28 @@ export function SaveContextPanel({
 }: SaveContextPanelProps) {
   const { density, setWritingMode, setAmbient } = useWorkspaceComposition();
   const { setWriting } = useIntentEngine();
-  const reduceMotion = useReducedMotion();
+  const {
+    primary,
+    expandHost,
+    setPresence,
+    setExpanding,
+    reloadMoments,
+    selectMoment,
+  } = useActiveMoment();
 
-  const enterWriting = () => {
+  const enterWriting = useCallback(() => {
     setWritingMode(true);
     setWriting(true);
     setAmbient("input");
-  };
-  const leaveWriting = () => {
+    setPresence("writing");
+  }, [setWritingMode, setWriting, setAmbient, setPresence]);
+
+  const leaveWriting = useCallback(() => {
     setWritingMode(false);
     setWriting(false);
-    setAmbient("workspace");
-  };
+    setAmbient("moment");
+  }, [setWritingMode, setWriting, setAmbient]);
+
   const [scope, setScope] = useState<SavedContextCaptureScope | null>(null);
   const [scopeError, setScopeError] = useState<string | null>(null);
   const [name, setName] = useState("");
@@ -88,6 +223,20 @@ export function SaveContextPanel({
   const canReview =
     scope !== null && trimmedName.length > 0 && trimmedHandoff.length > 0;
 
+  const attach =
+    Boolean(workspace) &&
+    !scopeError &&
+    !(step === "saved" && saved) &&
+    Boolean(primary);
+
+  useEffect(() => {
+    setExpanding(attach);
+    if (attach) {
+      setPresence("writing");
+    }
+    return () => setExpanding(false);
+  }, [attach, setExpanding, setPresence]);
+
   const save = useCallback(() => {
     if (!workspace || !scope || !trimmedHandoff) {
       return;
@@ -105,6 +254,10 @@ export function SaveContextPanel({
         setSaved(context);
         setStep("saved");
         onMessage(`Saved “${context.name}”`);
+        reloadMoments();
+        selectMoment(context.id);
+        setPresence("presence");
+        setExpanding(false);
       } catch (err: unknown) {
         onError(formatError(err));
       } finally {
@@ -119,6 +272,10 @@ export function SaveContextPanel({
     onBusy,
     onError,
     onMessage,
+    reloadMoments,
+    selectMoment,
+    setPresence,
+    setExpanding,
   ]);
 
   const startAgain = () => {
@@ -135,6 +292,23 @@ export function SaveContextPanel({
     setHandoffNote("");
     onError(null);
   };
+
+  const writeForm = (
+    <MomentWriteAttach
+      name={name}
+      handoffNote={handoffNote}
+      busy={busy}
+      density={density}
+      scope={scope}
+      canReview={canReview}
+      onName={setName}
+      onHandoff={setHandoffNote}
+      onEnter={enterWriting}
+      onLeave={leaveWriting}
+      onSave={save}
+      onClear={clearDraft}
+    />
+  );
 
   if (!workspace) {
     return (
@@ -173,181 +347,62 @@ export function SaveContextPanel({
   if (step === "saved" && saved) {
     return (
       <section className="ws-region save-place save-env">
-        <WorkspaceSurface
-          level="overlay"
-          tone="hero"
-          padding="xl"
-          className="focus-card save-success"
-        >
-          <p className="exp-kicker">Saved</p>
-          <h2 className="focus-card__title">{saved.name}</h2>
-          <p className="exp-intention">{saved.handoff_note}</p>
-          <p className="muted">
-            Kept on this computer · {formatMoment(saved.created_at)}
-          </p>
-          <details className="exp-inspect">
-            <summary>Inspect what was kept</summary>
-            <h3>
-              {saved.windows.length}{" "}
-              {saved.windows.length === 1 ? "window" : "windows"}
-            </h3>
-            <ul className="list compact">
-              {saved.windows.map((window) => (
-                <li key={window.id}>
-                  <div>{window.title}</div>
-                  <div className="muted">{describeWindow(window)}</div>
-                </li>
-              ))}
-            </ul>
-            <h3>
-              {saved.monitors.length}{" "}
-              {saved.monitors.length === 1 ? "monitor" : "monitors"}
-            </h3>
-            <ul className="list compact">
-              {saved.monitors.map((monitor) => (
-                <li key={monitor.id}>
-                  <div>
-                    {monitor.name || `Monitor ${monitor.monitor_index + 1}`}
-                    {monitor.is_primary ? " · main" : ""}
-                  </div>
-                  <div className="muted">
-                    {monitor.width}×{monitor.height} at {monitor.x},{monitor.y}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </details>
+        <p className="place__pulse text-center">
+          Saved into this place · {formatMoment(saved.created_at)}
+        </p>
+        <details className="exp-inspect">
+          <summary>Inspect what was kept</summary>
+          <h3>
+            {saved.windows.length}{" "}
+            {saved.windows.length === 1 ? "window" : "windows"}
+          </h3>
+          <ul className="list compact">
+            {saved.windows.map((window) => (
+              <li key={window.id}>
+                <div>{window.title}</div>
+                <div className="muted">{describeWindow(window)}</div>
+              </li>
+            ))}
+          </ul>
           <RestoreLimitsNotice />
-          <div className="exp-actions">
-            <button
-              type="button"
-              className="exp-btn"
-              onClick={startAgain}
-              disabled={busy}
-            >
-              Save another moment
-            </button>
-          </div>
-        </WorkspaceSurface>
+        </details>
+        <div className="exp-actions">
+          <button
+            type="button"
+            className="exp-btn"
+            onClick={startAgain}
+            disabled={busy}
+          >
+            Save another moment
+          </button>
+        </div>
+      </section>
+    );
+  }
+
+  if (!primary) {
+    return (
+      <section
+        className="ws-region save-place save-env save-env--write attention-field"
+        data-density={density}
+      >
+        <header className="place__identity place__identity--quiet-region">
+          <p className="exp-kicker">In {workspace.name}</p>
+          <h2 className="place__title place__title--region">Leave a note</h2>
+        </header>
+        {writeForm}
       </section>
     );
   }
 
   return (
     <section
-      className="ws-region save-place save-env save-env--write save-env--emerge attention-field"
+      className="ws-region save-place save-env save-env--attach"
       data-density={density}
       data-writing="ready"
     >
-      <header className="place__identity place__identity--place place__identity--quiet-region">
-        <p className="exp-kicker">In {workspace.name}</p>
-        <h2 className="place__title place__title--region">Leave a note</h2>
-        <p className="place__pulse">It stays in this place.</p>
-      </header>
-      <WorkspaceObject
-        objectId="write-surface"
-        kind="intention"
-        slot="anchor"
-        state="expanded"
-        level="floating"
-        lit
-        className="write-card write-focus write-card--place"
-      >
-        <label className="exp-field write-field" htmlFor="saved-context-name">
-          <span className="sr-only">Name</span>
-          <input
-            id="saved-context-name"
-            className="input-ghost write-name"
-            value={name}
-            placeholder="Name this moment"
-            disabled={busy}
-            onFocus={enterWriting}
-            onBlur={leaveWriting}
-            onChange={(event) => {
-              enterWriting();
-              setName(event.target.value);
-            }}
-          />
-        </label>
-
-        <label className="exp-field write-field write-card__anchor" htmlFor="saved-context-handoff">
-          <span className="sr-only">What next?</span>
-          <textarea
-            id="saved-context-handoff"
-            className="input-ghost write-textarea"
-            rows={density === "focus" ? 11 : 9}
-            value={handoffNote}
-            placeholder="What should future-you know?"
-            disabled={busy}
-            autoFocus
-            onFocus={enterWriting}
-            onBlur={leaveWriting}
-            onChange={(event) => {
-              enterWriting();
-              setHandoffNote(event.target.value);
-            }}
-          />
-        </label>
-        <p className="muted write-card__hint">
-          You write this. Workspace will not invent or rewrite it.
-        </p>
-
-        {scope === null && (
-          <p className="muted text-center">Checking capture scope…</p>
-        )}
-
-        <AnimatePresence>
-          {canReview && scope && (
-            <motion.div
-              className="write-review"
-              initial={reduceMotion ? false : { opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={reduceMotion ? undefined : { opacity: 0, height: 0 }}
-              transition={spring.soft}
-            >
-              <p className="exp-kicker">Ready to keep</p>
-              <p className="muted write-review__lead">
-                “{trimmedName}” — exactly as you wrote it below.
-              </p>
-              <details className="exp-inspect">
-                <summary>What will be saved</summary>
-                <p className="muted">{scope.purpose}</p>
-                <h3>From the desktop</h3>
-                <ul className="list compact">
-                  {scope.captured.map((item) => (
-                    <li key={item.key}>{item.summary}</li>
-                  ))}
-                </ul>
-                <h3>Not saved</h3>
-                <ul className="list compact">
-                  {scope.excluded.map((item) => (
-                    <li key={item.key}>{item.summary}</li>
-                  ))}
-                </ul>
-              </details>
-              <RestoreLimitsNotice />
-              <div className="exp-actions write-card__actions">
-                <button
-                  type="button"
-                  className="exp-btn primary"
-                  onClick={save}
-                  disabled={busy || !canReview}
-                >
-                  Save this context
-                </button>
-                <button
-                  type="button"
-                  className="exp-btn ghost"
-                  onClick={clearDraft}
-                  disabled={busy}
-                >
-                  Clear
-                </button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </WorkspaceObject>
+      <p className="sr-only">Writing expands inside the active Moment.</p>
+      {expandHost ? createPortal(writeForm, expandHost) : null}
     </section>
   );
 }

@@ -1,11 +1,13 @@
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useCallback, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { spring } from "../design-system";
 import { invokeIpc } from "../lib/ipc";
 import type {
   PilotMeasurementScope,
   PilotMeasurementSnapshot,
 } from "../types/domain";
+import { useActiveMoment } from "./ActiveMoment";
 import { CheckInSummaryObject } from "./objects/CheckInSummaryObject";
 import { useIntentEngine } from "./IntentEngine";
 import { WorkspaceSurface } from "./WorkspaceSurface";
@@ -52,13 +54,14 @@ export function PilotMeasurementPanel({
   onError,
   onMessage,
 }: PilotMeasurementPanelProps) {
-  const {
-    density,
-    setAttentionScene,
-    setPrimaryObject,
-    setSecondaryObjects,
-  } = useWorkspaceComposition();
+  const { density, setAttentionScene } = useWorkspaceComposition();
   const { setReflecting } = useIntentEngine();
+  const {
+    primary: activeMoment,
+    expandHost,
+    setPresence,
+    setExpanding,
+  } = useActiveMoment();
   const reduceMotion = useReducedMotion();
   const [scope, setScope] = useState<PilotMeasurementScope | null>(null);
   const [snapshot, setSnapshot] = useState<PilotMeasurementSnapshot | null>(null);
@@ -75,26 +78,9 @@ export function PilotMeasurementPanel({
   useEffect(() => {
     setReflecting(true);
     setAttentionScene("checkin");
-    const primary =
-      chapter === 0
-        ? "checkin-baseline"
-        : chapter === 1
-          ? "checkin-leave"
-          : "checkin-median";
-    setPrimaryObject(primary);
-    setSecondaryObjects(
-      ["checkin-baseline", "checkin-leave", "checkin-median"].filter(
-        (id) => id !== primary,
-      ),
-    );
+    setPresence("reflecting");
     return () => setReflecting(false);
-  }, [
-    chapter,
-    setReflecting,
-    setAttentionScene,
-    setPrimaryObject,
-    setSecondaryObjects,
-  ]);
+  }, [setReflecting, setAttentionScene, setPresence]);
 
   const advanceChapter = (from: number) => {
     setChapter(Math.min(3, from + 1));
@@ -160,6 +146,16 @@ export function PilotMeasurementPanel({
     snapshot?.consent != null &&
     snapshot.consent.withdrawn_at == null &&
     snapshot.consent.scope_id === snapshot.scope.id;
+
+  const attachConversation = Boolean(activeMoment) && consented;
+
+  useEffect(() => {
+    setExpanding(attachConversation);
+    if (attachConversation) {
+      setPresence("reflecting");
+    }
+    return () => setExpanding(false);
+  }, [attachConversation, setExpanding, setPresence]);
 
   const grantConsent = () => {
     if (!scope) {
@@ -331,9 +327,231 @@ export function PilotMeasurementPanel({
 
   const chapterLabel = CHECKIN_CHAPTERS[chapter] ?? CHECKIN_CHAPTERS[0];
 
+  const conversation = (
+    <div
+      id="checkin-form"
+      className="moment-attach moment-checkin checkin-narrative pilot-forms"
+      role="region"
+      aria-label={`${chapterLabel} form`}
+      tabIndex={-1}
+    >
+      <p className="moment-attach__kicker">{chapterLabel}</p>
+      <h2 className="sr-only">{chapterLabel}</h2>
+      <AnimatePresence mode="wait">
+        {chapter === 0 && (
+          <motion.div
+            key="ch-0"
+            className="checkin-chat checkin-chat--live"
+            initial={reduceMotion ? false : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={reduceMotion ? undefined : { opacity: 0.45, scale: 0.985 }}
+            transition={spring.soft}
+          >
+            <p className="checkin-prompt">
+              Before Workspace — about how many minutes to get back?
+            </p>
+            <div className="checkin-bubble--you checkin-bubble--object">
+              <label className="exp-field" htmlFor="pilot-baseline-minutes">
+                <span>Minutes</span>
+                <input
+                  id="pilot-baseline-minutes"
+                  className="input-wide"
+                  inputMode="numeric"
+                  value={baselineMinutes}
+                  disabled={busy}
+                  onChange={(event) => setBaselineMinutes(event.target.value)}
+                />
+              </label>
+              <label className="exp-field" htmlFor="pilot-baseline-notes">
+                <span>Notes (optional)</span>
+                <textarea
+                  id="pilot-baseline-notes"
+                  className="input-wide"
+                  rows={2}
+                  value={baselineNotes}
+                  disabled={busy}
+                  onChange={(event) => setBaselineNotes(event.target.value)}
+                />
+              </label>
+              <div className="exp-actions">
+                <button
+                  type="button"
+                  className="exp-btn primary"
+                  disabled={busy}
+                  onClick={saveBaseline}
+                >
+                  Save baseline
+                </button>
+                <button
+                  type="button"
+                  className="exp-btn ghost"
+                  onClick={() => advanceChapter(0)}
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {chapter === 1 && (
+          <motion.div
+            key="ch-1"
+            className="checkin-chat checkin-chat--live"
+            initial={reduceMotion ? false : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={reduceMotion ? undefined : { opacity: 0.45, scale: 0.985 }}
+            transition={spring.soft}
+          >
+            <p className="checkin-prompt">
+              After a Continue — how many minutes to feel back?
+            </p>
+            <div className="checkin-bubble--you checkin-bubble--object">
+              <label className="exp-field" htmlFor="pilot-return-minutes">
+                <span>Minutes to return</span>
+                <input
+                  id="pilot-return-minutes"
+                  className="input-wide"
+                  inputMode="numeric"
+                  value={returnMinutes}
+                  disabled={busy}
+                  onChange={(event) => setReturnMinutes(event.target.value)}
+                />
+              </label>
+              <label className="exp-check">
+                <input
+                  type="checkbox"
+                  checked={correctionNeeded}
+                  disabled={busy}
+                  onChange={(event) => setCorrectionNeeded(event.target.checked)}
+                />
+                <span>I needed to correct something after restore</span>
+              </label>
+              {correctionNeeded && (
+                <label className="exp-field" htmlFor="pilot-correction-note">
+                  <span>What did you correct?</span>
+                  <textarea
+                    id="pilot-correction-note"
+                    className="input-wide"
+                    rows={2}
+                    value={correctionNote}
+                    disabled={busy}
+                    onChange={(event) => setCorrectionNote(event.target.value)}
+                  />
+                </label>
+              )}
+              <div className="exp-actions">
+                <button
+                  type="button"
+                  className="exp-btn primary"
+                  disabled={busy}
+                  onClick={saveLeaveResume}
+                >
+                  Record this leave→resume
+                </button>
+                <button
+                  type="button"
+                  className="exp-btn ghost"
+                  onClick={() => advanceChapter(1)}
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {chapter === 2 && (
+          <motion.div
+            key="ch-2"
+            className="checkin-chat checkin-chat--live"
+            initial={reduceMotion ? false : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={reduceMotion ? undefined : { opacity: 0.45, scale: 0.985 }}
+            transition={spring.soft}
+          >
+            <div className="checkin-prompt">
+              <p>A few reflections — whenever you’re ready.</p>
+              <ul className="list compact">
+                {BASELINE_PROMPTS.map((prompt) => (
+                  <li key={prompt}>{prompt}</li>
+                ))}
+              </ul>
+            </div>
+            <div className="checkin-bubble--you checkin-bubble--object">
+              <textarea
+                className="input-wide"
+                rows={4}
+                value={interviewBaseline}
+                disabled={busy}
+                placeholder="Write your answers here. Stored only on this computer."
+                onChange={(event) => setInterviewBaseline(event.target.value)}
+              />
+              <div className="exp-actions">
+                <button
+                  type="button"
+                  className="exp-btn"
+                  disabled={busy}
+                  onClick={() => saveInterview("baseline", interviewBaseline)}
+                >
+                  Save baseline interview
+                </button>
+                <button
+                  type="button"
+                  className="exp-btn ghost"
+                  onClick={() => advanceChapter(2)}
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {chapter === 3 && (
+          <motion.div
+            key="ch-3"
+            className="checkin-chat checkin-chat--live"
+            initial={reduceMotion ? false : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={reduceMotion ? undefined : { opacity: 0.45, scale: 0.985 }}
+            transition={spring.soft}
+          >
+            <div className="checkin-prompt">
+              <p>Week four — still useful?</p>
+              <ul className="list compact">
+                {WEEK_FOUR_PROMPTS.map((prompt) => (
+                  <li key={prompt}>{prompt}</li>
+                ))}
+              </ul>
+            </div>
+            <div className="checkin-bubble--you checkin-bubble--object">
+              <textarea
+                className="input-wide"
+                rows={4}
+                value={interviewWeekFour}
+                disabled={busy}
+                placeholder="Write your answers here. Stored only on this computer."
+                onChange={(event) => setInterviewWeekFour(event.target.value)}
+              />
+              <button
+                type="button"
+                className="exp-btn"
+                disabled={busy}
+                onClick={() => saveInterview("week_four", interviewWeekFour)}
+              >
+                Save week-four interview
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+
   return (
     <section
-      className="ws-region checkin-place checkin-dash checkin-dash--story checkin-dash--conversation"
+      className="ws-region checkin-place checkin-dash checkin-dash--story checkin-dash--conversation checkin-place--object"
       data-testid="pilot-measurement-active"
       data-density={density}
       aria-labelledby="checkin-title"
@@ -343,7 +561,9 @@ export function PilotMeasurementPanel({
         <h1 id="checkin-title" className="place__title place__title--region">
           How’s the return feeling?
         </h1>
-        <p className="place__pulse">A quiet conversation — local only.</p>
+        <p className="place__pulse">
+          Reflection attaches to the Moment — local only.
+        </p>
         <p className="sr-only">
           Local pilot pulse only — they are not saved contexts and are not sent
           anywhere. Section {chapter + 1} of {CHECKIN_CHAPTERS.length}:{" "}
@@ -374,253 +594,24 @@ export function PilotMeasurementPanel({
       </nav>
 
       {(snapshot.interview_baseline || snapshot.interview_week_four) && (
-        <WorkspaceSurface
-          tone="soft"
-          padding="lg"
-          className="checkin-story checkin-story--settled"
-          aria-label="Your reflection"
-        >
-          <h2 className="sr-only">Your reflection</h2>
-          <p className="checkin-story__text">
-            {(
-              snapshot.interview_week_four?.responses ||
-              snapshot.interview_baseline?.responses ||
-              ""
-            ).trim()}
-          </p>
-          {snapshot.median_return_minutes != null && (
-            <p className="checkin-story__aside muted">
-              Lately about {snapshot.median_return_minutes} minutes to feel back
-              · {snapshot.distinct_resume_days} days noted
-            </p>
-          )}
-        </WorkspaceSurface>
+        <p className="checkin-story checkin-story--settled checkin-story--inline">
+          {(
+            snapshot.interview_week_four?.responses ||
+            snapshot.interview_baseline?.responses ||
+            ""
+          ).trim()}
+        </p>
       )}
 
-      <div
-        id="checkin-form"
-        className="checkin-narrative pilot-forms attention-field"
-        role="region"
-        aria-label={`${chapterLabel} form`}
-        tabIndex={-1}
-      >
-        <h2 className="sr-only">{chapterLabel}</h2>
-
-        <AnimatePresence mode="wait">
-          {chapter === 0 && (
-            <motion.div
-              key="ch-0"
-              className="checkin-chat checkin-chat--live"
-              initial={reduceMotion ? false : { opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={reduceMotion ? undefined : { opacity: 0.45, scale: 0.985 }}
-              transition={spring.soft}
-            >
-              <p className="checkin-prompt">
-                Before Workspace — about how many minutes to get back?
-              </p>
-              <WorkspaceSurface tone="solid" padding="md" className="checkin-bubble--you">
-                <label className="exp-field" htmlFor="pilot-baseline-minutes">
-                  <span>Minutes</span>
-                  <input
-                    id="pilot-baseline-minutes"
-                    className="input-wide"
-                    inputMode="numeric"
-                    value={baselineMinutes}
-                    disabled={busy}
-                    onChange={(event) => setBaselineMinutes(event.target.value)}
-                  />
-                </label>
-                <label className="exp-field" htmlFor="pilot-baseline-notes">
-                  <span>Notes (optional)</span>
-                  <textarea
-                    id="pilot-baseline-notes"
-                    className="input-wide"
-                    rows={2}
-                    value={baselineNotes}
-                    disabled={busy}
-                    onChange={(event) => setBaselineNotes(event.target.value)}
-                  />
-                </label>
-                <div className="exp-actions">
-                  <button
-                    type="button"
-                    className="exp-btn primary"
-                    disabled={busy}
-                    onClick={saveBaseline}
-                  >
-                    Save baseline
-                  </button>
-                  <button
-                    type="button"
-                    className="exp-btn ghost"
-                    onClick={() => advanceChapter(0)}
-                  >
-                    Next
-                  </button>
-                </div>
-              </WorkspaceSurface>
-            </motion.div>
-          )}
-
-
-          {chapter === 1 && (
-            <motion.div
-              key="ch-1"
-              className="checkin-chat checkin-chat--live"
-              initial={reduceMotion ? false : { opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={reduceMotion ? undefined : { opacity: 0.45, scale: 0.985 }}
-              transition={spring.soft}
-            >
-              <p className="checkin-prompt">
-                After a Continue — how many minutes to feel back?
-              </p>
-              <WorkspaceSurface tone="solid" padding="md" className="checkin-bubble--you">
-                <label className="exp-field" htmlFor="pilot-return-minutes">
-                  <span>Minutes to return</span>
-                  <input
-                    id="pilot-return-minutes"
-                    className="input-wide"
-                    inputMode="numeric"
-                    value={returnMinutes}
-                    disabled={busy}
-                    onChange={(event) => setReturnMinutes(event.target.value)}
-                  />
-                </label>
-                <label className="exp-check">
-                  <input
-                    type="checkbox"
-                    checked={correctionNeeded}
-                    disabled={busy}
-                    onChange={(event) => setCorrectionNeeded(event.target.checked)}
-                  />
-                  <span>I needed to correct something after restore</span>
-                </label>
-                {correctionNeeded && (
-                  <label className="exp-field" htmlFor="pilot-correction-note">
-                    <span>What did you correct?</span>
-                    <textarea
-                      id="pilot-correction-note"
-                      className="input-wide"
-                      rows={2}
-                      value={correctionNote}
-                      disabled={busy}
-                      onChange={(event) => setCorrectionNote(event.target.value)}
-                    />
-                  </label>
-                )}
-                <div className="exp-actions">
-                  <button
-                    type="button"
-                    className="exp-btn primary"
-                    disabled={busy}
-                    onClick={saveLeaveResume}
-                  >
-                    Record this leave→resume
-                  </button>
-                  <button
-                    type="button"
-                    className="exp-btn ghost"
-                    onClick={() => advanceChapter(1)}
-                  >
-                    Next
-                  </button>
-                </div>
-              </WorkspaceSurface>
-            </motion.div>
-          )}
-
-          {chapter === 2 && (
-            <motion.div
-              key="ch-2"
-              className="checkin-chat checkin-chat--live"
-              initial={reduceMotion ? false : { opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={reduceMotion ? undefined : { opacity: 0.45, scale: 0.985 }}
-              transition={spring.soft}
-            >
-              <div className="checkin-prompt">
-                <p>A few reflections — whenever you’re ready.</p>
-                <ul className="list compact">
-                  {BASELINE_PROMPTS.map((prompt) => (
-                    <li key={prompt}>{prompt}</li>
-                  ))}
-                </ul>
-              </div>
-              <WorkspaceSurface tone="solid" padding="md" className="checkin-bubble--you">
-                <textarea
-                  className="input-wide"
-                  rows={4}
-                  value={interviewBaseline}
-                  disabled={busy}
-                  placeholder="Write your answers here. Stored only on this computer."
-                  onChange={(event) => setInterviewBaseline(event.target.value)}
-                />
-                <div className="exp-actions">
-                  <button
-                    type="button"
-                    className="exp-btn"
-                    disabled={busy}
-                    onClick={() => saveInterview("baseline", interviewBaseline)}
-                  >
-                    Save baseline interview
-                  </button>
-                  <button
-                    type="button"
-                    className="exp-btn ghost"
-                    onClick={() => advanceChapter(2)}
-                  >
-                    Next
-                  </button>
-                </div>
-              </WorkspaceSurface>
-            </motion.div>
-          )}
-
-          {chapter === 3 && (
-            <motion.div
-              key="ch-3"
-              className="checkin-chat checkin-chat--live"
-              initial={reduceMotion ? false : { opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={reduceMotion ? undefined : { opacity: 0.45, scale: 0.985 }}
-              transition={spring.soft}
-            >
-              <div className="checkin-prompt">
-                <p>Week four — still useful?</p>
-                <ul className="list compact">
-                  {WEEK_FOUR_PROMPTS.map((prompt) => (
-                    <li key={prompt}>{prompt}</li>
-                  ))}
-                </ul>
-              </div>
-              <WorkspaceSurface tone="solid" padding="md" className="checkin-bubble--you">
-                <textarea
-                  className="input-wide"
-                  rows={4}
-                  value={interviewWeekFour}
-                  disabled={busy}
-                  placeholder="Write your answers here. Stored only on this computer."
-                  onChange={(event) => setInterviewWeekFour(event.target.value)}
-                />
-                <button
-                  type="button"
-                  className="exp-btn"
-                  disabled={busy}
-                  onClick={() => saveInterview("week_four", interviewWeekFour)}
-                >
-                  Save week-four interview
-                </button>
-              </WorkspaceSurface>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+      {attachConversation
+        ? expandHost
+          ? createPortal(conversation, expandHost)
+          : null
+        : conversation}
 
       <aside
         id="checkin-evidence"
-        className="checkin-evidence checkin-evidence--environment"
+        className="checkin-evidence checkin-evidence--environment checkin-evidence--quiet"
         aria-label="Pulse evidence"
         tabIndex={-1}
       >
