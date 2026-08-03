@@ -11,27 +11,27 @@ const STEPS = [
     id: "save",
     icon: BookmarkPlus,
     title: "Save",
-    line: "Try it: focus the note field — Workspace quiets around writing.",
+    line: "Focus the note — the place quiets around writing.",
     demo: "write",
   },
   {
     id: "continue",
     icon: Play,
     title: "Continue",
-    line: "Try it: a Moment expands — restore confidence appears inside it.",
+    line: "Step into a Moment — the place reconstructs around it.",
     demo: "expand",
   },
   {
     id: "checkin",
     icon: ClipboardList,
     title: "Check-in",
-    line: "Try it: one question at a time — completed answers gently recede.",
+    line: "Answer one question — earlier answers gently recede.",
     demo: "flow",
   },
 ] as const;
 
 /**
- * Guide — experiential tour driven by attention, not explanation.
+ * Guide — embedded orientation inside the continuous place.
  */
 export function PilotHelpPanel() {
   const {
@@ -50,7 +50,7 @@ export function PilotHelpPanel() {
     setSecondaryObjects(
       STEPS.filter((_, index) => index !== active).map((step) => step.id),
     );
-    setAmbient("card");
+    setAmbient("workspace");
   }, [
     active,
     setAttentionScene,
@@ -63,16 +63,17 @@ export function PilotHelpPanel() {
 
   return (
     <section
-      className="spatial-frame guide-dash guide-walk attention-field"
+      className="ws-region guide-place guide-dash guide-walk attention-field"
       data-testid="pilot-help"
       data-density={density}
     >
-      <header className="spatial-header">
+      <header className="place__identity place__identity--place place__identity--quiet-region">
         <p className="exp-kicker">Guide</p>
-        <h1 className="spatial-title">How this pilot works</h1>
+        <h1 className="place__title place__title--region">How this pilot works</h1>
+        <p className="place__pulse">Orientation inside this place — not a separate product tour.</p>
       </header>
 
-      <div className="guide-experience">
+      <div className="guide-experience guide-experience--embedded">
         <div className="guide-experience__stage">
           <GuideStepObject
             id={current.id}

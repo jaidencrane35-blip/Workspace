@@ -44,11 +44,14 @@ export function ContinuePreviewBody({
     ratio >= 0.85 ? "high" : ratio >= 0.5 ? "steady" : "limited";
 
   return (
-    <div className="continue-preview-body">
+    <div className="continue-preview-body continue-preview-body--spatial">
+      <p className="continue-preview__place-line">
+        Reconstructing this place
+      </p>
       <div
-        className="continue-window-field"
+        className="continue-window-field continue-window-field--spatial"
         role="list"
-        aria-label="Windows in this restore"
+        aria-label="Windows in this place"
       >
         {preview.plan.items.map((item, index) => {
           const skip = item.projected_disposition !== "will_attempt";

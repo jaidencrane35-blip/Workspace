@@ -1,0 +1,32 @@
+{
+  "sprint": 41,
+  "baseline": "sprint-40",
+  "baseline_commit": "127b06c",
+  "authority": "architecture/40_Experience_Refoundation.md",
+  "change": "continuous spatial workspace — destinations as focal regions",
+  "destination_means": {
+    "home": { "sprint40": 6.75, "sprint41": 7.6, "delta": 0.85 },
+    "save": { "sprint40": 7.2, "sprint41": 7.9, "delta": 0.7 },
+    "continue": { "sprint40": 5.0, "sprint41": 6.6, "delta": 1.6 },
+    "checkin": { "sprint40": 5.3, "sprint41": 6.4, "delta": 1.1 },
+    "guide": { "sprint40": 5.9, "sprint41": 6.8, "delta": 0.9 }
+  },
+  "overall_mean": {
+    "sprint40": 6.03,
+    "sprint41": 7.06,
+    "delta": 1.03
+  },
+  "dimension_deltas_home": {
+    "spatial_composition": { "before": 6.5, "after": 7.8, "delta": 1.3 },
+    "attention_flow": { "before": 7.0, "after": 7.8, "delta": 0.8 },
+    "first_impression": { "before": 7.5, "after": 8.0, "delta": 0.5 },
+    "information_density": { "before": 6.5, "after": 7.4, "delta": 0.9 }
+  },
+  "validation": {
+    "continuous_place": true,
+    "ambient_moments": 3,
+    "page_imperative_absent": true,
+    "typecheck": "pass",
+    "pnpm_test": "83/83"
+  }
+}

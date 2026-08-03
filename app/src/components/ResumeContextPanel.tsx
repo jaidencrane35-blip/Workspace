@@ -265,7 +265,7 @@ export function ResumeContextPanel({
 
   if (!workspace) {
     return (
-      <section className="spatial-frame spatial-frame--center">
+      <section className="ws-region continue-place continue-place--empty">
         <WorkspaceSurface level="floating" tone="hero" padding="xl" className="focus-card">
           <p className="exp-kicker">Continue</p>
           <h2 className="focus-card__title">Open your workspace</h2>
@@ -294,10 +294,11 @@ export function ResumeContextPanel({
   return (
     <section
       className={[
-        "spatial-frame",
+        "ws-region",
+        "continue-place",
         "continue-gallery",
         "continue-dash",
-        previewing ? "continue-dash--previewing" : "",
+        previewing ? "continue-dash--previewing continue-place--inside" : "",
       ]
         .filter(Boolean)
         .join(" ")}
@@ -305,15 +306,14 @@ export function ResumeContextPanel({
     >
       {(step === "browse" || step === "preview") && (
         <>
-              {!previewing && (
-            <>
-              <header className="spatial-header spatial-header--quiet">
-                <h1 className="spatial-title">What were you doing?</h1>
-              </header>
-              <p className="trust-strip trust-strip--quiet muted">
-                {RESTORE_LIMITS_SUMMARY}
-              </p>
-            </>
+          {!previewing && (
+            <header className="place__identity place__identity--place place__identity--quiet-region">
+              <p className="exp-kicker">Continue</p>
+              <h1 className="place__title place__title--region">
+                Step back in
+              </h1>
+              <p className="place__pulse">Your place is still here.</p>
+            </header>
           )}
 
           {loadError && <p className="error">{loadError}</p>}
@@ -373,13 +373,12 @@ export function ResumeContextPanel({
                 </div>
               )}
               {!previewing && density !== "focus" && satellitePool.length > 0 && (
-                <div className="continue-satellites continue-recede">
+                <div className="continue-satellites continue-recede home-field--context">
                   {satellitePool.map((context, index) => (
                     <MomentCard
                       key={context.id}
-                      variant="compact"
-                      sparse
-                      attentionWeight={0.68}
+                      variant="ambient"
+                      attentionWeight={0.5 - index * 0.04}
                       className={`home-satellite home-satellite--${index % 3}`}
                       state={
                         selectedId === context.id ? "selected" : "collapsed"
@@ -401,14 +400,18 @@ export function ResumeContextPanel({
             </div>
           )}
           {!previewing && featured && (
-            <button
-              type="button"
-              className="exp-btn ghost continue-inspect-entry"
-              disabled={busy}
-              onClick={() => openInspect(featured.id)}
-            >
-              Inspect
-            </button>
+            <details className="exp-inspect continue-inspect-recess">
+              <summary>Inspect this place</summary>
+              <button
+                type="button"
+                className="exp-btn ghost continue-inspect-entry"
+                disabled={busy}
+                onClick={() => openInspect(featured.id)}
+              >
+                Open details
+              </button>
+              <p className="muted">{RESTORE_LIMITS_SUMMARY}</p>
+            </details>
           )}
         </>
       )}

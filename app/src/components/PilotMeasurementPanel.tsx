@@ -272,7 +272,7 @@ export function PilotMeasurementPanel({
 
   if (!scope || !snapshot) {
     return (
-      <section className="spatial-frame spatial-frame--center">
+      <section className="ws-region checkin-place">
         <WorkspaceSurface tone="hero" padding="lg" className="focus-card">
           <p className="exp-kicker">Check-in</p>
           <h2 className="focus-card__title">One moment…</h2>
@@ -285,7 +285,7 @@ export function PilotMeasurementPanel({
   if (!consented) {
     return (
       <section
-        className="spatial-frame checkin-dash"
+        className="ws-region checkin-place checkin-dash"
         data-testid="pilot-measurement-consent"
       >
         <div className="checkin-chat">
@@ -333,15 +333,17 @@ export function PilotMeasurementPanel({
 
   return (
     <section
-      className="spatial-frame checkin-dash checkin-dash--story"
+      className="ws-region checkin-place checkin-dash checkin-dash--story checkin-dash--conversation"
       data-testid="pilot-measurement-active"
       data-density={density}
       aria-labelledby="checkin-title"
     >
-      <header className="spatial-header spatial-header--quiet">
-        <h1 id="checkin-title" className="spatial-title">
+      <header className="place__identity place__identity--place place__identity--quiet-region">
+        <p className="exp-kicker">Check-in</p>
+        <h1 id="checkin-title" className="place__title place__title--region">
           How’s the return feeling?
         </h1>
+        <p className="place__pulse">A quiet conversation — local only.</p>
         <p className="sr-only">
           Local pilot pulse only — they are not saved contexts and are not sent
           anywhere. Section {chapter + 1} of {CHECKIN_CHAPTERS.length}:{" "}
@@ -618,12 +620,12 @@ export function PilotMeasurementPanel({
 
       <aside
         id="checkin-evidence"
-        className="checkin-evidence"
+        className="checkin-evidence checkin-evidence--environment"
         aria-label="Pulse evidence"
         tabIndex={-1}
       >
         <h2 className="sr-only">Pulse evidence</h2>
-        <div className="checkin-metrics checkin-metrics--quiet">
+        <div className="checkin-metrics checkin-metrics--quiet checkin-metrics--ambient">
           <CheckInSummaryObject
             id="checkin-baseline"
             label="Was"

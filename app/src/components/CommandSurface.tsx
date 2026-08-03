@@ -27,8 +27,16 @@ function CommandSurfaceInner({
     (command) => command.view || command.action === "create",
   );
 
-  // Guide + Save capture keep quiet commands; populated Home/Continue/Check-in stay clean.
-  if (actionable.length === 0 || intent === "landing" || intent === "restore" || intent === "reflect") {
+  // Continuous place: only empty-home create remains as chrome command.
+  // Capture / restore / reflect / learn stay inside their region surfaces.
+  if (
+    actionable.length === 0 ||
+    intent === "landing" ||
+    intent === "restore" ||
+    intent === "reflect" ||
+    intent === "learn" ||
+    intent === "capture"
+  ) {
     return null;
   }
 

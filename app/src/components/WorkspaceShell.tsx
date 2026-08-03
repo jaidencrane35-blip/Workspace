@@ -121,7 +121,7 @@ function DockItem({
       className={
         active ? "tab active ws-dock__item is-active" : "tab ws-dock__item"
       }
-      aria-current={active ? "page" : undefined}
+      aria-current={active ? "true" : undefined}
       aria-selected={active}
       aria-controls={contentId}
       aria-label={PILOT_VIEW_LABELS[id]}
@@ -178,7 +178,8 @@ function ShellBody({
     setPrimaryObject,
   } = useWorkspaceComposition();
   const { intent, profile, adoptView, setWriting } = useIntentEngine();
-  const reveal = motionPrimitive("reveal", Boolean(reduceMotion));
+  // Focus shift inside one place — not a page enter/exit.
+  const focusShift = motionPrimitive("focus", Boolean(reduceMotion));
 
   useEffect(() => {
     contentRef.current?.focus({ preventScroll: true });
@@ -237,6 +238,7 @@ function ShellBody({
       data-ambient={ambient}
       data-writing={writingMode || profile.attentionScene === "writing" ? "on" : "off"}
       data-destination={view}
+      data-place="continuous"
       data-intent={intent}
       data-scene={profile.attentionScene}
       data-light={profile.lightingBias}
@@ -288,18 +290,18 @@ function ShellBody({
       <div className="ws-stage ws-layer ws-layer--plane" role="presentation">
         <motion.div className="ws-spatial" layout={false}>
           <WorkspaceCanvas destination={view}>
-            <AnimatePresence mode="wait" initial={false}>
+            <AnimatePresence mode="sync" initial={false}>
               <motion.div
                 key={view}
                 ref={contentRef}
                 id={contentId}
-                className="ws-content"
+                className="ws-content ws-region"
                 role="region"
                 aria-label={INTENT_LABELS[intent]}
                 tabIndex={-1}
-                initial={reveal.initial}
-                animate={reveal.animate}
-                exit={{ ...reveal.exit, pointerEvents: "none" }}
+                initial={focusShift.initial}
+                animate={focusShift.animate}
+                exit={{ ...focusShift.exit, pointerEvents: "none" }}
                 transition={contentTransition(reduceMotion)}
                 onFocusCapture={(event) => {
                   const target = event.target as HTMLElement;

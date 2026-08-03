@@ -2,7 +2,6 @@ import { BookmarkPlus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { ICON } from "../lib/icons";
 import { invokeIpc } from "../lib/ipc";
-import { RESTORE_LIMITS_SUMMARY } from "../lib/restoreLimits";
 import { formatRelativeTime } from "../lib/time";
 import type { SavedContext, Workspace } from "../types/domain";
 import { EmptyStructure } from "./EmptyStructure";
@@ -87,11 +86,11 @@ export function HomeWorkspacePanel({
   if (!workspace) {
     return (
       <section
-        className="spatial-frame ws-canvas place--empty"
+        className="ws-region home-place place--empty"
         data-testid="workspace-home"
         data-density={density}
       >
-        <div className="place__identity">
+        <div className="place__identity place__identity--place">
           <p className="exp-kicker">Workspace</p>
           <h2 className="place__title">This is your Workspace</h2>
           <p className="place__pulse">Where your work lives.</p>
@@ -122,13 +121,11 @@ export function HomeWorkspacePanel({
           </WorkspaceObject>
           <EmptyStructure />
         </div>
-        <p className="trust-strip muted">{RESTORE_LIMITS_SUMMARY}</p>
       </section>
     );
   }
 
   const latest = recent[0] ?? null;
-  // One environmental row only — avoids dock clip (parity H-05).
   const satellites = recent.slice(1, 4);
   const placePulse = latest
     ? `${recent.length} moment${recent.length === 1 ? "" : "s"} · last ${formatRelativeTime(latest.created_at)}`
@@ -136,118 +133,115 @@ export function HomeWorkspacePanel({
 
   return (
     <section
-      className="spatial-frame ws-canvas ws-canvas--home"
+      className="ws-region home-place ws-canvas--home"
       data-testid="workspace-home"
       data-density={density}
     >
-      <div className="home-place">
-        <div className="place__identity place__identity--place">
-          <p className="exp-kicker">Workspace</p>
-          <h1 className="place__title">{workspace.name}</h1>
-          <p className="place__pulse">{placePulse}</p>
-        </div>
-
-        {loadError && <p className="error">{loadError}</p>}
-
-        {latest ? (
-          <>
-            <div className="home-hero-band attention-field">
-              <MomentCard
-                variant="hero"
-                state="expanded"
-                context={latest}
-                busy={busy}
-                sparseMeta
-                onContinue={() => onContinueContext(latest.id)}
-                onSelect={() => {
-                  setPrimaryObject(latest.id);
-                  setAmbient("moment");
-                }}
-              />
-            </div>
-
-            {density !== "focus" && satellites.length > 0 && (
-              <div
-                className="home-field dash-grid"
-                aria-label="Earlier moments"
-              >
-                {satellites.map((context, index) => (
-                  <MomentCard
-                    key={context.id}
-                    variant="compact"
-                    state="collapsed"
-                    sparse
-                    attentionWeight={0.48 - index * 0.06}
-                    className={`home-satellite home-satellite--${index % 3}`}
-                    context={context}
-                    busy={busy}
-                    onSelect={() => {
-                      setPrimaryObject(context.id);
-                      setAmbient("moment");
-                      onContinueContext(context.id);
-                    }}
-                    onContinue={() => onContinueContext(context.id)}
-                  />
-                ))}
-              </div>
-            )}
-          </>
-        ) : (
-          <div className="ws-compose ws-compose--invite attention-field">
-            <div className="ws-compose__anchor">
-              <WorkspaceObject
-                objectId="first-moment"
-                kind="moment"
-                slot="anchor"
-                state="expanded"
-                className="empty-invite"
-              >
-                <p className="moment-card__kicker">Start here</p>
-                <h3>Save your first moment</h3>
-                <p className="moment-card__handoff">
-                  One note. That’s the way back.
-                </p>
-                <div className="moment-card__actions">
-                  <button
-                    type="button"
-                    className="exp-btn primary"
-                    onClick={onGoToSave}
-                    disabled={busy}
-                  >
-                    <BookmarkPlus
-                      size={ICON.md}
-                      strokeWidth={ICON.stroke}
-                      aria-hidden="true"
-                    />
-                    Save your first moment
-                  </button>
-                </div>
-              </WorkspaceObject>
-            </div>
-            <aside className="ws-compose__float">
-              <IntentionObject
-                id="intention-empty"
-                text="Your next intention will live here."
-                meta="Nothing invented"
-                state="idle"
-              />
-              <QuickActionObject
-                id="quick-save"
-                label="Quick save"
-                icon={BookmarkPlus}
-                primary
-                disabled={busy}
-                onClick={onGoToSave}
-              />
-            </aside>
-            {density !== "focus" && (
-              <div className="ws-compose__orbit">
-                <EmptyStructure />
-              </div>
-            )}
-          </div>
-        )}
+      <div className="place__identity place__identity--place place__identity--living">
+        <p className="exp-kicker">Workspace</p>
+        <h1 className="place__title">{workspace.name}</h1>
+        <p className="place__pulse">{placePulse}</p>
       </div>
+
+      {loadError && <p className="error">{loadError}</p>}
+
+      {latest ? (
+        <>
+          <div className="home-hero-band attention-field home-hero-band--owns">
+            <MomentCard
+              variant="hero"
+              state="expanded"
+              context={latest}
+              busy={busy}
+              sparseMeta
+              onContinue={() => onContinueContext(latest.id)}
+              onSelect={() => {
+                setPrimaryObject(latest.id);
+                setAmbient("moment");
+              }}
+            />
+          </div>
+
+          {density !== "focus" && satellites.length > 0 && (
+            <div
+              className="home-field home-field--context dash-grid"
+              aria-label="Earlier moments"
+            >
+              {satellites.map((context, index) => (
+                <MomentCard
+                  key={context.id}
+                  variant="ambient"
+                  state="collapsed"
+                  attentionWeight={0.42 - index * 0.05}
+                  className={`home-satellite home-satellite--${index % 3}`}
+                  context={context}
+                  busy={busy}
+                  onSelect={() => {
+                    setPrimaryObject(context.id);
+                    setAmbient("moment");
+                    onContinueContext(context.id);
+                  }}
+                  onContinue={() => onContinueContext(context.id)}
+                />
+              ))}
+            </div>
+          )}
+        </>
+      ) : (
+        <div className="ws-compose ws-compose--invite attention-field">
+          <div className="ws-compose__anchor">
+            <WorkspaceObject
+              objectId="first-moment"
+              kind="moment"
+              slot="anchor"
+              state="expanded"
+              className="empty-invite"
+            >
+              <p className="moment-card__kicker">Start here</p>
+              <h3>Save your first moment</h3>
+              <p className="moment-card__handoff">
+                One note. That’s the way back.
+              </p>
+              <div className="moment-card__actions">
+                <button
+                  type="button"
+                  className="exp-btn primary"
+                  onClick={onGoToSave}
+                  disabled={busy}
+                >
+                  <BookmarkPlus
+                    size={ICON.md}
+                    strokeWidth={ICON.stroke}
+                    aria-hidden="true"
+                  />
+                  Save your first moment
+                </button>
+              </div>
+            </WorkspaceObject>
+          </div>
+          <aside className="ws-compose__float">
+            <IntentionObject
+              id="intention-empty"
+              text="Your next intention will live here."
+              meta="Nothing invented"
+              state="idle"
+            />
+            <QuickActionObject
+              id="quick-save"
+              label="Quick save"
+              icon={BookmarkPlus}
+              primary
+              disabled={busy}
+              onClick={onGoToSave}
+            />
+          </aside>
+          {density !== "focus" && (
+            <div className="ws-compose__orbit">
+              <EmptyStructure />
+            </div>
+          )}
+        </div>
+      )}
     </section>
   );
 }

@@ -138,7 +138,7 @@ export function SaveContextPanel({
 
   if (!workspace) {
     return (
-      <section className="spatial-frame spatial-frame--center save-env">
+      <section className="ws-region save-place save-env">
         <WorkspaceSurface level="floating" tone="hero" padding="xl" className="focus-card">
           <p className="exp-kicker">Save</p>
           <h2 className="focus-card__title">Start your workspace</h2>
@@ -160,7 +160,7 @@ export function SaveContextPanel({
 
   if (scopeError) {
     return (
-      <section className="spatial-frame spatial-frame--center save-env">
+      <section className="ws-region save-place save-env">
         <WorkspaceSurface level="floating" tone="hero" padding="xl" className="focus-card">
           <p className="exp-kicker">Save</p>
           <h2 className="focus-card__title">Saving is unavailable</h2>
@@ -172,7 +172,7 @@ export function SaveContextPanel({
 
   if (step === "saved" && saved) {
     return (
-      <section className="spatial-frame spatial-frame--center save-env">
+      <section className="ws-region save-place save-env">
         <WorkspaceSurface
           level="overlay"
           tone="hero"
@@ -235,29 +235,31 @@ export function SaveContextPanel({
 
   return (
     <section
-      className="spatial-frame spatial-frame--center save-env save-env--write attention-field"
+      className="ws-region save-place save-env save-env--write save-env--emerge attention-field"
       data-density={density}
       data-writing="ready"
     >
+      <header className="place__identity place__identity--place place__identity--quiet-region">
+        <p className="exp-kicker">In {workspace.name}</p>
+        <h2 className="place__title place__title--region">Leave a note</h2>
+        <p className="place__pulse">It stays in this place.</p>
+      </header>
       <WorkspaceObject
         objectId="write-surface"
         kind="intention"
         slot="anchor"
         state="expanded"
-        level="overlay"
+        level="floating"
         lit
-        className="focus-card write-card write-focus"
+        className="write-card write-focus write-card--place"
       >
-        <p className="exp-kicker">Save</p>
-        <h2 className="focus-card__title">Leave a note</h2>
-
         <label className="exp-field write-field" htmlFor="saved-context-name">
-          <span>Name</span>
+          <span className="sr-only">Name</span>
           <input
             id="saved-context-name"
-            className="input-ghost"
+            className="input-ghost write-name"
             value={name}
-            placeholder="Tuesday review"
+            placeholder="Name this moment"
             disabled={busy}
             onFocus={enterWriting}
             onBlur={leaveWriting}
@@ -269,13 +271,13 @@ export function SaveContextPanel({
         </label>
 
         <label className="exp-field write-field write-card__anchor" htmlFor="saved-context-handoff">
-          <span>What next?</span>
+          <span className="sr-only">What next?</span>
           <textarea
             id="saved-context-handoff"
             className="input-ghost write-textarea"
             rows={density === "focus" ? 11 : 9}
             value={handoffNote}
-            placeholder="Finish the client proposal outline…"
+            placeholder="What should future-you know?"
             disabled={busy}
             autoFocus
             onFocus={enterWriting}

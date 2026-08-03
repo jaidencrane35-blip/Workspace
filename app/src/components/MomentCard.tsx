@@ -9,7 +9,7 @@ import type { SavedContext } from "../types/domain";
 import { WorkspaceObject } from "./WorkspaceObject";
 import { WorkspaceSurface } from "./WorkspaceSurface";
 
-export type MomentCardVariant = "hero" | "compact" | "placeholder";
+export type MomentCardVariant = "hero" | "compact" | "placeholder" | "ambient";
 export type MomentObjectState =
   | "collapsed"
   | "expanded"
@@ -95,19 +95,21 @@ function MomentCardInner({
     context.windows.length === 1
       ? "1 window"
       : `${context.windows.length} windows`;
-  const objectState = toObjectState(variant, state);
+  const ambient = variant === "ambient";
+  const objectState = toObjectState(ambient ? "compact" : variant, state);
   const showActions =
+    !ambient &&
     (objectState === "expanded" ||
       objectState === "selected" ||
       variant === "hero") &&
     !expandContent &&
     !sparse;
   const revealing = Boolean(expandContent) && state === "preview";
-  const showHandoff = !sparse || variant === "compact";
-  const showWindows = !sparse && !sparseMeta;
+  const showHandoff = ambient || !sparse || variant === "compact";
+  const showWindows = !ambient && !sparse && !sparseMeta;
   // Hero sparseMeta: handoff carries meaning; drop orphan time row (parity H-06).
-  const showMeta = !sparse && !sparseMeta;
-  const showKicker = !sparse && state === "restoring";
+  const showMeta = !ambient && !sparse && !sparseMeta;
+  const showKicker = !ambient && !sparse && state === "restoring";
 
   return (
     <WorkspaceObject
@@ -116,17 +118,18 @@ function MomentCardInner({
       slot={variant === "hero" || revealing ? "anchor" : "orbit"}
       state={objectState}
       layoutId={layoutId ?? `moment-${context.id}`}
-      attentionWeight={attentionWeight}
+      attentionWeight={attentionWeight ?? (ambient ? 0.36 : undefined)}
       lit={state === "preview" || state === "restoring"}
       // Avoid nested button roles when Continue/Inspect actions render.
       interactive={!showActions}
-      onActivate={onSelect}
+      onActivate={onSelect ?? onContinue}
       className={[
         "moment-card",
         "moment-object",
         `moment-card--${variant}`,
         `is-${state}`,
-        sparse ? "moment-card--sparse" : "",
+        sparse || ambient ? "moment-card--sparse" : "",
+        ambient ? "moment-card--ambient" : "",
         className,
       ]
         .filter(Boolean)
