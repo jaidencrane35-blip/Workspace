@@ -257,3 +257,20 @@ export type {
   ReliabilityBand,
   WorkspaceCalibration,
 } from "./workspaceCalibration";
+export {
+  applyStabilityToPresentation,
+  deriveWorkspacePresentationStability,
+  getActivePresentationStability,
+  measurePresentationStability,
+  replayPresentationStability,
+  resolvePresentationWithStability,
+  validatePresentationStability,
+} from "./workspacePresentationStability";
+export type {
+  StabilityEvidenceLineage,
+  StabilityMeasurement,
+  StabilityReplayLineage,
+  StabilityValidation,
+  StabilityValidationFailure,
+  WorkspacePresentationStability,
+} from "./workspacePresentationStability";

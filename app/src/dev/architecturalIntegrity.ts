@@ -55,6 +55,7 @@ export const AUTHORITY_CHAIN: readonly [
   ["58_Workspace_Memory_Evolution.md", "59_Workspace_Presence.md"],
   ["59_Workspace_Presence.md", "60_Workspace_Anticipation.md"],
   ["60_Workspace_Anticipation.md", "61_Workspace_Calibration.md"],
+  ["61_Workspace_Calibration.md", "62_Presentation_Stability.md"],
 ];
 
 export const AUTHORITY_ROOT: ArchitectureAuthorityDoc =

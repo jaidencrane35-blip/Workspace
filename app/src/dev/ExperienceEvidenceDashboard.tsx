@@ -130,6 +130,7 @@ type EvolutionApi = typeof import("../experience/workspaceMemoryEvolution");
 type PresenceApi = typeof import("../experience/workspacePresence");
 type AnticipationApi = typeof import("../experience/workspaceAnticipation");
 type CalibrationApi = typeof import("../experience/workspaceCalibration");
+type StabilityApi = typeof import("../experience/workspacePresentationStability");
 
 const NEXT_STATE: Partial<Record<ProposalLifecycle, ProposalLifecycle>> = {
   draft: "review",
@@ -189,6 +190,7 @@ export function ExperienceEvidenceDashboard() {
     useState<AnticipationApi | null>(null);
   const [calibrationApi, setCalibrationApi] =
     useState<CalibrationApi | null>(null);
+  const [stabilityApi, setStabilityApi] = useState<StabilityApi | null>(null);
   const [batchReport, setBatchReport] = useState<BatchValidationReport | null>(
     null,
   );
@@ -333,6 +335,15 @@ export function ExperienceEvidenceDashboard() {
         }
       });
     }
+    if (!stabilityApi) {
+      void import("../experience/workspacePresentationStability").then(
+        (mod) => {
+          if (!cancelled) {
+            setStabilityApi(mod);
+          }
+        },
+      );
+    }
     return () => {
       cancelled = true;
     };
@@ -355,6 +366,7 @@ export function ExperienceEvidenceDashboard() {
     presenceApi,
     anticipationApi,
     calibrationApi,
+    stabilityApi,
   ]);
 
   const sessions = useMemo(() => {
@@ -767,6 +779,25 @@ export function ExperienceEvidenceDashboard() {
     });
   }, [
     calibrationApi,
+    govStore,
+    tick,
+    activeAnticipation?.anticipationId,
+    anticipationReplay?.anticipation?.anticipationId,
+  ]);
+
+  const presentationStability = useMemo(() => {
+    void tick;
+    if (!stabilityApi) {
+      return null;
+    }
+    return stabilityApi.deriveWorkspacePresentationStability(govStore, {
+      anticipationLineageId:
+        activeAnticipation?.anticipationId ??
+        anticipationReplay?.anticipation?.anticipationId ??
+        null,
+    });
+  }, [
+    stabilityApi,
     govStore,
     tick,
     activeAnticipation?.anticipationId,
@@ -1932,6 +1963,58 @@ export function ExperienceEvidenceDashboard() {
             </li>
           ))}
         </ul>
+      </section>
+
+      <section
+        style={{ marginBottom: 10 }}
+        data-testid="presentation-stability"
+      >
+        <div style={{ marginBottom: 4 }}>
+          <strong>Presentation stability</strong>
+          {!stabilityApi ? " (loading…)" : ""}
+        </div>
+        {presentationStability ? (
+          <div data-testid="stability-score">
+            score {presentationStability.presentationStabilityScore} · variance{" "}
+            {presentationStability.presentationVariance} ·{" "}
+            {presentationStability.active ? "active" : "inactive"}
+            <div data-testid="stability-variance-trend">
+              variance trend [
+              {presentationStability.varianceTrend.join(", ") || "—"}]
+            </div>
+            <div data-testid="stability-transition-consistency">
+              transition {presentationStability.transitionConsistency} · motion{" "}
+              {presentationStability.motionContinuity} · focal{" "}
+              {presentationStability.focalStability}
+            </div>
+            <div data-testid="stability-environmental-continuity">
+              environmental {presentationStability.environmentalStability} ·
+              atmo {presentationStability.atmosphericContinuity} · damp{" "}
+              {presentationStability.motionDamping}
+            </div>
+            <div data-testid="stability-evidence-lineage">
+              evidence tip{" "}
+              {presentationStability.evidenceLineage.tipEvidenceId ?? "—"}
+            </div>
+            <div data-testid="stability-replay-lineage">
+              replay{" "}
+              {presentationStability.replayLineage.replaySessionIds.join(
+                ", ",
+              ) || "—"}{" "}
+              · cal {presentationStability.calibrationLineageId ?? "—"}
+            </div>
+            {presentationStability.validation.failureReasons.length > 0 ? (
+              <div>
+                fails{" "}
+                {presentationStability.validation.failureReasons.join(",")}
+              </div>
+            ) : null}
+          </div>
+        ) : (
+          <div style={{ opacity: 0.7 }} data-testid="stability-score">
+            No stability measurement.
+          </div>
+        )}
       </section>
 
       <section

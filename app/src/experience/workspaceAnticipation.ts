@@ -39,6 +39,7 @@ import {
   type AdaptationTargetComponent,
   type ResolvedPresentation,
 } from "./workspaceAdaptation";
+import { resolvePresentationWithStability } from "./workspacePresentationStability";
 
 export type { AnticipatedMoment } from "./anticipationPrediction";
 export { predictAnticipationFromEvidence } from "./anticipationPrediction";
@@ -399,17 +400,20 @@ export function presentationFromAnticipation(
  * Resolver ordering (unchanged — no new stage):
  * Runtime → Pack → Evolution → Presence → Anticipation → Presentation
  *
- * Calibration adjusts anticipation confidence internally only.
+ * Calibration adjusts confidence internally.
+ * Presentation stability damps variance internally (Sprint 71).
  */
 export function resolvePresentationWithAnticipation(
   store: ExperienceStoreAdapter,
 ): ResolvedPresentation {
   const base = resolvePresentationWithPresence(store);
   const anticipation = deriveWorkspaceAnticipation(store);
-  if (!anticipation?.active) {
-    return base;
-  }
-  return presentationFromAnticipation(anticipation, base);
+  const anticipated = anticipation?.active
+    ? presentationFromAnticipation(anticipation, base)
+    : base;
+  return resolvePresentationWithStability(store, anticipated, {
+    anticipationLineageId: anticipation?.anticipationId ?? null,
+  });
 }
 
 /** Replay — identical store ⇒ identical anticipation + presentation. */

@@ -164,7 +164,7 @@ describe("architecture graph integrity", () => {
     ).toBe(true);
     expect(a.edges.some((e) => e.type === "authority_precedes")).toBe(true);
     expect(a.edges.some((e) => e.type === "references_authority")).toBe(true);
-    expect(AUTHORITY_CHAIN).toHaveLength(21);
+    expect(AUTHORITY_CHAIN).toHaveLength(22);
   });
 
   it("passes integrity for a complete authority-linked source", () => {
@@ -231,7 +231,7 @@ describe("architecture graph integrity", () => {
         ...base.edges,
         {
           id: "edge:cycle",
-          from: "doc:61_Workspace_Calibration.md",
+          from: "doc:62_Presentation_Stability.md",
           to: "doc:40_Experience_Refoundation.md",
           type: "authority_precedes",
         },
@@ -382,10 +382,10 @@ describe("authority validation helpers", () => {
     );
     const tipDeps = listDependencies(
       graph,
-      "doc:60_Workspace_Anticipation.md",
+      "doc:61_Workspace_Calibration.md",
     );
     expect(
-      tipDeps.some((e) => e.to === "doc:61_Workspace_Calibration.md"),
+      tipDeps.some((e) => e.to === "doc:62_Presentation_Stability.md"),
     ).toBe(true);
   });
 });
