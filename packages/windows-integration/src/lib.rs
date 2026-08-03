@@ -14,6 +14,8 @@ mod stub_mutator;
 mod win32;
 #[cfg(all(windows, test))]
 mod product_proof;
+#[cfg(all(windows, test))]
+mod multi_monitor_proof;
 
 pub use capture::{
     monitor_index_for_point, monitor_index_for_window_bounds, CaptureMetadata,

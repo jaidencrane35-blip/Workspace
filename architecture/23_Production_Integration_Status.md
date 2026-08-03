@@ -13,6 +13,7 @@ Demo mode is a **permanent adapter** (`app/src/demo/`) for development, screensh
 - Runtime recovery: `architecture/28_Runtime_Recovery_Model.md`
 - Product proof: `architecture/29_Product_Proof.md`
 - Release gate: `architecture/30_Release_Gate.md`
+- Version 1 checklist: `architecture/31_Version_1_Release_Checklist.md`
 
 ---
 
@@ -117,8 +118,12 @@ Routing: `app/src/lib/ipc.ts` → Tauri `invoke` when not in adapter mode; else 
 
 Verified blockers (see `30_Release_Gate.md`):
 
-1. Dual-monitor placement and monitor disconnect/reconnect — **not evidenced** on proof host (single display).
-2. Tauri Experience click-through Home→Save→Continue→Restart→Continue — **not instrumented** (kernel live path proven).
-3. OS `TerminateProcess` during mutation — **not automated** (durable fence matrix proven).
-4. Virtual desktop / browser-tab fidelity — out of scope.
-5. `SetForegroundWindow` may refuse without input attachment — reported per-item, not forced.
+1. Dual-monitor placement and monitor disconnect/reconnect — **FAIL** until `multi-monitor-topology.json` shows hardware dual-monitor execution (harness ready).
+2. Virtual desktop / browser-tab fidelity — out of scope.
+3. `SetForegroundWindow` may refuse without input attachment — reported per-item, not forced.
+4. Desktop effects already applied before process kill are not OS-rolled-back.
+
+Closed this sprint (evidence on disk):
+
+- Behavioural Experience IPC E2E — `experience-e2e-behaviour.json`
+- OS `taskkill` during restore fence — `process-kill-recovery.json`

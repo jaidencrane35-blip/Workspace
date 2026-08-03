@@ -1,0 +1,95 @@
+{
+  "collected_at": "SystemTime { intervals: 134301902497506477 }",
+  "mode": "production_command_handler_ipc_behavioural",
+  "database_path": "C:\\Users\\Jaide\\AppData\\Local\\Temp\\.tmpPZLnXn\\experience-e2e.db",
+  "steps": [
+    {
+      "step": "launch",
+      "ipc_command": "get_workspace_status",
+      "ok": true,
+      "detail": "lifecycle=ready version=0.1.0"
+    },
+    {
+      "step": "launch_health",
+      "ipc_command": "get_workspace_health",
+      "ok": true,
+      "detail": "WorkspaceHealth { status: \"ready\", initialized: true, services: [\"database\", \"configuration\", \"workspace\"], version: \"0.1.0\" }"
+    },
+    {
+      "step": "bootstrap_create_workspace",
+      "ipc_command": "create_workspace",
+      "ok": true,
+      "detail": "311be07c-15d4-480f-9bfb-666688f0313f"
+    },
+    {
+      "step": "bootstrap_active_workspace",
+      "ipc_command": "update_settings",
+      "ok": true,
+      "detail": "Some(\"311be07c-15d4-480f-9bfb-666688f0313f\")"
+    },
+    {
+      "step": "home",
+      "ipc_command": "list_saved_contexts",
+      "ok": true,
+      "detail": "count=0"
+    },
+    {
+      "step": "save_scope",
+      "ipc_command": "get_saved_context_capture_scope",
+      "ok": true,
+      "detail": "saved-context-scope-v2"
+    },
+    {
+      "step": "save",
+      "ipc_command": "save_workspace_context",
+      "ok": true,
+      "detail": "id=7bbc5310-1c73-44c2-ae63-ec2f411d2110 windows=9 monitors=1"
+    },
+    {
+      "step": "home_after_save",
+      "ipc_command": "list_saved_contexts",
+      "ok": true,
+      "detail": "count=1"
+    },
+    {
+      "step": "continue_inspect",
+      "ipc_command": "get_saved_context",
+      "ok": true,
+      "detail": "7bbc5310-1c73-44c2-ae63-ec2f411d2110"
+    },
+    {
+      "step": "continue_plan",
+      "ipc_command": "resolve_resume_plan",
+      "ok": true,
+      "detail": "items=19 band=steady"
+    },
+    {
+      "step": "restore",
+      "ipc_command": "execute_resume_plan",
+      "ok": true,
+      "detail": "outcome=PartiallyCompleted restored=8 skipped=9 failed=2"
+    },
+    {
+      "step": "restart_hydrate",
+      "ipc_command": "get_workspace_runtime_state",
+      "ok": true,
+      "detail": "integrity=ok disposition=none last_saved=Some(\"7bbc5310-1c73-44c2-ae63-ec2f411d2110\")"
+    },
+    {
+      "step": "home_after_restart",
+      "ipc_command": "list_saved_contexts",
+      "ok": true,
+      "detail": "count=1"
+    },
+    {
+      "step": "continue_again",
+      "ipc_command": "execute_resume_plan",
+      "ok": true,
+      "detail": "outcome=PartiallyCompleted"
+    }
+  ],
+  "saved_context_id": "7bbc5310-1c73-44c2-ae63-ec2f411d2110",
+  "post_restart_listed_moments": 1,
+  "post_restart_session_saved_context_id": "7bbc5310-1c73-44c2-ae63-ec2f411d2110",
+  "continue_again_outcome": "PartiallyCompleted"
+}

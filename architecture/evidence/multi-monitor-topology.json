@@ -1,0 +1,27 @@
+{
+  "collected_at": "SystemTime { intervals: 134301902489584841 }",
+  "harness_ready": true,
+  "hardware_dual_monitor": false,
+  "monitor_count": 1,
+  "topology": [
+    {
+      "index": 0,
+      "name": "\\\\.\\DISPLAY1",
+      "x": 0,
+      "y": 0,
+      "width": 1707,
+      "height": 1067,
+      "work_x": 0,
+      "work_y": 0,
+      "work_width": 1707,
+      "work_height": 1019,
+      "is_primary": true
+    }
+  ],
+  "topology_fingerprint": "0:\\\\.\\DISPLAY1:1707x1067@0,0:p=true",
+  "cross_monitor_restore": "not_executed_insufficient_hardware",
+  "placements": [],
+  "disconnect_reconnect": "not_executed_no_wait_configured",
+  "hotplug_wait_seconds": 0,
+  "hotplug_observed_change": false
+}

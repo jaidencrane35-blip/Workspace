@@ -165,15 +165,45 @@ describe("observation model docs", () => {
       path.join(root, "architecture/30_Release_Gate.md"),
       "utf8",
     );
+    const checklist = fs.readFileSync(
+      path.join(root, "architecture/31_Version_1_Release_Checklist.md"),
+      "utf8",
+    );
     const evidence = fs.readFileSync(
       path.join(root, "architecture/evidence/windows-product-proof.json"),
       "utf8",
+    );
+    const multi = JSON.parse(
+      fs.readFileSync(
+        path.join(root, "architecture/evidence/multi-monitor-topology.json"),
+        "utf8",
+      ),
+    );
+    const e2e = JSON.parse(
+      fs.readFileSync(
+        path.join(root, "architecture/evidence/experience-e2e-behaviour.json"),
+        "utf8",
+      ),
+    );
+    const kill = JSON.parse(
+      fs.readFileSync(
+        path.join(root, "architecture/evidence/process-kill-recovery.json"),
+        "utf8",
+      ),
     );
     expect(proof).toContain("Evidence only");
     expect(proof).toContain("No aspirations");
     expect(gate).toContain("PASS WITH LIMITATIONS");
     expect(gate).toContain("FAIL");
+    expect(gate).toContain("multi-monitor-topology.json");
+    expect(checklist).toContain("Evidence inventory");
     expect(evidence).toContain("behaviour_matrix");
     expect(evidence).toContain("window.place");
+    expect(multi.harness_ready).toBe(true);
+    expect(e2e.steps.some((s: { step: string; ok: boolean }) => s.step === "continue_again" && s.ok)).toBe(
+      true,
+    );
+    expect(kill.kill_ok).toBe(true);
+    expect(kill.recovery_disposition).toBe("incomplete");
   });
 });

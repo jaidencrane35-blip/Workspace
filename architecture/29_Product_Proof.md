@@ -101,11 +101,11 @@ Authority lineage: commit `798469c` + `architecture/28_Runtime_Recovery_Model.md
 
 | Record | Evidence |
 | --- | --- |
-| Implementation status | Frozen; this sprint did not modify Experience |
-| Production evidence | `pnpm test` UI boundary + freeze PNG anchors + accessibility smoke **74** passed |
-| Automated tests | `experience-contract`, `ui-experience-boundary`, freeze anchors |
-| Manual Windows validation | No Experience redesign; no interaction change |
-| Known OS limitations | Full Tauri UI click-through Home→Save→Continue on this host was **not** instrumented |
+| Implementation status | Frozen; Experience layer not modified |
+| Production evidence | Behavioural operator IPC flow on file-backed DB: Launch→Home→Save→Continue→Restore→Restart→Hydrate→Continue again — `evidence/experience-e2e-behaviour.json` |
+| Automated tests | `experience_operator_ipc_flow_launch_through_continue_again`; freeze PNG + a11y Vitest |
+| Manual Windows validation | Production `CommandHandler` surface (same methods Tauri commands invoke); no WebView pixel asserts |
+| Known OS limitations | WebView chrome not driven (behavioural validation only, per gate) |
 
 ---
 
@@ -113,12 +113,12 @@ Authority lineage: commit `798469c` + `architecture/28_Runtime_Recovery_Model.md
 
 | Scenario | Result on proof host |
 | --- | --- |
-| Single monitor | Exercised (1 monitor) |
-| Dual monitor | **Not available** on host |
-| Monitor disconnect/reconnect | **Not exercised** |
-| Minimized windows | Observed (2) + minimize/restore committed on proof HWND |
-| Maximized windows | Observed (5 heuristic) |
+| Single monitor | Exercised (1 monitor) — `multi-monitor-topology.json` |
+| Dual monitor | **Not available** — harness ready, `hardware_dual_monitor: false` |
+| Monitor disconnect/reconnect | **Not exercised** — harness supports optional wait env |
+| Minimized windows | Observed + minimize/restore committed on proof HWND |
+| Maximized windows | Observed (heuristic) |
 | Mixed DPI / mixed geometry | **Not available** (single monitor) |
-| Restart → hydrate → continue again | Exercised in kernel live product-proof |
+| Restart → hydrate → continue again | Exercised — `experience-e2e-behaviour.json` |
 | Crash fences | Exercised (deterministic dispositions) |
-| OS process kill | **Not exercised** |
+| OS process kill | Exercised — `taskkill /F` — `process-kill-recovery.json` |
