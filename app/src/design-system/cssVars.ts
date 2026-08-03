@@ -101,14 +101,30 @@ export function designSystemCssVars(): string {
   --motion-fast: calc(var(--ws-dur-fast) * 1000ms);
   --motion-base: calc(var(--ws-dur-base) * 1000ms);
   --motion-slow: calc(var(--ws-dur-slow) * 1000ms);
+  --motion-attention: var(--motion-fast);
+  --motion-continuity: var(--motion-base);
+  --motion-memory: ${duration.memory}s;
+  --motion-reconstruction: ${duration.reconstruction}s;
+  --motion-lush: var(--motion-memory);
   --ease: cubic-bezier(0.22, 0.82, 0.2, 1);
-  --shadow-1: 0 10px 36px rgba(0, 0, 0, 0.38);
-  --shadow-2: 0 22px 64px rgba(0, 0, 0, 0.48);
-  --shadow-3: 0 32px 90px rgba(0, 0, 0, 0.55);
-  --shadow-4: 0 40px 120px rgba(0, 0, 0, 0.6);
-  --shadow-glow: 0 0 56px var(--ws-light-ambient);
-  --edge-light: inset 0 1px 0 rgba(255, 255, 255, 0.1),
+  --ease-attention: var(--ease);
+  --ease-continuity: var(--ease);
+  --ease-memory: var(--ease);
+  --ease-reconstruction: var(--ease);
+  --shadow-1: 0 12px 28px rgba(0, 0, 0, 0.42);
+  --shadow-2: 0 22px 56px rgba(0, 0, 0, 0.5);
+  --shadow-3: 0 36px 88px rgba(0, 0, 0, 0.58);
+  --shadow-4: 0 48px 120px rgba(0, 0, 0, 0.64);
+  --shadow-glow: 0 0 40px rgba(0, 0, 0, 0.35);
+  --edge-light: inset 0 1px 0 rgba(255, 255, 255, 0.09),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+  --mat-saturate: 1.06;
+  --mat-blur: var(--ws-blur-floating);
+  --mat-object-edge: inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.34),
     inset 0 0 0 1px rgba(255, 255, 255, 0.035);
+  --mat-object-depth: var(--shadow-3), 0 2px 0 rgba(0, 0, 0, 0.34);
+  --mat-neighbour-depth: var(--shadow-1);
   --color-border: rgba(160, 190, 220, 0.1);
   --color-border-strong: rgba(130, 210, 230, 0.28);
   --color-surface: rgba(18, 26, 38, 0.62);

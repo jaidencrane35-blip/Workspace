@@ -1,0 +1,45 @@
+{
+  "opticalConsistency": {
+    "purposeTokens": true,
+    "sharedRadius": true,
+    "noHardcoded22": true
+  },
+  "materialConsistency": {
+    "objectDepth": true,
+    "noCyanBloom": true,
+    "heroMatBlur": true
+  },
+  "motionConsistency": {
+    "purposeTiming": true,
+    "restorePanes": true,
+    "matPanes": true
+  },
+  "craftsmanship": {
+    "typographyCadence": true,
+    "destinationsIntact": true,
+    "stagePresent": true
+  },
+  "detail": {
+    "optical": {
+      "purposeTokens": true,
+      "heroUsesMatBlur": true,
+      "sharedRadius": true,
+      "noHardcoded22": true
+    },
+    "material": {
+      "stagePresent": true,
+      "objectDepth": true,
+      "noCyanBloom": true
+    },
+    "motion": {
+      "paneCount": 3,
+      "usesPurposeTiming": true,
+      "matObjectPanes": true
+    },
+    "craft": {
+      "noOddWeightsOnKeySurfaces": true,
+      "destinationsIntact": true
+    }
+  },
+  "pass": true
+}

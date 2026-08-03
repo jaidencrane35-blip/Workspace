@@ -1,4 +1,4 @@
-/** Shared motion primitives — no component invents its own animation. */
+/** Shared motion primitives — four purposes only. */
 
 import type { Transition, TargetAndTransition } from "motion/react";
 import { duration, spring } from "../design-system/tokens";
@@ -37,42 +37,57 @@ export function motionPrimitive(
   }
 
   switch (name) {
+    case "focus":
+      // Attention — opacity only.
+      return {
+        initial: { opacity: 0.88 },
+        animate: { opacity: 1 },
+        exit: { opacity: 0.82 },
+        transition: spring.attention,
+      };
     case "reveal":
-      // Opacity-only view swaps — y translation was a measurable CLS source.
+      // Continuity — opacity-only view swaps.
       return {
         initial: { opacity: 0 },
         animate: { opacity: 1 },
         exit: { opacity: 0 },
-        transition: spring.soft,
+        transition: spring.continuity,
       };
     case "elevate":
       return {
         initial: { opacity: 0.9, y: 6 },
         animate: { opacity: 1, y: 0 },
         exit: { opacity: 0.75, y: 4 },
-        transition: spring.soft,
+        transition: spring.continuity,
       };
     case "settle":
       return {
         initial: { opacity: 0.92 },
         animate: { opacity: 1, y: 0 },
         exit: { opacity: 0.85 },
-        transition: spring.soft,
+        transition: spring.continuity,
       };
     case "dissolve":
       return {
         initial: { opacity: 1 },
         animate: { opacity: 0.4 },
         exit: { opacity: 0 },
-        transition: spring.soft,
+        transition: spring.continuity,
       };
-    case "focus":
-      // Continuity — opacity only; scale read as UI chrome.
+    case "orbit":
+      // Memory — settle into the field.
       return {
-        initial: { opacity: 0.88 },
-        animate: { opacity: 1 },
-        exit: { opacity: 0.82 },
-        transition: spring.soft,
+        initial: { opacity: 0.5 },
+        animate: { opacity: 0.78 },
+        exit: { opacity: 0.32 },
+        transition: spring.memory,
+      };
+    case "compress":
+      return {
+        initial: { opacity: 1, scale: 1 },
+        animate: { opacity: 0.55, scale: 0.97 },
+        exit: { opacity: 0.3, scale: 0.96 },
+        transition: spring.memory,
       };
     case "restore":
       // Reconstruction — rise into place.
@@ -80,40 +95,27 @@ export function motionPrimitive(
         initial: { opacity: 0, y: 10 },
         animate: { opacity: 1, y: 0 },
         exit: { opacity: 0, y: 6 },
-        transition: spring.lush,
-      };
-    case "orbit":
-      // Memory — settle into the field without bounce.
-      return {
-        initial: { opacity: 0.5 },
-        animate: { opacity: 0.78 },
-        exit: { opacity: 0.32 },
-        transition: spring.soft,
-      };
-    case "compress":
-      return {
-        initial: { opacity: 1, scale: 1 },
-        animate: { opacity: 0.55, scale: 0.97 },
-        exit: { opacity: 0.3, scale: 0.96 },
-        transition: spring.soft,
+        transition: spring.reconstruction,
       };
     case "expand":
       return {
         initial: { opacity: 0.88, height: 0 },
         animate: { opacity: 1, height: "auto" },
         exit: { opacity: 0.7, height: 0 },
-        transition: spring.lush,
+        transition: spring.reconstruction,
       };
     default:
       return {
         animate: { opacity: 1 },
-        transition: spring.soft,
+        transition: spring.continuity,
       };
   }
 }
 
 export const contentTransition = (reduceMotion: boolean | null): Transition =>
-  reduceMotion ? instant : { ...spring.soft, opacity: { duration: 0.22 } };
+  reduceMotion
+    ? instant
+    : { ...spring.continuity, opacity: { duration: duration.continuity } };
 
 export const layoutTransition = (reduceMotion: boolean | null): Transition =>
-  reduceMotion ? instant : spring.layout;
+  reduceMotion ? instant : spring.reconstruction;

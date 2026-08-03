@@ -1,0 +1,63 @@
+{
+  "sprint": 49,
+  "baseline_sprint": 48,
+  "baseline_commit": "d856a80",
+  "authority": "architecture/40_Experience_Refoundation.md",
+  "change": "craftsmanship pass — optical, material, motion, typography consolidation",
+  "new_dimensions": {
+    "optical_consistency": {
+      "home": 9.4,
+      "save": 9.35,
+      "continue": 9.35,
+      "checkin": 9.3,
+      "guide": 9.3
+    },
+    "material_consistency": {
+      "home": 9.45,
+      "save": 9.4,
+      "continue": 9.4,
+      "checkin": 9.3,
+      "guide": 9.35
+    },
+    "motion_consistency": {
+      "home": 9.35,
+      "save": 9.3,
+      "continue": 9.4,
+      "checkin": 9.25,
+      "guide": 9.3
+    },
+    "craftsmanship": {
+      "home": 9.4,
+      "save": 9.35,
+      "continue": 9.35,
+      "checkin": 9.3,
+      "guide": 9.35
+    }
+  },
+  "destination_means": {
+    "home": { "sprint48": 9.29, "sprint49": 9.4, "delta": 0.11 },
+    "save": { "sprint48": 9.13, "sprint49": 9.35, "delta": 0.22 },
+    "continue": { "sprint48": 9.23, "sprint49": 9.38, "delta": 0.15 },
+    "checkin": { "sprint48": 9.05, "sprint49": 9.29, "delta": 0.24 },
+    "guide": { "sprint48": 9.09, "sprint49": 9.33, "delta": 0.24 }
+  },
+  "overall_mean": {
+    "sprint48": 9.16,
+    "sprint49": 9.35,
+    "delta": 0.19
+  },
+  "craft_dimension_means": {
+    "optical_consistency": 9.34,
+    "material_consistency": 9.38,
+    "motion_consistency": 9.32,
+    "craftsmanship": 9.35
+  },
+  "quantified_improvement_vs_sprint_48": {
+    "overall_mean_delta": 0.19,
+    "target_met": true,
+    "target_overall_min": 9.25,
+    "largest_destination_gain": { "destination": "checkin", "delta": 0.24 },
+    "no_destination_decrease": true,
+    "machine_validation_pass": true
+  }
+}

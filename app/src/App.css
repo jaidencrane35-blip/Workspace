@@ -257,7 +257,7 @@ body {
 .ws-object-stage {
   display: flex;
   flex-direction: column;
-  gap: clamp(0.85rem, 2vh, 1.35rem);
+  gap: clamp(0.65rem, 1.6vh, 1.1rem);
   width: 100%;
   z-index: 2;
 }
@@ -303,10 +303,10 @@ body {
   opacity: var(--sem-opacity, 0.7);
   transform-origin: center top;
   transition:
-    left 1.25s var(--ease),
-    top 1.25s var(--ease),
-    opacity 1.1s var(--ease),
-    transform 1.25s var(--ease);
+    left var(--motion-memory) var(--ease-memory),
+    top var(--motion-memory) var(--ease-memory),
+    opacity var(--motion-memory) var(--ease-memory),
+    transform var(--motion-memory) var(--ease-memory);
   pointer-events: auto;
 }
 
@@ -335,13 +335,14 @@ body {
   max-width: min(22rem, 70%);
   padding: 0.55rem 0.85rem;
   border-radius: var(--radius-md);
-  background: var(--mat-ephemeral, rgba(16, 22, 32, 0.72));
-  box-shadow: var(--mat-object-edge, inset 0 1px 0 rgba(255, 255, 255, 0.08));
+  background: var(--mat-ephemeral);
+  box-shadow: var(--mat-object-edge);
+  backdrop-filter: blur(var(--mat-blur)) saturate(var(--mat-saturate));
   pointer-events: none;
   transition:
-    left 1.2s var(--ease),
-    top 1.2s var(--ease),
-    opacity 1.4s var(--ease);
+    left var(--motion-memory) var(--ease-memory),
+    top var(--motion-memory) var(--ease-memory),
+    opacity var(--motion-memory) var(--ease-memory);
 }
 
 .semantic-cluster__annotation .moment-guide-hint__line {
@@ -373,10 +374,10 @@ body {
   opacity: var(--sem-opacity, 0.8);
   transform-origin: center top;
   transition:
-    left 1.15s var(--ease),
-    top 1.15s var(--ease),
-    opacity 1s var(--ease),
-    transform 1.15s var(--ease);
+    left var(--motion-reconstruction) var(--ease-reconstruction),
+    top var(--motion-reconstruction) var(--ease-reconstruction),
+    opacity var(--motion-reconstruction) var(--ease-reconstruction),
+    transform var(--motion-reconstruction) var(--ease-reconstruction);
 }
 
 .ws-region--attach {
@@ -387,9 +388,10 @@ body {
 .moment-object--anchor .ws-surface,
 .moment-object--anchor .elevated-card {
   border: 0 !important;
+  border-radius: var(--radius-md) !important;
   background: var(--mat-object) !important;
   box-shadow: var(--mat-object-depth) !important;
-  backdrop-filter: blur(22px) saturate(1.05);
+  backdrop-filter: blur(var(--mat-blur)) saturate(var(--mat-saturate));
 }
 
 .moment-object--anchor .ws-surface__edge,
@@ -487,7 +489,9 @@ body {
 
 /* ── Sprint 45/47/48: cognitive + semantic + temporal workspace ── */
 .ws-object-stage[data-semantic="on"] .semantic-field {
-  transition: height 1.15s var(--ease), opacity 1.1s var(--ease);
+  transition:
+    height var(--motion-memory) var(--ease-memory),
+    opacity var(--motion-memory) var(--ease-memory);
 }
 
 .ws-object-stage[data-temporal="nascent"] .moment-object--anchor .ws-surface,
@@ -547,8 +551,8 @@ body {
   opacity: 0.28;
   transform: translateY(2px);
   transition:
-    opacity var(--motion-base) var(--ease),
-    transform var(--motion-base) var(--ease);
+    opacity var(--motion-attention) var(--ease-attention),
+    transform var(--motion-attention) var(--ease-attention);
 }
 
 .moment-object--anchor:hover .moment-card__actions--quiet,
@@ -564,9 +568,10 @@ body {
   background: transparent;
   color: color-mix(in srgb, var(--color-accent-strong) 88%, white);
   font: inherit;
-  font-size: 0.95rem;
-  font-weight: 560;
+  font-size: var(--type-body);
+  font-weight: 500;
   letter-spacing: -0.01em;
+  line-height: 1.35;
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
@@ -618,8 +623,8 @@ body {
   flex-direction: column;
   gap: var(--space-3);
   transition:
-    opacity var(--motion-base) var(--ease),
-    max-height var(--motion-lush) var(--ease);
+    opacity var(--motion-continuity) var(--ease-continuity),
+    max-height var(--motion-memory) var(--ease-memory);
 }
 
 .continue-inspect-recess--quiet {
@@ -736,21 +741,23 @@ body {
 
 .place__title--region {
   font-size: clamp(1.85rem, 3.6vw, 2.55rem);
-  font-weight: 640;
-  letter-spacing: -0.04em;
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  line-height: 1.12;
 }
 
 .place__identity--living .place__title {
   text-shadow: none;
 }
 
-/* Neighbours — nearby objects, not miniature cards. */
+/* Neighbours — same material system, quieter elevation. */
 .moment-card--ambient .ws-surface,
 .moment-card--ambient .elevated-card {
   background: var(--mat-neighbour) !important;
   border: 0 !important;
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28) !important;
-  backdrop-filter: blur(8px) saturate(0.95) !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--mat-neighbour-depth) !important;
+  backdrop-filter: blur(var(--ws-blur-surface)) saturate(var(--mat-saturate)) !important;
 }
 
 .moment-card--ambient .ws-surface__shine,
@@ -770,9 +777,10 @@ body {
 .moment-card--ambient .moment-card__title,
 .moment-card--ambient h3 {
   font-size: 1rem;
-  font-weight: 540;
-  letter-spacing: -0.02em;
-  color: color-mix(in srgb, var(--exp-text) 72%, transparent);
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  line-height: 1.3;
+  color: color-mix(in srgb, var(--exp-text) 78%, transparent);
 }
 
 .moment-card--ambient .moment-card__handoff {
@@ -912,8 +920,9 @@ body {
 
 .place__identity--place .place__title {
   font-size: clamp(2.4rem, 5.2vw, 3.6rem);
-  font-weight: 680;
-  letter-spacing: -0.05em;
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  line-height: 1.08;
 }
 
 .place__identity--place .place__pulse {
@@ -938,7 +947,7 @@ body {
 .home-hero-band .moment-card--hero .elevated-card {
   background: var(--mat-object);
   box-shadow: var(--mat-object-depth);
-  backdrop-filter: blur(22px) saturate(1.05);
+  backdrop-filter: blur(var(--mat-blur)) saturate(var(--mat-saturate));
 }
 
 .home-hero-band .moment-card--hero .ws-surface--lit,
@@ -1007,9 +1016,10 @@ body {
 .ws-object.moment-card--sparse .moment-card__title,
 .ws-object.moment-card--sparse h3 {
   font-size: 1rem;
-  font-weight: 580;
+  font-weight: 500;
+  letter-spacing: -0.01em;
   -webkit-line-clamp: 2;
-  color: rgba(242, 246, 251, 0.92);
+  color: var(--exp-text);
 }
 
 .ws-object.moment-card--sparse .moment-card__handoff--compact {
@@ -1020,9 +1030,9 @@ body {
 .ws-object.moment-card--sparse .ws-surface,
 .ws-object.moment-card--sparse .elevated-card {
   background: var(--mat-neighbour);
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
+  box-shadow: var(--mat-neighbour-depth);
   border: 1px solid transparent;
-  backdrop-filter: blur(8px) saturate(0.95);
+  backdrop-filter: blur(var(--ws-blur-surface)) saturate(var(--mat-saturate));
   min-height: 7.5rem;
 }
 
@@ -1339,8 +1349,9 @@ body {
   margin: 0;
   font-family: var(--exp-display);
   font-size: 1.05rem;
-  font-weight: 650;
-  letter-spacing: -0.03em;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
 }
 
 .exp-brand,
@@ -1480,9 +1491,9 @@ body {
   margin: var(--space-1) 0 var(--space-2);
   font-family: var(--exp-display);
   font-size: var(--type-title);
-  font-weight: 650;
-  letter-spacing: -0.035em;
-  line-height: 1.12;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
   text-wrap: balance;
 }
 
@@ -1514,23 +1525,26 @@ body {
   border-radius: var(--radius-md);
   border: 1px solid transparent;
   background: var(--mat-object);
-  box-shadow: var(--shadow-1), var(--edge-light);
-  backdrop-filter: blur(var(--ws-blur-surface)) saturate(1.08);
+  box-shadow: var(--mat-object-depth);
+  backdrop-filter: blur(var(--mat-blur)) saturate(var(--mat-saturate));
   color: var(--exp-text);
   transition:
-    box-shadow var(--motion-base) var(--ease),
-    background var(--motion-base) var(--ease),
-    filter var(--motion-base) var(--ease);
+    box-shadow var(--motion-continuity) var(--ease-continuity),
+    background var(--motion-continuity) var(--ease-continuity),
+    filter var(--motion-continuity) var(--ease-continuity);
 }
 
-.ws-surface--surface { backdrop-filter: blur(var(--ws-blur-surface)) saturate(1.08); }
+.ws-surface--surface {
+  backdrop-filter: blur(var(--ws-blur-surface)) saturate(var(--mat-saturate));
+  box-shadow: var(--shadow-1), var(--mat-object-edge);
+}
 .ws-surface--floating {
-  backdrop-filter: blur(var(--ws-blur-floating)) saturate(1.1);
-  box-shadow: var(--shadow-2), var(--edge-light);
+  backdrop-filter: blur(var(--mat-blur)) saturate(var(--mat-saturate));
+  box-shadow: var(--shadow-2), var(--mat-object-edge);
 }
 .ws-surface--overlay {
-  backdrop-filter: blur(var(--ws-blur-overlay)) saturate(1.12);
-  box-shadow: var(--shadow-3), var(--edge-light);
+  backdrop-filter: blur(var(--ws-blur-overlay)) saturate(var(--mat-saturate));
+  box-shadow: var(--shadow-3), var(--mat-object-edge);
 }
 
 .ws-surface--lit {
@@ -1594,20 +1608,15 @@ body {
 }
 
 .elevated-card--hero {
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
   min-height: 13.5rem;
-  background:
-    radial-gradient(900px 320px at 8% 0%, rgba(95, 208, 216, 0.18), transparent 55%),
-    radial-gradient(600px 240px at 90% 100%, rgba(232, 184, 122, 0.07), transparent 50%),
-    linear-gradient(165deg, rgba(34, 48, 66, 0.78), rgba(12, 18, 28, 0.62));
+  background: var(--mat-object);
+  box-shadow: var(--mat-object-depth);
+  backdrop-filter: blur(var(--mat-blur)) saturate(var(--mat-saturate));
 }
 
 .elevated-card--soft {
-  background: linear-gradient(
-    165deg,
-    rgba(95, 208, 216, 0.1),
-    rgba(18, 28, 40, 0.55)
-  );
+  background: var(--mat-object);
 }
 
 .elevated-card--solid {
@@ -1615,12 +1624,9 @@ body {
 }
 
 .elevated-card--float {
-  background: linear-gradient(
-    165deg,
-    rgba(40, 54, 72, 0.55),
-    rgba(14, 20, 30, 0.42)
-  );
-  backdrop-filter: blur(28px) saturate(1.25);
+  background: var(--mat-object);
+  backdrop-filter: blur(var(--mat-blur)) saturate(var(--mat-saturate));
+  box-shadow: var(--mat-object-depth);
 }
 
 .elevated-card--ghost {
@@ -1753,15 +1759,10 @@ body {
   gap: var(--space-1);
   padding: 2.1rem var(--space-4) var(--space-3);
   border-radius: var(--radius-md);
-  background:
-    linear-gradient(
-      180deg,
-      rgba(48, 62, 80, 0.72) 0%,
-      rgba(22, 32, 46, 0.88) 42%,
-      rgba(14, 20, 30, 0.82) 100%
-    );
+  background: var(--mat-object);
   border: 1px solid transparent;
-  box-shadow: var(--edge-light);
+  box-shadow: var(--mat-object-depth);
+  backdrop-filter: blur(var(--mat-blur)) saturate(var(--mat-saturate));
   min-height: 8.5rem;
   position: relative;
   overflow: hidden;
@@ -1821,9 +1822,10 @@ body {
 }
 
 .continue-window-pane__title {
-  font-size: 0.98rem;
-  font-weight: 600;
-  letter-spacing: -0.015em;
+  font-size: var(--type-body);
+  font-weight: 500;
+  letter-spacing: -0.012em;
+  line-height: 1.3;
   color: var(--exp-text);
 }
 
@@ -2002,9 +2004,9 @@ body {
   padding: var(--space-1);
   border-radius: var(--radius-pill);
   border: 1px solid transparent;
-  background: rgba(12, 18, 28, 0.58);
-  backdrop-filter: blur(var(--ws-blur-dock)) saturate(1.25);
-  box-shadow: var(--edge-light);
+  background: var(--mat-structural);
+  backdrop-filter: blur(var(--ws-blur-dock)) saturate(var(--mat-saturate));
+  box-shadow: var(--mat-object-edge);
   flex-wrap: nowrap;
 }
 

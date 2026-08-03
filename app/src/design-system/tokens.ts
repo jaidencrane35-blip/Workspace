@@ -38,7 +38,7 @@ export const blur = {
   surface: "18px",
   floating: "26px",
   overlay: "34px",
-  dock: "30px",
+  dock: "26px",
 } as const;
 
 export const opacity = {
@@ -51,18 +51,66 @@ export const opacity = {
 
 export const duration = {
   instant: 0.01,
+  /** Attention — chrome press, focus rings */
+  attention: 0.14,
+  /** Continuity — place settle, opacity fades */
+  continuity: 0.28,
+  /** Memory — field reorganisation */
+  memory: 1.1,
+  /** Reconstruction — restore panes rising */
+  reconstruction: 0.9,
   fast: 0.14,
   base: 0.28,
   slow: 0.4,
   ambient: 72,
 } as const;
 
+/** Four purpose springs — aliases kept for call-site stability. */
 export const spring = {
-  snappy: { type: "spring" as const, stiffness: 480, damping: 32, mass: 0.45 },
-  soft: { type: "spring" as const, stiffness: 300, damping: 34, mass: 0.85 },
-  lush: { type: "spring" as const, stiffness: 240, damping: 30, mass: 1 },
-  dock: { type: "spring" as const, stiffness: 420, damping: 28, mass: 0.4 },
-  layout: { type: "spring" as const, stiffness: 340, damping: 36 },
+  attention: {
+    type: "spring" as const,
+    stiffness: 460,
+    damping: 34,
+    mass: 0.42,
+  },
+  continuity: {
+    type: "spring" as const,
+    stiffness: 300,
+    damping: 34,
+    mass: 0.85,
+  },
+  memory: { type: "spring" as const, stiffness: 240, damping: 32, mass: 1 },
+  reconstruction: {
+    type: "spring" as const,
+    stiffness: 260,
+    damping: 34,
+    mass: 0.95,
+  },
+  snappy: {
+    type: "spring" as const,
+    stiffness: 460,
+    damping: 34,
+    mass: 0.42,
+  },
+  soft: {
+    type: "spring" as const,
+    stiffness: 300,
+    damping: 34,
+    mass: 0.85,
+  },
+  lush: { type: "spring" as const, stiffness: 240, damping: 32, mass: 1 },
+  dock: {
+    type: "spring" as const,
+    stiffness: 460,
+    damping: 34,
+    mass: 0.42,
+  },
+  layout: {
+    type: "spring" as const,
+    stiffness: 260,
+    damping: 34,
+    mass: 0.95,
+  },
 } as const;
 
 export const lighting = {

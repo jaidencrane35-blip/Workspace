@@ -118,7 +118,7 @@ export function ContinuePreviewBody({
                 y: 0,
               }}
               transition={{
-                ...spring.lush,
+                ...spring.reconstruction,
                 delay,
               }}
             >
@@ -140,7 +140,7 @@ export function ContinuePreviewBody({
         initial={reduceMotion ? false : { opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{
-          ...spring.soft,
+          ...spring.continuity,
           delay: reduceMotion ? 0 : 0.12 + total * 0.11,
         }}
       >
