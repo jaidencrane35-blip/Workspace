@@ -64,3 +64,29 @@ export type {
   OpportunitySeverity,
   OpportunityWorkflow,
 } from "./experienceImprovement";
+export {
+  GOVERNANCE_STORAGE_KEY,
+  buildProposalFromOpportunities,
+  evaluateValidationContract,
+  persistProposal,
+  transitionProposal,
+  listProposals,
+  getProposal,
+  listProposalHistory,
+  listAllHistory,
+  assertHistoryImmutable,
+  clearGovernanceStore,
+  defaultGovernanceStore,
+  isTransitionAllowed,
+} from "./experienceGovernance";
+export type {
+  ExperienceChangeProposal,
+  ProposalLifecycle,
+  ProposalValidationContract,
+  GovernanceHistoryEntry,
+  GovernanceReason,
+  ValidationStatus,
+  TransitionError,
+  ImplementationScope,
+  AffectedComponent,
+} from "./experienceGovernance";

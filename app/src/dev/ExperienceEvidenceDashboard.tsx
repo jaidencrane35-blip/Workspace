@@ -24,6 +24,11 @@ import type {
   BaselineEvolution,
   ExperienceOpportunity,
 } from "./experienceImprovement";
+import type {
+  ExperienceChangeProposal,
+  GovernanceHistoryEntry,
+  ProposalLifecycle,
+} from "./experienceGovernance";
 
 const panelStyle: CSSProperties = {
   position: "fixed",
@@ -37,8 +42,8 @@ const panelStyle: CSSProperties = {
   border: "1px solid rgba(255,255,255,0.12)",
   borderRadius: 6,
   boxShadow: "0 8px 24px rgba(0,0,0,0.35)",
-  maxWidth: 460,
-  maxHeight: "72vh",
+  maxWidth: 480,
+  maxHeight: "74vh",
   overflow: "auto",
   padding: 10,
 };
@@ -68,6 +73,15 @@ function severityColor(s: string): string {
 }
 
 type ImprovementApi = typeof import("./experienceImprovement");
+type GovernanceApi = typeof import("./experienceGovernance");
+
+const NEXT_STATE: Partial<Record<ProposalLifecycle, ProposalLifecycle>> = {
+  draft: "review",
+  review: "accepted",
+  accepted: "implemented",
+  implemented: "validated",
+  validated: "closed",
+};
 
 export function ExperienceEvidenceDashboard() {
   const [open, setOpen] = useState(false);
@@ -75,25 +89,42 @@ export function ExperienceEvidenceDashboard() {
   const [improvementApi, setImprovementApi] = useState<ImprovementApi | null>(
     null,
   );
+  const [governanceApi, setGovernanceApi] = useState<GovernanceApi | null>(
+    null,
+  );
   const [lastReplay, setLastReplay] = useState<string | null>(null);
+  const [govMessage, setGovMessage] = useState<string | null>(null);
   const store = useMemo(() => defaultEvidenceStore(), []);
+  const govStore = useMemo(() => {
+    // Same adapter medium; governance key is separate.
+    return store;
+  }, [store]);
 
   const refresh = useCallback(() => setTick((n) => n + 1), []);
 
   useEffect(() => {
-    if (!open || improvementApi) {
+    if (!open) {
       return;
     }
     let cancelled = false;
-    void import("./experienceImprovement").then((mod) => {
-      if (!cancelled) {
-        setImprovementApi(mod);
-      }
-    });
+    if (!improvementApi) {
+      void import("./experienceImprovement").then((mod) => {
+        if (!cancelled) {
+          setImprovementApi(mod);
+        }
+      });
+    }
+    if (!governanceApi) {
+      void import("./experienceGovernance").then((mod) => {
+        if (!cancelled) {
+          setGovernanceApi(mod);
+        }
+      });
+    }
     return () => {
       cancelled = true;
     };
-  }, [open, improvementApi]);
+  }, [open, improvementApi, governanceApi]);
 
   const sessions = useMemo(() => {
     void tick;
@@ -137,6 +168,26 @@ export function ExperienceEvidenceDashboard() {
     }
     return improvementApi.evolveBaselines(snapshots);
   }, [improvementApi, snapshots]);
+
+  const proposals: ExperienceChangeProposal[] = useMemo(() => {
+    void tick;
+    if (!governanceApi) {
+      return [];
+    }
+    return governanceApi.listProposals(govStore);
+  }, [governanceApi, govStore, tick]);
+
+  const historyByProposal = useMemo(() => {
+    void tick;
+    if (!governanceApi) {
+      return new Map<string, GovernanceHistoryEntry[]>();
+    }
+    const map = new Map<string, GovernanceHistoryEntry[]>();
+    for (const p of proposals) {
+      map.set(p.proposalId, governanceApi.listProposalHistory(govStore, p.proposalId));
+    }
+    return map;
+  }, [governanceApi, govStore, proposals, tick]);
 
   const analyze = () => {
     if (sessions.length === 0) {
@@ -185,6 +236,69 @@ export function ExperienceEvidenceDashboard() {
     }
   };
 
+  const draftFromOpportunities = () => {
+    if (!governanceApi || opportunities.length === 0) {
+      setGovMessage("no_opportunities");
+      return;
+    }
+    const draft = governanceApi.buildProposalFromOpportunities(opportunities, {
+      evidenceBaselineId:
+        baseline?.evidenceId ?? opportunities[0]?.supportingEvidenceIds[0],
+    });
+    if (!draft) {
+      setGovMessage("proposal_build_failed");
+      return;
+    }
+    governanceApi.persistProposal(govStore, draft);
+    setGovMessage(`drafted:${draft.proposalId}`);
+    refresh();
+  };
+
+  const advanceProposal = (proposal: ExperienceChangeProposal) => {
+    if (!governanceApi) {
+      return;
+    }
+    const next = NEXT_STATE[proposal.state];
+    if (!next) {
+      setGovMessage("no_next_state");
+      return;
+    }
+    const result = governanceApi.transitionProposal(
+      govStore,
+      proposal.proposalId,
+      next,
+      {
+        evidenceReferenceId:
+          proposal.validation.evidenceBaselineId ||
+          baseline?.evidenceId ||
+          "unknown",
+      },
+    );
+    setGovMessage(
+      result.ok ? `${proposal.proposalId}->${next}` : `err:${result.error}`,
+    );
+    refresh();
+  };
+
+  const rejectProposal = (proposal: ExperienceChangeProposal) => {
+    if (!governanceApi || proposal.state !== "review") {
+      return;
+    }
+    const result = governanceApi.transitionProposal(
+      govStore,
+      proposal.proposalId,
+      "draft",
+      {
+        evidenceReferenceId: proposal.validation.evidenceBaselineId,
+        reason: "reject_to_draft",
+      },
+    );
+    setGovMessage(
+      result.ok ? `${proposal.proposalId}->draft` : `err:${result.error}`,
+    );
+    refresh();
+  };
+
   if (!isExperienceValidationEnabled()) {
     return null;
   }
@@ -230,10 +344,19 @@ export function ExperienceEvidenceDashboard() {
         <button type="button" style={btnStyle} onClick={replayAll}>
           Replay sessions
         </button>
+        <button
+          type="button"
+          style={btnStyle}
+          data-testid="draft-proposal"
+          onClick={draftFromOpportunities}
+        >
+          Draft proposal
+        </button>
         <button type="button" style={btnStyle} onClick={refresh}>
           Refresh
         </button>
       </div>
+      {govMessage ? <div style={{ marginBottom: 8 }}>gov: {govMessage}</div> : null}
 
       <section style={{ marginBottom: 10 }}>
         <div>Sessions in store: {sessions.length}</div>
@@ -316,6 +439,91 @@ export function ExperienceEvidenceDashboard() {
               </div>
             </li>
           ))}
+        </ul>
+      </section>
+
+      <section style={{ marginBottom: 10 }} data-testid="experience-proposals">
+        <div style={{ marginBottom: 4 }}>
+          <strong>Proposal queue</strong>
+          {!governanceApi ? " (loading…)" : ` (${proposals.length})`}
+        </div>
+        {governanceApi && proposals.length === 0 ? (
+          <div style={{ opacity: 0.7 }}>
+            Empty. Draft from opportunities after evidence exists.
+          </div>
+        ) : null}
+        <ul style={{ paddingLeft: 16, margin: "6px 0" }}>
+          {proposals.map((p) => {
+            const hist = historyByProposal.get(p.proposalId) ?? [];
+            return (
+              <li key={p.proposalId} style={{ marginBottom: 10 }}>
+                <div>
+                  {p.proposalId} · <strong>{p.state}</strong> · validation{" "}
+                  {p.validationStatus} · scope {p.implementationScope} · conf{" "}
+                  {p.confidence}
+                </div>
+                <div>
+                  workflows: {p.workflows.join(", ")} · components:{" "}
+                  {p.affectedComponents.join(", ")}
+                </div>
+                <div>
+                  opportunities: {p.opportunityIds.join(", ") || "—"}
+                </div>
+                <div>
+                  evidence: {p.evidenceSnapshotIds.join(", ") || "—"} · baseline{" "}
+                  {p.validation.evidenceBaselineId}
+                </div>
+                <div>
+                  success: {p.validation.successMetric} Δ≥
+                  {p.validation.successThresholdDelta} (
+                  {p.validation.successDirection})
+                </div>
+                <div>
+                  replay:{" "}
+                  {p.validation.replaySessionIds.map((id) => (
+                    <button
+                      key={id}
+                      type="button"
+                      style={btnStyle}
+                      onClick={() => replaySessionLink(id)}
+                    >
+                      {id}
+                    </button>
+                  ))}
+                </div>
+                <div>
+                  history:{" "}
+                  {hist
+                    .map(
+                      (h) =>
+                        `${h.seq}:${h.previousState ?? "∅"}→${h.newState}`,
+                    )
+                    .join(" · ") || "—"}
+                </div>
+                <div>
+                  {NEXT_STATE[p.state] ? (
+                    <button
+                      type="button"
+                      style={btnStyle}
+                      data-testid={`advance-${p.proposalId}`}
+                      onClick={() => advanceProposal(p)}
+                    >
+                      → {NEXT_STATE[p.state]}
+                    </button>
+                  ) : null}
+                  {p.state === "review" ? (
+                    <button
+                      type="button"
+                      style={btnStyle}
+                      onClick={() => rejectProposal(p)}
+                    >
+                      → draft
+                    </button>
+                  ) : null}
+                </div>
+              </li>
+            );
+          })}
         </ul>
       </section>
 
