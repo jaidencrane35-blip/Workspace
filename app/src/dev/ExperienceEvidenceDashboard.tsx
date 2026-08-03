@@ -29,6 +29,13 @@ import type {
   GovernanceHistoryEntry,
   ProposalLifecycle,
 } from "./experienceGovernance";
+import type {
+  EngineeringChangeRecord,
+  EngineeringHistoryEntry,
+  EngineeringLifecycle,
+  ReleaseTraceability,
+} from "./engineeringGovernance";
+import { fnv1a } from "./devHash";
 
 const panelStyle: CSSProperties = {
   position: "fixed",
@@ -74,6 +81,7 @@ function severityColor(s: string): string {
 
 type ImprovementApi = typeof import("./experienceImprovement");
 type GovernanceApi = typeof import("./experienceGovernance");
+type EngineeringApi = typeof import("./engineeringGovernance");
 
 const NEXT_STATE: Partial<Record<ProposalLifecycle, ProposalLifecycle>> = {
   draft: "review",
@@ -81,6 +89,15 @@ const NEXT_STATE: Partial<Record<ProposalLifecycle, ProposalLifecycle>> = {
   accepted: "implemented",
   implemented: "validated",
   validated: "closed",
+};
+
+const ENG_NEXT_STATE: Partial<
+  Record<EngineeringLifecycle, EngineeringLifecycle>
+> = {
+  draft: "implemented",
+  implemented: "validated",
+  validated: "architecturally_accepted",
+  architecturally_accepted: "released",
 };
 
 export function ExperienceEvidenceDashboard() {
@@ -92,11 +109,14 @@ export function ExperienceEvidenceDashboard() {
   const [governanceApi, setGovernanceApi] = useState<GovernanceApi | null>(
     null,
   );
+  const [engineeringApi, setEngineeringApi] = useState<EngineeringApi | null>(
+    null,
+  );
   const [lastReplay, setLastReplay] = useState<string | null>(null);
   const [govMessage, setGovMessage] = useState<string | null>(null);
   const store = useMemo(() => defaultEvidenceStore(), []);
   const govStore = useMemo(() => {
-    // Same adapter medium; governance key is separate.
+    // Same adapter medium; governance / engineering keys are separate.
     return store;
   }, [store]);
 
@@ -121,10 +141,17 @@ export function ExperienceEvidenceDashboard() {
         }
       });
     }
+    if (!engineeringApi) {
+      void import("./engineeringGovernance").then((mod) => {
+        if (!cancelled) {
+          setEngineeringApi(mod);
+        }
+      });
+    }
     return () => {
       cancelled = true;
     };
-  }, [open, improvementApi, governanceApi]);
+  }, [open, improvementApi, governanceApi, engineeringApi]);
 
   const sessions = useMemo(() => {
     void tick;
@@ -188,6 +215,51 @@ export function ExperienceEvidenceDashboard() {
     }
     return map;
   }, [governanceApi, govStore, proposals, tick]);
+
+  const engContext = useMemo(
+    () => ({
+      proposals,
+      evidenceIds: snapshots.map((s) => s.evidenceId),
+    }),
+    [proposals, snapshots],
+  );
+
+  const engineeringRecords: EngineeringChangeRecord[] = useMemo(() => {
+    void tick;
+    if (!engineeringApi) {
+      return [];
+    }
+    return engineeringApi.listEngineeringRecords(govStore);
+  }, [engineeringApi, govStore, tick]);
+
+  const engHistoryByChange = useMemo(() => {
+    void tick;
+    if (!engineeringApi) {
+      return new Map<string, EngineeringHistoryEntry[]>();
+    }
+    const map = new Map<string, EngineeringHistoryEntry[]>();
+    for (const r of engineeringRecords) {
+      map.set(
+        r.changeId,
+        engineeringApi.listEngineeringHistory(govStore, r.changeId),
+      );
+    }
+    return map;
+  }, [engineeringApi, engineeringRecords, govStore, tick]);
+
+  const traceabilityByChange = useMemo(() => {
+    if (!engineeringApi) {
+      return new Map<string, ReleaseTraceability>();
+    }
+    const map = new Map<string, ReleaseTraceability>();
+    for (const r of engineeringRecords) {
+      map.set(
+        r.changeId,
+        engineeringApi.buildReleaseTraceability(r, engContext),
+      );
+    }
+    return map;
+  }, [engineeringApi, engineeringRecords, engContext]);
 
   const analyze = () => {
     if (sessions.length === 0) {
@@ -299,6 +371,84 @@ export function ExperienceEvidenceDashboard() {
     refresh();
   };
 
+  const eligibleProposals = proposals.filter((p) =>
+    ["accepted", "implemented", "validated", "closed"].includes(p.state),
+  );
+
+  const draftEngineeringRecord = () => {
+    if (!engineeringApi) {
+      setGovMessage("eng_loading");
+      return;
+    }
+    if (eligibleProposals.length === 0) {
+      setGovMessage("no_eligible_proposals");
+      return;
+    }
+    const commitPlaceholder = fnv1a(
+      eligibleProposals
+        .map((p) => p.proposalId)
+        .sort()
+        .join(","),
+    );
+    const draft = engineeringApi.buildEngineeringRecordFromProposals(
+      eligibleProposals,
+      {
+        commits: [commitPlaceholder],
+        architectureDocuments: [
+          "45_Experience_Change_Governance.md",
+          "46_Engineering_Governance.md",
+        ],
+        affectedModules: [
+          "app/src/dev/engineeringGovernance.ts",
+          "app/src/dev/experienceGovernance.ts",
+        ],
+        affectedTests: ["tests/experience-engineering.test.ts"],
+        releaseImpact: "dev_tooling",
+      },
+    );
+    if (!draft) {
+      setGovMessage("eng_build_failed");
+      return;
+    }
+    const result = engineeringApi.persistEngineeringRecord(
+      govStore,
+      draft,
+      engContext,
+    );
+    setGovMessage(
+      result.ok
+        ? `eng_drafted:${result.record.changeId}`
+        : `eng_err:${result.error}`,
+    );
+    refresh();
+  };
+
+  const advanceEngineering = (record: EngineeringChangeRecord) => {
+    if (!engineeringApi) {
+      return;
+    }
+    const next = ENG_NEXT_STATE[record.state];
+    if (!next) {
+      setGovMessage("eng_no_next");
+      return;
+    }
+    const result = engineeringApi.transitionEngineeringRecord(
+      govStore,
+      record.changeId,
+      next,
+      engContext,
+      {
+        authorityReference: "46_Engineering_Governance.md",
+      },
+    );
+    setGovMessage(
+      result.ok
+        ? `${record.changeId}->${next}`
+        : `eng_err:${result.error}`,
+    );
+    refresh();
+  };
+
   if (!isExperienceValidationEnabled()) {
     return null;
   }
@@ -351,6 +501,14 @@ export function ExperienceEvidenceDashboard() {
           onClick={draftFromOpportunities}
         >
           Draft proposal
+        </button>
+        <button
+          type="button"
+          style={btnStyle}
+          data-testid="draft-engineering"
+          onClick={draftEngineeringRecord}
+        >
+          Draft engineering
         </button>
         <button type="button" style={btnStyle} onClick={refresh}>
           Refresh
@@ -521,6 +679,85 @@ export function ExperienceEvidenceDashboard() {
                     </button>
                   ) : null}
                 </div>
+              </li>
+            );
+          })}
+        </ul>
+      </section>
+
+      <section style={{ marginBottom: 10 }} data-testid="engineering-records">
+        <div style={{ marginBottom: 4 }}>
+          <strong>Engineering records</strong>
+          {!engineeringApi
+            ? " (loading…)"
+            : ` (${engineeringRecords.length})`}
+        </div>
+        {engineeringApi && engineeringRecords.length === 0 ? (
+          <div style={{ opacity: 0.7 }}>
+            Empty. Advance a proposal to accepted+, then draft engineering.
+          </div>
+        ) : null}
+        <ul style={{ paddingLeft: 16, margin: "6px 0" }}>
+          {engineeringRecords.map((r) => {
+            const hist = engHistoryByChange.get(r.changeId) ?? [];
+            const trace = traceabilityByChange.get(r.changeId);
+            return (
+              <li key={r.changeId} style={{ marginBottom: 10 }}>
+                <div>
+                  {r.changeId} · <strong>{r.state}</strong> · consistency{" "}
+                  {r.consistencyStatus} · impact {r.releaseImpact}
+                </div>
+                <div>
+                  commits: {r.commits.join(", ")} · proposals:{" "}
+                  {r.proposalIds.join(", ")}
+                </div>
+                <div>
+                  architecture: {r.architectureDocuments.join(", ")}
+                </div>
+                <div>
+                  modules: {r.affectedModules.join(", ")}
+                </div>
+                <div>tests: {r.affectedTests.join(", ")}</div>
+                <div>
+                  validation: proposals=
+                  {r.validationEvidence.proposalValidationComplete
+                    ? "complete"
+                    : "incomplete"}{" "}
+                  · evidence{" "}
+                  {r.validationEvidence.evidenceSnapshotIds.length} · replay{" "}
+                  {r.validationEvidence.replaySessionIds.length}
+                </div>
+                <div>
+                  release readiness:{" "}
+                  {trace?.complete ? "ready" : `blocked:${trace?.missing.join(",") ?? "—"}`}
+                </div>
+                <div>
+                  lineage: commit→
+                  {trace?.proposalIds[0] ?? "?"}→
+                  {trace?.opportunityIds[0] ?? "?"}→
+                  {trace?.evidenceSnapshotIds[0] ?? "?"}→
+                  {trace?.replaySessionIds[0] ?? "?"}→
+                  {trace?.interactionSessionIds[0] ?? "?"}
+                </div>
+                <div>
+                  history:{" "}
+                  {hist
+                    .map(
+                      (h) =>
+                        `${h.seq}:${h.previousState ?? "∅"}→${h.newState}`,
+                    )
+                    .join(" · ") || "—"}
+                </div>
+                {ENG_NEXT_STATE[r.state] ? (
+                  <button
+                    type="button"
+                    style={btnStyle}
+                    data-testid={`advance-eng-${r.changeId}`}
+                    onClick={() => advanceEngineering(r)}
+                  >
+                    → {ENG_NEXT_STATE[r.state]}
+                  </button>
+                ) : null}
               </li>
             );
           })}

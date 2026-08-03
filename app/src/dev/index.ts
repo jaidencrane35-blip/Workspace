@@ -90,3 +90,33 @@ export type {
   ImplementationScope,
   AffectedComponent,
 } from "./experienceGovernance";
+export {
+  ENGINEERING_STORAGE_KEY,
+  ARCHITECTURE_AUTHORITY_DOCS,
+  buildEngineeringRecordFromProposals,
+  verifyEngineeringConsistency,
+  buildReleaseTraceability,
+  persistEngineeringRecord,
+  transitionEngineeringRecord,
+  listEngineeringRecords,
+  getEngineeringRecord,
+  listEngineeringHistory,
+  listAllEngineeringHistory,
+  assertEngineeringHistoryImmutable,
+  assertNoOrphanReleasedRecords,
+  clearEngineeringStore,
+  defaultEngineeringStore,
+  isEngineeringTransitionAllowed,
+  isArchitectureAuthorityDoc,
+} from "./engineeringGovernance";
+export type {
+  EngineeringChangeRecord,
+  EngineeringLifecycle,
+  EngineeringValidationEvidence,
+  EngineeringHistoryEntry,
+  ReleaseTraceability,
+  ConsistencyResult,
+  ConsistencyError,
+  ArchitectureAuthorityDoc,
+  ReleaseImpact,
+} from "./engineeringGovernance";
