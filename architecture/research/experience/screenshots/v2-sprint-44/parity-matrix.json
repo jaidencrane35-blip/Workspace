@@ -1,0 +1,60 @@
+{
+  "sprint": 44,
+  "baseline_sprint": 43,
+  "baseline_commit": "0ad2841",
+  "authority": "architecture/40_Experience_Refoundation.md",
+  "change": "invisible interface — reduce chrome toward environmental workspace",
+  "new_dimensions": {
+    "interface_invisibility": {
+      "home": 9.0,
+      "save": 8.7,
+      "continue": 8.6,
+      "checkin": 8.5,
+      "guide": 8.8
+    },
+    "environmental_communication": {
+      "home": 8.8,
+      "save": 8.6,
+      "continue": 8.7,
+      "checkin": 8.4,
+      "guide": 8.5
+    },
+    "interaction_discoverability": {
+      "home": 8.4,
+      "save": 8.5,
+      "continue": 8.3,
+      "checkin": 8.2,
+      "guide": 8.1
+    },
+    "cognitive_load": {
+      "home": 9.0,
+      "save": 8.8,
+      "continue": 8.6,
+      "checkin": 8.7,
+      "guide": 8.9
+    }
+  },
+  "destination_means": {
+    "home": { "sprint43": 8.65, "sprint44": 8.8, "delta": 0.15 },
+    "save": { "sprint43": 8.58, "sprint44": 8.65, "delta": 0.07 },
+    "continue": { "sprint43": 8.5, "sprint44": 8.55, "delta": 0.05 },
+    "checkin": { "sprint43": 8.25, "sprint44": 8.45, "delta": 0.2 },
+    "guide": { "sprint43": 8.35, "sprint44": 8.58, "delta": 0.23 }
+  },
+  "overall_mean": {
+    "sprint43": 8.47,
+    "sprint44": 8.61,
+    "delta": 0.14
+  },
+  "invisibility_dimension_means": {
+    "interface_invisibility": 8.72,
+    "environmental_communication": 8.6,
+    "interaction_discoverability": 8.3,
+    "cognitive_load": 8.8
+  },
+  "quantified_improvement_vs_sprint_43": {
+    "overall_mean_delta": 0.14,
+    "largest_destination_gain": { "destination": "guide", "delta": 0.23 },
+    "machine_validation_pass": true
+  }
+}

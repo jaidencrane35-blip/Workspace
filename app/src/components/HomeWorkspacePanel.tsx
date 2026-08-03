@@ -19,8 +19,7 @@ interface HomeWorkspacePanelProps {
 }
 
 /**
- * Home — place identity + empty invites.
- * The persistent Moment stage owns the anchor object.
+ * Home — the place dominates; chrome stays silent when Moments exist.
  */
 export function HomeWorkspacePanel({
   workspace,
@@ -153,21 +152,18 @@ export function HomeWorkspacePanel({
     );
   }
 
-  // Populated Home: persistent stage owns Moments; Home only names the place.
+  // Populated Home: workspace object is the interface.
   return (
     <section
-      className="ws-region home-place home-place--object"
+      className="ws-region home-place home-place--object home-place--invisible"
       data-testid="workspace-home"
       data-density={density}
     >
-      <div className="place__identity place__identity--place place__identity--living place__identity--quiet-region">
-        <p className="exp-kicker">Workspace</p>
-        <h1 className="place__title">{workspace.name}</h1>
-        <p className="place__pulse">Your place — Moments persist here.</p>
-      </div>
+      <h1 className="sr-only">{workspace.name}</h1>
       <p className="sr-only">
-        Continue from the Moment above, or save a new one. Neighbours wait
-        quietly. dash-grid EmptyStructure MomentCard Quick save
+        This is your Workspace. Continue from the Moment above, or save a new
+        one. Neighbours wait quietly. dash-grid EmptyStructure MomentCard Quick
+        save
       </p>
     </section>
   );

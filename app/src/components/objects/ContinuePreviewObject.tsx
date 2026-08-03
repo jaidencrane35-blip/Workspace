@@ -7,6 +7,7 @@ interface ContinuePreviewBodyProps {
   busy: boolean;
   onApprove: () => void;
   onCancel: () => void;
+  onInspect?: () => void;
   describeDisposition: (item: ActionPlanItem) => string;
 }
 
@@ -32,6 +33,7 @@ export function ContinuePreviewBody({
   busy,
   onApprove,
   onCancel,
+  onInspect,
   describeDisposition,
 }: ContinuePreviewBodyProps) {
   const reduceMotion = useReducedMotion();
@@ -44,8 +46,13 @@ export function ContinuePreviewBody({
     ratio >= 0.85 ? "high" : ratio >= 0.5 ? "steady" : "limited";
 
   return (
-    <div className="continue-preview-body continue-preview-body--spatial continue-preview-body--remember">
-      <p className="sr-only">Reconstructing this place</p>
+    <div
+      className="continue-preview-body continue-preview-body--spatial continue-preview-body--remember continue-preview-body--invisible"
+      data-quality={quality}
+    >
+      <p className="sr-only">
+        Reconstructing this place. {willAttempt} of {total} windows still open.
+      </p>
       <div
         className="continue-window-field continue-window-field--spatial"
         role="list"
@@ -97,7 +104,7 @@ export function ContinuePreviewBody({
       </div>
 
       <motion.div
-        className="continue-preview__footer"
+        className="continue-preview__footer continue-preview__footer--quiet"
         initial={reduceMotion ? false : { opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{
@@ -105,13 +112,12 @@ export function ContinuePreviewBody({
           delay: reduceMotion ? 0 : 0.12 + total * 0.11,
         }}
       >
-        <p className="continue-preview__quality" data-quality={quality}>
-          <span className="continue-preview__quality-dot" aria-hidden="true" />
-          <span>
-            {willAttempt === total
-              ? "This place is ready"
-              : `${willAttempt} of ${total} windows still open`}
-          </span>
+        <p
+          className="continue-preview__quality"
+          data-quality={quality}
+          aria-hidden="true"
+        >
+          <span className="continue-preview__quality-dot" />
         </p>
         <div className="exp-actions continue-preview__actions">
           <button
@@ -131,6 +137,19 @@ export function ContinuePreviewBody({
             Not now
           </button>
         </div>
+        {onInspect ? (
+          <details className="exp-inspect continue-inspect-inline">
+            <summary>Details</summary>
+            <button
+              type="button"
+              className="exp-btn ghost"
+              disabled={busy}
+              onClick={onInspect}
+            >
+              Inspect this place
+            </button>
+          </details>
+        ) : null}
       </motion.div>
     </div>
   );

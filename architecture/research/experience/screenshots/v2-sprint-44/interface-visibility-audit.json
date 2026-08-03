@@ -1,0 +1,54 @@
+{
+  "interfaceInvisibility": {
+    "idleHomeSilent": true,
+    "quietAffordance": true,
+    "fewPrimaryButtonsIdle": true,
+    "guideChromeGone": true,
+    "checkinHeadingHidden": true
+  },
+  "environmentalCommunication": {
+    "writingInObject": true,
+    "restoreInObject": true,
+    "reflectionInObject": true,
+    "guideInObject": true
+  },
+  "interactionDiscoverability": {
+    "quietContinuePresent": true,
+    "writingInviteWorks": true,
+    "restoreApprovePresent": true
+  },
+  "cognitiveLoad": {
+    "numericQualityHidden": true,
+    "metricsFolded": true,
+    "rememberButtonGone": true
+  },
+  "detail": {
+    "idle": {
+      "invisibleHome": true,
+      "visiblePlaceTitles": 0,
+      "visibleKickers": 0,
+      "quietAffordance": true,
+      "primaryButtons": 0
+    },
+    "writing": {
+      "toolsOn": true,
+      "writeInside": true
+    },
+    "restore": {
+      "previewInside": true,
+      "numericQualityVisible": false,
+      "rememberChromeAbsent": true
+    },
+    "reflection": {
+      "formInside": true,
+      "visibleCheckinHeading": false,
+      "metricsFolded": true
+    },
+    "guide": {
+      "hintInside": true,
+      "chipRailAbsent": true,
+      "visibleGuideTitle": false
+    }
+  },
+  "pass": true
+}

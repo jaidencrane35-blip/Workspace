@@ -335,7 +335,7 @@ export function PilotMeasurementPanel({
       aria-label={`${chapterLabel} form`}
       tabIndex={-1}
     >
-      <p className="moment-attach__kicker">{chapterLabel}</p>
+      <p className="sr-only">{chapterLabel}</p>
       <h2 className="sr-only">{chapterLabel}</h2>
       <AnimatePresence mode="wait">
         {chapter === 0 && (
@@ -556,15 +556,10 @@ export function PilotMeasurementPanel({
       data-density={density}
       aria-labelledby="checkin-title"
     >
-      <header className="place__identity place__identity--place place__identity--quiet-region">
-        <p className="exp-kicker">Check-in</p>
-        <h1 id="checkin-title" className="place__title place__title--region">
-          How’s the return feeling?
-        </h1>
-        <p className="place__pulse">
-          Reflection attaches to the Moment — local only.
-        </p>
-        <p className="sr-only">
+      <header className="sr-only">
+        <p>Check-in</p>
+        <h1 id="checkin-title">How’s the return feeling?</h1>
+        <p>
           Local pilot pulse only — they are not saved contexts and are not sent
           anywhere. Section {chapter + 1} of {CHECKIN_CHAPTERS.length}:{" "}
           {chapterLabel}.
@@ -593,16 +588,6 @@ export function PilotMeasurementPanel({
         <a href="#checkin-evidence">Skip to pulse evidence</a>
       </nav>
 
-      {(snapshot.interview_baseline || snapshot.interview_week_four) && (
-        <p className="checkin-story checkin-story--settled checkin-story--inline">
-          {(
-            snapshot.interview_week_four?.responses ||
-            snapshot.interview_baseline?.responses ||
-            ""
-          ).trim()}
-        </p>
-      )}
-
       {attachConversation
         ? expandHost
           ? createPortal(conversation, expandHost)
@@ -611,12 +596,22 @@ export function PilotMeasurementPanel({
 
       <aside
         id="checkin-evidence"
-        className="checkin-evidence checkin-evidence--environment checkin-evidence--quiet"
+        className="checkin-evidence checkin-evidence--annotation"
         aria-label="Pulse evidence"
         tabIndex={-1}
       >
-        <h2 className="sr-only">Pulse evidence</h2>
-        <div className="checkin-metrics checkin-metrics--quiet checkin-metrics--ambient">
+        <details className="checkin-evidence__fold">
+          <summary>Pulse</summary>
+          {(snapshot.interview_baseline || snapshot.interview_week_four) && (
+            <p className="checkin-story checkin-story--settled checkin-story--inline">
+              {(
+                snapshot.interview_week_four?.responses ||
+                snapshot.interview_baseline?.responses ||
+                ""
+              ).trim()}
+            </p>
+          )}
+          <div className="checkin-metrics checkin-metrics--quiet checkin-metrics--ambient">
           <CheckInSummaryObject
             id="checkin-baseline"
             label="Was"
@@ -647,7 +642,7 @@ export function PilotMeasurementPanel({
             hero
             state="expanded"
           />
-        </div>
+          </div>
         {snapshot.leave_resume.length > 0 && (
           <div
             className="checkin-trend checkin-trend--quiet"
@@ -684,10 +679,11 @@ export function PilotMeasurementPanel({
             </div>
           </div>
         )}
+        </details>
       </aside>
 
-      <details className="exp-inspect checkin-withdraw">
-        <summary>Withdraw consent</summary>
+      <details className="exp-inspect checkin-withdraw checkin-withdraw--quiet">
+        <summary>Withdraw</summary>
         <div className="exp-actions">
           <button
             type="button"

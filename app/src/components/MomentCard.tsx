@@ -37,6 +37,8 @@ interface MomentCardProps {
   sparseMeta?: boolean;
   /** Override attention weight (satellites should stay readable). */
   attentionWeight?: number;
+  /** Soft object affordance — actions appear on proximity, not as chrome. */
+  quietActions?: boolean;
 }
 
 function toObjectState(
@@ -71,6 +73,7 @@ function MomentCardInner({
   sparse = false,
   sparseMeta = false,
   attentionWeight,
+  quietActions = false,
 }: MomentCardProps) {
   const reduceMotion = useReducedMotion();
   const expandMotion = motionPrimitive("expand", Boolean(reduceMotion));
@@ -158,11 +161,19 @@ function MomentCardInner({
         </div>
       )}
       {showActions && (
-        <div className="moment-card__actions">
+        <div
+          className={
+            quietActions
+              ? "moment-card__actions moment-card__actions--quiet"
+              : "moment-card__actions"
+          }
+        >
           {onContinue && (
             <button
               type="button"
-              className="exp-btn primary"
+              className={
+                quietActions ? "moment-affordance" : "exp-btn primary"
+              }
               disabled={busy || state === "restoring"}
               onClick={(event) => {
                 event.stopPropagation();
@@ -180,7 +191,7 @@ function MomentCardInner({
           {onInspect && (
             <button
               type="button"
-              className="exp-btn ghost"
+              className={quietActions ? "moment-affordance ghost" : "exp-btn ghost"}
               disabled={busy}
               onClick={(event) => {
                 event.stopPropagation();

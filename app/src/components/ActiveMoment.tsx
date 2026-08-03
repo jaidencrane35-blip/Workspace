@@ -106,8 +106,9 @@ export function ActiveMomentProvider({
 
   useEffect(() => {
     setExpanding(false);
+    // Destinations refine presence; Save starts as place until writing begins.
     if (view === "save") {
-      setPresence("writing");
+      setPresence("presence");
     } else if (view === "resume") {
       setPresence((current) =>
         current === "restoring" ? current : "presence",
@@ -270,8 +271,7 @@ export function PersistentMomentStage({
   const showNeighbours =
     density !== "focus" &&
     neighbours.length > 0 &&
-    presence !== "writing" &&
-    presence !== "restoring";
+    presence === "presence";
 
   const showExpand =
     expanding ||
@@ -304,6 +304,7 @@ export function PersistentMomentStage({
               />
             ) : undefined
           }
+          quietActions={presence === "presence"}
           onSelect={() => selectMoment(primary.id)}
           onContinue={
             presence === "presence" && onContinue

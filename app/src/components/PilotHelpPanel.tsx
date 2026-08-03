@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { RESTORE_LIMITS_SUMMARY } from "../lib/restoreLimits";
 import { useActiveMoment } from "./ActiveMoment";
@@ -23,13 +23,23 @@ const HINTS = [
 ] as const;
 
 /**
- * Guide — contextual annotations on the persistent Moment.
+ * Guide — idle chrome nearly gone; one contextual hint when useful.
  */
 export function PilotHelpPanel() {
   const { density } = useWorkspaceComposition();
-  const { primary, expandHost, setPresence, setExpanding } = useActiveMoment();
-  const [active, setActive] = useState(0);
-  const hint = HINTS[active] ?? HINTS[0];
+  const { primary, expandHost, neighbours, setPresence, setExpanding } =
+    useActiveMoment();
+  const [revealed, setRevealed] = useState(false);
+
+  const hint = useMemo(() => {
+    if (!primary) {
+      return HINTS[0];
+    }
+    if (neighbours.length === 0) {
+      return HINTS[0];
+    }
+    return HINTS[1];
+  }, [primary, neighbours.length]);
 
   useEffect(() => {
     setPresence("guided");
@@ -39,42 +49,25 @@ export function PilotHelpPanel() {
 
   const hintNode = (
     <aside className="moment-attach moment-guide-hint" aria-label="Guide hint">
-      <p className="moment-attach__kicker">{hint.title}</p>
       <p className="moment-guide-hint__line">{hint.line}</p>
     </aside>
   );
 
   return (
     <section
-      className="ws-region guide-place guide-dash guide-place--resident"
+      className="ws-region guide-place guide-dash guide-place--resident guide-place--invisible"
       data-testid="pilot-help"
       data-density={density}
+      data-revealed={revealed ? "on" : "off"}
+      onMouseEnter={() => setRevealed(true)}
+      onFocusCapture={() => setRevealed(true)}
     >
-      <header className="place__identity place__identity--quiet-region">
-        <p className="exp-kicker">Guide</p>
-        <h1 className="place__title place__title--region">How this pilot works</h1>
-        <p className="place__pulse">Hints on the Moment — never a separate surface.</p>
-      </header>
+      <h1 className="sr-only">How this pilot works</h1>
+      <p className="sr-only">
+        Hints appear when useful. You approve every restore plan.
+      </p>
 
-      <div className="guide-experience__rail" role="list">
-        {HINTS.map((item, index) => (
-          <button
-            key={item.id}
-            type="button"
-            role="listitem"
-            className={
-              index === active
-                ? "guide-experience__chip is-active"
-                : index < active
-                  ? "guide-experience__chip is-done is-settled"
-                  : "guide-experience__chip"
-            }
-            onClick={() => setActive(index)}
-          >
-            {item.title}
-          </button>
-        ))}
-      </div>
+      {primary && expandHost ? createPortal(hintNode, expandHost) : null}
 
       {!primary ? (
         <aside className="moment-guide-hint moment-guide-hint--fallback">
@@ -82,10 +75,8 @@ export function PilotHelpPanel() {
         </aside>
       ) : null}
 
-      {expandHost ? createPortal(hintNode, expandHost) : null}
-
-      <details className="exp-inspect guide-trust-recess">
-        <summary>What this pilot keeps local</summary>
+      <details className="exp-inspect guide-trust-recess guide-trust-recess--quiet">
+        <summary>Local trust</summary>
         <p className="quote-pane__text">
           You write the handoff. You approve every restore plan. You can inspect
           and permanently delete saved contexts. Nothing is sent off this

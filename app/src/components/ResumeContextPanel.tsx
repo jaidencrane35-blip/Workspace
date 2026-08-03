@@ -286,27 +286,14 @@ export function ResumeContextPanel({
       {(step === "browse" || step === "preview") && (
         <>
           {step === "browse" && (
-            <header className="place__identity place__identity--quiet-region">
-              <p className="exp-kicker">Continue</p>
-              <h1 className="place__title place__title--region">Step back in</h1>
-              <p className="place__pulse">The Moment above is the place.</p>
-            </header>
+            <p className="sr-only">
+              Continue — step back in through the Moment above. Remember this
+              place via Continue on the object.
+            </p>
           )}
           {step === "browse" && primary && (
-            <div className="exp-actions">
-              <button
-                type="button"
-                className="exp-btn primary"
-                disabled={busy}
-                onClick={() => openPreview(primary.id)}
-              >
-                Remember this place
-              </button>
-            </div>
-          )}
-          {step === "browse" && primary && (
-            <details className="exp-inspect continue-inspect-recess">
-              <summary>Inspect this place</summary>
+            <details className="exp-inspect continue-inspect-recess continue-inspect-recess--quiet">
+              <summary>Inspect</summary>
               <button
                 type="button"
                 className="exp-btn ghost continue-inspect-entry"
@@ -325,6 +312,7 @@ export function ResumeContextPanel({
                   busy={busy}
                   onApprove={approveAndRestore}
                   onCancel={backToBrowse}
+                  onInspect={() => openInspect(preview.saved_context_id)}
                   describeDisposition={describeDisposition}
                 />,
                 expandHost,
