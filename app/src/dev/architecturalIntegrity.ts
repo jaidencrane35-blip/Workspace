@@ -58,6 +58,7 @@ export const AUTHORITY_CHAIN: readonly [
   ["61_Workspace_Calibration.md", "62_Presentation_Stability.md"],
   ["62_Presentation_Stability.md", "63_Architectural_Simplification.md"],
   ["63_Architectural_Simplification.md", "64_Continuous_Engineering_Certification.md"],
+  ["64_Continuous_Engineering_Certification.md", "65_Architectural_Maintainability.md"],
 ];
 
 export const AUTHORITY_ROOT: ArchitectureAuthorityDoc =

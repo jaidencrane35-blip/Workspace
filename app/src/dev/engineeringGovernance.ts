@@ -51,6 +51,7 @@ export const ARCHITECTURE_AUTHORITY_DOCS = [
   "62_Presentation_Stability.md",
   "63_Architectural_Simplification.md",
   "64_Continuous_Engineering_Certification.md",
+  "65_Architectural_Maintainability.md",
 ] as const;
 
 export type ArchitectureAuthorityDoc =

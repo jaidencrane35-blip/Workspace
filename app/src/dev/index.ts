@@ -157,6 +157,23 @@ export type {
   EngineeringCertificationComparison,
 } from "./engineeringCertification";
 export {
+  MODULE_INVENTORY,
+  MAINTAINABILITY_BASELINE,
+  buildMaintainabilityReport,
+  buildDependencyHealthReport,
+  compareMaintainabilityTrend,
+} from "./architecturalMaintainability";
+export type {
+  MaintainabilitySubsystem,
+  ModuleInventoryEntry,
+  ModuleSizeEntry,
+  MaintainabilityReport,
+  DependencyModuleMetric,
+  BoundaryCrossing,
+  DependencyHealthReport,
+  MaintainabilityTrendReport,
+} from "./architecturalMaintainability";
+export {
   GOVERNANCE_ID_RE,
   GOVERNANCE_LABEL_RE,
   adaptationLineageRefsPresent,

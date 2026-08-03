@@ -162,7 +162,7 @@ export const ENGINEERING_INVARIANTS: readonly EngineeringInvariant[] = [
   {
     schemaVersion: 1,
     invariantId: "inv-authority-docs-tip",
-    authorityDocument: "64_Continuous_Engineering_Certification.md",
+    authorityDocument: "65_Architectural_Maintainability.md",
     scope: "authority",
     validationMethod: "authority_docs_include_tip",
     expectedResult: "pass",
@@ -303,7 +303,7 @@ function executeInvariant(
     }
     case "authority_docs_include_tip": {
       const tip = ARCHITECTURE_AUTHORITY_DOCS[ARCHITECTURE_AUTHORITY_DOCS.length - 1];
-      return tip === "64_Continuous_Engineering_Certification.md"
+      return tip === "65_Architectural_Maintainability.md"
         ? pass()
         : fail("authority_gap");
     }

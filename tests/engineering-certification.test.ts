@@ -222,13 +222,13 @@ describe("baseline comparison", () => {
 describe("governance", () => {
   it("extends authority chain through continuous certification doc", () => {
     expect(ARCHITECTURE_AUTHORITY_DOCS).toContain(
-      "64_Continuous_Engineering_Certification.md",
+      "65_Architectural_Maintainability.md",
     );
     expect(
       AUTHORITY_CHAIN.some(
         ([a, b]) =>
-          a === "63_Architectural_Simplification.md" &&
-          b === "64_Continuous_Engineering_Certification.md",
+          a === "64_Continuous_Engineering_Certification.md" &&
+          b === "65_Architectural_Maintainability.md",
       ),
     ).toBe(true);
     expect(AUTHORITY_CHAIN).toHaveLength(

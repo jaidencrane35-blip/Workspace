@@ -133,6 +133,7 @@ type CalibrationApi = typeof import("../experience/workspaceCalibration");
 type StabilityApi = typeof import("../experience/workspacePresentationStability");
 type ComplexityApi = typeof import("../experience/architecturalComplexity");
 type EngCertApi = typeof import("./engineeringCertification");
+type MaintainabilityApi = typeof import("./architecturalMaintainability");
 
 const NEXT_STATE: Partial<Record<ProposalLifecycle, ProposalLifecycle>> = {
   draft: "review",
@@ -197,6 +198,8 @@ export function ExperienceEvidenceDashboard() {
     null,
   );
   const [engCertApi, setEngCertApi] = useState<EngCertApi | null>(null);
+  const [maintainabilityApi, setMaintainabilityApi] =
+    useState<MaintainabilityApi | null>(null);
   const [batchReport, setBatchReport] = useState<BatchValidationReport | null>(
     null,
   );
@@ -364,6 +367,13 @@ export function ExperienceEvidenceDashboard() {
         }
       });
     }
+    if (!maintainabilityApi) {
+      void import("./architecturalMaintainability").then((mod) => {
+        if (!cancelled) {
+          setMaintainabilityApi(mod);
+        }
+      });
+    }
     return () => {
       cancelled = true;
     };
@@ -389,6 +399,7 @@ export function ExperienceEvidenceDashboard() {
     stabilityApi,
     complexityApi,
     engCertApi,
+    maintainabilityApi,
   ]);
 
   const sessions = useMemo(() => {
@@ -891,6 +902,32 @@ export function ExperienceEvidenceDashboard() {
     }
     return engCertApi.deriveSubsystemHealth(engCertReport);
   }, [engCertApi, engCertReport]);
+
+  const maintainabilityReport = useMemo(() => {
+    void tick;
+    if (!maintainabilityApi) {
+      return null;
+    }
+    return maintainabilityApi.buildMaintainabilityReport();
+  }, [maintainabilityApi, tick]);
+
+  const dependencyHealth = useMemo(() => {
+    void tick;
+    if (!maintainabilityApi) {
+      return null;
+    }
+    return maintainabilityApi.buildDependencyHealthReport();
+  }, [maintainabilityApi, tick]);
+
+  const maintainabilityTrend = useMemo(() => {
+    if (!maintainabilityApi || !maintainabilityReport || !dependencyHealth) {
+      return null;
+    }
+    return maintainabilityApi.compareMaintainabilityTrend(
+      maintainabilityReport,
+      dependencyHealth,
+    );
+  }, [maintainabilityApi, maintainabilityReport, dependencyHealth]);
 
   const analyze = () => {
     if (sessions.length === 0) {
@@ -2155,6 +2192,61 @@ export function ExperienceEvidenceDashboard() {
           </div>
         ) : (
           <div style={{ opacity: 0.7 }}>Awaiting certification module…</div>
+        )}
+      </section>
+
+      <section
+        style={{ marginBottom: 10 }}
+        data-testid="architectural-maintainability"
+      >
+        <div style={{ marginBottom: 4 }}>
+          <strong>Architectural maintainability</strong>
+          {!maintainabilityApi ? " (loading…)" : ""}
+        </div>
+        {maintainabilityReport && dependencyHealth && maintainabilityTrend ? (
+          <div data-testid="maintainability-report">
+            <div data-testid="maintainability-metrics">
+              modules {maintainabilityReport.moduleCount} · fanOut{" "}
+              {maintainabilityReport.dependencyFanOutTotal} · depth{" "}
+              {maintainabilityReport.dependencyDepthMax} · exports{" "}
+              {maintainabilityReport.exportedSymbolCount} · avgSize{" "}
+              {maintainabilityReport.averageModuleSize} · dupClamp{" "}
+              {maintainabilityReport.duplicatedImplementation.clampRoundSites} ·
+              valCov {maintainabilityReport.validationCoverage.percent}% ·
+              invCov {maintainabilityReport.invariantCoverage.percent}%
+            </div>
+            <div data-testid="maintainability-largest">
+              {maintainabilityReport.largestModules
+                .map((m) => `${m.id}:${m.lines}`)
+                .join(" · ")}
+            </div>
+            <div data-testid="dependency-health">
+              cycles {dependencyHealth.circularDependencyCount} · isolated{" "}
+              {dependencyHealth.isolatedModules.length} · highOut{" "}
+              {dependencyHealth.highFanOutModules.length} · highIn{" "}
+              {dependencyHealth.highFanInModules.length} · crossings{" "}
+              {dependencyHealth.architecturalBoundaryCrossings.length} · edges{" "}
+              {dependencyHealth.edgeCount}
+            </div>
+            <div data-testid="maintainability-trend">
+              added {maintainabilityTrend.modulesAdded.join(",") || "∅"} ·
+              removed {maintainabilityTrend.modulesRemoved.join(",") || "∅"} ·
+              dep+ {maintainabilityTrend.dependencyIncreases} · dep-{" "}
+              {maintainabilityTrend.dependencyReductions} · invΔ{" "}
+              {maintainabilityTrend.invariantCoverageDelta} · valΔ{" "}
+              {maintainabilityTrend.validationCoverageDelta}
+            </div>
+            <div data-testid="maintainability-subsystems">
+              {maintainabilityReport.subsystems
+                .map(
+                  (s) =>
+                    `${s.subsystem}:m${s.moduleCount}/l${s.lines}/e${s.exports}`,
+                )
+                .join(" · ")}
+            </div>
+          </div>
+        ) : (
+          <div style={{ opacity: 0.7 }}>Awaiting maintainability module…</div>
         )}
       </section>
 
