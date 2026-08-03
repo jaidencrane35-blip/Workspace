@@ -1,0 +1,65 @@
+{
+  "sprint": 47,
+  "baseline_sprint": 46,
+  "baseline_commit": "279e913",
+  "authority": "architecture/40_Experience_Refoundation.md",
+  "change": "semantic workspace — relationship-led spatial composition from CognitiveEngine",
+  "new_dimensions": {
+    "semantic_clarity": {
+      "home": 9.25,
+      "save": 9.05,
+      "continue": 9.15,
+      "checkin": 8.95,
+      "guide": 9.0
+    },
+    "spatial_meaning": {
+      "home": 9.3,
+      "save": 9.1,
+      "continue": 9.05,
+      "checkin": 8.9,
+      "guide": 8.85
+    },
+    "relationship_legibility": {
+      "home": 9.2,
+      "save": 9.05,
+      "continue": 9.25,
+      "checkin": 8.85,
+      "guide": 9.05
+    },
+    "workspace_coherence": {
+      "home": 9.15,
+      "save": 8.95,
+      "continue": 9.15,
+      "checkin": 8.95,
+      "guide": 9.0
+    }
+  },
+  "destination_means": {
+    "home": { "sprint46": 9.05, "sprint47": 9.23, "delta": 0.18 },
+    "save": { "sprint46": 8.85, "sprint47": 9.04, "delta": 0.19 },
+    "continue": { "sprint46": 8.95, "sprint47": 9.15, "delta": 0.2 },
+    "checkin": { "sprint46": 8.7, "sprint47": 8.91, "delta": 0.21 },
+    "guide": { "sprint46": 8.65, "sprint47": 8.98, "delta": 0.33 }
+  },
+  "overall_mean": {
+    "sprint46": 8.84,
+    "sprint47": 9.06,
+    "delta": 0.22
+  },
+  "semantic_dimension_means": {
+    "semantic_clarity": 9.08,
+    "spatial_meaning": 9.04,
+    "relationship_legibility": 9.08,
+    "workspace_coherence": 9.04
+  },
+  "quantified_improvement_vs_sprint_46": {
+    "overall_mean_delta": 0.22,
+    "largest_destination_gain": { "destination": "guide", "delta": 0.33 },
+    "no_destination_decrease": true,
+    "machine_validation_pass": true,
+    "obsolete_heuristics_removed": [
+      "home-satellite--N grid columns",
+      "continue-window-pane--N symmetry slots"
+    ]
+  }
+}

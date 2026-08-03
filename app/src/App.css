@@ -269,9 +269,114 @@ body {
 }
 
 .ws-object-stage__neighbours {
-  max-width: min(48rem, 100%);
+  max-width: min(56rem, 100%);
   margin: 0 auto;
   pointer-events: auto;
+}
+
+/* Sprint 47 — semantic field (relationship, not grid ownership) */
+.semantic-field {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: clamp(12rem, 26vh, 18rem);
+  margin: 0.35rem auto 0;
+  padding: 0;
+  opacity: 1;
+  filter: none;
+  transform: none;
+  pointer-events: auto;
+}
+
+.semantic-field.dash-grid {
+  display: block;
+  grid-template-columns: none;
+  gap: 0;
+}
+
+.semantic-field__node {
+  position: absolute;
+  left: calc(50% + var(--sem-x, 0px));
+  top: var(--sem-y, 0px);
+  width: min(13.5rem, 30vw);
+  transform: translateX(-50%) scale(var(--sem-scale, 1));
+  opacity: var(--sem-opacity, 0.7);
+  transform-origin: center top;
+  transition:
+    left 1.25s var(--ease),
+    top 1.25s var(--ease),
+    opacity 1.1s var(--ease),
+    transform 1.25s var(--ease);
+  pointer-events: auto;
+}
+
+.semantic-field__node .ws-object,
+.semantic-field__node .moment-card {
+  width: 100%;
+  max-width: none;
+}
+
+.ws-object-stage[data-presence="writing"] .semantic-field {
+  height: clamp(10rem, 20vh, 14rem);
+}
+
+.ws-object-stage[data-presence="writing"] .semantic-field__node[data-band="far"] {
+  filter: saturate(0.75);
+}
+
+.ws-object-stage[data-presence="reflecting"] .semantic-field__node[data-band="near"] {
+  filter: saturate(1.05);
+}
+
+.semantic-cluster__annotation {
+  position: absolute;
+  z-index: 4;
+  transform: translateX(-50%);
+  max-width: min(22rem, 70%);
+  padding: 0.55rem 0.85rem;
+  border-radius: var(--radius-md);
+  background: var(--mat-ephemeral, rgba(16, 22, 32, 0.72));
+  box-shadow: var(--mat-object-edge, inset 0 1px 0 rgba(255, 255, 255, 0.08));
+  pointer-events: none;
+  transition:
+    left 1.2s var(--ease),
+    top 1.2s var(--ease),
+    opacity 0.9s var(--ease);
+}
+
+.semantic-cluster__annotation .moment-guide-hint__line {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.35;
+  color: var(--exp-muted, rgba(220, 228, 240, 0.78));
+}
+
+.continue-window-field--semantic {
+  display: block;
+  position: relative;
+  min-height: 14rem;
+  height: clamp(14rem, 28vh, 18rem);
+  grid-template-columns: none;
+  gap: 0;
+}
+
+.continue-window-pane--semantic {
+  position: absolute;
+  left: calc(50% + var(--sem-x, 0px));
+  top: var(--sem-y, 0px);
+  width: min(12.5rem, 28vw);
+  min-height: 7.5rem;
+  grid-column: auto;
+  grid-row: auto;
+  margin: 0;
+  transform: translateX(-50%) scale(var(--sem-scale, 1)) rotateX(3deg);
+  opacity: var(--sem-opacity, 0.8);
+  transform-origin: center top;
+  transition:
+    left 1.15s var(--ease),
+    top 1.15s var(--ease),
+    opacity 1s var(--ease),
+    transform 1.15s var(--ease);
 }
 
 .ws-region--attach {
@@ -380,25 +485,14 @@ body {
   margin-bottom: 0;
 }
 
-/* ── Sprint 45: cognitive workspace ── */
-.ws-object-stage[data-cognitive="on"] .home-field--cognitive {
-  transition:
-    opacity 1.1s var(--ease),
-    filter 1.1s var(--ease),
-    transform 1.4s var(--ease);
+/* ── Sprint 45/47: cognitive + semantic workspace ── */
+.ws-object-stage[data-semantic="on"] .semantic-field {
+  transition: height 1.15s var(--ease), opacity 1.1s var(--ease);
 }
 
 .ws-object-stage[data-presence="writing"] .moment-object--anchor .ws-surface,
 .ws-object-stage[data-presence="writing"] .moment-object--anchor .elevated-card {
   box-shadow: var(--shadow-4), 0 2px 0 rgba(0, 0, 0, 0.4);
-}
-
-.continue-preview-body--cognitive .continue-window-pane--remember:nth-child(1) {
-  z-index: 3;
-}
-
-.continue-preview-body--cognitive .continue-window-pane--remember:nth-child(2) {
-  z-index: 2;
 }
 
 .guide-place--cognitive[data-hint="off"] .moment-guide-hint {
@@ -858,31 +952,11 @@ body {
   align-items: start;
 }
 
+/* Satellite grid slots removed — semantic-field owns neighbour placement */
 .home-satellite {
   max-width: none !important;
   flex: none !important;
   min-height: 0 !important;
-  grid-column: span 4;
-}
-
-/* H-04: modular uneven tile sizes */
-.home-satellite--0 { grid-column: 1 / span 6; }
-.home-satellite--1 { grid-column: 7 / span 3; margin-top: var(--space-7); }
-.home-satellite--2 { grid-column: 10 / span 3; margin-top: var(--space-2); }
-
-.ws-object.moment-card--sparse.home-satellite--0 .ws-surface,
-.ws-object.moment-card--sparse.home-satellite--0 .elevated-card {
-  min-height: 9.5rem;
-}
-
-.ws-object.moment-card--sparse.home-satellite--1 .ws-surface,
-.ws-object.moment-card--sparse.home-satellite--1 .elevated-card {
-  min-height: 5.75rem;
-}
-
-.ws-object.moment-card--sparse.home-satellite--2 .ws-surface,
-.ws-object.moment-card--sparse.home-satellite--2 .elevated-card {
-  min-height: 11rem;
 }
 
 .ws-object.moment-card--sparse .elevated-card__body,
@@ -1695,12 +1769,6 @@ body {
     1.1rem 0 0 rgba(255, 255, 255, 0.1);
 }
 
-.continue-window-pane--0 { grid-column: 1 / span 5; grid-row: 1; }
-.continue-window-pane--1 { grid-column: 6 / span 4; grid-row: 1; margin-top: var(--space-5); }
-.continue-window-pane--2 { grid-column: 9 / span 4; grid-row: 1 / span 2; min-height: 12rem; }
-.continue-window-pane--3 { grid-column: 1 / span 4; grid-row: 2; margin-left: var(--space-5); }
-.continue-window-pane--4 { grid-column: 5 / span 4; grid-row: 2; }
-
 .continue-window-pane.is-skip {
   opacity: 0.45;
   background: rgba(12, 16, 22, 0.4);
@@ -2337,12 +2405,11 @@ body {
 @media (max-width: 1100px) {
   .span-3, .span-4 { grid-column: span 6; }
   .span-6, .span-8 { grid-column: span 12; }
-  .home-satellite,
-  .home-satellite--0,
-  .home-satellite--1,
-  .home-satellite--2 {
-    grid-column: span 6;
-    margin: 0;
+  .semantic-field {
+    height: clamp(14rem, 32vh, 20rem);
+  }
+  .semantic-field__node {
+    width: min(12rem, 42vw);
   }
   .home-hero-band .moment-card--hero {
     min-height: clamp(14rem, 42vh, 22rem);
@@ -2351,12 +2418,11 @@ body {
 
 @media (max-width: 720px) {
   .span-3, .span-4, .span-6, .span-8, .span-12 { grid-column: span 12; }
-  .home-satellite,
-  .home-satellite--0,
-  .home-satellite--1,
-  .home-satellite--2 {
-    grid-column: span 12;
-    margin: 0;
+  .semantic-field__node {
+    width: min(11rem, 70vw);
+  }
+  .continue-window-pane--semantic {
+    width: min(11rem, 70vw);
   }
   .ws-dock__item { min-width: 3.6rem; font-size: 0.62rem; }
   body { overflow: auto; }

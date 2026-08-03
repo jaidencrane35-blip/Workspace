@@ -5,12 +5,15 @@ import {
   useEffect,
   useMemo,
   useState,
+  type CSSProperties,
   type ReactNode,
 } from "react";
 import {
+  composeSemanticField,
   rankMomentsByRelevance,
   scoreMomentRelevance,
   type CognitiveMomentInput,
+  type SemanticPlacement,
 } from "../lib/cognitive";
 import { invokeIpc } from "../lib/ipc";
 import type { PilotPrimaryView } from "../lib/pilotChrome";
@@ -18,6 +21,12 @@ import type { SavedContext, Workspace } from "../types/domain";
 import { useCognitiveEngine } from "./CognitiveEngine";
 import { MomentCard, type MomentObjectState } from "./MomentCard";
 import { useWorkspaceComposition } from "./WorkspaceComposition";
+
+const GUIDE_LINES = {
+  save: "Focus the note — writing expands from this Moment.",
+  continue: "Remember this place — windows grow from the Moment itself.",
+  checkin: "Reflect here — answers settle back into the object.",
+} as const;
 
 /** How the persistent Moment is currently being used. */
 export type MomentPresence =
@@ -80,14 +89,21 @@ export function ActiveMomentProvider({
 
   const toSignals = useCallback(
     (list: SavedContext[]): CognitiveMomentInput[] =>
-      list.map((c) => ({
-        id: c.id,
-        createdAt: c.created_at,
-        windowCount: c.windows.length,
-        handoffLength: c.handoff_note.trim().length,
-        resumeAffinity: resumeAffinity[c.id] ?? 0,
-        reflectionAffinity: reflectionDepth * 0.55,
-      })),
+      list.map((c) => {
+        const resume = resumeAffinity[c.id] ?? 0;
+        // Reflection reshapes distance toward demonstrated intent — not a badge.
+        const reflectionAffinity =
+          reflectionDepth *
+          (0.22 + resume * 0.45 + (c.windows.length > 0 ? 0.2 : 0));
+        return {
+          id: c.id,
+          createdAt: c.created_at,
+          windowCount: c.windows.length,
+          handoffLength: c.handoff_note.trim().length,
+          resumeAffinity: resume,
+          reflectionAffinity,
+        };
+      }),
     [resumeAffinity, reflectionDepth],
   );
 
@@ -338,7 +354,7 @@ function momentState(presence: MomentPresence): MomentObjectState {
 }
 
 /**
- * Persistent Moment anchor — one object identity across destinations.
+ * Persistent Moment anchor — semantic field of related Moments.
  */
 export function PersistentMomentStage({
   busy = false,
@@ -356,29 +372,48 @@ export function PersistentMomentStage({
     expanding,
     selectMoment,
   } = useActiveMoment();
+  const { guideDecision, preferHint } = useCognitiveEngine();
   const registerHost = useContext(ExpandHostRegisterContext);
+
+  const placements = useMemo(() => {
+    const ranked = neighbours.map((context) => ({
+      id: context.id,
+      score: neighbourScores[context.id] ?? 0.3,
+    }));
+    ranked.sort((a, b) => b.score - a.score);
+    return composeSemanticField(ranked, presence, 3);
+  }, [neighbours, neighbourScores, presence]);
+
+  const byId = useMemo(() => {
+    const map = new Map<string, SavedContext>();
+    for (const context of neighbours) {
+      map.set(context.id, context);
+    }
+    return map;
+  }, [neighbours]);
 
   if (!primary) {
     return null;
   }
 
-  const showNeighbours =
-    density !== "focus" &&
-    neighbours.length > 0 &&
-    presence === "presence";
+  const showField = density !== "focus" && placements.length > 0;
 
   const showExpand =
     expanding ||
     presence === "writing" ||
     presence === "restoring" ||
-    presence === "reflecting" ||
-    presence === "guided";
+    presence === "reflecting";
+
+  const nearCluster = placements.filter((p) => p.band === "near");
+  const guideLine =
+    GUIDE_LINES[preferHint ?? guideDecision.hintId] ?? GUIDE_LINES.continue;
 
   return (
     <div
       className="ws-object-stage"
       data-presence={presence}
       data-cognitive="on"
+      data-semantic="on"
       data-material="place"
       data-testid="persistent-moment-stage"
     >
@@ -409,33 +444,74 @@ export function PersistentMomentStage({
           }
         />
       </div>
-      {showNeighbours ? (
+      {showField ? (
         <div
-          className="home-field home-field--context home-field--waiting home-field--cognitive dash-grid ws-object-stage__neighbours"
-          aria-label="Neighbouring moments"
+          className="semantic-field ws-object-stage__neighbours dash-grid"
+          data-presence={presence}
+          data-testid="semantic-field"
+          aria-label="Related moments"
         >
-          {neighbours.slice(0, 3).map((context, index) => {
-            const score = neighbourScores[context.id] ?? 0.3;
+          {presence === "guided" && guideDecision.show ? (
+            <aside
+              className="semantic-cluster__annotation"
+              data-band={nearCluster[0]?.band ?? "near"}
+              aria-label="Guide hint"
+              style={clusterAnnotationStyle(nearCluster[0] ?? placements[0])}
+            >
+              <p className="moment-guide-hint__line">{guideLine}</p>
+            </aside>
+          ) : null}
+          {placements.map((placement) => {
+            const context = byId.get(placement.id);
+            if (!context) {
+              return null;
+            }
             return (
-              <MomentCard
+              <div
                 key={context.id}
-                variant="ambient"
-                state="collapsed"
-                attentionWeight={0.22 + score * 0.28}
-                layoutId={`moment-neighbour-${context.id}`}
-                className={`home-satellite home-satellite--${index % 3} moment-card--waiting`}
-                context={context}
-                busy={busy}
-                onSelect={() => {
-                  selectMoment(context.id);
-                  onContinue?.(context.id);
-                }}
-                onContinue={() => onContinue?.(context.id)}
-              />
+                className="semantic-field__node"
+                data-band={placement.band}
+                data-proximity={placement.proximity.toFixed(2)}
+                style={
+                  {
+                    "--sem-x": `${placement.x}px`,
+                    "--sem-y": `${placement.y}px`,
+                    "--sem-scale": String(placement.scale),
+                    "--sem-opacity": String(placement.opacity),
+                  } as CSSProperties
+                }
+              >
+                <MomentCard
+                  variant="ambient"
+                  state="collapsed"
+                  attentionWeight={0.2 + placement.proximity * 0.35}
+                  layoutId={`moment-neighbour-${context.id}`}
+                  className="moment-card--waiting moment-card--semantic"
+                  context={context}
+                  busy={busy}
+                  onSelect={() => {
+                    selectMoment(context.id);
+                    onContinue?.(context.id);
+                  }}
+                  onContinue={() => onContinue?.(context.id)}
+                />
+              </div>
             );
           })}
         </div>
       ) : null}
     </div>
   );
+}
+
+function clusterAnnotationStyle(
+  placement: SemanticPlacement | undefined,
+): CSSProperties {
+  if (!placement) {
+    return { left: "50%", top: "0.5rem" };
+  }
+  return {
+    left: `calc(50% + ${Math.round(placement.x * 0.35)}px)`,
+    top: `${Math.max(0, placement.y - 28)}px`,
+  };
 }

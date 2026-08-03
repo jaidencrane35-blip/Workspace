@@ -1,23 +1,17 @@
 import { useEffect, useState } from "react";
-import { createPortal } from "react-dom";
 import { RESTORE_LIMITS_SUMMARY } from "../lib/restoreLimits";
 import { useActiveMoment } from "./ActiveMoment";
 import { useCognitiveEngine } from "./CognitiveEngine";
 import { useWorkspaceComposition } from "./WorkspaceComposition";
 
-const HINT_LINES = {
-  save: "Focus the note — writing expands from this Moment.",
-  continue: "Remember this place — windows grow from the Moment itself.",
-  checkin: "Reflect here — answers settle back into the object.",
-} as const;
-
 /**
- * Guide — observational. Hints only when cognitive confidence warrants.
+ * Guide — observational. Cluster annotations live on the semantic field;
+ * this surface keeps trust recess and destination presence only.
  */
 export function PilotHelpPanel() {
   const { density } = useWorkspaceComposition();
-  const { primary, expandHost, setPresence, setExpanding } = useActiveMoment();
-  const { guideDecision, noteGuideVisit, preferHint } = useCognitiveEngine();
+  const { primary, setPresence, setExpanding } = useActiveMoment();
+  const { guideDecision, noteGuideVisit } = useCognitiveEngine();
   const [revealed, setRevealed] = useState(false);
 
   useEffect(() => {
@@ -26,18 +20,10 @@ export function PilotHelpPanel() {
 
   useEffect(() => {
     setPresence("guided");
-    setExpanding(Boolean(primary) && guideDecision.show);
+    // Hints attach to the semantic cluster — do not expand the Moment.
+    setExpanding(false);
     return () => setExpanding(false);
-  }, [primary, guideDecision.show, setPresence, setExpanding]);
-
-  const hintId = preferHint ?? guideDecision.hintId;
-  const line = HINT_LINES[hintId];
-
-  const hintNode = guideDecision.show ? (
-    <aside className="moment-attach moment-guide-hint" aria-label="Guide hint">
-      <p className="moment-guide-hint__line">{line}</p>
-    </aside>
-  ) : null;
+  }, [setPresence, setExpanding]);
 
   return (
     <section
@@ -46,6 +32,7 @@ export function PilotHelpPanel() {
       data-density={density}
       data-revealed={revealed ? "on" : "off"}
       data-hint={guideDecision.show ? "on" : "off"}
+      data-semantic-guide="cluster"
       onMouseEnter={() => setRevealed(true)}
       onFocusCapture={() => setRevealed(true)}
     >
@@ -54,13 +41,11 @@ export function PilotHelpPanel() {
         Hints appear when useful. You approve every restore plan.
       </p>
 
-      {primary && expandHost && hintNode
-        ? createPortal(hintNode, expandHost)
-        : null}
-
       {!primary && guideDecision.show ? (
         <aside className="moment-guide-hint moment-guide-hint--fallback">
-          <p className="moment-guide-hint__line">{line}</p>
+          <p className="moment-guide-hint__line">
+            Focus the note — writing expands from this Moment.
+          </p>
         </aside>
       ) : null}
 

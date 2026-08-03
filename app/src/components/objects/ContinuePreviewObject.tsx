@@ -1,6 +1,7 @@
 import { motion, useReducedMotion } from "motion/react";
+import type { CSSProperties } from "react";
 import { spring } from "../../design-system";
-import { sortWindowsByImportance } from "../../lib/cognitive";
+import { composeSemanticWindowField } from "../../lib/cognitive";
 import type { ActionPlanItem, ResumePlanPreview } from "../../types/domain";
 
 interface ContinuePreviewBodyProps {
@@ -38,29 +39,30 @@ export function ContinuePreviewBody({
   describeDisposition,
 }: ContinuePreviewBodyProps) {
   const reduceMotion = useReducedMotion();
-  const ordered = sortWindowsByImportance(preview.plan.items);
-  const willAttempt = ordered.filter(
-    (i) => i.projected_disposition === "will_attempt",
+  const field = composeSemanticWindowField(preview.plan.items);
+  const willAttempt = field.filter(
+    (entry) => entry.item.projected_disposition === "will_attempt",
   ).length;
-  const total = ordered.length;
+  const total = field.length;
   const ratio = total === 0 ? 0 : willAttempt / total;
   const quality =
     ratio >= 0.85 ? "high" : ratio >= 0.5 ? "steady" : "limited";
 
   return (
     <div
-      className="continue-preview-body continue-preview-body--spatial continue-preview-body--remember continue-preview-body--invisible continue-preview-body--cognitive"
+      className="continue-preview-body continue-preview-body--spatial continue-preview-body--remember continue-preview-body--invisible continue-preview-body--cognitive continue-preview-body--semantic"
       data-quality={quality}
     >
       <p className="sr-only">
         Reconstructing this place. {willAttempt} of {total} windows still open.
       </p>
       <div
-        className="continue-window-field continue-window-field--spatial"
+        className="continue-window-field continue-window-field--spatial continue-window-field--semantic"
         role="list"
         aria-label="Windows in this place"
+        data-testid="semantic-restore-field"
       >
-        {ordered.map((item, index) => {
+        {field.map(({ item, placement }, index) => {
           const skip = item.projected_disposition !== "will_attempt";
           const hint = describeDisposition(item);
           const { title, app } = splitWindowLabel(item.target_summary);
@@ -71,17 +73,25 @@ export function ContinuePreviewBody({
               role="listitem"
               className={[
                 "continue-window-pane",
-                `continue-window-pane--${index % 5}`,
+                "continue-window-pane--semantic",
                 skip ? "is-skip" : "",
                 "continue-window-pane--remember",
               ]
                 .filter(Boolean)
                 .join(" ")}
-              initial={
-                reduceMotion ? false : { opacity: 0, y: 8 }
+              data-importance={placement.importance.toFixed(2)}
+              style={
+                {
+                  "--sem-x": `${placement.x}px`,
+                  "--sem-y": `${placement.y}px`,
+                  "--sem-scale": String(placement.scale),
+                  "--sem-opacity": String(placement.opacity),
+                  zIndex: placement.zIndex,
+                } as CSSProperties
               }
+              initial={reduceMotion ? false : { opacity: 0, y: 8 }}
               animate={{
-                opacity: skip ? 0.4 : 1,
+                opacity: placement.opacity,
                 y: 0,
               }}
               transition={{

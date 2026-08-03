@@ -1,0 +1,57 @@
+{
+  "semanticClarity": {
+    "stageSemantic": true,
+    "fieldPresent": true,
+    "nodesPlaced": true
+  },
+  "spatialMeaning": {
+    "notRowGrid": true,
+    "spreadRelationships": true,
+    "writingReshape": true
+  },
+  "relationshipLegibility": {
+    "bandVariation": true,
+    "opacityDuringWrite": true,
+    "restoreByImportance": true
+  },
+  "workspaceCoherence": {
+    "restoreSemantic": true,
+    "reflectionQuiet": true,
+    "guideOnCluster": true
+  },
+  "detail": {
+    "home": {
+      "semanticOn": true,
+      "fieldPresent": true,
+      "nodeCount": 3,
+      "hasNear": true,
+      "notRowGrid": true,
+      "spreadX": true
+    },
+    "writing": {
+      "presence": true,
+      "fieldDuringWrite": true,
+      "opacitySpread": true,
+      "spread": 0.3180235235577332
+    },
+    "restore": {
+      "semanticRestore": true,
+      "paneCount": 3,
+      "noSymmetrySlots": true,
+      "importanceOrdered": true
+    },
+    "reflection": {
+      "reflecting": true,
+      "fieldPresent": true,
+      "noNewChrome": true
+    },
+    "guide": {
+      "clusterGuide": true,
+      "annotationOnField": true,
+      "notOnDestinationExpand": true,
+      "hintOn": true,
+      "hasClusterWhenHinted": true
+    }
+  },
+  "pass": true
+}

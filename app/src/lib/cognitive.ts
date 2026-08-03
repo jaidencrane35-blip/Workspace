@@ -67,7 +67,7 @@ export function scoreMomentRelevance(
     0.12,
     Math.min(
       1,
-      recency * 0.42 + substance * 0.28 + resume * 0.2 + reflect * 0.1,
+      recency * 0.38 + substance * 0.26 + resume * 0.2 + reflect * 0.16,
     ),
   );
 }
@@ -108,6 +108,56 @@ export function sortWindowsByImportance(
   return [...items].sort(
     (a, b) => scoreWindowImportance(b) - scoreWindowImportance(a),
   );
+}
+
+/** Window placement in the restore neighbourhood — importance, not symmetry. */
+export interface SemanticWindowPlacement {
+  itemId: string;
+  importance: number;
+  x: number;
+  y: number;
+  scale: number;
+  opacity: number;
+  zIndex: number;
+}
+
+export function composeSemanticWindowField(
+  items: ActionPlanItem[],
+  limit = 5,
+): Array<{ item: ActionPlanItem; placement: SemanticWindowPlacement }> {
+  const ordered = sortWindowsByImportance(items).slice(0, limit);
+  if (ordered.length === 0) {
+    return [];
+  }
+  const max = Math.max(...ordered.map(scoreWindowImportance), 0.01);
+  const slots = [
+    { angle: -0.7, baseY: 12 },
+    { angle: 0.55, baseY: 8 },
+    { angle: 0.15, baseY: 72 },
+    { angle: -1.15, baseY: 88 },
+    { angle: 1.05, baseY: 96 },
+  ] as const;
+
+  return ordered.map((item, index) => {
+    const importance = scoreWindowImportance(item) / max;
+    const skip = item.projected_disposition !== "will_attempt";
+    const slot = slots[index] ?? slots[slots.length - 1]!;
+    const radius = 40 + (1 - importance) * 110;
+    const x = Math.round(Math.sin(slot.angle) * radius * 1.55);
+    const y = Math.round(slot.baseY + (1 - importance) * 28);
+    return {
+      item,
+      placement: {
+        itemId: item.item_id,
+        importance,
+        x,
+        y,
+        scale: 0.82 + importance * 0.2,
+        opacity: skip ? 0.32 : 0.55 + importance * 0.4,
+        zIndex: Math.round(1 + importance * 4),
+      },
+    };
+  });
 }
 
 /**
@@ -232,4 +282,105 @@ export function visualFromCognitiveWeight(weight: number): AttentionVisual {
 export function decayAffinity(value: number, factor = 0.92): number {
   const next = value * factor;
   return next < 0.04 ? 0 : next;
+}
+
+/** Presence modes that reshape the semantic field. */
+export type SemanticPresence =
+  | "presence"
+  | "writing"
+  | "restoring"
+  | "reflecting"
+  | "guided";
+
+export type SemanticBand = "near" | "mid" | "far";
+
+/** Spatial placement derived from cognitive relevance — not a layout grid. */
+export interface SemanticPlacement {
+  id: string;
+  score: number;
+  /** 1 = beside the active work; 0 = archival distance. */
+  proximity: number;
+  /** Horizontal offset from field centre (px). */
+  x: number;
+  /** Vertical offset within the field (px). */
+  y: number;
+  scale: number;
+  opacity: number;
+  band: SemanticBand;
+}
+
+/**
+ * Compose neighbour positions from cognitive scores.
+ * Nearby ⇒ relevance; distant ⇒ archival context. No categories.
+ */
+export function composeSemanticField(
+  ranked: Array<{ id: string; score: number }>,
+  presence: SemanticPresence,
+  limit = 3,
+): SemanticPlacement[] {
+  const slice = ranked.slice(0, limit);
+  if (slice.length === 0) {
+    return [];
+  }
+
+  return slice.map((entry, index) => {
+    let proximity = entry.score;
+
+    if (presence === "writing") {
+      // Relevant Moments drift closer; unrelated quietly recede.
+      proximity =
+        entry.score >= 0.5
+          ? Math.min(1, entry.score * 1.18)
+          : entry.score * 0.48;
+    } else if (presence === "restoring") {
+      proximity = Math.min(1, entry.score * 1.08);
+    } else if (presence === "reflecting") {
+      proximity = Math.min(1, entry.score * 1.12);
+    } else if (presence === "guided") {
+      proximity = Math.min(1, 0.55 + entry.score * 0.4);
+    }
+
+    // Rank accent keeps neighbourhoods legible when scores cluster.
+    const rankAccent = 1 - index / Math.max(1, slice.length);
+    proximity = Math.max(
+      0.08,
+      Math.min(1, proximity * (0.68 + rankAccent * 0.34)),
+    );
+    if (presence === "writing") {
+      proximity = Math.max(0.08, proximity - index * 0.14);
+    }
+
+    const band: SemanticBand =
+      proximity >= 0.62 ? "near" : proximity >= 0.38 ? "mid" : "far";
+
+    // Angular slots around the anchor — relationship, not row/column.
+    const slots = [
+      { angle: -0.95, baseY: 8 },
+      { angle: 0.95, baseY: 18 },
+      { angle: 0.08, baseY: 54 },
+    ] as const;
+    const slot = slots[index] ?? slots[2]!;
+    const radius = 72 + (1 - proximity) * 150;
+    const x = Math.round(Math.sin(slot.angle) * radius * 1.35);
+    const y = Math.round(slot.baseY + (1 - proximity) * 42);
+
+    const scale = 0.78 + proximity * 0.22;
+    const opacity =
+      presence === "writing"
+        ? 0.16 + proximity * 0.7
+        : presence === "restoring"
+          ? 0.28 + proximity * 0.45
+          : 0.34 + proximity * 0.55;
+
+    return {
+      id: entry.id,
+      score: entry.score,
+      proximity,
+      x,
+      y,
+      scale: Math.max(0.72, Math.min(1, scale)),
+      opacity: Math.max(0.16, Math.min(0.92, opacity)),
+      band,
+    };
+  });
 }
