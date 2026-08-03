@@ -10,7 +10,7 @@ use workspace_domain::{
 };
 use workspace_windows_integration::StubDesktopCapturer;
 
-use crate::services::observation_flight_test_lock;
+use crate::services::lock_observation_flight_for_tests;
 use crate::services::{
     CaptureCoordinator, WorkspaceRuntimeStateService, WorkspaceSessionStore,
 };
@@ -18,7 +18,7 @@ use crate::WorkspaceKernel;
 
 #[test]
 fn save_load_checkpoint_round_trip() {
-    let _flight = observation_flight_test_lock().lock().unwrap();
+    let _flight = lock_observation_flight_for_tests();
     WorkspaceRuntimeStateService::reset_for_tests();
 
     let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
@@ -186,7 +186,7 @@ fn startup_hydration_restores_history() {
 
 #[test]
 fn observation_refresh_after_hydration_updates_session() {
-    let _flight = observation_flight_test_lock().lock().unwrap();
+    let _flight = lock_observation_flight_for_tests();
     WorkspaceRuntimeStateService::reset_for_tests();
 
     let kernel = WorkspaceKernel::initialize_in_memory().unwrap();

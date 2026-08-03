@@ -175,6 +175,14 @@ mod tests {
             .migrations
             .iter()
             .any(|migration| migration.version == "044_pilot_measurement"));
+        assert!(runner
+            .migrations
+            .iter()
+            .any(|migration| migration.version == "045_workspace_persistent_session"));
+        assert!(runner
+            .migrations
+            .iter()
+            .any(|migration| migration.version == "046_workspace_session_recovery_fence"));
     }
 
     #[test]

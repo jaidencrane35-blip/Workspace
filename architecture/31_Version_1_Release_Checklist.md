@@ -2,7 +2,8 @@
 
 Every item links to existing evidence or tests. No aspirational entries.
 
-Authority: `architecture/30_Release_Gate.md`, `architecture/29_Product_Proof.md`.
+Authority: `architecture/30_Release_Gate.md`, `architecture/29_Product_Proof.md`.  
+Baseline: `architecture/32_Version_1_Baseline.md`.
 
 ---
 

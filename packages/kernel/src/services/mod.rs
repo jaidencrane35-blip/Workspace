@@ -147,7 +147,9 @@ pub(crate) use desktop_action::{
 mod restore_executor;
 pub(crate) use restore_executor::RestoreExecutor;
 #[cfg(test)]
-pub(crate) use capture_coordinator::observation_flight_test_lock;
+pub(crate) use capture_coordinator::{
+    lock_observation_flight_for_tests, observation_flight_test_lock,
+};
 pub(crate) use observation_refresh_policy::ObservationRefreshPolicyService;
 pub(crate) use observation_trigger_admission::ObservationTriggerAdmissionPolicy;
 pub(crate) use observation_trigger_authority::{

@@ -17,7 +17,7 @@ use workspace_domain::{
 };
 
 use crate::config::SettingsUpdate;
-use crate::services::observation_flight_test_lock;
+use crate::services::lock_observation_flight_for_tests;
 use crate::services::WorkspaceRuntimeStateService;
 use crate::{CommandHandler, WorkspaceKernel};
 
@@ -56,7 +56,7 @@ fn intent() -> IntentContext {
 
 #[test]
 fn experience_operator_ipc_flow_launch_through_continue_again() {
-    let _flight = observation_flight_test_lock().lock().unwrap();
+    let _flight = lock_observation_flight_for_tests();
     WorkspaceRuntimeStateService::reset_for_tests();
 
     let temp = TempDir::new().expect("tempdir");

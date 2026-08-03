@@ -310,6 +310,8 @@ mod experience_e2e_behaviour_tests;
 #[cfg(all(test, windows))]
 mod process_kill_recovery_tests;
 #[cfg(test)]
+mod version_1_hardening_tests;
+#[cfg(test)]
 mod ai_memory_tests;
 #[cfg(test)]
 mod ai_model_provider_tests;

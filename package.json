@@ -12,7 +12,8 @@
     "typecheck": "pnpm --filter @workspace/app typecheck",
     "verify:explanation-catalog": "node scripts/verify-explanation-catalog.mjs",
     "verify:ui-experience-boundary": "node scripts/verify-ui-experience-boundary.mjs",
-    "verify:content-security-policy": "node scripts/verify-content-security-policy.mjs"
+    "verify:content-security-policy": "node scripts/verify-content-security-policy.mjs",
+    "verify:release": "pnpm typecheck && pnpm test && cargo check -p workspace-kernel && cargo check -p workspace-app && cargo test -p workspace-database persistent_session -- --test-threads=1 && cargo test -p workspace-kernel version_1_hardening -- --test-threads=1"
   },
   "engines": {
     "node": ">=20"

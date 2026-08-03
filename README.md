@@ -4,7 +4,7 @@
 
 Workspace is an adaptive desktop environment that unifies applications, windows, devices, audio, automation, and AI into a single operating experience — without replacing Windows.
 
-**Status:** Phase 1 Sprint 01 complete — architecture validation scaffold in place.
+**Status:** Version 1.0 engineering baseline — see [`architecture/32_Version_1_Baseline.md`](architecture/32_Version_1_Baseline.md).
 
 ---
 
@@ -23,10 +23,11 @@ The software adapts to the user. The user never adapts to the software.
 
 | Area | Status |
 |------|--------|
-| Documentation | Complete (Phase 0 + 0.5) |
-| Architecture | Decisions recorded (DEC-006–015) |
-| Technology stack | Tauri + React + TypeScript + Rust + SQLite |
-| Implementation | Phase 1 Sprint 01 — scaffold validated |
+| Documentation | Version 1.0 baseline (`architecture/32_*`) |
+| Architecture | Production integration authority `architecture/23`–`32` |
+| Technology stack | Tauri 2 + React 18 + TypeScript + Rust + SQLite |
+| Implementation | Runtime core release-ready (single-monitor Windows) |
+| Experience | Frozen chrome — behavioural IPC proven |
 | CI/CD | PR workflow active (`.github/workflows/ci-pr.yml`) |
 
 ---
@@ -39,7 +40,7 @@ The software adapts to the user. The user never adapts to the software.
 |------|---------|-------|
 | Node.js | ≥ 20 | Required for frontend tooling |
 | pnpm | 9.x | `corepack enable` then `corepack prepare pnpm@9.15.0 --activate` |
-| Rust | stable | Install via [rustup](https://rustup.rs/) |
+| Rust | stable ≥ 1.85 | Install via [rustup](https://rustup.rs/); required for `edition2024` lockfile deps |
 | Windows SDK | — | Required for Tauri on Windows (Visual Studio Build Tools) |
 
 ### Install
@@ -57,10 +58,12 @@ pnpm install
 |---------|---------|
 | `pnpm dev` | Launch Tauri dev shell (React + Rust IPC) |
 | `pnpm build` | Build React frontend (`app/dist`) |
+| `pnpm tauri:build` | Produce Windows installers (MSI + NSIS) under `target/release/bundle/` |
 | `pnpm typecheck` | TypeScript validation |
-| `pnpm test` | Run placeholder Vitest suite |
+| `pnpm test` | Run Vitest + boundary/CSP verifiers |
 | `cargo check --workspace` | Validate Rust workspace |
 | `cargo build --workspace` | Build all Rust crates including Tauri shell |
+| `cargo test -p workspace-kernel --lib -- --test-threads=1` | Kernel tests (serial; observation flight) |
 | `cargo test -p workspace-database` | Run database crate tests |
 
 ### Repository Layout

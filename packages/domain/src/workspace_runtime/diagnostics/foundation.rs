@@ -7,8 +7,8 @@ use serde::{Deserialize, Serialize};
 use crate::action_proposal::GOVERNANCE_AUTHORITY_EFFECT_NONE as AUTH_NONE;
 use crate::workspace_runtime::{
     CognitionContextProjection, GovernanceRuntimeSummary, WorkspaceHealthLevel,
-    WorkspaceRuntimeCoherence, WorkspaceRuntimeContext, WorkspaceRuntimeError,
-    WorkspaceRuntimeHealth, WorkspaceRuntimeIntegrationContract,
+    WorkspaceRuntimeContext, WorkspaceRuntimeError, WorkspaceRuntimeHealth,
+    WorkspaceRuntimeIntegrationContract,
 };
 
 // ---------------------------------------------------------------------------

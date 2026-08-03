@@ -1,6 +1,10 @@
 # Experience Roadmap — Post LEDGER-0034
 
-Status: Accepted sequencing guide for Experience presentation
+> **Superseded for shipped Experience presentation.**  
+> Frozen Experience contract + `architecture/32_Version_1_Baseline.md` are authority.  
+> This roadmap remains historical sequencing context only.
+
+Status: Superseded (historical)
 Authority: Subordinate to Blueprint, LEDGER-0013/0031, Product Proof behaviour,
 and contracts. Does not supersede capability research (`ROADMAP-001`).
 Version: 1.0

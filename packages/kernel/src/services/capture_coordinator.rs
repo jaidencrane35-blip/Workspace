@@ -290,6 +290,15 @@ pub(crate) fn observation_flight_test_lock() -> &'static std::sync::Mutex<()> {
     LOCK.get_or_init(|| Mutex::new(()))
 }
 
+/// Acquire the observation flight test lock, recovering from poison left by a
+/// panicked sibling test so the suite remains usable under parallel runners.
+#[cfg(test)]
+pub(crate) fn lock_observation_flight_for_tests() -> std::sync::MutexGuard<'static, ()> {
+    observation_flight_test_lock()
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

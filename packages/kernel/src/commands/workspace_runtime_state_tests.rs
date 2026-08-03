@@ -12,7 +12,7 @@ use workspace_domain::{
 use workspace_windows_integration::StubDesktopCapturer;
 
 use crate::services::{
-    observation_flight_test_lock, CaptureCoordinator, CaptureCoordinatorResult,
+    lock_observation_flight_for_tests, CaptureCoordinator, CaptureCoordinatorResult,
     WorkspaceRuntimeStateService, WorkspaceStateEngine,
 };
 use crate::WorkspaceKernel;
@@ -82,7 +82,7 @@ fn snapshot(pass_id: &str, captured_at: &str) -> WorkspaceObservationSnapshot {
 
 #[test]
 fn observation_refresh_phases_and_cache() {
-    let _flight = observation_flight_test_lock().lock().unwrap();
+    let _flight = lock_observation_flight_for_tests();
     WorkspaceRuntimeStateService::reset_for_tests();
 
     let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
@@ -130,7 +130,7 @@ fn observation_refresh_phases_and_cache() {
 
 #[test]
 fn stale_observation_still_served_until_refresh() {
-    let _flight = observation_flight_test_lock().lock().unwrap();
+    let _flight = lock_observation_flight_for_tests();
     WorkspaceRuntimeStateService::reset_for_tests();
 
     let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
@@ -160,7 +160,7 @@ fn stale_observation_still_served_until_refresh() {
 
 #[test]
 fn concurrent_observation_requests_reject_duplicate() {
-    let _flight = observation_flight_test_lock().lock().unwrap();
+    let _flight = lock_observation_flight_for_tests();
     WorkspaceRuntimeStateService::reset_for_tests();
 
     let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
@@ -283,7 +283,7 @@ fn execution_state_transitions_and_restore_history() {
 
 #[test]
 fn invalidate_forces_projection_rebuild() {
-    let _flight = observation_flight_test_lock().lock().unwrap();
+    let _flight = lock_observation_flight_for_tests();
     WorkspaceRuntimeStateService::reset_for_tests();
 
     let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
@@ -321,7 +321,7 @@ fn invalidate_forces_projection_rebuild() {
 
 #[test]
 fn runtime_state_consistent_with_desktop_engine() {
-    let _flight = observation_flight_test_lock().lock().unwrap();
+    let _flight = lock_observation_flight_for_tests();
     WorkspaceRuntimeStateService::reset_for_tests();
 
     let kernel = WorkspaceKernel::initialize_in_memory().unwrap();

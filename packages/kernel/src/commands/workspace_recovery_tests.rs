@@ -11,7 +11,7 @@ use workspace_domain::{
 };
 use workspace_windows_integration::StubDesktopCapturer;
 
-use crate::services::observation_flight_test_lock;
+use crate::services::lock_observation_flight_for_tests;
 use crate::services::{
     assert_runtime_session_consistent, CaptureCoordinator, WorkspaceRuntimeStateService,
     WorkspaceSessionStore,
@@ -197,7 +197,7 @@ fn migration_failure_recovers_empty() {
 
 #[test]
 fn concurrent_observation_and_persistence() {
-    let _flight = observation_flight_test_lock().lock().unwrap();
+    let _flight = lock_observation_flight_for_tests();
     WorkspaceRuntimeStateService::reset_for_tests();
     let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
     let actor = ActorContext::local_user();
@@ -245,7 +245,7 @@ fn concurrent_observation_and_persistence() {
 
 #[test]
 fn long_run_observation_loop_no_stale_accumulation() {
-    let _flight = observation_flight_test_lock().lock().unwrap();
+    let _flight = lock_observation_flight_for_tests();
     WorkspaceRuntimeStateService::reset_for_tests();
     let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
     let actor = ActorContext::local_user();
@@ -299,7 +299,7 @@ fn restart_loop_hydration_stable() {
 
 #[test]
 fn consistency_assertion_passes_after_checkpoint() {
-    let _flight = observation_flight_test_lock().lock().unwrap();
+    let _flight = lock_observation_flight_for_tests();
     WorkspaceRuntimeStateService::reset_for_tests();
     let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
     let actor = ActorContext::local_user();

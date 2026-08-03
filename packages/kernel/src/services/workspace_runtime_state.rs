@@ -12,8 +12,8 @@ use workspace_database::{Database, ObservationPassRepository};
 use workspace_domain::{
     observation_now_rfc3339, ActorContext, IntentContext, ObservationCachePhase,
     OperationOutcome, PersistentWorkspaceSession, RecoveryDisposition, RestoreCompatibilitySummary,
-    RestoreExecutionPhase, RestoreHistoryEntry, RuntimeHealth, WorkspaceObservationDelta,
-    WorkspaceObservationStatus, WorkspaceRuntimeState, WorkspaceState,
+    RestoreExecutionPhase, RestoreHistoryEntry, RuntimeHealth, WorkspaceRuntimeState,
+    WorkspaceState,
 };
 
 use crate::error::Result;
@@ -297,10 +297,3 @@ impl WorkspaceRuntimeStateService {
         owner().lock().expect("runtime owner").health.clone()
     }
 }
-
-/// Suppress unused import noise when delta type is only needed for docs.
-#[allow(dead_code)]
-fn _delta_type(_: &WorkspaceObservationDelta) {}
-
-#[allow(dead_code)]
-fn _status_type(_: &WorkspaceObservationStatus) {}

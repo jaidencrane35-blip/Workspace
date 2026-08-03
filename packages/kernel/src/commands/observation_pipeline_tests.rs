@@ -15,7 +15,7 @@ use crate::error::KernelError;
 use crate::services::{
     action_request_from_saved_context, DesktopActionService, SavedContextService, WorkspaceService,
 };
-use crate::services::observation_flight_test_lock;
+use crate::services::lock_observation_flight_for_tests;
 use crate::WorkspaceKernel;
 
 fn caps() -> CapabilitySet {
@@ -72,7 +72,7 @@ impl PipelineFixture {
 
 #[test]
 fn capture_persist_reload_preserves_geometry_and_restore_identity() {
-    let _flight = observation_flight_test_lock().lock().unwrap();
+    let _flight = lock_observation_flight_for_tests();
     let fixture = PipelineFixture::new();
 
     let saved = fixture.save_fixture("Tuesday review");
@@ -103,7 +103,7 @@ fn capture_persist_reload_preserves_geometry_and_restore_identity() {
 
 #[test]
 fn restore_planning_scores_exact_session_matches_as_eligible() {
-    let _flight = observation_flight_test_lock().lock().unwrap();
+    let _flight = lock_observation_flight_for_tests();
     let fixture = PipelineFixture::new();
     let saved = fixture.save_fixture("Tuesday review");
 
@@ -126,7 +126,7 @@ fn restore_planning_scores_exact_session_matches_as_eligible() {
 
 #[test]
 fn missing_window_is_unresolvable_not_relaunched() {
-    let _flight = observation_flight_test_lock().lock().unwrap();
+    let _flight = lock_observation_flight_for_tests();
     let fixture = PipelineFixture::new();
     let mut saved = fixture.save_fixture("Tuesday review");
 
@@ -155,7 +155,7 @@ fn missing_window_is_unresolvable_not_relaunched() {
 
 #[test]
 fn empty_platform_stub_save_is_refused() {
-    let _flight = observation_flight_test_lock().lock().unwrap();
+    let _flight = lock_observation_flight_for_tests();
     let fixture = PipelineFixture::new();
 
     let error = SavedContextService::save_with(
@@ -182,7 +182,7 @@ fn empty_platform_stub_save_is_refused() {
 
 #[test]
 fn observation_pass_carries_process_metadata_from_fixture() {
-    let _flight = observation_flight_test_lock().lock().unwrap();
+    let _flight = lock_observation_flight_for_tests();
     let fixture = PipelineFixture::new();
 
     // Enrich fixture with process_name before save so observation buffer records it.

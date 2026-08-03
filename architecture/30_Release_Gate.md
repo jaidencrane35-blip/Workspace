@@ -86,3 +86,5 @@ Upgrade this row only when evidence shows `hardware_dual_monitor: true` and cros
 **Do not claim** dual-monitor placement or monitor hot-plug until `multi-monitor-topology.json` records hardware dual-monitor execution.
 
 Frozen Experience chrome remains unchanged; operator IPC behavioural proof uses the production `CommandHandler` surface also registered by Tauri.
+
+Engineering baseline: `architecture/32_Version_1_Baseline.md`.

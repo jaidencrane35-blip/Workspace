@@ -447,9 +447,7 @@ mod tests {
         use tempfile::tempdir;
         use workspace_database::ObservationPassRepository;
 
-        let _lock = services::observation_flight_test_lock()
-            .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        let _lock = services::lock_observation_flight_for_tests();
         services::ObservationTriggerAdmissionPolicy::reset_for_tests();
 
         let dir = tempdir().unwrap();
@@ -480,17 +478,21 @@ mod tests {
             }
         }
 
-        // No observation, capture, or scheduler activity reached the audit trail.
+        // Startup hydration may read observation *status* from SQLite (no capture).
+        // Desktop capture / coordinator lifecycle must remain absent.
         let events = AuditService::list_recent(&db, 500).unwrap();
-        let sensing: Vec<&str> = events
+        let capture_sensing: Vec<&str> = events
             .iter()
             .map(|event| event.event_type.as_str())
-            .filter(|event_type| event_type.starts_with("workspace.observation"))
+            .filter(|event_type| {
+                event_type.starts_with("workspace.observation.capture")
+                    || *event_type == "workspace.observation.pass_recorded"
+            })
             .collect();
         assert!(
-            sensing.is_empty(),
-            "fresh startup must record no observation activity, found {:?}",
-            sensing
+            capture_sensing.is_empty(),
+            "fresh startup must record no observation capture activity, found {:?}",
+            capture_sensing
         );
 
         // The schedule is wired but dormant, so nothing senses in the background.
@@ -510,9 +512,7 @@ mod tests {
         use workspace_domain::{ObservationFreshnessRequirement, ObservationTriggerRequest};
         use workspace_windows_integration::StubDesktopCapturer;
 
-        let _lock = services::observation_flight_test_lock()
-            .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        let _lock = services::lock_observation_flight_for_tests();
         services::ObservationTriggerAdmissionPolicy::reset_for_tests();
 
         let kernel = WorkspaceKernel::initialize_in_memory().unwrap();

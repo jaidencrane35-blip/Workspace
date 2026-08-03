@@ -278,7 +278,6 @@ fn saved_monitor(monitor: &ObservedMonitor) -> SavedContextMonitor {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::services::capture_coordinator::observation_flight_test_lock;
     use crate::WorkspaceKernel;
     use workspace_database::ObservationPassRepository;
     use workspace_domain::{Workspace, WorkspaceId, SAVED_CONTEXT_SCOPE_ID};
@@ -355,7 +354,7 @@ mod tests {
 
     #[test]
     fn saves_the_named_context_the_user_confirmed() {
-        let _flight = observation_flight_test_lock().lock().unwrap();
+        let _flight = crate::services::lock_observation_flight_for_tests();
         let fixture = Fixture::new();
 
         let saved = fixture
@@ -371,7 +370,7 @@ mod tests {
 
     #[test]
     fn the_saved_context_is_readable_after_the_fact() {
-        let _flight = observation_flight_test_lock().lock().unwrap();
+        let _flight = crate::services::lock_observation_flight_for_tests();
         let fixture = Fixture::new();
         let saved = fixture
             .save(&fixture.request("Tuesday review", SAVED_CONTEXT_SCOPE_ID))
@@ -389,7 +388,7 @@ mod tests {
 
     #[test]
     fn it_keeps_its_own_copy_rather_than_pointing_at_the_observation_pass() {
-        let _flight = observation_flight_test_lock().lock().unwrap();
+        let _flight = crate::services::lock_observation_flight_for_tests();
         let fixture = Fixture::new();
         let saved = fixture
             .save(&fixture.request("Tuesday review", SAVED_CONTEXT_SCOPE_ID))
@@ -430,7 +429,7 @@ mod tests {
 
     #[test]
     fn it_persists_the_user_authored_handoff_unchanged() {
-        let _flight = observation_flight_test_lock().lock().unwrap();
+        let _flight = crate::services::lock_observation_flight_for_tests();
         let fixture = Fixture::new();
         let request = SaveContextRequest::new(
             fixture.workspace.id.clone(),
@@ -455,7 +454,7 @@ mod tests {
 
     #[test]
     fn a_save_without_handoff_reads_nothing_and_stores_nothing() {
-        let _flight = observation_flight_test_lock().lock().unwrap();
+        let _flight = crate::services::lock_observation_flight_for_tests();
         let fixture = Fixture::new();
         let request = SaveContextRequest::new(
             fixture.workspace.id.clone(),
@@ -471,7 +470,7 @@ mod tests {
 
     #[test]
     fn it_records_only_the_fields_the_scope_promised() {
-        let _flight = observation_flight_test_lock().lock().unwrap();
+        let _flight = crate::services::lock_observation_flight_for_tests();
         let fixture = Fixture::new();
         let saved = fixture
             .save(&fixture.request("Tuesday review", SAVED_CONTEXT_SCOPE_ID))
@@ -498,7 +497,7 @@ mod tests {
 
     #[test]
     fn an_unnamed_context_is_refused_without_reading_the_desktop() {
-        let _flight = observation_flight_test_lock().lock().unwrap();
+        let _flight = crate::services::lock_observation_flight_for_tests();
         let fixture = Fixture::new();
 
         let error = fixture
@@ -512,7 +511,7 @@ mod tests {
 
     #[test]
     fn a_save_without_confirmed_scope_reads_nothing_and_stores_nothing() {
-        let _flight = observation_flight_test_lock().lock().unwrap();
+        let _flight = crate::services::lock_observation_flight_for_tests();
         let fixture = Fixture::new();
 
         let error = fixture
@@ -526,7 +525,7 @@ mod tests {
 
     #[test]
     fn consent_for_a_different_scope_reads_nothing_and_stores_nothing() {
-        let _flight = observation_flight_test_lock().lock().unwrap();
+        let _flight = crate::services::lock_observation_flight_for_tests();
         let fixture = Fixture::new();
 
         let error = fixture
@@ -540,7 +539,7 @@ mod tests {
 
     #[test]
     fn an_unknown_workspace_is_refused_without_reading_the_desktop() {
-        let _flight = observation_flight_test_lock().lock().unwrap();
+        let _flight = crate::services::lock_observation_flight_for_tests();
         let fixture = Fixture::new();
         let request = SaveContextRequest::new(
             WorkspaceId::new("ws-does-not-exist").unwrap(),

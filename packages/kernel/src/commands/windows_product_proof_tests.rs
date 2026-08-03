@@ -18,7 +18,7 @@ use workspace_windows_integration::{
 };
 
 use crate::commands::resume::resolve_and_execute_for_tests;
-use crate::services::observation_flight_test_lock;
+use crate::services::lock_observation_flight_for_tests;
 use crate::services::{
     CaptureCoordinator, SavedContextService, WorkspaceRuntimeStateService, WorkspaceService,
     WorkspaceSessionStore,
@@ -64,7 +64,7 @@ impl LiveFixture {
 
 #[test]
 fn live_observation_save_plan_execute_persist_hydrate() {
-    let _flight = observation_flight_test_lock().lock().unwrap();
+    let _flight = lock_observation_flight_for_tests();
     let fixture = LiveFixture::new();
     let capturer = platform_desktop_capturer();
 

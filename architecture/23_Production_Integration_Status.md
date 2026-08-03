@@ -14,6 +14,7 @@ Demo mode is a **permanent adapter** (`app/src/demo/`) for development, screensh
 - Product proof: `architecture/29_Product_Proof.md`
 - Release gate: `architecture/30_Release_Gate.md`
 - Version 1 checklist: `architecture/31_Version_1_Release_Checklist.md`
+- Version 1 baseline: `architecture/32_Version_1_Baseline.md`
 
 ---
 

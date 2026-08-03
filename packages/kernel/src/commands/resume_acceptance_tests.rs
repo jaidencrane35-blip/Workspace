@@ -19,7 +19,7 @@ use crate::services::{
     action_request_from_saved_context, ActionExecutionControls, DesktopActionService,
     SavedContextService, WorkspaceService,
 };
-use crate::services::observation_flight_test_lock;
+use crate::services::lock_observation_flight_for_tests;
 use crate::WorkspaceKernel;
 use workspace_domain::{ActorContext, IntentContext, SaveContextRequest};
 
@@ -87,7 +87,7 @@ fn legacy_context() -> SavedContext {
 /// SCRI-AC-01 — new Save requires current (v2) scope consent.
 #[test]
 fn scri_ac_01_new_save_requires_v2_scope_consent() {
-    let _flight = observation_flight_test_lock().lock().unwrap();
+    let _flight = lock_observation_flight_for_tests();
     let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
     let db = kernel.shared_database();
     let workspace = {
@@ -338,7 +338,7 @@ fn scri_ac_13_incomplete_identity_reason() {
 /// removes it from inspect/resume surfaces.
 #[test]
 fn scri_ac_14_delete_removes_identities() {
-    let _flight = observation_flight_test_lock().lock().unwrap();
+    let _flight = lock_observation_flight_for_tests();
     let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
     let db = kernel.shared_database();
     let workspace = {
