@@ -42,6 +42,7 @@ export const AUTHORITY_CHAIN: readonly [
   ["50_Longitudinal_Adaptation_Validation.md", "51_Adaptation_Operations.md"],
   ["51_Adaptation_Operations.md", "52_First_Production_Adaptation.md"],
   ["52_First_Production_Adaptation.md", "53_Adaptation_Composition.md"],
+  ["53_Adaptation_Composition.md", "54_Adaptation_Certification.md"],
 ];
 
 export const AUTHORITY_ROOT: ArchitectureAuthorityDoc =

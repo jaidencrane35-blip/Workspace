@@ -117,3 +117,25 @@ export type {
   ConflictCause,
   ResolutionStrategy,
 } from "./adaptationComposition";
+export {
+  CERTIFICATION_STORAGE_KEY,
+  certifyAdaptationSet,
+  clearCertificationStore,
+  compareCertifications,
+  compareLatestCertifications,
+  currentAdaptationSetIds,
+  getCertification,
+  getLatestCertification,
+  hashAdaptationSet,
+  listCertifications,
+} from "./adaptationCertification";
+export type {
+  AdaptationCertification,
+  CertificationComparison,
+  CertificationEvidenceLineage,
+  CertificationFailureReason,
+  CertificationGateResult,
+  CertificationRegression,
+  CertificationRegressionCause,
+  CertificationRegressionStatus,
+} from "./adaptationCertification";

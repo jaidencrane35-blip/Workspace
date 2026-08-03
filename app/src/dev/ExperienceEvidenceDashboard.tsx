@@ -60,6 +60,11 @@ import type {
   CompositionResult,
   CompositionValidationReport,
 } from "../experience/adaptationComposition";
+import type {
+  AdaptationCertification,
+  CertificationComparison,
+  CertificationGateResult,
+} from "../experience/adaptationCertification";
 import { fnv1a } from "./devHash";
 
 const panelStyle: CSSProperties = {
@@ -114,6 +119,7 @@ type LongitudinalApi = typeof import("../experience/longitudinalAdaptation");
 type OperationsApi = typeof import("../experience/adaptationOperations");
 type ProductionApi = typeof import("../experience/productionAdaptation");
 type CompositionApi = typeof import("../experience/adaptationComposition");
+type CertificationApi = typeof import("../experience/adaptationCertification");
 
 const NEXT_STATE: Partial<Record<ProposalLifecycle, ProposalLifecycle>> = {
   draft: "review",
@@ -161,9 +167,13 @@ export function ExperienceEvidenceDashboard() {
   );
   const [compositionApi, setCompositionApi] =
     useState<CompositionApi | null>(null);
+  const [certificationApi, setCertificationApi] =
+    useState<CertificationApi | null>(null);
   const [batchReport, setBatchReport] = useState<BatchValidationReport | null>(
     null,
   );
+  const [lastCertGate, setLastCertGate] =
+    useState<CertificationGateResult | null>(null);
   const [exploreNode, setExploreNode] = useState<string>(
     "doc:40_Experience_Refoundation.md",
   );
@@ -252,6 +262,13 @@ export function ExperienceEvidenceDashboard() {
         }
       });
     }
+    if (!certificationApi) {
+      void import("../experience/adaptationCertification").then((mod) => {
+        if (!cancelled) {
+          setCertificationApi(mod);
+        }
+      });
+    }
     return () => {
       cancelled = true;
     };
@@ -267,6 +284,7 @@ export function ExperienceEvidenceDashboard() {
     operationsApi,
     productionApi,
     compositionApi,
+    certificationApi,
   ]);
 
   const sessions = useMemo(() => {
@@ -532,6 +550,38 @@ export function ExperienceEvidenceDashboard() {
 
   const conflictReport: AdaptationConflictReport | null =
     compositionResult?.conflictReport ?? null;
+
+  const certifications: AdaptationCertification[] = useMemo(() => {
+    void tick;
+    if (!certificationApi) {
+      return [];
+    }
+    return certificationApi.listCertifications(govStore);
+  }, [certificationApi, govStore, tick]);
+
+  const currentCertification: AdaptationCertification | null = useMemo(() => {
+    void tick;
+    if (!certificationApi) {
+      return null;
+    }
+    return certificationApi.getLatestCertification(govStore);
+  }, [certificationApi, govStore, tick]);
+
+  const previousCertification: AdaptationCertification | null = useMemo(() => {
+    if (certifications.length < 2) {
+      return null;
+    }
+    return certifications[certifications.length - 2]!;
+  }, [certifications]);
+
+  const certificationComparison: CertificationComparison | null =
+    useMemo(() => {
+      void tick;
+      if (!certificationApi) {
+        return null;
+      }
+      return certificationApi.compareLatestCertifications(govStore);
+    }, [certificationApi, govStore, tick]);
 
   const analyze = () => {
     if (sessions.length === 0) {
@@ -923,6 +973,23 @@ export function ExperienceEvidenceDashboard() {
     refresh();
   };
 
+  const runCertification = () => {
+    if (!certificationApi) {
+      setGovMessage("cert_loading");
+      return;
+    }
+    const result = certificationApi.certifyAdaptationSet(govStore, {
+      now: Date.now(),
+    });
+    setLastCertGate(result);
+    setGovMessage(
+      result.ok
+        ? `cert_ok:${result.certification?.certificationId}`
+        : `cert_fail:${result.failureReasons.join(",")}`,
+    );
+    refresh();
+  };
+
   const activateAdaptation = (adaptation: WorkspaceAdaptation) => {
     if (!adaptationApi) {
       return;
@@ -1083,6 +1150,14 @@ export function ExperienceEvidenceDashboard() {
           onClick={runProductionActivation}
         >
           Activate production adaptation
+        </button>
+        <button
+          type="button"
+          style={btnStyle}
+          data-testid="run-adaptation-certification"
+          onClick={runCertification}
+        >
+          Certify adaptation set
         </button>
         <button type="button" style={btnStyle} onClick={refresh}>
           Refresh
@@ -1396,6 +1471,84 @@ export function ExperienceEvidenceDashboard() {
               </li>
             );
           })}
+        </ul>
+      </section>
+
+      <section
+        style={{ marginBottom: 10 }}
+        data-testid="adaptation-certification"
+      >
+        <div style={{ marginBottom: 4 }}>
+          <strong>Adaptation certification</strong>
+          {!certificationApi
+            ? " (loading…)"
+            : ` · history ${certifications.length}`}
+        </div>
+        {currentCertification ? (
+          <div data-testid="current-certification">
+            current {currentCertification.certificationId} · at{" "}
+            {currentCertification.certifiedAt} · hash{" "}
+            {currentCertification.adaptationSetHash} · regression{" "}
+            {currentCertification.regressionStatus}
+            <div>
+              adaptations{" "}
+              {currentCertification.adaptationIds.join(", ") || "(none)"} ·
+              evidence {currentCertification.evidenceSnapshotId}
+            </div>
+            <div>
+              eng{" "}
+              {currentCertification.engineeringChangeIds.join(", ") || "—"} ·
+              asnap {currentCertification.architectureSnapshotId} ·
+              stability {currentCertification.composedStabilityScore}
+            </div>
+            <div>
+              integrity{" "}
+              {currentCertification.integrityValid ? "valid" : "invalid"} ·
+              governance{" "}
+              {currentCertification.governanceValid ? "valid" : "invalid"}
+            </div>
+          </div>
+        ) : (
+          <div style={{ opacity: 0.7 }}>No certification yet.</div>
+        )}
+        {previousCertification ? (
+          <div data-testid="previous-certification">
+            previous {previousCertification.certificationId} · hash{" "}
+            {previousCertification.adaptationSetHash}
+          </div>
+        ) : null}
+        {certificationComparison ? (
+          <div data-testid="certification-comparison">
+            comparison regressionFree{" "}
+            {certificationComparison.regressionFree ? "yes" : "no"} ·
+            regressions {certificationComparison.regressions.length}
+            {certificationComparison.regressions.length > 0 ? (
+              <ul style={{ paddingLeft: 16, margin: "4px 0" }}>
+                {certificationComparison.regressions.map((r) => (
+                  <li key={`${r.cause}:${r.field}`}>
+                    {r.cause} · {r.field} · {r.metrics.join(",") || "—"} ·{" "}
+                    {r.previousEvidenceId} → {r.currentEvidenceId}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </div>
+        ) : null}
+        {lastCertGate && !lastCertGate.ok ? (
+          <div>
+            last gate fail: {lastCertGate.failureReasons.join(", ")}
+          </div>
+        ) : null}
+        <div style={{ marginTop: 4 }}>
+          <strong>History</strong>
+        </div>
+        <ul style={{ paddingLeft: 16, margin: "4px 0" }} data-testid="certification-history">
+          {certifications.map((c) => (
+            <li key={c.certificationId}>
+              {c.certificationId} · {c.certifiedAt} · set{" "}
+              {c.adaptationIds.length} · {c.regressionStatus}
+            </li>
+          ))}
         </ul>
       </section>
 
