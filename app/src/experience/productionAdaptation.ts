@@ -4,11 +4,6 @@
  * No new lifecycle states. No Runtime Core / navigation / persistence changes.
  */
 
-import {
-  buildArchitectureGraph,
-  listArchitectureSnapshots,
-  validateArchitectureIntegrity,
-} from "../dev/architecturalIntegrity";
 import { fnv1a } from "../dev/devHash";
 import {
   buildEvidenceFromSessions,
@@ -22,9 +17,16 @@ import type {
   ExperienceSession,
 } from "../dev/experienceEvents";
 import { listEngineeringRecords } from "../dev/engineeringGovernance";
-import { detectOpportunities } from "../dev/experienceImprovement";
-import { listProposals } from "../dev/experienceGovernance";
 import type { ExperienceStoreAdapter } from "../dev/experienceStore";
+import {
+  adaptationLineageRefsPresent,
+  architectureSnapshotById,
+  buildLineageIdCatalogs,
+  clearJsonKey,
+  loadJsonBundleOrNull,
+  saveJsonBundle,
+  storeArchitectureIntegrityValid,
+} from "../dev/governancePrimitives";
 import {
   runAdaptationExperiments,
 } from "./adaptationExperiments";
@@ -203,71 +205,55 @@ function persistRecord(
   store: ExperienceStoreAdapter,
   record: ProductionActivationRecord,
 ): ProductionActivationRecord {
-  store.setItem(PRODUCTION_ACTIVATION_STORAGE_KEY, JSON.stringify(record));
+  saveJsonBundle(store, PRODUCTION_ACTIVATION_STORAGE_KEY, record);
   return record;
 }
 
 export function getProductionActivationRecord(
   store: ExperienceStoreAdapter,
 ): ProductionActivationRecord | null {
-  const raw = store.getItem(PRODUCTION_ACTIVATION_STORAGE_KEY);
-  if (!raw) {
+  const parsed = loadJsonBundleOrNull(
+    store,
+    PRODUCTION_ACTIVATION_STORAGE_KEY,
+    (value): value is ProductionActivationRecord =>
+      !!value &&
+      typeof value === "object" &&
+      (value as ProductionActivationRecord).schemaVersion === 1,
+  );
+  if (!parsed) {
     return null;
   }
-  try {
-    const parsed = JSON.parse(raw) as ProductionActivationRecord;
-    if (parsed?.schemaVersion !== 1) {
-      return null;
-    }
-    return {
-      ...parsed,
-      blockReasons: [...(parsed.blockReasons ?? [])],
-      replaySessionIds: [...(parsed.replaySessionIds ?? [])],
-    };
-  } catch {
-    return null;
-  }
+  return {
+    ...parsed,
+    blockReasons: [...(parsed.blockReasons ?? [])],
+    replaySessionIds: [...(parsed.replaySessionIds ?? [])],
+  };
 }
 
 export function clearProductionActivationStore(
   store: ExperienceStoreAdapter,
 ): void {
-  store.removeItem(PRODUCTION_ACTIVATION_STORAGE_KEY);
+  clearJsonKey(store, PRODUCTION_ACTIVATION_STORAGE_KEY);
 }
 
 function lineageIntact(
   adaptation: WorkspaceAdaptation,
   store: ExperienceStoreAdapter,
 ): boolean {
-  const proposal = listProposals(store).find(
-    (p) => p.proposalId === adaptation.proposalId,
-  );
+  if (!adaptationLineageRefsPresent(adaptation, buildLineageIdCatalogs(store))) {
+    return false;
+  }
   const engineering = listEngineeringRecords(store).find(
     (r) => r.changeId === adaptation.engineeringChangeId,
   );
-  const architecture = listArchitectureSnapshots(store).find(
-    (s) => s.snapshotId === adaptation.architectureSnapshotId,
+  const architecture = architectureSnapshotById(
+    store,
+    adaptation.architectureSnapshotId,
   );
   return Boolean(
-    proposal &&
-      engineering &&
-      architecture?.integrity.valid &&
-      adaptation.validation.replaySessionIds.length > 0 &&
-      engineering.proposalIds.includes(adaptation.proposalId),
+    engineering?.proposalIds.includes(adaptation.proposalId) &&
+      architecture?.integrity.valid,
   );
-}
-
-function integrityValid(store: ExperienceStoreAdapter): boolean {
-  const graph = buildArchitectureGraph({
-    engineeringRecords: listEngineeringRecords(store),
-    proposals: listProposals(store),
-    opportunities: detectOpportunities(listEvidenceSnapshots(store)),
-    evidence: listEvidenceSnapshots(store),
-  });
-  return validateArchitectureIntegrity(graph, {
-    engineeringRecords: listEngineeringRecords(store),
-    proposals: listProposals(store),
-  }).valid;
 }
 
 /**
@@ -428,7 +414,7 @@ export function runFirstProductionAdaptation(
       emptyRecord({
         outcome: "blocked",
         blockReasons: selected.reasons,
-        integrityValid: integrityValid(store),
+        integrityValid: storeArchitectureIntegrityValid(store),
       }),
     );
   }
@@ -461,7 +447,7 @@ export function runFirstProductionAdaptation(
           replaySessionIds: [...current.validation.replaySessionIds],
           stabilityScore,
           governanceIntact: lineageIntact(current, store),
-          integrityValid: integrityValid(store),
+          integrityValid: storeArchitectureIntegrityValid(store),
         }),
       );
     }
@@ -500,7 +486,7 @@ export function runFirstProductionAdaptation(
         replaySessionIds: [...current.validation.replaySessionIds],
         stabilityScore,
         governanceIntact: lineageIntact(current, store),
-        integrityValid: integrityValid(store),
+        integrityValid: storeArchitectureIntegrityValid(store),
         rollbackAvailable: true,
       }),
     );
@@ -551,7 +537,7 @@ export function runFirstProductionAdaptation(
     (vsPreImproved || vsBaseline.validationResult === "passed");
 
   const govOk = lineageIntact(current, store);
-  const integOk = integrityValid(store);
+  const integOk = storeArchitectureIntegrityValid(store);
 
   if (!metricOk || regression || !govOk || !integOk) {
     rollbackAdaptation(store, current.adaptationId);

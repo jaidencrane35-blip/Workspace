@@ -19,6 +19,11 @@ import {
   memoryStore,
   type ExperienceStoreAdapter,
 } from "./experienceStore";
+import {
+  clearJsonKey,
+  loadJsonBundle,
+  saveJsonBundle,
+} from "./governanceStore";
 
 export const ARCHITECTURE_INTEGRITY_STORAGE_KEY =
   "ws.dev.experience.architecture.v1";
@@ -44,6 +49,7 @@ export const AUTHORITY_CHAIN: readonly [
   ["52_First_Production_Adaptation.md", "53_Adaptation_Composition.md"],
   ["53_Adaptation_Composition.md", "54_Adaptation_Certification.md"],
   ["54_Adaptation_Certification.md", "55_Adaptation_Packs.md"],
+  ["55_Adaptation_Packs.md", "56_Governance_Consolidation.md"],
 ];
 
 export const AUTHORITY_ROOT: ArchitectureAuthorityDoc =
@@ -516,35 +522,30 @@ export function createArchitectureSnapshot(
 export function loadSnapshotBundle(
   store: ExperienceStoreAdapter,
 ): SnapshotBundle {
-  const raw = store.getItem(ARCHITECTURE_INTEGRITY_STORAGE_KEY);
-  if (!raw) {
-    return emptyBundle();
-  }
-  try {
-    const parsed = JSON.parse(raw) as SnapshotBundle;
-    if (parsed?.schemaVersion !== 1 || !Array.isArray(parsed.snapshots)) {
-      return emptyBundle();
-    }
-    return {
-      schemaVersion: 1,
-      snapshots: parsed.snapshots.slice(-MAX_ARCHITECTURE_SNAPSHOTS),
-    };
-  } catch {
-    return emptyBundle();
-  }
+  const parsed = loadJsonBundle(
+    store,
+    ARCHITECTURE_INTEGRITY_STORAGE_KEY,
+    emptyBundle,
+    (value): value is SnapshotBundle =>
+      !!value &&
+      typeof value === "object" &&
+      (value as SnapshotBundle).schemaVersion === 1 &&
+      Array.isArray((value as SnapshotBundle).snapshots),
+  );
+  return {
+    schemaVersion: 1,
+    snapshots: parsed.snapshots.slice(-MAX_ARCHITECTURE_SNAPSHOTS),
+  };
 }
 
 function saveSnapshotBundle(
   store: ExperienceStoreAdapter,
   bundle: SnapshotBundle,
 ): void {
-  store.setItem(
-    ARCHITECTURE_INTEGRITY_STORAGE_KEY,
-    JSON.stringify({
-      schemaVersion: 1,
-      snapshots: bundle.snapshots.slice(-MAX_ARCHITECTURE_SNAPSHOTS),
-    }),
-  );
+  saveJsonBundle(store, ARCHITECTURE_INTEGRITY_STORAGE_KEY, {
+    schemaVersion: 1,
+    snapshots: bundle.snapshots.slice(-MAX_ARCHITECTURE_SNAPSHOTS),
+  });
 }
 
 /**
@@ -644,7 +645,7 @@ export function listDependencies(
 export function clearArchitectureIntegrityStore(
   store: ExperienceStoreAdapter,
 ): void {
-  store.removeItem(ARCHITECTURE_INTEGRITY_STORAGE_KEY);
+  clearJsonKey(store, ARCHITECTURE_INTEGRITY_STORAGE_KEY);
 }
 
 export function defaultArchitectureIntegrityStore(): ExperienceStoreAdapter {

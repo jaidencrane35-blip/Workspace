@@ -5,9 +5,10 @@
  */
 
 import type { ExperienceStoreAdapter } from "../dev/experienceStore";
-import { listEngineeringRecords } from "../dev/engineeringGovernance";
-import { listProposals } from "../dev/experienceGovernance";
-import { listArchitectureSnapshots } from "../dev/architecturalIntegrity";
+import {
+  adaptationLineageRefsPresent,
+  buildLineageIdCatalogs,
+} from "../dev/governancePrimitives";
 import {
   getStabilityReport,
   listStabilityReports,
@@ -367,24 +368,14 @@ export function validateComposition(
   const adaptations = listAdaptations(store);
   const composition = composeAdaptations(adaptations);
   const ordered = selectComposableAdaptations(adaptations);
-  const proposals = new Set(listProposals(store).map((p) => p.proposalId));
-  const engineering = new Set(
-    listEngineeringRecords(store).map((r) => r.changeId),
-  );
-  const architecture = new Set(
-    listArchitectureSnapshots(store).map((s) => s.snapshotId),
-  );
+  const catalogs = buildLineageIdCatalogs(store);
 
   const missingLineageAdaptationIds: string[] = [];
   const stabilityScores: Array<{ adaptationId: string; score: number }> = [];
   const regressionAdaptationIds: string[] = [];
 
   for (const adaptation of ordered) {
-    const intact =
-      proposals.has(adaptation.proposalId) &&
-      engineering.has(adaptation.engineeringChangeId) &&
-      architecture.has(adaptation.architectureSnapshotId) &&
-      adaptation.validation.replaySessionIds.length > 0;
+    const intact = adaptationLineageRefsPresent(adaptation, catalogs);
     if (!intact) {
       missingLineageAdaptationIds.push(adaptation.adaptationId);
     }

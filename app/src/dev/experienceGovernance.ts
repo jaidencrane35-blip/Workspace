@@ -9,6 +9,11 @@ import {
   memoryStore,
   type ExperienceStoreAdapter,
 } from "./experienceStore";
+import {
+  clearJsonKey,
+  loadJsonBundle,
+  saveJsonBundle,
+} from "./governanceStore";
 import type { ExperienceEvidenceMetrics, MetricDirection } from "./experienceEvidence";
 import type {
   ExperienceOpportunity,
@@ -377,40 +382,34 @@ export function isTransitionAllowed(
 export function loadGovernanceBundle(
   store: ExperienceStoreAdapter,
 ): GovernanceBundle {
-  const raw = store.getItem(GOVERNANCE_STORAGE_KEY);
-  if (!raw) {
-    return emptyBundle();
-  }
-  try {
-    const parsed = JSON.parse(raw) as GovernanceBundle;
-    if (
-      parsed?.schemaVersion !== 1 ||
-      !Array.isArray(parsed.proposals) ||
-      !Array.isArray(parsed.history)
-    ) {
-      return emptyBundle();
-    }
-    return {
-      schemaVersion: 1,
-      proposals: parsed.proposals.slice(-MAX_PROPOSALS),
-      // History is append-only; keep tail if over cap (oldest dropped only by ring).
-      history: parsed.history.slice(-MAX_HISTORY_ENTRIES),
-    };
-  } catch {
-    return emptyBundle();
-  }
+  const parsed = loadJsonBundle(
+    store,
+    GOVERNANCE_STORAGE_KEY,
+    emptyBundle,
+    (value): value is GovernanceBundle =>
+      !!value &&
+      typeof value === "object" &&
+      (value as GovernanceBundle).schemaVersion === 1 &&
+      Array.isArray((value as GovernanceBundle).proposals) &&
+      Array.isArray((value as GovernanceBundle).history),
+  );
+  return {
+    schemaVersion: 1,
+    proposals: parsed.proposals.slice(-MAX_PROPOSALS),
+    // History is append-only; keep tail if over cap (oldest dropped only by ring).
+    history: parsed.history.slice(-MAX_HISTORY_ENTRIES),
+  };
 }
 
 function saveGovernanceBundle(
   store: ExperienceStoreAdapter,
   bundle: GovernanceBundle,
 ): void {
-  const next: GovernanceBundle = {
+  saveJsonBundle(store, GOVERNANCE_STORAGE_KEY, {
     schemaVersion: 1,
     proposals: bundle.proposals.slice(-MAX_PROPOSALS),
     history: bundle.history.slice(-MAX_HISTORY_ENTRIES),
-  };
-  store.setItem(GOVERNANCE_STORAGE_KEY, JSON.stringify(next));
+  });
 }
 
 function freezeEntry(entry: GovernanceHistoryEntry): GovernanceHistoryEntry {
@@ -630,7 +629,7 @@ export function assertHistoryImmutable(
 }
 
 export function clearGovernanceStore(store: ExperienceStoreAdapter): void {
-  store.removeItem(GOVERNANCE_STORAGE_KEY);
+  clearJsonKey(store, GOVERNANCE_STORAGE_KEY);
 }
 
 export function defaultGovernanceStore(): ExperienceStoreAdapter {

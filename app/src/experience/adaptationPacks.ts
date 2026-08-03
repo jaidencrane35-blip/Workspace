@@ -4,17 +4,19 @@
  * No new adaptation primitives. No Runtime Core / navigation / persistence changes.
  */
 
-import {
-  buildArchitectureGraph,
-  listArchitectureSnapshots,
-  validateArchitectureIntegrity,
-} from "../dev/architecturalIntegrity";
 import { fnv1a } from "../dev/devHash";
 import { listEvidenceSnapshots } from "../dev/experienceEvidence";
-import { listEngineeringRecords } from "../dev/engineeringGovernance";
-import { detectOpportunities } from "../dev/experienceImprovement";
-import { listProposals } from "../dev/experienceGovernance";
 import type { ExperienceStoreAdapter } from "../dev/experienceStore";
+import {
+  adaptationLineageRefsPresent,
+  buildLineageIdCatalogs,
+  clearJsonKey,
+  loadJsonBundle,
+  saveJsonBundle,
+  stablePayloadHash,
+  storeArchitectureIntegrityValid,
+  tipOf,
+} from "../dev/governancePrimitives";
 import {
   getLatestCertification,
   listCertifications,
@@ -90,35 +92,34 @@ function emptyBundle(): PackBundle {
   return { schemaVersion: 1, packs: [], activePackId: null };
 }
 
+function isPackBundle(parsed: unknown): parsed is PackBundle {
+  if (!parsed || typeof parsed !== "object") {
+    return false;
+  }
+  const p = parsed as PackBundle;
+  return p.schemaVersion === 1 && Array.isArray(p.packs);
+}
+
 function loadBundle(store: ExperienceStoreAdapter): PackBundle {
-  const raw = store.getItem(PACK_STORAGE_KEY);
-  if (!raw) {
-    return emptyBundle();
-  }
-  try {
-    const parsed = JSON.parse(raw) as PackBundle;
-    if (parsed?.schemaVersion !== 1 || !Array.isArray(parsed.packs)) {
-      return emptyBundle();
-    }
-    return {
-      schemaVersion: 1,
-      packs: parsed.packs.slice(-MAX_PACKS),
-      activePackId: parsed.activePackId ?? null,
-    };
-  } catch {
-    return emptyBundle();
-  }
+  const loaded = loadJsonBundle(
+    store,
+    PACK_STORAGE_KEY,
+    emptyBundle,
+    isPackBundle,
+  );
+  return {
+    schemaVersion: 1,
+    packs: loaded.packs.slice(-MAX_PACKS),
+    activePackId: loaded.activePackId ?? null,
+  };
 }
 
 function saveBundle(store: ExperienceStoreAdapter, bundle: PackBundle): void {
-  store.setItem(
-    PACK_STORAGE_KEY,
-    JSON.stringify({
-      schemaVersion: 1,
-      packs: bundle.packs.slice(-MAX_PACKS),
-      activePackId: bundle.activePackId,
-    }),
-  );
+  saveJsonBundle(store, PACK_STORAGE_KEY, {
+    schemaVersion: 1 as const,
+    packs: bundle.packs.slice(-MAX_PACKS),
+    activePackId: bundle.activePackId,
+  });
 }
 
 export function listAdaptationPacks(
@@ -168,20 +169,7 @@ export function getActiveAdaptationPack(
 }
 
 export function clearAdaptationPackStore(store: ExperienceStoreAdapter): void {
-  store.removeItem(PACK_STORAGE_KEY);
-}
-
-function integrityValid(store: ExperienceStoreAdapter): boolean {
-  const graph = buildArchitectureGraph({
-    engineeringRecords: listEngineeringRecords(store),
-    proposals: listProposals(store),
-    opportunities: detectOpportunities(listEvidenceSnapshots(store)),
-    evidence: listEvidenceSnapshots(store),
-  });
-  return validateArchitectureIntegrity(graph, {
-    engineeringRecords: listEngineeringRecords(store),
-    proposals: listProposals(store),
-  }).valid;
+  clearJsonKey(store, PACK_STORAGE_KEY);
 }
 
 function coveringCertifications(
@@ -216,18 +204,9 @@ function governanceComplete(
   adaptation: WorkspaceAdaptation,
   store: ExperienceStoreAdapter,
 ): boolean {
-  const proposals = new Set(listProposals(store).map((p) => p.proposalId));
-  const engineering = new Set(
-    listEngineeringRecords(store).map((r) => r.changeId),
-  );
-  const architecture = new Set(
-    listArchitectureSnapshots(store).map((s) => s.snapshotId),
-  );
-  return (
-    proposals.has(adaptation.proposalId) &&
-    engineering.has(adaptation.engineeringChangeId) &&
-    architecture.has(adaptation.architectureSnapshotId) &&
-    adaptation.validation.replaySessionIds.length > 0
+  return adaptationLineageRefsPresent(
+    adaptation,
+    buildLineageIdCatalogs(store),
   );
 }
 
@@ -365,7 +344,7 @@ export function certifyAdaptationPack(
     failureReasons.push("composition_invalid");
   }
 
-  if (!integrityValid(store)) {
+  if (!storeArchitectureIntegrityValid(store)) {
     failureReasons.push("integrity_invalid");
   }
 
@@ -379,17 +358,15 @@ export function certifyAdaptationPack(
     };
   }
 
-  const compositionHash = fnv1a(
-    [
-      composition.compositionOrder.join(","),
-      String(composition.presentation.spacingScale ?? 1),
-      String(composition.presentation.emphasisScale ?? 1),
-      String(composition.presentation.environmentalWeight ?? 1),
-      String(composition.presentation.density ?? "null"),
-      String(composition.presentation.motionProfile ?? "standard"),
-      String(conflicts.conflicts.length),
-    ].join("|"),
-  );
+  const compositionHash = stablePayloadHash([
+    composition.compositionOrder.join(","),
+    String(composition.presentation.spacingScale ?? 1),
+    String(composition.presentation.emphasisScale ?? 1),
+    String(composition.presentation.environmentalWeight ?? 1),
+    String(composition.presentation.density ?? "null"),
+    String(composition.presentation.motionProfile ?? "standard"),
+    String(conflicts.conflicts.length),
+  ]);
 
   const evidenceSnapshotIds = [
     ...new Set(
@@ -399,11 +376,10 @@ export function certifyAdaptationPack(
       }),
     ),
   ].sort();
-  const tipEvidence = listEvidenceSnapshots(store);
   const tipEvidenceId =
-    tipEvidence.length > 0
-      ? tipEvidence[tipEvidence.length - 1]!.evidenceId
-      : evidenceSnapshotIds[evidenceSnapshotIds.length - 1] ?? null;
+    tipOf(listEvidenceSnapshots(store))?.evidenceId ??
+    tipOf(evidenceSnapshotIds) ??
+    null;
 
   const stabilityScores = [...certificationIds].map((cid) => {
     const cert = certifications.find((c) => c.certificationId === cid)!;

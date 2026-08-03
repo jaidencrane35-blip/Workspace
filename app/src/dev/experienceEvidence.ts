@@ -10,6 +10,11 @@ import {
   memoryStore,
   type ExperienceStoreAdapter,
 } from "./experienceStore";
+import {
+  clearJsonKey,
+  loadJsonBundle,
+  saveJsonBundle,
+} from "./governanceStore";
 import { analyzeTraces, type TraceAggregate } from "./traceAnalysis";
 
 export const EVIDENCE_STORAGE_KEY = "ws.dev.experience.evidence.v1";
@@ -261,41 +266,38 @@ export function compareEvidence(
 export function loadEvidenceBundle(
   store: ExperienceStoreAdapter,
 ): EvidenceBundle {
-  const raw = store.getItem(EVIDENCE_STORAGE_KEY);
-  if (!raw) {
-    return emptyBundle();
-  }
-  try {
-    const parsed = JSON.parse(raw) as EvidenceBundle;
-    if (parsed?.schemaVersion !== 1 || !Array.isArray(parsed.snapshots)) {
-      return emptyBundle();
-    }
-    return {
-      schemaVersion: 1,
-      snapshots: parsed.snapshots.slice(-MAX_EVIDENCE_SNAPSHOTS),
-      baselineId:
-        typeof parsed.baselineId === "string" ? parsed.baselineId : null,
-      replayInvocations:
-        typeof parsed.replayInvocations === "number"
-          ? parsed.replayInvocations
-          : 0,
-    };
-  } catch {
-    return emptyBundle();
-  }
+  const parsed = loadJsonBundle(
+    store,
+    EVIDENCE_STORAGE_KEY,
+    emptyBundle,
+    (value): value is EvidenceBundle =>
+      !!value &&
+      typeof value === "object" &&
+      (value as EvidenceBundle).schemaVersion === 1 &&
+      Array.isArray((value as EvidenceBundle).snapshots),
+  );
+  return {
+    schemaVersion: 1,
+    snapshots: parsed.snapshots.slice(-MAX_EVIDENCE_SNAPSHOTS),
+    baselineId:
+      typeof parsed.baselineId === "string" ? parsed.baselineId : null,
+    replayInvocations:
+      typeof parsed.replayInvocations === "number"
+        ? parsed.replayInvocations
+        : 0,
+  };
 }
 
 function saveEvidenceBundle(
   store: ExperienceStoreAdapter,
   bundle: EvidenceBundle,
 ): void {
-  const next: EvidenceBundle = {
+  saveJsonBundle(store, EVIDENCE_STORAGE_KEY, {
     schemaVersion: 1,
     snapshots: bundle.snapshots.slice(-MAX_EVIDENCE_SNAPSHOTS),
     baselineId: bundle.baselineId,
     replayInvocations: bundle.replayInvocations,
-  };
-  store.setItem(EVIDENCE_STORAGE_KEY, JSON.stringify(next));
+  });
 }
 
 export function listEvidenceSnapshots(
@@ -355,7 +357,7 @@ export function getReplayInvocationCount(
 }
 
 export function clearEvidenceStore(store: ExperienceStoreAdapter): void {
-  store.removeItem(EVIDENCE_STORAGE_KEY);
+  clearJsonKey(store, EVIDENCE_STORAGE_KEY);
 }
 
 export function defaultEvidenceStore(): ExperienceStoreAdapter {

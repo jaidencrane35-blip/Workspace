@@ -136,6 +136,23 @@ export {
   clearArchitectureIntegrityStore,
   defaultArchitectureIntegrityStore,
 } from "./architecturalIntegrity";
+export {
+  GOVERNANCE_ID_RE,
+  GOVERNANCE_LABEL_RE,
+  adaptationLineageRefsPresent,
+  buildLineageIdCatalogs,
+  clearJsonKey,
+  cloneRecords,
+  contentAddressedId,
+  latestValidArchitectureSnapshotId,
+  loadJsonBundle,
+  loadJsonBundleOrNull,
+  saveJsonBundle,
+  stablePayloadHash,
+  storeArchitectureIntegrityValid,
+  tipEvidenceId,
+  tipOf,
+} from "./governancePrimitives";
 export type {
   ArchitectureGraph,
   ArchitectureNode,

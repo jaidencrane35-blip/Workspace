@@ -14,12 +14,17 @@ import {
   memoryStore,
   type ExperienceStoreAdapter,
 } from "./experienceStore";
+import {
+  clearJsonKey,
+  loadJsonBundle,
+  saveJsonBundle,
+} from "./governanceStore";
 
 export const ENGINEERING_STORAGE_KEY = "ws.dev.experience.engineering.v1";
 export const MAX_ENGINEERING_RECORDS = 50;
 export const MAX_ENGINEERING_HISTORY = 2000;
 
-/** Version 2 architecture authority documents (40–55). */
+/** Version 2 architecture authority documents (40–56). */
 export const ARCHITECTURE_AUTHORITY_DOCS = [
   "40_Experience_Refoundation.md",
   "41_Perceptual_Convergence.md",
@@ -37,6 +42,7 @@ export const ARCHITECTURE_AUTHORITY_DOCS = [
   "53_Adaptation_Composition.md",
   "54_Adaptation_Certification.md",
   "55_Adaptation_Packs.md",
+  "56_Governance_Consolidation.md",
 ] as const;
 
 export type ArchitectureAuthorityDoc =
@@ -477,41 +483,33 @@ export function buildEngineeringRecordFromProposals(
 export function loadEngineeringBundle(
   store: ExperienceStoreAdapter,
 ): EngineeringBundle {
-  const raw = store.getItem(ENGINEERING_STORAGE_KEY);
-  if (!raw) {
-    return emptyBundle();
-  }
-  try {
-    const parsed = JSON.parse(raw) as EngineeringBundle;
-    if (
-      parsed?.schemaVersion !== 1 ||
-      !Array.isArray(parsed.records) ||
-      !Array.isArray(parsed.history)
-    ) {
-      return emptyBundle();
-    }
-    return {
-      schemaVersion: 1,
-      records: parsed.records.slice(-MAX_ENGINEERING_RECORDS),
-      history: parsed.history.slice(-MAX_ENGINEERING_HISTORY),
-    };
-  } catch {
-    return emptyBundle();
-  }
+  const parsed = loadJsonBundle(
+    store,
+    ENGINEERING_STORAGE_KEY,
+    emptyBundle,
+    (value): value is EngineeringBundle =>
+      !!value &&
+      typeof value === "object" &&
+      (value as EngineeringBundle).schemaVersion === 1 &&
+      Array.isArray((value as EngineeringBundle).records) &&
+      Array.isArray((value as EngineeringBundle).history),
+  );
+  return {
+    schemaVersion: 1,
+    records: parsed.records.slice(-MAX_ENGINEERING_RECORDS),
+    history: parsed.history.slice(-MAX_ENGINEERING_HISTORY),
+  };
 }
 
 function saveEngineeringBundle(
   store: ExperienceStoreAdapter,
   bundle: EngineeringBundle,
 ): void {
-  store.setItem(
-    ENGINEERING_STORAGE_KEY,
-    JSON.stringify({
-      schemaVersion: 1,
-      records: bundle.records.slice(-MAX_ENGINEERING_RECORDS),
-      history: bundle.history.slice(-MAX_ENGINEERING_HISTORY),
-    }),
-  );
+  saveJsonBundle(store, ENGINEERING_STORAGE_KEY, {
+    schemaVersion: 1,
+    records: bundle.records.slice(-MAX_ENGINEERING_RECORDS),
+    history: bundle.history.slice(-MAX_ENGINEERING_HISTORY),
+  });
 }
 
 function freezeEntry(entry: EngineeringHistoryEntry): EngineeringHistoryEntry {
@@ -733,7 +731,7 @@ export function assertNoOrphanReleasedRecords(
 }
 
 export function clearEngineeringStore(store: ExperienceStoreAdapter): void {
-  store.removeItem(ENGINEERING_STORAGE_KEY);
+  clearJsonKey(store, ENGINEERING_STORAGE_KEY);
 }
 
 export function defaultEngineeringStore(): ExperienceStoreAdapter {

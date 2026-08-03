@@ -19,6 +19,12 @@ import {
   memoryStore,
   type ExperienceStoreAdapter,
 } from "../dev/experienceStore";
+import {
+  GOVERNANCE_ID_RE,
+  clearJsonKey,
+  loadJsonBundle,
+  saveJsonBundle,
+} from "../dev/governancePrimitives";
 
 export const ADAPTATION_STORAGE_KEY = "ws.experience.adaptation.v1";
 export const MAX_ADAPTATIONS = 40;
@@ -175,7 +181,7 @@ interface AdaptationBundle {
   stabilityReports: AdaptationStabilityReport[];
 }
 
-const ID_RE = /^[a-z0-9_.:-]{1,96}$/i;
+const ID_RE = GOVERNANCE_ID_RE;
 
 const PROPOSAL_OK = new Set([
   "accepted",
@@ -549,43 +555,38 @@ export function validateAdaptationEvidence(
 export function loadAdaptationBundle(
   store: ExperienceStoreAdapter,
 ): AdaptationBundle {
-  const raw = store.getItem(ADAPTATION_STORAGE_KEY);
-  if (!raw) {
-    return emptyBundle();
-  }
-  try {
-    const parsed = JSON.parse(raw) as AdaptationBundle;
-    if (parsed?.schemaVersion !== 1 || !Array.isArray(parsed.adaptations)) {
-      return emptyBundle();
-    }
-    return {
-      schemaVersion: 1,
-      adaptations: parsed.adaptations.slice(-MAX_ADAPTATIONS),
-      longitudinalRecords: Array.isArray(parsed.longitudinalRecords)
-        ? parsed.longitudinalRecords
-        : [],
-      stabilityReports: Array.isArray(parsed.stabilityReports)
-        ? parsed.stabilityReports
-        : [],
-    };
-  } catch {
-    return emptyBundle();
-  }
+  const parsed = loadJsonBundle(
+    store,
+    ADAPTATION_STORAGE_KEY,
+    emptyBundle,
+    (value): value is AdaptationBundle =>
+      !!value &&
+      typeof value === "object" &&
+      (value as AdaptationBundle).schemaVersion === 1 &&
+      Array.isArray((value as AdaptationBundle).adaptations),
+  );
+  return {
+    schemaVersion: 1,
+    adaptations: parsed.adaptations.slice(-MAX_ADAPTATIONS),
+    longitudinalRecords: Array.isArray(parsed.longitudinalRecords)
+      ? parsed.longitudinalRecords
+      : [],
+    stabilityReports: Array.isArray(parsed.stabilityReports)
+      ? parsed.stabilityReports
+      : [],
+  };
 }
 
 export function saveAdaptationBundle(
   store: ExperienceStoreAdapter,
   bundle: AdaptationBundle,
 ): void {
-  store.setItem(
-    ADAPTATION_STORAGE_KEY,
-    JSON.stringify({
-      schemaVersion: 1,
-      adaptations: bundle.adaptations.slice(-MAX_ADAPTATIONS),
-      longitudinalRecords: bundle.longitudinalRecords ?? [],
-      stabilityReports: bundle.stabilityReports ?? [],
-    }),
-  );
+  saveJsonBundle(store, ADAPTATION_STORAGE_KEY, {
+    schemaVersion: 1,
+    adaptations: bundle.adaptations.slice(-MAX_ADAPTATIONS),
+    longitudinalRecords: bundle.longitudinalRecords ?? [],
+    stabilityReports: bundle.stabilityReports ?? [],
+  });
   emitChanged();
 }
 
@@ -815,7 +816,7 @@ export function presentationToShellStyle(
 }
 
 export function clearAdaptationStore(store: ExperienceStoreAdapter): void {
-  store.removeItem(ADAPTATION_STORAGE_KEY);
+  clearJsonKey(store, ADAPTATION_STORAGE_KEY);
   emitChanged();
 }
 

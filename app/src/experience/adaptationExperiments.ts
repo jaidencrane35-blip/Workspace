@@ -36,6 +36,11 @@ import {
 } from "../dev/engineeringGovernance";
 import type { ExperienceStoreAdapter } from "../dev/experienceStore";
 import {
+  clearJsonKey,
+  loadJsonBundle,
+  saveJsonBundle,
+} from "../dev/governancePrimitives";
+import {
   activateAdaptation,
   buildAdaptationFromLineage,
   deactivateAdaptation,
@@ -641,40 +646,35 @@ export function runAdaptationExperiments(
 export function loadExperimentBundle(
   store: ExperienceStoreAdapter,
 ): ExperimentBundle {
-  const raw = store.getItem(EXPERIMENT_STORAGE_KEY);
-  if (!raw) {
-    return emptyBundle();
-  }
-  try {
-    const parsed = JSON.parse(raw) as ExperimentBundle;
-    if (parsed?.schemaVersion !== 1 || !Array.isArray(parsed.results)) {
-      return emptyBundle();
-    }
-    const legacy = parsed as ExperimentBundle & {
-      summary?: ExperimentRunSummary | null;
-    };
-    return {
-      schemaVersion: 1,
-      lastRun: legacy.lastRun ?? legacy.summary ?? null,
-      results: parsed.results.slice(-MAX_EXPERIMENT_RESULTS),
-    };
-  } catch {
-    return emptyBundle();
-  }
+  const parsed = loadJsonBundle(
+    store,
+    EXPERIMENT_STORAGE_KEY,
+    emptyBundle,
+    (value): value is ExperimentBundle =>
+      !!value &&
+      typeof value === "object" &&
+      (value as ExperimentBundle).schemaVersion === 1 &&
+      Array.isArray((value as ExperimentBundle).results),
+  );
+  const legacy = parsed as ExperimentBundle & {
+    summary?: ExperimentRunSummary | null;
+  };
+  return {
+    schemaVersion: 1,
+    lastRun: legacy.lastRun ?? legacy.summary ?? null,
+    results: parsed.results.slice(-MAX_EXPERIMENT_RESULTS),
+  };
 }
 
 export function persistExperimentSummary(
   store: ExperienceStoreAdapter,
   lastRun: ExperimentRunSummary,
 ): void {
-  store.setItem(
-    EXPERIMENT_STORAGE_KEY,
-    JSON.stringify({
-      schemaVersion: 1,
-      lastRun,
-      results: lastRun.results.slice(-MAX_EXPERIMENT_RESULTS),
-    }),
-  );
+  saveJsonBundle(store, EXPERIMENT_STORAGE_KEY, {
+    schemaVersion: 1,
+    lastRun,
+    results: lastRun.results.slice(-MAX_EXPERIMENT_RESULTS),
+  });
 }
 
 export function listExperimentResults(
@@ -727,7 +727,7 @@ export function toggleAdaptationExperiment(
 }
 
 export function clearExperimentStore(store: ExperienceStoreAdapter): void {
-  store.removeItem(EXPERIMENT_STORAGE_KEY);
+  clearJsonKey(store, EXPERIMENT_STORAGE_KEY);
 }
 
 /** Rollback readiness: validated experiments have replay refs and inactive/candidate adaptations. */

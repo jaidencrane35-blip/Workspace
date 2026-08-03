@@ -4,6 +4,11 @@
  */
 
 import type { ExperienceSession } from "./experienceEvents";
+import {
+  clearJsonKey,
+  loadJsonBundle,
+  saveJsonBundle,
+} from "./governanceStore";
 
 export const STORAGE_KEY = "ws.dev.experience.validation.v1";
 export const MAX_SESSIONS = 20;
@@ -45,36 +50,33 @@ function emptyBundle(): StoredBundle {
 }
 
 export function loadBundle(store: ExperienceStoreAdapter): StoredBundle {
-  const raw = store.getItem(STORAGE_KEY);
-  if (!raw) {
-    return emptyBundle();
-  }
-  try {
-    const parsed = JSON.parse(raw) as StoredBundle;
-    if (parsed?.schemaVersion !== 1 || !Array.isArray(parsed.sessions)) {
-      return emptyBundle();
-    }
-    return {
-      schemaVersion: 1,
-      sessions: parsed.sessions.slice(-MAX_SESSIONS),
-    };
-  } catch {
-    return emptyBundle();
-  }
+  const parsed = loadJsonBundle(
+    store,
+    STORAGE_KEY,
+    emptyBundle,
+    (value): value is StoredBundle =>
+      !!value &&
+      typeof value === "object" &&
+      (value as StoredBundle).schemaVersion === 1 &&
+      Array.isArray((value as StoredBundle).sessions),
+  );
+  return {
+    schemaVersion: 1,
+    sessions: parsed.sessions.slice(-MAX_SESSIONS),
+  };
 }
 
 export function saveBundle(
   store: ExperienceStoreAdapter,
   bundle: StoredBundle,
 ): void {
-  const next: StoredBundle = {
+  saveJsonBundle(store, STORAGE_KEY, {
     schemaVersion: 1,
     sessions: bundle.sessions.slice(-MAX_SESSIONS).map((session) => ({
       ...session,
       events: session.events.slice(0, MAX_EVENTS_PER_SESSION),
     })),
-  };
-  store.setItem(STORAGE_KEY, JSON.stringify(next));
+  });
 }
 
 export function upsertSession(
@@ -96,7 +98,7 @@ export function upsertSession(
 }
 
 export function clearStore(store: ExperienceStoreAdapter): void {
-  store.removeItem(STORAGE_KEY);
+  clearJsonKey(store, STORAGE_KEY);
 }
 
 export function listSessions(store: ExperienceStoreAdapter): ExperienceSession[] {

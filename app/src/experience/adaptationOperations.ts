@@ -14,6 +14,7 @@ import {
   listArchitectureSnapshots,
   type ArchitectureSnapshot,
 } from "../dev/architecturalIntegrity";
+import { tipOf } from "../dev/governancePrimitives";
 import {
   listAdaptations,
   loadAdaptationBundle,
@@ -138,11 +139,7 @@ function latestArchitectureId(
 }
 
 function tipEvidenceId(evidence: ExperienceEvidence[]): string | null {
-  if (evidence.length === 0) {
-    return null;
-  }
-  // Store order is append order; tip is last.
-  return evidence[evidence.length - 1]!.evidenceId;
+  return tipOf(evidence)?.evidenceId ?? null;
 }
 
 /**

@@ -4,11 +4,6 @@
  * Verification only. No Runtime Core / navigation / persistence / new primitives.
  */
 
-import {
-  buildArchitectureGraph,
-  listArchitectureSnapshots,
-  validateArchitectureIntegrity,
-} from "../dev/architecturalIntegrity";
 import { fnv1a } from "../dev/devHash";
 import {
   COMPARABLE_METRICS,
@@ -17,10 +12,16 @@ import {
   type ExperienceEvidence,
   type ExperienceEvidenceMetrics,
 } from "../dev/experienceEvidence";
-import { listEngineeringRecords } from "../dev/engineeringGovernance";
-import { detectOpportunities } from "../dev/experienceImprovement";
-import { listProposals } from "../dev/experienceGovernance";
 import type { ExperienceStoreAdapter } from "../dev/experienceStore";
+import {
+  clearJsonKey,
+  latestValidArchitectureSnapshotId,
+  loadJsonBundle,
+  saveJsonBundle,
+  stablePayloadHash,
+  storeArchitectureIntegrityValid,
+  tipOf,
+} from "../dev/governancePrimitives";
 import {
   composeAdaptations,
   validateComposition,
@@ -111,36 +112,35 @@ function emptyBundle(): CertificationBundle {
   return { schemaVersion: 1, certifications: [] };
 }
 
+function isCertificationBundle(parsed: unknown): parsed is CertificationBundle {
+  if (!parsed || typeof parsed !== "object") {
+    return false;
+  }
+  const p = parsed as CertificationBundle;
+  return p.schemaVersion === 1 && Array.isArray(p.certifications);
+}
+
 function loadBundle(store: ExperienceStoreAdapter): CertificationBundle {
-  const raw = store.getItem(CERTIFICATION_STORAGE_KEY);
-  if (!raw) {
-    return emptyBundle();
-  }
-  try {
-    const parsed = JSON.parse(raw) as CertificationBundle;
-    if (parsed?.schemaVersion !== 1 || !Array.isArray(parsed.certifications)) {
-      return emptyBundle();
-    }
-    return {
-      schemaVersion: 1,
-      certifications: parsed.certifications.slice(-MAX_CERTIFICATIONS),
-    };
-  } catch {
-    return emptyBundle();
-  }
+  const loaded = loadJsonBundle(
+    store,
+    CERTIFICATION_STORAGE_KEY,
+    emptyBundle,
+    isCertificationBundle,
+  );
+  return {
+    schemaVersion: 1,
+    certifications: loaded.certifications.slice(-MAX_CERTIFICATIONS),
+  };
 }
 
 function saveBundle(
   store: ExperienceStoreAdapter,
   bundle: CertificationBundle,
 ): void {
-  store.setItem(
-    CERTIFICATION_STORAGE_KEY,
-    JSON.stringify({
-      schemaVersion: 1,
-      certifications: bundle.certifications.slice(-MAX_CERTIFICATIONS),
-    }),
-  );
+  saveJsonBundle(store, CERTIFICATION_STORAGE_KEY, {
+    schemaVersion: 1 as const,
+    certifications: bundle.certifications.slice(-MAX_CERTIFICATIONS),
+  });
 }
 
 export function listCertifications(
@@ -161,8 +161,7 @@ export function listCertifications(
 export function getLatestCertification(
   store: ExperienceStoreAdapter,
 ): AdaptationCertification | null {
-  const list = listCertifications(store);
-  return list.length > 0 ? list[list.length - 1]! : null;
+  return tipOf(listCertifications(store));
 }
 
 export function getCertification(
@@ -177,16 +176,7 @@ export function getCertification(
 }
 
 export function clearCertificationStore(store: ExperienceStoreAdapter): void {
-  store.removeItem(CERTIFICATION_STORAGE_KEY);
-}
-
-function tipEvidence(
-  evidence: ExperienceEvidence[],
-): ExperienceEvidence | null {
-  if (evidence.length === 0) {
-    return null;
-  }
-  return evidence[evidence.length - 1]!;
+  clearJsonKey(store, CERTIFICATION_STORAGE_KEY);
 }
 
 function extractCertifiedMetrics(
@@ -199,32 +189,11 @@ function extractCertifiedMetrics(
   return metrics;
 }
 
-function integrityValid(store: ExperienceStoreAdapter): boolean {
-  const graph = buildArchitectureGraph({
-    engineeringRecords: listEngineeringRecords(store),
-    proposals: listProposals(store),
-    opportunities: detectOpportunities(listEvidenceSnapshots(store)),
-    evidence: listEvidenceSnapshots(store),
-  });
-  return validateArchitectureIntegrity(graph, {
-    engineeringRecords: listEngineeringRecords(store),
-    proposals: listProposals(store),
-  }).valid;
-}
-
 function resolveArchitectureSnapshotId(
   store: ExperienceStoreAdapter,
   compositionArchIds: string[],
 ): string | null {
-  const snapshots = listArchitectureSnapshots(store);
-  for (const id of [...compositionArchIds].sort()) {
-    const snap = snapshots.find((s) => s.snapshotId === id);
-    if (snap?.integrity.valid) {
-      return id;
-    }
-  }
-  const valid = snapshots.filter((s) => s.integrity.valid);
-  return valid.length > 0 ? valid[valid.length - 1]!.snapshotId : null;
+  return latestValidArchitectureSnapshotId(store, [...compositionArchIds].sort());
 }
 
 export function hashAdaptationSet(
@@ -233,13 +202,12 @@ export function hashAdaptationSet(
   architectureSnapshotId: string,
   composedStabilityScore: number,
 ): string {
-  const payload = [
+  return stablePayloadHash([
     [...adaptationIds].sort().join(","),
     evidenceSnapshotId,
     architectureSnapshotId,
     String(composedStabilityScore),
-  ].join("|");
-  return fnv1a(payload);
+  ]);
 }
 
 /**
@@ -401,7 +369,7 @@ function buildCandidateCertification(
     compositionValidationResult: compositionValidation.validationResult,
     certifiedMetrics,
     regressionStatus: "clear",
-    integrityValid: integrityValid(store),
+    integrityValid: storeArchitectureIntegrityValid(store),
     governanceValid: compositionValidation.governanceIntact,
     composedStabilityScore: compositionValidation.composedStabilityScore,
     previousCertificationId: previous?.certificationId ?? null,
@@ -427,7 +395,7 @@ export function certifyAdaptationSet(
   const compositionValidation = validateComposition(store);
   const failureReasons: CertificationFailureReason[] = [];
   const evidenceList = listEvidenceSnapshots(store);
-  const evidence = tipEvidence(evidenceList);
+  const evidence = tipOf(evidenceList);
   const previous = getLatestCertification(store);
 
   if (compositionValidation.validationResult !== "passed") {
@@ -439,7 +407,7 @@ export function certifyAdaptationSet(
   if (!evidence) {
     failureReasons.push("evidence_incomplete");
   }
-  const integOk = integrityValid(store);
+  const integOk = storeArchitectureIntegrityValid(store);
   if (!integOk) {
     failureReasons.push("integrity_invalid");
   }
