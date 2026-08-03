@@ -132,6 +132,7 @@ type AnticipationApi = typeof import("../experience/workspaceAnticipation");
 type CalibrationApi = typeof import("../experience/workspaceCalibration");
 type StabilityApi = typeof import("../experience/workspacePresentationStability");
 type ComplexityApi = typeof import("../experience/architecturalComplexity");
+type EngCertApi = typeof import("./engineeringCertification");
 
 const NEXT_STATE: Partial<Record<ProposalLifecycle, ProposalLifecycle>> = {
   draft: "review",
@@ -195,6 +196,7 @@ export function ExperienceEvidenceDashboard() {
   const [complexityApi, setComplexityApi] = useState<ComplexityApi | null>(
     null,
   );
+  const [engCertApi, setEngCertApi] = useState<EngCertApi | null>(null);
   const [batchReport, setBatchReport] = useState<BatchValidationReport | null>(
     null,
   );
@@ -355,6 +357,13 @@ export function ExperienceEvidenceDashboard() {
         }
       });
     }
+    if (!engCertApi) {
+      void import("./engineeringCertification").then((mod) => {
+        if (!cancelled) {
+          setEngCertApi(mod);
+        }
+      });
+    }
     return () => {
       cancelled = true;
     };
@@ -379,6 +388,7 @@ export function ExperienceEvidenceDashboard() {
     calibrationApi,
     stabilityApi,
     complexityApi,
+    engCertApi,
   ]);
 
   const sessions = useMemo(() => {
@@ -823,6 +833,64 @@ export function ExperienceEvidenceDashboard() {
     }
     return complexityApi.buildArchitecturalComplexityReport();
   }, [complexityApi, tick]);
+
+  useEffect(() => {
+    if (!engCertApi || !open) {
+      return;
+    }
+    if (engCertApi.listEngineeringCertificationHistory().length === 0) {
+      engCertApi.runEngineeringCertification(govStore, {
+        freezeDuration: true,
+        now: 1,
+        recordHistory: true,
+      });
+    }
+  }, [engCertApi, open, govStore]);
+
+  const engCertReport = useMemo(() => {
+    void tick;
+    if (!engCertApi) {
+      return null;
+    }
+    return engCertApi.runEngineeringCertification(govStore, {
+      freezeDuration: true,
+      now: 1,
+      recordHistory: false,
+    });
+  }, [engCertApi, govStore, tick]);
+
+  const engCertInvariants = useMemo(() => {
+    if (!engCertApi) {
+      return [];
+    }
+    return engCertApi.listEngineeringInvariants();
+  }, [engCertApi]);
+
+  const engCertHistory = useMemo(() => {
+    void tick;
+    if (!engCertApi) {
+      return [];
+    }
+    return engCertApi.listEngineeringCertificationHistory();
+  }, [engCertApi, tick]);
+
+  const engCertComparison = useMemo(() => {
+    if (!engCertApi || !engCertReport) {
+      return null;
+    }
+    const previous = engCertApi.getLatestEngineeringCertification();
+    return engCertApi.compareEngineeringCertifications(
+      previous,
+      engCertReport,
+    );
+  }, [engCertApi, engCertReport]);
+
+  const engSubsystemHealth = useMemo(() => {
+    if (!engCertApi || !engCertReport) {
+      return [];
+    }
+    return engCertApi.deriveSubsystemHealth(engCertReport);
+  }, [engCertApi, engCertReport]);
 
   const analyze = () => {
     if (sessions.length === 0) {
@@ -2031,6 +2099,62 @@ export function ExperienceEvidenceDashboard() {
           </div>
         ) : (
           <div style={{ opacity: 0.7 }}>Awaiting complexity module…</div>
+        )}
+      </section>
+
+      <section
+        style={{ marginBottom: 10 }}
+        data-testid="engineering-certification"
+      >
+        <div style={{ marginBottom: 4 }}>
+          <strong>Engineering certification</strong>
+          {!engCertApi ? " (loading…)" : ""}
+        </div>
+        {engCertReport ? (
+          <div data-testid="eng-cert-report">
+            <div data-testid="eng-cert-status">
+              complete {engCertReport.complete ? "yes" : "no"} · passed{" "}
+              {engCertReport.passed.length} · failed{" "}
+              {engCertReport.failed.length} · skipped{" "}
+              {engCertReport.skipped.length} · durationMs{" "}
+              {engCertReport.durationMs}
+            </div>
+            <div data-testid="eng-cert-authority">
+              {engCertReport.authorityReferences.join(" · ")}
+            </div>
+            <div data-testid="eng-invariant-registry">
+              invariants{" "}
+              {engCertInvariants
+                .map(
+                  (inv) =>
+                    `${inv.invariantId}:{${inv.owningSubsystem}/${inv.scope}}`,
+                )
+                .join(" · ")}
+            </div>
+            <div data-testid="eng-cert-history">
+              history {engCertHistory.length} · tip{" "}
+              {engCertHistory[engCertHistory.length - 1]?.certificationId ??
+                "none"}
+            </div>
+            {engCertComparison ? (
+              <div data-testid="eng-cert-baseline">
+                newFail {engCertComparison.newlyFailed.join(",") || "∅"} ·
+                resolved {engCertComparison.newlyResolved.join(",") || "∅"} ·
+                added {engCertComparison.invariantsAdded.join(",") || "∅"} ·
+                removed {engCertComparison.invariantsRemoved.join(",") || "∅"}
+              </div>
+            ) : null}
+            <div data-testid="eng-subsystem-health">
+              {engSubsystemHealth
+                .map(
+                  (h) =>
+                    `${h.subsystem}:p${h.passed}/f${h.failed}/s${h.skipped}`,
+                )
+                .join(" · ")}
+            </div>
+          </div>
+        ) : (
+          <div style={{ opacity: 0.7 }}>Awaiting certification module…</div>
         )}
       </section>
 

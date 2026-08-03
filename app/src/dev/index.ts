@@ -137,6 +137,26 @@ export {
   defaultArchitectureIntegrityStore,
 } from "./architecturalIntegrity";
 export {
+  ENGINEERING_INVARIANTS,
+  listEngineeringInvariants,
+  runEngineeringCertification,
+  compareEngineeringCertifications,
+  listEngineeringCertificationHistory,
+  getLatestEngineeringCertification,
+  clearEngineeringCertificationHistory,
+  deriveSubsystemHealth,
+} from "./engineeringCertification";
+export type {
+  EngineeringInvariant,
+  EngineeringSubsystem,
+  InvariantScope,
+  InvariantOutcome,
+  InvariantFailureCause,
+  InvariantExecutionResult,
+  EngineeringCertificationReport,
+  EngineeringCertificationComparison,
+} from "./engineeringCertification";
+export {
   GOVERNANCE_ID_RE,
   GOVERNANCE_LABEL_RE,
   adaptationLineageRefsPresent,
