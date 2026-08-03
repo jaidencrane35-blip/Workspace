@@ -255,7 +255,8 @@ function mergePresentation(
 
 /**
  * Deterministic resolver — presentation configuration only.
- * Active + passed adaptations apply in adaptationId order (stable).
+ * Active + passed adaptations compose in adaptationId order (Sprint 62).
+ * Conflict reporting lives in adaptationComposition.analyzeAdaptationConflicts.
  */
 export function resolvePresentationConfiguration(
   adaptations: WorkspaceAdaptation[],

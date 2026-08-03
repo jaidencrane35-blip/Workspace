@@ -100,3 +100,20 @@ export type {
   ProductionBlockReason,
   ProductionSelection,
 } from "./productionAdaptation";
+export {
+  analyzeAdaptationConflicts,
+  composeAdaptations,
+  composeAdaptationsFromStore,
+  compositionPriorityRank,
+  selectComposableAdaptations,
+  validateComposition,
+} from "./adaptationComposition";
+export type {
+  AdaptationConflict,
+  AdaptationConflictReport,
+  CompositionLineage,
+  CompositionResult,
+  CompositionValidationReport,
+  ConflictCause,
+  ResolutionStrategy,
+} from "./adaptationComposition";

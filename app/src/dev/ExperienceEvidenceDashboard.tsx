@@ -55,6 +55,11 @@ import type {
   BatchValidationReport,
 } from "../experience/adaptationOperations";
 import type { ProductionActivationRecord } from "../experience/productionAdaptation";
+import type {
+  AdaptationConflictReport,
+  CompositionResult,
+  CompositionValidationReport,
+} from "../experience/adaptationComposition";
 import { fnv1a } from "./devHash";
 
 const panelStyle: CSSProperties = {
@@ -108,6 +113,7 @@ type ExperimentApi = typeof import("../experience/adaptationExperiments");
 type LongitudinalApi = typeof import("../experience/longitudinalAdaptation");
 type OperationsApi = typeof import("../experience/adaptationOperations");
 type ProductionApi = typeof import("../experience/productionAdaptation");
+type CompositionApi = typeof import("../experience/adaptationComposition");
 
 const NEXT_STATE: Partial<Record<ProposalLifecycle, ProposalLifecycle>> = {
   draft: "review",
@@ -153,6 +159,8 @@ export function ExperienceEvidenceDashboard() {
   const [productionApi, setProductionApi] = useState<ProductionApi | null>(
     null,
   );
+  const [compositionApi, setCompositionApi] =
+    useState<CompositionApi | null>(null);
   const [batchReport, setBatchReport] = useState<BatchValidationReport | null>(
     null,
   );
@@ -237,6 +245,13 @@ export function ExperienceEvidenceDashboard() {
         }
       });
     }
+    if (!compositionApi) {
+      void import("../experience/adaptationComposition").then((mod) => {
+        if (!cancelled) {
+          setCompositionApi(mod);
+        }
+      });
+    }
     return () => {
       cancelled = true;
     };
@@ -251,6 +266,7 @@ export function ExperienceEvidenceDashboard() {
     longitudinalApi,
     operationsApi,
     productionApi,
+    compositionApi,
   ]);
 
   const sessions = useMemo(() => {
@@ -496,6 +512,26 @@ export function ExperienceEvidenceDashboard() {
     () => adaptations.filter((a) => a.rolloutState === "active"),
     [adaptations],
   );
+
+  const compositionResult: CompositionResult | null = useMemo(() => {
+    void tick;
+    if (!compositionApi) {
+      return null;
+    }
+    return compositionApi.composeAdaptations(adaptations);
+  }, [compositionApi, adaptations, tick]);
+
+  const compositionValidation: CompositionValidationReport | null =
+    useMemo(() => {
+      void tick;
+      if (!compositionApi) {
+        return null;
+      }
+      return compositionApi.validateComposition(govStore);
+    }, [compositionApi, govStore, tick]);
+
+  const conflictReport: AdaptationConflictReport | null =
+    compositionResult?.conflictReport ?? null;
 
   const analyze = () => {
     if (sessions.length === 0) {
@@ -1361,6 +1397,78 @@ export function ExperienceEvidenceDashboard() {
             );
           })}
         </ul>
+      </section>
+
+      <section
+        style={{ marginBottom: 10 }}
+        data-testid="adaptation-composition"
+      >
+        <div style={{ marginBottom: 4 }}>
+          <strong>Adaptation composition</strong>
+          {!compositionApi
+            ? " (loading…)"
+            : compositionResult
+              ? ` · stack ${compositionResult.compositionOrder.length}`
+              : ""}
+        </div>
+        {compositionResult ? (
+          <>
+            <div data-testid="composition-order">
+              order:{" "}
+              {compositionResult.compositionOrder.join(" → ") || "(empty)"}
+            </div>
+            <div>
+              priority:{" "}
+              {compositionResult.priority
+                .map((p) => `${p.adaptationId}#${p.rank}`)
+                .join(", ") || "—"}
+            </div>
+            <div data-testid="composition-resolved">
+              resolved: density{" "}
+              {String(compositionResult.presentation.density)} · space{" "}
+              {compositionResult.presentation.spacingScale} · motion{" "}
+              {compositionResult.presentation.motionProfile} · env{" "}
+              {compositionResult.presentation.environmentalWeight}
+            </div>
+            <div>
+              lineage props{" "}
+              {compositionResult.lineage.proposalIds.join(", ") || "—"} · eng{" "}
+              {compositionResult.lineage.engineeringChangeIds.join(", ") ||
+                "—"}
+            </div>
+            {conflictReport ? (
+              <div data-testid="composition-conflicts">
+                conflicts {conflictReport.conflicts.length} · compatible{" "}
+                {conflictReport.compatible ? "yes" : "no"}
+                {conflictReport.conflicts.length > 0 ? (
+                  <ul style={{ paddingLeft: 16, margin: "4px 0" }}>
+                    {conflictReport.conflicts.map((c) => (
+                      <li
+                        key={`${c.cause}:${c.adaptationIds.join("|")}:${c.field}`}
+                      >
+                        {c.cause} · {c.field} · {c.adaptationIds.join("+")} ·{" "}
+                        {c.resolutionStrategy}
+                        {c.winnerAdaptationId
+                          ? ` → ${c.winnerAdaptationId}`
+                          : ""}
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+              </div>
+            ) : null}
+            {compositionValidation ? (
+              <div>
+                composition validation{" "}
+                {compositionValidation.validationResult} · stability{" "}
+                {compositionValidation.composedStabilityScore} · governance{" "}
+                {compositionValidation.governanceIntact ? "intact" : "broken"}
+              </div>
+            ) : null}
+          </>
+        ) : (
+          <div style={{ opacity: 0.7 }}>Composition module loading…</div>
+        )}
       </section>
 
       <section
