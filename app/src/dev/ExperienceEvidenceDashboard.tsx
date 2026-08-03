@@ -126,6 +126,7 @@ type CompositionApi = typeof import("../experience/adaptationComposition");
 type CertificationApi = typeof import("../experience/adaptationCertification");
 type PacksApi = typeof import("../experience/adaptationPacks");
 type ValidationApi = typeof import("../experience/adaptationValidation");
+type EvolutionApi = typeof import("../experience/workspaceMemoryEvolution");
 
 const NEXT_STATE: Partial<Record<ProposalLifecycle, ProposalLifecycle>> = {
   draft: "review",
@@ -179,6 +180,7 @@ export function ExperienceEvidenceDashboard() {
   const [validationApi, setValidationApi] = useState<ValidationApi | null>(
     null,
   );
+  const [evolutionApi, setEvolutionApi] = useState<EvolutionApi | null>(null);
   const [batchReport, setBatchReport] = useState<BatchValidationReport | null>(
     null,
   );
@@ -295,6 +297,13 @@ export function ExperienceEvidenceDashboard() {
         }
       });
     }
+    if (!evolutionApi) {
+      void import("../experience/workspaceMemoryEvolution").then((mod) => {
+        if (!cancelled) {
+          setEvolutionApi(mod);
+        }
+      });
+    }
     return () => {
       cancelled = true;
     };
@@ -313,6 +322,7 @@ export function ExperienceEvidenceDashboard() {
     certificationApi,
     packsApi,
     validationApi,
+    evolutionApi,
   ]);
 
   const sessions = useMemo(() => {
@@ -636,6 +646,30 @@ export function ExperienceEvidenceDashboard() {
       now: Date.now(),
     });
   }, [validationApi, govStore, tick]);
+
+  const memoryEvolutions = useMemo(() => {
+    void tick;
+    if (!evolutionApi) {
+      return [];
+    }
+    return evolutionApi.listMemoryEvolutions(govStore);
+  }, [evolutionApi, govStore, tick]);
+
+  const activeMemoryEvolution = useMemo(() => {
+    void tick;
+    if (!evolutionApi) {
+      return null;
+    }
+    return evolutionApi.getActiveMemoryEvolution(govStore);
+  }, [evolutionApi, govStore, tick]);
+
+  const evolvedPresentation = useMemo(() => {
+    void tick;
+    if (!evolutionApi) {
+      return null;
+    }
+    return evolutionApi.resolvePresentationFromRuntime(govStore);
+  }, [evolutionApi, govStore, tick]);
 
   const analyze = () => {
     if (sessions.length === 0) {
@@ -1660,6 +1694,89 @@ export function ExperienceEvidenceDashboard() {
               </li>
             );
           })}
+        </ul>
+      </section>
+
+      <section
+        style={{ marginBottom: 10 }}
+        data-testid="workspace-memory-evolution"
+      >
+        <div style={{ marginBottom: 4 }}>
+          <strong>Workspace memory evolution</strong>
+          {!evolutionApi
+            ? " (loading…)"
+            : ` · history ${memoryEvolutions.length}`}
+        </div>
+        {activeMemoryEvolution ? (
+          <div data-testid="active-memory-evolution">
+            active {activeMemoryEvolution.evolutionId} · epoch{" "}
+            {activeMemoryEvolution.evolutionEpoch}
+            {activeMemoryEvolution.packId
+              ? ` · pack ${activeMemoryEvolution.packId}@${activeMemoryEvolution.packVersion}`
+              : ""}
+            <div>
+              adaptations{" "}
+              {activeMemoryEvolution.originatingAdaptationIds.join(", ") ||
+                "—"}
+            </div>
+            <div data-testid="evolution-evidence-lineage">
+              evidence{" "}
+              {activeMemoryEvolution.evidenceLineage.evidenceSnapshotIds.join(
+                ", ",
+              ) || "—"}{" "}
+              · tip{" "}
+              {activeMemoryEvolution.evidenceLineage.tipEvidenceId ?? "—"}
+            </div>
+            <div data-testid="evolution-replay-lineage">
+              replay{" "}
+              {activeMemoryEvolution.validation.replaySessionIds.join(", ") ||
+                "—"}
+            </div>
+            <div data-testid="evolution-presentation-delta">
+              delta spacing {activeMemoryEvolution.presentationDelta.spacingScale}{" "}
+              · emphasis{" "}
+              {activeMemoryEvolution.presentationDelta.emphasisScale} · group{" "}
+              {activeMemoryEvolution.presentationDelta.groupingTightness} · env{" "}
+              {activeMemoryEvolution.presentationDelta.environmentalWeight} ·
+              motion {activeMemoryEvolution.presentationDelta.motionProfile} ·
+              density{" "}
+              {activeMemoryEvolution.presentationDelta.density ?? "null"}
+            </div>
+            <div>
+              regions{" "}
+              {activeMemoryEvolution.affectedWorkspaceRegions.join(", ") ||
+                "—"}
+            </div>
+          </div>
+        ) : (
+          <div style={{ opacity: 0.7 }} data-testid="active-memory-evolution">
+            No active evolution (inactive or uncertified).
+          </div>
+        )}
+        {evolvedPresentation ? (
+          <div>
+            resolved applied{" "}
+            {evolvedPresentation.appliedAdaptationIds.join(", ") || "(none)"} ·
+            spacing {evolvedPresentation.spacingScale}
+          </div>
+        ) : null}
+        <ul style={{ paddingLeft: 16, margin: "6px 0" }} data-testid="evolution-history">
+          {memoryEvolutions.map((evo) => (
+            <li key={evo.evolutionId} style={{ marginBottom: 6 }}>
+              <div>
+                {evo.evolutionId} · epoch {evo.evolutionEpoch} ·{" "}
+                <strong>{evo.active ? "active" : "inactive"}</strong>
+                {evo.validation.failureReasons.length
+                  ? ` · ${evo.validation.failureReasons.join(",")}`
+                  : ""}
+              </div>
+              <div>
+                adaptations {evo.originatingAdaptationIds.join(", ") || "—"} ·
+                certs{" "}
+                {evo.certificationLineage.certificationIds.join(", ") || "—"}
+              </div>
+            </li>
+          ))}
         </ul>
       </section>
 

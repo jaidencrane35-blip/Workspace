@@ -3,32 +3,26 @@ import {
   ADAPTATION_CHANGED_EVENT,
   defaultAdaptationStore,
   identityPresentation,
-  listAdaptations,
-  resolvePresentationConfiguration,
   type ResolvedPresentation,
 } from "./workspaceAdaptation";
+import { resolvePresentationFromRuntime } from "./workspaceMemoryEvolution";
 
 /**
- * Live presentation configuration from approved active adaptations.
- * Defaults to identity (no change) when none are active.
+ * Live presentation from Runtime → Pack → MemoryEvolution → Presentation.
+ * Falls back to the active adaptation set when evolution is inactive.
+ * Defaults to identity when nothing applies.
  */
 export function useResolvedPresentation(): ResolvedPresentation {
   const [presentation, setPresentation] = useState<ResolvedPresentation>(() => {
     if (typeof window === "undefined") {
       return identityPresentation();
     }
-    return resolvePresentationConfiguration(
-      listAdaptations(defaultAdaptationStore()),
-    );
+    return resolvePresentationFromRuntime(defaultAdaptationStore());
   });
 
   useEffect(() => {
     const refresh = () => {
-      setPresentation(
-        resolvePresentationConfiguration(
-          listAdaptations(defaultAdaptationStore()),
-        ),
-      );
+      setPresentation(resolvePresentationFromRuntime(defaultAdaptationStore()));
     };
     refresh();
     window.addEventListener(ADAPTATION_CHANGED_EVENT, refresh);

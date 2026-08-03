@@ -227,7 +227,11 @@ function clamp(n: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, n));
 }
 
-function mergePresentation(
+/**
+ * Merge one presentation layer onto another (multiplicative scales).
+ * Presentation fields only — never touches data, navigation, or Runtime Core.
+ */
+export function applyPresentationLayer(
   base: ResolvedPresentation,
   next: PresentationConfiguration,
 ): ResolvedPresentation {
@@ -259,14 +263,53 @@ function mergePresentation(
   };
 }
 
+/** @deprecated Use applyPresentationLayer — retained name for local call sites. */
+const mergePresentation = applyPresentationLayer;
+
+export function finalizeResolvedPresentation(
+  resolved: ResolvedPresentation,
+): ResolvedPresentation {
+  return {
+    ...resolved,
+    spacingScale: Number((resolved.spacingScale ?? 1).toFixed(4)),
+    emphasisScale: Number((resolved.emphasisScale ?? 1).toFixed(4)),
+    groupingTightness: Number((resolved.groupingTightness ?? 0.5).toFixed(4)),
+    environmentalWeight: Number(
+      (resolved.environmentalWeight ?? 1).toFixed(4),
+    ),
+  };
+}
+
 /**
  * Deterministic resolver — presentation configuration only.
  * Active + passed adaptations compose in adaptationId order (Sprint 62).
+ * Optional active WorkspaceMemoryEvolution (Sprint 67) replaces the active set
+ * when provided — Runtime → Pack → Evolution → Presentation.
  * Conflict reporting lives in adaptationComposition.analyzeAdaptationConflicts.
  */
 export function resolvePresentationConfiguration(
   adaptations: WorkspaceAdaptation[],
+  options?: {
+    /** When active, presentation is taken from evolution delta (certified path). */
+    evolution?: {
+      active: boolean;
+      originatingAdaptationIds: string[];
+      presentationDelta: PresentationConfiguration;
+    } | null;
+  },
 ): ResolvedPresentation {
+  if (options?.evolution?.active) {
+    const applied = [...options.evolution.originatingAdaptationIds].sort((a, b) =>
+      a.localeCompare(b),
+    );
+    let resolved = applyPresentationLayer(
+      identityPresentation(),
+      options.evolution.presentationDelta,
+    );
+    resolved.appliedAdaptationIds = applied;
+    return finalizeResolvedPresentation(resolved);
+  }
+
   const active = adaptations
     .filter(
       (a) =>
@@ -282,16 +325,7 @@ export function resolvePresentationConfiguration(
     applied.push(adaptation.adaptationId);
   }
   resolved.appliedAdaptationIds = applied;
-  // Round for stability
-  resolved.spacingScale = Number((resolved.spacingScale ?? 1).toFixed(4));
-  resolved.emphasisScale = Number((resolved.emphasisScale ?? 1).toFixed(4));
-  resolved.groupingTightness = Number(
-    (resolved.groupingTightness ?? 0.5).toFixed(4),
-  );
-  resolved.environmentalWeight = Number(
-    (resolved.environmentalWeight ?? 1).toFixed(4),
-  );
-  return resolved;
+  return finalizeResolvedPresentation(resolved);
 }
 
 export interface AdaptationLineageContext {

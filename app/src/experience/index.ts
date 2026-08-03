@@ -11,6 +11,8 @@ export {
   listAdaptations,
   persistAdaptation,
   presentationToShellStyle,
+  applyPresentationLayer,
+  finalizeResolvedPresentation,
   resolvePresentationConfiguration,
   rollbackAdaptation,
   upsertValidatedAdaptation,
@@ -182,3 +184,22 @@ export type {
   PackEffectivenessReport,
   StabilityTrend,
 } from "./adaptationValidation";
+export {
+  deriveActiveMemoryEvolution,
+  evolutionCompositionFingerprint,
+  getActiveMemoryEvolution,
+  listMemoryEvolutions,
+  presentationFromEvolution,
+  replayMemoryEvolution,
+  resolvePresentationFromRuntime,
+  selectEvolutionMembers,
+  validateMemoryEvolution,
+} from "./workspaceMemoryEvolution";
+export type {
+  EvolutionCertificationLineage,
+  EvolutionEvidenceLineage,
+  EvolutionPresentationDelta,
+  EvolutionValidation,
+  EvolutionValidationFailure,
+  WorkspaceMemoryEvolution,
+} from "./workspaceMemoryEvolution";
