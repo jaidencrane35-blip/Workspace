@@ -139,3 +139,25 @@ export type {
   CertificationRegressionCause,
   CertificationRegressionStatus,
 } from "./adaptationCertification";
+export {
+  PACK_STORAGE_KEY,
+  activateAdaptationPack,
+  certifyAdaptationPack,
+  clearAdaptationPackStore,
+  composePackCandidate,
+  deactivateAdaptationPack,
+  getActiveAdaptationPack,
+  getAdaptationPack,
+  listAdaptationPacks,
+  packActivationReady,
+} from "./adaptationPacks";
+export type {
+  PackActivationError,
+  PackActivationResult,
+  PackCertificationFailureReason,
+  PackCertificationResult,
+  PackEvidenceSummary,
+  PackRolloutStatus,
+  PackStabilitySummary,
+  WorkspaceAdaptationPack,
+} from "./adaptationPacks";

@@ -65,6 +65,10 @@ import type {
   CertificationComparison,
   CertificationGateResult,
 } from "../experience/adaptationCertification";
+import type {
+  PackCertificationResult,
+  WorkspaceAdaptationPack,
+} from "../experience/adaptationPacks";
 import { fnv1a } from "./devHash";
 
 const panelStyle: CSSProperties = {
@@ -120,6 +124,7 @@ type OperationsApi = typeof import("../experience/adaptationOperations");
 type ProductionApi = typeof import("../experience/productionAdaptation");
 type CompositionApi = typeof import("../experience/adaptationComposition");
 type CertificationApi = typeof import("../experience/adaptationCertification");
+type PacksApi = typeof import("../experience/adaptationPacks");
 
 const NEXT_STATE: Partial<Record<ProposalLifecycle, ProposalLifecycle>> = {
   draft: "review",
@@ -169,11 +174,14 @@ export function ExperienceEvidenceDashboard() {
     useState<CompositionApi | null>(null);
   const [certificationApi, setCertificationApi] =
     useState<CertificationApi | null>(null);
+  const [packsApi, setPacksApi] = useState<PacksApi | null>(null);
   const [batchReport, setBatchReport] = useState<BatchValidationReport | null>(
     null,
   );
   const [lastCertGate, setLastCertGate] =
     useState<CertificationGateResult | null>(null);
+  const [lastPackGate, setLastPackGate] =
+    useState<PackCertificationResult | null>(null);
   const [exploreNode, setExploreNode] = useState<string>(
     "doc:40_Experience_Refoundation.md",
   );
@@ -269,6 +277,13 @@ export function ExperienceEvidenceDashboard() {
         }
       });
     }
+    if (!packsApi) {
+      void import("../experience/adaptationPacks").then((mod) => {
+        if (!cancelled) {
+          setPacksApi(mod);
+        }
+      });
+    }
     return () => {
       cancelled = true;
     };
@@ -285,6 +300,7 @@ export function ExperienceEvidenceDashboard() {
     productionApi,
     compositionApi,
     certificationApi,
+    packsApi,
   ]);
 
   const sessions = useMemo(() => {
@@ -582,6 +598,22 @@ export function ExperienceEvidenceDashboard() {
       }
       return certificationApi.compareLatestCertifications(govStore);
     }, [certificationApi, govStore, tick]);
+
+  const adaptationPacks: WorkspaceAdaptationPack[] = useMemo(() => {
+    void tick;
+    if (!packsApi) {
+      return [];
+    }
+    return packsApi.listAdaptationPacks(govStore);
+  }, [packsApi, govStore, tick]);
+
+  const activePack: WorkspaceAdaptationPack | null = useMemo(() => {
+    void tick;
+    if (!packsApi) {
+      return null;
+    }
+    return packsApi.getActiveAdaptationPack(govStore);
+  }, [packsApi, govStore, tick]);
 
   const analyze = () => {
     if (sessions.length === 0) {
@@ -990,6 +1022,59 @@ export function ExperienceEvidenceDashboard() {
     refresh();
   };
 
+  const runPackCertification = () => {
+    if (!packsApi) {
+      setGovMessage("pack_loading");
+      return;
+    }
+    const result = packsApi.certifyAdaptationPack(govStore, {
+      now: Date.now(),
+    });
+    setLastPackGate(result);
+    setGovMessage(
+      result.ok
+        ? `pack_ok:${result.pack?.packId}@${result.pack?.version}`
+        : `pack_fail:${result.failureReasons.join(",")}`,
+    );
+    refresh();
+  };
+
+  const activatePack = (pack: WorkspaceAdaptationPack) => {
+    if (!packsApi) {
+      setGovMessage("pack_loading");
+      return;
+    }
+    const result = packsApi.activateAdaptationPack(
+      govStore,
+      pack.packId,
+      pack.version,
+    );
+    setGovMessage(
+      result.ok
+        ? `pack_active:${pack.packId}@${pack.version}`
+        : `pack_err:${result.error}`,
+    );
+    refresh();
+  };
+
+  const deactivatePack = (pack: WorkspaceAdaptationPack) => {
+    if (!packsApi) {
+      setGovMessage("pack_loading");
+      return;
+    }
+    const result = packsApi.deactivateAdaptationPack(
+      govStore,
+      pack.packId,
+      pack.version,
+    );
+    setGovMessage(
+      result.ok
+        ? `pack_inactive:${pack.packId}@${pack.version}`
+        : `pack_err:${result.error}`,
+    );
+    refresh();
+  };
+
   const activateAdaptation = (adaptation: WorkspaceAdaptation) => {
     if (!adaptationApi) {
       return;
@@ -1158,6 +1243,14 @@ export function ExperienceEvidenceDashboard() {
           onClick={runCertification}
         >
           Certify adaptation set
+        </button>
+        <button
+          type="button"
+          style={btnStyle}
+          data-testid="run-pack-certification"
+          onClick={runPackCertification}
+        >
+          Certify adaptation pack
         </button>
         <button type="button" style={btnStyle} onClick={refresh}>
           Refresh
@@ -1466,6 +1559,80 @@ export function ExperienceEvidenceDashboard() {
                     onClick={() => toggleExperiment(r.adaptationId)}
                   >
                     Toggle adaptation
+                  </button>
+                ) : null}
+              </li>
+            );
+          })}
+        </ul>
+      </section>
+
+      <section style={{ marginBottom: 10 }} data-testid="adaptation-packs">
+        <div style={{ marginBottom: 4 }}>
+          <strong>Adaptation packs</strong>
+          {!packsApi
+            ? " (loading…)"
+            : ` · ${adaptationPacks.length}`}
+        </div>
+        {activePack ? (
+          <div data-testid="active-pack">
+            active pack {activePack.packId}@{activePack.version} · hash{" "}
+            {activePack.compositionHash}
+          </div>
+        ) : (
+          <div style={{ opacity: 0.7 }}>No active pack.</div>
+        )}
+        {lastPackGate && !lastPackGate.ok ? (
+          <div>last pack gate fail: {lastPackGate.failureReasons.join(", ")}</div>
+        ) : null}
+        <ul style={{ paddingLeft: 16, margin: "6px 0" }}>
+          {adaptationPacks.map((pack) => {
+            const ready = packsApi
+              ? packsApi.packActivationReady(govStore, pack)
+              : false;
+            const isActive =
+              activePack?.packId === pack.packId &&
+              activePack?.version === pack.version;
+            return (
+              <li
+                key={`${pack.packId}@${pack.version}`}
+                style={{ marginBottom: 8 }}
+              >
+                <div>
+                  {pack.packId}@{pack.version} ·{" "}
+                  <strong>{pack.rolloutStatus}</strong> · ready{" "}
+                  {ready ? "yes" : "no"}
+                  {isActive ? " · ACTIVE" : ""}
+                </div>
+                <div>
+                  adaptations {pack.adaptationIds.join(", ") || "—"}
+                </div>
+                <div>
+                  certs {pack.certificationIds.join(", ") || "—"} · hash{" "}
+                  {pack.compositionHash}
+                </div>
+                <div>
+                  stability {pack.stabilitySummary.composedStabilityScore} ·
+                  evidence tip {pack.evidenceSummary.tipEvidenceId ?? "—"}
+                </div>
+                {ready && !isActive ? (
+                  <button
+                    type="button"
+                    style={btnStyle}
+                    data-testid={`activate-pack-${pack.packId}-v${pack.version}`}
+                    onClick={() => activatePack(pack)}
+                  >
+                    Activate pack
+                  </button>
+                ) : null}
+                {isActive ? (
+                  <button
+                    type="button"
+                    style={btnStyle}
+                    data-testid={`deactivate-pack-${pack.packId}-v${pack.version}`}
+                    onClick={() => deactivatePack(pack)}
+                  >
+                    Deactivate pack
                   </button>
                 ) : null}
               </li>
