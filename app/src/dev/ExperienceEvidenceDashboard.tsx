@@ -127,6 +127,7 @@ type CertificationApi = typeof import("../experience/adaptationCertification");
 type PacksApi = typeof import("../experience/adaptationPacks");
 type ValidationApi = typeof import("../experience/adaptationValidation");
 type EvolutionApi = typeof import("../experience/workspaceMemoryEvolution");
+type PresenceApi = typeof import("../experience/workspacePresence");
 
 const NEXT_STATE: Partial<Record<ProposalLifecycle, ProposalLifecycle>> = {
   draft: "review",
@@ -181,6 +182,7 @@ export function ExperienceEvidenceDashboard() {
     null,
   );
   const [evolutionApi, setEvolutionApi] = useState<EvolutionApi | null>(null);
+  const [presenceApi, setPresenceApi] = useState<PresenceApi | null>(null);
   const [batchReport, setBatchReport] = useState<BatchValidationReport | null>(
     null,
   );
@@ -304,6 +306,13 @@ export function ExperienceEvidenceDashboard() {
         }
       });
     }
+    if (!presenceApi) {
+      void import("../experience/workspacePresence").then((mod) => {
+        if (!cancelled) {
+          setPresenceApi(mod);
+        }
+      });
+    }
     return () => {
       cancelled = true;
     };
@@ -323,6 +332,7 @@ export function ExperienceEvidenceDashboard() {
     packsApi,
     validationApi,
     evolutionApi,
+    presenceApi,
   ]);
 
   const sessions = useMemo(() => {
@@ -670,6 +680,22 @@ export function ExperienceEvidenceDashboard() {
     }
     return evolutionApi.resolvePresentationFromRuntime(govStore);
   }, [evolutionApi, govStore, tick]);
+
+  const activePresence = useMemo(() => {
+    void tick;
+    if (!presenceApi) {
+      return null;
+    }
+    return presenceApi.getActiveWorkspacePresence(govStore);
+  }, [presenceApi, govStore, tick]);
+
+  const presenceReplay = useMemo(() => {
+    void tick;
+    if (!presenceApi) {
+      return null;
+    }
+    return presenceApi.replayWorkspacePresence(govStore);
+  }, [presenceApi, govStore, tick]);
 
   const analyze = () => {
     if (sessions.length === 0) {
@@ -1695,6 +1721,69 @@ export function ExperienceEvidenceDashboard() {
             );
           })}
         </ul>
+      </section>
+
+      <section
+        style={{ marginBottom: 10 }}
+        data-testid="workspace-presence"
+      >
+        <div style={{ marginBottom: 4 }}>
+          <strong>Workspace presence</strong>
+          {!presenceApi ? " (loading…)" : ""}
+        </div>
+        {activePresence ? (
+          <div data-testid="active-presence-profile">
+            active {activePresence.presenceId}
+            <div>
+              calm {activePresence.environmentalCalm} · continuity{" "}
+              {activePresence.spatialContinuity} · focal{" "}
+              {activePresence.focalGravity} · atmosphere{" "}
+              {activePresence.contextualAtmosphere} · breath{" "}
+              {activePresence.visualBreathingRhythm}
+            </div>
+            <div data-testid="presence-contributing-adaptations">
+              adaptations{" "}
+              {activePresence.contributingAdaptationIds.join(", ") || "—"}
+            </div>
+            <div data-testid="presence-evolution-lineage">
+              evolution {activePresence.evolutionId ?? "—"} · epoch{" "}
+              {activePresence.evolutionEpoch ?? "—"} · certs{" "}
+              {activePresence.certificationIds.join(", ") || "—"}
+            </div>
+            <div data-testid="presence-resolved-environment">
+              lighting {activePresence.resolvedEnvironment.lighting} · spacing{" "}
+              {activePresence.resolvedEnvironment.spacingRhythm} · atmosphere{" "}
+              {activePresence.resolvedEnvironment.atmosphericIntensity} ·
+              motion {activePresence.resolvedEnvironment.motionCadence} · focal{" "}
+              {activePresence.resolvedEnvironment.focalEmphasis} · depth{" "}
+              {activePresence.resolvedEnvironment.depthWeighting}
+            </div>
+            <div data-testid="presence-validation-status">
+              validation valid · composition{" "}
+              {activePresence.validation.compositionValidationResult} ·
+              stability{" "}
+              {activePresence.validation.composedStabilityScore ?? "—"}
+            </div>
+          </div>
+        ) : (
+          <div style={{ opacity: 0.7 }} data-testid="active-presence-profile">
+            No active presence
+            {presenceApi && presenceReplay?.presence
+              ? ` · inactive (${presenceReplay.presence.validation.failureReasons.join(",") || "—"})`
+              : "."}
+          </div>
+        )}
+        {presenceReplay ? (
+          <div data-testid="presence-replay-comparison">
+            replay presentation spacing{" "}
+            {presenceReplay.presentation.spacingScale} · baseline{" "}
+            {presenceReplay.baselinePresentation.spacingScale} · match{" "}
+            {presenceReplay.presentation.spacingScale ===
+            presenceReplay.baselinePresentation.spacingScale
+              ? "yes"
+              : "no"}
+          </div>
+        ) : null}
       </section>
 
       <section

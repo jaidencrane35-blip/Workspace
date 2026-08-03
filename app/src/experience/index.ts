@@ -203,3 +203,19 @@ export type {
   EvolutionValidationFailure,
   WorkspaceMemoryEvolution,
 } from "./workspaceMemoryEvolution";
+export {
+  deriveWorkspacePresence,
+  getActiveWorkspacePresence,
+  identityPresence,
+  presenceContributorsExist,
+  presentationFromPresence,
+  replayWorkspacePresence,
+  resolvePresentationWithPresence,
+  validateWorkspacePresence,
+} from "./workspacePresence";
+export type {
+  PresenceResolvedEnvironment,
+  PresenceValidation,
+  PresenceValidationFailure,
+  WorkspacePresence,
+} from "./workspacePresence";
