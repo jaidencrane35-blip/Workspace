@@ -128,6 +128,7 @@ type PacksApi = typeof import("../experience/adaptationPacks");
 type ValidationApi = typeof import("../experience/adaptationValidation");
 type EvolutionApi = typeof import("../experience/workspaceMemoryEvolution");
 type PresenceApi = typeof import("../experience/workspacePresence");
+type AnticipationApi = typeof import("../experience/workspaceAnticipation");
 
 const NEXT_STATE: Partial<Record<ProposalLifecycle, ProposalLifecycle>> = {
   draft: "review",
@@ -183,6 +184,8 @@ export function ExperienceEvidenceDashboard() {
   );
   const [evolutionApi, setEvolutionApi] = useState<EvolutionApi | null>(null);
   const [presenceApi, setPresenceApi] = useState<PresenceApi | null>(null);
+  const [anticipationApi, setAnticipationApi] =
+    useState<AnticipationApi | null>(null);
   const [batchReport, setBatchReport] = useState<BatchValidationReport | null>(
     null,
   );
@@ -313,6 +316,13 @@ export function ExperienceEvidenceDashboard() {
         }
       });
     }
+    if (!anticipationApi) {
+      void import("../experience/workspaceAnticipation").then((mod) => {
+        if (!cancelled) {
+          setAnticipationApi(mod);
+        }
+      });
+    }
     return () => {
       cancelled = true;
     };
@@ -333,6 +343,7 @@ export function ExperienceEvidenceDashboard() {
     validationApi,
     evolutionApi,
     presenceApi,
+    anticipationApi,
   ]);
 
   const sessions = useMemo(() => {
@@ -696,6 +707,22 @@ export function ExperienceEvidenceDashboard() {
     }
     return presenceApi.replayWorkspacePresence(govStore);
   }, [presenceApi, govStore, tick]);
+
+  const activeAnticipation = useMemo(() => {
+    void tick;
+    if (!anticipationApi) {
+      return null;
+    }
+    return anticipationApi.getActiveWorkspaceAnticipation(govStore);
+  }, [anticipationApi, govStore, tick]);
+
+  const anticipationReplay = useMemo(() => {
+    void tick;
+    if (!anticipationApi) {
+      return null;
+    }
+    return anticipationApi.replayWorkspaceAnticipation(govStore);
+  }, [anticipationApi, govStore, tick]);
 
   const analyze = () => {
     if (sessions.length === 0) {
@@ -1721,6 +1748,76 @@ export function ExperienceEvidenceDashboard() {
             );
           })}
         </ul>
+      </section>
+
+      <section
+        style={{ marginBottom: 10 }}
+        data-testid="workspace-anticipation"
+      >
+        <div style={{ marginBottom: 4 }}>
+          <strong>Workspace anticipation</strong>
+          {!anticipationApi ? " (loading…)" : " · predict only — no auto-action"}
+        </div>
+        {activeAnticipation ? (
+          <div data-testid="anticipation-state">
+            active {activeAnticipation.anticipationId}
+            <div data-testid="anticipation-confidence">
+              confidence {activeAnticipation.confidence}
+            </div>
+            <div data-testid="anticipation-predicted-focal">
+              focal {activeAnticipation.likelyFocalRegion ?? "—"} · next{" "}
+              {activeAnticipation.likelyNextMoment ?? "—"} · continue{" "}
+              {activeAnticipation.likelyContinuationTarget ?? "—"}
+            </div>
+            <div data-testid="anticipation-evidence-lineage">
+              evidence tip{" "}
+              {activeAnticipation.evidenceLineage.tipEvidenceId ?? "—"} · n=
+              {activeAnticipation.evidenceLineage.evidenceSnapshotIds.length}
+            </div>
+            <div data-testid="anticipation-replay-lineage">
+              replay{" "}
+              {activeAnticipation.replayLineage.replaySessionIds.join(", ") ||
+                "—"}{" "}
+              · invocations{" "}
+              {activeAnticipation.replayLineage.bundleReplayInvocations}
+            </div>
+            <div data-testid="anticipation-contributing-adaptations">
+              adaptations{" "}
+              {activeAnticipation.contributingAdaptationIds.join(", ") || "—"}
+            </div>
+            <div data-testid="anticipation-validation-state">
+              validation valid · composition{" "}
+              {activeAnticipation.validation.compositionValidationResult} ·
+              arch{" "}
+              {activeAnticipation.architectureSnapshotIds.join(", ") || "—"}
+            </div>
+            <div>
+              readiness emphasis {activeAnticipation.readiness.subtleEmphasis}{" "}
+              · env {activeAnticipation.readiness.environmentalWeighting} ·
+              focus {activeAnticipation.readiness.preAttentiveFocus} · ready{" "}
+              {activeAnticipation.readiness.objectReadiness} · motion{" "}
+              {activeAnticipation.readiness.motionPreparation}
+            </div>
+          </div>
+        ) : (
+          <div style={{ opacity: 0.7 }} data-testid="anticipation-state">
+            No active anticipation
+            {anticipationApi && anticipationReplay?.anticipation
+              ? ` · inactive (${anticipationReplay.anticipation.validation.failureReasons.join(",") || "—"})`
+              : "."}
+          </div>
+        )}
+        {anticipationReplay ? (
+          <div data-testid="anticipation-replay-comparison">
+            replay match{" "}
+            {JSON.stringify(anticipationReplay.presentation) ===
+            JSON.stringify(anticipationReplay.baselinePresentation)
+              ? "yes"
+              : "no"}{" "}
+            · confidence{" "}
+            {anticipationReplay.anticipation?.confidence ?? "—"}
+          </div>
+        ) : null}
       </section>
 
       <section

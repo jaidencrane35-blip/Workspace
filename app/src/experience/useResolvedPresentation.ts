@@ -5,24 +5,26 @@ import {
   identityPresentation,
   type ResolvedPresentation,
 } from "./workspaceAdaptation";
-import { resolvePresentationWithPresence } from "./workspacePresence";
+import { resolvePresentationWithAnticipation } from "./workspaceAnticipation";
 
 /**
  * Live presentation:
- * Runtime → Pack → MemoryEvolution → Presence → Presentation
- * Presence inactive ⇒ evolution / active adaptation fallback.
+ * Runtime → Pack → Evolution → Presence → Anticipation → Presentation
+ * Anticipation predicts only; never executes. Inactive ⇒ presence fallback.
  */
 export function useResolvedPresentation(): ResolvedPresentation {
   const [presentation, setPresentation] = useState<ResolvedPresentation>(() => {
     if (typeof window === "undefined") {
       return identityPresentation();
     }
-    return resolvePresentationWithPresence(defaultAdaptationStore());
+    return resolvePresentationWithAnticipation(defaultAdaptationStore());
   });
 
   useEffect(() => {
     const refresh = () => {
-      setPresentation(resolvePresentationWithPresence(defaultAdaptationStore()));
+      setPresentation(
+        resolvePresentationWithAnticipation(defaultAdaptationStore()),
+      );
     };
     refresh();
     window.addEventListener(ADAPTATION_CHANGED_EVENT, refresh);

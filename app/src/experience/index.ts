@@ -219,3 +219,20 @@ export type {
   PresenceValidationFailure,
   WorkspacePresence,
 } from "./workspacePresence";
+export {
+  deriveWorkspaceAnticipation,
+  getActiveWorkspaceAnticipation,
+  presentationFromAnticipation,
+  replayWorkspaceAnticipation,
+  resolvePresentationWithAnticipation,
+  validateWorkspaceAnticipation,
+} from "./workspaceAnticipation";
+export type {
+  AnticipatedMoment,
+  AnticipationEvidenceLineage,
+  AnticipationReadiness,
+  AnticipationReplayLineage,
+  AnticipationValidation,
+  AnticipationValidationFailure,
+  WorkspaceAnticipation,
+} from "./workspaceAnticipation";
