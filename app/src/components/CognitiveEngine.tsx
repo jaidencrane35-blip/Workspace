@@ -64,8 +64,13 @@ interface CognitiveEngineValue {
   setRelevanceMap: (map: Record<string, number>) => void;
   noteResume: (momentId: string) => void;
   noteReflection: (depth: number) => void;
+  /** Completing a write strengthens permanence and quietly ripples neighbours. */
+  noteCapture: (momentId: string, neighbourIds?: string[]) => void;
   resumeAffinity: Record<string, number>;
+  permanenceById: Record<string, number>;
   reflectionDepth: number;
+  intentMemory: number;
+  temporalCertainty: number;
   guideDecision: GuideDecision;
   noteGuideVisit: () => void;
   preferHint: GuideHintId | null;
@@ -103,7 +108,11 @@ export function CognitiveEngineProvider({
   const [resumeAffinity, setResumeAffinity] = useState<Record<string, number>>(
     {},
   );
+  const [permanenceById, setPermanenceById] = useState<Record<string, number>>(
+    {},
+  );
   const [reflectionDepth, setReflectionDepth] = useState(0);
+  const [intentMemory, setIntentMemory] = useState(0);
   const [guideVisits, setGuideVisits] = useState(0);
 
   const intent = useMemo(
@@ -127,29 +136,50 @@ export function CognitiveEngineProvider({
     setScene(profile.attentionScene);
   }, [profile.attentionScene]);
 
-  // Calm decay of resume affinity — self-organisation without animation noise.
+  // Calm decay of temporal memory — continuity without animation noise.
   useEffect(() => {
-    if (Object.keys(resumeAffinity).length === 0) {
+    const hasResume = Object.keys(resumeAffinity).length > 0;
+    const hasPermanence = Object.keys(permanenceById).length > 0;
+    if (!hasResume && !hasPermanence) {
       return;
     }
     const timer = window.setInterval(() => {
-      setResumeAffinity((prev) => {
-        const next: Record<string, number> = {};
-        let changed = false;
-        for (const [id, value] of Object.entries(prev)) {
-          const decayed = decayAffinity(value, 0.96);
-          if (decayed > 0) {
-            next[id] = decayed;
+      if (hasResume) {
+        setResumeAffinity((prev) => {
+          const next: Record<string, number> = {};
+          let changed = false;
+          for (const [id, value] of Object.entries(prev)) {
+            const decayed = decayAffinity(value, 0.96);
+            if (decayed > 0) {
+              next[id] = decayed;
+            }
+            if (decayed !== value) {
+              changed = true;
+            }
           }
-          if (decayed !== value) {
-            changed = true;
+          return changed ? next : prev;
+        });
+      }
+      if (hasPermanence) {
+        setPermanenceById((prev) => {
+          const next: Record<string, number> = {};
+          let changed = false;
+          for (const [id, value] of Object.entries(prev)) {
+            const decayed = decayAffinity(value, 0.985);
+            if (decayed > 0) {
+              next[id] = decayed;
+            }
+            if (decayed !== value) {
+              changed = true;
+            }
           }
-        }
-        return changed ? next : prev;
-      });
+          return changed ? next : prev;
+        });
+      }
+      setIntentMemory((prev) => (prev < 0.04 ? 0 : prev * 0.994));
     }, 12000);
     return () => window.clearInterval(timer);
-  }, [resumeAffinity]);
+  }, [resumeAffinity, permanenceById]);
 
   const register = useCallback((id: string) => {
     if (registryRef.current.has(id)) {
@@ -224,10 +254,35 @@ export function CognitiveEngineProvider({
   }, []);
 
   const noteReflection = useCallback((depth: number) => {
-    setReflectionDepth((prev) =>
-      Math.min(1, Math.max(prev * 0.7, Math.min(1, depth))),
-    );
+    const next = Math.min(1, depth);
+    setReflectionDepth((prev) => Math.min(1, Math.max(prev * 0.7, next)));
+    // Repeated intent slowly reshapes future organisation.
+    setIntentMemory((prev) => Math.min(1, prev * 0.82 + next * 0.28));
   }, []);
+
+  const noteCapture = useCallback(
+    (momentId: string, neighbourIds: string[] = []) => {
+      setPermanenceById((prev) => ({
+        ...prev,
+        [momentId]: Math.min(1, (prev[momentId] ?? 0) * 0.45 + 0.74),
+      }));
+      setResumeAffinity((prev) => {
+        const next = {
+          ...prev,
+          [momentId]: Math.min(1, (prev[momentId] ?? 0) * 0.5 + 0.4),
+        };
+        for (const id of neighbourIds) {
+          if (id === momentId) {
+            continue;
+          }
+          // Neighbours respond as if the workspace learned something.
+          next[id] = Math.min(1, (next[id] ?? 0) * 0.88 + 0.16);
+        }
+        return next;
+      });
+    },
+    [],
+  );
 
   const noteGuideVisit = useCallback(() => {
     setGuideVisits((n) => n + 1);
@@ -242,6 +297,30 @@ export function CognitiveEngineProvider({
     [resumeAffinity],
   );
 
+  const permanenceMax = useMemo(
+    () => Math.max(0, ...Object.values(permanenceById), 0),
+    [permanenceById],
+  );
+
+  const temporalCertainty = useMemo(
+    () =>
+      Math.min(
+        1,
+        resumeAffinityMax * 0.4 +
+          reflectionDepth * 0.28 +
+          intentMemory * 0.18 +
+          permanenceMax * 0.08 +
+          Math.min(1, guideVisits / 5) * 0.06,
+      ),
+    [
+      resumeAffinityMax,
+      reflectionDepth,
+      intentMemory,
+      permanenceMax,
+      guideVisits,
+    ],
+  );
+
   const guideDecision = useMemo(
     () =>
       decideGuideHint({
@@ -250,6 +329,7 @@ export function CognitiveEngineProvider({
         resumeAffinityMax,
         reflectionDepth,
         idleVisits: guideVisits,
+        temporalCertainty,
       }),
     [
       primaryObjectId,
@@ -257,6 +337,7 @@ export function CognitiveEngineProvider({
       resumeAffinityMax,
       reflectionDepth,
       guideVisits,
+      temporalCertainty,
     ],
   );
 
@@ -289,8 +370,12 @@ export function CognitiveEngineProvider({
       setRelevanceMap,
       noteResume,
       noteReflection,
+      noteCapture,
       resumeAffinity,
+      permanenceById,
       reflectionDepth,
+      intentMemory,
+      temporalCertainty,
       guideDecision,
       noteGuideVisit,
       preferHint: guideDecision.show ? guideDecision.hintId : null,
@@ -317,8 +402,12 @@ export function CognitiveEngineProvider({
       setRelevanceMap,
       noteResume,
       noteReflection,
+      noteCapture,
       resumeAffinity,
+      permanenceById,
       reflectionDepth,
+      intentMemory,
+      temporalCertainty,
       guideDecision,
       noteGuideVisit,
     ],
@@ -363,8 +452,12 @@ export function useCognitiveEngine(): CognitiveEngineValue {
       setRelevanceMap: () => undefined,
       noteResume: () => undefined,
       noteReflection: () => undefined,
+      noteCapture: () => undefined,
       resumeAffinity: {},
+      permanenceById: {},
       reflectionDepth: 0,
+      intentMemory: 0,
+      temporalCertainty: 0,
       guideDecision: { show: false, hintId: "continue", confidence: 0 },
       noteGuideVisit: () => undefined,
       preferHint: null,

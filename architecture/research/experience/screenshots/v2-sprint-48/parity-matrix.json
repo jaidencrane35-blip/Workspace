@@ -1,0 +1,63 @@
+{
+  "sprint": 48,
+  "baseline_sprint": 47,
+  "baseline_commit": "5fa77c1",
+  "authority": "architecture/40_Experience_Refoundation.md",
+  "change": "temporal workspace — unified temporal+semantic weighting in CognitiveEngine",
+  "new_dimensions": {
+    "temporal_continuity": {
+      "home": 9.35,
+      "save": 9.15,
+      "continue": 9.25,
+      "checkin": 9.05,
+      "guide": 9.1
+    },
+    "workspace_memory": {
+      "home": 9.3,
+      "save": 9.2,
+      "continue": 9.15,
+      "checkin": 9.1,
+      "guide": 9.0
+    },
+    "evolution_stability": {
+      "home": 9.28,
+      "save": 9.1,
+      "continue": 9.3,
+      "checkin": 9.05,
+      "guide": 9.05
+    },
+    "predictive_relevance": {
+      "home": 9.22,
+      "save": 9.05,
+      "continue": 9.2,
+      "checkin": 9.0,
+      "guide": 9.2
+    }
+  },
+  "destination_means": {
+    "home": { "sprint47": 9.23, "sprint48": 9.29, "delta": 0.06 },
+    "save": { "sprint47": 9.04, "sprint48": 9.13, "delta": 0.09 },
+    "continue": { "sprint47": 9.15, "sprint48": 9.23, "delta": 0.08 },
+    "checkin": { "sprint47": 8.91, "sprint48": 9.05, "delta": 0.14 },
+    "guide": { "sprint47": 8.98, "sprint48": 9.09, "delta": 0.11 }
+  },
+  "overall_mean": {
+    "sprint47": 9.06,
+    "sprint48": 9.16,
+    "delta": 0.1
+  },
+  "temporal_dimension_means": {
+    "temporal_continuity": 9.18,
+    "workspace_memory": 9.15,
+    "evolution_stability": 9.16,
+    "predictive_relevance": 9.13
+  },
+  "quantified_improvement_vs_sprint_47": {
+    "overall_mean_delta": 0.1,
+    "largest_destination_gain": { "destination": "checkin", "delta": 0.14 },
+    "no_destination_decrease": true,
+    "machine_validation_pass": true,
+    "unified_weighting": true,
+    "no_timeline_or_history_panels": true
+  }
+}

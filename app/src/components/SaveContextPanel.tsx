@@ -10,6 +10,7 @@ import type {
   Workspace,
 } from "../types/domain";
 import { useActiveMoment } from "./ActiveMoment";
+import { useCognitiveEngine } from "./CognitiveEngine";
 import { RestoreLimitsNotice } from "./RestoreLimitsNotice";
 import { useIntentEngine } from "./IntentEngine";
 import { useWorkspaceComposition } from "./WorkspaceComposition";
@@ -201,12 +202,14 @@ export function SaveContextPanel({
   const { setWriting } = useIntentEngine();
   const {
     primary,
+    neighbours,
     expandHost,
     setPresence,
     setExpanding,
     reloadMoments,
     selectMoment,
   } = useActiveMoment();
+  const { noteCapture } = useCognitiveEngine();
 
   const leaveWriting = useCallback(() => {
     setWritingMode(false);
@@ -273,6 +276,10 @@ export function SaveContextPanel({
         setSaved(context);
         setStep("saved");
         onMessage(`Saved “${context.name}”`);
+        noteCapture(
+          context.id,
+          neighbours.map((n) => n.id),
+        );
         reloadMoments();
         selectMoment(context.id);
         setPresence("presence");
@@ -291,6 +298,8 @@ export function SaveContextPanel({
     onBusy,
     onError,
     onMessage,
+    noteCapture,
+    neighbours,
     reloadMoments,
     selectMoment,
     setPresence,

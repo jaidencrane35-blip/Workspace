@@ -11,9 +11,11 @@ import {
 import {
   composeSemanticField,
   rankMomentsByRelevance,
+  resolveTemporalPhase,
   scoreMomentRelevance,
   type CognitiveMomentInput,
   type SemanticPlacement,
+  type TemporalPhase,
 } from "../lib/cognitive";
 import { invokeIpc } from "../lib/ipc";
 import type { PilotPrimaryView } from "../lib/pilotChrome";
@@ -41,6 +43,9 @@ interface ActiveMomentValue {
   neighbours: SavedContext[];
   /** Relevance scores for calm neighbour rebalancing (id → 0–1). */
   neighbourScores: Record<string, number>;
+  /** Temporal phases for spatial / optical expression (id → phase). */
+  neighbourPhases: Record<string, TemporalPhase>;
+  primaryPhase: TemporalPhase | null;
   presence: MomentPresence;
   /** Host node inside the persistent Moment for destination attachments. */
   expandHost: HTMLDivElement | null;
@@ -74,7 +79,9 @@ export function ActiveMomentProvider({
   } = useWorkspaceComposition();
   const {
     resumeAffinity,
+    permanenceById,
     reflectionDepth,
+    intentMemory,
     setRelevanceMap,
     noteResume,
   } = useCognitiveEngine();
@@ -91,20 +98,27 @@ export function ActiveMomentProvider({
     (list: SavedContext[]): CognitiveMomentInput[] =>
       list.map((c) => {
         const resume = resumeAffinity[c.id] ?? 0;
-        // Reflection reshapes distance toward demonstrated intent — not a badge.
+        const permanence = permanenceById[c.id] ?? 0;
+        // Reflection + intent memory reshape distance — never badges.
         const reflectionAffinity =
           reflectionDepth *
           (0.22 + resume * 0.45 + (c.windows.length > 0 ? 0.2 : 0));
+        const memory =
+          intentMemory *
+          (0.2 + resume * 0.4 + permanence * 0.25 + (c.windows.length > 0 ? 0.15 : 0));
         return {
           id: c.id,
           createdAt: c.created_at,
+          capturedAt: c.captured_at,
           windowCount: c.windows.length,
           handoffLength: c.handoff_note.trim().length,
           resumeAffinity: resume,
           reflectionAffinity,
+          permanence,
+          intentMemory: memory,
         };
       }),
-    [resumeAffinity, reflectionDepth],
+    [resumeAffinity, permanenceById, reflectionDepth, intentMemory],
   );
 
   const setExpandHost = useCallback((node: HTMLDivElement | null) => {
@@ -120,10 +134,8 @@ export function ActiveMomentProvider({
       workspaceId: workspace.id,
     })
       .then((list) => {
-        const sorted = [...list].sort((a, b) =>
-          b.created_at.localeCompare(a.created_at),
-        );
-        setContexts(sorted);
+        // Stable load order — temporal ranking lives in toSignals / primary selection.
+        setContexts(list);
       })
       .catch(() => {
         setContexts([]);
@@ -188,17 +200,29 @@ export function ActiveMomentProvider({
 
   const neighbourRank = useMemo(() => {
     if (!primary) {
-      return [] as Array<{ context: SavedContext; score: number }>;
+      return [] as Array<{
+        context: SavedContext;
+        score: number;
+        phase: TemporalPhase;
+      }>;
     }
     const others = contexts.filter((c) => c.id !== primary.id);
     const ranked = rankMomentsByRelevance(toSignals(others));
     return ranked
       .map((entry) => {
         const context = others.find((c) => c.id === entry.id);
-        return context ? { context, score: entry.score } : null;
+        return context
+          ? { context, score: entry.score, phase: entry.phase }
+          : null;
       })
-      .filter((entry): entry is { context: SavedContext; score: number } =>
-        Boolean(entry),
+      .filter(
+        (
+          entry,
+        ): entry is {
+          context: SavedContext;
+          score: number;
+          phase: TemporalPhase;
+        } => Boolean(entry),
       )
       .slice(0, 4);
   }, [contexts, primary, toSignals]);
@@ -208,20 +232,21 @@ export function ActiveMomentProvider({
     [neighbourRank],
   );
 
+  const primaryPhase = useMemo(() => {
+    if (!primary) {
+      return null;
+    }
+    const signal = toSignals([primary])[0];
+    return signal ? resolveTemporalPhase(signal) : null;
+  }, [primary, toSignals]);
+
   useEffect(() => {
     const map: Record<string, number> = {};
-    for (const context of contexts) {
-      map[context.id] = scoreMomentRelevance({
-        id: context.id,
-        createdAt: context.created_at,
-        windowCount: context.windows.length,
-        handoffLength: context.handoff_note.trim().length,
-        resumeAffinity: resumeAffinity[context.id] ?? 0,
-        reflectionAffinity: reflectionDepth * 0.55,
-      });
+    for (const signal of toSignals(contexts)) {
+      map[signal.id] = scoreMomentRelevance(signal);
     }
     setRelevanceMap(map);
-  }, [contexts, resumeAffinity, reflectionDepth, setRelevanceMap]);
+  }, [contexts, toSignals, setRelevanceMap]);
 
   useEffect(() => {
     if (!primary) {
@@ -266,11 +291,21 @@ export function ActiveMomentProvider({
     return scores;
   }, [neighbourRank]);
 
+  const neighbourPhases = useMemo(() => {
+    const phases: Record<string, TemporalPhase> = {};
+    for (const entry of neighbourRank) {
+      phases[entry.context.id] = entry.phase;
+    }
+    return phases;
+  }, [neighbourRank]);
+
   const value = useMemo(
     () => ({
       primary,
       neighbours,
       neighbourScores,
+      neighbourPhases,
+      primaryPhase,
       presence,
       expandHost,
       expanding,
@@ -283,6 +318,8 @@ export function ActiveMomentProvider({
       primary,
       neighbours,
       neighbourScores,
+      neighbourPhases,
+      primaryPhase,
       presence,
       expandHost,
       expanding,
@@ -326,6 +363,8 @@ export function useActiveMoment(): ActiveMomentValue {
       primary: null,
       neighbours: [],
       neighbourScores: {},
+      neighbourPhases: {},
+      primaryPhase: null,
       presence: "presence",
       expandHost: null,
       expanding: false,
@@ -368,6 +407,8 @@ export function PersistentMomentStage({
     primary,
     neighbours,
     neighbourScores,
+    neighbourPhases,
+    primaryPhase,
     presence,
     expanding,
     selectMoment,
@@ -379,10 +420,11 @@ export function PersistentMomentStage({
     const ranked = neighbours.map((context) => ({
       id: context.id,
       score: neighbourScores[context.id] ?? 0.3,
+      phase: neighbourPhases[context.id] ?? ("waiting" as TemporalPhase),
     }));
     ranked.sort((a, b) => b.score - a.score);
     return composeSemanticField(ranked, presence, 3);
-  }, [neighbours, neighbourScores, presence]);
+  }, [neighbours, neighbourScores, neighbourPhases, presence]);
 
   const byId = useMemo(() => {
     const map = new Map<string, SavedContext>();
@@ -414,6 +456,7 @@ export function PersistentMomentStage({
       data-presence={presence}
       data-cognitive="on"
       data-semantic="on"
+      data-temporal={primaryPhase ?? "waiting"}
       data-material="place"
       data-testid="persistent-moment-stage"
     >
@@ -425,7 +468,7 @@ export function PersistentMomentStage({
           busy={busy}
           sparseMeta
           layoutId={ANCHOR_LAYOUT_ID}
-          className={`moment-object--anchor is-presence-${presence}`}
+          className={`moment-object--anchor is-presence-${presence} is-temporal-${primaryPhase ?? "waiting"}`}
           expandContent={
             showExpand ? (
               <div
@@ -455,8 +498,12 @@ export function PersistentMomentStage({
             <aside
               className="semantic-cluster__annotation"
               data-band={nearCluster[0]?.band ?? "near"}
+              data-confidence={guideDecision.confidence.toFixed(2)}
               aria-label="Guide hint"
-              style={clusterAnnotationStyle(nearCluster[0] ?? placements[0])}
+              style={{
+                ...clusterAnnotationStyle(nearCluster[0] ?? placements[0]),
+                opacity: Math.max(0.28, guideDecision.confidence),
+              }}
             >
               <p className="moment-guide-hint__line">{guideLine}</p>
             </aside>
@@ -471,6 +518,7 @@ export function PersistentMomentStage({
                 key={context.id}
                 className="semantic-field__node"
                 data-band={placement.band}
+                data-temporal={placement.phase}
                 data-proximity={placement.proximity.toFixed(2)}
                 style={
                   {
@@ -486,7 +534,7 @@ export function PersistentMomentStage({
                   state="collapsed"
                   attentionWeight={0.2 + placement.proximity * 0.35}
                   layoutId={`moment-neighbour-${context.id}`}
-                  className="moment-card--waiting moment-card--semantic"
+                  className={`moment-card--waiting moment-card--semantic is-temporal-${placement.phase}`}
                   context={context}
                   busy={busy}
                   onSelect={() => {

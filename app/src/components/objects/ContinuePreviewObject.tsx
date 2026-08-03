@@ -3,6 +3,8 @@ import type { CSSProperties } from "react";
 import { spring } from "../../design-system";
 import { composeSemanticWindowField } from "../../lib/cognitive";
 import type { ActionPlanItem, ResumePlanPreview } from "../../types/domain";
+import { useActiveMoment } from "../ActiveMoment";
+import { useCognitiveEngine } from "../CognitiveEngine";
 
 interface ContinuePreviewBodyProps {
   preview: ResumePlanPreview;
@@ -39,7 +41,26 @@ export function ContinuePreviewBody({
   describeDisposition,
 }: ContinuePreviewBodyProps) {
   const reduceMotion = useReducedMotion();
-  const field = composeSemanticWindowField(preview.plan.items);
+  const { primaryPhase } = useActiveMoment();
+  const { resumeAffinity, permanenceById } = useCognitiveEngine();
+  const momentId = preview.saved_context_id;
+  const temporalConfidence = Math.min(
+    1,
+    (resumeAffinity[momentId] ?? 0) * 0.55 +
+      (permanenceById[momentId] ?? 0) * 0.2 +
+      (primaryPhase === "resumed"
+        ? 0.35
+        : primaryPhase === "dormant"
+          ? 0.08
+          : primaryPhase === "evolving"
+            ? 0.22
+            : 0.15),
+  );
+  const field = composeSemanticWindowField(
+    preview.plan.items,
+    5,
+    temporalConfidence,
+  );
   const willAttempt = field.filter(
     (entry) => entry.item.projected_disposition === "will_attempt",
   ).length;
@@ -52,6 +73,8 @@ export function ContinuePreviewBody({
     <div
       className="continue-preview-body continue-preview-body--spatial continue-preview-body--remember continue-preview-body--invisible continue-preview-body--cognitive continue-preview-body--semantic"
       data-quality={quality}
+      data-temporal-confidence={temporalConfidence.toFixed(2)}
+      data-temporal={primaryPhase ?? "waiting"}
     >
       <p className="sr-only">
         Reconstructing this place. {willAttempt} of {total} windows still open.

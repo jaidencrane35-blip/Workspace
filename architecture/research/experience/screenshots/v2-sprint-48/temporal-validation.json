@@ -1,0 +1,53 @@
+{
+  "temporalContinuity": {
+    "stageTemporal": true,
+    "phaseVariety": true,
+    "activePresence": true
+  },
+  "workspaceMemory": {
+    "noBadges": true,
+    "evolvingAlive": true,
+    "notHistoryUi": true
+  },
+  "evolutionStability": {
+    "restoreTemporal": true,
+    "confidenceWired": true,
+    "dormantQuiet": true
+  },
+  "predictiveRelevance": {
+    "guideObservational": true,
+    "resumePanes": true,
+    "dormantStillPresent": true
+  },
+  "detail": {
+    "fresh": {
+      "temporalOn": true,
+      "phaseCount": 1,
+      "hasActivePhase": true,
+      "nodeCount": 3,
+      "noBadges": true
+    },
+    "guide": {
+      "clusterMode": true,
+      "hintFades": true,
+      "noTimeline": true
+    },
+    "evolving": {
+      "stageTemporal": true,
+      "fieldAlive": true,
+      "notHistoryChrome": true
+    },
+    "resumed": {
+      "restoreTemporal": true,
+      "confidencePresent": true,
+      "panes": 3
+    },
+    "dormant": {
+      "selected": true,
+      "quieterPresent": true,
+      "stillVisible": true
+    },
+    "dormantClicked": true
+  },
+  "pass": true
+}

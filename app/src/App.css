@@ -341,7 +341,7 @@ body {
   transition:
     left 1.2s var(--ease),
     top 1.2s var(--ease),
-    opacity 0.9s var(--ease);
+    opacity 1.4s var(--ease);
 }
 
 .semantic-cluster__annotation .moment-guide-hint__line {
@@ -485,9 +485,47 @@ body {
   margin-bottom: 0;
 }
 
-/* ── Sprint 45/47: cognitive + semantic workspace ── */
+/* ── Sprint 45/47/48: cognitive + semantic + temporal workspace ── */
 .ws-object-stage[data-semantic="on"] .semantic-field {
   transition: height 1.15s var(--ease), opacity 1.1s var(--ease);
+}
+
+.ws-object-stage[data-temporal="nascent"] .moment-object--anchor .ws-surface,
+.ws-object-stage[data-temporal="nascent"] .moment-object--anchor .elevated-card {
+  box-shadow: var(--mat-object-depth), 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.ws-object-stage[data-temporal="evolving"] .moment-object--anchor .ws-surface,
+.ws-object-stage[data-temporal="evolving"] .moment-object--anchor .elevated-card,
+.ws-object-stage[data-temporal="resumed"] .moment-object--anchor .ws-surface,
+.ws-object-stage[data-temporal="resumed"] .moment-object--anchor .elevated-card {
+  box-shadow: var(--mat-object-depth), 0 10px 36px rgba(0, 0, 0, 0.28);
+}
+
+.ws-object-stage[data-temporal="dormant"] .moment-object--anchor .ws-surface,
+.ws-object-stage[data-temporal="dormant"] .moment-object--anchor .elevated-card {
+  filter: saturate(0.88);
+  box-shadow: var(--shadow-2);
+}
+
+.semantic-field__node[data-temporal="dormant"] {
+  filter: saturate(0.78) brightness(0.94);
+}
+
+.semantic-field__node[data-temporal="nascent"],
+.semantic-field__node[data-temporal="evolving"],
+.semantic-field__node[data-temporal="resumed"] {
+  filter: saturate(1.02);
+}
+
+.continue-preview-body[data-temporal="dormant"] .continue-window-pane--semantic {
+  filter: saturate(0.85);
+}
+
+.continue-preview-body[data-temporal="resumed"] .continue-window-pane--semantic:not(.is-skip) {
+  box-shadow:
+    var(--edge-light),
+    0 20px 44px rgba(0, 0, 0, 0.38);
 }
 
 .ws-object-stage[data-presence="writing"] .moment-object--anchor .ws-surface,
