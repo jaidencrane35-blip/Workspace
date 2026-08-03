@@ -3,6 +3,7 @@
  * Persisted separately from Sprint 51 traces.
  */
 
+import { fnv1a } from "./devHash";
 import type { ExperienceDestination, ExperienceSession } from "./experienceEvents";
 import {
   browserStore,
@@ -128,15 +129,6 @@ function sanitizeLabel(label: string | undefined): string {
     return label;
   }
   return "snapshot";
-}
-
-function fnv1a(input: string): string {
-  let hash = 0x811c9dc5;
-  for (let i = 0; i < input.length; i++) {
-    hash ^= input.charCodeAt(i);
-    hash = Math.imul(hash, 0x01000193);
-  }
-  return (hash >>> 0).toString(16).padStart(8, "0");
 }
 
 export function aggregateToEvidence(

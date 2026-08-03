@@ -48,3 +48,19 @@ export type {
   MetricVerdict,
 } from "./experienceEvidence";
 export type { TraceAggregate } from "./traceAnalysis";
+export {
+  OPPORTUNITY_RULES,
+  LONGITUDINAL_SIGNIFICANCE,
+  detectOpportunities,
+  evolveBaselines,
+  evolutionVerdictFor,
+  opportunitiesHaveReplayLinkage,
+} from "./experienceImprovement";
+export type {
+  ExperienceOpportunity,
+  BaselineEvolution,
+  MetricEvolution,
+  EvolutionVerdict,
+  OpportunitySeverity,
+  OpportunityWorkflow,
+} from "./experienceImprovement";
