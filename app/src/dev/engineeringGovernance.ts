@@ -24,7 +24,7 @@ export const ENGINEERING_STORAGE_KEY = "ws.dev.experience.engineering.v1";
 export const MAX_ENGINEERING_RECORDS = 50;
 export const MAX_ENGINEERING_HISTORY = 2000;
 
-/** Version 2 architecture authority documents (40–60). */
+/** Version 2 architecture authority documents (40–61). */
 export const ARCHITECTURE_AUTHORITY_DOCS = [
   "40_Experience_Refoundation.md",
   "41_Perceptual_Convergence.md",
@@ -47,6 +47,7 @@ export const ARCHITECTURE_AUTHORITY_DOCS = [
   "58_Workspace_Memory_Evolution.md",
   "59_Workspace_Presence.md",
   "60_Workspace_Anticipation.md",
+  "61_Workspace_Calibration.md",
 ] as const;
 
 export type ArchitectureAuthorityDoc =

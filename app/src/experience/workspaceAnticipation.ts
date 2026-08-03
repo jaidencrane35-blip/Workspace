@@ -1,11 +1,10 @@
 /**
- * Sprint 69 — Workspace Anticipation.
+ * Sprint 69 — Workspace Anticipation (+ Sprint 70 confidence calibration).
  * Predicts likely next interaction; never executes actions.
- * Derived from Runtime, Memory Evolution, Presence, Evidence, Replay.
+ * Calibration adjusts confidence only — prediction selection unchanged.
  * No AI decision-making. No new persistence. No Runtime Core / navigation changes.
  */
 
-import type { ExperienceDestination } from "../dev/experienceEvents";
 import {
   getReplayInvocationCount,
   listEvidenceSnapshots,
@@ -14,6 +13,18 @@ import {
 import type { ExperienceStoreAdapter } from "../dev/experienceStore";
 import { contentAddressedId, tipOf } from "../dev/governancePrimitives";
 import { validateComposition } from "./adaptationComposition";
+import {
+  clamp01,
+  predictAnticipationFromEvidence,
+  round4,
+  type AnticipatedMoment,
+} from "./anticipationPrediction";
+import {
+  applyConfidenceCalibration,
+  deriveWorkspaceCalibration,
+  type ReliabilityBand,
+  type WorkspaceCalibration,
+} from "./workspaceCalibration";
 import {
   deriveActiveMemoryEvolution,
   type WorkspaceMemoryEvolution,
@@ -29,6 +40,9 @@ import {
   type ResolvedPresentation,
 } from "./workspaceAdaptation";
 
+export type { AnticipatedMoment } from "./anticipationPrediction";
+export { predictAnticipationFromEvidence } from "./anticipationPrediction";
+
 export type AnticipationValidationFailure =
   | "no_evidence"
   | "no_certified_lineage"
@@ -40,9 +54,6 @@ export type AnticipationValidationFailure =
   | "lineage_incomplete"
   | "confidence_unstable"
   | "prediction_bypass_attempt";
-
-/** Allowlisted Moment destinations (no free text). */
-export type AnticipatedMoment = Exclude<ExperienceDestination, "unknown">;
 
 export interface AnticipationEvidenceLineage {
   evidenceSnapshotIds: string[];
@@ -86,7 +97,12 @@ export interface WorkspaceAnticipation {
   likelyFocalRegion: AdaptationTargetComponent | null;
   likelyNextMoment: AnticipatedMoment | null;
   likelyContinuationTarget: AnticipatedMoment | null;
+  /** Calibrated confidence when calibration active; else raw. */
   confidence: number;
+  /** Pre-calibration heuristic confidence. */
+  rawConfidence: number;
+  calibrationId: string | null;
+  reliabilityBand: ReliabilityBand | null;
   evidenceLineage: AnticipationEvidenceLineage;
   replayLineage: AnticipationReplayLineage;
   architectureSnapshotIds: string[];
@@ -99,94 +115,8 @@ export interface WorkspaceAnticipation {
   validation: AnticipationValidation;
 }
 
-const MOMENTS: readonly AnticipatedMoment[] = [
-  "home",
-  "save",
-  "resume",
-  "pilot",
-  "help",
-] as const;
-
-function clamp01(n: number): number {
-  return Math.min(1, Math.max(0, n));
-}
-
-function round4(n: number): number {
-  return Number(n.toFixed(4));
-}
-
-function isMoment(value: string | null | undefined): value is AnticipatedMoment {
-  return !!value && (MOMENTS as readonly string[]).includes(value);
-}
-
-function destinationToRegion(
-  destination: AnticipatedMoment | null,
-): AdaptationTargetComponent | null {
-  if (!destination) {
-    return null;
-  }
-  return destination;
-}
-
 function tipEvidence(store: ExperienceStoreAdapter): ExperienceEvidence | null {
   return tipOf(listEvidenceSnapshots(store));
-}
-
-function predictFromEvidence(evidence: ExperienceEvidence | null): {
-  likelyNextMoment: AnticipatedMoment | null;
-  likelyContinuationTarget: AnticipatedMoment | null;
-  likelyFocalRegion: AdaptationTargetComponent | null;
-  confidence: number;
-} {
-  if (!evidence) {
-    return {
-      likelyNextMoment: null,
-      likelyContinuationTarget: null,
-      likelyFocalRegion: null,
-      confidence: 0,
-    };
-  }
-
-  const hotspot = [...evidence.hotspots].sort((a, b) => {
-    if (b.samples !== a.samples) {
-      return b.samples - a.samples;
-    }
-    return a.destination.localeCompare(b.destination);
-  })[0];
-
-  const nextRaw =
-    evidence.metrics.topHesitationDestination ?? hotspot?.destination ?? null;
-  const likelyNextMoment = isMoment(nextRaw) ? nextRaw : null;
-
-  // Continuation: prefer resume when continue successes dominate; else save; else next.
-  const continueN = evidence.metrics.continueSuccessTotal;
-  const saveN = evidence.metrics.saveSuccessTotal;
-  let likelyContinuationTarget: AnticipatedMoment | null = likelyNextMoment;
-  if (continueN > saveN && continueN > 0) {
-    likelyContinuationTarget = "resume";
-  } else if (saveN >= continueN && saveN > 0) {
-    likelyContinuationTarget = "save";
-  }
-
-  const likelyFocalRegion = destinationToRegion(
-    likelyNextMoment ?? likelyContinuationTarget,
-  );
-
-  const sessionFactor = clamp01(evidence.metrics.sessionCount / 4);
-  const replayFactor = clamp01(1 - evidence.metrics.replayDivergenceRate);
-  const hotspotFactor = hotspot
-    ? clamp01(hotspot.samples / Math.max(1, evidence.metrics.sessionCount))
-    : 0.25;
-  const confidence = round4(
-    clamp01(sessionFactor * 0.45 + replayFactor * 0.35 + hotspotFactor * 0.2),
-  );
-
-  return {
-    likelyNextMoment,
-    likelyContinuationTarget,
-    likelyFocalRegion,
-    confidence,
-  };
 }
 
 function readinessFrom(
@@ -196,7 +126,6 @@ function readinessFrom(
 ): AnticipationReadiness {
   const emphasis = presentation.emphasisScale ?? 1;
   const env = presentation.environmentalWeight ?? 1;
-  // Informational readiness — presentation apply stays within certified path values.
   return {
     subtleEmphasis: round4(emphasis),
     environmentalWeighting: round4(env),
@@ -273,8 +202,32 @@ function validateAnticipation(
   };
 }
 
+function anticipationLineageIdOf(parts: {
+  presenceId: string | null;
+  evolutionId: string | null;
+  likelyNextMoment: string | null;
+  likelyContinuationTarget: string | null;
+  likelyFocalRegion: string | null;
+  contributingAdaptationIds: string[];
+  tipEvidenceId: string | null;
+}): string {
+  return contentAddressedId(
+    "anticipate",
+    [
+      parts.presenceId ?? "nopresence",
+      parts.evolutionId ?? "noevo",
+      parts.likelyNextMoment ?? "none",
+      parts.likelyContinuationTarget ?? "none",
+      parts.likelyFocalRegion ?? "none",
+      parts.contributingAdaptationIds.join(","),
+      parts.tipEvidenceId ?? "",
+    ].join("|"),
+  );
+}
+
 /**
  * Derive WorkspaceAnticipation. Predicts only — never executes.
+ * Confidence may be calibrated (Sprint 70); prediction selection is unchanged.
  * Invalid anticipation ⇒ `active: false`.
  */
 export function deriveWorkspaceAnticipation(
@@ -299,14 +252,7 @@ export function deriveWorkspaceAnticipation(
     return null;
   }
 
-  const prediction = predictFromEvidence(evidence);
-  const basePresentation = resolvePresentationWithPresence(store);
-  const readiness = readinessFrom(
-    basePresentation,
-    prediction.confidence,
-    presence,
-  );
-
+  const prediction = predictAnticipationFromEvidence(evidence);
   const evidenceSnapshotIds = [
     ...new Set([
       ...snapshots.map((s) => s.evidenceId),
@@ -314,6 +260,30 @@ export function deriveWorkspaceAnticipation(
       ...(evolution?.evidenceLineage.evidenceSnapshotIds ?? []),
     ]),
   ].sort();
+  const tipEvidenceId = tipOf(evidenceSnapshotIds);
+
+  const lineageId = anticipationLineageIdOf({
+    presenceId: presence?.presenceId ?? null,
+    evolutionId: evolution?.evolutionId ?? null,
+    likelyNextMoment: prediction.likelyNextMoment,
+    likelyContinuationTarget: prediction.likelyContinuationTarget,
+    likelyFocalRegion: prediction.likelyFocalRegion,
+    contributingAdaptationIds,
+    tipEvidenceId,
+  });
+
+  // Internal calibration — not a new resolver stage.
+  const calibration: WorkspaceCalibration | null = deriveWorkspaceCalibration(
+    store,
+    { anticipationLineageId: lineageId },
+  );
+  const confidence = applyConfidenceCalibration(
+    prediction.rawConfidence,
+    calibration,
+  );
+
+  const basePresentation = resolvePresentationWithPresence(store);
+  const readiness = readinessFrom(basePresentation, confidence, presence);
 
   const replaySessionIds = [
     ...new Set([
@@ -342,33 +312,22 @@ export function deriveWorkspaceAnticipation(
     contributingAdaptationIds,
     architectureSnapshotIds,
     replaySessionIds,
-    prediction.confidence,
-  );
-
-  const anticipationId = contentAddressedId(
-    "anticipate",
-    [
-      presence?.presenceId ?? "nopresence",
-      evolution?.evolutionId ?? "noevo",
-      prediction.likelyNextMoment ?? "none",
-      prediction.likelyContinuationTarget ?? "none",
-      prediction.likelyFocalRegion ?? "none",
-      String(prediction.confidence),
-      contributingAdaptationIds.join(","),
-      tipOf(evidenceSnapshotIds) ?? "",
-    ].join("|"),
+    confidence,
   );
 
   return {
     schemaVersion: 1,
-    anticipationId,
+    anticipationId: lineageId,
     likelyFocalRegion: prediction.likelyFocalRegion,
     likelyNextMoment: prediction.likelyNextMoment,
     likelyContinuationTarget: prediction.likelyContinuationTarget,
-    confidence: prediction.confidence,
+    confidence,
+    rawConfidence: prediction.rawConfidence,
+    calibrationId: calibration?.active ? calibration.calibrationId : null,
+    reliabilityBand: calibration?.reliabilityBand ?? null,
     evidenceLineage: {
       evidenceSnapshotIds,
-      tipEvidenceId: tipOf(evidenceSnapshotIds),
+      tipEvidenceId,
     },
     replayLineage: {
       replaySessionIds,
@@ -437,10 +396,10 @@ export function presentationFromAnticipation(
 }
 
 /**
- * Resolver ordering:
+ * Resolver ordering (unchanged — no new stage):
  * Runtime → Pack → Evolution → Presence → Anticipation → Presentation
  *
- * Anticipation never executes actions. Failed validation skips anticipation.
+ * Calibration adjusts anticipation confidence internally only.
  */
 export function resolvePresentationWithAnticipation(
   store: ExperienceStoreAdapter,

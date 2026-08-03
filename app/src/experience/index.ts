@@ -222,6 +222,7 @@ export type {
 export {
   deriveWorkspaceAnticipation,
   getActiveWorkspaceAnticipation,
+  predictAnticipationFromEvidence,
   presentationFromAnticipation,
   replayWorkspaceAnticipation,
   resolvePresentationWithAnticipation,
@@ -236,3 +237,23 @@ export type {
   AnticipationValidationFailure,
   WorkspaceAnticipation,
 } from "./workspaceAnticipation";
+export {
+  applyConfidenceCalibration,
+  confidenceCalibrationFactor,
+  deriveWorkspaceCalibration,
+  getActiveWorkspaceCalibration,
+  listCalibrationHistory,
+  reliabilityBandOf,
+  replayWorkspaceCalibration,
+  scoreEvidenceCalibration,
+  validateWorkspaceCalibration,
+} from "./workspaceCalibration";
+export type {
+  CalibrationEvidenceLineage,
+  CalibrationReplayLineage,
+  CalibrationScore,
+  CalibrationValidation,
+  CalibrationValidationFailure,
+  ReliabilityBand,
+  WorkspaceCalibration,
+} from "./workspaceCalibration";

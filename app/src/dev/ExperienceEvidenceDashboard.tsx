@@ -129,6 +129,7 @@ type ValidationApi = typeof import("../experience/adaptationValidation");
 type EvolutionApi = typeof import("../experience/workspaceMemoryEvolution");
 type PresenceApi = typeof import("../experience/workspacePresence");
 type AnticipationApi = typeof import("../experience/workspaceAnticipation");
+type CalibrationApi = typeof import("../experience/workspaceCalibration");
 
 const NEXT_STATE: Partial<Record<ProposalLifecycle, ProposalLifecycle>> = {
   draft: "review",
@@ -186,6 +187,8 @@ export function ExperienceEvidenceDashboard() {
   const [presenceApi, setPresenceApi] = useState<PresenceApi | null>(null);
   const [anticipationApi, setAnticipationApi] =
     useState<AnticipationApi | null>(null);
+  const [calibrationApi, setCalibrationApi] =
+    useState<CalibrationApi | null>(null);
   const [batchReport, setBatchReport] = useState<BatchValidationReport | null>(
     null,
   );
@@ -323,6 +326,13 @@ export function ExperienceEvidenceDashboard() {
         }
       });
     }
+    if (!calibrationApi) {
+      void import("../experience/workspaceCalibration").then((mod) => {
+        if (!cancelled) {
+          setCalibrationApi(mod);
+        }
+      });
+    }
     return () => {
       cancelled = true;
     };
@@ -344,6 +354,7 @@ export function ExperienceEvidenceDashboard() {
     evolutionApi,
     presenceApi,
     anticipationApi,
+    calibrationApi,
   ]);
 
   const sessions = useMemo(() => {
@@ -723,6 +734,44 @@ export function ExperienceEvidenceDashboard() {
     }
     return anticipationApi.replayWorkspaceAnticipation(govStore);
   }, [anticipationApi, govStore, tick]);
+
+  const calibrationHistory = useMemo(() => {
+    void tick;
+    if (!calibrationApi) {
+      return [];
+    }
+    return calibrationApi.listCalibrationHistory(govStore, {
+      anticipationLineageId:
+        activeAnticipation?.anticipationId ??
+        anticipationReplay?.anticipation?.anticipationId ??
+        null,
+    });
+  }, [
+    calibrationApi,
+    govStore,
+    tick,
+    activeAnticipation?.anticipationId,
+    anticipationReplay?.anticipation?.anticipationId,
+  ]);
+
+  const activeCalibration = useMemo(() => {
+    void tick;
+    if (!calibrationApi) {
+      return null;
+    }
+    return calibrationApi.getActiveWorkspaceCalibration(govStore, {
+      anticipationLineageId:
+        activeAnticipation?.anticipationId ??
+        anticipationReplay?.anticipation?.anticipationId ??
+        null,
+    });
+  }, [
+    calibrationApi,
+    govStore,
+    tick,
+    activeAnticipation?.anticipationId,
+    anticipationReplay?.anticipation?.anticipationId,
+  ]);
 
   const analyze = () => {
     if (sessions.length === 0) {
@@ -1816,8 +1865,73 @@ export function ExperienceEvidenceDashboard() {
               : "no"}{" "}
             · confidence{" "}
             {anticipationReplay.anticipation?.confidence ?? "—"}
+            {anticipationReplay.anticipation ? (
+              <>
+                {" "}
+                · raw {anticipationReplay.anticipation.rawConfidence} · band{" "}
+                {anticipationReplay.anticipation.reliabilityBand ?? "—"}
+              </>
+            ) : null}
           </div>
         ) : null}
+      </section>
+
+      <section
+        style={{ marginBottom: 10 }}
+        data-testid="workspace-calibration"
+      >
+        <div style={{ marginBottom: 4 }}>
+          <strong>Workspace calibration</strong>
+          {!calibrationApi
+            ? " (loading…)"
+            : ` · history ${calibrationHistory.length}`}
+        </div>
+        {activeCalibration ? (
+          <div data-testid="calibration-active">
+            active {activeCalibration.calibrationId} · band{" "}
+            {activeCalibration.reliabilityBand}
+            <div data-testid="calibration-prediction-accuracy">
+              accuracy {activeCalibration.observedAccuracy} · confirmed{" "}
+              {activeCalibration.confirmedPredictions}/
+              {activeCalibration.predictionCount} · missed{" "}
+              {activeCalibration.missedPredictions}
+            </div>
+            <div data-testid="calibration-confidence">
+              factor {activeCalibration.confidenceCalibration}
+            </div>
+            <div data-testid="calibration-reliability-trend">
+              trend [{activeCalibration.reliabilityTrend.join(", ") || "—"}]
+            </div>
+            <div data-testid="calibration-evidence-lineage">
+              evidence tip{" "}
+              {activeCalibration.evidenceLineage.tipEvidenceId ?? "—"} · n=
+              {activeCalibration.evidenceLineage.evidenceSnapshotIds.length}
+            </div>
+            <div data-testid="calibration-replay-lineage">
+              replay{" "}
+              {activeCalibration.replayLineage.replaySessionIds.join(", ") ||
+                "—"}
+            </div>
+          </div>
+        ) : (
+          <div style={{ opacity: 0.7 }} data-testid="calibration-active">
+            No active calibration
+            {calibrationHistory[0]
+              ? ` · tip inactive (${calibrationHistory[calibrationHistory.length - 1]?.validation.failureReasons.join(",") || "—"})`
+              : "."}
+          </div>
+        )}
+        <ul
+          style={{ paddingLeft: 16, margin: "6px 0" }}
+          data-testid="calibration-history"
+        >
+          {calibrationHistory.map((c) => (
+            <li key={c.calibrationId} style={{ marginBottom: 4 }}>
+              {c.calibrationId} · {c.reliabilityBand} · acc {c.observedAccuracy}{" "}
+              · {c.active ? "active" : "inactive"}
+            </li>
+          ))}
+        </ul>
       </section>
 
       <section
