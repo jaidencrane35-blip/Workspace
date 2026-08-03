@@ -21,6 +21,7 @@ import {
   type LongitudinalAdaptationRecord,
   type WorkspaceAdaptation,
 } from "./workspaceAdaptation";
+import { clamp01, populationVariance, round4 } from "./experienceMath";
 
 export const LONGITUDINAL_MIN_OBSERVATIONS = 3;
 export const LONGITUDINAL_STABILITY_THRESHOLD = 0.7;
@@ -37,14 +38,6 @@ export type LongitudinalTransitionError =
   | "unresolved_regressions"
   | "evidence_minimum_unmet"
   | "governance_incomplete";
-
-function clamp01(n: number): number {
-  return Math.min(1, Math.max(0, n));
-}
-
-function round4(n: number): number {
-  return Number(n.toFixed(4));
-}
 
 function metricValue(
   evidence: ExperienceEvidence,
@@ -67,15 +60,6 @@ function improvedEnough(
     return baseline - after >= delta - 1e-9;
   }
   return after - baseline >= delta - 1e-9;
-}
-
-function populationVariance(values: number[]): number {
-  if (values.length === 0) {
-    return 0;
-  }
-  const mean = values.reduce((a, b) => a + b, 0) / values.length;
-  const sumSq = values.reduce((a, b) => a + (b - mean) ** 2, 0);
-  return sumSq / values.length;
 }
 
 function resolveTimeline(

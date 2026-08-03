@@ -21,6 +21,7 @@ import {
   type MotionProfile,
   type ResolvedPresentation,
 } from "./workspaceAdaptation";
+import { clamp01, round4 } from "./experienceMath";
 
 export type PresenceValidationFailure =
   | "no_certified_lineage"
@@ -75,14 +76,6 @@ export interface WorkspacePresence {
   resolvedEnvironment: PresenceResolvedEnvironment;
   active: boolean;
   validation: PresenceValidation;
-}
-
-function clamp01(n: number): number {
-  return Math.min(1, Math.max(0, n));
-}
-
-function round4(n: number): number {
-  return Number(n.toFixed(4));
 }
 
 function motionCadenceOf(profile: MotionProfile | undefined): number {

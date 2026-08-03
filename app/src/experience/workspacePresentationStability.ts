@@ -13,16 +13,15 @@ import {
 import type { ExperienceStoreAdapter } from "../dev/experienceStore";
 import { contentAddressedId, tipOf } from "../dev/governancePrimitives";
 import { validateComposition } from "./adaptationComposition";
-import { clamp01, round4 } from "./anticipationPrediction";
 import { deriveWorkspaceCalibration } from "./workspaceCalibration";
 import { deriveActiveMemoryEvolution } from "./workspaceMemoryEvolution";
-import { deriveWorkspacePresence } from "./workspacePresence";
 import {
   finalizeResolvedPresentation,
   identityPresentation,
   type MotionProfile,
   type ResolvedPresentation,
 } from "./workspaceAdaptation";
+import { clamp01, lerp, populationVariance, round4 } from "./experienceMath";
 
 export type StabilityValidationFailure =
   | "no_evidence"
@@ -85,19 +84,6 @@ export interface WorkspacePresentationStability {
 }
 
 const MIN_SAMPLES = 2;
-
-function populationVariance(values: number[]): number {
-  if (values.length === 0) {
-    return 0;
-  }
-  const mean = values.reduce((a, b) => a + b, 0) / values.length;
-  const sumSq = values.reduce((a, b) => a + (b - mean) ** 2, 0);
-  return sumSq / values.length;
-}
-
-function lerp(a: number, b: number, t: number): number {
-  return a + (b - a) * clamp01(t);
-}
 
 function proxiesFromEvidence(evidence: ExperienceEvidence): {
   environmental: number;
@@ -279,7 +265,6 @@ export function deriveWorkspacePresentationStability(
     return null;
   }
 
-  const presence = deriveWorkspacePresence(store);
   const evolution = deriveActiveMemoryEvolution(store);
   const calibration = deriveWorkspaceCalibration(store, {
     anticipationLineageId: options.anticipationLineageId ?? null,
@@ -322,9 +307,6 @@ export function deriveWorkspacePresentationStability(
   ) {
     failureReasons.push("stability_regressed");
   }
-
-  // Presence soft-signal — not a hard fail; used for damping scale.
-  void presence;
 
   const unique = [
     ...new Set(failureReasons),

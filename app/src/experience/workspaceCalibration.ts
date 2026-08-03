@@ -16,9 +16,8 @@ import { validateComposition } from "./adaptationComposition";
 import {
   observedMomentFromEvidence,
   predictAnticipationFromEvidence,
-  round4,
-  clamp01,
 } from "./anticipationPrediction";
+import { clamp01, round4 } from "./experienceMath";
 import { deriveActiveMemoryEvolution } from "./workspaceMemoryEvolution";
 
 export type ReliabilityBand =

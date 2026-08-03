@@ -131,6 +131,7 @@ type PresenceApi = typeof import("../experience/workspacePresence");
 type AnticipationApi = typeof import("../experience/workspaceAnticipation");
 type CalibrationApi = typeof import("../experience/workspaceCalibration");
 type StabilityApi = typeof import("../experience/workspacePresentationStability");
+type ComplexityApi = typeof import("../experience/architecturalComplexity");
 
 const NEXT_STATE: Partial<Record<ProposalLifecycle, ProposalLifecycle>> = {
   draft: "review",
@@ -191,6 +192,9 @@ export function ExperienceEvidenceDashboard() {
   const [calibrationApi, setCalibrationApi] =
     useState<CalibrationApi | null>(null);
   const [stabilityApi, setStabilityApi] = useState<StabilityApi | null>(null);
+  const [complexityApi, setComplexityApi] = useState<ComplexityApi | null>(
+    null,
+  );
   const [batchReport, setBatchReport] = useState<BatchValidationReport | null>(
     null,
   );
@@ -344,6 +348,13 @@ export function ExperienceEvidenceDashboard() {
         },
       );
     }
+    if (!complexityApi) {
+      void import("../experience/architecturalComplexity").then((mod) => {
+        if (!cancelled) {
+          setComplexityApi(mod);
+        }
+      });
+    }
     return () => {
       cancelled = true;
     };
@@ -367,6 +378,7 @@ export function ExperienceEvidenceDashboard() {
     anticipationApi,
     calibrationApi,
     stabilityApi,
+    complexityApi,
   ]);
 
   const sessions = useMemo(() => {
@@ -803,6 +815,14 @@ export function ExperienceEvidenceDashboard() {
     activeAnticipation?.anticipationId,
     anticipationReplay?.anticipation?.anticipationId,
   ]);
+
+  const complexityReport = useMemo(() => {
+    void tick;
+    if (!complexityApi) {
+      return null;
+    }
+    return complexityApi.buildArchitecturalComplexityReport();
+  }, [complexityApi, tick]);
 
   const analyze = () => {
     if (sessions.length === 0) {
@@ -1963,6 +1983,55 @@ export function ExperienceEvidenceDashboard() {
             </li>
           ))}
         </ul>
+      </section>
+
+      <section
+        style={{ marginBottom: 10 }}
+        data-testid="architectural-complexity"
+      >
+        <div style={{ marginBottom: 4 }}>
+          <strong>Architectural complexity</strong>
+          {!complexityApi ? " (loading…)" : ""}
+        </div>
+        {complexityReport ? (
+          <div data-testid="complexity-report">
+            <div data-testid="complexity-metrics">
+              clamp/round dup {complexityReport.before.duplicatedClampRoundSites}{" "}
+              → {complexityReport.after.duplicatedClampRoundSites} · variance dup{" "}
+              {complexityReport.before.duplicatedVarianceSites} →{" "}
+              {complexityReport.after.duplicatedVarianceSites} · deprecated{" "}
+              {complexityReport.before.deprecatedPresentationAliases} →{" "}
+              {complexityReport.after.deprecatedPresentationAliases}
+            </div>
+            <div data-testid="complexity-simplification-summary">
+              removed helpers{" "}
+              {complexityReport.simplification.removedLocalHelpers} · new{" "}
+              {complexityReport.simplification.newSharedModules.join(", ")}
+            </div>
+            <div data-testid="complexity-duplicate-inventory">
+              duplicates{" "}
+              {complexityReport.duplicateInventory
+                .map((d) => `${d.pattern}:{${d.status}}`)
+                .join(" · ")}
+            </div>
+            <div data-testid="complexity-dependency-fanout">
+              fan-out{" "}
+              {complexityReport.dependencyFanOut
+                .map(
+                  (f) =>
+                    `${f.module}:${f.importsBefore}→${f.importsAfter}`,
+                )
+                .join(" · ")}
+            </div>
+            <div data-testid="complexity-before-after">
+              modules {complexityReport.before.experienceModuleCount} →{" "}
+              {complexityReport.after.experienceModuleCount} · stages{" "}
+              {complexityReport.after.resolverStages}
+            </div>
+          </div>
+        ) : (
+          <div style={{ opacity: 0.7 }}>Awaiting complexity module…</div>
+        )}
       </section>
 
       <section

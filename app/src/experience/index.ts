@@ -274,3 +274,23 @@ export type {
   StabilityValidationFailure,
   WorkspacePresentationStability,
 } from "./workspacePresentationStability";
+export {
+  clamp01,
+  lerp,
+  meanOf,
+  populationVariance,
+  round4,
+} from "./experienceMath";
+export {
+  COMPLEXITY_AFTER,
+  COMPLEXITY_BEFORE,
+  buildArchitecturalComplexityReport,
+} from "./architecturalComplexity";
+export type {
+  ArchitecturalComplexityReport,
+  ComplexityMetrics,
+  ComplexityModuleMetric,
+  DependencyFanOutEntry,
+  DuplicateInventoryEntry,
+  SimplificationSummary,
+} from "./architecturalComplexity";

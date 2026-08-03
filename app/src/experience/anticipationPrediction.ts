@@ -7,8 +7,12 @@
 import type { ExperienceDestination } from "../dev/experienceEvents";
 import type { ExperienceEvidence } from "../dev/experienceEvidence";
 import type { AdaptationTargetComponent } from "./workspaceAdaptation";
+import { clamp01, round4 } from "./experienceMath";
 
 export type AnticipatedMoment = Exclude<ExperienceDestination, "unknown">;
+
+/** Re-export shared math for existing call sites. */
+export { clamp01, round4 } from "./experienceMath";
 
 const MOMENTS: readonly AnticipatedMoment[] = [
   "home",
@@ -17,14 +21,6 @@ const MOMENTS: readonly AnticipatedMoment[] = [
   "pilot",
   "help",
 ] as const;
-
-export function clamp01(n: number): number {
-  return Math.min(1, Math.max(0, n));
-}
-
-export function round4(n: number): number {
-  return Number(n.toFixed(4));
-}
 
 export function isAnticipatedMoment(
   value: string | null | undefined,

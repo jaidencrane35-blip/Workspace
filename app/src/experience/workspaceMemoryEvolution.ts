@@ -34,6 +34,7 @@ import {
   type ResolvedPresentation,
   type WorkspaceAdaptation,
 } from "./workspaceAdaptation";
+import { round4 } from "./experienceMath";
 
 export type EvolutionValidationFailure =
   | "no_certified_adaptations"
@@ -95,10 +96,6 @@ export interface WorkspaceMemoryEvolution {
   validation: EvolutionValidation;
   packId: string | null;
   packVersion: number | null;
-}
-
-function round4(n: number): number {
-  return Number(n.toFixed(4));
 }
 
 function deltaFromResolved(

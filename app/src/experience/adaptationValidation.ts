@@ -32,6 +32,7 @@ import {
   type LongitudinalAdaptationRecord,
   type WorkspaceAdaptation,
 } from "./workspaceAdaptation";
+import { meanOf, round4 } from "./experienceMath";
 
 export type StabilityTrend = "rising" | "stable" | "falling" | "unknown";
 
@@ -148,17 +149,6 @@ export interface LongitudinalTrendPoint {
 export interface LongitudinalTrendReport {
   schemaVersion: 1;
   points: LongitudinalTrendPoint[];
-}
-
-function round4(n: number): number {
-  return Number(n.toFixed(4));
-}
-
-function meanOf(values: number[]): number | null {
-  if (values.length === 0) {
-    return null;
-  }
-  return round4(values.reduce((a, b) => a + b, 0) / values.length);
 }
 
 function certificationTimestampForEvidence(

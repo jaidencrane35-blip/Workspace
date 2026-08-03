@@ -263,9 +263,6 @@ export function applyPresentationLayer(
   };
 }
 
-/** @deprecated Use applyPresentationLayer — retained name for local call sites. */
-const mergePresentation = applyPresentationLayer;
-
 export function finalizeResolvedPresentation(
   resolved: ResolvedPresentation,
 ): ResolvedPresentation {
@@ -321,7 +318,7 @@ export function resolvePresentationConfiguration(
   let resolved = identityPresentation();
   const applied: string[] = [];
   for (const adaptation of active) {
-    resolved = mergePresentation(resolved, adaptation.presentation);
+    resolved = applyPresentationLayer(resolved, adaptation.presentation);
     applied.push(adaptation.adaptationId);
   }
   resolved.appliedAdaptationIds = applied;

@@ -14,11 +14,10 @@ import type { ExperienceStoreAdapter } from "../dev/experienceStore";
 import { contentAddressedId, tipOf } from "../dev/governancePrimitives";
 import { validateComposition } from "./adaptationComposition";
 import {
-  clamp01,
   predictAnticipationFromEvidence,
-  round4,
   type AnticipatedMoment,
 } from "./anticipationPrediction";
+import { clamp01, round4 } from "./experienceMath";
 import {
   applyConfidenceCalibration,
   deriveWorkspaceCalibration,
