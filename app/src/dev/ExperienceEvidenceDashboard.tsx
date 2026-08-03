@@ -54,6 +54,7 @@ import type {
   AdaptationOperationalHealth,
   BatchValidationReport,
 } from "../experience/adaptationOperations";
+import type { ProductionActivationRecord } from "../experience/productionAdaptation";
 import { fnv1a } from "./devHash";
 
 const panelStyle: CSSProperties = {
@@ -106,6 +107,7 @@ type AdaptationApi = typeof import("../experience/workspaceAdaptation");
 type ExperimentApi = typeof import("../experience/adaptationExperiments");
 type LongitudinalApi = typeof import("../experience/longitudinalAdaptation");
 type OperationsApi = typeof import("../experience/adaptationOperations");
+type ProductionApi = typeof import("../experience/productionAdaptation");
 
 const NEXT_STATE: Partial<Record<ProposalLifecycle, ProposalLifecycle>> = {
   draft: "review",
@@ -146,6 +148,9 @@ export function ExperienceEvidenceDashboard() {
   const [longitudinalApi, setLongitudinalApi] =
     useState<LongitudinalApi | null>(null);
   const [operationsApi, setOperationsApi] = useState<OperationsApi | null>(
+    null,
+  );
+  const [productionApi, setProductionApi] = useState<ProductionApi | null>(
     null,
   );
   const [batchReport, setBatchReport] = useState<BatchValidationReport | null>(
@@ -225,6 +230,13 @@ export function ExperienceEvidenceDashboard() {
         }
       });
     }
+    if (!productionApi) {
+      void import("../experience/productionAdaptation").then((mod) => {
+        if (!cancelled) {
+          setProductionApi(mod);
+        }
+      });
+    }
     return () => {
       cancelled = true;
     };
@@ -238,6 +250,7 @@ export function ExperienceEvidenceDashboard() {
     experimentApi,
     longitudinalApi,
     operationsApi,
+    productionApi,
   ]);
 
   const sessions = useMemo(() => {
@@ -470,6 +483,19 @@ export function ExperienceEvidenceDashboard() {
     }
     return operationsApi.deriveOperationalHealth(govStore);
   }, [operationsApi, govStore, tick]);
+
+  const productionRecord: ProductionActivationRecord | null = useMemo(() => {
+    void tick;
+    if (!productionApi) {
+      return null;
+    }
+    return productionApi.getProductionActivationRecord(govStore);
+  }, [productionApi, govStore, tick]);
+
+  const activeAdaptations = useMemo(
+    () => adaptations.filter((a) => a.rolloutState === "active"),
+    [adaptations],
+  );
 
   const analyze = () => {
     if (sessions.length === 0) {
@@ -833,6 +859,34 @@ export function ExperienceEvidenceDashboard() {
     refresh();
   };
 
+  const runProductionActivation = () => {
+    if (!productionApi) {
+      setGovMessage("prod_loading");
+      return;
+    }
+    const record = productionApi.runFirstProductionAdaptation(govStore, {
+      now: Date.now(),
+    });
+    setGovMessage(
+      `prod:${record.outcome}:${record.adaptationId ?? "none"}:${record.blockReasons.join(",") || "ok"}`,
+    );
+    refresh();
+  };
+
+  const rollbackProduction = () => {
+    if (!productionApi) {
+      setGovMessage("prod_loading");
+      return;
+    }
+    const result = productionApi.rollbackProductionAdaptation(govStore);
+    setGovMessage(
+      result.ok
+        ? `prod_rollback:${result.record.adaptationId}`
+        : `prod_err:${result.error}`,
+    );
+    refresh();
+  };
+
   const activateAdaptation = (adaptation: WorkspaceAdaptation) => {
     if (!adaptationApi) {
       return;
@@ -985,6 +1039,14 @@ export function ExperienceEvidenceDashboard() {
           onClick={runBatchValidate}
         >
           Batch validate
+        </button>
+        <button
+          type="button"
+          style={btnStyle}
+          data-testid="run-production-adaptation"
+          onClick={runProductionActivation}
+        >
+          Activate production adaptation
         </button>
         <button type="button" style={btnStyle} onClick={refresh}>
           Refresh
@@ -1299,6 +1361,80 @@ export function ExperienceEvidenceDashboard() {
             );
           })}
         </ul>
+      </section>
+
+      <section
+        style={{ marginBottom: 10 }}
+        data-testid="production-adaptation"
+      >
+        <div style={{ marginBottom: 4 }}>
+          <strong>Production adaptation</strong>
+          {!productionApi
+            ? " (loading…)"
+            : productionRecord
+              ? ` · ${productionRecord.outcome}`
+              : " · none"}
+        </div>
+        {activeAdaptations.length > 0 ? (
+          <div data-testid="active-adaptation">
+            active:{" "}
+            {activeAdaptations.map((a) => a.adaptationId).join(", ")}
+          </div>
+        ) : (
+          <div style={{ opacity: 0.7 }}>No active adaptation.</div>
+        )}
+        {productionRecord ? (
+          <>
+            <div>
+              activatedAt {productionRecord.activatedAt ?? "—"} · rollback{" "}
+              {productionRecord.rollbackAvailable ? "available" : "n/a"}
+            </div>
+            <div>
+              evidence {productionRecord.preEvidenceId ?? "—"} →{" "}
+              {productionRecord.postEvidenceId ?? "—"}
+            </div>
+            <div>
+              {productionRecord.expectedMetric ?? "metric"}:{" "}
+              {productionRecord.preMetricValue ?? "—"} →{" "}
+              {productionRecord.postMetricValue ?? "—"} (Δ{" "}
+              {productionRecord.metricDelta ?? "—"})
+            </div>
+            <div>
+              regression {productionRecord.regression ? "yes" : "no"} ·
+              governance {productionRecord.governanceIntact ? "intact" : "broken"}{" "}
+              · integrity{" "}
+              {productionRecord.integrityValid ? "valid" : "invalid"}
+            </div>
+            <div>
+              lineage prop {productionRecord.proposalId ?? "—"} · eng{" "}
+              {productionRecord.engineeringChangeId ?? "—"} · asnap{" "}
+              {productionRecord.architectureSnapshotId ?? "—"}
+            </div>
+            <div>
+              replay{" "}
+              {productionRecord.replaySessionIds.join(", ") || "—"} ·
+              stability {productionRecord.stabilityScore ?? "—"}
+            </div>
+            {productionRecord.blockReasons.length > 0 ? (
+              <div>block: {productionRecord.blockReasons.join(", ")}</div>
+            ) : null}
+            {productionRecord.rollbackAvailable &&
+            productionRecord.outcome === "activated" ? (
+              <button
+                type="button"
+                style={btnStyle}
+                data-testid="rollback-production-adaptation"
+                onClick={rollbackProduction}
+              >
+                Rollback production adaptation
+              </button>
+            ) : null}
+          </>
+        ) : (
+          <div style={{ opacity: 0.7, marginBottom: 6 }}>
+            No production activation record. Run activate production adaptation.
+          </div>
+        )}
       </section>
 
       <section

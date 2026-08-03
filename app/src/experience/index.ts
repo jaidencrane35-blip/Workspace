@@ -85,3 +85,18 @@ export type {
   BatchValidationReport,
   CatalogDisposition,
 } from "./adaptationOperations";
+export {
+  PRODUCTION_ACTIVATION_STORAGE_KEY,
+  clearProductionActivationStore,
+  ensureLongitudinalEligibility,
+  getProductionActivationRecord,
+  rollbackProductionAdaptation,
+  runFirstProductionAdaptation,
+  selectProductionAdaptation,
+} from "./productionAdaptation";
+export type {
+  ProductionActivationOutcome,
+  ProductionActivationRecord,
+  ProductionBlockReason,
+  ProductionSelection,
+} from "./productionAdaptation";
