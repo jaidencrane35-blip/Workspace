@@ -161,3 +161,24 @@ export type {
   PackStabilitySummary,
   WorkspaceAdaptationPack,
 } from "./adaptationPacks";
+export {
+  buildAdaptationPerformanceReport,
+  buildCertificationLongevityReport,
+  buildEvidenceInventory,
+  buildLongitudinalTrendReport,
+  buildPackEffectivenessReport,
+  buildRealWorldValidationBundle,
+} from "./adaptationValidation";
+export type {
+  AdaptationPerformanceEntry,
+  AdaptationPerformanceReport,
+  CertificationLongevityEntry,
+  CertificationLongevityReport,
+  EvidenceInventory,
+  EvidenceInventoryEntry,
+  LongitudinalTrendPoint,
+  LongitudinalTrendReport,
+  PackEffectivenessCohort,
+  PackEffectivenessReport,
+  StabilityTrend,
+} from "./adaptationValidation";

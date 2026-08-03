@@ -125,6 +125,7 @@ type ProductionApi = typeof import("../experience/productionAdaptation");
 type CompositionApi = typeof import("../experience/adaptationComposition");
 type CertificationApi = typeof import("../experience/adaptationCertification");
 type PacksApi = typeof import("../experience/adaptationPacks");
+type ValidationApi = typeof import("../experience/adaptationValidation");
 
 const NEXT_STATE: Partial<Record<ProposalLifecycle, ProposalLifecycle>> = {
   draft: "review",
@@ -175,6 +176,9 @@ export function ExperienceEvidenceDashboard() {
   const [certificationApi, setCertificationApi] =
     useState<CertificationApi | null>(null);
   const [packsApi, setPacksApi] = useState<PacksApi | null>(null);
+  const [validationApi, setValidationApi] = useState<ValidationApi | null>(
+    null,
+  );
   const [batchReport, setBatchReport] = useState<BatchValidationReport | null>(
     null,
   );
@@ -284,6 +288,13 @@ export function ExperienceEvidenceDashboard() {
         }
       });
     }
+    if (!validationApi) {
+      void import("../experience/adaptationValidation").then((mod) => {
+        if (!cancelled) {
+          setValidationApi(mod);
+        }
+      });
+    }
     return () => {
       cancelled = true;
     };
@@ -301,6 +312,7 @@ export function ExperienceEvidenceDashboard() {
     compositionApi,
     certificationApi,
     packsApi,
+    validationApi,
   ]);
 
   const sessions = useMemo(() => {
@@ -614,6 +626,16 @@ export function ExperienceEvidenceDashboard() {
     }
     return packsApi.getActiveAdaptationPack(govStore);
   }, [packsApi, govStore, tick]);
+
+  const realWorldValidation = useMemo(() => {
+    void tick;
+    if (!validationApi) {
+      return null;
+    }
+    return validationApi.buildRealWorldValidationBundle(govStore, {
+      now: Date.now(),
+    });
+  }, [validationApi, govStore, tick]);
 
   const analyze = () => {
     if (sessions.length === 0) {
@@ -1639,6 +1661,151 @@ export function ExperienceEvidenceDashboard() {
             );
           })}
         </ul>
+      </section>
+
+      <section
+        style={{ marginBottom: 10 }}
+        data-testid="real-world-adaptation-validation"
+      >
+        <div style={{ marginBottom: 4 }}>
+          <strong>Real-world adaptation validation</strong>
+          {!validationApi
+            ? " (loading…)"
+            : ` · snapshots ${realWorldValidation?.inventory.snapshotCount ?? 0}`}
+        </div>
+        {realWorldValidation ? (
+          <>
+            <div data-testid="evidence-inventory">
+              <strong>Evidence inventory</strong>
+              <ul style={{ paddingLeft: 16, margin: "4px 0" }}>
+                {realWorldValidation.inventory.entries.map((e) => (
+                  <li key={e.evidenceId} style={{ marginBottom: 4 }}>
+                    #{e.sequenceIndex + 1} {e.evidenceId} · t{" "}
+                    {e.timestampMs ?? "—"} · interactions {e.interactionCount} ·
+                    replay {e.replayCount} · activeAdapt{" "}
+                    {e.activeAdaptationIds.join(",") || "—"} · cert{" "}
+                    {e.certificationId ?? "—"}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div data-testid="adaptation-performance">
+              <strong>Adaptation performance</strong>
+              <ul style={{ paddingLeft: 16, margin: "4px 0" }}>
+                {realWorldValidation.performance.adaptations.map((p) => (
+                  <li key={p.subjectId} style={{ marginBottom: 4 }}>
+                    {p.subjectId} · act {p.activationCount} · obs{" "}
+                    {p.observationCount} · stability {p.stabilityScore ?? "—"} ·
+                    trend {p.stabilityTrend} · persist{" "}
+                    {p.improvementPersistence ?? "—"} · regFreq{" "}
+                    {p.regressionFrequency ?? "—"} · growth {p.evidenceGrowth}
+                    <div>
+                      confidence [{p.confidenceEvolution.join(", ") || "—"}]
+                    </div>
+                  </li>
+                ))}
+                {realWorldValidation.performance.packs.map((p) => (
+                  <li
+                    key={`${p.subjectId}@${p.packVersion}`}
+                    style={{ marginBottom: 4 }}
+                  >
+                    pack {p.subjectId}@{p.packVersion} · act {p.activationCount}{" "}
+                    · obs {p.observationCount} · stability{" "}
+                    {p.stabilityScore ?? "—"} · trend {p.stabilityTrend} ·
+                    growth {p.evidenceGrowth} · rollout{" "}
+                    {p.rolloutSuccess ? "yes" : "no"}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div data-testid="pack-effectiveness">
+              <strong>Pack effectiveness</strong>
+              <div>
+                singles n={realWorldValidation.packEffectiveness.singles.subjectCount}{" "}
+                · stability{" "}
+                {realWorldValidation.packEffectiveness.singles.meanStabilityScore ??
+                  "—"}{" "}
+                · regFreq{" "}
+                {realWorldValidation.packEffectiveness.singles
+                  .meanRegressionFrequency ?? "—"}{" "}
+                · growth{" "}
+                {realWorldValidation.packEffectiveness.singles.totalEvidenceGrowth}{" "}
+                · rolloutRate{" "}
+                {realWorldValidation.packEffectiveness.singles.rolloutSuccessRate ??
+                  "—"}
+              </div>
+              <div>
+                packs n={realWorldValidation.packEffectiveness.packs.subjectCount}{" "}
+                · stability{" "}
+                {realWorldValidation.packEffectiveness.packs.meanStabilityScore ??
+                  "—"}{" "}
+                · regFreq{" "}
+                {realWorldValidation.packEffectiveness.packs
+                  .meanRegressionFrequency ?? "—"}{" "}
+                · growth{" "}
+                {realWorldValidation.packEffectiveness.packs.totalEvidenceGrowth}{" "}
+                · rolloutRate{" "}
+                {realWorldValidation.packEffectiveness.packs.rolloutSuccessRate ??
+                  "—"}
+              </div>
+              <div>
+                delta stability{" "}
+                {realWorldValidation.packEffectiveness.delta.meanStabilityScore ??
+                  "—"}{" "}
+                · delta regFreq{" "}
+                {realWorldValidation.packEffectiveness.delta
+                  .meanRegressionFrequency ?? "—"}{" "}
+                · delta growth{" "}
+                {realWorldValidation.packEffectiveness.delta.totalEvidenceGrowth}{" "}
+                · delta rollout{" "}
+                {realWorldValidation.packEffectiveness.delta.rolloutSuccessRate ??
+                  "—"}
+              </div>
+            </div>
+            <div data-testid="longitudinal-trend-graphs">
+              <strong>Longitudinal trend</strong>
+              <div>
+                friction [
+                {realWorldValidation.longitudinalTrend.points
+                  .map((p) => p.meanFrictionScore)
+                  .join(", ") || "—"}
+                ]
+              </div>
+              <div>
+                ttc [
+                {realWorldValidation.longitudinalTrend.points
+                  .map((p) => p.medianTimeToConfidenceMs)
+                  .join(", ") || "—"}
+                ]
+              </div>
+              <div>
+                sessions [
+                {realWorldValidation.longitudinalTrend.points
+                  .map((p) => p.sessionCount)
+                  .join(", ") || "—"}
+                ]
+              </div>
+            </div>
+            <div data-testid="certification-longevity">
+              <strong>Certification longevity</strong>
+              <div>
+                meanLongevityMs{" "}
+                {realWorldValidation.certificationLongevity.meanLongevityMs ??
+                  "—"}
+              </div>
+              <ul style={{ paddingLeft: 16, margin: "4px 0" }}>
+                {realWorldValidation.certificationLongevity.entries.map((e) => (
+                  <li key={e.certificationId}>
+                    {e.certificationId} · at {e.certifiedAt} · longevity{" "}
+                    {e.longevityMs ?? "tip"} · {e.regressionStatus}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </>
+        ) : (
+          <div style={{ opacity: 0.7 }}>Awaiting validation module…</div>
+        )}
       </section>
 
       <section

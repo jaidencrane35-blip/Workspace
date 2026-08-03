@@ -50,6 +50,7 @@ export const AUTHORITY_CHAIN: readonly [
   ["53_Adaptation_Composition.md", "54_Adaptation_Certification.md"],
   ["54_Adaptation_Certification.md", "55_Adaptation_Packs.md"],
   ["55_Adaptation_Packs.md", "56_Governance_Consolidation.md"],
+  ["56_Governance_Consolidation.md", "57_Real_World_Adaptation_Validation.md"],
 ];
 
 export const AUTHORITY_ROOT: ArchitectureAuthorityDoc =
