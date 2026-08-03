@@ -11,6 +11,8 @@ Demo mode is a **permanent adapter** (`app/src/demo/`) for development, screensh
 - Live runtime state: `architecture/26_Workspace_Runtime_State.md`
 - Session persistence: `architecture/27_Workspace_Session_Persistence.md`
 - Runtime recovery: `architecture/28_Runtime_Recovery_Model.md`
+- Product proof: `architecture/29_Product_Proof.md`
+- Release gate: `architecture/30_Release_Gate.md`
 
 ---
 
@@ -113,8 +115,10 @@ Routing: `app/src/lib/ipc.ts` → Tauri `invoke` when not in adapter mode; else 
 
 ## Remaining production blockers
 
-1. Full Windows E2E under Tauri on a real multi-monitor session (Save → Continue approve → live place/focus).
-2. Virtual desktop / browser-tab fidelity (out of scope).
-3. Check-in ambient metrics — only when real kernel sources exist (can later read `WorkspaceRuntimeState`).
-4. OS may refuse `SetForegroundWindow`; reported per-item, not silently forced.
-5. Crash-injection E2E across process kill during restore (unit fences cover contract; full OS kill not automated).
+Verified blockers (see `30_Release_Gate.md`):
+
+1. Dual-monitor placement and monitor disconnect/reconnect — **not evidenced** on proof host (single display).
+2. Tauri Experience click-through Home→Save→Continue→Restart→Continue — **not instrumented** (kernel live path proven).
+3. OS `TerminateProcess` during mutation — **not automated** (durable fence matrix proven).
+4. Virtual desktop / browser-tab fidelity — out of scope.
+5. `SetForegroundWindow` may refuse without input attachment — reported per-item, not forced.

@@ -120,4 +120,4 @@ Migration: `046_workspace_session_recovery_fence.sql` + explicit `migrate` v1→
 1. Nested Save→Observation: Observation fence may briefly overwrite Save fence during capture; Save re-fences before durable create.
 2. Ambient observation refresh after hydrate remains deferred (Product Proof).
 3. Desktop effects already applied before a crash during restore cannot be rolled back by the OS — marked Incomplete for operator awareness only.
-4. Full multi-process Tauri E2E crash injection is out of unit scope; fences + hydrate cover the recovery contract.
+4. OS process-kill during mutation is not automated; durable fence + hydrate cover the recovery contract (see `29_Product_Proof.md`).

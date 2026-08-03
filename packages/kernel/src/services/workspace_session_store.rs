@@ -152,7 +152,12 @@ impl WorkspaceSessionStore {
         session.updated_at = observation_now_rfc3339();
 
         if let Err(message) = assert_runtime_session_consistent(runtime, &session) {
+            // Production diagnostic (operator logs). Never panics the process.
             log::warn!("runtime/session consistency warning before checkpoint: {message}");
+            debug_assert!(
+                false,
+                "runtime/session inconsistency before checkpoint: {message}"
+            );
         }
 
         let guard = db.lock().map_err(|_| KernelError::NotReady)?;

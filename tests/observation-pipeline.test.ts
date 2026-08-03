@@ -155,4 +155,25 @@ describe("observation model docs", () => {
     expect(doc).toContain("begin_operation");
     expect(doc).toContain("Recovery matrix");
   });
+
+  it("documents product proof and release gate with evidence only", () => {
+    const proof = fs.readFileSync(
+      path.join(root, "architecture/29_Product_Proof.md"),
+      "utf8",
+    );
+    const gate = fs.readFileSync(
+      path.join(root, "architecture/30_Release_Gate.md"),
+      "utf8",
+    );
+    const evidence = fs.readFileSync(
+      path.join(root, "architecture/evidence/windows-product-proof.json"),
+      "utf8",
+    );
+    expect(proof).toContain("Evidence only");
+    expect(proof).toContain("No aspirations");
+    expect(gate).toContain("PASS WITH LIMITATIONS");
+    expect(gate).toContain("FAIL");
+    expect(evidence).toContain("behaviour_matrix");
+    expect(evidence).toContain("window.place");
+  });
 });

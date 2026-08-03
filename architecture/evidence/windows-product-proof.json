@@ -1,0 +1,73 @@
+{
+  "collected_at": "SystemTime { intervals: 134301898273471867 }",
+  "os": "Windows Windows_NT",
+  "desktop_session_id": "wts-session-1",
+  "monitor_count": 1,
+  "monitors": [
+    {
+      "index": 0,
+      "name": "\\\\.\\DISPLAY1",
+      "width": 1707,
+      "height": 1067,
+      "is_primary": true,
+      "x": 0,
+      "y": 0
+    }
+  ],
+  "window_count": 9,
+  "minimized_windows_observed": 2,
+  "maximized_heuristic_windows": 5,
+  "mixed_geometry_monitors": false,
+  "monitor_disconnect_reconnect_exercised": false,
+  "behaviour_matrix": [
+    {
+      "requested_action": "window.place",
+      "win32_result": "committed",
+      "os_refusal": false,
+      "notes": "SetWindowPos with SWP_NOACTIVATE|SWP_NOZORDER|SWP_SHOWWINDOW"
+    },
+    {
+      "requested_action": "window.minimize",
+      "win32_result": "committed",
+      "os_refusal": false,
+      "notes": "ShowWindow(SW_MINIMIZE)"
+    },
+    {
+      "requested_action": "window.restore_minimized_then_place",
+      "win32_result": "committed",
+      "os_refusal": false,
+      "notes": "ShowWindow(SW_RESTORE) then SetWindowPos NOZORDER"
+    },
+    {
+      "requested_action": "window.focus",
+      "win32_result": "committed",
+      "os_refusal": false,
+      "notes": "SetForegroundWindow — OS may refuse without input attachment"
+    },
+    {
+      "requested_action": "window.monitor_placement_primary",
+      "win32_result": "committed",
+      "os_refusal": false,
+      "notes": "primary monitor index 0"
+    },
+    {
+      "requested_action": "window.monitor_placement_secondary",
+      "win32_result": "not_available",
+      "os_refusal": false,
+      "notes": "single-monitor host — secondary placement not exercised"
+    },
+    {
+      "requested_action": "window.z_order_preservation",
+      "win32_result": "committed_by_contract",
+      "os_refusal": false,
+      "notes": "place path sets SWP_NOZORDER; Action marks window.z_order unsupported"
+    },
+    {
+      "requested_action": "window.identity_lookup",
+      "win32_result": "committed",
+      "os_refusal": false,
+      "notes": "IsWindow after mutations"
+    }
+  ],
+  "proof_hwnd": "0x00000000004A0744"
+}

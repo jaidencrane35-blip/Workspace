@@ -303,6 +303,8 @@ mod workspace_runtime_state_tests;
 mod workspace_session_store_tests;
 #[cfg(test)]
 mod workspace_recovery_tests;
+#[cfg(all(test, windows))]
+mod windows_product_proof_tests;
 #[cfg(test)]
 mod ai_memory_tests;
 #[cfg(test)]
