@@ -41,6 +41,10 @@ import type {
   IntegrityResult,
 } from "./architecturalIntegrity";
 import type { WorkspaceAdaptation } from "../experience/workspaceAdaptation";
+import type {
+  AdaptationExperimentResult,
+  ExperimentRunSummary,
+} from "../experience/adaptationExperiments";
 import { fnv1a } from "./devHash";
 
 const panelStyle: CSSProperties = {
@@ -90,6 +94,7 @@ type GovernanceApi = typeof import("./experienceGovernance");
 type EngineeringApi = typeof import("./engineeringGovernance");
 type IntegrityApi = typeof import("./architecturalIntegrity");
 type AdaptationApi = typeof import("../experience/workspaceAdaptation");
+type ExperimentApi = typeof import("../experience/adaptationExperiments");
 
 const NEXT_STATE: Partial<Record<ProposalLifecycle, ProposalLifecycle>> = {
   draft: "review",
@@ -122,6 +127,9 @@ export function ExperienceEvidenceDashboard() {
   );
   const [integrityApi, setIntegrityApi] = useState<IntegrityApi | null>(null);
   const [adaptationApi, setAdaptationApi] = useState<AdaptationApi | null>(
+    null,
+  );
+  const [experimentApi, setExperimentApi] = useState<ExperimentApi | null>(
     null,
   );
   const [exploreNode, setExploreNode] = useState<string>(
@@ -177,6 +185,13 @@ export function ExperienceEvidenceDashboard() {
         }
       });
     }
+    if (!experimentApi) {
+      void import("../experience/adaptationExperiments").then((mod) => {
+        if (!cancelled) {
+          setExperimentApi(mod);
+        }
+      });
+    }
     return () => {
       cancelled = true;
     };
@@ -187,6 +202,7 @@ export function ExperienceEvidenceDashboard() {
     engineeringApi,
     integrityApi,
     adaptationApi,
+    experimentApi,
   ]);
 
   const sessions = useMemo(() => {
@@ -363,6 +379,22 @@ export function ExperienceEvidenceDashboard() {
     }
     return adaptationApi.resolvePresentationConfiguration(adaptations);
   }, [adaptationApi, adaptations]);
+
+  const experimentSummary: ExperimentRunSummary | null = useMemo(() => {
+    void tick;
+    if (!experimentApi) {
+      return null;
+    }
+    return experimentApi.getExperimentSummary(govStore);
+  }, [experimentApi, govStore, tick]);
+
+  const experimentResults: AdaptationExperimentResult[] = useMemo(() => {
+    void tick;
+    if (!experimentApi) {
+      return [];
+    }
+    return experimentApi.listExperimentResults(govStore);
+  }, [experimentApi, govStore, tick]);
 
   const analyze = () => {
     if (sessions.length === 0) {
@@ -694,6 +726,34 @@ export function ExperienceEvidenceDashboard() {
     refresh();
   };
 
+  const runExperiments = () => {
+    if (!experimentApi) {
+      setGovMessage("exp_loading");
+      return;
+    }
+    const summary = experimentApi.runAdaptationExperiments(govStore);
+    setGovMessage(
+      `exp_run:selected=${summary.experimentsSelected}:validated=${summary.results.filter((r) => r.experimentStatus === "validated").length}`,
+    );
+    refresh();
+  };
+
+  const toggleExperiment = (adaptationId: string) => {
+    if (!experimentApi || !adaptationId) {
+      return;
+    }
+    const result = experimentApi.toggleAdaptationExperiment(
+      govStore,
+      adaptationId,
+    );
+    setGovMessage(
+      result.ok
+        ? `exp_toggle:${adaptationId}:${result.adaptation.rolloutState}`
+        : `exp_err:${result.error}`,
+    );
+    refresh();
+  };
+
   if (!isExperienceValidationEnabled()) {
     return null;
   }
@@ -770,6 +830,14 @@ export function ExperienceEvidenceDashboard() {
           onClick={draftAdaptation}
         >
           Draft adaptation
+        </button>
+        <button
+          type="button"
+          style={btnStyle}
+          data-testid="run-adaptation-experiments"
+          onClick={runExperiments}
+        >
+          Run experiments
         </button>
         <button type="button" style={btnStyle} onClick={refresh}>
           Refresh
@@ -1017,6 +1085,67 @@ export function ExperienceEvidenceDashboard() {
                     onClick={() => advanceEngineering(r)}
                   >
                     → {ENG_NEXT_STATE[r.state]}
+                  </button>
+                ) : null}
+              </li>
+            );
+          })}
+        </ul>
+      </section>
+
+      <section style={{ marginBottom: 10 }} data-testid="adaptation-experiments">
+        <div style={{ marginBottom: 4 }}>
+          <strong>Adaptation experiments</strong>
+          {!experimentApi
+            ? " (loading…)"
+            : ` (${experimentResults.length})`}
+        </div>
+        {experimentSummary ? (
+          <div style={{ marginBottom: 6, opacity: 0.85 }}>
+            considered {experimentSummary.proposalsConsidered} · selected{" "}
+            {experimentSummary.experimentsSelected}
+            <div>{experimentSummary.selectionNote}</div>
+          </div>
+        ) : (
+          <div style={{ opacity: 0.7, marginBottom: 6 }}>
+            No experiment run yet. Run experiments to exercise the pipeline.
+          </div>
+        )}
+        <ul style={{ paddingLeft: 16, margin: "6px 0" }}>
+          {experimentResults.map((r) => {
+            const ready = experimentApi
+              ? experimentApi.experimentRollbackReady(govStore, r.experimentId)
+              : false;
+            return (
+              <li key={r.experimentId} style={{ marginBottom: 8 }}>
+                <div>
+                  {r.experimentKey} · <strong>{r.experimentStatus}</strong> ·{" "}
+                  {r.validationOutcome} · rollout {r.rolloutDisposition}
+                </div>
+                <div>
+                  {r.expectedMetric}: {r.baselineMetricValue} →{" "}
+                  {r.observedMetricValue} (Δ {r.observedDelta}, expect Δ
+                  {r.expectedDirection === "lower_better" ? "≤-" : "≥"}
+                  {r.expectedImprovementDelta})
+                </div>
+                <div>
+                  confidence {r.confidence} · regression {r.regressionCheck} ·
+                  rollback {ready ? "ready" : "n/a"}
+                </div>
+                <div>
+                  lineage prop {r.proposalId} · eng {r.engineeringChangeId}
+                </div>
+                <div>
+                  evidence {r.evidenceBaselineId} → {r.evidenceAfterId}
+                </div>
+                {r.adaptationId ? (
+                  <button
+                    type="button"
+                    style={btnStyle}
+                    data-testid={`toggle-exp-${r.experimentKey}`}
+                    onClick={() => toggleExperiment(r.adaptationId)}
+                  >
+                    Toggle adaptation
                   </button>
                 ) : null}
               </li>

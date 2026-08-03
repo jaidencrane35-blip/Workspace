@@ -30,3 +30,24 @@ export type {
   RollbackCriterion,
 } from "./workspaceAdaptation";
 export { useResolvedPresentation } from "./useResolvedPresentation";
+export {
+  ADAPTATION_EXPERIMENT_SPECS,
+  EXPERIMENT_STORAGE_KEY,
+  clearExperimentStore,
+  experimentRollbackReady,
+  getExperimentSummary,
+  listExperimentResults,
+  materializeExperimentLineage,
+  rollbackExperimentAdaptation,
+  runAdaptationExperiments,
+  selectEligibleProposals,
+  selectExperimentSpecs,
+  toggleAdaptationExperiment,
+} from "./adaptationExperiments";
+export type {
+  AdaptationExperimentResult,
+  AdaptationExperimentSpec,
+  ExperimentRunSummary,
+  ExperimentStatus,
+  RolloutDisposition,
+} from "./adaptationExperiments";
