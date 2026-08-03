@@ -25,6 +25,9 @@ Live runtime: `architecture/26_Workspace_Runtime_State.md`.
 | `execution_phase` | **Ephemeral** | Never serialized |
 | `generation` | **Ephemeral** | Process-local |
 | `authority_effect` | **Ephemeral** | Constant / non-durable |
+| `health` | **Ephemeral** | Process-local; seeded from session recovery |
+| `pending_operation` (session) | **Persistent** | Crash fence (schema v2) |
+| `last_recovery` (session) | **Persistent** | Acknowledged interruption |
 
 Durable type: **`PersistentWorkspaceSession`** (`packages/domain/src/persistent_workspace_session.rs`).  
 Do not persist full `WorkspaceRuntimeState`.
@@ -39,7 +42,8 @@ Table `workspace_persistent_session` (migration `045_workspace_persistent_sessio
 - Scalar columns for persistent fields
 - `restore_history_json` TEXT
 - `payload_checksum` FNV-1a over durable material
-- `schema_version` INTEGER (current: **1**)
+- `schema_version` INTEGER (current: **2**)
+- `pending_operation_json` / `last_recovery_json` (recovery fences; see `28`)
 
 Atomic write: `BEGIN IMMEDIATE` transaction + `INSERT … ON CONFLICT DO UPDATE`.
 
@@ -103,7 +107,8 @@ Explicit only: `PersistentWorkspaceSession::migrate`.
 
 ```text
 v0 → v1   (identity / bound history)
-v1        (current)
+v1 → v2   (pending_operation + last_recovery)
+v2        (current)
 ```
 
 No implicit upgrades. Every step unit-tested.

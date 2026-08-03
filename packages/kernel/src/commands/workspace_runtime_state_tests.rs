@@ -238,6 +238,8 @@ fn concurrent_observation_requests_reject_duplicate() {
 
 #[test]
 fn execution_state_transitions_and_restore_history() {
+    // Initialize first — hydrate resets the process-local owner.
+    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
     WorkspaceRuntimeStateService::reset_for_tests();
 
     WorkspaceRuntimeStateService::note_execution_phase(RestoreExecutionPhase::Planning);
@@ -264,7 +266,6 @@ fn execution_state_transitions_and_restore_history() {
         RestoreExecutionPhase::Partial
     );
 
-    let kernel = WorkspaceKernel::initialize_in_memory().unwrap();
     let runtime = WorkspaceRuntimeStateService::current(
         &kernel.shared_database(),
         &ActorContext::local_user(),
@@ -277,6 +278,7 @@ fn execution_state_transitions_and_restore_history() {
         runtime.execution_phase,
         RestoreExecutionPhase::Partial
     );
+    assert!(runtime.health.last_restore_at.is_some());
 }
 
 #[test]

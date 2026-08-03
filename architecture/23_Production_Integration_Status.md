@@ -10,6 +10,7 @@ Demo mode is a **permanent adapter** (`app/src/demo/`) for development, screensh
 - Restore execution: `architecture/25_Restore_Execution_Model.md`
 - Live runtime state: `architecture/26_Workspace_Runtime_State.md`
 - Session persistence: `architecture/27_Workspace_Session_Persistence.md`
+- Runtime recovery: `architecture/28_Runtime_Recovery_Model.md`
 
 ---
 
@@ -105,6 +106,8 @@ Routing: `app/src/lib/ipc.ts` → Tauri `invoke` when not in adapter mode; else 
 | `get_workspace_runtime_state` IPC (operator; not Experience) | implemented |
 | `PersistentWorkspaceSession` + `WorkspaceSessionStore` | implemented |
 | Startup hydration + success-path checkpoints | implemented |
+| Operation fences + crash recovery dispositions | implemented |
+| Internal `RuntimeHealth` on `WorkspaceRuntimeState` | implemented |
 
 ---
 
@@ -114,3 +117,4 @@ Routing: `app/src/lib/ipc.ts` → Tauri `invoke` when not in adapter mode; else 
 2. Virtual desktop / browser-tab fidelity (out of scope).
 3. Check-in ambient metrics — only when real kernel sources exist (can later read `WorkspaceRuntimeState`).
 4. OS may refuse `SetForegroundWindow`; reported per-item, not silently forced.
+5. Crash-injection E2E across process kill during restore (unit fences cover contract; full OS kill not automated).

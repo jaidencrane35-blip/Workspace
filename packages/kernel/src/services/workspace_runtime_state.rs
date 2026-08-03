@@ -3,7 +3,7 @@
 //! Sole authoritative live desktop representation for runtime consumers.
 //! Capture still flows through [`CaptureCoordinator`]; Action still mutates via
 //! [`WindowMutator`]. This service owns projection cache, cache phase, execution
-//! phase, and restore history publication.
+//! phase, restore history publication, and internal [`RuntimeHealth`].
 
 use std::collections::VecDeque;
 use std::sync::{Arc, Mutex, OnceLock};
@@ -11,8 +11,8 @@ use std::sync::{Arc, Mutex, OnceLock};
 use workspace_database::{Database, ObservationPassRepository};
 use workspace_domain::{
     observation_now_rfc3339, ActorContext, IntentContext, ObservationCachePhase,
-    OperationOutcome, PersistentWorkspaceSession, RestoreCompatibilitySummary,
-    RestoreExecutionPhase, RestoreHistoryEntry, WorkspaceObservationDelta,
+    OperationOutcome, PersistentWorkspaceSession, RecoveryDisposition, RestoreCompatibilitySummary,
+    RestoreExecutionPhase, RestoreHistoryEntry, RuntimeHealth, WorkspaceObservationDelta,
     WorkspaceObservationStatus, WorkspaceRuntimeState, WorkspaceState,
 };
 
@@ -31,6 +31,7 @@ struct RuntimeOwnerInner {
     execution_phase: RestoreExecutionPhase,
     restore_history: VecDeque<RestoreHistoryEntry>,
     confidence_band: Option<String>,
+    health: RuntimeHealth,
 }
 
 impl Default for RuntimeOwnerInner {
@@ -43,6 +44,7 @@ impl Default for RuntimeOwnerInner {
             execution_phase: RestoreExecutionPhase::Idle,
             restore_history: VecDeque::new(),
             confidence_band: None,
+            health: RuntimeHealth::healthy(),
         }
     }
 }
@@ -63,7 +65,7 @@ impl WorkspaceRuntimeStateService {
     }
 
     /// Seed durable fields from a recovered session (startup hydration).
-    pub(crate) fn hydrate_from_session(session: &PersistentWorkspaceSession) {
+    pub(crate) fn hydrate_from_session(session: &PersistentWorkspaceSession, health: RuntimeHealth) {
         let mut guard = owner().lock().expect("runtime owner");
         guard.cached_pass_id = session.last_observation_pass_id.clone();
         guard.cached_desktop = None;
@@ -71,6 +73,7 @@ impl WorkspaceRuntimeStateService {
         guard.restore_history = session.restore_history.iter().cloned().collect();
         guard.cache_phase = ObservationCachePhase::Idle;
         guard.execution_phase = RestoreExecutionPhase::Idle;
+        guard.health = health;
         guard.generation = guard.generation.saturating_add(1);
     }
 
@@ -92,6 +95,9 @@ impl WorkspaceRuntimeStateService {
         guard.generation = guard.generation.saturating_add(1);
         guard.cached_desktop = None;
         guard.cached_pass_id = pass_id.map(str::to_string);
+        guard
+            .health
+            .note_observation_success(observation_now_rfc3339());
     }
 
     pub(crate) fn note_refresh_failed() {
@@ -107,6 +113,14 @@ impl WorkspaceRuntimeStateService {
         if guard.cache_phase != ObservationCachePhase::RefreshInProgress {
             guard.cache_phase = ObservationCachePhase::RefreshInProgress;
         }
+    }
+
+    pub(crate) fn note_needs_refresh_after_hydrate() {
+        let mut guard = owner().lock().expect("runtime owner");
+        if guard.health.recovery_disposition == RecoveryDisposition::None {
+            guard.health.recovery_disposition = RecoveryDisposition::NeedsRefresh;
+        }
+        guard.health.recompute_degraded();
     }
 
     pub(crate) fn note_execution_phase(phase: RestoreExecutionPhase) {
@@ -125,9 +139,10 @@ impl WorkspaceRuntimeStateService {
         purpose: impl Into<String>,
     ) {
         let mut guard = owner().lock().expect("runtime owner");
+        let recorded_at = observation_now_rfc3339();
         guard.execution_phase = RestoreExecutionPhase::from_operation_outcome(&outcome);
         guard.restore_history.push_front(RestoreHistoryEntry {
-            recorded_at: observation_now_rfc3339(),
+            recorded_at: recorded_at.clone(),
             operation_id: operation_id.into(),
             outcome,
             summary,
@@ -136,6 +151,15 @@ impl WorkspaceRuntimeStateService {
         while guard.restore_history.len() > WorkspaceRuntimeState::RESTORE_HISTORY_LIMIT {
             guard.restore_history.pop_back();
         }
+        guard.health.note_restore_success(recorded_at);
+    }
+
+    pub(crate) fn note_persistence_success(at: &str) {
+        owner()
+            .lock()
+            .expect("runtime owner")
+            .health
+            .note_persistence_success(at.to_string());
     }
 
     /// Invalidate cached desktop projection (forces rebuild on next read).
@@ -199,7 +223,7 @@ impl WorkspaceRuntimeStateService {
             rebuilt
         };
 
-        let (generation, cache_phase, execution_phase, restore_history, confidence_band) = {
+        let (generation, cache_phase, execution_phase, restore_history, confidence_band, health) = {
             let guard = owner().lock().expect("runtime owner");
             (
                 guard.generation,
@@ -207,6 +231,7 @@ impl WorkspaceRuntimeStateService {
                 guard.execution_phase,
                 guard.restore_history.iter().cloned().collect::<Vec<_>>(),
                 guard.confidence_band.clone(),
+                guard.health.clone(),
             )
         };
 
@@ -232,6 +257,7 @@ impl WorkspaceRuntimeStateService {
             capture_timestamp: observation.captured_at.clone(),
             confidence_band,
             restore_history,
+            health,
             generation,
             authority_effect: WorkspaceRuntimeState::AUTHORITY_EFFECT_NONE.into(),
         })
@@ -264,6 +290,11 @@ impl WorkspaceRuntimeStateService {
     #[cfg(test)]
     pub(crate) fn execution_phase_for_tests() -> RestoreExecutionPhase {
         owner().lock().expect("runtime owner").execution_phase
+    }
+
+    #[cfg(test)]
+    pub(crate) fn health_for_tests() -> RuntimeHealth {
+        owner().lock().expect("runtime owner").health.clone()
     }
 }
 

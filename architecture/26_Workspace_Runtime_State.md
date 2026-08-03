@@ -3,7 +3,7 @@
 **Implementation authority** for the canonical live desktop runtime model.  
 Experience chrome is frozen — this document describes kernel ownership only.
 
-Related: `24_Runtime_Observation_Model.md`, `25_Restore_Execution_Model.md`, `27_Workspace_Session_Persistence.md`.
+Related: `24_Runtime_Observation_Model.md`, `25_Restore_Execution_Model.md`, `27_Workspace_Session_Persistence.md`, `28_Runtime_Recovery_Model.md`.
 
 ---
 
@@ -53,6 +53,7 @@ ActionOperationResult + RestoreExecutionSummary
 | `capture_timestamp` | Latest observation `captured_at` |
 | `confidence_band` | Last `RestoreCompatibilitySummary` |
 | `restore_history` | Bounded ring of `RestoreHistoryEntry` (newest first) |
+| `health` | Internal `RuntimeHealth` (resilience; not Experience) |
 | `generation` | Bumped on invalidate / refresh complete|fail |
 
 ---

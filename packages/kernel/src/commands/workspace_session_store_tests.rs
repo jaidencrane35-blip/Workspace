@@ -55,13 +55,14 @@ fn save_load_checkpoint_round_trip() {
 }
 
 #[test]
-fn migration_v0_to_v1_on_load_path() {
+fn migration_v0_to_v2_on_load_path() {
     let mut session = PersistentWorkspaceSession::empty();
     session.schema_version = 0;
     session.active_workspace_id = Some("ws-mig".into());
     let migrated = session.migrate().unwrap();
-    assert_eq!(migrated.schema_version, 1);
+    assert_eq!(migrated.schema_version, WORKSPACE_SESSION_SCHEMA_VERSION);
     assert_eq!(migrated.active_workspace_id.as_deref(), Some("ws-mig"));
+    assert!(migrated.pending_operation.is_none());
 }
 
 #[test]

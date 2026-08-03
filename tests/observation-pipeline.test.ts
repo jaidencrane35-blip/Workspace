@@ -144,4 +144,15 @@ describe("observation model docs", () => {
     expect(doc).toContain("Derived");
     expect(doc).toContain("schema_version");
   });
+
+  it("documents runtime recovery model", () => {
+    const doc = fs.readFileSync(
+      path.join(root, "architecture/28_Runtime_Recovery_Model.md"),
+      "utf8",
+    );
+    expect(doc).toContain("RuntimeHealth");
+    expect(doc).toContain("NeedsRefresh");
+    expect(doc).toContain("begin_operation");
+    expect(doc).toContain("Recovery matrix");
+  });
 });

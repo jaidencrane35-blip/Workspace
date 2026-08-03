@@ -21,7 +21,8 @@ impl<'a> PersistentWorkspaceSessionRepository<'a> {
         let mut stmt = self.db.connection().prepare(
             "SELECT schema_version, updated_at, active_workspace_id, last_observation_pass_id,
                     last_capture_timestamp, last_confidence_band, last_saved_context_id,
-                    last_active_monitor_index, restore_history_json, payload_checksum
+                    last_active_monitor_index, restore_history_json, payload_checksum,
+                    pending_operation_json, last_recovery_json
              FROM workspace_persistent_session WHERE id = ?1",
         )?;
         let mut rows = stmt.query([SINGLETON_ID])?;
@@ -39,10 +40,26 @@ impl<'a> PersistentWorkspaceSessionRepository<'a> {
         let last_active_monitor_index: Option<i32> = row.get(7)?;
         let restore_history_json: String = row.get(8)?;
         let payload_checksum: String = row.get(9)?;
+        let pending_operation_json: Option<String> = row.get(10)?;
+        let last_recovery_json: Option<String> = row.get(11)?;
 
         let restore_history = serde_json::from_str(&restore_history_json).map_err(|error| {
             DatabaseError::Migration(format!("session restore_history corrupt: {error}"))
         })?;
+
+        let pending_operation = match pending_operation_json.as_deref() {
+            None | Some("") => None,
+            Some(raw) => Some(serde_json::from_str(raw).map_err(|error| {
+                DatabaseError::Migration(format!("session pending_operation corrupt: {error}"))
+            })?),
+        };
+
+        let last_recovery = match last_recovery_json.as_deref() {
+            None | Some("") => None,
+            Some(raw) => Some(serde_json::from_str(raw).map_err(|error| {
+                DatabaseError::Migration(format!("session last_recovery corrupt: {error}"))
+            })?),
+        };
 
         let session = PersistentWorkspaceSession {
             schema_version,
@@ -54,6 +71,8 @@ impl<'a> PersistentWorkspaceSessionRepository<'a> {
             last_saved_context_id,
             last_active_monitor_index,
             restore_history,
+            pending_operation,
+            last_recovery,
         };
 
         if !session.validate_checksum(&payload_checksum) {
@@ -76,6 +95,18 @@ impl<'a> PersistentWorkspaceSessionRepository<'a> {
         let history_json = serde_json::to_string(&session.restore_history).map_err(|error| {
             DatabaseError::Migration(format!("session history serialize: {error}"))
         })?;
+        let pending_json = match &session.pending_operation {
+            Some(fence) => Some(serde_json::to_string(fence).map_err(|error| {
+                DatabaseError::Migration(format!("session pending serialize: {error}"))
+            })?),
+            None => None,
+        };
+        let recovery_json = match &session.last_recovery {
+            Some(record) => Some(serde_json::to_string(record).map_err(|error| {
+                DatabaseError::Migration(format!("session recovery serialize: {error}"))
+            })?),
+            None => None,
+        };
         let checksum = session.checksum();
 
         self.db.transaction(|tx| {
@@ -84,8 +115,8 @@ impl<'a> PersistentWorkspaceSessionRepository<'a> {
                     id, schema_version, updated_at, active_workspace_id,
                     last_observation_pass_id, last_capture_timestamp, last_confidence_band,
                     last_saved_context_id, last_active_monitor_index, restore_history_json,
-                    payload_checksum
-                 ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)
+                    payload_checksum, pending_operation_json, last_recovery_json
+                 ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)
                  ON CONFLICT(id) DO UPDATE SET
                     schema_version = excluded.schema_version,
                     updated_at = excluded.updated_at,
@@ -96,7 +127,9 @@ impl<'a> PersistentWorkspaceSessionRepository<'a> {
                     last_saved_context_id = excluded.last_saved_context_id,
                     last_active_monitor_index = excluded.last_active_monitor_index,
                     restore_history_json = excluded.restore_history_json,
-                    payload_checksum = excluded.payload_checksum",
+                    payload_checksum = excluded.payload_checksum,
+                    pending_operation_json = excluded.pending_operation_json,
+                    last_recovery_json = excluded.last_recovery_json",
                 (
                     SINGLETON_ID,
                     session.schema_version,
@@ -109,6 +142,8 @@ impl<'a> PersistentWorkspaceSessionRepository<'a> {
                     session.last_active_monitor_index,
                     history_json.as_str(),
                     checksum.as_str(),
+                    pending_json.as_deref(),
+                    recovery_json.as_deref(),
                 ),
             )?;
             Ok(())
@@ -129,7 +164,8 @@ impl<'a> PersistentWorkspaceSessionRepository<'a> {
 mod tests {
     use super::*;
     use workspace_domain::{
-        OperationOutcome, RestoreExecutionSummary, RestoreHistoryEntry,
+        OperationOutcome, PendingOperationFence, PendingOperationKind, RestoreExecutionSummary,
+        RestoreHistoryEntry,
     };
 
     fn db() -> crate::connection::Database {
@@ -211,4 +247,27 @@ mod tests {
         );
     }
 
+    #[test]
+    fn pending_fence_round_trip() {
+        let database = db();
+        let repo = PersistentWorkspaceSessionRepository::new(&database);
+        let mut session = PersistentWorkspaceSession::empty();
+        session.pending_operation = Some(PendingOperationFence::new(
+            PendingOperationKind::RestoreExecution,
+            Some("op-fence".into()),
+        ));
+        repo.save(&session).unwrap();
+        let loaded = repo.load().unwrap().unwrap();
+        assert_eq!(
+            loaded.pending_operation.as_ref().map(|f| f.kind),
+            Some(PendingOperationKind::RestoreExecution)
+        );
+        assert_eq!(
+            loaded
+                .pending_operation
+                .as_ref()
+                .and_then(|f| f.correlation_id.as_deref()),
+            Some("op-fence")
+        );
+    }
 }

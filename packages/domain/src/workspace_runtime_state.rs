@@ -13,6 +13,7 @@ use serde::{Deserialize, Serialize};
 use crate::desktop_action::{
     OperationOutcome, RestoreCompatibilitySummary, RestoreExecutionSummary,
 };
+use crate::runtime_health::RuntimeHealth;
 use crate::workspace_observation::WorkspaceObservationStatus;
 use crate::workspace_state::WorkspaceState;
 
@@ -112,6 +113,8 @@ pub struct WorkspaceRuntimeState {
     pub confidence_band: Option<String>,
     /// Recent restore executions (newest first).
     pub restore_history: Vec<RestoreHistoryEntry>,
+    /// Internal resilience health (not an Experience surface).
+    pub health: RuntimeHealth,
     /// Monotonic generation bumped on invalidate / successful refresh.
     pub generation: u64,
     pub authority_effect: String,
@@ -132,6 +135,7 @@ impl WorkspaceRuntimeState {
             capture_timestamp: None,
             confidence_band: None,
             restore_history: Vec::new(),
+            health: RuntimeHealth::healthy(),
             generation: 0,
             authority_effect: Self::AUTHORITY_EFFECT_NONE.into(),
         }

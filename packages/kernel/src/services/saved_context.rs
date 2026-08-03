@@ -101,15 +101,43 @@ impl SavedContextService {
         request.validate().map_err(KernelError::from)?;
         Self::require_workspace(db, request)?;
 
+        // Durable fence: crash mid-save → Incomplete on next startup.
+        let _ = WorkspaceSessionStore::begin_operation(
+            db,
+            workspace_domain::PendingOperationKind::Save,
+            Some(request.workspace_id.to_string()),
+        );
+
         // The user has named the context and confirmed the current scope, so the
         // desktop may now be read exactly once.
-        let captured = capture(db)?;
-        Self::refuse_empty_platform_stub(&captured.snapshot)?;
+        let captured = match capture(db) {
+            Ok(value) => value,
+            Err(error) => {
+                let _ = WorkspaceSessionStore::clear_operation_fence(db);
+                return Err(error);
+            }
+        };
+        if let Err(error) = Self::refuse_empty_platform_stub(&captured.snapshot) {
+            let _ = WorkspaceSessionStore::clear_operation_fence(db);
+            return Err(error);
+        }
+
+        // Capture success clears its Observation fence; re-fence Save for the
+        // durable create boundary (crash here → Incomplete, not NeedsRefresh).
+        let _ = WorkspaceSessionStore::begin_operation(
+            db,
+            workspace_domain::PendingOperationKind::Save,
+            Some(request.workspace_id.to_string()),
+        );
 
         let context = Self::assemble(request, &captured.snapshot);
         {
             let guard = db.lock().map_err(|_| KernelError::NotReady)?;
-            SavedContextRepository::new(&guard).create(&context)?;
+            if let Err(error) = SavedContextRepository::new(&guard).create(&context) {
+                drop(guard);
+                let _ = WorkspaceSessionStore::clear_operation_fence(db);
+                return Err(error.into());
+            }
         }
         let _ = WorkspaceSessionStore::checkpoint_current(
             db,

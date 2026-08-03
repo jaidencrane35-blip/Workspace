@@ -167,6 +167,12 @@ impl CaptureCoordinator {
 
         record_lifecycle(CaptureLifecycleState::Started);
         WorkspaceRuntimeStateService::note_refresh_in_progress();
+        // Durable fence: crash mid-capture → NeedsRefresh on next startup.
+        let _ = WorkspaceSessionStore::begin_operation(
+            db,
+            workspace_domain::PendingOperationKind::Observation,
+            request.reason.clone(),
+        );
         Self::audit_lifecycle(
             db,
             actor,
@@ -217,6 +223,9 @@ impl CaptureCoordinator {
         drop(_guard);
         if matches!(&outcome, Ok(CaptureCoordinatorResult::Completed(_))) {
             let _ = WorkspaceSessionStore::checkpoint_current(db, actor, intent, None);
+        } else {
+            // Intentional failure — clear fence (crash would have left it).
+            let _ = WorkspaceSessionStore::clear_operation_fence(db);
         }
         outcome
     }

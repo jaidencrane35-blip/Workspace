@@ -161,7 +161,9 @@ pub(crate) use observation_delta::ObservationDeltaService;
 pub(crate) use observation_event_gateway::ObservationEventGateway;
 pub(crate) use workspace_state_engine::WorkspaceStateEngine;
 pub(crate) use workspace_runtime_state::WorkspaceRuntimeStateService;
-pub(crate) use workspace_session_store::WorkspaceSessionStore;
+pub(crate) use workspace_session_store::{
+    assert_runtime_session_consistent, WorkspaceSessionStore,
+};
 pub(crate) use workspace_scope::{approval_belongs_to_workspace, plan_belongs_to_workspace};
 pub use context::WorkspaceContextService;
 pub use database::DatabaseServiceHandle;

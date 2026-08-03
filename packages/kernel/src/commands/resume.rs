@@ -196,11 +196,26 @@ impl QueryCommand for ResolveResumePlan {
             .ok_or(KernelError::SavedContextNotFound)?;
 
         WorkspaceRuntimeStateService::note_execution_phase(RestoreExecutionPhase::Planning);
+        let _ = WorkspaceSessionStore::begin_operation(
+            &ctx.database,
+            workspace_domain::PendingOperationKind::RestorePlanning,
+            Some(self.saved_context_id.to_string()),
+        );
         // Companion copies fields; Action never sees the saved-context id.
         let request = action_request_from_saved_context(&context);
         let mutator = platform_window_mutator();
-        let plan =
-            DesktopActionService::resolve_plan(&request, &ctx.capability_set, mutator.as_ref())?;
+        let plan = match DesktopActionService::resolve_plan(
+            &request,
+            &ctx.capability_set,
+            mutator.as_ref(),
+        ) {
+            Ok(plan) => plan,
+            Err(error) => {
+                WorkspaceRuntimeStateService::note_execution_phase(RestoreExecutionPhase::Failed);
+                let _ = WorkspaceSessionStore::clear_operation_fence(&ctx.database);
+                return Err(error.into());
+            }
+        };
 
         let compatibility = RestoreCompatibilitySummary::from_plan(&plan);
         WorkspaceRuntimeStateService::note_compatibility(&compatibility);
@@ -276,14 +291,25 @@ impl MutationCommand for ExecuteResumePlan {
 
         // Matching authority alone is insufficient — each item still needs its
         // effect scope at point of use (ADM-AC-18).
+        let _ = WorkspaceSessionStore::begin_operation(
+            &ctx.database,
+            workspace_domain::PendingOperationKind::RestoreExecution,
+            Some(self.plan.plan_digest.clone()),
+        );
         let mutator = platform_window_mutator();
-        let result = RestoreExecutor::execute(
+        let result = match RestoreExecutor::execute(
             &self.plan,
             &proofs,
             &ctx.capability_set,
             mutator.as_ref(),
             &ActionExecutionControls::default(),
-        )?;
+        ) {
+            Ok(result) => result,
+            Err(error) => {
+                let _ = WorkspaceSessionStore::clear_operation_fence(&ctx.database);
+                return Err(error);
+            }
+        };
         let _ = WorkspaceSessionStore::checkpoint_current(
             &ctx.database,
             &ctx.actor_context,

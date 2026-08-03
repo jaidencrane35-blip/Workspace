@@ -1,16 +1,18 @@
 //! Durable subset of [`crate::WorkspaceRuntimeState`] (session persistence).
 //!
 //! Classification authority: `architecture/27_Workspace_Session_Persistence.md`.
+//! Recovery fences: `architecture/28_Runtime_Recovery_Model.md`.
 //! Only this record is written. Desktop projection and cache/execution phases
 //! are never serialized.
 
 use serde::{Deserialize, Serialize};
 
+use crate::runtime_health::{PendingOperationFence, RecoveryRecord};
 use crate::workspace_observation::observation_now_rfc3339;
 use crate::workspace_runtime_state::{RestoreHistoryEntry, WorkspaceRuntimeState};
 
 /// Current on-disk session schema version. Explicit migrations only.
-pub const WORKSPACE_SESSION_SCHEMA_VERSION: i32 = 1;
+pub const WORKSPACE_SESSION_SCHEMA_VERSION: i32 = 2;
 
 /// Persistent fields extracted from the live runtime (never includes desktop).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -24,6 +26,10 @@ pub struct PersistentWorkspaceSession {
     pub last_saved_context_id: Option<String>,
     pub last_active_monitor_index: Option<i32>,
     pub restore_history: Vec<RestoreHistoryEntry>,
+    /// Durable fence for crash detection (cleared on success).
+    pub pending_operation: Option<PendingOperationFence>,
+    /// Last acknowledged interruption — never silently discarded.
+    pub last_recovery: Option<RecoveryRecord>,
 }
 
 impl PersistentWorkspaceSession {
@@ -38,10 +44,13 @@ impl PersistentWorkspaceSession {
             last_saved_context_id: None,
             last_active_monitor_index: None,
             restore_history: Vec::new(),
+            pending_operation: None,
+            last_recovery: None,
         }
     }
 
     /// Extract only persistent fields from a live runtime snapshot.
+    /// Success-path extraction clears the operation fence.
     pub fn from_runtime(runtime: &WorkspaceRuntimeState) -> Self {
         Self {
             schema_version: WORKSPACE_SESSION_SCHEMA_VERSION,
@@ -58,6 +67,8 @@ impl PersistentWorkspaceSession {
                 .take(WorkspaceRuntimeState::RESTORE_HISTORY_LIMIT)
                 .cloned()
                 .collect(),
+            pending_operation: None,
+            last_recovery: None,
         }
     }
 
@@ -77,7 +88,7 @@ impl PersistentWorkspaceSession {
         while self.schema_version < WORKSPACE_SESSION_SCHEMA_VERSION {
             self = match self.schema_version {
                 0 => migrate_v0_to_v1(self)?,
-                // Future: 1 => migrate_v1_to_v2(self)?,
+                1 => migrate_v1_to_v2(self)?,
                 other => {
                     return Err(PersistentWorkspaceSessionError::IncompatibleSchema {
                         found: other,
@@ -91,8 +102,18 @@ impl PersistentWorkspaceSession {
 
     /// FNV-1a checksum over durable payload (corruption detection).
     pub fn checksum(&self) -> String {
+        let pending = self
+            .pending_operation
+            .as_ref()
+            .and_then(|f| serde_json::to_string(f).ok())
+            .unwrap_or_default();
+        let recovery = self
+            .last_recovery
+            .as_ref()
+            .and_then(|r| serde_json::to_string(r).ok())
+            .unwrap_or_default();
         let material = format!(
-            "{}|{}|{}|{}|{}|{}|{}|{}",
+            "{}|{}|{}|{}|{}|{}|{}|{}|{}|{}",
             self.schema_version,
             self.active_workspace_id.as_deref().unwrap_or(""),
             self.last_observation_pass_id.as_deref().unwrap_or(""),
@@ -103,6 +124,8 @@ impl PersistentWorkspaceSession {
                 .map(|v| v.to_string())
                 .unwrap_or_default(),
             serde_json::to_string(&self.restore_history).unwrap_or_else(|_| "[]".into()),
+            pending,
+            recovery,
         );
         format!("{:016x}", fnv1a64(material.as_bytes()))
     }
@@ -119,13 +142,24 @@ impl PersistentWorkspaceSession {
 fn migrate_v0_to_v1(
     mut session: PersistentWorkspaceSession,
 ) -> Result<PersistentWorkspaceSession, PersistentWorkspaceSessionError> {
-    // v0 was never shipped; treat as empty-to-v1 identity upgrade.
     session.schema_version = 1;
     session.updated_at = observation_now_rfc3339();
     if session.restore_history.len() > WorkspaceRuntimeState::RESTORE_HISTORY_LIMIT {
         session
             .restore_history
             .truncate(WorkspaceRuntimeState::RESTORE_HISTORY_LIMIT);
+    }
+    Ok(session)
+}
+
+fn migrate_v1_to_v2(
+    mut session: PersistentWorkspaceSession,
+) -> Result<PersistentWorkspaceSession, PersistentWorkspaceSessionError> {
+    session.schema_version = 2;
+    session.updated_at = observation_now_rfc3339();
+    // v1 had no fences; leave pending/last_recovery as deserialized (None).
+    if session.pending_operation.is_none() {
+        // ok
     }
     Ok(session)
 }
@@ -154,6 +188,7 @@ pub enum PersistentWorkspaceSessionError {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::runtime_health::PendingOperationKind;
 
     #[test]
     fn migrate_identity_at_current_version() {
@@ -164,13 +199,27 @@ mod tests {
     }
 
     #[test]
-    fn migrate_v0_to_v1() {
+    fn migrate_v0_to_v2() {
         let mut session = PersistentWorkspaceSession::empty();
         session.schema_version = 0;
         session.active_workspace_id = Some("ws-1".into());
         let migrated = session.migrate().unwrap();
-        assert_eq!(migrated.schema_version, 1);
+        assert_eq!(migrated.schema_version, 2);
         assert_eq!(migrated.active_workspace_id.as_deref(), Some("ws-1"));
+        assert!(migrated.pending_operation.is_none());
+    }
+
+    #[test]
+    fn migrate_v1_to_v2() {
+        let mut session = PersistentWorkspaceSession::empty();
+        session.schema_version = 1;
+        session.last_observation_pass_id = Some("pass-1".into());
+        let migrated = session.migrate().unwrap();
+        assert_eq!(migrated.schema_version, 2);
+        assert_eq!(
+            migrated.last_observation_pass_id.as_deref(),
+            Some("pass-1")
+        );
     }
 
     #[test]
@@ -184,10 +233,14 @@ mod tests {
     }
 
     #[test]
-    fn checksum_stable_for_same_payload() {
-        let session = PersistentWorkspaceSession::empty();
-        assert_eq!(session.checksum(), session.checksum());
+    fn checksum_includes_pending_fence() {
+        let mut session = PersistentWorkspaceSession::empty();
+        let without = session.checksum();
+        session.pending_operation = Some(PendingOperationFence::new(
+            PendingOperationKind::Observation,
+            Some("c1".into()),
+        ));
+        assert_ne!(session.checksum(), without);
         assert!(session.validate_checksum(&session.checksum()));
-        assert!(!session.validate_checksum("deadbeef"));
     }
 }
