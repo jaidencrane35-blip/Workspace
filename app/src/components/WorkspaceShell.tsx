@@ -251,10 +251,9 @@ function ShellBody({
       }
     >
       <div className="ws-layer ws-layer--bg" aria-hidden="true">
-        <div className="ws-atmosphere">
+        <div className="ws-atmosphere" data-material="environmental">
           <div className="ws-atmosphere__glow ws-atmosphere__glow--a" />
           <div className="ws-atmosphere__glow ws-atmosphere__glow--b" />
-          <div className="ws-atmosphere__glow ws-atmosphere__glow--c" />
           <div className="ws-atmosphere__grain" />
           <div className="ws-atmosphere__vignette" />
         </div>

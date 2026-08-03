@@ -8,7 +8,7 @@ interface EmptyStructureProps {
 }
 
 /**
- * Premium empty field — possibility through atmosphere, not instructions.
+ * Empty field — static atmosphere, no decorative pulse.
  */
 export function EmptyStructure({
   title = "Moments will float here",
@@ -22,20 +22,7 @@ export function EmptyStructure({
       className="empty-structure empty-possibility span-12"
       aria-label="Empty workspace structure"
     >
-      <motion.div
-        className="empty-possibility__halo"
-        aria-hidden="true"
-        animate={
-          reduceMotion
-            ? undefined
-            : { opacity: [0.25, 0.45, 0.3], scale: [1, 1.04, 1.01] }
-        }
-        transition={
-          reduceMotion
-            ? undefined
-            : { duration: 12, repeat: Infinity, ease: "easeInOut" }
-        }
-      />
+      <div className="empty-possibility__halo" aria-hidden="true" />
       <div className="empty-structure__copy sr-only">
         <h3>{title}</h3>
         <p className="muted">{hint}</p>

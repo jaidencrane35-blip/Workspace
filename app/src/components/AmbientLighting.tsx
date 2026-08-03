@@ -79,17 +79,17 @@ export function AmbientLighting({
           top: `${spot.y}%`,
           opacity: spot.strength,
         }}
-        transition={reduceMotion ? { duration: 0.01 } : spring.lush}
+        transition={reduceMotion ? { duration: 0.01 } : spring.soft}
         style={{
           background: `radial-gradient(circle at center, ${
             spot.warm > 0.1 ? warm : cool
-          }, transparent 68%)`,
+          }, transparent 72%)`,
         }}
       />
       <motion.div
         className="ws-ambient__wash"
         animate={{
-          opacity: living ? 0.38 : focus === "none" ? 0.18 : 0.28,
+          opacity: living ? 0.28 : focus === "none" ? 0.12 : 0.2,
         }}
         transition={reduceMotion ? { duration: 0.01 } : spring.soft}
       />
@@ -97,8 +97,8 @@ export function AmbientLighting({
         <motion.div
           className="ws-ambient__memory"
           initial={reduceMotion ? false : { opacity: 0 }}
-          animate={{ opacity: 0.22 }}
-          transition={reduceMotion ? { duration: 0.01 } : spring.lush}
+          animate={{ opacity: 0.16 }}
+          transition={reduceMotion ? { duration: 0.01 } : spring.soft}
         />
       ) : null}
     </div>

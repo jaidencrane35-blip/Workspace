@@ -1,0 +1,44 @@
+{
+  "materialCoherence": {
+    "envRole": true,
+    "placeRole": true,
+    "objectDepth": true,
+    "noUiBloom": true
+  },
+  "opticalHierarchy": {
+    "neighboursAsObjects": true,
+    "writingInObject": true,
+    "conversationInObject": true
+  },
+  "environmentalDepth": {
+    "glowReduced": true,
+    "restoreDepth": true
+  },
+  "motionDiscipline": {
+    "noDecorativeHaloLoop": true,
+    "restoreMotionPresent": true
+  },
+  "detail": {
+    "idle": {
+      "glowCount": 2,
+      "materialPlace": true,
+      "envMaterial": true,
+      "heroShadowDepth": true,
+      "heroNoCyanBloom": true,
+      "ambientNeighbours": 3,
+      "infiniteHaloAbsent": true
+    },
+    "writing": {
+      "presence": true,
+      "writeInside": true
+    },
+    "restore": {
+      "preview": true,
+      "panes": 3
+    },
+    "conversation": {
+      "formInside": true
+    }
+  },
+  "pass": true
+}

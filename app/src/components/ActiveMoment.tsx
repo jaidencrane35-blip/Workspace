@@ -379,6 +379,7 @@ export function PersistentMomentStage({
       className="ws-object-stage"
       data-presence={presence}
       data-cognitive="on"
+      data-material="place"
       data-testid="persistent-moment-stage"
     >
       <div className="ws-object-stage__anchor home-hero-band home-hero-band--living">

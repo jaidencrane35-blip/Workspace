@@ -78,14 +78,11 @@ export function ContinuePreviewBody({
                 .filter(Boolean)
                 .join(" ")}
               initial={
-                reduceMotion
-                  ? false
-                  : { opacity: 0, y: 10, filter: "blur(6px)" }
+                reduceMotion ? false : { opacity: 0, y: 8 }
               }
               animate={{
-                opacity: skip ? 0.42 : 1,
+                opacity: skip ? 0.4 : 1,
                 y: 0,
-                filter: "blur(0px)",
               }}
               transition={{
                 ...spring.lush,

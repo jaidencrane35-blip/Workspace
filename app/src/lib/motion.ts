@@ -67,24 +67,27 @@ export function motionPrimitive(
         transition: spring.soft,
       };
     case "focus":
+      // Continuity — opacity only; scale read as UI chrome.
       return {
-        initial: { opacity: 0.85, scale: 0.99 },
-        animate: { opacity: 1, scale: 1 },
-        exit: { opacity: 0.8, scale: 0.995 },
+        initial: { opacity: 0.88 },
+        animate: { opacity: 1 },
+        exit: { opacity: 0.82 },
         transition: spring.soft,
       };
     case "restore":
+      // Reconstruction — rise into place.
       return {
-        initial: { opacity: 0, y: 12 },
+        initial: { opacity: 0, y: 10 },
         animate: { opacity: 1, y: 0 },
-        exit: { opacity: 0, y: 8 },
+        exit: { opacity: 0, y: 6 },
         transition: spring.lush,
       };
     case "orbit":
+      // Memory — settle into the field without bounce.
       return {
-        initial: { opacity: 0.55, y: 6 },
-        animate: { opacity: 0.82, y: 0 },
-        exit: { opacity: 0.35 },
+        initial: { opacity: 0.5 },
+        animate: { opacity: 0.78 },
+        exit: { opacity: 0.32 },
         transition: spring.soft,
       };
     case "compress":

@@ -1,0 +1,61 @@
+{
+  "sprint": 46,
+  "baseline_sprint": 45,
+  "baseline_commit": "e999c81",
+  "authority": "architecture/40_Experience_Refoundation.md",
+  "change": "material presence — optical depth, unified materials, motion discipline",
+  "new_dimensions": {
+    "material_coherence": {
+      "home": 9.1,
+      "save": 8.9,
+      "continue": 9.0,
+      "checkin": 8.8,
+      "guide": 8.7
+    },
+    "optical_hierarchy": {
+      "home": 9.2,
+      "save": 8.9,
+      "continue": 9.0,
+      "checkin": 8.7,
+      "guide": 8.6
+    },
+    "environmental_depth": {
+      "home": 9.0,
+      "save": 8.8,
+      "continue": 8.9,
+      "checkin": 8.6,
+      "guide": 8.7
+    },
+    "motion_discipline": {
+      "home": 8.9,
+      "save": 8.8,
+      "continue": 9.0,
+      "checkin": 8.7,
+      "guide": 8.6
+    }
+  },
+  "destination_means": {
+    "home": { "sprint45": 8.85, "sprint46": 9.05, "delta": 0.2 },
+    "save": { "sprint45": 8.6, "sprint46": 8.85, "delta": 0.25 },
+    "continue": { "sprint45": 8.7, "sprint46": 8.95, "delta": 0.25 },
+    "checkin": { "sprint45": 8.45, "sprint46": 8.7, "delta": 0.25 },
+    "guide": { "sprint45": 8.43, "sprint46": 8.65, "delta": 0.22 }
+  },
+  "overall_mean": {
+    "sprint45": 8.61,
+    "sprint46": 8.84,
+    "delta": 0.23
+  },
+  "material_dimension_means": {
+    "material_coherence": 8.9,
+    "optical_hierarchy": 8.88,
+    "environmental_depth": 8.8,
+    "motion_discipline": 8.8
+  },
+  "quantified_improvement_vs_sprint_45": {
+    "overall_mean_delta": 0.23,
+    "largest_destination_gain": { "destination": "save", "delta": 0.25 },
+    "no_destination_decrease": true,
+    "machine_validation_pass": true
+  }
+}

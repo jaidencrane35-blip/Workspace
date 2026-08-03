@@ -364,7 +364,7 @@ export function PilotMeasurementPanel({
             className="checkin-chat checkin-chat--live"
             initial={reduceMotion ? false : { opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={reduceMotion ? undefined : { opacity: 0.45, scale: 0.985 }}
+            exit={reduceMotion ? undefined : { opacity: 0.4 }}
             transition={spring.soft}
           >
             <p className="checkin-prompt">
@@ -420,7 +420,7 @@ export function PilotMeasurementPanel({
             className="checkin-chat checkin-chat--live"
             initial={reduceMotion ? false : { opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={reduceMotion ? undefined : { opacity: 0.45, scale: 0.985 }}
+            exit={reduceMotion ? undefined : { opacity: 0.4 }}
             transition={spring.soft}
           >
             <p className="checkin-prompt">
@@ -487,7 +487,7 @@ export function PilotMeasurementPanel({
             className="checkin-chat checkin-chat--live"
             initial={reduceMotion ? false : { opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={reduceMotion ? undefined : { opacity: 0.45, scale: 0.985 }}
+            exit={reduceMotion ? undefined : { opacity: 0.4 }}
             transition={spring.soft}
           >
             <div className="checkin-prompt">
@@ -534,7 +534,7 @@ export function PilotMeasurementPanel({
             className="checkin-chat checkin-chat--live"
             initial={reduceMotion ? false : { opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={reduceMotion ? undefined : { opacity: 0.45, scale: 0.985 }}
+            exit={reduceMotion ? undefined : { opacity: 0.4 }}
             transition={spring.soft}
           >
             <div className="checkin-prompt">
