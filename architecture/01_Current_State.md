@@ -169,9 +169,28 @@ premium empty; object relationship influence. Product Proof chrome preserved.
 typography rhythm, icon metrics, surface/form/focus polish, a11y contrast and
 touch targets; no new architecture.
 
+✓ Version 2 Experience / engineering confidence track through Sprint 74 complete
+on branch `v2-dev` (LEDGER-0046). Authority tip:
+`architecture/65_Architectural_Maintainability.md` · tip commit `84f9f02`.
+Docs `40`–`65`. Continuous engineering certification (Sprint 73) and
+architectural maintainability reporting (Sprint 74) established. Shutdown
+handoff for replaceable agents: `architecture/V2_AGENT_HANDOFF.md`.
+
 ---
 
 # Active Task
+
+**Two concurrent programme surfaces (do not conflate):**
+
+1. **Product Proof** — Establish product evidence for the trusted
+   interruption-recovery hypothesis before sustained capability research or
+   large-scale feature implementation (unchanged mission below).
+
+2. **Version 2 engineering confidence (`v2-dev`)** — Architecture expansion is
+   complete through doc `65`. Future V2 work must improve engineering quality /
+   maintainability / certification confidence only. Start new V2 sessions from
+   `architecture/V2_AGENT_HANDOFF.md` + tip commit `84f9f02`. No Sprint 75 is
+   authorised until a new brief is provided.
 
 Establish product evidence for the trusted interruption-recovery hypothesis
 before sustained capability research or large-scale feature implementation.
@@ -273,6 +292,12 @@ LEDGER-0013 pilot execution.
 Recommended next Experience milestone (when authorised): **Experience Phase 3
 — rich visual Continue library** per `21_Experience_Roadmap.md`. Phase 2 Home
 dashboard is complete (LEDGER-0037). Capability expansion: **None**.
+
+**Version 2 (`v2-dev`) next engineering objective (when authorised):** continue
+from `architecture/V2_AGENT_HANDOFF.md`. Tip is Sprint 74 / doc `65` / commit
+`84f9f02`. Do not add architectural layers, governance systems, certification
+systems, resolver stages, or persistence models. Prefer proving long-term
+maintainability and engineering confidence.
 
 ---
 

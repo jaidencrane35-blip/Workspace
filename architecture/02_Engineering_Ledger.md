@@ -2328,3 +2328,55 @@ engines, state models, or Product Proof behaviour change.
 Validation: `pnpm typecheck`, `pnpm test` green.
 
 Status: Complete
+
+### LEDGER-0046
+
+Entry ID: LEDGER-0046  
+Timestamp: 2026-08-03  
+Capability: Version 2 engineering confidence (Experience DEV track on `v2-dev`)  
+Related ADRs: ADR-0008  
+Related Research: N/A — engineering confidence / maintainability evidence only  
+Related Authority: `architecture/40_*.md`–`65_*.md`; tip
+`65_Architectural_Maintainability.md`
+
+Decision: Record Version 2 tip through Sprint 74 and publish a replaceable-agent
+shutdown handoff. Architecture expansion for this track is complete through
+continuous engineering certification (Sprint 73, commit `3368705`, doc `64`)
+and architectural maintainability reporting (Sprint 74, commit `84f9f02`,
+doc `65`). Future V2 work must optimize engineering confidence rather than
+expand architecture. No new architectural layers, governance systems,
+certification systems, resolver stages, or persistence models unless a future
+authorised brief explicitly requires them.
+
+Implementation:
+- Tip commit `84f9f02` on `v2-dev`:
+  `feat(v2): implement architectural maintainability reporting`
+- Prior tip `3368705`:
+  `feat(v2): implement continuous engineering certification`
+- Key modules: `app/src/dev/engineeringCertification.ts`,
+  `app/src/dev/architecturalMaintainability.ts`
+- Authority chain extended `64 → 65` in `ARCHITECTURE_AUTHORITY_DOCS` /
+  `AUTHORITY_CHAIN`
+- Shutdown handoff: `architecture/V2_AGENT_HANDOFF.md` (operational; not an
+  architecture authority tip)
+- Current State updated to surface Product Proof vs V2 confidence tracks
+
+Validation:
+- At tip: `pnpm typecheck` green; `pnpm test` 342 tests green
+- Resolver stage count remains 5
+- Production Product Proof behaviour unchanged by Sprints 73–74
+
+Knowledge Gained:
+- V2 can self-verify via a canonical invariant registry + certification runner
+  without new persistence
+- Maintainability and dependency health can be reported deterministically from
+  a frozen module inventory for DEV overlay use
+- Conversation is insufficient for session restart; handoff must live in the
+  repository (ADR-0008)
+
+Unlocks: Replaceable agent sessions can resume V2 engineering-quality work from
+repository authority without chat history.
+
+Supersedes: None (operational record + tip acknowledgment)
+
+Status: Complete
