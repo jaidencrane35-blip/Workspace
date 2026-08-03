@@ -1,0 +1,630 @@
+{
+  "sprint": 50,
+  "baseline_sprint": 49,
+  "baseline_commit": "6592901",
+  "authority": [
+    "architecture/40_Experience_Refoundation.md",
+    "concept boards Aug 1 2026 (board-a, board-b)",
+    "accepted modes: minimal-immersive, modular-tiles, focus",
+    "refused: AI rails, gauges, live thumbnails"
+  ],
+  "weights": {
+    "compositionSimilarity": 0.14,
+    "focalPointPlacement": 0.14,
+    "whitespaceDistribution": 0.12,
+    "objectHierarchy": 0.14,
+    "typographyDensity": 0.1,
+    "contrastDistribution": 0.1,
+    "edgeDensity": 0.1,
+    "visualBalance": 0.1,
+    "motionIntent": 0.06
+  },
+  "motionIntent": 0.92,
+  "destinationScores": {
+    "home": {
+      "mode": "minimal-immersive",
+      "board": "board-b.png",
+      "weightedSimilarity": 0.6268,
+      "metrics": {
+        "compositionSimilarity": 0.9215390956878659,
+        "focalPointPlacement": 0.5707581529638799,
+        "whitespaceDistribution": 0.460753125,
+        "objectHierarchy": 0.42930259704589846,
+        "typographyDensity": 0.84752625,
+        "contrastDistribution": 0.6728229794952301,
+        "edgeDensity": 0.4455500000000001,
+        "visualBalance": 0.5065814442992931,
+        "motionIntent": 0.92
+      },
+      "current": {
+        "whitespace": 0.977796875,
+        "contrast": 0.14880774140334374,
+        "edgeDensity": 0.16875,
+        "typographyDensity": 0.04640625000000001,
+        "objectHierarchy": 0.08142117261886596,
+        "focalX": 0.3405421287412195,
+        "focalY": 0.23971234881629336,
+        "visualBalance": 0.23085969454797706,
+        "compositionCenterBias": 0.16632296512895986,
+        "brightShare": 0.002890625,
+        "meanLuminance": 0.06601262156863025
+      },
+      "concept": {
+        "whitespace": 0.43855,
+        "contrast": 0.4759847619081137,
+        "edgeDensity": 0.7232,
+        "typographyDensity": 0.19888,
+        "objectHierarchy": 0.6521185755729675,
+        "focalX": 0.41921516050864904,
+        "focalY": 0.46230108270624665,
+        "visualBalance": 0.724278250248684,
+        "compositionCenterBias": 0.24478386944109398,
+        "brightShare": 0.0322375,
+        "meanLuminance": 0.1820828917058626
+      }
+    },
+    "save": {
+      "mode": "focus",
+      "board": "board-b.png",
+      "weightedSimilarity": 0.6272,
+      "metrics": {
+        "compositionSimilarity": 0.9558060716715672,
+        "focalPointPlacement": 0.4460677844695202,
+        "whitespaceDistribution": 0.696296875,
+        "objectHierarchy": 0.5295322686433792,
+        "typographyDensity": 0.797661875,
+        "contrastDistribution": 0.7202902649841082,
+        "edgeDensity": 0.26422499999999993,
+        "visualBalance": 0.39818237975787696,
+        "motionIntent": 0.92
+      },
+      "current": {
+        "whitespace": 0.988515625,
+        "contrast": 0.1130900530433646,
+        "edgeDensity": 0.125125,
+        "typographyDensity": 0.034409375,
+        "objectHierarchy": 0.10829741656780242,
+        "focalX": 0.29415852182098595,
+        "focalY": 0.12872459202483108,
+        "visualBalance": 0.04023684185349474,
+        "compositionCenterBias": 0.26945512271066824,
+        "brightShare": 0.000015625,
+        "meanLuminance": 0.048085519926453615
+      },
+      "concept": {
+        "whitespace": 0.6848125,
+        "contrast": 0.3927997880592564,
+        "edgeDensity": 0.8609,
+        "typographyDensity": 0.23674750000000003,
+        "objectHierarchy": 0.5787651479244232,
+        "focalX": 0.3520129329450682,
+        "focalY": 0.427843697370417,
+        "visualBalance": 0.6420544620956178,
+        "compositionCenterBias": 0.22526119438223538,
+        "brightShare": 0.008625,
+        "meanLuminance": 0.123216205058839
+      }
+    },
+    "continue": {
+      "mode": "minimal-immersive",
+      "board": "board-a.png",
+      "weightedSimilarity": 0.6439,
+      "metrics": {
+        "compositionSimilarity": 0.9907967395620412,
+        "focalPointPlacement": 0.6351739132806171,
+        "whitespaceDistribution": 0.6589482230392156,
+        "objectHierarchy": 0.34847435355186474,
+        "typographyDensity": 0.8154898284313725,
+        "contrastDistribution": 0.6032324161683156,
+        "edgeDensity": 0.32905392156862745,
+        "visualBalance": 0.5840435879279354,
+        "motionIntent": 0.92
+      },
+      "current": {
+        "whitespace": 0.951921875,
+        "contrast": 0.20603540107328477,
+        "edgeDensity": 0.28425,
+        "typographyDensity": 0.07816875000000001,
+        "objectHierarchy": 0.09611858725547791,
+        "focalX": 0.37318020044691236,
+        "focalY": 0.354083722693175,
+        "visualBalance": 0.4930181941170204,
+        "compositionCenterBias": 0.26548531182743296,
+        "brightShare": 0.005921875,
+        "meanLuminance": 0.0740722100244737
+      },
+      "concept": {
+        "whitespace": 0.6108700980392157,
+        "contrast": 0.6028029849049692,
+        "edgeDensity": 0.9551960784313726,
+        "typographyDensity": 0.2626789215686275,
+        "objectHierarchy": 0.7476442337036132,
+        "focalX": 0.4813545261087966,
+        "focalY": 0.5230821916707598,
+        "visualBalance": 0.908974606189085,
+        "compositionCenterBias": 0.25628205138947413,
+        "brightShare": 0.053909313725490196,
+        "meanLuminance": 0.1660558843809692
+      }
+    },
+    "checkin": {
+      "mode": "focus",
+      "board": "board-b.png",
+      "weightedSimilarity": 0.731,
+      "metrics": {
+        "compositionSimilarity": 0.9717744783210981,
+        "focalPointPlacement": 0.801394825841022,
+        "whitespaceDistribution": 0.7193750000000001,
+        "objectHierarchy": 0.518799078464508,
+        "typographyDensity": 0.8509431249999999,
+        "contrastDistribution": 0.8073023163566125,
+        "edgeDensity": 0.457975,
+        "visualBalance": 0.5698418284300861,
+        "motionIntent": 0.92
+      },
+      "current": {
+        "whitespace": 0.9654375,
+        "contrast": 0.20010210441586895,
+        "edgeDensity": 0.318875,
+        "typographyDensity": 0.08769062500000001,
+        "objectHierarchy": 0.09756422638893127,
+        "focalX": 0.35344029544130146,
+        "focalY": 0.31862017776439744,
+        "visualBalance": 0.2118962905257039,
+        "compositionCenterBias": 0.25348671606113726,
+        "brightShare": 0.005296875,
+        "meanLuminance": 0.07459086079655196
+      },
+      "concept": {
+        "whitespace": 0.6848125,
+        "contrast": 0.3927997880592564,
+        "edgeDensity": 0.8609,
+        "typographyDensity": 0.23674750000000003,
+        "objectHierarchy": 0.5787651479244232,
+        "focalX": 0.3520129329450682,
+        "focalY": 0.427843697370417,
+        "visualBalance": 0.6420544620956178,
+        "compositionCenterBias": 0.22526119438223538,
+        "brightShare": 0.008625,
+        "meanLuminance": 0.123216205058839
+      }
+    },
+    "guide": {
+      "mode": "minimal-immersive",
+      "board": "board-b.png",
+      "weightedSimilarity": 0.6108,
+      "metrics": {
+        "compositionSimilarity": 0.9115764660468579,
+        "focalPointPlacement": 0.5205025618334556,
+        "whitespaceDistribution": 0.45519062499999996,
+        "objectHierarchy": 0.4097995400428772,
+        "typographyDensity": 0.8492793750000001,
+        "contrastDistribution": 0.646960941666168,
+        "edgeDensity": 0.451925,
+        "visualBalance": 0.48317489409784786,
+        "motionIntent": 0.92
+      },
+      "current": {
+        "whitespace": 0.983359375,
+        "contrast": 0.12294570357428168,
+        "edgeDensity": 0.175125,
+        "typographyDensity": 0.048159375000000004,
+        "objectHierarchy": 0.061918115615844725,
+        "focalX": 0.30490174184948865,
+        "focalY": 0.22464045332064575,
+        "visualBalance": 0.20745314434653184,
+        "compositionCenterBias": 0.1563603354879519,
+        "brightShare": 0.00103125,
+        "meanLuminance": 0.062400667855397315
+      },
+      "concept": {
+        "whitespace": 0.43855,
+        "contrast": 0.4759847619081137,
+        "edgeDensity": 0.7232,
+        "typographyDensity": 0.19888,
+        "objectHierarchy": 0.6521185755729675,
+        "focalX": 0.41921516050864904,
+        "focalY": 0.46230108270624665,
+        "visualBalance": 0.724278250248684,
+        "compositionCenterBias": 0.24478386944109398,
+        "brightShare": 0.0322375,
+        "meanLuminance": 0.1820828917058626
+      }
+    }
+  },
+  "overallConvergence": 0.6479,
+  "measuredGaps": [
+    {
+      "id": "GAP-GUIDE",
+      "kind": "measurement",
+      "destination": "guide",
+      "title": "Residual perceptual gap vs minimal-immersive",
+      "severity": "S2",
+      "confidence": 0.8,
+      "measuredSimilarity": 0.6108,
+      "residualGap": 0.389,
+      "theoreticalParityCeiling": 0.047,
+      "metrics": {
+        "compositionSimilarity": 0.9115764660468579,
+        "focalPointPlacement": 0.5205025618334556,
+        "whitespaceDistribution": 0.45519062499999996,
+        "objectHierarchy": 0.4097995400428772,
+        "typographyDensity": 0.8492793750000001,
+        "contrastDistribution": 0.646960941666168,
+        "edgeDensity": 0.451925,
+        "visualBalance": 0.48317489409784786,
+        "motionIntent": 0.92
+      }
+    },
+    {
+      "id": "GAP-HOME",
+      "kind": "measurement",
+      "destination": "home",
+      "title": "Residual perceptual gap vs minimal-immersive",
+      "severity": "S2",
+      "confidence": 0.8,
+      "measuredSimilarity": 0.6268,
+      "residualGap": 0.373,
+      "theoreticalParityCeiling": 0.045,
+      "metrics": {
+        "compositionSimilarity": 0.9215390956878659,
+        "focalPointPlacement": 0.5707581529638799,
+        "whitespaceDistribution": 0.460753125,
+        "objectHierarchy": 0.42930259704589846,
+        "typographyDensity": 0.84752625,
+        "contrastDistribution": 0.6728229794952301,
+        "edgeDensity": 0.4455500000000001,
+        "visualBalance": 0.5065814442992931,
+        "motionIntent": 0.92
+      }
+    },
+    {
+      "id": "GAP-SAVE",
+      "kind": "measurement",
+      "destination": "save",
+      "title": "Residual perceptual gap vs focus",
+      "severity": "S2",
+      "confidence": 0.8,
+      "measuredSimilarity": 0.6272,
+      "residualGap": 0.373,
+      "theoreticalParityCeiling": 0.045,
+      "metrics": {
+        "compositionSimilarity": 0.9558060716715672,
+        "focalPointPlacement": 0.4460677844695202,
+        "whitespaceDistribution": 0.696296875,
+        "objectHierarchy": 0.5295322686433792,
+        "typographyDensity": 0.797661875,
+        "contrastDistribution": 0.7202902649841082,
+        "edgeDensity": 0.26422499999999993,
+        "visualBalance": 0.39818237975787696,
+        "motionIntent": 0.92
+      }
+    },
+    {
+      "id": "GAP-CONTINUE",
+      "kind": "measurement",
+      "destination": "continue",
+      "title": "Residual perceptual gap vs minimal-immersive",
+      "severity": "S2",
+      "confidence": 0.8,
+      "measuredSimilarity": 0.6439,
+      "residualGap": 0.356,
+      "theoreticalParityCeiling": 0.043,
+      "metrics": {
+        "compositionSimilarity": 0.9907967395620412,
+        "focalPointPlacement": 0.6351739132806171,
+        "whitespaceDistribution": 0.6589482230392156,
+        "objectHierarchy": 0.34847435355186474,
+        "typographyDensity": 0.8154898284313725,
+        "contrastDistribution": 0.6032324161683156,
+        "edgeDensity": 0.32905392156862745,
+        "visualBalance": 0.5840435879279354,
+        "motionIntent": 0.92
+      }
+    },
+    {
+      "id": "GAP-CHECKIN",
+      "kind": "measurement",
+      "destination": "checkin",
+      "title": "Residual perceptual gap vs focus",
+      "severity": "S2",
+      "confidence": 0.8,
+      "measuredSimilarity": 0.731,
+      "residualGap": 0.269,
+      "theoreticalParityCeiling": 0.032,
+      "metrics": {
+        "compositionSimilarity": 0.9717744783210981,
+        "focalPointPlacement": 0.801394825841022,
+        "whitespaceDistribution": 0.7193750000000001,
+        "objectHierarchy": 0.518799078464508,
+        "typographyDensity": 0.8509431249999999,
+        "contrastDistribution": 0.8073023163566125,
+        "edgeDensity": 0.457975,
+        "visualBalance": 0.5698418284300861,
+        "motionIntent": 0.92
+      }
+    }
+  ],
+  "rankedDeltas": [
+    {
+      "id": "GAP-GUIDE",
+      "kind": "measurement",
+      "destination": "guide",
+      "title": "Residual perceptual gap vs minimal-immersive",
+      "severity": "S2",
+      "confidence": 0.8,
+      "measuredSimilarity": 0.6108,
+      "residualGap": 0.389,
+      "theoreticalParityCeiling": 0.047,
+      "metrics": {
+        "compositionSimilarity": 0.9115764660468579,
+        "focalPointPlacement": 0.5205025618334556,
+        "whitespaceDistribution": 0.45519062499999996,
+        "objectHierarchy": 0.4097995400428772,
+        "typographyDensity": 0.8492793750000001,
+        "contrastDistribution": 0.646960941666168,
+        "edgeDensity": 0.451925,
+        "visualBalance": 0.48317489409784786,
+        "motionIntent": 0.92
+      }
+    },
+    {
+      "id": "GAP-HOME",
+      "kind": "measurement",
+      "destination": "home",
+      "title": "Residual perceptual gap vs minimal-immersive",
+      "severity": "S2",
+      "confidence": 0.8,
+      "measuredSimilarity": 0.6268,
+      "residualGap": 0.373,
+      "theoreticalParityCeiling": 0.045,
+      "metrics": {
+        "compositionSimilarity": 0.9215390956878659,
+        "focalPointPlacement": 0.5707581529638799,
+        "whitespaceDistribution": 0.460753125,
+        "objectHierarchy": 0.42930259704589846,
+        "typographyDensity": 0.84752625,
+        "contrastDistribution": 0.6728229794952301,
+        "edgeDensity": 0.4455500000000001,
+        "visualBalance": 0.5065814442992931,
+        "motionIntent": 0.92
+      }
+    },
+    {
+      "id": "GAP-SAVE",
+      "kind": "measurement",
+      "destination": "save",
+      "title": "Residual perceptual gap vs focus",
+      "severity": "S2",
+      "confidence": 0.8,
+      "measuredSimilarity": 0.6272,
+      "residualGap": 0.373,
+      "theoreticalParityCeiling": 0.045,
+      "metrics": {
+        "compositionSimilarity": 0.9558060716715672,
+        "focalPointPlacement": 0.4460677844695202,
+        "whitespaceDistribution": 0.696296875,
+        "objectHierarchy": 0.5295322686433792,
+        "typographyDensity": 0.797661875,
+        "contrastDistribution": 0.7202902649841082,
+        "edgeDensity": 0.26422499999999993,
+        "visualBalance": 0.39818237975787696,
+        "motionIntent": 0.92
+      }
+    },
+    {
+      "id": "GAP-CONTINUE",
+      "kind": "measurement",
+      "destination": "continue",
+      "title": "Residual perceptual gap vs minimal-immersive",
+      "severity": "S2",
+      "confidence": 0.8,
+      "measuredSimilarity": 0.6439,
+      "residualGap": 0.356,
+      "theoreticalParityCeiling": 0.043,
+      "metrics": {
+        "compositionSimilarity": 0.9907967395620412,
+        "focalPointPlacement": 0.6351739132806171,
+        "whitespaceDistribution": 0.6589482230392156,
+        "objectHierarchy": 0.34847435355186474,
+        "typographyDensity": 0.8154898284313725,
+        "contrastDistribution": 0.6032324161683156,
+        "edgeDensity": 0.32905392156862745,
+        "visualBalance": 0.5840435879279354,
+        "motionIntent": 0.92
+      }
+    },
+    {
+      "id": "GAP-CHECKIN",
+      "kind": "measurement",
+      "destination": "checkin",
+      "title": "Residual perceptual gap vs focus",
+      "severity": "S2",
+      "confidence": 0.8,
+      "measuredSimilarity": 0.731,
+      "residualGap": 0.269,
+      "theoreticalParityCeiling": 0.032,
+      "metrics": {
+        "compositionSimilarity": 0.9717744783210981,
+        "focalPointPlacement": 0.801394825841022,
+        "whitespaceDistribution": 0.7193750000000001,
+        "objectHierarchy": 0.518799078464508,
+        "typographyDensity": 0.8509431249999999,
+        "contrastDistribution": 0.8073023163566125,
+        "edgeDensity": 0.457975,
+        "visualBalance": 0.5698418284300861,
+        "motionIntent": 0.92
+      }
+    },
+    {
+      "id": "D-WHITESPACE-HOME",
+      "kind": "candidate",
+      "title": "Increase Home stage vertical whitespace toward immersive board",
+      "severity": "S1",
+      "confidence": 0.62,
+      "affected": [
+        "app/src/App.css"
+      ],
+      "expectedGain": 0.03,
+      "cost": 1,
+      "riskRegression": true,
+      "rationale": "Whitespace gap is real, but expanding void risks neighbour-field legibility (S47/S48 semantic/temporal gains).",
+      "motionIntent": 0.92,
+      "expectedValue": 0.03
+    },
+    {
+      "id": "D-EDGE-SOFTEN",
+      "kind": "candidate",
+      "title": "Further reduce edge density on Continue panes",
+      "severity": "S1",
+      "confidence": 0.55,
+      "affected": [
+        "app/src/App.css"
+      ],
+      "expectedGain": 0.02,
+      "cost": 1,
+      "riskRegression": false,
+      "rationale": "Below 0.05 gain threshold; Sprint 49 already unified pane material.",
+      "motionIntent": 0.92,
+      "expectedValue": 0.02
+    },
+    {
+      "id": "D-FOCAL-LIFT-GUIDE",
+      "kind": "candidate",
+      "title": "Enlarge Guide cluster annotation as primary focal mass",
+      "severity": "S1",
+      "confidence": 0.58,
+      "affected": [
+        "app/src/App.css",
+        "app/src/components/ActiveMoment.tsx"
+      ],
+      "expectedGain": 0.03,
+      "cost": 2,
+      "riskRegression": true,
+      "rationale": "Guide similarity is lowest; enlarging annotation reintroduces instructional chrome Sprint 44–47 removed.",
+      "motionIntent": 0.92,
+      "expectedValue": 0.015
+    },
+    {
+      "id": "D-ATMOSPHERE-SCENIC",
+      "kind": "candidate",
+      "title": "Add scenic immersive wallpaper behind Home (concept Minimal Immersive)",
+      "severity": "S2",
+      "confidence": 0.78,
+      "affected": [
+        "app/src/App.css",
+        "app/src/components/AmbientLighting.tsx"
+      ],
+      "expectedGain": 0.04,
+      "cost": 3,
+      "riskRegression": true,
+      "rationale": "Photographic atmosphere matches board-a immersive mode, but risks competing with Moment hierarchy on Save/Continue and edges toward spectacle refused by §9.",
+      "motionIntent": 0.92,
+      "expectedValue": 0.0133
+    },
+    {
+      "id": "D-DELETE-OBSOLETE-VARIANTS",
+      "kind": "candidate",
+      "title": "Delete obsolete elevated-card tone variants unused after Sprint 49",
+      "severity": "S0",
+      "confidence": 0.88,
+      "affected": [
+        "app/src/App.css"
+      ],
+      "expectedGain": 0.01,
+      "cost": 1,
+      "riskRegression": false,
+      "rationale": "Complexity hygiene only — perceptual gain < 0.05; not a parity driver.",
+      "motionIntent": 0.92,
+      "expectedValue": 0.01
+    }
+  ],
+  "actionable": [],
+  "implementedDeltas": [
+    {
+      "id": "E-DEAD-ELEVATION-LADDER",
+      "type": "engineering_hygiene",
+      "parity_claim": 0
+    }
+  ],
+  "rejected": [
+    {
+      "id": "D-AI-SIDEBAR",
+      "title": "Add persistent AI assistant rail (concept boards)",
+      "expectedGain": 0,
+      "riskRegression": true,
+      "rationale": "Explicitly refused by architecture/40 §9 — AI rails / fabricated activity.",
+      "discard": true
+    },
+    {
+      "id": "D-SYSTEM-GAUGES",
+      "title": "Add CPU/RAM gauges and audio mixer chrome",
+      "expectedGain": 0,
+      "riskRegression": true,
+      "rationale": "Explicitly refused by architecture/40 §9 — gauges / spectacle.",
+      "discard": true
+    },
+    {
+      "id": "D-LIVE-THUMBNAILS",
+      "title": "Show live desktop window thumbnails in Moments",
+      "expectedGain": 0,
+      "riskRegression": true,
+      "rationale": "Explicitly refused — live thumbnails.",
+      "discard": true
+    },
+    {
+      "id": "D-WHITESPACE-HOME",
+      "title": "Increase Home stage vertical whitespace toward immersive board",
+      "expectedGain": 0.03,
+      "riskRegression": true,
+      "rationale": "Whitespace gap is real, but expanding void risks neighbour-field legibility (S47/S48 semantic/temporal gains).",
+      "discard": false
+    },
+    {
+      "id": "D-EDGE-SOFTEN",
+      "title": "Further reduce edge density on Continue panes",
+      "expectedGain": 0.02,
+      "riskRegression": false,
+      "rationale": "Below 0.05 gain threshold; Sprint 49 already unified pane material.",
+      "discard": false
+    },
+    {
+      "id": "D-FOCAL-LIFT-GUIDE",
+      "title": "Enlarge Guide cluster annotation as primary focal mass",
+      "expectedGain": 0.03,
+      "riskRegression": true,
+      "rationale": "Guide similarity is lowest; enlarging annotation reintroduces instructional chrome Sprint 44–47 removed.",
+      "discard": false
+    },
+    {
+      "id": "D-ATMOSPHERE-SCENIC",
+      "title": "Add scenic immersive wallpaper behind Home (concept Minimal Immersive)",
+      "expectedGain": 0.04,
+      "riskRegression": true,
+      "rationale": "Photographic atmosphere matches board-a immersive mode, but risks competing with Moment hierarchy on Save/Continue and edges toward spectacle refused by §9.",
+      "discard": false
+    },
+    {
+      "id": "D-DELETE-OBSOLETE-VARIANTS",
+      "title": "Delete obsolete elevated-card tone variants unused after Sprint 49",
+      "expectedGain": 0.01,
+      "riskRegression": false,
+      "rationale": "Complexity hygiene only — perceptual gain < 0.05; not a parity driver.",
+      "discard": false
+    }
+  ],
+  "decision": {
+    "action": "no-change",
+    "declareOptimum": "sprint-49",
+    "reason": "No remaining change has expected overall parity gain ≥ 0.05 without destination regression risk. Sprint 49 craftsmanship baseline is the perceptual optimum for the current architecture under accepted concept modes (Minimal Immersive / Modular Tiles / Focus), excluding refused board elements (AI rails, gauges, live thumbnails)."
+  },
+  "parityProjection": {
+    "sprint49": 9.35,
+    "sprint50": 9.35,
+    "delta": 0,
+    "target": 9.45,
+    "targetMet": false,
+    "justified": true,
+    "note": "Target ≥9.45 unreachable without refused concept elements or regression-risk changes; declaring S49 optimum is the success path when EV < 0.05."
+  }
+}

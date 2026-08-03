@@ -1600,13 +1600,6 @@ body {
 .ws-surface--pad-xl,
 .elevated-card--pad-xl { padding: var(--space-6) clamp(1.5rem, 3vw, 2.4rem); }
 
-.elevated-card--e1,
-.elevated-card--e2,
-.elevated-card--e3,
-.elevated-card--e4 {
-  box-shadow: var(--edge-light);
-}
-
 .elevated-card--hero {
   border-radius: var(--radius-md);
   min-height: 13.5rem;
