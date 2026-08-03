@@ -38,6 +38,7 @@ export const AUTHORITY_CHAIN: readonly [
   ["46_Engineering_Governance.md", "47_Architectural_Integrity.md"],
   ["47_Architectural_Integrity.md", "48_Adaptive_Workspace.md"],
   ["48_Adaptive_Workspace.md", "49_Adaptation_Experiments.md"],
+  ["49_Adaptation_Experiments.md", "50_Longitudinal_Adaptation_Validation.md"],
 ];
 
 export const AUTHORITY_ROOT: ArchitectureAuthorityDoc =

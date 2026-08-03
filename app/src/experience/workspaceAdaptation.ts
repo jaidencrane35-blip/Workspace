@@ -45,6 +45,7 @@ export type AdaptationTargetComponent =
 export type AdaptationRolloutState =
   | "inactive"
   | "candidate"
+  | "rollout_candidate"
   | "active"
   | "rolled_back";
 
@@ -133,9 +134,45 @@ export type AdaptationTransitionError =
   | "invalid_state"
   | "rolled_back";
 
+/** Longitudinal indexes + stability reports (Sprint 59) — evidence metrics stay in ExperienceEvidence. */
+export interface LongitudinalAdaptationRecord {
+  schemaVersion: 1;
+  adaptationId: string;
+  baselineEvidenceId: string;
+  intermediateEvidenceIds: string[];
+  latestEvidenceId: string;
+  observationCount: number;
+  stabilityScore: number;
+  regressionCount: number;
+}
+
+export interface AdaptationStabilityReport {
+  schemaVersion: 1;
+  adaptationId: string;
+  sampleCount: number;
+  stabilityScore: number;
+  confidenceTrend: "rising" | "stable" | "falling";
+  regressionEvents: Array<{
+    evidenceId: string;
+    criterion: RollbackCriterion | "metric_regression";
+    metric: keyof ExperienceEvidenceMetrics;
+    baselineValue: number;
+    observedValue: number;
+  }>;
+  /** hold | rollout_candidate | reject — avoids forbidden content key "summary". */
+  rolloutDisposition: "hold" | "rollout_candidate" | "reject";
+  metricVariance: number;
+  improvementConsistency: number;
+  regressionFrequency: number;
+  confidenceEvolution: number[];
+  evidenceTimeline: string[];
+}
+
 interface AdaptationBundle {
   schemaVersion: 1;
   adaptations: WorkspaceAdaptation[];
+  longitudinalRecords: LongitudinalAdaptationRecord[];
+  stabilityReports: AdaptationStabilityReport[];
 }
 
 const ID_RE = /^[a-z0-9_.:-]{1,96}$/i;
@@ -153,7 +190,12 @@ const ENGINEERING_OK = new Set([
 ]);
 
 function emptyBundle(): AdaptationBundle {
-  return { schemaVersion: 1, adaptations: [] };
+  return {
+    schemaVersion: 1,
+    adaptations: [],
+    longitudinalRecords: [],
+    stabilityReports: [],
+  };
 }
 
 function emitChanged(): void {
@@ -415,7 +457,8 @@ function improved(
   return after - baseline >= delta - 1e-9;
 }
 
-function rollbackTriggered(
+/** Exported for longitudinal regression detection (same thresholds). */
+export function rollbackTriggered(
   baseline: ExperienceEvidence,
   after: ExperienceEvidence,
   criteria: RollbackCriterion[],
@@ -478,6 +521,17 @@ export function validateAdaptationEvidence(
     );
 
   const validationResult: AdaptationValidationResult = ok ? "passed" : "failed";
+  let rolloutState: AdaptationRolloutState = adaptation.rolloutState;
+  if (validationResult === "failed") {
+    rolloutState =
+      adaptation.rolloutState === "active" ? "rolled_back" : "inactive";
+  } else if (adaptation.rolloutState === "active") {
+    rolloutState = "active";
+  } else if (adaptation.rolloutState === "rollout_candidate") {
+    rolloutState = "rollout_candidate";
+  } else {
+    rolloutState = "candidate";
+  }
   const next: WorkspaceAdaptation = {
     ...adaptation,
     validation: {
@@ -485,14 +539,7 @@ export function validateAdaptationEvidence(
       baselineEvidenceId: baseline.evidenceId,
       validationResult,
     },
-    rolloutState:
-      validationResult === "failed"
-        ? adaptation.rolloutState === "active"
-          ? "rolled_back"
-          : "inactive"
-        : adaptation.rolloutState === "active"
-          ? "active"
-          : "candidate",
+    rolloutState,
   };
 
   return { validationResult, rollback, adaptation: next };
@@ -513,13 +560,19 @@ export function loadAdaptationBundle(
     return {
       schemaVersion: 1,
       adaptations: parsed.adaptations.slice(-MAX_ADAPTATIONS),
+      longitudinalRecords: Array.isArray(parsed.longitudinalRecords)
+        ? parsed.longitudinalRecords
+        : [],
+      stabilityReports: Array.isArray(parsed.stabilityReports)
+        ? parsed.stabilityReports
+        : [],
     };
   } catch {
     return emptyBundle();
   }
 }
 
-function saveAdaptationBundle(
+export function saveAdaptationBundle(
   store: ExperienceStoreAdapter,
   bundle: AdaptationBundle,
 ): void {
@@ -528,6 +581,8 @@ function saveAdaptationBundle(
     JSON.stringify({
       schemaVersion: 1,
       adaptations: bundle.adaptations.slice(-MAX_ADAPTATIONS),
+      longitudinalRecords: bundle.longitudinalRecords ?? [],
+      stabilityReports: bundle.stabilityReports ?? [],
     }),
   );
   emitChanged();
@@ -651,7 +706,8 @@ export function activateAdaptation(
   }
   if (
     current.rolloutState !== "inactive" &&
-    current.rolloutState !== "candidate"
+    current.rolloutState !== "candidate" &&
+    current.rolloutState !== "rollout_candidate"
   ) {
     return { ok: false, error: "invalid_state" };
   }

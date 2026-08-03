@@ -27,6 +27,8 @@ export type {
   AdaptationValidationContract,
   AdaptationLineageContext,
   AdaptationLineageError,
+  AdaptationStabilityReport,
+  LongitudinalAdaptationRecord,
   RollbackCriterion,
 } from "./workspaceAdaptation";
 export { useResolvedPresentation } from "./useResolvedPresentation";
@@ -38,7 +40,6 @@ export {
   getExperimentSummary,
   listExperimentResults,
   materializeExperimentLineage,
-  rollbackExperimentAdaptation,
   runAdaptationExperiments,
   selectEligibleProposals,
   selectExperimentSpecs,
@@ -51,3 +52,20 @@ export type {
   ExperimentStatus,
   RolloutDisposition,
 } from "./adaptationExperiments";
+export {
+  LONGITUDINAL_MIN_OBSERVATIONS,
+  LONGITUDINAL_STABILITY_THRESHOLD,
+  LONGITUDINAL_MAX_UNRESOLVED_REGRESSIONS,
+  analyzeAdaptationStability,
+  appendLongitudinalObservation,
+  buildLongitudinalRecord,
+  getLongitudinalRecord,
+  getStabilityReport,
+  isRolloutReady,
+  listLongitudinalRecords,
+  listRolloutCandidates,
+  listStabilityReports,
+  promoteToRolloutCandidate,
+  runLongitudinalValidation,
+} from "./longitudinalAdaptation";
+export type { LongitudinalTransitionError } from "./longitudinalAdaptation";

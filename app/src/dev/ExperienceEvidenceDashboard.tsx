@@ -40,7 +40,11 @@ import type {
   ArchitectureSnapshot,
   IntegrityResult,
 } from "./architecturalIntegrity";
-import type { WorkspaceAdaptation } from "../experience/workspaceAdaptation";
+import type {
+  AdaptationStabilityReport,
+  LongitudinalAdaptationRecord,
+  WorkspaceAdaptation,
+} from "../experience/workspaceAdaptation";
 import type {
   AdaptationExperimentResult,
   ExperimentRunSummary,
@@ -95,6 +99,7 @@ type EngineeringApi = typeof import("./engineeringGovernance");
 type IntegrityApi = typeof import("./architecturalIntegrity");
 type AdaptationApi = typeof import("../experience/workspaceAdaptation");
 type ExperimentApi = typeof import("../experience/adaptationExperiments");
+type LongitudinalApi = typeof import("../experience/longitudinalAdaptation");
 
 const NEXT_STATE: Partial<Record<ProposalLifecycle, ProposalLifecycle>> = {
   draft: "review",
@@ -132,6 +137,8 @@ export function ExperienceEvidenceDashboard() {
   const [experimentApi, setExperimentApi] = useState<ExperimentApi | null>(
     null,
   );
+  const [longitudinalApi, setLongitudinalApi] =
+    useState<LongitudinalApi | null>(null);
   const [exploreNode, setExploreNode] = useState<string>(
     "doc:40_Experience_Refoundation.md",
   );
@@ -192,6 +199,13 @@ export function ExperienceEvidenceDashboard() {
         }
       });
     }
+    if (!longitudinalApi) {
+      void import("../experience/longitudinalAdaptation").then((mod) => {
+        if (!cancelled) {
+          setLongitudinalApi(mod);
+        }
+      });
+    }
     return () => {
       cancelled = true;
     };
@@ -203,6 +217,7 @@ export function ExperienceEvidenceDashboard() {
     integrityApi,
     adaptationApi,
     experimentApi,
+    longitudinalApi,
   ]);
 
   const sessions = useMemo(() => {
@@ -395,6 +410,30 @@ export function ExperienceEvidenceDashboard() {
     }
     return experimentApi.listExperimentResults(govStore);
   }, [experimentApi, govStore, tick]);
+
+  const longitudinalRecords: LongitudinalAdaptationRecord[] = useMemo(() => {
+    void tick;
+    if (!longitudinalApi) {
+      return [];
+    }
+    return longitudinalApi.listLongitudinalRecords(govStore);
+  }, [longitudinalApi, govStore, tick]);
+
+  const stabilityReports: AdaptationStabilityReport[] = useMemo(() => {
+    void tick;
+    if (!longitudinalApi) {
+      return [];
+    }
+    return longitudinalApi.listStabilityReports(govStore);
+  }, [longitudinalApi, govStore, tick]);
+
+  const rolloutCandidates: WorkspaceAdaptation[] = useMemo(() => {
+    void tick;
+    if (!longitudinalApi) {
+      return [];
+    }
+    return longitudinalApi.listRolloutCandidates(govStore);
+  }, [longitudinalApi, govStore, tick]);
 
   const analyze = () => {
     if (sessions.length === 0) {
@@ -688,8 +727,59 @@ export function ExperienceEvidenceDashboard() {
       latest,
     );
     adaptationApi.upsertValidatedAdaptation(govStore, result.adaptation);
+    if (longitudinalApi) {
+      longitudinalApi.appendLongitudinalObservation(
+        govStore,
+        result.adaptation,
+        baseline,
+      );
+      longitudinalApi.appendLongitudinalObservation(
+        govStore,
+        result.adaptation,
+        latest,
+      );
+    }
     setGovMessage(
       `adapt_val:${adaptation.adaptationId}:${result.validationResult}${result.rollback ? ":rollback" : ""}`,
+    );
+    refresh();
+  };
+
+  const runLongitudinal = (adaptation: WorkspaceAdaptation) => {
+    if (!longitudinalApi) {
+      setGovMessage("long_loading");
+      return;
+    }
+    if (latest) {
+      longitudinalApi.appendLongitudinalObservation(
+        govStore,
+        adaptation,
+        latest,
+      );
+    }
+    const { report } = longitudinalApi.runLongitudinalValidation(
+      govStore,
+      adaptation,
+    );
+    setGovMessage(
+      `long_val:${adaptation.adaptationId}:score=${report.stabilityScore}:disp=${report.rolloutDisposition}`,
+    );
+    refresh();
+  };
+
+  const promoteRollout = (adaptation: WorkspaceAdaptation) => {
+    if (!longitudinalApi) {
+      setGovMessage("long_loading");
+      return;
+    }
+    const result = longitudinalApi.promoteToRolloutCandidate(
+      govStore,
+      adaptation.adaptationId,
+    );
+    setGovMessage(
+      result.ok
+        ? `long_promote:${adaptation.adaptationId}`
+        : `long_err:${result.error}`,
     );
     refresh();
   };
@@ -1154,6 +1244,100 @@ export function ExperienceEvidenceDashboard() {
         </ul>
       </section>
 
+      <section
+        style={{ marginBottom: 10 }}
+        data-testid="longitudinal-adaptation"
+      >
+        <div style={{ marginBottom: 4 }}>
+          <strong>Longitudinal validation</strong>
+          {!longitudinalApi
+            ? " (loading…)"
+            : ` (${longitudinalRecords.length}) · rollout_candidates ${rolloutCandidates.length}`}
+        </div>
+        {longitudinalRecords.length === 0 ? (
+          <div style={{ opacity: 0.7, marginBottom: 6 }}>
+            No longitudinal series yet. Validate adaptations across multiple
+            evidence snapshots.
+          </div>
+        ) : null}
+        <ul style={{ paddingLeft: 16, margin: "6px 0" }}>
+          {longitudinalRecords.map((rec) => {
+            const report = stabilityReports.find(
+              (r) => r.adaptationId === rec.adaptationId,
+            );
+            const adaptation = adaptations.find(
+              (a) => a.adaptationId === rec.adaptationId,
+            );
+            return (
+              <li key={rec.adaptationId} style={{ marginBottom: 8 }}>
+                <div>
+                  {rec.adaptationId} · score {rec.stabilityScore} · obs{" "}
+                  {rec.observationCount} · regressions {rec.regressionCount}
+                </div>
+                <div>
+                  timeline {rec.baselineEvidenceId}
+                  {rec.intermediateEvidenceIds.length
+                    ? ` → ${rec.intermediateEvidenceIds.join(" → ")}`
+                    : ""}
+                  {" → "}
+                  {rec.latestEvidenceId}
+                </div>
+                {report ? (
+                  <>
+                    <div>
+                      trend {report.confidenceTrend} · consistency{" "}
+                      {report.improvementConsistency} · variance{" "}
+                      {report.metricVariance} · freq{" "}
+                      {report.regressionFrequency}
+                    </div>
+                    <div>
+                      confidence [{report.confidenceEvolution.join(", ")}] ·
+                      disposition {report.rolloutDisposition}
+                    </div>
+                    {report.regressionEvents.length > 0 ? (
+                      <div>
+                        regressions:{" "}
+                        {report.regressionEvents
+                          .map((e) => `${e.evidenceId}:${e.criterion}`)
+                          .join(", ")}
+                      </div>
+                    ) : (
+                      <div>regressions: none</div>
+                    )}
+                  </>
+                ) : null}
+                {adaptation ? (
+                  <div>
+                    <button
+                      type="button"
+                      style={btnStyle}
+                      data-testid={`long-run-${adaptation.adaptationId}`}
+                      onClick={() => runLongitudinal(adaptation)}
+                    >
+                      Re-analyse
+                    </button>
+                    {adaptation.rolloutState === "candidate" ? (
+                      <button
+                        type="button"
+                        style={btnStyle}
+                        data-testid={`long-promote-${adaptation.adaptationId}`}
+                        onClick={() => promoteRollout(adaptation)}
+                      >
+                        Promote rollout_candidate
+                      </button>
+                    ) : null}
+                    <span style={{ opacity: 0.7 }}>
+                      {" "}
+                      state {adaptation.rolloutState}
+                    </span>
+                  </div>
+                ) : null}
+              </li>
+            );
+          })}
+        </ul>
+      </section>
+
       <section style={{ marginBottom: 10 }} data-testid="workspace-adaptations">
         <div style={{ marginBottom: 4 }}>
           <strong>Adaptations</strong>
@@ -1230,6 +1414,9 @@ export function ExperienceEvidenceDashboard() {
                   {a.rolloutState === "rolled_back" ? " rolled_back" : ""}
                   {a.rolloutState === "inactive" ? " inactive" : ""}
                   {a.rolloutState === "candidate" ? " candidate" : ""}
+                  {a.rolloutState === "rollout_candidate"
+                    ? " rollout_candidate"
+                    : ""}
                 </span>
               </div>
             </li>

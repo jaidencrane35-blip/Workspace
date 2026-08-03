@@ -41,7 +41,6 @@ import {
   deactivateAdaptation,
   listAdaptations,
   persistAdaptation,
-  rollbackAdaptation,
   upsertValidatedAdaptation,
   validateAdaptationEvidence,
   type AdaptationScope,
@@ -50,6 +49,7 @@ import {
   type RollbackCriterion,
   type WorkspaceAdaptation,
 } from "./workspaceAdaptation";
+import { appendLongitudinalObservation } from "./longitudinalAdaptation";
 import type {
   ExperienceEvidenceMetrics,
   MetricDirection,
@@ -558,6 +558,17 @@ export function runAdaptationExperiments(
       lineage.afterEvidence,
     );
     upsertValidatedAdaptation(store, validated.adaptation);
+    // Seed longitudinal series (baseline + after). Promotion requires ≥3 snapshots.
+    appendLongitudinalObservation(
+      store,
+      validated.adaptation,
+      lineage.baselineEvidence,
+    );
+    appendLongitudinalObservation(
+      store,
+      validated.adaptation,
+      lineage.afterEvidence,
+    );
 
     const baselineMetricValue = metricNumber(
       lineage.baselineEvidence,
@@ -740,13 +751,7 @@ export function experimentRollbackReady(
     adaptation.validation.replaySessionIds.length > 0 &&
     (adaptation.rolloutState === "active" ||
       adaptation.rolloutState === "candidate" ||
+      adaptation.rolloutState === "rollout_candidate" ||
       adaptation.rolloutState === "inactive")
   );
-}
-
-export function rollbackExperimentAdaptation(
-  store: ExperienceStoreAdapter,
-  adaptationId: string,
-) {
-  return rollbackAdaptation(store, adaptationId);
 }
