@@ -69,3 +69,19 @@ export {
   runLongitudinalValidation,
 } from "./longitudinalAdaptation";
 export type { LongitudinalTransitionError } from "./longitudinalAdaptation";
+export {
+  buildAdaptationCatalog,
+  deriveOperationalHealth,
+  getCatalogEntry,
+  runBatchValidation,
+} from "./adaptationOperations";
+export type {
+  AdaptationCatalog,
+  AdaptationCatalogEntry,
+  AdaptationOperationalHealth,
+  BatchValidationCause,
+  BatchValidationItem,
+  BatchValidationOutcome,
+  BatchValidationReport,
+  CatalogDisposition,
+} from "./adaptationOperations";

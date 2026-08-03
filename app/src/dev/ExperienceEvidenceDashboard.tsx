@@ -49,6 +49,11 @@ import type {
   AdaptationExperimentResult,
   ExperimentRunSummary,
 } from "../experience/adaptationExperiments";
+import type {
+  AdaptationCatalog,
+  AdaptationOperationalHealth,
+  BatchValidationReport,
+} from "../experience/adaptationOperations";
 import { fnv1a } from "./devHash";
 
 const panelStyle: CSSProperties = {
@@ -100,6 +105,7 @@ type IntegrityApi = typeof import("./architecturalIntegrity");
 type AdaptationApi = typeof import("../experience/workspaceAdaptation");
 type ExperimentApi = typeof import("../experience/adaptationExperiments");
 type LongitudinalApi = typeof import("../experience/longitudinalAdaptation");
+type OperationsApi = typeof import("../experience/adaptationOperations");
 
 const NEXT_STATE: Partial<Record<ProposalLifecycle, ProposalLifecycle>> = {
   draft: "review",
@@ -139,6 +145,12 @@ export function ExperienceEvidenceDashboard() {
   );
   const [longitudinalApi, setLongitudinalApi] =
     useState<LongitudinalApi | null>(null);
+  const [operationsApi, setOperationsApi] = useState<OperationsApi | null>(
+    null,
+  );
+  const [batchReport, setBatchReport] = useState<BatchValidationReport | null>(
+    null,
+  );
   const [exploreNode, setExploreNode] = useState<string>(
     "doc:40_Experience_Refoundation.md",
   );
@@ -206,6 +218,13 @@ export function ExperienceEvidenceDashboard() {
         }
       });
     }
+    if (!operationsApi) {
+      void import("../experience/adaptationOperations").then((mod) => {
+        if (!cancelled) {
+          setOperationsApi(mod);
+        }
+      });
+    }
     return () => {
       cancelled = true;
     };
@@ -218,6 +237,7 @@ export function ExperienceEvidenceDashboard() {
     adaptationApi,
     experimentApi,
     longitudinalApi,
+    operationsApi,
   ]);
 
   const sessions = useMemo(() => {
@@ -434,6 +454,22 @@ export function ExperienceEvidenceDashboard() {
     }
     return longitudinalApi.listRolloutCandidates(govStore);
   }, [longitudinalApi, govStore, tick]);
+
+  const adaptationCatalog: AdaptationCatalog | null = useMemo(() => {
+    void tick;
+    if (!operationsApi) {
+      return null;
+    }
+    return operationsApi.buildAdaptationCatalog(govStore);
+  }, [operationsApi, govStore, tick]);
+
+  const operationalHealth: AdaptationOperationalHealth | null = useMemo(() => {
+    void tick;
+    if (!operationsApi) {
+      return null;
+    }
+    return operationsApi.deriveOperationalHealth(govStore);
+  }, [operationsApi, govStore, tick]);
 
   const analyze = () => {
     if (sessions.length === 0) {
@@ -784,6 +820,19 @@ export function ExperienceEvidenceDashboard() {
     refresh();
   };
 
+  const runBatchValidate = () => {
+    if (!operationsApi) {
+      setGovMessage("ops_loading");
+      return;
+    }
+    const report = operationsApi.runBatchValidation(govStore);
+    setBatchReport(report);
+    setGovMessage(
+      `ops_batch:v=${report.validated.length}:f=${report.failed.length}:u=${report.unchanged.length}:s=${report.skipped.length}`,
+    );
+    refresh();
+  };
+
   const activateAdaptation = (adaptation: WorkspaceAdaptation) => {
     if (!adaptationApi) {
       return;
@@ -928,6 +977,14 @@ export function ExperienceEvidenceDashboard() {
           onClick={runExperiments}
         >
           Run experiments
+        </button>
+        <button
+          type="button"
+          style={btnStyle}
+          data-testid="run-batch-validation"
+          onClick={runBatchValidate}
+        >
+          Batch validate
         </button>
         <button type="button" style={btnStyle} onClick={refresh}>
           Refresh
@@ -1241,6 +1298,93 @@ export function ExperienceEvidenceDashboard() {
               </li>
             );
           })}
+        </ul>
+      </section>
+
+      <section
+        style={{ marginBottom: 10 }}
+        data-testid="adaptation-operations"
+      >
+        <div style={{ marginBottom: 4 }}>
+          <strong>Adaptation operations</strong>
+          {!operationsApi
+            ? " (loading…)"
+            : adaptationCatalog
+              ? ` (${adaptationCatalog.entries.length})`
+              : ""}
+        </div>
+        {operationalHealth ? (
+          <div style={{ marginBottom: 6 }} data-testid="operational-health">
+            <div>
+              health · adaptations {operationalHealth.adaptationCount} ·
+              rollout backlog {operationalHealth.rolloutBacklog} · validation
+              backlog {operationalHealth.validationBacklog}
+            </div>
+            <div>
+              stale evidence {operationalHealth.staleEvidence} · expired
+              longitudinal {operationalHealth.expiredLongitudinalSamples} ·
+              orphan rollout {operationalHealth.orphanRolloutCandidates} ·
+              inactive validated {operationalHealth.inactiveValidatedAdaptations}
+            </div>
+            <div>
+              lifecycle inactive {operationalHealth.lifecycleDistribution.inactive}{" "}
+              · candidate {operationalHealth.lifecycleDistribution.candidate} ·
+              rollout_candidate{" "}
+              {operationalHealth.lifecycleDistribution.rollout_candidate} ·
+              active {operationalHealth.lifecycleDistribution.active} ·
+              rolled_back {operationalHealth.lifecycleDistribution.rolled_back}
+            </div>
+          </div>
+        ) : null}
+        {batchReport ? (
+          <div style={{ marginBottom: 6 }} data-testid="batch-validation-report">
+            batch · validated {batchReport.validated.length} · failed{" "}
+            {batchReport.failed.length} · unchanged {batchReport.unchanged.length}{" "}
+            · skipped {batchReport.skipped.length}
+            {batchReport.skipped.length > 0 ? (
+              <div>
+                skipped causes:{" "}
+                {batchReport.skipped
+                  .map((s) => `${s.adaptationId}:${s.cause}`)
+                  .join(", ")}
+              </div>
+            ) : null}
+            {batchReport.failed.length > 0 ? (
+              <div>
+                failed causes:{" "}
+                {batchReport.items
+                  .filter((i) => i.outcome === "failed")
+                  .map((i) => `${i.adaptationId}:${i.cause}`)
+                  .join(", ")}
+              </div>
+            ) : null}
+          </div>
+        ) : (
+          <div style={{ opacity: 0.7, marginBottom: 6 }}>
+            No batch report yet. Run batch validate.
+          </div>
+        )}
+        <div style={{ marginBottom: 4 }}>
+          <strong>Catalog</strong>
+        </div>
+        <ul style={{ paddingLeft: 16, margin: "6px 0" }} data-testid="adaptation-catalog">
+          {(adaptationCatalog?.entries ?? []).map((e) => (
+            <li key={e.adaptationId} style={{ marginBottom: 6 }}>
+              <div>
+                {e.adaptationId} · <strong>{e.lifecycleState}</strong> · ready{" "}
+                {e.rolloutReady ? "yes" : "no"} · disposition{" "}
+                {e.currentDisposition}
+              </div>
+              <div>
+                prop {e.proposalId} · eng {e.engineeringChangeId}
+              </div>
+              <div>
+                stability {e.stabilityScore} · evidence {e.evidenceCount} ·
+                latest evd {e.latestEvidenceSnapshotId ?? "—"} · asnap{" "}
+                {e.latestArchitectureSnapshotId ?? "—"}
+              </div>
+            </li>
+          ))}
         </ul>
       </section>
 
