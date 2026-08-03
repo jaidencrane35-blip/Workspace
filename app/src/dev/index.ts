@@ -120,3 +120,31 @@ export type {
   ArchitectureAuthorityDoc,
   ReleaseImpact,
 } from "./engineeringGovernance";
+export {
+  ARCHITECTURE_INTEGRITY_STORAGE_KEY,
+  AUTHORITY_CHAIN,
+  AUTHORITY_ROOT,
+  buildArchitectureGraph,
+  validateArchitectureIntegrity,
+  hashArchitectureGraph,
+  createArchitectureSnapshot,
+  persistArchitectureSnapshot,
+  listArchitectureSnapshots,
+  assertSnapshotsImmutable,
+  listAuthoritySuccessors,
+  listDependencies,
+  clearArchitectureIntegrityStore,
+  defaultArchitectureIntegrityStore,
+} from "./architecturalIntegrity";
+export type {
+  ArchitectureGraph,
+  ArchitectureNode,
+  ArchitectureEdge,
+  ArchitectureNodeKind,
+  ArchitectureEdgeType,
+  ArchitectureGraphSource,
+  ArchitectureSnapshot,
+  IntegrityResult,
+  IntegrityViolation,
+  IntegrityViolationCode,
+} from "./architecturalIntegrity";

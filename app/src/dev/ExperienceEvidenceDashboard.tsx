@@ -35,6 +35,11 @@ import type {
   EngineeringLifecycle,
   ReleaseTraceability,
 } from "./engineeringGovernance";
+import type {
+  ArchitectureGraph,
+  ArchitectureSnapshot,
+  IntegrityResult,
+} from "./architecturalIntegrity";
 import { fnv1a } from "./devHash";
 
 const panelStyle: CSSProperties = {
@@ -82,6 +87,7 @@ function severityColor(s: string): string {
 type ImprovementApi = typeof import("./experienceImprovement");
 type GovernanceApi = typeof import("./experienceGovernance");
 type EngineeringApi = typeof import("./engineeringGovernance");
+type IntegrityApi = typeof import("./architecturalIntegrity");
 
 const NEXT_STATE: Partial<Record<ProposalLifecycle, ProposalLifecycle>> = {
   draft: "review",
@@ -111,6 +117,10 @@ export function ExperienceEvidenceDashboard() {
   );
   const [engineeringApi, setEngineeringApi] = useState<EngineeringApi | null>(
     null,
+  );
+  const [integrityApi, setIntegrityApi] = useState<IntegrityApi | null>(null);
+  const [exploreNode, setExploreNode] = useState<string>(
+    "doc:40_Experience_Refoundation.md",
   );
   const [lastReplay, setLastReplay] = useState<string | null>(null);
   const [govMessage, setGovMessage] = useState<string | null>(null);
@@ -148,10 +158,17 @@ export function ExperienceEvidenceDashboard() {
         }
       });
     }
+    if (!integrityApi) {
+      void import("./architecturalIntegrity").then((mod) => {
+        if (!cancelled) {
+          setIntegrityApi(mod);
+        }
+      });
+    }
     return () => {
       cancelled = true;
     };
-  }, [open, improvementApi, governanceApi, engineeringApi]);
+  }, [open, improvementApi, governanceApi, engineeringApi, integrityApi]);
 
   const sessions = useMemo(() => {
     void tick;
@@ -260,6 +277,58 @@ export function ExperienceEvidenceDashboard() {
     }
     return map;
   }, [engineeringApi, engineeringRecords, engContext]);
+
+  const graphSource = useMemo(
+    () => ({
+      engineeringRecords,
+      proposals,
+      opportunities,
+      evidence: snapshots,
+    }),
+    [engineeringRecords, proposals, opportunities, snapshots],
+  );
+
+  const architectureGraph: ArchitectureGraph | null = useMemo(() => {
+    if (!integrityApi) {
+      return null;
+    }
+    return integrityApi.buildArchitectureGraph(graphSource);
+  }, [integrityApi, graphSource]);
+
+  const integrityResult: IntegrityResult | null = useMemo(() => {
+    if (!integrityApi || !architectureGraph) {
+      return null;
+    }
+    return integrityApi.validateArchitectureIntegrity(architectureGraph, {
+      engineeringRecords,
+      proposals,
+    });
+  }, [integrityApi, architectureGraph, engineeringRecords, proposals]);
+
+  const architectureSnapshots: ArchitectureSnapshot[] = useMemo(() => {
+    void tick;
+    if (!integrityApi) {
+      return [];
+    }
+    return integrityApi.listArchitectureSnapshots(govStore);
+  }, [integrityApi, govStore, tick]);
+
+  const authoritySuccessors = useMemo(() => {
+    if (!integrityApi || !architectureGraph) {
+      return [];
+    }
+    return integrityApi.listAuthoritySuccessors(
+      architectureGraph,
+      "40_Experience_Refoundation.md",
+    );
+  }, [integrityApi, architectureGraph]);
+
+  const exploredDeps = useMemo(() => {
+    if (!integrityApi || !architectureGraph) {
+      return [];
+    }
+    return integrityApi.listDependencies(architectureGraph, exploreNode);
+  }, [integrityApi, architectureGraph, exploreNode]);
 
   const analyze = () => {
     if (sessions.length === 0) {
@@ -397,12 +466,13 @@ export function ExperienceEvidenceDashboard() {
         architectureDocuments: [
           "45_Experience_Change_Governance.md",
           "46_Engineering_Governance.md",
+          "47_Architectural_Integrity.md",
         ],
         affectedModules: [
           "app/src/dev/engineeringGovernance.ts",
-          "app/src/dev/experienceGovernance.ts",
+          "app/src/dev/architecturalIntegrity.ts",
         ],
-        affectedTests: ["tests/experience-engineering.test.ts"],
+        affectedTests: ["tests/architectural-integrity.test.ts"],
         releaseImpact: "dev_tooling",
       },
     );
@@ -446,6 +516,21 @@ export function ExperienceEvidenceDashboard() {
         ? `${record.changeId}->${next}`
         : `eng_err:${result.error}`,
     );
+    refresh();
+  };
+
+  const snapshotArchitecture = () => {
+    if (!integrityApi || !architectureGraph) {
+      setGovMessage("integrity_loading");
+      return;
+    }
+    const snapshot = integrityApi.createArchitectureSnapshot(architectureGraph, {
+      t: Date.now(),
+      integrity: integrityResult ?? undefined,
+      source: graphSource,
+    });
+    integrityApi.persistArchitectureSnapshot(govStore, snapshot);
+    setGovMessage(`asnap:${snapshot.snapshotId}:${snapshot.integrity.valid ? "ok" : "fail"}`);
     refresh();
   };
 
@@ -509,6 +594,14 @@ export function ExperienceEvidenceDashboard() {
           onClick={draftEngineeringRecord}
         >
           Draft engineering
+        </button>
+        <button
+          type="button"
+          style={btnStyle}
+          data-testid="snapshot-architecture"
+          onClick={snapshotArchitecture}
+        >
+          Snapshot architecture
         </button>
         <button type="button" style={btnStyle} onClick={refresh}>
           Refresh
@@ -762,6 +855,84 @@ export function ExperienceEvidenceDashboard() {
             );
           })}
         </ul>
+      </section>
+
+      <section style={{ marginBottom: 10 }} data-testid="architecture-integrity">
+        <div style={{ marginBottom: 4 }}>
+          <strong>Architectural integrity</strong>
+          {!integrityApi ? " (loading…)" : ""}
+        </div>
+        {architectureGraph && integrityResult ? (
+          <>
+            <div>
+              graph: nodes {architectureGraph.nodes.length} · edges{" "}
+              {architectureGraph.edges.length} · hash{" "}
+              {integrityApi
+                ? integrityApi.hashArchitectureGraph(architectureGraph)
+                : "—"}
+            </div>
+            <div
+              style={{
+                color: integrityResult.valid ? "#6dcea0" : "#e08a8a",
+              }}
+            >
+              integrity: {integrityResult.valid ? "valid" : "invalid"} ·
+              violations {integrityResult.violations.length} · orphans{" "}
+              {integrityResult.orphanNodeIds.length} · dangling{" "}
+              {integrityResult.danglingEdgeIds.length}
+            </div>
+            {integrityResult.orphanNodeIds.length > 0 ? (
+              <div>
+                orphans: {integrityResult.orphanNodeIds.slice(0, 8).join(", ")}
+              </div>
+            ) : null}
+            <div>
+              authority root → {authoritySuccessors.join(" → ") || "—"}
+            </div>
+            <div style={{ marginTop: 6 }}>
+              explorer:{" "}
+              <select
+                value={exploreNode}
+                onChange={(e) => setExploreNode(e.target.value)}
+                style={{
+                  font: "inherit",
+                  color: "#e8e8e8",
+                  background: "rgba(0,0,0,0.35)",
+                  border: "1px solid rgba(255,255,255,0.16)",
+                  maxWidth: "100%",
+                }}
+              >
+                {(architectureGraph?.nodes ?? []).map((n) => (
+                  <option key={n.id} value={n.id}>
+                    {n.kind}:{n.id}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <ul style={{ paddingLeft: 16, margin: "4px 0" }}>
+              {exploredDeps.map((e) => (
+                <li key={e.id}>
+                  {e.type} → {e.to}
+                </li>
+              ))}
+            </ul>
+            <div style={{ marginTop: 6 }}>
+              <strong>Snapshots</strong> ({architectureSnapshots.length})
+            </div>
+            <ol style={{ paddingLeft: 16, margin: "4px 0" }}>
+              {[...architectureSnapshots].reverse().map((s) => (
+                <li key={s.snapshotId}>
+                  {s.snapshotId} · hash {s.graphHash} · n={s.nodeCount} e=
+                  {s.edgeCount} ·{" "}
+                  {s.integrity.valid ? "valid" : "invalid"} · releases{" "}
+                  {s.releaseLineage.length}
+                </li>
+              ))}
+            </ol>
+          </>
+        ) : (
+          <div style={{ opacity: 0.7 }}>Loading graph…</div>
+        )}
       </section>
 
       {evolution ? (
