@@ -6,6 +6,7 @@ import { ResumeContextPanel } from "./components/ResumeContextPanel";
 import { SaveContextPanel } from "./components/SaveContextPanel";
 import { WorkspaceShell } from "./components/WorkspaceShell";
 import { isExperienceDemoActive } from "./demo/demoMode";
+import { trackNavigate } from "./dev";
 import { invokeIpc } from "./lib/ipc";
 import {
   PILOT_DEFAULT_VIEW,
@@ -138,6 +139,7 @@ export default function App() {
 
   const goContinue = (contextId?: string) => {
     setFocusContextId(contextId ?? null);
+    trackNavigate("resume", { commandId: "go_continue" });
     setView("resume");
   };
 
@@ -146,6 +148,7 @@ export default function App() {
       return;
     }
     setFocusContextId(null);
+    trackNavigate(next, { commandId: "dock_navigate" });
     setView(next);
   };
 
@@ -173,7 +176,10 @@ export default function App() {
           workspace={workspace}
           busy={busy}
           onCreateWorkspace={createWorkspace}
-          onGoToSave={() => setView("save")}
+          onGoToSave={() => {
+            trackNavigate("save", { commandId: "go_save" });
+            setView("save");
+          }}
           onContinueContext={(id) => goContinue(id)}
         />
       );
@@ -196,8 +202,14 @@ export default function App() {
           onBusy={setBusy}
           onError={onError}
           onMessage={onMessage}
-          onGoToPilot={() => setView("pilot")}
-          onGoHome={() => setView("home")}
+          onGoToPilot={() => {
+            trackNavigate("pilot", { commandId: "dock_navigate" });
+            setView("pilot");
+          }}
+          onGoHome={() => {
+            trackNavigate("home", { commandId: "dock_navigate" });
+            setView("home");
+          }}
           focusContextId={focusContextId}
         />
       );

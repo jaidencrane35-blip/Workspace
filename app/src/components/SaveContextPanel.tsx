@@ -10,6 +10,7 @@ import type {
   Workspace,
 } from "../types/domain";
 import { useActiveMoment } from "./ActiveMoment";
+import { trackSaveSuccess } from "../dev";
 import { useCognitiveEngine } from "./CognitiveEngine";
 import { RestoreLimitsNotice } from "./RestoreLimitsNotice";
 import { useIntentEngine } from "./IntentEngine";
@@ -276,6 +277,7 @@ export function SaveContextPanel({
         setSaved(context);
         setStep("saved");
         onMessage(`Saved “${context.name}”`);
+        trackSaveSuccess();
         noteCapture(
           context.id,
           neighbours.map((n) => n.id),

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { trackContinueSuccess, trackFlowStart } from "../dev";
 import { invokeIpc } from "../lib/ipc";
 import { RESTORE_LIMITS_SUMMARY } from "../lib/restoreLimits";
 import type {
@@ -150,6 +151,7 @@ export function ResumeContextPanel({
           setPreview(next);
           setResult(null);
           setStep("preview");
+          trackFlowStart("continue");
           setRestoring(true);
           setPresence("restoring");
           setExpanding(true);
@@ -197,6 +199,7 @@ export function ResumeContextPanel({
         setStep("done");
         setExpanding(false);
         setPresence("presence");
+        trackContinueSuccess();
         onMessage(`Resume finished: ${outcome.outcome.replace(/_/g, " ")}`);
       } catch (err: unknown) {
         onError(formatError(err));
