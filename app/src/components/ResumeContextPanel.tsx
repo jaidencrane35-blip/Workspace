@@ -11,6 +11,7 @@ import type {
   Workspace,
 } from "../types/domain";
 import { useActiveMoment } from "./ActiveMoment";
+import { useCognitiveEngine } from "./CognitiveEngine";
 import { EmptyStructure } from "./EmptyStructure";
 import { ContinuePreviewBody } from "./objects/ContinuePreviewObject";
 import { RestoreLimitsNotice } from "./RestoreLimitsNotice";
@@ -98,6 +99,7 @@ export function ResumeContextPanel({
   focusContextId = null,
 }: ResumeContextPanelProps) {
   const { setRestoring } = useIntentEngine();
+  const { noteResume } = useCognitiveEngine();
   const {
     primary,
     expandHost,
@@ -138,6 +140,7 @@ export function ResumeContextPanel({
       onBusy(true);
       onError(null);
       selectMoment(contextId);
+      noteResume(contextId);
       void (async () => {
         try {
           const next = await invokeIpc<ResumePlanPreview>(
@@ -157,7 +160,15 @@ export function ResumeContextPanel({
         }
       })();
     },
-    [onBusy, onError, selectMoment, setRestoring, setPresence, setExpanding],
+    [
+      onBusy,
+      onError,
+      selectMoment,
+      noteResume,
+      setRestoring,
+      setPresence,
+      setExpanding,
+    ],
   );
 
   useEffect(() => {

@@ -1,64 +1,51 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { RESTORE_LIMITS_SUMMARY } from "../lib/restoreLimits";
 import { useActiveMoment } from "./ActiveMoment";
+import { useCognitiveEngine } from "./CognitiveEngine";
 import { useWorkspaceComposition } from "./WorkspaceComposition";
 
-const HINTS = [
-  {
-    id: "save",
-    title: "Save",
-    line: "Focus the note — writing expands from this Moment.",
-  },
-  {
-    id: "continue",
-    title: "Continue",
-    line: "Remember this place — windows grow from the Moment itself.",
-  },
-  {
-    id: "checkin",
-    title: "Check-in",
-    line: "Reflect here — answers settle back into the object.",
-  },
-] as const;
+const HINT_LINES = {
+  save: "Focus the note — writing expands from this Moment.",
+  continue: "Remember this place — windows grow from the Moment itself.",
+  checkin: "Reflect here — answers settle back into the object.",
+} as const;
 
 /**
- * Guide — idle chrome nearly gone; one contextual hint when useful.
+ * Guide — observational. Hints only when cognitive confidence warrants.
  */
 export function PilotHelpPanel() {
   const { density } = useWorkspaceComposition();
-  const { primary, expandHost, neighbours, setPresence, setExpanding } =
-    useActiveMoment();
+  const { primary, expandHost, setPresence, setExpanding } = useActiveMoment();
+  const { guideDecision, noteGuideVisit, preferHint } = useCognitiveEngine();
   const [revealed, setRevealed] = useState(false);
 
-  const hint = useMemo(() => {
-    if (!primary) {
-      return HINTS[0];
-    }
-    if (neighbours.length === 0) {
-      return HINTS[0];
-    }
-    return HINTS[1];
-  }, [primary, neighbours.length]);
+  useEffect(() => {
+    noteGuideVisit();
+  }, [noteGuideVisit]);
 
   useEffect(() => {
     setPresence("guided");
-    setExpanding(Boolean(primary));
+    setExpanding(Boolean(primary) && guideDecision.show);
     return () => setExpanding(false);
-  }, [primary, setPresence, setExpanding]);
+  }, [primary, guideDecision.show, setPresence, setExpanding]);
 
-  const hintNode = (
+  const hintId = preferHint ?? guideDecision.hintId;
+  const line = HINT_LINES[hintId];
+
+  const hintNode = guideDecision.show ? (
     <aside className="moment-attach moment-guide-hint" aria-label="Guide hint">
-      <p className="moment-guide-hint__line">{hint.line}</p>
+      <p className="moment-guide-hint__line">{line}</p>
     </aside>
-  );
+  ) : null;
 
   return (
     <section
-      className="ws-region guide-place guide-dash guide-place--resident guide-place--invisible"
+      className="ws-region guide-place guide-dash guide-place--resident guide-place--invisible guide-place--cognitive"
       data-testid="pilot-help"
       data-density={density}
       data-revealed={revealed ? "on" : "off"}
+      data-hint={guideDecision.show ? "on" : "off"}
       onMouseEnter={() => setRevealed(true)}
       onFocusCapture={() => setRevealed(true)}
     >
@@ -67,11 +54,13 @@ export function PilotHelpPanel() {
         Hints appear when useful. You approve every restore plan.
       </p>
 
-      {primary && expandHost ? createPortal(hintNode, expandHost) : null}
+      {primary && expandHost && hintNode
+        ? createPortal(hintNode, expandHost)
+        : null}
 
-      {!primary ? (
+      {!primary && guideDecision.show ? (
         <aside className="moment-guide-hint moment-guide-hint--fallback">
-          <p className="moment-guide-hint__line">{hint.line}</p>
+          <p className="moment-guide-hint__line">{line}</p>
         </aside>
       ) : null}
 

@@ -7,9 +7,15 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import {
+  rankMomentsByRelevance,
+  scoreMomentRelevance,
+  type CognitiveMomentInput,
+} from "../lib/cognitive";
 import { invokeIpc } from "../lib/ipc";
 import type { PilotPrimaryView } from "../lib/pilotChrome";
 import type { SavedContext, Workspace } from "../types/domain";
+import { useCognitiveEngine } from "./CognitiveEngine";
 import { MomentCard, type MomentObjectState } from "./MomentCard";
 import { useWorkspaceComposition } from "./WorkspaceComposition";
 
@@ -24,6 +30,8 @@ export type MomentPresence =
 interface ActiveMomentValue {
   primary: SavedContext | null;
   neighbours: SavedContext[];
+  /** Relevance scores for calm neighbour rebalancing (id → 0–1). */
+  neighbourScores: Record<string, number>;
   presence: MomentPresence;
   /** Host node inside the persistent Moment for destination attachments. */
   expandHost: HTMLDivElement | null;
@@ -55,12 +63,32 @@ export function ActiveMomentProvider({
     setAmbient,
     setAttentionScene,
   } = useWorkspaceComposition();
+  const {
+    resumeAffinity,
+    reflectionDepth,
+    setRelevanceMap,
+    noteResume,
+  } = useCognitiveEngine();
   const [contexts, setContexts] = useState<SavedContext[]>([]);
   const [primaryId, setPrimaryId] = useState<string | null>(null);
+  const [pinned, setPinned] = useState(false);
   const [presence, setPresence] = useState<MomentPresence>("presence");
   const [expanding, setExpanding] = useState(false);
   const [expandHost, setExpandHostState] = useState<HTMLDivElement | null>(
     null,
+  );
+
+  const toSignals = useCallback(
+    (list: SavedContext[]): CognitiveMomentInput[] =>
+      list.map((c) => ({
+        id: c.id,
+        createdAt: c.created_at,
+        windowCount: c.windows.length,
+        handoffLength: c.handoff_note.trim().length,
+        resumeAffinity: resumeAffinity[c.id] ?? 0,
+        reflectionAffinity: reflectionDepth * 0.55,
+      })),
+    [resumeAffinity, reflectionDepth],
   );
 
   const setExpandHost = useCallback((node: HTMLDivElement | null) => {
@@ -93,19 +121,34 @@ export function ActiveMomentProvider({
   useEffect(() => {
     if (focusContextId && contexts.some((c) => c.id === focusContextId)) {
       setPrimaryId(focusContextId);
+      setPinned(true);
+      noteResume(focusContextId);
       return;
     }
-    if (!primaryId && contexts[0]) {
-      setPrimaryId(contexts[0].id);
+    if (contexts.length === 0) {
       return;
     }
-    if (primaryId && !contexts.some((c) => c.id === primaryId) && contexts[0]) {
-      setPrimaryId(contexts[0].id);
+    if (pinned && primaryId && contexts.some((c) => c.id === primaryId)) {
+      return;
     }
-  }, [contexts, focusContextId, primaryId]);
+    // Self-organisation: recently resumed / relevant Moments return to centre.
+    const ranked = rankMomentsByRelevance(toSignals(contexts));
+    const centre = ranked[0]?.id ?? contexts[0]?.id ?? null;
+    if (centre) {
+      setPrimaryId(centre);
+    }
+  }, [
+    contexts,
+    focusContextId,
+    primaryId,
+    pinned,
+    toSignals,
+    noteResume,
+  ]);
 
   useEffect(() => {
     setExpanding(false);
+    setPinned(false);
     // Destinations refine presence; Save starts as place until writing begins.
     if (view === "save") {
       setPresence("presence");
@@ -126,10 +169,43 @@ export function ActiveMomentProvider({
     () => contexts.find((c) => c.id === primaryId) ?? contexts[0] ?? null,
     [contexts, primaryId],
   );
+
+  const neighbourRank = useMemo(() => {
+    if (!primary) {
+      return [] as Array<{ context: SavedContext; score: number }>;
+    }
+    const others = contexts.filter((c) => c.id !== primary.id);
+    const ranked = rankMomentsByRelevance(toSignals(others));
+    return ranked
+      .map((entry) => {
+        const context = others.find((c) => c.id === entry.id);
+        return context ? { context, score: entry.score } : null;
+      })
+      .filter((entry): entry is { context: SavedContext; score: number } =>
+        Boolean(entry),
+      )
+      .slice(0, 4);
+  }, [contexts, primary, toSignals]);
+
   const neighbours = useMemo(
-    () => contexts.filter((c) => c.id !== primary?.id).slice(0, 4),
-    [contexts, primary],
+    () => neighbourRank.map((entry) => entry.context),
+    [neighbourRank],
   );
+
+  useEffect(() => {
+    const map: Record<string, number> = {};
+    for (const context of contexts) {
+      map[context.id] = scoreMomentRelevance({
+        id: context.id,
+        createdAt: context.created_at,
+        windowCount: context.windows.length,
+        handoffLength: context.handoff_note.trim().length,
+        resumeAffinity: resumeAffinity[context.id] ?? 0,
+        reflectionAffinity: reflectionDepth * 0.55,
+      });
+    }
+    setRelevanceMap(map);
+  }, [contexts, resumeAffinity, reflectionDepth, setRelevanceMap]);
 
   useEffect(() => {
     if (!primary) {
@@ -162,13 +238,23 @@ export function ActiveMomentProvider({
   ]);
 
   const selectMoment = useCallback((id: string) => {
+    setPinned(true);
     setPrimaryId(id);
   }, []);
+
+  const neighbourScores = useMemo(() => {
+    const scores: Record<string, number> = {};
+    for (const entry of neighbourRank) {
+      scores[entry.context.id] = entry.score;
+    }
+    return scores;
+  }, [neighbourRank]);
 
   const value = useMemo(
     () => ({
       primary,
       neighbours,
+      neighbourScores,
       presence,
       expandHost,
       expanding,
@@ -180,6 +266,7 @@ export function ActiveMomentProvider({
     [
       primary,
       neighbours,
+      neighbourScores,
       presence,
       expandHost,
       expanding,
@@ -222,6 +309,7 @@ export function useActiveMoment(): ActiveMomentValue {
     return {
       primary: null,
       neighbours: [],
+      neighbourScores: {},
       presence: "presence",
       expandHost: null,
       expanding: false,
@@ -260,8 +348,14 @@ export function PersistentMomentStage({
   onContinue?: (id: string) => void;
 }) {
   const { density } = useWorkspaceComposition();
-  const { primary, neighbours, presence, expanding, selectMoment } =
-    useActiveMoment();
+  const {
+    primary,
+    neighbours,
+    neighbourScores,
+    presence,
+    expanding,
+    selectMoment,
+  } = useActiveMoment();
   const registerHost = useContext(ExpandHostRegisterContext);
 
   if (!primary) {
@@ -284,6 +378,7 @@ export function PersistentMomentStage({
     <div
       className="ws-object-stage"
       data-presence={presence}
+      data-cognitive="on"
       data-testid="persistent-moment-stage"
     >
       <div className="ws-object-stage__anchor home-hero-band home-hero-band--living">
@@ -315,26 +410,29 @@ export function PersistentMomentStage({
       </div>
       {showNeighbours ? (
         <div
-          className="home-field home-field--context home-field--waiting dash-grid ws-object-stage__neighbours"
+          className="home-field home-field--context home-field--waiting home-field--cognitive dash-grid ws-object-stage__neighbours"
           aria-label="Neighbouring moments"
         >
-          {neighbours.slice(0, 3).map((context, index) => (
-            <MomentCard
-              key={context.id}
-              variant="ambient"
-              state="collapsed"
-              attentionWeight={0.34 - index * 0.04}
-              layoutId={`moment-neighbour-${context.id}`}
-              className={`home-satellite home-satellite--${index % 3} moment-card--waiting`}
-              context={context}
-              busy={busy}
-              onSelect={() => {
-                selectMoment(context.id);
-                onContinue?.(context.id);
-              }}
-              onContinue={() => onContinue?.(context.id)}
-            />
-          ))}
+          {neighbours.slice(0, 3).map((context, index) => {
+            const score = neighbourScores[context.id] ?? 0.3;
+            return (
+              <MomentCard
+                key={context.id}
+                variant="ambient"
+                state="collapsed"
+                attentionWeight={0.22 + score * 0.28}
+                layoutId={`moment-neighbour-${context.id}`}
+                className={`home-satellite home-satellite--${index % 3} moment-card--waiting`}
+                context={context}
+                busy={busy}
+                onSelect={() => {
+                  selectMoment(context.id);
+                  onContinue?.(context.id);
+                }}
+                onContinue={() => onContinue?.(context.id)}
+              />
+            );
+          })}
         </div>
       ) : null}
     </div>

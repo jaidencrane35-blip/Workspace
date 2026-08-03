@@ -8,7 +8,7 @@ import {
 } from "react";
 import type { WorkspaceDensity } from "../lib/density";
 import type { PilotPrimaryView } from "../lib/pilotChrome";
-import { AttentionEngineProvider, useAttentionEngine } from "./AttentionEngine";
+import { useAttentionEngine } from "./AttentionEngine";
 import type { AmbientFocus } from "./AmbientLighting";
 import type { AttentionScene } from "../lib/attention";
 
@@ -128,11 +128,7 @@ export function WorkspaceCompositionProvider({
   density: WorkspaceDensity;
   children: ReactNode;
 }) {
-  return (
-    <AttentionEngineProvider>
-      <CompositionInner density={density}>{children}</CompositionInner>
-    </AttentionEngineProvider>
-  );
+  return <CompositionInner density={density}>{children}</CompositionInner>;
 }
 
 export function useWorkspaceComposition(): WorkspaceCompositionValue {

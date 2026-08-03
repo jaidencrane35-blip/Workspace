@@ -39,7 +39,7 @@ import {
 } from "./ActiveMoment";
 import { AmbientLighting } from "./AmbientLighting";
 import { CommandSurface } from "./CommandSurface";
-import { IntentEngineProvider, useIntentEngine } from "./IntentEngine";
+import { CognitiveEngineProvider, useIntentEngine } from "./CognitiveEngine";
 import { WorkspaceCanvas } from "./WorkspaceCanvas";
 import {
   useWorkspaceComposition,
@@ -388,19 +388,13 @@ function ShellBody({
   );
 }
 
-function ShellWithIntent(props: WorkspaceShellProps) {
-  return (
-    <IntentEngineProvider view={props.view}>
-      <ShellBody {...props} />
-    </IntentEngineProvider>
-  );
-}
-
 export function WorkspaceShell(props: WorkspaceShellProps) {
   const density = useWorkspaceDensity();
   return (
-    <WorkspaceCompositionProvider density={density}>
-      <ShellWithIntent {...props} />
-    </WorkspaceCompositionProvider>
+    <CognitiveEngineProvider view={props.view}>
+      <WorkspaceCompositionProvider density={density}>
+        <ShellBody {...props} />
+      </WorkspaceCompositionProvider>
+    </CognitiveEngineProvider>
   );
 }

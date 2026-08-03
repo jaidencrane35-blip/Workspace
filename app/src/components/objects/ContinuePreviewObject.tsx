@@ -1,5 +1,6 @@
 import { motion, useReducedMotion } from "motion/react";
 import { spring } from "../../design-system";
+import { sortWindowsByImportance } from "../../lib/cognitive";
 import type { ActionPlanItem, ResumePlanPreview } from "../../types/domain";
 
 interface ContinuePreviewBodyProps {
@@ -37,17 +38,18 @@ export function ContinuePreviewBody({
   describeDisposition,
 }: ContinuePreviewBodyProps) {
   const reduceMotion = useReducedMotion();
-  const willAttempt = preview.plan.items.filter(
+  const ordered = sortWindowsByImportance(preview.plan.items);
+  const willAttempt = ordered.filter(
     (i) => i.projected_disposition === "will_attempt",
   ).length;
-  const total = preview.plan.items.length;
+  const total = ordered.length;
   const ratio = total === 0 ? 0 : willAttempt / total;
   const quality =
     ratio >= 0.85 ? "high" : ratio >= 0.5 ? "steady" : "limited";
 
   return (
     <div
-      className="continue-preview-body continue-preview-body--spatial continue-preview-body--remember continue-preview-body--invisible"
+      className="continue-preview-body continue-preview-body--spatial continue-preview-body--remember continue-preview-body--invisible continue-preview-body--cognitive"
       data-quality={quality}
     >
       <p className="sr-only">
@@ -58,7 +60,7 @@ export function ContinuePreviewBody({
         role="list"
         aria-label="Windows in this place"
       >
-        {preview.plan.items.map((item, index) => {
+        {ordered.map((item, index) => {
           const skip = item.projected_disposition !== "will_attempt";
           const hint = describeDisposition(item);
           const { title, app } = splitWindowLabel(item.target_summary);

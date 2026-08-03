@@ -8,7 +8,10 @@ import {
   type MouseEvent,
   type ReactNode,
 } from "react";
-import { resolveAttentionVisual } from "../lib/attention";
+import {
+  modulateByIntentKind,
+  visualFromCognitiveWeight,
+} from "../lib/cognitive";
 import { layoutTransition } from "../lib/motion";
 import type {
   CanvasSlot,
@@ -68,26 +71,15 @@ function WorkspaceObjectInner({
     useIntentEngine();
 
   const baseWeight = attentionWeight ?? attention.weight;
-  let weight = baseWeight;
-  if (influenceObjectId && influenceObjectId !== objectId) {
-    weight *= slot === "orbit" || slot === "utility" ? 0.82 : 0.9;
-  } else if (influenceObjectId === objectId) {
-    weight = Math.min(1, weight + 0.08);
-  }
-  if (intent === "capture" && objectId !== "write-surface") {
-    weight *= 0.7;
-  }
-  if (intent === "restore" && kind !== "moment" && kind !== "continue-preview") {
-    weight *= 0.75;
-  }
-  if (intent === "learn" && kind !== "guide-step") {
-    weight *= 0.72;
-  }
-  if (intent === "reflect" && kind !== "checkin-summary") {
-    weight *= 0.8;
-  }
-
-  const visual = resolveAttentionVisual(weight);
+  const weight = modulateByIntentKind(
+    baseWeight,
+    intent,
+    kind,
+    objectId,
+    influenceObjectId,
+    slot,
+  );
+  const visual = visualFromCognitiveWeight(weight);
 
   const resolvedLevel: WorkspaceSurfaceLevel =
     level ??

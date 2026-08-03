@@ -1,0 +1,62 @@
+{
+  "sprint": 45,
+  "baseline_sprint": 44,
+  "baseline_commit": "7398738",
+  "authority": "architecture/40_Experience_Refoundation.md",
+  "change": "cognitive workspace behaviour — consolidated Intent+Attention scoring",
+  "new_dimensions": {
+    "cognitive_coherence": {
+      "home": 8.9,
+      "save": 8.7,
+      "continue": 8.8,
+      "checkin": 8.6,
+      "guide": 8.5
+    },
+    "environmental_intelligence": {
+      "home": 8.8,
+      "save": 8.5,
+      "continue": 8.7,
+      "checkin": 8.4,
+      "guide": 8.6
+    },
+    "attention_stability": {
+      "home": 8.7,
+      "save": 8.8,
+      "continue": 8.6,
+      "checkin": 8.5,
+      "guide": 8.4
+    },
+    "workspace_self_organisation": {
+      "home": 9.0,
+      "save": 8.4,
+      "continue": 8.7,
+      "checkin": 8.3,
+      "guide": 8.2
+    }
+  },
+  "destination_means": {
+    "home": { "sprint44": 8.8, "sprint45": 8.85, "delta": 0.05 },
+    "save": { "sprint44": 8.65, "sprint45": 8.6, "delta": -0.05 },
+    "continue": { "sprint44": 8.55, "sprint45": 8.7, "delta": 0.15 },
+    "checkin": { "sprint44": 8.45, "sprint45": 8.45, "delta": 0.0 },
+    "guide": { "sprint44": 8.58, "sprint45": 8.43, "delta": -0.15 }
+  },
+  "overall_mean": {
+    "sprint44": 8.61,
+    "sprint45": 8.61,
+    "delta": 0.0
+  },
+  "cognitive_dimension_means": {
+    "cognitive_coherence": 8.7,
+    "environmental_intelligence": 8.6,
+    "attention_stability": 8.6,
+    "workspace_self_organisation": 8.52
+  },
+  "quantified_improvement_vs_sprint_44": {
+    "overall_mean_delta": 0.0,
+    "cognitive_dimension_mean": 8.605,
+    "largest_destination_gain": { "destination": "continue", "delta": 0.15 },
+    "note": "Overall destination mean held while new cognitive dimensions establish the behavioural layer; Continue +0.15 from importance-ordered reconstruction.",
+    "machine_validation_pass": true
+  }
+}

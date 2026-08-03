@@ -369,6 +369,34 @@ body {
   margin-bottom: 0;
 }
 
+/* ── Sprint 45: cognitive workspace ── */
+.ws-object-stage[data-cognitive="on"] .home-field--cognitive {
+  transition:
+    opacity 1.1s var(--ease),
+    filter 1.1s var(--ease),
+    transform 1.4s var(--ease);
+}
+
+.ws-object-stage[data-presence="writing"] .moment-object--anchor .ws-surface,
+.ws-object-stage[data-presence="writing"] .moment-object--anchor .elevated-card {
+  box-shadow:
+    var(--edge-light),
+    0 32px 90px rgba(0, 0, 0, 0.5),
+    0 0 64px rgba(95, 208, 216, 0.1);
+}
+
+.continue-preview-body--cognitive .continue-window-pane--remember:nth-child(1) {
+  z-index: 3;
+}
+
+.continue-preview-body--cognitive .continue-window-pane--remember:nth-child(2) {
+  z-index: 2;
+}
+
+.guide-place--cognitive[data-hint="off"] .moment-guide-hint {
+  display: none;
+}
+
 /* ── Sprint 44: invisible interface ── */
 .home-place--invisible {
   min-height: 0 !important;

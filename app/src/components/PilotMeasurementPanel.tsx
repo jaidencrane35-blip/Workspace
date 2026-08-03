@@ -8,6 +8,7 @@ import type {
   PilotMeasurementSnapshot,
 } from "../types/domain";
 import { useActiveMoment } from "./ActiveMoment";
+import { useCognitiveEngine } from "./CognitiveEngine";
 import { CheckInSummaryObject } from "./objects/CheckInSummaryObject";
 import { useIntentEngine } from "./IntentEngine";
 import { WorkspaceSurface } from "./WorkspaceSurface";
@@ -56,6 +57,7 @@ export function PilotMeasurementPanel({
 }: PilotMeasurementPanelProps) {
   const { density, setAttentionScene } = useWorkspaceComposition();
   const { setReflecting } = useIntentEngine();
+  const { noteReflection } = useCognitiveEngine();
   const {
     primary: activeMoment,
     expandHost,
@@ -117,6 +119,21 @@ export function PilotMeasurementPanel({
   useEffect(() => {
     reload();
   }, [reload]);
+
+  useEffect(() => {
+    if (!snapshot) {
+      return;
+    }
+    if (snapshot.interview_week_four) {
+      noteReflection(0.88);
+    } else if (snapshot.interview_baseline) {
+      noteReflection(0.72);
+    } else if (snapshot.leave_resume.length > 0) {
+      noteReflection(0.5);
+    } else if (snapshot.baseline) {
+      noteReflection(0.4);
+    }
+  }, [snapshot, noteReflection]);
 
   useEffect(() => {
     if (!snapshot || historySeeded) {
@@ -210,6 +227,7 @@ export function PilotMeasurementPanel({
           returnMinutes: Math.round(minutes),
           notes: baselineNotes,
         });
+        noteReflection(0.45);
         onMessage("Baseline recorded locally.");
         reload();
       } catch (err: unknown) {
@@ -238,6 +256,7 @@ export function PilotMeasurementPanel({
         setReturnMinutes("");
         setCorrectionNeeded(false);
         setCorrectionNote("");
+        noteReflection(0.62);
         onMessage("Leave→resume record saved locally.");
         reload();
       } catch (err: unknown) {
@@ -253,6 +272,7 @@ export function PilotMeasurementPanel({
     void (async () => {
       try {
         await invokeIpc("record_pilot_interview", { phase, responses });
+        noteReflection(phase === "week_four" ? 0.9 : 0.75);
         onMessage(
           phase === "baseline"
             ? "Baseline interview notes saved locally."

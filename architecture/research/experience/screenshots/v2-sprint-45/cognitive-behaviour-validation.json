@@ -1,0 +1,55 @@
+{
+  "cognitiveCoherence": {
+    "stageMarked": true,
+    "writingPresence": true,
+    "restoreCognitive": true,
+    "reflectionPresence": true
+  },
+  "environmentalIntelligence": {
+    "neighbourField": true,
+    "guideObservational": true,
+    "guideRespectsConfidence": true
+  },
+  "attentionStability": {
+    "writingFocused": true,
+    "restoreFocused": true,
+    "homeReturns": true
+  },
+  "workspaceSelfOrganisation": {
+    "cognitiveHome": true,
+    "neighboursPresent": true,
+    "panesPrioritised": true
+  },
+  "detail": {
+    "passive": {
+      "cognitive": true,
+      "neighbourCount": 3,
+      "fieldCognitive": true
+    },
+    "writing": {
+      "presence": true,
+      "toolsOn": true
+    },
+    "guide": {
+      "cognitive": true,
+      "hintAttr": "on",
+      "hintInside": true,
+      "howThisPilot": true
+    },
+    "resumed": {
+      "cognitivePreview": true,
+      "paneCount": 3,
+      "presence": true
+    },
+    "reflection": {
+      "formInside": true,
+      "presence": true
+    },
+    "organised": {
+      "backHomeCognitive": true,
+      "presence": "presence",
+      "neighbours": 3
+    }
+  },
+  "pass": true
+}
