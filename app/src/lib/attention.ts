@@ -42,13 +42,15 @@ export function tierFromWeight(weight: number): AttentionTier {
 export function resolveAttentionVisual(weight: number): AttentionVisual {
   const clamped = Math.max(0, Math.min(1, weight));
   const tier = tierFromWeight(clamped);
+  // Context tier “waits” — present but recessed (memory without reading).
+  const waiting = tier === "context";
   return {
     weight: clamped,
     tier,
-    scale: 0.94 + clamped * 0.1,
-    opacity: 0.38 + clamped * 0.62,
-    blur: (1 - clamped) * 3.2,
-    y: (1 - clamped) * 6,
+    scale: 0.93 + clamped * 0.11,
+    opacity: waiting ? 0.28 + clamped * 0.45 : 0.4 + clamped * 0.6,
+    blur: waiting ? 1.4 + (1 - clamped) * 2.4 : (1 - clamped) * 2.6,
+    y: waiting ? 4 + (1 - clamped) * 5 : (1 - clamped) * 5,
     elevation: clamped >= 0.85 ? 3 : clamped >= 0.48 ? 2 : 1,
     lit: clamped >= 0.82,
     interactionPriority: Math.round(clamped * 100),

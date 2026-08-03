@@ -171,6 +171,7 @@ function ShellBody({
     density,
     writingMode,
     ambient,
+    primaryObjectId,
     setAmbient,
     setWritingMode,
     setSelectedObjectId,
@@ -239,6 +240,7 @@ function ShellBody({
       data-writing={writingMode || profile.attentionScene === "writing" ? "on" : "off"}
       data-destination={view}
       data-place="continuous"
+      data-living={primaryObjectId && !writingMode ? "on" : "off"}
       data-intent={intent}
       data-scene={profile.attentionScene}
       data-light={profile.lightingBias}
@@ -254,9 +256,6 @@ function ShellBody({
           <div className="ws-atmosphere__glow ws-atmosphere__glow--a" />
           <div className="ws-atmosphere__glow ws-atmosphere__glow--b" />
           <div className="ws-atmosphere__glow ws-atmosphere__glow--c" />
-          <div className="ws-atmosphere__glow ws-atmosphere__glow--d" />
-          <div className="ws-atmosphere__glow ws-atmosphere__glow--e" />
-          <div className="ws-atmosphere__glow ws-atmosphere__glow--f" />
           <div className="ws-atmosphere__grain" />
           <div className="ws-atmosphere__vignette" />
         </div>
@@ -266,8 +265,12 @@ function ShellBody({
               ? "input"
               : intent === "restore"
                 ? "moment"
-                : ambient
+                : ambient === "none"
+                  ? "workspace"
+                  : ambient
           }
+          scene={profile.attentionScene}
+          living={Boolean(primaryObjectId) && !writingMode}
           active
         />
       </div>

@@ -44,10 +44,8 @@ export function ContinuePreviewBody({
     ratio >= 0.85 ? "high" : ratio >= 0.5 ? "steady" : "limited";
 
   return (
-    <div className="continue-preview-body continue-preview-body--spatial">
-      <p className="continue-preview__place-line">
-        Reconstructing this place
-      </p>
+    <div className="continue-preview-body continue-preview-body--spatial continue-preview-body--remember">
+      <p className="sr-only">Reconstructing this place</p>
       <div
         className="continue-window-field continue-window-field--spatial"
         role="list"
@@ -57,6 +55,7 @@ export function ContinuePreviewBody({
           const skip = item.projected_disposition !== "will_attempt";
           const hint = describeDisposition(item);
           const { title, app } = splitWindowLabel(item.target_summary);
+          const delay = reduceMotion ? 0 : 0.08 + index * 0.11;
           return (
             <motion.div
               key={item.item_id}
@@ -65,12 +64,24 @@ export function ContinuePreviewBody({
                 "continue-window-pane",
                 `continue-window-pane--${index % 5}`,
                 skip ? "is-skip" : "",
+                "continue-window-pane--remember",
               ]
                 .filter(Boolean)
                 .join(" ")}
-              initial={reduceMotion ? false : { opacity: 0, y: 4 }}
-              animate={{ opacity: skip ? 0.48 : 1, y: 0 }}
-              transition={spring.soft}
+              initial={
+                reduceMotion
+                  ? false
+                  : { opacity: 0, y: 10, filter: "blur(6px)" }
+              }
+              animate={{
+                opacity: skip ? 0.42 : 1,
+                y: 0,
+                filter: "blur(0px)",
+              }}
+              transition={{
+                ...spring.lush,
+                delay,
+              }}
             >
               <span className="continue-window-pane__chrome" aria-hidden="true" />
               <span className="continue-window-pane__title">{title}</span>
@@ -85,7 +96,15 @@ export function ContinuePreviewBody({
         })}
       </div>
 
-      <div className="continue-preview__footer">
+      <motion.div
+        className="continue-preview__footer"
+        initial={reduceMotion ? false : { opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{
+          ...spring.soft,
+          delay: reduceMotion ? 0 : 0.12 + total * 0.11,
+        }}
+      >
         <p className="continue-preview__quality" data-quality={quality}>
           <span className="continue-preview__quality-dot" aria-hidden="true" />
           <span>
@@ -112,7 +131,7 @@ export function ContinuePreviewBody({
             Not now
           </button>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }

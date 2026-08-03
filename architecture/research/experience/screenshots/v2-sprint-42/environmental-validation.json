@@ -1,0 +1,13 @@
+{
+  "continuous": true,
+  "living": true,
+  "glowCount": 3,
+  "waitingMoments": 3,
+  "ambientMemoryOnRestoreScene": true,
+  "decorativeDriftRemoved": true,
+  "guideDemoAbsent": true,
+  "writingRecedeEvidence": "save-writing.png",
+  "rememberAssemblyImplemented": true,
+  "typecheck": "pass",
+  "pnpm_test": "83/83"
+}

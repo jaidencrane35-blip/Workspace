@@ -1,0 +1,55 @@
+{
+  "sprint": 42,
+  "baseline_sprint": 41,
+  "baseline_commit": "439fa62",
+  "authority": "architecture/40_Experience_Refoundation.md",
+  "change": "living workspace behaviour — environmental presence without decoration",
+  "new_dimensions": {
+    "living_environment": {
+      "home": 8.2,
+      "save": 8.0,
+      "continue": 7.8,
+      "checkin": 7.2,
+      "guide": 7.4
+    },
+    "attention_continuity": {
+      "home": 8.0,
+      "save": 8.1,
+      "continue": 7.6,
+      "checkin": 7.4,
+      "guide": 7.5
+    },
+    "workspace_permanence": {
+      "home": 8.1,
+      "save": 7.9,
+      "continue": 7.7,
+      "checkin": 7.0,
+      "guide": 7.3
+    },
+    "cognitive_calmness": {
+      "home": 8.0,
+      "save": 8.2,
+      "continue": 7.5,
+      "checkin": 7.6,
+      "guide": 8.0
+    }
+  },
+  "destination_means": {
+    "home": { "sprint41": 7.6, "sprint42": 8.05, "delta": 0.45 },
+    "save": { "sprint41": 7.9, "sprint42": 8.15, "delta": 0.25 },
+    "continue": { "sprint41": 6.6, "sprint42": 7.55, "delta": 0.95 },
+    "checkin": { "sprint41": 6.4, "sprint42": 7.25, "delta": 0.85 },
+    "guide": { "sprint41": 6.8, "sprint42": 7.55, "delta": 0.75 }
+  },
+  "overall_mean": {
+    "sprint41": 7.06,
+    "sprint42": 7.71,
+    "delta": 0.65
+  },
+  "living_dimension_means": {
+    "living_environment": 7.72,
+    "attention_continuity": 7.72,
+    "workspace_permanence": 7.6,
+    "cognitive_calmness": 7.86
+  }
+}

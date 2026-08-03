@@ -52,14 +52,17 @@ export function WorkspaceCanvas({
             ? undefined
             : {
                 filter:
-                  intent === "capture"
-                    ? "brightness(0.82) saturate(0.9)"
+                  intent === "capture" || writingMode
+                    ? "brightness(0.78) saturate(0.86)"
                     : intent === "restore"
-                      ? "brightness(0.92) saturate(0.95)"
-                      : `brightness(${0.9 + profile.atmosphereDepth * 0.1}) saturate(1)`,
+                      ? "brightness(0.9) saturate(0.92)"
+                      : intent === "learn"
+                        ? "brightness(0.94) saturate(0.96)"
+                        : `brightness(${0.92 + profile.atmosphereDepth * 0.08}) saturate(${0.96 + profile.atmosphereDepth * 0.04})`,
               }
         }
         transition={spring[profile.motion]}
+        data-living={primaryObjectId && !writingMode ? "on" : "off"}
       >
         <div className="ws-canvas-root__veil" aria-hidden="true" />
         <div className="ws-canvas-root__field">{children}</div>

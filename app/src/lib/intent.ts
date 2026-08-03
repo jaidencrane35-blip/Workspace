@@ -118,9 +118,10 @@ export function compositionForIntent(
       return {
         intent,
         attentionScene: "guide",
-        dockEmphasis: 0.75,
-        atmosphereDepth: 0.86,
-        spacingScale: 1.08,
+        // Guide is a resident — never dominate the place.
+        dockEmphasis: 0.92,
+        atmosphereDepth: 0.72,
+        spacingScale: 1.02,
         lightingBias: "cool",
         motion: "soft",
         primaryHint: "guide",
@@ -132,10 +133,10 @@ export function compositionForIntent(
         intent: "landing",
         attentionScene: empty ? "empty" : "default",
         dockEmphasis: empty ? 0.85 : 1,
-        atmosphereDepth: empty ? 0.95 : 1,
-        spacingScale: empty ? 1.15 : 1,
-        lightingBias: "neutral",
-        motion: "soft",
+        atmosphereDepth: empty ? 0.9 : 1,
+        spacingScale: empty ? 1.12 : 1,
+        lightingBias: empty ? "neutral" : "focus",
+        motion: "lush",
         primaryHint: empty ? "home-create" : "moment",
         commands: empty
           ? [

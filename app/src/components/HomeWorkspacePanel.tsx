@@ -147,7 +147,7 @@ export function HomeWorkspacePanel({
 
       {latest ? (
         <>
-          <div className="home-hero-band attention-field home-hero-band--owns">
+          <div className="home-hero-band attention-field home-hero-band--owns home-hero-band--living">
             <MomentCard
               variant="hero"
               state="expanded"
@@ -164,7 +164,7 @@ export function HomeWorkspacePanel({
 
           {density !== "focus" && satellites.length > 0 && (
             <div
-              className="home-field home-field--context dash-grid"
+              className="home-field home-field--context home-field--waiting dash-grid"
               aria-label="Earlier moments"
             >
               {satellites.map((context, index) => (
@@ -172,8 +172,8 @@ export function HomeWorkspacePanel({
                   key={context.id}
                   variant="ambient"
                   state="collapsed"
-                  attentionWeight={0.42 - index * 0.05}
-                  className={`home-satellite home-satellite--${index % 3}`}
+                  attentionWeight={0.34 - index * 0.04}
+                  className={`home-satellite home-satellite--${index % 3} moment-card--waiting`}
                   context={context}
                   busy={busy}
                   onSelect={() => {

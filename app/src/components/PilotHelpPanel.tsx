@@ -1,7 +1,5 @@
 import { BookmarkPlus, ClipboardList, Play } from "lucide-react";
-import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useState } from "react";
-import { spring } from "../design-system";
 import { RESTORE_LIMITS_SUMMARY } from "../lib/restoreLimits";
 import { GuideStepObject } from "./objects/GuideStepObject";
 import { useWorkspaceComposition } from "./WorkspaceComposition";
@@ -12,26 +10,23 @@ const STEPS = [
     icon: BookmarkPlus,
     title: "Save",
     line: "Focus the note — the place quiets around writing.",
-    demo: "write",
   },
   {
     id: "continue",
     icon: Play,
     title: "Continue",
-    line: "Step into a Moment — the place reconstructs around it.",
-    demo: "expand",
+    line: "Step into a Moment — the place remembers itself.",
   },
   {
     id: "checkin",
     icon: ClipboardList,
     title: "Check-in",
-    line: "Answer one question — earlier answers gently recede.",
-    demo: "flow",
+    line: "Answer one question — earlier answers settle into history.",
   },
 ] as const;
 
 /**
- * Guide — embedded orientation inside the continuous place.
+ * Guide — quiet resident of the living workspace.
  */
 export function PilotHelpPanel() {
   const {
@@ -41,7 +36,6 @@ export function PilotHelpPanel() {
     setAttentionScene,
     setAmbient,
   } = useWorkspaceComposition();
-  const reduceMotion = useReducedMotion();
   const [active, setActive] = useState(0);
 
   useEffect(() => {
@@ -63,14 +57,14 @@ export function PilotHelpPanel() {
 
   return (
     <section
-      className="ws-region guide-place guide-dash guide-walk attention-field"
+      className="ws-region guide-place guide-dash guide-walk guide-place--resident attention-field"
       data-testid="pilot-help"
       data-density={density}
     >
       <header className="place__identity place__identity--place place__identity--quiet-region">
         <p className="exp-kicker">Guide</p>
         <h1 className="place__title place__title--region">How this pilot works</h1>
-        <p className="place__pulse">Orientation inside this place — not a separate product tour.</p>
+        <p className="place__pulse">Hints when useful — never an interruption.</p>
       </header>
 
       <div className="guide-experience guide-experience--embedded">
@@ -83,18 +77,6 @@ export function PilotHelpPanel() {
             icon={current.icon}
             state="expanded"
           />
-          <motion.div
-            key={current.demo}
-            className={`guide-demo guide-demo--${current.demo}`}
-            initial={reduceMotion ? false : { opacity: 0, scale: 0.96 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={spring.soft}
-            aria-hidden="true"
-          >
-            <span className="guide-demo__pulse" />
-            <span className="guide-demo__pulse guide-demo__pulse--b" />
-            <span className="guide-demo__label">{current.title}</span>
-          </motion.div>
         </div>
 
         <div className="guide-experience__rail" role="list">
@@ -107,7 +89,7 @@ export function PilotHelpPanel() {
                 index === active
                   ? "guide-experience__chip is-active"
                   : index < active
-                    ? "guide-experience__chip is-done"
+                    ? "guide-experience__chip is-done is-settled"
                     : "guide-experience__chip"
               }
               onClick={() => setActive(index)}

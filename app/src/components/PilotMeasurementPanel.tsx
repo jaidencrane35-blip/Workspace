@@ -377,7 +377,7 @@ export function PilotMeasurementPanel({
         <WorkspaceSurface
           tone="soft"
           padding="lg"
-          className="checkin-story"
+          className="checkin-story checkin-story--settled"
           aria-label="Your reflection"
         >
           <h2 className="sr-only">Your reflection</h2>
@@ -410,10 +410,10 @@ export function PilotMeasurementPanel({
           {chapter === 0 && (
             <motion.div
               key="ch-0"
-              className="checkin-chat"
-              initial={reduceMotion ? false : { opacity: 0, x: 24 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={reduceMotion ? undefined : { opacity: 0, x: -16 }}
+              className="checkin-chat checkin-chat--live"
+              initial={reduceMotion ? false : { opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={reduceMotion ? undefined : { opacity: 0.45, scale: 0.985 }}
               transition={spring.soft}
             >
               <p className="checkin-prompt">
@@ -467,10 +467,10 @@ export function PilotMeasurementPanel({
           {chapter === 1 && (
             <motion.div
               key="ch-1"
-              className="checkin-chat"
-              initial={reduceMotion ? false : { opacity: 0, x: 24 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={reduceMotion ? undefined : { opacity: 0, x: -16 }}
+              className="checkin-chat checkin-chat--live"
+              initial={reduceMotion ? false : { opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={reduceMotion ? undefined : { opacity: 0.45, scale: 0.985 }}
               transition={spring.soft}
             >
               <p className="checkin-prompt">
@@ -534,10 +534,10 @@ export function PilotMeasurementPanel({
           {chapter === 2 && (
             <motion.div
               key="ch-2"
-              className="checkin-chat"
-              initial={reduceMotion ? false : { opacity: 0, x: 24 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={reduceMotion ? undefined : { opacity: 0, x: -16 }}
+              className="checkin-chat checkin-chat--live"
+              initial={reduceMotion ? false : { opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={reduceMotion ? undefined : { opacity: 0.45, scale: 0.985 }}
               transition={spring.soft}
             >
               <div className="checkin-prompt">
@@ -581,10 +581,10 @@ export function PilotMeasurementPanel({
           {chapter === 3 && (
             <motion.div
               key="ch-3"
-              className="checkin-chat"
-              initial={reduceMotion ? false : { opacity: 0, x: 24 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={reduceMotion ? undefined : { opacity: 0, x: -16 }}
+              className="checkin-chat checkin-chat--live"
+              initial={reduceMotion ? false : { opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={reduceMotion ? undefined : { opacity: 0.45, scale: 0.985 }}
               transition={spring.soft}
             >
               <div className="checkin-prompt">
