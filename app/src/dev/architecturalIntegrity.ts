@@ -36,6 +36,7 @@ export const AUTHORITY_CHAIN: readonly [
   ["44_Experience_Improvement_Model.md", "45_Experience_Change_Governance.md"],
   ["45_Experience_Change_Governance.md", "46_Engineering_Governance.md"],
   ["46_Engineering_Governance.md", "47_Architectural_Integrity.md"],
+  ["47_Architectural_Integrity.md", "48_Adaptive_Workspace.md"],
 ];
 
 export const AUTHORITY_ROOT: ArchitectureAuthorityDoc =

@@ -28,6 +28,10 @@ import { INTENT_LABELS } from "../lib/intent";
 import { contentTransition, motionPrimitive } from "../lib/motion";
 import { useWorkspaceDensity } from "../hooks/useWorkspaceDensity";
 import {
+  presentationToShellStyle,
+  useResolvedPresentation,
+} from "../experience";
+import {
   PILOT_PRIMARY_VIEWS,
   PILOT_VIEW_LABELS,
   type PilotPrimaryView,
@@ -174,7 +178,10 @@ function ShellBody({
   status,
   children,
 }: WorkspaceShellProps) {
-  const reduceMotion = useReducedMotion();
+  const systemReduceMotion = useReducedMotion();
+  const presentation = useResolvedPresentation();
+  const reduceMotion =
+    Boolean(systemReduceMotion) || presentation.motionProfile === "reduced";
   const contentRef = useRef<HTMLDivElement>(null);
   const contentId = useId();
   const liveRef = useRef<HTMLDivElement>(null);
@@ -188,7 +195,7 @@ function ShellBody({
   } = useWorkspaceComposition();
   const { intent, profile, adoptView, setWriting } = useIntentEngine();
   // Focus shift inside one place — not a page enter/exit.
-  const focusShift = motionPrimitive("focus", Boolean(reduceMotion));
+  const focusShift = motionPrimitive("focus", reduceMotion);
 
   useEffect(() => {
     contentRef.current?.focus({ preventScroll: true });
@@ -243,10 +250,15 @@ function ShellBody({
       data-intent={intent}
       data-scene={profile.attentionScene}
       data-light={profile.lightingBias}
+      data-adapt-motion={presentation.motionProfile ?? "standard"}
+      data-adapt-count={String(presentation.appliedAdaptationIds.length)}
       style={
         {
-          "--intent-space": String(profile.spacingScale),
-          "--intent-depth": String(profile.atmosphereDepth),
+          ...presentationToShellStyle(
+            profile.spacingScale,
+            profile.atmosphereDepth,
+            presentation,
+          ),
         } as CSSProperties
       }
     >
@@ -388,7 +400,8 @@ function ShellBody({
 }
 
 export function WorkspaceShell(props: WorkspaceShellProps) {
-  const density = useWorkspaceDensity();
+  const presentation = useResolvedPresentation();
+  const density = useWorkspaceDensity(presentation.density ?? null);
   return (
     <CognitiveEngineProvider view={props.view}>
       <WorkspaceCompositionProvider density={density}>

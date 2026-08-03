@@ -40,6 +40,7 @@ import type {
   ArchitectureSnapshot,
   IntegrityResult,
 } from "./architecturalIntegrity";
+import type { WorkspaceAdaptation } from "../experience/workspaceAdaptation";
 import { fnv1a } from "./devHash";
 
 const panelStyle: CSSProperties = {
@@ -88,6 +89,7 @@ type ImprovementApi = typeof import("./experienceImprovement");
 type GovernanceApi = typeof import("./experienceGovernance");
 type EngineeringApi = typeof import("./engineeringGovernance");
 type IntegrityApi = typeof import("./architecturalIntegrity");
+type AdaptationApi = typeof import("../experience/workspaceAdaptation");
 
 const NEXT_STATE: Partial<Record<ProposalLifecycle, ProposalLifecycle>> = {
   draft: "review",
@@ -119,6 +121,9 @@ export function ExperienceEvidenceDashboard() {
     null,
   );
   const [integrityApi, setIntegrityApi] = useState<IntegrityApi | null>(null);
+  const [adaptationApi, setAdaptationApi] = useState<AdaptationApi | null>(
+    null,
+  );
   const [exploreNode, setExploreNode] = useState<string>(
     "doc:40_Experience_Refoundation.md",
   );
@@ -165,10 +170,24 @@ export function ExperienceEvidenceDashboard() {
         }
       });
     }
+    if (!adaptationApi) {
+      void import("../experience/workspaceAdaptation").then((mod) => {
+        if (!cancelled) {
+          setAdaptationApi(mod);
+        }
+      });
+    }
     return () => {
       cancelled = true;
     };
-  }, [open, improvementApi, governanceApi, engineeringApi, integrityApi]);
+  }, [
+    open,
+    improvementApi,
+    governanceApi,
+    engineeringApi,
+    integrityApi,
+    adaptationApi,
+  ]);
 
   const sessions = useMemo(() => {
     void tick;
@@ -329,6 +348,21 @@ export function ExperienceEvidenceDashboard() {
     }
     return integrityApi.listDependencies(architectureGraph, exploreNode);
   }, [integrityApi, architectureGraph, exploreNode]);
+
+  const adaptations: WorkspaceAdaptation[] = useMemo(() => {
+    void tick;
+    if (!adaptationApi) {
+      return [];
+    }
+    return adaptationApi.listAdaptations(govStore);
+  }, [adaptationApi, govStore, tick]);
+
+  const resolvedPresentation = useMemo(() => {
+    if (!adaptationApi) {
+      return null;
+    }
+    return adaptationApi.resolvePresentationConfiguration(adaptations);
+  }, [adaptationApi, adaptations]);
 
   const analyze = () => {
     if (sessions.length === 0) {
@@ -534,6 +568,132 @@ export function ExperienceEvidenceDashboard() {
     refresh();
   };
 
+  const draftAdaptation = () => {
+    if (!adaptationApi || !integrityApi) {
+      setGovMessage("adapt_loading");
+      return;
+    }
+    const released = engineeringRecords.filter((r) =>
+      ["architecturally_accepted", "released"].includes(r.state),
+    );
+    const eng = released[released.length - 1];
+    const proposal = proposals.find(
+      (p) => eng?.proposalIds.includes(p.proposalId),
+    );
+    const evidence =
+      snapshots.find((s) => s.evidenceId === eng?.validationEvidence.evidenceSnapshotIds[0]) ??
+      latest;
+    let snap = architectureSnapshots[architectureSnapshots.length - 1];
+    if (!snap && architectureGraph) {
+      snap = integrityApi.createArchitectureSnapshot(architectureGraph, {
+        t: Date.now(),
+        source: graphSource,
+      });
+      integrityApi.persistArchitectureSnapshot(govStore, snap);
+    }
+    if (!eng || !proposal || !evidence || !snap) {
+      setGovMessage("adapt_lineage_incomplete");
+      return;
+    }
+    const built = adaptationApi.buildAdaptationFromLineage(
+      {
+        engineering: eng,
+        proposal,
+        evidence,
+        architectureSnapshot: snap,
+      },
+      {
+        targetComponents: ["shell", "canvas"],
+        scopes: ["spacing", "density", "motion", "environment"],
+        presentation: {
+          density: "balanced",
+          spacingScale: 0.94,
+          emphasisScale: 1.04,
+          groupingTightness: 0.62,
+          motionProfile: "standard",
+          environmentalWeight: 0.96,
+        },
+        expectedMetric: "meanFrictionScore",
+        expectedImprovementDelta: 0.03,
+        expectedDirection: "lower_better",
+        rollbackCriteria: ["friction_regression", "abandon_increase"],
+      },
+    );
+    if (!built) {
+      setGovMessage("adapt_build_failed");
+      return;
+    }
+    const result = adaptationApi.persistAdaptation(govStore, built, {
+      engineering: eng,
+      proposal,
+      evidence,
+      architectureSnapshot: snap,
+    });
+    setGovMessage(
+      result.ok
+        ? `adapt_drafted:${result.adaptation.adaptationId}`
+        : `adapt_err:${result.error}`,
+    );
+    refresh();
+  };
+
+  const validateAdaptation = (adaptation: WorkspaceAdaptation) => {
+    if (!adaptationApi || !latest) {
+      return;
+    }
+    const baseline =
+      snapshots.find(
+        (s) => s.evidenceId === adaptation.validation.baselineEvidenceId,
+      ) ?? snapshots[0];
+    if (!baseline) {
+      setGovMessage("adapt_no_baseline");
+      return;
+    }
+    // Compare baseline vs latest aggregate as after evidence.
+    const result = adaptationApi.validateAdaptationEvidence(
+      adaptation,
+      baseline,
+      latest,
+    );
+    adaptationApi.upsertValidatedAdaptation(govStore, result.adaptation);
+    setGovMessage(
+      `adapt_val:${adaptation.adaptationId}:${result.validationResult}${result.rollback ? ":rollback" : ""}`,
+    );
+    refresh();
+  };
+
+  const activateAdaptation = (adaptation: WorkspaceAdaptation) => {
+    if (!adaptationApi) {
+      return;
+    }
+    const result = adaptationApi.activateAdaptation(
+      govStore,
+      adaptation.adaptationId,
+    );
+    setGovMessage(
+      result.ok
+        ? `adapt_active:${adaptation.adaptationId}`
+        : `adapt_err:${result.error}`,
+    );
+    refresh();
+  };
+
+  const rollbackAdaptation = (adaptation: WorkspaceAdaptation) => {
+    if (!adaptationApi) {
+      return;
+    }
+    const result = adaptationApi.rollbackAdaptation(
+      govStore,
+      adaptation.adaptationId,
+    );
+    setGovMessage(
+      result.ok
+        ? `adapt_rollback:${adaptation.adaptationId}`
+        : `adapt_err:${result.error}`,
+    );
+    refresh();
+  };
+
   if (!isExperienceValidationEnabled()) {
     return null;
   }
@@ -602,6 +762,14 @@ export function ExperienceEvidenceDashboard() {
           onClick={snapshotArchitecture}
         >
           Snapshot architecture
+        </button>
+        <button
+          type="button"
+          style={btnStyle}
+          data-testid="draft-adaptation"
+          onClick={draftAdaptation}
+        >
+          Draft adaptation
         </button>
         <button type="button" style={btnStyle} onClick={refresh}>
           Refresh
@@ -854,6 +1022,89 @@ export function ExperienceEvidenceDashboard() {
               </li>
             );
           })}
+        </ul>
+      </section>
+
+      <section style={{ marginBottom: 10 }} data-testid="workspace-adaptations">
+        <div style={{ marginBottom: 4 }}>
+          <strong>Adaptations</strong>
+          {!adaptationApi
+            ? " (loading…)"
+            : ` (${adaptations.length})`}
+        </div>
+        {resolvedPresentation ? (
+          <div>
+            resolved: density {String(resolvedPresentation.density)} · space{" "}
+            {resolvedPresentation.spacingScale} · motion{" "}
+            {resolvedPresentation.motionProfile} · active{" "}
+            {resolvedPresentation.appliedAdaptationIds.length}
+          </div>
+        ) : null}
+        {adaptationApi && adaptations.length === 0 ? (
+          <div style={{ opacity: 0.7 }}>
+            Empty. Need accepted engineering + architecture snapshot, then draft.
+          </div>
+        ) : null}
+        <ul style={{ paddingLeft: 16, margin: "6px 0" }}>
+          {adaptations.map((a) => (
+            <li key={a.adaptationId} style={{ marginBottom: 8 }}>
+              <div>
+                {a.adaptationId} · <strong>{a.rolloutState}</strong> · validation{" "}
+                {a.validation.validationResult}
+              </div>
+              <div>
+                eng {a.engineeringChangeId} · prop {a.proposalId}
+              </div>
+              <div>
+                evidence {a.evidenceSnapshotId} · asnap{" "}
+                {a.architectureSnapshotId}
+              </div>
+              <div>
+                scopes {a.scopes.join(",")} · metric {a.expectedMetric} Δ
+                {a.expectedImprovementDelta}
+              </div>
+              <div>
+                replay {a.validation.replaySessionIds.join(", ") || "—"}
+              </div>
+              <div>
+                {a.validation.validationResult !== "passed" ? (
+                  <button
+                    type="button"
+                    style={btnStyle}
+                    onClick={() => validateAdaptation(a)}
+                  >
+                    Validate vs latest
+                  </button>
+                ) : null}
+                {a.validation.validationResult === "passed" &&
+                a.rolloutState !== "active" &&
+                a.rolloutState !== "rolled_back" ? (
+                  <button
+                    type="button"
+                    style={btnStyle}
+                    data-testid={`activate-adapt-${a.adaptationId}`}
+                    onClick={() => activateAdaptation(a)}
+                  >
+                    Activate
+                  </button>
+                ) : null}
+                {a.rolloutState === "active" ? (
+                  <button
+                    type="button"
+                    style={btnStyle}
+                    onClick={() => rollbackAdaptation(a)}
+                  >
+                    Rollback
+                  </button>
+                ) : null}
+                <span style={{ opacity: 0.7 }}>
+                  {a.rolloutState === "rolled_back" ? " rolled_back" : ""}
+                  {a.rolloutState === "inactive" ? " inactive" : ""}
+                  {a.rolloutState === "candidate" ? " candidate" : ""}
+                </span>
+              </div>
+            </li>
+          ))}
         </ul>
       </section>
 

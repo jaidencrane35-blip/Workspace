@@ -1,0 +1,32 @@
+export {
+  ADAPTATION_STORAGE_KEY,
+  ADAPTATION_CHANGED_EVENT,
+  activateAdaptation,
+  buildAdaptationFromLineage,
+  clearAdaptationStore,
+  deactivateAdaptation,
+  defaultAdaptationStore,
+  getAdaptation,
+  identityPresentation,
+  listAdaptations,
+  persistAdaptation,
+  presentationToShellStyle,
+  resolvePresentationConfiguration,
+  rollbackAdaptation,
+  upsertValidatedAdaptation,
+  validateAdaptationEvidence,
+  verifyAdaptationLineage,
+} from "./workspaceAdaptation";
+export type {
+  WorkspaceAdaptation,
+  PresentationConfiguration,
+  ResolvedPresentation,
+  AdaptationScope,
+  AdaptationRolloutState,
+  AdaptationTargetComponent,
+  AdaptationValidationContract,
+  AdaptationLineageContext,
+  AdaptationLineageError,
+  RollbackCriterion,
+} from "./workspaceAdaptation";
+export { useResolvedPresentation } from "./useResolvedPresentation";
