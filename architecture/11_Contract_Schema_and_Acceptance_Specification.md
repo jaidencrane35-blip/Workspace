@@ -1,8 +1,8 @@
-# Workspace Contract Schema and Acceptance Specification v1.0
+# Workspace Contract Schema and Acceptance Specification v1.1
 
 Status: Active
 Authority: Authoritative conceptual schema and pre-implementation acceptance specification for capability contracts
-Version: 1.0
+Version: 1.1
 
 This document defines architectural meaning, required conceptual fields, compatibility rules, invariants, and acceptance cases. It does not define a wire format, serialization, programming-language type, transport, storage engine, framework, or API.
 
@@ -329,6 +329,18 @@ Equivalent control-plane recovery is explicit:
 - Permission resolve/revoke/policy commands are immediate authoritative state transitions; decision events are notifications.
 - Companion tasks are reconciled through `Companion.getTaskStatus`.
 
+Runtime Host may restart a capability only under its validated lifecycle
+registration descriptor. The descriptor declares dependency class, supported
+transitions, restart class, compatible contract versions, readiness criteria,
+and owner reconciliation obligations. After interruption:
+
+- `never` is not restarted automatically
+- `stateless_restartable` may become available after ordinary readiness
+- `restartable_after_reconciliation` remains unavailable/reconciling until the
+  owner reports reconciliation complete for the new lifecycle epoch
+- restart, health, and reconciliation metadata remain domain-free
+- no lifecycle state can fabricate a domain operation outcome
+
 If an acceptance response is lost, redelivery of the same command identity returns the same operation identity/reference and does not create another operation.
 
 ---
@@ -391,6 +403,15 @@ Every protected committing capability must:
 3. validate with Permission Authority immediately before protected access/effect
 4. reject expiry, revocation, replay, requester mismatch, purpose mismatch, target mismatch, operation mismatch, scope mismatch, or extension mismatch
 5. record authorization identity, never proof content, in audit/explanation metadata
+
+A protected capability that must confirm Workspace scope may present its
+already authorized domain proof to `Workspace.scopeFor` when that proof binds
+the same Workspace identity/revision. The proof remains opaque: Workspace
+Management forwards it unchanged through IC-009 with the original requester and
+exact scope context, and Permission Authority returns only authorized-use or
+invalid. Workspace Management then returns lifecycle/revision validity without
+exposing Workspace content. This does not require, synthesize, or confer a
+separate `workspace.read` grant.
 
 ### Authorization consumption and revocation ordering
 
@@ -485,6 +506,18 @@ A state reference:
 - requires fresh permission validation when protected
 - becomes stale when owner revision changes
 - cannot be used to write state directly
+
+Workspace archive, restore, move, merge, and active-scope changes advance the
+owner revision and invalidate earlier scope references. Archiving active scope
+atomically establishes the nearest non-archived ancestor, otherwise the default
+personal workspace, otherwise explicit `unscoped`. A stale or archived scope
+cannot authorize a later protected effect.
+
+Memory retained under an archived Workspace scope remains Memory-owned and is
+excluded from ordinary active-scope retrieval. Explicit user-authorized Memory
+administration may inspect, redact, or forget it against the archived scope.
+Restore does not reactivate visibility until both current Workspace scope and
+fresh Memory authorization validate.
 
 Raw sensing buffers, authorization proofs, provider secrets, and extension partition contents are prohibited state references.
 
@@ -1109,6 +1142,25 @@ Each future contract supplies conceptual Given/When/Then cases. At minimum:
 40. Given user revocation of an operation-control proof, when the owner receives it, then active work safely pauses/cancels where possible before control invalidation; an irreversible effect may complete, but no subsequent effect begins and too-late/unsafe status is explained.
 41. Given control revocation delivery is missed during an Authority outage, when the bounded offline lease remains active, then only minimized status/safety control is possible; at lease expiry nonterminal work safely pauses/cancels where possible, otherwise later effects stop and too-late/unsafe is reported.
 42. Given reconciliation begins after control-proof expiry, when a fresh user-administration proof is presented, then the owner returns its content-free terminal tombstone or an honest expired-history result; neither permits automatic retry.
+
+### Foundational lifecycle and scope
+
+43. Given a user explicitly requests shutdown while Companion is unavailable,
+    when Experience calls Runtime Host, then shutdown is acknowledged, no
+    domain authority is granted, and status remains visible until final known
+    state or bounded residual outcomes are presented.
+44. Given a capability interruption, when Runtime Host considers restart, then
+    the validated restart class governs and a reconciliation-required owner is
+    not exposed as available before it reports reconciliation complete.
+45. Given active Workspace scope is archived, when the archive commits, then
+    fallback and scope-revision invalidation commit atomically and stale
+    snapshots cannot authorize later effects.
+46. Given Memory is retained under an archived Workspace, when ordinary active-
+    scope retrieval occurs, then that Memory is excluded; explicit archived-
+    scope administration requires fresh authorization.
+47. Given Memory validates a Workspace binding, when it presents a domain proof
+    bound to that scope, then Workspace returns only scope validity/lifecycle
+    state and does not require or grant a separate Workspace content-read proof.
 
 ---
 

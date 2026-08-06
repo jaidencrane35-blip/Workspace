@@ -220,22 +220,35 @@ export async function demoInvoke<T>(
           "That restore plan is no longer valid. Preview again.",
         );
       }
-      const preview: ResumePlanPreview = {
-        saved_context_id: plan.plan_id.replace(/^demo-plan-/, "demo-ctx-"),
-        saved_context_name: plan.purpose,
-        handoff_note: "",
-        plan,
-      };
       // Recover context id from plan_id `demo-plan-${id}`
       const contextId = plan.plan_id.startsWith("demo-plan-")
         ? plan.plan_id.slice("demo-plan-".length)
         : "";
       const context = state.contexts.find((c) => c.id === contextId);
-      if (context) {
-        preview.saved_context_id = context.id;
-        preview.saved_context_name = context.name;
-        preview.handoff_note = context.handoff_note;
-      }
+      const preview: ResumePlanPreview = context
+        ? { ...buildDemoResumePreview(context), plan }
+        : {
+            saved_context_id: plan.plan_id.replace(/^demo-plan-/, "demo-ctx-"),
+            saved_context_name: plan.purpose,
+            handoff_note: "",
+            plan,
+            compatibility: {
+              total_items: plan.items.length,
+              will_attempt: plan.items.filter(
+                (item) => item.projected_disposition === "will_attempt",
+              ).length,
+              will_skip_unsupported: 0,
+              will_skip_unresolvable: plan.items.filter(
+                (item) =>
+                  item.projected_disposition === "will_skip_unresolvable",
+              ).length,
+              missing_window_count: 0,
+              confidence_band: "limited",
+              restore_eligible: plan.items.some(
+                (item) => item.projected_disposition === "will_attempt",
+              ),
+            },
+          };
       const outcome = buildDemoExecuteResult(preview);
       if (contextId) {
         const entry: DemoRestoreHistoryEntry = {

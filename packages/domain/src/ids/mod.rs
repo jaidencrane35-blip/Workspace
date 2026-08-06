@@ -2,6 +2,7 @@ use std::fmt;
 use std::str::FromStr;
 
 use serde::{Deserialize, Serialize};
+use ts_rs::TS;
 use uuid::Uuid;
 
 use crate::errors::{DomainError, Result};
@@ -9,7 +10,8 @@ use crate::errors::{DomainError, Result};
 macro_rules! define_id {
     ($name:ident) => {
         /// Strongly typed domain identifier.
-        #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+        #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, TS)]
+        #[ts(type = "string")]
         #[serde(transparent)]
         pub struct $name(String);
 

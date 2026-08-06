@@ -1,12 +1,12 @@
 {
-  "collected_at": "SystemTime { intervals: 134301902504879104 }",
+  "collected_at": "SystemTime { intervals: 134305144700372478 }",
   "mode": "os_taskkill_during_restore_execution_fence",
-  "child_pid": 2948,
-  "kill_command": "taskkill /PID 2948 /F",
+  "child_pid": 47588,
+  "kill_command": "taskkill /PID 47588 /F",
   "kill_ok": true,
   "recovery_disposition": "incomplete",
   "session_integrity": "ok",
   "fence_cleared": true,
   "last_recovery_kind": "restore_execution",
-  "database_path": "C:\\Users\\Jaide\\AppData\\Local\\Temp\\.tmprAdeo1\\kill-recovery.db"
+  "database_path": "C:\\Users\\Jaide\\AppData\\Local\\Temp\\.tmpfoqJUK\\kill-recovery.db"
 }

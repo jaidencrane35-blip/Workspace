@@ -40,3 +40,11 @@ companion experience — not become it.
 6. Active workspace persistence defect fixed (pilot blocker).
 
 Trust, contracts, Save/Resume behaviour, and zero ambient observation unchanged.
+
+---
+
+## Follow-on
+
+Participant #1 review after LEDGER-0034: product visible (~6.5–7/10); personality
+and dashboard-first memory still missing. Sequencing continues in
+`21_Experience_Roadmap.md` (LEDGER-0035). No open-ended UI tweak sprint.

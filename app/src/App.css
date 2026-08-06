@@ -3188,3 +3188,305 @@ h2, h3, h4 {
   color: var(--exp-text);
   text-transform: none;
 }
+
+/* —— Conversational Operator (Modes 1–3) — desktop presence —— */
+
+.op-root {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  min-height: 100%;
+  overflow: hidden;
+  background: transparent;
+}
+
+.op-float {
+  position: fixed;
+  z-index: 80;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  border: none;
+  background: #121820;
+  color: var(--exp-text);
+  cursor: grab;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.4);
+  touch-action: none;
+  user-select: none;
+}
+
+.op-float:active { cursor: grabbing; }
+
+.op-float__mark {
+  font-family: var(--exp-display);
+  font-weight: 650;
+  font-size: 1.1rem;
+  letter-spacing: -0.03em;
+}
+
+.op-stage {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  gap: 0;
+  min-height: 0;
+}
+
+.op-stage--mode2 {
+  place-items: center;
+  padding: 0;
+  background: transparent;
+}
+
+.op-stage--mode3 {
+  grid-template-columns: minmax(300px, 380px) 1fr;
+  background: #070b10;
+}
+
+.op-stage__chat {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.op-stage--mode2 .op-stage__chat {
+  width: min(340px, calc(100vw - 1.5rem));
+  height: min(480px, calc(100vh - 1.5rem));
+  transform: translate(var(--op-panel-x, 0px), var(--op-panel-y, 0px));
+}
+
+.op-stage--mode3 .op-stage__chat { height: 100%; }
+
+.op-stage__workspace {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.op-stage__workspace .ws-env {
+  height: 100%;
+  min-height: 100%;
+}
+
+.op-stage__workspace[data-nested-shell="true"] .ws-menubar { display: none; }
+.op-stage__workspace[data-nested-shell="true"] .ws-env {
+  border: none;
+  box-shadow: none;
+}
+.op-stage__workspace[data-nested-shell="true"] .ws-atmosphere { opacity: 0.55; }
+
+html:not([data-operator-developer="on"]) .checkin-evidence {
+  display: none !important;
+}
+
+.op-shell {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  height: 100%;
+  min-height: 0;
+  background: #0e141c;
+  border: none;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+}
+
+.op-stage--mode3 .op-shell {
+  border-radius: 0;
+  box-shadow: none;
+  background: #0b1016;
+}
+
+.op-shell__chrome {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.55rem 0.7rem;
+  background: #121a22;
+  user-select: none;
+}
+
+.op-shell__chrome[data-drag-frame="true"] { cursor: grab; }
+.op-shell__chrome[data-drag-frame="true"]:active { cursor: grabbing; }
+
+.op-shell__brand {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-family: var(--exp-display);
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  font-size: 0.95rem;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+}
+
+.op-shell__dev-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #5fd0d8;
+}
+
+.op-shell__actions { display: flex; gap: 0.3rem; }
+
+.op-shell__btn,
+.op-shell__send,
+.op-health__close {
+  appearance: none;
+  border: none;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--exp-text);
+  border-radius: 8px;
+  padding: 0.28rem 0.65rem;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+
+.op-shell__btn--primary,
+.op-shell__send { background: rgba(95, 208, 216, 0.18); }
+.op-shell__send:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.op-shell__transcript {
+  min-height: 0;
+  overflow: auto;
+  padding: 0.9rem 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  background: #0e141c;
+}
+
+.op-shell__waiting { flex: 1; min-height: 8rem; }
+
+.op-msg {
+  max-width: 92%;
+  padding: 0.65rem 0.8rem;
+  border-radius: 12px;
+}
+
+.op-msg--user { align-self: flex-end; background: #1a2733; }
+.op-msg--workspace { align-self: flex-start; background: #162028; }
+
+.op-msg__text {
+  margin: 0;
+  white-space: pre-wrap;
+  line-height: 1.45;
+  font-size: 0.9rem;
+  color: #e8eef2;
+}
+
+.op-shell__composer {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.45rem;
+  align-items: end;
+  padding: 0.55rem 0.65rem 0.7rem;
+  background: #121a22;
+}
+
+.op-shell__input {
+  resize: none;
+  width: 100%;
+  border-radius: 10px;
+  border: none;
+  background: #0a1016;
+  color: var(--exp-text);
+  padding: 0.6rem 0.7rem;
+  font: inherit;
+  line-height: 1.35;
+}
+
+.op-shell__input:focus { outline: 1px solid rgba(95, 208, 216, 0.4); }
+
+.op-health {
+  height: 100%;
+  overflow: auto;
+  padding: 1.25rem 1.5rem 2rem;
+  background: #0a1018;
+  color: var(--exp-text);
+}
+
+.op-health__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.op-health__eyebrow {
+  margin: 0 0 0.2rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.5;
+}
+
+.op-health__title {
+  margin: 0;
+  font-family: var(--exp-display);
+  font-size: 1.35rem;
+}
+
+.op-health__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.85rem 1.25rem;
+  margin: 0 0 1.25rem;
+}
+
+.op-health__grid dt {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.55;
+  margin: 0 0 0.2rem;
+}
+
+.op-health__grid dd { margin: 0; font-size: 0.92rem; }
+
+.op-health__section { margin: 0 0 1.25rem; }
+.op-health__section h3 {
+  margin: 0 0 0.45rem;
+  font-size: 0.85rem;
+  font-family: var(--exp-display);
+}
+
+.op-health__list {
+  margin: 0.25rem 0 0;
+  padding-left: 1.1rem;
+}
+
+.op-health__pre {
+  margin: 0;
+  white-space: pre-wrap;
+  font: inherit;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  background: #121a22;
+  padding: 0.75rem 0.85rem;
+  border-radius: 10px;
+}
+
+.op-health__muted { opacity: 0.55; }
+.op-health__error { color: #ff8f8f; }
+
+@media (max-width: 900px) {
+  .op-stage--mode3 {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(240px, 42vh) 1fr;
+  }
+  .op-stage--mode3 .op-stage__chat {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+}

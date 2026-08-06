@@ -1,8 +1,8 @@
-# Workspace Capability Architecture v1.1
+# Workspace Capability Architecture v1.2
 
 Status: Active
 Authority: Authoritative product capability decomposition
-Version: 1.1
+Version: 1.2
 
 This document defines the foundational capability architecture for Workspace.
 It does not select technologies, libraries, or vendors.
@@ -82,9 +82,11 @@ Provide the local application substrate that starts, wires, persists configurati
 
 ### Contracts
 
-- `Host.lifecycle` — start, ready, pause, shutdown
-- `Host.mode` — offline | online-optional
-- `Host.registry` — capability availability queries
+- Runtime Host public and common control-plane contracts are the authoritative
+  `HST-*` definitions in `10_Capability_Contracts.md`.
+- Capability registration descriptors declare dependency class, supported
+  lifecycle transitions, restart class, reconciliation obligations, readiness
+  criteria, and compatible contract versions before lifecycle routing begins.
 
 ### Dependencies
 
@@ -151,7 +153,7 @@ Ensure meaningful Workspace actions occur only with explicit, revocable, explain
 - Grant, deny, revoke, and expiry
 - Permission checks for other capabilities
 - Permission audit trail
-- User-configured automatic-execution exceptions
+- User-configured automatic-authorization policies
 
 ### Does Not Own
 
@@ -183,15 +185,13 @@ Ensure meaningful Workspace actions occur only with explicit, revocable, explain
 
 ### Contracts
 
-- `Permission.authorize(scope, capability, purpose, subject, target, operation) -> proof | deny | challenge`
-- `Permission.validateForUse(proof, exact_effect_context) -> authorized_use | invalid`
-- `Permission.grant` / `Permission.revoke`
-- `Permission.explain(decision_id)`
-- `Permission.catalogue`
+- Permission Authority public contracts are the authoritative `PER-*`
+  definitions in `10_Capability_Contracts.md`.
 
 ### Dependencies
 
-- Runtime Host (persistence and availability)
+- Runtime Host (lifecycle and availability only; Permission Authority owns and
+  persists its own grants, policies, proof state, and audit)
 
 ### Permissions
 
@@ -202,7 +202,7 @@ Ensure meaningful Workspace actions occur only with explicit, revocable, explain
 
 - Permission grants and policies
 - Permission audit log
-- Automatic-execution exception list
+- Automatic-authorization policy state
 
 ### Lifecycle
 
@@ -283,10 +283,8 @@ Organize the user’s work into durable workspaces and zones so Companion assist
 
 ### Contracts
 
-- `Workspace.getActive(authorization_proof)`
-- `Workspace.list(authorization_proof)`
-- `Workspace.mutate(change, authorization_proof)` — validates the proof at the mutation commit point
-- `Workspace.scopeFor(capabilityRequest, authorization_proof)`
+- Workspace Management public contracts are the authoritative `WSP-*`
+  definitions in `10_Capability_Contracts.md`.
 
 ### Dependencies
 
@@ -310,12 +308,24 @@ Organize the user’s work into durable workspaces and zones so Companion assist
 - Runtime: serves scope to dependents
 - Persistence: durable local structure
 - Shutdown: persist active selection
+- Archive: archiving the active workspace/zone atomically selects the nearest
+  non-archived ancestor, otherwise the default personal workspace, otherwise
+  explicit `unscoped`; the scope revision changes in the same owned transition.
+- Scope invalidation: archive, restore, move, merge, or active-scope change
+  invalidates older snapshots. In-flight owners revalidate current scope before
+  each later protected effect or commit and never broaden scope from stale data.
 
 ### Failure Behaviour
 
 - If unavailable, dependents operate in a constrained “unscoped” mode with reduced automation and clear explanation.
 - Mutations fail closed without Permission Authority.
 - Reads and mutations reject expired, revoked, replayed, or context-mismatched authorization proofs at the access/commit point.
+- A scope-validation request from a protected capability carries that
+  capability's opaque domain proof. Workspace Management forwards it unchanged
+  through its permitted Permission Authority point-of-use validation path
+  against the exact Workspace binding. It returns only valid/invalid plus
+  lifecycle/revision state and does not require or confer a separate
+  `workspace.read` grant.
 
 ### Explainability
 
@@ -383,10 +393,8 @@ Remember appropriately: store, recall, and forget user-relevant knowledge under 
 
 ### Contracts
 
-- `Memory.proposeWrite(candidate, authorization_proof)`
-- `Memory.retrieve(query, scope, purpose, authorization_proof)`
-- `Memory.forget(item, authorization_proof)` / `Memory.redact(item, authorization_proof)`
-- `Memory.explain(item_id, authorization_proof)`
+- Memory public contracts are the authoritative `MEM-*` definitions in
+  `10_Capability_Contracts.md`.
 
 ### Dependencies
 
@@ -412,6 +420,11 @@ Remember appropriately: store, recall, and forget user-relevant knowledge under 
 - Runtime: write/retrieve/forget under permission
 - Persistence: local durable memory
 - Shutdown: complete in-flight writes; no cloud flush required
+- Archived Workspace scope: retained Memory remains Memory-owned and is not
+  deleted by Workspace archive. Ordinary active-scope retrieval excludes it.
+  Explicit user-authorized Memory administration may inspect, redact, or forget
+  it against the archived scope. Restore does not reactivate visibility until a
+  fresh Workspace scope and Memory authorization are validated.
 
 ### Failure Behaviour
 
@@ -1223,12 +1236,22 @@ These are architecture acceptance scenarios, not technology selections. Capabili
 
 1. OS starts Runtime Host.
 2. Runtime Host loads host configuration; sets offline/online-optional mode.
-3. Permission Authority starts (fail-closed ready).
-4. Workspace Management starts; ensures default workspace/scope.
-5. Memory, Context Sensing, Intelligence, and Action start (sensing remains inactive until granted). Extension Host starts only if a separately approved extension milestone has activated it.
-6. Companion Orchestration starts when required dependencies are available.
-7. Experience starts; shows ready/degraded status honestly.
-8. Host emits `ready`.
+3. Experience starts a minimal status and direct-administration surface beside
+   Runtime Host. It can show startup/degradation and request shutdown without
+   Companion or domain readiness.
+4. Permission Authority starts (fail-closed ready).
+5. Workspace Management starts; ensures default workspace/scope.
+6. Memory, Context Sensing, Intelligence, and Action start (sensing remains inactive until granted). Extension Host starts only if a separately approved extension milestone has activated it.
+7. Companion Orchestration starts when required dependencies are available.
+8. Experience enables each domain surface as its dependency becomes available;
+   status and direct administration remain available in limited mode.
+9. Host emits `ready`.
+
+For the audited foundation, Runtime Host is the root dependency; Permission
+Authority is independently available and fail-closed; Workspace Management
+degrades consumers to explicit `unscoped`; Memory degrades assistance to
+reduced context. A failure in one degradable branch does not prevent the
+Experience status/direct-administration surface from remaining available.
 
 ### Shutdown sequence
 

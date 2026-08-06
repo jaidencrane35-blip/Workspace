@@ -1,0 +1,287 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-08-06T18:26:14.197Z",
+  "constitution": {
+    "document": "architecture/ARCHITECTURAL_CONSTITUTION_V2.md",
+    "version": "2.0"
+  },
+  "engineeringMode": "constitutional-execution",
+  "protocol": {
+    "document": ".cursor/rules/constitutional-execution-protocol.mdc",
+    "version": "1.1",
+    "machineState": "docs/project-health.json"
+  },
+  "currentExecutionProgram": {
+    "id": "conversational-operator-foundation",
+    "title": "Conversational Operator Foundation",
+    "status": "complete",
+    "note": "UX refinement + capability evolution foundation + repository milestone. Owner review accepted for prior shell; cadence continues."
+  },
+  "completedExecutionPrograms": [
+    {
+      "id": "ipc-tiering",
+      "backlogRef": "Phase A — IPC tiers (§4.8)",
+      "completed": "2026-08-07",
+      "artifacts": [
+        "pnpm verify:ipc-tiers",
+        "app/src/generated/ipcTiers.ts"
+      ]
+    },
+    {
+      "id": "product-proof-contracts",
+      "backlogRef": "Phase A #1 — Rust→TS Product Proof contracts",
+      "completed": "2026-08-07",
+      "artifacts": [
+        "pnpm verify:contracts",
+        "app/src/generated/productContracts.ts"
+      ]
+    },
+    {
+      "id": "product-proof-integration-platform",
+      "backlogRef": "Product Proof Integration & Engineering Platform Modernisation",
+      "completed": "2026-08-07",
+      "artifacts": [
+        "docs/project-health.json",
+        "pnpm sync:project-health",
+        "pnpm verify:project-health",
+        "docs/product-proof-review.md"
+      ]
+    },
+    {
+      "id": "conversational-shell-p0",
+      "backlogRef": "P0 Conversational Shell (Modes 1–2) + Intent Bridge",
+      "completed": "2026-08-07",
+      "artifacts": [
+        "app/src/components/operator/OperatorRoot.tsx",
+        "app/src/lib/intentBridge.ts",
+        "docs/execution-program-conversational-shell.md"
+      ]
+    },
+    {
+      "id": "conversational-operator-foundation",
+      "backlogRef": "Conversational Operator Foundation milestone",
+      "completed": "2026-08-07",
+      "artifacts": [
+        "docs/repository-commit-review.md",
+        "app/src/lib/capabilityEvolution.ts",
+        "pnpm verify:capability-evolution",
+        "docs/capability-evolution/registry.json"
+      ]
+    }
+  ],
+  "remainingBacklog": [
+    {
+      "id": "intent-bridge-deepening",
+      "phase": "P1",
+      "title": "Deepen intent bridge (named Moments, launch honesty)",
+      "gap": "product",
+      "status": "approved"
+    },
+    {
+      "id": "docs-convergence",
+      "phase": "A",
+      "title": "Documentation authority convergence",
+      "gap": "G3",
+      "status": "backlog"
+    },
+    {
+      "id": "workspace-state-naming",
+      "phase": "A",
+      "title": "WorkspaceState naming modernisation",
+      "gap": "G4",
+      "status": "backlog"
+    },
+    {
+      "id": "agent-tool-gate",
+      "phase": "B",
+      "title": "AgentToolGate",
+      "gap": "G5",
+      "status": "backlog"
+    },
+    {
+      "id": "audit-integrity",
+      "phase": "B",
+      "title": "AuditIntegrity",
+      "gap": "G6",
+      "status": "backlog"
+    },
+    {
+      "id": "ai-runtime-boundaries",
+      "phase": "B",
+      "title": "AI runtime boundaries",
+      "gap": "G7",
+      "status": "backlog"
+    },
+    {
+      "id": "model-provider",
+      "phase": "C",
+      "title": "Provider-neutral ModelProvider",
+      "gap": "G7",
+      "status": "backlog"
+    },
+    {
+      "id": "background-worker-supervisor",
+      "phase": "C",
+      "title": "BackgroundWorkerSupervisor",
+      "gap": "G8",
+      "status": "backlog"
+    },
+    {
+      "id": "rfc-workflow",
+      "phase": "C",
+      "title": "RFC workflow",
+      "gap": "G9",
+      "status": "backlog"
+    },
+    {
+      "id": "domain-contracts-remainder",
+      "phase": "A+",
+      "title": "Generate remaining non–Product Proof domain TS contracts",
+      "gap": "G1-remainder",
+      "status": "backlog"
+    }
+  ],
+  "repositoryHealth": {
+    "overall": "healthy",
+    "build": "pass",
+    "typecheck": "pass",
+    "tests": "pass",
+    "notes": [
+      "Frontend production build succeeds",
+      "Conversational operator is the default front door",
+      "Capability evolution proposals only (no self-rewrite)",
+      "Non-PP domain.ts remains manual (G1 remainder)",
+      "Documentation authority still fragmented (G3)"
+    ]
+  },
+  "verification": {
+    "status": "pass",
+    "verifiers": {
+      "verify:explanation-catalog": {
+        "script": "scripts/verify-explanation-catalog.mjs",
+        "present": true,
+        "wiredInTest": true
+      },
+      "verify:ipc-tiers": {
+        "script": "scripts/verify-ipc-tiers.mjs",
+        "present": true,
+        "wiredInTest": true
+      },
+      "verify:contracts": {
+        "script": "scripts/verify-product-contracts.mjs",
+        "present": true,
+        "wiredInTest": true
+      },
+      "verify:ui-experience-boundary": {
+        "script": "scripts/verify-ui-experience-boundary.mjs",
+        "present": true,
+        "wiredInTest": true
+      },
+      "verify:content-security-policy": {
+        "script": "scripts/verify-content-security-policy.mjs",
+        "present": true,
+        "wiredInTest": true
+      },
+      "verify:project-health": {
+        "script": "scripts/verify-project-health.mjs",
+        "present": true,
+        "wiredInTest": true
+      },
+      "verify:capability-evolution": {
+        "script": "scripts/verify-capability-evolution.mjs",
+        "present": true,
+        "wiredInTest": true
+      }
+    },
+    "generators": {
+      "sync:explanation-catalog": true,
+      "sync:ipc-tiers": true,
+      "sync:contracts": true,
+      "sync:project-health": true
+    }
+  },
+  "validation": {
+    "status": "pass",
+    "lastRan": {
+      "typecheck": "pass",
+      "test": "pass",
+      "build": "pass"
+    }
+  },
+  "productProof": {
+    "mountedViews": [
+      "home",
+      "save",
+      "resume",
+      "pilot",
+      "help"
+    ],
+    "mountedViewLabels": [
+      "Home",
+      "Save",
+      "Continue",
+      "Check-in",
+      "Guide"
+    ],
+    "productIpcCommandCount": 20,
+    "launchStatus": "pending",
+    "readyForOwnerReview": false,
+    "reviewDocument": "docs/product-proof-review.md"
+  },
+  "architecturalRisks": [
+    {
+      "id": "G1-remainder",
+      "severity": "high",
+      "summary": "Non–Product Proof TypeScript domain types remain hand-maintained"
+    },
+    {
+      "id": "G3",
+      "severity": "high",
+      "summary": "Documentation authority fragmented across architecture/ and docs/"
+    },
+    {
+      "id": "G4",
+      "severity": "high",
+      "summary": "WorkspaceState naming collision (kernel lifecycle vs domain desktop)"
+    },
+    {
+      "id": "surface-size",
+      "severity": "medium",
+      "summary": "197 registered IPC commands; Product Proof uses 20"
+    }
+  ],
+  "technicalDebtSummary": {
+    "trend": "down",
+    "reduced": [
+      "IPC tiers machine-enforced",
+      "Product Proof contracts generated from Rust",
+      "Machine-readable project health registry",
+      "Capability evolution proposal pipeline + verifier"
+    ],
+    "remaining": [
+      "Manual domain.ts outside Product Proof",
+      "Doc authority convergence pending",
+      "WorkspaceState naming collision",
+      "No AgentToolGate / AuditIntegrity yet",
+      "Named Moment restore not yet in intent bridge"
+    ]
+  },
+  "lastMilestone": {
+    "date": "2026-08-07",
+    "document": "docs/engineering-milestone-report.md",
+    "title": "Conversational Operator Foundation",
+    "reviewBrief": "docs/repository-commit-review.md"
+  },
+  "handoffStatus": "MILESTONE_COMMITTED_NEXT_PROGRAM_INTENT_BRIDGE_DEEPENING",
+  "nextRecommendedExecutionProgram": {
+    "id": "intent-bridge-deepening",
+    "title": "Deepen intent bridge (named Moments, launch honesty)",
+    "blockedUntil": null
+  },
+  "capabilityEvolution": {
+    "document": "docs/capability-evolution/README.md",
+    "registry": "docs/capability-evolution/registry.json",
+    "verifier": "pnpm verify:capability-evolution",
+    "selfRewrite": false
+  }
+}

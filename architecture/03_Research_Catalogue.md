@@ -183,9 +183,10 @@ Rejected Options: None. Maintenance, licensing, security, platform, and
 complexity concerns are recorded as comparative evidence and unknowns, not
 technology rejections.
 
-Unresolved Risks: Memory taxonomy; archived-workspace visibility; correction and
-contradiction semantics; retention and pruning authority; retrieval-quality and
-hardware thresholds; graph necessity; exact redaction/forget guarantees;
+Unresolved Risks: Memory taxonomy; merge/reorganization scope visibility;
+correction and contradiction semantics; retention and pruning authority;
+retrieval-quality and hardware thresholds; graph necessity; exact
+redaction/forget guarantees;
 provenance that may survive deletion; encryption attacker/recovery model;
 backup expiry; synchronization requirement, trust, conflict, tombstone, and
 retired-device policy; operation commit/cancellation semantics.
@@ -206,7 +207,7 @@ Record Type: Research planning record; not a technology research unit
 
 Capability: System-wide capability research planning
 
-Status: Roadmap complete; pending architecture review
+Status: Roadmap complete; architecture review accepted (`LEDGER-0011`)
 
 Candidates: Not applicable. This record orders future research and does not
 discover, compare, select, recommend, or reject technologies.
@@ -231,7 +232,10 @@ Integration Notes:
   affected areas.
 - Each future bounded capability/category question receives its own canonical
   Catalogue research unit under the existing framework.
-- Runtime Host research is the first remaining unit.
+- At roadmap acceptance Runtime Host was the first remaining unit. Runtime Host
+  and Workspace Management research are now complete; Context Sensing, Action,
+  and Intelligence are the next bounded wave after shared assumptions are
+  accepted.
 - Context Sensing, Action, and Intelligence may proceed in parallel only after
   shared lifecycle, permission, Memory-boundary, and applicable scope
   assumptions are explicit.
@@ -254,7 +258,7 @@ Rejected Options: None. No technology or research area was rejected.
 
 Unresolved Risks: User-journey architecture corrections; Permission Authority
 proof, isolation, consent, and recovery assumptions; Memory taxonomy,
-archived-scope, deletion, encryption, synchronization, and lifecycle
+merge/reorganization scope, deletion, encryption, synchronization, and lifecycle
 assumptions; Runtime Host process/lifecycle boundaries; per-action-class scope;
 local Intelligence viability; and Extension Host activation justification.
 
@@ -265,3 +269,282 @@ research was performed.
 Review Date: At architecture approval, after any user-journey gap resolution,
 when a completed research unit changes downstream assumptions, and before each
 new research wave.
+
+---
+
+## RH-001 — Runtime Host architectures and candidate categories
+
+Capability: Runtime Host
+
+Status: Research complete; decision pending
+
+Candidates:
+
+- Workspace-owned lifecycle coordinator over an in-process modular host
+- Desktop framework event loop with explicit Workspace host policy
+- Generic-host/hosted-service composition adapted to a user-session desktop app
+- Supervisor-tree-inspired task and capability policy
+- Hybrid modular host with selected isolated local workers
+- Windows Job Object-managed worker topology
+- Constrained Windows workers using AppContainer or lower-privilege tokens
+- Sandboxed WebAssembly component boundary for separately justified use
+- Typed local RPC over named pipes or another OS-local transport
+- Structured local logging/tracing with optional, separately governed export
+- Versioned typed configuration with atomic local persistence
+- Representative comparators: Tauri 2.11.5, Electron 43.2.0, .NET 10.0.10
+  Generic Host, Tokio 1.53.1, Erlang/OTP 29.0.4 supervision, Wasmtime 47.0.2,
+  Rust `tracing`, `libloading`, OpenTelemetry Rust SDK 0.32.1, and Windows
+  lifecycle/process/IPC/diagnostic/packaging APIs
+
+Decision: No technology selected, recommended, approved, conditionally
+approved, or rejected. Retain the patterns, categories, and comparators for
+bounded evaluation after Runtime Host architecture assumptions are resolved.
+
+Reason: Modern mature approaches separate host policy from runtime mechanisms.
+Explicit lifecycle state, dependency-ordered startup, reverse shutdown,
+structured cancellation, bounded supervision, freshness-aware domain-free
+health, typed recoverable configuration, owned background work, and local
+diagnostics are stable patterns. No examined category supplies Workspace's
+complete lifecycle, safe-restart, health-minimization, explanation, offline,
+Windows shutdown, update, and contract semantics unchanged.
+
+Integration Notes:
+
+- Preserve Runtime Host as the owner of lifecycle, registration, host
+  configuration, health aggregation, connectivity presence, and ordered
+  shutdown only.
+- Keep essential/degradable classification, safe-restart policy, crash-loop
+  escalation, resource ownership, and explanation mapping Workspace-owned.
+- Select process boundaries by risk and recovery class; a worker process is a
+  crash boundary but not automatically a privilege boundary.
+- Treat graceful worker control and hard containment as separate paths. Parent
+  exit or a dropped child handle does not terminate Windows workers; Job Object
+  kill-on-close can prevent orphans but is forced termination, not completion.
+- Require every task, process, endpoint, handle, timer, and diagnostic sink to
+  have one owner, cancellation path, completion signal, and release deadline.
+- Keep diagnostics local by default, domain-free, bounded, erasable, and
+  independent from optional export.
+- Treat Windows shutdown, Job Objects, power events, named-pipe security,
+  single-instance behavior, packaging, signing, update, and crash diagnostics
+  as explicit Windows adapters rather than hidden framework behavior.
+- Do not treat native dynamic loading as isolation or this research as
+  Extension Host activation.
+- Selection remains blocked on architecture review and reproducible Windows,
+  offline, startup, degradation, crash, recovery, IPC, shutdown, update,
+  privacy, resource, migration, and contract-acceptance evidence.
+- Detailed record: `architecture/research/RUNTIME_HOST_RESEARCH.md`
+
+Licence: Current licence snapshots were recorded for representative
+comparators: MIT or Apache-2.0, MIT, Apache-2.0,
+Apache-2.0 WITH LLVM-exception, and ISC as applicable. Windows platform,
+build-tool, WebView, installer, signing, bundled runtime, plugin, and transitive
+terms remain separate. No component or transitive dependency is approved;
+exact-scope legal review remains required before adoption.
+
+Security Review: Research-level threat and pattern review complete. Mandatory
+unknowns remain for process/isolation classes, standard-user and elevation
+boundaries, worker identity, IPC ACLs and anti-squatting, handle inheritance,
+binary verification, sandbox compatibility, restart reconciliation,
+configuration recovery, diagnostic leakage, update trust, and forced
+termination. No security approval issued.
+
+Maintenance: Active 2026 releases were verified for the representative desktop,
+runtime, supervision, sandbox, and observability comparators. Electron's rapid
+major cadence, Wasmtime/component evolution, framework/plugin versioning,
+Windows regressions, and transitive supply-chain changes require exact-version
+refresh before selection.
+
+Rejected Options: None. No project was approved or rejected.
+
+Unresolved Risks: Startup classes outside the audited foundation;
+capability-specific process and safe-restart classes; host configuration
+backup/recovery; health freshness and lifecycle deadlines; operation
+reconciliation after crash; supported Windows and hardware
+baseline; packaging/update/signing/rollback; single-instance trust;
+suspend/resume; IPC protocol; diagnostic retention and dump privacy; resource
+budgets; existing/nested Job Object and breakaway behavior; user-session versus
+service hosting; offline repair; certificate/update-key recovery; and
+cross-platform parity.
+
+Evidence: `architecture/research/RUNTIME_HOST_RESEARCH.md`, including primary
+official sources accessed 2026-08-01.
+
+Review Date: 2027-02-01, or earlier on architecture correction, process-model
+decision, framework/runtime major release, security advisory, Windows support
+change, packaging decision, or new reproducible evidence.
+
+---
+
+## WM-001 — Local-first Workspace Management patterns and candidate categories
+
+Capability: Workspace Management
+
+Status: Research complete; decision pending
+
+Candidates:
+
+- Normalized relational Workspace aggregate
+- Document-oriented Workspace aggregate
+- Per-workspace or per-profile physical stores
+- Append-only/event-sourced organization model
+- Content-addressed/revisioned organization model
+- CRDT/local-first replicated organization model
+- Hybrid authoritative snapshot plus bounded journal
+- Versioned logical archive with manifest/checksums
+- Engine-supported physical backup and staged restore
+- Organizational profile identity/association model
+- Desktop arrangement definition/association with separate sensing and Action
+- Representative comparators: SQLite 3.53.4, rusqlite 0.40.1, SQLx 0.9.0,
+  Diesel 2.3.11, redb 4.1.0, LiteDB 5.0.21, Apache CouchDB 3.5.2,
+  Automerge 3.x, Git 2.55.0, Jujutsu 0.43.0, VS Code 1.131.0,
+  PowerToys 0.100.2, GlazeWM 3.10.1, RFC 8493 BagIt, and RFC 9562 UUIDs
+
+Decision: No technology selected, recommended, approved, conditionally
+approved, or rejected. Retain the patterns, categories, and comparators for
+bounded evaluation after Workspace profile, hierarchy, active-scope, archive,
+arrangement, import/restore, and recovery semantics are resolved.
+
+Reason: Mature approaches consistently separate stable organizational identity,
+immutable versioned scope, owner-authoritative mutation state, logical
+portability, and physical recovery. They also distinguish workspace definition
+from profile configuration, live desktop observation, geometry/application
+effects, and application-internal session state. No examined category supplies
+Workspace's complete scope, permission, archive, stale-reference, conflict,
+outcome-recovery, privacy, import, and explainability semantics unchanged.
+
+Integration Notes:
+
+- Preserve Workspace Management as sole owner of workspaces, zones,
+  organizational membership, active scope, revisions, and organizational
+  metadata.
+- Keep names, paths, hierarchy positions, `HWND`s, process IDs, and monitor
+  numbers separate from stable identity.
+- Treat scope snapshots as immutable minimized values; events and IDs grant no
+  authority, and consumers must invalidate/re-query stale versions.
+- Commit aggregate changes, active scope, revision, operation status,
+  idempotency, terminal outcome, and outbox together where the approved
+  aggregate permits.
+- Keep export/import, physical backup/restore, domain archive/restore, and merge
+  as separate candidate concerns. Export/import and physical backup/restore
+  remain conditional until administration contracts and policy are accepted.
+- Keep Memory, file indexing, live observation, desktop effects, UI state,
+  application sessions, orchestration, and permission truth outside this
+  capability.
+- Treat profiles and desktop-arrangement definitions as architecture ownership
+  questions before evaluating storage or arrangement technologies.
+- Selection remains blocked on reproducible Windows, offline, scope-isolation,
+  migration, conflict, lost-result, corruption, privacy, and contract-acceptance
+  evidence; import/archive and backup/restore evidence becomes mandatory if
+  those conditional administration paths are accepted.
+- Detailed record:
+  `architecture/research/WORKSPACE_MANAGEMENT_RESEARCH.md`
+
+Licence: Current licence snapshots were recorded for representative public
+domain, MIT, MIT OR Apache-2.0, Apache-2.0, GPL-2.0, and GPL-3.0 comparators,
+plus informational RFC specifications. Source and binary-product terms can
+differ. No component or transitive dependency is approved; exact-scope legal
+review remains required before adoption.
+
+Security Review: Research-level threat and pattern review complete. Mandatory
+unknowns remain for profile/workspace isolation, scope staleness, identity
+collision, hostile databases, path/reparse-point handling, desktop identity
+ambiguity, and migration integrity. Archive extraction, backup/export leakage,
+import provenance, encryption/key recovery, and restore integrity become
+mandatory if those conditional administration paths are accepted. No security
+approval issued.
+
+Maintenance: Active 2026 releases were verified for representative embedded
+storage, Rust access/migration, revision, workspace/profile, and Windows
+arrangement comparators. Exact patch-level corruption fixes, schema/format
+stability, MSRV/runtime changes, Windows regressions, and transitive
+supply-chain changes require refresh before selection.
+
+Rejected Options: None. No project was approved or rejected.
+
+Unresolved Risks: Profile ownership; tree/DAG and membership semantics;
+single/set/per-session active scope and `unscoped`; merge/reorganization
+invalidation and Memory identity/visibility; arrangement ownership;
+external-resource and display/app identity; import/restore/merge identity;
+conditional logical export content and backup retention/encryption/recovery;
+downgrade; synchronization; and representative scale/performance limits.
+
+Research Confidence: Medium. Storage, backup, migration, logical archive,
+identity, Windows path/locking, and capability-boundary findings have strong
+primary evidence. Product-specific profile, simultaneous active-scope,
+arrangement, merge, and synchronization semantics remain unresolved.
+
+Evidence: `architecture/research/WORKSPACE_MANAGEMENT_RESEARCH.md`, including
+primary official sources accessed 2026-08-01.
+
+Review Date: 2027-02-01, or earlier on architecture correction, accepted
+archive/profile/arrangement semantics, storage-format/advisory change, Windows
+support change, or new reproducible evidence.
+
+---
+
+## EXP-001 — Experience component library, patterns, and presentation stack
+
+Capability: Experience (presentation research; not a domain technology selection)
+
+Status: Research complete; decision pending
+
+Candidates:
+
+- Presentation stack: Tailwind CSS 4.x, shadcn/ui registry on Radix Primitives
+  or Base UI, class-variance-authority, clsx, tailwind-merge
+- Icons: Lucide React (ISC)
+- Time: date-fns (MIT); or platform `Intl.RelativeTimeFormat`
+- Dialogs/drawers: Radix Dialog/AlertDialog; optional Vaul
+- Command palette (Phase 3+): cmdk (MIT)
+- Motion (Phase 4): Motion / Framer Motion line (MIT)
+- Virtualized lists (Phase 3 if needed): react-virtuoso core (MIT; not Message
+  List commercial SKU)
+- Pattern references: VS Code recents, Linear hierarchy, Notion empty
+  structure, Obsidian local-vault metaphor, Fluent/HIG focus and density,
+  concept-board masonry rhythm
+- Rejected shell kits: Ant Design, Material UI as product chrome; GPL UI kits
+
+Decision: No technology selected or approved. Retain the component catalogue,
+licensing matrix, gap analysis, token proposal, and Phase 2 plan for an
+authorised Experience Phase 2 implementation session.
+
+Reason: Experience Phase 2 needs dashboard-first Home composition more than new
+capabilities. A curated MIT/Apache/ISC-friendly stack accelerates accessible
+primitives without forcing Material/Ant aesthetics. Exact-version legal and
+CSP review remain required before `pnpm add`.
+
+Integration Notes:
+
+- Experience owns presentation only; Product Proof Save/Continue behaviour,
+  handoff authorship, restore limits, and consented Check-in stay unchanged.
+- Do not import ambient thumbnails, AI briefings, system gauges, or fabricated
+  activity feeds from concept boards without separate authority.
+- Prefer build-time CSS (Tailwind output) under existing CSP; no CDN scripts.
+- Open Source Registry gains Approved rows only after adoption review — not by
+  this research entry alone.
+- Detailed package: `architecture/research/experience/` and
+  `architecture/research/EXPERIENCE_COMPONENT_RESEARCH.md`
+
+Licence: Evaluated candidates are MIT, Apache-2.0, or ISC at public registry
+claims accessed 2026-08-02. No component or transitive dependency is approved.
+
+Security Review: Research-level only. Supply-chain and CSP packaging checks
+required at adoption. No security approval issued.
+
+Maintenance: Active ecosystems verified at research time for Tailwind, Radix,
+shadcn/ui pattern, Lucide, and Motion. Refresh before selection.
+
+Rejected Options: GPL UI kits; Ant Design / Material as Experience shell;
+react-virtuoso Message List commercial SKU; ambient/AI concept-board features
+for Phases 2–4.
+
+Unresolved Risks: shadcn primitive-base choice (Radix vs Base UI); Tailwind
+adoption cost vs CSS-variable Path B; icon attribution process; transitive
+licence drift.
+
+Evidence: `architecture/research/EXPERIENCE_COMPONENT_RESEARCH.md`,
+`architecture/research/experience/*`, concept boards, Experience Roadmap,
+Participant #1 review after LEDGER-0034.
+
+Review Date: 2027-02-01, or earlier on Experience Roadmap change, material
+dependency licence/maintenance change, CSP policy change, or new pilot evidence.

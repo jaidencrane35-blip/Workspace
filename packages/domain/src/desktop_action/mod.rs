@@ -6,6 +6,7 @@
 use chrono::{Duration, Utc};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
+use ts_rs::TS;
 use uuid::Uuid;
 
 use crate::saved_context::{
@@ -26,7 +27,7 @@ pub const MATCH_CLASS_EXACT_SESSION: &str = "exact_session";
 /// Bounded plan validity (privacy constraint — not a convenience timeout).
 pub const ACTION_PLAN_TTL_SECS: i64 = 120;
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "snake_case")]
 pub enum ProjectedDisposition {
     WillAttempt,
@@ -34,7 +35,7 @@ pub enum ProjectedDisposition {
     WillSkipUnresolvable,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "snake_case")]
 pub enum ItemDisposition {
     Completed,
@@ -46,7 +47,7 @@ pub enum ItemDisposition {
     OutcomeUnknown,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "snake_case")]
 pub enum OperationOutcome {
     Completed,
@@ -56,7 +57,7 @@ pub enum OperationOutcome {
     Indeterminate,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum ProposedEffect {
     Place {
@@ -95,7 +96,7 @@ impl ProposedEffect {
 
 /// Declared target for one Action item. Contains identity evidence, never a
 /// saved-context identifier.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 pub struct ActionTargetDescriptor {
     pub item_id: String,
     pub action_type: String,
@@ -119,7 +120,7 @@ pub struct ActionRequest {
     pub items: Vec<ActionTargetDescriptor>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 pub struct ActionPlanItem {
     pub item_id: String,
     pub action_type: String,
@@ -135,7 +136,7 @@ pub struct ActionPlanItem {
     pub target: ActionTargetDescriptor,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 pub struct ActionPlan {
     pub plan_id: String,
     pub expires_at: String,
@@ -157,7 +158,7 @@ impl ActionPlan {
 ///
 /// Experience synthesizes the same bands from disposition ratios; this is the
 /// runtime authority so Save→Continue pipelines and tests share one score.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 pub struct RestoreCompatibilitySummary {
     pub total_items: u32,
     pub will_attempt: u32,
@@ -228,7 +229,7 @@ pub struct ItemEffectProof {
     pub requester: String,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 pub struct ActionItemOutcome {
     pub item_id: String,
     pub action_type: String,
@@ -246,7 +247,7 @@ pub struct ActionItemOutcome {
 /// Aggregated restore execution facts for Continue / operators.
 ///
 /// Derived from per-item dispositions so partial success is never discarded.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 pub struct RestoreExecutionSummary {
     /// Effect items that completed (place and/or focus).
     pub restored_windows: u32,
@@ -257,6 +258,7 @@ pub struct RestoreExecutionSummary {
     /// Failed, refused-changed, or outcome-unknown items.
     pub failed_operations: u32,
     /// Wall-clock duration of the execute pass.
+    #[ts(type = "number")]
     pub duration_ms: u64,
 }
 
@@ -292,12 +294,27 @@ impl RestoreExecutionSummary {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 pub struct ActionOperationResult {
     pub operation_id: String,
     pub outcome: OperationOutcome,
     pub items: Vec<ActionItemOutcome>,
     pub summary: RestoreExecutionSummary,
+}
+
+/// Preview payload returned to Experience for Continue (PP-M1-02).
+///
+/// Owned by domain as a Product Proof wire contract. Kernel commands construct
+/// this value; the React shell consumes it via IPC.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+pub struct ResumePlanPreview {
+    pub saved_context_id: String,
+    pub saved_context_name: String,
+    /// User-authored intended next action (PP-P01A). Not an Action effect.
+    pub handoff_note: String,
+    pub plan: ActionPlan,
+    /// Compatibility / confidence derived from plan dispositions.
+    pub compatibility: RestoreCompatibilitySummary,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Error)]

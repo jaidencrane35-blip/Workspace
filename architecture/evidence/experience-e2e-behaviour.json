@@ -1,7 +1,7 @@
 {
-  "collected_at": "SystemTime { intervals: 134301902497506477 }",
+  "collected_at": "SystemTime { intervals: 134305144673461981 }",
   "mode": "production_command_handler_ipc_behavioural",
-  "database_path": "C:\\Users\\Jaide\\AppData\\Local\\Temp\\.tmpPZLnXn\\experience-e2e.db",
+  "database_path": "C:\\Users\\Jaide\\AppData\\Local\\Temp\\.tmpM72A9o\\experience-e2e.db",
   "steps": [
     {
       "step": "launch",
@@ -19,13 +19,13 @@
       "step": "bootstrap_create_workspace",
       "ipc_command": "create_workspace",
       "ok": true,
-      "detail": "311be07c-15d4-480f-9bfb-666688f0313f"
+      "detail": "9ff378a8-6a29-4325-9f79-8067ae843cee"
     },
     {
       "step": "bootstrap_active_workspace",
       "ipc_command": "update_settings",
       "ok": true,
-      "detail": "Some(\"311be07c-15d4-480f-9bfb-666688f0313f\")"
+      "detail": "Some(\"9ff378a8-6a29-4325-9f79-8067ae843cee\")"
     },
     {
       "step": "home",
@@ -43,7 +43,7 @@
       "step": "save",
       "ipc_command": "save_workspace_context",
       "ok": true,
-      "detail": "id=7bbc5310-1c73-44c2-ae63-ec2f411d2110 windows=9 monitors=1"
+      "detail": "id=0a0b37a9-4b9a-4030-b553-6226f04800b3 windows=11 monitors=1"
     },
     {
       "step": "home_after_save",
@@ -55,25 +55,25 @@
       "step": "continue_inspect",
       "ipc_command": "get_saved_context",
       "ok": true,
-      "detail": "7bbc5310-1c73-44c2-ae63-ec2f411d2110"
+      "detail": "0a0b37a9-4b9a-4030-b553-6226f04800b3"
     },
     {
       "step": "continue_plan",
       "ipc_command": "resolve_resume_plan",
       "ok": true,
-      "detail": "items=19 band=steady"
+      "detail": "items=23 band=steady"
     },
     {
       "step": "restore",
       "ipc_command": "execute_resume_plan",
       "ok": true,
-      "detail": "outcome=PartiallyCompleted restored=8 skipped=9 failed=2"
+      "detail": "outcome=PartiallyCompleted restored=9 skipped=11 failed=3"
     },
     {
       "step": "restart_hydrate",
       "ipc_command": "get_workspace_runtime_state",
       "ok": true,
-      "detail": "integrity=ok disposition=none last_saved=Some(\"7bbc5310-1c73-44c2-ae63-ec2f411d2110\")"
+      "detail": "integrity=ok disposition=none last_saved=Some(\"0a0b37a9-4b9a-4030-b553-6226f04800b3\")"
     },
     {
       "step": "home_after_restart",
@@ -88,8 +88,8 @@
       "detail": "outcome=PartiallyCompleted"
     }
   ],
-  "saved_context_id": "7bbc5310-1c73-44c2-ae63-ec2f411d2110",
+  "saved_context_id": "0a0b37a9-4b9a-4030-b553-6226f04800b3",
   "post_restart_listed_moments": 1,
-  "post_restart_session_saved_context_id": "7bbc5310-1c73-44c2-ae63-ec2f411d2110",
+  "post_restart_session_saved_context_id": "0a0b37a9-4b9a-4030-b553-6226f04800b3",
   "continue_again_outcome": "PartiallyCompleted"
 }

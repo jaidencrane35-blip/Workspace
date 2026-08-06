@@ -14,12 +14,13 @@ use crate::services::{
     action_request_from_saved_context, ActionExecutionControls, DesktopActionService,
     RestoreExecutor, SavedContextService, WorkspaceRuntimeStateService, WorkspaceSessionStore,
 };
-use serde::{Deserialize, Serialize};
 use workspace_domain::{
     ActionOperationResult, ActionPlan, Capability, ItemEffectProof, ResourceKind,
     RestoreCompatibilitySummary, RestoreExecutionPhase, SavedContext, SavedContextId, WorkspaceId,
 };
 use workspace_windows_integration::{platform_window_mutator, WindowMutator};
+
+pub use workspace_domain::ResumePlanPreview;
 
 /// Lists saved contexts for one workspace. No desktop mutation.
 pub struct ListSavedContexts {
@@ -148,18 +149,6 @@ impl MutationCommand for DeleteSavedContext {
         }
         Ok(())
     }
-}
-
-/// Preview payload returned to Experience. Holds the Action plan value.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct ResumePlanPreview {
-    pub saved_context_id: String,
-    pub saved_context_name: String,
-    /// User-authored intended next action (PP-P01A). Not an Action effect.
-    pub handoff_note: String,
-    pub plan: ActionPlan,
-    /// Compatibility / confidence derived from plan dispositions (additive; UI may ignore).
-    pub compatibility: RestoreCompatibilitySummary,
 }
 
 /// Resolves a restore plan for a saved context. Mutates nothing.

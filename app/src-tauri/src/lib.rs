@@ -342,8 +342,9 @@ pub fn run() {
             get_execution_outcomes,
             get_execution_states,
             request_execution_cancellation,
-            // Registered for CommandHandler parity / future UI — unused by React today
-            // (see docs/03-Engineering/IPC-SURFACE.md)
+            // Quarantine / CommandHandler parity — unused by React today.
+            // Canonical quarantine + constitution tiers: docs/03-Engineering/ipc-tiers.json
+            // (get_action_catalog is Developer-tier; OperatorConsole calls it — not quarantine.)
             delete_zone,
             get_zone,
             delete_application,

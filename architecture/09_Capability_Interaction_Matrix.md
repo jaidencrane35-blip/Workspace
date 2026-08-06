@@ -2,7 +2,7 @@
 
 Status: Active
 Authority: Authoritative capability communication and trust-boundary constraints
-Reviewed against: Workspace Capability Architecture v1.1
+Reviewed against: Workspace Capability Architecture v1.2
 
 This document constrains communication between capabilities. It does not replace capability ownership in `08_Workspace_Capability_Architecture.md`, the accepted ADRs, or the Blueprint.
 
@@ -35,7 +35,7 @@ Rows initiate; columns receive.
 | AC | Event: health | Direct: validate proof | Direct: validate target scope | Forbidden | Forbidden | — | Forbidden | Event: execution result | Forbidden | Forbidden |
 | IN | Event: health | Direct: validate provider/data sharing | Forbidden | Forbidden | Forbidden | Forbidden | — | Event: inference result/proposal/availability | Forbidden | Forbidden |
 | CO | Event: health | Direct: authorize; explain task authorization | Direct | Direct | Direct | Direct: resolve plan or execute with the corresponding proof | Direct | — | Event: progress/interaction request | Direct: manage, only if activated |
-| EX | Direct: status query; Event: health | Direct: authorize Workspace read; catalogue/explain user's permissions; user decision/revoke/automatic-policy update | Direct: read-only view with proof | Forbidden | Forbidden | Forbidden | Forbidden | Direct: intent/interaction result | — | Forbidden |
+| EX | Direct: status query and explicit shutdown administration; Event: health | Direct: authorize Workspace read; catalogue/explain user's permissions; user decision/revoke/automatic-policy update | Direct: read-only view with proof | Forbidden | Forbidden | Forbidden | Forbidden | Direct: intent/interaction result | — | Forbidden |
 | EH | Event: health | Direct: validate extension scopes | Forbidden | Forbidden | Forbidden | Forbidden | Forbidden | Event: extension contribution/intent/error/state | Forbidden | — |
 
 ### Matrix interpretation rules
@@ -54,6 +54,13 @@ Rows initiate; columns receive.
 8. Runtime Host lifecycle access does not grant access to capability-owned domain data.
 9. Workspace Management, Memory, Context Sensing, Intelligence, Action, and an activated Extension Host validate bound authorization at their own access or commit boundary; an earlier Companion check is insufficient.
 10. For a non-immediate protected operation, Permission Authority issues a separate operation-control proof with effect authority. The owner binds it to the accepted operation and may validate it locally for minimized status or safety-reducing pause/stop/cancel when Authority is unavailable. It grants no continuation, retry, compensation, or new effect.
+11. Memory, Context Sensing, and Action may ask Workspace Management to
+    validate the Workspace binding already present in their domain proof.
+    Scope validation returns only validity plus lifecycle/revision state; it
+    neither requires nor grants separate `workspace.read` authority.
+12. Experience may request explicit full shutdown directly from Runtime Host.
+    This is user administration, remains available without Companion, and
+    grants no domain authority.
 
 ---
 
@@ -413,7 +420,7 @@ No critical findings.
 
 ## Re-review Result
 
-After the v1.1 revisions:
+After the v1.2 foundational consistency corrections:
 
 - No ownership conflicts remain.
 - No circular hard dependencies remain.

@@ -6,6 +6,21 @@
 | **Owner** | Lead Software Engineer |
 | **Dependencies** | `app/src-tauri/src/lib.rs`, `app/src` |
 | **Update Process** | Update when React invokes change or IPC is added/removed |
+| **Constitution tiers** | `docs/03-Engineering/ipc-tiers.json` + `app/src/generated/ipcTiers.ts` (`pnpm sync:ipc-tiers`) |
+
+---
+
+## Constitutional IPC tiers (§4.8)
+
+| Tier | Authority | Meaning |
+|------|-----------|---------|
+| **Product** | `app/src/demo/experienceIpcCatalog.ts` | Frozen Product Proof experience (Home / Save / Continue / Check-in) |
+| **Developer** | Computed from React `invokeIpc` minus Product/Diagnostic | Operator / Canvas / Intelligence / Assistant surfaces |
+| **Diagnostic** | `ipc-tiers.json` `diagnostic[]` | Observation, audit, model, memory, diagnose_* inspection |
+| **Experimental** | Remainder of `generate_handler!` | Parity / future UI; not Product Proof |
+| **Quarantine** | `ipc-tiers.json` `quarantine[]` | Subset unused by React; may overlap Diagnostic |
+
+Historical note: sections below still say “Product + diagnostic” for many cognition commands. That narrative predates Constitution V2. **Constitutional Product** is only the Experience catalog. Prefer the generated tier registry for engineering truth.
 
 ---
 
@@ -144,6 +159,8 @@
 
 ## Registered, unused by React (quarantined)
 
+Canonical list: `docs/03-Engineering/ipc-tiers.json` → `QUARANTINED_IPC_COMMANDS` in `app/src/generated/ipcTiers.ts`.
+
 Kept for kernel CommandHandler parity and future UI. Not removed during foundation hardening to avoid breaking external/test callers of the Tauri surface.
 
 - `delete_zone`, `get_zone`
@@ -153,6 +170,8 @@ Kept for kernel CommandHandler parity and future UI. Not removed during foundati
 - `get_workspace_snapshot`
 - `get_actor_capabilities`, `get_audit_history`, `get_observations`, `get_workspace_metrics`
 - `get_execution_state` (singular; UI uses list)
+
+`get_action_catalog` is **Developer** (OperatorConsole), not quarantine.
 
 ---
 

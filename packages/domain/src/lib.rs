@@ -189,11 +189,12 @@ pub use desktop_action::{
     permission_scope_for, ActionItemOutcome, ActionOperationResult, ActionPlan, ActionPlanItem,
     ActionRequest, ActionTargetDescriptor, DesktopActionError, ItemDisposition, ItemEffectProof,
     LiveWindowIdentity, MatchResult, OperationOutcome, ProjectedDisposition, ProposedEffect,
-    RestoreCompatibilitySummary, RestoreExecutionSummary, ACTION_PLAN_TTL_SECS,
+    RestoreCompatibilitySummary, RestoreExecutionSummary, ResumePlanPreview, ACTION_PLAN_TTL_SECS,
     ACTION_TYPE_APPLICATION_LAUNCH, ACTION_TYPE_WINDOW_FOCUS, ACTION_TYPE_WINDOW_PLACE,
     ACTION_TYPE_WINDOW_Z_ORDER, MATCH_CLASS_EXACT_SESSION, SCOPE_PLAN_RESOLVE, SCOPE_WINDOW_FOCUS,
     SCOPE_WINDOW_PLACE,
 };
+pub mod product_proof_contracts;
 pub use pilot_measurement::{
     median_return_minutes, GrantPilotConsentRequest, PilotBaseline, PilotConsent,
     PilotInterviewPhase, PilotInterviewRecord, PilotLeaveResumeRecord, PilotMeasurementError,

@@ -1,11 +1,12 @@
 use serde::{Deserialize, Serialize};
+use ts_rs::TS;
 
 use crate::errors::{validate_resource_name, Result};
 use crate::ids::{ApplicationId, WidgetId, WorkspaceId, ZoneId};
 use crate::resource::{Addressable, ResourceId, ResourceKind, ResourceRef};
 
 /// A user workspace container (domain entity).
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 pub struct Workspace {
     pub id: WorkspaceId,
     pub name: String,

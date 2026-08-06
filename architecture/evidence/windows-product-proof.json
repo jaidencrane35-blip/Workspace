@@ -1,5 +1,5 @@
 {
-  "collected_at": "SystemTime { intervals: 134301902491878007 }",
+  "collected_at": "SystemTime { intervals: 134305015686463678 }",
   "os": "Windows Windows_NT",
   "desktop_session_id": "wts-session-1",
   "monitor_count": 1,
@@ -14,7 +14,7 @@
       "y": 0
     }
   ],
-  "window_count": 9,
+  "window_count": 10,
   "minimized_windows_observed": 2,
   "maximized_heuristic_windows": 5,
   "mixed_geometry_monitors": false,
@@ -69,5 +69,5 @@
       "notes": "IsWindow after mutations"
     }
   ],
-  "proof_hwnd": "0x000000000033078C"
+  "proof_hwnd": "0x00000000003D07F8"
 }

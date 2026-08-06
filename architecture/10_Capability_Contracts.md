@@ -216,17 +216,33 @@ Capability-specific errors extend rather than redefine these meanings.
 
 - `HST-REQ-001 Host.getStatus() -> HostStatus`
 - `HST-REQ-002 Host.getCapabilityAvailability(capability_id) -> CapabilityAvailability`
-- `HST-CMD-001 Host.startCapability(capability_id)`
-- `HST-CMD-002 Host.pauseCapability(capability_id)`
-- `HST-CMD-003 Host.shutdownCapability(capability_id, reason)`
-- `HST-CMD-004 Host.shutdown(reason)`
+- `HST-CMD-001 Host.startCapability(capability_id)` (Runtime Host → capability)
+- `HST-CMD-002 Host.pauseCapability(capability_id)` (Runtime Host → capability)
+- `HST-CMD-003 Host.shutdownCapability(capability_id, reason)` (Runtime Host → capability)
+- `HST-CMD-004 Host.shutdown(reason)` (Experience or OS → Runtime Host)
 - `HST-EVT-001 HostStatusChanged`
 - `HST-EVT-002 RuntimeModeChanged` (Intelligence only)
+
+Each active capability supplies one common lifecycle registration descriptor
+during Host composition, before lifecycle routing. Registration is control-plane
+composition, not a domain call and not an authority grant. The descriptor names:
+
+- capability identity and supported contract versions
+- essential, independently available, or degradable dependency class
+- dependency identities and readiness criteria
+- supported lifecycle transitions
+- restart class (`never`, `restartable_after_reconciliation`, or
+  `stateless_restartable`)
+- owner reconciliation obligation after interruption
+
+Duplicate identities, dependency cycles, incompatible versions, or incomplete
+restart declarations are rejected before the capability becomes available.
 
 ### Internal responsibilities
 
 - Determine startup/shutdown order.
-- Maintain host-only configuration and registry.
+- Validate exactly one lifecycle registration descriptor per active capability
+  and maintain the resulting domain-free registry.
 - Aggregate health without reading domain state.
 - Exclude engineering artifacts from runtime packaging.
 
@@ -243,7 +259,8 @@ Capability-specific errors extend rather than redefine these meanings.
 
 ### Commands accepted
 
-- OS/user-authorized host shutdown.
+- OS lifecycle shutdown and explicit user shutdown administration from
+  Experience.
 - No domain commands.
 
 ### Commands produced
@@ -303,7 +320,7 @@ Capability-specific errors extend rather than redefine these meanings.
 
 ### Internal responsibilities
 
-- Evaluate default-deny policy and explicit automatic-execution exceptions.
+- Evaluate default-deny policy and explicit automatic-authorization policies.
 - Bind proofs to context and enforce expiry/replay constraints.
 - Issue independently governed operation-control proofs for non-immediate protected work without granting new effects.
 - Own permission audit and challenge lifecycle.
@@ -384,6 +401,13 @@ Capability-specific errors extend rather than redefine these meanings.
 - Validate workspace invariants and authorization at access/commit.
 - Persist organizational structure locally.
 - Maintain active selection.
+- Forward a protected caller's opaque domain proof unchanged through IC-009 and
+  ask Permission Authority to validate the exact Workspace binding, without
+  converting scope validation into a Workspace content read or substituting
+  Workspace Management as requester.
+- On archive of active scope, atomically select the nearest non-archived
+  ancestor, otherwise the default personal workspace, otherwise `unscoped`,
+  and advance the scope revision.
 
 ### Events consumed
 
@@ -418,7 +442,8 @@ Capability-specific errors extend rather than redefine these meanings.
 
 ### State exposed
 
-- Authorized summaries and immutable scope snapshots.
+- Authorized summaries and immutable scope snapshots, including lifecycle state
+  and owner revision needed to reject archived or stale scope.
 
 ### Error conditions
 
@@ -429,6 +454,12 @@ Capability-specific errors extend rather than redefine these meanings.
 - `workspace.read` for all reads.
 - `workspace.write` for mutations.
 - Validate proof at read or mutation commit point.
+- `WSP-REQ-003` scope validation accepts the requesting capability's already
+  authorized opaque domain proof. Workspace Management forwards it unchanged to
+  Permission Authority via IC-009 with the original requester and exact scope
+  context. It returns only valid/invalid plus lifecycle/revision state, exposes
+  no Workspace content, and neither requires nor grants separate
+  `workspace.read`.
 
 ### Explainability requirements
 
@@ -462,6 +493,10 @@ Capability-specific errors extend rather than redefine these meanings.
 - Validate provenance, scope, retention, redaction, and authorization.
 - Keep retrieval purpose-limited and minimized.
 - Prevent observations, prompts, logs, and task history becoming alternate memory stores.
+- Exclude archived Workspace scope from ordinary active-scope retrieval.
+  Archived-scope Memory remains retained and Memory-owned until explicitly
+  administered under a fresh proof; restore requires fresh Workspace scope and
+  Memory authorization before visibility resumes.
 
 ### Events consumed
 
@@ -1028,11 +1063,12 @@ Each row is exhaustive for allowed domain, lifecycle, authorization, and event i
 
 | ID | Initiator → Receiver | Purpose / trigger | Expected response | Failure behaviour | Permission boundary | Data exchanged | Mode |
 |----|----------------------|-------------------|-------------------|-------------------|---------------------|----------------|------|
-| IC-001 | Runtime Host → every active capability | Start/pause/shutdown after host lifecycle transition | Lifecycle acknowledgement; eventual health event | Mark unavailable; no domain fallback | Host lifecycle only; no domain authority | Capability id, lifecycle state, reason, correlation | Command + async event |
-| IC-002 | Every capability → Runtime Host | Health changed | No domain response; Host aggregates status | Missing health becomes unavailable/unknown | No product permission; no domain payload | Capability id, ready/degraded/unavailable, safe reason | Async event |
+| IC-001 | Runtime Host → every active capability | Start/pause/shutdown after validated registration and host lifecycle transition | Lifecycle acknowledgement; after interruption, eventual owner reconciliation state and health event | Mark unavailable; no domain fallback; never restart outside the declared class | Host lifecycle only; no domain authority | Capability id, descriptor revision, lifecycle state/epoch, reason, correlation | Command + async event |
+| IC-002 | Every capability → Runtime Host | Health or interruption-reconciliation state changed | No domain response; Host aggregates status and exposes availability only after required reconciliation | Missing/stale health or incomplete reconciliation becomes unavailable/unknown | No product permission; no domain payload | Capability id, lifecycle epoch, ready/reconciling/degraded/unavailable, freshness, safe reason | Async event |
 | IC-003 | Runtime Host → Experience | Aggregate host status changed | Presentation acknowledgement | Experience shows last-known/degraded status | No automation grant | Mode, readiness, capability availability, safe reason | Async event |
 | IC-004 | Experience → Runtime Host | User opens system status | `HostStatus` | Honest unavailable status; no fabricated health | No automation grant | Status query; domain-free response | Sync request |
 | IC-005 | Runtime Host → Intelligence | Offline/online-optional mode changed | No command response | Intelligence defaults local-only if mode unknown | Event grants no provider authority | Mode and timestamp only | Async event |
+| IC-039 | Experience → Runtime Host | User explicitly requests full application shutdown | Acknowledgement and visible transition to shutting down | Keep status surface available; report timeout/residual outcomes without fabricating completion | Direct user administration only; no domain authority | Reason, user-origin marker, correlation; no domain payload | Command |
 
 ### Permission interactions
 
@@ -1051,19 +1087,19 @@ Each row is exhaustive for allowed domain, lifecycle, authorization, and event i
 | ID | Initiator → Receiver | Purpose / trigger | Expected response | Failure behaviour | Permission boundary | Data exchanged | Mode |
 |----|----------------------|-------------------|-------------------|-------------------|---------------------|----------------|------|
 | IC-013 | Experience → Workspace Management | Render read-only navigation view | Authorized summaries/scope | Show unavailable/denied state | `workspace.read` proof validated at access | Filter, proof; minimized summaries | Sync request |
-| IC-014 | Companion → Workspace Management | Read task scope, mutate organization, reconcile accepted mutation, or perform delayed terminal lookup | Scope/summary; accepted mutation with operation identity/reference; authoritative status; or content-free terminal/expired-history result | Task degrades unscoped; mutation fails closed; missing result becomes outcome-unknown until reconciled | Read/write effect proof as appropriate; live status uses operation reference/control proof; delayed lookup uses fresh user-administration proof | Query/change/effect proof, operation reference/control proof, or operation id/admin proof | Sync request or command |
-| IC-015 | Memory → Workspace Management | Validate retrieval/write scope | Scope validation result | Reject scoped memory operation | Caller-bound `workspace.read`/scope proof | Workspace/zone ids and authorization context | Sync request |
+| IC-014 | Companion → Workspace Management | Read task scope, mutate organization, reconcile accepted mutation, or perform delayed terminal lookup | Scope/summary; accepted mutation with operation identity/reference; authoritative status; or content-free terminal/expired-history result | Task degrades unscoped; mutation fails closed; missing result becomes outcome-unknown until reconciled | Read/write effect proof as appropriate; every non-immediate mutation also carries operation-control proof; live status uses operation reference/control proof; delayed lookup uses fresh user-administration proof | Query, change/effect+control proof, operation reference/control proof, or operation id/admin proof | Sync request or command |
+| IC-015 | Memory → Workspace Management | Validate retrieval/write scope | Scope validation result after Workspace forwards the opaque domain proof unchanged through IC-009 | Reject scoped memory operation | Memory domain proof must bind the same Workspace scope; original requester is preserved; validation confers no `workspace.read` authority | Workspace/zone ids, owner revision, lifecycle state request, and opaque domain proof; no Memory or Workspace content | Sync request |
 | IC-016 | Context Sensing → Workspace Management | Tag/validate observation scope | Scope snapshot | Emit unscoped/minimized or stop as policy requires | Authorized scope only | Workspace id request; no observation content | Sync request |
 | IC-017 | Action → Workspace Management | Validate target belongs to authorized scope | Scope validation result | Reject execution | Action proof must bind same scope | Target scope identity; no effect payload | Sync request |
-| IC-018 | Workspace Management → Companion/Memory/Context Sensing/Action | Active/relevant scope changed, or an accepted Workspace mutation reached a terminal domain result including indeterminate | Companion updates task/result; scoped subscribers invalidate/update scope | Subscriber treats stale scope as invalid; Companion treats missing terminal result as unknown, never success | Event grants no read/write authority; domain results go only to requesting Companion task | Scope ids/version for subscribers; minimized mutation outcome/correlation for Companion; no unrelated workspace content | Async event |
+| IC-018 | Workspace Management → Companion/Memory/Context Sensing/Action | Active/relevant scope changed (including archive fallback/restore), or an accepted Workspace mutation reached a terminal domain result including indeterminate | Companion updates task/result; scoped subscribers invalidate/update scope | Subscriber treats stale or archived scope as invalid before later effects; Companion treats missing terminal result as unknown, never success | Event grants no read/write authority; domain results go only to requesting Companion task | Scope ids/version/lifecycle and fallback class for subscribers; minimized mutation outcome/correlation for Companion; no unrelated workspace content | Async event |
 
 ### Memory interactions
 
 | ID | Initiator → Receiver | Purpose / trigger | Expected response | Failure behaviour | Permission boundary | Data exchanged | Mode |
 |----|----------------------|-------------------|-------------------|-------------------|---------------------|----------------|------|
 | IC-019 | Companion → Memory | Retrieve/explain memory, reconcile an accepted write/forget/redact, or perform delayed terminal lookup | Provenance-bearing minimized result/explanation, authoritative status, or content-free terminal/expired-history result | Continue reduced-context; missing terminal result becomes outcome-unknown until reconciled | `memory.read` + workspace scope for content; live status uses operation reference/control proof; delayed lookup uses fresh user-administration proof | Query/item/scope/purpose/effect proof, operation reference/control proof, or operation id/admin proof | Sync request |
-| IC-020 | Companion → Memory | Retain approved candidate/user knowledge | Accepted then write-resolved event | Reject; no silent retry/bypass | `memory.write`; observation permission is insufficient | Candidate, provenance, retention intent, proof | Command + async event |
-| IC-021 | Companion → Memory | Forget/redact on user intent/policy | Accepted then terminal event | Keep item unchanged and explain failure | `memory.forget` | Item id/redaction, purpose, proof | Command + async event |
+| IC-020 | Companion → Memory | Retain approved candidate/user knowledge | Accepted then write-resolved event | Reject; no silent retry/bypass | `memory.write`; observation permission is insufficient; non-immediate work requires separate operation control | Candidate, provenance, retention intent, effect+control proof | Command + async event |
+| IC-021 | Companion → Memory | Forget/redact on user intent/policy | Accepted then terminal event | Keep item unchanged and explain failure | `memory.forget`; non-immediate work requires separate operation control | Item id/redaction, purpose, effect+control proof | Command + async event |
 | IC-022 | Memory → Companion | Write/forget/redact/policy terminal outcome, including indeterminate | Task updates/explanation | Companion marks result outcome-unknown if a required terminal event is missing | Event contains authorization id, not proof | Item id or minimized summary, outcome, provenance/policy refs | Async event |
 
 ### Context Sensing interactions
@@ -1087,7 +1123,7 @@ Each row is exhaustive for allowed domain, lifecycle, authorization, and event i
 | ID | Initiator → Receiver | Purpose / trigger | Expected response | Failure behaviour | Permission boundary | Data exchanged | Mode |
 |----|----------------------|-------------------|-------------------|-------------------|---------------------|----------------|------|
 | IC-029 | Companion → Action | Execute an explicitly approved action plan | Acceptance/denial; progress/terminal events | Stop; report partial effects honestly | Each item carries its own exact action-type effect proof, validated immediately before that effect; no batch-wide or omnibus effect proof | Approved plan with ordered proposed effects, one item effect proof per attempted item, and operation-control proof | Command + async event |
-| IC-030 | Companion → Action | Resolve an explicit user-initiated action plan without mutation; cancel/reconcile an operation; describe an action; or perform delayed terminal lookup | Action plan, acceptance/status/description, or content-free terminal/expired-history result | Refuse invalid plan authority; otherwise report invalid reference/control/admin proof or unsafe/too-late cancellation | Plan resolution uses `action.plan.resolve`, which grants bounded matching only and no effect authority; describe uses task authorization; live status/cancel use operation reference/control proof; delayed lookup uses fresh user-administration proof; cancellation cannot expand authority | Declared action items/targets/constraints and authorization proof; or operation/action type id, operation reference, relevant proof, and correlation | Sync request or command |
+| IC-030 | Companion → Action | Resolve an explicit user-initiated action plan without mutation; cancel/reconcile an operation; describe an action; or perform delayed terminal lookup | Action plan, acceptance/status/description, or content-free terminal/expired-history result | Refuse invalid plan authority; otherwise report invalid reference/control/admin proof or unsafe/too-late cancellation | Plan resolution uses `action.plan.resolve`, which grants bounded matching only and no effect authority; describe uses task authorization; live status/cancel use operation reference/control proof; delayed lookup uses fresh user-administration proof | Declared action items/targets/constraints and authorization proof; or operation/action type id, operation reference, relevant proof, and correlation | Sync request or command |
 | IC-031 | Action → Companion | Operation progress or terminal outcome, including partial/indeterminate | Task updates/explanation | Missing terminal event becomes unknown/degraded, never assumed success | Event grants no further action | Effect summary, partial effects, status, authorization id | Async event |
 
 ### Experience and Companion interactions

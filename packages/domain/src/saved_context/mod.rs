@@ -6,6 +6,7 @@
 
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
+use ts_rs::TS;
 
 use crate::errors::{validate_resource_name, DomainError};
 use crate::ids::{SavedContextId, WorkspaceId};
@@ -35,7 +36,7 @@ pub fn title_fingerprint(title: &str) -> String {
 }
 
 /// One line of the capture scope, written for the person deciding.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 pub struct SavedContextScopeItem {
     pub key: String,
     pub summary: String,
@@ -56,7 +57,7 @@ impl SavedContextScopeItem {
 /// declared next to the type that carries the captured result so the two cannot
 /// drift: every `captured` line below corresponds to a field of
 /// [`SavedContextWindow`] or [`SavedContextMonitor`].
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 pub struct SavedContextCaptureScope {
     pub id: String,
     pub purpose: String,
@@ -133,7 +134,7 @@ impl SavedContextCaptureScope {
 }
 
 /// Canonical restore identity for a still-open window (exact-session matching).
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 pub struct SavedContextRestoreIdentity {
     pub identity_schema_version: String,
     pub desktop_session_id: String,
@@ -171,7 +172,7 @@ impl SavedContextRestoreIdentity {
 }
 
 /// One window as it stood when the user saved the context.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 pub struct SavedContextWindow {
     pub id: String,
     pub title: String,
@@ -220,7 +221,7 @@ impl SavedContextWindow {
 }
 
 /// One monitor as it stood when the user saved the context.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 pub struct SavedContextMonitor {
     pub id: String,
     pub monitor_index: i32,
@@ -236,7 +237,7 @@ pub struct SavedContextMonitor {
 pub const HANDOFF_NOTE_MAX_CHARS: usize = 2000;
 
 /// A named bounded workspace context the user deliberately saved.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 pub struct SavedContext {
     pub id: SavedContextId,
     pub workspace_id: WorkspaceId,

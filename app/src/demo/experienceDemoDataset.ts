@@ -56,11 +56,16 @@ const MONITORS: SavedContextMonitor[] = [
 ];
 
 function windowOf(
-  partial: Omit<SavedContextWindow, "restore_identity"> & {
+  partial: Omit<
+    SavedContextWindow,
+    "restore_identity" | "restore_identity_unavailable_reason"
+  > & {
     restore_identity?: SavedContextWindow["restore_identity"];
+    restore_identity_unavailable_reason?: string | null;
   },
 ): SavedContextWindow {
   return {
+    ...partial,
     restore_identity: partial.restore_identity ?? {
       identity_schema_version: "1",
       desktop_session_id: "demo-session-aug2",
@@ -69,8 +74,8 @@ function windowOf(
       title_fingerprint: partial.title.slice(0, 48),
       captured_at: at(-3 * hour),
     },
-    restore_identity_unavailable_reason: null,
-    ...partial,
+    restore_identity_unavailable_reason:
+      partial.restore_identity_unavailable_reason ?? null,
   };
 }
 
@@ -487,17 +492,31 @@ export function buildDemoResumePreview(context: SavedContext): ResumePlanPreview
   const expires = at(12 * hour);
   const items = context.windows.map((window, index) => {
     const skipMinimized = window.minimized;
-    return {
+    const proposed_effect = {
+      kind: "place" as const,
+      x: window.x,
+      y: window.y,
+      width: window.width,
+      height: window.height,
+      monitor_index: window.monitor_index,
+      minimized: window.minimized,
+    };
+    const target = {
       item_id: `demo-plan-item-${context.id}-${index}`,
       action_type: "place_window",
       target_summary: window.title,
-      proposed_effect: {
-        x: window.x,
-        y: window.y,
-        width: window.width,
-        height: window.height,
-        monitor_index: window.monitor_index,
-      },
+      restore_identity: window.restore_identity ?? null,
+      identity_unavailable_reason:
+        window.restore_identity_unavailable_reason ?? null,
+      proposed_effect,
+      confidence_threshold: null,
+      saved_context_id: null,
+    };
+    return {
+      item_id: target.item_id,
+      action_type: target.action_type,
+      target_summary: target.target_summary,
+      proposed_effect,
       permission_scope: "desktop.window.place",
       projected_disposition: skipMinimized
         ? ("will_skip_unresolvable" as const)
@@ -508,6 +527,7 @@ export function buildDemoResumePreview(context: SavedContext): ResumePlanPreview
           ? "You were working here — will try to focus again."
           : "Still open in this Windows session.",
       error_code: null,
+      target,
     };
   });
 

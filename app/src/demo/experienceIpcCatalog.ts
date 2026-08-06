@@ -1,6 +1,11 @@
 /**
  * Pilot experience IPC catalog — contract between frozen UI and runtime.
  *
+ * This list is the constitutional **Product** IPC tier authority
+ * (`architecture/ARCHITECTURAL_CONSTITUTION_V2.md` §4.8).
+ * Machine-readable tiers: `app/src/generated/ipcTiers.ts`
+ * (`pnpm sync:ipc-tiers` / `pnpm verify:ipc-tiers`).
+ *
  * Demo mode is an adapter that implements this catalog in-memory.
  * Production Tauri commands with the same names are the authority when
  * `shouldUseExperienceDemo()` is false.

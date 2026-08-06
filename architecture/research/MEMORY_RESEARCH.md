@@ -172,8 +172,8 @@ Companion separately proposes an authorized Memory write.
 - Which non-content identifiers and provenance classes may survive forgetting?
 - How must redaction propagate into summaries, embeddings, lexical terms,
   relationships, cached retrievals, operation records, and backups?
-- How is Memory scoped when a workspace is archived, restored, merged, or
-  reorganized?
+- What merge-specific Memory identity and visibility rules apply when
+  Workspaces are merged?
 - What retention defaults are calm and privacy-preserving without surprising the
   user or causing repeated cognitive work?
 - Which pruning decisions may be automatic, and which require user visibility or
@@ -198,6 +198,11 @@ Companion separately proposes an authorized Memory write.
 - What operation commit points and cancellation classes apply to write,
   consolidation, redaction, forget, reindex, and migration?
 
+Capability Architecture v1.2 resolves ordinary archive/restore visibility:
+archived-scope Memory remains retained but is excluded from active retrieval;
+explicit administration and restored visibility require fresh authorization
+and current Workspace scope validation.
+
 ---
 
 ## D. Required Functional Capabilities
@@ -215,9 +220,10 @@ Companion separately proposes an authorized Memory write.
 - `MEM-FR-005` — Retrieve only purpose-, permission-, and workspace-scoped
   results, applying scope before candidate content crosses the boundary.
   Mandatory.
-- `MEM-FR-006` — Support lexical, semantic, metadata/time, graph, and hybrid
-  retrieval as replaceable strategies where evaluation justifies them.
-  Mandatory as an extensible contract capability; no strategy is selected.
+- `MEM-FR-006` — Evaluate lexical, semantic, metadata/time, graph, and hybrid
+  retrieval as replaceable strategies where evidence justifies them.
+  Conditional internal strategy requirement; no public strategy contract or
+  technology is selected.
 - `MEM-FR-007` — Return minimized results with provenance, revision, confidence,
   temporal validity, and retrieval explanation metadata. Mandatory.
 - `MEM-FR-008` — Explain what was remembered, why, source, scope, retention,
@@ -240,8 +246,9 @@ Companion separately proposes an authorized Memory write.
   content-free terminal tombstone. Mandatory.
 - `MEM-FR-016` — Rebuild every derived index from canonical records and declared
   model/configuration versions. Mandatory.
-- `MEM-FR-017` — Export canonical records, provenance, policies, and required
-  history in a technology-neutral logical form. Mandatory.
+- `MEM-FR-017` — Evaluate export of canonical records, provenance, policies,
+  and required history in a technology-neutral logical form. Conditional until
+  an owner-authoritative administration contract and policy are accepted.
 - `MEM-FR-018` — Keep working context bounded and ephemeral unless separately
   proposed for durable retention. Mandatory boundary requirement.
 - `MEM-FR-019` — If synchronization is later enabled, preserve authorization,
@@ -264,8 +271,9 @@ Companion separately proposes an authorized Memory write.
   background growth are bounded and observable without content leakage.
 - `MEM-NFR-006` — Destructive operations have deterministic, crash-recoverable
   progress and post-operation verification.
-- `MEM-NFR-007` — Canonical data remains readable and exportable when any derived
-  index is missing, corrupt, incompatible, or rebuilding.
+- `MEM-NFR-007` — Canonical data remains readable and recoverable by Memory when
+  any derived index is missing, corrupt, incompatible, or rebuilding. External
+  export remains conditional on an accepted administration contract.
 - `MEM-NFR-008` — Indexes, caches, backups, and model-provider histories cannot
   become alternate Memory stores.
 - `MEM-NFR-009` — Storage, lexical, vector, graph, embedding, reranking, and
@@ -285,9 +293,14 @@ Companion separately proposes an authorized Memory write.
 
 ## F. Local First Requirements
 
-Core write, retrieval, explanation, redaction, forgetting, policy, export,
-backup, rebuild, and recovery must work with all network interfaces unavailable
-when local prerequisites exist.
+Core write, retrieval, explanation, redaction, forgetting, policy, rebuild, and
+recovery must work with all network interfaces unavailable when local
+prerequisites exist.
+
+If Memory export or backup/restore is later accepted through architecture
+contracts, those administration paths must also be fully offline. Research and
+candidate comparison may test them now, but may not treat them as approved
+product contracts.
 
 Candidate implications:
 
@@ -1027,7 +1040,8 @@ Before any candidate or composition can be adopted, it must demonstrate:
     antivirus, filesystem, and shutdown evidence exists.
 21. Performance, resource, storage growth, rebuild, deletion, and migration are
     measured on declared hardware and workloads.
-22. Technology-neutral export and complete derived-index rebuild are proven.
+22. Complete derived-index rebuild is proven. If Memory export administration
+    is accepted, technology-neutral export is also proven.
 23. Storage, index, model, encryption, and schema migrations preserve authority,
     provenance, deletion barriers, and explanation meaning.
 24. Optional synchronization, if in scope, preserves E2EE, authorization,
@@ -1039,8 +1053,8 @@ Before any candidate or composition can be adopted, it must demonstrate:
 27. Every native library, process, model, graph, and synchronization boundary
     fits the Complexity Budget.
 28. Build-versus-integrate reasoning explicitly satisfies ADR-0002.
-29. Relevant architecture unknowns, especially archived-workspace visibility and
-    deletion semantics, are resolved or accepted by a named authority.
+29. Relevant architecture unknowns, especially merge/reorganization visibility
+    and deletion semantics, are resolved or accepted by a named authority.
 
 ### Evaluation criteria for future technology selection
 
@@ -1077,8 +1091,9 @@ No aggregate score may override a failed mandatory gate.
   comparators, trade-offs, unknowns, and acceptance criteria only
 - Rejected candidates: none
 - Conditions before selection:
-  - resolve architecture questions that materially change taxonomy, archived
-    scope, retention, deletion, synchronization, and operation semantics
+  - resolve architecture questions that materially change taxonomy,
+    merge/reorganization scope, retention, deletion, synchronization, and
+    operation semantics
   - define representative Windows hardware, data, query, and failure workloads
   - run bounded reproducible evaluation against mandatory acceptance criteria
   - validate exact versions, models, binary packaging, and transitive

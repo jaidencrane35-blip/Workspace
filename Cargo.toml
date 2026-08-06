@@ -26,3 +26,4 @@ workspace-kernel = { path = "packages/kernel" }
 workspace-windows-integration = { path = "packages/windows-integration" }
 uuid = { version = "1", features = ["v4"] }
 chrono = { version = "0.4", features = ["clock"] }
+ts-rs = { version = "10.1", features = ["serde-compat"] }

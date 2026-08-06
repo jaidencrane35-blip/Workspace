@@ -1,9 +1,9 @@
-# Workspace Capability Research Roadmap v1.0
+# Workspace Capability Research Roadmap v1.1
 
-Status: Complete; pending architecture review
+Status: Active; architecture review accepted (`LEDGER-0011`)
 Authority: Research-sequencing plan subordinate to the active architecture and
 `12_Capability_Technology_Research_Framework.md`
-Version: 1.0
+Version: 1.1
 
 This document orders the remaining Workspace capability research. It does not
 perform technology research, name or recommend technologies, select or reject a
@@ -102,9 +102,9 @@ incomplete requirements.
 Final comparison, recommendation, selection, or implementation for an affected
 area remains blocked until its relevant architecture changes are accepted:
 
-- essential versus degradable startup dependencies
-- Experience access to status, permission administration, and shutdown during
-  degraded startup
+- essential versus degradable startup dependencies for capabilities outside the
+  audited Runtime Host, Permission Authority, Workspace Management, and Memory
+  foundation
 - Experience-to-Companion cancellation, status, and explanation purposes
 - sensing subscription, unsubscribe, session reference, and control lifecycle
 - Companion child-operation cancellation and terminal reconciliation
@@ -112,11 +112,16 @@ area remains blocked until its relevant architecture changes are accepted:
 - local Intelligence provider administration and resource-cap contracts
 - independently revocable compound authorization for optional remote use
 - attention, interruption, bounded prompting, and neutral-consent invariants
-- archived-workspace active-scope fallback and Memory visibility
+- merge/reorganization Workspace identity and Memory visibility beyond the
+  accepted archive/restore lifecycle
 - per-operation commit, cancellation, partial-effect, compensation, and
   recovery declarations
 
 These are architecture prerequisites, not technology research tasks.
+
+`LEDGER-0014` resolved foundational startup/degradation, independent Experience
+status/direct shutdown, domain-proof scope validation, active archive fallback,
+stale-scope invalidation, and ordinary archived/restored Memory visibility.
 
 ---
 

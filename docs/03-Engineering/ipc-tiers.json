@@ -1,0 +1,85 @@
+{
+  "version": 1,
+  "constitution": "architecture/ARCHITECTURAL_CONSTITUTION_V2.md §4.8",
+  "tiers": {
+    "product": {
+      "authority": "app/src/demo/experienceIpcCatalog.ts EXPERIENCE_IPC_COMMANDS",
+      "description": "Frozen Product Proof experience shell (Home / Save / Continue / Check-in). Guide has no IPC."
+    },
+    "developer": {
+      "authority": "computed: React invokeIpc usage minus product minus diagnostic",
+      "description": "Commands invoked from React outside the Product Proof catalog (Operator, Canvas, Intelligence, Assistant, layout helpers)."
+    },
+    "diagnostic": {
+      "authority": "docs/03-Engineering/ipc-tiers.json diagnostic[]",
+      "description": "Health, observation, audit, model-provider inspection, and diagnose_* surfaces. Not Product Proof."
+    },
+    "experimental": {
+      "authority": "computed: registered minus product minus developer minus diagnostic",
+      "description": "Registered for kernel/CommandHandler parity or future UI; not Product Proof."
+    }
+  },
+  "diagnostic": [
+    "capture_workspace_observation",
+    "clear_memory_entries",
+    "compare_personalized_vs_neutral_plan",
+    "create_memory_entry",
+    "create_user_preference",
+    "decide_approval",
+    "delete_memory_entry",
+    "delete_user_preference",
+    "diagnose_ai_plan_evaluation",
+    "diagnose_ai_plan_preview",
+    "diagnose_ai_plan_with_personalization",
+    "diagnose_ai_workspace_plan",
+    "diagnose_model_proposal_generation",
+    "ensure_observation_freshness",
+    "get_actor_capabilities",
+    "get_ai_evaluation_history",
+    "get_audit_history",
+    "get_latest_observation_delta",
+    "get_latest_workspace_observation",
+    "get_layout_snapshot",
+    "get_memory_context",
+    "get_model_provider_metadata",
+    "get_observation_scheduler_status",
+    "get_observations",
+    "get_permission_approvals",
+    "get_preference_profile",
+    "get_workspace_metrics",
+    "get_workspace_observation_by_id",
+    "get_workspace_observation_status",
+    "get_workspace_runtime_state",
+    "get_workspace_snapshot",
+    "get_workspace_state",
+    "list_memory_entries",
+    "list_model_providers",
+    "set_personalization_enabled",
+    "test_model_provider_request",
+    "update_user_preference"
+  ],
+  "quarantine": [
+    "create_widget",
+    "delete_application",
+    "delete_layout",
+    "delete_widget",
+    "delete_zone",
+    "get_application",
+    "get_actor_capabilities",
+    "get_audit_history",
+    "get_execution_state",
+    "get_layout_snapshot",
+    "get_observations",
+    "get_widget",
+    "get_workspace_metrics",
+    "get_workspace_snapshot",
+    "get_zone",
+    "reset_layout"
+  ],
+  "notes": [
+    "Product tier is exactly the Experience IPC catalog (21 commands).",
+    "get_action_catalog is Developer (OperatorConsole), not quarantine — lib.rs parity comment is outdated.",
+    "Quarantine may overlap Diagnostic when a diagnostic command is unused by React.",
+    "Tier labels do not change Tauri registration or runtime behaviour."
+  ]
+}

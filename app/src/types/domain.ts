@@ -1,13 +1,38 @@
+export type {
+  ActionItemOutcome,
+  ActionOperationResult,
+  ActionPlan,
+  ActionPlanItem,
+  ActionTargetDescriptor,
+  ItemDisposition,
+  OperationOutcome,
+  PilotBaseline,
+  PilotConsent,
+  PilotInterviewPhase,
+  PilotInterviewRecord,
+  PilotLeaveResumeRecord,
+  PilotMeasurementScope,
+  PilotMeasurementSnapshot,
+  PilotScopeItem,
+  ProjectedDisposition,
+  ProposedEffect,
+  RestoreCompatibilitySummary,
+  RestoreExecutionSummary,
+  ResumePlanPreview,
+  SavedContext,
+  SavedContextCaptureScope,
+  SavedContextId,
+  SavedContextMonitor,
+  SavedContextRestoreIdentity,
+  SavedContextScopeItem,
+  SavedContextWindow,
+  Workspace,
+  WorkspaceId,
+} from "../generated/productContracts";
+
 export interface ResourceRef {
   kind: "workspace" | "zone" | "application" | "widget";
   id: string;
-}
-
-export interface Workspace {
-  id: string;
-  name: string;
-  created_at: string;
-  updated_at: string;
 }
 
 export interface Zone {
@@ -2028,211 +2053,10 @@ export interface WorkspaceObservationCaptureResult {
 }
 
 /**
- * Bounded, user-authored workspace contexts (Product Proof PP-M1-01).
- *
- * The capture scope is served by the kernel rather than restated here, so the
- * preview the user reviews cannot drift from what is actually captured.
+ * Product Proof Experience wire types are generated from Rust
+ * (`app/src/generated/productContracts.ts`) and re-exported at the top of this
+ * file to preserve existing `../types/domain` import paths.
  */
-export interface SavedContextScopeItem {
-  key: string;
-  summary: string;
-}
-
-export interface SavedContextCaptureScope {
-  id: string;
-  purpose: string;
-  captured: SavedContextScopeItem[];
-  excluded: SavedContextScopeItem[];
-}
-
-export interface SavedContextRestoreIdentity {
-  identity_schema_version: string;
-  desktop_session_id: string;
-  captured_hwnd: string;
-  captured_process_id: number;
-  title_fingerprint: string;
-  captured_at: string;
-}
-
-export interface SavedContextWindow {
-  id: string;
-  title: string;
-  process_id: number;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  monitor_index: number | null;
-  minimized: boolean;
-  focused: boolean;
-  z_order: number | null;
-  restore_identity?: SavedContextRestoreIdentity | null;
-  restore_identity_unavailable_reason?: string | null;
-}
-
-export type ProjectedDisposition =
-  | "will_attempt"
-  | "will_skip_unsupported"
-  | "will_skip_unresolvable";
-
-export type ItemDisposition =
-  | "completed"
-  | "failed"
-  | "skipped_unsupported"
-  | "skipped_unresolvable"
-  | "refused_changed"
-  | "not_attempted"
-  | "outcome_unknown";
-
-export type OperationOutcome =
-  | "completed"
-  | "partially_completed"
-  | "failed"
-  | "cancelled"
-  | "indeterminate";
-
-export interface ActionPlanItem {
-  item_id: string;
-  action_type: string;
-  target_summary: string;
-  proposed_effect: Record<string, unknown>;
-  permission_scope: string;
-  projected_disposition: ProjectedDisposition;
-  reason?: string | null;
-  error_code?: string | null;
-}
-
-export interface ActionPlan {
-  plan_id: string;
-  expires_at: string;
-  plan_digest: string;
-  purpose: string;
-  items: ActionPlanItem[];
-}
-
-/** Derived from ActionPlan dispositions — matches Continue quality bands. */
-export interface RestoreCompatibilitySummary {
-  total_items: number;
-  will_attempt: number;
-  will_skip_unsupported: number;
-  will_skip_unresolvable: number;
-  missing_window_count: number;
-  confidence_band: "high" | "steady" | "limited" | "empty" | string;
-  restore_eligible: boolean;
-}
-
-export interface ResumePlanPreview {
-  saved_context_id: string;
-  saved_context_name: string;
-  handoff_note: string;
-  plan: ActionPlan;
-  /** Additive runtime field; frozen UI may ignore and recompute from plan items. */
-  compatibility?: RestoreCompatibilitySummary;
-}
-
-/** PP-P01E — local pilot evaluation data (not product saved-context data). */
-export interface PilotScopeItem {
-  key: string;
-  summary: string;
-}
-
-export interface PilotMeasurementScope {
-  id: string;
-  purpose: string;
-  measured: PilotScopeItem[];
-  not_measured: PilotScopeItem[];
-}
-
-export interface PilotConsent {
-  scope_id: string;
-  consented_at: string;
-  withdrawn_at?: string | null;
-}
-
-export interface PilotBaseline {
-  return_minutes: number;
-  recorded_at: string;
-  notes: string;
-}
-
-export interface PilotLeaveResumeRecord {
-  id: string;
-  recorded_at: string;
-  local_day: string;
-  return_minutes: number;
-  correction_needed: boolean;
-  correction_note: string;
-}
-
-export interface PilotInterviewRecord {
-  phase: "baseline" | "week_four";
-  recorded_at: string;
-  responses: string;
-}
-
-export interface PilotMeasurementSnapshot {
-  scope: PilotMeasurementScope;
-  consent: PilotConsent | null;
-  baseline: PilotBaseline | null;
-  leave_resume: PilotLeaveResumeRecord[];
-  interview_baseline: PilotInterviewRecord | null;
-  interview_week_four: PilotInterviewRecord | null;
-  distinct_resume_days: number;
-  median_return_minutes: number | null;
-}
-
-export interface ActionItemOutcome {
-  item_id: string;
-  action_type: string;
-  target_summary: string;
-  disposition: ItemDisposition;
-  what: string;
-  why: string;
-  reason?: string | null;
-  error_code?: string | null;
-  user_action_available: string;
-}
-
-/** Aggregated restore execution facts (additive; frozen UI may ignore). */
-export interface RestoreExecutionSummary {
-  restored_windows: number;
-  skipped_windows: number;
-  missing_applications: number;
-  failed_operations: number;
-  duration_ms: number;
-}
-
-export interface ActionOperationResult {
-  operation_id: string;
-  outcome: OperationOutcome;
-  items: ActionItemOutcome[];
-  summary?: RestoreExecutionSummary;
-}
-
-export interface SavedContextMonitor {
-  id: string;
-  monitor_index: number;
-  name: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  is_primary: boolean;
-}
-
-export interface SavedContext {
-  id: string;
-  workspace_id: string;
-  name: string;
-  created_at: string;
-  approved_scope: string;
-  /** User-authored intended next action (PP-P01A). Never AI-generated. */
-  handoff_note: string;
-  observation_pass_id: string;
-  captured_at: string;
-  windows: SavedContextWindow[];
-  monitors: SavedContextMonitor[];
-}
 
 export type ObservationFreshness =
   | "unavailable"

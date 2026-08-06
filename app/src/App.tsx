@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { HomeWorkspacePanel } from "./components/HomeWorkspacePanel";
+import { OperatorRoot } from "./components/operator/OperatorRoot";
 import { PilotHelpPanel } from "./components/PilotHelpPanel";
 import { PilotMeasurementPanel } from "./components/PilotMeasurementPanel";
 import { ResumeContextPanel } from "./components/ResumeContextPanel";
@@ -48,9 +49,9 @@ async function persistActiveWorkspaceId(id: string | null): Promise<void> {
 }
 
 /**
- * Product root — mounts one persistent WorkspaceShell.
- * Destinations swap as content inside the shell (never as separate pages).
- * Pilot chrome: Home / Save / Continue / Check-in / Guide via PILOT_PRIMARY_VIEWS.
+ * Product root — Conversational Shell is the front door (Modes 1–3).
+ * Existing Product Proof (Home / Save / Continue / Check-in / Guide) is wrapped
+ * and shown beside conversation in Mode 3 via intent bridge or Workspace expand.
  */
 export default function App() {
   const [view, setView] = useState<PilotPrimaryView>(PILOT_DEFAULT_VIEW);
@@ -242,7 +243,7 @@ export default function App() {
     </>
   );
 
-  return (
+  const productSurface = (
     <WorkspaceShell
       view={view}
       onNavigate={navigate}
@@ -255,5 +256,12 @@ export default function App() {
     >
       {content}
     </WorkspaceShell>
+  );
+
+  return (
+    <OperatorRoot
+      productSurface={productSurface}
+      onNavigateProduct={navigate}
+    />
   );
 }

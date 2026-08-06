@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "description": "Approved capability backlog seed — runtime proposals live in the operator; engineering tracks approved IDs here after review.",
+  "statuses": [
+    "draft",
+    "proposed",
+    "approved",
+    "implementing",
+    "shipped",
+    "rejected",
+    "rolled_back"
+  ],
+  "categories": [
+    "user_preference",
+    "workflow",
+    "bug",
+    "capability",
+    "product_enhancement"
+  ],
+  "approvedBacklog": [],
+  "proposals": [],
+  "rules": [
+    "Workspace must not rewrite itself from conversation",
+    "Approved items execute only via constitutional engineering",
+    "Every status change requires an audit event",
+    "Undo restores the previous audited status when available"
+  ]
+}

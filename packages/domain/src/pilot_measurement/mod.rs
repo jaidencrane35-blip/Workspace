@@ -6,6 +6,7 @@
 
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
+use ts_rs::TS;
 
 /// Scope identifier participants consent to. Bumping this invalidates prior consent.
 pub const PILOT_MEASUREMENT_SCOPE_ID: &str = "pilot-measurement-scope-v1";
@@ -13,7 +14,7 @@ pub const PILOT_MEASUREMENT_SCOPE_ID: &str = "pilot-measurement-scope-v1";
 const NOTES_MAX_CHARS: usize = 4000;
 const RETURN_MINUTES_MAX: u32 = 24 * 60;
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 pub struct PilotScopeItem {
     pub key: String,
     pub summary: String,
@@ -29,7 +30,7 @@ impl PilotScopeItem {
 }
 
 /// What pilot measurement includes and excludes — shown before consent.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 pub struct PilotMeasurementScope {
     pub id: String,
     pub purpose: String,
@@ -91,7 +92,7 @@ impl PilotMeasurementScope {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 pub struct PilotConsent {
     pub scope_id: String,
     pub consented_at: String,
@@ -104,14 +105,14 @@ impl PilotConsent {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 pub struct PilotBaseline {
     pub return_minutes: u32,
     pub recorded_at: String,
     pub notes: String,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 pub struct PilotLeaveResumeRecord {
     pub id: String,
     pub recorded_at: String,
@@ -122,7 +123,7 @@ pub struct PilotLeaveResumeRecord {
     pub correction_note: String,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "snake_case")]
 pub enum PilotInterviewPhase {
     Baseline,
@@ -146,7 +147,7 @@ impl PilotInterviewPhase {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 pub struct PilotInterviewRecord {
     pub phase: PilotInterviewPhase,
     pub recorded_at: String,
@@ -154,7 +155,7 @@ pub struct PilotInterviewRecord {
 }
 
 /// Read model for Experience — evaluation data only.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 pub struct PilotMeasurementSnapshot {
     pub scope: PilotMeasurementScope,
     pub consent: Option<PilotConsent>,
