@@ -1,12 +1,12 @@
-export { handleOperatorUtterance, getOperatorPhase, inspectOperatorPlan } from "./intelligence";
-export { isCapabilityIntent, planFromIntent } from "./planner";
-export { isProviderCommand } from "./runtimeBridge";
-export { sanitizeUserText } from "./compose";
+export { handleOperatorUtterance } from "./intelligence";
+export { toCapabilityIntent, isCapabilityIntentAction } from "./intentMap";
+export {
+  executeCapabilityIntent,
+  isBannedProviderCommand,
+  CAPABILITY_INTENT_COMMAND,
+} from "./runtimeBridge";
 export type {
-  OperatorDomain,
+  CapabilityIntent,
   OperatorOutcome,
-  OperatorPhase,
-  OperatorPlan,
-  OperatorPlanStep,
-  ProviderStepResult,
+  OperatorTurnResult,
 } from "./types";

@@ -1,13 +1,14 @@
 # Operator → Capability Runtime Protocol
 
-The Operator is the **only** Conversation-side caller of Capability Runtime IPC.
+Conversation uses **one** governed entry:
 
-| Domain | IPC | Notes |
-| --- | --- | --- |
-| clipboard | `read_clipboard` / `write_clipboard` | Via Operator runtime bridge |
-| application | `execute_application_operation` | Via Operator runtime bridge |
-| window | `execute_window_operation` | Via Operator runtime bridge |
+| IPC | Owner |
+| --- | --- |
+| `execute_capability_intent` | Kernel Operator |
 
-Steps execute **in Operator-planned order**.  
-Providers never see each other.  
-Permission Gateway remains enforced inside Kernel CommandPipeline.
+Inside the kernel, the Operator plans steps and executes each through CommandPipeline (Permission Gateway intact) into Capability Runtime → Router → Provider.
+
+Provider-specific IPC may remain registered for diagnostics/legacy, but **must not** be called from Conversation or the TS façade.
+
+Steps execute **in Kernel Operator-planned order**.  
+Providers never see each other.

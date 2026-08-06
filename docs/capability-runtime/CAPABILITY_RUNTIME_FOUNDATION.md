@@ -12,13 +12,14 @@
 ## Frozen architecture
 
 ```
-Conversation → Intent Layer → Operator Intelligence → Capability Router
-    → Provider Registry → Capability Provider → Desktop Service
-    → Operator (response) → Conversation Response
+Conversation → Intent Layer → CapabilityIntent → execute_capability_intent
+    → Kernel Operator → Capability Runtime → Capability Router
+    → Provider Registry → Capability Provider → Desktop Service → OS
+    → Kernel Operator (response) → Conversation Response
 ```
 
 Presentation layer (UI Architecture Spec, Desktop Operator, Conversation chrome) is **stable**.  
-Operator Intelligence (P12.7) is the sole Conversation→Runtime bridge. Capabilities extend Workspace; they never replace it.
+Kernel Operator (P12 Finalization) is the sole Conversation→Runtime bridge. Capabilities extend Workspace; they never replace it.
 
 ---
 

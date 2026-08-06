@@ -1,10 +1,10 @@
 # Capability Composition Rule
-## Permanent engineering law (P12.7)
+## Permanent engineering law (P12.7 · Kernel composition P12 Finalization)
 
 | Field | Value |
 | --- | --- |
 | **Status** | Authoritative |
-| **Program** | P12.7 Operator Intelligence Foundation |
+| **Program** | P12.7 · composition authority → Kernel Operator (P12 Finalization) |
 
 ---
 
@@ -28,7 +28,7 @@ Future execution programs maximize composability instead of isolated features.
 | Files + Applications | “Open yesterday’s report in Word.” |
 | Memory + Windows | “Restore yesterday’s workspace.” |
 
-The Operator alone orchestrates multi-provider plans.  
+Composition authority belongs only to the **Kernel Operator**.  
 Providers never call each other.
 
 ---

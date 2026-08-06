@@ -1,11 +1,12 @@
 # Operator Authority Rule
-## Permanent architectural law (P12.7)
+## Permanent architectural law (P12.7 · confirmed P12 Finalization)
 
 | Field | Value |
 | --- | --- |
 | **Status** | Authoritative |
-| **Program** | P12.7 Operator Intelligence Foundation |
+| **Program** | P12.7 · refined by P12 Finalization (Kernel) |
 | **Also in** | `.cursor/rules/constitutional-execution-protocol.mdc` |
+| **Companion** | `KERNEL_AUTHORITY_RULE.md` · `PRESENTATION_PURITY_RULE.md` |
 
 ---
 
@@ -27,29 +28,32 @@ The Operator alone determines:
 Providers remain completely independent and never become conversational.  
 Conversation never contains operational logic.
 
-**The Operator is the bridge.**
+**The Operator is the bridge.**  
+**Production home of the Operator is the Kernel** (`packages/kernel/src/operator/`).
 
 ---
 
 ## Pipeline (authoritative)
 
 ```
-Conversation
+Conversation (React)
     ↓
-Intent Layer (language → intent)
+Intent Layer (TypeScript) → CapabilityIntent
     ↓
-Operator Intelligence
+execute_capability_intent (single IPC)
+    ↓
+Kernel Operator
     ↓
 Capability Runtime (Router → Registry → Provider)
     ↓
-Desktop Service / OS
+Operating System
     ↓
-Operator (response composition)
+Kernel Operator (response composition)
     ↓
 Conversation Response
 ```
 
-No capability path may skip the Operator.
+No capability path may skip the Kernel Operator.
 
 ---
 
@@ -57,7 +61,8 @@ No capability path may skip the Operator.
 
 | Layer | May | Must not |
 | --- | --- | --- |
-| Conversation | Present thread, composer, shell chrome; call Operator | Call providers / IPC effects |
-| Operator | Decide, clarify, orchestrate, compose replies | Own OS effects or product chrome |
+| Conversation | Present thread, composer, shell chrome; call façade | Call providers / IPC effects |
+| Intent Layer | Utterance → CapabilityIntent | Plan, compose, invoke providers |
+| Kernel Operator | Decide, clarify, orchestrate, compose replies | Own OS effects or product chrome |
 | Capability Runtime | Route & execute provider ops | Talk to the user |
 | Providers | Domain operations via ports | Call each other or Conversation |

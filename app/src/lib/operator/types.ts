@@ -1,41 +1,41 @@
 import type { IntentAction } from "../intentBridge";
 
-/** Capability domains registered in Capability Runtime today. */
-export type OperatorDomain = "clipboard" | "application" | "window";
-
-export interface OperatorPlanStep {
-  domain: OperatorDomain;
+/** Mirrors kernel `CapabilityIntent` (camelCase IPC). */
+export interface CapabilityIntent {
+  domain: string;
   operation: string;
-  args?: Record<string, unknown>;
+  text?: string | null;
+  query?: string | null;
+  path?: string | null;
+  hwnd?: string | null;
+  pid?: number | null;
+  x?: number | null;
+  y?: number | null;
+  width?: number | null;
+  height?: number | null;
+  monitorIndex?: number | null;
+  snap?: string | null;
 }
 
-export interface OperatorPlan {
-  steps: OperatorPlanStep[];
-  /** Catalogue id when multi-step / multi-domain. */
-  compositionId?: string;
+/** Mirrors kernel `OperatorTurnResult`. */
+export interface OperatorTurnResult {
+  ok: boolean;
+  message: string;
+  status?: string | null;
+  domain: string;
+  operation: string;
+  target?: string | null;
+  preview?: string | null;
+  text?: string | null;
+  items?: Array<{ title: string }> | null;
+  monitors?: Array<{
+    index: number;
+    name: string;
+    isPrimary: boolean;
+  }> | null;
+  compositionId?: string | null;
 }
 
 export type OperatorOutcome =
   | { kind: "reply"; text: string; suggestion?: string }
   | { kind: "shell"; action: IntentAction };
-
-export type OperatorPhase =
-  | "idle"
-  | "interpreting"
-  | "clarifying"
-  | "planning"
-  | "executing"
-  | "responding";
-
-export interface ProviderStepResult {
-  ok: boolean;
-  message?: string;
-  text?: string;
-  preview?: string;
-  format?: string;
-  bytes?: number;
-  status?: string;
-  target?: string;
-  items?: Array<{ title: string; processId?: number; minimized?: boolean }>;
-  monitors?: Array<{ index: number; name: string; isPrimary: boolean }>;
-}

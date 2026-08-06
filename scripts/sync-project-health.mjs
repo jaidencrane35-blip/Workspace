@@ -277,6 +277,18 @@ const completedPrograms = [
       "app/src/lib/operator/intelligence.ts",
     ],
   },
+  {
+    id: "operator-architecture-completion-p12-finalization",
+    backlogRef: "P12 Finalization — Operator Architecture Completion",
+    completed: "2026-08-07",
+    artifacts: [
+      "docs/operator/KERNEL_AUTHORITY_RULE.md",
+      "docs/operator/PRESENTATION_PURITY_RULE.md",
+      "packages/kernel/src/operator/mod.rs",
+      "pnpm verify:operator-intelligence",
+      "execute_capability_intent",
+    ],
+  },
 ];
 
 const remainingBacklog = [
@@ -359,14 +371,14 @@ const health = {
   engineeringMode: "constitutional-execution",
   protocol: {
     document: ".cursor/rules/constitutional-execution-protocol.mdc",
-    version: "1.4",
+    version: "1.5",
     machineState: "docs/project-health.json",
   },
   currentExecutionProgram: {
-    id: "operator-intelligence-foundation-p12-7",
-    title: "P12.7 Operator Intelligence Foundation",
+    id: "operator-architecture-completion-p12-finalization",
+    title: "P12 Finalization — Operator Architecture Completion",
     status: "complete_awaiting_owner_review",
-    note: "Operator Authority + Capability Composition adopted. Conversation→Operator→Runtime only. Await Owner review before P13.",
+    note: "Kernel Operator + Presentation Purity + single execute_capability_intent IPC. P12 series complete after Owner acceptance. P13 next.",
   },
   completedExecutionPrograms: completedPrograms,
   remainingBacklog,
@@ -389,7 +401,9 @@ const health = {
     windowProvider: "engineering_complete",
     windowProviderProductProof: "shipped_awaiting_owner",
     conversationalDesktopSurface: "shipped_awaiting_owner",
-    operatorIntelligence: "complete_awaiting_owner_review",
+    operatorIntelligence: "superseded_by_kernel_operator",
+    kernelOperator: "complete_awaiting_owner_review",
+    p12Series: "complete_awaiting_owner_acceptance",
     notes: [
       "UI Architecture Spec accepted/frozen (P8)",
       "Capability Runtime research accepted (P9)",
@@ -398,14 +412,15 @@ const health = {
       "Window Provider Levels 1–2 engineering complete (P12)",
       "Window Provider Conversation Product Proof shipped (P12.5)",
       "Conversational Desktop Surface + Product Gravity (P12.6)",
-      "Operator Intelligence Foundation (P12.7)",
-      "Operator Authority + Capability Composition permanent",
+      "Operator Intelligence Foundation (P12.7 TS interim)",
+      "P12 Finalization — Kernel Operator + Presentation Purity",
+      "Operator Authority + Kernel Authority + Composition permanent",
       "Providers own operations; independently testable",
     ],
   },
   currentMilestone: {
-    id: "operator-intelligence-foundation-p12-7",
-    title: "P12.7 Operator Intelligence Foundation",
+    id: "operator-architecture-completion-p12-finalization",
+    title: "P12 Finalization — Operator Architecture Completion",
     status: "awaiting_owner_review",
     commit: milestoneCommit,
   },
@@ -452,7 +467,7 @@ const health = {
     {
       id: "capability-providers-p13-plus",
       track: "B",
-      summary: "Notifications / Browser / Screenshot / File providers await Owner acceptance of Operator Intelligence (P12.7) + Product Gravity",
+      summary: "Notifications / Browser / Screenshot / File providers await Owner acceptance of P12 Finalization (Kernel Operator)",
     },
     {
       id: "tray-integration",
@@ -481,7 +496,8 @@ const health = {
       "Capability Runtime + Application + Window providers (P10–P12)",
       "Window Provider Conversation Product Proof (P12.5)",
       "Conversational Desktop Surface / Product Gravity (P12.6)",
-      "Operator Intelligence Foundation (P12.7)",
+      "Operator Intelligence Foundation (P12.7 TS interim)",
+      "P12 Finalization — Kernel Operator architecture",
       "Non-PP domain.ts remains manual (G1 remainder)",
       "Documentation authority still fragmented (G3)",
     ],
@@ -548,15 +564,15 @@ const health = {
   },
   lastMilestone: {
     date: "2026-08-07",
-    document: "docs/operator/OPERATOR_INTELLIGENCE_FOUNDATION.md",
-    title: "P12.7 Operator Intelligence Foundation",
+    document: "docs/engineering-milestone-report.md",
+    title: "P12 Finalization — Operator Architecture Completion",
     reviewBrief: "docs/operator/product-proof/OPERATOR_PRODUCT_PROOF.md",
   },
-  handoffStatus: "AWAITING_PROJECT_OWNER_OPERATOR_INTELLIGENCE_REVIEW",
+  handoffStatus: "AWAITING_PROJECT_OWNER_P12_FINALIZATION_REVIEW",
   nextRecommendedExecutionProgram: {
     id: "notifications-provider-p13",
-    title: "P13 Notifications Provider (reassess after Owner Operator review)",
-    blockedUntil: "Project Owner accepts Operator Authority bridge before more providers",
+    title: "P13 Notifications Provider",
+    blockedUntil: "Project Owner accepts P12 Finalization; then P13 is eligible",
   },
   capabilityEvolution: {
     document: "docs/capability-evolution/README.md",

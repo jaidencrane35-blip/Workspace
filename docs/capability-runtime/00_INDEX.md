@@ -7,17 +7,18 @@
 | **P12** | Window Provider engineering — complete |
 | **P12.5** | Window Conversation Product Proof — shipped |
 | **P12.6** | Conversational Desktop Surface — shipped |
-| **P12.7** | Operator Intelligence — awaiting Owner review |
+| **P12.7** | Operator Intelligence (TS interim) — superseded by Finalization |
+| **P12 Finalization** | Kernel Operator architecture — awaiting Owner review |
 | **UI law** | Frozen |
-| **Operator law** | Conversation → Operator → Runtime only |
+| **Operator law** | Conversation → Intent → Kernel Operator → Runtime |
 | **Provider law** | Own operations; independently testable; no provider-to-provider calls |
-| **Composition law** | Independently useful + composable |
+| **Composition law** | Independently useful + composable; Kernel owns composition |
 
 ## Documents
 
 | Document | Purpose |
 | --- | --- |
-| [../operator/00_INDEX.md](../operator/00_INDEX.md) | **Operator Intelligence (P12.7)** |
+| [../operator/00_INDEX.md](../operator/00_INDEX.md) | **Kernel Operator (P12 Finalization)** |
 | [CAPABILITY_RUNTIME_FOUNDATION.md](./CAPABILITY_RUNTIME_FOUNDATION.md) | Pipeline freeze |
 | [PRODUCT_PROOF_RULE.md](./PRODUCT_PROOF_RULE.md) | Permanent Product Proof completion rule |
 | [WINDOW_PROVIDER.md](./WINDOW_PROVIDER.md) | P12 Window Provider |

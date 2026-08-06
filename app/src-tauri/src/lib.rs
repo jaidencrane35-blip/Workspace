@@ -142,6 +142,7 @@ use commands::workspace_intelligence::{
     list_tasks, set_active_work, update_task_status,
 };
 use commands::application_capability::execute_application_operation;
+use commands::capability_intent::execute_capability_intent;
 use commands::clipboard::{read_clipboard, write_clipboard};
 use commands::window_capability::execute_window_operation;
 use commands::health::get_workspace_health;
@@ -184,6 +185,7 @@ pub fn run() {
             write_clipboard,
             execute_application_operation,
             execute_window_operation,
+            execute_capability_intent,
             exit_workspace,
             // Product shell (Canvas + Diagnostic)
             create_workspace,

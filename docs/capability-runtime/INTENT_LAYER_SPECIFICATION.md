@@ -1,31 +1,34 @@
 # Intent Layer Specification
-## Capability Runtime Foundation (P10)
+## Capability Runtime Foundation (P10) · P12 Finalization
 
 | Field | Value |
 | --- | --- |
 | **Status** | Authoritative for Track B entry |
-| **Layer** | Intent Layer (between Conversation and Capability Router) |
+| **Layer** | Intent Layer (utterance → CapabilityIntent) |
 | **UI law** | Frozen — Intent never invents a new primary interface |
+| **Execution** | Kernel Operator via `execute_capability_intent` only |
 
 ---
 
 ## Role
 
-The Intent Layer maps Conversation utterances to **capability intents**. It does not perform desktop effects.
+The Intent Layer maps Conversation utterances to **CapabilityIntent**. It does not perform desktop effects, plan steps, or choose providers.
 
 ```
 Conversation utterance
         ↓
 Intent Layer (deterministic bridge today; model later)
         ↓
-Capability intent { domain, operation, arguments }
+CapabilityIntent { domain, operation, arguments }
         ↓
-Operator Intelligence (accept / clarify / plan / orchestrate)
+execute_capability_intent (single IPC)
         ↓
-Capability Router
+Kernel Operator (accept / clarify / plan / orchestrate)
+        ↓
+Capability Runtime → Router → Provider → OS
 ```
 
-Intent Layer maps language. Operator decides. Conversation never skips the Operator.
+Intent Layer maps language. Kernel Operator decides. Conversation never skips the Operator.
 
 ---
 
@@ -34,73 +37,51 @@ Intent Layer maps language. Operator decides. Conversation never skips the Opera
 | Surface | Owner |
 | --- | --- |
 | Phrase → intent mapping | TypeScript `app/src/lib/intentBridge.ts` |
-| Shell / navigation intents | Operator presentation (existing) |
-| Capability intents | Intent kinds that invoke Capability Runtime IPC only |
-| Effect execution | **Forbidden** in Intent Layer |
+| Intent → CapabilityIntent | TypeScript `app/src/lib/operator/intentMap.ts` |
+| Shell / navigation intents | Presentation (existing) |
+| Effect execution / composition | **Kernel Operator only** |
 
 ---
 
 ## Capability intent kinds
 
+All capability kinds map to one IPC: **`execute_capability_intent`**.
+
 ### Clipboard (P10)
 
-| Kind | Domain | Operation | IPC |
-| --- | --- | --- | --- |
-| `clipboardRead` | clipboard | read | `read_clipboard` |
-| `clipboardWrite` | clipboard | write | `write_clipboard` |
+| Kind | Domain | Operation |
+| --- | --- | --- |
+| `clipboardRead` | clipboard | read |
+| `clipboardWrite` | clipboard | write |
 
 ### Application (P11)
 
-| Kind | Domain | Operation(s) | IPC |
-| --- | --- | --- | --- |
-| `appOpen` | application | find → focus \| launch | `execute_application_operation` |
-| `appLaunch` | application | launch | same |
-| `appFocus` | application | focus | same |
-| `appClose` | application | close | same |
-| `appMinimize` | application | minimize | same |
-| `appRestore` | application | restore | same |
-| `appEnumerate` | application | enumerate | same |
-
-Conversation examples:
-
-- “Open notepad” / “Launch chrome” / “Switch to Chrome” / “Close Spotify” / “List apps”
+| Kind | Domain | Operation |
+| --- | --- | --- |
+| `appOpen` | application | open *(Kernel composes find → focus \| launch)* |
+| `appLaunch` | application | launch |
+| `appFocus` | application | focus |
+| `appClose` | application | close |
+| `appMinimize` | application | minimize |
+| `appRestore` | application | restore |
+| `appEnumerate` | application | enumerate |
 
 ### Window (P12 + P12.5 Product Proof)
 
-| Kind | Domain | Operation(s) | IPC |
-| --- | --- | --- | --- |
-| `winEnumerate` | window | enumerate | `execute_window_operation` |
-| `winActive` | window | active | same |
-| `winMonitors` | window | monitors | same |
-| `winBounds` | window | bounds | same |
-| `winMaximize` | window | maximize | same |
-| `winMinimize` | window | minimize | same |
-| `winRestore` | window | restore | same |
-| `winSnap` | window | snap | same |
-| `winCenter` | window | center | same |
-| `winMoveMonitor` | window | move + monitorIndex | same |
-| `winFocus` | window | focus | same |
-| `winResize` | window | resize | same |
+| Kind | Domain | Operation |
+| --- | --- | --- |
+| `winEnumerate` | window | enumerate |
+| `winActive` | window | active |
+| `winMonitors` | window | monitors |
+| `winBounds` | window | bounds |
+| `winMaximize` | window | maximize |
+| `winMinimize` | window | minimize |
+| `winRestore` | window | restore |
+| `winSnap` | window | snap |
+| `winCenter` | window | center |
+| `winMove` | window | move |
+| `winResize` | window | resize |
+| `winFocus` | window | focus |
+| `winFind` | window | find |
 
-Natural examples (Product Proof): “What windows are open?” / “Move this window to the left.” / “Center this window.” / “Maximize Cursor.” / “Restore Chrome.” / “Bring Chrome to the front.” / “Move Chrome to monitor two.”
-
-Deixis: `this` / `this window` / bare operate verbs resolve to the active window inside Window Provider.  
-Clarification: “Move this window.” / “Resize this window.” ask where/size — never invent effects.  
-User-facing replies never mention providers.
-
----
-
-## Laws
-
-1. Intent Layer **must not** call Desktop Services or OS APIs.
-2. Intent Layer **must not** bypass Capability Router / Provider Registry.
-3. Unknown intents remain honest refusals — never invent effects.
-4. Future providers add intent kinds; they do not redesign Conversation chrome.
-
----
-
-## Future
-
-- Structured `IntentEnvelope` shared Rust/TS contract  
-- Voice utterance → same Intent Layer  
-- Model-assisted parsing still terminates in Workspace-owned intent kinds  
+Provider-specific IPC remains registered for diagnostics/legacy but **must not** be called from Conversation or the TS Operator façade.

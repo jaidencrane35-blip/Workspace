@@ -1,25 +1,36 @@
-# Operator Intelligence — Product Proof (P12.7)
+# Operator / Kernel Architecture — Product Proof
+## P12 Finalization Owner checklist
 
 | Field | Value |
 | --- | --- |
-| **Handoff** | `AWAITING_PROJECT_OWNER_OPERATOR_INTELLIGENCE_REVIEW` |
+| **Program** | P12 Finalization |
+| **Architecture** | Conversation → Intent → Kernel Operator → Runtime → Provider → OS |
+| **IPC** | `execute_capability_intent` only from Conversation |
 
-## Checklist (Conversation only)
+---
 
-| Check | Try |
-| --- | --- |
-| Discovery still works | “What windows are open?” |
-| Application open still works | “Open notepad” |
-| Clarification still honest | “Move this window.” |
-| No provider jargon | Replies never say Provider / Runtime / Registry |
-| Collapse / Save still work | Shell directives still function |
+## Owner verifies Conversation can (behaviour unchanged or better)
 
-## Engineering Proof
+- [ ] Open applications  
+- [ ] Focus applications  
+- [ ] Move / snap / restore windows  
+- [ ] Clarify ambiguous requests  
+- [ ] Report truthful failures  
 
-- `OperatorRoot` does not call provider IPC  
-- `pnpm verify:operator-intelligence` passes  
-- Vitest covers Operator plan + authority boundary  
+Without React containing operational decision logic.
 
-## Acceptance
+---
 
-Owner confirms Conversation still operates the desktop, and architecture places the Operator as the sole bridge.
+## Architectural gates
+
+- [ ] No React provider composition  
+- [ ] No presentation execution-order policy  
+- [ ] No presentation permission decisions  
+- [ ] All Conversation capabilities through Kernel Operator  
+- [ ] No remaining reason for another P12.x (except bugfixes)  
+
+---
+
+## After acceptance
+
+P12 series is **complete**. **P13 Notifications Provider** is the next eligible execution program.

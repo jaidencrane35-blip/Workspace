@@ -11,11 +11,16 @@ handleOperatorUtterance(utterance: string): Promise<OperatorOutcome>
 | `reply` | Stream/push text into the transcript |
 | `shell` | Apply presentation (mode, satellite, developer) |
 
-Conversation **must not** import or invoke:
+The façade maps Intent → `CapabilityIntent` and invokes **only**:
+
+```ts
+execute_capability_intent({ intent })
+```
+
+Conversation **must not** import or invoke provider-specific IPC:
 
 - `read_clipboard` / `write_clipboard`
 - `execute_application_operation`
 - `execute_window_operation`
-- any future provider IPC
 
-Intent resolution runs inside the Operator path (Intent Layer remains the language mapper; Operator owns acceptance).
+Intent Layer owns utterance → CapabilityIntent. Kernel Operator owns execution.

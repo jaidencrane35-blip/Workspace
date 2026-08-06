@@ -1,58 +1,64 @@
 # Engineering Milestone Report
-## P12.7 Operator Intelligence Foundation
+## P12 Finalization — Operator Architecture Completion
 
 | Field | Value |
 | --- | --- |
-| **Execution program** | P12.7 Operator Intelligence Foundation |
+| **Execution program** | P12 Finalization (Track B completion) |
 | **Date** | 2026-08-07 |
-| **Prior** | P12.6 Conversational Desktop Surface (`d1dc8b8`) |
-| **Commit** | 644c125 |
-| **Handoff** | `AWAITING_PROJECT_OWNER_OPERATOR_INTELLIGENCE_REVIEW` |
+| **Prior** | P12.7 TypeScript Operator interim (`644c125`) |
+| **Commit** | pending |
+| **Handoff** | `AWAITING_PROJECT_OWNER_P12_FINALIZATION_REVIEW` |
 | **Index** | `docs/operator/00_INDEX.md` |
 
 ---
 
 ## Mission
 
-Create the architectural reasoning layer that turns Conversation into governed desktop operation — without AGI, autonomy, or redesigning providers.
+Remove every remaining presentation-side operational responsibility. Establish Kernel Operator + single CapabilityIntent IPC as the permanent Conversation → Runtime architecture. Complete the P12 series.
 
 ---
 
-## Permanent rules adopted
+## Permanent rules adopted / confirmed
 
-| Rule | Authority |
+| Rule | Doc |
 | --- | --- |
-| **Operator Authority Rule** | `docs/operator/OPERATOR_AUTHORITY_RULE.md` · protocol v1.4 |
-| **Capability Composition Rule** | `docs/operator/CAPABILITY_COMPOSITION_RULE.md` |
+| Presentation Purity | `docs/operator/PRESENTATION_PURITY_RULE.md` |
+| Kernel Authority | `docs/operator/KERNEL_AUTHORITY_RULE.md` |
+| Operator Authority | confirmed |
+| Capability Composition | composition authority = Kernel Operator |
+
+Protocol → v1.5
 
 ---
 
-## Decision
+## Architectural corrections
 
-**ADOPT** TypeScript Operator Intelligence (`app/src/lib/operator/`) as the sole Conversation → Capability Runtime bridge. Kernel Runtime remains effect authority. Providers stay independent and non-conversational.
-
----
-
-## Deliverables
-
-| Artifact | Path |
+| Before (P12.7 interim) | After (Finalization) |
 | --- | --- |
-| Operator Intelligence | `app/src/lib/operator/*` |
-| Conversation rewired | `OperatorRoot` → `handleOperatorUtterance` only |
-| Authority / Composition rules | `docs/operator/*` |
-| Policies + state machine + contracts | `docs/operator/` |
-| Composition catalogue | `docs/operator/COMPOSITION_CATALOGUE.md` |
-| Product Proof | `docs/operator/product-proof/OPERATOR_PRODUCT_PROOF.md` |
-| Verifier | `pnpm verify:operator-intelligence` |
+| TS Operator planned/composed/invoked provider IPC | Kernel Operator owns plan/compose/orchestrate |
+| Multiple provider IPC from façade | Single `execute_capability_intent` |
+| `app.open_or_focus` in TypeScript | `app.open_or_focus` in Kernel Operator |
+
+---
+
+## Completion audit answers
+
+1. React desktop operational logic? **No** (OperatorRoot is presentation + shell only)  
+2. Presentation provider composition? **No**  
+3. Presentation execution order? **No**  
+4. Presentation permission decisions? **No**  
+5. Every capability through Kernel Operator? **Yes** (Conversation path)  
+6. Full architecture authoritative? **Yes**  
+7. Remaining reason for another P12.x? **No**
 
 ---
 
 ## Explicit non-goals
 
-P13 Notifications · AGI / planning models · autonomous agents · provider redesign · UI redesign
+P13 · redesign providers/UI/Gravity · AGI
 
 ---
 
 ## Stop
 
-Wait for Product Owner Operator Intelligence review before P13.
+Await Owner acceptance. After acceptance, P12 series is complete; **P13** is next eligible.

@@ -3,7 +3,7 @@ description: Workspace Constitutional Execution Protocol — disciplined backlog
 alwaysApply: true
 ---
 
-# Workspace Constitutional Execution Protocol (v1.4)
+# Workspace Constitutional Execution Protocol (v1.5)
 
 You are the Principal Constitutional Implementation Engineer for Workspace.
 You are not an autonomous product designer, architect, refactoring engine, or feature-generation engine.
@@ -17,10 +17,22 @@ The Operator alone decides whether action occurs, which provider(s) run, in what
 Providers never become conversational. Conversation never becomes operational.  
 Authority: `docs/operator/OPERATOR_AUTHORITY_RULE.md`.
 
+## Kernel Authority Rule (permanent — P12 Finalization)
+
+The **Kernel Operator** is the sole execution authority between Intent and Capability Runtime.  
+Conversation → Intent (TS) → single IPC `execute_capability_intent` → Kernel Operator → Runtime.  
+Authority: `docs/operator/KERNEL_AUTHORITY_RULE.md`.
+
+## Presentation Purity Rule (permanent — P12 Finalization)
+
+Presentation layers gather input and present truthful output only.  
+They must never contain provider orchestration, execution/permission policy, capability composition, or desktop decision logic.  
+Authority: `docs/operator/PRESENTATION_PURITY_RULE.md`.
+
 ## Capability Composition Rule (permanent — P12.7)
 
 Every provider must be independently useful **and** compose with other providers to create new user-visible capabilities.  
-The Operator orchestrates compositions; providers never call each other.  
+Composition authority belongs only to the Kernel Operator; providers never call each other.  
 Authority: `docs/operator/CAPABILITY_COMPOSITION_RULE.md`.
 
 ## Product Proof Rule (permanent — P12.5)

@@ -1,11 +1,12 @@
 # Rolling Capability Provider Roadmap
-## Updated after P12.7 Operator Intelligence Foundation
+## Updated after P12 Finalization (Operator Architecture Completion)
 
 UI Architecture, Desktop Operator, Conversation, and Capability Runtime pipeline remain **frozen**.  
 Providers own **operations**. Providers never call each other.  
 Every provider requires **Engineering Completion + Product Proof**.  
-Conversation → **Operator** → Runtime (Operator Authority).  
-Compositions create user value (Capability Composition Rule).
+Conversation → Intent → **Kernel Operator** → Runtime (Kernel Authority).  
+Compositions create user value (Capability Composition Rule).  
+Presentation stays pure (Presentation Purity Rule).
 
 ---
 
@@ -18,7 +19,10 @@ Compositions create user value (Capability Composition Rule).
 | **P12** | Window Provider (engineering) | `66465b8` |
 | **P12.5** | Window Conversation Product Proof | `40dd746` |
 | **P12.6** | Conversational Desktop Surface / Product Gravity | `d1dc8b8` |
-| **P12.7** | Operator Intelligence Foundation | this milestone |
+| **P12.7** | Operator Intelligence Foundation (TS interim) | `644c125` |
+| **P12 Finalization** | Kernel Operator + Presentation Purity | this milestone |
+
+P12 series is **complete** after Owner acceptance of Finalization. No further P12.x except genuine bug fixes.
 
 ---
 
@@ -43,3 +47,4 @@ Longer: P18 Voice → P19 Memory → P20 Automation → P21 Intelligence
 3. Providers own operations; independently testable.  
 4. Every provider ends with Conversation Product Proof (`PRODUCT_PROOF_RULE.md`).  
 5. One program → stop for Owner review.  
+6. Kernel Operator is sole composition / execution authority after Intent.  

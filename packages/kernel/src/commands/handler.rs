@@ -267,6 +267,21 @@ impl CommandHandler {
         )
     }
 
+    /// Single Conversation → Kernel Operator entry (P12 Finalization).
+    pub fn execute_capability_intent(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        capability_intent: crate::operator::CapabilityIntent,
+    ) -> Result<crate::operator::OperatorTurnResult> {
+        crate::commands::capability_intent::execute_capability_intent(
+            kernel,
+            actor,
+            intent,
+            capability_intent,
+        )
+    }
+
     /// Executes a Window Provider operation through Capability Runtime (P12).
     #[allow(clippy::too_many_arguments)]
     pub fn execute_window_operation(

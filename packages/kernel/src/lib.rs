@@ -11,6 +11,7 @@ pub mod events;
 pub mod health;
 pub mod intent;
 pub mod lifecycle;
+pub mod operator;
 pub mod policy;
 pub mod security;
 pub mod services;
@@ -25,6 +26,7 @@ pub use commands::{
     ApplicationOperationResult, ClipboardReadResult, ClipboardWriteResult, CommandHandler,
     ResumePlanPreview, WindowOperationResult,
 };
+pub use operator::{CapabilityIntent, KernelOperator, OperatorTurnResult};
 pub use config::{ConfigManager, SettingsUpdate, WorkspaceSettings};
 pub use error::{KernelError, PublicError, Result};
 pub use events::{DomainEvent, EventBus};

@@ -4,54 +4,57 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { resolveIntent } from "../app/src/lib/intentBridge";
 import {
-  isCapabilityIntent,
-  isProviderCommand,
-  planFromIntent,
-  sanitizeUserText,
+  CAPABILITY_INTENT_COMMAND,
+  isBannedProviderCommand,
+  isCapabilityIntentAction,
+  toCapabilityIntent,
 } from "../app/src/lib/operator";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
-describe("Operator Intelligence Foundation", () => {
-  it("plans capability intents without Conversation owning IPC", () => {
-    const win = resolveIntent("What windows are open?");
-    expect(isCapabilityIntent(win)).toBe(true);
-    expect(planFromIntent(win)).toMatchObject({
-      steps: [{ domain: "window", operation: "enumerate" }],
+describe("P12 Finalization — Kernel Operator authority", () => {
+  it("maps intents to CapabilityIntent without orchestration", () => {
+    expect(toCapabilityIntent(resolveIntent("What windows are open?"))).toEqual(
+      {
+        domain: "window",
+        operation: "enumerate",
+      },
+    );
+    expect(toCapabilityIntent(resolveIntent("open notepad"))).toEqual({
+      domain: "application",
+      operation: "open",
+      query: "notepad",
     });
-
-    const open = resolveIntent("open notepad");
-    expect(planFromIntent(open)).toMatchObject({
-      compositionId: "app.open_or_focus",
-      steps: [{ domain: "application", operation: "find" }],
-    });
+    expect(isCapabilityIntentAction(resolveIntent("save this"))).toBe(false);
   });
 
-  it("returns shell directives for non-capability intents", () => {
-    const save = resolveIntent("save this");
-    expect(isCapabilityIntent(save)).toBe(false);
-    expect(planFromIntent(save)).toBeNull();
+  it("bans provider-specific IPC from the Operator façade", () => {
+    expect(isBannedProviderCommand("execute_window_operation")).toBe(true);
+    expect(isBannedProviderCommand(CAPABILITY_INTENT_COMMAND)).toBe(false);
   });
 
-  it("strips provider jargon from user-facing text", () => {
-    expect(
-      sanitizeUserText("Reading via Capability Runtime and Window Provider."),
-    ).not.toMatch(/capability runtime|window provider/i);
-  });
-
-  it("classifies provider IPC commands for authority checks", () => {
-    expect(isProviderCommand("execute_window_operation")).toBe(true);
-    expect(isProviderCommand("get_workspace")).toBe(false);
-  });
-
-  it("keeps OperatorRoot free of provider IPC (source law)", () => {
-    const source = readFileSync(
+  it("keeps OperatorRoot and façade free of provider invoke paths", () => {
+    const rootUi = readFileSync(
       path.join(root, "app/src/components/operator/OperatorRoot.tsx"),
       "utf8",
     );
-    expect(source).toContain("handleOperatorUtterance");
-    expect(source).not.toContain("execute_window_operation");
-    expect(source).not.toContain("execute_application_operation");
-    expect(source).not.toContain("read_clipboard");
+    const intelligence = readFileSync(
+      path.join(root, "app/src/lib/operator/intelligence.ts"),
+      "utf8",
+    );
+    const bridge = readFileSync(
+      path.join(root, "app/src/lib/operator/runtimeBridge.ts"),
+      "utf8",
+    );
+
+    expect(rootUi).toContain("handleOperatorUtterance");
+    expect(rootUi).not.toContain("invokeIpc");
+    expect(intelligence).not.toContain("invokeIpc");
+    expect(bridge).toContain(CAPABILITY_INTENT_COMMAND);
+    // Sole invoke target is the CapabilityIntent command constant (banned names may appear in a deny-list).
+    expect(bridge).toMatch(/invokeIpc[\s\S]*CAPABILITY_INTENT_COMMAND/);
+    expect(bridge).not.toMatch(
+      /invokeIpc\s*<[^>]*>\s*\(\s*"(execute_window_operation|execute_application_operation|read_clipboard|write_clipboard)"/,
+    );
   });
 });

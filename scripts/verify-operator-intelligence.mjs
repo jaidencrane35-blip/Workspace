@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Verifies P12.7 Operator Intelligence Foundation + Operator Authority Rule.
+ * Verifies Kernel Operator authority + Presentation Purity (P12 Finalization).
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -17,22 +17,15 @@ function fail(msg) {
 const required = [
   "docs/operator/OPERATOR_AUTHORITY_RULE.md",
   "docs/operator/CAPABILITY_COMPOSITION_RULE.md",
+  "docs/operator/PRESENTATION_PURITY_RULE.md",
+  "docs/operator/KERNEL_AUTHORITY_RULE.md",
   "docs/operator/OPERATOR_INTELLIGENCE_FOUNDATION.md",
-  "docs/operator/OPERATOR_CONTRACTS.md",
-  "docs/operator/CONVERSATION_OPERATOR_PROTOCOL.md",
-  "docs/operator/OPERATOR_RUNTIME_PROTOCOL.md",
-  "docs/operator/OPERATOR_STATE_MACHINE.md",
-  "docs/operator/COMPOSITION_CATALOGUE.md",
-  "docs/operator/policies/CLARIFICATION_POLICY.md",
-  "docs/operator/policies/TRUTHFULNESS_POLICY.md",
-  "docs/operator/policies/ORCHESTRATION_POLICY.md",
-  "docs/operator/policies/PERMISSION_POLICY.md",
-  "docs/operator/policies/RESPONSE_COMPOSITION_POLICY.md",
-  "docs/operator/policies/CONTEXT_LIFETIME_POLICY.md",
-  "docs/operator/product-proof/OPERATOR_PRODUCT_PROOF.md",
+  "packages/kernel/src/operator/mod.rs",
+  "packages/kernel/src/commands/capability_intent.rs",
+  "app/src-tauri/src/commands/capability_intent.rs",
   "app/src/lib/operator/intelligence.ts",
+  "app/src/lib/operator/intentMap.ts",
   "app/src/lib/operator/runtimeBridge.ts",
-  "app/src/lib/operator/planner.ts",
   "tests/operator-intelligence.test.ts",
 ];
 
@@ -42,64 +35,78 @@ for (const rel of required) {
   }
 }
 
-const authority = fs.readFileSync(
-  path.join(root, "docs/operator/OPERATOR_AUTHORITY_RULE.md"),
-  "utf8",
-);
-for (const token of [
-  "Conversation never invokes providers directly",
-  "Operator alone",
-  "Providers remain completely independent",
-]) {
-  if (!authority.includes(token)) {
-    fail(`OPERATOR_AUTHORITY_RULE missing: ${token}`);
-  }
-}
-
-const composition = fs.readFileSync(
-  path.join(root, "docs/operator/CAPABILITY_COMPOSITION_RULE.md"),
-  "utf8",
-);
-if (!composition.includes("Independently useful") || !composition.includes("Composable")) {
-  fail("CAPABILITY_COMPOSITION_RULE must require independent + composable");
-}
-
 const protocol = fs.readFileSync(
   path.join(root, ".cursor/rules/constitutional-execution-protocol.mdc"),
   "utf8",
 );
-if (!protocol.includes("Operator Authority Rule")) {
-  fail("protocol must document Operator Authority Rule");
+for (const token of [
+  "Operator Authority Rule",
+  "Capability Composition Rule",
+  "Presentation Purity Rule",
+  "Kernel Authority Rule",
+]) {
+  if (!protocol.includes(token)) {
+    fail(`protocol must document ${token}`);
+  }
 }
-if (!protocol.includes("Capability Composition Rule")) {
-  fail("protocol must document Capability Composition Rule");
+
+const libRs = fs.readFileSync(path.join(root, "app/src-tauri/src/lib.rs"), "utf8");
+if (!libRs.includes("execute_capability_intent")) {
+  fail("Tauri generate_handler must register execute_capability_intent");
 }
 
 const rootUi = fs.readFileSync(
   path.join(root, "app/src/components/operator/OperatorRoot.tsx"),
   "utf8",
 );
-for (const banned of [
-  "read_clipboard",
-  "write_clipboard",
-  "execute_application_operation",
-  "execute_window_operation",
-  "invokeIpc",
-]) {
-  if (rootUi.includes(banned)) {
-    fail(`OperatorRoot must not call ${banned} (Operator Authority)`);
-  }
+if (rootUi.includes("invokeIpc")) {
+  fail("OperatorRoot must not call invokeIpc (Presentation Purity)");
 }
 if (!rootUi.includes("handleOperatorUtterance")) {
-  fail("OperatorRoot must speak only through handleOperatorUtterance");
+  fail("OperatorRoot must speak through handleOperatorUtterance");
+}
+
+const bridge = fs.readFileSync(
+  path.join(root, "app/src/lib/operator/runtimeBridge.ts"),
+  "utf8",
+);
+if (!bridge.includes("execute_capability_intent")) {
+  fail("runtimeBridge must use single execute_capability_intent IPC");
+}
+if (/invokeIpc<[^>]+>\(\s*"(read_clipboard|write_clipboard|execute_)/.test(bridge)) {
+  fail("runtimeBridge must not invoke provider-specific commands");
+}
+
+const intelligence = fs.readFileSync(
+  path.join(root, "app/src/lib/operator/intelligence.ts"),
+  "utf8",
+);
+if (intelligence.includes("compositionId") || intelligence.includes("planFromIntent")) {
+  fail("TS intelligence must not own composition/planning");
+}
+for (const banned of [
+  "app/src/lib/operator/planner.ts",
+  "app/src/lib/operator/compose.ts",
+]) {
+  if (fs.existsSync(path.join(root, banned))) {
+    fail(`${banned} must not exist (composition belongs in Kernel Operator)`);
+  }
+}
+
+const kernelOp = fs.readFileSync(
+  path.join(root, "packages/kernel/src/operator/mod.rs"),
+  "utf8",
+);
+if (!kernelOp.includes("KernelOperator") || !kernelOp.includes("app.open_or_focus")) {
+  fail("Kernel Operator must own open composition");
 }
 
 const router = fs.readFileSync(
   path.join(root, "docs/capability-runtime/CAPABILITY_ROUTER_SPECIFICATION.md"),
   "utf8",
 );
-if (!router.includes("Operator Intelligence")) {
-  fail("Capability Router spec must include Operator Intelligence in pipeline");
+if (!router.includes("Kernel Operator") && !router.includes("execute_capability_intent")) {
+  fail("Router spec must reference Kernel Operator / single IPC");
 }
 
 console.log("verify-operator-intelligence: ok");

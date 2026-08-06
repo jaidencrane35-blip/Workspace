@@ -12,11 +12,15 @@
 ## Permanent pipeline
 
 ```
-Conversation
+Conversation (React)
     ↓
-Intent Layer
+Intent Layer (TypeScript) → CapabilityIntent
     ↓
-Operator Intelligence   ← sole decision / orchestration authority (P12.7)
+Single IPC: execute_capability_intent
+    ↓
+Kernel Operator          ← sole decision / orchestration (P12 Finalization)
+    ↓
+Capability Runtime
     ↓
 Capability Router
     ↓
@@ -26,13 +30,15 @@ Capability Provider
     ↓
 Desktop Service (port / windows-integration)
     ↓
-Operator Intelligence (response composition)
+Operating System
+    ↓
+Kernel Operator (response composition)
     ↓
 Conversation Response
 ```
 
 **No capability may bypass this pipeline.**  
-**Conversation never calls the Router or Providers directly** (Operator Authority Rule).
+**Conversation never calls the Router or Providers directly** (Operator Authority / Kernel Authority / Presentation Purity).
 
 ---
 
