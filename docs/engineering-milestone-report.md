@@ -7,7 +7,7 @@
 | **Date** | 2026-08-07 |
 | **Prior** | P6 Shell Completion accepted (`11bab9d`) |
 | **Repository version** | `0.1.0` |
-| **Commit** | _(filled after commit)_ |
+| **Commit** | `e93fb79` |
 | **Handoff** | `AWAITING_PROJECT_OWNER_PRODUCTIZATION_REVIEW` |
 | **Detail** | `docs/execution-program-productization-native-windows.md` |
 
