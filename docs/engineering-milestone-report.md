@@ -7,7 +7,7 @@
 | **Date** | 2026-08-07 |
 | **Prior** | P4 Native Windows Shell Lifecycle (`23d9d01`) |
 | **Repository version** | `0.1.0` |
-| **Commit** | _(filled after commit)_ |
+| **Commit** | `4316230` |
 | **Handoff** | `AWAITING_PROJECT_OWNER_OPERATOR_REFOUNDATION_REVIEW` |
 | **Detail** | `docs/execution-program-native-desktop-operator-refoundation.md` |
 
