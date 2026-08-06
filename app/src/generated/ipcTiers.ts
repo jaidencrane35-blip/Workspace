@@ -65,6 +65,7 @@ export const DEVELOPER_IPC_COMMANDS = [
   "defer_decision_item",
   "dismiss_decision_candidate",
   "dismiss_decision_item",
+  "execute_application_operation",
   "execute_intent_request",
   "generate_decision_engine",
   "generate_decision_queue",
@@ -297,6 +298,7 @@ export const REGISTERED_IPC_COMMANDS = [
   "dismiss_decision_item",
   "ensure_observation_freshness",
   "evaluate_triggers",
+  "execute_application_operation",
   "execute_intent_request",
   "execute_resume_plan",
   "exit_workspace",
@@ -443,13 +445,13 @@ export const REGISTERED_IPC_COMMANDS = [
 export type IpcTier = "product" | "developer" | "diagnostic" | "experimental";
 
 export const IPC_TIER_COUNTS = {
-  "registered": 200,
+  "registered": 201,
   "product": 20,
-  "developer": 114,
+  "developer": 115,
   "diagnostic": 37,
   "experimental": 29,
   "quarantine": 16,
-  "reactUsed": 158
+  "reactUsed": 159
 } as const;
 
 const productSet = new Set<string>(PRODUCT_IPC_COMMANDS);

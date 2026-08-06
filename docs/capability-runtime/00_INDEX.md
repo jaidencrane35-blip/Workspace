@@ -2,37 +2,28 @@
 
 | Field | Value |
 | --- | --- |
-| **P9** | Research complete (accepted) |
-| **P10** | Foundation implemented — awaiting Owner review |
+| **P9** | Research accepted |
+| **P10** | Foundation + Clipboard reference — complete |
+| **P11** | Application Provider — awaiting Owner review |
 | **Layer** | 3 — Capability Runtime (Track B) |
 | **UI law** | Frozen (`docs/ui/UI_ARCHITECTURE_SPECIFICATION.md`) |
+| **Provider law** | Providers own **operations**, not isolated features |
 
-## P10 Foundation
+## Active foundation docs
 
 | Document | Purpose |
 | --- | --- |
-| [CAPABILITY_RUNTIME_FOUNDATION.md](./CAPABILITY_RUNTIME_FOUNDATION.md) | Foundation overview |
-| [INTENT_LAYER_SPECIFICATION.md](./INTENT_LAYER_SPECIFICATION.md) | Intent Layer laws |
-| [CAPABILITY_ROUTER_SPECIFICATION.md](./CAPABILITY_ROUTER_SPECIFICATION.md) | Router + pipeline freeze |
-| [PROVIDER_REGISTRY.md](./PROVIDER_REGISTRY.md) | Provider architecture |
-| [CLIPBOARD_PROVIDER.md](./CLIPBOARD_PROVIDER.md) | Reference provider contract |
-| [FIVE_PROGRAM_ROADMAP.md](./FIVE_PROGRAM_ROADMAP.md) | P10–P14 design (P11+ not executed) |
+| [CAPABILITY_RUNTIME_FOUNDATION.md](./CAPABILITY_RUNTIME_FOUNDATION.md) | Pipeline freeze |
+| [INTENT_LAYER_SPECIFICATION.md](./INTENT_LAYER_SPECIFICATION.md) | Intent kinds |
+| [CAPABILITY_ROUTER_SPECIFICATION.md](./CAPABILITY_ROUTER_SPECIFICATION.md) | Router laws |
+| [PROVIDER_REGISTRY.md](./PROVIDER_REGISTRY.md) | Registry + operations law |
+| [CLIPBOARD_PROVIDER.md](./CLIPBOARD_PROVIDER.md) | P10 reference provider |
+| [APPLICATION_PROVIDER.md](./APPLICATION_PROVIDER.md) | P11 Application Provider |
+| [FIVE_PROGRAM_ROADMAP.md](./FIVE_PROGRAM_ROADMAP.md) | Rolling roadmap |
+| [CAPABILITY_CONTRACTS.md](./CAPABILITY_CONTRACTS.md) | Conversation-entry contracts |
 
-Verifier: `pnpm verify:capability-runtime-foundation`
+Verifiers: `pnpm verify:capability-runtime-foundation` · `pnpm verify:capability-runtime-research`
 
 ## P9 Research (retained)
 
-| Document | Purpose |
-| --- | --- |
-| [CAPABILITY_RUNTIME_RESEARCH_REPORT.md](./CAPABILITY_RUNTIME_RESEARCH_REPORT.md) | Executive research |
-| [CAPABILITY_DOMAIN_CATALOGUE.md](./CAPABILITY_DOMAIN_CATALOGUE.md) | Permanent domains |
-| [OPEN_SOURCE_ADOPTION_MATRIX.md](./OPEN_SOURCE_ADOPTION_MATRIX.md) | ADOPT / ADAPT / WRAP / STUDY / REJECT |
-| [CAPABILITY_CONTRACTS.md](./CAPABILITY_CONTRACTS.md) | Conversation-entry contracts |
-| [ADOPTION_RISK_ASSESSMENT.md](./ADOPTION_RISK_ASSESSMENT.md) | Legal, security, identity risks |
-| [RECOMMENDED_IMPLEMENTATION_ORDER.md](./RECOMMENDED_IMPLEMENTATION_ORDER.md) | Phased Track B order |
-
-Verifier: `pnpm verify:capability-runtime-research`
-
-## Verdict
-
-Workspace owns contracts, permissions, audit, and Win32 authority; wraps commodity libraries; never adopts an external agent suite as product identity. P10 proves the pipeline with Clipboard only.  
+See research report, domain catalogue, OSS matrix, risk assessment, implementation order.  

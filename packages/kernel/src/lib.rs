@@ -17,11 +17,13 @@ pub mod services;
 pub mod state;
 
 pub use capability_runtime::{
-    runtime as capability_runtime, CapabilityDomainId, CapabilityOperation, CapabilityRouter,
-    ProviderDescriptor, ProviderInvokeRequest, ProviderInvokeResponse, ProviderRegistry,
+    runtime as capability_runtime, ApplicationWindowItem, CapabilityDomainId, CapabilityOperation,
+    CapabilityRouter, ProviderDescriptor, ProviderInvokeRequest, ProviderInvokeResponse,
+    ProviderRegistry,
 };
 pub use commands::{
-    ClipboardReadResult, ClipboardWriteResult, CommandHandler, ResumePlanPreview,
+    ApplicationOperationResult, ClipboardReadResult, ClipboardWriteResult, CommandHandler,
+    ResumePlanPreview,
 };
 pub use config::{ConfigManager, SettingsUpdate, WorkspaceSettings};
 pub use error::{KernelError, PublicError, Result};

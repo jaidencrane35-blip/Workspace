@@ -32,4 +32,24 @@ describe("intent bridge", () => {
       text: "hello p10",
     });
   });
+
+  it("routes application provider operations", () => {
+    expect(resolveIntent("open notepad")).toMatchObject({
+      kind: "appOpen",
+      query: "notepad",
+    });
+    expect(resolveIntent("launch chrome")).toMatchObject({
+      kind: "appLaunch",
+      query: "chrome",
+    });
+    expect(resolveIntent("switch to Chrome")).toMatchObject({
+      kind: "appFocus",
+      query: "Chrome",
+    });
+    expect(resolveIntent("close Spotify")).toMatchObject({
+      kind: "appClose",
+      query: "Spotify",
+    });
+    expect(resolveIntent("list apps").kind).toBe("appEnumerate");
+  });
 });

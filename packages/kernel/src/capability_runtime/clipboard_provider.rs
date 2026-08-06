@@ -12,6 +12,7 @@ use crate::error::{KernelError, Result};
 /// Reference Capability Provider (P10) — Clipboard domain.
 ///
 /// Adoption: WRAP `arboard` behind [`ClipboardPort`].
+/// Operations owned: Read, Write.
 pub struct ClipboardProvider {
     port: Arc<dyn ClipboardPort>,
 }
@@ -62,6 +63,9 @@ impl CapabilityProvider for ClipboardProvider {
                     text: Some(text),
                     preview: Some(preview),
                     message: None,
+                    status: Some("read".into()),
+                    target: None,
+                    items: None,
                 })
             }
             CapabilityOperation::Write => {
@@ -84,8 +88,17 @@ impl CapabilityProvider for ClipboardProvider {
                     text: None,
                     preview: Some(preview),
                     message: Some("Clipboard updated.".into()),
+                    status: Some("written".into()),
+                    target: None,
+                    items: None,
                 })
             }
+            other => Err(KernelError::CapabilityRuntime {
+                message: format!(
+                    "ClipboardProvider does not own operation '{}'",
+                    other.as_str()
+                ),
+            }),
         }
     }
 }

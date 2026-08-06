@@ -180,4 +180,33 @@ impl WindowMutator for StubWindowMutator {
         }
         Ok(MutatorEffectOutcome::Committed)
     }
+
+    fn minimize_window(&self, hwnd: &str) -> Result<MutatorEffectOutcome> {
+        let mut state = self.state.lock().expect("stub mutator");
+        let Some(window) = state.windows.get_mut(hwnd) else {
+            return Ok(MutatorEffectOutcome::RefusedByEnvironment);
+        };
+        window.minimized = true;
+        window.visible = false;
+        window.focused = false;
+        Ok(MutatorEffectOutcome::Committed)
+    }
+
+    fn restore_window(&self, hwnd: &str) -> Result<MutatorEffectOutcome> {
+        let mut state = self.state.lock().expect("stub mutator");
+        let Some(window) = state.windows.get_mut(hwnd) else {
+            return Ok(MutatorEffectOutcome::RefusedByEnvironment);
+        };
+        window.minimized = false;
+        window.visible = true;
+        Ok(MutatorEffectOutcome::Committed)
+    }
+
+    fn close_window(&self, hwnd: &str) -> Result<MutatorEffectOutcome> {
+        let mut state = self.state.lock().expect("stub mutator");
+        if state.windows.remove(hwnd).is_none() {
+            return Ok(MutatorEffectOutcome::RefusedByEnvironment);
+        }
+        Ok(MutatorEffectOutcome::Committed)
+    }
 }

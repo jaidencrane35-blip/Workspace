@@ -95,10 +95,14 @@ use crate::commands::personalization::{
 use crate::commands::pipeline::CommandPipeline;
 use crate::commands::reject_suggestion::RejectSuggestion;
 use crate::commands::request_execution_cancellation::RequestExecutionCancellation;
+use crate::commands::application_capability::{
+    ApplicationOperationResult, ExecuteApplicationOperation,
+};
 use crate::commands::clipboard::{
     ClipboardReadResult, ClipboardWriteResult, ReadClipboard, WriteClipboard,
 };
 use crate::commands::update_settings::UpdateSettings;
+use crate::capability_runtime::CapabilityOperation;
 use crate::commands::widget::{CreateWidget, DeleteWidget, GetWidget};
 use crate::commands::workspace_intent::{
     CreateProject, CreateTask, CreateWorkGoal, GetProject, GetTask, GetWorkflowContext,
@@ -240,6 +244,26 @@ impl CommandHandler {
     ) -> Result<ClipboardWriteResult> {
         CommandPipeline::new(kernel.command_context(actor, intent))
             .execute_mutation(WriteClipboard::new(text))
+    }
+
+    /// Executes an Application Provider operation through Capability Runtime (P11).
+    pub fn execute_application_operation(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        operation: String,
+        query: Option<String>,
+        path: Option<String>,
+        hwnd: Option<String>,
+    ) -> Result<ApplicationOperationResult> {
+        let operation = CapabilityOperation::parse(&operation).ok_or_else(|| {
+            KernelError::CapabilityRuntime {
+                message: format!("unknown application operation '{operation}'"),
+            }
+        })?;
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_mutation(
+            ExecuteApplicationOperation::new(operation, query, path, hwnd),
+        )
     }
 
     pub fn create_workspace(

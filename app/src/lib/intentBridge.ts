@@ -36,6 +36,13 @@ export type IntentAction =
   | { kind: "proposal"; reply: string }
   | { kind: "clipboardRead"; reply: string }
   | { kind: "clipboardWrite"; text: string; reply: string }
+  | { kind: "appOpen"; query: string; reply: string }
+  | { kind: "appLaunch"; query: string; reply: string }
+  | { kind: "appFocus"; query: string; reply: string }
+  | { kind: "appClose"; query: string; reply: string }
+  | { kind: "appMinimize"; query: string; reply: string }
+  | { kind: "appRestore"; query: string; reply: string }
+  | { kind: "appEnumerate"; reply: string }
   | { kind: "unknown"; reply: string; suggestion?: string };
 
 function normalize(input: string): string {
@@ -299,22 +306,103 @@ export function resolveIntent(raw: string): IntentAction {
     };
   }
 
-  const launch = raw.trim().match(/^(?:open|launch|start)\s+(.+)$/i);
-  if (launch?.[1]) {
-    const target = launch[1].trim().replace(/[.!?]+$/g, "");
+  if (
+    /\b(list (running )?apps?|list applications|what('?s| is) (running|open)|running applications)\b/.test(
+      text,
+    )
+  ) {
     return {
-      kind: "unknown",
-      reply: `I can’t launch “${target}” from conversation yet — and I won’t pretend it opened. Desktop launch isn’t wired through this shell.`,
-      suggestion:
-        "Closest available: “save this”, “continue”, or “restore <Moment name>” for interruption recovery.",
+      kind: "appEnumerate",
+      reply: "Listing running application windows through Capability Runtime.",
     };
+  }
+
+  const appClose = raw
+    .trim()
+    .match(/^(?:close|quit|exit)\s+(.+)$/i);
+  if (appClose?.[1]) {
+    const query = appClose[1].trim().replace(/[.!?]+$/g, "");
+    if (query && !/^(workspace|conversation)$/i.test(query)) {
+      return {
+        kind: "appClose",
+        query,
+        reply: `Closing “${query}” through Application Provider.`,
+      };
+    }
+  }
+
+  const appMinimize = raw.trim().match(/^minimize\s+(.+)$/i);
+  if (appMinimize?.[1]) {
+    const query = appMinimize[1].trim().replace(/[.!?]+$/g, "");
+    if (query) {
+      return {
+        kind: "appMinimize",
+        query,
+        reply: `Minimizing “${query}” through Application Provider.`,
+      };
+    }
+  }
+
+  const appRestore = raw
+    .trim()
+    .match(/^(?:unminimize|restore\s+(?:window|app))\s+(.+)$/i);
+  if (appRestore?.[1]) {
+    const query = appRestore[1].trim().replace(/[.!?]+$/g, "");
+    if (query) {
+      return {
+        kind: "appRestore",
+        query,
+        reply: `Restoring “${query}” through Application Provider.`,
+      };
+    }
+  }
+
+  const appFocus = raw
+    .trim()
+    .match(/^(?:switch\s+to|focus|bring\s+(?:up|to front))\s+(.+)$/i);
+  if (appFocus?.[1]) {
+    const query = appFocus[1].trim().replace(/[.!?]+$/g, "");
+    if (query) {
+      return {
+        kind: "appFocus",
+        query,
+        reply: `Focusing “${query}” through Application Provider.`,
+      };
+    }
+  }
+
+  const appLaunchExplicit = raw
+    .trim()
+    .match(/^(?:launch|start)\s+(.+)$/i);
+  if (appLaunchExplicit?.[1]) {
+    const query = appLaunchExplicit[1].trim().replace(/[.!?]+$/g, "");
+    if (query) {
+      return {
+        kind: "appLaunch",
+        query,
+        reply: `Launching “${query}” through Application Provider.`,
+      };
+    }
+  }
+
+  const appOpen = raw.trim().match(/^open\s+(.+)$/i);
+  if (appOpen?.[1]) {
+    const query = appOpen[1].trim().replace(/[.!?]+$/g, "");
+    if (query && !/^(workspace|conversation)$/i.test(query)) {
+      return {
+        kind: "appOpen",
+        query,
+        reply: `Opening “${query}” through Application Provider (focus if running, else launch).`,
+      };
+    }
   }
 
   return {
     kind: "unknown",
     reply:
-      "I don’t have that yet — and I won’t invent it. Closest available: Save, Continue, Moments, Check-in, Guide, expand Workspace, or propose a change.",
-    suggestion: "Try “save this”, “continue”, “expand”, or “Add a screenshot button”.",
+      "I don’t have that yet — and I won’t invent it. Closest available: Save, Continue, Moments, Check-in, Guide, open/launch apps, or propose a change.",
+    suggestion:
+      "Try “open notepad”, “list apps”, “switch to Chrome”, “save this”, or “continue”.",
   };
 }
 

@@ -37,13 +37,21 @@ Future providers extend the registry. They never redesign the runtime.
 
 ---
 
-## Registered providers (P10)
+## Law: Providers own operations
 
-| Domain | Provider | Adoption | Status |
-| --- | --- | --- | --- |
-| clipboard | `ClipboardProvider` | WRAP `arboard` | **Reference implementation** |
+A provider is not a bag of unrelated features. It owns a coherent operation set  
+(e.g. Application: Launch, Enumerate, Focus, Close, Minimize, Restore, Find).
 
-Placeholders for later programs (not registered yet): Application, Window, Notifications, Browser, Screenshot, Terminal, Memory, Voice, Automation.
+---
+
+## Registered providers
+
+| Domain | Provider | Adoption | Operations | Status |
+| --- | --- | --- | --- | --- |
+| clipboard | `ClipboardProvider` | WRAP `arboard` | read, write | P10 reference |
+| application | `ApplicationProvider` | ADAPT Win32 ports | launch, enumerate, find, focus, close, minimize, restore | **P11** |
+
+Placeholders: Window, Notifications, Browser, Screenshot, File, Terminal, Memory, Voice, Automation.
 
 ---
 

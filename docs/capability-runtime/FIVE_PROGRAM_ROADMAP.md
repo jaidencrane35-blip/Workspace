@@ -1,48 +1,43 @@
-# Five-Program Execution Roadmap
-## Designed in P10 — not executed beyond P10
+# Rolling Capability Provider Roadmap
+## Updated after P10 Owner review → P11
 
-UI Architecture, Desktop Operator, and Conversation remain **frozen**.  
-Programs expand Capability Runtime only.
-
----
-
-## Sequence
-
-| Program | Title | Scope | Depends on |
-| --- | --- | --- | --- |
-| **P10** | Capability Runtime Foundation | Runtime freeze + Provider Registry + **Clipboard reference provider** | P8, P9 accepted |
-| **P11** | Application Provider | Launch/focus via Conversation → Runtime (ADAPT Win32 ports) | P10 |
-| **P12** | Window Provider | Placement / focus quality behind Runtime | P10, P11 recommended |
-| **P13** | Notifications Provider | Sparse system feedback (WRAP Tauri notifications) | P10 |
-| **P14** | Browser Provider | URL open only (WRAP `webbrowser`); CDP deferred | P10 |
+UI Architecture, Desktop Operator, Conversation, and Capability Runtime pipeline remain **frozen**.  
+Providers own **operations**. Programs expand providers only.
 
 ---
 
-## Order justification (vs nominal list)
+## Completed
 
-Nominal Owner list placed Clipboard at P13. **P9 research** ranked Clipboard as the first V1 vertical (safe I/O, clear Conversation entry). P10 therefore ships Clipboard as the **sole reference provider** to prove the pipeline.
-
-| Nominal | Adjusted | Reason |
+| Program | Title | Status |
 | --- | --- | --- |
-| P13 Clipboard | **Absorbed into P10** as reference | Prove runtime with highest-value thin slice |
-| — | **P13 → Notifications** | Next P9 Phase 1 candidate after Clipboard |
-| P11 Application / P12 Window | Unchanged | Owner priority for desktop operator value; builds on existing Win32 ADAPT ports |
-| P14 Browser | Unchanged | P9 Phase 1 #3 |
-
-This roadmap is **reassessed after every Owner review**. It is not a commitment to execute P11 next if reassessment says otherwise.
+| **P10** | Capability Runtime Foundation + Clipboard reference | Complete — Owner accepted direction |
+| **P11** | Application Provider (operations) | Active / this milestone |
 
 ---
 
-## Explicit non-execution
+## Next five (rolling)
 
-P11–P14 are **design only** in this milestone. No Application / Window / Notifications / Browser provider registration in P10.
+| Program | Title | Why |
+| --- | --- | --- |
+| **P12** | Window Provider | Placement / geometry quality; pairs with Application ops |
+| **P13** | Notifications Provider | Lightweight outbound communication |
+| **P14** | Browser Provider | URL open (WRAP); CDP deferred |
+| **P15** | Screenshot Provider | Capture WRAP behind consent |
+| **P16** | File Provider | Scoped FS — later automation dependency |
 
 ---
 
-## Exit for each future program
+## Longer horizon
 
-- Provider contract complete  
-- Pipeline-only effects  
-- Permission + audit coverage  
-- UI Architecture verifier green  
-- One milestone commit + Owner review  
+P17 Terminal → P18 Voice → P19 Memory deepen → P20 Automation → P21 Workspace Intelligence
+
+Clipboard remains the P10 reference provider (not re-implemented).
+
+---
+
+## Permanent rules
+
+1. Do not redesign frozen Levels 1–3 (Product / Architecture / UI).  
+2. Do not bypass Conversation → Intent → Router → Registry → Provider → Desktop → Response.  
+3. Providers own operations (Launch, Focus, …), not isolated one-off features.  
+4. One execution program at a time; stop for Owner review.  

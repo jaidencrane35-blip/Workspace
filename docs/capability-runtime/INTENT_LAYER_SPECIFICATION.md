@@ -36,17 +36,30 @@ Capability Router
 
 ---
 
-## Capability intent kinds (P10)
+## Capability intent kinds
+
+### Clipboard (P10)
 
 | Kind | Domain | Operation | IPC |
 | --- | --- | --- | --- |
 | `clipboardRead` | clipboard | read | `read_clipboard` |
 | `clipboardWrite` | clipboard | write | `write_clipboard` |
 
+### Application (P11)
+
+| Kind | Domain | Operation(s) | IPC |
+| --- | --- | --- | --- |
+| `appOpen` | application | find → focus \| launch | `execute_application_operation` |
+| `appLaunch` | application | launch | same |
+| `appFocus` | application | focus | same |
+| `appClose` | application | close | same |
+| `appMinimize` | application | minimize | same |
+| `appRestore` | application | restore | same |
+| `appEnumerate` | application | enumerate | same |
+
 Conversation examples:
 
-- “What’s on my clipboard?”
-- “Copy to clipboard: …” / “Clipboard write: …”
+- “Open notepad” / “Launch chrome” / “Switch to Chrome” / “Close Spotify” / “List apps”
 
 ---
 

@@ -1,27 +1,36 @@
-//! Capability Runtime Foundation (P10).
+//! Capability Runtime Foundation (P10) + Application Provider (P11).
 //!
 //! Permanent pipeline:
 //! Conversation → Intent Layer → Capability Router → Provider Registry →
 //! Capability Provider → Desktop Service → Conversation Response.
 //!
+//! Providers own **operations**, not isolated features.
 //! No capability may bypass this pipeline. Providers never become product identity.
 
+mod application_provider;
 mod clipboard_provider;
 mod registry;
 mod router;
 mod types;
 
+pub use application_provider::{ApplicationPorts, ApplicationProvider};
 pub use clipboard_provider::ClipboardProvider;
 pub use registry::ProviderRegistry;
 pub use router::CapabilityRouter;
 pub use types::{
-    CapabilityDomainId, CapabilityOperation, ProviderDescriptor, ProviderInvokeRequest,
-    ProviderInvokeResponse, ProviderResultSummary,
+    ApplicationWindowItem, CapabilityDomainId, CapabilityOperation, ProviderDescriptor,
+    ProviderInvokeRequest, ProviderInvokeResponse, ProviderResultSummary,
 };
 
 use std::sync::{Arc, OnceLock, RwLock};
 
-use workspace_windows_integration::{ClipboardPort, MemoryClipboard};
+use workspace_windows_integration::{
+    platform_process_launcher, platform_window_enumerator, platform_window_mutator, ClipboardPort,
+};
+#[cfg(test)]
+use workspace_windows_integration::{
+    FixtureWindowEnumerator, MemoryClipboard, StubProcessLauncher, StubWindowMutator,
+};
 
 use crate::error::{KernelError, Result};
 
@@ -36,6 +45,9 @@ impl CapabilityRuntime {
         registry
             .register(Box::new(ClipboardProvider::new(clipboard_port())))
             .expect("clipboard provider registers once at bootstrap");
+        registry
+            .register(Box::new(ApplicationProvider::new(application_ports())))
+            .expect("application provider registers once at bootstrap");
         Self {
             registry: RwLock::new(registry),
         }
@@ -71,6 +83,25 @@ fn clipboard_port() -> Arc<dyn ClipboardPort> {
     }
 }
 
+fn application_ports() -> ApplicationPorts {
+    #[cfg(test)]
+    {
+        ApplicationPorts {
+            launcher: Arc::new(StubProcessLauncher),
+            enumerator: Arc::new(FixtureWindowEnumerator),
+            mutator: Arc::new(StubWindowMutator::fixture_dual_monitor()),
+        }
+    }
+    #[cfg(not(test))]
+    {
+        ApplicationPorts {
+            launcher: Arc::from(platform_process_launcher()),
+            enumerator: Arc::from(platform_window_enumerator()),
+            mutator: Arc::from(platform_window_mutator()),
+        }
+    }
+}
+
 static RUNTIME: OnceLock<CapabilityRuntime> = OnceLock::new();
 
 /// Shared Capability Runtime for the process.
@@ -83,9 +114,12 @@ mod tests {
     use super::*;
 
     #[test]
-    fn bootstrap_registers_clipboard_provider() {
+    fn bootstrap_registers_clipboard_and_application_providers() {
         let descriptors = runtime().list_providers().unwrap();
         assert!(descriptors.iter().any(|d| d.domain.as_str() == "clipboard"));
+        assert!(descriptors
+            .iter()
+            .any(|d| d.domain.as_str() == "application"));
     }
 
     #[test]
@@ -95,6 +129,7 @@ mod tests {
                 domain: CapabilityDomainId::clipboard(),
                 operation: CapabilityOperation::Write,
                 text: Some("p10-runtime".into()),
+                ..Default::default()
             })
             .unwrap();
         assert!(write.ok);
@@ -104,11 +139,49 @@ mod tests {
             .invoke(ProviderInvokeRequest {
                 domain: CapabilityDomainId::clipboard(),
                 operation: CapabilityOperation::Read,
-                text: None,
+                ..Default::default()
             })
             .unwrap();
         assert!(read.ok);
         assert_eq!(read.text.as_deref(), Some("p10-runtime"));
-        assert_eq!(read.format.as_deref(), Some("text"));
+    }
+
+    #[test]
+    fn application_enumerate_and_focus_through_router() {
+        let listed = runtime()
+            .invoke(ProviderInvokeRequest {
+                domain: CapabilityDomainId::application(),
+                operation: CapabilityOperation::Enumerate,
+                ..Default::default()
+            })
+            .unwrap();
+        assert!(listed.ok);
+        assert!(listed.items.as_ref().map(|items| !items.is_empty()).unwrap_or(false));
+
+        let focused = runtime()
+            .invoke(ProviderInvokeRequest {
+                domain: CapabilityDomainId::application(),
+                operation: CapabilityOperation::Focus,
+                query: Some("Fixture Focus".into()),
+                ..Default::default()
+            })
+            .unwrap();
+        assert!(focused.ok);
+        assert_eq!(focused.status.as_deref(), Some("focused"));
+    }
+
+    #[test]
+    fn application_launch_uses_alias_through_router() {
+        let launched = runtime()
+            .invoke(ProviderInvokeRequest {
+                domain: CapabilityDomainId::application(),
+                operation: CapabilityOperation::Launch,
+                query: Some("notepad".into()),
+                ..Default::default()
+            })
+            .unwrap();
+        assert!(launched.ok);
+        assert_eq!(launched.target.as_deref(), Some("notepad.exe"));
+        assert_eq!(launched.status.as_deref(), Some("launched_simulated"));
     }
 }

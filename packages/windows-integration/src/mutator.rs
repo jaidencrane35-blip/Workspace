@@ -45,4 +45,13 @@ pub trait WindowMutator: Send + Sync {
     fn place_window(&self, hwnd: &str, placement: &WindowPlacementRequest) -> Result<MutatorEffectOutcome>;
 
     fn focus_window(&self, hwnd: &str) -> Result<MutatorEffectOutcome>;
+
+    /// Minimize a top-level window (Application Provider operation).
+    fn minimize_window(&self, hwnd: &str) -> Result<MutatorEffectOutcome>;
+
+    /// Restore a minimized top-level window without relocating it.
+    fn restore_window(&self, hwnd: &str) -> Result<MutatorEffectOutcome>;
+
+    /// Request close via WM_CLOSE (graceful). Does not force-kill.
+    fn close_window(&self, hwnd: &str) -> Result<MutatorEffectOutcome>;
 }

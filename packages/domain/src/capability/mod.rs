@@ -285,6 +285,38 @@ impl Capability {
             scope: CapabilityScope::System,
         }
     }
+
+    /// Focus an application window (Application Provider).
+    pub fn application_focus() -> Self {
+        Self {
+            id: CapabilityId::new("application.focus").expect("application.focus is valid"),
+            scope: CapabilityScope::Application,
+        }
+    }
+
+    /// Close / quit an application window (Application Provider — graceful WM_CLOSE).
+    pub fn application_close() -> Self {
+        Self {
+            id: CapabilityId::new("application.close").expect("application.close is valid"),
+            scope: CapabilityScope::Application,
+        }
+    }
+
+    /// Minimize an application window.
+    pub fn application_minimize() -> Self {
+        Self {
+            id: CapabilityId::new("application.minimize").expect("application.minimize is valid"),
+            scope: CapabilityScope::Application,
+        }
+    }
+
+    /// Restore a minimized application window.
+    pub fn application_restore() -> Self {
+        Self {
+            id: CapabilityId::new("application.restore").expect("application.restore is valid"),
+            scope: CapabilityScope::Application,
+        }
+    }
 }
 
 impl CapabilitySet {
@@ -351,6 +383,10 @@ impl CapabilitySet {
             .with_capability(&Capability::action_window_focus())
             .with_capability(&Capability::clipboard_read())
             .with_capability(&Capability::clipboard_write())
+            .with_capability(&Capability::application_focus())
+            .with_capability(&Capability::application_close())
+            .with_capability(&Capability::application_minimize())
+            .with_capability(&Capability::application_restore())
     }
 
     /// Capabilities attributed to system lifecycle operations.

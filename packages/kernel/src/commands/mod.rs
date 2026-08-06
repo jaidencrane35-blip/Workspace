@@ -1,5 +1,6 @@
 mod accept_suggestion;
 mod application;
+mod application_capability;
 mod clipboard;
 mod automation_contract;
 mod automation_trigger;
@@ -387,6 +388,7 @@ pub use get_workspace::GetWorkspace;
 pub use get_workspace_context::GetWorkspaceContext;
 pub use get_workspace_metrics::GetWorkspaceMetrics;
 pub use get_workspace_snapshot::GetWorkspaceSnapshot;
+pub use application_capability::{ApplicationOperationResult, ExecuteApplicationOperation};
 pub use clipboard::{ClipboardReadResult, ClipboardWriteResult, ReadClipboard, WriteClipboard};
 pub use handler::CommandHandler;
 pub use initialize::InitializeWorkspace;

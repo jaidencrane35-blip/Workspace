@@ -30,9 +30,11 @@ describe("moment match + named intents", () => {
     });
   });
 
-  it("keeps launch honesty without fabricating opens", () => {
+  it("routes open through Application Provider (P11)", () => {
     const launch = resolveIntent("open Cursor");
-    expect(launch.kind).toBe("unknown");
-    expect(launch.reply.toLowerCase()).toMatch(/won.t pretend/);
+    expect(launch).toMatchObject({
+      kind: "appOpen",
+      query: "Cursor",
+    });
   });
 });

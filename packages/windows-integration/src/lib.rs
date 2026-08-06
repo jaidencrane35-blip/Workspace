@@ -7,6 +7,7 @@ mod capture;
 mod clipboard;
 mod enumerator;
 mod error;
+mod fixture_enumerator;
 mod launcher;
 mod mutator;
 mod stub;
@@ -27,6 +28,7 @@ pub use clipboard::{
     platform_clipboard, ArboardClipboard, ClipboardPort, MemoryClipboard,
 };
 pub use enumerator::{DesktopWindowSnapshot, WindowEnumerator};
+pub use fixture_enumerator::FixtureWindowEnumerator;
 pub use error::{Result, WindowsIntegrationError};
 pub use launcher::{ProcessLaunchOutcome, ProcessLaunchRequest, ProcessLauncher};
 pub use mutator::{

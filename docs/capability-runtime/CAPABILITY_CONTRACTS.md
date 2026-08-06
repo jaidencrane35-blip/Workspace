@@ -21,14 +21,19 @@ Cross-capability message envelopes remain governed by `architecture/10_Capabilit
 | | |
 | --- | --- |
 | **Purpose** | Launch, focus, or quit applications by user intent |
-| **Conversation examples** | “Open Cursor.” / “Focus Slack.” / “Quit Notepad.” |
-| **Permissions** | `app.launch`, `app.focus`, `app.quit` — ApprovalRequired when ambiguous or destructive |
-| **Arguments** | `app_query` \| `path` \| `args[]` \| `pid?` |
-| **Expected results** | `{ status: launched\|focused\|quit\|not_found, target }` |
-| **Failure modes** | Not installed; elevation required; access denied |
-| **Rollback** | Quit launched process only if same operation_id and user confirms |
-| **Audit** | app id/path, action, result — no keystroke payload |
-| **Future** | Install detection; recent-apps ranking (Intelligence) |
+| **Conversation examples** | “Open Cursor.” / “Switch to Chrome.” / “Close Spotify.” / “List apps.” |
+| **Permissions** | `application.launch`, `application.focus`, `application.close`, `application.minimize`, `application.restore`, `application.read` |
+| **Arguments** | `query` \| `path` \| `hwnd?` |
+| **Expected results** | `{ status, target, items? }` — see `APPLICATION_PROVIDER.md` |
+| **Failure modes** | Not installed; not found; focus refused; access denied |
+| **Rollback** | Close is graceful WM_CLOSE only (no force-kill in P11) |
+| **Audit** | operation + status + target — no keystroke payload |
+| **P11 status** | **Application Provider shipped** — operations model |
+| **Adoption** | ADAPT Win32 ports (`ProcessLauncher`, `WindowEnumerator`, `WindowMutator`) |
+| **Rust** | `ApplicationProvider` + `ExecuteApplicationOperation` |
+| **TypeScript** | Intent kinds `appOpen` / `appLaunch` / `appFocus` / … → IPC only |
+| **IPC** | `execute_application_operation` |
+| **Future** | Ambiguity satellite; ApprovalRequired for risky close; Intelligence ranking |
 
 ---
 

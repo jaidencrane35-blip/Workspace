@@ -299,6 +299,85 @@ export function OperatorRoot({
           }
           break;
         }
+        case "appEnumerate":
+        case "appLaunch":
+        case "appFocus":
+        case "appClose":
+        case "appMinimize":
+        case "appRestore":
+        case "appOpen": {
+          try {
+            type AppResult = {
+              operation: string;
+              ok: boolean;
+              status?: string;
+              target?: string;
+              message?: string;
+              preview?: string;
+              items?: Array<{ title: string; processId: number; minimized: boolean }>;
+            };
+            const run = (operation: string, query?: string) =>
+              invokeIpc<AppResult>("execute_application_operation", {
+                operation,
+                query: query ?? null,
+                path: null,
+                hwnd: null,
+              });
+
+            if (action.kind === "appEnumerate") {
+              const result = await run("enumerate");
+              const titles =
+                result.items
+                  ?.slice(0, 12)
+                  .map((item) => `• ${item.title}`)
+                  .join("\n") ?? "(none)";
+              await pushWorkspace(
+                `${result.message ?? "Applications listed."}\n${titles}`,
+              );
+              break;
+            }
+
+            if (action.kind === "appOpen") {
+              const found = await run("find", action.query);
+              if (found.ok && (found.items?.length ?? 0) > 0) {
+                const focused = await run("focus", action.query);
+                await pushWorkspace(
+                  focused.message ??
+                    `Focused “${action.query}” (already running).`,
+                );
+              } else {
+                const launched = await run("launch", action.query);
+                await pushWorkspace(
+                  launched.message ?? `Launch requested for “${action.query}”.`,
+                );
+              }
+              break;
+            }
+
+            const operation =
+              action.kind === "appLaunch"
+                ? "launch"
+                : action.kind === "appFocus"
+                  ? "focus"
+                  : action.kind === "appClose"
+                    ? "close"
+                    : action.kind === "appMinimize"
+                      ? "minimize"
+                      : "restore";
+            const result = await run(operation, action.query);
+            await pushWorkspace(
+              result.message ??
+                `${operation} → ${result.status ?? (result.ok ? "ok" : "failed")}`,
+            );
+          } catch (error) {
+            const message =
+              error instanceof IpcCommandError
+                ? error.message
+                : "Application operation failed.";
+            await pushWorkspace(message);
+          }
+          break;
+        }
         case "unknown":
           await pushWorkspace(
             action.suggestion

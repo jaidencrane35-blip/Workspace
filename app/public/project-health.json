@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-06T21:12:05.020Z",
+  "updatedAt": "2026-08-06T21:29:30.265Z",
   "constitution": {
     "document": "architecture/ARCHITECTURAL_CONSTITUTION_V2.md",
     "version": "2.0"
@@ -12,10 +12,10 @@
     "machineState": "docs/project-health.json"
   },
   "currentExecutionProgram": {
-    "id": "capability-runtime-foundation-p10",
-    "title": "P10 Capability Runtime Foundation",
+    "id": "application-provider-p11",
+    "title": "P11 Application Provider",
     "status": "complete_awaiting_owner_review",
-    "note": "Runtime pipeline frozen; Provider Registry + Clipboard reference provider (WRAP arboard). P11–P14 designed only. Await Owner review before P11."
+    "note": "Application Provider operations (launch/enumerate/focus/close/minimize/restore/find) on frozen Capability Runtime. Providers own operations. Await Owner review before P12."
   },
   "completedExecutionPrograms": [
     {
@@ -169,6 +169,16 @@
         "packages/kernel/src/capability_runtime/mod.rs",
         "docs/capability-runtime/CLIPBOARD_PROVIDER.md"
       ]
+    },
+    {
+      "id": "application-provider-p11",
+      "backlogRef": "P11 Application Provider",
+      "completed": "2026-08-07",
+      "artifacts": [
+        "docs/capability-runtime/APPLICATION_PROVIDER.md",
+        "packages/kernel/src/capability_runtime/application_provider.rs",
+        "pnpm verify:capability-runtime-foundation"
+      ]
     }
   ],
   "remainingBacklog": [
@@ -250,19 +260,21 @@
     "nativeFeel": "in_progress",
     "presentationAuthority": "accepted",
     "capabilityRuntimeResearch": "accepted",
-    "capabilityRuntimeFoundation": "complete",
+    "capabilityRuntimeFoundation": "accepted",
+    "applicationProvider": "complete",
     "notes": [
       "UI Architecture Spec accepted/frozen (P8)",
       "Capability Runtime research accepted (P9)",
-      "Capability Runtime Foundation + Clipboard reference (P10)",
-      "Zero platform ADOPT; WRAP commodity crates behind contracts"
+      "Capability Runtime Foundation + Clipboard accepted (P10)",
+      "Application Provider operations shipped (P11)",
+      "Providers own operations — permanent rule"
     ]
   },
   "currentMilestone": {
-    "id": "capability-runtime-foundation-p10",
-    "title": "P10 Capability Runtime Foundation",
+    "id": "application-provider-p11",
+    "title": "P11 Application Provider",
     "status": "awaiting_owner_review",
-    "commit": "23492a8"
+    "commit": "8d440f7"
   },
   "acceptedReviews": [
     {
@@ -282,13 +294,19 @@
       "title": "Capability Runtime Research",
       "commit": "34647bd",
       "acceptedAt": "2026-08-07"
+    },
+    {
+      "id": "p10",
+      "title": "Capability Runtime Foundation",
+      "commit": "23492a8",
+      "acceptedAt": "2026-08-07"
     }
   ],
   "outstandingProductDebt": [
     {
-      "id": "capability-providers-p11-plus",
+      "id": "capability-providers-p12-plus",
       "track": "B",
-      "summary": "Application / Window / Notifications / Browser providers await Owner review of P10"
+      "summary": "Window / Notification / Browser / Screenshot providers await Owner review of P11"
     },
     {
       "id": "tray-integration",
@@ -314,7 +332,7 @@
     "notes": [
       "Frontend production build succeeds",
       "UI Architecture Spec accepted and frozen",
-      "Capability Runtime Foundation + Clipboard reference provider (P10)",
+      "Capability Runtime Foundation accepted (P10); Application Provider (P11)",
       "Non-PP domain.ts remains manual (G1 remainder)",
       "Documentation authority still fragmented (G3)"
     ]
@@ -454,15 +472,15 @@
   },
   "lastMilestone": {
     "date": "2026-08-07",
-    "document": "docs/capability-runtime/CAPABILITY_RUNTIME_FOUNDATION.md",
-    "title": "P10 Capability Runtime Foundation",
+    "document": "docs/capability-runtime/APPLICATION_PROVIDER.md",
+    "title": "P11 Application Provider",
     "reviewBrief": "docs/capability-runtime/00_INDEX.md"
   },
-  "handoffStatus": "AWAITING_PROJECT_OWNER_CAPABILITY_RUNTIME_FOUNDATION_REVIEW",
+  "handoffStatus": "AWAITING_PROJECT_OWNER_APPLICATION_PROVIDER_REVIEW",
   "nextRecommendedExecutionProgram": {
-    "id": "application-provider-p11",
-    "title": "P11 Application Provider (reassess after Owner review)",
-    "blockedUntil": "Project Owner Capability Runtime Foundation review"
+    "id": "window-provider-p12",
+    "title": "P12 Window Provider (reassess after Owner review)",
+    "blockedUntil": "Project Owner Application Provider review"
   },
   "capabilityEvolution": {
     "document": "docs/capability-evolution/README.md",

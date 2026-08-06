@@ -5,7 +5,7 @@ use std::os::windows::ffi::OsStringExt;
 use std::process::Command;
 use std::time::Instant;
 
-use windows::Win32::Foundation::{BOOL, CloseHandle, HANDLE, HWND, LPARAM, RECT};
+use windows::Win32::Foundation::{BOOL, CloseHandle, HANDLE, HWND, LPARAM, RECT, WPARAM};
 use windows::Win32::Graphics::Gdi::{
     EnumDisplayMonitors, GetMonitorInfoW, HDC, HMONITOR, MONITORINFO, MONITORINFOEXW,
 };
@@ -17,8 +17,8 @@ use windows::Win32::System::Threading::{
 use windows::Win32::UI::WindowsAndMessaging::{
     EnumWindows, GetForegroundWindow, GetWindowRect, GetWindowTextLengthW, GetWindowTextW,
     GetWindowThreadProcessId, IsIconic, IsWindow, IsWindowVisible, MONITORINFOF_PRIMARY,
-    SetForegroundWindow, SetWindowPos, ShowWindow, HWND_TOP, SWP_NOACTIVATE, SWP_NOZORDER,
-    SWP_SHOWWINDOW, SW_MINIMIZE, SW_RESTORE,
+    PostMessageW, SetForegroundWindow, SetWindowPos, ShowWindow, HWND_TOP, SWP_NOACTIVATE,
+    SWP_NOZORDER, SWP_SHOWWINDOW, SW_MINIMIZE, SW_RESTORE, WM_CLOSE,
 };
 
 use super::capture::{
@@ -176,6 +176,43 @@ impl WindowMutator for Win32WindowEnumerator {
         }
         let ok = unsafe { SetForegroundWindow(handle) };
         if !ok.as_bool() {
+            return Ok(MutatorEffectOutcome::RefusedByEnvironment);
+        }
+        Ok(MutatorEffectOutcome::Committed)
+    }
+
+    fn minimize_window(&self, hwnd: &str) -> Result<MutatorEffectOutcome> {
+        let handle = parse_hwnd(hwnd)?;
+        if !unsafe { IsWindow(handle).as_bool() } {
+            return Ok(MutatorEffectOutcome::RefusedByEnvironment);
+        }
+        let ok = unsafe { ShowWindow(handle, SW_MINIMIZE) };
+        if !ok.as_bool() {
+            return Ok(MutatorEffectOutcome::RefusedByEnvironment);
+        }
+        Ok(MutatorEffectOutcome::Committed)
+    }
+
+    fn restore_window(&self, hwnd: &str) -> Result<MutatorEffectOutcome> {
+        let handle = parse_hwnd(hwnd)?;
+        if !unsafe { IsWindow(handle).as_bool() } {
+            return Ok(MutatorEffectOutcome::RefusedByEnvironment);
+        }
+        let ok = unsafe { ShowWindow(handle, SW_RESTORE) };
+        if !ok.as_bool() {
+            return Ok(MutatorEffectOutcome::RefusedByEnvironment);
+        }
+        Ok(MutatorEffectOutcome::Committed)
+    }
+
+    fn close_window(&self, hwnd: &str) -> Result<MutatorEffectOutcome> {
+        let handle = parse_hwnd(hwnd)?;
+        if !unsafe { IsWindow(handle).as_bool() } {
+            return Ok(MutatorEffectOutcome::RefusedByEnvironment);
+        }
+        // Graceful close request — never TerminateProcess from Application Provider.
+        let ok = unsafe { PostMessageW(handle, WM_CLOSE, WPARAM(0), LPARAM(0)) };
+        if ok.is_err() {
             return Ok(MutatorEffectOutcome::RefusedByEnvironment);
         }
         Ok(MutatorEffectOutcome::Committed)

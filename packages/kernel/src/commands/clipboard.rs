@@ -65,6 +65,7 @@ impl QueryCommand for ReadClipboard {
             domain: CapabilityDomainId::clipboard(),
             operation: CapabilityOperation::Read,
             text: None,
+            ..Default::default()
         })?;
         Ok(ClipboardReadResult {
             format: response.format.unwrap_or_else(|| "text".into()),
@@ -112,6 +113,9 @@ impl MutationCommand for WriteClipboard {
             bytes: Some(output.bytes),
             preview: Some(output.preview.clone()),
             message: Some(output.message.clone()),
+            status: Some("written".into()),
+            target: None,
+            item_count: None,
         };
         Some(json!({ "clipboard": summary }).to_string())
     }
@@ -140,6 +144,7 @@ impl MutationCommand for WriteClipboard {
             domain: CapabilityDomainId::clipboard(),
             operation: CapabilityOperation::Write,
             text: Some(self.text.clone()),
+            ..Default::default()
         })?;
         Ok(ClipboardWriteResult {
             format: response.format.unwrap_or_else(|| "text".into()),

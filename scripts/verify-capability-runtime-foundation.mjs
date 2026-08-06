@@ -27,9 +27,13 @@ const required = [
   "packages/kernel/src/capability_runtime/router.rs",
   "packages/kernel/src/capability_runtime/registry.rs",
   "packages/kernel/src/capability_runtime/clipboard_provider.rs",
+  "packages/kernel/src/capability_runtime/application_provider.rs",
   "packages/windows-integration/src/clipboard.rs",
   "packages/kernel/src/commands/clipboard.rs",
+  "packages/kernel/src/commands/application_capability.rs",
   "app/src-tauri/src/commands/clipboard.rs",
+  "app/src-tauri/src/commands/application_capability.rs",
+  "docs/capability-runtime/APPLICATION_PROVIDER.md",
 ];
 
 for (const rel of required) {
@@ -84,6 +88,9 @@ const libRs = fs.readFileSync(
 if (!libRs.includes("read_clipboard") || !libRs.includes("write_clipboard")) {
   fail("Tauri generate_handler must register read_clipboard / write_clipboard");
 }
+if (!libRs.includes("execute_application_operation")) {
+  fail("Tauri generate_handler must register execute_application_operation");
+}
 
 const intent = fs.readFileSync(
   path.join(root, "app/src/lib/intentBridge.ts"),
@@ -91,6 +98,28 @@ const intent = fs.readFileSync(
 );
 if (!intent.includes("clipboardRead") || !intent.includes("clipboardWrite")) {
   fail("intentBridge must define clipboardRead / clipboardWrite");
+}
+for (const kind of [
+  "appOpen",
+  "appLaunch",
+  "appFocus",
+  "appClose",
+  "appEnumerate",
+]) {
+  if (!intent.includes(kind)) {
+    fail(`intentBridge must define ${kind}`);
+  }
+}
+
+const registry = fs.readFileSync(
+  path.join(root, "docs/capability-runtime/PROVIDER_REGISTRY.md"),
+  "utf8",
+);
+if (!registry.includes("Providers own operations")) {
+  fail("provider registry must state operations ownership law");
+}
+if (!registry.includes("ApplicationProvider")) {
+  fail("provider registry must list ApplicationProvider");
 }
 
 const cargo = fs.readFileSync(
