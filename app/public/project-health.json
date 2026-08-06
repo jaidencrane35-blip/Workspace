@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-06T23:52:17.099Z",
+  "updatedAt": "2026-08-06T23:52:17.421Z",
   "constitution": {
     "document": "architecture/ARCHITECTURAL_CONSTITUTION_V2.md",
     "version": "2.0"
@@ -354,7 +354,7 @@
     "id": "p12-complete-final-repository-closure",
     "title": "P12 COMPLETE — Final Repository Closure",
     "status": "permanently_closed",
-    "commit": "pending"
+    "commit": "030fa3f"
   },
   "acceptedReviews": [
     {
@@ -422,7 +422,7 @@
     {
       "id": "p12-complete",
       "title": "P12 COMPLETE — Final Repository Closure",
-      "commit": "pending",
+      "commit": "030fa3f",
       "acceptedAt": "2026-08-07",
       "note": "P12 series permanently closed; P13 eligible"
     }

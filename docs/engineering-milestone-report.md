@@ -7,7 +7,7 @@
 | **Date** | 2026-08-07 |
 | **Outcome** | **A — P12 is repository-complete** |
 | **Implementation base** | P12 Finalization `daf3ae9` |
-| **Closure commit** | pending |
+| **Closure commit** | `030fa3f` |
 | **Handoff** | `P12_PERMANENTLY_CLOSED_P13_ELIGIBLE` |
 | **Next program** | **P13 Notifications Provider** |
 
