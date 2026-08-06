@@ -6,7 +6,7 @@
 | **Execution program** | P12 Finalization (Track B completion) |
 | **Date** | 2026-08-07 |
 | **Prior** | P12.7 TypeScript Operator interim (`644c125`) |
-| **Commit** | pending |
+| **Commit** | `daf3ae9` |
 | **Handoff** | `AWAITING_PROJECT_OWNER_P12_FINALIZATION_REVIEW` |
 | **Index** | `docs/operator/00_INDEX.md` |
 

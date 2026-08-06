@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-06T23:42:58.884Z",
+  "updatedAt": "2026-08-06T23:43:46.433Z",
   "constitution": {
     "document": "architecture/ARCHITECTURAL_CONSTITUTION_V2.md",
     "version": "2.0"
@@ -341,7 +341,7 @@
     "id": "operator-architecture-completion-p12-finalization",
     "title": "P12 Finalization — Operator Architecture Completion",
     "status": "awaiting_owner_review",
-    "commit": "pending"
+    "commit": "daf3ae9"
   },
   "acceptedReviews": [
     {
