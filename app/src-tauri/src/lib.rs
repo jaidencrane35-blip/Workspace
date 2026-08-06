@@ -143,6 +143,7 @@ use commands::workspace_intelligence::{
 };
 use commands::health::get_workspace_health;
 use commands::settings::{get_settings, update_settings};
+use commands::shell::exit_workspace;
 use commands::status::get_workspace_status;
 use tauri::Manager;
 use workspace_kernel::WorkspaceKernel;
@@ -160,11 +161,12 @@ pub fn run() {
 
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
-            // Runtime / settings
+            // Runtime / settings / shell
             get_workspace_status,
             get_workspace_health,
             get_settings,
             update_settings,
+            exit_workspace,
             // Product shell (Canvas + Diagnostic)
             create_workspace,
             get_workspace,

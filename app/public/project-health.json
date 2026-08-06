@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-06T18:26:14.197Z",
+  "updatedAt": "2026-08-06T19:20:11.465Z",
   "constitution": {
     "document": "architecture/ARCHITECTURAL_CONSTITUTION_V2.md",
     "version": "2.0"
@@ -12,10 +12,10 @@
     "machineState": "docs/project-health.json"
   },
   "currentExecutionProgram": {
-    "id": "conversational-operator-foundation",
-    "title": "Conversational Operator Foundation",
-    "status": "complete",
-    "note": "UX refinement + capability evolution foundation + repository milestone. Owner review accepted for prior shell; cadence continues."
+    "id": "windows-shell-completion-p3",
+    "title": "P3 Windows Shell Completion (Desktop Operator Foundation)",
+    "status": "complete_awaiting_owner_review",
+    "note": "Zero-Trap shell state machine; floating operator context menu; close→collapse; Exit ends process. Await owner review."
   },
   "completedExecutionPrograms": [
     {
@@ -67,16 +67,41 @@
         "pnpm verify:capability-evolution",
         "docs/capability-evolution/registry.json"
       ]
+    },
+    {
+      "id": "intent-bridge-deepening",
+      "backlogRef": "P1 Deepen intent bridge (named Moments, launch honesty)",
+      "completed": "2026-08-07",
+      "artifacts": [
+        "app/src/lib/momentMatch.ts",
+        "tests/moment-match.test.ts",
+        "docs/execution-program-intent-bridge-deepening.md"
+      ]
+    },
+    {
+      "id": "operator-refoundation-p2",
+      "backlogRef": "P2 Conversational Desktop Operator Refoundation",
+      "completed": "2026-08-07",
+      "artifacts": [
+        "app/src/lib/shellRuntime.ts",
+        "app/src/lib/shellWindows.ts",
+        "docs/execution-program-operator-refoundation.md",
+        "docs/capability-evolution/PIPELINE_ARCHITECTURE.md"
+      ]
+    },
+    {
+      "id": "windows-shell-completion-p3",
+      "backlogRef": "P3 Windows Shell Completion (Desktop Operator Foundation)",
+      "completed": "2026-08-07",
+      "artifacts": [
+        "app/src/lib/shellStateMachine.ts",
+        "pnpm verify:shell-zero-trap",
+        "docs/execution-program-windows-shell-completion.md",
+        "docs/shell/FUTURE_INPUT_ARCHITECTURE.md"
+      ]
     }
   ],
   "remainingBacklog": [
-    {
-      "id": "intent-bridge-deepening",
-      "phase": "P1",
-      "title": "Deepen intent bridge (named Moments, launch honesty)",
-      "gap": "product",
-      "status": "approved"
-    },
     {
       "id": "docs-convergence",
       "phase": "A",
@@ -148,7 +173,7 @@
     "tests": "pass",
     "notes": [
       "Frontend production build succeeds",
-      "Conversational operator is the default front door",
+      "Zero-Trap shell state machine + floating operator menu",
       "Capability evolution proposals only (no self-rewrite)",
       "Non-PP domain.ts remains manual (G1 remainder)",
       "Documentation authority still fragmented (G3)"
@@ -191,6 +216,11 @@
         "script": "scripts/verify-capability-evolution.mjs",
         "present": true,
         "wiredInTest": true
+      },
+      "verify:shell-zero-trap": {
+        "script": "scripts/verify-shell-zero-trap.mjs",
+        "present": true,
+        "wiredInTest": true
       }
     },
     "generators": {
@@ -224,8 +254,8 @@
       "Guide"
     ],
     "productIpcCommandCount": 20,
-    "launchStatus": "pending",
-    "readyForOwnerReview": false,
+    "launchStatus": "verified",
+    "readyForOwnerReview": true,
     "reviewDocument": "docs/product-proof-review.md"
   },
   "architecturalRisks": [
@@ -263,20 +293,20 @@
       "Doc authority convergence pending",
       "WorkspaceState naming collision",
       "No AgentToolGate / AuditIntegrity yet",
-      "Named Moment restore not yet in intent bridge"
+      "Doc authority convergence (G3) still open"
     ]
   },
   "lastMilestone": {
     "date": "2026-08-07",
-    "document": "docs/engineering-milestone-report.md",
-    "title": "Conversational Operator Foundation",
-    "reviewBrief": "docs/repository-commit-review.md"
+    "document": "docs/execution-program-windows-shell-completion.md",
+    "title": "P3 Windows Shell Completion",
+    "reviewBrief": "docs/execution-program-windows-shell-completion.md"
   },
-  "handoffStatus": "MILESTONE_COMMITTED_NEXT_PROGRAM_INTENT_BRIDGE_DEEPENING",
+  "handoffStatus": "AWAITING_PROJECT_OWNER_WINDOWS_SHELL_REVIEW",
   "nextRecommendedExecutionProgram": {
-    "id": "intent-bridge-deepening",
-    "title": "Deepen intent bridge (named Moments, launch honesty)",
-    "blockedUntil": null
+    "id": "docs-convergence",
+    "title": "Documentation authority convergence",
+    "blockedUntil": "Project Owner Windows shell completion review"
   },
   "capabilityEvolution": {
     "document": "docs/capability-evolution/README.md",

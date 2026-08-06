@@ -21,6 +21,13 @@ import type { PilotPrimaryView } from "./pilotChrome";
 
 export type IntentAction =
   | { kind: "navigate"; view: PilotPrimaryView; reply: string }
+  | {
+      kind: "navigateNamed";
+      view: "resume";
+      nameQuery: string;
+      reply: string;
+    }
+  | { kind: "saveAs"; name: string; reply: string }
   | { kind: "expand"; reply: string }
   | { kind: "collapse"; reply: string }
   | { kind: "health"; reply: string }
@@ -141,19 +148,35 @@ export function resolveIntent(raw: string): IntentAction {
   ) {
     return {
       kind: "collapse",
-      reply: "Collapsed to the floating operator.",
+      reply:
+        "Collapsing to the desktop operator. The conversation window closes — click the floating W when you need Workspace again.",
     };
   }
 
   if (
-    /\b(expand|open workspace|show workspace|workspace surfaces|mode 3)\b/.test(
+    /\b(expand|open workspace|show workspace|workspace surfaces|mode 2)\b/.test(
       text,
     ) ||
     text === "open workspace"
   ) {
     return {
       kind: "expand",
-      reply: "Expanding Workspace around this conversation.",
+      reply:
+        "Expanding around this conversation. Ask when you need Save, restore, or other tools — I won’t show a feature dashboard.",
+    };
+  }
+
+  const saveAs = raw
+    .trim()
+    .match(
+      /^(?:save(?:\s+this)?\s+as|remember\s+(?:this\s+as|as))\s+(.+)$/i,
+    );
+  if (saveAs?.[1]) {
+    const name = saveAs[1].trim().replace(/[.!?]+$/g, "");
+    return {
+      kind: "saveAs",
+      name,
+      reply: `Opening Save. Name it “${name}” when you approve capture — nothing is written until you consent.`,
     };
   }
 
@@ -169,6 +192,25 @@ export function resolveIntent(raw: string): IntentAction {
       view: "save",
       reply: "Opening Save. You approve capture before anything is written.",
     };
+  }
+
+  const namedMoment = raw
+    .trim()
+    .match(/^(?:restore|continue|resume|open\s+moment)\s+(.+)$/i);
+  if (namedMoment?.[1]) {
+    const nameQuery = namedMoment[1].trim().replace(/[.!?]+$/g, "");
+    const blocked =
+      /^(yesterday|workspace|history|saved work|moments?|settings|guide|help|check[- ]?in)$/i.test(
+        nameQuery,
+      );
+    if (!blocked && nameQuery.length > 0) {
+      return {
+        kind: "navigateNamed",
+        view: "resume",
+        nameQuery,
+        reply: `Looking for a saved Moment matching “${nameQuery}”.`,
+      };
+    }
   }
 
   if (
@@ -227,12 +269,14 @@ export function resolveIntent(raw: string): IntentAction {
     };
   }
 
-  if (/\b(open cursor|launch |start )\b/.test(text)) {
+  const launch = raw.trim().match(/^(?:open|launch|start)\s+(.+)$/i);
+  if (launch?.[1]) {
+    const target = launch[1].trim().replace(/[.!?]+$/g, "");
     return {
       kind: "unknown",
-      reply:
-        "App launch by name isn’t wired through this shell yet. I won’t pretend I opened it. Closest: Save or Continue for interruption recovery.",
-      suggestion: "Try “save this” or “continue”.",
+      reply: `I can’t launch “${target}” from conversation yet — and I won’t pretend it opened. Desktop launch isn’t wired through this shell.`,
+      suggestion:
+        "Closest available: “save this”, “continue”, or “restore <Moment name>” for interruption recovery.",
     };
   }
 

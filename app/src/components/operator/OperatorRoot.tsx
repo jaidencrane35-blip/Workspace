@@ -9,10 +9,24 @@ import {
   useState,
 } from "react";
 import { resolveIntent, streamText } from "../../lib/intentBridge";
+import { matchMomentByName } from "../../lib/momentMatch";
+import {
+  SHELL_MODE_EVENT,
+  isTauriRuntime,
+  loadShellMode,
+  saveShellMode,
+  type ShellMode,
+} from "../../lib/shellRuntime";
+import { canTransition } from "../../lib/shellStateMachine";
+import {
+  applyShellMode,
+  exitWorkspace,
+  installMainCloseCollapse,
+  startOperatorDrag,
+} from "../../lib/shellWindows";
 import type { PilotPrimaryView } from "../../lib/pilotChrome";
+import { DesktopOperator } from "./DesktopOperator";
 import { RepositoryHealthPanel } from "./RepositoryHealthPanel";
-
-export type OperatorMode = 1 | 2 | 3;
 
 export interface ChatMessage {
   id: string;
@@ -21,62 +35,35 @@ export interface ChatMessage {
   streaming?: boolean;
 }
 
-const FLOAT_KEY = "workspace.operator.float";
-const PANEL_KEY = "workspace.operator.panel";
-const MODE_KEY = "workspace.operator.mode";
 const DEV_KEY = "workspace.operator.developer";
 
 interface OperatorRootProps {
-  productSurface: ReactNode;
-  onNavigateProduct: (view: PilotPrimaryView) => void;
-}
-
-function loadPoint(key: string, fallback: { x: number; y: number }) {
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) {
-      return fallback;
-    }
-    const parsed = JSON.parse(raw) as { x?: number; y?: number };
-    return {
-      x: typeof parsed.x === "number" ? parsed.x : fallback.x,
-      y: typeof parsed.y === "number" ? parsed.y : fallback.y,
-    };
-  } catch {
-    return fallback;
-  }
+  /** Mode 3 specialized tool surface (no Product Proof dock). */
+  specializedSurface: ReactNode;
+  onNavigateProduct: (
+    view: PilotPrimaryView,
+    opts?: { focusContextId?: string | null },
+  ) => void;
+  listMoments: () => Promise<Array<{ id: string; name: string }>>;
+  activeSpecialized: PilotPrimaryView | "health" | null;
 }
 
 export function OperatorRoot({
-  productSurface,
+  specializedSurface,
   onNavigateProduct,
+  listMoments,
+  activeSpecialized,
 }: OperatorRootProps) {
   const listId = useId();
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const scrollerRef = useRef<HTMLDivElement>(null);
-  const dragRef = useRef<{
-    kind: "float" | "panel";
-    ox: number;
-    oy: number;
-    sx: number;
-    sy: number;
-  } | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const brandClicks = useRef({ n: 0, t: 0 });
+  const chromeDrag = useRef<{ sx: number; sy: number } | null>(null);
 
-  const [mode, setMode] = useState<OperatorMode>(() => {
-    const stored = localStorage.getItem(MODE_KEY);
-    if (stored === "1" || stored === "2" || stored === "3") {
-      return Number(stored) as OperatorMode;
-    }
-    return 2;
-  });
-  const [floatPos, setFloatPos] = useState(() =>
-    loadPoint(FLOAT_KEY, { x: 24, y: 24 }),
-  );
-  const [panelPos, setPanelPos] = useState(() =>
-    loadPoint(PANEL_KEY, { x: 0, y: 0 }),
-  );
+  const [mode, setModeState] = useState<ShellMode>(() => loadShellMode(1));
+  const modeRef = useRef(mode);
+  modeRef.current = mode;
   const [draft, setDraft] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [busy, setBusy] = useState(false);
@@ -85,27 +72,47 @@ export function OperatorRoot({
     () => localStorage.getItem(DEV_KEY) === "1",
   );
 
-  useEffect(() => {
-    localStorage.setItem(MODE_KEY, String(mode));
-  }, [mode]);
+  const setMode = useCallback(async (next: ShellMode) => {
+    if (!canTransition(modeRef.current, next) && modeRef.current !== next) {
+      return;
+    }
+    modeRef.current = next;
+    setModeState(next);
+    saveShellMode(next);
+    await applyShellMode(next);
+  }, []);
 
   useEffect(() => {
-    localStorage.setItem(FLOAT_KEY, JSON.stringify(floatPos));
-  }, [floatPos]);
-
-  useEffect(() => {
-    localStorage.setItem(PANEL_KEY, JSON.stringify(panelPos));
-  }, [panelPos]);
-
-  useEffect(() => {
-    localStorage.setItem(DEV_KEY, developer ? "1" : "0");
+    document.documentElement.dataset.shellMode = String(mode);
     document.documentElement.dataset.operatorDeveloper = developer
       ? "on"
       : "off";
-    return () => {
-      delete document.documentElement.dataset.operatorDeveloper;
+    localStorage.setItem(DEV_KEY, developer ? "1" : "0");
+  }, [mode, developer]);
+
+  useEffect(() => {
+    void installMainCloseCollapse();
+    void applyShellMode(mode);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    const syncFromStorage = () => {
+      const stored = loadShellMode(1);
+      if (stored !== mode) {
+        setModeState(stored);
+      }
     };
-  }, [developer]);
+    window.addEventListener("storage", syncFromStorage);
+    window.addEventListener(SHELL_MODE_EVENT, syncFromStorage);
+    window.addEventListener("focus", syncFromStorage);
+    document.addEventListener("visibilitychange", syncFromStorage);
+    return () => {
+      window.removeEventListener("storage", syncFromStorage);
+      window.removeEventListener(SHELL_MODE_EVENT, syncFromStorage);
+      window.removeEventListener("focus", syncFromStorage);
+      document.removeEventListener("visibilitychange", syncFromStorage);
+    };
+  }, [mode]);
 
   useEffect(() => {
     const el = scrollerRef.current;
@@ -155,30 +162,61 @@ export function OperatorRoot({
     }
   }, []);
 
+  const openSpecialized = useCallback(
+    async (view: PilotPrimaryView) => {
+      setShowHealth(false);
+      onNavigateProduct(view);
+      await setMode(3);
+    },
+    [onNavigateProduct, setMode],
+  );
+
   const handleIntent = useCallback(
     async (raw: string) => {
       const action = resolveIntent(raw);
       switch (action.kind) {
         case "navigate":
-          setMode(3);
-          setShowHealth(false);
-          onNavigateProduct(action.view);
+          await openSpecialized(action.view);
           await pushWorkspace(action.reply);
           break;
+        case "saveAs":
+          await openSpecialized("save");
+          await pushWorkspace(action.reply);
+          break;
+        case "navigateNamed": {
+          const moments = await listMoments();
+          const hit = matchMomentByName(moments, action.nameQuery);
+          if (hit) {
+            setShowHealth(false);
+            onNavigateProduct("resume", { focusContextId: hit.id });
+            await setMode(3);
+            await pushWorkspace(
+              `Opening restore review for “${hit.name}”. Approve the plan before anything moves.`,
+            );
+          } else {
+            setShowHealth(false);
+            onNavigateProduct("resume");
+            await setMode(3);
+            await pushWorkspace(
+              `No unique Moment matched “${action.nameQuery}”. Opening restore review so you can choose — I won’t invent a restore.`,
+            );
+          }
+          break;
+        }
         case "expand":
-          setMode(3);
           setShowHealth(false);
+          await setMode(2);
           await pushWorkspace(action.reply);
           break;
         case "collapse":
-          setMode(1);
           setShowHealth(false);
-          await pushWorkspace(action.reply);
+          // Leave the desktop — do not keep a reply in a hidden window.
+          await setMode(0);
           break;
         case "health":
           setDeveloper(true);
-          setMode(3);
           setShowHealth(true);
+          await setMode(3);
           await pushWorkspace(action.reply);
           break;
         case "developer":
@@ -202,7 +240,7 @@ export function OperatorRoot({
           break;
       }
     },
-    [onNavigateProduct, pushWorkspace],
+    [listMoments, onNavigateProduct, openSpecialized, pushWorkspace, setMode],
   );
 
   const onSubmit = (event: FormEvent) => {
@@ -214,75 +252,9 @@ export function OperatorRoot({
     setDraft("");
     setMessages((prev) => [
       ...prev,
-      {
-        id: `u-${Date.now()}`,
-        role: "user",
-        text,
-      },
+      { id: `u-${Date.now()}`, role: "user", text },
     ]);
     void handleIntent(text);
-  };
-
-  const onFloatPointerDown = (event: ReactPointerEvent<HTMLButtonElement>) => {
-    event.currentTarget.setPointerCapture(event.pointerId);
-    dragRef.current = {
-      kind: "float",
-      ox: floatPos.x,
-      oy: floatPos.y,
-      sx: event.clientX,
-      sy: event.clientY,
-    };
-  };
-
-  const onChromePointerDown = (event: ReactPointerEvent<HTMLElement>) => {
-    if (mode !== 2) {
-      return;
-    }
-    const target = event.target as HTMLElement;
-    if (target.closest("button")) {
-      return;
-    }
-    event.currentTarget.setPointerCapture(event.pointerId);
-    dragRef.current = {
-      kind: "panel",
-      ox: panelPos.x,
-      oy: panelPos.y,
-      sx: event.clientX,
-      sy: event.clientY,
-    };
-  };
-
-  const onSharedPointerMove = (event: ReactPointerEvent<HTMLElement>) => {
-    if (!dragRef.current) {
-      return;
-    }
-    const dx = event.clientX - dragRef.current.sx;
-    const dy = event.clientY - dragRef.current.sy;
-    if (dragRef.current.kind === "float") {
-      setFloatPos({
-        x: Math.max(8, dragRef.current.ox + dx),
-        y: Math.max(8, dragRef.current.oy + dy),
-      });
-      return;
-    }
-    setPanelPos({
-      x: dragRef.current.ox + dx,
-      y: dragRef.current.oy + dy,
-    });
-  };
-
-  const onFloatPointerUp = (event: ReactPointerEvent<HTMLButtonElement>) => {
-    const started = dragRef.current;
-    dragRef.current = null;
-    if (!started || started.kind !== "float") {
-      return;
-    }
-    const moved =
-      Math.hypot(event.clientX - started.sx, event.clientY - started.sy) > 6;
-    if (!moved) {
-      setMode(2);
-      requestAnimationFrame(() => inputRef.current?.focus());
-    }
   };
 
   const onBrandActivate = () => {
@@ -298,183 +270,194 @@ export function OperatorRoot({
     }
   };
 
-  const conversation = (
-    <section
-      className="op-shell"
-      aria-label="Workspace conversation"
-      data-operator-mode={mode}
-    >
-      <header
-        className="op-shell__chrome"
-        data-drag-frame={mode === 2 ? "true" : undefined}
-        onPointerDown={onChromePointerDown}
-        onPointerMove={onSharedPointerMove}
-        onPointerUp={() => {
-          dragRef.current = null;
-        }}
-        onPointerCancel={() => {
-          dragRef.current = null;
-        }}
-      >
-        <button
-          type="button"
-          className="op-shell__brand"
-          onClick={onBrandActivate}
-          title={developer ? "Developer mode on" : "Workspace"}
-        >
-          Workspace
-          {developer && <span className="op-shell__dev-dot" aria-hidden="true" />}
-        </button>
-        <div className="op-shell__actions">
-          {mode !== 1 && (
-            <button
-              type="button"
-              className="op-shell__btn"
-              onClick={() => setMode(1)}
-              title="Collapse to floating operator"
-            >
-              Collapse
-            </button>
-          )}
-          {mode !== 3 && (
-            <button
-              type="button"
-              className="op-shell__btn op-shell__btn--primary"
-              onClick={() => {
-                setShowHealth(false);
-                setMode(3);
-              }}
-              title="Expand Workspace around conversation"
-            >
-              Expand
-            </button>
-          )}
-          {mode === 3 && (
-            <button
-              type="button"
-              className="op-shell__btn"
-              onClick={() => {
-                setShowHealth(false);
-                setMode(2);
-              }}
-              title="Conversation only"
-            >
-              Compact
-            </button>
-          )}
-          {developer && mode === 3 && (
-            <button
-              type="button"
-              className="op-shell__btn"
-              onClick={() => setShowHealth((v) => !v)}
-              title="Repository health"
-            >
-              Health
-            </button>
-          )}
-        </div>
-      </header>
+  const onChromePointerDown = (event: ReactPointerEvent<HTMLElement>) => {
+    const target = event.target as HTMLElement;
+    if (target.closest("button")) {
+      return;
+    }
+    chromeDrag.current = { sx: event.clientX, sy: event.clientY };
+    void startOperatorDrag();
+  };
 
-      <div
-        className="op-shell__transcript"
-        ref={scrollerRef}
-        id={listId}
-        role="log"
-        aria-live="polite"
-        aria-relevant="additions"
-      >
-        {messages.length === 0 ? (
-          <div className="op-shell__waiting" aria-hidden="true" />
-        ) : (
-          messages.map((message) => (
-            <div
-              key={message.id}
-              className={`op-msg op-msg--${message.role}`}
-              data-streaming={message.streaming ? "true" : undefined}
-            >
-              <p className="op-msg__text">{message.text}</p>
-            </div>
-          ))
-        )}
-      </div>
+  const showSecondary = mode >= 2;
+  const secondary =
+    mode === 3 && showHealth && developer ? (
+      <RepositoryHealthPanel onClose={() => setShowHealth(false)} />
+    ) : mode === 3 ? (
+      specializedSurface
+    ) : (
+      <aside className="op-secondary-quiet" aria-label="Workspace context">
+        <p className="op-secondary-quiet__copy">
+          Ask Workspace to save, restore, or operate the desktop. Supporting
+          tools appear here when needed — not as a dashboard.
+        </p>
+      </aside>
+    );
 
-      <form className="op-shell__composer" onSubmit={onSubmit}>
-        <textarea
-          ref={inputRef}
-          className="op-shell__input"
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              e.currentTarget.form?.requestSubmit();
-            }
-          }}
-          rows={2}
-          placeholder=""
-          aria-label="Message Workspace"
-          disabled={busy}
+  // Mode 0 in Tauri: main window is hidden — operator window owns UI.
+  // Browser/demo fallback: in-window icon only (cannot leave the host page).
+  if (mode === 0) {
+    if (isTauriRuntime()) {
+      return (
+        <div className="op-root" data-mode={0} aria-hidden="true" />
+      );
+    }
+    return (
+      <div className="op-root" data-mode={0} data-shell-fallback="in-window">
+        <DesktopOperator
+          onOpenCompact={() => void setMode(1)}
+          onExpand={() => void setMode(2)}
         />
-        <button
-          type="submit"
-          className="op-shell__send"
-          disabled={busy || !draft.trim()}
-        >
-          Send
-        </button>
-      </form>
-    </section>
-  );
+      </div>
+    );
+  }
 
   return (
     <div
       className="op-root"
       data-mode={mode}
       data-developer={developer ? "on" : "off"}
+      data-specialized={activeSpecialized ?? undefined}
     >
-      {mode === 1 && (
-        <button
-          type="button"
-          className="op-float"
-          style={{ left: floatPos.x, top: floatPos.y }}
-          aria-label="Open Workspace conversation"
-          onPointerDown={onFloatPointerDown}
-          onPointerMove={onSharedPointerMove}
-          onPointerUp={onFloatPointerUp}
-          onPointerCancel={() => {
-            dragRef.current = null;
-          }}
-        >
-          <span className="op-float__mark" aria-hidden="true">
-            W
-          </span>
-        </button>
-      )}
+      <div className={`op-stage op-stage--mode${mode}`}>
+        <div className="op-stage__chat">
+          <section
+            className="op-shell"
+            aria-label="Workspace conversation"
+            data-operator-mode={mode}
+          >
+            <header
+              className="op-shell__chrome"
+              data-drag-frame="true"
+              onPointerDown={onChromePointerDown}
+            >
+              <button
+                type="button"
+                className="op-shell__brand"
+                onClick={onBrandActivate}
+                title={developer ? "Developer mode on" : "Workspace"}
+              >
+                Workspace
+                {developer && (
+                  <span className="op-shell__dev-dot" aria-hidden="true" />
+                )}
+              </button>
+                <div className="op-shell__actions">
+                <button
+                  type="button"
+                  className="op-shell__btn"
+                  onClick={() => void setMode(0)}
+                  title="Collapse to desktop operator"
+                >
+                  Collapse
+                </button>
+                {mode === 1 && (
+                  <button
+                    type="button"
+                    className="op-shell__btn op-shell__btn--primary"
+                    onClick={() => {
+                      setShowHealth(false);
+                      void setMode(2);
+                    }}
+                    title="Expand around conversation"
+                  >
+                    Expand
+                  </button>
+                )}
+                {mode >= 2 && (
+                  <button
+                    type="button"
+                    className="op-shell__btn"
+                    onClick={() => {
+                      setShowHealth(false);
+                      void setMode(1);
+                    }}
+                    title="Compact conversation"
+                  >
+                    Compact
+                  </button>
+                )}
+                {developer && mode >= 2 && (
+                  <button
+                    type="button"
+                    className="op-shell__btn"
+                    onClick={() => {
+                      setShowHealth((v) => !v);
+                      void setMode(3);
+                    }}
+                    title="Repository health"
+                  >
+                    Health
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="op-shell__btn"
+                  onClick={() => void exitWorkspace()}
+                  title="Exit Workspace"
+                >
+                  Exit
+                </button>
+              </div>
+            </header>
 
-      {mode >= 2 && (
-        <div
-          className={`op-stage op-stage--mode${mode}`}
-          style={
-            mode === 2
-              ? {
-                  ["--op-panel-x" as string]: `${panelPos.x}px`,
-                  ["--op-panel-y" as string]: `${panelPos.y}px`,
-                }
-              : undefined
-          }
-        >
-          <div className="op-stage__chat">{conversation}</div>
-          {mode === 3 && (
-            <div className="op-stage__workspace" data-nested-shell="true">
-              {showHealth && developer ? (
-                <RepositoryHealthPanel onClose={() => setShowHealth(false)} />
+            <div
+              className="op-shell__transcript"
+              ref={scrollerRef}
+              id={listId}
+              role="log"
+              aria-live="polite"
+              aria-relevant="additions"
+            >
+              {messages.length === 0 ? (
+                <div className="op-shell__waiting" aria-hidden="true" />
               ) : (
-                productSurface
+                messages.map((message) => (
+                  <div
+                    key={message.id}
+                    className={`op-msg op-msg--${message.role}`}
+                    data-streaming={message.streaming ? "true" : undefined}
+                  >
+                    <p className="op-msg__text">{message.text}</p>
+                  </div>
+                ))
               )}
             </div>
-          )}
+
+            <form className="op-shell__composer" onSubmit={onSubmit}>
+              <textarea
+                ref={inputRef}
+                className="op-shell__input"
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    e.currentTarget.form?.requestSubmit();
+                  }
+                }}
+                rows={2}
+                placeholder=""
+                aria-label="Message Workspace"
+                disabled={busy}
+              />
+              <button
+                type="submit"
+                className="op-shell__send"
+                disabled={busy || !draft.trim()}
+              >
+                Send
+              </button>
+            </form>
+          </section>
         </div>
-      )}
+
+        {showSecondary && (
+          <div className="op-stage__workspace" data-specialized-shell="true">
+            {secondary}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

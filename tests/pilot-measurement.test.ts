@@ -61,13 +61,15 @@ describe("PP-P01E consented pilot measurement", () => {
     expect(panel).toContain("withdraw_pilot_consent");
   });
 
-  it("exposes Pilot as a participant surface without restoring engine tabs", () => {
+  it("exposes Pilot as a specialized Mode 3 tool without restoring engine tabs", () => {
     expect(chrome).toContain('"pilot"');
     expect(chrome).toContain("Check-in");
     expect(app).toContain("PilotMeasurementPanel");
-    expect(app).toContain("Check-in");
+    // Product identity is conversation-first; Check-in label lives in pilotChrome, not dock chrome.
     expect(app).not.toContain("OperatorConsole");
     expect(app).not.toContain("CanvasShell");
+    expect(app).not.toContain("WorkspaceShell");
   });
 });
+
 

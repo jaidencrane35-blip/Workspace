@@ -1,22 +1,44 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
+import { DesktopOperator } from "./components/operator/DesktopOperator";
 import {
   disposeExperienceInstrumentation,
   initExperienceInstrumentation,
 } from "./dev";
+import { isTauriRuntime, loadShellMode } from "./lib/shellRuntime";
+import {
+  bootstrapShellOnLaunch,
+  currentWindowLabel,
+} from "./lib/shellWindows";
 import "./design-system/tokens.css";
 import "./App.css";
 
 initExperienceInstrumentation();
 
-ReactDOM.createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
-);
+async function resolveShellEntry(): Promise<React.ReactElement> {
+  if (isTauriRuntime()) {
+    await bootstrapShellOnLaunch();
+    const label = await currentWindowLabel();
+    if (label === "operator") {
+      return <DesktopOperator />;
+    }
+    // Main window: if durable mode is floating, keep App mounted (hidden) for recovery.
+    const mode = loadShellMode(1);
+    if (mode === 0) {
+      // Still mount App so close/sync handlers live; window stays hidden.
+      return <App />;
+    }
+  }
+  return <App />;
+}
 
-// Evidence dashboard is DEV-only; Vite drops this branch from production bundles.
+void resolveShellEntry().then((element) => {
+  ReactDOM.createRoot(document.getElementById("root")!).render(
+    <React.StrictMode>{element}</React.StrictMode>,
+  );
+});
+
 if (import.meta.env.DEV) {
   void import("./dev/mountExperienceEvidence").then((mod) => {
     mod.mountExperienceEvidenceDashboard();

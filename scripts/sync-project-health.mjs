@@ -44,6 +44,7 @@ const verifiers = {
   "verify:content-security-policy": "scripts/verify-content-security-policy.mjs",
   "verify:project-health": "scripts/verify-project-health.mjs",
   "verify:capability-evolution": "scripts/verify-capability-evolution.mjs",
+  "verify:shell-zero-trap": "scripts/verify-shell-zero-trap.mjs",
 };
 
 const verifierStatus = {};
@@ -113,16 +114,41 @@ const completedPrograms = [
       "docs/capability-evolution/registry.json",
     ],
   },
+  {
+    id: "intent-bridge-deepening",
+    backlogRef: "P1 Deepen intent bridge (named Moments, launch honesty)",
+    completed: "2026-08-07",
+    artifacts: [
+      "app/src/lib/momentMatch.ts",
+      "tests/moment-match.test.ts",
+      "docs/execution-program-intent-bridge-deepening.md",
+    ],
+  },
+  {
+    id: "operator-refoundation-p2",
+    backlogRef: "P2 Conversational Desktop Operator Refoundation",
+    completed: "2026-08-07",
+    artifacts: [
+      "app/src/lib/shellRuntime.ts",
+      "app/src/lib/shellWindows.ts",
+      "docs/execution-program-operator-refoundation.md",
+      "docs/capability-evolution/PIPELINE_ARCHITECTURE.md",
+    ],
+  },
+  {
+    id: "windows-shell-completion-p3",
+    backlogRef: "P3 Windows Shell Completion (Desktop Operator Foundation)",
+    completed: "2026-08-07",
+    artifacts: [
+      "app/src/lib/shellStateMachine.ts",
+      "pnpm verify:shell-zero-trap",
+      "docs/execution-program-windows-shell-completion.md",
+      "docs/shell/FUTURE_INPUT_ARCHITECTURE.md",
+    ],
+  },
 ];
 
 const remainingBacklog = [
-  {
-    id: "intent-bridge-deepening",
-    phase: "P1",
-    title: "Deepen intent bridge (named Moments, launch honesty)",
-    gap: "product",
-    status: "approved",
-  },
   {
     id: "docs-convergence",
     phase: "A",
@@ -205,10 +231,10 @@ const health = {
     machineState: "docs/project-health.json",
   },
   currentExecutionProgram: {
-    id: "conversational-operator-foundation",
-    title: "Conversational Operator Foundation",
-    status: "complete",
-    note: "UX refinement + capability evolution foundation + repository milestone. Owner review accepted for prior shell; cadence continues.",
+    id: "windows-shell-completion-p3",
+    title: "P3 Windows Shell Completion (Desktop Operator Foundation)",
+    status: "complete_awaiting_owner_review",
+    note: "Zero-Trap shell state machine; floating operator context menu; close→collapse; Exit ends process. Await owner review.",
   },
   completedExecutionPrograms: completedPrograms,
   remainingBacklog,
@@ -219,7 +245,7 @@ const health = {
     tests: "pass",
     notes: [
       "Frontend production build succeeds",
-      "Conversational operator is the default front door",
+      "Zero-Trap shell state machine + floating operator menu",
       "Capability evolution proposals only (no self-rewrite)",
       "Non-PP domain.ts remains manual (G1 remainder)",
       "Documentation authority still fragmented (G3)",
@@ -281,20 +307,20 @@ const health = {
       "Doc authority convergence pending",
       "WorkspaceState naming collision",
       "No AgentToolGate / AuditIntegrity yet",
-      "Named Moment restore not yet in intent bridge",
+      "Doc authority convergence (G3) still open",
     ],
   },
   lastMilestone: {
     date: "2026-08-07",
-    document: "docs/engineering-milestone-report.md",
-    title: "Conversational Operator Foundation",
-    reviewBrief: "docs/repository-commit-review.md",
+    document: "docs/execution-program-windows-shell-completion.md",
+    title: "P3 Windows Shell Completion",
+    reviewBrief: "docs/execution-program-windows-shell-completion.md",
   },
-  handoffStatus: "MILESTONE_COMMITTED_NEXT_PROGRAM_INTENT_BRIDGE_DEEPENING",
+  handoffStatus: "AWAITING_PROJECT_OWNER_WINDOWS_SHELL_REVIEW",
   nextRecommendedExecutionProgram: {
-    id: "intent-bridge-deepening",
-    title: "Deepen intent bridge (named Moments, launch honesty)",
-    blockedUntil: null,
+    id: "docs-convergence",
+    title: "Documentation authority convergence",
+    blockedUntil: "Project Owner Windows shell completion review",
   },
   capabilityEvolution: {
     document: "docs/capability-evolution/README.md",

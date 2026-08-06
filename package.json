@@ -8,7 +8,7 @@
     "dev": "pnpm --filter @workspace/app dev",
     "build": "pnpm --filter @workspace/app build",
     "tauri:build": "pnpm --filter @workspace/app exec tauri build",
-    "test": "pnpm --filter @workspace/tests test && node scripts/verify-explanation-catalog.mjs && node scripts/verify-ipc-tiers.mjs && node scripts/verify-product-contracts.mjs && node scripts/verify-project-health.mjs && node scripts/verify-capability-evolution.mjs && node scripts/verify-ui-experience-boundary.mjs && node scripts/verify-content-security-policy.mjs",
+    "test": "pnpm --filter @workspace/tests test && node scripts/verify-explanation-catalog.mjs && node scripts/verify-ipc-tiers.mjs && node scripts/verify-product-contracts.mjs && node scripts/verify-project-health.mjs && node scripts/verify-capability-evolution.mjs && node scripts/verify-shell-zero-trap.mjs && node scripts/verify-ui-experience-boundary.mjs && node scripts/verify-content-security-policy.mjs",
     "typecheck": "pnpm --filter @workspace/app typecheck",
     "verify:explanation-catalog": "node scripts/verify-explanation-catalog.mjs",
     "verify:ipc-tiers": "node scripts/verify-ipc-tiers.mjs",
@@ -18,6 +18,7 @@
     "verify:project-health": "node scripts/verify-project-health.mjs",
     "sync:project-health": "node scripts/sync-project-health.mjs",
     "verify:capability-evolution": "node scripts/verify-capability-evolution.mjs",
+    "verify:shell-zero-trap": "node scripts/verify-shell-zero-trap.mjs",
     "verify:ui-experience-boundary": "node scripts/verify-ui-experience-boundary.mjs",
     "verify:content-security-policy": "node scripts/verify-content-security-policy.mjs",
     "verify:release": "pnpm typecheck && pnpm build && pnpm test && cargo check -p workspace-kernel && cargo check -p workspace-app && cargo test -p workspace-database persistent_session -- --test-threads=1 && cargo test -p workspace-kernel version_1_hardening -- --test-threads=1"

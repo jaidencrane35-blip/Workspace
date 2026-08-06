@@ -1,14 +1,8 @@
 import { BookmarkPlus } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { ICON } from "../lib/icons";
-import type { Workspace } from "../types/domain";
-import { useActiveMoment } from "./ActiveMoment";
-import { EmptyStructure } from "./EmptyStructure";
-import { IntentionObject } from "./objects/IntentionObject";
-import { QuickActionObject } from "./objects/QuickActionObject";
-import { useIntentEngine } from "./IntentEngine";
-import { useWorkspaceComposition } from "./WorkspaceComposition";
-import { WorkspaceObject } from "./WorkspaceObject";
+import { invokeIpc } from "../lib/ipc";
+import type { SavedContext, Workspace } from "../types/domain";
 
 interface HomeWorkspacePanelProps {
   workspace: Workspace | null;
@@ -19,152 +13,131 @@ interface HomeWorkspacePanelProps {
 }
 
 /**
- * Home — the place dominates; chrome stays silent when Moments exist.
+ * Moments tool (Mode 3 specialized) — not an onboarding dashboard.
  */
 export function HomeWorkspacePanel({
   workspace,
   busy,
   onCreateWorkspace,
   onGoToSave,
-  onContinueContext: _onContinueContext,
+  onContinueContext,
 }: HomeWorkspacePanelProps) {
-  const { density } = useWorkspaceComposition();
-  const { setEmpty } = useIntentEngine();
-  const { primary, setPresence, setExpanding } = useActiveMoment();
+  const [moments, setMoments] = useState<SavedContext[]>([]);
 
   useEffect(() => {
-    setExpanding(false);
-    setPresence("presence");
-  }, [setExpanding, setPresence]);
-
-  useEffect(() => {
-    setEmpty(!workspace || !primary);
-  }, [workspace, primary, setEmpty]);
+    if (!workspace) {
+      setMoments([]);
+      return;
+    }
+    let cancelled = false;
+    void invokeIpc<SavedContext[]>("list_saved_contexts", {
+      workspaceId: workspace.id,
+    })
+      .then((list) => {
+        if (!cancelled) {
+          setMoments(list);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setMoments([]);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [workspace]);
 
   if (!workspace) {
     return (
       <section
-        className="ws-region home-place place--empty"
+        className="ws-region home-place place--empty op-moments-tool"
         data-testid="workspace-home"
-        data-density={density}
       >
         <div className="place__identity place__identity--place">
-          <p className="exp-kicker">Workspace</p>
-          <h2 className="place__title">This is your Workspace</h2>
-          <p className="place__pulse">Where your work lives.</p>
+          <p className="exp-kicker">Moments</p>
+          <h2 className="place__title">No workspace yet</h2>
+          <p className="place__pulse">
+            Ask in conversation to save where you are — or create a place for
+            Moments here.
+          </p>
         </div>
-        <div className="ws-compose ws-compose--empty attention-field">
-          <WorkspaceObject
-            objectId="home-create"
-            kind="quick-action"
-            slot="anchor"
-            state="expanded"
-            className="empty-invite"
+        <div className="moment-card__actions">
+          <button
+            type="button"
+            className="exp-btn primary"
+            onClick={onCreateWorkspace}
+            disabled={busy}
           >
-            <p className="moment-card__kicker">Begin</p>
-            <h3>Create your Workspace</h3>
-            <p className="moment-card__handoff">
-              One place for moments, notes, and return.
-            </p>
-            <div className="moment-card__actions">
-              <button
-                type="button"
-                className="exp-btn primary"
-                onClick={onCreateWorkspace}
-                disabled={busy}
-              >
-                Create a workspace
-              </button>
-            </div>
-          </WorkspaceObject>
-          <EmptyStructure />
+            Create workspace
+          </button>
         </div>
       </section>
     );
   }
 
-  if (!primary) {
+  if (moments.length === 0) {
     return (
       <section
-        className="ws-region home-place"
+        className="ws-region home-place op-moments-tool"
         data-testid="workspace-home"
-        data-density={density}
       >
         <div className="place__identity place__identity--place place__identity--living">
-          <p className="exp-kicker">Workspace</p>
+          <p className="exp-kicker">Moments</p>
           <h1 className="place__title">{workspace.name}</h1>
-          <p className="place__pulse">Ready for your first moment.</p>
+          <p className="place__pulse">
+            No saved Moments yet. Say “save this” in conversation when you want
+            to put work down.
+          </p>
         </div>
-        <div className="ws-compose ws-compose--invite attention-field">
-          <div className="ws-compose__anchor">
-            <WorkspaceObject
-              objectId="first-moment"
-              kind="moment"
-              slot="anchor"
-              state="expanded"
-              className="empty-invite"
-            >
-              <p className="moment-card__kicker">Start here</p>
-              <h3>Save your first moment</h3>
-              <p className="moment-card__handoff">
-                One note. That’s the way back.
-              </p>
-              <div className="moment-card__actions">
-                <button
-                  type="button"
-                  className="exp-btn primary"
-                  onClick={onGoToSave}
-                  disabled={busy}
-                >
-                  <BookmarkPlus
-                    size={ICON.md}
-                    strokeWidth={ICON.stroke}
-                    aria-hidden="true"
-                  />
-                  Save your first moment
-                </button>
-              </div>
-            </WorkspaceObject>
-          </div>
-          <aside className="ws-compose__float">
-            <IntentionObject
-              id="intention-empty"
-              text="Your next intention will live here."
-              meta="Nothing invented"
-              state="idle"
+        <div className="moment-card__actions">
+          <button
+            type="button"
+            className="exp-btn primary"
+            onClick={onGoToSave}
+            disabled={busy}
+          >
+            <BookmarkPlus
+              size={ICON.md}
+              strokeWidth={ICON.stroke}
+              aria-hidden="true"
             />
-            <QuickActionObject
-              id="quick-save"
-              label="Quick save"
-              icon={BookmarkPlus}
-              primary
-              disabled={busy}
-              onClick={onGoToSave}
-            />
-          </aside>
-          {density !== "focus" && (
-            <div className="ws-compose__orbit">
-              <EmptyStructure />
-            </div>
-          )}
+            Save now
+          </button>
         </div>
       </section>
     );
   }
 
-  // Populated Home: workspace object is the interface.
   return (
     <section
-      className="ws-region home-place home-place--object home-place--invisible"
+      className="ws-region home-place op-moments-tool"
       data-testid="workspace-home"
-      data-density={density}
     >
-      <h1 className="sr-only">{workspace.name}</h1>
-      <p className="sr-only">
-        This is your Workspace. Continue from the Moment above, or save a new
-        one. Neighbours wait quietly. dash-grid EmptyStructure MomentCard Quick
-        save
-      </p>
+      <div className="place__identity place__identity--place">
+        <p className="exp-kicker">Moments</p>
+        <h1 className="place__title">{workspace.name}</h1>
+        <p className="place__pulse">
+          Choose a Moment to restore — or ask in conversation.
+        </p>
+      </div>
+      <ul className="op-moments-list">
+        {moments.map((moment) => (
+          <li key={moment.id}>
+            <button
+              type="button"
+              className="op-moments-list__item"
+              disabled={busy}
+              onClick={() => onContinueContext(moment.id)}
+            >
+              <span className="op-moments-list__name">{moment.name}</span>
+              <span className="op-moments-list__meta">
+                {moment.handoff_note?.trim() || "Restore review"}
+              </span>
+            </button>
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }

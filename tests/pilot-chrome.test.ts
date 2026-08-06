@@ -52,7 +52,8 @@ describe("PP-P01D pilot-safe chrome", () => {
       "Guide",
     ]);
     expect(appSource).toContain("PILOT_PRIMARY_VIEWS");
-    expect(appSource).toContain("PILOT_VIEW_LABELS");
+    // View labels remain in pilotChrome; App no longer mounts a labeled dock.
+    expect(Object.keys(PILOT_VIEW_LABELS).length).toBe(PILOT_PRIMARY_VIEWS.length);
     for (const label of Object.values(PILOT_VIEW_LABELS)) {
       expect(PILOT_PRIMARY_TAB_LABELS).toContain(label);
     }
@@ -70,20 +71,21 @@ describe("PP-P01D pilot-safe chrome", () => {
     expect(appSource).not.toContain("AssistantPanel");
   });
 
-  it("preserves Product Proof Save and Resume surfaces", () => {
+  it("preserves Save/Resume as specialized tools without Home onboarding identity", () => {
     expect(appSource).toContain("SaveContextPanel");
     expect(appSource).toContain("ResumeContextPanel");
     expect(appSource).toContain("PilotHelpPanel");
     expect(appSource).toContain("HomeWorkspacePanel");
+    expect(appSource).toContain("OperatorRoot");
     expect(saveSource).toContain("RestoreLimitsNotice");
     expect(resumeSource).toContain("RestoreLimitsNotice");
     expect(resumeSource).toContain("delete_saved_context");
     expect(resumeSource).toContain("get_saved_context");
-    expect(homeSource).toContain("This is your Workspace");
-    expect(homeSource).toContain("dash-grid");
-    expect(homeSource).toContain("EmptyStructure");
-    expect(homeSource).toContain("MomentCard");
-    expect(homeSource).toContain("Quick save");
+    // Moments tool — not Product Proof onboarding theatre
+    expect(homeSource).toContain("Moments");
+    expect(homeSource).toContain("Say “save this” in conversation");
+    expect(homeSource).not.toContain("Save your first moment");
+    expect(homeSource).not.toContain("This is your Workspace");
   });
 
 

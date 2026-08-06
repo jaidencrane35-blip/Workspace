@@ -1,18 +1,16 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { HomeWorkspacePanel } from "./components/HomeWorkspacePanel";
 import { OperatorRoot } from "./components/operator/OperatorRoot";
 import { PilotHelpPanel } from "./components/PilotHelpPanel";
 import { PilotMeasurementPanel } from "./components/PilotMeasurementPanel";
 import { ResumeContextPanel } from "./components/ResumeContextPanel";
 import { SaveContextPanel } from "./components/SaveContextPanel";
-import { WorkspaceShell } from "./components/WorkspaceShell";
 import { isExperienceDemoActive } from "./demo/demoMode";
 import { trackNavigate } from "./dev";
 import { invokeIpc } from "./lib/ipc";
 import {
   PILOT_DEFAULT_VIEW,
   PILOT_PRIMARY_VIEWS,
-  PILOT_VIEW_LABELS,
   type PilotPrimaryView,
 } from "./lib/pilotChrome";
 import type { Workspace } from "./types/domain";
@@ -49,9 +47,8 @@ async function persistActiveWorkspaceId(id: string | null): Promise<void> {
 }
 
 /**
- * Product root — Conversational Shell is the front door (Modes 1–3).
- * Existing Product Proof (Home / Save / Continue / Check-in / Guide) is wrapped
- * and shown beside conversation in Mode 3 via intent bridge or Workspace expand.
+ * Main shell (Modes 1–3) — conversation is the product.
+ * Former Product Proof surfaces are Mode 3 specialized tools only (no dock IA).
  */
 export default function App() {
   const [view, setView] = useState<PilotPrimaryView>(PILOT_DEFAULT_VIEW);
@@ -128,8 +125,8 @@ export default function App() {
           name: "My Workspace",
         });
         await activateWorkspace(created);
-        setMessage("Your workspace is ready.");
-        setView("home");
+        setMessage("Workspace ready.");
+        setView("save");
       } catch (err: unknown) {
         onError(formatError(err));
       } finally {
@@ -144,18 +141,38 @@ export default function App() {
     setView("resume");
   };
 
-  const navigate = (next: PilotPrimaryView) => {
+  const navigate = (
+    next: PilotPrimaryView,
+    opts?: { focusContextId?: string | null },
+  ) => {
     if (!PILOT_PRIMARY_VIEWS.includes(next)) {
       return;
     }
-    setFocusContextId(null);
+    if (opts && "focusContextId" in opts) {
+      setFocusContextId(opts.focusContextId ?? null);
+    } else {
+      setFocusContextId(null);
+    }
     trackNavigate(next, { commandId: "dock_navigate" });
     setView(next);
   };
 
-  useEffect(() => {
-    document.title = `Workspace · ${PILOT_VIEW_LABELS[view]}`;
-  }, [view]);
+  const listMoments = useCallback(async () => {
+    if (!workspace) {
+      return [];
+    }
+    try {
+      const list = await invokeIpc<Array<{ id: string; name: string }>>(
+        "list_saved_contexts",
+        {
+          workspaceId: workspace.id,
+        },
+      );
+      return list.map((item) => ({ id: item.id, name: item.name }));
+    } catch {
+      return [];
+    }
+  }, [workspace]);
 
   useEffect(() => {
     if (!demo) {
@@ -167,101 +184,95 @@ export default function App() {
     };
   }, [demo]);
 
-  let content = (
-    <p className="muted exp-loading">Opening your workspace…</p>
-  );
+  let tool: ReactNode = <p className="muted exp-loading">Opening…</p>;
   if (bootstrapped) {
     if (view === "home") {
-      content = (
-        <HomeWorkspacePanel
-          workspace={workspace}
-          busy={busy}
-          onCreateWorkspace={createWorkspace}
-          onGoToSave={() => {
-            trackNavigate("save", { commandId: "go_save" });
-            setView("save");
-          }}
-          onContinueContext={(id) => goContinue(id)}
-        />
+      tool = (
+        <div className="op-tool">
+          <HomeWorkspacePanel
+            workspace={workspace}
+            busy={busy}
+            onCreateWorkspace={createWorkspace}
+            onGoToSave={() => {
+              trackNavigate("save", { commandId: "go_save" });
+              setView("save");
+            }}
+            onContinueContext={(id) => goContinue(id)}
+          />
+        </div>
       );
     } else if (view === "save") {
-      content = (
-        <SaveContextPanel
-          workspace={workspace}
-          busy={busy}
-          onBusy={setBusy}
-          onError={onError}
-          onMessage={onMessage}
-          onCreateWorkspace={createWorkspace}
-        />
+      tool = (
+        <div className="op-tool">
+          <SaveContextPanel
+            workspace={workspace}
+            busy={busy}
+            onBusy={setBusy}
+            onError={onError}
+            onMessage={onMessage}
+            onCreateWorkspace={createWorkspace}
+          />
+        </div>
       );
     } else if (view === "resume") {
-      content = (
-        <ResumeContextPanel
-          workspace={workspace}
-          busy={busy}
-          onBusy={setBusy}
-          onError={onError}
-          onMessage={onMessage}
-          onGoToPilot={() => {
-            trackNavigate("pilot", { commandId: "dock_navigate" });
-            setView("pilot");
-          }}
-          onGoHome={() => {
-            trackNavigate("home", { commandId: "dock_navigate" });
-            setView("home");
-          }}
-          focusContextId={focusContextId}
-        />
+      tool = (
+        <div className="op-tool">
+          <ResumeContextPanel
+            workspace={workspace}
+            busy={busy}
+            onBusy={setBusy}
+            onError={onError}
+            onMessage={onMessage}
+            onGoToPilot={() => {
+              trackNavigate("pilot", { commandId: "dock_navigate" });
+              setView("pilot");
+            }}
+            onGoHome={() => {
+              trackNavigate("home", { commandId: "dock_navigate" });
+              setView("home");
+            }}
+            focusContextId={focusContextId}
+          />
+        </div>
       );
     } else if (view === "pilot") {
-      content = (
-        <PilotMeasurementPanel
-          busy={busy}
-          onBusy={setBusy}
-          onError={onError}
-          onMessage={onMessage}
-        />
+      tool = (
+        <div className="op-tool">
+          <PilotMeasurementPanel
+            busy={busy}
+            onBusy={setBusy}
+            onError={onError}
+            onMessage={onMessage}
+          />
+        </div>
       );
     } else {
-      content = <PilotHelpPanel />;
+      tool = (
+        <div className="op-tool">
+          <PilotHelpPanel />
+        </div>
+      );
     }
   }
 
-  const status = (
-    <>
-      {error && (
-        <p className="error banner ws-toast" role="status" aria-atomic="true">
-          {error}
-        </p>
+  const specializedSurface = (
+    <div className="op-specialized">
+      {(error || message) && (
+        <div className="op-specialized__status" role="status" aria-atomic="true">
+          {error && <p className="error banner ws-toast">{error}</p>}
+          {message && !error && <p className="ok banner ws-toast">{message}</p>}
+        </div>
       )}
-      {message && !error && (
-        <p className="ok banner ws-toast" role="status" aria-atomic="true">
-          {message}
-        </p>
-      )}
-    </>
-  );
-
-  const productSurface = (
-    <WorkspaceShell
-      view={view}
-      onNavigate={navigate}
-      onCreateWorkspace={createWorkspace}
-      onContinueMoment={(id) => goContinue(id)}
-      workspace={workspace}
-      focusContextId={focusContextId}
-      busy={busy}
-      status={status}
-    >
-      {content}
-    </WorkspaceShell>
+      {tool}
+    </div>
   );
 
   return (
     <OperatorRoot
-      productSurface={productSurface}
+      specializedSurface={specializedSurface}
       onNavigateProduct={navigate}
+      listMoments={listMoments}
+      activeSpecialized={view}
     />
   );
 }

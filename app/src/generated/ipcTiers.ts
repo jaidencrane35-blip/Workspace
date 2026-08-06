@@ -192,6 +192,7 @@ export const EXPERIMENTAL_IPC_COMMANDS = [
   "delete_widget",
   "delete_zone",
   "evaluate_triggers",
+  "exit_workspace",
   "get_application",
   "get_assistant_workflow",
   "get_automation_contract",
@@ -296,6 +297,7 @@ export const REGISTERED_IPC_COMMANDS = [
   "evaluate_triggers",
   "execute_intent_request",
   "execute_resume_plan",
+  "exit_workspace",
   "generate_decision_engine",
   "generate_decision_queue",
   "generate_task_graph",
@@ -437,11 +439,11 @@ export const REGISTERED_IPC_COMMANDS = [
 export type IpcTier = "product" | "developer" | "diagnostic" | "experimental";
 
 export const IPC_TIER_COUNTS = {
-  "registered": 197,
+  "registered": 198,
   "product": 20,
   "developer": 112,
   "diagnostic": 37,
-  "experimental": 28,
+  "experimental": 29,
   "quarantine": 16,
   "reactUsed": 156
 } as const;

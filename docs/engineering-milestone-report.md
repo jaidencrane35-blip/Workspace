@@ -1,107 +1,80 @@
 # Engineering Milestone Report
-## Conversational Operator Foundation
+## P3 Windows Shell Completion (Desktop Operator Foundation)
 
 | Field | Value |
 | --- | --- |
-| **Execution milestone** | Conversational Operator Foundation |
+| **Execution program** | P3 Windows Shell Completion |
 | **Date** | 2026-08-07 |
-| **Branch** | `v2-dev` |
-| **Commit hash** | `ac6f997906a0cdeec814d856d4a42c0465298201` |
-| **Repository version** | `0.1.0` (`package.json`) |
-| **Repository health** | healthy |
-| **Product authority** | `docs/00-Constitution/PRODUCT_CONSTITUTION.md` |
-| **Architecture authority** | `architecture/ARCHITECTURAL_CONSTITUTION_V2.md` |
-| **Commit review** | `docs/repository-commit-review.md` |
+| **Prior** | P2 Operator Refoundation |
+| **Repository version** | `0.1.0` |
+| **Handoff** | `AWAITING_PROJECT_OWNER_WINDOWS_SHELL_REVIEW` |
+| **Detail** | `docs/execution-program-windows-shell-completion.md` |
 
 ---
 
 ## Executive Summary
 
-Conversation is the durable front door. Owner review of the P0 shell was accepted; this milestone refines the operator into desktop presence (not a nested mini-app), completes developer-only repository health, and ships a non-rewriting capability evolution proposal pipeline. Product Proof remains wrapped — Save / Continue / Check-in / Guide are reached through conversation and Expand.
+This program polished Workspace as a **Windows companion shell** — not AI, not automation. Zero-Trap state machine, floating operator context menu, durable positions/modes, close→collapse (never trap), Exit ends the process. Future keyboard/voice/screenshot/clipboard/drag-drop inputs documented as one IntentEnvelope path.
 
 ---
 
-## Repository Health
+## Shell architecture summary
+
+| Window | Modes |
+| --- | --- |
+| `operator` | 0 — floating W (taskbar-visible) |
+| `main` | 1 Compact · 2 Expanded · 3 Specialized |
+
+Durable: mode, operator/main positions, hidden flag (`shellRuntime` / `shellWindows`).
+
+---
+
+## State transition diagram
+
+See mermaid in `docs/execution-program-windows-shell-completion.md`.
+
+Core recoveries: **0↔1↔2**, **3→0/1/2**, **Hide→taskbar**, **Exit→process end**, **main X→Mode 0**.
+
+---
+
+## Zero-Trap verification checklist
+
+See execution program § Zero-Trap. Automated: `pnpm verify:shell-zero-trap` + `tests/shell-zero-trap.test.ts`.
+
+---
+
+## Repository health summary
 
 | Signal | Status |
 | --- | --- |
-| Overall | healthy |
-| Typecheck | pass |
-| Frontend build | pass |
-| Vitest | 349 pass |
-| Constitutional verifiers | pass (incl. capability-evolution) |
+| Typecheck / build / tests | pass (after IPC sync) |
+| `verify:shell-zero-trap` | wired into `pnpm test` |
 | `cargo check -p workspace-app` | pass |
-| Machine state | `docs/project-health.json` |
+| Current program | `windows-shell-completion-p3` |
 
 ---
 
-## Product Progress
+## Product Owner review checklist
 
-- Mode 1 lightweight floating operator retained
-- Mode 2 calculator presence: solid message bubbles, drag frame on Workspace chrome, reduced nested borders / chrome
-- Mode 3 expands Workspace around conversation; duplicate menubar brand hidden
-- Engineering controls + Check-in evidence hidden unless developer mode (`Ctrl+Shift+D`, triple-click brand, or “developer mode” / health intents)
-- Intent bridge still honest about unimplemented desktop claims
-
----
-
-## Engineering Progress
-
-- Capability Evolution Foundation: classify → propose → approve/reject → audit/undo/backlog
-- `pnpm verify:capability-evolution` wired into `pnpm test`
-- Repository health dashboard consumes full project-health fields (warnings, backlog, verifiers, debt, local proposals)
-- Permanent cadence documented: review → refine → milestone → commit → push → next program
+- [ ] Always open Workspace (launch → Compact)
+- [ ] Collapse → floating W; desktop remains usable
+- [ ] Left click W → Compact
+- [ ] Right click W → Open / Expand / Hide / Exit
+- [ ] Hide → recover from taskbar (no Task Manager)
+- [ ] Window X on Compact → floating W (not dead)
+- [ ] Expand / Compact round-trip
+- [ ] Exit Workspace ends app; relaunch works
+- [ ] No onboarding / capability catalogue in Compact
+- [ ] Positions remembered across collapse/expand
 
 ---
 
-## Verification Added
+## Next program (after approval only)
 
-| Artifact | Role |
-| --- | --- |
-| `scripts/verify-capability-evolution.mjs` | Schema + law presence |
-| `docs/capability-evolution/registry.json` | Registry template |
-| `tests/capability-evolution.test.ts` | Classifier + bridge routing |
+Documentation authority convergence (Phase A / G3) — or owner redirect.
 
 ---
 
-## Validation
+## Stop
 
-Ran: `pnpm typecheck`, `pnpm test`, `pnpm build`, `cargo check -p workspace-app`, domain/kernel tests as available, `pnpm sync:project-health` / `verify:project-health`.
-
----
-
-## Technical Debt
-
-Trend: down (new verifier + proposal pipeline). Remaining: G1 remainder (manual domain.ts), G3 docs convergence, G4 WorkspaceState naming, AgentToolGate / AuditIntegrity.
-
----
-
-## Architecture Health
-
-Architectural Constitution V2 unchanged. No new runtime ownership abstractions. Capability evolution explicitly forbids self-rewrite; execution stays constitutional.
-
----
-
-## Product Health
-
-Identity expression improved: conversation-primary, desktop-capability, trust-preserving permissions on Save/Continue paths. Operator feels closer to presence than a tool collection.
-
----
-
-## Capability Evolution Status
-
-Foundation complete. Proposals only. Approved items require a dedicated execution program. Registry seed at `docs/capability-evolution/`.
-
----
-
-## Lessons Learned
-
-- Wrapping Product Proof beats rewriting it for constitutional speed
-- Developer surfaces must be gated or they reintroduce “tool collection” energy
-- Every program should leave a verifier/generator when behaviour is machine-checkable
-
----
-
-## Next Approved Execution Program
-
-**Intent bridge deepening** — named Moments routing, clearer launch honesty, tighter Continue/Save phrases — single program after this milestone commit/push.
+Launched fresh for review. **Do not begin another execution program until Product Owner approval.**

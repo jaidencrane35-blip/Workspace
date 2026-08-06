@@ -17,8 +17,12 @@ function fail(msg) {
 const registryPath = path.join(root, "docs/capability-evolution/registry.json");
 const libPath = path.join(root, "app/src/lib/capabilityEvolution.ts");
 const readmePath = path.join(root, "docs/capability-evolution/README.md");
+const pipelinePath = path.join(
+  root,
+  "docs/capability-evolution/PIPELINE_ARCHITECTURE.md",
+);
 
-for (const p of [registryPath, libPath, readmePath]) {
+for (const p of [registryPath, libPath, readmePath, pipelinePath]) {
   if (!fs.existsSync(p)) {
     fail(`missing ${path.relative(root, p)}`);
   }
