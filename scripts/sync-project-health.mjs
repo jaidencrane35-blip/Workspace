@@ -175,6 +175,16 @@ const completedPrograms = [
       "docs/execution-program-desktop-operator-shell-completion.md",
     ],
   },
+  {
+    id: "productization-native-windows-p7",
+    backlogRef: "P7 Productization & Native Windows Experience",
+    completed: "2026-08-07",
+    artifacts: [
+      "app/src/lib/shellRuntime.ts",
+      "docs/execution-program-productization-native-windows.md",
+      "docs/project-health.json",
+    ],
+  },
 ];
 
 const remainingBacklog = [
@@ -245,6 +255,7 @@ const remainingBacklog = [
 
 const launchStatus = argValue("launch-status", "pending");
 const readyForOwnerReview = argValue("ready-for-owner-review", "false") === "true";
+const milestoneCommit = argValue("milestone-commit", "pending");
 
 const health = {
   schemaVersion: 1,
@@ -260,13 +271,68 @@ const health = {
     machineState: "docs/project-health.json",
   },
   currentExecutionProgram: {
-    id: "desktop-operator-shell-completion-p6",
-    title: "P6 Desktop Operator Shell Completion (Collapse as true shell mode)",
+    id: "productization-native-windows-p7",
+    title: "P7 Productization & Native Windows Experience",
     status: "complete_awaiting_owner_review",
-    note: "Collapse hides conversation completely; click restores; no context menu; companion ≠ mini window. Await owner review.",
+    note: "Compact conversation default; lighter chrome; product readiness health. Await owner review.",
   },
   completedExecutionPrograms: completedPrograms,
   remainingBacklog,
+  engineeringHealth: {
+    overall: "healthy",
+    build: "pass",
+    typecheck: "pass",
+    tests: "pass",
+    verification: "pass",
+  },
+  productReadiness: {
+    status: "review",
+    shellLifecycle: "accepted",
+    compactConversation: "implemented",
+    nativeFeel: "in_progress",
+    notes: [
+      "P6 shell Form A/B accepted (commit 11bab9d)",
+      "Conversation opens at compact productivity size with work-area clamp",
+      "Visual weight reduced around conversation",
+      "Track B desktop capabilities not started",
+    ],
+  },
+  currentMilestone: {
+    id: "productization-native-windows-p7",
+    title: "P7 Productization & Native Windows Experience",
+    status: "awaiting_owner_review",
+    commit: milestoneCommit,
+  },
+  acceptedReviews: [
+    {
+      id: "p6",
+      title: "Desktop Operator Shell Completion",
+      commit: "11bab9d",
+      acceptedAt: "2026-08-07",
+    },
+  ],
+  outstandingProductDebt: [
+    {
+      id: "tray-integration",
+      track: "A",
+      summary: "System tray integration not yet implemented",
+    },
+    {
+      id: "window-animations",
+      track: "A",
+      summary: "Native show/hide transition polish still limited",
+    },
+    {
+      id: "track-b-capabilities",
+      track: "B",
+      summary: "Desktop capability layer not started (intentional)",
+    },
+    {
+      id: "G3-docs",
+      track: "A",
+      summary: "Documentation authority still fragmented",
+    },
+  ],
   repositoryHealth: {
     overall: "healthy",
     build: "pass",
@@ -274,7 +340,7 @@ const health = {
     tests: "pass",
     notes: [
       "Frontend production build succeeds",
-      "Shell Form A/B: click-restore companion; conversation fully hidden on collapse",
+      "P6 shell accepted; P7 productization pass",
       "Capability evolution proposals only (no self-rewrite)",
       "Non-PP domain.ts remains manual (G1 remainder)",
       "Documentation authority still fragmented (G3)",
@@ -330,26 +396,27 @@ const health = {
       "Product Proof contracts generated from Rust",
       "Machine-readable project health registry",
       "Capability evolution proposal pipeline + verifier",
+      "Two-form shell accepted (P6)",
     ],
     remaining: [
       "Manual domain.ts outside Product Proof",
       "Doc authority convergence pending",
       "WorkspaceState naming collision",
       "No AgentToolGate / AuditIntegrity yet",
-      "Doc authority convergence (G3) still open",
+      "Tray / deeper native polish remaining (Track A debt)",
     ],
   },
   lastMilestone: {
     date: "2026-08-07",
-    document: "docs/execution-program-desktop-operator-shell-completion.md",
-    title: "P6 Desktop Operator Shell Completion",
-    reviewBrief: "docs/execution-program-desktop-operator-shell-completion.md",
+    document: "docs/execution-program-productization-native-windows.md",
+    title: "P7 Productization & Native Windows Experience",
+    reviewBrief: "docs/execution-program-productization-native-windows.md",
   },
-  handoffStatus: "AWAITING_PROJECT_OWNER_SHELL_COMPLETION_REVIEW",
+  handoffStatus: "AWAITING_PROJECT_OWNER_PRODUCTIZATION_REVIEW",
   nextRecommendedExecutionProgram: {
-    id: "reassess-after-shell-completion-review",
+    id: "reassess-after-productization-review",
     title: "Reassess highest-value program from owner feedback",
-    blockedUntil: "Project Owner Shell Completion review",
+    blockedUntil: "Project Owner Productization review",
   },
   capabilityEvolution: {
     document: "docs/capability-evolution/README.md",

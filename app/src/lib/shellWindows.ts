@@ -6,6 +6,7 @@
  */
 
 import {
+  CONVERSATION_MIN_SIZE,
   CONVERSATION_SIZE,
   MAIN_POS_KEY,
   MAIN_SIZE_KEY,
@@ -15,6 +16,7 @@ import {
   isTauriRuntime,
   loadPoint,
   loadSize,
+  normalizeConversationSize,
   savePoint,
   saveShellMode,
   saveSize,
@@ -79,7 +81,10 @@ async function persistMainGeometry(
   }
   try {
     const size = await main.outerSize();
-    saveSize(MAIN_SIZE_KEY, { width: size.width, height: size.height });
+    saveSize(
+      MAIN_SIZE_KEY,
+      normalizeConversationSize({ width: size.width, height: size.height }),
+    );
   } catch {
     /* keep */
   }
@@ -153,12 +158,15 @@ export async function applyShellMode(mode: ShellMode): Promise<void> {
     await operator.hide();
   }
 
-  // Restore conversation size from durable storage — never from operator geometry.
+  // Compact productivity size — never from operator geometry; never beyond work area.
   const size = loadSize(MAIN_SIZE_KEY, CONVERSATION_SIZE);
   await main.setSize(new LogicalSize(size.width, size.height));
   try {
     await main.setResizable(true);
     await main.setDecorations(true);
+    await main.setMinSize(
+      new LogicalSize(CONVERSATION_MIN_SIZE.width, CONVERSATION_MIN_SIZE.height),
+    );
   } catch {
     /* optional */
   }
@@ -166,6 +174,15 @@ export async function applyShellMode(mode: ShellMode): Promise<void> {
   if (mainPos.x >= 0 && mainPos.y >= 0) {
     const clamped = clampPos(mainPos.x, mainPos.y, size.width, size.height);
     await main.setPosition(new LogicalPosition(clamped.x, clamped.y));
+  } else {
+    // First open: dock to lower-right of the work area — usable, not centered fullscreen.
+    const availW =
+      typeof window !== "undefined" ? window.screen.availWidth : 1440;
+    const availH =
+      typeof window !== "undefined" ? window.screen.availHeight : 900;
+    const x = Math.max(16, availW - size.width - 28);
+    const y = Math.max(16, availH - size.height - 48);
+    await main.setPosition(new LogicalPosition(x, y));
   }
   try {
     await main.setAlwaysOnTop(false);

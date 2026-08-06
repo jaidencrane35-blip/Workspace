@@ -15,6 +15,37 @@ export interface ProjectHealthSnapshot {
     status?: string;
     note?: string;
   };
+  engineeringHealth?: {
+    overall?: string;
+    build?: string;
+    typecheck?: string;
+    tests?: string;
+    verification?: string;
+  };
+  productReadiness?: {
+    status?: string;
+    shellLifecycle?: string;
+    compactConversation?: string;
+    nativeFeel?: string;
+    notes?: string[];
+  };
+  currentMilestone?: {
+    id?: string;
+    title?: string;
+    status?: string;
+    commit?: string;
+  };
+  acceptedReviews?: Array<{
+    id?: string;
+    title?: string;
+    commit?: string;
+    acceptedAt?: string;
+  }>;
+  outstandingProductDebt?: Array<{
+    id?: string;
+    summary?: string;
+    track?: string;
+  }>;
   repositoryHealth?: {
     overall?: string;
     build?: string;
@@ -93,6 +124,8 @@ export function RepositoryHealthPanel({ onClose }: RepositoryHealthPanelProps) {
   }, []);
 
   const verifierEntries = Object.entries(health?.verification?.verifiers ?? {});
+  const eng = health?.engineeringHealth;
+  const product = health?.productReadiness;
 
   return (
     <aside className="op-health" aria-label="Repository health">
@@ -109,68 +142,120 @@ export function RepositoryHealthPanel({ onClose }: RepositoryHealthPanelProps) {
       {!error && !health && <p className="op-health__muted">Loading…</p>}
       {health && (
         <>
-          <dl className="op-health__grid">
-            <div>
-              <dt>Current execution program</dt>
-              <dd>{health.currentExecutionProgram?.title ?? "—"}</dd>
-            </div>
-            <div>
-              <dt>Program status</dt>
-              <dd>{health.currentExecutionProgram?.status ?? "—"}</dd>
-            </div>
-            <div>
-              <dt>Repository health</dt>
-              <dd>{health.repositoryHealth?.overall ?? "—"}</dd>
-            </div>
-            <div>
-              <dt>Build / typecheck / tests</dt>
-              <dd>
-                {health.repositoryHealth?.build ?? "—"} /{" "}
-                {health.repositoryHealth?.typecheck ?? "—"} /{" "}
-                {health.repositoryHealth?.tests ?? "—"}
-              </dd>
-            </div>
-            <div>
-              <dt>Verification</dt>
-              <dd>{health.verification?.status ?? "—"}</dd>
-            </div>
-            <div>
-              <dt>Validation</dt>
-              <dd>{health.validation?.status ?? "—"}</dd>
-            </div>
-            <div>
-              <dt>Latest milestone</dt>
-              <dd>
-                {health.lastMilestone?.title ?? "—"}
-                {health.lastMilestone?.date
-                  ? ` (${health.lastMilestone.date})`
-                  : ""}
-              </dd>
-            </div>
-            <div>
-              <dt>Handoff</dt>
-              <dd>{health.handoffStatus ?? "—"}</dd>
-            </div>
-            <div>
-              <dt>Constitution</dt>
-              <dd>v{health.constitution?.version ?? "—"}</dd>
-            </div>
-            <div>
-              <dt>Protocol</dt>
-              <dd>v{health.protocol?.version ?? "—"}</dd>
-            </div>
-            <div>
-              <dt>Next recommended</dt>
-              <dd>{health.nextRecommendedExecutionProgram?.title ?? "—"}</dd>
-            </div>
-            <div>
-              <dt>Product IPC (PP)</dt>
-              <dd>
-                {health.productProof?.productIpcCommandCount ?? "—"} · launch{" "}
-                {health.productProof?.launchStatus ?? "—"}
-              </dd>
-            </div>
-          </dl>
+          <section className="op-health__section">
+            <h3>Current milestone</h3>
+            <dl className="op-health__grid">
+              <div>
+                <dt>Program</dt>
+                <dd>
+                  {health.currentMilestone?.title ??
+                    health.currentExecutionProgram?.title ??
+                    "—"}
+                </dd>
+              </div>
+              <div>
+                <dt>Status</dt>
+                <dd>
+                  {health.currentMilestone?.status ??
+                    health.currentExecutionProgram?.status ??
+                    "—"}
+                </dd>
+              </div>
+              <div>
+                <dt>Commit</dt>
+                <dd>{health.currentMilestone?.commit ?? "—"}</dd>
+              </div>
+              <div>
+                <dt>Handoff</dt>
+                <dd>{health.handoffStatus ?? "—"}</dd>
+              </div>
+            </dl>
+          </section>
+
+          <section className="op-health__section">
+            <h3>Engineering health</h3>
+            <dl className="op-health__grid">
+              <div>
+                <dt>Overall</dt>
+                <dd>{eng?.overall ?? health.repositoryHealth?.overall ?? "—"}</dd>
+              </div>
+              <div>
+                <dt>Build / typecheck / tests</dt>
+                <dd>
+                  {eng?.build ?? health.repositoryHealth?.build ?? "—"} /{" "}
+                  {eng?.typecheck ?? health.repositoryHealth?.typecheck ?? "—"} /{" "}
+                  {eng?.tests ?? health.repositoryHealth?.tests ?? "—"}
+                </dd>
+              </div>
+              <div>
+                <dt>Verification</dt>
+                <dd>
+                  {eng?.verification ?? health.verification?.status ?? "—"}
+                </dd>
+              </div>
+              <div>
+                <dt>Validation</dt>
+                <dd>{health.validation?.status ?? "—"}</dd>
+              </div>
+            </dl>
+          </section>
+
+          <section className="op-health__section">
+            <h3>Product readiness</h3>
+            <dl className="op-health__grid">
+              <div>
+                <dt>Status</dt>
+                <dd>{product?.status ?? "—"}</dd>
+              </div>
+              <div>
+                <dt>Shell lifecycle</dt>
+                <dd>{product?.shellLifecycle ?? "—"}</dd>
+              </div>
+              <div>
+                <dt>Compact conversation</dt>
+                <dd>{product?.compactConversation ?? "—"}</dd>
+              </div>
+              <div>
+                <dt>Native feel</dt>
+                <dd>{product?.nativeFeel ?? "—"}</dd>
+              </div>
+            </dl>
+            {(product?.notes?.length ?? 0) > 0 && (
+              <ul className="op-health__list">
+                {product?.notes?.map((note) => (
+                  <li key={note}>{note}</li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          <section className="op-health__section">
+            <h3>Accepted reviews</h3>
+            <ul className="op-health__list">
+              {(health.acceptedReviews ?? []).length === 0 && (
+                <li className="op-health__muted">None recorded yet.</li>
+              )}
+              {(health.acceptedReviews ?? []).map((review) => (
+                <li key={review.id ?? review.title}>
+                  {review.title ?? review.id}
+                  {review.commit ? ` · ${review.commit}` : ""}
+                  {review.acceptedAt ? ` · ${review.acceptedAt}` : ""}
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          <section className="op-health__section">
+            <h3>Outstanding product debt</h3>
+            <ul className="op-health__list">
+              {(health.outstandingProductDebt ?? []).map((item) => (
+                <li key={item.id ?? item.summary}>
+                  [{item.track ?? "—"}] {item.summary}{" "}
+                  <span className="op-health__muted">({item.id})</span>
+                </li>
+              ))}
+            </ul>
+          </section>
 
           <section className="op-health__section">
             <h3>Architectural warnings</h3>
@@ -214,18 +299,6 @@ export function RepositoryHealthPanel({ onClose }: RepositoryHealthPanelProps) {
           </section>
 
           <section className="op-health__section">
-            <h3>Technical debt</h3>
-            <p className="op-health__muted">
-              Trend: {health.technicalDebtSummary?.trend ?? "—"}
-            </p>
-            <ul className="op-health__list">
-              {(health.technicalDebtSummary?.remaining ?? []).map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </section>
-
-          <section className="op-health__section">
             <h3>Capability evolution (local)</h3>
             <pre className="op-health__pre">
               {evolution
@@ -233,17 +306,6 @@ export function RepositoryHealthPanel({ onClose }: RepositoryHealthPanelProps) {
                 : "No local evolution state."}
             </pre>
           </section>
-
-          {(health.repositoryHealth?.notes?.length ?? 0) > 0 && (
-            <section className="op-health__section">
-              <h3>Notes</h3>
-              <ul className="op-health__list">
-                {health.repositoryHealth?.notes?.map((note) => (
-                  <li key={note}>{note}</li>
-                ))}
-              </ul>
-            </section>
-          )}
         </>
       )}
     </aside>

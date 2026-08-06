@@ -30,6 +30,11 @@ const requiredTop = [
   "completedExecutionPrograms",
   "remainingBacklog",
   "repositoryHealth",
+  "engineeringHealth",
+  "productReadiness",
+  "currentMilestone",
+  "acceptedReviews",
+  "outstandingProductDebt",
   "verification",
   "validation",
   "architecturalRisks",
@@ -58,6 +63,26 @@ if (!Array.isArray(health.completedExecutionPrograms)) {
 
 if (!Array.isArray(health.remainingBacklog)) {
   fail("remainingBacklog must be an array");
+}
+
+if (!Array.isArray(health.acceptedReviews)) {
+  fail("acceptedReviews must be an array");
+}
+
+if (!Array.isArray(health.outstandingProductDebt)) {
+  fail("outstandingProductDebt must be an array");
+}
+
+if (!health.engineeringHealth?.overall) {
+  fail("engineeringHealth.overall required");
+}
+
+if (!health.productReadiness?.status) {
+  fail("productReadiness.status required");
+}
+
+if (!health.currentMilestone?.id) {
+  fail("currentMilestone.id required");
 }
 
 const verifiers = health.verification?.verifiers ?? {};

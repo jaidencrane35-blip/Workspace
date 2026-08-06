@@ -4,6 +4,7 @@ import {
   OPERATOR_SIZE,
   SHELL_MODE_LABEL,
   isShellMode,
+  normalizeConversationSize,
   normalizeShellMode,
 } from "../app/src/lib/shellRuntime";
 import { resolveIntent } from "../app/src/lib/intentBridge";
@@ -24,8 +25,13 @@ describe("shell runtime two-form model", () => {
     expect(normalizeShellMode(0)).toBe(0);
   });
 
-  it("keeps operator tiny relative to conversation default", () => {
+  it("keeps compact productivity default and migrates oversized legacy defaults", () => {
+    expect(CONVERSATION_SIZE.width).toBeLessThanOrEqual(360);
+    expect(CONVERSATION_SIZE.height).toBeLessThanOrEqual(500);
     expect(OPERATOR_SIZE.width).toBeLessThan(CONVERSATION_SIZE.width);
+    const migrated = normalizeConversationSize({ width: 420, height: 560 });
+    expect(migrated.width).toBe(CONVERSATION_SIZE.width);
+    expect(migrated.height).toBe(CONVERSATION_SIZE.height);
   });
 
   it("routes collapse / expand intents without inventing shell forms", () => {

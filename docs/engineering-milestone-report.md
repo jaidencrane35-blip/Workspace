@@ -1,30 +1,31 @@
 # Engineering Milestone Report
-## P6 Desktop Operator Shell Completion
+## P7 Productization & Native Windows Experience
 
 | Field | Value |
 | --- | --- |
-| **Execution program** | P6 Desktop Operator Shell Completion |
+| **Execution program** | P7 Productization & Native Windows Experience |
 | **Date** | 2026-08-07 |
-| **Prior** | P5 Native Desktop Operator Refoundation (`4316230`) |
+| **Prior** | P6 Shell Completion accepted (`11bab9d`) |
 | **Repository version** | `0.1.0` |
-| **Commit** | `11bab9d` |
-| **Handoff** | `AWAITING_PROJECT_OWNER_SHELL_COMPLETION_REVIEW` |
-| **Detail** | `docs/execution-program-desktop-operator-shell-completion.md` |
+| **Commit** | _(filled after commit)_ |
+| **Handoff** | `AWAITING_PROJECT_OWNER_PRODUCTIZATION_REVIEW` |
+| **Detail** | `docs/execution-program-productization-native-windows.md` |
 
 ---
 
 ## Executive Summary
 
-Collapse is now a true **shell-mode transition**: conversation window fully leaves the desktop; the Desktop Operator companion is the only Workspace surface. Restore is **single click / double-click** — context menu removed. Drag no longer steals the click.
+First productization pass on the accepted two-form shell: compact conversation defaults, lighter conversation-first chrome, work-area-aware sizing/placement, and repository health expanded into engineering + product readiness indicators.
 
 ---
 
 ## Product Owner checklist
 
-- [ ] Collapse → companion only (not a resized chat)
-- [ ] Click restores conversation immediately
-- [ ] Drag works; Exit exits
-- [ ] Fresh runtime; repo committed and pushed
+- [ ] Compact open size
+- [ ] Native placement / restore
+- [ ] Visual polish improved
+- [ ] Feels like a real Windows app
+- [ ] Health dashboard reflects product readiness
 
 ---
 
