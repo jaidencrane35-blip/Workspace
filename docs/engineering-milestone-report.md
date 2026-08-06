@@ -6,7 +6,7 @@
 | **Execution program** | P12 Window Provider |
 | **Date** | 2026-08-07 |
 | **Prior** | P11 Application Provider (`330a26b`) |
-| **Commit** | `8cefb88` |
+| **Commit** | `66465b8` |
 | **Handoff** | `AWAITING_PROJECT_OWNER_WINDOW_PROVIDER_REVIEW` |
 | **Index** | `docs/capability-runtime/00_INDEX.md` |
 
