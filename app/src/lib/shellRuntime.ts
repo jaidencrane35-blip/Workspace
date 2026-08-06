@@ -39,8 +39,11 @@ export function normalizeShellMode(value: number): ShellMode {
   return 1;
 }
 
-/** Default idle form is Desktop Operator. */
-export function loadShellMode(fallback: ShellMode = 0): ShellMode {
+/**
+ * Product Gravity (P12.6): unset mode opens Conversation.
+ * Durable mode still restores Operator after Collapse.
+ */
+export function loadShellMode(fallback: ShellMode = 1): ShellMode {
   try {
     const raw = localStorage.getItem(MODE_STORAGE_KEY);
     const n = raw == null ? NaN : Number(raw);

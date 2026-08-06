@@ -4,12 +4,19 @@ import {
   OPERATOR_SIZE,
   SHELL_MODE_LABEL,
   isShellMode,
+  loadShellMode,
   normalizeConversationSize,
   normalizeShellMode,
 } from "../app/src/lib/shellRuntime";
 import { resolveIntent } from "../app/src/lib/intentBridge";
 
 describe("shell runtime two-form model", () => {
+  it("defaults unset mode to Conversation under Product Gravity", () => {
+    // No durable mode → Conversation (default parameter + empty-storage path).
+    expect(loadShellMode()).toBe(1);
+    expect(loadShellMode(1)).toBe(1);
+  });
+
   it("defines Form A Operator and Form B Conversation only", () => {
     expect(SHELL_MODE_LABEL[0]).toMatch(/Desktop Operator/i);
     expect(SHELL_MODE_LABEL[1]).toMatch(/Conversation/i);

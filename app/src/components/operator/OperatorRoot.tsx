@@ -61,7 +61,7 @@ export function OperatorRoot({
   const abortRef = useRef<AbortController | null>(null);
   const brandClicks = useRef({ n: 0, t: 0 });
 
-  const [mode, setModeState] = useState<ShellMode>(() => loadShellMode(0));
+  const [mode, setModeState] = useState<ShellMode>(() => loadShellMode(1));
   const modeRef = useRef(mode);
   modeRef.current = mode;
   const [draft, setDraft] = useState("");
@@ -105,7 +105,7 @@ export function OperatorRoot({
 
   useEffect(() => {
     const syncFromStorage = () => {
-      const stored = loadShellMode(0);
+      const stored = loadShellMode(1);
       if (stored !== modeRef.current) {
         modeRef.current = stored;
         setModeState(stored);
@@ -133,6 +133,16 @@ export function OperatorRoot({
       el.scrollTop = el.scrollHeight;
     }
   }, [messages, mode]);
+
+  useEffect(() => {
+    if (mode !== 1) {
+      return;
+    }
+    const id = window.setTimeout(() => {
+      inputRef.current?.focus();
+    }, 40);
+    return () => window.clearTimeout(id);
+  }, [mode]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -629,6 +639,7 @@ export function OperatorRoot({
     <div
       className="op-root"
       data-mode={1}
+      data-gravity="conversation"
       data-presentation={presentationExpanded ? "expanded" : "conversation"}
       data-developer={developer ? "on" : "off"}
       data-specialized={activeSpecialized ?? undefined}
@@ -642,6 +653,7 @@ export function OperatorRoot({
             className="op-shell"
             aria-label="Workspace conversation"
             data-operator-mode={1}
+            data-surface="gravity"
           >
             <header
               className="op-shell__chrome"
@@ -664,7 +676,8 @@ export function OperatorRoot({
                   type="button"
                   className="op-shell__btn"
                   onClick={() => void setMode(0)}
-                  title="Desktop Operator"
+                  title="Collapse to desktop companion"
+                  aria-label="Collapse"
                 >
                   Collapse
                 </button>
@@ -686,6 +699,7 @@ export function OperatorRoot({
                   className="op-shell__btn op-shell__btn--quiet"
                   onClick={() => void exitWorkspace()}
                   title="Exit Workspace"
+                  aria-label="Exit Workspace"
                 >
                   Exit
                 </button>
@@ -729,15 +743,17 @@ export function OperatorRoot({
                 }}
                 rows={2}
                 placeholder=""
-                aria-label="Message Workspace"
+                aria-label="Talk to Workspace"
                 disabled={busy}
               />
               <button
                 type="submit"
                 className="op-shell__send"
                 disabled={busy || !draft.trim()}
+                aria-label="Send"
+                title="Send"
               >
-                Send
+                ↵
               </button>
             </form>
           </section>

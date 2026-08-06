@@ -1,7 +1,8 @@
 /**
- * Two-form window lifecycle.
- * Form A (0): Desktop Operator — always visible utility.
- * Form B (1): Conversation — resizable; close/collapse → Operator (never exit).
+ * Two-form window lifecycle (Product Gravity — P12.6).
+ * Form B (1): Conversation — default launch presence; transparent host on the desktop.
+ * Form A (0): Desktop Operator — collapse / idle companion.
+ * Close/collapse of Conversation → Operator (never exit).
  * Exit Workspace ends the process — never overlapped with Collapse/Close.
  */
 
@@ -163,7 +164,8 @@ export async function applyShellMode(mode: ShellMode): Promise<void> {
   await main.setSize(new LogicalSize(size.width, size.height));
   try {
     await main.setResizable(true);
-    await main.setDecorations(true);
+    // Product Gravity: undecorated transparent host — conversation on the desktop.
+    await main.setDecorations(false);
     await main.setMinSize(
       new LogicalSize(CONVERSATION_MIN_SIZE.width, CONVERSATION_MIN_SIZE.height),
     );
@@ -253,14 +255,13 @@ export async function installMainCloseCollapse(): Promise<void> {
   });
 }
 
-/** Bootstrap: idle form is Desktop Operator unless durable Conversation. */
+/** Bootstrap: Product Gravity defaults to Conversation unless durable Operator. */
 export async function bootstrapShellOnLaunch(): Promise<void> {
   if (!isTauriRuntime()) {
     return;
   }
   const { loadShellMode } = await import("./shellRuntime");
-  // Hidden flag from older builds → Operator (always recoverable, always visible).
   setShellHidden(false);
-  const mode = loadShellMode(0);
+  const mode = loadShellMode(1);
   await applyShellMode(mode);
 }

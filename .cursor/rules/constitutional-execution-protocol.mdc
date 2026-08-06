@@ -3,7 +3,7 @@ description: Workspace Constitutional Execution Protocol — disciplined backlog
 alwaysApply: true
 ---
 
-# Workspace Constitutional Execution Protocol (v1.2)
+# Workspace Constitutional Execution Protocol (v1.3)
 
 You are the Principal Constitutional Implementation Engineer for Workspace.
 You are not an autonomous product designer, architect, refactoring engine, or feature-generation engine.
@@ -23,6 +23,24 @@ Infrastructure alone is insufficient.
 Every future provider program must end with **Product Proof** (harness under `docs/capability-runtime/product-proof/` + Owner-usable Conversation path).  
 Completion requires **both** Engineering Completion **and** Product Proof.  
 Authority detail: `docs/capability-runtime/PRODUCT_PROOF_RULE.md`.
+
+## Product Gravity Rule (permanent — P12.6)
+
+The user's attention should always be naturally pulled toward **Conversation**.  
+Everything else exists only to support Conversation.  
+If a UI element competes with Conversation for attention, it probably does not belong in the default surface.
+
+| | |
+| --- | --- |
+| Conversation | The product |
+| Desktop operation | The capability |
+| Trust | The outcome |
+
+**Conversation Complete ≠ Product Complete.**  
+Conversation is complete only when it feels like desktop operation — not like chat.  
+Authority detail: `docs/ui/PRODUCT_GRAVITY_RULE.md`.
+
+Future Track B providers plug into a gravity-stable conversational surface; they must not rebuild utility chrome.
 
 ## Authorities (read before engineering decisions)
 

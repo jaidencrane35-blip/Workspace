@@ -3189,14 +3189,20 @@ h2, h3, h4 {
   text-transform: none;
 }
 
-/* —— Desktop Operator (Form A) — companion, not a miniature app —— */
+/* —— Product Gravity (P12.6) — conversation exists on the desktop —— */
 
 html[data-shell-mode="0"],
 html[data-shell-mode="0"] body,
 html[data-shell-mode="0"] #root,
 html[data-shell-form="operator"],
 html[data-shell-form="operator"] body,
-html[data-shell-form="operator"] #root {
+html[data-shell-form="operator"] #root,
+html[data-shell-mode="1"],
+html[data-shell-mode="1"] body,
+html[data-shell-mode="1"] #root,
+html[data-shell-form="conversation"],
+html[data-shell-form="conversation"] body,
+html[data-shell-form="conversation"] #root {
   background: transparent !important;
   overflow: hidden;
 }
@@ -3261,12 +3267,14 @@ html[data-shell-form="operator"] #root {
 .op-stage--mode1,
 .op-stage--conversation {
   grid-template-columns: 1fr;
-  background: #0c1117;
+  background: transparent;
+  padding: 0;
 }
 
 .op-stage--conversation[data-dock="on"] {
   grid-template-columns: minmax(280px, 340px) 1fr;
-  background: #0a0e13;
+  background: transparent;
+  gap: 0;
 }
 
 .op-stage--mode2,
@@ -3333,9 +3341,21 @@ html[data-shell-form="operator"] #root {
   grid-template-rows: auto 1fr auto;
   height: 100%;
   min-height: 0;
-  background: #0c1117;
   border: none;
   overflow: hidden;
+  border-radius: 14px;
+  background:
+    linear-gradient(
+      165deg,
+      rgba(18, 24, 32, 0.78) 0%,
+      rgba(10, 14, 20, 0.72) 55%,
+      rgba(8, 11, 16, 0.76) 100%
+    );
+  backdrop-filter: blur(var(--mat-blur)) saturate(var(--mat-saturate));
+  -webkit-backdrop-filter: blur(var(--mat-blur)) saturate(var(--mat-saturate));
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.06),
+    0 18px 48px rgba(0, 0, 0, 0.28);
 }
 
 .op-shell__chrome {
@@ -3343,9 +3363,9 @@ html[data-shell-form="operator"] #root {
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
-  padding: 0.35rem 0.5rem 0.3rem;
+  padding: 0.42rem 0.55rem 0.28rem;
   background: transparent;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.035);
   user-select: none;
   cursor: grab;
 }
@@ -3356,11 +3376,11 @@ html[data-shell-form="operator"] #root {
   appearance: none;
   border: none;
   background: transparent;
-  color: rgba(232, 238, 242, 0.72);
+  color: rgba(232, 238, 242, 0.48);
   font-family: var(--exp-display);
-  font-weight: 600;
+  font-weight: 550;
   letter-spacing: -0.02em;
-  font-size: 0.82rem;
+  font-size: 0.74rem;
   padding: 0.15rem 0.2rem;
   display: inline-flex;
   align-items: center;
@@ -3383,21 +3403,22 @@ html[data-shell-form="operator"] #root {
   appearance: none;
   border: none;
   background: transparent;
-  color: rgba(232, 238, 242, 0.62);
+  color: rgba(232, 238, 242, 0.42);
   border-radius: 6px;
-  padding: 0.22rem 0.5rem;
-  font-size: 0.68rem;
+  padding: 0.2rem 0.42rem;
+  font-size: 0.64rem;
+  letter-spacing: 0.01em;
   cursor: pointer;
 }
 
 .op-shell__btn:hover,
 .op-health__close:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: rgba(232, 238, 242, 0.9);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(232, 238, 242, 0.78);
 }
 
 .op-shell__btn--quiet {
-  opacity: 0.55;
+  opacity: 0.45;
 }
 
 .op-shell__btn--quiet:hover {
@@ -3406,31 +3427,46 @@ html[data-shell-form="operator"] #root {
 
 .op-stage__workspace[data-satellite="true"] {
   border-left: 1px solid rgba(255, 255, 255, 0.04);
-  background: #090d12;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(12, 16, 22, 0.82) 0%,
+      rgba(8, 11, 16, 0.78) 100%
+    );
+  backdrop-filter: blur(var(--mat-blur)) saturate(var(--mat-saturate));
+  -webkit-backdrop-filter: blur(var(--mat-blur)) saturate(var(--mat-saturate));
+  border-radius: 0 14px 14px 0;
 }
 
 .op-shell__btn--primary,
 .op-shell__send {
-  background: rgba(95, 208, 216, 0.14);
-  color: rgba(232, 238, 242, 0.92);
+  background: transparent;
+  color: rgba(232, 238, 242, 0.55);
+  font-size: 0.85rem;
+  line-height: 1;
+  padding: 0.35rem 0.45rem;
 }
-.op-shell__send:disabled { opacity: 0.35; cursor: not-allowed; }
+.op-shell__send:hover:not(:disabled) {
+  color: rgba(232, 238, 242, 0.92);
+  background: rgba(255, 255, 255, 0.04);
+}
+.op-shell__send:disabled { opacity: 0.22; cursor: not-allowed; }
 
 .op-shell__transcript {
   min-height: 0;
   overflow: auto;
-  padding: 0.55rem 0.7rem 0.35rem;
+  padding: 0.85rem 0.85rem 0.45rem;
   display: flex;
   flex-direction: column;
-  gap: 0.45rem;
+  gap: 0.55rem;
   background: transparent;
 }
 
 .op-shell__waiting { flex: 1; min-height: 6rem; }
 
 .op-msg {
-  max-width: 94%;
-  padding: 0.35rem 0.15rem;
+  max-width: 96%;
+  padding: 0.2rem 0.05rem;
   border-radius: 0;
   background: transparent;
 }
@@ -3438,55 +3474,60 @@ html[data-shell-form="operator"] #root {
 .op-msg--user {
   align-self: flex-end;
   text-align: right;
-  padding: 0.3rem 0.45rem;
-  border-radius: 10px 10px 4px 10px;
-  background: rgba(255, 255, 255, 0.04);
+  padding: 0.15rem 0.1rem;
+  border-radius: 0;
+  background: transparent;
 }
 
 .op-msg--workspace {
   align-self: flex-start;
-  padding: 0.15rem 0;
+  padding: 0.1rem 0;
   background: transparent;
 }
 
 .op-msg__text {
   margin: 0;
   white-space: pre-wrap;
-  line-height: 1.42;
-  font-size: 0.86rem;
-  color: rgba(232, 238, 242, 0.92);
+  line-height: 1.45;
+  font-size: 0.9rem;
+  color: rgba(238, 242, 246, 0.94);
 }
 
 .op-msg--workspace .op-msg__text {
   color: rgba(232, 238, 242, 0.78);
 }
 
+.op-msg--user .op-msg__text {
+  color: rgba(210, 220, 230, 0.88);
+}
+
 .op-shell__composer {
   display: grid;
   grid-template-columns: 1fr auto;
-  gap: 0.35rem;
+  gap: 0.25rem;
   align-items: end;
-  padding: 0.4rem 0.5rem 0.5rem;
+  padding: 0.35rem 0.55rem 0.55rem;
   background: transparent;
-  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  border-top: 1px solid rgba(255, 255, 255, 0.035);
 }
 
 .op-shell__input {
   resize: none;
   width: 100%;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  background: rgba(0, 0, 0, 0.18);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(0, 0, 0, 0.14);
   color: var(--exp-text);
-  padding: 0.5rem 0.6rem;
+  padding: 0.55rem 0.65rem;
   font: inherit;
-  font-size: 0.86rem;
+  font-size: 0.88rem;
   line-height: 1.35;
 }
 
 .op-shell__input:focus {
   outline: none;
-  border-color: rgba(95, 208, 216, 0.35);
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.2);
 }
 
 .op-health {

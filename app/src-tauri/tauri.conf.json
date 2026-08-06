@@ -19,8 +19,11 @@
         "minWidth": 300,
         "minHeight": 400,
         "resizable": true,
-        "decorations": true,
-        "visible": false,
+        "decorations": false,
+        "transparent": true,
+        "shadow": true,
+        "visible": true,
+        "focus": true,
         "center": false,
         "x": 48,
         "y": 48
@@ -35,9 +38,9 @@
         "transparent": true,
         "shadow": false,
         "alwaysOnTop": true,
-        "skipTaskbar": false,
-        "visible": true,
-        "focus": true,
+        "skipTaskbar": true,
+        "visible": false,
+        "focus": false,
         "x": 24,
         "y": 24
       }

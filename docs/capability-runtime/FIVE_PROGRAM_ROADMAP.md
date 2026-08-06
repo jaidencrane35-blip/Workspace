@@ -1,9 +1,10 @@
 # Rolling Capability Provider Roadmap
-## Updated after P12.5 Window Product Proof
+## Updated after P12.6 Conversational Desktop Surface
 
 UI Architecture, Desktop Operator, Conversation, and Capability Runtime pipeline remain **frozen**.  
 Providers own **operations**. Providers never call each other.  
-Every provider requires **Engineering Completion + Product Proof**.
+Every provider requires **Engineering Completion + Product Proof**.  
+Conversation surface follows **Product Gravity** (P12.6) — providers plug into a product-ready conversational host.
 
 ---
 
@@ -14,7 +15,8 @@ Every provider requires **Engineering Completion + Product Proof**.
 | **P10** | Capability Runtime Foundation + Clipboard | `23492a8` |
 | **P11** | Application Provider | `330a26b` |
 | **P12** | Window Provider (engineering) | `66465b8` |
-| **P12.5** | Window Conversation Product Proof | this milestone |
+| **P12.5** | Window Conversation Product Proof | `40dd746` |
+| **P12.6** | Conversational Desktop Surface / Product Gravity | this milestone |
 
 ---
 
@@ -22,7 +24,7 @@ Every provider requires **Engineering Completion + Product Proof**.
 
 | Program | Title | Why |
 | --- | --- | --- |
-| **P13** | Notifications Provider | Lightweight outbound feedback — **must include Product Proof** |
+| **P13** | Notifications Provider | Lightweight outbound feedback — **must include Product Proof**; plugs into gravity surface |
 | **P14** | Browser Provider | URL open (WRAP) |
 | **P15** | Screenshot Provider | Capture under consent |
 | **P16** | File Provider | Scoped FS for later automation |

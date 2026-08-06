@@ -17,6 +17,7 @@ function fail(msg) {
 const required = [
   "docs/ui/UI_ARCHITECTURE_SPECIFICATION.md",
   "docs/ui/PRODUCT_PRESENTATION_SPECIFICATION.md",
+  "docs/ui/PRODUCT_GRAVITY_RULE.md",
   "docs/ui/COMPONENT_OWNERSHIP_MAP.md",
   "docs/ui/WINDOW_LIFECYCLE_SPECIFICATION.md",
   "docs/ui/LAYER_OWNERSHIP_MAP.md",
@@ -50,6 +51,7 @@ for (const token of [
   "Track B",
   "Track C",
   "conversation-defining",
+  "Product Gravity",
 ]) {
   if (!spec.includes(token)) {
     fail(`UI Architecture Spec missing required token: ${token}`);

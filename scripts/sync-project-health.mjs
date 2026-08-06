@@ -51,6 +51,7 @@ const verifiers = {
   "verify:capability-runtime-foundation":
     "scripts/verify-capability-runtime-foundation.mjs",
   "verify:product-proof-harness": "scripts/verify-product-proof-harness.mjs",
+  "verify:product-gravity": "scripts/verify-product-gravity.mjs",
 };
 
 const verifierStatus = {};
@@ -253,6 +254,17 @@ const completedPrograms = [
       "app/src/lib/intentBridge.ts",
     ],
   },
+  {
+    id: "conversational-desktop-surface-p12-6",
+    backlogRef: "P12.6 Conversational Desktop Surface",
+    completed: "2026-08-07",
+    artifacts: [
+      "docs/ui/PRODUCT_GRAVITY_RULE.md",
+      "pnpm verify:product-gravity",
+      "app/src-tauri/tauri.conf.json",
+      "app/src/components/operator/OperatorRoot.tsx",
+    ],
+  },
 ];
 
 const remainingBacklog = [
@@ -335,14 +347,14 @@ const health = {
   engineeringMode: "constitutional-execution",
   protocol: {
     document: ".cursor/rules/constitutional-execution-protocol.mdc",
-    version: "1.2",
+    version: "1.3",
     machineState: "docs/project-health.json",
   },
   currentExecutionProgram: {
-    id: "window-provider-product-proof-p12-5",
-    title: "P12.5 Conversation Integration & Product Proof",
+    id: "conversational-desktop-surface-p12-6",
+    title: "P12.6 Conversational Desktop Surface",
     status: "complete_awaiting_owner_review",
-    note: "Window Provider connected to Conversation with Product Proof harness. Permanent Product Proof Rule adopted. Await Owner Product Proof review before P13.",
+    note: "Product Gravity Rule adopted. Conversation-first launch; transparent undecorated host. Await Owner review before P13.",
   },
   completedExecutionPrograms: completedPrograms,
   remainingBacklog,
@@ -363,7 +375,8 @@ const health = {
     capabilityRuntimeFoundation: "accepted",
     applicationProvider: "accepted",
     windowProvider: "engineering_complete",
-    windowProviderProductProof: "complete_awaiting_owner_review",
+    windowProviderProductProof: "shipped_awaiting_owner",
+    conversationalDesktopSurface: "complete_awaiting_owner_review",
     notes: [
       "UI Architecture Spec accepted/frozen (P8)",
       "Capability Runtime research accepted (P9)",
@@ -371,13 +384,14 @@ const health = {
       "Application Provider accepted (P11)",
       "Window Provider Levels 1–2 engineering complete (P12)",
       "Window Provider Conversation Product Proof shipped (P12.5)",
-      "Product Proof Rule permanent — Engineering + Product Proof required",
+      "Conversational Desktop Surface + Product Gravity (P12.6)",
+      "Product Proof Rule + Product Gravity Rule permanent",
       "Providers own operations; independently testable",
     ],
   },
   currentMilestone: {
-    id: "window-provider-product-proof-p12-5",
-    title: "P12.5 Conversation Integration & Product Proof",
+    id: "conversational-desktop-surface-p12-6",
+    title: "P12.6 Conversational Desktop Surface",
     status: "awaiting_owner_review",
     commit: milestoneCommit,
   },
@@ -424,7 +438,7 @@ const health = {
     {
       id: "capability-providers-p13-plus",
       track: "B",
-      summary: "Notifications / Browser / Screenshot / File providers await Owner Product Proof acceptance of P12.5",
+      summary: "Notifications / Browser / Screenshot / File providers await Owner acceptance of Product Gravity surface (P12.6) + prior Product Proof",
     },
     {
       id: "tray-integration",
@@ -452,6 +466,7 @@ const health = {
       "UI Architecture Spec accepted and frozen",
       "Capability Runtime + Application + Window providers (P10–P12)",
       "Window Provider Conversation Product Proof (P12.5)",
+      "Conversational Desktop Surface / Product Gravity (P12.6)",
       "Non-PP domain.ts remains manual (G1 remainder)",
       "Documentation authority still fragmented (G3)",
     ],
@@ -518,15 +533,15 @@ const health = {
   },
   lastMilestone: {
     date: "2026-08-07",
-    document: "docs/capability-runtime/product-proof/WINDOW_PROVIDER_PRODUCT_PROOF.md",
-    title: "P12.5 Conversation Integration & Product Proof",
-    reviewBrief: "docs/capability-runtime/PRODUCT_PROOF_RULE.md",
+    document: "docs/ui/PRODUCT_GRAVITY_RULE.md",
+    title: "P12.6 Conversational Desktop Surface",
+    reviewBrief: "docs/ui/PRODUCT_GRAVITY_RULE.md",
   },
-  handoffStatus: "AWAITING_PROJECT_OWNER_WINDOW_PRODUCT_PROOF_REVIEW",
+  handoffStatus: "AWAITING_PROJECT_OWNER_PRODUCT_GRAVITY_REVIEW",
   nextRecommendedExecutionProgram: {
     id: "notifications-provider-p13",
-    title: "P13 Notifications Provider (reassess after Owner Product Proof)",
-    blockedUntil: "Project Owner confirms Window Provider usable through Conversation",
+    title: "P13 Notifications Provider (reassess after Owner Product Gravity review)",
+    blockedUntil: "Project Owner confirms Conversation feels like desktop operation under Product Gravity",
   },
   capabilityEvolution: {
     document: "docs/capability-evolution/README.md",

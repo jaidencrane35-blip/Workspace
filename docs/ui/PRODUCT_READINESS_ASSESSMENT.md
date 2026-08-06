@@ -3,6 +3,7 @@
 | Area | Status | Notes |
 | --- | --- | --- |
 | Shell lifecycle Form A/B | **Accepted** | P6 (`11bab9d`) |
+| Product Gravity / Conversation surface | **Review** | P12.6 — Conversation-first, transparent host |
 | Compact conversation sizing | Implemented | P7 |
 | Presentation authority | **Established** | This program — UI Architecture Spec |
 | Conversation-defining chrome | In progress | Material convergence in P8 runtime |

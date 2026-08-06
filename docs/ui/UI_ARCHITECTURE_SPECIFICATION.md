@@ -5,10 +5,11 @@
 | --- | --- |
 | **Status** | Authoritative — extend, do not redesign |
 | **Program** | P8 Final Product Presentation Refoundation |
+| **Extended by** | P12.6 Product Gravity Rule (`PRODUCT_GRAVITY_RULE.md`) |
 | **Date** | 2026-08-07 |
 | **Preserves** | Accepted shell Form A/B (P5–P6); compact sizing (P7) |
 | **Subordinate to** | Architectural Constitution V2 · Product Constitution |
-| **Companion docs** | Product Presentation · Component Ownership · Window Lifecycle · Layer Ownership |
+| **Companion docs** | Product Gravity · Product Presentation · Component Ownership · Window Lifecycle · Layer Ownership |
 
 ---
 
@@ -190,16 +191,19 @@ Collapse is a **mode switch**, never a resize of conversation into the operator.
 
 ## 9. Visual design rules
 
-Owner law: **the application should visually disappear around the conversation.**
+Owner law: **the application should visually disappear around the conversation.**  
+Product Gravity (P12.6): **Conversation should feel like it exists on top of Windows.**
 
-For every element: *Does this improve conversation?* If not → remove, move, hide, or quiet.
+For every element: *Does this improve conversation?* If not → remove, move, hide, or quiet.  
+Also: *Does this compete with Conversation for attention?* If yes → it does not belong in the default surface.
 
 | Prefer | Avoid |
 | --- | --- |
-| Transparent / quiet chrome | Heavy title bars and tool frames |
+| Transparent / quiet conversation host | Framed utility / heavy OS title bar as product identity |
 | Transcript as hero | Dashboard density |
 | Soft message treatment | Card grids and bubble stacks as identity |
-| Native Windows decorations on `main` | Custom OS-chrome cosplay that fights Windows |
+| Whisper Collapse / Exit / brand | Chrome that reads as an application menubar |
+| Compact presence on the desktop | Centered dominance or opaque app slab |
 
 ---
 

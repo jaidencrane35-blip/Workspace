@@ -24,7 +24,7 @@ async function resolveShellEntry(): Promise<React.ReactElement> {
       return <DesktopOperator />;
     }
     // Main window: if durable mode is floating, keep App mounted (hidden) for recovery.
-    const mode = loadShellMode(0);
+    const mode = loadShellMode(1);
     if (mode === 0) {
       // Still mount App so close/sync handlers live; window stays hidden.
       return <App />;

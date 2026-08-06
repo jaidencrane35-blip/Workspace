@@ -1,28 +1,29 @@
 # Engineering Milestone Report
-## P12.5 Conversation Integration & Product Proof
+## P12.6 Conversational Desktop Surface
 
 | Field | Value |
 | --- | --- |
-| **Execution program** | P12.5 Conversation Integration & Product Proof |
+| **Execution program** | P12.6 Conversational Desktop Surface |
 | **Date** | 2026-08-07 |
-| **Prior** | P12 Window Provider engineering (`66465b8`) — not reimplemented |
-| **Commit** | `40dd746` |
-| **Handoff** | `AWAITING_PROJECT_OWNER_WINDOW_PRODUCT_PROOF_REVIEW` |
-| **Index** | `docs/capability-runtime/product-proof/WINDOW_PROVIDER_PRODUCT_PROOF.md` |
+| **Prior** | P12.5 Window Product Proof (`40dd746`) — not a provider program |
+| **Commit** | pending |
+| **Handoff** | `AWAITING_PROJECT_OWNER_PRODUCT_GRAVITY_REVIEW` |
+| **Index** | `docs/ui/PRODUCT_GRAVITY_RULE.md` |
 
 ---
 
 ## Mission
 
-Close the Product Proof gap identified by the Product Owner (“Nothing has changed”).  
-Connect the completed Window Provider to Conversation so the capability is naturally usable, with truthful feedback and no provider jargon.
+Make Conversation finally feel like the product: a lightweight desktop companion where attention lands on the thread, the frame recedes, and Workspace exists on top of Windows — not as a framed utility.
 
 ---
 
-## Product Proof Rule (permanent)
+## Permanent rules adopted
 
-Documented in `docs/capability-runtime/PRODUCT_PROOF_RULE.md` and protocol v1.2.  
-Providers require Engineering Completion **and** Product Proof before they are Product Complete.
+| Rule | Authority |
+| --- | --- |
+| **Product Gravity Rule** | `docs/ui/PRODUCT_GRAVITY_RULE.md` · protocol v1.3 |
+| Conversation Complete ≠ Product Complete | Conversation must feel like desktop operation, not chat |
 
 ---
 
@@ -30,29 +31,30 @@ Providers require Engineering Completion **and** Product Proof before they are P
 
 | Artifact | Path |
 | --- | --- |
-| Conversation window intents | `app/src/lib/intentBridge.ts` (`resolveWindowIntent`) |
-| Truthful Conversation execution | `app/src/components/operator/OperatorRoot.tsx` |
-| Active-window deixis (“this”) | `packages/kernel/src/capability_runtime/window_provider.rs` |
-| Product Proof Rule | `docs/capability-runtime/PRODUCT_PROOF_RULE.md` |
-| Window Product Proof harness | `docs/capability-runtime/product-proof/*` |
-| Verifier | `pnpm verify:product-proof-harness` |
-| Protocol | `.cursor/rules/constitutional-execution-protocol.mdc` v1.2 |
+| Product Gravity Rule | `docs/ui/PRODUCT_GRAVITY_RULE.md` |
+| Conversation-first launch | `shellRuntime` / `bootstrapShellOnLaunch` default Form B |
+| Transparent undecorated host | `app/src-tauri/tauri.conf.json` + `shellWindows` |
+| Gravity surface presentation | `OperatorRoot` + `App.css` |
+| Verifier | `pnpm verify:product-gravity` |
 
 ---
 
 ## User-visible
 
-Conversation understands natural window requests (list / active / snap / center / maximize / restore / focus / monitor move / resize) and reports real outcomes.
+- Launch opens Conversation (not the floating W)
+- Conversation sits on a translucent host without OS title bar
+- Chrome whispers; transcript owns attention; composer focuses ready to speak
+- Collapse still returns to the Desktop Operator companion
 
 ---
 
 ## Explicit non-goals
 
-P13 Notifications · UI redesign · Conversation chrome redesign · Reimplementing P12 Window Provider
+P13 Notifications · new providers · redesign Form A/B model · Conversation chrome IA expansion
 
 ---
 
 ## Stop
 
-Wait for Product Owner Product Proof review before P13.  
-Acceptance requires the Owner can use Window Provider through Conversation.
+Wait for Product Owner Product Gravity review before P13.  
+Acceptance: Conversation feels like desktop operation, not chat.

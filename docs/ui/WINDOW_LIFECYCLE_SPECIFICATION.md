@@ -10,11 +10,13 @@
 ## Transitions
 
 ```
-Running → Form A (default launch)
+Running → Form B Conversation (Product Gravity default)
+Form B --Collapse|Close--> Form A Operator
 Form A --click--> Form B
-Form B --Collapse|Close--> Form A
 Form A|B --Exit--> Process end
 ```
+
+Durable mode still restores the last form. Fresh / unset mode opens Conversation.
 
 ## Invariants
 
@@ -24,6 +26,7 @@ Form A|B --Exit--> Process end
 4. While Form B: `operator` hidden.  
 5. Geometry of `main` persisted independently of operator.  
 6. Sizes normalized via `normalizeConversationSize` (compact-first).  
+7. Conversation host is undecorated / transparent — presence on the desktop, not a framed utility.  
 
 ## Expanded Workspace (presentation)
 
