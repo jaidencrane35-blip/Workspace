@@ -7,7 +7,7 @@
 | **Date** | 2026-08-07 |
 | **Prior** | P3 Windows Shell Completion (`0a50f19`) |
 | **Repository version** | `0.1.0` |
-| **Commit** | _(filled after commit)_ |
+| **Commit** | `23d9d01` |
 | **Handoff** | `AWAITING_PROJECT_OWNER_DESKTOP_OPERATOR_FOUNDATION_REVIEW` |
 | **Detail** | `docs/execution-program-native-windows-shell-lifecycle.md` |
 
