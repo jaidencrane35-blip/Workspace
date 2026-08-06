@@ -95,6 +95,9 @@ use crate::commands::personalization::{
 use crate::commands::pipeline::CommandPipeline;
 use crate::commands::reject_suggestion::RejectSuggestion;
 use crate::commands::request_execution_cancellation::RequestExecutionCancellation;
+use crate::commands::clipboard::{
+    ClipboardReadResult, ClipboardWriteResult, ReadClipboard, WriteClipboard,
+};
 use crate::commands::update_settings::UpdateSettings;
 use crate::commands::widget::{CreateWidget, DeleteWidget, GetWidget};
 use crate::commands::workspace_intent::{
@@ -217,6 +220,26 @@ impl CommandHandler {
     ) -> Result<WorkspaceSettings> {
         CommandPipeline::new(kernel.command_context(actor, intent))
             .execute_mutation(UpdateSettings::new(update))
+    }
+
+    /// Reads clipboard text through Capability Runtime (P10 reference provider).
+    pub fn read_clipboard(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+    ) -> Result<ClipboardReadResult> {
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_query(ReadClipboard)
+    }
+
+    /// Writes clipboard text through Capability Runtime (P10 reference provider).
+    pub fn write_clipboard(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        text: String,
+    ) -> Result<ClipboardWriteResult> {
+        CommandPipeline::new(kernel.command_context(actor, intent))
+            .execute_mutation(WriteClipboard::new(text))
     }
 
     pub fn create_workspace(

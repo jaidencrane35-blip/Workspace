@@ -269,6 +269,22 @@ impl Capability {
             scope: CapabilityScope::System,
         }
     }
+
+    /// Read system clipboard text (sensitive — audit length/format only).
+    pub fn clipboard_read() -> Self {
+        Self {
+            id: CapabilityId::new("clipboard.read").expect("clipboard.read is valid"),
+            scope: CapabilityScope::System,
+        }
+    }
+
+    /// Write system clipboard text.
+    pub fn clipboard_write() -> Self {
+        Self {
+            id: CapabilityId::new("clipboard.write").expect("clipboard.write is valid"),
+            scope: CapabilityScope::System,
+        }
+    }
 }
 
 impl CapabilitySet {
@@ -333,6 +349,8 @@ impl CapabilitySet {
             .with_capability(&Capability::action_plan_resolve())
             .with_capability(&Capability::action_window_place())
             .with_capability(&Capability::action_window_focus())
+            .with_capability(&Capability::clipboard_read())
+            .with_capability(&Capability::clipboard_write())
     }
 
     /// Capabilities attributed to system lifecycle operations.

@@ -12,4 +12,7 @@ pub enum WindowsIntegrationError {
 
     #[error("Invalid launch target: {0}")]
     InvalidLaunchTarget(String),
+
+    #[error("Clipboard failed: {0}")]
+    ClipboardFailed(String),
 }

@@ -111,6 +111,7 @@ export const DEVELOPER_IPC_COMMANDS = [
   "pause_automation_contract",
   "postpone_decision_candidate",
   "present_recommendation",
+  "read_clipboard",
   "record_and_evaluate_triggers",
   "record_assistant_explanation_viewed",
   "regenerate_assistant_plan",
@@ -141,6 +142,7 @@ export const DEVELOPER_IPC_COMMANDS = [
   "validate_workspace_transitions",
   "validate_workspace_work_context",
   "validate_workspace_working_style",
+  "write_clipboard",
 ] as const;
 
 export const DIAGNOSTIC_IPC_COMMANDS = [
@@ -386,6 +388,7 @@ export const REGISTERED_IPC_COMMANDS = [
   "postpone_decision_candidate",
   "prepare_automation_contract_intent",
   "present_recommendation",
+  "read_clipboard",
   "record_and_evaluate_triggers",
   "record_assistant_explanation_viewed",
   "record_pilot_baseline",
@@ -433,19 +436,20 @@ export const REGISTERED_IPC_COMMANDS = [
   "validate_workspace_work_context",
   "validate_workspace_working_style",
   "withdraw_pilot_consent",
+  "write_clipboard",
 ] as const;
 
 
 export type IpcTier = "product" | "developer" | "diagnostic" | "experimental";
 
 export const IPC_TIER_COUNTS = {
-  "registered": 198,
+  "registered": 200,
   "product": 20,
-  "developer": 112,
+  "developer": 114,
   "diagnostic": 37,
   "experimental": 29,
   "quarantine": 16,
-  "reactUsed": 156
+  "reactUsed": 158
 } as const;
 
 const productSet = new Set<string>(PRODUCT_IPC_COMMANDS);

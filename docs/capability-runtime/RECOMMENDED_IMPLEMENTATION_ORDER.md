@@ -14,11 +14,12 @@ UI Architecture remains frozen. Each phase is a **separate** constitutional exec
 
 ## Phase 1 — Safe I/O verticals (V1 candidate)
 
-1. **Clipboard** (WRAP `arboard`) — read/write with permission  
-2. **Notifications** (WRAP Tauri plugin) — sparse system feedback  
-3. **Browser open** (WRAP `webbrowser`) — URL open only  
+1. **Clipboard** (WRAP `arboard`) — read/write with permission — **shipped as P10 reference provider**  
+2. **Notifications** (WRAP Tauri plugin) — sparse system feedback — roadmap P13  
+3. **Browser open** (WRAP `webbrowser`) — URL open only — roadmap P14  
 
-*Why first:* High user value, limited blast radius, clear conversation entry.
+*Why first:* High user value, limited blast radius, clear conversation entry.  
+*P10 also freezes* Intent → Router → Registry → Provider pipeline (`CAPABILITY_RUNTIME_FOUNDATION.md`).
 
 ## Phase 2 — Capture & Moments deepen
 

@@ -34,6 +34,8 @@ export type IntentAction =
   | { kind: "health"; reply: string }
   | { kind: "developer"; enabled: boolean; reply: string }
   | { kind: "proposal"; reply: string }
+  | { kind: "clipboardRead"; reply: string }
+  | { kind: "clipboardWrite"; text: string; reply: string }
   | { kind: "unknown"; reply: string; suggestion?: string };
 
 function normalize(input: string): string {
@@ -266,6 +268,34 @@ export function resolveIntent(raw: string): IntentAction {
       kind: "settings",
       reply:
         "There’s no Settings surface in this shell. Collapse returns to the desktop operator; Exit Workspace quits. Ask Guide for trust limits.",
+    };
+  }
+
+  const clipboardWrite = raw
+    .trim()
+    .match(
+      /^(?:copy(?:\s+to\s+clipboard)?|clipboard\s+write|put\s+on\s+clipboard)\s*[:\s]+(.+)$/i,
+    );
+  if (clipboardWrite?.[1]) {
+    const payload = clipboardWrite[1].trim();
+    if (payload.length > 0) {
+      return {
+        kind: "clipboardWrite",
+        text: payload,
+        reply: "Writing to the clipboard through Capability Runtime.",
+      };
+    }
+  }
+
+  if (
+    /\b(what'?s on my clipboard|read clipboard|show clipboard|clipboard)\b/.test(
+      text,
+    ) ||
+    text === "clipboard?"
+  ) {
+    return {
+      kind: "clipboardRead",
+      reply: "Reading the clipboard through Capability Runtime.",
     };
   }
 

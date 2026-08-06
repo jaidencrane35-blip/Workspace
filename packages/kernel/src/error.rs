@@ -145,6 +145,9 @@ pub enum KernelError {
     #[error("Windows integration error: {message}")]
     WindowsIntegration { message: String },
 
+    #[error("Capability runtime error: {message}")]
+    CapabilityRuntime { message: String },
+
     #[error("Invalid launch target: {message}")]
     InvalidLaunchTarget { message: String },
 
@@ -911,6 +914,10 @@ impl KernelError {
             },
             KernelError::WindowsIntegration { message } => PublicError {
                 code: "windows_integration_error".into(),
+                message: message.clone(),
+            },
+            KernelError::CapabilityRuntime { message } => PublicError {
+                code: "capability_runtime_error".into(),
                 message: message.clone(),
             },
             KernelError::InvalidLaunchTarget { message } => PublicError {

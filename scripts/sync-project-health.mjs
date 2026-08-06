@@ -48,6 +48,8 @@ const verifiers = {
   "verify:ui-architecture": "scripts/verify-ui-architecture.mjs",
   "verify:capability-runtime-research":
     "scripts/verify-capability-runtime-research.mjs",
+  "verify:capability-runtime-foundation":
+    "scripts/verify-capability-runtime-foundation.mjs",
 };
 
 const verifierStatus = {};
@@ -208,6 +210,17 @@ const completedPrograms = [
       "docs/capability-runtime/OPEN_SOURCE_ADOPTION_MATRIX.md",
     ],
   },
+  {
+    id: "capability-runtime-foundation-p10",
+    backlogRef: "P10 Capability Runtime Foundation",
+    completed: "2026-08-07",
+    artifacts: [
+      "docs/capability-runtime/CAPABILITY_RUNTIME_FOUNDATION.md",
+      "pnpm verify:capability-runtime-foundation",
+      "packages/kernel/src/capability_runtime/mod.rs",
+      "docs/capability-runtime/CLIPBOARD_PROVIDER.md",
+    ],
+  },
 ];
 
 const remainingBacklog = [
@@ -294,10 +307,10 @@ const health = {
     machineState: "docs/project-health.json",
   },
   currentExecutionProgram: {
-    id: "capability-runtime-research-p9",
-    title: "P9 Capability Runtime Research & Adoption Strategy",
+    id: "capability-runtime-foundation-p10",
+    title: "P10 Capability Runtime Foundation",
     status: "complete_awaiting_owner_review",
-    note: "Track B research complete: domains, OSS matrix, contracts, order. No capability V1 code. Await owner review before Capability Runtime V1.",
+    note: "Runtime pipeline frozen; Provider Registry + Clipboard reference provider (WRAP arboard). P11–P14 designed only. Await Owner review before P11.",
   },
   completedExecutionPrograms: completedPrograms,
   remainingBacklog,
@@ -314,17 +327,18 @@ const health = {
     compactConversation: "implemented",
     nativeFeel: "in_progress",
     presentationAuthority: "accepted",
-    capabilityRuntimeResearch: "complete",
+    capabilityRuntimeResearch: "accepted",
+    capabilityRuntimeFoundation: "complete",
     notes: [
-      "UI Architecture Spec accepted (P8)",
-      "Capability Runtime research pack complete (P9) — no V1 impl yet",
+      "UI Architecture Spec accepted/frozen (P8)",
+      "Capability Runtime research accepted (P9)",
+      "Capability Runtime Foundation + Clipboard reference (P10)",
       "Zero platform ADOPT; WRAP commodity crates behind contracts",
-      "Recommended V1 slice: clipboard → notifications → browser open",
     ],
   },
   currentMilestone: {
-    id: "capability-runtime-research-p9",
-    title: "P9 Capability Runtime Research & Adoption Strategy",
+    id: "capability-runtime-foundation-p10",
+    title: "P10 Capability Runtime Foundation",
     status: "awaiting_owner_review",
     commit: milestoneCommit,
   },
@@ -341,12 +355,18 @@ const health = {
       commit: "c045eb0",
       acceptedAt: "2026-08-07",
     },
+    {
+      id: "p9",
+      title: "Capability Runtime Research",
+      commit: "34647bd",
+      acceptedAt: "2026-08-07",
+    },
   ],
   outstandingProductDebt: [
     {
-      id: "capability-runtime-v1",
+      id: "capability-providers-p11-plus",
       track: "B",
-      summary: "Capability Runtime V1 not started — blocked on Owner review of P9",
+      summary: "Application / Window / Notifications / Browser providers await Owner review of P10",
     },
     {
       id: "tray-integration",
@@ -372,7 +392,7 @@ const health = {
     notes: [
       "Frontend production build succeeds",
       "UI Architecture Spec accepted and frozen",
-      "Capability Runtime research complete; V1 not implemented",
+      "Capability Runtime Foundation + Clipboard reference provider (P10)",
       "Non-PP domain.ts remains manual (G1 remainder)",
       "Documentation authority still fragmented (G3)",
     ],
@@ -439,15 +459,15 @@ const health = {
   },
   lastMilestone: {
     date: "2026-08-07",
-    document: "docs/capability-runtime/CAPABILITY_RUNTIME_RESEARCH_REPORT.md",
-    title: "P9 Capability Runtime Research & Adoption Strategy",
+    document: "docs/capability-runtime/CAPABILITY_RUNTIME_FOUNDATION.md",
+    title: "P10 Capability Runtime Foundation",
     reviewBrief: "docs/capability-runtime/00_INDEX.md",
   },
-  handoffStatus: "AWAITING_PROJECT_OWNER_CAPABILITY_RUNTIME_RESEARCH_REVIEW",
+  handoffStatus: "AWAITING_PROJECT_OWNER_CAPABILITY_RUNTIME_FOUNDATION_REVIEW",
   nextRecommendedExecutionProgram: {
-    id: "capability-runtime-v1",
-    title: "Capability Runtime V1 (approved thin slice only)",
-    blockedUntil: "Project Owner Capability Runtime research review",
+    id: "application-provider-p11",
+    title: "P11 Application Provider (reassess after Owner review)",
+    blockedUntil: "Project Owner Capability Runtime Foundation review",
   },
   capabilityEvolution: {
     document: "docs/capability-evolution/README.md",

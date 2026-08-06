@@ -4,6 +4,7 @@
 //! traits — never Win32 directly.
 
 mod capture;
+mod clipboard;
 mod enumerator;
 mod error;
 mod launcher;
@@ -21,6 +22,9 @@ pub use capture::{
     monitor_index_for_point, monitor_index_for_window_bounds, CaptureMetadata,
     CapturedDesktopMonitor, CapturedDesktopWindow, DesktopCapturer, DesktopObservationCapture,
     STUB_DESKTOP_SESSION_ID,
+};
+pub use clipboard::{
+    platform_clipboard, ArboardClipboard, ClipboardPort, MemoryClipboard,
 };
 pub use enumerator::{DesktopWindowSnapshot, WindowEnumerator};
 pub use error::{Result, WindowsIntegrationError};

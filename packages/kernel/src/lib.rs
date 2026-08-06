@@ -3,6 +3,7 @@
 //! Owns application lifecycle, state, configuration, service registration,
 //! internal events, command pipeline, and permission boundaries.
 
+pub mod capability_runtime;
 pub mod commands;
 pub mod config;
 pub mod error;
@@ -15,7 +16,13 @@ pub mod security;
 pub mod services;
 pub mod state;
 
-pub use commands::{CommandHandler, ResumePlanPreview};
+pub use capability_runtime::{
+    runtime as capability_runtime, CapabilityDomainId, CapabilityOperation, CapabilityRouter,
+    ProviderDescriptor, ProviderInvokeRequest, ProviderInvokeResponse, ProviderRegistry,
+};
+pub use commands::{
+    ClipboardReadResult, ClipboardWriteResult, CommandHandler, ResumePlanPreview,
+};
 pub use config::{ConfigManager, SettingsUpdate, WorkspaceSettings};
 pub use error::{KernelError, PublicError, Result};
 pub use events::{DomainEvent, EventBus};

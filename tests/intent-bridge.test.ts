@@ -22,4 +22,14 @@ describe("intent bridge", () => {
   it("opens repository health as a secondary surface", () => {
     expect(resolveIntent("repository health").kind).toBe("health");
   });
+
+  it("routes clipboard intents through Capability Runtime kinds", () => {
+    expect(resolveIntent("what's on my clipboard")).toMatchObject({
+      kind: "clipboardRead",
+    });
+    expect(resolveIntent("copy to clipboard: hello p10")).toMatchObject({
+      kind: "clipboardWrite",
+      text: "hello p10",
+    });
+  });
 });

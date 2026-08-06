@@ -53,14 +53,20 @@ Cross-capability message envelopes remain governed by `architecture/10_Capabilit
 | | |
 | --- | --- |
 | **Purpose** | Read/write clipboard under permission |
-| **Examples** | “What’s on my clipboard?” / “Copy that path.” |
+| **Examples** | “What’s on my clipboard?” / “Copy to clipboard: …” |
 | **Permissions** | `clipboard.read` (sensitive), `clipboard.write` |
 | **Arguments** | `format?` · `text?` |
 | **Results** | Payload summary + truncated preview |
-| **Failures** | Locked clipboard; unsupported format |
+| **Failures** | Locked clipboard; unsupported format; permission denied |
 | **Rollback** | N/A for read; write may restore previous if buffered |
 | **Audit** | format + length — not full secrets by default |
 | **Future** | Image clipboard; history (explicit opt-in) |
+| **P10 status** | **Reference provider shipped** — see `CLIPBOARD_PROVIDER.md` |
+| **Adoption** | WRAP `arboard` behind `ClipboardPort` |
+| **Rust** | `ClipboardProvider` + `ReadClipboard` / `WriteClipboard` |
+| **TypeScript** | Intent kinds `clipboardRead` / `clipboardWrite` → IPC only |
+| **IPC** | `read_clipboard`, `write_clipboard` |
+| **Pipeline** | Intent → Router → Registry → ClipboardProvider → ClipboardPort → reply |
 
 ---
 

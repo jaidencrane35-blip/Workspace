@@ -9,6 +9,7 @@ import {
   useState,
 } from "react";
 import { resolveIntent, streamText } from "../../lib/intentBridge";
+import { IpcCommandError, invokeIpc } from "../../lib/ipc";
 import { matchMomentByName } from "../../lib/momentMatch";
 import {
   SHELL_MODE_EVENT,
@@ -252,6 +253,52 @@ export function OperatorRoot({
         case "proposal":
           await pushWorkspace(action.reply);
           break;
+        case "clipboardRead": {
+          try {
+            const result = await invokeIpc<{
+              format: string;
+              bytes: number;
+              preview: string;
+              text: string;
+            }>("read_clipboard");
+            if (!result.text) {
+              await pushWorkspace(
+                "Clipboard is empty (or has no text). Capability Runtime read completed.",
+              );
+            } else {
+              await pushWorkspace(
+                `Clipboard (${result.format}, ${result.bytes} bytes):\n${result.preview}`,
+              );
+            }
+          } catch (error) {
+            const message =
+              error instanceof IpcCommandError
+                ? error.message
+                : "Clipboard read failed.";
+            await pushWorkspace(message);
+          }
+          break;
+        }
+        case "clipboardWrite": {
+          try {
+            const result = await invokeIpc<{
+              format: string;
+              bytes: number;
+              preview: string;
+              message: string;
+            }>("write_clipboard", { text: action.text });
+            await pushWorkspace(
+              `${result.message} (${result.bytes} bytes). Preview: ${result.preview}`,
+            );
+          } catch (error) {
+            const message =
+              error instanceof IpcCommandError
+                ? error.message
+                : "Clipboard write failed.";
+            await pushWorkspace(message);
+          }
+          break;
+        }
         case "unknown":
           await pushWorkspace(
             action.suggestion
