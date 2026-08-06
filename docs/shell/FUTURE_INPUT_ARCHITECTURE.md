@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | **Status** | Architecture — **not implemented** |
-| **Program** | P3 Windows Shell Completion |
+| **Program** | P3–P4 Desktop Operator Foundation |
 | **Law** | Keyboard / Voice / Screenshot / Clipboard / Drag-drop feed **one** intent pipeline |
 
 ---

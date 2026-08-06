@@ -30,6 +30,7 @@ export type IntentAction =
   | { kind: "saveAs"; name: string; reply: string }
   | { kind: "expand"; reply: string }
   | { kind: "collapse"; reply: string }
+  | { kind: "settings"; reply: string }
   | { kind: "health"; reply: string }
   | { kind: "developer"; enabled: boolean; reply: string }
   | { kind: "proposal"; reply: string }
@@ -262,10 +263,9 @@ export function resolveIntent(raw: string): IntentAction {
 
   if (/\b(settings|preferences|options)\b/.test(text)) {
     return {
-      kind: "unknown",
+      kind: "settings",
       reply:
-        "There isn’t a separate Settings surface in Product Proof yet. Closest: Guide (trust limits) or expand Workspace for Home / Save / Continue. Presentation tweaks can be proposed (“make the background transparent”).",
-      suggestion: "Try “open guide”, “expand”, or describe a preference.",
+        "Opening Settings. Preferences that aren’t wired yet stay listed as not available — I won’t invent controls.",
     };
   }
 

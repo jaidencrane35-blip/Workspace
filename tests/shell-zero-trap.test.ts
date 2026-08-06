@@ -22,12 +22,17 @@ describe("Zero-Trap shell state machine", () => {
     expect(canTransition(1, 2)).toBe(true);
   });
 
-  it("exposes Open / Expand / Hide / Exit from floating mode", () => {
+  it("exposes Open / Expand / Hide / Settings / Exit from floating mode", () => {
     const labels = SHELL_EXITS[0].map((e) => e.label);
     expect(labels).toContain("Open Workspace");
     expect(labels).toContain("Expand Workspace");
     expect(labels).toContain("Hide");
+    expect(labels).toContain("Settings");
     expect(labels).toContain("Exit Workspace");
+  });
+
+  it("allows floating → specialized for Settings", () => {
+    expect(canTransition(0, 3)).toBe(true);
   });
 
   it("keeps specialized mode recoverable", () => {

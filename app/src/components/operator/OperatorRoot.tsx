@@ -14,7 +14,9 @@ import {
   SHELL_MODE_EVENT,
   isTauriRuntime,
   loadShellMode,
+  loadSpecializedTarget,
   saveShellMode,
+  saveSpecializedTarget,
   type ShellMode,
 } from "../../lib/shellRuntime";
 import { canTransition } from "../../lib/shellStateMachine";
@@ -26,6 +28,7 @@ import {
 } from "../../lib/shellWindows";
 import type { PilotPrimaryView } from "../../lib/pilotChrome";
 import { DesktopOperator } from "./DesktopOperator";
+import { OperatorSettingsPanel } from "./OperatorSettingsPanel";
 import { RepositoryHealthPanel } from "./RepositoryHealthPanel";
 
 export interface ChatMessage {
@@ -68,6 +71,9 @@ export function OperatorRoot({
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [busy, setBusy] = useState(false);
   const [showHealth, setShowHealth] = useState(false);
+  const [showSettings, setShowSettings] = useState(
+    () => loadSpecializedTarget() === "settings",
+  );
   const [developer, setDeveloper] = useState(
     () => localStorage.getItem(DEV_KEY) === "1",
   );
@@ -75,6 +81,11 @@ export function OperatorRoot({
   const setMode = useCallback(async (next: ShellMode) => {
     if (!canTransition(modeRef.current, next) && modeRef.current !== next) {
       return;
+    }
+    if (next !== 3) {
+      setShowSettings(false);
+      setShowHealth(false);
+      saveSpecializedTarget("none");
     }
     modeRef.current = next;
     setModeState(next);
@@ -98,8 +109,14 @@ export function OperatorRoot({
   useEffect(() => {
     const syncFromStorage = () => {
       const stored = loadShellMode(1);
-      if (stored !== mode) {
+      if (stored !== modeRef.current) {
+        modeRef.current = stored;
         setModeState(stored);
+      }
+      const specialized = loadSpecializedTarget();
+      setShowSettings(specialized === "settings");
+      if (specialized === "health") {
+        setShowHealth(true);
       }
     };
     window.addEventListener("storage", syncFromStorage);
@@ -112,7 +129,7 @@ export function OperatorRoot({
       window.removeEventListener("focus", syncFromStorage);
       document.removeEventListener("visibilitychange", syncFromStorage);
     };
-  }, [mode]);
+  }, []);
 
   useEffect(() => {
     const el = scrollerRef.current;
@@ -165,11 +182,20 @@ export function OperatorRoot({
   const openSpecialized = useCallback(
     async (view: PilotPrimaryView) => {
       setShowHealth(false);
+      setShowSettings(false);
+      saveSpecializedTarget("none");
       onNavigateProduct(view);
       await setMode(3);
     },
     [onNavigateProduct, setMode],
   );
+
+  const openSettingsSurface = useCallback(async () => {
+    setShowHealth(false);
+    setShowSettings(true);
+    saveSpecializedTarget("settings");
+    await setMode(3);
+  }, [setMode]);
 
   const handleIntent = useCallback(
     async (raw: string) => {
@@ -205,16 +231,24 @@ export function OperatorRoot({
         }
         case "expand":
           setShowHealth(false);
+          setShowSettings(false);
           await setMode(2);
           await pushWorkspace(action.reply);
           break;
         case "collapse":
           setShowHealth(false);
+          setShowSettings(false);
           // Leave the desktop — do not keep a reply in a hidden window.
           await setMode(0);
           break;
+        case "settings":
+          await openSettingsSurface();
+          await pushWorkspace(action.reply);
+          break;
         case "health":
           setDeveloper(true);
+          setShowSettings(false);
+          saveSpecializedTarget("health");
           setShowHealth(true);
           await setMode(3);
           await pushWorkspace(action.reply);
@@ -240,7 +274,14 @@ export function OperatorRoot({
           break;
       }
     },
-    [listMoments, onNavigateProduct, openSpecialized, pushWorkspace, setMode],
+    [
+      listMoments,
+      onNavigateProduct,
+      openSettingsSurface,
+      openSpecialized,
+      pushWorkspace,
+      setMode,
+    ],
   );
 
   const onSubmit = (event: FormEvent) => {
@@ -281,8 +322,23 @@ export function OperatorRoot({
 
   const showSecondary = mode >= 2;
   const secondary =
-    mode === 3 && showHealth && developer ? (
-      <RepositoryHealthPanel onClose={() => setShowHealth(false)} />
+    mode === 3 && showSettings ? (
+      <OperatorSettingsPanel
+        onClose={() => {
+          setShowSettings(false);
+          saveSpecializedTarget("none");
+          void setMode(1);
+        }}
+        onOpenGuide={() => void openSpecialized("help")}
+      />
+    ) : mode === 3 && showHealth && developer ? (
+      <RepositoryHealthPanel
+        onClose={() => {
+          setShowHealth(false);
+          saveSpecializedTarget("none");
+          void setMode(1);
+        }}
+      />
     ) : mode === 3 ? (
       specializedSurface
     ) : (
@@ -307,6 +363,7 @@ export function OperatorRoot({
         <DesktopOperator
           onOpenCompact={() => void setMode(1)}
           onExpand={() => void setMode(2)}
+          onOpenSettings={() => void openSettingsSurface()}
         />
       </div>
     );
@@ -357,6 +414,7 @@ export function OperatorRoot({
                     className="op-shell__btn op-shell__btn--primary"
                     onClick={() => {
                       setShowHealth(false);
+                      setShowSettings(false);
                       void setMode(2);
                     }}
                     title="Expand around conversation"
@@ -370,6 +428,7 @@ export function OperatorRoot({
                     className="op-shell__btn"
                     onClick={() => {
                       setShowHealth(false);
+                      setShowSettings(false);
                       void setMode(1);
                     }}
                     title="Compact conversation"
@@ -377,12 +436,22 @@ export function OperatorRoot({
                     Compact
                   </button>
                 )}
+                <button
+                  type="button"
+                  className="op-shell__btn"
+                  onClick={() => void openSettingsSurface()}
+                  title="Settings"
+                >
+                  Settings
+                </button>
                 {developer && mode >= 2 && (
                   <button
                     type="button"
                     className="op-shell__btn"
                     onClick={() => {
+                      setShowSettings(false);
                       setShowHealth((v) => !v);
+                      saveSpecializedTarget("health");
                       void setMode(3);
                     }}
                     title="Repository health"

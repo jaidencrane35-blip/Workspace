@@ -127,6 +127,12 @@ export async function applyShellMode(mode: ShellMode): Promise<void> {
     const clamped = clampPos(mainPos.x, mainPos.y, size.width, size.height);
     await main.setPosition(new LogicalPosition(clamped.x, clamped.y));
   }
+  try {
+    await main.setAlwaysOnTop(false);
+    await main.setSkipTaskbar(false);
+  } catch {
+    /* optional APIs */
+  }
   await main.unminimize().catch(() => undefined);
   await main.show();
   await main.setFocus();

@@ -146,6 +146,16 @@ const completedPrograms = [
       "docs/shell/FUTURE_INPUT_ARCHITECTURE.md",
     ],
   },
+  {
+    id: "native-windows-shell-lifecycle-p4",
+    backlogRef: "P4 Native Windows Shell Lifecycle (Desktop Operator Foundation)",
+    completed: "2026-08-07",
+    artifacts: [
+      "app/src/components/operator/OperatorSettingsPanel.tsx",
+      "docs/execution-program-native-windows-shell-lifecycle.md",
+      "docs/engineering-milestone-report.md",
+    ],
+  },
 ];
 
 const remainingBacklog = [
@@ -231,10 +241,10 @@ const health = {
     machineState: "docs/project-health.json",
   },
   currentExecutionProgram: {
-    id: "windows-shell-completion-p3",
-    title: "P3 Windows Shell Completion (Desktop Operator Foundation)",
+    id: "native-windows-shell-lifecycle-p4",
+    title: "P4 Native Windows Shell Lifecycle (Desktop Operator Foundation)",
     status: "complete_awaiting_owner_review",
-    note: "Zero-Trap shell state machine; floating operator context menu; close→collapse; Exit ends process. Await owner review.",
+    note: "Native shell lifecycle; Settings specialized surface; floating→Settings; quiet product logging. Await owner review.",
   },
   completedExecutionPrograms: completedPrograms,
   remainingBacklog,
@@ -245,7 +255,7 @@ const health = {
     tests: "pass",
     notes: [
       "Frontend production build succeeds",
-      "Zero-Trap shell state machine + floating operator menu",
+      "Zero-Trap shell + Settings Mode 3 + floating operator menu",
       "Capability evolution proposals only (no self-rewrite)",
       "Non-PP domain.ts remains manual (G1 remainder)",
       "Documentation authority still fragmented (G3)",
@@ -312,15 +322,15 @@ const health = {
   },
   lastMilestone: {
     date: "2026-08-07",
-    document: "docs/execution-program-windows-shell-completion.md",
-    title: "P3 Windows Shell Completion",
-    reviewBrief: "docs/execution-program-windows-shell-completion.md",
+    document: "docs/execution-program-native-windows-shell-lifecycle.md",
+    title: "P4 Native Windows Shell Lifecycle",
+    reviewBrief: "docs/execution-program-native-windows-shell-lifecycle.md",
   },
-  handoffStatus: "AWAITING_PROJECT_OWNER_WINDOWS_SHELL_REVIEW",
+  handoffStatus: "AWAITING_PROJECT_OWNER_DESKTOP_OPERATOR_FOUNDATION_REVIEW",
   nextRecommendedExecutionProgram: {
     id: "docs-convergence",
     title: "Documentation authority convergence",
-    blockedUntil: "Project Owner Windows shell completion review",
+    blockedUntil: "Project Owner Desktop Operator Foundation review",
   },
   capabilityEvolution: {
     document: "docs/capability-evolution/README.md",

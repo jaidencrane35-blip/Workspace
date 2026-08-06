@@ -3,6 +3,7 @@ import {
   SHELL_MODE_EVENT,
   emitShellModeEvent,
   saveShellMode,
+  saveSpecializedTarget,
 } from "../../lib/shellRuntime";
 import { SHELL_EXITS } from "../../lib/shellStateMachine";
 import {
@@ -18,6 +19,7 @@ interface DesktopOperatorProps {
   /** Browser/fallback: parent updates React mode. */
   onOpenCompact?: () => void;
   onExpand?: () => void;
+  onOpenSettings?: () => void;
 }
 
 /**
@@ -27,11 +29,13 @@ interface DesktopOperatorProps {
 export function DesktopOperator({
   onOpenCompact,
   onExpand,
+  onOpenSettings,
 }: DesktopOperatorProps) {
   const dragRef = useRef<{ sx: number; sy: number; moved: boolean } | null>(
     null,
   );
   const lastClickRef = useRef(0);
+  const clickTimerRef = useRef<number | null>(null);
   const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
@@ -39,6 +43,9 @@ export function DesktopOperator({
     document.title = "Workspace";
     return () => {
       delete document.documentElement.dataset.shellMode;
+      if (clickTimerRef.current !== null) {
+        window.clearTimeout(clickTimerRef.current);
+      }
     };
   }, []);
 
@@ -57,6 +64,7 @@ export function DesktopOperator({
 
   const openCompact = useCallback(async () => {
     setMenu(null);
+    saveSpecializedTarget("none");
     saveShellMode(1);
     emitShellModeEvent();
     if (onOpenCompact) {
@@ -68,6 +76,7 @@ export function DesktopOperator({
 
   const openExpanded = useCallback(async () => {
     setMenu(null);
+    saveSpecializedTarget("none");
     saveShellMode(2);
     emitShellModeEvent();
     if (onExpand) {
@@ -76,6 +85,18 @@ export function DesktopOperator({
     }
     await applyShellMode(2);
   }, [onExpand]);
+
+  const openSettings = useCallback(async () => {
+    setMenu(null);
+    saveSpecializedTarget("settings");
+    saveShellMode(3);
+    emitShellModeEvent();
+    if (onOpenSettings) {
+      onOpenSettings();
+      return;
+    }
+    await applyShellMode(3);
+  }, [onOpenSettings]);
 
   const onHide = useCallback(async () => {
     setMenu(null);
@@ -132,12 +153,22 @@ export function DesktopOperator({
           }
           const now = Date.now();
           if (now - lastClickRef.current < 350) {
+            if (clickTimerRef.current !== null) {
+              window.clearTimeout(clickTimerRef.current);
+              clickTimerRef.current = null;
+            }
             lastClickRef.current = 0;
             void openExpanded();
             return;
           }
           lastClickRef.current = now;
-          void openCompact();
+          if (clickTimerRef.current !== null) {
+            window.clearTimeout(clickTimerRef.current);
+          }
+          clickTimerRef.current = window.setTimeout(() => {
+            clickTimerRef.current = null;
+            void openCompact();
+          }, 280);
         }}
       >
         <span className="op-desktop__mark" aria-hidden="true">
@@ -163,6 +194,8 @@ export function DesktopOperator({
                     void openCompact();
                   } else if (action.to === 2) {
                     void openExpanded();
+                  } else if (action.to === "settings") {
+                    void openSettings();
                   } else if (action.to === "hide") {
                     void onHide();
                   } else if (action.to === "exit") {

@@ -7,7 +7,7 @@ import type { ShellMode } from "./shellRuntime";
 
 /** Allowed directed transitions (Zero-Trap graph). */
 export const SHELL_TRANSITIONS: Record<ShellMode, readonly ShellMode[]> = {
-  0: [1, 2], // Floating → Compact | Expand
+  0: [1, 2, 3], // Floating → Compact | Expand | Specialized (Settings)
   1: [0, 2, 3], // Compact → Floating | Expand | Specialized
   2: [0, 1, 3], // Expanded → Floating | Compact | Specialized
   3: [0, 1, 2], // Specialized → Floating | Compact | Expanded
@@ -16,7 +16,7 @@ export const SHELL_TRANSITIONS: Record<ShellMode, readonly ShellMode[]> = {
 export interface ShellExitAction {
   id: string;
   label: string;
-  to: ShellMode | "hide" | "exit";
+  to: ShellMode | "hide" | "exit" | "settings";
 }
 
 /** Obvious exits available from each state (UI + recovery). */
@@ -25,6 +25,7 @@ export const SHELL_EXITS: Record<ShellMode, readonly ShellExitAction[]> = {
     { id: "open", label: "Open Workspace", to: 1 },
     { id: "expand", label: "Expand Workspace", to: 2 },
     { id: "hide", label: "Hide", to: "hide" },
+    { id: "settings", label: "Settings", to: "settings" },
     { id: "exit", label: "Exit Workspace", to: "exit" },
   ],
   1: [

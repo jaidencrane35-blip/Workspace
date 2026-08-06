@@ -20,6 +20,29 @@ export const MODE_STORAGE_KEY = "workspace.shell.mode";
 export const OPERATOR_POS_KEY = "workspace.shell.operatorPos";
 export const MAIN_POS_KEY = "workspace.shell.mainPos";
 export const HIDDEN_KEY = "workspace.shell.hidden";
+export const SPECIALIZED_KEY = "workspace.shell.specialized";
+
+export type SpecializedTarget = "none" | "settings" | "health";
+
+export function loadSpecializedTarget(): SpecializedTarget {
+  try {
+    const raw = localStorage.getItem(SPECIALIZED_KEY);
+    if (raw === "settings" || raw === "health") {
+      return raw;
+    }
+    return "none";
+  } catch {
+    return "none";
+  }
+}
+
+export function saveSpecializedTarget(target: SpecializedTarget): void {
+  try {
+    localStorage.setItem(SPECIALIZED_KEY, target);
+  } catch {
+    /* ignore */
+  }
+}
 
 export function isShellMode(value: unknown): value is ShellMode {
   return value === 0 || value === 1 || value === 2 || value === 3;

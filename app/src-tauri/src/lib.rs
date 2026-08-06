@@ -149,7 +149,18 @@ use tauri::Manager;
 use workspace_kernel::WorkspaceKernel;
 
 fn init_logging() {
-    let _ = env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info"))
+    // Product builds stay quiet (no console under windows_subsystem).
+    // Engineers opt into verbose logs with RUST_LOG / WORKSPACE_DEV_LOG=1.
+    let default_filter = if cfg!(debug_assertions) {
+        if std::env::var_os("WORKSPACE_DEV_LOG").is_some() {
+            "info"
+        } else {
+            "warn"
+        }
+    } else {
+        "error"
+    };
+    let _ = env_logger::Builder::from_env(env_logger::Env::default().default_filter_or(default_filter))
         .format_timestamp_secs()
         .try_init();
 }

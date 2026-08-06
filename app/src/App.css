@@ -3495,6 +3495,54 @@ html[data-shell-mode="0"] #root {
 .op-health__muted { opacity: 0.55; }
 .op-health__error { color: #ff8f8f; }
 
+.op-settings {
+  height: 100%;
+  overflow: auto;
+  padding: 1.25rem 1.5rem 2rem;
+  background: #0a1018;
+  color: var(--exp-text);
+}
+
+.op-settings__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.op-settings__eyebrow {
+  margin: 0 0 0.2rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.5;
+}
+
+.op-settings__title {
+  margin: 0;
+  font-family: var(--exp-display);
+  font-size: 1.35rem;
+}
+
+.op-settings__section {
+  margin: 0 0 1.35rem;
+}
+
+.op-settings__section h3 {
+  margin: 0 0 0.45rem;
+  font-size: 0.85rem;
+  font-family: var(--exp-display);
+}
+
+.op-settings__copy {
+  margin: 0 0 0.65rem;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  opacity: 0.82;
+  max-width: 36rem;
+}
+
 html:not([data-operator-developer="on"]) .checkin-evidence {
   display: none !important;
 }

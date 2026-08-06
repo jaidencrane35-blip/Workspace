@@ -19,7 +19,9 @@ const required = [
   "app/src/lib/shellRuntime.ts",
   "app/src/lib/shellWindows.ts",
   "app/src/components/operator/DesktopOperator.tsx",
+  "app/src/components/operator/OperatorSettingsPanel.tsx",
   "docs/execution-program-windows-shell-completion.md",
+  "docs/execution-program-native-windows-shell-lifecycle.md",
   "docs/shell/FUTURE_INPUT_ARCHITECTURE.md",
   "app/src-tauri/src/commands/shell.rs",
 ];
@@ -58,11 +60,15 @@ for (const token of [
   "Open Workspace",
   "Expand Workspace",
   "Hide",
+  "Settings",
   "Exit Workspace",
 ]) {
   if (!machine.includes(token)) {
     fail(`shellStateMachine missing menu label ${token}`);
   }
+}
+if (!desktop.includes("settings") && !desktop.includes("openSettings")) {
+  fail("DesktopOperator must wire Settings menu action");
 }
 
 const windows = fs.readFileSync(
