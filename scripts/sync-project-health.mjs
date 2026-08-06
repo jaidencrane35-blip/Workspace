@@ -45,6 +45,7 @@ const verifiers = {
   "verify:project-health": "scripts/verify-project-health.mjs",
   "verify:capability-evolution": "scripts/verify-capability-evolution.mjs",
   "verify:shell-zero-trap": "scripts/verify-shell-zero-trap.mjs",
+  "verify:ui-architecture": "scripts/verify-ui-architecture.mjs",
 };
 
 const verifierStatus = {};
@@ -185,6 +186,16 @@ const completedPrograms = [
       "docs/project-health.json",
     ],
   },
+  {
+    id: "ui-architecture-specification-p8",
+    backlogRef: "P8 Final Product Presentation Refoundation",
+    completed: "2026-08-07",
+    artifacts: [
+      "docs/ui/UI_ARCHITECTURE_SPECIFICATION.md",
+      "pnpm verify:ui-architecture",
+      "docs/ui/LAYER_OWNERSHIP_MAP.md",
+    ],
+  },
 ];
 
 const remainingBacklog = [
@@ -271,10 +282,10 @@ const health = {
     machineState: "docs/project-health.json",
   },
   currentExecutionProgram: {
-    id: "productization-native-windows-p7",
-    title: "P7 Productization & Native Windows Experience",
+    id: "ui-architecture-specification-p8",
+    title: "P8 Final Product Presentation Refoundation",
     status: "complete_awaiting_owner_review",
-    note: "Compact conversation default; lighter chrome; product readiness health. Await owner review.",
+    note: "Authoritative UI Architecture Spec established; conversation-defining presentation convergence; verify:ui-architecture. Await owner review.",
   },
   completedExecutionPrograms: completedPrograms,
   remainingBacklog,
@@ -290,16 +301,17 @@ const health = {
     shellLifecycle: "accepted",
     compactConversation: "implemented",
     nativeFeel: "in_progress",
+    presentationAuthority: "established",
     notes: [
-      "P6 shell Form A/B accepted (commit 11bab9d)",
-      "Conversation opens at compact productivity size with work-area clamp",
-      "Visual weight reduced around conversation",
-      "Track B desktop capabilities not started",
+      "P6 shell Form A/B accepted (11bab9d)",
+      "UI Architecture Specification is presentation law (P8)",
+      "Teaching dock / capability catalogue chrome removed",
+      "Future work extends Conversation → Capability → Intelligence",
     ],
   },
   currentMilestone: {
-    id: "productization-native-windows-p7",
-    title: "P7 Productization & Native Windows Experience",
+    id: "ui-architecture-specification-p8",
+    title: "P8 Final Product Presentation Refoundation",
     status: "awaiting_owner_review",
     commit: milestoneCommit,
   },
@@ -340,7 +352,7 @@ const health = {
     tests: "pass",
     notes: [
       "Frontend production build succeeds",
-      "P6 shell accepted; P7 productization pass",
+      "UI Architecture Spec is authoritative presentation law",
       "Capability evolution proposals only (no self-rewrite)",
       "Non-PP domain.ts remains manual (G1 remainder)",
       "Documentation authority still fragmented (G3)",
@@ -408,15 +420,15 @@ const health = {
   },
   lastMilestone: {
     date: "2026-08-07",
-    document: "docs/execution-program-productization-native-windows.md",
-    title: "P7 Productization & Native Windows Experience",
-    reviewBrief: "docs/execution-program-productization-native-windows.md",
+    document: "docs/ui/UI_ARCHITECTURE_SPECIFICATION.md",
+    title: "P8 Final Product Presentation Refoundation",
+    reviewBrief: "docs/ui/UI_ARCHITECTURE_SPECIFICATION.md",
   },
-  handoffStatus: "AWAITING_PROJECT_OWNER_PRODUCTIZATION_REVIEW",
+  handoffStatus: "AWAITING_PROJECT_OWNER_UI_ARCHITECTURE_REVIEW",
   nextRecommendedExecutionProgram: {
-    id: "reassess-after-productization-review",
+    id: "reassess-after-ui-architecture-review",
     title: "Reassess highest-value program from owner feedback",
-    blockedUntil: "Project Owner Productization review",
+    blockedUntil: "Project Owner UI Architecture review",
   },
   capabilityEvolution: {
     document: "docs/capability-evolution/README.md",

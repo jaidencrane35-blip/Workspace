@@ -224,8 +224,8 @@ export function OperatorRoot({
           break;
         }
         case "expand":
-          // No Expanded shell form — tools open beside conversation when asked.
-          setToolDock(true);
+          // Expanded Workspace is a presentation dock, not a shell form.
+          // Without an earned satellite, stay conversation-only.
           await ensureConversation();
           await pushWorkspace(action.reply);
           break;
@@ -321,21 +321,12 @@ export function OperatorRoot({
       />
     ) : activeSpecialized ? (
       specializedSurface
-    ) : (
-      <aside className="op-secondary-quiet" aria-label="Workspace tools">
-        <p className="op-secondary-quiet__copy">
-          Ask for Save, Continue, Moments, or Guide. Tools open here from
-          conversation — not as a separate Workspace form.
-        </p>
-        <button
-          type="button"
-          className="op-shell__btn"
-          onClick={() => setToolDock(false)}
-        >
-          Hide tools
-        </button>
-      </aside>
-    );
+    ) : null;
+
+  // Expanded Workspace presentation = Form B + earned satellite only.
+  const presentationExpanded = Boolean(
+    toolDock && (showHealth || activeSpecialized),
+  );
 
   // Form A in Tauri: conversation window hidden — operator window owns UI.
   if (mode === 0) {
@@ -355,12 +346,13 @@ export function OperatorRoot({
     <div
       className="op-root"
       data-mode={1}
+      data-presentation={presentationExpanded ? "expanded" : "conversation"}
       data-developer={developer ? "on" : "off"}
       data-specialized={activeSpecialized ?? undefined}
     >
       <div
         className="op-stage op-stage--conversation"
-        data-dock={toolDock ? "on" : "off"}
+        data-dock={presentationExpanded ? "on" : "off"}
       >
         <div className="op-stage__chat">
           <section
@@ -389,7 +381,7 @@ export function OperatorRoot({
                   type="button"
                   className="op-shell__btn"
                   onClick={() => void setMode(0)}
-                  title="Leave conversation — Desktop Operator mode"
+                  title="Desktop Operator"
                 >
                   Collapse
                 </button>
@@ -408,9 +400,9 @@ export function OperatorRoot({
                 )}
                 <button
                   type="button"
-                  className="op-shell__btn"
+                  className="op-shell__btn op-shell__btn--quiet"
                   onClick={() => void exitWorkspace()}
-                  title="Exit Workspace completely"
+                  title="Exit Workspace"
                 >
                   Exit
                 </button>
@@ -468,8 +460,12 @@ export function OperatorRoot({
           </section>
         </div>
 
-        {toolDock && (
-          <div className="op-stage__workspace" data-specialized-shell="true">
+        {presentationExpanded && secondary && (
+          <div
+            className="op-stage__workspace"
+            data-specialized-shell="true"
+            data-satellite="true"
+          >
             {secondary}
           </div>
         )}
