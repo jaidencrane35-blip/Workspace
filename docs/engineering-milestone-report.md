@@ -1,22 +1,20 @@
 # Engineering Milestone Report
-## P8 Final Product Presentation Refoundation
+## P9 Capability Runtime Research & Adoption Strategy
 
 | Field | Value |
 | --- | --- |
-| **Execution program** | P8 Final Product Presentation Refoundation |
+| **Execution program** | P9 Capability Runtime Research & Adoption Strategy |
 | **Date** | 2026-08-07 |
-| **Prior** | P7 Productization (`e93fb79`); P6 shell accepted (`11bab9d`) |
-| **Commit** | `c045eb0` |
-| **Handoff** | `AWAITING_PROJECT_OWNER_UI_ARCHITECTURE_REVIEW` |
-| **Authority** | `docs/ui/UI_ARCHITECTURE_SPECIFICATION.md` |
+| **Prior** | P8 UI Architecture accepted (`c045eb0`) |
+| **Commit** | `f26c917` |
+| **Handoff** | `AWAITING_PROJECT_OWNER_CAPABILITY_RUNTIME_RESEARCH_REVIEW` |
+| **Index** | `docs/capability-runtime/00_INDEX.md` |
 
 ---
 
-## Phase 1 — Biggest finished-product gap
+## Mission
 
-**Answer:** Presentation still read as a framed utility because chrome/teaching docks competed with conversation and there was no stable presentation authority.
-
-P8 establishes that authority and converges runtime presentation toward conversation-defining UI — without reopening accepted Form A/B shell behaviour.
+Research Track B **before** implementation. Prevent unnecessary engineering. UI / Operator / Conversation remain frozen.
 
 ---
 
@@ -24,32 +22,31 @@ P8 establishes that authority and converges runtime presentation toward conversa
 
 | Artifact | Path |
 | --- | --- |
-| UI Architecture Specification | `docs/ui/UI_ARCHITECTURE_SPECIFICATION.md` |
-| Product Presentation Specification | `docs/ui/PRODUCT_PRESENTATION_SPECIFICATION.md` |
-| Component Ownership Map | `docs/ui/COMPONENT_OWNERSHIP_MAP.md` |
-| Window Lifecycle Specification | `docs/ui/WINDOW_LIFECYCLE_SPECIFICATION.md` |
-| Layer Ownership Map | `docs/ui/LAYER_OWNERSHIP_MAP.md` |
-| Product Readiness Assessment | `docs/ui/PRODUCT_READINESS_ASSESSMENT.md` |
-| Verifier | `pnpm verify:ui-architecture` |
+| Research Report | `docs/capability-runtime/CAPABILITY_RUNTIME_RESEARCH_REPORT.md` |
+| Domain Catalogue | `docs/capability-runtime/CAPABILITY_DOMAIN_CATALOGUE.md` |
+| OSS Adoption Matrix | `docs/capability-runtime/OPEN_SOURCE_ADOPTION_MATRIX.md` |
+| Capability Contracts | `docs/capability-runtime/CAPABILITY_CONTRACTS.md` |
+| Risk Assessment | `docs/capability-runtime/ADOPTION_RISK_ASSESSMENT.md` |
+| Implementation Order | `docs/capability-runtime/RECOMMENDED_IMPLEMENTATION_ORDER.md` |
+| Verifier | `pnpm verify:capability-runtime-research` |
 
 ---
 
-## Runtime convergence (material only)
+## Headline recommendations
 
-- Removed capability-teaching dock copy  
-- Expanded Workspace = Form B + earned satellite only (`data-presentation`)  
-- Quieter Exit chrome  
-- Accepted shell lifecycle unchanged  
+- **0** platform ADOPT (no Kiro/AHK/n8n-as-product)  
+- **WRAP** commodity crates (clipboard, capture, notifications, PTY, …)  
+- **ADAPT** Win32 ownership already in `workspace-windows-integration`  
+- **V1 candidate order:** Clipboard → Notifications → Browser open  
 
 ---
 
-## Repository health summary
+## Explicit non-implementation
 
-Engineering health: validation suite. Product readiness: presentation authority **established**. Next programs should extend Conversation → Capability Runtime → Intelligence — not redesign the Operator.
+No capability domain code in this program. Capability Runtime V1 awaits Owner approval.
 
 ---
 
 ## Stop
 
-**Do not begin another execution program until Product Owner approval.**  
-Reassess next program from Owner feedback + repository truth.
+Wait for Product Owner review before Capability Runtime V1.

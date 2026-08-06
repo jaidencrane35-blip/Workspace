@@ -46,6 +46,8 @@ const verifiers = {
   "verify:capability-evolution": "scripts/verify-capability-evolution.mjs",
   "verify:shell-zero-trap": "scripts/verify-shell-zero-trap.mjs",
   "verify:ui-architecture": "scripts/verify-ui-architecture.mjs",
+  "verify:capability-runtime-research":
+    "scripts/verify-capability-runtime-research.mjs",
 };
 
 const verifierStatus = {};
@@ -196,6 +198,16 @@ const completedPrograms = [
       "docs/ui/LAYER_OWNERSHIP_MAP.md",
     ],
   },
+  {
+    id: "capability-runtime-research-p9",
+    backlogRef: "P9 Capability Runtime Research & Adoption Strategy",
+    completed: "2026-08-07",
+    artifacts: [
+      "docs/capability-runtime/CAPABILITY_RUNTIME_RESEARCH_REPORT.md",
+      "pnpm verify:capability-runtime-research",
+      "docs/capability-runtime/OPEN_SOURCE_ADOPTION_MATRIX.md",
+    ],
+  },
 ];
 
 const remainingBacklog = [
@@ -282,10 +294,10 @@ const health = {
     machineState: "docs/project-health.json",
   },
   currentExecutionProgram: {
-    id: "ui-architecture-specification-p8",
-    title: "P8 Final Product Presentation Refoundation",
+    id: "capability-runtime-research-p9",
+    title: "P9 Capability Runtime Research & Adoption Strategy",
     status: "complete_awaiting_owner_review",
-    note: "Authoritative UI Architecture Spec established; conversation-defining presentation convergence; verify:ui-architecture. Await owner review.",
+    note: "Track B research complete: domains, OSS matrix, contracts, order. No capability V1 code. Await owner review before Capability Runtime V1.",
   },
   completedExecutionPrograms: completedPrograms,
   remainingBacklog,
@@ -301,17 +313,18 @@ const health = {
     shellLifecycle: "accepted",
     compactConversation: "implemented",
     nativeFeel: "in_progress",
-    presentationAuthority: "established",
+    presentationAuthority: "accepted",
+    capabilityRuntimeResearch: "complete",
     notes: [
-      "P6 shell Form A/B accepted (11bab9d)",
-      "UI Architecture Specification is presentation law (P8)",
-      "Teaching dock / capability catalogue chrome removed",
-      "Future work extends Conversation → Capability → Intelligence",
+      "UI Architecture Spec accepted (P8)",
+      "Capability Runtime research pack complete (P9) — no V1 impl yet",
+      "Zero platform ADOPT; WRAP commodity crates behind contracts",
+      "Recommended V1 slice: clipboard → notifications → browser open",
     ],
   },
   currentMilestone: {
-    id: "ui-architecture-specification-p8",
-    title: "P8 Final Product Presentation Refoundation",
+    id: "capability-runtime-research-p9",
+    title: "P9 Capability Runtime Research & Adoption Strategy",
     status: "awaiting_owner_review",
     commit: milestoneCommit,
   },
@@ -322,8 +335,19 @@ const health = {
       commit: "11bab9d",
       acceptedAt: "2026-08-07",
     },
+    {
+      id: "p8",
+      title: "UI Architecture & Product Presentation",
+      commit: "c045eb0",
+      acceptedAt: "2026-08-07",
+    },
   ],
   outstandingProductDebt: [
+    {
+      id: "capability-runtime-v1",
+      track: "B",
+      summary: "Capability Runtime V1 not started — blocked on Owner review of P9",
+    },
     {
       id: "tray-integration",
       track: "A",
@@ -333,11 +357,6 @@ const health = {
       id: "window-animations",
       track: "A",
       summary: "Native show/hide transition polish still limited",
-    },
-    {
-      id: "track-b-capabilities",
-      track: "B",
-      summary: "Desktop capability layer not started (intentional)",
     },
     {
       id: "G3-docs",
@@ -352,8 +371,8 @@ const health = {
     tests: "pass",
     notes: [
       "Frontend production build succeeds",
-      "UI Architecture Spec is authoritative presentation law",
-      "Capability evolution proposals only (no self-rewrite)",
+      "UI Architecture Spec accepted and frozen",
+      "Capability Runtime research complete; V1 not implemented",
       "Non-PP domain.ts remains manual (G1 remainder)",
       "Documentation authority still fragmented (G3)",
     ],
@@ -420,15 +439,15 @@ const health = {
   },
   lastMilestone: {
     date: "2026-08-07",
-    document: "docs/ui/UI_ARCHITECTURE_SPECIFICATION.md",
-    title: "P8 Final Product Presentation Refoundation",
-    reviewBrief: "docs/ui/UI_ARCHITECTURE_SPECIFICATION.md",
+    document: "docs/capability-runtime/CAPABILITY_RUNTIME_RESEARCH_REPORT.md",
+    title: "P9 Capability Runtime Research & Adoption Strategy",
+    reviewBrief: "docs/capability-runtime/00_INDEX.md",
   },
-  handoffStatus: "AWAITING_PROJECT_OWNER_UI_ARCHITECTURE_REVIEW",
+  handoffStatus: "AWAITING_PROJECT_OWNER_CAPABILITY_RUNTIME_RESEARCH_REVIEW",
   nextRecommendedExecutionProgram: {
-    id: "reassess-after-ui-architecture-review",
-    title: "Reassess highest-value program from owner feedback",
-    blockedUntil: "Project Owner UI Architecture review",
+    id: "capability-runtime-v1",
+    title: "Capability Runtime V1 (approved thin slice only)",
+    blockedUntil: "Project Owner Capability Runtime research review",
   },
   capabilityEvolution: {
     document: "docs/capability-evolution/README.md",
