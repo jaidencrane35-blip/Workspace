@@ -3,7 +3,7 @@
 
 | Field | Value |
 | --- | --- |
-| **Status** | Implemented — awaiting Product Owner review |
+| **Status** | Implemented — P12 series permanently closed |
 | **Prior** | P9 research accepted |
 | **Reference provider** | Clipboard (WRAP `arboard`) |
 

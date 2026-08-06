@@ -1,64 +1,61 @@
 # Engineering Milestone Report
-## P12 Finalization — Operator Architecture Completion
+## P12 COMPLETE — Final Repository Closure
 
 | Field | Value |
 | --- | --- |
-| **Execution program** | P12 Finalization (Track B completion) |
+| **Execution program** | P12 COMPLETE (Final Repository Closure) |
 | **Date** | 2026-08-07 |
-| **Prior** | P12.7 TypeScript Operator interim (`644c125`) |
-| **Commit** | `daf3ae9` |
-| **Handoff** | `AWAITING_PROJECT_OWNER_P12_FINALIZATION_REVIEW` |
-| **Index** | `docs/operator/00_INDEX.md` |
+| **Outcome** | **A — P12 is repository-complete** |
+| **Implementation base** | P12 Finalization `daf3ae9` |
+| **Closure commit** | pending |
+| **Handoff** | `P12_PERMANENTLY_CLOSED_P13_ELIGIBLE` |
+| **Next program** | **P13 Notifications Provider** |
 
 ---
 
-## Mission
+## Repository reassessment
 
-Remove every remaining presentation-side operational responsibility. Establish Kernel Operator + single CapabilityIntent IPC as the permanent Conversation → Runtime architecture. Complete the P12 series.
+Audited P10–P12 Finalization as one integrated product against repository truth on `v2-dev`.
 
----
-
-## Permanent rules adopted / confirmed
-
-| Rule | Doc |
+| Area | Result |
 | --- | --- |
-| Presentation Purity | `docs/operator/PRESENTATION_PURITY_RULE.md` |
-| Kernel Authority | `docs/operator/KERNEL_AUTHORITY_RULE.md` |
-| Operator Authority | confirmed |
-| Capability Composition | composition authority = Kernel Operator |
-
-Protocol → v1.5
-
----
-
-## Architectural corrections
-
-| Before (P12.7 interim) | After (Finalization) |
-| --- | --- |
-| TS Operator planned/composed/invoked provider IPC | Kernel Operator owns plan/compose/orchestrate |
-| Multiple provider IPC from façade | Single `execute_capability_intent` |
-| `app.open_or_focus` in TypeScript | `app.open_or_focus` in Kernel Operator |
+| Conversation → Intent → Kernel Operator → Runtime | Authoritative |
+| Single IPC `execute_capability_intent` | Enforced |
+| Presentation Purity / Kernel Authority | Satisfied |
+| Window / Application Product Proof paths | Intact |
+| Product Gravity / Desktop Operator | Intact |
+| Remaining P12 architectural work | **None** |
 
 ---
 
-## Completion audit answers
+## Findings closed in this program
 
-1. React desktop operational logic? **No** (OperatorRoot is presentation + shell only)  
+No new architecture. Sync + Product Proof hygiene only:
+
+1. Roadmap stamped (`daf3ae9`); P12 series marked permanently complete  
+2. Product Proof Rule + window proof harness pipeline → Kernel Operator / single IPC  
+3. Provider docs distinguish Conversation IPC vs diagnostic IPC  
+4. Intent clipboard replies scrubbed of “Capability Runtime” jargon  
+5. Verifiers tightened for jargon + proof IPC  
+6. Project health / indexes synchronized for permanent closure  
+
+---
+
+## Completion audit
+
+1. React desktop operational logic (Conversation)? **No**  
 2. Presentation provider composition? **No**  
 3. Presentation execution order? **No**  
 4. Presentation permission decisions? **No**  
-5. Every capability through Kernel Operator? **Yes** (Conversation path)  
-6. Full architecture authoritative? **Yes**  
-7. Remaining reason for another P12.x? **No**
+5. Conversation capabilities through Kernel Operator? **Yes**  
+6. Architecture fully authoritative? **Yes**  
+7. Remaining reason for another P12.x? **No**  
 
 ---
 
-## Explicit non-goals
+## Explicit statements
 
-P13 · redesign providers/UI/Gravity · AGI
+- **Is P12 now permanently complete?** **Yes.**  
+- **Is P13 the next constitutional execution program?** **Yes.**  
 
----
-
-## Stop
-
-Await Owner acceptance. After acceptance, P12 series is complete; **P13** is next eligible.
+Do not begin P13 in this program. STOP for Owner acknowledgment.

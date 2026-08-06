@@ -5,10 +5,12 @@
 | **P10** | Foundation + Clipboard — complete |
 | **P11** | Application Provider — complete |
 | **P12** | Window Provider engineering — complete |
-| **P12.5** | Window Conversation Product Proof — shipped |
-| **P12.6** | Conversational Desktop Surface — shipped |
-| **P12.7** | Operator Intelligence (TS interim) — superseded by Finalization |
-| **P12 Finalization** | Kernel Operator architecture — awaiting Owner review |
+| **P12.5** | Window Conversation Product Proof — complete |
+| **P12.6** | Conversational Desktop Surface — complete |
+| **P12.7** | Operator Intelligence (TS interim) — superseded by Kernel |
+| **P12 Finalization** | Kernel Operator — complete |
+| **P12 series** | **Permanently complete** |
+| **Next** | **P13 Notifications Provider** |
 | **UI law** | Frozen |
 | **Operator law** | Conversation → Intent → Kernel Operator → Runtime |
 | **Provider law** | Own operations; independently testable; no provider-to-provider calls |
@@ -18,7 +20,7 @@
 
 | Document | Purpose |
 | --- | --- |
-| [../operator/00_INDEX.md](../operator/00_INDEX.md) | **Kernel Operator (P12 Finalization)** |
+| [../operator/00_INDEX.md](../operator/00_INDEX.md) | **Kernel Operator** |
 | [CAPABILITY_RUNTIME_FOUNDATION.md](./CAPABILITY_RUNTIME_FOUNDATION.md) | Pipeline freeze |
 | [PRODUCT_PROOF_RULE.md](./PRODUCT_PROOF_RULE.md) | Permanent Product Proof completion rule |
 | [WINDOW_PROVIDER.md](./WINDOW_PROVIDER.md) | P12 Window Provider |

@@ -115,5 +115,14 @@ for (const kind of [
 if (/through Window Provider/i.test(intent)) {
   fail("Conversation replies must not expose Window Provider terminology");
 }
+if (/through Capability Runtime/i.test(intent)) {
+  fail("Conversation replies must not expose Capability Runtime terminology");
+}
+if (proof.ipc !== "execute_capability_intent") {
+  fail("window-provider.proof.json Conversation ipc must be execute_capability_intent");
+}
+if (!proof.pipeline?.includes("Kernel Operator")) {
+  fail("window-provider.proof.json pipeline must include Kernel Operator");
+}
 
 console.log("verify-product-proof-harness: ok");

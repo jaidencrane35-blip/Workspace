@@ -31,8 +31,9 @@ Cross-capability message envelopes remain governed by `architecture/10_Capabilit
 | **P11 status** | **Application Provider shipped** — operations model |
 | **Adoption** | ADAPT Win32 ports (`ProcessLauncher`, `WindowEnumerator`, `WindowMutator`) |
 | **Rust** | `ApplicationProvider` + `ExecuteApplicationOperation` |
-| **TypeScript** | Intent kinds `appOpen` / `appLaunch` / `appFocus` / … → IPC only |
-| **IPC** | `execute_application_operation` |
+| **TypeScript** | Intent kinds `appOpen` / `appLaunch` / `appFocus` / … → CapabilityIntent |
+| **Conversation IPC** | `execute_capability_intent` (Kernel Operator) |
+| **Diagnostic IPC** | `execute_application_operation` (not Conversation) |
 | **Future** | Ambiguity satellite; ApprovalRequired for risky close; Intelligence ranking |
 
 ---
@@ -50,12 +51,13 @@ Cross-capability message envelopes remain governed by `architecture/10_Capabilit
 | **Rollback** | Prior bounds snapshot — future |
 | **Audit** | operation + status + target + geometry summary |
 | **P12 status** | **Window Provider engineering complete** (Levels 1–2) |
-| **P12.5 status** | **Window Conversation Product Proof shipped** — awaiting Owner Product Proof review |
+| **P12.5 status** | **Window Conversation Product Proof shipped** — P12 series permanently closed |
 | **Product Proof Rule** | `docs/capability-runtime/PRODUCT_PROOF_RULE.md` (permanent) |
 | **Adoption** | ADAPT Win32 ports; FancyZones = STUDY only |
 | **Rust** | `WindowProvider` + `ExecuteWindowOperation` |
-| **TypeScript** | `winEnumerate` / `winSnap` / … → IPC only |
-| **IPC** | `execute_window_operation` |
+| **TypeScript** | `winEnumerate` / `winSnap` / … → CapabilityIntent |
+| **Conversation IPC** | `execute_capability_intent` (Kernel Operator) |
+| **Diagnostic IPC** | `execute_window_operation` (not Conversation) |
 | **Future** | Level 3 compose layouts; Level 4 Intelligence |
 
 ---
@@ -76,9 +78,10 @@ Cross-capability message envelopes remain governed by `architecture/10_Capabilit
 | **P10 status** | **Reference provider shipped** — see `CLIPBOARD_PROVIDER.md` |
 | **Adoption** | WRAP `arboard` behind `ClipboardPort` |
 | **Rust** | `ClipboardProvider` + `ReadClipboard` / `WriteClipboard` |
-| **TypeScript** | Intent kinds `clipboardRead` / `clipboardWrite` → IPC only |
-| **IPC** | `read_clipboard`, `write_clipboard` |
-| **Pipeline** | Intent → Router → Registry → ClipboardProvider → ClipboardPort → reply |
+| **TypeScript** | Intent kinds `clipboardRead` / `clipboardWrite` → CapabilityIntent |
+| **Conversation IPC** | `execute_capability_intent` (Kernel Operator) |
+| **Diagnostic IPC** | `read_clipboard`, `write_clipboard` (not Conversation) |
+| **Pipeline** | Intent → Kernel Operator → Runtime → Router → Registry → ClipboardProvider → reply |
 
 ---
 

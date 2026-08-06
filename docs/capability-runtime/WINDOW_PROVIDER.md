@@ -52,7 +52,8 @@ Hide is **not** implemented (risk of lost windows).
 | --- | --- |
 | Provider | `packages/kernel/src/capability_runtime/window_provider.rs` |
 | Command | `ExecuteWindowOperation` |
-| IPC | `execute_window_operation` |
+| Conversation IPC | `execute_capability_intent` |
+| Diagnostic IPC | `execute_window_operation` |
 | Intent | `winEnumerate`, `winSnap`, `winMaximize`, … |
 
 ---

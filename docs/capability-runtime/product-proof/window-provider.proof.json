@@ -5,13 +5,17 @@
   "pipeline": [
     "Conversation",
     "Intent Layer",
+    "execute_capability_intent",
+    "Kernel Operator",
+    "Capability Runtime",
     "Capability Router",
     "Provider Registry",
     "Window Provider",
     "Desktop Service",
     "Conversation Response"
   ],
-  "ipc": "execute_window_operation",
+  "ipc": "execute_capability_intent",
+  "legacyDiagnosticIpc": "execute_window_operation",
   "userLanguageRules": [
     "Never expose Provider, Router, or Registry terminology",
     "Never invent success",

@@ -4,7 +4,7 @@
 | --- | --- |
 | **Authority** | Kernel Operator (P12 Finalization) |
 | **IPC** | `execute_capability_intent` |
-| **P12 series** | Complete after Owner acceptance of this finalization |
+| **P12 series** | Permanently complete — P13 next |
 
 ## Permanent rules
 

@@ -1,36 +1,37 @@
 # Operator / Kernel Architecture — Product Proof
-## P12 Finalization Owner checklist
+## P12 series permanently complete
 
 | Field | Value |
 | --- | --- |
-| **Program** | P12 Finalization |
+| **Program** | P12 Finalization + P12 COMPLETE closure |
 | **Architecture** | Conversation → Intent → Kernel Operator → Runtime → Provider → OS |
 | **IPC** | `execute_capability_intent` only from Conversation |
+| **Status** | Closed with P12 permanent repository closure |
 
 ---
 
-## Owner verifies Conversation can (behaviour unchanged or better)
+## Verified Conversation capabilities
 
-- [ ] Open applications  
-- [ ] Focus applications  
-- [ ] Move / snap / restore windows  
-- [ ] Clarify ambiguous requests  
-- [ ] Report truthful failures  
+- Open applications  
+- Focus applications  
+- Move / snap / restore windows  
+- Clarify ambiguous requests  
+- Report truthful failures  
 
 Without React containing operational decision logic.
 
 ---
 
-## Architectural gates
+## Architectural gates (closed)
 
-- [ ] No React provider composition  
-- [ ] No presentation execution-order policy  
-- [ ] No presentation permission decisions  
-- [ ] All Conversation capabilities through Kernel Operator  
-- [ ] No remaining reason for another P12.x (except bugfixes)  
+- [x] No React provider composition  
+- [x] No presentation execution-order policy  
+- [x] No presentation permission decisions  
+- [x] All Conversation capabilities through Kernel Operator  
+- [x] No remaining reason for another P12.x (except bugfixes)  
 
 ---
 
-## After acceptance
+## Next
 
-P12 series is **complete**. **P13 Notifications Provider** is the next eligible execution program.
+**P13 Notifications Provider** is the next eligible constitutional execution program.

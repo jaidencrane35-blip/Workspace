@@ -35,15 +35,21 @@ before they are considered complete.
 ```
 Conversation
     ↓
-Intent Layer
+Intent Layer → CapabilityIntent
     ↓
-Capability Router
+execute_capability_intent
+    ↓
+Kernel Operator
+    ↓
+Capability Runtime → Capability Router
     ↓
 Provider Registry
     ↓
 Capability Provider
     ↓
 Desktop Service
+    ↓
+Kernel Operator (response)
     ↓
 Conversation Response
 ```

@@ -1,5 +1,5 @@
 # Rolling Capability Provider Roadmap
-## Updated after P12 Finalization (Operator Architecture Completion)
+## Updated after P12 permanent closure
 
 UI Architecture, Desktop Operator, Conversation, and Capability Runtime pipeline remain **frozen**.  
 Providers own **operations**. Providers never call each other.  
@@ -20,9 +20,9 @@ Presentation stays pure (Presentation Purity Rule).
 | **P12.5** | Window Conversation Product Proof | `40dd746` |
 | **P12.6** | Conversational Desktop Surface / Product Gravity | `d1dc8b8` |
 | **P12.7** | Operator Intelligence Foundation (TS interim) | `644c125` |
-| **P12 Finalization** | Kernel Operator + Presentation Purity | this milestone |
+| **P12 Finalization** | Kernel Operator + Presentation Purity | `daf3ae9` |
 
-P12 series is **complete** after Owner acceptance of Finalization. No further P12.x except genuine bug fixes.
+**P12 series is permanently complete.** No further P12.x except genuine bug fixes.
 
 ---
 

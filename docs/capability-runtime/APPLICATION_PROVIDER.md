@@ -72,7 +72,8 @@ Operation + status + target title/path + item counts. No keystroke payloads.
 | --- | --- |
 | Provider | `packages/kernel/src/capability_runtime/application_provider.rs` |
 | Command | `ExecuteApplicationOperation` |
-| IPC | `execute_application_operation` |
+| Conversation IPC | `execute_capability_intent` |
+| Diagnostic IPC | `execute_application_operation` |
 | Intent | `appOpen` / `appLaunch` / `appFocus` / `appClose` / `appMinimize` / `appRestore` / `appEnumerate` |
 
 ---

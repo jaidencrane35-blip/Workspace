@@ -5,11 +5,12 @@
 | **Program** | P12.5 Conversation Integration & Product Proof |
 | **Engineering base** | P12 Window Provider (complete — not reimplemented) |
 | **Harness** | `window-provider.proof.json` |
-| **Handoff** | `AWAITING_PROJECT_OWNER_WINDOW_PRODUCT_PROOF_REVIEW` |
+| **Conversation IPC** | `execute_capability_intent` (Kernel Operator) |
+| **Series status** | Included in **P12 permanently complete** closure |
 
 ---
 
-## Product finding this program closes
+## Product finding this program closed
 
 Repository progressed. Product did not.  
 Window Provider existed in the runtime but was not naturally usable through Conversation.  
@@ -64,7 +65,7 @@ Permissions remain `window.read` / `window.focus` / `window.state` / `window.pla
 
 ---
 
-## Acceptance
+## Acceptance (series)
 
-P12.5 is accepted only when the Product Owner can successfully use Window Provider through Conversation.  
-Only then may P13 become eligible.
+P12.5 Product Proof is part of the closed P12 series.  
+**P13** is the next constitutional execution program after P12 permanent closure.

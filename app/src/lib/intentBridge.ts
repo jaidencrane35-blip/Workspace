@@ -589,7 +589,7 @@ export function resolveIntent(raw: string): IntentAction {
       return {
         kind: "clipboardWrite",
         text: payload,
-        reply: "Writing to the clipboard through Capability Runtime.",
+        reply: "Copying that to the clipboard.",
       };
     }
   }
@@ -602,7 +602,7 @@ export function resolveIntent(raw: string): IntentAction {
   ) {
     return {
       kind: "clipboardRead",
-      reply: "Reading the clipboard through Capability Runtime.",
+      reply: "Checking the clipboard.",
     };
   }
 

@@ -1,13 +1,14 @@
 //! Capability Runtime — P10 foundation + P11 Application + P12 Window providers.
 //!
 //! Permanent pipeline:
-//! Conversation → Intent Layer → Operator Intelligence → Capability Router →
-//! Provider Registry → Capability Provider → Desktop Service →
-//! Operator (response) → Conversation Response.
+//! Conversation → Intent Layer → execute_capability_intent → Kernel Operator →
+//! Capability Runtime → Capability Router → Provider Registry →
+//! Capability Provider → Desktop Service → Kernel Operator (response) →
+//! Conversation Response.
 //!
 //! Providers own **operations**, not isolated features.
 //! Providers never call each other — only the Capability Runtime routes.
-//! Conversation never invokes providers — Operator Authority (P12.7).
+//! Conversation never invokes providers — Kernel Authority / Presentation Purity.
 
 mod application_provider;
 mod clipboard_provider;

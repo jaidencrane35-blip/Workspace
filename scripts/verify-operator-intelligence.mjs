@@ -109,4 +109,12 @@ if (!router.includes("Kernel Operator") && !router.includes("execute_capability_
   fail("Router spec must reference Kernel Operator / single IPC");
 }
 
+const intentBridge = fs.readFileSync(
+  path.join(root, "app/src/lib/intentBridge.ts"),
+  "utf8",
+);
+if (/through Capability Runtime|through Window Provider|through Application Provider/i.test(intentBridge)) {
+  fail("intentBridge must not leak provider/runtime terminology into replies");
+}
+
 console.log("verify-operator-intelligence: ok");
