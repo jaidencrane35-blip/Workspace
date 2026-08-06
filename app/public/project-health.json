@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-06T21:29:30.265Z",
+  "updatedAt": "2026-08-06T21:29:30.554Z",
   "constitution": {
     "document": "architecture/ARCHITECTURAL_CONSTITUTION_V2.md",
     "version": "2.0"
@@ -274,7 +274,7 @@
     "id": "application-provider-p11",
     "title": "P11 Application Provider",
     "status": "awaiting_owner_review",
-    "commit": "8d440f7"
+    "commit": "330a26b"
   },
   "acceptedReviews": [
     {
