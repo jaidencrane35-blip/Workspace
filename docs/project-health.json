@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-06T20:34:42.902Z",
+  "updatedAt": "2026-08-06T20:35:03.820Z",
   "constitution": {
     "document": "architecture/ARCHITECTURAL_CONSTITUTION_V2.md",
     "version": "2.0"
@@ -239,7 +239,7 @@
     "id": "ui-architecture-specification-p8",
     "title": "P8 Final Product Presentation Refoundation",
     "status": "awaiting_owner_review",
-    "commit": "c90de48"
+    "commit": "c045eb0"
   },
   "acceptedReviews": [
     {

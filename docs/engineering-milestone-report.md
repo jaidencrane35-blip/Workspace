@@ -6,7 +6,7 @@
 | **Execution program** | P8 Final Product Presentation Refoundation |
 | **Date** | 2026-08-07 |
 | **Prior** | P7 Productization (`e93fb79`); P6 shell accepted (`11bab9d`) |
-| **Commit** | `c90de48` |
+| **Commit** | `c045eb0` |
 | **Handoff** | `AWAITING_PROJECT_OWNER_UI_ARCHITECTURE_REVIEW` |
 | **Authority** | `docs/ui/UI_ARCHITECTURE_SPECIFICATION.md` |
 
