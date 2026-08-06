@@ -6,7 +6,7 @@
 | **Execution milestone** | Conversational Operator Foundation |
 | **Date** | 2026-08-07 |
 | **Branch** | `v2-dev` |
-| **Commit hash** | _(filled after push)_ |
+| **Commit hash** | `ac6f997906a0cdeec814d856d4a42c0465298201` |
 | **Repository version** | `0.1.0` (`package.json`) |
 | **Repository health** | healthy |
 | **Product authority** | `docs/00-Constitution/PRODUCT_CONSTITUTION.md` |
