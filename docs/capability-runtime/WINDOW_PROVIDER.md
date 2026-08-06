@@ -8,6 +8,7 @@
 | **Adoption** | **ADAPT** existing Win32 ports (`WindowEnumerator`, `WindowMutator`, `DesktopCapturer`) |
 | **Rejected identity** | FancyZones / AutoHotkey as product |
 | **Independence** | Never calls ApplicationProvider — Runtime routes only |
+| **Product Proof** | P12.5 — Conversation integration (`product-proof/WINDOW_PROVIDER_PRODUCT_PROOF.md`) |
 
 ---
 

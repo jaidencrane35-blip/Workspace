@@ -304,10 +304,13 @@ export function OperatorRoot({
         case "winMonitors":
         case "winBounds":
         case "winMaximize":
+        case "winMinimize":
+        case "winRestore":
         case "winSnap":
         case "winCenter":
         case "winMoveMonitor":
-        case "winFocus": {
+        case "winFocus":
+        case "winResize": {
           try {
             type WinResult = {
               operation: string;
@@ -336,33 +339,52 @@ export function OperatorRoot({
 
             if (action.kind === "winEnumerate") {
               const result = await run({ operation: "enumerate" });
+              if (!result.ok) {
+                await pushWorkspace(
+                  result.message ?? "I couldn’t list windows.",
+                );
+                break;
+              }
               const titles =
                 result.items
                   ?.slice(0, 12)
                   .map((item) => `• ${item.title}`)
                   .join("\n") ?? "(none)";
+              const count = result.items?.length ?? 0;
               await pushWorkspace(
-                `${result.message ?? "Windows listed."}\n${titles}`,
+                count === 0
+                  ? "No open windows found."
+                  : `Open windows (${count}):\n${titles}`,
               );
               break;
             }
             if (action.kind === "winMonitors") {
               const result = await run({ operation: "monitors" });
+              if (!result.ok) {
+                await pushWorkspace(
+                  result.message ?? "I couldn’t list monitors.",
+                );
+                break;
+              }
               const lines =
                 result.monitors
                   ?.map(
                     (m) =>
-                      `• ${m.index}: ${m.name}${m.isPrimary ? " (primary)" : ""}`,
+                      `• Monitor ${m.index}: ${m.name}${m.isPrimary ? " (primary)" : ""}`,
                   )
                   .join("\n") ?? "(none)";
               await pushWorkspace(
-                `${result.message ?? "Monitors listed."}\n${lines}`,
+                `${result.message ?? "Monitors attached."}\n${lines}`,
               );
               break;
             }
             if (action.kind === "winActive") {
               const result = await run({ operation: "active" });
-              await pushWorkspace(result.message ?? "No active window.");
+              await pushWorkspace(
+                result.ok
+                  ? (result.message ?? "Active window found.")
+                  : (result.message ?? "No active window."),
+              );
               break;
             }
             if (action.kind === "winSnap") {
@@ -371,7 +393,10 @@ export function OperatorRoot({
                 query: action.query,
                 snap: action.snap,
               });
-              await pushWorkspace(result.message ?? "Snap finished.");
+              await pushWorkspace(
+                result.message ??
+                  (result.ok ? "Moved the window." : "Couldn’t move that window."),
+              );
               break;
             }
             if (action.kind === "winMoveMonitor") {
@@ -380,7 +405,23 @@ export function OperatorRoot({
                 query: action.query,
                 monitor_index: action.monitorIndex,
               });
-              await pushWorkspace(result.message ?? "Move finished.");
+              await pushWorkspace(
+                result.message ??
+                  (result.ok ? "Moved the window." : "Couldn’t move that window."),
+              );
+              break;
+            }
+            if (action.kind === "winResize") {
+              const result = await run({
+                operation: "resize",
+                query: action.query,
+                width: action.width,
+                height: action.height,
+              });
+              await pushWorkspace(
+                result.message ??
+                  (result.ok ? "Resized the window." : "Couldn’t resize that window."),
+              );
               break;
             }
             const operation =
@@ -388,21 +429,29 @@ export function OperatorRoot({
                 ? "bounds"
                 : action.kind === "winMaximize"
                   ? "maximize"
-                  : action.kind === "winCenter"
-                    ? "center"
-                    : "focus";
+                  : action.kind === "winMinimize"
+                    ? "minimize"
+                    : action.kind === "winRestore"
+                      ? "restore"
+                      : action.kind === "winCenter"
+                        ? "center"
+                        : "focus";
             const result = await run({
               operation,
               query: "query" in action ? action.query : undefined,
             });
             await pushWorkspace(
-              result.message ?? result.text ?? `${operation} complete.`,
+              result.message ??
+                result.text ??
+                (result.ok
+                  ? "Done."
+                  : "That window action didn’t succeed."),
             );
           } catch (error) {
             const message =
               error instanceof IpcCommandError
                 ? error.message
-                : "Window operation failed.";
+                : "That window action failed.";
             await pushWorkspace(message);
           }
           break;

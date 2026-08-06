@@ -33,6 +33,8 @@ describe("capability evolution foundation", () => {
   it("detects evolution requests and approval phrases", () => {
     expect(isEvolutionRequest("Add a screenshot button")).toBe(true);
     expect(isEvolutionRequest("save this")).toBe(false);
+    expect(isEvolutionRequest("Move this window to the left.")).toBe(false);
+    expect(isEvolutionRequest("Show me my open windows.")).toBe(false);
     expect(parseApprovalIntent("approve proposal")).toBe("approve");
     expect(parseApprovalIntent("reject proposal")).toBe("reject");
   });

@@ -1,0 +1,145 @@
+{
+  "schemaVersion": 1,
+  "provider": "window",
+  "program": "P12.5",
+  "pipeline": [
+    "Conversation",
+    "Intent Layer",
+    "Capability Router",
+    "Provider Registry",
+    "Window Provider",
+    "Desktop Service",
+    "Conversation Response"
+  ],
+  "ipc": "execute_window_operation",
+  "userLanguageRules": [
+    "Never expose Provider, Router, or Registry terminology",
+    "Never invent success",
+    "Ask for clarification when placement target is missing"
+  ],
+  "examples": [
+    {
+      "category": "discovery",
+      "utterance": "What windows are open?",
+      "expectedKind": "winEnumerate",
+      "expectedOperation": "enumerate"
+    },
+    {
+      "category": "discovery",
+      "utterance": "Show me my open windows.",
+      "expectedKind": "winEnumerate",
+      "expectedOperation": "enumerate"
+    },
+    {
+      "category": "discovery",
+      "utterance": "Which window is active?",
+      "expectedKind": "winActive",
+      "expectedOperation": "active"
+    },
+    {
+      "category": "discovery",
+      "utterance": "list windows",
+      "expectedKind": "winEnumerate",
+      "expectedOperation": "enumerate"
+    },
+    {
+      "category": "placement",
+      "utterance": "Move this window to the left.",
+      "expectedKind": "winSnap",
+      "expectedOperation": "snap",
+      "expectedSnap": "left",
+      "expectedQuery": "this"
+    },
+    {
+      "category": "placement",
+      "utterance": "Center this window.",
+      "expectedKind": "winCenter",
+      "expectedOperation": "center",
+      "expectedQuery": "this"
+    },
+    {
+      "category": "state",
+      "utterance": "Maximize Cursor.",
+      "expectedKind": "winMaximize",
+      "expectedOperation": "maximize",
+      "expectedQuery": "Cursor"
+    },
+    {
+      "category": "state",
+      "utterance": "Restore Chrome.",
+      "expectedKind": "winRestore",
+      "expectedOperation": "restore",
+      "expectedQuery": "Chrome"
+    },
+    {
+      "category": "focus",
+      "utterance": "Bring Chrome to the front.",
+      "expectedKind": "winFocus",
+      "expectedOperation": "focus",
+      "expectedQuery": "Chrome"
+    },
+    {
+      "category": "placement",
+      "utterance": "Move Chrome to monitor two.",
+      "expectedKind": "winMoveMonitor",
+      "expectedOperation": "move",
+      "expectedQuery": "Chrome",
+      "expectedMonitorIndex": 2
+    },
+    {
+      "category": "placement",
+      "utterance": "snap Chrome left",
+      "expectedKind": "winSnap",
+      "expectedOperation": "snap",
+      "expectedSnap": "left",
+      "expectedQuery": "Chrome"
+    },
+    {
+      "category": "placement",
+      "utterance": "resize this window to 1280x720",
+      "expectedKind": "winResize",
+      "expectedOperation": "resize",
+      "expectedQuery": "this",
+      "expectedWidth": 1280,
+      "expectedHeight": 720
+    }
+  ],
+  "clarifications": [
+    {
+      "category": "placement",
+      "utterance": "Move this window.",
+      "expectedKind": "unknown",
+      "mustMention": "left"
+    },
+    {
+      "category": "placement",
+      "utterance": "Resize this window.",
+      "expectedKind": "unknown",
+      "mustMention": "size"
+    }
+  ],
+  "failureExamples": [
+    {
+      "note": "No matching window title",
+      "expectedUserFeedback": "No matching window."
+    },
+    {
+      "note": "IPC / permission failure",
+      "expectedUserFeedback": "Truthful error text from runtime — never pretend success"
+    }
+  ],
+  "permissionNotes": [
+    "window.read — enumerate, active, bounds, monitors",
+    "window.focus — focus / activate",
+    "window.state — minimize, restore, maximize",
+    "window.place — move, resize, center, snap"
+  ],
+  "ownerReviewChecklist": [
+    "Window discovery — ask what windows are open",
+    "Window focus — bring an app to the front by name",
+    "Window state — maximize / restore a named window",
+    "Window placement — snap left / center / move to another monitor",
+    "Clarification — say “move this window” and expect a where-question",
+    "Honesty — ask for a window that does not exist and expect a clear miss"
+  ]
+}

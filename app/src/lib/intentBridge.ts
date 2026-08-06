@@ -48,10 +48,19 @@ export type IntentAction =
   | { kind: "winMonitors"; reply: string }
   | { kind: "winBounds"; query: string; reply: string }
   | { kind: "winMaximize"; query: string; reply: string }
+  | { kind: "winMinimize"; query: string; reply: string }
+  | { kind: "winRestore"; query: string; reply: string }
   | { kind: "winSnap"; query: string; snap: string; reply: string }
   | { kind: "winCenter"; query: string; reply: string }
   | { kind: "winMoveMonitor"; query: string; monitorIndex: number; reply: string }
   | { kind: "winFocus"; query: string; reply: string }
+  | {
+      kind: "winResize";
+      query: string;
+      width: number;
+      height: number;
+      reply: string;
+    }
   | { kind: "unknown"; reply: string; suggestion?: string };
 
 function normalize(input: string): string {
@@ -60,6 +69,280 @@ function normalize(input: string): string {
     .toLowerCase()
     .replace(/[.!?]+$/g, "")
     .replace(/\s+/g, " ");
+}
+
+function stripTrailingPunctuation(value: string): string {
+  return value.trim().replace(/[.!?]+$/g, "").trim();
+}
+
+/** Map spoken monitor references to 1-based indices used by Window Provider. */
+function parseMonitorIndex(token: string): number | null {
+  const t = token.trim().toLowerCase();
+  if (/^\d+$/.test(t)) {
+    return Number(t);
+  }
+  const words: Record<string, number> = {
+    one: 1,
+    first: 1,
+    two: 2,
+    second: 2,
+    three: 3,
+    third: 3,
+    four: 4,
+    fourth: 4,
+  };
+  return words[t] ?? null;
+}
+
+function windowTarget(rawQuery: string | undefined): string {
+  const q = stripTrailingPunctuation(rawQuery ?? "");
+  if (!q || /^(this|it|the|active|current|foreground)(\s+window)?$/i.test(q)) {
+    return "this";
+  }
+  return q.replace(/^(the|my)\s+/i, "").trim() || "this";
+}
+
+/**
+ * Architecture-driven Window intents (Conversation language → Window operations).
+ * Must run before capability-evolution proposals that also match move/resize/show.
+ */
+function resolveWindowIntent(raw: string, text: string): IntentAction | null {
+  const utterance = stripTrailingPunctuation(raw);
+
+  if (
+    /\b(what windows are open|which windows are open|show( me)?( my)?( open)? windows|list( (all|my|open))? windows|open windows|what('?s| is) open on (my |the )?desktop)\b/.test(
+      text,
+    ) ||
+    text === "windows" ||
+    text === "what windows" ||
+    text === "show windows"
+  ) {
+    return {
+      kind: "winEnumerate",
+      reply: "Checking which windows are open.",
+    };
+  }
+
+  if (
+    /\b(which window is active|what('?s| is) (the )?(active|focused|foreground) window|active window|foreground window|what('?s| is) focused)\b/.test(
+      text,
+    )
+  ) {
+    return {
+      kind: "winActive",
+      reply: "Checking the active window.",
+    };
+  }
+
+  if (
+    /\b(list (my )?monitors|list (my )?displays|what monitors|which monitors|how many (monitors|displays))\b/.test(
+      text,
+    ) ||
+    text === "monitors" ||
+    text === "displays"
+  ) {
+    return {
+      kind: "winMonitors",
+      reply: "Checking attached monitors.",
+    };
+  }
+
+  const snapEdge =
+    utterance.match(
+      /^(?:snap|move)\s+(?:window\s+)?(.+?)\s+(?:to\s+the\s+)?(left|right|top|bottom)(?:\s+side)?$/i,
+    ) ??
+    utterance.match(
+      /^(?:move|snap)\s+(?:this|the|my)?\s*window\s+(?:to\s+the\s+)?(left|right|top|bottom)(?:\s+side)?$/i,
+    );
+  if (snapEdge) {
+    if (snapEdge.length === 3 && snapEdge[1] && snapEdge[2]) {
+      const edge = snapEdge[2].toLowerCase();
+      const query = windowTarget(snapEdge[1]);
+      return {
+        kind: "winSnap",
+        query,
+        snap: edge,
+        reply: `Moving ${query === "this" ? "this window" : `“${query}”`} to the ${edge}.`,
+      };
+    }
+    if (snapEdge.length === 2 && snapEdge[1]) {
+      const edge = snapEdge[1].toLowerCase();
+      return {
+        kind: "winSnap",
+        query: "this",
+        snap: edge,
+        reply: `Moving this window to the ${edge}.`,
+      };
+    }
+  }
+
+  const moveMonitor =
+    utterance.match(
+      /^(?:move|send)\s+(?:window\s+)?(.+?)\s+to\s+(?:monitor|display)\s+(\d+|one|two|three|four|first|second|third|fourth)$/i,
+    ) ??
+    utterance.match(
+      /^(?:move|send)\s+(?:this|the|my)?\s*window\s+to\s+(?:monitor|display)\s+(\d+|one|two|three|four|first|second|third|fourth)$/i,
+    );
+  if (moveMonitor) {
+    if (moveMonitor.length === 3 && moveMonitor[1] && moveMonitor[2]) {
+      const monitorIndex = parseMonitorIndex(moveMonitor[2]);
+      if (monitorIndex != null) {
+        const query = windowTarget(moveMonitor[1]);
+        return {
+          kind: "winMoveMonitor",
+          query,
+          monitorIndex,
+          reply: `Moving ${query === "this" ? "this window" : `“${query}”`} to monitor ${monitorIndex}.`,
+        };
+      }
+    }
+    if (moveMonitor.length === 2 && moveMonitor[1]) {
+      const monitorIndex = parseMonitorIndex(moveMonitor[1]);
+      if (monitorIndex != null) {
+        return {
+          kind: "winMoveMonitor",
+          query: "this",
+          monitorIndex,
+          reply: `Moving this window to monitor ${monitorIndex}.`,
+        };
+      }
+    }
+  }
+
+  const maximize = utterance.match(
+    /^(?:maximize|maximise)(?:\s+(?:window\s+)?(.+))?$/i,
+  );
+  if (maximize) {
+    const query = windowTarget(maximize[1]);
+    return {
+      kind: "winMaximize",
+      query,
+      reply:
+        query === "this"
+          ? "Maximizing this window."
+          : `Maximizing “${query}”.`,
+    };
+  }
+
+  const minimize = utterance.match(
+    /^(?:minimize|minimise)(?:\s+(?:window\s+)?(.+))?$/i,
+  );
+  if (minimize) {
+    const query = windowTarget(minimize[1]);
+    return {
+      kind: "winMinimize",
+      query,
+      reply:
+        query === "this"
+          ? "Minimizing this window."
+          : `Minimizing “${query}”.`,
+    };
+  }
+
+  const restoreWin = utterance.match(
+    /^(?:restore|unminimize)(?:\s+(?:window\s+|app\s+)?(.+))?$/i,
+  );
+  if (restoreWin) {
+    const candidate = stripTrailingPunctuation(restoreWin[1] ?? "");
+    const momentOnly =
+      /^(yesterday|workspace|history|saved work|moments?)$/i.test(candidate);
+    if (!momentOnly) {
+      const query = windowTarget(candidate || "this");
+      return {
+        kind: "winRestore",
+        query,
+        reply:
+          query === "this"
+            ? "Restoring this window."
+            : `Restoring “${query}”.`,
+      };
+    }
+  }
+
+  const center = utterance.match(
+    /^(?:center|centre)(?:\s+(?:window\s+)?(.+))?$/i,
+  );
+  if (center) {
+    const query = windowTarget(center[1]);
+    return {
+      kind: "winCenter",
+      query,
+      reply:
+        query === "this"
+          ? "Centering this window."
+          : `Centering “${query}”.`,
+    };
+  }
+
+  const focusFront =
+    utterance.match(/^(?:bring)\s+(.+?)\s+to\s+(?:the\s+)?front$/i) ??
+    utterance.match(/^(?:focus(?:\s+window)?|activate)\s+(.+)$/i);
+  if (focusFront?.[1]) {
+    const query = windowTarget(focusFront[1]);
+    return {
+      kind: "winFocus",
+      query,
+      reply:
+        query === "this"
+          ? "Bringing this window to the front."
+          : `Bringing “${query}” to the front.`,
+    };
+  }
+
+  const bounds = utterance.match(
+    /^(?:bounds|where is|window (?:info|size|position)(?: for)?)\s+(.+)$/i,
+  );
+  if (bounds?.[1]) {
+    const query = windowTarget(bounds[1]);
+    return {
+      kind: "winBounds",
+      query,
+      reply:
+        query === "this"
+          ? "Reading this window’s size and position."
+          : `Reading size and position for “${query}”.`,
+    };
+  }
+
+  const resizeDims = utterance.match(
+    /^(?:resize)\s+(?:window\s+)?(.+?)\s+to\s+(\d+)\s*[x×]\s*(\d+)$/i,
+  );
+  if (resizeDims?.[1] && resizeDims[2] && resizeDims[3]) {
+    const query = windowTarget(resizeDims[1]);
+    const width = Number(resizeDims[2]);
+    const height = Number(resizeDims[3]);
+    return {
+      kind: "winResize",
+      query,
+      width,
+      height,
+      reply: `Resizing ${query === "this" ? "this window" : `“${query}”`} to ${width}×${height}.`,
+    };
+  }
+
+  // Honest clarification — never invent a placement.
+  if (
+    /^(move|resize)(\s+(this|the|my))?(\s+window)?$/.test(text) ||
+    /^move this window$/.test(text) ||
+    /^resize this window$/.test(text)
+  ) {
+    if (text.startsWith("resize")) {
+      return {
+        kind: "unknown",
+        reply:
+          "I can resize a window when you give a size — for example “resize this window to 1280x720”.",
+        suggestion: "Or try “snap this window left” / “center this window”.",
+      };
+    }
+    return {
+      kind: "unknown",
+      reply:
+        "I can move a window when you say where — for example “move this window to the left” or “move this window to monitor two”.",
+      suggestion: "Try “center this window” or “maximize this window”.",
+    };
+  }
+
+  return null;
 }
 
 /**
@@ -139,45 +422,10 @@ export function resolveIntent(raw: string): IntentAction {
     };
   }
 
-  // Concrete Window Provider intents take precedence over evolution proposals
-  // (evolution also matches verbs like "move" / "resize").
-  const earlyWinSnap = raw
-    .trim()
-    .match(/^snap\s+(.+?)\s+(left|right|top|bottom)$/i);
-  if (earlyWinSnap?.[1] && earlyWinSnap[2]) {
-    return {
-      kind: "winSnap",
-      query: earlyWinSnap[1].trim(),
-      snap: earlyWinSnap[2].toLowerCase(),
-      reply: `Snapping “${earlyWinSnap[1].trim()}” ${earlyWinSnap[2].toLowerCase()} through Window Provider.`,
-    };
-  }
-  const earlyWinMoveMon = raw
-    .trim()
-    .match(/^move\s+(?:window\s+)?(.+?)\s+to\s+monitor\s+(\d+)$/i);
-  if (earlyWinMoveMon?.[1] && earlyWinMoveMon[2]) {
-    return {
-      kind: "winMoveMonitor",
-      query: earlyWinMoveMon[1].trim(),
-      monitorIndex: Number(earlyWinMoveMon[2]),
-      reply: `Moving “${earlyWinMoveMon[1].trim()}” to monitor ${earlyWinMoveMon[2]} through Window Provider.`,
-    };
-  }
-  const earlyWinMax = raw.trim().match(/^maximize\s+(.+)$/i);
-  if (earlyWinMax?.[1]) {
-    return {
-      kind: "winMaximize",
-      query: earlyWinMax[1].trim().replace(/[.!?]+$/g, ""),
-      reply: `Maximizing “${earlyWinMax[1].trim()}” through Window Provider.`,
-    };
-  }
-  const earlyWinCenter = raw.trim().match(/^center\s+(.+)$/i);
-  if (earlyWinCenter?.[1]) {
-    return {
-      kind: "winCenter",
-      query: earlyWinCenter[1].trim().replace(/[.!?]+$/g, ""),
-      reply: `Centering “${earlyWinCenter[1].trim()}” through Window Provider.`,
-    };
+  // Window operations before evolution (evolution also matches move/resize/show).
+  const windowIntent = resolveWindowIntent(raw, text);
+  if (windowIntent) {
+    return windowIntent;
   }
 
   if (isEvolutionRequest(raw)) {
@@ -254,11 +502,12 @@ export function resolveIntent(raw: string): IntentAction {
     };
   }
 
+  // Moments use Continue / Resume. Bare “restore <app>” is Window state (P12.5).
   const namedMoment = raw
     .trim()
-    .match(/^(?:restore|continue|resume|open\s+moment)\s+(.+)$/i);
+    .match(/^(?:continue|resume|open\s+moment)\s+(.+)$/i);
   if (namedMoment?.[1]) {
-    const nameQuery = namedMoment[1].trim().replace(/[.!?]+$/g, "");
+    const nameQuery = stripTrailingPunctuation(namedMoment[1]);
     const blocked =
       /^(yesterday|workspace|history|saved work|moments?|settings|guide|help|check[- ]?in)$/i.test(
         nameQuery,
@@ -274,9 +523,10 @@ export function resolveIntent(raw: string): IntentAction {
   }
 
   if (
-    /\b(continue|restore|resume)\b/.test(text) ||
+    /\b(continue|resume)\b/.test(text) ||
     /\byesterday\b/.test(text) ||
     text === "restore workspace" ||
+    text === "restore yesterday" ||
     text === "continue yesterday"
   ) {
     return {
@@ -357,103 +607,13 @@ export function resolveIntent(raw: string): IntentAction {
   }
 
   if (
-    /\b(list (running )?apps?|list applications|what('?s| is) (running|open)|running applications)\b/.test(
+    /\b(list (running )?apps?|list applications|what('?s| is) running|running applications)\b/.test(
       text,
     )
   ) {
     return {
       kind: "appEnumerate",
-      reply: "Listing running application windows through Capability Runtime.",
-    };
-  }
-
-  if (
-    /\b(list windows|what windows|show windows)\b/.test(text) ||
-    text === "windows"
-  ) {
-    return {
-      kind: "winEnumerate",
-      reply: "Listing windows through Window Provider.",
-    };
-  }
-
-  if (
-    /\b(active window|foreground window|what('?s| is) focused|which window)\b/.test(
-      text,
-    )
-  ) {
-    return {
-      kind: "winActive",
-      reply: "Reading the active window through Window Provider.",
-    };
-  }
-
-  if (/\b(list monitors|monitors|displays)\b/.test(text)) {
-    return {
-      kind: "winMonitors",
-      reply: "Listing monitors through Window Provider.",
-    };
-  }
-
-  const winSnap = raw
-    .trim()
-    .match(/^snap\s+(.+?)\s+(left|right|top|bottom)$/i);
-  if (winSnap?.[1] && winSnap[2]) {
-    return {
-      kind: "winSnap",
-      query: winSnap[1].trim(),
-      snap: winSnap[2].toLowerCase(),
-      reply: `Snapping “${winSnap[1].trim()}” ${winSnap[2].toLowerCase()} through Window Provider.`,
-    };
-  }
-
-  const winMoveMon = raw
-    .trim()
-    .match(/^move\s+(?:window\s+)?(.+?)\s+to\s+monitor\s+(\d+)$/i);
-  if (winMoveMon?.[1] && winMoveMon[2]) {
-    return {
-      kind: "winMoveMonitor",
-      query: winMoveMon[1].trim(),
-      monitorIndex: Number(winMoveMon[2]),
-      reply: `Moving “${winMoveMon[1].trim()}” to monitor ${winMoveMon[2]} through Window Provider.`,
-    };
-  }
-
-  const winCenter = raw.trim().match(/^center\s+(.+)$/i);
-  if (winCenter?.[1]) {
-    return {
-      kind: "winCenter",
-      query: winCenter[1].trim().replace(/[.!?]+$/g, ""),
-      reply: `Centering “${winCenter[1].trim()}” through Window Provider.`,
-    };
-  }
-
-  const winMax = raw.trim().match(/^maximize\s+(.+)$/i);
-  if (winMax?.[1]) {
-    return {
-      kind: "winMaximize",
-      query: winMax[1].trim().replace(/[.!?]+$/g, ""),
-      reply: `Maximizing “${winMax[1].trim()}” through Window Provider.`,
-    };
-  }
-
-  const winBounds = raw
-    .trim()
-    .match(/^(?:bounds|where is|window info(?: for)?)\s+(.+)$/i);
-  if (winBounds?.[1]) {
-    return {
-      kind: "winBounds",
-      query: winBounds[1].trim().replace(/[.!?]+$/g, ""),
-      reply: `Reading bounds for “${winBounds[1].trim()}” through Window Provider.`,
-    };
-  }
-
-  const winFocus = raw.trim().match(/^focus window\s+(.+)$/i);
-  if (winFocus?.[1]) {
-    return {
-      kind: "winFocus",
-      query: winFocus[1].trim().replace(/[.!?]+$/g, ""),
-      reply: `Focusing window “${winFocus[1].trim()}” through Window Provider.`,
+      reply: "Listing running applications.",
     };
   }
 
@@ -461,52 +621,26 @@ export function resolveIntent(raw: string): IntentAction {
     .trim()
     .match(/^(?:close|quit|exit)\s+(.+)$/i);
   if (appClose?.[1]) {
-    const query = appClose[1].trim().replace(/[.!?]+$/g, "");
+    const query = stripTrailingPunctuation(appClose[1]);
     if (query && !/^(workspace|conversation)$/i.test(query)) {
       return {
         kind: "appClose",
         query,
-        reply: `Closing “${query}” through Application Provider.`,
-      };
-    }
-  }
-
-  const appMinimize = raw.trim().match(/^minimize\s+(.+)$/i);
-  if (appMinimize?.[1]) {
-    const query = appMinimize[1].trim().replace(/[.!?]+$/g, "");
-    if (query) {
-      return {
-        kind: "appMinimize",
-        query,
-        reply: `Minimizing “${query}” through Application Provider.`,
-      };
-    }
-  }
-
-  const appRestore = raw
-    .trim()
-    .match(/^(?:unminimize|restore\s+(?:window|app))\s+(.+)$/i);
-  if (appRestore?.[1]) {
-    const query = appRestore[1].trim().replace(/[.!?]+$/g, "");
-    if (query) {
-      return {
-        kind: "appRestore",
-        query,
-        reply: `Restoring “${query}” through Application Provider.`,
+        reply: `Closing “${query}”.`,
       };
     }
   }
 
   const appFocus = raw
     .trim()
-    .match(/^(?:switch\s+to|focus|bring\s+(?:up|to front))\s+(.+)$/i);
+    .match(/^(?:switch\s+to|bring\s+up)\s+(.+)$/i);
   if (appFocus?.[1]) {
-    const query = appFocus[1].trim().replace(/[.!?]+$/g, "");
+    const query = stripTrailingPunctuation(appFocus[1]);
     if (query) {
       return {
         kind: "appFocus",
         query,
-        reply: `Focusing “${query}” through Application Provider.`,
+        reply: `Switching to “${query}”.`,
       };
     }
   }
@@ -515,24 +649,24 @@ export function resolveIntent(raw: string): IntentAction {
     .trim()
     .match(/^(?:launch|start)\s+(.+)$/i);
   if (appLaunchExplicit?.[1]) {
-    const query = appLaunchExplicit[1].trim().replace(/[.!?]+$/g, "");
+    const query = stripTrailingPunctuation(appLaunchExplicit[1]);
     if (query) {
       return {
         kind: "appLaunch",
         query,
-        reply: `Launching “${query}” through Application Provider.`,
+        reply: `Launching “${query}”.`,
       };
     }
   }
 
   const appOpen = raw.trim().match(/^open\s+(.+)$/i);
   if (appOpen?.[1]) {
-    const query = appOpen[1].trim().replace(/[.!?]+$/g, "");
+    const query = stripTrailingPunctuation(appOpen[1]);
     if (query && !/^(workspace|conversation)$/i.test(query)) {
       return {
         kind: "appOpen",
         query,
-        reply: `Opening “${query}” through Application Provider (focus if running, else launch).`,
+        reply: `Opening “${query}”.`,
       };
     }
   }
@@ -540,9 +674,9 @@ export function resolveIntent(raw: string): IntentAction {
   return {
     kind: "unknown",
     reply:
-      "I don’t have that yet — and I won’t invent it. Closest available: Save, Continue, Moments, Check-in, Guide, open/launch apps, or propose a change.",
+      "I don’t have that yet — and I won’t invent it. Closest available: window control, open/launch apps, Save, Continue, Moments, Check-in, or Guide.",
     suggestion:
-      "Try “open notepad”, “list apps”, “switch to Chrome”, “save this”, or “continue”.",
+      "Try “what windows are open?”, “maximize Cursor”, “move this window to the left”, “open notepad”, or “save this”.",
   };
 }
 

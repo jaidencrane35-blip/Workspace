@@ -1,8 +1,9 @@
 # Rolling Capability Provider Roadmap
-## Updated after P12 Window Provider
+## Updated after P12.5 Window Product Proof
 
 UI Architecture, Desktop Operator, Conversation, and Capability Runtime pipeline remain **frozen**.  
-Providers own **operations**. Providers never call each other.
+Providers own **operations**. Providers never call each other.  
+Every provider requires **Engineering Completion + Product Proof**.
 
 ---
 
@@ -12,7 +13,8 @@ Providers own **operations**. Providers never call each other.
 | --- | --- | --- |
 | **P10** | Capability Runtime Foundation + Clipboard | `23492a8` |
 | **P11** | Application Provider | `330a26b` |
-| **P12** | Window Provider | this milestone |
+| **P12** | Window Provider (engineering) | `66465b8` |
+| **P12.5** | Window Conversation Product Proof | this milestone |
 
 ---
 
@@ -20,7 +22,7 @@ Providers own **operations**. Providers never call each other.
 
 | Program | Title | Why |
 | --- | --- | --- |
-| **P13** | Notifications Provider | Lightweight outbound feedback |
+| **P13** | Notifications Provider | Lightweight outbound feedback — **must include Product Proof** |
 | **P14** | Browser Provider | URL open (WRAP) |
 | **P15** | Screenshot Provider | Capture under consent |
 | **P16** | File Provider | Scoped FS for later automation |
@@ -35,5 +37,5 @@ Longer: P18 Voice → P19 Memory → P20 Automation → P21 Intelligence
 1. Frozen Levels 1–3 (Product / Architecture / UI) stay frozen.  
 2. Pipeline only — no bypasses.  
 3. Providers own operations; independently testable.  
-4. Every program delivers user-visible value or unblocks it.  
+4. Every provider ends with Conversation Product Proof (`PRODUCT_PROOF_RULE.md`).  
 5. One program → stop for Owner review.  

@@ -61,7 +61,7 @@ Conversation examples:
 
 - “Open notepad” / “Launch chrome” / “Switch to Chrome” / “Close Spotify” / “List apps”
 
-### Window (P12)
+### Window (P12 + P12.5 Product Proof)
 
 | Kind | Domain | Operation(s) | IPC |
 | --- | --- | --- | --- |
@@ -70,12 +70,19 @@ Conversation examples:
 | `winMonitors` | window | monitors | same |
 | `winBounds` | window | bounds | same |
 | `winMaximize` | window | maximize | same |
+| `winMinimize` | window | minimize | same |
+| `winRestore` | window | restore | same |
 | `winSnap` | window | snap | same |
 | `winCenter` | window | center | same |
 | `winMoveMonitor` | window | move + monitorIndex | same |
 | `winFocus` | window | focus | same |
+| `winResize` | window | resize | same |
 
-Examples: “List windows” / “Snap Chrome left” / “Move Cursor to monitor 1” / “Maximize notepad”
+Natural examples (Product Proof): “What windows are open?” / “Move this window to the left.” / “Center this window.” / “Maximize Cursor.” / “Restore Chrome.” / “Bring Chrome to the front.” / “Move Chrome to monitor two.”
+
+Deixis: `this` / `this window` / bare operate verbs resolve to the active window inside Window Provider.  
+Clarification: “Move this window.” / “Resize this window.” ask where/size — never invent effects.  
+User-facing replies never mention providers.
 
 ---
 

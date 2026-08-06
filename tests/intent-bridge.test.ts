@@ -55,18 +55,40 @@ describe("intent bridge", () => {
 
   it("routes window provider operations", () => {
     expect(resolveIntent("list windows").kind).toBe("winEnumerate");
+    expect(resolveIntent("What windows are open?").kind).toBe("winEnumerate");
+    expect(resolveIntent("Show me my open windows.").kind).toBe("winEnumerate");
+    expect(resolveIntent("Which window is active?").kind).toBe("winActive");
     expect(resolveIntent("snap Chrome left")).toMatchObject({
       kind: "winSnap",
       query: "Chrome",
+      snap: "left",
+    });
+    expect(resolveIntent("Move this window to the left.")).toMatchObject({
+      kind: "winSnap",
+      query: "this",
       snap: "left",
     });
     expect(resolveIntent("maximize notepad")).toMatchObject({
       kind: "winMaximize",
       query: "notepad",
     });
+    expect(resolveIntent("Restore Chrome.")).toMatchObject({
+      kind: "winRestore",
+      query: "Chrome",
+    });
+    expect(resolveIntent("Bring Chrome to the front.")).toMatchObject({
+      kind: "winFocus",
+      query: "Chrome",
+    });
     expect(resolveIntent("move Cursor to monitor 1")).toMatchObject({
       kind: "winMoveMonitor",
       monitorIndex: 1,
     });
+    expect(resolveIntent("Move Chrome to monitor two.")).toMatchObject({
+      kind: "winMoveMonitor",
+      query: "Chrome",
+      monitorIndex: 2,
+    });
+    expect(resolveIntent("Move this window.").kind).toBe("unknown");
   });
 });

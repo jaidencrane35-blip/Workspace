@@ -39,6 +39,7 @@ const required = [
   "docs/capability-runtime/APPLICATION_PROVIDER.md",
   "docs/capability-runtime/WINDOW_PROVIDER.md",
   "docs/capability-runtime/WINDOW_OPERATIONS_SPECIFICATION.md",
+  "docs/capability-runtime/PRODUCT_PROOF_RULE.md",
 ];
 
 for (const rel of required) {

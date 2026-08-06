@@ -49,7 +49,9 @@ Cross-capability message envelopes remain governed by `architecture/10_Capabilit
 | **Failures** | not_found; focus refused; invalid size; no monitor |
 | **Rollback** | Prior bounds snapshot — future |
 | **Audit** | operation + status + target + geometry summary |
-| **P12 status** | **Window Provider shipped** (Levels 1–2) |
+| **P12 status** | **Window Provider engineering complete** (Levels 1–2) |
+| **P12.5 status** | **Window Conversation Product Proof shipped** — awaiting Owner Product Proof review |
+| **Product Proof Rule** | `docs/capability-runtime/PRODUCT_PROOF_RULE.md` (permanent) |
 | **Adoption** | ADAPT Win32 ports; FancyZones = STUDY only |
 | **Rust** | `WindowProvider` + `ExecuteWindowOperation` |
 | **TypeScript** | `winEnumerate` / `winSnap` / … → IPC only |

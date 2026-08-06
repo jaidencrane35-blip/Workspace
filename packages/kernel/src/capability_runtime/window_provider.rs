@@ -84,6 +84,52 @@ impl WindowProvider {
         Ok(capture.monitors)
     }
 
+    fn is_active_deixis(query: &str) -> bool {
+        matches!(
+            query.trim().to_ascii_lowercase().as_str(),
+            "this"
+                | "it"
+                | "this window"
+                | "the window"
+                | "the active window"
+                | "active"
+                | "active window"
+                | "current"
+                | "current window"
+                | "foreground"
+                | "foreground window"
+        )
+    }
+
+    fn foreground_window(&self) -> Result<Option<DesktopWindowSnapshot>> {
+        let capture =
+            self.ports
+                .capturer
+                .capture_desktop()
+                .map_err(|error| KernelError::WindowsIntegration {
+                    message: error.to_string(),
+                })?;
+        let Some(hwnd) = capture.foreground_hwnd.as_ref() else {
+            return Ok(None);
+        };
+        Ok(capture.windows.iter().find(|w| &w.hwnd == hwnd).map(|w| {
+            DesktopWindowSnapshot {
+                hwnd: w.hwnd.clone(),
+                title: w.title.clone(),
+                process_id: w.process_id,
+                visible: w.visible,
+                focused: w.focused,
+                minimized: w.minimized,
+                x: w.x,
+                y: w.y,
+                width: w.width,
+                height: w.height,
+                monitor_index: w.monitor_index,
+                monitor_name: None,
+            }
+        }))
+    }
+
     fn match_windows(&self, request: &ProviderInvokeRequest) -> Result<Vec<DesktopWindowSnapshot>> {
         let windows = self.windows()?;
         if let Some(hwnd) = request.hwnd.as_deref() {
@@ -98,6 +144,11 @@ impl WindowProvider {
             .map(str::trim)
             .filter(|value| !value.is_empty())
             .map(|value| value.to_ascii_lowercase());
+        if let Some(ref needle) = query {
+            if Self::is_active_deixis(needle) {
+                return Ok(self.foreground_window()?.into_iter().collect());
+            }
+        }
         let path = request
             .path
             .as_deref()
@@ -128,6 +179,11 @@ impl WindowProvider {
         &self,
         request: &ProviderInvokeRequest,
     ) -> Result<Option<DesktopWindowSnapshot>> {
+        let query = request.query.as_deref().map(str::trim).unwrap_or("");
+        if query.is_empty() {
+            // Bare operate verbs (“maximize”, “center”) target the active window.
+            return self.foreground_window();
+        }
         Ok(self.match_windows(request)?.into_iter().next())
     }
 

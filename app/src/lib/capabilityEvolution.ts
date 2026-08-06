@@ -117,10 +117,43 @@ function normalize(input: string): string {
     .replace(/\s+/g, " ");
 }
 
+/**
+ * Desktop window operations must not be classified as product-evolution proposals.
+ * Conversation owns language; Window Provider owns execution.
+ */
+export function isWindowDesktopRequest(raw: string): boolean {
+  const text = normalize(raw);
+  if (!text) {
+    return false;
+  }
+  // Presentation / chrome evolution stays in the proposal pipeline.
+  if (
+    /\b(chat|conversation|theme|transparent|opacity|screenshot button|operator chrome)\b/.test(
+      text,
+    )
+  ) {
+    return false;
+  }
+  return (
+    /\b(windows?|monitors?|displays?|snap|maximize|maximise|minimi[sz]e|unminimize|center|centre|foreground|active window|open windows)\b/.test(
+      text,
+    ) ||
+    /\b(move|resize|bring|restore|focus)\b[\s\S]*\b(window|monitor|display|left|right|top|bottom|front)\b/.test(
+      text,
+    ) ||
+    /^(maximize|maximise|minimi[sz]e|center|centre|snap|restore|focus)\b/.test(text) ||
+    /\b(what|which|show|list).*\bwindows?\b/.test(text) ||
+    /\bwindows?\b.*\b(open|running|active)\b/.test(text)
+  );
+}
+
 /** Detect whether an utterance is a product-change request vs an operational intent. */
 export function isEvolutionRequest(raw: string): boolean {
   const text = normalize(raw);
   if (!text) {
+    return false;
+  }
+  if (isWindowDesktopRequest(raw)) {
     return false;
   }
   return (

@@ -19,10 +19,15 @@ describe("moment match + named intents", () => {
     expect(matchMomentByName(moments, "Atlantis")).toBeNull();
   });
 
-  it("routes restore <name> and save as <name>", () => {
-    expect(resolveIntent("Restore Northwind")).toMatchObject({
+  it("routes continue <name> and save as <name>", () => {
+    // Moments use Continue/Resume; bare “Restore <app>” is Window state (P12.5).
+    expect(resolveIntent("Continue Northwind")).toMatchObject({
       kind: "navigateNamed",
       nameQuery: "Northwind",
+    });
+    expect(resolveIntent("Restore Chrome")).toMatchObject({
+      kind: "winRestore",
+      query: "Chrome",
     });
     expect(resolveIntent("save this as Northwind")).toMatchObject({
       kind: "saveAs",
