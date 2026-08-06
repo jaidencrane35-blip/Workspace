@@ -89,6 +89,8 @@ export function OperatorRoot({
 
   useEffect(() => {
     document.documentElement.dataset.shellMode = String(mode);
+    document.documentElement.dataset.shellForm =
+      mode === 0 ? "operator" : "conversation";
     document.documentElement.dataset.operatorDeveloper = developer
       ? "on"
       : "off";
@@ -387,7 +389,7 @@ export function OperatorRoot({
                   type="button"
                   className="op-shell__btn"
                   onClick={() => void setMode(0)}
-                  title="Return to desktop operator"
+                  title="Leave conversation — Desktop Operator mode"
                 >
                   Collapse
                 </button>

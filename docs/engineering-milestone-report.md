@@ -1,50 +1,30 @@
 # Engineering Milestone Report
-## P5 Native Desktop Operator Refoundation
+## P6 Desktop Operator Shell Completion
 
 | Field | Value |
 | --- | --- |
-| **Execution program** | P5 Native Desktop Operator Refoundation |
+| **Execution program** | P6 Desktop Operator Shell Completion |
 | **Date** | 2026-08-07 |
-| **Prior** | P4 Native Windows Shell Lifecycle (`23d9d01`) |
+| **Prior** | P5 Native Desktop Operator Refoundation (`4316230`) |
 | **Repository version** | `0.1.0` |
-| **Commit** | `4316230` |
-| **Handoff** | `AWAITING_PROJECT_OWNER_OPERATOR_REFOUNDATION_REVIEW` |
-| **Detail** | `docs/execution-program-native-desktop-operator-refoundation.md` |
+| **Commit** | _(filled after commit)_ |
+| **Handoff** | `AWAITING_PROJECT_OWNER_SHELL_COMPLETION_REVIEW` |
+| **Detail** | `docs/execution-program-desktop-operator-shell-completion.md` |
 
 ---
 
 ## Executive Summary
 
-Owner review rejected polishing the four-mode shell. P5 **replaces** that model with two forms only: **Desktop Operator** and **Conversation Window**. Expanded/Settings/Hide are gone as shell states. Tools are conversation satellites. Collapse/Close return to the operator; Exit exits.
-
----
-
-## Shell architecture
-
-| Form | Window |
-| --- | --- |
-| A — Desktop Operator | `operator` |
-| B — Conversation | `main` (resizable, restorable) |
-
----
-
-## Validation (after run)
-
-| Signal | Status |
-| --- | --- |
-| Typecheck / test / build | _(validation)_ |
-| `verify:shell-zero-trap` | two-form graph |
-| Fresh launch for review | required |
+Collapse is now a true **shell-mode transition**: conversation window fully leaves the desktop; the Desktop Operator companion is the only Workspace surface. Restore is **single click / double-click** — context menu removed. Drag no longer steals the click.
 
 ---
 
 ## Product Owner checklist
 
-- [ ] Operator idle on launch
-- [ ] Click ↔ Conversation deterministic
-- [ ] Close → Operator; Exit → quit
-- [ ] Drag works; no Expand/Settings
-- [ ] Clean runtime / no terminal leakage
+- [ ] Collapse → companion only (not a resized chat)
+- [ ] Click restores conversation immediately
+- [ ] Drag works; Exit exits
+- [ ] Fresh runtime; repo committed and pushed
 
 ---
 

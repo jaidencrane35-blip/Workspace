@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Verifies two-form Zero-Trap shell + required artifacts.
+ * Verifies two-form Zero-Trap shell + click-restore Desktop Operator.
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -19,7 +19,7 @@ const required = [
   "app/src/lib/shellRuntime.ts",
   "app/src/lib/shellWindows.ts",
   "app/src/components/operator/DesktopOperator.tsx",
-  "docs/execution-program-native-desktop-operator-refoundation.md",
+  "docs/execution-program-desktop-operator-shell-completion.md",
   "docs/shell/FUTURE_INPUT_ARCHITECTURE.md",
   "app/src-tauri/src/commands/shell.rs",
 ];
@@ -53,23 +53,25 @@ const desktop = fs.readFileSync(
   path.join(root, "app/src/components/operator/DesktopOperator.tsx"),
   "utf8",
 );
-for (const token of [
-  "SHELL_EXITS",
-  "onContextMenu",
-  "exitWorkspace",
-  "openConversation",
-]) {
+for (const token of ["openConversation", "startOperatorDrag", "onDoubleClick"]) {
   if (!desktop.includes(token)) {
     fail(`DesktopOperator missing ${token}`);
   }
 }
+if (desktop.includes("onContextMenu") || desktop.includes("op-desktop-menu")) {
+  fail("DesktopOperator must not require a context menu to restore");
+}
 if (desktop.includes("openExpanded") || desktop.includes("Hide")) {
   fail("DesktopOperator must not offer Expand/Hide shell paths");
+}
+// Drag must not steal click — startDragging only after move threshold.
+if (/onPointerDown[\s\S]{0,400}startOperatorDrag/.test(desktop)) {
+  fail("startOperatorDrag must not run on pointerdown (breaks click restore)");
 }
 
 for (const token of ["Open Conversation", "Exit Workspace", "Collapse"]) {
   if (!machine.includes(token)) {
-    fail(`shellStateMachine missing menu label ${token}`);
+    fail(`shellStateMachine missing exit label ${token}`);
   }
 }
 
@@ -94,8 +96,11 @@ if (!windows.includes("installMainCloseCollapse")) {
 if (!windows.includes("exitWorkspace")) {
   fail("shellWindows must support exitWorkspace");
 }
+if (!windows.includes("setSkipTaskbar(true)")) {
+  fail("collapsed conversation must leave the taskbar (mode switch, not resize)");
+}
 if (windows.includes("hideShellToTaskbar")) {
-  fail("hide-to-taskbar is not a user-facing shell form in P5");
+  fail("hide-to-taskbar is not a user-facing shell form");
 }
 
 const rootUi = fs.readFileSync(

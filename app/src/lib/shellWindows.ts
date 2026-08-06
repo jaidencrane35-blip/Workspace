@@ -86,9 +86,9 @@ async function persistMainGeometry(
 }
 
 /**
- * Apply shell form to native windows.
- * 0 → hide conversation, show operator.
- * 1 → hide operator, show resizable conversation (restored size/position).
+ * Apply shell form to native windows — mode switch, never a resize of conversation.
+ * Form A (0): conversation window fully gone; operator is the only Workspace surface.
+ * Form B (1): operator gone; conversation is the only Workspace surface.
  */
 export async function applyShellMode(mode: ShellMode): Promise<void> {
   if (!isTauriRuntime()) {
@@ -105,6 +105,12 @@ export async function applyShellMode(mode: ShellMode): Promise<void> {
 
   if (mode === 0) {
     await persistMainGeometry(main);
+    // Conversation must disappear completely — not shrink into a mini window.
+    try {
+      await main.setSkipTaskbar(true);
+    } catch {
+      /* optional */
+    }
     await main.hide();
     if (operator) {
       const raw = loadPoint(OPERATOR_POS_KEY, { x: 24, y: 24 });
@@ -121,6 +127,7 @@ export async function applyShellMode(mode: ShellMode): Promise<void> {
       try {
         await operator.setSkipTaskbar(false);
         await operator.setAlwaysOnTop(true);
+        await operator.setDecorations(false);
       } catch {
         /* optional */
       }
@@ -138,13 +145,20 @@ export async function applyShellMode(mode: ShellMode): Promise<void> {
     } catch {
       /* keep */
     }
+    try {
+      await operator.setSkipTaskbar(true);
+    } catch {
+      /* optional */
+    }
     await operator.hide();
   }
 
+  // Restore conversation size from durable storage — never from operator geometry.
   const size = loadSize(MAIN_SIZE_KEY, CONVERSATION_SIZE);
   await main.setSize(new LogicalSize(size.width, size.height));
   try {
     await main.setResizable(true);
+    await main.setDecorations(true);
   } catch {
     /* optional */
   }

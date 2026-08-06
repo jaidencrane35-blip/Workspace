@@ -1,12 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import {
   emitShellModeEvent,
   saveShellMode,
 } from "../../lib/shellRuntime";
-import { SHELL_EXITS } from "../../lib/shellStateMachine";
 import {
   applyShellMode,
-  exitWorkspace,
   startOperatorDrag,
 } from "../../lib/shellWindows";
 
@@ -16,38 +14,29 @@ interface DesktopOperatorProps {
 }
 
 /**
- * Form A — Desktop Operator.
- * Single click → Conversation. Drag → move. Right click → Open / Exit.
+ * Form A — Desktop Operator (independent shell mode, not a resized conversation).
+ * Click / double-click → restore Conversation immediately.
+ * Drag past threshold → move companion (drag never steals the click).
  */
 export function DesktopOperator({ onOpenConversation }: DesktopOperatorProps) {
-  const dragRef = useRef<{ sx: number; sy: number; moved: boolean } | null>(
-    null,
-  );
-  const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
+  const gestureRef = useRef<{
+    sx: number;
+    sy: number;
+    moved: boolean;
+    dragging: boolean;
+  } | null>(null);
 
   useEffect(() => {
     document.documentElement.dataset.shellMode = "0";
+    document.documentElement.dataset.shellForm = "operator";
     document.title = "Workspace";
     return () => {
       delete document.documentElement.dataset.shellMode;
+      delete document.documentElement.dataset.shellForm;
     };
   }, []);
 
-  useEffect(() => {
-    if (!menu) {
-      return;
-    }
-    const close = () => setMenu(null);
-    window.addEventListener("click", close);
-    window.addEventListener("blur", close);
-    return () => {
-      window.removeEventListener("click", close);
-      window.removeEventListener("blur", close);
-    };
-  }, [menu]);
-
   const openConversation = useCallback(async () => {
-    setMenu(null);
     saveShellMode(1);
     emitShellModeEvent();
     if (onOpenConversation) {
@@ -57,54 +46,63 @@ export function DesktopOperator({ onOpenConversation }: DesktopOperatorProps) {
     await applyShellMode(1);
   }, [onOpenConversation]);
 
-  const onExit = useCallback(async () => {
-    setMenu(null);
-    await exitWorkspace();
-  }, []);
-
   return (
-    <div className="op-desktop-root">
+    <div className="op-desktop-root" data-shell-form="operator">
       <button
         type="button"
         className="op-desktop"
-        aria-label="Workspace desktop operator"
-        aria-haspopup="menu"
-        onContextMenu={(event) => {
-          event.preventDefault();
-          setMenu({ x: event.clientX, y: event.clientY });
-        }}
+        aria-label="Workspace — open conversation"
         onPointerDown={(event) => {
           if (event.button !== 0) {
             return;
           }
-          dragRef.current = {
+          gestureRef.current = {
             sx: event.clientX,
             sy: event.clientY,
             moved: false,
+            dragging: false,
           };
-          void startOperatorDrag();
+          try {
+            event.currentTarget.setPointerCapture(event.pointerId);
+          } catch {
+            /* ignore */
+          }
         }}
         onPointerMove={(event) => {
-          const started = dragRef.current;
-          if (!started) {
+          const gesture = gestureRef.current;
+          if (!gesture || gesture.dragging) {
             return;
           }
           if (
-            Math.hypot(event.clientX - started.sx, event.clientY - started.sy) >
-            4
+            Math.hypot(event.clientX - gesture.sx, event.clientY - gesture.sy) >
+            5
           ) {
-            started.moved = true;
+            gesture.moved = true;
+            gesture.dragging = true;
+            void startOperatorDrag();
           }
         }}
         onPointerUp={(event) => {
           if (event.button !== 0) {
             return;
           }
-          const started = dragRef.current;
-          dragRef.current = null;
-          if (!started || started.moved) {
+          const gesture = gestureRef.current;
+          gestureRef.current = null;
+          try {
+            event.currentTarget.releasePointerCapture(event.pointerId);
+          } catch {
+            /* ignore */
+          }
+          if (!gesture || gesture.moved) {
             return;
           }
+          void openConversation();
+        }}
+        onPointerCancel={() => {
+          gestureRef.current = null;
+        }}
+        onDoubleClick={(event) => {
+          event.preventDefault();
           void openConversation();
         }}
       >
@@ -112,34 +110,6 @@ export function DesktopOperator({ onOpenConversation }: DesktopOperatorProps) {
           W
         </span>
       </button>
-
-      {menu && (
-        <ul
-          className="op-desktop-menu"
-          role="menu"
-          style={{ left: menu.x, top: menu.y }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          {SHELL_EXITS[0].map((action) => (
-            <li key={action.id} role="none">
-              <button
-                type="button"
-                role="menuitem"
-                className="op-desktop-menu__item"
-                onClick={() => {
-                  if (action.to === 1) {
-                    void openConversation();
-                  } else if (action.to === "exit") {
-                    void onExit();
-                  }
-                }}
-              >
-                {action.label}
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
     </div>
   );
 }

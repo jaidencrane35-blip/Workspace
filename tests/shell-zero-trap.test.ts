@@ -20,13 +20,14 @@ describe("Zero-Trap two-form shell", () => {
     expect(SHELL_TRANSITIONS[1]).toEqual([0]);
   });
 
-  it("exposes Open Conversation / Exit from Operator", () => {
+  it("restores Conversation via click path, not Expand/Settings/Hide", () => {
     const labels = SHELL_EXITS[0].map((e) => e.label);
     expect(labels).toContain("Open Conversation");
     expect(labels).toContain("Exit Workspace");
     expect(labels).not.toContain("Expand Workspace");
     expect(labels).not.toContain("Settings");
     expect(labels).not.toContain("Hide");
+    expect(SHELL_EXITS[0].some((e) => e.id === "click")).toBe(true);
   });
 
   it("exposes Collapse / Exit from Conversation", () => {

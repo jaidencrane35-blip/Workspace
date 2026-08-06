@@ -3189,13 +3189,20 @@ h2, h3, h4 {
   text-transform: none;
 }
 
-/* —— Conversational Operator (Modes 0–3) — desktop presence —— */
+/* —— Desktop Operator (Form A) — companion, not a miniature app —— */
 
 html[data-shell-mode="0"],
 html[data-shell-mode="0"] body,
-html[data-shell-mode="0"] #root {
+html[data-shell-mode="0"] #root,
+html[data-shell-form="operator"],
+html[data-shell-form="operator"] body,
+html[data-shell-form="operator"] #root {
   background: transparent !important;
   overflow: hidden;
+}
+
+.op-desktop-root[data-shell-form="operator"] {
+  background: transparent;
 }
 
 .op-desktop {
@@ -3203,25 +3210,35 @@ html[data-shell-mode="0"] #root {
   inset: 0;
   width: 100%;
   height: 100%;
+  margin: 0;
+  padding: 0;
   border: none;
-  border-radius: 14px;
-  background: #121820;
-  color: var(--exp-text);
-  cursor: grab;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #2a3542 0%, #141b24 70%);
+  color: #e8eef4;
+  cursor: pointer;
   display: grid;
   place-items: center;
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.28);
   touch-action: none;
   user-select: none;
+  -webkit-app-region: no-drag;
 }
 
-.op-desktop:active { cursor: grabbing; }
+.op-desktop:hover {
+  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.35);
+}
+
+.op-desktop:active {
+  cursor: grabbing;
+}
 
 .op-desktop__mark {
   font-family: var(--exp-display);
   font-weight: 650;
-  font-size: 1.1rem;
+  font-size: 0.95rem;
   letter-spacing: -0.03em;
+  line-height: 1;
 }
 
 .op-root {
@@ -3568,8 +3585,8 @@ html:not([data-operator-developer="on"]) .checkin-evidence {
   inset: auto;
   left: 24px;
   top: 24px;
-  width: 52px;
-  height: 52px;
+  width: 44px;
+  height: 44px;
 }
 .op-moments-list {
   list-style: none;

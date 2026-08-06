@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | **Status** | Architecture — **not implemented** |
-| **Program** | P5 two-form shell (Operator ⇄ Conversation) |
+| **Program** | P6 shell completion (Operator ⇄ Conversation, click restore) |
 | **Law** | Keyboard / Voice / Screenshot / Clipboard / Drag-drop feed **one** intent pipeline |
 
 ---

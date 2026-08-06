@@ -166,6 +166,15 @@ const completedPrograms = [
       "docs/execution-program-native-desktop-operator-refoundation.md",
     ],
   },
+  {
+    id: "desktop-operator-shell-completion-p6",
+    backlogRef: "P6 Desktop Operator Shell Completion (Collapse as true shell mode)",
+    completed: "2026-08-07",
+    artifacts: [
+      "app/src/components/operator/DesktopOperator.tsx",
+      "docs/execution-program-desktop-operator-shell-completion.md",
+    ],
+  },
 ];
 
 const remainingBacklog = [
@@ -251,10 +260,10 @@ const health = {
     machineState: "docs/project-health.json",
   },
   currentExecutionProgram: {
-    id: "native-desktop-operator-refoundation-p5",
-    title: "P5 Native Desktop Operator Refoundation (The Operator Becomes Real)",
+    id: "desktop-operator-shell-completion-p6",
+    title: "P6 Desktop Operator Shell Completion (Collapse as true shell mode)",
     status: "complete_awaiting_owner_review",
-    note: "Two-form shell only: Desktop Operator ⇄ Conversation. Expanded/Settings/Hide removed as shell forms. Await owner review.",
+    note: "Collapse hides conversation completely; click restores; no context menu; companion ≠ mini window. Await owner review.",
   },
   completedExecutionPrograms: completedPrograms,
   remainingBacklog,
@@ -265,7 +274,7 @@ const health = {
     tests: "pass",
     notes: [
       "Frontend production build succeeds",
-      "Two-form Zero-Trap shell (Operator ⇄ Conversation)",
+      "Shell Form A/B: click-restore companion; conversation fully hidden on collapse",
       "Capability evolution proposals only (no self-rewrite)",
       "Non-PP domain.ts remains manual (G1 remainder)",
       "Documentation authority still fragmented (G3)",
@@ -332,15 +341,15 @@ const health = {
   },
   lastMilestone: {
     date: "2026-08-07",
-    document: "docs/execution-program-native-desktop-operator-refoundation.md",
-    title: "P5 Native Desktop Operator Refoundation",
-    reviewBrief: "docs/execution-program-native-desktop-operator-refoundation.md",
+    document: "docs/execution-program-desktop-operator-shell-completion.md",
+    title: "P6 Desktop Operator Shell Completion",
+    reviewBrief: "docs/execution-program-desktop-operator-shell-completion.md",
   },
-  handoffStatus: "AWAITING_PROJECT_OWNER_OPERATOR_REFOUNDATION_REVIEW",
+  handoffStatus: "AWAITING_PROJECT_OWNER_SHELL_COMPLETION_REVIEW",
   nextRecommendedExecutionProgram: {
-    id: "docs-convergence",
-    title: "Documentation authority convergence",
-    blockedUntil: "Project Owner Operator Refoundation review",
+    id: "reassess-after-shell-completion-review",
+    title: "Reassess highest-value program from owner feedback",
+    blockedUntil: "Project Owner Shell Completion review",
   },
   capabilityEvolution: {
     document: "docs/capability-evolution/README.md",

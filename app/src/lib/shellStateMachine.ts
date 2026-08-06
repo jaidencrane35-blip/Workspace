@@ -16,10 +16,13 @@ export interface ShellExitAction {
   to: ShellMode | "exit";
 }
 
-/** Obvious exits — Collapse/Close ≠ Exit. */
+/**
+ * Obvious exits — Collapse/Close ≠ Exit.
+ * Form A restores via click on the operator (not a context menu).
+ */
 export const SHELL_EXITS: Record<ShellMode, readonly ShellExitAction[]> = {
   0: [
-    { id: "open", label: "Open Conversation", to: 1 },
+    { id: "click", label: "Open Conversation", to: 1 },
     { id: "exit", label: "Exit Workspace", to: "exit" },
   ],
   1: [

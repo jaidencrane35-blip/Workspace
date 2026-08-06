@@ -14,7 +14,8 @@ export const SHELL_MODE_LABEL: Record<ShellMode, string> = {
 export const CONVERSATION_SIZE = { width: 420, height: 560 };
 /** @deprecated Use CONVERSATION_SIZE — kept for test/compat aliases. */
 export const COMPACT_SIZE = CONVERSATION_SIZE;
-export const OPERATOR_SIZE = { width: 52, height: 52 };
+/** Companion hit-target — not a miniature application frame. */
+export const OPERATOR_SIZE = { width: 44, height: 44 };
 
 export const MODE_STORAGE_KEY = "workspace.shell.mode";
 export const OPERATOR_POS_KEY = "workspace.shell.operatorPos";
