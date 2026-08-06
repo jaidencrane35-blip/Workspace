@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-06T23:10:19.260Z",
+  "updatedAt": "2026-08-06T23:10:40.016Z",
   "constitution": {
     "document": "architecture/ARCHITECTURAL_CONSTITUTION_V2.md",
     "version": "2.0"
@@ -326,7 +326,7 @@
     "id": "operator-intelligence-foundation-p12-7",
     "title": "P12.7 Operator Intelligence Foundation",
     "status": "awaiting_owner_review",
-    "commit": "pending"
+    "commit": "644c125"
   },
   "acceptedReviews": [
     {

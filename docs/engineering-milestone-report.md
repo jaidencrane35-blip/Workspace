@@ -6,7 +6,7 @@
 | **Execution program** | P12.7 Operator Intelligence Foundation |
 | **Date** | 2026-08-07 |
 | **Prior** | P12.6 Conversational Desktop Surface (`d1dc8b8`) |
-| **Commit** | pending |
+| **Commit** | 644c125 |
 | **Handoff** | `AWAITING_PROJECT_OWNER_OPERATOR_INTELLIGENCE_REVIEW` |
 | **Index** | `docs/operator/00_INDEX.md` |
 
