@@ -1,41 +1,28 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  SHELL_MODE_EVENT,
   emitShellModeEvent,
   saveShellMode,
-  saveSpecializedTarget,
 } from "../../lib/shellRuntime";
 import { SHELL_EXITS } from "../../lib/shellStateMachine";
 import {
   applyShellMode,
   exitWorkspace,
-  hideShellToTaskbar,
   startOperatorDrag,
 } from "../../lib/shellWindows";
 
-export { SHELL_MODE_EVENT };
-
 interface DesktopOperatorProps {
-  /** Browser/fallback: parent updates React mode. */
-  onOpenCompact?: () => void;
-  onExpand?: () => void;
-  onOpenSettings?: () => void;
+  /** Browser/fallback: parent updates React form. */
+  onOpenConversation?: () => void;
 }
 
 /**
- * Mode 0 — Floating Desktop Operator.
- * Left click → Compact. Right click → recovery menu. Double click → Expand.
+ * Form A — Desktop Operator.
+ * Single click → Conversation. Drag → move. Right click → Open / Exit.
  */
-export function DesktopOperator({
-  onOpenCompact,
-  onExpand,
-  onOpenSettings,
-}: DesktopOperatorProps) {
+export function DesktopOperator({ onOpenConversation }: DesktopOperatorProps) {
   const dragRef = useRef<{ sx: number; sy: number; moved: boolean } | null>(
     null,
   );
-  const lastClickRef = useRef(0);
-  const clickTimerRef = useRef<number | null>(null);
   const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
@@ -43,9 +30,6 @@ export function DesktopOperator({
     document.title = "Workspace";
     return () => {
       delete document.documentElement.dataset.shellMode;
-      if (clickTimerRef.current !== null) {
-        window.clearTimeout(clickTimerRef.current);
-      }
     };
   }, []);
 
@@ -62,46 +46,16 @@ export function DesktopOperator({
     };
   }, [menu]);
 
-  const openCompact = useCallback(async () => {
+  const openConversation = useCallback(async () => {
     setMenu(null);
-    saveSpecializedTarget("none");
     saveShellMode(1);
     emitShellModeEvent();
-    if (onOpenCompact) {
-      onOpenCompact();
+    if (onOpenConversation) {
+      onOpenConversation();
       return;
     }
     await applyShellMode(1);
-  }, [onOpenCompact]);
-
-  const openExpanded = useCallback(async () => {
-    setMenu(null);
-    saveSpecializedTarget("none");
-    saveShellMode(2);
-    emitShellModeEvent();
-    if (onExpand) {
-      onExpand();
-      return;
-    }
-    await applyShellMode(2);
-  }, [onExpand]);
-
-  const openSettings = useCallback(async () => {
-    setMenu(null);
-    saveSpecializedTarget("settings");
-    saveShellMode(3);
-    emitShellModeEvent();
-    if (onOpenSettings) {
-      onOpenSettings();
-      return;
-    }
-    await applyShellMode(3);
-  }, [onOpenSettings]);
-
-  const onHide = useCallback(async () => {
-    setMenu(null);
-    await hideShellToTaskbar();
-  }, []);
+  }, [onOpenConversation]);
 
   const onExit = useCallback(async () => {
     setMenu(null);
@@ -151,24 +105,7 @@ export function DesktopOperator({
           if (!started || started.moved) {
             return;
           }
-          const now = Date.now();
-          if (now - lastClickRef.current < 350) {
-            if (clickTimerRef.current !== null) {
-              window.clearTimeout(clickTimerRef.current);
-              clickTimerRef.current = null;
-            }
-            lastClickRef.current = 0;
-            void openExpanded();
-            return;
-          }
-          lastClickRef.current = now;
-          if (clickTimerRef.current !== null) {
-            window.clearTimeout(clickTimerRef.current);
-          }
-          clickTimerRef.current = window.setTimeout(() => {
-            clickTimerRef.current = null;
-            void openCompact();
-          }, 280);
+          void openConversation();
         }}
       >
         <span className="op-desktop__mark" aria-hidden="true">
@@ -191,13 +128,7 @@ export function DesktopOperator({
                 className="op-desktop-menu__item"
                 onClick={() => {
                   if (action.to === 1) {
-                    void openCompact();
-                  } else if (action.to === 2) {
-                    void openExpanded();
-                  } else if (action.to === "settings") {
-                    void openSettings();
-                  } else if (action.to === "hide") {
-                    void onHide();
+                    void openConversation();
                   } else if (action.to === "exit") {
                     void onExit();
                   }

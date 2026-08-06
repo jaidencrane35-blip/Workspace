@@ -1,19 +1,23 @@
 /**
- * Shell window transitions — Mode 0 lives in a separate always-on-top window.
- * Zero-Trap: close of main collapses to operator; Exit ends the process.
+ * Two-form window lifecycle.
+ * Form A (0): Desktop Operator — always visible utility.
+ * Form B (1): Conversation — resizable; close/collapse → Operator (never exit).
+ * Exit Workspace ends the process — never overlapped with Collapse/Close.
  */
 
 import {
-  COMPACT_SIZE,
-  EXPANDED_SIZE,
+  CONVERSATION_SIZE,
   MAIN_POS_KEY,
+  MAIN_SIZE_KEY,
   OPERATOR_POS_KEY,
   OPERATOR_SIZE,
   emitShellModeEvent,
   isTauriRuntime,
   loadPoint,
+  loadSize,
   savePoint,
   saveShellMode,
+  saveSize,
   setShellHidden,
   type ShellMode,
 } from "./shellRuntime";
@@ -48,7 +52,9 @@ function clampPos(
   height: number,
 ): { x: number; y: number } {
   const maxX =
-    typeof window !== "undefined" ? Math.max(8, window.screen.availWidth - width) : x;
+    typeof window !== "undefined"
+      ? Math.max(8, window.screen.availWidth - width)
+      : x;
   const maxY =
     typeof window !== "undefined"
       ? Math.max(8, window.screen.availHeight - height)
@@ -59,10 +65,30 @@ function clampPos(
   };
 }
 
+async function persistMainGeometry(
+  main: Awaited<ReturnType<typeof windowByLabel>>,
+): Promise<void> {
+  if (!main) {
+    return;
+  }
+  try {
+    const pos = await main.outerPosition();
+    savePoint(MAIN_POS_KEY, { x: pos.x, y: pos.y });
+  } catch {
+    /* keep */
+  }
+  try {
+    const size = await main.outerSize();
+    saveSize(MAIN_SIZE_KEY, { width: size.width, height: size.height });
+  } catch {
+    /* keep */
+  }
+}
+
 /**
- * Apply shell mode to native windows.
- * Mode 0 → hide main, show operator (taskbar-visible for recovery).
- * Modes 1–3 → hide operator, show main at compact/expanded size.
+ * Apply shell form to native windows.
+ * 0 → hide conversation, show operator.
+ * 1 → hide operator, show resizable conversation (restored size/position).
  */
 export async function applyShellMode(mode: ShellMode): Promise<void> {
   if (!isTauriRuntime()) {
@@ -78,12 +104,7 @@ export async function applyShellMode(mode: ShellMode): Promise<void> {
   setShellHidden(false);
 
   if (mode === 0) {
-    try {
-      const pos = await main.outerPosition();
-      savePoint(MAIN_POS_KEY, { x: pos.x, y: pos.y });
-    } catch {
-      /* keep stored */
-    }
+    await persistMainGeometry(main);
     await main.hide();
     if (operator) {
       const raw = loadPoint(OPERATOR_POS_KEY, { x: 24, y: 24 });
@@ -101,7 +122,7 @@ export async function applyShellMode(mode: ShellMode): Promise<void> {
         await operator.setSkipTaskbar(false);
         await operator.setAlwaysOnTop(true);
       } catch {
-        /* optional APIs */
+        /* optional */
       }
       await operator.unminimize().catch(() => undefined);
       await operator.show();
@@ -120,8 +141,13 @@ export async function applyShellMode(mode: ShellMode): Promise<void> {
     await operator.hide();
   }
 
-  const size = mode === 1 ? COMPACT_SIZE : EXPANDED_SIZE;
+  const size = loadSize(MAIN_SIZE_KEY, CONVERSATION_SIZE);
   await main.setSize(new LogicalSize(size.width, size.height));
+  try {
+    await main.setResizable(true);
+  } catch {
+    /* optional */
+  }
   const mainPos = loadPoint(MAIN_POS_KEY, { x: -1, y: -1 });
   if (mainPos.x >= 0 && mainPos.y >= 0) {
     const clamped = clampPos(mainPos.x, mainPos.y, size.width, size.height);
@@ -131,7 +157,7 @@ export async function applyShellMode(mode: ShellMode): Promise<void> {
     await main.setAlwaysOnTop(false);
     await main.setSkipTaskbar(false);
   } catch {
-    /* optional APIs */
+    /* optional */
   }
   await main.unminimize().catch(() => undefined);
   await main.show();
@@ -149,42 +175,6 @@ export async function transitionShellMode(
   emitShellModeEvent();
   await applyShellMode(to);
   return true;
-}
-
-/** Hide both surfaces; keep process + operator taskbar entry for recovery. */
-export async function hideShellToTaskbar(): Promise<void> {
-  if (!isTauriRuntime()) {
-    setShellHidden(true);
-    return;
-  }
-  setShellHidden(true);
-  saveShellMode(0);
-  emitShellModeEvent();
-  const main = await windowByLabel("main");
-  const operator = await windowByLabel("operator");
-  if (main) {
-    try {
-      const pos = await main.outerPosition();
-      savePoint(MAIN_POS_KEY, { x: pos.x, y: pos.y });
-    } catch {
-      /* ignore */
-    }
-    await main.hide();
-  }
-  if (operator) {
-    try {
-      const pos = await operator.outerPosition();
-      savePoint(OPERATOR_POS_KEY, { x: pos.x, y: pos.y });
-    } catch {
-      /* ignore */
-    }
-    try {
-      await operator.setSkipTaskbar(false);
-    } catch {
-      /* ignore */
-    }
-    await operator.minimize();
-  }
 }
 
 /** Full process exit — only explicit Exit Workspace. */
@@ -213,7 +203,7 @@ export async function startOperatorDrag(): Promise<void> {
 }
 
 /**
- * Close of the conversation window must collapse to the operator — never trap.
+ * Close of the conversation window returns to Desktop Operator — never exits.
  */
 export async function installMainCloseCollapse(): Promise<void> {
   if (!isTauriRuntime()) {
@@ -232,16 +222,14 @@ export async function installMainCloseCollapse(): Promise<void> {
   });
 }
 
-/** Bootstrap windows from durable shell mode on launch. */
+/** Bootstrap: idle form is Desktop Operator unless durable Conversation. */
 export async function bootstrapShellOnLaunch(): Promise<void> {
   if (!isTauriRuntime()) {
     return;
   }
-  const { loadShellMode, isShellHidden } = await import("./shellRuntime");
-  const mode = loadShellMode(1);
-  if (isShellHidden()) {
-    await hideShellToTaskbar();
-    return;
-  }
+  const { loadShellMode } = await import("./shellRuntime");
+  // Hidden flag from older builds → Operator (always recoverable, always visible).
+  setShellHidden(false);
+  const mode = loadShellMode(0);
   await applyShellMode(mode);
 }

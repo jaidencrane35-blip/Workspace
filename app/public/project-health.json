@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-06T19:32:42.942Z",
+  "updatedAt": "2026-08-06T19:47:52.580Z",
   "constitution": {
     "document": "architecture/ARCHITECTURAL_CONSTITUTION_V2.md",
     "version": "2.0"
@@ -12,10 +12,10 @@
     "machineState": "docs/project-health.json"
   },
   "currentExecutionProgram": {
-    "id": "native-windows-shell-lifecycle-p4",
-    "title": "P4 Native Windows Shell Lifecycle (Desktop Operator Foundation)",
+    "id": "native-desktop-operator-refoundation-p5",
+    "title": "P5 Native Desktop Operator Refoundation (The Operator Becomes Real)",
     "status": "complete_awaiting_owner_review",
-    "note": "Native shell lifecycle; Settings specialized surface; floating→Settings; quiet product logging. Await owner review."
+    "note": "Two-form shell only: Desktop Operator ⇄ Conversation. Expanded/Settings/Hide removed as shell forms. Await owner review."
   },
   "completedExecutionPrograms": [
     {
@@ -105,9 +105,19 @@
       "backlogRef": "P4 Native Windows Shell Lifecycle (Desktop Operator Foundation)",
       "completed": "2026-08-07",
       "artifacts": [
-        "app/src/components/operator/OperatorSettingsPanel.tsx",
         "docs/execution-program-native-windows-shell-lifecycle.md",
         "docs/engineering-milestone-report.md"
+      ]
+    },
+    {
+      "id": "native-desktop-operator-refoundation-p5",
+      "backlogRef": "P5 Native Desktop Operator Refoundation (The Operator Becomes Real)",
+      "completed": "2026-08-07",
+      "artifacts": [
+        "app/src/lib/shellStateMachine.ts",
+        "app/src/lib/shellRuntime.ts",
+        "app/src/lib/shellWindows.ts",
+        "docs/execution-program-native-desktop-operator-refoundation.md"
       ]
     }
   ],
@@ -183,7 +193,7 @@
     "tests": "pass",
     "notes": [
       "Frontend production build succeeds",
-      "Zero-Trap shell + Settings Mode 3 + floating operator menu",
+      "Two-form Zero-Trap shell (Operator ⇄ Conversation)",
       "Capability evolution proposals only (no self-rewrite)",
       "Non-PP domain.ts remains manual (G1 remainder)",
       "Documentation authority still fragmented (G3)"
@@ -308,15 +318,15 @@
   },
   "lastMilestone": {
     "date": "2026-08-07",
-    "document": "docs/execution-program-native-windows-shell-lifecycle.md",
-    "title": "P4 Native Windows Shell Lifecycle",
-    "reviewBrief": "docs/execution-program-native-windows-shell-lifecycle.md"
+    "document": "docs/execution-program-native-desktop-operator-refoundation.md",
+    "title": "P5 Native Desktop Operator Refoundation",
+    "reviewBrief": "docs/execution-program-native-desktop-operator-refoundation.md"
   },
-  "handoffStatus": "AWAITING_PROJECT_OWNER_DESKTOP_OPERATOR_FOUNDATION_REVIEW",
+  "handoffStatus": "AWAITING_PROJECT_OWNER_OPERATOR_REFOUNDATION_REVIEW",
   "nextRecommendedExecutionProgram": {
     "id": "docs-convergence",
     "title": "Documentation authority convergence",
-    "blockedUntil": "Project Owner Desktop Operator Foundation review"
+    "blockedUntil": "Project Owner Operator Refoundation review"
   },
   "capabilityEvolution": {
     "document": "docs/capability-evolution/README.md",

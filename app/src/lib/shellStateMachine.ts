@@ -1,46 +1,28 @@
 /**
- * Shell state machine — runtime modes with Zero-Trap exits.
- * Every state must expose at least one obvious recovery path.
+ * Two-form shell state machine — Zero-Trap between Operator and Conversation.
  */
 
 import type { ShellMode } from "./shellRuntime";
 
-/** Allowed directed transitions (Zero-Trap graph). */
+/** Allowed directed transitions. */
 export const SHELL_TRANSITIONS: Record<ShellMode, readonly ShellMode[]> = {
-  0: [1, 2, 3], // Floating → Compact | Expand | Specialized (Settings)
-  1: [0, 2, 3], // Compact → Floating | Expand | Specialized
-  2: [0, 1, 3], // Expanded → Floating | Compact | Specialized
-  3: [0, 1, 2], // Specialized → Floating | Compact | Expanded
+  0: [1], // Desktop Operator → Conversation
+  1: [0], // Conversation → Desktop Operator
 };
 
 export interface ShellExitAction {
   id: string;
   label: string;
-  to: ShellMode | "hide" | "exit" | "settings";
+  to: ShellMode | "exit";
 }
 
-/** Obvious exits available from each state (UI + recovery). */
+/** Obvious exits — Collapse/Close ≠ Exit. */
 export const SHELL_EXITS: Record<ShellMode, readonly ShellExitAction[]> = {
   0: [
-    { id: "open", label: "Open Workspace", to: 1 },
-    { id: "expand", label: "Expand Workspace", to: 2 },
-    { id: "hide", label: "Hide", to: "hide" },
-    { id: "settings", label: "Settings", to: "settings" },
+    { id: "open", label: "Open Conversation", to: 1 },
     { id: "exit", label: "Exit Workspace", to: "exit" },
   ],
   1: [
-    { id: "collapse", label: "Collapse", to: 0 },
-    { id: "expand", label: "Expand", to: 2 },
-    { id: "exit", label: "Exit Workspace", to: "exit" },
-  ],
-  2: [
-    { id: "compact", label: "Compact", to: 1 },
-    { id: "collapse", label: "Collapse", to: 0 },
-    { id: "exit", label: "Exit Workspace", to: "exit" },
-  ],
-  3: [
-    { id: "compact", label: "Compact", to: 1 },
-    { id: "expand", label: "Back to Expand", to: 2 },
     { id: "collapse", label: "Collapse", to: 0 },
     { id: "exit", label: "Exit Workspace", to: "exit" },
   ],
@@ -53,23 +35,29 @@ export function canTransition(from: ShellMode, to: ShellMode): boolean {
   return SHELL_TRANSITIONS[from].includes(to);
 }
 
-/** Assert graph: every mode reachable from 1; every mode has ≥1 exit. */
+/** Assert: both forms reachable; every form has exits; Operator ↔ Conversation. */
 export function verifyZeroTrapGraph(): {
   ok: boolean;
   issues: string[];
 } {
   const issues: string[] = [];
-  for (const mode of [0, 1, 2, 3] as ShellMode[]) {
+  for (const mode of [0, 1] as ShellMode[]) {
     if (SHELL_EXITS[mode].length < 1) {
-      issues.push(`Mode ${mode} has no exits`);
+      issues.push(`Form ${mode} has no exits`);
     }
     if (SHELL_TRANSITIONS[mode].length < 1) {
-      issues.push(`Mode ${mode} has no transitions`);
+      issues.push(`Form ${mode} has no transitions`);
     }
   }
-  // Reachability from Mode 1 (default launch)
-  const seen = new Set<ShellMode>([1]);
-  const queue: ShellMode[] = [1];
+  if (!SHELL_TRANSITIONS[0].includes(1)) {
+    issues.push("Desktop Operator cannot open Conversation");
+  }
+  if (!SHELL_TRANSITIONS[1].includes(0)) {
+    issues.push("Conversation cannot return to Desktop Operator");
+  }
+  // Reachability from idle Operator
+  const seen = new Set<ShellMode>([0]);
+  const queue: ShellMode[] = [0];
   while (queue.length) {
     const cur = queue.shift()!;
     for (const next of SHELL_TRANSITIONS[cur]) {
@@ -79,14 +67,10 @@ export function verifyZeroTrapGraph(): {
       }
     }
   }
-  for (const mode of [0, 1, 2, 3] as ShellMode[]) {
+  for (const mode of [0, 1] as ShellMode[]) {
     if (!seen.has(mode)) {
-      issues.push(`Mode ${mode} unreachable from Compact (1)`);
+      issues.push(`Form ${mode} unreachable from Desktop Operator`);
     }
-  }
-  // Floating can return to Compact (recovery)
-  if (!SHELL_TRANSITIONS[0].includes(1)) {
-    issues.push("Floating cannot open Compact");
   }
   return { ok: issues.length === 0, issues };
 }

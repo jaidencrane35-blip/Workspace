@@ -3241,9 +3241,15 @@ html[data-shell-mode="0"] #root {
   min-height: 0;
 }
 
-.op-stage--mode1 {
+.op-stage--mode1,
+.op-stage--conversation {
   grid-template-columns: 1fr;
   background: #0e141c;
+}
+
+.op-stage--conversation[data-dock="on"] {
+  grid-template-columns: minmax(300px, 380px) 1fr;
+  background: #070b10;
 }
 
 .op-stage--mode2,
@@ -3549,7 +3555,8 @@ html:not([data-operator-developer="on"]) .checkin-evidence {
 
 @media (max-width: 900px) {
   .op-stage--mode2,
-  .op-stage--mode3 {
+  .op-stage--mode3,
+  .op-stage--conversation[data-dock="on"] {
     grid-template-columns: 1fr;
     grid-template-rows: minmax(240px, 42vh) 1fr;
   }

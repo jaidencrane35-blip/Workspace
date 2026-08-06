@@ -14,25 +14,25 @@
       {
         "label": "main",
         "title": "Workspace",
-        "width": 360,
-        "height": 520,
+        "width": 420,
+        "height": 560,
         "resizable": true,
         "decorations": true,
-        "visible": true,
+        "visible": false,
         "center": true
       },
       {
         "label": "operator",
         "title": "Workspace",
-        "width": 56,
-        "height": 56,
+        "width": 52,
+        "height": 52,
         "resizable": false,
         "decorations": false,
         "transparent": true,
         "alwaysOnTop": true,
         "skipTaskbar": false,
-        "visible": false,
-        "focus": false,
+        "visible": true,
+        "focus": true,
         "x": 24,
         "y": 24
       }

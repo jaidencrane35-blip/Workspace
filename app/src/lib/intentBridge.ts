@@ -144,13 +144,13 @@ export function resolveIntent(raw: string): IntentAction {
   }
 
   if (
-    /\b(collapse|minimize|minimise|hide|float|icon)\b/.test(text) ||
-    text === "mode 1"
+    /\b(collapse|minimize|minimise|float|icon)\b/.test(text) ||
+    text === "desktop operator"
   ) {
     return {
       kind: "collapse",
       reply:
-        "Collapsing to the desktop operator. The conversation window closes — click the floating W when you need Workspace again.",
+        "Returning to the desktop operator. Click the floating W to open conversation again.",
     };
   }
 
@@ -163,7 +163,7 @@ export function resolveIntent(raw: string): IntentAction {
     return {
       kind: "expand",
       reply:
-        "Expanding around this conversation. Ask when you need Save, restore, or other tools — I won’t show a feature dashboard.",
+        "There’s no separate Expanded Workspace form. Tools open beside this conversation when you ask — try Save, Continue, or Guide.",
     };
   }
 
@@ -265,7 +265,7 @@ export function resolveIntent(raw: string): IntentAction {
     return {
       kind: "settings",
       reply:
-        "Opening Settings. Preferences that aren’t wired yet stay listed as not available — I won’t invent controls.",
+        "There’s no Settings surface in this shell. Collapse returns to the desktop operator; Exit Workspace quits. Ask Guide for trust limits.",
     };
   }
 

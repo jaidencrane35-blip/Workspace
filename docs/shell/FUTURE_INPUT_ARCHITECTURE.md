@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | **Status** | Architecture — **not implemented** |
-| **Program** | P3–P4 Desktop Operator Foundation |
+| **Program** | P5 two-form shell (Operator ⇄ Conversation) |
 | **Law** | Keyboard / Voice / Screenshot / Clipboard / Drag-drop feed **one** intent pipeline |
 
 ---
@@ -40,9 +40,9 @@ All sources produce the same envelope. No parallel “voice product” or “vis
 
 ## Shell readiness (now)
 
-| Requirement | P3 status |
+| Requirement | Status |
 | --- | --- |
-| Stable Modes 0–3 | Implemented |
+| Stable Forms A–B (Operator ⇄ Conversation) | Implemented (P5) |
 | Conversation as default intent surface | Implemented |
 | Zero-Trap recovery | Implemented |
 | Permission before desktop mutation | Existing CommandPipeline |

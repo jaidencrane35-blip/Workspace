@@ -1,58 +1,48 @@
 /**
- * Runtime shell modes for the Conversational Desktop Operator.
- * Modes are window/runtime states — not page layouts.
+ * Two-form shell runtime — Desktop Operator | Conversation Window.
+ * Legacy modes 2–3 migrate to Conversation (1).
  */
 
-export type ShellMode = 0 | 1 | 2 | 3;
+/** 0 = Desktop Operator (Form A). 1 = Conversation Window (Form B). */
+export type ShellMode = 0 | 1;
 
 export const SHELL_MODE_LABEL: Record<ShellMode, string> = {
   0: "Desktop Operator",
-  1: "Compact Conversation",
-  2: "Expanded Workspace",
-  3: "Specialized Work Surface",
+  1: "Conversation Window",
 };
 
-export const COMPACT_SIZE = { width: 360, height: 520 };
-export const EXPANDED_SIZE = { width: 1100, height: 720 };
-export const OPERATOR_SIZE = { width: 56, height: 56 };
+export const CONVERSATION_SIZE = { width: 420, height: 560 };
+/** @deprecated Use CONVERSATION_SIZE — kept for test/compat aliases. */
+export const COMPACT_SIZE = CONVERSATION_SIZE;
+export const OPERATOR_SIZE = { width: 52, height: 52 };
 
 export const MODE_STORAGE_KEY = "workspace.shell.mode";
 export const OPERATOR_POS_KEY = "workspace.shell.operatorPos";
 export const MAIN_POS_KEY = "workspace.shell.mainPos";
+export const MAIN_SIZE_KEY = "workspace.shell.mainSize";
 export const HIDDEN_KEY = "workspace.shell.hidden";
-export const SPECIALIZED_KEY = "workspace.shell.specialized";
-
-export type SpecializedTarget = "none" | "settings" | "health";
-
-export function loadSpecializedTarget(): SpecializedTarget {
-  try {
-    const raw = localStorage.getItem(SPECIALIZED_KEY);
-    if (raw === "settings" || raw === "health") {
-      return raw;
-    }
-    return "none";
-  } catch {
-    return "none";
-  }
-}
-
-export function saveSpecializedTarget(target: SpecializedTarget): void {
-  try {
-    localStorage.setItem(SPECIALIZED_KEY, target);
-  } catch {
-    /* ignore */
-  }
-}
 
 export function isShellMode(value: unknown): value is ShellMode {
-  return value === 0 || value === 1 || value === 2 || value === 3;
+  return value === 0 || value === 1;
 }
 
-export function loadShellMode(fallback: ShellMode = 1): ShellMode {
+/** Normalize legacy 2/3 (expanded/specialized) → Conversation. */
+export function normalizeShellMode(value: number): ShellMode {
+  if (value === 0) {
+    return 0;
+  }
+  return 1;
+}
+
+/** Default idle form is Desktop Operator. */
+export function loadShellMode(fallback: ShellMode = 0): ShellMode {
   try {
     const raw = localStorage.getItem(MODE_STORAGE_KEY);
     const n = raw == null ? NaN : Number(raw);
-    return isShellMode(n) ? n : fallback;
+    if (Number.isFinite(n)) {
+      return normalizeShellMode(n);
+    }
+    return fallback;
   } catch {
     return fallback;
   }
@@ -89,6 +79,42 @@ export function loadPoint(
 export function savePoint(key: string, pos: { x: number; y: number }): void {
   try {
     localStorage.setItem(key, JSON.stringify(pos));
+  } catch {
+    /* ignore */
+  }
+}
+
+export function loadSize(
+  key: string,
+  fallback: { width: number; height: number },
+): { width: number; height: number } {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) {
+      return fallback;
+    }
+    const parsed = JSON.parse(raw) as { width?: number; height?: number };
+    return {
+      width:
+        typeof parsed.width === "number" && parsed.width >= 280
+          ? parsed.width
+          : fallback.width,
+      height:
+        typeof parsed.height === "number" && parsed.height >= 360
+          ? parsed.height
+          : fallback.height,
+    };
+  } catch {
+    return fallback;
+  }
+}
+
+export function saveSize(
+  key: string,
+  size: { width: number; height: number },
+): void {
+  try {
+    localStorage.setItem(key, JSON.stringify(size));
   } catch {
     /* ignore */
   }

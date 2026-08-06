@@ -6,36 +6,32 @@ import {
   verifyZeroTrapGraph,
 } from "../app/src/lib/shellStateMachine";
 
-describe("Zero-Trap shell state machine", () => {
-  it("has no dead ends and is fully reachable from Compact", () => {
+describe("Zero-Trap two-form shell", () => {
+  it("has no dead ends between Operator and Conversation", () => {
     const result = verifyZeroTrapGraph();
     expect(result.issues).toEqual([]);
     expect(result.ok).toBe(true);
   });
 
-  it("allows floating ↔ compact ↔ expand recovery paths", () => {
+  it("allows Operator ↔ Conversation only", () => {
     expect(canTransition(0, 1)).toBe(true);
-    expect(canTransition(0, 2)).toBe(true);
     expect(canTransition(1, 0)).toBe(true);
-    expect(canTransition(2, 0)).toBe(true);
-    expect(canTransition(2, 1)).toBe(true);
-    expect(canTransition(1, 2)).toBe(true);
+    expect(SHELL_TRANSITIONS[0]).toEqual([1]);
+    expect(SHELL_TRANSITIONS[1]).toEqual([0]);
   });
 
-  it("exposes Open / Expand / Hide / Settings / Exit from floating mode", () => {
+  it("exposes Open Conversation / Exit from Operator", () => {
     const labels = SHELL_EXITS[0].map((e) => e.label);
-    expect(labels).toContain("Open Workspace");
-    expect(labels).toContain("Expand Workspace");
-    expect(labels).toContain("Hide");
-    expect(labels).toContain("Settings");
+    expect(labels).toContain("Open Conversation");
     expect(labels).toContain("Exit Workspace");
+    expect(labels).not.toContain("Expand Workspace");
+    expect(labels).not.toContain("Settings");
+    expect(labels).not.toContain("Hide");
   });
 
-  it("allows floating → specialized for Settings", () => {
-    expect(canTransition(0, 3)).toBe(true);
-  });
-
-  it("keeps specialized mode recoverable", () => {
-    expect(SHELL_TRANSITIONS[3]).toEqual(expect.arrayContaining([0, 1, 2]));
+  it("exposes Collapse / Exit from Conversation", () => {
+    const labels = SHELL_EXITS[1].map((e) => e.label);
+    expect(labels).toContain("Collapse");
+    expect(labels).toContain("Exit Workspace");
   });
 });

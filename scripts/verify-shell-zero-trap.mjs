@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 /**
- * Verifies Zero-Trap shell graph + required shell artifacts.
+ * Verifies two-form Zero-Trap shell + required artifacts.
  */
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "..");
@@ -19,9 +19,7 @@ const required = [
   "app/src/lib/shellRuntime.ts",
   "app/src/lib/shellWindows.ts",
   "app/src/components/operator/DesktopOperator.tsx",
-  "app/src/components/operator/OperatorSettingsPanel.tsx",
-  "docs/execution-program-windows-shell-completion.md",
-  "docs/execution-program-native-windows-shell-lifecycle.md",
+  "docs/execution-program-native-desktop-operator-refoundation.md",
   "docs/shell/FUTURE_INPUT_ARCHITECTURE.md",
   "app/src-tauri/src/commands/shell.rs",
 ];
@@ -47,28 +45,43 @@ for (const token of [
   }
 }
 
+if (machine.includes("Expand Workspace") || machine.includes("Settings")) {
+  fail("shellStateMachine must not expose Expanded/Settings as shell exits");
+}
+
 const desktop = fs.readFileSync(
   path.join(root, "app/src/components/operator/DesktopOperator.tsx"),
   "utf8",
 );
-for (const token of ["SHELL_EXITS", "onContextMenu", "hideShellToTaskbar", "exitWorkspace"]) {
+for (const token of [
+  "SHELL_EXITS",
+  "onContextMenu",
+  "exitWorkspace",
+  "openConversation",
+]) {
   if (!desktop.includes(token)) {
     fail(`DesktopOperator missing ${token}`);
   }
 }
-for (const token of [
-  "Open Workspace",
-  "Expand Workspace",
-  "Hide",
-  "Settings",
-  "Exit Workspace",
-]) {
+if (desktop.includes("openExpanded") || desktop.includes("Hide")) {
+  fail("DesktopOperator must not offer Expand/Hide shell paths");
+}
+
+for (const token of ["Open Conversation", "Exit Workspace", "Collapse"]) {
   if (!machine.includes(token)) {
     fail(`shellStateMachine missing menu label ${token}`);
   }
 }
-if (!desktop.includes("settings") && !desktop.includes("openSettings")) {
-  fail("DesktopOperator must wire Settings menu action");
+
+const runtime = fs.readFileSync(
+  path.join(root, "app/src/lib/shellRuntime.ts"),
+  "utf8",
+);
+if (!runtime.includes("normalizeShellMode")) {
+  fail("shellRuntime must migrate legacy modes");
+}
+if (runtime.includes("export type ShellMode = 0 | 1 | 2 | 3")) {
+  fail("ShellMode must be two-form (0 | 1) only");
 }
 
 const windows = fs.readFileSync(
@@ -76,18 +89,24 @@ const windows = fs.readFileSync(
   "utf8",
 );
 if (!windows.includes("installMainCloseCollapse")) {
-  fail("shellWindows must install main close → collapse");
+  fail("shellWindows must install main close → operator");
 }
 if (!windows.includes("exitWorkspace")) {
   fail("shellWindows must support exitWorkspace");
 }
+if (windows.includes("hideShellToTaskbar")) {
+  fail("hide-to-taskbar is not a user-facing shell form in P5");
+}
 
-// Execute graph check via vitest-exported logic duplicated lightly:
-const transitionsMatch = machine.match(
-  /SHELL_TRANSITIONS[\s\S]*?\{([\s\S]*?)\n\};/,
+const rootUi = fs.readFileSync(
+  path.join(root, "app/src/components/operator/OperatorRoot.tsx"),
+  "utf8",
 );
-if (!transitionsMatch) {
-  fail("could not parse SHELL_TRANSITIONS");
+if (rootUi.includes("Expand") && rootUi.includes("op-shell__btn--primary")) {
+  fail("OperatorRoot must not expose Expand chrome");
+}
+if (rootUi.includes("OperatorSettingsPanel") || rootUi.includes("Settings")) {
+  fail("OperatorRoot must not expose Settings chrome");
 }
 
 console.log("verify-shell-zero-trap: ok");

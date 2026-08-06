@@ -24,7 +24,7 @@ async function resolveShellEntry(): Promise<React.ReactElement> {
       return <DesktopOperator />;
     }
     // Main window: if durable mode is floating, keep App mounted (hidden) for recovery.
-    const mode = loadShellMode(1);
+    const mode = loadShellMode(0);
     if (mode === 0) {
       // Still mount App so close/sync handlers live; window stays hidden.
       return <App />;
@@ -39,7 +39,8 @@ void resolveShellEntry().then((element) => {
   );
 });
 
-if (import.meta.env.DEV) {
+// Evidence dashboard is opt-in only — never auto-mount into Product Owner review.
+if (import.meta.env.DEV && localStorage.getItem("workspace.operator.developer") === "1") {
   void import("./dev/mountExperienceEvidence").then((mod) => {
     mod.mountExperienceEvidenceDashboard();
   });

@@ -14,9 +14,7 @@ import {
   SHELL_MODE_EVENT,
   isTauriRuntime,
   loadShellMode,
-  loadSpecializedTarget,
   saveShellMode,
-  saveSpecializedTarget,
   type ShellMode,
 } from "../../lib/shellRuntime";
 import { canTransition } from "../../lib/shellStateMachine";
@@ -28,7 +26,6 @@ import {
 } from "../../lib/shellWindows";
 import type { PilotPrimaryView } from "../../lib/pilotChrome";
 import { DesktopOperator } from "./DesktopOperator";
-import { OperatorSettingsPanel } from "./OperatorSettingsPanel";
 import { RepositoryHealthPanel } from "./RepositoryHealthPanel";
 
 export interface ChatMessage {
@@ -41,7 +38,7 @@ export interface ChatMessage {
 const DEV_KEY = "workspace.operator.developer";
 
 interface OperatorRootProps {
-  /** Mode 3 specialized tool surface (no Product Proof dock). */
+  /** Secondary tool surface launched from conversation (not a shell form). */
   specializedSurface: ReactNode;
   onNavigateProduct: (
     view: PilotPrimaryView,
@@ -62,18 +59,16 @@ export function OperatorRoot({
   const scrollerRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const brandClicks = useRef({ n: 0, t: 0 });
-  const chromeDrag = useRef<{ sx: number; sy: number } | null>(null);
 
-  const [mode, setModeState] = useState<ShellMode>(() => loadShellMode(1));
+  const [mode, setModeState] = useState<ShellMode>(() => loadShellMode(0));
   const modeRef = useRef(mode);
   modeRef.current = mode;
   const [draft, setDraft] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [busy, setBusy] = useState(false);
+  /** Tool dock inside Conversation — never a third shell form. */
+  const [toolDock, setToolDock] = useState(false);
   const [showHealth, setShowHealth] = useState(false);
-  const [showSettings, setShowSettings] = useState(
-    () => loadSpecializedTarget() === "settings",
-  );
   const [developer, setDeveloper] = useState(
     () => localStorage.getItem(DEV_KEY) === "1",
   );
@@ -82,10 +77,9 @@ export function OperatorRoot({
     if (!canTransition(modeRef.current, next) && modeRef.current !== next) {
       return;
     }
-    if (next !== 3) {
-      setShowSettings(false);
+    if (next === 0) {
+      setToolDock(false);
       setShowHealth(false);
-      saveSpecializedTarget("none");
     }
     modeRef.current = next;
     setModeState(next);
@@ -108,15 +102,14 @@ export function OperatorRoot({
 
   useEffect(() => {
     const syncFromStorage = () => {
-      const stored = loadShellMode(1);
+      const stored = loadShellMode(0);
       if (stored !== modeRef.current) {
         modeRef.current = stored;
         setModeState(stored);
-      }
-      const specialized = loadSpecializedTarget();
-      setShowSettings(specialized === "settings");
-      if (specialized === "health") {
-        setShowHealth(true);
+        if (stored === 0) {
+          setToolDock(false);
+          setShowHealth(false);
+        }
       }
     };
     window.addEventListener("storage", syncFromStorage);
@@ -179,50 +172,49 @@ export function OperatorRoot({
     }
   }, []);
 
-  const openSpecialized = useCallback(
+  const ensureConversation = useCallback(async () => {
+    if (modeRef.current !== 1) {
+      await setMode(1);
+    }
+  }, [setMode]);
+
+  const openToolSurface = useCallback(
     async (view: PilotPrimaryView) => {
       setShowHealth(false);
-      setShowSettings(false);
-      saveSpecializedTarget("none");
       onNavigateProduct(view);
-      await setMode(3);
+      setToolDock(true);
+      await ensureConversation();
     },
-    [onNavigateProduct, setMode],
+    [ensureConversation, onNavigateProduct],
   );
-
-  const openSettingsSurface = useCallback(async () => {
-    setShowHealth(false);
-    setShowSettings(true);
-    saveSpecializedTarget("settings");
-    await setMode(3);
-  }, [setMode]);
 
   const handleIntent = useCallback(
     async (raw: string) => {
       const action = resolveIntent(raw);
       switch (action.kind) {
         case "navigate":
-          await openSpecialized(action.view);
+          await openToolSurface(action.view);
           await pushWorkspace(action.reply);
           break;
         case "saveAs":
-          await openSpecialized("save");
+          await openToolSurface("save");
           await pushWorkspace(action.reply);
           break;
         case "navigateNamed": {
           const moments = await listMoments();
           const hit = matchMomentByName(moments, action.nameQuery);
+          setShowHealth(false);
           if (hit) {
-            setShowHealth(false);
             onNavigateProduct("resume", { focusContextId: hit.id });
-            await setMode(3);
+            setToolDock(true);
+            await ensureConversation();
             await pushWorkspace(
               `Opening restore review for “${hit.name}”. Approve the plan before anything moves.`,
             );
           } else {
-            setShowHealth(false);
             onNavigateProduct("resume");
-            await setMode(3);
+            setToolDock(true);
+            await ensureConversation();
             await pushWorkspace(
               `No unique Moment matched “${action.nameQuery}”. Opening restore review so you can choose — I won’t invent a restore.`,
             );
@@ -230,27 +222,22 @@ export function OperatorRoot({
           break;
         }
         case "expand":
-          setShowHealth(false);
-          setShowSettings(false);
-          await setMode(2);
+          // No Expanded shell form — tools open beside conversation when asked.
+          setToolDock(true);
+          await ensureConversation();
           await pushWorkspace(action.reply);
           break;
         case "collapse":
-          setShowHealth(false);
-          setShowSettings(false);
-          // Leave the desktop — do not keep a reply in a hidden window.
           await setMode(0);
           break;
         case "settings":
-          await openSettingsSurface();
           await pushWorkspace(action.reply);
           break;
         case "health":
           setDeveloper(true);
-          setShowSettings(false);
-          saveSpecializedTarget("health");
           setShowHealth(true);
-          await setMode(3);
+          setToolDock(true);
+          await ensureConversation();
           await pushWorkspace(action.reply);
           break;
         case "developer":
@@ -275,10 +262,10 @@ export function OperatorRoot({
       }
     },
     [
+      ensureConversation,
       listMoments,
       onNavigateProduct,
-      openSettingsSurface,
-      openSpecialized,
+      openToolSurface,
       pushWorkspace,
       setMode,
     ],
@@ -304,7 +291,8 @@ export function OperatorRoot({
       brandClicks.current = { n: 1, t: now };
       return;
     }
-    brandClicks.current = { n: brandClicks.current.n + 1, t: now };
+    brandClicks.current.n += 1;
+    brandClicks.current.t = now;
     if (brandClicks.current.n >= 3) {
       brandClicks.current = { n: 0, t: 0 };
       setDeveloper((prev) => !prev);
@@ -316,42 +304,38 @@ export function OperatorRoot({
     if (target.closest("button")) {
       return;
     }
-    chromeDrag.current = { sx: event.clientX, sy: event.clientY };
     void startOperatorDrag();
   };
 
-  const showSecondary = mode >= 2;
   const secondary =
-    mode === 3 && showSettings ? (
-      <OperatorSettingsPanel
-        onClose={() => {
-          setShowSettings(false);
-          saveSpecializedTarget("none");
-          void setMode(1);
-        }}
-        onOpenGuide={() => void openSpecialized("help")}
-      />
-    ) : mode === 3 && showHealth && developer ? (
+    showHealth && developer ? (
       <RepositoryHealthPanel
         onClose={() => {
           setShowHealth(false);
-          saveSpecializedTarget("none");
-          void setMode(1);
+          if (!activeSpecialized) {
+            setToolDock(false);
+          }
         }}
       />
-    ) : mode === 3 ? (
+    ) : activeSpecialized ? (
       specializedSurface
     ) : (
-      <aside className="op-secondary-quiet" aria-label="Workspace context">
+      <aside className="op-secondary-quiet" aria-label="Workspace tools">
         <p className="op-secondary-quiet__copy">
-          Ask Workspace to save, restore, or operate the desktop. Supporting
-          tools appear here when needed — not as a dashboard.
+          Ask for Save, Continue, Moments, or Guide. Tools open here from
+          conversation — not as a separate Workspace form.
         </p>
+        <button
+          type="button"
+          className="op-shell__btn"
+          onClick={() => setToolDock(false)}
+        >
+          Hide tools
+        </button>
       </aside>
     );
 
-  // Mode 0 in Tauri: main window is hidden — operator window owns UI.
-  // Browser/demo fallback: in-window icon only (cannot leave the host page).
+  // Form A in Tauri: conversation window hidden — operator window owns UI.
   if (mode === 0) {
     if (isTauriRuntime()) {
       return (
@@ -360,11 +344,7 @@ export function OperatorRoot({
     }
     return (
       <div className="op-root" data-mode={0} data-shell-fallback="in-window">
-        <DesktopOperator
-          onOpenCompact={() => void setMode(1)}
-          onExpand={() => void setMode(2)}
-          onOpenSettings={() => void openSettingsSurface()}
-        />
+        <DesktopOperator onOpenConversation={() => void setMode(1)} />
       </div>
     );
   }
@@ -372,16 +352,19 @@ export function OperatorRoot({
   return (
     <div
       className="op-root"
-      data-mode={mode}
+      data-mode={1}
       data-developer={developer ? "on" : "off"}
       data-specialized={activeSpecialized ?? undefined}
     >
-      <div className={`op-stage op-stage--mode${mode}`}>
+      <div
+        className="op-stage op-stage--conversation"
+        data-dock={toolDock ? "on" : "off"}
+      >
         <div className="op-stage__chat">
           <section
             className="op-shell"
             aria-label="Workspace conversation"
-            data-operator-mode={mode}
+            data-operator-mode={1}
           >
             <header
               className="op-shell__chrome"
@@ -399,60 +382,22 @@ export function OperatorRoot({
                   <span className="op-shell__dev-dot" aria-hidden="true" />
                 )}
               </button>
-                <div className="op-shell__actions">
+              <div className="op-shell__actions">
                 <button
                   type="button"
                   className="op-shell__btn"
                   onClick={() => void setMode(0)}
-                  title="Collapse to desktop operator"
+                  title="Return to desktop operator"
                 >
                   Collapse
                 </button>
-                {mode === 1 && (
-                  <button
-                    type="button"
-                    className="op-shell__btn op-shell__btn--primary"
-                    onClick={() => {
-                      setShowHealth(false);
-                      setShowSettings(false);
-                      void setMode(2);
-                    }}
-                    title="Expand around conversation"
-                  >
-                    Expand
-                  </button>
-                )}
-                {mode >= 2 && (
+                {developer && (
                   <button
                     type="button"
                     className="op-shell__btn"
                     onClick={() => {
-                      setShowHealth(false);
-                      setShowSettings(false);
-                      void setMode(1);
-                    }}
-                    title="Compact conversation"
-                  >
-                    Compact
-                  </button>
-                )}
-                <button
-                  type="button"
-                  className="op-shell__btn"
-                  onClick={() => void openSettingsSurface()}
-                  title="Settings"
-                >
-                  Settings
-                </button>
-                {developer && mode >= 2 && (
-                  <button
-                    type="button"
-                    className="op-shell__btn"
-                    onClick={() => {
-                      setShowSettings(false);
                       setShowHealth((v) => !v);
-                      saveSpecializedTarget("health");
-                      void setMode(3);
+                      setToolDock(true);
                     }}
                     title="Repository health"
                   >
@@ -463,7 +408,7 @@ export function OperatorRoot({
                   type="button"
                   className="op-shell__btn"
                   onClick={() => void exitWorkspace()}
-                  title="Exit Workspace"
+                  title="Exit Workspace completely"
                 >
                   Exit
                 </button>
@@ -521,7 +466,7 @@ export function OperatorRoot({
           </section>
         </div>
 
-        {showSecondary && (
+        {toolDock && (
           <div className="op-stage__workspace" data-specialized-shell="true">
             {secondary}
           </div>
