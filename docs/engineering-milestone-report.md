@@ -6,7 +6,7 @@
 | **Execution program** | P10 Capability Runtime Foundation |
 | **Date** | 2026-08-07 |
 | **Prior** | P8 UI Architecture frozen; P9 research accepted |
-| **Commit** | `ba7932b` |
+| **Commit** | `23492a8` |
 | **Handoff** | `AWAITING_PROJECT_OWNER_CAPABILITY_RUNTIME_FOUNDATION_REVIEW` |
 | **Index** | `docs/capability-runtime/00_INDEX.md` |
 

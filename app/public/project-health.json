@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-06T21:11:50.511Z",
+  "updatedAt": "2026-08-06T21:12:05.020Z",
   "constitution": {
     "document": "architecture/ARCHITECTURAL_CONSTITUTION_V2.md",
     "version": "2.0"
@@ -262,7 +262,7 @@
     "id": "capability-runtime-foundation-p10",
     "title": "P10 Capability Runtime Foundation",
     "status": "awaiting_owner_review",
-    "commit": "ba7932b"
+    "commit": "23492a8"
   },
   "acceptedReviews": [
     {
