@@ -6,7 +6,7 @@
 | **Execution program** | P11 Application Provider |
 | **Date** | 2026-08-07 |
 | **Prior** | P10 Foundation complete (`23492a8`); Owner directed Application next |
-| **Commit** | $hash |
+| **Commit** | `330a26b` |
 | **Handoff** | `AWAITING_PROJECT_OWNER_APPLICATION_PROVIDER_REVIEW` |
 | **Index** | `docs/capability-runtime/00_INDEX.md` |
 
