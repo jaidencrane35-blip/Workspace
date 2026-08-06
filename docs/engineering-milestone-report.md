@@ -7,7 +7,7 @@
 | **Date** | 2026-08-07 |
 | **Prior** | P5 Native Desktop Operator Refoundation (`4316230`) |
 | **Repository version** | `0.1.0` |
-| **Commit** | _(filled after commit)_ |
+| **Commit** | `11bab9d` |
 | **Handoff** | `AWAITING_PROJECT_OWNER_SHELL_COMPLETION_REVIEW` |
 | **Detail** | `docs/execution-program-desktop-operator-shell-completion.md` |
 
