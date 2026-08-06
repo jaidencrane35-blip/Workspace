@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-06T22:14:04.234Z",
+  "updatedAt": "2026-08-06T22:14:20.840Z",
   "constitution": {
     "document": "architecture/ARCHITECTURAL_CONSTITUTION_V2.md",
     "version": "2.0"
@@ -300,7 +300,7 @@
     "id": "window-provider-product-proof-p12-5",
     "title": "P12.5 Conversation Integration & Product Proof",
     "status": "awaiting_owner_review",
-    "commit": "ca63fc8"
+    "commit": "40dd746"
   },
   "acceptedReviews": [
     {

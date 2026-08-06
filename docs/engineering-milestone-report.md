@@ -6,7 +6,7 @@
 | **Execution program** | P12.5 Conversation Integration & Product Proof |
 | **Date** | 2026-08-07 |
 | **Prior** | P12 Window Provider engineering (`66465b8`) — not reimplemented |
-| **Commit** | `ca63fc8` |
+| **Commit** | `40dd746` |
 | **Handoff** | `AWAITING_PROJECT_OWNER_WINDOW_PRODUCT_PROOF_REVIEW` |
 | **Index** | `docs/capability-runtime/product-proof/WINDOW_PROVIDER_PRODUCT_PROOF.md` |
 
