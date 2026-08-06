@@ -6,7 +6,7 @@
 | **Execution program** | P9 Capability Runtime Research & Adoption Strategy |
 | **Date** | 2026-08-07 |
 | **Prior** | P8 UI Architecture accepted (`c045eb0`) |
-| **Commit** | `f26c917` |
+| **Commit** | `34647bd` |
 | **Handoff** | `AWAITING_PROJECT_OWNER_CAPABILITY_RUNTIME_RESEARCH_REVIEW` |
 | **Index** | `docs/capability-runtime/00_INDEX.md` |
 
