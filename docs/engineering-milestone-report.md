@@ -6,7 +6,7 @@
 | **Execution program** | P12.6 Conversational Desktop Surface |
 | **Date** | 2026-08-07 |
 | **Prior** | P12.5 Window Product Proof (`40dd746`) — not a provider program |
-| **Commit** | pending |
+| **Commit** | d1dc8b8 |
 | **Handoff** | `AWAITING_PROJECT_OWNER_PRODUCT_GRAVITY_REVIEW` |
 | **Index** | `docs/ui/PRODUCT_GRAVITY_RULE.md` |
 

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-06T22:26:41.538Z",
+  "updatedAt": "2026-08-06T22:27:02.012Z",
   "constitution": {
     "document": "architecture/ARCHITECTURAL_CONSTITUTION_V2.md",
     "version": "2.0"
@@ -313,7 +313,7 @@
     "id": "conversational-desktop-surface-p12-6",
     "title": "P12.6 Conversational Desktop Surface",
     "status": "awaiting_owner_review",
-    "commit": "pending"
+    "commit": "d1dc8b8"
   },
   "acceptedReviews": [
     {
