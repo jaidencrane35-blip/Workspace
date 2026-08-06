@@ -143,6 +143,7 @@ use commands::workspace_intelligence::{
 };
 use commands::application_capability::execute_application_operation;
 use commands::clipboard::{read_clipboard, write_clipboard};
+use commands::window_capability::execute_window_operation;
 use commands::health::get_workspace_health;
 use commands::settings::{get_settings, update_settings};
 use commands::shell::exit_workspace;
@@ -182,6 +183,7 @@ pub fn run() {
             read_clipboard,
             write_clipboard,
             execute_application_operation,
+            execute_window_operation,
             exit_workspace,
             // Product shell (Canvas + Diagnostic)
             create_workspace,

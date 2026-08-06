@@ -54,4 +54,7 @@ pub trait WindowMutator: Send + Sync {
 
     /// Request close via WM_CLOSE (graceful). Does not force-kill.
     fn close_window(&self, hwnd: &str) -> Result<MutatorEffectOutcome>;
+
+    /// Maximize a top-level window (Window Provider).
+    fn maximize_window(&self, hwnd: &str) -> Result<MutatorEffectOutcome>;
 }

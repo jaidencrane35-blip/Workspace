@@ -1,17 +1,18 @@
 # Rolling Capability Provider Roadmap
-## Updated after P10 Owner review → P11
+## Updated after P12 Window Provider
 
 UI Architecture, Desktop Operator, Conversation, and Capability Runtime pipeline remain **frozen**.  
-Providers own **operations**. Programs expand providers only.
+Providers own **operations**. Providers never call each other.
 
 ---
 
-## Completed
+## Completed (immutable repository truth)
 
-| Program | Title | Status |
+| Program | Title | Commit |
 | --- | --- | --- |
-| **P10** | Capability Runtime Foundation + Clipboard reference | Complete — Owner accepted direction |
-| **P11** | Application Provider (operations) | Active / this milestone |
+| **P10** | Capability Runtime Foundation + Clipboard | `23492a8` |
+| **P11** | Application Provider | `330a26b` |
+| **P12** | Window Provider | this milestone |
 
 ---
 
@@ -19,25 +20,20 @@ Providers own **operations**. Programs expand providers only.
 
 | Program | Title | Why |
 | --- | --- | --- |
-| **P12** | Window Provider | Placement / geometry quality; pairs with Application ops |
-| **P13** | Notifications Provider | Lightweight outbound communication |
-| **P14** | Browser Provider | URL open (WRAP); CDP deferred |
-| **P15** | Screenshot Provider | Capture WRAP behind consent |
-| **P16** | File Provider | Scoped FS — later automation dependency |
+| **P13** | Notifications Provider | Lightweight outbound feedback |
+| **P14** | Browser Provider | URL open (WRAP) |
+| **P15** | Screenshot Provider | Capture under consent |
+| **P16** | File Provider | Scoped FS for later automation |
+| **P17** | Terminal Provider | Governed ConPTY |
 
----
-
-## Longer horizon
-
-P17 Terminal → P18 Voice → P19 Memory deepen → P20 Automation → P21 Workspace Intelligence
-
-Clipboard remains the P10 reference provider (not re-implemented).
+Longer: P18 Voice → P19 Memory → P20 Automation → P21 Intelligence
 
 ---
 
 ## Permanent rules
 
-1. Do not redesign frozen Levels 1–3 (Product / Architecture / UI).  
-2. Do not bypass Conversation → Intent → Router → Registry → Provider → Desktop → Response.  
-3. Providers own operations (Launch, Focus, …), not isolated one-off features.  
-4. One execution program at a time; stop for Owner review.  
+1. Frozen Levels 1–3 (Product / Architecture / UI) stay frozen.  
+2. Pipeline only — no bypasses.  
+3. Providers own operations; independently testable.  
+4. Every program delivers user-visible value or unblocks it.  
+5. One program → stop for Owner review.  

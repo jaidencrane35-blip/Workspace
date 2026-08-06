@@ -299,6 +299,114 @@ export function OperatorRoot({
           }
           break;
         }
+        case "winEnumerate":
+        case "winActive":
+        case "winMonitors":
+        case "winBounds":
+        case "winMaximize":
+        case "winSnap":
+        case "winCenter":
+        case "winMoveMonitor":
+        case "winFocus": {
+          try {
+            type WinResult = {
+              operation: string;
+              ok: boolean;
+              status?: string;
+              target?: string;
+              message?: string;
+              text?: string;
+              items?: Array<{ title: string }>;
+              monitors?: Array<{ index: number; name: string; isPrimary: boolean }>;
+            };
+            const run = (args: Record<string, unknown>) =>
+              invokeIpc<WinResult>("execute_window_operation", {
+                query: null,
+                path: null,
+                hwnd: null,
+                pid: null,
+                x: null,
+                y: null,
+                width: null,
+                height: null,
+                monitor_index: null,
+                snap: null,
+                ...args,
+              });
+
+            if (action.kind === "winEnumerate") {
+              const result = await run({ operation: "enumerate" });
+              const titles =
+                result.items
+                  ?.slice(0, 12)
+                  .map((item) => `• ${item.title}`)
+                  .join("\n") ?? "(none)";
+              await pushWorkspace(
+                `${result.message ?? "Windows listed."}\n${titles}`,
+              );
+              break;
+            }
+            if (action.kind === "winMonitors") {
+              const result = await run({ operation: "monitors" });
+              const lines =
+                result.monitors
+                  ?.map(
+                    (m) =>
+                      `• ${m.index}: ${m.name}${m.isPrimary ? " (primary)" : ""}`,
+                  )
+                  .join("\n") ?? "(none)";
+              await pushWorkspace(
+                `${result.message ?? "Monitors listed."}\n${lines}`,
+              );
+              break;
+            }
+            if (action.kind === "winActive") {
+              const result = await run({ operation: "active" });
+              await pushWorkspace(result.message ?? "No active window.");
+              break;
+            }
+            if (action.kind === "winSnap") {
+              const result = await run({
+                operation: "snap",
+                query: action.query,
+                snap: action.snap,
+              });
+              await pushWorkspace(result.message ?? "Snap finished.");
+              break;
+            }
+            if (action.kind === "winMoveMonitor") {
+              const result = await run({
+                operation: "move",
+                query: action.query,
+                monitor_index: action.monitorIndex,
+              });
+              await pushWorkspace(result.message ?? "Move finished.");
+              break;
+            }
+            const operation =
+              action.kind === "winBounds"
+                ? "bounds"
+                : action.kind === "winMaximize"
+                  ? "maximize"
+                  : action.kind === "winCenter"
+                    ? "center"
+                    : "focus";
+            const result = await run({
+              operation,
+              query: "query" in action ? action.query : undefined,
+            });
+            await pushWorkspace(
+              result.message ?? result.text ?? `${operation} complete.`,
+            );
+          } catch (error) {
+            const message =
+              error instanceof IpcCommandError
+                ? error.message
+                : "Window operation failed.";
+            await pushWorkspace(message);
+          }
+          break;
+        }
         case "appEnumerate":
         case "appLaunch":
         case "appFocus":

@@ -43,6 +43,15 @@ export type IntentAction =
   | { kind: "appMinimize"; query: string; reply: string }
   | { kind: "appRestore"; query: string; reply: string }
   | { kind: "appEnumerate"; reply: string }
+  | { kind: "winEnumerate"; reply: string }
+  | { kind: "winActive"; reply: string }
+  | { kind: "winMonitors"; reply: string }
+  | { kind: "winBounds"; query: string; reply: string }
+  | { kind: "winMaximize"; query: string; reply: string }
+  | { kind: "winSnap"; query: string; snap: string; reply: string }
+  | { kind: "winCenter"; query: string; reply: string }
+  | { kind: "winMoveMonitor"; query: string; monitorIndex: number; reply: string }
+  | { kind: "winFocus"; query: string; reply: string }
   | { kind: "unknown"; reply: string; suggestion?: string };
 
 function normalize(input: string): string {
@@ -127,6 +136,47 @@ export function resolveIntent(raw: string): IntentAction {
         status === "approved"
           ? `Approved ${target.id}. It is on the capability backlog. Implementation still requires a constitutional execution program — Workspace will not rewrite itself.`
           : `Rejected ${target.id}. Recorded in the audit trail.`,
+    };
+  }
+
+  // Concrete Window Provider intents take precedence over evolution proposals
+  // (evolution also matches verbs like "move" / "resize").
+  const earlyWinSnap = raw
+    .trim()
+    .match(/^snap\s+(.+?)\s+(left|right|top|bottom)$/i);
+  if (earlyWinSnap?.[1] && earlyWinSnap[2]) {
+    return {
+      kind: "winSnap",
+      query: earlyWinSnap[1].trim(),
+      snap: earlyWinSnap[2].toLowerCase(),
+      reply: `Snapping “${earlyWinSnap[1].trim()}” ${earlyWinSnap[2].toLowerCase()} through Window Provider.`,
+    };
+  }
+  const earlyWinMoveMon = raw
+    .trim()
+    .match(/^move\s+(?:window\s+)?(.+?)\s+to\s+monitor\s+(\d+)$/i);
+  if (earlyWinMoveMon?.[1] && earlyWinMoveMon[2]) {
+    return {
+      kind: "winMoveMonitor",
+      query: earlyWinMoveMon[1].trim(),
+      monitorIndex: Number(earlyWinMoveMon[2]),
+      reply: `Moving “${earlyWinMoveMon[1].trim()}” to monitor ${earlyWinMoveMon[2]} through Window Provider.`,
+    };
+  }
+  const earlyWinMax = raw.trim().match(/^maximize\s+(.+)$/i);
+  if (earlyWinMax?.[1]) {
+    return {
+      kind: "winMaximize",
+      query: earlyWinMax[1].trim().replace(/[.!?]+$/g, ""),
+      reply: `Maximizing “${earlyWinMax[1].trim()}” through Window Provider.`,
+    };
+  }
+  const earlyWinCenter = raw.trim().match(/^center\s+(.+)$/i);
+  if (earlyWinCenter?.[1]) {
+    return {
+      kind: "winCenter",
+      query: earlyWinCenter[1].trim().replace(/[.!?]+$/g, ""),
+      reply: `Centering “${earlyWinCenter[1].trim()}” through Window Provider.`,
     };
   }
 
@@ -314,6 +364,96 @@ export function resolveIntent(raw: string): IntentAction {
     return {
       kind: "appEnumerate",
       reply: "Listing running application windows through Capability Runtime.",
+    };
+  }
+
+  if (
+    /\b(list windows|what windows|show windows)\b/.test(text) ||
+    text === "windows"
+  ) {
+    return {
+      kind: "winEnumerate",
+      reply: "Listing windows through Window Provider.",
+    };
+  }
+
+  if (
+    /\b(active window|foreground window|what('?s| is) focused|which window)\b/.test(
+      text,
+    )
+  ) {
+    return {
+      kind: "winActive",
+      reply: "Reading the active window through Window Provider.",
+    };
+  }
+
+  if (/\b(list monitors|monitors|displays)\b/.test(text)) {
+    return {
+      kind: "winMonitors",
+      reply: "Listing monitors through Window Provider.",
+    };
+  }
+
+  const winSnap = raw
+    .trim()
+    .match(/^snap\s+(.+?)\s+(left|right|top|bottom)$/i);
+  if (winSnap?.[1] && winSnap[2]) {
+    return {
+      kind: "winSnap",
+      query: winSnap[1].trim(),
+      snap: winSnap[2].toLowerCase(),
+      reply: `Snapping “${winSnap[1].trim()}” ${winSnap[2].toLowerCase()} through Window Provider.`,
+    };
+  }
+
+  const winMoveMon = raw
+    .trim()
+    .match(/^move\s+(?:window\s+)?(.+?)\s+to\s+monitor\s+(\d+)$/i);
+  if (winMoveMon?.[1] && winMoveMon[2]) {
+    return {
+      kind: "winMoveMonitor",
+      query: winMoveMon[1].trim(),
+      monitorIndex: Number(winMoveMon[2]),
+      reply: `Moving “${winMoveMon[1].trim()}” to monitor ${winMoveMon[2]} through Window Provider.`,
+    };
+  }
+
+  const winCenter = raw.trim().match(/^center\s+(.+)$/i);
+  if (winCenter?.[1]) {
+    return {
+      kind: "winCenter",
+      query: winCenter[1].trim().replace(/[.!?]+$/g, ""),
+      reply: `Centering “${winCenter[1].trim()}” through Window Provider.`,
+    };
+  }
+
+  const winMax = raw.trim().match(/^maximize\s+(.+)$/i);
+  if (winMax?.[1]) {
+    return {
+      kind: "winMaximize",
+      query: winMax[1].trim().replace(/[.!?]+$/g, ""),
+      reply: `Maximizing “${winMax[1].trim()}” through Window Provider.`,
+    };
+  }
+
+  const winBounds = raw
+    .trim()
+    .match(/^(?:bounds|where is|window info(?: for)?)\s+(.+)$/i);
+  if (winBounds?.[1]) {
+    return {
+      kind: "winBounds",
+      query: winBounds[1].trim().replace(/[.!?]+$/g, ""),
+      reply: `Reading bounds for “${winBounds[1].trim()}” through Window Provider.`,
+    };
+  }
+
+  const winFocus = raw.trim().match(/^focus window\s+(.+)$/i);
+  if (winFocus?.[1]) {
+    return {
+      kind: "winFocus",
+      query: winFocus[1].trim().replace(/[.!?]+$/g, ""),
+      reply: `Focusing window “${winFocus[1].trim()}” through Window Provider.`,
     };
   }
 

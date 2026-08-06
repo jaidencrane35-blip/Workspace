@@ -41,15 +41,20 @@ Cross-capability message envelopes remain governed by `architecture/10_Capabilit
 
 | | |
 | --- | --- |
-| **Purpose** | Place and organize HWND-level windows |
-| **Examples** | “Move this to the right monitor.” / “Snap code left, browser right.” |
-| **Permissions** | `window.move`, `window.resize`, `window.zorder` |
-| **Arguments** | `hwnd` \| `selector` · `bounds` · `monitor_id` |
-| **Results** | Applied geometry / skipped reasons |
-| **Failures** | Window closed; elevated other-process limits |
-| **Rollback** | Restore prior bounds snapshot when available |
-| **Audit** | hwnd hash, monitor, before/after bounds |
-| **Future** | Layout Moments integration |
+| **Purpose** | Discover, place, and organize HWND-level windows |
+| **Examples** | “List windows.” / “Snap Chrome left.” / “Move Notepad to monitor 1.” / “Maximize Cursor.” |
+| **Permissions** | `window.read`, `window.focus`, `window.place`, `window.state` |
+| **Arguments** | `query` \| `hwnd` \| `pid` · `x/y/width/height` · `monitorIndex` · `snap` |
+| **Results** | `{ status, target, items?, monitors? }` — see `WINDOW_PROVIDER.md` |
+| **Failures** | not_found; focus refused; invalid size; no monitor |
+| **Rollback** | Prior bounds snapshot — future |
+| **Audit** | operation + status + target + geometry summary |
+| **P12 status** | **Window Provider shipped** (Levels 1–2) |
+| **Adoption** | ADAPT Win32 ports; FancyZones = STUDY only |
+| **Rust** | `WindowProvider` + `ExecuteWindowOperation` |
+| **TypeScript** | `winEnumerate` / `winSnap` / … → IPC only |
+| **IPC** | `execute_window_operation` |
+| **Future** | Level 3 compose layouts; Level 4 Intelligence |
 
 ---
 

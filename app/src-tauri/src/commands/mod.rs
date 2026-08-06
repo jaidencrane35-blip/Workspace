@@ -2,6 +2,7 @@ pub mod analytics;
 pub mod audit;
 pub mod application_capability;
 pub mod clipboard;
+pub mod window_capability;
 pub mod automation_contract;
 pub mod automation_trigger;
 pub mod decision_engine;

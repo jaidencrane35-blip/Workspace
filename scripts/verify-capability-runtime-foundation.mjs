@@ -28,12 +28,17 @@ const required = [
   "packages/kernel/src/capability_runtime/registry.rs",
   "packages/kernel/src/capability_runtime/clipboard_provider.rs",
   "packages/kernel/src/capability_runtime/application_provider.rs",
+  "packages/kernel/src/capability_runtime/window_provider.rs",
   "packages/windows-integration/src/clipboard.rs",
   "packages/kernel/src/commands/clipboard.rs",
   "packages/kernel/src/commands/application_capability.rs",
+  "packages/kernel/src/commands/window_capability.rs",
   "app/src-tauri/src/commands/clipboard.rs",
   "app/src-tauri/src/commands/application_capability.rs",
+  "app/src-tauri/src/commands/window_capability.rs",
   "docs/capability-runtime/APPLICATION_PROVIDER.md",
+  "docs/capability-runtime/WINDOW_PROVIDER.md",
+  "docs/capability-runtime/WINDOW_OPERATIONS_SPECIFICATION.md",
 ];
 
 for (const rel of required) {
@@ -91,6 +96,9 @@ if (!libRs.includes("read_clipboard") || !libRs.includes("write_clipboard")) {
 if (!libRs.includes("execute_application_operation")) {
   fail("Tauri generate_handler must register execute_application_operation");
 }
+if (!libRs.includes("execute_window_operation")) {
+  fail("Tauri generate_handler must register execute_window_operation");
+}
 
 const intent = fs.readFileSync(
   path.join(root, "app/src/lib/intentBridge.ts"),
@@ -120,6 +128,9 @@ if (!registry.includes("Providers own operations")) {
 }
 if (!registry.includes("ApplicationProvider")) {
   fail("provider registry must list ApplicationProvider");
+}
+if (!registry.includes("WindowProvider")) {
+  fail("provider registry must list WindowProvider");
 }
 
 const cargo = fs.readFileSync(

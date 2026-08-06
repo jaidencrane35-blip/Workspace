@@ -18,7 +18,7 @@ use windows::Win32::UI::WindowsAndMessaging::{
     EnumWindows, GetForegroundWindow, GetWindowRect, GetWindowTextLengthW, GetWindowTextW,
     GetWindowThreadProcessId, IsIconic, IsWindow, IsWindowVisible, MONITORINFOF_PRIMARY,
     PostMessageW, SetForegroundWindow, SetWindowPos, ShowWindow, HWND_TOP, SWP_NOACTIVATE,
-    SWP_NOZORDER, SWP_SHOWWINDOW, SW_MINIMIZE, SW_RESTORE, WM_CLOSE,
+    SWP_NOZORDER, SWP_SHOWWINDOW, SW_MAXIMIZE, SW_MINIMIZE, SW_RESTORE, WM_CLOSE,
 };
 
 use super::capture::{
@@ -213,6 +213,18 @@ impl WindowMutator for Win32WindowEnumerator {
         // Graceful close request — never TerminateProcess from Application Provider.
         let ok = unsafe { PostMessageW(handle, WM_CLOSE, WPARAM(0), LPARAM(0)) };
         if ok.is_err() {
+            return Ok(MutatorEffectOutcome::RefusedByEnvironment);
+        }
+        Ok(MutatorEffectOutcome::Committed)
+    }
+
+    fn maximize_window(&self, hwnd: &str) -> Result<MutatorEffectOutcome> {
+        let handle = parse_hwnd(hwnd)?;
+        if !unsafe { IsWindow(handle).as_bool() } {
+            return Ok(MutatorEffectOutcome::RefusedByEnvironment);
+        }
+        let ok = unsafe { ShowWindow(handle, SW_MAXIMIZE) };
+        if !ok.as_bool() {
             return Ok(MutatorEffectOutcome::RefusedByEnvironment);
         }
         Ok(MutatorEffectOutcome::Committed)

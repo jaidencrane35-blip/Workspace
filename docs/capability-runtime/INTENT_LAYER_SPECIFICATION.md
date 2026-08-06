@@ -61,6 +61,22 @@ Conversation examples:
 
 - “Open notepad” / “Launch chrome” / “Switch to Chrome” / “Close Spotify” / “List apps”
 
+### Window (P12)
+
+| Kind | Domain | Operation(s) | IPC |
+| --- | --- | --- | --- |
+| `winEnumerate` | window | enumerate | `execute_window_operation` |
+| `winActive` | window | active | same |
+| `winMonitors` | window | monitors | same |
+| `winBounds` | window | bounds | same |
+| `winMaximize` | window | maximize | same |
+| `winSnap` | window | snap | same |
+| `winCenter` | window | center | same |
+| `winMoveMonitor` | window | move + monitorIndex | same |
+| `winFocus` | window | focus | same |
+
+Examples: “List windows” / “Snap Chrome left” / “Move Cursor to monitor 1” / “Maximize notepad”
+
 ---
 
 ## Laws

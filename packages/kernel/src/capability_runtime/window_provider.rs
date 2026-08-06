@@ -1,0 +1,625 @@
+//! Window Provider (P12) — owns window geometry and state operations.
+//!
+//! Adoption: **ADAPT** existing Win32 ports. FancyZones-class UX = STUDY only.
+//! Independently testable — never calls ApplicationProvider.
+
+use std::sync::Arc;
+
+use workspace_windows_integration::{
+    CapturedDesktopMonitor, DesktopCapturer, DesktopWindowSnapshot, MutatorEffectOutcome,
+    WindowEnumerator, WindowMutator, WindowPlacementRequest,
+};
+
+use super::registry::CapabilityProvider;
+use super::types::{
+    text_preview, ApplicationWindowItem, CapabilityDomainId, CapabilityOperation, MonitorItem,
+    ProviderDescriptor, ProviderInvokeRequest, ProviderInvokeResponse,
+};
+use crate::error::{KernelError, Result};
+
+pub struct WindowPorts {
+    pub enumerator: Arc<dyn WindowEnumerator>,
+    pub mutator: Arc<dyn WindowMutator>,
+    pub capturer: Arc<dyn DesktopCapturer>,
+}
+
+/// Window Capability Provider — Discovery, Focus, State, Placement, Information (L1–L2).
+pub struct WindowProvider {
+    ports: WindowPorts,
+}
+
+impl WindowProvider {
+    pub fn new(ports: WindowPorts) -> Self {
+        Self { ports }
+    }
+
+    fn item(window: &DesktopWindowSnapshot) -> ApplicationWindowItem {
+        ApplicationWindowItem {
+            hwnd: window.hwnd.clone(),
+            title: window.title.clone(),
+            process_id: window.process_id,
+            minimized: window.minimized,
+            focused: window.focused,
+            x: window.x,
+            y: window.y,
+            width: window.width,
+            height: window.height,
+            monitor_index: window.monitor_index,
+        }
+    }
+
+    fn monitor_item(monitor: &CapturedDesktopMonitor) -> MonitorItem {
+        MonitorItem {
+            index: monitor.index,
+            name: monitor.name.clone(),
+            x: monitor.x,
+            y: monitor.y,
+            width: monitor.width,
+            height: monitor.height,
+            work_x: monitor.work_x,
+            work_y: monitor.work_y,
+            work_width: monitor.work_width,
+            work_height: monitor.work_height,
+            is_primary: monitor.is_primary,
+        }
+    }
+
+    fn windows(&self) -> Result<Vec<DesktopWindowSnapshot>> {
+        self.ports
+            .enumerator
+            .enumerate_windows()
+            .map_err(|error| KernelError::WindowsIntegration {
+                message: error.to_string(),
+            })
+    }
+
+    fn monitors(&self) -> Result<Vec<CapturedDesktopMonitor>> {
+        let capture = self
+            .ports
+            .capturer
+            .capture_desktop()
+            .map_err(|error| KernelError::WindowsIntegration {
+                message: error.to_string(),
+            })?;
+        Ok(capture.monitors)
+    }
+
+    fn match_windows(&self, request: &ProviderInvokeRequest) -> Result<Vec<DesktopWindowSnapshot>> {
+        let windows = self.windows()?;
+        if let Some(hwnd) = request.hwnd.as_deref() {
+            return Ok(windows.into_iter().filter(|w| w.hwnd == hwnd).collect());
+        }
+        if let Some(pid) = request.pid {
+            return Ok(windows.into_iter().filter(|w| w.process_id == pid).collect());
+        }
+        let query = request
+            .query
+            .as_deref()
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .map(|value| value.to_ascii_lowercase());
+        let path = request
+            .path
+            .as_deref()
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .map(|value| value.to_ascii_lowercase());
+        if query.is_none() && path.is_none() {
+            return Ok(windows);
+        }
+        Ok(windows
+            .into_iter()
+            .filter(|window| {
+                let title = window.title.to_ascii_lowercase();
+                let query_hit = query
+                    .as_ref()
+                    .map(|needle| title.contains(needle))
+                    .unwrap_or(false);
+                let path_hit = path
+                    .as_ref()
+                    .map(|needle| title.contains(needle) || needle.contains(&title))
+                    .unwrap_or(false);
+                query_hit || path_hit
+            })
+            .collect())
+    }
+
+    fn resolve_one(
+        &self,
+        request: &ProviderInvokeRequest,
+    ) -> Result<Option<DesktopWindowSnapshot>> {
+        Ok(self.match_windows(request)?.into_iter().next())
+    }
+
+    fn effect(
+        operation: CapabilityOperation,
+        status: &str,
+        window: &DesktopWindowSnapshot,
+        outcome: MutatorEffectOutcome,
+        message: impl Into<String>,
+    ) -> ProviderInvokeResponse {
+        let ok = matches!(
+            outcome,
+            MutatorEffectOutcome::Committed | MutatorEffectOutcome::OutcomeUnknown
+        );
+        ProviderInvokeResponse {
+            domain: CapabilityDomainId::window(),
+            operation,
+            ok,
+            format: None,
+            bytes: None,
+            text: None,
+            preview: Some(text_preview(&window.title, 80)),
+            message: Some(message.into()),
+            status: Some(status.into()),
+            target: Some(window.title.clone()),
+            items: Some(vec![Self::item(window)]),
+            monitors: None,
+        }
+    }
+
+    fn not_found(operation: CapabilityOperation, request: &ProviderInvokeRequest) -> ProviderInvokeResponse {
+        ProviderInvokeResponse {
+            domain: CapabilityDomainId::window(),
+            operation,
+            ok: false,
+            format: None,
+            bytes: None,
+            text: None,
+            preview: request.query.clone(),
+            message: Some("No matching window.".into()),
+            status: Some("not_found".into()),
+            target: request.query.clone().or_else(|| request.hwnd.clone()),
+            items: None,
+            monitors: None,
+        }
+    }
+
+    fn place(
+        &self,
+        hwnd: &str,
+        x: i32,
+        y: i32,
+        width: i32,
+        height: i32,
+    ) -> Result<MutatorEffectOutcome> {
+        self.ports
+            .mutator
+            .place_window(
+                hwnd,
+                &WindowPlacementRequest {
+                    x,
+                    y,
+                    width,
+                    height,
+                    minimized: false,
+                },
+            )
+            .map_err(|error| KernelError::WindowsIntegration {
+                message: error.to_string(),
+            })
+    }
+
+    fn monitor_for(
+        monitors: &[CapturedDesktopMonitor],
+        index: Option<i32>,
+        fallback: Option<i32>,
+    ) -> Option<&CapturedDesktopMonitor> {
+        if let Some(index) = index {
+            if let Some(monitor) = monitors.iter().find(|m| m.index == index) {
+                return Some(monitor);
+            }
+        }
+        if let Some(index) = fallback {
+            if let Some(monitor) = monitors.iter().find(|m| m.index == index) {
+                return Some(monitor);
+            }
+        }
+        monitors
+            .iter()
+            .find(|m| m.is_primary)
+            .or_else(|| monitors.first())
+    }
+}
+
+impl CapabilityProvider for WindowProvider {
+    fn descriptor(&self) -> ProviderDescriptor {
+        ProviderDescriptor {
+            name: "WindowProvider".into(),
+            domain: CapabilityDomainId::window(),
+            purpose: "Discover, focus, place, and inspect native windows under Workspace governance."
+                .into(),
+            operations: vec![
+                "enumerate",
+                "find",
+                "active",
+                "bounds",
+                "monitors",
+                "focus",
+                "minimize",
+                "restore",
+                "maximize",
+                "move",
+                "resize",
+                "center",
+                "snap",
+            ],
+            adoption: "ADAPT",
+        }
+    }
+
+    fn invoke(&self, request: ProviderInvokeRequest) -> Result<ProviderInvokeResponse> {
+        if request.domain != CapabilityDomainId::window() {
+            return Err(KernelError::CapabilityRuntime {
+                message: format!(
+                    "WindowProvider cannot serve domain '{}'",
+                    request.domain.as_str()
+                ),
+            });
+        }
+
+        match request.operation {
+            CapabilityOperation::Enumerate => {
+                let items: Vec<_> = self.windows()?.iter().map(Self::item).collect();
+                Ok(ProviderInvokeResponse {
+                    domain: CapabilityDomainId::window(),
+                    operation: CapabilityOperation::Enumerate,
+                    ok: true,
+                    format: Some("window_list".into()),
+                    bytes: Some(items.len()),
+                    text: None,
+                    preview: Some(text_preview(
+                        &items
+                            .iter()
+                            .take(8)
+                            .map(|item| item.title.clone())
+                            .collect::<Vec<_>>()
+                            .join(", "),
+                        160,
+                    )),
+                    message: Some(format!("{} window(s).", items.len())),
+                    status: Some("enumerated".into()),
+                    target: None,
+                    items: Some(items),
+                    monitors: None,
+                })
+            }
+            CapabilityOperation::Find => {
+                let matches = self.match_windows(&request)?;
+                let items: Vec<_> = matches.iter().map(Self::item).collect();
+                let status = if items.is_empty() {
+                    "not_found"
+                } else {
+                    "found"
+                };
+                Ok(ProviderInvokeResponse {
+                    domain: CapabilityDomainId::window(),
+                    operation: CapabilityOperation::Find,
+                    ok: !items.is_empty(),
+                    format: Some("window_list".into()),
+                    bytes: Some(items.len()),
+                    text: None,
+                    preview: request.query.clone(),
+                    message: Some(format!("{status}: {} match(es).", items.len())),
+                    status: Some(status.into()),
+                    target: request.query.clone(),
+                    items: Some(items),
+                    monitors: None,
+                })
+            }
+            CapabilityOperation::Active => {
+                let capture = self.ports.capturer.capture_desktop().map_err(|error| {
+                    KernelError::WindowsIntegration {
+                        message: error.to_string(),
+                    }
+                })?;
+                let hwnd = capture.foreground_hwnd.clone();
+                let window = hwnd.as_ref().and_then(|hwnd| {
+                    capture
+                        .windows
+                        .iter()
+                        .find(|w| &w.hwnd == hwnd)
+                        .map(|w| DesktopWindowSnapshot {
+                            hwnd: w.hwnd.clone(),
+                            title: w.title.clone(),
+                            process_id: w.process_id,
+                            visible: w.visible,
+                            focused: w.focused,
+                            minimized: w.minimized,
+                            x: w.x,
+                            y: w.y,
+                            width: w.width,
+                            height: w.height,
+                            monitor_index: w.monitor_index,
+                            monitor_name: None,
+                        })
+                });
+                match window {
+                    Some(window) => Ok(ProviderInvokeResponse {
+                        domain: CapabilityDomainId::window(),
+                        operation: CapabilityOperation::Active,
+                        ok: true,
+                        format: Some("window".into()),
+                        bytes: Some(1),
+                        text: None,
+                        preview: Some(text_preview(&window.title, 80)),
+                        message: Some(format!("Active window: “{}”.", window.title)),
+                        status: Some("active".into()),
+                        target: Some(window.title.clone()),
+                        items: Some(vec![Self::item(&window)]),
+                        monitors: None,
+                    }),
+                    None => Ok(ProviderInvokeResponse {
+                        domain: CapabilityDomainId::window(),
+                        operation: CapabilityOperation::Active,
+                        ok: false,
+                        format: None,
+                        bytes: Some(0),
+                        text: None,
+                        preview: None,
+                        message: Some("No active window.".into()),
+                        status: Some("not_found".into()),
+                        target: None,
+                        items: None,
+                        monitors: None,
+                    }),
+                }
+            }
+            CapabilityOperation::Monitors => {
+                let monitors: Vec<_> = self.monitors()?.iter().map(Self::monitor_item).collect();
+                Ok(ProviderInvokeResponse {
+                    domain: CapabilityDomainId::window(),
+                    operation: CapabilityOperation::Monitors,
+                    ok: true,
+                    format: Some("monitor_list".into()),
+                    bytes: Some(monitors.len()),
+                    text: None,
+                    preview: Some(format!("{} monitor(s)", monitors.len())),
+                    message: Some(format!("{} monitor(s) attached.", monitors.len())),
+                    status: Some("enumerated".into()),
+                    target: None,
+                    items: None,
+                    monitors: Some(monitors),
+                })
+            }
+            CapabilityOperation::Bounds => {
+                let Some(window) = self.resolve_one(&request)? else {
+                    return Ok(Self::not_found(CapabilityOperation::Bounds, &request));
+                };
+                Ok(ProviderInvokeResponse {
+                    domain: CapabilityDomainId::window(),
+                    operation: CapabilityOperation::Bounds,
+                    ok: true,
+                    format: Some("bounds".into()),
+                    bytes: Some(1),
+                    text: Some(format!(
+                        "{}x{} @ ({},{}) monitor={:?}",
+                        window.width, window.height, window.x, window.y, window.monitor_index
+                    )),
+                    preview: Some(text_preview(&window.title, 80)),
+                    message: Some(format!(
+                        "“{}” — {}×{} at ({}, {}), monitor {:?}.",
+                        window.title,
+                        window.width,
+                        window.height,
+                        window.x,
+                        window.y,
+                        window.monitor_index
+                    )),
+                    status: Some("bounds".into()),
+                    target: Some(window.title.clone()),
+                    items: Some(vec![Self::item(&window)]),
+                    monitors: None,
+                })
+            }
+            CapabilityOperation::Focus => {
+                let Some(window) = self.resolve_one(&request)? else {
+                    return Ok(Self::not_found(CapabilityOperation::Focus, &request));
+                };
+                let outcome = self.ports.mutator.focus_window(&window.hwnd).map_err(|e| {
+                    KernelError::WindowsIntegration {
+                        message: e.to_string(),
+                    }
+                })?;
+                Ok(Self::effect(
+                    CapabilityOperation::Focus,
+                    "focused",
+                    &window,
+                    outcome,
+                    format!("Focused “{}”.", window.title),
+                ))
+            }
+            CapabilityOperation::Minimize => {
+                let Some(window) = self.resolve_one(&request)? else {
+                    return Ok(Self::not_found(CapabilityOperation::Minimize, &request));
+                };
+                let outcome = self
+                    .ports
+                    .mutator
+                    .minimize_window(&window.hwnd)
+                    .map_err(|e| KernelError::WindowsIntegration {
+                        message: e.to_string(),
+                    })?;
+                Ok(Self::effect(
+                    CapabilityOperation::Minimize,
+                    "minimized",
+                    &window,
+                    outcome,
+                    format!("Minimized “{}”.", window.title),
+                ))
+            }
+            CapabilityOperation::Restore => {
+                let Some(window) = self.resolve_one(&request)? else {
+                    return Ok(Self::not_found(CapabilityOperation::Restore, &request));
+                };
+                let outcome = self
+                    .ports
+                    .mutator
+                    .restore_window(&window.hwnd)
+                    .map_err(|e| KernelError::WindowsIntegration {
+                        message: e.to_string(),
+                    })?;
+                Ok(Self::effect(
+                    CapabilityOperation::Restore,
+                    "restored",
+                    &window,
+                    outcome,
+                    format!("Restored “{}”.", window.title),
+                ))
+            }
+            CapabilityOperation::Maximize => {
+                let Some(window) = self.resolve_one(&request)? else {
+                    return Ok(Self::not_found(CapabilityOperation::Maximize, &request));
+                };
+                let outcome = self
+                    .ports
+                    .mutator
+                    .maximize_window(&window.hwnd)
+                    .map_err(|e| KernelError::WindowsIntegration {
+                        message: e.to_string(),
+                    })?;
+                Ok(Self::effect(
+                    CapabilityOperation::Maximize,
+                    "maximized",
+                    &window,
+                    outcome,
+                    format!("Maximized “{}”.", window.title),
+                ))
+            }
+            CapabilityOperation::Move => {
+                let Some(window) = self.resolve_one(&request)? else {
+                    return Ok(Self::not_found(CapabilityOperation::Move, &request));
+                };
+                let monitors = self.monitors()?;
+                let target_monitor = Self::monitor_for(
+                    &monitors,
+                    request.monitor_index,
+                    window.monitor_index,
+                );
+                let (x, y) = if let (Some(x), Some(y)) = (request.x, request.y) {
+                    (x, y)
+                } else if let Some(monitor) = target_monitor {
+                    if request.monitor_index.is_some() {
+                        (monitor.work_x + 40, monitor.work_y + 40)
+                    } else {
+                        return Err(KernelError::CapabilityRuntime {
+                            message: "window move requires x/y or monitorIndex".into(),
+                        });
+                    }
+                } else {
+                    return Err(KernelError::CapabilityRuntime {
+                        message: "window move requires x/y or monitorIndex".into(),
+                    });
+                };
+                let outcome = self.place(&window.hwnd, x, y, window.width, window.height)?;
+                Ok(Self::effect(
+                    CapabilityOperation::Move,
+                    "moved",
+                    &window,
+                    outcome,
+                    format!("Moved “{}” to ({x}, {y}).", window.title),
+                ))
+            }
+            CapabilityOperation::Resize => {
+                let Some(window) = self.resolve_one(&request)? else {
+                    return Ok(Self::not_found(CapabilityOperation::Resize, &request));
+                };
+                let width = request.width.ok_or_else(|| KernelError::CapabilityRuntime {
+                    message: "window resize requires width".into(),
+                })?;
+                let height = request.height.ok_or_else(|| KernelError::CapabilityRuntime {
+                    message: "window resize requires height".into(),
+                })?;
+                if width < 100 || height < 80 {
+                    return Err(KernelError::CapabilityRuntime {
+                        message: "window resize minimum is 100×80".into(),
+                    });
+                }
+                let outcome = self.place(&window.hwnd, window.x, window.y, width, height)?;
+                Ok(Self::effect(
+                    CapabilityOperation::Resize,
+                    "resized",
+                    &window,
+                    outcome,
+                    format!("Resized “{}” to {width}×{height}.", window.title),
+                ))
+            }
+            CapabilityOperation::Center => {
+                let Some(window) = self.resolve_one(&request)? else {
+                    return Ok(Self::not_found(CapabilityOperation::Center, &request));
+                };
+                let monitors = self.monitors()?;
+                let monitor = Self::monitor_for(&monitors, request.monitor_index, window.monitor_index)
+                    .ok_or_else(|| KernelError::CapabilityRuntime {
+                        message: "no monitor available for center".into(),
+                    })?;
+                let x = monitor.work_x + ((monitor.work_width - window.width) / 2).max(0);
+                let y = monitor.work_y + ((monitor.work_height - window.height) / 2).max(0);
+                let outcome = self.place(&window.hwnd, x, y, window.width, window.height)?;
+                Ok(Self::effect(
+                    CapabilityOperation::Center,
+                    "centered",
+                    &window,
+                    outcome,
+                    format!("Centered “{}” on monitor {}.", window.title, monitor.index),
+                ))
+            }
+            CapabilityOperation::Snap => {
+                let Some(window) = self.resolve_one(&request)? else {
+                    return Ok(Self::not_found(CapabilityOperation::Snap, &request));
+                };
+                let edge = request
+                    .snap
+                    .as_deref()
+                    .unwrap_or("left")
+                    .trim()
+                    .to_ascii_lowercase();
+                let monitors = self.monitors()?;
+                let monitor = Self::monitor_for(&monitors, request.monitor_index, window.monitor_index)
+                    .ok_or_else(|| KernelError::CapabilityRuntime {
+                        message: "no monitor available for snap".into(),
+                    })?;
+                let (x, y, width, height) = match edge.as_str() {
+                    "right" => (
+                        monitor.work_x + monitor.work_width / 2,
+                        monitor.work_y,
+                        monitor.work_width / 2,
+                        monitor.work_height,
+                    ),
+                    "top" => (
+                        monitor.work_x,
+                        monitor.work_y,
+                        monitor.work_width,
+                        monitor.work_height / 2,
+                    ),
+                    "bottom" => (
+                        monitor.work_x,
+                        monitor.work_y + monitor.work_height / 2,
+                        monitor.work_width,
+                        monitor.work_height / 2,
+                    ),
+                    _ => (
+                        monitor.work_x,
+                        monitor.work_y,
+                        monitor.work_width / 2,
+                        monitor.work_height,
+                    ),
+                };
+                let outcome = self.place(&window.hwnd, x, y, width.max(100), height.max(80))?;
+                Ok(Self::effect(
+                    CapabilityOperation::Snap,
+                    "snapped",
+                    &window,
+                    outcome,
+                    format!("Snapped “{}” {edge} on monitor {}.", window.title, monitor.index),
+                ))
+            }
+            other => Err(KernelError::CapabilityRuntime {
+                message: format!(
+                    "WindowProvider does not own operation '{}'",
+                    other.as_str()
+                ),
+            }),
+        }
+    }
+}

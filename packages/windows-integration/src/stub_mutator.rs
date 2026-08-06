@@ -209,4 +209,18 @@ impl WindowMutator for StubWindowMutator {
         }
         Ok(MutatorEffectOutcome::Committed)
     }
+
+    fn maximize_window(&self, hwnd: &str) -> Result<MutatorEffectOutcome> {
+        let mut state = self.state.lock().expect("stub mutator");
+        let Some(window) = state.windows.get_mut(hwnd) else {
+            return Ok(MutatorEffectOutcome::RefusedByEnvironment);
+        };
+        window.minimized = false;
+        window.visible = true;
+        window.x = 0;
+        window.y = 0;
+        window.width = 1920;
+        window.height = 1040;
+        Ok(MutatorEffectOutcome::Committed)
+    }
 }

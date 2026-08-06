@@ -317,6 +317,38 @@ impl Capability {
             scope: CapabilityScope::Application,
         }
     }
+
+    /// Read window discovery / bounds / monitors (Window Provider Level 1).
+    pub fn window_read() -> Self {
+        Self {
+            id: CapabilityId::new("window.read").expect("window.read is valid"),
+            scope: CapabilityScope::System,
+        }
+    }
+
+    /// Focus / activate a window (Window Provider Level 2).
+    pub fn window_focus() -> Self {
+        Self {
+            id: CapabilityId::new("window.focus").expect("window.focus is valid"),
+            scope: CapabilityScope::System,
+        }
+    }
+
+    /// Place / move / resize / snap / center (Window Provider Level 2).
+    pub fn window_place() -> Self {
+        Self {
+            id: CapabilityId::new("window.place").expect("window.place is valid"),
+            scope: CapabilityScope::System,
+        }
+    }
+
+    /// Minimize / restore / maximize window state (Window Provider Level 2).
+    pub fn window_state() -> Self {
+        Self {
+            id: CapabilityId::new("window.state").expect("window.state is valid"),
+            scope: CapabilityScope::System,
+        }
+    }
 }
 
 impl CapabilitySet {
@@ -387,6 +419,10 @@ impl CapabilitySet {
             .with_capability(&Capability::application_close())
             .with_capability(&Capability::application_minimize())
             .with_capability(&Capability::application_restore())
+            .with_capability(&Capability::window_read())
+            .with_capability(&Capability::window_focus())
+            .with_capability(&Capability::window_place())
+            .with_capability(&Capability::window_state())
     }
 
     /// Capabilities attributed to system lifecycle operations.

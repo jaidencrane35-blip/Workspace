@@ -18,12 +18,12 @@ pub mod state;
 
 pub use capability_runtime::{
     runtime as capability_runtime, ApplicationWindowItem, CapabilityDomainId, CapabilityOperation,
-    CapabilityRouter, ProviderDescriptor, ProviderInvokeRequest, ProviderInvokeResponse,
-    ProviderRegistry,
+    CapabilityRouter, MonitorItem, ProviderDescriptor, ProviderInvokeRequest,
+    ProviderInvokeResponse, ProviderRegistry,
 };
 pub use commands::{
     ApplicationOperationResult, ClipboardReadResult, ClipboardWriteResult, CommandHandler,
-    ResumePlanPreview,
+    ResumePlanPreview, WindowOperationResult,
 };
 pub use config::{ConfigManager, SettingsUpdate, WorkspaceSettings};
 pub use error::{KernelError, PublicError, Result};

@@ -18,15 +18,16 @@ impl CapabilityDomainId {
         Self::new("application")
     }
 
+    pub fn window() -> Self {
+        Self::new("window")
+    }
+
     pub fn as_str(&self) -> &str {
         &self.0
     }
 }
 
 /// Provider-owned operation (not a standalone feature).
-///
-/// Providers own operations. Clipboard owns Read/Write; Application owns
-/// Launch/Enumerate/Focus/Close/Minimize/Restore/Find.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum CapabilityOperation {
@@ -39,6 +40,14 @@ pub enum CapabilityOperation {
     Minimize,
     Restore,
     Find,
+    Maximize,
+    Move,
+    Resize,
+    Center,
+    Snap,
+    Bounds,
+    Active,
+    Monitors,
 }
 
 impl CapabilityOperation {
@@ -53,6 +62,14 @@ impl CapabilityOperation {
             Self::Minimize => "minimize",
             Self::Restore => "restore",
             Self::Find => "find",
+            Self::Maximize => "maximize",
+            Self::Move => "move",
+            Self::Resize => "resize",
+            Self::Center => "center",
+            Self::Snap => "snap",
+            Self::Bounds => "bounds",
+            Self::Active => "active",
+            Self::Monitors => "monitors",
         }
     }
 
@@ -62,11 +79,19 @@ impl CapabilityOperation {
             "write" => Some(Self::Write),
             "launch" => Some(Self::Launch),
             "enumerate" | "list" => Some(Self::Enumerate),
-            "focus" | "switch" => Some(Self::Focus),
+            "focus" | "switch" | "activate" => Some(Self::Focus),
             "close" | "quit" => Some(Self::Close),
             "minimize" => Some(Self::Minimize),
             "restore" => Some(Self::Restore),
             "find" | "locate" => Some(Self::Find),
+            "maximize" => Some(Self::Maximize),
+            "move" => Some(Self::Move),
+            "resize" => Some(Self::Resize),
+            "center" => Some(Self::Center),
+            "snap" => Some(Self::Snap),
+            "bounds" | "info" => Some(Self::Bounds),
+            "active" | "foreground" => Some(Self::Active),
+            "monitors" | "displays" => Some(Self::Monitors),
             _ => None,
         }
     }
@@ -89,15 +114,18 @@ pub struct ProviderDescriptor {
 pub struct ProviderInvokeRequest {
     pub domain: CapabilityDomainId,
     pub operation: CapabilityOperation,
-    /// Clipboard text, or free-form payload when needed.
     pub text: Option<String>,
-    /// Application / window query (name, title fragment).
     pub query: Option<String>,
-    /// Explicit executable path for launch.
     pub path: Option<String>,
-    /// Window handle hex string when already resolved.
     pub hwnd: Option<String>,
     pub pid: Option<u32>,
+    pub x: Option<i32>,
+    pub y: Option<i32>,
+    pub width: Option<i32>,
+    pub height: Option<i32>,
+    pub monitor_index: Option<i32>,
+    /// Snap edge: left | right | top | bottom
+    pub snap: Option<String>,
 }
 
 impl Default for CapabilityDomainId {
@@ -112,7 +140,7 @@ impl Default for CapabilityOperation {
     }
 }
 
-/// One enumerated / found application window (Conversation-safe).
+/// One enumerated / found window (Conversation-safe).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ApplicationWindowItem {
@@ -121,6 +149,28 @@ pub struct ApplicationWindowItem {
     pub process_id: u32,
     pub minimized: bool,
     pub focused: bool,
+    pub x: i32,
+    pub y: i32,
+    pub width: i32,
+    pub height: i32,
+    pub monitor_index: Option<i32>,
+}
+
+/// Monitor descriptor for Window Provider Level 1.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MonitorItem {
+    pub index: i32,
+    pub name: String,
+    pub x: i32,
+    pub y: i32,
+    pub width: i32,
+    pub height: i32,
+    pub work_x: i32,
+    pub work_y: i32,
+    pub work_width: i32,
+    pub work_height: i32,
+    pub is_primary: bool,
 }
 
 /// Response from a Capability Provider (Desktop Service effect complete).
@@ -132,14 +182,13 @@ pub struct ProviderInvokeResponse {
     pub ok: bool,
     pub format: Option<String>,
     pub bytes: Option<usize>,
-    /// Full text for Conversation reply construction — never written to audit as-is.
     pub text: Option<String>,
     pub preview: Option<String>,
     pub message: Option<String>,
-    /// Operation result status (launched|focused|closed|not_found|…).
     pub status: Option<String>,
     pub target: Option<String>,
     pub items: Option<Vec<ApplicationWindowItem>>,
+    pub monitors: Option<Vec<MonitorItem>>,
 }
 
 impl ProviderInvokeResponse {

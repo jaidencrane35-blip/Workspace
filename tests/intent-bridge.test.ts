@@ -52,4 +52,21 @@ describe("intent bridge", () => {
     });
     expect(resolveIntent("list apps").kind).toBe("appEnumerate");
   });
+
+  it("routes window provider operations", () => {
+    expect(resolveIntent("list windows").kind).toBe("winEnumerate");
+    expect(resolveIntent("snap Chrome left")).toMatchObject({
+      kind: "winSnap",
+      query: "Chrome",
+      snap: "left",
+    });
+    expect(resolveIntent("maximize notepad")).toMatchObject({
+      kind: "winMaximize",
+      query: "notepad",
+    });
+    expect(resolveIntent("move Cursor to monitor 1")).toMatchObject({
+      kind: "winMoveMonitor",
+      monitorIndex: 1,
+    });
+  });
 });

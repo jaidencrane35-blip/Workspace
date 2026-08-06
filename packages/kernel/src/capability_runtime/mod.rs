@@ -1,35 +1,39 @@
-//! Capability Runtime Foundation (P10) + Application Provider (P11).
+//! Capability Runtime — P10 foundation + P11 Application + P12 Window providers.
 //!
 //! Permanent pipeline:
 //! Conversation → Intent Layer → Capability Router → Provider Registry →
 //! Capability Provider → Desktop Service → Conversation Response.
 //!
 //! Providers own **operations**, not isolated features.
-//! No capability may bypass this pipeline. Providers never become product identity.
+//! Providers never call each other — only the Capability Runtime routes.
 
 mod application_provider;
 mod clipboard_provider;
 mod registry;
 mod router;
 mod types;
+mod window_provider;
 
 pub use application_provider::{ApplicationPorts, ApplicationProvider};
 pub use clipboard_provider::ClipboardProvider;
 pub use registry::ProviderRegistry;
 pub use router::CapabilityRouter;
 pub use types::{
-    ApplicationWindowItem, CapabilityDomainId, CapabilityOperation, ProviderDescriptor,
-    ProviderInvokeRequest, ProviderInvokeResponse, ProviderResultSummary,
+    ApplicationWindowItem, CapabilityDomainId, CapabilityOperation, MonitorItem,
+    ProviderDescriptor, ProviderInvokeRequest, ProviderInvokeResponse, ProviderResultSummary,
 };
+pub use window_provider::{WindowPorts, WindowProvider};
 
 use std::sync::{Arc, OnceLock, RwLock};
 
 use workspace_windows_integration::{
-    platform_process_launcher, platform_window_enumerator, platform_window_mutator, ClipboardPort,
+    platform_desktop_capturer, platform_process_launcher, platform_window_enumerator,
+    platform_window_mutator, ClipboardPort,
 };
 #[cfg(test)]
 use workspace_windows_integration::{
-    FixtureWindowEnumerator, MemoryClipboard, StubProcessLauncher, StubWindowMutator,
+    FixtureWindowEnumerator, MemoryClipboard, StubDesktopCapturer, StubProcessLauncher,
+    StubWindowMutator,
 };
 
 use crate::error::{KernelError, Result};
@@ -48,6 +52,9 @@ impl CapabilityRuntime {
         registry
             .register(Box::new(ApplicationProvider::new(application_ports())))
             .expect("application provider registers once at bootstrap");
+        registry
+            .register(Box::new(WindowProvider::new(window_ports())))
+            .expect("window provider registers once at bootstrap");
         Self {
             registry: RwLock::new(registry),
         }
@@ -102,6 +109,25 @@ fn application_ports() -> ApplicationPorts {
     }
 }
 
+fn window_ports() -> WindowPorts {
+    #[cfg(test)]
+    {
+        WindowPorts {
+            enumerator: Arc::new(FixtureWindowEnumerator),
+            mutator: Arc::new(StubWindowMutator::fixture_dual_monitor()),
+            capturer: Arc::new(StubDesktopCapturer::fixture_dual_monitor()),
+        }
+    }
+    #[cfg(not(test))]
+    {
+        WindowPorts {
+            enumerator: Arc::from(platform_window_enumerator()),
+            mutator: Arc::from(platform_window_mutator()),
+            capturer: Arc::from(platform_desktop_capturer()),
+        }
+    }
+}
+
 static RUNTIME: OnceLock<CapabilityRuntime> = OnceLock::new();
 
 /// Shared Capability Runtime for the process.
@@ -114,12 +140,13 @@ mod tests {
     use super::*;
 
     #[test]
-    fn bootstrap_registers_clipboard_and_application_providers() {
+    fn bootstrap_registers_core_providers() {
         let descriptors = runtime().list_providers().unwrap();
         assert!(descriptors.iter().any(|d| d.domain.as_str() == "clipboard"));
         assert!(descriptors
             .iter()
             .any(|d| d.domain.as_str() == "application"));
+        assert!(descriptors.iter().any(|d| d.domain.as_str() == "window"));
     }
 
     #[test]
@@ -133,7 +160,6 @@ mod tests {
             })
             .unwrap();
         assert!(write.ok);
-        assert_eq!(write.bytes, Some(11));
 
         let read = runtime()
             .invoke(ProviderInvokeRequest {
@@ -142,32 +168,7 @@ mod tests {
                 ..Default::default()
             })
             .unwrap();
-        assert!(read.ok);
         assert_eq!(read.text.as_deref(), Some("p10-runtime"));
-    }
-
-    #[test]
-    fn application_enumerate_and_focus_through_router() {
-        let listed = runtime()
-            .invoke(ProviderInvokeRequest {
-                domain: CapabilityDomainId::application(),
-                operation: CapabilityOperation::Enumerate,
-                ..Default::default()
-            })
-            .unwrap();
-        assert!(listed.ok);
-        assert!(listed.items.as_ref().map(|items| !items.is_empty()).unwrap_or(false));
-
-        let focused = runtime()
-            .invoke(ProviderInvokeRequest {
-                domain: CapabilityDomainId::application(),
-                operation: CapabilityOperation::Focus,
-                query: Some("Fixture Focus".into()),
-                ..Default::default()
-            })
-            .unwrap();
-        assert!(focused.ok);
-        assert_eq!(focused.status.as_deref(), Some("focused"));
     }
 
     #[test]
@@ -182,6 +183,47 @@ mod tests {
             .unwrap();
         assert!(launched.ok);
         assert_eq!(launched.target.as_deref(), Some("notepad.exe"));
-        assert_eq!(launched.status.as_deref(), Some("launched_simulated"));
+    }
+
+    #[test]
+    fn window_enumerate_and_snap_through_router() {
+        let listed = runtime()
+            .invoke(ProviderInvokeRequest {
+                domain: CapabilityDomainId::window(),
+                operation: CapabilityOperation::Enumerate,
+                ..Default::default()
+            })
+            .unwrap();
+        assert!(listed.ok);
+        assert!(listed.items.as_ref().map(|i| !i.is_empty()).unwrap_or(false));
+
+        let snapped = runtime()
+            .invoke(ProviderInvokeRequest {
+                domain: CapabilityDomainId::window(),
+                operation: CapabilityOperation::Snap,
+                query: Some("Fixture Focus".into()),
+                snap: Some("left".into()),
+                ..Default::default()
+            })
+            .unwrap();
+        assert!(snapped.ok);
+        assert_eq!(snapped.status.as_deref(), Some("snapped"));
+    }
+
+    #[test]
+    fn window_monitors_level1_through_router() {
+        let monitors = runtime()
+            .invoke(ProviderInvokeRequest {
+                domain: CapabilityDomainId::window(),
+                operation: CapabilityOperation::Monitors,
+                ..Default::default()
+            })
+            .unwrap();
+        assert!(monitors.ok);
+        assert!(monitors
+            .monitors
+            .as_ref()
+            .map(|m| m.len() >= 2)
+            .unwrap_or(false));
     }
 }

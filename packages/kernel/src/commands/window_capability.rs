@@ -1,11 +1,11 @@
-//! Application Provider commands — operations through Capability Runtime (P11).
+//! Window Provider commands — operations through Capability Runtime (P12).
 
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
 use crate::capability_runtime::{
-    runtime, CapabilityDomainId, CapabilityOperation, ProviderInvokeRequest, ProviderInvokeResponse,
-    ProviderResultSummary,
+    runtime, ApplicationWindowItem, CapabilityDomainId, CapabilityOperation, MonitorItem,
+    ProviderInvokeRequest, ProviderInvokeResponse, ProviderResultSummary,
 };
 use crate::commands::context::CommandContext;
 use crate::commands::r#trait::MutationCommand;
@@ -14,20 +14,21 @@ use crate::lifecycle::LifecycleState;
 use crate::security::PermissionSubject;
 use workspace_domain::Capability;
 
-/// IPC / Conversation result for an Application Provider operation.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct ApplicationOperationResult {
+pub struct WindowOperationResult {
     pub operation: String,
     pub ok: bool,
     pub status: Option<String>,
     pub target: Option<String>,
     pub message: Option<String>,
     pub preview: Option<String>,
-    pub items: Option<Vec<crate::capability_runtime::ApplicationWindowItem>>,
+    pub text: Option<String>,
+    pub items: Option<Vec<ApplicationWindowItem>>,
+    pub monitors: Option<Vec<MonitorItem>>,
 }
 
-impl From<ProviderInvokeResponse> for ApplicationOperationResult {
+impl From<ProviderInvokeResponse> for WindowOperationResult {
     fn from(response: ProviderInvokeResponse) -> Self {
         Self {
             operation: response.operation.as_str().into(),
@@ -36,69 +37,97 @@ impl From<ProviderInvokeResponse> for ApplicationOperationResult {
             target: response.target,
             message: response.message,
             preview: response.preview,
+            text: response.text,
             items: response.items,
+            monitors: response.monitors,
         }
     }
 }
 
-/// Executes one Application Provider operation through the frozen pipeline.
-pub struct ExecuteApplicationOperation {
+pub struct ExecuteWindowOperation {
     pub operation: CapabilityOperation,
     pub query: Option<String>,
     pub path: Option<String>,
     pub hwnd: Option<String>,
+    pub pid: Option<u32>,
+    pub x: Option<i32>,
+    pub y: Option<i32>,
+    pub width: Option<i32>,
+    pub height: Option<i32>,
+    pub monitor_index: Option<i32>,
+    pub snap: Option<String>,
 }
 
-impl ExecuteApplicationOperation {
+impl ExecuteWindowOperation {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         operation: CapabilityOperation,
         query: Option<String>,
         path: Option<String>,
         hwnd: Option<String>,
+        pid: Option<u32>,
+        x: Option<i32>,
+        y: Option<i32>,
+        width: Option<i32>,
+        height: Option<i32>,
+        monitor_index: Option<i32>,
+        snap: Option<String>,
     ) -> Self {
         Self {
             operation,
             query,
             path,
             hwnd,
+            pid,
+            x,
+            y,
+            width,
+            height,
+            monitor_index,
+            snap,
         }
     }
 }
 
-impl crate::commands::Command for ExecuteApplicationOperation {
+impl crate::commands::Command for ExecuteWindowOperation {
     fn name(&self) -> &'static str {
-        "ExecuteApplicationOperation"
+        "ExecuteWindowOperation"
     }
 }
 
-impl MutationCommand for ExecuteApplicationOperation {
-    type Output = ApplicationOperationResult;
+impl MutationCommand for ExecuteWindowOperation {
+    type Output = WindowOperationResult;
 
     fn permission_subject(&self) -> PermissionSubject {
-        PermissionSubject::Resource(workspace_domain::ResourceKind::Application)
+        PermissionSubject::System
     }
 
     fn required_capability(&self) -> Capability {
         match self.operation {
-            CapabilityOperation::Launch => Capability::application_launch(),
-            CapabilityOperation::Enumerate | CapabilityOperation::Find => {
-                Capability::application_read()
-            }
-            CapabilityOperation::Focus => Capability::application_focus(),
-            CapabilityOperation::Close => Capability::application_close(),
-            CapabilityOperation::Minimize => Capability::application_minimize(),
-            CapabilityOperation::Restore => Capability::application_restore(),
+            CapabilityOperation::Enumerate
+            | CapabilityOperation::Find
+            | CapabilityOperation::Active
+            | CapabilityOperation::Bounds
+            | CapabilityOperation::Monitors => Capability::window_read(),
+            CapabilityOperation::Focus => Capability::window_focus(),
+            CapabilityOperation::Minimize
+            | CapabilityOperation::Restore
+            | CapabilityOperation::Maximize => Capability::window_state(),
+            CapabilityOperation::Move
+            | CapabilityOperation::Resize
+            | CapabilityOperation::Center
+            | CapabilityOperation::Snap => Capability::window_place(),
             other => Capability::new(
-                format!("application.{}", other.as_str()),
-                workspace_domain::CapabilityScope::Application,
+                format!("window.{}", other.as_str()),
+                workspace_domain::CapabilityScope::System,
             )
-            .unwrap_or_else(|_| Capability::application_read()),
+            .unwrap_or_else(|_| Capability::window_read()),
         }
     }
 
     fn audit_metadata(&self, output: &Self::Output) -> Option<String> {
         let summary = ProviderResultSummary {
-            domain: CapabilityDomainId::application(),
+            domain: CapabilityDomainId::window(),
             operation: self.operation,
             ok: output.ok,
             format: None,
@@ -109,38 +138,31 @@ impl MutationCommand for ExecuteApplicationOperation {
             target: output.target.clone(),
             item_count: output.items.as_ref().map(|items| items.len()),
         };
-        Some(json!({ "application": summary }).to_string())
+        Some(json!({ "window": summary }).to_string())
     }
 
-    fn audit_failure_metadata(&self) -> Option<String> {
-        Some(
-            json!({
-                "application": {
-                    "domain": "application",
-                    "operation": self.operation.as_str(),
-                    "query": self.query,
-                }
-            })
-            .to_string(),
-        )
-    }
-
-    fn execute(&self, ctx: &CommandContext<'_>) -> Result<ApplicationOperationResult> {
+    fn execute(&self, ctx: &CommandContext<'_>) -> Result<WindowOperationResult> {
         if ctx.state.lifecycle != LifecycleState::Ready {
             return Err(KernelError::NotReady);
         }
         match self.operation {
-            CapabilityOperation::Launch
-            | CapabilityOperation::Enumerate
+            CapabilityOperation::Enumerate
+            | CapabilityOperation::Find
+            | CapabilityOperation::Active
+            | CapabilityOperation::Bounds
+            | CapabilityOperation::Monitors
             | CapabilityOperation::Focus
-            | CapabilityOperation::Close
             | CapabilityOperation::Minimize
             | CapabilityOperation::Restore
-            | CapabilityOperation::Find => {}
+            | CapabilityOperation::Maximize
+            | CapabilityOperation::Move
+            | CapabilityOperation::Resize
+            | CapabilityOperation::Center
+            | CapabilityOperation::Snap => {}
             other => {
                 return Err(KernelError::CapabilityRuntime {
                     message: format!(
-                        "ExecuteApplicationOperation cannot run '{}'",
+                        "ExecuteWindowOperation cannot run '{}'",
                         other.as_str()
                     ),
                 });
@@ -148,16 +170,21 @@ impl MutationCommand for ExecuteApplicationOperation {
         }
 
         let response = runtime().invoke(ProviderInvokeRequest {
-            domain: CapabilityDomainId::application(),
+            domain: CapabilityDomainId::window(),
             operation: self.operation,
             text: None,
             query: self.query.clone(),
             path: self.path.clone(),
             hwnd: self.hwnd.clone(),
-            pid: None,
-            ..Default::default()
+            pid: self.pid,
+            x: self.x,
+            y: self.y,
+            width: self.width,
+            height: self.height,
+            monitor_index: self.monitor_index,
+            snap: self.snap.clone(),
         })?;
-        Ok(ApplicationOperationResult::from(response))
+        Ok(WindowOperationResult::from(response))
     }
 }
 
@@ -188,34 +215,25 @@ mod tests {
     }
 
     #[test]
-    fn pipeline_enumerates_applications() {
+    fn pipeline_snaps_fixture_window() {
         let bus = EventBus::new();
         let init = InitializeWorkspace::in_memory().execute(&bus).unwrap();
         let result = CommandPipeline::new(ready_ctx(&init, &bus))
-            .execute_mutation(ExecuteApplicationOperation::new(
-                CapabilityOperation::Enumerate,
+            .execute_mutation(ExecuteWindowOperation::new(
+                CapabilityOperation::Snap,
+                Some("Fixture Focus".into()),
                 None,
                 None,
                 None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                Some("left".into()),
             ))
             .unwrap();
         assert!(result.ok);
-        assert!(result.items.as_ref().unwrap().len() >= 1);
-    }
-
-    #[test]
-    fn pipeline_launches_notepad_alias() {
-        let bus = EventBus::new();
-        let init = InitializeWorkspace::in_memory().execute(&bus).unwrap();
-        let result = CommandPipeline::new(ready_ctx(&init, &bus))
-            .execute_mutation(ExecuteApplicationOperation::new(
-                CapabilityOperation::Launch,
-                Some("notepad".into()),
-                None,
-                None,
-            ))
-            .unwrap();
-        assert!(result.ok);
-        assert_eq!(result.target.as_deref(), Some("notepad.exe"));
+        assert_eq!(result.status.as_deref(), Some("snapped"));
     }
 }

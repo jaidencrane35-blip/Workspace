@@ -39,6 +39,11 @@ impl ApplicationProvider {
             process_id: window.process_id,
             minimized: window.minimized,
             focused: window.focused,
+            x: window.x,
+            y: window.y,
+            width: window.width,
+            height: window.height,
+            monitor_index: window.monitor_index,
         }
     }
 
@@ -133,6 +138,7 @@ impl ApplicationProvider {
             status: Some(status.into()),
             target: Some(target.into()),
             items: None,
+                    monitors: None,
         })
     }
 }
@@ -195,6 +201,7 @@ impl CapabilityProvider for ApplicationProvider {
                     status: Some("enumerated".into()),
                     target: None,
                     items: Some(items),
+                    monitors: None,
                 })
             }
             CapabilityOperation::Find => {
@@ -225,6 +232,7 @@ impl CapabilityProvider for ApplicationProvider {
                     status: Some(status.into()),
                     target: Some(query.into()),
                     items: Some(items),
+                    monitors: None,
                 })
             }
             CapabilityOperation::Launch => {
@@ -256,6 +264,7 @@ impl CapabilityProvider for ApplicationProvider {
                     status: Some(status.into()),
                     target: Some(executable),
                     items: None,
+                    monitors: None,
                 })
             }
             CapabilityOperation::Focus => {
@@ -272,6 +281,7 @@ impl CapabilityProvider for ApplicationProvider {
                         status: Some("not_found".into()),
                         target: request.query.clone(),
                         items: None,
+                    monitors: None,
                     });
                 };
                 let outcome = self
@@ -303,6 +313,7 @@ impl CapabilityProvider for ApplicationProvider {
                         status: Some("not_found".into()),
                         target: request.query.clone(),
                         items: None,
+                    monitors: None,
                     });
                 };
                 let outcome = self
@@ -334,6 +345,7 @@ impl CapabilityProvider for ApplicationProvider {
                         status: Some("not_found".into()),
                         target: request.query.clone(),
                         items: None,
+                    monitors: None,
                     });
                 };
                 // Prefer dedicated minimize; fall back path unused on ports that
@@ -367,6 +379,7 @@ impl CapabilityProvider for ApplicationProvider {
                         status: Some("not_found".into()),
                         target: request.query.clone(),
                         items: None,
+                    monitors: None,
                     });
                 };
                 let outcome = self

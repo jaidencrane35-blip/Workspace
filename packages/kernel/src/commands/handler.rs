@@ -102,6 +102,7 @@ use crate::commands::clipboard::{
     ClipboardReadResult, ClipboardWriteResult, ReadClipboard, WriteClipboard,
 };
 use crate::commands::update_settings::UpdateSettings;
+use crate::commands::window_capability::{ExecuteWindowOperation, WindowOperationResult};
 use crate::capability_runtime::CapabilityOperation;
 use crate::commands::widget::{CreateWidget, DeleteWidget, GetWidget};
 use crate::commands::workspace_intent::{
@@ -263,6 +264,46 @@ impl CommandHandler {
         })?;
         CommandPipeline::new(kernel.command_context(actor, intent)).execute_mutation(
             ExecuteApplicationOperation::new(operation, query, path, hwnd),
+        )
+    }
+
+    /// Executes a Window Provider operation through Capability Runtime (P12).
+    #[allow(clippy::too_many_arguments)]
+    pub fn execute_window_operation(
+        kernel: &WorkspaceKernel,
+        actor: ActorContext,
+        intent: IntentContext,
+        operation: String,
+        query: Option<String>,
+        path: Option<String>,
+        hwnd: Option<String>,
+        pid: Option<u32>,
+        x: Option<i32>,
+        y: Option<i32>,
+        width: Option<i32>,
+        height: Option<i32>,
+        monitor_index: Option<i32>,
+        snap: Option<String>,
+    ) -> Result<WindowOperationResult> {
+        let operation = CapabilityOperation::parse(&operation).ok_or_else(|| {
+            KernelError::CapabilityRuntime {
+                message: format!("unknown window operation '{operation}'"),
+            }
+        })?;
+        CommandPipeline::new(kernel.command_context(actor, intent)).execute_mutation(
+            ExecuteWindowOperation::new(
+                operation,
+                query,
+                path,
+                hwnd,
+                pid,
+                x,
+                y,
+                width,
+                height,
+                monitor_index,
+                snap,
+            ),
         )
     }
 

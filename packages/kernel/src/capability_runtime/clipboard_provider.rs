@@ -66,6 +66,7 @@ impl CapabilityProvider for ClipboardProvider {
                     status: Some("read".into()),
                     target: None,
                     items: None,
+                    monitors: None,
                 })
             }
             CapabilityOperation::Write => {
@@ -91,6 +92,7 @@ impl CapabilityProvider for ClipboardProvider {
                     status: Some("written".into()),
                     target: None,
                     items: None,
+                    monitors: None,
                 })
             }
             other => Err(KernelError::CapabilityRuntime {

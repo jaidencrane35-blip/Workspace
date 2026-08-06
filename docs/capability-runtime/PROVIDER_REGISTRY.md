@@ -49,9 +49,12 @@ A provider is not a bag of unrelated features. It owns a coherent operation set
 | Domain | Provider | Adoption | Operations | Status |
 | --- | --- | --- | --- | --- |
 | clipboard | `ClipboardProvider` | WRAP `arboard` | read, write | P10 reference |
-| application | `ApplicationProvider` | ADAPT Win32 ports | launch, enumerate, find, focus, close, minimize, restore | **P11** |
+| application | `ApplicationProvider` | ADAPT Win32 ports | launch, enumerate, find, focus, close, minimize, restore | P11 |
+| window | `WindowProvider` | ADAPT Win32 ports | enumerate, find, active, bounds, monitors, focus, minimize, restore, maximize, move, resize, center, snap | **P12** |
 
-Placeholders: Window, Notifications, Browser, Screenshot, File, Terminal, Memory, Voice, Automation.
+Placeholders: Notifications, Browser, Screenshot, File, Terminal, Memory, Voice, Automation.
+
+**Independence:** WindowProvider never calls ApplicationProvider.
 
 ---
 

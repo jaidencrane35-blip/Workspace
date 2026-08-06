@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-06T21:29:30.554Z",
+  "updatedAt": "2026-08-06T22:01:16.714Z",
   "constitution": {
     "document": "architecture/ARCHITECTURAL_CONSTITUTION_V2.md",
     "version": "2.0"
@@ -12,10 +12,10 @@
     "machineState": "docs/project-health.json"
   },
   "currentExecutionProgram": {
-    "id": "application-provider-p11",
-    "title": "P11 Application Provider",
+    "id": "window-provider-p12",
+    "title": "P12 Window Provider",
     "status": "complete_awaiting_owner_review",
-    "note": "Application Provider operations (launch/enumerate/focus/close/minimize/restore/find) on frozen Capability Runtime. Providers own operations. Await Owner review before P12."
+    "note": "Window Provider Levels 1–2 (discover/focus/state/placement) on frozen Capability Runtime. Independently testable. Await Owner review before P13."
   },
   "completedExecutionPrograms": [
     {
@@ -179,6 +179,16 @@
         "packages/kernel/src/capability_runtime/application_provider.rs",
         "pnpm verify:capability-runtime-foundation"
       ]
+    },
+    {
+      "id": "window-provider-p12",
+      "backlogRef": "P12 Window Provider",
+      "completed": "2026-08-07",
+      "artifacts": [
+        "docs/capability-runtime/WINDOW_PROVIDER.md",
+        "packages/kernel/src/capability_runtime/window_provider.rs",
+        "docs/capability-runtime/WINDOW_OPERATIONS_SPECIFICATION.md"
+      ]
     }
   ],
   "remainingBacklog": [
@@ -261,20 +271,22 @@
     "presentationAuthority": "accepted",
     "capabilityRuntimeResearch": "accepted",
     "capabilityRuntimeFoundation": "accepted",
-    "applicationProvider": "complete",
+    "applicationProvider": "accepted",
+    "windowProvider": "complete",
     "notes": [
       "UI Architecture Spec accepted/frozen (P8)",
       "Capability Runtime research accepted (P9)",
       "Capability Runtime Foundation + Clipboard accepted (P10)",
-      "Application Provider operations shipped (P11)",
-      "Providers own operations — permanent rule"
+      "Application Provider accepted (P11)",
+      "Window Provider Levels 1–2 shipped (P12)",
+      "Providers own operations; independently testable"
     ]
   },
   "currentMilestone": {
-    "id": "application-provider-p11",
-    "title": "P11 Application Provider",
+    "id": "window-provider-p12",
+    "title": "P12 Window Provider",
     "status": "awaiting_owner_review",
-    "commit": "330a26b"
+    "commit": "8cefb88"
   },
   "acceptedReviews": [
     {
@@ -300,13 +312,19 @@
       "title": "Capability Runtime Foundation",
       "commit": "23492a8",
       "acceptedAt": "2026-08-07"
+    },
+    {
+      "id": "p11",
+      "title": "Application Provider",
+      "commit": "330a26b",
+      "acceptedAt": "2026-08-07"
     }
   ],
   "outstandingProductDebt": [
     {
-      "id": "capability-providers-p12-plus",
+      "id": "capability-providers-p13-plus",
       "track": "B",
-      "summary": "Window / Notification / Browser / Screenshot providers await Owner review of P11"
+      "summary": "Notifications / Browser / Screenshot / File providers await Owner review of P12"
     },
     {
       "id": "tray-integration",
@@ -332,7 +350,7 @@
     "notes": [
       "Frontend production build succeeds",
       "UI Architecture Spec accepted and frozen",
-      "Capability Runtime Foundation accepted (P10); Application Provider (P11)",
+      "Capability Runtime + Application + Window providers (P10–P12)",
       "Non-PP domain.ts remains manual (G1 remainder)",
       "Documentation authority still fragmented (G3)"
     ]
@@ -472,15 +490,15 @@
   },
   "lastMilestone": {
     "date": "2026-08-07",
-    "document": "docs/capability-runtime/APPLICATION_PROVIDER.md",
-    "title": "P11 Application Provider",
+    "document": "docs/capability-runtime/WINDOW_PROVIDER.md",
+    "title": "P12 Window Provider",
     "reviewBrief": "docs/capability-runtime/00_INDEX.md"
   },
-  "handoffStatus": "AWAITING_PROJECT_OWNER_APPLICATION_PROVIDER_REVIEW",
+  "handoffStatus": "AWAITING_PROJECT_OWNER_WINDOW_PROVIDER_REVIEW",
   "nextRecommendedExecutionProgram": {
-    "id": "window-provider-p12",
-    "title": "P12 Window Provider (reassess after Owner review)",
-    "blockedUntil": "Project Owner Application Provider review"
+    "id": "notifications-provider-p13",
+    "title": "P13 Notifications Provider (reassess after Owner review)",
+    "blockedUntil": "Project Owner Window Provider review"
   },
   "capabilityEvolution": {
     "document": "docs/capability-evolution/README.md",
