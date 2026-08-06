@@ -16,6 +16,8 @@ Conversation
     ↓
 Intent Layer
     ↓
+Operator Intelligence   ← sole decision / orchestration authority (P12.7)
+    ↓
 Capability Router
     ↓
 Provider Registry
@@ -24,10 +26,13 @@ Capability Provider
     ↓
 Desktop Service (port / windows-integration)
     ↓
+Operator Intelligence (response composition)
+    ↓
 Conversation Response
 ```
 
-**No capability may bypass this pipeline.**
+**No capability may bypass this pipeline.**  
+**Conversation never calls the Router or Providers directly** (Operator Authority Rule).
 
 ---
 

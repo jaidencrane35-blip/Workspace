@@ -52,6 +52,7 @@ const verifiers = {
     "scripts/verify-capability-runtime-foundation.mjs",
   "verify:product-proof-harness": "scripts/verify-product-proof-harness.mjs",
   "verify:product-gravity": "scripts/verify-product-gravity.mjs",
+  "verify:operator-intelligence": "scripts/verify-operator-intelligence.mjs",
 };
 
 const verifierStatus = {};
@@ -265,6 +266,17 @@ const completedPrograms = [
       "app/src/components/operator/OperatorRoot.tsx",
     ],
   },
+  {
+    id: "operator-intelligence-foundation-p12-7",
+    backlogRef: "P12.7 Operator Intelligence Foundation",
+    completed: "2026-08-07",
+    artifacts: [
+      "docs/operator/OPERATOR_AUTHORITY_RULE.md",
+      "docs/operator/CAPABILITY_COMPOSITION_RULE.md",
+      "pnpm verify:operator-intelligence",
+      "app/src/lib/operator/intelligence.ts",
+    ],
+  },
 ];
 
 const remainingBacklog = [
@@ -347,14 +359,14 @@ const health = {
   engineeringMode: "constitutional-execution",
   protocol: {
     document: ".cursor/rules/constitutional-execution-protocol.mdc",
-    version: "1.3",
+    version: "1.4",
     machineState: "docs/project-health.json",
   },
   currentExecutionProgram: {
-    id: "conversational-desktop-surface-p12-6",
-    title: "P12.6 Conversational Desktop Surface",
+    id: "operator-intelligence-foundation-p12-7",
+    title: "P12.7 Operator Intelligence Foundation",
     status: "complete_awaiting_owner_review",
-    note: "Product Gravity Rule adopted. Conversation-first launch; transparent undecorated host. Await Owner review before P13.",
+    note: "Operator Authority + Capability Composition adopted. Conversation→Operator→Runtime only. Await Owner review before P13.",
   },
   completedExecutionPrograms: completedPrograms,
   remainingBacklog,
@@ -376,7 +388,8 @@ const health = {
     applicationProvider: "accepted",
     windowProvider: "engineering_complete",
     windowProviderProductProof: "shipped_awaiting_owner",
-    conversationalDesktopSurface: "complete_awaiting_owner_review",
+    conversationalDesktopSurface: "shipped_awaiting_owner",
+    operatorIntelligence: "complete_awaiting_owner_review",
     notes: [
       "UI Architecture Spec accepted/frozen (P8)",
       "Capability Runtime research accepted (P9)",
@@ -385,13 +398,14 @@ const health = {
       "Window Provider Levels 1–2 engineering complete (P12)",
       "Window Provider Conversation Product Proof shipped (P12.5)",
       "Conversational Desktop Surface + Product Gravity (P12.6)",
-      "Product Proof Rule + Product Gravity Rule permanent",
+      "Operator Intelligence Foundation (P12.7)",
+      "Operator Authority + Capability Composition permanent",
       "Providers own operations; independently testable",
     ],
   },
   currentMilestone: {
-    id: "conversational-desktop-surface-p12-6",
-    title: "P12.6 Conversational Desktop Surface",
+    id: "operator-intelligence-foundation-p12-7",
+    title: "P12.7 Operator Intelligence Foundation",
     status: "awaiting_owner_review",
     commit: milestoneCommit,
   },
@@ -438,7 +452,7 @@ const health = {
     {
       id: "capability-providers-p13-plus",
       track: "B",
-      summary: "Notifications / Browser / Screenshot / File providers await Owner acceptance of Product Gravity surface (P12.6) + prior Product Proof",
+      summary: "Notifications / Browser / Screenshot / File providers await Owner acceptance of Operator Intelligence (P12.7) + Product Gravity",
     },
     {
       id: "tray-integration",
@@ -467,6 +481,7 @@ const health = {
       "Capability Runtime + Application + Window providers (P10–P12)",
       "Window Provider Conversation Product Proof (P12.5)",
       "Conversational Desktop Surface / Product Gravity (P12.6)",
+      "Operator Intelligence Foundation (P12.7)",
       "Non-PP domain.ts remains manual (G1 remainder)",
       "Documentation authority still fragmented (G3)",
     ],
@@ -533,15 +548,15 @@ const health = {
   },
   lastMilestone: {
     date: "2026-08-07",
-    document: "docs/ui/PRODUCT_GRAVITY_RULE.md",
-    title: "P12.6 Conversational Desktop Surface",
-    reviewBrief: "docs/ui/PRODUCT_GRAVITY_RULE.md",
+    document: "docs/operator/OPERATOR_INTELLIGENCE_FOUNDATION.md",
+    title: "P12.7 Operator Intelligence Foundation",
+    reviewBrief: "docs/operator/product-proof/OPERATOR_PRODUCT_PROOF.md",
   },
-  handoffStatus: "AWAITING_PROJECT_OWNER_PRODUCT_GRAVITY_REVIEW",
+  handoffStatus: "AWAITING_PROJECT_OWNER_OPERATOR_INTELLIGENCE_REVIEW",
   nextRecommendedExecutionProgram: {
     id: "notifications-provider-p13",
-    title: "P13 Notifications Provider (reassess after Owner Product Gravity review)",
-    blockedUntil: "Project Owner confirms Conversation feels like desktop operation under Product Gravity",
+    title: "P13 Notifications Provider (reassess after Owner Operator review)",
+    blockedUntil: "Project Owner accepts Operator Authority bridge before more providers",
   },
   capabilityEvolution: {
     document: "docs/capability-evolution/README.md",

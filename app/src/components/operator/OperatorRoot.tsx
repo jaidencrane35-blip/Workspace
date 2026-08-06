@@ -8,8 +8,8 @@ import {
   useRef,
   useState,
 } from "react";
-import { resolveIntent, streamText } from "../../lib/intentBridge";
-import { IpcCommandError, invokeIpc } from "../../lib/ipc";
+import { streamText } from "../../lib/intentBridge";
+import { handleOperatorUtterance } from "../../lib/operator";
 import { matchMomentByName } from "../../lib/momentMatch";
 import {
   SHELL_MODE_EVENT,
@@ -201,9 +201,24 @@ export function OperatorRoot({
     [ensureConversation, onNavigateProduct],
   );
 
+  /**
+   * Conversation speaks only to the Operator (Operator Authority Rule).
+   * Presentation applies shell directives; capability IPC lives in Operator only.
+   */
   const handleIntent = useCallback(
     async (raw: string) => {
-      const action = resolveIntent(raw);
+      const outcome = await handleOperatorUtterance(raw);
+
+      if (outcome.kind === "reply") {
+        await pushWorkspace(
+          outcome.suggestion
+            ? `${outcome.text}\n${outcome.suggestion}`
+            : outcome.text,
+        );
+        return;
+      }
+
+      const action = outcome.action;
       switch (action.kind) {
         case "navigate":
           await openToolSurface(action.view);
@@ -235,8 +250,6 @@ export function OperatorRoot({
           break;
         }
         case "expand":
-          // Expanded Workspace is a presentation dock, not a shell form.
-          // Without an earned satellite, stay conversation-only.
           await ensureConversation();
           await pushWorkspace(action.reply);
           break;
@@ -262,295 +275,6 @@ export function OperatorRoot({
           break;
         case "proposal":
           await pushWorkspace(action.reply);
-          break;
-        case "clipboardRead": {
-          try {
-            const result = await invokeIpc<{
-              format: string;
-              bytes: number;
-              preview: string;
-              text: string;
-            }>("read_clipboard");
-            if (!result.text) {
-              await pushWorkspace(
-                "Clipboard is empty (or has no text). Capability Runtime read completed.",
-              );
-            } else {
-              await pushWorkspace(
-                `Clipboard (${result.format}, ${result.bytes} bytes):\n${result.preview}`,
-              );
-            }
-          } catch (error) {
-            const message =
-              error instanceof IpcCommandError
-                ? error.message
-                : "Clipboard read failed.";
-            await pushWorkspace(message);
-          }
-          break;
-        }
-        case "clipboardWrite": {
-          try {
-            const result = await invokeIpc<{
-              format: string;
-              bytes: number;
-              preview: string;
-              message: string;
-            }>("write_clipboard", { text: action.text });
-            await pushWorkspace(
-              `${result.message} (${result.bytes} bytes). Preview: ${result.preview}`,
-            );
-          } catch (error) {
-            const message =
-              error instanceof IpcCommandError
-                ? error.message
-                : "Clipboard write failed.";
-            await pushWorkspace(message);
-          }
-          break;
-        }
-        case "winEnumerate":
-        case "winActive":
-        case "winMonitors":
-        case "winBounds":
-        case "winMaximize":
-        case "winMinimize":
-        case "winRestore":
-        case "winSnap":
-        case "winCenter":
-        case "winMoveMonitor":
-        case "winFocus":
-        case "winResize": {
-          try {
-            type WinResult = {
-              operation: string;
-              ok: boolean;
-              status?: string;
-              target?: string;
-              message?: string;
-              text?: string;
-              items?: Array<{ title: string }>;
-              monitors?: Array<{ index: number; name: string; isPrimary: boolean }>;
-            };
-            const run = (args: Record<string, unknown>) =>
-              invokeIpc<WinResult>("execute_window_operation", {
-                query: null,
-                path: null,
-                hwnd: null,
-                pid: null,
-                x: null,
-                y: null,
-                width: null,
-                height: null,
-                monitor_index: null,
-                snap: null,
-                ...args,
-              });
-
-            if (action.kind === "winEnumerate") {
-              const result = await run({ operation: "enumerate" });
-              if (!result.ok) {
-                await pushWorkspace(
-                  result.message ?? "I couldn’t list windows.",
-                );
-                break;
-              }
-              const titles =
-                result.items
-                  ?.slice(0, 12)
-                  .map((item) => `• ${item.title}`)
-                  .join("\n") ?? "(none)";
-              const count = result.items?.length ?? 0;
-              await pushWorkspace(
-                count === 0
-                  ? "No open windows found."
-                  : `Open windows (${count}):\n${titles}`,
-              );
-              break;
-            }
-            if (action.kind === "winMonitors") {
-              const result = await run({ operation: "monitors" });
-              if (!result.ok) {
-                await pushWorkspace(
-                  result.message ?? "I couldn’t list monitors.",
-                );
-                break;
-              }
-              const lines =
-                result.monitors
-                  ?.map(
-                    (m) =>
-                      `• Monitor ${m.index}: ${m.name}${m.isPrimary ? " (primary)" : ""}`,
-                  )
-                  .join("\n") ?? "(none)";
-              await pushWorkspace(
-                `${result.message ?? "Monitors attached."}\n${lines}`,
-              );
-              break;
-            }
-            if (action.kind === "winActive") {
-              const result = await run({ operation: "active" });
-              await pushWorkspace(
-                result.ok
-                  ? (result.message ?? "Active window found.")
-                  : (result.message ?? "No active window."),
-              );
-              break;
-            }
-            if (action.kind === "winSnap") {
-              const result = await run({
-                operation: "snap",
-                query: action.query,
-                snap: action.snap,
-              });
-              await pushWorkspace(
-                result.message ??
-                  (result.ok ? "Moved the window." : "Couldn’t move that window."),
-              );
-              break;
-            }
-            if (action.kind === "winMoveMonitor") {
-              const result = await run({
-                operation: "move",
-                query: action.query,
-                monitor_index: action.monitorIndex,
-              });
-              await pushWorkspace(
-                result.message ??
-                  (result.ok ? "Moved the window." : "Couldn’t move that window."),
-              );
-              break;
-            }
-            if (action.kind === "winResize") {
-              const result = await run({
-                operation: "resize",
-                query: action.query,
-                width: action.width,
-                height: action.height,
-              });
-              await pushWorkspace(
-                result.message ??
-                  (result.ok ? "Resized the window." : "Couldn’t resize that window."),
-              );
-              break;
-            }
-            const operation =
-              action.kind === "winBounds"
-                ? "bounds"
-                : action.kind === "winMaximize"
-                  ? "maximize"
-                  : action.kind === "winMinimize"
-                    ? "minimize"
-                    : action.kind === "winRestore"
-                      ? "restore"
-                      : action.kind === "winCenter"
-                        ? "center"
-                        : "focus";
-            const result = await run({
-              operation,
-              query: "query" in action ? action.query : undefined,
-            });
-            await pushWorkspace(
-              result.message ??
-                result.text ??
-                (result.ok
-                  ? "Done."
-                  : "That window action didn’t succeed."),
-            );
-          } catch (error) {
-            const message =
-              error instanceof IpcCommandError
-                ? error.message
-                : "That window action failed.";
-            await pushWorkspace(message);
-          }
-          break;
-        }
-        case "appEnumerate":
-        case "appLaunch":
-        case "appFocus":
-        case "appClose":
-        case "appMinimize":
-        case "appRestore":
-        case "appOpen": {
-          try {
-            type AppResult = {
-              operation: string;
-              ok: boolean;
-              status?: string;
-              target?: string;
-              message?: string;
-              preview?: string;
-              items?: Array<{ title: string; processId: number; minimized: boolean }>;
-            };
-            const run = (operation: string, query?: string) =>
-              invokeIpc<AppResult>("execute_application_operation", {
-                operation,
-                query: query ?? null,
-                path: null,
-                hwnd: null,
-              });
-
-            if (action.kind === "appEnumerate") {
-              const result = await run("enumerate");
-              const titles =
-                result.items
-                  ?.slice(0, 12)
-                  .map((item) => `• ${item.title}`)
-                  .join("\n") ?? "(none)";
-              await pushWorkspace(
-                `${result.message ?? "Applications listed."}\n${titles}`,
-              );
-              break;
-            }
-
-            if (action.kind === "appOpen") {
-              const found = await run("find", action.query);
-              if (found.ok && (found.items?.length ?? 0) > 0) {
-                const focused = await run("focus", action.query);
-                await pushWorkspace(
-                  focused.message ??
-                    `Focused “${action.query}” (already running).`,
-                );
-              } else {
-                const launched = await run("launch", action.query);
-                await pushWorkspace(
-                  launched.message ?? `Launch requested for “${action.query}”.`,
-                );
-              }
-              break;
-            }
-
-            const operation =
-              action.kind === "appLaunch"
-                ? "launch"
-                : action.kind === "appFocus"
-                  ? "focus"
-                  : action.kind === "appClose"
-                    ? "close"
-                    : action.kind === "appMinimize"
-                      ? "minimize"
-                      : "restore";
-            const result = await run(operation, action.query);
-            await pushWorkspace(
-              result.message ??
-                `${operation} → ${result.status ?? (result.ok ? "ok" : "failed")}`,
-            );
-          } catch (error) {
-            const message =
-              error instanceof IpcCommandError
-                ? error.message
-                : "Application operation failed.";
-            await pushWorkspace(message);
-          }
-          break;
-        }
-        case "unknown":
-          await pushWorkspace(
-            action.suggestion
-              ? `${action.reply}\n${action.suggestion}`
-              : action.reply,
-          );
           break;
         default:
           break;

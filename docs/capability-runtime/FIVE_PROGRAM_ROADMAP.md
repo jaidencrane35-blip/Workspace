@@ -1,10 +1,11 @@
 # Rolling Capability Provider Roadmap
-## Updated after P12.6 Conversational Desktop Surface
+## Updated after P12.7 Operator Intelligence Foundation
 
 UI Architecture, Desktop Operator, Conversation, and Capability Runtime pipeline remain **frozen**.  
 Providers own **operations**. Providers never call each other.  
 Every provider requires **Engineering Completion + Product Proof**.  
-Conversation surface follows **Product Gravity** (P12.6) — providers plug into a product-ready conversational host.
+Conversation → **Operator** → Runtime (Operator Authority).  
+Compositions create user value (Capability Composition Rule).
 
 ---
 
@@ -16,7 +17,8 @@ Conversation surface follows **Product Gravity** (P12.6) — providers plug into
 | **P11** | Application Provider | `330a26b` |
 | **P12** | Window Provider (engineering) | `66465b8` |
 | **P12.5** | Window Conversation Product Proof | `40dd746` |
-| **P12.6** | Conversational Desktop Surface / Product Gravity | this milestone |
+| **P12.6** | Conversational Desktop Surface / Product Gravity | `d1dc8b8` |
+| **P12.7** | Operator Intelligence Foundation | this milestone |
 
 ---
 
@@ -24,7 +26,7 @@ Conversation surface follows **Product Gravity** (P12.6) — providers plug into
 
 | Program | Title | Why |
 | --- | --- | --- |
-| **P13** | Notifications Provider | Lightweight outbound feedback — **must include Product Proof**; plugs into gravity surface |
+| **P13** | Notifications Provider | Lightweight outbound feedback — Product Proof + Operator orchestration |
 | **P14** | Browser Provider | URL open (WRAP) |
 | **P15** | Screenshot Provider | Capture under consent |
 | **P16** | File Provider | Scoped FS for later automation |

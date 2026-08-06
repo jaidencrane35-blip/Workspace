@@ -1,20 +1,20 @@
 # Engineering Milestone Report
-## P12.6 Conversational Desktop Surface
+## P12.7 Operator Intelligence Foundation
 
 | Field | Value |
 | --- | --- |
-| **Execution program** | P12.6 Conversational Desktop Surface |
+| **Execution program** | P12.7 Operator Intelligence Foundation |
 | **Date** | 2026-08-07 |
-| **Prior** | P12.5 Window Product Proof (`40dd746`) — not a provider program |
-| **Commit** | d1dc8b8 |
-| **Handoff** | `AWAITING_PROJECT_OWNER_PRODUCT_GRAVITY_REVIEW` |
-| **Index** | `docs/ui/PRODUCT_GRAVITY_RULE.md` |
+| **Prior** | P12.6 Conversational Desktop Surface (`d1dc8b8`) |
+| **Commit** | pending |
+| **Handoff** | `AWAITING_PROJECT_OWNER_OPERATOR_INTELLIGENCE_REVIEW` |
+| **Index** | `docs/operator/00_INDEX.md` |
 
 ---
 
 ## Mission
 
-Make Conversation finally feel like the product: a lightweight desktop companion where attention lands on the thread, the frame recedes, and Workspace exists on top of Windows — not as a framed utility.
+Create the architectural reasoning layer that turns Conversation into governed desktop operation — without AGI, autonomy, or redesigning providers.
 
 ---
 
@@ -22,8 +22,14 @@ Make Conversation finally feel like the product: a lightweight desktop companion
 
 | Rule | Authority |
 | --- | --- |
-| **Product Gravity Rule** | `docs/ui/PRODUCT_GRAVITY_RULE.md` · protocol v1.3 |
-| Conversation Complete ≠ Product Complete | Conversation must feel like desktop operation, not chat |
+| **Operator Authority Rule** | `docs/operator/OPERATOR_AUTHORITY_RULE.md` · protocol v1.4 |
+| **Capability Composition Rule** | `docs/operator/CAPABILITY_COMPOSITION_RULE.md` |
+
+---
+
+## Decision
+
+**ADOPT** TypeScript Operator Intelligence (`app/src/lib/operator/`) as the sole Conversation → Capability Runtime bridge. Kernel Runtime remains effect authority. Providers stay independent and non-conversational.
 
 ---
 
@@ -31,30 +37,22 @@ Make Conversation finally feel like the product: a lightweight desktop companion
 
 | Artifact | Path |
 | --- | --- |
-| Product Gravity Rule | `docs/ui/PRODUCT_GRAVITY_RULE.md` |
-| Conversation-first launch | `shellRuntime` / `bootstrapShellOnLaunch` default Form B |
-| Transparent undecorated host | `app/src-tauri/tauri.conf.json` + `shellWindows` |
-| Gravity surface presentation | `OperatorRoot` + `App.css` |
-| Verifier | `pnpm verify:product-gravity` |
-
----
-
-## User-visible
-
-- Launch opens Conversation (not the floating W)
-- Conversation sits on a translucent host without OS title bar
-- Chrome whispers; transcript owns attention; composer focuses ready to speak
-- Collapse still returns to the Desktop Operator companion
+| Operator Intelligence | `app/src/lib/operator/*` |
+| Conversation rewired | `OperatorRoot` → `handleOperatorUtterance` only |
+| Authority / Composition rules | `docs/operator/*` |
+| Policies + state machine + contracts | `docs/operator/` |
+| Composition catalogue | `docs/operator/COMPOSITION_CATALOGUE.md` |
+| Product Proof | `docs/operator/product-proof/OPERATOR_PRODUCT_PROOF.md` |
+| Verifier | `pnpm verify:operator-intelligence` |
 
 ---
 
 ## Explicit non-goals
 
-P13 Notifications · new providers · redesign Form A/B model · Conversation chrome IA expansion
+P13 Notifications · AGI / planning models · autonomous agents · provider redesign · UI redesign
 
 ---
 
 ## Stop
 
-Wait for Product Owner Product Gravity review before P13.  
-Acceptance: Conversation feels like desktop operation, not chat.
+Wait for Product Owner Operator Intelligence review before P13.

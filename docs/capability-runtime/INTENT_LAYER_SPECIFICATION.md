@@ -20,8 +20,12 @@ Intent Layer (deterministic bridge today; model later)
         ↓
 Capability intent { domain, operation, arguments }
         ↓
+Operator Intelligence (accept / clarify / plan / orchestrate)
+        ↓
 Capability Router
 ```
+
+Intent Layer maps language. Operator decides. Conversation never skips the Operator.
 
 ---
 
