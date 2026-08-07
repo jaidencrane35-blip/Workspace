@@ -144,6 +144,7 @@ use commands::workspace_intelligence::{
 use commands::application_capability::execute_application_operation;
 use commands::capability_intent::execute_capability_intent;
 use commands::clipboard::{read_clipboard, write_clipboard};
+use commands::voice::{voice_cancel, voice_listen_once, voice_status};
 use commands::window_capability::execute_window_operation;
 use commands::health::get_workspace_health;
 use commands::settings::{get_settings, update_settings};
@@ -186,6 +187,9 @@ pub fn run() {
             execute_application_operation,
             execute_window_operation,
             execute_capability_intent,
+            voice_status,
+            voice_listen_once,
+            voice_cancel,
             exit_workspace,
             // Product shell (Canvas + Diagnostic)
             create_workspace,

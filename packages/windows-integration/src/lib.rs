@@ -7,6 +7,7 @@ mod browser;
 mod capture;
 mod clipboard;
 mod screenshot;
+mod voice;
 mod enumerator;
 mod error;
 mod fixture_enumerator;
@@ -34,6 +35,10 @@ pub use browser::{
 pub use screenshot::{
     platform_screenshot, MemoryScreenshotPort, ScreenshotCapabilityStatus,
     ScreenshotCaptureOutcome, ScreenshotPort, SystemScreenshotPort, UnavailableScreenshotPort,
+};
+pub use voice::{
+    platform_voice, MemoryVoicePort, SystemVoicePort, UnavailableVoicePort, VoiceCapabilityStatus,
+    VoiceListenOutcome, VoicePort,
 };
 pub use clipboard::{
     platform_clipboard, ArboardClipboard, ClipboardPort, MemoryClipboard,

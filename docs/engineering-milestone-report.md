@@ -1,14 +1,14 @@
 # Engineering Milestone Report
-## P15 Screenshot Provider
+## P16 Voice Input
 
 | Field | Value |
 | --- | --- |
-| **Execution program** | P15 Screenshot Provider |
+| **Execution program** | P16 Voice Input |
 | **Date** | 2026-08-07 |
-| **Commit** | `381f7bb` |
-| **Status** | **P15 PERMANENTLY CLOSED** |
-| **Handoff** | `P15_PERMANENTLY_CLOSED_P16_ELIGIBLE` |
-| **Adoption** | WRAP `xcap` + arboard image clipboard behind `ScreenshotPort` |
+| **Commit** | `19a2c20` |
+| **Status** | **P16 PERMANENTLY CLOSED** |
+| **Handoff** | `P16_PERMANENTLY_CLOSED_P17_ELIGIBLE` |
+| **Adoption** | WRAP WinRT `SpeechRecognizer` behind `VoicePort` |
 
 ---
 
@@ -16,24 +16,24 @@
 
 | Item | Result |
 | --- | --- |
-| P15 Screenshot Provider | **PERMANENTLY CLOSED ? ACCEPTED ? REPOSITORY TRUTH ? DO NOT REOPEN** |
-| Capability Independence Rule | Permanent (protocol v1.8 + Acceptance Standard) |
-| Levels | 1?2 only (`status`, capture desktop/window/monitor, `save_png`, `copy_clipboard`) |
-| Pipeline | Conversation ? Intent ? Kernel Operator ? Runtime ? Screenshot Provider ? OS |
+| P16 Voice Input | **PERMANENTLY CLOSED — ACCEPTED — REPOSITORY TRUTH — DO NOT REOPEN** |
+| Kind | Conversation **input device** (not a desktop Capability Provider) |
+| Levels | 1–2 (`voice_status`, `voice_listen_once`, `voice_cancel` + mic UI) |
+| Pipeline | Mic ? VoicePort ? Conversation ? Intent ? Kernel Operator ? Providers |
 
 ---
 
-## Explicit non-goals (unchanged)
+## Explicit non-goals
 
-OCR · annotation · editing · AI vision · image search · recording · streaming · ambient capture
+Conversational AI · speech intelligence · dictation editor · hotword · ambient listen · cloud STT default · provider execution from Voice
 
 ---
 
 ## Explicit confirmation
 
-- **P15 Engineering Complete:** Yes  
-- **P15 Product Complete:** Yes (Product Proof harness + Independence Rule)  
+- **P16 Engineering Complete:** Yes  
+- **P16 Product Complete:** Yes  
 - **Independently useful:** Yes  
 - **Capability Independence Rule:** Satisfied  
-- **Next eligible program:** P16 Voice Input  
-- **P16 implementation:** Not begun  
+- **Next eligible program:** P17 File Provider  
+- **P17 implementation:** Not begun  

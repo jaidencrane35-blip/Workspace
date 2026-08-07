@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 2,
+  "provider": "voice_input",
+  "program": "P16",
+  "kind": "conversation_input_device",
+  "pipeline": [
+    "Microphone",
+    "VoicePort",
+    "Conversation composer",
+    "Intent Layer",
+    "execute_capability_intent",
+    "Kernel Operator",
+    "Capability Runtime",
+    "Providers",
+    "Operating System",
+    "Conversation Response"
+  ],
+  "ipc": {
+    "voice": ["voice_status", "voice_listen_once", "voice_cancel"],
+    "desktop": "execute_capability_intent"
+  },
+  "userLanguageRules": [
+    "Never expose Provider, Router, Registry, Runtime, Kernel, WinRT, or SpeechRecognizer terminology",
+    "Never invent transcripts",
+    "Voice behaves exactly like typing after recognition",
+    "Capability Independence — desktop language only"
+  ],
+  "examples": [
+    {
+      "category": "status",
+      "utterance": "Can you hear me?",
+      "expectedKind": "voiceStatus"
+    },
+    {
+      "category": "status",
+      "utterance": "Is voice available?",
+      "expectedKind": "voiceStatus"
+    },
+    {
+      "category": "explain",
+      "utterance": "What can you do with voice?",
+      "expectedKind": "voiceExplain"
+    },
+    {
+      "category": "typed_equivalence",
+      "utterance": "Open ChatGPT.",
+      "expectedKind": "browserOpen",
+      "expectedDomain": "browser",
+      "note": "Same Intent path Voice will submit after recognition"
+    },
+    {
+      "category": "typed_equivalence",
+      "utterance": "Take a screenshot.",
+      "expectedKind": "screenshotDesktop",
+      "expectedDomain": "screenshots"
+    },
+    {
+      "category": "typed_equivalence",
+      "utterance": "Bring Chrome to the front.",
+      "expectedKind": "winFocus",
+      "expectedDomain": "window"
+    },
+    {
+      "category": "typed_equivalence",
+      "utterance": "Open GitHub beside Cursor.",
+      "expectedKind": "browserOpenBeside",
+      "expectedDomain": "browser"
+    },
+    {
+      "category": "typed_equivalence",
+      "utterance": "Take a screenshot and copy it.",
+      "expectedKind": "screenshotCaptureAndCopy",
+      "expectedDomain": "screenshots"
+    },
+    {
+      "category": "typed_equivalence",
+      "utterance": "Copy this screenshot.",
+      "expectedKind": "screenshotCopy",
+      "expectedDomain": "screenshots"
+    }
+  ],
+  "uiRequirements": [
+    "op-shell__mic",
+    "VoiceMicButton",
+    "listening indicator",
+    "composer integration"
+  ],
+  "independenceRule": true,
+  "compositionAudit": "docs/capability-runtime/product-proof/VOICE_INPUT_COMPOSITION_AUDIT.md"
+}

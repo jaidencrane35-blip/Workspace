@@ -28,6 +28,7 @@ import {
 import type { PilotPrimaryView } from "../../lib/pilotChrome";
 import { DesktopOperator } from "./DesktopOperator";
 import { RepositoryHealthPanel } from "./RepositoryHealthPanel";
+import { VoiceMicButton } from "./VoiceMicButton";
 
 export interface ChatMessage {
   id: string;
@@ -290,19 +291,42 @@ export function OperatorRoot({
     ],
   );
 
+  const submitUtterance = useCallback(
+    (raw: string) => {
+      const text = raw.trim();
+      if (!text || busy) {
+        return;
+      }
+      setDraft("");
+      setMessages((prev) => [
+        ...prev,
+        { id: `u-${Date.now()}`, role: "user", text },
+      ]);
+      void handleIntent(text);
+    },
+    [busy, handleIntent],
+  );
+
   const onSubmit = (event: FormEvent) => {
     event.preventDefault();
-    const text = draft.trim();
-    if (!text || busy) {
-      return;
-    }
-    setDraft("");
-    setMessages((prev) => [
-      ...prev,
-      { id: `u-${Date.now()}`, role: "user", text },
-    ]);
-    void handleIntent(text);
+    submitUtterance(draft);
   };
+
+  const onVoiceTranscript = useCallback(
+    (transcript: string) => {
+      // Voice behaves exactly like typing: insert then submit.
+      setDraft(transcript);
+      submitUtterance(transcript);
+    },
+    [submitUtterance],
+  );
+
+  const onVoiceMessage = useCallback(
+    (message: string) => {
+      void pushWorkspace(message);
+    },
+    [pushWorkspace],
+  );
 
   const onBrandActivate = () => {
     const now = Date.now();
@@ -470,15 +494,22 @@ export function OperatorRoot({
                 aria-label="Talk to Workspace"
                 disabled={busy}
               />
-              <button
-                type="submit"
-                className="op-shell__send"
-                disabled={busy || !draft.trim()}
-                aria-label="Send"
-                title="Send"
-              >
-                ↵
-              </button>
+              <div className="op-shell__composer-actions">
+                <VoiceMicButton
+                  disabled={busy}
+                  onTranscript={onVoiceTranscript}
+                  onVoiceMessage={onVoiceMessage}
+                />
+                <button
+                  type="submit"
+                  className="op-shell__send"
+                  disabled={busy || !draft.trim()}
+                  aria-label="Send"
+                  title="Send"
+                >
+                  ↵
+                </button>
+              </div>
             </form>
           </section>
         </div>

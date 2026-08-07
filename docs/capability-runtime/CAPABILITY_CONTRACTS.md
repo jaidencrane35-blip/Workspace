@@ -159,15 +159,17 @@ Cross-capability message envelopes remain governed by `architecture/10_Capabilit
 
 | | |
 | --- | --- |
-| **Purpose** | Speech → utterance into Conversation (IntentEnvelope) |
-| **Examples** | Push-to-talk: “Save this moment as Northwind.” |
-| **Permissions** | `mic.capture` session-scoped |
-| **Arguments** | `audio_stream` · `locale?` |
-| **Results** | `{ utterance, confidence }` → same intent bridge |
-| **Failures** | Mic denied; low confidence |
-| **Rollback** | Discard utterance |
-| **Audit** | session id — not raw audio by default |
-| **Future** | Hotword (explicit opt-in only) |
+| **Purpose** | Speech → Conversation composer (P16 Levels 1–2) — **input device**, not desktop provider |
+| **Examples** | Mic → “Open ChatGPT.” / “Take a screenshot.” |
+| **Adoption** | WRAP WinRT `SpeechRecognizer` behind `VoicePort` |
+| **Rust / IPC** | `voice_status` · `voice_listen_once` · `voice_cancel` |
+| **UI** | Mic button beside composer; listening pulse |
+| **Results** | Transcript inserted + submitted exactly as typed |
+| **Failures** | Mic missing; permission denied; recognition failure — truthful |
+| **Pipeline** | Mic → VoicePort → Conversation → Intent → Kernel Operator → Providers |
+| **Composition** | Composes with all providers via Conversation text only |
+| **Independence** | Capability Independence Rule satisfied |
+| **Future** | Hotword only with explicit opt-in (separate program) |
 
 ---
 

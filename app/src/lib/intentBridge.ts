@@ -68,6 +68,8 @@ export type IntentAction =
       monitorIndex?: number;
       reply: string;
     }
+  | { kind: "voiceStatus"; reply: string }
+  | { kind: "voiceExplain"; reply: string; suggestion?: string }
   | { kind: "appOpen"; query: string; reply: string }
   | { kind: "appLaunch"; query: string; reply: string }
   | { kind: "appFocus"; query: string; reply: string }
@@ -132,6 +134,42 @@ function windowTarget(rawQuery: string | undefined): string {
     return "this";
   }
   return q.replace(/^(the|my)\s+/i, "").trim() || "this";
+}
+
+/**
+ * Voice Input intents — status / help only (recognition is the mic button).
+ * Voice never executes desktop operations itself.
+ */
+function resolveVoiceIntent(_raw: string, text: string): IntentAction | null {
+  if (
+    /\b(what can you do with voice|voice help|how do (i|you) use voice|voice input help|can i talk to you|can i speak to you)\b/.test(
+      text,
+    )
+  ) {
+    return {
+      kind: "voiceExplain",
+      reply:
+        "You can speak to Workspace with the microphone beside the message box. I’ll put what I hear into Conversation — same as typing — then act on it.",
+      suggestion:
+        'Try the mic, then say “open chatgpt”, “take a screenshot”, or “bring chrome to the front”.',
+    };
+  }
+
+  if (
+    /\b(can you (use |hear )?voice|is voice available|voice support|microphone (available|working)|can you hear me|do you support voice)\b/.test(
+      text,
+    ) ||
+    text === "voice?" ||
+    text === "voice" ||
+    text === "microphone?"
+  ) {
+    return {
+      kind: "voiceStatus",
+      reply: "Checking whether voice input is available.",
+    };
+  }
+
+  return null;
 }
 
 /**
@@ -1126,6 +1164,11 @@ export function resolveIntent(raw: string): IntentAction {
   const screenshotIntent = resolveScreenshotIntent(raw, text);
   if (screenshotIntent) {
     return screenshotIntent;
+  }
+
+  const voiceIntent = resolveVoiceIntent(raw, text);
+  if (voiceIntent) {
+    return voiceIntent;
   }
 
   if (isEvolutionRequest(raw)) {

@@ -24,4 +24,7 @@ pub enum WindowsIntegrationError {
 
     #[error("Screenshot failed: {0}")]
     ScreenshotFailed(String),
+
+    #[error("Voice input failed: {0}")]
+    VoiceFailed(String),
 }

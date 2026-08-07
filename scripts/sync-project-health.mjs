@@ -364,6 +364,19 @@ const completedPrograms = [
       "P15_PERMANENTLY_CLOSED_P16_ELIGIBLE",
     ],
   },
+  {
+    id: "voice-input-p16",
+    backlogRef: "P16 Voice Input",
+    completed: "2026-08-07",
+    artifacts: [
+      "docs/capability-runtime/VOICE_INPUT.md",
+      "docs/capability-runtime/product-proof/voice-input.proof.json",
+      "packages/windows-integration/src/voice.rs",
+      "app/src/components/operator/VoiceMicButton.tsx",
+      "pnpm verify:voice-input",
+      "P16_PERMANENTLY_CLOSED_P17_ELIGIBLE",
+    ],
+  },
 ];
 
 const remainingBacklog = [
@@ -450,10 +463,10 @@ const health = {
     machineState: "docs/project-health.json",
   },
   currentExecutionProgram: {
-    id: "screenshot-provider-p15",
-    title: "P15 Screenshot Provider",
+    id: "voice-input-p16",
+    title: "P16 Voice Input",
     status: "permanently_closed",
-    note: "P15 permanently closed. Capability Independence Rule permanent. P16 Voice Input eligible. Do not begin P16 until Owner starts it.",
+    note: "P16 permanently closed. Voice is a Conversation input device. P17 File Provider eligible. Do not begin P17 until Owner starts it.",
   },
   completedExecutionPrograms: completedPrograms,
   remainingBacklog,
@@ -482,6 +495,7 @@ const health = {
     notificationsProvider: "permanently_complete",
     browserProvider: "permanently_complete",
     screenshotProvider: "permanently_complete",
+    voiceInput: "permanently_complete",
     p12_5: "accepted_do_not_reopen",
     providerAcceptanceStandard: "permanent",
     capabilityIndependenceRule: "permanent",
@@ -495,6 +509,7 @@ const health = {
       "P13 Notifications Provider permanently closed",
       "P14 Browser Provider PERMANENTLY CLOSED",
       "P15 Screenshot Provider PERMANENTLY CLOSED",
+      "P16 Voice Input PERMANENTLY CLOSED",
       "Natural Language Robustness Rule permanent",
       "Provider Acceptance Standard permanent",
       "Capability Independence Rule permanent (P15)",
@@ -502,8 +517,8 @@ const health = {
     ],
   },
   currentMilestone: {
-    id: "screenshot-provider-p15",
-    title: "P15 Screenshot Provider",
+    id: "voice-input-p16",
+    title: "P16 Voice Input",
     status: "permanently_closed",
     commit: milestoneCommit,
   },
@@ -595,6 +610,13 @@ const health = {
     {
       id: "p15",
       title: "P15 Screenshot Provider",
+      commit: "a84eb83",
+      acceptedAt: "2026-08-07",
+      note: "PERMANENTLY CLOSED — ACCEPTED — REPOSITORY TRUTH — DO NOT REOPEN (bugfixes only)",
+    },
+    {
+      id: "p16",
+      title: "P16 Voice Input",
       commit: milestoneCommit === "pending" ? "pending" : milestoneCommit,
       acceptedAt: "2026-08-07",
       note: "PERMANENTLY CLOSED — ACCEPTED — REPOSITORY TRUTH — DO NOT REOPEN (bugfixes only)",
@@ -602,9 +624,9 @@ const health = {
   ],
   outstandingProductDebt: [
     {
-      id: "capability-providers-p16-plus",
+      id: "capability-providers-p17-plus",
       track: "B",
-      summary: "Voice / File / Terminal providers — P16+ (P15 Screenshot permanently closed)",
+      summary: "File / Terminal / Memory providers — P17+ (P16 Voice permanently closed)",
     },
     {
       id: "tray-integration",
@@ -639,6 +661,7 @@ const health = {
       "P13 Notifications Provider permanently closed",
       "P14 Browser Provider permanently closed (P14.5)",
       "P15 Screenshot Provider permanently closed",
+      "P16 Voice Input permanently closed",
       "Capability Independence Rule permanent",
       "Natural Language Robustness Rule permanent",
       "Non-PP domain.ts remains manual (G1 remainder)",
@@ -708,15 +731,15 @@ const health = {
   lastMilestone: {
     date: "2026-08-07",
     document: "docs/engineering-milestone-report.md",
-    title: "P15 Screenshot Provider — permanently closed",
-    reviewBrief: "docs/capability-runtime/product-proof/SCREENSHOT_PROVIDER_PRODUCT_PROOF.md",
+    title: "P16 Voice Input — permanently closed",
+    reviewBrief: "docs/capability-runtime/product-proof/VOICE_INPUT_PRODUCT_PROOF.md",
   },
-  handoffStatus: "P15_PERMANENTLY_CLOSED_P16_ELIGIBLE",
+  handoffStatus: "P16_PERMANENTLY_CLOSED_P17_ELIGIBLE",
   nextRecommendedExecutionProgram: {
-    id: "voice-input-p16",
-    title: "P16 Voice Input",
+    id: "file-provider-p17",
+    title: "P17 File Provider",
     blockedUntil: null,
-    note: "P15 permanently closed. Follow Provider Acceptance Standard + Capability Independence Rule. Do not begin until Owner starts P16.",
+    note: "P16 permanently closed. Follow Provider Acceptance Standard + Capability Independence Rule. Do not begin until Owner starts P17.",
   },
   capabilityEvolution: {
     document: "docs/capability-evolution/README.md",
