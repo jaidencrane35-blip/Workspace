@@ -1,11 +1,11 @@
 /**
- * Capability Registry (P16.31) — Intent Layer authority for discovery.
+ * Capability Registry (P16.31 / P16.32) — single source of truth for discovery.
  *
- * Every Conversation-facing desktop capability advertises verbs, aliases,
- * objects, modifiers, requirements, and examples. Discovery replies are
- * generated from this graph — never hard-coded marketing copy.
+ * If a Conversation-facing desktop capability exists, it is declared here.
+ * If it is not declared here, discovery must not claim it.
  *
- * Providers never see this registry. Kernel receives CapabilityIntent only.
+ * Discovery replies are generated only from this graph — never hard-coded catalogues.
+ * Providers never see this registry.
  */
 
 export interface CapabilityNode {
@@ -18,7 +18,10 @@ export interface CapabilityNode {
   objects: string[];
   modifiers: string[];
   requirements: string[];
+  limitations: string[];
   examples: string[];
+  /** Short Owner-facing note used only when generating discovery text. */
+  documentation: string;
 }
 
 /** Live capability graph for desktop operation through Conversation. */
@@ -28,31 +31,38 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
     domain: "Applications",
     summary: "Open or bring forward desktop apps on this PC",
     verbs: ["open", "launch", "start"],
-    aliases: ["run", "start up"],
+    aliases: ["run", "start up", "take me to"],
     objects: ["apps", "Microsoft Store", "Cursor", "Notepad", "File Explorer"],
     modifiers: ["to the front", "full size", "beside"],
     requirements: ["Windows can find or launch the app"],
+    limitations: [
+      "Unknown app names are not invented as .exe files",
+      "Store / Settings use Windows protocol handlers",
+    ],
     examples: [
       "Open Microsoft Store",
       "Open Cursor to full size",
       "Open Notepad",
     ],
+    documentation: "Resolved apps go through Find → Focus or Launch — never raw transcripts.",
   },
   {
     id: "focus-window",
     domain: "Windows",
     summary: "Find windows and bring them forward",
-    verbs: ["focus", "bring forward", "bring to the front", "locate", "show"],
-    aliases: ["activate", "switch to", "put in front"],
+    verbs: ["focus", "bring forward", "bring to the front", "locate", "show", "switch to"],
+    aliases: ["activate", "put in front", "take me to"],
     objects: ["Chrome", "Edge", "Cursor", "ChatGPT", "YouTube"],
     modifiers: ["browser with …", "application with …"],
     requirements: ["A matching window is open"],
+    limitations: ["Matches window titles — not deep browser-tab APIs"],
     examples: [
       "Bring GPT to the front",
       "Focus Chrome",
       "Focus Edge",
       "Locate the browser with YouTube open",
     ],
+    documentation: "Locate/focus compose to Window focus (and optional minimise).",
   },
   {
     id: "window-state",
@@ -63,27 +73,31 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
     objects: ["Cursor", "Chrome", "this window"],
     modifiers: ["left", "right", "to monitor"],
     requirements: ["A matching window is open"],
+    limitations: ["Bulk “minimise all apps” is not supported"],
     examples: [
       "Maximise Cursor",
       "Restore Cursor",
       "Minimize ChatGPT",
       "Snap Chrome left",
     ],
+    documentation: "Window state changes are Kernel Window operations only.",
   },
   {
     id: "browser",
     domain: "Browser",
     summary: "Open websites and place them on the desktop",
     verbs: ["open", "visit", "go to"],
-    aliases: ["browse", "launch site"],
+    aliases: ["browse", "launch site", "take me to"],
     objects: ["ChatGPT", "YouTube", "GitHub", "Google"],
     modifiers: ["beside", "in a new tab", "and bring to the front"],
     requirements: ["A browser is available on this PC"],
+    limitations: ["Site names resolve to known URLs — not arbitrary search"],
     examples: [
       "Open ChatGPT",
       "Open YouTube beside Cursor",
       "Open GPT and bring it to the front",
     ],
+    documentation: "Browser open may compose with Window focus or snap.",
   },
   {
     id: "screenshots",
@@ -94,7 +108,9 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
     objects: ["desktop", "window", "monitor"],
     modifiers: ["and copy"],
     requirements: ["Screenshot capability available"],
+    limitations: ["Does not edit images after capture"],
     examples: ["Take a screenshot", "Capture this window"],
+    documentation: "Screenshot capture/copy is Kernel composition across screenshot ops.",
   },
   {
     id: "clipboard",
@@ -105,7 +121,9 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
     objects: ["clipboard text"],
     modifiers: [],
     requirements: ["Clipboard access allowed"],
+    limitations: ["Does not scrape arbitrary app UIs"],
     examples: ["What’s on my clipboard?", "Copy this text"],
+    documentation: "Clipboard is a first-class capability domain.",
   },
   {
     id: "notifications",
@@ -116,7 +134,9 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
     objects: ["notification"],
     modifiers: [],
     requirements: ["Notifications available"],
+    limitations: ["Does not replace the Windows Action Center"],
     examples: ["Show me a notification: Done"],
+    documentation: "Notifications are shown under Workspace governance.",
   },
   {
     id: "voice",
@@ -127,54 +147,168 @@ export const CAPABILITY_GRAPH: CapabilityNode[] = [
     objects: ["microphone"],
     modifiers: ["review then Send"],
     requirements: ["Microphone and speech privacy allowed"],
+    limitations: ["Recognition quality follows Windows dictation"],
     examples: ["Can you hear me?", "What can you do with voice?"],
+    documentation: "Voice is an input device — transcript follows the same Intent path as typing.",
   },
   {
     id: "folders",
     domain: "Folders",
     summary: "Open common folders in File Explorer",
     verbs: ["open", "locate", "show"],
-    aliases: ["go to folder"],
+    aliases: ["go to folder", "take me to"],
     objects: ["Pictures", "Documents", "Downloads", "Desktop"],
-    modifiers: ["in File Explorer"],
+    modifiers: ["in File Explorer", "to folder"],
     requirements: ["File Explorer available"],
-    examples: ["Open File Explorer and locate Pictures"],
+    limitations: ["Uses known shell folders — not arbitrary paths"],
+    examples: [
+      "Open File Explorer and locate Pictures",
+      "Locate Downloads",
+      "Show my Desktop",
+    ],
+    documentation: "Folders open via Windows shell: URIs.",
   },
 ];
 
-/** Discovery / meta utterances that should answer from the live graph. */
+export type DiscoveryScope =
+  | "all"
+  | "windows"
+  | "applications"
+  | "browser"
+  | "desktop";
+
+function normalizeDiscoveryText(text: string): string {
+  return text.trim().toLowerCase().replace(/[.!?]+$/g, "");
+}
+
+/** Discovery / meta utterances that must answer from the live graph. */
 export function isCapabilityDiscoveryUtterance(text: string): boolean {
-  const t = text.trim().toLowerCase().replace(/[.!?]+$/g, "");
+  const t = normalizeDiscoveryText(text);
+  // Voice / browser product-scoped explain stay on specialized Intent paths.
+  if (/\bwith (voice|browsers?)\b/i.test(t)) {
+    return false;
+  }
   return (
-    /^(what can you (do|help with)|what do you (do|help with))$/i.test(t) ||
-    /^(show me your capabilities|list (your )?capabilities|list desktop actions|what are your capabilities|capabilities)$/i.test(
+    /^(what can you (do|help with)|what do you (do|help with)|how can you help( me)?)$/i.test(
       t,
     ) ||
-    /^(what can you do on (the )?desktop|desktop (help|capabilities)|help with (the )?desktop)$/i.test(
+    /^(show( me)?( your)? capabilities|list (your )?capabilities|list desktop (actions|commands)|what are your capabilities|capabilities)$/i.test(
+      t,
+    ) ||
+    /^(what (desktop )?tasks can you perform|what can you do on (the )?desktop|desktop (help|capabilities)|help with (the )?desktop)$/i.test(
+      t,
+    ) ||
+    /^(what do you know about windows?|what (can you do|do you do) with windows?)$/i.test(
+      t,
+    ) ||
+    /^(what applications can you (control|open|launch)|what apps can you (control|open|launch))$/i.test(
+      t,
+    ) ||
+    /^(what (can you do|do you do) with (folders?|screenshots?|clipboard|notifications?))$/i.test(
       t,
     )
   );
 }
 
+export function resolveDiscoveryScope(text: string): DiscoveryScope {
+  const t = normalizeDiscoveryText(text);
+  if (/\bwindows?\b/.test(t) && !/\b(desktop|application)/.test(t)) {
+    return "windows";
+  }
+  if (/\b(applications?|apps?)\b/.test(t)) {
+    return "applications";
+  }
+  if (/\bbrowsers?\b/.test(t)) {
+    return "browser";
+  }
+  if (/\bdesktop\b/.test(t)) {
+    return "desktop";
+  }
+  return "all";
+}
+
+function nodesForScope(scope: DiscoveryScope): CapabilityNode[] {
+  switch (scope) {
+    case "windows":
+      return CAPABILITY_GRAPH.filter((n) => n.domain === "Windows");
+    case "applications":
+      return CAPABILITY_GRAPH.filter((n) => n.domain === "Applications");
+    case "browser":
+      return CAPABILITY_GRAPH.filter((n) => n.domain === "Browser");
+    case "desktop":
+      return CAPABILITY_GRAPH.filter((n) =>
+        ["Applications", "Windows", "Browser", "Folders", "Screenshots"].includes(
+          n.domain,
+        ),
+      );
+    default:
+      return CAPABILITY_GRAPH;
+  }
+}
+
 /**
- * Generate a Conversation reply from the live capability graph.
- * Ordinary language only — no Provider / Registry jargon.
+ * Generate a Conversation reply from the live capability graph only.
+ * Examples / suggestions are taken from node.examples — never a separate hard-coded list.
  */
-export function generateCapabilityDiscovery(): {
+export function generateCapabilityDiscovery(scope: DiscoveryScope = "all"): {
   reply: string;
   suggestion: string;
 } {
-  const lines = CAPABILITY_GRAPH.map(
-    (node) => `${node.domain}: ${node.summary}. Example — “${node.examples[0]}”.`,
-  );
+  const nodes = nodesForScope(scope);
+  if (nodes.length === 0) {
+    return {
+      reply: "I don’t have a matching capability to describe for that yet.",
+      suggestion: "Ask “what can you do?” for the full desktop list.",
+    };
+  }
+
+  const header =
+    scope === "all"
+      ? "Here’s what I can do on this desktop through Conversation:"
+      : `Here’s what I can do for ${scope}:`;
+
+  const lines = nodes.map((node) => {
+    const example = node.examples[0] ?? node.summary;
+    const limit = node.limitations[0]
+      ? ` Limit — ${node.limitations[0]}.`
+      : "";
+    return `• ${node.domain}: ${node.summary}. Example — “${example}”.${limit}`;
+  });
+
   const reply = [
-    "Here’s what I can do on this desktop through Conversation:",
-    ...lines.map((line) => `• ${line}`),
+    header,
+    ...lines,
     "Say what you want in ordinary words — I’ll turn it into desktop actions.",
   ].join("\n");
 
-  const examples = CAPABILITY_GRAPH.flatMap((n) => n.examples).slice(0, 4);
-  const suggestion = `Try “${examples.join("”, “")}”.`;
+  const examples = nodes.flatMap((n) => n.examples).slice(0, 4);
+  const suggestion =
+    examples.length > 0
+      ? `Try “${examples.join("”, “")}”.`
+      : "Try asking for a desktop action in ordinary words.";
 
   return { reply, suggestion };
+}
+
+/** Nearby supported examples from the live graph (truthful recovery). */
+export function suggestNearbyCapabilities(seed: string, limit = 3): string {
+  const key = seed.trim().toLowerCase();
+  const scored = CAPABILITY_GRAPH.flatMap((node) =>
+    node.examples.map((example) => {
+      const e = example.toLowerCase();
+      let score = 0;
+      if (key && e.includes(key.slice(0, Math.min(6, key.length)))) score += 2;
+      if (node.objects.some((o) => o.toLowerCase().includes(key))) score += 3;
+      if (node.verbs.some((v) => key.includes(v))) score += 1;
+      return { example, score };
+    }),
+  )
+    .sort((a, b) => b.score - a.score)
+    .map((x) => x.example);
+
+  const unique = [...new Set(scored)].slice(0, limit);
+  if (unique.length === 0) {
+    return CAPABILITY_GRAPH.flatMap((n) => n.examples).slice(0, limit).join("”, “");
+  }
+  return unique.join("”, “");
 }

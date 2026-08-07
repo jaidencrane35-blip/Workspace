@@ -1,9 +1,9 @@
 # Engineering Milestone Report
-## P16.31 Semantic Intent Engine & Desktop Operator Completion
+## P16.32 Evidence-Driven Product Completion & Trust Validation
 
 | Field | Value |
 | --- | --- |
-| **Execution program** | P16.31 Semantic Intent Engine & Desktop Operator Completion |
+| **Execution program** | P16.32 Evidence-Driven Product Completion & Trust Validation |
 | **Date** | 2026-08-07 |
 | **Status** | **Engineering Complete for program** — Product Complete **Owner-only** |
 | **Handoff** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` |
@@ -13,16 +13,15 @@
 
 ## Summary
 
-Owner live review showed remaining failures were **Semantic Understanding**, not speech. P16.31 adds:
+Product Owner evidence outranks engineering confidence. P16.32:
 
-1. **Semantic Intent Engine** — reasons over Intent Grammar + desktop entity catalog  
-2. **Capability Registry** — generated discovery for “What can you do?”  
-3. **Microsoft Store** ? `ms-windows-store:` protocol (never `microsoft store.exe`)  
-4. **Compound window ops** — locate browser with title; locate + minimise (`focus_minimize`)  
-5. Entity focus — GPT ? ChatGPT; Focus Chrome / Edge; Restore / Maximise Cursor  
+1. **Falsified** remaining invented-`.exe` path (Kernel + Intent refuse unknowns)  
+2. **Hostile NL suite** (?200 variants) for Semantic Engine  
+3. **Registry-complete discovery** (limitations, documentation, scoped answers)  
+4. **Pipeline evidence** via `resolveIntentWithEvidence`  
+5. Commodity gap classification (P16 / P17 / outside)
 
-Artifact: `docs/capability-runtime/product-proof/VOICE_P16_31_SEMANTIC_INTENT.md`  
-Verifier: `pnpm verify:semantic-intent`
+Artifact: `docs/capability-runtime/product-proof/VOICE_P16_32_TRUST_VALIDATION.md`
 
 ## Explicit
 

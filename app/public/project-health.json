@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-07T10:01:53.574Z",
+  "updatedAt": "2026-08-07T10:16:41.762Z",
   "constitution": {
     "document": "architecture/ARCHITECTURAL_CONSTITUTION_V2.md",
     "version": "2.0"
@@ -15,7 +15,7 @@
     "id": "voice-input-p16",
     "title": "P16 Voice Input",
     "status": "engineering_complete_product_proof_pending",
-    "note": "P16.31 Semantic Intent Engine & Desktop Operator Completion. Grammar + Semantic Engine + Capability Registry. Owner live Product Proof pending. Canonical: VOICE_P16_31_SEMANTIC_INTENT.md. Do not mark permanently closed. Do not begin P17."
+    "note": "P16.32 Evidence-Driven Product Completion & Trust Validation. Owner evidence overrides engineering confidence. Hostile NL suite + exe invent refusal + registry discovery. Canonical: VOICE_P16_32_TRUST_VALIDATION.md. Do not mark permanently closed. Do not begin P17."
   },
   "completedExecutionPrograms": [
     {
@@ -415,7 +415,7 @@
       "P13 Notifications Provider permanently closed",
       "P14 Browser Provider PERMANENTLY CLOSED",
       "P15 Screenshot Provider PERMANENTLY CLOSED",
-      "P16.31 Semantic Intent Engine — capability registry + desktop entity reasoning; Product Proof pending Owner acceptance (NOT permanently closed)",
+      "P16.32 Trust Validation — hostile NL evidence + no invented .exe + registry discovery; Product Proof pending Owner acceptance (NOT permanently closed)",
       "Owner Experience Before Engineering Confidence permanent (P16.21)",
       "Repository Quality Before Milestone Closure permanent (P16.21)",
       "User Adaptation Prohibition permanent (P16.6)",
@@ -437,10 +437,10 @@
     ]
   },
   "currentMilestone": {
-    "id": "semantic-intent-engine-p16-31",
-    "title": "P16.31 Semantic Intent Engine & Desktop Operator Completion",
+    "id": "evidence-driven-trust-validation-p16-32",
+    "title": "P16.32 Evidence-Driven Product Completion & Trust Validation",
     "status": "engineering_complete_product_proof_pending",
-    "commit": "fc77ed9"
+    "commit": "953f5bc"
   },
   "acceptedReviews": [
     {
@@ -539,7 +539,7 @@
     {
       "id": "p16-voice-product-proof",
       "track": "B",
-      "summary": "P16 Voice Input — live Product Owner Product Proof pending final acceptance (P16.31 Semantic Intent Engine; not permanently closed)"
+      "summary": "P16 Voice Input — live Product Owner Product Proof pending final acceptance (P16.32 Trust Validation; not permanently closed)"
     },
     {
       "id": "capability-providers-p17-plus",
@@ -579,7 +579,7 @@
       "P13 Notifications Provider permanently closed",
       "P14 Browser Provider permanently closed (P14.5)",
       "P15 Screenshot Provider permanently closed",
-      "P16.31 Semantic Intent Engine — Product Proof pending Owner acceptance; WinRT WRAP frozen",
+      "P16.32 Trust Validation — Product Proof pending Owner acceptance; WinRT WRAP frozen; Owner evidence outranks engineering confidence",
       "User Adaptation Prohibition permanent",
       "Conversation Continuity + Semantic Alias Rule permanent",
       "Permission Guidance Principle permanent",
@@ -705,6 +705,11 @@
         "present": true,
         "wiredInTest": true
       },
+      "verify:capability-registry": {
+        "script": "scripts/verify-capability-registry.mjs",
+        "present": true,
+        "wiredInTest": true
+      },
       "verify:dev-environment": {
         "script": "scripts/verify-dev-environment.mjs",
         "present": true,
@@ -788,8 +793,8 @@
   "lastMilestone": {
     "date": "2026-08-07",
     "document": "docs/engineering-milestone-report.md",
-    "title": "P16.31 Semantic Intent Engine — awaiting Owner live Product Proof",
-    "reviewBrief": "docs/capability-runtime/product-proof/VOICE_P16_31_SEMANTIC_INTENT.md"
+    "title": "P16.32 Evidence-Driven Trust Validation — awaiting Owner live Product Proof",
+    "reviewBrief": "docs/capability-runtime/product-proof/VOICE_P16_32_TRUST_VALIDATION.md"
   },
   "handoffStatus": "P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING",
   "nextRecommendedExecutionProgram": {

@@ -235,9 +235,9 @@ export function parseDesktopIntent(raw: string): DesktopIntent | null {
     }
   }
 
-  // Open File Explorer and locate/show/find Pictures (or other folder)
+  // Open File Explorer and locate/show/find Pictures — or “to Pictures”
   const explorerLocate = text.match(
-    /^(?:open|launch|start)\s+(?:file\s+)?explorer\s+and\s+(?:locate|find|show|open)\s+(.+)$/i,
+    /^(?:open|launch|start)\s+(?:file\s+)?explorer\s+(?:and\s+(?:locate|find|show|open)|to)\s+(.+)$/i,
   );
   if (explorerLocate?.[1]) {
     return {
@@ -248,6 +248,63 @@ export function parseDesktopIntent(raw: string): DesktopIntent | null {
       context: "folder",
       confidence: 0.92,
     };
+  }
+
+  // Locate / show / open known folder names (Downloads, Desktop, Pictures, …)
+  const folderOnly = text.match(
+    /^(?:locate|show|open|go\s+to|take\s+me\s+to)\s+(?:my\s+)?(pictures|documents|downloads|desktop|music|videos)(?:\s+folder)?$/i,
+  );
+  if (folderOnly?.[1]) {
+    return {
+      action: "open",
+      target: "File Explorer",
+      modifier: "locate_object",
+      object: folderOnly[1].trim(),
+      context: "folder",
+      confidence: 0.93,
+    };
+  }
+
+  // Goal phrasing for desktop entities only — do not steal “show me a notification / windows”.
+  const goal = text.match(
+    /^(?:take\s+me\s+to|go\s+to|i\s+want)\s+(.+)$/i,
+  );
+  if (goal?.[1]) {
+    const target = goal[1].trim();
+    if (
+      !/\b(notification|windows?|screenshot|clipboard|capabilities|guide)\b/i.test(
+        target,
+      )
+    ) {
+      return {
+        action: "open",
+        target,
+        modifier: "none",
+        object: "",
+        context: "unknown",
+        confidence: 0.88,
+      };
+    }
+  }
+
+  // “show me X” only when X is a compact desktop target (not lists / notifications).
+  const showMe = text.match(/^show\s+me\s+(.+)$/i);
+  if (showMe?.[1]) {
+    const target = showMe[1].trim();
+    if (
+      /^(my\s+)?(chatgpt|gpt|youtube|chrome|edge|cursor|store|settings|downloads|desktop|pictures|documents)(\s+folder)?$/i.test(
+        target,
+      )
+    ) {
+      return {
+        action: "open",
+        target,
+        modifier: "none",
+        object: "",
+        context: "unknown",
+        confidence: 0.9,
+      };
+    }
   }
 
   // Open X beside Y

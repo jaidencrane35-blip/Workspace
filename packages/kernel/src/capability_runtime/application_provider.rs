@@ -117,7 +117,8 @@ impl ApplicationProvider {
             .ok_or_else(|| KernelError::CapabilityRuntime {
                 message: "application launch requires query or path".into(),
             })?;
-        Ok(Self::materialize_launch_target(&launch_alias(query)))
+        let aliased = launch_alias(query)?;
+        Ok(Self::materialize_launch_target(&aliased))
     }
 
     /// shell: → explorer; ms-* protocols → rundll32 FileProtocolHandler; else raw exe.
@@ -433,29 +434,34 @@ impl CapabilityProvider for ApplicationProvider {
     }
 }
 
-fn launch_alias(query: &str) -> String {
+/// Resolve a launch target only for known Windows apps / protocols / explicit paths.
+/// P16.32: never invent `{token}.exe` for unknown names (Owner evidence override).
+fn launch_alias(query: &str) -> Result<String> {
     let normalized = query.trim().to_ascii_lowercase();
     match normalized.as_str() {
-        "notepad" => "notepad.exe".into(),
-        "explorer" | "file explorer" | "files" => "explorer.exe".into(),
-        "cmd" | "command prompt" | "terminal cmd" => "cmd.exe".into(),
-        "powershell" | "pwsh" => "powershell.exe".into(),
-        "chrome" | "google chrome" => "chrome.exe".into(),
-        "edge" | "microsoft edge" => "msedge.exe".into(),
-        "cursor" => "cursor.exe".into(),
-        "spotify" => "spotify.exe".into(),
-        "calculator" | "calc" => "calc.exe".into(),
-        // Windows Store — protocol via rundll32 (never "microsoft store.exe").
+        "notepad" => Ok("notepad.exe".into()),
+        "explorer" | "file explorer" | "files" => Ok("explorer.exe".into()),
+        "cmd" | "command prompt" | "terminal cmd" => Ok("cmd.exe".into()),
+        "powershell" | "pwsh" => Ok("powershell.exe".into()),
+        "chrome" | "google chrome" => Ok("chrome.exe".into()),
+        "edge" | "microsoft edge" => Ok("msedge.exe".into()),
+        "cursor" => Ok("cursor.exe".into()),
+        "spotify" => Ok("spotify.exe".into()),
+        "calculator" | "calc" => Ok("calc.exe".into()),
         "microsoft store" | "ms store" | "windows store" | "store" => {
-            // Sentinel consumed by resolve_launch_target callers — keep protocol form.
-            "ms-windows-store:".into()
+            Ok("ms-windows-store:".into())
         }
-        "windows settings" | "settings" => "ms-settings:".into(),
+        "windows settings" | "settings" => Ok("ms-settings:".into()),
         other if other.ends_with(".exe") || other.contains('\\') || other.contains('/') => {
-            query.trim().to_string()
+            Ok(query.trim().to_string())
         }
-        // Never invent "foo bar.exe" for multi-word unknown names (P16.31).
-        other if other.contains(' ') => query.trim().to_string(),
-        other => format!("{other}.exe"),
+        other if other.starts_with("ms-") && other.contains(':') => Ok(query.trim().to_string()),
+        other if other.starts_with("shell:") => Ok(query.trim().to_string()),
+        _unknown => Err(KernelError::CapabilityRuntime {
+            message: format!(
+                "I don’t know how to launch “{}” — and I won’t invent a program name.",
+                query.trim()
+            ),
+        }),
     }
 }

@@ -17,7 +17,10 @@ const required = [
   "app/src/lib/semanticIntentEngine.ts",
   "app/src/lib/capabilityRegistry.ts",
   "app/src/lib/intentGrammar.ts",
+  "app/src/lib/intentPipeline.ts",
   "docs/capability-runtime/product-proof/VOICE_P16_31_SEMANTIC_INTENT.md",
+  "docs/capability-runtime/product-proof/VOICE_P16_32_TRUST_VALIDATION.md",
+  "tests/semantic-hostile-nl.test.ts",
 ];
 
 for (const rel of required) {
@@ -71,8 +74,14 @@ if (!bridge.includes("capabilityExplain")) {
 if (!appProvider.includes("url.dll,FileProtocolHandler")) {
   fail("application launch must materialize ms-* protocols (never spaced .exe)");
 }
-if (!appProvider.includes('other if other.contains(\' \')')) {
-  fail("launch_alias must refuse inventing multi-word .exe names");
+if (
+  !appProvider.includes("won’t invent a program name") &&
+  !appProvider.includes("won't invent a program name")
+) {
+  fail("launch_alias must refuse unknown targets without inventing .exe names");
+}
+if (appProvider.includes('format!("{other}.exe")') || appProvider.includes('format!("{_unknown}.exe")')) {
+  fail("launch_alias must not invent {other}.exe");
 }
 if (!plan.includes("focus_minimize")) {
   fail("Kernel must compose window.focus_minimize for locate+minimise");

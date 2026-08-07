@@ -24,7 +24,9 @@ import {
   voiceCheckReply,
 } from "./conversationGuidance";
 import type { PilotPrimaryView } from "./pilotChrome";
+import { suggestNearbyCapabilities } from "./capabilityRegistry";
 import {
+  resolveDesktopEntity,
   resolveSemanticIntent,
   resolveWindowQuery,
 } from "./semanticIntentEngine";
@@ -1762,11 +1764,37 @@ export function resolveIntent(raw: string): IntentAction {
         return site;
       }
     }
-    if (rawQuery) {
+    // P16.32: only resolved desktop entities may launch — never invent executables.
+    const entity = resolveDesktopEntity(rawQuery) ?? resolveDesktopEntity(query);
+    if (entity?.kind === "protocol" || entity?.kind === "shell") {
       return {
         kind: "appLaunch",
-        query: windowMatchLabel(rawQuery),
-        reply: `Launching “${windowMatchLabel(rawQuery)}”.`,
+        query: entity.value,
+        reply: `Launching ${entity.label}.`,
+      };
+    }
+    if (entity?.kind === "browser" || entity?.kind === "application") {
+      return {
+        kind: "appOpen",
+        query: entity.openQuery ?? entity.value,
+        reply: `Opening “${entity.label}”.`,
+      };
+    }
+    if (entity?.kind === "site") {
+      return {
+        kind: "browserOpen",
+        url: entity.value,
+        reply: `Opening ${entity.label}.`,
+      };
+    }
+    if (rawQuery) {
+      const nearby = suggestNearbyCapabilities(rawQuery);
+      return {
+        kind: "unknown",
+        reply: `I don’t recognize “${rawQuery}” as something I can launch — and I won’t invent a program name.`,
+        suggestion: nearby
+          ? `Try “${nearby}”.`
+          : "Try naming an app or site I already support.",
       };
     }
   }
@@ -1785,8 +1813,7 @@ export function resolveIntent(raw: string): IntentAction {
       return {
         kind: "unknown",
         reply: "I need a clearer desktop request before I can open that.",
-        suggestion:
-          'Try “Open ChatGPT and bring it to the front”, “Open Cursor to full size”, or “Open File Explorer and locate Pictures”.',
+        suggestion: `Try “${suggestNearbyCapabilities("open")}”.`,
       };
     }
     const query = expandSemanticAlias(rawQuery) || rawQuery;
@@ -1806,12 +1833,29 @@ export function resolveIntent(raw: string): IntentAction {
         suggestion: INVALID_WEBSITE_SUGGESTION,
       };
     }
-    if (query && !/^(workspace|conversation)$/i.test(query)) {
-      const label = windowMatchLabel(rawQuery);
+    const entity = resolveDesktopEntity(rawQuery) ?? resolveDesktopEntity(query);
+    if (entity?.kind === "protocol" || entity?.kind === "shell") {
+      return {
+        kind: "appLaunch",
+        query: entity.value,
+        reply: `Opening ${entity.label}.`,
+      };
+    }
+    if (entity?.kind === "browser" || entity?.kind === "application") {
       return {
         kind: "appOpen",
-        query: label,
-        reply: `Opening “${label}”.`,
+        query: entity.openQuery ?? entity.value,
+        reply: `Opening “${entity.label}”.`,
+      };
+    }
+    if (query && !/^(workspace|conversation)$/i.test(query)) {
+      const nearby = suggestNearbyCapabilities(rawQuery);
+      return {
+        kind: "unknown",
+        reply: `I don’t recognize “${rawQuery}” as something I can open yet — and I won’t invent a program name.`,
+        suggestion: nearby
+          ? `Try “${nearby}”.`
+          : "Try naming an app, site, or folder I already support.",
       };
     }
   }

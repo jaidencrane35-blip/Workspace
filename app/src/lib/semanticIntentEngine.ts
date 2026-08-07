@@ -11,6 +11,7 @@
 import {
   generateCapabilityDiscovery,
   isCapabilityDiscoveryUtterance,
+  resolveDiscoveryScope,
 } from "./capabilityRegistry";
 import {
   parseDesktopIntent,
@@ -47,7 +48,10 @@ function normalizeKey(raw: string): string {
     .toLowerCase()
     .replace(/[.!?]+$/g, "")
     .replace(/,/g, " ")
-    .replace(/\s+/g, " ");
+    .replace(/\s+/g, " ")
+    // Discourse tails — reason over the desktop goal, not filler words.
+    .replace(/\s+(please|thanks|thank you|for me|just|now|today)$/i, "")
+    .trim();
 }
 
 /** Known Windows / desktop entities — reasoned resolution, not phrase memorize-only. */
@@ -182,6 +186,16 @@ const KNOWN_ENTITIES: Array<{
       kind: "application",
       value: "Calculator",
       label: "Calculator",
+      context: "application",
+    },
+  },
+  {
+    keys: ["spotify"],
+    entity: {
+      kind: "application",
+      value: "Spotify",
+      label: "Spotify",
+      openQuery: "Spotify",
       context: "application",
     },
   },
@@ -391,7 +405,8 @@ function reasonFromGrammar(grammar: DesktopIntent): IntentAction | null {
 
   if (grammar.action === "open" || grammar.action === "launch") {
     if (!entity) {
-      // Unknown open target — refuse executable guessing; fall through to other resolvers.
+      // Defer rich phrasing (tabs, notifications, window lists) to specialized resolvers.
+      // Executable invent is blocked at appOpen/appLaunch fallthrough + Kernel launch_alias.
       return null;
     }
     if (entity.kind === "protocol" || entity.kind === "shell") {
@@ -431,7 +446,7 @@ export function resolveSemanticIntent(raw: string): IntentAction | null {
   }
 
   if (isCapabilityDiscoveryUtterance(text)) {
-    const discovery = generateCapabilityDiscovery();
+    const discovery = generateCapabilityDiscovery(resolveDiscoveryScope(text));
     return {
       kind: "capabilityExplain",
       reply: discovery.reply,

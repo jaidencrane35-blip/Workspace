@@ -60,6 +60,7 @@ const verifiers = {
   "verify:voice-regression": "scripts/verify-voice-regression.mjs",
   "verify:conversation-quality": "scripts/verify-conversation-quality.mjs",
   "verify:semantic-intent": "scripts/verify-semantic-intent.mjs",
+  "verify:capability-registry": "scripts/verify-capability-registry.mjs",
   "verify:dev-environment": "scripts/verify-dev-environment.mjs",
 };
 
@@ -459,7 +460,7 @@ const health = {
     id: "voice-input-p16",
     title: "P16 Voice Input",
     status: "engineering_complete_product_proof_pending",
-    note: "P16.31 Semantic Intent Engine & Desktop Operator Completion. Grammar + Semantic Engine + Capability Registry. Owner live Product Proof pending. Canonical: VOICE_P16_31_SEMANTIC_INTENT.md. Do not mark permanently closed. Do not begin P17.",
+    note: "P16.32 Evidence-Driven Product Completion & Trust Validation. Owner evidence overrides engineering confidence. Hostile NL suite + exe invent refusal + registry discovery. Canonical: VOICE_P16_32_TRUST_VALIDATION.md. Do not mark permanently closed. Do not begin P17.",
   },
   completedExecutionPrograms: completedPrograms,
   remainingBacklog,
@@ -504,7 +505,7 @@ const health = {
       "P13 Notifications Provider permanently closed",
       "P14 Browser Provider PERMANENTLY CLOSED",
       "P15 Screenshot Provider PERMANENTLY CLOSED",
-      "P16.31 Semantic Intent Engine — capability registry + desktop entity reasoning; Product Proof pending Owner acceptance (NOT permanently closed)",
+      "P16.32 Trust Validation — hostile NL evidence + no invented .exe + registry discovery; Product Proof pending Owner acceptance (NOT permanently closed)",
       "Owner Experience Before Engineering Confidence permanent (P16.21)",
       "Repository Quality Before Milestone Closure permanent (P16.21)",
       "User Adaptation Prohibition permanent (P16.6)",
@@ -526,8 +527,8 @@ const health = {
     ],
   },
   currentMilestone: {
-    id: "semantic-intent-engine-p16-31",
-    title: "P16.31 Semantic Intent Engine & Desktop Operator Completion",
+    id: "evidence-driven-trust-validation-p16-32",
+    title: "P16.32 Evidence-Driven Product Completion & Trust Validation",
     status: "engineering_complete_product_proof_pending",
     commit: milestoneCommit,
   },
@@ -629,7 +630,7 @@ const health = {
       id: "p16-voice-product-proof",
       track: "B",
       summary:
-        "P16 Voice Input — live Product Owner Product Proof pending final acceptance (P16.31 Semantic Intent Engine; not permanently closed)",
+        "P16 Voice Input — live Product Owner Product Proof pending final acceptance (P16.32 Trust Validation; not permanently closed)",
     },
     {
       id: "capability-providers-p17-plus",
@@ -670,7 +671,7 @@ const health = {
       "P13 Notifications Provider permanently closed",
       "P14 Browser Provider permanently closed (P14.5)",
       "P15 Screenshot Provider permanently closed",
-      "P16.31 Semantic Intent Engine — Product Proof pending Owner acceptance; WinRT WRAP frozen",
+      "P16.32 Trust Validation — Product Proof pending Owner acceptance; WinRT WRAP frozen; Owner evidence outranks engineering confidence",
       "User Adaptation Prohibition permanent",
       "Conversation Continuity + Semantic Alias Rule permanent",
       "Permission Guidance Principle permanent",
@@ -752,9 +753,9 @@ const health = {
     date: "2026-08-07",
     document: "docs/engineering-milestone-report.md",
     title:
-      "P16.31 Semantic Intent Engine — awaiting Owner live Product Proof",
+      "P16.32 Evidence-Driven Trust Validation — awaiting Owner live Product Proof",
     reviewBrief:
-      "docs/capability-runtime/product-proof/VOICE_P16_31_SEMANTIC_INTENT.md",
+      "docs/capability-runtime/product-proof/VOICE_P16_32_TRUST_VALIDATION.md",
   },
   handoffStatus: "P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING",
   nextRecommendedExecutionProgram: {
