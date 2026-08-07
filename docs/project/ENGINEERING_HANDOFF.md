@@ -7,13 +7,14 @@
 | **Updated** | 2026-08-07 |
 | **Branch** | `v2-dev` |
 | **Handoff status** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` |
-| **Latest program** | P16.O2 Owner Product Proof Execution Authority — Owner is primary product-quality evidence; session pending |
+| **Latest program** | P16.O3 Governance Resilience — **Sustainable Engineering Operations**; no further meta-governance programs |
+| **Governance resilience** | `docs/00-Constitution/P16_O3_GOVERNANCE_RESILIENCE_REPORT.md` |
 | **Product Proof readiness** | `docs/capability-runtime/product-proof/P16_O1_PRODUCT_PROOF_READINESS_REPORT.md` |
 | **Product Proof execution** | `docs/capability-runtime/product-proof/P16_O2_OWNER_PRODUCT_PROOF_EXECUTION_AUTHORITY.md` |
 | **Product Proof workbook** | `docs/capability-runtime/product-proof/P16_O2_PRODUCT_PROOF_SESSION_WORKBOOK.md` |
 | **Rule** | Spec v2 = sole architectural authority. Execution Standard v1 = how all programs run. Classify work, max layer, lowest-layer invariant, compliance checklist. Do not reopen Spec without a Review Trigger. |
 
-**Milestone:** Workspace has completed its Constitutional Governance phase and now operates in **Constitutional Operations**. The product runs under the Workspace Constitutional Specification v2 and the Engineering Execution Standard v1. Future engineering is expected to occur within this framework. Architecture is stable by default; capabilities evolve within it. Architectural change requires a named Constitutional Review Trigger supported by objective evidence. Constitutional work is otherwise closed.
+**Milestone:** Workspace has completed Constitutional Governance and Constitutional Operations stress-testing. It now operates in **Sustainable Engineering Operations**. Spec v2 and EES v1 are stable constraints. Future effort prioritizes Owner Product Proof, Track A production quality, and capability expansion (P17+ after P16 Accept)—not governance evolution. Architecture is stable by default. Architectural change requires a named Constitutional Review Trigger with objective evidence.
 
 **Start here before any execution program.**
 

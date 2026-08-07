@@ -10,7 +10,7 @@ Before any implementation work:
 4. Read the engineering handoff: **[`docs/project/ENGINEERING_HANDOFF.md`](docs/project/ENGINEERING_HANDOFF.md)**
 5. Reassess `docs/project-health.json`.
 
-Current handoff posture: **Constitutional Operations. Spec v2.1 + Execution Standard v1 are authoritative. Architecture is stable by default; capabilities evolve within it. Architectural change requires a named Review Trigger with objective evidence. P16 Product Proof still pending. Do not begin P17.**
+Current handoff posture: **Sustainable Engineering Operations.** Spec v2.1 + Execution Standard v1 are stable constraints (not redesign surfaces). Architecture is stable by default; capabilities evolve within them. Architectural change requires a named Review Trigger with objective evidence. Prioritize Owner Product Proof, Track A, then P17 after P16 Accept. Do not open further meta-governance programs. Do not begin P17 while P16 Product Proof is pending.
 
 ## Cursor Cloud specific instructions
 

@@ -13,6 +13,7 @@
 | **Compliance checklist** | `CONSTITUTIONAL_COMPLIANCE_CHECKLIST.md` |
 | **Engineering Execution Standard** | `WORKSPACE_ENGINEERING_EXECUTION_STANDARD_V1.md` |
 | **Decision record index** | `ARCHITECTURAL_DECISION_RECORD_INDEX.md` |
+| **Governance resilience** | `P16_O3_GOVERNANCE_RESILIENCE_REPORT.md` — Sustainable Engineering Operations |
 
 ---
 

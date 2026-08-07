@@ -18,7 +18,8 @@ This is an **index of settled decisions**, not a redesign surface. Individual ra
 | Workspace Constitutional Specification v2 | Active | Constitution | Spec v2.1; A1–A3 formalization/codification; tag `workspace-constitution-v2.1` | Prior peer “architecture” docs; Blueprint-as-highest-authority claims |
 | Engineering Execution Standard v1 | Active | Governance | `WORKSPACE_ENGINEERING_EXECUTION_STANDARD_V1.md` | Ad-hoc engineering prompt reinventing lifecycle |
 | Repository Confidence Model | Active | Governance | `REPOSITORY_CONFIDENCE_MODEL.md`; Operations Audit | Treating scoped audits as universal certainty |
-| Constitutional Operations posture | Active | Governance | Handoff milestone; Operations Audit confidence boundary | Architecture Discovery / continuous redesign posture |
+| Constitutional Operations posture | Superseded | Governance | Operations Audit | Architecture Discovery |
+| Sustainable Engineering Operations | Active | Governance | `P16_O3_GOVERNANCE_RESILIENCE_REPORT.md`; handoff | Continuous meta-governance / constitutional redesign programs |
 | Product Gravity | Active (principle) | Constitution | Spec §9; `docs/ui/PRODUCT_GRAVITY_RULE.md` | Catalogue / launcher-first product identity |
 | Capability Integration Standard | Active | Constitution | Spec §15 | Provider-specific bespoke architectures |
 | Kernel Operator sole Effect composition | Active | Architecture Standard under Spec | `KERNEL_AUTHORITY_RULE.md`; Operations Audit | Conversation→provider IPC; provider→provider |
@@ -42,12 +43,13 @@ This is an **index of settled decisions**, not a redesign surface. Individual ra
 
 ---
 
-## Standing posture (Constitutional Operations Mode)
+## Standing posture (Sustainable Engineering Operations)
 
-- Architecture is presumed stable by default.  
+- Architecture and governance are presumed stable by default.  
 - Every engineering task begins by identifying the lowest Information Owner responsible.  
 - Engineering proceeds within the Constitution unless objective evidence satisfies a Review Trigger.  
-- Improvements target product quality, production readiness, capability growth, or UX — not architectural novelty.
+- Improvements target product quality, production readiness, capability growth, or UX — not architectural or governance novelty.  
+- Do not open further meta-governance programs absent a demonstrated process failure with evidence.
 
 ---
 
