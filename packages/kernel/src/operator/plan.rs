@@ -135,6 +135,64 @@ pub fn plan_capability_intent(intent: &CapabilityIntent) -> Result<OperatorPlan>
         });
     }
 
+    // Open then maximize (Intent Grammar fullscreen — Kernel composition only)
+    if domain == CapabilityDomainId::application() && op_raw == "open_maximize" {
+        return Ok(OperatorPlan {
+            composition_id: Some("app.open_maximize".into()),
+            steps: vec![step_from_intent(
+                CapabilityDomainId::application(),
+                CapabilityOperation::Find,
+                intent,
+            )],
+        });
+    }
+
+    // Browser open + bring window forward (Intent Grammar foreground)
+    if domain == CapabilityDomainId::browser() && op_raw == "open_foreground" {
+        let url = intent
+            .path
+            .as_deref()
+            .unwrap_or("")
+            .trim();
+        if url.is_empty() {
+            return Err(KernelError::CapabilityRuntime {
+                message: "Which website should I open?".into(),
+            });
+        }
+        let focus = intent
+            .title
+            .as_deref()
+            .or(intent.query.as_deref())
+            .unwrap_or("")
+            .trim();
+        if focus.is_empty() {
+            return Err(KernelError::CapabilityRuntime {
+                message: "Which window should I bring forward?".into(),
+            });
+        }
+        let mut open_intent = intent.clone();
+        open_intent.path = Some(url.to_string());
+        open_intent.query = Some(url.to_string());
+        let mut focus_intent = intent.clone();
+        focus_intent.query = Some(focus.to_string());
+        focus_intent.title = Some(focus.to_string());
+        return Ok(OperatorPlan {
+            composition_id: Some("browser.open_foreground".into()),
+            steps: vec![
+                step_from_intent(
+                    CapabilityDomainId::browser(),
+                    CapabilityOperation::Open,
+                    &open_intent,
+                ),
+                step_from_intent(
+                    CapabilityDomainId::window(),
+                    CapabilityOperation::Focus,
+                    &focus_intent,
+                ),
+            ],
+        });
+    }
+
     // Browser open beside = open URL then Window snap composition
     if domain == CapabilityDomainId::browser() && op_raw == "open_beside" {
         let url = intent

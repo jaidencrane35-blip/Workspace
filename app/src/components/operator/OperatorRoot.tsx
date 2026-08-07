@@ -314,11 +314,18 @@ export function OperatorRoot({
 
   const onVoiceTranscript = useCallback(
     (transcript: string) => {
-      // Voice behaves exactly like typing: insert then submit.
+      // F10 dictation: Voice inserts like typing — Owner reviews, then Send or clear.
+      // Never auto-submit; Send / Enter = send; Escape / clear = cancel.
       setDraft(transcript);
-      submitUtterance(transcript);
+      void pushWorkspace(
+        "Review your words, then Send — or clear the box to cancel.",
+      );
+      window.setTimeout(() => {
+        inputRef.current?.focus();
+        inputRef.current?.select();
+      }, 0);
     },
-    [submitUtterance],
+    [pushWorkspace],
   );
 
   const onVoiceMessage = useCallback(
@@ -484,6 +491,11 @@ export function OperatorRoot({
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
                 onKeyDown={(e) => {
+                  if (e.key === "Escape") {
+                    e.preventDefault();
+                    setDraft("");
+                    return;
+                  }
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
                     e.currentTarget.form?.requestSubmit();
@@ -504,8 +516,12 @@ export function OperatorRoot({
                   type="submit"
                   className="op-shell__send"
                   disabled={busy || !draft.trim()}
-                  aria-label="Send"
-                  title="Send"
+                  aria-label={draft.trim() ? "Send" : "Send (enter text or speak first)"}
+                  title={
+                    draft.trim()
+                      ? "Send — Enter"
+                      : "Send after speaking or typing"
+                  }
                 >
                   ↵
                 </button>

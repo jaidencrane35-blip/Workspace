@@ -198,6 +198,53 @@ describe("intent bridge", () => {
     );
   });
 
+  it("P16.30 Intent Grammar — F11 compounds never become executable names", () => {
+    expect(resolveIntent("Open GPT and bring to the front")).toMatchObject({
+      kind: "browserOpenFocus",
+      url: "https://chatgpt.com",
+      focusQuery: "ChatGPT",
+    });
+    expect(
+      resolveIntent("Open GPT and bring it to the front"),
+    ).toMatchObject({
+      kind: "browserOpenFocus",
+      url: "https://chatgpt.com",
+      focusQuery: "ChatGPT",
+    });
+    expect(resolveIntent("Open Cursor to full size")).toMatchObject({
+      kind: "appOpenMaximize",
+      query: "Cursor",
+    });
+    expect(
+      resolveIntent("Locate the application with ChatGPT"),
+    ).toMatchObject({
+      kind: "winFocus",
+      query: "ChatGPT",
+    });
+    expect(
+      resolveIntent("Open File Explorer and locate Pictures"),
+    ).toMatchObject({
+      kind: "appLaunch",
+      query: "shell:My Pictures",
+    });
+    for (const utterance of [
+      "Open GPT and bring to the front",
+      "Open Cursor to full size",
+      "Locate the application with ChatGPT",
+      "Open File Explorer and locate Pictures",
+    ]) {
+      const action = resolveIntent(utterance);
+      expect(action.kind, utterance).not.toBe("unknown");
+      expect(action.kind, utterance).not.toBe("appOpen");
+      // Executable / launch query must never be the raw compound transcript.
+      if ("query" in action && typeof action.query === "string") {
+        expect(action.query.toLowerCase(), utterance).not.toMatch(
+          / and |to full|locate pictures|application with/i,
+        );
+      }
+    }
+  });
+
   it("expands natural desktop intents for Product Proof remediation", () => {
     expect(resolveIntent("Open YouTube beside ChatGPT")).toMatchObject({
       kind: "browserOpenBeside",

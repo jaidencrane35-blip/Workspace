@@ -23,6 +23,11 @@ import {
   softenUtterance,
   voiceCheckReply,
 } from "./conversationGuidance";
+import {
+  parseDesktopIntent,
+  resolveShellFolder,
+  type DesktopIntent,
+} from "./intentGrammar";
 import type { PilotPrimaryView } from "./pilotChrome";
 
 export type IntentAction =
@@ -56,11 +61,18 @@ export type IntentAction =
   | { kind: "browserStatus"; reply: string }
   | { kind: "browserOpen"; url: string; reply: string }
   | {
+      kind: "browserOpenFocus";
+      url: string;
+      focusQuery: string;
+      reply: string;
+    }
+  | {
       kind: "browserOpenBeside";
       url: string;
       beside: string;
       reply: string;
     }
+  | { kind: "appOpenMaximize"; query: string; reply: string }
   | { kind: "browserExplain"; reply: string; suggestion?: string }
   | { kind: "screenshotStatus"; reply: string }
   | { kind: "screenshotDesktop"; reply: string }
@@ -1248,8 +1260,106 @@ function resolveWindowIntent(raw: string, text: string): IntentAction | null {
 }
 
 /**
+ * Map Intent Grammar → IntentAction. Never passes raw compounds to appLaunch/appOpen.
+ */
+function resolveFromDesktopGrammar(
+  grammar: DesktopIntent,
+  resolveOpenWebsiteTarget: (name: string) => IntentAction | null,
+): IntentAction | null {
+  const target = grammar.target.trim();
+  if (!target) {
+    return null;
+  }
+
+  if (grammar.action === "locate") {
+    const label = windowMatchLabel(target);
+    return {
+      kind: "winFocus",
+      query: label,
+      reply: `Looking for “${label}”.`,
+    };
+  }
+
+  if (grammar.modifier === "locate_object" && grammar.context === "folder") {
+    const shell = resolveShellFolder(grammar.object);
+    if (shell) {
+      return {
+        kind: "appLaunch",
+        query: shell,
+        reply: `Opening ${grammar.object} in File Explorer.`,
+      };
+    }
+    return {
+      kind: "appOpen",
+      query: "File Explorer",
+      reply: `Opening File Explorer — tell me which folder if you need a specific one.`,
+    };
+  }
+
+  if (grammar.modifier === "beside" && grammar.secondaryTarget) {
+    const site =
+      resolveOpenWebsiteTarget(target) ??
+      resolveOpenWebsiteTarget(expandSemanticAlias(target));
+    if (site && site.kind === "browserOpen") {
+      return {
+        kind: "browserOpenBeside",
+        url: site.url,
+        beside: windowMatchLabel(grammar.secondaryTarget),
+        reply: `Opening beside “${windowMatchLabel(grammar.secondaryTarget)}”.`,
+      };
+    }
+  }
+
+  if (grammar.modifier === "foreground") {
+    const site =
+      resolveOpenWebsiteTarget(target) ??
+      resolveOpenWebsiteTarget(expandSemanticAlias(target));
+    if (site && site.kind === "browserOpen") {
+      const focusQuery = windowMatchLabel(target);
+      return {
+        kind: "browserOpenFocus",
+        url: site.url,
+        focusQuery,
+        reply: `Opening ${focusQuery} and bringing it to the front.`,
+      };
+    }
+    const label = windowMatchLabel(target);
+    // open_or_focus already brings an existing window forward (or launches).
+    return {
+      kind: "appOpen",
+      query: label,
+      reply: `Opening “${label}” and bringing it to the front.`,
+    };
+  }
+
+  if (grammar.modifier === "fullscreen") {
+    const label = windowMatchLabel(target);
+    // Sites still open in browser; fullscreen → maximize after open when app-shaped.
+    const site =
+      resolveOpenWebsiteTarget(target) ??
+      resolveOpenWebsiteTarget(expandSemanticAlias(target));
+    if (site && site.kind === "browserOpen") {
+      return {
+        kind: "browserOpenFocus",
+        url: site.url,
+        focusQuery: windowMatchLabel(target),
+        reply: `Opening ${windowMatchLabel(target)}.`,
+      };
+    }
+    return {
+      kind: "appOpenMaximize",
+      query: label,
+      reply: `Opening “${label}” full size.`,
+    };
+  }
+
+  return null;
+}
+
+/**
  * Resolve a user utterance to an existing Workspace capability.
  * Never invents desktop awareness or memory.
+ * Raw transcripts never become executable names (Intent Grammar — P16.30).
  */
 export function resolveIntent(raw: string): IntentAction {
   const text = normalize(raw);
@@ -1266,6 +1376,18 @@ export function resolveIntent(raw: string): IntentAction {
 
   if (isVoiceCheckUtterance(text) || isVoiceCheckUtterance(matchText)) {
     return voiceCheckReply(raw);
+  }
+
+  // Intent Grammar — structured parse before app/exe fallthrough.
+  const grammar =
+    parseDesktopIntent(raw.trim()) ??
+    parseDesktopIntent(softRaw) ??
+    parseDesktopIntent(matchText);
+  if (grammar) {
+    const fromGrammar = resolveFromDesktopGrammar(grammar, resolveOpenWebsiteTarget);
+    if (fromGrammar) {
+      return fromGrammar;
+    }
   }
 
   if (
@@ -1743,6 +1865,21 @@ export function resolveIntent(raw: string): IntentAction {
   const appOpen = matchFirst(raw, softRaw, /^open\s+(.+)$/i);
   if (appOpen?.[1]) {
     const rawQuery = stripTrailingPunctuation(appOpen[1]);
+    // Safety net: compounds must never become executable names (F11 / Intent Grammar).
+    if (
+      /\band\b/i.test(rawQuery) ||
+      /\b(full\s*size|fullscreen|full\s*screen|maximized|maximised)\b/i.test(
+        rawQuery,
+      ) ||
+      /\bbeside\b/i.test(rawQuery)
+    ) {
+      return {
+        kind: "unknown",
+        reply: "I need a clearer desktop request before I can open that.",
+        suggestion:
+          'Try “Open ChatGPT and bring it to the front”, “Open Cursor to full size”, or “Open File Explorer and locate Pictures”.',
+      };
+    }
     const query = expandSemanticAlias(rawQuery) || rawQuery;
     // Never treat GPT / site aliases as executable names (User Adaptation).
     if (resolveSiteAlias(rawQuery) || resolveSiteAlias(query)) {

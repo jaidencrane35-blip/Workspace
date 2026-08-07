@@ -33,7 +33,9 @@ ConfirmedDenied ◄── speech privacy only (sticky)
 ```
 Idle → Preparing(IPC) → Warm(locked) → ContinuousStart → Capturing
      → Ready(UI) → SoundStarted → Listening → Stop/Silence → Recognizing
-     → Transcript → Processing(UI) → Finished → Idle
+     → Transcript → Reviewing(composer) → (Owner Send → Conversation Processing)
+     → or Cancel/Escape → Idle
+     Mic chrome: Reviewing → Idle (draft retained until Send/clear)
 ```
 
 | Stage | Failure mode | Product behaviour |

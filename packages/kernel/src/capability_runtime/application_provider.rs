@@ -96,13 +96,21 @@ impl ApplicationProvider {
     }
 
     fn resolve_launch_executable(request: &ProviderInvokeRequest) -> Result<String> {
+        Ok(Self::resolve_launch_target(request)?.0)
+    }
+
+    /// Resolve launch executable + args. `shell:` URIs open via explorer (Windows Shell).
+    fn resolve_launch_target(request: &ProviderInvokeRequest) -> Result<(String, Vec<String>)> {
         if let Some(path) = request
             .path
             .as_deref()
             .map(str::trim)
             .filter(|value| !value.is_empty())
         {
-            return Ok(path.to_string());
+            if path.to_ascii_lowercase().starts_with("shell:") {
+                return Ok(("explorer.exe".into(), vec![path.to_string()]));
+            }
+            return Ok((path.to_string(), Vec::new()));
         }
         let query = request
             .query
@@ -112,7 +120,10 @@ impl ApplicationProvider {
             .ok_or_else(|| KernelError::CapabilityRuntime {
                 message: "application launch requires query or path".into(),
             })?;
-        Ok(launch_alias(query))
+        if query.to_ascii_lowercase().starts_with("shell:") {
+            return Ok(("explorer.exe".into(), vec![query.to_string()]));
+        }
+        Ok((launch_alias(query), Vec::new()))
     }
 
     fn effect_response(
@@ -236,13 +247,18 @@ impl CapabilityProvider for ApplicationProvider {
                 })
             }
             CapabilityOperation::Launch => {
-                let executable = Self::resolve_launch_executable(&request)?;
+                let (executable, args) = Self::resolve_launch_target(&request)?;
+                let target_label = if args.is_empty() {
+                    executable.clone()
+                } else {
+                    format!("{executable} {}", args.join(" "))
+                };
                 let outcome = self
                     .ports
                     .launcher
                     .launch(&ProcessLaunchRequest {
                         executable: executable.clone(),
-                        args: Vec::new(),
+                        args,
                     })
                     .map_err(|error| KernelError::WindowsIntegration {
                         message: error.to_string(),
@@ -259,10 +275,10 @@ impl CapabilityProvider for ApplicationProvider {
                     format: None,
                     bytes: None,
                     text: None,
-                    preview: Some(text_preview(&executable, 80)),
-                    message: Some(format!("Launch requested for {executable}.")),
+                    preview: Some(text_preview(&target_label, 80)),
+                    message: Some(format!("Launch requested for {target_label}.")),
                     status: Some(status.into()),
-                    target: Some(executable),
+                    target: Some(target_label),
                     items: None,
                     monitors: None,
                 })

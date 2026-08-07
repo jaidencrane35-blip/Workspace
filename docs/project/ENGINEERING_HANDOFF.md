@@ -7,7 +7,7 @@
 | **Updated** | 2026-08-07 |
 | **Branch** | `v2-dev` |
 | **Handoff status** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` |
-| **Latest program** | P16.28 Final Engineering Exit Audit (awaiting Owner live review only) |
+| **Latest program** | P16.30 Product Completion Reopened (F9–F11; awaiting Owner live Product Proof) |
 | **Rule** | Ignore prior chat history. Reassess repository truth before any implementation. |
 
 **Start here before any execution program.**
@@ -59,7 +59,7 @@ Conversation
 | --- | --- |
 | Architectural Constitution | `architecture/ARCHITECTURAL_CONSTITUTION_V2.md` (**v2.0**) |
 | Product Constitution | `docs/00-Constitution/PRODUCT_CONSTITUTION.md` |
-| Execution protocol | `.cursor/rules/constitutional-execution-protocol.mdc` (**v1.19**) — P16.28 engineering exit; Owner live review only |
+| Execution protocol | `.cursor/rules/constitutional-execution-protocol.mdc` — P16.30 reopen after P16.28 exit falsified by F9–F11; Owner live review |
 | Machine state | `docs/project-health.json` (synced to `app/public/project-health.json`) |
 | Product Gravity | `docs/ui/PRODUCT_GRAVITY_RULE.md` |
 | Product Proof | `docs/capability-runtime/PRODUCT_PROOF_RULE.md` |
@@ -108,7 +108,7 @@ One execution program
 
 Authoritative rolling list: `docs/capability-runtime/FIVE_PROGRAM_ROADMAP.md`.
 
-| Now | P16 Voice Input — Engineering Exit Complete (**P16.28**); Product Proof pending Owner live review only; no further Voice engineering justified |
+| Now | P16 Voice Input — **P16.30** engineering complete for reopen (Intent Grammar, dictation review/send, F9 evidence); Product Proof pending Owner live review; P17 blocked |
 | Next (after P16 acceptance) | **P17 File Provider** |
 | Then | P18 Terminal · P19 Memory · P20 Automation · P21 Workspace Intelligence |
 
@@ -144,7 +144,7 @@ Do not reopen except bugfixes:
 | Notifications | Closed (P13) | |
 | Browser | Closed (P14) | |
 | Screenshots | Closed (P15) | |
-| **Voice Input** | **Engineering Exit** (P16.28) | Conversation input device — **Owner live review only**; WRAP frozen; checklist `VOICE_LIVE_PRODUCT_PROOF_PACKAGE.md` |
+| **Voice Input** | **P16.30 engineering complete** (Product Proof open) | Conversation input device — Intent Grammar + review/send; WRAP frozen; `VOICE_P16_30_PRODUCT_COMPLETION.md` |
 | File | Not started | **P17** (blocked) |
 | Terminal / Memory / Automation | Roadmap | P18+ |
 

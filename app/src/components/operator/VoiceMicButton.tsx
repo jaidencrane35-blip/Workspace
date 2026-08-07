@@ -49,13 +49,15 @@ function phaseLabel(
     case "preparing":
       return "Preparing…";
     case "ready":
-      return "Ready — speak when you like";
+      return "Ready — speak, or click to stop";
     case "speechDetected":
-      return "Speech detected";
+      return "Speech detected — click to stop";
     case "listening":
-      return "Listening";
+      return "Listening — click to stop";
     case "recognizing":
       return "Recognizing…";
+    case "reviewing":
+      return "Review transcript — Send or clear";
     case "processing":
       return "Processing…";
     case "finished":
@@ -287,10 +289,10 @@ export function VoiceMicButton({
       setSoftFailUi(false);
       setPhase("recognizing");
       await new Promise((r) => setTimeout(r, 40));
-      setPhase("processing");
+      // F10: deliver transcript for Owner review — do not imply Kernel processing yet.
       onTranscript(result.transcript.trim());
-      setPhase("finished");
-      await new Promise((r) => setTimeout(r, 480));
+      setPhase("reviewing");
+      await new Promise((r) => setTimeout(r, 900));
       setPhase("idle");
     } finally {
       listenInFlightRef.current = false;
@@ -357,9 +359,9 @@ export function VoiceMicButton({
             ? "◉"
             : preparing
               ? "◌"
-              : phase === "recognizing" || phase === "processing"
+                : phase === "recognizing" || phase === "processing"
                 ? "◎"
-                : phase === "finished"
+                : phase === "reviewing" || phase === "finished"
                   ? "✓"
                   : phase === "error" || deniedUi || softFailUi || !available
                     ? "!"

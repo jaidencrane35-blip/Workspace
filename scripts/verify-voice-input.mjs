@@ -142,8 +142,13 @@ for (const phase of [
     // phases appear as string literals in phaseLabel / setPhase
   }
 }
-if (!micUi.includes("recognizing") || !micUi.includes("processing") || !micUi.includes("finished")) {
-  fail("mic UI must expose recognizing / processing / finished states");
+if (
+  !micUi.includes("recognizing") ||
+  !micUi.includes("reviewing") ||
+  !micUi.includes("processing") ||
+  !micUi.includes("finished")
+) {
+  fail("mic UI must expose recognizing / reviewing / processing / finished states (F10)");
 }
 if (!micUi.includes("ready")) {
   fail("mic UI must expose Ready state (Capturing contract)");
@@ -163,8 +168,8 @@ if (
 if (!micUi.includes("data-soft-fail") || !micUi.includes("softFailUi")) {
   fail("mic UI must distinguish soft mic fail from Settings deny chrome (P16.24)");
 }
-if (!micUi.includes("720") || !micUi.includes("480")) {
-  fail("mic UI must hold error (~720ms) and finished (~480ms) long enough to notice (P16.24)");
+if (!micUi.includes("720") || !micUi.includes("900")) {
+  fail("mic UI must hold error (~720ms) and reviewing (~900ms) long enough to notice (P16.30 F10)");
 }
 if (!micUi.includes("data-sound") || !micUi.includes("onSoundStarted")) {
   fail("mic UI must react to SoundStarted for live speech activity");

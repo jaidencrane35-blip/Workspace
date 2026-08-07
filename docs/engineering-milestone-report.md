@@ -1,28 +1,31 @@
 # Engineering Milestone Report
-## P16.28 Final Engineering Exit Audit
+## P16.30 Product Completion Reopened — Intent Architecture, Voice UX & Production Validation
 
 | Field | Value |
 | --- | --- |
-| **Execution program** | P16.28 Final Engineering Exit Audit |
+| **Execution program** | P16.30 Product Completion Reopened |
 | **Date** | 2026-08-07 |
-| **Status** | **Engineering Exit Complete** — Product Complete **Owner-only** |
+| **Status** | **Engineering Complete for reopen** — Product Complete **Owner-only** |
 | **Handoff** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` |
-| **Not** | P17 / Product Complete / permanently closed / Workspace launched |
+| **Not** | P17 / Product Complete / permanently closed |
 
 ---
 
 ## Summary
 
-Engineering exit audit. No reproducible Voice-owned engineering defect identified after P16.27. Remaining concerns are Owner subjective experience, Windows/WinRT limitations, Intent/Conversation residuals, or Track A — not Voice engineering blockers.
+P16.28 Engineering Exit was **falsified** by Owner live Product Proof findings **F9** (fast speech), **F10** (dictation review/send), **F11** (NL ? executable names).
 
-WinRT ContinuousRecognitionSession WRAP **frozen**. Instrumentation sufficient (`WORKSPACE_VOICE_PRODUCT_PROOF=1`). No further Voice engineering justified by current evidence. Next step exclusively Product Owner live review via `VOICE_LIVE_PRODUCT_PROOF_PACKAGE.md`.
+P16.30 delivered:
 
-Artifact: `docs/capability-runtime/product-proof/VOICE_ENGINEERING_EXIT_AUDIT.md`.
+1. Permanent Intent Grammar (`intentGrammar.ts`) before executable routing  
+2. Kernel compositions `browser.open_foreground` / `app.open_maximize` + `shell:` folder launch  
+3. Dictation lifecycle: stop ? review transcript ? Send / Escape cancel (no auto-submit)  
+4. F9 evidence: inherent WinRT rapid-speech ceiling; WRAP remains frozen  
+5. Regressions R41–R44 + product-proof handoff `VOICE_P16_30_PRODUCT_COMPLETION.md`
 
 ## Explicit
 
-- **Recommend Owner live review:** Yes — exclusively  
-- **Further Voice engineering justified?** **No**  
+- **Recommend Owner live review:** Yes — launch once for Product Owner  
+- **Further Voice engineering justified?** Only if Owner proves a new reproducible Voice-owned defect  
 - **P16 permanently closed:** **No**  
-- **Workspace launched:** **No**  
 - **P17:** Not begun  

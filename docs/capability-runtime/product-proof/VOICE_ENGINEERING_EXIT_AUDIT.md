@@ -2,12 +2,19 @@
 ## P16.28
 
 Determines whether further Voice engineering is justified by evidence.  
-Workspace was **not** launched. P16 is **not** permanently closed.  
+Workspace was **not** launched for this audit. P16 is **not** permanently closed.  
 Product Complete remains **Owner-only**.
 
 | Canonical live checklist | `VOICE_LIVE_PRODUCT_PROOF_PACKAGE.md` |
 | Traceability | `VOICE_OWNER_FINDINGS_TRACEABILITY.md` |
 | Tip baseline | P16.27 `073d80f` + this exit commit |
+
+### Superseding notice (P16.30)
+
+**Engineering Exit was objectively falsified** after Owner live Product Proof demonstrated new reproducible Voice-owned defects **F9** (fast speech), **F10** (dictation review/send lifecycle), **F11** (NL → executable-name routing).
+
+P16.30 reopened engineering under Production Before Expansion. See `VOICE_P16_30_PRODUCT_COMPLETION.md`.  
+Historical sections below remain as the P16.28 record. Current “no further Voice engineering” claim is **void** until Owner re-accepts after P16.30.
 
 ---
 
@@ -16,7 +23,7 @@ Product Complete remains **Owner-only**.
 | Truth | Status |
 | --- | --- |
 | P10–P15 | Permanently closed |
-| P16 Engineering | Complete through **P16.28** (engineering exit) |
+| P16 Engineering | Complete through **P16.28** (engineering exit) — later **falsified** by F9–F11 |
 | P16 Product Proof | **OPEN** — blocked only on Owner live judgment |
 | P17 | Blocked (Production Before Expansion) |
 | Architecture | Frozen |
@@ -28,9 +35,11 @@ Product Complete remains **Owner-only**.
 
 Engineering may continue only if a **reproducible Voice-owned engineering defect** exists.
 
-**Exit audit finding:** none identified after hostile review of tip `073d80f` (R37 warm_lock whole-listen held; Settings honesty; classify landmine closed; available chrome honest).
+**Exit audit finding (P16.28):** none identified after hostile review of tip `073d80f` (R37 warm_lock whole-listen held; Settings honesty; classify landmine closed; available chrome honest).
 
-Therefore: **no further Voice engineering is justified by the current evidence.**
+Therefore at P16.28 tip: **no further Voice engineering is justified by the current evidence.**
+
+**Post-exit Owner evidence (P16.30):** F9–F11 reopened engineering. Exit claim no longer current repository truth.
 
 ---
 

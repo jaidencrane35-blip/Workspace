@@ -13,7 +13,7 @@ Status legend: **CLOSED** (engineering + regression) · **OWNER-LIVE** (requires
 
 ---
 
-## A. Owner failure matrix (F1–F8)
+## A. Owner failure matrix (F1–F11)
 
 | Finding | Root cause | Fix commit | Regression | Evidence | Status |
 | --- | --- | --- | --- | --- | --- |
@@ -25,6 +25,9 @@ Status legend: **CLOSED** (engineering + regression) · **OWNER-LIVE** (requires
 | F6 Browser → exe | Fallthrough to app launch | `b926878` | R15 | intentBridge canonicalize | CLOSED |
 | F7 Permission confusion | Soft unavailable treated as Settings deny | `b926878` · `526d4fb` | R4, R19, R30 | soft×2; soft-fail chrome | CLOSED · OWNER-LIVE |
 | F8 Declared complete too early | Optimism without falsification | Process principles P16.17–P16.25 | R25 | Evidence Before Completion; hostile passes | CLOSED (process) |
+| F9 Fast speech quality degrades | WinRT dictation segmentation / hypothesis timing under rapid speech | P16.30 (document + review→Send mitigation; no WRAP migrate) | R44 | `VOICE_FAST_SPEECH_INVESTIGATION.md` | DOCUMENT (WinRT) · OWNER-LIVE |
+| F10 Dictation workflow incomplete | Auto-submit on transcript; no review/send/cancel | P16.30 | R42 | OperatorRoot + VoiceMicButton reviewing | CLOSED · OWNER-LIVE |
+| F11 NL → executable names | Compound open phrases fell through to `appOpen` query | P16.30 | R41, R43 | Intent Grammar + Kernel compose | CLOSED · OWNER-LIVE |
 
 ---
 

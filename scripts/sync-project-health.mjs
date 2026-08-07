@@ -458,7 +458,7 @@ const health = {
     id: "voice-input-p16",
     title: "P16 Voice Input",
     status: "engineering_complete_product_proof_pending",
-    note: "P16 Engineering Complete + Engineering Exit (P16.28). No further Voice engineering justified by evidence. Canonical checklist VOICE_LIVE_PRODUCT_PROOF_PACKAGE.md; WORKSPACE_VOICE_PRODUCT_PROOF=1. Next step exclusively Owner live review. Do not launch until Owner requests. After Owner closes Workspace: cleanup only, never relaunch. Do not mark permanently closed. Do not begin P17.",
+    note: "P16.30 Product Completion Reopened (F9–F11). Engineering Exit P16.28 falsified by Owner live evidence. Intent Grammar + dictation review/send + F9 WinRT evidence. Canonical checklist VOICE_LIVE_PRODUCT_PROOF_PACKAGE.md + VOICE_P16_30_PRODUCT_COMPLETION.md; WORKSPACE_VOICE_PRODUCT_PROOF=1. Next step Owner live review. After Owner closes Workspace: cleanup only, never relaunch. Do not mark permanently closed. Do not begin P17.",
   },
   completedExecutionPrograms: completedPrograms,
   remainingBacklog,
@@ -503,7 +503,7 @@ const health = {
       "P13 Notifications Provider permanently closed",
       "P14 Browser Provider PERMANENTLY CLOSED",
       "P15 Screenshot Provider PERMANENTLY CLOSED",
-      "P16 Voice Input Engineering Complete + Exit Audit (P16.28) — Product Proof pending Owner acceptance (NOT permanently closed); no further Voice engineering justified",
+      "P16.30 Product Completion Reopened — Intent Grammar / dictation UX / F9 evidence; Product Proof pending Owner acceptance (NOT permanently closed); P16.28 exit falsified by F9–F11",
       "Owner Experience Before Engineering Confidence permanent (P16.21)",
       "Repository Quality Before Milestone Closure permanent (P16.21)",
       "User Adaptation Prohibition permanent (P16.6)",
@@ -525,8 +525,8 @@ const health = {
     ],
   },
   currentMilestone: {
-    id: "voice-engineering-exit-audit-p16-28",
-    title: "P16.28 Final Engineering Exit Audit",
+    id: "voice-product-completion-reopened-p16-30",
+    title: "P16.30 Product Completion Reopened — Intent Architecture, Voice UX & Production Validation",
     status: "engineering_complete_product_proof_pending",
     commit: milestoneCommit,
   },
@@ -628,7 +628,7 @@ const health = {
       id: "p16-voice-product-proof",
       track: "B",
       summary:
-        "P16 Voice Input — live Product Owner Product Proof pending final acceptance (Engineering Exit P16.28; not permanently closed)",
+        "P16 Voice Input — live Product Owner Product Proof pending final acceptance (P16.30 reopen; not permanently closed)",
     },
     {
       id: "capability-providers-p17-plus",
@@ -669,7 +669,7 @@ const health = {
       "P13 Notifications Provider permanently closed",
       "P14 Browser Provider permanently closed (P14.5)",
       "P15 Screenshot Provider permanently closed",
-      "P16 Voice Input Engineering Complete + Exit (P16.28) — Product Proof pending Owner acceptance; WinRT WRAP frozen",
+      "P16.30 Product Completion Reopened — Product Proof pending Owner acceptance; WinRT WRAP frozen; P16.28 exit falsified by F9–F11",
       "User Adaptation Prohibition permanent",
       "Conversation Continuity + Semantic Alias Rule permanent",
       "Permission Guidance Principle permanent",
@@ -751,9 +751,9 @@ const health = {
     date: "2026-08-07",
     document: "docs/engineering-milestone-report.md",
     title:
-      "P16.28 Final Engineering Exit Audit — awaiting Owner live review only",
+      "P16.30 Product Completion Reopened — awaiting Owner live Product Proof",
     reviewBrief:
-      "docs/capability-runtime/product-proof/VOICE_LIVE_PRODUCT_PROOF_PACKAGE.md",
+      "docs/capability-runtime/product-proof/VOICE_P16_30_PRODUCT_COMPLETION.md",
   },
   handoffStatus: "P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING",
   nextRecommendedExecutionProgram: {

@@ -7,6 +7,8 @@ export type VoicePhase =
   | "speechDetected"
   | "listening"
   | "recognizing"
+  /** Owner is reviewing transcript in the composer (F10) — not Kernel processing. */
+  | "reviewing"
   | "processing"
   | "finished"
   | "error";

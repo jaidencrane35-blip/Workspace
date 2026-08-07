@@ -79,7 +79,9 @@ impl KernelOperator {
 
         let mut results: Vec<ProviderInvokeResponse> = Vec::new();
 
-        if plan.composition_id.as_deref() == Some("app.open_or_focus") {
+        if plan.composition_id.as_deref() == Some("app.open_or_focus")
+            || plan.composition_id.as_deref() == Some("app.open_maximize")
+        {
             let find = Self::invoke_step(&plan.steps[0])?;
             let has_match = find.ok && find.items.as_ref().is_some_and(|i| !i.is_empty());
             results.push(find);
@@ -107,7 +109,30 @@ impl KernelOperator {
                 priority: None,
                 duration: None,
             })?;
+            let maximize_after = plan.composition_id.as_deref() == Some("app.open_maximize") && next.ok;
             results.push(next);
+            if maximize_after {
+                let maximize = Self::invoke_step(&OperatorPlanStep {
+                    domain: CapabilityDomainId::window(),
+                    operation: CapabilityOperation::Maximize,
+                    text: None,
+                    query: intent.query.clone(),
+                    path: None,
+                    hwnd: None,
+                    pid: None,
+                    x: None,
+                    y: None,
+                    width: None,
+                    height: None,
+                    monitor_index: None,
+                    snap: None,
+                    title: None,
+                    category: None,
+                    priority: None,
+                    duration: None,
+                })?;
+                results.push(maximize);
+            }
         } else {
             for step in &plan.steps {
                 let result = Self::invoke_step(step)?;
@@ -153,6 +178,36 @@ mod tests {
         assert_eq!(plan.composition_id.as_deref(), Some("app.open_or_focus"));
         assert_eq!(plan.steps.len(), 1);
         assert_eq!(plan.steps[0].operation, CapabilityOperation::Find);
+    }
+
+    #[test]
+    fn plans_browser_open_foreground_composition() {
+        let plan = KernelOperator::plan(&CapabilityIntent {
+            domain: "browser".into(),
+            operation: "open_foreground".into(),
+            path: Some("https://chatgpt.com".into()),
+            query: Some("ChatGPT".into()),
+            title: Some("ChatGPT".into()),
+            ..Default::default()
+        })
+        .unwrap();
+        assert_eq!(
+            plan.composition_id.as_deref(),
+            Some("browser.open_foreground")
+        );
+        assert_eq!(plan.steps.len(), 2);
+    }
+
+    #[test]
+    fn plans_application_open_maximize_composition() {
+        let plan = KernelOperator::plan(&CapabilityIntent {
+            domain: "application".into(),
+            operation: "open_maximize".into(),
+            query: Some("Cursor".into()),
+            ..Default::default()
+        })
+        .unwrap();
+        assert_eq!(plan.composition_id.as_deref(), Some("app.open_maximize"));
     }
 
     #[test]

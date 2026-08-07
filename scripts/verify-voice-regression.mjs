@@ -329,13 +329,58 @@ if (
   !exitBody.includes("NO FURTHER VOICE ENGINEERING") &&
   !exitBody.includes("no further Voice engineering")
 ) {
-  fail("engineering exit audit must state no further Voice engineering justified (P16.28)");
+  fail("engineering exit audit must record P16.28 no-further-engineering claim (historical)");
+}
+if (!exitBody.includes("falsified") && !exitBody.includes("FALSIFIED")) {
+  fail("engineering exit audit must record P16.30 falsification of exit by F9–F11");
 }
 if (!exitBody.includes("FROZEN") && !exitBody.includes("frozen")) {
   fail("engineering exit audit must freeze WinRT WRAP decision (P16.28)");
 }
 if (!matrix.includes("R37") || !matrix.includes("R40")) {
   fail("regression matrix must still cover P16.27 R37–R40 through engineering exit");
+}
+if (
+  !matrix.includes("R41") ||
+  !matrix.includes("R42") ||
+  !matrix.includes("R43") ||
+  !matrix.includes("R44")
+) {
+  fail("regression matrix must cover P16.30 F9–F11 guards (R41–R44)");
+}
+const p1630 = path.join(
+  root,
+  "docs/capability-runtime/product-proof/VOICE_P16_30_PRODUCT_COMPLETION.md",
+);
+if (!fs.existsSync(p1630)) {
+  fail("missing VOICE_P16_30_PRODUCT_COMPLETION.md (P16.30 artifact)");
+}
+const fastSpeech = path.join(
+  root,
+  "docs/capability-runtime/product-proof/VOICE_FAST_SPEECH_INVESTIGATION.md",
+);
+if (!fs.existsSync(fastSpeech)) {
+  fail("missing VOICE_FAST_SPEECH_INVESTIGATION.md (F9 evidence)");
+}
+const intentGrammar = path.join(root, "app/src/lib/intentGrammar.ts");
+if (!fs.existsSync(intentGrammar)) {
+  fail("missing intentGrammar.ts (P16.30 Intent Grammar)");
+}
+const grammarSrc = fs.readFileSync(intentGrammar, "utf8");
+if (!grammarSrc.includes("parseDesktopIntent")) {
+  fail("intentGrammar must export parseDesktopIntent");
+}
+const operatorRoot = fs.readFileSync(
+  path.join(root, "app/src/components/operator/OperatorRoot.tsx"),
+  "utf8",
+);
+if (
+  /onVoiceTranscript[\s\S]*?submitUtterance\(transcript\)/.test(operatorRoot)
+) {
+  fail("F10: onVoiceTranscript must not auto-submit (review → Send)");
+}
+if (!operatorRoot.includes("Review your words")) {
+  fail("F10: Owner must be guided to review then Send");
 }
 const finalLive = path.join(
   root,

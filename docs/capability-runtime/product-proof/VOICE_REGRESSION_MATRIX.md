@@ -47,6 +47,10 @@ See also: `VOICE_PRODUCTION_FAILURE_MATRIX.md`, `VOICE_LIFECYCLE_STATE_MACHINE.m
 | R38 | False “I opened Settings” | Gate armed before open; errors swallowed | Open first; `Promise<boolean>`; truth on fail | P16.27 |
 | R39 | Product-copy reclassify landmine | Bare `"access"` matched “allow access” | Classify on denied/unavailable phrases only | P16.27 |
 | R40 | False available via recognitionAvailable | `available \|\| recognitionAvailable` | Use `status.available` only | P16.27 |
+| R41 | NL compounds → executable names (F11) | appOpen fallthrough used raw compound as query | Intent Grammar + Kernel `open_foreground` / `open_maximize` + appOpen compound safety net | `intent-bridge` F11 tests · P16.30 |
+| R42 | Voice auto-submits without review (F10) | `onVoiceTranscript` called `submitUtterance` | Draft-only + Send/Escape; mic `reviewing` phase | OperatorRoot · VoiceMicButton · P16.30 |
+| R43 | Explorer folder locate failed / wrong exe | `shell:` treated as `.exe` alias | Launch `explorer.exe` + `shell:` arg | application_provider · P16.30 |
+| R44 | Fast speech WER blamed on Workspace without WRAP evidence (F9) | Assumed fixable in Intent/UI | Document inherent WinRT limit; review→Send mitigation; no migrate without evidence | `VOICE_FAST_SPEECH_INVESTIGATION.md` · P16.30 |
 
 ### Engineering stress (non-Owner)
 

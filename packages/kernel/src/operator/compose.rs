@@ -196,6 +196,34 @@ pub fn compose_user_reply(
                     )
                 }
             }
+            ("browser", "open_foreground") => {
+                if ok {
+                    let focus = intent
+                        .title
+                        .as_deref()
+                        .or(intent.query.as_deref())
+                        .unwrap_or("it");
+                    format!("Opened {focus} and brought it to the front.")
+                } else {
+                    strip_jargon(
+                        last.message
+                            .as_deref()
+                            .unwrap_or("I couldn’t open that and bring it forward."),
+                    )
+                }
+            }
+            ("application", "open_maximize") => {
+                if ok {
+                    let target = intent.query.as_deref().unwrap_or("that app");
+                    format!("Opened “{target}” full size.")
+                } else {
+                    strip_jargon(
+                        last.message
+                            .as_deref()
+                            .unwrap_or("I couldn’t open that full size."),
+                    )
+                }
+            }
             ("screenshots", "status") => strip_jargon(
                 last.message
                     .as_deref()

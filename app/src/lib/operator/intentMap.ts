@@ -38,6 +38,15 @@ export function toCapabilityIntent(action: IntentAction): CapabilityIntent | nul
         path: action.url,
         query: action.url,
       };
+    case "browserOpenFocus":
+      return {
+        domain: "browser",
+        operation: "open_foreground",
+        path: action.url,
+        // query = window title hint for focus step (not the raw transcript).
+        query: action.focusQuery,
+        title: action.focusQuery,
+      };
     case "browserOpenBeside":
       return {
         domain: "browser",
@@ -101,6 +110,12 @@ export function toCapabilityIntent(action: IntentAction): CapabilityIntent | nul
       };
     case "appOpen":
       return { domain: "application", operation: "open", query: action.query };
+    case "appOpenMaximize":
+      return {
+        domain: "application",
+        operation: "open_maximize",
+        query: action.query,
+      };
     case "winEnumerate":
       return { domain: "window", operation: "enumerate" };
     case "winActive":
