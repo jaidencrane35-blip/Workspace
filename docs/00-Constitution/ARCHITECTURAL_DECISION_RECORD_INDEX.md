@@ -26,7 +26,8 @@ This is an **index of settled decisions**, not a redesign surface. Individual ra
 | WinRT ContinuousRecognitionSession WRAP | Active (realization) | Architecture Standard / Voice | Voice WRAP audits; frozen unless Voice-owned defect | Speculative STT migrations without measured evidence |
 | Moments approve-before-restore | Active | Product / Architecture Standard | Product Proof shell; Operations Audit | Ambient capture; silent restore |
 | P10–P15 providers closed | Active | Capability Standards | Handoff inventory; Provider Acceptance | Reopening closed providers except bugfixes |
-| P16 Product Proof pending Owner | Active (gate) | Governance | `project-health.json`; handoff | Treating engineering green as Owner acceptance |
+| P16 Product Proof pending Owner | Active (gate) | Governance | `project-health.json`; handoff; `P16_O1_PRODUCT_PROOF_READINESS_REPORT.md` | Treating engineering green as Owner acceptance |
+| P16.O1 Product Proof Readiness | Active (assessment) | Governance | `P16_O1_PRODUCT_PROOF_READINESS_REPORT.md` | Meta-architecture as substitute for live Owner feel |
 | P17 File Provider deferred | Active (sequencing) | Governance | Handoff; roadmap | Starting P17 before P16 Owner close |
 
 ---

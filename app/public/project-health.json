@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-07T13:33:32.008Z",
+  "updatedAt": "2026-08-07T13:41:37.784Z",
   "constitution": {
     "document": "docs/00-Constitution/WORKSPACE_CONSTITUTIONAL_SPECIFICATION_V2.md",
     "version": "2.1",
@@ -17,7 +17,7 @@
     "id": "voice-input-p16",
     "title": "P16 Voice Input",
     "status": "engineering_complete_product_proof_pending",
-    "note": "Constitutional Operations established. Operations audit: no non-compliance found in audited Conversation→Effect scope (not universal certainty). Spec + EES + Confidence Model. Meta-engineering closed unless new evidence/Review Trigger. P16 Product Proof still pending. Do not begin P17."
+    "note": "P16.O1: Product Proof Readiness — engineering ready for Owner live PP (VOICE_LIVE_PRODUCT_PROOF_PACKAGE + P16_O1 report). Not Product Complete. No runtime work justified before PP. P17 blocked. Meta-engineering closed. Spec + EES authoritative."
   },
   "completedExecutionPrograms": [
     {

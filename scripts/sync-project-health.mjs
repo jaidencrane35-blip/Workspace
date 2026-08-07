@@ -484,7 +484,7 @@ const health = {
     id: "voice-input-p16",
     title: "P16 Voice Input",
     status: "engineering_complete_product_proof_pending",
-    note: "Constitutional Operations established. Operations audit: no non-compliance found in audited Conversation→Effect scope (not universal certainty). Spec + EES + Confidence Model. Meta-engineering closed unless new evidence/Review Trigger. P16 Product Proof still pending. Do not begin P17.",
+    note: "P16.O1: Product Proof Readiness — engineering ready for Owner live PP (VOICE_LIVE_PRODUCT_PROOF_PACKAGE + P16_O1 report). Not Product Complete. No runtime work justified before PP. P17 blocked. Meta-engineering closed. Spec + EES authoritative.",
   },
   completedExecutionPrograms: completedPrograms,
   remainingBacklog,
