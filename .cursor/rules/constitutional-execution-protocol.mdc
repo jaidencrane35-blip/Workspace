@@ -3,7 +3,7 @@ description: Workspace Constitutional Execution Protocol — disciplined backlog
 alwaysApply: true
 ---
 
-# Workspace Constitutional Execution Protocol (v1.11)
+# Workspace Constitutional Execution Protocol (v1.12)
 
 You are the Principal Constitutional Implementation Engineer for Workspace.
 You are not an autonomous product designer, architect, refactoring engine, or feature-generation engine.
@@ -120,6 +120,12 @@ Authority: `docs/capability-runtime/PRODUCT_PROOF_RULE.md`.
 Engineering Complete means engineering validation is finished. It does **not** authorize repeated Product Proof launches.  
 After engineering validation: engineering stops; Workspace remains closed; the Product Owner alone decides when to launch Workspace.  
 Engineering must never repeatedly launch, relaunch, terminate, or restart Workspace during Product Proof.  
+Authority: `docs/capability-runtime/PRODUCT_PROOF_RULE.md`.
+
+## Production Before Expansion (permanent — P16.15)
+
+No additional capability may be introduced while an existing capability still fails Product Proof.  
+Perfect the open capability first. Do not begin the next provider program until Owner Product Complete (or an explicit Owner waiver).  
 Authority: `docs/capability-runtime/PRODUCT_PROOF_RULE.md`.
 
 ## Permanent Provider Acceptance Standard (permanent — P14.5 Finalization)

@@ -65,7 +65,8 @@ export function VoiceMicButton({
 }: VoiceMicButtonProps) {
   const [phase, setPhase] = useState<VoicePhase>("idle");
   const [available, setAvailable] = useState(true);
-  const [warmed, setWarmed] = useState(false);
+  // Track native warm for poison-reset sync only (listen path does not gate on this).
+  const [, setWarmed] = useState(false);
   const [soundActive, setSoundActive] = useState(false);
   const [deniedUi, setDeniedUi] = useState(false);
   const onVoiceMessageRef = useRef(onVoiceMessage);
@@ -163,19 +164,13 @@ export function VoiceMicButton({
     setPhase("preparing");
     setSoundActive(false);
 
-    // Always ensure engine is warm, but never treat soft/peek deny as fatal —
-    // listen confirms real MicrophoneUnavailable (P16.13 regression fix).
-    if (!warmed) {
-      const status = await warmUpVoice();
-      applyStatus(status, false);
-      if (status.permission === "denied" && !status.available) {
-        setPhase("idle");
-        return;
-      }
-    }
-
+    // P16.15: do not await a separate warm IPC on the listen hot path.
+    // Mount/startup already warms; listen warms cheaply if the engine is ready.
+    // A stale frontend `warmed` flag after engine_reset previously skipped warm
+    // and caused “couldn’t listen” after earlier successes.
     const result = await listenOnce({
       onReady: () => {
+        setWarmed(true);
         setPhase("ready");
       },
       onListening: () => {
@@ -197,11 +192,23 @@ export function VoiceMicButton({
     setSoundActive(false);
 
     if (!result.ok || !result.transcript?.trim()) {
-      if (result.status === "cancelled") {
+      if (result.status === "cancelled" || result.status === "no_speech") {
         setPhase("idle");
+        if (result.status === "no_speech") {
+          onVoiceMessage(result.message);
+        }
         return;
       }
       setPhase("error");
+      // Poison failures reset the native engine — clear frontend warm cache.
+      if (
+        result.status === "recognition_failed" ||
+        result.status === "recognition_unavailable" ||
+        result.status === "microphone_unavailable" ||
+        result.status === "permission_denied"
+      ) {
+        setWarmed(false);
+      }
       if (
         result.status === "permission_denied" ||
         result.status === "microphone_unavailable"
@@ -230,7 +237,7 @@ export function VoiceMicButton({
     setPhase("finished");
     await new Promise((r) => setTimeout(r, 180));
     setPhase("idle");
-  }, [applyStatus, onTranscript, onVoiceMessage, warmed]);
+  }, [onTranscript, onVoiceMessage]);
 
   const onToggle = () => {
     if (disabled) {

@@ -158,6 +158,12 @@ Authority detail: `docs/capability-runtime/PRODUCT_PROOF_RULE.md`.
 Engineering Complete does not authorize repeated Product Proof launches. After engineering validation, Workspace remains closed until the Product Owner launches it.  
 Authority detail: `docs/capability-runtime/PRODUCT_PROOF_RULE.md`.
 
+### P22 — Production Before Expansion (permanent — P16.15)
+
+No additional capability may be introduced while an existing capability still fails Product Proof.  
+Perfect the open capability first. Expansion waits for Owner Product Complete (or an explicit Owner waiver).  
+Authority detail: `docs/capability-runtime/PRODUCT_PROOF_RULE.md`.
+
 ---
 
 ## 3. Presentation modes (binding intent)

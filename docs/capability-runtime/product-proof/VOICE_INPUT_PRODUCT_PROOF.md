@@ -1,11 +1,11 @@
 # Voice Input — Product Proof
-## P16 / P16.14 — Owner checklist
+## P16 / P16.15 — Owner checklist (final Product Completion review)
 
 | Field | Value |
 | --- | --- |
-| **Program** | P16 Voice Input (+ P16.14 technology validation) |
+| **Program** | P16 Voice Input (+ P16.15 Product Completion & production hardening) |
 | **Status** | **Pending live Product Owner acceptance** (**not** Product Complete) |
-| **Launch** | Engineering leaves Workspace running once for this review |
+| **Launch** | Engineering leaves Workspace running **exactly once** for this review |
 
 ---
 
@@ -17,6 +17,7 @@
 3. Click mic, say nothing / cancel — next listen must still start quickly  
 4. Repeat several successful sessions — no “couldn’t listen” after prior success  
 5. No freeze / multi-second hang on every click  
+6. Mic should feel permanently ready after first warm  
 
 ### Permission
 1. If denied: one explanation; Settings only on mic click  
@@ -24,9 +25,10 @@
 3. Later sessions must not spam Settings after grant  
 
 ### Conversation
-- Open GPT / Please open YouTube / Launch GPT in another window  
-- Open a browser beside Cursor / Open ChatGPT beside Cursor  
-- Open Chrome / Open my browser / Bring Cursor forward  
+- Open GPT / Launch GPT / Please open YouTube  
+- Open a browser / Open another browser / Open my browser  
+- Open a browser beside Cursor / Open YouTube beside ChatGPT  
+- Open Chrome / Bring Chrome forward / Bring Cursor forward  
 - Close Settings / Take a screenshot / Capture this window  
 - Can you hear me? / What can you do?  
 

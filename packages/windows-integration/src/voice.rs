@@ -1090,8 +1090,9 @@ fn winrt_listen_continuous_when_ready(
                     t0.elapsed()
                 );
             }
-            // Brief settle after Capturing so first frames are retained before Ready.
-            std::thread::sleep(Duration::from_millis(45));
+            // Minimal settle after Capturing — Ready means speech will be retained.
+            // P16.15: 20ms (was 45ms) once Capturing is confirmed.
+            std::thread::sleep(Duration::from_millis(20));
             if let Ok(mut cell) = on_ready_cell.lock() {
                 if let Some(cb) = cell.take() {
                     cb();
@@ -1329,5 +1330,32 @@ mod tests {
             VoiceSettingsTarget::SpeechPrivacy.as_settings_uri(),
             "ms-settings:privacy-speech"
         );
+    }
+
+    /// P16.15 engineering stress — 100 consecutive warm listens stay ready (MemoryVoicePort).
+    #[test]
+    fn memory_voice_survives_100_consecutive_listen_sessions() {
+        let port = MemoryVoicePort::new();
+        port.warm_up().unwrap();
+        assert!(port.status().unwrap().warmed);
+        for i in 0..100 {
+            port.set_next_transcript(format!("session {i}"));
+            let ready = std::sync::Arc::new(AtomicBool::new(false));
+            let ready_cb = std::sync::Arc::clone(&ready);
+            let outcome = port
+                .listen_once_when_ready(
+                    Box::new(move || {
+                        ready_cb.store(true, Ordering::SeqCst);
+                    }),
+                    None,
+                )
+                .unwrap();
+            assert!(outcome.ok, "session {i} must succeed");
+            assert!(ready.load(Ordering::SeqCst), "session {i} must emit Ready");
+            assert!(
+                port.status().unwrap().warmed,
+                "session {i} must keep engine warm"
+            );
+        }
     }
 }

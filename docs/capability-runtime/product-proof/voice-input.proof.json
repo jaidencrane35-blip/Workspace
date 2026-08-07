@@ -45,7 +45,7 @@
     "permissionGuidanceNoAutoSettings": true,
     "permissionRecheckAfterSettingsReturn": true,
     "rememberGrantedNeverReopenSettings": true,
-    "settleBeforeReadyMs": 45,
+    "settleBeforeReadyMs": 20,
     "permissionStateMachineOncePerDenyCycle": true,
     "spawnBlockingListenAndWarm": true,
     "statusPeekOnly": true,
@@ -54,7 +54,9 @@
     "serializedWarmLock": true,
     "activityIndicatorIsSoundStartedNotLevelMeter": true,
     "noMediaCaptureDuringWarm": true,
-    "keepEngineOnNoSpeechOrCancel": true
+    "keepEngineOnNoSpeechOrCancel": true,
+    "noListenPathWarmGate": true,
+    "productionBeforeExpansion": true
   },
   "uiPhases": [
     "idle",
@@ -177,6 +179,18 @@
       "category": "typed_equivalence",
       "utterance": "Open my browser.",
       "expectedKind": "browserOpen",
+      "expectedDomain": "browser"
+    },
+    {
+      "category": "typed_equivalence",
+      "utterance": "Open another browser.",
+      "expectedKind": "browserOpen",
+      "expectedDomain": "browser"
+    },
+    {
+      "category": "typed_equivalence",
+      "utterance": "Open a browser beside Cursor.",
+      "expectedKind": "browserOpenBeside",
       "expectedDomain": "browser"
     },
     {

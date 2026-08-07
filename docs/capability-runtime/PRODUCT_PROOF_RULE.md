@@ -134,6 +134,12 @@ Engineering Complete means engineering validation is finished. It does **not** a
 After engineering validation: engineering stops; Workspace remains closed; the Product Owner alone decides when to launch Workspace.  
 Engineering must never repeatedly launch, relaunch, terminate, or restart Workspace during Product Proof.
 
+## Production Before Expansion (permanent — P16.15)
+
+No additional capability may be introduced while an existing capability still fails Product Proof.  
+Perfect the open capability first. Expansion waits for Owner Product Complete (or an explicit Owner waiver).  
+Engineering confidence is not Product Completion. Objective Product Proof is Product Completion.
+
 ## Commodity Before Reinvention — survey obligation
 
 Before major capability work, perform a Commodity Survey (ADOPT / WRAP / ADAPT / STUDY / REJECT) and record it under capability research. Workspace owns identity, contracts, Operator, permissions, conversation, and runtime; commodity stays an implementation detail.

@@ -25,8 +25,11 @@ export function softenUtterance(text: string): string {
     )
     .replace(/^(i\s+want\s+you\s+to|i\s+need\s+you\s+to|i\s+need\s+to)\s+/i, "")
     .replace(/^(just\s+)?(go\s+ahead\s+and)\s+/i, "")
-    .replace(/\s+please$/i, "")
-    .replace(/\s+for\s+me$/i, "")
+    .replace(/^(try\s+to|help\s+me)\s+/i, "")
+    .replace(/\s+please[.!?]*$/i, "")
+    .replace(/\s+for\s+me[.!?]*$/i, "")
+    .replace(/\s+thanks[.!?]*$/i, "")
+    .replace(/[.!?]+$/g, "")
     .trim();
 }
 

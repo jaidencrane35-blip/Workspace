@@ -43,7 +43,7 @@ describe("intent bridge", () => {
   it("routes application provider operations", () => {
     expect(resolveIntent("open notepad")).toMatchObject({
       kind: "appOpen",
-      query: "notepad",
+      query: "Notepad",
     });
     expect(resolveIntent("launch chrome")).toMatchObject({
       kind: "appLaunch",

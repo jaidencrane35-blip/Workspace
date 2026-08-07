@@ -288,9 +288,48 @@ Two stacked defects after P16.13:
 | spawn_blocking enter | immediate |
 | warm (already compiled) | &lt; 20ms (lock + check) |
 | Continuous start → Capturing | typically &lt; 500ms; timeout 2.5s |
-| Ready settle | 45ms |
+| Ready settle | 20ms (P16.15; was 45ms) |
 | SoundStarted → Listening UI | event-driven |
 | User Stop / silence stitch | continuous; AutoStop 10s stitches |
+
+### P16.15 Product Completion — final technology validation
+
+#### Objective
+
+Transform Voice from Engineering Complete into Owner-reviewable Production Complete posture.  
+No new providers. No architecture redesign. Evidence-based Product Proof remediations only.
+
+#### Commodity comparison (revalidated)
+
+| Candidate | Architecture | Permissions | Lifecycle | UX fit | Class |
+| --- | --- | --- | --- | --- | --- |
+| WinRT ContinuousRecognitionSession | OS speech | Native mic + speech privacy | Compile once → Capturing → Ready | Instant after warm | **WRAP** |
+| Windows App SDK Speech | Overlaps WinRT | Similar | Similar | No clear win | STUDY |
+| whisper.cpp / Sherpa-ONNX / Vosk | Local ASR | Custom | Model load / VAD | Heavy packaging | STUDY |
+| Azure / Web Speech | Cloud | Cloud consent | Network | CSP / privacy fail | REJECT default |
+| Kiro / VS Code / PowerToys | IDE / utilities | App-specific | N/A for STT | Terminology study only | STUDY aliases |
+
+**Verdict: WinRT ContinuousRecognitionSession remains the objectively correct production foundation.**  
+Indefinite keep-warm after compile is the WRAP strategy (engine retained across idle outcomes; reset only on poison). WinRT does not expose a separate “permanently armed” OS service — Workspace approximates permanent readiness by avoiding recompile / MediaCapture / Settings spam.
+
+#### P16.15 Product Proof remediations
+
+| Failure | Root cause | Correction | Validation |
+| --- | --- | --- | --- |
+| Extra click latency / desync after reset | Frontend awaited `warmUpVoice` when `!warmed`, and could skip after stale warm | Remove listen-path warm gate; clear `warmed` on poison | `noListenPathWarmGate` |
+| Ready slightly late after Capturing | 45ms settle | 20ms settle | proof `settleBeforeReadyMs: 20` |
+| “Open another browser” / desktop phrasing gaps | Incomplete deterministic aliases | Browser / Explorer / soften expansions | conversation-quality tests |
+| Expansion pressure while Proof open | Missing permanent rule | **Production Before Expansion** | protocol + Product Proof Rule |
+
+#### Permanent readiness answer
+
+| Question | Answer |
+| --- | --- |
+| Feel permanently ready? | Yes after first warm — compile retained; listen hot path does not re-warm via separate IPC |
+| First-word loss eliminated? | Engineering: Capturing contract + 20ms settle; Owner must confirm under stress |
+| WinRT still correct? | **Yes** — WRAP; no migration |
+
+Regression matrix: `docs/capability-runtime/product-proof/VOICE_REGRESSION_MATRIX.md`.
 
 ---
 

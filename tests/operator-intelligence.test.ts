@@ -23,7 +23,7 @@ describe("P12 Finalization — Kernel Operator authority", () => {
     expect(toCapabilityIntent(resolveIntent("open notepad"))).toEqual({
       domain: "application",
       operation: "open",
-      query: "notepad",
+      query: "Notepad",
     });
     expect(isCapabilityIntentAction(resolveIntent("save this"))).toBe(false);
   });

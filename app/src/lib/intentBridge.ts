@@ -549,6 +549,13 @@ const SEMANTIC_ALIASES: Record<string, string> = {
   settings: "windows settings",
   cursor: "cursor",
   "cursor ide": "cursor",
+  // Windows / Search / PowerToys-style desktop terminology (aliases only).
+  explorer: "file explorer",
+  "file explorer": "file explorer",
+  "this pc": "file explorer",
+  calculator: "calculator",
+  calc: "calculator",
+  notepad: "notepad",
 };
 
 const SITE_ALIASES: Record<string, string> = {
@@ -610,11 +617,16 @@ function windowMatchLabel(name: string): string {
   }
   if (key === "windows settings" || key === "settings") return "Windows Settings";
   if (key === "cursor") return "Cursor";
+  if (key === "file explorer" || key === "explorer" || key === "this pc") {
+    return "File Explorer";
+  }
+  if (key === "calculator" || key === "calc") return "Calculator";
+  if (key === "notepad") return "Notepad";
   return cleaned || name;
 }
 
 const APP_OPEN_EXCLUSIONS =
-  /^(notepad|calculator|calc|spotify|discord|slack|figma|cursor|code|vscode|visual studio code|word|excel|outlook|chrome|edge|firefox|brave|msedge)$/i;
+  /^(notepad|calculator|calc|spotify|discord|slack|figma|cursor|code|vscode|visual studio code|word|excel|outlook|chrome|edge|firefox|brave|msedge|file explorer|explorer)$/i;
 
 const BROWSER_WINDOW_NAMES =
   /^(chrome|google chrome|edge|microsoft edge|msedge|firefox|brave|browser|my browser|current browser|latest browser|recent browser|chrome tab)$/i;
@@ -886,9 +898,23 @@ function resolveBrowserIntent(raw: string, text: string): IntentAction | null {
     };
   }
 
+  // “Open a/another/new browser” — open default browser site surface, not an .exe guess.
+  // Longer qualifiers first so “a new” is not consumed as bare “a”.
+  if (
+    /^(?:open|launch|start)\s+(?:a\s+new\s+|another\s+|new\s+|my\s+|the\s+|a\s+)?browsers?$/i.test(
+      utterance,
+    )
+  ) {
+    return {
+      kind: "browserOpen",
+      url: "https://www.google.com",
+      reply: "Opening your browser.",
+    };
+  }
+
   // “Open a browser beside Cursor” — browser chrome beside an app, not an executable name.
   const browserBeside = utterance.match(
-    /^open\s+(?:a\s+|my\s+|the\s+)?browsers?\s+beside\s+(.+)$/i,
+    /^open\s+(?:a\s+new\s+|another\s+|new\s+|my\s+|the\s+|a\s+)?browsers?\s+beside\s+(.+)$/i,
   );
   if (browserBeside?.[1]) {
     const besideLabel = windowMatchLabel(stripTrailingPunctuation(browserBeside[1]));

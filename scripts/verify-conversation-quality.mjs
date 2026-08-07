@@ -42,6 +42,7 @@ for (const token of [
   "Permission Guidance Principle",
   "Engineering Verification Separation",
   "Owner Directed Product Proof",
+  "Production Before Expansion",
 ]) {
   if (!rule.includes(token)) {
     fail(`PRODUCT_PROOF_RULE.md missing token: ${token}`);
@@ -54,6 +55,9 @@ const protocol = fs.readFileSync(
 );
 if (!protocol.includes("User Adaptation Prohibition")) {
   fail("protocol must document User Adaptation Prohibition");
+}
+if (!protocol.includes("Production Before Expansion")) {
+  fail("protocol must document Production Before Expansion");
 }
 
 const guidance = fs.readFileSync(
@@ -105,6 +109,12 @@ const constitution = fs.readFileSync(
 );
 if (!constitution.includes("User Adaptation Prohibition")) {
   fail("PRODUCT_CONSTITUTION must record User Adaptation Prohibition");
+}
+if (!constitution.includes("Production Before Expansion")) {
+  fail("PRODUCT_CONSTITUTION must record Production Before Expansion");
+}
+if (!bridge.includes("Open a/another/new browser") && !bridge.includes("another browser")) {
+  fail("intentBridge must support open another/new browser phrasing");
 }
 
 console.log("verify-conversation-quality: ok");

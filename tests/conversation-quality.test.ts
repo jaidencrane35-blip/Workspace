@@ -17,6 +17,9 @@ describe("conversation quality (P16.6)", () => {
       "take a screenshot",
     );
     expect(softenUtterance("can you open chatgpt")).toBe("open chatgpt");
+    expect(softenUtterance("Would you open Chrome for me?")).toBe(
+      "open Chrome",
+    );
   });
 
   it("treats mic-check phrases as heard, not desktop failure", () => {
@@ -69,6 +72,16 @@ describe("conversation quality (P16.6)", () => {
     expect(resolveIntent("Open my browser.")).toMatchObject({
       kind: "browserOpen",
     });
+    expect(resolveIntent("Open another browser.")).toMatchObject({
+      kind: "browserOpen",
+    });
+    expect(resolveIntent("Open a new browser.")).toMatchObject({
+      kind: "browserOpen",
+    });
+    expect(resolveIntent("Open a browser beside Cursor.")).toMatchObject({
+      kind: "browserOpenBeside",
+      beside: "Cursor",
+    });
     expect(resolveIntent("Open Git.")).toMatchObject({
       kind: "browserOpen",
       url: "https://github.com",
@@ -80,14 +93,23 @@ describe("conversation quality (P16.6)", () => {
     expect(resolveIntent("Take a screenshot and copy it.").kind).toBe(
       "screenshotCaptureAndCopy",
     );
+    expect(resolveIntent("Capture this window.").kind).toBe("screenshotWindow");
     expect(resolveIntent("What windows are open?").kind).toBe("winEnumerate");
     expect(resolveIntent("Bring Chrome to the front.")).toMatchObject({
       kind: "winFocus",
       query: "Chrome",
     });
+    expect(resolveIntent("Bring Cursor forward.")).toMatchObject({
+      kind: "winFocus",
+      query: "Cursor",
+    });
     expect(resolveIntent("Put Chrome in front.")).toMatchObject({
       kind: "winFocus",
       query: "Chrome",
+    });
+    expect(resolveIntent("Would you open Chrome for me?")).toMatchObject({
+      kind: "appOpen",
+      query: "Google Chrome",
     });
   });
 

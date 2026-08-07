@@ -69,17 +69,56 @@ if (!research.includes("P16.13") || !research.includes("false-deny")) {
 if (!research.includes("P16.14") || !research.includes("MediaCapture warm race")) {
   fail("VOICE_RESEARCH must document P16.14 MediaCapture warm race root cause");
 }
+if (!research.includes("P16.15") || !research.includes("Production Before Expansion")) {
+  fail("VOICE_RESEARCH must document P16.15 Product Completion + Production Before Expansion");
+}
 if (!proof.responsiveness?.noStickyMediaCaptureDeny) {
   fail("proof must declare noStickyMediaCaptureDeny");
 }
 if (!proof.responsiveness?.engineResetOnListenFailure) {
   fail("proof must declare engineResetOnListenFailure");
 }
+if (proof.responsiveness?.settleBeforeReadyMs !== 20) {
+  fail("proof must declare settleBeforeReadyMs: 20 (P16.15)");
+}
+if (!proof.responsiveness?.noListenPathWarmGate) {
+  fail("proof must declare noListenPathWarmGate (P16.15)");
+}
+if (!proof.responsiveness?.productionBeforeExpansion) {
+  fail("proof must declare productionBeforeExpansion (P16.15)");
+}
 if (!protocol.includes("Engineering Completion Gate")) {
   fail("protocol must adopt Engineering Completion Gate permanently");
 }
 if (!protocol.includes("Capability Regression Prevention")) {
   fail("protocol must adopt Capability Regression Prevention permanently");
+}
+if (!protocol.includes("Production Before Expansion")) {
+  fail("protocol must adopt Production Before Expansion permanently");
+}
+if (!voiceRs.includes("from_millis(20)")) {
+  fail("voice port Ready settle must be 20ms after Capturing (P16.15)");
+}
+const micUi = fs.readFileSync(
+  path.join(root, "app/src/components/operator/VoiceMicButton.tsx"),
+  "utf8",
+);
+if (micUi.includes("if (!warmed)") && micUi.includes("warmUpVoice()")) {
+  fail("mic UI must not gate listen on frontend warmed + warmUpVoice (P16.15)");
+}
+if (!micUi.includes("setWarmed(false)")) {
+  fail("mic UI must clear warmed after poison listen failures (P16.15)");
+}
+const matrixPath = path.join(
+  root,
+  "docs/capability-runtime/product-proof/VOICE_REGRESSION_MATRIX.md",
+);
+if (!fs.existsSync(matrixPath)) {
+  fail("missing VOICE_REGRESSION_MATRIX.md (P16.15 artifact)");
+}
+const matrix = fs.readFileSync(matrixPath, "utf8");
+if (!matrix.includes("R8") || !matrix.includes("noListenPathWarmGate")) {
+  fail("regression matrix must cover P16.15 listen-path warm gate");
 }
 
 console.log("verify-voice-regression: ok");
