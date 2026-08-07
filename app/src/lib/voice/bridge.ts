@@ -156,7 +156,9 @@ export type ListenOnceHooks = {
 };
 
 /**
- * Single-utterance listen.
+ * Continuous listen turn (Conversation Continuity).
+ * Ends when the user finishes speaking (long silence), toggles the mic (Stop),
+ * or a genuine recognition error occurs — never on a short mid-speech pause.
  * `onReady` / `onListening` fire only after WinRT Capturing (trustworthy contract).
  * `onSoundStarted` fires when WinRT reports speech energy (SoundStarted).
  */

@@ -160,7 +160,24 @@ describe("intent bridge", () => {
     }
     expect(resolveIntent("Open Chrome.")).toMatchObject({
       kind: "appOpen",
-      query: "Chrome",
+      query: "Google Chrome",
+    });
+    expect(resolveIntent("Open Git")).toMatchObject({
+      kind: "browserOpen",
+      url: "https://github.com",
+    });
+    expect(resolveIntent("Open YT")).toMatchObject({
+      kind: "browserOpen",
+      url: "https://www.youtube.com",
+    });
+    expect(resolveIntent("Open VSCode")).toMatchObject({
+      kind: "appOpen",
+      query: "Visual Studio Code",
+    });
+    expect(resolveIntent("Open YouTube beside GPT")).toMatchObject({
+      kind: "browserOpenBeside",
+      url: "https://www.youtube.com",
+      beside: "ChatGPT",
     });
     expect(resolveIntent("Open my recent browser.")).toMatchObject({
       kind: "browserOpen",

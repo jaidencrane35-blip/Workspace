@@ -69,6 +69,10 @@ describe("conversation quality (P16.6)", () => {
     expect(resolveIntent("Open my browser.")).toMatchObject({
       kind: "browserOpen",
     });
+    expect(resolveIntent("Open Git.")).toMatchObject({
+      kind: "browserOpen",
+      url: "https://github.com",
+    });
     expect(resolveIntent("Open GitHub beside Cursor.")).toMatchObject({
       kind: "browserOpenBeside",
       beside: "Cursor",

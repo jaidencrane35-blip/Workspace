@@ -33,7 +33,11 @@
     "hoistedListeningEventSubscription": true,
     "warmBeforeListenWhenCold": true,
     "soundStartedActivity": true,
-    "firstWordCapture": "required"
+    "firstWordCapture": "required",
+    "continuousRecognitionSession": true,
+    "conversationContinuity": true,
+    "autoStopSilenceTimeoutSeconds": 10,
+    "micToggleFinalizesTranscript": true
   },
   "uiPhases": [
     "idle",
@@ -46,16 +50,18 @@
   ],
   "lifecycleEvidence": [
     "voice.lifecycle: warm_done",
-    "voice.lifecycle: recognize_async_op_created",
+    "voice.lifecycle: continuous_started",
     "voice.lifecycle: capturing_contract",
-    "voice.lifecycle: on_ready_emitted"
+    "voice.lifecycle: on_ready_emitted",
+    "voice.lifecycle: continuous_complete"
   ],
   "userLanguageRules": [
     "Never expose Provider, Router, Registry, Runtime, Kernel, WinRT, or SpeechRecognizer terminology",
     "Never invent transcripts",
     "Voice behaves exactly like typing after recognition",
     "Capability Independence — desktop language only",
-    "Never expose HRESULT, stack traces, or raw OS exception text"
+    "Never expose HRESULT, stack traces, or raw OS exception text",
+    "Conversation Continuity — never end listening on short mid-speech silence"
   ],
   "failureModes": [
     {

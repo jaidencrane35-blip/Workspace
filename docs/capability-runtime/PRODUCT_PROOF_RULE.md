@@ -89,6 +89,19 @@ Never expose commodity implementation details (vendor APIs, HRESULT, engine name
 
 ---
 
+## Conversation Continuity (permanent — P16.8)
+
+Voice behaves like typing. A listening session belongs to the user.  
+Do not terminate recognition merely because an arbitrary short timeout elapsed while the user is still speaking.  
+Listening ends only when the user clearly finishes speaking, the user explicitly stops, or a genuine recognition error occurs. Never interrupt an active speaker.
+
+## Semantic Alias Rule (permanent — P16.8)
+
+Deterministic semantic aliases are owned by the Kernel Operator / Intent Layer (examples: GPT→ChatGPT, Git→GitHub, YT→YouTube, VSCode→Visual Studio Code, Edge→Microsoft Edge, Chrome→Google Chrome, Settings→Windows Settings).  
+Providers remain unaware of aliases. Resolution stays deterministic — no AI guessing.
+
+---
+
 ## Frozen pipeline (no shortcuts)
 
 ```

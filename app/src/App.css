@@ -3344,18 +3344,19 @@ html[data-shell-form="conversation"] #root {
   border: none;
   overflow: hidden;
   border-radius: 14px;
+  /* P16.8 — premium desktop glass (slightly less transparent for readability). */
   background:
     linear-gradient(
       165deg,
-      rgba(18, 24, 32, 0.78) 0%,
-      rgba(10, 14, 20, 0.72) 55%,
-      rgba(8, 11, 16, 0.76) 100%
+      rgba(18, 24, 32, 0.88) 0%,
+      rgba(10, 14, 20, 0.84) 55%,
+      rgba(8, 11, 16, 0.86) 100%
     );
   backdrop-filter: blur(var(--mat-blur)) saturate(var(--mat-saturate));
   -webkit-backdrop-filter: blur(var(--mat-blur)) saturate(var(--mat-saturate));
   box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.06),
-    0 18px 48px rgba(0, 0, 0, 0.28);
+    0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 18px 48px rgba(0, 0, 0, 0.34);
 }
 
 .op-shell__chrome {
@@ -3430,8 +3431,8 @@ html[data-shell-form="conversation"] #root {
   background:
     linear-gradient(
       180deg,
-      rgba(12, 16, 22, 0.82) 0%,
-      rgba(8, 11, 16, 0.78) 100%
+      rgba(12, 16, 22, 0.9) 0%,
+      rgba(8, 11, 16, 0.86) 100%
     );
   backdrop-filter: blur(var(--mat-blur)) saturate(var(--mat-saturate));
   -webkit-backdrop-filter: blur(var(--mat-blur)) saturate(var(--mat-saturate));
@@ -3521,18 +3522,19 @@ html[data-shell-form="conversation"] #root {
   position: relative;
   appearance: none;
   border: none;
-  background: rgba(255, 255, 255, 0.03);
-  color: rgba(232, 238, 242, 0.62);
-  border-radius: 10px;
-  width: 2.75rem;
-  height: 2.75rem;
-  flex: 0 0 2.75rem;
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(232, 238, 242, 0.72);
+  border-radius: 12px;
+  width: 3.25rem;
+  height: 3.25rem;
+  flex: 0 0 3.25rem;
   display: grid;
   place-items: center;
   cursor: pointer;
-  font-size: 0.95rem;
+  font-size: 1.1rem;
   line-height: 1;
-  transition: color 120ms ease, background 120ms ease;
+  transition: color 120ms ease, background 120ms ease, box-shadow 120ms ease;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
 }
 
 .op-shell__mic:hover:not(:disabled) {
@@ -3546,13 +3548,19 @@ html[data-shell-form="conversation"] #root {
 }
 
 .op-shell__mic[data-listening="true"] {
-  color: rgba(95, 208, 216, 0.98);
-  background: rgba(95, 208, 216, 0.1);
+  color: rgba(95, 208, 216, 1);
+  background: rgba(95, 208, 216, 0.16);
+  box-shadow:
+    inset 0 0 0 1px rgba(95, 208, 216, 0.35),
+    0 0 0 2px rgba(95, 208, 216, 0.12);
 }
 
 .op-shell__mic[data-phase="ready"] {
-  color: rgba(120, 220, 180, 0.95);
-  background: rgba(120, 220, 180, 0.1);
+  color: rgba(120, 220, 180, 1);
+  background: rgba(120, 220, 180, 0.16);
+  box-shadow:
+    inset 0 0 0 1px rgba(120, 220, 180, 0.4),
+    0 0 0 2px rgba(120, 220, 180, 0.14);
 }
 
 .op-shell__mic[data-sound="true"] .op-shell__mic-wave i {
@@ -3579,23 +3587,27 @@ html[data-shell-form="conversation"] #root {
 
 .op-shell__mic-pulse {
   position: absolute;
-  inset: 0.28rem;
+  inset: 0.2rem;
   border-radius: 999px;
-  border: 1.5px solid rgba(95, 208, 216, 0.6);
+  border: 2px solid rgba(95, 208, 216, 0.72);
   animation: op-mic-pulse 1.05s ease-out infinite;
   pointer-events: none;
+}
+
+.op-shell__mic[data-phase="ready"] .op-shell__mic-pulse {
+  border-color: rgba(120, 220, 180, 0.78);
 }
 
 /* Listening activity bars — not a calibrated level meter (WinRT path has no energy API). */
 .op-shell__mic-wave {
   position: absolute;
-  bottom: 0.22rem;
+  bottom: 0.28rem;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   align-items: flex-end;
   gap: 2px;
-  height: 0.55rem;
+  height: 0.7rem;
   pointer-events: none;
 }
 

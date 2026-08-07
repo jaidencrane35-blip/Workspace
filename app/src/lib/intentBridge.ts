@@ -527,6 +527,23 @@ function canonicalizeOpenTarget(value: string): string {
   return t.trim();
 }
 
+/**
+ * Semantic Alias Rule (P16.8) — Kernel Operator / Intent Layer only.
+ * Providers never see these abbreviations; they receive expanded product names / URLs.
+ */
+const SEMANTIC_ALIASES: Record<string, string> = {
+  gpt: "chatgpt",
+  "g p t": "chatgpt",
+  git: "github",
+  yt: "youtube",
+  "y t": "youtube",
+  vscode: "visual studio code",
+  vs: "visual studio code",
+  edge: "microsoft edge",
+  chrome: "google chrome",
+  settings: "windows settings",
+};
+
 const SITE_ALIASES: Record<string, string> = {
   chatgpt: "https://chatgpt.com",
   "chat gpt": "https://chatgpt.com",
@@ -544,19 +561,30 @@ const SITE_ALIASES: Record<string, string> = {
   google: "https://www.google.com",
   github: "https://github.com",
   "git hub": "https://github.com",
+  git: "https://github.com",
   youtube: "https://www.youtube.com",
   "you tube": "https://www.youtube.com",
+  yt: "https://www.youtube.com",
+  "y t": "https://www.youtube.com",
   bing: "https://www.bing.com",
 };
 
-function resolveSiteAlias(name: string): string | null {
+/** Expand Operator-owned semantic aliases before matching. */
+function expandSemanticAlias(name: string): string {
   const key = normalizeAliasKey(canonicalizeOpenTarget(name));
-  return SITE_ALIASES[key] ?? null;
+  const expanded = SEMANTIC_ALIASES[key];
+  return expanded ?? canonicalizeOpenTarget(name);
+}
+
+function resolveSiteAlias(name: string): string | null {
+  const expanded = expandSemanticAlias(name);
+  const key = normalizeAliasKey(expanded);
+  return SITE_ALIASES[key] ?? SITE_ALIASES[normalizeAliasKey(canonicalizeOpenTarget(name))] ?? null;
 }
 
 /** Window-title hint for Operator composition (beside / close / focus). */
 function windowMatchLabel(name: string): string {
-  const cleaned = canonicalizeOpenTarget(name) || stripTrailingPunctuation(name);
+  const cleaned = expandSemanticAlias(name) || stripTrailingPunctuation(name);
   const alias = resolveSiteAlias(cleaned) ?? resolveSiteAlias(name);
   if (alias) {
     if (/chatgpt\.com/i.test(alias)) return "ChatGPT";
@@ -565,6 +593,13 @@ function windowMatchLabel(name: string): string {
     if (/google\.com/i.test(alias)) return "Google";
     if (/bing\.com/i.test(alias)) return "Bing";
   }
+  const key = normalizeAliasKey(cleaned);
+  if (key === "microsoft edge" || key === "edge") return "Microsoft Edge";
+  if (key === "google chrome" || key === "chrome") return "Google Chrome";
+  if (key === "visual studio code" || key === "vscode" || key === "vs") {
+    return "Visual Studio Code";
+  }
+  if (key === "windows settings" || key === "settings") return "Windows Settings";
   return cleaned || name;
 }
 
@@ -1629,7 +1664,7 @@ export function resolveIntent(raw: string): IntentAction {
   const appOpen = matchFirst(raw, softRaw, /^open\s+(.+)$/i);
   if (appOpen?.[1]) {
     const rawQuery = stripTrailingPunctuation(appOpen[1]);
-    const query = canonicalizeOpenTarget(rawQuery) || rawQuery;
+    const query = expandSemanticAlias(rawQuery) || rawQuery;
     // Never treat GPT / site aliases as executable names (User Adaptation).
     if (resolveSiteAlias(rawQuery) || resolveSiteAlias(query)) {
       const site = resolveOpenWebsiteTarget(rawQuery);
@@ -1638,10 +1673,11 @@ export function resolveIntent(raw: string): IntentAction {
       }
     }
     if (query && !/^(workspace|conversation)$/i.test(query)) {
+      const label = windowMatchLabel(rawQuery);
       return {
         kind: "appOpen",
-        query,
-        reply: `Opening “${query}”.`,
+        query: label,
+        reply: `Opening “${label}”.`,
       };
     }
   }

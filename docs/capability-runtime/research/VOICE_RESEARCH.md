@@ -93,9 +93,15 @@ Lifecycle evidence (logged as `voice.lifecycle:*`):
 | Candidate | Class | Notes |
 | --- | --- | --- |
 | WinRT `SpeechRecognizer` (current) | **WRAP** | Keep; gate UI on Capturing |
-| WinRT ContinuousRecognitionSession | **STUDY** | Stronger for long dictation; larger product change |
+| WinRT ContinuousRecognitionSession | **WRAP** (P16.8) | Conversation Continuity — natural pauses must not end the session |
 | Cloud STT / Whisper local | **REJECT** (now) | Wrong default for local-first Conversation mic |
 | Custom VAD + ring buffer | **REJECT** (now) | Rebuild commodity; revisit only if Capturing gate fails Owner Proof |
+
+### P16.8 premature session end (measured)
+
+**Root cause:** `RecognizeAsync` + `EndSilenceTimeout` ≈ 2 seconds. Natural mid-speech pauses ended the turn while the Owner was still speaking — not frontend/Operator timeouts.
+
+**Fix:** WRAP `SpeechContinuousRecognitionSession` with `AutoStopSilenceTimeout` at the WinRT maximum (10s post-speech silence = “user finished”). Mic toggle calls `StopAsync` (finalize transcript). Session accumulates `ResultGenerated` fragments. Capturing-contract Ready/Listening gate retained.
 
 ---
 

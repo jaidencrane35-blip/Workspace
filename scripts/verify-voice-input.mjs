@@ -167,11 +167,24 @@ if (!voiceRs.includes("warm_up") || !voiceRs.includes("listen_once_when_ready"))
 if (!voiceRs.includes("SpeechRecognizerState::Capturing") || !voiceRs.includes("capturing_contract")) {
   fail("voice port must gate Listening on WinRT Capturing (P16.7 trustworthy contract)");
 }
+if (
+  !voiceRs.includes("ContinuousRecognitionSession") ||
+  !voiceRs.includes("winrt_listen_continuous_when_ready") ||
+  !voiceRs.includes("SetAutoStopSilenceTimeout")
+) {
+  fail("voice port must WRAP ContinuousRecognitionSession (P16.8 Conversation Continuity)");
+}
+if (!voiceRs.includes("StartWithModeAsync") || !voiceRs.includes("ResultGenerated")) {
+  fail("continuous listen must start a session and accumulate ResultGenerated fragments");
+}
 if (!voiceRs.includes("voice.lifecycle:")) {
   fail("voice port must emit lifecycle timing logs for capture evidence");
 }
 if (!proof.responsiveness?.prewarm || !proof.responsiveness?.listeningIndicatorOnlyWhenCapturing) {
   fail("proof must declare P16.5 responsiveness requirements");
+}
+if (!proof.responsiveness?.continuousRecognitionSession || !proof.responsiveness?.conversationContinuity) {
+  fail("proof must declare P16.8 Conversation Continuity requirements");
 }
 
 if (!Array.isArray(proof.failureModes) || proof.failureModes.length < 1) {

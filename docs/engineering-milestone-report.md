@@ -1,9 +1,9 @@
 # Engineering Milestone Report
-## P16.7 Voice Capture Reliability & Product Completion
+## P16.8 Final Product Proof Remediation — Conversation Continuity
 
 | Field | Value |
 | --- | --- |
-| **Execution program** | P16.7 Voice Capture Reliability & Product Completion |
+| **Execution program** | P16.8 Final Product Proof Remediation — Conversation Continuity |
 | **Date** | 2026-08-07 |
 | **Status** | **Engineering Complete** — live Product Owner Product Proof **pending** |
 | **Handoff** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` |
@@ -11,29 +11,21 @@
 
 ---
 
-## Exact first-word failure point
+## Root cause — premature voice end
 
-WinRT discards audio until `SpeechRecognizerState::Capturing`.
+WinRT `RecognizeAsync` ended on ~2s `EndSilenceTimeout`. Natural pauses while speaking terminated the session. Not a frontend/Operator/Conversation timeout.
 
-Prior code emitted Listening when `RecognizeAsync()` returned an `IAsyncOperation` — **before** Capturing. Waiting after click did not help if the user spoke during that Idle?Capturing gap (or if UI invited speech early).
+## Conversation Continuity
 
-Lifecycle logs: `voice.lifecycle:*` (warm ? recognize_async_op_created ? capturing_contract ? on_ready_emitted).
+WRAP `ContinuousRecognitionSession`; accumulate results; stop on finish silence (10s max AutoStop), mic Stop, or error. Mic toggle finalizes (like submitting typed text).
 
----
+## Semantic Alias Rule
 
-## Fix
+Intent Layer owns GPT/Git/YT/VSCode/Edge/Chrome/Settings expansions. Providers unaware.
 
-- Gate Ready/Listening on Capturing (`StateChanged`)
-- `voice-sound` on SoundStarted for live activity
-- Ready UI phase + Commodity Before Reinvention permanent
+## Visual / mic
 
----
-
-## Commodity
-
-WinRT SpeechRecognizer remains **WRAP**. Continuous session **STUDY**. Custom VAD buffer **REJECT** for now.
-
----
+Shell glass alphas raised for readability; mic enlarged with stronger Ready/Listening distinction.
 
 ## Explicit
 

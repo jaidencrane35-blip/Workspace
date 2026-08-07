@@ -1,7 +1,10 @@
-//! Voice input port — WRAP WinRT speech recognition (P16 / P16.5).
+//! Voice input port — WRAP WinRT speech recognition (P16 / P16.8).
 //!
 //! Voice is a Conversation **input device**, not a desktop Capability Provider.
 //! It never invokes other providers and never owns orchestration.
+//!
+//! P16.8 Conversation Continuity: listening uses ContinuousRecognitionSession so
+//! natural pauses do not end the session (RecognizeAsync + short EndSilenceTimeout did).
 
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
@@ -322,10 +325,13 @@ impl VoicePort for UnavailableVoicePort {
 
 /// Production WRAP of WinRT `SpeechRecognizer` (dictation scenario).
 pub struct SystemVoicePort {
+    /// User asked to end the session (mic toggle / cancel). Finalizes via StopAsync.
     cancel_requested: AtomicBool,
     warmed: AtomicBool,
     #[cfg(windows)]
     engine: Mutex<Option<WinrtVoiceEngine>>,
+    #[cfg(windows)]
+    active_session: Mutex<Option<windows::Media::SpeechRecognition::SpeechContinuousRecognitionSession>>,
     #[cfg(windows)]
     mic_access: Mutex<Option<MicAccess>>,
 }
@@ -356,6 +362,8 @@ impl SystemVoicePort {
             warmed: AtomicBool::new(false),
             #[cfg(windows)]
             engine: Mutex::new(None),
+            #[cfg(windows)]
+            active_session: Mutex::new(None),
             #[cfg(windows)]
             mic_access: Mutex::new(None),
         }
@@ -441,9 +449,10 @@ impl VoicePort for SystemVoicePort {
                     message: MICROPHONE_PERMISSION_MESSAGE.into(),
                 });
             }
-            winrt_listen_once_when_ready(
+            winrt_listen_continuous_when_ready(
                 &self.engine,
                 &self.warmed,
+                &self.active_session,
                 &self.cancel_requested,
                 on_ready,
                 on_sound_started,
@@ -458,12 +467,13 @@ impl VoicePort for SystemVoicePort {
     }
 
     fn cancel(&self) -> Result<()> {
+        // Mic toggle while listening = finish the turn (keep transcript), not discard.
         self.cancel_requested.store(true, Ordering::SeqCst);
         #[cfg(windows)]
         {
-            if let Ok(guard) = self.engine.lock() {
-                if let Some(engine) = guard.as_ref() {
-                    let _ = engine.recognizer.StopRecognitionAsync();
+            if let Ok(guard) = self.active_session.lock() {
+                if let Some(session) = guard.as_ref() {
+                    let _ = session.StopAsync();
                 }
             }
         }
@@ -585,16 +595,19 @@ fn create_compiled_recognizer(
     recognizer.Constraints()?.Append(&topic)?;
     recognizer.CompileConstraintsAsync()?.get()?;
 
-    // Give the user time to start speaking after the ready indicator appears.
+    // Initial silence: allow the user to settle after Ready.
+    // End silence is not the primary stop for P16.8 — ContinuousRecognitionSession
+    // AutoStopSilenceTimeout owns "user finished speaking" after natural pauses.
     if let Ok(timeouts) = recognizer.Timeouts() {
         let _ = timeouts.SetInitialSilenceTimeout(TimeSpan {
-            Duration: 12_i64 * 10_000_000,
+            Duration: 15_i64 * 10_000_000,
         });
         let _ = timeouts.SetEndSilenceTimeout(TimeSpan {
-            Duration: 2_i64 * 10_000_000,
+            Duration: 10_i64 * 10_000_000,
         });
+        // Keep babble generous — continuous session owns finish semantics.
         let _ = timeouts.SetBabbleTimeout(TimeSpan {
-            Duration: 8_i64 * 10_000_000,
+            Duration: 20_i64 * 10_000_000,
         });
     }
     Ok(recognizer)
@@ -633,19 +646,26 @@ fn outcome_from_winrt_error(error: windows::core::Error) -> VoiceListenOutcome {
     outcome
 }
 
+/// P16.8 — continuous listen session (Conversation Continuity).
+/// Ends only on: long post-speech silence (user finished), user Stop (mic toggle), or error.
 #[cfg(windows)]
-fn winrt_listen_once_when_ready(
+fn winrt_listen_continuous_when_ready(
     engine: &Mutex<Option<WinrtVoiceEngine>>,
     warmed: &AtomicBool,
+    active_session: &Mutex<
+        Option<windows::Media::SpeechRecognition::SpeechContinuousRecognitionSession>,
+    >,
     cancel_requested: &AtomicBool,
     on_ready: Box<dyn FnOnce() + Send>,
     on_sound_started: Option<std::sync::Arc<dyn Fn() + Send + Sync>>,
 ) -> Result<VoiceListenOutcome> {
     use std::sync::{Arc, Condvar, Mutex as StdMutex};
     use std::time::{Duration, Instant};
-    use windows::Foundation::TypedEventHandler;
+    use windows::Foundation::{TimeSpan, TypedEventHandler};
     use windows::Media::SpeechRecognition::{
-        SpeechRecognitionResultStatus, SpeechRecognizerState,
+        SpeechContinuousRecognitionCompletedEventArgs,
+        SpeechContinuousRecognitionMode, SpeechContinuousRecognitionResultGeneratedEventArgs,
+        SpeechContinuousRecognitionSession, SpeechRecognitionResultStatus, SpeechRecognizerState,
         SpeechRecognizerStateChangedEventArgs,
     };
 
@@ -653,10 +673,7 @@ fn winrt_listen_once_when_ready(
     log::info!("voice.lifecycle: warm_begin");
 
     if let Err(error) = winrt_warm_up(engine, warmed) {
-        log::warn!(
-            "voice.lifecycle: warm_failed +{:?}",
-            t0.elapsed()
-        );
+        log::warn!("voice.lifecycle: warm_failed +{:?}", t0.elapsed());
         return Ok(VoiceListenOutcome {
             ok: false,
             transcript: None,
@@ -692,9 +709,71 @@ fn winrt_listen_once_when_ready(
         });
     }
 
-    // P16.7 evidence: RecognizeAsync() returning an IAsyncOperation is NOT Capturing.
-    // Audio spoken after click but before SpeechRecognizerState::Capturing is discarded
-    // by WinRT. Gate the Listening UI on Capturing (trustworthy listening contract).
+    let session = match recognizer.ContinuousRecognitionSession() {
+        Ok(s) => s,
+        Err(error) => return Ok(outcome_from_winrt_error(error)),
+    };
+
+    // WinRT max AutoStopSilenceTimeout is typically 10s. Natural mid-speech pauses
+    // under this limit do not end the session (unlike RecognizeAsync EndSilence=2s).
+    let _ = session.SetAutoStopSilenceTimeout(TimeSpan {
+        Duration: 10_i64 * 10_000_000,
+    });
+
+    let parts: Arc<StdMutex<Vec<String>>> = Arc::new(StdMutex::new(Vec::new()));
+    let session_done = Arc::new((StdMutex::new(false), Condvar::new()));
+    let complete_status: Arc<StdMutex<Option<SpeechRecognitionResultStatus>>> =
+        Arc::new(StdMutex::new(None));
+
+    let parts_for_result = Arc::clone(&parts);
+    let result_token = session.ResultGenerated(&TypedEventHandler::<
+        SpeechContinuousRecognitionSession,
+        SpeechContinuousRecognitionResultGeneratedEventArgs,
+    >::new(move |_session, args| {
+        let Some(args) = args else {
+            return Ok(());
+        };
+        let Ok(result) = args.Result() else {
+            return Ok(());
+        };
+        if let Ok(status) = result.Status() {
+            if status != SpeechRecognitionResultStatus::Success {
+                return Ok(());
+            }
+        }
+        if let Ok(text) = result.Text() {
+            let piece = text.to_string().trim().to_string();
+            if !piece.is_empty() {
+                if let Ok(mut guard) = parts_for_result.lock() {
+                    guard.push(piece);
+                }
+            }
+        }
+        Ok(())
+    }));
+
+    let done_for_complete = Arc::clone(&session_done);
+    let status_for_complete = Arc::clone(&complete_status);
+    let complete_token = session.Completed(&TypedEventHandler::<
+        SpeechContinuousRecognitionSession,
+        SpeechContinuousRecognitionCompletedEventArgs,
+    >::new(move |_session, args| {
+        if let Some(args) = args {
+            if let Ok(status) = args.Status() {
+                if let Ok(mut guard) = status_for_complete.lock() {
+                    *guard = Some(status);
+                }
+            }
+        }
+        let (lock, cvar) = &*done_for_complete;
+        if let Ok(mut done) = lock.lock() {
+            *done = true;
+            cvar.notify_one();
+        }
+        Ok(())
+    }));
+
+    // Capturing contract (P16.7): Ready/Listening only after real capture.
     let capture_gate = Arc::new((StdMutex::new(false), Condvar::new()));
     let gate_for_handler = Arc::clone(&capture_gate);
     let sound_hook = on_sound_started.clone();
@@ -732,27 +811,35 @@ fn winrt_listen_once_when_ready(
         Ok(())
     }));
 
-    log::info!("voice.lifecycle: recognize_async_call +{:?}", t0.elapsed());
-    let recognize = match recognizer.RecognizeAsync() {
-        Ok(op) => op,
-        Err(error) => {
-            if let Ok(token) = state_token {
-                let _ = recognizer.RemoveStateChanged(token);
-            }
-            return Ok(outcome_from_winrt_error(error));
+    if let Ok(mut guard) = active_session.lock() {
+        *guard = Some(session.clone());
+    }
+
+    log::info!("voice.lifecycle: continuous_start +{:?}", t0.elapsed());
+    if let Err(error) = session
+        .StartWithModeAsync(SpeechContinuousRecognitionMode::Default)
+        .and_then(|op| op.get())
+    {
+        if let Ok(mut guard) = active_session.lock() {
+            *guard = None;
         }
-    };
+        if let Ok(token) = state_token {
+            let _ = recognizer.RemoveStateChanged(token);
+        }
+        if let Ok(token) = result_token {
+            let _ = session.RemoveResultGenerated(token);
+        }
+        if let Ok(token) = complete_token {
+            let _ = session.RemoveCompleted(token);
+        }
+        return Ok(outcome_from_winrt_error(error));
+    }
     log::info!(
-        "voice.lifecycle: recognize_async_op_created +{:?}",
+        "voice.lifecycle: continuous_started +{:?}",
         t0.elapsed()
     );
 
-    // Race: Capturing may already be set before the handler attaches.
     if let Ok(state) = recognizer.State() {
-        log::info!(
-            "voice.lifecycle: state_after_op={state:?} +{:?}",
-            t0.elapsed()
-        );
         if state == SpeechRecognizerState::Capturing
             || state == SpeechRecognizerState::SpeechDetected
             || state == SpeechRecognizerState::SoundStarted
@@ -768,6 +855,10 @@ fn winrt_listen_once_when_ready(
     {
         let (lock, cvar) = &*capture_gate;
         let Ok(mut ready) = lock.lock() else {
+            let _ = session.StopAsync().and_then(|op| op.get());
+            if let Ok(mut guard) = active_session.lock() {
+                *guard = None;
+            }
             return Ok(VoiceListenOutcome {
                 ok: false,
                 transcript: None,
@@ -783,7 +874,7 @@ fn winrt_listen_once_when_ready(
             ready = guard;
             if wait.timed_out() {
                 log::warn!(
-                    "voice.lifecycle: capturing_wait_timeout +{:?} — UI fallback (contract weak)",
+                    "voice.lifecycle: capturing_wait_timeout +{:?}",
                     t0.elapsed()
                 );
                 break;
@@ -796,93 +887,125 @@ fn winrt_listen_once_when_ready(
         );
     }
 
-    // Listening UI only after Capturing (or timeout fallback).
     on_ready();
     log::info!("voice.lifecycle: on_ready_emitted +{:?}", t0.elapsed());
 
-    let result = match recognize.get() {
-        Ok(value) => value,
-        Err(error) => {
-            if let Ok(token) = state_token {
-                let _ = recognizer.RemoveStateChanged(token);
+    // Wait until session completes (silence finish), or user Stop, or error.
+    {
+        let (lock, cvar) = &*session_done;
+        let Ok(mut done) = lock.lock() else {
+            let _ = session.StopAsync().and_then(|op| op.get());
+            if let Ok(mut guard) = active_session.lock() {
+                *guard = None;
             }
+            return Ok(VoiceListenOutcome {
+                ok: false,
+                transcript: None,
+                status: "recognition_failed".into(),
+                message: "I couldn’t listen just now. Check that a microphone is connected and try again.".into(),
+            });
+        };
+        while !*done {
             if cancel_requested.load(Ordering::SeqCst) {
-                return Ok(VoiceListenOutcome {
-                    ok: false,
-                    transcript: None,
-                    status: "cancelled".into(),
-                    message: "Listening stopped.".into(),
-                });
+                log::info!(
+                    "voice.lifecycle: user_stop +{:?}",
+                    t0.elapsed()
+                );
+                let _ = session.StopAsync().and_then(|op| op.get());
+                // Completed handler should fire; wait briefly for it.
             }
-            return Ok(outcome_from_winrt_error(error));
+            let (guard, wait) = cvar
+                .wait_timeout(done, Duration::from_millis(250))
+                .unwrap_or_else(|e| e.into_inner());
+            done = guard;
+            if *done {
+                break;
+            }
+            if cancel_requested.load(Ordering::SeqCst) && wait.timed_out() {
+                // StopAsync may have completed without Completed in edge cases.
+                *done = true;
+                break;
+            }
         }
-    };
+    }
+
+    if let Ok(mut guard) = active_session.lock() {
+        *guard = None;
+    }
     if let Ok(token) = state_token {
         let _ = recognizer.RemoveStateChanged(token);
     }
-    log::info!("voice.lifecycle: recognize_complete +{:?}", t0.elapsed());
+    if let Ok(token) = result_token {
+        let _ = session.RemoveResultGenerated(token);
+    }
+    if let Ok(token) = complete_token {
+        let _ = session.RemoveCompleted(token);
+    }
 
-    let status = match result.Status() {
-        Ok(value) => value,
-        Err(error) => return Ok(outcome_from_winrt_error(error)),
-    };
+    log::info!("voice.lifecycle: continuous_complete +{:?}", t0.elapsed());
 
-    match status {
-        SpeechRecognitionResultStatus::Success => {
-            let text = match result.Text() {
-                Ok(value) => value,
-                Err(error) => return Ok(outcome_from_winrt_error(error)),
-            };
-            let transcript = text.to_string().trim().to_string();
-            if transcript.is_empty() {
+    let transcript = parts
+        .lock()
+        .map(|g| g.join(" ").trim().to_string())
+        .unwrap_or_default();
+    let finished_status = complete_status.lock().ok().and_then(|g| *g);
+
+    if let Some(status) = finished_status {
+        match status {
+            SpeechRecognitionResultStatus::MicrophoneUnavailable => {
+                let _ =
+                    open_windows_settings_uri(VoiceSettingsTarget::Microphone.as_settings_uri());
                 return Ok(VoiceListenOutcome {
                     ok: false,
                     transcript: None,
-                    status: "no_speech".into(),
-                    message: "I didn’t catch that. Try again when you’re ready.".into(),
+                    status: "microphone_unavailable".into(),
+                    message: MICROPHONE_PERMISSION_MESSAGE.into(),
                 });
             }
-            Ok(VoiceListenOutcome {
-                ok: true,
-                transcript: Some(transcript),
-                status: "recognized".into(),
-                message: "Got it.".into(),
-            })
+            SpeechRecognitionResultStatus::NetworkFailure => {
+                return Ok(VoiceListenOutcome {
+                    ok: false,
+                    transcript: None,
+                    status: "recognition_unavailable".into(),
+                    message: "Speech recognition isn’t available right now. Check your network and try again.".into(),
+                });
+            }
+            SpeechRecognitionResultStatus::AudioQualityFailure => {
+                return Ok(VoiceListenOutcome {
+                    ok: false,
+                    transcript: None,
+                    status: "microphone_unavailable".into(),
+                    message: "I couldn’t hear the microphone clearly.".into(),
+                });
+            }
+            _ => {}
         }
-        SpeechRecognitionResultStatus::UserCanceled => Ok(VoiceListenOutcome {
-            ok: false,
-            transcript: None,
-            status: "cancelled".into(),
-            message: "Listening stopped.".into(),
-        }),
-        SpeechRecognitionResultStatus::AudioQualityFailure => Ok(VoiceListenOutcome {
-            ok: false,
-            transcript: None,
-            status: "microphone_unavailable".into(),
-            message: "I couldn’t hear the microphone clearly.".into(),
-        }),
-        SpeechRecognitionResultStatus::MicrophoneUnavailable => {
-            let _ = open_windows_settings_uri(VoiceSettingsTarget::Microphone.as_settings_uri());
-            Ok(VoiceListenOutcome {
-                ok: false,
-                transcript: None,
-                status: "microphone_unavailable".into(),
-                message: MICROPHONE_PERMISSION_MESSAGE.into(),
-            })
-        }
-        SpeechRecognitionResultStatus::NetworkFailure => Ok(VoiceListenOutcome {
-            ok: false,
-            transcript: None,
-            status: "recognition_unavailable".into(),
-            message: "Speech recognition isn’t available right now. Check your network and try again.".into(),
-        }),
-        _ => Ok(VoiceListenOutcome {
-            ok: false,
-            transcript: None,
-            status: "recognition_failed".into(),
-            message: "I couldn’t recognize that. Try again when you’re ready.".into(),
-        }),
     }
+
+    if transcript.is_empty() {
+        let user_stopped = cancel_requested.load(Ordering::SeqCst);
+        return Ok(VoiceListenOutcome {
+            ok: false,
+            transcript: None,
+            status: if user_stopped {
+                "cancelled".into()
+            } else {
+                "no_speech".into()
+            },
+            message: if user_stopped {
+                "Listening stopped.".into()
+            } else {
+                "I didn’t catch that. Try again when you’re ready.".into()
+            },
+        });
+    }
+
+    Ok(VoiceListenOutcome {
+        ok: true,
+        transcript: Some(transcript),
+        status: "recognized".into(),
+        message: "Got it.".into(),
+    })
 }
 
 #[cfg(test)]

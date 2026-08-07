@@ -7,7 +7,7 @@
 | **Updated** | 2026-08-07 |
 | **Branch** | `v2-dev` |
 | **Handoff status** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` |
-| **Latest program** | P16.7 Voice Capture Reliability & Product Completion (awaiting Owner) |
+| **Latest program** | P16.8 Conversation Continuity Product Proof remediation (awaiting Owner) |
 | **Rule** | Ignore prior chat history. Reassess repository truth before any implementation. |
 
 **Start here before any execution program.**

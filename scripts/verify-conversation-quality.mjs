@@ -37,6 +37,8 @@ for (const token of [
   "rigid wording",
   "Commodity Before Reinvention",
   "WRAP",
+  "Conversation Continuity",
+  "Semantic Alias Rule",
 ]) {
   if (!rule.includes(token)) {
     fail(`PRODUCT_PROOF_RULE.md missing token: ${token}`);
@@ -78,6 +80,14 @@ if (!bridge.includes("softenUtterance")) {
 }
 if (!bridge.includes("canonicalizeOpenTarget")) {
   fail("intentBridge must canonicalize GPT/tab/browser phrasing");
+}
+if (!bridge.includes("SEMANTIC_ALIASES") || !bridge.includes("expandSemanticAlias")) {
+  fail("intentBridge must own Semantic Alias Rule expansions");
+}
+for (const alias of ["git:", "yt:", "vscode:", "gpt:"]) {
+  if (!bridge.includes(alias)) {
+    fail(`intentBridge SEMANTIC_ALIASES missing ${alias}`);
+  }
 }
 if (!bridge.includes("browserOpenBeside")) {
   fail("intentBridge must support open-beside Operator composition intents");

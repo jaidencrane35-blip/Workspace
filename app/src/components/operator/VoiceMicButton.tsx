@@ -20,11 +20,11 @@ function phaseLabel(phase: VoicePhase, available: boolean): string {
   }
   switch (phase) {
     case "preparing":
-      return "Getting ready…";
+      return "Preparing microphone…";
     case "ready":
-      return "Ready — speak now";
+      return "Ready — Workspace is listening";
     case "listening":
-      return "Listening";
+      return "Listening — speak naturally";
     case "recognizing":
       return "Recognizing…";
     case "processing":
@@ -71,10 +71,9 @@ export function VoiceMicButton({
     };
   }, [onVoiceMessage]);
 
-  const stop = useCallback(async () => {
+  /** Mic toggle while listening = finish turn (like submitting typed text). */
+  const finish = useCallback(async () => {
     await cancelListening();
-    setSoundActive(false);
-    setPhase("idle");
   }, []);
 
   const start = useCallback(async () => {
@@ -108,6 +107,10 @@ export function VoiceMicButton({
     setSoundActive(false);
 
     if (!result.ok || !result.transcript?.trim()) {
+      if (result.status === "cancelled") {
+        setPhase("idle");
+        return;
+      }
       setPhase("error");
       onVoiceMessage(result.message);
       if (
@@ -141,7 +144,7 @@ export function VoiceMicButton({
       phase === "recognizing" ||
       phase === "processing"
     ) {
-      void stop();
+      void finish();
       return;
     }
     void start();

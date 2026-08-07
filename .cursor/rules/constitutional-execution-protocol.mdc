@@ -73,6 +73,16 @@ Before substantial new capability work, research mature implementations and clas
 Prefer wrapping proven components behind Workspace contracts; never expose commodity internals on the product surface.  
 Authority: `docs/capability-runtime/PRODUCT_PROOF_RULE.md`.
 
+## Conversation Continuity (permanent — P16.8)
+
+Voice behaves like typing. Listening ends only when the user finishes speaking, explicitly stops, or a genuine error occurs — never because a short arbitrary timeout interrupted an active speaker.  
+Authority: `docs/capability-runtime/PRODUCT_PROOF_RULE.md`.
+
+## Semantic Alias Rule (permanent — P16.8)
+
+Kernel Operator / Intent Layer owns deterministic aliases (GPT→ChatGPT, Git→GitHub, YT→YouTube, etc.). Providers never see aliases.  
+Authority: `docs/capability-runtime/PRODUCT_PROOF_RULE.md`.
+
 ## Permanent Provider Acceptance Standard (permanent — P14.5 Finalization)
 
 Every provider from **P15 onward** must complete this sequence before permanent acceptance:

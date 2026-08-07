@@ -110,6 +110,17 @@ Workspace owns identity, contracts, permissions, audit, Operator, and runtime au
 Before substantial new capability work, research mature implementations and classify ADOPT / WRAP / ADAPT / STUDY / REJECT. Prefer wrapping proven components behind Workspace contracts. Never expose commodity internals on the product surface.  
 Authority detail: `docs/capability-runtime/PRODUCT_PROOF_RULE.md`.
 
+### P13 — Conversation Continuity (permanent — P16.8)
+
+Voice behaves like typing. A listening session belongs to the user.  
+Workspace must never terminate recognition merely because an arbitrary short timeout elapsed while the user is still speaking.  
+Listening ends only when the user clearly finishes speaking, the user explicitly stops, or a genuine recognition error occurs. Never interrupt an active speaker.
+
+### P14 — Semantic Alias Rule (permanent — P16.8)
+
+The Kernel Operator (via the Intent Layer) owns deterministic semantic aliases (GPT→ChatGPT, Git→GitHub, YT→YouTube, VSCode→Visual Studio Code, Edge→Microsoft Edge, Chrome→Google Chrome, Settings→Windows Settings).  
+Providers remain unaware of aliases. No probabilistic guessing.
+
 ---
 
 ## 3. Presentation modes (binding intent)
