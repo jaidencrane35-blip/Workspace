@@ -68,7 +68,10 @@
     "noRecognizeAsyncEndSilenceTimeout": true,
     "softMicUnavailableNoStickyDeny": true,
     "listenWarmSerialized": true,
-    "settingsGuidanceOnlyOnPermissionDenied": true
+    "settingsGuidanceOnlyOnPermissionDenied": true,
+    "liveProductProofInstrumentation": true,
+    "voiceProofEnvGate": "WORKSPACE_VOICE_PRODUCT_PROOF",
+    "voiceProofRemovableAfterP16": true
   },
   "uiPhases": [
     "idle",

@@ -266,6 +266,9 @@ if (!matrix.includes("R19") || !matrix.includes("R20") || !matrix.includes("R21"
 if (!matrix.includes("R22") || !matrix.includes("R24") || !matrix.includes("listen_outcome_from_engine_error")) {
   fail("regression matrix must cover P16.22 ship-readiness fixes (R22–R24)");
 }
+if (!matrix.includes("R25") || !matrix.includes("voice_proof")) {
+  fail("regression matrix must cover P16.23 live instrumentation (R25)");
+}
 const lifecycle = path.join(
   root,
   "docs/capability-runtime/product-proof/VOICE_LIFECYCLE_STATE_MACHINE.md",

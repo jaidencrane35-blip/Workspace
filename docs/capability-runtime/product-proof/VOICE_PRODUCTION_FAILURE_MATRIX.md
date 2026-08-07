@@ -67,4 +67,9 @@ Engineering falsification of “no remaining defects.” Does **not** equal Owne
 | S3 | Settings-help copy without Settings gate | **FIX** |
 | S4 | Warm-fail permission misclassify | **FIX** |
 
+### P16.23 live instrumentation
+
+Env-gated timing evidence for Owner Product Proof (`WORKSPACE_VOICE_PRODUCT_PROOF=1`).  
+See `VOICE_LIVE_INSTRUMENTATION.md`.
+
 See also: `VOICE_SHIP_READINESS_FALSIFICATION.md`, `VOICE_OWNER_EXPERIENCE_CLOSURE_GATE.md`.

@@ -8,6 +8,7 @@ mod capture;
 mod clipboard;
 mod screenshot;
 mod voice;
+mod voice_proof;
 mod enumerator;
 mod error;
 mod fixture_enumerator;
@@ -40,6 +41,10 @@ pub use voice::{
     classify_speech_failure, open_windows_settings_uri, platform_voice, MemoryVoicePort,
     SystemVoicePort, UnavailableVoicePort, VoiceCapabilityStatus, VoiceListenOutcome, VoicePort,
     VoiceSettingsTarget, HRESULT_SPEECH_PRIVACY_DECLINED,
+};
+pub use voice_proof::{
+    proof_last_report, proof_status_summary, voice_proof_enabled, VoiceProofEvent,
+    VoiceProofReport,
 };
 pub use clipboard::{
     platform_clipboard, ArboardClipboard, ClipboardPort, MemoryClipboard,

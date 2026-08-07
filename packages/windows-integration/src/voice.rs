@@ -10,6 +10,10 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
 
 use crate::error::{Result, WindowsIntegrationError};
+use crate::voice_proof::{
+    proof_begin_listen, proof_end_listen, proof_mark, proof_mark_recreated, proof_mark_reused,
+    proof_note_permission, proof_note_recovery, proof_note_reset,
+};
 
 /// Windows SPERR_PRIVACY_STATEMENT_DECLINED — speech privacy not accepted.
 pub const HRESULT_SPEECH_PRIVACY_DECLINED: u32 = 0x8004_5509;
@@ -245,28 +249,46 @@ impl VoicePort for MemoryVoicePort {
         on_sound_started: Option<std::sync::Arc<dyn Fn() + Send + Sync>>,
     ) -> Result<VoiceListenOutcome> {
         self.cancelled.store(false, Ordering::SeqCst);
+        let cold = !self.warmed.load(Ordering::SeqCst);
+        proof_begin_listen(cold);
+        if cold {
+            proof_mark_recreated();
+            proof_mark("compile_start");
+            proof_mark("compile_finish");
+        } else {
+            proof_mark_reused();
+        }
         let _ = self.warm_up();
+        proof_mark("engine_available");
         if self.fail_permission.load(Ordering::SeqCst) {
-            // Permission Guidance: never auto-open Settings — Conversation guides the user.
-            return Ok(VoiceListenOutcome {
+            proof_note_permission("microphone_denied");
+            let outcome = VoiceListenOutcome {
                 ok: false,
                 transcript: None,
                 status: "permission_denied".into(),
                 message: MICROPHONE_PERMISSION_MESSAGE.into(),
-            });
+            };
+            let _ = proof_end_listen(&outcome.status);
+            return Ok(outcome);
         }
-        // Tests: capturing contract is immediate after warm.
+        // Tests: capturing contract is immediate after warm (harness timings).
+        proof_mark("capturing_entered");
         on_ready();
+        proof_mark("ready_emitted");
         if let Some(sound) = on_sound_started {
             sound();
         }
+        proof_mark("first_speech_detected");
         if self.cancelled.load(Ordering::SeqCst) {
-            return Ok(VoiceListenOutcome {
+            proof_mark("stop_requested");
+            let outcome = VoiceListenOutcome {
                 ok: false,
                 transcript: None,
                 status: "cancelled".into(),
                 message: "Listening stopped.".into(),
-            });
+            };
+            let _ = proof_end_listen(&outcome.status);
+            return Ok(outcome);
         }
         let transcript = self
             .next_transcript
@@ -275,19 +297,25 @@ impl VoicePort for MemoryVoicePort {
             .clone()
             .unwrap_or_default();
         if transcript.trim().is_empty() {
-            return Ok(VoiceListenOutcome {
+            let outcome = VoiceListenOutcome {
                 ok: false,
                 transcript: None,
                 status: "no_speech".into(),
                 message: "I didn’t catch that. Try again when you’re ready.".into(),
-            });
+            };
+            let _ = proof_end_listen(&outcome.status);
+            return Ok(outcome);
         }
-        Ok(VoiceListenOutcome {
+        proof_mark("first_token_received");
+        proof_mark("transcript_completed");
+        let outcome = VoiceListenOutcome {
             ok: true,
             transcript: Some(transcript),
             status: "recognized".into(),
             message: "Got it.".into(),
-        })
+        };
+        let _ = proof_end_listen(&outcome.status);
+        Ok(outcome)
     }
 
     fn cancel(&self) -> Result<()> {
@@ -494,17 +522,23 @@ impl VoicePort for SystemVoicePort {
         self.cancel_requested.store(false, Ordering::SeqCst);
         #[cfg(windows)]
         {
+            let cold = !self.warmed.load(Ordering::SeqCst);
+            proof_begin_listen(cold);
+            proof_mark("engine_available");
             // ConfirmedDenied only for speech privacy (P16.19). Soft mic fails never sticky-block.
             if matches!(
                 self.mic_access.lock().ok().and_then(|g| *g),
                 Some(MicAccess::ConfirmedDenied)
             ) {
-                return Ok(VoiceListenOutcome {
+                proof_note_permission("speech_privacy_sticky");
+                let outcome = VoiceListenOutcome {
                     ok: false,
                     transcript: None,
                     status: "permission_denied".into(),
                     message: SPEECH_PRIVACY_MESSAGE.into(),
-                });
+                };
+                let _ = proof_end_listen(&outcome.status);
+                return Ok(outcome);
             }
             // Serialize warm with startup/UI warm — listen previously raced CompileConstraints.
             {
@@ -513,7 +547,10 @@ impl VoicePort for SystemVoicePort {
                 })?;
                 if let Err(error) = winrt_warm_up(&self.engine, &self.warmed) {
                     log::warn!("voice.lifecycle: listen_warm_failed_classified");
-                    return Ok(listen_outcome_from_engine_error(&error));
+                    let outcome = listen_outcome_from_engine_error(&error);
+                    proof_note_permission(&outcome.status);
+                    let _ = proof_end_listen(&outcome.status);
+                    return Ok(outcome);
                 }
             }
             let outcome = winrt_listen_continuous_when_ready(
@@ -529,6 +566,7 @@ impl VoicePort for SystemVoicePort {
                 if let Ok(mut guard) = self.mic_access.lock() {
                     *guard = Some(MicAccess::Allowed);
                 }
+                proof_mark("transcript_completed");
             } else if matches!(
                 outcome.status.as_str(),
                 "no_speech" | "cancelled"
@@ -538,8 +576,6 @@ impl VoicePort for SystemVoicePort {
                     outcome.status
                 );
             } else if outcome.status == "microphone_unavailable" {
-                // Soft recover — reset poisoned engine, never ConfirmedDenied.
-                // Also clear a stale sticky deny so a later soft fail cannot hard-block forever.
                 log::warn!(
                     "voice.lifecycle: mic_unavailable_soft — reset engine, not sticky-deny"
                 );
@@ -549,11 +585,14 @@ impl VoicePort for SystemVoicePort {
                         log::info!("voice.lifecycle: cleared_stale_confirmed_denied");
                     }
                 }
-                reset_voice_engine(&self.engine, &self.warmed, &self.active_session);
+                proof_note_recovery("microphone_unavailable");
+                reset_voice_engine(
+                    &self.engine,
+                    &self.warmed,
+                    &self.active_session,
+                    "microphone_unavailable",
+                );
             } else if outcome.status == "permission_denied" {
-                // P16.19–P16.21: only speech privacy is sticky ConfirmedDenied.
-                // All mic Access Denied paths remap to microphone_unavailable so the UI
-                // never Settings-traps on the first soft failure (Owner experience).
                 let sticky_privacy = outcome
                     .message
                     .to_ascii_lowercase()
@@ -562,21 +601,35 @@ impl VoicePort for SystemVoicePort {
                     log::warn!(
                         "voice.lifecycle: sticky_privacy_deny — ConfirmedDenied until Settings recheck"
                     );
+                    proof_note_permission("speech_privacy");
                     if let Ok(mut guard) = self.mic_access.lock() {
                         *guard = Some(MicAccess::ConfirmedDenied);
                     }
-                    reset_voice_engine(&self.engine, &self.warmed, &self.active_session);
+                    reset_voice_engine(
+                        &self.engine,
+                        &self.warmed,
+                        &self.active_session,
+                        "speech_privacy",
+                    );
                 } else {
                     log::warn!(
                         "voice.lifecycle: permission_denied_soft_mic — remap unavailable, not Settings"
                     );
-                    reset_voice_engine(&self.engine, &self.warmed, &self.active_session);
-                    return Ok(VoiceListenOutcome {
+                    proof_note_recovery("permission_denied_soft_mic");
+                    reset_voice_engine(
+                        &self.engine,
+                        &self.warmed,
+                        &self.active_session,
+                        "permission_denied_soft_mic",
+                    );
+                    let remapped = VoiceListenOutcome {
                         ok: false,
                         transcript: None,
                         status: "microphone_unavailable".into(),
                         message: "I couldn’t reach the microphone just now. Try again.".into(),
-                    });
+                    };
+                    let _ = proof_end_listen(&remapped.status);
+                    return Ok(remapped);
                 }
             } else if matches!(
                 outcome.status.as_str(),
@@ -586,13 +639,20 @@ impl VoicePort for SystemVoicePort {
                     "voice.lifecycle: listen_fail_recover status={} — resetting engine",
                     outcome.status
                 );
-                reset_voice_engine(&self.engine, &self.warmed, &self.active_session);
+                proof_note_recovery(&outcome.status);
+                reset_voice_engine(
+                    &self.engine,
+                    &self.warmed,
+                    &self.active_session,
+                    &outcome.status,
+                );
             } else {
                 log::info!(
                     "voice.lifecycle: listen_fail_keep_engine status={}",
                     outcome.status
                 );
             }
+            let _ = proof_end_listen(&outcome.status);
             Ok(outcome)
         }
         #[cfg(not(windows))]
@@ -606,6 +666,7 @@ impl VoicePort for SystemVoicePort {
     fn cancel(&self) -> Result<()> {
         // Mic toggle while listening = finish the turn (keep transcript), not discard.
         self.cancel_requested.store(true, Ordering::SeqCst);
+        proof_mark("stop_requested");
         #[cfg(windows)]
         {
             if let Ok(guard) = self.active_session.lock() {
@@ -788,7 +849,9 @@ fn reset_voice_engine(
     active_session: &Mutex<
         Option<windows::Media::SpeechRecognition::SpeechContinuousRecognitionSession>,
     >,
+    reason: &str,
 ) {
+    proof_note_reset(reason);
     if let Ok(mut guard) = active_session.lock() {
         *guard = None;
     }
@@ -796,7 +859,7 @@ fn reset_voice_engine(
         *guard = None;
     }
     warmed.store(false, Ordering::SeqCst);
-    log::info!("voice.lifecycle: engine_reset");
+    log::info!("voice.lifecycle: engine_reset reason={reason}");
 }
 
 #[cfg(windows)]
@@ -881,15 +944,19 @@ fn winrt_warm_up(
     if warmed.load(Ordering::SeqCst) {
         if let Ok(guard) = engine.lock() {
             if guard.is_some() {
+                proof_mark_reused();
                 return Ok(());
             }
         }
     }
+    proof_mark_recreated();
     let t0 = std::time::Instant::now();
     log::info!("voice.lifecycle: compile_recognizer_begin");
+    proof_mark("compile_start");
     let recognizer = create_compiled_recognizer().map_err(|error| {
         WindowsIntegrationError::VoiceFailed(sanitize_setup_message(&error.to_string()))
     })?;
+    proof_mark("compile_finish");
     log::info!(
         "voice.lifecycle: compile_recognizer_done +{:?}",
         t0.elapsed()
@@ -1001,6 +1068,7 @@ fn winrt_listen_continuous_when_ready(
             if let Ok(mut ready) = lock.lock() {
                 if !*ready {
                     *ready = true;
+                    proof_mark("capturing_entered");
                     cvar.notify_one();
                 }
             }
@@ -1010,6 +1078,7 @@ fn winrt_listen_continuous_when_ready(
         {
             if !speech_fired_state.swap(true, Ordering::SeqCst) {
                 log::info!("voice.lifecycle: speech_detected +{:?}", t0.elapsed());
+                proof_mark("first_speech_detected");
                 if let Some(hook) = speech_hook_state.as_ref() {
                     hook();
                 }
@@ -1065,11 +1134,15 @@ fn winrt_listen_continuous_when_ready(
                 let piece = text.to_string().trim().to_string();
                 if !piece.is_empty() {
                     if !speech_fired_result.swap(true, Ordering::SeqCst) {
+                        proof_mark("first_speech_detected");
                         if let Some(hook) = speech_hook_result.as_ref() {
                             hook();
                         }
                     }
                     if let Ok(mut guard) = parts_for_result.lock() {
+                        if guard.is_empty() {
+                            proof_mark("first_token_received");
+                        }
                         guard.push(piece);
                     }
                 }
@@ -1142,7 +1215,10 @@ fn winrt_listen_continuous_when_ready(
             if state == SpeechRecognizerState::Capturing {
                 let (lock, cvar) = &*capture_gate;
                 if let Ok(mut ready) = lock.lock() {
-                    *ready = true;
+                    if !*ready {
+                        *ready = true;
+                        proof_mark("capturing_entered");
+                    }
                     cvar.notify_one();
                 }
             }
@@ -1208,6 +1284,7 @@ fn winrt_listen_continuous_when_ready(
                 if let Some(cb) = cell.take() {
                     cb();
                     ready_emitted.store(true, Ordering::SeqCst);
+                    proof_mark("ready_emitted");
                     log::info!(
                         "voice.lifecycle: on_ready_emitted click_to_ready={:?}",
                         t0.elapsed()
@@ -1222,6 +1299,7 @@ fn winrt_listen_continuous_when_ready(
                 while !*done {
                     if cancel_requested.load(Ordering::SeqCst) {
                         log::info!("voice.lifecycle: user_stop +{:?}", t0.elapsed());
+                        proof_mark("stop_requested");
                         let _ = session.StopAsync().and_then(|op| op.get());
                     }
                     let (guard, wait) = cvar
@@ -1506,6 +1584,31 @@ mod tests {
         let outcome = classify_speech_failure(0, "The microphone is unavailable");
         assert_eq!(outcome.status, "microphone_unavailable");
         assert!(!outcome.message.to_ascii_lowercase().contains("settings"));
+    }
+
+    #[test]
+    fn product_proof_instrumentation_measures_memory_listen_intervals() {
+        std::env::set_var("WORKSPACE_VOICE_PRODUCT_PROOF", "1");
+        let port = MemoryVoicePort::new();
+        port.set_next_transcript("hello".to_string());
+        let _ = port
+            .listen_once_when_ready(Box::new(|| {}), Some(std::sync::Arc::new(|| {})))
+            .unwrap();
+        let cold = crate::voice_proof::proof_last_report().expect("cold report");
+        assert!(cold.cold_start || cold.recognizer_recreated);
+        assert!(cold.click_to_capturing_ms.is_some());
+        assert!(cold.click_to_ready_ms.is_some());
+        assert!(cold.ready_to_first_speech_ms.is_some());
+        assert!(cold.first_speech_to_first_token_ms.is_some());
+
+        port.set_next_transcript("again".to_string());
+        let _ = port
+            .listen_once_when_ready(Box::new(|| {}), Some(std::sync::Arc::new(|| {})))
+            .unwrap();
+        let warm = crate::voice_proof::proof_last_report().expect("warm report");
+        assert!(warm.recognizer_reused, "second listen must reuse warm engine");
+        assert!(!warm.cold_start);
+        std::env::remove_var("WORKSPACE_VOICE_PRODUCT_PROOF");
     }
 
     #[test]

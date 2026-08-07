@@ -7,7 +7,7 @@
 | **Updated** | 2026-08-07 |
 | **Branch** | `v2-dev` |
 | **Handoff status** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` |
-| **Latest program** | P16.22 Product Proof Falsification & Ship Readiness (awaiting Owner) |
+| **Latest program** | P16.23 Live Product Proof Instrumentation & Final Closure Preparation (awaiting Owner) |
 | **Rule** | Ignore prior chat history. Reassess repository truth before any implementation. |
 
 **Start here before any execution program.**
@@ -59,7 +59,7 @@ Conversation
 | --- | --- |
 | Architectural Constitution | `architecture/ARCHITECTURAL_CONSTITUTION_V2.md` (**v2.0**) |
 | Product Constitution | `docs/00-Constitution/PRODUCT_CONSTITUTION.md` |
-| Execution protocol | `.cursor/rules/constitutional-execution-protocol.mdc` (**v1.18**) — P16.22 ship readiness falsification |
+| Execution protocol | `.cursor/rules/constitutional-execution-protocol.mdc` (**v1.19**) — P16.23 live Product Proof instrumentation |
 | Machine state | `docs/project-health.json` (synced to `app/public/project-health.json`) |
 | Product Gravity | `docs/ui/PRODUCT_GRAVITY_RULE.md` |
 | Product Proof | `docs/capability-runtime/PRODUCT_PROOF_RULE.md` |
@@ -108,7 +108,7 @@ One execution program
 
 Authoritative rolling list: `docs/capability-runtime/FIVE_PROGRAM_ROADMAP.md`.
 
-| Now | P16 Voice Input — Engineering Complete (through **P16.22** Ship Readiness Falsification); Product Proof pending Owner |
+| Now | P16 Voice Input — Engineering Complete (through **P16.23** Live Product Proof Instrumentation); Product Proof pending Owner |
 | Next (after P16 acceptance) | **P17 File Provider** |
 | Then | P18 Terminal · P19 Memory · P20 Automation · P21 Workspace Intelligence |
 
@@ -144,7 +144,7 @@ Do not reopen except bugfixes:
 | Notifications | Closed (P13) | |
 | Browser | Closed (P14) | |
 | Screenshots | Closed (P15) | |
-| **Voice Input** | **Engineering Complete** (P16.22) | Conversation input device — **not** a Runtime desktop provider; **Product Proof pending Owner** |
+| **Voice Input** | **Engineering Complete** (P16.23) | Conversation input device — **Product Proof pending Owner**; live timings via `WORKSPACE_VOICE_PRODUCT_PROOF=1` |
 | File | Not started | **P17** (blocked) |
 | Terminal / Memory / Automation | Roadmap | P18+ |
 
@@ -169,7 +169,7 @@ Catalogue: `docs/capability-runtime/CAPABILITY_DOMAIN_CATALOGUE.md`.
 - Runtime hosts providers; Intent enters via Kernel Operator.
 - Verifiers: `pnpm verify:capability-runtime-foundation`, provider-specific `pnpm verify:*-provider`, `pnpm verify:voice-input`, `pnpm verify:conversation-quality`, `pnpm verify:product-proof-harness`.
 - Index: `docs/capability-runtime/00_INDEX.md`.
-- Voice ship readiness: `docs/capability-runtime/product-proof/VOICE_SHIP_READINESS_FALSIFICATION.md`.
+- Voice live instrumentation: `docs/capability-runtime/product-proof/VOICE_LIVE_INSTRUMENTATION.md`.
 
 ---
 
@@ -211,8 +211,9 @@ Do not redesign without a new constitutional program:
 | Harness / verifiers for Voice + conversation quality | Green (engineering) — do not treat as Owner acceptance |
 | P10–P15 Product Proof | Accepted / closed |
 
-Voice remediations through P16.22 (ship readiness falsification) do **not** equal permanent closure.  
+Voice remediations through P16.23 (live instrumentation) do **not** equal permanent closure.  
 **Do not launch Workspace until the Product Owner requests it.**  
+For live Product Proof: `WORKSPACE_VOICE_PRODUCT_PROOF=1` (removable after P16 closes).  
 After Owner closes Workspace: cleanup only — **never relaunch**.
 
 ---
@@ -225,9 +226,9 @@ After Owner closes Workspace: cleanup only — **never relaunch**.
 
 ## 15. Latest commit
 
-| Tip | Use `git log -1 --oneline` on `v2-dev` after P16.22 push |
+| Tip | Use `git log -1 --oneline` on `v2-dev` after P16.23 push |
 | --- | --- |
-| Prior Voice engineering | `526d4fb` (P16.21) · `9cbd350` (P16.20) |
+| Prior Voice engineering | `1ec84d3` (P16.22) · `526d4fb` (P16.21) |
 
 ---
 
@@ -238,7 +239,7 @@ After Owner closes Workspace: cleanup only — **never relaunch**.
 | Machine state | `docs/project-health.json` |
 | Handoff status | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` |
 | Engineering mode | `constitutional-execution` |
-| Protocol | v1.18 |
+| Protocol | v1.19 |
 | Constitution | v2.0 |
 | Sync | `node scripts/sync-project-health.mjs` |
 | Verify | `node scripts/verify-project-health.mjs` |

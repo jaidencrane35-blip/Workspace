@@ -445,6 +445,13 @@ Attempted to prevent closure. Proven holes fixed:
 
 Report: `VOICE_SHIP_READINESS_FALSIFICATION.md`. **WinRT remains WRAP.**
 
+### P16.23 Live Product Proof Instrumentation
+
+Env-gated (`WORKSPACE_VOICE_PRODUCT_PROOF=1`) timing marks for Click→Capturing→Ready→speech→token, warm/reuse, reset reasons.  
+Reports under `%TEMP%/workspace-voice-proof/`. Not shown to ordinary users. Removable after P16 closure.  
+Harness timings measured on MemoryVoicePort; live WinRT timings await Owner session.  
+Doc: `VOICE_LIVE_INSTRUMENTATION.md`. **WinRT remains WRAP.**
+
 ---
 
 ## Explicit non-goals

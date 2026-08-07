@@ -31,6 +31,7 @@ See also: `VOICE_PRODUCTION_FAILURE_MATRIX.md`, `VOICE_LIFECYCLE_STATE_MACHINE.m
 | R22 | Status “ready” without mic proof | Unknown warmed → “Voice is ready.” | Prompt + set-up copy until Allowed | P16.22 |
 | R23 | Soft×2 Settings message desync | Arm gate but say “Try again.” | Always Settings guidance when arming | P16.22 |
 | R24 | Warm fail loses permission_denied | Double sanitize → recognition_unavailable | `listen_outcome_from_engine_error` · `listen_warm_failed_classified` | P16.22 |
+| R25 | Engineering confidence without live evidence | Owner repeatedly found post-“complete” defects | Env-gated `voice_proof` timing reports; removable after P16 | P16.23 |
 
 ### Engineering stress (non-Owner)
 
