@@ -4,9 +4,10 @@
 | --- | --- |
 | **P10–P12** | Complete (P12 series permanently closed) |
 | **P13** | Notifications Provider — **permanently closed** |
-| **P14** | Browser Provider — **permanently closed** (P14.5 Product Proof) |
-| **P15** | Screenshot Provider — preparation docs ready; **next eligible** |
-| **Next** | P15 Screenshot Provider implementation |
+| **P12.5** | Window Product Proof — **ACCEPTED — DO NOT REOPEN** |
+| **P14** | Browser Provider — **PERMANENTLY CLOSED** |
+| **P15** | Screenshot Provider — prep ready; **next eligible** |
+| **Acceptance** | [PROVIDER_ACCEPTANCE_STANDARD.md](./PROVIDER_ACCEPTANCE_STANDARD.md) |
 | **Operator law** | Conversation → Intent → Kernel Operator → Runtime |
 | **Composition law** | Kernel owns composition |
 
@@ -14,6 +15,7 @@
 
 | Document | Purpose |
 | --- | --- |
+| [PROVIDER_ACCEPTANCE_STANDARD.md](./PROVIDER_ACCEPTANCE_STANDARD.md) | Permanent provider completion sequence |
 | [SCREENSHOT_PROVIDER_PREPARATION.md](./SCREENSHOT_PROVIDER_PREPARATION.md) | **P15 prep pack** (no code) |
 | [research/SCREENSHOT_RESEARCH.md](./research/SCREENSHOT_RESEARCH.md) | Capture API / WRAP decision |
 | [research/SCREENSHOT_ARCHITECTURE_PROPOSAL.md](./research/SCREENSHOT_ARCHITECTURE_PROPOSAL.md) | Architecture proposal |

@@ -1,32 +1,39 @@
 # Engineering Milestone Report
-## P14.5 Browser Product Proof Remediation
+## P14.5 Browser Product Proof Finalization & Permanent Closure
 
 | Field | Value |
 | --- | --- |
-| **Execution program** | P14.5 Browser Product Proof Remediation |
+| **Execution program** | P14.5 Finalization & Permanent Closure |
 | **Date** | 2026-08-07 |
-| **Commit** | `0ed6711` |
-| **Prior** | P14 Browser engineering `1670822` |
 | **Status** | **P14 PERMANENTLY CLOSED** |
 | **Handoff** | `P14_PERMANENTLY_CLOSED_P15_ELIGIBLE` |
+| **Prior remediation** | `0ed6711` |
 
 ---
 
-## Scope closed
+## Repository truth extended
 
-| Owner FAIL | Remediation |
+| Item | Result |
 | --- | --- |
-| Natural language robustness | Deterministic alias/spacing/case normalization in Intent |
-| Invalid URL handling | Plausible URL validation; refuse without launch |
-| Capability explanation | `browserExplain` — never opens Guide |
-
-Architecture frozen. No Capability Runtime / Provider / Registry redesign.
+| P12.5 | **ACCEPTED ? REPOSITORY TRUTH ? DO NOT REOPEN** |
+| P14 | **PERMANENTLY CLOSED** |
+| Provider Acceptance Standard | Permanent (P15+) |
+| Natural Language Robustness Rule | Permanent |
 
 ---
 
-## Explicit statements
+## Behavioural finalization
 
-- **Does Browser satisfy the Product Proof Rule?** **Yes.**  
-- **Is P14 permanently closed?** **Yes.**  
-- **Next eligible program:** P15 Screenshot Provider (prep pack already present).  
-- **P15 implementation:** Not begun in this program.
+- `open my browser` / `open recent browser`  
+- `show chrome` / `bring chrome to front`  
+- Prior P14.5 NL aliases, invalid URL refusal, `browserExplain` retained  
+
+Architecture unchanged.
+
+---
+
+## Explicit confirmation
+
+- **P14 Browser Provider:** PERMANENTLY CLOSED · Accepted · Repository Truth · Do Not Reopen (bugfixes only)  
+- **Next eligible program:** P15 Screenshot Provider  
+- **P15 implementation:** Not begun  

@@ -3,7 +3,7 @@
 
 | Field | Value |
 | --- | --- |
-| **Status** | **Permanently closed** — Product Complete (P14.5) |
+| **Status** | **PERMANENTLY CLOSED — ACCEPTED — DO NOT REOPEN** (bugfixes only) |
 | **Domain** | `browser` |
 | **Adoption** | WRAP `webbrowser` |
 | **Research** | `research/BROWSER_RESEARCH.md` |

@@ -254,7 +254,7 @@ const APP_OPEN_EXCLUSIONS =
   /^(notepad|calculator|calc|spotify|discord|slack|figma|cursor|code|vscode|visual studio code|word|excel|outlook|chrome|edge|firefox|brave|msedge)$/i;
 
 const BROWSER_WINDOW_NAMES =
-  /^(chrome|google chrome|edge|microsoft edge|msedge|firefox|brave|browser|current browser|latest browser|chrome tab)$/i;
+  /^(chrome|google chrome|edge|microsoft edge|msedge|firefox|brave|browser|my browser|current browser|latest browser|recent browser|chrome tab)$/i;
 
 const INVALID_WEBSITE_SUGGESTION =
   'Try “open google”, “open github”, “open youtube”, or provide a complete URL.';
@@ -377,10 +377,10 @@ function resolveOpenWebsiteTarget(target: string): IntentAction | null {
     return null;
   }
 
-  // open browser / current browser / latest browser
+  // open browser / my browser / current|latest|recent browser
   if (
-    /^(my\s+)?(current\s+|latest\s+)?browsers?$/i.test(cleaned) ||
-    /^(current|latest)\s+browser$/i.test(cleaned)
+    /^(my\s+)?(current\s+|latest\s+|recent\s+)?browsers?$/i.test(cleaned) ||
+    /^(current|latest|recent)\s+browser$/i.test(cleaned)
   ) {
     return {
       kind: "browserOpen",
@@ -460,7 +460,9 @@ function resolveBrowserIntent(raw: string, text: string): IntentAction | null {
     const label = /browser/i.test(query) ? "your browser" : query;
     return {
       kind: "winFocus",
-      query: /^(current|latest)\s+browser$/i.test(query) ? "Chrome" : query,
+      query: /^(my|current|latest|recent)\s+browser$/i.test(query)
+        ? "Chrome"
+        : query,
       reply: `Bringing ${label} to the front.`,
     };
   }
@@ -470,6 +472,7 @@ function resolveBrowserIntent(raw: string, text: string): IntentAction | null {
       /^(?:bring)\s+(.+?)\s+(?:to\s+(?:the\s+)?front|forward)$/i,
     ) ??
     utterance.match(/^(?:focus|activate)\s+(.+)$/i) ??
+    utterance.match(/^(?:show)\s+(?!me\b)(.+)$/i) ??
     utterance.match(/^(?:switch\s+to)\s+(.+)$/i);
   if (browserFocus?.[1]) {
     const target = stripTrailingPunctuation(browserFocus[1]);
@@ -479,7 +482,10 @@ function resolveBrowserIntent(raw: string, text: string): IntentAction | null {
       BROWSER_WINDOW_NAMES.test(key) ||
       /^(chrome|edge|firefox|brave)(\s+tab)?$/i.test(key)
     ) {
-      const query = key.replace(/\s+tab$/, "").replace(/^google\s+/, "").replace(/^microsoft\s+/, "");
+      const query = key
+        .replace(/\s+tab$/, "")
+        .replace(/^google\s+/, "")
+        .replace(/^microsoft\s+/, "");
       const focusQuery =
         query === "msedge" || query === "microsoft edge"
           ? "Edge"
@@ -487,6 +493,8 @@ function resolveBrowserIntent(raw: string, text: string): IntentAction | null {
             ? "Chrome"
             : query === "current browser" ||
                 query === "latest browser" ||
+                query === "recent browser" ||
+                query === "my browser" ||
                 query === "browser"
               ? "Chrome"
               : query;
@@ -724,6 +732,7 @@ function resolveWindowIntent(raw: string, text: string): IntentAction | null {
       /^(?:bring)\s+(.+?)\s+(?:to\s+(?:the\s+)?front|forward)$/i,
     ) ??
     utterance.match(/^(?:focus(?:\s+window)?|activate)\s+(.+)$/i) ??
+    utterance.match(/^(?:show)\s+(?!me\b)(.+)$/i) ??
     utterance.match(/^(?:switch\s+to)\s+(.+)$/i);
   if (focusFront?.[1]) {
     const query = windowTarget(focusFront[1]);

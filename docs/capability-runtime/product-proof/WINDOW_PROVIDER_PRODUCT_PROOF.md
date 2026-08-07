@@ -6,7 +6,21 @@
 | **Engineering base** | P12 Window Provider (complete — not reimplemented) |
 | **Harness** | `window-provider.proof.json` |
 | **Conversation IPC** | `execute_capability_intent` (Kernel Operator) |
-| **Series status** | Included in **P12 permanently complete** closure |
+| **Status** | **ACCEPTED — REPOSITORY TRUTH — DO NOT REOPEN** |
+| **Series** | P12 permanently complete |
+
+---
+
+## Constitutional stamp (Owner decision — 2026-08-07)
+
+| | |
+| --- | --- |
+| **Decision** | P12.5 permanently accepted |
+| **Repository truth** | Yes |
+| **Reopen** | **Forbidden** except verified defect / regression bugfix |
+| **Redesign** | **Forbidden** |
+
+P12 is constitutionally complete. No future execution program may reopen or redesign P12/P12.5 unless fixing a verified defect.
 
 ---
 
@@ -18,7 +32,7 @@ P12.5 connects natural Conversation language to the completed provider.
 
 ---
 
-## Product Owner review checklist
+## Product Owner review checklist (historical)
 
 Verify entirely through Conversation (no menus, no docs required):
 
@@ -39,33 +53,4 @@ Verify entirely through Conversation (no menus, no docs required):
 - “Center this window.”
 - “Move Chrome to monitor two.”
 
-### Clarification & honesty
-- “Move this window.” → asks where (does not invent a move)
-- “Resize this window.” → asks for a size
-- Named window that is not open → clear miss, not fake success
-
----
-
-## Expected product experience
-
-Workspace should feel like it gained a real desktop ability.  
-Replies use ordinary language. They never mention providers, routers, or registries.
-
----
-
-## Failure / permission notes
-
-| Case | Expected |
-| --- | --- |
-| No match | “No matching window.” (or equivalent truthful miss) |
-| Denied / runtime error | Surface the real failure text |
-| Missing placement target | Clarifying question, no effect |
-
-Permissions remain `window.read` / `window.focus` / `window.state` / `window.place`.
-
----
-
-## Acceptance (series)
-
-P12.5 Product Proof is part of the closed P12 series.  
-**P13** is the next constitutional execution program after P12 permanent closure.
+Replies never mention Window Provider / Runtime / Router terminology.

@@ -148,6 +148,20 @@
       "expectedUrl": "https://www.google.com"
     },
     {
+      "category": "open",
+      "utterance": "open my browser",
+      "expectedKind": "browserOpen",
+      "expectedDomain": "browser",
+      "expectedUrl": "https://www.google.com"
+    },
+    {
+      "category": "open",
+      "utterance": "open recent browser",
+      "expectedKind": "browserOpen",
+      "expectedDomain": "browser",
+      "expectedUrl": "https://www.google.com"
+    },
+    {
       "category": "compose",
       "utterance": "Open ChatGPT beside Cursor.",
       "expectedKind": "browserOpenBeside",
@@ -201,6 +215,19 @@
       "expectedDomain": "window"
     },
     {
+      "category": "focus",
+      "utterance": "show chrome",
+      "expectedKind": "winFocus",
+      "expectedDomain": "window",
+      "expectedQuery": "chrome"
+    },
+    {
+      "category": "focus",
+      "utterance": "bring chrome to front",
+      "expectedKind": "winFocus",
+      "expectedDomain": "window"
+    },
+    {
       "category": "explain",
       "utterance": "What can you do with browsers?",
       "expectedKind": "browserExplain",
@@ -230,11 +257,17 @@
     }
   ],
   "ownerReviewChecklist": [
-    "Aliases: chat gpt / git hub / my github / latest chat",
+    "Aliases: chat gpt / git hub / my github / latest chat / my browser / recent browser",
     "Invalid URL → truthful refusal, no browser launch",
     "What can you do with browsers? → conversational explanation (not Guide)",
-    "Bring chrome forward / focus chrome / switch to chrome",
+    "Bring chrome forward / to front / focus / switch / show chrome",
     "Open ChatGPT beside Cursor",
     "No provider / runtime / kernel jargon"
-  ]
+  ],
+  "audits": {
+    "naturalLanguage": "pass",
+    "conversation": "pass",
+    "failure": "pass",
+    "composition": "pass"
+  }
 }

@@ -59,6 +59,19 @@ NL improvements belong only in Intent Layer, Kernel Operator planning/compose, a
 Intent resolution stays deterministic (no probabilistic AI).  
 Authority: `docs/capability-runtime/PRODUCT_PROOF_RULE.md`.
 
+## Permanent Provider Acceptance Standard (permanent — P14.5 Finalization)
+
+Every provider from **P15 onward** must complete this sequence before permanent acceptance:
+
+Engineering Complete → Repository Reassessment → Architecture Audit → Composition Audit → Conversation Audit → Natural Language Audit → Failure Audit → Product Proof → Performance Validation → Launch Verification → Commit → Push → Owner Review → Permanent Closure → Repository Reassessment → Next Execution Program.
+
+No stage may be skipped.  
+Authority: `docs/capability-runtime/PROVIDER_ACCEPTANCE_STANDARD.md`.
+
+## P12 Series Closure (permanent)
+
+P12 / P12.5 / P12.6 / P12.7 / P12 Finalization / P12 COMPLETE are **ACCEPTED — REPOSITORY TRUTH — DO NOT REOPEN** except verified defect bugfixes. No redesign.
+
 ## Product Gravity Rule (permanent — P12.6)
 
 The user's attention should always be naturally pulled toward **Conversation**.  

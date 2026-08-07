@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-07T01:14:59.206Z",
+  "updatedAt": "2026-08-07T01:24:40.832Z",
   "constitution": {
     "document": "architecture/ARCHITECTURAL_CONSTITUTION_V2.md",
     "version": "2.0"
@@ -8,14 +8,14 @@
   "engineeringMode": "constitutional-execution",
   "protocol": {
     "document": ".cursor/rules/constitutional-execution-protocol.mdc",
-    "version": "1.6",
+    "version": "1.7",
     "machineState": "docs/project-health.json"
   },
   "currentExecutionProgram": {
-    "id": "browser-provider-p14-5",
-    "title": "P14.5 Browser Product Proof Remediation",
+    "id": "browser-provider-p14-5-finalization",
+    "title": "P14.5 Browser Product Proof Finalization & Permanent Closure",
     "status": "permanently_closed",
-    "note": "P14 Product Complete and permanently closed under Natural Language Robustness Rule. P15 Screenshot is next."
+    "note": "P14 permanently closed. P12.5 stamped DO NOT REOPEN. Provider Acceptance Standard permanent. P15 eligible."
   },
   "completedExecutionPrograms": [
     {
@@ -282,6 +282,18 @@
         "pnpm verify:browser-provider",
         "Natural Language Robustness Rule"
       ]
+    },
+    {
+      "id": "browser-provider-p14-5-finalization",
+      "backlogRef": "P14.5 Browser Product Proof Finalization & Permanent Closure",
+      "completed": "2026-08-07",
+      "artifacts": [
+        "docs/capability-runtime/PROVIDER_ACCEPTANCE_STANDARD.md",
+        "docs/capability-runtime/product-proof/WINDOW_PROVIDER_PRODUCT_PROOF.md",
+        "docs/capability-runtime/product-proof/BROWSER_PROVIDER_PRODUCT_PROOF.md",
+        "pnpm verify:browser-provider",
+        "P14_PERMANENTLY_CLOSED_P15_ELIGIBLE"
+      ]
     }
   ],
   "remainingBacklog": [
@@ -373,24 +385,27 @@
     "p12Series": "permanently_complete",
     "notificationsProvider": "permanently_complete",
     "browserProvider": "permanently_complete",
+    "p12_5": "accepted_do_not_reopen",
+    "providerAcceptanceStandard": "permanent",
     "notes": [
       "UI Architecture Spec accepted/frozen (P8)",
       "Capability Runtime research accepted (P9)",
       "Capability Runtime Foundation + Clipboard accepted (P10)",
       "Application Provider accepted (P11)",
-      "Window Provider + P12 series permanently complete",
+      "P12.5 ACCEPTED — REPOSITORY TRUTH — DO NOT REOPEN",
+      "P12 series constitutionally complete",
       "P13 Notifications Provider permanently closed",
-      "P14 Browser Provider permanently closed (P14.5 Product Proof + NL Robustness)",
+      "P14 Browser Provider PERMANENTLY CLOSED",
       "Natural Language Robustness Rule permanent",
-      "Operator Authority + Kernel Authority + Composition permanent",
-      "Providers own operations; independently testable"
+      "Provider Acceptance Standard permanent (P15+)",
+      "Operator Authority + Kernel Authority + Composition permanent"
     ]
   },
   "currentMilestone": {
-    "id": "browser-provider-p14-5",
-    "title": "P14.5 Browser Product Proof Remediation",
+    "id": "browser-provider-p14-5-finalization",
+    "title": "P14.5 Browser Product Proof Finalization & Permanent Closure",
     "status": "permanently_closed",
-    "commit": "0ed6711"
+    "commit": "fca6dca"
   },
   "acceptedReviews": [
     {
@@ -434,7 +449,8 @@
       "id": "p12-5",
       "title": "Window Provider Product Proof",
       "commit": "40dd746",
-      "acceptedAt": "2026-08-07"
+      "acceptedAt": "2026-08-07",
+      "note": "ACCEPTED — REPOSITORY TRUTH — DO NOT REOPEN"
     },
     {
       "id": "p12-6",
@@ -474,7 +490,7 @@
       "title": "P14 Browser Provider",
       "commit": "1670822",
       "acceptedAt": "2026-08-07",
-      "note": "Engineering + Product Proof closed via P14.5"
+      "note": "PERMANENTLY CLOSED — ACCEPTED — DO NOT REOPEN (bugfixes only)"
     }
   ],
   "outstandingProductDebt": [
@@ -681,15 +697,15 @@
   "lastMilestone": {
     "date": "2026-08-07",
     "document": "docs/engineering-milestone-report.md",
-    "title": "P14.5 Browser Product Proof Remediation — P14 permanently closed",
-    "reviewBrief": "docs/capability-runtime/product-proof/BROWSER_PROVIDER_PRODUCT_PROOF.md"
+    "title": "P14.5 Finalization — P14 permanently closed; P12.5 do-not-reopen",
+    "reviewBrief": "docs/capability-runtime/PROVIDER_ACCEPTANCE_STANDARD.md"
   },
   "handoffStatus": "P14_PERMANENTLY_CLOSED_P15_ELIGIBLE",
   "nextRecommendedExecutionProgram": {
     "id": "screenshot-provider-p15",
     "title": "P15 Screenshot Provider",
     "blockedUntil": null,
-    "note": "P14 permanently closed. P15 is the next constitutional execution program."
+    "note": "P14 permanently closed. Follow Provider Acceptance Standard. Do not begin until Owner starts P15."
   },
   "capabilityEvolution": {
     "document": "docs/capability-evolution/README.md",

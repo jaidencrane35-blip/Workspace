@@ -1,41 +1,40 @@
-# Provider Composition Audit — Browser (P14 / P14.5)
+# Provider Composition Audit — Browser (P14 Finalization)
 
 | Field | Value |
 | --- | --- |
 | **Provider** | Browser |
-| **Program** | P14.5 Product Proof Remediation |
-| **Status** | Complete — re-confirmed |
+| **Program** | P14.5 Finalization & Permanent Closure |
+| **Status** | **Complete — re-confirmed** |
 
 ---
 
 ## 1. Independently useful?
 
-**Yes.** Conversation opens URLs, reports browser availability, explains browser help, and refuses invalid sites without other providers.
-
-Evidence: `browser-provider.proof.json` (P14.5) + Intent/Operator path only.
+**Yes.** Conversation opens sites, refuses invalid URLs, explains browser help, reports availability, and focuses browser windows without depending on other providers for core open/status.
 
 ---
 
 ## 2. Composes with
 
-| Partner | Today | Notes |
+| Partner | Status | Notes |
 | --- | --- | --- |
-| **Window Provider** | **Available** | `open_beside` snaps via Operator; focus (“bring chrome forward”) → Window focus |
-| **Application Provider** | Adjacent | “Open Notepad” / “launch chrome” stay Application; sites use Browser |
-| **Notifications Provider** | Future | Finish-watching not in L1–2 |
-| **Conversation / Operator / Runtime** | **Available** | Sole governed path |
+| **Window Provider** | **Available** | `open_beside` + focus (`bring` / `show` / `switch`) via Kernel Operator only |
+| **Application Provider** | Adjacent | App launches stay Application; sites stay Browser |
+| **Notifications Provider** | Future | No watching / finish alerts in L1–2 |
+| **Kernel Operator** | **Required** | Sole composition authority |
+| **Conversation** | **Required** | Sole user entry |
+| **Capability Runtime** | **Required** | Sole route to Browser Provider |
 
 ---
 
-## 3. New user-visible capabilities
+## 3. User-visible capabilities
 
 | Capability | Status |
 | --- | --- |
-| Open site / URL via Conversation | **Available** |
-| NL aliases (chat gpt, git hub, latest chat) | **Available** (P14.5 Intent) |
-| Invalid URL refusal | **Available** (P14.5) |
-| Browser capability explanation | **Available** (P14.5 — not Guide) |
-| Browser + Window — beside / focus | **Available** |
+| Open website / aliases | **Available** |
+| Invalid URL refusal | **Available** |
+| Browser explanation (not Guide) | **Available** |
+| Browser + Window beside / focus | **Available** |
 | Browser + Notifications | Future |
 | Browser + Memory | Future |
 
@@ -43,4 +42,14 @@ Evidence: `browser-provider.proof.json` (P14.5) + Intent/Operator path only.
 
 ## 4. Coupling?
 
-**No.** BrowserPort only opens URLs / reports status. Window effects and focus go through Kernel Operator → Window Provider. P14.5 changed Intent + Operator compose/validate only — no provider-to-provider calls, no registry/runtime redesign.
+**No.**
+
+- No provider-to-provider calls  
+- BrowserPort does not import Window/Application/Notification providers  
+- Operator remains sole authority for composition  
+
+---
+
+## Closure
+
+Browser Provider Composition Audit satisfied for permanent P14 closure.
