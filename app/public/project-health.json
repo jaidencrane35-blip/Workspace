@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-07T03:08:52.059Z",
+  "updatedAt": "2026-08-07T03:09:30.419Z",
   "constitution": {
     "document": "architecture/ARCHITECTURAL_CONSTITUTION_V2.md",
     "version": "2.0"
@@ -425,7 +425,7 @@
     "id": "voice-input-p16",
     "title": "P16 Voice Input",
     "status": "engineering_complete_product_proof_pending",
-    "commit": "c3cb36c"
+    "commit": "09e32e6"
   },
   "acceptedReviews": [
     {
