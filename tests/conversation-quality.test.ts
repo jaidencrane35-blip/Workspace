@@ -119,6 +119,18 @@ describe("conversation quality (P16.6)", () => {
       kind: "browserOpen",
       url: "https://chatgpt.com",
     });
+    expect(resolveIntent("What can you do for me?")).toMatchObject({
+      kind: "navigate",
+      view: "help",
+    });
+    expect(resolveIntent("Please what can you do")).toMatchObject({
+      kind: "navigate",
+      view: "help",
+    });
+    expect(resolveIntent("Please open Settings")).toMatchObject({
+      kind: "appLaunch",
+      query: "ms-settings:",
+    });
     expect(resolveIntent("Open Chrome browser.")).toMatchObject({
       kind: "appOpen",
       query: "Google Chrome",

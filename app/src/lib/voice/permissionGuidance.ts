@@ -97,6 +97,19 @@ export function notePermissionGranted(): void {
   rememberVoicePermissionGranted();
 }
 
+/**
+ * Settings return with MediaCapture/warm looking OK — but listen must still prove
+ * speech privacy / real capture. Clears awaiting without stamping a grant (P16.20).
+ */
+export function noteSettingsReturnNeedsListenConfirm(): void {
+  gate = "idle";
+  explainAnnounced = false;
+}
+
+export function settingsReturnConfirmMessage(): string {
+  return "If you updated permissions, click the microphone to confirm I can listen.";
+}
+
 export function permissionGuidanceMessage(kind: "microphone" | "speech"): string {
   if (kind === "speech") {
     return "Windows needs speech privacy turned on before I can listen. Click the microphone once and I’ll open the right Settings page — then come back here.";

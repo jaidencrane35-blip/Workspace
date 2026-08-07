@@ -74,15 +74,18 @@ Ambient always-on session remains **REJECT** (Product Gravity / consent).
 
 ---
 
-## F1 challenge result (P16.19)
+## F1 challenge result (P16.19 / P16.20)
 
 | Path | Sticky false deny possible? |
 | --- | --- |
 | `MicrophoneUnavailable` status | **No** — soft |
-| Mic Access Denied HRESULT | **No** — soft reset, not ConfirmedDenied |
+| Mic Access Denied after prior Allowed | **No** — remapped `microphone_unavailable` (P16.20) |
+| Mic Access Denied (never Allowed) | Soft reset; Settings guidance once (not sticky ConfirmedDenied) |
 | Speech privacy declined | **Yes (intentional)** — OS policy until Settings |
 | MediaCapture Denied | **No** — never sticky-cached |
 | Hard-block on ConfirmedDenied | **Only privacy sticky** |
+| Settings recheck → ✓ ready | **No** — listen confirm required (P16.20) |
+| ConfirmedDenied `status()` copy | Speech privacy message (not mic / preparing) |
 
 ---
 

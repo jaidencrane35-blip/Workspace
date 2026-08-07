@@ -54,6 +54,19 @@ if (!voiceRs.includes("mic_unavailable_soft")) {
 if (!voiceRs.includes("sticky_privacy_deny") || !voiceRs.includes("permission_denied_soft_mic")) {
   fail("ConfirmedDenied sticky only for speech privacy (P16.19)");
 }
+if (!voiceRs.includes("permission_denied_soft_after_success")) {
+  fail("Access Denied after prior success must remap to soft unavailable (P16.20)");
+}
+if (!voiceRs.includes("permission_recheck_needs_listen_confirm")) {
+  fail("Settings recheck must not claim grant without listen confirm (P16.20)");
+}
+if (
+  /MicAccess::ConfirmedDenied => VoiceCapabilityStatus \{[\s\S]*?MICROPHONE_PERMISSION_MESSAGE/.test(
+    voiceRs,
+  )
+) {
+  fail("ConfirmedDenied status must use speech privacy message, not mic copy (P16.20)");
+}
 if (!voiceRs.includes("cleared_stale_confirmed_denied")) {
   fail("soft mic_unavailable must clear stale ConfirmedDenied (P16.19)");
 }
@@ -236,6 +249,9 @@ if (!matrix.includes("R13") || !matrix.includes("mic_unavailable_soft")) {
 if (!matrix.includes("R16") || !matrix.includes("sticky_privacy_deny")) {
   fail("regression matrix must cover P16.19 speech-privacy-only sticky deny (R16)");
 }
+if (!matrix.includes("R17") || !matrix.includes("permission_recheck_needs_listen_confirm")) {
+  fail("regression matrix must cover P16.20 recheck/status privacy fixes (R17)");
+}
 const lifecycle = path.join(
   root,
   "docs/capability-runtime/product-proof/VOICE_LIFECYCLE_STATE_MACHINE.md",
@@ -249,6 +265,19 @@ const closure = path.join(
 );
 if (!fs.existsSync(closure)) {
   fail("missing VOICE_PRODUCTION_CLOSURE_INVESTIGATION.md (P16.19 artifact)");
+}
+const finalValidation = path.join(
+  root,
+  "docs/capability-runtime/product-proof/VOICE_FINAL_PRODUCT_PROOF_VALIDATION.md",
+);
+if (!fs.existsSync(finalValidation)) {
+  fail("missing VOICE_FINAL_PRODUCT_PROOF_VALIDATION.md (P16.20 artifact)");
+}
+if (!guide.includes("noteSettingsReturnNeedsListenConfirm")) {
+  fail("permissionGuidance must require listen confirm after Settings return (P16.20)");
+}
+if (!micUi.includes("noteSettingsReturnNeedsListenConfirm")) {
+  fail("mic UI must not stamp grant from MediaCapture recheck alone (P16.20)");
 }
 
 console.log("verify-voice-regression: ok");

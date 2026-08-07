@@ -16,7 +16,9 @@ import {
   notePermissionDenied,
   notePermissionGranted,
   noteSettingsOpened,
+  noteSettingsReturnNeedsListenConfirm,
   settingsOpenedMessage,
+  settingsReturnConfirmMessage,
   shouldOpenSettingsOnMicClick,
   voiceReadyMessage,
 } from "../../lib/voice/permissionGuidance";
@@ -80,10 +82,9 @@ export function VoiceMicButton({
       const ok = status.available || status.recognitionAvailable;
       setAvailable(ok);
       setWarmed(Boolean(status.warmed || status.available));
-      const granted =
-        status.permission === "granted" ||
-        (ok && status.permission !== "denied");
-      if (granted) {
+      // P16.20: only explicit granted stamps remember — never treat "prompt" as grant
+      // (MediaCapture recheck cannot prove speech privacy).
+      if (status.permission === "granted") {
         const wasNew = !hasRememberedVoicePermissionGranted();
         notePermissionGranted();
         setDeniedUi(false);
@@ -128,7 +129,20 @@ export function VoiceMicButton({
         if (!active) {
           return;
         }
-        applyStatus(status, true);
+        if (status.permission === "denied") {
+          applyStatus(status, true);
+          return;
+        }
+        // Recheck OK ≠ speech privacy proven — confirm on next listen (P16.20).
+        noteSettingsReturnNeedsListenConfirm();
+        setDeniedUi(false);
+        setAvailable(Boolean(status.available || status.recognitionAvailable));
+        setWarmed(Boolean(status.warmed || status.available));
+        onVoiceMessageRef.current(
+          status.message.toLowerCase().includes("confirm")
+            ? status.message
+            : settingsReturnConfirmMessage(),
+        );
       });
     };
     document.addEventListener("visibilitychange", onVis);

@@ -406,6 +406,19 @@ Final falsification before Owner acceptance:
 
 Closure report: `VOICE_PRODUCTION_CLOSURE_INVESTIGATION.md`. **WinRT remains WRAP.** No P17.
 
+### P16.20 Final Product Proof Validation
+
+Hostile challenge of P16.19 “no remaining defects”:
+
+| Hole | Fix |
+| --- | --- |
+| ConfirmedDenied status mic copy / preparing | Speech privacy message on all ConfirmedDenied status paths |
+| Recheck MediaCapture → false ✓ ready | Listen-confirm after Settings; grant only on explicit granted / successful listen |
+| Soft Access Denied after Allowed → Settings cycle | Remap to `microphone_unavailable` |
+| Guide softener miss | Intent Guide/Settings use `matchText` |
+
+Final validation: `VOICE_FINAL_PRODUCT_PROOF_VALIDATION.md`. **WinRT remains WRAP.** No P17.
+
 ---
 
 ## Explicit non-goals

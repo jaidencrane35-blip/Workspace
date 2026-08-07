@@ -23,6 +23,8 @@ See also: `VOICE_PRODUCTION_FAILURE_MATRIX.md`, `VOICE_LIFECYCLE_STATE_MACHINE.m
 | R14 | Long Ready / warm race | Listen warm without `warm_lock` | Serialize listen warm under `warm_lock` | listen path + `warm_lock` |
 | R15 | Browser phrasing → exe | “Chrome browser” / “launch browser” fallthrough | Canonicalize + bare browser → `browserOpen` | conversation-quality tests |
 | R16 | Sticky false deny via Access Denied | Mic `permission_denied` → ConfirmedDenied hard-block | Sticky **only** when message contains speech privacy; soft mic deny resets | `sticky_privacy_deny` · P16.19 |
+| R17 | Wrong Settings / false ready after privacy | ConfirmedDenied status used mic copy; recheck treated MediaCapture as grant | Speech privacy message on status; `permission_recheck_needs_listen_confirm`; grant only on explicit granted / successful listen; `permission_denied_soft_after_success` | P16.20 |
+| R18 | Guide softener miss | “What can you do for me?” → unknown | Guide + Settings matchers use softened `matchText` | conversation-quality |
 
 ### Engineering stress (non-Owner)
 

@@ -1,24 +1,25 @@
 # Voice Input — Product Proof
-## P16 / P16.19 — Owner checklist (Final Engineering Challenge)
+## P16 / P16.20 — Owner checklist (Final validation)
 
 | Field | Value |
 | --- | --- |
-| **Program** | P16 Voice Input (+ P16.19 Production Closure Investigation) |
+| **Program** | P16 Voice Input (+ P16.20 Final Product Proof Validation) |
 | **Status** | **Pending live Product Owner acceptance** (**not** Product Complete) |
-| **Launch** | **Do not launch until Owner requests** — engineering left Workspace unlaunched |
+| **Launch** | **Do not launch until Owner requests** |
 
 ---
 
-## Please stress these Owner-reported paths
+## Please stress these paths
 
-1. Several successful listens, then another — must **not** become “unavailable” / Settings spam  
-2. Click mic after prior success — Ready should stay quick (no multi-second hang)  
+1. Several successful listens, then another — must not become unavailable / Settings spam  
+2. Ready stays quick after prior success  
 3. Speak immediately on Ready — first words kept  
-4. “Open Chrome browser” / “Launch browser” / “Open GPT” — browser/desktop, never inventing `.exe`  
-5. Permission denied only when Windows truly denies — not after a flaky listen  
-6. After a soft “couldn’t reach the microphone” — next click must work without Settings detour  
+4. Ordinary browser/desktop phrasing — never inventing `.exe`  
+5. Speech privacy deny → correct Settings page (Speech, not Microphone)  
+6. Return from Settings → ask to click mic to confirm — **not** instant “✓ Voice ready” if speech still off  
+7. “What can you do for me?” → Guide  
 
-Also re-check: long pause dictation, cancel, screenshot, Can you hear me?
+Also: long pause dictation, cancel, screenshot, Can you hear me?
 
 When finished, **close Workspace normally**. Engineering will **not** relaunch.
 

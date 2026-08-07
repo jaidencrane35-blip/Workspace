@@ -40,4 +40,13 @@ Engineering falsification of “no remaining defects.” Does **not** equal Owne
 
 - Live Product Owner confirmation that F1–F7 feel resolved in Product Proof  
 
-See also: `VOICE_LIFECYCLE_STATE_MACHINE.md`, `VOICE_PRODUCTION_CLOSURE_INVESTIGATION.md`.
+### P16.20 challenge of P16.19 “none proven”
+
+| ID | Hole found | Disposition |
+| --- | --- | --- |
+| D1 | ConfirmedDenied `status()` used mic / preparing copy | **FIX** — speech privacy message |
+| D2 | Settings recheck → ✓ ready from MediaCapture alone | **FIX** — listen confirm |
+| D3 | Soft Access Denied after success → Settings cycle | **FIX** — remap unavailable |
+| NL | Guide ignored softeners | **FIX** — matchText |
+
+See also: `VOICE_LIFECYCLE_STATE_MACHINE.md`, `VOICE_PRODUCTION_CLOSURE_INVESTIGATION.md`, `VOICE_FINAL_PRODUCT_PROOF_VALIDATION.md`.

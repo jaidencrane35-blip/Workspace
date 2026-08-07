@@ -1507,15 +1507,20 @@ export function resolveIntent(raw: string): IntentAction {
 
   if (
     text === "guide" ||
+    matchText === "guide" ||
     text === "help" ||
+    matchText === "help" ||
     text === "open guide" ||
+    matchText === "open guide" ||
     text === "show guide" ||
+    matchText === "show guide" ||
     text === "show me the guide" ||
+    matchText === "show me the guide" ||
     /\b(open (the )?guide|show (me )?(the )?guide|trust limits?|what are (your|the) limits)\b/.test(
-      text,
+      matchText,
     ) ||
     /^(how does workspace work|what can you (do|help with)|what do you (do|help with))$/i.test(
-      text,
+      matchText,
     )
   ) {
     return {
@@ -1527,10 +1532,10 @@ export function resolveIntent(raw: string): IntentAction {
 
   // Windows Settings (not an in-shell preferences panel).
   if (
-    /^(open\s+)?(windows\s+)?settings$/i.test(text) ||
-    /^(open\s+)?(system\s+)?preferences$/i.test(text) ||
-    text === "open windows settings" ||
-    text === "windows settings"
+    /^(open\s+)?(windows\s+)?settings$/i.test(matchText) ||
+    /^(open\s+)?(system\s+)?preferences$/i.test(matchText) ||
+    matchText === "open windows settings" ||
+    matchText === "windows settings"
   ) {
     return {
       kind: "appLaunch",

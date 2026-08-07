@@ -1,9 +1,9 @@
 # Engineering Milestone Report
-## P16.19 Production Closure Investigation & Final Engineering Challenge
+## P16.20 Final Product Proof Validation & Closure Recommendation
 
 | Field | Value |
 | --- | --- |
-| **Execution program** | P16.19 Production Closure Investigation & Final Engineering Challenge |
+| **Execution program** | P16.20 Final Product Proof Validation & Closure Recommendation |
 | **Date** | 2026-08-07 |
 | **Status** | **Engineering Complete** — Product Complete **Owner-only** |
 | **Handoff** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` |
@@ -11,24 +11,24 @@
 
 ---
 
-## Falsification summary
+## Hostile validation summary
 
-Attempted to prove Voice is **not** production-ready. One remaining F1 path was proven:
+P16.19’s “no remaining Voice-owned defects” was falsified. Three Voice permission/status holes and one NL softener gap were proven and fixed.
 
 | Finding | Disposition |
 | --- | --- |
-| Mic Access Denied ? sticky ConfirmedDenied after prior success | **FIX** — ConfirmedDenied only for speech privacy |
-| Soft mic_unavailable with stale ConfirmedDenied | **FIX** — clear stale sticky |
-| Lifecycle / state machine races | Documented; no additional proven poison paths |
-| Permission onboarding tour | DOCUMENT Track A — does not block |
-| Commodity missing behaviour | None that blocks P16 |
-| 1000 listen stress (MemoryVoicePort) | Pass |
+| ConfirmedDenied status wrong Settings copy | FIX |
+| Settings recheck false ? ready | FIX |
+| Soft Access Denied after success ? Settings | FIX |
+| Guide “for me” / Please Settings unknown | FIX |
+| Mic idle contrast | FIX (production readability) |
+| WinRT foundation | WRAP revalidated — keep |
 
-Artifacts: `VOICE_PRODUCTION_CLOSURE_INVESTIGATION.md`, `VOICE_LIFECYCLE_STATE_MACHINE.md`, updated Failure / Regression matrices.
+Artifact: `docs/capability-runtime/product-proof/VOICE_FINAL_PRODUCT_PROOF_VALIDATION.md`.
 
 ## Explicit
 
-- **Recommend Owner acceptance review:** Yes — no remaining proven Voice-owned engineering blockers  
+- **Recommend Owner acceptance:** Yes — no remaining proven Voice-owned engineering blockers  
 - **P16 permanently closed:** **No**  
-- **Workspace launched this program:** **No**  
+- **Workspace launched:** **No**  
 - **P17:** Not begun  

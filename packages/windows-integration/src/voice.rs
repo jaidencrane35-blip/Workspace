@@ -419,7 +419,12 @@ impl VoicePort for SystemVoicePort {
                     } else {
                         "prompt".into()
                     },
-                    message: "Voice is preparing…".into(),
+                    // P16.20: ConfirmedDenied is speech-privacy sticky — never mic copy / preparing.
+                    message: if denied {
+                        SPEECH_PRIVACY_MESSAGE.into()
+                    } else {
+                        "Voice is preparing…".into()
+                    },
                     warmed: false,
                 });
             }
@@ -437,7 +442,7 @@ impl VoicePort for SystemVoicePort {
                     microphone_available: false,
                     recognition_available: true,
                     permission: "denied".into(),
-                    message: MICROPHONE_PERMISSION_MESSAGE.into(),
+                    message: SPEECH_PRIVACY_MESSAGE.into(),
                     warmed: true,
                 },
                 MicAccess::Denied | MicAccess::Unknown => VoiceCapabilityStatus {
@@ -547,13 +552,17 @@ impl VoicePort for SystemVoicePort {
                 }
                 reset_voice_engine(&self.engine, &self.warmed, &self.active_session);
             } else if outcome.status == "permission_denied" {
-                // P16.19 F1 challenge: only speech privacy is sticky ConfirmedDenied.
-                // Mic "Access is denied" can be transient COM contention after success —
-                // sticky hard-block reproduced Owner “unavailable after success”.
+                // P16.19/P16.20: only speech privacy is sticky ConfirmedDenied.
+                // After a prior Allowed listen, mic Access Denied is remapped to
+                // microphone_unavailable so UI does not enter a Settings cycle (F1 residual).
                 let sticky_privacy = outcome
                     .message
                     .to_ascii_lowercase()
                     .contains("speech privacy");
+                let previously_allowed = matches!(
+                    peek_microphone_access(&self.mic_access),
+                    MicAccess::Allowed
+                );
                 if sticky_privacy {
                     log::warn!(
                         "voice.lifecycle: sticky_privacy_deny — ConfirmedDenied until Settings recheck"
@@ -561,12 +570,24 @@ impl VoicePort for SystemVoicePort {
                     if let Ok(mut guard) = self.mic_access.lock() {
                         *guard = Some(MicAccess::ConfirmedDenied);
                     }
+                    reset_voice_engine(&self.engine, &self.warmed, &self.active_session);
+                } else if previously_allowed {
+                    log::warn!(
+                        "voice.lifecycle: permission_denied_soft_after_success — remap unavailable"
+                    );
+                    reset_voice_engine(&self.engine, &self.warmed, &self.active_session);
+                    return Ok(VoiceListenOutcome {
+                        ok: false,
+                        transcript: None,
+                        status: "microphone_unavailable".into(),
+                        message: "I couldn’t reach the microphone just now. Try again.".into(),
+                    });
                 } else {
                     log::warn!(
                         "voice.lifecycle: permission_denied_soft_mic — reset engine, not sticky"
                     );
+                    reset_voice_engine(&self.engine, &self.warmed, &self.active_session);
                 }
-                reset_voice_engine(&self.engine, &self.warmed, &self.active_session);
             } else if matches!(
                 outcome.status.as_str(),
                 "recognition_failed" | "recognition_unavailable"
@@ -618,13 +639,23 @@ impl VoicePort for SystemVoicePort {
             if let Ok(mut guard) = self.mic_access.lock() {
                 *guard = None;
             }
-            // Recheck may confirm Allowed; MediaCapture Denied stays non-sticky.
+            // Recheck may confirm MediaCapture Allowed; Denied stays non-sticky.
+            // MediaCapture alone cannot prove speech privacy — frontend must not
+            // claim ✓ Voice ready until a successful listen after speech Settings.
             let mic = probe_microphone_access_soft(&self.mic_access);
             if matches!(mic, MicAccess::Allowed) {
-                // Successful Settings return — ensure engine is ready.
                 let _ = winrt_warm_up(&self.engine, &self.warmed);
             }
-            let status = self.status()?;
+            let mut status = self.status()?;
+            if matches!(mic, MicAccess::Allowed) && status.permission != "denied" {
+                // Prefer prompt over granted so Settings-return does not auto-stamp grant
+                // before speech privacy is proven by a listen (P16.20 D2).
+                status.permission = "prompt".into();
+                status.message =
+                    "Permissions look clearer — click the microphone to confirm I can listen."
+                        .into();
+                log::info!("voice.lifecycle: permission_recheck_needs_listen_confirm");
+            }
             log::info!(
                 "voice.lifecycle: permission_recheck_done permission={} mic={mic:?} +{:?}",
                 status.permission,
@@ -672,7 +703,7 @@ fn sanitize_setup_message(raw: &str) -> String {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum MicAccess {
     Allowed,
-    /// Only set after SpeechRecognizer reports MicrophoneUnavailable (not MediaCapture).
+    /// Sticky only after speech privacy decline (not MediaCapture / soft mic Access Denied).
     ConfirmedDenied,
     Denied,
     Unknown,
