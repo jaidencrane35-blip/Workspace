@@ -166,7 +166,15 @@ Agents MUST complete before edits:
 
 ---
 
-## 9. Forbidden drifts
+## 9. Audit epistemology (mandatory)
+
+Engineering SHALL distinguish between **“no evidence of non-compliance”** and **“proof of universal compliance.”** Repository audits certify only the scope actually examined.
+
+Use `REPOSITORY_CONFIDENCE_MODEL.md` (Verified / Supported / Hypothesis / Unknown). Do not elevate Supported or scoped Verified findings into universal constitutional certainty.
+
+---
+
+## 10. Forbidden drifts
 
 Agents MUST NOT:
 
@@ -176,10 +184,11 @@ Agents MUST NOT:
 - Skip Product Proof for capability delivery when required by Product Proof Rule  
 - Begin deferred capability programs when handoff/health blocks them  
 - Treat historical sprint / Blueprint docs as architectural authority  
+- Treat a scoped compliance audit as proof that every dormant or future surface is compliant  
 
 ---
 
-## 10. Relationship to other layers
+## 11. Relationship to other layers
 
 ```
 Constitutional Specification v2     ← what Workspace is (immutable without trigger)
@@ -197,7 +206,7 @@ This document MUST NOT amend the Spec. On conflict, the Spec wins.
 
 ---
 
-## 11. Success criteria for meta-governance
+## 12. Success criteria for meta-governance
 
 Meta-architecture is complete when:
 

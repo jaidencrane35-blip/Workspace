@@ -8,6 +8,8 @@
 | **Canonical Spec** | `WORKSPACE_CONSTITUTIONAL_SPECIFICATION_V2.md` |
 | **Review evidence** | `CONSTITUTIONAL_FINAL_REVIEW.md` |
 | **Alignment audit** | `CONSTITUTIONAL_ALIGNMENT_AUDIT.md` |
+| **Operations audit** | `CONSTITUTIONAL_OPERATIONS_AUDIT.md` |
+| **Repository Confidence Model** | `REPOSITORY_CONFIDENCE_MODEL.md` |
 | **Compliance checklist** | `CONSTITUTIONAL_COMPLIANCE_CHECKLIST.md` |
 | **Engineering Execution Standard** | `WORKSPACE_ENGINEERING_EXECUTION_STANDARD_V1.md` |
 

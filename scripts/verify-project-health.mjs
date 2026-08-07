@@ -142,6 +142,20 @@ if (
 ) {
   fail("engineering execution standard missing");
 }
+if (
+  !fs.existsSync(
+    path.join(root, "docs/00-Constitution/CONSTITUTIONAL_OPERATIONS_AUDIT.md"),
+  )
+) {
+  fail("constitutional operations audit missing");
+}
+if (
+  !fs.existsSync(
+    path.join(root, "docs/00-Constitution/REPOSITORY_CONFIDENCE_MODEL.md"),
+  )
+) {
+  fail("repository confidence model missing");
+}
 
 if (!fs.existsSync(path.join(root, "docs/engineering-milestone-report.md"))) {
   fail("milestone report missing");
