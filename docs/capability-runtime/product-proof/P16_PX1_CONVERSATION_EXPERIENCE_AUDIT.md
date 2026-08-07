@@ -5,6 +5,7 @@
 | **Program** | P16.PX1 — Conversation Experience Refinement |
 | **Kind** | Experience polish (not constitutional; not production gate; not P17) |
 | **Date** | 2026-08-07 |
+| **Commit** | `d4ffb90` |
 | **Constraint** | Workspace Constitutional Specification v2 + Engineering Execution Standard |
 | **Rule** | One isolated UX improvement only → Product Owner review |
 
