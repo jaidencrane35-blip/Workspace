@@ -457,7 +457,7 @@ const health = {
     id: "voice-input-p16",
     title: "P16 Voice Input",
     status: "engineering_complete_product_proof_pending",
-    note: "P16 Engineering Complete (P16.5–P16.7: naturalness, conversation quality, GPT/browser routing + dev-env recovery). User Adaptation Prohibition permanent. Live Product Owner Product Proof still pending final acceptance. Do not mark permanently closed. Do not begin P17.",
+    note: "P16 Engineering Complete (incl. P16.6 Voice & Conversation Product Proof Remediation). User Adaptation Prohibition permanent. Live Product Owner Product Proof still pending final acceptance. Do not mark permanently closed. Do not begin P17.",
   },
   completedExecutionPrograms: completedPrograms,
   remainingBacklog,
@@ -511,8 +511,8 @@ const health = {
     ],
   },
   currentMilestone: {
-    id: "dev-env-recovery-p16-final-product-proof",
-    title: "Development Environment Recovery + P16 Final Product Proof",
+    id: "voice-conversation-product-proof-remediation-p16-6",
+    title: "P16.6 Voice & Conversation Product Proof Remediation",
     status: "engineering_complete_product_proof_pending",
     commit: milestoneCommit,
   },
@@ -727,7 +727,7 @@ const health = {
     date: "2026-08-07",
     document: "docs/engineering-milestone-report.md",
     title:
-      "Dev-env recovery + P16 Final Product Proof — awaiting Owner acceptance",
+      "P16.6 Voice & Conversation Product Proof Remediation — awaiting Owner acceptance",
     reviewBrief: "docs/capability-runtime/product-proof/VOICE_INPUT_PRODUCT_PROOF.md",
   },
   handoffStatus: "P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING",

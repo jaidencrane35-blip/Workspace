@@ -69,6 +69,10 @@ Owner mic click failed immediately with WinRT `RecognizeAsync` HRESULT `0x800455
 
 Owner found Voice “worked” but felt late: first words lost because Listening UI + user speech began during ~280 ms cold `SpeechRecognizer::new` plus a status IPC round-trip, before `RecognizeAsync` captured audio. Fix: pre-warm and reuse the compiled recognizer; show Listening only after capture starts; skip status on the listen hot path; detect mic denial and open the correct Windows Settings URI.
 
+### P16.6 residual first-word loss
+
+WinRT does not buffer audio before `RecognizeAsync()`. Occasional loss remained when (1) the frontend still awaited `listen("voice-listening")` on each click before invoke, and (2) the user clicked before warm completed. Remediation: hoist the listening event subscription; require warm completion before listen when cold; enlarge mic + explicit Idle/Preparing/Listening/Recognizing/Processing/Finished states. No calibrated audio-energy API on this WRAP path — listening waveform is activity indication only.
+
 ---
 
 ## Explicit non-goals

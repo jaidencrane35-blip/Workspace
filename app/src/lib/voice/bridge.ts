@@ -1,5 +1,5 @@
 /**
- * Voice Input bridge — Conversation input device (P16 / P16.5).
+ * Voice Input bridge — Conversation input device (P16).
  * Never calls Capability Providers or Kernel Operator for recognition.
  */
 
@@ -50,6 +50,33 @@ export function desktopVoiceMessage(raw: string): string {
   return raw;
 }
 
+/**
+ * Hoisted off the listen hot path — subscribing to events before each invoke
+ * previously delayed RecognizeAsync and dropped leading speech.
+ */
+let listeningBridge: Promise<(() => void) | null> | null = null;
+const listeningCallbacks = new Set<() => void>();
+
+export async function ensureVoiceListeningBridge(): Promise<void> {
+  if (!isTauriRuntime()) {
+    return;
+  }
+  if (!listeningBridge) {
+    listeningBridge = listen("voice-listening", () => {
+      for (const cb of listeningCallbacks) {
+        try {
+          cb();
+        } catch {
+          // Ignore listener faults — recognition must continue.
+        }
+      }
+    })
+      .then((unlisten) => unlisten)
+      .catch(() => null);
+  }
+  await listeningBridge;
+}
+
 export async function getVoiceStatus(): Promise<VoiceStatus> {
   if (!isTauriRuntime()) {
     return DEMO_STATUS;
@@ -80,6 +107,7 @@ export async function warmUpVoice(): Promise<VoiceStatus> {
     return DEMO_STATUS;
   }
   try {
+    await ensureVoiceListeningBridge();
     const status = await invokeIpc<VoiceStatus>("voice_warm_up");
     return { ...status, message: desktopVoiceMessage(status.message) };
   } catch {
@@ -104,16 +132,13 @@ export async function listenOnce(
     };
   }
 
-  let unlisten: (() => void) | undefined;
-  try {
-    unlisten = await listen("voice-listening", () => {
-      onListening?.();
-    });
-  } catch {
-    // Event bridge unavailable — still attempt listen; UI stays in preparing.
+  await ensureVoiceListeningBridge();
+  if (onListening) {
+    listeningCallbacks.add(onListening);
   }
 
   try {
+    // Hot path: invoke only — event subscription is already mounted.
     const result = await invokeIpc<VoiceListenResult>("voice_listen_once");
     return { ...result, message: desktopVoiceMessage(result.message) };
   } catch (error) {
@@ -138,7 +163,9 @@ export async function listenOnce(
       message,
     };
   } finally {
-    unlisten?.();
+    if (onListening) {
+      listeningCallbacks.delete(onListening);
+    }
   }
 }
 

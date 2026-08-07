@@ -169,4 +169,38 @@ describe("intent bridge", () => {
       "browserExplain",
     );
   });
+
+  it("expands natural desktop intents for Product Proof remediation", () => {
+    expect(resolveIntent("Open YouTube beside ChatGPT")).toMatchObject({
+      kind: "browserOpenBeside",
+      url: "https://www.youtube.com",
+      beside: "ChatGPT",
+    });
+    expect(
+      resolveIntent("Open ChatGPT in another browser window"),
+    ).toMatchObject({
+      kind: "browserOpen",
+      url: "https://chatgpt.com",
+    });
+    expect(resolveIntent("Close YouTube")).toMatchObject({
+      kind: "appClose",
+      query: "YouTube",
+    });
+    expect(resolveIntent("Bring Chrome forward")).toMatchObject({
+      kind: "winFocus",
+      query: "Chrome",
+    });
+    expect(resolveIntent("Open Settings")).toMatchObject({
+      kind: "appLaunch",
+      query: "ms-settings:",
+    });
+    expect(resolveIntent("Take a capture of our chat")).toMatchObject({
+      kind: "screenshotWindow",
+      query: "this",
+    });
+    expect(resolveIntent("Close this browser tab").kind).toBe("unknown");
+    expect(resolveIntent("Minimize all applications").kind).toBe("unknown");
+    expect(resolveIntent("Set speaker volume to 50%").kind).toBe("unknown");
+    expect(resolveIntent("Transcribe this conversation").kind).toBe("unknown");
+  });
 });

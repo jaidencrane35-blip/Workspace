@@ -74,6 +74,12 @@ if (!bridge.includes("resolveUnknownGuidance")) {
 if (!bridge.includes("softenUtterance")) {
   fail("intentBridge must soften ordinary polite phrasing");
 }
+if (!bridge.includes("canonicalizeOpenTarget")) {
+  fail("intentBridge must canonicalize GPT/tab/browser phrasing");
+}
+if (!bridge.includes("browserOpenBeside")) {
+  fail("intentBridge must support open-beside Operator composition intents");
+}
 if (bridge.includes("I don’t have that yet — and I won’t invent it. Closest available:")) {
   fail("static repetitive unknown fallback must not remain in intentBridge");
 }

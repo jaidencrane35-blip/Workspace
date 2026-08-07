@@ -55,12 +55,13 @@ A capability is **not Product Complete** if the user must adapt their behaviour 
 
 Product Complete means the software naturally guides the user through successful interaction without requiring:
 
-- hidden timing  
+- hidden timing or sequencing tricks  
 - workarounds  
 - memorized commands or phrasing  
 - undocumented operating system knowledge  
 - precise capitalization  
 - rigid wording  
+- undocumented behaviour  
 
 **The software adapts to the user. The user never adapts to the software.**
 

@@ -112,6 +112,9 @@ if (!bridge.includes("desktopVoiceMessage")) {
 if (!bridge.includes("warmUpVoice") || !bridge.includes("voice-listening")) {
   fail("voice bridge must support warm-up and listening-ready events");
 }
+if (!bridge.includes("ensureVoiceListeningBridge")) {
+  fail("voice bridge must hoist voice-listening subscription off the listen hot path");
+}
 
 const micUi = fs.readFileSync(
   path.join(root, "app/src/components/operator/VoiceMicButton.tsx"),
@@ -119,6 +122,27 @@ const micUi = fs.readFileSync(
 );
 if (!micUi.includes('data-preparing') || !micUi.includes("preparing")) {
   fail("mic UI must distinguish preparing from listening");
+}
+for (const phase of [
+  "idle",
+  "preparing",
+  "listening",
+  "recognizing",
+  "processing",
+  "finished",
+]) {
+  if (!micUi.includes(`"${phase}"`) && !micUi.includes(`'${phase}'`) && !micUi.includes(phase)) {
+    // phases appear as string literals in phaseLabel / setPhase
+  }
+}
+if (!micUi.includes("recognizing") || !micUi.includes("processing") || !micUi.includes("finished")) {
+  fail("mic UI must expose recognizing / processing / finished states");
+}
+if (!micUi.includes("op-shell__mic-wave")) {
+  fail("mic UI must show a listening activity waveform while capturing");
+}
+if (!micUi.includes("warmed")) {
+  fail("mic UI must wait for warm engine before listen when possible");
 }
 if (micUi.includes("getVoiceStatus()") && micUi.includes("setPhase(\"preparing\")")) {
   // Hot-path status before listen reintroduces first-word loss.

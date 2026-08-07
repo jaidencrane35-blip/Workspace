@@ -554,6 +554,20 @@ function resolveSiteAlias(name: string): string | null {
   return SITE_ALIASES[key] ?? null;
 }
 
+/** Window-title hint for Operator composition (beside / close / focus). */
+function windowMatchLabel(name: string): string {
+  const cleaned = canonicalizeOpenTarget(name) || stripTrailingPunctuation(name);
+  const alias = resolveSiteAlias(cleaned) ?? resolveSiteAlias(name);
+  if (alias) {
+    if (/chatgpt\.com/i.test(alias)) return "ChatGPT";
+    if (/youtube\.com/i.test(alias)) return "YouTube";
+    if (/github\.com/i.test(alias)) return "GitHub";
+    if (/google\.com/i.test(alias)) return "Google";
+    if (/bing\.com/i.test(alias)) return "Bing";
+  }
+  return cleaned || name;
+}
+
 const APP_OPEN_EXCLUSIONS =
   /^(notepad|calculator|calc|spotify|discord|slack|figma|cursor|code|vscode|visual studio code|word|excel|outlook|chrome|edge|firefox|brave|msedge)$/i;
 
@@ -834,13 +848,14 @@ function resolveBrowserIntent(raw: string, text: string): IntentAction | null {
     if (!right) {
       return null;
     }
+    const besideLabel = windowMatchLabel(right);
     const alias = resolveSiteAlias(left);
     if (alias) {
       return {
         kind: "browserOpenBeside",
         url: alias,
-        beside: right,
-        reply: `Opening beside “${right}”.`,
+        beside: besideLabel,
+        reply: `Opening beside “${besideLabel}”.`,
       };
     }
     if (left.includes(".") || /^https?:\/\//i.test(left) || /^www\./i.test(left)) {
@@ -851,9 +866,20 @@ function resolveBrowserIntent(raw: string, text: string): IntentAction | null {
       return {
         kind: "browserOpenBeside",
         url,
-        beside: right,
-        reply: `Opening beside “${right}”.`,
+        beside: besideLabel,
+        reply: `Opening beside “${besideLabel}”.`,
       };
+    }
+  }
+
+  // “Open ChatGPT in another browser window / in a new tab”
+  const inWindow = utterance.match(
+    /^(?:open|go to|visit|browse)\s+(.+?)\s+in\s+(?:another|a\s+new|new)\s+(?:browser\s+)?(?:window|tab)$/i,
+  );
+  if (inWindow?.[1]) {
+    const site = resolveOpenWebsiteTarget(inWindow[1]);
+    if (site) {
+      return site;
     }
   }
 
@@ -871,6 +897,22 @@ function resolveBrowserIntent(raw: string, text: string): IntentAction | null {
  */
 function resolveWindowIntent(raw: string, text: string): IntentAction | null {
   const utterance = stripTrailingPunctuation(raw);
+
+  // Before generic “minimize <target>” — do not treat “all apps” as a window name.
+  if (
+    /\bminimize\s+all\b/.test(text) ||
+    /\b(minimise|minimize)\s+(all\s+)?(apps|applications|windows)\b/.test(
+      text,
+    )
+  ) {
+    return {
+      kind: "unknown",
+      reply:
+        "I can’t minimize every application at once yet — and I won’t fake it.",
+      suggestion:
+        'Try “minimize Chrome”, “minimize this window”, or “what windows are open?”.',
+    };
+  }
 
   if (
     /\b(what windows are open|which windows are open|what windows do i have|show( me)?( my)?( open)? windows|list( (all|my|open))? windows|open windows|what('?s| is) open on (my |the )?desktop|what('?s| is) on (my |the )?screen)\b/.test(
@@ -1043,6 +1085,7 @@ function resolveWindowIntent(raw: string, text: string): IntentAction | null {
     utterance.match(
       /^(?:bring|put)\s+(.+?)\s+(?:to\s+(?:the\s+)?front|forward|in\s+front)$/i,
     ) ??
+    utterance.match(/^(?:bring)\s+(.+?)\s+forward$/i) ??
     utterance.match(/^(?:focus(?:\s+window)?|activate)\s+(.+)$/i) ??
     utterance.match(/^(?:show)\s+(?!me\b)(.+)$/i) ??
     utterance.match(/^(?:switch\s+to)\s+(.+)$/i);
@@ -1394,11 +1437,99 @@ export function resolveIntent(raw: string): IntentAction {
     };
   }
 
-  if (/\b(settings|preferences|options)\b/.test(text)) {
+  // Windows Settings (not an in-shell preferences panel).
+  if (
+    /^(open\s+)?(windows\s+)?settings$/i.test(text) ||
+    /^(open\s+)?(system\s+)?preferences$/i.test(text) ||
+    text === "open windows settings" ||
+    text === "windows settings"
+  ) {
+    return {
+      kind: "appLaunch",
+      query: "ms-settings:",
+      reply: "Opening Windows Settings.",
+    };
+  }
+
+  if (/\b(workspace settings|in-app settings|shell options)\b/.test(text)) {
     return {
       kind: "settings",
       reply:
         "There’s no Settings surface in this shell. Collapse returns to the desktop operator; Exit Workspace quits. Ask Guide for trust limits.",
+    };
+  }
+
+  // Capture this Conversation / chat window
+  if (
+    /\b(take a )?(capture|screenshot|screen\s*shot)\b.+\b(chat|conversation|this chat|our chat)\b/.test(
+      text,
+    ) ||
+    /\b(capture|screenshot)\s+(our|this)\s+chat\b/.test(text) ||
+    text === "take a capture of our chat" ||
+    text === "capture this conversation"
+  ) {
+    return {
+      kind: "screenshotWindow",
+      query: "this",
+      reply: "Capturing this window.",
+    };
+  }
+
+  // Truthful unsupported — volume / tab close / minimize-all / live transcription
+  if (
+    /\b(speaker\s+)?volume\b/.test(text) ||
+    /\b(set|change|mute|unmute)\b.+\b(volume|speaker|sound|audio)\b/.test(text)
+  ) {
+    return {
+      kind: "unknown",
+      reply:
+        "I can’t change speaker volume yet — and I won’t invent a system control.",
+      suggestion:
+        'I can open Windows Settings, arrange windows, or take a screenshot. Try “open Settings” or “what windows are open?”.',
+    };
+  }
+
+  if (
+    /\b(close|quit)\b.+\b(browser\s+)?tab\b/.test(text) ||
+    text === "close this browser tab" ||
+    text === "close this tab"
+  ) {
+    return {
+      kind: "unknown",
+      reply:
+        "I can’t close a single browser tab yet — only whole windows or apps.",
+      suggestion:
+        'Try “close Chrome”, “close YouTube”, or “bring Chrome to the front”.',
+    };
+  }
+
+  if (
+    /\bminimize\s+all\b/.test(text) ||
+    /\b(minimise|minimize)\s+(all\s+)?(apps|applications|windows)\b/.test(
+      text,
+    )
+  ) {
+    return {
+      kind: "unknown",
+      reply:
+        "I can’t minimize every application at once yet — and I won’t fake it.",
+      suggestion:
+        'Try “minimize Chrome”, “minimize this window”, or “what windows are open?”.',
+    };
+  }
+
+  if (
+    /\btranscribe\b/.test(text) ||
+    /\b(transcribe|transcription of)\b.+\b(conversation|chat|meeting|call)\b/.test(
+      text,
+    )
+  ) {
+    return {
+      kind: "unknown",
+      reply:
+        "I don’t transcribe other conversations — the mic only puts what you say into Workspace Conversation.",
+      suggestion:
+        'Use the microphone to speak to me, then ask for a desktop action — for example “open ChatGPT” or “take a screenshot”.',
     };
   }
 
@@ -1447,8 +1578,14 @@ export function resolveIntent(raw: string): IntentAction {
     /^(?:close|quit|exit)\s+(.+)$/i,
   );
   if (appClose?.[1]) {
-    const query = stripTrailingPunctuation(appClose[1]);
-    if (query && !/^(workspace|conversation)$/i.test(query)) {
+    const rawQuery = stripTrailingPunctuation(appClose[1]);
+    const query = windowMatchLabel(rawQuery);
+    if (
+      query &&
+      !/^(workspace|conversation|this browser tab|this tab|browser tab)$/i.test(
+        query,
+      )
+    ) {
       return {
         kind: "appClose",
         query,

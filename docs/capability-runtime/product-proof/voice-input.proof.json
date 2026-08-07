@@ -29,8 +29,18 @@
     "prewarm": true,
     "listeningIndicatorOnlyWhenCapturing": true,
     "noStatusRoundTripBeforeListen": true,
+    "hoistedListeningEventSubscription": true,
+    "warmBeforeListenWhenCold": true,
     "firstWordCapture": "required"
   },
+  "uiPhases": [
+    "idle",
+    "preparing",
+    "listening",
+    "recognizing",
+    "processing",
+    "finished"
+  ],
   "userLanguageRules": [
     "Never expose Provider, Router, Registry, Runtime, Kernel, WinRT, or SpeechRecognizer terminology",
     "Never invent transcripts",
