@@ -20,7 +20,7 @@ Conversation → Intent → **Kernel Operator** → Runtime (Kernel Authority).
 | **P12.7** | Operator Intelligence Foundation (TS interim) | `644c125` |
 | **P12 Finalization** | Kernel Operator + Presentation Purity | `daf3ae9` |
 | **P12 COMPLETE** | Final Repository Closure | `030fa3f` |
-| **P13** | Notifications Provider | this milestone |
+| **P13** | Notifications Provider | `f0e03c4` |
 
 P12 series remains **permanently closed**.
 

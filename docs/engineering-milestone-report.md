@@ -5,7 +5,7 @@
 | --- | --- |
 | **Execution program** | P13 Notifications Provider |
 | **Date** | 2026-08-07 |
-| **Commit** | pending |
+| **Commit** | `f0e03c4` |
 | **Handoff** | `AWAITING_PROJECT_OWNER_NOTIFICATIONS_PRODUCT_PROOF_REVIEW` |
 | **Index** | `docs/capability-runtime/NOTIFICATIONS_PROVIDER.md` |
 | **Product Proof** | `docs/capability-runtime/product-proof/NOTIFICATIONS_PROVIDER_PRODUCT_PROOF.md` |
