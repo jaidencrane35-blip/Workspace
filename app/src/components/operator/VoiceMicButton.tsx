@@ -384,26 +384,33 @@ export function VoiceMicButton({
       aria-pressed={activeCapture}
       aria-busy={busy}
     >
-      <span className="op-shell__mic-icon" aria-hidden="true">
-        {listening
-          ? "●"
-          : phase === "ready"
-            ? "◉"
-            : preparing
-              ? "◌"
-                : phase === "recognizing" || phase === "processing"
-                ? "◎"
-                : phase === "reviewing" || phase === "finished"
-                  ? "✓"
-                  : phase === "error" || deniedUi || softFailUi || !available
-                    ? "!"
-                    : "○"}
+      {/*
+        PX2: capture states rely on pulse/wave — not stacked glyphs.
+        Idle stays a quiet circle; errors stay explicit.
+      */}
+      <span
+        className="op-shell__mic-icon"
+        data-quiet={listening || phase === "ready" ? "true" : "false"}
+        aria-hidden="true"
+      >
+        {listening || phase === "ready"
+          ? ""
+          : preparing
+            ? "…"
+            : phase === "recognizing" || phase === "processing"
+              ? "…"
+              : phase === "reviewing" || phase === "finished"
+                ? "✓"
+                : phase === "error" || deniedUi || softFailUi || !available
+                  ? "!"
+                  : "○"}
       </span>
       {activeCapture && (
         <span className="op-shell__mic-pulse" aria-hidden="true" />
       )}
       {listening && (
         <span className="op-shell__mic-wave" aria-hidden="true">
+          <i />
           <i />
           <i />
           <i />

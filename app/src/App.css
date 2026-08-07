@@ -3555,29 +3555,37 @@ html[data-shell-form="conversation"] #root {
   cursor: not-allowed;
 }
 
+/* PX2: calmer capture chrome — less neon, less ring noise */
 .op-shell__mic[data-listening="true"] {
-  color: rgba(40, 245, 250, 1);
-  background: rgba(40, 230, 240, 0.32);
+  color: rgba(210, 240, 245, 0.98);
+  background: rgba(255, 255, 255, 0.14);
   box-shadow:
-    inset 0 0 0 2px rgba(40, 245, 250, 0.7),
-    0 0 0 4px rgba(40, 230, 240, 0.28);
+    inset 0 0 0 1.5px rgba(150, 220, 230, 0.5),
+    0 2px 12px rgba(0, 0, 0, 0.28);
 }
 
 .op-shell__mic[data-phase="ready"],
 .op-shell__mic[data-ready="true"] {
-  color: rgba(90, 255, 170, 1);
-  background: rgba(80, 240, 160, 0.34);
+  color: rgba(200, 235, 220, 0.98);
+  background: rgba(255, 255, 255, 0.16);
   box-shadow:
-    inset 0 0 0 2px rgba(90, 255, 170, 0.75),
-    0 0 0 4px rgba(80, 240, 160, 0.3);
+    inset 0 0 0 1.5px rgba(140, 210, 180, 0.55),
+    0 2px 12px rgba(0, 0, 0, 0.28);
 }
 
 .op-shell__mic[data-phase="speechDetected"] {
-  color: rgba(160, 255, 210, 1);
-  background: rgba(40, 230, 240, 0.28);
+  color: rgba(210, 240, 245, 0.98);
+  background: rgba(255, 255, 255, 0.15);
   box-shadow:
-    inset 0 0 0 2px rgba(160, 255, 210, 0.65),
-    0 0 0 4px rgba(40, 230, 240, 0.24);
+    inset 0 0 0 1.5px rgba(150, 220, 230, 0.48),
+    0 2px 12px rgba(0, 0, 0, 0.28);
+}
+
+.op-shell__mic-icon[data-quiet="true"] {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  overflow: hidden;
 }
 
 /* Hard deny / Settings gate — warm orange, stronger ring */
@@ -3601,8 +3609,8 @@ html[data-shell-form="conversation"] #root {
 }
 
 .op-shell__mic[data-sound="true"] .op-shell__mic-wave i {
-  background: rgba(160, 255, 210, 1);
-  animation-duration: 0.4s;
+  background: rgba(200, 245, 250, 0.95);
+  animation-duration: 0.55s;
 }
 
 /* Preparing — visible fill so Owner never wonders if the click registered */
@@ -3642,63 +3650,85 @@ html[data-shell-form="conversation"] #root {
   }
 }
 
+/* PX2: soft breathing ring — ready vs listening share calm motion language */
 .op-shell__mic-pulse {
   position: absolute;
-  inset: 0.2rem;
+  inset: 0.35rem;
   border-radius: 999px;
-  border: 2px solid rgba(95, 208, 216, 0.72);
-  animation: op-mic-pulse 1.05s ease-out infinite;
+  border: 1.5px solid rgba(180, 230, 235, 0.45);
+  animation: op-mic-pulse 1.6s cubic-bezier(0.33, 0.1, 0.25, 1) infinite;
   pointer-events: none;
 }
 
 .op-shell__mic[data-phase="ready"] .op-shell__mic-pulse {
-  border-color: rgba(120, 220, 180, 0.78);
+  border-color: rgba(160, 220, 190, 0.5);
 }
 
-/* Listening activity bars — not a calibrated level meter (WinRT path has no energy API). */
+.op-shell__mic[data-listening="true"] .op-shell__mic-pulse {
+  border-color: rgba(170, 225, 235, 0.4);
+  animation-duration: 1.35s;
+}
+
+/*
+ * Listening activity bars — presentational only (WinRT has no energy API).
+ * PX2: centered equalizer, smoother easing, five bars for a lighter modern feel.
+ */
 .op-shell__mic-wave {
   position: absolute;
-  bottom: 0.28rem;
-  left: 50%;
-  transform: translateX(-50%);
+  inset: 0;
   display: flex;
-  align-items: flex-end;
-  gap: 2px;
-  height: 0.7rem;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  height: auto;
   pointer-events: none;
 }
 
 .op-shell__mic-wave i {
   display: block;
-  width: 2px;
-  height: 35%;
-  border-radius: 1px;
-  background: rgba(95, 208, 216, 0.85);
-  animation: op-mic-wave 0.7s ease-in-out infinite;
+  width: 2.5px;
+  height: 0.95rem;
+  border-radius: 999px;
+  background: rgba(190, 235, 245, 0.88);
+  transform-origin: center center;
+  animation: op-mic-wave 1.05s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+}
+
+.op-shell__mic-wave i:nth-child(1) {
+  animation-delay: 0s;
+  height: 0.45rem;
 }
 
 .op-shell__mic-wave i:nth-child(2) {
   animation-delay: 0.1s;
-  height: 70%;
+  height: 0.72rem;
 }
 
 .op-shell__mic-wave i:nth-child(3) {
   animation-delay: 0.2s;
-  height: 100%;
+  height: 1rem;
 }
 
 .op-shell__mic-wave i:nth-child(4) {
-  animation-delay: 0.15s;
-  height: 55%;
+  animation-delay: 0.14s;
+  height: 0.68rem;
+}
+
+.op-shell__mic-wave i:nth-child(5) {
+  animation-delay: 0.06s;
+  height: 0.42rem;
 }
 
 @keyframes op-mic-pulse {
   0% {
-    transform: scale(0.72);
-    opacity: 0.85;
+    transform: scale(0.88);
+    opacity: 0.55;
+  }
+  60% {
+    opacity: 0.18;
   }
   100% {
-    transform: scale(1.4);
+    transform: scale(1.28);
     opacity: 0;
   }
 }
@@ -3706,12 +3736,16 @@ html[data-shell-form="conversation"] #root {
 @keyframes op-mic-wave {
   0%,
   100% {
-    transform: scaleY(0.45);
-    opacity: 0.55;
+    transform: scaleY(0.32);
+    opacity: 0.45;
   }
-  50% {
+  35% {
     transform: scaleY(1);
-    opacity: 1;
+    opacity: 0.95;
+  }
+  65% {
+    transform: scaleY(0.55);
+    opacity: 0.7;
   }
 }
 

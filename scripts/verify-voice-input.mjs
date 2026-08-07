@@ -192,6 +192,20 @@ if (!micUi.includes('addEventListener("keydown", onKey, true)')) {
 if (!micUi.includes("click, Enter, or Space to stop")) {
   fail("mic tooltips must advertise keyboard stop during capture (P16.PX1)");
 }
+// P16.PX2: quieter capture chrome — motion carries ready/listening (no stacked glyphs).
+if (!micUi.includes('data-quiet={listening || phase === "ready" ? "true" : "false"}')) {
+  fail("mic UI must quiet center glyph while ready/listening (P16.PX2)");
+}
+if ((micUi.match(/<i \/>/g) || []).length < 5) {
+  fail("mic waveform must use five bars for PX2 listening motion");
+}
+const appCss = fs.readFileSync(path.join(root, "app/src/App.css"), "utf8");
+if (!appCss.includes("op-shell__mic-icon[data-quiet=\"true\"]")) {
+  fail("App.css must hide quiet mic icon during capture (P16.PX2)");
+}
+if (!appCss.includes("cubic-bezier(0.45, 0.05, 0.55, 0.95)")) {
+  fail("App.css must use smoothed mic-wave easing (P16.PX2)");
+}
 if (!micUi.includes("couldn’t open Windows Settings") && !micUi.includes("couldn't open Windows Settings")) {
   fail("mic UI must tell truth when Settings open fails (P16.27)");
 }

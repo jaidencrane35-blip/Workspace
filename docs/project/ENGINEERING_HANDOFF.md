@@ -7,9 +7,11 @@
 | **Updated** | 2026-08-07 |
 | **Branch** | `v2-dev` |
 | **Handoff status** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` |
-| **Latest program** | P16.PX1 — Conversation Experience Refinement (keyboard Stop/Cancel during capture); await Owner |
+| **Latest program** | P16.PX2 — Premium Conversation Experience (calm listening motion); await Owner |
+| **PX2 report** | `docs/capability-runtime/product-proof/P16_PX2_PREMIUM_CONVERSATION_EXPERIENCE.md` |
 | **PX1 audit** | `docs/capability-runtime/product-proof/P16_PX1_CONVERSATION_EXPERIENCE_AUDIT.md` |
 | **Production note** | Prior PI4 Gate Spec unchanged; await Owner before A1; **do not begin P17** |
+| **Product heuristic** | Prefer reducing user friction over exposing engineering complexity, unless Spec or Product Proof forbids it (not constitutional law) |
 | **Production gate schema** | `docs/production/PRODUCTION_GATE_SPECIFICATION.md` |
 | **Production dependency authority** | `docs/production/PRODUCTION_DEPENDENCY_AUTHORITY.md` |
 | **Production gate catalog** | `docs/production/PRODUCTION_GATE_CATALOG.md` |
@@ -23,7 +25,7 @@
 | **Product Proof workbook** | `docs/capability-runtime/product-proof/P16_O2_PRODUCT_PROOF_SESSION_WORKBOOK.md` |
 | **Rule** | Spec v2 = sole architectural authority. Execution Standard v1 = how all programs run. Classify work, max layer, lowest-layer invariant, compliance checklist. Do not reopen Spec without a Review Trigger. |
 
-**Milestone:** Workspace operates in **Sustainable Engineering Operations**. Spec v2 and EES v1 are stable constraints. **PR1** records production truth: not public-release ready (installer/signing/updater/tray/diagnostics/IPC). Future effort: Owner Product Proof → Phase 2 Critical production → P17 after P16 Accept. No meta-governance. Architecture stable by default; Review Trigger required for constitutional change.
+**Milestone:** Workspace operates in **Sustainable Engineering Operations**. Spec v2 and EES v1 are stable constraints. **PR1** records production truth: not public-release ready (installer/signing/updater/tray/diagnostics/IPC). Highest-value work alternates **product experience refinements** (Owner Product Proof quality) and **production gates** (release readiness) — both inside Spec/EES. No meta-governance. Architecture stable by default; Review Trigger required for constitutional change. **Do not begin P17** until P16 Product Proof Accept.
 
 **Start here before any execution program.**
 

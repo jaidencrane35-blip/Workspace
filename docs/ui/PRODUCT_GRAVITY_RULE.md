@@ -70,3 +70,11 @@ Conversation should feel as if it simply exists on top of Windows:
 3. If removed, does the product lose a real conversational ability — or only chrome noise?
 
 If the answer to (1) or (2) is no, do not ship it in the default surface.
+
+---
+
+## Related product heuristic (not constitutional law)
+
+When there is a choice between exposing engineering complexity and reducing user friction, prefer reducing user friction unless doing so violates the Constitutional Specification or Product Proof requirements.
+
+This is a design preference for experience work — not a new framework and not Spec authority.
