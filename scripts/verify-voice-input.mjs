@@ -178,6 +178,20 @@ if (!micUi.includes("data-sound") || !micUi.includes("onSoundStarted")) {
 if (!micUi.includes("listenInFlightRef")) {
   fail("mic UI must serialize concurrent listen starts (P16.27)");
 }
+// P16.PX1: capture-phase keyboard Stop/Cancel (Enter/Space/Escape) — F10 review preserved.
+if (
+  !micUi.includes('event.key === "Enter"') ||
+  !micUi.includes('event.key === " "') ||
+  !micUi.includes('event.key === "Escape"')
+) {
+  fail("mic UI must stop/cancel capture via Enter, Space, and Escape (P16.PX1)");
+}
+if (!micUi.includes('addEventListener("keydown", onKey, true)')) {
+  fail("mic capture keyboard must use capture-phase keydown (P16.PX1)");
+}
+if (!micUi.includes("click, Enter, or Space to stop")) {
+  fail("mic tooltips must advertise keyboard stop during capture (P16.PX1)");
+}
 if (!micUi.includes("couldn’t open Windows Settings") && !micUi.includes("couldn't open Windows Settings")) {
   fail("mic UI must tell truth when Settings open fails (P16.27)");
 }

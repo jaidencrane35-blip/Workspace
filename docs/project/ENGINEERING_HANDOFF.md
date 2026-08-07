@@ -7,7 +7,9 @@
 | **Updated** | 2026-08-07 |
 | **Branch** | `v2-dev` |
 | **Handoff status** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` |
-| **Latest program** | P16.PI4 — Gate Specification + catalog normalize; **no gate implemented**; await Owner before A1 |
+| **Latest program** | P16.PX1 — Conversation Experience Refinement (keyboard Stop/Cancel during capture); await Owner |
+| **PX1 audit** | `docs/capability-runtime/product-proof/P16_PX1_CONVERSATION_EXPERIENCE_AUDIT.md` |
+| **Production note** | Prior PI4 Gate Spec unchanged; await Owner before A1; **do not begin P17** |
 | **Production gate schema** | `docs/production/PRODUCTION_GATE_SPECIFICATION.md` |
 | **Production dependency authority** | `docs/production/PRODUCTION_DEPENDENCY_AUTHORITY.md` |
 | **Production gate catalog** | `docs/production/PRODUCTION_GATE_CATALOG.md` |

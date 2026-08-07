@@ -49,11 +49,11 @@ function phaseLabel(
     case "preparing":
       return "Preparing…";
     case "ready":
-      return "Ready — speak, or click to stop";
+      return "Ready — speak; click, Enter, or Space to stop";
     case "speechDetected":
-      return "Speech detected — click to stop";
+      return "Speech detected — click, Enter, or Space to stop · Esc cancel";
     case "listening":
-      return "Listening — click to stop";
+      return "Listening — click, Enter, or Space to stop · Esc cancel";
     case "recognizing":
       return "Recognizing…";
     case "reviewing":
@@ -178,6 +178,38 @@ export function VoiceMicButton({
   const finish = useCallback(async () => {
     await cancelListening();
   }, []);
+
+  // PX1: while capturing, keyboard matches modern dictation — Stop / Cancel without a second mic hunt.
+  // Enter/Space = stop (transcript still reviews before Send — F10). Escape = cancel listen.
+  useEffect(() => {
+    const capturing =
+      phase === "preparing" ||
+      phase === "ready" ||
+      phase === "speechDetected" ||
+      phase === "listening";
+    if (!capturing) {
+      return;
+    }
+    const onKey = (event: KeyboardEvent) => {
+      if (event.isComposing) {
+        return;
+      }
+      // While capturing, Stop/Cancel beat composer Send — F10 review starts only after stop.
+      if (event.key === "Escape") {
+        event.preventDefault();
+        event.stopPropagation();
+        void finish();
+        return;
+      }
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        event.stopPropagation();
+        void finish();
+      }
+    };
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
+  }, [phase, finish]);
 
   const start = useCallback(async () => {
     // Already opened Settings — do not spam; wait for return + recheck.
