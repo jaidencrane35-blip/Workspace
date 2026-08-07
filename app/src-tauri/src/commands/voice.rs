@@ -35,8 +35,7 @@ fn sanitize_voice_user_message(raw: impl std::fmt::Display) -> String {
         || lower.contains("speechrecognizer")
         || lower.contains("hresult")
     {
-        return "I couldn’t listen just now. Try the microphone again — if it keeps failing, click once for Settings help."
-            .into();
+        return "I couldn’t listen just now. Try the microphone again.".into();
     }
     text
 }

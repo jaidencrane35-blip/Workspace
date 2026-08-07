@@ -1,9 +1,9 @@
 # Voice Input — Product Proof
-## P16 / P16.21 — Owner checklist (Owner-experience gate)
+## P16 / P16.22 — Owner checklist (Ship readiness)
 
 | Field | Value |
 | --- | --- |
-| **Program** | P16 Voice Input (+ P16.21 Owner-Experience Closure Gate) |
+| **Program** | P16 Voice Input (+ P16.22 Ship Readiness Falsification) |
 | **Status** | **Pending live Product Owner acceptance** (**not** Product Complete) |
 | **Launch** | **Do not launch until Owner requests** |
 
@@ -11,15 +11,14 @@
 
 ## Please stress these paths
 
-1. Soft “couldn’t reach microphone” once — next click must **retry**, not open Settings  
-2. Two soft mic fails in a row — then Settings help is OK  
-3. Speech privacy deny → Speech Settings page (not Microphone)  
-4. Return from Settings → confirm by clicking mic (not instant “✓ Voice ready”)  
-5. Ready / Listening / Error affordances visibly distinct  
-6. Ordinary desktop phrasing — never inventing `.exe`  
-7. Several successful listens in a row  
+1. “Can you hear me?” before first successful listen — must **not** claim Voice is ready as if listening works; guide to the mic  
+2. Soft mic fail once → retry; twice → Settings guidance that matches the next click  
+3. Speech privacy deny → Speech Settings; warm/compile privacy fail still Settings path  
+4. recognition_failed → “Try again” only (no Settings promise unless Settings is armed)  
+5. Ordinary desktop phrasing — never inventing `.exe`  
+6. Several successful listens; Ready / Listening / Error distinct  
 
-Also: long pause dictation, cancel, screenshot, Can you hear me?, What can you do for me?
+Also: long pause dictation, cancel, screenshot, What can you do for me?
 
 When finished, **close Workspace normally**. Engineering will **not** relaunch.
 

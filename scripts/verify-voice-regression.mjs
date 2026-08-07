@@ -172,6 +172,10 @@ const micUi = fs.readFileSync(
   path.join(root, "app/src/components/operator/VoiceMicButton.tsx"),
   "utf8",
 );
+const bridge = fs.readFileSync(
+  path.join(root, "app/src/lib/voice/bridge.ts"),
+  "utf8",
+);
 if (micUi.includes("if (!warmed)") && micUi.includes("warmUpVoice()")) {
   fail("mic UI must not gate listen on frontend warmed + warmUpVoice (P16.15)");
 }
@@ -259,6 +263,9 @@ if (!matrix.includes("R17") || !matrix.includes("permission_recheck_needs_listen
 if (!matrix.includes("R19") || !matrix.includes("R20") || !matrix.includes("R21")) {
   fail("regression matrix must cover P16.21 Owner-experience fixes (R19–R21)");
 }
+if (!matrix.includes("R22") || !matrix.includes("R24") || !matrix.includes("listen_outcome_from_engine_error")) {
+  fail("regression matrix must cover P16.22 ship-readiness fixes (R22–R24)");
+}
 const lifecycle = path.join(
   root,
   "docs/capability-runtime/product-proof/VOICE_LIFECYCLE_STATE_MACHINE.md",
@@ -286,6 +293,25 @@ const ownerGate = path.join(
 );
 if (!fs.existsSync(ownerGate)) {
   fail("missing VOICE_OWNER_EXPERIENCE_CLOSURE_GATE.md (P16.21 artifact)");
+}
+const shipReady = path.join(
+  root,
+  "docs/capability-runtime/product-proof/VOICE_SHIP_READINESS_FALSIFICATION.md",
+);
+if (!fs.existsSync(shipReady)) {
+  fail("missing VOICE_SHIP_READINESS_FALSIFICATION.md (P16.22 artifact)");
+}
+if (!voiceRs.includes("listen_outcome_from_engine_error") || !voiceRs.includes("listen_warm_failed_classified")) {
+  fail("warm fail must classify permission denials (P16.22)");
+}
+if (!voiceRs.includes("Voice is set up — click the microphone to speak")) {
+  fail("status must not claim Voice is ready for unproven mic (P16.22)");
+}
+if (
+  bridge.includes("click once for Settings help") ||
+  voiceCmd.includes("click once for Settings help")
+) {
+  fail("retry copy must not promise Settings without arming gate (P16.22)");
 }
 if (!guide.includes("noteSettingsReturnNeedsListenConfirm")) {
   fail("permissionGuidance must require listen confirm after Settings return (P16.20)");

@@ -432,6 +432,19 @@ Engineering confidence ≠ evidence. Owner experience overrides assumptions unti
 
 Gate report: `VOICE_OWNER_EXPERIENCE_CLOSURE_GATE.md`. Principles: Owner Experience Before Engineering Confidence; Repository Quality Before Milestone Closure. **WinRT remains WRAP.**
 
+### P16.22 Product Proof Falsification & Ship Readiness
+
+Attempted to prevent closure. Proven holes fixed:
+
+| Hole | Fix |
+| --- | --- |
+| Status “Voice is ready” without Allowed | Prompt + set-up copy |
+| Soft×2 Settings message desync | Always Settings guidance when arming |
+| Settings-help copy without gate | Retry-only bridge/IPC copy |
+| Warm-fail loses permission_denied | `listen_outcome_from_engine_error` + classify speech privacy phrase |
+
+Report: `VOICE_SHIP_READINESS_FALSIFICATION.md`. **WinRT remains WRAP.**
+
 ---
 
 ## Explicit non-goals

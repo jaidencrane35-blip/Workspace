@@ -49,6 +49,7 @@ pub fn classify_speech_failure(code: u32, detail: &str) -> VoiceListenOutcome {
     if code == HRESULT_SPEECH_PRIVACY_DECLINED
         || lower.contains("privacy policy")
         || lower.contains("privacy statement")
+        || lower.contains("speech privacy")
     {
         return VoiceListenOutcome {
             ok: false,
@@ -446,12 +447,13 @@ impl VoicePort for SystemVoicePort {
                     warmed: true,
                 },
                 // MediaCapture Denied is never sticky-cached — treat as Unknown.
+                // P16.22: never claim "Voice is ready" / mic available until Allowed (successful listen).
                 MicAccess::Denied | MicAccess::Unknown => VoiceCapabilityStatus {
                     available: true,
-                    microphone_available: true,
+                    microphone_available: false,
                     recognition_available: true,
                     permission: "prompt".into(),
-                    message: "Voice is ready.".into(),
+                    message: "Voice is set up — click the microphone to speak.".into(),
                     warmed: true,
                 },
             })
@@ -510,12 +512,8 @@ impl VoicePort for SystemVoicePort {
                     WindowsIntegrationError::VoiceFailed("voice warm lock poisoned".into())
                 })?;
                 if let Err(error) = winrt_warm_up(&self.engine, &self.warmed) {
-                    return Ok(VoiceListenOutcome {
-                        ok: false,
-                        transcript: None,
-                        status: "recognition_unavailable".into(),
-                        message: sanitize_setup_message(&error.to_string()),
-                    });
+                    log::warn!("voice.lifecycle: listen_warm_failed_classified");
+                    return Ok(listen_outcome_from_engine_error(&error));
                 }
             }
             let outcome = winrt_listen_continuous_when_ready(
@@ -688,6 +686,26 @@ fn sanitize_setup_message(raw: &str) -> String {
         "Speech recognition isn’t available on this system.".into()
     } else {
         outcome.message
+    }
+}
+
+/// Classify warm/compile failures without forcing recognition_unavailable over permission denials.
+/// Strips the VoiceFailed display prefix so a second classify pass still matches privacy/mic copy.
+fn listen_outcome_from_engine_error(error: &impl std::fmt::Display) -> VoiceListenOutcome {
+    let text = error.to_string();
+    let detail = text
+        .strip_prefix("Voice input failed: ")
+        .unwrap_or(text.as_str());
+    let outcome = classify_speech_failure(0, detail);
+    if outcome.status == "recognition_failed" {
+        VoiceListenOutcome {
+            ok: false,
+            transcript: None,
+            status: "recognition_unavailable".into(),
+            message: "Speech recognition isn’t available on this system.".into(),
+        }
+    } else {
+        outcome
     }
 }
 
@@ -919,12 +937,7 @@ fn winrt_listen_continuous_when_ready(
         log::info!("voice.lifecycle: stage=click_to_warm_begin");
         if let Err(error) = winrt_warm_up(engine, warmed) {
             log::warn!("voice.lifecycle: stage=warm_failed +{:?}", t0.elapsed());
-            return Ok(VoiceListenOutcome {
-                ok: false,
-                transcript: None,
-                status: "recognition_unavailable".into(),
-                message: sanitize_setup_message(&error.to_string()),
-            });
+            return Ok(listen_outcome_from_engine_error(&error));
         }
         log::info!("voice.lifecycle: stage=warm_done +{:?}", t0.elapsed());
     } else {
@@ -1493,5 +1506,19 @@ mod tests {
         let outcome = classify_speech_failure(0, "The microphone is unavailable");
         assert_eq!(outcome.status, "microphone_unavailable");
         assert!(!outcome.message.to_ascii_lowercase().contains("settings"));
+    }
+
+    #[test]
+    fn speech_privacy_user_copy_reclassifies_after_voice_failed_wrap() {
+        let wrapped = format!("Voice input failed: {SPEECH_PRIVACY_MESSAGE}");
+        let outcome = listen_outcome_from_engine_error(&wrapped);
+        assert_eq!(outcome.status, "permission_denied");
+        assert!(outcome.message.to_ascii_lowercase().contains("speech privacy"));
+    }
+
+    #[test]
+    fn classify_detects_speech_privacy_phrase_in_user_copy() {
+        let outcome = classify_speech_failure(0, SPEECH_PRIVACY_MESSAGE);
+        assert_eq!(outcome.status, "permission_denied");
     }
 }

@@ -25,7 +25,7 @@ const MICROPHONE_PERMISSION_MESSAGE =
   "Workspace can’t use the microphone yet. Click the microphone once and I’ll open Windows Settings so you can allow access — then come back here.";
 
 const LISTEN_RETRY_MESSAGE =
-  "I couldn’t listen just now. Try the microphone again — if it keeps failing, click once for Settings help.";
+  "I couldn’t listen just now. Try the microphone again.";
 
 /** Strip technical IPC / OS detail before Conversation shows a voice error. */
 export function desktopVoiceMessage(raw: string): string {

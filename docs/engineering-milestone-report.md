@@ -1,9 +1,9 @@
 # Engineering Milestone Report
-## P16.21 Final Owner-Experience Validation & Production Closure Gate
+## P16.22 Product Proof Falsification & Ship Readiness
 
 | Field | Value |
 | --- | --- |
-| **Execution program** | P16.21 Final Owner-Experience Validation & Production Closure Gate |
+| **Execution program** | P16.22 Product Proof Falsification & Ship Readiness |
 | **Date** | 2026-08-07 |
 | **Status** | **Engineering Complete** — Product Complete **Owner-only** |
 | **Handoff** | `P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING` |
@@ -11,13 +11,11 @@
 
 ---
 
-## Owner-experience falsification
+## Falsification summary
 
-P16.20 “no remaining defects” was challenged against Owner experience. Proven holes fixed: soft Settings trap, invisible error phase, dual-event race, redundant warm, ConfirmedDenied soft-probe fallthrough, Idle/Ready glyph, reduced-motion mic.
+Attempted to prove P16 is not ship-ready. Four Owner-path defects were proven and fixed: false ready status, soft×2 Settings message desync, Settings-promise copy without gate, warm-fail permission misclassification.
 
-Artifact: `docs/capability-runtime/product-proof/VOICE_OWNER_EXPERIENCE_CLOSURE_GATE.md`.
-
-Principles adopted: **Owner Experience Before Engineering Confidence**, **Repository Quality Before Milestone Closure**.
+Artifact: `docs/capability-runtime/product-proof/VOICE_SHIP_READINESS_FALSIFICATION.md`.
 
 ## Explicit
 

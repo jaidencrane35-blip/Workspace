@@ -241,9 +241,10 @@ export function VoiceMicButton({
       } else if (result.status === "microphone_unavailable") {
         softMicDenyCountRef.current += 1;
         if (softMicDenyCountRef.current >= 2) {
-          const { announce, message } = notePermissionDenied("microphone");
+          // Always announce Settings guidance when arming the gate (never soft "Try again.").
+          const { message } = notePermissionDenied("microphone");
           setDeniedUi(true);
-          onVoiceMessage(announce ? message : result.message);
+          onVoiceMessage(message);
         } else {
           setDeniedUi(false);
           onVoiceMessage(result.message);

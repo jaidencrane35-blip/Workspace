@@ -58,4 +58,13 @@ Engineering falsification of “no remaining defects.” Does **not** equal Owne
 | U2 | Dual listening event race | **FIX** |
 | C2 | Redundant second warm | **FIX** |
 
-See also: `VOICE_OWNER_EXPERIENCE_CLOSURE_GATE.md`, `VOICE_FINAL_PRODUCT_PROOF_VALIDATION.md`.
+### P16.22 ship-readiness challenge of P16.21
+
+| ID | Hole | Disposition |
+| --- | --- | --- |
+| S1 | False “Voice is ready” on unproven mic | **FIX** |
+| S2 | Soft×2 Settings / “Try again” desync | **FIX** |
+| S3 | Settings-help copy without Settings gate | **FIX** |
+| S4 | Warm-fail permission misclassify | **FIX** |
+
+See also: `VOICE_SHIP_READINESS_FALSIFICATION.md`, `VOICE_OWNER_EXPERIENCE_CLOSURE_GATE.md`.

@@ -28,6 +28,9 @@ See also: `VOICE_PRODUCTION_FAILURE_MATRIX.md`, `VOICE_LIFECYCLE_STATE_MACHINE.m
 | R19 | Soft first mic deny → Settings trap | `permission_denied` always entered Settings gate | Remap soft mic → unavailable; Settings after 2 soft fails | P16.21 |
 | R20 | Dual emit Ready/Listening race | `voice-sound` + `voice-listening` same callback | Single `voice-sound`; SoundStarted-only UI | P16.21 |
 | R21 | Error phase never painted | Immediate idle after error | 280ms error flash | P16.21 |
+| R22 | Status “ready” without mic proof | Unknown warmed → “Voice is ready.” | Prompt + set-up copy until Allowed | P16.22 |
+| R23 | Soft×2 Settings message desync | Arm gate but say “Try again.” | Always Settings guidance when arming | P16.22 |
+| R24 | Warm fail loses permission_denied | Double sanitize → recognition_unavailable | `listen_outcome_from_engine_error` · `listen_warm_failed_classified` | P16.22 |
 
 ### Engineering stress (non-Owner)
 

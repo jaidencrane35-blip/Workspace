@@ -451,14 +451,14 @@ const health = {
   engineeringMode: "constitutional-execution",
   protocol: {
     document: ".cursor/rules/constitutional-execution-protocol.mdc",
-    version: "1.17",
+    version: "1.18",
     machineState: "docs/project-health.json",
   },
   currentExecutionProgram: {
     id: "voice-input-p16",
     title: "P16 Voice Input",
     status: "engineering_complete_product_proof_pending",
-    note: "P16 Engineering Complete (incl. P16.21 Owner-Experience Closure Gate — soft Settings trap, UI race, repo-quality Voice cleanup). Product Complete is Owner-only. Do not launch until Owner requests. After Owner closes Workspace: cleanup only, never relaunch. Do not mark permanently closed. Do not begin P17.",
+    note: "P16 Engineering Complete (incl. P16.22 Ship Readiness Falsification — false ready, Settings message desync, warm-fail classify). Product Complete is Owner-only. Do not launch until Owner requests. After Owner closes Workspace: cleanup only, never relaunch. Do not mark permanently closed. Do not begin P17.",
   },
   completedExecutionPrograms: completedPrograms,
   remainingBacklog,
@@ -503,7 +503,7 @@ const health = {
       "P13 Notifications Provider permanently closed",
       "P14 Browser Provider PERMANENTLY CLOSED",
       "P15 Screenshot Provider PERMANENTLY CLOSED",
-      "P16 Voice Input Engineering Complete (incl. P16.21 Owner-Experience Closure Gate) — Product Proof pending Owner acceptance (NOT permanently closed)",
+      "P16 Voice Input Engineering Complete (incl. P16.22 Ship Readiness Falsification) — Product Proof pending Owner acceptance (NOT permanently closed)",
       "Owner Experience Before Engineering Confidence permanent (P16.21)",
       "Repository Quality Before Milestone Closure permanent (P16.21)",
       "User Adaptation Prohibition permanent (P16.6)",
@@ -525,8 +525,8 @@ const health = {
     ],
   },
   currentMilestone: {
-    id: "voice-owner-experience-closure-gate-p16-21",
-    title: "P16.21 Final Owner-Experience Validation & Production Closure Gate",
+    id: "voice-ship-readiness-falsification-p16-22",
+    title: "P16.22 Product Proof Falsification & Ship Readiness",
     status: "engineering_complete_product_proof_pending",
     commit: milestoneCommit,
   },
@@ -628,7 +628,7 @@ const health = {
       id: "p16-voice-product-proof",
       track: "B",
       summary:
-        "P16 Voice Input — live Product Owner Product Proof pending final acceptance (Engineering Complete incl. P16.21 Owner-Experience Gate; not permanently closed)",
+        "P16 Voice Input — live Product Owner Product Proof pending final acceptance (Engineering Complete incl. P16.22 Ship Readiness; not permanently closed)",
     },
     {
       id: "capability-providers-p17-plus",
@@ -669,7 +669,7 @@ const health = {
       "P13 Notifications Provider permanently closed",
       "P14 Browser Provider permanently closed (P14.5)",
       "P15 Screenshot Provider permanently closed",
-      "P16 Voice Input Engineering Complete (P16.21 Owner-Experience Closure Gate) — Product Proof pending Owner acceptance",
+      "P16 Voice Input Engineering Complete (P16.22 Ship Readiness Falsification) — Product Proof pending Owner acceptance",
       "User Adaptation Prohibition permanent",
       "Conversation Continuity + Semantic Alias Rule permanent",
       "Permission Guidance Principle permanent",
@@ -751,7 +751,7 @@ const health = {
     date: "2026-08-07",
     document: "docs/engineering-milestone-report.md",
     title:
-      "P16.21 Voice Owner-Experience Closure Gate — awaiting Owner acceptance",
+      "P16.22 Voice Ship Readiness Falsification — awaiting Owner acceptance",
     reviewBrief: "docs/capability-runtime/product-proof/VOICE_INPUT_PRODUCT_PROOF.md",
   },
   handoffStatus: "P16_ENGINEERING_COMPLETE_PRODUCT_PROOF_PENDING",
