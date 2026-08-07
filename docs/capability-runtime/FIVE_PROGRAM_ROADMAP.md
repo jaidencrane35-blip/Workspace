@@ -22,7 +22,7 @@ Conversation → Intent → **Kernel Operator** → Runtime (Kernel Authority).
 | **P12 COMPLETE** | Final Repository Closure | `030fa3f` |
 | **P13** | Notifications Provider | `f0e03c4` (closed `f1a359c`) |
 | **P14** | Browser Provider | `1670822` |
-| **P14.5** | Browser Product Proof Remediation | *(this commit)* |
+| **P14.5** | Browser Product Proof Remediation | `0ed6711` |
 
 P12 series remains **permanently closed**.  
 **P13 is permanently closed.**  
